@@ -24,6 +24,8 @@ using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.UI;
+using Hecton8.World;
+using Hecton.Localization;
 using NASAPunk.Visor;
 using UnityEngine;
 
@@ -44,6 +46,7 @@ namespace Hecton8.Visor
         {
             OnModeChanged = null;
             OnSonarPulse = null;
+            OnSonarSnapshotUpdated = null;
         }
 
         /// <summary>Режим визора изменился.</summary>
@@ -51,9 +54,11 @@ namespace Hecton8.Visor
 
         /// <summary>Сонар-пульс. float: радиус обнаружения.</summary>
         public static event Action<float> OnSonarPulse;
+        public static event Action<SpatialSonarSnapshot> OnSonarSnapshotUpdated;
 
         public static void RaiseModeChanged(SpectrumMode mode) => OnModeChanged?.Invoke(mode);
         public static void RaiseSonarPulse(float radius) => OnSonarPulse?.Invoke(radius);
+        public static void RaiseSonarSnapshotUpdated(SpatialSonarSnapshot snapshot) => OnSonarSnapshotUpdated?.Invoke(snapshot);
     }
 
     [DisallowMultipleComponent]
@@ -94,6 +99,9 @@ namespace Hecton8.Visor
         private SpectrumMode _currentMode = SpectrumMode.Normal;
         private float _sonarTimer;
         private bool _registered;
+        private bool _hasSonarSnapshot;
+        private Transform _playerTransform;
+        private SpatialSonarSnapshot _lastSonarSnapshot;
 
         // Cached shader IDs
         private static readonly int _ShaderSpectrumMode =
@@ -113,6 +121,8 @@ namespace Hecton8.Visor
         public bool IsThermalActive     => _currentMode == SpectrumMode.Thermal;
         public bool IsSonarActive       => _currentMode == SpectrumMode.Sonar;
         public bool IsEchoActive        => _currentMode == SpectrumMode.Echolocation;
+        public bool HasSonarSnapshot    => _hasSonarSnapshot;
+        public SpatialSonarSnapshot LastSonarSnapshot => _lastSonarSnapshot;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -154,6 +164,7 @@ namespace Hecton8.Visor
 
             // Сбрасываем в Normal при отключении
             Shader.SetGlobalInt(_ShaderSpectrumMode, 0);
+            ClearSonarSnapshot();
         }
 
         private void OnDestroy()
@@ -190,6 +201,13 @@ namespace Hecton8.Visor
             SpectrumEvents.RaiseSonarPulse(sonarRadius);
             Shader.SetGlobalFloat(_ShaderSonarPulseTime, Time.time);
             Shader.SetGlobalFloat(_ShaderSonarRadius, sonarRadius);
+
+            if (ResolvePlayerTransform())
+            {
+                WorldSpatialHashGrid.BuildSonarSnapshot(_playerTransform.position, sonarRadius, out _lastSonarSnapshot);
+                _hasSonarSnapshot = true;
+                SpectrumEvents.RaiseSonarSnapshotUpdated(_lastSonarSnapshot);
+            }
         }
 
         // ══════════════════════════════════════════════════════════
@@ -210,6 +228,9 @@ namespace Hecton8.Visor
             _currentMode = mode;
             _sonarTimer = 0f;
 
+            if (_currentMode != SpectrumMode.Sonar)
+                ClearSonarSnapshot();
+
             ApplyShaderMode();
             SpectrumEvents.RaiseModeChanged(mode);
 
@@ -218,14 +239,10 @@ namespace Hecton8.Visor
             for (int i = 0; i < s_glitchControllers.Count; i++)
                 s_glitchControllers[i]?.GlitchPulse(0.2f);
 
-            string modeName = mode switch
-            {
-                SpectrumMode.Thermal      => "ТЕПЛОВИЗОР",
-                SpectrumMode.Sonar        => "СОНАР",
-                SpectrumMode.Echolocation => "ЭХОЛОТ",
-                _                         => "НОРМАЛЬНЫЙ"
-            };
-            NotificationEvents.PushInfo($"SPECTRUM: {modeName}");
+            string modeName = ResolveLocalizedModeName(mode);
+            NotificationEvents.PushInfo(string.Format(
+                ResolveLocalized(LocalizationKeys.SPECTRUM_NOTIFICATION_MODE, "SPECTRUM: {0}"),
+                modeName));
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log($"[Spectrum] Mode: {mode}");
@@ -261,6 +278,42 @@ namespace Hecton8.Visor
             }
 
             return playerTransform.TryGetComponent(out survivalSystem);
+        }
+
+        private bool ResolvePlayerTransform()
+        {
+            if (_playerTransform != null)
+                return true;
+
+            return SceneBootstrap.TryGetCurrentPlayerTransform(out _playerTransform) && _playerTransform != null;
+        }
+
+        private void ClearSonarSnapshot()
+        {
+            _hasSonarSnapshot = false;
+            _lastSonarSnapshot = default;
+            SpectrumEvents.RaiseSonarSnapshotUpdated(default);
+        }
+
+        private static string ResolveLocalizedModeName(SpectrumMode mode)
+        {
+            switch (mode)
+            {
+                case SpectrumMode.Thermal:
+                    return ResolveLocalized(LocalizationKeys.SPECTRUM_MODE_THERMAL, "THERMAL");
+                case SpectrumMode.Sonar:
+                    return ResolveLocalized(LocalizationKeys.SPECTRUM_MODE_SONAR, "SONAR");
+                case SpectrumMode.Echolocation:
+                    return ResolveLocalized(LocalizationKeys.SPECTRUM_MODE_ECHOLOCATION, "ECHOLOCATION");
+                default:
+                    return ResolveLocalized(LocalizationKeys.SPECTRUM_MODE_NORMAL, "NORMAL");
+            }
+        }
+
+        private static string ResolveLocalized(string key, string fallback)
+        {
+            LocalizationManager localization = LocalizationManager.Instance;
+            return localization != null ? localization.GetOrFallback(localization.CurrentLanguage, key, fallback) : fallback;
         }
     }
 }

@@ -28,7 +28,7 @@ namespace MoreMountains.Tools
 			{
 				if (_instance == null)
 				{
-					_instance = FindObjectOfType<T> ();
+					_instance = FindAnyObjectByType<T> ();
 					if (_instance == null)
 					{
 						GameObject obj = new GameObject ();
@@ -63,7 +63,7 @@ namespace MoreMountains.Tools
 
 			DontDestroyOnLoad (this.gameObject);
 			// we check for existing objects of the same type
-			T[] check = FindObjectsOfType<T>();
+			T[] check = FindObjectsByType<T>(FindObjectsInactive.Include);
 			foreach (T searched in check)
 			{
 				if (searched!=this)

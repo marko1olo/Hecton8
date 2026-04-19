@@ -506,6 +506,7 @@ namespace Hecton8.UI
             text.alignment = alignment;
             text.raycastTarget = false;
             text.textWrappingMode = TextWrappingModes.NoWrap;
+            LocalizedTMPAutoSizer.Configure(text, size * 0.72f, size, TextOverflowModes.Truncate, TextWrappingModes.NoWrap);
             return text;
         }
 

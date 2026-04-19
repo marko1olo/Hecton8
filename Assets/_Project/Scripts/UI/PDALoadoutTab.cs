@@ -62,6 +62,7 @@ namespace Hecton8.UI
 
         /// <summary>Кэшированный StringBuilder для сборки preset текста (избегает аллокаций в RefreshPresets)</summary>
         private readonly System.Text.StringBuilder _presetBuilder = new System.Text.StringBuilder(128);
+        private readonly System.Collections.Generic.Dictionary<int, PlayerTool> _prefabToolCache = new System.Collections.Generic.Dictionary<int, PlayerTool>(32); // COLD ALLOC: Dictionary<int, PlayerTool>(32) — caches prefab PlayerTool owners for repeated loadout refreshes — owner: PDALoadoutTab
 
         /// <summary>Кэшированные строки для ToUpperInvariant (избегает повторных аллокаций)</summary>
         private static readonly string[] _cachedUpperStrings = new string[16];
@@ -624,7 +625,7 @@ namespace Hecton8.UI
             for (int i = 0; i < 4; i++)
             {
                 GameObject prefab = toolManager.GetAssignedToolPrefab(i);
-                PlayerTool tool = prefab != null ? prefab.GetComponent<PlayerTool>() : null;
+                PlayerTool tool = ResolvePrefabTool(prefab);
                 ItemData item = tool != null ? tool.ToolData : null;
                 ToolMetadata meta = tool != null ? tool.Metadata : null;
 
@@ -743,7 +744,7 @@ namespace Hecton8.UI
             for (int i = 0; i < toolManager.SlotCount; i++)
             {
                 GameObject prefab = toolManager.GetAssignedToolPrefab(i);
-                PlayerTool tool = prefab != null ? prefab.GetComponent<PlayerTool>() : null;
+                PlayerTool tool = ResolvePrefabTool(prefab);
                 if (tool == null)
                     continue;
 
@@ -933,7 +934,7 @@ namespace Hecton8.UI
                 return;
 
             GameObject prefab = toolManager.GetAssignedToolPrefab(slotIndex);
-            PlayerTool tool = prefab != null ? prefab.GetComponent<PlayerTool>() : null;
+            PlayerTool tool = ResolvePrefabTool(prefab);
             ItemData item = tool != null ? tool.ToolData : null;
 
             if (clearAssignment)
@@ -1210,7 +1211,7 @@ namespace Hecton8.UI
             for (int i = 0; i < preset.slotPrefabs.Length; i++)
             {
                 GameObject prefab = preset.slotPrefabs[i];
-                PlayerTool tool = prefab != null ? prefab.GetComponent<PlayerTool>() : null;
+                PlayerTool tool = ResolvePrefabTool(prefab);
                 if (tool?.ToolData != null && playerInventory.ContainsItem(tool.ToolData))
                     count++;
             }
@@ -1234,6 +1235,25 @@ namespace Hecton8.UI
             return description.Length > 44
                 ? description.Substring(0, 44).TrimEnd() + "..."
                 : description;
+        }
+
+        private PlayerTool ResolvePrefabTool(GameObject prefab)
+        {
+            if (prefab == null)
+                return null;
+
+            int prefabId = prefab.GetEntityId();
+            if (_prefabToolCache.TryGetValue(prefabId, out PlayerTool cachedTool) &&
+                cachedTool != null)
+            {
+                return cachedTool;
+            }
+
+            if (!prefab.TryGetComponent(out PlayerTool resolvedTool))
+                return null;
+
+            _prefabToolCache[prefabId] = resolvedTool;
+            return resolvedTool;
         }
 
         private string GetActiveExpressionName()
@@ -1361,6 +1381,7 @@ namespace Hecton8.UI
             text.fontStyle = style;
             text.alignment = alignment;
             text.raycastTarget = false;
+            LocalizedTMPAutoSizer.Configure(text, size * 0.72f, size, TextOverflowModes.Truncate, TextWrappingModes.NoWrap);
             return text;
         }
 

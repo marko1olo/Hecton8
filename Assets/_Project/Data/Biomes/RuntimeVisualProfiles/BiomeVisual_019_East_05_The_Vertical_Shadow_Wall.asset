@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 559ad33e1d65b1d42950ade30bdf05c9, type: 3}
+  m_Name: BiomeVisual_019_East_05_The_Vertical_Shadow_Wall
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Environment.HectonBiomeProfile
+  biomeName: 'The Vertical Shadow Wall [East T05]'
+  scatterColorBase: {r: 0.02363697, g: 0.10915394, b: 0.17052758, a: 1}
+  scatterColorShallow: {r: 0.074815586, g: 0.24068363, b: 0.2947496, a: 1}
+  depthFogDensity: {x: 0.3269331, y: 0.20389986, z: 0.12673327}
+  fogColor: {r: 0.025258983, g: 0.1422564, b: 0.1975174, a: 1}
+  turbidityMultiplier: 0.8273409

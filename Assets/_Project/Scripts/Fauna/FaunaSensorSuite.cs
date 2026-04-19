@@ -12,6 +12,8 @@ namespace Hecton8.AI
     [System.Serializable]
     public class FaunaSensorSuite
     {
+        private const float ToolNoiseRadiusMultiplier = 1.35f;
+
         [Header("── Avoidance ──────────────────────────────────")]
         public float avoidanceRange = 8f;
         public float lookAheadFactor = 0.5f;
@@ -64,9 +66,7 @@ namespace Hecton8.AI
 
         private Transform _selfTransform;
         private Transform _playerTransform;
-        private PlayerFlashlight _playerFlashlight;
         private PlayerToolManager _playerToolManager;
-        private Rigidbody _playerRb;
         private FaunaSpeciesProfile _profile;
         private float _avoidanceTimeAccumulator;
         
@@ -80,8 +80,6 @@ namespace Hecton8.AI
         private static readonly Collider[] _distractorBuffer = new Collider[5];
         private static readonly Collider[] _flockBuffer = new Collider[50];
         private static readonly RaycastHit[] _hitBuffer = new RaycastHit[1];
-        private static readonly Collider[] _preyBuffer = new Collider[10];
-        private static readonly Collider[] _threatBuffer = new Collider[5];
         private static readonly Vector3[] _rayDirs = new Vector3[7];
 
         public void Init(Transform self, FaunaSpeciesProfile profile)
@@ -93,9 +91,8 @@ namespace Hecton8.AI
 
             if (_playerTransform != null)
             {
-                _playerTransform.TryGetComponent(out _playerFlashlight);
-                _playerTransform.TryGetComponent(out _playerRb);
                 _playerToolManager = _playerTransform.GetComponentInChildren<PlayerToolManager>(true);
+                PlayerNoiseEmitter.EnsureAttached(_playerTransform);
             }
         }
 
@@ -129,31 +126,31 @@ namespace Hecton8.AI
         {
             float radius = aggroDistance;
 
-            // [RULE] Sensory Stealth Weights
-            // [REQ] Flashlight: If playerFlashlight.IsOn, double the predator's detection radius.
-            if (_playerFlashlight != null && _playerFlashlight.IsOn)
-            {
-                radius *= 2.0f;
-            }
-
-            // [REQ] Speed: If the player is using a MantaScooter, apply the multiplier.
-            MantaScooter manta = _playerToolManager != null ? _playerToolManager.CurrentTool as MantaScooter : null;
-            if (manta != null && manta.GetPropulsionForce() > 0f)
-            {
-                radius *= _profile != null ? _profile.sensoryWeightScooter : 1.5f;
-            }
-
-            // [REQ] Stealth: If the player is moving slowly (< 1m/s) with lights off, reduce the radius by 50%.
-            if (_playerFlashlight != null && !_playerFlashlight.IsOn && _playerRb != null)
-            {
-                // Note: linearVelocity.sqrMagnitude is used to avoid sqrt in hot path.
-                if (_playerRb.linearVelocity.sqrMagnitude < 1.0f) 
-                {
-                    radius *= 0.5f;
-                }
-            }
+            if (NoiseSystem.TryGetPlayerSignal(out NoiseSystem.PlayerNoiseSignal playerNoise))
+                ApplyReportedPlayerSenses(playerNoise, ref radius);
 
             canSeePlayer = distSqrToPlayer < radius * radius;
+        }
+
+        private void ApplyReportedPlayerSenses(NoiseSystem.PlayerNoiseSignal playerNoise, ref float radius)
+        {
+            if (reactToPlayerLight && playerNoise.FlashlightOn)
+                radius *= 2f;
+
+            if (!reactToPlayerNoise)
+                return;
+
+            if (playerNoise.TransportBoost01 > 0f)
+            {
+                float transportSensitivity = _profile != null ? _profile.sensoryWeightScooter : 1.5f;
+                radius *= Mathf.Lerp(1f, transportSensitivity * playerNoise.TransportSignature, playerNoise.TransportBoost01);
+            }
+
+            if (playerNoise.ToolUseNoise01 > 0f)
+                radius *= Mathf.Lerp(1f, ToolNoiseRadiusMultiplier, playerNoise.ToolUseNoise01);
+
+            if (!playerNoise.FlashlightOn && playerNoise.MovementSpeedSqr < 1.0f)
+                radius *= 0.5f;
         }
 
         private void UpdateThreatDetection()
@@ -161,25 +158,20 @@ namespace Hecton8.AI
             isThreatened = false;
             currentThreat = null;
             
-            if (territoryMask == 0 || _profile == null) return;
+            if (territoryMask == 0 || _profile == null)
+                return;
 
-            // [REQ] Territorial Dispute Check
-            int count = UnityEngine.Physics.OverlapSphereNonAlloc(_selfTransform.position, _profile.territoryThreatRadius, _threatBuffer, _profile.predatorMask);
-            
-            for (int i = 0; i < count; i++)
+            if (WorldSpatialHashGrid.TryGetNearestBioform(
+                    _selfTransform.position,
+                    _profile.territoryThreatRadius,
+                    _profile.predatorMask,
+                    _selfTransform,
+                    _profile.speciesID,
+                    false,
+                    out SpatialQueryHit threatHit))
             {
-                if (_threatBuffer[i].transform == _selfTransform) continue;
-
-                // Check if it's a different species predator
-                if (_threatBuffer[i].TryGetComponent<FaunaBrain>(out var otherBrain))
-                {
-                    if (otherBrain.SpeciesProfile != null && otherBrain.SpeciesProfile.speciesID != _profile.speciesID)
-                    {
-                        isThreatened = true;
-                        currentThreat = _threatBuffer[i].transform;
-                        break;
-                    }
-                }
+                currentThreat = threatHit.Transform;
+                isThreatened = currentThreat != null;
             }
         }
 
@@ -247,22 +239,23 @@ namespace Hecton8.AI
         private void UpdatePreyDetection()
         {
             currentPrey = null;
-            if (preyMask == 0) return;
+            if (_profile == null)
+                return;
 
-            int count = UnityEngine.Physics.OverlapSphereNonAlloc(_selfTransform.position, aggroDistance, _preyBuffer, _profile.preyMask);
-            float closestSqrDist = float.MaxValue;
+            LayerMask searchMask = _profile.preyMask != 0 ? _profile.preyMask : preyMask;
+            if (searchMask == 0)
+                return;
 
-            for (int i = 0; i < count; i++)
+            if (WorldSpatialHashGrid.TryGetNearestBioform(
+                    _selfTransform.position,
+                    aggroDistance,
+                    searchMask,
+                    _selfTransform,
+                    -1,
+                    true,
+                    out SpatialQueryHit preyHit))
             {
-                if (_preyBuffer[i].CompareTag("Prey"))
-                {
-                    float sqrDist = (_preyBuffer[i].transform.position - _selfTransform.position).sqrMagnitude;
-                    if (sqrDist < closestSqrDist)
-                    {
-                        closestSqrDist = sqrDist;
-                        currentPrey = _preyBuffer[i].transform;
-                    }
-                }
+                currentPrey = preyHit.Transform;
             }
         }
 

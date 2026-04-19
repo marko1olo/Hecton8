@@ -49,7 +49,7 @@ MonoBehaviour:
   landmarkStrength: 5
   rewardPull: 5
   survivalPressure: 5
-  runtimeVisualProfile: {fileID: 0}
+  runtimeVisualProfile: {fileID: 11400000, guid: b12ad1c366c80084a8b7d1e128c55995, type: 2}
   familyId: biome.family.rift_void
   familyProfile: {fileID: 11400000, guid: c99b16137fd8d0044895be98153c1d24, type: 2}
   suggestedZoneFamily: combat.silhouette.far

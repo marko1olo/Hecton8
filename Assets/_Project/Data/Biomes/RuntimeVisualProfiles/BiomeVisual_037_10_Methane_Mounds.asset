@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 559ad33e1d65b1d42950ade30bdf05c9, type: 3}
+  m_Name: BiomeVisual_037_10_Methane_Mounds
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomeProfile
+  biomeName: 'Methane Mounds [10]'
+  scatterColorBase: {r: 0.02485096, g: 0.08192174, b: 0.09357731, a: 1}
+  scatterColorShallow: {r: 0.07237824, g: 0.17255649, b: 0.14854128, a: 1}
+  depthFogDensity: {x: 0.58461311, y: 0.3572838, z: 0.20488621}
+  fogColor: {r: 0.02909027, g: 0.10408109, b: 0.0986794, a: 1}
+  turbidityMultiplier: 1.44226274

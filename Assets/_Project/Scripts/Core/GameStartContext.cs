@@ -184,6 +184,8 @@ namespace Hecton8.Core
         private const string PersistKeySpawnMode = "GameStartContext.SpawnMode";
         private const string PersistKeyIntroSceneName = "GameStartContext.IntroSceneName";
         private const string PersistKeyLandingPresetName = "GameStartContext.LandingPresetName";
+        private const string PersistKeyIssuedAtUtcTicks = "GameStartContext.IssuedAtUtcTicks";
+        private const double PersistedHandoffMaxAgeSeconds = 45d;
 
         /// <summary>Текущий контекст игровой сессии.</summary>
         public static GameStartContext Current { get; set; }
@@ -223,6 +225,7 @@ namespace Hecton8.Core
             PlayerPrefs.DeleteKey(PersistKeySpawnMode);
             PlayerPrefs.DeleteKey(PersistKeyIntroSceneName);
             PlayerPrefs.DeleteKey(PersistKeyLandingPresetName);
+            PlayerPrefs.DeleteKey(PersistKeyIssuedAtUtcTicks);
             PlayerPrefs.Save();
         }
 
@@ -259,6 +262,7 @@ namespace Hecton8.Core
             PlayerPrefs.SetInt(PersistKeySpawnMode, (int)Current.SpawnMode);
             PlayerPrefs.SetString(PersistKeyIntroSceneName, Current.IntroSceneName ?? string.Empty);
             PlayerPrefs.SetString(PersistKeyLandingPresetName, Current.LandingPresetName ?? string.Empty);
+            PlayerPrefs.SetString(PersistKeyIssuedAtUtcTicks, DateTime.UtcNow.Ticks.ToString());
             PlayerPrefs.Save();
         }
 
@@ -271,6 +275,21 @@ namespace Hecton8.Core
 
             int startModeValue = PlayerPrefs.GetInt(PersistKeyStartMode, -1);
             int spawnModeValue = PlayerPrefs.GetInt(PersistKeySpawnMode, -1);
+            string issuedAtUtcTicksRaw = PlayerPrefs.GetString(PersistKeyIssuedAtUtcTicks, string.Empty);
+
+            if (!long.TryParse(issuedAtUtcTicksRaw, out long issuedAtUtcTicks))
+            {
+                ClearPersistedHandoff();
+                return false;
+            }
+
+            long handoffAgeTicks = DateTime.UtcNow.Ticks - issuedAtUtcTicks;
+            if (handoffAgeTicks < 0L ||
+                handoffAgeTicks > TimeSpan.FromSeconds(PersistedHandoffMaxAgeSeconds).Ticks)
+            {
+                ClearPersistedHandoff();
+                return false;
+            }
 
             if ((uint)startModeValue > (uint)GameStartMode.Resume ||
                 (uint)spawnModeValue > (uint)GameSpawnMode.IntroLocation)

@@ -26,9 +26,6 @@ namespace Hecton8.UI
             Visible_ClampedToEdge = 5
         }
 
-        // COLD ALLOC: Camera[16] — fallback camera resolution buffer for relay HUD owner — owner: RelayHUDElement
-        private static readonly Camera[] s_CameraBuffer = new Camera[16];
-
         [Header("── References ──────────────────")]
         [Tooltip("Icon used for the relay route marker.")]
         [SerializeField] private Image markerIcon;
@@ -62,10 +59,16 @@ namespace Hecton8.UI
         private Transform _playerTransform;
         private EmergencyServiceRelay _trackedRelay;
         private bool _registered;
+        private bool _isVisible;
+        private bool _hasVisibilityState;
+        private bool _hasColorState;
+        private bool _lastColorUsedEdgeState;
         private int _lastDistanceMeters = int.MinValue;
         private string _lastLabel = string.Empty;
         private RelayMarkerVisibilityState _lastVisibilityState = RelayMarkerVisibilityState.Hidden_NoRouteTarget;
         private float _lastObservedDistance;
+        private float _cameraRetryTime;
+        private const float CameraRetryInterval = 2f;
 
         private void Awake()
         {
@@ -96,6 +99,10 @@ namespace Hecton8.UI
             _trackedRelay = null;
             _lastDistanceMeters = int.MinValue;
             _lastLabel = string.Empty;
+            _hasColorState = false;
+            _lastColorUsedEdgeState = false;
+            _hasVisibilityState = false;
+            _isVisible = false;
             SetVisible(false);
         }
 
@@ -190,8 +197,44 @@ namespace Hecton8.UI
 
         private bool TryCacheCamera()
         {
-            if (_mainCamera == null || !_mainCamera.isActiveAndEnabled)
-                _mainCamera = ResolveWorldCamera();
+            if (_mainCamera != null && _mainCamera.isActiveAndEnabled)
+            {
+                if (_playerTransform == null)
+                {
+                    if (!SceneBootstrap.TryGetCurrentPlayerTransform(out _playerTransform) || _playerTransform == null)
+                        _playerTransform = _mainCamera.transform;
+                }
+                return _playerTransform != null;
+            }
+
+            _mainCamera = null;
+
+            if (Time.time < _cameraRetryTime)
+                return false;
+
+            _cameraRetryTime = Time.time + CameraRetryInterval;
+
+            // Resolve via SceneBootstrap player hierarchy (explicit ownership, no Camera.main)
+            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
+            {
+                _mainCamera = playerTransform.GetComponentInChildren<Camera>(true);
+                if (_mainCamera != null)
+                {
+                    _playerTransform = playerTransform;
+                    return true;
+                }
+            }
+
+            // Fallback: walk local hierarchy (self, children, parent)
+            _mainCamera = GetComponent<Camera>();
+            if (_mainCamera == null)
+                _mainCamera = GetComponentInChildren<Camera>(true);
+            if (_mainCamera == null)
+            {
+                Transform parent = transform.parent;
+                if (parent != null)
+                    parent.TryGetComponent(out _mainCamera);
+            }
 
             if (_mainCamera == null)
                 return false;
@@ -203,38 +246,6 @@ namespace Hecton8.UI
             }
 
             return _playerTransform != null;
-        }
-
-        private static Camera ResolveWorldCamera()
-        {
-            Camera taggedMainCamera = Camera.main;
-            if (taggedMainCamera != null && taggedMainCamera.isActiveAndEnabled)
-                return taggedMainCamera;
-
-            int cameraCount = Camera.GetAllCameras(s_CameraBuffer);
-            Camera fallbackCamera = null;
-
-            for (int i = 0; i < cameraCount; i++)
-            {
-                Camera candidate = s_CameraBuffer[i];
-                if (candidate == null || !candidate.isActiveAndEnabled)
-                    continue;
-
-                string candidateName = candidate.name ?? string.Empty;
-                if (candidateName.IndexOf("Main", StringComparison.OrdinalIgnoreCase) >= 0)
-                    return candidate;
-
-                if (candidateName.IndexOf("HUD", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                    candidateName.IndexOf("UI", StringComparison.OrdinalIgnoreCase) >= 0)
-                {
-                    fallbackCamera ??= candidate;
-                    continue;
-                }
-
-                return candidate;
-            }
-
-            return fallbackCamera;
         }
 
         private void UpdateLabel(string relayLabel)
@@ -265,10 +276,16 @@ namespace Hecton8.UI
 
         private void UpdateColor(bool clampedToEdge)
         {
-            if (markerIcon != null)
-                markerIcon.color = clampedToEdge ? edgeColor : onScreenColor;
-
             Color textColor = clampedToEdge ? edgeColor : onScreenColor;
+            if (_hasColorState && _lastColorUsedEdgeState == clampedToEdge)
+                return;
+
+            _hasColorState = true;
+            _lastColorUsedEdgeState = clampedToEdge;
+
+            if (markerIcon != null)
+                markerIcon.color = textColor;
+
             if (distanceText != null)
                 distanceText.color = textColor;
 
@@ -281,6 +298,11 @@ namespace Hecton8.UI
             if (_canvasGroup == null)
                 return;
 
+            if (_hasVisibilityState && _isVisible == visible)
+                return;
+
+            _hasVisibilityState = true;
+            _isVisible = visible;
             _canvasGroup.alpha = visible ? 1f : 0f;
             _canvasGroup.blocksRaycasts = false;
             _canvasGroup.interactable = false;

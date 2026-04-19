@@ -190,6 +190,12 @@ namespace Hecton8.Celestial
         [SerializeField, Range(0f, 1f)] private float _surfaceFogAmbientColorInfluence = 0.22f;
         [Tooltip("Widens the haze band away from the exact horizon line. Raise this when haze controls feel like they only affect a razor-thin strip.")]
         [SerializeField, Range(0.5f, 2.5f)] private float _surfaceHazeHorizonSpread = 1.35f;
+        [Tooltip("Strength of the low mist shelf that sits directly on the waterline. Raise this when the far ocean still reads as a cut plane instead of dissolving into air.")]
+        [SerializeField, Range(0f, 2f)] private float _surfaceHorizonMistShelfIntensity = 1f;
+        [Tooltip("Vertical reach of the horizon mist shelf above the waterline. Raise this when the dissolve stays too thin and only touches the exact seam.")]
+        [SerializeField, Range(0.04f, 0.32f)] private float _surfaceHorizonMistShelfHeight = 0.16f;
+        [Tooltip("Softness of the horizon mist shelf transition. Raise this when the shelf still reads as a stripe instead of a gradual atmospheric mass.")]
+        [SerializeField, Range(0.02f, 0.24f)] private float _surfaceHorizonMistShelfSoftness = 0.1f;
 
         [Space(10)]
         [Header("═══ AEGIR ATMOSPHERE COMPOSITE ═══")]
@@ -417,7 +423,7 @@ namespace Hecton8.Celestial
         private const int CelestialBodyCacheCapacity = 8;
         private const float AtmosphereWeightBlendThreshold = 0.01f;
         private const int CelestialAtmosphereLutResolution = 512;
-        private const int BestVisualDefaultsVersion = 4;
+        private const int BestVisualDefaultsVersion = 5;
         private const float NightAtmosphereInscatterFloor = 0.001f;
         private bool _editorPreviewDirty;
         private readonly List<ObserverRelativeCelestialBody> _observerBodyCache = new List<ObserverRelativeCelestialBody>(CelestialBodyCacheCapacity); // COLD ALLOC: List<ObserverRelativeCelestialBody>[8] - cold observer-body cache for moon renderer discovery - owner: HectonCelestialEngine
@@ -474,6 +480,9 @@ namespace Hecton8.Celestial
         private static readonly int _ID_HazeFalloff = Shader.PropertyToID("_HazeFalloff");
         private static readonly int _ID_HazeColor = Shader.PropertyToID("_HazeColor");
         private static readonly int _ID_HazeSunTintStrength = Shader.PropertyToID("_HazeSunTintStrength");
+        private static readonly int _ID_HorizonMistShelfIntensity = Shader.PropertyToID("_HorizonMistShelfIntensity");
+        private static readonly int _ID_HorizonMistShelfHeight = Shader.PropertyToID("_HorizonMistShelfHeight");
+        private static readonly int _ID_HorizonMistShelfSoftness = Shader.PropertyToID("_HorizonMistShelfSoftness");
         private static readonly int _ID_HighCloudTex       = Shader.PropertyToID("_HighCloudTex");
         private static readonly int _ID_MainCloudAtlas     = Shader.PropertyToID("_MainCloudAtlas");
         private static readonly int _ID_MainCloudTex       = Shader.PropertyToID("_MainCloudTex");
@@ -1005,6 +1014,13 @@ namespace Hecton8.Celestial
                 _surfaceHazeHorizonSpread = 1.35f;
             }
 
+            if (_visualDefaultsVersion < 5)
+            {
+                _surfaceHorizonMistShelfIntensity = 1f;
+                _surfaceHorizonMistShelfHeight = 0.16f;
+                _surfaceHorizonMistShelfSoftness = 0.1f;
+            }
+
             _visualDefaultsVersion = BestVisualDefaultsVersion;
         }
 
@@ -1477,6 +1493,21 @@ namespace Hecton8.Celestial
             hazeSunTintStrength = Mathf.Lerp(hazeSunTintStrength, hazeSunTintStrength * 1.25f, sunsetWeight);
             hazeSunTintStrength = Mathf.Lerp(hazeSunTintStrength, hazeSunTintStrength * 0.6f, nightWeight);
 
+            float mistShelfIntensity = Mathf.Lerp(0.22f, 0.56f, hazeResponse) *
+                                       Mathf.Clamp(_surfaceHorizonMistShelfIntensity, 0f, 2f);
+            mistShelfIntensity *= Mathf.Lerp(1f, 1f + (hazeSpread - 1f) * 0.24f, hazeResponse);
+            mistShelfIntensity = Mathf.Lerp(mistShelfIntensity, mistShelfIntensity * 1.12f, sunsetWeight);
+            mistShelfIntensity = Mathf.Lerp(mistShelfIntensity, mistShelfIntensity * 0.34f, nightWeight);
+            mistShelfIntensity = Mathf.Clamp(mistShelfIntensity, 0f, 2f);
+
+            float mistShelfHeight = _surfaceHorizonMistShelfHeight *
+                                    Mathf.Lerp(0.92f, 1.18f, hazeResponse);
+            mistShelfHeight = Mathf.Clamp(mistShelfHeight, 0.04f, 0.32f);
+
+            float mistShelfSoftness = _surfaceHorizonMistShelfSoftness *
+                                      Mathf.Lerp(0.9f, 1.12f, hazeResponse);
+            mistShelfSoftness = Mathf.Clamp(mistShelfSoftness, 0.02f, 0.24f);
+
             Color ambientSkyColor = Color.Lerp(ambientBaseColor, skyZenithColor, 0.7f);
             Color ambientEquatorColor = Color.Lerp(ambientBaseColor, horizonFogColor, 0.62f);
             Color ambientGroundColor = Color.Lerp(skyNadirColor, ambientEquatorColor, 0.46f);
@@ -1513,6 +1544,9 @@ namespace Hecton8.Celestial
                 HorizonHazeIntensity = hazeIntensity,
                 HorizonHazeFalloff = hazeFalloff,
                 HorizonHazeSunTintStrength = hazeSunTintStrength,
+                HorizonMistShelfIntensity = mistShelfIntensity,
+                HorizonMistShelfHeight = mistShelfHeight,
+                HorizonMistShelfSoftness = mistShelfSoftness,
                 SkyZenithColor = _resolvedSkyZenith,
                 SkyHorizonColor = _resolvedSkyHorizon,
                 SkyNadirColor = _resolvedSkyNadir,
@@ -2297,6 +2331,9 @@ namespace Hecton8.Celestial
             targetMaterial.SetFloat(_ID_HazeFalloff, state.HorizonHazeFalloff);
             targetMaterial.SetColor(_ID_HazeColor, state.HorizonHazeColor);
             targetMaterial.SetFloat(_ID_HazeSunTintStrength, state.HorizonHazeSunTintStrength);
+            targetMaterial.SetFloat(_ID_HorizonMistShelfIntensity, state.HorizonMistShelfIntensity);
+            targetMaterial.SetFloat(_ID_HorizonMistShelfHeight, state.HorizonMistShelfHeight);
+            targetMaterial.SetFloat(_ID_HorizonMistShelfSoftness, state.HorizonMistShelfSoftness);
         }
 
         private void ResolveSkyColors(out Color zenith, out Color horizon, out Color nadir)

@@ -50,7 +50,7 @@ MonoBehaviour:
   landmarkStrength: 3
   rewardPull: 3
   survivalPressure: 5
-  runtimeVisualProfile: {fileID: 0}
+  runtimeVisualProfile: {fileID: 11400000, guid: 6f3e278f7fc2a2848aab6bf583048488, type: 2}
   familyId: biome.family.abyssal_silt
   familyProfile: {fileID: 11400000, guid: b4535b511f094aa479551dc4476a87a6, type: 2}
   suggestedZoneFamily: combat.readability.mid

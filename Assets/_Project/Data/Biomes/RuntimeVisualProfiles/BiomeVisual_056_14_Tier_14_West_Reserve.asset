@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 559ad33e1d65b1d42950ade30bdf05c9, type: 3}
+  m_Name: BiomeVisual_056_14_Tier_14_West_Reserve
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomeProfile
+  biomeName: 'Tier 14 West Reserve [14]'
+  scatterColorBase: {r: 0.0213864, g: 0.0519524, b: 0.0736784, a: 1}
+  scatterColorShallow: {r: 0.05188, g: 0.11076, b: 0.1252, a: 1}
+  depthFogDensity: {x: 0.673, y: 0.3955, z: 0.225}
+  fogColor: {r: 0.0256808, g: 0.0668044, b: 0.0796436, a: 1}
+  turbidityMultiplier: 1.44875

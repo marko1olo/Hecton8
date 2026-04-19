@@ -162,7 +162,7 @@ namespace GPUInstancer
 
         private static void GetPrefabInstanceCounts()
         {
-            GameObject[] prefabInstances = (GameObject[])FindObjectsOfType(typeof(GameObject));
+            GameObject[] prefabInstances = (GameObject[])FindObjectsByType(typeof(GameObject), FindObjectsInactive.Include);
 #if UNITY_2018_3_OR_NEWER
             Dictionary<GameObject, bool> prefabHasChildCacheDict = new Dictionary<GameObject, bool>();
             List<GameObject> prefabAssetList = GPUInstancerUtility.GetCorrespondingPrefabAssetsOfGameObjects(prefabInstances);

@@ -256,7 +256,7 @@ namespace MapMagic.Brush.Undo
 				undoData.Write(terrain);
 			}
 
-			foreach (MapMagicBrush brush in GameObject.FindObjectsOfType<MapMagicBrush>())
+			foreach (MapMagicBrush brush in GameObject.FindObjectsByType<MapMagicBrush>(FindObjectsInactive.Include))
 				brush.UpdateCaches();
 		}
 	}

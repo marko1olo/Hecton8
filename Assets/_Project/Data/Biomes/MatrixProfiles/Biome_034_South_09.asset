@@ -46,7 +46,7 @@ MonoBehaviour:
   landmarkStrength: 4
   rewardPull: 4
   survivalPressure: 4
-  runtimeVisualProfile: {fileID: 0}
+  runtimeVisualProfile: {fileID: 11400000, guid: d9bd77df4b8151741957343d35d9e3bd, type: 2}
   familyId: biome.family.fossil_reef
   familyProfile: {fileID: 11400000, guid: ff56cfd9b8f15844093dd69495d38346, type: 2}
   suggestedZoneFamily: resources.landmarks.far

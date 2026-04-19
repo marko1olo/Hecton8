@@ -66,6 +66,7 @@ namespace Hecton8.Gameplay
         private float _tempGraceTimer;
         private float _radGraceTimer;
         private HectonPlayerMovement _playerMovement;
+        private PlayerTransportCoordinator _playerTransportCoordinator;
         private bool _surfaceContractUnderwater;
         private const float HazardGraceDuration = 3f;
 
@@ -129,6 +130,7 @@ namespace Hecton8.Gameplay
             }
 
             TryGetComponent(out _playerMovement);
+            TryGetComponent(out _playerTransportCoordinator);
             ResetToMax();
         }
 
@@ -206,7 +208,11 @@ namespace Hecton8.Gameplay
             }
 
             float pressureFactor = math.max(1f, pressure * 0.5f);
-            oxygen = math.max(0f, oxygen - stats.OxygenConsumptionRate * pressureFactor * dt);
+            float oxygenConsumptionScale = ResolveTransportOxygenConsumptionScale();
+            if (oxygenConsumptionScale <= 0f)
+                return;
+
+            oxygen = math.max(0f, oxygen - stats.OxygenConsumptionRate * pressureFactor * oxygenConsumptionScale * dt);
         }
 
         private bool ResolveSurfaceContractUnderwater()
@@ -241,9 +247,12 @@ namespace Hecton8.Gameplay
         {
             if (depth <= stats.SafeDepth) return;
 
+            float pressureDamageScale = ResolveTransportPressureDamageScale();
+            if (pressureDamageScale <= 0f) return;
+
             float excess = depth - stats.SafeDepth;
             float scale  = 1f + excess * stats.PressureScalePerMeter;
-            integrity = math.max(0f, integrity - stats.PressureDamageRate * scale * dt);
+            integrity = math.max(0f, integrity - stats.PressureDamageRate * scale * pressureDamageScale * dt);
         }
 
         private void HandleTemperature(float dt)
@@ -267,15 +276,22 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            float thermalExposureScale = ResolveTransportThermalExposureScale();
+            if (thermalExposureScale <= 0f)
+            {
+                _tempGraceTimer = 0f;
+                return;
+            }
+
             _tempGraceTimer += dt;
             if (_tempGraceTimer < HazardGraceDuration) return;
 
             // Suit energy drain for thermal regulation
-            float heatDrain = excess * stats.TempEnergyScale * dt;
+            float heatDrain = excess * stats.TempEnergyScale * thermalExposureScale * dt;
             energy = math.max(0f, energy - heatDrain);
 
             // Thermal integrity damage
-            float damage = stats.TempDamageRate * (1f + excess * 0.1f) * dt;
+            float damage = stats.TempDamageRate * (1f + excess * 0.1f) * thermalExposureScale * dt;
             integrity = math.max(0f, integrity - damage);
         }
 
@@ -294,13 +310,59 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            float radiationExposureScale = ResolveTransportRadiationExposureScale();
+            if (radiationExposureScale <= 0f)
+            {
+                _radGraceTimer = 0f;
+                return;
+            }
+
             _radGraceTimer += dt;
             if (_radGraceTimer < HazardGraceDuration) return;
 
             float excess = currentRad - stats.RadiationThreshold;
-            float damage = excess * stats.RadiationDamageRate * dt;
+            float damage = excess * stats.RadiationDamageRate * radiationExposureScale * dt;
             
             integrity = math.max(0f, integrity - damage);
+        }
+
+        private PlayerTransportPreset ResolveActiveTransportPreset()
+        {
+            return _playerTransportCoordinator != null
+                ? _playerTransportCoordinator.ResolveTransportPreset()
+                : null;
+        }
+
+        private float ResolveTransportOxygenConsumptionScale()
+        {
+            PlayerTransportPreset transportPreset = ResolveActiveTransportPreset();
+            return transportPreset != null
+                ? math.max(0f, transportPreset.OxygenConsumptionScale)
+                : 1f;
+        }
+
+        private float ResolveTransportPressureDamageScale()
+        {
+            PlayerTransportPreset transportPreset = ResolveActiveTransportPreset();
+            return transportPreset != null
+                ? math.max(0f, transportPreset.PressureDamageScale)
+                : 1f;
+        }
+
+        private float ResolveTransportThermalExposureScale()
+        {
+            PlayerTransportPreset transportPreset = ResolveActiveTransportPreset();
+            return transportPreset != null
+                ? math.max(0f, transportPreset.ThermalExposureScale)
+                : 1f;
+        }
+
+        private float ResolveTransportRadiationExposureScale()
+        {
+            PlayerTransportPreset transportPreset = ResolveActiveTransportPreset();
+            return transportPreset != null
+                ? math.max(0f, transportPreset.RadiationExposureScale)
+                : 1f;
         }
 
         private void UpdateHungerAndThirst(float dt)

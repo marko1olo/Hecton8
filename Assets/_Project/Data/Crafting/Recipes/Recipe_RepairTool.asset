@@ -1,4 +1,4 @@
-%YAML 1.1
+﻿%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!114 &11400000
 MonoBehaviour:
@@ -13,9 +13,17 @@ MonoBehaviour:
   m_Name: Recipe_RepairTool
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Crafting.RecipeData
   recipeName: Repair Tool
+  localizedRecipeName:
+    tableKey: ITEM_TOOL_REPAIR_NAME
+    fallbackText: ''
+    variants: []
   overrideIcon: {fileID: 0}
   description: Field maintenance head for sealed modules, hull fractures, and flooded
     systems.
+  localizedRecipeDescription:
+    tableKey: ITEM_TOOL_REPAIR_DESCRIPTION
+    fallbackText: ''
+    variants: []
   resultItem: {fileID: 11400000, guid: b7348927f9bf50f49a10a940fad34081, type: 2}
   resultQuantity: 1
   ingredients:

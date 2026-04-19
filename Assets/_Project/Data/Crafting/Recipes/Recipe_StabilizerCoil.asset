@@ -1,4 +1,4 @@
-%YAML 1.1
+﻿%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!114 &11400000
 MonoBehaviour:
@@ -13,9 +13,17 @@ MonoBehaviour:
   m_Name: Recipe_StabilizerCoil
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Crafting.RecipeData
   recipeName: Stabilizer Coil
+  localizedRecipeName:
+    tableKey: ITEM_STABILIZER_COIL_NAME
+    fallbackText: ''
+    variants: []
   overrideIcon: {fileID: 0}
   description: Wind and brace a high-precision stabilizer coil for heavy control
     tools.
+  localizedRecipeDescription:
+    tableKey: ITEM_STABILIZER_COIL_DESCRIPTION
+    fallbackText: ''
+    variants: []
   resultItem: {fileID: 11400000, guid: c3851602fb54f504fbd62ea61e3c294a, type: 2}
   resultQuantity: 1
   ingredients:

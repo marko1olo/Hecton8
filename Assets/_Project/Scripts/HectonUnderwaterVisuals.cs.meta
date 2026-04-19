@@ -1,2 +1,27 @@
 fileFormatVersion: 2
 guid: 7b8d6f3311640f64ba03f2b62d8a00cd
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - playerCamera: {instanceID: 0}
+  - sunLight: {instanceID: 0}
+  - sunFlare: {instanceID: 0}
+  - sunVisualTransform: {instanceID: 0}
+  - mainCamera: {instanceID: 0}
+  - transitionCameraVfx: {instanceID: 0}
+  - transitionVisorController: {instanceID: 0}
+  - underwaterSuspendedMotes: {instanceID: 0}
+  - underwaterExhaleBubbles: {instanceID: 0}
+  - shallowSunBeam: {instanceID: 0}
+  - shallowSunBeamLight: {instanceID: 0}
+  - atmosphereManager: {instanceID: 0}
+  - oceanUnderwaterMaterial: {fileID: 2100000, guid: ef94c26e44a36e24a9dcbc5995a2bed1, type: 2}
+  - skyMaterial: {fileID: 2100000, guid: c94a1beef2372b8458941c2ed9d05d5e, type: 2}
+  - biomePalette: {fileID: 11400000, guid: 1ed7cad7d9660ec4898f244d19b99da4, type: 2}
+  - biomeMatrixDirector: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

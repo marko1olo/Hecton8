@@ -52,6 +52,9 @@ namespace Hecton8.Gameplay
         [Tooltip("Optional tool owner. When a held tool is active, swim-body presentation can be reduced to avoid rig fighting.")]
         [SerializeField] private PlayerToolManager playerToolManager;
 
+        [Tooltip("Optional transport owner. Preferred over direct tool probing when available.")]
+        [SerializeField] private PlayerTransportCoordinator playerTransportCoordinator;
+
         [Tooltip("Optional render-layer slave that visualizes the current swim presentation with near-camera blockout arms.")]
         [SerializeField] private PlayerSwimBlockoutRig swimBlockoutRig;
 
@@ -572,6 +575,7 @@ namespace Hecton8.Gameplay
         private float _heavyCarryLoadVelocity;
         private float _transportBoostCurrent;
         private float _transportBoostVelocity;
+        private PlayerTransportFeelContract _transportFeelContractCurrent;
         private float _previousCameraYaw;
         private int _lastDrivenFrame = -1;
         private bool _hasInitializedActiveBlend;
@@ -820,6 +824,9 @@ namespace Hecton8.Gameplay
             if (playerToolManager == null)
                 gameObject.TryGetComponent(out playerToolManager);
 
+            if (playerTransportCoordinator == null)
+                gameObject.TryGetComponent(out playerTransportCoordinator);
+
             if (swimBlockoutRig == null)
                 gameObject.TryGetComponent(out swimBlockoutRig);
 
@@ -1001,7 +1008,7 @@ namespace Hecton8.Gameplay
             if (cadence > 0f)
             {
                 cadence *= math.lerp(1f, heavyCarryCadenceMultiplier, _heavyCarryLoadCurrent);
-                cadence *= math.lerp(1f, mantaTransportCadenceMultiplier, _transportBoostCurrent);
+                cadence *= math.lerp(1f, ResolveTransportCadenceMultiplier(), _transportBoostCurrent);
                 float speedFactor = math.saturate(planarSpeed / math.max(0.01f, profile.UnderwaterSprintStartSpeed));
                 cadence *= 1f + speedFactor * profile.SpeedCadenceInfluence;
                 _strokePhase += cadence * dt;
@@ -1020,7 +1027,7 @@ namespace Hecton8.Gameplay
             ApplyObstaclePropulsionDamping(ref propulsionPulse);
             propulsionPulse *= math.lerp(1f, heavyCarryPropulsionMultiplier, _heavyCarryLoadCurrent);
             if (_transportBoostCurrent > 0.0001f)
-                propulsionPulse = math.max(propulsionPulse, _transportBoostCurrent * mantaTransportPropulsionFloor);
+                propulsionPulse = math.max(propulsionPulse, _transportBoostCurrent * ResolveTransportPropulsionFloor());
             _propulsionPulse = propulsionPulse * _presentationBlend * _toolSuppressionWeight;
         }
 
@@ -1147,7 +1154,7 @@ namespace Hecton8.Gameplay
             localPosition.y -= toolRootLowering * toolFramingWeight * presentationWeight;
             localPosition.z += strokeCos * profile.StrokeSurgeAmplitude * presentationWeight;
             localPosition.z += surfaceBreathSin * surfaceBreathAmplitude * 0.22f * surfaceIdleWeight * presentationWeight;
-            localPosition.z += _transportBoostCurrent * mantaTransportRootForwardBias * presentationWeight;
+            localPosition.z += _transportBoostCurrent * ResolveTransportRootForwardBias() * presentationWeight;
             localPosition.z -= accelKick;
             localPosition.z -= _heavyCarryLoadCurrent * heavyCarryRootRearBias * presentationWeight;
             localPosition.z -= _rootObstacleAverageCurrent * obstacleRootRearBias * presentationWeight;
@@ -1525,7 +1532,7 @@ namespace Hecton8.Gameplay
             localPosition.z -= ascendBias * profile.HandPullDistance * ascendPullbackBias * guideWeight * toolMotionScale;
             localPosition.z += descendBias * profile.HandReachDistance * descendReachBias * guideWeight * toolMotionScale;
             localPosition.z += correctionBias * profile.HandReachDistance * steeringReachBias * guideWeight * toolMotionScale;
-            localPosition.z += _transportBoostCurrent * mantaTransportGuideForwardBias * guideWeight;
+            localPosition.z += _transportBoostCurrent * ResolveTransportGuideForwardBias() * guideWeight;
             localPosition.z -= _heavyCarryLoadCurrent * heavyCarryGuideRearBias * guideWeight;
             localPosition.z -= framingRearBias * guideWeight;
             localPosition += toolPositionBias * guideWeight;
@@ -1673,10 +1680,18 @@ namespace Hecton8.Gameplay
             {
                 targetWeight = math.max(
                     targetWeight,
-                    math.lerp(targetWeight, mantaTransportRootPresentationWeight, _transportBoostCurrent));
+                    math.lerp(targetWeight, ResolveTransportRootPresentationWeight(), _transportBoostCurrent));
                 targetSupportHandWeight = math.max(
                     targetSupportHandWeight,
-                    math.lerp(targetSupportHandWeight, mantaTransportSupportHandWeight, _transportBoostCurrent));
+                    math.lerp(targetSupportHandWeight, ResolveTransportSupportHandWeight(), _transportBoostCurrent));
+            }
+
+            float transportPresentationScale = ResolveTransportSwimPresentationScale();
+            if (transportPresentationScale < 0.9999f)
+            {
+                targetWeight *= transportPresentationScale;
+                targetSupportHandWeight *= transportPresentationScale;
+                targetToolHandWeight *= transportPresentationScale;
             }
 
             _toolSuppressionWeight = SmoothDampValue(
@@ -2252,7 +2267,7 @@ namespace Hecton8.Gameplay
                 multiplier *= math.lerp(1f, heavyCarryPoseLagMultiplier, _heavyCarryLoadCurrent);
 
             if (_transportBoostCurrent > 0.0001f)
-                multiplier *= math.lerp(1f, mantaTransportPoseLagMultiplier, _transportBoostCurrent);
+                multiplier *= math.lerp(1f, ResolveTransportPoseLagMultiplier(), _transportBoostCurrent);
 
             return math.max(0.0001f, multiplier);
         }
@@ -2263,15 +2278,8 @@ namespace Hecton8.Gameplay
                 ? playerMovement.HeavyCarryLoad
                 : 0f;
 
-            float targetTransportBoost = 0f;
-            if (playerToolManager != null &&
-                !playerToolManager.IsSwapping &&
-                playerToolManager.CurrentTool is MantaScooter mantaScooter)
-            {
-                targetTransportBoost = math.saturate(
-                    mantaScooter.GetPropulsionForce() /
-                    math.max(mantaTransportForceReference, 0.01f));
-            }
+            _transportFeelContractCurrent = ResolveTransportFeelContract();
+            float targetTransportBoost = ResolveTransportBoost01();
 
             _heavyCarryLoadCurrent = SmoothDampValue(
                 _heavyCarryLoadCurrent,
@@ -2285,6 +2293,108 @@ namespace Hecton8.Gameplay
                 ref _transportBoostVelocity,
                 toolTransitionSmoothTime,
                 dt);
+        }
+
+        private float ResolveTransportBoost01()
+        {
+            if (playerTransportCoordinator == null)
+                gameObject.TryGetComponent(out playerTransportCoordinator);
+
+            bool coordinatorOwnsTransport = playerTransportCoordinator != null && playerTransportCoordinator.HasActiveTransportSource();
+            if (coordinatorOwnsTransport)
+                return playerTransportCoordinator.ResolveTransportBoost01();
+
+            if (playerToolManager == null || playerToolManager.IsSwapping)
+                return 0f;
+
+            IPlayerTransportSource transportSource = playerToolManager.CurrentToolTransportSource;
+            if (transportSource == null)
+                return 0f;
+
+            float transportBoost = math.saturate(transportSource.GetTransportBoost01());
+            if (transportBoost > 0f)
+                return transportBoost;
+
+            float reference = math.max(ResolveTransportPropulsionReference(), 0.01f);
+            return math.saturate(transportSource.GetTransportPropulsionForce() / reference);
+        }
+
+        private PlayerTransportFeelContract ResolveTransportFeelContract()
+        {
+            if (playerTransportCoordinator == null)
+                gameObject.TryGetComponent(out playerTransportCoordinator);
+
+            bool coordinatorOwnsTransport = playerTransportCoordinator != null && playerTransportCoordinator.HasActiveTransportSource();
+            if (coordinatorOwnsTransport)
+                return playerTransportCoordinator.ResolveTransportFeelContract();
+
+            if (playerToolManager == null || playerToolManager.IsSwapping)
+                return null;
+
+            return playerToolManager.CurrentToolTransportFeelContract;
+        }
+
+        private float ResolveTransportPropulsionReference()
+        {
+            return _transportFeelContractCurrent != null
+                ? _transportFeelContractCurrent.PropulsionForceReference
+                : mantaTransportForceReference;
+        }
+
+        private float ResolveTransportPropulsionFloor()
+        {
+            return _transportFeelContractCurrent != null
+                ? _transportFeelContractCurrent.SwimPropulsionFloor
+                : mantaTransportPropulsionFloor;
+        }
+
+        private float ResolveTransportCadenceMultiplier()
+        {
+            return _transportFeelContractCurrent != null
+                ? _transportFeelContractCurrent.SwimCadenceMultiplier
+                : mantaTransportCadenceMultiplier;
+        }
+
+        private float ResolveTransportPoseLagMultiplier()
+        {
+            return _transportFeelContractCurrent != null
+                ? _transportFeelContractCurrent.SwimPoseLagMultiplier
+                : mantaTransportPoseLagMultiplier;
+        }
+
+        private float ResolveTransportRootPresentationWeight()
+        {
+            return _transportFeelContractCurrent != null
+                ? _transportFeelContractCurrent.SwimRootPresentationWeight
+                : mantaTransportRootPresentationWeight;
+        }
+
+        private float ResolveTransportSupportHandWeight()
+        {
+            return _transportFeelContractCurrent != null
+                ? _transportFeelContractCurrent.SwimSupportHandWeight
+                : mantaTransportSupportHandWeight;
+        }
+
+        private float ResolveTransportRootForwardBias()
+        {
+            return _transportFeelContractCurrent != null
+                ? _transportFeelContractCurrent.SwimRootForwardBias
+                : mantaTransportRootForwardBias;
+        }
+
+        private float ResolveTransportGuideForwardBias()
+        {
+            return _transportFeelContractCurrent != null
+                ? _transportFeelContractCurrent.SwimGuideForwardBias
+                : mantaTransportGuideForwardBias;
+        }
+
+        private float ResolveTransportSwimPresentationScale()
+        {
+            return _transportFeelContractCurrent != null
+                ? _transportFeelContractCurrent.SwimPresentationScale
+                : 1f;
         }
 
         private float ResolveGuidePoseLagMultiplier(

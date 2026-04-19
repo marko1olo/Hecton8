@@ -3,6 +3,7 @@
 // Zero-GC bridge from hazard enter/exit to HUD notification events.
 // ============================================================================
 
+using Hecton.Localization;
 using Hecton8.UI;
 using UnityEngine;
 
@@ -74,15 +75,15 @@ namespace Hecton8.Gameplay
             switch (type)
             {
                 case HazardType.Radiation:
-                    return MsgRadiationEnter;
+                    return ResolveLocalized(LocalizationKeys.HAZARD_RADIATION_ENTER, MsgRadiationEnter);
                 case HazardType.Heat:
-                    return MsgHeatEnter;
+                    return ResolveLocalized(LocalizationKeys.HAZARD_HEAT_ENTER, MsgHeatEnter);
                 case HazardType.Toxicity:
-                    return MsgToxicityEnter;
+                    return ResolveLocalized(LocalizationKeys.HAZARD_TOXICITY_ENTER, MsgToxicityEnter);
                 case HazardType.Biohazard:
-                    return MsgBiohazardEnter;
+                    return ResolveLocalized(LocalizationKeys.HAZARD_BIOHAZARD_ENTER, MsgBiohazardEnter);
                 default:
-                    return MsgBiohazardEnter;
+                    return ResolveLocalized(LocalizationKeys.HAZARD_BIOHAZARD_ENTER, MsgBiohazardEnter);
             }
         }
 
@@ -91,16 +92,22 @@ namespace Hecton8.Gameplay
             switch (type)
             {
                 case HazardType.Radiation:
-                    return MsgRadiationExit;
+                    return ResolveLocalized(LocalizationKeys.HAZARD_RADIATION_EXIT, MsgRadiationExit);
                 case HazardType.Heat:
-                    return MsgHeatExit;
+                    return ResolveLocalized(LocalizationKeys.HAZARD_HEAT_EXIT, MsgHeatExit);
                 case HazardType.Toxicity:
-                    return MsgToxicityExit;
+                    return ResolveLocalized(LocalizationKeys.HAZARD_TOXICITY_EXIT, MsgToxicityExit);
                 case HazardType.Biohazard:
-                    return MsgBiohazardExit;
+                    return ResolveLocalized(LocalizationKeys.HAZARD_BIOHAZARD_EXIT, MsgBiohazardExit);
                 default:
-                    return MsgBiohazardExit;
+                    return ResolveLocalized(LocalizationKeys.HAZARD_BIOHAZARD_EXIT, MsgBiohazardExit);
             }
+        }
+
+        private static string ResolveLocalized(string key, string fallback)
+        {
+            LocalizationManager localization = LocalizationManager.Instance;
+            return localization != null ? localization.GetOrFallback(localization.CurrentLanguage, key, fallback) : fallback;
         }
     }
 }

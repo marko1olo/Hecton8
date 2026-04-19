@@ -109,9 +109,9 @@ namespace Hecton8.UI
         private string LabelCraftTime   = "FABRICATION TIME";
         private string LabelResult      = "OUTPUT";
         private string LabelCrafting    = "FABRICATING...";
-        private string LabelHintNav     = "[W/S] NAVIGATE";
-        private string LabelHintCraft   = "[SPACE] FABRICATE";
-        private string LabelHintClose   = "[ESC] CLOSE";
+        private string LabelHintNav     = "<button:navigate> Navigate";
+        private string LabelHintCraft   = "<button:submit> Fabricate";
+        private string LabelHintClose   = "<button:cancel> Close";
         private string LabelNoRecipes   = "NO BLUEPRINTS AVAILABLE";
         private string LabelBlueprintLocked = "SCAN DATA REQUIRED";
         private string LabelInsufficient = "INSUFFICIENT";
@@ -251,9 +251,17 @@ namespace Hecton8.UI
         private string[] _ingredientNameCache;
         private string[] _ingredientStatusCache; // "2/3"
         private bool[]   _ingredientSufficient;
+        private Texture[] _ingredientIconTextureCache;
+        private Color[] _ingredientIconColorCache;
+        private bool[] _ingredientHasTextureCache;
+        private bool[] _ingredientHasFallbackIconCache;
         private int      _ingredientCacheCount;
         private string   _craftTimeCache;        // "5.0s"
         private string   _resultNameCache;       // "Hull Panel"
+        private Texture _resultIconTextureCache;
+        private Color _resultIconColorCache;
+        private bool _resultHasTextureCache;
+        private bool _resultHasFallbackIconCache;
         private bool     _canCraftCurrent;       // all ingredients sufficient
 
         // ── StringBuilder for non-per-frame string building ──
@@ -277,6 +285,10 @@ namespace Hecton8.UI
             _ingredientNameCache   = new string[16];
             _ingredientStatusCache = new string[16];
             _ingredientSufficient  = new bool[16];
+            _ingredientIconTextureCache = new Texture[16];
+            _ingredientIconColorCache = new Color[16];
+            _ingredientHasTextureCache = new bool[16];
+            _ingredientHasFallbackIconCache = new bool[16];
 
             if (font == null)
             {
@@ -315,6 +327,7 @@ namespace Hecton8.UI
                 InputManager.Instance.OnNavigate += HandleNavigateInput;
                 InputManager.Instance.OnSubmit   += HandleSubmitInput;
                 InputManager.Instance.OnCancel   += HandleCancelInput;
+                InputManager.Instance.OnInputDisplayStyleChanged += HandleInputDisplayStyleChanged;
             }
 
             if (RebindingManager.TryGetInstance(out RebindingManager rebindingManager))
@@ -349,12 +362,15 @@ namespace Hecton8.UI
             LabelCraftTime = loc.Get(LocalizationKeys.UI_FABRICATION_TIME);
             LabelResult = loc.Get(LocalizationKeys.UI_OUTPUT);
             LabelCrafting = loc.Get(LocalizationKeys.UI_FABRICATING);
-            LabelHintNav = loc.Get(LocalizationKeys.UI_HINT_NAVIGATE);
-            LabelHintCraft = loc.Get(LocalizationKeys.UI_HINT_FABRICATE);
-            LabelHintClose = loc.Get(LocalizationKeys.UI_HINT_CLOSE);
+            LabelHintNav = loc.GetExpanded(LocalizationKeys.UI_HINT_NAVIGATE);
+            LabelHintCraft = loc.GetExpanded(LocalizationKeys.UI_HINT_FABRICATE);
+            LabelHintClose = loc.GetExpanded(LocalizationKeys.UI_HINT_CLOSE);
             LabelNoRecipes = loc.Get(LocalizationKeys.UI_NO_BLUEPRINTS);
+            LabelBlueprintLocked = loc.GetOrFallback(lang, LocalizationKeys.UI_BLUEPRINT_LOCKED, "SCAN DATA REQUIRED");
             LabelInsufficient = loc.Get(LocalizationKeys.UI_INSUFFICIENT);
             LabelReady = loc.Get(LocalizationKeys.UI_READY);
+            LabelPowerOffline = loc.GetOrFallback(lang, LocalizationKeys.UI_POWER_OFFLINE, "POWER OFFLINE");
+            LabelPowerRequired = loc.GetOrFallback(lang, LocalizationKeys.UI_POWER_REQUIRED, "POWER REQUIRED");
             
             // Rebuild string caches if they are currently displaying something that might have altered.
             if (_recipes != null && _recipes.Count > 0 && _isOpen)
@@ -377,6 +393,7 @@ namespace Hecton8.UI
                 InputManager.Instance.OnNavigate -= HandleNavigateInput;
                 InputManager.Instance.OnSubmit   -= HandleSubmitInput;
                 InputManager.Instance.OnCancel   -= HandleCancelInput;
+                InputManager.Instance.OnInputDisplayStyleChanged -= HandleInputDisplayStyleChanged;
             }
 
             if (RebindingManager.TryGetInstance(out RebindingManager rebindingManager))
@@ -489,19 +506,21 @@ namespace Hecton8.UI
 
         private void UpdateInputHints()
         {
-            string navigateBinding = InputManager.Instance != null
-                ? InputManager.Instance.GetBindingDisplayString("Navigate")
-                : "W/S";
-            string submitBinding = InputManager.Instance != null
-                ? InputManager.Instance.GetBindingDisplayString("Submit")
-                : "Space";
-            string cancelBinding = InputManager.Instance != null
-                ? InputManager.Instance.GetBindingDisplayString("Cancel")
-                : "Esc";
+            LocalizationManager localization = LocalizationManager.Instance;
+            if (localization == null)
+                return;
 
-            LabelHintNav = $"[{navigateBinding}] NAVIGATE";
-            LabelHintCraft = $"[{submitBinding}] FABRICATE";
-            LabelHintClose = $"[{cancelBinding}] CLOSE";
+            LabelHintNav = localization.GetExpandedOrFallback(localization.CurrentLanguage, LocalizationKeys.UI_HINT_NAVIGATE, "<button:navigate> NAVIGATE");
+            LabelHintCraft = localization.GetExpandedOrFallback(localization.CurrentLanguage, LocalizationKeys.UI_HINT_FABRICATE, "<button:submit> FABRICATE");
+            LabelHintClose = localization.GetExpandedOrFallback(localization.CurrentLanguage, LocalizationKeys.UI_HINT_CLOSE, "<button:cancel> CLOSE");
+        }
+
+        private void HandleInputDisplayStyleChanged(InputDisplayStyle displayStyle)
+        {
+            if (!_isOpen)
+                return;
+
+            UpdateInputHints();
         }
 
         private void HandleRebindCompleted(string actionName, string actionMap, int bindingIndex, string display)
@@ -946,7 +965,7 @@ namespace Hecton8.UI
                 Draw.TextAlign = TextAlign.Left;
 
                 float textX = ListX + 20f;
-                Draw.Text(Scr(textX, itemY), recipe.recipeName);
+                Draw.Text(Scr(textX, itemY), recipe.DisplayNameOrFallback);
 
                 // ── Selection brackets (animated) ──
                 if (isSelected)
@@ -1036,7 +1055,8 @@ namespace Hecton8.UI
             // Result name
             Draw.Color    = ColorTextBright;
             Draw.FontSize = FontW(fontSizeBody * 1.1f);
-            Draw.Text(Scr(x + 10f, y), _resultNameCache ?? "--");
+            DrawResultIcon(x + 10f, y + 6f);
+            Draw.Text(Scr(x + 30f, y), _resultNameCache ?? "--");
 
             y -= lineH * 0.5f;
 
@@ -1064,13 +1084,12 @@ namespace Hecton8.UI
                 bool hasMats = _ingredientSufficient[i];
 
                 // Bullet
-                Draw.Color = hasMats ? ColorSuccess : ColorWarning;
-                Draw.Disc(Scr(x + 8f, y + fontSizeBody * 0.3f), 3f * _worldPerPx);
+                DrawIngredientIcon(i, x + 8f, y + fontSizeBody * 0.2f, hasMats);
 
                 // Ingredient name
                 Draw.Color    = ColorText;
                 Draw.FontSize = FontW(fontSizeBody);
-                Draw.Text(Scr(x + 20f, y), _ingredientNameCache[i] ?? "--");
+                Draw.Text(Scr(x + 28f, y), _ingredientNameCache[i] ?? "--");
 
                 // Status (right-aligned amount)
                 Draw.Color     = hasMats ? ColorSuccess : ColorWarning;
@@ -1240,6 +1259,39 @@ namespace Hecton8.UI
                 0.5f * _worldPerPx);
         }
 
+        private void DrawResultIcon(float x, float y)
+        {
+            if (_resultHasTextureCache && _resultIconTextureCache != null)
+            {
+                Draw.Texture(_resultIconTextureCache, new Rect(x, y - 8f, 14f, 14f), Color.white);
+                return;
+            }
+
+            if (_resultHasFallbackIconCache)
+            {
+                Draw.Color = _resultIconColorCache;
+                Draw.Disc(Scr(x + 6f, y), 4f * _worldPerPx);
+            }
+        }
+
+        private void DrawIngredientIcon(int index, float x, float y, bool hasMaterials)
+        {
+            if (index < 0 || index >= _ingredientCacheCount)
+                return;
+
+            if (_ingredientHasTextureCache[index] && _ingredientIconTextureCache[index] != null)
+            {
+                Color tint = hasMaterials ? Color.white : new Color(1f, 0.55f, 0.55f, 0.9f);
+                Draw.Texture(_ingredientIconTextureCache[index], new Rect(x, y - 6f, 12f, 12f), tint);
+                return;
+            }
+
+            Draw.Color = _ingredientHasFallbackIconCache[index]
+                ? _ingredientIconColorCache[index]
+                : (hasMaterials ? ColorSuccess : ColorWarning);
+            Draw.Disc(Scr(x + 4f, y + 2f), 3.5f * _worldPerPx);
+        }
+
         // ══════════════════════════════════════════════════════════
         //  CACHE REBUILDING — on selection change
         // ══════════════════════════════════════════════════════════
@@ -1262,6 +1314,10 @@ namespace Hecton8.UI
                 _canCraftCurrent      = false;
                 _craftTimeCache       = "--";
                 _resultNameCache      = "--";
+                _resultIconTextureCache = null;
+                _resultIconColorCache = Color.white;
+                _resultHasTextureCache = false;
+                _resultHasFallbackIconCache = false;
                 return;
             }
 
@@ -1270,11 +1326,17 @@ namespace Hecton8.UI
             {
                 _ingredientCacheCount = 0;
                 _canCraftCurrent      = false;
+                _resultIconTextureCache = null;
+                _resultHasTextureCache = false;
+                _resultHasFallbackIconCache = false;
                 return;
             }
 
             // ── Result name ──
-            _resultNameCache = recipe.recipeName; // already cached string on SO
+            _resultNameCache = recipe.DisplayNameOrFallback;
+            _resultIconTextureCache = ResolveItemTexture(recipe.resultItem);
+            _resultHasTextureCache = _resultIconTextureCache != null;
+            _resultHasFallbackIconCache = LocalizedInlineIconResolver.TryResolveItemAccent(recipe.resultItem, out _resultIconColorCache);
 
             // ── Craft time ──
             _sb.Clear();
@@ -1292,6 +1354,10 @@ namespace Hecton8.UI
                 _ingredientNameCache   = new string[count];
                 _ingredientStatusCache = new string[count];
                 _ingredientSufficient  = new bool[count];
+                _ingredientIconTextureCache = new Texture[count];
+                _ingredientIconColorCache = new Color[count];
+                _ingredientHasTextureCache = new bool[count];
+                _ingredientHasFallbackIconCache = new bool[count];
             }
 
             _ingredientCacheCount = count;
@@ -1303,6 +1369,9 @@ namespace Hecton8.UI
 
                 // Name (from ItemData — already cached)
                 _ingredientNameCache[i] = (ing.item != null) ? ing.item.itemName : "--";
+                _ingredientIconTextureCache[i] = ResolveItemTexture(ing.item);
+                _ingredientHasTextureCache[i] = _ingredientIconTextureCache[i] != null;
+                _ingredientHasFallbackIconCache[i] = LocalizedInlineIconResolver.TryResolveItemAccent(ing.item, out _ingredientIconColorCache[i]);
 
                 // Count in inventory
                 int have     = CountItemInInventory(ing.item);
@@ -1336,6 +1405,14 @@ namespace Hecton8.UI
         ///
         /// ZERO GC: ReferenceEquals, for-цикл, no LINQ.
         /// </summary>
+        private static Texture ResolveItemTexture(ItemData item)
+        {
+            if (item == null || item.icon == null)
+                return null;
+
+            return item.icon.texture;
+        }
+
         private void CycleGroup(int direction)
         {
             FabricationGroup[] groups =
@@ -1426,17 +1503,25 @@ namespace Hecton8.UI
             return GetGroupLabel(_selectedGroup);
         }
 
-        private static string GetGroupLabel(FabricationGroup group)
+        private string GetGroupLabel(FabricationGroup group)
         {
+            LocalizationManager localization = LocalizationManager.Instance;
             switch (group)
             {
-                case FabricationGroup.Materials: return "MAT";
-                case FabricationGroup.Components: return "COMP";
-                case FabricationGroup.Tools: return "TOOLS";
-                case FabricationGroup.Suit: return "SUIT";
-                case FabricationGroup.Construction: return "CONST";
-                case FabricationGroup.Power: return "POWER";
-                default: return "ALL";
+                case FabricationGroup.Materials:
+                    return localization != null ? localization.GetOrFallback(localization.CurrentLanguage, LocalizationKeys.FAB_GROUP_MATERIALS, "MATERIALS") : "MATERIALS";
+                case FabricationGroup.Components:
+                    return localization != null ? localization.GetOrFallback(localization.CurrentLanguage, LocalizationKeys.FAB_GROUP_COMPONENTS, "COMPONENTS") : "COMPONENTS";
+                case FabricationGroup.Tools:
+                    return localization != null ? localization.GetOrFallback(localization.CurrentLanguage, LocalizationKeys.FAB_GROUP_TOOLS, "TOOLS") : "TOOLS";
+                case FabricationGroup.Suit:
+                    return localization != null ? localization.GetOrFallback(localization.CurrentLanguage, LocalizationKeys.FAB_GROUP_SUIT, "SUIT") : "SUIT";
+                case FabricationGroup.Construction:
+                    return localization != null ? localization.GetOrFallback(localization.CurrentLanguage, LocalizationKeys.FAB_GROUP_CONSTRUCTION, "CONSTRUCTION") : "CONSTRUCTION";
+                case FabricationGroup.Power:
+                    return localization != null ? localization.GetOrFallback(localization.CurrentLanguage, LocalizationKeys.FAB_GROUP_POWER, "POWER") : "POWER";
+                default:
+                    return localization != null ? localization.GetOrFallback(localization.CurrentLanguage, LocalizationKeys.FAB_GROUP_ALL, "ALL") : "ALL";
             }
         }
 

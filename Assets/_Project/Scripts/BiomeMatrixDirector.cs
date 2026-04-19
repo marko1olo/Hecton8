@@ -1,12 +1,19 @@
 using System;
+using Hecton8.Atmosphere;
 using Hecton8.Core;
+using Hecton8.Gameplay;
+using Hecton8.Physics;
 using Hecton8.World;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Hecton8.Environment
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4035)]
+    [ExecuteAlways]
     public sealed class BiomeMatrixDirector : MonoBehaviour, ISlowTickable
     {
         private const string MissingProfileLabel = "No biome profile";
@@ -29,6 +36,13 @@ namespace Hecton8.Environment
         [SerializeField] private string _debugBiomeName = "None";
         [SerializeField] private int _debugMatrixIndex = -1;
         [SerializeField] private bool _debugPlaceholder;
+        [SerializeField] private float _debugSurfaceLevelY;
+#pragma warning disable 0414
+        [SerializeField] private string _debugDepthSource = "SurfaceOffset";
+#pragma warning restore 0414
+#pragma warning disable 0414
+        [SerializeField] private string _debugEvaluationSource = "Player";
+#pragma warning restore 0414
         [SerializeField] private string _debugFamilyId = "None";
         [SerializeField] private string _debugFamilyLabel = "None";
         [SerializeField] private string _debugResolutionMode = "Exact";
@@ -99,6 +113,10 @@ namespace Hecton8.Environment
         private HectonBiomeMatrixProfile _currentProfile;
         private int _currentDepthTier = 1;
         private float _currentDepthMeters;
+        private HectonPlayerMovement _playerMovement;
+        private HectonFluidEngine _resolvedFluidEngine;
+        private MapMagicBridge _resolvedMapMagicBridge;
+        private HectonAtmosphereManager _resolvedAtmosphereManager;
 
         internal static BiomeMatrixDirector ActiveRuntimeInstance { get; private set; }
 
@@ -119,6 +137,10 @@ namespace Hecton8.Environment
         private void OnEnable()
         {
             TryRegister();
+#if UNITY_EDITOR
+            EditorApplication.update -= EditorUpdate;
+            EditorApplication.update += EditorUpdate;
+#endif
         }
 
         private void Start()
@@ -131,15 +153,31 @@ namespace Hecton8.Environment
         private void OnDisable()
         {
             TryUnregister();
+#if UNITY_EDITOR
+            EditorApplication.update -= EditorUpdate;
+#endif
         }
 
         private void OnDestroy()
         {
             TryUnregister();
+#if UNITY_EDITOR
+            EditorApplication.update -= EditorUpdate;
+#endif
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
         }
+
+#if UNITY_EDITOR
+        private void EditorUpdate()
+        {
+            if (Application.isPlaying)
+                return;
+
+            EvaluateMatrix(forcePublish: false);
+        }
+#endif
 
         private void TryRegister()
         {
@@ -188,29 +226,32 @@ namespace Hecton8.Environment
         private void EvaluateMatrix(bool forcePublish)
         {
             ResolveReferences();
+            Transform evaluationTransform = ResolveEvaluationTransform();
 
-            if (playerTransform == null || !HasCatalog)
+            if (evaluationTransform == null || !HasCatalog)
             {
                 bool hadProfile = _currentProfile != null;
                 _currentProfile = null;
                 _currentDepthMeters = 0f;
                 _currentDepthTier = 1;
-                _debugResolutionMode = playerTransform == null ? "Missing player" : "Missing catalog";
+                _debugResolutionMode = evaluationTransform == null ? "Missing evaluation transform" : "Missing catalog";
                 if (hadProfile)
                     OnMatrixBiomeChanged?.Invoke(null);
                 UpdateDiagnostics(null, 1, HectonBiomeMatrixProfile.CardinalRegion.North);
                 return;
             }
 
-            float depth = surfaceOffsetMeters - playerTransform.position.y;
+            float surfaceLevelY = ResolveSurfaceLevelY();
+            float depth = Mathf.Max(0f, surfaceLevelY - evaluationTransform.position.y);
             int tier = ResolveDepthTier(depth);
-            HectonBiomeMatrixProfile.CardinalRegion region = ResolveRegion(playerTransform.position);
+            HectonBiomeMatrixProfile.CardinalRegion region = ResolveRegion(evaluationTransform.position);
             bool usedFallback;
             HectonBiomeMatrixProfile next = ResolveMatrixProfile(tier, region, out usedFallback);
             bool depthTierChanged = forcePublish || tier != _currentDepthTier;
 
             _currentDepthMeters = depth;
             _currentDepthTier = tier;
+            _debugSurfaceLevelY = surfaceLevelY;
             _debugResolutionMode = next == null ? MissingProfileLabel : usedFallback ? "Fallback" : "Exact";
 
             if (depthTierChanged)
@@ -229,6 +270,31 @@ namespace Hecton8.Environment
         {
             if (playerTransform == null)
                 WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
+
+            if (playerTransform != null && _playerMovement == null)
+                playerTransform.TryGetComponent(out _playerMovement);
+        }
+
+        private Transform ResolveEvaluationTransform()
+        {
+            if (Application.isPlaying)
+            {
+                _debugEvaluationSource = "Player";
+                return playerTransform;
+            }
+
+#if UNITY_EDITOR
+            SceneView sceneView = SceneView.lastActiveSceneView;
+            Camera sceneViewCamera = sceneView != null ? sceneView.camera : null;
+            if (sceneViewCamera != null)
+            {
+                _debugEvaluationSource = "SceneView";
+                return sceneViewCamera.transform;
+            }
+#endif
+
+            _debugEvaluationSource = "Player";
+            return playerTransform;
         }
 
         private HectonBiomeMatrixProfile ResolveMatrixProfile(int tier, HectonBiomeMatrixProfile.CardinalRegion region, out bool usedFallback)
@@ -281,6 +347,57 @@ namespace Hecton8.Environment
 
             usedFallback = bestProfile != null;
             return bestProfile;
+        }
+
+        private float ResolveSurfaceLevelY()
+        {
+            if (_playerMovement != null)
+            {
+                _debugDepthSource = "PlayerMovement";
+                return _playerMovement.CurrentWaterSurfaceY;
+            }
+
+            if (_resolvedFluidEngine == null)
+            {
+                _resolvedFluidEngine = Application.isPlaying
+                    ? HectonFluidEngine.Instance
+                    : FindAnyObjectByType<HectonFluidEngine>(FindObjectsInactive.Include);
+            }
+
+            if (_resolvedFluidEngine != null)
+            {
+                _debugDepthSource = "FluidEngine";
+                return _resolvedFluidEngine.WaterLevel;
+            }
+
+            if (_resolvedMapMagicBridge == null)
+            {
+                _resolvedMapMagicBridge = Application.isPlaying
+                    ? MapMagicBridge.Instance
+                    : FindAnyObjectByType<MapMagicBridge>(FindObjectsInactive.Include);
+            }
+
+            if (_resolvedMapMagicBridge != null)
+            {
+                _debugDepthSource = "MapMagicBridge";
+                return _resolvedMapMagicBridge.WaterSurfaceLevel;
+            }
+
+            if (_resolvedAtmosphereManager == null)
+            {
+                _resolvedAtmosphereManager = Application.isPlaying
+                    ? HectonAtmosphereManager.Instance
+                    : FindAnyObjectByType<HectonAtmosphereManager>(FindObjectsInactive.Include);
+            }
+
+            if (_resolvedAtmosphereManager != null)
+            {
+                _debugDepthSource = "AtmosphereManager";
+                return _resolvedAtmosphereManager.SeaLevelY;
+            }
+
+            _debugDepthSource = "SurfaceOffset";
+            return surfaceOffsetMeters;
         }
 
         private int ResolveDepthTier(float depth)

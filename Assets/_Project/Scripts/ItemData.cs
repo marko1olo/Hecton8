@@ -187,6 +187,16 @@ namespace Hecton8.Items
             }
         }
 
+        /// <summary>
+        /// Localization table key bound to the item name reference.
+        /// </summary>
+        public string ItemNameTableKey => localizedItemName.TableKey;
+
+        /// <summary>
+        /// Localization table key bound to the item description reference.
+        /// </summary>
+        public string DescriptionTableKey => localizedDescription.TableKey;
+
         public int CellArea => width * height;
 
         /// <summary>Time in seconds to consume this item. 0 = instant.</summary>

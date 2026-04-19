@@ -19,6 +19,7 @@ namespace Hecton8.UI
     using Hecton8.Bootstrap;
     using Hecton8.Core;
     using Hecton8.Gameplay;
+    using Hecton8.Input;
     using Hecton8.Inventory;
     using Hecton8.Interaction;
     using Hecton8.Items;
@@ -53,22 +54,22 @@ namespace Hecton8.UI
 
         [Header("── Prompt Templates ──────────────────────────")]
         [Tooltip("Default interaction prompt format. {0}=verb, {1}=name")]
-        [SerializeField] private string defaultPromptFormat = "[E] {0} {1}";
+        [SerializeField] private string defaultPromptFormat = "<button:interact> {0} {1}";
 
         [Tooltip("Prompt when tool has no battery.")]
         [SerializeField] private string noBatteryPrompt = "No Battery to Swap";
 
         [Tooltip("Prompt to swap battery.")]
-        [SerializeField] private string swapBatteryPrompt = "[E] Swap Battery";
+        [SerializeField] private string swapBatteryPrompt = "<button:interact> Swap Battery";
 
         [Tooltip("Prompt to deposit fuel.")]
-        [SerializeField] private string depositFuelPrompt = "[E] Deposit Fuel";
+        [SerializeField] private string depositFuelPrompt = "<button:interact> Deposit Fuel";
 
         [Tooltip("Prompt to take item.")]
-        [SerializeField] private string takeItemPrompt = "[E] Take Item";
+        [SerializeField] private string takeItemPrompt = "<button:interact> Take Item";
 
         [Tooltip("Prompt format for consumable with duration. {0}=verb, {1}=duration")]
-        [SerializeField] private string consumableWithDurationFormat = "Hold [E] {0} ({1:0.0}s)";
+        [SerializeField] private string consumableWithDurationFormat = "Hold <button:interact> {0} ({1:0.0}s)";
 
         [Tooltip("Prompt for action in progress.")]
         [SerializeField] private string actionInProgressPrompt = "Consuming...";
@@ -91,6 +92,8 @@ namespace Hecton8.UI
         private bool _registered;
         private string _currentPrompt;
         private bool _isVisible;
+        private float _cameraRetryTime;
+        private const float CameraRetryInterval = 2f;
         private string _localizedDefaultPromptFormat;
         private string _localizedNoBatteryPrompt;
         private string _localizedSwapBatteryPrompt;
@@ -100,6 +103,7 @@ namespace Hecton8.UI
         private string _localizedActionInProgressPrompt;
         private string _localizedInsertBatteryPrompt;
         private string _localizedBioReactorPrompt;
+        private string _localizedOpenCratePrompt;
         private string _localizedEmptyCratePrompt;
         private string _localizedVerbApply;
         private string _localizedVerbDrink;
@@ -128,7 +132,8 @@ namespace Hecton8.UI
         private void Awake()
         {
             _cachedTransform = transform;
-            _mainCamera = Camera.main;
+            _cameraRetryTime = 0f; // Allow immediate first resolve in Tick
+            ConfigurePromptText();
             RefreshLocalizedPromptCache();
             SetVisible(false);
         }
@@ -137,6 +142,9 @@ namespace Hecton8.UI
         {
             ResolvePlayerReferences();
             LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
+            if (InputManager.Instance != null)
+                InputManager.Instance.OnInputDisplayStyleChanged += HandleInputDisplayStyleChanged;
+            ConfigurePromptText();
             RefreshLocalizedPromptCache();
             RegisterToTick();
         }
@@ -144,6 +152,8 @@ namespace Hecton8.UI
         private void OnDisable()
         {
             LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+            if (InputManager.Instance != null)
+                InputManager.Instance.OnInputDisplayStyleChanged -= HandleInputDisplayStyleChanged;
             UnregisterFromTick();
             SetVisible(false);
         }
@@ -164,11 +174,27 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (_mainCamera == null)
+            if (_mainCamera == null || !_mainCamera.isActiveAndEnabled)
             {
-                _mainCamera = Camera.main;
-                if (_mainCamera == null)
+                _mainCamera = null;
+                if (Time.time < _cameraRetryTime)
+                {
+                    if (_isVisible)
+                        SetVisible(false);
                     return;
+                }
+
+                _cameraRetryTime = Time.time + CameraRetryInterval;
+
+                if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
+                    _mainCamera = playerTransform.GetComponentInChildren<Camera>(true);
+
+                if (_mainCamera == null)
+                {
+                    if (_isVisible)
+                        SetVisible(false);
+                    return;
+                }
             }
 
             // Raycast from camera center
@@ -266,16 +292,20 @@ namespace Hecton8.UI
             if (item == null)
                 return null;
 
+            string itemDisplay = LocalizedInlineIconResolver.BuildItemDisplay(item, item.itemName);
+
             // Check if this is a consumable with use duration
             if (item.isConsumable && item.UseDuration > 0f)
             {
                 // Determine verb based on item type
                 string verb = GetConsumableVerb(item);
+                if (LocalizedInlineIconResolver.TryResolveItemChip(item, out string chip))
+                    verb = chip + " " + verb;
                 // Note: string.Format is acceptable here (not in hot path - only when looking at new item)
                 return string.Format(_localizedConsumableWithDurationFormat, verb, item.UseDuration);
             }
 
-            return string.Format(_localizedDefaultPromptFormat, _localizedVerbTake, item.itemName);
+            return string.Format(_localizedDefaultPromptFormat, _localizedVerbTake, itemDisplay);
         }
 
         /// <summary>
@@ -353,9 +383,18 @@ namespace Hecton8.UI
             // Check if player has organic items
             if (_inventory != null)
             {
-                int fuelCount = CountOrganicFuel(_inventory);
+                int fuelCount = reactor.CountFuelInInventory(_inventory);
                 if (fuelCount > 0)
                 {
+                    LocalizationManager localization = LocalizationManager.Instance;
+                    if (localization != null)
+                    {
+                        return localization.GetPluralFormatted(
+                            LocalizationKeys.INTERACT_DEPOSIT_FUEL_COUNT,
+                            fuelCount,
+                            fuelCount);
+                    }
+
                     return string.Format("{0} ({1})", _localizedDepositFuelPrompt, fuelCount);
                 }
             }
@@ -370,15 +409,7 @@ namespace Hecton8.UI
                 return _localizedEmptyCratePrompt;
             }
 
-            return ResolveLocalized(LocalizationKeys.INTERACT_OPEN_CRATE, "[E] Open Crate");
-        }
-
-        private int CountOrganicFuel(PlayerInventory inventory)
-        {
-            // Count organic items that can be used as fuel
-            // This would need to check inventory for organic items
-            // For now, return 0 - actual implementation depends on inventory API
-            return 0;
+            return _localizedOpenCratePrompt;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -387,15 +418,17 @@ namespace Hecton8.UI
 
         private void UpdatePrompt(string prompt)
         {
-            if (_currentPrompt == prompt)
+            LocalizationManager localization = LocalizationManager.Instance;
+            string expandedPrompt = localization != null ? localization.ExpandText(prompt) : prompt;
+            if (_currentPrompt == expandedPrompt)
                 return;
 
-            _currentPrompt = prompt;
+            _currentPrompt = expandedPrompt;
 
             if (promptText != null)
-                promptText.text = prompt;
+                promptText.text = expandedPrompt;
 
-            OnPromptChanged?.Invoke(prompt);
+            OnPromptChanged?.Invoke(expandedPrompt);
         }
 
         private void SetVisible(bool visible)
@@ -432,27 +465,53 @@ namespace Hecton8.UI
 
         private void HandleLanguageChanged(GameLanguage language)
         {
+            ConfigurePromptText();
             RefreshLocalizedPromptCache();
+            _currentPrompt = null;
+        }
+
+        private void HandleInputDisplayStyleChanged(InputDisplayStyle displayStyle)
+        {
+            RefreshLocalizedPromptCache();
+            _currentPrompt = null;
+        }
+
+        private void ConfigurePromptText()
+        {
+            if (promptText == null)
+                return;
+
+            LocalizedTMPAutoSizer.Configure(
+                promptText,
+                promptText.fontSize * 0.72f,
+                promptText.fontSize,
+                TMPro.TextOverflowModes.Ellipsis,
+                TMPro.TextWrappingModes.Normal);
         }
 
         private void RefreshLocalizedPromptCache()
         {
-            _localizedDefaultPromptFormat = defaultPromptFormat;
-            _localizedNoBatteryPrompt = ResolveLocalized(LocalizationKeys.INTERACT_NO_BATTERY_TO_SWAP, noBatteryPrompt);
-            _localizedSwapBatteryPrompt = ResolveLocalized(LocalizationKeys.INTERACT_SWAP_BATTERY, swapBatteryPrompt);
-            _localizedDepositFuelPrompt = ResolveLocalized(LocalizationKeys.INTERACT_DEPOSIT_FUEL, depositFuelPrompt);
-            _localizedTakeItemPrompt = ResolveLocalized(LocalizationKeys.INTERACT_TAKE_ITEM, takeItemPrompt);
-            _localizedConsumableWithDurationFormat = consumableWithDurationFormat;
-            _localizedActionInProgressPrompt = ResolveLocalized(LocalizationKeys.ACTION_USING, actionInProgressPrompt);
-            _localizedInsertBatteryPrompt = ResolveLocalized(LocalizationKeys.INTERACT_INSERT_BATTERY, "Insert Battery");
-            _localizedBioReactorPrompt = ResolveLocalized(LocalizationKeys.INTERACT_BIO_REACTOR, "Bio Reactor");
-            _localizedEmptyCratePrompt = ResolveLocalized(LocalizationKeys.INTERACT_EMPTY_CRATE, "Empty Crate");
-            _localizedVerbApply = ResolveLocalized(LocalizationKeys.INTERACT_VERB_APPLY, "Apply");
-            _localizedVerbDrink = ResolveLocalized(LocalizationKeys.INTERACT_VERB_DRINK, "Drink");
-            _localizedVerbEat = ResolveLocalized(LocalizationKeys.INTERACT_VERB_EAT, "Eat");
-            _localizedVerbInhale = ResolveLocalized(LocalizationKeys.INTERACT_VERB_INHALE, "Inhale");
-            _localizedVerbUse = ResolveLocalized(LocalizationKeys.INTERACT_VERB_USE, "Use");
-            _localizedVerbTake = ResolveLocalized("ITEM_INTERACT_TAKE", "Take");
+            _localizedDefaultPromptFormat = ResolveLocalizedExpanded(
+                LocalizationKeys.INTERACT_DEFAULT_PROMPT_FORMAT,
+                defaultPromptFormat);
+            _localizedNoBatteryPrompt = ResolveLocalizedExpanded(LocalizationKeys.INTERACT_NO_BATTERY_TO_SWAP, noBatteryPrompt);
+            _localizedSwapBatteryPrompt = ResolveLocalizedExpanded(LocalizationKeys.INTERACT_SWAP_BATTERY, swapBatteryPrompt);
+            _localizedDepositFuelPrompt = ResolveLocalizedExpanded(LocalizationKeys.INTERACT_DEPOSIT_FUEL, depositFuelPrompt);
+            _localizedTakeItemPrompt = ResolveLocalizedExpanded(LocalizationKeys.INTERACT_TAKE_ITEM, takeItemPrompt);
+            _localizedConsumableWithDurationFormat = ResolveLocalizedExpanded(
+                LocalizationKeys.INTERACT_CONSUMABLE_WITH_DURATION_FORMAT,
+                consumableWithDurationFormat);
+            _localizedActionInProgressPrompt = ResolveLocalizedExpanded(LocalizationKeys.ACTION_USING, actionInProgressPrompt);
+            _localizedInsertBatteryPrompt = ResolveLocalizedExpanded(LocalizationKeys.INTERACT_INSERT_BATTERY, "Insert Battery");
+            _localizedBioReactorPrompt = ResolveLocalizedExpanded(LocalizationKeys.INTERACT_BIO_REACTOR, "Bio Reactor");
+            _localizedOpenCratePrompt = ResolveLocalizedExpanded(LocalizationKeys.INTERACT_OPEN_CRATE, "<button:interact> Open Crate");
+            _localizedEmptyCratePrompt = ResolveLocalizedExpanded(LocalizationKeys.INTERACT_EMPTY_CRATE, "Empty Crate");
+            _localizedVerbApply = ResolveLocalizedExpanded(LocalizationKeys.INTERACT_VERB_APPLY, "Apply");
+            _localizedVerbDrink = ResolveLocalizedExpanded(LocalizationKeys.INTERACT_VERB_DRINK, "Drink");
+            _localizedVerbEat = ResolveLocalizedExpanded(LocalizationKeys.INTERACT_VERB_EAT, "Eat");
+            _localizedVerbInhale = ResolveLocalizedExpanded(LocalizationKeys.INTERACT_VERB_INHALE, "Inhale");
+            _localizedVerbUse = ResolveLocalizedExpanded(LocalizationKeys.INTERACT_VERB_USE, "Use");
+            _localizedVerbTake = ResolveLocalizedExpanded("ITEM_INTERACT_TAKE", "Take");
         }
 
         private static string ResolveLocalized(string key, string fallback)
@@ -460,6 +519,14 @@ namespace Hecton8.UI
             LocalizationManager localization = LocalizationManager.Instance;
             return localization != null
                 ? localization.GetOrFallback(localization.CurrentLanguage, key, fallback)
+                : fallback;
+        }
+
+        private static string ResolveLocalizedExpanded(string key, string fallback)
+        {
+            LocalizationManager localization = LocalizationManager.Instance;
+            return localization != null
+                ? localization.GetExpandedOrFallback(localization.CurrentLanguage, key, fallback)
                 : fallback;
         }
 

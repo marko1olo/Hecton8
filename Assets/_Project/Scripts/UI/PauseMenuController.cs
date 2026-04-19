@@ -90,6 +90,7 @@ namespace Hecton8.UI
         private Button _settingsBackButton;
         private Button _settingsLanguageButton;
         private TextMeshProUGUI _settingsLanguageStatus;
+        private string _appliedSettingsLanguageStatusText;
 
         public bool IsOpen => _isOpen;
         public bool IsSettingsOpen => _isOpen && _activeSection == PauseSection.Settings;
@@ -680,6 +681,7 @@ namespace Hecton8.UI
             _settingsLanguageStatus = CreateText(panel, "LanguageStatus", numericFont, 10.5f, FontStyles.Normal, TextAlignmentOptions.Center);
             Anchor(_settingsLanguageStatus.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(26f, -146f), new Vector2(-26f, -118f));
             _settingsLanguageStatus.color = Dim;
+            _appliedSettingsLanguageStatusText = null;
 
             RectTransform controlsRoot = CreateRect(panel, "ControlsPanel");
             Anchor(controlsRoot, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(22f, 160f), new Vector2(-22f, -80f));
@@ -883,7 +885,10 @@ namespace Hecton8.UI
             if (_saveStatus != null && percent != _lastMainMenuLoadPercent)
             {
                 _lastMainMenuLoadPercent = percent;
-                _saveStatus.SetText(string.Concat(_cachedLoadingMainMenuPrefix, percent.ToString(), _cachedPercentSuffix));
+                _saveStatus.SetText(string.Concat(
+                    _cachedLoadingMainMenuPrefix,
+                    HudNumericStringCache.IntStrings[percent],
+                    _cachedPercentSuffix));
             }
 
             if (_sceneActivationRequested || _mainMenuLoadOperation.progress < 0.9f)
@@ -1378,17 +1383,26 @@ namespace Hecton8.UI
             LocalizationManager localization = LocalizationManager.Instance;
             if (localization == null)
             {
-                _settingsLanguageStatus.text = ResolveLocalized(
+                SetSettingsLanguageStatus(ResolveLocalized(
                     LocalizationKeys.SETTINGS_LANGUAGE_OWNER_UNAVAILABLE,
-                    "LANGUAGE OWNER UNAVAILABLE.");
+                    "LANGUAGE OWNER UNAVAILABLE."));
                 return;
             }
 
-            _settingsLanguageStatus.text = string.Format(
+            SetSettingsLanguageStatus(string.Format(
                 ResolveLocalized(
                     LocalizationKeys.SETTINGS_CURRENT_LANGUAGE,
                     "CURRENT LANGUAGE: {0}"),
-                CachedToUpperInvariant(GetLanguageDisplayName(localization.CurrentLanguage)));
+                CachedToUpperInvariant(GetLanguageDisplayName(localization.CurrentLanguage))));
+        }
+
+        private void SetSettingsLanguageStatus(string value)
+        {
+            if (_settingsLanguageStatus == null || string.Equals(_appliedSettingsLanguageStatusText, value, StringComparison.Ordinal))
+                return;
+
+            _settingsLanguageStatus.SetText(value);
+            _appliedSettingsLanguageStatusText = value;
         }
 
         private static string GetLanguageDisplayName(GameLanguage language)

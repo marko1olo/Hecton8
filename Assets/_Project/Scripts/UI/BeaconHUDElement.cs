@@ -4,7 +4,7 @@
 //
 // ARCHITECTURE:
 //   • ITickable for updates (no Update)
-//   • Zero GC: cached Camera.main, pre-allocated arrays
+//   • Zero GC: cached camera via SceneBootstrap, pre-allocated arrays
 //   • World-to-screen conversion for icon positioning
 //
 // FEATURES:
@@ -17,6 +17,7 @@ namespace Hecton8.UI
 {
     using Hecton8.Core;
     using Hecton8.Gameplay;
+    using Hecton.Localization;
     using UnityEngine;
 
     /// <summary>
@@ -63,6 +64,10 @@ namespace Hecton8.UI
         private Camera _mainCamera;
         private Transform _cachedTransform;
         private bool _registered;
+        private string _distancePattern = "{0:0} m";
+        private GameLanguage _distanceLanguage = GameLanguage.English;
+        private float _cameraRetryTime;
+        private const float CameraRetryInterval = 2f;
 
         // Pre-allocated array for beacon icons
         private BeaconIconDisplay[] _iconDisplays = new BeaconIconDisplay[16]; // COLD ALLOC: max 16 beacon icons — owner: BeaconHUDElement
@@ -75,7 +80,7 @@ namespace Hecton8.UI
         private void Awake()
         {
             _cachedTransform = transform;
-            _mainCamera = Camera.main;
+            _cameraRetryTime = 0f; // Allow immediate first resolve in Tick
 
             // Pre-create icon pool
             if (beaconIconPrefab != null && iconContainer != null)
@@ -98,11 +103,14 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
+            RebuildLocalizationCache();
             RegisterToTick();
         }
 
         private void OnDisable()
         {
+            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
             UnregisterFromTick();
             HideAllIcons();
         }
@@ -113,9 +121,20 @@ namespace Hecton8.UI
 
         public void Tick(float deltaTime)
         {
-            if (_mainCamera == null)
+            if (_mainCamera == null || !_mainCamera.isActiveAndEnabled)
             {
-                _mainCamera = Camera.main;
+                _mainCamera = null;
+                if (Time.time < _cameraRetryTime)
+                    return;
+
+                _cameraRetryTime = Time.time + CameraRetryInterval;
+
+                if (Hecton8.Bootstrap.SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform)
+                    && playerTransform != null)
+                {
+                    _mainCamera = playerTransform.GetComponentInChildren<Camera>(true);
+                }
+
                 if (_mainCamera == null)
                     return;
             }
@@ -225,7 +244,8 @@ namespace Hecton8.UI
                     int roundedDistance = Mathf.RoundToInt(distance);
                     if (!display.HasCachedDistance || display.CachedDistanceMeters != roundedDistance)
                     {
-                        display.distanceText.SetText("{0:0}m", roundedDistance);
+                        float localizedDistance = LocalizedMeasurementFormatter.ConvertDistanceMeters(distance, _distanceLanguage);
+                        display.distanceText.SetText(_distancePattern, localizedDistance);
                         display.CachedDistanceMeters = roundedDistance;
                         display.HasCachedDistance = true;
                     }
@@ -284,6 +304,34 @@ namespace Hecton8.UI
 
             child.TryGetComponent(out TMPro.TMP_Text text);
             return text;
+        }
+
+        private void HandleLanguageChanged(GameLanguage language)
+        {
+            RebuildLocalizationCache();
+            InvalidateDisplayCaches();
+        }
+
+        private void RebuildLocalizationCache()
+        {
+            LocalizationManager manager = LocalizationManager.Instance;
+            _distanceLanguage = manager != null ? manager.CurrentLanguage : GameLanguage.English;
+            string unitLabel = LocalizedMeasurementFormatter.ResolveDistanceUnitLabel(_distanceLanguage);
+            _distancePattern = string.Concat("{0:0} ", unitLabel);
+        }
+
+        private void InvalidateDisplayCaches()
+        {
+            for (int i = 0; i < _iconDisplays.Length; i++)
+            {
+                BeaconIconDisplay display = _iconDisplays[i];
+                if (display == null)
+                    continue;
+
+                display.CachedLabel = null;
+                display.CachedDistanceMeters = 0;
+                display.HasCachedDistance = false;
+            }
         }
 
         private static Transform FindDeepChild(Transform root, string childName)

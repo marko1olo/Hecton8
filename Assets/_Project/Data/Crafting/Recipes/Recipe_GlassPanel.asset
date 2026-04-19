@@ -1,4 +1,4 @@
-%YAML 1.1
+﻿%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!114 &11400000
 MonoBehaviour:
@@ -13,8 +13,16 @@ MonoBehaviour:
   m_Name: Recipe_GlassPanel
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Crafting.RecipeData
   recipeName: Glass Panel
+  localizedRecipeName:
+    tableKey: ITEM_GLASS_PANEL_NAME
+    fallbackText: ''
+    variants: []
   overrideIcon: {fileID: 0}
   description: Cut and stabilize silica into a clean optics-grade pane.
+  localizedRecipeDescription:
+    tableKey: ITEM_GLASS_PANEL_DESCRIPTION
+    fallbackText: ''
+    variants: []
   resultItem: {fileID: 11400000, guid: 108f7c8e3007d4b4f9f8b5c407aa4fdf, type: 2}
   resultQuantity: 1
   ingredients:

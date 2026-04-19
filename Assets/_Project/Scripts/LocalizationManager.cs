@@ -43,6 +43,19 @@ namespace Hecton.Localization
         private static readonly Regex FlatJsonEntryRegex = new Regex(
             "\"(?<key>(?:\\\\.|[^\"\\\\])*)\"\\s*:\\s*\"(?<value>(?:\\\\.|[^\"\\\\])*)\"",
             RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        // COLD ALLOC: Regex[1] — button token replacement for localized TMP text — owner: LocalizationManager
+        private static readonly Regex ButtonTokenRegex = new Regex(
+            "<button:(?<token>[a-zA-Z0-9_\\-]+)>",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex ItemTokenRegex = new Regex(
+            "<item:(?<token>[a-zA-Z0-9_\\-]+)>",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex StatusTokenRegex = new Regex(
+            "<status:(?<token>[a-zA-Z0-9_\\-]+)>",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly MatchEvaluator ButtonTokenEvaluator = EvaluateButtonToken;
+        private static readonly MatchEvaluator ItemTokenEvaluator = EvaluateItemToken;
+        private static readonly MatchEvaluator StatusTokenEvaluator = EvaluateStatusToken;
         private const string DefaultLanguageTableFolder = "Assets/_Project/Scripts";
 
         public static LocalizationManager Instance { get; private set; }
@@ -150,6 +163,59 @@ namespace Hecton.Localization
 #endif
                 return template;
             }
+        }
+
+        /// <summary>
+        /// Resolve a localized string and expand runtime button tokens for TMP consumers.
+        /// </summary>
+        public string GetExpanded(string key)
+        {
+            return ExpandRuntimeTokens(Get(key));
+        }
+
+        /// <summary>
+        /// Resolve a localized string with fallback and expand runtime button tokens.
+        /// </summary>
+        public string GetExpandedOrFallback(GameLanguage language, string key, string fallback)
+        {
+            return ExpandRuntimeTokens(GetOrFallback(language, key, fallback));
+        }
+
+        /// <summary>
+        /// Resolve, format, and expand a localized string for TMP consumers.
+        /// </summary>
+        public string GetExpandedFormatted(string key, params object[] args)
+        {
+            string template = Get(key);
+            return ExpandRuntimeTokens(FormatLocalized(template, key, args));
+        }
+
+        /// <summary>
+        /// Expand runtime localization tokens in an arbitrary authored string.
+        /// </summary>
+        public string ExpandText(string text)
+        {
+            return ExpandRuntimeTokens(text);
+        }
+
+        /// <summary>
+        /// Resolve a pluralized localized string root for the current language.
+        /// Expected suffixes: _ZERO, _ONE, _TWO, _FEW, _MANY, _OTHER.
+        /// </summary>
+        public string GetPlural(string keyRoot, int count)
+        {
+            string pluralKey = ResolvePluralKey(CurrentLanguage, keyRoot, count);
+            return Get(pluralKey);
+        }
+
+        /// <summary>
+        /// Resolve, format, and expand a pluralized localized string root for the current language.
+        /// </summary>
+        public string GetPluralFormatted(string keyRoot, int count, params object[] args)
+        {
+            string pluralKey = ResolvePluralKey(CurrentLanguage, keyRoot, count);
+            string template = Get(pluralKey);
+            return ExpandRuntimeTokens(FormatLocalized(template, pluralKey, args));
         }
 
         /// <summary>
@@ -277,6 +343,144 @@ namespace Hecton.Localization
             }
 
             return result;
+        }
+
+        private string ExpandRuntimeTokens(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return string.Empty;
+
+            string expanded = ButtonTokenRegex.Replace(text, ButtonTokenEvaluator);
+            expanded = ItemTokenRegex.Replace(expanded, ItemTokenEvaluator);
+            expanded = StatusTokenRegex.Replace(expanded, StatusTokenEvaluator);
+            return expanded;
+        }
+
+        private static string EvaluateButtonToken(Match match)
+        {
+            if (match == null || !match.Success)
+                return string.Empty;
+
+            string token = match.Groups["token"].Value;
+            InputManager input = InputManager.Instance;
+            if (input != null && input.TryGetBindingMarkupForToken(token, out string markup))
+                return markup;
+
+            return match.Value;
+        }
+
+        private static string EvaluateItemToken(Match match)
+        {
+            if (match == null || !match.Success)
+                return string.Empty;
+
+            string token = match.Groups["token"].Value;
+            return LocalizedInlineIconResolver.TryResolveItemChip(token, out string markup)
+                ? markup
+                : match.Value;
+        }
+
+        private static string EvaluateStatusToken(Match match)
+        {
+            if (match == null || !match.Success)
+                return string.Empty;
+
+            string token = match.Groups["token"].Value;
+            return LocalizedInlineIconResolver.TryResolveStatusChip(token, out string markup)
+                ? markup
+                : match.Value;
+        }
+
+        private string ResolvePluralKey(GameLanguage language, string keyRoot, int count)
+        {
+            string preferred = keyRoot + GetPluralSuffix(language, count);
+            if (TryGet(language, preferred, out _))
+                return preferred;
+
+            string fallbackOther = keyRoot + "_OTHER";
+            if (TryGet(language, fallbackOther, out _))
+                return fallbackOther;
+
+            return keyRoot;
+        }
+
+        private static string GetPluralSuffix(GameLanguage language, int count)
+        {
+            int absCount = Math.Abs(count);
+
+            switch (language)
+            {
+                case GameLanguage.Russian:
+                case GameLanguage.Ukrainian:
+                    return ResolveEastSlavicPluralSuffix(absCount);
+
+                case GameLanguage.Polish:
+                    if (absCount == 1)
+                        return "_ONE";
+
+                    int polishMod10 = absCount % 10;
+                    int polishMod100 = absCount % 100;
+                    if (polishMod10 >= 2 && polishMod10 <= 4 && !(polishMod100 >= 12 && polishMod100 <= 14))
+                        return "_FEW";
+                    return "_MANY";
+
+                case GameLanguage.Arabic:
+                    if (absCount == 0)
+                        return "_ZERO";
+                    if (absCount == 1)
+                        return "_ONE";
+                    if (absCount == 2)
+                        return "_TWO";
+
+                    int arabicMod100 = absCount % 100;
+                    if (arabicMod100 >= 3 && arabicMod100 <= 10)
+                        return "_FEW";
+                    if (arabicMod100 >= 11 && arabicMod100 <= 99)
+                        return "_MANY";
+                    return "_OTHER";
+
+                default:
+                    return absCount == 1 ? "_ONE" : "_OTHER";
+            }
+        }
+
+        private static string ResolveEastSlavicPluralSuffix(int count)
+        {
+            int mod10 = count % 10;
+            int mod100 = count % 100;
+
+            if (mod10 == 1 && mod100 != 11)
+                return "_ONE";
+            if (mod10 >= 2 && mod10 <= 4 && !(mod100 >= 12 && mod100 <= 14))
+                return "_FEW";
+            return "_MANY";
+        }
+
+        /// <summary>
+        /// True when the selected language should be rendered right-to-left.
+        /// </summary>
+        public static bool IsRightToLeftLanguage(GameLanguage language)
+        {
+            return language == GameLanguage.Arabic;
+        }
+
+        private static string FormatLocalized(string template, string key, params object[] args)
+        {
+            if (args == null || args.Length == 0)
+                return template;
+
+            try
+            {
+                return string.Format(template, args);
+            }
+            catch (FormatException)
+            {
+#if UNITY_EDITOR
+                Debug.LogError(
+                    $"[Localization] Format error for key \"{key}\", template: \"{template}\", args count: {args.Length}");
+#endif
+                return template;
+            }
         }
 
         private void LoadBuiltInTables()

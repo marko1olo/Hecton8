@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 559ad33e1d65b1d42950ade30bdf05c9, type: 3}
+  m_Name: BiomeVisual_041_11_Cinder_Fields
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomeProfile
+  biomeName: 'Cinder Fields [11]'
+  scatterColorBase: {r: 0.02811518, g: 0.08662649, b: 0.11693974, a: 1}
+  scatterColorShallow: {r: 0.08137142, g: 0.19054283, b: 0.1898964, a: 1}
+  depthFogDensity: {x: 0.50097861, y: 0.29642922, z: 0.16969959}
+  fogColor: {r: 0.03195657, g: 0.10758118, b: 0.12582627, a: 1}
+  turbidityMultiplier: 1.12817365

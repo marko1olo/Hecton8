@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 559ad33e1d65b1d42950ade30bdf05c9, type: 3}
+  m_Name: BiomeVisual_007_East_02_The_Tectonic_Chute
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Environment.HectonBiomeProfile
+  biomeName: 'The Tectonic Chute [East T02]'
+  scatterColorBase: {r: 0.032778513, g: 0.15440574, b: 0.22163343, a: 1}
+  scatterColorShallow: {r: 0.12109157, g: 0.40572995, b: 0.42372456, a: 1}
+  depthFogDensity: {x: 0.22187047, y: 0.13994463, z: 0.08857761}
+  fogColor: {r: 0.025073182, g: 0.17417178, b: 0.23418833, a: 1}
+  turbidityMultiplier: 0.6476981

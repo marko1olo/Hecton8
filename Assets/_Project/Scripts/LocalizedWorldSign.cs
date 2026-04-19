@@ -79,7 +79,7 @@ namespace Hecton.Localization
             if (manager != null && !string.IsNullOrWhiteSpace(tableKey))
             {
                 string fallback = string.IsNullOrWhiteSpace(fallbackText) ? tableKey : fallbackText;
-                return manager.GetOrFallback(manager.CurrentLanguage, tableKey, fallback);
+                return manager.GetExpandedOrFallback(manager.CurrentLanguage, tableKey, fallback);
             }
 
             if (!string.IsNullOrWhiteSpace(fallbackText))

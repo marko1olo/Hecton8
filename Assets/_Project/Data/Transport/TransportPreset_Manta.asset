@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9d512a24877f33949b5c90ec07b45730, type: 3}
+  m_Name: TransportPreset_Manta
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Gameplay.PlayerTransportPreset
+  transportName: Manta Scooter
+  mountInteractText: Board Manta Scooter
+  dismountInteractText: Dismount
+  underwaterOnly: 1
+  autoDropDriveOutsideWater: 1
+  holsterToolOnMount: 0
+  propulsionForce: 800
+  speedMultiplier: 2.2
+  activationInputThreshold: 0.12
+  idleCruiseFactor: 0
+  energyDrainPerSecond: 0
+  forwardPitchInfluence: 1
+  strafeInputScale: 1
+  verticalInputScale: 1
+  reverseThrustScale: 0.78
+  bodyYawResponsivenessScale: 1
+  surfaceDiveAssistScale: 1
+  ambientCurrentInfluenceScale: 1
+  surfaceLockInfluenceScale: 1
+  faunaDetectionSignature: 1
+  throttleRiseSharpness: 18
+  throttleFallSharpness: 10
+  throttleOutputExponent: 1.02
+  oxygenConsumptionScale: 1
+  pressureDamageScale: 1
+  thermalExposureScale: 1
+  radiationExposureScale: 1
+  orientationMode: 1
+  orientationFollowSharpness: 9
+  dismountDistance: 1.35
+  occupancyMode: 0
+  swimPresentationScale: 1
+  thrusterAudioScale: 1
+  cameraMotionScale: 1
+  propulsionForceReference: 800
+  swimPropulsionFloor: 0.62
+  swimCadenceMultiplier: 0.74
+  swimPoseLagMultiplier: 0.9
+  swimRootPresentationWeight: 0.58
+  swimSupportHandWeight: 0.84
+  swimRootForwardBias: 0.018
+  swimGuideForwardBias: 0.028
+  audioIdleSpeedFloor: 0.42
+  audioVolumeBoost: 0.18
+  audioPitchBoost: 0.22
+  audioModeBlendFloor: 0.35

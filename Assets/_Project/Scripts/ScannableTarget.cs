@@ -1,4 +1,5 @@
 using UnityEngine;
+using Hecton8.World;
 
 namespace Hecton8.Gameplay
 {
@@ -12,6 +13,7 @@ namespace Hecton8.Gameplay
         [TextArea(2, 5)]
         [SerializeField] private string entrySummary =
             "Passive scan profile has been captured. Manual classification pending.";
+        private int _spatialHandle;
 
         public string EntryId => string.IsNullOrWhiteSpace(entryId) ? gameObject.name : entryId;
         public string EntryTitle => string.IsNullOrWhiteSpace(entryTitle) ? CachedToUpperInvariant(gameObject.name) : entryTitle;
@@ -28,6 +30,30 @@ namespace Hecton8.Gameplay
             entrySummary = string.IsNullOrWhiteSpace(summary)
                 ? "Passive scan profile has been captured."
                 : summary.Trim();
+        }
+
+        private void OnEnable()
+        {
+            if (_spatialHandle == 0)
+                _spatialHandle = WorldSpatialHashGrid.RegisterScannable(this);
+        }
+
+        private void OnDisable()
+        {
+            if (_spatialHandle == 0)
+                return;
+
+            WorldSpatialHashGrid.Unregister(_spatialHandle);
+            _spatialHandle = 0;
+        }
+
+        private void OnDestroy()
+        {
+            if (_spatialHandle == 0)
+                return;
+
+            WorldSpatialHashGrid.Unregister(_spatialHandle);
+            _spatialHandle = 0;
         }
 
 #if UNITY_EDITOR

@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 559ad33e1d65b1d42950ade30bdf05c9, type: 3}
+  m_Name: BiomeVisual_067_17_Tier_17_East_Reserve
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomeProfile
+  biomeName: 'Tier 17 East Reserve [17]'
+  scatterColorBase: {r: 0.01377376, g: 0.05590818, b: 0.08920259, a: 1}
+  scatterColorShallow: {r: 0.03946715, g: 0.11453429, b: 0.14616787, a: 1}
+  depthFogDensity: {x: 0.72502139, y: 0.42457078, z: 0.24030041}
+  fogColor: {r: 0.01644586, g: 0.07101223, b: 0.09968637, a: 1}
+  turbidityMultiplier: 1.45932635

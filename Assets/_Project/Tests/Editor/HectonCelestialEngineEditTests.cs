@@ -225,11 +225,17 @@ public class HectonCelestialEngineEditTests
         float nightExposure = (float)GetPrivateField(_engine, "nightAtmosphereExposure");
         float horizonDensity = (float)GetPrivateField(_engine, "horizonDensity");
         float zenithTransparency = (float)GetPrivateField(_engine, "zenithTransparency");
+        float mistShelfIntensity = (float)GetPrivateField(_engine, "_surfaceHorizonMistShelfIntensity");
+        float mistShelfHeight = (float)GetPrivateField(_engine, "_surfaceHorizonMistShelfHeight");
+        float mistShelfSoftness = (float)GetPrivateField(_engine, "_surfaceHorizonMistShelfSoftness");
         AnimationCurve dayDensity = (AnimationCurve)GetPrivateField(_engine, "dayAtmosphereDensity");
 
         Assert.That(nightExposure, Is.EqualTo(0.001f).Within(0.0001f));
         Assert.That(horizonDensity, Is.EqualTo(1.1f).Within(0.0001f));
         Assert.That(zenithTransparency, Is.EqualTo(0.84f).Within(0.0001f));
+        Assert.That(mistShelfIntensity, Is.EqualTo(1f).Within(0.0001f));
+        Assert.That(mistShelfHeight, Is.EqualTo(0.16f).Within(0.0001f));
+        Assert.That(mistShelfSoftness, Is.EqualTo(0.1f).Within(0.0001f));
         Assert.That(dayDensity.Evaluate(0f), Is.LessThan(0.7f));
         Assert.That(dayDensity.Evaluate(0f), Is.GreaterThan(dayDensity.Evaluate(1f)));
     }
@@ -273,7 +279,10 @@ public class HectonCelestialEngineEditTests
             HorizonHazeIntensity = 0.37f,
             HorizonHazeFalloff = 2.15f,
             HorizonHazeSunTintStrength = 0.29f,
-            HorizonHazeColor = new Color(0.44f, 0.47f, 0.52f, 1f)
+            HorizonHazeColor = new Color(0.44f, 0.47f, 0.52f, 1f),
+            HorizonMistShelfIntensity = 0.48f,
+            HorizonMistShelfHeight = 0.17f,
+            HorizonMistShelfSoftness = 0.09f
         };
 
         SetPrivateField("_surfaceAtmosphericLightingState", state);
@@ -284,6 +293,9 @@ public class HectonCelestialEngineEditTests
         Assert.That(_skyMaterial.GetFloat("_HazeFalloff"), Is.EqualTo(2.15f).Within(0.0001f));
         Assert.That(_skyMaterial.GetFloat("_HazeSunTintStrength"), Is.EqualTo(0.29f).Within(0.0001f));
         Assert.That(_skyMaterial.GetColor("_HazeColor"), Is.EqualTo(state.HorizonHazeColor));
+        Assert.That(_skyMaterial.GetFloat("_HorizonMistShelfIntensity"), Is.EqualTo(0.48f).Within(0.0001f));
+        Assert.That(_skyMaterial.GetFloat("_HorizonMistShelfHeight"), Is.EqualTo(0.17f).Within(0.0001f));
+        Assert.That(_skyMaterial.GetFloat("_HorizonMistShelfSoftness"), Is.EqualTo(0.09f).Within(0.0001f));
     }
 
     [Test]

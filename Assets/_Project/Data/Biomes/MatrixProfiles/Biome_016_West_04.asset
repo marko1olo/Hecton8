@@ -46,7 +46,7 @@ MonoBehaviour:
   landmarkStrength: 5
   rewardPull: 3
   survivalPressure: 2
-  runtimeVisualProfile: {fileID: 0}
+  runtimeVisualProfile: {fileID: 11400000, guid: 35c45e4589ba14b4fbe39bc8a97e072e, type: 2}
   familyId: biome.family.crystal_growth
   familyProfile: {fileID: 11400000, guid: 5ee165fd8b45fc74e9dff4a7517c27c0, type: 2}
   suggestedZoneFamily: resources.landmarks.far

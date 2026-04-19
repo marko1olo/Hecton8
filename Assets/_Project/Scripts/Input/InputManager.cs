@@ -15,6 +15,15 @@ using System;
 namespace Hecton8.Input
 {
     /// <summary>
+    /// UI-facing input display styles used by localization token expansion.
+    /// </summary>
+    public enum InputDisplayStyle
+    {
+        KeyboardMouse = 0,
+        Gamepad = 1
+    }
+
+    /// <summary>
     /// Enterprise-grade Input Manager with zero GC allocations.
     /// Singleton pattern with thread-safe initialization.
     /// Supports keyboard, mouse, and gamepad with full rebinding support.
@@ -140,6 +149,7 @@ namespace Hecton8.Input
         public event Action OnCancel;
         public event Action OnTabNext;
         public event Action OnTabPrevious;
+        public event Action<InputDisplayStyle> OnInputDisplayStyleChanged;
 
         // ═══════════════════════════════════════════════════════════════════════════════════════════
         // PROPERTIES
@@ -148,6 +158,7 @@ namespace Hecton8.Input
         public bool IsPlayerInputEnabled => TryGetActionMapEnabled(_playerActionMap);
         public bool IsUIInputEnabled => TryGetActionMapEnabled(_uiActionMap);
         public bool CanSwitchActionMaps => !_isShuttingDown && _inputMapsInitialized && _runtimeInputActionAsset != null;
+        public InputDisplayStyle CurrentDisplayStyle { get; private set; } = InputDisplayStyle.KeyboardMouse;
         
         public Vector2 MoveInput => _moveAction?.ReadValue<Vector2>() ?? Vector2.zero;
         public Vector2 LookInput => _lookAction?.ReadValue<Vector2>() ?? Vector2.zero;
@@ -309,11 +320,7 @@ namespace Hecton8.Input
 
             try
             {
-                string templateJson = templateAsset.ToJson(); // COLD ALLOC: string[template asset json] — detached runtime clone source — owner: InputManager
-                if (string.IsNullOrEmpty(templateJson))
-                    return null;
-
-                return InputActionAsset.FromJson(templateJson); // COLD ALLOC: InputActionAsset[1] — detached runtime input asset — owner: InputManager
+                return Instantiate(templateAsset); // COLD ALLOC: InputActionAsset[1] — detached runtime input asset clone — owner: InputManager
             }
             catch (Exception ex)
             {
@@ -477,40 +484,120 @@ namespace Hecton8.Input
         // ═══════════════════════════════════════════════════════════════════════════════════════════
         
         // Movement Callbacks
-        private void OnMovePerformed(InputAction.CallbackContext context) => OnMove?.Invoke(context.ReadValue<Vector2>());
+        private void OnMovePerformed(InputAction.CallbackContext context)
+        {
+            CaptureInputDisplayStyle(context);
+            OnMove?.Invoke(context.ReadValue<Vector2>());
+        }
         private void OnMoveCanceled(InputAction.CallbackContext context) => OnMove?.Invoke(Vector2.zero);
-        private void OnLookPerformed(InputAction.CallbackContext context) => OnLook?.Invoke(context.ReadValue<Vector2>());
-        private void OnJumpPerformed(InputAction.CallbackContext context) => OnJump?.Invoke();
+        private void OnLookPerformed(InputAction.CallbackContext context)
+        {
+            CaptureInputDisplayStyle(context);
+            OnLook?.Invoke(context.ReadValue<Vector2>());
+        }
+        private void OnJumpPerformed(InputAction.CallbackContext context)
+        {
+            CaptureInputDisplayStyle(context);
+            OnJump?.Invoke();
+        }
         private void OnJumpCanceledPerformed(InputAction.CallbackContext context) => OnJumpCanceled?.Invoke();
-        private void OnSprintPerformed(InputAction.CallbackContext context) => OnSprint?.Invoke();
+        private void OnSprintPerformed(InputAction.CallbackContext context)
+        {
+            CaptureInputDisplayStyle(context);
+            OnSprint?.Invoke();
+        }
         private void OnSprintCanceledPerformed(InputAction.CallbackContext context) => OnSprintCanceled?.Invoke();
-        private void OnVerticalMovementPerformed(InputAction.CallbackContext context) => OnVerticalMove?.Invoke(context.ReadValue<float>());
+        private void OnVerticalMovementPerformed(InputAction.CallbackContext context)
+        {
+            CaptureInputDisplayStyle(context);
+            OnVerticalMove?.Invoke(context.ReadValue<float>());
+        }
         private void OnVerticalMovementCanceled(InputAction.CallbackContext context) => OnVerticalMove?.Invoke(0f);
         
         // Interaction Callbacks
-        private void OnInteractPerformed(InputAction.CallbackContext context) => OnInteract?.Invoke();
-        private void OnFlashlightPerformed(InputAction.CallbackContext context) => OnFlashlight?.Invoke();
-        private void OnPDAPerformed(InputAction.CallbackContext context) => OnPDA?.Invoke();
-        private void OnInventoryPerformed(InputAction.CallbackContext context) => OnInventory?.Invoke();
+        private void OnInteractPerformed(InputAction.CallbackContext context)
+        {
+            CaptureInputDisplayStyle(context);
+            OnInteract?.Invoke();
+        }
+        private void OnFlashlightPerformed(InputAction.CallbackContext context)
+        {
+            CaptureInputDisplayStyle(context);
+            OnFlashlight?.Invoke();
+        }
+        private void OnPDAPerformed(InputAction.CallbackContext context)
+        {
+            CaptureInputDisplayStyle(context);
+            OnPDA?.Invoke();
+        }
+        private void OnInventoryPerformed(InputAction.CallbackContext context)
+        {
+            CaptureInputDisplayStyle(context);
+            OnInventory?.Invoke();
+        }
         
         // Tool Callbacks
-        private void OnToolSlot1Performed(InputAction.CallbackContext context) => OnToolSlot1?.Invoke();
-        private void OnToolSlot2Performed(InputAction.CallbackContext context) => OnToolSlot2?.Invoke();
-        private void OnToolSlot3Performed(InputAction.CallbackContext context) => OnToolSlot3?.Invoke();
-        private void OnToolSlot4Performed(InputAction.CallbackContext context) => OnToolSlot4?.Invoke();
+        private void OnToolSlot1Performed(InputAction.CallbackContext context)
+        {
+            CaptureInputDisplayStyle(context);
+            OnToolSlot1?.Invoke();
+        }
+        private void OnToolSlot2Performed(InputAction.CallbackContext context)
+        {
+            CaptureInputDisplayStyle(context);
+            OnToolSlot2?.Invoke();
+        }
+        private void OnToolSlot3Performed(InputAction.CallbackContext context)
+        {
+            CaptureInputDisplayStyle(context);
+            OnToolSlot3?.Invoke();
+        }
+        private void OnToolSlot4Performed(InputAction.CallbackContext context)
+        {
+            CaptureInputDisplayStyle(context);
+            OnToolSlot4?.Invoke();
+        }
         
         // Action Callbacks
-        private void OnPrimaryActionPerformed(InputAction.CallbackContext context) => OnPrimaryAction?.Invoke();
+        private void OnPrimaryActionPerformed(InputAction.CallbackContext context)
+        {
+            CaptureInputDisplayStyle(context);
+            OnPrimaryAction?.Invoke();
+        }
         private void OnPrimaryActionCanceledPerformed(InputAction.CallbackContext context) => OnPrimaryActionCanceled?.Invoke();
-        private void OnSecondaryActionPerformed(InputAction.CallbackContext context) => OnSecondaryAction?.Invoke();
+        private void OnSecondaryActionPerformed(InputAction.CallbackContext context)
+        {
+            CaptureInputDisplayStyle(context);
+            OnSecondaryAction?.Invoke();
+        }
         private void OnSecondaryActionCanceledPerformed(InputAction.CallbackContext context) => OnSecondaryActionCanceled?.Invoke();
         
         // UI Callbacks
-        private void OnNavigatePerformed(InputAction.CallbackContext context) => OnNavigate?.Invoke(context.ReadValue<Vector2>());
-        private void OnSubmitPerformed(InputAction.CallbackContext context) => OnSubmit?.Invoke();
-        private void OnCancelPerformed(InputAction.CallbackContext context) => OnCancel?.Invoke();
-        private void OnTabNextPerformed(InputAction.CallbackContext context) => OnTabNext?.Invoke();
-        private void OnTabPreviousPerformed(InputAction.CallbackContext context) => OnTabPrevious?.Invoke();
+        private void OnNavigatePerformed(InputAction.CallbackContext context)
+        {
+            CaptureInputDisplayStyle(context);
+            OnNavigate?.Invoke(context.ReadValue<Vector2>());
+        }
+        private void OnSubmitPerformed(InputAction.CallbackContext context)
+        {
+            CaptureInputDisplayStyle(context);
+            OnSubmit?.Invoke();
+        }
+        private void OnCancelPerformed(InputAction.CallbackContext context)
+        {
+            CaptureInputDisplayStyle(context);
+            OnCancel?.Invoke();
+        }
+        private void OnTabNextPerformed(InputAction.CallbackContext context)
+        {
+            CaptureInputDisplayStyle(context);
+            OnTabNext?.Invoke();
+        }
+        private void OnTabPreviousPerformed(InputAction.CallbackContext context)
+        {
+            CaptureInputDisplayStyle(context);
+            OnTabPrevious?.Invoke();
+        }
 
         // ═══════════════════════════════════════════════════════════════════════════════════════════
         // PUBLIC API
@@ -625,12 +712,29 @@ namespace Hecton8.Input
                 return string.Empty;
 
             if (bindingIndex < 0 || bindingIndex >= action.bindings.Count)
-                bindingIndex = GetFirstDisplayableBindingIndex(action);
+                bindingIndex = GetPreferredBindingIndex(action, CurrentDisplayStyle);
 
             if (!TryGetBindingDisplayStringSafe(action, bindingIndex, out string display))
                 return string.Empty;
 
             return display;
+        }
+
+        public bool TryGetBindingMarkupForToken(string token, out string markup)
+        {
+            markup = string.Empty;
+            if (string.IsNullOrWhiteSpace(token))
+                return false;
+
+            if (!TryResolveTokenBinding(token, out string actionName, out string actionMap))
+                return false;
+
+            string display = GetBindingDisplayString(actionName, actionMap, -1);
+            if (string.IsNullOrWhiteSpace(display))
+                return false;
+
+            markup = FormatBindingChip(display, CurrentDisplayStyle);
+            return !string.IsNullOrWhiteSpace(markup);
         }
 
         public static bool TryGetBindingDisplayStringSafe(InputAction action, int bindingIndex, out string display)
@@ -661,13 +765,25 @@ namespace Hecton8.Input
 
             try
             {
-                display = InputControlPath.ToHumanReadableString(
-                    path,
-                    InputControlPath.HumanReadableStringOptions.OmitDevice);
+                display = action.GetBindingDisplayString(bindingIndex);
             }
             catch
             {
                 display = string.Empty;
+            }
+
+            if (string.IsNullOrWhiteSpace(display))
+            {
+                try
+                {
+                    display = InputControlPath.ToHumanReadableString(
+                        path,
+                        InputControlPath.HumanReadableStringOptions.OmitDevice);
+                }
+                catch
+                {
+                    display = string.Empty;
+                }
             }
 
             if (string.IsNullOrWhiteSpace(display))
@@ -697,6 +813,116 @@ namespace Hecton8.Input
             {
                 return -1;
             }
+        }
+
+        private static int GetPreferredBindingIndex(InputAction action, InputDisplayStyle displayStyle)
+        {
+            if (action == null)
+                return -1;
+
+            try
+            {
+                int count = action.bindings.Count;
+                for (int i = 0; i < count; i++)
+                {
+                    InputBinding binding = action.bindings[i];
+                    if (!IsBindingSuitableForDisplay(binding, displayStyle))
+                        continue;
+
+                    return i;
+                }
+            }
+            catch
+            {
+                return GetFirstDisplayableBindingIndex(action);
+            }
+
+            return GetFirstDisplayableBindingIndex(action);
+        }
+
+        private static bool IsBindingSuitableForDisplay(InputBinding binding, InputDisplayStyle displayStyle)
+        {
+            string path = binding.effectivePath;
+            if (string.IsNullOrWhiteSpace(path))
+                path = !string.IsNullOrWhiteSpace(binding.overridePath) ? binding.overridePath : binding.path;
+
+            if (string.IsNullOrWhiteSpace(path))
+                return false;
+
+            if (displayStyle == InputDisplayStyle.Gamepad)
+                return path.IndexOf("Gamepad", StringComparison.OrdinalIgnoreCase) >= 0;
+
+            return path.IndexOf("Keyboard", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   path.IndexOf("Mouse", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private static string FormatBindingChip(string display, InputDisplayStyle displayStyle)
+        {
+            string sanitized = string.IsNullOrWhiteSpace(display) ? "?" : display.Trim().ToUpperInvariant();
+            string prefix = displayStyle == InputDisplayStyle.Gamepad ? "\u25C6" : "\u2328";
+            return $"<b><color=#AEE8FF>{prefix}</color> {sanitized}</b>";
+        }
+
+        private static bool TryResolveTokenBinding(string token, out string actionName, out string actionMap)
+        {
+            string normalized = token.Trim().ToLowerInvariant();
+            actionName = string.Empty;
+            actionMap = "Player";
+
+            switch (normalized)
+            {
+                case "interact":
+                    actionName = "Interact";
+                    return true;
+                case "inventory":
+                    actionName = "Inventory";
+                    return true;
+                case "pda":
+                    actionName = "PDA";
+                    return true;
+                case "flashlight":
+                    actionName = "Flashlight";
+                    return true;
+                case "primary":
+                    actionName = "PrimaryAction";
+                    return true;
+                case "secondary":
+                    actionName = "SecondaryAction";
+                    return true;
+                case "navigate":
+                    actionName = "Navigate";
+                    actionMap = "UI";
+                    return true;
+                case "submit":
+                    actionName = "Submit";
+                    actionMap = "UI";
+                    return true;
+                case "cancel":
+                    actionName = "Cancel";
+                    actionMap = "UI";
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private void CaptureInputDisplayStyle(InputAction.CallbackContext context)
+        {
+            InputDisplayStyle nextStyle = ResolveDisplayStyle(context.control);
+            if (CurrentDisplayStyle == nextStyle)
+                return;
+
+            CurrentDisplayStyle = nextStyle;
+            OnInputDisplayStyleChanged?.Invoke(nextStyle);
+        }
+
+        private static InputDisplayStyle ResolveDisplayStyle(InputControl control)
+        {
+            InputDevice device = control?.device;
+            if (device is Gamepad)
+                return InputDisplayStyle.Gamepad;
+
+            return InputDisplayStyle.KeyboardMouse;
         }
 
         public string SaveBindingOverridesAsJson()

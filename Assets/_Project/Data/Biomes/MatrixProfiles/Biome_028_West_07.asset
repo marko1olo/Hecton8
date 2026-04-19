@@ -46,7 +46,7 @@ MonoBehaviour:
   landmarkStrength: 3
   rewardPull: 4
   survivalPressure: 2
-  runtimeVisualProfile: {fileID: 0}
+  runtimeVisualProfile: {fileID: 11400000, guid: b17d557c53efecf42a62444d1f6ed0ed, type: 2}
   familyId: biome.family.sediment_drift
   familyProfile: {fileID: 11400000, guid: 749c8bd2ced6fa043a661fd8c3841898, type: 2}
   suggestedZoneFamily: navigation.route.mid

@@ -63,6 +63,9 @@ namespace Hecton8.Gameplay
         [Tooltip("Optional swim-presentation contract for near-camera hand ownership while this tool is equipped.")]
         [SerializeField] private PlayerToolSwimContract _swimContract;
 
+        [Tooltip("Optional transport feel contract consumed by audio and presentation while this tool drives the player.")]
+        [SerializeField] private PlayerTransportFeelContract _transportFeelContract;
+
         // ══════════════════════════════════════════════════════════
         //  PUBLIC PROPERTIES
         // ══════════════════════════════════════════════════════════
@@ -96,6 +99,20 @@ namespace Hecton8.Gameplay
                     ResolveSwimContract();
 
                 return _swimContract;
+            }
+        }
+
+        /// <summary>
+        /// Optional transport feel contract for this tool.
+        /// </summary>
+        internal PlayerTransportFeelContract TransportFeelContract
+        {
+            get
+            {
+                if (!_transportFeelContractResolved)
+                    ResolveTransportFeelContract();
+
+                return _transportFeelContract;
             }
         }
 
@@ -159,6 +176,7 @@ namespace Hecton8.Gameplay
         [NonSerialized] private HectonSurvivalSystem _survivalSystem;
         private bool _lowDurabilityWarningFired;
         private bool _swimContractResolved;
+        private bool _transportFeelContractResolved;
         private string _cachedOperationalToolName;
 
         // ══════════════════════════════════════════════════════════
@@ -180,6 +198,7 @@ namespace Hecton8.Gameplay
             _lowDurabilityWarningFired = false;
             RefreshOperationalToolNameCache();
             ResolveSwimContract();
+            ResolveTransportFeelContract();
 
             // Auto-resolve SurvivalSystem
             if (_survivalSystem == null && enableEnergyConsumption)
@@ -214,6 +233,13 @@ namespace Hecton8.Gameplay
             _swimContractResolved = true;
             if (_swimContract == null)
                 TryGetComponent(out _swimContract);
+        }
+
+        private void ResolveTransportFeelContract()
+        {
+            _transportFeelContractResolved = true;
+            if (_transportFeelContract == null)
+                TryGetComponent(out _transportFeelContract);
         }
 
         // ══════════════════════════════════════════════════════════

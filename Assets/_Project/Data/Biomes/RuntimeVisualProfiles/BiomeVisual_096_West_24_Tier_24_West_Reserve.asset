@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 559ad33e1d65b1d42950ade30bdf05c9, type: 3}
+  m_Name: BiomeVisual_096_West_24_Tier_24_West_Reserve
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Environment.HectonBiomeProfile
+  biomeName: 'Tier 24 West Reserve [West T24]'
+  scatterColorBase: {r: 0.02532019, g: 0.08528114, b: 0.13869801, a: 1}
+  scatterColorShallow: {r: 0.05385365, g: 0.14369987, b: 0.19743137, a: 1}
+  depthFogDensity: {x: 0.6847887, y: 0.39894366, z: 0.22619718}
+  fogColor: {r: 0.024164176, g: 0.07214088, b: 0.11520054, a: 1}
+  turbidityMultiplier: 1.4232144

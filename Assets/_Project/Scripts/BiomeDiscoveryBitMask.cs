@@ -1,0 +1,124 @@
+using System.Collections.Generic;
+
+namespace Hecton8.SaveSystem
+{
+    /// <summary>
+    /// Packed bit-word helpers for 108-biome discovery persistence.
+    /// </summary>
+    internal static class BiomeDiscoveryBitMask
+    {
+        public const int MinBiomeId = 1;
+        public const int MaxBiomeId = 108;
+        public const int InvalidBiomeId = -1;
+        public const int WordBitCount = 64;
+        public const int WordCount = ((MaxBiomeId - MinBiomeId + 1) + WordBitCount - 1) / WordBitCount;
+
+        public static bool IsValidBiomeId(int biomeId)
+        {
+            return biomeId >= MinBiomeId && biomeId <= MaxBiomeId;
+        }
+
+        public static bool HasExpectedCapacity(long[] words)
+        {
+            return words != null && words.Length >= WordCount;
+        }
+
+        public static void EnsureCapacity(ref long[] words)
+        {
+            if (HasExpectedCapacity(words))
+                return;
+
+            // COLD ALLOC: long[WordCount] — packed discovered biome persistence — owner: BiomeDiscoveryBitMask
+            words = new long[WordCount];
+        }
+
+        public static bool HasAnySet(long[] words)
+        {
+            if (words == null)
+                return false;
+
+            int wordCount = words.Length < WordCount ? words.Length : WordCount;
+            for (int i = 0; i < wordCount; i++)
+            {
+                if (words[i] != 0L)
+                    return true;
+            }
+
+            return false;
+        }
+
+        public static bool Contains(long[] words, int biomeId)
+        {
+            if (!IsValidBiomeId(biomeId) || words == null)
+                return false;
+
+            int zeroBasedBiomeIndex = biomeId - MinBiomeId;
+            int wordIndex = zeroBasedBiomeIndex >> 6;
+            if (wordIndex >= words.Length)
+                return false;
+
+            int bitIndex = zeroBasedBiomeIndex & (WordBitCount - 1);
+            ulong mask = 1UL << bitIndex;
+            return (((ulong)words[wordIndex]) & mask) != 0UL;
+        }
+
+        public static void Pack(HashSet<int> discoveredBiomeIds, long[] words)
+        {
+            if (words == null)
+                return;
+
+            Clear(words);
+
+            if (discoveredBiomeIds == null)
+                return;
+
+            foreach (int biomeId in discoveredBiomeIds)
+            {
+                if (!IsValidBiomeId(biomeId))
+                    continue;
+
+                int zeroBasedBiomeIndex = biomeId - MinBiomeId;
+                int wordIndex = zeroBasedBiomeIndex >> 6;
+                int bitIndex = zeroBasedBiomeIndex & (WordBitCount - 1);
+                ulong mask = 1UL << bitIndex;
+                words[wordIndex] = (long)(((ulong)words[wordIndex]) | mask);
+            }
+        }
+
+        public static void Unpack(long[] words, HashSet<int> destination)
+        {
+            if (destination == null)
+                return;
+
+            destination.Clear();
+            if (words == null)
+                return;
+
+            for (int biomeId = MinBiomeId; biomeId <= MaxBiomeId; biomeId++)
+            {
+                if (Contains(words, biomeId))
+                    destination.Add(biomeId);
+            }
+        }
+
+        public static int ResolveFallbackLastDiscoveredId(long[] words)
+        {
+            if (words == null)
+                return InvalidBiomeId;
+
+            for (int biomeId = MinBiomeId; biomeId <= MaxBiomeId; biomeId++)
+            {
+                if (Contains(words, biomeId))
+                    return biomeId;
+            }
+
+            return InvalidBiomeId;
+        }
+
+        private static void Clear(long[] words)
+        {
+            for (int i = 0; i < words.Length; i++)
+                words[i] = 0L;
+        }
+    }
+}

@@ -1,4 +1,5 @@
 using Hecton8.Atmosphere;
+using Hecton8.Bootstrap;
 using Hecton8.Core;
 using UnityEngine;
 
@@ -518,9 +519,12 @@ namespace Hecton8.Celestial
 
             if (observerTransform == null)
             {
-                Camera mainCamera = Camera.main;
-                if (mainCamera != null)
-                    observerTransform = mainCamera.transform;
+                if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
+                {
+                    Camera playerCamera = playerTransform.GetComponentInChildren<Camera>(true);
+                    if (playerCamera != null)
+                        observerTransform = playerCamera.transform;
+                }
             }
 
             return observerTransform != null

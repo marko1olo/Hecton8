@@ -152,6 +152,7 @@ namespace Hecton8.UI
         private PDATabButton[] _tabButtons;
         private RectTransform _filterBarRoot;
         private PDAInventoryFilterButton[] _filterButtons;
+        private RectTransform _toolSlotRowRoot;
 
         // USE button
         private RectTransform _useButtonRoot;
@@ -387,6 +388,8 @@ namespace Hecton8.UI
             if (existing != null)
             {
                 _tabBarRoot = existing as RectTransform;
+                HorizontalLayoutGroup existingLayoutGroup = EnsureHorizontalLayout(_tabBarRoot, 6f, TextAnchor.MiddleCenter);
+                LocalizedLayoutMirror.ConfigureRuntime(existingLayoutGroup, _tabBarRoot, true, true, false);
                 _tabButtons = _tabBarRoot.GetComponentsInChildren<PDATabButton>(true);
                 if (_tabButtons != null && _tabButtons.Length == labels.Length)
                     return;
@@ -409,15 +412,14 @@ namespace Hecton8.UI
 
             _tabButtons = new PDATabButton[labels.Length];
             float tabWidth = 126f;
-            float totalWidth = labels.Length * tabWidth + (labels.Length - 1) * 6f;
-            float startX = -totalWidth * 0.5f + tabWidth * 0.5f;
+            HorizontalLayoutGroup layoutGroup = EnsureHorizontalLayout(_tabBarRoot, 6f, TextAnchor.MiddleCenter);
+            LocalizedLayoutMirror.ConfigureRuntime(layoutGroup, _tabBarRoot, true, true, false);
 
             for (int i = 0; i < labels.Length; i++)
             {
                 RectTransform tabRect = CreateRect("Tab_" + i, _tabBarRoot);
-                Anchor(tabRect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                       new Vector2(startX + i * (tabWidth + 6f), 0f),
-                       new Vector2(tabWidth, 30f));
+                tabRect.sizeDelta = new Vector2(tabWidth, 30f);
+                EnsureLayoutElement(tabRect, tabWidth, 30f);
 
                 Image tabBg = tabRect.gameObject.AddComponent<Image>();
                 tabBg.color = i == 0 ? TabBgActive : TabBgInactive;
@@ -742,20 +744,29 @@ namespace Hecton8.UI
             Anchor(_loadoutAssignRoot, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
                 new Vector2(0f, 112f), new Vector2(212f, 64f));
 
+            RectTransform topRow = CreateRect("LoadoutAssignRowTop", _loadoutAssignRoot);
+            Anchor(topRow, new Vector2(0f, 1f), new Vector2(1f, 1f),
+                new Vector2(0f, 0f), new Vector2(0f, 26f));
+            HorizontalLayoutGroup topRowLayout = EnsureHorizontalLayout(topRow, 8f, TextAnchor.UpperLeft);
+            LocalizedLayoutMirror.ConfigureRuntime(topRowLayout, topRow, true, true, false);
+
+            RectTransform bottomRow = CreateRect("LoadoutAssignRowBottom", _loadoutAssignRoot);
+            Anchor(bottomRow, new Vector2(0f, 1f), new Vector2(1f, 1f),
+                new Vector2(0f, -32f), new Vector2(0f, 26f));
+            HorizontalLayoutGroup bottomRowLayout = EnsureHorizontalLayout(bottomRow, 8f, TextAnchor.UpperLeft);
+            LocalizedLayoutMirror.ConfigureRuntime(bottomRowLayout, bottomRow, true, true, false);
+
             _loadoutAssignBgs = new Image[ToolSlotCount];
             _loadoutAssignLabels = new TextMeshProUGUI[ToolSlotCount];
 
             for (int i = 0; i < ToolSlotCount; i++)
             {
                 int row = i / 2;
-                int col = i % 2;
+                RectTransform rowRoot = row == 0 ? topRow : bottomRow;
 
-                RectTransform btn = CreateRect("AssignSlot_" + i, _loadoutAssignRoot);
-                btn.pivot = new Vector2(0f, 1f);
-                btn.anchorMin = new Vector2(0f, 1f);
-                btn.anchorMax = new Vector2(0f, 1f);
-                btn.anchoredPosition = new Vector2(col * 108f, -row * 32f);
+                RectTransform btn = CreateRect("AssignSlot_" + i, rowRoot);
                 btn.sizeDelta = new Vector2(100f, 26f);
+                EnsureLayoutElement(btn, 100f, 26f);
 
                 Image bg = btn.gameObject.AddComponent<Image>();
                 bg.color = new Color(0.08f, 0.16f, 0.18f, 0.58f);
@@ -814,18 +825,21 @@ namespace Hecton8.UI
             hdr.text = "FIELD LOADOUT";
             hdr.color = A(DimLow, 0.6f);
 
+            _toolSlotRowRoot = CreateRect("ToolSlotRow", _toolStripRoot);
+            Anchor(_toolSlotRowRoot, new Vector2(0f, 0f), new Vector2(0f, 0f),
+                new Vector2(0f, 0f), new Vector2(stripW, slotSize));
+            HorizontalLayoutGroup toolLayout = EnsureHorizontalLayout(_toolSlotRowRoot, slotGap, TextAnchor.LowerLeft);
+            LocalizedLayoutMirror.ConfigureRuntime(toolLayout, _toolSlotRowRoot, true, true, false);
+
             _toolSlotBgs = new Image[ToolSlotCount];
             _toolSlotIcons = new Image[ToolSlotCount];
             _toolSlotKeys = new TextMeshProUGUI[ToolSlotCount];
 
             for (int i = 0; i < ToolSlotCount; i++)
             {
-                RectTransform slot = CreateRect("ToolSlot_" + i, _toolStripRoot);
-                slot.pivot = new Vector2(0f, 0f);
-                slot.anchorMin = new Vector2(0f, 0f);
-                slot.anchorMax = new Vector2(0f, 0f);
-                slot.anchoredPosition = new Vector2(i * (slotSize + slotGap), 0f);
+                RectTransform slot = CreateRect("ToolSlot_" + i, _toolSlotRowRoot);
                 slot.sizeDelta = new Vector2(slotSize, slotSize);
+                EnsureLayoutElement(slot, slotSize, slotSize);
 
                 Image bg = slot.gameObject.AddComponent<Image>();
                 bg.color = ToolSlotBg;
@@ -965,6 +979,8 @@ namespace Hecton8.UI
             _filterBarRoot.anchorMax = new Vector2(0f, 1f);
             _filterBarRoot.anchoredPosition = new Vector2(32f, -24f);
             _filterBarRoot.sizeDelta = new Vector2(GridAreaSize.x, 22f);
+            HorizontalLayoutGroup layoutGroup = EnsureHorizontalLayout(_filterBarRoot, 6f, TextAnchor.MiddleLeft);
+            LocalizedLayoutMirror.ConfigureRuntime(layoutGroup, _filterBarRoot, true, true, false);
 
             string[] labels = { "ALL", "TOOLS", "CONS", "MATS", "PARTS" };
             InventoryViewFilter[] filters =
@@ -978,16 +994,12 @@ namespace Hecton8.UI
 
             _filterButtons = new PDAInventoryFilterButton[labels.Length];
             const float chipWidth = 70f;
-            const float chipGap = 6f;
 
             for (int i = 0; i < labels.Length; i++)
             {
                 RectTransform chip = CreateRect("Filter_" + labels[i], _filterBarRoot);
-                chip.pivot = new Vector2(0f, 0.5f);
-                chip.anchorMin = new Vector2(0f, 0.5f);
-                chip.anchorMax = new Vector2(0f, 0.5f);
-                chip.anchoredPosition = new Vector2(i * (chipWidth + chipGap), 0f);
                 chip.sizeDelta = new Vector2(chipWidth, 20f);
+                EnsureLayoutElement(chip, chipWidth, 20f);
 
                 Image chipBg = chip.gameObject.AddComponent<Image>();
                 chipBg.color = filters[i] == _currentFilter ? TabBgActive : TabBgInactive;
@@ -1671,6 +1683,7 @@ namespace Hecton8.UI
             t.alignment = align;
             t.textWrappingMode = TextWrappingModes.NoWrap;
             t.raycastTarget = false;
+            Hecton8.UI.LocalizedTMPAutoSizer.Configure(t, size * 0.72f, size, TextOverflowModes.Truncate, TextWrappingModes.NoWrap);
             return t;
         }
 
@@ -1703,6 +1716,45 @@ namespace Hecton8.UI
                 group = rect.gameObject.AddComponent<CanvasGroup>();
 
             return group;
+        }
+
+        private static HorizontalLayoutGroup EnsureHorizontalLayout(RectTransform rect, float spacing, TextAnchor alignment)
+        {
+            if (rect == null)
+                return null;
+
+            HorizontalLayoutGroup layout = rect.GetComponent<HorizontalLayoutGroup>();
+            if (layout == null)
+                layout = rect.gameObject.AddComponent<HorizontalLayoutGroup>();
+
+            layout.spacing = spacing;
+            layout.childAlignment = alignment;
+            layout.childControlWidth = false;
+            layout.childControlHeight = false;
+            layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = false;
+            layout.childScaleWidth = false;
+            layout.childScaleHeight = false;
+            layout.reverseArrangement = false;
+            return layout;
+        }
+
+        private static LayoutElement EnsureLayoutElement(RectTransform rect, float width, float height)
+        {
+            if (rect == null)
+                return null;
+
+            LayoutElement layoutElement = rect.GetComponent<LayoutElement>();
+            if (layoutElement == null)
+                layoutElement = rect.gameObject.AddComponent<LayoutElement>();
+
+            layoutElement.minWidth = width;
+            layoutElement.preferredWidth = width;
+            layoutElement.flexibleWidth = 0f;
+            layoutElement.minHeight = height;
+            layoutElement.preferredHeight = height;
+            layoutElement.flexibleHeight = 0f;
+            return layoutElement;
         }
 
         private static void SetCanvasGroupVisible(CanvasGroup group, bool visible)
@@ -2331,7 +2383,7 @@ namespace Hecton8.UI
         {
             _tab?.DropSelectedItem();
         }
-
+ 
         public void OnPointerEnter(PointerEventData eventData)
         {
             if (_bg != null) _bg.color = _hoverColor;
@@ -2342,8 +2394,48 @@ namespace Hecton8.UI
             if (_bg != null) _bg.color = _normalColor;
         }
     }
+
     // ══════════════════════════════════════════════════════════════
     //  HELPER: Grid Pointer Handler
+    // ══════════════════════════════════════════════════════════════
+
+    [DisallowMultipleComponent]
+    internal sealed class GridPointerHandler : MonoBehaviour,
+        IPointerMoveHandler, IPointerClickHandler, IPointerExitHandler
+    {
+        private PDAInventoryTab _tab;
+
+        public void Init(PDAInventoryTab tab)
+        {
+            _tab = tab;
+        }
+
+        public void OnPointerMove(PointerEventData eventData)
+        {
+            if (_tab == null) return;
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                transform as RectTransform, eventData.position, eventData.pressEventCamera, out Vector2 localPoint))
+                return;
+            _tab.HandlePointerMove(localPoint);
+        }
+
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            if (_tab == null) return;
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                transform as RectTransform, eventData.position, eventData.pressEventCamera, out Vector2 localPoint))
+                return;
+            _tab.HandlePointerClick(localPoint);
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            _tab?.HandlePointerExit();
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  HELPER: Loadout Assign Button
     // ══════════════════════════════════════════════════════════════
 
     [DisallowMultipleComponent]
@@ -2378,127 +2470,6 @@ namespace Hecton8.UI
         public void OnPointerExit(PointerEventData eventData)
         {
             if (_bg != null) _bg.color = _normalColor;
-        }
-    }
-
-    [DisallowMultipleComponent]
-    internal sealed class GridPointerHandler : MonoBehaviour,
-        IPointerMoveHandler, IPointerClickHandler, IPointerExitHandler
-    {
-        private PDAInventoryTab _tab;
-
-        public void Init(PDAInventoryTab tab) => _tab = tab;
-
-        public void OnPointerMove(PointerEventData eventData)
-        {
-            if (_tab == null) return;
-            RectTransform rt = transform as RectTransform;
-            if (rt == null) return;
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                rt, eventData.position, eventData.pressEventCamera, out Vector2 local);
-            _tab.HandlePointerMove(local);
-        }
-
-        public void OnPointerClick(PointerEventData eventData)
-        {
-            if (_tab == null) return;
-            RectTransform rt = transform as RectTransform;
-            if (rt == null) return;
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                rt, eventData.position, eventData.pressEventCamera, out Vector2 local);
-            _tab.HandlePointerClick(local);
-        }
-
-        public void OnPointerExit(PointerEventData eventData)
-        {
-            _tab?.HandlePointerExit();
-        }
-    }
-
-    // ══════════════════════════════════════════════════════════════
-    //  HELPER: PDA Tab Button
-    // ══════════════════════════════════════════════════════════════
-
-    [DisallowMultipleComponent]
-    internal sealed class PDATabButton : MonoBehaviour, IPointerClickHandler
-    {
-        private int _tabIndex;
-        private PlayerPDA _pda;
-        private Image _bg;
-        private TextMeshProUGUI _label;
-        private Color _bgActive, _bgInactive, _txtActive, _txtInactive;
-        private bool _isActive;
-
-        public void Init(int index, PlayerPDA pda, Image bg, TextMeshProUGUI label,
-            Color bgActive, Color bgInactive, Color txtActive, Color txtInactive)
-        {
-            _tabIndex = index;
-            _pda = pda;
-            _bg = bg;
-            _label = label;
-            _bgActive = bgActive;
-            _bgInactive = bgInactive;
-            _txtActive = txtActive;
-            _txtInactive = txtInactive;
-        }
-
-        public void SetActive(bool active)
-        {
-            _isActive = active;
-            if (_bg != null) _bg.color = active ? _bgActive : _bgInactive;
-            if (_label != null) _label.color = active ? _txtActive : _txtInactive;
-        }
-
-        public void OnPointerClick(PointerEventData eventData)
-        {
-            if (_pda != null)
-                _pda.SetActiveTab(_tabIndex);
-        }
-    }
-
-    [DisallowMultipleComponent]
-    internal sealed class PDAInventoryFilterButton : MonoBehaviour, IPointerClickHandler
-    {
-        private PDAInventoryTab _tab;
-        private InventoryViewFilter _filter;
-        private Image _bg;
-        private TextMeshProUGUI _label;
-        private Color _bgActive;
-        private Color _bgInactive;
-        private Color _txtActive;
-        private Color _txtInactive;
-
-        internal InventoryViewFilter Filter => _filter;
-
-        public void Init(
-            PDAInventoryTab tab,
-            InventoryViewFilter filter,
-            Image bg,
-            TextMeshProUGUI label,
-            Color bgActive,
-            Color bgInactive,
-            Color txtActive,
-            Color txtInactive)
-        {
-            _tab = tab;
-            _filter = filter;
-            _bg = bg;
-            _label = label;
-            _bgActive = bgActive;
-            _bgInactive = bgInactive;
-            _txtActive = txtActive;
-            _txtInactive = txtInactive;
-        }
-
-        public void SetActive(bool active)
-        {
-            if (_bg != null) _bg.color = active ? _bgActive : _bgInactive;
-            if (_label != null) _label.color = active ? _txtActive : _txtInactive;
-        }
-
-        public void OnPointerClick(PointerEventData eventData)
-        {
-            _tab?.SetFilter(_filter);
         }
     }
 }

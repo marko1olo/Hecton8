@@ -32,6 +32,7 @@ using Hecton8.Environment;
 using Hecton8.Interaction;
 using Hecton8.Inventory;
 using Hecton8.Items;
+using Hecton.Localization;
 using Hecton8.Narrative;
 using Hecton8.Quest;
 using Hecton8.SaveSystem;
@@ -148,17 +149,17 @@ namespace Hecton8.Gameplay
 
         private const float MinEarnedOrientationTime = 75f;
         private const string MsgResourceShelfRead =
-            "ДЕРЖИСЬ ЧИТАЕМОЙ КРОМКИ. ПЕРВАЯ МЕДЬ ЧАЩЕ СИДИТ НИЖЕ И СБОКУ ОТ САМОЙ БЕЗОПАСНОЙ ПОЛКИ.";
+            "HOLD THE READABLE EDGE. THE FIRST COPPER NORMALLY SITS LOWER AND OFF TO THE SIDE OF THE SAFEST SHELF.";
         private const string MsgFabricationFallback =
-            "УЗЕЛ ДАЁТ ПЕРЕДЫШКУ, НЕ ОТВЕТ. ВЫХОДИ СНОВА — СИЛЬНЫЙ РАННИЙ ВЫХОД ЛЕЖИТ ЧУТЬ ГЛУБЖЕ.";
+            "THE NODE BUYS BREATHING ROOM, NOT ANSWERS. MOVE OUT AGAIN - THE STRONG EARLY EXIT SITS A LITTLE DEEPER.";
         private const string MsgReturnLoreRelay =
-            "В СЛУЖЕБНЫХ УЗЛАХ МОГЛИ ОСТАТЬСЯ ЗАПИСИ И МЕТКИ. ПРОВЕРЯЙ ТЕРМИНАЛЫ И БОКОВЫЕ СТОЙКИ, НЕ ТОЛЬКО РЕСУРСЫ.";
+            "SERVICE NODES MAY STILL HOLD LOGS AND MARKERS. CHECK TERMINALS AND SIDE RACKS, NOT JUST RESOURCES.";
         private const string MsgDeeperRouteRead =
-            "НИЖЕ ВАЖНЕЕ НЕ ЖАДНОСТЬ, А МАРШРУТ. ДЕРЖИ В ПАМЯТИ СИЛУЭТ ВЫХОДА И СПОКОЙНЫЙ КАРМАН.";
+            "LOWER DOWN, ROUTE MATTERS MORE THAN GREED. KEEP THE EXIT SILHOUETTE AND A CALM AIR POCKET IN MIND.";
         private const string MsgModuleRouteRead =
-            "ТЕПЕРЬ ИЩИ НЕ РОССЫПЬ, А СЛЕД. РУИНЫ, МОДУЛИ И СЛУЖЕБНЫЕ ОСТАНОВКИ ДАДУТ НАСТОЯЩИЙ ВЕКТОР.";
+            "NOW LOOK FOR A TRACE, NOT LOOSE SCRAP. RUINS, MODULES, AND SERVICE HALTS WILL GIVE YOU A REAL VECTOR.";
         private const string MsgStarterBackslideRead =
-            "МЕЛКОВОДЬЕ ТЕПЕРЬ ДАЁТ ТЕБЕ ПЕРЕДЫШКУ, НЕ ПРОГРЕСС. СОБЕРИСЬ И ВЕРНИСЬ К ГЛУБИННОМУ МАРШРУТУ.";
+            "THE SHALLOWS ONLY BUY BREATHING ROOM NOW, NOT PROGRESS. REGROUP AND RETURN TO THE DEEPER ROUTE.";
 
         // ══════════════════════════════════════════════════════════
         //  ISaveable
@@ -307,7 +308,9 @@ namespace Hecton8.Gameplay
             {
                 _firstModuleHintIssued = true;
                 _firstModuleReminderIssued = true;
-                NotificationEvents.PushInfo("СКАНИРУЙ РУИНЫ И МОДУЛИ. ЗДЕСЬ ЕСТЬ ЧТО-ТО ЦЕЛОЕ.");
+                NotificationEvents.PushInfo(ResolveLocalized(
+                    LocalizationKeys.FIRST_HOUR_MODULE_SCAN_HINT,
+                    "SCAN RUINS AND MODULES. SOMETHING INTACT IS STILL DOWN HERE."));
             }
 
             TryIssueRetentionNudges();
@@ -697,8 +700,12 @@ namespace Hecton8.Gameplay
             {
                 _firstResourceReminderIssued = true;
                 string reminderMessage = string.Equals(firstResourceItemId, "Data_Copper", StringComparison.Ordinal)
-                    ? "ИЩИ МЕДЬ В ОБЛОМКАХ И У СКАЛ. БЕЗ НЕЁ ТЫ НЕ СДВИНЕШЬСЯ ДАЛЬШЕ."
-                    : "ИЩИ ПЕРВЫЙ ОПОРНЫЙ МАТЕРИАЛ В ОБЛОМКАХ И У ЧИТАЕМЫХ СКАЛ. БЕЗ НЕГО ЦЕПЬ НЕ ПОЙДЁТ ДАЛЬШЕ.";
+                    ? ResolveLocalized(
+                        LocalizationKeys.FIRST_HOUR_RESOURCE_REMINDER_COPPER,
+                        "LOOK FOR COPPER IN THE DEBRIS AND AROUND THE ROCKS. WITHOUT IT, YOU DO NOT MOVE THE CHAIN FORWARD.")
+                    : ResolveLocalized(
+                        LocalizationKeys.FIRST_HOUR_RESOURCE_REMINDER_GENERIC,
+                        "LOOK FOR THE FIRST CORE MATERIAL IN THE DEBRIS AND ALONG READABLE ROCK FACES. WITHOUT IT, THE CHAIN STOPS HERE.");
                 NotificationEvents.PushInfo(reminderMessage);
             }
 
@@ -709,7 +716,9 @@ namespace Hecton8.Gameplay
                 _sessionTime >= firstDepthReminderTime)
             {
                 _firstDepthReminderIssued = true;
-                NotificationEvents.PushInfo("ПЕРВАЯ НАСТОЯЩАЯ НАХОДКА НИЖЕ. ИДИ ГЛУБЖЕ, НО НЕ ТЕРЯЙ ВЫХОД.");
+                NotificationEvents.PushInfo(ResolveLocalized(
+                    LocalizationKeys.FIRST_HOUR_DEPTH_REMINDER,
+                    "THE FIRST REAL FIND IS LOWER. GO DEEPER, BUT DO NOT LOSE THE WAY OUT."));
             }
 
             if (!_firstModuleReminderIssued &&
@@ -954,7 +963,7 @@ namespace Hecton8.Gameplay
                 expedition != null ? expedition.softProgressionPull : null,
                 currentBiome != null ? currentBiome.commonRewardHook : null,
                 currentBiome != null ? currentBiome.landmarkGuidance : null,
-                MsgResourceShelfRead);
+                ResolveLocalized(LocalizationKeys.FIRST_HOUR_RESOURCE_SHELF_READ, MsgResourceShelfRead));
         }
 
         private string ResolveFabricationFallbackMessage(
@@ -971,7 +980,7 @@ namespace Hecton8.Gameplay
                 sandbox != null ? sandbox.shelterRead : null,
                 currentBiome != null ? currentBiome.safePocketIdentity : null,
                 null,
-                MsgFabricationFallback);
+                ResolveLocalized(LocalizationKeys.FIRST_HOUR_FABRICATION_FALLBACK, MsgFabricationFallback));
         }
 
         private string ResolveReturnLoreGuidanceMessage(
@@ -988,7 +997,7 @@ namespace Hecton8.Gameplay
                 currentBiome != null ? currentBiome.rareRewardHook : null,
                 null,
                 null,
-                MsgReturnLoreRelay);
+                ResolveLocalized(LocalizationKeys.FIRST_HOUR_RETURN_LORE_RELAY, MsgReturnLoreRelay));
         }
 
         private string ResolveDeeperRouteGuidanceMessage(
@@ -1005,7 +1014,7 @@ namespace Hecton8.Gameplay
                 currentBiome != null ? currentBiome.landmarkGuidance : null,
                 currentBiome != null ? currentBiome.rareRewardHook : null,
                 null,
-                MsgDeeperRouteRead);
+                ResolveLocalized(LocalizationKeys.FIRST_HOUR_DEEPER_ROUTE_READ, MsgDeeperRouteRead));
         }
 
         private string ResolveModuleRouteGuidanceMessage(
@@ -1022,7 +1031,7 @@ namespace Hecton8.Gameplay
                 sandbox != null ? sandbox.storyLure : null,
                 currentBiome != null ? currentBiome.landmarkGuidance : null,
                 null,
-                MsgModuleRouteRead);
+                ResolveLocalized(LocalizationKeys.FIRST_HOUR_MODULE_ROUTE_READ, MsgModuleRouteRead));
         }
 
         private string ResolveStarterBackslideMessage(
@@ -1040,7 +1049,7 @@ namespace Hecton8.Gameplay
                 motivation != null ? motivation.storyPull : null,
                 sandbox != null ? sandbox.deepLure : null,
                 currentBiome != null ? currentBiome.landmarkGuidance : null,
-                MsgStarterBackslideRead);
+                ResolveLocalized(LocalizationKeys.FIRST_HOUR_STARTER_BACKSLIDE_READ, MsgStarterBackslideRead));
         }
 
         private static string SelectFirstNonEmpty(
@@ -1085,6 +1094,12 @@ namespace Hecton8.Gameplay
 
             inventory = playerTransform.GetComponentInChildren<PlayerInventory>(true);
             return inventory != null;
+        }
+
+        private static string ResolveLocalized(string key, string fallback)
+        {
+            LocalizationManager localization = LocalizationManager.Instance;
+            return localization != null ? localization.GetOrFallback(localization.CurrentLanguage, key, fallback) : fallback;
         }
     }
 }

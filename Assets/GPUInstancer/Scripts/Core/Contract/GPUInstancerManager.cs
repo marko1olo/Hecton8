@@ -867,7 +867,7 @@ namespace GPUInstancer
 
         public static void UpdateSceneWind()
         {
-            WindZone[] sceneWindZones = FindObjectsOfType<WindZone>();
+            WindZone[] sceneWindZones = FindObjectsByType<WindZone>(FindObjectsInactive.Include);
 
             for (int i = 0; i < sceneWindZones.Length; i++)
             {

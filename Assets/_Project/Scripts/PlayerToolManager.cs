@@ -50,6 +50,8 @@ namespace Hecton8.Gameplay
 
         [Tooltip("Ссылка на инвентарь игрока для проверки наличия инструментов.")]
         [SerializeField] private PlayerInventory playerInventory;
+        [Tooltip("Optional coordinator used to suppress handheld tools while mounted transport owns the player.")]
+        [SerializeField] private PlayerTransportCoordinator playerTransportCoordinator;
 
         [Header("── Tool Prefabs (слоты 1-4) ──────────────────")]
         [Tooltip("Префабы инструментов, привязанные к кнопкам 1-4. " +
@@ -158,6 +160,7 @@ namespace Hecton8.Gameplay
                 _anchorLoweredPosition = _anchorRestPosition + lowerOffset;
             }
 
+            ResolveTransportCoordinator();
             RefreshSlotNameCache();
         }
 
@@ -236,11 +239,24 @@ namespace Hecton8.Gameplay
         public void Tick(float deltaTime)
         {
             RefreshInputSubscriptions();
+            bool handheldToolsBlocked = IsHandheldToolUsageBlocked();
             // ── 1. Обработка ввода переключения слотов ──
-            ProcessSlotInput();
+            if (!handheldToolsBlocked)
+                ProcessSlotInput();
+            else if (_currentTool != null && _swapState == SwapState.Idle && _pendingSlotIndex < 0)
+                Holster();
 
             // ── 2. Анимация смены инструмента ──
             ProcessSwapAnimation(deltaTime);
+
+            if (handheldToolsBlocked)
+            {
+#if UNITY_EDITOR
+                _debugCurrentSlot = _currentSlotIndex;
+                _debugStateName   = _swapState.ToString();
+#endif
+                return;
+            }
 
             // ── 3. Если инструмент активен и анимация завершена — обновляем ──
             if (_currentTool != null && _swapState == SwapState.Idle)
@@ -284,6 +300,9 @@ namespace Hecton8.Gameplay
             if (slotIndex < -1 || slotIndex >= toolPrefabs.Length)
                 return;
 
+            if (slotIndex >= 0 && IsHandheldToolUsageBlocked())
+                return;
+
             RequestSwap(slotIndex);
         }
 
@@ -301,6 +320,12 @@ namespace Hecton8.Gameplay
 
         /// <summary>Optional swim-presentation contract of the current tool.</summary>
         public PlayerToolSwimContract CurrentToolSwimContract => _currentTool != null ? _currentTool.SwimContract : null;
+
+        /// <summary>Optional transport source of the current tool.</summary>
+        public IPlayerTransportSource CurrentToolTransportSource => _currentTool as IPlayerTransportSource;
+
+        /// <summary>Optional transport feel contract of the current tool.</summary>
+        internal PlayerTransportFeelContract CurrentToolTransportFeelContract => _currentTool != null ? _currentTool.TransportFeelContract : null;
 
         /// <summary>Индекс текущего слота (-1 = нет инструмента).</summary>
         public int CurrentSlotIndex => _currentSlotIndex;
@@ -536,6 +561,18 @@ namespace Hecton8.Gameplay
             pool.Warmup(prefab, minimumReserve - availableCount);
         }
 
+        private void ResolveTransportCoordinator()
+        {
+            if (playerTransportCoordinator == null)
+                TryGetComponent(out playerTransportCoordinator);
+        }
+
+        private bool IsHandheldToolUsageBlocked()
+        {
+            ResolveTransportCoordinator();
+            return playerTransportCoordinator != null && playerTransportCoordinator.BlocksHandheldToolUsage();
+        }
+
         private void HandleToolSlot1() => HandleToolSlot(0);
         private void HandleToolSlot2() => HandleToolSlot(1);
         private void HandleToolSlot3() => HandleToolSlot(2);
@@ -545,6 +582,9 @@ namespace Hecton8.Gameplay
         {
             // Do not accept input during swap animation
             if (_swapState != SwapState.Idle)
+                return;
+
+            if (IsHandheldToolUsageBlocked())
                 return;
 
             if (index < 0 || index >= toolPrefabs.Length)
@@ -568,6 +608,9 @@ namespace Hecton8.Gameplay
         /// </summary>
         private void RequestSwap(int newSlotIndex)
         {
+            if (newSlotIndex >= 0 && IsHandheldToolUsageBlocked())
+                return;
+
             LogToolDebug(
                 $"RequestSwap new={newSlotIndex} current={_currentSlotIndex} pending={_pendingSlotIndex} " +
                 $"state={_swapState} hasCurrent={_currentTool != null}");

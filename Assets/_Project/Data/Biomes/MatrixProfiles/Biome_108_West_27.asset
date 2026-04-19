@@ -47,7 +47,7 @@ MonoBehaviour:
   landmarkStrength: 4
   rewardPull: 5
   survivalPressure: 5
-  runtimeVisualProfile: {fileID: 0}
+  runtimeVisualProfile: {fileID: 11400000, guid: 3ba00ac937a5ff1449681a0bb4a6393f, type: 2}
   familyId: biome.family.metallic_hadal
   familyProfile: {fileID: 11400000, guid: 4449cf4bad4eec2409b27ac20f131d75, type: 2}
   suggestedZoneFamily: progression.skyline.far

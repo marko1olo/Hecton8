@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 559ad33e1d65b1d42950ade30bdf05c9, type: 3}
+  m_Name: BiomeVisual_032_West_08_Dune_Drains
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Environment.HectonBiomeProfile
+  biomeName: 'Dune-Drains [West T08]'
+  scatterColorBase: {r: 0.044659242, g: 0.10350917, b: 0.13574693, a: 1}
+  scatterColorShallow: {r: 0.0867712, g: 0.18385601, b: 0.2006272, a: 1}
+  depthFogDensity: {x: 0.43741268, y: 0.24091962, z: 0.13585316}
+  fogColor: {r: 0.050441474, g: 0.12072052, b: 0.14545028, a: 1}
+  turbidityMultiplier: 1.1005545

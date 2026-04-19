@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 559ad33e1d65b1d42950ade30bdf05c9, type: 3}
+  m_Name: BiomeVisual_094_South_24_Tier_24_South_Reserve
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Environment.HectonBiomeProfile
+  biomeName: 'Tier 24 South Reserve [South T24]'
+  scatterColorBase: {r: 0.02172019, g: 0.09788114, b: 0.149498, a: 1}
+  scatterColorShallow: {r: 0.04865365, g: 0.16189988, b: 0.21303137, a: 1}
+  depthFogDensity: {x: 0.6847887, y: 0.39894366, z: 0.22619718}
+  fogColor: {r: 0.019764176, g: 0.08754087, b: 0.12840053, a: 1}
+  turbidityMultiplier: 1.3232145

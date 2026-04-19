@@ -134,7 +134,7 @@ namespace Hecton8.UI
         {
             LocalizationManager manager = LocalizationManager.Instance;
             string resolved = manager != null
-                ? manager.GetOrFallback(manager.CurrentLanguage, key, key)
+                ? manager.GetExpandedOrFallback(manager.CurrentLanguage, key, key)
                 : key;
 
             Enqueue(resolved, duration, SubtitleSource.Generic, false);
@@ -336,6 +336,12 @@ namespace Hecton8.UI
             _subtitleText.textWrappingMode = TextWrappingModes.Normal;
             _subtitleText.raycastTarget = false;
             _subtitleText.color = TextColor;
+            LocalizedTMPAutoSizer.Configure(
+                _subtitleText,
+                16f,
+                _subtitleText.fontSize,
+                TextOverflowModes.Ellipsis,
+                TextWrappingModes.Normal);
 
             _built = true;
         }

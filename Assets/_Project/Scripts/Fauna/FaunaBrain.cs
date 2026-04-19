@@ -4,6 +4,7 @@ using UnityEngine.Serialization;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.VFX;
+using Hecton8.World;
 
 namespace Hecton8.AI
 {
@@ -67,6 +68,10 @@ namespace Hecton8.AI
         private Animator _animator;
         private bool _isDead;
         private bool _registered;
+        private int _spatialHandle;
+        
+        // --- Animator Hashes (Prime Directive #18) ---
+        private static readonly int _HashSwimSpeed = Animator.StringToHash("SwimSpeed");
         
         // --- LOD & Stagger ---
         private bool _lodDisabled;
@@ -144,6 +149,7 @@ namespace Hecton8.AI
         {
             _rb = GetComponent<Rigidbody>();
             _renderer = GetComponentInChildren<Renderer>();
+            TryGetComponent(out _animator);
             _tickStaggerShift = UnityEngine.Random.Range(0, 10);
 
             // Inject profile into subsystems
@@ -163,6 +169,8 @@ namespace Hecton8.AI
                 GameTickManager.Instance.Register((ISlowTickable)this);
                 _registered = true;
             }
+
+            RegisterSpatialHandle();
         }
 
         private void OnDisable()
@@ -174,6 +182,8 @@ namespace Hecton8.AI
                 GameTickManager.Instance.Unregister((ISlowTickable)this);
                 _registered = false;
             }
+
+            UnregisterSpatialHandle();
         }
 
         private void OnDestroy()
@@ -187,6 +197,7 @@ namespace Hecton8.AI
             _isDead = false;
             _currentHealth = _maxHealth;
             _stateMachine.Init(transform, _speciesProfile);
+            RegisterSpatialHandle();
         }
 
         public void OnDespawn()
@@ -194,6 +205,7 @@ namespace Hecton8.AI
             _isDead = true;
             _rb.linearVelocity = Vector3.zero;
             _rb.angularVelocity = Vector3.zero;
+            UnregisterSpatialHandle();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -247,7 +259,7 @@ namespace Hecton8.AI
             if (_animator != null && _steeringEngine.maxSpeed > 0f)
             {
                 float movementIntensity = _rb.linearVelocity.magnitude / _steeringEngine.maxSpeed;
-                _animator.SetFloat("SwimSpeed", movementIntensity);
+                _animator.SetFloat(_HashSwimSpeed, movementIntensity);
             }
 
             // [REQ] Procedural Eye Tracking (The "Stare")
@@ -289,6 +301,9 @@ namespace Hecton8.AI
 
         public void FixedTick(float fdt)
         {
+            if (_spatialHandle != 0)
+                WorldSpatialHashGrid.Refresh(_spatialHandle);
+
             if (_isDead || _lodDisabled) return;
             
             _steeringEngine.FixedTick(
@@ -303,6 +318,23 @@ namespace Hecton8.AI
         }
 
         public void SlowTick() { }
+
+        private void RegisterSpatialHandle()
+        {
+            if (_spatialHandle != 0 || !isActiveAndEnabled)
+                return;
+
+            _spatialHandle = WorldSpatialHashGrid.RegisterBioform(this);
+        }
+
+        private void UnregisterSpatialHandle()
+        {
+            if (_spatialHandle == 0)
+                return;
+
+            WorldSpatialHashGrid.Unregister(_spatialHandle);
+            _spatialHandle = 0;
+        }
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC API

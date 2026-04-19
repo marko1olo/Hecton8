@@ -46,7 +46,7 @@ MonoBehaviour:
   landmarkStrength: 4
   rewardPull: 5
   survivalPressure: 5
-  runtimeVisualProfile: {fileID: 0}
+  runtimeVisualProfile: {fileID: 11400000, guid: 920eca70a1c3e024e94738f8f4bce14c, type: 2}
   familyId: biome.family.volcanic_glass
   familyProfile: {fileID: 11400000, guid: ab3e56deacd0c534e8a3bb4cc1857e35, type: 2}
   suggestedZoneFamily: resources.clutter.mid

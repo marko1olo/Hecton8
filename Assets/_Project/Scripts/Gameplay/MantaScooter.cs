@@ -20,6 +20,7 @@ namespace Hecton8.Gameplay
     using Hecton8.Audio;
     using Hecton8.Bootstrap;
     using Hecton8.Core;
+    using Hecton8.Input;
     using Hecton8.Items;
     using Hecton8.Tools;
     using Hecton8.UI;
@@ -31,8 +32,10 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Tools/Manta Scooter")]
-    public sealed class MantaScooter : PlayerTool, IBatteryTool, ITickable
+    public sealed class MantaScooter : PlayerTool, IBatteryTool, ITickable, IPlayerTransportSource, IPlayerTransportLifecycleOwner
     {
+        private const float DefaultTransportPropulsionReference = 800f;
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -40,6 +43,9 @@ namespace Hecton8.Gameplay
         [Header("── Propulsion ────────────────────────────────")]
         [Tooltip("Swim speed multiplier when scooter is active.")]
         [SerializeField, Range(1.5f, 4f)] private float speedMultiplier = 2.2f;
+
+        [Tooltip("Optional shared transport preset. When assigned, propulsion and feel resolve from the preset instead of local fallback values.")]
+        [SerializeField] private PlayerTransportPreset transportPreset;
 
         [Tooltip("Battery drain per second while moving.")]
         [SerializeField, Range(0.5f, 10f)] private float batteryDrainRate = 2f;
@@ -94,9 +100,9 @@ namespace Hecton8.Gameplay
         private AudioSource _motorAudioSource;
         private Rigidbody _playerRigidbody;
         private Transform _cachedTransform;
-        private Camera _mainCamera;
         private bool _isActive;
         private bool _isMoving;
+        private float _driveThrottleCurrent;
         private bool _registeredTick;
         private bool _hudStateInitialized;
         private bool _lastHudVisible;
@@ -121,6 +127,7 @@ namespace Hecton8.Gameplay
         private string _localizedDirectiveSwapRecharge = "Battery depleted. Swap or recharge.";
         private string _localizedDirectiveHoldForward = "Hold forward to propel. Release to coast.";
         private string _localizedDirectiveHoldPrimary = "Hold primary to activate propulsion while swimming.";
+        private string _localizedTransportBrokenWarning = "MANTA - DRIVE FAILURE";
         [SerializeField] private string _debugActivationState = ActivationStateIdle;
 
         // MaterialPropertyBlock for power indicator
@@ -140,6 +147,10 @@ namespace Hecton8.Gameplay
         private const string ActivationStateMoving = "ActiveMoving";
         private const string ActivationStateIdleInWater = "ActiveIdle";
         private const string ActivationStateBatteryDepleted = "BatteryDepleted";
+        private const string ActivationStateBroken = "Broken";
+        private float _currentIntegrity = -1f;
+        private bool _transportLifecycleInitialized;
+        private bool _isTransportBroken;
 
         // ══════════════════════════════════════════════════════════
         //  IBatteryTool IMPLEMENTATION
@@ -156,6 +167,21 @@ namespace Hecton8.Gameplay
 
         /// <summary>Latest deterministic activation state for runtime verification.</summary>
         public string DebugActivationState => _debugActivationState;
+
+        /// <summary>True while Manta propulsion is actively engaged.</summary>
+        public bool IsTransportActive => !_isTransportBroken && _isActive && _hasBattery && _currentCharge >= minChargeToActivate;
+
+        /// <summary>True when this Manta can currently accept station charge.</summary>
+        public bool CanReceiveTransportCharge => _hasBattery && !_isActive && _currentCharge < 0.999f;
+
+        /// <summary>True when this Manta has failed structurally.</summary>
+        public bool IsTransportBroken => _isTransportBroken;
+
+        /// <summary>Current normalized battery charge treated as transport charge.</summary>
+        public float TransportChargeNormalized => _hasBattery ? _currentCharge : 0f;
+
+        /// <summary>Current normalized transport integrity.</summary>
+        public float TransportIntegrityNormalized => ResolveCurrentIntegrityNormalized();
 
         /// <summary>
         /// Removes the battery from the tool.
@@ -203,6 +229,8 @@ namespace Hecton8.Gameplay
             _cachedTransform = transform;
             _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — power indicator emission — owner: MantaScooter
             RefreshMantaLocalizationCache();
+            BindTransportPresetToFeelContract();
+            EnsureTransportLifecycleInitialized();
 
             // Setup motor audio
             TryGetComponent(out _motorAudioSource);
@@ -232,6 +260,8 @@ namespace Hecton8.Gameplay
             _isActive = false;
             _registeredTick = false;
             _debugActivationState = ActivationStateSpawned;
+            BindTransportPresetToFeelContract();
+            EnsureTransportLifecycleInitialized();
             ResolvePlayerReferences();
             ResetHudStateCache();
             UpdateBatteryVisuals();
@@ -249,6 +279,7 @@ namespace Hecton8.Gameplay
         public override void OnEquip()
         {
             base.OnEquip();
+            BindTransportPresetToFeelContract();
             ResolvePlayerReferences();
             _debugActivationState = ActivationStateEquipped;
             ResetHudStateCache();
@@ -277,6 +308,16 @@ namespace Hecton8.Gameplay
             if (!IsEquipped)
             {
                 _debugActivationState = ActivationStateNotEquipped;
+                return;
+            }
+
+            if (_isTransportBroken)
+            {
+                if (_isActive)
+                    DeactivateScooter();
+
+                _debugActivationState = ActivationStateBroken;
+                ToolHitUtility.ShowWarning(_localizedTransportBrokenWarning);
                 return;
             }
 
@@ -327,11 +368,13 @@ namespace Hecton8.Gameplay
             // Check if player is moving
             _isMoving = IsPlayerMoving();
             _debugActivationState = _isMoving ? ActivationStateMoving : ActivationStateIdleInWater;
+            _driveThrottleCurrent = AdvanceDriveThrottle(_driveThrottleCurrent, 1f, deltaTime);
+            float driveThrottleOutput = ResolveDriveThrottleOutput();
 
             if (_isMoving)
             {
                 // Drain battery while moving
-                _currentCharge = Mathf.Max(0f, _currentCharge - batteryDrainRate * deltaTime);
+                _currentCharge = Mathf.Max(0f, _currentCharge - batteryDrainRate * driveThrottleOutput * deltaTime);
                 UpdatePowerIndicator();
                 UpdateHUD();
 
@@ -362,6 +405,9 @@ namespace Hecton8.Gameplay
         {
             if (!IsEquipped)
                 return;
+
+            if (_isActive)
+                TickDriveRelease(deltaTime);
 
             UpdateHUD();
         }
@@ -442,6 +488,7 @@ namespace Hecton8.Gameplay
         {
             _isActive = false;
             _isMoving = false;
+            _driveThrottleCurrent = 0f;
             _debugActivationState = ActivationStateIdle;
 
             // Stop motor sound
@@ -468,10 +515,10 @@ namespace Hecton8.Gameplay
         /// </summary>
         public float GetSpeedMultiplier()
         {
-            if (!_isActive || !_hasBattery || _currentCharge < minChargeToActivate)
+            if (_isTransportBroken || !_isActive || !_hasBattery || _currentCharge < minChargeToActivate)
                 return 1f;
 
-            return speedMultiplier;
+            return Mathf.Lerp(1f, ResolveConfiguredTransportSpeedMultiplier(), ResolveDriveThrottleOutput());
         }
 
         /// <summary>
@@ -480,11 +527,74 @@ namespace Hecton8.Gameplay
         /// </summary>
         public float GetPropulsionForce()
         {
-            if (!_isActive || !_hasBattery || _currentCharge < minChargeToActivate)
+            if (_isTransportBroken || !_isActive || !_hasBattery || _currentCharge < minChargeToActivate)
                 return 0f;
 
             // Return additional force based on battery charge
-            return 800f * _currentCharge; // Scale force with battery level
+            return ResolveConfiguredTransportPropulsionForce() * ResolveDriveThrottleOutput() * _currentCharge; // Scale force with battery level
+        }
+
+        /// <summary>
+        /// Resolves transport propulsion force for generic transport consumers.
+        /// </summary>
+        public float GetTransportPropulsionForce()
+        {
+            return GetPropulsionForce();
+        }
+
+        /// <summary>
+        /// Resolves transport speed multiplier for generic transport consumers.
+        /// </summary>
+        public float GetTransportSpeedMultiplier()
+        {
+            return GetSpeedMultiplier();
+        }
+
+        /// <summary>
+        /// Resolves normalized transport boost for generic transport consumers.
+        /// </summary>
+        public float GetTransportBoost01()
+        {
+            float propulsionReference = ResolveTransportPropulsionReference();
+            return Mathf.Clamp01(GetPropulsionForce() / propulsionReference);
+        }
+
+        /// <summary>
+        /// Recharges the installed battery through a transport charging station.
+        /// </summary>
+        public void RechargeTransport(float normalizedChargeDelta)
+        {
+            if (!_hasBattery || normalizedChargeDelta <= 0f)
+                return;
+
+            _currentCharge = Mathf.Clamp01(_currentCharge + normalizedChargeDelta * ResolveStationChargeRateScale());
+            UpdatePowerIndicator();
+            UpdateHUD();
+        }
+
+        /// <summary>
+        /// Applies collision impact damage to the Manta frame.
+        /// </summary>
+        public void ApplyTransportCollisionImpact(float impactSpeed, Vector3 hitPoint, Vector3 hitNormal)
+        {
+            if (_isTransportBroken)
+                return;
+
+            float startSpeed = ResolveCollisionDamageStartSpeed();
+            if (impactSpeed <= startSpeed)
+                return;
+
+            float maxSpeed = ResolveCollisionDamageMaxSpeed(startSpeed);
+            float maxDamage = ResolveCollisionDamageAtMaxSpeed();
+            if (maxDamage <= 0f)
+                return;
+
+            EnsureTransportLifecycleInitialized();
+            float damageT = Mathf.InverseLerp(startSpeed, maxSpeed, impactSpeed);
+            float damage = Mathf.Lerp(0f, maxDamage, damageT);
+            _currentIntegrity = Mathf.Max(0f, _currentIntegrity - damage);
+            if (_currentIntegrity <= 0.0001f)
+                BreakTransport();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -495,6 +605,161 @@ namespace Hecton8.Gameplay
         {
             if (batteryMesh != null && batteryMesh.activeSelf != _hasBattery)
                 batteryMesh.SetActive(_hasBattery);
+        }
+
+        private float ResolveTransportPropulsionReference()
+        {
+            PlayerTransportFeelContract transportFeelContract = TransportFeelContract;
+            if (transportFeelContract != null)
+                return Mathf.Max(0.01f, transportFeelContract.PropulsionForceReference);
+
+            if (transportPreset != null)
+                return Mathf.Max(0.01f, transportPreset.PropulsionForceReference);
+
+            return DefaultTransportPropulsionReference;
+        }
+
+        private float ResolveConfiguredTransportPropulsionForce()
+        {
+            if (transportPreset != null)
+                return Mathf.Max(0f, transportPreset.PropulsionForce);
+
+            return DefaultTransportPropulsionReference;
+        }
+
+        private float ResolveConfiguredTransportSpeedMultiplier()
+        {
+            if (transportPreset != null)
+                return Mathf.Max(1f, transportPreset.SpeedMultiplier);
+
+            return speedMultiplier;
+        }
+
+        private void BindTransportPresetToFeelContract()
+        {
+            PlayerTransportFeelContract transportFeelContract = TransportFeelContract;
+            if (transportFeelContract != null && transportPreset != null)
+                transportFeelContract.BindPreset(transportPreset);
+        }
+
+        private void TickDriveRelease(float deltaTime)
+        {
+            InputManager inputManager = InputManager.Instance;
+            bool primaryHeld = inputManager != null && inputManager.IsPrimaryActionHeld;
+            if (primaryHeld)
+                return;
+
+            _driveThrottleCurrent = AdvanceDriveThrottle(_driveThrottleCurrent, 0f, deltaTime);
+            if (_driveThrottleCurrent <= 0.0001f)
+                DeactivateScooter();
+        }
+
+        private float AdvanceDriveThrottle(float currentThrottle, float targetThrottle, float deltaTime)
+        {
+            float clampedCurrent = Mathf.Clamp01(currentThrottle);
+            float clampedTarget = Mathf.Clamp01(targetThrottle);
+            float sharpness = clampedTarget > clampedCurrent
+                ? ResolveConfiguredThrottleRiseSharpness()
+                : ResolveConfiguredThrottleFallSharpness();
+            float blend = 1f - Mathf.Exp(-sharpness * deltaTime);
+            return Mathf.Lerp(clampedCurrent, clampedTarget, blend);
+        }
+
+        private float ResolveDriveThrottleOutput()
+        {
+            return Mathf.Pow(Mathf.Clamp01(_driveThrottleCurrent), ResolveConfiguredThrottleOutputExponent());
+        }
+
+        private float ResolveConfiguredThrottleRiseSharpness()
+        {
+            if (transportPreset != null)
+                return Mathf.Max(0.5f, transportPreset.ThrottleRiseSharpness);
+
+            return 10f;
+        }
+
+        private float ResolveConfiguredThrottleFallSharpness()
+        {
+            if (transportPreset != null)
+                return Mathf.Max(0.5f, transportPreset.ThrottleFallSharpness);
+
+            return 8f;
+        }
+
+        private float ResolveConfiguredThrottleOutputExponent()
+        {
+            if (transportPreset != null)
+                return Mathf.Max(0.5f, transportPreset.ThrottleOutputExponent);
+
+            return 1f;
+        }
+
+        private void EnsureTransportLifecycleInitialized()
+        {
+            if (_transportLifecycleInitialized)
+                return;
+
+            _currentIntegrity = ResolveMaxIntegrity();
+            _isTransportBroken = false;
+            _transportLifecycleInitialized = true;
+        }
+
+        private float ResolveCurrentIntegrityNormalized()
+        {
+            EnsureTransportLifecycleInitialized();
+            return Mathf.Clamp01(_currentIntegrity / ResolveMaxIntegrity());
+        }
+
+        private float ResolveMaxIntegrity()
+        {
+            if (transportPreset != null)
+                return Mathf.Max(1f, transportPreset.MaxIntegrity);
+
+            return 100f;
+        }
+
+        private float ResolveCollisionDamageStartSpeed()
+        {
+            if (transportPreset != null)
+                return Mathf.Max(0f, transportPreset.CollisionDamageStartSpeed);
+
+            return 6f;
+        }
+
+        private float ResolveCollisionDamageMaxSpeed(float minimum)
+        {
+            if (transportPreset != null)
+                return Mathf.Max(minimum + 0.01f, transportPreset.CollisionDamageMaxSpeed);
+
+            return Mathf.Max(minimum + 0.01f, 14f);
+        }
+
+        private float ResolveCollisionDamageAtMaxSpeed()
+        {
+            if (transportPreset != null)
+                return Mathf.Max(0f, transportPreset.CollisionDamageAtMaxSpeed);
+
+            return 42f;
+        }
+
+        private float ResolveStationChargeRateScale()
+        {
+            if (transportPreset != null)
+                return Mathf.Max(0f, transportPreset.StationChargeRateScale);
+
+            return 1f;
+        }
+
+        private void BreakTransport()
+        {
+            if (_isTransportBroken)
+                return;
+
+            _currentIntegrity = 0f;
+            _isTransportBroken = true;
+            DeactivateScooter();
+            _debugActivationState = ActivationStateBroken;
+            ToolHitUtility.ShowWarning(_localizedTransportBrokenWarning);
         }
 
         private void UpdatePowerIndicator()
@@ -593,12 +858,9 @@ namespace Hecton8.Gameplay
                 if (_mantaSurvivalSystem == null)
                     _mantaSurvivalSystem = playerTransform.GetComponent<HectonSurvivalSystem>();
 
-                if (_playerRigidbody == null)
-                    _playerRigidbody = playerTransform.GetComponent<Rigidbody>();
+            if (_playerRigidbody == null)
+                _playerRigidbody = playerTransform.GetComponent<Rigidbody>();
             }
-
-            if (_mainCamera == null)
-                _mainCamera = Camera.main;
         }
 
         private void ResetHudStateCache()
@@ -662,6 +924,7 @@ namespace Hecton8.Gameplay
             _localizedDirectiveSwapRecharge = ResolveMantaLocalizedLabel(LocalizationKeys.MANTA_DIRECTIVE_SWAP_OR_RECHARGE, "Battery depleted. Swap or recharge.");
             _localizedDirectiveHoldForward = ResolveMantaLocalizedLabel(LocalizationKeys.MANTA_DIRECTIVE_HOLD_FORWARD, "Hold forward to propel. Release to coast.");
             _localizedDirectiveHoldPrimary = ResolveMantaLocalizedLabel(LocalizationKeys.MANTA_DIRECTIVE_HOLD_PRIMARY, "Hold primary to activate propulsion while swimming.");
+            _localizedTransportBrokenWarning = ResolveMantaLocalizedLabel(LocalizationKeys.MANTA_HUD_BATTERY_DEPLETED, "MANTA - DRIVE FAILURE");
         }
 
         private static string ResolveMantaLocalizedLabel(string key, string fallback)
@@ -671,5 +934,12 @@ namespace Hecton8.Gameplay
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            BindTransportPresetToFeelContract();
+        }
+#endif
     }
 }

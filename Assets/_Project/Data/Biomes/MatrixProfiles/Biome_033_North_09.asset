@@ -46,7 +46,7 @@ MonoBehaviour:
   landmarkStrength: 5
   rewardPull: 5
   survivalPressure: 5
-  runtimeVisualProfile: {fileID: 0}
+  runtimeVisualProfile: {fileID: 11400000, guid: 99be680c11c3e7b4d8496a8b82d5b61b, type: 2}
   familyId: biome.family.rift_void
   familyProfile: {fileID: 11400000, guid: c99b16137fd8d0044895be98153c1d24, type: 2}
   suggestedZoneFamily: progression.route.mid

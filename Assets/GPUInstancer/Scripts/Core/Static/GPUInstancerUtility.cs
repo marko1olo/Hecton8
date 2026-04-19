@@ -1309,7 +1309,7 @@ namespace GPUInstancer
 
             if (!Application.isPlaying)
             {
-                GPUInstancerPrefab[] prefabInstances = GameObject.FindObjectsOfType<GPUInstancerPrefab>();
+                GPUInstancerPrefab[] prefabInstances = GameObject.FindObjectsByType<GPUInstancerPrefab>(FindObjectsInactive.Include);
                 for (int i = 0; i < prefabInstances.Length; i++)
                 {
 #if UNITY_2018_2_OR_NEWER

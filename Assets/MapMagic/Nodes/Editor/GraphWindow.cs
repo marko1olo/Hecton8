@@ -67,7 +67,7 @@ namespace MapMagic.Nodes.GUI
 			UnityEngine.SceneManagement.Scene scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
 			if (scene != prevSceneLoaded || scene.rootCount != prevRootObjsCount || Selection.activeObject != prevObjSelected)
 			{
-				MapMagicObject[] allMM = GameObject.FindObjectsOfType<MapMagicObject>();
+				MapMagicObject[] allMM = GameObject.FindObjectsByType<MapMagicObject>(FindObjectsInactive.Include);
 				for (int m=0; m<allMM.Length; m++)
 					if (allMM[m].ContainsGraph(graph)) return allMM[m];
 
@@ -1142,7 +1142,7 @@ namespace MapMagic.Nodes.GUI
 			[MenuItem ("Window/MapMagic/Editor")]
 			public static void ShowEditor ()
 			{
-				MapMagicObject mm = FindObjectOfType<MapMagicObject>();
+				MapMagicObject mm = FindAnyObjectByType<MapMagicObject>();
 				Graph gens = mm!=null? mm.graph : null;
 				GraphWindow.Show(mm?.graph);
 			}

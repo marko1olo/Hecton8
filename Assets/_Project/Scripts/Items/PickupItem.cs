@@ -7,6 +7,7 @@ using Hecton8.Items;
 
 namespace Hecton8.Interaction
 {
+    using Hecton8.World;
     using UnityEngine;
 
     [RequireComponent(typeof(InteractionHighlighter))]
@@ -20,6 +21,7 @@ namespace Hecton8.Interaction
         // Cached references — resolved once in Awake, never again.
         private InteractionHighlighter _highlighter;
         private string _cachedInteractText;
+        private int _spatialHandle;
 
         public ItemData ItemData => itemData;
         public int Quantity => quantity;
@@ -42,6 +44,21 @@ namespace Hecton8.Interaction
             _cachedInteractText = itemData != null
                 ? itemData.GetInteractText()
                 : "Pick up Unknown";
+        }
+
+        private void OnEnable()
+        {
+            if (_spatialHandle == 0)
+                _spatialHandle = WorldSpatialHashGrid.RegisterPickup(this);
+        }
+
+        private void OnDisable()
+        {
+            if (_spatialHandle == 0)
+                return;
+
+            WorldSpatialHashGrid.Unregister(_spatialHandle);
+            _spatialHandle = 0;
         }
 
         // ================================================================

@@ -7,6 +7,7 @@ using Hecton8.Interaction;
 using Hecton8.Items;
 using Hecton8.Scavenging;
 using Hecton8.Tools;
+using Hecton8.World;
 using Hecton.Localization;
 using Shapes;
 using Unity.Mathematics;
@@ -185,6 +186,18 @@ namespace Hecton8.Gameplay
             }
         }
 
+        private struct ScanAggregate
+        {
+            public Transform transform;
+            public Vector3 position;
+            public ScannableTarget scannable;
+            public PickupItem pickup;
+            public ModuleMarker module;
+            public FieldTargetDescriptor descriptor;
+            public ResourceNode resourceNode;
+            public bool hasBioformContact;
+        }
+
         [Header("Scan Parameters")]
         [SerializeField] private float scanRadius = 50f;
         [SerializeField] private float scanCooldown = 3f;
@@ -206,7 +219,17 @@ namespace Hecton8.Gameplay
         [SerializeField] private float resultFeedbackInterval = 0.5f;
         [SerializeField] private float modeFeedbackInterval = 0.4f;
 
-        private static readonly Collider[] s_HitBuffer = new Collider[64];
+        // COLD ALLOC: SpatialQueryHit[128] — scanner spatial contact buffer — owner: ScannerTool
+        private static readonly SpatialQueryHit[] s_SpatialHitBuffer = new SpatialQueryHit[128];
+        // COLD ALLOC: ScanAggregate[128] — scanner transform aggregate buffer — owner: ScannerTool
+        private static readonly ScanAggregate[] s_ScanAggregateBuffer = new ScanAggregate[128];
+        private static readonly SpatialTargetKind s_ScannerSpatialKinds =
+            SpatialTargetKind.Resource |
+            SpatialTargetKind.Bioform |
+            SpatialTargetKind.Signal |
+            SpatialTargetKind.Pickup |
+            SpatialTargetKind.Scannable |
+            SpatialTargetKind.Module;
 
         private float _lastScanTime = -999f;
         private float _nextCooldownFeedbackAt;
@@ -518,24 +541,78 @@ namespace Hecton8.Gameplay
 
         private ScanResultSummary PerformScan(Unity.Mathematics.float3 origin, ScanMode mode)
         {
-            int hitCount = UnityEngine.Physics.OverlapSphereNonAlloc(
-                origin,
-                scanRadius,
-                s_HitBuffer,
-                scanLayerMask,
-                QueryTriggerInteraction.Collide);
-
-            if (hitCount > s_HitBuffer.Length)
-                hitCount = s_HitBuffer.Length;
-
+            Vector3 scanOrigin = new Vector3(origin.x, origin.y, origin.z);
+            int hitCount = WorldSpatialHashGrid.CollectContactsNonAlloc(scanOrigin, scanRadius, s_ScannerSpatialKinds, s_SpatialHitBuffer);
             ScanResultSummary result = default;
             bool genericResourceLogged = false;
+            int aggregateCount = 0;
 
             for (int i = 0; i < hitCount; i++)
             {
-                Collider col = s_HitBuffer[i];
-                if (col == null)
+                SpatialQueryHit hit = s_SpatialHitBuffer[i];
+                if (hit.Transform == null || !MatchesScanLayer(hit.Layer))
                     continue;
+
+                int aggregateIndex = -1;
+                for (int aggregateCursor = 0; aggregateCursor < aggregateCount; aggregateCursor++)
+                {
+                    if (s_ScanAggregateBuffer[aggregateCursor].transform != hit.Transform)
+                        continue;
+
+                    aggregateIndex = aggregateCursor;
+                    break;
+                }
+
+                if (aggregateIndex < 0)
+                {
+                    if (aggregateCount >= s_ScanAggregateBuffer.Length)
+                        break;
+
+                    aggregateIndex = aggregateCount;
+                    s_ScanAggregateBuffer[aggregateIndex] = new ScanAggregate
+                    {
+                        transform = hit.Transform,
+                        position = hit.Position
+                    };
+                    aggregateCount++;
+                }
+
+                ScanAggregate aggregate = s_ScanAggregateBuffer[aggregateIndex];
+                aggregate.position = hit.Position;
+
+                if ((hit.Kind & SpatialTargetKind.Scannable) != 0)
+                {
+                    aggregate.scannable = hit.Owner as ScannableTarget;
+                }
+                else if ((hit.Kind & SpatialTargetKind.Pickup) != 0)
+                {
+                    aggregate.pickup = hit.Owner as PickupItem;
+                }
+                else if ((hit.Kind & SpatialTargetKind.Module) != 0)
+                {
+                    aggregate.module = hit.Owner as ModuleMarker;
+                }
+                else if ((hit.Kind & SpatialTargetKind.Signal) != 0)
+                {
+                    aggregate.descriptor = hit.Owner as FieldTargetDescriptor;
+                }
+                else if ((hit.Kind & SpatialTargetKind.Resource) != 0)
+                {
+                    aggregate.resourceNode = hit.Owner as ResourceNode;
+                }
+                else if ((hit.Kind & SpatialTargetKind.Bioform) != 0)
+                {
+                    aggregate.hasBioformContact = true;
+                }
+
+                s_ScanAggregateBuffer[aggregateIndex] = aggregate;
+                s_SpatialHitBuffer[i] = default;
+            }
+
+            for (int i = 0; i < aggregateCount; i++)
+            {
+                ScanAggregate aggregate = s_ScanAggregateBuffer[i];
+                s_ScanAggregateBuffer[i] = default;
 
                 bool meaningfulContact = false;
                 bool resourceContact = false;
@@ -543,49 +620,54 @@ namespace Hecton8.Gameplay
                 bool pickupContact = false;
                 bool scannableContact = false;
                 bool bioformContact = false;
+                bool countedBioformRole = false;
 
-                if (col.TryGetComponent(out ScannableTarget scannable))
+                if (aggregate.scannable != null)
                 {
                     ScanEvents.OnEntryDiscovered?.Invoke(
-                        scannable.EntryId,
-                        scannable.EntryTitle,
-                        scannable.EntryCategory,
-                        scannable.EntrySummary);
+                        aggregate.scannable.EntryId,
+                        aggregate.scannable.EntryTitle,
+                        aggregate.scannable.EntryCategory,
+                        aggregate.scannable.EntrySummary);
                     meaningfulContact = true;
                     scannableContact = true;
-                    CategorizeScannable(scannable, ref result);
+                    CategorizeScannable(aggregate.scannable, ref result);
                 }
                 else
                 {
-                    if (col.TryGetComponent(out PickupItem pickup) && TryDiscoverPickupEntry(pickup))
+                    if (aggregate.pickup != null && TryDiscoverPickupEntry(aggregate.pickup))
                     {
                         meaningfulContact = true;
                         pickupContact = true;
-                        resourceContact = IsResourcePickup(pickup.ItemData);
+                        resourceContact = IsResourcePickup(aggregate.pickup.ItemData);
                     }
 
-                    if (col.TryGetComponent(out ModuleMarker marker) && TryDiscoverModuleEntry(marker))
+                    if (aggregate.module != null && TryDiscoverModuleEntry(aggregate.module))
                     {
                         meaningfulContact = true;
                         structureContact = true;
                     }
                 }
 
-                if (FieldTargetDescriptor.TryResolve(col, out FieldTargetDescriptor descriptor))
+                if (aggregate.descriptor != null)
                 {
-                    CategorizeDescriptor(descriptor, ref result, ref meaningfulContact, ref resourceContact, ref structureContact);
-                    bioformContact = FieldTargetSemantics.IsBioformRole(descriptor.Role);
+                    CategorizeDescriptor(aggregate.descriptor, ref result, ref meaningfulContact, ref resourceContact, ref structureContact);
+                    if (FieldTargetSemantics.IsBioformRole(aggregate.descriptor.Role))
+                    {
+                        bioformContact = true;
+                        countedBioformRole = true;
+                    }
                 }
 
-                if (col.TryGetComponent(out ResourceNode node))
+                if (aggregate.resourceNode != null)
                 {
-                    if (node.IsDepleted)
-                    {
-                        s_HitBuffer[i] = null;
+                    if (aggregate.resourceNode.IsDepleted)
                         continue;
-                    }
 
-                    Unity.Mathematics.float3 nodePos = col.transform.position;
+                    Unity.Mathematics.float3 nodePos = new Unity.Mathematics.float3(
+                        aggregate.position.x,
+                        aggregate.position.y,
+                        aggregate.position.z);
                     ScanEvents.OnNodeFound?.Invoke(nodePos);
                     if (!genericResourceLogged)
                     {
@@ -596,8 +678,17 @@ namespace Hecton8.Gameplay
                             ResolveLocalized(LocalizationKeys.SCANNER_ENTRY_RESOURCE_DEPOSIT_SUMMARY, "Hydroacoustic pulse returned a mineral-density signature. Mark for salvage or extraction."));
                         genericResourceLogged = true;
                     }
+
                     meaningfulContact = true;
                     resourceContact = true;
+                }
+
+                if (aggregate.hasBioformContact)
+                {
+                    meaningfulContact = true;
+                    bioformContact = true;
+                    if (!countedBioformRole)
+                        result.bioformContacts++;
                 }
 
                 if (meaningfulContact && MatchesMode(mode, resourceContact, structureContact, pickupContact, scannableContact, bioformContact))
@@ -608,12 +699,10 @@ namespace Hecton8.Gameplay
                     if (pickupContact) result.pickupContacts++;
                     if (scannableContact) result.scannableContacts++;
                 }
-
-                s_HitBuffer[i] = null;
             }
 
 #if UNITY_EDITOR
-            Debug.Log($"[Scanner] Pulse at {origin}: {result.totalContacts} contacts found ({hitCount} colliders checked, radius {scanRadius}m, mode {DescribeMode(mode)})");
+            Debug.Log($"[Scanner] Pulse at {origin}: {result.totalContacts} contacts found ({hitCount} spatial contacts checked, radius {scanRadius}m, mode {DescribeMode(mode)})");
 #endif
             return result;
         }
@@ -770,6 +859,11 @@ namespace Hecton8.Gameplay
                 ScanMode.Structure => structureContact || scannableContact,
                 _ => resourceContact || structureContact || pickupContact || scannableContact || bioformContact
             };
+        }
+
+        private bool MatchesScanLayer(int layer)
+        {
+            return (scanLayerMask & (1 << layer)) != 0;
         }
 
         private static bool IsResourcePickup(ItemData item)

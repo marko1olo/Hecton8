@@ -12,6 +12,7 @@
 // ============================================================================
 
 using Hecton8.Building;
+using Hecton8.World;
 using UnityEngine;
 
 namespace Hecton8.Construction
@@ -43,6 +44,7 @@ namespace Hecton8.Construction
         /// </summary>
         private string _prefabId;
         private bool   _initialized;
+        private int _spatialHandle;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC API
@@ -81,6 +83,30 @@ namespace Hecton8.Construction
         private void Awake()
         {
             if (!_initialized) CacheId();
+        }
+
+        private void OnEnable()
+        {
+            if (_spatialHandle == 0)
+                _spatialHandle = WorldSpatialHashGrid.RegisterModule(this);
+        }
+
+        private void OnDisable()
+        {
+            if (_spatialHandle == 0)
+                return;
+
+            WorldSpatialHashGrid.Unregister(_spatialHandle);
+            _spatialHandle = 0;
+        }
+
+        private void OnDestroy()
+        {
+            if (_spatialHandle == 0)
+                return;
+
+            WorldSpatialHashGrid.Unregister(_spatialHandle);
+            _spatialHandle = 0;
         }
 
         // ══════════════════════════════════════════════════════════

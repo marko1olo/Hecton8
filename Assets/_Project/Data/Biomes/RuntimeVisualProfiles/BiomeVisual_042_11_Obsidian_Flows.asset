@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 559ad33e1d65b1d42950ade30bdf05c9, type: 3}
+  m_Name: BiomeVisual_042_11_Obsidian_Flows
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomeProfile
+  biomeName: 'Obsidian Flows [11]'
+  scatterColorBase: {r: 0.02631518, g: 0.09562649, b: 0.13133974, a: 1}
+  scatterColorShallow: {r: 0.07877142, g: 0.20354283, b: 0.2106964, a: 1}
+  depthFogDensity: {x: 0.50097861, y: 0.29642922, z: 0.16969959}
+  fogColor: {r: 0.02975657, g: 0.11858118, b: 0.14342627, a: 1}
+  turbidityMultiplier: 0.98817365

@@ -7,11 +7,13 @@ namespace Hecton8.Gameplay
 {
     /// <summary>
     /// Physics projectile fired by hostile flora.
+    /// Implements ITickable for centralized tick dispatch (no native Update).
+    /// Implements IPoolable for ObjectPoolManager lifecycle compliance.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
     [RequireComponent(typeof(Collider))]
-    public sealed class FloraProjectile : MonoBehaviour
+    public sealed class FloraProjectile : MonoBehaviour, ITickable, IPoolable
     {
         private const string PlayerTag = "Player";
 
@@ -43,15 +45,28 @@ namespace Hecton8.Gameplay
         [Tooltip("Invoked when the projectile hits anything except the player.")]
         [SerializeField] private UnityEvent OnHitEnvironment;
 
+        // ══════════════════════════════════════════════════════════
+        //  PRIVATE STATE
+        // ══════════════════════════════════════════════════════════
+
         private Transform _cachedTransform;
         private Rigidbody _rigidbody;
         private Collider _collider;
         private float _lifetimeTimer;
         private bool _initialized;
         private Vector3 _initialVelocity;
+        private bool _registered;
+
+        // ══════════════════════════════════════════════════════════
+        //  PUBLIC PROPERTIES
+        // ══════════════════════════════════════════════════════════
 
         /// <summary>Damage dealt on player hit.</summary>
         public float Damage => damage;
+
+        // ══════════════════════════════════════════════════════════
+        //  LIFECYCLE
+        // ══════════════════════════════════════════════════════════
 
         private void Awake()
         {
@@ -65,15 +80,83 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
-            _lifetimeTimer = 0f;
-            _initialized = false;
+            if (GameTickManager.Instance != null && !_registered)
+            {
+                GameTickManager.Instance.Register(this);
+                _registered = true;
+            }
         }
 
-        private void Update()
+        private void OnDisable()
         {
-            _lifetimeTimer += Time.deltaTime;
+            if (GameTickManager.Instance != null && _registered)
+            {
+                GameTickManager.Instance.Unregister(this);
+                _registered = false;
+            }
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  ITickable — replaces native Update()
+        // ══════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Called every frame via GameTickManager. Uses dt parameter, not Time.deltaTime.
+        /// </summary>
+        /// <param name="dt">Frame delta time from GameTickManager.</param>
+        public void Tick(float dt)
+        {
+            _lifetimeTimer += dt;
             if (_lifetimeTimer >= maxLifetime)
                 DespawnSelf();
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  IPoolable — ObjectPoolManager lifecycle
+        // ══════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Called when spawned from pool. Resets ALL state for reuse.
+        /// </summary>
+        public void OnSpawn()
+        {
+            _lifetimeTimer = 0f;
+            _initialized = false;
+            _initialVelocity = Vector3.zero;
+
+            if (_rigidbody != null)
+            {
+                _rigidbody.linearVelocity = Vector3.zero;
+                _rigidbody.angularVelocity = Vector3.zero;
+            }
+
+            if (GameTickManager.Instance != null && !_registered)
+            {
+                GameTickManager.Instance.Register(this);
+                _registered = true;
+            }
+        }
+
+        /// <summary>
+        /// Called when returned to pool. Unregisters from tick and clears state.
+        /// </summary>
+        public void OnDespawn()
+        {
+            if (GameTickManager.Instance != null && _registered)
+            {
+                GameTickManager.Instance.Unregister(this);
+                _registered = false;
+            }
+
+            _lifetimeTimer = 0f;
+            _initialized = false;
+            _initialVelocity = Vector3.zero;
+
+            if (_rigidbody != null)
+            {
+                _rigidbody.linearVelocity = Vector3.zero;
+                _rigidbody.angularVelocity = Vector3.zero;
+            }
         }
 
         /// <summary>
@@ -156,18 +239,11 @@ namespace Hecton8.Gameplay
 
         /// <summary>
         /// Resets the projectile for pooling reuse.
+        /// Delegates to OnSpawn for single-owner reset logic.
         /// </summary>
         public void ResetProjectile()
         {
-            _lifetimeTimer = 0f;
-            _initialized = false;
-            _initialVelocity = Vector3.zero;
-
-            if (_rigidbody != null)
-            {
-                _rigidbody.linearVelocity = Vector3.zero;
-                _rigidbody.angularVelocity = Vector3.zero;
-            }
+            OnSpawn();
         }
 
 #if UNITY_EDITOR

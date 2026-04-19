@@ -324,7 +324,7 @@ namespace MoreMountains.Tools
 			{
 				if (_instance == null)
 				{
-					_instance = FindObjectOfType<MMPlaylist> ();
+					_instance = FindAnyObjectByType<MMPlaylist> ();
 					if (_instance == null)
 					{
 						GameObject obj = new GameObject ();

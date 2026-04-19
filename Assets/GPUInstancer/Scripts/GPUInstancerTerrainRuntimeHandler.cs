@@ -20,7 +20,7 @@ namespace GPUInstancer
             terrain = GetComponent<Terrain>();
             if (_treeManager == null)
             {
-                _treeManager = FindObjectOfType<GPUInstancerTreeManager>();
+                _treeManager = FindAnyObjectByType<GPUInstancerTreeManager>();
             }
         }
 

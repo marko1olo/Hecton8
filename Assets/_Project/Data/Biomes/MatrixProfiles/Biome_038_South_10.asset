@@ -46,7 +46,7 @@ MonoBehaviour:
   landmarkStrength: 4
   rewardPull: 4
   survivalPressure: 5
-  runtimeVisualProfile: {fileID: 0}
+  runtimeVisualProfile: {fileID: 11400000, guid: c7fd9a5c675aea541a0b8918f6355e0e, type: 2}
   familyId: biome.family.tectonic_spine
   familyProfile: {fileID: 11400000, guid: e57a707c04bc23546be9c1d27289534b, type: 2}
   suggestedZoneFamily: progression.route.mid

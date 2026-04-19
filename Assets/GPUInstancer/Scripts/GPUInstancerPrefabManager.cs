@@ -881,7 +881,7 @@ namespace GPUInstancer
             foreach (GPUInstancerPrefabPrototype pp in prototypeList)
                 registeredPrefabs.Add(new RegisteredPrefabsData(pp));
 
-            GPUInstancerPrefab[] scenePrefabInstances = FindObjectsOfType<GPUInstancerPrefab>();
+            GPUInstancerPrefab[] scenePrefabInstances = FindObjectsByType<GPUInstancerPrefab>(FindObjectsInactive.Include);
             foreach (GPUInstancerPrefab prefabInstance in scenePrefabInstances)
                 AddRegisteredPrefab(prefabInstance);
         }

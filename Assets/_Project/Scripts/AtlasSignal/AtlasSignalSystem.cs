@@ -28,6 +28,7 @@ using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
+using Hecton.Localization;
 using UnityEngine;
 
 namespace Hecton8.AtlasSignal
@@ -396,19 +397,22 @@ namespace Hecton8.AtlasSignal
                         AtlasSignalEvents.RaiseDetected(atlasCorePosWorld);
                     }
 
-                    NotificationEvents.PushInfo(
-                        "СЛАБЫЙ РИТМИЧЕСКИЙ ПАТТЕРН ПОДТВЕРЖДЁН. КОНТАКТ ЕЩЁ НЕСТАБИЛЕН.");
+                    NotificationEvents.PushInfo(ResolveLocalized(
+                        LocalizationKeys.ATLAS_SIGNAL_REVEAL_STAGE_2,
+                        "WEAK RHYTHMIC PATTERN CONFIRMED. CONTACT STILL UNSTABLE."));
                     break;
 
                 case 3:
                     TryEnsureIdentityDiscoveryPublished();
-                    NotificationEvents.PushWarning(
-                        "СИГНАЛ НАЧАЛ ОТДАВАТЬ ФРАГМЕНТЫ СОДЕРЖАНИЯ. ГЛУБИНА ДАЁТ ПЕЛЕНГ ЧИЩЕ.");
+                    NotificationEvents.PushWarning(ResolveLocalized(
+                        LocalizationKeys.ATLAS_SIGNAL_REVEAL_STAGE_3,
+                        "THE SIGNAL IS STARTING TO RETURN CONTENT FRAGMENTS. DEPTH IS CLEANING THE BEARING."));
                     break;
 
                 case 4:
-                    NotificationEvents.PushWarning(
-                        "НЕСУЩАЯ СТАБИЛЬНА. ТЕПЕРЬ СИГНАЛ МОЖНО ДОЖИМАТЬ ДО ИСТОЧНИКА.");
+                    NotificationEvents.PushWarning(ResolveLocalized(
+                        LocalizationKeys.ATLAS_SIGNAL_REVEAL_STAGE_4,
+                        "CARRIER STABLE. THE SIGNAL CAN NOW BE DRIVEN ALL THE WAY TO THE SOURCE."));
                     break;
             }
 
@@ -456,6 +460,12 @@ namespace Hecton8.AtlasSignal
         private static void LogRevealStageUnlocked(int revealStage, float manifestedStrength)
         {
             Debug.Log($"[AtlasSignal] Reveal stage {revealStage} unlocked. Manifested strength: {manifestedStrength:F2}");
+        }
+
+        private static string ResolveLocalized(string key, string fallback)
+        {
+            LocalizationManager manager = LocalizationManager.Instance;
+            return manager != null ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback) : fallback;
         }
 
         // ══════════════════════════════════════════════════════════

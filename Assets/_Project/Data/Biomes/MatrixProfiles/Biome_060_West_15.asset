@@ -48,7 +48,7 @@ MonoBehaviour:
   landmarkStrength: 5
   rewardPull: 4
   survivalPressure: 5
-  runtimeVisualProfile: {fileID: 0}
+  runtimeVisualProfile: {fileID: 11400000, guid: 70adc65b3bdfb0047958dffe22088e08, type: 2}
   familyId: biome.family.granite_escarpment
   familyProfile: {fileID: 11400000, guid: 5ddc21c118f37894c8d92183aa345feb, type: 2}
   suggestedZoneFamily: combat.silhouette.far

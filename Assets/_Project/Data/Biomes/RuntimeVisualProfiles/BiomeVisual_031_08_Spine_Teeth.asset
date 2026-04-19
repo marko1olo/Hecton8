@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 559ad33e1d65b1d42950ade30bdf05c9, type: 3}
+  m_Name: BiomeVisual_031_08_Spine_Teeth
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomeProfile
+  biomeName: 'Spine-Teeth [8]'
+  scatterColorBase: {r: 0.02208424, g: 0.09424736, b: 0.14618277, a: 1}
+  scatterColorShallow: {r: 0.07700606, g: 0.21498702, b: 0.24953074, a: 1}
+  depthFogDensity: {x: 0.41459809, y: 0.2505107, z: 0.15605826}
+  fogColor: {r: 0.02569407, g: 0.12587265, b: 0.17193376, a: 1}
+  turbidityMultiplier: 0.99308147

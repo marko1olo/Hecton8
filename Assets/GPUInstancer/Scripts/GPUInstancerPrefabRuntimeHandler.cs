@@ -18,7 +18,7 @@ namespace GPUInstancer
             {
                 _managerDictionary = new Dictionary<GPUInstancerPrefabPrototype, GPUInstancerPrefabManager>();
 
-                GPUInstancerPrefabManager[] prefabManagers = FindObjectsOfType<GPUInstancerPrefabManager>();
+                GPUInstancerPrefabManager[] prefabManagers = FindObjectsByType<GPUInstancerPrefabManager>(FindObjectsInactive.Include);
                 if (prefabManagers != null && prefabManagers.Length > 0)
                 {
                     foreach (GPUInstancerPrefabManager pm in prefabManagers)

@@ -1,4 +1,4 @@
-%YAML 1.1
+﻿%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!114 &11400000
 MonoBehaviour:
@@ -13,9 +13,17 @@ MonoBehaviour:
   m_Name: Recipe_SalvageSampler
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Crafting.RecipeData
   recipeName: Salvage Sampler
+  localizedRecipeName:
+    tableKey: ITEM_TOOL_SALVAGE_SAMPLER_NAME
+    fallbackText: ''
+    variants: []
   overrideIcon: {fileID: 0}
   description: Field recovery sampler for breaking down caches and weakened resource
     targets.
+  localizedRecipeDescription:
+    tableKey: ITEM_TOOL_SALVAGE_SAMPLER_DESCRIPTION
+    fallbackText: ''
+    variants: []
   resultItem: {fileID: 11400000, guid: 0b4ba642bbd13cc4e909b28a175a8e1b, type: 2}
   resultQuantity: 1
   ingredients:

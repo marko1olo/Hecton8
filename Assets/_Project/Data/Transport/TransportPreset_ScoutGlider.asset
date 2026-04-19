@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9d512a24877f33949b5c90ec07b45730, type: 3}
+  m_Name: TransportPreset_ScoutGlider
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Gameplay.PlayerTransportPreset
+  transportName: Scout Glider
+  mountInteractText: Board Scout Glider
+  dismountInteractText: Dismount
+  underwaterOnly: 1
+  autoDropDriveOutsideWater: 1
+  holsterToolOnMount: 1
+  propulsionForce: 1250
+  speedMultiplier: 3.1
+  activationInputThreshold: 0.08
+  idleCruiseFactor: 0.18
+  energyDrainPerSecond: 3
+  forwardPitchInfluence: 0.58
+  strafeInputScale: 0.72
+  verticalInputScale: 0.78
+  reverseThrustScale: 0.42
+  bodyYawResponsivenessScale: 1.08
+  surfaceDiveAssistScale: 1.05
+  ambientCurrentInfluenceScale: 0.68
+  surfaceLockInfluenceScale: 0.72
+  faunaDetectionSignature: 1.28
+  throttleRiseSharpness: 8.5
+  throttleFallSharpness: 5.2
+  throttleOutputExponent: 1.1
+  oxygenConsumptionScale: 1
+  pressureDamageScale: 0.94
+  thermalExposureScale: 0.92
+  radiationExposureScale: 0.92
+  orientationMode: 1
+  orientationFollowSharpness: 11
+  dismountDistance: 1.6
+  occupancyMode: 1
+  swimPresentationScale: 0.9
+  thrusterAudioScale: 1
+  cameraMotionScale: 0.92
+  propulsionForceReference: 1250
+  swimPropulsionFloor: 0.78
+  swimCadenceMultiplier: 0.6
+  swimPoseLagMultiplier: 0.84
+  swimRootPresentationWeight: 0.72
+  swimSupportHandWeight: 0.96
+  swimRootForwardBias: 0.03
+  swimGuideForwardBias: 0.045
+  audioIdleSpeedFloor: 0.6
+  audioVolumeBoost: 0.28
+  audioPitchBoost: 0.36
+  audioModeBlendFloor: 0.5

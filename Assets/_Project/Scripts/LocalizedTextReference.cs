@@ -58,6 +58,11 @@ namespace Hecton.Localization
         public string FallbackText => fallbackText ?? string.Empty;
 
         /// <summary>
+        /// Raw localization table key configured on this reference.
+        /// </summary>
+        public string TableKey => tableKey ?? string.Empty;
+
+        /// <summary>
         /// Resolve text for the currently active game language.
         /// </summary>
         public string Resolve()

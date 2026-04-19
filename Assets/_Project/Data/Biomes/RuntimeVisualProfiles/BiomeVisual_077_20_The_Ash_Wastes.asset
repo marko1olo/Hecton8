@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 559ad33e1d65b1d42950ade30bdf05c9, type: 3}
+  m_Name: BiomeVisual_077_20_The_Ash_Wastes
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomeProfile
+  biomeName: 'The Ash-Wastes [20]'
+  scatterColorBase: {r: 0.02922831, g: 0.06687901, b: 0.07701538, a: 1}
+  scatterColorShallow: {r: 0.05939473, g: 0.11678673, b: 0.11296324, a: 1}
+  depthFogDensity: {x: 0.87140191, y: 0.5104893, z: 0.28894174}
+  fogColor: {r: 0.03954551, g: 0.08223903, b: 0.08466627, a: 1}
+  turbidityMultiplier: 1.62441853

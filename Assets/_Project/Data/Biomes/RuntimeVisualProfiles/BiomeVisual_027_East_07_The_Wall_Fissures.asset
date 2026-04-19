@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 559ad33e1d65b1d42950ade30bdf05c9, type: 3}
+  m_Name: BiomeVisual_027_East_07_The_Wall_Fissures
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Environment.HectonBiomeProfile
+  biomeName: 'The Wall-Fissures [East T07]'
+  scatterColorBase: {r: 0.023454145, g: 0.10878829, b: 0.17098464, a: 1}
+  scatterColorShallow: {r: 0.07303878, g: 0.23570858, b: 0.29137367, a: 1}
+  depthFogDensity: {x: 0.33470806, y: 0.20827329, z: 0.12867701}
+  fogColor: {r: 0.024697127, g: 0.13841704, b: 0.1942399, a: 1}
+  turbidityMultiplier: 0.83557326

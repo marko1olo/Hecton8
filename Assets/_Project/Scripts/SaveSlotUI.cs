@@ -190,6 +190,12 @@ namespace Hecton.UI.MainMenu
             if (text == null)
                 return;
 
+            Hecton8.UI.LocalizedTMPAutoSizer.Configure(
+                text,
+                text.fontSize * 0.68f,
+                text.fontSize,
+                TextOverflowModes.Ellipsis,
+                TextWrappingModes.Normal);
             text.textWrappingMode = TextWrappingModes.Normal;
             text.overflowMode = TextOverflowModes.Truncate;
             text.alignment = TextAlignmentOptions.Left;
@@ -207,6 +213,26 @@ namespace Hecton.UI.MainMenu
             string number = ExtractSlotNumber(_slotId);
             string slotLine = string.Concat(prefix, " ", number);
             string detailsLine = BuildDetailsLine(loc);
+
+            if (slotNameText != null)
+            {
+                Hecton8.UI.LocalizedTMPAutoSizer.Configure(
+                    slotNameText,
+                    slotNameText.fontSize * 0.68f,
+                    slotNameText.fontSize,
+                    TextOverflowModes.Ellipsis,
+                    _useCompactSingleTextLayout ? TextWrappingModes.Normal : TextWrappingModes.NoWrap);
+            }
+
+            if (detailsText != null)
+            {
+                Hecton8.UI.LocalizedTMPAutoSizer.Configure(
+                    detailsText,
+                    detailsText.fontSize * 0.72f,
+                    detailsText.fontSize,
+                    TextOverflowModes.Ellipsis,
+                    TextWrappingModes.NoWrap);
+            }
 
             if (_useCompactSingleTextLayout && slotNameText != null)
             {

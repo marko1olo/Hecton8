@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 559ad33e1d65b1d42950ade30bdf05c9, type: 3}
+  m_Name: BiomeVisual_002_South_01_Mesa_Plateaus
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Environment.HectonBiomeProfile
+  biomeName: 'Mesa Plateaus [South T01]'
+  scatterColorBase: {r: 0.03934, g: 0.179, b: 0.22688, a: 1}
+  scatterColorShallow: {r: 0.1361656, g: 0.46538398, b: 0.443796, a: 1}
+  depthFogDensity: {x: 0.2046, y: 0.12708001, z: 0.08216}
+  fogColor: {r: 0.0290648, g: 0.205024, b: 0.2465208, a: 1}
+  turbidityMultiplier: 0.55

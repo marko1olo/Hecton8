@@ -124,6 +124,8 @@ namespace Hecton8.VFX
 
         private float _baseChromaticIntensity;
         private float _baseVignetteIntensity;
+        private float _baseVignetteSmoothness;
+        private bool _baseVignetteRounded;
         private bool _hasChromatic;
         private bool _hasVignette;
         private bool _registeredToTickManager;
@@ -132,6 +134,10 @@ namespace Hecton8.VFX
         private float _waterTransitionChromaticScale;
         private float _waterTransitionVignetteScale;
         private float _waterTransitionRecoverySpeed;
+        private float _transportCockpitVignetteIntensity;
+        private float _transportCockpitVignetteSmoothness;
+        private bool _transportCockpitVignetteRounded;
+        private float _transportCockpitChromaticIntensity;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -163,7 +169,13 @@ namespace Hecton8.VFX
             {
                 _vignette.active = true;
                 _vignette.intensity.overrideState = true;
+                _vignette.smoothness.overrideState = true;
+                _vignette.rounded.overrideState = true;
                 _baseVignetteIntensity = _vignette.intensity.value;
+                _baseVignetteSmoothness = _vignette.smoothness.value;
+                _baseVignetteRounded = _vignette.rounded.value;
+                _transportCockpitVignetteSmoothness = _baseVignetteSmoothness;
+                _transportCockpitVignetteRounded = _baseVignetteRounded;
             }
 
             if (!_hasChromatic && !_hasVignette)
@@ -193,7 +205,11 @@ namespace Hecton8.VFX
             if (_hasChromatic)
                 _chromatic.intensity.value = _baseChromaticIntensity;
             if (_hasVignette)
+            {
                 _vignette.intensity.value = _baseVignetteIntensity;
+                _vignette.smoothness.value = _baseVignetteSmoothness;
+                _vignette.rounded.value = _baseVignetteRounded;
+            }
         }
 
         // ══════════════════════════════════════════════════════════
@@ -329,6 +345,21 @@ namespace Hecton8.VFX
                 surfaceBreakRecoverySpeed);
         }
 
+        /// <summary>
+        /// Applies a persistent cockpit overlay on top of impact and water-transition optics.
+        /// </summary>
+        public void SetTransportCockpitOverlay(
+            float vignetteIntensity,
+            float vignetteRoundness,
+            float vignetteSmoothness,
+            float chromaticIntensity)
+        {
+            _transportCockpitVignetteIntensity = math.max(0f, vignetteIntensity);
+            _transportCockpitVignetteRounded = vignetteRoundness >= 0.5f;
+            _transportCockpitVignetteSmoothness = math.saturate(vignetteSmoothness);
+            _transportCockpitChromaticIntensity = math.max(0f, chromaticIntensity);
+        }
+
         private void RegisterToTickManager()
         {
             if (_registeredToTickManager || GameTickManager.Instance == null)
@@ -435,14 +466,27 @@ namespace Hecton8.VFX
             {
                 _chromatic.intensity.value = _baseChromaticIntensity +
                     _currentIntensity * maxChromaticIntensity +
-                    _waterTransitionIntensity * _waterTransitionChromaticScale;
+                    _waterTransitionIntensity * _waterTransitionChromaticScale +
+                    _transportCockpitChromaticIntensity;
             }
 
             if (_hasVignette)
             {
                 _vignette.intensity.value = _baseVignetteIntensity +
                     _currentIntensity * maxVignetteIntensity +
-                    _waterTransitionIntensity * _waterTransitionVignetteScale;
+                    _waterTransitionIntensity * _waterTransitionVignetteScale +
+                    _transportCockpitVignetteIntensity;
+
+                if (_transportCockpitVignetteIntensity > 0.0001f)
+                {
+                    _vignette.smoothness.value = _transportCockpitVignetteSmoothness;
+                    _vignette.rounded.value = _transportCockpitVignetteRounded;
+                }
+                else
+                {
+                    _vignette.smoothness.value = _baseVignetteSmoothness;
+                    _vignette.rounded.value = _baseVignetteRounded;
+                }
             }
         }
 

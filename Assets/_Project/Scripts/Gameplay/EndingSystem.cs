@@ -40,6 +40,7 @@ using Hecton8.Core;
 using Hecton8.Quest;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
+using Hecton.Localization;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -200,8 +201,9 @@ namespace Hecton8.Gameplay
 
             NarrativeEvents.RaiseDiscoveryMade("atlas6_core_reached");
 
-            NotificationEvents.PushWarning(
-                "ЯДРО АТЛАС-6 ОБНАРУЖЕНО. ТЕРМИНАЛ АКТИВЕН. ВЫБЕРИТЕ ДЕЙСТВИЕ.");
+            NotificationEvents.PushWarning(ResolveLocalized(
+                LocalizationKeys.ENDING_CORE_REACHED,
+                "ATLAS-6 CORE DETECTED. TERMINAL ACTIVE. SELECT AN ACTION."));
 
             LogEndingConditionMet();
         }
@@ -299,9 +301,9 @@ namespace Hecton8.Gameplay
 
             NarrativeEvents.RaiseDiscoveryMade("ending_shutdown");
 
-            NotificationEvents.PushWarning(
-                "АТЛАС-6 ОТКЛЮЧЁН. СИГНАЛ ПРЕКРАЩЁН. КОРПОРАЦИЯ ПОЛУЧИТ ДАННЫЕ. " +
-                "ТЕРРАФОРМИРОВАНИЕ ПРОДОЛЖИТСЯ.");
+            NotificationEvents.PushWarning(ResolveLocalized(
+                LocalizationKeys.ENDING_SHUTDOWN_COMPLETE,
+                "ATLAS-6 SHUT DOWN. SIGNAL TERMINATED. THE CORPORATION WILL GET THE DATA. TERRAFORMING CONTINUES."));
         }
 
         private void ExecuteLeave()
@@ -309,9 +311,9 @@ namespace Hecton8.Gameplay
             // Атлас-6 продолжает работу. Сигнал активен.
             NarrativeEvents.RaiseDiscoveryMade("ending_leave");
 
-            NotificationEvents.PushInfo(
-                "АТЛАС-6 ПРОДОЛЖАЕТ РАБОТУ. СИГНАЛ АКТИВЕН. " +
-                "ЖИЗНЬ ЗАЩИЩЕНА — ПОКА СИГНАЛ НЕ НАЙДУТ.");
+            NotificationEvents.PushInfo(ResolveLocalized(
+                LocalizationKeys.ENDING_LEAVE_COMPLETE,
+                "ATLAS-6 REMAINS ACTIVE. SIGNAL LIVE. LIFE IS PROTECTED - UNTIL THE SIGNAL IS FOUND."));
         }
 
         private void ExecuteAmplify()
@@ -327,10 +329,9 @@ namespace Hecton8.Gameplay
             Shader.SetGlobalFloat(
                 Shader.PropertyToID("_AtlasSignalStrength"), 1f);
 
-            NotificationEvents.PushWarning(
-                "СИГНАЛ УСИЛЕН. ВЕСЬ СЕКТОР СЛЫШИТ. " +
-                "АТЛАС-6 ЗАВЕРШАЕТ ПРОГРАММУ. ПРАВДА РАСКРЫТА. " +
-                "ПОСЛЕДСТВИЯ НЕПРЕДСКАЗУЕМЫ.");
+            NotificationEvents.PushWarning(ResolveLocalized(
+                LocalizationKeys.ENDING_AMPLIFY_COMPLETE,
+                "SIGNAL AMPLIFIED. THE WHOLE SECTOR CAN HEAR IT. ATLAS-6 IS ENDING THE PROGRAM. THE TRUTH IS OUT. CONSEQUENCES UNPREDICTABLE."));
         }
 
         private bool ResolveSurvivalSystem()
@@ -369,6 +370,12 @@ namespace Hecton8.Gameplay
         {
             // Полная расшифровка — условие может быть выполнено
             // SlowTick проверит глубину на следующем тике
+        }
+
+        private static string ResolveLocalized(string key, string fallback)
+        {
+            LocalizationManager manager = LocalizationManager.Instance;
+            return manager != null ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback) : fallback;
         }
 
         // ══════════════════════════════════════════════════════════

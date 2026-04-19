@@ -55,6 +55,7 @@ namespace Hecton8.Gameplay
         public float swimVerticalInput;
         public float heavyCarryLoad;
         public float transportBoost01;
+        public float transportCameraMotionScale;
     }
 
     public sealed class CameraJuiceProcessor
@@ -156,9 +157,9 @@ namespace Hecton8.Gameplay
         private const float HEAVY_CARRY_MAX_LANDING_DIP_SCALE = 1.12f;
         private const float HEAVY_CARRY_MAX_SURFACE_BOB_SCALE = 0.78f;
         private const float HEAVY_CARRY_MAX_TURN_SWAY_SCALE = 1.18f;
-        private const float MANTA_TRANSPORT_PROPULSION_FLOOR = 0.62f;
-        private const float MANTA_TRANSPORT_POSITION_KICK = 0.0038f;
-        private const float MANTA_TRANSPORT_FOV_KICK = 0.22f;
+        private const float TRANSPORT_PROPULSION_FLOOR = 0.62f;
+        private const float TRANSPORT_POSITION_KICK = 0.0038f;
+        private const float TRANSPORT_FOV_KICK = 0.22f;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC — EVENTS (polled, zero GC)
@@ -392,6 +393,8 @@ namespace Hecton8.Gameplay
             _output.localPositionOffset.y += _actionBobY;
             _output.localPositionOffset.x += _actionBobX;
 
+            ApplyTransportCameraMotionScale(in input);
+
             _prevImmersionRatio = input.immersionRatio;
 
             return _output;
@@ -594,7 +597,7 @@ namespace Hecton8.Gameplay
             float verticalBob = math.sin(cycle) * suit.swimBobVerticalAmplitude * finalScale;
             float forwardBob = math.sin(cycle * 0.5f - 0.35f) * suit.swimBobForwardAmplitude * finalScale;
             float rollBob = math.sin(cycle + 1.57f) * suit.swimBobRollAmplitude * finalScale;
-            float pull = math.max(math.saturate(input.swimPropulsionPulse), transportBoost * MANTA_TRANSPORT_PROPULSION_FLOOR);
+            float pull = math.max(math.saturate(input.swimPropulsionPulse), transportBoost * TRANSPORT_PROPULSION_FLOOR);
             float pullKick = pull * pull;
             float pullImpulse = math.saturate(input.swimStrokeImpulse);
             float ascend = math.max(0f, input.swimVerticalInput);
@@ -608,8 +611,8 @@ namespace Hecton8.Gameplay
                 (pullKick * SWIM_PRESENTATION_PROPULSION_FOV_KICK +
                  pullImpulse * SWIM_PRESENTATION_PROPULSION_IMPULSE_FOV_KICK) * modeScale,
                 SWIM_PRESENTATION_MAX_FOV_KICK * sprintClampScale);
-            float transportPositionKick = transportBoost * MANTA_TRANSPORT_POSITION_KICK * modeScale;
-            float transportFovKick = transportBoost * MANTA_TRANSPORT_FOV_KICK * modeScale;
+            float transportPositionKick = transportBoost * TRANSPORT_POSITION_KICK * modeScale;
+            float transportFovKick = transportBoost * TRANSPORT_FOV_KICK * modeScale;
 
             _output.localPositionOffset.y += verticalBob;
             _output.localPositionOffset.z += forwardBob;
@@ -624,6 +627,18 @@ namespace Hecton8.Gameplay
                  ascend * SWIM_PRESENTATION_ASCEND_PITCH) *
                 pull * modeScale;
             _output.fovOffset += propulsionFovKick + transportFovKick;
+        }
+
+        private void ApplyTransportCameraMotionScale(in CameraJuiceInput input)
+        {
+            float cameraMotionScale = math.saturate(input.transportCameraMotionScale);
+            if (cameraMotionScale >= 0.9999f)
+                return;
+
+            _output.localPositionOffset *= cameraMotionScale;
+            _output.rollOffset *= cameraMotionScale;
+            _output.pitchOffset *= cameraMotionScale;
+            _output.fovOffset *= cameraMotionScale;
         }
 
         private static float ResolvePresentationCameraScale(PlayerSwimPresentationMode mode)

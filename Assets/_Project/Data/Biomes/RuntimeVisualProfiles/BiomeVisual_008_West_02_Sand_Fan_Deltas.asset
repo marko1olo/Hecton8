@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 559ad33e1d65b1d42950ade30bdf05c9, type: 3}
+  m_Name: BiomeVisual_008_West_02_Sand_Fan_Deltas
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Environment.HectonBiomeProfile
+  biomeName: 'Sand-Fan Deltas [West T02]'
+  scatterColorBase: {r: 0.045339156, g: 0.14737129, b: 0.19219215, a: 1}
+  scatterColorShallow: {r: 0.133213, g: 0.3828003, b: 0.3725085, a: 1}
+  depthFogDensity: {x: 0.25547045, y: 0.14834464, z: 0.08857761}
+  fogColor: {r: 0.041546803, g: 0.16035967, b: 0.19415805, a: 1}
+  turbidityMultiplier: 0.8876981

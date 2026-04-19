@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 559ad33e1d65b1d42950ade30bdf05c9, type: 3}
+  m_Name: BiomeVisual_103_East_26_Tier_26_East_Reserve
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Environment.HectonBiomeProfile
+  biomeName: 'Tier 26 East Reserve [East T26]'
+  scatterColorBase: {r: 0.018688342, g: 0.09193006, b: 0.15890445, a: 1}
+  scatterColorShallow: {r: 0.044378243, g: 0.15303732, b: 0.22602074, a: 1}
+  depthFogDensity: {x: 0.6883295, y: 0.40093538, z: 0.22708239}
+  fogColor: {r: 0.015889468, g: 0.079167336, b: 0.13843729, a: 1}
+  turbidityMultiplier: 1.3660264

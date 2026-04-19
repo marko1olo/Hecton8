@@ -1,241 +1,264 @@
 // ============================================================================
-// HECTON-8 — InteractionUI.cs
-// Strictly event-driven UI component. Zero polling, zero Update() overhead.
-// Subscribes exclusively to InteractionEvents.OnHoverChanged.
-// No direct reference to PlayerInteraction — pure decoupled architecture.
-//
-// PERFORMANCE NOTES:
-//   - No Update() method exists — nothing runs per-frame.
-//   - Handler fires only on hover state transitions.
-//   - GameObject.SetActive used over CanvasGroup.alpha for zero overdraw
-//     when hidden (Unity skips entire subtree in canvas rebuild).
-//   - GetInteractText() returns a pre-cached string from the interactable,
-//     so the only allocation is the single string.Concat per hover change.
-//   - SetCharArray zero-alloc path provided and documented for extreme cases.
+// HECTON-8 - InteractionUI.cs
+// Event-driven interaction prompt owner for hover state transitions.
+// No Update loop. No polling. Prefix refreshes only on input/layout changes.
 // ============================================================================
 
 namespace Hecton8.Interaction
 {
     using System;
+    using Hecton.Localization;
     using Hecton8.Input;
-    using UnityEngine;
+    using Hecton8.UI;
     using TMPro;
+    using UnityEngine;
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Interaction UI")]
-    public class InteractionUI : MonoBehaviour
+    public sealed class InteractionUI : MonoBehaviour
     {
-        // ====================================================================
-        // SERIALIZED CONFIGURATION
-        // ====================================================================
-
         [Header("UI References")]
         [SerializeField, Tooltip("The TextMeshProUGUI label that displays the interaction prompt.")]
         private TextMeshProUGUI promptLabel;
 
-        [SerializeField, Tooltip("Parent container GameObject to activate/deactivate. " +
-                                  "Should wrap the prompt label and any background/icon elements.")]
+        [SerializeField, Tooltip("Parent container GameObject that owns the prompt visuals.")]
         private GameObject promptContainer;
 
         [Header("Formatting")]
-        [SerializeField,
-         Tooltip("Префикс в Edit Mode и до Play. В Play подхватывается binding из InputManager.")]
-        private string inputPrefix = "[E]  ";
+        [SerializeField, Tooltip("Fallback prefix used before runtime bindings are available.")]
+        private string inputPrefix = "<button:interact> ";
 
-        // ====================================================================
-        // INTERNAL STATE
-        // ====================================================================
-
-        // Tracks the currently displayed target to avoid redundant UI updates
-        // if the same event fires multiple times for the same object.
         private IInteractable _lastDisplayedTarget;
+        private string _cachedInteractPrefix;
 
-        // Pre-allocated character buffer for the zero-alloc SetCharArray path.
-        // 96 chars is generous for any interaction prompt string.
-        private readonly char[] _charBuffer = new char[96];
-
-        // ====================================================================
-        // UNITY LIFECYCLE — Subscribe / Unsubscribe to global event bus.
-        // No Update(), no LateUpdate(), no coroutines. Purely reactive.
-        // ====================================================================
+        // COLD ALLOC: char[192] - hover prompt rich-text buffer - owner: InteractionUI
+        private readonly char[] _charBuffer = new char[192];
 
         private void OnEnable()
         {
             InteractionEvents.OnHoverChanged += HandleHoverChanged;
-            RebindingManager.Instance.OnRebindCompleted += HandleBindingChanged;
-            RebindingManager.Instance.OnRebindCanceled += HandleBindingCanceled;
-            RebindingManager.Instance.OnOverridesLoaded += HandleOverridesLoaded;
-            RebindingManager.Instance.OnOverridesCleared += HandleOverridesCleared;
 
-            // Guarantee clean initial state — prompt hidden on enable.
+            RebindingManager rebindingManager = RebindingManager.Instance;
+            if (rebindingManager != null)
+            {
+                rebindingManager.OnRebindCompleted += HandleBindingChanged;
+                rebindingManager.OnRebindCanceled += HandleBindingCanceled;
+                rebindingManager.OnOverridesLoaded += HandleOverridesLoaded;
+                rebindingManager.OnOverridesCleared += HandleOverridesCleared;
+            }
+
+            if (InputManager.Instance != null)
+                InputManager.Instance.OnInputDisplayStyleChanged += HandleInputDisplayStyleChanged;
+
+            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
+
+            ConfigurePromptLabel();
+            RefreshInteractPrefixCache();
             HidePrompt();
         }
 
         private void OnDisable()
         {
             InteractionEvents.OnHoverChanged -= HandleHoverChanged;
-            RebindingManager.Instance.OnRebindCompleted -= HandleBindingChanged;
-            RebindingManager.Instance.OnRebindCanceled -= HandleBindingCanceled;
-            RebindingManager.Instance.OnOverridesLoaded -= HandleOverridesLoaded;
-            RebindingManager.Instance.OnOverridesCleared -= HandleOverridesCleared;
 
-            // Clean up visual state so re-enabling doesn't show stale prompt.
+            RebindingManager rebindingManager = RebindingManager.Instance;
+            if (rebindingManager != null)
+            {
+                rebindingManager.OnRebindCompleted -= HandleBindingChanged;
+                rebindingManager.OnRebindCanceled -= HandleBindingCanceled;
+                rebindingManager.OnOverridesLoaded -= HandleOverridesLoaded;
+                rebindingManager.OnOverridesCleared -= HandleOverridesCleared;
+            }
+
+            if (InputManager.Instance != null)
+                InputManager.Instance.OnInputDisplayStyleChanged -= HandleInputDisplayStyleChanged;
+
+            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+
             HidePrompt();
         }
-
-        // ====================================================================
-        // EVENT HANDLER — Fires exclusively on hover state transitions.
-        // This is the ONLY entry point for all UI logic in this class.
-        // ====================================================================
 
         private void HandleHoverChanged(IInteractable target)
         {
             if (target != null)
             {
-                // Guard: skip redundant updates if hovering the same object.
-                // ReferenceEquals avoids any virtual dispatch or boxing.
                 if (ReferenceEquals(target, _lastDisplayedTarget))
                     return;
 
                 _lastDisplayedTarget = target;
                 ShowPrompt(target);
+                return;
             }
-            else
-            {
-                _lastDisplayedTarget = null;
-                HidePrompt();
-            }
+
+            _lastDisplayedTarget = null;
+            HidePrompt();
         }
 
         private void HandleBindingChanged(string actionName, string actionMap, int bindingIndex, string display)
         {
-            if (!Application.isPlaying) return;
-            if (!string.Equals(actionMap, "Player", StringComparison.OrdinalIgnoreCase)) return;
-            if (!string.Equals(actionName, "Interact", StringComparison.OrdinalIgnoreCase)) return;
+            if (!Application.isPlaying)
+                return;
+
+            if (!string.Equals(actionMap, "Player", StringComparison.OrdinalIgnoreCase))
+                return;
+
+            if (!string.Equals(actionName, "Interact", StringComparison.OrdinalIgnoreCase))
+                return;
+
+            RefreshInteractPrefixCache();
             RefreshCurrentPrompt();
         }
 
         private void HandleBindingCanceled(string actionName, string actionMap, int bindingIndex)
         {
-            if (!Application.isPlaying) return;
-            if (!string.Equals(actionMap, "Player", StringComparison.OrdinalIgnoreCase)) return;
-            if (!string.Equals(actionName, "Interact", StringComparison.OrdinalIgnoreCase)) return;
+            if (!Application.isPlaying)
+                return;
+
+            if (!string.Equals(actionMap, "Player", StringComparison.OrdinalIgnoreCase))
+                return;
+
+            if (!string.Equals(actionName, "Interact", StringComparison.OrdinalIgnoreCase))
+                return;
+
+            RefreshInteractPrefixCache();
             RefreshCurrentPrompt();
         }
 
         private void HandleOverridesLoaded()
         {
+            RefreshInteractPrefixCache();
             RefreshCurrentPrompt();
         }
 
         private void HandleOverridesCleared()
         {
+            RefreshInteractPrefixCache();
+            RefreshCurrentPrompt();
+        }
+
+        private void HandleInputDisplayStyleChanged(InputDisplayStyle displayStyle)
+        {
+            RefreshInteractPrefixCache();
+            RefreshCurrentPrompt();
+        }
+
+        private void HandleLanguageChanged(GameLanguage language)
+        {
+            ConfigurePromptLabel();
+            RefreshInteractPrefixCache();
             RefreshCurrentPrompt();
         }
 
         private void RefreshCurrentPrompt()
         {
-            if (_lastDisplayedTarget == null) return;
+            if (_lastDisplayedTarget == null)
+                return;
+
             ShowPrompt(_lastDisplayedTarget);
         }
 
-        // ====================================================================
-        // INTERNAL — UI State Management
-        // ====================================================================
-
-        /// <summary>
-        /// Activates the prompt container and populates the label text.
-        /// Uses the zero-alloc SetCharArray path to avoid any GC pressure.
-        /// </summary>
         private void ShowPrompt(IInteractable target)
         {
             if (promptLabel != null)
             {
-                // Retrieve the pre-cached interact string from the interactable.
-                // Contract: GetInteractText() must return a cached string, never allocate.
                 string interactText = target.GetInteractText();
+                LocalizationManager localizationManager = LocalizationManager.Instance;
+                if (localizationManager != null)
+                    interactText = localizationManager.ExpandText(interactText);
 
-                // Zero-alloc text assembly using pre-allocated char buffer.
-                // ResolveInteractPrefix() picks up the current InputManager binding at runtime.
-                int totalLength = WriteToBuffer(ResolveInteractPrefix(), interactText);
+                int totalLength = WriteToBuffer(_cachedInteractPrefix, interactText);
                 promptLabel.SetCharArray(_charBuffer, 0, totalLength);
             }
 
-            if (promptContainer != null)
-            {
+            if (promptContainer != null && !promptContainer.activeSelf)
                 promptContainer.SetActive(true);
-            }
         }
 
-        /// <summary>
-        /// Deactivates the prompt container. Unity skips the entire UI subtree
-        /// when a GameObject is inactive — zero layout/render cost.
-        /// </summary>
         private void HidePrompt()
         {
-            if (promptContainer != null)
-            {
+            if (promptContainer != null && promptContainer.activeSelf)
                 promptContainer.SetActive(false);
-            }
 
             _lastDisplayedTarget = null;
         }
 
-        private string ResolveInteractPrefix()
+        private void RefreshInteractPrefixCache()
         {
             if (!Application.isPlaying)
             {
-                return inputPrefix;
+                LocalizationManager manager = LocalizationManager.Instance;
+                _cachedInteractPrefix = manager != null
+                    ? manager.GetExpandedOrFallback(manager.CurrentLanguage, LocalizationKeys.INTERACT_DEFAULT_PROMPT_FORMAT, inputPrefix + "{0} {1}")
+                    : inputPrefix + "{0} {1}";
+                _cachedInteractPrefix = ExtractPrefix(_cachedInteractPrefix);
+                return;
             }
 
-            string interactBinding = InputManager.Instance != null
-                ? InputManager.Instance.GetBindingDisplayString("Interact")
-                : string.Empty;
-
-            if (string.IsNullOrEmpty(interactBinding))
+            if (InputManager.Instance != null &&
+                InputManager.Instance.TryGetBindingMarkupForToken("interact", out string markup) &&
+                !string.IsNullOrEmpty(markup))
             {
-                interactBinding = "E";
+                _cachedInteractPrefix = string.Concat(markup, " ");
+                return;
             }
 
-            return "[" + interactBinding + "]  ";
+            LocalizationManager localizationManager = LocalizationManager.Instance;
+            if (localizationManager != null)
+            {
+                string fallbackTemplate = localizationManager.GetExpandedOrFallback(
+                    localizationManager.CurrentLanguage,
+                    LocalizationKeys.INTERACT_DEFAULT_PROMPT_FORMAT,
+                    inputPrefix + "{0} {1}");
+                _cachedInteractPrefix = ExtractPrefix(fallbackTemplate);
+                return;
+            }
+
+            _cachedInteractPrefix = inputPrefix;
         }
 
-        // ====================================================================
-        // ZERO-ALLOC TEXT ASSEMBLY
-        // Copies prefix + interact text into the pre-allocated char buffer.
-        // Returns the total number of characters written.
-        // No string.Concat, no StringBuilder, no GC. Ever.
-        // ====================================================================
+        private void ConfigurePromptLabel()
+        {
+            if (promptLabel == null)
+                return;
 
-        /// <summary>
-        /// Writes prefix and body strings into _charBuffer sequentially.
-        /// Clamps to buffer length to prevent overflow.
-        /// </summary>
-        /// <returns>Total characters written.</returns>
+            LocalizedTMPAutoSizer.Configure(
+                promptLabel,
+                promptLabel.fontSize * 0.72f,
+                promptLabel.fontSize,
+                TextOverflowModes.Ellipsis,
+                TextWrappingModes.Normal);
+        }
+
+        private static string ExtractPrefix(string template)
+        {
+            if (string.IsNullOrEmpty(template))
+                return string.Empty;
+
+            int placeholderIndex = template.IndexOf("{0}", StringComparison.Ordinal);
+            if (placeholderIndex <= 0)
+                return template;
+
+            return template.Substring(0, placeholderIndex);
+        }
+
         private int WriteToBuffer(string prefix, string body)
         {
             int bufferLength = _charBuffer.Length;
             int offset = 0;
 
-            // Copy prefix characters.
-            if (prefix != null)
+            if (!string.IsNullOrEmpty(prefix))
             {
-                int prefixLen = Mathf.Min(prefix.Length, bufferLength);
-                for (int i = 0; i < prefixLen; i++)
-                {
+                int prefixLength = Mathf.Min(prefix.Length, bufferLength);
+                for (int i = 0; i < prefixLength; i++)
                     _charBuffer[offset++] = prefix[i];
-                }
             }
 
-            // Copy body characters.
-            if (body != null)
+            if (!string.IsNullOrEmpty(body))
             {
                 int remaining = bufferLength - offset;
-                int bodyLen = Mathf.Min(body.Length, remaining);
-                for (int i = 0; i < bodyLen; i++)
-                {
+                int bodyLength = Mathf.Min(body.Length, remaining);
+                for (int i = 0; i < bodyLength; i++)
                     _charBuffer[offset++] = body[i];
-                }
             }
 
             return offset;

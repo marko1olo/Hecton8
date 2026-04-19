@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 559ad33e1d65b1d42950ade30bdf05c9, type: 3}
+  m_Name: BiomeVisual_088_22_Tier_22_West_Reserve
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomeProfile
+  biomeName: 'Tier 22 West Reserve [22]'
+  scatterColorBase: {r: 0.02203891, g: 0.05450809, b: 0.07922483, a: 1}
+  scatterColorShallow: {r: 0.0512104, g: 0.11352599, b: 0.12968379, a: 1}
+  depthFogDensity: {x: 0.71640282, y: 0.4244604, z: 0.24129495}
+  fogColor: {r: 0.02545811, g: 0.06760225, b: 0.08511395, a: 1}
+  turbidityMultiplier: 1.40872497

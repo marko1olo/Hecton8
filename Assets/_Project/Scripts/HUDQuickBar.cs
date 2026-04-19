@@ -438,8 +438,13 @@ namespace Hecton8.UI
         private void RefreshSlotVisuals(int slotIndex, int activeSlot)
         {
             bool isActive = slotIndex == activeSlot;
-            _slotBgs[slotIndex].color = isActive ? SlotActive : SlotBg;
-            _slotKeys[slotIndex].color = isActive ? KeyActive : KeyDim;
+            Color desiredSlotBackground = isActive ? SlotActive : SlotBg;
+            if (_slotBgs[slotIndex].color != desiredSlotBackground)
+                _slotBgs[slotIndex].color = desiredSlotBackground;
+
+            Color desiredKeyColor = isActive ? KeyActive : KeyDim;
+            if (_slotKeys[slotIndex].color != desiredKeyColor)
+                _slotKeys[slotIndex].color = desiredKeyColor;
 
             GameObject prefab = toolManager.GetAssignedToolPrefab(slotIndex);
             if (prefab != null && prefab.TryGetComponent(out PlayerTool tool) &&
@@ -507,9 +512,10 @@ namespace Hecton8.UI
 
             if (_slotDurVisible[slotIndex])
             {
-                _durBars[slotIndex].color = desiredColor;
+                if (_durBars[slotIndex].color != desiredColor)
+                    _durBars[slotIndex].color = desiredColor;
             }
-            else if (_durBars[slotIndex].color.a > 0f)
+            else if (_durBars[slotIndex].color != DurHidden)
             {
                 _durBars[slotIndex].color = DurHidden;
             }

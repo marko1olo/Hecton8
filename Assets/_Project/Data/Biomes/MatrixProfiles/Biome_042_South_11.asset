@@ -46,7 +46,7 @@ MonoBehaviour:
   landmarkStrength: 4
   rewardPull: 5
   survivalPressure: 5
-  runtimeVisualProfile: {fileID: 0}
+  runtimeVisualProfile: {fileID: 11400000, guid: 5dcfc7b4e88c4ac459ab72062e06fef8, type: 2}
   familyId: biome.family.volcanic_glass
   familyProfile: {fileID: 11400000, guid: ab3e56deacd0c534e8a3bb4cc1857e35, type: 2}
   suggestedZoneFamily: progression.skyline.far

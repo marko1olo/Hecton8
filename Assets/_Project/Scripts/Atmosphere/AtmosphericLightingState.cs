@@ -18,6 +18,9 @@ namespace Hecton8.Atmosphere
         public float HorizonHazeIntensity;
         public float HorizonHazeFalloff;
         public float HorizonHazeSunTintStrength;
+        public float HorizonMistShelfIntensity;
+        public float HorizonMistShelfHeight;
+        public float HorizonMistShelfSoftness;
         public Color SkyZenithColor;
         public Color SkyHorizonColor;
         public Color SkyNadirColor;
@@ -39,6 +42,9 @@ namespace Hecton8.Atmosphere
             HorizonHazeIntensity = 0f,
             HorizonHazeFalloff = 4f,
             HorizonHazeSunTintStrength = 0f,
+            HorizonMistShelfIntensity = 0f,
+            HorizonMistShelfHeight = 0.14f,
+            HorizonMistShelfSoftness = 0.1f,
             SkyZenithColor = Color.black,
             SkyHorizonColor = Color.black,
             SkyNadirColor = Color.black,

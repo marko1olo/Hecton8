@@ -222,7 +222,7 @@ namespace Hecton8.World
             ResolveReferences();
             RefreshRuntimeProfilesFromChunkProfile();
             ClampSettings();
-            UpdateDiagnostics();
+            ApplyStreamingProfile(force: true);
         }
 
         private void OnEnable()

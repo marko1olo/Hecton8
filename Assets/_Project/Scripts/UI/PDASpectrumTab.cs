@@ -13,6 +13,9 @@
 // ============================================================================
 
 using Hecton8.Visor;
+using Hecton8.Gameplay;
+using Hecton8.World;
+using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -52,6 +55,12 @@ namespace Hecton8.UI
         private TextMeshProUGUI _statusLabel;
         private TextMeshProUGUI _sonarStatusLabel;
         private TextMeshProUGUI _currentModeLabel;
+        private TextMeshProUGUI _contactSummaryLabel;
+        private TextMeshProUGUI _resourceSummaryLabel;
+        private TextMeshProUGUI _bioformSummaryLabel;
+        private TextMeshProUGUI _signalSummaryLabel;
+        // COLD ALLOC: StringBuilder[96] — sonar contact line assembly — owner: PDASpectrumTab
+        private readonly StringBuilder _lineBuilder = new StringBuilder(96);
 
         private static readonly string[] ModeNames =
         {
@@ -69,6 +78,16 @@ namespace Hecton8.UI
             "Биомеханические сигнатуры.\nОбнаружение дронов Атлас-6.\nТребует апгрейда сенсоров."
         };
 
+        private static readonly string[] ActiveModeLabels =
+        {
+            "АКТИВНЫЙ РЕЖИМ: НОРМАЛЬНЫЙ",
+            "АКТИВНЫЙ РЕЖИМ: ТЕПЛОВИЗОР",
+            "АКТИВНЫЙ РЕЖИМ: СОНАР",
+            "АКТИВНЫЙ РЕЖИМ: ЭХОЛОТ"
+        };
+
+        private const string SonarActiveStatus = "СОНАР АКТИВЕН — РАДИУС: 100М";
+
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
         // ══════════════════════════════════════════════════════════
@@ -84,6 +103,7 @@ namespace Hecton8.UI
             if (!_built) EnsureBuilt();
 
             SpectrumEvents.OnModeChanged += HandleModeChanged;
+            SpectrumEvents.OnSonarSnapshotUpdated += HandleSonarSnapshotUpdated;
             PDAEvents.OnOpened += HandlePDAOpened;
 
             RefreshModeDisplay();
@@ -92,6 +112,7 @@ namespace Hecton8.UI
         private void OnDisable()
         {
             SpectrumEvents.OnModeChanged -= HandleModeChanged;
+            SpectrumEvents.OnSonarSnapshotUpdated -= HandleSonarSnapshotUpdated;
             PDAEvents.OnOpened -= HandlePDAOpened;
         }
 
@@ -104,6 +125,7 @@ namespace Hecton8.UI
         // ══════════════════════════════════════════════════════════
 
         private void HandleModeChanged(SpectrumMode mode) => RefreshModeDisplay();
+        private void HandleSonarSnapshotUpdated(SpatialSonarSnapshot snapshot) => RefreshModeDisplay();
         private void HandlePDAOpened(int tab) => RefreshModeDisplay();
 
         // ══════════════════════════════════════════════════════════
@@ -217,11 +239,27 @@ namespace Hecton8.UI
             _statusLabel = CreateText("Status", panel, 10f, colorText, TextAlignmentOptions.TopLeft);
             _statusLabel.textWrappingMode = TMPro.TextWrappingModes.Normal;
             Anchor(_statusLabel.rectTransform, new Vector2(0, 1), new Vector2(1, 1),
-                new Vector2(12, -80), new Vector2(-12, -40));
+                new Vector2(12, -88), new Vector2(-12, -44));
 
             _sonarStatusLabel = CreateText("SonarStatus", panel, 9f, colorDim, TextAlignmentOptions.BottomLeft);
             Anchor(_sonarStatusLabel.rectTransform, new Vector2(0, 0), new Vector2(1, 0),
-                new Vector2(12, 8), new Vector2(-12, 28));
+                new Vector2(12, 84), new Vector2(-12, 104));
+
+            _contactSummaryLabel = CreateText("ContactSummary", panel, 8.5f, colorAccent, TextAlignmentOptions.BottomLeft);
+            Anchor(_contactSummaryLabel.rectTransform, new Vector2(0, 0), new Vector2(1, 0),
+                new Vector2(12, 60), new Vector2(-12, 80));
+
+            _resourceSummaryLabel = CreateText("ResourceSummary", panel, 8.5f, colorText, TextAlignmentOptions.BottomLeft);
+            Anchor(_resourceSummaryLabel.rectTransform, new Vector2(0, 0), new Vector2(1, 0),
+                new Vector2(12, 40), new Vector2(-12, 60));
+
+            _bioformSummaryLabel = CreateText("BioformSummary", panel, 8.5f, colorText, TextAlignmentOptions.BottomLeft);
+            Anchor(_bioformSummaryLabel.rectTransform, new Vector2(0, 0), new Vector2(1, 0),
+                new Vector2(12, 20), new Vector2(-12, 40));
+
+            _signalSummaryLabel = CreateText("SignalSummary", panel, 8.5f, colorText, TextAlignmentOptions.BottomLeft);
+            Anchor(_signalSummaryLabel.rectTransform, new Vector2(0, 0), new Vector2(1, 0),
+                new Vector2(12, 0), new Vector2(-12, 20));
         }
 
         // ══════════════════════════════════════════════════════════
@@ -245,23 +283,27 @@ namespace Hecton8.UI
 
             // Обновляем статус
             int idx = (int)active;
-             if (_currentModeLabel != null)
-             {
-                 string modeText = string.Format("АКТИВНЫЙ РЕЖИМ: {0}", ModeNames[idx]);
-                 if (_currentModeLabel.text != modeText)
-                 {
-                     _currentModeLabel.text = modeText;
-                 }
-             }
-
-            if (_statusLabel != null)
-                _statusLabel.text = ModeDescriptions[idx];
-
-            if (_sonarStatusLabel != null)
+            SetLabelText(_currentModeLabel, ActiveModeLabels[idx]);
+            SetLabelText(_statusLabel, ModeDescriptions[idx]);
+            if (active == SpectrumMode.Sonar && sys != null && sys.HasSonarSnapshot)
             {
-                _sonarStatusLabel.text = active == SpectrumMode.Sonar
-                    ? $"СОНАР АКТИВЕН — РАДИУС: {(sys != null ? "100" : "—")}М"
-                    : string.Empty;
+                RefreshSonarSnapshot(sys.LastSonarSnapshot);
+            }
+            else if (active == SpectrumMode.Sonar)
+            {
+                SetLabelText(_sonarStatusLabel, "SONAR ACTIVE // AWAITING PULSE");
+                SetLabelText(_contactSummaryLabel, "CONTACTS // RES 0 | BIO 0 | SIG 0");
+                SetLabelText(_resourceSummaryLabel, "NEAREST RESOURCE // NONE");
+                SetLabelText(_bioformSummaryLabel, "NEAREST BIOFORM // NONE");
+                SetLabelText(_signalSummaryLabel, "NEAREST SIGNAL // NONE");
+            }
+            else
+            {
+                SetLabelText(_sonarStatusLabel, string.Empty);
+                SetLabelText(_contactSummaryLabel, string.Empty);
+                SetLabelText(_resourceSummaryLabel, string.Empty);
+                SetLabelText(_bioformSummaryLabel, string.Empty);
+                SetLabelText(_signalSummaryLabel, string.Empty);
             }
         }
 
@@ -274,6 +316,106 @@ namespace Hecton8.UI
             SpectrumSystem sys = SpectrumSystem.Instance;
             if (sys != null)
                 sys.SetMode(mode);
+        }
+
+        private void RefreshSonarSnapshot(SpatialSonarSnapshot snapshot)
+        {
+            SetLabelText(_sonarStatusLabel, "SONAR ACTIVE // GRID LOCKED");
+
+            _lineBuilder.Clear();
+            _lineBuilder.Append("CONTACTS // RES ");
+            AppendInt(snapshot.ResourceCount);
+            _lineBuilder.Append(" | BIO ");
+            AppendInt(snapshot.BioformCount);
+            _lineBuilder.Append(" | SIG ");
+            AppendInt(snapshot.SignalCount);
+            _contactSummaryLabel.SetText(_lineBuilder);
+
+            SetDistanceLabel(_resourceSummaryLabel, "NEAREST RESOURCE // ", snapshot.HasNearestResource, snapshot.NearestResourceDistanceMeters, "NEAREST RESOURCE // NONE");
+            SetDistanceLabel(_bioformSummaryLabel, "NEAREST BIOFORM // ", snapshot.HasNearestBioform, snapshot.NearestBioformDistanceMeters, "NEAREST BIOFORM // NONE");
+            SetSignalDistanceLabel(snapshot);
+        }
+
+        private void SetDistanceLabel(TextMeshProUGUI label, string prefix, bool hasDistance, int distanceMeters, string emptyValue)
+        {
+            if (!hasDistance)
+            {
+                SetLabelText(label, emptyValue);
+                return;
+            }
+
+            _lineBuilder.Clear();
+            _lineBuilder.Append(prefix);
+            AppendDistance(distanceMeters);
+            label.SetText(_lineBuilder);
+        }
+
+        private void SetSignalDistanceLabel(SpatialSonarSnapshot snapshot)
+        {
+            if (!snapshot.HasNearestSignal)
+            {
+                SetLabelText(_signalSummaryLabel, "NEAREST SIGNAL // NONE");
+                return;
+            }
+
+            _lineBuilder.Clear();
+            _lineBuilder.Append("NEAREST SIGNAL // ");
+            _lineBuilder.Append(ResolveSignalRoleLabel(snapshot.NearestSignalRole));
+            _lineBuilder.Append(' ');
+            AppendDistance(snapshot.NearestSignalDistanceMeters);
+            _signalSummaryLabel.SetText(_lineBuilder);
+        }
+
+        private void AppendInt(int value)
+        {
+            int clampedValue = Mathf.Clamp(value, 0, HudNumericStringCache.MaxIntegerValue);
+            _lineBuilder.Append(HudNumericStringCache.IntStrings[clampedValue]);
+        }
+
+        private void AppendDistance(int distanceMeters)
+        {
+            int clampedDistance = Mathf.Clamp(distanceMeters, 0, HudNumericStringCache.MaxIntegerValue);
+            _lineBuilder.Append(HudNumericStringCache.IntStrings[clampedDistance]);
+            _lineBuilder.Append('M');
+        }
+
+        private static string ResolveSignalRoleLabel(FieldTargetRole role)
+        {
+            switch (role)
+            {
+                case FieldTargetRole.RouteAnchor:
+                    return "ANCHOR";
+                case FieldTargetRole.RouteRelay:
+                    return "RELAY";
+                case FieldTargetRole.RouteFrontier:
+                    return "FRONTIER";
+                case FieldTargetRole.HazardProbe:
+                    return "HAZARD";
+                case FieldTargetRole.ServiceDamaged:
+                    return "SERVICE";
+                case FieldTargetRole.ServiceFlooded:
+                    return "FLOOD";
+                case FieldTargetRole.ServiceControl:
+                    return "CONTROL";
+                case FieldTargetRole.StructureRelay:
+                    return "STRUCT";
+                case FieldTargetRole.ExpeditionCheckpoint:
+                    return "CHECKPOINT";
+                case FieldTargetRole.ConstructionSocket:
+                    return "SOCKET";
+                case FieldTargetRole.ConstructionBlocked:
+                    return "BLOCKED";
+                case FieldTargetRole.ConstructionClear:
+                    return "CLEAR";
+                case FieldTargetRole.PowerGeneration:
+                    return "POWER";
+                case FieldTargetRole.PowerRelay:
+                    return "GRID";
+                case FieldTargetRole.PowerLoad:
+                    return "LOAD";
+                default:
+                    return "SIGNAL";
+            }
         }
 
         // ══════════════════════════════════════════════════════════
@@ -346,7 +488,16 @@ namespace Hecton8.UI
             tmp.alignment = alignment;
             tmp.overflowMode = TextOverflowModes.Truncate;
             tmp.raycastTarget = false;
+            LocalizedTMPAutoSizer.Configure(tmp, size * 0.72f, size, TextOverflowModes.Truncate, TextWrappingModes.NoWrap);
             return tmp;
+        }
+
+        private static void SetLabelText(TextMeshProUGUI label, string value)
+        {
+            if (label != null && label.text != value)
+            {
+                label.text = value;
+            }
         }
 
         private static void Anchor(RectTransform r, Vector2 amin, Vector2 amax,

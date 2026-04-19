@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 559ad33e1d65b1d42950ade30bdf05c9, type: 3}
+  m_Name: BiomeVisual_059_East_15_The_Black_Spine
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Environment.HectonBiomeProfile
+  biomeName: 'The Black Spine [East T15]'
+  scatterColorBase: {r: 0.019129882, g: 0.08623858, b: 0.14125018, a: 1}
+  scatterColorShallow: {r: 0.05388137, g: 0.15594545, b: 0.21083409, a: 1}
+  depthFogDensity: {x: 0.56066453, y: 0.33412382, z: 0.19516614}
+  fogColor: {r: 0.018888047, g: 0.088354796, b: 0.13671716, a: 1}
+  turbidityMultiplier: 1.1942331

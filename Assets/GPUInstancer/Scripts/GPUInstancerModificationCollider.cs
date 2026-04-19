@@ -16,7 +16,7 @@ namespace GPUInstancer
             _collider = GetComponent<Collider>();
 
             if(prefabManager == null)
-                prefabManager = FindObjectOfType<GPUInstancerPrefabManager>();
+                prefabManager = FindAnyObjectByType<GPUInstancerPrefabManager>();
 
             if (prefabManager != null)
                 prefabManager.AddModificationCollider(this);

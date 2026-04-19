@@ -31,7 +31,7 @@ namespace MapMagic.Brush
 		[UnityEditor.InitializeOnLoadMethod] 
 		static void Initialize () 
 		{
-			lastBrush = FindObjectOfType<MapMagicBrush>();
+			lastBrush = FindAnyObjectByType<MapMagicBrush>();
 		}
 
 		static void AssignCurrent (SceneView sceneView) 

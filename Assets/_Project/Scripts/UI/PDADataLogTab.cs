@@ -74,15 +74,18 @@ namespace Hecton8.UI
         private TextMeshProUGUI _playButtonLabel;
         private TextMeshProUGUI _countLabel;
         private TextMeshProUGUI _emptyStateLabel;
+        private TextMeshProUGUI _headerTitleLabel;
 
         // List rows â€” pre-allocated
         private readonly List<LogRow> _rows = new List<LogRow>(32);
+        private readonly string[] _localizedCategoryLabels = new string[5]; // COLD ALLOC: string[5] — localized category labels — owner: PDADataLogTab
 
         // State
         private int _selectedIndex = -1;
         private bool _built;
         private bool _registered;
         private bool _dirty;
+        private bool _detailVisible = true;
 
         // Playback timer display
         private float _playbackRemaining;
@@ -98,6 +101,25 @@ namespace Hecton8.UI
         private const string NoPayloadLabel = "NO PLAYBACK";
         private const string TextOnlySummaryPrefix = "TEXT LOG\n";
         private const string ArchiveOnlySummaryPrefix = "ARCHIVE FRAGMENT\n";
+
+        private string _localizedArchiveTitle = "DATA ARCHIVE - HECTON-8 COLONY";
+        private string _localizedCountFormat = "{0}/{1} LOGS";
+        private string _localizedCategoryUnknown = "UNKNOWN";
+        private string _localizedEncryptedLabel = "??? ENCRYPTED ???";
+        private string _localizedEncryptedSummary = "Entry encrypted. Discovery required before archive access.";
+        private string _localizedUnknownAuthor = "UNKNOWN";
+        private string _localizedUnknownDate = "DATE UNKNOWN";
+        private string _localizedAuthorPrefix = "AUTHOR: ";
+        private string _localizedDatePrefix = "DATE: ";
+        private string _localizedPlayAudioLabel = PlayAudioLabel;
+        private string _localizedOpenTextLabel = OpenTextLogLabel;
+        private string _localizedStopAudioLabel = StopAudioLabel;
+        private string _localizedCloseTextLabel = CloseTextLogLabel;
+        private string _localizedLockedLabel = LockedLogLabel;
+        private string _localizedNoPayloadLabel = NoPayloadLabel;
+        private string _localizedTextOnlySummaryPrefix = TextOnlySummaryPrefix;
+        private string _localizedArchiveOnlySummaryPrefix = ArchiveOnlySummaryPrefix;
+        private string _localizedEmptyStateText = "ARCHIVE EMPTY\nAssign AudioLogData assets in allLogs.";
 
         private int CatalogCount => allLogs != null ? allLogs.Length : 0;
 
@@ -129,7 +151,9 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            RebuildLocalizationCache();
             if (!_built) EnsureBuilt();
+            ApplyLocalizedStaticText();
 
             TryRegister();
 
@@ -313,10 +337,10 @@ namespace Hecton8.UI
             Anchor(_countLabel.rectTransform, new Vector2(0.5f, 0), new Vector2(1, 1),
                 new Vector2(-8, 0), new Vector2(-12, 0));
 
-            TextMeshProUGUI title = CreateText("Title", header, 13f, colorAccent, TextAlignmentOptions.MidlineLeft);
-            title.text = ResolveLocalized(LocalizationKeys.AUDIOLOG_ARCHIVE_TITLE, "DATA ARCHIVE - HECTON-8 COLONY");
-            title.fontStyle = FontStyles.Bold;
-            Anchor(title.rectTransform, new Vector2(0, 0), new Vector2(0.5f, 1),
+            _headerTitleLabel = CreateText("Title", header, 13f, colorAccent, TextAlignmentOptions.MidlineLeft);
+            _headerTitleLabel.text = _localizedArchiveTitle;
+            _headerTitleLabel.fontStyle = FontStyles.Bold;
+            Anchor(_headerTitleLabel.rectTransform, new Vector2(0, 0), new Vector2(0.5f, 1),
                 new Vector2(12, 0), new Vector2(0, 0));
         }
 
@@ -369,7 +393,7 @@ namespace Hecton8.UI
                 TextMeshProUGUI catLabel = CreateText("Cat", rowRoot, 8f, colorDim, TextAlignmentOptions.MidlineRight);
                 Anchor(catLabel.rectTransform, new Vector2(0.75f, 0), new Vector2(1, 1),
                     new Vector2(0, 0), new Vector2(-6, 0));
-                catLabel.text = GetLocalizedCategoryLabel(log.category);
+                catLabel.text = GetCachedCategoryLabel(log.category);
 
                 // Button component
                 LogRowButton btn = rowRoot.gameObject.AddComponent<LogRowButton>();
@@ -402,7 +426,7 @@ namespace Hecton8.UI
 
             _emptyStateLabel = CreateText("EmptyStateLabel", emptyState, 10f, colorDim, TextAlignmentOptions.Center);
             _emptyStateLabel.textWrappingMode = TMPro.TextWrappingModes.Normal;
-            _emptyStateLabel.text = GetEmptyStateText();
+            _emptyStateLabel.text = _localizedEmptyStateText;
             Stretch(_emptyStateLabel.rectTransform, 16, 16, 16, 16);
         }
 
@@ -458,7 +482,7 @@ namespace Hecton8.UI
 
             _playButtonLabel = CreateText("PlayLabel", playBtn, 11f, colorBackground, TextAlignmentOptions.Midline);
             _playButtonLabel.fontStyle = FontStyles.Bold;
-            _playButtonLabel.text = PlayAudioLabel;
+            _playButtonLabel.text = _localizedPlayAudioLabel;
             Stretch(_playButtonLabel.rectTransform);
 
             PlayButtonHandler pbh = playBtn.gameObject.AddComponent<PlayButtonHandler>();
@@ -479,15 +503,14 @@ namespace Hecton8.UI
             int logCount = CatalogCount;
 
             if (_countLabel != null)
-            {
-                string countTemplate = ResolveLocalized(LocalizationKeys.AUDIOLOG_COUNT, "{0}/{1} LOGS");
-                _countLabel.text = string.Format(countTemplate, discovered, logCount);
-            }
+                _countLabel.SetText(_localizedCountFormat, discovered, logCount);
 
             if (_emptyStateLabel != null)
             {
-                _emptyStateLabel.gameObject.SetActive(logCount == 0);
-                _emptyStateLabel.text = GetEmptyStateText();
+                bool shouldShowEmptyState = logCount == 0;
+                if (_emptyStateLabel.gameObject.activeSelf != shouldShowEmptyState)
+                    _emptyStateLabel.gameObject.SetActive(shouldShowEmptyState);
+                _emptyStateLabel.text = _localizedEmptyStateText;
             }
 
             if (logCount == 0)
@@ -508,13 +531,13 @@ namespace Hecton8.UI
                 if (row.IndexLabel != null) row.IndexLabel.color = colorDim;
                 if (row.CategoryLabel != null)
                     row.CategoryLabel.text = log != null
-                        ? GetLocalizedCategoryLabel(log.category)
-                        : ResolveLocalized(LocalizationKeys.AUDIOLOG_CATEGORY_UNKNOWN, "UNKNOWN");
+                        ? GetCachedCategoryLabel(log.category)
+                        : _localizedCategoryUnknown;
                 if (row.CategoryLabel != null) row.CategoryLabel.color = isDiscovered ? colorDim : new Color(colorDim.r, colorDim.g, colorDim.b, 0.3f);
 
                 // Replace title with ??? for undiscovered
                 if (row.TitleLabel != null)
-                    row.TitleLabel.text = isDiscovered ? log.DisplayTitleOrFallback : ResolveLocalized(LocalizationKeys.AUDIOLOG_ENCRYPTED, "??? ENCRYPTED ???");
+                    row.TitleLabel.text = isDiscovered ? log.DisplayTitleOrFallback : _localizedEncryptedLabel;
             }
 
             RefreshRowHighlights();
@@ -537,22 +560,22 @@ namespace Hecton8.UI
             SetDetailVisible(true);
 
             if (_titleLabel != null)
-                _titleLabel.text = isDiscovered ? log.DisplayTitleOrFallback.ToUpperInvariant() : ResolveLocalized(LocalizationKeys.AUDIOLOG_ENCRYPTED, "??? ENCRYPTED ???");
+                _titleLabel.text = isDiscovered ? log.DisplayTitleOrFallback.ToUpperInvariant() : _localizedEncryptedLabel;
 
             if (_authorLabel != null)
                 _authorLabel.text = isDiscovered
-                    ? ResolveLocalized(LocalizationKeys.INTERACT_AUTHOR, "AUTHOR") + ": " + log.AuthorOrFallback
-                    : ResolveLocalized(LocalizationKeys.INTERACT_AUTHOR, "AUTHOR") + ": " + ResolveLocalized(LocalizationKeys.AUDIOLOG_UNKNOWN_AUTHOR, "UNKNOWN");
+                    ? string.Concat(_localizedAuthorPrefix, log.AuthorOrFallback)
+                    : string.Concat(_localizedAuthorPrefix, _localizedUnknownAuthor);
 
             if (_dateLabel != null)
                 _dateLabel.text = isDiscovered
                     ? log.RecordDateOrFallback
-                    : ResolveLocalized(LocalizationKeys.INTERACT_DATE, "DATE") + ": " + ResolveLocalized(LocalizationKeys.AUDIOLOG_UNKNOWN_DATE, "DATE UNKNOWN");
+                    : string.Concat(_localizedDatePrefix, _localizedUnknownDate);
 
             if (_summaryLabel != null)
                 _summaryLabel.text = isDiscovered
-                    ? GetLocalizedSummaryText(log)
-                    : ResolveLocalized(LocalizationKeys.AUDIOLOG_ENCRYPTED_SUMMARY, "Entry encrypted. Discovery required before archive access.");
+                    ? GetCachedSummaryText(log)
+                    : _localizedEncryptedSummary;
 
             RefreshPlayButton();
         }
@@ -599,7 +622,7 @@ namespace Hecton8.UI
             }
 
             if (_playButtonLabel != null)
-                _playButtonLabel.text = GetLocalizedPlayButtonLabel(system, selectedLog, isDiscovered);
+                _playButtonLabel.text = GetCachedPlayButtonLabel(system, selectedLog, isDiscovered);
 
             RefreshRowHighlights();
         }
@@ -627,6 +650,10 @@ namespace Hecton8.UI
 
         private void SetDetailVisible(bool visible)
         {
+            if (_detailVisible == visible)
+                return;
+
+            _detailVisible = visible;
             if (_titleLabel != null)   _titleLabel.gameObject.SetActive(visible);
             if (_authorLabel != null)  _authorLabel.gameObject.SetActive(visible);
             if (_dateLabel != null)    _dateLabel.gameObject.SetActive(visible);
@@ -709,64 +736,95 @@ namespace Hecton8.UI
 
         private void HandleLanguageChanged(GameLanguage language)
         {
+            RebuildLocalizationCache();
+            ApplyLocalizedStaticText();
             _dirty = true;
             RefreshList();
             RefreshDetail();
             RefreshPlayButton();
         }
 
-        private static string GetLocalizedSummaryText(AudioLogData log)
+        private void RebuildLocalizationCache()
+        {
+            _localizedArchiveTitle = ResolveLocalized(LocalizationKeys.AUDIOLOG_ARCHIVE_TITLE, "DATA ARCHIVE - HECTON-8 COLONY");
+            _localizedCountFormat = ResolveLocalized(LocalizationKeys.AUDIOLOG_COUNT, "{0}/{1} LOGS");
+            _localizedCategoryLabels[(int)AudioLogCategory.Personal] = ResolveLocalized(LocalizationKeys.AUDIOLOG_CATEGORY_PERSONAL, "PERSONAL");
+            _localizedCategoryLabels[(int)AudioLogCategory.Technical] = ResolveLocalized(LocalizationKeys.AUDIOLOG_CATEGORY_TECHNICAL, "TECHNICAL");
+            _localizedCategoryLabels[(int)AudioLogCategory.Emergency] = ResolveLocalized(LocalizationKeys.AUDIOLOG_CATEGORY_EMERGENCY, "EMERGENCY");
+            _localizedCategoryLabels[(int)AudioLogCategory.Atlas6] = ResolveLocalized(LocalizationKeys.AUDIOLOG_CATEGORY_ATLAS6, "ATLAS6");
+            _localizedCategoryLabels[(int)AudioLogCategory.Unknown] = ResolveLocalized(LocalizationKeys.AUDIOLOG_CATEGORY_UNKNOWN, "UNKNOWN");
+            _localizedCategoryUnknown = _localizedCategoryLabels[(int)AudioLogCategory.Unknown];
+            _localizedEncryptedLabel = ResolveLocalized(LocalizationKeys.AUDIOLOG_ENCRYPTED, "??? ENCRYPTED ???");
+            _localizedEncryptedSummary = ResolveLocalized(LocalizationKeys.AUDIOLOG_ENCRYPTED_SUMMARY, "Entry encrypted. Discovery required before archive access.");
+            _localizedUnknownAuthor = ResolveLocalized(LocalizationKeys.AUDIOLOG_UNKNOWN_AUTHOR, "UNKNOWN");
+            _localizedUnknownDate = ResolveLocalized(LocalizationKeys.AUDIOLOG_UNKNOWN_DATE, "DATE UNKNOWN");
+            _localizedAuthorPrefix = string.Concat(ResolveLocalized(LocalizationKeys.INTERACT_AUTHOR, "AUTHOR"), ": ");
+            _localizedDatePrefix = string.Concat(ResolveLocalized(LocalizationKeys.INTERACT_DATE, "DATE"), ": ");
+            _localizedPlayAudioLabel = ResolveLocalized(LocalizationKeys.AUDIOLOG_PLAY, PlayAudioLabel);
+            _localizedOpenTextLabel = ResolveLocalized(LocalizationKeys.AUDIOLOG_OPEN_TEXT, OpenTextLogLabel);
+            _localizedStopAudioLabel = ResolveLocalized(LocalizationKeys.AUDIOLOG_STOP, StopAudioLabel);
+            _localizedCloseTextLabel = ResolveLocalized(LocalizationKeys.AUDIOLOG_CLOSE_TEXT, CloseTextLogLabel);
+            _localizedLockedLabel = ResolveLocalized(LocalizationKeys.AUDIOLOG_LOCKED, LockedLogLabel);
+            _localizedNoPayloadLabel = ResolveLocalized(LocalizationKeys.AUDIOLOG_NO_PAYLOAD, NoPayloadLabel);
+            _localizedTextOnlySummaryPrefix = ResolveLocalized(LocalizationKeys.AUDIOLOG_TEXT_ONLY_PREFIX, TextOnlySummaryPrefix);
+            _localizedArchiveOnlySummaryPrefix = ResolveLocalized(LocalizationKeys.AUDIOLOG_ARCHIVE_ONLY_PREFIX, ArchiveOnlySummaryPrefix);
+            _localizedEmptyStateText = string.Concat(
+                ResolveLocalized(LocalizationKeys.AUDIOLOG_EMPTY_ARCHIVE, "ARCHIVE EMPTY"),
+                "\n",
+                ResolveLocalized(LocalizationKeys.AUDIOLOG_EMPTY_ARCHIVE_HINT, "Assign AudioLogData assets in allLogs."));
+        }
+
+        private void ApplyLocalizedStaticText()
+        {
+            if (_headerTitleLabel != null)
+                _headerTitleLabel.text = _localizedArchiveTitle;
+
+            if (_emptyStateLabel != null)
+                _emptyStateLabel.text = _localizedEmptyStateText;
+        }
+
+        private string GetCachedSummaryText(AudioLogData log)
         {
             if (log == null)
                 return string.Empty;
 
             if (log.IsTextOnlyPlayback)
-                return ResolveLocalized(LocalizationKeys.AUDIOLOG_TEXT_ONLY_PREFIX, TextOnlySummaryPrefix) + log.ArchiveSummaryOrFallback;
+                return string.Concat(_localizedTextOnlySummaryPrefix, log.ArchiveSummaryOrFallback);
 
             if (!log.HasPlaybackPayload && log.HasArchiveSummary)
-                return ResolveLocalized(LocalizationKeys.AUDIOLOG_ARCHIVE_ONLY_PREFIX, ArchiveOnlySummaryPrefix) + log.ArchiveSummaryOrFallback;
+                return string.Concat(_localizedArchiveOnlySummaryPrefix, log.ArchiveSummaryOrFallback);
 
             return log.ArchiveSummaryOrFallback;
         }
 
-        private static string GetLocalizedPlayButtonLabel(AudioLogSystem system, AudioLogData selectedLog, bool isDiscovered)
+        private string GetCachedPlayButtonLabel(AudioLogSystem system, AudioLogData selectedLog, bool isDiscovered)
         {
             if (system != null && system.IsPlaying)
             {
                 AudioLogData playingLog = system.CurrentLog;
                 return playingLog != null && playingLog.IsTextOnlyPlayback
-                    ? ResolveLocalized(LocalizationKeys.AUDIOLOG_CLOSE_TEXT, CloseTextLogLabel)
-                    : ResolveLocalized(LocalizationKeys.AUDIOLOG_STOP, StopAudioLabel);
+                    ? _localizedCloseTextLabel
+                    : _localizedStopAudioLabel;
             }
 
             if (!isDiscovered)
-                return ResolveLocalized(LocalizationKeys.AUDIOLOG_LOCKED, LockedLogLabel);
+                return _localizedLockedLabel;
 
             if (selectedLog == null || !selectedLog.HasPlaybackPayload)
-                return ResolveLocalized(LocalizationKeys.AUDIOLOG_NO_PAYLOAD, NoPayloadLabel);
+                return _localizedNoPayloadLabel;
 
             return selectedLog.HasAudioClip
-                ? ResolveLocalized(LocalizationKeys.AUDIOLOG_PLAY, PlayAudioLabel)
-                : ResolveLocalized(LocalizationKeys.AUDIOLOG_OPEN_TEXT, OpenTextLogLabel);
+                ? _localizedPlayAudioLabel
+                : _localizedOpenTextLabel;
         }
 
-        private static string GetLocalizedCategoryLabel(AudioLogCategory category)
+        private string GetCachedCategoryLabel(AudioLogCategory category)
         {
-            return category switch
-            {
-                AudioLogCategory.Personal => ResolveLocalized(LocalizationKeys.AUDIOLOG_CATEGORY_PERSONAL, "PERSONAL"),
-                AudioLogCategory.Technical => ResolveLocalized(LocalizationKeys.AUDIOLOG_CATEGORY_TECHNICAL, "TECHNICAL"),
-                AudioLogCategory.Emergency => ResolveLocalized(LocalizationKeys.AUDIOLOG_CATEGORY_EMERGENCY, "EMERGENCY"),
-                AudioLogCategory.Atlas6 => ResolveLocalized(LocalizationKeys.AUDIOLOG_CATEGORY_ATLAS6, "ATLAS6"),
-                _ => ResolveLocalized(LocalizationKeys.AUDIOLOG_CATEGORY_UNKNOWN, "UNKNOWN")
-            };
-        }
+            int categoryIndex = (int)category;
+            if ((uint)categoryIndex < (uint)_localizedCategoryLabels.Length)
+                return _localizedCategoryLabels[categoryIndex];
 
-        private static string GetEmptyStateText()
-        {
-            string archiveLabel = ResolveLocalized(LocalizationKeys.AUDIOLOG_EMPTY_ARCHIVE, "ARCHIVE EMPTY");
-            string hintLabel = ResolveLocalized(LocalizationKeys.AUDIOLOG_EMPTY_ARCHIVE_HINT, "Assign AudioLogData assets in allLogs.");
-            return archiveLabel + "\n" + hintLabel;
+            return _localizedCategoryUnknown;
         }
 
         private static string ResolveLocalized(string key, string fallback)
@@ -796,6 +854,7 @@ namespace Hecton8.UI
             tmp.color = color;
             tmp.alignment = alignment;
             tmp.overflowMode = TextOverflowModes.Truncate;
+            LocalizedTMPAutoSizer.Configure(tmp, size * 0.72f, size, TextOverflowModes.Truncate, TextWrappingModes.NoWrap);
             return tmp;
         }
 

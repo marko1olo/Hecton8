@@ -87,14 +87,24 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(0.02f, 0.6f)] private float surfaceAscendReleaseDepth = 0.18f;
         [Tooltip("Damping applied to upward velocity at the top of the water.")]
         [SerializeField, Range(0f, 20f)] private float surfaceAscendVelocityDamping = 5f;
-        [Tooltip("Minimum pitch-down angle that counts as deliberate surface dive intent.")]
-        [SerializeField, Range(0f, 80f)] private float surfaceDivePitchCommit = 24f;
+        [Tooltip("Minimum camera look-down angle below the horizon that counts as deliberate surface dive intent. Runtime never allows values below 30 degrees.")]
+        [SerializeField, Range(0f, 85f)] private float surfaceDivePitchCommit = 30f;
         [Tooltip("Minimum forward input that counts as deliberate surface dive intent.")]
         [SerializeField, Range(0f, 1f)] private float surfaceDiveForwardCommit = 0.35f;
         [Tooltip("How long a committed surface dive keeps the player out of surface-lock locomotion.")]
         [SerializeField, Range(0.04f, 0.5f)] private float surfaceDiveAssistDuration = 0.18f;
         [Tooltip("Extra downward swim-force multiplier applied while breaking through the surface into a dive.")]
         [SerializeField, Range(0f, 3f)] private float surfaceDiveAssistForceMultiplier = 1.15f;
+        [Tooltip("World-space Y offset applied to the player root while SurfaceSwim sticks to the sampled wave height.")]
+        [SerializeField, Range(-2f, 0.5f)] private float surfaceStickOffset = -0.62f;
+        [Tooltip("How deep below the surface the head must be before a deliberate dive unlocks free 3D swim.")]
+        [SerializeField, Range(0.05f, 1.5f)] private float surfaceDiveBreakDepth = 0.28f;
+        [Tooltip("How close the head must get to the surface to snap back into SurfaceSwim while ascending.")]
+        [SerializeField, Range(0f, 0.25f)] private float surfaceHeadReattachDepth = 0.05f;
+        [Tooltip("Extra damping applied against downward velocity while breaking through the surface.")]
+        [SerializeField, Range(0f, 20f)] private float surfaceDiveResistanceDamping = 4.5f;
+        [Tooltip("How much Crest's sampled vertical surface velocity influences the player while surface-sticking.")]
+        [SerializeField, Range(0f, 1f)] private float surfaceWaveVelocityInfluence = 0.75f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — CREST OCEAN INTEGRATION
@@ -103,6 +113,8 @@ namespace Hecton8.Gameplay
         [Header("── Crest Ocean Integration ───────────────────")]
         [Tooltip("Enable dynamic water height from Crest Ocean waves.")]
         [SerializeField] private bool useCrestOceanHeight = true;
+        [Tooltip("Optional explicit Crest ocean owner. Use this when OceanRenderer.Instance comes up late during world bootstrap.")]
+        [SerializeField] private Crest.OceanRenderer crestOceanRenderer;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — GRADUATED GRAVITY
@@ -220,18 +232,36 @@ namespace Hecton8.Gameplay
         private InputManager _inputManager;
         private InputManager _subscribedInputManager;
         private PlayerToolManager _playerToolManager;
+        private PlayerTransportCoordinator _playerTransportCoordinator;
         private PlayerSwimPresentationController _swimPresentationController;
         private PhysicalInteractionHandler _physicalInteractionHandler;
         private bool _resolvedPhysicalInteractionHandler;
+        private float _basePlayerHeight;
+        private float _baseCapsuleHeight;
+        private float _baseCapsuleRadius;
+        private Vector3 _baseCapsuleCenter;
+        private float _appliedCollisionHeightScale = 1f;
+        private float _appliedCollisionRadiusScale = 1f;
+        private float _appliedCollisionCenterYOffset;
 
         // ══════════════════════════════════════════════════════════
         //  CREST OCEAN — runtime state
         // ══════════════════════════════════════════════════════════
 
-        private Crest.SampleHeightHelper _crestHeightSampler;
+        private int _crestQueryOwnerHash;
         private bool _crestAvailable;
         private float _dynamicWaterSurfaceY;
+        private Vector3 _dynamicWaterSurfaceNormal = Vector3.up;
+        private Vector3 _dynamicWaterSurfaceVelocity;
+        private float _fallbackWaterSurfaceY;
         private bool _crestSamplingSucceeded;
+        private float _nextCrestResolveTime = float.NegativeInfinity;
+        private readonly Vector3[] _crestQueryPoints = new Vector3[1]; // COLD ALLOC: Vector3[1] — single-point Crest collision query position buffer — owner: HectonPlayerMovement
+        private readonly float[] _crestQueryHeights = new float[1]; // COLD ALLOC: float[1] — single-point Crest collision query height buffer — owner: HectonPlayerMovement
+        private readonly Vector3[] _crestQueryNormals = new Vector3[1]; // COLD ALLOC: Vector3[1] — single-point Crest collision query normal buffer — owner: HectonPlayerMovement
+        private readonly Vector3[] _crestQueryVelocities = new Vector3[1]; // COLD ALLOC: Vector3[1] — single-point Crest collision query velocity buffer — owner: HectonPlayerMovement
+        private readonly System.Collections.Generic.List<GameObject> _sceneRootBuffer =
+            new System.Collections.Generic.List<GameObject>(16); // COLD ALLOC: List<GameObject>(16) — reusable root scan buffer for one-shot Crest owner recovery — owner: HectonPlayerMovement
 
         // ══════════════════════════════════════════════════════════
         //  CAMERA JUICE
@@ -351,7 +381,15 @@ namespace Hecton8.Gameplay
 
         private float EffectiveWaterSurfaceY => (_crestAvailable && useCrestOceanHeight)
             ? _dynamicWaterSurfaceY
-            : waterSurfaceY;
+            : _fallbackWaterSurfaceY;
+
+        private Vector3 EffectiveWaterSurfaceNormal => (_crestAvailable && useCrestOceanHeight)
+            ? _dynamicWaterSurfaceNormal
+            : Vector3.up;
+
+        private Vector3 EffectiveWaterSurfaceVelocity => (_crestAvailable && useCrestOceanHeight)
+            ? _dynamicWaterSurfaceVelocity
+            : Vector3.zero;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC API
@@ -396,6 +434,7 @@ namespace Hecton8.Gameplay
             TryGetComponent(out _swimPresentationController);
             TryGetComponent(out _physicalInteractionHandler);
             _resolvedPhysicalInteractionHandler = true;
+            CacheBaseCollisionProfile();
             ResolvePlayerToolManager();
 
             _rb.interpolation = RigidbodyInterpolation.Interpolate;
@@ -428,17 +467,16 @@ namespace Hecton8.Gameplay
             _cachedGravity = UnityEngine.Physics.gravity;
             _smoothedGroundNormal = Vector3.up;
             RefreshGroundSlopeCache();
+            _crestQueryOwnerHash = GetHashCode();
 
             EnsureJuiceProcessor();
             _juiceProcessor.Initialize(leanIntoTurn);
 
             // ── Crest integration ──
-            if (useCrestOceanHeight && _crestHeightSampler == null)
-            {
-                _crestHeightSampler = new Crest.SampleHeightHelper(); // COLD ALLOC: reused Crest sampler for the whole scene lifetime
-            }
-
-            _dynamicWaterSurfaceY = waterSurfaceY;
+            _fallbackWaterSurfaceY = ResolveFallbackWaterSurfaceY();
+            _dynamicWaterSurfaceY = _fallbackWaterSurfaceY;
+            _dynamicWaterSurfaceNormal = Vector3.up;
+            _dynamicWaterSurfaceVelocity = Vector3.zero;
             _crestSamplingSucceeded = false;
             InitCrest();
 
@@ -518,16 +556,228 @@ namespace Hecton8.Gameplay
                 _playerToolManager = GetComponentInChildren<PlayerToolManager>(true);
         }
 
-        private float ResolveActiveMantaPropulsionForce()
+        private void ResolvePlayerTransportCoordinator()
+        {
+            if (_playerTransportCoordinator != null)
+                return;
+
+            TryGetComponent(out _playerTransportCoordinator);
+        }
+
+        private IPlayerTransportSource ResolveActiveTransportSource()
         {
             if (_playerToolManager == null)
                 ResolvePlayerToolManager();
 
-            PlayerTool activeTool = _playerToolManager != null ? _playerToolManager.CurrentTool : null;
-            if (!(activeTool is IBatteryTool) || !(activeTool is MantaScooter mantaScooter))
-                return 0f;
+            return _playerToolManager != null && !_playerToolManager.IsSwapping
+                ? _playerToolManager.CurrentToolTransportSource
+                : null;
+        }
 
-            return mantaScooter.GetPropulsionForce();
+        private float ResolveActiveTransportPropulsionForce()
+        {
+            ResolvePlayerTransportCoordinator();
+            if (_playerTransportCoordinator != null)
+                return _playerTransportCoordinator.ResolveTransportPropulsionForce();
+
+            IPlayerTransportSource transportSource = ResolveActiveTransportSource();
+            return transportSource != null
+                ? math.max(0f, transportSource.GetTransportPropulsionForce())
+                : 0f;
+        }
+
+        private float ResolveActiveTransportSpeedMultiplier()
+        {
+            ResolvePlayerTransportCoordinator();
+            if (_playerTransportCoordinator != null)
+                return _playerTransportCoordinator.ResolveTransportSpeedMultiplier();
+
+            IPlayerTransportSource transportSource = ResolveActiveTransportSource();
+            return transportSource != null
+                ? math.max(0.01f, transportSource.GetTransportSpeedMultiplier())
+                : 1f;
+        }
+
+        private float ResolveActiveTransportBoost01()
+        {
+            ResolvePlayerTransportCoordinator();
+            if (_playerTransportCoordinator != null)
+                return _playerTransportCoordinator.ResolveTransportBoost01();
+
+            IPlayerTransportSource transportSource = ResolveActiveTransportSource();
+            return transportSource != null
+                ? math.saturate(transportSource.GetTransportBoost01())
+                : 0f;
+        }
+
+        private float ResolveActiveTransportCameraMotionScale()
+        {
+            ResolvePlayerTransportCoordinator();
+            if (_playerTransportCoordinator != null)
+                return _playerTransportCoordinator.ResolveTransportCameraMotionScale();
+
+            if (_playerToolManager == null)
+                ResolvePlayerToolManager();
+
+            if (_playerToolManager != null && !_playerToolManager.IsSwapping)
+            {
+                PlayerTransportFeelContract transportFeelContract = _playerToolManager.CurrentToolTransportFeelContract;
+                if (transportFeelContract != null)
+                    return math.saturate(transportFeelContract.CameraMotionScale);
+            }
+
+            return 1f;
+        }
+
+        private PlayerTransportPreset ResolveActiveTransportPreset()
+        {
+            ResolvePlayerTransportCoordinator();
+            if (_playerTransportCoordinator != null)
+            {
+                PlayerTransportPreset transportPreset = _playerTransportCoordinator.ResolveTransportPreset();
+                if (transportPreset != null)
+                    return transportPreset;
+            }
+
+            if (_playerToolManager == null)
+                ResolvePlayerToolManager();
+
+            if (_playerToolManager != null && !_playerToolManager.IsSwapping)
+            {
+                PlayerTransportFeelContract transportFeelContract = _playerToolManager.CurrentToolTransportFeelContract;
+                if (transportFeelContract != null)
+                    return transportFeelContract.Preset;
+            }
+
+            return null;
+        }
+
+        private void CacheBaseCollisionProfile()
+        {
+            _basePlayerHeight = math.max(0.5f, playerHeight);
+
+            if (_capsuleCollider != null)
+            {
+                _baseCapsuleHeight = math.max(0.5f, _capsuleCollider.height);
+                _baseCapsuleRadius = math.max(0.01f, _capsuleCollider.radius);
+                _baseCapsuleCenter = _capsuleCollider.center;
+            }
+            else
+            {
+                _baseCapsuleHeight = _basePlayerHeight;
+                _baseCapsuleRadius = math.max(0.01f, groundCheckRadius);
+                _baseCapsuleCenter = Vector3.zero;
+            }
+
+            _appliedCollisionHeightScale = 1f;
+            _appliedCollisionRadiusScale = 1f;
+            _appliedCollisionCenterYOffset = 0f;
+        }
+
+        private void ApplyTransportCollisionProfile(PlayerTransportPreset transportPreset)
+        {
+            float nextRadiusScale = ResolveTransportCollisionRadiusScale(transportPreset);
+            float nextHeightScale = ResolveTransportCollisionHeightScale(transportPreset);
+            float nextCenterYOffset = ResolveTransportCollisionCenterYOffset(transportPreset);
+
+            if (math.abs(_appliedCollisionRadiusScale - nextRadiusScale) <= 0.0001f &&
+                math.abs(_appliedCollisionHeightScale - nextHeightScale) <= 0.0001f &&
+                math.abs(_appliedCollisionCenterYOffset - nextCenterYOffset) <= 0.0001f)
+                return;
+
+            _appliedCollisionRadiusScale = nextRadiusScale;
+            _appliedCollisionHeightScale = nextHeightScale;
+            _appliedCollisionCenterYOffset = nextCenterYOffset;
+            playerHeight = math.max(0.5f, _basePlayerHeight * nextHeightScale);
+
+            if (_capsuleCollider == null)
+                return;
+
+            float scaledRadius = math.max(0.01f, _baseCapsuleRadius * nextRadiusScale);
+            float scaledHeight = math.max(scaledRadius * 2f + 0.01f, _baseCapsuleHeight * nextHeightScale);
+            Vector3 scaledCenter = _baseCapsuleCenter;
+            scaledCenter.y += nextCenterYOffset;
+
+            _capsuleCollider.radius = scaledRadius;
+            _capsuleCollider.height = scaledHeight;
+            _capsuleCollider.center = scaledCenter;
+        }
+
+        private static float ResolveTransportCollisionRadiusScale(PlayerTransportPreset transportPreset)
+        {
+            return transportPreset != null
+                ? math.max(0.5f, transportPreset.CollisionRadiusScale)
+                : 1f;
+        }
+
+        private static float ResolveTransportCollisionHeightScale(PlayerTransportPreset transportPreset)
+        {
+            return transportPreset != null
+                ? math.max(0.5f, transportPreset.CollisionHeightScale)
+                : 1f;
+        }
+
+        private static float ResolveTransportCollisionCenterYOffset(PlayerTransportPreset transportPreset)
+        {
+            return transportPreset != null
+                ? transportPreset.CollisionCenterYOffset
+                : 0f;
+        }
+
+        private static float ResolveTransportForwardPitchInfluence(PlayerTransportPreset transportPreset)
+        {
+            return transportPreset != null
+                ? math.saturate(transportPreset.ForwardPitchInfluence)
+                : 1f;
+        }
+
+        private static float ResolveTransportStrafeInputScale(PlayerTransportPreset transportPreset)
+        {
+            return transportPreset != null
+                ? math.max(0f, transportPreset.StrafeInputScale)
+                : 1f;
+        }
+
+        private static float ResolveTransportVerticalInputScale(PlayerTransportPreset transportPreset)
+        {
+            return transportPreset != null
+                ? math.max(0f, transportPreset.VerticalInputScale)
+                : 1f;
+        }
+
+        private static float ResolveTransportReverseThrustScale(PlayerTransportPreset transportPreset)
+        {
+            return transportPreset != null
+                ? math.max(0f, transportPreset.ReverseThrustScale)
+                : 1f;
+        }
+
+        private static float ResolveTransportBodyYawResponsivenessScale(PlayerTransportPreset transportPreset)
+        {
+            return transportPreset != null
+                ? math.max(0.1f, transportPreset.BodyYawResponsivenessScale)
+                : 1f;
+        }
+
+        private static float ResolveTransportSurfaceDiveAssistScale(PlayerTransportPreset transportPreset)
+        {
+            return transportPreset != null
+                ? math.max(0f, transportPreset.SurfaceDiveAssistScale)
+                : 1f;
+        }
+
+        private static float ResolveTransportAmbientCurrentInfluenceScale(PlayerTransportPreset transportPreset)
+        {
+            return transportPreset != null
+                ? math.max(0f, transportPreset.AmbientCurrentInfluenceScale)
+                : 1f;
+        }
+
+        private static float ResolveTransportSurfaceLockInfluenceScale(PlayerTransportPreset transportPreset)
+        {
+            return transportPreset != null
+                ? math.max(0f, transportPreset.SurfaceLockInfluenceScale)
+                : 1f;
         }
 
         private bool IsHeavyCarryActive()
@@ -585,6 +835,23 @@ namespace Hecton8.Gameplay
 
             float relSpeed = collision.relativeVelocity.magnitude;
             _juiceProcessor.RegisterCollisionImpulse(relSpeed, currentSuitData);
+
+            ResolvePlayerTransportCoordinator();
+            if (_playerTransportCoordinator == null ||
+                !_playerTransportCoordinator.IsTransportActive() ||
+                !_playerTransportCoordinator.TryResolveTransportLifecycleOwner(out IPlayerTransportLifecycleOwner transportLifecycleOwner))
+                return;
+
+            Vector3 hitPoint = _cachedTransform.position;
+            Vector3 hitNormal = Vector3.up;
+            if (collision.contactCount > 0)
+            {
+                ContactPoint contact = collision.GetContact(0);
+                hitPoint = contact.point;
+                hitNormal = contact.normal;
+            }
+
+            transportLifecycleOwner.ApplyTransportCollisionImpact(relSpeed, hitPoint, hitNormal);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -593,13 +860,22 @@ namespace Hecton8.Gameplay
 
         private void InitCrest()
         {
+            _fallbackWaterSurfaceY = ResolveFallbackWaterSurfaceY();
+            _dynamicWaterSurfaceY = _fallbackWaterSurfaceY;
+            _dynamicWaterSurfaceNormal = Vector3.up;
+            _dynamicWaterSurfaceVelocity = Vector3.zero;
             _crestAvailable = false;
-            if (!useCrestOceanHeight) return;
-
-            if (Crest.OceanRenderer.Instance != null)
+            if (!useCrestOceanHeight)
             {
-                _crestAvailable = true;
-                _dynamicWaterSurfaceY = Crest.OceanRenderer.Instance.SeaLevel;
+                UpdateCrestDiagnostics();
+                return;
+            }
+
+            Crest.OceanRenderer oceanRenderer = ResolveCrestOceanRenderer(forceSceneSearch: true);
+            if (oceanRenderer != null)
+            {
+                _crestAvailable = oceanRenderer.CollisionProvider != null;
+                _dynamicWaterSurfaceY = oceanRenderer.SeaLevel;
             }
 
             UpdateCrestDiagnostics();
@@ -607,51 +883,120 @@ namespace Hecton8.Gameplay
 
         private void UpdateCrestWaterHeight()
         {
-            if (!useCrestOceanHeight) return;
+            _fallbackWaterSurfaceY = ResolveFallbackWaterSurfaceY();
 
-            if (!_crestAvailable)
-            {
-                if (Crest.OceanRenderer.Instance != null)
-                {
-                    _crestAvailable = true;
-                    _dynamicWaterSurfaceY = Crest.OceanRenderer.Instance.SeaLevel;
-                    UpdateCrestDiagnostics();
-                }
-                else
-                {
-                    return;
-                }
-            }
-
-            if (Crest.OceanRenderer.Instance == null)
+            if (!useCrestOceanHeight)
             {
                 _crestAvailable = false;
+                _crestSamplingSucceeded = false;
+                _dynamicWaterSurfaceY = _fallbackWaterSurfaceY;
+                _dynamicWaterSurfaceNormal = Vector3.up;
+                _dynamicWaterSurfaceVelocity = Vector3.zero;
                 UpdateCrestDiagnostics();
                 return;
             }
 
-            if (_crestHeightSampler == null)
+            Crest.OceanRenderer oceanRenderer = ResolveCrestOceanRenderer(forceSceneSearch: !_crestAvailable);
+            if (oceanRenderer == null)
             {
                 _crestAvailable = false;
+                _crestSamplingSucceeded = false;
+                _dynamicWaterSurfaceY = _fallbackWaterSurfaceY;
+                _dynamicWaterSurfaceNormal = Vector3.up;
+                _dynamicWaterSurfaceVelocity = Vector3.zero;
                 UpdateCrestDiagnostics();
                 return;
             }
 
-            Vector3 samplePos = _rb.position;
-            _crestHeightSampler.Init(samplePos, 0f, true);
+            Crest.ICollProvider collisionProvider = oceanRenderer.CollisionProvider;
+            if (collisionProvider == null)
+            {
+                _crestAvailable = false;
+                _crestSamplingSucceeded = false;
+                _dynamicWaterSurfaceY = oceanRenderer.SeaLevel;
+                _dynamicWaterSurfaceNormal = Vector3.up;
+                _dynamicWaterSurfaceVelocity = Vector3.zero;
+                UpdateCrestDiagnostics();
+                return;
+            }
 
-            _crestSamplingSucceeded = _crestHeightSampler.Sample(out float waterHeight);
+            _crestAvailable = true;
+            _crestQueryPoints[0] = _rb.position;
+
+            int queryStatus = collisionProvider.Query(
+                _crestQueryOwnerHash,
+                0f,
+                _crestQueryPoints,
+                _crestQueryHeights,
+                _crestQueryNormals,
+                _crestQueryVelocities);
+            _crestSamplingSucceeded = collisionProvider.RetrieveSucceeded(queryStatus);
 
             if (_crestSamplingSucceeded)
             {
-                _dynamicWaterSurfaceY = waterHeight;
+                _dynamicWaterSurfaceY = _crestQueryHeights[0];
+
+                Vector3 sampledNormal = _crestQueryNormals[0];
+                _dynamicWaterSurfaceNormal = sampledNormal.sqrMagnitude > 0.0001f
+                    ? sampledNormal.normalized
+                    : Vector3.up;
+                _dynamicWaterSurfaceVelocity = _crestQueryVelocities[0];
             }
             else
             {
-                _dynamicWaterSurfaceY = Crest.OceanRenderer.Instance.SeaLevel;
+                _dynamicWaterSurfaceY = oceanRenderer.SeaLevel;
+                _dynamicWaterSurfaceNormal = Vector3.up;
+                _dynamicWaterSurfaceVelocity = Vector3.zero;
             }
 
             UpdateCrestDiagnostics();
+        }
+
+        private float ResolveFallbackWaterSurfaceY()
+        {
+            HectonFluidEngine fluidEngine = HectonFluidEngine.Instance;
+            return fluidEngine != null ? fluidEngine.WaterLevel : waterSurfaceY;
+        }
+
+        private Crest.OceanRenderer ResolveCrestOceanRenderer(bool forceSceneSearch)
+        {
+            if (crestOceanRenderer != null)
+                return crestOceanRenderer;
+
+            Crest.OceanRenderer instance = Crest.OceanRenderer.Instance;
+            if (instance != null)
+            {
+                crestOceanRenderer = instance;
+                return crestOceanRenderer;
+            }
+
+            if (!forceSceneSearch || !Application.isPlaying)
+                return null;
+
+            float now = Time.unscaledTime;
+            if (now < _nextCrestResolveTime)
+                return null;
+
+            _nextCrestResolveTime = now + 1f;
+
+            _sceneRootBuffer.Clear();
+            gameObject.scene.GetRootGameObjects(_sceneRootBuffer);
+            int rootCount = _sceneRootBuffer.Count;
+            for (int i = 0; i < rootCount; i++)
+            {
+                GameObject rootObject = _sceneRootBuffer[i];
+                if (rootObject == null)
+                    continue;
+
+                Crest.OceanRenderer candidate = rootObject.GetComponentInChildren<Crest.OceanRenderer>(true);
+                if (candidate == null)
+                    continue;
+
+                crestOceanRenderer = candidate;
+                return crestOceanRenderer;
+            }
+
+            return null;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -734,6 +1079,7 @@ namespace Hecton8.Gameplay
                 TryGetComponent(out _swimPresentationController);
 
             _debugHasSwimPresentationController = _swimPresentationController != null;
+            ApplyTransportCollisionProfile(ResolveActiveTransportPreset());
 
             if (IsGameplayInputBlockedByMenu())
             {
@@ -855,7 +1201,8 @@ namespace Hecton8.Gameplay
             _juiceInput.cameraPitch = _cameraPitch;
             _juiceInput.swimVerticalInput = _inputVertical;
             _juiceInput.heavyCarryLoad = ResolveHeavyCarryLoad01();
-            _juiceInput.transportBoost01 = math.saturate(ResolveActiveMantaPropulsionForce() / 800f);
+            _juiceInput.transportBoost01 = ResolveActiveTransportBoost01();
+            _juiceInput.transportCameraMotionScale = ResolveActiveTransportCameraMotionScale();
 
             if (_swimPresentationController != null)
             {
@@ -997,6 +1344,7 @@ namespace Hecton8.Gameplay
 
             EnsureJuiceProcessor();
             _currentFixedDeltaTime = fixedDeltaTime;
+            PlayerTransportPreset activeTransportPreset = ResolveActiveTransportPreset();
 
             // ═══════════════════════════════════════════════
             //  1. FORCE-OVERRIDE: BuoyancyObject-proof
@@ -1013,7 +1361,9 @@ namespace Hecton8.Gameplay
             }
             else
             {
-                float bodyYawOmega = suit.bodyYawSpringOmega * ResolveHeavyCarryBodyYawSpringMultiplier();
+                float bodyYawOmega = suit.bodyYawSpringOmega *
+                    ResolveHeavyCarryBodyYawSpringMultiplier() *
+                    ResolveTransportBodyYawResponsivenessScale(activeTransportPreset);
                 _bodyYaw = SpringDamp(_bodyYaw, _cameraYaw, ref _bodyYawVelocity,
                     bodyYawOmega, fixedDeltaTime);
             }
@@ -1159,8 +1509,8 @@ namespace Hecton8.Gameplay
                 !shouldWalk &&
                 !IsInDryInterior() &&
                 physicsImmersion >= surfaceBreachMinImmersion &&
-                _currentDepth <= surfaceSwimDepthBand &&
-                HasSurfaceDiveIntent();
+                GetHeadDepthBelowSurface(EffectiveWaterSurfaceY) <= surfaceDiveBreakDepth &&
+                HasSurfaceDiveIntent(activeTransportPreset);
 
             if (shouldWalk)
             {
@@ -1178,7 +1528,7 @@ namespace Hecton8.Gameplay
                 UpdateModeDiagnostics();
             }
 
-            _isSurfaceSwimming = !_isWalking && IsSurfaceSwimBand(physicsImmersion);
+            _isSurfaceSwimming = !_isWalking && ResolveSurfaceSwimState(physicsImmersion, activeTransportPreset);
             _currentLocomotionMode = ResolveLocomotionMode(physicsImmersion);
             UpdateModeDiagnostics();
 
@@ -1220,13 +1570,13 @@ namespace Hecton8.Gameplay
             }
             else
             {
-                SwimPhysics(suit, fixedDeltaTime);
+                SwimPhysics(suit, fixedDeltaTime, activeTransportPreset);
 
                 if (_isSurfaceSwimming)
-                    ApplySurfaceLock(suit);
+                    ApplySurfaceLock(suit, activeTransportPreset);
 
                 if (_waterImmersionRatio > 0.3f)
-                    ApplyAmbientCurrent(suit, fixedDeltaTime);
+                    ApplyAmbientCurrent(suit, fixedDeltaTime, activeTransportPreset);
             }
 
             // ═══════════════════════════════════════════════
@@ -1269,18 +1619,37 @@ namespace Hecton8.Gameplay
             return _buoyancy != null && _buoyancy.IsInDryZone;
         }
 
-        private bool IsSurfaceSwimBand(float physicsImmersion)
+        private bool ResolveSurfaceSwimState(float physicsImmersion, PlayerTransportPreset transportPreset)
         {
-            if (IsInDryInterior())
+            if (_isWalking || IsInDryInterior())
                 return false;
+
+            float surfaceY = EffectiveWaterSurfaceY;
+            float headDepth = GetHeadDepthBelowSurface(surfaceY);
+            bool headTouchingSurface = headDepth <= surfaceHeadReattachDepth;
+            bool deliberateDive = HasSurfaceDiveIntent(transportPreset);
+            bool insideSurfaceBand =
+                physicsImmersion >= surfaceBreachMinImmersion &&
+                (_currentDepth <= surfaceSwimDepthBand || headDepth <= surfaceDiveBreakDepth);
+
+            if (headTouchingSurface)
+                return true;
 
             if (_surfaceDiveAssistTimer > 0f)
                 return false;
 
-            if (physicsImmersion < 0.3f || physicsImmersion >= 0.999f)
+            if (_isSurfaceSwimming)
+            {
+                if (deliberateDive && headDepth >= surfaceDiveBreakDepth)
+                    return false;
+
+                return insideSurfaceBand;
+            }
+
+            if (!insideSurfaceBand)
                 return false;
 
-            return _currentDepth <= surfaceSwimDepthBand;
+            return !deliberateDive;
         }
 
         private PlayerLocomotionMode ResolveLocomotionMode(float physicsImmersion)
@@ -1301,12 +1670,27 @@ namespace Hecton8.Gameplay
                 : PlayerLocomotionMode.UnderwaterSwim;
         }
 
-        private bool HasSurfaceDiveIntent()
+        private bool HasSurfaceDiveIntent(PlayerTransportPreset transportPreset)
         {
-            if (_inputVertical < -0.1f)
-                return true;
+            if (ResolveTransportSurfaceDiveAssistScale(transportPreset) <= 0f)
+                return false;
 
-            return _inputV > surfaceDiveForwardCommit && _cameraPitch >= surfaceDivePitchCommit;
+            float requiredDiveAngle = math.max(surfaceDivePitchCommit, 30f);
+            if (ResolveCameraLookDownAngle() < requiredDiveAngle)
+                return false;
+
+            return _inputVertical < -0.1f || _inputV > surfaceDiveForwardCommit;
+        }
+
+        private float ResolveCameraLookDownAngle()
+        {
+            if (playerCamera != null)
+            {
+                float downwardComponent = math.clamp(-playerCamera.forward.y, 0f, 1f);
+                return math.degrees(math.asin(downwardComponent));
+            }
+
+            return math.max(0f, _cameraPitch);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1489,32 +1873,29 @@ namespace Hecton8.Gameplay
         //  SURFACE LOCK
         // ══════════════════════════════════════════════════════════
 
-        private void ApplySurfaceLock(SuitData suit)
+        private void ApplySurfaceLock(SuitData suit, PlayerTransportPreset transportPreset)
         {
             if (suit.surfaceLockStrength <= 0f) return;
-            if (_surfaceBreachLockTimer > 0f) return;
             if (!_isSurfaceSwimming) return;
             if (IsInDryInterior()) return;
-
-            if (HasSurfaceDiveIntent()) return;
-
             if (_isGrounded) return;
             if (_shoreGroundGraceTimer > 0f && _smoothedImmersionRatio < swimTransitionThreshold) return;
 
-            float surfaceY = EffectiveWaterSurfaceY;
-            float feetY = GetBodyBottomY();
+            float shoreBlend = math.saturate((_smoothedImmersionRatio - 0.32f) * 2.1f);
+            float surfaceLockInfluenceScale = ResolveTransportSurfaceLockInfluenceScale(transportPreset);
+            if (surfaceLockInfluenceScale <= 0f) return;
 
-            if (feetY >= surfaceY - 0.1f) return;
+            float targetRootY = EffectiveWaterSurfaceY + surfaceStickOffset;
+            float positionError = _rb.position.y - targetRootY;
+            float effectiveSurfaceLockRange = math.max(suit.surfaceLockRange, math.abs(surfaceStickOffset) + surfaceBreachDepthWindow);
+            positionError = math.clamp(positionError, -effectiveSurfaceLockRange, effectiveSurfaceLockRange);
 
-            float eyeY = GetBodyEyeY();
-            float error = eyeY - surfaceY;
+            float targetSurfaceVelocityY = EffectiveWaterSurfaceVelocity.y * surfaceWaveVelocityInfluence;
+            float velocityError = _rb.linearVelocity.y - targetSurfaceVelocityY;
+            float diveIntentScale = HasSurfaceDiveIntent(transportPreset) ? 0.55f : 1f;
 
-            if (math.abs(error) > suit.surfaceLockRange) return;
-
-            float shoreBlend = math.saturate((_waterImmersionRatio - 0.5f) * 2.5f);
-
-            float springForce = -error * suit.surfaceLockStrength * shoreBlend;
-            float dampForce = -_rb.linearVelocity.y * suit.surfaceLockDamping * shoreBlend;
+            float springForce = -positionError * suit.surfaceLockStrength * shoreBlend * surfaceLockInfluenceScale * diveIntentScale;
+            float dampForce = -velocityError * suit.surfaceLockDamping * shoreBlend * surfaceLockInfluenceScale * diveIntentScale;
             float totalForce = (springForce + dampForce) * _rb.mass;
 
             _forceVector.x = 0f;
@@ -1542,6 +1923,12 @@ namespace Hecton8.Gameplay
         private float GetBodyEyeY()
         {
             return math.lerp(GetBodyBottomY(), GetBodyTopY(), 0.85f);
+        }
+
+        private float GetHeadDepthBelowSurface(float surfaceY)
+        {
+            float depth = surfaceY - GetBodyTopY();
+            return depth > 0f ? depth : 0f;
         }
 
         private bool TryGetCapsuleCastGeometry(float inset, out Vector3 point1, out Vector3 point2, out float radius)
@@ -1829,7 +2216,7 @@ namespace Hecton8.Gameplay
         //  SWIM PHYSICS — with depth pressure resistance
         // ══════════════════════════════════════════════════════════
 
-        private void SwimPhysics(SuitData suit, float fixedDeltaTime)
+        private void SwimPhysics(SuitData suit, float fixedDeltaTime, PlayerTransportPreset transportPreset)
         {
             _velocity = _rb.linearVelocity;
             float speed = math.sqrt(
@@ -1837,7 +2224,7 @@ namespace Hecton8.Gameplay
                 _velocity.y * _velocity.y +
                 _velocity.z * _velocity.z);
             bool isSurfaceSwim = _isSurfaceSwimming;
-            bool hasSurfaceDiveIntent = isSurfaceSwim && HasSurfaceDiveIntent();
+            bool hasSurfaceDiveIntent = isSurfaceSwim && HasSurfaceDiveIntent(transportPreset);
 
             // ── Depth-based drag increase (v7.0) ──
             float depthDragAdd = 0f;
@@ -1868,10 +2255,10 @@ namespace Hecton8.Gameplay
             }
 
             // ── Swim thrust ──
-            float mantaPropulsionForce = ResolveActiveMantaPropulsionForce();
+            float transportPropulsionForce = ResolveActiveTransportPropulsionForce();
             bool hasInput = _inputH != 0f || _inputV != 0f || _inputVertical != 0f;
             bool surfaceDiveAssistActive = _surfaceDiveAssistTimer > 0f;
-            if (!hasInput && mantaPropulsionForce <= 0f && !surfaceDiveAssistActive)
+            if (!hasInput && transportPropulsionForce <= 0f && !surfaceDiveAssistActive)
                 return;
 
             // ── Depth-based swim force reduction (v7.0) ──
@@ -1891,6 +2278,11 @@ namespace Hecton8.Gameplay
             float heavyCarryForceMultiplier = ResolveHeavyCarryForceMultiplier();
             effectiveSwimForce *= heavyCarryForceMultiplier;
             effectiveVerticalForce *= heavyCarryForceMultiplier;
+            float transportForwardPitchInfluence = ResolveTransportForwardPitchInfluence(transportPreset);
+            float transportStrafeInputScale = ResolveTransportStrafeInputScale(transportPreset);
+            float transportVerticalInputScale = ResolveTransportVerticalInputScale(transportPreset);
+            float transportReverseThrustScale = ResolveTransportReverseThrustScale(transportPreset);
+            float transportSurfaceDiveAssistScale = ResolveTransportSurfaceDiveAssistScale(transportPreset);
 
             float bodyYawRad = _bodyYaw * DEG_TO_RAD;
             float pitchRad = _cameraPitch * DEG_TO_RAD;
@@ -1899,28 +2291,63 @@ namespace Hecton8.Gameplay
             float cosBodyYaw = math.cos(bodyYawRad);
             float sinPitch = math.sin(pitchRad);
             float cosPitch = math.cos(pitchRad);
+            float fwdX;
+            float fwdY;
+            float fwdZ;
+            float rightX;
+            float rightZ;
 
-            float surfaceDepthT = isSurfaceSwim
-                ? math.saturate(_currentDepth / math.max(surfaceSwimDepthBand, 0.01f))
-                : 1f;
-            float surfacePitchBlend = isSurfaceSwim
-                ? math.lerp(1f - surfaceForwardPitchSuppression, 1f, surfaceDepthT)
-                : 1f;
+            if (isSurfaceSwim && !hasSurfaceDiveIntent)
+            {
+                Vector3 bodyForward = new Vector3(sinBodyYaw, 0f, cosBodyYaw);
+                Vector3 bodyRight = new Vector3(cosBodyYaw, 0f, -sinBodyYaw);
+                Vector3 surfaceNormal = EffectiveWaterSurfaceNormal;
+                Vector3 surfaceForward = Vector3.ProjectOnPlane(bodyForward, surfaceNormal);
+                Vector3 surfaceRight = Vector3.ProjectOnPlane(bodyRight, surfaceNormal);
 
-            float fwdPlanarScale = math.lerp(1f, cosPitch, surfacePitchBlend);
-            float fwdX = sinBodyYaw * fwdPlanarScale;
-            float fwdY = (!isSurfaceSwim || hasSurfaceDiveIntent) ? -sinPitch : 0f;
-            float fwdZ = cosBodyYaw * fwdPlanarScale;
+                if (surfaceForward.sqrMagnitude <= 0.0001f)
+                    surfaceForward = bodyForward;
+                else
+                    surfaceForward.Normalize();
 
-            float rightX = cosBodyYaw;
-            float rightZ = -sinBodyYaw;
+                if (surfaceRight.sqrMagnitude <= 0.0001f)
+                    surfaceRight = bodyRight;
+                else
+                    surfaceRight.Normalize();
+
+                fwdX = surfaceForward.x;
+                fwdY = surfaceForward.y;
+                fwdZ = surfaceForward.z;
+                rightX = surfaceRight.x;
+                rightZ = surfaceRight.z;
+            }
+            else
+            {
+                float surfaceDepthT = isSurfaceSwim
+                    ? math.saturate(_currentDepth / math.max(surfaceSwimDepthBand, 0.01f))
+                    : 1f;
+                float surfacePitchBlend = isSurfaceSwim
+                    ? math.lerp(1f - surfaceForwardPitchSuppression, 1f, surfaceDepthT)
+                    : 1f;
+                surfacePitchBlend *= transportForwardPitchInfluence;
+
+                float fwdPlanarScale = math.lerp(1f, cosPitch, surfacePitchBlend);
+                fwdX = sinBodyYaw * fwdPlanarScale;
+                fwdY = -sinPitch * transportForwardPitchInfluence;
+                fwdZ = cosBodyYaw * fwdPlanarScale;
+                rightX = cosBodyYaw;
+                rightZ = -sinBodyYaw;
+            }
 
             float forwardScale = isSurfaceSwim ? surfaceForwardForceMultiplier : 1f;
-            float strafeScale = isSurfaceSwim ? surfaceStrafeForceMultiplier : 1f;
+            float strafeScale = (isSurfaceSwim ? surfaceStrafeForceMultiplier : 1f) * transportStrafeInputScale;
+            float forwardInput = _inputV;
+            if (forwardInput < 0f)
+                forwardInput *= transportReverseThrustScale;
 
-            float dirX = fwdX * (_inputV * forwardScale) + rightX * (_inputH * strafeScale);
-            float dirY = fwdY * (_inputV * forwardScale);
-            float dirZ = fwdZ * (_inputV * forwardScale) + rightZ * (_inputH * strafeScale);
+            float dirX = fwdX * (forwardInput * forwardScale) + rightX * (_inputH * strafeScale);
+            float dirY = fwdY * (forwardInput * forwardScale);
+            float dirZ = fwdZ * (forwardInput * forwardScale) + rightZ * (_inputH * strafeScale);
 
             float sqrMag = dirX * dirX + dirY * dirY + dirZ * dirZ;
             if (sqrMag > 1.0001f)
@@ -1935,6 +2362,7 @@ namespace Hecton8.Gameplay
                 float ascendGate = math.saturate(_currentDepth / math.max(surfaceAscendReleaseDepth, 0.01f));
                 verticalInput *= ascendGate;
             }
+            verticalInput *= transportVerticalInputScale;
 
             _forceVector.x = dirX * effectiveSwimForce;
             _forceVector.y = dirY * effectiveSwimForce;
@@ -1944,10 +2372,20 @@ namespace Hecton8.Gameplay
             if (surfaceDiveAssistActive)
             {
                 float diveAssistT = math.saturate(_surfaceDiveAssistTimer / math.max(surfaceDiveAssistDuration, 0.01f));
-                _forceVector.y -= effectiveVerticalForce * surfaceDiveAssistForceMultiplier * diveAssistT;
+                _forceVector.y -= effectiveVerticalForce * surfaceDiveAssistForceMultiplier * transportSurfaceDiveAssistScale * diveAssistT;
             }
 
-            if (mantaPropulsionForce > 0f)
+            if (isSurfaceSwim && hasSurfaceDiveIntent && surfaceDiveResistanceDamping > 0f && _velocity.y < 0f)
+            {
+                float headDepth = GetHeadDepthBelowSurface(EffectiveWaterSurfaceY);
+                float surfaceResistanceT = 1f - math.saturate(headDepth / math.max(surfaceDiveBreakDepth, 0.01f));
+                if (surfaceResistanceT > 0f)
+                {
+                    _forceVector.y -= _velocity.y * _rb.mass * surfaceDiveResistanceDamping * surfaceResistanceT;
+                }
+            }
+
+            if (transportPropulsionForce > 0f)
             {
                 float propulsionDirSqr =
                     _forceVector.x * _forceVector.x +
@@ -1956,13 +2394,13 @@ namespace Hecton8.Gameplay
 
                 if (propulsionDirSqr <= 0.0001f)
                 {
-                    _forceVector.x = fwdX * mantaPropulsionForce;
-                    _forceVector.y = fwdY * mantaPropulsionForce;
-                    _forceVector.z = fwdZ * mantaPropulsionForce;
+                    _forceVector.x = fwdX * transportPropulsionForce;
+                    _forceVector.y = fwdY * transportPropulsionForce;
+                    _forceVector.z = fwdZ * transportPropulsionForce;
                 }
                 else
                 {
-                    float propulsionScale = mantaPropulsionForce / math.sqrt(propulsionDirSqr);
+                    float propulsionScale = transportPropulsionForce / math.sqrt(propulsionDirSqr);
                     _forceVector.x += _forceVector.x * propulsionScale;
                     _forceVector.y += _forceVector.y * propulsionScale;
                     _forceVector.z += _forceVector.z * propulsionScale;
@@ -2084,13 +2522,16 @@ namespace Hecton8.Gameplay
         //  AMBIENT CURRENT
         // ══════════════════════════════════════════════════════════
 
-        private void ApplyAmbientCurrent(SuitData suit, float fixedDeltaTime)
+        private void ApplyAmbientCurrent(SuitData suit, float fixedDeltaTime, PlayerTransportPreset transportPreset)
         {
             if (suit.ambientCurrentStrength <= 0f) return;
             _currentTimer += fixedDeltaTime;
             if (_currentTimer > 100000f) _currentTimer -= 100000f;
 
-            float strength = suit.ambientCurrentStrength * _waterImmersionRatio;
+            float currentInfluenceScale = ResolveTransportAmbientCurrentInfluenceScale(transportPreset);
+            if (currentInfluenceScale <= 0f) return;
+
+            float strength = suit.ambientCurrentStrength * _waterImmersionRatio * currentInfluenceScale;
             Unity.Mathematics.float3 phantom = CurrentManager.SampleCurrent(
                 new Unity.Mathematics.float3(transform.position.x, transform.position.y, transform.position.z),
                 _currentTimer,
@@ -2098,7 +2539,7 @@ namespace Hecton8.Gameplay
                 0.12f,
                 strength,
                 0.2f);
-            Vector3 localVolumeCurrent = Hecton8.Physics.CurrentVolume.SampleAt(transform.position) * _waterImmersionRatio;
+            Vector3 localVolumeCurrent = Hecton8.Physics.CurrentVolume.SampleAt(transform.position) * (_waterImmersionRatio * currentInfluenceScale);
             _forceVector.x = phantom.x + localVolumeCurrent.x;
             _forceVector.y = phantom.y + localVolumeCurrent.y;
             _forceVector.z = phantom.z + localVolumeCurrent.z;
@@ -2157,6 +2598,7 @@ namespace Hecton8.Gameplay
                 if (_isSurfaceSwimming) maxSpd *= surfaceMaxSpeedMultiplier;
                 if (_isSprinting && !IsHeavyCarryActive()) maxSpd *= suit.sprintMultiplier;
                 maxSpd *= ResolveHeavyCarrySpeedMultiplier();
+                maxSpd *= ResolveActiveTransportSpeedMultiplier();
                 if (maxSpd > 0f)
                 {
                     float fullSqr = _velocity.x * _velocity.x + _velocity.y * _velocity.y + _velocity.z * _velocity.z;
@@ -2268,11 +2710,17 @@ namespace Hecton8.Gameplay
             if (surfaceSwimDepthBand < 0.1f) surfaceSwimDepthBand = 0.1f;
             if (surfaceAscendReleaseDepth < 0.02f) surfaceAscendReleaseDepth = 0.02f;
             if (surfaceDivePitchCommit < 0f) surfaceDivePitchCommit = 0f;
-            if (surfaceDivePitchCommit > 80f) surfaceDivePitchCommit = 80f;
+            if (surfaceDivePitchCommit > 85f) surfaceDivePitchCommit = 85f;
             if (surfaceDiveForwardCommit < 0f) surfaceDiveForwardCommit = 0f;
             if (surfaceDiveForwardCommit > 1f) surfaceDiveForwardCommit = 1f;
             if (surfaceDiveAssistDuration < 0.04f) surfaceDiveAssistDuration = 0.04f;
             if (surfaceDiveAssistForceMultiplier < 0f) surfaceDiveAssistForceMultiplier = 0f;
+            if (surfaceDiveBreakDepth < 0.05f) surfaceDiveBreakDepth = 0.05f;
+            if (surfaceHeadReattachDepth < 0f) surfaceHeadReattachDepth = 0f;
+            if (surfaceHeadReattachDepth > surfaceDiveBreakDepth) surfaceHeadReattachDepth = surfaceDiveBreakDepth;
+            if (surfaceDiveResistanceDamping < 0f) surfaceDiveResistanceDamping = 0f;
+            if (surfaceWaveVelocityInfluence < 0f) surfaceWaveVelocityInfluence = 0f;
+            if (surfaceWaveVelocityInfluence > 1f) surfaceWaveVelocityInfluence = 1f;
             if (surfaceBreachDepthWindow < SurfaceStateUtility.ExitUnderwaterDepth)
                 surfaceBreachDepthWindow = SurfaceStateUtility.ExitUnderwaterDepth;
             if (surfaceBreachMinImmersion >= 0.98f)
@@ -2281,6 +2729,7 @@ namespace Hecton8.Gameplay
             if (maxHeavyCarryBodyYawSpringMultiplier > 1f) maxHeavyCarryBodyYawSpringMultiplier = 1f;
 
             RefreshGroundSlopeCache();
+            CacheBaseCollisionProfile();
         }
 
         private void OnDrawGizmosSelected()

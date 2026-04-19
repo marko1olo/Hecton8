@@ -123,9 +123,9 @@ namespace Hecton8.Gameplay
             // В финальной версии — отдельный UI экран с тремя кнопками
             // Сейчас — уведомления с инструкцией
             Hecton8.UI.NotificationEvents.PushWarning(
-                "АТЛАС-6: ДАННЫЕ ПРОГРАММЫ ПОСЕВА ЗАГРУЖЕНЫ. " +
-                "ЖИЗНЬ НА ГЕКТОНЕ-8 СУЩЕСТВОВАЛА ДО ПРИХОДА ЛЮДЕЙ. " +
-                "АТЛАС-6 СТРОИЛ СИГНАЛ ЗАЩИТЫ — 847 ДНЕЙ.");
+                ResolveLocalized(
+                    LocalizationKeys.ENDING_TERMINAL_DATA_LOADED,
+                    "ATLAS-6: SEED PROGRAM DATA LOADED. LIFE ON HECTON-8 PRE-DATES HUMAN ARRIVAL. ATLAS-6 BUILT A PROTECTIVE SIGNAL FOR 847 DAYS."));
 
             LogChoiceUiOpened();
         }

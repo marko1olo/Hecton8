@@ -34,7 +34,7 @@ namespace Pathfinding {
 		/// <summary>Fills the buffer with all RecastMeshObjs which intersect the specified bounds</summary>
 		public static void GetAllInBounds (List<RecastMeshObj> buffer, Bounds bounds) {
 			if (!Application.isPlaying) {
-				var objs = FindObjectsOfType(typeof(RecastMeshObj)) as RecastMeshObj[];
+				var objs = FindObjectsByType(typeof(RecastMeshObj), FindObjectsInactive.Include) as RecastMeshObj[];
 				for (int i = 0; i < objs.Length; i++) {
 					objs[i].RecalculateBounds();
 					if (objs[i].GetBounds().Intersects(bounds)) {
@@ -45,7 +45,7 @@ namespace Pathfinding {
 			} else if (Time.timeSinceLevelLoad == 0) {
 				// Is is not guaranteed that all RecastMeshObj OnEnable functions have been called, so if it is the first frame since loading a new level
 				// try to initialize all RecastMeshObj objects.
-				var objs = FindObjectsOfType(typeof(RecastMeshObj)) as RecastMeshObj[];
+				var objs = FindObjectsByType(typeof(RecastMeshObj), FindObjectsInactive.Include) as RecastMeshObj[];
 				for (int i = 0; i < objs.Length; i++) objs[i].Register();
 			}
 

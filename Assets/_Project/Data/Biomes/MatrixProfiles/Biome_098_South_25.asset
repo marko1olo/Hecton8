@@ -48,7 +48,7 @@ MonoBehaviour:
   landmarkStrength: 5
   rewardPull: 5
   survivalPressure: 5
-  runtimeVisualProfile: {fileID: 0}
+  runtimeVisualProfile: {fileID: 11400000, guid: e33ac5f54d10663449cefd66cdf6adca, type: 2}
   familyId: biome.family.volcanic_hadal
   familyProfile: {fileID: 11400000, guid: e259d660f9f182748a6d18a288c2bfa1, type: 2}
   suggestedZoneFamily: resources.landmarks.far

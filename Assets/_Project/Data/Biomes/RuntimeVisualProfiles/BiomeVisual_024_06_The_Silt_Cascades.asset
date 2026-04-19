@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 559ad33e1d65b1d42950ade30bdf05c9, type: 3}
+  m_Name: BiomeVisual_024_06_The_Silt_Cascades
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomeProfile
+  biomeName: 'The Silt Cascades [6]'
+  scatterColorBase: {r: 0.05177995, g: 0.09127089, b: 0.1088033, a: 1}
+  scatterColorShallow: {r: 0.10364622, g: 0.17623856, b: 0.15844469, a: 1}
+  depthFogDensity: {x: 0.56959718, y: 0.3065396, z: 0.16370505}
+  fogColor: {r: 0.06412134, g: 0.11206122, b: 0.11575074, a: 1}
+  turbidityMultiplier: 1.36877503

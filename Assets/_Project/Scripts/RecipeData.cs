@@ -1,19 +1,6 @@
-// ============================================================================
-// HECTON-8 — RecipeData.cs
-// Рецепт крафта одного предмета.
-//
-// ScriptableObject — один ассет на рецепт.
-// Создаётся через: Hecton → Recipe.
-//
-// Data-Driven: дизайнеры создают рецепты в редакторе,
-// код Fabricator просто итерирует по ним.
-//
-// Zero GC: строковые кэши строятся один раз в OnEnable.
-// ============================================================================
-
-using System;
 using System.Collections.Generic;
 using System.Text;
+using Hecton.Localization;
 using Hecton8.Building;
 using Hecton8.Gameplay;
 using Hecton8.Items;
@@ -33,73 +20,60 @@ namespace Hecton8.Crafting
     }
 
     /// <summary>
-    /// Данные одного рецепта крафта.
-    /// Содержит входные ресурсы, выходной предмет и время изготовления.
-    ///
-    /// Использует InventoryCost из системы строительства —
-    /// единый формат стоимости для всего проекта.
+    /// Data for a single fabrication recipe.
     /// </summary>
-    [CreateAssetMenu(
-        fileName = "NewRecipe",
-        menuName = "Hecton/Recipe",
-        order    = 20)]
+    [CreateAssetMenu(fileName = "NewRecipe", menuName = "Hecton/Recipe", order = 20)]
     public sealed class RecipeData : ScriptableObject
     {
-        // ─────────────────────── Identity ────────────────────────
         [Header("Identity")]
-        [Tooltip("Название рецепта для UI")]
+        [Tooltip("Authoring fallback name for the recipe UI.")]
         public string recipeName = "New Recipe";
 
-        [Tooltip("Иконка для меню крафта (опционально, берётся из resultItem)")]
+        [Tooltip("Localized display name override. Falls back to the result item localization when empty.")]
+        [SerializeField] private LocalizedTextReference localizedRecipeName;
+
+        [Tooltip("Optional override icon. Falls back to result item icon.")]
         public Sprite overrideIcon;
 
         [TextArea(2, 4)]
-        [Tooltip("Описание для подсказки")]
-        public string description = "";
+        [Tooltip("Authoring fallback description.")]
+        public string description = string.Empty;
 
-        // ─────────────────────── Result ──────────────────────────
+        [Tooltip("Localized description override. Falls back to the result item localization when empty.")]
+        [SerializeField] private LocalizedTextReference localizedRecipeDescription;
+
         [Header("Result")]
-        [Tooltip("Предмет на выходе")]
+        [Tooltip("Result item granted by the recipe.")]
         public ItemData resultItem;
 
-        [Tooltip("Количество предметов на выходе")]
+        [Tooltip("How many result items are crafted.")]
         [Min(1)]
         public int resultQuantity = 1;
 
-        // ─────────────────────── Ingredients ─────────────────────
         [Header("Ingredients")]
-        [Tooltip("Список ингредиентов (ItemData + количество)")]
+        [Tooltip("Required ingredients and quantities.")]
         public List<InventoryCost> ingredients = new List<InventoryCost>();
 
-        // ─────────────────────── Timing ──────────────────────────
         [Header("Timing")]
-        [Tooltip("Время крафта в секундах")]
+        [Tooltip("Craft duration in seconds.")]
         [Min(0.1f)]
         public float craftTime = 3f;
 
         [Header("Power")]
-        [Tooltip("Энергия, потребляемая при завершении крафта (Вт·ч). 0 = бесплатно.")]
+        [Tooltip("Power cost paid when crafting completes.")]
         [Min(0f)]
         public float powerCost = 5f;
 
         [Header("Unlock")]
-        [Tooltip("Необязательная scan-log запись, которая открывает этот чертёж. Пусто = чертёж доступен сразу.")]
-        public string requiredScanEntryId = "";
+        [Tooltip("Optional scan-log unlock dependency. Empty means always available.")]
+        public string requiredScanEntryId = string.Empty;
 
         [Header("Fabricator Group")]
+        [Tooltip("Optional explicit fabricator group override.")]
         public FabricationGroup fabricationGroup = FabricationGroup.Unspecified;
 
-        // ─────────────────────── Cache ───────────────────────────
-
-        /// <summary>"Создать Кислородный баллон" — для UI промпта.</summary>
         private string _cachedCraftText;
-
-        /// <summary>"Титан ×2, Стекло ×1" — краткое описание стоимости.</summary>
         private string _cachedCostSummary;
-
-        // ═════════════════════════════════════════════════════════
-        //  Lifecycle
-        // ═════════════════════════════════════════════════════════
 
         private void OnEnable()
         {
@@ -109,46 +83,57 @@ namespace Hecton8.Crafting
 #if UNITY_EDITOR
         private void OnValidate()
         {
-#if UNITY_EDITOR
             if (UnityEditor.EditorApplication.isCompiling ||
                 UnityEditor.EditorApplication.isUpdating ||
                 UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+            {
                 return;
-#endif
-            if (resultQuantity < 1) resultQuantity = 1;
-            if (craftTime < 0.1f)   craftTime = 0.1f;
+            }
+
+            if (resultQuantity < 1)
+                resultQuantity = 1;
+
+            if (craftTime < 0.1f)
+                craftTime = 0.1f;
 
             RebuildCache();
         }
 #endif
 
-        // ═════════════════════════════════════════════════════════
-        //  Public API — Zero GC
-        // ═════════════════════════════════════════════════════════
+        /// <summary>
+        /// Localized display name used by Fabricator and PDA recipe surfaces.
+        /// </summary>
+        public string DisplayNameOrFallback => resultItem != null && !string.IsNullOrWhiteSpace(resultItem.itemName)
+            ? ResolveLocalizedRecipeName(resultItem.itemName)
+            : ResolveLocalizedRecipeName(recipeName);
 
         /// <summary>
-        /// "Создать {recipeName}". Кэширована — zero alloc.
+        /// Localized description used by Fabricator detail surfaces.
+        /// </summary>
+        public string DescriptionOrFallback => resultItem != null && !string.IsNullOrWhiteSpace(resultItem.description)
+            ? ResolveLocalizedRecipeDescription(resultItem.description)
+            : ResolveLocalizedRecipeDescription(description);
+
+        /// <summary>
+        /// Localized craft CTA used by prompt-style UI.
         /// </summary>
         public string GetCraftText()
         {
-            if (string.IsNullOrEmpty(_cachedCraftText))
-                RebuildCache();
+            RebuildCache();
             return _cachedCraftText;
         }
 
         /// <summary>
-        /// "Титан ×2, Стекло ×1". Кэширована — zero alloc.
-        /// Используется UI для отображения стоимости.
+        /// Localized cost summary used by prompt-style UI.
         /// </summary>
         public string GetCostSummary()
         {
-            if (string.IsNullOrEmpty(_cachedCostSummary))
-                RebuildCache();
+            RebuildCache();
             return _cachedCostSummary;
         }
 
         /// <summary>
-        /// Иконка рецепта: overrideIcon, или resultItem.icon, или null.
+        /// Icon shown for the recipe.
         /// </summary>
         public Sprite Icon => overrideIcon != null
             ? overrideIcon
@@ -194,40 +179,65 @@ namespace Hecton8.Crafting
 
         public string GetFabricationGroupLabel()
         {
+            LocalizationManager localization = LocalizationManager.Instance;
             switch (GetResolvedFabricationGroup())
             {
-                case FabricationGroup.Materials: return "MATERIALS";
-                case FabricationGroup.Components: return "COMPONENTS";
-                case FabricationGroup.Tools: return "TOOLS";
-                case FabricationGroup.Suit: return "SUIT";
-                case FabricationGroup.Construction: return "CONSTRUCTION";
-                case FabricationGroup.Power: return "POWER";
-                default: return "ALL";
+                case FabricationGroup.Materials:
+                    return localization != null ? localization.GetOrFallback(localization.CurrentLanguage, LocalizationKeys.FAB_GROUP_MATERIALS, "MATERIALS") : "MATERIALS";
+                case FabricationGroup.Components:
+                    return localization != null ? localization.GetOrFallback(localization.CurrentLanguage, LocalizationKeys.FAB_GROUP_COMPONENTS, "COMPONENTS") : "COMPONENTS";
+                case FabricationGroup.Tools:
+                    return localization != null ? localization.GetOrFallback(localization.CurrentLanguage, LocalizationKeys.FAB_GROUP_TOOLS, "TOOLS") : "TOOLS";
+                case FabricationGroup.Suit:
+                    return localization != null ? localization.GetOrFallback(localization.CurrentLanguage, LocalizationKeys.FAB_GROUP_SUIT, "SUIT") : "SUIT";
+                case FabricationGroup.Construction:
+                    return localization != null ? localization.GetOrFallback(localization.CurrentLanguage, LocalizationKeys.FAB_GROUP_CONSTRUCTION, "CONSTRUCTION") : "CONSTRUCTION";
+                case FabricationGroup.Power:
+                    return localization != null ? localization.GetOrFallback(localization.CurrentLanguage, LocalizationKeys.FAB_GROUP_POWER, "POWER") : "POWER";
+                default:
+                    return localization != null ? localization.GetOrFallback(localization.CurrentLanguage, LocalizationKeys.FAB_GROUP_ALL, "ALL") : "ALL";
             }
         }
 
-        // ═════════════════════════════════════════════════════════
-        //  Private
-        // ═════════════════════════════════════════════════════════
-
         private void RebuildCache()
         {
-            _cachedCraftText = $"Создать {recipeName}";
+            _cachedCraftText = "Create " + DisplayNameOrFallback;
 
-            // ── Краткое описание стоимости ──
             var sb = new StringBuilder(64);
-            for (int i = 0, count = ingredients.Count; i < count; i++)
+            int ingredientCount = ingredients != null ? ingredients.Count : 0;
+            for (int i = 0; i < ingredientCount; i++)
             {
                 InventoryCost cost = ingredients[i];
-                if (cost == null || cost.item == null) continue;
+                if (cost == null || cost.item == null)
+                    continue;
 
-                if (sb.Length > 0) sb.Append(", ");
+                if (sb.Length > 0)
+                    sb.Append(", ");
+
+                if (LocalizedInlineIconResolver.TryResolveItemChip(cost.item, out string chip))
+                {
+                    sb.Append(chip);
+                    sb.Append(' ');
+                }
+
                 sb.Append(cost.item.itemName);
-                sb.Append(" ×");
+                sb.Append(" x");
                 sb.Append(cost.amount);
             }
 
-            _cachedCostSummary = sb.Length > 0 ? sb.ToString() : "—";
+            _cachedCostSummary = sb.Length > 0 ? sb.ToString() : "-";
+        }
+
+        private string ResolveLocalizedRecipeName(string fallback)
+        {
+            string resolved = localizedRecipeName.ResolveOrFallback(string.Empty);
+            return !string.IsNullOrWhiteSpace(resolved) ? resolved : (fallback ?? string.Empty);
+        }
+
+        private string ResolveLocalizedRecipeDescription(string fallback)
+        {
+            string resolved = localizedRecipeDescription.ResolveOrFallback(string.Empty);
+            return !string.IsNullOrWhiteSpace(resolved) ? resolved : (fallback ?? string.Empty);
         }
     }
 }

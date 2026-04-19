@@ -49,7 +49,7 @@ MonoBehaviour:
   landmarkStrength: 5
   rewardPull: 5
   survivalPressure: 5
-  runtimeVisualProfile: {fileID: 0}
+  runtimeVisualProfile: {fileID: 11400000, guid: b42d78c16c9fe724a9bfe086b2caa514, type: 2}
   familyId: biome.family.rift_void
   familyProfile: {fileID: 11400000, guid: c99b16137fd8d0044895be98153c1d24, type: 2}
   suggestedZoneFamily: progression.skyline.far

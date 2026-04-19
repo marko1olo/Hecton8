@@ -47,7 +47,7 @@ MonoBehaviour:
   landmarkStrength: 4
   rewardPull: 5
   survivalPressure: 5
-  runtimeVisualProfile: {fileID: 0}
+  runtimeVisualProfile: {fileID: 11400000, guid: dd7d48d3349a0a646ba95e00c4fda89d, type: 2}
   familyId: biome.family.chemosynthetic_brine
   familyProfile: {fileID: 11400000, guid: ad32ebb956f32204fa68a6ccaca89fc3, type: 2}
   suggestedZoneFamily: power.generator.current_turbine

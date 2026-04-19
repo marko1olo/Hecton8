@@ -739,7 +739,7 @@ namespace GPUInstancer
         [MenuItem("Tools/GPU Instancer/Show Scene Prefab Importer", validate = false, priority = 201)]
         public static void ToolbarShowPrefabImporter()
         {
-            GameObject[] prefabInstances = (GameObject[])GameObject.FindObjectsOfType(typeof(GameObject));
+            GameObject[] prefabInstances = (GameObject[])GameObject.FindObjectsByType(typeof(GameObject), FindObjectsInactive.Include);
             List<GameObject> prefabList = new List<GameObject>();
             foreach (GameObject go in prefabInstances)
             {

@@ -143,8 +143,18 @@ namespace Hecton.Localization
         public const string UI_HINT_FABRICATE = "UI_HINT_FABRICATE";
         public const string UI_HINT_CLOSE = "UI_HINT_CLOSE";
         public const string UI_NO_BLUEPRINTS = "UI_NO_BLUEPRINTS";
+        public const string UI_BLUEPRINT_LOCKED = "UI_BLUEPRINT_LOCKED";
         public const string UI_INSUFFICIENT = "UI_INSUFFICIENT";
         public const string UI_READY = "UI_READY";
+        public const string UI_POWER_OFFLINE = "UI_POWER_OFFLINE";
+        public const string UI_POWER_REQUIRED = "UI_POWER_REQUIRED";
+        public const string FAB_GROUP_ALL = "FAB_GROUP_ALL";
+        public const string FAB_GROUP_MATERIALS = "FAB_GROUP_MATERIALS";
+        public const string FAB_GROUP_COMPONENTS = "FAB_GROUP_COMPONENTS";
+        public const string FAB_GROUP_TOOLS = "FAB_GROUP_TOOLS";
+        public const string FAB_GROUP_SUIT = "FAB_GROUP_SUIT";
+        public const string FAB_GROUP_CONSTRUCTION = "FAB_GROUP_CONSTRUCTION";
+        public const string FAB_GROUP_POWER = "FAB_GROUP_POWER";
 
         // HectonSuitHUD
         public const string HUD_MODULE_POWERED = "HUD_MODULE_POWERED";
@@ -165,6 +175,10 @@ namespace Hecton.Localization
         public const string HUD_HULL = "HUD_HULL";
         public const string HUD_TEMP = "HUD_TEMP";
         public const string HUD_PRESSURE = "HUD_PRESSURE";
+        public const string HUD_UNIT_METERS = "HUD_UNIT_METERS";
+        public const string HUD_UNIT_FEET = "HUD_UNIT_FEET";
+        public const string HUD_UNIT_CELSIUS = "HUD_UNIT_CELSIUS";
+        public const string HUD_UNIT_FAHRENHEIT = "HUD_UNIT_FAHRENHEIT";
         public const string HUD_STATUS_PRESSURE_LIMIT_EXCEEDED = "HUD_STATUS_PRESSURE_LIMIT_EXCEEDED";
         public const string HUD_STATUS_APPROACHING_SAFE_DEPTH_LIMIT = "HUD_STATUS_APPROACHING_SAFE_DEPTH_LIMIT";
         public const string HUD_STATUS_SUIT_DAMAGE_CRITICAL = "HUD_STATUS_SUIT_DAMAGE_CRITICAL";
@@ -189,6 +203,7 @@ namespace Hecton.Localization
         public const string INTERACT_EXIT_BASE = "INTERACT_EXIT_BASE";
         public const string INTERACT_CYCLING = "INTERACT_CYCLING";
         public const string INTERACT_DEPOSIT_FUEL = "INTERACT_DEPOSIT_FUEL";
+        public const string INTERACT_DEPOSIT_FUEL_COUNT = "INTERACT_DEPOSIT_FUEL_COUNT";
         public const string INTERACT_REACTOR_FULL = "INTERACT_REACTOR_FULL";
         public const string INTERACT_ACCESS_CHARGER = "INTERACT_ACCESS_CHARGER";
         public const string INTERACT_SWAP_BATTERY = "INTERACT_SWAP_BATTERY";
@@ -196,6 +211,8 @@ namespace Hecton.Localization
         public const string INTERACT_TAKE_ITEM = "INTERACT_TAKE_ITEM";
         public const string INTERACT_INSERT_BATTERY = "INTERACT_INSERT_BATTERY";
         public const string INTERACT_BIO_REACTOR = "INTERACT_BIO_REACTOR";
+        public const string INTERACT_DEFAULT_PROMPT_FORMAT = "INTERACT_DEFAULT_PROMPT_FORMAT";
+        public const string INTERACT_CONSUMABLE_WITH_DURATION_FORMAT = "INTERACT_CONSUMABLE_WITH_DURATION_FORMAT";
         public const string INTERACT_EMPTY_CRATE = "INTERACT_EMPTY_CRATE";
         public const string INTERACT_VERB_APPLY = "INTERACT_VERB_APPLY";
         public const string INTERACT_VERB_DRINK = "INTERACT_VERB_DRINK";
@@ -218,6 +235,7 @@ namespace Hecton.Localization
         public const string ENDING_TERMINAL_INACTIVE = "ENDING_TERMINAL_INACTIVE";
         public const string ENDING_TERMINAL_ACTIVE = "ENDING_TERMINAL_ACTIVE";
         public const string ENDING_TERMINAL_COMPLETE = "ENDING_TERMINAL_COMPLETE";
+        public const string ENDING_TERMINAL_DATA_LOADED = "ENDING_TERMINAL_DATA_LOADED";
 
         // Audio log / lore notifications
         public const string AUDIOLOG_DISCOVERED = "AUDIOLOG_DISCOVERED";
@@ -286,6 +304,43 @@ namespace Hecton.Localization
         public const string MANTA_DIRECTIVE_SWAP_OR_RECHARGE = "MANTA_DIRECTIVE_SWAP_OR_RECHARGE";
         public const string MANTA_DIRECTIVE_HOLD_FORWARD = "MANTA_DIRECTIVE_HOLD_FORWARD";
         public const string MANTA_DIRECTIVE_HOLD_PRIMARY = "MANTA_DIRECTIVE_HOLD_PRIMARY";
+        public const string FIRST_HOUR_MODULE_SCAN_HINT = "FIRST_HOUR_MODULE_SCAN_HINT";
+        public const string FIRST_HOUR_RESOURCE_REMINDER_COPPER = "FIRST_HOUR_RESOURCE_REMINDER_COPPER";
+        public const string FIRST_HOUR_RESOURCE_REMINDER_GENERIC = "FIRST_HOUR_RESOURCE_REMINDER_GENERIC";
+        public const string FIRST_HOUR_DEPTH_REMINDER = "FIRST_HOUR_DEPTH_REMINDER";
+        public const string FIRST_HOUR_RESOURCE_SHELF_READ = "FIRST_HOUR_RESOURCE_SHELF_READ";
+        public const string FIRST_HOUR_FABRICATION_FALLBACK = "FIRST_HOUR_FABRICATION_FALLBACK";
+        public const string FIRST_HOUR_RETURN_LORE_RELAY = "FIRST_HOUR_RETURN_LORE_RELAY";
+        public const string FIRST_HOUR_DEEPER_ROUTE_READ = "FIRST_HOUR_DEEPER_ROUTE_READ";
+        public const string FIRST_HOUR_MODULE_ROUTE_READ = "FIRST_HOUR_MODULE_ROUTE_READ";
+        public const string FIRST_HOUR_STARTER_BACKSLIDE_READ = "FIRST_HOUR_STARTER_BACKSLIDE_READ";
+        public const string HAZARD_RADIATION_ENTER = "HAZARD_RADIATION_ENTER";
+        public const string HAZARD_RADIATION_EXIT = "HAZARD_RADIATION_EXIT";
+        public const string HAZARD_HEAT_ENTER = "HAZARD_HEAT_ENTER";
+        public const string HAZARD_HEAT_EXIT = "HAZARD_HEAT_EXIT";
+        public const string HAZARD_TOXICITY_ENTER = "HAZARD_TOXICITY_ENTER";
+        public const string HAZARD_TOXICITY_EXIT = "HAZARD_TOXICITY_EXIT";
+        public const string HAZARD_BIOHAZARD_ENTER = "HAZARD_BIOHAZARD_ENTER";
+        public const string HAZARD_BIOHAZARD_EXIT = "HAZARD_BIOHAZARD_EXIT";
+        public const string SPECTRUM_NOTIFICATION_MODE = "SPECTRUM_NOTIFICATION_MODE";
+        public const string SPECTRUM_MODE_NORMAL = "SPECTRUM_MODE_NORMAL";
+        public const string SPECTRUM_MODE_THERMAL = "SPECTRUM_MODE_THERMAL";
+        public const string SPECTRUM_MODE_SONAR = "SPECTRUM_MODE_SONAR";
+        public const string SPECTRUM_MODE_ECHOLOCATION = "SPECTRUM_MODE_ECHOLOCATION";
+        public const string ENDING_CORE_REACHED = "ENDING_CORE_REACHED";
+        public const string ENDING_SHUTDOWN_COMPLETE = "ENDING_SHUTDOWN_COMPLETE";
+        public const string ENDING_LEAVE_COMPLETE = "ENDING_LEAVE_COMPLETE";
+        public const string ENDING_AMPLIFY_COMPLETE = "ENDING_AMPLIFY_COMPLETE";
+        public const string CORP_ORDER_INCOMING = "CORP_ORDER_INCOMING";
+        public const string CORP_ORDER_CONFLICT = "CORP_ORDER_CONFLICT";
+        public const string ATLAS6_ANOMALY_DETECTED = "ATLAS6_ANOMALY_DETECTED";
+        public const string ATLAS6_COLLABORATOR_STATUS = "ATLAS6_COLLABORATOR_STATUS";
+        public const string ATLAS_SIGNAL_REVEAL_STAGE_2 = "ATLAS_SIGNAL_REVEAL_STAGE_2";
+        public const string ATLAS_SIGNAL_REVEAL_STAGE_3 = "ATLAS_SIGNAL_REVEAL_STAGE_3";
+        public const string ATLAS_SIGNAL_REVEAL_STAGE_4 = "ATLAS_SIGNAL_REVEAL_STAGE_4";
+        public const string BASE_INTEGRITY_DANGER = "BASE_INTEGRITY_DANGER";
+        public const string BASE_INTEGRITY_CRITICAL = "BASE_INTEGRITY_CRITICAL";
+        public const string BASE_INTEGRITY_WARNING = "BASE_INTEGRITY_WARNING";
 
         // Beacon tool / network
         public const string BEACON_PREFIX = "BEACON_PREFIX";

@@ -122,6 +122,10 @@ namespace Hecton8.UI
         private string _prevAmbientVolumeText = null;
         private string _prevFOVText = null;
         private string _prevShadowDistanceText = null;
+        private string _prevQualityLevelText = null;
+        private string _prevShadowQualityText = null;
+        private string _prevAntiAliasingText = null;
+        private string _prevTextureQualityText = null;
 
         // ZERO-GC: Static constructor to pre-generate all display strings
         static SettingsPanel()
@@ -414,9 +418,9 @@ namespace Hecton8.UI
 
             string[] qualityNames = QualitySettings.names;
             if (_cachedQualityLevel >= 0 && _cachedQualityLevel < qualityNames.Length)
-                txtQualityLevel.SetText(ResolveLocalizedQualityName(qualityNames[_cachedQualityLevel]));
+                SetValueTextIfChanged(txtQualityLevel, ResolveLocalizedQualityName(qualityNames[_cachedQualityLevel]), ref _prevQualityLevelText);
             else
-                txtQualityLevel.SetText("--");
+                SetValueTextIfChanged(txtQualityLevel, "--", ref _prevQualityLevelText);
         }
 
         private void RefreshVolumeUI()
@@ -507,7 +511,7 @@ namespace Hecton8.UI
             }
 
             if (txtShadowQuality != null && _cachedShadowQuality >= 0 && _cachedShadowQuality < ShadowQualityNames.Length)
-                txtShadowQuality.SetText(ResolveLocalizedShadowQualityName(_cachedShadowQuality));
+                SetValueTextIfChanged(txtShadowQuality, ResolveLocalizedShadowQualityName(_cachedShadowQuality), ref _prevShadowQualityText);
 
             if (sliderShadowDistance != null)
                 sliderShadowDistance.SetValueWithoutNotify(_cachedShadowDistance);
@@ -526,7 +530,7 @@ namespace Hecton8.UI
             }
 
             if (txtAntiAliasing != null && _cachedAntiAliasing >= 0 && _cachedAntiAliasing < AntiAliasingNames.Length)
-                txtAntiAliasing.SetText(ResolveLocalizedAntiAliasingName(_cachedAntiAliasing));
+                SetValueTextIfChanged(txtAntiAliasing, ResolveLocalizedAntiAliasingName(_cachedAntiAliasing), ref _prevAntiAliasingText);
 
             if (toggleAmbientOcclusion != null)
                 toggleAmbientOcclusion.SetIsOnWithoutNotify(_cachedAmbientOcclusion);
@@ -538,7 +542,7 @@ namespace Hecton8.UI
                 toggleMotionBlur.SetIsOnWithoutNotify(_cachedMotionBlur);
 
             if (txtTextureQuality != null && _cachedTextureQuality >= 0 && _cachedTextureQuality < TextureQualityNames.Length)
-                txtTextureQuality.SetText(ResolveLocalizedTextureQualityName(_cachedTextureQuality));
+                SetValueTextIfChanged(txtTextureQuality, ResolveLocalizedTextureQualityName(_cachedTextureQuality), ref _prevTextureQualityText);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -657,14 +661,14 @@ namespace Hecton8.UI
         {
             _cachedShadowQuality = Mathf.Clamp(_cachedShadowQuality - 1, 0, 3);
             if (txtShadowQuality != null && _cachedShadowQuality >= 0 && _cachedShadowQuality < ShadowQualityNames.Length)
-                txtShadowQuality.SetText(ResolveLocalizedShadowQualityName(_cachedShadowQuality));
+                SetValueTextIfChanged(txtShadowQuality, ResolveLocalizedShadowQualityName(_cachedShadowQuality), ref _prevShadowQualityText);
         }
 
         private void OnShadowQualityIncrease()
         {
             _cachedShadowQuality = Mathf.Clamp(_cachedShadowQuality + 1, 0, 3);
             if (txtShadowQuality != null && _cachedShadowQuality >= 0 && _cachedShadowQuality < ShadowQualityNames.Length)
-                txtShadowQuality.SetText(ResolveLocalizedShadowQualityName(_cachedShadowQuality));
+                SetValueTextIfChanged(txtShadowQuality, ResolveLocalizedShadowQualityName(_cachedShadowQuality), ref _prevShadowQualityText);
         }
 
         private void OnShadowDistanceChanged(float value)
@@ -695,14 +699,14 @@ namespace Hecton8.UI
         {
             _cachedAntiAliasing = Mathf.Clamp(_cachedAntiAliasing - 1, 0, 3);
             if (txtAntiAliasing != null && _cachedAntiAliasing >= 0 && _cachedAntiAliasing < AntiAliasingNames.Length)
-                txtAntiAliasing.SetText(ResolveLocalizedAntiAliasingName(_cachedAntiAliasing));
+                SetValueTextIfChanged(txtAntiAliasing, ResolveLocalizedAntiAliasingName(_cachedAntiAliasing), ref _prevAntiAliasingText);
         }
 
         private void OnAntiAliasingIncrease()
         {
             _cachedAntiAliasing = Mathf.Clamp(_cachedAntiAliasing + 1, 0, 3);
             if (txtAntiAliasing != null && _cachedAntiAliasing >= 0 && _cachedAntiAliasing < AntiAliasingNames.Length)
-                txtAntiAliasing.SetText(ResolveLocalizedAntiAliasingName(_cachedAntiAliasing));
+                SetValueTextIfChanged(txtAntiAliasing, ResolveLocalizedAntiAliasingName(_cachedAntiAliasing), ref _prevAntiAliasingText);
         }
 
         private void OnAmbientOcclusionChanged(bool value)
@@ -751,14 +755,14 @@ namespace Hecton8.UI
         {
             _cachedTextureQuality = Mathf.Clamp(_cachedTextureQuality - 1, 0, 3);
             if (txtTextureQuality != null && _cachedTextureQuality >= 0 && _cachedTextureQuality < TextureQualityNames.Length)
-                txtTextureQuality.SetText(ResolveLocalizedTextureQualityName(_cachedTextureQuality));
+                SetValueTextIfChanged(txtTextureQuality, ResolveLocalizedTextureQualityName(_cachedTextureQuality), ref _prevTextureQualityText);
         }
 
         private void OnTextureQualityIncrease()
         {
             _cachedTextureQuality = Mathf.Clamp(_cachedTextureQuality + 1, 0, 3);
             if (txtTextureQuality != null && _cachedTextureQuality >= 0 && _cachedTextureQuality < TextureQualityNames.Length)
-                txtTextureQuality.SetText(ResolveLocalizedTextureQualityName(_cachedTextureQuality));
+                SetValueTextIfChanged(txtTextureQuality, ResolveLocalizedTextureQualityName(_cachedTextureQuality), ref _prevTextureQualityText);
         }
 
         private void HandleLanguageChanged(GameLanguage language)
@@ -801,7 +805,23 @@ namespace Hecton8.UI
             if (!target.TryGetComponent(out TMP_Text label))
                 return;
 
-            label.SetText(ResolveLocalized(key, fallback));
+            LocalizedTMPAutoSizer.Configure(label, label.fontSize * 0.72f, label.fontSize, TextOverflowModes.Ellipsis, TextWrappingModes.NoWrap);
+            SetTextIfChanged(label, ResolveLocalized(key, fallback));
+        }
+
+        private static void SetValueTextIfChanged(TMP_Text label, string text, ref string previousText)
+        {
+            if (label == null || previousText == text)
+                return;
+
+            label.SetText(text);
+            previousText = text;
+        }
+
+        private static void SetTextIfChanged(TMP_Text label, string text)
+        {
+            if (label != null && label.text != text)
+                label.SetText(text);
         }
 
         private static string ResolveLocalized(string key, string fallback)

@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 559ad33e1d65b1d42950ade30bdf05c9, type: 3}
+  m_Name: BiomeVisual_057_North_15_The_Iron_Plains
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Environment.HectonBiomeProfile
+  biomeName: 'The Iron Plains [North T15]'
+  scatterColorBase: {r: 0.02416988, g: 0.08443858, b: 0.11965018, a: 1}
+  scatterColorShallow: {r: 0.061161365, g: 0.15334545, b: 0.17963408, a: 1}
+  depthFogDensity: {x: 0.56066453, y: 0.33412382, z: 0.19516614}
+  fogColor: {r: 0.025048047, g: 0.086154796, b: 0.110317156, a: 1}
+  turbidityMultiplier: 1.2942331

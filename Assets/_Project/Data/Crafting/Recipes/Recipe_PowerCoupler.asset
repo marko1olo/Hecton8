@@ -1,4 +1,4 @@
-%YAML 1.1
+﻿%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!114 &11400000
 MonoBehaviour:
@@ -13,9 +13,17 @@ MonoBehaviour:
   m_Name: Recipe_PowerCoupler
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Crafting.RecipeData
   recipeName: Power Coupler
+  localizedRecipeName:
+    tableKey: ITEM_POWER_COUPLER_NAME
+    fallbackText: ''
+    variants: []
   overrideIcon: {fileID: 0}
   description: Assemble a sealed high-load coupler for generator and habitat power
     links.
+  localizedRecipeDescription:
+    tableKey: ITEM_POWER_COUPLER_DESCRIPTION
+    fallbackText: ''
+    variants: []
   resultItem: {fileID: 11400000, guid: 2f16016142035d6459a0e8b33c4ae20f, type: 2}
   resultQuantity: 1
   ingredients:

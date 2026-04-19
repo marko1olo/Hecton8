@@ -200,6 +200,7 @@ namespace Hecton8.UI
         private string _localizedDepthPattern = DefaultDepthPattern;
         private string _localizedTemperaturePattern = DefaultTemperaturePattern;
         private string _localizedPressurePattern = DefaultPressurePattern;
+        private GameLanguage _localizedMeasurementLanguage = GameLanguage.English;
         private string _localizedGaugeO2Label = DefaultGaugeO2Label;
         private string _localizedGaugePowerLabel = DefaultGaugePowerLabel;
         private string _localizedGaugeHullLabel = DefaultGaugeHullLabel;
@@ -843,8 +844,10 @@ namespace Hecton8.UI
 
             SetTextIfChanged(_suitLabel, ResolveSuitLabel(), Alpha(primary, 0.95f), ref _appliedSuitLabelText, ref _appliedSuitLabelColor);
             SetTextIfChanged(_headingLabel, ResolveHeadingLabel(Mathf.RoundToInt(heading)), Alpha(dim, 0.58f), ref _appliedHeadingLabelText, ref _appliedHeadingLabelColor);
-            SetMetricIntIfChanged(_depthLabel, _localizedDepthPattern, Mathf.RoundToInt(depth), Alpha(primary, 0.96f), ref _appliedDepthValue, ref _hasAppliedDepthValue, ref _appliedDepthColor);
-            SetMetricFloatTenthsIfChanged(_temperatureLabel, _localizedTemperaturePattern, _displayTemperature, Alpha(dim, 0.84f), ref _appliedTemperatureTenths, ref _hasAppliedTemperatureTenths, ref _appliedTemperatureColor);
+            float localizedDepth = LocalizedMeasurementFormatter.ConvertDistanceMeters(depth, _localizedMeasurementLanguage);
+            float localizedTemperature = LocalizedMeasurementFormatter.ConvertTemperatureCelsius(_displayTemperature, _localizedMeasurementLanguage);
+            SetMetricIntIfChanged(_depthLabel, _localizedDepthPattern, Mathf.RoundToInt(localizedDepth), Alpha(primary, 0.96f), ref _appliedDepthValue, ref _hasAppliedDepthValue, ref _appliedDepthColor);
+            SetMetricFloatTenthsIfChanged(_temperatureLabel, _localizedTemperaturePattern, localizedTemperature, Alpha(dim, 0.84f), ref _appliedTemperatureTenths, ref _hasAppliedTemperatureTenths, ref _appliedTemperatureColor);
             SetMetricFloatTenthsIfChanged(_pressureLabel, _localizedPressurePattern, pressure, Alpha(dim, 0.64f), ref _appliedPressureTenths, ref _hasAppliedPressureTenths, ref _appliedPressureColor);
             SetTextIfChanged(_statusLabel, ResolveStatus(oxygen, power, health, safeDepthNormalized, depth, safeDepth, depthDelta), PickAccent(oxygen, power, health, safeDepthNormalized, primary, warning), ref _appliedStatusLabelText, ref _appliedStatusLabelColor);
 
@@ -1037,13 +1040,17 @@ namespace Hecton8.UI
 
         private void RebuildLocalizationCache()
         {
+            LocalizationManager manager = LocalizationManager.Instance;
+            _localizedMeasurementLanguage = manager != null ? manager.CurrentLanguage : GameLanguage.English;
             string depthLabel = ResolveLocalized(LocalizationKeys.HUD_DEPTH, "DEPTH");
             string temperatureLabel = ResolveLocalized(LocalizationKeys.HUD_TEMP, DefaultTemperatureLabel);
             string pressureLabel = ResolveLocalized(LocalizationKeys.HUD_PRESSURE, DefaultPressureLabel);
             string atmLabel = ResolveLocalized(LocalizationKeys.HUD_ATM, "atm");
+            string depthUnitLabel = LocalizedMeasurementFormatter.ResolveDistanceUnitLabel(_localizedMeasurementLanguage);
+            string temperatureUnitLabel = LocalizedMeasurementFormatter.ResolveTemperatureUnitLabel(_localizedMeasurementLanguage);
 
-            _localizedDepthPattern = string.Concat(depthLabel, ": -{0:0} m");
-            _localizedTemperaturePattern = string.Concat(temperatureLabel, ": {0:0.0} C");
+            _localizedDepthPattern = string.Concat(depthLabel, ": -{0:0} ", depthUnitLabel);
+            _localizedTemperaturePattern = string.Concat(temperatureLabel, ": {0:0.0} ", temperatureUnitLabel);
             _localizedPressurePattern = string.Concat(pressureLabel, ": {0:0.0} ", atmLabel);
             _localizedGaugeO2Label = ResolveLocalized(LocalizationKeys.HUD_O2, DefaultGaugeO2Label);
             _localizedGaugePowerLabel = ResolveLocalized(LocalizationKeys.HUD_PWR, DefaultGaugePowerLabel);

@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
+using Hecton.Localization;
 using UnityEngine;
 
 namespace Hecton8.Narrative
@@ -217,10 +218,14 @@ namespace Hecton8.Narrative
             NarrativeEvents.RaiseDiscoveryMade($"corporate_order_{orderId}");
 
             // HUD уведомление — берём первые 60 символов без аллокации через Substring
-            string preview = order.orderText.Length > 60
-                ? order.orderText.Substring(0, 60) + "..."
-                : order.orderText;
-            NotificationEvents.PushWarning($"ВХОДЯЩИЙ ПРИКАЗ — {order.sourceFactionId.ToUpperInvariant()}: {preview}");
+            string orderText = order.OrderTextOrFallback;
+            string preview = orderText.Length > 60
+                ? orderText.Substring(0, 60) + "..."
+                : orderText;
+            NotificationEvents.PushWarning(string.Format(
+                ResolveLocalized(LocalizationKeys.CORP_ORDER_INCOMING, "INCOMING ORDER - {0}: {1}"),
+                ResolveFactionLabel(order.sourceFactionId),
+                preview));
 
             // Проверяем конфликт
             if (!string.IsNullOrEmpty(order.conflictsWithOrderId) &&
@@ -229,8 +234,9 @@ namespace Hecton8.Narrative
                 string conflictKey = $"{orderId}_vs_{order.conflictsWithOrderId}";
                 if (_activeConflicts.Add(conflictKey))
                 {
-                    NotificationEvents.PushWarning(
-                        "КОНФЛИКТ ПРИКАЗОВ — ФРАКЦИИ КОРПОРАЦИИ ПРОТИВОРЕЧАТ ДРУГ ДРУГУ.");
+                    NotificationEvents.PushWarning(ResolveLocalized(
+                        LocalizationKeys.CORP_ORDER_CONFLICT,
+                        "ORDER CONFLICT - CORPORATE FACTIONS ARE DIRECTLY CONTRADICTING EACH OTHER."));
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.Log($"[CorporateOrders] Conflict: {orderId} vs {order.conflictsWithOrderId}");
@@ -241,6 +247,26 @@ namespace Hecton8.Narrative
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log($"[CorporateOrders] Delivered: {orderId} from {order.sourceFactionId}");
 #endif
+        }
+
+        private string ResolveFactionLabel(string factionId)
+        {
+            if (corporationData != null && corporationData.factions != null)
+            {
+                for (int i = 0; i < corporationData.factions.Length; i++)
+                {
+                    if (string.Equals(corporationData.factions[i].factionId, factionId, System.StringComparison.Ordinal))
+                        return corporationData.factions[i].DisplayNameOrFallback;
+                }
+            }
+
+            return factionId;
+        }
+
+        private static string ResolveLocalized(string key, string fallback)
+        {
+            LocalizationManager manager = LocalizationManager.Instance;
+            return manager != null ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback) : fallback;
         }
 
         // ══════════════════════════════════════════════════════════

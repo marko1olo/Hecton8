@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 559ad33e1d65b1d42950ade30bdf05c9, type: 3}
+  m_Name: BiomeVisual_015_East_04_The_Slab_Wall
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Environment.HectonBiomeProfile
+  biomeName: 'The Slab Wall [East T04]'
+  scatterColorBase: {r: 0.023705676, g: 0.10929135, b: 0.17035581, a: 1}
+  scatterColorShallow: {r: 0.07548331, g: 0.24255326, b: 0.29601827, a: 1}
+  depthFogDensity: {x: 0.32401127, y: 0.20225635, z: 0.12600282}
+  fogColor: {r: 0.025470125, g: 0.1436992, b: 0.19874907, a: 1}
+  turbidityMultiplier: 0.82424724

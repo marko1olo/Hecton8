@@ -199,7 +199,7 @@ namespace MoreMountains.Tools
 				{
 					if (_instance == null)
 					{
-						_instance = FindObjectOfType<MMSMPlaylistManager> ();
+						_instance = FindAnyObjectByType<MMSMPlaylistManager> ();
 						if (_instance == null)
 						{
 							GameObject obj = new GameObject ();

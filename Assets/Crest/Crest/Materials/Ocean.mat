@@ -12,8 +12,9 @@ Material:
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
+  - _ALBEDO_ON
   - _CLIPSURFACE_ON
-  - _FOAM3DLIGHTING_ON
+  - _CLIPUNDERTERRAIN_ON
   - _FOAM_ON
   - _PROCEDURALSKY_ON
   - _SHADOWS_ON
@@ -94,7 +95,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _Albedo: 0
+    - _Albedo: 1
     - _ApplyFlowToNormals: 0
     - _ApplyNormalMapping: 0
     - _BumpAmt: 0.514
@@ -109,7 +110,7 @@ Material:
     - _CausticsTextureAverage: 0.07
     - _CausticsTextureScale: 5
     - _ClipSurface: 1
-    - _ClipUnderTerrain: 0
+    - _ClipUnderTerrain: 1
     - _CompileShaderWithDebugInfo: 0
     - _ComputeDirectionalLight: 1
     - _CullMode: 2
@@ -125,9 +126,9 @@ Material:
     - _DirectionalLightFallOff: 275
     - _Flow: 0
     - _Foam: 1
-    - _Foam3DLighting: 1
+    - _Foam3DLighting: 0
     - _FoamBubbleParallax: 0.1
-    - _FoamScale: 0.75627005
+    - _FoamScale: 0.012433972
     - _FresnelPower: 5
     - _Invert: 1
     - _LightIntensityMultiplier: 2
@@ -152,16 +153,16 @@ Material:
     - _Roughness: 0
     - _S: 1
     - _Shadows: 1
-    - _ShorelineFoamMinDepth: 2.73
+    - _ShorelineFoamMinDepth: 0.95
     - _SkyDirectionality: 0.78
-    - _Smoothness: 0.8
+    - _Smoothness: 1
     - _SmoothnessFar: 0.35
     - _SmoothnessFarDistance: 2000
     - _SmoothnessPower: 0.5
     - _Specular: 1
     - _StartLevel: 0.157
     - _StencilFunction: 0
-    - _SubSurfaceBase: 0.33
+    - _SubSurfaceBase: 0.52416
     - _SubSurfaceDepthMax: 9.4
     - _SubSurfaceDepthPower: 2.57
     - _SubSurfaceHeightLerp: 1
@@ -169,8 +170,8 @@ Material:
     - _SubSurfaceHeightPower: 1.68
     - _SubSurfaceScattering: 1
     - _SubSurfaceShallowColour: 1
-    - _SubSurfaceSun: 1.13
-    - _SubSurfaceSunFallOff: 7.11
+    - _SubSurfaceSun: 1.5468
+    - _SubSurfaceSunFallOff: 5.26
     - _TexelSize: 0.125
     - _TextureRes: 1024
     - _Transparency: 1
@@ -181,7 +182,7 @@ Material:
     - _WaveFoamBubblesFeather: 0.32
     - _WaveFoamBubblesStart: 0.115
     - _WaveFoamBubblesStrength: 0.637
-    - _WaveFoamCoverage: 0.38
+    - _WaveFoamCoverage: 0.52
     - _WaveFoamFeather: 0.4
     - _WaveFoamLightScale: 0.9
     - _WaveFoamNormalStrength: 3.5
@@ -189,21 +190,21 @@ Material:
     - _WaveFoamSpecularBoost: 0.15
     - _WaveFoamSpecularFallOff: 293
     - _WaveFoamStart: 0
-    - _WaveFoamStrength: 1
+    - _WaveFoamStrength: 1.25
     m_Colors:
-    - _DepthFogDensity: {r: 0.020572085, g: 0.011556854, b: 0.013359899, a: 0}
-    - _Diffuse: {r: 0.028, g: 0.0448, b: 0.14, a: 1}
-    - _DiffuseGrazing: {r: 0.37201846, g: 0.32808727, b: 0.27442247, a: 1}
-    - _DiffuseShadow: {r: 0.020584475, g: 0.092924185, b: 0.112155, a: 1}
+    - _DepthFogDensity: {r: 0.12, g: 0.12, b: 0.08590842, a: 0}
+    - _Diffuse: {r: 0.09501698, g: 0.15468192, b: 0.22335678, a: 1}
+    - _DiffuseGrazing: {r: 0.31469914, g: 0.41018075, b: 0.43047425, a: 1}
+    - _DiffuseShadow: {r: 0.06440507, g: 0.23035675, b: 0.27265766, a: 1}
     - _FoamBubbleColor: {r: 0, g: 0, b: 0, a: 1}
     - _FoamWhiteColor: {r: 1, g: 0.99634784, b: 0.97199994, a: 0.6862745}
     - _SkyAwayFromSun: {r: 0.1, g: 0.16, b: 0.5, a: 1}
-    - _SkyBase: {r: 0.6546657, g: 0.68566626, b: 0.74349964, a: 1}
+    - _SkyBase: {r: 0.62867564, g: 0.65692866, b: 0.7349152, a: 1}
     - _SkyTowardsSun: {r: 0.97143614, g: 0.6800053, b: 0.29143086, a: 1}
     - _SubSurface: {r: 0, g: 0.48, b: 0.36, a: 1}
-    - _SubSurfaceColour: {r: 0.37201846, g: 0.32808727, b: 0.27442247, a: 1}
-    - _SubSurfaceShallowCol: {r: 0.37201846, g: 0.32808727, b: 0.27442247, a: 1}
-    - _SubSurfaceShallowColShadow: {r: 0.14181545, g: 0.22392115, b: 0.2610454, a: 1}
-    - _SubSurfaceShallowColour: {r: 0.41999996, g: 0.75, b: 0.69, a: 1}
+    - _SubSurfaceColour: {r: 0.31469914, g: 0.41018075, b: 0.43047425, a: 1}
+    - _SubSurfaceShallowCol: {r: 0.31469914, g: 0.41018075, b: 0.43047425, a: 1}
+    - _SubSurfaceShallowColShadow: {r: 0.29467666, g: 0.4606005, b: 0.5204591, a: 1}
+    - _SubSurfaceShallowColour: {r: 0.34, g: 0.78, b: 0.74, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

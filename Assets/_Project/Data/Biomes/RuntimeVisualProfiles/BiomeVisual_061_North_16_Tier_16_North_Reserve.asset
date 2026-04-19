@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 559ad33e1d65b1d42950ade30bdf05c9, type: 3}
+  m_Name: BiomeVisual_061_North_16_Tier_16_North_Reserve
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Environment.HectonBiomeProfile
+  biomeName: 'Tier 16 North Reserve [North T16]'
+  scatterColorBase: {r: 0.022144143, g: 0.08147882, b: 0.119145565, a: 1}
+  scatterColorShallow: {r: 0.05336391, g: 0.14675047, b: 0.17881224, a: 1}
+  depthFogDensity: {x: 0.58685476, y: 0.34760582, z: 0.1967137}
+  fogColor: {r: 0.02256, g: 0.08102959, b: 0.10509893, a: 1}
+  turbidityMultiplier: 1.3907875

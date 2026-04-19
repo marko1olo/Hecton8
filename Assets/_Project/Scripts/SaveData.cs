@@ -43,7 +43,7 @@ namespace Hecton8.SaveSystem
         public float totalPlayTime;
 
         /// <summary>Текущая версия формата. Используется для миграции.</summary>
-        public const int CurrentVersion = 19; // v19: Hunger/Thirst persistence
+        public const int CurrentVersion = 20; // v20: Packed biome discovery bitmask
 
         // ─────────────────────── DTO Sections ────────────────────
 
@@ -63,8 +63,11 @@ namespace Hecton8.SaveSystem
         /// <summary>Сломанные инструменты (toolID → broken). v2.0 ENTERPRISE</summary>
         public Dictionary<string, bool> toolBrokenMap = new Dictionary<string, bool>();
 
-        /// <summary>Список ID открытых биомов. v3.0 MASTER GRADE</summary>
-        public HashSet<int> discoveredBiomeIds = new HashSet<int>();
+        /// <summary>Legacy set of discovered biome IDs kept only for backward-compatible migration reads.</summary>
+        public HashSet<int> discoveredBiomeIds;
+
+        /// <summary>Packed discovery words for all 108 biomes. Two 64-bit words cover the current matrix.</summary>
+        public long[] discoveredBiomeBitWords;
 
         /// <summary>Последний подтвержденный открытый биом для PDA и HUD.</summary>
         public int lastDiscoveredBiomeId = -1;
@@ -170,7 +173,9 @@ namespace Hecton8.SaveSystem
                 barter        = new BarterDTO(),
                 fieldOperations = new FieldOperationLogDTO(),
                 beaconNetwork = new BeaconNetworkDTO(),
-                discoveredBiomeIds = new HashSet<int>(),
+                discoveredBiomeIds = null,
+                // COLD ALLOC: long[BiomeDiscoveryBitMask.WordCount] — packed discovered biome persistence — owner: SaveData
+                discoveredBiomeBitWords = new long[BiomeDiscoveryBitMask.WordCount],
                 lastDiscoveredBiomeId = -1,
                 narrativeDiscoveryCount = 0,
                 narrativeDiscoveryIds = new string[MaxNarrativeDiscoveries],

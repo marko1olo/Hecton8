@@ -83,6 +83,9 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
         _HazeFalloff ("Haze Falloff", Range(0.5, 8)) = 3.0
         [HDR] _HazeColor ("Haze Color", Color) = (0.5, 0.45, 0.55, 1)
         _HazeSunTintStrength ("Haze Sun Tint", Range(0, 2)) = 0.8
+        _HorizonMistShelfIntensity ("Horizon Mist Shelf Intensity", Range(0, 2)) = 0.0
+        _HorizonMistShelfHeight ("Horizon Mist Shelf Height", Range(0.04, 0.32)) = 0.16
+        _HorizonMistShelfSoftness ("Horizon Mist Shelf Softness", Range(0.02, 0.24)) = 0.1
 
         [Header(Backlit Glow)]
         _BacklitPower ("Backlit Power", Range(1, 16)) = 4.0
@@ -205,6 +208,9 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 half   _HazeFalloff;
                 half4  _HazeColor;
                 half   _HazeSunTintStrength;
+                half   _HorizonMistShelfIntensity;
+                half   _HorizonMistShelfHeight;
+                half   _HorizonMistShelfSoftness;
 
                 half   _BacklitPower;
                 half   _BacklitIntensity;
@@ -659,6 +665,27 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                                     * saturate(horizonFactor * 4.0h)
                                     * lerp(0.01h, 1.0h, cloudDayReturn);
                 skyColor = lerp(skyColor, cloudColor, finalCloudMask);
+
+                // Low ocean mist shelf: a soft air-mass veil hugging the horizon.
+                // This uses the same haze owner color instead of introducing a
+                // separate horizon paint pass, so ocean/fog/sky stay linked.
+                half mistShelfLower = smoothstep(-_HorizonMistShelfSoftness, 0.0h, horizonFactor);
+                half mistShelfUpper = 1.0h - smoothstep(
+                    _HorizonMistShelfHeight,
+                    _HorizonMistShelfHeight + _HorizonMistShelfSoftness,
+                    horizonFactor);
+                half mistShelfBand = mistShelfLower * mistShelfUpper;
+                half mistShelfBreakup = lerp(0.82h, 1.08h, saturate(cloudRG.x * 0.72h + cirrusDensity * 0.28h));
+                half mistShelfDensity = mistShelfBand
+                                      * hazeMask
+                                      * mistShelfBreakup
+                                      * _HorizonMistShelfIntensity
+                                      * lerp(1.0h, 0.28h, nightFactor);
+
+                half3 mistShelfColor = lerp(hazeColor, skyColor, 0.18h);
+                mistShelfColor = lerp(mistShelfColor, _SunScatterColor.rgb, sunsetFactor * 0.08h);
+                skyColor = lerp(skyColor, mistShelfColor, mistShelfDensity * 0.42h);
+                skyColor += mistShelfColor * mistShelfDensity * 0.12h;
 
                 float4 sharedAtmosphereSample = SampleHectonCelestialAtmosphere(
                     Vf,

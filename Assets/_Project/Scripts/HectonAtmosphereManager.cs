@@ -452,7 +452,12 @@ namespace Hecton8.Atmosphere
                 _editorPreviewDirty = true;
             }
 
-            SyncEditorPreviewFromSunTransform();
+            bool sunMoved = SyncEditorPreviewFromSunTransform();
+            if (!_editorPreviewDirty && !sunMoved)
+                return;
+
+            Tick(0f);
+            _editorPreviewDirty = false;
         }
 #endif
 
@@ -725,6 +730,14 @@ namespace Hecton8.Atmosphere
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool EvaluateUnderwater()
         {
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+            {
+                _autoUnderwaterState = false;
+                return false;
+            }
+#endif
+
             if (_underwaterExternalFlag)
             {
                 _autoUnderwaterState = true;

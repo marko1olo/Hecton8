@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 5809351018414027186}
   - component: {fileID: 4702733535216915999}
   - component: {fileID: 1513402988957420496}
+  - component: {fileID: 8169143112576087304}
   m_Layer: 0
   m_Name: Tool_Propulsion_Held
   m_TagString: Untagged
@@ -52,7 +53,9 @@ MonoBehaviour:
   enableEnergyConsumption: 1
   lifecycleDebugLogging: 0
   _swimContract: {fileID: 0}
+  _transportFeelContract: {fileID: 8169143112576087304}
   speedMultiplier: 2.2
+  transportPreset: {fileID: 11400000, guid: cf32272204a993640bc50b707b7849a4, type: 2}
   batteryDrainRate: 2
   minChargeToActivate: 0.05
   motorLoopClip: {fileID: 0}
@@ -64,6 +67,7 @@ MonoBehaviour:
   hudCanvasGroup: {fileID: 0}
   depthText: {fileID: 0}
   batteryText: {fileID: 0}
+  _debugActivationState: Idle
 --- !u!114 &1513402988957420496
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -96,6 +100,31 @@ MonoBehaviour:
   activeUseSupportHandPoseBias:
     localPositionOffset: {x: -0.018, y: 0.03, z: 0.022}
     localEulerOffset: {x: 8, y: -14, z: -10}
+--- !u!114 &8169143112576087304
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1883046840169899827}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 08e7fb5790e444f4bb5866ee91366d62, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Gameplay.PlayerTransportFeelContract
+  preset: {fileID: 11400000, guid: cf32272204a993640bc50b707b7849a4, type: 2}
+  propulsionForceReference: 800
+  swimPropulsionFloor: 0.62
+  swimCadenceMultiplier: 0.74
+  swimPoseLagMultiplier: 0.9
+  swimRootPresentationWeight: 0.58
+  swimSupportHandWeight: 0.84
+  swimRootForwardBias: 0.018
+  swimGuideForwardBias: 0.028
+  audioIdleSpeedFloor: 0.42
+  audioVolumeBoost: 0.18
+  audioPitchBoost: 0.22
+  audioModeBlendFloor: 0.35
 --- !u!1 &5259587744455386403
 GameObject:
   m_ObjectHideFlags: 0

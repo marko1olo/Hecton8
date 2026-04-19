@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 559ad33e1d65b1d42950ade30bdf05c9, type: 3}
+  m_Name: BiomeVisual_075_East_19_Tier_19_East_Reserve
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Environment.HectonBiomeProfile
+  biomeName: 'Tier 19 East Reserve [East T19]'
+  scatterColorBase: {r: 0.019870406, g: 0.09512486, b: 0.16337931, a: 1}
+  scatterColorShallow: {r: 0.05145721, g: 0.16844961, b: 0.23945013, a: 1}
+  depthFogDensity: {x: 0.52423704, y: 0.31738335, z: 0.18105926}
+  fogColor: {r: 0.017490879, g: 0.09153791, b: 0.14911264, a: 1}
+  turbidityMultiplier: 1.1491922

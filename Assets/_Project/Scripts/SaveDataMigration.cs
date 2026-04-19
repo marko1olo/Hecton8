@@ -15,9 +15,7 @@ namespace Hecton8.SaveSystem
         private const float LegacyModuleIntegrityDefault = 100f;
         private const float LegacyBeaconLightRangeDefault = 4f;
         private const string DefaultBeaconLabelPrefix = "BEACON";
-        private const int MinBiomeId = 1;
-        private const int MaxBiomeId = 108;
-        private const int InvalidBiomeId = -1;
+        private const int InvalidBiomeId = BiomeDiscoveryBitMask.InvalidBiomeId;
         private const int MaxAtlasRevealStage = 4;
 
         public static bool MigrateInPlace(SaveData data, out int originalVersion, out string summary)
@@ -53,16 +51,27 @@ namespace Hecton8.SaveSystem
                 steps.Add("tool broken map created");
             }
 
-            if (data.discoveredBiomeIds == null)
+            bool hadPackedBiomeCapacity = BiomeDiscoveryBitMask.HasExpectedCapacity(data.discoveredBiomeBitWords);
+            if (!hadPackedBiomeCapacity)
             {
-                data.discoveredBiomeIds = new HashSet<int>();
+                BiomeDiscoveryBitMask.EnsureCapacity(ref data.discoveredBiomeBitWords);
                 changed = true;
-                steps.Add("discovered biome set created");
+                steps.Add("discovered biome bit words created");
+            }
+
+            if (!BiomeDiscoveryBitMask.HasAnySet(data.discoveredBiomeBitWords) &&
+                data.discoveredBiomeIds != null &&
+                data.discoveredBiomeIds.Count > 0)
+            {
+                BiomeDiscoveryBitMask.Pack(data.discoveredBiomeIds, data.discoveredBiomeBitWords);
+                changed = true;
+                steps.Add("discovered biome set packed");
             }
 
             int normalizedLastDiscoveredBiomeId = NormalizeLastDiscoveredBiomeId(
                 data.lastDiscoveredBiomeId,
-                data.discoveredBiomeIds);
+                data.discoveredBiomeIds,
+                data.discoveredBiomeBitWords);
             if (normalizedLastDiscoveredBiomeId != data.lastDiscoveredBiomeId)
             {
                 data.lastDiscoveredBiomeId = normalizedLastDiscoveredBiomeId;
@@ -118,20 +127,26 @@ namespace Hecton8.SaveSystem
             return changed;
         }
 
-        private static int NormalizeLastDiscoveredBiomeId(int lastDiscoveredBiomeId, HashSet<int> discoveredBiomeIds)
+        private static int NormalizeLastDiscoveredBiomeId(
+            int lastDiscoveredBiomeId,
+            HashSet<int> discoveredBiomeIds,
+            long[] discoveredBiomeBitWords)
         {
             if (IsValidBiomeId(lastDiscoveredBiomeId) &&
-                discoveredBiomeIds != null &&
-                discoveredBiomeIds.Contains(lastDiscoveredBiomeId))
+                (BiomeDiscoveryBitMask.Contains(discoveredBiomeBitWords, lastDiscoveredBiomeId) ||
+                 (discoveredBiomeIds != null && discoveredBiomeIds.Contains(lastDiscoveredBiomeId))))
             {
                 return lastDiscoveredBiomeId;
             }
 
+            if (BiomeDiscoveryBitMask.HasAnySet(discoveredBiomeBitWords))
+                return BiomeDiscoveryBitMask.ResolveFallbackLastDiscoveredId(discoveredBiomeBitWords);
+
             if (discoveredBiomeIds != null)
             {
-                foreach (int biomeId in discoveredBiomeIds)
+                for (int biomeId = BiomeDiscoveryBitMask.MinBiomeId; biomeId <= BiomeDiscoveryBitMask.MaxBiomeId; biomeId++)
                 {
-                    if (IsValidBiomeId(biomeId))
+                    if (discoveredBiomeIds.Contains(biomeId))
                         return biomeId;
                 }
             }
@@ -141,7 +156,7 @@ namespace Hecton8.SaveSystem
 
         private static bool IsValidBiomeId(int biomeId)
         {
-            return biomeId >= MinBiomeId && biomeId <= MaxBiomeId;
+            return BiomeDiscoveryBitMask.IsValidBiomeId(biomeId);
         }
 
         private static bool EnsureWorldState(ref WorldStateDTO dto, List<string> steps)

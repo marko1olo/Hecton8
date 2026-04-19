@@ -35,6 +35,7 @@ using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
+using Hecton.Localization;
 using UnityEngine;
 
 namespace Hecton8.AtlasSignal
@@ -230,8 +231,9 @@ namespace Hecton8.AtlasSignal
                 _playerStatus != Atlas6PlayerStatus.Threat)
             {
                 SetStatus(Atlas6PlayerStatus.Anomaly);
-                NotificationEvents.PushWarning(
-                    "АТЛАС-6: НЕОПОЗНАННЫЙ БИОЛОГИЧЕСКИЙ АГЕНТ ОБНАРУЖЕН. АНАЛИЗ...");
+                NotificationEvents.PushWarning(ResolveLocalized(
+                    LocalizationKeys.ATLAS6_ANOMALY_DETECTED,
+                    "ATLAS-6: UNIDENTIFIED BIOLOGICAL AGENT DETECTED. ANALYSIS..."));
             }
 
             // Конфликт директив — обнаружен живой человек
@@ -286,8 +288,9 @@ namespace Hecton8.AtlasSignal
                 _playerStatus != Atlas6PlayerStatus.Threat)
             {
                 SetStatus(Atlas6PlayerStatus.Collaborator);
-                NotificationEvents.PushInfo(
-                    "АТЛАС-6: УТИЛИТАРНЫЙ РАСЧЁТ — ОБМЕН ЭФФЕКТИВЕН. СТАТУС: СОТРУДНИК.");
+                NotificationEvents.PushInfo(ResolveLocalized(
+                    LocalizationKeys.ATLAS6_COLLABORATOR_STATUS,
+                    "ATLAS-6: UTILITARIAN CALCULATION - EXCHANGE EFFICIENT. STATUS: COLLABORATOR."));
             }
         }
 
@@ -362,6 +365,12 @@ namespace Hecton8.AtlasSignal
         private static void LogPlayerStatus(Atlas6PlayerStatus newStatus)
         {
             Debug.Log($"[Atlas6] Player status: {newStatus}");
+        }
+
+        private static string ResolveLocalized(string key, string fallback)
+        {
+            LocalizationManager manager = LocalizationManager.Instance;
+            return manager != null ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback) : fallback;
         }
 
         // ══════════════════════════════════════════════════════════

@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 559ad33e1d65b1d42950ade30bdf05c9, type: 3}
+  m_Name: BiomeVisual_009_03_Basalt_Steps
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomeProfile
+  biomeName: 'Basalt Steps [3]'
+  scatterColorBase: {r: 0.02705693, g: 0.10212641, b: 0.14099939, a: 1}
+  scatterColorShallow: {r: 0.0889021, g: 0.23480541, b: 0.24690571, a: 1}
+  depthFogDensity: {x: 0.36515339, y: 0.22287984, z: 0.1415157}
+  fogColor: {r: 0.03174765, g: 0.13778747, b: 0.16652895, a: 1}
+  turbidityMultiplier: 1.00501024

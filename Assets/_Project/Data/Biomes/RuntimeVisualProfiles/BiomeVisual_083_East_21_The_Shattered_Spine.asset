@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 559ad33e1d65b1d42950ade30bdf05c9, type: 3}
+  m_Name: BiomeVisual_083_East_21_The_Shattered_Spine
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Environment.HectonBiomeProfile
+  biomeName: 'The Shattered Spine [East T21]'
+  scatterColorBase: {r: 0.019986274, g: 0.09651527, b: 0.16604427, a: 1}
+  scatterColorShallow: {r: 0.050443754, g: 0.16709834, b: 0.23990054, a: 1}
+  depthFogDensity: {x: 0.53409195, y: 0.32292673, z: 0.18352297}
+  fogColor: {r: 0.017253492, g: 0.089401424, b: 0.14840047, a: 1}
+  turbidityMultiplier: 1.1596268

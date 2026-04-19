@@ -17,6 +17,7 @@
 //   • Dirty-flag обновление.
 // ============================================================================
 
+using System.Text;
 using Hecton8.AtlasSignal;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
@@ -86,8 +87,11 @@ namespace Hecton8.UI
         private bool _atlasTelemetryVisible;
         private bool _dirty;
         private int _lastCountdownSeconds = int.MinValue;
+        private int _lastStrengthDisplayMode = int.MinValue;
+        private int _lastStrengthPercent = int.MinValue;
         private UnityEngine.Camera _mainCamera;
         private float _mainCameraResolveRetryTimer;
+        private readonly StringBuilder _directionBuilder = new StringBuilder(64); // COLD ALLOC: StringBuilder[64] — atlas direction label formatting — owner: PDAAtlasSignalTab
 
         // Pre-cached strings — zero GC
         private static readonly string[] PhaseNames =
@@ -107,6 +111,36 @@ namespace Hecton8.UI
             "СОДЕРЖАНИЕ",
             "ГОТОВО"
         };
+
+        private static readonly string[] MessageTexts =
+        {
+            "СИГНАЛ НЕ ОБНАРУЖЕН\n\nПриблизьтесь к источнику\nили используйте сканер.",
+            "НЕИЗВЕСТНЫЙ СИГНАЛ\n\nРитмичный паттерн.\nПериод: 11:23\n\nИсточник неизвестен.",
+            "НЕСТАБИЛЬНЫЙ ПАТТЕРН\n\nЭмоциональный отпечаток:\nОтчаяние → Надежда → Безумие\n\nИсточник ещё не удерживается.",
+            "АТЛАС-6 — ПОИСК РЕШЕНИЯ\n\n847 дней. Колония мертва.\nПрограмма посева активна.\n\nСигнал содержит... что-то.",
+            "АТЛАС-6 — РАСШИФРОВКА ЗАВЕРШЕНА\n\nИсточник: глубина -5000м\nЯдро активно. Программа посева активна.\n\n847 дней поиска решения. Колония мертва."
+        };
+
+        private static readonly string[] DirectionDistancePrefixes =
+        {
+            "НАПРАВЛЕНИЕ: ВВЕРХ  |  РАССТОЯНИЕ: ",
+            "НАПРАВЛЕНИЕ: ВНИЗ  |  РАССТОЯНИЕ: ",
+            "НАПРАВЛЕНИЕ: СЕВЕР  |  РАССТОЯНИЕ: ",
+            "НАПРАВЛЕНИЕ: СЕВЕРО-ВОСТОК  |  РАССТОЯНИЕ: ",
+            "НАПРАВЛЕНИЕ: ВОСТОК  |  РАССТОЯНИЕ: ",
+            "НАПРАВЛЕНИЕ: ЮГО-ВОСТОК  |  РАССТОЯНИЕ: ",
+            "НАПРАВЛЕНИЕ: ЮГ  |  РАССТОЯНИЕ: ",
+            "НАПРАВЛЕНИЕ: ЮГО-ЗАПАД  |  РАССТОЯНИЕ: ",
+            "НАПРАВЛЕНИЕ: ЗАПАД  |  РАССТОЯНИЕ: ",
+            "НАПРАВЛЕНИЕ: СЕВЕРО-ЗАПАД  |  РАССТОЯНИЕ: "
+        };
+
+        private const string StrengthNoiseLabel = "ШУМ";
+        private const string StrengthPatternLabel = "ПАТТЕРН";
+        private const string BackgroundNoiseMessage = "ФОНОВЫЙ ШУМ\n\nСтабильной телеметрии нет.\nСеть не держит решение направления.\n\nПродолжайте маршрут и сбор.";
+        private const string DirectionUnavailableLabel = "НАПРАВЛЕНИЕ: —";
+        private const string DirectionDataErrorLabel = "НАПРАВЛЕНИЕ: ОШИБКА ДАННЫХ";
+        private const string DirectionUnstableLabel = "НАПРАВЛЕНИЕ: ПЕЛЕНГ ЕЩЁ НЕ УДЕРЖИВАЕТСЯ";
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -428,12 +462,35 @@ namespace Hecton8.UI
             // Update value
             if (_strengthValue != null)
             {
-                _strengthValue.text = _currentPhase switch
+                int displayMode = _currentPhase switch
                 {
-                    1 => "ШУМ",
-                    2 => "ПАТТЕРН",
-                    _ => $"{(_currentStrength * 100f):F0}%"
+                    1 => 1,
+                    2 => 2,
+                    _ => 0
                 };
+
+                if (displayMode == 1)
+                {
+                    _lastStrengthDisplayMode = displayMode;
+                    _lastStrengthPercent = int.MinValue;
+                    SetLabelText(_strengthValue, StrengthNoiseLabel);
+                }
+                else if (displayMode == 2)
+                {
+                    _lastStrengthDisplayMode = displayMode;
+                    _lastStrengthPercent = int.MinValue;
+                    SetLabelText(_strengthValue, StrengthPatternLabel);
+                }
+                else
+                {
+                    int roundedPercent = Mathf.Clamp(Mathf.RoundToInt(_currentStrength * 100f), 0, 100);
+                    if (_lastStrengthDisplayMode != displayMode || _lastStrengthPercent != roundedPercent)
+                    {
+                        _lastStrengthDisplayMode = displayMode;
+                        _lastStrengthPercent = roundedPercent;
+                        _strengthValue.SetText("{0}%", roundedPercent);
+                    }
+                }
             }
         }
 
@@ -451,7 +508,7 @@ namespace Hecton8.UI
             if (_phaseValue != null)
             {
                 int phase = Mathf.Clamp(_currentPhase, 0, 4);
-                _phaseValue.text = PhaseNames[phase];
+                SetLabelText(_phaseValue, PhaseNames[phase]);
             }
         }
 
@@ -461,35 +518,14 @@ namespace Hecton8.UI
 
             if (!_atlasTelemetryVisible)
             {
-                _messageLabel.text = "ФОНОВЫЙ ШУМ\n\nСтабильной телеметрии нет.\nСеть не держит решение направления.\n\nПродолжайте маршрут и сбор.";
-                _messageLabel.color = colorDim;
+                SetLabelText(_messageLabel, BackgroundNoiseMessage);
+                SetLabelColor(_messageLabel, colorDim);
                 return;
             }
-            if (_currentPhase >= 4)
-            {
-                _messageLabel.text = "АТЛАС-6 — РАСШИФРОВКА ЗАВЕРШЕНА\n\nИсточник: глубина -5000м\nЯдро активно. Программа посева активна.\n\n847 дней поиска решения. Колония мертва.";
-                _messageLabel.color = colorPhase4;
-            }
-            else if (_currentPhase == 3)
-            {
-                _messageLabel.text = "АТЛАС-6 — ПОИСК РЕШЕНИЯ\n\n847 дней. Колония мертва.\nПрограмма посева активна.\n\nСигнал содержит... что-то.";
-                _messageLabel.color = colorText;
-            }
-            else if (_currentPhase == 2)
-            {
-                _messageLabel.text = "НЕСТАБИЛЬНЫЙ ПАТТЕРН\n\nЭмоциональный отпечаток:\nОтчаяние → Надежда → Безумие\n\nИсточник ещё не удерживается.";
-                _messageLabel.color = colorText;
-            }
-            else if (_currentPhase == 1)
-            {
-                _messageLabel.text = "НЕИЗВЕСТНЫЙ СИГНАЛ\n\nРитмичный паттерн.\nПериод: 11:23\n\nИсточник неизвестен.";
-                _messageLabel.color = colorDim;
-            }
-            else
-            {
-                _messageLabel.text = "СИГНАЛ НЕ ОБНАРУЖЕН\n\nПриблизьтесь к источнику\nили используйте сканер.";
-                _messageLabel.color = colorDim;
-            }
+
+            int messageIndex = Mathf.Clamp(_currentPhase, 0, MessageTexts.Length - 1);
+            SetLabelText(_messageLabel, MessageTexts[messageIndex]);
+            SetLabelColor(_messageLabel, _currentPhase >= 4 ? colorPhase4 : _currentPhase >= 2 ? colorText : colorDim);
         }
 
         private void RefreshDirection()
@@ -501,21 +537,21 @@ namespace Hecton8.UI
 
             if (!_signalDetected)
             {
-                _directionLabel.text = "НАПРАВЛЕНИЕ: —";
-                _directionLabel.color = colorDim;
+                SetLabelText(_directionLabel, DirectionUnavailableLabel);
+                SetLabelColor(_directionLabel, colorDim);
                 return;
             }
 
             if (sys == null)
             {
-                _directionLabel.text = "НАПРАВЛЕНИЕ: ОШИБКА ДАННЫХ";
+                SetLabelText(_directionLabel, DirectionDataErrorLabel);
                 return;
             }
 
             if (revealStage < 3)
             {
-                _directionLabel.text = "НАПРАВЛЕНИЕ: ПЕЛЕНГ ЕЩЁ НЕ УДЕРЖИВАЕТСЯ";
-                _directionLabel.color = colorDim;
+                SetLabelText(_directionLabel, DirectionUnstableLabel);
+                SetLabelColor(_directionLabel, colorDim);
                 return;
             }
 
@@ -525,9 +561,13 @@ namespace Hecton8.UI
                 _mainCamera != null ? _mainCamera.transform.position : Vector3.zero);
 
             // Convert direction to compass
-            string compass = GetCompassDirection(dir);
-            _directionLabel.text = $"НАПРАВЛЕНИЕ: {compass}  |  РАССТОЯНИЕ: {dist:F0}М";
-            _directionLabel.color = colorAccent;
+            int directionIndex = GetCompassDirectionIndex(dir);
+            _directionBuilder.Clear();
+            _directionBuilder.Append(DirectionDistancePrefixes[directionIndex]);
+            _directionBuilder.Append(Mathf.RoundToInt(dist));
+            _directionBuilder.Append('М');
+            _directionLabel.SetText(_directionBuilder);
+            SetLabelColor(_directionLabel, colorAccent);
         }
 
         private void UpdateCountdownDisplay()
@@ -602,24 +642,24 @@ namespace Hecton8.UI
                 _mainCamera = GetComponentInParent<Camera>();
         }
 
-        private static string GetCompassDirection(Vector3 dir)
+        private static int GetCompassDirectionIndex(Vector3 dir)
         {
             // Project to horizontal plane
             Vector2 horizontal = new Vector2(dir.x, dir.z);
             if (horizontal.sqrMagnitude < 0.001f)
-                return dir.y > 0 ? "ВВЕРХ" : "ВНИЗ";
+                return dir.y > 0 ? 0 : 1;
 
             float angle = Mathf.Atan2(horizontal.x, horizontal.y) * Mathf.Rad2Deg;
             if (angle < 0) angle += 360f;
 
-            if (angle < 22.5f || angle >= 337.5f) return "СЕВЕР";
-            if (angle < 67.5f) return "СЕВЕРО-ВОСТОК";
-            if (angle < 112.5f) return "ВОСТОК";
-            if (angle < 157.5f) return "ЮГО-ВОСТОК";
-            if (angle < 202.5f) return "ЮГ";
-            if (angle < 247.5f) return "ЮГО-ЗАПАД";
-            if (angle < 292.5f) return "ЗАПАД";
-            return "СЕВЕРО-ЗАПАД";
+            if (angle < 22.5f || angle >= 337.5f) return 2;
+            if (angle < 67.5f) return 3;
+            if (angle < 112.5f) return 4;
+            if (angle < 157.5f) return 5;
+            if (angle < 202.5f) return 6;
+            if (angle < 247.5f) return 7;
+            if (angle < 292.5f) return 8;
+            return 9;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -646,7 +686,24 @@ namespace Hecton8.UI
             tmp.alignment = alignment;
             tmp.overflowMode = TextOverflowModes.Truncate;
             tmp.raycastTarget = false;
+            LocalizedTMPAutoSizer.Configure(tmp, size * 0.72f, size, TextOverflowModes.Truncate, TextWrappingModes.NoWrap);
             return tmp;
+        }
+
+        private static void SetLabelText(TextMeshProUGUI label, string value)
+        {
+            if (label != null && label.text != value)
+            {
+                label.text = value;
+            }
+        }
+
+        private static void SetLabelColor(TextMeshProUGUI label, Color value)
+        {
+            if (label != null && label.color != value)
+            {
+                label.color = value;
+            }
         }
 
         private static void Anchor(RectTransform r, Vector2 amin, Vector2 amax,

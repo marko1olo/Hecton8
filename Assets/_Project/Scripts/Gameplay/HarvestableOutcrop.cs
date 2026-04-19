@@ -100,11 +100,11 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         [Header("── VFX ────────────────────────────────────────")]
-        [Tooltip("Particle system for hit effect (rock dust).")]
-        [SerializeField] private ParticleSystem hitParticles;
+        [Tooltip("Particle prefab for hit effect (rock dust). Spawned via ObjectPoolManager.")]
+        [SerializeField] private GameObject hitParticlePrefab;
 
-        [Tooltip("Particle system for break effect.")]
-        [SerializeField] private ParticleSystem breakParticles;
+        [Tooltip("Particle prefab for break effect. Spawned via ObjectPoolManager.")]
+        [SerializeField] private GameObject breakParticlePrefab;
 
         [Tooltip("Renderer for hit flash effect.")]
         [SerializeField] private Renderer targetRenderer;
@@ -304,12 +304,15 @@ namespace Hecton8.Gameplay
                 audio.PlayAtPoint(hitSound, hitPoint, hitVolume);
             }
 
-            // ── Particles ──
-            if (hitParticles != null)
+            // ── Particles (pooled) ──
+            if (hitParticlePrefab != null)
             {
-                // Move particle system to hit point and emit
-                hitParticles.transform.position = hitPoint;
-                hitParticles.Emit(5);
+                ObjectPoolManager pool = ObjectPoolManager.Instance;
+                if (pool != null)
+                {
+                    GameObject pooled = pool.Spawn(hitParticlePrefab, hitPoint, Quaternion.identity);
+                    // ParticleSystem will auto-despawn if configured with StopAction.Destroy
+                }
             }
 
             // ── Hit Flash (MaterialPropertyBlock) ──
@@ -335,11 +338,15 @@ namespace Hecton8.Gameplay
                 audio.PlayAtPoint(breakSound, pos, breakVolume);
             }
 
-            // ── Particles ──
-            if (breakParticles != null)
+            // ── Particles (pooled) ──
+            if (breakParticlePrefab != null)
             {
-                breakParticles.transform.position = pos;
-                breakParticles.Play();
+                ObjectPoolManager pool = ObjectPoolManager.Instance;
+                if (pool != null)
+                {
+                    GameObject pooled = pool.Spawn(breakParticlePrefab, pos, Quaternion.identity);
+                    // ParticleSystem will auto-despawn if configured with StopAction.Destroy
+                }
             }
         }
 

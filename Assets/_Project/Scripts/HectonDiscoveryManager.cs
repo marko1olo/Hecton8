@@ -23,9 +23,9 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton8/Gameplay/Hecton Discovery Manager")]
     public sealed class HectonDiscoveryManager : MonoBehaviour, ISaveable
     {
-        private const int MinBiomeId = 1;
-        private const int MaxBiomeId = 108;
-        private const int InvalidBiomeId = -1;
+        private const int MinBiomeId = BiomeDiscoveryBitMask.MinBiomeId;
+        private const int MaxBiomeId = BiomeDiscoveryBitMask.MaxBiomeId;
+        private const int InvalidBiomeId = BiomeDiscoveryBitMask.InvalidBiomeId;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR - REFERENCES
@@ -187,12 +187,13 @@ namespace Hecton8.Gameplay
             if (data == null)
                 return;
 
-            data.discoveredBiomeIds.Clear();
-
-            foreach (int biomeId in _discoveredBiomeIds)
-                data.discoveredBiomeIds.Add(biomeId);
-
-            data.lastDiscoveredBiomeId = LastDiscoveredId;
+            BiomeDiscoveryBitMask.EnsureCapacity(ref data.discoveredBiomeBitWords);
+            BiomeDiscoveryBitMask.Pack(_discoveredBiomeIds, data.discoveredBiomeBitWords);
+            data.discoveredBiomeIds = null;
+            data.lastDiscoveredBiomeId = IsValidBiomeId(LastDiscoveredId) &&
+                                         _discoveredBiomeIds.Contains(LastDiscoveredId)
+                ? LastDiscoveredId
+                : ResolveFallbackLastDiscoveredId();
         }
 
         /// <inheritdoc />
@@ -201,13 +202,20 @@ namespace Hecton8.Gameplay
             _discoveredBiomeIds.Clear();
             LastDiscoveredId = InvalidBiomeId;
 
-            if (data?.discoveredBiomeIds == null)
+            if (data == null)
                 return;
 
-            foreach (int biomeId in data.discoveredBiomeIds)
+            if (BiomeDiscoveryBitMask.HasAnySet(data.discoveredBiomeBitWords))
             {
-                if (IsValidBiomeId(biomeId))
-                    _discoveredBiomeIds.Add(biomeId);
+                BiomeDiscoveryBitMask.Unpack(data.discoveredBiomeBitWords, _discoveredBiomeIds);
+            }
+            else if (data.discoveredBiomeIds != null)
+            {
+                foreach (int biomeId in data.discoveredBiomeIds)
+                {
+                    if (IsValidBiomeId(biomeId))
+                        _discoveredBiomeIds.Add(biomeId);
+                }
             }
 
             if (IsValidBiomeId(data.lastDiscoveredBiomeId) &&
@@ -239,9 +247,9 @@ namespace Hecton8.Gameplay
 
         private int ResolveFallbackLastDiscoveredId()
         {
-            foreach (int biomeId in _discoveredBiomeIds)
+            for (int biomeId = MinBiomeId; biomeId <= MaxBiomeId; biomeId++)
             {
-                if (IsValidBiomeId(biomeId))
+                if (_discoveredBiomeIds.Contains(biomeId))
                     return biomeId;
             }
 

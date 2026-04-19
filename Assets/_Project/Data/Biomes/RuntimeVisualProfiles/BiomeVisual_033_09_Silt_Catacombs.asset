@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 559ad33e1d65b1d42950ade30bdf05c9, type: 3}
+  m_Name: BiomeVisual_033_09_Silt_Catacombs
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomeProfile
+  biomeName: 'Silt Catacombs [9]'
+  scatterColorBase: {r: 0.02703569, g: 0.0600896, b: 0.07270068, a: 1}
+  scatterColorShallow: {r: 0.04999041, g: 0.106388, b: 0.11169606, a: 1}
+  depthFogDensity: {x: 0.7090833, y: 0.40860537, z: 0.23531862}
+  fogColor: {r: 0.0371632, g: 0.07648286, b: 0.08010126, a: 1}
+  turbidityMultiplier: 1.52716431

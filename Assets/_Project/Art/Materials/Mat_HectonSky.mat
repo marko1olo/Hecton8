@@ -140,9 +140,9 @@ Material:
     - _CirrusSpeedMult: 0.008
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
-    - _CloudDensityThreshold: 0.16
+    - _CloudDensityThreshold: 0
     - _CloudOverlayMode: 0
-    - _CloudSoftness: 0.3
+    - _CloudSoftness: 0.01
     - _CloudSpeedMult: 0
     - _Cull: 2
     - _Cutoff: 0.5
@@ -162,11 +162,14 @@ Material:
     - _Glossiness: 0
     - _GlossyReflections: 0
     - _HazeFalloff: 3.529331
-    - _HazeIntensity: 0.31842512
+    - _HazeIntensity: 0.35822824
     - _HazeSunTintStrength: 0.21612202
     - _HighCloudOpacity: 0.82
     - _HighCloudParallaxStrength: 0
     - _HighCloudSpeedMult: 0.08
+    - _HorizonMistShelfHeight: 0.17135337
+    - _HorizonMistShelfIntensity: 0.50342965
+    - _HorizonMistShelfSoftness: 0.10277342
     - _Metallic: 0
     - _NightBlend: 0
     - _OcclusionStrength: 1
@@ -203,12 +206,12 @@ Material:
     - _CelestialTransmittanceTiling: {r: 0.04, g: 0.06, b: 0, a: 0}
     - _CirrusColor: {r: 0.82, g: 0.84, b: 0.9, a: 1}
     - _CirrusTiling: {r: 0.1, g: 0.1, b: 0, a: 0}
-    - _CloudColorLit: {r: 0.7, g: 0.74, b: 0.8, a: 1}
-    - _CloudColorShadow: {r: 0.32, g: 0.36, b: 0.44, a: 1}
+    - _CloudColorLit: {r: 0, g: 0, b: 0, a: 0}
+    - _CloudColorShadow: {r: 0, g: 0, b: 0, a: 0}
     - _CloudTiling: {r: 0.1, g: 0.15, b: 0, a: 0}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _HazeColor: {r: 0.6585649, g: 0.68234015, b: 0.73309755, a: 1}
+    - _HazeColor: {r: 0.6413432, g: 0.6711431, b: 0.72370523, a: 1}
     - _HighCloudColor: {r: 0.76, g: 0.78, b: 0.9, a: 1}
     - _HighCloudTiling: {r: 6, g: 3, b: 0, a: 0}
     - _NightCloudColor: {r: 0.0256, g: 0.018000001, b: 0.0528, a: 1}

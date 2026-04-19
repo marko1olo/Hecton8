@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using Hecton8.World;
 
 namespace Hecton8.Gameplay
 {
@@ -39,6 +40,7 @@ namespace Hecton8.Gameplay
     public sealed class FieldTargetDescriptor : MonoBehaviour
     {
         private static readonly List<FieldTargetDescriptor> _ActiveDescriptors = new List<FieldTargetDescriptor>(64);
+        private int _spatialHandle;
 
         [SerializeField] private FieldTargetRole role = FieldTargetRole.Generic;
         [SerializeField] [TextArea(2, 4)] private string operatorNote = string.Empty;
@@ -51,22 +53,27 @@ namespace Hecton8.Gameplay
         {
             if (!_ActiveDescriptors.Contains(this))
                 _ActiveDescriptors.Add(this);
+
+            RegisterSpatialHandle();
         }
 
         private void OnDisable()
         {
             _ActiveDescriptors.Remove(this);
+            UnregisterSpatialHandle();
         }
 
         private void OnDestroy()
         {
             _ActiveDescriptors.Remove(this);
+            UnregisterSpatialHandle();
         }
 
         public void Configure(FieldTargetRole targetRole, string note)
         {
             role = targetRole;
             operatorNote = note ?? string.Empty;
+            RefreshSpatialHandle();
         }
 
         public static FieldTargetDescriptor GetActiveDescriptorAt(int index)
@@ -84,6 +91,32 @@ namespace Hecton8.Gameplay
 
             descriptor = source.GetComponent<FieldTargetDescriptor>() ?? source.GetComponentInParent<FieldTargetDescriptor>();
             return descriptor != null;
+        }
+
+        private void RegisterSpatialHandle()
+        {
+            if (_spatialHandle != 0 || !isActiveAndEnabled)
+                return;
+
+            _spatialHandle = WorldSpatialHashGrid.RegisterSignal(this);
+        }
+
+        private void UnregisterSpatialHandle()
+        {
+            if (_spatialHandle == 0)
+                return;
+
+            WorldSpatialHashGrid.Unregister(_spatialHandle);
+            _spatialHandle = 0;
+        }
+
+        private void RefreshSpatialHandle()
+        {
+            if (!isActiveAndEnabled)
+                return;
+
+            UnregisterSpatialHandle();
+            RegisterSpatialHandle();
         }
     }
 }

@@ -1,4 +1,4 @@
-%YAML 1.1
+﻿%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!114 &11400000
 MonoBehaviour:
@@ -13,8 +13,16 @@ MonoBehaviour:
   m_Name: Recipe_SealantPack
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Crafting.RecipeData
   recipeName: Sealant Pack
+  localizedRecipeName:
+    tableKey: ITEM_SEALANT_PACK_NAME
+    fallbackText: ''
+    variants: []
   overrideIcon: {fileID: 0}
   description: Mix fiber binder and sulfur compound into an emergency patching medium.
+  localizedRecipeDescription:
+    tableKey: ITEM_SEALANT_PACK_DESCRIPTION
+    fallbackText: ''
+    variants: []
   resultItem: {fileID: 11400000, guid: 4a285a81e47817e4c986cae01c0f5508, type: 2}
   resultQuantity: 1
   ingredients:

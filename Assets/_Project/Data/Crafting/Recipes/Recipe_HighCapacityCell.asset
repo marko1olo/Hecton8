@@ -1,4 +1,4 @@
-%YAML 1.1
+﻿%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!114 &11400000
 MonoBehaviour:
@@ -13,8 +13,16 @@ MonoBehaviour:
   m_Name: Recipe_HighCapacityCell
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Crafting.RecipeData
   recipeName: High-Capacity Cell
+  localizedRecipeName:
+    tableKey: ITEM_HIGH_CAPACITY_CELL_NAME
+    fallbackText: ''
+    variants: []
   overrideIcon: {fileID: 0}
   description: Upgrade a field cell into a high-endurance power pack.
+  localizedRecipeDescription:
+    tableKey: ITEM_HIGH_CAPACITY_CELL_DESCRIPTION
+    fallbackText: ''
+    variants: []
   resultItem: {fileID: 11400000, guid: 02536e73b3fe4cc4593bb90b44c03511, type: 2}
   resultQuantity: 1
   ingredients:

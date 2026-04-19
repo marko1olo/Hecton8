@@ -120,6 +120,7 @@ namespace Hecton8.Scavenging
         private bool  _isDepleted;
         private bool  _despawnRequested;
         private bool  _lootSpawnBlockedLogged;
+        private int _spatialHandle;
 
         /// <summary>
         /// Кэшированный MaterialPropertyBlock. Создаётся один раз в Awake.
@@ -194,6 +195,13 @@ namespace Hecton8.Scavenging
                     return;
                 }
             }
+
+            RegisterSpatialHandle();
+        }
+
+        private void OnDisable()
+        {
+            UnregisterSpatialHandle();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -230,10 +238,13 @@ namespace Hecton8.Scavenging
                     return;
                 }
             }
+
+            RegisterSpatialHandle();
         }
 
         public void OnDespawn()
         {
+            UnregisterSpatialHandle();
             ResetState();
 
             if (autoGenerateId)
@@ -493,6 +504,23 @@ namespace Hecton8.Scavenging
 
             // v5.0: Сброс мельт-эффекта
             ResetMeltProperties();
+        }
+
+        private void RegisterSpatialHandle()
+        {
+            if (_spatialHandle != 0 || _isDepleted || !isActiveAndEnabled)
+                return;
+
+            _spatialHandle = WorldSpatialHashGrid.RegisterResource(this);
+        }
+
+        private void UnregisterSpatialHandle()
+        {
+            if (_spatialHandle == 0)
+                return;
+
+            WorldSpatialHashGrid.Unregister(_spatialHandle);
+            _spatialHandle = 0;
         }
 
         // ══════════════════════════════════════════════════════════

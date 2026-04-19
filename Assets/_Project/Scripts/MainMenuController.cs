@@ -100,6 +100,7 @@ namespace Hecton.UI.MainMenu
             }
 
             AutoWireSceneReferences();
+            ConfigureAdaptiveLabels();
             ValidateReferences();
             BindButtons();
             InitializePanelStates();
@@ -170,10 +171,32 @@ namespace Hecton.UI.MainMenu
             if (loc == null)
                 return;
 
+            ConfigureAdaptiveLabels();
             if (labelNewGame != null) labelNewGame.SetText(loc.Get(LocalizationKeys.MENU_NEW_GAME));
             if (labelLoadGame != null) labelLoadGame.SetText(loc.Get(LocalizationKeys.MENU_LOAD_GAME));
             if (labelSettings != null) labelSettings.SetText(loc.Get(LocalizationKeys.MENU_SETTINGS));
             if (labelQuit != null) labelQuit.SetText(loc.Get(LocalizationKeys.MENU_QUIT));
+        }
+
+        private void ConfigureAdaptiveLabels()
+        {
+            ConfigureAdaptiveLabel(labelNewGame);
+            ConfigureAdaptiveLabel(labelLoadGame);
+            ConfigureAdaptiveLabel(labelSettings);
+            ConfigureAdaptiveLabel(labelQuit);
+        }
+
+        private static void ConfigureAdaptiveLabel(TMP_Text label)
+        {
+            if (label == null)
+                return;
+
+            LocalizedTMPAutoSizer.Configure(
+                label,
+                label.fontSize * 0.72f,
+                label.fontSize,
+                TextOverflowModes.Ellipsis,
+                TextWrappingModes.NoWrap);
         }
 
         private void ValidateReferences()
