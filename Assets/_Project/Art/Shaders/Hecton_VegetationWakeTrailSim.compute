@@ -1,0 +1,54 @@
+#pragma kernel SimulateWakeTrail
+
+Texture2D<float4> _HectonWakeTrailSource;
+RWTexture2D<float4> _HectonWakeTrailResult;
+
+float _HectonWakeTrailFadeDelta;
+float _HectonWakeTrailDiffusion;
+float _HectonWakeTrailWaveStrength;
+float _HectonWakeTrailDamping;
+float4 _HectonWakeTrailTexelSize;
+
+[numthreads(8, 8, 1)]
+void SimulateWakeTrail(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint width;
+    uint height;
+    _HectonWakeTrailResult.GetDimensions(width, height);
+    if (dispatchThreadId.x >= width || dispatchThreadId.y >= height)
+        return;
+
+    int2 pixel = int2(dispatchThreadId.xy);
+    int2 leftPixel = int2(max(pixel.x - 1, 0), pixel.y);
+    int2 rightPixel = int2(min(pixel.x + 1, (int)width - 1), pixel.y);
+    int2 downPixel = int2(pixel.x, max(pixel.y - 1, 0));
+    int2 upPixel = int2(pixel.x, min(pixel.y + 1, (int)height - 1));
+
+    float4 center = _HectonWakeTrailSource[pixel];
+    float4 left = _HectonWakeTrailSource[leftPixel];
+    float4 right = _HectonWakeTrailSource[rightPixel];
+    float4 down = _HectonWakeTrailSource[downPixel];
+    float4 up = _HectonWakeTrailSource[upPixel];
+
+    float currentIntensity = center.b;
+    float previousIntensity = center.a;
+    float neighborAverage = (left.b + right.b + down.b + up.b) * 0.25;
+    float diffusedIntensity = lerp(currentIntensity, neighborAverage, saturate(_HectonWakeTrailDiffusion));
+    float waveIntensity = ((neighborAverage * 2.0) - previousIntensity) * saturate(_HectonWakeTrailDamping);
+    float propagatedIntensity = saturate(lerp(diffusedIntensity, waveIntensity, saturate(_HectonWakeTrailWaveStrength)) - _HectonWakeTrailFadeDelta);
+
+    float2 currentDirection = center.rg * 2.0 - 1.0;
+    float2 gradientDirection = float2(right.b - left.b, up.b - down.b);
+    float gradientLengthSq = dot(gradientDirection, gradientDirection);
+    float2 blendedDirection = currentDirection;
+    if (gradientLengthSq > 0.000001)
+        blendedDirection += normalize(gradientDirection) * (_HectonWakeTrailWaveStrength * 0.75);
+
+    float directionLengthSq = dot(blendedDirection, blendedDirection);
+    if (directionLengthSq <= 0.000001)
+        blendedDirection = float2(0.0, 1.0);
+    else
+        blendedDirection *= rsqrt(directionLengthSq);
+
+    _HectonWakeTrailResult[pixel] = float4(blendedDirection * 0.5 + 0.5, propagatedIntensity, currentIntensity);
+}

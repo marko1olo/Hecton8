@@ -13,6 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using Hecton8.Modding;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
@@ -303,6 +304,8 @@ namespace Hecton8.SaveSystem
                     if (IsAlive(_saveables[i])) _saveables[i].PopulateSaveData(data);
                 }
 
+                ModSaveStateStore.PopulateSaveData(data);
+
                 SaveMetadata metadata = new SaveMetadata
                 {
                     SlotName = slotName,
@@ -446,6 +449,7 @@ namespace Hecton8.SaveSystem
 
                 _totalPlayTime = data.totalPlayTime;
                 _sessionStartTime = Time.realtimeSinceStartup;
+                ModSaveStateStore.LoadFromSaveData(data);
                 
                 _registryDirty = true;
                 SortRegistryIfDirty(LoadPriorityCompare);

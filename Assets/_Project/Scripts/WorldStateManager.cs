@@ -1,43 +1,8 @@
-// ============================================================================
-// HECTON-8 — WorldStateManager.cs
-// Менеджер состояния игрового мира.
-//
-// Singleton, ISaveable (Priority 50).
-//
-// Отслеживает уничтоженные/собранные объекты (ResourceNode),
-// чтобы они не появлялись заново после загрузки.
-//
-// АРХИТЕКТУРА:
-//   • HashSet<string> для O(1) проверки IsNodeDepleted.
-//   • При сохранении: HashSet → string[] (ConstructionDTO-стиль).
-//   • При загрузке: string[] → HashSet + деактивация узлов в сцене.
-//   • FindObjectsByType вызывается ОДИН РАЗ при загрузке (не per-frame).
-//
-// ZERO GC в рантайме:
-//   • RegisterDepletedNode: HashSet.Add — amortized O(1), 0 GC (если capacity достаточна).
-//   • IsNodeDepleted: HashSet.Contains — O(1), 0 GC.
-//   • Per-frame нет никаких вызовов (нет ITickable).
-//
-// POOL SAFETY (v2.1):
-//   ApplyToScene ИГНОРИРУЕТ объекты с PoolItemMarker.
-//   Динамические ресурсы (из ObjectPoolManager) проверяют свой стейт
-//   самостоятельно при спавне через ResourceNode.OnEnable →
-//   WorldStateManager.IsNodeDepleted. ApplyToScene управляет только
-//   статически размещёнными в сцене объектами.
-//   Это предотвращает массовую активацию пустых болванок пула.
-//
-// ИНТЕГРАЦИЯ:
-//   • ResourceNode вызывает RegisterDepletedNode(uniqueId) при разрушении.
-//   • ResourceNode.OnEnable / OnSpawn проверяет IsNodeDepleted для самодеактивации.
-//   • ResourceNode (v4.1) авто-генерирует uniqueId из координат
-//     при autoGenerateId=true, обеспечивая детерминизм
-//     при регенерации чанков MapMagic.
-//   • SaveManager вызывает PopulateSaveData / LoadFromSaveData.
-// ============================================================================
-
+using System;
 using System.Collections.Generic;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Interaction;
 using Hecton8.SaveSystem;
 using Hecton8.Scavenging;
 using UnityEngine;
@@ -48,11 +13,38 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-6000)]
     public sealed class WorldStateManager : MonoBehaviour, ISaveable
     {
-        // ══════════════════════════════════════════════════════════
-        //  SINGLETON
-        // ══════════════════════════════════════════════════════════
+        private struct PickupPersistenceEntry
+        {
+            public long Key;
+            public long ChunkKey;
+        }
 
         private static WorldStateManager _instance;
+        private static readonly Comparison<PickupPersistenceEntry> PickupPersistenceEntryCompare = ComparePickupPersistenceEntries;
+
+        [Header("── Settings ───────────────────────────────")]
+        [Tooltip("Initial capacity for world-state persistence sets.")]
+        [SerializeField] private int initialCapacity = 128;
+
+        [Header("── Diagnostics ───────────────────────────")]
+        [SerializeField] private int _debugDepletedCount;
+        [SerializeField] private int _debugDepletedPickupCount;
+
+        private HashSet<string> _depletedNodeIds;
+        private HashSet<long> _depletedPickupKeys;
+
+        // COLD ALLOC: Dictionary<long,long>[128] — pickup key-to-chunk lookup for save/load persistence — owner: WorldStateManager
+        private readonly Dictionary<long, long> _depletedPickupChunkKeysByPickupKey = new Dictionary<long, long>(128);
+        // COLD ALLOC: List<PickupPersistenceEntry>[512] — pickup persistence sort buffer for save/load packing — owner: WorldStateManager
+        private readonly List<PickupPersistenceEntry> _pickupPersistenceEntries = new List<PickupPersistenceEntry>(512);
+        // COLD ALLOC: List<long>[128] — packed pickup chunk keys during save — owner: WorldStateManager
+        private readonly List<long> _packedPickupChunkKeys = new List<long>(128);
+        // COLD ALLOC: List<int>[128] — packed pickup chunk word-start offsets during save — owner: WorldStateManager
+        private readonly List<int> _packedPickupChunkWordStarts = new List<int>(128);
+        // COLD ALLOC: List<int>[128] — packed pickup chunk word-counts during save — owner: WorldStateManager
+        private readonly List<int> _packedPickupChunkWordCounts = new List<int>(128);
+        // COLD ALLOC: List<long>[256] — packed pickup depletion words during save — owner: WorldStateManager
+        private readonly List<long> _packedPickupWords = new List<long>(256);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -60,6 +52,9 @@ namespace Hecton8.World
             _instance = null;
         }
 
+        /// <summary>
+        /// Global world-state manager instance.
+        /// </summary>
         public static WorldStateManager Instance
         {
             get
@@ -72,120 +67,33 @@ namespace Hecton8.World
             }
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  INSPECTOR
-        // ══════════════════════════════════════════════════════════
-
-        [Header("── Settings ──────────────────────────────────")]
-        [Tooltip("Начальная ёмкость HashSet. Увеличь для больших миров.")]
-        [SerializeField] private int initialCapacity = 128;
-
-        [Header("── Diagnostics ───────────────────────────────")]
-        [SerializeField] private int _debugDepletedCount;
-
-        // ══════════════════════════════════════════════════════════
-        //  STATE
-        // ══════════════════════════════════════════════════════════
-
         /// <summary>
-        /// Множество уникальных ID уничтоженных/собранных объектов.
-        /// HashSet: O(1) Add, Contains, Remove. Pre-allocated.
+        /// Total persisted depleted resource node count.
         /// </summary>
-        private HashSet<string> _depletedNodeIds;
-
-        // ══════════════════════════════════════════════════════════
-        //  PUBLIC API — QUERIES
-        // ══════════════════════════════════════════════════════════
-
-        /// <summary>Количество уничтоженных узлов.</summary>
         public int DepletedCount => _depletedNodeIds != null ? _depletedNodeIds.Count : 0;
 
+        /// <summary>
+        /// Total persisted depleted authored pickup count.
+        /// </summary>
+        public int DepletedPickupCount => _depletedPickupKeys != null ? _depletedPickupKeys.Count : 0;
+
+        /// <summary>
+        /// Current player transform from bootstrap.
+        /// </summary>
         public Transform PlayerTransform => SceneBootstrap.CurrentPlayerTransform;
 
         /// <summary>
-        /// Проверяет, был ли узел с данным ID уже уничтожен/собран.
-        /// O(1), Zero GC.
-        ///
-        /// Вызывается:
-        ///   • ResourceNode.OnEnable — для самодеактивации scene-объектов.
-        ///   • ResourceNode.OnSpawn — для деспавна pool-объектов.
-        ///   • Любая внешняя система, проверяющая состояние мира.
+        /// Save order for world-state persistence.
         /// </summary>
-        /// <param name="uniqueId">Уникальный ID узла.</param>
-        /// <returns>true если узел уже уничтожен.</returns>
-        public bool IsNodeDepleted(string uniqueId)
-        {
-            if (string.IsNullOrEmpty(uniqueId)) return false;
-            if (_depletedNodeIds == null) return false;
-
-            return _depletedNodeIds.Contains(uniqueId);
-        }
-
-        // ══════════════════════════════════════════════════════════
-        //  PUBLIC API — REGISTRATION
-        // ══════════════════════════════════════════════════════════
+        public int SavePriority => 50;
 
         /// <summary>
-        /// Регистрирует узел как уничтоженный.
-        /// Вызывается из ResourceNode.TakeDamage() при health ≤ 0.
-        ///
-        /// O(1) amortized. Дубликаты игнорируются (HashSet).
+        /// Load order for world-state persistence.
         /// </summary>
-        /// <param name="uniqueId">Уникальный ID узла.</param>
-        public void RegisterDepletedNode(string uniqueId)
-        {
-            if (string.IsNullOrEmpty(uniqueId)) return;
-            if (_depletedNodeIds == null) return;
-
-            _depletedNodeIds.Add(uniqueId);
-
-            UpdateDiagnostics();
-        }
-
-        /// <summary>
-        /// Алиас для RegisterDepletedNode.
-        /// Предоставляет альтернативное имя API для читаемости.
-        /// Функционально идентичен RegisterDepletedNode.
-        /// </summary>
-        /// <param name="uniqueId">Уникальный ID узла.</param>
-        public void MarkNodeDepleted(string uniqueId)
-        {
-            RegisterDepletedNode(uniqueId);
-        }
-
-        /// <summary>
-        /// Снимает пометку "уничтожен" с узла.
-        /// Используется для респавна ресурсов (таймер, событие, читы).
-        /// </summary>
-        /// <param name="uniqueId">Уникальный ID узла.</param>
-        public void UnregisterDepletedNode(string uniqueId)
-        {
-            if (string.IsNullOrEmpty(uniqueId)) return;
-            if (_depletedNodeIds == null) return;
-
-            _depletedNodeIds.Remove(uniqueId);
-
-            UpdateDiagnostics();
-        }
-
-        /// <summary>
-        /// Очищает все записи. Все узлы снова считаются "живыми".
-        /// Используется при New Game.
-        /// </summary>
-        public void ClearAll()
-        {
-            _depletedNodeIds?.Clear();
-
-            UpdateDiagnostics();
-        }
-
-        // ══════════════════════════════════════════════════════════
-        //  LIFECYCLE
-        // ══════════════════════════════════════════════════════════
+        public int LoadPriority => 50;
 
         private void Awake()
         {
-            // ── Singleton ──
             if (_instance != null && _instance != this)
             {
                 Destroy(gameObject);
@@ -195,8 +103,11 @@ namespace Hecton8.World
             _instance = this;
             DontDestroyOnLoad(gameObject);
 
-            // ── Pre-allocate HashSet ──
+            // COLD ALLOC: HashSet<string>[initialCapacity] — depleted node persistence set — owner: WorldStateManager
             _depletedNodeIds = new HashSet<string>(initialCapacity);
+            // COLD ALLOC: HashSet<long>[initialCapacity] — depleted pickup persistence set — owner: WorldStateManager
+            _depletedPickupKeys = new HashSet<long>(Mathf.Max(64, initialCapacity));
+            _depletedPickupChunkKeysByPickupKey.Clear();
         }
 
         private void OnEnable()
@@ -215,68 +126,152 @@ namespace Hecton8.World
                 _instance = null;
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  ISaveable — SAVE / LOAD (Priority 50)
-        // ══════════════════════════════════════════════════════════
-
-        /// <summary>World state загружается после Inventory, до Construction.</summary>
-        public int SavePriority => 50;
-        public int LoadPriority => 50;
-
         /// <summary>
-        /// Записывает HashSet уничтоженных узлов в WorldStateDTO.
-        ///
-        /// HashSet → string[] (pre-allocated через EnsureCapacity).
-        /// Проверка на MaxNodes: если узлов больше — обрезаем с Warning.
+        /// Checks whether a resource node was already depleted.
         /// </summary>
-        public void PopulateSaveData(SaveData data)
+        /// <param name="uniqueId">Stable resource node id.</param>
+        /// <returns>true when the node is already depleted.</returns>
+        public bool IsNodeDepleted(string uniqueId)
         {
-            ref WorldStateDTO dto = ref data.worldState;
-            dto.EnsureCapacity();
+            if (string.IsNullOrEmpty(uniqueId) || _depletedNodeIds == null)
+                return false;
 
-            int index = 0;
-
-            foreach (string id in _depletedNodeIds)
-            {
-                if (index >= WorldStateDTO.MaxNodes)
-                {
-                    Debug.LogWarning(
-                        $"[WorldStateManager] Max depleted nodes ({WorldStateDTO.MaxNodes}) reached. " +
-                        $"Truncating: {_depletedNodeIds.Count - index} nodes not saved.");
-                    break;
-                }
-
-                dto.depletedNodeIds[index] = id;
-                index++;
-            }
-
-            dto.depletedCount = index;
+            return _depletedNodeIds.Contains(uniqueId);
         }
 
         /// <summary>
-        /// Восстанавливает состояние мира из SaveData.
-        ///
-        /// Порядок:
-        ///   1. Очистить текущий HashSet.
-        ///   2. Загрузить ID из dto.
-        ///   3. Найти ВСЕ ResourceNode в сцене (FindObjectsByType — один раз).
-        ///   4. Деактивировать те, чей uniqueId есть в HashSet.
-        ///
-        /// FindObjectsByType вызывается ОДИН РАЗ при загрузке — допустимо.
+        /// Checks whether an authored pickup was already collected.
         /// </summary>
+        /// <param name="persistenceKey">Stable pickup persistence key.</param>
+        /// <returns>true when the pickup is already depleted.</returns>
+        public bool IsPickupDepleted(long persistenceKey)
+        {
+            if (persistenceKey == 0L || _depletedPickupKeys == null)
+                return false;
+
+            return _depletedPickupKeys.Contains(persistenceKey);
+        }
+
+        /// <summary>
+        /// Marks a resource node as depleted.
+        /// </summary>
+        /// <param name="uniqueId">Stable resource node id.</param>
+        public void RegisterDepletedNode(string uniqueId)
+        {
+            if (string.IsNullOrEmpty(uniqueId) || _depletedNodeIds == null)
+                return;
+
+            _depletedNodeIds.Add(uniqueId);
+            UpdateDiagnostics();
+        }
+
+        /// <summary>
+        /// Alias for resource-node depletion registration.
+        /// </summary>
+        /// <param name="uniqueId">Stable resource node id.</param>
+        public void MarkNodeDepleted(string uniqueId)
+        {
+            RegisterDepletedNode(uniqueId);
+        }
+
+        /// <summary>
+        /// Marks an authored pickup as collected.
+        /// </summary>
+        /// <param name="persistenceKey">Stable pickup persistence key.</param>
+        /// <param name="chunkKey">Stable world chunk key for grouping in save data.</param>
+        public void RegisterCollectedPickup(long persistenceKey, long chunkKey)
+        {
+            if (persistenceKey == 0L || _depletedPickupKeys == null)
+                return;
+
+            _depletedPickupKeys.Add(persistenceKey);
+            _depletedPickupChunkKeysByPickupKey[persistenceKey] = chunkKey != 0L ? chunkKey : persistenceKey;
+            UpdateDiagnostics();
+        }
+
+        /// <summary>
+        /// Backward-compatible pickup registration when only persistence key is available.
+        /// </summary>
+        /// <param name="persistenceKey">Stable pickup persistence key.</param>
+        public void RegisterCollectedPickup(long persistenceKey)
+        {
+            RegisterCollectedPickup(persistenceKey, persistenceKey);
+        }
+
+        /// <summary>
+        /// Removes a resource node from depleted persistence.
+        /// </summary>
+        /// <param name="uniqueId">Stable resource node id.</param>
+        public void UnregisterDepletedNode(string uniqueId)
+        {
+            if (string.IsNullOrEmpty(uniqueId) || _depletedNodeIds == null)
+                return;
+
+            _depletedNodeIds.Remove(uniqueId);
+            UpdateDiagnostics();
+        }
+
+        /// <summary>
+        /// Clears all persisted world depletion state.
+        /// </summary>
+        public void ClearAll()
+        {
+            _depletedNodeIds?.Clear();
+            _depletedPickupKeys?.Clear();
+            _depletedPickupChunkKeysByPickupKey.Clear();
+            UpdateDiagnostics();
+        }
+
+        /// <summary>
+        /// Writes world-state persistence into save data.
+        /// </summary>
+        /// <param name="data">Save container to populate.</param>
+        public void PopulateSaveData(SaveData data)
+        {
+            if (data == null)
+                return;
+
+            ref WorldStateDTO dto = ref data.worldState;
+            dto.EnsureCapacity();
+
+            int nodeIndex = 0;
+            foreach (string id in _depletedNodeIds)
+            {
+                if (nodeIndex >= WorldStateDTO.MaxNodes)
+                {
+                    Debug.LogWarning(
+                        $"[WorldStateManager] Max depleted nodes ({WorldStateDTO.MaxNodes}) reached. " +
+                        $"Truncating: {_depletedNodeIds.Count - nodeIndex} nodes not saved.");
+                    break;
+                }
+
+                dto.depletedNodeIds[nodeIndex] = id;
+                nodeIndex++;
+            }
+
+            dto.depletedCount = nodeIndex;
+            PopulatePackedPickupState(ref dto);
+        }
+
+        /// <summary>
+        /// Restores world-state persistence from save data.
+        /// </summary>
+        /// <param name="data">Save container to read.</param>
         public void LoadFromSaveData(SaveData data)
         {
+            if (data == null)
+                return;
+
             WorldStateDTO dto = data.worldState;
 
-            // ── 1. Очистка ──
             _depletedNodeIds.Clear();
+            _depletedPickupKeys.Clear();
+            _depletedPickupChunkKeysByPickupKey.Clear();
 
-            // ── 2. Загрузка ID ──
             if (dto.depletedNodeIds != null && dto.depletedCount > 0)
             {
-                int count = Mathf.Min(dto.depletedCount, dto.depletedNodeIds.Length);
-
-                for (int i = 0; i < count; i++)
+                int nodeCount = Mathf.Min(dto.depletedCount, dto.depletedNodeIds.Length);
+                for (int i = 0; i < nodeCount; i++)
                 {
                     string id = dto.depletedNodeIds[i];
                     if (!string.IsNullOrEmpty(id))
@@ -284,101 +279,253 @@ namespace Hecton8.World
                 }
             }
 
-            // ── 3. Применение к сцене ──
+            LoadPackedPickupState(in dto);
             ApplyToScene();
-
             UpdateDiagnostics();
 
             Debug.Log(
-                $"[WorldStateManager] Loaded {_depletedNodeIds.Count} depleted nodes.");
+                $"[WorldStateManager] Loaded {_depletedNodeIds.Count} depleted nodes and {_depletedPickupKeys.Count} depleted pickups.");
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  PUBLIC — APPLY TO SCENE
-        // ══════════════════════════════════════════════════════════
-
         /// <summary>
-        /// Находит все ResourceNode в сцене и деактивирует уничтоженные.
-        ///
-        /// Вызывается:
-        ///   • LoadFromSaveData() — после загрузки сейва.
-        ///   • Можно вызвать вручную после загрузки новой сцены
-        ///     (если узлы спавнятся позже SaveManager.LoadGame).
-        ///
-        /// FindObjectsByType с includeInactive:
-        ///   Ищет ВСЕ узлы, включая уже деактивированные,
-        ///   чтобы корректно обработать повторные загрузки.
-        ///
-        /// POOL SAFETY:
-        ///   Объекты с PoolItemMarker (принадлежащие ObjectPoolManager)
-        ///   ИГНОРИРУЮТСЯ. Динамические ресурсы из пула проверяют свой
-        ///   depleted-стейт самостоятельно при спавне через
-        ///   ResourceNode.OnEnable → IsNodeDepleted.
-        ///   Это предотвращает массовую ошибочную активацию
-        ///   предсозданных болванок пула.
-        ///
-        /// ОДНОРАЗОВАЯ операция при загрузке. Не per-frame.
+        /// Applies persisted depletion state to the currently loaded scene.
         /// </summary>
         public void ApplyToScene()
         {
-            if (_depletedNodeIds.Count == 0) return;
+            if (_depletedNodeIds.Count == 0 && (_depletedPickupKeys == null || _depletedPickupKeys.Count == 0))
+                return;
 
-            // FindObjectsByType — Unity 2022.3+
-            // Flags: включаем неактивные объекты
-            ResourceNode[] allNodes = FindObjectsByType<ResourceNode>(
-                FindObjectsInactive.Include);
+            ResourceNode[] allNodes = FindObjectsByType<ResourceNode>(FindObjectsInactive.Include);
+            int deactivatedNodes = 0;
 
-            int deactivated = 0;
-
-            for (int i = 0, len = allNodes.Length; i < len; i++)
+            for (int i = 0; i < allNodes.Length; i++)
             {
                 ResourceNode node = allNodes[i];
-                if (node == null) continue;
+                if (node == null)
+                    continue;
 
-                // ИГНОРИРУЕМ объекты пула. Они динамические и сами
-                // проверяют стейт при спавне через ResourceNode.OnEnable.
-                // Без этой проверки ApplyToScene активирует все предсозданные
-                // болванки ObjectPoolManager, вызывая массовый визуальный баг.
                 if (node.TryGetComponent<ObjectPoolManager.PoolItemMarker>(out _))
                     continue;
 
                 string nodeId = node.UniqueId;
-                if (string.IsNullOrEmpty(nodeId)) continue;
+                if (string.IsNullOrEmpty(nodeId))
+                    continue;
 
                 if (_depletedNodeIds.Contains(nodeId))
                 {
                     if (node.gameObject.activeSelf)
                     {
                         node.gameObject.SetActive(false);
-                        deactivated++;
+                        deactivatedNodes++;
                     }
                 }
-                else
+                else if (!node.gameObject.activeSelf)
                 {
-                    // Узел НЕ в списке уничтоженных — убедиться что активен
-                    // (мог быть деактивирован предыдущей загрузкой)
-                    if (!node.gameObject.activeSelf)
-                    {
-                        node.gameObject.SetActive(true);
-                    }
+                    node.gameObject.SetActive(true);
                 }
             }
 
-            if (deactivated > 0)
+            if (deactivatedNodes > 0)
             {
                 Debug.Log(
-                    $"[WorldStateManager] Deactivated {deactivated} depleted nodes in scene.");
+                    $"[WorldStateManager] Deactivated {deactivatedNodes} depleted nodes in scene.");
+            }
+
+            ApplyPickupStateToScene();
+        }
+
+        private static int ComparePickupPersistenceEntries(PickupPersistenceEntry left, PickupPersistenceEntry right)
+        {
+            int chunkCompare = left.ChunkKey.CompareTo(right.ChunkKey);
+            if (chunkCompare != 0)
+                return chunkCompare;
+
+            return left.Key.CompareTo(right.Key);
+        }
+
+        private void PopulatePackedPickupState(ref WorldStateDTO dto)
+        {
+            _pickupPersistenceEntries.Clear();
+            _packedPickupChunkKeys.Clear();
+            _packedPickupChunkWordStarts.Clear();
+            _packedPickupChunkWordCounts.Clear();
+            _packedPickupWords.Clear();
+
+            if (_depletedPickupKeys == null || _depletedPickupKeys.Count == 0)
+            {
+                dto.depletedPickupChunkCount = 0;
+                dto.depletedPickupWordCount = 0;
+                return;
+            }
+
+            foreach (long pickupKey in _depletedPickupKeys)
+            {
+                long chunkKey;
+                if (!_depletedPickupChunkKeysByPickupKey.TryGetValue(pickupKey, out chunkKey) || chunkKey == 0L)
+                    chunkKey = pickupKey;
+
+                _pickupPersistenceEntries.Add(new PickupPersistenceEntry
+                {
+                    Key = pickupKey,
+                    ChunkKey = chunkKey
+                });
+            }
+
+            _pickupPersistenceEntries.Sort(PickupPersistenceEntryCompare);
+
+            bool hasActiveChunk = false;
+            long activeChunkKey = 0L;
+            int activeChunkCount = 0;
+
+            for (int i = 0; i < _pickupPersistenceEntries.Count; i++)
+            {
+                if (_packedPickupWords.Count >= WorldStateDTO.MaxPickupWords)
+                {
+                    Debug.LogWarning(
+                        $"[WorldStateManager] Max depleted pickup words ({WorldStateDTO.MaxPickupWords}) reached. " +
+                        $"Truncating: {_pickupPersistenceEntries.Count - i} pickups not saved.");
+                    break;
+                }
+
+                PickupPersistenceEntry entry = _pickupPersistenceEntries[i];
+                if (!hasActiveChunk || entry.ChunkKey != activeChunkKey)
+                {
+                    if (_packedPickupChunkKeys.Count >= WorldStateDTO.MaxPickupChunks)
+                    {
+                        Debug.LogWarning(
+                            $"[WorldStateManager] Max depleted pickup chunks ({WorldStateDTO.MaxPickupChunks}) reached. " +
+                            "Truncating remaining pickup persistence.");
+                        break;
+                    }
+
+                    if (hasActiveChunk)
+                        _packedPickupChunkWordCounts.Add(activeChunkCount);
+
+                    hasActiveChunk = true;
+                    activeChunkKey = entry.ChunkKey;
+                    activeChunkCount = 0;
+
+                    _packedPickupChunkKeys.Add(activeChunkKey);
+                    _packedPickupChunkWordStarts.Add(_packedPickupWords.Count);
+                }
+
+                _packedPickupWords.Add(entry.Key);
+                activeChunkCount++;
+            }
+
+            if (hasActiveChunk)
+                _packedPickupChunkWordCounts.Add(activeChunkCount);
+
+            int chunkCount = _packedPickupChunkKeys.Count;
+            for (int i = 0; i < chunkCount; i++)
+            {
+                dto.depletedPickupChunkKeys[i] = _packedPickupChunkKeys[i];
+                dto.depletedPickupChunkWordStarts[i] = _packedPickupChunkWordStarts[i];
+                dto.depletedPickupChunkWordCounts[i] = _packedPickupChunkWordCounts[i];
+            }
+
+            int pickupWordCount = _packedPickupWords.Count;
+            for (int i = 0; i < pickupWordCount; i++)
+                dto.depletedPickupWords[i] = _packedPickupWords[i];
+
+            dto.depletedPickupChunkCount = chunkCount;
+            dto.depletedPickupWordCount = pickupWordCount;
+        }
+
+        private void LoadPackedPickupState(in WorldStateDTO dto)
+        {
+            if (dto.depletedPickupWords == null || dto.depletedPickupWordCount <= 0)
+                return;
+
+            int wordCount = Mathf.Min(dto.depletedPickupWordCount, dto.depletedPickupWords.Length);
+            int chunkCount = dto.depletedPickupChunkKeys != null
+                ? Mathf.Min(dto.depletedPickupChunkCount, dto.depletedPickupChunkKeys.Length)
+                : 0;
+
+            if (chunkCount > 0 &&
+                dto.depletedPickupChunkWordStarts != null &&
+                dto.depletedPickupChunkWordCounts != null)
+            {
+                chunkCount = Mathf.Min(chunkCount, dto.depletedPickupChunkWordStarts.Length, dto.depletedPickupChunkWordCounts.Length);
+
+                for (int chunkIndex = 0; chunkIndex < chunkCount; chunkIndex++)
+                {
+                    long chunkKey = dto.depletedPickupChunkKeys[chunkIndex];
+                    int wordStart = Mathf.Clamp(dto.depletedPickupChunkWordStarts[chunkIndex], 0, wordCount);
+                    int availableWordCount = wordCount - wordStart;
+                    int chunkWordCount = Mathf.Clamp(dto.depletedPickupChunkWordCounts[chunkIndex], 0, availableWordCount);
+
+                    for (int wordIndex = 0; wordIndex < chunkWordCount; wordIndex++)
+                    {
+                        long pickupKey = dto.depletedPickupWords[wordStart + wordIndex];
+                        if (pickupKey == 0L)
+                            continue;
+
+                        _depletedPickupKeys.Add(pickupKey);
+                        _depletedPickupChunkKeysByPickupKey[pickupKey] = chunkKey != 0L ? chunkKey : pickupKey;
+                    }
+                }
+
+                return;
+            }
+
+            for (int wordIndex = 0; wordIndex < wordCount; wordIndex++)
+            {
+                long pickupKey = dto.depletedPickupWords[wordIndex];
+                if (pickupKey == 0L)
+                    continue;
+
+                _depletedPickupKeys.Add(pickupKey);
+                _depletedPickupChunkKeysByPickupKey[pickupKey] = pickupKey;
             }
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  DIAGNOSTICS
-        // ══════════════════════════════════════════════════════════
+        private void ApplyPickupStateToScene()
+        {
+            if (_depletedPickupKeys == null || _depletedPickupKeys.Count == 0)
+                return;
+
+            PickupItem[] allPickups = FindObjectsByType<PickupItem>(FindObjectsInactive.Include);
+            int deactivatedPickups = 0;
+
+            for (int i = 0; i < allPickups.Length; i++)
+            {
+                PickupItem pickup = allPickups[i];
+                if (pickup == null)
+                    continue;
+
+                if (pickup.TryGetComponent<ObjectPoolManager.PoolItemMarker>(out _))
+                    continue;
+
+                long persistenceKey;
+                long chunkKey;
+                if (!pickup.TryGetWorldStatePersistenceIdentity(out persistenceKey, out chunkKey))
+                    continue;
+
+                if (!_depletedPickupKeys.Contains(persistenceKey))
+                    continue;
+
+                _depletedPickupChunkKeysByPickupKey[persistenceKey] = chunkKey != 0L ? chunkKey : persistenceKey;
+
+                if (!pickup.gameObject.activeSelf)
+                    continue;
+
+                pickup.gameObject.SetActive(false);
+                deactivatedPickups++;
+            }
+
+            if (deactivatedPickups > 0)
+            {
+                Debug.Log(
+                    $"[WorldStateManager] Deactivated {deactivatedPickups} depleted pickups in scene.");
+            }
+        }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         private void UpdateDiagnostics()
         {
             _debugDepletedCount = _depletedNodeIds != null ? _depletedNodeIds.Count : 0;
+            _debugDepletedPickupCount = _depletedPickupKeys != null ? _depletedPickupKeys.Count : 0;
         }
     }
 }

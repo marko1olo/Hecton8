@@ -6,6 +6,7 @@ using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
 using Hecton8.Bootstrap;
 using Hecton8.Input;
+using Hecton8.World;
 
 namespace Hecton8.UI
 {
@@ -39,9 +40,11 @@ namespace Hecton8.UI
         private const string BloomKey = "Hecton_Bloom";
         private const string MotionBlurKey = "Hecton_MotionBlur";
         private const string TextureQualityKey = "Hecton_TextureQuality";
+        private const string GraphicsPresetKey = "Hecton_GraphicsPreset";
 
         private const float DefaultVolume = 0.8f;
         private const int DefaultQualityLevel = 2; // Medium (Surface)
+        private const int DefaultGraphicsPreset = 2; // High
         private const float DefaultFOV = 75f;
 
         // ══════════════════════════════════════════════════════════
@@ -92,7 +95,7 @@ namespace Hecton8.UI
         [SerializeField, Tooltip("Main camera for FOV application")]
         private Camera mainCamera;
 
-        [SerializeField, Tooltip("URP Volume for post-processing (AO/Bloom/Motion Blur)")]
+        [SerializeField, Tooltip("URP Volume for post-processing overrides with a live scene owner (Bloom/Motion Blur). AO preference is cached separately.")]
         private Volume urpVolume;
 
         private UserOptionsPersistence _persistence;
@@ -116,6 +119,7 @@ namespace Hecton8.UI
         private bool _cachedBloom;
         private bool _cachedMotionBlur;
         private int _cachedTextureQuality = -1;
+        private int _cachedGraphicsPreset = DefaultGraphicsPreset;
 
         // ══════════════════════════════════════════════════════════
         // LIFECYCLE
@@ -183,6 +187,11 @@ namespace Hecton8.UI
                 SaveInt(QualityLevelKey, clamped);
             }
         }
+
+        /// <summary>
+        /// Gets the currently persisted graphics preset (0=Low, 1=Medium, 2=High, 3=Ultra).
+        /// </summary>
+        public int GraphicsPreset => _cachedGraphicsPreset;
 
         /// <summary>
         /// Gets or sets VSync enabled state (0=off, 1=on).
@@ -509,6 +518,7 @@ namespace Hecton8.UI
                 PlayerPrefs.DeleteKey(BloomKey);
                 PlayerPrefs.DeleteKey(MotionBlurKey);
                 PlayerPrefs.DeleteKey(TextureQualityKey);
+                PlayerPrefs.DeleteKey(GraphicsPresetKey);
                 PlayerPrefs.Save();
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -532,6 +542,9 @@ namespace Hecton8.UI
             Bloom = true;
             MotionBlur = false;
             TextureQuality = 2; // High
+            _cachedGraphicsPreset = DefaultGraphicsPreset;
+            SaveInt(GraphicsPresetKey, _cachedGraphicsPreset);
+            ApplyWorldQualityPreset(_cachedGraphicsPreset);
 
             Resolution defaultRes = Screen.currentResolution;
             SetResolution(defaultRes.width, defaultRes.height);
@@ -552,7 +565,11 @@ namespace Hecton8.UI
         /// </summary>
         public void ApplyQualityPreset(int preset)
         {
-            switch (preset)
+            int clampedPreset = ValidateGraphicsPreset(preset);
+            _cachedGraphicsPreset = clampedPreset;
+            SaveInt(GraphicsPresetKey, clampedPreset);
+
+            switch (clampedPreset)
             {
                 case 0: // Low
                     QualityLevel = 0;
@@ -604,6 +621,8 @@ namespace Hecton8.UI
 #endif
                     break;
             }
+
+            ApplyWorldQualityPreset(clampedPreset);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -637,6 +656,7 @@ namespace Hecton8.UI
             _cachedBloom = LoadBool(BloomKey, true);
             _cachedMotionBlur = LoadBool(MotionBlurKey, false);
             _cachedTextureQuality = ValidateTextureQuality(LoadInt(TextureQualityKey, 2));
+            _cachedGraphicsPreset = ValidateGraphicsPreset(LoadInt(GraphicsPresetKey, DefaultGraphicsPreset));
 
         }
 
@@ -741,6 +761,19 @@ namespace Hecton8.UI
             return value;
         }
 
+        private static int ValidateGraphicsPreset(int value)
+        {
+            if (value < 0 || value > 3)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning($"[SettingsManager] Invalid graphics preset {value}, clamping to [0, 3]");
+#endif
+                return Mathf.Clamp(value, 0, 3);
+            }
+
+            return value;
+        }
+
         /// <summary>
         /// Apply all cached settings to Unity systems with comprehensive error handling.
         /// Returns true if all settings applied successfully, false if any failed.
@@ -792,6 +825,8 @@ namespace Hecton8.UI
                 success = false;
                 failureCount++;
             }
+
+            ApplyWorldQualityPreset(_cachedGraphicsPreset);
 
             // Camera FOV
             if (!ApplyCameraFOV(_cachedFieldOfView))
@@ -936,18 +971,23 @@ namespace Hecton8.UI
 
         private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            if (!_pendingFieldOfViewApply)
-                return;
-
             _cachedMainCamera = null;
-            if (ApplyCameraFOV(_cachedFieldOfView))
+            _cachedVolumeProfile = null;
+
+            if (_pendingFieldOfViewApply && ApplyCameraFOV(_cachedFieldOfView))
                 _pendingFieldOfViewApply = false;
+
+            ApplyPostProcessing();
+            ApplyWorldQualityPreset(_cachedGraphicsPreset);
         }
 
         private bool ApplyPostProcessing()
         {
             if (!TryResolveVolumeProfileReference())
                 return false;
+
+            // Unity 6000 URP exposes SSAO as a renderer feature, not a VolumeComponent.
+            // Keep the user preference cached, but do not query the volume profile with the old type.
 
             // Bloom
             if (_cachedVolumeProfile.TryGet(out UnityEngine.Rendering.Universal.Bloom bloom))
@@ -962,6 +1002,38 @@ namespace Hecton8.UI
             }
 
             return true;
+        }
+
+        private void ApplyWorldQualityPreset(int graphicsPreset)
+        {
+            LODQualityPreset worldPreset = ResolveWorldQualityPreset(graphicsPreset);
+
+            if (LODSystemManager.Instance != null)
+            {
+                LODSystemManager.Instance.SetQualityPreset(worldPreset);
+                return;
+            }
+
+            if (DynamicResolutionScaler.Instance != null)
+            {
+                DynamicResolutionScaler.Instance.SetQualityPreset(worldPreset);
+            }
+        }
+
+        private static LODQualityPreset ResolveWorldQualityPreset(int graphicsPreset)
+        {
+            switch (graphicsPreset)
+            {
+                case 0:
+                    return LODQualityPreset.Low;
+                case 1:
+                    return LODQualityPreset.Medium;
+                case 2:
+                case 3:
+                    return LODQualityPreset.High;
+                default:
+                    return LODQualityPreset.Medium;
+            }
         }
 
         private bool TryResolveMainCameraReference()

@@ -90,6 +90,7 @@ Unified settings system for HECTON-8. Manages graphics, audio, and video options
 - `Hecton_Bloom`
 - `Hecton_MotionBlur`
 - `Hecton_TextureQuality`
+- `Hecton_GraphicsPreset`
 
 ### Backend
 - **UserOptionsPersistence**: Wrapper around PlayerPrefs
@@ -242,6 +243,8 @@ Verified now:
 - `FieldOfView` is applied to `mainCamera`
 - Bloom and Motion Blur are applied through a scene `Volume` owner referenced by `[SettingsManager]`
 - `01_MAIN_MENU` scene wiring exists in-scene; manual Inspector assignment is not the primary path anymore
+- `SettingsComparisonView` compares persisted graphics presets, not raw `QualityLevel`
 
 Not verified / not fully implemented:
 - `AmbientOcclusion` does not currently drive a runtime renderer-feature owner; the UI flag persists, but visual application is still pending
+- Unity 6000 exposes `ScreenSpaceAmbientOcclusion` as a `ScriptableRendererFeature`, so `VolumeProfile.TryGet(...)` is not the correct owner path for AO in the current stack

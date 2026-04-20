@@ -79,15 +79,16 @@ namespace Hecton.Localization
         /// </summary>
         public string Resolve(GameLanguage language)
         {
-            if (TryResolveInline(language, out string inlineValue))
-                return inlineValue;
-
             LocalizationManager manager = LocalizationManager.Instance;
+
+            if (TryResolveInline(language, out string inlineValue))
+                return manager != null ? manager.ExpandText(inlineValue) : inlineValue;
+
             if (manager != null && HasTableKey && manager.TryGet(language, tableKey, out string tableValue))
-                return tableValue;
+                return manager.ExpandText(tableValue);
 
             if (!string.IsNullOrWhiteSpace(fallbackText))
-                return fallbackText;
+                return manager != null ? manager.ExpandText(fallbackText) : fallbackText;
 
             return HasTableKey ? tableKey : string.Empty;
         }

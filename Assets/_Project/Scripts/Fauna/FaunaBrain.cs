@@ -280,7 +280,7 @@ namespace Hecton8.AI
             // Priority: Threat > Distractor > Player > Prey
             if (_sensorSuite.currentThreat != null) { targetPos = _sensorSuite.currentThreat.position; hasTarget = true; }
             else if (_sensorSuite.currentDistractor != null) { targetPos = _sensorSuite.currentDistractor.position; hasTarget = true; }
-            else if (_sensorSuite.canSeePlayer && _sensorSuite.GetPlayerTransform() != null) { targetPos = _sensorSuite.GetPlayerTransform().position; hasTarget = true; }
+            else if (_sensorSuite.canSeePlayer && _sensorSuite.TryGetPerceivedPlayerPosition(out Vector3 playerTargetPos)) { targetPos = playerTargetPos; hasTarget = true; }
             else if (_sensorSuite.currentPrey != null) { targetPos = _sensorSuite.currentPrey.position; hasTarget = true; }
 
             if (hasTarget)
@@ -305,6 +305,9 @@ namespace Hecton8.AI
                 WorldSpatialHashGrid.Refresh(_spatialHandle);
 
             if (_isDead || _lodDisabled) return;
+            Vector3 playerTargetPosition = default;
+            if (_sensorSuite.TryGetPerceivedPlayerPosition(out Vector3 perceivedPlayerPosition))
+                playerTargetPosition = perceivedPlayerPosition;
             
             _steeringEngine.FixedTick(
                 fdt, 
@@ -313,7 +316,7 @@ namespace Hecton8.AI
                 _stateMachine.currentSpeedMultiplier, 
                 _stateMachine.currentTurnMultiplier,
                 _stateMachine.currentState == AIState.Retreat,
-                _sensorSuite.GetPlayerTransform() != null ? _sensorSuite.GetPlayerTransform().position : default
+                playerTargetPosition
             );
         }
 
@@ -339,6 +342,14 @@ namespace Hecton8.AI
         // ══════════════════════════════════════════════════════════
         //  PUBLIC API
         // ══════════════════════════════════════════════════════════
+        internal void ReceivePlayerNoiseSignal(NoiseSystem.PlayerNoiseSignal signal)
+        {
+            if (_isDead || !isActiveAndEnabled)
+                return;
+
+            _sensorSuite.ReceivePlayerNoiseSignal(signal);
+        }
+
         private void HandleAttackPerform(Transform target)
         {
             if (target == null || _isDead) return;

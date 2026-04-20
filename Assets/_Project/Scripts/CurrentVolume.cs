@@ -19,14 +19,26 @@ namespace Hecton8.Physics
             Sphere = 1
         }
 
+        public enum FlowPattern
+        {
+            Directional = 0,
+            RadialInward = 1,
+            RadialOutward = 2,
+            VortexClockwise = 3,
+            VortexCounterClockwise = 4,
+            Updraft = 5,
+            Downdraft = 6
+        }
+
         private static readonly List<CurrentVolume>    ActiveVolumes    = new List<CurrentVolume>(32);
         private static readonly HashSet<CurrentVolume> ActiveVolumesSet = new HashSet<CurrentVolume>();
 
         [Header("Flow")]
         [SerializeField] private VolumeShape shape = VolumeShape.Box;
+        [SerializeField] private FlowPattern flowPattern = FlowPattern.Directional;
         [SerializeField] private Vector3 localDirection = Vector3.forward;
         [SerializeField] private float strength = 1.5f;
-        [SerializeField, Range(0f, 1f)] private float verticalFactor = 0.1f;
+        [SerializeField, Range(-1f, 1f)] private float verticalFactor = 0.1f;
         [SerializeField, Range(0.01f, 1f)] private float edgeSoftness = 0.2f;
         [SerializeField, Range(0f, 1f)] private float pulseAmplitude = 0.15f;
         [SerializeField] private float pulseFrequency = 0.18f;
@@ -34,8 +46,10 @@ namespace Hecton8.Physics
         [SerializeField] private float turbulenceStrength = 0f;
         [SerializeField] private float turbulenceScale = 0.08f;
         [SerializeField] private float turbulenceTimeScale = 0.16f;
+        [SerializeField, Range(-1f, 1f)] private float vortexRadialPull = 0.25f;
 
         public VolumeShape Shape => shape;
+        public FlowPattern Pattern => flowPattern;
         public Vector3 LocalDirection => localDirection;
         public float Strength => strength;
         public float VerticalFactor => verticalFactor;
@@ -46,6 +60,7 @@ namespace Hecton8.Physics
         public float TurbulenceStrength => turbulenceStrength;
         public float TurbulenceScale => turbulenceScale;
         public float TurbulenceTimeScale => turbulenceTimeScale;
+        public float VortexRadialPull => vortexRadialPull;
 
         [Header("Bounds")]
         [SerializeField] private Vector3 boxSize = new Vector3(10f, 6f, 10f);
@@ -104,8 +119,7 @@ namespace Hecton8.Physics
             if (weight <= 0.0001f)
                 return Vector3.zero;
 
-            Vector3 dir = transform.TransformDirection(localDirection.normalized);
-            dir.y *= verticalFactor;
+            Vector3 dir = ComputeFlowDirection(worldPos);
             if (dir.sqrMagnitude <= 0.0001f)
                 return Vector3.zero;
 
@@ -134,6 +148,71 @@ namespace Hecton8.Physics
             }
 
             return result;
+        }
+
+        private Vector3 ComputeFlowDirection(Vector3 worldPos)
+        {
+            Vector3 up = transform.up;
+            switch (flowPattern)
+            {
+                case FlowPattern.RadialInward:
+                    return ComputeRadialDirection(worldPos, true);
+
+                case FlowPattern.RadialOutward:
+                    return ComputeRadialDirection(worldPos, false);
+
+                case FlowPattern.VortexClockwise:
+                    return ComputeVortexDirection(worldPos, up, true);
+
+                case FlowPattern.VortexCounterClockwise:
+                    return ComputeVortexDirection(worldPos, up, false);
+
+                case FlowPattern.Updraft:
+                    return up;
+
+                case FlowPattern.Downdraft:
+                    return -up;
+
+                default:
+                    Vector3 directional = transform.TransformDirection(localDirection.normalized);
+                    directional.y *= verticalFactor;
+                    return directional;
+            }
+        }
+
+        private Vector3 ComputeRadialDirection(Vector3 worldPos, bool inward)
+        {
+            Vector3 delta = worldPos - transform.position;
+            float vertical = delta.y;
+            delta.y = 0f;
+            if (delta.sqrMagnitude <= 0.0001f)
+            {
+                return inward ? -transform.forward : transform.forward;
+            }
+
+            Vector3 radial = inward ? -delta.normalized : delta.normalized;
+            radial.y = Mathf.Clamp(verticalFactor * vertical * 0.1f, -1f, 1f);
+            return radial;
+        }
+
+        private Vector3 ComputeVortexDirection(Vector3 worldPos, Vector3 axis, bool clockwise)
+        {
+            Vector3 delta = worldPos - transform.position;
+            Vector3 radial = Vector3.ProjectOnPlane(delta, axis);
+            if (radial.sqrMagnitude <= 0.0001f)
+            {
+                return axis * verticalFactor;
+            }
+
+            Vector3 tangent = clockwise
+                ? Vector3.Cross(axis, radial)
+                : Vector3.Cross(radial, axis);
+
+            tangent.Normalize();
+            radial.Normalize();
+
+            Vector3 dir = tangent + (-radial * vortexRadialPull) + (axis * verticalFactor);
+            return dir;
         }
 
         private float ComputeBoxWeight(Vector3 worldPos)
@@ -172,6 +251,7 @@ namespace Hecton8.Physics
             if (turbulenceScale < 0f) turbulenceScale = 0f;
             if (turbulenceTimeScale < 0f) turbulenceTimeScale = 0f;
             if (sphereRadius < 0.01f) sphereRadius = 0.01f;
+            vortexRadialPull = Mathf.Clamp(vortexRadialPull, -1f, 1f);
             boxSize.x = Mathf.Max(0.01f, boxSize.x);
             boxSize.y = Mathf.Max(0.01f, boxSize.y);
             boxSize.z = Mathf.Max(0.01f, boxSize.z);

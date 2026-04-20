@@ -51,6 +51,32 @@ namespace Hecton8.Gameplay
             Failed,
             Expired
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            if (string.IsNullOrWhiteSpace(missionId) || string.Equals(missionId, "mission.unknown", System.StringComparison.Ordinal))
+                missionId = name.ToLowerInvariant().Replace(" ", "_");
+
+            NormalizeObjectiveIds();
+        }
+
+        private void NormalizeObjectiveIds()
+        {
+            if (objectives == null || objectives.Count <= 0)
+                return;
+
+            for (int i = 0; i < objectives.Count; i++)
+            {
+                ObjectiveData objective = objectives[i];
+                if (objective == null)
+                    continue;
+
+                if (string.IsNullOrWhiteSpace(objective.objectiveId) || string.Equals(objective.objectiveId, "obj.unknown", System.StringComparison.Ordinal))
+                    objective.objectiveId = missionId + ".objective_" + (i + 1);
+            }
+        }
+#endif
     }
 
     /// <summary>Data for a single mission objective.</summary>

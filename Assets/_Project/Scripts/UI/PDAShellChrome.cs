@@ -1,6 +1,8 @@
 using Hecton8.Gameplay;
 using Hecton8.Bootstrap;
+using Hecton8.Core;
 using Hecton8.Inventory;
+using Hecton.Localization;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -9,7 +11,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Shell Chrome")]
-    public sealed class PDAShellChrome : MonoBehaviour
+    public sealed class PDAShellChrome : MonoBehaviour, ITickable
     {
         private const string TitleTextValue = "HECTON-8 PERSONAL DATA ASSISTANT";
         private const string ActiveTabInventory = "ACTIVE TAB // INVENTORY";
@@ -61,6 +63,19 @@ namespace Hecton8.UI
         private PlayerInventory _subscribedInventory;
         private PlayerToolManager _subscribedToolManager;
         private HectonSurvivalSystem _subscribedSurvivalSystem;
+        private string _localizedTitle = TitleTextValue;
+        private string _localizedTabInventory = ActiveTabInventory;
+        private string _localizedTabLoadout = ActiveTabLoadout;
+        private string _localizedTabConstruction = ActiveTabConstruction;
+        private string _localizedTabBarter = ActiveTabBarter;
+        private string _localizedTabDataLog = ActiveTabDataLog;
+        private string _localizedTabSpectrum = ActiveTabSpectrum;
+        private string _localizedTabUnknown = ActiveTabUnknown;
+        private string _localizedLeftFooterFormat = LeftFooterFormat;
+        private string _localizedRightFooterOnlineFormat = RightFooterOnlineFormat;
+        private string _localizedRightFooterStandbyFormat = RightFooterStandbyFormat;
+        private bool _registeredToTickManager;
+        private int _lastStressCorruptionBucket = int.MinValue;
 
         private void Awake()
         {
@@ -70,14 +85,18 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             RefreshBindings();
+            RefreshLocalizedTextCache();
             EnsureBuilt();
             Subscribe();
             RefreshChrome();
+            EvaluateTickRegistration();
         }
 
         private void OnDisable()
         {
+            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
             Unsubscribe();
+            UnregisterFromTickManager();
         }
 
         private void AutoResolve()
@@ -101,10 +120,8 @@ namespace Hecton8.UI
 
             if (playerPDA == null)
                 playerPDA = GetComponent<PlayerPDA>() ?? GetComponentInParent<PlayerPDA>();
-            if (labelFont == null)
-                labelFont = TMP_Settings.defaultFontAsset;
-            if (numericFont == null)
-                numericFont = labelFont;
+            labelFont = LocalizedFontResolver.ResolveReadableFont(labelFont);
+            numericFont = LocalizedFontResolver.ResolveNumericFont(numericFont, labelFont);
         }
 
         private void RefreshBindings()
@@ -139,6 +156,7 @@ namespace Hecton8.UI
             PDAEvents.OnOpened += HandlePdaOpened;
             PDAEvents.OnClosed += HandlePdaClosed;
             PDAEvents.OnTabChanged += HandleTabChanged;
+            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
 
             SubscribeInventory(playerInventory);
             SubscribeToolManager(toolManager);
@@ -150,6 +168,7 @@ namespace Hecton8.UI
             PDAEvents.OnOpened -= HandlePdaOpened;
             PDAEvents.OnClosed -= HandlePdaClosed;
             PDAEvents.OnTabChanged -= HandleTabChanged;
+            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
 
             UnsubscribeInventory(_subscribedInventory);
             UnsubscribeToolManager(_subscribedToolManager);
@@ -221,14 +240,42 @@ namespace Hecton8.UI
         {
             RefreshBindings();
             RefreshChrome();
+            EvaluateTickRegistration();
         }
         private void HandlePdaClosed(float _)
         {
             RefreshChrome();
+            EvaluateTickRegistration();
         }
 
         private void HandleTabChanged(int _, int __)
         {
+            RefreshChrome();
+        }
+
+        public void Tick(float deltaTime)
+        {
+            if (!PlayerPDA.IsOpen)
+            {
+                _lastStressCorruptionBucket = int.MinValue;
+                UnregisterFromTickManager();
+                return;
+            }
+
+            LocalizationManager manager = LocalizationManager.Instance;
+            int stressBucket = manager != null ? manager.GetHullStressCorruptionBucket() : 0;
+            if (stressBucket == _lastStressCorruptionBucket)
+                return;
+
+            _lastStressCorruptionBucket = stressBucket;
+            _lastActiveTab = int.MinValue;
+            _lastCargoCells = -1;
+            _lastCargoTotal = -1;
+            _lastWeightDeci = int.MinValue;
+            _lastReadyTools = -1;
+            _lastAssignedTools = -1;
+            _lastOxygenPercent = int.MinValue;
+            _lastEnergyPercent = int.MinValue;
             RefreshChrome();
         }
 
@@ -299,7 +346,7 @@ namespace Hecton8.UI
             _titleText = CreateText(header, "Title", labelFont, 12f, FontStyles.Bold, TextAlignmentOptions.Left);
             Anchor(_titleText.rectTransform, new Vector2(0f, 0f), new Vector2(0.6f, 1f), new Vector2(14f, 0f), new Vector2(-8f, 0f));
             _titleText.color = Primary;
-            _titleText.SetText(TitleTextValue);
+            _titleText.text = ResolveStressReactiveText(_localizedTitle);
 
             _tabText = CreateText(header, "Tab", numericFont, 11f, FontStyles.Bold, TextAlignmentOptions.Right);
             Anchor(_tabText.rectTransform, new Vector2(0.42f, 0f), new Vector2(1f, 1f), new Vector2(8f, 0f), new Vector2(-14f, 0f));
@@ -322,10 +369,34 @@ namespace Hecton8.UI
                 RefreshChrome();
         }
 
+        private void HandleLanguageChanged(GameLanguage language)
+        {
+            RefreshLocalizedTextCache();
+            _lastActiveTab = int.MinValue;
+            _lastCargoCells = -1;
+            _lastCargoTotal = -1;
+            _lastWeightDeci = int.MinValue;
+            _lastReadyTools = -1;
+            _lastAssignedTools = -1;
+            _lastOxygenPercent = int.MinValue;
+            _lastEnergyPercent = int.MinValue;
+            if (_titleText != null)
+                _titleText.text = ResolveStressReactiveText(_localizedTitle);
+            RefreshChrome();
+            EvaluateTickRegistration();
+        }
+
         private void RefreshChrome()
         {
             if (!_built)
                 return;
+
+            if (_titleText != null)
+            {
+                string titleText = ResolveStressReactiveText(_localizedTitle);
+                if (!string.Equals(_titleText.text, titleText, System.StringComparison.Ordinal))
+                    _titleText.text = titleText;
+            }
 
             string tabName = GetActiveTabLabel();
             int cargoCells = playerInventory != null && playerInventory.Grid != null
@@ -347,13 +418,14 @@ namespace Hecton8.UI
 
             if (_tabText != null && _lastActiveTab != activeTabIndex)
             {
-                _tabText.SetText(tabName);
+                _tabText.text = ResolveStressReactiveText(tabName);
                 _lastActiveTab = activeTabIndex;
             }
 
              if (_leftFooterText != null && (_lastCargoCells != cargoCells || _lastCargoTotal != cargoTotal || _lastWeightDeci != weightDeci || _lastReadyTools != readyTools || _lastAssignedTools != assignedTools))
              {
-                 _leftFooterText.SetText(LeftFooterFormat, cargoCells, cargoTotal, weight, readyTools, Mathf.Max(assignedTools, 1));
+                 string leftFooter = string.Format(_localizedLeftFooterFormat, cargoCells, cargoTotal, weight, readyTools, Mathf.Max(assignedTools, 1));
+                 _leftFooterText.text = ResolveStressReactiveText(leftFooter);
                  _lastCargoCells = cargoCells;
                  _lastCargoTotal = cargoTotal;
                  _lastWeightDeci = weightDeci;
@@ -367,9 +439,9 @@ namespace Hecton8.UI
                   _lastPdaOpen != pdaOpen))
              {
                  if (pdaOpen)
-                     _rightFooterText.SetText(RightFooterOnlineFormat, oxygenPercent, energyPercent);
+                     _rightFooterText.text = ResolveStressReactiveText(string.Format(_localizedRightFooterOnlineFormat, oxygenPercent, energyPercent));
                  else
-                     _rightFooterText.SetText(RightFooterStandbyFormat, oxygenPercent, energyPercent);
+                     _rightFooterText.text = ResolveStressReactiveText(string.Format(_localizedRightFooterStandbyFormat, oxygenPercent, energyPercent));
                  _lastOxygenPercent = oxygenPercent;
                  _lastEnergyPercent = energyPercent;
                  _lastPdaOpen = pdaOpen;
@@ -387,18 +459,86 @@ namespace Hecton8.UI
         private string GetActiveTabLabel()
         {
             if (playerPDA == null)
-                return ActiveTabUnknown;
+                return _localizedTabUnknown;
 
             switch (playerPDA.ActiveTab)
             {
-                case 0: return ActiveTabInventory;
-                case 1: return ActiveTabLoadout;
-                case 2: return ActiveTabConstruction;
-                case 3: return ActiveTabBarter;
-                case 4: return ActiveTabDataLog;
-                case 5: return ActiveTabSpectrum;
-                default: return ActiveTabUnknown;
+                case 0: return _localizedTabInventory;
+                case 1: return _localizedTabLoadout;
+                case 2: return _localizedTabConstruction;
+                case 3: return _localizedTabBarter;
+                case 4: return _localizedTabDataLog;
+                case 5: return _localizedTabSpectrum;
+                default: return _localizedTabUnknown;
             }
+        }
+
+        private void RefreshLocalizedTextCache()
+        {
+            _localizedTitle = ResolveLocalized(LocalizationKeys.PDA_SHELL_TITLE, TitleTextValue);
+            _localizedTabInventory = ResolveLocalized(LocalizationKeys.PDA_TAB_INVENTORY, ActiveTabInventory);
+            _localizedTabLoadout = ResolveLocalized(LocalizationKeys.PDA_TAB_LOADOUT, ActiveTabLoadout);
+            _localizedTabConstruction = ResolveLocalized(LocalizationKeys.PDA_TAB_CONSTRUCTION, ActiveTabConstruction);
+            _localizedTabBarter = ResolveLocalized(LocalizationKeys.PDA_TAB_BARTER, ActiveTabBarter);
+            _localizedTabDataLog = ResolveLocalized(LocalizationKeys.PDA_TAB_DATA_LOG, ActiveTabDataLog);
+            _localizedTabSpectrum = ResolveLocalized(LocalizationKeys.PDA_TAB_SPECTRUM, ActiveTabSpectrum);
+            _localizedTabUnknown = ResolveLocalized(LocalizationKeys.PDA_TAB_UNKNOWN, ActiveTabUnknown);
+            _localizedLeftFooterFormat = ResolveLocalized(LocalizationKeys.PDA_FOOTER_LEFT, LeftFooterFormat);
+            _localizedRightFooterOnlineFormat = ResolveLocalized(LocalizationKeys.PDA_FOOTER_RIGHT_ONLINE, RightFooterOnlineFormat);
+            _localizedRightFooterStandbyFormat = ResolveLocalized(LocalizationKeys.PDA_FOOTER_RIGHT_STANDBY, RightFooterStandbyFormat);
+        }
+
+        private static string ResolveLocalized(string key, string fallback)
+        {
+            LocalizationManager manager = LocalizationManager.Instance;
+            if (manager == null)
+                return fallback;
+
+            return manager.GetOrFallback(manager.CurrentLanguage, key, fallback);
+        }
+
+        private static string ResolveStressReactiveText(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return string.Empty;
+
+            LocalizationManager manager = LocalizationManager.Instance;
+            return manager != null
+                ? manager.ApplyHullStressCorruptionIfNeeded(text)
+                : text;
+        }
+
+        private void EvaluateTickRegistration()
+        {
+            if (PlayerPDA.IsOpen)
+                RegisterToTickManager();
+            else
+                UnregisterFromTickManager();
+        }
+
+        private void RegisterToTickManager()
+        {
+            if (_registeredToTickManager)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager == null)
+                return;
+
+            tickManager.Register(this);
+            _registeredToTickManager = true;
+        }
+
+        private void UnregisterFromTickManager()
+        {
+            if (!_registeredToTickManager)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+                tickManager.Unregister(this);
+
+            _registeredToTickManager = false;
         }
 
         private int CountAssignedTools()

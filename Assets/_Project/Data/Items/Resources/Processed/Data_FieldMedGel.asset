@@ -12,16 +12,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a49e6475ccf8054419a7fba4c7a78a5c, type: 3}
   m_Name: Data_FieldMedGel
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
-  itemName: Field Med Gel
+  legacyItemName: Field Med Gel
+  stableId: Data_FieldMedGel
   localizedItemName:
     tableKey: ITEM_FIELD_MED_GEL_NAME
-    fallbackText: "Field Med Gel"
+    fallbackText: Field Med Gel
     variants: []
   icon: {fileID: 0}
-  description: Pressure-safe medical gel for patching suit trauma and restoring integrity.
+  legacyDescription: Pressure-safe medical gel for patching suit trauma and restoring
+    integrity.
   localizedDescription:
     tableKey: ITEM_FIELD_MED_GEL_DESCRIPTION
-    fallbackText: "Pressure-safe medical gel for patching suit trauma and restoring integrity."
+    fallbackText: Pressure-safe medical gel for patching suit trauma and restoring
+      integrity.
     variants: []
   weight: 0.6
   stackable: 1
@@ -30,17 +33,22 @@ MonoBehaviour:
   resourceFamily: 7
   progressionTier: 2
   isRawResource: 0
+  minDepth: 0
+  maxDepth: 0
   width: 1
   height: 1
   isConsumable: 1
+  useDuration: 0
   oxygenRestore: 0
   energyRestore: 0
   integrityRestore: 30
+  hungerRestore: 0
+  thirstRestore: 0
   useSound: {fileID: 0}
-  interactVerb: Take
+  legacyInteractVerb: Take
   localizedInteractVerb:
     tableKey: ITEM_INTERACT_TAKE
-    fallbackText: "Take"
+    fallbackText: Take
     variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

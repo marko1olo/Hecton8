@@ -12,33 +12,43 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a49e6475ccf8054419a7fba4c7a78a5c, type: 3}
   m_Name: Item_Tool_SalvageSampler
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
-  itemName: Salvage Sampler
+  legacyItemName: Salvage Sampler
+  stableId: Item_Tool_SalvageSampler
   localizedItemName:
     tableKey: ITEM_TOOL_SALVAGE_SAMPLER_NAME
-    fallbackText: "Salvage Sampler"
+    fallbackText: Salvage Sampler
     variants: []
   icon: {fileID: 0}
-  description: Precision tool for extracting bio-samples, cutting growths and removing
-    resource crusts.
+  legacyDescription: Precision tool for extracting bio-samples, cutting growths and
+    removing resource crusts.
   localizedDescription:
     tableKey: ITEM_TOOL_SALVAGE_SAMPLER_DESCRIPTION
-    fallbackText: "Precision tool for extracting bio-samples, cutting growths and removing resource crusts."
+    fallbackText: Precision tool for extracting bio-samples, cutting growths and
+      removing resource crusts.
     variants: []
   weight: 1.7
   stackable: 0
   maxStack: 1
   category: 2
+  resourceFamily: 0
+  progressionTier: 0
+  isRawResource: 0
+  minDepth: 0
+  maxDepth: 0
   width: 2
   height: 1
   isConsumable: 0
+  useDuration: 0
   oxygenRestore: 0
   energyRestore: 0
   integrityRestore: 0
+  hungerRestore: 0
+  thirstRestore: 0
   useSound: {fileID: 0}
-  interactVerb: Take
+  legacyInteractVerb: Take
   localizedInteractVerb:
     tableKey: ITEM_INTERACT_TAKE
-    fallbackText: "Take"
+    fallbackText: Take
     variants: []
   worldPrefab: {fileID: 100100000, guid: fa20e563eef211a4daf00fe5b0ca6412, type: 3}
   worldBuoyancyProfile: {fileID: 11400000, guid: fa0a7e88c5c4f244f928f327d4520019, type: 2}

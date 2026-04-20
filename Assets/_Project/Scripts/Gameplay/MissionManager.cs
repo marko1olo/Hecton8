@@ -13,11 +13,17 @@ using Hecton8.SaveSystem;
 using Hecton8.UI;
 using UnityEngine;
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 namespace Hecton8.Gameplay
 {
     /// <summary>Singleton manager for handling missions and quests.</summary>
     public sealed class MissionManager : MonoBehaviour, ISaveable
     {
+        private const string MissionDataRoot = "Assets/_Project/Data";
+
         /// <summary>Singleton instance of the mission manager.</summary>
         public static MissionManager Instance { get; private set; }
 
@@ -33,6 +39,8 @@ namespace Hecton8.Gameplay
 
         // COLD ALLOC: O(1) lookup — eliminates LINQ Find() in StartMission hot path
         private readonly Dictionary<string, MissionData> _missionLookup = new Dictionary<string, MissionData>(32);
+        private bool _hasLookupAmbiguity;
+        private string _lookupAmbiguitySummary;
 
         private PlayerInventory _playerInventory;
         private bool _registeredWithSaveManager;
@@ -82,16 +90,38 @@ namespace Hecton8.Gameplay
                 Instance = null;
         }
 
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            TryAutoPopulateMissionRegistry();
+            BuildMissionLookup();
+        }
+#endif
+
         /// <summary>Starts a mission by its ID.</summary>
         /// <param name="missionId">The unique identifier of the mission.</param>
         public void StartMission(string missionId)
         {
+            if (string.IsNullOrEmpty(missionId))
+                return;
+
+            if (IsRegistryAmbiguous())
+                return;
+
             if (_activeMissions.ContainsKey(missionId) || _completedMissions.Contains(missionId))
                 return;
 
-            // O(1) lookup — no LINQ allocation
-            if (!_missionLookup.TryGetValue(missionId, out MissionData data))
+            if (!TryResolveMissionData(missionId, out MissionData data))
+            {
+                Debug.LogWarning($"[Mission] Cannot start unknown missionId '{missionId}'.");
                 return;
+            }
+
+            if (!TryValidateMissionDefinition(data, out string definitionError))
+            {
+                Debug.LogError($"[Mission] Cannot start invalid mission '{missionId}'. {definitionError}", data);
+                return;
+            }
 
             MissionInstance instance = new MissionInstance(data);
             _activeMissions[missionId] = instance;
@@ -103,8 +133,17 @@ namespace Hecton8.Gameplay
         /// <param name="objectiveId">The objective identifier.</param>
         public void CompleteObjective(string missionId, string objectiveId)
         {
+            if (string.IsNullOrEmpty(objectiveId))
+                return;
+
             if (!_activeMissions.TryGetValue(missionId, out MissionInstance mission))
                 return;
+
+            if (!MissionHasObjective(mission.Data, objectiveId))
+            {
+                Debug.LogWarning($"[Mission] Mission '{missionId}' cannot complete unknown objectiveId '{objectiveId}'.");
+                return;
+            }
 
             mission.CompleteObjective(objectiveId);
 
@@ -200,16 +239,158 @@ namespace Hecton8.Gameplay
 
         // ── Lookup cache ──────────────────────────────────────────
 
+#if UNITY_EDITOR
+        private void TryAutoPopulateMissionRegistry()
+        {
+            if (availableMissions != null && availableMissions.Count > 0)
+                return;
+
+            string[] missionGuids = AssetDatabase.FindAssets("t:MissionData", new[] { MissionDataRoot });
+            if (missionGuids == null || missionGuids.Length == 0)
+                return;
+
+            // COLD ALLOC: List<MissionData>[missionGuids.Length] - editor-time mission registry bootstrap - owner: MissionManager
+            List<MissionData> loadedMissions = new List<MissionData>(missionGuids.Length);
+            for (int i = 0; i < missionGuids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(missionGuids[i]);
+                MissionData mission = AssetDatabase.LoadAssetAtPath<MissionData>(path);
+                if (mission == null)
+                    continue;
+
+                loadedMissions.Add(mission);
+            }
+
+            if (loadedMissions.Count <= 0)
+                return;
+
+            availableMissions = loadedMissions;
+            EditorUtility.SetDirty(this);
+        }
+#endif
+
         private void BuildMissionLookup()
         {
             _missionLookup.Clear();
-            if (availableMissions == null) return;
+            _hasLookupAmbiguity = false;
+            _lookupAmbiguitySummary = string.Empty;
+
+            if (availableMissions == null)
+                return;
+
             for (int i = 0; i < availableMissions.Count; i++)
             {
                 MissionData m = availableMissions[i];
-                if (m != null && !string.IsNullOrEmpty(m.missionId))
-                    _missionLookup[m.missionId] = m;
+                if (m == null || string.IsNullOrEmpty(m.missionId))
+                    continue;
+
+                if (_missionLookup.TryGetValue(m.missionId, out MissionData existing) && !ReferenceEquals(existing, m))
+                {
+                    RegisterLookupAmbiguity(m.missionId, existing, m);
+                    Debug.LogError($"[Mission] Duplicate missionId '{m.missionId}' between '{existing.name}' and '{m.name}'.", m);
+                    continue;
+                }
+
+                _missionLookup[m.missionId] = m;
             }
+        }
+
+        private bool TryResolveMissionData(string missionId, out MissionData missionData)
+        {
+            if (_missionLookup.Count == 0 && availableMissions != null && availableMissions.Count > 0)
+                BuildMissionLookup();
+
+            return _missionLookup.TryGetValue(missionId, out missionData);
+        }
+
+        private static bool TryValidateMissionDefinition(MissionData data, out string errorSummary)
+        {
+            errorSummary = string.Empty;
+            if (data == null)
+            {
+                errorSummary = "MissionData is null.";
+                return false;
+            }
+
+            if (data.objectives == null || data.objectives.Count == 0)
+            {
+                errorSummary = "Mission has no objectives.";
+                return false;
+            }
+
+            int objectiveCount = data.objectives.Count;
+            // COLD ALLOC: Dictionary<string, byte>[objectiveCount] - mission objective identity validation on activation/load - owner: MissionManager
+            Dictionary<string, byte> objectiveIds = new Dictionary<string, byte>(objectiveCount, System.StringComparer.Ordinal);
+            for (int i = 0; i < objectiveCount; i++)
+            {
+                ObjectiveData objective = data.objectives[i];
+                if (objective == null)
+                {
+                    errorSummary = $"Mission has null objective at index {i}.";
+                    return false;
+                }
+
+                if (string.IsNullOrWhiteSpace(objective.objectiveId))
+                {
+                    errorSummary = $"Mission has empty objectiveId at index {i}.";
+                    return false;
+                }
+
+                if (objectiveIds.ContainsKey(objective.objectiveId))
+                {
+                    errorSummary = $"Mission has duplicate objectiveId '{objective.objectiveId}'.";
+                    return false;
+                }
+
+                objectiveIds.Add(objective.objectiveId, 0);
+            }
+
+            return true;
+        }
+
+        private static bool MissionHasObjective(MissionData data, string objectiveId)
+        {
+            if (data == null || string.IsNullOrEmpty(objectiveId) || data.objectives == null)
+                return false;
+
+            for (int i = 0; i < data.objectives.Count; i++)
+            {
+                ObjectiveData objective = data.objectives[i];
+                if (objective == null)
+                    continue;
+
+                if (objective.objectiveId == objectiveId)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private bool IsRegistryAmbiguous()
+        {
+            if (_missionLookup.Count == 0 && availableMissions != null && availableMissions.Count > 0)
+                BuildMissionLookup();
+
+            if (!_hasLookupAmbiguity)
+                return false;
+
+            Debug.LogError(
+                "[Mission] Mission registry has ambiguous mission IDs. " +
+                $"Operation aborted: {_lookupAmbiguitySummary}");
+            return true;
+        }
+
+        private void RegisterLookupAmbiguity(string missionId, MissionData existing, MissionData incoming)
+        {
+            _hasLookupAmbiguity = true;
+
+            if (!string.IsNullOrEmpty(_lookupAmbiguitySummary))
+                return;
+
+            string existingName = existing != null ? existing.name : "null";
+            string incomingName = incoming != null ? incoming.name : "null";
+            _lookupAmbiguitySummary =
+                $"missionId '{missionId}' resolves to both '{existingName}' and '{incomingName}'.";
         }
 
         // ── ISaveable ─────────────────────────────────────────────
@@ -236,21 +417,52 @@ namespace Hecton8.Gameplay
             _activeMissions.Clear();
             _completedMissions.Clear();
 
-            if (data == null) return;
+            if (data == null)
+                return;
+
+            if (IsRegistryAmbiguous())
+                return;
 
             if (data.missionCompletedIds != null)
                 foreach (string id in data.missionCompletedIds)
-                    if (!string.IsNullOrEmpty(id)) _completedMissions.Add(id);
+                    if (!string.IsNullOrEmpty(id) && TryResolveMissionData(id, out MissionData completedMissionData))
+                    {
+                        if (!TryValidateMissionDefinition(completedMissionData, out string definitionError))
+                        {
+                            Debug.LogWarning($"[Mission] Save references invalid completed missionId '{id}'. {definitionError} Skipping.");
+                            continue;
+                        }
+
+                        _completedMissions.Add(id);
+                    }
+                    else if (!string.IsNullOrEmpty(id))
+                        Debug.LogWarning($"[Mission] Save references unknown completed missionId '{id}'. Skipping.");
 
             if (data.missionActiveIds != null)
             {
                 foreach (string id in data.missionActiveIds)
                 {
-                    if (string.IsNullOrEmpty(id)) continue;
-                    if (_missionLookup.TryGetValue(id, out MissionData mData))
+                    if (string.IsNullOrEmpty(id))
+                        continue;
+
+                    if (TryResolveMissionData(id, out MissionData mData))
+                    {
+                        if (!TryValidateMissionDefinition(mData, out string definitionError))
+                        {
+                            Debug.LogWarning($"[Mission] Save references invalid active missionId '{id}'. {definitionError} Skipping.");
+                            continue;
+                        }
+
                         _activeMissions[id] = new MissionInstance(mData);
+                    }
+                    else
+                        Debug.LogWarning($"[Mission] Save references unknown active missionId '{id}'. Skipping.");
                 }
             }
+
+            HashSet<string>.Enumerator completedEnumerator = _completedMissions.GetEnumerator();
+            while (completedEnumerator.MoveNext())
+                _activeMissions.Remove(completedEnumerator.Current);
         }
 
         private void RegisterWithSaveManager()

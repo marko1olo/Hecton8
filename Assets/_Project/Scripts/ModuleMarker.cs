@@ -12,6 +12,7 @@
 // ============================================================================
 
 using Hecton8.Building;
+using Hecton8.Gameplay;
 using Hecton8.World;
 using UnityEngine;
 
@@ -45,6 +46,7 @@ namespace Hecton8.Construction
         private string _prefabId;
         private bool   _initialized;
         private int _spatialHandle;
+        private FieldTargetRole _spatialRole = FieldTargetRole.Generic;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC API
@@ -55,7 +57,7 @@ namespace Hecton8.Construction
 
         /// <summary>
         /// Строковый ID для save/load.
-        /// Использует BuildableData.name (имя ассета ScriptableObject).
+        /// Использует BuildableData.PersistentId с legacy fallback на имя ассета.
         /// Zero alloc при повторных вызовах.
         /// </summary>
         public string PrefabId
@@ -67,6 +69,9 @@ namespace Hecton8.Construction
             }
         }
 
+        /// <summary>Current runtime field-semantics role exposed to scanner/sonar owners.</summary>
+        public FieldTargetRole SpatialRole => _spatialRole;
+
         /// <summary>
         /// Программная инициализация (если маркер добавлен в рантайме).
         /// </summary>
@@ -74,6 +79,20 @@ namespace Hecton8.Construction
         {
             buildableData = data;
             CacheId();
+        }
+
+        /// <summary>
+        /// Updates the runtime field role used by spatial scanner/sonar owners.
+        /// </summary>
+        public void SetSpatialRole(FieldTargetRole role)
+        {
+            if (_spatialRole == role)
+                return;
+
+            _spatialRole = role;
+
+            if (_spatialHandle != 0)
+                WorldSpatialHashGrid.UpdateSignalRole(_spatialHandle, _spatialRole);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -115,7 +134,7 @@ namespace Hecton8.Construction
 
         private void CacheId()
         {
-            _prefabId    = buildableData != null ? buildableData.name : string.Empty;
+            _prefabId    = buildableData != null ? buildableData.PersistentId : string.Empty;
             _initialized = true;
         }
 

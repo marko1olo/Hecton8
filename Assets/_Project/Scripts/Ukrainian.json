@@ -1196,5 +1196,20 @@
   "UI_RETURN_TO_MENU": "ДО МЕНЮ",
   "WARNING_BACKUP_USED_MESSAGE": "WARNING BACKUP USED",
   "WARNING_BACKUP_USED_TITLE": "WARNING BACKUP USED",
-  "UI_BLUEPRINT_LOCKED": "ПОТРІБНІ ДАНІ СКАНУВАННЯ"
+  "UI_BLUEPRINT_LOCKED": "ПОТРІБНІ ДАНІ СКАНУВАННЯ",
+  "AUDIOLOG_PLAYING": "ВІДТВОРЕННЯ: {0}",
+  "PDA_SHELL_TITLE": "ПЕРСОНАЛЬНИЙ PDA HECTON-8",
+  "PDA_TAB_INVENTORY": "АКТИВНА ВКЛАДКА // ІНВЕНТАР",
+  "PDA_TAB_LOADOUT": "АКТИВНА ВКЛАДКА // ОСНАЩЕННЯ",
+  "PDA_TAB_CONSTRUCTION": "АКТИВНА ВКЛАДКА // БУДІВНИЦТВО",
+  "PDA_TAB_BARTER": "АКТИВНА ВКЛАДКА // ОБМІН",
+  "PDA_TAB_DATA_LOG": "АКТИВНА ВКЛАДКА // АРХІВ",
+  "PDA_TAB_SPECTRUM": "АКТИВНА ВКЛАДКА // СПЕКТР",
+  "PDA_TAB_UNKNOWN": "АКТИВНА ВКЛАДКА // НЕВІДОМО",
+  "PDA_FOOTER_LEFT": "ВАНТАЖ {0}/{1}  |  МАСА {2:0.0} кг  |  ГОТОВІ ІНСТР. {3}/{4}",
+  "PDA_FOOTER_RIGHT_ONLINE": "O2 {0:0}%  |  PWR {1:0}%  |  PDA ОНЛАЙН",
+  "PDA_FOOTER_RIGHT_STANDBY": "O2 {0:0}%  |  PWR {1:0}%  |  PDA ОЧІКУВАННЯ",
+  "TECH_O2_SPEC": "[Pressure: 300 bar | Mix: O2 96% | Rack: A-2]",
+  "TECH_HULL_SPEC": "[Sealant: <key:ITEM_TITANIUM_SCRAP_NAME> laminate | Rating: 41 MPa]",
+  "TECH_PWR_BUS": "[Bus: 48V DC | Cell bank: Li-Salt MkII]"
 }

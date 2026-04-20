@@ -293,5 +293,7 @@ Critical correction:
 - manual Inspector wiring is no longer the required path for `01_MAIN_MENU`
 - the old guide omitted required `SettingsPanel` fields and missed the `btnBackFromSettings` gate in `MainMenuController`
 - `AmbientOcclusion` is still not applied to a live renderer feature owner at runtime; only Bloom and Motion Blur have a concrete scene owner
+- `UnityEngine.Rendering.Universal.ScreenSpaceAmbientOcclusion` is a `ScriptableRendererFeature` in this Unity 6000 project, so `VolumeProfile.TryGet(...)` is not the correct AO owner path
+- `SettingsComparisonView` now reads the persisted graphics preset instead of inferring from `QualityLevel`
 
 Treat the rest of this file as historical notes unless revalidated.

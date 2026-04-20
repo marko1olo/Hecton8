@@ -1,0 +1,454 @@
+#pragma kernel CSMain
+
+struct BoidData
+{
+    float3 Position;
+    float3 Velocity;
+    float Seed;
+    float Panic;
+};
+
+struct GrazingAnchorData
+{
+    float3 Position;
+    float Radius;
+    float Strength;
+    float Phase;
+    float2 Padding;
+};
+
+struct MassiveThreatData
+{
+    float3 Position;
+    float InnerRadius;
+    float PanicRadius;
+    float Strength;
+    float RemainingDuration;
+    float3 Padding;
+};
+
+StructuredBuffer<BoidData> _BoidsBufferRead;
+RWStructuredBuffer<BoidData> _BoidsBufferWrite;
+StructuredBuffer<GrazingAnchorData> _GrazingAnchors;
+StructuredBuffer<MassiveThreatData> _MassiveThreats;
+
+Texture2D<float4> _DensityTex;
+SamplerState sampler_DensityTex;
+
+Texture2D<float4> _CutMaskTex;
+SamplerState sampler_CutMaskTex;
+
+uint _BoidCount;
+float _DeltaTime;
+float3 _FieldCenterWS;
+float3 _FieldExtents;
+float _WaterLevel;
+float _MinDepthBelowSurface;
+float _MaxDepthBelowSurface;
+float _CruiseSpeed;
+float _MaxSpeed;
+float _PanicSpeedBoost;
+float _PerceptionRadius;
+float _SeparationRadius;
+float _SeparationWeight;
+float _AlignmentWeight;
+float _CohesionWeight;
+float _ContainmentWeight;
+float _PanicWeight;
+float _NoiseWeight;
+float _DensityThreshold;
+float _WindowThreshold;
+float _GradientWorldStep;
+float _PanicThreshold;
+float _PanicDecay;
+uint _GrazingAnchorCount;
+float _GrazingWeight;
+float _GrazingRadius;
+float _GrazingRestSpeedScale;
+float _GrazingRestHoldThreshold;
+float _CanopyAffinityWeight;
+float _SimulationTime;
+float3 _PlayerPositionWS;
+float3 _PlayerVelocityWS;
+float _PlayerSpeed;
+float _PanicPlayerSpeedThreshold;
+float _PanicPlayerRadius;
+float _PanicPlayerRadiusScale;
+float3 _CameraAvoidPositionWS;
+float _CameraAvoidRadius;
+float _CameraAvoidWeight;
+uint _MassiveThreatCount;
+float _MassiveThreatWeight;
+float4 _DensityWorldRect;
+float4 _CutMaskWorldRect;
+float _CutMaskActive;
+float3 _GlobalDriftOffset;
+float3 _GlobalDriftDelta;
+float _DeepMode;
+float _DeepClusterWeight;
+float _HeadlightPanic;
+float _ParasiteMode;
+float _ParasiteAffinityWeight;
+float _ParasiteAggression;
+float _ParasiteLatchRadius;
+
+#define THREAD_GROUP_SIZE 64
+#define EPSILON 0.0001
+
+float Hash11(float inputValue)
+{
+    return frac(sin(inputValue * 12.9898 + 78.233) * 43758.5453);
+}
+
+float3 SafeNormalize(float3 value)
+{
+    float lengthSq = dot(value, value);
+    if (lengthSq <= EPSILON)
+        return float3(0.0, 0.0, 0.0);
+
+    return value * rsqrt(lengthSq);
+}
+
+float SampleDensity01(float2 worldXZ)
+{
+    float2 sampleXZ = worldXZ - _GlobalDriftOffset.xz;
+    float2 uv = (sampleXZ - _DensityWorldRect.xy) * _DensityWorldRect.zw;
+    if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0)
+        return 0.0;
+
+    return _DensityTex.SampleLevel(sampler_DensityTex, uv, 0).r;
+}
+
+float SampleCutMask01(float2 worldXZ)
+{
+    if (_CutMaskActive < 0.5)
+        return 0.0;
+
+    float2 uv = (worldXZ - _CutMaskWorldRect.xy) * _CutMaskWorldRect.zw;
+    if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0)
+        return 0.0;
+
+    return _CutMaskTex.SampleLevel(sampler_CutMaskTex, uv, 0).r;
+}
+
+float2 SampleDensityGradient(float2 worldXZ)
+{
+    float stepWorld = max(_GradientWorldStep, 0.05);
+    float sampleXPos = SampleDensity01(worldXZ + float2(stepWorld, 0.0));
+    float sampleXNeg = SampleDensity01(worldXZ - float2(stepWorld, 0.0));
+    float sampleZPos = SampleDensity01(worldXZ + float2(0.0, stepWorld));
+    float sampleZNeg = SampleDensity01(worldXZ - float2(0.0, stepWorld));
+    return float2(sampleXPos - sampleXNeg, sampleZPos - sampleZNeg);
+}
+
+float2 SampleCutGradient(float2 worldXZ)
+{
+    if (_CutMaskActive < 0.5)
+        return float2(0.0, 0.0);
+
+    float stepWorld = max(_GradientWorldStep, 0.05);
+    float sampleXPos = SampleCutMask01(worldXZ + float2(stepWorld, 0.0));
+    float sampleXNeg = SampleCutMask01(worldXZ - float2(stepWorld, 0.0));
+    float sampleZPos = SampleCutMask01(worldXZ + float2(0.0, stepWorld));
+    float sampleZNeg = SampleCutMask01(worldXZ - float2(0.0, stepWorld));
+    return float2(sampleXPos - sampleXNeg, sampleZPos - sampleZNeg);
+}
+
+[numthreads(THREAD_GROUP_SIZE, 1, 1)]
+void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    uint index = dispatchThreadID.x;
+    if (index >= _BoidCount)
+        return;
+
+    BoidData selfBoid = _BoidsBufferRead[index];
+    float3 position = selfBoid.Position + _GlobalDriftDelta;
+    float3 velocity = selfBoid.Velocity;
+    float panic = max(0.0, selfBoid.Panic - _PanicDecay * _DeltaTime);
+
+    float perceptionRadiusSq = _PerceptionRadius * _PerceptionRadius;
+    float separationRadiusSq = _SeparationRadius * _SeparationRadius;
+    float3 alignmentSum = float3(0.0, 0.0, 0.0);
+    float3 cohesionSum = float3(0.0, 0.0, 0.0);
+    float3 separationSum = float3(0.0, 0.0, 0.0);
+    float neighbourCount = 0.0;
+    float separationCount = 0.0;
+
+    [loop]
+    for (uint otherIndex = 0; otherIndex < _BoidCount; otherIndex++)
+    {
+        if (otherIndex == index)
+            continue;
+
+        BoidData otherBoid = _BoidsBufferRead[otherIndex];
+        float3 toOther = otherBoid.Position - selfBoid.Position;
+        float distanceSq = dot(toOther, toOther);
+        if (distanceSq > perceptionRadiusSq || distanceSq <= EPSILON)
+            continue;
+
+        alignmentSum += otherBoid.Velocity;
+        cohesionSum += otherBoid.Position;
+        neighbourCount += 1.0;
+
+        if (distanceSq <= separationRadiusSq)
+        {
+            separationSum -= toOther * rsqrt(distanceSq + 0.025);
+            separationCount += 1.0;
+        }
+    }
+
+    float2 worldXZ = position.xz;
+    float cutMask = SampleCutMask01(worldXZ);
+    float panicFromCut = saturate((cutMask - _PanicThreshold) / max(1.0 - _PanicThreshold, 0.001));
+    float playerDistance = distance(position, _PlayerPositionWS);
+    float effectivePlayerPanicRadius = max(_PanicPlayerRadius * _PanicPlayerRadiusScale, 0.001);
+    float playerSpeedGate = saturate((_PlayerSpeed - _PanicPlayerSpeedThreshold) / max(_PanicPlayerSpeedThreshold, 0.001));
+    float playerThreatGate = 1.0 - saturate(playerDistance / effectivePlayerPanicRadius);
+    float panicFromPlayer = _ParasiteMode > 0.5
+        ? 0.0
+        : max(playerSpeedGate * playerThreatGate, _HeadlightPanic * playerThreatGate);
+    float panicFromMassive = 0.0;
+    float3 fleeFromMassive = float3(0.0, 0.0, 0.0);
+    [loop]
+    for (uint threatIndex = 0; threatIndex < _MassiveThreatCount; threatIndex++)
+    {
+        MassiveThreatData threat = _MassiveThreats[threatIndex];
+        if (threat.Strength <= 0.0 || threat.RemainingDuration <= 0.0)
+            continue;
+
+        float3 awayFromThreat = position - threat.Position;
+        float distanceToThreat = length(awayFromThreat);
+        float panicRadius = max(threat.PanicRadius, threat.InnerRadius + 0.001);
+        float threatGate = 1.0 - saturate((distanceToThreat - threat.InnerRadius) / max(panicRadius - threat.InnerRadius, 0.001));
+        if (threatGate <= 0.0)
+            continue;
+
+        float threatPanic = threatGate * threat.Strength;
+        panicFromMassive = max(panicFromMassive, threatPanic);
+        fleeFromMassive += SafeNormalize(awayFromThreat) * threatPanic;
+    }
+
+    panic = max(panic, max(max(panicFromCut, panicFromPlayer), panicFromMassive));
+
+    float density = _DeepMode > 0.5 ? 1.0 : SampleDensity01(worldXZ);
+    float effectiveDensity = _DeepMode > 0.5 ? 1.0 : density * (1.0 - cutMask);
+    float2 densityGradient = _DeepMode > 0.5 ? float2(0.0, 0.0) : SampleDensityGradient(worldXZ);
+
+    float3 acceleration = float3(0.0, 0.0, 0.0);
+    float3 grazingForce = float3(0.0, 0.0, 0.0);
+    float grazingWeightSum = 0.0;
+    float grazingHoldPeak = 0.0;
+    float grazingHoldPhase = 0.0;
+    float3 closestAnchorDelta = float3(0.0, 0.0, 0.0);
+
+    if (separationCount > 0.0)
+    {
+        float3 separationForce = SafeNormalize(separationSum / separationCount);
+        acceleration += separationForce * _SeparationWeight;
+    }
+
+    if (neighbourCount > 0.0)
+    {
+        float3 averageVelocity = alignmentSum / neighbourCount;
+        float3 averagePosition = cohesionSum / neighbourCount;
+        float3 alignmentForce = SafeNormalize(averageVelocity);
+        float3 cohesionForce = SafeNormalize(averagePosition - position);
+        acceleration += alignmentForce * _AlignmentWeight;
+        acceleration += cohesionForce * _CohesionWeight;
+    }
+
+    float densityDeficit = _DeepMode > 0.5 ? 0.0 : saturate((_DensityThreshold - effectiveDensity) / max(_DensityThreshold, 0.001));
+    float cutIntrusion = _DeepMode > 0.5 ? 0.0 : saturate(cutMask / max(_WindowThreshold, 0.001));
+    if (_DeepMode < 0.5 && (densityDeficit > 0.0 || cutIntrusion > 0.0))
+    {
+        float3 densityForce = SafeNormalize(float3(densityGradient.x, 0.0, densityGradient.y));
+        float3 centerForce = SafeNormalize(float3(_FieldCenterWS.x - position.x, 0.0, _FieldCenterWS.z - position.z));
+        acceleration += (densityForce * 0.7 + centerForce * 0.3) * max(densityDeficit, cutIntrusion) * _ContainmentWeight;
+    }
+
+    [loop]
+    for (uint anchorIndex = 0; anchorIndex < _GrazingAnchorCount; anchorIndex++)
+    {
+        GrazingAnchorData anchor = _GrazingAnchors[anchorIndex];
+        if (anchor.Strength <= 0.0)
+            continue;
+
+        float3 toAnchor = anchor.Position - position;
+        float anchorRadius = max(anchor.Radius, _GrazingRadius);
+        float anchorDistanceSq = dot(toAnchor, toAnchor);
+        if (anchorDistanceSq > anchorRadius * anchorRadius)
+            continue;
+
+        float anchorDistance = sqrt(anchorDistanceSq + EPSILON);
+        float anchorFalloff = 1.0 - saturate(anchorDistance / max(anchorRadius, 0.001));
+        float phase = selfBoid.Seed * 6.2831853 + anchor.Phase * 6.2831853;
+        float3 swirl = float3(-toAnchor.z, sin(phase) * 0.18, toAnchor.x);
+        float deepAnchorBlend = saturate(_DeepMode);
+        float3 anchorForce = SafeNormalize(toAnchor) * lerp(0.78, 0.96, deepAnchorBlend) + SafeNormalize(swirl) * lerp(0.22, 0.04, deepAnchorBlend);
+        float anchorHold = anchor.Strength * anchorFalloff;
+        grazingForce += anchorForce * anchorHold;
+        grazingWeightSum += anchorHold;
+        if (anchorHold > grazingHoldPeak)
+        {
+            grazingHoldPeak = anchorHold;
+            grazingHoldPhase = anchor.Phase;
+            closestAnchorDelta = toAnchor;
+        }
+    }
+
+    float feedingHold = 0.0;
+    if (grazingWeightSum > 0.0 && panic < 0.2)
+    {
+        float grazingPullWeight = lerp(_GrazingWeight, max(_GrazingWeight, _DeepClusterWeight), saturate(_DeepMode));
+        acceleration += SafeNormalize(grazingForce / grazingWeightSum) * ((1.0 - panic) * grazingPullWeight);
+        float grazePauseSignal = sin(_SimulationTime * lerp(1.35, 1.85, saturate(_DeepMode)) + selfBoid.Seed * 11.0 + grazingHoldPhase * 6.2831853) * 0.5 + 0.5;
+        float grazeHold = saturate((grazingHoldPeak - _GrazingRestHoldThreshold) / max(1.0 - _GrazingRestHoldThreshold, 0.001));
+        feedingHold = grazeHold * saturate((grazePauseSignal - lerp(0.72, 0.6, saturate(_DeepMode))) / lerp(0.18, 0.24, saturate(_DeepMode))) * (1.0 - panic);
+        if (feedingHold > 0.0)
+            acceleration += SafeNormalize(closestAnchorDelta) * (feedingHold * grazingPullWeight * lerp(0.3, 0.6, saturate(_DeepMode)));
+    }
+
+    if (_DeepMode < 0.5 && panic < 0.2 && _CanopyAffinityWeight > 0.0)
+    {
+        float calmCanopyThreshold = saturate(_DensityThreshold * 0.85);
+        float canopyAffinity = saturate((effectiveDensity - calmCanopyThreshold) / max(1.0 - calmCanopyThreshold, 0.001));
+        if (canopyAffinity > 0.0)
+        {
+            float3 canopyForce = SafeNormalize(float3(densityGradient.x, 0.0, densityGradient.y));
+            acceleration += canopyForce * ((1.0 - panic) * canopyAffinity * _CanopyAffinityWeight);
+        }
+    }
+
+    if (_ParasiteMode > 0.5 && _ParasiteAffinityWeight > 0.0)
+    {
+        float3 toPlayer = _PlayerPositionWS - position;
+        float playerDistanceToHull = length(toPlayer);
+        float parasiteRadius = max(_PanicPlayerRadius * lerp(1.4, 2.25, saturate(_ParasiteAggression)), _ParasiteLatchRadius + 0.001);
+        float parasiteGate = 1.0 - saturate(playerDistanceToHull / parasiteRadius);
+        if (parasiteGate > 0.0)
+        {
+            float3 orbitDirection = SafeNormalize(cross(float3(0.0, 1.0, 0.0), _PlayerVelocityWS));
+            if (dot(orbitDirection, orbitDirection) <= EPSILON)
+                orbitDirection = float3(0.0, 0.0, 1.0);
+
+            float3 affinityDirection = SafeNormalize(toPlayer + orbitDirection * lerp(0.35, 0.08, saturate(_ParasiteAggression)));
+            float affinityWeight = _ParasiteAffinityWeight * lerp(0.55, 1.85, saturate(_ParasiteAggression));
+            acceleration += affinityDirection * parasiteGate * affinityWeight;
+
+            if (playerDistanceToHull < _ParasiteLatchRadius)
+            {
+                float latch01 = 1.0 - saturate(playerDistanceToHull / max(_ParasiteLatchRadius, 0.001));
+                velocity = lerp(velocity, _PlayerVelocityWS, latch01 * lerp(0.28, 0.82, saturate(_ParasiteAggression)));
+            }
+        }
+    }
+
+    if (panic > 0.0)
+    {
+        float2 cutGradient = SampleCutGradient(worldXZ);
+        float cutPanicWeight = panicFromCut;
+        float playerPanicWeight = _ParasiteMode > 0.5
+            ? panicFromPlayer
+            : max(panicFromPlayer, _HeadlightPanic);
+        float massivePanicWeight = panicFromMassive;
+        float3 fleeFromCut = SafeNormalize(float3(-cutGradient.x, 0.0, -cutGradient.y));
+        float3 fleeFromPlayer = SafeNormalize(position - _PlayerPositionWS);
+        float3 fleeForce = fleeFromCut * cutPanicWeight + fleeFromPlayer * playerPanicWeight + SafeNormalize(fleeFromMassive) * massivePanicWeight;
+        if (dot(fleeForce, fleeForce) <= EPSILON)
+            fleeForce = SafeNormalize(float3(position.x - _FieldCenterWS.x, 0.0, position.z - _FieldCenterWS.z));
+        else
+            fleeForce = SafeNormalize(fleeForce);
+
+        float panicWeight = lerp(_PanicWeight, _MassiveThreatWeight, saturate(massivePanicWeight));
+        acceleration += fleeForce * panic * panicWeight;
+    }
+
+    if (_CameraAvoidWeight > 0.0 && _CameraAvoidRadius > 0.0)
+    {
+        float3 fromCamera = position - _CameraAvoidPositionWS;
+        float cameraDistance = length(fromCamera);
+        float cameraAvoidGate = 1.0 - saturate(cameraDistance / max(_CameraAvoidRadius, 0.001));
+        if (cameraAvoidGate > 0.0)
+            acceleration += SafeNormalize(fromCamera) * (cameraAvoidGate * _CameraAvoidWeight);
+    }
+
+    float noisePhase = selfBoid.Seed * 17.0 + position.x * 0.13 + position.z * 0.21 + position.y * 0.09;
+    float3 noiseForce = float3(
+        Hash11(noisePhase + 1.0) * 2.0 - 1.0,
+        Hash11(noisePhase + 2.0) * 2.0 - 1.0,
+        Hash11(noisePhase + 3.0) * 2.0 - 1.0);
+    acceleration += SafeNormalize(noiseForce) * _NoiseWeight;
+
+    float minY = _WaterLevel - _MaxDepthBelowSurface;
+    float maxY = _WaterLevel - _MinDepthBelowSurface;
+    if (position.y < minY)
+    {
+        acceleration.y += (minY - position.y) * _ContainmentWeight;
+    }
+    else if (position.y > maxY)
+    {
+        acceleration.y -= (position.y - maxY) * _ContainmentWeight;
+    }
+
+    float minX = _FieldCenterWS.x - _FieldExtents.x;
+    float maxX = _FieldCenterWS.x + _FieldExtents.x;
+    float minZ = _FieldCenterWS.z - _FieldExtents.z;
+    float maxZ = _FieldCenterWS.z + _FieldExtents.z;
+
+    if (position.x < minX)
+        acceleration.x += (minX - position.x) * _ContainmentWeight;
+    else if (position.x > maxX)
+        acceleration.x -= (position.x - maxX) * _ContainmentWeight;
+
+    if (position.z < minZ)
+        acceleration.z += (minZ - position.z) * _ContainmentWeight;
+    else if (position.z > maxZ)
+        acceleration.z -= (position.z - maxZ) * _ContainmentWeight;
+
+    velocity += acceleration * _DeltaTime;
+
+    float grazingRestSpeedScale = lerp(1.0, _GrazingRestSpeedScale, feedingHold);
+    float targetMinSpeed = max(0.02, _CruiseSpeed * 0.55 * grazingRestSpeedScale);
+    float calmSpeedScale = grazingWeightSum > 0.0 ? lerp(0.82, _GrazingRestSpeedScale, feedingHold) : 1.0;
+    float targetCruiseSpeed = _CruiseSpeed * lerp(calmSpeedScale, 1.0, saturate(panic * 2.0));
+    float targetMaxSpeed = min(_MaxSpeed, targetCruiseSpeed + panic * _PanicSpeedBoost);
+    float speed = length(velocity);
+    if (speed <= EPSILON)
+    {
+        float fallbackAngle = selfBoid.Seed * 6.2831853 + index * 0.173;
+        velocity = float3(cos(fallbackAngle), 0.0, sin(fallbackAngle)) * targetMinSpeed;
+    }
+    else
+    {
+        float clampedSpeed = clamp(speed, targetMinSpeed, max(targetMinSpeed, targetMaxSpeed));
+        velocity = velocity * (clampedSpeed / speed);
+    }
+
+    position += velocity * _DeltaTime;
+
+    if (_CameraAvoidRadius > 0.0)
+    {
+        float3 fromCamera = position - _CameraAvoidPositionWS;
+        float cameraDistanceSq = dot(fromCamera, fromCamera);
+        float cameraRadiusSq = _CameraAvoidRadius * _CameraAvoidRadius;
+        if (cameraDistanceSq < cameraRadiusSq)
+        {
+            float3 pushDirection = SafeNormalize(fromCamera);
+            if (dot(pushDirection, pushDirection) <= EPSILON)
+                pushDirection = float3(0.0, 0.0, 1.0);
+
+            position = _CameraAvoidPositionWS + pushDirection * _CameraAvoidRadius;
+        }
+    }
+
+    position.x = clamp(position.x, minX, maxX);
+    position.y = clamp(position.y, minY, maxY);
+    position.z = clamp(position.z, minZ, maxZ);
+
+    BoidData result;
+    result.Position = position;
+    result.Velocity = velocity;
+    result.Seed = selfBoid.Seed;
+    result.Panic = panic;
+    _BoidsBufferWrite[index] = result;
+}

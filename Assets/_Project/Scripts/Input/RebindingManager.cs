@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -6,13 +7,17 @@ namespace Hecton8.Input
 {
     /// <summary>
     /// Centralized runtime rebinding service for Input System actions.
-    /// Persists binding overrides in PlayerPrefs and exposes lifecycle events for UI.
+    /// Persists binding overrides to controls.json and exposes lifecycle events for UI.
+    /// Legacy PlayerPrefs payload is still supported as a migration fallback.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-30990)] // Keep scene-owned instance ahead of regular runtime consumers.
     public sealed class RebindingManager : MonoBehaviour
     {
         private const string DefaultOverridesKey = "Hecton8.Input.BindingOverrides.v1";
+        private const string DefaultOverridesFileName = "controls.json";
+        private const string DefaultOverridesTempFileName = "controls.json.tmp";
+        private const string DefaultKeyboardCancelPath = "<Keyboard>/escape";
         private static RebindingManager _instance;
         private static bool _isShuttingDown;
 
@@ -26,6 +31,9 @@ namespace Hecton8.Input
         [Header("Persistence")]
         [SerializeField] private bool loadOverridesOnAwake = true;
         [SerializeField] private bool saveOverridesAfterRebind = true;
+        [SerializeField] private string overridesFileName = DefaultOverridesFileName;
+        [SerializeField] private string overridesTempFileName = DefaultOverridesTempFileName;
+        [Tooltip("Legacy migration fallback. Existing PlayerPrefs payload is consumed only when controls.json is absent.")]
         [SerializeField] private string overridesPlayerPrefsKey = DefaultOverridesKey;
 
         [Header("Debug")]
@@ -98,7 +106,7 @@ namespace Hecton8.Input
             string actionMap = "Player",
             int bindingIndex = 0,
             string expectedControlType = null,
-            string cancelPath = "<Keyboard>/escape",
+            string cancelPath = DefaultKeyboardCancelPath,
             string[] excludedControlPaths = null)
         {
             if (IsRebinding)
@@ -238,7 +246,7 @@ namespace Hecton8.Input
             string bindingId,
             string actionMap = "Player",
             string expectedControlType = null,
-            string cancelPath = "<Keyboard>/escape",
+            string cancelPath = DefaultKeyboardCancelPath,
             string[] excludedControlPaths = null)
         {
             if (string.IsNullOrWhiteSpace(bindingId))
@@ -279,57 +287,220 @@ namespace Hecton8.Input
 
         public void SaveOverrides()
         {
-            string json = InputManager.Instance.SaveBindingOverridesAsJson();
-            UserOptionsPersistence options = UserOptionsPersistence.Instance;
+            InputManager inputManager = InputManager.Instance;
+            if (inputManager == null)
+            {
+                LogWarning("Cannot save binding overrides because InputManager.Instance is null.");
+                return;
+            }
+
+            string json = inputManager.SaveBindingOverridesAsJson();
             if (string.IsNullOrEmpty(json))
             {
-                options.DeleteKey(overridesPlayerPrefsKey);
+                DeleteOverridesFileIfExists();
+                DeleteLegacyOverridesKey();
             }
             else
             {
-                options.SetString(overridesPlayerPrefsKey, json);
+                if (!TryWriteOverridesFile(json))
+                    return;
+
+                DeleteLegacyOverridesKey();
             }
 
-            options.Save();
             OnOverridesSaved?.Invoke();
             Log("Binding overrides saved.");
         }
 
         public void LoadOverrides()
         {
-            UserOptionsPersistence options = UserOptionsPersistence.Instance;
-            if (!options.HasKey(overridesPlayerPrefsKey))
+            InputManager inputManager = InputManager.Instance;
+            if (inputManager == null)
             {
-                Log("No saved binding overrides found.");
+                LogWarning("Cannot load binding overrides because InputManager.Instance is null.");
                 return;
             }
 
-            string json = options.GetString(overridesPlayerPrefsKey, string.Empty);
-            if (string.IsNullOrEmpty(json))
-            {
-                Log("Saved binding overrides key exists but payload is empty.");
+            if (TryLoadOverridesFromFile(inputManager))
                 return;
-            }
 
-            InputManager.Instance.LoadBindingOverridesFromJson(json);
-            OnOverridesLoaded?.Invoke();
-            Log("Binding overrides loaded.");
+            if (TryLoadOverridesFromLegacyStorage(inputManager))
+                return;
+
+            Log("No saved binding overrides found.");
         }
 
         public void ClearOverrides(bool clearPlayerPrefs = true)
         {
             CancelRebind();
-            InputManager.Instance.ClearBindingOverrides();
+            InputManager inputManager = InputManager.Instance;
+            if (inputManager != null)
+                inputManager.ClearBindingOverrides();
+
+            DeleteOverridesFileIfExists();
 
             if (clearPlayerPrefs)
-            {
-                UserOptionsPersistence options = UserOptionsPersistence.Instance;
-                options.DeleteKey(overridesPlayerPrefsKey);
-                options.Save();
-            }
+                DeleteLegacyOverridesKey();
 
             OnOverridesCleared?.Invoke();
             Log("Binding overrides cleared.");
+        }
+
+        private bool TryLoadOverridesFromFile(InputManager inputManager)
+        {
+            string path = GetOverridesFilePath();
+            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+                return false;
+
+            try
+            {
+                string json = File.ReadAllText(path);
+                if (string.IsNullOrWhiteSpace(json))
+                {
+                    LogWarning($"Binding overrides file is empty: {path}");
+                    return false;
+                }
+
+                inputManager.LoadBindingOverridesFromJson(json);
+                OnOverridesLoaded?.Invoke();
+                Log($"Binding overrides loaded from file: {path}");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                LogWarning($"Failed to load binding overrides file '{path}': {ex.Message}");
+                return false;
+            }
+        }
+
+        private bool TryLoadOverridesFromLegacyStorage(InputManager inputManager)
+        {
+            if (string.IsNullOrWhiteSpace(overridesPlayerPrefsKey))
+                return false;
+
+            UserOptionsPersistence options = UserOptionsPersistence.Instance;
+            if (!options.HasKey(overridesPlayerPrefsKey))
+                return false;
+
+            string json = options.GetString(overridesPlayerPrefsKey, string.Empty);
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                Log("Legacy binding overrides key exists but payload is empty.");
+                return false;
+            }
+
+            try
+            {
+                inputManager.LoadBindingOverridesFromJson(json);
+                if (TryWriteOverridesFile(json))
+                    DeleteLegacyOverridesKey();
+
+                OnOverridesLoaded?.Invoke();
+                Log("Binding overrides loaded from legacy PlayerPrefs payload and migrated to file storage.");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                LogWarning($"Failed to load legacy binding overrides payload: {ex.Message}");
+                return false;
+            }
+        }
+
+        private bool TryWriteOverridesFile(string json)
+        {
+            string path = GetOverridesFilePath();
+            string tempPath = GetOverridesTempFilePath();
+            if (string.IsNullOrEmpty(path) || string.IsNullOrEmpty(tempPath))
+            {
+                LogWarning("Cannot save binding overrides because resolved controls.json path is empty.");
+                return false;
+            }
+
+            try
+            {
+                string directory = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                File.WriteAllText(tempPath, json);
+
+                if (File.Exists(path))
+                    File.Delete(path);
+
+                File.Move(tempPath, path);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                LogWarning($"Failed to save binding overrides file '{path}': {ex.Message}");
+
+                try
+                {
+                    if (File.Exists(tempPath))
+                        File.Delete(tempPath);
+                }
+                catch
+                {
+                    // Best-effort cleanup only.
+                }
+
+                return false;
+            }
+        }
+
+        private void DeleteOverridesFileIfExists()
+        {
+            string path = GetOverridesFilePath();
+            if (!string.IsNullOrEmpty(path) && File.Exists(path))
+            {
+                try
+                {
+                    File.Delete(path);
+                }
+                catch (Exception ex)
+                {
+                    LogWarning($"Failed to delete binding overrides file '{path}': {ex.Message}");
+                }
+            }
+
+            string tempPath = GetOverridesTempFilePath();
+            if (!string.IsNullOrEmpty(tempPath) && File.Exists(tempPath))
+            {
+                try
+                {
+                    File.Delete(tempPath);
+                }
+                catch (Exception ex)
+                {
+                    LogWarning($"Failed to delete temp binding overrides file '{tempPath}': {ex.Message}");
+                }
+            }
+        }
+
+        private void DeleteLegacyOverridesKey()
+        {
+            if (string.IsNullOrWhiteSpace(overridesPlayerPrefsKey))
+                return;
+
+            UserOptionsPersistence options = UserOptionsPersistence.Instance;
+            options.DeleteKey(overridesPlayerPrefsKey);
+            options.Save();
+        }
+
+        private string GetOverridesFilePath()
+        {
+            string fileName = string.IsNullOrWhiteSpace(overridesFileName)
+                ? DefaultOverridesFileName
+                : overridesFileName;
+            return Path.Combine(Application.persistentDataPath, fileName);
+        }
+
+        private string GetOverridesTempFilePath()
+        {
+            string fileName = string.IsNullOrWhiteSpace(overridesTempFileName)
+                ? DefaultOverridesTempFileName
+                : overridesTempFileName;
+            return Path.Combine(Application.persistentDataPath, fileName);
         }
 
         private static int FindBindingIndexById(InputAction action, string bindingId)

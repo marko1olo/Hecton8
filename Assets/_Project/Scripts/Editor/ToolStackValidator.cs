@@ -7,6 +7,7 @@ using Hecton8.Items;
 using Hecton8.SaveSystem;
 using Hecton8.Tools;
 using Hecton8.UI;
+using Hecton8.World;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -29,6 +30,10 @@ namespace Hecton8.EditorTools
             List<ItemData> toolItems = LoadToolItems(ref errorCount, ref warningCount);
             HashSet<ItemData> itemSet = new HashSet<ItemData>(toolItems);
             HashSet<string> toolIds = new HashSet<string>(System.StringComparer.Ordinal);
+            HashSet<string> itemIds = new HashSet<string>(System.StringComparer.Ordinal);
+            Dictionary<string, ItemData> itemAliases = new Dictionary<string, ItemData>(System.StringComparer.Ordinal);
+
+            ValidateToolItemIdentities(toolItems, itemIds, itemAliases, ref errorCount, ref warningCount);
 
             ValidateToolMetadata(toolIds, ref errorCount, ref warningCount);
             ValidateHeldPrefabs(itemSet, ref errorCount, ref warningCount);
@@ -92,6 +97,47 @@ namespace Hecton8.EditorTools
             }
 
             return results;
+        }
+
+        private static void ValidateToolItemIdentities(
+            List<ItemData> toolItems,
+            HashSet<string> itemIds,
+            Dictionary<string, ItemData> itemAliases,
+            ref int errorCount,
+            ref int warningCount)
+        {
+            for (int i = 0; i < toolItems.Count; i++)
+            {
+                ItemData item = toolItems[i];
+                if (item == null)
+                    continue;
+
+                string assetPath = AssetDatabase.GetAssetPath(item);
+                string persistentId = item.PersistentId;
+                if (string.IsNullOrWhiteSpace(persistentId))
+                {
+                    Debug.LogError($"[ToolStackValidation] Tool item resolves to empty PersistentId: {assetPath}", item);
+                    errorCount++;
+                }
+                else if (!itemIds.Add(persistentId))
+                {
+                    Debug.LogError($"[ToolStackValidation] Duplicate tool PersistentId '{persistentId}': {assetPath}", item);
+                    errorCount++;
+                }
+
+                SerializedObject serializedItem = new SerializedObject(item);
+                SerializedProperty stableIdProperty = serializedItem.FindProperty("stableId");
+                if (stableIdProperty == null || string.IsNullOrWhiteSpace(stableIdProperty.stringValue))
+                {
+                    Debug.LogWarning(
+                        $"[ToolStackValidation] Tool item relies on asset-name fallback for PersistentId. Stamp explicit stableId before rename-sensitive content work: {assetPath}",
+                        item);
+                    warningCount++;
+                }
+
+                RegisterAlias(itemAliases, persistentId, item, assetPath, ref errorCount);
+                RegisterAlias(itemAliases, item.name, item, assetPath, ref errorCount);
+            }
         }
 
         private static void ValidateToolMetadata(HashSet<string> toolIds, ref int errorCount, ref int warningCount)
@@ -208,13 +254,46 @@ namespace Hecton8.EditorTools
             for (int i = 0; i < toolItems.Count; i++)
             {
                 ItemData item = toolItems[i];
-                ItemData resolved = catalog.FindById(item.name);
-                if (!ReferenceEquals(item, resolved))
+                ItemData resolvedByPersistentId = catalog.FindById(item.PersistentId);
+                if (!ReferenceEquals(item, resolvedByPersistentId))
                 {
-                    Debug.LogError($"[ToolStackValidation] ItemCatalog does not resolve tool item '{item.name}'.", catalog);
+                    Debug.LogError($"[ToolStackValidation] ItemCatalog does not resolve tool PersistentId '{item.PersistentId}'.", catalog);
+                    errorCount++;
+                }
+
+                ItemData resolvedByLegacyAlias = catalog.FindById(item.name);
+                if (!ReferenceEquals(item, resolvedByLegacyAlias))
+                {
+                    Debug.LogError($"[ToolStackValidation] ItemCatalog does not resolve tool legacy alias '{item.name}'.", catalog);
                     errorCount++;
                 }
             }
+        }
+
+        private static void RegisterAlias(
+            Dictionary<string, ItemData> itemAliases,
+            string alias,
+            ItemData item,
+            string assetPath,
+            ref int errorCount)
+        {
+            if (string.IsNullOrWhiteSpace(alias) || item == null)
+                return;
+
+            if (itemAliases.TryGetValue(alias, out ItemData existing))
+            {
+                if (!ReferenceEquals(existing, item))
+                {
+                    Debug.LogError(
+                        $"[ToolStackValidation] Identity alias collision '{alias}' between '{existing.name}' and '{item.name}': {assetPath}",
+                        item);
+                    errorCount++;
+                }
+
+                return;
+            }
+
+            itemAliases.Add(alias, item);
         }
 
         private static void ValidateProvisioner(HashSet<ItemData> toolItems, ref int errorCount, ref int warningCount)
@@ -299,6 +378,12 @@ namespace Hecton8.EditorTools
                 PickupItem pickup = child.GetComponent<PickupItem>();
                 if (pickup == null)
                 {
+                    if (child.GetComponent<WorldInterestAnchor>() != null ||
+                        child.GetComponent<WorldZoneAnchor>() != null)
+                    {
+                        continue;
+                    }
+
                     Debug.LogError($"[ToolStackValidation] Staging child '{child.name}' missing PickupItem.", child.gameObject);
                     errorCount++;
                     continue;

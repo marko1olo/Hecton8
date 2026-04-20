@@ -12,33 +12,43 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a49e6475ccf8054419a7fba4c7a78a5c, type: 3}
   m_Name: Item_Tool_Propulsion
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
-  itemName: Propulsion Cannon
+  legacyItemName: Propulsion Cannon
+  stableId: Item_Tool_Propulsion
   localizedItemName:
     tableKey: ITEM_TOOL_PROPULSION_NAME
-    fallbackText: "Propulsion Cannon"
+    fallbackText: Propulsion Cannon
     variants: []
   icon: {fileID: 0}
-  description: Gravitic projector for pulling, pushing and clearing objects in hazardous
-    spaces.
+  legacyDescription: Gravitic projector for pulling, pushing and clearing objects
+    in hazardous spaces.
   localizedDescription:
     tableKey: ITEM_TOOL_PROPULSION_DESCRIPTION
-    fallbackText: "Gravitic projector for pulling, pushing and clearing objects in hazardous spaces."
+    fallbackText: Gravitic projector for pulling, pushing and clearing objects in
+      hazardous spaces.
     variants: []
   weight: 3
   stackable: 0
   maxStack: 1
   category: 2
+  resourceFamily: 0
+  progressionTier: 0
+  isRawResource: 0
+  minDepth: 0
+  maxDepth: 0
   width: 2
   height: 2
   isConsumable: 0
+  useDuration: 0
   oxygenRestore: 0
   energyRestore: 0
   integrityRestore: 0
+  hungerRestore: 0
+  thirstRestore: 0
   useSound: {fileID: 0}
-  interactVerb: Take
+  legacyInteractVerb: Take
   localizedInteractVerb:
     tableKey: ITEM_INTERACT_TAKE
-    fallbackText: "Take"
+    fallbackText: Take
     variants: []
   worldPrefab: {fileID: 100100000, guid: f9ee01257418ed74696850470ef62d20, type: 3}
   worldBuoyancyProfile: {fileID: 11400000, guid: fa0a7e88c5c4f244f928f327d4520019, type: 2}

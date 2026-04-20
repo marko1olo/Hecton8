@@ -276,21 +276,21 @@ namespace Hecton8.EditorTools
             }
             else if (familyId == "family.kelp.canopy")
             {
-                material.SetColor("_BaseColor", new Color(0.72f, 0.88f, 0.58f, 1f));
-                material.SetColor("_TipColor", new Color(0.78f, 0.92f, 0.62f, 1f));
-                material.SetColor("_TransmissionColor", new Color(0.60f, 0.82f, 0.44f, 1f));
-                material.SetColor("_RimColor", new Color(0.74f, 0.88f, 0.66f, 1f));
-                material.SetFloat("_Smoothness", 0.18f);
+                material.SetColor("_BaseColor", new Color(0.54f, 0.50f, 0.22f, 1f));
+                material.SetColor("_TipColor", new Color(0.74f, 0.66f, 0.30f, 1f));
+                material.SetColor("_TransmissionColor", new Color(0.62f, 0.56f, 0.26f, 1f));
+                material.SetColor("_RimColor", new Color(0.82f, 0.74f, 0.42f, 1f));
+                material.SetFloat("_Smoothness", 0.2f);
                 material.SetFloat("_NormalStrength", Mathf.Max(material.GetFloat("_NormalStrength"), 0.88f));
                 material.SetFloat("_ThicknessStrength", Mathf.Max(material.GetFloat("_ThicknessStrength"), 0.78f));
                 material.SetFloat("_VertexTintStrength", Mathf.Max(material.GetFloat("_VertexTintStrength"), 0.62f));
-                material.SetFloat("_AgeDarkening", Mathf.Max(material.GetFloat("_AgeDarkening"), 0.18f));
-                material.SetFloat("_AmbientStrength", 0.44f);
-                material.SetFloat("_TransmissionStrength", 0.72f);
-                material.SetFloat("_EdgeTransmissionBoost", 0.38f);
-                material.SetFloat("_RimStrength", 0.22f);
+                material.SetFloat("_AgeDarkening", Mathf.Max(material.GetFloat("_AgeDarkening"), 0.24f));
+                material.SetFloat("_AmbientStrength", 0.48f);
+                material.SetFloat("_TransmissionStrength", 0.76f);
+                material.SetFloat("_EdgeTransmissionBoost", 0.42f);
+                material.SetFloat("_RimStrength", 0.24f);
                 material.SetFloat("_CausticStrength", 0.10f);
-                material.SetFloat("_CausticScale", 1.46f);
+                material.SetFloat("_CausticScale", 1.38f);
             }
             else if (familyId == "family.kelp.abyssal")
             {

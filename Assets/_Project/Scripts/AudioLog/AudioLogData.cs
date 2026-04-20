@@ -1,4 +1,5 @@
 using Hecton.Localization;
+using Hecton8.Core;
 using UnityEngine;
 
 namespace Hecton8.Narrative
@@ -103,12 +104,72 @@ namespace Hecton8.Narrative
         public string DisplayTitleOrFallback => localizedDisplayTitle.ResolveOrFallback(FallbackOrDefault(displayTitle, SafeLogId));
         public string AuthorOrFallback => localizedAuthor.ResolveOrFallback(FallbackOrDefault(author, "UNKNOWN"));
         public string SubtitleOrFallback => localizedSubtitleText.ResolveOrFallback(subtitleText);
+        public string VisibleSubtitleOrFallback => StripTimecodedSubtitleMarkup(SubtitleOrFallback);
         public string ArchiveSummaryOrFallback => localizedArchiveSummary.ResolveOrFallback(FallbackOrDefault(archiveSummary, "Entry unavailable."));
         public string RecordDateOrFallback => localizedRecordDate.ResolveOrFallback(FallbackOrDefault(recordDate, "DATE UNKNOWN"));
 
         private static string FallbackOrDefault(string value, string fallback)
         {
             return string.IsNullOrWhiteSpace(value) ? fallback : value;
+        }
+
+        public static string StripTimecodedSubtitleMarkup(string subtitle)
+        {
+            if (string.IsNullOrEmpty(subtitle) || subtitle.IndexOf('[', System.StringComparison.Ordinal) < 0)
+                return subtitle ?? string.Empty;
+
+            System.Text.StringBuilder builder = StringBuilderPool.Get();
+            bool removedAny = false;
+
+            for (int i = 0; i < subtitle.Length; i++)
+            {
+                char current = subtitle[i];
+                if (current == '[' && TrySkipTimeMarker(subtitle, ref i))
+                {
+                    removedAny = true;
+                    continue;
+                }
+
+                builder.Append(current);
+            }
+
+            string stripped = removedAny ? builder.ToString().Trim() : subtitle;
+            StringBuilderPool.Return(builder);
+            return stripped;
+        }
+
+        private static bool TrySkipTimeMarker(string text, ref int index)
+        {
+            int markerStart = index;
+            int current = markerStart + 1;
+            bool sawDigit = false;
+            bool sawDot = false;
+
+            while (current < text.Length)
+            {
+                char markerChar = text[current];
+                if (markerChar >= '0' && markerChar <= '9')
+                {
+                    sawDigit = true;
+                    current++;
+                    continue;
+                }
+
+                if (markerChar == '.' && !sawDot)
+                {
+                    sawDot = true;
+                    current++;
+                    continue;
+                }
+
+                break;
+            }
+
+            if (!sawDigit || current >= text.Length || text[current] != ']')
+                return false;
+
+            index = current;
+            return true;
         }
 
 #if UNITY_EDITOR

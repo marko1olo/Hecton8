@@ -20,6 +20,7 @@
 // ============================================================================
 
 using System;
+using Hecton8.AI;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Gameplay;
@@ -46,6 +47,7 @@ namespace Hecton8.Visor
         {
             OnModeChanged = null;
             OnSonarPulse = null;
+            OnSonarPingSent = null;
             OnSonarSnapshotUpdated = null;
         }
 
@@ -54,10 +56,13 @@ namespace Hecton8.Visor
 
         /// <summary>Сонар-пульс. float: радиус обнаружения.</summary>
         public static event Action<float> OnSonarPulse;
+        /// <summary>Controller-authored active sonar ping. Float = normalized pulse intensity 0-1.</summary>
+        public static event Action<float> OnSonarPingSent;
         public static event Action<SpatialSonarSnapshot> OnSonarSnapshotUpdated;
 
         public static void RaiseModeChanged(SpectrumMode mode) => OnModeChanged?.Invoke(mode);
         public static void RaiseSonarPulse(float radius) => OnSonarPulse?.Invoke(radius);
+        public static void RaiseSonarPingSent(float intensity) => OnSonarPingSent?.Invoke(intensity);
         public static void RaiseSonarSnapshotUpdated(SpatialSonarSnapshot snapshot) => OnSonarSnapshotUpdated?.Invoke(snapshot);
     }
 
@@ -65,6 +70,8 @@ namespace Hecton8.Visor
     [DefaultExecutionOrder(-95)]
     public sealed class SpectrumSystem : MonoBehaviour, ITickable
     {
+        private const int SonarRevealMaxContacts = 24;
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -79,9 +86,49 @@ namespace Hecton8.Visor
         [Tooltip("Энергия за переключение режима.")]
         [SerializeField] private float modeSwitchEnergyCost = 2f;
 
+        [Tooltip("Энергия, сжигаемая каждым активным sonar pulse.")]
+        [SerializeField] private float sonarPulseEnergyCost = 6f;
+
+        [Tooltip("Интенсивность шумовой сигнатуры, публикуемой sonar pulse для окружающей фауны.")]
+        [SerializeField, Range(0f, 1f)] private float sonarNoiseSignature01 = 1f;
+
+        [Tooltip("Радиус прямой provocation wave по bioforms вокруг игрока.")]
+        [SerializeField] private float sonarProvocationRadius = 85f;
+
+        [Tooltip("How long the active sonar reveal stays valid for shader and VFX consumers after each pulse.")]
+        [SerializeField] private float sonarRevealDuration = 2.4f;
+
+        [Tooltip("How fast the authored active-sonar wavefront travels through the reveal buffer in meters per second.")]
+        [SerializeField] private float sonarRevealWaveSpeed = 100f;
+
+        [Tooltip("How long each revealed contact stays bright after the sonar wavefront reaches it.")]
+        [SerializeField] private float sonarRevealFadeDuration = 3f;
+
         [Header("── References ──────────────────────────────")]
         [Tooltip("Система выживания для drain энергии.")]
         [SerializeField] private HectonSurvivalSystem survivalSystem;
+
+        [Tooltip("Optional cartographer bridge used to bias sonar contacts toward organic returns when vegetation owns the space.")]
+        [SerializeField] private HectonMapMagicVegetationBridge vegetationBridge;
+
+        [Header("── Sonar Grid Overlay ──────────────────────")]
+        [Tooltip("Master intensity for the noir sonar-grid overlay rendered on the visor during active pings.")]
+        [SerializeField, Range(0f, 3f)] private float sonarGridIntensity = 1.15f;
+
+        [Tooltip("World-space line density used by the visor sonar grid.")]
+        [SerializeField, Range(0.05f, 2f)] private float sonarGridLineScale = 0.22f;
+
+        [Tooltip("Half-width of the projected noir grid lines.")]
+        [SerializeField, Range(0.001f, 0.08f)] private float sonarGridLineWidth = 0.018f;
+
+        [Tooltip("Boost applied to scene-depth contour edges when the sonar wavefront crosses geometry.")]
+        [SerializeField, Range(0f, 8f)] private float sonarGridContourBoost = 2.4f;
+
+        [Tooltip("Tint used for hard structure echoes such as base walls, wreckage, and modules.")]
+        [SerializeField] private Color sonarGridHardColor = new Color(0.18f, 1f, 0.94f, 1f);
+
+        [Tooltip("Tint used for softer organic sonar echoes.")]
+        [SerializeField] private Color sonarGridOrganicColor = new Color(0.44f, 1f, 0.58f, 1f);
 
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
@@ -110,8 +157,28 @@ namespace Hecton8.Visor
             Shader.PropertyToID("_SonarRadius");
         private static readonly int _ShaderSonarPulseTime =
             Shader.PropertyToID("_SonarPulseTime");
+        private static readonly int _ShaderSonarRevealOrigin =
+            Shader.PropertyToID("_SonarRevealOriginWS");
+        private static readonly int _ShaderSonarRevealExpireTime =
+            Shader.PropertyToID("_SonarRevealExpireTime");
+        private static readonly int _ShaderSonarRevealWaveParams =
+            Shader.PropertyToID("_SonarRevealWaveParams");
+        private static readonly int _ShaderSonarRevealContactCount =
+            Shader.PropertyToID("_SonarRevealContactCount");
+        private static readonly int _ShaderSonarRevealContacts =
+            Shader.PropertyToID("_SonarRevealContacts");
+        private static readonly int _ShaderSonarRevealContactMeta =
+            Shader.PropertyToID("_SonarRevealContactMeta");
         private static readonly System.Collections.Generic.List<VisorHUDController> s_glitchControllers =
             new System.Collections.Generic.List<VisorHUDController>(4); // COLD ALLOC: shared glitch pulse controller buffer
+        // COLD ALLOC: SpatialQueryHit[16] — active-sonar fauna provocation buffer — owner: SpectrumSystem
+        private static readonly SpatialQueryHit[] s_sonarBioformBuffer = new SpatialQueryHit[16];
+        // COLD ALLOC: SpatialQueryHit[24] — active-sonar reveal contact buffer — owner: SpectrumSystem
+        private static readonly SpatialQueryHit[] s_sonarRevealBuffer = new SpatialQueryHit[SonarRevealMaxContacts];
+        // COLD ALLOC: Vector4[24] — active-sonar reveal shader payload buffer — owner: SpectrumSystem
+        private static readonly Vector4[] s_sonarRevealContacts = new Vector4[SonarRevealMaxContacts];
+        // COLD ALLOC: Vector4[24] — active-sonar semantic shader payload buffer — owner: SpectrumSystem
+        private static readonly Vector4[] s_sonarRevealContactMeta = new Vector4[SonarRevealMaxContacts];
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC PROPERTIES
@@ -132,6 +199,13 @@ namespace Hecton8.Visor
         {
             if (Instance != null && Instance != this) { Destroy(gameObject); return; }
             Instance = this;
+            SonarGridOverlay.ApplyGlobals(
+                sonarGridIntensity,
+                sonarGridLineScale,
+                sonarGridLineWidth,
+                sonarGridContourBoost,
+                sonarGridHardColor,
+                sonarGridOrganicColor);
         }
 
         private void OnEnable()
@@ -148,6 +222,13 @@ namespace Hecton8.Visor
 
             ResolveSurvivalSystem();
 
+            SonarGridOverlay.ApplyGlobals(
+                sonarGridIntensity,
+                sonarGridLineScale,
+                sonarGridLineWidth,
+                sonarGridContourBoost,
+                sonarGridHardColor,
+                sonarGridOrganicColor);
             ApplyShaderMode();
         }
 
@@ -164,6 +245,7 @@ namespace Hecton8.Visor
 
             // Сбрасываем в Normal при отключении
             Shader.SetGlobalInt(_ShaderSpectrumMode, 0);
+            SonarGridOverlay.ClearGlobals();
             ClearSonarSnapshot();
         }
 
@@ -180,6 +262,8 @@ namespace Hecton8.Visor
 
             if (Instance == this)
                 Instance = null;
+
+            SonarGridOverlay.ClearGlobals();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -197,17 +281,7 @@ namespace Hecton8.Visor
 
             _sonarTimer = 0f;
 
-            // Публикуем пульс
-            SpectrumEvents.RaiseSonarPulse(sonarRadius);
-            Shader.SetGlobalFloat(_ShaderSonarPulseTime, Time.time);
-            Shader.SetGlobalFloat(_ShaderSonarRadius, sonarRadius);
-
-            if (ResolvePlayerTransform())
-            {
-                WorldSpatialHashGrid.BuildSonarSnapshot(_playerTransform.position, sonarRadius, out _lastSonarSnapshot);
-                _hasSonarSnapshot = true;
-                SpectrumEvents.RaiseSonarSnapshotUpdated(_lastSonarSnapshot);
-            }
+            EmitSonarPulse(sonarRadius, sonarRevealDuration, true, false);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -256,6 +330,18 @@ namespace Hecton8.Visor
             SetMode((SpectrumMode)next);
         }
 
+        /// <summary>
+        /// Triggers an immediate one-shot active-sonar ping without requiring sonar visor mode to stay latched.
+        /// </summary>
+        /// <param name="radius">Pulse radius in world meters.</param>
+        /// <param name="revealDurationSeconds">Reveal hold duration for shader/VFX consumers.</param>
+        public bool TriggerActiveSonarPing(float radius, float revealDurationSeconds)
+        {
+            float pulseRadius = Mathf.Max(1f, radius);
+            float revealDurationValue = revealDurationSeconds > 0f ? revealDurationSeconds : sonarRevealDuration;
+            return EmitSonarPulse(pulseRadius, revealDurationValue, true, true);
+        }
+
         // ══════════════════════════════════════════════════════════
         //  PRIVATE
         // ══════════════════════════════════════════════════════════
@@ -264,6 +350,33 @@ namespace Hecton8.Visor
         {
             Shader.SetGlobalInt(_ShaderSpectrumMode, (int)_currentMode);
             Shader.SetGlobalFloat(_ShaderSonarRadius, sonarRadius);
+        }
+
+        private bool EmitSonarPulse(float pulseRadius, float revealDurationSeconds, bool consumeEnergy, bool isActivePing)
+        {
+            if (!ResolvePlayerTransform())
+                return false;
+
+            ResolveSurvivalSystem();
+            if (consumeEnergy && survivalSystem != null && sonarPulseEnergyCost > 0f)
+                survivalSystem.DrainEnergy(sonarPulseEnergyCost);
+
+            Vector3 playerPosition = _playerTransform.position;
+            float pulseTime = Time.time;
+            float pulseIntensity = Mathf.Clamp01(pulseRadius / 200f);
+            SpectrumEvents.RaiseSonarPulse(pulseRadius);
+            if (isActivePing)
+                SpectrumEvents.RaiseSonarPingSent(pulseIntensity);
+
+            Shader.SetGlobalFloat(_ShaderSonarPulseTime, pulseTime);
+            Shader.SetGlobalFloat(_ShaderSonarRadius, pulseRadius);
+            PublishSonarReveal(playerPosition, pulseRadius, revealDurationSeconds, pulseTime, pulseIntensity);
+            WorldSpatialHashGrid.BuildSonarSnapshot(playerPosition, pulseRadius, out _lastSonarSnapshot);
+            _hasSonarSnapshot = true;
+            NoiseSystem.ReportPlayerSignal(playerPosition, 0f, false, 0f, 0f, Mathf.Clamp01(sonarNoiseSignature01));
+            ProvokeNearbyFauna(playerPosition, pulseRadius);
+            SpectrumEvents.RaiseSonarSnapshotUpdated(_lastSonarSnapshot);
+            return true;
         }
 
         private bool ResolveSurvivalSystem()
@@ -292,7 +405,60 @@ namespace Hecton8.Visor
         {
             _hasSonarSnapshot = false;
             _lastSonarSnapshot = default;
+            Shader.SetGlobalInt(_ShaderSonarRevealContactCount, 0);
+            Shader.SetGlobalFloat(_ShaderSonarRevealExpireTime, 0f);
+            Shader.SetGlobalVector(_ShaderSonarRevealWaveParams, Vector4.zero);
+            Shader.SetGlobalVectorArray(_ShaderSonarRevealContactMeta, s_sonarRevealContactMeta);
             SpectrumEvents.RaiseSonarSnapshotUpdated(default);
+        }
+
+        private void PublishSonarReveal(Vector3 origin, float radius, float revealDurationSeconds, float pulseTime, float pulseIntensity)
+        {
+            int contactCount = WorldSpatialHashGrid.CollectContactsNonAlloc(
+                origin,
+                radius,
+                SpatialTargetKind.Signal | SpatialTargetKind.Module | SpatialTargetKind.Resource | SpatialTargetKind.Pickup | SpatialTargetKind.Scannable,
+                s_sonarRevealBuffer);
+
+            for (int i = 0; i < contactCount; i++)
+            {
+                SpatialQueryHit hit = s_sonarRevealBuffer[i];
+                float arrivalOffset = Mathf.Sqrt(hit.DistanceSqr) / Mathf.Max(0.01f, sonarRevealWaveSpeed);
+                s_sonarRevealContacts[i] = new Vector4(hit.Position.x, hit.Position.y, hit.Position.z, arrivalOffset);
+                s_sonarRevealContactMeta[i] = ResolveRevealContactMeta(hit);
+            }
+
+            Shader.SetGlobalVector(_ShaderSonarRevealOrigin, new Vector4(origin.x, origin.y, origin.z, radius));
+            Shader.SetGlobalFloat(_ShaderSonarRevealExpireTime, pulseTime + Mathf.Max(0.05f, revealDurationSeconds));
+            Shader.SetGlobalVector(
+                _ShaderSonarRevealWaveParams,
+                new Vector4(
+                    pulseTime,
+                    Mathf.Max(0.01f, sonarRevealWaveSpeed),
+                    Mathf.Max(0.05f, sonarRevealFadeDuration),
+                    pulseIntensity));
+            Shader.SetGlobalInt(_ShaderSonarRevealContactCount, contactCount);
+            Shader.SetGlobalVectorArray(_ShaderSonarRevealContacts, s_sonarRevealContacts);
+            Shader.SetGlobalVectorArray(_ShaderSonarRevealContactMeta, s_sonarRevealContactMeta);
+        }
+
+        private void ProvokeNearbyFauna(Vector3 playerPosition, float pulseRadius)
+        {
+            float queryRadius = Mathf.Min(pulseRadius, Mathf.Max(0f, sonarProvocationRadius));
+            if (queryRadius <= 0f)
+                return;
+
+            int count = WorldSpatialHashGrid.CollectContactsNonAlloc(
+                playerPosition,
+                queryRadius,
+                SpatialTargetKind.Bioform,
+                s_sonarBioformBuffer);
+
+            for (int i = 0; i < count; i++)
+            {
+                if (s_sonarBioformBuffer[i].Owner is FaunaBrain brain)
+                    brain.Provoke(playerPosition);
+            }
         }
 
         private static string ResolveLocalizedModeName(SpectrumMode mode)
@@ -308,6 +474,67 @@ namespace Hecton8.Visor
                 default:
                     return ResolveLocalized(LocalizationKeys.SPECTRUM_MODE_NORMAL, "NORMAL");
             }
+        }
+
+        private Vector4 ResolveRevealContactMeta(SpatialQueryHit hit)
+        {
+            float hardResponse = 0.7f;
+            float organicResponse = 0.15f;
+            float contactRadius = 4.5f;
+
+            if ((hit.Kind & SpatialTargetKind.Module) != 0)
+            {
+                hardResponse = 1f;
+                organicResponse = 0f;
+                contactRadius = 7.5f;
+            }
+            else if ((hit.Kind & SpatialTargetKind.Signal) != 0)
+            {
+                hardResponse = 0.92f;
+                organicResponse = 0.05f;
+                contactRadius = 6.25f;
+            }
+            else if ((hit.Kind & SpatialTargetKind.Scannable) != 0)
+            {
+                hardResponse = 0.84f;
+                organicResponse = 0.08f;
+                contactRadius = 5.2f;
+            }
+            else if ((hit.Kind & SpatialTargetKind.Resource) != 0)
+            {
+                hardResponse = 0.38f;
+                organicResponse = 0.44f;
+                contactRadius = 4.8f;
+            }
+            else if ((hit.Kind & SpatialTargetKind.Pickup) != 0)
+            {
+                hardResponse = 0.55f;
+                organicResponse = 0.2f;
+                contactRadius = 4.2f;
+            }
+
+            if (vegetationBridge != null)
+            {
+                HectonMapMagicVegetationBridge.VegetationDensitySample vegetationSample =
+                    vegetationBridge.GetVegetationDensity(hit.Position);
+                if (vegetationSample.HasVegetation)
+                {
+                    float density = Mathf.Clamp01(vegetationSample.Density);
+                    float densityOrganicBoost =
+                        vegetationSample.SemanticType == HectonMapMagicVegetationBridge.VegetationSemanticType.SargassumMat
+                            ? Mathf.Lerp(0.3f, 1f, density)
+                            : Mathf.Lerp(0.18f, 0.78f, density);
+                    organicResponse = Mathf.Max(organicResponse, densityOrganicBoost);
+                    hardResponse *= 1f - (organicResponse * 0.45f);
+                    contactRadius = Mathf.Max(contactRadius, Mathf.Lerp(4f, 8.5f, density));
+                }
+            }
+
+            return new Vector4(
+                Mathf.Clamp01(hardResponse),
+                Mathf.Clamp01(organicResponse),
+                Mathf.Max(0.5f, contactRadius),
+                0f);
         }
 
         private static string ResolveLocalized(string key, string fallback)

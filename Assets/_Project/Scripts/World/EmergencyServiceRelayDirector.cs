@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Hecton.Localization;
 using Hecton8.AtlasSignal;
 using Hecton8.Gameplay;
@@ -44,6 +45,21 @@ namespace Hecton8.World
         private string _lastGuidanceRelayId;
         private bool _hasAnyRelayDiscovery;
         private EmergencyServiceRelay _currentRouteTarget;
+        // COLD ALLOC: EmergencyServiceRelay[8] — driven relay chain cache — owner: EmergencyServiceRelayDirector
+        private readonly List<EmergencyServiceRelay> _drivenChainRelays = new List<EmergencyServiceRelay>(8);
+        // COLD ALLOC: Dictionary<string, EmergencyServiceRelay>[8] — relay-id lookup cache — owner: EmergencyServiceRelayDirector
+        private readonly Dictionary<string, EmergencyServiceRelay> _relayById =
+            new Dictionary<string, EmergencyServiceRelay>(8, StringComparer.Ordinal);
+        // COLD ALLOC: Dictionary<int, EmergencyServiceRelay>[8] — relay-order lookup cache — owner: EmergencyServiceRelayDirector
+        private readonly Dictionary<int, EmergencyServiceRelay> _relayByOrder =
+            new Dictionary<int, EmergencyServiceRelay>(8);
+        // COLD ALLOC: HashSet<string>[8] — duplicate relay-id guard — owner: EmergencyServiceRelayDirector
+        private readonly HashSet<string> _ambiguousRelayIds =
+            new HashSet<string>(StringComparer.Ordinal);
+        // COLD ALLOC: HashSet<int>[8] — duplicate relay-order guard — owner: EmergencyServiceRelayDirector
+        private readonly HashSet<int> _ambiguousRelayOrders =
+            new HashSet<int>();
+        private int _observedRelayRegistryVersion = -1;
 
         private void Awake()
         {
@@ -59,12 +75,16 @@ namespace Hecton8.World
         private void OnEnable()
         {
             EmergencyServiceRelayEvents.OnRelayActivated += HandleRelayActivated;
+            InvalidateRelayCache();
             RefreshRelayDiscoveryState();
         }
 
         private void OnDisable()
         {
             EmergencyServiceRelayEvents.OnRelayActivated -= HandleRelayActivated;
+            InvalidateRelayCache();
+            _currentRouteTarget = null;
+            _lastGuidanceRelayId = null;
         }
 
         private void OnDestroy()
@@ -72,6 +92,23 @@ namespace Hecton8.World
             if (_instance == this)
                 _instance = null;
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            introChainId = string.IsNullOrWhiteSpace(introChainId)
+                ? introChainId
+                : introChainId.Trim();
+
+            if (string.IsNullOrWhiteSpace(introChainId))
+                introChainId = DefaultIntroChainId;
+
+            if (maximumAtlasRevealStageToDrive < 0)
+                maximumAtlasRevealStageToDrive = 0;
+
+            InvalidateRelayCache();
+        }
+#endif
 
         /// <summary>Returns true when the first-hour relay chain already made real route contact with the player.</summary>
         public bool HasDiscoveredRelayInDrivenChain()
@@ -86,17 +123,8 @@ namespace Hecton8.World
             if (string.IsNullOrEmpty(discoveryId))
                 return false;
 
-            for (int i = 0; i < EmergencyServiceRelay.ActiveCount; i++)
-            {
-                EmergencyServiceRelay relay = EmergencyServiceRelay.GetActiveRelayAt(i);
-                if (relay == null || !IsRelayPartOfDrivenChain(relay))
-                    continue;
-
-                if (string.Equals(relay.RelayId, discoveryId, StringComparison.Ordinal))
-                    return true;
-            }
-
-            return false;
+            EnsureChainCache();
+            return !_ambiguousRelayIds.Contains(discoveryId) && _relayById.ContainsKey(discoveryId);
         }
 
         /// <summary>
@@ -109,6 +137,7 @@ namespace Hecton8.World
             if (!ShouldDriveBreadcrumbs())
                 return false;
 
+            EnsureChainCache();
             EmergencyServiceRelay nextRelay = ResolveCurrentRouteTarget();
             if (nextRelay == null)
                 return false;
@@ -132,8 +161,11 @@ namespace Hecton8.World
         /// </summary>
         public EmergencyServiceRelay GetActiveRouteTarget()
         {
+            EnsureChainCache();
+
             if (_currentRouteTarget != null &&
-                IsRelayPartOfDrivenChain(_currentRouteTarget) &&
+                IsValidRelayForRouting(_currentRouteTarget) &&
+                !_currentRouteTarget.IsDiscovered &&
                 _currentRouteTarget.isActiveAndEnabled)
             {
                 return _currentRouteTarget;
@@ -146,7 +178,8 @@ namespace Hecton8.World
 
         private void HandleRelayActivated(EmergencyServiceRelay relay, bool firstActivation)
         {
-            if (relay == null || !IsRelayPartOfDrivenChain(relay))
+            EnsureChainCache();
+            if (!IsValidRelayForRouting(relay))
                 return;
 
             _hasAnyRelayDiscovery = true;
@@ -170,15 +203,16 @@ namespace Hecton8.World
 
         private void RefreshRelayDiscoveryState()
         {
+            EnsureChainCache();
             _hasAnyRelayDiscovery = false;
             _currentRouteTarget = null;
             EmergencyServiceRelay highestDiscoveredRelay = null;
             int highestDiscoveredOrder = int.MinValue;
 
-            for (int i = 0; i < EmergencyServiceRelay.ActiveCount; i++)
+            for (int i = 0; i < _drivenChainRelays.Count; i++)
             {
-                EmergencyServiceRelay relay = EmergencyServiceRelay.GetActiveRelayAt(i);
-                if (relay == null || !IsRelayPartOfDrivenChain(relay) || !relay.IsDiscovered)
+                EmergencyServiceRelay relay = _drivenChainRelays[i];
+                if (!IsValidRelayForRouting(relay) || !relay.IsDiscovered)
                     continue;
 
                 _hasAnyRelayDiscovery = true;
@@ -213,14 +247,17 @@ namespace Hecton8.World
 
         private EmergencyServiceRelay ResolveCurrentRouteTarget()
         {
+            EnsureChainCache();
+
             if (_currentRouteTarget != null &&
-                IsRelayPartOfDrivenChain(_currentRouteTarget) &&
+                IsValidRelayForRouting(_currentRouteTarget) &&
+                !_currentRouteTarget.IsDiscovered &&
                 _currentRouteTarget.isActiveAndEnabled)
             {
                 return _currentRouteTarget;
             }
 
-            _currentRouteTarget = ResolveRouteTargetFromDiscoveryState(null);
+            RefreshRelayDiscoveryState();
             return _currentRouteTarget;
         }
 
@@ -230,9 +267,7 @@ namespace Hecton8.World
                 return null;
 
             EmergencyServiceRelay explicitNextRelay = currentRelay.NextRelay;
-            if (explicitNextRelay != null &&
-                IsRelayPartOfDrivenChain(explicitNextRelay) &&
-                explicitNextRelay.isActiveAndEnabled)
+            if (CanUseExplicitNextRelay(currentRelay, explicitNextRelay))
             {
                 return explicitNextRelay;
             }
@@ -255,28 +290,25 @@ namespace Hecton8.World
         private EmergencyServiceRelay ResolveNextRelayInDrivenChain(EmergencyServiceRelay currentRelay)
         {
             EmergencyServiceRelay explicitNextRelay = currentRelay != null ? currentRelay.NextRelay : null;
-            if (explicitNextRelay != null &&
-                IsRelayPartOfDrivenChain(explicitNextRelay) &&
-                !explicitNextRelay.IsDiscovered)
+            if (CanUseExplicitNextRelay(currentRelay, explicitNextRelay))
             {
                 return explicitNextRelay;
             }
 
             EmergencyServiceRelay bestRelay = null;
             int minimumOrder = currentRelay != null ? currentRelay.RelayOrder + 1 : int.MinValue;
-            int bestOrder = int.MaxValue;
 
-            for (int i = 0; i < EmergencyServiceRelay.ActiveCount; i++)
+            for (int i = 0; i < _drivenChainRelays.Count; i++)
             {
-                EmergencyServiceRelay relay = EmergencyServiceRelay.GetActiveRelayAt(i);
-                if (relay == null || !IsRelayPartOfDrivenChain(relay) || relay.IsDiscovered)
+                EmergencyServiceRelay relay = _drivenChainRelays[i];
+                if (!IsValidRelayForRouting(relay) || relay.IsDiscovered)
                     continue;
 
-                if (relay.RelayOrder < minimumOrder || relay.RelayOrder >= bestOrder)
+                if (relay.RelayOrder < minimumOrder)
                     continue;
 
-                bestOrder = relay.RelayOrder;
                 bestRelay = relay;
+                break;
             }
 
             return bestRelay;
@@ -286,6 +318,118 @@ namespace Hecton8.World
         {
             return relay != null &&
                 string.Equals(relay.ChainId, introChainId, StringComparison.Ordinal);
+        }
+
+        private bool IsValidRelayForRouting(EmergencyServiceRelay relay)
+        {
+            if (relay == null ||
+                !relay.isActiveAndEnabled ||
+                !IsRelayPartOfDrivenChain(relay))
+            {
+                return false;
+            }
+
+            string relayId = relay.RelayId;
+            return !string.IsNullOrWhiteSpace(relayId) &&
+                   !_ambiguousRelayIds.Contains(relayId) &&
+                   !_ambiguousRelayOrders.Contains(relay.RelayOrder);
+        }
+
+        private bool CanUseExplicitNextRelay(EmergencyServiceRelay currentRelay, EmergencyServiceRelay explicitNextRelay)
+        {
+            if (!IsValidRelayForRouting(explicitNextRelay) || explicitNextRelay.IsDiscovered)
+                return false;
+
+            if (currentRelay == null)
+                return true;
+
+            return explicitNextRelay.RelayOrder > currentRelay.RelayOrder;
+        }
+
+        private void EnsureChainCache()
+        {
+            int registryVersion = EmergencyServiceRelay.RegistryVersion;
+            if (_observedRelayRegistryVersion == registryVersion)
+                return;
+
+            RebuildDrivenChainCache(registryVersion);
+        }
+
+        private void InvalidateRelayCache()
+        {
+            _observedRelayRegistryVersion = -1;
+        }
+
+        private void RebuildDrivenChainCache(int registryVersion)
+        {
+            _drivenChainRelays.Clear();
+            _relayById.Clear();
+            _relayByOrder.Clear();
+            _ambiguousRelayIds.Clear();
+            _ambiguousRelayOrders.Clear();
+
+            for (int i = 0; i < EmergencyServiceRelay.ActiveCount; i++)
+            {
+                EmergencyServiceRelay relay = EmergencyServiceRelay.GetActiveRelayAt(i);
+                if (relay == null || !relay.isActiveAndEnabled || !IsRelayPartOfDrivenChain(relay))
+                    continue;
+
+                string relayId = relay.RelayId;
+                if (string.IsNullOrWhiteSpace(relayId))
+                    continue;
+
+                if (_relayById.ContainsKey(relayId))
+                {
+                    _relayById.Remove(relayId);
+                    _ambiguousRelayIds.Add(relayId);
+                }
+                else if (!_ambiguousRelayIds.Contains(relayId))
+                {
+                    _relayById.Add(relayId, relay);
+                }
+
+                int relayOrder = relay.RelayOrder;
+                if (_relayByOrder.ContainsKey(relayOrder))
+                {
+                    _relayByOrder.Remove(relayOrder);
+                    _ambiguousRelayOrders.Add(relayOrder);
+                }
+                else if (!_ambiguousRelayOrders.Contains(relayOrder))
+                {
+                    _relayByOrder.Add(relayOrder, relay);
+                }
+
+                _drivenChainRelays.Add(relay);
+            }
+
+            SortDrivenRelaysByOrder();
+            _observedRelayRegistryVersion = registryVersion;
+
+            if (!IsValidRelayForRouting(_currentRouteTarget) || (_currentRouteTarget != null && _currentRouteTarget.IsDiscovered))
+                _currentRouteTarget = null;
+
+            if (!string.IsNullOrEmpty(_lastGuidanceRelayId) &&
+                (_ambiguousRelayIds.Contains(_lastGuidanceRelayId) || !_relayById.ContainsKey(_lastGuidanceRelayId)))
+            {
+                _lastGuidanceRelayId = null;
+            }
+        }
+
+        private void SortDrivenRelaysByOrder()
+        {
+            for (int i = 1; i < _drivenChainRelays.Count; i++)
+            {
+                EmergencyServiceRelay relay = _drivenChainRelays[i];
+                int relayOrder = relay.RelayOrder;
+                int insertIndex = i - 1;
+                while (insertIndex >= 0 && _drivenChainRelays[insertIndex].RelayOrder > relayOrder)
+                {
+                    _drivenChainRelays[insertIndex + 1] = _drivenChainRelays[insertIndex];
+                    insertIndex--;
+                }
+
+                _drivenChainRelays[insertIndex + 1] = relay;
+            }
         }
 
         private static EmergencyServiceRelayDirector ResolveInstance()

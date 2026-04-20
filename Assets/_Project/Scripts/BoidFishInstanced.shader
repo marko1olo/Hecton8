@@ -56,6 +56,17 @@ Shader "Hecton8/BoidFishInstanced"
         _ColorVariance ("Color Hue Variance", Float) = 0.05
         _BellyColor ("Belly Color", Color) = (0.8, 0.85, 0.9, 1.0)
         _BellyBlend ("Belly Blend (Y threshold)", Float) = 0.0
+
+        [Header(Bioluminescence)]
+        _BiolumColor ("Biolum Color", Color) = (0.16, 0.86, 0.88, 1.0)
+        _BiolumStrength ("Biolum Strength", Range(0, 4)) = 0.42
+        _BiolumPulseAmplitude ("Biolum Pulse Amplitude", Range(0, 1)) = 0.18
+        _BiolumNightResponse ("Biolum Night Response", Range(0, 2)) = 1.0
+
+        [Header(Parasite Drones)]
+        _ParasiteBaseColor ("Parasite Base Color", Color) = (0.32, 0.35, 0.42, 1.0)
+        _ParasiteGlowColor ("Parasite Glow Color", Color) = (0.22, 0.95, 1.0, 1.0)
+        _ParasiteGlowStrength ("Parasite Glow Strength", Range(0, 6)) = 1.65
     }
 
     SubShader
@@ -131,7 +142,21 @@ Shader "Hecton8/BoidFishInstanced"
                 float  _ColorVariance;
                 float4 _BellyColor;
                 float  _BellyBlend;
+                float4 _BiolumColor;
+                float  _BiolumStrength;
+                float  _BiolumPulseAmplitude;
+                float  _BiolumNightResponse;
+                float4 _ParasiteBaseColor;
+                float4 _ParasiteGlowColor;
+                float  _ParasiteGlowStrength;
             CBUFFER_END
+
+            float _SargassumBiolumPhaseMultiplier;
+            float _HectonNightFactor;
+            float4 _HectonOceanBiolumColor;
+            float _HectonOceanBiolumStrength;
+            float _ParasiteMode;
+            float _ParasiteAggression;
 
             TEXTURE2D(_BaseMap);
             SAMPLER(sampler_BaseMap);
@@ -275,7 +300,8 @@ Shader "Hecton8/BoidFishInstanced"
                 float wavePhase = phase + localPos.z * bodyWaveK;
 
                 // Amplitude scales with speed (faster = smaller wag)
-                float ampAdjusted = _TailAmplitude * (1.0 + 0.3 * instRand);
+                float parasiteMode = saturate(_ParasiteMode);
+                float ampAdjusted = _TailAmplitude * (1.0 + 0.3 * instRand) * lerp(1.0, 0.28, parasiteMode);
                 
                 // Apply displacement to local X (horizontal wag)
                 localPos.x += sin(wavePhase) * ampAdjusted * tailFactor;
@@ -335,7 +361,10 @@ Shader "Hecton8/BoidFishInstanced"
                 baseCol = saturate(baseCol);
 
                 // ── Belly/back color blend ──
+                half parasiteMode = saturate(_ParasiteMode);
+                half parasiteAggression = saturate(_ParasiteAggression);
                 half3 finalColor = lerp(baseCol, _BellyColor.rgb, input.colorBlend);
+                finalColor = lerp(finalColor, _ParasiteBaseColor.rgb, parasiteMode);
 
                 // ── Simple hemispheric lighting ──
                 // Ultra-cheap: dot(normal, up) for basic shading.
@@ -358,6 +387,19 @@ Shader "Hecton8/BoidFishInstanced"
                 half depthFade = saturate(depth / 150.0); // fade over 150m
                 half3 waterColor = half3(0.1, 0.2, 0.35);
                 color = lerp(color, waterColor, depthFade * 0.6);
+
+                half nightFactor = saturate(_HectonNightFactor * _BiolumNightResponse);
+                half biolumPhase = (_Time.y * _SargassumBiolumPhaseMultiplier) + input.instanceRand * 6.28318h + input.uv.y * 2.1h + depth * 0.012h;
+                half biolumPulse = 1.0h + sin(biolumPhase) * _BiolumPulseAmplitude;
+                half oceanBiolumInfluence = saturate(_HectonOceanBiolumStrength);
+                half3 biolumColor = lerp(_BiolumColor.rgb, _HectonOceanBiolumColor.rgb, oceanBiolumInfluence * 0.65h);
+                half biolumMask = saturate(0.28h + (1.0h - input.colorBlend) * 0.34h + (1.0h - lighting) * 0.22h);
+                color += biolumColor * (_BiolumStrength * (1.0h + oceanBiolumInfluence * 0.6h) * nightFactor * biolumPulse * biolumMask);
+
+                half parasitePulse = 1.0h + sin((_Time.y * _SargassumBiolumPhaseMultiplier * 1.65h) + input.instanceRand * 9.7h + input.uv.x * 12.0h) * 0.35h;
+                half parasiteMask = saturate(0.35h + (1.0h - abs(input.normalWS.y)) * 0.45h + input.uv.x * 0.2h);
+                color = lerp(color, color * lerp(1.0h, 0.82h, parasiteMode), parasiteMode);
+                color += _ParasiteGlowColor.rgb * (_ParasiteGlowStrength * parasiteMode * parasiteMask * parasitePulse * lerp(0.55h, 1.15h, parasiteAggression));
 
                 return half4(color, 1.0);
             }

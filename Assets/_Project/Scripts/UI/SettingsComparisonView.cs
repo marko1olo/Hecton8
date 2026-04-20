@@ -34,9 +34,9 @@ namespace Hecton8.UI
         private SettingsManager _settings;
         private bool _registered;
         private float _timer;
-        private int _pendingQualityLevel = -1;
-        private int _lastRenderedCurrentQuality = -1;
-        private int _lastRenderedPendingQuality = -1;
+        private int _pendingGraphicsPreset = -1;
+        private int _lastRenderedCurrentGraphicsPreset = -1;
+        private int _lastRenderedPendingGraphicsPreset = -1;
         private float _cachedCurrentFPS;
         private float _cachedEstimatedFPS;
         private string _cachedImpactText = string.Empty;
@@ -91,14 +91,14 @@ namespace Hecton8.UI
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Update comparison with pending quality level.
+        /// Update comparison with pending graphics preset.
         /// </summary>
-        public void UpdateComparison(int pendingQualityLevel)
+        public void UpdateComparison(int pendingGraphicsPreset)
         {
             if (_settings == null)
                 return;
 
-            _pendingQualityLevel = pendingQualityLevel;
+            _pendingGraphicsPreset = Mathf.Clamp(pendingGraphicsPreset, 0, FPSEstimates.Length - 1);
             RefreshComparison();
         }
 
@@ -137,18 +137,19 @@ namespace Hecton8.UI
             if (_settings == null)
                 return;
 
-            int currentQuality = _settings.QualityLevel;
-            int pendingQuality = _pendingQualityLevel >= 0 ? _pendingQualityLevel : currentQuality;
+            int currentGraphicsPreset = Mathf.Clamp(_settings.GraphicsPreset, 0, FPSEstimates.Length - 1);
+            int pendingGraphicsPreset = _pendingGraphicsPreset >= 0 ? _pendingGraphicsPreset : currentGraphicsPreset;
 
-            if (_lastRenderedCurrentQuality == currentQuality && _lastRenderedPendingQuality == pendingQuality)
+            if (_lastRenderedCurrentGraphicsPreset == currentGraphicsPreset &&
+                _lastRenderedPendingGraphicsPreset == pendingGraphicsPreset)
                 return;
 
-            _lastRenderedCurrentQuality = currentQuality;
-            _lastRenderedPendingQuality = pendingQuality;
+            _lastRenderedCurrentGraphicsPreset = currentGraphicsPreset;
+            _lastRenderedPendingGraphicsPreset = pendingGraphicsPreset;
 
             // Estimate FPS
-            float currentFPS = EstimateFPS(currentQuality);
-            float estimatedFPS = EstimateFPS(pendingQuality);
+            float currentFPS = EstimateFPS(currentGraphicsPreset);
+            float estimatedFPS = EstimateFPS(pendingGraphicsPreset);
 
             // Update UI if changed
             if (_cachedCurrentFPS != currentFPS)

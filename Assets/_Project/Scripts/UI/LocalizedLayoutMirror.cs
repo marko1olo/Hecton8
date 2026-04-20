@@ -1,4 +1,5 @@
 using Hecton.Localization;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -28,12 +29,29 @@ namespace Hecton8.UI
         [Tooltip("Mirror pivot and anchored X when the active language is RTL.")]
         [SerializeField] private bool mirrorRectTransform = false;
 
+        [Tooltip("Mirror icon graphics by flipping localScale.x when the active language is RTL.")]
+        [SerializeField] private bool mirrorIconScaleX = false;
+
+        [Tooltip("Optional explicit icon roots to flip for RTL locales.")]
+        [SerializeField] private RectTransform[] explicitIconRoots;
+
+        [Tooltip("Auto-discover child icons by tag when icon flipping is enabled.")]
+        [SerializeField] private bool mirrorTaggedIcons = true;
+
+        [Tooltip("Tag used for icon roots that should flip in RTL locales.")]
+        [SerializeField] private string iconTag = "Icon";
+
+        [Tooltip("Auto-discover child graphics with 'icon' in the name when icon flipping is enabled.")]
+        [SerializeField] private bool mirrorNamedIcons = true;
+
         private bool _capturedDefaults;
         private bool _baseReverseArrangement;
         private TextAnchor _baseChildAlignment;
         private Vector2 _basePivot;
         private Vector2 _baseAnchoredPosition;
         private bool _isAppliedRtl;
+        private readonly List<RectTransform> _resolvedIconRoots = new List<RectTransform>(8); // COLD ALLOC: List[8] — cached mirrored icon roots — owner: LocalizedLayoutMirror
+        private readonly List<Vector3> _baseIconScales = new List<Vector3>(8); // COLD ALLOC: List[8] — cached icon base scales — owner: LocalizedLayoutMirror
 
         private void Awake()
         {
@@ -106,6 +124,8 @@ namespace Hecton8.UI
                 }
             }
 
+            ApplyIconMirroring(rtl);
+
             _isAppliedRtl = rtl;
         }
 
@@ -137,7 +157,103 @@ namespace Hecton8.UI
                 _baseAnchoredPosition = targetRect.anchoredPosition;
             }
 
+            ResolveIconRoots();
+
             _capturedDefaults = true;
+        }
+
+        private void ApplyIconMirroring(bool rtl)
+        {
+            if (!mirrorIconScaleX)
+                return;
+
+            ResolveIconRoots();
+            for (int i = 0; i < _resolvedIconRoots.Count; i++)
+            {
+                RectTransform iconRoot = _resolvedIconRoots[i];
+                if (iconRoot == null)
+                    continue;
+
+                Vector3 baseScale = i < _baseIconScales.Count ? _baseIconScales[i] : iconRoot.localScale;
+                float mirroredX = rtl ? -Mathf.Abs(baseScale.x) : Mathf.Abs(baseScale.x);
+                iconRoot.localScale = new Vector3(mirroredX, baseScale.y, baseScale.z);
+            }
+        }
+
+        private void ResolveIconRoots()
+        {
+            _resolvedIconRoots.Clear();
+            _baseIconScales.Clear();
+
+            if (!mirrorIconScaleX)
+                return;
+
+            AddExplicitIconRoots();
+            if (mirrorTaggedIcons || mirrorNamedIcons)
+                CollectIconRoots(transform);
+        }
+
+        private void AddExplicitIconRoots()
+        {
+            if (explicitIconRoots == null)
+                return;
+
+            for (int i = 0; i < explicitIconRoots.Length; i++)
+                AddIconRoot(explicitIconRoots[i]);
+        }
+
+        private void CollectIconRoots(Transform parent)
+        {
+            if (parent == null)
+                return;
+
+            int childCount = parent.childCount;
+            for (int i = 0; i < childCount; i++)
+            {
+                Transform child = parent.GetChild(i);
+                if (child == null)
+                    continue;
+
+                RectTransform rect = child as RectTransform;
+                if (rect != null && ShouldMirrorIcon(rect))
+                    AddIconRoot(rect);
+
+                CollectIconRoots(child);
+            }
+        }
+
+        private bool ShouldMirrorIcon(RectTransform rect)
+        {
+            if (rect == null || rect == targetRect)
+                return false;
+
+            if (mirrorTaggedIcons && !string.IsNullOrEmpty(iconTag) && rect.CompareTag(iconTag))
+                return true;
+
+            if (!mirrorNamedIcons)
+                return false;
+
+            if (!rect.TryGetComponent(out Graphic _))
+                return false;
+
+            string objectName = rect.name;
+            return !string.IsNullOrEmpty(objectName) &&
+                   objectName.IndexOf("icon", System.StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private void AddIconRoot(RectTransform rect)
+        {
+            if (rect == null)
+                return;
+
+            for (int i = 0; i < _resolvedIconRoots.Count; i++)
+            {
+                if (_resolvedIconRoots[i] == rect)
+                    return;
+            }
+
+            _resolvedIconRoots.Add(rect);
+            _baseIconScales.Add(rect.localScale);
         }
 
         private static TextAnchor MirrorAlignment(TextAnchor alignment)
@@ -186,6 +302,8 @@ namespace Hecton8.UI
             mirror.mirrorChildOrder = reverseChildren;
             mirror.mirrorChildAlignment = mirrorAlignment;
             mirror.mirrorRectTransform = mirrorRectTransform;
+            mirror.mirrorIconScaleX = true;
+            mirror.mirrorNamedIcons = true;
             mirror.ResolveTargets();
             mirror._capturedDefaults = false;
             mirror.CaptureDefaults();

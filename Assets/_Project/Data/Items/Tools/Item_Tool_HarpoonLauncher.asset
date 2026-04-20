@@ -12,33 +12,43 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a49e6475ccf8054419a7fba4c7a78a5c, type: 3}
   m_Name: Item_Tool_HarpoonLauncher
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
-  itemName: Harpoon Launcher
+  legacyItemName: Harpoon Launcher
+  stableId: Item_Tool_HarpoonLauncher
   localizedItemName:
     tableKey: ITEM_TOOL_HARPOON_LAUNCHER_NAME
-    fallbackText: "Harpoon Launcher"
+    fallbackText: Harpoon Launcher
     variants: []
   icon: {fileID: 0}
-  description: High-pressure launcher for hunting, tethering and emergency lethal
-    response underwater.
+  legacyDescription: High-pressure launcher for hunting, tethering and emergency
+    lethal response underwater.
   localizedDescription:
     tableKey: ITEM_TOOL_HARPOON_LAUNCHER_DESCRIPTION
-    fallbackText: "High-pressure launcher for hunting, tethering and emergency lethal response underwater."
+    fallbackText: High-pressure launcher for hunting, tethering and emergency lethal
+      response underwater.
     variants: []
   weight: 2.8
   stackable: 0
   maxStack: 1
   category: 2
+  resourceFamily: 0
+  progressionTier: 0
+  isRawResource: 0
+  minDepth: 0
+  maxDepth: 0
   width: 2
   height: 2
   isConsumable: 0
+  useDuration: 0
   oxygenRestore: 0
   energyRestore: 0
   integrityRestore: 0
+  hungerRestore: 0
+  thirstRestore: 0
   useSound: {fileID: 0}
-  interactVerb: Take
+  legacyInteractVerb: Take
   localizedInteractVerb:
     tableKey: ITEM_INTERACT_TAKE
-    fallbackText: "Take"
+    fallbackText: Take
     variants: []
   worldPrefab: {fileID: 100100000, guid: 2f2aaf08a7039d74ab54a9f41530b73c, type: 3}
   worldBuoyancyProfile: {fileID: 11400000, guid: fa0a7e88c5c4f244f928f327d4520019, type: 2}

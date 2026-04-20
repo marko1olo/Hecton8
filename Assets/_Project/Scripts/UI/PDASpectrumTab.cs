@@ -12,6 +12,8 @@
 //   • Показывает статус сонара (последний пульс, радиус).
 // ============================================================================
 
+using Hecton8.Environment;
+using Hecton8.Bootstrap;
 using Hecton8.Visor;
 using Hecton8.Gameplay;
 using Hecton8.World;
@@ -59,6 +61,7 @@ namespace Hecton8.UI
         private TextMeshProUGUI _resourceSummaryLabel;
         private TextMeshProUGUI _bioformSummaryLabel;
         private TextMeshProUGUI _signalSummaryLabel;
+        private HectonSurvivalSystem _survivalSystem;
         // COLD ALLOC: StringBuilder[96] — sonar contact line assembly — owner: PDASpectrumTab
         private readonly StringBuilder _lineBuilder = new StringBuilder(96);
 
@@ -105,6 +108,8 @@ namespace Hecton8.UI
             SpectrumEvents.OnModeChanged += HandleModeChanged;
             SpectrumEvents.OnSonarSnapshotUpdated += HandleSonarSnapshotUpdated;
             PDAEvents.OnOpened += HandlePDAOpened;
+            BiomeMatrixDirector.OnMatrixBiomeChanged += HandleMatrixBiomeChanged;
+            BiomeMatrixDirector.OnDepthTierChanged += HandleDepthTierChanged;
 
             RefreshModeDisplay();
         }
@@ -114,6 +119,8 @@ namespace Hecton8.UI
             SpectrumEvents.OnModeChanged -= HandleModeChanged;
             SpectrumEvents.OnSonarSnapshotUpdated -= HandleSonarSnapshotUpdated;
             PDAEvents.OnOpened -= HandlePDAOpened;
+            BiomeMatrixDirector.OnMatrixBiomeChanged -= HandleMatrixBiomeChanged;
+            BiomeMatrixDirector.OnDepthTierChanged -= HandleDepthTierChanged;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -127,6 +134,8 @@ namespace Hecton8.UI
         private void HandleModeChanged(SpectrumMode mode) => RefreshModeDisplay();
         private void HandleSonarSnapshotUpdated(SpatialSonarSnapshot snapshot) => RefreshModeDisplay();
         private void HandlePDAOpened(int tab) => RefreshModeDisplay();
+        private void HandleMatrixBiomeChanged(HectonBiomeMatrixProfile profile) => RefreshModeDisplay();
+        private void HandleDepthTierChanged(int tier, float depthMeters) => RefreshModeDisplay();
 
         // ══════════════════════════════════════════════════════════
         //  BUILD UI
@@ -284,7 +293,7 @@ namespace Hecton8.UI
             // Обновляем статус
             int idx = (int)active;
             SetLabelText(_currentModeLabel, ActiveModeLabels[idx]);
-            SetLabelText(_statusLabel, ModeDescriptions[idx]);
+            RefreshStatusLabel(idx);
             if (active == SpectrumMode.Sonar && sys != null && sys.HasSonarSnapshot)
             {
                 RefreshSonarSnapshot(sys.LastSonarSnapshot);
@@ -295,16 +304,30 @@ namespace Hecton8.UI
                 SetLabelText(_contactSummaryLabel, "CONTACTS // RES 0 | BIO 0 | SIG 0");
                 SetLabelText(_resourceSummaryLabel, "NEAREST RESOURCE // NONE");
                 SetLabelText(_bioformSummaryLabel, "NEAREST BIOFORM // NONE");
-                SetLabelText(_signalSummaryLabel, "NEAREST SIGNAL // NONE");
+                RefreshLastLossLabel();
             }
             else
             {
-                SetLabelText(_sonarStatusLabel, string.Empty);
-                SetLabelText(_contactSummaryLabel, string.Empty);
-                SetLabelText(_resourceSummaryLabel, string.Empty);
-                SetLabelText(_bioformSummaryLabel, string.Empty);
-                SetLabelText(_signalSummaryLabel, string.Empty);
+                RefreshBiomeDiagnostics();
             }
+        }
+
+        private void RefreshStatusLabel(int modeIndex)
+        {
+            if (!TryResolveBiomeData(out BiomeMatrixDirector biomeDirector, out HectonBiomeMatrixProfile matrixProfile, out HectonBiomeProfile _, out AtmosphereProfile _))
+            {
+                SetLabelText(_statusLabel, ModeDescriptions[modeIndex]);
+                return;
+            }
+
+            _lineBuilder.Clear();
+            _lineBuilder.Append(ModeDescriptions[modeIndex]);
+            _lineBuilder.Append('\n');
+            _lineBuilder.Append("BIOME // ");
+            AppendBiomeName(matrixProfile);
+            _lineBuilder.Append(" // DEPTH ");
+            AppendDistance(Mathf.RoundToInt(biomeDirector.CurrentDepthMeters));
+            _statusLabel.SetText(_lineBuilder);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -336,6 +359,70 @@ namespace Hecton8.UI
             SetSignalDistanceLabel(snapshot);
         }
 
+        private void RefreshBiomeDiagnostics()
+        {
+            if (!TryResolveBiomeData(out BiomeMatrixDirector biomeDirector, out HectonBiomeMatrixProfile matrixProfile, out HectonBiomeProfile visualProfile, out AtmosphereProfile atmosphereProfile))
+            {
+                SetLabelText(_sonarStatusLabel, "BIOME // OFFLINE");
+                SetLabelText(_contactSummaryLabel, "MATRIX // UNRESOLVED");
+                SetLabelText(_resourceSummaryLabel, "TURBIDITY // N/A");
+                SetLabelText(_bioformSummaryLabel, "ABSORPTION RGB // N/A");
+                RefreshLastLossLabel();
+                return;
+            }
+
+            _lineBuilder.Clear();
+            _lineBuilder.Append("MATRIX // ");
+            AppendBiomeName(matrixProfile);
+            _lineBuilder.Append(" // TIER ");
+            AppendInt(biomeDirector.CurrentDepthTier);
+            _sonarStatusLabel.SetText(_lineBuilder);
+
+            _lineBuilder.Clear();
+            _lineBuilder.Append("DEPTH // ");
+            AppendDistance(Mathf.RoundToInt(biomeDirector.CurrentDepthMeters));
+            _lineBuilder.Append(" // MATRIX ");
+            AppendInt(Mathf.Max(0, matrixProfile.matrixIndex));
+            _contactSummaryLabel.SetText(_lineBuilder);
+
+            if (visualProfile != null)
+            {
+                _lineBuilder.Clear();
+                _lineBuilder.Append("TURBIDITY // ");
+                AppendTenths(visualProfile.turbidityMultiplier);
+                _resourceSummaryLabel.SetText(_lineBuilder);
+
+                _lineBuilder.Clear();
+                _lineBuilder.Append("ABSORPTION RGB // ");
+                AppendTenths(visualProfile.depthFogDensity.x);
+                _lineBuilder.Append(" / ");
+                AppendTenths(visualProfile.depthFogDensity.y);
+                _lineBuilder.Append(" / ");
+                AppendTenths(visualProfile.depthFogDensity.z);
+                _bioformSummaryLabel.SetText(_lineBuilder);
+            }
+            else
+            {
+                SetLabelText(_resourceSummaryLabel, "TURBIDITY // N/A");
+                SetLabelText(_bioformSummaryLabel, "ABSORPTION RGB // N/A");
+            }
+
+            if (atmosphereProfile != null)
+            {
+                _lineBuilder.Clear();
+                _lineBuilder.Append("THERMAL // ");
+                AppendSignedTenths(atmosphereProfile.temperature);
+                _lineBuilder.Append(" C // RAD ");
+                AppendTenths(atmosphereProfile.radiation);
+                AppendLastLossSuffix();
+                _signalSummaryLabel.SetText(_lineBuilder);
+            }
+            else
+            {
+                RefreshLastLossLabel();
+            }
+        }
+
         private void SetDistanceLabel(TextMeshProUGUI label, string prefix, bool hasDistance, int distanceMeters, string emptyValue)
         {
             if (!hasDistance)
@@ -352,6 +439,9 @@ namespace Hecton8.UI
 
         private void SetSignalDistanceLabel(SpatialSonarSnapshot snapshot)
         {
+            if (TryAppendLastLossLabel())
+                return;
+
             if (!snapshot.HasNearestSignal)
             {
                 SetLabelText(_signalSummaryLabel, "NEAREST SIGNAL // NONE");
@@ -366,6 +456,76 @@ namespace Hecton8.UI
             _signalSummaryLabel.SetText(_lineBuilder);
         }
 
+        private void RefreshLastLossLabel()
+        {
+            if (!TryAppendLastLossLabel())
+                SetLabelText(_signalSummaryLabel, "LAST LOSS // NONE");
+        }
+
+        private static bool TryResolveBiomeData(
+            out BiomeMatrixDirector biomeDirector,
+            out HectonBiomeMatrixProfile matrixProfile,
+            out HectonBiomeProfile visualProfile,
+            out AtmosphereProfile atmosphereProfile)
+        {
+            biomeDirector = BiomeMatrixDirector.ActiveRuntimeInstance;
+            matrixProfile = biomeDirector != null ? biomeDirector.CurrentProfile : null;
+            visualProfile = matrixProfile != null ? matrixProfile.runtimeVisualProfile : null;
+            atmosphereProfile = matrixProfile != null && matrixProfile.familyProfile != null
+                ? matrixProfile.familyProfile.atmosphereProfile
+                : null;
+            return biomeDirector != null && matrixProfile != null;
+        }
+
+        private bool TryResolveSurvivalSystem(out HectonSurvivalSystem survival)
+        {
+            if (_survivalSystem != null)
+            {
+                survival = _survivalSystem;
+                return true;
+            }
+
+            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                playerTransform != null)
+            {
+                _survivalSystem = playerTransform.GetComponent<HectonSurvivalSystem>();
+            }
+
+            survival = _survivalSystem;
+            return survival != null;
+        }
+
+        private void AppendLastLossSuffix()
+        {
+            if (!TryResolveSurvivalSystem(out HectonSurvivalSystem survival) ||
+                !survival.TryGetLastDeathRecord(out SurvivalDeathRecord record))
+            {
+                return;
+            }
+
+            _lineBuilder.Append(" // LOSS ");
+            _lineBuilder.Append(ResolveDeathCauseTag(record.Cause));
+            _lineBuilder.Append(' ');
+            AppendDistance(Mathf.RoundToInt(Vector3.Distance(survival.transform.position, record.Position)));
+        }
+
+        private bool TryAppendLastLossLabel()
+        {
+            if (!TryResolveSurvivalSystem(out HectonSurvivalSystem survival) ||
+                !survival.TryGetLastDeathRecord(out SurvivalDeathRecord record))
+            {
+                return false;
+            }
+
+            _lineBuilder.Clear();
+            _lineBuilder.Append("LAST LOSS // ");
+            _lineBuilder.Append(ResolveDeathCauseTag(record.Cause));
+            _lineBuilder.Append(' ');
+            AppendDistance(Mathf.RoundToInt(Vector3.Distance(survival.transform.position, record.Position)));
+            _signalSummaryLabel.SetText(_lineBuilder);
+            return true;
+        }
+
         private void AppendInt(int value)
         {
             int clampedValue = Mathf.Clamp(value, 0, HudNumericStringCache.MaxIntegerValue);
@@ -377,6 +537,43 @@ namespace Hecton8.UI
             int clampedDistance = Mathf.Clamp(distanceMeters, 0, HudNumericStringCache.MaxIntegerValue);
             _lineBuilder.Append(HudNumericStringCache.IntStrings[clampedDistance]);
             _lineBuilder.Append('M');
+        }
+
+        private void AppendTenths(float value)
+        {
+            int roundedTenths = Mathf.Abs(Mathf.RoundToInt(value * 10f));
+            int maxHudTenths = HudNumericStringCache.MaxIntegerValue * 10 + 9;
+            int clampedTenths = Mathf.Clamp(roundedTenths, 0, maxHudTenths);
+            _lineBuilder.Append(HudNumericStringCache.IntStrings[clampedTenths / 10]);
+            _lineBuilder.Append('.');
+            _lineBuilder.Append(HudNumericStringCache.IntStrings[clampedTenths % 10]);
+        }
+
+        private void AppendSignedTenths(float value)
+        {
+            int roundedTenths = Mathf.RoundToInt(value * 10f);
+            if (roundedTenths < 0)
+            {
+                _lineBuilder.Append('-');
+                roundedTenths = -roundedTenths;
+            }
+
+            int maxHudTenths = HudNumericStringCache.MaxIntegerValue * 10 + 9;
+            int clampedTenths = Mathf.Clamp(roundedTenths, 0, maxHudTenths);
+            _lineBuilder.Append(HudNumericStringCache.IntStrings[clampedTenths / 10]);
+            _lineBuilder.Append('.');
+            _lineBuilder.Append(HudNumericStringCache.IntStrings[clampedTenths % 10]);
+        }
+
+        private void AppendBiomeName(HectonBiomeMatrixProfile matrixProfile)
+        {
+            if (matrixProfile == null || string.IsNullOrEmpty(matrixProfile.biomeName))
+            {
+                _lineBuilder.Append("UNRESOLVED");
+                return;
+            }
+
+            _lineBuilder.Append(matrixProfile.biomeName);
         }
 
         private static string ResolveSignalRoleLabel(FieldTargetRole role)
@@ -421,6 +618,29 @@ namespace Hecton8.UI
         // ══════════════════════════════════════════════════════════
         //  NESTED TYPES
         // ══════════════════════════════════════════════════════════
+
+        private static string ResolveDeathCauseTag(SurvivalDeathCause cause)
+        {
+            switch (cause)
+            {
+                case SurvivalDeathCause.OxygenDepletion:
+                    return "O2";
+                case SurvivalDeathCause.PressureCollapse:
+                    return "PRESS";
+                case SurvivalDeathCause.ThermalFailure:
+                    return "THERM";
+                case SurvivalDeathCause.RadiationExposure:
+                    return "RAD";
+                case SurvivalDeathCause.Starvation:
+                    return "HUNGER";
+                case SurvivalDeathCause.Dehydration:
+                    return "THIRST";
+                case SurvivalDeathCause.IntegrityFailure:
+                    return "HULL";
+                default:
+                    return "LOSS";
+            }
+        }
 
         private struct ModeButton
         {

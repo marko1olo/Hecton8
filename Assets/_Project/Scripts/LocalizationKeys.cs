@@ -247,6 +247,7 @@ namespace Hecton.Localization
         public const string AUDIOLOG_NO_PAYLOAD = "AUDIOLOG_NO_PAYLOAD";
         public const string AUDIOLOG_TEXT_ONLY_PREFIX = "AUDIOLOG_TEXT_ONLY_PREFIX";
         public const string AUDIOLOG_ARCHIVE_ONLY_PREFIX = "AUDIOLOG_ARCHIVE_ONLY_PREFIX";
+        public const string AUDIOLOG_PLAYING = "AUDIOLOG_PLAYING";
         public const string AUDIOLOG_ENCRYPTED = "AUDIOLOG_ENCRYPTED";
         public const string AUDIOLOG_ENCRYPTED_SUMMARY = "AUDIOLOG_ENCRYPTED_SUMMARY";
         public const string AUDIOLOG_UNKNOWN_AUTHOR = "AUDIOLOG_UNKNOWN_AUTHOR";
@@ -260,6 +261,20 @@ namespace Hecton.Localization
         public const string AUDIOLOG_CATEGORY_EMERGENCY = "AUDIOLOG_CATEGORY_EMERGENCY";
         public const string AUDIOLOG_CATEGORY_ATLAS6 = "AUDIOLOG_CATEGORY_ATLAS6";
         public const string AUDIOLOG_CATEGORY_UNKNOWN = "AUDIOLOG_CATEGORY_UNKNOWN";
+        public const string PDA_SHELL_TITLE = "PDA_SHELL_TITLE";
+        public const string PDA_TAB_INVENTORY = "PDA_TAB_INVENTORY";
+        public const string PDA_TAB_LOADOUT = "PDA_TAB_LOADOUT";
+        public const string PDA_TAB_CONSTRUCTION = "PDA_TAB_CONSTRUCTION";
+        public const string PDA_TAB_BARTER = "PDA_TAB_BARTER";
+        public const string PDA_TAB_DATA_LOG = "PDA_TAB_DATA_LOG";
+        public const string PDA_TAB_SPECTRUM = "PDA_TAB_SPECTRUM";
+        public const string PDA_TAB_UNKNOWN = "PDA_TAB_UNKNOWN";
+        public const string PDA_FOOTER_LEFT = "PDA_FOOTER_LEFT";
+        public const string PDA_FOOTER_RIGHT_ONLINE = "PDA_FOOTER_RIGHT_ONLINE";
+        public const string PDA_FOOTER_RIGHT_STANDBY = "PDA_FOOTER_RIGHT_STANDBY";
+        public const string TECH_O2_SPEC = "TECH_O2_SPEC";
+        public const string TECH_HULL_SPEC = "TECH_HULL_SPEC";
+        public const string TECH_PWR_BUS = "TECH_PWR_BUS";
 
         // Save station / world notifications
         public const string SAVE_STATION_OFFLINE = "SAVE_STATION_OFFLINE";

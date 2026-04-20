@@ -90,6 +90,14 @@ namespace Hecton8.World
         {
             if (string.IsNullOrEmpty(zoneId))
                 zoneId = name.ToLower().Replace(" ", "_");
+            else
+                zoneId = zoneId.Trim();
+
+            if (string.IsNullOrWhiteSpace(discoveryId))
+                discoveryId = zoneId;
+            else
+                discoveryId = discoveryId.Trim();
+
             if (maxDepth <= minDepth)
                 maxDepth = minDepth + 100f;
         }

@@ -21,6 +21,7 @@ namespace Hecton8.UI
         private const int ThumbnailWidth = 320;
         private const int ThumbnailHeight = 180;
         private const string ThumbnailExtension = ".png";
+        private const string TempThumbnailExtension = ".png.tmp";
 
         // ══════════════════════════════════════════════════════════
         // INSPECTOR
@@ -117,6 +118,7 @@ namespace Hecton8.UI
             // Encode to PNG and save
             byte[] pngData = screenshot.EncodeToPNG();
             string thumbnailPath = GetThumbnailPath(slotName);
+            string tempThumbnailPath = GetTempThumbnailPath(slotName);
 
             try
             {
@@ -124,7 +126,15 @@ namespace Hecton8.UI
                 if (!Directory.Exists(directory))
                     Directory.CreateDirectory(directory);
 
-                File.WriteAllBytes(thumbnailPath, pngData);
+                if (File.Exists(tempThumbnailPath))
+                    File.Delete(tempThumbnailPath);
+
+                File.WriteAllBytes(tempThumbnailPath, pngData);
+
+                if (File.Exists(thumbnailPath))
+                    File.Replace(tempThumbnailPath, thumbnailPath, null, true);
+                else
+                    File.Move(tempThumbnailPath, thumbnailPath);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.Log($"[SaveSlotThumbnail] Captured thumbnail for {slotName}: {thumbnailPath}");
@@ -132,6 +142,7 @@ namespace Hecton8.UI
             }
             catch (System.Exception ex)
             {
+                TryDeleteTempThumbnail(tempThumbnailPath);
                 Debug.LogError($"[SaveSlotThumbnail] Failed to save thumbnail for {slotName}: {ex.Message}");
             }
 
@@ -192,6 +203,16 @@ namespace Hecton8.UI
         // ══════════════════════════════════════════════════════════
         // PRIVATE
         // ══════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Injects an explicit capture camera from the local save-thumbnail owner.
+        /// </summary>
+        internal void SetCaptureCamera(Camera camera)
+        {
+            captureCamera = camera;
+            if (camera != null)
+                _fallbackCaptureCamera = camera;
+        }
 
         private void ShowThumbnail(Texture2D texture)
         {
@@ -355,6 +376,27 @@ namespace Hecton8.UI
         {
             string saveDirectory = Path.Combine(Application.persistentDataPath, "Saves");
             return Path.Combine(saveDirectory, slotName + ThumbnailExtension);
+        }
+
+        private static string GetTempThumbnailPath(string slotName)
+        {
+            string saveDirectory = Path.Combine(Application.persistentDataPath, "Saves");
+            return Path.Combine(saveDirectory, slotName + TempThumbnailExtension);
+        }
+
+        private static void TryDeleteTempThumbnail(string tempThumbnailPath)
+        {
+            if (string.IsNullOrEmpty(tempThumbnailPath) || !File.Exists(tempThumbnailPath))
+                return;
+
+            try
+            {
+                File.Delete(tempThumbnailPath);
+            }
+            catch
+            {
+                // Ignore cleanup failure. The authoritative thumbnail path remains unchanged.
+            }
         }
     }
 }

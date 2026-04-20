@@ -43,6 +43,19 @@ namespace Hecton8.Gameplay
         [Tooltip("Mount and dismount one-shot volume.")]
         [SerializeField, Range(0f, 1f)] private float transportAudioVolume = 0.8f;
 
+        [Header("-- Bailout Drift --------------------")]
+        [Tooltip("How long a violently abandoned transport keeps drifting on inherited inertia before settling into passive sink.")]
+        [SerializeField, Range(0.1f, 8f)] private float bailoutDriftDuration = 4.5f;
+
+        [Tooltip("Downward acceleration applied while a broken transport is drifting riderless after emergency bailout.")]
+        [SerializeField, Range(0f, 20f)] private float bailoutSinkAcceleration = 2.8f;
+
+        [Tooltip("Linear damping imposed during emergency bailout drift so the transport coasts, yaws, and then starts to sink out.")]
+        [SerializeField, Range(0f, 8f)] private float bailoutLinearDamping = 1.35f;
+
+        [Tooltip("Angular damping imposed during emergency bailout drift to avoid endless spin after the rider is thrown clear.")]
+        [SerializeField, Range(0f, 12f)] private float bailoutAngularDamping = 2.4f;
+
         [Header("-- Debug ----------------------------")]
         [SerializeField] private bool debugTransportState;
 
@@ -74,6 +87,11 @@ namespace Hecton8.Gameplay
         private float _currentIntegrity = -1f;
         private string _cachedMountText = DefaultMountText;
         private string _cachedDismountText = DefaultDismountText;
+        private float _bailoutDriftTimer;
+        private float _cachedLinearDamping;
+        private float _cachedAngularDamping;
+        private bool _hasCachedBodyDamping;
+        private bool _cachedBodyWasKinematic = true;
 
         /// <summary>True while this external transport is actively mounted by the rider.</summary>
         public bool IsMounted => _mounted;
@@ -248,10 +266,25 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void FixedTick(float fixedDeltaTime)
         {
-            if (!_mounted || _riderTransform == null)
+            if (_mounted && _riderTransform != null)
+            {
+                AlignTransportToRider(fixedDeltaTime);
                 return;
+            }
 
-            AlignTransportToRider(fixedDeltaTime);
+            if (_bailoutDriftTimer <= 0f || _transportBody == null)
+            {
+                TryRestoreBodyFromBailoutDrift();
+                return;
+            }
+
+            _bailoutDriftTimer -= fixedDeltaTime;
+            if (_bailoutDriftTimer < 0f)
+                _bailoutDriftTimer = 0f;
+
+            _transportBody.linearDamping = bailoutLinearDamping;
+            _transportBody.angularDamping = bailoutAngularDamping;
+            _transportBody.AddForce(Vector3.down * bailoutSinkAcceleration * fixedDeltaTime, ForceMode.VelocityChange);
         }
 
         /// <summary>Current propulsion force contributed by this transport.</summary>
@@ -327,6 +360,8 @@ namespace Hecton8.Gameplay
             if (preset == null || _mounted)
                 return;
 
+            TryRestoreBodyFromBailoutDrift();
+
             if (!ResolveRiderReferences(interactor))
                 return;
 
@@ -362,25 +397,19 @@ namespace Hecton8.Gameplay
 
         private void DismountRider(bool placeRiderAtExit)
         {
+            DismountRiderInternal(placeRiderAtExit, zeroRiderVelocity: true);
+        }
+
+        internal void TriggerEmergencyBailoutDrift(Vector3 inheritedVelocity, float severity)
+        {
             if (!_mounted)
+            {
+                BeginEmergencyBailoutDrift(inheritedVelocity, severity);
                 return;
+            }
 
-            if (placeRiderAtExit)
-                MoveRiderToDismountPoint();
-
-            if (_riderTransportCoordinator != null)
-                _riderTransportCoordinator.ClearExternalTransportSource(this);
-
-            RestoreRiderInteraction();
-            UnsubscribeMountedInput();
-            RestoreInteractionCollider();
-            ZeroRiderVelocity();
-            PlayTransportOneShot(dismountSound);
-            ClearRiderReferences();
-
-            _mounted = false;
-            _transportActive = false;
-            _currentThrottle = 0f;
+            DismountRiderInternal(placeRiderAtExit: false, zeroRiderVelocity: false);
+            BeginEmergencyBailoutDrift(inheritedVelocity, severity);
         }
 
         private void ForceReleaseMountedRider()
@@ -621,6 +650,66 @@ namespace Hecton8.Gameplay
 
             if (_mounted)
                 DismountRider(true);
+        }
+
+        private void DismountRiderInternal(bool placeRiderAtExit, bool zeroRiderVelocity)
+        {
+            if (!_mounted)
+                return;
+
+            if (placeRiderAtExit)
+                MoveRiderToDismountPoint();
+
+            if (_riderTransportCoordinator != null)
+                _riderTransportCoordinator.ClearExternalTransportSource(this);
+
+            RestoreRiderInteraction();
+            UnsubscribeMountedInput();
+            RestoreInteractionCollider();
+            if (zeroRiderVelocity)
+                ZeroRiderVelocity();
+
+            PlayTransportOneShot(dismountSound);
+            ClearRiderReferences();
+
+            _mounted = false;
+            _transportActive = false;
+            _currentThrottle = 0f;
+        }
+
+        private void BeginEmergencyBailoutDrift(Vector3 inheritedVelocity, float severity)
+        {
+            if (_transportBody == null)
+                return;
+
+            if (!_hasCachedBodyDamping)
+            {
+                _cachedLinearDamping = _transportBody.linearDamping;
+                _cachedAngularDamping = _transportBody.angularDamping;
+                _cachedBodyWasKinematic = _transportBody.isKinematic;
+                _hasCachedBodyDamping = true;
+            }
+
+            if (_transportBody.isKinematic)
+                _transportBody.isKinematic = false;
+
+            _transportBody.WakeUp();
+            _transportBody.linearVelocity = inheritedVelocity * Mathf.Lerp(0.88f, 1.04f, Mathf.Clamp01(severity));
+            _transportBody.angularVelocity = new Vector3(0f, Mathf.Lerp(0.6f, 2.2f, Mathf.Clamp01(severity)), 0f);
+            _transportBody.linearDamping = bailoutLinearDamping;
+            _transportBody.angularDamping = bailoutAngularDamping;
+            _bailoutDriftTimer = bailoutDriftDuration;
+        }
+
+        private void TryRestoreBodyFromBailoutDrift()
+        {
+            if (_transportBody == null || !_hasCachedBodyDamping || _bailoutDriftTimer > 0f)
+                return;
+
+            _transportBody.linearDamping = _cachedLinearDamping;
+            _transportBody.angularDamping = _cachedAngularDamping;
+            if (!_isBroken)
+                _transportBody.isKinematic = _cachedBodyWasKinematic;
         }
 
         private void RebuildPromptCache()

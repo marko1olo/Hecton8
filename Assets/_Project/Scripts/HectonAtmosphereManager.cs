@@ -154,6 +154,12 @@ namespace Hecton8.Atmosphere
 
         private static readonly int _shaderID_SunDirection =
             Shader.PropertyToID("_SunDirection");
+        private static readonly int _shaderID_HectonTimeOfDay01 =
+            Shader.PropertyToID("_HectonTimeOfDay01");
+        private static readonly int _shaderID_HectonNightFactor =
+            Shader.PropertyToID("_HectonNightFactor");
+        private static readonly int _shaderID_SargassumBiolumPhaseMultiplier =
+            Shader.PropertyToID("_SargassumBiolumPhaseMultiplier");
 
         #endregion
 
@@ -239,6 +245,9 @@ namespace Hecton8.Atmosphere
 
         /// <summary>Cached shader property values (for dirty-write batching).</summary>
         private float3 _cachedShaderSunDirection = new float3(0f, -1f, 0f);
+        private float _cachedShaderTimeOfDay01 = -1f;
+        private float _cachedShaderNightFactor = -1f;
+        private float _cachedShaderSargassumBiolumPhaseMultiplier = float.NaN;
 
         /// <summary>Dictionary for O(1) biome profile lookup (instead of linear search).</summary>
         private Dictionary<int, AtmosphereProfile> _biomeProfileDict;
@@ -396,6 +405,9 @@ namespace Hecton8.Atmosphere
                 EditorApplication.update -= EditorTick;
             }
 #endif
+
+            if (_instance == this)
+                ResetCycleShaderGlobals();
         }
 
         private void OnDestroy()
@@ -405,6 +417,8 @@ namespace Hecton8.Atmosphere
 
             if (_instance != this) return;
             _instance = null;
+
+            ResetCycleShaderGlobals();
 
             if (Application.isPlaying)
                 OnStateChanged = null;
@@ -532,6 +546,8 @@ namespace Hecton8.Atmosphere
                     _shaderID_SunDirection,
                     new Vector4(sunForward.x, sunForward.y, sunForward.z, 0f));
             }
+
+            PublishCycleShaderGlobals(_cycleTimer / _cycleDuration);
 
             SyncWaterSurfaceFromPlayerMovement();
 
@@ -695,6 +711,47 @@ namespace Hecton8.Atmosphere
                     _shaderID_SunDirection,
                     new Vector4(sunForward.x, sunForward.y, sunForward.z, 0f));
             }
+
+            PublishCycleShaderGlobals(normalized);
+        }
+
+        private void PublishCycleShaderGlobals(float normalizedTime)
+        {
+            float timeOfDay01 = math.saturate(normalizedTime);
+            float thresholdSin = math.sin(math.radians(_nightThresholdAngle));
+            float thresholdSpan = math.max(thresholdSin * 2f, 0.001f);
+            float daytimeLerp = math.saturate((_sunElevationDot + thresholdSin) / thresholdSpan);
+            float smoothedDaytime = daytimeLerp * daytimeLerp * (3f - 2f * daytimeLerp);
+            float nightFactor = 1f - smoothedDaytime;
+            float biolumPhaseMultiplier = HectonVegetationConstants.SargassumBiolumPhaseMultiplier;
+
+            if (math.abs(timeOfDay01 - _cachedShaderTimeOfDay01) > 0.0001f)
+            {
+                _cachedShaderTimeOfDay01 = timeOfDay01;
+                Shader.SetGlobalFloat(_shaderID_HectonTimeOfDay01, timeOfDay01);
+            }
+
+            if (math.abs(nightFactor - _cachedShaderNightFactor) > 0.0001f)
+            {
+                _cachedShaderNightFactor = nightFactor;
+                Shader.SetGlobalFloat(_shaderID_HectonNightFactor, nightFactor);
+            }
+
+            if (math.abs(biolumPhaseMultiplier - _cachedShaderSargassumBiolumPhaseMultiplier) > 0.0001f || float.IsNaN(_cachedShaderSargassumBiolumPhaseMultiplier))
+            {
+                _cachedShaderSargassumBiolumPhaseMultiplier = biolumPhaseMultiplier;
+                Shader.SetGlobalFloat(_shaderID_SargassumBiolumPhaseMultiplier, biolumPhaseMultiplier);
+            }
+        }
+
+        private void ResetCycleShaderGlobals()
+        {
+            _cachedShaderTimeOfDay01 = -1f;
+            _cachedShaderNightFactor = -1f;
+            _cachedShaderSargassumBiolumPhaseMultiplier = float.NaN;
+            Shader.SetGlobalFloat(_shaderID_HectonTimeOfDay01, 0f);
+            Shader.SetGlobalFloat(_shaderID_HectonNightFactor, 0f);
+            Shader.SetGlobalFloat(_shaderID_SargassumBiolumPhaseMultiplier, HectonVegetationConstants.SargassumBiolumPhaseMultiplier);
         }
 
         #endregion

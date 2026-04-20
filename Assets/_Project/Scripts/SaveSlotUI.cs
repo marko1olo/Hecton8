@@ -142,19 +142,54 @@ namespace Hecton.UI.MainMenu
             if (slotNameText != null && detailsText != null)
                 return;
 
+            TMP_Text namedSlotNameText = null;
+            TMP_Text namedDetailsText = null;
+            FindNamedTextReferences(transform, ref namedSlotNameText, ref namedDetailsText);
+
             TMP_Text firstText = null;
             TMP_Text secondText = null;
-            FindTextReferences(transform, ref firstText, ref secondText);
+            if (namedSlotNameText == null || namedDetailsText == null)
+                FindTextReferences(transform, ref firstText, ref secondText);
 
             if (slotNameText == null)
-                slotNameText = firstText;
+                slotNameText = namedSlotNameText != null ? namedSlotNameText : firstText;
 
             if (detailsText == null)
-                detailsText = secondText;
+            {
+                TMP_Text detailsCandidate = namedDetailsText != null ? namedDetailsText : secondText;
+                if (detailsCandidate != slotNameText)
+                    detailsText = detailsCandidate;
+            }
 
             _useCompactSingleTextLayout = slotNameText != null && detailsText == null;
             if (_useCompactSingleTextLayout)
                 ConfigureCompactSingleTextLayout(slotNameText);
+        }
+
+        private static void FindNamedTextReferences(Transform parent, ref TMP_Text slotText, ref TMP_Text detailsText)
+        {
+            if (parent == null || (slotText != null && detailsText != null))
+                return;
+
+            for (int i = 0; i < parent.childCount; i++)
+            {
+                Transform child = parent.GetChild(i);
+                if (child == null)
+                    continue;
+
+                if (child.TryGetComponent(out TMP_Text text))
+                {
+                    string candidateName = child.name;
+                    if (slotText == null && IsTextNameMatch(candidateName, "slot", "title", "header", "name"))
+                        slotText = text;
+                    else if (detailsText == null && IsTextNameMatch(candidateName, "detail", "meta", "info", "status", "body"))
+                        detailsText = text;
+                }
+
+                FindNamedTextReferences(child, ref slotText, ref detailsText);
+                if (slotText != null && detailsText != null)
+                    return;
+            }
         }
 
         private static void FindTextReferences(Transform parent, ref TMP_Text firstText, ref TMP_Text secondText)
@@ -183,6 +218,24 @@ namespace Hecton.UI.MainMenu
                 if (secondText != null)
                     return;
             }
+        }
+
+        private static bool IsTextNameMatch(string candidateName, params string[] tokens)
+        {
+            if (string.IsNullOrEmpty(candidateName) || tokens == null)
+                return false;
+
+            for (int i = 0; i < tokens.Length; i++)
+            {
+                string token = tokens[i];
+                if (!string.IsNullOrEmpty(token) &&
+                    candidateName.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static void ConfigureCompactSingleTextLayout(TMP_Text text)
@@ -268,8 +321,10 @@ namespace Hecton.UI.MainMenu
             if (_exists)
             {
                 string formattedPlaytime = FormatPlaytime(_playtime);
-                string sceneChunk = string.IsNullOrEmpty(_sceneName) ? string.Empty : string.Concat(" | ", _sceneName);
-                string statusChunk = string.IsNullOrEmpty(_statusLabel) ? string.Empty : string.Concat("\n", _statusLabel);
+                string sceneLabel = ResolveSceneLabel(loc, _sceneName);
+                string statusLabel = ResolveStatusLabel(loc, _integrityState, _statusLabel);
+                string sceneChunk = string.IsNullOrEmpty(sceneLabel) ? string.Empty : string.Concat(" | ", sceneLabel);
+                string statusChunk = string.IsNullOrEmpty(statusLabel) ? string.Empty : string.Concat("\n", statusLabel);
                 return string.Concat(_timestamp, " | ", formattedPlaytime, sceneChunk, statusChunk);
             }
 
@@ -304,6 +359,45 @@ namespace Hecton.UI.MainMenu
 
         private static string GetCompactSceneName(LocalizationManager loc, string sceneName)
         {
+            string sceneLabel = ResolveSceneLabel(loc, sceneName);
+            if (string.IsNullOrEmpty(sceneLabel))
+                return string.Empty;
+
+            const int CompactSceneNameLimit = 16;
+            if (sceneLabel.Length <= CompactSceneNameLimit)
+                return sceneLabel;
+
+            return string.Concat(sceneLabel.Substring(0, CompactSceneNameLimit - 1), "...");
+        }
+
+        private static string GetCompactStatusLabel(
+            LocalizationManager loc,
+            SaveSlotIntegrityState integrityState,
+            string fallbackStatusLabel)
+        {
+            switch (integrityState)
+            {
+                case SaveSlotIntegrityState.Healthy:
+                    return string.Empty;
+                case SaveSlotIntegrityState.HealthyWithBackup:
+                    return ResolveCompactLabel(loc, LocalizationKeys.SLOT_STATUS_BACKUP, "BACKUP");
+                case SaveSlotIntegrityState.BackupOnly:
+                    return ResolveCompactLabel(loc, LocalizationKeys.SLOT_STATUS_BACKUP_ONLY, "BACKUP ONLY");
+                case SaveSlotIntegrityState.MissingMetadata:
+                    return ResolveCompactLabel(loc, LocalizationKeys.SLOT_STATUS_NO_META, "NO META");
+                case SaveSlotIntegrityState.MetadataRecoveredFromBackup:
+                    return ResolveCompactLabel(loc, LocalizationKeys.SLOT_STATUS_META_RESTORED, "META RESTORED");
+                case SaveSlotIntegrityState.MetadataSynthesized:
+                    return ResolveCompactLabel(loc, LocalizationKeys.SLOT_STATUS_META_SYNTH, "META SYNTH");
+                case SaveSlotIntegrityState.CorruptedMetadata:
+                    return ResolveCompactLabel(loc, LocalizationKeys.SLOT_STATUS_CORRUPT, "CORRUPT");
+                default:
+                    return string.IsNullOrEmpty(fallbackStatusLabel) ? string.Empty : fallbackStatusLabel;
+            }
+        }
+
+        private static string ResolveSceneLabel(LocalizationManager loc, string sceneName)
+        {
             if (string.IsNullOrEmpty(sceneName))
                 return string.Empty;
 
@@ -314,14 +408,10 @@ namespace Hecton.UI.MainMenu
                     : "WORLD";
             }
 
-            const int CompactSceneNameLimit = 16;
-            if (sceneName.Length <= CompactSceneNameLimit)
-                return sceneName;
-
-            return string.Concat(sceneName.Substring(0, CompactSceneNameLimit - 1), "...");
+            return sceneName;
         }
 
-        private static string GetCompactStatusLabel(
+        private static string ResolveStatusLabel(
             LocalizationManager loc,
             SaveSlotIntegrityState integrityState,
             string fallbackStatusLabel)

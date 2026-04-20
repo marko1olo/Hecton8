@@ -12,17 +12,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a49e6475ccf8054419a7fba4c7a78a5c, type: 3}
   m_Name: Comp_PressureSeal
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
-  itemName: Pressure Seal
+  legacyItemName: Pressure Seal
+  stableId: Comp_PressureSeal
   localizedItemName:
     tableKey: ITEM_PRESSURE_SEAL_NAME
-    fallbackText: "Pressure Seal"
+    fallbackText: Pressure Seal
     variants: []
   icon: {fileID: 0}
-  description: Layered seal rated for flooded modules, hatch rings, and suit pressure
-    joints.
+  legacyDescription: Layered seal rated for flooded modules, hatch rings, and suit
+    pressure joints.
   localizedDescription:
     tableKey: ITEM_PRESSURE_SEAL_DESCRIPTION
-    fallbackText: "Layered seal rated for flooded modules, hatch rings, and suit pressure joints."
+    fallbackText: Layered seal rated for flooded modules, hatch rings, and suit pressure
+      joints.
     variants: []
   weight: 0.45
   stackable: 1
@@ -31,17 +33,22 @@ MonoBehaviour:
   resourceFamily: 7
   progressionTier: 2
   isRawResource: 0
+  minDepth: 0
+  maxDepth: 0
   width: 1
   height: 1
   isConsumable: 0
+  useDuration: 0
   oxygenRestore: 0
   energyRestore: 0
   integrityRestore: 0
+  hungerRestore: 0
+  thirstRestore: 0
   useSound: {fileID: 0}
-  interactVerb: Take
+  legacyInteractVerb: Take
   localizedInteractVerb:
     tableKey: ITEM_INTERACT_TAKE
-    fallbackText: "Take"
+    fallbackText: Take
     variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

@@ -133,7 +133,7 @@ Need to assign in SettingsManager component:
 - No LINQ, no string concat in hot paths
 - Pre-allocated arrays for quality names (ShadowQualityNames, AntiAliasingNames, TextureQualityNames)
 
-### URP Volume Integration ✅
+### URP Volume Integration ⚠️
 ```csharp
 private void ApplyPostProcessing()
 {
@@ -141,9 +141,6 @@ private void ApplyPostProcessing()
         return;
 
     VolumeProfile profile = urpVolume.profile;
-
-    if (profile.TryGet(out ScreenSpaceAmbientOcclusion ssao))
-        ssao.active = _cachedAmbientOcclusion;
 
     if (profile.TryGet(out UnityEngine.Rendering.Universal.Bloom bloom))
         bloom.active = _cachedBloom;
@@ -226,12 +223,14 @@ private void ApplyCameraFOV(float fov)
 - Inspector wiring is no longer the primary pending task for `01_MAIN_MENU`; the settings panel hierarchy and serialized references were rebuilt in-scene.
 - `SettingsManager.mainCamera` and `SettingsManager.urpVolume` are assigned in the authored scene state.
 - `AmbientOcclusion` is persisted in settings data, but this document previously overstated runtime support.
+- `UnityEngine.Rendering.Universal.ScreenSpaceAmbientOcclusion` exists, but in Unity 6000 it is a `ScriptableRendererFeature`, not a `VolumeComponent`.
 - The project does not currently expose a live renderer-feature owner for SSAO through `VolumeProfile.TryGet`.
 - Live post-processing preview in this branch only has a concrete scene owner for Bloom and Motion Blur.
 - Any claim here that AO/Bloom/Motion Blur are all driven the same way through URP Volume is false for the current project state.
+- `SettingsComparisonView` now compares persisted graphics presets, not raw `QualityLevel`, so `High` and `Ultra` no longer collapse into one estimate row.
 - Play mode verification remains `PENDING VERIFICATION`.
 
-**Backend**: 100% complete. URP Volume integration, Camera FOV application, quality presets, persistence — all working.
+**Backend**: partial. Camera FOV, persistence, presets, Bloom, and Motion Blur are wired; AO still lacks a truthful runtime owner in the current stack.
 
 **UI Layout**: 80% complete. Core structure created (presets, FOV, shadow distance, toggles, audio, actions). Missing: additional volume sliders, quality buttons, reset button.
 

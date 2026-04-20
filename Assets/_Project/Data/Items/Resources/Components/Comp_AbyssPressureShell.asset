@@ -12,16 +12,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a49e6475ccf8054419a7fba4c7a78a5c, type: 3}
   m_Name: Comp_AbyssPressureShell
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
-  itemName: Abyss Pressure Shell
+  legacyItemName: Abyss Pressure Shell
+  stableId: Comp_AbyssPressureShell
   localizedItemName:
     tableKey: ITEM_ABYSS_PRESSURE_SHELL_NAME
-    fallbackText: "Abyss Pressure Shell"
+    fallbackText: Abyss Pressure Shell
     variants: []
   icon: {fileID: 0}
-  description: Endgame deep shell for extreme pressure housings and abyss-ready upgrades.
+  legacyDescription: Endgame deep shell for extreme pressure housings and abyss-ready
+    upgrades.
   localizedDescription:
     tableKey: ITEM_ABYSS_PRESSURE_SHELL_DESCRIPTION
-    fallbackText: "Endgame deep shell for extreme pressure housings and abyss-ready upgrades."
+    fallbackText: Endgame deep shell for extreme pressure housings and abyss-ready
+      upgrades.
     variants: []
   weight: 1
   stackable: 1
@@ -30,17 +33,22 @@ MonoBehaviour:
   resourceFamily: 7
   progressionTier: 4
   isRawResource: 0
+  minDepth: 0
+  maxDepth: 0
   width: 1
   height: 1
   isConsumable: 0
+  useDuration: 0
   oxygenRestore: 0
   energyRestore: 0
   integrityRestore: 0
+  hungerRestore: 0
+  thirstRestore: 0
   useSound: {fileID: 0}
-  interactVerb: Take
+  legacyInteractVerb: Take
   localizedInteractVerb:
     tableKey: ITEM_INTERACT_TAKE
-    fallbackText: "Take"
+    fallbackText: Take
     variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

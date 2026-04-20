@@ -64,6 +64,8 @@ namespace Hecton8.Building
         [Header("Identity")]
         [Tooltip("Название модуля для UI: 'Фундамент', 'Коридор'")]
         public string moduleName = "Module";
+        [Tooltip("Stable module ID used by saves, scanner archives, and future content packs. Leave empty to fall back to the asset name.")]
+        [SerializeField] private string stableId = string.Empty;
 
         [Tooltip("Иконка для меню строительства (опционально)")]
         public Sprite icon;
@@ -128,6 +130,9 @@ namespace Hecton8.Building
                 UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
                 return;
 
+            if (string.IsNullOrWhiteSpace(stableId) && !string.IsNullOrWhiteSpace(name))
+                stableId = name;
+
             RebuildCache();
         }
 #endif
@@ -174,7 +179,28 @@ namespace Hecton8.Building
 
         public bool IsPassive => Mathf.Approximately(powerRating, 0f);
 
+        /// <summary>
+        /// Stable content identifier used by persistence-facing systems.
+        /// </summary>
+        public string PersistentId => string.IsNullOrWhiteSpace(stableId) ? name : stableId;
+
         public string FamilyLabel => CachedToUpperInvariant(family.ToString());
+
+        /// <summary>
+        /// Returns true when the supplied ID matches the authored stable ID or the legacy asset name.
+        /// </summary>
+        public bool MatchesPersistentId(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+                return false;
+
+            string persistentId = PersistentId;
+            if (string.Equals(persistentId, id, StringComparison.Ordinal))
+                return true;
+
+            return !string.Equals(name, persistentId, StringComparison.Ordinal) &&
+                   string.Equals(name, id, StringComparison.Ordinal);
+        }
 
         public string FamilyShortCode
         {

@@ -73,6 +73,8 @@ namespace Hecton8.Quest
         // Lookup: questId → QuestData (COLD ALLOC)
         private readonly Dictionary<string, QuestData> _questLookup =
             new Dictionary<string, QuestData>(64);
+        private bool _hasLookupAmbiguity;
+        private string _lookupAmbiguitySummary;
 
         private float _currentDepth;
         private bool _registered;
@@ -216,21 +218,24 @@ namespace Hecton8.Quest
         public void ActivateQuest(string questId)
         {
             if (string.IsNullOrEmpty(questId)) return;
+            if (IsRegistryAmbiguous()) return;
             if (_activeQuests.Contains(questId)) return;
             if (_completedQuests.Contains(questId)) return;
+            if (!TryResolveQuestData(questId, out QuestData q))
+            {
+                Debug.LogWarning($"[Quest] Cannot activate unknown questId '{questId}'.");
+                return;
+            }
 
             _activeQuests.Add(questId);
             QuestEvents.RaiseActivated(questId);
 
             // HUD notification — показываем название квеста если есть в lookup
-            if (_questLookup.TryGetValue(questId, out QuestData q))
-            {
-                string title = q.DisplayTitleOrFallback;
-                LocalizationManager localization = LocalizationManager.Instance;
-                NotificationEvents.PushInfo(localization != null
-                    ? localization.GetFormatted(LocalizationKeys.QUEST_NEW_OBJECTIVE, title)
-                    : "NEW OBJECTIVE: " + title);
-            }
+            string title = q.DisplayTitleOrFallback;
+            LocalizationManager localization = LocalizationManager.Instance;
+            NotificationEvents.PushInfo(localization != null
+                ? localization.GetFormatted(LocalizationKeys.QUEST_NEW_OBJECTIVE, title)
+                : "NEW OBJECTIVE: " + title);
 
         }
 
@@ -238,20 +243,24 @@ namespace Hecton8.Quest
         public void CompleteQuest(string questId)
         {
             if (string.IsNullOrEmpty(questId)) return;
+            if (IsRegistryAmbiguous()) return;
             if (!_activeQuests.Contains(questId)) return;
+            if (!TryResolveQuestData(questId, out QuestData q))
+            {
+                Debug.LogWarning($"[Quest] Cannot complete unknown questId '{questId}'.");
+                _activeQuests.Remove(questId);
+                return;
+            }
 
             _activeQuests.Remove(questId);
             _completedQuests.Add(questId);
             QuestEvents.RaiseCompleted(questId);
 
-            if (_questLookup.TryGetValue(questId, out QuestData q))
-            {
-                string title = q.DisplayTitleOrFallback;
-                LocalizationManager localization = LocalizationManager.Instance;
-                NotificationEvents.PushInfo(localization != null
-                    ? localization.GetFormatted(LocalizationKeys.QUEST_COMPLETED, title)
-                    : "OBJECTIVE COMPLETED: " + title);
-            }
+            string title = q.DisplayTitleOrFallback;
+            LocalizationManager localization = LocalizationManager.Instance;
+            NotificationEvents.PushInfo(localization != null
+                ? localization.GetFormatted(LocalizationKeys.QUEST_COMPLETED, title)
+                : "OBJECTIVE COMPLETED: " + title);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log($"[Quest] Completed: {questId}");
@@ -276,7 +285,7 @@ namespace Hecton8.Quest
 
         private void HandleItemCollected(ItemData itemData, int quantity, Transform interactor)
         {
-            string itemId = itemData != null ? itemData.name : string.Empty;
+            string itemId = itemData != null ? itemData.PersistentId : string.Empty;
             ProcessTrigger(QuestTriggerType.OnItemCollected, itemId, quantity);
             ProcessCompletion(QuestCompletionType.OnItemCollected, itemId, quantity);
         }
@@ -324,12 +333,58 @@ namespace Hecton8.Quest
         private void BuildLookup()
         {
             _questLookup.Clear();
+            _hasLookupAmbiguity = false;
+            _lookupAmbiguitySummary = string.Empty;
             for (int i = 0; i < allQuests.Length; i++)
             {
                 QuestData q = allQuests[i];
-                if (q != null && !string.IsNullOrEmpty(q.questId))
-                    _questLookup[q.questId] = q;
+                if (q == null || string.IsNullOrEmpty(q.questId))
+                    continue;
+
+                if (_questLookup.TryGetValue(q.questId, out QuestData existing) && !ReferenceEquals(existing, q))
+                {
+                    RegisterLookupAmbiguity(q.questId, existing, q);
+                    Debug.LogError($"[Quest] Duplicate questId '{q.questId}' between '{existing.name}' and '{q.name}'.", q);
+                    continue;
+                }
+
+                _questLookup[q.questId] = q;
             }
+        }
+
+        private bool TryResolveQuestData(string questId, out QuestData questData)
+        {
+            if (_questLookup.Count == 0 && allQuests != null && allQuests.Length > 0)
+                BuildLookup();
+
+            return _questLookup.TryGetValue(questId, out questData);
+        }
+
+        private bool IsRegistryAmbiguous()
+        {
+            if (_questLookup.Count == 0 && allQuests != null && allQuests.Length > 0)
+                BuildLookup();
+
+            if (!_hasLookupAmbiguity)
+                return false;
+
+            Debug.LogError(
+                "[Quest] Quest registry has ambiguous quest IDs. " +
+                $"Operation aborted: {_lookupAmbiguitySummary}");
+            return true;
+        }
+
+        private void RegisterLookupAmbiguity(string questId, QuestData existing, QuestData incoming)
+        {
+            _hasLookupAmbiguity = true;
+
+            if (!string.IsNullOrEmpty(_lookupAmbiguitySummary))
+                return;
+
+            string existingName = existing != null ? existing.name : "null";
+            string incomingName = incoming != null ? incoming.name : "null";
+            _lookupAmbiguitySummary =
+                $"questId '{questId}' resolves to both '{existingName}' and '{incomingName}'.";
         }
 
         private void ProcessTrigger(QuestTriggerType type, string id, float value)
@@ -489,14 +544,25 @@ namespace Hecton8.Quest
             _completedQuests.Clear();
 
             if (data == null) return;
+            if (IsRegistryAmbiguous()) return;
 
             if (data.questActiveIds != null)
                 foreach (string id in data.questActiveIds)
-                    if (!string.IsNullOrEmpty(id)) _activeQuests.Add(id);
+                    if (!string.IsNullOrEmpty(id) && TryResolveQuestData(id, out _))
+                        _activeQuests.Add(id);
+                    else if (!string.IsNullOrEmpty(id))
+                        Debug.LogWarning($"[Quest] Save references unknown active questId '{id}'. Skipping.");
 
             if (data.questCompletedIds != null)
                 foreach (string id in data.questCompletedIds)
-                    if (!string.IsNullOrEmpty(id)) _completedQuests.Add(id);
+                    if (!string.IsNullOrEmpty(id) && TryResolveQuestData(id, out _))
+                        _completedQuests.Add(id);
+                    else if (!string.IsNullOrEmpty(id))
+                        Debug.LogWarning($"[Quest] Save references unknown completed questId '{id}'. Skipping.");
+
+            HashSet<string>.Enumerator completedEnumerator = _completedQuests.GetEnumerator();
+            while (completedEnumerator.MoveNext())
+                _activeQuests.Remove(completedEnumerator.Current);
         }
     }
 }

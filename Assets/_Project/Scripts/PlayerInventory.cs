@@ -18,6 +18,7 @@ namespace Hecton8.Inventory
     using Hecton8.Gameplay;
     using Hecton8.Interaction;
     using Hecton8.Items;
+    using Hecton8.Modding;
     using Hecton8.SaveSystem;
     using UnityEngine;
 
@@ -84,6 +85,11 @@ namespace Hecton8.Inventory
         /// Только чтение рекомендуется — мутация через PlayerInventory.
         /// </summary>
         public InventoryGrid Grid => _grid;
+
+        /// <summary>
+        /// Runtime item catalog currently used by inventory save/load and item resolution.
+        /// </summary>
+        public ItemCatalog ItemCatalog => itemCatalog;
 
         /// <summary>
         /// Fired whenever inventory contents change and UI must refresh.
@@ -289,6 +295,14 @@ namespace Hecton8.Inventory
         /// </summary>
         public bool TryAddItem(ItemData item, int quantity = 1)
         {
+            int addedQuantity;
+            return TryAddItemInternal(item, quantity, out addedQuantity);
+        }
+
+        private bool TryAddItemInternal(ItemData item, int quantity, out int addedQuantity)
+        {
+            addedQuantity = 0;
+
             if (item == null || quantity <= 0)
                 return false;
 
@@ -299,6 +313,7 @@ namespace Hecton8.Inventory
                 if (item.stackable && TryStackItem(item))
                 {
                     TotalWeight += item.weight;
+                    addedQuantity++;
                     continue;
                 }
 
@@ -308,6 +323,7 @@ namespace Hecton8.Inventory
                 {
                     _stackCounts[AnchorIndex(placedX, placedY)] = 1;
                     TotalWeight += item.weight;
+                    addedQuantity++;
                 }
                 else
                 {
@@ -486,7 +502,7 @@ namespace Hecton8.Inventory
                         {
                             x          = x,
                             y          = y,
-                            itemId     = item.name,
+                            itemId     = item.PersistentId,
                             stackCount = _stackCounts[y * cols + x]
                         };
                         cellIndex++;
@@ -590,7 +606,11 @@ namespace Hecton8.Inventory
             if (item == null)
                 return;
 
-            bool allAdded = TryAddItem(item, quantity);
+            int addedQuantity;
+            bool allAdded = TryAddItemInternal(item, quantity, out addedQuantity);
+            if (addedQuantity > 0)
+                HectonEventBus.Publish(new ItemCollectedEvent(item, addedQuantity, interactor));
+
             if (!allAdded)
             {
                 Debug.LogWarning(

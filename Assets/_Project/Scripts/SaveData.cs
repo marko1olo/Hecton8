@@ -43,7 +43,7 @@ namespace Hecton8.SaveSystem
         public float totalPlayTime;
 
         /// <summary>Текущая версия формата. Используется для миграции.</summary>
-        public const int CurrentVersion = 20; // v20: Packed biome discovery bitmask
+        public const int CurrentVersion = 28; // v28: hardcore run modifiers, permadeath state, and module breathable reserve state persisted in the official save format
 
         // ─────────────────────── DTO Sections ────────────────────
 
@@ -56,6 +56,13 @@ namespace Hecton8.SaveSystem
         public BarterDTO barter;
         public FieldOperationLogDTO fieldOperations;
         public BeaconNetworkDTO beaconNetwork;
+        public ExplorationMapDTO explorationMap;
+        public PDALogbookDTO pdaLogbook;
+        public PDAMarkerRegistryDTO pdaMarkers;
+        public PDAContextualAdvisoryDTO pdaAdvisories;
+        public ProceduralLoreStateDTO proceduralLore;
+        public AchievementRegistryDTO achievements;
+        public RunModifiersDTO runModifiers;
 
         /// <summary>Прочность инструментов (toolID → durability). v2.0 ENTERPRISE</summary>
         public Dictionary<string, float> toolDurabilityMap = new Dictionary<string, float>();
@@ -132,6 +139,9 @@ namespace Hecton8.SaveSystem
         /// <summary>Битовая маска выполненных milestone первого часа. v4.4 FIRSTHOUR</summary>
         public int firstHourMilestones;
 
+        /// <summary>Битовая маска уже выданных first-hour guidance/reminder states. v4.11 FIRSTHOUR</summary>
+        public int firstHourGuidanceFlags;
+
         /// <summary>Выбранная концовка. v4.5 ENDING</summary>
         public int endingChoice;
 
@@ -153,6 +163,9 @@ namespace Hecton8.SaveSystem
         /// <summary>Dynamic resolution scaling enabled. v4.8 LOD</summary>
         public bool DynamicResolutionEnabled = true; // Default: Enabled
 
+        /// <summary>Custom mod payload map persisted inside the official save file. v24 MODDING</summary>
+        public Dictionary<string, string> CustomModData = new Dictionary<string, string>();
+
         // ═════════════════════════════════════════════════════════
         //  Factory — создание нового SaveData с метаданными
         // ═════════════════════════════════════════════════════════
@@ -173,6 +186,16 @@ namespace Hecton8.SaveSystem
                 barter        = new BarterDTO(),
                 fieldOperations = new FieldOperationLogDTO(),
                 beaconNetwork = new BeaconNetworkDTO(),
+                explorationMap = new ExplorationMapDTO(),
+                pdaLogbook = new PDALogbookDTO(),
+                pdaMarkers = new PDAMarkerRegistryDTO(),
+                pdaAdvisories = new PDAContextualAdvisoryDTO(),
+                proceduralLore = new ProceduralLoreStateDTO(),
+                achievements = new AchievementRegistryDTO(),
+                runModifiers = new RunModifiersDTO
+                {
+                    dailySeedId = string.Empty
+                },
                 discoveredBiomeIds = null,
                 // COLD ALLOC: long[BiomeDiscoveryBitMask.WordCount] — packed discovered biome persistence — owner: SaveData
                 discoveredBiomeBitWords = new long[BiomeDiscoveryBitMask.WordCount],
@@ -197,13 +220,15 @@ namespace Hecton8.SaveSystem
                 corporatePendingOrderTimers = new List<float>(),
                 firstHourSessionTime = 0f,
                 firstHourMilestones = 0,
+                firstHourGuidanceFlags = 0,
                 endingChoice = 0,
                 endingComplete = false,
                 endingConditionMet = false,
                 missionActiveIds = new List<string>(),
                 missionCompletedIds = new List<string>(),
                 LODQualityPreset = 1, // Default: Medium
-                DynamicResolutionEnabled = true // Default: Enabled
+                DynamicResolutionEnabled = true, // Default: Enabled
+                CustomModData = new Dictionary<string, string>()
             };
         }
 
@@ -223,6 +248,21 @@ namespace Hecton8.SaveSystem
         public float weight;
         public float hunger;
         public float thirst;
+        public float currentLifeDurationSeconds;
+        public float currentLifePeakDepthMeters;
+        public float currentLifeLowestOxygenNormalized;
+        public float currentLifeLowestEnergyNormalized;
+        public float currentLifeLowestIntegrityNormalized;
+        public bool hasLastDeathRecord;
+        public byte lastDeathCause;
+        public float lastDeathPosX;
+        public float lastDeathPosY;
+        public float lastDeathPosZ;
+        public float lastDeathLifeDurationSeconds;
+        public float lastDeathPeakDepthMeters;
+        public float lastDeathLowestOxygenNormalized;
+        public float lastDeathLowestEnergyNormalized;
+        public float lastDeathLowestIntegrityNormalized;
 
         public float posX;
         public float posY;
@@ -244,6 +284,15 @@ namespace Hecton8.SaveSystem
         public void SetRotation(Quaternion rot)
         {
             rotX = rot.x; rotY = rot.y; rotZ = rot.z; rotW = rot.w;
+        }
+
+        public Vector3 GetLastDeathPosition() => new Vector3(lastDeathPosX, lastDeathPosY, lastDeathPosZ);
+
+        public void SetLastDeathPosition(Vector3 pos)
+        {
+            lastDeathPosX = pos.x;
+            lastDeathPosY = pos.y;
+            lastDeathPosZ = pos.z;
         }
     }
 
@@ -287,12 +336,32 @@ namespace Hecton8.SaveSystem
     {
         public int depletedCount;
         public string[] depletedNodeIds;
+        public int depletedPickupChunkCount;
+        public long[] depletedPickupChunkKeys;
+        public int[] depletedPickupChunkWordStarts;
+        public int[] depletedPickupChunkWordCounts;
+        public int depletedPickupWordCount;
+        public long[] depletedPickupWords;
         public const int MaxNodes = 512;
+        public const int MaxPickupChunks = 4096;
+        public const int MaxPickupWords = 8192;
 
         public void EnsureCapacity()
         {
             if (depletedNodeIds == null || depletedNodeIds.Length < MaxNodes)
                 depletedNodeIds = new string[MaxNodes];
+
+            if (depletedPickupChunkKeys == null || depletedPickupChunkKeys.Length < MaxPickupChunks)
+                depletedPickupChunkKeys = new long[MaxPickupChunks];
+
+            if (depletedPickupChunkWordStarts == null || depletedPickupChunkWordStarts.Length < MaxPickupChunks)
+                depletedPickupChunkWordStarts = new int[MaxPickupChunks];
+
+            if (depletedPickupChunkWordCounts == null || depletedPickupChunkWordCounts.Length < MaxPickupChunks)
+                depletedPickupChunkWordCounts = new int[MaxPickupChunks];
+
+            if (depletedPickupWords == null || depletedPickupWords.Length < MaxPickupWords)
+                depletedPickupWords = new long[MaxPickupWords];
         }
     }
 
@@ -485,6 +554,165 @@ namespace Hecton8.SaveSystem
     }
 
     [Serializable]
+    public struct ExplorationMapDTO
+    {
+        public int exploredChunkCount;
+        public long[] exploredChunkKeys;
+
+        public const int MaxExploredChunks = 16384;
+
+        public void EnsureCapacity()
+        {
+            if (exploredChunkKeys == null || exploredChunkKeys.Length < MaxExploredChunks)
+                exploredChunkKeys = new long[MaxExploredChunks];
+        }
+    }
+
+    [Serializable]
+    public struct PDALogbookEntryDTO
+    {
+        public int sequence;
+        public int dayIndex;
+        public float dayTimeHours;
+        public float playTimeSeconds;
+        public string title;
+        public string message;
+        public string originKey;
+    }
+
+    [Serializable]
+    public struct PDALogbookDTO
+    {
+        public int entryCount;
+        public int nextSequence;
+        public PDALogbookEntryDTO[] entries;
+        public int seenOriginCount;
+        public string[] seenOriginKeys;
+
+        public const int MaxEntries = 256;
+        public const int MaxSeenOrigins = 512;
+
+        public void EnsureCapacity()
+        {
+            if (entries == null || entries.Length < MaxEntries)
+                entries = new PDALogbookEntryDTO[MaxEntries];
+
+            if (seenOriginKeys == null || seenOriginKeys.Length < MaxSeenOrigins)
+                seenOriginKeys = new string[MaxSeenOrigins];
+        }
+    }
+
+    [Serializable]
+    public struct PDAMarkerEntryDTO
+    {
+        public string markerId;
+        public string title;
+        public int iconType;
+        public float posX;
+        public float posY;
+        public float posZ;
+        public bool visibleOnHud;
+
+        public Vector3 GetPosition() => new Vector3(posX, posY, posZ);
+
+        public void SetPosition(Vector3 position)
+        {
+            posX = position.x;
+            posY = position.y;
+            posZ = position.z;
+        }
+    }
+
+    [Serializable]
+    public struct PDAMarkerRegistryDTO
+    {
+        public int markerCount;
+        public int nextSequence;
+        public PDAMarkerEntryDTO[] entries;
+
+        public const int MaxEntries = 64;
+
+        public void EnsureCapacity()
+        {
+            if (entries == null || entries.Length < MaxEntries)
+                entries = new PDAMarkerEntryDTO[MaxEntries];
+        }
+    }
+
+    [Serializable]
+    public struct PDAContextualAdvisoryDTO
+    {
+        public int issuedFlags;
+        public int oxygenDeathCount;
+        public int inventoryFullAttemptCount;
+        public float deepExposureSeconds;
+    }
+
+    [Serializable]
+    public struct ProceduralLorePlacementDTO
+    {
+        public string discoveryId;
+        public string logId;
+        public long chunkKey;
+        public float posX;
+        public float posY;
+        public float posZ;
+
+        public Vector3 GetPosition() => new Vector3(posX, posY, posZ);
+
+        public void SetPosition(Vector3 position)
+        {
+            posX = position.x;
+            posY = position.y;
+            posZ = position.z;
+        }
+    }
+
+    [Serializable]
+    public struct ProceduralLoreStateDTO
+    {
+        public int activeCount;
+        public int nextSourceIndex;
+        public ProceduralLorePlacementDTO[] activePlacements;
+
+        public const int MaxActivePlacements = 12;
+
+        public void EnsureCapacity()
+        {
+            if (activePlacements == null || activePlacements.Length < MaxActivePlacements)
+                activePlacements = new ProceduralLorePlacementDTO[MaxActivePlacements];
+        }
+    }
+
+    [Serializable]
+    public struct AchievementRegistryDTO
+    {
+        public float swamDistanceMeters;
+        public int craftedItemCount;
+        public int discoveredBiomeCount;
+        public int unlockedCount;
+        public string[] unlockedIds;
+
+        public const int MaxUnlockedAchievements = 32;
+
+        public void EnsureCapacity()
+        {
+            if (unlockedIds == null || unlockedIds.Length < MaxUnlockedAchievements)
+                unlockedIds = new string[MaxUnlockedAchievements];
+        }
+    }
+
+    [Serializable]
+    public struct RunModifiersDTO
+    {
+        public bool isPermadeath;
+        public bool isNightmareMode;
+        public bool isDailySeed;
+        public bool runMarkedDead;
+        public string dailySeedId;
+    }
+
+    [Serializable]
     public struct ModuleDTO
     {
         public string prefabId;
@@ -496,7 +724,10 @@ namespace Hecton8.SaveSystem
         public float rotZ;
         public float rotW;
         public float integrity;
+        public float repairIntegrityCap;
+        public float airReserveNormalized;
         public bool isFlooded;
+        public byte failureMode;
 
         public Vector3 GetPosition() => new Vector3(posX, posY, posZ);
         public Quaternion GetRotation() => new Quaternion(rotX, rotY, rotZ, rotW);

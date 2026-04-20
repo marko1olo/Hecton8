@@ -48,6 +48,47 @@ namespace Hecton8.Gameplay
             HectonDirectorAI.OnRequestRareDiscovery  -= HandleRareDiscovery;
         }
 
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            if (directorMissionIds == null || directorMissionIds.Length <= 0)
+                return;
+
+            int writeIndex = 0;
+            for (int i = 0; i < directorMissionIds.Length; i++)
+            {
+                string missionId = directorMissionIds[i];
+                if (string.IsNullOrWhiteSpace(missionId))
+                    continue;
+
+                bool duplicate = false;
+                for (int j = 0; j < writeIndex; j++)
+                {
+                    if (directorMissionIds[j] == missionId)
+                    {
+                        duplicate = true;
+                        break;
+                    }
+                }
+
+                if (duplicate)
+                    continue;
+
+                directorMissionIds[writeIndex] = missionId;
+                writeIndex++;
+            }
+
+            if (writeIndex == directorMissionIds.Length)
+                return;
+
+            string[] compact = new string[writeIndex];
+            for (int i = 0; i < writeIndex; i++)
+                compact[i] = directorMissionIds[i];
+
+            directorMissionIds = compact;
+        }
+#endif
+
         private void HandleMissionTrigger(Vector3 position)
         {
             if (!CanServeDirectorContent())
@@ -70,6 +111,9 @@ namespace Hecton8.Gameplay
                 if (mm.GetActiveMission(missionId) != null) continue;
 
                 mm.StartMission(missionId);
+                if (mm.GetActiveMission(missionId) == null)
+                    continue;
+
                 _lastMissionIndex = (idx + 1) % directorMissionIds.Length;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD

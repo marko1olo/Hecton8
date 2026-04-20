@@ -720,6 +720,14 @@ namespace Hecton8.Input
             return display;
         }
 
+        public int GetPreferredBindingIndex(string actionName, string actionMap = "Player")
+        {
+            InputAction action = GetAction(actionName, actionMap);
+            return action != null
+                ? GetPreferredBindingIndex(action, CurrentDisplayStyle)
+                : -1;
+        }
+
         public bool TryGetBindingMarkupForToken(string token, out string markup)
         {
             markup = string.Empty;

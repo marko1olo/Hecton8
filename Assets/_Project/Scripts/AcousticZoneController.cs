@@ -53,6 +53,7 @@ using Hecton8.Core;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Physics;
+using Hecton8.Visor;
 using Hecton8.World;
 using UnityEngine;
 using UnityEngine.Audio;
@@ -69,6 +70,8 @@ namespace Hecton8.Audio
         private const string DefaultWaterDrainSoundPath = "Assets/_Project/Audio/Movement/swimming -onwater.wav";
         private const string DefaultWaterFillSoundPath = "Assets/_Project/Audio/Movement/swimming - underwater.ogg";
         private const string DefaultMasterMixerPath = "Assets/_Project/MasterMixer.mixer";
+        private const string DefaultStormStaticPrimaryPath = "Assets/_Project/Audio/Music for Game/shelf_6_Decaying Analog Static.ogg";
+        private const string DefaultStormStaticSecondaryPath = "Assets/_Project/Audio/Music for Game/shelf_7_Decaying Analog Static.ogg";
 #endif
 
         private enum AcousticZoneState : byte
@@ -207,6 +210,68 @@ namespace Hecton8.Audio
         [Tooltip("Громкость переходных звуков [0..1].")]
         [SerializeField, Range(0f, 1f)] private float transitionVolume = 0.8f;
 
+        [Header("Storm Interference Audio")]
+        [Tooltip("Optional 2D helmet-static pulse used during heavy electrical storms.")]
+        [SerializeField] private AudioClip stormStaticPrimary;
+
+        [Tooltip("Optional alternate static pulse so repeated storm interference does not sound identical.")]
+        [SerializeField] private AudioClip stormStaticSecondary;
+
+        [Tooltip("Electrical activity required before storm audio interference becomes audible.")]
+        [SerializeField, Range(0f, 1f)] private float stormStaticElectricalThreshold = 0.52f;
+
+        [Tooltip("Slowest cadence between static pulses when the storm only barely exceeds the threshold.")]
+        [SerializeField, Min(0.1f)] private float stormStaticIntervalMax = 5.2f;
+
+        [Tooltip("Fastest cadence between static pulses during peak electrical activity.")]
+        [SerializeField, Min(0.1f)] private float stormStaticIntervalMin = 1.6f;
+
+        [Tooltip("Helmet-static pulse volume when the storm first crosses the interference threshold.")]
+        [SerializeField, Range(0f, 1f)] private float stormStaticVolumeMin = 0.08f;
+
+        [Tooltip("Helmet-static pulse volume during peak electrical activity.")]
+        [SerializeField, Range(0f, 1f)] private float stormStaticVolumeMax = 0.2f;
+
+        [Tooltip("Volume multiplier for storm static pulses while the player remains underwater.")]
+        [SerializeField, Range(0f, 1f)] private float stormStaticUnderwaterVolumeScale = 0.72f;
+
+        [Tooltip("Maximum ducking applied to the underwater ambient loop while storms interfere with the suit audio path.")]
+        [SerializeField, Range(0f, 0.5f)] private float stormAmbientDuckMax = 0.18f;
+
+        [Tooltip("Maximum downward pitch shift applied to the underwater ambient loop during heavy electrical storms.")]
+        [SerializeField, Range(0f, 0.25f)] private float stormAmbientPitchDropMax = 0.08f;
+
+        [Tooltip("Maximum flutter amplitude layered on the underwater ambient loop pitch during heavy electrical storms.")]
+        [SerializeField, Range(0f, 0.15f)] private float stormAmbientPitchFlutterMax = 0.035f;
+
+        [Tooltip("Pitch flutter frequency range floor for underwater storm interference.")]
+        [SerializeField, Range(0.1f, 5f)] private float stormAmbientFlutterFrequencyMin = 0.6f;
+
+        [Tooltip("Pitch flutter frequency range ceiling for underwater storm interference.")]
+        [SerializeField, Range(0.1f, 8f)] private float stormAmbientFlutterFrequencyMax = 2.1f;
+
+        [Header("Sonar Pulse Audio")]
+        [Tooltip("Optional 2D sonar ping one-shot used when the player sends an active sonar pulse.")]
+        [SerializeField] private AudioClip sonarPingClip;
+        [Tooltip("Minimum sonar ping volume for low-intensity pulses.")]
+        [SerializeField, Range(0f, 1f)] private float sonarPingVolumeMin = 0.18f;
+        [Tooltip("Maximum sonar ping volume for full-strength active pulses.")]
+        [SerializeField, Range(0f, 1f)] private float sonarPingVolumeMax = 0.42f;
+
+        [Header("Fatal Pressure Audio")]
+        [Tooltip("Primary 2D white-noise burst used during the fatal crush-depth glitch loop.")]
+        [SerializeField] private AudioClip fatalPressureNoisePrimary;
+        [Tooltip("Alternate 2D white-noise burst so repeated fatal-pressure warnings do not sound identical.")]
+        [SerializeField] private AudioClip fatalPressureNoiseSecondary;
+        [Tooltip("Slowest cadence between fatal-pressure white-noise bursts at sequence start.")]
+        [SerializeField, Min(0.05f)] private float fatalPressureNoiseIntervalMax = 0.38f;
+        [Tooltip("Fastest cadence between fatal-pressure white-noise bursts right before implosion.")]
+        [SerializeField, Min(0.05f)] private float fatalPressureNoiseIntervalMin = 0.08f;
+        [Tooltip("Minimum white-noise burst volume during the fatal-pressure loop.")]
+        [SerializeField, Range(0f, 1f)] private float fatalPressureNoiseVolumeMin = 0.16f;
+        [Tooltip("Maximum white-noise burst volume at the end of the fatal-pressure loop.")]
+        [SerializeField, Range(0f, 1f)] private float fatalPressureNoiseVolumeMax = 0.45f;
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — PLAYER REFERENCE
         // ══════════════════════════════════════════════════════════
@@ -214,7 +279,25 @@ namespace Hecton8.Audio
         [Header("── Player ────────────────────────────────────")]
         [Tooltip("BuoyancyObject на игроке. Если не назначен —\n" +
                  "ищется автоматически по тегу 'Player' при старте.")]
-        [SerializeField] private BuoyancyObject playerBuoyancy;
+
+        [SerializeField] private BuoyancyObject playerBuoyancy; // player acoustic owner ref
+
+        [Header("Underwater Vegetation Overlay")]
+        [Tooltip("Optional 2D ambient pulse used when underwater audio moves through dense sargassum fields.")]
+        [SerializeField] private AudioClip underwaterSargassumBubblesClip;
+        [Tooltip("Optional 2D ambient pulse used when underwater audio moves through dense grass or kelp fields.")]
+        [SerializeField] private AudioClip underwaterGrassRustleClip;
+        [Tooltip("Minimum global vegetation audio density before underwater vegetation overlays become audible.")]
+        [SerializeField, Range(0f, 1f)] private float underwaterVegetationDensityThreshold = 0.16f;
+        [Tooltip("Slowest cadence between underwater vegetation overlay pulses.")]
+        [SerializeField, Min(0.1f)] private float underwaterVegetationIntervalMax = 2.4f;
+        [Tooltip("Fastest cadence between underwater vegetation overlay pulses at peak density.")]
+        [SerializeField, Min(0.1f)] private float underwaterVegetationIntervalMin = 0.7f;
+        [Tooltip("Minimum overlay volume once underwater vegetation density crosses the threshold.")]
+        [SerializeField, Range(0f, 1f)] private float underwaterVegetationVolumeMin = 0.06f;
+        [Tooltip("Maximum overlay volume at peak underwater vegetation density.")]
+        [SerializeField, Range(0f, 1f)] private float underwaterVegetationVolumeMax = 0.22f;
+
 
         [Tooltip("Опциональная ссылка на loop AudioSource с подводным эмбиентом на игроке.\n" +
                  "Если не задана — контроллер лениво ищет первый 2D loop/playOnAwake source под player root.")]
@@ -327,6 +410,7 @@ namespace Hecton8.Audio
         [SerializeField] private string _debugMixerCoverage;
         [SerializeField] private float _debugAmbientVolume;
         [SerializeField] private float _debugAmbientPitch;
+        [SerializeField] private float _debugStormInterference;
         [SerializeField] private string _debugSoundscapeTier;
         [SerializeField] private float _debugSoundscapeVolumeScale = 1f;
         [SerializeField] private float _debugSoundscapePitchScale = 1f;
@@ -393,6 +477,14 @@ namespace Hecton8.Audio
         private float _currentSoundscapePitchScale = 1f;
         private float _surfacePrecipitationIntensity;
         private float _surfaceElectricalActivity;
+        private float _stormInterferencePulseTimer;
+        private float _stormAmbientInterference;
+        private float _stormAmbientFlutterPhase;
+        private float _stormAmbientFlutter;
+        private bool _stormStaticUsePrimaryNext = true;
+        private float _underwaterVegetationPulseTimer;
+        private float _fatalPressureNoiseTimer;
+        private bool _fatalPressureNoiseUsePrimaryNext = true;
         private bool _snapshotBindingsResolved;
         private bool _warnedMissingInteriorSnapshot;
         private bool _warnedMissingUnderwaterSnapshot;
@@ -458,6 +550,15 @@ namespace Hecton8.Audio
             TryRegister();
             HectonAtmosphereManager.OnStateChanged += HandleAtmosphereStateChanged;
             SoundscapeEvents.OnTierChanged += HandleSoundscapeTierChanged;
+            SpectrumEvents.OnSonarPingSent += HandleSonarPingSent;
+            _stormInterferencePulseTimer = 0f;
+            _stormAmbientInterference = 0f;
+            _stormAmbientFlutterPhase = 0f;
+            _stormAmbientFlutter = 0f;
+            _stormStaticUsePrimaryNext = true;
+            _underwaterVegetationPulseTimer = 0f;
+            _fatalPressureNoiseTimer = 0f;
+            _fatalPressureNoiseUsePrimaryNext = true;
             ResolveBiomeMatrixDirector(true);
             RefreshSoundscapeTierContext(true);
         }
@@ -499,6 +600,13 @@ namespace Hecton8.Audio
         {
             HectonAtmosphereManager.OnStateChanged -= HandleAtmosphereStateChanged;
             SoundscapeEvents.OnTierChanged -= HandleSoundscapeTierChanged;
+            SpectrumEvents.OnSonarPingSent -= HandleSonarPingSent;
+            _stormInterferencePulseTimer = 0f;
+            _stormAmbientInterference = 0f;
+            _stormAmbientFlutterPhase = 0f;
+            _stormAmbientFlutter = 0f;
+            _underwaterVegetationPulseTimer = 0f;
+            _fatalPressureNoiseTimer = 0f;
             ResetSourceLevelAcousticFallback();
             TryUnregister();
         }
@@ -508,6 +616,7 @@ namespace Hecton8.Audio
             TryUnregister();
             HectonAtmosphereManager.OnStateChanged -= HandleAtmosphereStateChanged;
             SoundscapeEvents.OnTierChanged -= HandleSoundscapeTierChanged;
+            SpectrumEvents.OnSonarPingSent -= HandleSonarPingSent;
             ResetSourceLevelAcousticFallback();
 
             if (_instance == this)
@@ -580,7 +689,10 @@ namespace Hecton8.Audio
             currentZone = ResolveStableZone(currentZone);
             RefreshBiomeAmbientContext();
             RefreshSoundscapeTierContext(false);
+            UpdateStormInterferenceAudio(currentZone, deltaTime);
             UpdateAmbientLoopMix(currentZone);
+            UpdateUnderwaterVegetationOverlay(currentZone, deltaTime);
+            UpdateFatalPressureLoopAudio(currentZone, deltaTime);
 
             // ── Первый кадр: установить начальное состояние без перехода ──
             if (!_stateInitialized)
@@ -921,7 +1033,7 @@ namespace Hecton8.Audio
         {
             float depth = Mathf.Max(0f, movement.CurrentDepth);
             float immersion = Mathf.Clamp01(movement.WaterImmersionRatio);
-            bool headSubmerged = movement.IsPlayerSubmerged;
+            bool headSubmerged = movement.IsPlayerSubmerged || depth > 0f;
 
             if (headSubmerged || depth >= acousticForceUnderwaterDepth)
                 return true;
@@ -1307,6 +1419,12 @@ namespace Hecton8.Audio
                 targetPitch *= _currentAmbientPitchScale;
                 targetVolume *= _currentSoundscapeVolumeScale;
                 targetPitch *= _currentSoundscapePitchScale;
+                if (_stormAmbientInterference > 0.001f)
+                {
+                    targetVolume *= Mathf.Lerp(1f, Mathf.Max(0.1f, 1f - stormAmbientDuckMax), _stormAmbientInterference);
+                    targetPitch *= Mathf.Lerp(1f, Mathf.Max(0.5f, 1f - stormAmbientPitchDropMax), _stormAmbientInterference);
+                    targetPitch += _stormAmbientFlutter;
+                }
             }
 
             if (Mathf.Abs(ambientSource.volume - targetVolume) > 0.01f)
@@ -1314,6 +1432,161 @@ namespace Hecton8.Audio
 
             if (Mathf.Abs(ambientSource.pitch - targetPitch) > 0.01f)
                 ambientSource.pitch = targetPitch;
+        }
+
+        private void UpdateStormInterferenceAudio(AcousticZoneState zone, float deltaTime)
+        {
+            if (zone == AcousticZoneState.Interior)
+            {
+                _stormAmbientInterference = 0f;
+                _stormAmbientFlutter = 0f;
+                _stormInterferencePulseTimer = 0f;
+                _debugStormInterference = 0f;
+                return;
+            }
+
+            if (_surfaceElectricalActivity <= stormStaticElectricalThreshold)
+            {
+                _stormAmbientInterference = 0f;
+                _stormAmbientFlutter = 0f;
+                _stormInterferencePulseTimer = 0f;
+                _debugStormInterference = 0f;
+                return;
+            }
+
+            float stormInterference = Mathf.InverseLerp(stormStaticElectricalThreshold, 1f, _surfaceElectricalActivity);
+            _stormAmbientInterference = stormInterference;
+            _debugStormInterference = stormInterference;
+
+            float flutterFrequency = Mathf.Lerp(stormAmbientFlutterFrequencyMin, stormAmbientFlutterFrequencyMax, stormInterference);
+            _stormAmbientFlutterPhase += deltaTime * flutterFrequency * Mathf.PI * 2f;
+            if (_stormAmbientFlutterPhase >= Mathf.PI * 2f)
+                _stormAmbientFlutterPhase -= Mathf.PI * 2f;
+
+            _stormAmbientFlutter = Mathf.Sin(_stormAmbientFlutterPhase) * (stormAmbientPitchFlutterMax * stormInterference);
+
+            _stormInterferencePulseTimer -= deltaTime;
+            if (_stormInterferencePulseTimer > 0f)
+                return;
+
+            PlayStormInterferencePulse(stormInterference, zone);
+            _stormInterferencePulseTimer = Mathf.Lerp(
+                Mathf.Max(0.1f, stormStaticIntervalMax),
+                Mathf.Max(0.1f, stormStaticIntervalMin),
+                stormInterference);
+        }
+
+        private void UpdateUnderwaterVegetationOverlay(AcousticZoneState zone, float deltaTime)
+        {
+            if (zone != AcousticZoneState.Underwater)
+            {
+                _underwaterVegetationPulseTimer = 0f;
+                return;
+            }
+
+            HectonMapMagicVegetationBridge.VegetationAcousticType acousticType =
+                HectonMapMagicVegetationBridge.GlobalVegetationAcousticType;
+            float density = Mathf.Clamp01(HectonMapMagicVegetationBridge.GlobalVegetationAudioDensity);
+            if (acousticType == HectonMapMagicVegetationBridge.VegetationAcousticType.Silence ||
+                density <= underwaterVegetationDensityThreshold)
+            {
+                _underwaterVegetationPulseTimer = 0f;
+                return;
+            }
+
+            _underwaterVegetationPulseTimer -= deltaTime;
+            if (_underwaterVegetationPulseTimer > 0f)
+                return;
+
+            AudioClip clip = acousticType == HectonMapMagicVegetationBridge.VegetationAcousticType.SargassumBubbles
+                ? underwaterSargassumBubblesClip
+                : underwaterGrassRustleClip;
+            if (clip == null || !SpatialAudioManager.TryGetInstance(out SpatialAudioManager sam))
+                return;
+
+            float densityT = Mathf.InverseLerp(underwaterVegetationDensityThreshold, 1f, density);
+            float volume = Mathf.Lerp(underwaterVegetationVolumeMin, underwaterVegetationVolumeMax, densityT);
+            sam.PlayStatic2D(clip, volume, sam.AmbientGroup);
+            _underwaterVegetationPulseTimer = Mathf.Lerp(
+                Mathf.Max(0.1f, underwaterVegetationIntervalMax),
+                Mathf.Max(0.1f, underwaterVegetationIntervalMin),
+                densityT);
+        }
+
+        private void UpdateFatalPressureLoopAudio(AcousticZoneState zone, float deltaTime)
+        {
+            HectonPlayerMovement movement = ResolvePlayerMovement();
+            float intensity = movement != null ? Mathf.Clamp01(movement.CurrentFatalPressureSequence01) : 0f;
+            if (zone != AcousticZoneState.Underwater || intensity <= 0.001f)
+            {
+                _fatalPressureNoiseTimer = 0f;
+                return;
+            }
+
+            _fatalPressureNoiseTimer -= deltaTime;
+            if (_fatalPressureNoiseTimer > 0f)
+                return;
+
+            AudioClip clip = null;
+            if (fatalPressureNoisePrimary != null && fatalPressureNoiseSecondary != null)
+            {
+                clip = _fatalPressureNoiseUsePrimaryNext ? fatalPressureNoisePrimary : fatalPressureNoiseSecondary;
+                _fatalPressureNoiseUsePrimaryNext = !_fatalPressureNoiseUsePrimaryNext;
+            }
+            else if (fatalPressureNoisePrimary != null)
+            {
+                clip = fatalPressureNoisePrimary;
+            }
+            else if (fatalPressureNoiseSecondary != null)
+            {
+                clip = fatalPressureNoiseSecondary;
+            }
+
+            if (clip == null || !SpatialAudioManager.TryGetInstance(out SpatialAudioManager sam))
+                return;
+
+            float volume = Mathf.Lerp(fatalPressureNoiseVolumeMin, fatalPressureNoiseVolumeMax, intensity);
+            sam.PlayStatic2D(clip, volume, sam.InterfaceGroup);
+            _fatalPressureNoiseTimer = Mathf.Lerp(
+                Mathf.Max(0.05f, fatalPressureNoiseIntervalMax),
+                Mathf.Max(0.05f, fatalPressureNoiseIntervalMin),
+                intensity);
+        }
+
+        private void HandleSonarPingSent(float intensity)
+        {
+            if (sonarPingClip == null || !SpatialAudioManager.TryGetInstance(out SpatialAudioManager sam))
+                return;
+
+            float volume = Mathf.Lerp(sonarPingVolumeMin, sonarPingVolumeMax, Mathf.Clamp01(intensity));
+            sam.PlayStatic2D(sonarPingClip, volume, sam.InterfaceGroup);
+        }
+
+        private void PlayStormInterferencePulse(float stormInterference, AcousticZoneState zone)
+        {
+            AudioClip clip = null;
+            if (stormStaticPrimary != null && stormStaticSecondary != null)
+            {
+                clip = _stormStaticUsePrimaryNext ? stormStaticPrimary : stormStaticSecondary;
+                _stormStaticUsePrimaryNext = !_stormStaticUsePrimaryNext;
+            }
+            else if (stormStaticPrimary != null)
+            {
+                clip = stormStaticPrimary;
+            }
+            else if (stormStaticSecondary != null)
+            {
+                clip = stormStaticSecondary;
+            }
+
+            if (clip == null || !SpatialAudioManager.TryGetInstance(out SpatialAudioManager sam))
+                return;
+
+            float volume = Mathf.Lerp(stormStaticVolumeMin, stormStaticVolumeMax, stormInterference);
+            if (zone == AcousticZoneState.Underwater)
+                volume *= stormStaticUnderwaterVolumeScale;
+
+            sam.PlayStatic2D(clip, volume, sam.InterfaceGroup);
         }
 
         private string ResolveAmbientMoodLabel()
@@ -1345,6 +1618,9 @@ namespace Hecton8.Audio
 
             _surfacePrecipitationIntensity = clampedPrecipitation;
             _surfaceElectricalActivity = clampedElectrical;
+            _debugStormInterference = clampedElectrical <= stormStaticElectricalThreshold
+                ? 0f
+                : Mathf.InverseLerp(stormStaticElectricalThreshold, 1f, clampedElectrical);
 
             if (_stateInitialized && _lastZone == AcousticZoneState.Surface)
                 TransitionToResolvedSnapshot(AcousticZoneState.Surface, surfaceWeatherTransitionDuration);
@@ -1360,6 +1636,10 @@ namespace Hecton8.Audio
 
             _surfacePrecipitationIntensity = 0f;
             _surfaceElectricalActivity = 0f;
+            _stormInterferencePulseTimer = 0f;
+            _stormAmbientInterference = 0f;
+            _stormAmbientFlutter = 0f;
+            _debugStormInterference = 0f;
 
             if (_stateInitialized && _lastZone == AcousticZoneState.Surface)
                 TransitionToResolvedSnapshot(AcousticZoneState.Surface, surfaceWeatherTransitionDuration);
@@ -1805,6 +2085,25 @@ namespace Hecton8.Audio
             if (exteriorTransitionHoldTime < 0f) exteriorTransitionHoldTime = 0f;
             if (transitionVolume < 0f) transitionVolume = 0f;
             if (transitionVolume > 1f) transitionVolume = 1f;
+            if (stormStaticElectricalThreshold < 0f) stormStaticElectricalThreshold = 0f;
+            if (stormStaticElectricalThreshold > 1f) stormStaticElectricalThreshold = 1f;
+            if (stormStaticIntervalMax < 0.1f) stormStaticIntervalMax = 0.1f;
+            if (stormStaticIntervalMin < 0.1f) stormStaticIntervalMin = 0.1f;
+            if (stormStaticIntervalMin > stormStaticIntervalMax) stormStaticIntervalMin = stormStaticIntervalMax;
+            if (stormStaticVolumeMin < 0f) stormStaticVolumeMin = 0f;
+            if (stormStaticVolumeMin > 1f) stormStaticVolumeMin = 1f;
+            if (stormStaticVolumeMax < stormStaticVolumeMin) stormStaticVolumeMax = stormStaticVolumeMin;
+            if (stormStaticVolumeMax > 1f) stormStaticVolumeMax = 1f;
+            if (stormStaticUnderwaterVolumeScale < 0f) stormStaticUnderwaterVolumeScale = 0f;
+            if (stormStaticUnderwaterVolumeScale > 1f) stormStaticUnderwaterVolumeScale = 1f;
+            if (stormAmbientDuckMax < 0f) stormAmbientDuckMax = 0f;
+            if (stormAmbientDuckMax > 0.5f) stormAmbientDuckMax = 0.5f;
+            if (stormAmbientPitchDropMax < 0f) stormAmbientPitchDropMax = 0f;
+            if (stormAmbientPitchDropMax > 0.25f) stormAmbientPitchDropMax = 0.25f;
+            if (stormAmbientPitchFlutterMax < 0f) stormAmbientPitchFlutterMax = 0f;
+            if (stormAmbientPitchFlutterMax > 0.15f) stormAmbientPitchFlutterMax = 0.15f;
+            if (stormAmbientFlutterFrequencyMin < 0.1f) stormAmbientFlutterFrequencyMin = 0.1f;
+            if (stormAmbientFlutterFrequencyMax < stormAmbientFlutterFrequencyMin) stormAmbientFlutterFrequencyMax = stormAmbientFlutterFrequencyMin;
             if (interiorFallbackReverbDryLevel < -10000f) interiorFallbackReverbDryLevel = -10000f;
             if (interiorFallbackReverbDryLevel > 0f) interiorFallbackReverbDryLevel = 0f;
             _snapshotBindingsResolved = false;
@@ -1823,6 +2122,12 @@ namespace Hecton8.Audio
 
             if (waterFillSound == null)
                 waterFillSound = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(DefaultWaterFillSoundPath);
+
+            if (stormStaticPrimary == null)
+                stormStaticPrimary = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(DefaultStormStaticPrimaryPath);
+
+            if (stormStaticSecondary == null)
+                stormStaticSecondary = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(DefaultStormStaticSecondaryPath);
         }
 
         private void ResetAuthoringWarnings()

@@ -1,3 +1,4 @@
+using Hecton8.World;
 using UnityEngine;
 
 namespace Hecton8.AI
@@ -7,6 +8,16 @@ namespace Hecton8.AI
     /// </summary>
     public static class NoiseSystem
     {
+        private const float MinimumMovementNoiseSqr = 0.25f;
+        private const float MinimumMovementNoiseRadius = 12f;
+        private const float MaximumMovementNoiseRadius = 42f;
+        private const float FlashlightNoiseRadius = 30f;
+        private const float MinimumToolNoiseRadius = 18f;
+        private const float MaximumToolNoiseRadius = 48f;
+        private const float MinimumTransportNoiseRadius = 28f;
+        private const float MaximumTransportNoiseRadius = 96f;
+        private const int MaxNoiseListenerCount = 256;
+
         /// <summary>
         /// Snapshot of player-generated noise state for the current frame window.
         /// </summary>
@@ -55,6 +66,8 @@ namespace Hecton8.AI
         private const int MaxPlayerSignalAgeFrames = 30;
         private static PlayerNoiseSignal _playerNoiseSignal;
         private static bool _hasPlayerNoiseSignal;
+        // COLD ALLOC: SpatialQueryHit[256] — centralized fauna noise dispatch buffer — owner: NoiseSystem
+        private static readonly SpatialQueryHit[] _playerNoiseListenerBuffer = new SpatialQueryHit[MaxNoiseListenerCount];
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -83,6 +96,7 @@ namespace Hecton8.AI
                 Mathf.Clamp01(toolUseNoise01),
                 Time.frameCount);
             _hasPlayerNoiseSignal = true;
+            DispatchPlayerSignal(_playerNoiseSignal);
         }
 
         /// <summary>
@@ -108,6 +122,64 @@ namespace Hecton8.AI
 
             signal = default;
             return false;
+        }
+
+        private static void DispatchPlayerSignal(PlayerNoiseSignal signal)
+        {
+            float dispatchRadius = ResolveDispatchRadius(signal);
+            if (dispatchRadius <= 0f)
+                return;
+
+            int count = WorldSpatialHashGrid.CollectContactsNonAlloc(
+                signal.Position,
+                dispatchRadius,
+                SpatialTargetKind.Bioform,
+                _playerNoiseListenerBuffer);
+
+            for (int i = 0; i < count; i++)
+            {
+                if (_playerNoiseListenerBuffer[i].Owner is FaunaBrain brain)
+                    brain.ReceivePlayerNoiseSignal(signal);
+            }
+        }
+
+        private static float ResolveDispatchRadius(PlayerNoiseSignal signal)
+        {
+            float dispatchRadius = 0f;
+
+            if (signal.FlashlightOn)
+                dispatchRadius = FlashlightNoiseRadius;
+
+            if (signal.MovementSpeedSqr >= MinimumMovementNoiseSqr)
+            {
+                float movementSpeed = Mathf.Sqrt(signal.MovementSpeedSqr);
+                float movementRadius = Mathf.Lerp(
+                    MinimumMovementNoiseRadius,
+                    MaximumMovementNoiseRadius,
+                    Mathf.InverseLerp(0.5f, 8.5f, movementSpeed));
+                dispatchRadius = Mathf.Max(dispatchRadius, movementRadius);
+            }
+
+            if (signal.ToolUseNoise01 > 0f)
+            {
+                float toolRadius = Mathf.Lerp(
+                    MinimumToolNoiseRadius,
+                    MaximumToolNoiseRadius,
+                    signal.ToolUseNoise01);
+                dispatchRadius = Mathf.Max(dispatchRadius, toolRadius);
+            }
+
+            if (signal.TransportBoost01 > 0f)
+            {
+                float transportSignature = Mathf.Max(1f, signal.TransportSignature);
+                float transportRadius = Mathf.Lerp(
+                    MinimumTransportNoiseRadius,
+                    MaximumTransportNoiseRadius * transportSignature,
+                    signal.TransportBoost01);
+                dispatchRadius = Mathf.Max(dispatchRadius, transportRadius);
+            }
+
+            return dispatchRadius;
         }
 
         public static float EvaluatePlayerNoise01(

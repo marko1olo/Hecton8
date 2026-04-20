@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Build_Utility_Pylon
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Building.BuildableData
   moduleName: Utility Pylon
+  stableId: Build_Utility_Pylon
   icon: {fileID: 0}
   description: External support and routing node for later power/data chains.
   family: 2

@@ -21,6 +21,7 @@
 
 using Hecton8.Audio;
 using Hecton8.Core;
+using Hecton8.World;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -128,6 +129,8 @@ namespace Hecton8.Gameplay
         private float _fadeTimer;
         private float _currentIntensity;
         private bool _isRegistered;
+        private int _spatialHandle;
+        private Vector3 _lastSpatialPosition;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC ACCESSORS
@@ -181,6 +184,7 @@ namespace Hecton8.Gameplay
         {
             // Unregister from tick system
             UnregisterFromTick();
+            UnregisterSpatialHandle();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -194,6 +198,8 @@ namespace Hecton8.Gameplay
         /// <param name="deltaTime">Time.deltaTime.</param>
         public void Tick(float deltaTime)
         {
+            RefreshSpatialHandle();
+
             switch (_state)
             {
                 case FlareState.Burning:
@@ -293,6 +299,7 @@ namespace Hecton8.Gameplay
 
             // Unregister from tick system to save performance
             UnregisterFromTick();
+            UnregisterSpatialHandle();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -343,6 +350,7 @@ namespace Hecton8.Gameplay
 
             // Register with tick system
             RegisterToTick();
+            RegisterSpatialHandle();
         }
 
         /// <summary>
@@ -368,6 +376,7 @@ namespace Hecton8.Gameplay
 
             // Unregister from tick
             UnregisterFromTick();
+            UnregisterSpatialHandle();
         }
 
         /// <summary>
@@ -396,6 +405,7 @@ namespace Hecton8.Gameplay
 
             // Unregister from tick
             UnregisterFromTick();
+            UnregisterSpatialHandle();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -462,6 +472,34 @@ namespace Hecton8.Gameplay
                 tickManager.Unregister(this);
                 _isRegistered = false;
             }
+        }
+
+        private void RegisterSpatialHandle()
+        {
+            if (_spatialHandle != 0)
+                return;
+
+            _spatialHandle = WorldSpatialHashGrid.RegisterSignal(this);
+            _lastSpatialPosition = _transform.position;
+        }
+
+        private void UnregisterSpatialHandle()
+        {
+            if (_spatialHandle == 0)
+                return;
+
+            WorldSpatialHashGrid.Unregister(_spatialHandle);
+            _spatialHandle = 0;
+        }
+
+        private void RefreshSpatialHandle()
+        {
+            if (_spatialHandle == 0)
+                return;
+
+            Vector3 currentPosition = _transform.position;
+            WorldSpatialHashGrid.UpdateGridPosition(_spatialHandle, _lastSpatialPosition, currentPosition);
+            _lastSpatialPosition = currentPosition;
         }
 
         // ══════════════════════════════════════════════════════════

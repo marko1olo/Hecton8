@@ -78,8 +78,8 @@ namespace Hecton8.UI
 
         /// <summary>
         /// Queue post-processing changes for live preview.
-        /// Ambient occlusion is persisted but not previewed here because the project
-        /// does not expose a live renderer-feature owner through a Volume profile.
+        /// Ambient occlusion is persisted but not previewed here because Unity 6000
+        /// exposes SSAO as a renderer feature, not a VolumeComponent in this project.
         /// </summary>
         public void PreviewPostProcessing(bool ao, bool bloom, bool motionBlur)
         {

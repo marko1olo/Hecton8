@@ -65,11 +65,20 @@ using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Physics;
 using Hecton8.Power;
+using Hecton8.UI;
 using UnityEngine;
 using UnityEngine.Rendering;
 
 namespace Hecton8.Gameplay
 {
+    public enum BaseModuleFailureMode : byte
+    {
+        None = 0,
+        OxygenLeak = 1,
+        Fire = 2,
+        ShortCircuit = 3
+    }
+
     [DisallowMultipleComponent]
     public sealed class BaseModule : MonoBehaviour, IPowerComponent, IPoolable, ISlowTickable, ICuttable
     {
@@ -134,6 +143,25 @@ namespace Hecton8.Gameplay
         [Tooltip("Множитель деградации на глубине > 500м (давление на корпус).")]
         [SerializeField, UnityEngine.Range(1f, 5f)] private float depthDegradationMultiplier = 2f;
 
+        [Header("── Cascade Failures ──────────────────────────────")]
+        [Tooltip("Текущий каскадный отказ модуля. None = штатно, остальные требуют сервисного восстановления.")]
+        [SerializeField] private BaseModuleFailureMode failureMode;
+        [Tooltip("Permanent integrity lost after each cascade failure.")]
+        [SerializeField] private float repairWearPerCascade = 12f;
+        [Tooltip("Lowest fraction of original integrity that repairs are allowed to restore.")]
+        [SerializeField, Range(0.1f, 1f)] private float minimumRecoverableIntegrityRatio = 0.45f;
+        [Tooltip("Current repair ceiling for this module. Repeated failures reduce it until the module is rebuilt.")]
+        [SerializeField] private float maxRecoverableIntegrity = 100f;
+
+        [Tooltip("Скорость утечки кислорода из скафандра игрока внутри аварийного модуля.")]
+        [SerializeField] private float oxygenLeakDrainRate = 10f;
+
+        [Tooltip("Урон скафандру игрока внутри горящего модуля.")]
+        [SerializeField] private float fireSuitDamageRate = 12f;
+
+        [Tooltip("Сжигаемая пожаром энергия костюма игрока внутри модуля.")]
+        [SerializeField] private float fireSuitEnergyDrainRate = 6f;
+
         [Header("── Interior Zone (Dry Zone) ──────────────────")]
         [Tooltip("BoxCollider (Trigger), охватывающий внутреннее пространство модуля. " +
                  "Объекты с BuoyancyObject внутри этого триггера не испытывают водных сил, " +
@@ -170,6 +198,20 @@ namespace Hecton8.Gameplay
                  "module is powered, and not flooded.\n" +
                  "15 = full O2 tank (~100 units) refilled in ~7 seconds.")]
         [SerializeField] private float oxygenRefillRate = 15f;
+        [Tooltip("Maximum breathable reserve stored inside the module for dry-zone life support.")]
+        [SerializeField] private float breathableReserveCapacity = 120f;
+        [Tooltip("Current breathable reserve. Older authored modules initialize this to full on first runtime spawn.")]
+        [SerializeField] private float breathableReserve = 120f;
+        [Tooltip("How quickly powered scrubbers rebuild breathable reserve while the compartment stays serviceable.")]
+        [SerializeField] private float airRecycleRate = 6f;
+        [Tooltip("Breathable reserve consumed each second while an occupant is using this module as dry shelter.")]
+        [SerializeField] private float occupiedAirDrainRate = 9f;
+        [Tooltip("Air-quality threshold below which dry shelter becomes a short-lived stale-air pocket.")]
+        [SerializeField, Range(0.05f, 0.8f)] private float staleAirThreshold = 0.25f;
+        [Tooltip("Minimum refill fraction while stale air still exists but the scrubber loop is near saturation.")]
+        [SerializeField, Range(0f, 1f)] private float staleAirMinRefillScale = 0.2f;
+        [Tooltip("Suit oxygen lost per second when breathable reserve is fully exhausted inside an otherwise dry module.")]
+        [SerializeField] private float staleAirSuitDrainRate = 3f;
         [Header("── Power Fallback ────────────────────────────")]
         [Tooltip("Fallback power draw, если BuildableData / ModuleMarker отсутствуют.")]
         [SerializeField] private float fallbackPowerRating = -10f;
@@ -216,6 +258,8 @@ namespace Hecton8.Gameplay
         /// Null = player is not inside this module.
         /// </summary>
         private HectonSurvivalSystem _trackedPlayerSurvival;
+        private bool _airReserveWarningLatched;
+        private bool _airReserveDepletedLatched;
         // ══════════════════════════════════════════════════════════
         //  INTERIOR ZONE — TRACKED OBJECTS
         // ══════════════════════════════════════════════════════════
@@ -252,7 +296,7 @@ namespace Hecton8.Gameplay
         public float CurrentIntegrity
         {
             get => currentIntegrity;
-            set => currentIntegrity = Mathf.Clamp(value, 0f, maxIntegrity);
+            set => currentIntegrity = Mathf.Clamp(value, 0f, GetRepairIntegrityCap());
         }
 
         /// <summary>
@@ -274,6 +318,21 @@ namespace Hecton8.Gameplay
         /// <summary>Идёт ли деконструкция (защита от повторных вызовов).</summary>
         public bool IsDeconstructing => _isDeconstructing;
 
+        /// <summary>Текущий каскадный аварийный статус модуля.</summary>
+        public BaseModuleFailureMode CurrentFailureMode => failureMode;
+
+        /// <summary>Модуль находится в аварийном каскадном состоянии.</summary>
+        public bool HasCascadeFailure => failureMode != BaseModuleFailureMode.None;
+
+        /// <summary>Current repair ceiling after accumulated material fatigue.</summary>
+        public float MaxRecoverableIntegrity => GetRepairIntegrityCap();
+        /// <summary>Normalized breathable reserve available for dry-zone life support.</summary>
+        public float AirReserveNormalized => breathableReserveCapacity > 0.01f ? Mathf.Clamp01(breathableReserve / breathableReserveCapacity) : 1f;
+        /// <summary>True when the player is currently inside this module's interior volume.</summary>
+        public bool IsPlayerInsideInterior => _trackedPlayerSurvival != null;
+        /// <summary>True when breathable reserve has degraded into a stale-air window.</summary>
+        public bool IsAirQualityLow => AirReserveNormalized <= staleAirThreshold;
+
         // ══════════════════════════════════════════════════════════
         //  IPowerComponent
         // ══════════════════════════════════════════════════════════
@@ -286,7 +345,7 @@ namespace Hecton8.Gameplay
 
         public int PowerPriority => powerPriority;
 
-        public bool HasPower => _hasPower;
+        public bool HasPower => HasOperationalPower;
 
         /// <summary>
         /// Реакция на изменение статуса питания от PowerGrid:
@@ -301,9 +360,9 @@ namespace Hecton8.Gameplay
             _hasPower = hasPower;
             _debugHasPower = hasPower;
 
-            SetLightsEnabled(hasPower);
+            SetLightsEnabled(HasOperationalPower);
 
-            if (!hasPower)
+            if (!HasOperationalPower)
             {
                 StopDrain();
             }
@@ -311,6 +370,8 @@ namespace Hecton8.Gameplay
             {
                 TryStartDrain();
             }
+
+            SyncSpatialRole();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -336,13 +397,16 @@ namespace Hecton8.Gameplay
             CacheReferences();
             ReadBuildablePower();
 
-            currentIntegrity = Mathf.Clamp(currentIntegrity, 0f, maxIntegrity);
+            EnsureRepairIntegrityCapInitialized();
+            InitializeBreathableReserveCold();
+            currentIntegrity = Mathf.Clamp(currentIntegrity, 0f, GetRepairIntegrityCap());
             _wasFlooded = isFlooded;
             _isDeconstructing = false;
 
             RefreshVisualStateImmediate();
             ResyncInteriorOccupants(true);
             TryStartDrain();
+            SyncSpatialRole();
         }
 
         public void OnDespawn()
@@ -355,6 +419,12 @@ namespace Hecton8.Gameplay
 
             _isDeconstructing = false;
             _trackedPlayerSurvival = null;
+            failureMode = BaseModuleFailureMode.None;
+            maxRecoverableIntegrity = maxIntegrity;
+            breathableReserve = breathableReserveCapacity;
+            _airReserveWarningLatched = false;
+            _airReserveDepletedLatched = false;
+            SyncSpatialRole();
 
             ReleaseAllTrackedObjects();
         }
@@ -372,21 +442,17 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void SlowTick()
         {
-            // ── Life Support: O2 refill ──
-            // Conditions: player inside + powered + not flooded.
-            // Runs BEFORE power check so we can skip everything else
-            // if power is off, but still need the player-inside check
-            // to be evaluated every tick.
-            if (_trackedPlayerSurvival != null && _hasPower && !isFlooded)
-            {
-                _trackedPlayerSurvival.RefillOxygen(oxygenRefillRate * SLOW_TICK_DT);
-            }
-            if (!_hasPower)
+            ApplyCascadeFailureEffects();
+            UpdateLifeSupport(SLOW_TICK_DT);
+            if (!HasOperationalPower)
                 return;
 
+            float repairCap = GetRepairIntegrityCap();
+
             if (passiveRecoveryRate > 0f &&
+                failureMode == BaseModuleFailureMode.None &&
                 currentIntegrity > 0f &&
-                currentIntegrity < maxIntegrity)
+                currentIntegrity < repairCap)
             {
                 Repair(passiveRecoveryRate * SLOW_TICK_DT);
             }
@@ -431,6 +497,7 @@ namespace Hecton8.Gameplay
             CacheReferences();
             ReadBuildablePower();
             ValidateInteriorTrigger();
+            InitializeBreathableReserveCold();
 
             _wasFlooded = isFlooded;
         }
@@ -527,11 +594,11 @@ namespace Hecton8.Gameplay
 
             if (currentIntegrity <= 0f)
             {
-                Breach();
+                TriggerCascadeFailure();
             }
             else
             {
-                SetLeakActive(true);
+                SetLeakActive(ShouldLeakBeActive());
             }
 
             StopDrain();
@@ -546,21 +613,28 @@ namespace Hecton8.Gameplay
         public void Repair(float amount)
         {
             if (amount <= 0f) return;
-            if (currentIntegrity >= maxIntegrity && !isFlooded) return;
+            float repairCap = GetRepairIntegrityCap();
+            if (currentIntegrity >= repairCap && !isFlooded) return;
 
             currentIntegrity += amount;
-            if (currentIntegrity > maxIntegrity)
-                currentIntegrity = maxIntegrity;
+            if (currentIntegrity > repairCap)
+                currentIntegrity = repairCap;
 
-            if (currentIntegrity >= maxIntegrity)
+            if (currentIntegrity >= repairCap)
             {
-                currentIntegrity = maxIntegrity;
-                SetLeakActive(false);
+                currentIntegrity = repairCap;
+                if (failureMode == BaseModuleFailureMode.Fire ||
+                    failureMode == BaseModuleFailureMode.ShortCircuit)
+                {
+                    ClearCascadeFailure();
+                }
+
+                SetLeakActive(ShouldLeakBeActive());
                 TryStartDrain();
             }
             else
             {
-                SetLeakActive(true);
+                SetLeakActive(ShouldLeakBeActive());
             }
 
             RefreshVisualStateImmediate();
@@ -575,6 +649,7 @@ namespace Hecton8.Gameplay
             StopDrain();
             SetFloodedVisual(true);
             SyncTrackedObjectsFloodState();
+            SyncSpatialRole();
             PlaySpatialSfx(floodClip);
         }
 
@@ -585,8 +660,11 @@ namespace Hecton8.Gameplay
         {
             isFlooded = false;
             StopDrain();
+            if (failureMode == BaseModuleFailureMode.OxygenLeak)
+                ClearCascadeFailure();
             SetFloodedVisual(false);
             SyncTrackedObjectsFloodState();
+            SyncSpatialRole();
         }
 
         /// <summary>
@@ -595,8 +673,13 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void RefreshAfterLoad()
         {
-            currentIntegrity = Mathf.Clamp(currentIntegrity, 0f, maxIntegrity);
+            EnsureRepairIntegrityCapInitialized();
+            currentIntegrity = Mathf.Clamp(currentIntegrity, 0f, GetRepairIntegrityCap());
+            breathableReserveCapacity = Mathf.Max(1f, breathableReserveCapacity);
+            breathableReserve = Mathf.Clamp(breathableReserve, 0f, breathableReserveCapacity);
             _wasFlooded = isFlooded;
+            _airReserveWarningLatched = IsAirQualityLow;
+            _airReserveDepletedLatched = breathableReserve <= 0f;
             RefreshVisualStateImmediate();
             SyncTrackedObjectsFloodState();
             ResyncInteriorOccupants(true);
@@ -609,10 +692,41 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void SetState(float integrity, bool flooded)
         {
-            currentIntegrity = Mathf.Clamp(integrity, 0f, maxIntegrity);
+            SetState(integrity, flooded, BaseModuleFailureMode.None, maxIntegrity);
+        }
+
+        /// <summary>
+        /// Устанавливает состояние модуля при загрузке сохранения, включая аварийный статус.
+        /// </summary>
+        public void SetState(float integrity, bool flooded, BaseModuleFailureMode cascadeFailure)
+        {
+            SetState(integrity, flooded, cascadeFailure, maxIntegrity);
+        }
+
+        /// <summary>
+        /// Restores module state from save, including the reduced repair ceiling caused by previous failures.
+        /// </summary>
+        public void SetState(float integrity, bool flooded, BaseModuleFailureMode cascadeFailure, float repairIntegrityCap)
+        {
+            SetState(integrity, flooded, cascadeFailure, repairIntegrityCap, 1f);
+        }
+
+        /// <summary>
+        /// Restores module state from save, including reduced repair ceiling and breathable reserve state.
+        /// </summary>
+        public void SetState(float integrity, bool flooded, BaseModuleFailureMode cascadeFailure, float repairIntegrityCap, float airReserveNormalized)
+        {
+            breathableReserveCapacity = Mathf.Max(1f, breathableReserveCapacity);
+            maxRecoverableIntegrity = Mathf.Clamp(repairIntegrityCap, maxIntegrity * minimumRecoverableIntegrityRatio, maxIntegrity);
+            currentIntegrity = Mathf.Clamp(integrity, 0f, GetRepairIntegrityCap());
+            breathableReserve = Mathf.Clamp01(airReserveNormalized) * breathableReserveCapacity;
             isFlooded = flooded;
             _wasFlooded = flooded;
+            failureMode = cascadeFailure;
+            _airReserveWarningLatched = IsAirQualityLow;
+            _airReserveDepletedLatched = breathableReserve <= 0f;
             RefreshVisualStateImmediate();
+            SyncSpatialRole();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -823,23 +937,95 @@ namespace Hecton8.Gameplay
         //  PRIVATE — CORE STATE LOGIC
         // ══════════════════════════════════════════════════════════
 
-        private void Breach()
+        private float GetRepairIntegrityCap()
         {
-            isFlooded = true;
+            float minimumCap = maxIntegrity * minimumRecoverableIntegrityRatio;
+            if (minimumCap < 1f)
+                minimumCap = 1f;
+
+            return Mathf.Clamp(maxRecoverableIntegrity, minimumCap, maxIntegrity);
+        }
+
+        private void EnsureRepairIntegrityCapInitialized()
+        {
+            if (maxRecoverableIntegrity <= 0f)
+                maxRecoverableIntegrity = maxIntegrity;
+
+            maxRecoverableIntegrity = GetRepairIntegrityCap();
+        }
+
+        private void InitializeBreathableReserveCold()
+        {
+            breathableReserveCapacity = Mathf.Max(1f, breathableReserveCapacity);
+
+            if (breathableReserve <= 0f)
+                breathableReserve = breathableReserveCapacity;
+
+            breathableReserve = Mathf.Clamp(breathableReserve, 0f, breathableReserveCapacity);
+            _airReserveWarningLatched = IsAirQualityLow;
+            _airReserveDepletedLatched = breathableReserve <= 0f;
+        }
+
+        private void ApplyMaterialFatigue()
+        {
+            EnsureRepairIntegrityCapInitialized();
+
+            if (repairWearPerCascade <= 0f)
+                return;
+
+            float minimumCap = maxIntegrity * minimumRecoverableIntegrityRatio;
+            if (minimumCap < 1f)
+                minimumCap = 1f;
+
+            maxRecoverableIntegrity -= repairWearPerCascade;
+            if (maxRecoverableIntegrity < minimumCap)
+                maxRecoverableIntegrity = minimumCap;
+        }
+
+        private bool HasOperationalPower => _hasPower && failureMode != BaseModuleFailureMode.ShortCircuit;
+
+        private void TriggerCascadeFailure()
+        {
+            ApplyMaterialFatigue();
+            failureMode = ResolveCascadeFailureMode();
             _isDraining = false;
             _drainTimer = 0f;
 
-            SetLeakActive(true);
-            SetFloodedVisual(true);
+            switch (failureMode)
+            {
+                case BaseModuleFailureMode.Fire:
+                    isFlooded = false;
+                    PlaySpatialSfx(floodClip);
+                    RecordCascadeFailure("MODULE FIRE", "Compartment ignition risk. Repair before occupancy.");
+                    NotificationEvents.PushWarning("BASE MODULE FIRE // SERVICE NOW");
+                    break;
+                case BaseModuleFailureMode.ShortCircuit:
+                    isFlooded = true;
+                    PlaySpatialSfx(floodClip);
+                    RecordCascadeFailure("SHORT CIRCUIT", "Compartment flooded and pumps offline until hull service completes.");
+                    NotificationEvents.PushWarning("BASE SHORT CIRCUIT // POWER LOCKOUT");
+                    break;
+                default:
+                    failureMode = BaseModuleFailureMode.OxygenLeak;
+                    isFlooded = true;
+                    PlaySpatialSfx(floodClip);
+                    RecordCascadeFailure("OXYGEN LEAK", "Compartment seal lost. Oxygen-safe shelter compromised.");
+                    NotificationEvents.PushWarning("BASE OXYGEN LEAK // COMPARTMENT BREACHED");
+                    break;
+            }
+
+            SetLeakActive(ShouldLeakBeActive());
+            SetFloodedVisual(isFlooded);
             SyncTrackedObjectsFloodState();
-            PlaySpatialSfx(floodClip);
+            SetLightsEnabled(HasOperationalPower);
+            SyncSpatialRole();
         }
 
         private void TryStartDrain()
         {
-            if (!_hasPower) return;
+            if (!HasOperationalPower) return;
             if (!isFlooded) return;
-            if (currentIntegrity < maxIntegrity) return;
+            if (currentIntegrity < GetRepairIntegrityCap()) return;
 
             _isDraining = true;
             if (_drainTimer <= 0f)
@@ -856,18 +1042,200 @@ namespace Hecton8.Gameplay
 
         private void RefreshVisualStateImmediate()
         {
-            if (currentIntegrity < maxIntegrity && currentIntegrity > 0f)
-                SetLeakActive(true);
-            else if (currentIntegrity >= maxIntegrity)
-                SetLeakActive(false);
+            SetLeakActive(ShouldLeakBeActive());
 
             SetFloodedVisual(isFlooded);
-            SetLightsEnabled(_hasPower);
+            SetLightsEnabled(HasOperationalPower);
         }
 
         // ══════════════════════════════════════════════════════════
         //  PRIVATE — INTERIOR ZONE SYNC
         // ══════════════════════════════════════════════════════════
+
+        private bool ShouldLeakBeActive()
+        {
+            if (failureMode == BaseModuleFailureMode.OxygenLeak ||
+                failureMode == BaseModuleFailureMode.Fire)
+            {
+                return true;
+            }
+
+            return currentIntegrity < GetRepairIntegrityCap() && currentIntegrity > 0f;
+        }
+
+        private void ApplyCascadeFailureEffects()
+        {
+            if (_trackedPlayerSurvival == null)
+                return;
+
+            switch (failureMode)
+            {
+                case BaseModuleFailureMode.OxygenLeak:
+                    if (oxygenLeakDrainRate > 0f)
+                        _trackedPlayerSurvival.DrainOxygen(oxygenLeakDrainRate * SLOW_TICK_DT);
+                    break;
+                case BaseModuleFailureMode.Fire:
+                    if (fireSuitDamageRate > 0f)
+                        _trackedPlayerSurvival.TakeDamage(fireSuitDamageRate * SLOW_TICK_DT);
+                    if (fireSuitEnergyDrainRate > 0f)
+                        _trackedPlayerSurvival.DrainEnergy(fireSuitEnergyDrainRate * SLOW_TICK_DT);
+                    break;
+            }
+        }
+
+        private void UpdateLifeSupport(float dt)
+        {
+            bool dryCompartment = !isFlooded && failureMode != BaseModuleFailureMode.Fire;
+
+            if (dryCompartment && HasOperationalPower && airRecycleRate > 0f && breathableReserve < breathableReserveCapacity)
+            {
+                breathableReserve += airRecycleRate * dt;
+                if (breathableReserve > breathableReserveCapacity)
+                    breathableReserve = breathableReserveCapacity;
+            }
+
+            if (_trackedPlayerSurvival == null || !dryCompartment)
+            {
+                TrackAirReserveStateTransitions();
+                return;
+            }
+
+            if (occupiedAirDrainRate > 0f)
+            {
+                breathableReserve -= occupiedAirDrainRate * dt;
+                if (breathableReserve < 0f)
+                    breathableReserve = 0f;
+            }
+
+            if (breathableReserve > 0f)
+            {
+                float refillScale = ResolveAirRefillScale();
+                if (refillScale > 0f && oxygenRefillRate > 0f)
+                    _trackedPlayerSurvival.RefillOxygen(oxygenRefillRate * refillScale * dt);
+            }
+            else if (staleAirSuitDrainRate > 0f)
+            {
+                _trackedPlayerSurvival.DrainOxygen(staleAirSuitDrainRate * dt);
+            }
+
+            TrackAirReserveStateTransitions();
+        }
+
+        private float ResolveAirRefillScale()
+        {
+            float airQuality = AirReserveNormalized;
+            if (airQuality >= staleAirThreshold)
+                return 1f;
+
+            if (airQuality <= 0f || staleAirThreshold <= 0.01f)
+                return staleAirMinRefillScale;
+
+            return Mathf.Lerp(staleAirMinRefillScale, 1f, airQuality / staleAirThreshold);
+        }
+
+        private void TrackAirReserveStateTransitions()
+        {
+            bool airQualityLow = IsAirQualityLow;
+            if (airQualityLow && !_airReserveWarningLatched)
+            {
+                _airReserveWarningLatched = true;
+                RecordCascadeFailure("AIR SCRUBBERS SATURATED", BuildAirReserveSummary());
+            }
+            else if (!airQualityLow && _airReserveWarningLatched && AirReserveNormalized > staleAirThreshold + 0.15f)
+            {
+                _airReserveWarningLatched = false;
+            }
+
+            bool depleted = breathableReserve <= 0f;
+            if (depleted && !_airReserveDepletedLatched)
+            {
+                _airReserveDepletedLatched = true;
+                RecordCascadeFailure("BREATHABLE RESERVE EXHAUSTED", "Dry shelter air has collapsed into stale reserve. Occupants must evacuate or restore scrubber support.");
+            }
+            else if (!depleted && _airReserveDepletedLatched && AirReserveNormalized > 0.2f)
+            {
+                _airReserveDepletedLatched = false;
+            }
+        }
+
+        private string BuildAirReserveSummary()
+        {
+            return string.Format(
+                "Breathable reserve down to {0:0}% inside the dry shelter loop. Scrubber support is no longer keeping pace with occupancy.",
+                AirReserveNormalized * 100f);
+        }
+
+        private void ClearCascadeFailure()
+        {
+            failureMode = BaseModuleFailureMode.None;
+            SyncSpatialRole();
+        }
+
+        private BaseModuleFailureMode ResolveCascadeFailureMode()
+        {
+            int hash = 17;
+            string prefabId = _moduleMarker != null ? _moduleMarker.PrefabId : string.Empty;
+
+            if (!string.IsNullOrEmpty(prefabId))
+            {
+                int length = prefabId.Length;
+                for (int i = 0; i < length; i++)
+                    hash = hash * 31 + prefabId[i];
+            }
+
+            Vector3 position = transform.position;
+            hash = hash * 31 + Mathf.RoundToInt(position.x * 10f);
+            hash = hash * 31 + Mathf.RoundToInt(position.y * 10f);
+            hash = hash * 31 + Mathf.RoundToInt(position.z * 10f);
+
+            int resolved = Mathf.Abs(hash % 3);
+            if (!_hasPower && resolved == 2)
+                resolved = 0;
+
+            switch (resolved)
+            {
+                case 1:
+                    return BaseModuleFailureMode.Fire;
+                case 2:
+                    return BaseModuleFailureMode.ShortCircuit;
+                default:
+                    return BaseModuleFailureMode.OxygenLeak;
+            }
+        }
+
+        private void RecordCascadeFailure(string title, string summary)
+        {
+            string source = _moduleMarker != null && _moduleMarker.Data != null
+                ? _moduleMarker.Data.moduleName
+                : "BASE";
+            FieldOperationLogSystem.RecordOperation(source, title, summary, "WARN");
+        }
+
+        private void SyncSpatialRole()
+        {
+            if (_moduleMarker == null)
+                return;
+
+            _moduleMarker.SetSpatialRole(ResolveSpatialRole());
+        }
+
+        private FieldTargetRole ResolveSpatialRole()
+        {
+            if (failureMode == BaseModuleFailureMode.ShortCircuit ||
+                failureMode == BaseModuleFailureMode.OxygenLeak ||
+                isFlooded)
+            {
+                return FieldTargetRole.ServiceFlooded;
+            }
+
+            if (failureMode == BaseModuleFailureMode.Fire)
+                return FieldTargetRole.ServiceDamaged;
+
+            if (currentIntegrity < GetRepairIntegrityCap())
+                return FieldTargetRole.ServiceDamaged;
+
+            return FieldTargetRole.Generic;
+        }
 
         private void SyncTrackedObjectsFloodState()
         {
@@ -1210,7 +1578,17 @@ namespace Hecton8.Gameplay
 #endif
             if (maxIntegrity < 1f) maxIntegrity = 1f;
             if (currentIntegrity < 0f) currentIntegrity = 0f;
-            if (currentIntegrity > maxIntegrity) currentIntegrity = maxIntegrity;
+            if (minimumRecoverableIntegrityRatio < 0.1f) minimumRecoverableIntegrityRatio = 0.1f;
+            if (minimumRecoverableIntegrityRatio > 1f) minimumRecoverableIntegrityRatio = 1f;
+            if (maxRecoverableIntegrity <= 0f) maxRecoverableIntegrity = maxIntegrity;
+            if (maxRecoverableIntegrity > maxIntegrity) maxRecoverableIntegrity = maxIntegrity;
+            if (currentIntegrity > maxRecoverableIntegrity) currentIntegrity = maxRecoverableIntegrity;
+            if (breathableReserveCapacity < 1f) breathableReserveCapacity = 1f;
+            if (breathableReserve < 0f) breathableReserve = 0f;
+            if (breathableReserve > breathableReserveCapacity) breathableReserve = breathableReserveCapacity;
+            if (airRecycleRate < 0f) airRecycleRate = 0f;
+            if (occupiedAirDrainRate < 0f) occupiedAirDrainRate = 0f;
+            if (staleAirSuitDrainRate < 0f) staleAirSuitDrainRate = 0f;
             if (drainDuration < 0.1f) drainDuration = 0.1f;
         }
 

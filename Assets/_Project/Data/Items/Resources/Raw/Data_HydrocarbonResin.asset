@@ -12,17 +12,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a49e6475ccf8054419a7fba4c7a78a5c, type: 3}
   m_Name: Data_HydrocarbonResin
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
-  itemName: Hydrocarbon Resin
+  legacyItemName: Hydrocarbon Resin
+  stableId: Data_HydrocarbonResin
   localizedItemName:
     tableKey: ITEM_HYDROCARBON_RESIN_NAME
-    fallbackText: "Hydrocarbon Resin"
+    fallbackText: Hydrocarbon Resin
     variants: []
   icon: {fileID: 0}
-  description: Sticky deep-sea resin for polymers, lubricants, and pressure-safe
+  legacyDescription: Sticky deep-sea resin for polymers, lubricants, and pressure-safe
     seal mixes.
   localizedDescription:
     tableKey: ITEM_HYDROCARBON_RESIN_DESCRIPTION
-    fallbackText: "Sticky deep-sea resin for polymers, lubricants, and pressure-safe seal mixes."
+    fallbackText: Sticky deep-sea resin for polymers, lubricants, and pressure-safe
+      seal mixes.
     variants: []
   weight: 0.8
   stackable: 1
@@ -31,17 +33,22 @@ MonoBehaviour:
   resourceFamily: 3
   progressionTier: 2
   isRawResource: 1
+  minDepth: 0
+  maxDepth: 0
   width: 1
   height: 1
   isConsumable: 0
+  useDuration: 0
   oxygenRestore: 0
   energyRestore: 0
   integrityRestore: 0
+  hungerRestore: 0
+  thirstRestore: 0
   useSound: {fileID: 0}
-  interactVerb: Collect
+  legacyInteractVerb: Collect
   localizedInteractVerb:
     tableKey: ITEM_INTERACT_TAKE
-    fallbackText: "Collect"
+    fallbackText: Collect
     variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

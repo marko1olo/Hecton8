@@ -1,0 +1,358 @@
+ДИАЛОГ ""НАСТРОИТЬ ГПУ ТРАВУ И БЛЕНД""
+
+
+What was wrong
+
+LOD1 motion vectors were still wrong. The impostor cards in Hecton_IndirectVegetationMotionVectors.shader (line 227) built both current and previous billboards from the current camera position, so a fast scooter turn could smear the far cards. Additional lights in Hecton_IndirectVegetation.shader (line 879) also stayed too readable in the abyss because there was no camera-distance extinction below the deep-fog band.
+
+I did not add a standalone empty-space volumetric spotlight renderer. That is a separate fullscreen/light-volume subsystem, outside the strict vegetation owner, and wiring it here would be architecture drift.
+
+What I did
+
+In HectonIndirectVegetationRenderer.cs (line 57) I added _HectonPreviousCameraPosition binding plus cached motion-camera history fields at 230 (line 230). The motion pass now pushes previous camera position before each draw in DrawMotionVectorPasses (line 1267) and resets safely on disable at 346 (line 346).
+
+In Hecton_IndirectVegetationMotionVectors.shader (line 59) I added the new uniform and rewired billboard history. ResolveBillboardPositionWS(...) now accepts an explicit camera position at 227 (line 227), AnimatePositionWS(...) carries it through at 238 (line 238), and the vertex path now uses _WorldSpaceCameraPos for current plus _HectonPreviousCameraPosition for previous at 293 (line 293).
+
+In Hecton_IndirectVegetation.shader (line 312) I added ResolveAbyssalAdditionalLightVisibility(...). The additional-light loop now multiplies both local diffuse/translucency and local shaft energy by this deep-water extinction term at 879 (line 879), 898 (line 898), and 899 (line 899). Below 1000m, headlights get progressively eaten by distance through the water column instead of reading cleanly to the far plane.
+
+In-game result
+
+LOD1 impostor cards now have a proper previous-camera billboard basis, so rapid scooter yaw should produce less far-field ghosting in TAA/motion blur. In abyss scenes, local lights still drive the vegetation, but their reach is shorter and dirtier because the water now absorbs them with camera distance.
+
+Empty-space volumetric headlight shafts through pure void are still not present. The vegetation-side scattering is stronger and more coherent, but it is not a new fullscreen raymarch system.
+
+What was verified
+
+Static patch verification only:
+
+motion-camera history property and cached state exist in renderer
+motion shader now consumes previous camera position for LOD1 billboard history
+abyss additional-light extinction exists and is applied in the forward additional-light loop
+Unity-side verification is blocked. refresh_unity timed out waiting for readiness, and subsequent console calls returned Unity session not available. I do not have live compile or Frame Debugger proof for this turn. Status remains PENDING VERIFICATION.
+
+Экзамен
+
+Why ZWrite Off in the main pass after Z-prepass:
+The depth-only pass owns visibility. That lets the expensive forward pass shade only pixels that survived the alpha-tested depth prime instead of rewriting depth on every overlapping layer. For algae with cutout holes, only the clipped-in coverage writes depth in prepass; clipped-out transparent holes stay empty, so the forward pass preserves the porous silhouette instead of sealing it.
+
+How shadow culling interacts with scooter headlights:
+It does not. The current shadow culling path is directional-light only. CullFloraShadowInstances is built around the main sun shadow domain, not local spot/point shadow frusta. Scooter headlights can still light the vegetation through URP additional lights, but this GPU shadow-culling path is not handling local spotlight shadow maps.
+
+GC VALIDATION: BEFORE: unknown · AFTER: unknown · STATUS: measured proof absent.
+REGRESSION MODEL: CPU/GC unchanged on managed hot paths; GPU cost rises trivially from one extra motion uniform and one abyss-light attenuation eval, while expected correctness improves for LOD1 history and deep-water light falloff.
+HOT PATH IMPACT: no new managed allocations in Tick; renderer only updates cached camera-history vectors; shader cost increase is one extra extinction function per lit pixel in _ADDITIONAL_LIGHTS.
+FAILURE MODES: if the render camera changes abruptly between frames, the motion path falls back to current camera position for one frame; if URP motion vectors are disabled in the renderer asset, the shader path exists but will not be consumed; empty-space spotlight shafts still require a separate volumetric renderer outside this owner.
+WARNING: Regression risk in very spotlight-heavy abyss scenes because additional-light shading still scales with URP’s per-draw light list and fragment count.
+STATUS: PENDING VERIFICATION.
+
+
+
+
+
+2:22 AM
+3 files changed
++52
+-8
+Undo
+
+Review
+Assets/_Project/Art/Shaders/Hecton_IndirectVegetation.shader
+Assets/_Project/Art/Shaders/Hecton_IndirectVegetationMotionVectors.shader
+Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs
+
+
+=--=-==--==-=--==-=-=-
+
+
+ДИАЛОГ "" УЛУЧШИТЬ ПЛАВАНИЕ НА ВОЛНАХ""
+
+
+What Was Wrong
+
+Активный сонар уже умел собирать контакты, но не продавал эффект визуально. Глубинные течения были слишком гладкими: без рваных seam-hits корпус скутера читал их как обычный drift. Катапультирование снимало контроль, но не давало короткой дезориентации, а mounted transport не продолжал физически уходить по инерции.
+
+What I Did
+
+В SpectrumSystem.cs я уже публикуемый sonar payload добил до grid-ready формата: _SonarRevealContacts теперь сопровождается _SonarRevealContactMeta, где отдельно кодируются hard/organic response и локальный radius контакта. Источник различения не выдуман: это SpatialTargetKind плюс GetVegetationDensity и semantic/acoustic sample от картографа. Для глобальных параметров сетки добавлен SonarGridOverlay.cs.
+
+В SuitVisor.shader добавлен сам noir-grid overlay. Он:
+
+реконструирует scene world position из depth,
+считает arrival-aware wavefront от _SonarRevealWaveParams,
+подсвечивает depth contours,
+рисует world-space grid,
+держит terrain mask коротко,
+отдельно даёт per-contact fade по arrival time через _SonarRevealContacts.w,
+смешивает hard/organic tint через _SonarRevealContactMeta.x/y.
+По глубинным течениям в HectonPlayerMovement.cs добавил noisy abyssal flow path через новый owner-bridge ApplyAbyssalFlowNoise. ApplyAbyssalCurrents теперь:
+
+берёт noisy flow,
+наклоняет им downdraft direction,
+отслеживает seam crossing по flowDelta,
+даёт короткий VelocityChange hull jolt,
+шлёт micro-hit в CameraJuiceProcessor через RegisterCollisionImpulse и новый RegisterExternalRollImpulse.
+По bailout в HectonPlayerMovement.cs TriggerTransportBailout теперь:
+
+для mounted transport зовёт TriggerEmergencyBailoutDrift,
+даёт игроку signed roll impulse,
+запускает visor distortion через VisorHUDController.TriggerEnvironmentalDistortion.
+В MountablePlayerTransport.cs добавлен owner-путь emergency drift/sink:
+
+rider снимается без zeroing velocity,
+rigidbody транспорта получает inherited velocity,
+потом коротко дрейфует,
+постепенно уходит вниз,
+если transport не broken, authored body damping/kinematic mode восстанавливаются после drift window.
+In-Game Result
+
+Сонар теперь не просто “пишет в буфер”. Через визор пробегает сферическая сетка, рельеф и инстансы вспыхивают в момент прихода волны и затухают, причём органика и твёрдые объекты читаются разным откликом.
+
+На большой глубине currents стали злее. Переход через шумные границы потока больше не выглядит как математически гладкий lerp: корпус получает короткие удары, камера ловит roll-jolt, а downdraft сам стал менее “идеально вертикальным”.
+
+Emergency eject теперь читается как авария, а не как сухой state flip. Игрок теряет ориентацию на короткое окно, а mounted transport не замирает на месте, а реально уходит дальше по инерции и начинает тонуть. WARNING: handheld MantaScooter по-прежнему не имеет отдельного world-body owner, поэтому полноценный inertial drift/sink в этом случае архитектурно ограничен.
+
+What Was Verified
+
+Unity-verified:
+
+refresh + compile дошли до idle.
+Новых console errors по HectonPlayerMovement.cs, CameraJuiceProcessor.cs, MountablePlayerTransport.cs, SpectrumSystem.cs, HectonMapMagicVegetationBridge.cs не surfaced.
+Текущие compile blockers внешние: Assets\_Project\Scripts\World\EnvironmentalStrainManager.cs(104,41) и (117,42).
+Code-review-only:
+
+Sonar grid использует уже существующие globals и fixed arrays, без новых per-frame allocations.
+Abyssal turbulence path — scalar-only в fixed step.
+Emergency drift/sink живёт в owner-е транспорта, а не в player controller.
+Экзамен:
+
+HullStress от скорости погружения считается не как жёсткий бан по depth, а как взвешенный blend depthT * 0.72 + depthRateT * 0.28 в UpdateHullStress. Поэтому при очень медленном и осторожном спуске rate-term остаётся низким, и игрок может пройти глубже, чем при агрессивном пикировании. Но depth-term всё равно копится и в итоге дожимает к лимиту.
+Сонар отличает органику от твёрдых объектов не “по названию объекта”, а через два канала в ResolveRevealContactMeta: SpatialTargetKind даёт hard bias для модулей/сигналов/сканируемых вещей, а GetVegetationDensity(...) + semantic type от картографа добавляют organic bias для травы/саргассов. В shader это уходит в _SonarRevealContactMeta.x/y и красится разными цветами.
+REGRESSION MODEL: CPU impact низкий на main thread, кроме одного extra noisy-flow compare в fixed step; GPU impact локален в visor pass и фиксирован 24-contact loop только в одном transparent shader. GC validation: measured proof absent. HOT PATH IMPACT: fixed-step turbulence seam detection + one extra roll impulse path; shader cost растёт только на визоре. FAILURE MODES: sonar grid зависит от scene depth и от того, что visor реально использует NASAPunk/SuitVisor; mounted bailout drift полноценно работает только для MountablePlayerTransport; aggressive sonar contour boost может дать слишком шумный оverlay на геометрии с грязным depth discontinuity. Status: PENDING VERIFICATION.
+
+
+
+
+
+2:34 AM
+7 files changed
++533
+-48
+Undo
+
+Review
+Assets/_Project/Art/Shaders/SuitVisor.shader
+Assets/_Project/Scripts/CameraJuiceProcessor.cs
+Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs
+Assets/_Project/Scripts/HectonPlayerMovement.cs
+Assets/_Project/Scripts/Visor/SonarGridOverlay.cs
+Assets/_Project/Scripts/Visor/SpectrumSystem.cs
+Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs
+
+
+
+=-=--==-=-=-=-=-=-
+
+
+ДИАЛОГ ""ДОРАБОТАЙ СТРИМИНГ ФЛОРЫ""
+What Was Wrong
+
+HectonFloatingOrigin and the bridge were misaligned.
+
+HectonFloatingOrigin shifts scene roots by -offset and then fires OnWorldShift(offset). The bridge’s ApplyWorldOffsetToAllChunks (line 1390) was doing the opposite sign and was walking the whole pool by capacity, not by live used slices. That was wrong twice:
+
+wrong world-space direction
+unnecessary cold-path stall risk
+The deep-biome path also still needed harder dead-zone behavior. It was already semantic, but the 3-4 km band was not sparse and huge enough.
+
+There was also a live external compile blocker trail in Editor.log outside the bridge path. The freshest one I directly touched was MetaBuffInjector.cs missing Hecton8.SaveSystem for ItemCatalog.
+
+What I Did
+
+In HectonMapMagicVegetationBridge.cs (line 1390) I rewired origin shifting to the real project contract.
+
+Subscribed the bridge to HectonFloatingOrigin.OnWorldShift in TrySubscribeEvents (line 4958) and HandleWorldShift (line 4971).
+Fixed the sign: the bridge now applies appliedOffset = -offset, matching HectonFloatingOrigin.
+Stopped touching full pool capacity. The bridge now schedules Burst offset jobs only for live payload slices through ScheduleShiftChunkSlice (line 3963) and the two calls at 1412 (line 1412) and 1415 (line 1415).
+Killed in-flight chunk jobs before origin shift so old job output cannot finalize against pre-shift coordinates.
+For techno-jungle / abyss variety:
+
+Kept the semantic family split and made it explicit in the Burst path with deterministic local-hash family selection in ResolveColonySemanticTypeStatic (line 3722).
+Continued using the dedicated techno Voronoi field in TryEvaluateTechnoJungle (line 3737), not the floating sargassum path.
+Made dead-zone anchors materially rarer and much larger in the anchored job at 3339-3361 (line 3339). The deeper the sample goes past the dead-zone threshold, the lower the keep chance and the larger the surviving structure scale.
+Kept abyssal 3D turbulence in ApplyAbyssalFlowNoiseStatic (line 3770).
+For the external unblock:
+
+Added the missing namespace in MetaBuffInjector.cs (line 6) so ItemCatalog resolves through Hecton8.SaveSystem.
+In-Game Result
+
+The bridge is now wired to the floating-origin system instead of free-running on stale absolute coordinates. On origin shift it should:
+
+cancel stale build jobs
+shift only used pool slices
+shift cached chunk bounds and tile positions with the correct sign
+refresh residency against the shifted player/world state
+Deep biome output is harsher now:
+
+Colony Graveyard still uses tech-jungle clustering
+Dead Zone now trends toward rare mega-anchors instead of medium-density clutter
+semantic family selection remains deterministic and renderer-safe because legacy render type 0/1/2 is still preserved
+Status: PENDING VERIFICATION.
+
+What Was Verified
+
+Code-review-only:
+
+Origin-shift event integration is present in HandleWorldShift (line 4971).
+The sign bug is fixed in ApplyWorldOffsetToAllChunks (line 1390).
+Offset work now targets used slices, not full pool capacity, through ScheduleShiftChunkSlice (line 3963).
+Dead-zone mega-structure thinning and scaling are in the Burst generation path around 3339 (line 3339).
+MetaBuffInjector now imports Hecton8.SaveSystem at line 6 (line 6).
+Unity-verified:
+
+Not complete. Unity MCP session dropped during domain reload.
+Editor.log fallback still shows external compile blockers in the Meta/* area and an older HectonPlayerMovement/VisorHUDController trace. I cannot call that clean.
+I do not have a fresh stable live console pass after the last patch set.
+Regression model:
+
+CPU: origin shift no longer walks dormant pool capacity. It now scales with live used slices only. Cold path still completes Burst work synchronously at shift time.
+GC: no new hot-path managed allocations were added.
+Memory: unchanged in pool design; dead-zone sparsity reduces live occupancy pressure in abyss chunks.
+Cadence: origin shift now invalidates in-flight builds instead of allowing stale post-shift payload finalization.
+Correctness: sign alignment with HectonFloatingOrigin is now consistent.
+FAILURE MODE: Unity reload instability prevented a trustworthy final live console read.
+WARNING: Regression risk in origin-shift hitching if the live used slice count is extreme in one frame. This is materially better than shifting full capacity, but not measured proof of zero pause.
+Экзамен:
+
+Как я гарантирую отсутствие паузы при ApplyWorldOffset на 500,000 инстансов: строго не гарантирую без profiler capture. Что я сделал реально: убрал полный проход по capacity и свел работу к живым used slices, плюс отменяю in-flight jobs до shift. Это режет худший сценарий, но не доказывает zero-stall. Для настоящей гарантии нужен либо GPU/global offset path, либо многокадровый phased shift с explicit render compensation.
+Как double buffering tile cache защищает при быстром вертикальном погружении: recache пишет в inactive buffer и только потом atomically свапает active index. Читающие systems и Burst jobs продолжают работать по старому стабильному буферу, пока новый полностью не готов. Это убирает half-written mask state и sync-блокировки на чтении. Это защита от corruption/stale-read, не магическая отмена всей стоимости recache.
+
+
+
+
+2:23 AM
+2 files changed
++62
+-17
+Undo
+
+Review
+Assets/_Project/Scripts/Meta/MetaBuffInjector.cs
+Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs
+
+
+-==-=-==-=-=-=-
+
+
+ДИАЛОГ ""СОЗДАТЬ САРГАССЫ ДОБАВИТЬ ГАШЕНИЕ ВОЛН И БОЙДС""
+
+What Was Wrong
+
+Catastrophic cut clusters stopped at canopy sinking. There was no pooled heavy debris escalation, no hadal parasite-drone override for boids, and the oil-film shader had no spectral shift.
+Parasite mode had a logic conflict: headlight panic could still route boids into flee behavior inside the new latch state.
+Unity verification is unavailable. The MCP session is disconnected, so scene wiring and runtime readback remain PENDING VERIFICATION.
+What I Did
+
+Added catastrophic collapse chunk escalation in Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs:27, Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs:1033, Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs:1135, and editor autowire in Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs:1636.
+Added pooled chunk owner Assets/_Project/Scripts/World/SargassumCollapseChunk.cs:12 with activation/reset paths at Assets/_Project/Scripts/World/SargassumCollapseChunk.cs:62, Assets/_Project/Scripts/World/SargassumCollapseChunk.cs:107, and Assets/_Project/Scripts/World/SargassumCollapseChunk.cs:125; added prefab shell Assets/_Project/Prefabs/Construction/Final/PFB_SargassumCollapseChunk.prefab:16.
+Optimized cut-area sampling in Assets/_Project/Scripts/World/SargassumCutManager.cs:184 and Assets/_Project/Scripts/World/SargassumCutManager.cs:226 so collapse checks stay bounded on the fixed recent-stamp ring instead of scaling with player count.
+Added parasite-drone mode in Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:324, Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:802, Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:1070, Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:1234, and hull-stress intake in Assets/_Project/Scripts/HectonPlayerMovement.cs:1061 plus blend in Assets/_Project/Scripts/HectonPlayerMovement.cs:3698.
+Fixed parasite compute behavior in Assets/_Project/Art/Shaders/SargassumMicroFaunaBoids.compute:322, Assets/_Project/Art/Shaders/SargassumMicroFaunaBoids.compute:340, and Assets/_Project/Art/Shaders/SargassumMicroFaunaBoids.compute:350; added parasite visual pass in Assets/_Project/Scripts/BoidFishInstanced.shader:67 and Assets/_Project/Scripts/BoidFishInstanced.shader:399.
+Added Crest oil iridescence in Assets/_Project/Art/Shaders/Crest_SargassumOilFilm.shader:10 and Assets/_Project/Art/Shaders/Crest_SargassumOilFilm.shader:85; logged the slice in Docs/2026-04-20_Sargassum_Reality_Audit/CHANGELOG.md:152.
+In-Game Result
+
+Large local canopy failures now escalate into pooled rigidbody chunks instead of only sinking the mat.
+Below -2000m in synthetic/service/power/construction zones, boids switch to parasite drones, bias toward the player hull, and convert light-driven aggression into external hull stress instead of fleeing.
+Oil-film patches can now read as iridescent slicks instead of flat tint only.
+WARNING: Regression risk in collapse turbidity. Assets/_Project/Prefabs/Construction/Final/PFB_SargassumCollapseChunk.prefab:99 still has siltTrail unassigned, so the chunk payload is live but the attached mud-trail visual is not Unity-wired yet.
+What Was Verified
+
+Code-review-only: git diff --check on the touched files returned no whitespace errors; only existing LF→CRLF warnings on Assets/_Project/Scripts/BoidFishInstanced.shader and Assets/_Project/Scripts/HectonPlayerMovement.cs.
+Code-review-only: parasite mode no longer mixes headlight flee with latch mode; the compute panic gate is explicit at Assets/_Project/Art/Shaders/SargassumMicroFaunaBoids.compute:350.
+Unity-verified: none. Unity MCP session is disconnected; no compile, prefab, scene, or runtime log confirmation was possible. Status: PENDING VERIFICATION.
+Exam — smoke drift: GlobalDriftOffset does not drive abyssal smoke. AbyssalThermalManager emits from vent world anchors (Assets/_Project/Scripts/World/AbyssalThermalManager.cs:759, Assets/_Project/Scripts/World/AbyssalThermalManager.cs:766) and samples flow separately (Assets/_Project/Scripts/World/AbyssalThermalManager.cs:433), so smoke stays pinned to the seabed vent mouth.
+Exam — SampleRecentCutArea: the query stays bounded because it only scans the fixed recent-stamp ring in Assets/_Project/Scripts/World/SargassumCutManager.cs:226; rejection is squared-distance first, overlap sqrt only after passing the cheap test, and the collapse caller runs from the drag-manager slow path at Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs:1033. Four scooters increase stamp replacement pressure, not algorithmic complexity.
+REGRESSION MODEL: CPU = one bounded slow-tick collapse query plus pooled chunk activation; GC = no new hot-path managed allocations; memory = one pooled chunk prefab/class plus existing boid buffers; cadence = unchanged gameplay ticks, collapse work remains in SlowTick; correctness = parasite mode now resolves to latch/aggression instead of conflicting flee input.
+HOT PATH IMPACT: boid cost is GPU-only math inside the existing kernel; chunk cost is on catastrophic events only, not per-frame steady state.
+FAILURE MODES: disconnected Unity session blocked scene wiring proof; PFB_SargassumCollapseChunk currently lacks a wired siltTrail; hadal “AI zone” detection is mapped to existing runtime zone kinds because there is no dedicated AI-zone enum in the live contract.
+WHY KEPT/REJECTED: kept pooled rigidbody chunks because this respects ObjectPoolManager and avoids instantiation spikes; kept parasite mode in the existing boid compute path instead of a second fauna stack; rejected any runtime Crest material cloning per asset-integrity rules.
+If you want the next pass, the correct move is Unity-side verification and prefab wiring for the chunk silt trail once the editor session is back.
+
+
+
+
+
+2:40 AM
+12 files changed
++896
+-18
+Undo
+
+Review
+Assets/_Project/Art/Shaders/Crest_SargassumOilFilm.shader
+Assets/_Project/Art/Shaders/SargassumMicroFaunaBoids.compute
+Assets/_Project/Prefabs/Construction/Final/PFB_SargassumCollapseChunk.prefab
+Assets/_Project/Prefabs/Construction/Final/PFB_SargassumCollapseChunk.prefab.meta
+Assets/_Project/Scripts/BoidFishInstanced.shader
+Assets/_Project/Scripts/HectonPlayerMovement.cs
+Assets/_Project/Scripts/World/SargassumCollapseChunk.cs
+Assets/_Project/Scripts/World/SargassumCollapseChunk.cs.meta
+Assets/_Project/Scripts/World/SargassumCutManager.cs
+Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs
+Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs
+Docs/2026-04-20_Sargassum_Reality_Audit/CHANGELOG.md
+
+ --==-=-=-=-=-
+
+ОТЧЕТ ЛОКАЛИЗАТОРА (ОТДЕЛЬНЫЙ ПРОМПТ)
+
+What Was Wrong
+
+Новых правок в проект в этом сообщении не делал. Запрос сейчас организационный: зафиксировать следующие задачи и ответить на sanity check до следующего прохода.
+
+Риски на завтра понятны:
+
+Madness-слой может засорить PDA и сломать читабельность.
+lip-sync waveform нельзя делать через шумный per-frame парсинг.
+CJK fallback всё ещё не release-grade.
+nested keys уже ограничены, но это нужно держать под жёстким контролем.
+What I Did
+
+Сформировал техническую рамку на следующий проход.
+
+Для Madness-слоя:
+
+не буду подменять source JSON или save-data;
+подмена пойдёт только в display path;
+порог HullStress > 0.9;
+переключение сделаю через отдельный madness resolver поверх уже существующего <tech:id> path, чтобы TECH_O2_SPEC мог разворачиваться либо в нормальный tech readout, либо в authored AI intrusion line.
+Для waveform у аудиологов:
+
+не через повторный парсинг [0.5] каждый кадр;
+SubtitleManager уже умеет парсить cues на старте playback;
+из этих cues можно вывести cheap envelope/signal для UI-иконки, обновляемый только по таймеру и смене cue.
+Для CJK fallback:
+
+завтра нужен отдельный font pass с импортом легального Noto Sans CJK source и настройкой TMP fallback chain;
+без этого Chinese/Japanese остаются неготовыми к релизу.
+In-Game Result
+
+Немедленного in-game изменения в этом сообщении нет. Это техническая фиксация следующего рабочего пакета.
+
+Ответы на экзамен:
+
+Overflow/glitch safety: гарантия идёт не через “надеюсь символы влезут”, а через уже существующий autosize path и bucketed refresh. Дополнительно правильный путь — ограничивать corrosion alphabet на UI-critical surfaces символами близкой визуальной ширины и не вставлять новые символы сверх исходной длины. Я заменяю glyph in-place, не расширяю строку. Это ключевое.
+Nested-key recursion safety: сейчас защита уже есть через MaxExpansionPasses = 3 в LocalizationManager. Это режет бесконечную цепочку A -> B -> A. Если завтра добивать систему до жёсткого production-grade состояния, правильное усиление — добавить visited-key guard на один expansion call, чтобы циклы резались детерминированно, а не только лимитом проходов.
+What Was Verified
+
+Код/данные:
+
+в этом сообщении файловые изменения не выполнялись;
+новых compile/readback данных не собиралось.
+Unity:
+
+live verification в этом сообщении не запускалась.
+Статус: PENDING VERIFICATION
+
+WARNING: Текущая защита nested keys от циклов достаточна для остановки бесконечной рекурсии, но не идеальна для диагностики. Для release-grade поведения нужен ещё explicit visited-set guard с логом цикла.
+
+WARNING: Glitch text уже не ломает rich-text теги, но overflow-proof для extreme-width glyph sets зависит от конкретного TMP owner и его autosize limits. Это надо проверять на живом PDA screen pass, а не только по коду.

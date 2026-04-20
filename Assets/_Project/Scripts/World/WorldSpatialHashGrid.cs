@@ -107,6 +107,11 @@ namespace Hecton8.World
             return Register(descriptor, descriptor != null ? descriptor.transform : null, SpatialTargetKind.Signal, role, 0);
         }
 
+        public static int RegisterSignal(DeployableFlare flare)
+        {
+            return Register(flare, flare != null ? flare.transform : null, SpatialTargetKind.Signal, FieldTargetRole.Generic, 0);
+        }
+
         public static int RegisterPickup(PickupItem pickup)
         {
             return Register(pickup, pickup != null ? pickup.transform : null, SpatialTargetKind.Pickup, FieldTargetRole.Generic, 0);
@@ -119,7 +124,48 @@ namespace Hecton8.World
 
         public static int RegisterModule(ModuleMarker marker)
         {
-            return Register(marker, marker != null ? marker.transform : null, SpatialTargetKind.Module, FieldTargetRole.Generic, 0);
+            FieldTargetRole role = marker != null ? marker.SpatialRole : FieldTargetRole.Generic;
+            return Register(marker, marker != null ? marker.transform : null, SpatialTargetKind.Module, role, 0);
+        }
+
+        public static void UpdateSignalRole(int handle, FieldTargetRole signalRole)
+        {
+            if (handle <= 0 || !_entries.TryGetValue(handle, out Entry entry) || entry == null)
+                return;
+
+            entry.SignalRole = signalRole;
+        }
+
+        public static void UpdateGridPosition(GameObject obj, Vector3 oldPosition, Vector3 newPosition)
+        {
+            if (obj == null)
+                return;
+
+            int handle = FindHandle(obj.transform);
+            if (handle != 0)
+                UpdateGridPosition(handle, oldPosition, newPosition);
+        }
+
+        public static void UpdateGridPosition(int handle, Vector3 oldPosition, Vector3 newPosition)
+        {
+            if (handle <= 0 || !_entries.TryGetValue(handle, out Entry entry) || entry == null)
+                return;
+
+            if (entry.Transform == null)
+            {
+                Unregister(handle);
+                return;
+            }
+
+            long previousCellKey = GetCellKey(oldPosition);
+            long nextCellKey = GetCellKey(newPosition);
+            if (previousCellKey == nextCellKey || entry.CellKey == nextCellKey)
+                return;
+
+            RemoveFromCell(handle, entry.CellKey);
+            AddToCell(handle, nextCellKey);
+            entry.CellKey = nextCellKey;
+            entry.Layer = entry.Transform.gameObject.layer;
         }
 
         public static void Refresh(int handle)
@@ -303,7 +349,11 @@ namespace Hecton8.World
                                 continue;
                             }
 
-                            if (!IsSpectrumSignalRole(entry.SignalRole))
+                            bool isSpectrumSignal =
+                                (kind & SpatialTargetKind.Signal) != 0 ||
+                                ((kind & SpatialTargetKind.Module) != 0 && IsSpectrumSignalRole(entry.SignalRole));
+
+                            if (!isSpectrumSignal)
                                 continue;
 
                             signalCount++;
@@ -427,6 +477,22 @@ namespace Hecton8.World
             _entries.Add(handle, entry);
             AddToCell(handle, cellKey);
             return handle;
+        }
+
+        private static int FindHandle(Transform targetTransform)
+        {
+            if (targetTransform == null)
+                return 0;
+
+            Dictionary<int, Entry>.Enumerator enumerator = _entries.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                KeyValuePair<int, Entry> pair = enumerator.Current;
+                if (ReferenceEquals(pair.Value.Transform, targetTransform))
+                    return pair.Key;
+            }
+
+            return 0;
         }
 
         private static void AddToCell(int handle, long cellKey)

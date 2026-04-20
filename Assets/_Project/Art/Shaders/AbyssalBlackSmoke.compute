@@ -1,0 +1,123 @@
+#pragma kernel CSMain
+
+struct AshParticleData
+{
+    float3 PositionWS;
+    float Size;
+    float3 VelocityWS;
+    float Alpha;
+    float Lifetime;
+    float MaxLifetime;
+    float Seed;
+    float VentIndex;
+};
+
+struct ThermalVentGpuData
+{
+    float3 PositionWS;
+    float RadiusWS;
+    float HeightWS;
+    float UpdraftVelocity;
+    float HeatIntensity;
+    float SmokeDensity;
+    float2 Padding;
+};
+
+StructuredBuffer<AshParticleData> _ParticlesRead;
+RWStructuredBuffer<AshParticleData> _ParticlesWrite;
+StructuredBuffer<ThermalVentGpuData> _ThermalVents;
+
+int _ParticleCount;
+int _ActiveVentCount;
+float _DeltaTime;
+float _SimulationTime;
+float3 _CameraPositionWS;
+float4 _ParticleSizeRange;
+float4 _NoiseParams;
+float _MaxViewDistance;
+
+#define THREAD_GROUP_SIZE 64
+#define EPSILON 0.0001
+
+float Hash11(float value)
+{
+    return frac(sin(value * 12.9898 + 78.233) * 43758.5453);
+}
+
+float3 SafeNormalize(float3 value)
+{
+    float lengthSq = dot(value, value);
+    if (lengthSq <= EPSILON)
+        return float3(0.0, 1.0, 0.0);
+
+    return value * rsqrt(lengthSq);
+}
+
+float3 BuildRespawnPosition(ThermalVentGpuData vent, uint particleIndex, float seed)
+{
+    float angle = Hash11(particleIndex * 1.37 + vent.PositionWS.x * 0.003 + seed * 41.0) * 6.2831853;
+    float radial = sqrt(Hash11(particleIndex * 0.91 + vent.PositionWS.z * 0.005 + seed * 13.0)) * vent.RadiusWS * 0.45;
+    float3 lateral = float3(cos(angle), 0.0, sin(angle)) * radial;
+    float vertical = lerp(0.15, 1.5, Hash11(particleIndex * 0.57 + seed * 7.3));
+    return vent.PositionWS + lateral + float3(0.0, vertical, 0.0);
+}
+
+[numthreads(THREAD_GROUP_SIZE, 1, 1)]
+void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    uint index = dispatchThreadID.x;
+    if (index >= _ParticleCount)
+        return;
+
+    AshParticleData particle = _ParticlesRead[index];
+    if (_ActiveVentCount <= 0)
+    {
+        particle.Alpha = 0.0;
+        _ParticlesWrite[index] = particle;
+        return;
+    }
+
+    uint ventIndex = (uint)clamp(particle.VentIndex, 0.0, max(0, _ActiveVentCount - 1));
+    ThermalVentGpuData vent = _ThermalVents[ventIndex];
+    float dt = max(_DeltaTime, 0.0);
+
+    particle.Lifetime += dt;
+    float heightLimit = vent.PositionWS.y + vent.HeightWS;
+    bool expired = particle.Lifetime >= particle.MaxLifetime || particle.PositionWS.y >= heightLimit;
+    if (expired)
+    {
+        float respawnSeed = Hash11(index * 0.33 + particle.Seed * 19.0 + _SimulationTime * 0.11);
+        particle.PositionWS = BuildRespawnPosition(vent, index, particle.Seed);
+        particle.Size = lerp(_ParticleSizeRange.x, _ParticleSizeRange.y, respawnSeed);
+        particle.VelocityWS = float3(0.0, vent.UpdraftVelocity * lerp(0.55, 1.05, respawnSeed), 0.0);
+        particle.Lifetime = 0.0;
+        particle.MaxLifetime = lerp(1.8, 5.6, Hash11(index * 0.73 + particle.Seed * 3.7));
+        particle.Alpha = 0.0;
+        particle.VentIndex = ventIndex;
+    }
+
+    float lifeT = saturate(particle.Lifetime / max(particle.MaxLifetime, 0.001));
+    float heightT = saturate((particle.PositionWS.y - vent.PositionWS.y) / max(vent.HeightWS, 0.001));
+    float radialT = saturate(distance(particle.PositionWS.xz, vent.PositionWS.xz) / max(vent.RadiusWS, 0.001));
+    float3 toCenter = float3(vent.PositionWS.x - particle.PositionWS.x, 0.0, vent.PositionWS.z - particle.PositionWS.z);
+    float3 inward = SafeNormalize(toCenter);
+    float noisePhase = particle.Seed * 37.0 + _SimulationTime * 0.91 + index * 0.013;
+    float3 lateralNoise = float3(
+        Hash11(noisePhase + 1.0) * 2.0 - 1.0,
+        Hash11(noisePhase + 2.0) * 2.0 - 1.0,
+        Hash11(noisePhase + 3.0) * 2.0 - 1.0);
+    lateralNoise.y = 0.0;
+    float3 turbulence = SafeNormalize(lateralNoise) * (_NoiseParams.x * vent.SmokeDensity);
+    float upward = vent.UpdraftVelocity + (Hash11(noisePhase + 4.0) * 2.0 - 1.0) * _NoiseParams.y;
+    float confinement = saturate((radialT - 0.55) / 0.45);
+    float3 acceleration = float3(0.0, upward, 0.0) + inward * (confinement * vent.UpdraftVelocity * 0.28) + turbulence;
+
+    particle.VelocityWS += acceleration * dt;
+    particle.PositionWS += particle.VelocityWS * dt;
+
+    float distanceFade = 1.0 - saturate(distance(particle.PositionWS, _CameraPositionWS) / max(_MaxViewDistance, 0.001));
+    float plumeFade = (1.0 - heightT) * (1.0 - radialT * 0.82);
+    particle.Alpha = saturate(plumeFade * distanceFade * vent.SmokeDensity * 0.42);
+
+    _ParticlesWrite[index] = particle;
+}

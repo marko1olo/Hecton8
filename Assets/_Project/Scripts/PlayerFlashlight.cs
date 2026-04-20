@@ -185,6 +185,14 @@ namespace Hecton8.Gameplay
         [Tooltip("Small underwater jitter to stop the shaft from looking dead.")]
         [SerializeField, Range(0f, 0.15f)] private float underwaterBeamJitterMax = 0.03f;
 
+        [Header("── Storm Interference ─────────────────────────")]
+        [Tooltip("Minimum output multiplier applied while electrical storms interfere with the flashlight.")]
+        [SerializeField, Range(0.1f, 1f)] private float stormInterferenceMinIntensity = 0.45f;
+        [Tooltip("Extra noise injected into the volumetric beam during severe electrical interference.")]
+        [SerializeField, Range(0f, 0.4f)] private float stormInterferenceBeamNoise = 0.12f;
+        [Tooltip("Extra beam jitter injected during severe electrical interference.")]
+        [SerializeField, Range(0f, 0.2f)] private float stormInterferenceBeamJitter = 0.05f;
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — DIAGNOSTICS
         // ══════════════════════════════════════════════════════════
@@ -250,6 +258,9 @@ namespace Hecton8.Gameplay
         private bool _isFlickering;
         private float _flickerTimer;
         private float _flickerIntensityMod;
+        private float _externalInterferenceIntensity;
+        private float _externalInterferenceHoldTimer;
+        private float _externalInterferenceRecoverySpeed;
 
         // VolumetricLightBeam integration (cached via reflection to avoid hard dependency)
 
@@ -331,6 +342,8 @@ namespace Hecton8.Gameplay
         {
             TryUnregister();
             UnsubscribeFromInputManager();
+            _externalInterferenceIntensity = 0f;
+            _externalInterferenceHoldTimer = 0f;
         }
 
         private void OnDestroy()
@@ -392,6 +405,7 @@ namespace Hecton8.Gameplay
             }
 
             // ── Flickering ──
+            UpdateExternalInterference(deltaTime);
             UpdateFlickering(deltaTime);
 
             // ── Transition ──
@@ -434,6 +448,19 @@ namespace Hecton8.Gameplay
 
             PlaySound(toggleOffSound);
             FlashlightEvents.RaiseToggled(false);
+        }
+
+        internal void TriggerExternalInterference(float normalizedIntensity, float holdDuration, float recoverySpeed)
+        {
+            float clampedIntensity = Mathf.Clamp01(normalizedIntensity);
+            if (clampedIntensity <= 0f)
+                return;
+
+            if (_externalInterferenceIntensity < clampedIntensity)
+                _externalInterferenceIntensity = clampedIntensity;
+
+            _externalInterferenceHoldTimer = Mathf.Max(_externalInterferenceHoldTimer, holdDuration);
+            _externalInterferenceRecoverySpeed = Mathf.Max(0.1f, recoverySpeed);
         }
 
         public void SetOn(bool on)
@@ -777,17 +804,27 @@ namespace Hecton8.Gameplay
         private void UpdateFlickering(float deltaTime)
         {
             bool shouldFlicker = false;
+            bool batteryOrHeatFlicker = false;
 
             // Trigger flickering on low battery
             if (enableBatteryDrain && survivalSystem != null)
             {
                 float energyPercent = survivalSystem.EnergyPercent;
                 if (energyPercent <= lowBatteryThreshold)
+                {
                     shouldFlicker = true;
+                    batteryOrHeatFlicker = true;
+                }
             }
 
             // Trigger flickering on high heat
             if (enableHeatBuildup && _heatLevel >= flickerHeatThreshold)
+            {
+                shouldFlicker = true;
+                batteryOrHeatFlicker = true;
+            }
+
+            if (_externalInterferenceIntensity > 0.001f)
                 shouldFlicker = true;
 
             if (shouldFlicker && _isOn)
@@ -802,7 +839,16 @@ namespace Hecton8.Gameplay
 
                 // Perlin-like noise for organic flicker
                 float noise = Mathf.PerlinNoise(_flickerTimer, 0f);
-                _flickerIntensityMod = Mathf.Lerp(flickerMinIntensity, 1f, noise);
+                float minIntensity = batteryOrHeatFlicker ? flickerMinIntensity : 1f;
+                if (_externalInterferenceIntensity > 0.001f)
+                {
+                    float interferenceMin = Mathf.Lerp(1f, stormInterferenceMinIntensity, _externalInterferenceIntensity);
+                    minIntensity = batteryOrHeatFlicker
+                        ? Mathf.Min(minIntensity, interferenceMin)
+                        : interferenceMin;
+                }
+
+                _flickerIntensityMod = Mathf.Lerp(minIntensity, 1f, noise);
             }
             else
             {
@@ -876,6 +922,12 @@ namespace Hecton8.Gameplay
                     jitter = underwaterBeamJitterMax * depthFactor;
                 }
 
+                if (_externalInterferenceIntensity > 0.001f)
+                {
+                    noiseIntensity += stormInterferenceBeamNoise * _externalInterferenceIntensity;
+                    jitter += stormInterferenceBeamJitter * _externalInterferenceIntensity;
+                }
+
                 if (Mathf.Abs(_cachedBeamIntensityMultiplier - multiplier) > 0.01f)
                 {
                     _vlbHD.intensityMultiplier = multiplier;
@@ -903,6 +955,27 @@ namespace Hecton8.Gameplay
                 _debugVolumetricMultiplier = multiplier;
                 _debugVolumetricDepth = depth;
             }
+        }
+
+        private void UpdateExternalInterference(float deltaTime)
+        {
+            if (_externalInterferenceHoldTimer > 0f)
+            {
+                _externalInterferenceHoldTimer -= deltaTime;
+                if (_externalInterferenceHoldTimer < 0f)
+                    _externalInterferenceHoldTimer = 0f;
+
+                return;
+            }
+
+            if (_externalInterferenceIntensity <= 0.001f)
+            {
+                _externalInterferenceIntensity = 0f;
+                return;
+            }
+
+            float t = 1f - Mathf.Exp(-_externalInterferenceRecoverySpeed * deltaTime);
+            _externalInterferenceIntensity = Mathf.Lerp(_externalInterferenceIntensity, 0f, t);
         }
 
         private float GetModeIntensity()

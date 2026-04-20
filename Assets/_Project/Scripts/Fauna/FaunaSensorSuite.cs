@@ -13,6 +13,7 @@ namespace Hecton8.AI
     public class FaunaSensorSuite
     {
         private const float ToolNoiseRadiusMultiplier = 1.35f;
+        private const int PlayerAwarenessMemoryFrames = 45;
 
         [Header("── Avoidance ──────────────────────────────────")]
         public float avoidanceRange = 8f;
@@ -37,6 +38,8 @@ namespace Hecton8.AI
         
         [Header("── Internal State ─────────────────────────────")]
         public bool canSeePlayer;
+        public bool hasVisualPlayerContact;
+        public bool hasNoisePlayerContact;
         public float distSqrToPlayer;
         public bool isThreatened;
         public Transform currentThreat;
@@ -69,6 +72,11 @@ namespace Hecton8.AI
         private PlayerToolManager _playerToolManager;
         private FaunaSpeciesProfile _profile;
         private float _avoidanceTimeAccumulator;
+        private NoiseSystem.PlayerNoiseSignal _lastReportedPlayerNoise;
+        private bool _hasReportedPlayerNoise;
+        private bool _hasLastKnownPlayerPosition;
+        private Vector3 _lastKnownPlayerPosition;
+        private int _lastKnownPlayerFrame;
         
         /// <summary>
         /// True if the creature has been failing to move forward due to obstacles.
@@ -81,11 +89,18 @@ namespace Hecton8.AI
         private static readonly Collider[] _flockBuffer = new Collider[50];
         private static readonly RaycastHit[] _hitBuffer = new RaycastHit[1];
         private static readonly Vector3[] _rayDirs = new Vector3[7];
+        // COLD ALLOC: SpatialQueryHit[8] - fauna distractor lookup buffer over spatial grid - owner: FaunaSensorSuite
+        private static readonly SpatialQueryHit[] _distractorSpatialBuffer = new SpatialQueryHit[8];
 
         public void Init(Transform self, FaunaSpeciesProfile profile)
         {
             _selfTransform = self;
             _profile = profile;
+            _lastReportedPlayerNoise = default;
+            _hasReportedPlayerNoise = false;
+            _hasLastKnownPlayerPosition = false;
+            _lastKnownPlayerPosition = default;
+            _lastKnownPlayerFrame = 0;
             if (WorldStateManager.Instance != null)
                 _playerTransform = WorldStateManager.Instance.PlayerTransform;
 
@@ -102,9 +117,8 @@ namespace Hecton8.AI
             int frame = Time.frameCount;
             bool majorUpdate = (frame % 10 == 0);
 
-            if (_playerTransform != null)
+            if (majorUpdate && _playerTransform != null)
             {
-                // Distance count every frame is fine (optimized) but user wants staggering for sensory logic
                 distSqrToPlayer = (_playerTransform.position - _selfTransform.position).sqrMagnitude;
                 lodDisabled = distSqrToPlayer > 150f * 150f;
                 isSleeping = distSqrToPlayer > sleepDistance * sleepDistance;
@@ -124,33 +138,84 @@ namespace Hecton8.AI
 
         private void UpdateMajorSenses()
         {
-            float radius = aggroDistance;
+            bool visualContact = distSqrToPlayer < aggroDistance * aggroDistance;
+            bool reportedContact = HasFreshReportedPlayerNoise();
+            hasVisualPlayerContact = visualContact;
+            hasNoisePlayerContact = reportedContact;
+            canSeePlayer = visualContact || reportedContact;
 
-            if (NoiseSystem.TryGetPlayerSignal(out NoiseSystem.PlayerNoiseSignal playerNoise))
-                ApplyReportedPlayerSenses(playerNoise, ref radius);
-
-            canSeePlayer = distSqrToPlayer < radius * radius;
+            if (visualContact && _playerTransform != null)
+                RememberPlayerPosition(_playerTransform.position);
         }
 
-        private void ApplyReportedPlayerSenses(NoiseSystem.PlayerNoiseSignal playerNoise, ref float radius)
+        public void ReceivePlayerNoiseSignal(NoiseSystem.PlayerNoiseSignal playerNoise)
         {
-            if (reactToPlayerLight && playerNoise.FlashlightOn)
-                radius *= 2f;
+            _lastReportedPlayerNoise = playerNoise;
+            _hasReportedPlayerNoise = true;
+            hasNoisePlayerContact = true;
+            RememberPlayerPosition(playerNoise.Position);
+            distSqrToPlayer = (_lastKnownPlayerPosition - _selfTransform.position).sqrMagnitude;
+        }
+
+        private bool HasFreshReportedPlayerNoise()
+        {
+            if (_playerTransform == null || !_hasReportedPlayerNoise)
+                return false;
+
+            if (Time.frameCount - _lastReportedPlayerNoise.ReportedFrame > 30)
+                return false;
+
+            if (reactToPlayerLight && _lastReportedPlayerNoise.FlashlightOn)
+                return true;
 
             if (!reactToPlayerNoise)
-                return;
+                return false;
 
-            if (playerNoise.TransportBoost01 > 0f)
+            if (_lastReportedPlayerNoise.TransportBoost01 > 0f)
+                return true;
+
+            if (_lastReportedPlayerNoise.ToolUseNoise01 > 0f)
+                return true;
+
+            return _lastReportedPlayerNoise.MovementSpeedSqr >= 1.0f;
+        }
+
+        public bool TryGetDirectPlayerTransform(out Transform playerTransform)
+        {
+            if (hasVisualPlayerContact && _playerTransform != null)
             {
-                float transportSensitivity = _profile != null ? _profile.sensoryWeightScooter : 1.5f;
-                radius *= Mathf.Lerp(1f, transportSensitivity * playerNoise.TransportSignature, playerNoise.TransportBoost01);
+                playerTransform = _playerTransform;
+                return true;
             }
 
-            if (playerNoise.ToolUseNoise01 > 0f)
-                radius *= Mathf.Lerp(1f, ToolNoiseRadiusMultiplier, playerNoise.ToolUseNoise01);
+            playerTransform = null;
+            return false;
+        }
 
-            if (!playerNoise.FlashlightOn && playerNoise.MovementSpeedSqr < 1.0f)
-                radius *= 0.5f;
+        public bool TryGetPerceivedPlayerPosition(out Vector3 playerPosition)
+        {
+            if (hasVisualPlayerContact && _playerTransform != null)
+            {
+                playerPosition = _playerTransform.position;
+                return true;
+            }
+
+            if (_hasLastKnownPlayerPosition &&
+                Time.frameCount - _lastKnownPlayerFrame <= PlayerAwarenessMemoryFrames)
+            {
+                playerPosition = _lastKnownPlayerPosition;
+                return true;
+            }
+
+            playerPosition = default;
+            return false;
+        }
+
+        private void RememberPlayerPosition(Vector3 playerPosition)
+        {
+            _hasLastKnownPlayerPosition = true;
+            _lastKnownPlayerPosition = playerPosition;
+            _lastKnownPlayerFrame = Time.frameCount;
         }
 
         private void UpdateThreatDetection()
@@ -195,17 +260,7 @@ namespace Hecton8.AI
 
         private void UpdateDistractorDetection()
         {
-            // [REQ] Search for Flare tag with distractorMask
-            int count = UnityEngine.Physics.OverlapSphereNonAlloc(_selfTransform.position, distractorDetectRadius, _distractorBuffer, distractorMask);
-            currentDistractor = null;
-            for (int i = 0; i < count; i++)
-            {
-                if (_distractorBuffer[i].CompareTag("Flare"))
-                {
-                    currentDistractor = _distractorBuffer[i].transform;
-                    break;
-                }
-            }
+            currentDistractor = ResolveNearestDistractorByTag("Flare");
         }
 
         private void UpdateScavengeTarget()
@@ -224,16 +279,7 @@ namespace Hecton8.AI
                 }
             }
 
-            // 2. Search for DroppedFood
-            int count = UnityEngine.Physics.OverlapSphereNonAlloc(_selfTransform.position, distractorDetectRadius, _distractorBuffer, distractorMask);
-            for (int i = 0; i < count; i++)
-            {
-                if (_distractorBuffer[i].CompareTag("DroppedFood"))
-                {
-                    currentScavengeTarget = _distractorBuffer[i].transform;
-                    break;
-                }
-            }
+            currentScavengeTarget = ResolveNearestDistractorByTag("DroppedFood");
         }
 
         private void UpdatePreyDetection()
@@ -262,6 +308,43 @@ namespace Hecton8.AI
         private void UpdatePOISearch()
         {
             // Logic for finding EscapePoints via poiMask...
+        }
+
+        private Transform ResolveNearestDistractorByTag(string requiredTag)
+        {
+            int layerMaskValue = distractorMask.value;
+            if (layerMaskValue == 0)
+                return null;
+
+            int count = WorldSpatialHashGrid.CollectContactsNonAlloc(
+                _selfTransform.position,
+                distractorDetectRadius,
+                SpatialTargetKind.Pickup | SpatialTargetKind.Signal,
+                _distractorSpatialBuffer);
+            Transform nearestTransform = null;
+            float bestDistanceSqr = float.MaxValue;
+
+            for (int i = 0; i < count; i++)
+            {
+                SpatialQueryHit hit = _distractorSpatialBuffer[i];
+                Transform hitTransform = hit.Transform;
+                if (hitTransform == null)
+                    continue;
+
+                if ((layerMaskValue & (1 << hit.Layer)) == 0)
+                    continue;
+
+                if (!hitTransform.CompareTag(requiredTag))
+                    continue;
+
+                if (hit.DistanceSqr >= bestDistanceSqr)
+                    continue;
+
+                bestDistanceSqr = hit.DistanceSqr;
+                nearestTransform = hitTransform;
+            }
+
+            return nearestTransform;
         }
 
         public Transform GetPlayerTransform() => _playerTransform;

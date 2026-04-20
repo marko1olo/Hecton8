@@ -88,6 +88,7 @@ namespace Hecton8.UI
         private Image[] _rowAccentBars = Array.Empty<Image>();
         private Image[] _bindingBackgrounds = Array.Empty<Image>();
         private Image _statusBackground;
+        private TextMeshProUGUI _headerHintText;
 
         private bool IsControlsTabActive =>
             isActiveAndEnabled &&
@@ -163,6 +164,7 @@ namespace Hecton8.UI
             input.OnCancel += HandleCancel;
             input.OnTabNext += HandleTabNext;
             input.OnTabPrevious += HandleTabPrevious;
+            input.OnInputDisplayStyleChanged += HandleInputDisplayStyleChanged;
 
             rebinding.OnRebindStarted += HandleRebindStarted;
             rebinding.OnRebindCompleted += HandleRebindCompleted;
@@ -189,6 +191,7 @@ namespace Hecton8.UI
                 input.OnCancel -= HandleCancel;
                 input.OnTabNext -= HandleTabNext;
                 input.OnTabPrevious -= HandleTabPrevious;
+                input.OnInputDisplayStyleChanged -= HandleInputDisplayStyleChanged;
             }
 
             RebindingManager.TryGetInstance(out RebindingManager rebinding);
@@ -241,7 +244,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            int bindingIndex = ResolveBindingIndex(action, row.bindingIndex);
+            int bindingIndex = ResolveBindingIndex(action, row.actionName, row.actionMap, row.bindingIndex);
             if (bindingIndex < 0)
             {
                 SetStatus($"No rebindable binding: {row.label}");
@@ -253,7 +256,6 @@ namespace Hecton8.UI
                 row.actionMap,
                 bindingIndex,
                 expectedControlType: null,
-                cancelPath: "<Keyboard>/escape",
                 excludedControlPaths: ExcludedControlPaths);
 
             if (!started)
@@ -333,6 +335,16 @@ namespace Hecton8.UI
             UpdateStatusForSelected();
         }
 
+        private void HandleInputDisplayStyleChanged(InputDisplayStyle style)
+        {
+            if (!IsControlsTabActive)
+                return;
+
+            UpdateHeaderHintText();
+            RefreshAllBindings();
+            UpdateStatusForSelected();
+        }
+
         private void ResetSelectedBinding()
         {
             if (!TryGetSelectedRow(out RebindRow row, out _))
@@ -348,7 +360,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            int bindingIndex = ResolveBindingIndex(action, row.bindingIndex);
+            int bindingIndex = ResolveBindingIndex(action, row.actionName, row.actionMap, row.bindingIndex);
             if (bindingIndex < 0)
             {
                 SetStatus($"No rebindable binding: {row.actionName}");
@@ -375,6 +387,7 @@ namespace Hecton8.UI
             }
 
             NormalizeSelectedIndex();
+            UpdateHeaderHintText();
             RefreshLabels();
             RefreshSelectionVisuals();
             RefreshAllBindings();
@@ -428,7 +441,8 @@ namespace Hecton8.UI
             Anchor(hint.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f),
                 new Vector2(18f, -18f), new Vector2(-18f, 24f));
             hint.color = HintColor;
-            hint.SetText("SUBMIT = rebind  |  TAB NEXT = reset one  |  TAB PREV = reset all");
+            _headerHintText = hint;
+            UpdateHeaderHintText();
 
             RectTransform listRoot = CreateRect(self, "Rows");
             Anchor(listRoot, new Vector2(0f, 0f), new Vector2(1f, 1f),
@@ -538,6 +552,13 @@ namespace Hecton8.UI
 
         private void ResolveRowReferencesByName()
         {
+            if (_headerHintText == null)
+            {
+                Transform hintTransform = FindDeepChild(transform, "Hint");
+                if (hintTransform != null)
+                    _headerHintText = hintTransform.GetComponent<TextMeshProUGUI>();
+            }
+
             if (rows == null || rows.Length == 0) return;
 
             for (int i = 0; i < rows.Length; i++)
@@ -659,7 +680,9 @@ namespace Hecton8.UI
             if (row.bindingText == null) return;
 
             InputAction action = InputManager.Instance.GetAction(row.actionName, row.actionMap);
-            int bindingIndex = action != null ? ResolveBindingIndex(action, row.bindingIndex) : -1;
+            int bindingIndex = action != null
+                ? ResolveBindingIndex(action, row.actionName, row.actionMap, row.bindingIndex)
+                : -1;
             if (action == null || bindingIndex < 0)
             {
                 row.bindingText.text = "--";
@@ -720,14 +743,14 @@ namespace Hecton8.UI
             InputAction action = InputManager.Instance.GetAction(row.actionName, row.actionMap);
             if (action != null)
             {
-                int bindingIndex = ResolveBindingIndex(action, row.bindingIndex);
+                int bindingIndex = ResolveBindingIndex(action, row.actionName, row.actionMap, row.bindingIndex);
                 if (bindingIndex >= 0)
                 {
                     binding = GetBindingDisplaySafe(action, bindingIndex);
                 }
             }
 
-            SetStatus($"{readyPrefix}: {row.label} [{binding}]  |  {resetHint}");
+            SetStatus($"{readyPrefix}: {row.label} [{binding}]  |  {BuildResetHintText()}");
         }
 
         private bool TryGetSelectedRow(out RebindRow row, out int rowIndex)
@@ -801,10 +824,18 @@ namespace Hecton8.UI
             }
         }
 
-        private static int ResolveBindingIndex(InputAction action, int preferredIndex)
+        private static int ResolveBindingIndex(InputAction action, string actionName, string actionMap, int preferredIndex)
         {
             if (action == null)
                 return -1;
+
+            InputManager inputManager = InputManager.Instance;
+            if (inputManager != null)
+            {
+                int displayPreferredIndex = inputManager.GetPreferredBindingIndex(actionName, actionMap);
+                if (IsBindableActionIndex(action, displayPreferredIndex))
+                    return displayPreferredIndex;
+            }
 
             int bindingCount;
             try
@@ -819,20 +850,8 @@ namespace Hecton8.UI
             if (bindingCount == 0)
                 return -1;
 
-            try
-            {
-                if (preferredIndex >= 0 &&
-                    preferredIndex < bindingCount &&
-                    !action.bindings[preferredIndex].isComposite &&
-                    !action.bindings[preferredIndex].isPartOfComposite)
-                {
-                    return preferredIndex;
-                }
-            }
-            catch
-            {
-                return -1;
-            }
+            if (IsBindableActionIndex(action, preferredIndex))
+                return preferredIndex;
 
             for (int i = 0; i < bindingCount; i++)
             {
@@ -850,6 +869,23 @@ namespace Hecton8.UI
             return -1;
         }
 
+        private static bool IsBindableActionIndex(InputAction action, int bindingIndex)
+        {
+            if (action == null || bindingIndex < 0)
+                return false;
+
+            try
+            {
+                return bindingIndex < action.bindings.Count &&
+                       !action.bindings[bindingIndex].isComposite &&
+                       !action.bindings[bindingIndex].isPartOfComposite;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         private static string GetBindingDisplaySafe(InputAction action, int bindingIndex)
         {
             if (action == null || bindingIndex < 0)
@@ -859,6 +895,46 @@ namespace Hecton8.UI
                    !string.IsNullOrEmpty(binding)
                 ? binding
                 : "--";
+        }
+
+        private string BuildResetHintText()
+        {
+            InputManager inputManager = InputManager.Instance;
+            if (inputManager == null)
+                return resetHint;
+
+            string resetOne = inputManager.GetBindingDisplayString("TabNext", "UI", -1);
+            string resetAll = inputManager.GetBindingDisplayString("TabPrevious", "UI", -1);
+            if (string.IsNullOrWhiteSpace(resetOne) || string.IsNullOrWhiteSpace(resetAll))
+                return resetHint;
+
+            return $"{resetOne} = reset selected, {resetAll} = reset all";
+        }
+
+        private void UpdateHeaderHintText()
+        {
+            if (_headerHintText == null)
+                return;
+
+            InputManager inputManager = InputManager.Instance;
+            if (inputManager == null)
+            {
+                _headerHintText.SetText("SUBMIT = rebind  |  TAB NEXT = reset one  |  TAB PREV = reset all");
+                return;
+            }
+
+            string submit = inputManager.GetBindingDisplayString("Submit", "UI", -1);
+            string resetOne = inputManager.GetBindingDisplayString("TabNext", "UI", -1);
+            string resetAll = inputManager.GetBindingDisplayString("TabPrevious", "UI", -1);
+            if (string.IsNullOrWhiteSpace(submit) ||
+                string.IsNullOrWhiteSpace(resetOne) ||
+                string.IsNullOrWhiteSpace(resetAll))
+            {
+                _headerHintText.SetText("SUBMIT = rebind  |  TAB NEXT = reset one  |  TAB PREV = reset all");
+                return;
+            }
+
+            _headerHintText.SetText($"{submit} = rebind  |  {resetOne} = reset one  |  {resetAll} = reset all");
         }
 
         private void SetStatus(string value)

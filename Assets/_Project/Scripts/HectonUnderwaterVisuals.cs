@@ -1,10 +1,10 @@
 // ============================================================================
-// HECTON-8 — HectonUnderwaterVisuals.cs  v5.1
-// ЕДИНОЛИЧНЫЙ ДИРЕКТОР СРЕДЫ: туман, свет, цвета, камера, рассеивание солнца.
+// HECTON-8 â€” HectonUnderwaterVisuals.cs  v5.1
+// Ð•Ð”Ð˜ÐÐžÐ›Ð˜Ð§ÐÐ«Ð™ Ð”Ð˜Ð Ð•ÐšÐ¢ÐžÐ  Ð¡Ð Ð•Ð”Ð«: Ñ‚ÑƒÐ¼Ð°Ð½, ÑÐ²ÐµÑ‚, Ñ†Ð²ÐµÑ‚Ð°, ÐºÐ°Ð¼ÐµÑ€Ð°, Ñ€Ð°ÑÑÐµÐ¸Ð²Ð°Ð½Ð¸Ðµ ÑÐ¾Ð»Ð½Ñ†Ð°.
 //
-// ═══════════════════════════════════════════════════════════════
-// v5.1 CHANGES — RACE CONDITION FIX:
-// ═══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// v5.1 CHANGES â€” RACE CONDITION FIX:
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //
 //   [FIX] EXECUTION ORDER:
 //     DefaultExecutionOrder(-4000) ensures this script's OnEnable
@@ -12,9 +12,9 @@
 //     Registration order in GameTickManager = tick order.
 //
 //     CHAIN (every frame, deterministic):
-//       1. AtmosphereManager.Tick() → fresh ProfileSunIntensity, ComputedHorizonFade
-//       2. UnderwaterVisuals.Tick() → sunLight.intensity = profile × horizon × depth
-//       3. CelestialEngine.Tick()   → sunLight.intensity *= eclipseVisibility
+//       1. AtmosphereManager.Tick() â†’ fresh ProfileSunIntensity, ComputedHorizonFade
+//       2. UnderwaterVisuals.Tick() â†’ sunLight.intensity = profile Ã— horizon Ã— depth
+//       3. CelestialEngine.Tick()   â†’ sunLight.intensity *= eclipseVisibility
 //
 //   [FIX] ResolveHorizonFade():
 //     Now reads AtmosphereManager.ComputedHorizonFade DIRECTLY
@@ -25,29 +25,30 @@
 //
 //   [FIX] Surface light update:
 //     Above water, sunLight.intensity is still written every frame
-//     (profile × horizon) so CelestialEngine can multiply by eclipse.
+//     (profile Ã— horizon) so CelestialEngine can multiply by eclipse.
 //     Guard changed: only skip if BOTH baseSun AND horizon are zero
 //     (prevents writing 0 when AtmosphereManager hasn't initialized).
 //
-// ═══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // v5.0 PRESERVED:
-//   ✓ Global depth curve (AnimationCurve)
-//   ✓ Fog density derived from lightFactor
-//   ✓ Sun scattering / color fade
-//   ✓ Biome color interpolation
-//   ✓ Camera background = fog color
-//   ✓ EnforceFogState render callback
-//   ✓ Zero GC in Tick
-//   ✓ [ExecuteAlways] for Editor preview
+//   âœ“ Global depth curve (AnimationCurve)
+//   âœ“ Fog density derived from lightFactor
+//   âœ“ Sun scattering / color fade
+//   âœ“ Biome color interpolation
+//   âœ“ Camera background = fog color
+//   âœ“ EnforceFogState render callback
+//   âœ“ Zero GC in Tick
+//   âœ“ [ExecuteAlways] for Editor preview
 //
-// КООРДИНАЦИЯ ЗАПИСИ sunLight.intensity (v5.1):
-//   AtmosphereManager(-6000) → ProfileSunIntensity, ComputedHorizonFade (data)
-//   UnderwaterVisuals(-4000) → sunLight.intensity = profile × horizon × lightCurve
-//   CelestialEngine(-3000)   → sunLight.intensity *= (1 - eclipseOcclusion)
+// ÐšÐžÐžÐ Ð”Ð˜ÐÐÐ¦Ð˜Ð¯ Ð—ÐÐŸÐ˜Ð¡Ð˜ sunLight.intensity (v5.1):
+//   AtmosphereManager(-6000) â†’ ProfileSunIntensity, ComputedHorizonFade (data)
+//   UnderwaterVisuals(-4000) â†’ sunLight.intensity = profile Ã— horizon Ã— lightCurve
+//   CelestialEngine(-3000)   â†’ sunLight.intensity *= (1 - eclipseOcclusion)
 // ============================================================================
 
 using Hecton8.Core;
 using Hecton8.Atmosphere;
+using Hecton8.Audio;
 using Hecton8.Bootstrap;
 using Hecton8.Celestial;
 using Hecton8.Gameplay;
@@ -118,6 +119,8 @@ namespace Hecton8.Environment
         private const string UnderwaterShallowSunBeamChildName = "Underwater_ShallowSunBeam";
         private static readonly Color UnderwaterDaylightSeaTintShallow = new Color(0.118f, 0.402f, 0.424f, 1f);
         private static readonly Color UnderwaterDaylightSeaTintMid = new Color(0.026f, 0.156f, 0.238f, 1f);
+        private static readonly int _SargassumCanopyShadowParamsId = Shader.PropertyToID("_SargassumCanopyShadowParams");
+        private static readonly int _SargassumCanopyLightingParamsId = Shader.PropertyToID("_SargassumCanopyLightingParams");
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -125,16 +128,17 @@ namespace Hecton8.Environment
             ActiveRuntimeInstance = null;
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  INSPECTOR — REFERENCES
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  INSPECTOR â€” REFERENCES
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        [Header("═══ REFERENCES ═══")]
+        [Header("â•â•â• REFERENCES â•â•â•")]
         [SerializeField] private Transform playerCamera;
         [SerializeField] private Light sunLight;
         [SerializeField] private LensFlareComponentSRP sunFlare;
         [SerializeField] private Transform sunVisualTransform;
         [SerializeField] private Camera mainCamera;
+        [SerializeField] private DepthZoneDirector depthZoneDirector;
         [SerializeField] private LandingImpactVFX transitionCameraVfx;
         [SerializeField] private VisorHUDController transitionVisorController;
         [Tooltip("Near-camera suspended particulate system parented under the runtime main camera.")]
@@ -146,28 +150,48 @@ namespace Hecton8.Environment
         [Tooltip("Attached light used only to drive the VLB beam. Keep cullingMask = 0 to avoid lighting the world.")]
         [SerializeField] private Light shallowSunBeamLight;
 
-        [Header("═══ ATMOSPHERE MANAGER ═══")]
+        [Header("â•â•â• SARGASSUM CANOPY â•â•â•")]
+        [Tooltip("Allows underwater visuals to react to global sargassum density when the player dives under floating mats.")]
+        [SerializeField] private bool enableSargassumCanopyLighting = true;
+        [Tooltip("World-space radius used by the local canopy shadow blob pushed into first-party underwater terrain shaders.")]
+        [SerializeField, UnityEngine.Range(4f, 48f)] private float sargassumCanopyShadowRadius = 24f;
+        [Tooltip("How strongly floating sargassum density suppresses underwater light when the player is under a canopy.")]
+        [SerializeField, UnityEngine.Range(0f, 1f)] private float sargassumCanopyLightOcclusionStrength = 0.62f;
+        [Tooltip("Extra fog density added under dense canopy coverage.")]
+        [SerializeField, UnityEngine.Range(0f, 1f)] private float sargassumCanopyFogBoost = 0.28f;
+        [Tooltip("Ambient-light suppression under a dense canopy.")]
+        [SerializeField, UnityEngine.Range(0f, 1f)] private float sargassumCanopyAmbientOcclusionStrength = 0.48f;
+        [Tooltip("How strongly the canopy suppresses shallow sun beams unless a local Voronoi window is open.")]
+        [SerializeField, UnityEngine.Range(0f, 1f)] private float sargassumCanopyBeamOcclusionStrength = 0.72f;
+        [Tooltip("How strongly Voronoi canopy windows re-open shallow god rays.")]
+        [SerializeField, UnityEngine.Range(0f, 1f)] private float sargassumCanopyBeamWindowBoost = 0.94f;
+        [Tooltip("How strongly the shallow god ray shifts laterally toward the current canopy-window anchor so the beam tracks drifting sargassum openings.")]
+        [SerializeField, UnityEngine.Range(0f, 1f)] private float sargassumCanopyBeamAnchorTracking = 0.42f;
+        [Tooltip("Maximum local beam offset applied when tracking a drifting canopy window.")]
+        [SerializeField, UnityEngine.Range(0f, 6f)] private float sargassumCanopyBeamAnchorMaxOffset = 2.4f;
+
+        [Header("â•â•â• ATMOSPHERE MANAGER â•â•â•")]
         [SerializeField] private HectonAtmosphereManager atmosphereManager;
 
-        [Header("═══ CREST MATERIAL ═══")]
+        [Header("â•â•â• CREST MATERIAL â•â•â•")]
         [SerializeField] private Material oceanUnderwaterMaterial;
 
-        [Header("═══ SKY MATERIAL ═══")]
+        [Header("â•â•â• SKY MATERIAL â•â•â•")]
         [SerializeField] private Material skyMaterial;
 
-        [Header("═══ BIOME PALETTE ═══")]
+        [Header("â•â•â• BIOME PALETTE â•â•â•")]
         [SerializeField] private HectonOceanPalette biomePalette;
 
-        [Header("═══ VERTICAL RUNTIME ═══")]
+        [Header("â•â•â• VERTICAL RUNTIME â•â•â•")]
         [SerializeField] private BiomeMatrixDirector biomeMatrixDirector;
 
-        // ══════════════════════════════════════════════════════════
-        //  INSPECTOR — GLOBAL DEPTH CURVE
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  INSPECTOR â€” GLOBAL DEPTH CURVE
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        [Header("═══ GLOBAL LIGHT CURVE ═══")]
-        [Tooltip("ГЛАВНАЯ КРИВАЯ ЗАТЕМНЕНИЯ.\n" +
-                 "X = глубина (м), Y = множитель света [0..1].")]
+        [Header("â•â•â• GLOBAL LIGHT CURVE â•â•â•")]
+        [Tooltip("Ð“Ð›ÐÐ’ÐÐÐ¯ ÐšÐ Ð˜Ð’ÐÐ¯ Ð—ÐÐ¢Ð•ÐœÐÐ•ÐÐ˜Ð¯.\n" +
+                 "X = Ð³Ð»ÑƒÐ±Ð¸Ð½Ð° (Ð¼), Y = Ð¼Ð½Ð¾Ð¶Ð¸Ñ‚ÐµÐ»ÑŒ ÑÐ²ÐµÑ‚Ð° [0..1].")]
         [SerializeField] private AnimationCurve globalLightCurve = new AnimationCurve(
             new Keyframe(0f,    1.0f,  0f, 0f),
             new Keyframe(300f,  0.8f,  0f, 0f),
@@ -175,7 +199,7 @@ namespace Hecton8.Environment
             new Keyframe(1000f, 0.0f,  0f, 0f)
         );
 
-        [Header("═══ FOG DENSITY RANGE ═══")]
+        [Header("â•â•â• FOG DENSITY RANGE â•â•â•")]
         [Header("Beer-Lambert Depth Attenuation")]
         [Tooltip("Uses Crest depth-fog coefficients as Beer-Lambert extinction instead of the legacy authored depth curve.")]
         [SerializeField] private bool useBeerLambertDepthAttenuation = true;
@@ -219,14 +243,14 @@ namespace Hecton8.Environment
         [Tooltip("Controls how strongly Crest's procedural sky base is glued to the fog/haze state instead of the authored fallback color.")]
         [SerializeField, UnityEngine.Range(0f, 1f)] private float crestSkyBaseFogLink = 0.88f;
 
-        // ══════════════════════════════════════════════════════════
-        //  INSPECTOR — CONFIGURATION
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  INSPECTOR â€” CONFIGURATION
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        [Header("═══ WATER LEVEL ═══")]
+        [Header("â•â•â• WATER LEVEL â•â•â•")]
         [SerializeField] private float waterLevelFallback = 4900f;
 
-        [Header("═══ DEEP CELESTIAL CULL ═══")]
+        [Header("â•â•â• DEEP CELESTIAL CULL â•â•â•")]
         [Tooltip("Suppresses SpaceCamera celestial rendering below this depth to cut deep-water render overhead without touching shallow water.")]
         [SerializeField] private float deepCelestialCullDepth = 1000f;
         [Tooltip("Keeps SpaceCamera celestial rendering suppressed until the player climbs clearly out of the deep-water threshold instead of thrashing at one boundary.")]
@@ -240,11 +264,11 @@ namespace Hecton8.Environment
         [Tooltip("Render-scale threshold required before the SpaceCamera is restored after adaptive suppression.")]
         [SerializeField, UnityEngine.Range(0.5f, 1f)] private float adaptiveSpaceCameraRestoreRenderScale = 0.9f;
 
-        [Header("═══ SUN VISUAL ═══")]
+        [Header("â•â•â• SUN VISUAL â•â•â•")]
         [UnityEngine.Range(0.0001f, 0.05f)]
         [SerializeField] private float sunVisualDisableThreshold = 0.005f;
 
-        [Header("═══ SUN SCATTERING ═══")]
+        [Header("â•â•â• SUN SCATTERING â•â•â•")]
         [SerializeField] private float baseSunSize = 0.002f;
         [SerializeField] private float underwaterSunSizeMax = 0.15f;
         [SerializeField] private float baseSunEdgeSoftness = 0.001f;
@@ -252,25 +276,37 @@ namespace Hecton8.Environment
         [SerializeField, UnityEngine.Range(0.5f, 20f)] private float sunStateBrightenSpeed = 4.5f;
         [SerializeField, UnityEngine.Range(0.5f, 20f)] private float sunStateDarkenSpeed = 8f;
 
-        [Header("═══ TRANSITION ═══")]
+        [Header("â•â•â• TRANSITION â•â•â•")]
         [UnityEngine.Range(0.05f, 2.0f)]
         [SerializeField] private float biomeTransitionSpeed = 0.2f;
         [SerializeField] private float slowTickInterval = 0.5f;
 
-        [Header("â•â•â• SUBMERGE IMPULSE â•â•â•")]
+        [Header("Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â SUBMERGE IMPULSE Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â")]
         [SerializeField, UnityEngine.Range(0f, 0.6f)] private float submergeDarkenStrength = 0.2f;
         [SerializeField, UnityEngine.Range(0f, 2f)] private float submergeFogBoost = 0.45f;
         [SerializeField, UnityEngine.Range(0.05f, 1f)] private float submergeImpulseDuration = 0.32f;
         [SerializeField, UnityEngine.Range(0.1f, 2f)] private float submergeImpulseDepthWindow = 0.9f;
 
-        [Header("â•â•â• SHALLOW CAUSTICS â•â•â•")]
+        [Header("── Thermocline Transition ───")]
+        [Tooltip("Optional subtle one-shot used when the player punches through a sharp water-layer boundary.")]
+        [SerializeField] private AudioClip thermoclineTransitionClip;
+        [SerializeField, UnityEngine.Range(0f, 1f)] private float thermoclineMinTriggerIntensity = 0.18f;
+        [SerializeField, UnityEngine.Range(0.25f, 20f)] private float thermoclineTemperatureDeltaForFullEffect = 6f;
+        [SerializeField, UnityEngine.Range(0.02f, 0.5f)] private float thermoclineFogDeltaForFullEffect = 0.11f;
+        [SerializeField, UnityEngine.Range(0.05f, 1.5f)] private float thermoclineColorDeltaForFullEffect = 0.32f;
+        [SerializeField, UnityEngine.Range(0f, 1f)] private float thermoclineAudioVolume = 0.26f;
+        [SerializeField, UnityEngine.Range(0f, 1f)] private float thermoclineVisorDistortionHoldDuration = 0.08f;
+        [SerializeField, UnityEngine.Range(0.25f, 8f)] private float thermoclineVisorDistortionRecoverySpeed = 5.8f;
+        [SerializeField, UnityEngine.Range(0.1f, 2f)] private float thermoclineMinRepeatInterval = 0.45f;
+
+        [Header("Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â SHALLOW CAUSTICS Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â")]
         [SerializeField] private bool enableShallowCaustics = true;
         [SerializeField, UnityEngine.Range(0.1f, 4f)] private float causticsStrengthScale = 1f;
         [SerializeField, UnityEngine.Range(0.05f, 2f)] private float causticsFadeInDepth = 0.3f;
         [SerializeField, UnityEngine.Range(1f, 40f)] private float causticsFadeOutDepth = 18f;
         [SerializeField, UnityEngine.Range(0f, 1f)] private float causticsMinLightFactor = 0.18f;
 
-        [Header("─── UNDERWATER MOTES ───")]
+        [Header("â”€â”€â”€ UNDERWATER MOTES â”€â”€â”€")]
         [Tooltip("Enables camera-local suspended particulate while underwater.")]
         [SerializeField] private bool enableSuspendedMotes = true;
         [Tooltip("Base emission rate at clean shallow water.")]
@@ -284,7 +320,7 @@ namespace Hecton8.Environment
         [Tooltip("How strongly biome turbidity raises particulate density.")]
         [SerializeField, UnityEngine.Range(0f, 1.5f)] private float suspendedMotesTurbidityWeight = 0.65f;
 
-        [Header("─── BOTTOM SILT ───")]
+        [Header("â”€â”€â”€ BOTTOM SILT â”€â”€â”€")]
         [Tooltip("Boosts near-camera particulate when the player moves close to the seafloor.")]
         [SerializeField] private bool enableBottomSiltBoost = true;
         [Tooltip("Maximum interval between bottom probes while underwater.")]
@@ -300,7 +336,7 @@ namespace Hecton8.Environment
         [Tooltip("Maximum extra emission injected into the existing suspended motes field near the seabed.")]
         [SerializeField, UnityEngine.Range(0f, 48f)] private float bottomSiltEmissionBoost = 14f;
 
-        [Header("─── EXHALE BUBBLES ───")]
+        [Header("â”€â”€â”€ EXHALE BUBBLES â”€â”€â”€")]
         [Tooltip("Emits a short bubble burst on each underwater exhale event from the player movement owner.")]
         [SerializeField] private bool enableExhaleBubbles = true;
         [Tooltip("Minimum burst count in clean shallow water.")]
@@ -314,7 +350,7 @@ namespace Hecton8.Environment
         [Tooltip("Protects against duplicate exhale events landing in the same short window.")]
         [SerializeField, UnityEngine.Range(0.05f, 1f)] private float exhaleBubbleMinInterval = 0.28f;
 
-        [Header("─── SHALLOW SUN BEAM ───")]
+        [Header("â”€â”€â”€ SHALLOW SUN BEAM â”€â”€â”€")]
         [Tooltip("Enables the near-camera shallow-water sunshaft proxy.")]
         [SerializeField] private bool enableShallowSunBeam = true;
         [Tooltip("Beam fades in over this first shallow depth range.")]
@@ -326,7 +362,7 @@ namespace Hecton8.Environment
         [Tooltip("Maximum light intensity pushed into the proxy beam light.")]
         [SerializeField, UnityEngine.Range(0f, 4f)] private float shallowSunBeamMaxLightIntensity = 0.55f;
 
-        [Header("─── ECOLOGY RESPONSE ───")]
+        [Header("â”€â”€â”€ ECOLOGY RESPONSE â”€â”€â”€")]
         [Tooltip("How strongly fauna mood can thicken underwater suspended particulates.")]
         [SerializeField, UnityEngine.Range(0f, 1f)] private float ecologySuspendedMotesWeight = 0.28f;
         [Tooltip("How strongly fauna mood can increase exhale bubble burst density.")]
@@ -398,7 +434,7 @@ namespace Hecton8.Environment
         [Tooltip("Caustics intensity multiplier in thermal tier.")]
         [SerializeField, UnityEngine.Range(0f, 1.5f)] private float thermalTierCausticsScale = 0.14f;
 
-        [Header("═══ SURFACE DEFAULTS ═══")]
+        [Header("â•â•â• SURFACE DEFAULTS â•â•â•")]
         [ColorUsage(false)]
         [SerializeField] private Color surfaceFogColor = new Color(0.7f, 0.75f, 0.8f, 1f);
         [SerializeField] private float surfaceFogDensity = 0.001f;
@@ -406,15 +442,15 @@ namespace Hecton8.Environment
         [ColorUsage(false)]
         [SerializeField] private Color surfaceAmbientColor = new Color(0.5f, 0.5f, 0.5f, 1f);
 
-        [Header("═══ UNDERWATER AMBIENT ═══")]
+        [Header("â•â•â• UNDERWATER AMBIENT â•â•â•")]
         [ColorUsage(false)]
         [SerializeField] private Color underwaterAmbientColor = new Color(0.02f, 0.04f, 0.06f, 1f);
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  DIAGNOSTICS
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        [Header("═══ DIAGNOSTICS ═══")]
+        [Header("â•â•â• DIAGNOSTICS â•â•â•")]
 #pragma warning disable CS0414
         [SerializeField] private float _debugDepth;
         [SerializeField] private float _debugLightFactor;
@@ -458,9 +494,9 @@ namespace Hecton8.Environment
         [SerializeField] private bool  _debugEditorDriven;
 #pragma warning restore CS0414
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  SHADER PROPERTY IDs
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private static readonly int _ID_ScatterColourBase =
             Shader.PropertyToID("_ScatterColourBase");
@@ -525,9 +561,9 @@ namespace Hecton8.Environment
         private static readonly int _ID_ProceduralSky =
             Shader.PropertyToID("_ProceduralSky");
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  CONSTANTS
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private static readonly Color MIN_AMBIENT = new Color(0.01f, 0.02f, 0.03f, 1f);
         private const string ProceduralSkyKeyword = "_PROCEDURALSKY_ON";
@@ -537,9 +573,9 @@ namespace Hecton8.Environment
         private const float SharedOceanUnderwaterScatterLuminanceFloor = 0.48f;
         private const float CrestSkyDirectionality = 0.78f;
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  RUNTIME STATE
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private Hecton8.Physics.HectonFluidEngine _physicsEngine;
         private bool _physicsEngineCached;
@@ -604,7 +640,9 @@ namespace Hecton8.Environment
         private bool _registeredTick;
         private bool _registeredSlowTick;
         private bool _wasUnderwater;
+        private DepthZoneProfile _lastDepthZoneProfile;
         private float _submergeImpulseTimer;
+        private float _nextThermoclineAllowedTime = float.NegativeInfinity;
         private float _cachedVisualDepth;
         private float _cachedLightFactor;
         private float _cachedCausticsStrength;
@@ -630,13 +668,14 @@ namespace Hecton8.Environment
         private float _nextRuntimeReferenceWarningTime = float.NegativeInfinity;
         private float _nextEditorCameraResolveTime = float.NegativeInfinity;
         private const int RuntimeCameraBufferSize = 8;
-        private static readonly Camera[] _runtimeCameraBuffer = new Camera[RuntimeCameraBufferSize]; // COLD ALLOC: Camera[8] — reusable runtime main-camera resolve buffer to avoid hierarchy array allocations — owner: HectonUnderwaterVisuals
+        private static readonly Camera[] _runtimeCameraBuffer = new Camera[RuntimeCameraBufferSize]; // COLD ALLOC: Camera[8] â€” reusable runtime main-camera resolve buffer to avoid hierarchy array allocations â€” owner: HectonUnderwaterVisuals
         private Camera _gameplayMainCamera;
         private Camera _spaceCamera;
         private Camera _capturedCompositionMainCamera;
         private Camera _capturedCompositionSpaceCamera;
         private CrestOceanRenderer _oceanRenderer;
         private Transform _shallowSunBeamTransform;
+        private Vector3 _shallowSunBeamBaseLocalPosition;
         private CrestUnderwaterRenderer _mainCameraUnderwaterRenderer;
         private CrestUnderwaterRenderer _spaceCameraUnderwaterRenderer;
         private bool _cameraCompositionDefaultsCaptured;
@@ -660,11 +699,11 @@ namespace Hecton8.Environment
 #endif
 
         private float _editorSlowTickAccum;
-        private readonly RaycastHit[] _bottomSiltProbeHits = new RaycastHit[4]; // COLD ALLOC: RaycastHit[4] — reused seafloor probe buffer for underwater bottom-silt gating — owner: HectonUnderwaterVisuals
+        private readonly RaycastHit[] _bottomSiltProbeHits = new RaycastHit[4]; // COLD ALLOC: RaycastHit[4] â€” reused seafloor probe buffer for underwater bottom-silt gating â€” owner: HectonUnderwaterVisuals
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  LIFECYCLE
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private void OnEnable()
         {
@@ -719,6 +758,8 @@ namespace Hecton8.Environment
 #endif
 
             _wasUnderwater = false;
+            _lastDepthZoneProfile = null;
+            _nextThermoclineAllowedTime = float.NegativeInfinity;
             _sunVisualWasDisabled = false;
         }
 
@@ -957,6 +998,8 @@ namespace Hecton8.Environment
 #if UNITY_EDITOR
             ResumeEditorWaterRendering();
 #endif
+            _lastDepthZoneProfile = null;
+            _nextThermoclineAllowedTime = float.NegativeInfinity;
             _cachedBottomDistance = float.PositiveInfinity;
             _cachedBottomSiltBoost = 0f;
             _nextBottomSiltProbeTime = float.NegativeInfinity;
@@ -970,11 +1013,13 @@ namespace Hecton8.Environment
             RestoreSpaceCameraDefaults();
             RestoreCameraDefaults();
             RestoreSkyMaterialDefaults();
+            Shader.SetGlobalVector(_SargassumCanopyShadowParamsId, Vector4.zero);
+            Shader.SetGlobalVector(_SargassumCanopyLightingParamsId, new Vector4(0f, 0f, 1f, 0f));
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  EDITOR UPDATE
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 #if UNITY_EDITOR
         private void EditorUpdate()
@@ -1179,14 +1224,14 @@ namespace Hecton8.Environment
         }
 #endif
 
-        // ══════════════════════════════════════════════════════════
-        //  ITickable.Tick — PER-FRAME
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  ITickable.Tick â€” PER-FRAME
         //
         //  v5.1: By the time this runs, AtmosphereManager has already
         //  computed fresh ProfileSunIntensity and ComputedHorizonFade.
         //  We read those values and combine with depth factor.
         //  CelestialEngine will run AFTER us and multiply by eclipse.
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         public void Tick(float deltaTime)
         {
@@ -1209,10 +1254,11 @@ namespace Hecton8.Environment
             _cachedVisualDepth = depth;
             _cachedVisualIsUnderwater = isUnderwater;
             UpdateTransportCockpitOverlay();
+            TryHandleThermoclineTransition(isUnderwater);
 
-            // ══════════════════════════════════════════════
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             //  ABOVE WATER
-            // ══════════════════════════════════════════════
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
             if (!isUnderwater)
             {
@@ -1227,13 +1273,14 @@ namespace Hecton8.Environment
 
                 UpdateUnderwaterSuspendedMotes(depth, 1f, 0f, false);
                 DisableUnderwaterExhaleBubbles(true);
-                UpdateShallowSunBeam(depth, 1f, false);
+                UpdateShallowSunBeam(depth, 1f, false, Vector3.zero, 1f, 0f);
+                ApplySargassumCanopyShaderGlobals(default);
 
-                // ── v5.1: Write sunLight.intensity EVERY FRAME above water ──
+                // â”€â”€ v5.1: Write sunLight.intensity EVERY FRAME above water â”€â”€
                 // This is the "base" value that CelestialEngine will multiply
                 // by eclipse visibility in its Tick() (which runs after ours).
                 //
-                // profile × horizon gives the correct sunset/sunrise dimming.
+                // profile Ã— horizon gives the correct sunset/sunrise dimming.
                 // CelestialEngine then applies: intensity *= (1 - eclipseOcclusion)
                 //
                 // Guard: skip only if AtmosphereManager hasn't computed yet
@@ -1271,9 +1318,9 @@ namespace Hecton8.Environment
                 return;
             }
 
-            // ══════════════════════════════════════════════
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             //  ENTERING WATER
-            // ══════════════════════════════════════════════
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
             if (!_wasUnderwater)
             {
@@ -1283,19 +1330,24 @@ namespace Hecton8.Environment
                 _wasUnderwater = true;
             }
 
-            // ══════════════════════════════════════════════
-            //  UNDERWATER — DEPTH-DRIVEN
-            // ══════════════════════════════════════════════
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+            //  UNDERWATER â€” DEPTH-DRIVEN
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
+            SargassumGlobalDragManager.SargassumFieldSample sargassumCanopySample = ResolveSargassumCanopySample();
+            float canopyOcclusion01 = sargassumCanopySample.Occlusion01;
+            float canopyWindow01 = sargassumCanopySample.Window01;
             float lightFactor = ResolveDepthLightFactor(depth);
             float submergeImpulse = EvaluateSubmergeImpulse(depth);
             lightFactor *= 1f - (submergeDarkenStrength * submergeImpulse);
+            lightFactor *= 1f - (canopyOcclusion01 * sargassumCanopyLightOcclusionStrength);
             _cachedLightFactor = lightFactor;
             _cachedCausticsStrength = ResolveCausticsStrength(depth, lightFactor, isUnderwater);
             UpdateUnderwaterSuspendedMotes(depth, lightFactor, submergeImpulse, true);
-            UpdateShallowSunBeam(depth, lightFactor, true);
+            UpdateShallowSunBeam(depth, lightFactor, true, sargassumCanopySample.AnchorWS, canopyWindow01, canopyOcclusion01);
+            ApplySargassumCanopyShaderGlobals(sargassumCanopySample);
 
-            // ── Sun intensity = profile × horizon × depthCurve ──
+            // â”€â”€ Sun intensity = profile Ã— horizon Ã— depthCurve â”€â”€
             float baseSunIntensity = ResolveProfileSunIntensity();
             float horizonFade = ResolveHorizonFade();
             float finalSunIntensity = baseSunIntensity * horizonFade * lightFactor;
@@ -1305,16 +1357,16 @@ namespace Hecton8.Environment
             ApplySunVisualState(smoothedUnderwaterLightFactor);
             ApplySunScattering(smoothedUnderwaterLightFactor);
             ApplySunColorFade(smoothedUnderwaterLightFactor);
-            ApplyUnderwaterFog(lightFactor, depth, submergeImpulse);
-            ApplyUnderwaterAmbient();
+            ApplyUnderwaterFog(lightFactor, depth, submergeImpulse, canopyOcclusion01);
+            ApplyUnderwaterAmbient(canopyOcclusion01);
             ApplyUnderwaterCamera();
 
             UpdateLightDiagnostics(lightFactor, baseSunIntensity, horizonFade, appliedSunIntensity);
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  ISlowTickable.SlowTick — 2Hz
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  ISlowTickable.SlowTick â€” 2Hz
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         public void SlowTick()
         {
@@ -1337,13 +1389,13 @@ namespace Hecton8.Environment
             ApplyCrestMaterial();
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  ATMOSPHERE MANAGER INTEGRATION
         //
         //  v5.1: ResolveHorizonFade now reads the PRECOMPUTED value
         //  from AtmosphereManager instead of recalculating.
         //  This ensures ONE source of truth for the horizon curve.
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private float ResolveProfileSunIntensity()
         {
@@ -1372,7 +1424,7 @@ namespace Hecton8.Environment
         /// v5.1 FIX: Reads AtmosphereManager.ComputedHorizonFade directly.
         ///
         /// OLD (v5.0): Recalculated from SunElevation with its own fadeAngle.
-        ///   Problem: different fadeAngle → different curve → desync with
+        ///   Problem: different fadeAngle â†’ different curve â†’ desync with
         ///   what AtmosphereManager considers "sunset".
         ///
         /// NEW (v5.1): Single source of truth.
@@ -1470,9 +1522,9 @@ namespace Hecton8.Environment
 #endif
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  SUN INTENSITY
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private float SmoothSunState(float targetIntensity, float targetLightFactor, float deltaTime)
         {
@@ -1512,9 +1564,9 @@ namespace Hecton8.Environment
             return finalIntensity;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  SUN VISUAL DISC
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private void ApplySunVisualState(float lightFactor)
         {
@@ -1576,9 +1628,9 @@ namespace Hecton8.Environment
             _sunVisualWasDisabled = true;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  SUN SCATTERING
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private void ApplySunScattering(float lightFactor)
         {
@@ -1597,9 +1649,9 @@ namespace Hecton8.Environment
 #endif
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  SUN DISC / SCATTER COLOR FADE
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private void CaptureSkyBaseColors()
         {
@@ -1656,9 +1708,9 @@ namespace Hecton8.Environment
             }
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  FOG
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private Color ResolveSurfaceFogColor()
         {
@@ -1722,9 +1774,15 @@ namespace Hecton8.Environment
                 : 1f;
         }
 
-        private void ApplyUnderwaterFog(float lightFactor, float currentDepth, float submergeImpulse)
+        private void ApplyUnderwaterFog(float lightFactor, float currentDepth, float submergeImpulse, float canopyOcclusion01)
         {
             Color fogColor = ResolveUnderwaterFogColor(lightFactor, currentDepth);
+            if (canopyOcclusion01 > 0.0001f)
+            {
+                float canopyColorBlend = canopyOcclusion01 * 0.55f;
+                fogColor = Color.Lerp(fogColor, fogColor * 0.54f, canopyColorBlend);
+                fogColor.a = 1f;
+            }
             float effectiveSurfaceFogBlendDepth = math.min(surfaceFogBlendDepth, MaxSurfaceFogBlendDepth);
             float surfaceBlend = 1f - math.saturate(
                 currentDepth / math.max(0.01f, effectiveSurfaceFogBlendDepth));
@@ -1742,6 +1800,7 @@ namespace Hecton8.Environment
             float targetDensity = baseDensity * _currentTurbidity;
             targetDensity *= _soundscapeFogDensityScale;
             targetDensity *= 1f + (submergeFogBoost * submergeImpulse);
+            targetDensity *= 1f + (canopyOcclusion01 * sargassumCanopyFogBoost);
             float shallowDensityFloor = Mathf.Lerp(
                 UnderwaterFogDensityFloorNearSurface,
                 UnderwaterFogDensityFloorAtDepth,
@@ -1839,13 +1898,20 @@ namespace Hecton8.Environment
             return Mathf.Lerp(surfaceDensity, _cachedFogDensity, sceneViewDensityScale);
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  AMBIENT / CAMERA
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        private void ApplyUnderwaterAmbient()
+        private void ApplyUnderwaterAmbient(float canopyOcclusion01)
         {
             Color effectiveAmbient = ResolveUnderwaterAmbientColor();
+            if (canopyOcclusion01 > 0.0001f)
+            {
+                float canopyDarken = 1f - (canopyOcclusion01 * sargassumCanopyAmbientOcclusionStrength);
+                effectiveAmbient.r *= canopyDarken;
+                effectiveAmbient.g *= canopyDarken;
+                effectiveAmbient.b *= canopyDarken;
+            }
             Color ambient;
             ambient.r = math.max(effectiveAmbient.r, MIN_AMBIENT.r);
             ambient.g = math.max(effectiveAmbient.g, MIN_AMBIENT.g);
@@ -1892,6 +1958,51 @@ namespace Hecton8.Environment
                     ? CameraClearFlags.Skybox
                     : CameraClearFlags.SolidColor;
             ApplyRuntimeMainCameraClearFlags(underwaterClearFlags);
+        }
+
+        private SargassumGlobalDragManager.SargassumFieldSample ResolveSargassumCanopySample()
+        {
+            SargassumGlobalDragManager.SargassumFieldSample sample = default;
+            sample.Window01 = 1f;
+            if (!enableSargassumCanopyLighting)
+                return sample;
+
+            SargassumGlobalDragManager dragManager = SargassumGlobalDragManager.Instance;
+            if (dragManager == null)
+                return sample;
+
+            Transform sampleTransform = playerCamera != null ? playerCamera : mainCamera != null ? mainCamera.transform : null;
+            if (sampleTransform == null)
+                return sample;
+
+            dragManager.SampleDetailedInfluence(sampleTransform.position, 1.15f, 0f, out sample);
+            return sample;
+        }
+
+        private void ApplySargassumCanopyShaderGlobals(SargassumGlobalDragManager.SargassumFieldSample sample)
+        {
+            if (!enableSargassumCanopyLighting || !sample.HasInfluence)
+            {
+                Shader.SetGlobalVector(_SargassumCanopyShadowParamsId, Vector4.zero);
+                Shader.SetGlobalVector(_SargassumCanopyLightingParamsId, new Vector4(0f, 0f, 1f, 0f));
+                return;
+            }
+
+            float inverseRadius = 1f / math.max(0.01f, sargassumCanopyShadowRadius);
+            Shader.SetGlobalVector(
+                _SargassumCanopyShadowParamsId,
+                new Vector4(
+                    sample.AnchorWS.x,
+                    sample.AnchorWS.z,
+                    inverseRadius,
+                    sample.Occlusion01));
+            Shader.SetGlobalVector(
+                _SargassumCanopyLightingParamsId,
+                new Vector4(
+                    sample.Density01,
+                    sample.Occlusion01,
+                    sample.Window01,
+                    1f));
         }
 
         private Color ResolveUnderwaterAmbientColor()
@@ -2276,19 +2387,19 @@ namespace Hecton8.Environment
                 1f);
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  SURFACE DEFAULTS
         //
         //  v5.1: ApplySurfaceDefaults writes sunLight.intensity
-        //  as profile × horizon. CelestialEngine will multiply
+        //  as profile Ã— horizon. CelestialEngine will multiply
         //  by eclipse visibility afterward (runs later in tick order).
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private void ApplySurfaceDefaults()
         {
             bool hasSurfaceAtmosphereState = HectonCelestialEngine.TryGetCurrentAtmosphericLightingState(out AtmosphericLightingState surfaceState);
 
-            // ── Sun intensity: base for CelestialEngine to multiply ──
+            // â”€â”€ Sun intensity: base for CelestialEngine to multiply â”€â”€
             if (sunLight != null)
             {
                 if (hasSurfaceAtmosphereState)
@@ -2363,9 +2474,9 @@ namespace Hecton8.Environment
             ApplyRuntimeMainCameraClearFlags(CameraClearFlags.Skybox);
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  BIOME INTERPOLATION
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private void RefreshTargetsFromCurrentProfile()
         {
@@ -2670,9 +2781,9 @@ namespace Hecton8.Environment
                 targetMaterial.DisableKeyword(UnderwaterKeyword);
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  BIOME EVENT
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private void HandleBiomeChanged(int biomeIndex)
         {
@@ -2801,9 +2912,9 @@ namespace Hecton8.Environment
 #endif
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  PUBLIC API
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         public float CurrentDepth
         {
@@ -2866,9 +2977,9 @@ namespace Hecton8.Environment
         public void SetPlayerCamera(Transform camera) => playerCamera = camera;
         public void SetWaterLevelFallback(float y) => waterLevelFallback = y;
 
-        // ══════════════════════════════════════════════════════════
-        //  PRIVATE — INIT
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  PRIVATE â€” INIT
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private void ResolvePlayerCamera()
         {
@@ -3114,7 +3225,7 @@ namespace Hecton8.Environment
             if (!mainCamera.TryGetComponent(out _mainCameraUnderwaterRenderer) ||
                 _mainCameraUnderwaterRenderer == null)
             {
-                // COLD ALLOC: UnderwaterRenderer[1] — restore Crest underwater pass on the gameplay camera when authoring data lost it — owner: HectonUnderwaterVisuals
+                // COLD ALLOC: UnderwaterRenderer[1] â€” restore Crest underwater pass on the gameplay camera when authoring data lost it â€” owner: HectonUnderwaterVisuals
                 _mainCameraUnderwaterRenderer =
                     mainCamera.gameObject.AddComponent<CrestUnderwaterRenderer>();
             }
@@ -3142,7 +3253,7 @@ namespace Hecton8.Environment
             if (!sceneViewCamera.TryGetComponent(out _editorSceneViewUnderwaterRenderer) ||
                 _editorSceneViewUnderwaterRenderer == null)
             {
-                // COLD ALLOC: UnderwaterRenderer[1] — restore Crest underwater pass on SceneView camera for editor preview ownership — owner: HectonUnderwaterVisuals
+                // COLD ALLOC: UnderwaterRenderer[1] â€” restore Crest underwater pass on SceneView camera for editor preview ownership â€” owner: HectonUnderwaterVisuals
                 _editorSceneViewUnderwaterRenderer =
                     sceneViewCamera.gameObject.AddComponent<CrestUnderwaterRenderer>();
             }
@@ -3166,7 +3277,7 @@ namespace Hecton8.Environment
             if (!_gameplayMainCamera.TryGetComponent(out _editorCrestUnderwaterRenderer) ||
                 _editorCrestUnderwaterRenderer == null)
             {
-                // COLD ALLOC: UnderwaterRenderer[1] — restore Crest underwater pass on gameplay main camera for editor GameView ownership — owner: HectonUnderwaterVisuals
+                // COLD ALLOC: UnderwaterRenderer[1] â€” restore Crest underwater pass on gameplay main camera for editor GameView ownership â€” owner: HectonUnderwaterVisuals
                 _editorCrestUnderwaterRenderer =
                     _gameplayMainCamera.gameObject.AddComponent<CrestUnderwaterRenderer>();
             }
@@ -3236,6 +3347,9 @@ namespace Hecton8.Environment
 
             if (!IsCameraReferenceValid(_spaceCamera))
                 ResolveSpaceCamera();
+
+            if (depthZoneDirector == null)
+                depthZoneDirector = DepthZoneDirector.Instance;
 
             EnsureCrestOceanCameraOwnership();
 
@@ -3448,6 +3562,76 @@ namespace Hecton8.Environment
             return ResolveSafeCrestColor(fallback, new Color(0f, 0.15f, 0.12f, 1f));
         }
 
+        private void TryHandleThermoclineTransition(bool isUnderwater)
+        {
+            if (!Application.isPlaying)
+                return;
+
+            if (depthZoneDirector == null)
+                depthZoneDirector = DepthZoneDirector.Instance;
+
+            DepthZoneProfile currentZone = depthZoneDirector != null ? depthZoneDirector.CurrentZone : null;
+            if (!isUnderwater || !_wasUnderwater)
+            {
+                _lastDepthZoneProfile = currentZone;
+                return;
+            }
+
+            if (currentZone == _lastDepthZoneProfile)
+                return;
+
+            DepthZoneProfile previousZone = _lastDepthZoneProfile;
+            _lastDepthZoneProfile = currentZone;
+
+            if (previousZone == null || currentZone == null)
+                return;
+
+            if (Time.unscaledTime < _nextThermoclineAllowedTime)
+                return;
+
+            float intensity = ResolveThermoclineTransitionIntensity(previousZone, currentZone);
+            if (intensity < thermoclineMinTriggerIntensity)
+                return;
+
+            ResolveTransitionCameraVfx();
+            if (transitionCameraVfx != null)
+                transitionCameraVfx.TriggerThermoclineImpulse(intensity);
+
+            ResolveTransitionVisorController();
+            if (transitionVisorController != null)
+            {
+                transitionVisorController.TriggerEnvironmentalDistortion(
+                    intensity,
+                    thermoclineVisorDistortionHoldDuration,
+                    thermoclineVisorDistortionRecoverySpeed);
+            }
+
+            if (thermoclineTransitionClip != null && SpatialAudioManager.Instance != null)
+                SpatialAudioManager.Instance.PlayStatic2D(thermoclineTransitionClip, thermoclineAudioVolume * intensity);
+
+            _nextThermoclineAllowedTime = Time.unscaledTime + thermoclineMinRepeatInterval;
+        }
+
+        private float ResolveThermoclineTransitionIntensity(DepthZoneProfile previousZone, DepthZoneProfile currentZone)
+        {
+            DepthZoneAmbience previousAmbience = previousZone.ambience;
+            DepthZoneAmbience currentAmbience = currentZone.ambience;
+
+            float temperatureDelta = Mathf.Abs(previousAmbience.waterTemperature - currentAmbience.waterTemperature);
+            float fogDelta = Mathf.Abs(previousAmbience.fogDensity - currentAmbience.fogDensity);
+            Vector3 previousColor = new Vector3(previousAmbience.waterColor.r, previousAmbience.waterColor.g, previousAmbience.waterColor.b);
+            Vector3 currentColor = new Vector3(currentAmbience.waterColor.r, currentAmbience.waterColor.g, currentAmbience.waterColor.b);
+            float colorDelta = Vector3.Distance(previousColor, currentColor);
+
+            float normalizedTemperature = temperatureDelta / Mathf.Max(0.01f, thermoclineTemperatureDeltaForFullEffect);
+            float normalizedFog = fogDelta / Mathf.Max(0.01f, thermoclineFogDeltaForFullEffect);
+            float normalizedColor = colorDelta / Mathf.Max(0.01f, thermoclineColorDeltaForFullEffect);
+            float structuralBonus = previousZone.isThermal != currentZone.isThermal ? 0.24f : 0f;
+            structuralBonus += Mathf.Abs(previousZone.dangerLevel - currentZone.dangerLevel) * 0.12f;
+
+            return Mathf.Clamp01(Mathf.Max(normalizedTemperature, Mathf.Max(normalizedFog, normalizedColor)) + structuralBonus);
+        }
+
         private void TriggerSubmergeImpulse()
         {
             ResolveTransitionCameraVfx();
@@ -3556,6 +3740,7 @@ namespace Hecton8.Environment
                 return;
 
             _shallowSunBeamTransform = beamTransform;
+            _shallowSunBeamBaseLocalPosition = beamTransform.localPosition;
             if (shallowSunBeam == null)
                 beamTransform.TryGetComponent(out shallowSunBeam);
             if (shallowSunBeamLight == null)
@@ -3939,7 +4124,7 @@ namespace Hecton8.Environment
             return hitBodyTransform == playerRoot || hitBodyTransform.IsChildOf(playerRoot);
         }
 
-        private void UpdateShallowSunBeam(float depth, float lightFactor, bool isUnderwater)
+        private void UpdateShallowSunBeam(float depth, float lightFactor, bool isUnderwater, Vector3 canopyAnchorWS, float canopyWindow01, float canopyOcclusion01)
         {
             if (shallowSunBeam == null || shallowSunBeamLight == null || _shallowSunBeamTransform == null)
                 ResolveShallowSunBeam();
@@ -3960,6 +4145,15 @@ namespace Hecton8.Environment
                     (lightFactor - shallowSunBeamMinLightFactor) /
                     math.max(0.0001f, 1f - shallowSunBeamMinLightFactor));
                 float beamFactor = fadeIn * fadeOut * lightFade * ResolveHorizonFade();
+                if (enableSargassumCanopyLighting)
+                {
+                    float canopyWindowFactor = Mathf.Lerp(
+                        1f - sargassumCanopyBeamOcclusionStrength,
+                        1f,
+                        canopyWindow01 * sargassumCanopyBeamWindowBoost);
+                    beamFactor *= canopyWindowFactor;
+                    beamFactor *= 1f - (canopyOcclusion01 * sargassumCanopyBeamOcclusionStrength);
+                }
                 targetIntensity = shallowSunBeamMaxLightIntensity * beamFactor * _ecologySunBeamMultiplier * _adaptiveBeamScale * _soundscapeBeamScale;
                 shouldActivate = targetIntensity > 0.001f;
             }
@@ -3982,6 +4176,21 @@ namespace Hecton8.Environment
                         _shallowSunBeamTransform.rotation = Quaternion.LookRotation(beamDirection, beamUp);
                     }
                 }
+
+                Vector3 beamLocalPosition = _shallowSunBeamBaseLocalPosition;
+                if (enableSargassumCanopyLighting && mainCamera != null && canopyOcclusion01 > 0.0001f)
+                {
+                    Vector3 canopyDeltaWS = canopyAnchorWS - mainCamera.transform.position;
+                    canopyDeltaWS.y = 0f;
+                    float maxOffset = math.max(0.01f, sargassumCanopyBeamAnchorMaxOffset);
+                    canopyDeltaWS = Vector3.ClampMagnitude(canopyDeltaWS, maxOffset);
+                    Vector3 canopyDeltaLS = mainCamera.transform.InverseTransformVector(canopyDeltaWS);
+                    canopyDeltaLS.z = 0f;
+                    beamLocalPosition += canopyDeltaLS * (sargassumCanopyBeamAnchorTracking * canopyWindow01);
+                }
+
+                if ((_shallowSunBeamTransform.localPosition - beamLocalPosition).sqrMagnitude > 0.000001f)
+                    _shallowSunBeamTransform.localPosition = beamLocalPosition;
 
                 if (math.abs(targetIntensity - _cachedShallowSunBeamLightIntensity) > 0.01f)
                 {
@@ -4649,9 +4858,9 @@ namespace Hecton8.Environment
             }
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  UTILITY
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private static float ColorDistanceManhattan(Color a, Color b)
         {
@@ -4697,9 +4906,9 @@ namespace Hecton8.Environment
             _debugSoundscapeCausticsScale = _soundscapeCausticsScale;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  GIZMOS
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 #if UNITY_EDITOR
         private void OnDrawGizmosSelected()

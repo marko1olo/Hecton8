@@ -188,7 +188,11 @@ namespace Hecton8.Gameplay
             if (item == null || ScanLogSystem.Instance == null)
                 return;
 
-            string entryId = $"recovery.{item.name.ToLowerInvariant()}";
+            string itemId = item.PersistentId;
+            if (string.IsNullOrWhiteSpace(itemId))
+                return;
+
+            string entryId = $"recovery.{itemId}".ToLowerInvariant();
             string title = string.Format(
                 ResolveLocalized(LocalizationKeys.SAMPLER_ARCHIVE_RECOVERY_TITLE, "{0} RECOVERY"),
                 item.itemName);

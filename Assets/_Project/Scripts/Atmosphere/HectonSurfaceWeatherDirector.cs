@@ -5,6 +5,7 @@ using Hecton8.Celestial;
 using Hecton8.Core;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
+using NASAPunk.Visor;
 using UnityEngine;
 using Crest;
 #if UNITY_EDITOR
@@ -219,6 +220,32 @@ namespace Hecton8.Atmosphere
         [Tooltip("Optional explicit local weather VFX rig reference. If null, a scene-local rig is created on demand.")]
         [SerializeField] private SurfaceWeatherVfxRig weatherVfxRig;
 
+        [Tooltip("Optional explicit visor HUD controller reference used for storm interference pulses.")]
+        [SerializeField] private VisorHUDController stormVisorController;
+
+        [Tooltip("Optional explicit flashlight reference used for storm interference pulses.")]
+        [SerializeField] private PlayerFlashlight stormFlashlight;
+
+        [Header("Storm Equipment Interference")]
+        [Tooltip("Electrical activity required before the storm starts glitching the visor and flashlight.")]
+        [SerializeField, UnityEngine.Range(0f, 1f)] private float stormInterferenceElectricalThreshold = 0.42f;
+        [Tooltip("Shortest cadence between passive storm interference pulses at peak electrical activity.")]
+        [SerializeField, Min(0.05f)] private float stormInterferencePulseIntervalMin = 0.42f;
+        [Tooltip("Longest cadence between passive storm interference pulses when the storm only barely exceeds the threshold.")]
+        [SerializeField, Min(0.05f)] private float stormInterferencePulseIntervalMax = 1.35f;
+        [Tooltip("Visor distortion hold duration for passive storm interference pulses.")]
+        [SerializeField, UnityEngine.Range(0f, 0.5f)] private float stormVisorInterferenceHoldDuration = 0.05f;
+        [Tooltip("Visor distortion recovery speed for passive storm interference pulses.")]
+        [SerializeField, UnityEngine.Range(0.25f, 10f)] private float stormVisorInterferenceRecoverySpeed = 6f;
+        [Tooltip("Flashlight interference hold duration for passive storm interference pulses.")]
+        [SerializeField, UnityEngine.Range(0f, 0.5f)] private float stormFlashlightInterferenceHoldDuration = 0.08f;
+        [Tooltip("Flashlight interference recovery speed for passive storm interference pulses.")]
+        [SerializeField, UnityEngine.Range(0.25f, 10f)] private float stormFlashlightInterferenceRecoverySpeed = 6.8f;
+        [Tooltip("Short HUD glitch duration for passive storm interference pulses.")]
+        [SerializeField, UnityEngine.Range(0f, 0.5f)] private float stormHudGlitchDuration = 0.08f;
+        [Tooltip("Longer HUD glitch duration used when a lightning strike fires.")]
+        [SerializeField, UnityEngine.Range(0f, 0.5f)] private float lightningHudGlitchDuration = 0.18f;
+
         [Header("Diagnostics")]
         [SerializeField] private SurfaceWeatherKind _debugCurrentWeatherKind = SurfaceWeatherKind.ClearCalm;
         [SerializeField] private SurfaceExecutionMode _debugExecutionMode = SurfaceExecutionMode.SurfaceActive;
@@ -279,6 +306,7 @@ namespace Hecton8.Atmosphere
         private float _currentLocalRainExposure = 1f;
         private float _targetLocalRainExposure = 1f;
         private bool _isLocallySheltered;
+        private float _stormEquipmentPulseTimer;
 
         /// <summary>
         /// Active surface weather director instance for the loaded world scene.
@@ -338,6 +366,7 @@ namespace Hecton8.Atmosphere
             TryUnregisterTickManagers();
 
             RefreshPlayerMovementSubscription(null);
+            _stormEquipmentPulseTimer = 0f;
             ClearWeatherBindings();
         }
 
@@ -345,6 +374,7 @@ namespace Hecton8.Atmosphere
         {
             TryUnregisterTickManagers();
             RefreshPlayerMovementSubscription(null);
+            _stormEquipmentPulseTimer = 0f;
 
             if (_instance == this)
                 _instance = null;
@@ -365,6 +395,7 @@ namespace Hecton8.Atmosphere
             UpdateLightningState(deltaTime);
             BlendWeather(deltaTime);
             ApplyWeatherBindings(deltaTime);
+            UpdateStormEquipmentInterference(deltaTime);
             UpdateDiagnostics();
         }
 
@@ -473,6 +504,15 @@ namespace Hecton8.Atmosphere
 
             if (weatherVfxRig == null)
                 weatherVfxRig = GetComponentInChildren<SurfaceWeatherVfxRig>(true);
+
+            if (_playerTransform != null)
+            {
+                if (stormVisorController == null || !stormVisorController.transform.IsChildOf(_playerTransform))
+                    stormVisorController = _playerTransform.GetComponentInChildren<VisorHUDController>(true);
+
+                if (stormFlashlight == null || !stormFlashlight.transform.IsChildOf(_playerTransform))
+                    stormFlashlight = _playerTransform.GetComponentInChildren<PlayerFlashlight>(true);
+            }
 
             if (celestialEngine != null)
                 return;
@@ -714,6 +754,13 @@ namespace Hecton8.Atmosphere
             _lightningFlashRemaining = flashDuration;
             _lightningFlashStrength = flashBase * flashVariance;
             _lightningCooldown = ResolveNextLightningCooldown(electricalActivity);
+            TriggerStormEquipmentPulse(
+                Mathf.Lerp(0.58f, 1f, electricalActivity),
+                lightningHudGlitchDuration,
+                stormVisorInterferenceHoldDuration * 1.5f,
+                stormVisorInterferenceRecoverySpeed * 0.85f,
+                stormFlashlightInterferenceHoldDuration * 1.4f,
+                stormFlashlightInterferenceRecoverySpeed * 0.8f);
 
             if (weatherVfxRig != null &&
                 _executionMode == SurfaceExecutionMode.SurfaceActive)
@@ -735,6 +782,80 @@ namespace Hecton8.Atmosphere
             else
             {
                 _pendingThunderDelay = -1f;
+            }
+        }
+
+        private void UpdateStormEquipmentInterference(float deltaTime)
+        {
+            if (_executionMode == SurfaceExecutionMode.SurfaceSuppressed)
+            {
+                _stormEquipmentPulseTimer = 0f;
+                return;
+            }
+
+            float stormInterference = ResolveStormInterference01();
+            if (stormInterference <= 0f)
+            {
+                _stormEquipmentPulseTimer = 0f;
+                return;
+            }
+
+            _stormEquipmentPulseTimer -= deltaTime;
+            if (_stormEquipmentPulseTimer > 0f)
+                return;
+
+            TriggerStormEquipmentPulse(
+                stormInterference,
+                stormHudGlitchDuration,
+                stormVisorInterferenceHoldDuration,
+                stormVisorInterferenceRecoverySpeed,
+                stormFlashlightInterferenceHoldDuration,
+                stormFlashlightInterferenceRecoverySpeed);
+
+            _stormEquipmentPulseTimer = Mathf.Lerp(
+                Mathf.Max(0.05f, stormInterferencePulseIntervalMax),
+                Mathf.Max(0.05f, stormInterferencePulseIntervalMin),
+                stormInterference);
+        }
+
+        private float ResolveStormInterference01()
+        {
+            float electricalActivity = Mathf.Clamp01(_currentState.electricalActivity);
+            if (electricalActivity <= stormInterferenceElectricalThreshold)
+                return 0f;
+
+            float electricalT = Mathf.InverseLerp(stormInterferenceElectricalThreshold, 1f, electricalActivity);
+            float precipitationT = Mathf.Lerp(0.7f, 1f, Mathf.Clamp01(_currentState.precipitationIntensity));
+            return electricalT * precipitationT;
+        }
+
+        private void TriggerStormEquipmentPulse(
+            float normalizedIntensity,
+            float glitchDuration,
+            float visorHoldDuration,
+            float visorRecoverySpeed,
+            float flashlightHoldDuration,
+            float flashlightRecoverySpeed)
+        {
+            float clampedIntensity = Mathf.Clamp01(normalizedIntensity);
+            if (clampedIntensity <= 0f)
+                return;
+
+            if (stormVisorController != null)
+            {
+                stormVisorController.GlitchPulse(glitchDuration);
+                stormVisorController.TriggerEnvironmentalDistortion(
+                    clampedIntensity,
+                    visorHoldDuration,
+                    visorRecoverySpeed);
+            }
+
+            if (stormFlashlight != null)
+            {
+                stormFlashlight.TriggerExternalInterference(
+                    clampedIntensity,
+                    flashlightHoldDuration,
+                    flashlightRecoverySpeed);
             }
         }
 

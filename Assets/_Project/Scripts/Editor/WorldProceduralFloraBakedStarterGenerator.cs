@@ -449,6 +449,8 @@ namespace Hecton8.EditorTools
                 CreateSpec("family.kelp.canopy", "family_kelp_canopy__laminaria__s105-165", new Vector3(0.28f, 6.8f, 0.28f)),
                 CreateSpec("family.kelp.canopy", "family_kelp_canopy__sheetwall__s150-230", new Vector3(0.34f, 10.5f, 0.34f)),
                 CreateSpec("family.kelp.canopy", "family_kelp_canopy__tapestry__s160-240", new Vector3(0.38f, 11.2f, 0.38f)),
+                CreateSpec("family.kelp.canopy", "family_kelp_canopy__windrow__s145-230", new Vector3(0.34f, 10.8f, 0.34f)),
+                CreateSpec("family.kelp.canopy", "family_kelp_canopy__tanglemat__s130-205", new Vector3(0.3f, 8.4f, 0.3f)),
                 CreateSpec("family.kelp.canopy", "family_kelp_canopy__oar__s110-180", new Vector3(0.26f, 5.8f, 0.26f)),
                 CreateSpec("family.kelp.canopy", "family_kelp_canopy__paddlefan__s120-190", new Vector3(0.3f, 7.6f, 0.3f)),
                 CreateSpec("family.kelp.canopy", "family_kelp_canopy__featherfan__s120-200", new Vector3(0.3f, 8.2f, 0.3f)),

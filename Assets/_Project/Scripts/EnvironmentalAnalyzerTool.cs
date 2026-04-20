@@ -1,5 +1,7 @@
 using Hecton8.AI;
 using Hecton8.Bootstrap;
+using Hecton8.Building;
+using Hecton8.Construction;
 using Hecton8.Items;
 using Hecton8.Interaction;
 using Hecton8.Scavenging;
@@ -442,9 +444,10 @@ namespace Hecton8.Gameplay
                 if (item.Data == null)
                     return;
 
-                string itemId = string.IsNullOrWhiteSpace(item.Data.itemName)
-                    ? item.Data.name
-                    : item.Data.itemName;
+                string itemId = item.Data.PersistentId;
+                if (string.IsNullOrWhiteSpace(itemId))
+                    return;
+
                 ScanLogSystem.Instance.ArchiveEntry(
                     $"analyzer.item.{itemId}".ToLowerInvariant(),
                     $"{item.Data.itemName.ToUpperInvariant()} PROFILE",
@@ -459,10 +462,23 @@ namespace Hecton8.Gameplay
 
             if (module != null)
             {
-                string entryId = $"analyzer.module.{module.name}".ToLowerInvariant();
+                ModuleMarker marker = null;
+                if (!collider.TryGetComponent(out marker))
+                    marker = collider.GetComponentInParent<ModuleMarker>();
+
+                BuildableData buildableData = marker != null ? marker.Data : null;
+                string moduleId = buildableData != null ? buildableData.PersistentId : module.name;
+                string moduleLabel = buildableData != null && !string.IsNullOrWhiteSpace(buildableData.moduleName)
+                    ? buildableData.moduleName
+                    : module.name;
+
+                if (string.IsNullOrWhiteSpace(moduleId))
+                    return;
+
+                string entryId = $"analyzer.module.{moduleId}".ToLowerInvariant();
                 ScanLogSystem.Instance.ArchiveEntry(
                     entryId,
-                    $"{module.name.ToUpperInvariant()} ANALYSIS",
+                    $"{moduleLabel.ToUpperInvariant()} ANALYSIS",
                     assessment.Category,
                     assessment.BuildArchiveSummary());
                 return;

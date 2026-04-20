@@ -53,6 +53,7 @@ namespace Hecton8.World
 
         // COLD ALLOC: EmergencyServiceRelay[16] — active authored relay registry — owner: EmergencyServiceRelay
         private static readonly List<EmergencyServiceRelay> s_ActiveRelays = new List<EmergencyServiceRelay>(16);
+        private static int s_RegistryVersion;
 
         [Header("── Identity ───────────────────────────────")]
         [Tooltip("Unique discovery ID used for persistence and relay-chain state.")]
@@ -141,6 +142,7 @@ namespace Hecton8.World
 
         /// <summary>Number of active relay nodes in the scene.</summary>
         public static int ActiveCount => s_ActiveRelays.Count;
+        internal static int RegistryVersion => s_RegistryVersion;
 
         private void Awake()
         {
@@ -156,14 +158,18 @@ namespace Hecton8.World
             RebuildInteractText();
 
             if (!s_ActiveRelays.Contains(this))
+            {
                 s_ActiveRelays.Add(this);
+                MarkRegistryDirty();
+            }
 
             EnsureRuntimeRelayDirector();
         }
 
         private void OnDisable()
         {
-            s_ActiveRelays.Remove(this);
+            if (s_ActiveRelays.Remove(this))
+                MarkRegistryDirty();
 
             if (highlightObject != null)
                 highlightObject.SetActive(false);
@@ -173,7 +179,8 @@ namespace Hecton8.World
 
         private void OnDestroy()
         {
-            s_ActiveRelays.Remove(this);
+            if (s_ActiveRelays.Remove(this))
+                MarkRegistryDirty();
         }
 
         /// <summary>Returns the active relay at the given registry index.</summary>
@@ -300,6 +307,14 @@ namespace Hecton8.World
                 "[EmergencyServiceRelay] Spawned EmergencyServiceRelayDirector from relay self-heal because runtime owner was missing. " +
                 "Owner='" + owner.name + "'. This is a fail-safe, not a substitute for authored setup.");
 #endif
+        }
+
+        private static void MarkRegistryDirty()
+        {
+            unchecked
+            {
+                s_RegistryVersion++;
+            }
         }
 
         private void TryResolveComponents()
@@ -439,12 +454,50 @@ namespace Hecton8.World
 #if UNITY_EDITOR
         private void OnValidate()
         {
+            relayId = string.IsNullOrWhiteSpace(relayId)
+                ? relayId
+                : relayId.Trim();
+            chainId = string.IsNullOrWhiteSpace(chainId)
+                ? chainId
+                : chainId.Trim();
+            relayLabel = string.IsNullOrWhiteSpace(relayLabel)
+                ? relayLabel
+                : relayLabel.Trim();
+            interactVerb = string.IsNullOrWhiteSpace(interactVerb)
+                ? interactVerb
+                : interactVerb.Trim();
+            reviewVerb = string.IsNullOrWhiteSpace(reviewVerb)
+                ? reviewVerb
+                : reviewVerb.Trim();
+
             if (string.IsNullOrWhiteSpace(relayId))
                 relayId = gameObject.name.ToLowerInvariant().Replace(" ", "_");
+
+            if (string.IsNullOrWhiteSpace(chainId))
+                chainId = DefaultChainId;
+
+            if (nextRelay == this)
+                nextRelay = null;
+
+            if (rewards != null)
+            {
+                for (int i = 0; i < rewards.Length; i++)
+                {
+                    RewardEntry reward = rewards[i];
+                    if (reward.quantity < 0)
+                    {
+                        reward.quantity = 0;
+                        rewards[i] = reward;
+                    }
+                }
+            }
 
             TryResolveComponents();
             ApplyDescriptorSemantics();
             RebuildInteractText();
+
+            if (Application.isPlaying && isActiveAndEnabled)
+                MarkRegistryDirty();
         }
 #endif
     }

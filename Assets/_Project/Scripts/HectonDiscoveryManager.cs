@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using Conditional = System.Diagnostics.ConditionalAttribute;
 using Hecton.Localization;
+using Hecton8.Modding;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
 using UnityEngine;
@@ -134,6 +135,7 @@ namespace Hecton8.Gameplay
             LogBiomeDiscovered(biomeName, biomeId, this);
 
             OnBiomeDiscovered?.Invoke(biomeId);
+            HectonEventBus.Publish(new BiomeDiscoveredEvent(biomeId, biomeName));
 
             NotificationEvents.PushInfo(string.Format(
                 ResolveLocalized(LocalizationKeys.DISCOVERY_NEW_BIOME, "NEW BIOME DISCOVERED: {0}"),

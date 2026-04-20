@@ -39,6 +39,7 @@ using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Inventory;
 using Hecton8.Items;
+using Hecton8.Modding;
 using Hecton8.Power;
 using UnityEngine;
 
@@ -164,7 +165,14 @@ namespace Hecton8.Crafting
             }
         }
 
-        public int TotalRecipeCount => availableRecipes != null ? availableRecipes.Count : 0;
+        public int TotalRecipeCount
+        {
+            get
+            {
+                EnsureRecipeCache();
+                return _visibleRecipes.Count + _lockedRecipeCount;
+            }
+        }
         public int LockedRecipeCount
         {
             get
@@ -242,15 +250,18 @@ namespace Hecton8.Crafting
         private void OnEnable()
         {
             LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
+            ModRecipeRegistry.RegistryChanged += HandleModRecipeRegistryChanged;
             RebuildInteractText();
             TryRegister();
             EnsureScanLogSystem();
             SubscribeToScanLog();
+            MarkRecipeCacheDirty();
         }
 
         private void OnDisable()
         {
             LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+            ModRecipeRegistry.RegistryChanged -= HandleModRecipeRegistryChanged;
             UnsubscribeFromScanLog();
 
             if (_isCrafting)
@@ -735,15 +746,18 @@ namespace Hecton8.Crafting
             {
                 for (int i = 0; i < availableRecipes.Count; i++)
                 {
-                    RecipeData recipe = availableRecipes[i];
-                    if (recipe == null)
-                        continue;
-
-                    if (IsRecipeUnlocked(recipe))
-                        _visibleRecipes.Add(recipe);
-                    else
-                        _lockedRecipeCount++;
+                    AppendRecipeToCache(availableRecipes[i]);
                 }
+            }
+
+            int runtimeRecipeCount = ModRecipeRegistry.Count;
+            for (int i = 0; i < runtimeRecipeCount; i++)
+            {
+                RecipeData recipe = ModRecipeRegistry.GetAt(i);
+                if (recipe == null || ContainsAuthoredRecipeReference(recipe))
+                    continue;
+
+                AppendRecipeToCache(recipe);
             }
 
             _recipeCacheDirty = false;
@@ -752,6 +766,37 @@ namespace Hecton8.Crafting
         private bool IsRecipeUnlocked(RecipeData recipe)
         {
             return recipe != null && recipe.IsUnlocked(_scanLogSystem);
+        }
+
+        private void AppendRecipeToCache(RecipeData recipe)
+        {
+            if (recipe == null)
+                return;
+
+            if (IsRecipeUnlocked(recipe))
+                _visibleRecipes.Add(recipe);
+            else
+                _lockedRecipeCount++;
+        }
+
+        private bool ContainsAuthoredRecipeReference(RecipeData recipe)
+        {
+            if (recipe == null || availableRecipes == null)
+                return false;
+
+            for (int i = 0; i < availableRecipes.Count; i++)
+            {
+                if (ReferenceEquals(availableRecipes[i], recipe))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private void HandleModRecipeRegistryChanged()
+        {
+            MarkRecipeCacheDirty();
+            EnsureRecipeCache();
         }
 
         // ══════════════════════════════════════════════════════════

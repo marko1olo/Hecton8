@@ -35,6 +35,12 @@ Shader "NASAPunk/SuitVisor"
         _WaterDropletMaskTex ("Water Droplet Mask", 2D) = "black" {}
         _WaterDropletMaskInfluence ("Water Droplet Mask Influence", Range(0, 1)) = 1
 
+        [Header(Condensation)]
+        _CondensationStrength ("Condensation Strength", Range(0, 1)) = 0
+        _CondensationDistortion ("Condensation Distortion", Range(0, 0.05)) = 0.008
+        _CondensationEdgeExponent ("Condensation Edge Exponent", Range(0.5, 6)) = 2.35
+        _CondensationDriftSpeed ("Condensation Drift Speed", Range(0, 2)) = 0.18
+
         [Header(Refraction Distortion)]
         _DistortionStrength ("Edge Distortion", Range(0, 0.1)) = 0.02
         _DistortionFalloff ("Distortion Edge Falloff", Range(0.5, 5)) = 2.0
@@ -78,6 +84,7 @@ Shader "NASAPunk/SuitVisor"
             #pragma multi_compile_fog
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
@@ -109,6 +116,11 @@ Shader "NASAPunk/SuitVisor"
                 float4 _WaterDropletMaskTex_ST;
                 float  _WaterDropletMaskInfluence;
 
+                float  _CondensationStrength;
+                float  _CondensationDistortion;
+                float  _CondensationEdgeExponent;
+                float  _CondensationDriftSpeed;
+
                 float  _DistortionStrength;
                 float  _DistortionFalloff;
 
@@ -127,6 +139,15 @@ Shader "NASAPunk/SuitVisor"
             TEXTURE2D(_WaterRunoffNormalTex); SAMPLER(sampler_WaterRunoffNormalTex);
             TEXTURE2D(_WaterDropletMaskTex); SAMPLER(sampler_WaterDropletMaskTex);
             TEXTURE2D(_CameraOpaqueTexture); SAMPLER(sampler_CameraOpaqueTexture);
+            float4 _SonarRevealOriginWS;
+            float4 _SonarRevealWaveParams;
+            float4 _SonarGridParams0;
+            float4 _SonarGridHardColor;
+            float4 _SonarGridOrganicColor;
+            float4 _SonarRevealContacts[24];
+            float4 _SonarRevealContactMeta[24];
+            float _SonarRevealExpireTime;
+            int _SonarRevealContactCount;
 
             struct Attributes
             {
@@ -256,6 +277,34 @@ Shader "NASAPunk/SuitVisor"
                 return curvedUV;
             }
 
+            float3 SampleSceneWorldPosition(float2 screenUV, out float rawDepth, out float validMask)
+            {
+                rawDepth = SampleSceneDepth(screenUV);
+#if UNITY_REVERSED_Z
+                validMask = step(0.0001, rawDepth);
+#else
+                validMask = step(rawDepth, 0.9999);
+#endif
+                return ComputeWorldSpacePosition(screenUV, rawDepth, UNITY_MATRIX_I_VP);
+            }
+
+            float ComputeSonarContourMask(float2 screenUV, float rawDepth)
+            {
+                float2 texel = 1.0 / _ScaledScreenParams.xy;
+                float depthDx = SampleSceneDepth(screenUV + float2(texel.x, 0.0));
+                float depthDy = SampleSceneDepth(screenUV + float2(0.0, texel.y));
+                float depthGradient = abs(depthDx - rawDepth) + abs(depthDy - rawDepth);
+                return saturate(depthGradient * max(1.0, _SonarGridParams0.w) * 180.0);
+            }
+
+            float ComputeSonarGridMask(float3 sceneWorldPos)
+            {
+                float lineScale = max(0.1, _SonarGridParams0.y);
+                float lineWidth = max(0.001, _SonarGridParams0.z);
+                float2 cell = abs(frac(sceneWorldPos.xz * lineScale) - 0.5);
+                return 1.0 - smoothstep(lineWidth, lineWidth * 2.5, min(cell.x, cell.y));
+            }
+
             Varyings VisorVert(Attributes IN)
             {
                 Varyings OUT = (Varyings)0;
@@ -340,8 +389,79 @@ Shader "NASAPunk/SuitVisor"
                     distortionOffset.y -= runoffMask * _WaterRunoffDistortion * (0.35 + abs(runoffNormalTS.y) * 0.25);
                 }
 
+                float condensationStrength = saturate(_CondensationStrength);
+                float condensationMask = 0.0;
+                if (condensationStrength > 0.001)
+                {
+                    float condensationTime = _Time.y * _CondensationDriftSpeed;
+                    float2 condensationUV = fpUV + float2(condensationTime * 0.021, condensationTime * -0.047);
+                    float condensationTextureMask = SAMPLE_TEXTURE2D(_FingerprintTex, sampler_FingerprintTex, condensationUV).r;
+                    float condensationProceduralMask = ComputeProceduralSmudgeMask(
+                        IN.uv + float2(condensationTime * 0.012, condensationTime * -0.018));
+                    float condensationEdge = pow(saturate(edgeDist), max(0.5, _CondensationEdgeExponent));
+                    condensationMask = saturate(
+                        max(condensationTextureMask, condensationProceduralMask * 1.2)
+                        * condensationEdge
+                        * condensationStrength);
+
+                    float2 condensationDistortion = (scratchNormalTS.xy * 0.4 + normalWS.xy * 0.25) * _CondensationDistortion;
+                    distortionOffset += condensationDistortion * condensationMask;
+                    distortionOffset.y -= condensationMask * _CondensationDistortion * 0.28;
+                }
+
                 float2 refractedUV = screenUV + distortionOffset;
                 float3 sceneColor = SAMPLE_TEXTURE2D(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, refractedUV).rgb;
+
+                float sonarSceneDepth;
+                float sonarDepthValid;
+                float3 sonarSceneWorldPos = SampleSceneWorldPosition(screenUV, sonarSceneDepth, sonarDepthValid);
+                float sonarOverlayMask = 0.0;
+                float3 sonarOverlayColor = 0.0;
+
+                float sonarGridIntensity = saturate(_SonarGridParams0.x);
+                float sonarWaveSpeed = max(0.01, _SonarRevealWaveParams.y);
+                float sonarFadeDuration = max(0.05, _SonarRevealWaveParams.z);
+                float sonarContactLifetimeMask = step(
+                    _Time.y,
+                    _SonarRevealWaveParams.x + (_SonarRevealOriginWS.w / sonarWaveSpeed) + sonarFadeDuration);
+                if (sonarGridIntensity > 0.0001 && sonarDepthValid > 0.5 && sonarContactLifetimeMask > 0.5)
+                {
+                    float distanceToOrigin = distance(sonarSceneWorldPos, _SonarRevealOriginWS.xyz);
+                    float timeSinceArrival = _Time.y - (_SonarRevealWaveParams.x + distanceToOrigin / sonarWaveSpeed);
+                    float arrivalMask = step(0.0, timeSinceArrival);
+                    float terrainFade = arrivalMask * saturate(1.0 - (timeSinceArrival / sonarFadeDuration));
+                    float waveRadius = max(0.0, (_Time.y - _SonarRevealWaveParams.x) * sonarWaveSpeed);
+                    float waveBandWidth = lerp(6.0, 2.0, saturate(_SonarRevealWaveParams.w));
+                    float waveFront = 1.0 - smoothstep(waveBandWidth, waveBandWidth * 2.0, abs(distanceToOrigin - waveRadius));
+                    float contourMask = ComputeSonarContourMask(screenUV, sonarSceneDepth);
+                    float gridMask = ComputeSonarGridMask(sonarSceneWorldPos);
+                    float activeTerrainMask = step(_Time.y, _SonarRevealExpireTime);
+                    float terrainGrid = gridMask * max(contourMask, 0.14) * max(terrainFade, waveFront * 0.85) * activeTerrainMask;
+
+                    float hardAccum = terrainGrid * 0.55;
+                    float organicAccum = terrainGrid * 0.18;
+
+                    [unroll(24)]
+                    for (int contactIndex = 0; contactIndex < 24; contactIndex++)
+                    {
+                        float active = step((float)contactIndex + 0.5, (float)_SonarRevealContactCount);
+                        float contactArrivalTime = _SonarRevealWaveParams.x + _SonarRevealContacts[contactIndex].w;
+                        float contactTimeSinceArrival = _Time.y - contactArrivalTime;
+                        float contactFade = active * step(0.0, contactTimeSinceArrival) * saturate(1.0 - (contactTimeSinceArrival / sonarFadeDuration));
+                        float contactRadius = max(0.25, _SonarRevealContactMeta[contactIndex].z);
+                        float contactDistance = distance(sonarSceneWorldPos, _SonarRevealContacts[contactIndex].xyz);
+                        float contactMask = (1.0 - smoothstep(contactRadius * 0.55, contactRadius, contactDistance)) * contactFade;
+                        hardAccum += contactMask * _SonarRevealContactMeta[contactIndex].x;
+                        organicAccum += contactMask * _SonarRevealContactMeta[contactIndex].y;
+                    }
+
+                    float hardStrength = saturate(hardAccum);
+                    float organicStrength = saturate(organicAccum);
+                    sonarOverlayColor =
+                        (_SonarGridHardColor.rgb * hardStrength) +
+                        (_SonarGridOrganicColor.rgb * organicStrength);
+                    sonarOverlayMask = sonarGridIntensity * saturate(max(hardStrength, organicStrength) + waveFront * contourMask * 0.4);
+                }
 
                 float hudEdgeFade;
                 float2 hudUV = ComputeCurvedHudUV(IN.uv, IN.positionOS, hudEdgeFade);
@@ -368,6 +488,7 @@ Shader "NASAPunk/SuitVisor"
                     saturate(dot(reflect(-mainLight.direction, normalWS), viewDir)),
                     128.0 * _Smoothness) * 0.3;
                 float wetHazeMask = saturate(runoffMask * (0.45 + proceduralSmudgeMask * 0.55) + scratchMask * runoffMask * 0.35);
+                float condensationHazeMask = saturate(condensationMask * (0.52 + proceduralSmudgeMask * 0.3 + scratchMask * 0.18));
                 float3 runoffSheen = (fresnelColor * 0.55 + specular * 0.25 + mainLight.color * 0.04) * runoffMask;
 
                 float3 finalColor = 0.0;
@@ -382,7 +503,12 @@ Shader "NASAPunk/SuitVisor"
                 finalColor += hudFingerprintGlow;
                 finalColor = lerp(finalColor, sceneColor * 0.86 + 0.04 + fresnelColor * 0.2, runoffMask * 0.35);
                 finalColor = lerp(finalColor, finalColor * 0.78 + sceneColor * 0.18 + fresnelColor * 0.12, wetHazeMask * 0.22);
+                finalColor = lerp(
+                    finalColor,
+                    finalColor * 0.74 + sceneColor * 0.14 + fresnelColor * 0.18 + float3(0.055, 0.07, 0.075),
+                    condensationHazeMask * 0.42);
                 finalColor += runoffSheen;
+                finalColor += sonarOverlayColor * sonarOverlayMask;
 
                 float finalAlpha = _GlassAlpha
                     + hudAlpha * 0.9
@@ -390,7 +516,9 @@ Shader "NASAPunk/SuitVisor"
                     + smudgeOpacity
                     + scratchBleed * 0.2
                     + runoffMask * 0.18
-                    + wetHazeMask * 0.08;
+                    + wetHazeMask * 0.08
+                    + condensationHazeMask * 0.16
+                    + sonarOverlayMask * 0.08;
                 finalAlpha = saturate(finalAlpha);
 
                 finalColor = MixFog(finalColor, IN.fogCoord);

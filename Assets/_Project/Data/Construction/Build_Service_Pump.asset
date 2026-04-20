@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Build_Service_Pump
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Building.BuildableData
   moduleName: Service Pump
+  stableId: Build_Service_Pump
   icon: {fileID: 0}
   description: Flood-control utility module for keeping starter corridors and work
     bays serviceable.

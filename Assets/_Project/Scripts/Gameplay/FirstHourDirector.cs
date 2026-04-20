@@ -68,6 +68,22 @@ namespace Hecton8.Gameplay
     [DefaultExecutionOrder(-65)]
     public sealed class FirstHourDirector : MonoBehaviour, ISaveable, ISlowTickable
     {
+        [Flags]
+        private enum GuidanceStateFlags
+        {
+            FirstModuleHintIssued = 1 << 0,
+            FirstResourceReminderIssued = 1 << 1,
+            FirstDepthReminderIssued = 1 << 2,
+            FirstModuleReminderIssued = 1 << 3,
+            StarterResourcesZoneHintIssued = 1 << 4,
+            StarterFabricationFallbackHintIssued = 1 << 5,
+            StarterBackslideGuidanceIssued = 1 << 6,
+            FirstReturnLoreHintIssued = 1 << 7,
+            DeeperRouteZoneHintIssued = 1 << 8,
+            ModuleRouteHintIssued = 1 << 9,
+            HasLoreRouteContact = 1 << 10
+        }
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -423,7 +439,7 @@ namespace Hecton8.Gameplay
         {
             if (!IsMilestoneComplete(FirstHourMilestone.Orientation) ||
                 item == null ||
-                !string.Equals(item.name, firstResourceItemId, StringComparison.Ordinal))
+                !item.MatchesPersistentId(firstResourceItemId))
             {
                 return;
             }
@@ -505,6 +521,7 @@ namespace Hecton8.Gameplay
             if (data == null) return;
             data.firstHourSessionTime = _sessionTime;
             data.firstHourMilestones  = _completedMilestones;
+            data.firstHourGuidanceFlags = BuildGuidanceStateFlags();
         }
 
         public void LoadFromSaveData(SaveData data)
@@ -512,18 +529,9 @@ namespace Hecton8.Gameplay
             if (data == null) return;
             _sessionTime          = data.firstHourSessionTime;
             _completedMilestones  = data.firstHourMilestones;
-            _firstModuleHintIssued = _sessionTime >= firstModuleTime ||
-                                     IsMilestoneComplete(FirstHourMilestone.FirstModule);
-            _firstResourceReminderIssued = false;
-            _firstDepthReminderIssued = false;
-            _firstModuleReminderIssued = false;
-            _starterResourcesZoneHintIssued = false;
-            _starterFabricationFallbackHintIssued = false;
-            _starterBackslideGuidanceIssued = false;
-            _firstReturnLoreHintIssued = false;
-            _deeperRouteZoneHintIssued = false;
-            _moduleRouteHintIssued = false;
-            _hasLoreRouteContact = false;
+            ApplyGuidanceStateFlags(data.firstHourGuidanceFlags);
+            _firstModuleHintIssued |= _sessionTime >= firstModuleTime ||
+                                      IsMilestoneComplete(FirstHourMilestone.FirstModule);
             _nextContextualGuidanceTime = 0f;
             _lastObservedZone = null;
             _lastContextResourceCompleted = false;
@@ -533,6 +541,51 @@ namespace Hecton8.Gameplay
             SynchronizeAtlasMilestonesFromRuntime();
             SynchronizeEarlyQuestState();
             SynchronizeFirstResourceQuestFromSaveData(data);
+        }
+
+        private int BuildGuidanceStateFlags()
+        {
+            GuidanceStateFlags flags = 0;
+            if (_firstModuleHintIssued)
+                flags |= GuidanceStateFlags.FirstModuleHintIssued;
+            if (_firstResourceReminderIssued)
+                flags |= GuidanceStateFlags.FirstResourceReminderIssued;
+            if (_firstDepthReminderIssued)
+                flags |= GuidanceStateFlags.FirstDepthReminderIssued;
+            if (_firstModuleReminderIssued)
+                flags |= GuidanceStateFlags.FirstModuleReminderIssued;
+            if (_starterResourcesZoneHintIssued)
+                flags |= GuidanceStateFlags.StarterResourcesZoneHintIssued;
+            if (_starterFabricationFallbackHintIssued)
+                flags |= GuidanceStateFlags.StarterFabricationFallbackHintIssued;
+            if (_starterBackslideGuidanceIssued)
+                flags |= GuidanceStateFlags.StarterBackslideGuidanceIssued;
+            if (_firstReturnLoreHintIssued)
+                flags |= GuidanceStateFlags.FirstReturnLoreHintIssued;
+            if (_deeperRouteZoneHintIssued)
+                flags |= GuidanceStateFlags.DeeperRouteZoneHintIssued;
+            if (_moduleRouteHintIssued)
+                flags |= GuidanceStateFlags.ModuleRouteHintIssued;
+            if (_hasLoreRouteContact)
+                flags |= GuidanceStateFlags.HasLoreRouteContact;
+
+            return (int)flags;
+        }
+
+        private void ApplyGuidanceStateFlags(int persistedFlags)
+        {
+            GuidanceStateFlags flags = (GuidanceStateFlags)persistedFlags;
+            _firstModuleHintIssued = (flags & GuidanceStateFlags.FirstModuleHintIssued) != 0;
+            _firstResourceReminderIssued = (flags & GuidanceStateFlags.FirstResourceReminderIssued) != 0;
+            _firstDepthReminderIssued = (flags & GuidanceStateFlags.FirstDepthReminderIssued) != 0;
+            _firstModuleReminderIssued = (flags & GuidanceStateFlags.FirstModuleReminderIssued) != 0;
+            _starterResourcesZoneHintIssued = (flags & GuidanceStateFlags.StarterResourcesZoneHintIssued) != 0;
+            _starterFabricationFallbackHintIssued = (flags & GuidanceStateFlags.StarterFabricationFallbackHintIssued) != 0;
+            _starterBackslideGuidanceIssued = (flags & GuidanceStateFlags.StarterBackslideGuidanceIssued) != 0;
+            _firstReturnLoreHintIssued = (flags & GuidanceStateFlags.FirstReturnLoreHintIssued) != 0;
+            _deeperRouteZoneHintIssued = (flags & GuidanceStateFlags.DeeperRouteZoneHintIssued) != 0;
+            _moduleRouteHintIssued = (flags & GuidanceStateFlags.ModuleRouteHintIssued) != 0;
+            _hasLoreRouteContact = (flags & GuidanceStateFlags.HasLoreRouteContact) != 0;
         }
 
         private void ActivateQuest(string questId)
@@ -673,7 +726,7 @@ namespace Hecton8.Gameplay
                     if (item == null)
                         continue;
 
-                    if (!string.Equals(item.name, firstResourceItemId, StringComparison.Ordinal))
+                    if (!item.MatchesPersistentId(firstResourceItemId))
                         continue;
 
                     CompleteQuest(firstResourceQuestId);

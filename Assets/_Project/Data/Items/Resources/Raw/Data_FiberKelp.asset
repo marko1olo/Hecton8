@@ -12,16 +12,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a49e6475ccf8054419a7fba4c7a78a5c, type: 3}
   m_Name: Data_FiberKelp
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
-  itemName: Fiber Kelp
+  legacyItemName: Fiber Kelp
+  stableId: Data_FiberKelp
   localizedItemName:
     tableKey: ITEM_FIBER_KELP_NAME
-    fallbackText: "Fiber Kelp"
+    fallbackText: Fiber Kelp
     variants: []
   icon: {fileID: 0}
-  description: Flexible organic ribbon used for mesh, binding, and early suit work.
+  legacyDescription: Flexible organic ribbon used for mesh, binding, and early suit
+    work.
   localizedDescription:
     tableKey: ITEM_FIBER_KELP_DESCRIPTION
-    fallbackText: "Flexible organic ribbon used for mesh, binding, and early suit work."
+    fallbackText: Flexible organic ribbon used for mesh, binding, and early suit
+      work.
     variants: []
   weight: 0.4
   stackable: 1
@@ -30,17 +33,22 @@ MonoBehaviour:
   resourceFamily: 4
   progressionTier: 1
   isRawResource: 1
+  minDepth: 0
+  maxDepth: 0
   width: 1
   height: 1
   isConsumable: 0
+  useDuration: 0
   oxygenRestore: 0
   energyRestore: 0
   integrityRestore: 0
+  hungerRestore: 0
+  thirstRestore: 0
   useSound: {fileID: 0}
-  interactVerb: Collect
+  legacyInteractVerb: Collect
   localizedInteractVerb:
     tableKey: ITEM_INTERACT_TAKE
-    fallbackText: "Collect"
+    fallbackText: Collect
     variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

@@ -12,33 +12,43 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a49e6475ccf8054419a7fba4c7a78a5c, type: 3}
   m_Name: Item_Tool_Scanner
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
-  itemName: Hydroacoustic Scanner
+  legacyItemName: Hydroacoustic Scanner
+  stableId: Item_Tool_Scanner
   localizedItemName:
     tableKey: ITEM_TOOL_SCANNER_NAME
-    fallbackText: "Hydroacoustic Scanner"
+    fallbackText: Hydroacoustic Scanner
     variants: []
   icon: {fileID: 0}
-  description: Long-range analysis tool for fauna, flora, wreck signatures and technology
-    traces.
+  legacyDescription: Long-range analysis tool for fauna, flora, wreck signatures
+    and technology traces.
   localizedDescription:
     tableKey: ITEM_TOOL_SCANNER_DESCRIPTION
-    fallbackText: "Long-range analysis tool for fauna, flora, wreck signatures and technology traces."
+    fallbackText: Long-range analysis tool for fauna, flora, wreck signatures and
+      technology traces.
     variants: []
   weight: 1.6
   stackable: 0
   maxStack: 1
   category: 2
+  resourceFamily: 0
+  progressionTier: 0
+  isRawResource: 0
+  minDepth: 0
+  maxDepth: 0
   width: 2
   height: 1
   isConsumable: 0
+  useDuration: 0
   oxygenRestore: 0
   energyRestore: 0
   integrityRestore: 0
+  hungerRestore: 0
+  thirstRestore: 0
   useSound: {fileID: 0}
-  interactVerb: Take
+  legacyInteractVerb: Take
   localizedInteractVerb:
     tableKey: ITEM_INTERACT_TAKE
-    fallbackText: "Take"
+    fallbackText: Take
     variants: []
   worldPrefab: {fileID: 100100000, guid: 48435f04343913447adc3ca4573951fc, type: 3}
   worldBuoyancyProfile: {fileID: 11400000, guid: 3d11ab4b6f12cac4a9410e735e06e486, type: 2}

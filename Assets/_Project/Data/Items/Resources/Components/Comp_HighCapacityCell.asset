@@ -12,16 +12,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a49e6475ccf8054419a7fba4c7a78a5c, type: 3}
   m_Name: Comp_HighCapacityCell
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
-  itemName: High-Capacity Cell
+  legacyItemName: High-Capacity Cell
+  stableId: Comp_HighCapacityCell
   localizedItemName:
     tableKey: ITEM_HIGH_CAPACITY_CELL_NAME
-    fallbackText: "High-Capacity Cell"
+    fallbackText: High-Capacity Cell
     variants: []
   icon: {fileID: 0}
-  description: Late portable cell for heavy tools, stunners, and long-haul systems.
+  legacyDescription: Late portable cell for heavy tools, stunners, and long-haul
+    systems.
   localizedDescription:
     tableKey: ITEM_HIGH_CAPACITY_CELL_DESCRIPTION
-    fallbackText: "Late portable cell for heavy tools, stunners, and long-haul systems."
+    fallbackText: Late portable cell for heavy tools, stunners, and long-haul systems.
     variants: []
   weight: 0.8
   stackable: 1
@@ -30,17 +32,22 @@ MonoBehaviour:
   resourceFamily: 8
   progressionTier: 3
   isRawResource: 0
+  minDepth: 0
+  maxDepth: 0
   width: 1
   height: 1
   isConsumable: 0
+  useDuration: 0
   oxygenRestore: 0
   energyRestore: 0
   integrityRestore: 0
+  hungerRestore: 0
+  thirstRestore: 0
   useSound: {fileID: 0}
-  interactVerb: Take
+  legacyInteractVerb: Take
   localizedInteractVerb:
     tableKey: ITEM_INTERACT_TAKE
-    fallbackText: "Take"
+    fallbackText: Take
     variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

@@ -51,6 +51,13 @@ namespace Hecton8.SaveSystem
                 steps.Add("tool broken map created");
             }
 
+            if (data.CustomModData == null)
+            {
+                data.CustomModData = new Dictionary<string, string>();
+                changed = true;
+                steps.Add("custom mod data created");
+            }
+
             bool hadPackedBiomeCapacity = BiomeDiscoveryBitMask.HasExpectedCapacity(data.discoveredBiomeBitWords);
             if (!hadPackedBiomeCapacity)
             {
@@ -89,6 +96,13 @@ namespace Hecton8.SaveSystem
             changed |= EnsureBarter(ref data.barter, steps);
             changed |= EnsureFieldOperations(ref data.fieldOperations, steps);
             changed |= EnsureBeaconNetwork(ref data.beaconNetwork, steps);
+            changed |= EnsureExplorationMap(ref data.explorationMap, steps);
+            changed |= EnsurePdaLogbook(ref data.pdaLogbook, steps);
+            changed |= EnsurePdaMarkers(ref data.pdaMarkers, steps);
+            changed |= EnsurePdaAdvisories(ref data.pdaAdvisories, steps);
+            changed |= EnsureProceduralLore(ref data.proceduralLore, steps);
+            changed |= EnsureAchievements(ref data.achievements, steps);
+            changed |= EnsureRunModifiers(ref data.runModifiers, steps);
             changed |= EnsureLoreSystems(ref data, sourceVersion, steps);
             changed |= EnsurePlayerExpression(ref data, steps);
             changed |= EnsurePerformanceSettings(ref data, sourceVersion, steps);
@@ -162,7 +176,11 @@ namespace Hecton8.SaveSystem
         private static bool EnsureWorldState(ref WorldStateDTO dto, List<string> steps)
         {
             bool changed = false;
-            if (dto.depletedNodeIds == null || dto.depletedNodeIds.Length < WorldStateDTO.MaxNodes)
+            if (dto.depletedNodeIds == null || dto.depletedNodeIds.Length < WorldStateDTO.MaxNodes ||
+                dto.depletedPickupChunkKeys == null || dto.depletedPickupChunkKeys.Length < WorldStateDTO.MaxPickupChunks ||
+                dto.depletedPickupChunkWordStarts == null || dto.depletedPickupChunkWordStarts.Length < WorldStateDTO.MaxPickupChunks ||
+                dto.depletedPickupChunkWordCounts == null || dto.depletedPickupChunkWordCounts.Length < WorldStateDTO.MaxPickupChunks ||
+                dto.depletedPickupWords == null || dto.depletedPickupWords.Length < WorldStateDTO.MaxPickupWords)
             {
                 dto.EnsureCapacity();
                 changed = true;
@@ -175,6 +193,28 @@ namespace Hecton8.SaveSystem
                 dto.depletedCount = clamped;
                 changed = true;
                 steps.Add("world state count clamped");
+            }
+
+            int clampedPickupChunks = Mathf.Clamp(
+                dto.depletedPickupChunkCount,
+                0,
+                dto.depletedPickupChunkKeys != null ? dto.depletedPickupChunkKeys.Length : 0);
+            if (clampedPickupChunks != dto.depletedPickupChunkCount)
+            {
+                dto.depletedPickupChunkCount = clampedPickupChunks;
+                changed = true;
+                steps.Add("world pickup chunk count clamped");
+            }
+
+            int clampedPickupWords = Mathf.Clamp(
+                dto.depletedPickupWordCount,
+                0,
+                dto.depletedPickupWords != null ? dto.depletedPickupWords.Length : 0);
+            if (clampedPickupWords != dto.depletedPickupWordCount)
+            {
+                dto.depletedPickupWordCount = clampedPickupWords;
+                changed = true;
+                steps.Add("world pickup word count clamped");
             }
 
             return changed;
@@ -204,6 +244,223 @@ namespace Hecton8.SaveSystem
                 data.narrativeDepthTier = 0;
                 changed = true;
                 steps.Add("narrative depth tier repaired");
+            }
+
+            return changed;
+        }
+
+        private static bool EnsureExplorationMap(ref ExplorationMapDTO dto, List<string> steps)
+        {
+            bool changed = false;
+
+            if (dto.exploredChunkKeys == null || dto.exploredChunkKeys.Length < ExplorationMapDTO.MaxExploredChunks)
+            {
+                dto.EnsureCapacity();
+                changed = true;
+                steps.Add("exploration map capacity repaired");
+            }
+
+            int clampedCount = Mathf.Clamp(dto.exploredChunkCount, 0, dto.exploredChunkKeys != null ? dto.exploredChunkKeys.Length : 0);
+            if (clampedCount != dto.exploredChunkCount)
+            {
+                dto.exploredChunkCount = clampedCount;
+                changed = true;
+                steps.Add("exploration map count clamped");
+            }
+
+            return changed;
+        }
+
+        private static bool EnsurePdaLogbook(ref PDALogbookDTO dto, List<string> steps)
+        {
+            bool changed = false;
+
+            if (dto.entries == null || dto.entries.Length < PDALogbookDTO.MaxEntries ||
+                dto.seenOriginKeys == null || dto.seenOriginKeys.Length < PDALogbookDTO.MaxSeenOrigins)
+            {
+                dto.EnsureCapacity();
+                changed = true;
+                steps.Add("pda logbook capacity repaired");
+            }
+
+            int clampedCount = Mathf.Clamp(dto.entryCount, 0, dto.entries != null ? dto.entries.Length : 0);
+            if (clampedCount != dto.entryCount)
+            {
+                dto.entryCount = clampedCount;
+                changed = true;
+                steps.Add("pda logbook count clamped");
+            }
+
+            if (dto.nextSequence < 1)
+            {
+                dto.nextSequence = Mathf.Max(1, clampedCount + 1);
+                changed = true;
+                steps.Add("pda logbook sequence repaired");
+            }
+
+            int clampedSeenOriginCount = Mathf.Clamp(dto.seenOriginCount, 0, dto.seenOriginKeys != null ? dto.seenOriginKeys.Length : 0);
+            if (clampedSeenOriginCount != dto.seenOriginCount)
+            {
+                dto.seenOriginCount = clampedSeenOriginCount;
+                changed = true;
+                steps.Add("pda logbook seen-origin count clamped");
+            }
+
+            return changed;
+        }
+
+        private static bool EnsurePdaMarkers(ref PDAMarkerRegistryDTO dto, List<string> steps)
+        {
+            bool changed = false;
+
+            if (dto.entries == null || dto.entries.Length < PDAMarkerRegistryDTO.MaxEntries)
+            {
+                dto.EnsureCapacity();
+                changed = true;
+                steps.Add("pda marker capacity repaired");
+            }
+
+            int clampedCount = Mathf.Clamp(dto.markerCount, 0, dto.entries != null ? dto.entries.Length : 0);
+            if (clampedCount != dto.markerCount)
+            {
+                dto.markerCount = clampedCount;
+                changed = true;
+                steps.Add("pda marker count clamped");
+            }
+
+            if (dto.nextSequence < 1)
+            {
+                dto.nextSequence = Mathf.Max(1, clampedCount + 1);
+                changed = true;
+                steps.Add("pda marker sequence repaired");
+            }
+
+            return changed;
+        }
+
+        private static bool EnsurePdaAdvisories(ref PDAContextualAdvisoryDTO dto, List<string> steps)
+        {
+            bool changed = false;
+
+            if (dto.oxygenDeathCount < 0)
+            {
+                dto.oxygenDeathCount = 0;
+                changed = true;
+                steps.Add("pda advisory oxygen-death count repaired");
+            }
+
+            if (dto.inventoryFullAttemptCount < 0)
+            {
+                dto.inventoryFullAttemptCount = 0;
+                changed = true;
+                steps.Add("pda advisory inventory-full count repaired");
+            }
+
+            if (dto.deepExposureSeconds < 0f || float.IsNaN(dto.deepExposureSeconds))
+            {
+                dto.deepExposureSeconds = 0f;
+                changed = true;
+                steps.Add("pda advisory deep-exposure time repaired");
+            }
+
+            return changed;
+        }
+
+        private static bool EnsureProceduralLore(ref ProceduralLoreStateDTO dto, List<string> steps)
+        {
+            bool changed = false;
+
+            if (dto.activePlacements == null || dto.activePlacements.Length < ProceduralLoreStateDTO.MaxActivePlacements)
+            {
+                dto.EnsureCapacity();
+                changed = true;
+                steps.Add("procedural lore capacity repaired");
+            }
+
+            int clampedCount = Mathf.Clamp(dto.activeCount, 0, dto.activePlacements != null ? dto.activePlacements.Length : 0);
+            if (clampedCount != dto.activeCount)
+            {
+                dto.activeCount = clampedCount;
+                changed = true;
+                steps.Add("procedural lore count clamped");
+            }
+
+            if (dto.nextSourceIndex < 0)
+            {
+                dto.nextSourceIndex = 0;
+                changed = true;
+                steps.Add("procedural lore source index repaired");
+            }
+
+            return changed;
+        }
+
+        private static bool EnsureAchievements(ref AchievementRegistryDTO dto, List<string> steps)
+        {
+            bool changed = false;
+
+            if (dto.unlockedIds == null || dto.unlockedIds.Length < AchievementRegistryDTO.MaxUnlockedAchievements)
+            {
+                dto.EnsureCapacity();
+                changed = true;
+                steps.Add("achievement registry capacity repaired");
+            }
+
+            int clampedUnlockedCount = Mathf.Clamp(dto.unlockedCount, 0, dto.unlockedIds != null ? dto.unlockedIds.Length : 0);
+            if (clampedUnlockedCount != dto.unlockedCount)
+            {
+                dto.unlockedCount = clampedUnlockedCount;
+                changed = true;
+                steps.Add("achievement registry count clamped");
+            }
+
+            if (dto.swamDistanceMeters < 0f || float.IsNaN(dto.swamDistanceMeters))
+            {
+                dto.swamDistanceMeters = 0f;
+                changed = true;
+                steps.Add("achievement swim distance repaired");
+            }
+
+            if (dto.craftedItemCount < 0)
+            {
+                dto.craftedItemCount = 0;
+                changed = true;
+                steps.Add("achievement crafted count repaired");
+            }
+
+            if (dto.discoveredBiomeCount < 0)
+            {
+                dto.discoveredBiomeCount = 0;
+                changed = true;
+                steps.Add("achievement biome count repaired");
+            }
+
+            return changed;
+        }
+
+        private static bool EnsureRunModifiers(ref RunModifiersDTO dto, List<string> steps)
+        {
+            bool changed = false;
+
+            if (!dto.isDailySeed && !string.IsNullOrEmpty(dto.dailySeedId))
+            {
+                dto.dailySeedId = string.Empty;
+                changed = true;
+                steps.Add("run modifiers daily-seed id cleared");
+            }
+
+            if (dto.isDailySeed && dto.dailySeedId == null)
+            {
+                dto.dailySeedId = string.Empty;
+                changed = true;
+                steps.Add("run modifiers daily-seed id repaired");
+            }
+
+            if (!dto.isPermadeath && dto.runMarkedDead)
+            {
+                dto.runMarkedDead = false;
+                changed = true;
+                steps.Add("run modifiers dead-run flag repaired");
             }
 
             return changed;

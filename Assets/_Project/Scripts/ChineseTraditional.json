@@ -1194,5 +1194,20 @@
   "UI_RETURN_TO_MENU": "返回選單",
   "WARNING_BACKUP_USED_MESSAGE": "WARNING BACKUP USED",
   "WARNING_BACKUP_USED_TITLE": "WARNING BACKUP USED",
-  "UI_BLUEPRINT_LOCKED": "需要掃描資料"
+  "UI_BLUEPRINT_LOCKED": "需要掃描資料",
+  "AUDIOLOG_PLAYING": "正在播放：{0}",
+  "PDA_SHELL_TITLE": "個人資料助理 HECTON-8",
+  "PDA_TAB_INVENTORY": "目前分頁 // 背包",
+  "PDA_TAB_LOADOUT": "目前分頁 // 配裝",
+  "PDA_TAB_CONSTRUCTION": "目前分頁 // 建造",
+  "PDA_TAB_BARTER": "目前分頁 // 交換",
+  "PDA_TAB_DATA_LOG": "目前分頁 // 檔案",
+  "PDA_TAB_SPECTRUM": "目前分頁 // 頻譜",
+  "PDA_TAB_UNKNOWN": "目前分頁 // 未知",
+  "PDA_FOOTER_LEFT": "貨艦 {0}/{1}  |  質量 {2:0.0} kg  |  就緒工具 {3}/{4}",
+  "PDA_FOOTER_RIGHT_ONLINE": "O2 {0:0}%  |  PWR {1:0}%  |  PDA 連線",
+  "PDA_FOOTER_RIGHT_STANDBY": "O2 {0:0}%  |  PWR {1:0}%  |  PDA 待機",
+  "TECH_O2_SPEC": "[Pressure: 300 bar | Mix: O2 96% | Rack: A-2]",
+  "TECH_HULL_SPEC": "[Sealant: <key:ITEM_TITANIUM_SCRAP_NAME> laminate | Rating: 41 MPa]",
+  "TECH_PWR_BUS": "[Bus: 48V DC | Cell bank: Li-Salt MkII]"
 }

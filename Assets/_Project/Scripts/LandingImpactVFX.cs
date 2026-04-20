@@ -94,6 +94,36 @@ namespace Hecton8.VFX
         [SerializeField, Range(0.5f, 15f)]
         private float surfaceBreakRecoverySpeed = 7.5f;
 
+        [Header("── Thermocline Transition ─────────────────────────")]
+        [Tooltip("Chromatic aberration boost when the player punches through a sharp water-layer boundary.")]
+        [SerializeField, Range(0f, 1f)]
+        private float thermoclineChromaticIntensity = 0.16f;
+
+        [Tooltip("Vignette boost when the player crosses a thermocline boundary.")]
+        [SerializeField, Range(0f, 0.5f)]
+        private float thermoclineVignetteIntensity = 0.1f;
+
+        [Tooltip("How long the thermocline shock sits at peak before recovery begins.")]
+        [SerializeField, Range(0f, 0.5f)]
+        private float thermoclineHoldDuration = 0.08f;
+
+        [Tooltip("How quickly the thermocline optical shock decays.")]
+        [SerializeField, Range(0.5f, 15f)]
+        private float thermoclineRecoverySpeed = 7.2f;
+
+        [Header("── Underwater Stress ───────────────────")]
+        [Tooltip("Extra chromatic aberration applied while near-surface storm turbulence is violently disorienting the player.")]
+        [SerializeField, Range(0f, 1f)]
+        private float underwaterStressChromaticIntensity = 0.18f;
+
+        [Tooltip("Extra vignette intensity applied while underwater storm turbulence is disorienting the player.")]
+        [SerializeField, Range(0f, 0.5f)]
+        private float underwaterStressVignetteIntensity = 0.14f;
+
+        [Tooltip("Vignette smoothness target while underwater turbulence stress is active.")]
+        [SerializeField, Range(0f, 1f)]
+        private float underwaterStressVignetteSmoothness = 0.72f;
+
         [Header("── Locomotion Mode Mix ──────────────────────")]
         [Tooltip("Interior walk impacts should feel slightly damped compared to hard exterior ground.")]
         [SerializeField, Range(0f, 1f)]
@@ -134,6 +164,9 @@ namespace Hecton8.VFX
         private float _waterTransitionChromaticScale;
         private float _waterTransitionVignetteScale;
         private float _waterTransitionRecoverySpeed;
+        private float _thermoclineTransitionIntensity;
+        private float _thermoclineTransitionHoldTimer;
+        private float _thermoclineTransitionRecoverySpeed;
         private float _transportCockpitVignetteIntensity;
         private float _transportCockpitVignetteSmoothness;
         private bool _transportCockpitVignetteRounded;
@@ -227,6 +260,7 @@ namespace Hecton8.VFX
 
             UpdateLandingEffect(deltaTime);
             UpdateWaterTransitionEffect(deltaTime);
+            UpdateThermoclineTransitionEffect(deltaTime);
             ApplyPostProcessing();
             return;
 
@@ -346,6 +380,20 @@ namespace Hecton8.VFX
         }
 
         /// <summary>
+        /// Triggers a short optical shock when the player crosses a sharp underwater layer boundary.
+        /// </summary>
+        public void TriggerThermoclineImpulse(float normalizedIntensity)
+        {
+            float clampedIntensity = math.saturate(normalizedIntensity);
+            if (clampedIntensity <= 0f)
+                return;
+
+            _thermoclineTransitionIntensity = math.max(_thermoclineTransitionIntensity, clampedIntensity);
+            _thermoclineTransitionHoldTimer = math.max(_thermoclineTransitionHoldTimer, thermoclineHoldDuration);
+            _thermoclineTransitionRecoverySpeed = math.max(0.1f, thermoclineRecoverySpeed);
+        }
+
+        /// <summary>
         /// Applies a persistent cockpit overlay on top of impact and water-transition optics.
         /// </summary>
         public void SetTransportCockpitOverlay(
@@ -460,14 +508,39 @@ namespace Hecton8.VFX
             }
         }
 
+        private void UpdateThermoclineTransitionEffect(float deltaTime)
+        {
+            if (_thermoclineTransitionHoldTimer > 0f)
+            {
+                _thermoclineTransitionHoldTimer -= deltaTime;
+                return;
+            }
+
+            if (_thermoclineTransitionIntensity > 0.001f)
+            {
+                float t = 1f - math.exp(-_thermoclineTransitionRecoverySpeed * deltaTime);
+                _thermoclineTransitionIntensity = math.lerp(_thermoclineTransitionIntensity, 0f, t);
+            }
+            else
+            {
+                _thermoclineTransitionIntensity = 0f;
+            }
+        }
+
         private void ApplyPostProcessing()
         {
+            float underwaterStressIntensity = playerMovement != null
+                ? playerMovement.CurrentUnderwaterStressIntensity01
+                : 0f;
+
             if (_hasChromatic)
             {
                 _chromatic.intensity.value = _baseChromaticIntensity +
                     _currentIntensity * maxChromaticIntensity +
                     _waterTransitionIntensity * _waterTransitionChromaticScale +
-                    _transportCockpitChromaticIntensity;
+                    _thermoclineTransitionIntensity * thermoclineChromaticIntensity +
+                    _transportCockpitChromaticIntensity +
+                    underwaterStressIntensity * underwaterStressChromaticIntensity;
             }
 
             if (_hasVignette)
@@ -475,7 +548,9 @@ namespace Hecton8.VFX
                 _vignette.intensity.value = _baseVignetteIntensity +
                     _currentIntensity * maxVignetteIntensity +
                     _waterTransitionIntensity * _waterTransitionVignetteScale +
-                    _transportCockpitVignetteIntensity;
+                    _thermoclineTransitionIntensity * thermoclineVignetteIntensity +
+                    _transportCockpitVignetteIntensity +
+                    underwaterStressIntensity * underwaterStressVignetteIntensity;
 
                 if (_transportCockpitVignetteIntensity > 0.0001f)
                 {
@@ -484,7 +559,10 @@ namespace Hecton8.VFX
                 }
                 else
                 {
-                    _vignette.smoothness.value = _baseVignetteSmoothness;
+                    _vignette.smoothness.value = math.lerp(
+                        _baseVignetteSmoothness,
+                        underwaterStressVignetteSmoothness,
+                        underwaterStressIntensity);
                     _vignette.rounded.value = _baseVignetteRounded;
                 }
             }

@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Build_Corridor_Straight
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Building.BuildableData
   moduleName: Straight Corridor
+  stableId: Build_Corridor_Straight
   icon: {fileID: 0}
   description: Pressurized connector for linking starter modules.
   family: 1

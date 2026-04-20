@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Comp_GuidanceModule
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
   itemName: Guidance Module
+  stableId: Comp_GuidanceModule
   localizedItemName:
     tableKey: ITEM_GUIDANCE_MODULE_NAME
     fallbackText: "Guidance Module"

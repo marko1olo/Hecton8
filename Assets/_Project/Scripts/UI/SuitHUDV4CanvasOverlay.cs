@@ -91,6 +91,15 @@ namespace Hecton8.UI
         [SerializeField] private float projectionPlaneDistance = 1f;
         [SerializeField] private int overlaySortingOrder = 140;
 
+        [Header("Stress Pulse")]
+        [SerializeField, Range(0f, 1f)] private float stressPulseStartThreshold = 0.24f;
+        [SerializeField, Range(0.25f, 4f)] private float stressPulseFrequencyMin = 0.9f;
+        [SerializeField, Range(0.25f, 6f)] private float stressPulseFrequencyMax = 2.3f;
+        [SerializeField, Range(0f, 0.25f)] private float stressPulseChromeAlphaBoost = 0.09f;
+        [SerializeField, Range(0f, 0.35f)] private float stressPulseBrightnessBoost = 0.12f;
+        [SerializeField, Range(0f, 0.4f)] private float stressPulseWarningBlend = 0.18f;
+        [SerializeField, Range(0.25f, 12f)] private float stressPulseBlendSpeed = 3.4f;
+
         [Header("Layout Controls")]
         [SerializeField] private Vector2 headerOffset = new Vector2(0f, -34f);
         [SerializeField] private Vector2 telemetryOffset = new Vector2(-226f, 126f);
@@ -197,6 +206,9 @@ namespace Hecton8.UI
         private bool _canvasStateApplied;
         private bool _hasAppliedRootVisibility;
         private bool _appliedRootVisible;
+        private float _stressPulseIntensity;
+        private float _stressPulsePhase;
+        private float _appliedStressPulseStrength = -1f;
         private string _localizedDepthPattern = DefaultDepthPattern;
         private string _localizedTemperaturePattern = DefaultTemperaturePattern;
         private string _localizedPressurePattern = DefaultPressurePattern;
@@ -298,6 +310,9 @@ namespace Hecton8.UI
             UnregisterActiveOverlay();
             UnregisterRuntimeTick();
             ClearDepthSignalSubscription();
+            _stressPulseIntensity = 0f;
+            _stressPulsePhase = 0f;
+            _appliedStressPulseStrength = -1f;
 #if UNITY_EDITOR
             UnregisterEditorTick();
 #endif
@@ -834,6 +849,10 @@ namespace Hecton8.UI
             float energyMax = hasSurvivalStats ? survival.Stats.MaxEnergy : 100f;
             float healthCurrent = survival != null ? survival.Integrity : health * 100f;
             float healthMax = hasSurvivalStats ? survival.Stats.MaxIntegrity : 100f;
+            float stressPulse = UpdateStressPulse(dt);
+            Color pulsedPrimary = ResolveStressPulseColor(primary, warning, stressPulse, stressPulseBrightnessBoost, stressPulseWarningBlend);
+            Color pulsedDim = ResolveStressPulseColor(dim, warning, stressPulse, stressPulseBrightnessBoost * 0.45f, stressPulseWarningBlend * 0.38f);
+            Color pulsedWarning = ResolveStressPulseColor(warning, primary, stressPulse, stressPulseBrightnessBoost * 0.22f, 0f);
 
             float targetTemp = EstimateTemperature(depth);
             _displayTemperature = Mathf.Lerp(_displayTemperature, targetTemp, 1f - Mathf.Exp(-4f * dt));
@@ -841,23 +860,24 @@ namespace Hecton8.UI
             _lastDepth = depth;
 
             ApplyStaticStyleIfNeeded(primary, secondary, dim, warning);
+            ApplyStressPulseStyle(primary, warning, stressPulse);
 
             SetTextIfChanged(_suitLabel, ResolveSuitLabel(), Alpha(primary, 0.95f), ref _appliedSuitLabelText, ref _appliedSuitLabelColor);
             SetTextIfChanged(_headingLabel, ResolveHeadingLabel(Mathf.RoundToInt(heading)), Alpha(dim, 0.58f), ref _appliedHeadingLabelText, ref _appliedHeadingLabelColor);
             float localizedDepth = LocalizedMeasurementFormatter.ConvertDistanceMeters(depth, _localizedMeasurementLanguage);
             float localizedTemperature = LocalizedMeasurementFormatter.ConvertTemperatureCelsius(_displayTemperature, _localizedMeasurementLanguage);
-            SetMetricIntIfChanged(_depthLabel, _localizedDepthPattern, Mathf.RoundToInt(localizedDepth), Alpha(primary, 0.96f), ref _appliedDepthValue, ref _hasAppliedDepthValue, ref _appliedDepthColor);
-            SetMetricFloatTenthsIfChanged(_temperatureLabel, _localizedTemperaturePattern, localizedTemperature, Alpha(dim, 0.84f), ref _appliedTemperatureTenths, ref _hasAppliedTemperatureTenths, ref _appliedTemperatureColor);
-            SetMetricFloatTenthsIfChanged(_pressureLabel, _localizedPressurePattern, pressure, Alpha(dim, 0.64f), ref _appliedPressureTenths, ref _hasAppliedPressureTenths, ref _appliedPressureColor);
-            SetTextIfChanged(_statusLabel, ResolveStatus(oxygen, power, health, safeDepthNormalized, depth, safeDepth, depthDelta), PickAccent(oxygen, power, health, safeDepthNormalized, primary, warning), ref _appliedStatusLabelText, ref _appliedStatusLabelColor);
+            SetMetricIntIfChanged(_depthLabel, _localizedDepthPattern, Mathf.RoundToInt(localizedDepth), Alpha(pulsedPrimary, 0.96f), ref _appliedDepthValue, ref _hasAppliedDepthValue, ref _appliedDepthColor);
+            SetMetricFloatTenthsIfChanged(_temperatureLabel, _localizedTemperaturePattern, localizedTemperature, Alpha(pulsedDim, 0.84f), ref _appliedTemperatureTenths, ref _hasAppliedTemperatureTenths, ref _appliedTemperatureColor);
+            SetMetricFloatTenthsIfChanged(_pressureLabel, _localizedPressurePattern, pressure, Alpha(pulsedDim, 0.64f), ref _appliedPressureTenths, ref _hasAppliedPressureTenths, ref _appliedPressureColor);
+            SetTextIfChanged(_statusLabel, ResolveStatus(oxygen, power, health, safeDepthNormalized, depth, safeDepth, depthDelta), PickAccent(oxygen, power, health, safeDepthNormalized, pulsedPrimary, pulsedWarning), ref _appliedStatusLabelText, ref _appliedStatusLabelColor);
 
-            Color oxygenAccent = primary;
-            Color healthAccent = Color.Lerp(primary, dim, 0.24f);
-            Color energyAccent = Color.Lerp(primary, warning, 0.28f);
+            Color oxygenAccent = pulsedPrimary;
+            Color healthAccent = Color.Lerp(pulsedPrimary, pulsedDim, 0.24f);
+            Color energyAccent = Color.Lerp(pulsedPrimary, pulsedWarning, 0.28f);
 
-            UpdateGauge(ref _oxygenGauge, _localizedGaugeO2Label, string.Empty, oxygen, oxygenCurrent, oxygenAccent, secondary, dim, warning);
-            UpdateGauge(ref _healthGauge, _localizedGaugeHullLabel, string.Empty, health, healthCurrent, healthAccent, secondary, dim, warning);
-            UpdateGauge(ref _powerGauge, _localizedGaugePowerLabel, string.Empty, power, energyCurrent, energyAccent, secondary, dim, warning);
+            UpdateGauge(ref _oxygenGauge, _localizedGaugeO2Label, string.Empty, oxygen, oxygenCurrent, oxygenAccent, secondary, pulsedDim, pulsedWarning);
+            UpdateGauge(ref _healthGauge, _localizedGaugeHullLabel, string.Empty, health, healthCurrent, healthAccent, secondary, pulsedDim, pulsedWarning);
+            UpdateGauge(ref _powerGauge, _localizedGaugePowerLabel, string.Empty, power, energyCurrent, energyAccent, secondary, pulsedDim, pulsedWarning);
         }
 
         private void RefreshDepthSignalSubscription()
@@ -1587,6 +1607,40 @@ namespace Hecton8.UI
         private static readonly Color VeilBaseBottom = new Color(0.01f, 0.04f, 0.06f, 1f);
         private static readonly Color VeilBaseSide = new Color(0.01f, 0.03f, 0.05f, 1f);
 
+        private float UpdateStressPulse(float dt)
+        {
+            float rawStress = playerMovement != null
+                ? Mathf.Clamp01(playerMovement.CurrentUnderwaterStressIntensity01)
+                : 0f;
+            float targetStress = rawStress <= stressPulseStartThreshold
+                ? 0f
+                : Mathf.InverseLerp(stressPulseStartThreshold, 1f, rawStress);
+            float blendT = 1f - Mathf.Exp(-Mathf.Max(0.01f, stressPulseBlendSpeed) * dt);
+            _stressPulseIntensity = Mathf.Lerp(_stressPulseIntensity, targetStress, blendT);
+            if (_stressPulseIntensity <= 0.001f)
+            {
+                _stressPulseIntensity = 0f;
+                return 0f;
+            }
+
+            float frequency = Mathf.Lerp(stressPulseFrequencyMin, stressPulseFrequencyMax, _stressPulseIntensity);
+            _stressPulsePhase += dt * frequency * Mathf.PI * 2f;
+            if (_stressPulsePhase >= Mathf.PI * 2f)
+                _stressPulsePhase -= Mathf.PI * 2f;
+
+            float wave = 0.5f + 0.5f * Mathf.Sin(_stressPulsePhase);
+            return _stressPulseIntensity * wave;
+        }
+
+        private static Color ResolveStressPulseColor(Color baseColor, Color warningColor, float pulseStrength, float brightnessBoost, float warningBlend)
+        {
+            if (pulseStrength <= 0.0001f)
+                return baseColor;
+
+            Color pulsedColor = Color.Lerp(baseColor, warningColor, pulseStrength * warningBlend);
+            return Color.Lerp(pulsedColor, Color.white, pulseStrength * brightnessBoost);
+        }
+
         private void ApplyStaticStyleIfNeeded(Color primary, Color secondary, Color dim, Color warning)
         {
             if (_styleApplied &&
@@ -1630,6 +1684,33 @@ namespace Hecton8.UI
             _styleApplied = true;
         }
 
+        private void ApplyStressPulseStyle(Color primary, Color warning, float stressPulse)
+        {
+            if (!_styleApplied || Mathf.Abs(_appliedStressPulseStrength - stressPulse) <= 0.002f)
+                return;
+
+            Color pulsedPrimary = ResolveStressPulseColor(primary, warning, stressPulse, stressPulseBrightnessBoost, stressPulseWarningBlend);
+            float chromePulse = stressPulse * stressPulseChromeAlphaBoost;
+            _topVeil.color = Alpha(VeilBaseTop, chromeAlpha * (0.45f + chromePulse * 0.6f));
+            _bottomVeil.color = Alpha(VeilBaseBottom, chromeAlpha * (0.55f + chromePulse));
+            _leftVeil.color = Alpha(VeilBaseSide, chromeAlpha * (0.16f + chromePulse * 0.28f));
+            _rightVeil.color = Alpha(VeilBaseSide, chromeAlpha * (0.16f + chromePulse * 0.28f));
+            _headerLine.color = Alpha(pulsedPrimary, 0.22f + stressPulse * 0.04f);
+            _headerWingLeft.color = Alpha(pulsedPrimary, 0.16f + stressPulse * 0.03f);
+            _headerWingRight.color = Alpha(pulsedPrimary, 0.16f + stressPulse * 0.03f);
+            _footerLine.color = Alpha(pulsedPrimary, 0.18f + stressPulse * 0.04f);
+            _statusRuleLeft.color = Alpha(pulsedPrimary, 0.14f + stressPulse * 0.05f);
+            _statusRuleRight.color = Alpha(pulsedPrimary, 0.14f + stressPulse * 0.05f);
+            _telemetryRule.color = Alpha(pulsedPrimary, 0.18f + stressPulse * 0.03f);
+            _telemetryBraceUpper.color = Alpha(pulsedPrimary, 0.18f + stressPulse * 0.03f);
+            _telemetryBraceLower.color = Alpha(pulsedPrimary, 0.12f + stressPulse * 0.03f);
+            _reticleH.color = Alpha(pulsedPrimary, 0.76f + stressPulse * 0.1f);
+            _reticleV.color = Alpha(pulsedPrimary, 0.5f + stressPulse * 0.08f);
+            _reticleBracketLeft.color = Alpha(pulsedPrimary, 0.42f + stressPulse * 0.08f);
+            _reticleBracketRight.color = Alpha(pulsedPrimary, 0.42f + stressPulse * 0.08f);
+            _appliedStressPulseStrength = stressPulse;
+        }
+
         private void InvalidateVisualCaches()
         {
             _appliedSuitLabelText = null;
@@ -1647,6 +1728,7 @@ namespace Hecton8.UI
             _appliedPressureTenths = 0;
             _hasAppliedPressureTenths = false;
             _appliedPressureColor = default;
+            _appliedStressPulseStrength = -1f;
             _styleApplied = false;
             _appliedOverallScale = 0f;
             _appliedChromeAlpha = 0f;

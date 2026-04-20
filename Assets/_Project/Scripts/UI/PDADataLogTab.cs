@@ -91,6 +91,7 @@ namespace Hecton8.UI
         private float _playbackRemaining;
         private int _prevTimerSeconds = -1;
         private string _prevSubtitleText;
+        private int _lastStressCorruptionBucket = int.MinValue;
 
         private const float TICK_DT = 1f / 60f;
         private const string PlayAudioLabel = "PLAY AUDIO";
@@ -122,6 +123,23 @@ namespace Hecton8.UI
         private string _localizedEmptyStateText = "ARCHIVE EMPTY\nAssign AudioLogData assets in allLogs.";
 
         private int CatalogCount => allLogs != null ? allLogs.Length : 0;
+
+        /// <summary>
+        /// Copies the authored audio-log catalog into a caller-owned buffer.
+        /// </summary>
+        /// <param name="buffer">Destination buffer owned by the caller.</param>
+        /// <returns>Number of copied catalog entries.</returns>
+        public int CopyCatalog(AudioLogData[] buffer)
+        {
+            if (buffer == null || buffer.Length == 0 || allLogs == null || allLogs.Length == 0)
+                return 0;
+
+            int copyCount = Mathf.Min(buffer.Length, allLogs.Length);
+            for (int i = 0; i < copyCount; i++)
+                buffer[i] = allLogs[i];
+
+            return copyCount;
+        }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  NESTED TYPE
@@ -203,6 +221,8 @@ namespace Hecton8.UI
                 if (_playbackRemaining < 0f) _playbackRemaining = 0f;
                 UpdatePlaybackTimer();
             }
+
+            RefreshStressReactiveDetailIfNeeded();
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -249,8 +269,9 @@ namespace Hecton8.UI
             _playbackRemaining = data != null ? data.Duration : 0f;
             if (_subtitleLabel != null && data != null)
             {
-                _subtitleLabel.text = data.SubtitleOrFallback;
-                _prevSubtitleText = data.SubtitleOrFallback;
+                string visibleSubtitle = data.VisibleSubtitleOrFallback;
+                _subtitleLabel.text = ResolveStressReactiveText(visibleSubtitle);
+                _prevSubtitleText = visibleSubtitle;
             }
 
             RefreshPlayButton();
@@ -503,14 +524,14 @@ namespace Hecton8.UI
             int logCount = CatalogCount;
 
             if (_countLabel != null)
-                _countLabel.SetText(_localizedCountFormat, discovered, logCount);
+                _countLabel.text = ResolveStressReactiveText(string.Format(_localizedCountFormat, discovered, logCount));
 
             if (_emptyStateLabel != null)
             {
                 bool shouldShowEmptyState = logCount == 0;
                 if (_emptyStateLabel.gameObject.activeSelf != shouldShowEmptyState)
                     _emptyStateLabel.gameObject.SetActive(shouldShowEmptyState);
-                _emptyStateLabel.text = _localizedEmptyStateText;
+                _emptyStateLabel.text = ResolveStressReactiveText(_localizedEmptyStateText);
             }
 
             if (logCount == 0)
@@ -531,13 +552,13 @@ namespace Hecton8.UI
                 if (row.IndexLabel != null) row.IndexLabel.color = colorDim;
                 if (row.CategoryLabel != null)
                     row.CategoryLabel.text = log != null
-                        ? GetCachedCategoryLabel(log.category)
-                        : _localizedCategoryUnknown;
+                        ? ResolveStressReactiveText(GetCachedCategoryLabel(log.category))
+                        : ResolveStressReactiveText(_localizedCategoryUnknown);
                 if (row.CategoryLabel != null) row.CategoryLabel.color = isDiscovered ? colorDim : new Color(colorDim.r, colorDim.g, colorDim.b, 0.3f);
 
                 // Replace title with ??? for undiscovered
                 if (row.TitleLabel != null)
-                    row.TitleLabel.text = isDiscovered ? log.DisplayTitleOrFallback : _localizedEncryptedLabel;
+                    row.TitleLabel.text = ResolveStressReactiveText(isDiscovered ? log.DisplayTitleOrFallback : _localizedEncryptedLabel);
             }
 
             RefreshRowHighlights();
@@ -560,22 +581,22 @@ namespace Hecton8.UI
             SetDetailVisible(true);
 
             if (_titleLabel != null)
-                _titleLabel.text = isDiscovered ? log.DisplayTitleOrFallback.ToUpperInvariant() : _localizedEncryptedLabel;
+                _titleLabel.text = ResolveStressReactiveText(isDiscovered ? log.DisplayTitleOrFallback.ToUpperInvariant() : _localizedEncryptedLabel);
 
             if (_authorLabel != null)
-                _authorLabel.text = isDiscovered
+                _authorLabel.text = ResolveStressReactiveText(isDiscovered
                     ? string.Concat(_localizedAuthorPrefix, log.AuthorOrFallback)
-                    : string.Concat(_localizedAuthorPrefix, _localizedUnknownAuthor);
+                    : string.Concat(_localizedAuthorPrefix, _localizedUnknownAuthor));
 
             if (_dateLabel != null)
-                _dateLabel.text = isDiscovered
+                _dateLabel.text = ResolveStressReactiveText(isDiscovered
                     ? log.RecordDateOrFallback
-                    : string.Concat(_localizedDatePrefix, _localizedUnknownDate);
+                    : string.Concat(_localizedDatePrefix, _localizedUnknownDate));
 
             if (_summaryLabel != null)
-                _summaryLabel.text = isDiscovered
+                _summaryLabel.text = ResolveStressReactiveText(isDiscovered
                     ? GetCachedSummaryText(log)
-                    : _localizedEncryptedSummary;
+                    : _localizedEncryptedSummary);
 
             RefreshPlayButton();
         }
@@ -736,6 +757,7 @@ namespace Hecton8.UI
 
         private void HandleLanguageChanged(GameLanguage language)
         {
+            _lastStressCorruptionBucket = int.MinValue;
             RebuildLocalizationCache();
             ApplyLocalizedStaticText();
             _dirty = true;
@@ -777,10 +799,10 @@ namespace Hecton8.UI
         private void ApplyLocalizedStaticText()
         {
             if (_headerTitleLabel != null)
-                _headerTitleLabel.text = _localizedArchiveTitle;
+                _headerTitleLabel.text = ResolveStressReactiveText(_localizedArchiveTitle);
 
             if (_emptyStateLabel != null)
-                _emptyStateLabel.text = _localizedEmptyStateText;
+                _emptyStateLabel.text = ResolveStressReactiveText(_localizedEmptyStateText);
         }
 
         private string GetCachedSummaryText(AudioLogData log)
@@ -825,6 +847,42 @@ namespace Hecton8.UI
                 return _localizedCategoryLabels[categoryIndex];
 
             return _localizedCategoryUnknown;
+        }
+
+        private void RefreshStressReactiveDetailIfNeeded()
+        {
+            if (!_detailVisible)
+            {
+                _lastStressCorruptionBucket = int.MinValue;
+                return;
+            }
+
+            LocalizationManager manager = LocalizationManager.Instance;
+            int stressBucket = manager != null ? manager.GetHullStressCorruptionBucket() : 0;
+            if (stressBucket == _lastStressCorruptionBucket)
+                return;
+
+            _lastStressCorruptionBucket = stressBucket;
+            RefreshList();
+            RefreshDetail();
+
+            if (_subtitleLabel != null)
+            {
+                string displaySubtitle = ResolveStressReactiveText(_prevSubtitleText);
+                if (!string.Equals(_subtitleLabel.text, displaySubtitle, System.StringComparison.Ordinal))
+                    _subtitleLabel.text = displaySubtitle;
+            }
+        }
+
+        private static string ResolveStressReactiveText(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return string.Empty;
+
+            LocalizationManager manager = LocalizationManager.Instance;
+            return manager != null
+                ? manager.ApplyHullStressCorruptionIfNeeded(text)
+                : text;
         }
 
         private static string ResolveLocalized(string key, string fallback)

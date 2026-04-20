@@ -12,17 +12,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a49e6475ccf8054419a7fba4c7a78a5c, type: 3}
   m_Name: Data_EnzymeCoral
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
-  itemName: Enzyme Coral
+  legacyItemName: Enzyme Coral
+  stableId: Data_EnzymeCoral
   localizedItemName:
     tableKey: ITEM_ENZYME_CORAL_NAME
-    fallbackText: "Enzyme Coral"
+    fallbackText: Enzyme Coral
     variants: []
   icon: {fileID: 0}
-  description: Catalytic coral growth used in bonding compounds and advanced bio
-    mixes.
+  legacyDescription: Catalytic coral growth used in bonding compounds and advanced
+    bio mixes.
   localizedDescription:
     tableKey: ITEM_ENZYME_CORAL_DESCRIPTION
-    fallbackText: "Catalytic coral growth used in bonding compounds and advanced bio mixes."
+    fallbackText: Catalytic coral growth used in bonding compounds and advanced bio
+      mixes.
     variants: []
   weight: 0.6
   stackable: 1
@@ -31,17 +33,22 @@ MonoBehaviour:
   resourceFamily: 4
   progressionTier: 2
   isRawResource: 1
+  minDepth: 0
+  maxDepth: 0
   width: 1
   height: 1
   isConsumable: 0
+  useDuration: 0
   oxygenRestore: 0
   energyRestore: 0
   integrityRestore: 0
+  hungerRestore: 0
+  thirstRestore: 0
   useSound: {fileID: 0}
-  interactVerb: Harvest
+  legacyInteractVerb: Harvest
   localizedInteractVerb:
     tableKey: ITEM_INTERACT_TAKE
-    fallbackText: "Harvest"
+    fallbackText: Harvest
     variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

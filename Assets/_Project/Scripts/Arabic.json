@@ -1198,5 +1198,20 @@
   "UI_RETURN_TO_MENU": "عودة إلى القائمة",
   "WARNING_BACKUP_USED_MESSAGE": "WARNING BACKUP USED",
   "WARNING_BACKUP_USED_TITLE": "WARNING BACKUP USED",
-  "UI_BLUEPRINT_LOCKED": "بيانات المسح مطلوبة"
+  "UI_BLUEPRINT_LOCKED": "بيانات المسح مطلوبة",
+  "AUDIOLOG_PLAYING": "جارٍ التشغيل: {0}",
+  "PDA_SHELL_TITLE": "مساعد البيانات الشخصي HECTON-8",
+  "PDA_TAB_INVENTORY": "علامة التبويب النشطة // المخزون",
+  "PDA_TAB_LOADOUT": "علامة التبويب النشطة // التجهيز",
+  "PDA_TAB_CONSTRUCTION": "علامة التبويب النشطة // البناء",
+  "PDA_TAB_BARTER": "علامة التبويب النشطة // المقايضة",
+  "PDA_TAB_DATA_LOG": "علامة التبويب النشطة // الأرشيف",
+  "PDA_TAB_SPECTRUM": "علامة التبويب النشطة // الطيف",
+  "PDA_TAB_UNKNOWN": "علامة التبويب النشطة // غير معروف",
+  "PDA_FOOTER_LEFT": "الحمولة {0}/{1}  |  الكتلة {2:0.0} kg  |  أدوات جاهزة {3}/{4}",
+  "PDA_FOOTER_RIGHT_ONLINE": "O2 {0:0}%  |  PWR {1:0}%  |  PDA متصل",
+  "PDA_FOOTER_RIGHT_STANDBY": "O2 {0:0}%  |  PWR {1:0}%  |  PDA استعداد",
+  "TECH_O2_SPEC": "[Pressure: 300 bar | Mix: O2 96% | Rack: A-2]",
+  "TECH_HULL_SPEC": "[Sealant: <key:ITEM_TITANIUM_SCRAP_NAME> laminate | Rating: 41 MPa]",
+  "TECH_PWR_BUS": "[Bus: 48V DC | Cell bank: Li-Salt MkII]"
 }

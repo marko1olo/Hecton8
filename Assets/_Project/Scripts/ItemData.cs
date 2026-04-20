@@ -48,6 +48,8 @@ namespace Hecton8.Items
         [Tooltip("Legacy fallback item name used when no localization key is configured.")]
         [FormerlySerializedAs("itemName")]
         [SerializeField] private string legacyItemName = "Unnamed Item";
+        [Tooltip("Stable item ID used by saves, quests, scanner archives, and future content packs. Leave empty to fall back to the asset name.")]
+        [SerializeField] private string stableId = string.Empty;
         [Tooltip("Localized display name reference.")]
         [SerializeField] private LocalizedTextReference localizedItemName;
         public Sprite icon;
@@ -197,10 +199,31 @@ namespace Hecton8.Items
         /// </summary>
         public string DescriptionTableKey => localizedDescription.TableKey;
 
+        /// <summary>
+        /// Stable content identifier used by persistence-facing systems.
+        /// </summary>
+        public string PersistentId => string.IsNullOrWhiteSpace(stableId) ? name : stableId;
+
         public int CellArea => width * height;
 
         /// <summary>Time in seconds to consume this item. 0 = instant.</summary>
         public float UseDuration => useDuration;
+
+        /// <summary>
+        /// Returns true when the supplied ID matches the authored stable ID or the legacy asset name.
+        /// </summary>
+        public bool MatchesPersistentId(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+                return false;
+
+            string persistentId = PersistentId;
+            if (string.Equals(persistentId, id, System.StringComparison.Ordinal))
+                return true;
+
+            return !string.Equals(name, persistentId, System.StringComparison.Ordinal) &&
+                   string.Equals(name, id, System.StringComparison.Ordinal);
+        }
 
         private void OnEnable()
         {
@@ -223,6 +246,9 @@ namespace Hecton8.Items
 
             if (height < 1)
                 height = 1;
+
+            if (string.IsNullOrWhiteSpace(stableId) && !string.IsNullOrWhiteSpace(name))
+                stableId = name;
 
             InvalidateLocalizedCache();
             EnsureLocalizedCache();

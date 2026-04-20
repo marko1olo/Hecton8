@@ -584,10 +584,11 @@ namespace Hecton.UI.MainMenu
             }
 
             LocalizationManager loc = LocalizationManager.Instance;
+            string displaySlotName = BuildSlotDisplayName(loc, slotName);
             string title = loc != null ? loc.Get(LocalizationKeys.MODAL_LOAD_TITLE) : "Load Game";
             string message = loc != null
-                ? loc.GetFormatted(LocalizationKeys.MODAL_LOAD_MESSAGE, slotName)
-                : string.Concat("Load save \"", slotName, "\"?");
+                ? loc.GetFormatted(LocalizationKeys.MODAL_LOAD_MESSAGE, displaySlotName)
+                : string.Concat("Load save \"", displaySlotName, "\"?");
 
             ModalWindow.Show(title, message, () => StartGame(slotName));
         }
@@ -635,10 +636,11 @@ namespace Hecton.UI.MainMenu
                 if (!_saveManager.SaveExists(slotName))
                 {
                     LocalizationManager loc = LocalizationManager.Instance;
+                    string displaySlotName = BuildSlotDisplayName(loc, slotName);
                     string title = loc != null ? loc.Get(LocalizationKeys.MODAL_LOAD_ERROR_TITLE) : "Load Error";
                     string message = loc != null
-                        ? loc.GetFormatted(LocalizationKeys.MODAL_LOAD_ERROR_MESSAGE, slotName)
-                        : $"Save file does not exist for {slotName}.";
+                        ? loc.GetFormatted(LocalizationKeys.MODAL_LOAD_ERROR_MESSAGE, displaySlotName)
+                        : $"Save file does not exist for {displaySlotName}.";
 
                     ModalWindow.ShowWithCustomLabels(
                         title,
@@ -873,6 +875,37 @@ namespace Hecton.UI.MainMenu
             return null;
         }
 
+        private static string BuildSlotDisplayName(LocalizationManager loc, string slotName)
+        {
+            if (string.IsNullOrEmpty(slotName))
+                return "?";
+
+            string slotPrefix = loc != null
+                ? loc.GetOrFallback(loc.CurrentLanguage, LocalizationKeys.SLOT_PREFIX, "SLOT")
+                : "SLOT";
+
+            return string.Concat(slotPrefix, " ", ExtractSlotNumber(slotName));
+        }
+
+        private static string ExtractSlotNumber(string slotName)
+        {
+            int underscoreIndex = slotName.LastIndexOf('_');
+            if (underscoreIndex >= 0 && underscoreIndex < slotName.Length - 1)
+                return slotName.Substring(underscoreIndex + 1);
+
+            return slotName;
+        }
+
+        private static bool IsCorruptNoBackupError(string error)
+        {
+            if (string.IsNullOrEmpty(error))
+                return false;
+
+            return error.IndexOf("corrupt", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   error.IndexOf("checksum", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   error.IndexOf("No valid save data", System.StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
         private void UpdatePanelTransition(float unscaledDeltaTime)
         {
             if (_panelTransitionState == PanelTransitionState.None ||
@@ -1042,10 +1075,11 @@ namespace Hecton.UI.MainMenu
 
             // Display error modal
             LocalizationManager loc = LocalizationManager.Instance;
+            string displaySlotName = BuildSlotDisplayName(loc, slotName);
             string title = loc != null ? loc.Get(LocalizationKeys.ERROR_SAVE_FAILED_TITLE) : "Save Failed";
             string message = loc != null
-                ? loc.GetFormatted(LocalizationKeys.ERROR_SAVE_FAILED_MESSAGE, slotName, error)
-                : $"Failed to save to {slotName}.\n\n{error}";
+                ? loc.GetFormatted(LocalizationKeys.ERROR_SAVE_FAILED_MESSAGE, displaySlotName, error)
+                : $"Failed to save to {displaySlotName}.\n\n{error}";
 
             ModalWindow.ShowWithCustomLabels(
                 title,
@@ -1091,10 +1125,11 @@ namespace Hecton.UI.MainMenu
 
                 // Display backup recovery notification
                 LocalizationManager loc = LocalizationManager.Instance;
+                string displaySlotName = BuildSlotDisplayName(loc, slotName);
                 string title = loc != null ? loc.Get(LocalizationKeys.WARNING_BACKUP_USED_TITLE) : "Backup Loaded";
                 string message = loc != null
-                    ? loc.GetFormatted(LocalizationKeys.WARNING_BACKUP_USED_MESSAGE, slotName)
-                    : $"Primary save file was corrupt. Loaded from backup for {slotName}.";
+                    ? loc.GetFormatted(LocalizationKeys.WARNING_BACKUP_USED_MESSAGE, displaySlotName)
+                    : $"Primary save file was corrupt. Loaded from backup for {displaySlotName}.";
 
                 ModalWindow.ShowWithCustomLabels(
                     title,
@@ -1123,23 +1158,24 @@ namespace Hecton.UI.MainMenu
             SetSaveLoadButtonsInteractable(true);
 
             // Check if error indicates corrupt save with no backup
-            bool isCorruptNoBackup = error.Contains("corrupt") || error.Contains("checksum") || error.Contains("No valid save data");
+            bool isCorruptNoBackup = IsCorruptNoBackupError(error);
 
             LocalizationManager loc = LocalizationManager.Instance;
+            string displaySlotName = BuildSlotDisplayName(loc, slotName);
             string title = loc != null ? loc.Get(LocalizationKeys.ERROR_LOAD_FAILED_TITLE) : "Load Failed";
             string message;
 
             if (isCorruptNoBackup)
             {
                 message = loc != null
-                    ? loc.GetFormatted(LocalizationKeys.ERROR_LOAD_CORRUPT_NO_BACKUP_MESSAGE, slotName)
-                    : $"No valid save data found for {slotName}.\n\nThe save file is corrupt and no backup is available.";
+                    ? loc.GetFormatted(LocalizationKeys.ERROR_LOAD_CORRUPT_NO_BACKUP_MESSAGE, displaySlotName)
+                    : $"No valid save data found for {displaySlotName}.\n\nThe save file is corrupt and no backup is available.";
             }
             else
             {
                 message = loc != null
-                    ? loc.GetFormatted(LocalizationKeys.ERROR_LOAD_FAILED_MESSAGE, slotName, error)
-                    : $"Failed to load {slotName}.\n\n{error}";
+                    ? loc.GetFormatted(LocalizationKeys.ERROR_LOAD_FAILED_MESSAGE, displaySlotName, error)
+                    : $"Failed to load {displaySlotName}.\n\n{error}";
             }
 
             ModalWindow.ShowWithCustomLabels(

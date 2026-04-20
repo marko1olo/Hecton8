@@ -7,6 +7,7 @@
 using Hecton8.Core;
 using Hecton8.Inventory;
 using Hecton8.Items;
+using Hecton.Localization;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -74,6 +75,7 @@ namespace Hecton8.UI
         private NotificationSeverity _lastEnqueuedSeverity;
         private float _lastEnqueueTime = -999f;
         private bool _registeredToTickManager;
+        private int _lastStressCorruptionBucket = int.MinValue;
 
         public static bool TryGetActive(out HUDNotification notification)
         {
@@ -147,6 +149,9 @@ namespace Hecton8.UI
                     }
                 }
             }
+
+            if (_isShowing)
+                RefreshStressCorruptionIfNeeded();
 
             if (_canvasGroup != null)
                 _canvasGroup.alpha = _currentAlpha;
@@ -285,7 +290,10 @@ namespace Hecton8.UI
                     break;
             }
 
-            _notifText.text = message;
+            _lastStressCorruptionBucket = int.MinValue;
+            string displayMessage = ResolveDisplayMessage(message);
+            if (!string.Equals(_notifText.text, displayMessage, System.StringComparison.Ordinal))
+                _notifText.text = displayMessage;
         }
 
         private void OnPushNotification(string message, int severity)
@@ -313,6 +321,30 @@ namespace Hecton8.UI
             _inventoryFullItemNameCache[cacheIndex] = itemName;
             _inventoryFullMessageCache[cacheIndex] = message;
             return message;
+        }
+
+        private void RefreshStressCorruptionIfNeeded()
+        {
+            LocalizationManager manager = LocalizationManager.Instance;
+            int stressBucket = manager != null ? manager.GetHullStressCorruptionBucket() : 0;
+            if (stressBucket == _lastStressCorruptionBucket)
+                return;
+
+            _lastStressCorruptionBucket = stressBucket;
+            string displayMessage = ResolveDisplayMessage(_currentMessage);
+            if (_notifText != null && !string.Equals(_notifText.text, displayMessage, System.StringComparison.Ordinal))
+                _notifText.text = displayMessage;
+        }
+
+        private static string ResolveDisplayMessage(string message)
+        {
+            if (string.IsNullOrEmpty(message))
+                return string.Empty;
+
+            LocalizationManager manager = LocalizationManager.Instance;
+            return manager != null
+                ? manager.ApplyHullStressCorruptionIfNeeded(message)
+                : message;
         }
 
         private void EnsureBuilt()

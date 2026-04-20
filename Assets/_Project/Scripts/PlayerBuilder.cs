@@ -39,6 +39,7 @@ using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Input;
+using Hecton8.Modding;
 using Hecton8.Construction;
 using Hecton8.UI;
 using UnityEngine;
@@ -886,6 +887,7 @@ namespace Hecton8.Building
                 _snappedSocket.SetOccupied(true);
             }
 
+            HectonEventBus.Publish(new BaseModulePlacedEvent(activeBuildable, placedModule));
             PlaySound(buildSound);
             NotifyBuildPlaced(activeBuildable);
 

@@ -1194,5 +1194,20 @@
   "UI_RETURN_TO_MENU": "메뉴로",
   "WARNING_BACKUP_USED_MESSAGE": "WARNING BACKUP USED",
   "WARNING_BACKUP_USED_TITLE": "WARNING BACKUP USED",
-  "UI_BLUEPRINT_LOCKED": "스캔 데이터 필요"
+  "UI_BLUEPRINT_LOCKED": "스캔 데이터 필요",
+  "AUDIOLOG_PLAYING": "재생 중: {0}",
+  "PDA_SHELL_TITLE": "HECTON-8 개인 데이터 보조장치",
+  "PDA_TAB_INVENTORY": "활성 탭 // 인벤토리",
+  "PDA_TAB_LOADOUT": "활성 탭 // 장비",
+  "PDA_TAB_CONSTRUCTION": "활성 탭 // 건설",
+  "PDA_TAB_BARTER": "활성 탭 // 교환",
+  "PDA_TAB_DATA_LOG": "활성 탭 // 데이터 로그",
+  "PDA_TAB_SPECTRUM": "활성 탭 // 스펙트럼",
+  "PDA_TAB_UNKNOWN": "활성 탭 // 미상",
+  "PDA_FOOTER_LEFT": "화물 {0}/{1}  |  질량 {2:0.0} kg  |  준비 완료 도구 {3}/{4}",
+  "PDA_FOOTER_RIGHT_ONLINE": "O2 {0:0}%  |  PWR {1:0}%  |  PDA 온라인",
+  "PDA_FOOTER_RIGHT_STANDBY": "O2 {0:0}%  |  PWR {1:0}%  |  PDA 대기",
+  "TECH_O2_SPEC": "[Pressure: 300 bar | Mix: O2 96% | Rack: A-2]",
+  "TECH_HULL_SPEC": "[Sealant: <key:ITEM_TITANIUM_SCRAP_NAME> laminate | Rating: 41 MPa]",
+  "TECH_PWR_BUS": "[Bus: 48V DC | Cell bank: Li-Salt MkII]"
 }

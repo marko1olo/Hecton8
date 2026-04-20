@@ -89,6 +89,7 @@ namespace Hecton8.Gameplay
         /// Throttled: only fires when delta > 0.02 to avoid spam.
         /// </summary>
         public static event Action<float> OnHeatChanged;
+        internal static event Action<Transform, bool> OnBeamStateChanged;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — LASER SETTINGS
@@ -305,6 +306,7 @@ namespace Hecton8.Gameplay
 
         public override void OnUnequip()
         {
+            PublishBeamState(false);
             _isFiring = false;
             _wasFiringLastFrame = false;
             ResetDeconstructState();
@@ -342,6 +344,7 @@ namespace Hecton8.Gameplay
             }
 
             _isFiring = true;
+            PublishBeamState(true);
 
             // ── Accumulate heat ──
             _heatLevel += deltaTime / math.max(overheatTime, 0.1f);
@@ -451,6 +454,7 @@ namespace Hecton8.Gameplay
             // ── Visual shutdown on release ──
             if (_wasFiringLastFrame && !_isFiring)
             {
+                PublishBeamState(false);
                 SetVisualsActive(false);
                 ResetDeconstructState();
             }
@@ -528,6 +532,7 @@ namespace Hecton8.Gameplay
         /// </summary>
         private void TriggerOverheatLockout()
         {
+            PublishBeamState(false);
             _isLockedOut = true;
             _lockoutTimer = math.max(0f, overheatLockoutTime);
             _lockoutSoundPlayed = false;
@@ -730,7 +735,11 @@ namespace Hecton8.Gameplay
             if (data == null)
                 return;
 
-            string entryId = $"recovery.module.{data.name.ToLowerInvariant()}";
+            string moduleId = data.PersistentId;
+            if (string.IsNullOrWhiteSpace(moduleId))
+                return;
+
+            string entryId = $"recovery.module.{moduleId}".ToLowerInvariant();
             string title = string.Format(
                 ResolveLocalized(LocalizationKeys.LASER_ARCHIVE_RECOVERY_TITLE, "{0} RECOVERY"),
                 data.moduleName);
@@ -890,6 +899,7 @@ namespace Hecton8.Gameplay
         /// </summary>
         private void ResetAllState()
         {
+            PublishBeamState(false);
             _isFiring = false;
             _wasFiringLastFrame = false;
             _heatLevel = 0f;
@@ -899,6 +909,11 @@ namespace Hecton8.Gameplay
             _lastPublishedHeat = -1f;
             _secondaryLatched = false;
             ResetDeconstructState();
+        }
+
+        private void PublishBeamState(bool isActive)
+        {
+            OnBeamStateChanged?.Invoke(transform, isActive);
         }
 
         private CutterDiagnosis BuildDiagnosis(bool didHit)

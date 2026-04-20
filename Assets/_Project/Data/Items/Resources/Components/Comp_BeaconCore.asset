@@ -12,17 +12,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a49e6475ccf8054419a7fba4c7a78a5c, type: 3}
   m_Name: Comp_BeaconCore
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
-  itemName: Beacon Core
+  legacyItemName: Beacon Core
+  stableId: Comp_BeaconCore
   localizedItemName:
     tableKey: ITEM_BEACON_CORE_NAME
-    fallbackText: "Beacon Core"
+    fallbackText: Beacon Core
     variants: []
   icon: {fileID: 0}
-  description: Self-powered marker kernel for route beacons and long-range return
-    lanes.
+  legacyDescription: Self-powered marker kernel for route beacons and long-range
+    return lanes.
   localizedDescription:
     tableKey: ITEM_BEACON_CORE_DESCRIPTION
-    fallbackText: "Self-powered marker kernel for route beacons and long-range return lanes."
+    fallbackText: Self-powered marker kernel for route beacons and long-range return
+      lanes.
     variants: []
   weight: 0.4
   stackable: 1
@@ -31,17 +33,22 @@ MonoBehaviour:
   resourceFamily: 7
   progressionTier: 2
   isRawResource: 0
+  minDepth: 0
+  maxDepth: 0
   width: 1
   height: 1
   isConsumable: 0
+  useDuration: 0
   oxygenRestore: 0
   energyRestore: 0
   integrityRestore: 0
+  hungerRestore: 0
+  thirstRestore: 0
   useSound: {fileID: 0}
-  interactVerb: Take
+  legacyInteractVerb: Take
   localizedInteractVerb:
     tableKey: ITEM_INTERACT_TAKE
-    fallbackText: "Take"
+    fallbackText: Take
     variants: []
   worldPrefab: {fileID: 0}
   worldBuoyancyProfile: {fileID: 0}

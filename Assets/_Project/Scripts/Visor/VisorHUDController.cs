@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Gameplay;
 using Hecton8.Optimization;
 using Hecton8.World;
 using UnityEngine;
@@ -69,6 +71,22 @@ namespace NASAPunk.Visor
         [SerializeField, Range(0.25f, 10f)] private float _submergeRunoffRecoverySpeed = 1.4f;
         [SerializeField, Range(0.25f, 10f)] private float _surfaceRunoffRecoverySpeed = 1.8f;
 
+        [Header("Condensation")]
+        [SerializeField, Range(0f, 0.05f)] private float _condensationDistortion = 0.008f;
+        [SerializeField, Range(0.5f, 6f)] private float _condensationEdgeExponent = 2.35f;
+        [SerializeField, Range(0f, 2f)] private float _condensationDriftSpeed = 0.18f;
+        [SerializeField, Range(1f, 20f)] private float _temperatureShockThreshold = 6f;
+        [SerializeField, Range(0.1f, 4f)] private float _pressureShockThreshold = 0.75f;
+        [SerializeField, Range(0.5f, 1.5f)] private float _criticalPressureStartFactor = 0.88f;
+        [SerializeField, Range(1f, 2f)] private float _criticalPressureFullFactor = 1.18f;
+        [SerializeField, Range(0f, 1f)] private float _criticalPressureCondensationMax = 0.52f;
+        [SerializeField, Range(0f, 1f)] private float _condensationShockHoldDuration = 0.22f;
+        [SerializeField, Range(0.25f, 8f)] private float _condensationShockRecoverySpeed = 1.3f;
+        [SerializeField, Range(0.25f, 8f)] private float _criticalPressureCondensationBlendSpeed = 2.2f;
+
+        [Header("Environmental Interference")]
+        [SerializeField, Range(0f, 0.05f)] private float _interferenceDistortionMax = 0.016f;
+
         [Header("Pose Lock")]
         [SerializeField] private bool _syncToReferenceCamera = true;
         [SerializeField] private bool _syncPoseInEditMode = false;
@@ -111,8 +129,21 @@ namespace NASAPunk.Visor
         private float _waterRunoffIntensity;
         private float _waterRunoffHoldTimer;
         private float _waterRunoffRecoverySpeed;
+        private float _condensationShockIntensity;
+        private float _condensationShockHoldTimer;
+        private float _criticalPressureCondensationTarget;
+        private float _criticalPressureCondensation;
+        private float _interferenceDistortionIntensity;
+        private float _interferenceDistortionHoldTimer;
+        private float _interferenceDistortionRecoverySpeed;
         private bool _runtimeTickRegistered;
         private bool _editorPreviewSuspended;
+        private HectonSurvivalSystem _survivalSystem;
+        private HectonSurvivalSystem _subscribedSurvivalSystem;
+        private bool _hasTemperatureSample;
+        private float _lastTemperatureSample;
+        private bool _hasPressureSample;
+        private float _lastPressureSample;
 
         private uint _glitchRngState = 1u;
 
@@ -126,6 +157,10 @@ namespace NASAPunk.Visor
         private static readonly int ID_WaterRunoffDistortion = Shader.PropertyToID("_WaterRunoffDistortion");
         private static readonly int ID_WaterDropletDensity = Shader.PropertyToID("_WaterDropletDensity");
         private static readonly int ID_WaterDropletScale = Shader.PropertyToID("_WaterDropletScale");
+        private static readonly int ID_CondensationStrength = Shader.PropertyToID("_CondensationStrength");
+        private static readonly int ID_CondensationDistortion = Shader.PropertyToID("_CondensationDistortion");
+        private static readonly int ID_CondensationEdgeExponent = Shader.PropertyToID("_CondensationEdgeExponent");
+        private static readonly int ID_CondensationDriftSpeed = Shader.PropertyToID("_CondensationDriftSpeed");
 
         public Camera HudCamera => _hudCamera;
         public RenderTexture SharedRenderTexture => _sharedRenderTexture;
@@ -195,6 +230,26 @@ namespace NASAPunk.Visor
                 ApplyMaterialProperties();
             }
 
+            if (_condensationShockIntensity > 0f ||
+                _condensationShockHoldTimer > 0f ||
+                _criticalPressureCondensation > 0f ||
+                _interferenceDistortionIntensity > 0f ||
+                _interferenceDistortionHoldTimer > 0f)
+            {
+                _condensationShockIntensity = 0f;
+                _condensationShockHoldTimer = 0f;
+                _criticalPressureCondensationTarget = 0f;
+                _criticalPressureCondensation = 0f;
+                _interferenceDistortionIntensity = 0f;
+                _interferenceDistortionHoldTimer = 0f;
+                _materialPropertiesDirty = true;
+                ApplyMaterialProperties();
+            }
+
+            RefreshSurvivalSubscription(null);
+            _survivalSystem = null;
+            _hasTemperatureSample = false;
+            _hasPressureSample = false;
             UnregisterRuntimeTick();
             ReleaseRT();
             InvalidatePoseCache();
@@ -255,6 +310,8 @@ namespace NASAPunk.Visor
             RefreshAdaptiveRuntimeProjection();
             UpdateGlitchState(deltaTime);
             UpdateWaterRunoffState(deltaTime);
+            UpdateCondensationState(deltaTime);
+            UpdateInterferenceState(deltaTime);
             if (_materialPropertiesDirty)
                 ApplyMaterialProperties();
         }
@@ -367,6 +424,8 @@ namespace NASAPunk.Visor
                         _referenceCamera = baseParent.GetComponent<Camera>();
                 }
             }
+
+            ResolveSurvivalSystemReference();
         }
 
         private bool NeedsAutoResolve()
@@ -374,11 +433,13 @@ namespace NASAPunk.Visor
             bool needsBaseStackCamera = _projectionMode != ProjectionMode.Disabled && _baseStackCamera == null;
             bool needsReferenceCamera = _syncToReferenceCamera && _referenceCamera == null;
             bool needsHudCamera = _projectionMode != ProjectionMode.Disabled && _hudCamera == null;
+            bool needsSurvivalSystem = Application.isPlaying && _survivalSystem == null;
 
             return _visorRenderer == null
                 || needsHudCamera
                 || needsBaseStackCamera
-                || needsReferenceCamera;
+                || needsReferenceCamera
+                || needsSurvivalSystem;
         }
 
         private static float GetAutoResolveNow()
@@ -406,16 +467,23 @@ namespace NASAPunk.Visor
 
             EnsurePropertyBlock();
 
+            float condensationStrength = Mathf.Clamp01(_condensationShockIntensity + _criticalPressureCondensation);
+            float environmentalDistortion = _interferenceDistortionIntensity * _interferenceDistortionMax;
+
             _visorRenderer.GetPropertyBlock(_mpb);
             _mpb.SetFloat(ID_HUDIntensity, _hudIntensity);
             _mpb.SetColor(ID_HUDColor, _hudTint);
             _mpb.SetFloat(ID_ScratchBleed, _scratchBleed);
-            _mpb.SetFloat(ID_Distortion, _distortion);
+            _mpb.SetFloat(ID_Distortion, _distortion + environmentalDistortion);
             _mpb.SetFloat(ID_WaterRunoffStrength, _waterRunoffIntensity);
             _mpb.SetFloat(ID_WaterRunoffSpeed, _waterRunoffSpeed);
             _mpb.SetFloat(ID_WaterRunoffDistortion, _waterRunoffDistortion);
             _mpb.SetFloat(ID_WaterDropletDensity, _waterDropletDensity);
             _mpb.SetFloat(ID_WaterDropletScale, _waterDropletScale);
+            _mpb.SetFloat(ID_CondensationStrength, condensationStrength);
+            _mpb.SetFloat(ID_CondensationDistortion, _condensationDistortion);
+            _mpb.SetFloat(ID_CondensationEdgeExponent, _condensationEdgeExponent);
+            _mpb.SetFloat(ID_CondensationDriftSpeed, _condensationDriftSpeed);
             _visorRenderer.SetPropertyBlock(_mpb);
             _materialPropertiesDirty = false;
         }
@@ -467,6 +535,177 @@ namespace NASAPunk.Visor
             if (!Mathf.Approximately(nextIntensity, _waterRunoffIntensity))
             {
                 _waterRunoffIntensity = nextIntensity;
+                _materialPropertiesDirty = true;
+            }
+        }
+
+        private void ResolveSurvivalSystemReference()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            HectonSurvivalSystem resolvedSystem = _survivalSystem;
+            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform currentPlayerTransform) &&
+                currentPlayerTransform != null)
+            {
+                if (resolvedSystem == null || resolvedSystem.transform != currentPlayerTransform)
+                    currentPlayerTransform.TryGetComponent(out resolvedSystem);
+            }
+
+            if (_survivalSystem != resolvedSystem)
+                _survivalSystem = resolvedSystem;
+
+            RefreshSurvivalSubscription(_survivalSystem);
+        }
+
+        private void RefreshSurvivalSubscription(HectonSurvivalSystem target)
+        {
+            if (_subscribedSurvivalSystem == target)
+                return;
+
+            if (_subscribedSurvivalSystem != null)
+            {
+                _subscribedSurvivalSystem.OnTemperatureChanged -= HandleTemperatureChanged;
+                _subscribedSurvivalSystem.OnPressureChanged -= HandlePressureChanged;
+            }
+
+            _subscribedSurvivalSystem = target;
+
+            if (_subscribedSurvivalSystem == null)
+                return;
+
+            _subscribedSurvivalSystem.OnTemperatureChanged += HandleTemperatureChanged;
+            _subscribedSurvivalSystem.OnPressureChanged += HandlePressureChanged;
+            HandlePressureChanged(_subscribedSurvivalSystem.Pressure);
+        }
+
+        private void HandleTemperatureChanged(float temperature)
+        {
+            if (_hasTemperatureSample)
+            {
+                float delta = Mathf.Abs(temperature - _lastTemperatureSample);
+                if (delta >= _temperatureShockThreshold)
+                    TriggerCondensationShock(delta / Mathf.Max(0.01f, _temperatureShockThreshold));
+            }
+
+            _lastTemperatureSample = temperature;
+            _hasTemperatureSample = true;
+        }
+
+        private void HandlePressureChanged(float pressure)
+        {
+            if (_hasPressureSample)
+            {
+                float delta = Mathf.Abs(pressure - _lastPressureSample);
+                if (delta >= _pressureShockThreshold)
+                    TriggerCondensationShock(delta / Mathf.Max(0.01f, _pressureShockThreshold));
+            }
+
+            _lastPressureSample = pressure;
+            _hasPressureSample = true;
+
+            float target = 0f;
+            if (_subscribedSurvivalSystem != null && _subscribedSurvivalSystem.Stats != null)
+            {
+                float safeDepth = Mathf.Max(0.01f, _subscribedSurvivalSystem.Stats.SafeDepth);
+                float pressureFactor = pressure / safeDepth;
+                float pressureT = Mathf.InverseLerp(
+                    _criticalPressureStartFactor,
+                    Mathf.Max(_criticalPressureStartFactor + 0.01f, _criticalPressureFullFactor),
+                    pressureFactor);
+                target = pressureT * _criticalPressureCondensationMax;
+            }
+
+            if (!Mathf.Approximately(_criticalPressureCondensationTarget, target))
+            {
+                _criticalPressureCondensationTarget = target;
+                _materialPropertiesDirty = true;
+            }
+        }
+
+        private void TriggerCondensationShock(float normalizedIntensity)
+        {
+            float clampedIntensity = Mathf.Clamp01(normalizedIntensity);
+            if (clampedIntensity <= 0f)
+                return;
+
+            if (_condensationShockIntensity < clampedIntensity)
+                _condensationShockIntensity = clampedIntensity;
+
+            _condensationShockHoldTimer = Mathf.Max(_condensationShockHoldTimer, _condensationShockHoldDuration);
+            _condensationShockRecoverySpeed = Mathf.Max(0.1f, _condensationShockRecoverySpeed);
+            _materialPropertiesDirty = true;
+        }
+
+        private void UpdateCondensationState(float deltaTime)
+        {
+            float pressureBlendT = 1f - Mathf.Exp(-Mathf.Max(0.1f, _criticalPressureCondensationBlendSpeed) * deltaTime);
+            float blendedPressureCondensation = Mathf.Lerp(
+                _criticalPressureCondensation,
+                _criticalPressureCondensationTarget,
+                pressureBlendT);
+            if (!Mathf.Approximately(blendedPressureCondensation, _criticalPressureCondensation))
+            {
+                _criticalPressureCondensation = blendedPressureCondensation;
+                _materialPropertiesDirty = true;
+            }
+
+            if (_condensationShockHoldTimer > 0f)
+            {
+                _condensationShockHoldTimer -= deltaTime;
+                if (_condensationShockHoldTimer < 0f)
+                    _condensationShockHoldTimer = 0f;
+
+                return;
+            }
+
+            if (_condensationShockIntensity <= 0.001f)
+            {
+                if (_condensationShockIntensity != 0f)
+                {
+                    _condensationShockIntensity = 0f;
+                    _materialPropertiesDirty = true;
+                }
+
+                return;
+            }
+
+            float t = 1f - Mathf.Exp(-Mathf.Max(0.1f, _condensationShockRecoverySpeed) * deltaTime);
+            float nextIntensity = Mathf.Lerp(_condensationShockIntensity, 0f, t);
+            if (!Mathf.Approximately(nextIntensity, _condensationShockIntensity))
+            {
+                _condensationShockIntensity = nextIntensity;
+                _materialPropertiesDirty = true;
+            }
+        }
+
+        private void UpdateInterferenceState(float deltaTime)
+        {
+            if (_interferenceDistortionHoldTimer > 0f)
+            {
+                _interferenceDistortionHoldTimer -= deltaTime;
+                if (_interferenceDistortionHoldTimer < 0f)
+                    _interferenceDistortionHoldTimer = 0f;
+
+                return;
+            }
+
+            if (_interferenceDistortionIntensity <= 0.001f)
+            {
+                if (_interferenceDistortionIntensity != 0f)
+                {
+                    _interferenceDistortionIntensity = 0f;
+                    _materialPropertiesDirty = true;
+                }
+
+                return;
+            }
+
+            float t = 1f - Mathf.Exp(-Mathf.Max(0.1f, _interferenceDistortionRecoverySpeed) * deltaTime);
+            float nextIntensity = Mathf.Lerp(_interferenceDistortionIntensity, 0f, t);
+            if (!Mathf.Approximately(nextIntensity, _interferenceDistortionIntensity))
+            {
+                _interferenceDistortionIntensity = nextIntensity;
                 _materialPropertiesDirty = true;
             }
         }
@@ -1083,6 +1322,20 @@ namespace NASAPunk.Visor
                 _surfaceRunoffIntensity,
                 _surfaceRunoffHoldDuration,
                 _surfaceRunoffRecoverySpeed);
+        }
+
+        internal void TriggerEnvironmentalDistortion(float normalizedIntensity, float holdDuration, float recoverySpeed)
+        {
+            float clampedIntensity = Mathf.Clamp01(normalizedIntensity);
+            if (clampedIntensity <= 0f)
+                return;
+
+            if (_interferenceDistortionIntensity < clampedIntensity)
+                _interferenceDistortionIntensity = clampedIntensity;
+
+            _interferenceDistortionHoldTimer = Mathf.Max(_interferenceDistortionHoldTimer, holdDuration);
+            _interferenceDistortionRecoverySpeed = Mathf.Max(0.1f, recoverySpeed);
+            _materialPropertiesDirty = true;
         }
 
         private void TriggerWaterRunoff(float intensity, float holdDuration, float recoverySpeed)

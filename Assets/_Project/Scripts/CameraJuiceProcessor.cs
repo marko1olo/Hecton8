@@ -88,10 +88,16 @@ namespace Hecton8.Gameplay
         private float _collisionShakeXVel;
         private float _collisionShakePitch;
         private float _collisionShakePitchVel;
+        private float _externalRollImpulse;
+        private float _externalRollImpulseVel;
 
         // ── Splash Dip ──
         private float _splashDipCurrent;
         private float _splashDipVelocity;
+        private float _waterEntryFovTimer;
+        private float _waterEntryFovDuration;
+        private float _waterEntryFovExpandDegrees;
+        private float _waterEntryFovCompressDegrees;
 
         // ── Action Bob (eating, healing) ──
         private float _actionBobY;
@@ -191,8 +197,14 @@ namespace Hecton8.Gameplay
             _collisionShakeXVel = 0f;
             _collisionShakePitch = 0f;
             _collisionShakePitchVel = 0f;
+            _externalRollImpulse = 0f;
+            _externalRollImpulseVel = 0f;
             _splashDipCurrent = 0f;
             _splashDipVelocity = 0f;
+            _waterEntryFovTimer = 0f;
+            _waterEntryFovDuration = 0f;
+            _waterEntryFovExpandDegrees = 0f;
+            _waterEntryFovCompressDegrees = 0f;
             _currentRoll = 0f;
             _rollVelocity = 0f;
             _targetRoll = 0f;
@@ -247,6 +259,92 @@ namespace Hecton8.Gameplay
             float dip = -intensity * suit.splashCameraDip;
             _splashDipCurrent = dip;
             _splashDipVelocity = -dip * 2f;
+        }
+
+        public void RegisterEntanglementStrain(float intensity)
+        {
+            intensity = math.saturate(intensity);
+            if (intensity <= 0.0001f)
+                return;
+
+            float hash = math.frac(Time.time * 23.17f);
+            float signX = hash > 0.5f ? 1f : -1f;
+            float signP = math.frac(Time.time * 11.43f) > 0.5f ? 1f : -1f;
+            float amplitude = intensity * 0.0035f;
+
+            _collisionShakeY = math.min(_collisionShakeY, -amplitude);
+            _collisionShakeYVel = math.max(_collisionShakeYVel, amplitude * 24f);
+            _collisionShakeX = signX * amplitude * 0.8f;
+            _collisionShakeXVel = -signX * amplitude * 18f;
+            _collisionShakePitch = signP * intensity * 0.18f;
+            _collisionShakePitchVel = -signP * intensity * 2.4f;
+        }
+
+        /// <summary>
+        /// Registers a low-frequency active-sonar thump so the pulse reads as a suit/helmet body hit.
+        /// </summary>
+        public void RegisterSonarPingImpulse(float intensity)
+        {
+            intensity = math.saturate(intensity);
+            if (intensity <= 0.0001f)
+                return;
+
+            float amplitude = intensity * 0.0042f;
+            _collisionShakeY = math.min(_collisionShakeY, -amplitude);
+            _collisionShakeYVel = math.max(_collisionShakeYVel, amplitude * 16f);
+            _collisionShakePitch = math.min(_collisionShakePitch, -intensity * 0.12f);
+            _collisionShakePitchVel = math.max(_collisionShakePitchVel, intensity * 0.95f);
+        }
+
+        /// <summary>
+        /// Registers a signed roll impulse for emergency disorientation without allocating a coroutine/state wrapper.
+        /// </summary>
+        public void RegisterExternalRollImpulse(float signedDegrees)
+        {
+            float clampedDegrees = math.clamp(signedDegrees, -18f, 18f);
+            if (math.abs(clampedDegrees) <= 0.001f)
+                return;
+
+            _externalRollImpulse = clampedDegrees;
+            _externalRollImpulseVel = -clampedDegrees * 3.6f;
+        }
+
+        /// <summary>
+        /// Registers a short FOV impulse for hard air-to-water transitions.
+        /// </summary>
+        /// <param name="expandDegrees">Initial positive FOV expansion in degrees.</param>
+        /// <param name="compressDegrees">Follow-up negative FOV compression in degrees.</param>
+        /// <param name="duration">Total impulse duration in seconds.</param>
+        public void RegisterWaterEntryFovImpulse(float expandDegrees, float compressDegrees, float duration)
+        {
+            if (duration <= 0f)
+                return;
+
+            expandDegrees = math.max(0f, expandDegrees);
+            compressDegrees = math.max(0f, compressDegrees);
+            if (expandDegrees <= 0f && compressDegrees <= 0f)
+                return;
+
+            if (_waterEntryFovTimer <= 0f || expandDegrees >= _waterEntryFovExpandDegrees)
+            {
+                _waterEntryFovExpandDegrees = expandDegrees;
+                _waterEntryFovCompressDegrees = compressDegrees;
+                _waterEntryFovDuration = duration;
+                _waterEntryFovTimer = duration;
+                return;
+            }
+
+            if (expandDegrees > _waterEntryFovExpandDegrees)
+                _waterEntryFovExpandDegrees = expandDegrees;
+
+            if (compressDegrees > _waterEntryFovCompressDegrees)
+                _waterEntryFovCompressDegrees = compressDegrees;
+
+            if (duration > _waterEntryFovTimer)
+            {
+                _waterEntryFovDuration = duration;
+                _waterEntryFovTimer = duration;
+            }
         }
 
         /// <summary>
@@ -318,6 +416,7 @@ namespace Hecton8.Gameplay
 
             // ── FOV compression ──
             ProcessDepthFovCompression(in input, suit);
+            ProcessWaterEntryFovImpulse(dt);
 
             float heavyCarryAmplitudeScale = math.lerp(1f, HEAVY_CARRY_MAX_HEADBOB_AMPLITUDE_SCALE, input.heavyCarryLoad);
             float heavyCarryCadenceScale = math.lerp(1f, HEAVY_CARRY_MAX_HEADBOB_CADENCE_SCALE, input.heavyCarryLoad);
@@ -386,6 +485,7 @@ namespace Hecton8.Gameplay
             _output.localPositionOffset.y += _collisionShakeY;
             _output.localPositionOffset.x += _collisionShakeX;
             _output.pitchOffset += _collisionShakePitch;
+            _output.rollOffset += _externalRollImpulse;
             _output.localPositionOffset.y += _exhaleDipCurrent;
 
             // ── Action bob (eating, healing) ──
@@ -486,6 +586,13 @@ namespace Hecton8.Gameplay
                     ref _collisionShakePitchVel, omega, dt);
             }
             else { _collisionShakePitch = 0f; _collisionShakePitchVel = 0f; }
+
+            if (math.abs(_externalRollImpulse) > 0.001f || math.abs(_externalRollImpulseVel) > 0.001f)
+            {
+                _externalRollImpulse = SpringDamp(_externalRollImpulse, 0f,
+                    ref _externalRollImpulseVel, omega * 0.78f, dt);
+            }
+            else { _externalRollImpulse = 0f; _externalRollImpulseVel = 0f; }
         }
 
         // ══════════════════════════════════════════════════════════
@@ -540,6 +647,44 @@ namespace Hecton8.Gameplay
             t = t * t * (3f - 2f * t);
 
             _output.fovOffset = -t * suit.depthFovCompressionMax;
+        }
+
+        private void ProcessWaterEntryFovImpulse(float dt)
+        {
+            if (_waterEntryFovTimer <= 0f || _waterEntryFovDuration <= 0f)
+            {
+                _waterEntryFovTimer = 0f;
+                _waterEntryFovDuration = 0f;
+                _waterEntryFovExpandDegrees = 0f;
+                _waterEntryFovCompressDegrees = 0f;
+                return;
+            }
+
+            _waterEntryFovTimer -= dt;
+            if (_waterEntryFovTimer < 0f)
+                _waterEntryFovTimer = 0f;
+
+            float elapsed = _waterEntryFovDuration - _waterEntryFovTimer;
+            float phase = math.saturate(elapsed / math.max(_waterEntryFovDuration, 0.01f));
+            const float ExpandPhaseEnd = 0.32f;
+
+            if (phase <= ExpandPhaseEnd)
+            {
+                float expandT = 1f - (phase / ExpandPhaseEnd);
+                _output.fovOffset += _waterEntryFovExpandDegrees * expandT * expandT;
+            }
+            else
+            {
+                float compressT = 1f - ((phase - ExpandPhaseEnd) / math.max(1f - ExpandPhaseEnd, 0.01f));
+                _output.fovOffset -= _waterEntryFovCompressDegrees * compressT * compressT;
+            }
+
+            if (_waterEntryFovTimer <= 0f)
+            {
+                _waterEntryFovDuration = 0f;
+                _waterEntryFovExpandDegrees = 0f;
+                _waterEntryFovCompressDegrees = 0f;
+            }
         }
 
         // ══════════════════════════════════════════════════════════

@@ -103,13 +103,14 @@ namespace Hecton8.UI
         private static readonly string _cachedWriting = "WRITING ";
         private static readonly string _cachedWritten = " WRITTEN.";
         private static readonly string _cachedFailed = " FAILED. ";
+        private static readonly string _cachedFailedTerminal = " FAILED.";
         private static readonly string _cachedSaveManagerUnavailable = "SAVE MANAGER UNAVAILABLE.";
         private static readonly string _cachedSaveInProgress = "SAVE ALREADY IN PROGRESS.";
-        private static readonly string _cachedCheckConsole = " FAILED. CHECK CONSOLE.";
         private static readonly string _cachedAwaitingSaveCommand = "Awaiting save command.";
         private static readonly string _cachedPreparingSceneTransition = "Preparing scene transition...";
         private static readonly string _cachedLoadingMainMenuPrefix = "Loading main menu... ";
         private static readonly string _cachedPercentSuffix = "%";
+        private static readonly string _cachedWritePrefix = "WRITE ";
 
         // Simple cache for ToUpperInvariant to reduce allocations in UI strings
         private static readonly string[] _cachedUpperStrings = new string[16];
@@ -618,7 +619,7 @@ namespace Hecton8.UI
             for (int i = 0; i < saveSlots.Length; i++)
             {
                 string slotName = saveSlots[i];
-                RectTransform btn = CreateButton(panel, $"SaveSlot_{i}", $"WRITE {CachedToUpperInvariant(slotName)}",
+                RectTransform btn = CreateButton(panel, $"SaveSlot_{i}", string.Concat(_cachedWritePrefix, GetUpperSlotDisplayName(slotName)),
                     new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
                     new Vector2(0f, -108f - i * 56f), new Vector2(420f, 40f),
                     () => SaveSlot(slotName));
@@ -632,6 +633,8 @@ namespace Hecton8.UI
                 if (label != null)
                     label.alignment = TextAlignmentOptions.Center;
             }
+
+            RefreshSaveSlotButtonLabels();
 
             _saveStatus = CreateText(panel, "SaveStatus", numericFont, 11f, FontStyles.Normal, TextAlignmentOptions.Center);
             Anchor(_saveStatus.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(22f, 66f), new Vector2(-22f, 22f));
@@ -719,6 +722,7 @@ namespace Hecton8.UI
                     break;
                 case PauseSection.Saves:
                     _headerSub.SetText("manual persistence via SaveManager");
+                    RefreshSaveSlotButtonLabels();
                     RefreshSaveSectionState();
                     break;
                 case PauseSection.Help:
@@ -755,7 +759,7 @@ namespace Hecton8.UI
         /// </summary>
         private async System.Threading.Tasks.Task SaveSlotAsync(string slotName)
         {
-            string upperSlotName = CachedToUpperInvariant(slotName);
+            string upperSlotName = GetUpperSlotDisplayName(slotName);
 
             if (_saveStatus != null)
                 _saveStatus.text = string.Concat(_cachedWriting, upperSlotName, "...");
@@ -776,7 +780,7 @@ namespace Hecton8.UI
                     message,
                     null,
                     null,
-                    "OK",
+                    ResolveLocalized(LocalizationKeys.UI_OK, "OK"),
                     null);
                 return;
             }
@@ -796,14 +800,15 @@ namespace Hecton8.UI
             {
                 Debug.LogError($"[PauseMenuController] Save failed for '{slotName}': {ex.Message}");
                 if (_saveStatus != null)
-                    _saveStatus.SetText(string.Concat(upperSlotName, _cachedCheckConsole));
+                    _saveStatus.SetText(string.Concat(upperSlotName, _cachedFailedTerminal));
 
                 // Localized error message
                 LocalizationManager loc = LocalizationManager.Instance;
+                string displaySlotName = BuildSlotDisplayName(loc, slotName);
                 string title = loc != null ? loc.Get(LocalizationKeys.ERROR_SAVE_CRASHED_TITLE) : "Save Error";
                 string message = loc != null 
-                    ? loc.GetFormatted(LocalizationKeys.ERROR_SAVE_CRASHED_MESSAGE, slotName)
-                    : $"Save operation crashed for {slotName}.\n\nCheck console for details.\n\nRetry?";
+                    ? loc.GetFormatted(LocalizationKeys.ERROR_SAVE_CRASHED_MESSAGE, displaySlotName)
+                    : $"Save operation crashed for {displaySlotName}.\n\nRetry?";
 
                 // Show retry modal on exception
                 ModalWindow.ShowWithCustomLabels(
@@ -811,7 +816,7 @@ namespace Hecton8.UI
                     message,
                     () => SaveSlot(slotName), // Retry
                     null, // Cancel just closes modal
-                    "Retry",
+                    ResolveLocalized(LocalizationKeys.UI_RETRY, "Retry"),
                     "Cancel");
             }
         }
@@ -1292,6 +1297,26 @@ namespace Hecton8.UI
                 _saveStatus.SetText(_cachedAwaitingSaveCommand);
         }
 
+        private void RefreshSaveSlotButtonLabels()
+        {
+            if (_saveSlotButtons == null || saveSlots == null)
+                return;
+
+            int count = Mathf.Min(_saveSlotButtons.Length, saveSlots.Length);
+            for (int i = 0; i < count; i++)
+            {
+                Button button = _saveSlotButtons[i];
+                if (button == null)
+                    continue;
+
+                TextMeshProUGUI label = GetText(button.transform, "Label");
+                if (label == null)
+                    continue;
+
+                label.SetText(string.Concat(_cachedWritePrefix, GetUpperSlotDisplayName(saveSlots[i])));
+            }
+        }
+
         private void SetSaveButtonsInteractable(bool interactable)
         {
             if (_saveSlotButtons == null)
@@ -1320,7 +1345,7 @@ namespace Hecton8.UI
             SetSaveButtonsInteractable(false);
 
             if (_saveStatus != null)
-                _saveStatus.SetText(string.Concat(_cachedWriting, CachedToUpperInvariant(slotName), "..."));
+                _saveStatus.SetText(string.Concat(_cachedWriting, GetUpperSlotDisplayName(slotName), "..."));
         }
 
         private void HandleSaveCompleted(string slotName)
@@ -1329,7 +1354,7 @@ namespace Hecton8.UI
             SetSaveButtonsInteractable(true);
 
             if (_saveStatus != null)
-                _saveStatus.SetText(string.Concat(CachedToUpperInvariant(slotName), _cachedWritten));
+                _saveStatus.SetText(string.Concat(GetUpperSlotDisplayName(slotName), _cachedWritten));
 
             if (_activeSection == PauseSection.Saves)
                 SelectDefaultButtonForSection(PauseSection.Saves);
@@ -1342,20 +1367,21 @@ namespace Hecton8.UI
 
             string normalizedError = string.IsNullOrEmpty(error) ? "Unknown error" : error;
             if (_saveStatus != null)
-                _saveStatus.SetText(string.Concat(CachedToUpperInvariant(slotName), _cachedFailed, CachedToUpperInvariant(normalizedError)));
+                _saveStatus.SetText(string.Concat(GetUpperSlotDisplayName(slotName), _cachedFailed, CachedToUpperInvariant(normalizedError)));
 
             LocalizationManager loc = LocalizationManager.Instance;
+            string displaySlotName = BuildSlotDisplayName(loc, slotName);
             string title = loc != null ? loc.Get(LocalizationKeys.ERROR_SAVE_FAILED_TITLE) : "Save Failed";
             string message = loc != null
-                ? loc.GetFormatted(LocalizationKeys.ERROR_SAVE_FAILED_MESSAGE, slotName, normalizedError)
-                : $"Failed to save to {slotName}.\n\n{normalizedError}\n\nRetry?";
+                ? loc.GetFormatted(LocalizationKeys.ERROR_SAVE_FAILED_MESSAGE, displaySlotName, normalizedError)
+                : $"Failed to save to {displaySlotName}.\n\n{normalizedError}\n\nRetry?";
 
             ModalWindow.ShowWithCustomLabels(
                 title,
                 message,
                 () => SaveSlot(slotName),
                 null,
-                "Retry",
+                ResolveLocalized(LocalizationKeys.UI_RETRY, "Retry"),
                 "Cancel");
 
             if (_activeSection == PauseSection.Saves)
@@ -1436,6 +1462,32 @@ namespace Hecton8.UI
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;
+        }
+
+        private static string GetUpperSlotDisplayName(string slotName)
+        {
+            return CachedToUpperInvariant(BuildSlotDisplayName(LocalizationManager.Instance, slotName));
+        }
+
+        private static string BuildSlotDisplayName(LocalizationManager loc, string slotName)
+        {
+            if (string.IsNullOrEmpty(slotName))
+                return "?";
+
+            string slotPrefix = loc != null
+                ? loc.GetOrFallback(loc.CurrentLanguage, LocalizationKeys.SLOT_PREFIX, "SLOT")
+                : "SLOT";
+
+            return string.Concat(slotPrefix, " ", ExtractSlotNumber(slotName));
+        }
+
+        private static string ExtractSlotNumber(string slotName)
+        {
+            int underscoreIndex = slotName.LastIndexOf('_');
+            if (underscoreIndex >= 0 && underscoreIndex < slotName.Length - 1)
+                return slotName.Substring(underscoreIndex + 1);
+
+            return slotName;
         }
 
         private void ClearPauseSelection()

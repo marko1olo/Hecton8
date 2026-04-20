@@ -1,0 +1,161 @@
+# CHANGELOG
+
+Status: `ACTIVE`
+Verification: `PENDING VERIFICATION`
+
+## 2026-04-20
+
+- Created `HECTON8_SARGASSUM_REALITY_AUDIT_AND_EXECUTION_PLAN.md`.
+- Recorded architecture decision to reuse `family.kelp.canopy` instead of creating a new sargassum runtime subsystem.
+- Started first execution slice in existing canopy flora authoring.
+- Added new canopy baked starter roots:
+  - `family_kelp_canopy__windrow__s145-230`
+  - `family_kelp_canopy__tanglemat__s130-205`
+- Added matching mesh builder specs for the new canopy variants.
+- Shifted `family.kelp.canopy` default material tuning toward a warmer olive / amber / dried-sargassum palette.
+- Attempted Unity verification:
+  - `refresh_unity` compile request issued
+  - `Hecton/Authoring/Generate Procedural Flora Baked Starters` invoked
+  - `Hecton/Authoring/Apply Procedural Flora Final Variants` invoked
+- Verification blocked by existing project compile error:
+  - `CS2001: Source file 'Assets/_Project/Scripts/WorldStateManager.cs' could not be found.`
+- Git state confirms `Assets/_Project/Scripts/WorldStateManager.cs` is a tracked file currently deleted in the working tree.
+- Restored tracked-deleted `Assets/_Project/Scripts/WorldStateManager.cs` from `git HEAD` to clear the missing-source compile blocker.
+- Audited save contract and confirmed `SaveData.WorldStateDTO` already owns pickup depletion persistence via:
+  - `depletedPickupChunkKeys`
+  - `depletedPickupChunkWordStarts`
+  - `depletedPickupChunkWordCounts`
+  - `depletedPickupWords`
+- Found contract drift:
+  - `PickupItem` already resolved both `persistenceKey` and `chunkKey`
+  - restored `WorldStateManager` only handled depleted resource nodes and was missing pickup persistence API
+- Rebuilt `WorldStateManager` as the single owner for authored pickup depletion:
+  - added `IsPickupDepleted(long)`
+  - added `RegisterCollectedPickup(long,long)` plus fallback overload
+  - added pickup save/load packing into `WorldStateDTO`
+  - added authored pickup scene reapply during `ApplyToScene()`
+- Updated `PickupItem` to pass the existing `_worldStateChunkKey` into `WorldStateManager` instead of discarding it on interact.
+- Unity verification rerun after owner fix:
+  - compile completed with `read_console` returning `0` errors and `0` warnings
+  - `Hecton/Authoring/Generate Procedural Flora Baked Starters` completed:
+    - `Prefabs=89`
+    - `MeshesUpdated=267`
+    - `Failures=0`
+  - `Hecton/Authoring/Apply Procedural Flora Final Variants` completed:
+    - `FamiliesTouched=0`
+    - `LinkedVariants=89`
+    - `MissingFamilies=0`
+- New baked canopy assets now exist for:
+  - `GEN_family_kelp_canopy__windrow__s145-230`
+  - `GEN_family_kelp_canopy__tanglemat__s130-205`
+- Verified `ProceduralFamily_family_kelp_canopy.asset` now contains final variant ids for:
+  - `family.kelp.canopy.final.flora.gen_family_kelp_canopy__windrow`
+  - `family.kelp.canopy.final.flora.gen_family_kelp_canopy__tanglemat`
+- Added Crest damping pipeline for Type 2 sargassum:
+  - new density-field export from `SargassumGlobalDragManager`
+  - new `SargassumCrestDampingController`
+  - new Crest input shaders:
+    - `Crest/Inputs/Animated Waves/Sargassum Damping`
+    - `Crest/Inputs/Foam/Sargassum Damping`
+  - new asset materials:
+    - `MAT_SargassumWaveDamping`
+    - `MAT_SargassumFoamDamping`
+- Added GPU micro-fauna pipeline for dense sargassum walls:
+  - new `SargassumMicroFaunaBoids`
+  - new compute shader `SargassumMicroFaunaBoids.compute`
+  - new indirect render material `MAT_SargassumMicroFaunaBoids`
+  - boids consume both density texture and `_SargassumCutMaskRT`
+- Updated `Ocean_Crest.prefab`:
+  - added child Crest input quads `SargassumWaveDampingInput` and `SargassumFoamDampingInput`
+  - wired Crest input materials on prefab asset
+  - added root MonoBehaviour references for damping + boid runtime controllers
+- Targeted verification facts:
+  - Unity asset database imported the new shader / compute / material assets successfully
+  - `Shader.Find` resolves both new Crest damping shaders
+  - prefab hierarchy now contains the two new Crest child inputs
+- Verification blocked by pre-existing compile failure outside this slice:
+  - `Assets/_Project/Scripts/UI/SaveSlotHoverPreview.cs(299,51): error CS1501: No overload for method 'IsPreviewTextMatch' takes 5 arguments`
+- Because the project assembly is not compiling, Unity currently reports root custom MonoBehaviours on `Ocean_Crest.prefab` as `<missing>`:
+  - `SargassumCrestDampingController`
+  - `SargassumMicroFaunaBoids`
+  - same blocked state also affects `MonoScript.GetClass()` for these scripts and existing `SargassumGlobalDragManager`
+- Added night biolum contract for sargassum canopy:
+  - `HectonAtmosphereManager` now publishes `_HectonTimeOfDay01` and `_HectonNightFactor`
+  - `Hecton_SargassumMaster.shader` now exposes pneumatocyst biolum emission controls tied to global ocean biolum + night factor
+- Added rare instanced nesting path to `SargassumGlobalDragManager`:
+  - manager now renders rare tangled debris via `Graphics.DrawMeshInstanced`
+  - nesting archetypes are data-driven through reusable `NestedAttachmentPrototype` slots so the same pattern can extend to non-sargassum ocean biomes later
+- Polished GPU micro-fauna behavior:
+  - boids now receive deterministic grazing anchors inside dense canopy walls
+  - panic now responds to fast player approach instead of any nearby slow swim
+  - cut-mask panic path remains intact and stacks with player threat
+- Local CLI validation blocker:
+  - no `dotnet`, `msbuild`, or `csc` toolchain available in the shell environment
+- Added entanglement bio-sync handoff:
+  - `SargassumGlobalDragManager` now exposes static event `OnEntanglementStrain`
+  - `HectonPlayerMovement` now forwards active escape strain into camera/audio feedback without adding a new runtime owner
+  - `CameraJuiceProcessor` now has a dedicated low-amplitude entanglement tremor path
+- Synced ecosystem biolum phase:
+  - `HectonAtmosphereManager` now publishes global `_SargassumBiolumPhase`
+  - `Hecton_SargassumMaster.shader` bubbles and `BoidFishInstanced.shader` shoals now pulse from the same phase source
+- Polished god-ray canopy drift:
+  - `HectonUnderwaterVisuals` now offsets the shallow beam toward the drifted canopy anchor so light columns follow moving Voronoi windows
+- Updated validation facts for this slice:
+  - Unity compile recovered after patch-specific fixes; console readback returned `0` errors / warnings for the current pass
+  - Unity runtime reflection confirms `SargassumGlobalDragManager.OnEntanglementStrain` exists
+  - `Shader.Find` resolves both `Hecton8/Flora/SargassumMaster` and `Hecton8/BoidFishInstanced`
+- Added shared labyrinth math owner:
+  - new `HectonVegetationConstants` now owns floating-labyrinth seed, Voronoi salts, warp defaults, and scooter panic multiplier
+  - `HectonMapMagicVegetationBridge` and `SargassumGlobalDragManager` now resolve the same canonical floating-labyrinth values instead of carrying separate literals
+- Reworked biolum rhythm sync:
+  - sargassum bubbles and boid glow now derive phase from `_Time.y * _SargassumBiolumPhaseMultiplier`
+  - `HectonAtmosphereManager` now publishes the shared multiplier instead of pushing a pre-integrated phase value
+- Extended boid panic logic:
+  - player-speed panic remains active
+  - active transport now expands boid panic radius by `3x` before the speed gate is applied
+  - flee steering now blends cut-gradient escape with direct player-vector escape, so scooter passes scatter the flock away from the rider instead of only away from cut scars
+- Added trapping-forest debris logic:
+  - dense canopy nodes now roll a deterministic `1%` nest chance during `SargassumGlobalDragManager` field rebuilds
+  - trapped debris nests stay fully instanced, inherit `GlobalDriftOffset`, and sever free from recent cut stamps without spawning `GameObject` debris
+- Added Crest oily-surface feedback:
+  - new Crest albedo input shader/material `Crest/Inputs/Albedo/Sargassum Oil Film` darkens dense fields and drives a local smoothness boost through the ocean albedo alpha
+  - `Ocean_Crest.prefab` now includes `SargassumOilFilmInput` with `RegisterAlbedoInput`
+- Polished boid grazing behavior:
+  - calm boids now enter short deterministic feeding pauses at pneumatocyst anchors
+  - gameplay camera proximity now repels boids out of the near clip bubble to prevent player-view clipping
+- Current verification blockers are external to this slice:
+  - `Assets/_Project/Scripts/AcousticZoneController.cs(260,10): error CS0579: Duplicate 'Tooltip' attribute`
+- Status remains `PENDING VERIFICATION` until the external UI compile error is cleared and Unity recompiles the assembly cleanly.
+
+WARNING: Regression risk in shared canopy visuals. `family.kelp.canopy` material tuning is shared across the family, not isolated to future sargassum placements.
+- Added destruction-state canopy collapse:
+  - `SargassumCutManager` now exposes weighted recent-cut area queries and external cut registration for non-player tears
+  - `SargassumGlobalDragManager` now registers persistent buoyancy-collapse zones when clustered cuts exceed the local canopy threshold
+  - collapsed canopy zones now suppress baked density, drag trapped debris downward, publish a buoyancy sink texture to the sargassum shader, and starve Crest damping in the drowned patch
+- Added leviathan displacement API:
+  - new `ISargassumMassiveDisplacementReceiver.RegisterMassiveDisplacement(position, radius, duration)` contract added for whale/submarine-scale canopy breaches
+  - `SargassumGlobalDragManager` now implements the contract, injects a giant tear into the cut mask, zeroes local density through a timed disruption zone, and broadcasts `OnMassiveDisplacement`
+  - `SargassumMicroFaunaBoids` now caches capped leviathan panic threats and uploads them to the compute shader for 50m+ extreme scatter
+- Stabilized Crest oily-surface hook:
+  - reverted the direct `OceanFramework_Generated.shader` smoothness hack
+  - moved the live oil-smoothness bridge onto the source `Crest/Ocean URP` path by extending `OceanReflection.hlsl` and `Ocean.shader`, which is the actual shader assigned on the runtime ocean tiles
+- Added abyssal thermal foundation:
+  - new `AbyssalThermalManager` now owns hydrothermal updraft sampling, heat-hazard registration through `HectonHazardManager`, bio-cable entanglement metadata, and `DrawProceduralIndirect` black-smoke plumes
+  - scene wiring now mounts `AbyssalThermalManager` on `Ocean_Crest` and assigns `AbyssalBlackSmoke.compute` plus `MAT_AbyssalBlackSmoke`
+- Wired cable entanglement into locomotion:
+  - `LaserCutter` now publishes an internal beam-state event so abyssal cable severing can follow the live cutter without polling
+  - `HectonPlayerMovement` now samples `AbyssalThermalManager`, blends vent flow into the ambient-current path, injects external thermal updraft velocity change, and applies harsher cable drag / energy drain / spring force until cut progress crosses the authored release threshold
+- Added deep-sea boid adaptation:
+  - `HectonBiolumManager` now exposes a non-alloc nearby-zone copy helper for runtime consumers
+  - `SargassumMicroFaunaBoids` now rebuilds into abyssal bait-ball mode below `World_Y <= -1000`, clustering around nearby biolum zones instead of canopy density
+  - abyssal boids now panic on sudden lamp activation while transport is active, using the current flashlight toggle as the concrete scooter-headlight proxy until a dedicated scooter lamp system exists
+- Added catastrophic collapse chunk escalation:
+  - `SargassumCutManager.SampleRecentCutArea` now keeps the cut-area query on a fixed `RecentCutStamp[16]` ring, with squared-distance rejection before overlap sqrt work
+  - `SargassumGlobalDragManager` now escalates catastrophic canopy failures into pooled `SargassumCollapseChunk` bursts once local cut area exceeds the collapse threshold multiplier
+  - new prefab `PFB_SargassumCollapseChunk` provides the rigidbody chunk payload for `ObjectPoolManager` collapse bursts
+- Added hadal parasite-drone boid mode:
+  - `SargassumMicroFaunaBoids` now switches into parasite mode below `-2000m` inside synthetic/service/power/construction zones
+  - parasite drones bind to player transport velocity, glow with a distinct emissive pass, and request external hull stress through `HectonPlayerMovement`
+  - headlight panic is now suppressed in parasite mode so lights drive aggression/latching instead of flee behavior
+- Polished Crest oil-film color:
+  - `Crest_SargassumOilFilm.shader` now applies an iridescent spectral shift driven by world-space density coordinates plus time

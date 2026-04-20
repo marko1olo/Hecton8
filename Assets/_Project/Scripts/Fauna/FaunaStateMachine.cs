@@ -99,6 +99,8 @@ namespace Hecton8.AI
             if (_scatterTimer > 0) _scatterTimer -= dt;
 
             FaunaBrain.AIState nextState = currentState;
+            bool hasDirectPlayerTransform = sensors.TryGetDirectPlayerTransform(out Transform directPlayerTransform);
+            bool hasPerceivedPlayerPosition = sensors.TryGetPerceivedPlayerPosition(out Vector3 perceivedPlayerPosition);
 
             // 1. Evaluate Transitions
             if (currentState == FaunaBrain.AIState.Sated)
@@ -125,17 +127,16 @@ namespace Hecton8.AI
             else if (isAggressive && (sensors.canSeePlayer || sensors.currentDistractor != null || sensors.currentPrey != null || sensors.currentScavengeTarget != null))
             {
                 // [REQ] Scavenger > Player > Prey
-                Transform targetToEvaluate = sensors.currentScavengeTarget ?? (sensors.currentDistractor ?? sensors.GetPlayerTransform());
+                Transform targetToEvaluate = sensors.currentScavengeTarget ?? (sensors.currentDistractor ?? directPlayerTransform);
                 if (targetToEvaluate == null) targetToEvaluate = sensors.currentPrey;
 
                 bool inTerritory = !useTerritory || (sensors.currentDistractor != null) || (sensors.currentPrey != null) ||
-                                 (sensors.GetPlayerTransform() != null && (sensors.GetPlayerTransform().position - _homePosition).sqrMagnitude <= (patrolRadius * patrolRadius));
+                                 (hasPerceivedPlayerPosition && (perceivedPlayerPosition - _homePosition).sqrMagnitude <= (patrolRadius * patrolRadius));
 
-                float stalkRad = stalkRadius;
                 float atkRad = _speciesProfile != null ? _speciesProfile.attackRadius : attackRadius;
                 int stalkPat = _speciesProfile != null ? _speciesProfile.stalkingPatience : 3;
 
-                if (inTerritory && targetToEvaluate != null)
+                if (inTerritory && (targetToEvaluate != null || hasPerceivedPlayerPosition))
                 {
                     if (currentState != FaunaBrain.AIState.Aggressive && currentState != FaunaBrain.AIState.Stalk)
                     {
@@ -149,7 +150,7 @@ namespace Hecton8.AI
                         if (stalkPat <= 0 && _stateTimer > stalkDuration) patienceDepleted = true;
                         
                         // Prey results in immediate aggression (hunger)
-                        if (sensors.currentPrey != null && sensors.GetPlayerTransform() == null) patienceDepleted = true;
+                        if (sensors.currentPrey != null && !hasDirectPlayerTransform) patienceDepleted = true;
 
                         if (patienceDepleted && sensors.currentDistractor == null)
                             nextState = FaunaBrain.AIState.Aggressive;
@@ -160,7 +161,7 @@ namespace Hecton8.AI
 
                 if (currentState == FaunaBrain.AIState.Aggressive)
                 {
-                    Transform target = sensors.currentScavengeTarget ?? (sensors.currentDistractor ?? (sensors.GetPlayerTransform() ?? sensors.currentPrey));
+                    Transform target = sensors.currentScavengeTarget ?? (sensors.currentDistractor ?? (directPlayerTransform ?? sensors.currentPrey));
                     if (target != null && Vector3.SqrMagnitude(target.position - selfPosition) <= atkRad * atkRad)
                     {
                         float retDur = _speciesProfile != null ? _speciesProfile.retreatDuration : retreatDuration;
@@ -205,9 +206,9 @@ namespace Hecton8.AI
                     break;
                 case FaunaBrain.AIState.Threaten:
                     currentSpeedMultiplier = 0.5f;
-                    if (sensors.GetPlayerTransform() != null)
+                    if (hasPerceivedPlayerPosition)
                     {
-                        Vector3 toPlayer = (sensors.GetPlayerTransform().position - selfPosition).normalized;
+                        Vector3 toPlayer = (perceivedPlayerPosition - selfPosition).normalized;
                         // Face the player but maintain distance
                         desiredDir = Vector3.Lerp(-toPlayer, Vector3.Cross(Vector3.up, toPlayer), 0.5f);
                     }
@@ -225,7 +226,7 @@ namespace Hecton8.AI
                     }
                     break;
                 case FaunaBrain.AIState.Stalk:
-                    Transform t = sensors.currentScavengeTarget ?? (sensors.currentDistractor ?? (sensors.GetPlayerTransform() ?? sensors.currentPrey));
+                    Transform t = sensors.currentScavengeTarget ?? (sensors.currentDistractor ?? (directPlayerTransform ?? sensors.currentPrey));
                     if (t != null)
                     {
                         Vector3 toT = (t.position - selfPosition).normalized;
@@ -239,24 +240,34 @@ namespace Hecton8.AI
                         }
                         _prevStalkDir = toT;
                     }
+                    else if (hasPerceivedPlayerPosition)
+                    {
+                        Vector3 toT = (perceivedPlayerPosition - selfPosition).normalized;
+                        desiredDir = Vector3.Cross(Vector3.up, toT).normalized;
+                        desiredDir = Vector3.Lerp(desiredDir, toT * (Vector3.Distance(perceivedPlayerPosition, selfPosition) > stalkRadius ? 1 : -1), 0.5f).normalized;
+                    }
                     break;
                 case FaunaBrain.AIState.Aggressive:
                     currentForceMultiplier = 2f; 
                     currentSpeedMultiplier = _speciesProfile != null ? _speciesProfile.aggressiveSpeedMultiplier : 1.3f;
-                    Transform target = sensors.currentScavengeTarget ?? (sensors.currentDistractor ?? (sensors.GetPlayerTransform() ?? sensors.currentPrey));
-                    if (target != null) desiredDir = (target.position - selfPosition).normalized;
+                    Transform target = sensors.currentScavengeTarget ?? (sensors.currentDistractor ?? (directPlayerTransform ?? sensors.currentPrey));
+                    if (target != null)
+                        desiredDir = (target.position - selfPosition).normalized;
+                    else if (hasPerceivedPlayerPosition)
+                        desiredDir = (perceivedPlayerPosition - selfPosition).normalized;
                     break;
                 case FaunaBrain.AIState.Retreat:
                     currentForceMultiplier = 2.5f; 
                     currentSpeedMultiplier = _speciesProfile != null ? _speciesProfile.retreatSpeedMultiplier : 1.5f; 
-                    Transform retreatTr = sensors.currentDistractor ?? sensors.GetPlayerTransform();
-                    Vector3 fleeFromPos = retreatTr != null ? retreatTr.position : _forcedThreatPos;
+                    Transform retreatTr = sensors.currentDistractor ?? directPlayerTransform;
+                    Vector3 fleeFromPos = retreatTr != null ? retreatTr.position : hasPerceivedPlayerPosition ? perceivedPlayerPosition : _forcedThreatPos;
                     desiredDir = (selfPosition - fleeFromPos).normalized; 
                     break;
                 case FaunaBrain.AIState.Escape:
                     currentForceMultiplier = 2.5f; 
                     currentSpeedMultiplier = _speciesProfile != null ? _speciesProfile.escapeSpeedMultiplier : 2f;
-                    if (sensors.GetPlayerTransform() != null) desiredDir = (selfPosition - sensors.GetPlayerTransform().position).normalized;
+                    if (hasPerceivedPlayerPosition)
+                        desiredDir = (selfPosition - perceivedPlayerPosition).normalized;
                     break;
                 case FaunaBrain.AIState.Flocking:
                     if (sensors.isScattering)

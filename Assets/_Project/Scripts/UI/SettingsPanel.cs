@@ -1,4 +1,5 @@
 using TMPro;
+using Hecton8.Modding;
 using UnityEngine;
 using UnityEngine.UI;
 using Hecton.Localization;
@@ -68,6 +69,9 @@ namespace Hecton8.UI
 
         [Header("=== COMPARISON VIEW ===")]
         [SerializeField] private SettingsComparisonView comparisonView;
+
+        [Header("=== MODS ===")]
+        [SerializeField] private ModMenuUIController modMenuController;
 
         [Header("=== PERFORMANCE ===")]
         [SerializeField, Tooltip("Apply button cooldown (seconds)")]
@@ -167,6 +171,7 @@ namespace Hecton8.UI
             LoadCurrentSettings();
             RefreshAllUI();
             RefreshLocalizedLabels();
+            modMenuController?.RefreshView();
 
             // Play fade-in animation
             if (panelAnimator != null)
@@ -769,6 +774,7 @@ namespace Hecton8.UI
         {
             RefreshAllUI();
             RefreshLocalizedLabels();
+            modMenuController?.RefreshView();
         }
 
         private void RefreshLocalizedLabels()

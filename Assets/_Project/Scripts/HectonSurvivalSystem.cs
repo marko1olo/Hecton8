@@ -1,5 +1,7 @@
 using System;
 using Hecton8.Core;
+using Hecton8.Meta;
+using Hecton8.Modding;
 using Hecton8.SaveSystem;
 using UnityEngine;
 using Unity.Mathematics;
@@ -7,6 +9,64 @@ using Hecton8.Atmosphere;
 
 namespace Hecton8.Gameplay
 {
+    public enum SurvivalDeathCause : byte
+    {
+        None = 0,
+        OxygenDepletion = 1,
+        PressureCollapse = 2,
+        ThermalFailure = 3,
+        RadiationExposure = 4,
+        Starvation = 5,
+        Dehydration = 6,
+        IntegrityFailure = 7
+    }
+
+    /// <summary>
+    /// Persisted telemetry for the last completed life.
+    /// Used by death-facing UX and navigation systems to surface the latest loss marker.
+    /// </summary>
+    public readonly struct SurvivalDeathRecord
+    {
+        public SurvivalDeathRecord(
+            SurvivalDeathCause cause,
+            Vector3 position,
+            float lifeDurationSeconds,
+            float peakDepthMeters,
+            float lowestOxygenNormalized,
+            float lowestEnergyNormalized,
+            float lowestIntegrityNormalized)
+        {
+            Cause = cause;
+            Position = position;
+            LifeDurationSeconds = lifeDurationSeconds;
+            PeakDepthMeters = peakDepthMeters;
+            LowestOxygenNormalized = lowestOxygenNormalized;
+            LowestEnergyNormalized = lowestEnergyNormalized;
+            LowestIntegrityNormalized = lowestIntegrityNormalized;
+        }
+
+        /// <summary>Resolved fatal cause for the recorded life.</summary>
+        public SurvivalDeathCause Cause { get; }
+
+        /// <summary>World-space position where the last life ended.</summary>
+        public Vector3 Position { get; }
+
+        /// <summary>Total survived time for the recorded life.</summary>
+        public float LifeDurationSeconds { get; }
+
+        /// <summary>Deepest reached depth for the recorded life.</summary>
+        public float PeakDepthMeters { get; }
+
+        /// <summary>Lowest normalized oxygen reached during the recorded life.</summary>
+        public float LowestOxygenNormalized { get; }
+
+        /// <summary>Lowest normalized energy reached during the recorded life.</summary>
+        public float LowestEnergyNormalized { get; }
+
+        /// <summary>Lowest normalized integrity reached during the recorded life.</summary>
+        public float LowestIntegrityNormalized { get; }
+    }
+
     /// <summary>
     /// Core survival simulation for the Hecton diving suit.
     /// Attach to the player GameObject and assign a SurvivalStats asset.
@@ -68,7 +128,22 @@ namespace Hecton8.Gameplay
         private HectonPlayerMovement _playerMovement;
         private PlayerTransportCoordinator _playerTransportCoordinator;
         private bool _surfaceContractUnderwater;
+        private float _runtimeOxygenCapacityMultiplier = 1f;
+        private SurvivalDeathCause _lastDeathCause;
+        private SurvivalDeathCause _pendingIntegrityDeathCause;
+        private float _currentLifeDurationSeconds;
+        private float _currentLifePeakDepthMeters;
+        private float _currentLifeLowestOxygenNormalized = 1f;
+        private float _currentLifeLowestEnergyNormalized = 1f;
+        private float _currentLifeLowestIntegrityNormalized = 1f;
+        private float _currentPressureExposureSeconds;
+        private float _currentPressurePeakExcessMeters;
+        private float _currentPressurePeakDamagePerSecond;
+        private SurvivalDeathRecord _lastDeathRecord;
+        private bool _hasLastDeathRecord;
         private const float HazardGraceDuration = 3f;
+        private const float PressureIncidentLogDurationThreshold = 4f;
+        private const float PressureIncidentLogExcessThreshold = 6f;
 
         private const float Epsilon       = 0.1f;
         private const float DirtySentinel = -9999f;
@@ -107,7 +182,7 @@ namespace Hecton8.Gameplay
         public bool  IsAlive             => alive;
         public SurvivalStats Stats       => stats;
 
-        public float OxygenNormalized    => oxygen    / stats.MaxOxygen;
+        public float OxygenNormalized    => oxygen    / ResolveRuntimeMaxOxygenCapacity();
         public float EnergyNormalized    => energy    / stats.MaxEnergy;
         public float IntegrityNormalized => integrity / stats.MaxIntegrity;
         public float HungerNormalized    => hunger    / stats.MaxHunger;
@@ -115,6 +190,27 @@ namespace Hecton8.Gameplay
         public float EnergyPercent       => EnergyNormalized * 100f;
         public float HungerPercent       => HungerNormalized * 100f;
         public float ThirstPercent       => ThirstNormalized * 100f;
+        public SurvivalDeathCause LastDeathCause => _lastDeathCause;
+        /// <summary>Total elapsed time for the currently active life.</summary>
+        public float CurrentLifeDurationSeconds => _currentLifeDurationSeconds;
+        /// <summary>Deepest reached depth for the currently active life.</summary>
+        public float CurrentLifePeakDepthMeters => _currentLifePeakDepthMeters;
+        /// <summary>True when a persisted last-loss marker record is available.</summary>
+        public bool HasLastDeathRecord => _hasLastDeathRecord;
+        /// <summary>World-space marker position for the latest recorded death.</summary>
+        public Vector3 LastDeathMarkerPosition => _lastDeathRecord.Position;
+        /// <summary>Latest persisted death telemetry record.</summary>
+        public SurvivalDeathRecord LastDeathRecord => _lastDeathRecord;
+        /// <summary>Signed margin to the authored safe depth. Negative values mean active overpressure.</summary>
+        public float SafeDepthMarginMeters => stats != null ? stats.SafeDepth - depth : 0f;
+        /// <summary>Positive metres beyond the safe depth envelope.</summary>
+        public float OverpressureMeters => stats != null ? math.max(0f, depth - stats.SafeDepth) : 0f;
+        /// <summary>True when the suit is already deeper than its safe depth rating.</summary>
+        public bool IsBeyondSafeDepth => OverpressureMeters > 0f;
+        /// <summary>Current integrity attrition per second caused by overpressure.</summary>
+        public float PressureDamagePerSecond => ResolveCurrentPressureDamagePerSecond();
+        /// <summary>Normalized live overpressure severity for advisory systems.</summary>
+        public float PressureExposureSeverity01 => ResolvePressureExposureSeverity01();
 
         // ═════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -159,6 +255,8 @@ namespace Hecton8.Gameplay
             if (!alive) return;
 
             ComputeDepthAndPressure();
+            TrackCurrentLifeTelemetry(deltaTime);
+            TrackPressureExposure(deltaTime);
             PublishDirty();
             CheckLethalConditions();
         }
@@ -202,7 +300,7 @@ namespace Hecton8.Gameplay
             if (!_surfaceContractUnderwater)
             {
                 oxygen = math.min(
-                    stats.MaxOxygen,
+                    ResolveRuntimeMaxOxygenCapacity(),
                     oxygen + surfaceOxygenRefillRate * dt);
                 return;
             }
@@ -212,7 +310,8 @@ namespace Hecton8.Gameplay
             if (oxygenConsumptionScale <= 0f)
                 return;
 
-            oxygen = math.max(0f, oxygen - stats.OxygenConsumptionRate * pressureFactor * oxygenConsumptionScale * dt);
+            DifficultyModifierData modifiers = DynamicDifficultyDirector.Current;
+            oxygen = math.max(0f, oxygen - stats.OxygenConsumptionRate * pressureFactor * oxygenConsumptionScale * modifiers.OxygenDepletionRate * dt);
         }
 
         private bool ResolveSurfaceContractUnderwater()
@@ -252,7 +351,9 @@ namespace Hecton8.Gameplay
 
             float excess = depth - stats.SafeDepth;
             float scale  = 1f + excess * stats.PressureScalePerMeter;
-            integrity = math.max(0f, integrity - stats.PressureDamageRate * scale * pressureDamageScale * dt);
+            float damageMultiplier = DynamicDifficultyDirector.Current.DamageMultiplier;
+            integrity = math.max(0f, integrity - stats.PressureDamageRate * scale * pressureDamageScale * damageMultiplier * dt);
+            MarkIntegrityDeathCauseIfNeeded(SurvivalDeathCause.PressureCollapse);
         }
 
         private void HandleTemperature(float dt)
@@ -293,6 +394,7 @@ namespace Hecton8.Gameplay
             // Thermal integrity damage
             float damage = stats.TempDamageRate * (1f + excess * 0.1f) * thermalExposureScale * dt;
             integrity = math.max(0f, integrity - damage);
+            MarkIntegrityDeathCauseIfNeeded(SurvivalDeathCause.ThermalFailure);
         }
 
         private void HandleRadiation(float dt)
@@ -324,6 +426,7 @@ namespace Hecton8.Gameplay
             float damage = excess * stats.RadiationDamageRate * radiationExposureScale * dt;
             
             integrity = math.max(0f, integrity - damage);
+            MarkIntegrityDeathCauseIfNeeded(SurvivalDeathCause.RadiationExposure);
         }
 
         private PlayerTransportPreset ResolveActiveTransportPreset()
@@ -377,12 +480,14 @@ namespace Hecton8.Gameplay
             if (hunger <= 0f)
             {
                 integrity = math.max(0f, integrity - stats.StarvationDamageRate * dt);
+                MarkIntegrityDeathCauseIfNeeded(SurvivalDeathCause.Starvation);
             }
 
             // Apply dehydration damage if thirst is 0
             if (thirst <= 0f)
             {
                 integrity = math.max(0f, integrity - stats.DehydrationDamageRate * dt);
+                MarkIntegrityDeathCauseIfNeeded(SurvivalDeathCause.Dehydration);
             }
         }
 
@@ -465,7 +570,11 @@ namespace Hecton8.Gameplay
             if (oxygen > 0f && integrity > 0f) return;
 
             alive = false;
+            _lastDeathCause = ResolveDeathCause();
+            CaptureDeathRecord();
+            RecordDeathTelemetry();
             OnDeath?.Invoke();
+            HectonEventBus.Publish(new PlayerDiedEvent(this, _lastDeathCause, _lastDeathRecord));
             enabled = false;
         }
 
@@ -475,7 +584,18 @@ namespace Hecton8.Gameplay
 
         public void RefillOxygen(float amount)
         {
-            oxygen = math.min(stats.MaxOxygen, oxygen + math.max(0f, amount));
+            oxygen = math.min(ResolveRuntimeMaxOxygenCapacity(), oxygen + math.max(0f, amount));
+            ForceDirty(ref lastPubOxygen);
+        }
+
+        /// <summary>
+        /// Applies a runtime-only oxygen-capacity multiplier without mutating the authored SurvivalStats asset.
+        /// </summary>
+        /// <param name="multiplier">Runtime oxygen-capacity multiplier.</param>
+        public void SetRuntimeOxygenCapacityMultiplier(float multiplier)
+        {
+            _runtimeOxygenCapacityMultiplier = Mathf.Clamp(multiplier, 0.5f, 4f);
+            oxygen = Mathf.Clamp(oxygen, 0f, ResolveRuntimeMaxOxygenCapacity());
             ForceDirty(ref lastPubOxygen);
         }
 
@@ -499,10 +619,38 @@ namespace Hecton8.Gameplay
             CheckLethalConditions();
         }
 
+        /// <summary>
+        /// Consumes a fixed amount of suit oxygen immediately.
+        /// </summary>
+        /// <param name="amount">Absolute amount of oxygen to remove.</param>
+        public void DrainOxygen(float amount)
+        {
+            if (amount <= 0f)
+                return;
+
+            oxygen = math.max(0f, oxygen - amount);
+            ForceDirty(ref lastPubOxygen);
+            CheckLethalConditions();
+        }
+
         public void TakeDamage(float amount)
         {
             if (!alive || amount <= 0f) return;
+
+            PlayerTakeDamageEvent damageEvent = HectonEventBus.Publish(new PlayerTakeDamageEvent(this, amount));
+            if (damageEvent == null || damageEvent.IsCancelled)
+                return;
+
+            amount = damageEvent.DamageAmount;
+            if (amount <= 0f)
+                return;
+
+            amount *= DynamicDifficultyDirector.Current.DamageMultiplier;
+            if (amount <= 0f)
+                return;
+
             integrity = math.max(0f, integrity - amount);
+            MarkIntegrityDeathCauseIfNeeded(SurvivalDeathCause.IntegrityFailure);
             ForceDirty(ref lastPubIntegrity);
             CheckLethalConditions();
         }
@@ -546,6 +694,25 @@ namespace Hecton8.Gameplay
             ForceAllDirty();
         }
 
+        /// <summary>
+        /// Returns the latest persisted death record when one exists.
+        /// </summary>
+        /// <param name="record">Latest last-loss telemetry record.</param>
+        public bool TryGetLastDeathRecord(out SurvivalDeathRecord record)
+        {
+            record = _lastDeathRecord;
+            return _hasLastDeathRecord;
+        }
+
+        /// <summary>
+        /// Resolves player-facing survival advice for a fatal cause.
+        /// </summary>
+        /// <param name="cause">Fatal cause to translate into tactical advice.</param>
+        public string GetDeathAdvice(SurvivalDeathCause cause)
+        {
+            return ResolveDeathAdvice(cause);
+        }
+
         // ═════════════════════════════════════════════════════════
         //  SAVE SYSTEM
         // ═════════════════════════════════════════════════════════
@@ -562,6 +729,19 @@ namespace Hecton8.Gameplay
             dto.weight = weight;
             dto.hunger = hunger;
             dto.thirst = thirst;
+            dto.currentLifeDurationSeconds = _currentLifeDurationSeconds;
+            dto.currentLifePeakDepthMeters = _currentLifePeakDepthMeters;
+            dto.currentLifeLowestOxygenNormalized = _currentLifeLowestOxygenNormalized;
+            dto.currentLifeLowestEnergyNormalized = _currentLifeLowestEnergyNormalized;
+            dto.currentLifeLowestIntegrityNormalized = _currentLifeLowestIntegrityNormalized;
+            dto.hasLastDeathRecord = _hasLastDeathRecord;
+            dto.lastDeathCause = (byte)_lastDeathRecord.Cause;
+            dto.lastDeathLifeDurationSeconds = _lastDeathRecord.LifeDurationSeconds;
+            dto.lastDeathPeakDepthMeters = _lastDeathRecord.PeakDepthMeters;
+            dto.lastDeathLowestOxygenNormalized = _lastDeathRecord.LowestOxygenNormalized;
+            dto.lastDeathLowestEnergyNormalized = _lastDeathRecord.LowestEnergyNormalized;
+            dto.lastDeathLowestIntegrityNormalized = _lastDeathRecord.LowestIntegrityNormalized;
+            dto.SetLastDeathPosition(_lastDeathRecord.Position);
             dto.SetPosition(transform.position);
             dto.SetRotation(transform.rotation);
         }
@@ -569,13 +749,33 @@ namespace Hecton8.Gameplay
         public void LoadFromSaveData(SaveData data)
         {
             PlayerStatsDTO dto = data.playerStats;
-            oxygen    = Mathf.Clamp(dto.oxygen,    0f, stats.MaxOxygen);
+            bool hasTelemetryV23 = data.version >= 23;
+            oxygen    = Mathf.Clamp(dto.oxygen,    0f, ResolveRuntimeMaxOxygenCapacity());
             energy    = Mathf.Clamp(dto.energy,    0f, stats.MaxEnergy);
             integrity = Mathf.Clamp(dto.integrity, 0f, stats.MaxIntegrity);
             weight    = Mathf.Max(0f, dto.weight);
             hunger    = Mathf.Clamp(dto.hunger,    0f, stats.MaxHunger);
             thirst    = Mathf.Clamp(dto.thirst,    0f, stats.MaxThirst);
+            _currentLifeDurationSeconds = hasTelemetryV23 ? Mathf.Max(0f, dto.currentLifeDurationSeconds) : 0f;
+            _currentLifePeakDepthMeters = hasTelemetryV23 ? Mathf.Max(0f, dto.currentLifePeakDepthMeters) : 0f;
+            _currentLifeLowestOxygenNormalized = hasTelemetryV23 ? Mathf.Clamp01(dto.currentLifeLowestOxygenNormalized) : OxygenNormalized;
+            _currentLifeLowestEnergyNormalized = hasTelemetryV23 ? Mathf.Clamp01(dto.currentLifeLowestEnergyNormalized) : EnergyNormalized;
+            _currentLifeLowestIntegrityNormalized = hasTelemetryV23 ? Mathf.Clamp01(dto.currentLifeLowestIntegrityNormalized) : IntegrityNormalized;
             alive     = oxygen > 0f && integrity > 0f;
+            _lastDeathCause = alive ? SurvivalDeathCause.None : ResolveDeathCause();
+            _pendingIntegrityDeathCause = SurvivalDeathCause.None;
+            _hasLastDeathRecord = hasTelemetryV23 && dto.hasLastDeathRecord;
+            _lastDeathRecord = _hasLastDeathRecord
+                ? new SurvivalDeathRecord(
+                    (SurvivalDeathCause)dto.lastDeathCause,
+                    dto.GetLastDeathPosition(),
+                    Mathf.Max(0f, dto.lastDeathLifeDurationSeconds),
+                    Mathf.Max(0f, dto.lastDeathPeakDepthMeters),
+                    Mathf.Clamp01(dto.lastDeathLowestOxygenNormalized),
+                    Mathf.Clamp01(dto.lastDeathLowestEnergyNormalized),
+                    Mathf.Clamp01(dto.lastDeathLowestIntegrityNormalized))
+                : default;
+            ResetPressureExposureTracking();
 
             Vector3 pos = dto.GetPosition();
             if (!float.IsNaN(pos.x)) transform.SetPositionAndRotation(pos, dto.GetRotation());
@@ -589,7 +789,7 @@ namespace Hecton8.Gameplay
 
         private void ResetToMax()
         {
-            oxygen    = stats.MaxOxygen;
+            oxygen    = ResolveRuntimeMaxOxygenCapacity();
             energy    = stats.MaxEnergy;
             integrity = stats.MaxIntegrity;
             hunger    = stats.MaxHunger;
@@ -598,6 +798,14 @@ namespace Hecton8.Gameplay
             pressure  = 1f;
             weight    = 0f;
             alive     = true;
+            _lastDeathCause = SurvivalDeathCause.None;
+            _pendingIntegrityDeathCause = SurvivalDeathCause.None;
+            _currentLifeDurationSeconds = 0f;
+            _currentLifePeakDepthMeters = 0f;
+            _currentLifeLowestOxygenNormalized = 1f;
+            _currentLifeLowestEnergyNormalized = 1f;
+            _currentLifeLowestIntegrityNormalized = 1f;
+            ResetPressureExposureTracking();
 
             _tempGraceTimer = 0f;
             _radGraceTimer  = 0f;
@@ -616,6 +824,218 @@ namespace Hecton8.Gameplay
             lastPubRad       = DirtySentinel;
             lastPubHunger    = DirtySentinel;
             lastPubThirst    = DirtySentinel;
+        }
+
+        private void MarkIntegrityDeathCauseIfNeeded(SurvivalDeathCause cause)
+        {
+            if (integrity <= 0f && cause != SurvivalDeathCause.None)
+                _pendingIntegrityDeathCause = cause;
+        }
+
+        private void TrackCurrentLifeTelemetry(float deltaTime)
+        {
+            _currentLifeDurationSeconds += deltaTime;
+
+            if (depth > _currentLifePeakDepthMeters)
+                _currentLifePeakDepthMeters = depth;
+
+            float oxygenNormalized = Mathf.Clamp01(OxygenNormalized);
+            if (oxygenNormalized < _currentLifeLowestOxygenNormalized)
+                _currentLifeLowestOxygenNormalized = oxygenNormalized;
+
+            float energyNormalized = Mathf.Clamp01(EnergyNormalized);
+            if (energyNormalized < _currentLifeLowestEnergyNormalized)
+                _currentLifeLowestEnergyNormalized = energyNormalized;
+
+            float integrityNormalized = Mathf.Clamp01(IntegrityNormalized);
+            if (integrityNormalized < _currentLifeLowestIntegrityNormalized)
+                _currentLifeLowestIntegrityNormalized = integrityNormalized;
+        }
+
+        private void TrackPressureExposure(float deltaTime)
+        {
+            float overpressureMeters = OverpressureMeters;
+            if (overpressureMeters <= 0f)
+            {
+                TryRecordPressureExposureTelemetry();
+                ResetPressureExposureTracking();
+                return;
+            }
+
+            _currentPressureExposureSeconds += deltaTime;
+            if (overpressureMeters > _currentPressurePeakExcessMeters)
+                _currentPressurePeakExcessMeters = overpressureMeters;
+
+            float damagePerSecond = ResolveCurrentPressureDamagePerSecond();
+            if (damagePerSecond > _currentPressurePeakDamagePerSecond)
+                _currentPressurePeakDamagePerSecond = damagePerSecond;
+        }
+
+        private SurvivalDeathCause ResolveDeathCause()
+        {
+            if (oxygen <= 0f)
+                return SurvivalDeathCause.OxygenDepletion;
+
+            if (integrity <= 0f)
+            {
+                if (_pendingIntegrityDeathCause != SurvivalDeathCause.None)
+                    return _pendingIntegrityDeathCause;
+
+                return SurvivalDeathCause.IntegrityFailure;
+            }
+
+            return SurvivalDeathCause.None;
+        }
+
+        private void CaptureDeathRecord()
+        {
+            _lastDeathRecord = new SurvivalDeathRecord(
+                _lastDeathCause,
+                transform.position,
+                _currentLifeDurationSeconds,
+                _currentLifePeakDepthMeters,
+                _currentLifeLowestOxygenNormalized,
+                _currentLifeLowestEnergyNormalized,
+                _currentLifeLowestIntegrityNormalized);
+            _hasLastDeathRecord = true;
+        }
+
+        private void TryRecordPressureExposureTelemetry()
+        {
+            if (_currentPressureExposureSeconds < PressureIncidentLogDurationThreshold &&
+                _currentPressurePeakExcessMeters < PressureIncidentLogExcessThreshold)
+            {
+                return;
+            }
+
+            FieldOperationLogSystem.RecordOperation(
+                "SUIT",
+                "PRESSURE WINDOW BREACHED",
+                BuildPressureExposureSummary(),
+                "WARN");
+        }
+
+        private void RecordDeathTelemetry()
+        {
+            if (!_hasLastDeathRecord)
+                return;
+
+            string summary = string.Format(
+                "Cause {0} // Life {1:0}s // Peak {2:0}m // O2 low {3:0}% // PWR low {4:0}% // Marker {5:0},{6:0},{7:0}. Advice: {8}",
+                ResolveDeathCauseLabel(_lastDeathRecord.Cause),
+                _lastDeathRecord.LifeDurationSeconds,
+                _lastDeathRecord.PeakDepthMeters,
+                _lastDeathRecord.LowestOxygenNormalized * 100f,
+                _lastDeathRecord.LowestEnergyNormalized * 100f,
+                _lastDeathRecord.Position.x,
+                _lastDeathRecord.Position.y,
+                _lastDeathRecord.Position.z,
+                ResolveDeathAdvice(_lastDeathRecord.Cause));
+
+            FieldOperationLogSystem.RecordOperation(
+                "SUIT",
+                "LAST LOSS MARKER UPDATED",
+                summary,
+                "CRITICAL");
+        }
+
+        private static string ResolveDeathAdvice(SurvivalDeathCause cause)
+        {
+            switch (cause)
+            {
+                case SurvivalDeathCause.OxygenDepletion:
+                    return "Break ascent and return routing at 25% oxygen. Do not wait for critical reserve.";
+                case SurvivalDeathCause.PressureCollapse:
+                    return "Respect safe-depth margin. Pull back before hull stress starts compounding.";
+                case SurvivalDeathCause.ThermalFailure:
+                    return "Do not hold in thermal pockets without power reserve or heat shielding.";
+                case SurvivalDeathCause.RadiationExposure:
+                    return "Cross irradiated lanes fast. Do not idle inside contaminated sectors.";
+                case SurvivalDeathCause.Starvation:
+                    return "Carry food before long extraction pushes. Integrity attrition is slower but terminal.";
+                case SurvivalDeathCause.Dehydration:
+                    return "Hydration is a hard timer. Refill before deep transit, not after.";
+                case SurvivalDeathCause.IntegrityFailure:
+                    return "Repair hull damage early. Stacked chip damage is what kills late in the run.";
+                default:
+                    return "Rebuild a shorter route and recover margin before the next deep push.";
+            }
+        }
+
+        private float ResolveCurrentPressureDamagePerSecond()
+        {
+            if (stats == null)
+                return 0f;
+
+            float overpressureMeters = OverpressureMeters;
+            if (overpressureMeters <= 0f)
+                return 0f;
+
+            float pressureDamageScale = ResolveTransportPressureDamageScale();
+            if (pressureDamageScale <= 0f)
+                return 0f;
+
+            float scale = 1f + overpressureMeters * stats.PressureScalePerMeter;
+            return stats.PressureDamageRate * scale * pressureDamageScale;
+        }
+
+        private float ResolvePressureExposureSeverity01()
+        {
+            if (stats == null)
+                return 0f;
+
+            float safeDepth = Mathf.Max(1f, stats.SafeDepth);
+            float overpressureSeverity = Mathf.Clamp01(OverpressureMeters / Mathf.Max(8f, safeDepth * 0.3f));
+            float damageSeverity = Mathf.Clamp01(ResolveCurrentPressureDamagePerSecond() / Mathf.Max(1f, stats.MaxIntegrity * 0.08f));
+            return Mathf.Clamp01(overpressureSeverity * 0.65f + damageSeverity * 0.35f);
+        }
+
+        private string BuildPressureExposureSummary()
+        {
+            return string.Format(
+                "Exceeded safe depth by {0:0}m for {1:0}s // Peak hull attrition {2:0.0}/s // Suit rating {3:0}m",
+                _currentPressurePeakExcessMeters,
+                _currentPressureExposureSeconds,
+                _currentPressurePeakDamagePerSecond,
+                stats != null ? stats.SafeDepth : 0f);
+        }
+
+        private void ResetPressureExposureTracking()
+        {
+            _currentPressureExposureSeconds = 0f;
+            _currentPressurePeakExcessMeters = 0f;
+            _currentPressurePeakDamagePerSecond = 0f;
+        }
+
+        private static string ResolveDeathCauseLabel(SurvivalDeathCause cause)
+        {
+            switch (cause)
+            {
+                case SurvivalDeathCause.OxygenDepletion:
+                    return "OXYGEN";
+                case SurvivalDeathCause.PressureCollapse:
+                    return "PRESSURE";
+                case SurvivalDeathCause.ThermalFailure:
+                    return "THERMAL";
+                case SurvivalDeathCause.RadiationExposure:
+                    return "RADIATION";
+                case SurvivalDeathCause.Starvation:
+                    return "STARVATION";
+                case SurvivalDeathCause.Dehydration:
+                    return "DEHYDRATION";
+                case SurvivalDeathCause.IntegrityFailure:
+                    return "INTEGRITY";
+                default:
+                    return "UNKNOWN";
+            }
+        }
+
+        private float ResolveRuntimeMaxOxygenCapacity()
+        {
+            if (stats == null)
+                return 0f;
+
+            return Mathf.Max(1f, stats.MaxOxygen * _runtimeOxygenCapacityMultiplier);
         }
 
         private static void ForceDirty(ref float lastPub) => lastPub = DirtySentinel;

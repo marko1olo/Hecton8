@@ -43,9 +43,15 @@ namespace Hecton8.UI
         private const string MsgEnergyWarning = "SUIT POWER LOW";
         private const string MsgIntegrityWarning = "SUIT INTEGRITY DEGRADED";
         private const string MsgIntegrityCritical = "SUIT INTEGRITY CRITICAL";
-        private const string MsgDepthWarning = "DEPTH LIMIT APPROACHING";
-        private const string MsgDepthCritical = "DEPTH LIMIT EXCEEDED";
         private const string MsgDeath = "SUIT FAILURE";
+        private const string MsgDeathOxygen = "FATALITY: OXYGEN DEPLETED";
+        private const string MsgDeathPressure = "FATALITY: PRESSURE COLLAPSE";
+        private const string MsgDeathThermal = "FATALITY: THERMAL FAILURE";
+        private const string MsgDeathRadiation = "FATALITY: RADIATION EXPOSURE";
+        private const string MsgDeathStarvation = "FATALITY: STARVATION";
+        private const string MsgDeathDehydration = "FATALITY: DEHYDRATION";
+        private const string MsgDeathIntegrity = "FATALITY: STRUCTURAL FAILURE";
+        private const string MsgBaseBreach = "BASE BREACH DETECTED";
 
         private void Awake()
         {
@@ -84,6 +90,10 @@ namespace Hecton8.UI
 
         private void Subscribe()
         {
+            BaseIntegrityEvents.OnModuleBreached += HandleModuleBreached;
+            BaseIntegrityEvents.OnModuleEmergency += HandleModuleEmergency;
+            BaseIntegrityEvents.OnModuleAirQualityWarning += HandleModuleAirQualityWarning;
+
             if (survival == null)
                 return;
 
@@ -96,14 +106,18 @@ namespace Hecton8.UI
 
         private void Unsubscribe()
         {
-            if (survival == null)
-                return;
+            if (survival != null)
+            {
+                survival.OnOxygenChanged -= HandleOxygenChanged;
+                survival.OnEnergyChanged -= HandleEnergyChanged;
+                survival.OnIntegrityChanged -= HandleIntegrityChanged;
+                survival.OnDepthChanged -= HandleDepthChanged;
+                survival.OnDeath -= HandleDeath;
+            }
 
-            survival.OnOxygenChanged -= HandleOxygenChanged;
-            survival.OnEnergyChanged -= HandleEnergyChanged;
-            survival.OnIntegrityChanged -= HandleIntegrityChanged;
-            survival.OnDepthChanged -= HandleDepthChanged;
-            survival.OnDeath -= HandleDeath;
+            BaseIntegrityEvents.OnModuleBreached -= HandleModuleBreached;
+            BaseIntegrityEvents.OnModuleEmergency -= HandleModuleEmergency;
+            BaseIntegrityEvents.OnModuleAirQualityWarning -= HandleModuleAirQualityWarning;
         }
 
         private void EvaluateAll()
@@ -196,17 +210,17 @@ namespace Hecton8.UI
             if (survival == null || survival.Stats == null)
                 return;
 
-            float remaining = survival.Stats.SafeDepth - depth;
+            float remaining = survival.SafeDepthMarginMeters;
 
             if (!_depthCritical && remaining <= safeDepthCriticalMargin)
             {
                 _depthCritical = true;
-                NotifyCritical(MsgDepthCritical);
+                NotifyCritical(BuildDepthCriticalMessage());
             }
             else if (!_depthWarned && remaining <= safeDepthWarningMargin)
             {
                 _depthWarned = true;
-                NotifyWarning(MsgDepthWarning);
+                NotifyWarning(BuildDepthWarningMessage(remaining));
             }
 
             if (remaining > safeDepthWarningMargin + 5f)
@@ -226,7 +240,34 @@ namespace Hecton8.UI
                 return;
 
             _deathTriggered = true;
-            NotifyCritical(MsgDeath);
+            NotifyCritical(ResolveDeathMessage());
+
+            if (survival != null && survival.TryGetLastDeathRecord(out SurvivalDeathRecord record))
+            {
+                NotifyWarning(BuildDeathAdvice(record.Cause));
+                NotifyInfo(BuildDeathSummary(record));
+            }
+        }
+
+        private void HandleModuleBreached()
+        {
+            NotifyCritical(MsgBaseBreach);
+        }
+
+        private void HandleModuleEmergency(BaseModuleFailureMode failureMode, float integrity)
+        {
+            NotifyWarning(BuildBaseEmergencyMessage(failureMode, integrity));
+        }
+
+        private void HandleModuleAirQualityWarning(float airQualityNormalized)
+        {
+            if (airQualityNormalized <= 0.12f)
+            {
+                NotifyCritical(BuildAirQualityMessage(airQualityNormalized));
+                return;
+            }
+
+            NotifyWarning(BuildAirQualityMessage(airQualityNormalized));
         }
 
         private void NotifyWarning(string message)
@@ -241,6 +282,11 @@ namespace Hecton8.UI
             PlayUiClip(criticalClip != null ? criticalClip : warningClip);
         }
 
+        private void NotifyInfo(string message)
+        {
+            hudNotification?.ShowInfo(message);
+        }
+
         private void PlayUiClip(AudioClip clip)
         {
             if (clip == null)
@@ -249,6 +295,99 @@ namespace Hecton8.UI
             SpatialAudioManager audio = SpatialAudioManager.Instance;
             if (audio != null)
                 audio.PlayStatic2D(clip, uiVolume);
+        }
+
+        private string ResolveDeathMessage()
+        {
+            if (survival == null)
+                return MsgDeath;
+
+            switch (survival.LastDeathCause)
+            {
+                case SurvivalDeathCause.OxygenDepletion:
+                    return MsgDeathOxygen;
+                case SurvivalDeathCause.PressureCollapse:
+                    return MsgDeathPressure;
+                case SurvivalDeathCause.ThermalFailure:
+                    return MsgDeathThermal;
+                case SurvivalDeathCause.RadiationExposure:
+                    return MsgDeathRadiation;
+                case SurvivalDeathCause.Starvation:
+                    return MsgDeathStarvation;
+                case SurvivalDeathCause.Dehydration:
+                    return MsgDeathDehydration;
+                case SurvivalDeathCause.IntegrityFailure:
+                    return MsgDeathIntegrity;
+                default:
+                    return MsgDeath;
+            }
+        }
+
+        private string BuildDeathAdvice(SurvivalDeathCause cause)
+        {
+            if (survival == null)
+                return "SURVIVAL ADVICE: REBUILD YOUR SAFETY MARGIN BEFORE THE NEXT PUSH";
+
+            return $"SURVIVAL ADVICE: {survival.GetDeathAdvice(cause).ToUpperInvariant()}";
+        }
+
+        private static string BuildDeathSummary(SurvivalDeathRecord record)
+        {
+            int totalSeconds = Mathf.Max(0, Mathf.RoundToInt(record.LifeDurationSeconds));
+            int minutes = totalSeconds / 60;
+            int seconds = totalSeconds % 60;
+
+            return string.Format(
+                "LAST RUN {0:00}:{1:00} // PEAK {2:0}M // O2 LOW {3:0}% // PWR LOW {4:0}% // HULL LOW {5:0}%",
+                minutes,
+                seconds,
+                record.PeakDepthMeters,
+                record.LowestOxygenNormalized * 100f,
+                record.LowestEnergyNormalized * 100f,
+                record.LowestIntegrityNormalized * 100f);
+        }
+
+        private static string BuildBaseEmergencyMessage(BaseModuleFailureMode failureMode, float integrity)
+        {
+            int integrityPercent = Mathf.Clamp(Mathf.RoundToInt(integrity * 100f), 0, 100);
+
+            switch (failureMode)
+            {
+                case BaseModuleFailureMode.OxygenLeak:
+                    return $"BASE OXYGEN LEAK // SHELTER UNSAFE // HULL {integrityPercent}%";
+                case BaseModuleFailureMode.Fire:
+                    return $"BASE FIRE // EVACUATE OR REPAIR // HULL {integrityPercent}%";
+                case BaseModuleFailureMode.ShortCircuit:
+                    return $"BASE SHORT CIRCUIT // POWER OFFLINE // HULL {integrityPercent}%";
+                default:
+                    return $"BASE EMERGENCY // HULL {integrityPercent}%";
+            }
+        }
+
+        private static string BuildAirQualityMessage(float airQualityNormalized)
+        {
+            int reservePercent = Mathf.Clamp(Mathf.RoundToInt(airQualityNormalized * 100f), 0, 100);
+            return $"BASE AIR QUALITY LOW // SCRUBBERS {reservePercent}%";
+        }
+
+        private string BuildDepthWarningMessage(float safeDepthMarginMeters)
+        {
+            float displayedMargin = Mathf.Max(0f, safeDepthMarginMeters);
+            return string.Format(
+                "SAFE DEPTH WINDOW {0:0}M // SUIT RATING {1:0}M",
+                displayedMargin,
+                survival != null && survival.Stats != null ? survival.Stats.SafeDepth : 0f);
+        }
+
+        private string BuildDepthCriticalMessage()
+        {
+            if (survival == null)
+                return "PRESSURE DAMAGE ACTIVE";
+
+            return string.Format(
+                "PRESSURE DAMAGE ACTIVE // +{0:0}M // HULL {1:0.0}/S",
+                survival.OverpressureMeters,
+                survival.PressureDamagePerSecond);
         }
     }
 }

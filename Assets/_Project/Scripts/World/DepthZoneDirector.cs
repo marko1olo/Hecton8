@@ -22,6 +22,9 @@ using Hecton8.Gameplay;
 using Hecton8.Quest;
 using Hecton8.UI;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Hecton8.World
 {
@@ -48,6 +51,8 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-105)]
     public sealed class DepthZoneDirector : MonoBehaviour, ISlowTickable
     {
+        private const string DepthZoneDataRoot = "Assets/_Project/Data/Lore/DepthZones";
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -391,5 +396,81 @@ namespace Hecton8.World
 
             _registered = false;
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            if (Application.isPlaying)
+                return;
+
+            TryAutoPopulateZones();
+            RebuildZoneMessageCache();
+        }
+
+        private void TryAutoPopulateZones()
+        {
+            if (zones != null && zones.Length > 0)
+                return;
+
+            string[] guids = AssetDatabase.FindAssets("t:DepthZoneProfile", new[] { DepthZoneDataRoot });
+            if (guids == null || guids.Length <= 0)
+                return;
+
+            DepthZoneProfile[] loadedZones = new DepthZoneProfile[guids.Length];
+            int loadedCount = 0;
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                DepthZoneProfile zone = AssetDatabase.LoadAssetAtPath<DepthZoneProfile>(path);
+                if (zone == null)
+                    continue;
+
+                loadedZones[loadedCount] = zone;
+                loadedCount++;
+            }
+
+            if (loadedCount <= 0)
+                return;
+
+            if (loadedCount != loadedZones.Length)
+            {
+                DepthZoneProfile[] compactZones = new DepthZoneProfile[loadedCount];
+                System.Array.Copy(loadedZones, compactZones, loadedCount);
+                loadedZones = compactZones;
+            }
+
+            SortZonesByMinDepth(loadedZones);
+            zones = loadedZones;
+            EditorUtility.SetDirty(this);
+        }
+
+        private static void SortZonesByMinDepth(DepthZoneProfile[] authoredZones)
+        {
+            if (authoredZones == null || authoredZones.Length <= 1)
+                return;
+
+            for (int i = 0; i < authoredZones.Length - 1; i++)
+            {
+                int bestIndex = i;
+                float bestDepth = authoredZones[i] != null ? authoredZones[i].minDepth : float.MaxValue;
+                for (int j = i + 1; j < authoredZones.Length; j++)
+                {
+                    float candidateDepth = authoredZones[j] != null ? authoredZones[j].minDepth : float.MaxValue;
+                    if (candidateDepth < bestDepth)
+                    {
+                        bestIndex = j;
+                        bestDepth = candidateDepth;
+                    }
+                }
+
+                if (bestIndex == i)
+                    continue;
+
+                DepthZoneProfile swap = authoredZones[i];
+                authoredZones[i] = authoredZones[bestIndex];
+                authoredZones[bestIndex] = swap;
+            }
+        }
+#endif
     }
 }

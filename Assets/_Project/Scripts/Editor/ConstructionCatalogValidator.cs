@@ -19,6 +19,10 @@ namespace Hecton8.EditorTools
             int errorCount = 0;
             int warningCount = 0;
             HashSet<string> moduleNames = new HashSet<string>(System.StringComparer.Ordinal);
+            HashSet<string> moduleIds = new HashSet<string>(System.StringComparer.Ordinal);
+            Dictionary<string, BuildableData> identityAliases = new Dictionary<string, BuildableData>(System.StringComparer.Ordinal);
+            List<BuildableData> discoveredBuildables = new List<BuildableData>(buildableGuids.Length);
+            HashSet<BuildableData> catalogReferencedBuildables = new HashSet<BuildableData>();
 
             for (int i = 0; i < buildableGuids.Length; i++)
             {
@@ -27,7 +31,8 @@ namespace Hecton8.EditorTools
                 if (data == null)
                     continue;
 
-                ValidateBuildable(path, data, moduleNames, ref errorCount, ref warningCount);
+                discoveredBuildables.Add(data);
+                ValidateBuildable(path, data, moduleNames, moduleIds, identityAliases, ref errorCount, ref warningCount);
             }
 
             for (int i = 0; i < catalogGuids.Length; i++)
@@ -37,8 +42,10 @@ namespace Hecton8.EditorTools
                 if (catalog == null)
                     continue;
 
-                ValidateCatalog(path, catalog, ref errorCount, ref warningCount);
+                ValidateCatalog(path, catalog, catalogReferencedBuildables, ref errorCount, ref warningCount);
             }
+
+            ValidateCatalogCoverage(discoveredBuildables, catalogReferencedBuildables, ref warningCount);
 
             if (errorCount <= 0 && warningCount <= 0)
             {
@@ -53,6 +60,8 @@ namespace Hecton8.EditorTools
             string path,
             BuildableData data,
             HashSet<string> moduleNames,
+            HashSet<string> moduleIds,
+            Dictionary<string, BuildableData> identityAliases,
             ref int errorCount,
             ref int warningCount)
         {
@@ -66,6 +75,31 @@ namespace Hecton8.EditorTools
                 Debug.LogError($"[ConstructionValidation] Duplicate moduleName '{data.moduleName}': {path}", data);
                 errorCount++;
             }
+
+            string persistentId = data.PersistentId;
+            if (string.IsNullOrWhiteSpace(persistentId))
+            {
+                Debug.LogError($"[ConstructionValidation] Buildable resolves to empty PersistentId: {path}", data);
+                errorCount++;
+            }
+            else if (!moduleIds.Add(persistentId))
+            {
+                Debug.LogError($"[ConstructionValidation] Duplicate PersistentId '{persistentId}': {path}", data);
+                errorCount++;
+            }
+
+            SerializedObject serializedData = new SerializedObject(data);
+            SerializedProperty stableIdProperty = serializedData.FindProperty("stableId");
+            if (stableIdProperty == null || string.IsNullOrWhiteSpace(stableIdProperty.stringValue))
+            {
+                Debug.LogWarning(
+                    $"[ConstructionValidation] Buildable relies on asset-name fallback for PersistentId. Stamp explicit stableId before rename-sensitive content work: {path}",
+                    data);
+                warningCount++;
+            }
+
+            RegisterAlias(identityAliases, persistentId, data, path, ref errorCount);
+            RegisterAlias(identityAliases, data.name, data, path, ref errorCount);
 
             if (data.ghostPrefab == null)
             {
@@ -120,6 +154,7 @@ namespace Hecton8.EditorTools
         private static void ValidateCatalog(
             string path,
             ModuleCatalog catalog,
+            HashSet<BuildableData> catalogReferencedBuildables,
             ref int errorCount,
             ref int warningCount)
         {
@@ -149,6 +184,69 @@ namespace Hecton8.EditorTools
                         catalog);
                     warningCount++;
                 }
+
+                if (!ReferenceEquals(catalog.FindDataById(module.PersistentId), module))
+                {
+                    Debug.LogError(
+                        $"[ConstructionValidation] ModuleCatalog does not resolve PersistentId '{module.PersistentId}' to '{module.moduleName}': {path}",
+                        catalog);
+                    errorCount++;
+                }
+
+                if (!string.IsNullOrWhiteSpace(module.name) &&
+                    !ReferenceEquals(catalog.FindDataById(module.name), module))
+                {
+                    Debug.LogError(
+                        $"[ConstructionValidation] ModuleCatalog legacy alias lookup failed for asset '{module.name}': {path}",
+                        catalog);
+                    errorCount++;
+                }
+
+                catalogReferencedBuildables.Add(module);
+            }
+        }
+
+        private static void RegisterAlias(
+            Dictionary<string, BuildableData> identityAliases,
+            string alias,
+            BuildableData data,
+            string path,
+            ref int errorCount)
+        {
+            if (string.IsNullOrWhiteSpace(alias) || data == null)
+                return;
+
+            if (identityAliases.TryGetValue(alias, out BuildableData existing))
+            {
+                if (!ReferenceEquals(existing, data))
+                {
+                    Debug.LogError(
+                        $"[ConstructionValidation] Identity alias collision '{alias}' between '{existing.name}' and '{data.name}': {path}",
+                        data);
+                    errorCount++;
+                }
+
+                return;
+            }
+
+            identityAliases.Add(alias, data);
+        }
+
+        private static void ValidateCatalogCoverage(
+            List<BuildableData> discoveredBuildables,
+            HashSet<BuildableData> catalogReferencedBuildables,
+            ref int warningCount)
+        {
+            for (int i = 0; i < discoveredBuildables.Count; i++)
+            {
+                BuildableData data = discoveredBuildables[i];
+                if (data == null || catalogReferencedBuildables.Contains(data))
+                    continue;
+
+                Debug.LogWarning(
+                    $"[ConstructionValidation] Buildable '{data.name}' is not referenced by any ModuleCatalog.",
+                    data);
+                warningCount++;
             }
         }
     }

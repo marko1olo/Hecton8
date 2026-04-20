@@ -811,7 +811,7 @@ namespace Hecton8.Gameplay
             if (item == null)
                 return false;
 
-            string itemId = string.IsNullOrWhiteSpace(item.name) ? item.itemName : item.name;
+            string itemId = item.PersistentId;
             if (string.IsNullOrWhiteSpace(itemId))
                 return false;
 
@@ -830,7 +830,7 @@ namespace Hecton8.Gameplay
                 return false;
 
             BuildableData data = marker.Data;
-            string moduleId = string.IsNullOrWhiteSpace(data.name) ? data.moduleName : data.name;
+            string moduleId = data.PersistentId;
             if (string.IsNullOrWhiteSpace(moduleId))
                 return false;
 
@@ -838,11 +838,43 @@ namespace Hecton8.Gameplay
                 ? ResolveLocalized(LocalizationKeys.SCANNER_TITLE_UNIDENTIFIED_MODULE, "UNIDENTIFIED MODULE")
                 : ZeroGCStringCache.CachedToUpperInvariant(data.moduleName);
             string category = $"Construction/{data.FamilyLabel}";
-            string summary = string.IsNullOrWhiteSpace(data.description)
-                ? $"Base module archived. Power role: {DescribePowerRole(data)}."
-                : data.description.Trim();
+            string summary = BuildModuleSummary(marker, data);
             ScanEvents.OnEntryDiscovered?.Invoke($"module.{moduleId}".ToLowerInvariant(), title, category, summary);
             return true;
+        }
+
+        private static string BuildModuleSummary(ModuleMarker marker, BuildableData data)
+        {
+            if (marker != null)
+            {
+                if (marker.TryGetComponent(out BaseModule baseModule))
+                {
+                    switch (baseModule.CurrentFailureMode)
+                    {
+                        case BaseModuleFailureMode.OxygenLeak:
+                            return "Service module is venting breathable reserves. Stabilize seals and restore compartment safety before reuse.";
+                        case BaseModuleFailureMode.Fire:
+                            return "Service module is in active fire state. Hull repair and immediate compartment suppression take priority.";
+                        case BaseModuleFailureMode.ShortCircuit:
+                            return "Service module is shorted and power-locked. Restore hull integrity and electrical service before restart.";
+                    }
+
+                    if (baseModule.IsAirQualityLow)
+                        return "Service module is holding stale breathable reserve. Restore scrubber margin before treating this compartment as safe shelter.";
+                }
+
+                switch (marker.SpatialRole)
+                {
+                    case FieldTargetRole.ServiceDamaged:
+                        return "Service module is damaged and should be prioritized for hull repair before deeper field work.";
+                    case FieldTargetRole.ServiceFlooded:
+                        return "Service module is flooded or venting and now reads as an emergency recovery target.";
+                }
+            }
+
+            return string.IsNullOrWhiteSpace(data.description)
+                ? $"Base module archived. Power role: {DescribePowerRole(data)}."
+                : data.description.Trim();
         }
 
         private static bool MatchesMode(

@@ -12,33 +12,43 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a49e6475ccf8054419a7fba4c7a78a5c, type: 3}
   m_Name: Item_Tool_EnvAnalyzer
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
-  itemName: Environmental Analyzer
+  legacyItemName: Environmental Analyzer
+  stableId: Item_Tool_EnvAnalyzer
   localizedItemName:
     tableKey: ITEM_TOOL_ENV_ANALYZER_NAME
-    fallbackText: "Environmental Analyzer"
+    fallbackText: Environmental Analyzer
     variants: []
   icon: {fileID: 0}
-  description: Reads pressure, toxicity, acidity, radiation and biome hazard signatures
-    in the field.
+  legacyDescription: Reads pressure, toxicity, acidity, radiation and biome hazard
+    signatures in the field.
   localizedDescription:
     tableKey: ITEM_TOOL_ENV_ANALYZER_DESCRIPTION
-    fallbackText: "Reads pressure, toxicity, acidity, radiation and biome hazard signatures in the field."
+    fallbackText: Reads pressure, toxicity, acidity, radiation and biome hazard signatures
+      in the field.
     variants: []
   weight: 1.4
   stackable: 0
   maxStack: 1
   category: 2
+  resourceFamily: 0
+  progressionTier: 0
+  isRawResource: 0
+  minDepth: 0
+  maxDepth: 0
   width: 2
   height: 1
   isConsumable: 0
+  useDuration: 0
   oxygenRestore: 0
   energyRestore: 0
   integrityRestore: 0
+  hungerRestore: 0
+  thirstRestore: 0
   useSound: {fileID: 0}
-  interactVerb: Take
+  legacyInteractVerb: Take
   localizedInteractVerb:
     tableKey: ITEM_INTERACT_TAKE
-    fallbackText: "Take"
+    fallbackText: Take
     variants: []
   worldPrefab: {fileID: 100100000, guid: f31fbadc22133c74a9c4e0dafbec547e, type: 3}
   worldBuoyancyProfile: {fileID: 11400000, guid: 3d11ab4b6f12cac4a9410e735e06e486, type: 2}

@@ -18,6 +18,14 @@ namespace Hecton8.Gameplay
         private const float HeavySuitMassThreshold = 220f;
         private const string LeftGuideName = "Swim_LeftGuide";
         private const string RightGuideName = "Swim_RightGuide";
+        private static readonly int _WaveSlopeForwardHash = Animator.StringToHash("WaveSlopeForward");
+        private static readonly int _WaveSlopeLateralHash = Animator.StringToHash("WaveSlopeLateral");
+        private static readonly int _WaveSlopeXHash = Animator.StringToHash("WaveSlopeX");
+        private static readonly int _WaveSlopeZHash = Animator.StringToHash("WaveSlopeZ");
+        private static readonly int _WaveCrestReachHash = Animator.StringToHash("WaveCrestReach");
+        private static readonly int _WaveDescentTuckHash = Animator.StringToHash("WaveDescentTuck");
+        private static readonly int _WaveLeanWeightHash = Animator.StringToHash("WaveLeanWeight");
+        private static readonly int _ImmersionDepthHash = Animator.StringToHash("ImmersionDepth");
 
         private static readonly string[] s_modeLabels =
         {
@@ -57,6 +65,9 @@ namespace Hecton8.Gameplay
 
         [Tooltip("Optional render-layer slave that visualizes the current swim presentation with near-camera blockout arms.")]
         [SerializeField] private PlayerSwimBlockoutRig swimBlockoutRig;
+
+        [Tooltip("Optional animator that receives Crest-derived wave-slope parameters for spine leaning and future IK.")]
+        [SerializeField] private Animator swimAnimator;
 
         [Tooltip("Future swim viewmodel root driven by this controller.")]
         [SerializeField] private Transform viewModelRoot;
@@ -448,6 +459,13 @@ namespace Hecton8.Gameplay
         [Tooltip("How much the freer hand can recover propulsion when only one arm is crowded by geometry. This preserves one-handed sculling instead of collapsing all forward drive.")]
         [SerializeField, Range(0f, 0.5f)] private float obstaclePropulsionCompensation = 0.16f;
 
+        [Header("-- Wave Animation Bridge --------------")]
+        [Tooltip("How quickly Crest-derived wave slope signals blend into animator parameters.")]
+        [SerializeField, Range(1f, 24f)] private float animatorWaveSignalBlendSpeed = 9f;
+
+        [Tooltip("Wave slope magnitude that maps to a full animator response of 1.")]
+        [SerializeField, Range(0.1f, 3f)] private float animatorWaveSlopeNormalization = 1.15f;
+
         [Header("-- Root Obstacle Response -------------")]
         [Tooltip("How much nearby wall pressure shifts the swim root sideways away from the blocked hand.")]
         [SerializeField, Range(0f, 0.05f)] private float obstacleRootLateralBias = 0.012f;
@@ -555,6 +573,12 @@ namespace Hecton8.Gameplay
         private float _rightObstacleWeightVelocity;
         private float _rightObstacleSideBiasCurrent;
         private float _rightObstacleSideBiasVelocity;
+        private float _waveSlopeForwardCurrent;
+        private float _waveSlopeLateralCurrent;
+        private float _waveCrestReachCurrent;
+        private float _waveDescentTuckCurrent;
+        private float _waveLeanWeightCurrent;
+        private float _immersionDepthCurrent;
         private float _leftObstacleVerticalBiasCurrent;
         private float _leftObstacleVerticalBiasVelocity;
         private float _rightObstacleVerticalBiasCurrent;
@@ -680,6 +704,24 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
+            _waveSlopeForwardCurrent = 0f;
+            _waveSlopeLateralCurrent = 0f;
+            _waveCrestReachCurrent = 0f;
+            _waveDescentTuckCurrent = 0f;
+            _waveLeanWeightCurrent = 0f;
+            _immersionDepthCurrent = 0f;
+            if (swimAnimator != null)
+            {
+                swimAnimator.SetFloat(_WaveSlopeForwardHash, 0f);
+                swimAnimator.SetFloat(_WaveSlopeLateralHash, 0f);
+                swimAnimator.SetFloat(_WaveSlopeXHash, 0f);
+                swimAnimator.SetFloat(_WaveSlopeZHash, 0f);
+                swimAnimator.SetFloat(_WaveCrestReachHash, 0f);
+                swimAnimator.SetFloat(_WaveDescentTuckHash, 0f);
+                swimAnimator.SetFloat(_WaveLeanWeightHash, 0f);
+                swimAnimator.SetFloat(_ImmersionDepthHash, 0f);
+            }
+
             TryUnregister();
         }
 
@@ -781,6 +823,7 @@ namespace Hecton8.Gameplay
             UpdateStrokePowerPulse(activeSwimPresentation, dt);
             UpdateCameraTurnSway(dt);
             UpdateDirectionalCorrection(planarSpeed, velocity, dt);
+            UpdateWaveAnimationBridge(activeSwimPresentation, dt);
             ApplyRootPose(profile, velocity, speedDelta, dt);
             ApplyGuidePoses(profile, planarSpeed, velocity, dt);
             if (swimBlockoutRig != null)
@@ -829,6 +872,13 @@ namespace Hecton8.Gameplay
 
             if (swimBlockoutRig == null)
                 gameObject.TryGetComponent(out swimBlockoutRig);
+
+            if (swimAnimator == null)
+            {
+                gameObject.TryGetComponent(out swimAnimator);
+                if (swimAnimator == null)
+                    swimAnimator = GetComponentInChildren<Animator>(true);
+            }
 
             if (allowSingletonAccess && _inputManager == null)
                 _inputManager = Hecton8.Input.InputManager.Instance;
@@ -1077,6 +1127,49 @@ namespace Hecton8.Gameplay
             _previousPropulsionPulse = _propulsionPulse;
         }
 
+        private void UpdateWaveAnimationBridge(bool activeSwimPresentation, float dt)
+        {
+            if (swimAnimator == null || playerMovement == null)
+                return;
+
+            float targetWeight = 0f;
+            float targetForward = 0f;
+            float targetLateral = 0f;
+            float targetCrestReach = 0f;
+            float targetDescentTuck = 0f;
+            float targetImmersionDepth = 0f;
+
+            if (activeSwimPresentation && playerMovement.CurrentLocomotionMode == PlayerLocomotionMode.SurfaceSwim)
+            {
+                Vector2 waveSlope = playerMovement.GetCurrentLocalWaveSlope();
+                float slopeNormalization = math.max(0.1f, animatorWaveSlopeNormalization);
+                float shorelineWeight = playerMovement.CurrentShoreBuoyancyBlend01;
+                targetWeight = shorelineWeight;
+                targetForward = math.clamp(waveSlope.y / slopeNormalization, -1f, 1f) * shorelineWeight;
+                targetLateral = math.clamp(waveSlope.x / slopeNormalization, -1f, 1f) * shorelineWeight;
+                targetCrestReach = math.max(0f, targetForward);
+                targetDescentTuck = math.max(0f, -targetForward);
+                targetImmersionDepth = math.max(0f, playerMovement.CurrentDepth) * shorelineWeight;
+            }
+
+            float blendT = 1f - math.exp(-math.max(animatorWaveSignalBlendSpeed, 0.01f) * dt);
+            _waveSlopeForwardCurrent = math.lerp(_waveSlopeForwardCurrent, targetForward, blendT);
+            _waveSlopeLateralCurrent = math.lerp(_waveSlopeLateralCurrent, targetLateral, blendT);
+            _waveCrestReachCurrent = math.lerp(_waveCrestReachCurrent, targetCrestReach, blendT);
+            _waveDescentTuckCurrent = math.lerp(_waveDescentTuckCurrent, targetDescentTuck, blendT);
+            _waveLeanWeightCurrent = math.lerp(_waveLeanWeightCurrent, targetWeight, blendT);
+            _immersionDepthCurrent = math.lerp(_immersionDepthCurrent, targetImmersionDepth, blendT);
+
+            swimAnimator.SetFloat(_WaveSlopeForwardHash, _waveSlopeForwardCurrent);
+            swimAnimator.SetFloat(_WaveSlopeLateralHash, _waveSlopeLateralCurrent);
+            swimAnimator.SetFloat(_WaveSlopeXHash, _waveSlopeLateralCurrent);
+            swimAnimator.SetFloat(_WaveSlopeZHash, _waveSlopeForwardCurrent);
+            swimAnimator.SetFloat(_WaveCrestReachHash, _waveCrestReachCurrent);
+            swimAnimator.SetFloat(_WaveDescentTuckHash, _waveDescentTuckCurrent);
+            swimAnimator.SetFloat(_WaveLeanWeightHash, _waveLeanWeightCurrent);
+            swimAnimator.SetFloat(_ImmersionDepthHash, _immersionDepthCurrent);
+        }
+
         private void ApplyRootPose(
             SwimPresentationProfile profile,
             Vector3 velocity,
@@ -1181,12 +1274,19 @@ namespace Hecton8.Gameplay
             float poseLagMultiplier = ResolvePoseLagMultiplier(profile);
             float rootPositionSmooth = math.max(0.0001f, rootPosePositionSmoothTime * poseLagMultiplier);
             float rootRotationSmooth = math.max(0.0001f, rootPoseRotationSmoothTime * poseLagMultiplier);
+            Quaternion environmentalRotation = Quaternion.identity;
+            if (playerMovement != null)
+            {
+                environmentalRotation =
+                    playerMovement.CurrentSurfaceWavePoseLocalRotation *
+                    playerMovement.CurrentUnderwaterTurbulencePoseLocalRotation;
+            }
 
             if (!_poseStateInitialized)
             {
                 _currentLocalPosition = localPosition;
                 _rootPoseEulerCurrent = localEuler;
-                _currentLocalRotation = Quaternion.Euler(_rootPoseEulerCurrent);
+                _currentLocalRotation = Quaternion.Euler(_rootPoseEulerCurrent) * environmentalRotation;
             }
             else
             {
@@ -1202,7 +1302,7 @@ namespace Hecton8.Gameplay
                     ref _rootPoseEulerVelocity,
                     rootRotationSmooth,
                     dt);
-                _currentLocalRotation = Quaternion.Euler(_rootPoseEulerCurrent);
+                _currentLocalRotation = Quaternion.Euler(_rootPoseEulerCurrent) * environmentalRotation;
             }
 
             if (viewModelRoot != null)

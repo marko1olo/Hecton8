@@ -160,3 +160,103 @@ Date: `2026-04-19`
     - `mcpforunity://instances` currently reports `instance_count = 0` even though local machine still shows Unity processes
     - local `Editor.log` timestamp is older than the latest writes to `WorldSpatialHashGrid.cs`, `ScannerTool.cs`, `PickupItem.cs`, `ScannableTarget.cs`, and `ModuleMarker.cs`
     - result: this entire scanner/grid slice is still code-review-only and remains `PENDING VERIFICATION`
+- latest dynamic-grid / noise-bus / biome-diagnostics pass:
+  - added `WorldSpatialHashGrid.UpdateGridPosition(...)` and a handle lookup fallback so moving spatial owners can migrate cell buckets without full unregister/register churn
+  - moved `PickupItem` to `ISlowTickable` registration through `GameTickManager` and now updates its spatial handle from cached previous position instead of staying frozen in its enable-time cell
+  - upgraded `NoiseSystem` from snapshot-only storage to active spatial dispatch:
+    - player noise now resolves a finite dispatch radius from movement / flashlight / tool / transport state
+    - nearby `FaunaBrain` owners are discovered through `WorldSpatialHashGrid.CollectContactsNonAlloc`
+    - `FaunaSensorSuite` now consumes pushed noise signals instead of polling `NoiseSystem.TryGetPlayerSignal` in `UpdateMajorSenses`
+  - upgraded `PDASpectrumTab` from static filler text to live biome diagnostics:
+    - subscribes to `BiomeMatrixDirector.OnMatrixBiomeChanged` and `OnDepthTierChanged`
+    - displays current biome matrix name / tier / depth
+    - displays `runtimeVisualProfile.turbidityMultiplier`
+    - displays `runtimeVisualProfile.depthFogDensity` as RGB absorption readout
+    - displays `AtmosphereProfile.temperature` and `radiation`
+    - numeric formatting stays on owner-local `StringBuilder` + `HudNumericStringCache` path, no `ToString()` formatting added to hot UI paths
+  - Unity-side verification for this pass improved materially:
+    - headless Unity batch compile advanced through `DisplayProgressbar: Compiling Scripts`
+    - batch log shows `*** Tundra build success (35.79 seconds), 29 items updated, 1964 evaluated`
+    - batch log shows `AssetDatabase: script compilation time: 44.045886s`
+    - batch log ends with `Exiting batchmode successfully now!`
+    - no `error CS` lines were found in the batch log
+    - only compile warning in that run was unrelated: `PDALoadoutTab.cs(1245,28)` obsolete `EntityId -> int`
+  - runtime proof is still absent:
+    - no playmode verification was executed for moving dropped pickups
+    - no live fauna behavior capture exists for pushed noise pulses
+    - no in-game PDA screenshot / telemetry proof exists for the new biome diagnostics
+  - status for this pass remains `PENDING VERIFICATION`
+- latest packed pickup depletion pass:
+  - added `WorldPickupStateCodec`:
+    - builds deterministic pickup persistence keys from scene path + hierarchy path + authored anchor position + `ItemData.name`
+    - groups authored pickups into chunk keys for packed save storage
+  - upgraded `PickupItem`:
+    - resolves and caches world-state identity on enable
+    - self-deactivates if `WorldStateManager` already marks that pickup as collected
+    - registers collected world pickups into `WorldStateManager` before raising the normal inventory event
+  - upgraded `WorldStateManager`:
+    - still preserves legacy `HashSet<string>` node depletion for `ResourceNode`
+    - now also tracks depleted pickups in `HashSet<long>`
+    - now packs pickup depletion into chunk bitmasks on save and decodes those bitmasks back into depletion keys on load
+    - applies depleted pickup state back to scene pickups without forcing unrelated inactive pickups active
+  - upgraded `SaveData` to `v21`:
+    - added packed pickup chunk keys / word starts / word counts / bit-word arrays under `WorldStateDTO`
+    - `SaveDataMigration.EnsureWorldState` now repairs capacity and clamps pickup chunk/word counts
+  - import-side failure discovered during implementation:
+    - replacing `WorldStateManager.cs` dropped `WorldStateManager.cs.meta`
+    - Unity stopped importing the script and every `WorldStateManager` reference broke until the original guid meta was restored
+  - verification state for this slice:
+    - official live Unity `Editor.log` proof is absent because the active editor did not advance past the stale pre-restore compile pass
+    - standalone Unity batchmode compile is blocked by the live editor instance already holding the project
+    - modified Roslyn compile using Unity Bee rsp inputs now reports only unrelated errors:
+      - `SettingsManager.cs(984,38)` `ScreenSpaceAmbientOcclusion` generic mismatch
+      - `SettingsManager.cs(986,34)` missing `active` member on that AO type
+      - existing warning: `PDALoadoutTab.cs(1245,28)` obsolete `EntityId -> int`
+    - no current-source compile errors remain for:
+      - `PickupItem.cs`
+      - `WorldStateManager.cs`
+      - `WorldPickupStateCodec.cs`
+      - `SaveData.cs`
+      - `SaveDataMigration.cs`
+  - runtime proof is still absent:
+    - no save/load roundtrip was executed in play mode for collected world pickups
+    - dropped runtime pickups are still not persisted as active world objects; this pass only packs depleted authored-pickup state
+  - status remains `PENDING VERIFICATION`
+- latest fauna noise-bus pass:
+  - `FaunaSensorSuite` no longer recomputes player distance every tick:
+    - player distance / sleep / LOD gating now refresh on the existing major-sense cadence instead of every frame
+    - pushed noise signals now cache last known player position and refresh `distSqrToPlayer` when a fresh pulse arrives
+  - `FaunaSensorSuite` now distinguishes:
+    - `hasVisualPlayerContact`
+    - `hasNoisePlayerContact`
+    - perceived player position memory via `TryGetPerceivedPlayerPosition`
+  - `FaunaStateMachine` now consumes perceived player position for:
+    - threat facing
+    - stalk circling fallback when only noise memory exists
+    - aggressive pursuit direction
+    - retreat / escape vectors
+    - territory checks that used to read direct player transform position
+  - `FaunaBrain` now feeds eye-tracking and steering retreat target position from perceived player position instead of raw direct player transform reads
+  - compile proof for this slice:
+    - current-source Roslyn pass via Unity `dotnet + csc.dll` reports only the existing warning:
+      - `PDALoadoutTab.cs(1245,28)` obsolete `EntityId -> int`
+    - no current-source compile errors remain in:
+      - `FaunaSensorSuite.cs`
+      - `FaunaStateMachine.cs`
+      - `FaunaBrain.cs`
+  - verification limits:
+    - no Unity-side runtime fauna capture exists for stalk / escape / retreat behavior after the perceived-position shift
+    - no live profiler numbers exist yet for reduced per-fauna distance churn
+  - warning:
+    - regression risk in fauna pursuit behavior while player is audible but not directly visible
+  - status remains `PENDING VERIFICATION`
+- latest compile-pipeline unblock pass:
+  - official Unity console exposed a real unrelated blocker:
+    - `HectonMapMagicVegetationBridge.cs(1295,42)` referenced nonexistent `TerrainTile.isDraft`
+  - fixed by replacing the invalid property check with the existing runtime readiness owner:
+    - `ResolveMainTerrain(tile) == null`
+  - Unity-side verification after `refresh_unity(compile=request, scope=scripts)`:
+    - console now reports only:
+      - `PDALoadoutTab.cs(1245,28)` obsolete `EntityId -> int` warning
+    - no fresh `error CS` lines remain for `HectonMapMagicVegetationBridge`
+  - status remains `PENDING VERIFICATION`

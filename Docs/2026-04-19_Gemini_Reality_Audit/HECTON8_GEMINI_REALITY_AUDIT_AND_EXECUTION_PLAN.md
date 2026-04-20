@@ -445,6 +445,30 @@ Current status:
 8. Started centralized player-noise snapshot work to reduce repeated fauna reads of player movement / light / tool / transport state.
 9. Removed delegate-capturing query lambdas from `WorldSpatialHashGrid` so fauna and PDA sonar paths stop allocating hidden closures in hot query calls.
 10. Extended `WorldSpatialHashGrid` to register `PickupItem`, `ScannableTarget`, and `ModuleMarker`, and routed `ScannerTool` scan contact discovery through the spatial grid instead of `Physics.OverlapSphereNonAlloc`.
+11. Added dynamic spatial-grid migration entry points in `WorldSpatialHashGrid` and moved `PickupItem` onto `ISlowTickable` so moving pickups can update cell membership without `Update()`.
+12. Promoted player-noise delivery from pull to push: `NoiseSystem` now dispatches fresh player-noise pulses to nearby fauna through the spatial grid, and `FaunaSensorSuite` consumes cached pushed signals instead of polling the global snapshot during major-sense updates.
+13. Rewired `PDASpectrumTab` to `BiomeMatrixDirector` events and replaced static filler lines with live biome matrix / depth / turbidity / absorption / thermal readouts built through the existing HUD numeric cache path.
+14. Recovered Unity-side compile verification through headless batch mode after MCP session loss; latest batch log shows `*** Tundra build success`, `AssetDatabase: script compilation time`, and `Exiting batchmode successfully now!` with no `error CS` lines for this pass.
+15. Added packed pickup depletion persistence:
+   - `PickupItem` now resolves a deterministic world-state key + chunk key from scene path / hierarchy path / authored anchor position
+   - `WorldStateManager` now tracks depleted pickups separately from depleted resource nodes and serializes pickup depletion into packed chunk bitmasks instead of string IDs
+   - `SaveData` upgraded to v21 with packed pickup-chunk arrays and migration-safe capacity repair in `SaveDataMigration`
+   - `WorldStateManager.cs.meta` had to be restored after file replacement because Unity stopped importing the script without it
+   - earlier `SettingsManager` errors were stale compile-state artifacts, not current source errors
+   - current compile proof for this slice is a Roslyn pass using Unity Bee rsp inputs patched to include the restored `WorldStateManager.cs` and exclude one stale missing file reference; a fresh `dotnet + csc.dll` pass now reports only the existing `PDALoadoutTab` warning
+16. Hardened packed pickup depletion against runtime drop corruption:
+   - `PickupItem` now refuses to build authored persistence identity when the instance carries `ObjectPoolManager.PoolItemMarker`
+   - this prevents pooled runtime-dropped pickups from polluting authored scene depletion bitmasks
+17. Shifted fauna perception further onto the player-noise bus:
+   - `FaunaSensorSuite` now refreshes player distance / sleep / LOD gating on the existing major-sense cadence instead of every tick
+   - noise pulses cache a last-known player position and can refresh perceived distance without a fresh direct player transform distance query
+   - `FaunaStateMachine` now steers threat/stalk/aggressive/retreat/escape behavior from perceived player position memory when direct visual contact is absent
+   - `FaunaBrain` now uses perceived player position for eye tracking and retreat steering target input
+   - current-source compile proof for this fauna slice is clean except for the existing `PDALoadoutTab` obsolete-warning line
+18. Cleared the next official Unity compile blocker in `HectonMapMagicVegetationBridge`:
+   - Unity console reported `TerrainTile.isDraft` as a nonexistent API at line 1295
+   - the bootstrap tile filter now uses `ResolveMainTerrain(tile) == null` instead of the invalid property
+   - after an explicit Unity script refresh, console readback dropped to the existing `PDALoadoutTab` obsolete-warning line only
 
 ---
 

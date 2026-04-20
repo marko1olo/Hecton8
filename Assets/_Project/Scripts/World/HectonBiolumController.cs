@@ -17,6 +17,7 @@
 using Hecton8.AtlasSignal;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Hecton8.Visor;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -50,6 +51,13 @@ namespace Hecton8.World
         [Tooltip("Скорость затухания пульса.")]
         [SerializeField] private float pulseDecayRate = 0.5f;
 
+        [Header("── Sonar Communication ────────────────────")]
+        [Tooltip("Дополнительная интенсивность отклика биолюма на активный sonar pulse игрока.")]
+        [SerializeField, Range(0f, 0.35f)] private float sonarPulseBoost = 0.12f;
+
+        [Tooltip("Нормализующий радиус sonar pulse для расчета биолюминесцентного отклика.")]
+        [SerializeField] private float sonarReferenceRadius = 100f;
+
         [Header("── References ──────────────────────────────")]
         [SerializeField] private HectonSurvivalSystem survivalSystem;
 
@@ -68,7 +76,8 @@ namespace Hecton8.World
 
         private float _currentIntensity;
         private float _targetIntensity;
-        private float _pulseBurst;
+        private float _atlasPulseBurst;
+        private float _sonarPulseBurst;
         private bool  _eclipseActive;
         private bool  _registered;
 
@@ -94,8 +103,11 @@ namespace Hecton8.World
             EclipseGameplayEvents.OnEclipsePhaseChanged += HandleEclipsePhase;
             AtlasSignalEvents.OnSignalPulse             += HandleSignalPulse;
             DepthZoneEvents.OnZoneEntered               += HandleDepthZoneEntered;
+            SpectrumEvents.OnSonarPulse                 += HandleSonarPulse;
 
             _currentIntensity = baseIntensity;
+            _atlasPulseBurst = 0f;
+            _sonarPulseBurst = 0f;
             ApplyShader();
         }
 
@@ -106,8 +118,10 @@ namespace Hecton8.World
             EclipseGameplayEvents.OnEclipsePhaseChanged -= HandleEclipsePhase;
             AtlasSignalEvents.OnSignalPulse             -= HandleSignalPulse;
             DepthZoneEvents.OnZoneEntered               -= HandleDepthZoneEntered;
+            SpectrumEvents.OnSonarPulse                 -= HandleSonarPulse;
 
             Shader.SetGlobalFloat(_ShaderBiolumIntensity, baseIntensity);
+            Shader.SetGlobalFloat(_ShaderBiolumPulseTime, 0f);
         }
 
         private void OnDestroy()
@@ -144,9 +158,14 @@ namespace Hecton8.World
             // Плавное изменение + pulse burst
             _currentIntensity = Mathf.MoveTowards(_currentIntensity, _targetIntensity, 0.05f * dt / 0.5f);
 
-            if (_pulseBurst > 0f)
+            if (_atlasPulseBurst > 0f)
             {
-                _pulseBurst = Mathf.Max(0f, _pulseBurst - pulseDecayRate * dt);
+                _atlasPulseBurst = Mathf.Max(0f, _atlasPulseBurst - pulseDecayRate * dt);
+            }
+
+            if (_sonarPulseBurst > 0f)
+            {
+                _sonarPulseBurst = Mathf.Max(0f, _sonarPulseBurst - pulseDecayRate * dt);
             }
 
             ApplyShader();
@@ -158,7 +177,7 @@ namespace Hecton8.World
 
         private void ApplyShader()
         {
-            Shader.SetGlobalFloat(_ShaderBiolumIntensity, _currentIntensity + _pulseBurst);
+            Shader.SetGlobalFloat(_ShaderBiolumIntensity, _currentIntensity + _atlasPulseBurst + _sonarPulseBurst);
         }
 
         private void HandleEclipsePhase(bool active)
@@ -168,8 +187,22 @@ namespace Hecton8.World
 
         private void HandleSignalPulse(float intensity)
         {
-            _pulseBurst = signalPulseBoost * intensity;
+            _atlasPulseBurst = Mathf.Max(_atlasPulseBurst, signalPulseBoost * intensity);
             Shader.SetGlobalFloat(_ShaderBiolumPulseTime, Time.time);
+            ApplyShader();
+        }
+
+        private void HandleSonarPulse(float radius)
+        {
+            float normalizedRadius = Mathf.Clamp01(radius / Mathf.Max(1f, sonarReferenceRadius));
+            if (normalizedRadius <= 0f)
+            {
+                return;
+            }
+
+            _sonarPulseBurst = Mathf.Max(_sonarPulseBurst, sonarPulseBoost * normalizedRadius);
+            Shader.SetGlobalFloat(_ShaderBiolumPulseTime, Time.time);
+            ApplyShader();
         }
 
         private void HandleDepthZoneEntered(DepthZoneProfile zone)
@@ -222,5 +255,14 @@ namespace Hecton8.World
 
             _registered = false;
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            deepTransitionDepth = Mathf.Max(1f, deepTransitionDepth);
+            pulseDecayRate = Mathf.Max(0.01f, pulseDecayRate);
+            sonarReferenceRadius = Mathf.Max(1f, sonarReferenceRadius);
+        }
+#endif
     }
 }

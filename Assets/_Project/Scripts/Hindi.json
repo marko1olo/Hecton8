@@ -1194,5 +1194,20 @@
   "UI_RETURN_TO_MENU": "मेनू पर",
   "WARNING_BACKUP_USED_MESSAGE": "WARNING BACKUP USED",
   "WARNING_BACKUP_USED_TITLE": "WARNING BACKUP USED",
-  "UI_BLUEPRINT_LOCKED": "स्कैन डेटा आवश्यक"
+  "UI_BLUEPRINT_LOCKED": "स्कैन डेटा आवश्यक",
+  "AUDIOLOG_PLAYING": "चल रहा है: {0}",
+  "PDA_SHELL_TITLE": "HECTON-8 व्यक्तिगत डेटा असिस्टेंट",
+  "PDA_TAB_INVENTORY": "सक्रिय टैब // इन्वेंटरी",
+  "PDA_TAB_LOADOUT": "सक्रिय टैब // लोडआउट",
+  "PDA_TAB_CONSTRUCTION": "सक्रिय टैब // निर्माण",
+  "PDA_TAB_BARTER": "सक्रिय टैब // विनिमय",
+  "PDA_TAB_DATA_LOG": "सक्रिय टैब // डाटा लॉग",
+  "PDA_TAB_SPECTRUM": "सक्रिय टैब // स्पेक्ट्रम",
+  "PDA_TAB_UNKNOWN": "सक्रिय टैब // अज्ञात",
+  "PDA_FOOTER_LEFT": "कार्गो {0}/{1}  |  द्रव्यमान {2:0.0} kg  |  तैयार टूल {3}/{4}",
+  "PDA_FOOTER_RIGHT_ONLINE": "O2 {0:0}%  |  PWR {1:0}%  |  PDA सक्रिय",
+  "PDA_FOOTER_RIGHT_STANDBY": "O2 {0:0}%  |  PWR {1:0}%  |  PDA प्रतीक्षा",
+  "TECH_O2_SPEC": "[Pressure: 300 bar | Mix: O2 96% | Rack: A-2]",
+  "TECH_HULL_SPEC": "[Sealant: <key:ITEM_TITANIUM_SCRAP_NAME> laminate | Rating: 41 MPa]",
+  "TECH_PWR_BUS": "[Bus: 48V DC | Cell bank: Li-Salt MkII]"
 }

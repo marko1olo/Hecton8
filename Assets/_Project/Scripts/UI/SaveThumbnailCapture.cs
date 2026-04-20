@@ -39,23 +39,26 @@ namespace Hecton8.UI
                 Debug.Log("[SaveThumbnailCapture] Created SaveSlotThumbnail component dynamically.");
 #endif
             }
+
+            if (thumbnailComponent != null && captureCamera != null)
+                thumbnailComponent.SetCaptureCamera(captureCamera);
         }
 
         private void OnEnable()
         {
-            SaveEvents.OnSaveStarted += OnSaveStarted;
+            SaveEvents.OnSaveCompleted += OnSaveCompleted;
         }
 
         private void OnDisable()
         {
-            SaveEvents.OnSaveStarted -= OnSaveStarted;
+            SaveEvents.OnSaveCompleted -= OnSaveCompleted;
         }
 
         // ══════════════════════════════════════════════════════════
         // EVENT HANDLERS
         // ══════════════════════════════════════════════════════════
 
-        private void OnSaveStarted(string slotName)
+        private void OnSaveCompleted(string slotName)
         {
             if (thumbnailComponent == null)
             {

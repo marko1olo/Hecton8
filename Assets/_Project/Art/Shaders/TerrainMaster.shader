@@ -44,7 +44,7 @@ Shader "HECTON/Terrain/TerrainMaster"
         }
 
         // ================================================================
-        // SHARED HLSL — included in every pass automatically
+        // SHARED HLSL â€” included in every pass automatically
         // ================================================================
         HLSLINCLUDE
 
@@ -52,7 +52,7 @@ Shader "HECTON/Terrain/TerrainMaster"
 
         // -------------------------------------------------------------
         // SRP Batcher: ALL material properties in ONE contiguous CBUFFER.
-        // No _ST floats needed — we use world-space UVs with _Scale.
+        // No _ST floats needed â€” we use world-space UVs with _Scale.
         // -------------------------------------------------------------
         CBUFFER_START(UnityPerMaterial)
             float  _SandScale;
@@ -75,6 +75,8 @@ Shader "HECTON/Terrain/TerrainMaster"
         TEXTURE2D(_SandTex);    SAMPLER(sampler_SandTex);
         TEXTURE2D(_RockTex);    SAMPLER(sampler_RockTex);
         TEXTURE2D(_RockNormal); SAMPLER(sampler_RockNormal);
+        float4 _SargassumCanopyShadowParams;
+        float4 _SargassumCanopyLightingParams;
 
         // -------------------------------------------------------------
         // Triplanar weights (custom name to avoid CommonMaterial clash)
@@ -99,10 +101,10 @@ Shader "HECTON/Terrain/TerrainMaster"
             float  scale,
             half   triplanarBlend)
         {
-            // Always sample XZ plane (Y-weight projection) — cheapest
+            // Always sample XZ plane (Y-weight projection) â€” cheapest
             half4 ySample = SAMPLE_TEXTURE2D(tex, samp, posWS.xz * scale);
 
-            // Early out for flat terrain — single texture read
+            // Early out for flat terrain â€” single texture read
             if (triplanarBlend < 0.001)
                 return ySample;
 
@@ -147,6 +149,20 @@ Shader "HECTON/Terrain/TerrainMaster"
             half3 triNormal = nx * weights.x + ny * weights.y + nz * weights.z;
 
             return lerp(ny, triNormal, triplanarBlend);
+        }
+
+        half EvaluateSargassumCanopyShadow(float3 positionWS)
+        {
+            if (_SargassumCanopyLightingParams.w < 0.5)
+                return 0.0h;
+
+            float2 delta = positionWS.xz - _SargassumCanopyShadowParams.xy;
+            float distance01 = length(delta) * _SargassumCanopyShadowParams.z;
+            half radialFalloff = saturate(1.0 - distance01);
+            radialFalloff *= radialFalloff;
+            half canopyWindow = saturate(_SargassumCanopyLightingParams.z);
+            half canopyOcclusion = saturate(_SargassumCanopyShadowParams.w) * (1.0h - canopyWindow * 0.55h);
+            return radialFalloff * canopyOcclusion;
         }
 
         ENDHLSL
@@ -209,7 +225,7 @@ Shader "HECTON/Terrain/TerrainMaster"
                 // Pack vertex colors: xy = (slope, depth), zw = (cave, biome)
                 half4  vColor      : TEXCOORD2;
                 half   fogFactor   : TEXCOORD3;
-                // Pack triplanar blend into w of positionWS? No — keep it separate for clarity
+                // Pack triplanar blend into w of positionWS? No â€” keep it separate for clarity
                 half   triBlend    : TEXCOORD4;
                 #if defined(LIGHTMAP_ON)
                 float2 staticLightmapUV  : TEXCOORD5;
@@ -238,7 +254,7 @@ Shader "HECTON/Terrain/TerrainMaster"
                 OUT.fogFactor  = ComputeFogFactor(posInputs.positionCS.z);
 
                 // Precompute triplanar blend in vertex shader to save fragment cost
-                // slope < threshold → 0 (flat, cheap 2D), slope >= threshold → ramp to 1
+                // slope < threshold â†’ 0 (flat, cheap 2D), slope >= threshold â†’ ramp to 1
                 half slope = IN.color.r;
                 OUT.triBlend = saturate((slope - _TriplanarThreshold) / (1.0 - _TriplanarThreshold + 1e-6));
 
@@ -298,13 +314,19 @@ Shader "HECTON/Terrain/TerrainMaster"
 
                 // ---- Cave emission ----
                 half3 emission = cave * _CaveGlowColor.rgb * _CaveGlowPower;
+                half canopyShadow = EvaluateSargassumCanopyShadow(IN.positionWS);
+                if (canopyShadow > 0.0001h)
+                {
+                    albedo = lerp(albedo, albedo * 0.34h, canopyShadow);
+                    emission *= 1.0h - canopyShadow * 0.8h;
+                }
 
                 // ---- Final world normal ----
                 float3 finalNormalWS = NormalizeNormalPerPixel(
                     IN.normalWS + rockNormalWS * slopeBlend);
 
                 // ============================================================
-                // InputData — fully initialized to prevent magenta
+                // InputData â€” fully initialized to prevent magenta
                 // ============================================================
                 InputData inputData = (InputData)0;
                 inputData.positionWS              = IN.positionWS;
@@ -351,7 +373,7 @@ Shader "HECTON/Terrain/TerrainMaster"
                             finalNormalWS);
                     #endif
                 #else
-                    // No lightmap — sample Spherical Harmonics
+                    // No lightmap â€” sample Spherical Harmonics
                     // URP 17+ approach: SampleSHPixel with vertex SH passed as 0
                     // The vertex SH (OUTPUT_SH4) is broken, so we compute per-pixel.
                     #if defined(EVALUATE_SH_VERTEX) || defined(EVALUATE_SH_MIXED)
@@ -366,7 +388,7 @@ Shader "HECTON/Terrain/TerrainMaster"
                 #endif
 
                 // ============================================================
-                // SurfaceData — fully initialized to prevent magenta
+                // SurfaceData â€” fully initialized to prevent magenta
                 // ============================================================
                 SurfaceData surfData    = (SurfaceData)0;
                 surfData.albedo         = albedo;
@@ -521,7 +543,7 @@ Shader "HECTON/Terrain/TerrainMaster"
         }
 
         // ================================================================
-        // PASS 4: DepthNormals — manual pass, avoids Unity 6 include bugs
+        // PASS 4: DepthNormals â€” manual pass, avoids Unity 6 include bugs
         // Uses adaptive sampling for consistency & performance
         // ================================================================
         Pass
@@ -539,7 +561,7 @@ Shader "HECTON/Terrain/TerrainMaster"
             #pragma fragment DNFrag
             #pragma multi_compile_instancing
 
-            // Only Core.hlsl is included via HLSLINCLUDE — minimal dependencies
+            // Only Core.hlsl is included via HLSLINCLUDE â€” minimal dependencies
 
             struct DNAttr
             {

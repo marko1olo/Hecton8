@@ -1,0 +1,2076 @@
+using System;
+using System.Collections.Generic;
+using Hecton8.Core;
+using UnityEngine;
+using UnityEngine.Rendering;
+
+namespace Hecton8.World
+{
+    /// <summary>
+    /// Builds a coarse world-space density field for floating sargassum and serves zero-allocation drag queries.
+    /// Also bakes a density texture used by Crest damping and GPU micro-fauna.
+    /// </summary>
+    [DisallowMultipleComponent]
+    [DefaultExecutionOrder(-104)]
+    public sealed class SargassumGlobalDragManager : MonoBehaviour, ITickable, ISlowTickable, ISargassumMassiveDisplacementReceiver
+    {
+        private static readonly int _GlobalDriftOffsetId = Shader.PropertyToID("_SargassumGlobalDriftOffset");
+        private static readonly int _SinkTextureId = Shader.PropertyToID("_SargassumBuoyancySinkRT");
+        private static readonly int _SinkWorldRectId = Shader.PropertyToID("_SargassumBuoyancySinkWorldRect");
+        private static readonly int _MaxSinkDepthId = Shader.PropertyToID("_SargassumBuoyancySinkDepth");
+
+        private const uint NestingHashSeed = 0x7F4A7C15u;
+        private const int InitialCellCapacity = 4096;
+        private const int DefaultDensityTextureResolution = 128;
+        private const int MaxDisruptionZoneCapacity = 16;
+        private const float MinDensityThreshold = 0.025f;
+        private const byte CollapseChunkBurstSpawnedFlag = 1 << 0;
+
+        internal struct SargassumFieldSample
+        {
+            public bool HasInfluence;
+            public float SpeedMultiplier;
+            public float DragMultiplier;
+            public float Density01;
+            public Vector3 AnchorWS;
+            public float Entanglement01;
+            public float Window01;
+            public float Occlusion01;
+        }
+
+        public struct EntanglementStrainSignal
+        {
+            public int SourceInstanceId;
+            public Vector3 PositionWS;
+            public Vector3 AnchorWS;
+            public float Tension01;
+            public float EscapeIntent01;
+            public float Shake01;
+        }
+
+        public struct MassiveDisplacementSignal
+        {
+            public Vector3 PositionWS;
+            public float RadiusWS;
+            public float Duration;
+            public float ExtremePanicRadiusWS;
+        }
+
+        private struct CellData
+        {
+            public float Density;
+            public float MinY;
+            public float MaxY;
+        }
+
+        private struct NestedAttachmentState
+        {
+            public Vector3 SampleSpaceAnchorWS;
+            public Vector3 RenderOffsetWS;
+            public Vector3 ReleaseVelocityWS;
+            public Quaternion Rotation;
+            public float UniformScale;
+            public float ReleaseLifetime;
+            public float ReleaseAge;
+            public int PrototypeIndex;
+            public bool Released;
+        }
+
+        private enum DisruptionZoneMode : byte
+        {
+            CutCollapse = 1,
+            MassiveDisplacement = 2
+        }
+
+        private struct DisruptionZoneState
+        {
+            public Vector3 SampleSpaceCenterWS;
+            public float RadiusWS;
+            public float Strength01;
+            public float SinkDepthWS;
+            public float RampDuration;
+            public float HoldDuration;
+            public float FadeDuration;
+            public float Age;
+            public byte Mode;
+            public byte Flags;
+        }
+
+        private struct DisruptionSample
+        {
+            public float Suppression01;
+            public float SinkDepthWS;
+        }
+
+        [Serializable]
+        private struct NestedAttachmentPrototype
+        {
+            [Tooltip("Instanced mesh rendered for this nesting archetype.")]
+            public Mesh Mesh;
+            [Tooltip("Shared asset material used by Graphics.DrawMeshInstanced.")]
+            public Material Material;
+            [Tooltip("Relative selection weight for deterministic prototype picking.")]
+            public int Weight;
+            [Tooltip("Uniform scale range applied to this nesting archetype.")]
+            public Vector2 UniformScaleRange;
+            [Tooltip("Vertical offset range applied above the sampled canopy anchor.")]
+            public Vector2 VerticalOffsetRange;
+            [Tooltip("Minimum local density required before this archetype may spawn.")]
+            public float DensityThreshold;
+            [Tooltip("Maximum canopy window openness allowed for this archetype.")]
+            public float WindowThreshold;
+            [Tooltip("Shadow mode for this archetype.")]
+            public ShadowCastingMode ShadowCastingMode;
+        }
+
+        private static SargassumGlobalDragManager _instance;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _instance = null;
+            OnEntanglementStrain = null;
+            OnMassiveDisplacement = null;
+        }
+
+        [Header("── Runtime Wiring ──────────────────")]
+        [SerializeField]
+        [Tooltip("Primary runtime source for active floating sargassum matrices coming from MapMagic residency.")]
+        private HectonMapMagicVegetationBridge mapMagicVegetationBridge;
+
+        [Header("── Spatial Hash ──────────────────")]
+        [SerializeField, Min(2f)]
+        [Tooltip("XZ cell size used by the coarse world-space density field.")]
+        private float cellSize = 6f;
+
+        [SerializeField, Min(0.5f)]
+        [Tooltip("Base planar influence radius contributed by one sargassum instance at unit scale.")]
+        private float baseInfluenceRadius = 3.2f;
+
+        [SerializeField, Min(0.25f)]
+        [Tooltip("Vertical half-extent used to detect that the player body intersects a floating sargassum layer.")]
+        private float baseVerticalHalfExtent = 2.15f;
+
+        [SerializeField, Range(0.1f, 4f)]
+        [Tooltip("Density normalization applied after sampling nearby cells.")]
+        private float densityNormalization = 0.42f;
+
+        [SerializeField, Range(1f, 4f)]
+        [Tooltip("How aggressively cell contributions decay with planar distance.")]
+        private float distancePower = 1.4f;
+
+        [Header("── Canopy Lighting ──────────────────")]
+        [SerializeField]
+        [Tooltip("Fallback patch threshold used only if the MapMagic bridge is unavailable. Runtime should stay synced from ActiveFloatingLabyrinthConfig.")]
+        private float fallbackPatchThreshold = HectonVegetationConstants.FloatingPatchThreshold;
+
+        [SerializeField]
+        [Tooltip("Fallback world-flow direction used only if the MapMagic bridge is unavailable.")]
+        private Vector2 canopyFlowDirection = HectonVegetationConstants.FloatingFlowDirection;
+
+        [SerializeField, Range(0.2f, 1f)]
+        [Tooltip("Fallback cross-flow anisotropy used only if the MapMagic bridge is unavailable.")]
+        private float canopyFlowAnisotropy = HectonVegetationConstants.FloatingFlowAnisotropy;
+
+        [SerializeField, Min(4f)]
+        [Tooltip("Fallback primary cell size used only if the MapMagic bridge is unavailable.")]
+        private float canopyPrimaryCellSize = HectonVegetationConstants.FloatingPrimaryCellSize;
+
+        [SerializeField, Min(4f)]
+        [Tooltip("Fallback secondary cell size used only if the MapMagic bridge is unavailable.")]
+        private float canopySecondaryCellSize = HectonVegetationConstants.FloatingSecondaryCellSize;
+
+        [SerializeField, Min(0.25f)]
+        [Tooltip("Fallback wall width used only if the MapMagic bridge is unavailable.")]
+        private float canopyWallWidth = HectonVegetationConstants.FloatingWallWidth;
+
+        [SerializeField, Min(0f)]
+        [Tooltip("Fallback warp amplitude used only if the MapMagic bridge is unavailable.")]
+        private float canopyWarpMeters = HectonVegetationConstants.FloatingWarpMeters;
+
+        [SerializeField, Min(0.0001f)]
+        [Tooltip("Fallback patch noise scale used only if the MapMagic bridge is unavailable.")]
+        private float canopyWarpNoiseScale = HectonVegetationConstants.FloatingPatchNoiseScale;
+
+        [Header("── Density Texture ──────────────────")]
+        [SerializeField, Range(64, 256)]
+        [Tooltip("Resolution of the baked density texture consumed by Crest damping and GPU micro-fauna.")]
+        private int densityTextureResolution = DefaultDensityTextureResolution;
+
+        [SerializeField, Min(0f)]
+        [Tooltip("Extra world-space padding added around the streamed field bounds when baking the density texture.")]
+        private float densityTextureBoundsPadding = 24f;
+
+        [Header("── Global Drift ──────────────────")]
+        [SerializeField]
+        [Tooltip("World-space drift offset applied by ocean systems. Physics samples subtract it to stay aligned with the visual shader drift.")]
+        private Vector3 _globalDriftOffset;
+
+        [Header("── Nesting Attachments ──────────────────")]
+        [SerializeField]
+        [Tooltip("Instanced archetypes used for rare debris or crates tangled into dense canopy walls. Future ecosystems can swap these without changing the renderer path.")]
+        private NestedAttachmentPrototype[] nestingPrototypes;
+
+        [SerializeField, Range(0f, 5f)]
+        [Tooltip("Chance in percent for one dense canopy node to trap a debris nest during field rebuild. The authored default is 1%.")]
+        private float denseNodeNestChancePercent = 1f;
+
+        [SerializeField, Range(4, 128)]
+        [Tooltip("Hard cap for active instanced nesting attachments in the current field.")]
+        private int maxNestedAttachmentCount = 48;
+
+        [SerializeField, Range(4, 24)]
+        [Tooltip("Maximum deterministic rejection attempts per nested attachment spawn.")]
+        private int maxNestedAttachmentAttempts = 12;
+
+        [SerializeField, Range(0.1f, 2.5f)]
+        [Tooltip("Sampling radius used when validating dense nesting anchors.")]
+        private float nestingSampleRadius = 0.95f;
+
+        [SerializeField, Range(0f, 1f)]
+        [Tooltip("Minimum dense-node value required before a debris nest candidate is allowed to trap objects.")]
+        private float nestingNodeDensityThreshold = 0.72f;
+
+        [SerializeField, Range(0f, 1f)]
+        [Tooltip("Maximum canopy window openness allowed for debris nests. Lower values keep trapped objects inside the thickest labyrinth knots.")]
+        private float nestingNodeWindowThreshold = 0.14f;
+
+        [SerializeField, Range(0.1f, 4f)]
+        [Tooltip("Additional cut-query radius used when deciding whether a trapped debris nest has been severed free.")]
+        private float nestingCutReleaseRadius = 1.15f;
+
+        [SerializeField, Range(0f, 1f)]
+        [Tooltip("Minimum recent-cut weight required before a trapped debris nest releases and starts falling out of the canopy.")]
+        private float nestingCutReleaseThreshold = 0.22f;
+
+        [SerializeField, Range(0.2f, 8f)]
+        [Tooltip("Seconds a released debris nest keeps rendering while falling away from the severed canopy knot.")]
+        private float nestingReleaseLifetime = 2.8f;
+
+        [SerializeField, Range(0f, 6f)]
+        [Tooltip("Horizontal burst speed applied when a debris nest is severed out of the canopy.")]
+        private float nestingReleaseHorizontalSpeed = 1.15f;
+
+        [SerializeField, Range(0f, 4f)]
+        [Tooltip("Initial downward speed applied when a debris nest is severed out of the canopy.")]
+        private float nestingReleaseDownwardSpeed = 0.85f;
+
+        [SerializeField, Range(0f, 4f)]
+        [Tooltip("Additional downward acceleration applied while a severed debris nest is falling out of the canopy.")]
+        private float nestingReleaseGravity = 0.72f;
+
+        [Header("── Destruction & Buoyancy Collapse ──────────────────")]
+        [SerializeField, Range(1, MaxDisruptionZoneCapacity)]
+        [Tooltip("Hard cap for persistent collapse or leviathan disruption zones applied over the current canopy field.")]
+        private int maxDisruptionZoneCount = 8;
+
+        [SerializeField, Range(2f, 18f)]
+        [Tooltip("Local query radius used when measuring whether clustered cuts have punctured too much canopy in one knot.")]
+        private float buoyancyCollapseQueryRadius = 7.5f;
+
+        [SerializeField, Min(1f)]
+        [Tooltip("Weighted recent-cut area required before a dense canopy knot loses buoyancy and begins to sink.")]
+        private float buoyancyCollapseAreaThreshold = 42f;
+
+        [SerializeField, Range(0f, 1f)]
+        [Tooltip("Strongest overlapping cut required before a clustered puncture is allowed to trigger a buoyancy collapse zone.")]
+        private float buoyancyCollapseCutStrengthThreshold = 0.38f;
+
+        [SerializeField, Range(2f, 18f)]
+        [Tooltip("World-space radius of a collapse zone registered after too many cuts puncture one dense cluster.")]
+        private float buoyancyCollapseRadius = 6.5f;
+
+        [SerializeField, Range(10f, 20f)]
+        [Tooltip("Seconds required for a collapsed canopy knot to reach its full sink offset.")]
+        private float buoyancyCollapseSinkDuration = 14f;
+
+        [SerializeField, Range(1f, 24f)]
+        [Tooltip("Maximum downward sink depth applied to a collapsed canopy knot before it is treated as locally drowned.")]
+        private float buoyancyCollapseSinkDepth = 9.5f;
+
+        [SerializeField]
+        [Tooltip("Pooled rigidbody chunk spawned when a catastrophic cut cluster collapses a large canopy knot.")]
+        private GameObject collapseChunkPrefab;
+
+        [SerializeField, Range(1f, 4f)]
+        [Tooltip("Multiplier applied to the base collapse-area threshold before a collapse escalates into pooled falling chunks.")]
+        private float collapseChunkAreaThresholdMultiplier = 1.85f;
+
+        [SerializeField, Range(1, 6)]
+        [Tooltip("Maximum chunk count spawned by one catastrophic canopy collapse burst.")]
+        private int collapseChunkSpawnCount = 3;
+
+        [SerializeField, Range(0.5f, 8f)]
+        [Tooltip("Planar spawn radius used when scattering pooled collapse chunks around the failing canopy knot.")]
+        private float collapseChunkSpawnRadius = 2.6f;
+
+        [SerializeField, Range(0f, 8f)]
+        [Tooltip("Initial lateral velocity applied to catastrophic collapse chunks.")]
+        private float collapseChunkHorizontalSpeed = 1.9f;
+
+        [SerializeField, Range(0f, 8f)]
+        [Tooltip("Initial downward velocity applied to catastrophic collapse chunks.")]
+        private float collapseChunkDownwardSpeed = 1.25f;
+
+        [SerializeField, Range(0.5f, 24f)]
+        [Tooltip("Seconds catastrophic collapse chunks remain active before they are returned to the object pool.")]
+        private float collapseChunkLifetime = 18f;
+
+        [SerializeField, Range(0.25f, 3f)]
+        [Tooltip("Minimum uniform scale applied to pooled collapse chunks.")]
+        private float collapseChunkScaleMin = 0.85f;
+
+        [SerializeField, Range(0.5f, 4f)]
+        [Tooltip("Maximum uniform scale applied to pooled collapse chunks.")]
+        private float collapseChunkScaleMax = 1.65f;
+
+        [SerializeField, Range(0.1f, 2f)]
+        [Tooltip("Strength written into the global cut mask when a leviathan or submarine punches through the canopy.")]
+        private float massiveDisplacementCutStrength = 1f;
+
+        [SerializeField, Range(0.1f, 4f)]
+        [Tooltip("Seconds required for a massive displacement tear to reach full local density suppression.")]
+        private float massiveDisplacementRampDuration = 0.65f;
+
+        [SerializeField, Range(0.1f, 8f)]
+        [Tooltip("Seconds used to fade a massive displacement tear out after its requested duration expires.")]
+        private float massiveDisplacementFadeDuration = 2.4f;
+
+        [SerializeField, Range(50f, 96f)]
+        [Tooltip("Minimum flee radius broadcast to GPU boids when a leviathan or submarine rips through the canopy.")]
+        private float massiveDisplacementExtremePanicRadius = HectonVegetationConstants.BoidMassiveDisplacementPanicRadius;
+
+        [Header("── Gameplay Response ──────────────────")]
+        [SerializeField, Range(0.3f, 1f)]
+        [Tooltip("Maximum swim-speed multiplier when the sampled density reaches full saturation.")]
+        private float minSpeedMultiplier = 0.58f;
+
+        [SerializeField, Range(1f, 4f)]
+        [Tooltip("Maximum drag multiplier when the sampled density reaches full saturation.")]
+        private float maxDragMultiplier = 2.35f;
+
+        [SerializeField, Range(0.1f, 1f)]
+        [Tooltip("Minimum density required before the sticky field upgrades from drag into an entangling snare.")]
+        private float entanglementMinDensity = 0.28f;
+
+        [SerializeField, Min(0.25f)]
+        [Tooltip("Player or scooter speed below which the sticky field begins to snare and pull back toward the local mass center.")]
+        private float entanglementSpeedThreshold = 1.5f;
+
+        [SerializeField, Range(0f, 1f)]
+        [Tooltip("Maximum normalized entanglement tension resolved by the global field sample.")]
+        private float maxEntanglementStrength = 0.92f;
+
+        [Header("── Diagnostics ──────────────────")]
+        [SerializeField]
+        [Tooltip("Number of active sargassum instances seen in the current source payload.")]
+        private int _debugTrackedInstances;
+
+        [SerializeField]
+        [Tooltip("Number of occupied density cells after the last rebuild.")]
+        private int _debugOccupiedCells;
+
+        [SerializeField]
+        [Tooltip("Approximate world-space bounds of the current density field.")]
+        private Bounds _debugFieldBounds;
+
+        [SerializeField]
+        [Tooltip("World-space density rect encoded as minX, minZ, invSizeX, invSizeZ.")]
+        private Vector4 _debugDensityFieldWorldRect;
+
+        [SerializeField]
+        [Tooltip("Total active instanced attachments rendered inside the current canopy field.")]
+        private int _debugNestedAttachmentCount;
+
+        [SerializeField]
+        [Tooltip("Bounds used for nesting attachment draw calls.")]
+        private Bounds _debugNestedAttachmentBounds;
+
+        [SerializeField]
+        [Tooltip("Count of active trapped debris nests retained in CPU state before prototype batching.")]
+        private int _debugNestedStateCount;
+
+        [SerializeField]
+        [Tooltip("Active canopy disruption zone count currently influencing density, sinking, and megafauna tears.")]
+        private int _debugActiveDisruptionZones;
+
+        [SerializeField]
+        [Tooltip("Maximum sink depth currently encoded into the global buoyancy sink texture.")]
+        private float _debugMaxSinkDepth;
+
+        // COLD ALLOC: Dictionary<long, CellData>[4096] - coarse sargassum density field keyed by XZ cell hash - owner: SargassumGlobalDragManager
+        private readonly Dictionary<long, CellData> _densityCells = new Dictionary<long, CellData>(InitialCellCapacity);
+        private byte[] _densityTextureRaw;
+        private Texture2D _densityFieldTexture;
+        private byte[] _sinkTextureRaw;
+        private Texture2D _sinkFieldTexture;
+        private Matrix4x4[][] _nestedMatricesByPrototype;
+        private int[] _nestedMatrixCounts;
+        private NestedAttachmentState[] _nestedAttachmentStates;
+        private DisruptionZoneState[] _disruptionZones;
+        private int _nestedPrototypeCapacity;
+        private int _activeNestedPrototypeCount;
+        private int _activeNestedAttachmentStateCount;
+        private int _activeDisruptionZoneCount;
+        private NestedAttachmentPrototype[] _activeNestingPrototypes;
+        private NestedAttachmentPrototype[] _fallbackNestingPrototypes;
+        private Mesh _fallbackAttachmentMesh;
+        private Material _fallbackCrateMaterial;
+        private Material _fallbackScrapMaterial;
+
+        private bool _registeredTick;
+        private bool _registeredSlowTick;
+        private bool _hasFieldData;
+        private float _inverseCellSize;
+        private int _fieldRevision;
+        private HectonMapMagicVegetationBridge.FloatingLabyrinthConfig _fallbackLabyrinthConfig;
+        private Vector4 _densityFieldWorldRect;
+
+        /// <summary>
+        /// Active singleton instance.
+        /// </summary>
+        public static SargassumGlobalDragManager Instance => _instance;
+
+        /// <summary>
+        /// Raised when an entangled actor is actively fighting the canopy snare strongly enough to generate tension cues.
+        /// </summary>
+        public static event Action<EntanglementStrainSignal> OnEntanglementStrain;
+
+        /// <summary>
+        /// Raised when a leviathan-scale object tears or clears a local canopy region.
+        /// </summary>
+        public static event Action<MassiveDisplacementSignal> OnMassiveDisplacement;
+
+        /// <summary>
+        /// True while the manager has at least one active sargassum density cell.
+        /// </summary>
+        public bool HasFieldData => _hasFieldData;
+
+        /// <summary>
+        /// Monotonic revision incremented every time the field and density texture are rebuilt.
+        /// </summary>
+        public int FieldRevision => _fieldRevision;
+
+        /// <summary>
+        /// Baked density texture consumed by Crest damping and GPU micro-fauna.
+        /// </summary>
+        public Texture2D DensityFieldTexture => _densityFieldTexture;
+
+        /// <summary>
+        /// Baked buoyancy sink texture consumed by the sargassum canopy shader.
+        /// </summary>
+        public Texture2D SinkFieldTexture => _sinkFieldTexture;
+
+        /// <summary>
+        /// World-space density rect encoded as minX, minZ, invSizeX, invSizeZ in non-drifted sampling space.
+        /// </summary>
+        public Vector4 DensityFieldWorldRect => _densityFieldWorldRect;
+
+        /// <summary>
+        /// Gets or sets the global drift offset applied to both the sargassum shader and drag sampling space.
+        /// </summary>
+        public Vector3 GlobalDriftOffset
+        {
+            get => _globalDriftOffset;
+            set
+            {
+                if (_globalDriftOffset == value)
+                    return;
+
+                _globalDriftOffset = value;
+                PublishShaderGlobals();
+            }
+        }
+
+        /// <summary>
+        /// Broadcasts an active entanglement-strain cue to interested runtime systems.
+        /// </summary>
+        public static void RaiseEntanglementStrain(EntanglementStrainSignal signal)
+        {
+            OnEntanglementStrain?.Invoke(signal);
+        }
+
+        /// <summary>
+        /// Broadcasts a canopy-clearing massive displacement cue to interested runtime systems.
+        /// </summary>
+        /// <param name="signal">Displacement payload.</param>
+        public static void RaiseMassiveDisplacement(MassiveDisplacementSignal signal)
+        {
+            OnMassiveDisplacement?.Invoke(signal);
+        }
+
+        private void Awake()
+        {
+            if (_instance != null && _instance != this)
+            {
+                Debug.LogError("[SargassumGlobalDragManager] Duplicate instance detected. Destroying the newer component.", this);
+                Destroy(this);
+                return;
+            }
+
+            _instance = this;
+            SanitizeSettings();
+            ResolveBridge();
+            ResolveActiveNestingPrototypes();
+            CreateDensityTexture();
+            EnsureDisruptionStorage();
+            ClearField();
+            ClearDisruptionZones();
+            ClearSinkTexture();
+            PublishShaderGlobals();
+        }
+
+        private void OnEnable()
+        {
+            ResolveActiveNestingPrototypes();
+            EnsureDisruptionStorage();
+            PublishShaderGlobals();
+            TryRegister();
+        }
+
+        private void OnDisable()
+        {
+            TryUnregister();
+            ClearField();
+            ClearNestedAttachments();
+            ClearDisruptionZones();
+            ClearDensityTexture();
+            ClearSinkTexture();
+            Shader.SetGlobalVector(_GlobalDriftOffsetId, Vector4.zero);
+            Shader.SetGlobalVector(_SinkWorldRectId, Vector4.zero);
+            Shader.SetGlobalFloat(_MaxSinkDepthId, 0f);
+            Shader.SetGlobalTexture(_SinkTextureId, Texture2D.blackTexture);
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregister();
+            ReleaseNestedAttachmentStorage();
+            ReleaseFallbackNestingResources();
+            ReleaseDensityTexture();
+            ReleaseSinkTexture();
+            Shader.SetGlobalVector(_GlobalDriftOffsetId, Vector4.zero);
+            Shader.SetGlobalVector(_SinkWorldRectId, Vector4.zero);
+            Shader.SetGlobalFloat(_MaxSinkDepthId, 0f);
+            Shader.SetGlobalTexture(_SinkTextureId, Texture2D.blackTexture);
+
+            if (_instance == this)
+                _instance = null;
+        }
+
+        /// <summary>
+        /// Rebuilds the active sargassum density field from the current MapMagic residency payload.
+        /// </summary>
+        public void SlowTick()
+        {
+            ResolveBridge();
+            RebuildDensityField();
+            EvaluateBuoyancyCollapseZones();
+            RefreshDynamicTextures(incrementRevision: true);
+            RebuildNestedAttachments();
+            PublishShaderGlobals();
+        }
+
+        /// <summary>
+        /// Draws rare nested attachments tangled into the current dense canopy field.
+        /// </summary>
+        /// <param name="dt">Frame delta supplied by GameTickManager.</param>
+        public void Tick(float dt)
+        {
+            if (!_hasFieldData || _activeNestedPrototypeCount <= 0 || _nestedMatricesByPrototype == null || _nestedMatrixCounts == null || _activeNestingPrototypes == null)
+            {
+                if (UpdateDisruptionZones(dt))
+                {
+                    RefreshDynamicTextures(incrementRevision: false);
+                    PublishShaderGlobals();
+                }
+
+                return;
+            }
+
+            if (UpdateDisruptionZones(dt))
+            {
+                RefreshDynamicTextures(incrementRevision: false);
+                PublishShaderGlobals();
+            }
+
+            UpdateNestedAttachmentBatches(dt);
+
+            for (int prototypeIndex = 0; prototypeIndex < _activeNestedPrototypeCount; prototypeIndex++)
+            {
+                if ((uint)prototypeIndex >= (uint)_activeNestingPrototypes.Length)
+                    break;
+
+                NestedAttachmentPrototype prototype = _activeNestingPrototypes[prototypeIndex];
+                if (prototype.Mesh == null || prototype.Material == null)
+                    continue;
+
+                int matrixCount = _nestedMatrixCounts[prototypeIndex];
+                if (matrixCount <= 0)
+                    continue;
+
+                Graphics.DrawMeshInstanced(
+                    prototype.Mesh,
+                    0,
+                    prototype.Material,
+                    _nestedMatricesByPrototype[prototypeIndex],
+                    matrixCount,
+                    null,
+                    prototype.ShadowCastingMode,
+                    true,
+                    gameObject.layer,
+                    null,
+                    LightProbeUsage.Off,
+                    null);
+            }
+        }
+
+        /// <summary>
+        /// Samples sticky drag at the given world position.
+        /// </summary>
+        /// <param name="positionWS">World-space sample position.</param>
+        /// <param name="radius">Approximate body radius used for overlap with the density field.</param>
+        /// <param name="speedMultiplier">Resolved speed multiplier when intersecting active sargassum density.</param>
+        /// <param name="dragMultiplier">Resolved drag multiplier when intersecting active sargassum density.</param>
+        /// <param name="density01">Resolved normalized density in the 0..1 range.</param>
+        /// <returns>True when the sample intersects meaningful sargassum density.</returns>
+        public bool SampleInfluence(
+            Vector3 positionWS,
+            float radius,
+            out float speedMultiplier,
+            out float dragMultiplier,
+            out float density01)
+        {
+            bool hasSample = SampleDetailedInfluence(positionWS, radius, entanglementSpeedThreshold + 1f, out SargassumFieldSample sample);
+            speedMultiplier = sample.SpeedMultiplier;
+            dragMultiplier = sample.DragMultiplier;
+            density01 = sample.Density01;
+            return hasSample;
+        }
+
+        /// <summary>
+        /// Returns the current baked density texture and source world rect.
+        /// </summary>
+        /// <param name="texture">Current density texture.</param>
+        /// <param name="worldRect">Current world rect encoded as minX, minZ, invSizeX, invSizeZ.</param>
+        /// <returns>True when a valid density texture exists.</returns>
+        public bool TryGetDensityFieldTexture(out Texture2D texture, out Vector4 worldRect)
+        {
+            texture = _densityFieldTexture;
+            worldRect = _densityFieldWorldRect;
+            return _hasFieldData &&
+                   texture != null &&
+                   _densityFieldWorldRect.z > 0f &&
+                   _densityFieldWorldRect.w > 0f;
+        }
+
+        /// <summary>
+        /// Returns the current buoyancy sink texture and source world rect.
+        /// </summary>
+        /// <param name="texture">Current sink texture.</param>
+        /// <param name="worldRect">Current world rect encoded as minX, minZ, invSizeX, invSizeZ.</param>
+        /// <returns>True when a valid sink texture exists.</returns>
+        public bool TryGetSinkFieldTexture(out Texture2D texture, out Vector4 worldRect)
+        {
+            texture = _sinkFieldTexture;
+            worldRect = _densityFieldWorldRect;
+            return _hasFieldData &&
+                   texture != null &&
+                   _densityFieldWorldRect.z > 0f &&
+                   _densityFieldWorldRect.w > 0f;
+        }
+
+        /// <summary>
+        /// Registers a leviathan-scale or submarine-scale canopy displacement.
+        /// </summary>
+        /// <param name="position">World-space center of the tear.</param>
+        /// <param name="radius">World-space canopy tear radius.</param>
+        /// <param name="duration">Lifetime of the tear cue in seconds.</param>
+        public void RegisterMassiveDisplacement(Vector3 position, float radius, float duration)
+        {
+            float clampedRadius = Mathf.Max(1f, radius);
+            float clampedDuration = Mathf.Max(0.25f, duration);
+            float extremePanicRadius = Mathf.Max(massiveDisplacementExtremePanicRadius, clampedRadius * 3f);
+
+            RegisterOrReinforceDisruptionZone(
+                position - _globalDriftOffset,
+                clampedRadius,
+                1f,
+                0f,
+                massiveDisplacementRampDuration,
+                clampedDuration,
+                massiveDisplacementFadeDuration,
+                DisruptionZoneMode.MassiveDisplacement);
+
+            SargassumCutManager cutManager = SargassumCutManager.Instance;
+            if (cutManager != null)
+                cutManager.RegisterExternalCut(position, clampedRadius, massiveDisplacementCutStrength, Vector3.up, 1.15f);
+
+            RaiseMassiveDisplacement(new MassiveDisplacementSignal
+            {
+                PositionWS = position,
+                RadiusWS = clampedRadius,
+                Duration = clampedDuration,
+                ExtremePanicRadiusWS = extremePanicRadius
+            });
+
+            RefreshDynamicTextures(incrementRevision: false);
+            PublishShaderGlobals();
+        }
+
+        void ISargassumMassiveDisplacementReceiver.RegisterMassiveDisplacement(Vector3 position, float radius, float duration)
+        {
+            RegisterMassiveDisplacement(position, radius, duration);
+        }
+
+        internal bool SampleDetailedInfluence(
+            Vector3 positionWS,
+            float radius,
+            float currentSpeed,
+            out SargassumFieldSample sample)
+        {
+            sample = default;
+            sample.SpeedMultiplier = 1f;
+            sample.DragMultiplier = 1f;
+            sample.AnchorWS = positionWS;
+            sample.Window01 = 1f;
+
+            if (!_hasFieldData || _densityCells.Count == 0)
+                return false;
+
+            Vector3 sampledPositionWS = positionWS - _globalDriftOffset;
+            float effectiveRadius = Mathf.Max(0.1f, radius);
+            int minCellX = Mathf.FloorToInt((sampledPositionWS.x - effectiveRadius) * _inverseCellSize);
+            int maxCellX = Mathf.FloorToInt((sampledPositionWS.x + effectiveRadius) * _inverseCellSize);
+            int minCellZ = Mathf.FloorToInt((sampledPositionWS.z - effectiveRadius) * _inverseCellSize);
+            int maxCellZ = Mathf.FloorToInt((sampledPositionWS.z + effectiveRadius) * _inverseCellSize);
+            float accumulatedDensity = 0f;
+            float weightedCenterX = 0f;
+            float weightedCenterY = 0f;
+            float weightedCenterZ = 0f;
+            float accumulatedWeight = 0f;
+            float strongestContribution = 0f;
+            Vector3 strongestCenterWS = sampledPositionWS;
+
+            for (int cellZ = minCellZ; cellZ <= maxCellZ; cellZ++)
+            {
+                for (int cellX = minCellX; cellX <= maxCellX; cellX++)
+                {
+                    long key = PackCellKey(cellX, cellZ);
+                    if (!_densityCells.TryGetValue(key, out CellData cell))
+                        continue;
+
+                    if (sampledPositionWS.y + effectiveRadius < cell.MinY || sampledPositionWS.y - effectiveRadius > cell.MaxY)
+                        continue;
+
+                    float cellCenterX = (cellX + 0.5f) * cellSize;
+                    float cellCenterZ = (cellZ + 0.5f) * cellSize;
+                    float planarDistance = Vector2.Distance(
+                        new Vector2(sampledPositionWS.x, sampledPositionWS.z),
+                        new Vector2(cellCenterX, cellCenterZ));
+                    float planarWeight = 1f - planarDistance / Mathf.Max(cellSize + effectiveRadius, 0.001f);
+                    if (planarWeight <= 0f)
+                        continue;
+
+                    float weightedContribution = cell.Density * Mathf.Pow(planarWeight, Mathf.Max(1f, distancePower));
+                    accumulatedDensity += weightedContribution;
+                    accumulatedWeight += weightedContribution;
+                    weightedCenterX += cellCenterX * weightedContribution;
+                    weightedCenterY += ((cell.MinY + cell.MaxY) * 0.5f) * weightedContribution;
+                    weightedCenterZ += cellCenterZ * weightedContribution;
+
+                    if (weightedContribution > strongestContribution)
+                    {
+                        strongestContribution = weightedContribution;
+                        strongestCenterWS.x = cellCenterX;
+                        strongestCenterWS.y = (cell.MinY + cell.MaxY) * 0.5f;
+                        strongestCenterWS.z = cellCenterZ;
+                    }
+                }
+            }
+
+            DisruptionSample disruption = SampleDisruptionNoDrift(sampledPositionWS);
+            sample.Density01 = Mathf.Clamp01(accumulatedDensity * densityNormalization);
+            if (disruption.Suppression01 > 0f)
+                sample.Density01 *= 1f - disruption.Suppression01;
+
+            if (sample.Density01 < MinDensityThreshold)
+            {
+                sample.Density01 = 0f;
+                return false;
+            }
+
+            Vector3 centroidWS = accumulatedWeight > 0.0001f
+                ? new Vector3(
+                    weightedCenterX / accumulatedWeight,
+                    weightedCenterY / accumulatedWeight,
+                    weightedCenterZ / accumulatedWeight)
+                : strongestCenterWS;
+            sample.AnchorWS = Vector3.Lerp(centroidWS, strongestCenterWS, 0.65f) + _globalDriftOffset;
+            sample.AnchorWS.y -= disruption.SinkDepthWS;
+            sample.SpeedMultiplier = Mathf.Lerp(1f, minSpeedMultiplier, sample.Density01);
+            sample.DragMultiplier = Mathf.Lerp(1f, maxDragMultiplier, sample.Density01);
+            sample.Window01 = EvaluateCanopyWindow01(sampledPositionWS);
+            sample.Occlusion01 = Mathf.Clamp01(sample.Density01 * (1f - sample.Window01 * 0.78f));
+            sample.Entanglement01 = ResolveEntanglement01(sample.Density01, currentSpeed);
+            sample.HasInfluence = true;
+            return true;
+        }
+
+        private void ResolveBridge()
+        {
+            if (mapMagicVegetationBridge != null)
+                return;
+
+            mapMagicVegetationBridge = FindAnyObjectByType<HectonMapMagicVegetationBridge>(FindObjectsInactive.Exclude);
+        }
+
+        private void RebuildDensityField()
+        {
+            ClearField();
+            if (mapMagicVegetationBridge == null)
+                return;
+
+            Matrix4x4[] matrices = mapMagicVegetationBridge.ActiveSurfaceMatrices;
+            int[] types = mapMagicVegetationBridge.ActiveSurfaceTypes;
+            int activeCount = mapMagicVegetationBridge.ActiveSurfaceInstanceCount;
+            if (matrices == null || types == null || activeCount <= 0)
+                return;
+
+            Bounds fieldBounds = default;
+            bool boundsInitialized = false;
+            int trackedInstances = 0;
+
+            for (int i = 0; i < activeCount; i++)
+            {
+                if ((HectonVegetationInstanceType)types[i] != HectonVegetationInstanceType.Sargassum)
+                    continue;
+
+                Matrix4x4 matrix = matrices[i];
+                Vector3 origin = matrix.GetColumn(3);
+                float scale = ExtractUniformScale(matrix);
+                float influenceRadius = Mathf.Max(baseInfluenceRadius * scale, cellSize * 0.35f);
+                float verticalHalfExtent = Mathf.Max(baseVerticalHalfExtent * scale, 0.5f);
+                float minY = origin.y - verticalHalfExtent;
+                float maxY = origin.y + verticalHalfExtent;
+
+                int minCellX = Mathf.FloorToInt((origin.x - influenceRadius) * _inverseCellSize);
+                int maxCellX = Mathf.FloorToInt((origin.x + influenceRadius) * _inverseCellSize);
+                int minCellZ = Mathf.FloorToInt((origin.z - influenceRadius) * _inverseCellSize);
+                int maxCellZ = Mathf.FloorToInt((origin.z + influenceRadius) * _inverseCellSize);
+
+                for (int cellZ = minCellZ; cellZ <= maxCellZ; cellZ++)
+                {
+                    for (int cellX = minCellX; cellX <= maxCellX; cellX++)
+                    {
+                        float cellCenterX = (cellX + 0.5f) * cellSize;
+                        float cellCenterZ = (cellZ + 0.5f) * cellSize;
+                        float planarDistance = Vector2.Distance(
+                            new Vector2(origin.x, origin.z),
+                            new Vector2(cellCenterX, cellCenterZ));
+                        if (planarDistance > influenceRadius)
+                            continue;
+
+                        float normalized = 1f - planarDistance / Mathf.Max(influenceRadius, 0.001f);
+                        float density = Mathf.Pow(Mathf.Clamp01(normalized), Mathf.Max(1f, distancePower));
+                        if (density <= 0.0001f)
+                            continue;
+
+                        long key = PackCellKey(cellX, cellZ);
+                        if (_densityCells.TryGetValue(key, out CellData existing))
+                        {
+                            existing.Density += density;
+                            existing.MinY = Mathf.Min(existing.MinY, minY);
+                            existing.MaxY = Mathf.Max(existing.MaxY, maxY);
+                            _densityCells[key] = existing;
+                        }
+                        else
+                        {
+                            _densityCells.Add(
+                                key,
+                                new CellData
+                                {
+                                    Density = density,
+                                    MinY = minY,
+                                    MaxY = maxY
+                                });
+                        }
+                    }
+                }
+
+                Bounds instanceBounds = new Bounds(origin, new Vector3(influenceRadius * 2f, verticalHalfExtent * 2f, influenceRadius * 2f));
+                if (!boundsInitialized)
+                {
+                    fieldBounds = instanceBounds;
+                    boundsInitialized = true;
+                }
+                else
+                {
+                    fieldBounds.Encapsulate(instanceBounds);
+                }
+
+                trackedInstances++;
+            }
+
+            _hasFieldData = _densityCells.Count > 0;
+            _debugTrackedInstances = trackedInstances;
+            _debugOccupiedCells = _densityCells.Count;
+            _debugFieldBounds = boundsInitialized ? fieldBounds : default;
+        }
+
+        private void ClearField()
+        {
+            _densityCells.Clear();
+            _hasFieldData = false;
+            _debugTrackedInstances = 0;
+            _debugOccupiedCells = 0;
+            _debugFieldBounds = default;
+            _densityFieldWorldRect = Vector4.zero;
+            _debugDensityFieldWorldRect = Vector4.zero;
+        }
+
+        private void ClearNestedAttachments()
+        {
+            _activeNestedPrototypeCount = 0;
+            _activeNestedAttachmentStateCount = 0;
+            _debugNestedAttachmentCount = 0;
+            _debugNestedAttachmentBounds = default;
+            _debugNestedStateCount = 0;
+
+            if (_nestedMatrixCounts == null)
+                return;
+
+            for (int i = 0; i < _nestedMatrixCounts.Length; i++)
+                _nestedMatrixCounts[i] = 0;
+        }
+
+        private void EnsureDisruptionStorage()
+        {
+            int requiredCapacity = Mathf.Clamp(maxDisruptionZoneCount, 1, MaxDisruptionZoneCapacity);
+            if (_disruptionZones != null && _disruptionZones.Length == requiredCapacity)
+                return;
+
+            // COLD ALLOC: DisruptionZoneState[capacity] - persistent canopy destruction zones - owner: SargassumGlobalDragManager
+            _disruptionZones = new DisruptionZoneState[requiredCapacity];
+            _activeDisruptionZoneCount = 0;
+            _debugActiveDisruptionZones = 0;
+        }
+
+        private void ClearDisruptionZones()
+        {
+            _activeDisruptionZoneCount = 0;
+            _debugActiveDisruptionZones = 0;
+            _debugMaxSinkDepth = 0f;
+
+            if (_disruptionZones == null)
+                return;
+
+            Array.Clear(_disruptionZones, 0, _disruptionZones.Length);
+        }
+
+        private bool UpdateDisruptionZones(float dt)
+        {
+            if (_disruptionZones == null || _activeDisruptionZoneCount <= 0)
+                return false;
+
+            bool changed = false;
+            float deltaTime = Mathf.Max(0f, dt);
+            int index = 0;
+            while (index < _activeDisruptionZoneCount)
+            {
+                DisruptionZoneState zone = _disruptionZones[index];
+                float previousStrength01 = EvaluateDisruptionZone01(zone);
+                zone.Age += deltaTime;
+
+                float lifeTime = zone.Mode == (byte)DisruptionZoneMode.CutCollapse
+                    ? float.MaxValue
+                    : zone.HoldDuration + zone.FadeDuration;
+
+                if (zone.Age >= lifeTime)
+                {
+                    int lastIndex = _activeDisruptionZoneCount - 1;
+                    _disruptionZones[index] = _disruptionZones[lastIndex];
+                    _disruptionZones[lastIndex] = default;
+                    _activeDisruptionZoneCount = lastIndex;
+                    changed = true;
+                    continue;
+                }
+
+                float currentStrength01 = EvaluateDisruptionZone01(zone);
+                if (Mathf.Abs(currentStrength01 - previousStrength01) > 0.0005f)
+                    changed = true;
+
+                _disruptionZones[index] = zone;
+                index++;
+            }
+
+            _debugActiveDisruptionZones = _activeDisruptionZoneCount;
+            return changed;
+        }
+
+        private void EvaluateBuoyancyCollapseZones()
+        {
+            SargassumCutManager cutManager = SargassumCutManager.Instance;
+            if (cutManager == null || _densityCells.Count == 0)
+                return;
+
+            Dictionary<long, CellData>.Enumerator enumerator = _densityCells.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                long cellKey = enumerator.Current.Key;
+                CellData cell = enumerator.Current.Value;
+                float normalizedDensity = Mathf.Clamp01(cell.Density * densityNormalization);
+                if (normalizedDensity < nestingNodeDensityThreshold)
+                    continue;
+
+                int cellX = (int)(cellKey >> 32);
+                int cellZ = (int)cellKey;
+                Vector3 cellCenterWS = new Vector3(
+                    (cellX + 0.5f) * cellSize + _globalDriftOffset.x,
+                    (cell.MinY + cell.MaxY) * 0.5f + _globalDriftOffset.y,
+                    (cellZ + 0.5f) * cellSize + _globalDriftOffset.z);
+
+                if (!cutManager.SampleRecentCutArea(cellCenterWS, buoyancyCollapseQueryRadius, out float accumulatedCutAreaWS, out float strongestCut01))
+                    continue;
+
+                if (accumulatedCutAreaWS < buoyancyCollapseAreaThreshold || strongestCut01 < buoyancyCollapseCutStrengthThreshold)
+                    continue;
+
+                float collapseStrength = Mathf.Clamp01(accumulatedCutAreaWS / Mathf.Max(buoyancyCollapseAreaThreshold, 0.001f));
+                float sinkDepth = Mathf.Lerp(buoyancyCollapseSinkDepth * 0.45f, buoyancyCollapseSinkDepth, collapseStrength);
+                int zoneIndex = RegisterOrReinforceDisruptionZone(
+                    cellCenterWS - _globalDriftOffset,
+                    buoyancyCollapseRadius,
+                    collapseStrength,
+                    sinkDepth,
+                    buoyancyCollapseSinkDuration,
+                    0f,
+                    0f,
+                    DisruptionZoneMode.CutCollapse);
+                TrySpawnCollapseChunks(zoneIndex, cellCenterWS, collapseStrength, accumulatedCutAreaWS);
+            }
+        }
+
+        private int RegisterOrReinforceDisruptionZone(
+            Vector3 sampleSpaceCenterWS,
+            float radiusWS,
+            float strength01,
+            float sinkDepthWS,
+            float rampDuration,
+            float holdDuration,
+            float fadeDuration,
+            DisruptionZoneMode mode)
+        {
+            EnsureDisruptionStorage();
+
+            float clampedRadius = Mathf.Max(cellSize * 0.5f, radiusWS);
+            float clampedStrength = Mathf.Clamp01(strength01);
+            float clampedRamp = Mathf.Max(0.01f, rampDuration);
+            float clampedHold = Mathf.Max(0f, holdDuration);
+            float clampedFade = Mathf.Max(0f, fadeDuration);
+            int zoneIndex = FindMatchingDisruptionZoneIndex(sampleSpaceCenterWS, clampedRadius, mode);
+
+            if (zoneIndex < 0)
+            {
+                if (_activeDisruptionZoneCount >= (_disruptionZones != null ? _disruptionZones.Length : 0))
+                    return -1;
+
+                zoneIndex = _activeDisruptionZoneCount++;
+            }
+
+            DisruptionZoneState zone = _disruptionZones[zoneIndex];
+            bool isExistingZone = zone.Mode != 0;
+            if (zone.Mode == 0)
+                zone.SampleSpaceCenterWS = sampleSpaceCenterWS;
+            else
+                zone.SampleSpaceCenterWS = Vector3.Lerp(zone.SampleSpaceCenterWS, sampleSpaceCenterWS, 0.35f);
+
+            zone.RadiusWS = Mathf.Max(zone.RadiusWS, clampedRadius);
+            zone.Strength01 = Mathf.Max(zone.Strength01, clampedStrength);
+            zone.SinkDepthWS = Mathf.Max(zone.SinkDepthWS, Mathf.Max(0f, sinkDepthWS));
+            zone.RampDuration = Mathf.Min(zone.RampDuration > 0f ? zone.RampDuration : clampedRamp, clampedRamp);
+            zone.HoldDuration = Mathf.Max(zone.HoldDuration, clampedHold);
+            zone.FadeDuration = Mathf.Max(zone.FadeDuration, clampedFade);
+            zone.Mode = (byte)mode;
+            if (!isExistingZone || mode == DisruptionZoneMode.MassiveDisplacement)
+                zone.Age = 0f;
+            _disruptionZones[zoneIndex] = zone;
+            _debugActiveDisruptionZones = _activeDisruptionZoneCount;
+            return zoneIndex;
+        }
+
+        private int FindMatchingDisruptionZoneIndex(Vector3 sampleSpaceCenterWS, float radiusWS, DisruptionZoneMode mode)
+        {
+            if (_disruptionZones == null)
+                return -1;
+
+            float mergeDistance = Mathf.Max(cellSize, radiusWS * 0.85f);
+            float mergeDistanceSq = mergeDistance * mergeDistance;
+            for (int i = 0; i < _activeDisruptionZoneCount; i++)
+            {
+                if (_disruptionZones[i].Mode != (byte)mode)
+                    continue;
+
+                Vector3 delta = _disruptionZones[i].SampleSpaceCenterWS - sampleSpaceCenterWS;
+                delta.y = 0f;
+                if (delta.sqrMagnitude <= mergeDistanceSq)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private static float EvaluateDisruptionZone01(DisruptionZoneState zone)
+        {
+            float ramp = Mathf.Clamp01(zone.Age / Mathf.Max(zone.RampDuration, 0.01f));
+            if (zone.Mode == (byte)DisruptionZoneMode.CutCollapse)
+                return zone.Strength01 * ramp;
+
+            float fade = zone.Age <= zone.HoldDuration
+                ? 1f
+                : 1f - Mathf.Clamp01((zone.Age - zone.HoldDuration) / Mathf.Max(zone.FadeDuration, 0.01f));
+            return zone.Strength01 * ramp * fade;
+        }
+
+        private void TrySpawnCollapseChunks(int zoneIndex, Vector3 zoneCenterWS, float collapseStrength, float accumulatedCutAreaWS)
+        {
+            if (zoneIndex < 0 ||
+                collapseChunkPrefab == null ||
+                _disruptionZones == null ||
+                zoneIndex >= _activeDisruptionZoneCount ||
+                _activeDisruptionZoneCount <= 0)
+            {
+                return;
+            }
+
+            float catastrophicAreaThreshold = buoyancyCollapseAreaThreshold * Mathf.Max(1f, collapseChunkAreaThresholdMultiplier);
+            if (accumulatedCutAreaWS < catastrophicAreaThreshold)
+                return;
+
+            ObjectPoolManager poolManager = ObjectPoolManager.Instance;
+            if (poolManager == null)
+                return;
+
+            DisruptionZoneState zone = _disruptionZones[zoneIndex];
+            if ((zone.Flags & CollapseChunkBurstSpawnedFlag) != 0)
+                return;
+
+            int spawnCount = Mathf.Clamp(
+                Mathf.RoundToInt(Mathf.Lerp(1f, collapseChunkSpawnCount, Mathf.Clamp01(collapseStrength))),
+                1,
+                collapseChunkSpawnCount);
+
+            for (int chunkIndex = 0; chunkIndex < spawnCount; chunkIndex++)
+            {
+                float angle = HashToFloat01((uint)zoneIndex, (uint)chunkIndex, 0x85A308D3u) * Mathf.PI * 2f;
+                float radialT = Mathf.Sqrt(HashToFloat01((uint)zoneIndex, (uint)chunkIndex, 0x13198A2Eu));
+                float radius = collapseChunkSpawnRadius * radialT;
+                Vector3 spawnOffset = new Vector3(Mathf.Cos(angle) * radius, 0f, Mathf.Sin(angle) * radius);
+                Vector3 spawnPosition = zoneCenterWS + spawnOffset;
+                spawnPosition.y += Mathf.Lerp(0.25f, 1.1f, HashToFloat01((uint)zoneIndex, (uint)chunkIndex, 0x03707344u));
+
+                Vector3 lateralDirection = spawnOffset.sqrMagnitude > 0.0001f ? spawnOffset.normalized : Vector3.right;
+                Vector3 linearVelocity = new Vector3(
+                    lateralDirection.x * collapseChunkHorizontalSpeed,
+                    -collapseChunkDownwardSpeed,
+                    lateralDirection.z * collapseChunkHorizontalSpeed);
+                Vector3 angularVelocity = new Vector3(
+                    Mathf.Lerp(-2.8f, 2.8f, HashToFloat01((uint)zoneIndex, (uint)chunkIndex, 0xA4093822u)),
+                    Mathf.Lerp(-1.9f, 1.9f, HashToFloat01((uint)zoneIndex, (uint)chunkIndex, 0x299F31D0u)),
+                    Mathf.Lerp(-2.4f, 2.4f, HashToFloat01((uint)zoneIndex, (uint)chunkIndex, 0x082EFA98u)));
+                float uniformScale = Mathf.Lerp(
+                    collapseChunkScaleMin,
+                    collapseChunkScaleMax,
+                    HashToFloat01((uint)zoneIndex, (uint)chunkIndex, 0xEC4E6C89u));
+
+                GameObject chunkInstance = poolManager.Spawn(
+                    collapseChunkPrefab,
+                    spawnPosition,
+                    Quaternion.Euler(
+                        Mathf.Lerp(-18f, 18f, HashToFloat01((uint)zoneIndex, (uint)chunkIndex, 0x452821E6u)),
+                        Mathf.Lerp(0f, 360f, HashToFloat01((uint)zoneIndex, (uint)chunkIndex, 0x38D01377u)),
+                        Mathf.Lerp(-18f, 18f, HashToFloat01((uint)zoneIndex, (uint)chunkIndex, 0xBE5466CFu))));
+                if (chunkInstance == null)
+                    continue;
+
+                if (chunkInstance.TryGetComponent(out SargassumCollapseChunk collapseChunk))
+                {
+                    collapseChunk.ActivateChunk(linearVelocity, angularVelocity, uniformScale, collapseChunkLifetime);
+                }
+                else
+                {
+                    chunkInstance.transform.localScale = chunkInstance.transform.localScale * uniformScale;
+                    if (chunkInstance.TryGetComponent(out Rigidbody chunkRigidbody))
+                    {
+                        chunkRigidbody.isKinematic = false;
+                        chunkRigidbody.WakeUp();
+                        chunkRigidbody.linearVelocity = linearVelocity;
+                        chunkRigidbody.angularVelocity = angularVelocity;
+                    }
+
+                    poolManager.Despawn(chunkInstance, collapseChunkLifetime);
+                }
+            }
+
+            zone.Flags |= CollapseChunkBurstSpawnedFlag;
+            _disruptionZones[zoneIndex] = zone;
+        }
+
+        private DisruptionSample SampleDisruptionNoDrift(Vector3 sampledPositionWS)
+        {
+            DisruptionSample sample = default;
+            if (_disruptionZones == null || _activeDisruptionZoneCount <= 0)
+                return sample;
+
+            Vector2 sampleXZ = new Vector2(sampledPositionWS.x, sampledPositionWS.z);
+            for (int i = 0; i < _activeDisruptionZoneCount; i++)
+            {
+                DisruptionZoneState zone = _disruptionZones[i];
+                float zone01 = EvaluateDisruptionZone01(zone);
+                if (zone01 <= 0f || zone.RadiusWS <= 0f)
+                    continue;
+
+                Vector2 deltaXZ = sampleXZ - new Vector2(zone.SampleSpaceCenterWS.x, zone.SampleSpaceCenterWS.z);
+                float distance = deltaXZ.magnitude;
+                if (distance >= zone.RadiusWS)
+                    continue;
+
+                float radial01 = 1f - distance / Mathf.Max(zone.RadiusWS, 0.001f);
+                float influence01 = zone01 * radial01 * radial01;
+                if (influence01 > sample.Suppression01)
+                    sample.Suppression01 = influence01;
+
+                float sinkDepthWS = zone.SinkDepthWS * influence01;
+                if (sinkDepthWS > sample.SinkDepthWS)
+                    sample.SinkDepthWS = sinkDepthWS;
+            }
+
+            return sample;
+        }
+
+        private void PublishShaderGlobals()
+        {
+            Shader.SetGlobalVector(_GlobalDriftOffsetId, _globalDriftOffset);
+            Shader.SetGlobalTexture(_SinkTextureId, _sinkFieldTexture != null ? _sinkFieldTexture : Texture2D.blackTexture);
+            Shader.SetGlobalVector(_SinkWorldRectId, _densityFieldWorldRect);
+            Shader.SetGlobalFloat(_MaxSinkDepthId, _debugMaxSinkDepth);
+        }
+
+        private void ResolveActiveNestingPrototypes()
+        {
+            if (nestingPrototypes != null && nestingPrototypes.Length > 0)
+            {
+                _activeNestingPrototypes = nestingPrototypes;
+                return;
+            }
+
+            EnsureFallbackNestingResources();
+            _activeNestingPrototypes = _fallbackNestingPrototypes;
+        }
+
+        private void EnsureFallbackNestingResources()
+        {
+            if (_fallbackAttachmentMesh == null)
+                _fallbackAttachmentMesh = BuildFallbackAttachmentMesh();
+
+            if (_fallbackCrateMaterial == null)
+            {
+                Shader litShader = Shader.Find("Universal Render Pipeline/Lit");
+                if (litShader == null)
+                    litShader = Shader.Find("Standard");
+
+                if (litShader != null)
+                {
+                    _fallbackCrateMaterial = new Material(litShader)
+                    {
+                        name = "__SargassumNestCrateFallback",
+                        hideFlags = HideFlags.HideAndDontSave
+                    }; // COLD ALLOC: Material[1] - runtime crate fallback for canopy nesting - owner: SargassumGlobalDragManager
+                    _fallbackCrateMaterial.enableInstancing = true;
+                    _fallbackCrateMaterial.SetColor("_BaseColor", new Color(0.42f, 0.29f, 0.17f, 1f));
+                    _fallbackCrateMaterial.SetColor("_Color", new Color(0.42f, 0.29f, 0.17f, 1f));
+                }
+            }
+
+            if (_fallbackScrapMaterial == null)
+            {
+                Shader litShader = Shader.Find("Universal Render Pipeline/Lit");
+                if (litShader == null)
+                    litShader = Shader.Find("Standard");
+
+                if (litShader != null)
+                {
+                    _fallbackScrapMaterial = new Material(litShader)
+                    {
+                        name = "__SargassumNestScrapFallback",
+                        hideFlags = HideFlags.HideAndDontSave
+                    }; // COLD ALLOC: Material[1] - runtime scrap fallback for canopy nesting - owner: SargassumGlobalDragManager
+                    _fallbackScrapMaterial.enableInstancing = true;
+                    _fallbackScrapMaterial.SetColor("_BaseColor", new Color(0.28f, 0.34f, 0.38f, 1f));
+                    _fallbackScrapMaterial.SetColor("_Color", new Color(0.28f, 0.34f, 0.38f, 1f));
+                }
+            }
+
+            if (_fallbackNestingPrototypes != null)
+                return;
+
+            _fallbackNestingPrototypes = new[]
+            {
+                new NestedAttachmentPrototype
+                {
+                    Mesh = _fallbackAttachmentMesh,
+                    Material = _fallbackCrateMaterial,
+                    Weight = 1,
+                    UniformScaleRange = new Vector2(0.72f, 1.08f),
+                    VerticalOffsetRange = new Vector2(-0.15f, 0.25f),
+                    DensityThreshold = 0.62f,
+                    WindowThreshold = 0.18f,
+                    ShadowCastingMode = ShadowCastingMode.Off
+                },
+                new NestedAttachmentPrototype
+                {
+                    Mesh = _fallbackAttachmentMesh,
+                    Material = _fallbackScrapMaterial,
+                    Weight = 2,
+                    UniformScaleRange = new Vector2(0.54f, 0.92f),
+                    VerticalOffsetRange = new Vector2(-0.28f, 0.18f),
+                    DensityThreshold = 0.56f,
+                    WindowThreshold = 0.22f,
+                    ShadowCastingMode = ShadowCastingMode.Off
+                }
+            }; // COLD ALLOC: NestedAttachmentPrototype[2] - runtime fallback nesting archetypes - owner: SargassumGlobalDragManager
+        }
+
+        private void ReleaseFallbackNestingResources()
+        {
+            _activeNestingPrototypes = null;
+            _fallbackNestingPrototypes = null;
+
+            if (_fallbackCrateMaterial != null)
+            {
+                Destroy(_fallbackCrateMaterial);
+                _fallbackCrateMaterial = null;
+            }
+
+            if (_fallbackScrapMaterial != null)
+            {
+                Destroy(_fallbackScrapMaterial);
+                _fallbackScrapMaterial = null;
+            }
+
+            if (_fallbackAttachmentMesh != null)
+            {
+                Destroy(_fallbackAttachmentMesh);
+                _fallbackAttachmentMesh = null;
+            }
+        }
+
+        private void RebuildNestedAttachments()
+        {
+            EnsureNestedAttachmentStorage();
+            ClearNestedAttachments();
+
+            if (!_hasFieldData ||
+                _activeNestingPrototypes == null ||
+                _activeNestingPrototypes.Length == 0 ||
+                _nestedMatricesByPrototype == null ||
+                _nestedMatrixCounts == null ||
+                _debugFieldBounds.size.sqrMagnitude <= 0.0001f)
+            {
+                return;
+            }
+
+            float denseNodeChance = Mathf.Clamp01(denseNodeNestChancePercent * 0.01f);
+            if (denseNodeChance <= 0f)
+                return;
+
+            Dictionary<long, CellData>.Enumerator enumerator = _densityCells.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                if (_activeNestedAttachmentStateCount >= maxNestedAttachmentCount)
+                    break;
+
+                long cellKey = enumerator.Current.Key;
+                CellData cell = enumerator.Current.Value;
+                float normalizedDensity = Mathf.Clamp01(cell.Density * densityNormalization);
+                if (normalizedDensity < nestingNodeDensityThreshold)
+                    continue;
+
+                int cellX = (int)(cellKey >> 32);
+                int cellZ = (int)cellKey;
+                float chance = HashToFloat01((uint)cellX, (uint)cellZ, 0x6A09E667u);
+                if (chance > denseNodeChance)
+                    continue;
+
+                Vector3 cellCenterWS = new Vector3(
+                    (cellX + 0.5f) * cellSize + _globalDriftOffset.x,
+                    (cell.MinY + cell.MaxY) * 0.5f + _globalDriftOffset.y,
+                    (cellZ + 0.5f) * cellSize + _globalDriftOffset.z);
+                if (!SampleDetailedInfluence(cellCenterWS, nestingSampleRadius, 0f, out SargassumFieldSample fieldSample))
+                    continue;
+
+                if (fieldSample.Window01 > nestingNodeWindowThreshold)
+                    continue;
+
+                int prototypeIndex = ResolveNestedPrototypeIndex(fieldSample, cellX, cellZ);
+                if (prototypeIndex < 0)
+                    continue;
+
+                NestedAttachmentPrototype prototype = _activeNestingPrototypes[prototypeIndex];
+                float minScale = prototype.UniformScaleRange.x > 0f ? prototype.UniformScaleRange.x : 0.72f;
+                float maxScale = prototype.UniformScaleRange.y > minScale ? prototype.UniformScaleRange.y : minScale * 1.18f;
+                float uniformScale = Mathf.Lerp(
+                    Mathf.Max(0.1f, minScale),
+                    Mathf.Max(minScale, maxScale),
+                    HashToFloat01((uint)cellX, (uint)cellZ, 0x91E10DA5u));
+                float verticalOffset = Mathf.Lerp(
+                    prototype.VerticalOffsetRange.x,
+                    prototype.VerticalOffsetRange.y,
+                    HashToFloat01((uint)cellX, (uint)cellZ, 0x52A3F15Du));
+                float yaw = HashToFloat01((uint)cellX, (uint)cellZ, 0xD23F4195u) * 360f;
+                float pitch = Mathf.Lerp(-10f, 10f, HashToFloat01((uint)cellX, (uint)cellZ, 0x3AF21D8Bu));
+                float roll = Mathf.Lerp(-14f, 14f, HashToFloat01((uint)cellX, (uint)cellZ, 0xF13A0BCDu));
+                Vector3 sampleSpaceAnchorWS = fieldSample.AnchorWS - _globalDriftOffset;
+                sampleSpaceAnchorWS.y = Mathf.Clamp(cellCenterWS.y + verticalOffset - _globalDriftOffset.y, cell.MinY, cell.MaxY);
+
+                _nestedAttachmentStates[_activeNestedAttachmentStateCount] = new NestedAttachmentState
+                {
+                    SampleSpaceAnchorWS = sampleSpaceAnchorWS,
+                    RenderOffsetWS = Vector3.zero,
+                    ReleaseVelocityWS = Vector3.zero,
+                    Rotation = Quaternion.Euler(pitch, yaw, roll),
+                    UniformScale = uniformScale,
+                    ReleaseLifetime = nestingReleaseLifetime,
+                    ReleaseAge = 0f,
+                    PrototypeIndex = prototypeIndex,
+                    Released = false
+                };
+                _activeNestedAttachmentStateCount++;
+            }
+
+            _activeNestedPrototypeCount = _activeNestingPrototypes.Length;
+            _debugNestedStateCount = _activeNestedAttachmentStateCount;
+            UpdateNestedAttachmentBatches(0f);
+        }
+
+        private void EnsureNestedAttachmentStorage()
+        {
+            ResolveActiveNestingPrototypes();
+            int prototypeCount = _activeNestingPrototypes != null ? _activeNestingPrototypes.Length : 0;
+            int requiredCapacity = Mathf.Clamp(maxNestedAttachmentCount, 4, 128);
+            if (_nestedMatricesByPrototype != null &&
+                _nestedMatrixCounts != null &&
+                _nestedAttachmentStates != null &&
+                _nestedMatricesByPrototype.Length == prototypeCount &&
+                _nestedPrototypeCapacity == requiredCapacity)
+            {
+                return;
+            }
+
+            _nestedPrototypeCapacity = requiredCapacity;
+            // COLD ALLOC: Matrix4x4[prototypeCount][capacity] - persistent instanced nesting matrices by archetype - owner: SargassumGlobalDragManager
+            _nestedMatricesByPrototype = new Matrix4x4[prototypeCount][];
+            // COLD ALLOC: int[prototypeCount] - per-archetype instanced nesting counts - owner: SargassumGlobalDragManager
+            _nestedMatrixCounts = new int[prototypeCount];
+            for (int i = 0; i < prototypeCount; i++)
+            {
+                // COLD ALLOC: Matrix4x4[capacity] - instanced nesting batch storage for one archetype - owner: SargassumGlobalDragManager
+                _nestedMatricesByPrototype[i] = new Matrix4x4[requiredCapacity];
+            }
+            // COLD ALLOC: NestedAttachmentState[capacity] - persistent trapped-debris state for cut-release simulation - owner: SargassumGlobalDragManager
+            _nestedAttachmentStates = new NestedAttachmentState[requiredCapacity];
+        }
+
+        private void ReleaseNestedAttachmentStorage()
+        {
+            _nestedMatricesByPrototype = null;
+            _nestedMatrixCounts = null;
+            _nestedAttachmentStates = null;
+            _nestedPrototypeCapacity = 0;
+            _activeNestedPrototypeCount = 0;
+            _activeNestedAttachmentStateCount = 0;
+        }
+
+        private int ResolveNestedPrototypeIndex(SargassumFieldSample fieldSample, int sampleX, int sampleZ)
+        {
+            if (_activeNestingPrototypes == null || _activeNestingPrototypes.Length == 0)
+                return -1;
+
+            int totalWeight = 0;
+            for (int i = 0; i < _activeNestingPrototypes.Length; i++)
+            {
+                NestedAttachmentPrototype prototype = _activeNestingPrototypes[i];
+                if (prototype.Mesh == null || prototype.Material == null)
+                    continue;
+
+                float densityThreshold = prototype.DensityThreshold > 0f ? Mathf.Clamp01(prototype.DensityThreshold) : 0.56f;
+                float windowThreshold = prototype.WindowThreshold > 0f ? Mathf.Clamp01(prototype.WindowThreshold) : 0.18f;
+                if (fieldSample.Density01 < densityThreshold)
+                    continue;
+
+                if (fieldSample.Window01 > windowThreshold)
+                    continue;
+
+                totalWeight += Mathf.Max(1, prototype.Weight);
+            }
+
+            if (totalWeight <= 0)
+                return -1;
+
+            float pick = HashToFloat01((uint)sampleX, (uint)sampleZ, 0x64A8B875u) * totalWeight;
+            float cursor = 0f;
+            for (int i = 0; i < _activeNestingPrototypes.Length; i++)
+            {
+                NestedAttachmentPrototype prototype = _activeNestingPrototypes[i];
+                if (prototype.Mesh == null || prototype.Material == null)
+                    continue;
+
+                float densityThreshold = prototype.DensityThreshold > 0f ? Mathf.Clamp01(prototype.DensityThreshold) : 0.56f;
+                float windowThreshold = prototype.WindowThreshold > 0f ? Mathf.Clamp01(prototype.WindowThreshold) : 0.18f;
+                if (fieldSample.Density01 < densityThreshold)
+                    continue;
+
+                if (fieldSample.Window01 > windowThreshold)
+                    continue;
+
+                cursor += Mathf.Max(1, prototype.Weight);
+                if (pick <= cursor)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private void UpdateNestedAttachmentBatches(float dt)
+        {
+            if (_nestedAttachmentStates == null || _nestedMatrixCounts == null || _nestedMatricesByPrototype == null)
+                return;
+
+            for (int i = 0; i < _nestedMatrixCounts.Length; i++)
+                _nestedMatrixCounts[i] = 0;
+
+            SargassumCutManager cutManager = SargassumCutManager.Instance;
+            bool boundsInitialized = false;
+            Bounds drawBounds = default;
+            int totalVisible = 0;
+
+            for (int stateIndex = 0; stateIndex < _activeNestedAttachmentStateCount; stateIndex++)
+            {
+                NestedAttachmentState state = _nestedAttachmentStates[stateIndex];
+                if ((uint)state.PrototypeIndex >= (uint)_activeNestingPrototypes.Length)
+                    continue;
+
+                DisruptionSample disruption = SampleDisruptionNoDrift(state.SampleSpaceAnchorWS);
+                Vector3 worldPosition = state.SampleSpaceAnchorWS + _globalDriftOffset + state.RenderOffsetWS;
+                if (!state.Released && disruption.SinkDepthWS > 0f)
+                    worldPosition.y -= disruption.SinkDepthWS;
+                if (!state.Released &&
+                    cutManager != null &&
+                    cutManager.SampleRecentCut01(worldPosition, nestingCutReleaseRadius, out float cut01) &&
+                    cut01 >= nestingCutReleaseThreshold)
+                {
+                    Vector3 releaseDirection = new Vector3(
+                        Mathf.Lerp(-1f, 1f, HashToFloat01((uint)stateIndex, 0xB5C0FBCFu, 0x51ED270Bu)),
+                        0f,
+                        Mathf.Lerp(-1f, 1f, HashToFloat01((uint)stateIndex, 0x9E3779B9u, 0xA54FF53Au)));
+                    if (releaseDirection.sqrMagnitude <= 0.0001f)
+                        releaseDirection = Vector3.right;
+
+                    releaseDirection.Normalize();
+                    state.Released = true;
+                    state.ReleaseAge = 0f;
+                    state.ReleaseVelocityWS = new Vector3(
+                        releaseDirection.x * nestingReleaseHorizontalSpeed,
+                        -nestingReleaseDownwardSpeed,
+                        releaseDirection.z * nestingReleaseHorizontalSpeed);
+                }
+
+                if (state.Released)
+                {
+                    state.ReleaseAge += Mathf.Max(0f, dt);
+                    if (state.ReleaseAge >= state.ReleaseLifetime)
+                    {
+                        _nestedAttachmentStates[stateIndex] = state;
+                        continue;
+                    }
+
+                    state.ReleaseVelocityWS.y -= nestingReleaseGravity * Mathf.Max(0f, dt);
+                    state.RenderOffsetWS += state.ReleaseVelocityWS * Mathf.Max(0f, dt);
+                    worldPosition = state.SampleSpaceAnchorWS + _globalDriftOffset + state.RenderOffsetWS;
+                }
+
+                int prototypeIndex = state.PrototypeIndex;
+                int matrixCount = _nestedMatrixCounts[prototypeIndex];
+                if (matrixCount >= _nestedMatricesByPrototype[prototypeIndex].Length)
+                {
+                    _nestedAttachmentStates[stateIndex] = state;
+                    continue;
+                }
+
+                Matrix4x4 matrix = Matrix4x4.TRS(worldPosition, state.Rotation, Vector3.one * state.UniformScale);
+                _nestedMatricesByPrototype[prototypeIndex][matrixCount] = matrix;
+                _nestedMatrixCounts[prototypeIndex] = matrixCount + 1;
+                totalVisible++;
+
+                Bounds instanceBounds = new Bounds(worldPosition, Vector3.one * Mathf.Max(1f, state.UniformScale * 2.6f));
+                if (!boundsInitialized)
+                {
+                    drawBounds = instanceBounds;
+                    boundsInitialized = true;
+                }
+                else
+                {
+                    drawBounds.Encapsulate(instanceBounds);
+                }
+
+                _nestedAttachmentStates[stateIndex] = state;
+            }
+
+            _debugNestedAttachmentCount = totalVisible;
+            _debugNestedAttachmentBounds = boundsInitialized ? drawBounds : default;
+        }
+
+        private void OnValidate()
+        {
+#if UNITY_EDITOR
+            if (collapseChunkPrefab == null)
+                collapseChunkPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Prefabs/Construction/Final/PFB_SargassumCollapseChunk.prefab");
+#endif
+            SanitizeSettings();
+            ResolveActiveNestingPrototypes();
+            EnsureNestedAttachmentStorage();
+            EnsureDisruptionStorage();
+            CreateDensityTexture();
+            ClearNestedAttachments();
+            ClearDensityTexture();
+            ClearSinkTexture();
+            PublishShaderGlobals();
+        }
+
+        private void TryRegister()
+        {
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager == null)
+                return;
+
+            if (!_registeredTick)
+            {
+                tickManager.Register((ITickable)this);
+                _registeredTick = true;
+            }
+
+            if (!_registeredSlowTick)
+            {
+                tickManager.Register((ISlowTickable)this);
+                _registeredSlowTick = true;
+            }
+        }
+
+        private void TryUnregister()
+        {
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager == null)
+                return;
+
+            if (_registeredTick)
+            {
+                tickManager.Unregister((ITickable)this);
+                _registeredTick = false;
+            }
+
+            if (_registeredSlowTick)
+            {
+                tickManager.Unregister((ISlowTickable)this);
+                _registeredSlowTick = false;
+            }
+        }
+
+        private static float ExtractUniformScale(Matrix4x4 matrix)
+        {
+            Vector3 axisX = new Vector3(matrix.m00, matrix.m10, matrix.m20);
+            Vector3 axisY = new Vector3(matrix.m01, matrix.m11, matrix.m21);
+            Vector3 axisZ = new Vector3(matrix.m02, matrix.m12, matrix.m22);
+            return Mathf.Max(0.1f, Mathf.Max(axisX.magnitude, Mathf.Max(axisY.magnitude, axisZ.magnitude)));
+        }
+
+        private static long PackCellKey(int cellX, int cellZ)
+        {
+            return ((long)cellX << 32) ^ (uint)cellZ;
+        }
+
+        private void SanitizeSettings()
+        {
+            cellSize = Mathf.Max(2f, cellSize);
+            _inverseCellSize = 1f / cellSize;
+            densityTextureResolution = Mathf.Clamp(densityTextureResolution, 64, 256);
+            densityTextureBoundsPadding = Mathf.Max(0f, densityTextureBoundsPadding);
+            maxNestedAttachmentCount = Mathf.Clamp(maxNestedAttachmentCount, 4, 128);
+            maxNestedAttachmentAttempts = Mathf.Clamp(maxNestedAttachmentAttempts, 4, 24);
+            denseNodeNestChancePercent = Mathf.Clamp(denseNodeNestChancePercent, 0f, 5f);
+            nestingSampleRadius = Mathf.Clamp(nestingSampleRadius, 0.1f, 2.5f);
+            nestingNodeDensityThreshold = Mathf.Clamp01(nestingNodeDensityThreshold);
+            nestingNodeWindowThreshold = Mathf.Clamp01(nestingNodeWindowThreshold);
+            nestingCutReleaseRadius = Mathf.Clamp(nestingCutReleaseRadius, 0.1f, 4f);
+            nestingCutReleaseThreshold = Mathf.Clamp01(nestingCutReleaseThreshold);
+            nestingReleaseLifetime = Mathf.Clamp(nestingReleaseLifetime, 0.2f, 8f);
+            nestingReleaseHorizontalSpeed = Mathf.Clamp(nestingReleaseHorizontalSpeed, 0f, 6f);
+            nestingReleaseDownwardSpeed = Mathf.Clamp(nestingReleaseDownwardSpeed, 0f, 4f);
+            nestingReleaseGravity = Mathf.Clamp(nestingReleaseGravity, 0f, 4f);
+            maxDisruptionZoneCount = Mathf.Clamp(maxDisruptionZoneCount, 1, MaxDisruptionZoneCapacity);
+            buoyancyCollapseQueryRadius = Mathf.Clamp(buoyancyCollapseQueryRadius, 2f, 18f);
+            buoyancyCollapseAreaThreshold = Mathf.Max(1f, buoyancyCollapseAreaThreshold);
+            buoyancyCollapseCutStrengthThreshold = Mathf.Clamp01(buoyancyCollapseCutStrengthThreshold);
+            buoyancyCollapseRadius = Mathf.Clamp(buoyancyCollapseRadius, 2f, 18f);
+            buoyancyCollapseSinkDuration = Mathf.Clamp(buoyancyCollapseSinkDuration, 10f, 20f);
+            buoyancyCollapseSinkDepth = Mathf.Clamp(buoyancyCollapseSinkDepth, 1f, 24f);
+            collapseChunkAreaThresholdMultiplier = Mathf.Clamp(collapseChunkAreaThresholdMultiplier, 1f, 4f);
+            collapseChunkSpawnCount = Mathf.Clamp(collapseChunkSpawnCount, 1, 6);
+            collapseChunkSpawnRadius = Mathf.Clamp(collapseChunkSpawnRadius, 0.5f, 8f);
+            collapseChunkHorizontalSpeed = Mathf.Clamp(collapseChunkHorizontalSpeed, 0f, 8f);
+            collapseChunkDownwardSpeed = Mathf.Clamp(collapseChunkDownwardSpeed, 0f, 8f);
+            collapseChunkLifetime = Mathf.Clamp(collapseChunkLifetime, 0.5f, 24f);
+            collapseChunkScaleMin = Mathf.Clamp(collapseChunkScaleMin, 0.25f, 3f);
+            collapseChunkScaleMax = Mathf.Max(collapseChunkScaleMin, Mathf.Clamp(collapseChunkScaleMax, 0.5f, 4f));
+            massiveDisplacementCutStrength = Mathf.Clamp(massiveDisplacementCutStrength, 0.1f, 2f);
+            massiveDisplacementRampDuration = Mathf.Clamp(massiveDisplacementRampDuration, 0.1f, 4f);
+            massiveDisplacementFadeDuration = Mathf.Clamp(massiveDisplacementFadeDuration, 0.1f, 8f);
+            massiveDisplacementExtremePanicRadius = Mathf.Clamp(massiveDisplacementExtremePanicRadius, 50f, 96f);
+            fallbackPatchThreshold = Mathf.Clamp01(fallbackPatchThreshold);
+            canopyFlowAnisotropy = Mathf.Clamp(canopyFlowAnisotropy, 0.2f, 1f);
+            canopyPrimaryCellSize = Mathf.Max(4f, canopyPrimaryCellSize);
+            canopySecondaryCellSize = Mathf.Max(4f, canopySecondaryCellSize);
+            canopyWallWidth = Mathf.Max(0.25f, canopyWallWidth);
+            canopyWarpMeters = Mathf.Max(0f, canopyWarpMeters);
+            canopyWarpNoiseScale = Mathf.Max(0.0001f, canopyWarpNoiseScale);
+            entanglementMinDensity = Mathf.Clamp01(entanglementMinDensity);
+            entanglementSpeedThreshold = Mathf.Max(0.25f, entanglementSpeedThreshold);
+            maxEntanglementStrength = Mathf.Clamp01(maxEntanglementStrength);
+            _fallbackLabyrinthConfig = new HectonMapMagicVegetationBridge.FloatingLabyrinthConfig(
+                fallbackPatchThreshold,
+                canopyWarpNoiseScale,
+                canopyPrimaryCellSize,
+                canopySecondaryCellSize,
+                canopyWallWidth,
+                canopyWarpMeters,
+                NormalizeFlowDirection(canopyFlowDirection),
+                canopyFlowAnisotropy);
+        }
+
+        private float ResolveEntanglement01(float density01, float currentSpeed)
+        {
+            float densityGate = Mathf.InverseLerp(entanglementMinDensity, 1f, density01);
+            if (densityGate <= 0f)
+                return 0f;
+
+            float speedGate = 1f - Mathf.Clamp01(currentSpeed / Mathf.Max(0.01f, entanglementSpeedThreshold));
+            if (speedGate <= 0f)
+                return 0f;
+
+            return densityGate * speedGate * maxEntanglementStrength;
+        }
+
+        private float EvaluateCanopyWindow01(Vector3 sampledPositionWS)
+        {
+            float occupancy = EvaluateCanopyOccupancy(sampledPositionWS.x, sampledPositionWS.z);
+            return Mathf.Clamp01(1f - occupancy);
+        }
+
+        private float EvaluateCanopyOccupancy(float worldX, float worldZ)
+        {
+            HectonMapMagicVegetationBridge.FloatingLabyrinthConfig config = ResolveLabyrinthConfig();
+            HectonMapMagicVegetationBridge.EvaluateFloatingLabyrinth(
+                worldX,
+                worldZ,
+                HectonVegetationConstants.FloatingLabyrinthSamplingSeed,
+                config,
+                out float occupancy);
+            return Mathf.Clamp01(occupancy);
+        }
+
+        private HectonMapMagicVegetationBridge.FloatingLabyrinthConfig ResolveLabyrinthConfig()
+        {
+            if (mapMagicVegetationBridge != null)
+                return mapMagicVegetationBridge.ActiveFloatingLabyrinthConfig;
+
+            return _fallbackLabyrinthConfig;
+        }
+
+        private static Vector2 NormalizeFlowDirection(Vector2 direction)
+        {
+            if (direction.sqrMagnitude <= 0.0001f)
+                return Vector2.right;
+
+            direction.Normalize();
+            return direction;
+        }
+
+        private void CreateDensityTexture()
+        {
+            int resolution = Mathf.Clamp(densityTextureResolution, 64, 256);
+            int texelCount = resolution * resolution;
+
+            if (_densityTextureRaw == null || _densityTextureRaw.Length != texelCount)
+            {
+                // COLD ALLOC: byte[resolution*resolution] - CPU density texture staging buffer - owner: SargassumGlobalDragManager
+                _densityTextureRaw = new byte[texelCount];
+            }
+
+            if (_sinkTextureRaw == null || _sinkTextureRaw.Length != texelCount)
+            {
+                // COLD ALLOC: byte[resolution*resolution] - CPU buoyancy sink texture staging buffer - owner: SargassumGlobalDragManager
+                _sinkTextureRaw = new byte[texelCount];
+            }
+
+            if (_densityFieldTexture == null ||
+                _densityFieldTexture.width != resolution ||
+                _densityFieldTexture.height != resolution)
+            {
+                ReleaseDensityTexture();
+                _densityFieldTexture = new Texture2D(resolution, resolution, TextureFormat.R8, false, true)
+                {
+                    name = "__SargassumDensityField",
+                    wrapMode = TextureWrapMode.Clamp,
+                    filterMode = FilterMode.Bilinear,
+                    hideFlags = HideFlags.HideAndDontSave
+                }; // COLD ALLOC: Texture2D[1] - baked sargassum density map - owner: SargassumGlobalDragManager
+            }
+
+            if (_sinkFieldTexture == null ||
+                _sinkFieldTexture.width != resolution ||
+                _sinkFieldTexture.height != resolution)
+            {
+                ReleaseSinkTexture();
+                _sinkFieldTexture = new Texture2D(resolution, resolution, TextureFormat.R8, false, true)
+                {
+                    name = "__SargassumBuoyancySink",
+                    wrapMode = TextureWrapMode.Clamp,
+                    filterMode = FilterMode.Bilinear,
+                    hideFlags = HideFlags.HideAndDontSave
+                }; // COLD ALLOC: Texture2D[1] - baked sargassum buoyancy sink map - owner: SargassumGlobalDragManager
+            }
+        }
+
+        private void ReleaseDensityTexture()
+        {
+            if (_densityFieldTexture == null)
+                return;
+
+            Destroy(_densityFieldTexture);
+            _densityFieldTexture = null;
+        }
+
+        private void ReleaseSinkTexture()
+        {
+            if (_sinkFieldTexture == null)
+                return;
+
+            Destroy(_sinkFieldTexture);
+            _sinkFieldTexture = null;
+        }
+
+        private void ClearDensityTexture()
+        {
+            if (_densityFieldTexture == null || _densityTextureRaw == null)
+                return;
+
+            Array.Clear(_densityTextureRaw, 0, _densityTextureRaw.Length);
+            _densityFieldTexture.LoadRawTextureData(_densityTextureRaw);
+            _densityFieldTexture.Apply(false, false);
+        }
+
+        private void ClearSinkTexture()
+        {
+            if (_sinkFieldTexture == null || _sinkTextureRaw == null)
+                return;
+
+            Array.Clear(_sinkTextureRaw, 0, _sinkTextureRaw.Length);
+            _sinkFieldTexture.LoadRawTextureData(_sinkTextureRaw);
+            _sinkFieldTexture.Apply(false, false);
+        }
+
+        private void RefreshDynamicTextures(bool incrementRevision)
+        {
+            CreateDensityTexture();
+            if (_densityFieldTexture == null ||
+                _densityTextureRaw == null ||
+                _sinkFieldTexture == null ||
+                _sinkTextureRaw == null)
+            {
+                return;
+            }
+
+            if (incrementRevision)
+                _fieldRevision++;
+
+            if (!_hasFieldData || _debugFieldBounds.size.sqrMagnitude <= 0.0001f)
+            {
+                _densityFieldWorldRect = Vector4.zero;
+                _debugDensityFieldWorldRect = Vector4.zero;
+                ClearDensityTexture();
+                ClearSinkTexture();
+                _debugMaxSinkDepth = 0f;
+                return;
+            }
+
+            Vector3 boundsCenter = _debugFieldBounds.center;
+            float halfExtent = Mathf.Max(_debugFieldBounds.extents.x, _debugFieldBounds.extents.z) + densityTextureBoundsPadding;
+            float worldSize = Mathf.Max(halfExtent * 2f, cellSize * 2f);
+            float minX = boundsCenter.x - halfExtent;
+            float minZ = boundsCenter.z - halfExtent;
+            float texelWorldSize = worldSize / _densityFieldTexture.width;
+            float sampleRadius = Mathf.Max(texelWorldSize * 0.65f, cellSize * 0.35f);
+            float sampleY = Mathf.Clamp(boundsCenter.y, _debugFieldBounds.min.y, _debugFieldBounds.max.y);
+
+            _densityFieldWorldRect = new Vector4(
+                minX,
+                minZ,
+                1f / Mathf.Max(worldSize, 0.001f),
+                1f / Mathf.Max(worldSize, 0.001f));
+            _debugDensityFieldWorldRect = _densityFieldWorldRect;
+
+            int resolution = _densityFieldTexture.width;
+            float maxSinkDepthWS = ResolveMaximumSinkDepthWS();
+            for (int y = 0; y < resolution; y++)
+            {
+                float worldZ = minZ + (y + 0.5f) * texelWorldSize;
+                int rowStart = y * resolution;
+
+                for (int x = 0; x < resolution; x++)
+                {
+                    float worldX = minX + (x + 0.5f) * texelWorldSize;
+                    Vector3 sampledPositionWS = new Vector3(worldX, sampleY, worldZ);
+                    float density01 = SampleDensity01NoDrift(sampledPositionWS, sampleRadius);
+                    float occupancy01 = EvaluateCanopyOccupancy(worldX, worldZ);
+                    DisruptionSample disruption = SampleDisruptionNoDrift(sampledPositionWS);
+                    float encodedDensity01 = Mathf.Max(density01, occupancy01) * (1f - disruption.Suppression01);
+                    _densityTextureRaw[rowStart + x] = (byte)Mathf.Clamp(Mathf.RoundToInt(encodedDensity01 * 255f), 0, 255);
+                    float encodedSink01 = maxSinkDepthWS > 0f ? Mathf.Clamp01(disruption.SinkDepthWS / maxSinkDepthWS) : 0f;
+                    _sinkTextureRaw[rowStart + x] = (byte)Mathf.Clamp(Mathf.RoundToInt(encodedSink01 * 255f), 0, 255);
+                }
+            }
+
+            _densityFieldTexture.LoadRawTextureData(_densityTextureRaw);
+            _densityFieldTexture.Apply(false, false);
+            _sinkFieldTexture.LoadRawTextureData(_sinkTextureRaw);
+            _sinkFieldTexture.Apply(false, false);
+            _debugMaxSinkDepth = maxSinkDepthWS;
+        }
+
+        private float SampleDensity01NoDrift(Vector3 sampledPositionWS, float radius)
+        {
+            if (!_hasFieldData || _densityCells.Count == 0)
+                return 0f;
+
+            float effectiveRadius = Mathf.Max(0.1f, radius);
+            int minCellX = Mathf.FloorToInt((sampledPositionWS.x - effectiveRadius) * _inverseCellSize);
+            int maxCellX = Mathf.FloorToInt((sampledPositionWS.x + effectiveRadius) * _inverseCellSize);
+            int minCellZ = Mathf.FloorToInt((sampledPositionWS.z - effectiveRadius) * _inverseCellSize);
+            int maxCellZ = Mathf.FloorToInt((sampledPositionWS.z + effectiveRadius) * _inverseCellSize);
+            float accumulatedDensity = 0f;
+
+            for (int cellZ = minCellZ; cellZ <= maxCellZ; cellZ++)
+            {
+                for (int cellX = minCellX; cellX <= maxCellX; cellX++)
+                {
+                    long key = PackCellKey(cellX, cellZ);
+                    if (!_densityCells.TryGetValue(key, out CellData cell))
+                        continue;
+
+                    if (sampledPositionWS.y + effectiveRadius < cell.MinY || sampledPositionWS.y - effectiveRadius > cell.MaxY)
+                        continue;
+
+                    float cellCenterX = (cellX + 0.5f) * cellSize;
+                    float cellCenterZ = (cellZ + 0.5f) * cellSize;
+                    float planarDistance = Vector2.Distance(
+                        new Vector2(sampledPositionWS.x, sampledPositionWS.z),
+                        new Vector2(cellCenterX, cellCenterZ));
+                    float planarWeight = 1f - planarDistance / Mathf.Max(cellSize + effectiveRadius, 0.001f);
+                    if (planarWeight <= 0f)
+                        continue;
+
+                    accumulatedDensity += cell.Density * Mathf.Pow(planarWeight, Mathf.Max(1f, distancePower));
+                }
+            }
+
+            return Mathf.Clamp01(accumulatedDensity * densityNormalization);
+        }
+
+        private float ResolveMaximumSinkDepthWS()
+        {
+            if (_disruptionZones == null || _activeDisruptionZoneCount <= 0)
+                return 0f;
+
+            float maxSinkDepthWS = 0f;
+            for (int i = 0; i < _activeDisruptionZoneCount; i++)
+            {
+                if (_disruptionZones[i].SinkDepthWS > maxSinkDepthWS)
+                    maxSinkDepthWS = _disruptionZones[i].SinkDepthWS;
+            }
+
+            return maxSinkDepthWS;
+        }
+
+        private static Mesh BuildFallbackAttachmentMesh()
+        {
+            Mesh mesh = new Mesh
+            {
+                name = "__SargassumNestFallbackMesh"
+            }; // COLD ALLOC: Mesh[1] - runtime fallback instanced nesting geometry - owner: SargassumGlobalDragManager
+
+            Vector3[] vertices =
+            {
+                new Vector3(-0.5f, -0.5f,  0.5f), new Vector3( 0.5f, -0.5f,  0.5f), new Vector3( 0.5f,  0.5f,  0.5f), new Vector3(-0.5f,  0.5f,  0.5f),
+                new Vector3( 0.5f, -0.5f, -0.5f), new Vector3(-0.5f, -0.5f, -0.5f), new Vector3(-0.5f,  0.5f, -0.5f), new Vector3( 0.5f,  0.5f, -0.5f),
+                new Vector3(-0.5f, -0.5f, -0.5f), new Vector3(-0.5f, -0.5f,  0.5f), new Vector3(-0.5f,  0.5f,  0.5f), new Vector3(-0.5f,  0.5f, -0.5f),
+                new Vector3( 0.5f, -0.5f,  0.5f), new Vector3( 0.5f, -0.5f, -0.5f), new Vector3( 0.5f,  0.5f, -0.5f), new Vector3( 0.5f,  0.5f,  0.5f),
+                new Vector3(-0.5f,  0.5f,  0.5f), new Vector3( 0.5f,  0.5f,  0.5f), new Vector3( 0.5f,  0.5f, -0.5f), new Vector3(-0.5f,  0.5f, -0.5f),
+                new Vector3(-0.5f, -0.5f, -0.5f), new Vector3( 0.5f, -0.5f, -0.5f), new Vector3( 0.5f, -0.5f,  0.5f), new Vector3(-0.5f, -0.5f,  0.5f)
+            };
+
+            int[] triangles =
+            {
+                0, 1, 2, 0, 2, 3,
+                4, 5, 6, 4, 6, 7,
+                8, 9,10, 8,10,11,
+                12,13,14, 12,14,15,
+                16,17,18, 16,18,19,
+                20,21,22, 20,22,23
+            };
+
+            Vector3[] normals =
+            {
+                Vector3.forward, Vector3.forward, Vector3.forward, Vector3.forward,
+                Vector3.back, Vector3.back, Vector3.back, Vector3.back,
+                Vector3.left, Vector3.left, Vector3.left, Vector3.left,
+                Vector3.right, Vector3.right, Vector3.right, Vector3.right,
+                Vector3.up, Vector3.up, Vector3.up, Vector3.up,
+                Vector3.down, Vector3.down, Vector3.down, Vector3.down
+            };
+
+            Vector2[] uv =
+            {
+                new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(0f, 1f),
+                new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(0f, 1f),
+                new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(0f, 1f),
+                new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(0f, 1f),
+                new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(0f, 1f),
+                new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(0f, 1f)
+            };
+
+            mesh.vertices = vertices;
+            mesh.normals = normals;
+            mesh.uv = uv;
+            mesh.triangles = triangles;
+            mesh.bounds = new Bounds(Vector3.zero, Vector3.one);
+            return mesh;
+        }
+
+        private static float HashToFloat01(uint index, uint iteration, uint salt)
+        {
+            uint value = index * 374761393u + iteration * 668265263u + salt + NestingHashSeed;
+            value = (value ^ (value >> 13)) * 1274126177u;
+            value ^= value >> 16;
+            return (value & 0x00FFFFFFu) / 16777215f;
+        }
+    }
+}

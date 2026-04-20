@@ -1204,6 +1204,10 @@ namespace Hecton8.Bootstrap
                 !IsTemporaryRuntimeShellObject(playerController.gameObject))
                 playerObject = playerController.gameObject;
 
+            Hecton8.Meta.MetaRuntimeInstaller.EnsureRuntimeSystems();
+            Hecton8.PDA.PDARuntimeInstaller.EnsurePlayerSystems(playerObject);
+            Hecton8.Progression.ProgressionRuntimeInstaller.EnsurePlayerSystems(playerObject);
+            Hecton8.Narrative.NarrativeRuntimeInstaller.EnsurePlayerSystems(playerObject);
             BootstrapState.PublishCurrentPlayerObject(playerObject);
         }
 

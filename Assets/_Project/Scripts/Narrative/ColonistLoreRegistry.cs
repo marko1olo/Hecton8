@@ -1,4 +1,5 @@
 using Hecton.Localization;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Hecton8.Narrative
@@ -55,20 +56,93 @@ namespace Hecton8.Narrative
     public sealed class ColonistLoreRegistry : ScriptableObject
     {
         [SerializeField] public LoreEntry[] entries = new LoreEntry[0];
+        private readonly Dictionary<string, int> _entryIndexByDiscoveryId = new Dictionary<string, int>(64, System.StringComparer.Ordinal);
+        private readonly HashSet<string> _ambiguousDiscoveryIds = new HashSet<string>(System.StringComparer.Ordinal);
+        private bool _lookupReady;
+
+        private void OnEnable()
+        {
+            RebuildLookup();
+        }
 
         public bool TryGetEntry(string discoveryId, out LoreEntry entry)
         {
-            for (int i = 0; i < entries.Length; i++)
+            if (string.IsNullOrWhiteSpace(discoveryId))
             {
-                if (entries[i].discoveryId == discoveryId)
-                {
-                    entry = entries[i];
-                    return true;
-                }
+                entry = default;
+                return false;
             }
 
-            entry = default;
-            return false;
+            if (!_lookupReady)
+                RebuildLookup();
+
+            if (_ambiguousDiscoveryIds.Contains(discoveryId) ||
+                !_entryIndexByDiscoveryId.TryGetValue(discoveryId, out int index) ||
+                entries == null ||
+                index < 0 ||
+                index >= entries.Length)
+            {
+                entry = default;
+                return false;
+            }
+
+            entry = entries[index];
+            return true;
         }
+
+        private void RebuildLookup()
+        {
+            _entryIndexByDiscoveryId.Clear();
+            _ambiguousDiscoveryIds.Clear();
+            _lookupReady = true;
+
+            if (entries == null)
+                return;
+
+            for (int i = 0; i < entries.Length; i++)
+            {
+                string discoveryId = entries[i].discoveryId;
+                if (string.IsNullOrWhiteSpace(discoveryId))
+                    continue;
+
+                if (_ambiguousDiscoveryIds.Contains(discoveryId))
+                    continue;
+
+                if (_entryIndexByDiscoveryId.TryGetValue(discoveryId, out int existingIndex))
+                {
+                    if (existingIndex != i)
+                    {
+                        _entryIndexByDiscoveryId.Remove(discoveryId);
+                        _ambiguousDiscoveryIds.Add(discoveryId);
+                    }
+
+                    continue;
+                }
+
+                _entryIndexByDiscoveryId.Add(discoveryId, i);
+            }
+        }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            if (entries == null)
+            {
+                RebuildLookup();
+                return;
+            }
+
+            for (int i = 0; i < entries.Length; i++)
+            {
+                LoreEntry entry = entries[i];
+                if (!string.IsNullOrWhiteSpace(entry.discoveryId))
+                    entry.discoveryId = entry.discoveryId.Trim();
+
+                entries[i] = entry;
+            }
+
+            RebuildLookup();
+        }
+#endif
     }
 }

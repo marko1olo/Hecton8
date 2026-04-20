@@ -33,6 +33,7 @@ namespace Hecton8.Gameplay
         // Runtime-only collection for active POIs in the world.
         // COLD ALLOC: 64 for initial capacity (reasonable number of POIs per scene).
         private readonly List<NarrativeDiscovery> _activePOIs = new List<NarrativeDiscovery>(64);
+        private readonly HashSet<string> _discoveredIdLookup = new HashSet<string>(64, System.StringComparer.Ordinal);
 
         private Transform _playerTransform;
         private bool _registered;
@@ -70,15 +71,18 @@ namespace Hecton8.Gameplay
         {
             currentDepthTier = data.narrativeDepthTier;
             discoveredIds.Clear();
+            _discoveredIdLookup.Clear();
 
             if (data.narrativeDiscoveryIds != null)
             {
                 int count = Mathf.Min(data.narrativeDiscoveryCount, data.narrativeDiscoveryIds.Length);
                 for (int i = 0; i < count; i++)
                 {
-                    if (!string.IsNullOrEmpty(data.narrativeDiscoveryIds[i]))
+                    string discoveryId = data.narrativeDiscoveryIds[i];
+                    if (!string.IsNullOrWhiteSpace(discoveryId) &&
+                        _discoveredIdLookup.Add(discoveryId))
                     {
-                        discoveredIds.Add(data.narrativeDiscoveryIds[i]);
+                        discoveredIds.Add(discoveryId);
                     }
                 }
             }
@@ -96,6 +100,7 @@ namespace Hecton8.Gameplay
             }
 
             _instance = this;
+            RebuildDiscoveryLookup();
         }
 
         private void OnEnable()
@@ -204,7 +209,7 @@ namespace Hecton8.Gameplay
 
         public bool HasDiscovery(string id)
         {
-            return discoveredIds.Contains(id);
+            return !string.IsNullOrWhiteSpace(id) && _discoveredIdLookup.Contains(id);
         }
 
         private int CalculateDepthTier(float depth)
@@ -226,7 +231,7 @@ namespace Hecton8.Gameplay
 
         private void HandleDiscovery(string id)
         {
-            if (discoveredIds.Contains(id))
+            if (string.IsNullOrWhiteSpace(id) || !_discoveredIdLookup.Add(id))
                 return;
 
             discoveredIds.Add(id);
@@ -294,6 +299,29 @@ namespace Hecton8.Gameplay
         {
             if (poi == null) return;
             _activePOIs.Remove(poi);
+        }
+
+        private void RebuildDiscoveryLookup()
+        {
+            _discoveredIdLookup.Clear();
+            if (discoveredIds == null)
+                return;
+
+            int writeIndex = 0;
+            for (int i = 0; i < discoveredIds.Count; i++)
+            {
+                string discoveryId = discoveredIds[i];
+                if (string.IsNullOrWhiteSpace(discoveryId) || !_discoveredIdLookup.Add(discoveryId))
+                    continue;
+
+                if (writeIndex != i)
+                    discoveredIds[writeIndex] = discoveryId;
+
+                writeIndex++;
+            }
+
+            if (writeIndex < discoveredIds.Count)
+                discoveredIds.RemoveRange(writeIndex, discoveredIds.Count - writeIndex);
         }
     }
 }

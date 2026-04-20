@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Build_Current_Turbine
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Building.BuildableData
   moduleName: Current Turbine
+  stableId: Build_Current_Turbine
   icon: {fileID: 0}
   description: Low-profile current generator for early power support on exposed routes.
   family: 2

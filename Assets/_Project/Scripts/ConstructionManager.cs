@@ -33,8 +33,10 @@ namespace Hecton8.Construction
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-7000)]
-    public sealed class ConstructionManager : MonoBehaviour, ISaveable
+    public sealed class ConstructionManager : MonoBehaviour, ISaveable, ISlowTickable
     {
+        private const float SlowTickDeltaTime = 0.5f;
+
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
         // ══════════════════════════════════════════════════════════
@@ -73,8 +75,22 @@ namespace Hecton8.Construction
                  "Увеличь для больших баз.")]
         [SerializeField] private int initialCapacity = 64;
 
+        [Header("Ambient Accidents")]
+        [Tooltip("Разрешает редкие сервисные аварии на уже размещённых модулях базы.")]
+        [SerializeField] private bool enableAmbientAccidents = true;
+        [Tooltip("Интервал между cold-path проверками на случайную сервисную аварию.")]
+        [SerializeField] private float ambientAccidentCheckInterval = 90f;
+        [Tooltip("Базовый шанс аварии на одну cold-path проверку. Финальный шанс умножается на risk score кандидата.")]
+        [SerializeField, Range(0f, 1f)] private float ambientAccidentBaseChance = 0.25f;
+        [Tooltip("Минимальный risk score, при котором модуль считается аварийным кандидатом.")]
+        [SerializeField, Range(0f, 1f)] private float ambientAccidentMinRisk = 0.2f;
+        [Tooltip("Порог integrity, ниже которого модуль считается изношенным для accident scheduler.")]
+        [SerializeField, Range(0f, 1f)] private float ambientAccidentIntegrityThreshold = 0.8f;
+
         [Header("── Diagnostics ───────────────────────────────")]
         [SerializeField] private int _debugModuleCount;
+        [Tooltip("Runtime timer until the next ambient accident evaluation.")]
+        [SerializeField] private float _debugAmbientAccidentTimer;
 
         // ══════════════════════════════════════════════════════════
         //  REGISTRY
@@ -85,6 +101,9 @@ namespace Hecton8.Construction
         /// Pre-allocated. Swap-remove для O(1) удаления.
         /// </summary>
         private List<GameObject> _spawnedModules;
+        private bool _tickRegistered;
+        private float _ambientAccidentTimer;
+        private int _ambientAccidentCursor;
 
         // ══════════════════════════════════════════════════════════
         //  CONSTANTS — DEFAULT MODULE STATE
@@ -130,22 +149,49 @@ namespace Hecton8.Construction
 
             // ── Pre-allocate ──
             _spawnedModules = new List<GameObject>(initialCapacity);
+            _ambientAccidentTimer = 0f;
         }
 
         private void OnEnable()
         {
+            TryRegister();
             SaveManager.Instance?.Register(this);
+        }
+
+        private void Start()
+        {
+            TryRegister();
         }
 
         private void OnDisable()
         {
+            TryUnregister();
             SaveManager.Instance?.Unregister(this);
         }
 
         private void OnDestroy()
         {
+            TryUnregister();
+
             if (_instance == this)
                 _instance = null;
+        }
+
+        public void SlowTick()
+        {
+            if (!enableAmbientAccidents || ambientAccidentCheckInterval <= 0f)
+                return;
+
+            _ambientAccidentTimer += SlowTickDeltaTime;
+            _debugAmbientAccidentTimer = _ambientAccidentTimer;
+
+            if (_ambientAccidentTimer < ambientAccidentCheckInterval)
+                return;
+
+            _ambientAccidentTimer = 0f;
+            _debugAmbientAccidentTimer = 0f;
+
+            TryTriggerAmbientAccident();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -346,12 +392,18 @@ namespace Hecton8.Construction
                 if (module.TryGetComponent(out BaseModule baseModule))
                 {
                     moduleDto.integrity = baseModule.CurrentIntegrity;
+                    moduleDto.repairIntegrityCap = baseModule.MaxRecoverableIntegrity;
+                    moduleDto.airReserveNormalized = baseModule.AirReserveNormalized;
                     moduleDto.isFlooded = baseModule.IsFlooded;
+                    moduleDto.failureMode = (byte)baseModule.CurrentFailureMode;
                 }
                 else
                 {
                     moduleDto.integrity = DefaultIntegrity;
+                    moduleDto.repairIntegrityCap = DefaultIntegrity;
+                    moduleDto.airReserveNormalized = 1f;
                     moduleDto.isFlooded = DefaultIsFlooded;
+                    moduleDto.failureMode = (byte)BaseModuleFailureMode.None;
                 }
 
                 dto.modules[moduleIndex] = moduleDto;
@@ -386,6 +438,14 @@ namespace Hecton8.Construction
                 Debug.LogError(
                     "[ConstructionManager] ModuleCatalog not assigned! " +
                     "Cannot load construction data.");
+                return;
+            }
+
+            if (catalog.HasLookupAmbiguity)
+            {
+                Debug.LogError(
+                    "[ConstructionManager] ModuleCatalog has ambiguous ID aliases. " +
+                    $"Construction load aborted: {catalog.LookupAmbiguitySummary}");
                 return;
             }
 
@@ -493,7 +553,20 @@ namespace Hecton8.Construction
                     if (loadedIntegrity <= 0f)
                         loadedIntegrity = DefaultIntegrity;
 
-                    baseModule.SetState(loadedIntegrity, moduleDto.isFlooded);
+                    float loadedRepairCap = moduleDto.repairIntegrityCap;
+                    if (loadedRepairCap <= 0f)
+                        loadedRepairCap = baseModule.MaxIntegrity;
+
+                    float loadedAirReserveNormalized = data.version >= 28
+                        ? Mathf.Clamp01(moduleDto.airReserveNormalized)
+                        : 1f;
+
+                    baseModule.SetState(
+                        loadedIntegrity,
+                        moduleDto.isFlooded,
+                        (BaseModuleFailureMode)moduleDto.failureMode,
+                        loadedRepairCap,
+                        loadedAirReserveNormalized);
                 }
 
                 // ── Register с привязкой к BuildableData ──
@@ -566,6 +639,143 @@ namespace Hecton8.Construction
         // ══════════════════════════════════════════════════════════
         //  DIAGNOSTICS
         // ══════════════════════════════════════════════════════════
+
+        private void TryRegister()
+        {
+            if (_tickRegistered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager == null)
+                return;
+
+            tickManager.Register((ISlowTickable)this);
+            _tickRegistered = true;
+        }
+
+        private void TryUnregister()
+        {
+            if (!_tickRegistered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+                tickManager.Unregister((ISlowTickable)this);
+
+            _tickRegistered = false;
+        }
+
+        private void TryTriggerAmbientAccident()
+        {
+            PurgeNullEntries();
+
+            int count = _spawnedModules.Count;
+            if (count <= 0)
+                return;
+
+            BaseModule candidate = null;
+            float bestRisk = ambientAccidentMinRisk;
+            int startIndex = _ambientAccidentCursor % count;
+
+            for (int offset = 0; offset < count; offset++)
+            {
+                int index = (startIndex + offset) % count;
+                GameObject moduleObject = _spawnedModules[index];
+                if (moduleObject == null || !moduleObject.TryGetComponent(out BaseModule module))
+                    continue;
+
+                if (!TryEvaluateAmbientAccidentRisk(module, out float risk))
+                    continue;
+
+                if (risk <= bestRisk)
+                    continue;
+
+                bestRisk = risk;
+                candidate = module;
+                _ambientAccidentCursor = index + 1;
+            }
+
+            if (candidate == null)
+                return;
+
+            float accidentChance = Mathf.Clamp01(ambientAccidentBaseChance * bestRisk);
+            if (UnityEngine.Random.value > accidentChance)
+                return;
+
+            TriggerAmbientAccident(candidate, bestRisk);
+        }
+
+        private bool TryEvaluateAmbientAccidentRisk(BaseModule module, out float risk)
+        {
+            risk = 0f;
+
+            if (module == null)
+                return false;
+
+            if (module.HasCascadeFailure || module.CurrentIntegrity <= 0f || module.MaxIntegrity <= 0f)
+                return false;
+
+            float integrity01 = module.CurrentIntegrity / module.MaxIntegrity;
+            if (integrity01 >= 0.999f && module.HasPower && !module.IsFlooded)
+                return false;
+
+            risk = 1f - integrity01;
+
+            if (integrity01 <= ambientAccidentIntegrityThreshold)
+                risk += 0.25f;
+
+            if (!module.HasPower)
+                risk += 0.2f;
+
+            if (module.IsFlooded)
+                risk += 0.35f;
+
+            return risk >= ambientAccidentMinRisk;
+        }
+
+        private static void TriggerAmbientAccident(BaseModule module, float risk)
+        {
+            if (module == null)
+                return;
+
+            string source = ResolveModuleSource(module);
+            string summary = BuildAmbientAccidentSummary(module, risk);
+            FieldOperationLogSystem.RecordOperation(source, "SERVICE ACCIDENT", summary, "WARN");
+
+            module.ApplyDamage(module.CurrentIntegrity + 1f);
+        }
+
+        private static string ResolveModuleSource(BaseModule module)
+        {
+            if (module != null && module.TryGetComponent(out ModuleMarker marker) && marker.Data != null)
+            {
+                string moduleName = marker.Data.moduleName;
+                if (!string.IsNullOrWhiteSpace(moduleName))
+                    return moduleName;
+            }
+
+            return "BASE";
+        }
+
+        private static string BuildAmbientAccidentSummary(BaseModule module, float risk)
+        {
+            if (module == null)
+                return "Neglected service hardware destabilized and rolled into a cascade failure.";
+
+            float integrity01 = module.MaxIntegrity > 0f
+                ? module.CurrentIntegrity / module.MaxIntegrity
+                : 0f;
+
+            string condition;
+            if (module.IsFlooded)
+                condition = "Residual flooding was left unresolved.";
+            else if (!module.HasPower)
+                condition = "Power loss left pumps and service recovery offline.";
+            else
+                condition = "Hull fatigue crossed the unattended maintenance margin.";
+
+            return $"Integrity {integrity01:0%}. {condition} Risk {Mathf.Clamp01(risk):0%} converted into a live compartment incident.";
+        }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         private void UpdateDiagnostics()

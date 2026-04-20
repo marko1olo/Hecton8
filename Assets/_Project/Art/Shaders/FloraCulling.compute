@@ -1,0 +1,314 @@
+#pragma kernel CullFloraInstances
+#pragma kernel CullFloraShadowInstances
+
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+#define HECTON_THREADS_PER_GROUP 64
+
+StructuredBuffer<float4x4> _HectonSourceInstanceMatrices;
+StructuredBuffer<float4> _HectonSourceVegetationInstanceData;
+AppendStructuredBuffer<uint> _HectonVisibleInstanceIndicesLOD0;
+AppendStructuredBuffer<uint> _HectonVisibleInstanceIndicesLOD1;
+AppendStructuredBuffer<uint> _HectonVisibleInstanceIndicesShadow;
+Texture2D<float> _HectonCameraDepthTexture;
+
+uint _HectonSourceInstanceCount;
+float4x4 _HectonViewProjection;
+float4x4 _HectonViewMatrix;
+float3 _HectonCameraPosition;
+float _HectonLodNearDistance;
+float _HectonLodFarDistance;
+float _HectonLodTransitionRange;
+float4 _HectonZBufferParams;
+float _HectonOcclusionDepthBias;
+uint _HectonOcclusionEnabled;
+
+float4x4 _MainLightWorldToShadow[5];
+float4 _CascadeShadowSplitSpheres0;
+float4 _CascadeShadowSplitSpheres1;
+float4 _CascadeShadowSplitSpheres2;
+float4 _CascadeShadowSplitSpheres3;
+float4 _CascadeShadowSplitSphereRadii;
+
+float3 TransformPoint(float4x4 matrixValue, float3 localPosition)
+{
+    return mul(matrixValue, float4(localPosition, 1.0)).xyz;
+}
+
+void ResolveInstanceShape(float instanceType, float heightScale, float widthScale, out float instanceHeight, out float instanceWidth)
+{
+    if (instanceType < 0.5)
+    {
+        instanceHeight = lerp(0.35, 1.4, saturate(heightScale));
+        instanceWidth = lerp(0.65, 1.25, saturate(widthScale));
+        return;
+    }
+
+    if (instanceType < 1.5)
+    {
+        instanceHeight = lerp(10.0, 20.0, saturate(heightScale));
+        instanceWidth = lerp(0.55, 1.6, saturate(widthScale));
+        return;
+    }
+
+    instanceHeight = lerp(0.75, 2.4, saturate(heightScale));
+    instanceWidth = lerp(0.75, 1.35, saturate(widthScale));
+}
+
+bool IsVisibleInFrustum(float4 clipRoot, float4 clipCenter, float4 clipTop, float4 clipSideA, float4 clipSideB)
+{
+    if (clipRoot.w <= 0.0001 &&
+        clipCenter.w <= 0.0001 &&
+        clipTop.w <= 0.0001 &&
+        clipSideA.w <= 0.0001 &&
+        clipSideB.w <= 0.0001)
+    {
+        return false;
+    }
+
+    float2 ndcRoot = clipRoot.xy / max(clipRoot.w, 0.0001);
+    float2 ndcCenter = clipCenter.xy / max(clipCenter.w, 0.0001);
+    float2 ndcTop = clipTop.xy / max(clipTop.w, 0.0001);
+    float2 ndcSideA = clipSideA.xy / max(clipSideA.w, 0.0001);
+    float2 ndcSideB = clipSideB.xy / max(clipSideB.w, 0.0001);
+
+    float minX = min(ndcRoot.x, min(ndcCenter.x, min(ndcTop.x, min(ndcSideA.x, ndcSideB.x))));
+    float maxX = max(ndcRoot.x, max(ndcCenter.x, max(ndcTop.x, max(ndcSideA.x, ndcSideB.x))));
+    float minY = min(ndcRoot.y, min(ndcCenter.y, min(ndcTop.y, min(ndcSideA.y, ndcSideB.y))));
+    float maxY = max(ndcRoot.y, max(ndcCenter.y, max(ndcTop.y, max(ndcSideA.y, ndcSideB.y))));
+
+    if (maxX < -1.06)
+        return false;
+
+    if (minX > 1.06)
+        return false;
+
+    if (maxY < -1.08)
+        return false;
+
+    if (minY > 1.08)
+        return false;
+
+    float ndcRootZ = clipRoot.z / max(clipRoot.w, 0.0001);
+    float ndcCenterZ = clipCenter.z / max(clipCenter.w, 0.0001);
+    float ndcTopZ = clipTop.z / max(clipTop.w, 0.0001);
+    float ndcSideAZ = clipSideA.z / max(clipSideA.w, 0.0001);
+    float ndcSideBZ = clipSideB.z / max(clipSideB.w, 0.0001);
+
+    float maxZ = max(ndcRootZ, max(ndcCenterZ, max(ndcTopZ, max(ndcSideAZ, ndcSideBZ))));
+    float minZ = min(ndcRootZ, min(ndcCenterZ, min(ndcTopZ, min(ndcSideAZ, ndcSideBZ))));
+
+    if (maxZ < -1.1)
+        return false;
+
+    if (minZ > 1.1)
+        return false;
+
+    return true;
+}
+
+float ResolveEyeDepth(float3 positionWS)
+{
+    float3 positionVS = mul(_HectonViewMatrix, float4(positionWS, 1.0)).xyz;
+    return max(0.0, -positionVS.z);
+}
+
+bool IsPointOccluded(float4 clipPosition, float eyeDepth, uint2 depthTextureSize)
+{
+    if (clipPosition.w <= 0.0001 || eyeDepth <= 0.0001)
+        return false;
+
+    float2 uv = clipPosition.xy / clipPosition.w;
+    uv = uv * 0.5 + 0.5;
+    if (uv.x <= 0.0 || uv.x >= 1.0 || uv.y <= 0.0 || uv.y >= 1.0)
+        return false;
+
+    uint2 pixel = (uint2)(uv * (depthTextureSize - 1));
+    float rawDepth = _HectonCameraDepthTexture.Load(int3(pixel, 0));
+#if defined(UNITY_REVERSED_Z)
+    if (rawDepth <= 0.0001)
+        return false;
+#else
+    if (rawDepth >= 0.9999)
+        return false;
+#endif
+
+    float sceneEyeDepth = LinearEyeDepth(rawDepth, _HectonZBufferParams);
+    if (sceneEyeDepth <= 0.0001)
+        return false;
+
+    return eyeDepth - sceneEyeDepth > _HectonOcclusionDepthBias;
+}
+
+bool IsOccludedByDepth(
+    float3 originWS,
+    float3 centerWS,
+    float3 topWS,
+    float3 sideAWS,
+    float3 sideBWS,
+    float4 clipRoot,
+    float4 clipCenter,
+    float4 clipTop,
+    float4 clipSideA,
+    float4 clipSideB)
+{
+    if (_HectonOcclusionEnabled == 0)
+        return false;
+
+    uint depthWidth;
+    uint depthHeight;
+    _HectonCameraDepthTexture.GetDimensions(depthWidth, depthHeight);
+    if (depthWidth == 0 || depthHeight == 0)
+        return false;
+
+    uint2 depthTextureSize = uint2(depthWidth, depthHeight);
+    bool rootOccluded = IsPointOccluded(clipRoot, ResolveEyeDepth(originWS), depthTextureSize);
+    if (!rootOccluded)
+        return false;
+
+    bool centerOccluded = IsPointOccluded(clipCenter, ResolveEyeDepth(centerWS), depthTextureSize);
+    if (!centerOccluded)
+        return false;
+
+    bool topOccluded = IsPointOccluded(clipTop, ResolveEyeDepth(topWS), depthTextureSize);
+    if (!topOccluded)
+        return false;
+
+    bool sideAOccluded = IsPointOccluded(clipSideA, ResolveEyeDepth(sideAWS), depthTextureSize);
+    if (!sideAOccluded)
+        return false;
+
+    return IsPointOccluded(clipSideB, ResolveEyeDepth(sideBWS), depthTextureSize);
+}
+
+float4 GetCascadeSphere(int cascadeIndex)
+{
+    if (cascadeIndex == 0)
+        return _CascadeShadowSplitSpheres0;
+    if (cascadeIndex == 1)
+        return _CascadeShadowSplitSpheres1;
+    if (cascadeIndex == 2)
+        return _CascadeShadowSplitSpheres2;
+    return _CascadeShadowSplitSpheres3;
+}
+
+float GetCascadeSphereRadiusSq(int cascadeIndex)
+{
+    if (cascadeIndex == 0)
+        return _CascadeShadowSplitSphereRadii.x;
+    if (cascadeIndex == 1)
+        return _CascadeShadowSplitSphereRadii.y;
+    if (cascadeIndex == 2)
+        return _CascadeShadowSplitSphereRadii.z;
+    return _CascadeShadowSplitSphereRadii.w;
+}
+
+bool IsInShadowCascade(float3 positionWS, int cascadeIndex)
+{
+    float4 sphere = GetCascadeSphere(cascadeIndex);
+    float3 delta = positionWS - sphere.xyz;
+    if (dot(delta, delta) > GetCascadeSphereRadiusSq(cascadeIndex))
+        return false;
+
+    float4 shadowCoord = mul(_MainLightWorldToShadow[cascadeIndex], float4(positionWS, 1.0));
+    if (shadowCoord.w <= 0.0001)
+        return false;
+
+    float3 shadowNdc = shadowCoord.xyz / shadowCoord.w;
+    return shadowNdc.x >= 0.0 && shadowNdc.x <= 1.0 &&
+        shadowNdc.y >= 0.0 && shadowNdc.y <= 1.0 &&
+        shadowNdc.z > 0.0 && shadowNdc.z < 1.0;
+}
+
+bool IsVisibleInAnyShadowCascade(float3 rootWS, float3 centerWS, float3 topWS, float3 sideAWS, float3 sideBWS)
+{
+    [unroll]
+    for (int cascadeIndex = 0; cascadeIndex < 4; cascadeIndex++)
+    {
+        if (IsInShadowCascade(rootWS, cascadeIndex) ||
+            IsInShadowCascade(centerWS, cascadeIndex) ||
+            IsInShadowCascade(topWS, cascadeIndex) ||
+            IsInShadowCascade(sideAWS, cascadeIndex) ||
+            IsInShadowCascade(sideBWS, cascadeIndex))
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+[numthreads(HECTON_THREADS_PER_GROUP, 1, 1)]
+void CullFloraInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint instanceIndex = dispatchThreadId.x;
+    if (instanceIndex >= _HectonSourceInstanceCount)
+        return;
+
+    float4x4 instanceMatrix = _HectonSourceInstanceMatrices[instanceIndex];
+    float4 instanceData = _HectonSourceVegetationInstanceData[instanceIndex];
+    float instanceType = clamp(round(instanceData.x), 0.0, 2.0);
+
+    float instanceHeight;
+    float instanceWidth;
+    ResolveInstanceShape(instanceType, instanceData.y, instanceData.z, instanceHeight, instanceWidth);
+
+    float3 originWS = TransformPoint(instanceMatrix, float3(0.0, 0.0, 0.0));
+    float3 centerWS = TransformPoint(instanceMatrix, float3(0.0, instanceHeight * 0.5, 0.0));
+    float3 topWS = TransformPoint(instanceMatrix, float3(0.0, instanceHeight, 0.0));
+    float3 sideAWS = TransformPoint(instanceMatrix, float3(instanceWidth, instanceHeight * 0.5, 0.0));
+    float3 sideBWS = TransformPoint(instanceMatrix, float3(-instanceWidth, instanceHeight * 0.5, 0.0));
+
+    float4 clipRoot = mul(_HectonViewProjection, float4(originWS, 1.0));
+    float4 clipCenter = mul(_HectonViewProjection, float4(centerWS, 1.0));
+    float4 clipTop = mul(_HectonViewProjection, float4(topWS, 1.0));
+    float4 clipSideA = mul(_HectonViewProjection, float4(sideAWS, 1.0));
+    float4 clipSideB = mul(_HectonViewProjection, float4(sideBWS, 1.0));
+
+    if (!IsVisibleInFrustum(clipRoot, clipCenter, clipTop, clipSideA, clipSideB))
+        return;
+
+    if (IsOccludedByDepth(originWS, centerWS, topWS, sideAWS, sideBWS, clipRoot, clipCenter, clipTop, clipSideA, clipSideB))
+        return;
+
+    float distanceToCamera = distance(originWS, _HectonCameraPosition);
+    float lod0Distance = max(_HectonLodNearDistance, 0.01);
+    float lod1Distance = max(_HectonLodFarDistance, lod0Distance);
+    float lodTransition = max(_HectonLodTransitionRange, 0.01);
+    float lod0MaxDistance = lod0Distance + lodTransition;
+    float lod1MinDistance = max(0.0, lod0Distance - lodTransition);
+    float lod1MaxDistance = lod1Distance + lodTransition;
+
+    if (distanceToCamera <= lod0MaxDistance)
+        _HectonVisibleInstanceIndicesLOD0.Append(instanceIndex);
+
+    if (distanceToCamera >= lod1MinDistance && distanceToCamera <= lod1MaxDistance)
+        _HectonVisibleInstanceIndicesLOD1.Append(instanceIndex);
+}
+
+[numthreads(HECTON_THREADS_PER_GROUP, 1, 1)]
+void CullFloraShadowInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint instanceIndex = dispatchThreadId.x;
+    if (instanceIndex >= _HectonSourceInstanceCount)
+        return;
+
+    float4x4 instanceMatrix = _HectonSourceInstanceMatrices[instanceIndex];
+    float4 instanceData = _HectonSourceVegetationInstanceData[instanceIndex];
+    float instanceType = clamp(round(instanceData.x), 0.0, 2.0);
+
+    float instanceHeight;
+    float instanceWidth;
+    ResolveInstanceShape(instanceType, instanceData.y, instanceData.z, instanceHeight, instanceWidth);
+
+    float3 rootWS = TransformPoint(instanceMatrix, float3(0.0, 0.0, 0.0));
+    float3 centerWS = TransformPoint(instanceMatrix, float3(0.0, instanceHeight * 0.5, 0.0));
+    float3 topWS = TransformPoint(instanceMatrix, float3(0.0, instanceHeight, 0.0));
+    float3 sideAWS = TransformPoint(instanceMatrix, float3(instanceWidth, instanceHeight * 0.5, 0.0));
+    float3 sideBWS = TransformPoint(instanceMatrix, float3(-instanceWidth, instanceHeight * 0.5, 0.0));
+
+    if (!IsVisibleInAnyShadowCascade(rootWS, centerWS, topWS, sideAWS, sideBWS))
+        return;
+
+    _HectonVisibleInstanceIndicesShadow.Append(instanceIndex);
+}

@@ -12,25 +12,43 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a49e6475ccf8054419a7fba4c7a78a5c, type: 3}
   m_Name: Item_Builder_Device
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
-  itemName: Fabrication Tool
+  legacyItemName: Fabrication Tool
+  stableId: Item_Builder_Device
   localizedItemName:
     tableKey: ITEM_BUILDER_DEVICE_NAME
-    fallbackText: "Fabrication Tool"
+    fallbackText: Fabrication Tool
     variants: []
   icon: {fileID: 0}
-  description: Handheld fabrication device used to place, rotate, and dismantle field structures.
+  legacyDescription: Handheld fabrication device used to place, rotate, and dismantle
+    field structures.
   localizedDescription:
     tableKey: ITEM_BUILDER_DEVICE_DESCRIPTION
-    fallbackText: "Handheld fabrication device used to place, rotate, and dismantle field structures."
+    fallbackText: Handheld fabrication device used to place, rotate, and dismantle
+      field structures.
     variants: []
   weight: 2.5
   stackable: 0
   maxStack: 1
+  category: 0
+  resourceFamily: 0
+  progressionTier: 0
+  isRawResource: 0
+  minDepth: 0
+  maxDepth: 0
   width: 2
   height: 2
-  interactVerb: Take
+  isConsumable: 0
+  useDuration: 0
+  oxygenRestore: 0
+  energyRestore: 0
+  integrityRestore: 0
+  hungerRestore: 0
+  thirstRestore: 0
+  useSound: {fileID: 0}
+  legacyInteractVerb: Take
   localizedInteractVerb:
     tableKey: ITEM_INTERACT_TAKE
-    fallbackText: "Take"
+    fallbackText: Take
     variants: []
   worldPrefab: {fileID: 0}
+  worldBuoyancyProfile: {fileID: 0}

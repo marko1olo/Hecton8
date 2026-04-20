@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using Hecton8.Bootstrap;
+using Hecton8.Core;
+using Hecton8.Gameplay;
 using Hecton8.Input;
 using UnityEngine;
 #if UNITY_EDITOR
@@ -53,10 +56,31 @@ namespace Hecton.Localization
         private static readonly Regex StatusTokenRegex = new Regex(
             "<status:(?<token>[a-zA-Z0-9_\\-]+)>",
             RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex TechTokenRegex = new Regex(
+            "<tech:(?<token>[a-zA-Z0-9_\\-]+)>",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex KeyTokenRegex = new Regex(
+            "<key:(?<token>[a-zA-Z0-9_\\-]+)>",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
         private static readonly MatchEvaluator ButtonTokenEvaluator = EvaluateButtonToken;
         private static readonly MatchEvaluator ItemTokenEvaluator = EvaluateItemToken;
         private static readonly MatchEvaluator StatusTokenEvaluator = EvaluateStatusToken;
+        private static readonly MatchEvaluator TechTokenEvaluator = EvaluateTechToken;
+        private static readonly MatchEvaluator KeyTokenEvaluator = EvaluateKeyToken;
         private const string DefaultLanguageTableFolder = "Assets/_Project/Scripts";
+        private const int MaxExpansionPasses = 3;
+        private const string AnalyzerTechKeyPrefix = "TECH_";
+        private const string AnalyzerPrefabToken = "EnvAnalyzer";
+        private const string EnvironmentalAnalyzerToolTypeName = "EnvironmentalAnalyzerTool";
+        private const float HullStressCorruptionThreshold = 0.7f;
+        private const int MaxStressCorruptionBucket = 8;
+        private const string CorruptionBlocks = "#%&█";
+        private const string LatinCorruptionAlphabet = "AEINORSTUVWXYZ";
+        private const string CyrillicCorruptionAlphabet = "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
+        private const string ArabicCorruptionAlphabet = "ابتثجحخدذرزسشصضطظعغفقكلمنهوي";
+        private const string CjkCorruptionAlphabet = "深海圧壳酸氧流核域警号層站影断障";
+        private const string HangulCorruptionAlphabet = "심해압력산소전력균열경보파손격리영역장치";
+        private const string DevanagariCorruptionAlphabet = "अआइईउऊकखगघचछजझटठडढतथदधनपफबभमयरलवशसह";
 
         public static LocalizationManager Instance { get; private set; }
 
@@ -75,6 +99,12 @@ namespace Hecton.Localization
         // COLD ALLOC: Dictionary[20] â€” language tables for UI/content lookup â€” owner: LocalizationManager
         private readonly Dictionary<GameLanguage, Dictionary<string, string>> _tables =
             new Dictionary<GameLanguage, Dictionary<string, string>>(20);
+        private PlayerToolManager _cachedPlayerToolManager;
+        private HectonPlayerMovement _cachedPlayerMovement;
+        private int _cachedAnalyzerFrame = -1;
+        private bool _cachedAnalyzerInstalled;
+        private int _cachedHullStressFrame = -1;
+        private float _cachedHullStressCorruptionIntensity;
 
         /// <summary>
         /// Active language for runtime lookups.
@@ -134,7 +164,7 @@ namespace Hecton.Localization
                 return string.Empty;
 
             if (TryGet(CurrentLanguage, key, out string value))
-                return value;
+                return ExpandNarrativeTokens(value);
 
 #if UNITY_EDITOR
             Debug.LogWarning($"[Localization] Missing key: \"{key}\" for {CurrentLanguage}");
@@ -199,6 +229,64 @@ namespace Hecton.Localization
         }
 
         /// <summary>
+        /// Resolve, expand, and apply atmospheric corruption to a localized string.
+        /// </summary>
+        public string GetCorruptedText(string key, float intensity)
+        {
+            string expanded = GetExpanded(key);
+            return CorruptExpandedText(expanded, intensity);
+        }
+
+        /// <summary>
+        /// Apply atmospheric corruption to an already expanded localized string.
+        /// </summary>
+        public string CorruptExpandedText(string text, float intensity)
+        {
+            return CorruptVisibleText(text, Mathf.Clamp01(intensity), CurrentLanguage);
+        }
+
+        /// <summary>
+        /// Returns the current suit-stress corruption intensity derived from player hull stress.
+        /// </summary>
+        public float GetHullStressCorruptionIntensity()
+        {
+            int frame = Time.frameCount;
+            if (_cachedHullStressFrame == frame)
+                return _cachedHullStressCorruptionIntensity;
+
+            _cachedHullStressFrame = frame;
+            _cachedHullStressCorruptionIntensity = ResolveHullStressCorruptionIntensity();
+            return _cachedHullStressCorruptionIntensity;
+        }
+
+        /// <summary>
+        /// Returns a coarse bucket for suit-stress driven corrosion refresh.
+        /// </summary>
+        public int GetHullStressCorruptionBucket()
+        {
+            float intensity = GetHullStressCorruptionIntensity();
+            if (intensity <= 0f)
+                return 0;
+
+            return Mathf.Clamp(Mathf.CeilToInt(intensity * MaxStressCorruptionBucket), 1, MaxStressCorruptionBucket);
+        }
+
+        /// <summary>
+        /// Applies suit-stress corrosion to an already expanded display string when hull stress is high enough.
+        /// </summary>
+        public string ApplyHullStressCorruptionIfNeeded(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return string.Empty;
+
+            float intensity = GetHullStressCorruptionIntensity();
+            if (intensity <= 0f)
+                return text;
+
+            return CorruptExpandedText(text, intensity);
+        }
+
+        /// <summary>
         /// Resolve a pluralized localized string root for the current language.
         /// Expected suffixes: _ZERO, _ONE, _TWO, _FEW, _MANY, _OTHER.
         /// </summary>
@@ -245,7 +333,8 @@ namespace Hecton.Localization
         /// </summary>
         public string GetOrFallback(GameLanguage language, string key, string fallback)
         {
-            return TryGet(language, key, out string value) ? value : (fallback ?? string.Empty);
+            string resolved = TryGet(language, key, out string value) ? value : (fallback ?? string.Empty);
+            return ExpandNarrativeTokens(resolved);
         }
 
         /// <summary>
@@ -312,6 +401,67 @@ namespace Hecton.Localization
                 LoadBuiltInTables();
         }
 
+        /// <summary>
+        /// Injects additional localization entries into the live table for a language.
+        /// Intended for mod content and other cold-path runtime table extensions after first-party tables are loaded.
+        /// </summary>
+        /// <param name="language">Target language table to extend.</param>
+        /// <param name="entries">Flat key/value map to merge into the live table.</param>
+        /// <param name="sourceId">Diagnostic source label used in warnings and editor logs.</param>
+        /// <param name="overwriteExisting">
+        /// True to replace existing keys with injected values.
+        /// False to preserve first-writer ownership and only add missing keys.
+        /// </param>
+        public void InjectEntries(
+            GameLanguage language,
+            Dictionary<string, string> entries,
+            string sourceId,
+            bool overwriteExisting = true)
+        {
+            if (entries == null || entries.Count == 0)
+                return;
+
+            if (!_tables.TryGetValue(language, out Dictionary<string, string> table) || table == null)
+            {
+                table = new Dictionary<string, string>(Mathf.Max(32, entries.Count));
+                _tables[language] = table;
+            }
+
+            Dictionary<string, string>.Enumerator enumerator = entries.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                string key = enumerator.Current.Key;
+                if (string.IsNullOrWhiteSpace(key))
+                    continue;
+
+                if (!overwriteExisting && table.ContainsKey(key))
+                    continue;
+
+                table[key] = enumerator.Current.Value ?? string.Empty;
+            }
+
+            if (CurrentLanguage == language)
+                OnLanguageChanged?.Invoke(language);
+
+#if UNITY_EDITOR
+            Debug.Log($"[Localization] Injected {entries.Count} entries into {language} from '{sourceId}'.");
+#endif
+        }
+
+        /// <summary>
+        /// Parses a flat JSON localization object into the dictionary format consumed by the runtime localization owner.
+        /// Expected schema: <c>{ "KEY": "Value" }</c>.
+        /// </summary>
+        /// <param name="json">Raw JSON text to parse.</param>
+        /// <returns>
+        /// Parsed key/value pairs.
+        /// Invalid or empty input returns an empty dictionary instead of throwing.
+        /// </returns>
+        public static Dictionary<string, string> ParseFlatJsonTable(string json)
+        {
+            return ParseJsonTable(json);
+        }
+
         private static Dictionary<string, string> ParseJsonTable(string json)
         {
             // COLD ALLOC: Dictionary[128] â€” parsed localization table entries â€” owner: LocalizationManager
@@ -350,9 +500,39 @@ namespace Hecton.Localization
             if (string.IsNullOrEmpty(text))
                 return string.Empty;
 
-            string expanded = ButtonTokenRegex.Replace(text, ButtonTokenEvaluator);
-            expanded = ItemTokenRegex.Replace(expanded, ItemTokenEvaluator);
-            expanded = StatusTokenRegex.Replace(expanded, StatusTokenEvaluator);
+            string expanded = ExpandNarrativeTokens(text);
+            for (int pass = 0; pass < MaxExpansionPasses; pass++)
+            {
+                string next = ButtonTokenRegex.Replace(expanded, ButtonTokenEvaluator);
+                next = ItemTokenRegex.Replace(next, ItemTokenEvaluator);
+                next = StatusTokenRegex.Replace(next, StatusTokenEvaluator);
+                next = NormalizeExpandedText(next);
+                if (string.Equals(next, expanded, StringComparison.Ordinal))
+                    break;
+
+                expanded = next;
+            }
+
+            return expanded;
+        }
+
+        private string ExpandNarrativeTokens(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return string.Empty;
+
+            string expanded = text;
+            for (int pass = 0; pass < MaxExpansionPasses; pass++)
+            {
+                string next = KeyTokenRegex.Replace(expanded, KeyTokenEvaluator);
+                next = TechTokenRegex.Replace(next, TechTokenEvaluator);
+                next = NormalizeExpandedText(next);
+                if (string.Equals(next, expanded, StringComparison.Ordinal))
+                    break;
+
+                expanded = next;
+            }
+
             return expanded;
         }
 
@@ -389,6 +569,293 @@ namespace Hecton.Localization
             return LocalizedInlineIconResolver.TryResolveStatusChip(token, out string markup)
                 ? markup
                 : match.Value;
+        }
+
+        private static string EvaluateTechToken(Match match)
+        {
+            if (match == null || !match.Success)
+                return string.Empty;
+
+            LocalizationManager manager = Instance;
+            if (manager == null)
+                return string.Empty;
+
+            return manager.ResolveTechToken(match.Groups["token"].Value);
+        }
+
+        private static string EvaluateKeyToken(Match match)
+        {
+            if (match == null || !match.Success)
+                return string.Empty;
+
+            LocalizationManager manager = Instance;
+            if (manager == null)
+                return match.Value;
+
+            string token = match.Groups["token"].Value;
+            return manager.TryGet(manager.CurrentLanguage, token, out string value) ? value : token;
+        }
+
+        private string ResolveTechToken(string token)
+        {
+            if (string.IsNullOrWhiteSpace(token) || !HasAnalyzerContext())
+                return string.Empty;
+
+            string techKey = token.StartsWith(AnalyzerTechKeyPrefix, StringComparison.OrdinalIgnoreCase)
+                ? token.ToUpperInvariant()
+                : AnalyzerTechKeyPrefix + token.ToUpperInvariant();
+
+            return TryGet(CurrentLanguage, techKey, out string value) ? value : string.Empty;
+        }
+
+        private bool HasAnalyzerContext()
+        {
+            int frame = Time.frameCount;
+            if (_cachedAnalyzerFrame == frame)
+                return _cachedAnalyzerInstalled;
+
+            _cachedAnalyzerFrame = frame;
+            _cachedAnalyzerInstalled = ResolveAnalyzerContext();
+            return _cachedAnalyzerInstalled;
+        }
+
+        private bool ResolveAnalyzerContext()
+        {
+            PlayerToolManager toolManager = ResolvePlayerToolManager();
+            if (toolManager == null)
+                return false;
+
+            PlayerTool currentTool = toolManager.CurrentTool;
+            if (currentTool != null && currentTool.GetType().Name.IndexOf(EnvironmentalAnalyzerToolTypeName, StringComparison.Ordinal) >= 0)
+                return true;
+
+            int slotCount = toolManager.SlotCount;
+            for (int i = 0; i < slotCount; i++)
+            {
+                GameObject prefab = toolManager.GetAssignedToolPrefab(i);
+                if (prefab == null)
+                    continue;
+
+                string prefabName = prefab.name;
+                if (!string.IsNullOrEmpty(prefabName) &&
+                    prefabName.IndexOf(AnalyzerPrefabToken, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private PlayerToolManager ResolvePlayerToolManager()
+        {
+            if (_cachedPlayerToolManager != null)
+                return _cachedPlayerToolManager;
+
+            if (!SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) || playerTransform == null)
+                return null;
+
+            _cachedPlayerToolManager = playerTransform.GetComponentInChildren<PlayerToolManager>(true);
+            return _cachedPlayerToolManager;
+        }
+
+        private float ResolveHullStressCorruptionIntensity()
+        {
+            HectonPlayerMovement playerMovement = ResolvePlayerMovement();
+            if (playerMovement == null)
+                return 0f;
+
+            float hullStress = Mathf.Clamp01(playerMovement.CurrentHullStress01);
+            if (hullStress <= HullStressCorruptionThreshold)
+                return 0f;
+
+            return Mathf.InverseLerp(HullStressCorruptionThreshold, 1f, hullStress);
+        }
+
+        private HectonPlayerMovement ResolvePlayerMovement()
+        {
+            if (_cachedPlayerMovement != null)
+                return _cachedPlayerMovement;
+
+            if (!SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) || playerTransform == null)
+                return null;
+
+            _cachedPlayerMovement = playerTransform.GetComponent<HectonPlayerMovement>();
+            return _cachedPlayerMovement;
+        }
+
+        private static string NormalizeExpandedText(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return string.Empty;
+
+            string normalized = text.Replace("  ", " ");
+            normalized = normalized.Replace(" \n", "\n");
+            normalized = normalized.Replace("\n ", "\n");
+            return normalized.Trim();
+        }
+
+        private static string CorruptVisibleText(string text, float intensity, GameLanguage language)
+        {
+            if (string.IsNullOrEmpty(text) || intensity <= 0f)
+                return text ?? string.Empty;
+
+            string alphabet = GetCorruptionAlphabet(language);
+            if (string.IsNullOrEmpty(alphabet))
+                return text;
+
+            int threshold = Mathf.RoundToInt(Mathf.Lerp(0f, 700f, intensity));
+            if (threshold <= 0)
+                return text;
+
+            System.Text.StringBuilder builder = StringBuilderPool.Get();
+            bool insideRichTag = false;
+            bool previousCorrupted = false;
+            int visibleIndex = 0;
+            int seed = ComputeCorruptionSeed(text);
+
+            for (int i = 0; i < text.Length; i++)
+            {
+                char current = text[i];
+
+                if (current == '<')
+                {
+                    insideRichTag = true;
+                    previousCorrupted = false;
+                    builder.Append(current);
+                    continue;
+                }
+
+                if (insideRichTag)
+                {
+                    builder.Append(current);
+                    if (current == '>')
+                        insideRichTag = false;
+                    continue;
+                }
+
+                if (current == '[' && TryAppendBracketedMarker(text, ref i, builder))
+                {
+                    previousCorrupted = false;
+                    continue;
+                }
+
+                if (!ShouldCorruptCharacter(current))
+                {
+                    previousCorrupted = false;
+                    builder.Append(current);
+                    continue;
+                }
+
+                int hash = seed ^ (visibleIndex * 486187739);
+                visibleIndex++;
+                bool shouldCorrupt = !previousCorrupted && (hash & 1023) < threshold;
+                if (!shouldCorrupt)
+                {
+                    builder.Append(current);
+                    previousCorrupted = false;
+                    continue;
+                }
+
+                builder.Append(ResolveCorruptionGlyph(hash, alphabet));
+                previousCorrupted = true;
+            }
+
+            string corrupted = builder.ToString();
+            StringBuilderPool.Return(builder);
+            return corrupted;
+        }
+
+        private static bool TryAppendBracketedMarker(string text, ref int index, System.Text.StringBuilder builder)
+        {
+            int markerStart = index;
+            int current = markerStart + 1;
+            bool sawDigit = false;
+            bool sawDot = false;
+
+            while (current < text.Length)
+            {
+                char markerChar = text[current];
+                if (markerChar >= '0' && markerChar <= '9')
+                {
+                    sawDigit = true;
+                    current++;
+                    continue;
+                }
+
+                if (markerChar == '.' && !sawDot)
+                {
+                    sawDot = true;
+                    current++;
+                    continue;
+                }
+
+                break;
+            }
+
+            if (!sawDigit || current >= text.Length || text[current] != ']')
+            {
+                builder.Append(text[markerStart]);
+                return false;
+            }
+
+            for (int i = markerStart; i <= current; i++)
+                builder.Append(text[i]);
+
+            index = current;
+            return true;
+        }
+
+        private static bool ShouldCorruptCharacter(char value)
+        {
+            return char.IsLetter(value);
+        }
+
+        private static int ComputeCorruptionSeed(string text)
+        {
+            unchecked
+            {
+                int seed = 17 ^ Mathf.RoundToInt(Time.unscaledTime * 12f);
+                for (int i = 0; i < text.Length; i++)
+                    seed = (seed * 31) + text[i];
+                return seed;
+            }
+        }
+
+        private static char ResolveCorruptionGlyph(int hash, string alphabet)
+        {
+            if ((hash & 7) == 0)
+                return CorruptionBlocks[(hash >> 3) & (CorruptionBlocks.Length - 1)];
+
+            int alphabetIndex = (hash & int.MaxValue) % alphabet.Length;
+            return alphabet[alphabetIndex];
+        }
+
+        private static string GetCorruptionAlphabet(GameLanguage language)
+        {
+            switch (language)
+            {
+                case GameLanguage.Russian:
+                case GameLanguage.Ukrainian:
+                    return CyrillicCorruptionAlphabet;
+
+                case GameLanguage.Arabic:
+                    return ArabicCorruptionAlphabet;
+
+                case GameLanguage.ChineseSimplified:
+                case GameLanguage.ChineseTraditional:
+                case GameLanguage.Japanese:
+                    return CjkCorruptionAlphabet;
+
+                case GameLanguage.Korean:
+                    return HangulCorruptionAlphabet;
+
+                case GameLanguage.Hindi:
+                    return DevanagariCorruptionAlphabet;
+
+                default:
+                    return LatinCorruptionAlphabet;
+            }
         }
 
         private string ResolvePluralKey(GameLanguage language, string keyRoot, int count)

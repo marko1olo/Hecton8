@@ -3,6 +3,7 @@
 // Example IInteractable implementation showing all systems working together.
 // ============================================================================
 
+using Hecton8.Core;
 using Hecton8.Items;
 
 namespace Hecton8.Interaction
@@ -12,16 +13,26 @@ namespace Hecton8.Interaction
 
     [RequireComponent(typeof(InteractionHighlighter))]
     [RequireComponent(typeof(Collider))]
-    public class PickupItem : MonoBehaviour, IInteractable
+    public class PickupItem : MonoBehaviour, IInteractable, ISlowTickable
     {
         [Header("Item Configuration")]
         [SerializeField] private ItemData itemData;
         [SerializeField] private int quantity = 1;
 
-        // Cached references — resolved once in Awake, never again.
+        [Header("World State")]
+        [Tooltip("Persist this authored world pickup into WorldStateManager depletion storage.")]
+        [SerializeField] private bool persistWorldState = true;
+
         private InteractionHighlighter _highlighter;
         private string _cachedInteractText;
         private int _spatialHandle;
+        private bool _registeredToSlowTick;
+        private Vector3 _lastSpatialPosition;
+        private bool _worldStateIdentityResolved;
+        private bool _worldStateIdentityAvailable;
+        private long _worldStatePersistenceKey;
+        private long _worldStateChunkKey;
+        private Vector3 _worldStateAnchorPosition;
 
         public ItemData ItemData => itemData;
         public int Quantity => quantity;
@@ -30,6 +41,7 @@ namespace Hecton8.Interaction
         {
             itemData = data;
             quantity = Mathf.Max(1, itemQuantity);
+            InvalidateWorldStateIdentity();
 
             _cachedInteractText = itemData != null
                 ? itemData.GetInteractText()
@@ -38,9 +50,8 @@ namespace Hecton8.Interaction
 
         private void Awake()
         {
-            _highlighter = GetComponent<InteractionHighlighter>();
+            TryGetComponent(out _highlighter);
 
-            // Cache the string ONCE. GetInteractText() returns this forever.
             _cachedInteractText = itemData != null
                 ? itemData.GetInteractText()
                 : "Pick up Unknown";
@@ -48,11 +59,66 @@ namespace Hecton8.Interaction
 
         private void OnEnable()
         {
-            if (_spatialHandle == 0)
-                _spatialHandle = WorldSpatialHashGrid.RegisterPickup(this);
+            ResolveWorldStateIdentity();
+
+            WorldStateManager worldStateManager = WorldStateManager.Instance;
+            if (_worldStateIdentityAvailable &&
+                worldStateManager != null &&
+                worldStateManager.IsPickupDepleted(_worldStatePersistenceKey))
+            {
+                gameObject.SetActive(false);
+                return;
+            }
+
+            RegisterSpatialHandle();
+            TryRegisterSlowTick();
+        }
+
+        private void Start()
+        {
+            TryRegisterSlowTick();
         }
 
         private void OnDisable()
+        {
+            TryUnregisterSlowTick();
+            UnregisterSpatialHandle();
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregisterSlowTick();
+            UnregisterSpatialHandle();
+        }
+
+        public void SlowTick()
+        {
+            if (_spatialHandle == 0)
+                return;
+
+            Vector3 currentPosition = transform.position;
+            WorldSpatialHashGrid.UpdateGridPosition(_spatialHandle, _lastSpatialPosition, currentPosition);
+            _lastSpatialPosition = currentPosition;
+        }
+
+        internal bool TryGetWorldStatePersistenceIdentity(out long persistenceKey, out long chunkKey)
+        {
+            ResolveWorldStateIdentity();
+            persistenceKey = _worldStatePersistenceKey;
+            chunkKey = _worldStateChunkKey;
+            return _worldStateIdentityAvailable;
+        }
+
+        private void RegisterSpatialHandle()
+        {
+            if (_spatialHandle != 0)
+                return;
+
+            _spatialHandle = WorldSpatialHashGrid.RegisterPickup(this);
+            _lastSpatialPosition = transform.position;
+        }
+
+        private void UnregisterSpatialHandle()
         {
             if (_spatialHandle == 0)
                 return;
@@ -61,9 +127,30 @@ namespace Hecton8.Interaction
             _spatialHandle = 0;
         }
 
-        // ================================================================
-        // IInteractable Implementation
-        // ================================================================
+        private void TryRegisterSlowTick()
+        {
+            if (_registeredToSlowTick)
+                return;
+
+            GameTickManager gameTickManager = GameTickManager.Instance;
+            if (gameTickManager == null)
+                return;
+
+            gameTickManager.Register((ISlowTickable)this);
+            _registeredToSlowTick = true;
+        }
+
+        private void TryUnregisterSlowTick()
+        {
+            if (!_registeredToSlowTick)
+                return;
+
+            GameTickManager gameTickManager = GameTickManager.Instance;
+            if (gameTickManager != null)
+                gameTickManager.Unregister((ISlowTickable)this);
+
+            _registeredToSlowTick = false;
+        }
 
         public void OnHoverStart()
         {
@@ -77,18 +164,48 @@ namespace Hecton8.Interaction
 
         public void Interact(Transform interactor)
         {
-            // Fire the global event — inventory system, audio, VFX all react.
+            WorldStateManager.Instance?.RegisterCollectedPickup(_worldStatePersistenceKey, _worldStateChunkKey);
             InteractionEvents.RaiseItemCollected(itemData, quantity, interactor);
-
-            // Return to pool instead of Destroy in production.
-            // ObjectPool.Return(gameObject);
             gameObject.SetActive(false);
         }
 
         public string GetInteractText()
         {
-            // Zero allocation — returns pre-cached string from Awake().
             return _cachedInteractText;
+        }
+
+        private void ResolveWorldStateIdentity()
+        {
+            if (_worldStateIdentityResolved)
+                return;
+
+            _worldStateAnchorPosition = transform.position;
+            _worldStateIdentityResolved = true;
+            bool isPooledRuntimeInstance = TryGetComponent(out ObjectPoolManager.PoolItemMarker _);
+            _worldStateIdentityAvailable = persistWorldState &&
+                                           !isPooledRuntimeInstance &&
+                                           WorldPickupStateCodec.TryBuildIdentity(
+                                               transform,
+                                               gameObject.scene,
+                                               itemData,
+                                               _worldStateAnchorPosition,
+                                               out _worldStatePersistenceKey,
+                                               out _worldStateChunkKey);
+
+            if (_worldStateIdentityAvailable)
+                return;
+
+            _worldStatePersistenceKey = 0L;
+            _worldStateChunkKey = 0L;
+        }
+
+        private void InvalidateWorldStateIdentity()
+        {
+            _worldStateIdentityResolved = false;
+            _worldStateIdentityAvailable = false;
+            _worldStatePersistenceKey = 0L;
+            _worldStateChunkKey = 0L;
+            _worldStateAnchorPosition = default;
         }
     }
 }
