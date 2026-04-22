@@ -61,6 +61,7 @@ Shader "Hidden/Hecton8/SonarGridOverlay"
         float4 _HectonSonarWorldMemoryRect;
         float4 _HectonSonarWorldScrollUvOffset;
         float4 _HectonSonarWorldOriginOffset;
+        float _AbyssalDistortion;
         float4 _SonarRevealContacts[HECTON_SONAR_MAX_CONTACTS];
         float4 _SonarRevealContactMeta[HECTON_SONAR_MAX_CONTACTS];
         float _SonarRevealExpireTime;
@@ -280,6 +281,49 @@ Shader "Hidden/Hecton8/SonarGridOverlay"
             return SAMPLE_TEXTURE2D(_HectonSonarWorldPointCloudRT, sampler_LinearClamp, uv);
         }
 
+        float2 ResolveAbyssalDistortionOffset(float2 screenUV, float3 absoluteWorldPos)
+        {
+            float distortion = saturate(_AbyssalDistortion);
+            if (distortion <= 0.0001)
+                return float2(0.0, 0.0);
+
+            float timePhase = _Time.y * (0.85 + distortion * 2.3);
+            float phaseA = Hash31(float3(floor(screenUV * _ScaledScreenParams.xy * 0.35), floor(timePhase * 11.0)));
+            float phaseB = Hash31(float3(floor(absoluteWorldPos.xz * 0.08 + timePhase * 0.47), floor(timePhase * 7.0)));
+            float2 jitterDirection = normalize(float2(phaseA * 2.0 - 1.0, phaseB * 2.0 - 1.0) + 0.0001);
+            float jitterPixels = distortion * lerp(0.5, 4.0, saturate(length(absoluteWorldPos.xz - _SonarRevealOriginWS.xz) * 0.0025));
+            return jitterDirection * (jitterPixels * _ScaledScreenParams.zw);
+        }
+
+        half4 SampleScreenPointCloudDistorted(float2 screenUV, float3 absoluteWorldPos)
+        {
+            float2 uvOffset = ResolveAbyssalDistortionOffset(screenUV, absoluteWorldPos);
+            float2 distortedUv = saturate(screenUV + uvOffset);
+            half4 center = SAMPLE_TEXTURE2D_X(_HectonSonarHistoryTex, sampler_LinearClamp, distortedUv);
+            float distortion = saturate(_AbyssalDistortion);
+            if (distortion <= 0.0001)
+                return center;
+
+            half4 smear = SAMPLE_TEXTURE2D_X(_HectonSonarHistoryTex, sampler_LinearClamp, saturate(distortedUv - uvOffset * 0.65));
+            return lerp(center, max(center, smear), distortion * 0.38h);
+        }
+
+        half4 SampleWorldPointCloudDistorted(float3 absoluteWorldPos)
+        {
+            float2 uv = ResolveWorldMemoryUv(absoluteWorldPos);
+            if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0)
+                return half4(0.0h, 0.0h, 0.0h, 0.0h);
+
+            float distortion = saturate(_AbyssalDistortion);
+            float2 uvOffset = ResolveAbyssalDistortionOffset(uv, absoluteWorldPos) * 1.75;
+            half4 center = SAMPLE_TEXTURE2D(_HectonSonarWorldPointCloudRT, sampler_LinearClamp, saturate(uv + uvOffset));
+            if (distortion <= 0.0001)
+                return center;
+
+            half4 smear = SAMPLE_TEXTURE2D(_HectonSonarWorldPointCloudRT, sampler_LinearClamp, saturate(uv - uvOffset * 0.5));
+            return lerp(center, max(center, smear), distortion * 0.44h);
+        }
+
         half4 FragAccumulate(Varyings input) : SV_Target
         {
             half4 previousHistory = SAMPLE_TEXTURE2D_X(_HectonSonarHistoryTex, sampler_LinearClamp, input.screenUV) * _HasHistory;
@@ -346,12 +390,12 @@ Shader "Hidden/Hecton8/SonarGridOverlay"
         half4 FragComposite(Varyings input) : SV_Target
         {
             half4 sourceColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, input.screenUV);
-            half4 pointCloud = SAMPLE_TEXTURE2D_X(_HectonSonarHistoryTex, sampler_LinearClamp, input.screenUV);
             float rawDepth;
             float depthValid;
             float3 sceneWorldPos = SampleSceneWorldPosition(input.screenUV, rawDepth, depthValid);
             float3 absoluteWorldPos = ResolveAbsoluteWorldPosition(sceneWorldPos);
-            half4 worldPointCloud = depthValid > 0.5 ? SampleWorldPointCloud(absoluteWorldPos) : half4(0.0h, 0.0h, 0.0h, 0.0h);
+            half4 pointCloud = SampleScreenPointCloudDistorted(input.screenUV, absoluteWorldPos);
+            half4 worldPointCloud = depthValid > 0.5 ? SampleWorldPointCloudDistorted(absoluteWorldPos) : half4(0.0h, 0.0h, 0.0h, 0.0h);
             half3 overlay =
                 pointCloud.rgb * (pointCloud.a * _OverlayOpacity) +
                 worldPointCloud.rgb * (worldPointCloud.a * (_OverlayOpacity * 0.85h));

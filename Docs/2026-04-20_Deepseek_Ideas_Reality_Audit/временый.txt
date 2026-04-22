@@ -1,271 +1,781 @@
-
+ВНИМАНИЕ! БУДЬ БЕСПОЩАДЕН! ЧЕСТНО И ДЕТАЛЬНО АНАЛИЗИРУЙ ИХ ОТЧЕТЫ! 
 -=-=-=-=-=-
-ДИАЛОГ ""НАСТРОИТЬ ГПУ ТРАВУ И БЛЕНД""
-
-
-
-Worked for 10m 27s
+ДИАЛОГ ""НАСТРОИТЬ ГПУ ТРАВУ И БЛЕНД""  - "РЕНДЕРЕР"
+ОТЧЁТ
+Worked for 10m 56s
 What was wrong
 
-Crest 5 was not actually fixed. In Lighting.hlsl (line 149) AdditionalLighting() had been neutered with an early return color;. That only hides the Unity 6 breakage. It does not repair it. On current URP, clustered light looping expects a live inputData symbol for LIGHT_LOOP_BEGIN, and Crest was not providing it.
+Пещеры и дальний рельеф все еще опирались на плоское ambient-освещение. На MX350 полноценный SSAO из URP для этого бюджета слишком дорогой, а собственной дешевой directional occlusion-подсистемы не было. Параллельно не было отдельного HLOD owner-а под будущий NativeList<HLODInstance>, значит дальние обломки и крупные силуэты не могли идти через один дешевый DrawMeshInstancedIndirect проход.
 
-The abyss water path was also too flat. UnderwaterShared.hlsl (line 392) had no hard deep-sea extinction ramp that takes water from readable near-surface to near-black by roughly 600m.
-
-The volumetric shaft system the task asks for already existed as the owner HectonScooterVolumetricShaftsFeature.cs (line 13) plus Hecton_ScooterVolumetricShafts.shader (line 276). Duplicating it under a second feature name would be architecture drift.
-
-V-SSAO existed too, but it was still configured too wide for the brief: HectonVoxelSsaoFeature.cs (line 37) was 1.0m / 6 taps, not the requested lightweight ~1.5m / 4 taps cave-only solve.
+Требование по volumetric fade для фар уже было закрыто существующим owner-ом. Дублировать второй shafts feature было бы архитектурной ошибкой.
 
 What I did
 
-I repaired Crest’s Unity 6 clustered-light path instead of masking it. In Lighting.hlsl (line 156) I now reconstruct the minimal valid URP InputData needed by the clustered light iterator:
+Добавил новый URP render feature HectonAbyssalSsdoFeature.cs (line 16) и fullscreen shader Hecton_AbyssalSSDO.shader (line 1). Это легкий half-resolution SSDO/HBAO-lite path на depth+normals, с 4-tap directional gather, bilateral blur X/Y и финальным ambient-only composite. Transparent объекты исключены самим injection point BeforeRenderingTransparents, а non-depth/non-normal geometry просто не участвует, потому что shader валидирует SceneDepth и reconstructed normal перед расчетом окклюзии.
 
-inputData.positionWS = i_PositionWS
-inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(i_ScreenPosition)
-Then I switched Crest back onto the real URP clustered loop in Lighting.hlsl (line 179) with LIGHT_LOOP_BEGIN / LIGHT_LOOP_END. That removes the fake early-out and restores additional-light contribution under Unity 6000’s clustered path.
+Добавил HLOD контракт HLODInstance.cs (line 1) и новый bind-only renderer HectonHLODRenderer.cs (line 16). Он принимает native instances, один раз загружает матрицы и fade в persistent buffers, а в Tick делает только один Graphics.DrawMeshInstancedIndirect. Под него добавлен максимально дешевый fog silhouette shader Hecton_HLODUnlitFog.shader (line 1): unlit, no normal maps, ZWrite Off, ZTest LEqual, fog + alpha fade, GPU offset через _GlobalFloatingOffset.
 
-For optical parity, I hardened underwater extinction in UnderwaterShared.hlsl (line 392). The new abyssFactor starts after a shallow clear band, then ramps quadratically toward a stronger exponential extinction by ~600m. Result: near-surface stays clearer, deep water goes ink-dark instead of blue mush.
-
-I did not fork a second volumetric-shafts feature. The correct owner already exists. I audited the existing fullscreen path:
-
-raymarch in IntegrateHeadlightShafts (line 276)
-depth-aware bilateral blur in BlurShafts (line 340)
-composite in HectonScooterVolumetricShaftsFeature.cs (line 170)
-That owner already gives the requested fullscreen raymarch, blue-noise jitter, bilateral cleanup, and depth termination against cave geometry. Duplicating it would have been bad engineering.
-
-I tightened V-SSAO to the brief in HectonVoxelSsaoFeature.cs (line 37):
-
-radiusMeters = 1.5f
-sampleCount = 4
-The compute path remains the existing owner and still consumes the camera depth prepass for ambient-only cave occlusion.
+Volumetric fade не переписывал. Существующий owner Hecton_ScooterVolumetricShafts.shader (line 354) уже использует smooth distance fade для дальних lights, и этот путь сохранен.
 
 In-game result
 
-Crest water is no longer relying on a fake disabled additional-light path. Under Unity 6 clustered lighting, water now has the minimal InputData state it needs to compile and participate in URP’s additional-light loop again.
+Пещерные поверхности получают направленное screen-space затенение от depth+normals без тяжелого URP SSAO. Это не GI и не ray tracing. Это дешёвый directional occlusion слой, который возвращает объем щелям, аркам и стыкам скал.
 
-The underwater volume should read less like blue gel and more like actual deep water: readable near the surface, then progressively crushed toward black as depth approaches the abyss band.
-
-The headlight shafts owner remains the same fullscreen system, but it is already the correct architecture for this repo. It raymarchs only up to scene depth, so cave walls, base walls, and voxel arches terminate the beam instead of letting it punch through geometry.
-
-V-SSAO is now cheaper and more on-brief for MX350 cave use: 4 depth taps over a 1.5m neighborhood, ambient only.
+Дальний HLOD-контент теперь имеет отдельный рендер-пайплайн. Когда Картограф начнет публиковать NativeList<HLODInstance>, система сможет рисовать дальние силуэты обломков и массивных форм одним indirect draw, с плавным fade-out при подходе полноценного LOD0 чанка.
 
 What was verified
 
 Unity-verified:
 
-refresh_unity succeeded and requested compilation.
+refresh_unity успешно запросил компиляцию.
 Filtered console returned 0 entries for:
-Lighting.hlsl
-UnderwaterShared.hlsl
-HectonVoxelSsaoFeature
-Hecton_ScooterVolumetricShafts
-General console is not clean. Current unrelated entries are Crest [SerializeReference] warnings for multiple *Lod types and two Internal error - unexpected guid mismatch messages. No owner-zone compile error from this patch was present in the filtered readback.
+HectonAbyssalSsdoFeature.cs (line 16)
+Hecton_AbyssalSSDO.shader (line 1)
+HectonHLODRenderer.cs (line 16)
+Hecton_HLODUnlitFog.shader (line 1)
+HLODInstance.cs (line 1)
+Asset import/readback succeeded for those files as Shader / MonoScript.
 Code-review-only:
 
-Crest clustered fix lives at Lighting.hlsl (line 156)
-Abyss extinction lives at UnderwaterShared.hlsl (line 392)
-Existing fullscreen shafts owner remains at HectonScooterVolumetricShaftsFeature.cs (line 13)
-Existing raymarch/blur anchors remain at Hecton_ScooterVolumetricShafts.shader (line 276) and 340 (line 340)
-V-SSAO budget change is at HectonVoxelSsaoFeature.cs (line 37) and 46 (line 46)
-Экзамен:
+SSDO render path is isolated in HectonAbyssalSsdoFeature.cs (line 110) and Hecton_AbyssalSSDO.shader (line 138).
+HLOD indirect draw path is isolated in HectonHLODRenderer.cs (line 98) and Hecton_HLODUnlitFog.shader (line 52).
+Full project is still red because of foreign blocker in HectonVoxelEngine.cs (line 2187) and 2317 (line 2317). Это не мой owner-zone.
+1. ARCHITECTURE & REFACTORING
 
-Лучи не проходят сквозь стены, потому что shafts raymarch идет не в бесконечность. В IntegrateHeadlightShafts (line 276) сначала реконструируется scenePositionWS из SceneDepth, потом rayLength = min(distance(camera, scenePositionWS), MaxRayDistance). Это значит, что depth-writing геометрия и Z-prepass фактически обрезают луч на первом видимом препятствии. Потом BlurShafts (line 340) еще и depth-reject’ом не дает свету размазываться через резкие silhouette edges.
-Для фикса Crest inputData я не вводил новый lighting approximation. Я сделал минимальную реконструкцию URP InputData, достаточную для clustered light loop: world position плюс perspective-normalized screen UV через GetNormalizedScreenSpaceUV(i_ScreenPosition). Математически это пост-проективная нормализация экранных координат, а не новая модель света. Этого достаточно, потому что ClusterInit() в текущем URP реально требует только inputData.positionWS и inputData.normalizedScreenSpaceUV.
+SNIPPETS:
+
+// HectonAbyssalSsdoFeature.cs
+public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
+{
+    if (_pass == null || !_pass.IsReady)
+        return;
+
+    _pass.Setup(renderer.cameraColorTargetHandle);
+    renderer.EnqueuePass(_pass);
+}
+// HectonHLODRenderer.cs
+public void Tick(float dt)
+{
+    if (!_registered || !_hasValidBinding || _mesh == null || _material == null || _argsBuffer == null)
+        return;
+
+    _lastGlobalFloatingOffset = ResolveGlobalFloatingOffset();
+    _propertyBlock.SetVector(GlobalFloatingOffsetId, _lastGlobalFloatingOffset);
+    _propertyBlock.SetBuffer(HlodMatrixBufferId, _uploadedMatrixBuffer);
+    _propertyBlock.SetBuffer(HlodFadeBufferId, _uploadedFadeBuffer);
+
+    Graphics.DrawMeshInstancedIndirect(
+        _mesh,
+        0,
+        _material,
+        _drawBounds,
+        _argsBuffer,
+        0,
+        _propertyBlock,
+        _shadowCastingMode,
+        false,
+        gameObject.layer);
+}
+// Hecton_HLODUnlitFog.shader
+float3 positionWS = mul(instanceMatrix, float4(positionOS, 1.0)).xyz + _GlobalFloatingOffset.xyz;
+SRP COMPLIANCE:
+
+SSDO вынесен в отдельный render feature + hidden shader. В gameplay/tick code ничего не внедрялось.
+HLOD renderer bind-only. Он не знает, как Картограф строит HLOD. Он только принимает NativeArray<HLODInstance> и рисует.
+Циклических зависимостей нет. HLOD renderer читает только глобальный offset из HectonMapMagicVegetationBridge (line 1238), но не управляет Картографом и не подписывается на его шины.
+2. PERFORMANCE & HOT PATH OPTIMIZATION
+
+ALGORITHMIC COMPLEXITY:
+
+SSDO gather: O(P * S), где P — число пикселей half-res RT, S — 4 taps по умолчанию.
+SSDO bilateral blur: O(P).
+HLOD upload on publish: O(N), один проход по NativeArray<HLODInstance>.
+HLOD steady-state Tick: O(1) CPU + один indirect draw.
+STALL AVOIDANCE:
+
+В новых hot paths нет .Complete(), TryGetComponent, Find*, new, LINQ.
+SSDO тяжелая работа целиком на GPU через fullscreen passes.
+HLOD CPU работа вынесена в bind/update path. В Tick нет пересборки матриц или bounds scan.
+Нет GPU readback. Только write-only buffer upload на publish.
+GPU/CPU BALANCE:
+
+SSDO обязан быть на GPU: он использует уже существующие depth/normal buffers и линейно масштабируется по screen space.
+HLOD должен быть GPU-rendered через indirect draw. CPU здесь только агрегирует bounds и загружает данные при смене набора инстансов.
+Volumetric fade оставлен в существующем shader-side path, потому что это per-pixel light attenuation, не CPU light management.
+3. MEMORY ARCHITECTURE & ZERO-GC AUDIT
+
+ALLOCATION CHECK:
+
+Zero-GC hot path соблюден в новых системах.
+В Tick у HectonHLODRenderer.cs (line 98) нет managed allocations.
+SSDO использует RenderGraph transient textures. Перманентных per-frame managed alloc не добавлено.
+LIFETIME:
+
+HLODInstance — plain struct в HLODInstance.cs (line 6).
+HectonHLODRenderer.cs (line 225) владеет:
+NativeArray<Matrix4x4>
+NativeArray<Vector4>
+ComputeBuffer args/matrix/fade
+Освобождение идет через ReleaseResources() (line 267), вызываемый из OnDestroy.
+Ресайз без фрагментации: Mathf.NextPowerOfTwo в EnsureOwnedUploadCapacity() (line 225). Это экспоненциальный рост, а не частые мелкие realloc.
+4. MATHEMATICAL & DSP RIGOR
+
+FORMULAS:
+
+SSDO sample radius в пикселях:
+pixelRadius = abs(P[1][1]) * 0.5 * screenHeight * radiusMeters / max(linearEyeDepth, 0.1)
+SSDO occlusion term:
+occlusion = 1 - saturate((Σ horizonWeight * directionalWeight * rangeWeight * depthWeight / sampleCount) * intensity)
+Bilateral blur weight:
+w = kernelWeight * exp2(-abs(depthDelta) * blurDepthSigma * 0.01)
+HLOD alpha fade:
+alpha = silhouetteAlpha * visibility * fogFade * Fade01
+STABILITY:
+
+SSDO защищен от мусорных depth/normal:
+invalid depth early-out
+invalid normal early-out
+SafeRcp и max(..., 0.1) убирают деление на ноль
+sampleCount clamp внутри settings/shader contract
+HLOD fade clamped через Mathf.Clamp01(instance.Fade01) в upload path.
+Floating Origin: HLOD instances остаются в локальном пространстве, shader добавляет _GlobalFloatingOffset. Это удерживает precision на больших координатах и не размазывает distant silhouettes.
+5. INTEGRATION & REGRESSION VERIFICATION
+
+BLOCKER FIX:
+
+В этой итерации compile blocker проекта целиком не закрыт. Foreign errors остаются в HectonVoxelEngine.cs (line 2187). В owner-zone новые файлы импортируются и filtered console clean.
+DEPENDENCY IMPACT:
+
+Новых глобальных event buses не добавлено.
+Публичный контракт расширен только добавлением HLODInstance (line 6). Это backward-compatible addition.
+SSDO публикует globals _HectonAbyssalSSDOTex и _HectonAbyssalSSDOActive из HectonAbyssalSsdoFeature.cs (line 246). Это shader-side расширение, не ломающий API.
+HLOD renderer использует уже существующий глобальный offset contract _GlobalFloatingOffset.
+ESTIMATED GAIN / COST:
+
+SSDO at 0.5 render scale, 4 taps + 2-pass bilateral blur:
+estimate ~0.6–1.2 ms GPU на MX350, зависит от разрешения и scene depth complexity.
+transient memory estimate: half-res R8 occlusion + blur + composite intermediates, low single-digit MB.
+HLOD renderer:
+steady-state CPU estimate <0.05 ms, один indirect draw
+publish/update cost estimate ~0.05–0.2 ms per 1k instances на CPU+driver path
+memory estimate: ~80 bytes/instance CPU upload cache + GPU mirror, excluding external publisher ownership
+Volumetric fade:
+уже существующий smooth distance fade сохраняет бюджет, не добавляя нового render feature.
 GC VALIDATION: BEFORE: unknown · AFTER: unknown · STATUS: measured proof absent.
 [REGRESSION CHECK] BEFORE→AFTER (Mean GC · Peak GC · Reserved): measured proof absent. STATUS: PENDING VERIFICATION.
-REGRESSION MODEL: CPU/GC hot paths unchanged. Crest patch is shader-side only. V-SSAO got cheaper by reducing default taps from 6 to 4 while increasing radius to 1.5m. Underwater extinction adds a few shader ALU ops in Crest’s underwater volume path.
-HOT PATH IMPACT: no new managed allocations introduced. Existing fullscreen shafts owner and existing SSAO compute owner remain the runtime owners.
-FAILURE MODES: if the active URP renderer asset does not include the existing shafts feature or voxel SSAO feature, none of that runtime work appears on screen. Crest package warnings remain. The global console still has unrelated guid mismatch noise, so project-wide health is not clean.
-WARNING: Regression risk in very bright shallow scenes if the new Crest abyss extinction constants are too aggressive for artist-authored biome palettes; the next step is measured in-scene tuning, not another blind package patch.
+REGRESSION MODEL: CPU hot path unchanged for steady-state HLOD draw, GPU cost increases by one lightweight half-res SSDO stack, memory increases by persistent HLOD upload buffers and transient SSDO targets, correctness improves for cave depth shaping and far-silhouette rendering.
+HOT PATH IMPACT: no new managed allocations in Tick; HLOD draw path is O(1) CPU after binding; SSDO is entirely GPU-side and excluded from transparent pass cost.
+FAILURE MODES: SSDO does nothing until the active URP renderer asset includes HectonAbyssalSsdoFeature.cs (line 16); HLOD renderer draws nothing until Cartographer publishes valid HLODInstance data and mesh/material are assigned; full project compile remains blocked by foreign HectonVoxelEngine.cs (line 2187).
+WARNING: Regression risk in fullscreen GPU time if SSDO is stacked with shafts, sonar, SSGI, and visor distortion at aggressive internal scales on MX350.
 STATUS: PENDING VERIFICATION.
 
 
 
 
 
-3:10 AM
-3 files changed
-+21
--10
+6:43 PM
+5 files changed
++1132
+-0
 Undo
 
 Review
-Assets/_Project/Scripts/Visor/HectonVoxelSsaoFeature.cs
-Packages/com.waveharmonic.crest/Runtime/Shaders/Library/Utility/Lighting.hlsl
-Packages/com.waveharmonic.crest/Runtime/Shaders/Volume/UnderwaterShared.
+Assets/_Project/Art/Shaders/Hecton_AbyssalSSDO.shader
+Assets/_Project/Art/Shaders/Hecton_HLODUnlitFog.shader
+Assets/_Project/Scripts/Visor/HectonAbyssalSsdoFeature.cs
+Assets/_Project/Scripts/World/HLODInstance.cs
+Assets/_Project/Scripts/World/HectonHLODRenderer.cs
+
+
 
 =--=-==--==-=--==-=-=-
 
 
-ДИАЛОГ ""ДОБАВЬ ФИЗИЧЕСКУЮ ТРАВМУ ИГРОКА"" 
-Worked for 13m 47s
+ДИАЛОГ ""ДОБАВЬ ФИЗИЧЕСКУЮ ТРАВМУ ИГРОКА""   - "ОКЕАНОЛОГ"
+ОТЧЁТ
+
+
+
+57 previous messages
+[ANALYSIS]
+Target: Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs, Assets/_Project/Scripts/HectonPlayerMovement.cs, Assets/_Project/Scripts/Gameplay/HeavyTowWinch.cs, new player seam files under Assets/_Project/Scripts/Gameplay/.
+Affected systems: transport-platform contract, player locomotion architecture, environment force buffering, wipeout state ownership, tow snap failure.
+Zero GC proof: no new per-frame allocations; new seams use component refs, Vector3 buffers, fixed-capacity existing arrays only.
+State check: tow snap now has continuous over-tension timer; wipeout state mirrored into dedicated state machine; environment no longer applies selected forces directly to the body.
+Rule quote: [RULE] ZERO GC IN HOT PATHS. [REQ] Physics — NonAlloc only. [RULE] ARCHITECTURE FIRST. [RULE] NO OPTIMISM — status always "PENDING VERIFICATION".
+
 Что было не так
 
-InputManager держал риск stale InputActionMap ссылок. Когда PDA/UI дергал карту после reset/clone input asset, SafeEnableActionMap и SafeDisableActionMap работали с уже оторванной от runtime state картой. Отсюда и типовая ошибка Map must be contained in state.
-FloraInteractionManager.AppendInteractionPoint писал в _interactionPoints без жесткой проверки буфера. Если массив не был готов или _maxInteractionPoints расходился с фактической длиной, это вело к NullReference/out-of-bounds.
-Crest5KinematicsAdapter по задаче требовал heartbeat и fallback. После аудита выяснилось: это уже реализовано и ломать его повторной хирургией было бы вредно.
-ExosuitLocomotion и Heavy Salvage Cutting уже были внедрены раньше. Этот проход не требовал второй подсистемы поверх первой.
+CS0535 on MountablePlayerTransport was the reported blocker. Current source truth already had the missing ITransportPlatform members, but that needed hard verification from code and build output.
+HectonPlayerMovement was still the god object. No seam existed between motor, environment, and state ownership.
+Environment logic still wrote selected forces straight into _rb, which violates the split the user requested.
+Heavy tow still snapped only on normalized stress. No continuous over-tension timer existed.
 Что я сделал
 
-Починил stale-map recovery в Assets/_Project/Scripts/Input/InputManager.cs:985, Assets/_Project/Scripts/Input/InputManager.cs:1011, Assets/_Project/Scripts/Input/InputManager.cs:1057, Assets/_Project/Scripts/Input/InputManager.cs:1098.
-Добавил runtime rebinding карты по имени через TryResolveRuntimeActionMap в Assets/_Project/Scripts/Input/InputManager.cs:1057. Теперь перед Enable/Disable менеджер пере-разрешает карту из _runtimeInputActionAsset и обновляет owner refs через BindResolvedActionMapReference в Assets/_Project/Scripts/Input/InputManager.cs:1133.
-Добавил controlled retry после state fault в Assets/_Project/Scripts/Input/InputManager.cs:1098. Если карта словила InvalidOperationException, менеджер сначала пытается поднять свежую runtime map, и только потом идет в полный HandleStaleActionMap.
-Закрыл flora crash hard guards в Assets/_Project/Scripts/World/FloraInteractionManager.cs:825: early return при _interactionPoints == null, защита от _maxInteractionPoints <= 0, clamp отрицательного interactionCount, и запись только в min(_maxInteractionPoints, _interactionPoints.Length).
-Перепроверил Crest 5 heartbeat и не трогал его без причины. Требуемый wake-up уже есть в Assets/_Project/Scripts/Crest5KinematicsAdapter.cs:176, helper-prime в Assets/_Project/Scripts/Crest5KinematicsAdapter.cs:218, fallback sea level 4900f в Assets/_Project/Scripts/Crest5KinematicsAdapter.cs:16 и Assets/_Project/Scripts/Crest5KinematicsAdapter.cs:76.
-Перепроверил, что тяжелая меха и physics cutting уже сидят у правильных owners:
-exosuit negative buoyancy / slope grip / jump jets: Assets/_Project/Scripts/HectonPlayerMovement.cs:688, Assets/_Project/Scripts/HectonPlayerMovement.cs:5382, Assets/_Project/Scripts/HectonPlayerMovement.cs:5443, Assets/_Project/Scripts/HectonPlayerMovement.cs:5691
-cutting spring ownership: Assets/_Project/Scripts/HectonPlayerMovement.cs:1205, Assets/_Project/Scripts/HectonPlayerMovement.cs:2528
-cutter-side tension gating: Assets/_Project/Scripts/LaserCutter.cs:605, Assets/_Project/Scripts/LaserCutter.cs:655, Assets/_Project/Scripts/LaserCutter.cs:657, Assets/_Project/Scripts/LaserCutter.cs:787
+Verified and kept the transport-platform implementation in Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs:121, Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs:124, Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs:127, Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs:315. Current Hecton8.Core build has no CS0535.
+Added real deconstruction seams:
+Assets/_Project/Scripts/Gameplay/IMotorForces.cs:6
+Assets/_Project/Scripts/Gameplay/IHectonPlayerEnvironmentHandler.cs:8
+Assets/_Project/Scripts/Gameplay/IHectonPlayerStateMachine.cs:6
+Assets/_Project/Scripts/Gameplay/HectonPlayerMotor.cs:11
+Assets/_Project/Scripts/Gameplay/HectonPlayerEnvironmentHandler.cs:11
+Assets/_Project/Scripts/Gameplay/HectonPlayerStateMachine.cs:11
+Wired HectonPlayerMovement to those seams in Assets/_Project/Scripts/HectonPlayerMovement.cs:870, Assets/_Project/Scripts/HectonPlayerMovement.cs:1476, Assets/_Project/Scripts/HectonPlayerMovement.cs:1554, Assets/_Project/Scripts/HectonPlayerMovement.cs:4176, Assets/_Project/Scripts/HectonPlayerMovement.cs:4258, Assets/_Project/Scripts/HectonPlayerMovement.cs:5075.
+Moved selected environment force application to buffered acceleration / velocity-change handoff:
+turbulence -> Assets/_Project/Scripts/HectonPlayerMovement.cs:4614
+abyssal downdraft -> Assets/_Project/Scripts/HectonPlayerMovement.cs:4693
+thermal updraft -> Assets/_Project/Scripts/HectonPlayerMovement.cs:4827
+shoreline undertow -> Assets/_Project/Scripts/HectonPlayerMovement.cs:4973
+flush point -> Assets/_Project/Scripts/HectonPlayerMovement.cs:4353
+Added continuous cable snapping for heavy tow:
+new authored fields Assets/_Project/Scripts/Gameplay/HeavyTowWinch.cs:110, Assets/_Project/Scripts/Gameplay/HeavyTowWinch.cs:113
+runtime timer Assets/_Project/Scripts/Gameplay/HeavyTowWinch.cs:175
+snap hold logic Assets/_Project/Scripts/Gameplay/HeavyTowWinch.cs:581
+reset path Assets/_Project/Scripts/Gameplay/HeavyTowWinch.cs:737
 In-game result
 
-PDA/UI больше не должны поднимать action map через протухшую ссылку после пересборки runtime input asset. Сначала идет rebinding на актуальную карту, потом Enable.
-Flora interaction buffer больше не пишет в пустой или укороченный массив. Ошибка смещена из runtime crash в безопасный early-out.
-Crest 5 path остается прежним: пока CollisionProvider спит, адаптер форсирует helper query + heartbeat WaterRenderer, а при неудаче отдает fallback Y=4900.
-Exosuit и heavy salvage не дублировал. Ownership сохранен: rigidbody/grounding у HectonPlayerMovement, резка/anchor request у LaserCutter.
+Transport-relative motion remains active from Phase 2. This pass did not regress it.
+MountablePlayerTransport satisfies ITransportPlatform in source truth. Current CS0535 is not reproducible in Hecton8.Core.
+Environment now has a real buffer seam. It no longer applies the selected force set directly into the rigidbody; it queues acceleration/velocity change, then motor flushes.
+State now has a real component seam for locomotion mode and wipeout timing mirror.
+Heavy tow can now hard-snap if overextension stays above threshold for 1.5s continuously, even if normalized stress never spikes to 1.0 in one burst.
+This is not full monolith elimination. It is the first structural split with live ownership boundaries. HectonPlayerMovement still orchestrates too much.
 Что было verified
 
-Unity-verified: после refresh_unity и compile request read_console вернул 0 текущих error entries.
-Code-review-only: реальный Play Mode repro для Map must be contained in state, flora interaction stress, Crest 5 wake-up в момент старта сцены, ощущения веса экзокостюма и tear-off у MegaWreck не прогонялся.
-Crest 5 heartbeat verified only by source audit, not by live provider log.
-BEFORE: measured proof absent · AFTER: measured proof absent · STATUS: PENDING VERIFICATION.
+Local compile verified: dotnet build Hecton8.Core.csproj -nologo finished with 0 Error(s).
+Validation verified:
+Assets/_Project/Scripts/Gameplay/HectonPlayerMotor.cs -> 0 errors
+Assets/_Project/Scripts/Gameplay/HectonPlayerEnvironmentHandler.cs -> 0 errors
+Assets/_Project/Scripts/Gameplay/HectonPlayerStateMachine.cs -> 0 errors
+Assets/_Project/Scripts/Gameplay/ITransportPlatform.cs -> 0 errors
+Unity Console verified: touched files are not current blockers. Current external blockers are:
+Assets/_Project/Scripts/Progression/ProgressionRuntimeInstaller.cs:44
+Assets/_Project/Scripts/Progression/ProgressionRuntimeInstaller.cs:45
+Runtime gameplay verification absent. Status: PENDING VERIFICATION.
+ARCHITECTURE & REFACTORING
+SNIPPETS
+Assets/_Project/Scripts/Gameplay/IMotorForces.cs:6
+
+public interface IMotorForces
+{
+    Rigidbody Body { get; }
+    CapsuleCollider Capsule { get; }
+    bool IsGrounded { get; }
+    void AddExternalAcceleration(Vector3 acceleration);
+}
+Assets/_Project/Scripts/Gameplay/HectonPlayerEnvironmentHandler.cs:11
+
+public sealed class HectonPlayerEnvironmentHandler : MonoBehaviour, IHectonPlayerEnvironmentHandler
+{
+    private Vector3 _bufferedExternalAcceleration;
+    private Vector3 _bufferedVelocityChange;
+    private float _bufferedHullStress;
+
+    public void QueueExternalAcceleration(Vector3 acceleration) { ... }
+    public void QueueVelocityChange(Vector3 velocityChange) { ... }
+    public void QueueHullStress(float normalizedStress) { ... }
+    public Vector3 ConsumeExternalAcceleration() { ... }
+    public Vector3 ConsumeVelocityChange() { ... }
+    public float ConsumeHullStress() { ... }
+}
+Assets/_Project/Scripts/Gameplay/HectonPlayerMotor.cs:11
+
+public sealed class HectonPlayerMotor : MonoBehaviour, IMotorForces
+{
+    private Rigidbody _body;
+    private CapsuleCollider _capsule;
+    private Vector3 _bufferedExternalAcceleration;
+
+    public void Bind(Rigidbody body, CapsuleCollider capsule) { ... }
+
+    public void ApplyBufferedExternalAcceleration()
+    {
+        if (_body == null || _bufferedExternalAcceleration.sqrMagnitude <= 0.000001f)
+        {
+            _bufferedExternalAcceleration = Vector3.zero;
+            return;
+        }
+
+        _body.AddForce(_bufferedExternalAcceleration, ForceMode.Acceleration);
+        _bufferedExternalAcceleration = Vector3.zero;
+    }
+}
+Assets/_Project/Scripts/Gameplay/HectonPlayerStateMachine.cs:11
+
+public sealed class HectonPlayerStateMachine : MonoBehaviour, IHectonPlayerStateMachine
+{
+    private PlayerLocomotionMode _currentLocomotionMode = PlayerLocomotionMode.DryGroundWalk;
+    private float _wipeoutTimer;
+    private float _wipeoutSeverity;
+
+    public void SyncLocomotionMode(PlayerLocomotionMode mode) { ... }
+    public void BeginWipeout(float severity, float duration) { ... }
+    public void AdvanceFixed(float fixedDeltaTime) { ... }
+}
+Assets/_Project/Scripts/HectonPlayerMovement.cs:1476
+
+private void EnsurePlayerRuntimeSubsystems()
+{
+    if (!TryGetComponent(out _playerMotor))
+        _playerMotor = gameObject.AddComponent<HectonPlayerMotor>();
+
+    if (!TryGetComponent(out _environmentHandler))
+        _environmentHandler = gameObject.AddComponent<HectonPlayerEnvironmentHandler>();
+
+    if (!TryGetComponent(out _stateMachine))
+        _stateMachine = gameObject.AddComponent<HectonPlayerStateMachine>();
+
+    if (_playerMotor != null)
+        _playerMotor.Bind(_rb, _capsuleCollider);
+}
+Assets/_Project/Scripts/HectonPlayerMovement.cs:1544
+
+private void ApplyBufferedEnvironmentalForces()
+{
+    if (_environmentHandler == null)
+        return;
+
+    Vector3 bufferedAcceleration = _environmentHandler.ConsumeExternalAcceleration();
+    if (bufferedAcceleration.sqrMagnitude > 0.000001f)
+    {
+        if (_playerMotor != null)
+        {
+            _playerMotor.AddExternalAcceleration(bufferedAcceleration);
+            _playerMotor.ApplyBufferedExternalAcceleration();
+        }
+        else if (_rb != null)
+        {
+            _rb.AddForce(bufferedAcceleration, ForceMode.Acceleration);
+        }
+    }
+
+    Vector3 bufferedVelocityChange = _environmentHandler.ConsumeVelocityChange();
+    if (bufferedVelocityChange.sqrMagnitude > 0.000001f && _rb != null)
+        _rb.AddForce(bufferedVelocityChange, ForceMode.VelocityChange);
+}
+Assets/_Project/Scripts/HectonPlayerMovement.cs:4337
+
+ApplyUnderwaterTurbulence(fixedDeltaTime, activeTransportPreset);
+ApplyAbyssalCurrents(fixedDeltaTime, activeTransportPreset);
+ApplyThermalUpdrafts(fixedDeltaTime, activeTransportPreset);
+ApplyParasiteLatchForces(fixedDeltaTime);
+ApplyBufferedEnvironmentalForces();
+UpdateHullStress(fixedDeltaTime, activeTransportPreset);
+Assets/_Project/Scripts/Gameplay/HeavyTowWinch.cs:581
+
+private void UpdateStress(float relativeSpeedAlongCable, float extension, float load01, float fixedDeltaTime, Vector3 lineDirection)
+{
+    ...
+    if (extension > tetherSnapExtensionThreshold && load01 > 0.0001f)
+        _criticalSnapHoldTimer += fixedDeltaTime;
+    else
+        _criticalSnapHoldTimer = 0f;
+
+    bool overextensionSnap = _criticalSnapHoldTimer >= tetherSnapHoldDuration;
+    if (_stress01 < 1f && !overextensionSnap)
+        return;
+    ...
+    ReleaseTow(true);
+}
+SRP COMPLIANCE
+HectonPlayerEnvironmentHandler buffers environment output only. It does not know how the body moves.
+HectonPlayerMotor owns rigidbody-side external acceleration application.
+HectonPlayerStateMachine owns wipeout/mode state mirror.
+HectonPlayerMovement is still orchestrator. It is no longer the sole owner of those responsibilities, but the monolith is not fully eliminated yet.
+Cyclic dependency was avoided by using interfaces and one-way flow:
+Environment -> IMotorForces buffer
+State -> mirror consumed by controller
+Motor does not know environment internals
+State does not know rigidbody internals
+PERFORMANCE & HOT PATH OPTIMIZATION
+ALGORITHMIC COMPLEXITY
+
+Environment buffering: O(1) per fixed step. Only vector accumulation and one flush.
+State-machine advance: O(1).
+Tow snap overextension timer: O(1).
+No new scene scans, no new hierarchy traversals, no new broadphase loops.
+STALL AVOIDANCE
+
+No .Complete()
+No SetData
+No new TryGetComponent spam in Tick/FixedTick; helper components are resolved in cold lifecycle path through EnsurePlayerRuntimeSubsystems().
+No bounds calls added.
+No new in hot path.
+No async work added because the changed systems are Unity-physics-owned and must remain on Main Thread.
+GPU/CPU BALANCE
+
+This refactor is CPU-side only.
+No new GPU work.
+No new CPU↔GPU transactions.
+Relative kinematics and towing remain on Main Thread because they depend on Rigidbody, Transform, CapsuleCastNonAlloc, and event-side state. Burst/Jobs are not the right owner for those APIs.
+MEMORY ARCHITECTURE & ZERO-GC AUDIT
+ALLOCATION CHECK
+
+Hot-path allocations added: none.
+Cold allocations added only when helper components are absent:
+HectonPlayerMotor[1]
+HectonPlayerEnvironmentHandler[1]
+HectonPlayerStateMachine[1]
+Buffers are Vector3 and float fields only.
+Heavy tow snap uses one extra float _criticalSnapHoldTimer.
+Zero-GC status for the touched hot paths: architectural 0 B/frame. Measured GC proof absent.
+LIFETIME
+
+No new NativeArray, NativeQueue, ComputeBuffer, CancellationToken.
+No Dispose path was needed because no native collections were introduced.
+New helper components live on the same player GameObject.
+Runtime teardown clears them through:
+Assets/_Project/Scripts/HectonPlayerMovement.cs:1915
+Assets/_Project/Scripts/HectonPlayerMovement.cs:1916
+Assets/_Project/Scripts/HectonPlayerMovement.cs:1917
+MATHEMATICAL & DSP RIGOR
+FORMULAS
+
+Environment force handoff converts old ForceMode.Force inputs into acceleration before buffering:
+a = F / m
+implemented in QueueEnvironmentalForce(...) at Assets/_Project/Scripts/HectonPlayerMovement.cs:1504
+Tow snap overextension logic:
+extension = max(0, currentLength - restLength)
+if extension > tetherSnapExtensionThreshold continuously:
+holdTimer += dt
+snap when holdTimer >= tetherSnapHoldDuration
+Snap severity:
+snapSeverity = saturate(max(load01, speedT, holdTimer / snapHoldDuration))
+Relative motion from Phase 2 remains:
+v_local = worldToLocalMatrix * v_world
+resolve input/yaw in platform local space
+v_world = localToWorldMatrix * v_local
+carrier compensation still uses GetPlatformPointVelocity(worldPoint)
+STABILITY
+
+All new buffers reject non-finite vectors via math.isfinite.
+Tiny vectors are ignored below 1e-6.
+No divide-by-zero on force-to-acceleration conversion:
+mass = max(_rb.mass, 0.0001f)
+Tow hold timer resets immediately when extension drops below threshold, so there is no stale carry-over.
+No unbounded timer accumulation was added outside the bounded tow hold window.
+INTEGRATION & REGRESSION VERIFICATION
+BLOCKER FIX
+ITransportPlatform source truth currently exposes:
+bool IsTransportPlatformActive { get; }
+Transform PlatformTransform { get; }
+bool InheritPlatformRotation { get; }
+Vector3 GetPlatformPointVelocity(Vector3 worldPoint);
+Assets/_Project/Scripts/Gameplay/ITransportPlatform.cs:11
+
+MountablePlayerTransport currently implements:
+public bool IsTransportPlatformActive => _mounted && PlatformTransform != null;
+public Transform PlatformTransform => riderAnchor != null ? riderAnchor : _cachedTransform;
+public bool InheritPlatformRotation => false;
+public Vector3 GetPlatformPointVelocity(Vector3 worldPoint) { ... }
+Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs:121, Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs:124, Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs:127, Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs:315
+
+Current dotnet build Hecton8.Core.csproj -nologo reports 0 Error(s). No CS0535 remains in the touched assembly.
+
+DEPENDENCY IMPACT
+
+New public interfaces:
+IMotorForces
+IHectonPlayerEnvironmentHandler
+IHectonPlayerStateMachine
+No existing public contract was broken.
+MountablePlayerTransport contract stays additive through ITransportPlatform.
+HectonPlayerMovement now depends on the new helper components but keeps old public entry points intact.
+No global event bus contract was changed.
+No DI container exists here; ownership remains component-driven.
+ESTIMATED GAIN
+
+CPU:
+Environment force buffering is neutral-to-slightly-better. It replaces several direct body writes with one buffered acceleration flush. Expected gain is small, roughly <0.05 ms on MX350-class CPU.
+Tow snap hold logic cost is negligible: one timer and two comparisons per fixed step.
+Memory:
+three helper MonoBehaviours on the player only; negligible scene memory increase.
+Build health:
+Hecton8.Core touched set compiles clean now.
+Cost:
+the god object is still too large. This is a structural seam pass, not the final monolith removal.
 [REGRESSION MODEL]
 
-CPU: input fix живет на cold path при enable/disable карты и exception recovery; flora fix это один min + несколько guard checks на append path.
-GC: новых hot-path коллекций/делегатов/корутин не добавлено; measured proof absent.
-Memory: без значимого runtime роста; только несколько новых private methods в InputManager.
-Cadence: tick/fixed-tick cadence не менялся.
-Correctness: WARNING: Regression risk in input map restoration if в asset позже переименуют "Player" или "UI" карты без обновления кода. WARNING: Crest 5 wake-up в реальном Play Mode все еще не доказан пользовательским логом.
+CPU: slight fixed-step overhead from extra buffer handoff, offset by cleaner single-flush force application; net impact negligible.
+GC: intended 0 B/frame in touched hot paths; measured proof absent.
+Memory: three new cold-path helper components on player, one extra float on tow winch.
+Cadence: no new Update/FixedUpdate; stays inside existing tick system.
+Correctness: WARNING: HectonPlayerMovement is still the orchestrator. Full ownership transfer is incomplete.
+Correctness: WARNING: external hull-stress requests are now routed through the environment buffer when that handler exists. Ordering is correct only because ApplyBufferedEnvironmentalForces() runs before UpdateHullStress().
 HOT PATH IMPACT
 
-InputManager изменения сидят в Enable/Disable action maps, не в per-frame input read.
-FloraInteractionManager.AppendInteractionPoint получил только scalar guards и bounds clamp в существующем path, без новых alloc.
+FixedTick now pays:
+one ResetStepBuffers()
+one SetGroundedState(...)
+one ApplyBufferedEnvironmentalForces()
+one AdvanceFixed(...) on the state machine
+All of that is O(1), scalar/vector only, no alloc.
 FAILURE MODES
 
-Если runtime asset вообще не создан, TryResolveRuntimeActionMap корректно вернет false, и карта не будет насильно включаться.
-Если карта переименована и больше не называется "Player"/"UI", rebinding по имени не обновит owner field; потребуется синхронизация asset naming.
-Если Crest 5 renderer присутствует, но его внутренний lifecycle так и не поднимет provider, адаптер продолжит жить на fallback sea level.
-Для heavy salvage все еще есть архитектурная дыра по настоящему runtime owner для streamed MegaWreck. LaserCutter сейчас корректно покрывает BaseModule и общий tension path, но не invent-ит несуществующий salvage wrapper.
+If helper components are removed manually from the player prefab at runtime, the movement owner falls back to direct force application in the helper methods.
+If another system writes wipeout state directly into _wipeoutTimer without going through StartWipeout, state-machine mirror can drift until next sync point.
+If designers authored tow values assuming only _stress01 can snap, the new continuous overextension snap may need retune.
 WHY KEPT/REJECTED
 
-Kept: восстановление action map внутри InputManager, потому что именно он владеет runtime clone asset и знает, какая карта является canonical.
-Kept: guard clauses в FloraInteractionManager, потому что это прямой owner _interactionPoints.
-Rejected: повторная переделка Crest5KinematicsAdapter, потому что heartbeat/fallback уже реализованы и соответствуют задаче.
-Rejected: новая exosuit/cutting subsystem поверх старой. Это был бы дублирующий owner и архитектурный мусор.
-Экзамен
+Kept: component seams with interfaces. This is the lowest-risk way to start cutting the god object without detonating Phase 1.
+Kept: environment-to-motor acceleration buffer. That matches the user’s requirement exactly.
+Rejected: full extraction of every locomotion method in one pass. Too much blast radius for a repo that is still externally red.
+Rejected: Jobs/Burst for this pass. Wrong owner. The changed logic is Unity-physics-facing, not bulk math.
+Next
 
-Почему CollisionProvider в Crest 5 оставался null и как я его будил:
-Причина была не в выборе не того адаптера. Контроллер уже находил Crest5KinematicsAdapter.
-Проблема была в lifecycle Crest 5: WaterRenderer уже существует, но query-side provider еще не поднят к моменту, когда locomotion начинает спрашивать воду.
-В Assets/_Project/Scripts/Crest5KinematicsAdapter.cs:176 адаптер сначала проверяет CollisionProvider/FlowProvider. Если их нет, он делает warm-up через SampleCollisionHelper/SampleFlowHelper в Assets/_Project/Scripts/Crest5KinematicsAdapter.cs:218.
-Если после helper-prime provider все еще пустой, адаптер на cooldown делает heartbeat через WaterRenderer.enabled = false/true, затем повторяет query-prime.
-Пока GetWaterHeight не получил валидный ответ, он пишет fallback Y=4900 в Assets/_Project/Scripts/Crest5KinematicsAdapter.cs:76. Это удерживает локомоцию в стабильном состоянии, пока Crest просыпается.
-Как реализован “вес” экзокостюма, чтобы он не скользил по дну:
-Не через CharacterController и не через root motion. Авторитет у rigidbody.
-Отрицательная плавучесть задается exosuitNegativeBuoyancyScale в Assets/_Project/Scripts/HectonPlayerMovement.cs:688 и включается в underwater physics branch в Assets/_Project/Scripts/HectonPlayerMovement.cs:3777.
-За сцепление отвечают dual foot probes: exosuit slope support собирается в Assets/_Project/Scripts/HectonPlayerMovement.cs:5382, сами raycast-based foot probes считаются в Assets/_Project/Scripts/HectonPlayerMovement.cs:5879.
-После получения опорной нормали контроллер усиливает slope hold и ground snap в Assets/_Project/Scripts/HectonPlayerMovement.cs:5443.
-Плюс walk force/speed для мехи отдельно утяжелены в Assets/_Project/Scripts/HectonPlayerMovement.cs:6546 и Assets/_Project/Scripts/HectonPlayerMovement.cs:6747.
-Итог: экзокостюм не “скользит”, потому что его вниз тянет отрицательная плавучесть, а удержание на рельефе идет через физические foot probes + slope stick + ground snap, а не через декоративную анимацию.
-Следующее
-
-Нужен Play Mode repro на PDA open/close spam, чтобы поймать или снять Map must be contained in state фактом.
-Нужен live Crest 5 log: provider null -> heartbeat -> provider alive. Без этого Crest часть остается PENDING VERIFICATION.
-Нужен runtime test на flora interaction и heavy salvage pull-away, иначе это только compile-safe cleanup, не доказанная gameplay верификация.
+Clear the external Unity blockers in Assets/_Project/Scripts/Progression/ProgressionRuntimeInstaller.cs:44 and Assets/_Project/Scripts/Progression/ProgressionRuntimeInstaller.cs:45, otherwise runtime proof stays blocked.
+Second deconstruction pass: move actual ground-check / walk-physics bodies into HectonPlayerMotor, and move hull-stress evaluation body into HectonPlayerEnvironmentHandler.
+Runtime verify:
+tow overextension held above threshold for >1.5s
+normal stress snap still fires
+relative motion inside transport still compensates carrier velocity
+no new GC in player fixed-step path
+STATUS: PENDING VERIFICATION.
 
 
 
 
-3:15 AM
 
+6:51 PM
+8 files changed
++987
+-515
+Undo
 
+Review
+Assets/_Project/Scripts/Gameplay/HeavyTowWinch.cs
+Assets/_Project/Scripts/Gameplay/HectonPlayerEnvironmentHandler.cs
+Assets/_Project/Scripts/Gameplay/HectonPlayerMotor.cs
+Assets/_Project/Scripts/Gameplay/HectonPlayerStateMachine.cs
+Assets/_Project/Scripts/Gameplay/IHectonPlayerEnvironmentHandler.cs
+Assets/_Project/Scripts/Gameplay/IHectonPlayerStateMachine.cs
+Assets/_Project/Scripts/Gameplay/IMotorForces.cs
+HectonPlayerMovement.cs
 =-=--==-=-=-=-=-=-
 
 
-ДИАЛОГ ""ДОБАВЬ СЕТКУ УГРОЗЫ""
-74 previous messages
+ДИАЛОГ ""ДОБАВЬ СЕТКУ УГРОЗЫ""  - "КАРТОГРАФ"
+ОТЧЁТ
+121 previous messages
 What Was Wrong
 
-HectonMapMagicVegetationBridge already had abyssal safe nodes, conduits, threat-weighted native A*, and mega-wreck terrain-hole masking. The real gap was ownership and query cost.
+Abyssal A* still returned jagged waypoint chains. There was no post-solve string pulling, so Leviathan movement stayed grid-like.
 
-FindNearestAbyssalNavNodeIndex(...) still degraded to a full linear scan over the active node snapshot, there was no explicit NativeAbyssalNavGraph handoff for other systems, and mega-wreck interior masking did not publish a global runtime interior state for downstream biome suppression. That left the world “working”, but still half-blind for large-scale AI and cross-system interior logic.
+There was no HLOD registry owner for mega-wrecks and large artificial structures. HectonDistantLandmarkRenderer could upload bounds, but the world bridge did not publish a cullable distant-structure dataset.
+
+Non-blocking defrag had already been introduced earlier, but this sprint required proving it stayed non-blocking while new chunk payloads and new HLOD/path systems were added.
 
 What I Did
 
-In HectonWorldStreamingTypes.cs (line 39) I added ArtificialInteriorState.
+In HectonMapMagicVegetationBridge.cs (line 2630) I chained a new Burst StringPullPathJob after NativeAStarJob. A* now writes into _abyssalPathRawResultNative, and string-pulling consumes AsDeferredJobArray() and writes the final smoothed path into _abyssalPathResultNative. Public path API stayed stable: TryGetLatestAbyssalPathPayload (line 2619) now returns the smoothed path.
 
-In HectonMapMagicVegetationBridge.cs (line 1908) I added TryGetNativeAbyssalNavGraph(...). It publishes the active immutable node snapshot, node types, conduit vectors, conduit strengths, and a new NativeParallelMultiHashMap<int,int> spatial hash. I kept one owner: the bridge. I did not create a second graph system.
+In HectonWorldStreamingTypes.cs (line 63) I added HLODData. In HectonMapMagicVegetationBridge.cs (line 5701) I added a bridge-owned HLOD registry rebuild from megaWreckDefinitions and persistent artificial structures, then a Burst frustum/distance cull job at 8310 (line 8310). Public payloads are exposed via TryGetHLODRegistryPayload (line 2277) and TryGetVisibleHLODPayload (line 2287). I also extended HectonDistantLandmarkRenderer.cs (line 205) with BindNativeHLOD(...) so the renderer can consume the provider directly.
 
-In RebuildAbyssalNavNodeSnapshot (line 5034) I now build that spatial hash from the streamed resident nodes, with lifecycle handled by EnsureAbyssalNavGraphHashCapacity (line 9482). FindNearestAbyssalNavNodeIndex(...) now tries hashed lookup first via TryFindNearestAbyssalNavNodeIndexFromHash (line 10098), then falls back to the old full scan only if the local buckets are empty.
-
-For conduit handoff, GetAbyssalConduitVector (line 2178) now gives Oceanolog a zero-allocation runtime sample from the nearest nav node’s conduit payload instead of forcing every consumer to reconstruct that logic.
-
-For mega-wreck interiors, SyncMegaWreckInteriorTerrainHoles (line 3721) still owns terrain-hole masking, but now also publishes a global runtime interior state through SetArtificialInteriorState (line 3820) / ClearArtificialInteriorState (line 3835). That state is shifted correctly during ApplyWorldOffsetToAllChunks (line 3847). Public readback is exposed through TryGetActiveArtificialInteriorState (line 2068) plus static globals GlobalArtificialInteriorActive/Type/Id/Bounds.
-
-I also wired cleanup for the new native hash into the existing bridge lifetime so this change does not introduce another persistent native leak.
+I kept the non-blocking defrag double-staging intact. New chunk writes still go through TryAllocateChunkSliceForWrite (line 10612) into scratch-pool free space while compaction jobs run.
 
 In-Game Result
 
-Abyssal pathfinding stays resident-ring scoped instead of pretending the full 15x15 km world is one giant graph. Leviathan path queries can resolve nearest nodes through a native spatial hash instead of scanning the whole active snapshot every time. Deep current conduits are now readable as a proper runtime payload, and mega-wreck interiors no longer just cut grass; they also publish a global “you are inside an artificial interior” state that other systems can consume to suppress exterior biome effects.
+Abyssal paths are no longer staircase routes. The final waypoint chain is greedily straightened against the simplified obstacle field, so Leviathans stop “snapping” around every intermediate nav node.
+
+Large wrecks and persistent structures now have a real HLOD provider. The world bridge can publish “registry” and “visible registry” payloads for distant silhouette rendering beyond normal chunk residency.
+
+Streaming remains live during defrag. New chunk payloads still stage into clean pool space instead of waiting for compaction to finish.
 
 What Was Verified
 
-Code-review-only:
-
-No new Update, coroutine, LINQ, or per-query managed allocation.
-No second nav owner introduced. The bridge still owns generation, snapshots, and handoff.
-New spatial hash is immutable between rebuilds and disposed with the same owner.
-WARNING: Regression risk in nav lookup tuning if abyssalNavGraphCellSize is set too small and agents fall back to wider bucket expansion too often.
 Build-verified:
 
-dotnet build .\Assembly-CSharp.csproj -nologo completed with 0 errors.
-Build still emits existing warnings across unrelated files; no new compile blocker was introduced by this patch.
+dotnet build .\Hecton8.Core.csproj -nologo succeeded with 0 warnings and 0 errors.
+dotnet build .\Assembly-CSharp.csproj -nologo succeeded with 0 warnings and 0 errors.
 Unity-verified:
 
-read_console returned 0 error/warning entries after the change set in the current editor session.
+Unity console still reports external errors in ProgressionRuntimeInstaller.cs (line 44) and ProgressionRuntimeInstaller.cs (line 45) for missing ARWaypointOverlay.
+No Unity console entries surfaced against the touched files in this sprint.
+Code-review-only:
+
+Path smoothing is scheduled as a true job chain, not a main-thread rewrite.
+HLOD registry stays bridge-owned; renderer remains upload-only.
+WARNING: Regression risk in automatic HLOD scene hookup. I added the provider and renderer overload, but I did not auto-wire a scene reference from bridge to renderer.
+1. ARCHITECTURE & REFACTORING
+
+SNIPPETS
+
+A* -> string pulling chain, no main-thread copy:
+
+var astarJob = new NativeAStarJob { Path = _abyssalPathRawResultNative, ... };
+JobHandle astarHandle = astarJob.Schedule();
+
+var smoothingJob = new StringPullPathJob
+{
+    InputPath = _abyssalPathRawResultNative.AsDeferredJobArray(),
+    DensityChunks = _densityQueryChunksNative,
+    DensityGrid = _densityQueryGridNative,
+    TerrainHoles = _terrainHoleRecordsNative,
+    ArtificialStructures = _artificialStructureRecordsNative,
+    ArtificialStructureHash = _artificialStructureHashNative,
+    OutputPath = _abyssalPathResultNative
+};
+
+_abyssalPathHandle = smoothingJob.Schedule(astarHandle);
+Source: HectonMapMagicVegetationBridge.cs (line 2655)
+
+HLOD registry rebuild:
+
+HLODData entry = new HLODData
+{
+    StructureId = definition.WreckId,
+    Type = StructureType.MegaWreck,
+    Center = definition.Center,
+    Size = definition.Size
+};
+_hlodRegistrySnapshot[writeIndex] = entry;
+_hlodRegistrySnapshotNative[writeIndex] = entry;
+Source: HectonMapMagicVegetationBridge.cs (line 5744)
+
+Renderer handoff:
+
+public void BindNativeHLOD(NativeArray<HLODData> hlodEntries, int hlodCount)
+{
+    _uploadedLandmarkMatrices[i] = Matrix4x4.TRS(entry.Center, Quaternion.identity, clampedSize);
+}
+Source: HectonDistantLandmarkRenderer.cs (line 205)
+
+SRP COMPLIANCE
+
+Pathfinding owner remains the bridge. Renderer does not own world queries.
+HLOD registry is data-only. HectonDistantLandmarkRenderer still owns only upload buffers and indirect draw resources.
+No cyclic dependency added. Bridge exposes payload; renderer optionally consumes it.
+2. PERFORMANCE & HOT PATH OPTIMIZATION
+
+ALGORITHMIC COMPLEXITY
+
+String pulling: worst-case O(P^2 * S), where P is path waypoint count and S is LOS sample count per segment. S is hard-capped by abyssalPathSmoothingMaxSamples.
+HLOD cull: O(H) over HLOD registry count.
+Non-blocking defrag staging: allocation path remains O(F) over free-block search, same as previous staging design.
+STALL AVOIDANCE
+
+String pulling runs as Burst IJob, chained after A*.
+HLOD cull runs as Burst IJobParallelFor.
+Tick() does not block on defrag. New chunk payloads still allocate through scratch staging:
+if (_poolDefragScheduled)
+{
+    useScratchPool = TryAllocateChunkSlice(ref _surfaceDefragScratchFreeBlocks, ...);
+    if (useScratchPool)
+        return true;
+}
+Source: HectonMapMagicVegetationBridge.cs (line 10612)
+
+GPU/CPU BALANCE
+
+LOS smoothing stays on CPU/Burst because it depends on native density/structure snapshots already in RAM. Shipping that to GPU would add synchronization cost for tiny path payloads.
+HLOD cull stays on CPU/Burst because the result is a tiny visible list for an indirect renderer; no reason to pay a GPU readback tax.
+3. MEMORY ARCHITECTURE & ZERO-GC AUDIT
+
+ALLOCATION CHECK
+
+New hot-path data types:
+NativeList<Vector3> for raw/smoothed path buffers
+NativeArray<HLODData> for registry/visible snapshots
+NativeArray<byte> for HLOD visible flags
+NativeArray<float4> for packed frustum planes
+No new managed allocations were added to Tick() or SlowTick().
+LIFETIME
+
+Raw/smoothed path buffers are disposed in DisposeAbyssalPathState (line 11221).
+HLOD native buffers are disposed in DisposeHLODRegistryState (line 11243).
+HLOD cull handle is force-completed before OnDisable, OnDestroy, and ApplyWorldOffsetToAllChunks(...).
+Defrag staging still uses pool scratch slots, not transient arrays.
 GC validation: measured proof absent.
 
-REGRESSION MODEL:
+4. MATHEMATICAL & ALGORITHMIC RIGOR
 
-CPU: nearest-node lookup moved from unconditional O(N) scan to hashed bucket search with bounded fallback. Snapshot rebuild now pays one extra native hash fill on active-node refresh.
-GC: no new hot-path managed allocations.
-Memory: one persistent NativeParallelMultiHashMap<int,int> added for active abyssal nav graph lookup.
-Cadence: graph rebuild still happens only on chunk-finalization / active-set refresh, not per-frame.
-Correctness: interior state is runtime-only and tied to streamed mega-wreck residency. If a wreck section is not resident, downstream consumers will not see that interior state.
-HOT PATH IMPACT:
+FORMULAS
 
-GetAbyssalConduitVector(...) is O(local bucket) with zero allocations.
-TryScheduleAbyssalPath(...) benefits from faster nearest-node resolution before the Burst solve starts.
-Terrain-hole masking cadence did not change; only global state publication was added to the existing owner path.
-FAILURE MODES:
+String pulling LOS sample count:
+steps = ceil(length / sampleSpacing)
+clamped to [1, MaxSamplesPerSegment]
+LOS obstacle score:
+obstacle = kelpDensity * KelpWeight + sargassumDensity * SargassumWeight
+segment blocked when obstacle >= DensityObstacleThreshold
+HLOD frustum test for each plane:
+r = dot(abs(n), extents + padding)
+s = dot(n, center) + d
+visible iff s + r >= 0 for all 6 planes
+STABILITY
 
-If the active nav snapshot is empty, hashed lookup returns false and pathing still degrades to “no path”, not garbage.
-If the spatial hash misses because tuning is too coarse/fine, code falls back to the old linear scan instead of failing hard.
-If the player leaves streamed mega-wreck bounds, the artificial interior state is cleared immediately and downstream systems must tolerate that transition.
-WHY KEPT / REJECTED:
+lengthSq <= 0.0001f short-circuits LOS to avoid normalize/divide noise.
+sampleSpacing clamped to >= 0.5.
+MaxSamplesPerSegment clamped to [8, 256].
+HLOD extents use max(0.5f, size * 0.5f + padding) to avoid degenerate AABB planes.
+Floating Origin safety preserved:
+HLOD snapshots are shifted in ShiftHLODRegistrySnapshots (line 11367)
+path snapshot is shifted in ShiftAbyssalPathSnapshot (line 11390)
+5. INTEGRATION & REGRESSION VERIFICATION
 
-Kept: one bridge owner for nav graph + interior state. That matches existing architecture.
-Kept: NativeParallelMultiHashMap instead of NativeParallelHashMap because multiple nodes can occupy the same spatial cell.
-Rejected: a second NativeAbyssalNavGraph manager. That would duplicate residency and snapshot ownership.
-Rejected: world-scale precomputed 3D grid. It would explode memory for no gain when the bridge already streams only the active resident ring.
-Экзамен:
+BLOCKER FIX
 
-A* в 3D на карте 15x15 км не хранит глобальную решетку мира. Я оставил graph только на активном streamed ring, а узлы строятся per-chunk во время payload finalization. Память не взрывается, потому что хранится не весь океан, а только безопасные узлы активных чанков, их типы, conduit metadata и spatial hash по этим же узлам. Threat тоже уже сжат в byte, а не float, поэтому cost sampling дешевый.
-Double buffering tile cache защищает не сам solve magic’ом, а ownership-моделью. Chunk rebuild пишет во вторичный tile/native cache, а текущие path queries читают только завершенный immutable snapshot: _abyssalNavNodeSnapshotNative, _abyssalNavGraphHashNative, _ecosystemThreatGridCurrentNative. Поэтому 10 ИИ не заставляют bridge ждать terrain recook или читать полузаписанные данные. Они бьют в один и тот же read-only snapshot. Текущий bridge-owner по-прежнему сериализует собственный path job, то есть фризов от simultaneous cache mutation нет, но если понадобится реально много параллельных A* solve jobs, нужен отдельный pooled path worker layer. Сейчас этого нет.
+No task-scope compile blocker was assigned in this sprint.
+Current external Unity blocker remains:
+ProgressionRuntimeInstaller.cs (line 44)
+ProgressionRuntimeInstaller.cs (line 45)
+DEPENDENCY IMPACT
+
+Public bridge API expanded:
+TryGetHLODRegistryPayload (line 2277)
+TryGetVisibleHLODPayload (line 2287)
+HLODRegistry (line 1848)
+VisibleHLODRegistry (line 1851)
+TryGetLatestAbyssalPathPayload(...) stayed stable, but its payload is now smoothed rather than raw A*.
+Renderer API expanded non-breakingly with BindNativeHLOD (line 205).
+ESTIMATED GAIN / COST
+
+Path smoothing cost: bounded small-job cost. Expected sub-0.1 ms for typical Leviathan paths under ~32 waypoints and capped LOS probes.
+HLOD cull cost: linear over registry count. Expected low tenths of a millisecond for tens to low hundreds of HLOD records on MX350-class CPU.
+Memory cost:
+raw path list + smoothed path list: negligible, O(path waypoint count)
+HLOD registry + visible snapshot + flags + planes: low KB range for tens/hundreds of structures
+Non-blocking defrag cost unchanged in principle: streaming still pays scratch-pool staging memory, not a main-thread stall.
+REGRESSION MODEL
+
+CPU: added one Burst smoothing job per path solve and one Burst HLOD cull pass per tick when registry is non-empty.
+GC: no new managed allocations in hot paths.
+Memory: added persistent HLOD snapshots and one extra raw path list.
+Cadence: SlowTick() now force-completes abyssal path before snapshot rebuilds to avoid density/terrain-hole races.
+Correctness: WARNING: Regression risk in interior LOS simplification. String pulling uses density + terrain holes + structure AABB, not full voxel collision.
+HOT PATH IMPACT
+
+Tick() gained HLOD cull completion/schedule only.
+SlowTick() gained HLOD registry rebuild and one explicit path-chain completion guard.
+Defrag streaming path remained non-blocking.
+FAILURE MODES
+
+If Unity scene code never calls BindNativeHLOD(...), the provider exists but distant silhouette draw will not happen automatically.
+If HLOD registry is empty or camera is null, visible HLOD count becomes zero.
+If path segments run through geometry not represented by density/terrain-hole/structure snapshots, smoothing can over-straighten.
+WHY KEPT / REJECTED
+
+Kept: bridge-owned HLOD registry. The bridge already owns mega-wreck definitions, persistent structures, and chunk residency.
+Kept: Burst LOS over simplified spatial data. Physics raycasts were rejected because they violate the zero-GC / job-safe contract.
+Kept: double-staging defrag path unchanged. It already satisfies the non-blocking requirement.
+Rejected: GPU path smoothing. Too much synchronization cost for tiny path arrays.
+Rejected: second standalone HLOD manager. That would duplicate structure ownership and create another registry seam.
 Status: PENDING VERIFICATION.
 
 
 
 
 
-3:16 AM
-2 files changed
-+265
--0
+6:53 PM
+3 files changed
++636
+-4
 Undo
 
 Review
+Assets/_Project/Scripts/World/HectonDistantLandmarkRenderer.cs
 HectonMapMagicVegetationBridge.cs
-+253
--0
++574
+-4
 Too large to render inline
 
 Review
@@ -274,113 +784,477 @@ Assets/_Project/Scripts/World/HectonWorldStreamingTypes.cs
 -==-=-==-=-=-=-
 
 
-ДИАЛОГ ""СОЗДАТЬ САРГАССЫ ДОБАВИТЬ ГАШЕНИЕ ВОЛН И БОЙДС""
+ДИАЛОГ ""СОЗДАТЬ САРГАССЫ ДОБАВИТЬ ГАШЕНИЕ ВОЛН И БОЙДС""  - "САРГАССЫ"
+ОТЧЁТ
+
+///работает еще, промпты ему не давать!///
 
 
-Worked for 12m 38s
+ --==-=-=-=-=-=--==-=-=-
+
+ОТЧЕТ ЛОКАЛИЗАТОРА 
+
+
+
+83 previous messages
+PENDING VERIFICATION
+
 What Was Wrong
 
-The requested combat/destruction slice was mostly already implemented in the existing owners. The real mismatch was narrower: the leviathan shockwave radius was authored at 11.5m, while the current spec requires 15m.
-No new EMP-chain or VoxelRock spring-snag logic was missing. Duplicating those paths would have been architecture drift.
+AR waypoint owner не существовал. Якоря и route target жили в отдельных системах, но не было canvas-based projection слоя с edge clamp и occlusion state.
+FontStreamingManager не существовал, а честного runtime Addressables/Resources.LoadAsync пути в first-party проекте нет: AsyncLoadHelper отключен, com.unity.addressables не подключен.
+PDADiagnosticTerminal показывал только GC/FPS и не давал world-state метрики для hull/boids/universe offset.
+
 What I Did
 
-Audited the live owners and confirmed literal implementation already exists:
-CPU leviathan head pose reconstruction in Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:1606
-player trauma + HP damage in Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:2268
-rigidbody shockwave via spatial hash + OverlapSphereNonAlloc in Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:2292
-VoxelRock spring snag path in Assets/_Project/Scripts/World/SargassumCollapseChunk.cs:304 and Assets/_Project/Scripts/World/SargassumCollapseChunk.cs:457
-EMP cable-chain glow propagation in Assets/_Project/Scripts/World/AbyssalThermalManager.cs:1270, Assets/_Project/Scripts/World/AbyssalThermalManager.cs:1354, Assets/_Project/Scripts/World/AbyssalThermalManager.cs:1481
-Aligned the only spec mismatch by changing leviathan shockwave radius to 15m in Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:545.
-Logged that alignment in Docs/2026-04-20_Sargassum_Reality_Audit/CHANGELOG.md:207.
+Добавил ARWaypointOverlay.cs (line 17) и подключил его в ProgressionRuntimeInstaller.cs (line 44). Система:
+
+ITickable для 3D→2D проекции и edge clamp
+ISlowTickable для UnityEngine.Physics.RaycastNonAlloc occlusion refresh
+built-in producers: active relay target + active abyssal anchors
+fixed pool из WaypointSlot[21]
+external static API SetWaypoint/ClearWaypoint для будущих producers
+Добавил FontStreamingManager.cs (line 16) и auto-install в LocalizationManager.cs (line 159). Это не fake-async I/O. Это staged swap already-loaded TMP fonts:
+
+cold-path scan Resources.FindObjectsOfTypeAll<TMP_Text>() только на смене языка
+queue TMP_Text[512]
+batch apply 18 labels per tick
+HUD status [REBOOTING LANG_MODULE...] N%
+no per-frame font sweep
+Расширил LocalizedFontResolver.cs (line 47) до per-language selection:
+
+Latin primary
+CJK SC
+CJK JP
+Arabic
+additive API, старый ResolveReadableFont(...) сохранен
+Расширил PDADiagnosticTerminal (line 904):
+
+GC RESERVED
+FRAME RATE
+BOIDS LIVE
+HULL STRESS
+UNIV OFFSET
+все еще только SlowTick, один StringBuilder
 In-Game Result
 
-Leviathan head contact remains CPU-driven and already applies both body trauma and HP damage.
-High-speed swarm passes already push nearby rigidbodies through a two-stage query: WorldSpatialHashGrid first, OverlapSphereNonAlloc second.
-VoxelRock impacts already create hanging debris through the cached SpringJoint path.
-EMP nests already propagate a timed emission wave across linked bio-cables.
-Status: PENDING VERIFICATION.
+HUD получает world-space AR markers, которые прилипают к world targets, уходят на край экрана при behind-camera case и тускнеют/outline-ятся при occlusion.
+Смена языка больше не бьет массовым TMP swap в один кадр: labels переводятся staged-path, пока HUD показывает REBOOTING LANG_MODULE.
+Диагностический CLI теперь дает не косметику, а полезный perf/world snapshot.
+
 What Was Verified
 
-Build-verified: dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1 completed with 0 errors and 70 warnings.
-Code-review-only: touched-file diff hygiene passed for Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs and Docs/2026-04-20_Sargassum_Reality_Audit/CHANGELOG.md. Only LF→CRLF warnings remain.
-Unity-verified: none. refresh_unity still returns Unity session not available; please retry.
-Exam 1: I do not read leviathan head coordinates back from the compute shader. The CPU reconstructs the head pose from the same LeviathanNodeData spline already staged before dispatch in Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:1574 and Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:1606, then consumes that pose in fixed-step at Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:888 and Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:2268. That removes GPU readback latency entirely, so there is no 1-frame hitch from synchronization.
-Exam 2: yes, joint pooling is already used. SargassumCollapseChunk caches SpringJoint and HingeJoint once in Assets/_Project/Scripts/World/SargassumCollapseChunk.cs:380 and Assets/_Project/Scripts/World/SargassumCollapseChunk.cs:387, then reuses them on every snag in Assets/_Project/Scripts/World/SargassumCollapseChunk.cs:417. No per-impact joint allocation path is active.
-REGRESSION MODEL: CPU impact is effectively neutral except the shockwave radius now includes more rigidbody candidates; GC hot path target remains 0 B/frame; memory unchanged; cadence unchanged; correctness improved only by matching the authored shockwave reach to the current spec.
-HOT PATH IMPACT: slightly higher worst-case shockwave target count because 15m covers a larger area than 11.5m. The path remains bounded by spatial-hash capacity and deduplicated rigidbody buffers.
-FAILURE MODES: Unity runtime proof is still absent; larger shockwave radius can over-affect dense debris clusters if the authored impulse magnitude stays too high for the zone.
-WHY KEPT/REJECTED: kept the existing CPU-spline hitbox model, cached spring-joint snagging, and existing EMP chain path because they already satisfy the requested architecture. Rejected any new GPU readback hitbox path and rejected duplicate EMP/snag subsystems. WARNING: Regression risk in Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:2292 if 15m shockwaves push too many nearby lightweight props in dense salvage fields.
+dotnet build Hecton8.Core.csproj -nologo -v:minimal завершился с 0 Error(s), 75 Warning(s). Ошибок из измененного write-set больше нет.
+Runtime/playmode verification отсутствует. Нет Unity Profiler/GCMonitor, нет capture AR occlusion, нет живого замера font-swap spike.
+
+1. ARCHITECTURE & REFACTORING
+
+SNIPPETS
+
+ARWaypointOverlay.cs (line 238)
+
+private void CollectRuntimeWaypoints()
+{
+    EmergencyServiceRelay relayTarget = relayDirector != null ? relayDirector.GetActiveRouteTarget() : null;
+    ...
+    if (_vegetationBridge.TryGetActiveAbyssalAnchorPayload(out NativeArray<Vector3> anchors, out int anchorCount))
+    {
+        ...
+    }
+}
+FontStreamingManager.cs (line 90)
+
+private void HandleLanguageChanged(GameLanguage language)
+{
+    TMP_FontAsset targetFont = LocalizedFontResolver.ResolveReadableFontForLanguage(null, language);
+    ...
+    CollectSwapQueue(targetFont);
+    _streaming = _queueCount > 0;
+}
+PlayerPDA.cs (line 1040)
+
+private void RefreshTerminal(bool force)
+{
+    ResolveDiagnosticsSources();
+    int boidCount = _microFaunaBoids != null ? _microFaunaBoids.BoidCount : 0;
+    int hullStressPercent = _playerMovement != null ? ... : 0;
+    Vector3 universeOffset = HectonFloatingOrigin.Instance != null
+        ? HectonFloatingOrigin.Instance.TotalUniverseOffset
+        : HectonMapMagicVegetationBridge.GlobalTotalUniverseOffset;
+    ...
+}
+SRP COMPLIANCE
+
+ARWaypointOverlay владеет только projection/occlusion/render pool.
+FontStreamingManager владеет только staged TMP font apply и status UI.
+LocalizedFontResolver только выбирает font asset.
+PDADiagnosticTerminal только читает perf/world metrics и печатает CLI.
+Циклических зависимостей нет: LocalizationManager -> FontStreamingManager -> LocalizedFontResolver, но resolver не знает про manager state machine.
+2. PERFORMANCE & HOT PATH OPTIMIZATION
+
+ALGORITHMIC COMPLEXITY
+
+ARWaypointOverlay.Tick: O(N), N <= 21
+ARWaypointOverlay.SlowTick: O(N) raycasts раз в ~0.5 s
+FontStreamingManager: cold-path queue build O(M) only on language switch; hot path O(B) per frame, B = 18
+PDADiagnosticTerminal.SlowTick: O(1)
+STALL AVOIDANCE
+
+Нет .Complete(), jobs, coroutines, SetData, String.Format, Find* в hot path.
+Нет full-scene font swap в одном кадре. Swap режется батчами.
+FontStreamingManager.cs (line 130)
+
+while (_queueIndex < _queueCount && processed < SwapBatchPerTick)
+{
+    TMP_Text text = _swapQueue[_queueIndex];
+    _swapQueue[_queueIndex] = null;
+    _queueIndex++;
+    ...
+    text.font = _targetFont;
+    text.fontSharedMaterial = _targetFont.material;
+}
+GPU/CPU BALANCE
+
+AR рендерится обычным UI pool на CPU. Правильно: это мало объектов, UI API main-thread only.
+Async font I/O не реализован фиктивно, потому что runtime Addressables отсутствуют. Убран spike от массового apply, не придуман несуществующий loader.
+3. MEMORY ARCHITECTURE & ZERO-GC AUDIT
+
+ALLOCATION CHECK
+
+Hot path target: zero-GC by design. Measured proof absent.
+
+Использованные структуры:
+
+ExternalWaypoint[8]
+RuntimeWaypoint[21]
+WaypointSlot[21]
+RaycastHit[1]
+TMP_Text[512]
+StringBuilder(64)
+StringBuilder(192)
+ARWaypointOverlay.cs (line 72), FontStreamingManager.cs (line 29), PlayerPDA.cs (line 919)
+
+LIFETIME
+
+Native collections не владеются. NativeArray<Vector3> от vegetation bridge читается в кадре и не кэшируется между кадрами.
+Dispose не требуется: новых owned NativeArray/NativeList нет.
+UI pool живет lifetime сцены/owner-а и не ресайзится.
+.meta добавлен для ARWaypointOverlay.cs.meta (line 1), чтобы GUID не плавал.
+4. MATHEMATICAL & DSP RIGOR
+
+FORMULAS
+
+3D→2D edge clamp в ARWaypointOverlay.cs (line 406):
+
+Vector2 direction = planar.normalized;
+float tx = abs(dir.x) > eps ? halfWidth / abs(dir.x) : inf;
+float ty = abs(dir.y) > eps ? halfHeight / abs(dir.y) : inf;
+float distance = min(tx, ty);
+edgePos = direction * distance;
+Occlusion:
+
+hitCount = UnityEngine.Physics.RaycastNonAlloc(origin, direction, hits, distance - 0.15f, mask, Ignore);
+occluded = hitCount > 0;
+Diagnostics FPS:
+
+fps = round(1 / max(0.0001, Time.unscaledDeltaTime))
+STABILITY
+
+Деление защищено 0.0001f
+behind-camera case отражается через planar = -planar
+near-zero planar vector уходит в Vector2.up
+ray length сокращен на 0.15f, чтобы не ловить сам target collider на конце луча
+font queue не аллоцируется в Tick; status alpha уходит через MoveTowards, без таймерного drift
+5. INTEGRATION & REGRESSION VERIFICATION
+
+BLOCKER FIX
+
+Compile-fix в ARWaypointOverlay.cs (line 393), ARWaypointOverlay.cs (line 484), ARWaypointOverlay.cs (line 517):
+
+int hitCount = UnityEngine.Physics.RaycastNonAlloc(...);
+tickManager.Register((ITickable)this);
+tickManager.Unregister((ITickable)this);
+DEPENDENCY IMPACT
+
+LocalizationManager.cs (line 159): auto-install FontStreamingManager
+LocalizedFontResolver.cs (line 47): additive language-aware API
+ProgressionRuntimeInstaller.cs (line 44): installs ARWaypointOverlay
+PlayerPDA.cs (line 1045): diagnostics reads SargassumMicroFaunaBoids, HectonPlayerMovement, HectonFloatingOrigin
+ESTIMATED GAIN / COST
+
+FontStreamingManager: вместо one-frame TMP mass swap ожидаемо режет spike примерно с 0.6–2.0 ms до 0.05–0.18 ms/frame на период staged apply. Не измерено.
+ARWaypointOverlay: ~0.03–0.08 ms/frame tick + амортизированно ~0.01 ms/frame от slow-tick raycasts при полном наборе точек. Не измерено.
+PDADiagnosticTerminal: ~0.00–0.01 ms раз в SlowTick, вне активной diagnostics tab почти ноль.
+Память: AR pool + font queue + status UI — порядок десятков KB managed. Не измерено.
+WARNING / FAILURE MODES
+
+WARNING: Regression risk in font streaming semantics. Это staged apply already-loaded fonts. Реального async disk/Addressables path в проекте нет.
+WARNING: Regression risk in occlusion fidelity. Raycast occlusion зависит от collider coverage в voxel/world geometry. Z-depth path не использовался.
+WARNING: Regression risk in external waypoint capacity. External registry capped at 8 IDs.
+Runtime proof absent. No Unity playmode logs, no profiler, no GCMonitor.
 
 
 
 
-3:13 AM
-2 files changed
-+3
--1
+6:51 PM
+8 files changed
++1228
+-27
 Undo
 
 Review
-Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs
-Docs/2026-04-20_Sargassum_Reality_Audit/CHANGELOG.md
-
- --==-=-=-=-=-
-
-ОТЧЕТ ЛОКАЛИЗАТОРА (ОТДЕЛЬНЫЙ ПРОМПТ)
-
-
-
-
--=-=-=-=-
-
-ОТЧЕТ ПОЧИНКИ КРЕСТА
+Assets/_Project/Scripts/LocalizationManager.cs
+Assets/_Project/Scripts/PlayerPDA.cs
+Assets/_Project/Scripts/Progression/ProgressionRuntimeInstaller.cs
+Assets/_Project/Scripts/UI/ARWaypointOverlay.cs
+Assets/_Project/Scripts/UI/ARWaypointOverlay.cs.meta
+Assets/_Project/Scripts/UI/FontStreamingManager.cs
+Assets/_Project/Scripts/UI/LocalizedFontResolver.cs
+Hecton8.Core.csproj
 
 
+-=-=-=-=-=-=-=-=---=-=-
 
 -==-=-=-=-=-=-=-
 
 ОТЧЕТ МУЗЫКАНТА
+Worked for 13m 8s
+STATUS: PENDING VERIFICATION
+
+ARCHITECTURE & REFACTORING
+SNIPPETS
+
+Producer-consumer split. OnAudioFilterRead is now a pure consumer over a lock-free SPSC ring buffer in PlayerCriticalProceduralAudioRenderer.cs (line 345) and NativeAudioFrameRingBuffer.cs (line 8).
+
+private void OnAudioFilterRead(float[] data, int channels)
+{
+    if (!_buffersInitialized || _sampleRingBuffer == null || !_sampleRingBuffer.IsCreated)
+        return;
+
+    int frameCount = data.Length / channels;
+    if (frameCount <= 0)
+        return;
+
+    _sampleRingBuffer.AddToInterleaved(data, channels, frameCount);
+}
+Async producer thread stays ahead of the DSP consumer and runs Burst jobs off the audio callback path at PlayerCriticalProceduralAudioRenderer.cs (line 389) and 411 (line 411).
+
+private void AudioProducerLoop()
+{
+    while (Volatile.Read(ref _audioProducerRunning) != 0)
+    {
+        if (_sampleRingBuffer.BufferedFrames >= targetLeadFrames)
+        {
+            Thread.Sleep(1);
+            continue;
+        }
+
+        ProduceAudioBlock(blockFrames);
+    }
+}
+Voxel-aware acoustic reaction is main-thread only and updates listener reverb from an upward cave probe at PlayerCriticalProceduralAudioRenderer.cs (line 610) and 640 (line 640).
+
+int hitCount = UnityEngine.Physics.RaycastNonAlloc(
+    origin, Vector3.up, _ceilingProbeHits, ceilingProbeDistance, ceilingProbeLayers, QueryTriggerInteraction.Ignore);
+
+_targetCaveReverbBlend = float.IsPositiveInfinity(_cachedCeilingDistanceMeters)
+    ? 0f
+    : 1f - math.saturate(_cachedCeilingDistanceMeters / math.max(caveCeilingThreshold, 0.01f));
+SRP COMPLIANCE
+
+Ring buffer ownership is isolated in NativeAudioFrameRingBuffer.cs (line 8). The renderer owns synthesis state, worker lifecycle, and environment probing only. Legacy clip paths remain suppressed through AtmosphericAudioRuntimeInstaller.cs (line 20), PlayerThrusterAudio.cs (line 128), MantaScooter.cs (line 636), and HectonPlayerMovement.cs (line 4936). No cyclic dependency was added: audio consumes HectonPlayerMovement, PlayerToolManager, PlayerTransportCoordinator, and existing world payloads; world systems do not depend on audio.
+
+PERFORMANCE & HOT PATH OPTIMIZATION
+ALGORITHMIC COMPLEXITY
+
+Ring buffer read: O(N) per callback in NativeAudioFrameRingBuffer.cs (line 77).
+Ring buffer write: O(N) per produced block in NativeAudioFrameRingBuffer.cs (line 60).
+DSP block generation: O(N) for hull + sonar + thruster + low-pass in PlayerCriticalProceduralAudioRenderer.cs (line 435), 450 (line 450), 468 (line 468), 931 (line 931).
+Ceiling probe: fixed-size O(1) because the hit buffer is capped at 8.
+
+STALL AVOIDANCE
+
+Heavy Burst generation no longer runs inside OnAudioFilterRead. The callback now only drains ready frames from the ring buffer.
+No .Complete() was added to the audio callback or main thread.
+Main-thread cave acoustics use RaycastNonAlloc with a cold-allocated hit buffer and probe cadence throttled by ceilingProbeInterval.
+The worker thread stays ahead by workerTargetLeadFrames, so frame hitches hit the producer first, not the DSP callback.
+
+MEMORY ARCHITECTURE & ZERO-GC AUDIT
+ALLOCATION CHECK
+
+Hot-path status by code review: zero-GC in Tick, OnAudioFilterRead, producer loop, and DSP jobs.
+Cold allocs only: worker Thread, AudioReverbFilter fallback if absent, RaycastHit[8], persistent NativeArray<float> scratch buffers, persistent ring buffer native storage.
+
+LIFETIME
+
+Ring buffer native storage is allocated in NativeAudioFrameRingBuffer.cs (line 38) and disposed in NativeAudioFrameRingBuffer.cs (line 104).
+Renderer scratch buffers and ring buffer are allocated in PlayerCriticalProceduralAudioRenderer.cs (line 806) and disposed in 823 (line 823).
+Shutdown order is explicit: stop worker thread, restore listener reverb defaults, then dispose native storage in 263 (line 263).
+Buffer growth strategy: power-of-two ring capacity, no runtime fragmentation, no per-frame resize.
+
+MATHEMATICAL & DSP RIGOR
+FORMULAS
+
+Sample timeline is now frame-based, not callback-time-based: t = (blockStartFrame + i) / sampleRate. That removed callback-dependent phase drift from the producer path.
+Doppler echo still uses the monostatic ratio (c + v) / (c - v) in PlayerCriticalProceduralAudioRenderer.cs (line 892) and echo delay 2d / c in 881 (line 881).
+Hull FM now includes the explicit low carrier at 80 Hz with noise-driven frequency modulation in 1094 (line 1094).
+Biquad low-pass coefficients use the standard RBJ low-pass form in 950 (line 950).
+Cave reverb blend uses 1 - saturate(ceilingDistance / caveCeilingThreshold) in 629 (line 629).
+
+STABILITY
+
+All denominators are clamped with math.max(..., 0.01f) or stronger.
+Doppler ratio, attenuation, and echo delay are clamped to finite ranges before use.
+Oscillator phase uses wrapped fractional cycles; it does not accumulate unbounded float phase drift.
+Ring buffer is SPSC and lock-free; producer writes samples before publishing _writeFrameCursor, consumer reads cursor snapshot before consuming.
+Underrun behavior is soft: callback reads only what exists and adds nothing for missing frames, instead of blocking or generating on the callback thread.
+
+INTEGRATION & REGRESSION VERIFICATION
+BLOCKER FIX
+
+Exact compile fix from this task: PlayerCriticalProceduralAudioRenderer.cs (line 646) changed Physics.RaycastNonAlloc to UnityEngine.Physics.RaycastNonAlloc because the project namespace resolution was binding to Hecton8.Physics and failing with CS0234.
+
+DEPENDENCY IMPACT
+
+No public gameplay contract was broken.
+Existing bridge event ProceduralAudioEvents.OnAudioPingTriggered remains the sync point; its timing is now scheduled from the ring-buffer write cursor in HandleSonarPingSent at 720 (line 720).
+Legacy clip-based critical audio remains gated out through the previously added runtime suppression points.
+WARNING: regression risk in listener fallback acoustics if AcousticZoneController is actively rewriting the same AudioReverbFilter in fallback mode.
+
+ESTIMATED GAIN
+
+Estimated audio-thread win: heavy synthesis removed from callback, leaving only O(N) interleaved copy. Measured proof absent, but expected callback reduction is material under CPU stalls because Burst jobs and low-pass no longer execute on the audio thread.
+Estimated memory cost: ring buffer 65536 mono frames ≈ 256 KB; four scratch NativeArray<float> buffers at 16384 frames each ≈ 256 KB; total new persistent audio memory ≈ 512 KB plus trivial managed overhead.
+Estimated main-thread cost: upward cave probe every 0.12 s with max 8 hits, effectively negligible on MX350-class CPU. Measured proof absent.
+
+Verification
+Unity Console after script refresh reports 0 errors/warnings for:
+PlayerCriticalProceduralAudioRenderer.cs (line 345)
+NativeAudioFrameRingBuffer.cs (line 8)
+
+Full project still does not compile due to external blockers:
+ProgressionRuntimeInstaller.cs (line 44) and ProgressionRuntimeInstaller.cs (line 45) reference missing ARWaypointOverlay.
+
+[ANALYSIS]
+What was wrong: OnAudioFilterRead still owned Burst synthesis, so CPU hitches could starve the audio callback. Cave acoustics had no spatial ceiling response.
+What I did: introduced a lock-free native SPSC frame ring buffer, moved Burst block synthesis to a dedicated worker thread, kept OnAudioFilterRead as a ring-buffer consumer, and added upward-probe-driven AudioReverbFilter smoothing for cave vs open water.
+In-game result: audio scheduling is now buffer-led instead of callback-led, sonar visuals are scheduled against the buffered start frame, and cave ceilings can tighten the reverb profile while open water stays long and dull.
+What was verified: local audio files are console-clean after refresh. Full runtime behavior, underrun resistance under actual frame spikes, and filter interaction with AcousticZoneController remain PENDING VERIFICATION.
+
+
+
+
+
+6:47 PM
+2 files changed
++471
+-87
+Undo
+
+Review
+Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs
+Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs
 
 
 -=---=-=-==--=-=-
 
-отчет вокселееба
-Worked for 35m 47s
+отчет РАБОТНИКА ПО ВОКСЕЛЯМ
+
+Worked for 15m 26s
 What Was Wrong
-VoxelDensityJob still carved mostly straight primitive tunnels, Arch was a thick capsule proxy, and normals came from interpolating the baked density grid instead of sampling the continuous cave field. That gave you boxy topology, weak abyss silhouettes, and normals that were better than triangle averaging but still not true field-driven shading. Terrain seam hiding was also too shallow at the entrance edge.
+VoxelNormalJob only produced normals. There was no baked curvature channel for rock wear/AO, and the shader still treated Color.a as skirt coverage, so the vertex payload contract was wrong for Phase 3. LOD metadata also stopped at the entry point: GenerateVolumeFromDataAsync and RebuildVolumeAsync were not carrying LOD state through the unified pipeline, which meant half-migrated behavior and seam risk at coarse chunks.
+
+I also introduced a source-compatibility hazard when adding lodLevel before CancellationToken in public async APIs. That broke positional callers in WorldCaveDirector.cs (line 381), HectonVoxelStreamingBridge.cs (line 155), and WorldGenerativeGeologyVoxelBridgeDirector.cs (line 591).
 
 What I Did
-In HectonVoxelEngine.cs (line 505) I moved density evaluation into EvaluateDensityAt, so the same continuous field is used for voxel fill and for normal extraction. Tunnels at line 749 (line 749) are now sampled as smooth-min chains of curved Bezier capsule segments with domain-warped control offsets. Entrances at line 808 (line 808) got a flared throat, and the new skirt pass at line 593 (line 593) pushes solid shell back under the terrain plane to hide the seam. Arch structures at line 924 (line 924) are now actual curved spans with layered fBm plus terrace breakup. VoxelNormalJob at line 1443 (line 1443) now samples the SDF field through tetrahedral offsets via CreateDensityEvaluator, not welded triangle data or trilinear grid normals.
+1. ARCHITECTURE & REFACTORING
 
-In CaveGraphGenerator.cs (line 823) I passed terrain height into structure generation, rewired normal arch placement to use position + pointB as feet, and added AddAbyssalArchways at line 980 (line 980) so Abyss/Mega presets spawn seabed-scale arches anchored near the terrain floor. In WorldCaveDirector.cs (line 538) I pushed the Abyss preset harder on warp, wall layering, terrace breakup, tunnel warp, blend radius, and room/structure pressure.
+Kept the unified voxel pipeline as the only owner of density → MC → weld → shading → mesh. LOD and curvature now flow through VoxelPipelineData (line 2050), not through side branches.
+Preserved public API compatibility by restoring old overloads and adding explicit-Lod overloads instead of forcing a breaking signature change in HectonVoxelEngine.cs (line 2155) and HectonVoxelEngine.cs (line 2317).
+Kept SRP boundaries intact: HectonVoxelEngine owns build pipeline, HectonVoxelVolume (line 148) only stores immutable runtime metadata and requests rebuilds back through the engine. No camera/input/UI logic was added.
+public async Awaitable<GameObject> GenerateVolumeAsync(
+    Vector3 worldCenter, uint seed, CavePreset preset = null, CancellationToken ct = default)
+{
+    return await GenerateVolumeAsync(worldCenter, seed, preset, 0, ct);
+}
+2. PERFORMANCE & HOT PATH OPTIMIZATION
 
+Curvature bake is O(V) on welded vertices. Incremental cost over existing central-difference normals is one extra center SDF sample per vertex in VoxelNormalJob (line 1599).
+LOD1 halves grid dimension and doubles voxel step in GenerateVolumeAsync (line 2184) and GenerateVolumeFromDataAsync (line 2326). That cuts 3D voxel/cell work to roughly 1/8.
+Seam handling for coarse chunks is done by widening horizontal edge seal and adding LOD edge skirt in ApplyEdgeSeal (line 567) and VoxelColorJob (line 1713).
+Async physics bake remains off the main thread in VoxelMeshBakeJob (line 2090) and ApplyVolumeMeshAsync (line 3185). sharedMesh assignment still waits for completion, but the bake itself no longer stalls the main thread.
+int gridDim = math.max(16, baseGridDim >> clampedLodLevel);
+float voxelStep = baseVoxelStep * (1 << clampedLodLevel);
+float lodTransitionBand = clampedLodLevel > 0 ? math.max(baseVoxelStep * 2f, voxelStep * 1.25f) : 0f;
+3. MEMORY ARCHITECTURE & ZERO-GC AUDIT
+
+New runtime data stays in native containers only: NativeArray<float> CurvatureValues was added to VoxelPipelineData (line 2050) and disposed in VoxelPipelineData.Dispose (line 2074).
+No new managed allocations were added in hot paths. Curvature and LOD use the existing scratch-slot pipeline and reuse the same mesh upload path.
+Color.a is now curvature and Color.b is skirt mask in VoxelColorJob (line 1770). No extra vertex stream was added.
+4. MATHEMATICAL & DSP RIGOR
+
+Curvature is a discrete SDF Laplacian, not triangle-derived noise. It is computed from central samples in VoxelNormalJob (line 1649), then remapped into 0..1 for shader use.
+Shader uses convex curvature for edge wear and concave curvature for fake AO in Hecton_AbyssalVoxelRock.shader (line 410). Color.a became curvature, Color.b became skirt alpha, and UV3 still carries absolute world position at line 101 (line 101).
+Stability guards:
+epsilon = max(0.1, voxelStep * 0.4)
+invEpsilonSq = 1 / max(epsilon*epsilon, 0.0001)
+normalizesafe for gradients
+saturate on curvature, AO, skirt, and shader masks
+LOD seam band derived from voxel scale, not chunk-local magic constants
+float laplacian =
+    (samplePosX + sampleNegX - (2f * centerDensity)) +
+    (samplePosY + sampleNegY - (2f * centerDensity)) +
+    (samplePosZ + sampleNegZ - (2f * centerDensity));
+
+float signedCurvature = (laplacian * invEpsilonSq) * epsilon;
+curvatureValues[idx] = math.saturate(0.5f + signedCurvature * 0.35f);
+5. INTEGRATION & REGRESSION VERIFICATION
+
+Blocker fix from this patch: restored non-breaking overloads and corrected positional call sites in WorldCaveDirector.cs (line 381), HectonVoxelStreamingBridge.cs (line 155), and WorldGenerativeGeologyVoxelBridgeDirector.cs (line 591).
+Dependency impact:
+Expanded runtime volume metadata with LODLevel in HectonVoxelVolume.cs (line 77).
+Expanded voxel shader contract: Color.a = curvature, Color.b = skirt, UV3 = absolutePositionWS.
+No event buses, DI containers, or singleton ownership changed.
+Estimated MX350 budget:
+LOD1: roughly 8x fewer voxels/cells and ~8x less density/MC work for distant chunks; real frame gain depends on active chunk count.
+Curvature: one extra SDF sample per welded vertex plus a few ALU ops in shader. Expected cost is small relative to full density extraction, but not free.
+Shader curvature wear/AO: a few extra pow/lerp/mul ops per pixel. Likely sub-millisecond unless cave fill dominates the frame.
 In-Game Result
-Expected result: caves stop reading as capsule corridors and start reading as warped connected voids, arches become large abyssal landmarks instead of room clutter, and entrance lips should bury under the terrain enough to hide the hole seam from below.
+Distant voxel chunks can now be generated at LOD1 without changing cave shape catastrophically, because the field is still sampled in world space and only the sampling density changes. Coarse chunks also get a wider seal/skirt band so the LOD boundary does not open obvious holes. Rock shading now has a baked curvature signal, so convex edges can read worn and concave cavities can darken without a real AO solve.
 
-Direct MapMagic TerrainHole runtime registration is still not added. Reason: the current bridge exposes RegisterTerrainHole plus global ClearTerrainHoles, but no safe per-cave unregister path. Blindly wiring that in risks stale holes and cross-system regressions.
+Async mesh bake behavior remains in the job path before collider assignment. Absolute world position remains baked into UV3, so triplanar shading stays stable across floating-origin shifts while curvature travels in vertex alpha.
 
 What Was Verified
-Unity script compile completed clean after the last pass: console returned 0 entries after refresh. Status remains PENDING VERIFICATION.
+Unity compile was re-run through MCP after the patch. My voxel-related signature regressions are gone. Current console still reports two unrelated project blockers: ProgressionRuntimeInstaller.cs (line 44) and ProgressionRuntimeInstaller.cs (line 45), both missing ARWaypointOverlay. That blocks a fully clean project compile, so shader/runtime verification is still incomplete.
 
 Not verified:
 
-runtime mesh shape in scene
-seam quality against actual MapMagic terrain holes
-GC/CPU impact of the new field-sampled normals
-whether the new abyss arches oversaturate specific presets
-WARNING: Regression risk in HectonVoxelEngine generation cost. VoxelNormalJob now re-evaluates the density field per vertex, so shading quality is higher but Burst cost will rise until profiler data confirms budget.
+visual seam quality between live adjacent LOD0/LOD1 chunks in-scene
+actual curvature look under gameplay lighting
+frame-time delta on MX350 under multi-chunk streaming
+collider bake latency during rebuild storms
+Status: PENDING VERIFICATION.
 
 
 
 
 
-3:37 AM
-3 files changed
-+127
--53
+6:47 PM
+6 files changed
++258
+-66
 Undo
 
 Review
-Assets/_Project/Scripts/CaveGraphGenerator.cs
+Assets/_Project/Art/Shaders/Hecton_AbyssalVoxelRock.shader
 Assets/_Project/Scripts/HectonVoxelEngine.cs
+Assets/_Project/Scripts/HectonVoxelVolume.cs
+Assets/_Project/Scripts/World/HectonVoxelStreamingBridge.cs
 Assets/_Project/Scripts/WorldCaveDirector.cs
+Assets/_Project/Scripts/WorldGenerativeGeologyVoxelBridgeDirector.cs
+
+
+
+=--=-=-===-=-=-=-=-=-=-
+
+ОБЯЗАТЕЛЬНО ОДНОМУ ИЗ АГЕНТОВ КАК ДОПЗАДАЧУ ДАТЬ ПОЧИНКУ БЛОКЕРОВ ИЗ КОНСОЛИ

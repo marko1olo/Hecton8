@@ -65,6 +65,18 @@ namespace Hecton8.Visor
 
             [Tooltip("Temporal drift speed of the suspended silt field.")]
             [Range(0f, 2f)] public float siltDriftSpeed = 0.18f;
+
+            [Tooltip("Screen-space contact shadow strength applied to headlight-lit opaque pixels.")]
+            [Range(0f, 1f)] public float contactShadowStrength = 0.62f;
+
+            [Tooltip("Number of depth raymarch steps used for screen-space contact shadows.")]
+            [Range(4, 8)] public int contactShadowSteps = 6;
+
+            [Tooltip("World-space bias used to prevent self-shadow acne in the contact shadow march.")]
+            [Range(0.01f, 0.5f)] public float contactShadowBias = 0.08f;
+
+            [Tooltip("Maximum world-space reach of the contact shadow test toward the headlight sources.")]
+            [Range(1f, 24f)] public float contactShadowMaxDistance = 9f;
         }
 
         private sealed class ShaftsPass : ScriptableRenderPass
@@ -221,6 +233,10 @@ namespace Hecton8.Visor
                 material.SetFloat(ShaderConstants.SiltNoiseScaleId, Mathf.Max(0.001f, settings.siltNoiseScale));
                 material.SetFloat(ShaderConstants.SiltFloorBoostId, Mathf.Max(0f, settings.siltFloorBoost));
                 material.SetFloat(ShaderConstants.SiltDriftSpeedId, Mathf.Max(0f, settings.siltDriftSpeed));
+                material.SetFloat(ShaderConstants.ContactShadowStrengthId, Mathf.Clamp01(settings.contactShadowStrength));
+                material.SetFloat(ShaderConstants.ContactShadowStepsId, Mathf.Clamp(settings.contactShadowSteps, 4, 8));
+                material.SetFloat(ShaderConstants.ContactShadowBiasId, Mathf.Max(0.001f, settings.contactShadowBias));
+                material.SetFloat(ShaderConstants.ContactShadowMaxDistanceId, Mathf.Max(0.1f, settings.contactShadowMaxDistance));
                 material.SetFloat(ShaderConstants.HasBlueNoiseTextureId, settings.blueNoiseTexture != null ? 1f : 0f);
                 material.SetTexture(ShaderConstants.BlueNoiseTextureId, settings.blueNoiseTexture);
             }
@@ -245,6 +261,10 @@ namespace Hecton8.Visor
             internal static readonly int SiltNoiseScaleId = Shader.PropertyToID("_HectonSiltNoiseScale");
             internal static readonly int SiltFloorBoostId = Shader.PropertyToID("_HectonSiltFloorBoost");
             internal static readonly int SiltDriftSpeedId = Shader.PropertyToID("_HectonSiltDriftSpeed");
+            internal static readonly int ContactShadowStrengthId = Shader.PropertyToID("_HectonContactShadowStrength");
+            internal static readonly int ContactShadowStepsId = Shader.PropertyToID("_HectonContactShadowSteps");
+            internal static readonly int ContactShadowBiasId = Shader.PropertyToID("_HectonContactShadowBias");
+            internal static readonly int ContactShadowMaxDistanceId = Shader.PropertyToID("_HectonContactShadowMaxDistance");
             internal static readonly int BlueNoiseTextureId = Shader.PropertyToID("_BlueNoiseTex");
             internal static readonly int HasBlueNoiseTextureId = Shader.PropertyToID("_HectonHasBlueNoiseTex");
             internal static readonly int ShaftTextureId = Shader.PropertyToID("_HectonShaftsTexture");

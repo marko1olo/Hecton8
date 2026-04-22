@@ -20,6 +20,8 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
 
         #define HECTON_MAX_SCOOTER_HEADLIGHTS 2
+        #define HECTON_VOLUMETRIC_LIGHT_CULL_DISTANCE 30.0
+        #define HECTON_VOLUMETRIC_LIGHT_CULL_FADE_START 24.0
 
         CBUFFER_START(UnityPerMaterial)
             float _HectonShaftPassMode;
@@ -37,6 +39,10 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             float _HectonSiltNoiseScale;
             float _HectonSiltFloorBoost;
             float _HectonSiltDriftSpeed;
+            float _HectonContactShadowStrength;
+            float _HectonContactShadowSteps;
+            float _HectonContactShadowBias;
+            float _HectonContactShadowMaxDistance;
             float _HectonHasBlueNoiseTex;
         CBUFFER_END
 
@@ -224,10 +230,131 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             return radialMask * forwardMask * shaftMask * _HectonScooterBrakeCloud;
         }
 
+        float EvaluateSurfaceHeadlightMask(float3 surfacePositionWS, float3 normalWS)
+        {
+            if (_HectonScooterHeadlightCount <= 0)
+                return 0.0;
+
+            float accumulatedMask = 0.0;
+            [unroll(HECTON_MAX_SCOOTER_HEADLIGHTS)]
+            for (int lightIndex = 0; lightIndex < HECTON_MAX_SCOOTER_HEADLIGHTS; lightIndex++)
+            {
+                if (lightIndex >= _HectonScooterHeadlightCount)
+                    break;
+
+                float3 lightPositionWS = _HectonScooterHeadlightPositionsWS[lightIndex].xyz;
+                float volumetricLightFade = ResolveVolumetricLightDistanceFade(lightPositionWS);
+                if (volumetricLightFade <= 0.0001)
+                    continue;
+                float lightRange = max(0.1, _HectonScooterHeadlightPositionsWS[lightIndex].w);
+                float3 toSurfaceWS = surfacePositionWS - lightPositionWS;
+                float surfaceDistance = length(toSurfaceWS);
+                if (surfaceDistance >= lightRange)
+                    continue;
+
+                float3 surfaceDirectionWS = toSurfaceWS * SafeRcp(surfaceDistance);
+                float3 lightDirectionWS = SafeNormalize3(_HectonScooterHeadlightDirectionsWS[lightIndex].xyz);
+                float innerCos = _HectonScooterHeadlightDirectionsWS[lightIndex].w;
+                float outerCos = _HectonScooterHeadlightConeData[lightIndex].x;
+                float inverseRange = _HectonScooterHeadlightConeData[lightIndex].z;
+                float coneAttenuation = ResolveSpotConeAttenuation(dot(lightDirectionWS, surfaceDirectionWS), innerCos, outerCos);
+                float rangeAttenuation = saturate(1.0 - surfaceDistance * inverseRange);
+                rangeAttenuation *= rangeAttenuation;
+                float noL = saturate(dot(normalWS, -surfaceDirectionWS));
+                float lightIntensity = _HectonScooterHeadlightColors[lightIndex].w;
+                accumulatedMask += coneAttenuation * rangeAttenuation * noL * volumetricLightFade * saturate(lightIntensity * 0.35);
+            }
+
+            return saturate(accumulatedMask);
+        }
+
+        float EvaluateContactShadow(float3 surfacePositionWS, float3 normalWS)
+        {
+            if (_HectonScooterHeadlightCount <= 0 || _HectonContactShadowStrength <= 0.0001)
+                return 1.0;
+
+            int stepCount = max(1, (int)round(_HectonContactShadowSteps));
+            float3 biasedSurfacePositionWS = surfacePositionWS + normalWS * _HectonContactShadowBias;
+            float shadowOcclusion = 0.0;
+
+            [loop]
+            for (int stepIndex = 0; stepIndex < 8; stepIndex++)
+            {
+                if (stepIndex >= stepCount)
+                    break;
+
+                float stepT = (stepIndex + 1.0) * SafeRcp((float)stepCount + 1.0);
+
+                [unroll(HECTON_MAX_SCOOTER_HEADLIGHTS)]
+                for (int lightIndex = 0; lightIndex < HECTON_MAX_SCOOTER_HEADLIGHTS; lightIndex++)
+                {
+                    if (lightIndex >= _HectonScooterHeadlightCount)
+                        break;
+
+                    float3 lightPositionWS = _HectonScooterHeadlightPositionsWS[lightIndex].xyz;
+                    float volumetricLightFade = ResolveVolumetricLightDistanceFade(lightPositionWS);
+                    if (volumetricLightFade <= 0.0001)
+                        continue;
+                    float lightRange = max(0.1, _HectonScooterHeadlightPositionsWS[lightIndex].w);
+                    float3 lightRayWS = lightPositionWS - biasedSurfacePositionWS;
+                    float lightDistance = length(lightRayWS);
+                    if (lightDistance <= 0.0001)
+                        continue;
+
+                    float marchDistance = min(lightDistance, _HectonContactShadowMaxDistance);
+                    float marchT = stepT * SafeRcp(lightDistance) * marchDistance;
+                    float3 raySampleWS = lerp(biasedSurfacePositionWS, lightPositionWS, marchT);
+                    float4 raySampleCS = TransformWorldToHClip(raySampleWS);
+                    if (raySampleCS.w <= 0.0)
+                        continue;
+
+                    float2 raySampleUV = raySampleCS.xy * SafeRcp(raySampleCS.w) * 0.5 + 0.5;
+                    if (raySampleUV.x <= 0.0 || raySampleUV.x >= 1.0 || raySampleUV.y <= 0.0 || raySampleUV.y >= 1.0)
+                        continue;
+
+                    float sampledRawDepth = SampleSceneDepth(raySampleUV);
+                #if UNITY_REVERSED_Z
+                    float sampledDepthValid = step(0.0001, sampledRawDepth);
+                #else
+                    float sampledDepthValid = step(sampledRawDepth, 0.9999);
+                #endif
+                    if (sampledDepthValid <= 0.5)
+                        continue;
+
+                    float3 sampledScenePositionWS = ComputeWorldSpacePosition(raySampleUV, sampledRawDepth, UNITY_MATRIX_I_VP);
+                    float sceneEyeDistance = distance(_WorldSpaceCameraPos, sampledScenePositionWS);
+                    float rayEyeDistance = distance(_WorldSpaceCameraPos, raySampleWS);
+                    float occluded = step(sceneEyeDistance + (_HectonContactShadowBias * 0.5), rayEyeDistance);
+                    if (occluded <= 0.5)
+                        continue;
+
+                    float3 surfaceVectorWS = surfacePositionWS - lightPositionWS;
+                    float3 surfaceDirectionWS = SafeNormalize3(surfaceVectorWS);
+                    float3 lightDirectionWS = SafeNormalize3(_HectonScooterHeadlightDirectionsWS[lightIndex].xyz);
+                    float innerCos = _HectonScooterHeadlightDirectionsWS[lightIndex].w;
+                    float outerCos = _HectonScooterHeadlightConeData[lightIndex].x;
+                    float inverseRange = _HectonScooterHeadlightConeData[lightIndex].z;
+                    float coneAttenuation = ResolveSpotConeAttenuation(dot(lightDirectionWS, surfaceDirectionWS), innerCos, outerCos);
+                    float rangeAttenuation = saturate(1.0 - min(lightDistance, lightRange) * inverseRange);
+                    rangeAttenuation *= rangeAttenuation;
+                    float noL = saturate(dot(normalWS, -surfaceDirectionWS));
+                    shadowOcclusion = max(shadowOcclusion, coneAttenuation * rangeAttenuation * noL * volumetricLightFade);
+                }
+            }
+
+            return 1.0 - saturate(shadowOcclusion * _HectonContactShadowStrength);
+        }
+
         float ResolveSpotConeAttenuation(float cosAngle, float innerCos, float outerCos)
         {
             float coneRange = max(innerCos - outerCos, 0.0001);
             return saturate((cosAngle - outerCos) / coneRange);
+        }
+
+        float ResolveVolumetricLightDistanceFade(float3 lightPositionWS)
+        {
+            float lightDistanceToCamera = distance(_WorldSpaceCameraPos, lightPositionWS);
+            return 1.0 - smoothstep(HECTON_VOLUMETRIC_LIGHT_CULL_FADE_START, HECTON_VOLUMETRIC_LIGHT_CULL_DISTANCE, lightDistanceToCamera);
         }
 
         half3 EvaluateHeadlightScattering(float3 samplePositionWS, float3 rayDirectionWS)
@@ -243,6 +370,9 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
                     break;
 
                 float3 lightPositionWS = _HectonScooterHeadlightPositionsWS[lightIndex].xyz;
+                float volumetricLightFade = ResolveVolumetricLightDistanceFade(lightPositionWS);
+                if (volumetricLightFade <= 0.0001)
+                    continue;
                 float lightRange = max(0.1, _HectonScooterHeadlightPositionsWS[lightIndex].w);
                 float3 lightDirectionWS = SafeNormalize3(_HectonScooterHeadlightDirectionsWS[lightIndex].xyz);
                 float innerCos = _HectonScooterHeadlightDirectionsWS[lightIndex].w;
@@ -264,7 +394,7 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
                 float halo = exp2(-sampleDistance * (1.35 * inverseRange));
                 float phaseCos = saturate(dot(sampleDirectionWS, -rayDirectionWS));
                 float phase = EvaluateSchlickPhase(phaseCos, _HectonShaftScatteringAnisotropy);
-                float volumetricEnergy = (coneAttenuation * rangeAttenuation * phase * shaftStrength) + (halo * 0.08);
+                float volumetricEnergy = ((coneAttenuation * rangeAttenuation * phase * shaftStrength) + (halo * 0.08)) * volumetricLightFade;
                 half3 lightColor = _HectonScooterHeadlightColors[lightIndex].rgb;
                 float lightIntensity = _HectonScooterHeadlightColors[lightIndex].w;
                 accumulated += lightColor * (lightIntensity * volumetricEnergy);
@@ -434,6 +564,19 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             half4 sourceColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, input.screenUV);
             half3 shafts = SAMPLE_TEXTURE2D_X(_HectonShaftsTexture, sampler_LinearClamp, input.screenUV).rgb;
             half3 biolumProjection = EvaluateBiolumFloorProjection(input.screenUV);
+            float rawDepth;
+            float depthValid;
+            float3 scenePositionWS;
+            float linearEyeDepth;
+            ResolveDepthData(input.screenUV, rawDepth, depthValid, scenePositionWS, linearEyeDepth);
+            if (depthValid > 0.5)
+            {
+                float3 normalWS = ApproximateWorldNormal(input.screenUV, scenePositionWS);
+                float headlightMask = EvaluateSurfaceHeadlightMask(scenePositionWS, normalWS);
+                float contactShadow = EvaluateContactShadow(scenePositionWS, normalWS);
+                sourceColor.rgb *= lerp(1.0, contactShadow, headlightMask);
+            }
+
             return half4(sourceColor.rgb + shafts + biolumProjection, sourceColor.a);
         }
         ENDHLSL

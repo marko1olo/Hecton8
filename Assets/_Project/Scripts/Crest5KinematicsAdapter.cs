@@ -14,6 +14,7 @@ namespace Hecton8.Physics
     {
         private const int MaxBatchSampleCount = 5;
         private const float DefaultSeaLevel = 4900f;
+        private const int ProviderPriority = 500;
 
         [Header("References")]
         [Tooltip("Optional explicit Crest 5 water owner. Leave empty to resolve WaterRenderer.Instance or scan the scene.")]
@@ -35,6 +36,9 @@ namespace Hecton8.Physics
             new SampleCollisionHelper[MaxBatchSampleCount]; // COLD ALLOC: SampleCollisionHelper[5] — per-point Crest 5 displacement/normal query lanes for zero-GC batch sampling — owner: Crest5KinematicsAdapter
         private readonly SampleFlowHelper[] _flowSampleHelpers =
             new SampleFlowHelper[MaxBatchSampleCount]; // COLD ALLOC: SampleFlowHelper[5] — per-point Crest 5 flow query lanes for zero-GC batch sampling — owner: Crest5KinematicsAdapter
+
+        /// <inheritdoc />
+        public int Priority => ProviderPriority;
 
         /// <inheritdoc />
         public bool IsAvailable
@@ -60,6 +64,16 @@ namespace Hecton8.Physics
         private void Awake()
         {
             EnsureHelpersInitialized();
+        }
+
+        private void OnEnable()
+        {
+            HectonOceanRegistry.Register(this);
+        }
+
+        private void OnDisable()
+        {
+            HectonOceanRegistry.Unregister(this);
         }
 
         /// <inheritdoc />

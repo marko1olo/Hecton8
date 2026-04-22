@@ -34,7 +34,7 @@ namespace Hecton8.Physics
         private void Awake()
         {
             TryGetComponent(out _currentVolume);
-            _hazardSourceId = GetInstanceID();
+            _hazardSourceId = unchecked((int)EntityId.ToULong(GetEntityId()));
             ApplyPreset();
         }
 

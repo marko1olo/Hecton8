@@ -10,6 +10,11 @@ namespace Hecton8.Physics
     public interface IHectonOceanKinematics
     {
         /// <summary>
+        /// Provider-selection priority used by the global ocean registry. Higher wins.
+        /// </summary>
+        int Priority { get; }
+
+        /// <summary>
         /// True when the underlying ocean backend can answer collision/flow queries this frame.
         /// </summary>
         bool IsAvailable { get; }

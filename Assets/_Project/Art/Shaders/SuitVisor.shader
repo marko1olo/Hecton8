@@ -41,9 +41,13 @@ Shader "NASAPunk/SuitVisor"
         _CondensationEdgeExponent ("Condensation Edge Exponent", Range(0.5, 6)) = 2.35
         _CondensationDriftSpeed ("Condensation Drift Speed", Range(0, 2)) = 0.18
 
+        [Header(Frost)]
+        _ScreenFrostStrength ("Screen Frost Strength", Range(0, 1)) = 0
+
         [Header(Refraction Distortion)]
         _DistortionStrength ("Edge Distortion", Range(0, 0.1)) = 0.02
         _DistortionFalloff ("Distortion Edge Falloff", Range(0.5, 5)) = 2.0
+        _LensEdgeRefraction ("Lens Edge Refraction", Range(0, 0.08)) = 0.028
 
         [Header(Fresnel)]
         _FresnelColor ("Fresnel Rim Color", Color) = (0.4, 0.6, 0.8, 1.0)
@@ -120,9 +124,11 @@ Shader "NASAPunk/SuitVisor"
                 float  _CondensationDistortion;
                 float  _CondensationEdgeExponent;
                 float  _CondensationDriftSpeed;
+                float  _ScreenFrostStrength;
 
                 float  _DistortionStrength;
                 float  _DistortionFalloff;
+                float  _LensEdgeRefraction;
 
                 float4 _FresnelColor;
                 float  _FresnelPower;
@@ -235,6 +241,22 @@ Shader "NASAPunk/SuitVisor"
                 float edgeBias = smoothstep(0.08, 0.74, EdgeMask(uv, 1.1));
                 float topBias = smoothstep(0.08, 0.86, uv.y);
                 return saturate((smearA * 0.66 + smearB * 0.52) * edgeBias * topBias * 0.28);
+            }
+
+            float ComputeProceduralFrostMask(float2 uv, float edgeDist, float timeValue)
+            {
+                float frostEdge = pow(saturate(edgeDist), 1.42);
+                float2 baseUv = uv * float2(11.5, 17.0) + float2(timeValue * 0.004, timeValue * -0.006);
+                float2 sampleUv = TRANSFORM_TEX(baseUv, _FingerprintTex);
+                float4 packedNoise = SAMPLE_TEXTURE2D(_FingerprintTex, sampler_FingerprintTex, sampleUv);
+                float crystalSeed = packedNoise.r;
+                float grainSeed = packedNoise.g;
+                float shardBands = step(0.68, frac(baseUv.x * 6.4 + baseUv.y * 2.7 + grainSeed * 1.9));
+                float shardRibs = step(0.74, frac(baseUv.x * 2.1 - baseUv.y * 5.3 + crystalSeed * 2.7));
+                float lobe = 1.0 - smoothstep(0.18, 0.46, length((frac(baseUv) - 0.5) * float2(1.0, 1.7)));
+                float crystalMask = saturate(shardBands * 0.55 + shardRibs * 0.45 + lobe * 0.3 + crystalSeed * 0.35 - 0.62);
+                float topBias = smoothstep(0.06, 0.94, uv.y);
+                return saturate(crystalMask * frostEdge * topBias);
             }
 
             float ComputeWaterRunoffMask(float2 uv, float time)
@@ -368,6 +390,9 @@ Shader "NASAPunk/SuitVisor"
                 float edgeDist = EdgeMask(IN.uv, _DistortionFalloff);
                 float2 distortionOffset = scratchNormalTS.xy * _DistortionStrength;
                 distortionOffset += edgeDist * normalWS.xy * _DistortionStrength * 0.5;
+                float2 radialScreenOffset = screenUV - 0.5;
+                float radialMagnitude = saturate(length(radialScreenOffset) * 1.75);
+                distortionOffset += radialScreenOffset * (radialMagnitude * radialMagnitude) * _LensEdgeRefraction;
 
                 float runoffMask = 0.0;
                 if (_WaterRunoffStrength > 0.001)
@@ -409,6 +434,15 @@ Shader "NASAPunk/SuitVisor"
                     float2 condensationDistortion = (scratchNormalTS.xy * 0.4 + normalWS.xy * 0.25) * _CondensationDistortion;
                     distortionOffset += condensationDistortion * condensationMask;
                     distortionOffset.y -= condensationMask * _CondensationDistortion * 0.28;
+                }
+
+                float frostStrength = saturate(_ScreenFrostStrength);
+                float frostMask = 0.0;
+                if (frostStrength > 0.001)
+                {
+                    float authoredFrost = ComputeProceduralFrostMask(IN.uv, edgeDist, _Time.y);
+                    frostMask = saturate(authoredFrost * frostStrength);
+                    distortionOffset += (scratchNormalTS.xy * 0.2 + radialScreenOffset * 0.06) * frostMask * 0.006;
                 }
 
                 float2 refractedUV = screenUV + distortionOffset;
@@ -514,6 +548,10 @@ Shader "NASAPunk/SuitVisor"
                     finalColor,
                     finalColor * 0.74 + sceneColor * 0.14 + fresnelColor * 0.18 + float3(0.055, 0.07, 0.075),
                     condensationHazeMask * 0.42);
+                finalColor = lerp(
+                    finalColor,
+                    finalColor * 0.55 + float3(0.72, 0.78, 0.82) * 0.38 + sceneColor * 0.08,
+                    frostMask * 0.65);
                 finalColor += runoffSheen;
                 finalColor += sonarOverlayColor * sonarOverlayMask;
 
@@ -525,6 +563,7 @@ Shader "NASAPunk/SuitVisor"
                     + runoffMask * 0.18
                     + wetHazeMask * 0.08
                     + condensationHazeMask * 0.16
+                    + frostMask * 0.22
                     + sonarOverlayMask * 0.08;
                 finalAlpha = saturate(finalAlpha);
 

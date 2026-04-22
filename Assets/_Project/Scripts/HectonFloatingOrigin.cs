@@ -28,6 +28,9 @@ namespace Hecton8.Core
     [DefaultExecutionOrder(-10000)]
     public sealed class HectonFloatingOrigin : MonoBehaviour, ITickable
     {
+        private static readonly int _HectonFloatingOriginOffsetId = Shader.PropertyToID("_HectonFloatingOriginOffset");
+        private static readonly int _TotalUniverseOffsetId = Shader.PropertyToID("_TotalUniverseOffset");
+
         // ══════════════════════════════════════════════════════════
         //  SINGLETON & EVENTS
         // ══════════════════════════════════════════════════════════
@@ -40,6 +43,8 @@ namespace Hecton8.Core
         {
             _instance = null;
             OnWorldShift = null;
+            Shader.SetGlobalVector(_HectonFloatingOriginOffsetId, Vector4.zero);
+            Shader.SetGlobalVector(_TotalUniverseOffsetId, Vector4.zero);
         }
 
         /// <summary>
@@ -52,6 +57,7 @@ namespace Hecton8.Core
         /// Cumulative offset applied to the world origin since startup.
         /// </summary>
         public Vector3 TotalOffset { get; private set; }
+        public Vector3 TotalUniverseOffset => TotalOffset;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -88,6 +94,7 @@ namespace Hecton8.Core
             _instance = this;
             RefreshThresholdCache();
             TryResolveAnchor(force: true);
+            PublishGlobalOffsets();
         }
 
         private void OnEnable()
@@ -171,6 +178,7 @@ namespace Hecton8.Core
 
             // 4. Update internal Unity state
             TotalOffset += offset;
+            PublishGlobalOffsets();
             UnityEngine.Physics.SyncTransforms();
 
             // 5. Notify specialized systems (Voxel, VFX, Sound emitters)
@@ -201,6 +209,13 @@ namespace Hecton8.Core
                 _threshold = 1f;
 
             _thresholdSqr = _threshold * _threshold;
+        }
+
+        private void PublishGlobalOffsets()
+        {
+            Vector4 offset = new Vector4(TotalOffset.x, TotalOffset.y, TotalOffset.z, 0f);
+            Shader.SetGlobalVector(_HectonFloatingOriginOffsetId, offset);
+            Shader.SetGlobalVector(_TotalUniverseOffsetId, offset);
         }
 
         private void TryRegister()

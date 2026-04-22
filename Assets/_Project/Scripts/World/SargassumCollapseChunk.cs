@@ -68,7 +68,7 @@ namespace Hecton8.World
         [Header("── Disintegration ──────────────────")]
         [SerializeField, Range(1f, 60f)]
         [Tooltip("How long a snagged chunk can hang before it tears apart into physical scrap.")]
-        private float snagDisintegrationDelay = 16f;
+        private float snagDisintegrationDelay = 48f;
 
         [SerializeField, Range(1, 4)]
         [Tooltip("How many pooled scrap pickups are released when the chunk disintegrates.")]
@@ -126,6 +126,9 @@ namespace Hecton8.World
         private bool _siltTrailSettled;
         private float _snagHangTimer;
         private float _remainingThermalIntegrity;
+        private float _scavengerConsume01;
+        private bool _registeredScavengerHost;
+        private bool _disintegrating;
         private readonly Collider[] _snagColliders = new Collider[8]; // COLD ALLOC: Collider[8] - bounded snag-target probe buffer for collapse chunks - owner: SargassumCollapseChunk
 
         private void Awake()
@@ -188,6 +191,8 @@ namespace Hecton8.World
             _siltTrailSettled = false;
             _snagHangTimer = 0f;
             _remainingThermalIntegrity = Mathf.Max(0.01f, thermalIntegrity);
+            _scavengerConsume01 = 0f;
+            _disintegrating = false;
             DisableSnagJoints();
             TryRegister();
         }
@@ -247,7 +252,10 @@ namespace Hecton8.World
             _siltTrailSettled = false;
             _snagHangTimer = 0f;
             _remainingThermalIntegrity = Mathf.Max(0.01f, thermalIntegrity);
+            _scavengerConsume01 = 0f;
+            _disintegrating = false;
             DisableSnagJoints();
+            UpdateConsumedScale();
 
             if (siltTrail != null)
             {
@@ -281,7 +289,11 @@ namespace Hecton8.World
             _siltTrailSettled = false;
             _snagHangTimer = 0f;
             _remainingThermalIntegrity = Mathf.Max(0.01f, thermalIntegrity);
+            _scavengerConsume01 = 0f;
+            _disintegrating = false;
             DisableSnagJoints();
+            TryUnregisterScavengerHost();
+            UpdateConsumedScale();
 
             if (siltTrail != null)
                 siltTrail.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
@@ -318,11 +330,13 @@ namespace Hecton8.World
 
         private void OnDisable()
         {
+            TryUnregisterScavengerHost();
             TryUnregister();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterScavengerHost();
             TryUnregister();
         }
 
@@ -349,6 +363,29 @@ namespace Hecton8.World
                 tickManager.Unregister((ITickable)this);
 
             _registeredTick = false;
+        }
+
+        internal bool CanHostScavengers => gameObject.activeInHierarchy && _hasSnag && !_disintegrating;
+
+        internal Vector3 GetScavengerAnchorWS()
+        {
+            return transform.position;
+        }
+
+        internal void ClearScavengerHostRegistration()
+        {
+            _registeredScavengerHost = false;
+        }
+
+        internal void ApplyScavengerConsumptionDelta(float delta01)
+        {
+            if (delta01 <= 0f || !CanHostScavengers)
+                return;
+
+            _scavengerConsume01 = Mathf.Clamp01(_scavengerConsume01 + delta01);
+            UpdateConsumedScale();
+            if (_scavengerConsume01 >= 0.999f)
+                DisintegrateIntoScrap();
         }
 
         private void ResolveRuntimeWiring(bool createFallbackTrail)
@@ -466,6 +503,7 @@ namespace Hecton8.World
                 _snagSpringJoint.enableCollision = false;
                 _hasSnag = true;
                 _siltTrailSettled = true;
+                TryRegisterScavengerHost();
                 return;
             }
 
@@ -488,6 +526,7 @@ namespace Hecton8.World
 
             _hasSnag = true;
             _siltTrailSettled = true;
+            TryRegisterScavengerHost();
         }
 
         private void UpdateSiltTrailEmission()
@@ -625,8 +664,43 @@ namespace Hecton8.World
             return particleSystem;
         }
 
+        private void UpdateConsumedScale()
+        {
+            float scaleMultiplier = Mathf.Lerp(1f, 0.26f, _scavengerConsume01);
+            transform.localScale = _defaultLocalScale * Mathf.Max(0.1f, scaleMultiplier);
+        }
+
+        private void TryRegisterScavengerHost()
+        {
+            if (_registeredScavengerHost)
+                return;
+
+            SargassumGlobalDragManager dragManager = SargassumGlobalDragManager.Instance;
+            if (dragManager == null)
+                return;
+
+            _registeredScavengerHost = dragManager.RegisterSettledCollapseChunk(this);
+        }
+
+        private void TryUnregisterScavengerHost()
+        {
+            if (!_registeredScavengerHost)
+                return;
+
+            SargassumGlobalDragManager dragManager = SargassumGlobalDragManager.Instance;
+            if (dragManager != null)
+                dragManager.UnregisterSettledCollapseChunk(this);
+
+            _registeredScavengerHost = false;
+        }
+
         private void DisintegrateIntoScrap()
         {
+            if (_disintegrating)
+                return;
+
+            _disintegrating = true;
+            TryUnregisterScavengerHost();
             ObjectPoolManager poolManager = ObjectPoolManager.Instance;
             if (poolManager != null && scrapPickupPrefab != null)
             {
@@ -658,7 +732,7 @@ namespace Hecton8.World
             snagDamper = Mathf.Clamp(snagDamper, 0f, 16f);
             snagMaxDistance = Mathf.Clamp(snagMaxDistance, 0f, 2f);
             snagSurfaceOffset = Mathf.Clamp(snagSurfaceOffset, 0.01f, 0.5f);
-            snagDisintegrationDelay = Mathf.Clamp(snagDisintegrationDelay, 1f, 60f);
+            snagDisintegrationDelay = Mathf.Clamp(snagDisintegrationDelay, 30f, 90f);
             scrapPickupCount = Mathf.Clamp(scrapPickupCount, 1, ScrapEjectDirections.Length);
             thermalIntegrity = Mathf.Clamp(thermalIntegrity, 0f, 16f);
             scrapEjectSpeed = Mathf.Clamp(scrapEjectSpeed, 0f, 8f);

@@ -550,4 +550,58 @@ namespace Hecton8.Audio
         }
 #endif
     }
+
+    /// <summary>
+    /// Zero-allocation payload for contextual spatial-audio captions.
+    /// Producers are expected to pass a cached/prelocalized caption string.
+    /// </summary>
+    public readonly struct AudioCaptionRequest
+    {
+        public AudioCaptionRequest(string captionText, Vector3 worldPosition, float durationSeconds, float intensity)
+        {
+            CaptionText = captionText;
+            WorldPosition = worldPosition;
+            DurationSeconds = durationSeconds;
+            Intensity = intensity;
+        }
+
+        /// <summary>Cached/prelocalized caption text shown by the HUD.</summary>
+        public string CaptionText { get; }
+
+        /// <summary>World-space origin used to position the caption around the reticle.</summary>
+        public Vector3 WorldPosition { get; }
+
+        /// <summary>Visible duration in seconds.</summary>
+        public float DurationSeconds { get; }
+
+        /// <summary>Normalized caption strength in the 0..1 range.</summary>
+        public float Intensity { get; }
+    }
+
+    /// <summary>
+    /// Main-thread event bus for spatial-audio captions.
+    /// Audio systems publish semantic cue text here; HUD overlays render it.
+    /// </summary>
+    public static class AudioCaptionEvents
+    {
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            OnCaptionRequested = null;
+        }
+
+        /// <summary>Raised on the main thread when a semantic audio cue should be captioned.</summary>
+        public static event System.Action<AudioCaptionRequest> OnCaptionRequested;
+
+        /// <summary>
+        /// Raises a caption request using a prelocalized text payload.
+        /// </summary>
+        public static void Raise(AudioCaptionRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.CaptionText))
+                return;
+
+            OnCaptionRequested?.Invoke(request);
+        }
+    }
 }

@@ -92,6 +92,31 @@ namespace Hecton8.Gameplay
         [Tooltip("Fuel level threshold for low fuel warning (0-1).")]
         [SerializeField, Range(0.1f, 0.5f)] private float lowFuelThreshold = 0.25f;
 
+        [Header("── Overheat ───────────────────────────────")]
+        [Tooltip("Grid utilization threshold above which the reactor starts accumulating overheat.")]
+        [SerializeField, Range(0.5f, 1f)] private float overheatUtilizationThreshold = 0.98f;
+
+        [Tooltip("Seconds the reactor can sustain near-full utilization before damaging the host module.")]
+        [SerializeField, Range(1f, 600f)] private float overheatGraceSeconds = 120f;
+
+        [Tooltip("Integrity damage per second applied to the host module once overheat grace is exhausted.")]
+        [SerializeField, Range(0f, 50f)] private float overheatIntegrityDamagePerSecond = 4f;
+
+        [Tooltip("Rate at which stored overheat decays when the grid load drops.")]
+        [SerializeField, Range(0.1f, 10f)] private float overheatCooldownRate = 1.5f;
+
+        [Tooltip("Explosion radius applied when an overheated reactor catastrophically fails.")]
+        [SerializeField, Range(1f, 40f)] private float meltdownRadius = 20f;
+
+        [Tooltip("Peak module damage dealt at the center of the reactor meltdown.")]
+        [SerializeField, Range(0f, 200f)] private float meltdownModuleDamage = 90f;
+
+        [Tooltip("Peak player damage dealt at the center of the reactor meltdown.")]
+        [SerializeField, Range(0f, 200f)] private float meltdownPlayerDamage = 65f;
+
+        [Tooltip("Layers scanned during the reactor meltdown overlap pass.")]
+        [SerializeField] private LayerMask meltdownMask = ~0;
+
         [Header("── Audio ──────────────────────────────────────")]
         [Tooltip("Sound played when fuel is inserted.")]
         [SerializeField] private AudioClip insertSound;
@@ -290,11 +315,19 @@ namespace Hecton8.Gameplay
         private bool _registered;
         private bool _hasPower = true; // IPowerComponent requirement
         private int _emissionPropertyId;
+        private float _overheatTimer;
+        private float _debugGridUtilization;
+        private bool _meltdownTriggered;
 
         // Cached references
         private Transform _cachedTransform;
+        private PowerNode _powerNode;
+        private BaseModule _hostModule;
         private MaterialPropertyBlock _mpb;
         private static readonly int _EmissionColorID = Shader.PropertyToID("_EmissionColor");
+        private static readonly Collider[] MeltdownOverlapBuffer = new Collider[48];
+        private readonly int[] _damagedModuleIds = new int[24];
+        private readonly int[] _damagedSurvivalIds = new int[8];
 
         // ══════════════════════════════════════════════════════════
         //  IPowerComponent IMPLEMENTATION
@@ -346,6 +379,10 @@ namespace Hecton8.Gameplay
         private void Awake()
         {
             _cachedTransform = transform;
+            _powerNode = GetComponent<PowerNode>();
+            _hostModule = GetComponent<BaseModule>();
+            if (_hostModule == null)
+                _hostModule = GetComponentInParent<BaseModule>();
             _emissionPropertyId = Shader.PropertyToID(string.IsNullOrEmpty(emissionProperty) ? "_EmissionColor" : emissionProperty);
             _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — per-renderer props — owner: BioReactor
             _fuelItems = new List<FuelItem>(maxFuelSlots); // COLD ALLOC: List<FuelItem>[maxFuelSlots] — fuel storage — owner: BioReactor
@@ -414,8 +451,11 @@ namespace Hecton8.Gameplay
                 {
                     _isProducing = false;
                     OnReactorStopped?.Invoke();
+                    NotifyGridBalanceChanged();
                     UpdateFuelIndicator();
                 }
+
+                UpdateOverheat(deltaTime);
                 return;
             }
 
@@ -428,8 +468,10 @@ namespace Hecton8.Gameplay
             {
                 _isProducing = true;
                 OnReactorStarted?.Invoke();
+                NotifyGridBalanceChanged();
             }
 
+            UpdateOverheat(deltaTime);
             UpdateFuelIndicator();
         }
 
@@ -563,6 +605,143 @@ namespace Hecton8.Gameplay
         /// Updates the fuel level indicator using MaterialPropertyBlock.
         /// Zero GC: uses cached MaterialPropertyBlock.
         /// </summary>
+        private void UpdateOverheat(float deltaTime)
+        {
+            if (_meltdownTriggered)
+                return;
+
+            PowerGrid grid = _powerNode != null ? _powerNode.Grid : null;
+            if (!_isProducing || grid == null)
+            {
+                CoolOverheat(deltaTime);
+                return;
+            }
+
+            float totalGeneration = grid.TotalGeneration;
+            if (totalGeneration <= 0.0001f)
+            {
+                CoolOverheat(deltaTime);
+                return;
+            }
+
+            float utilization = Mathf.Clamp01(grid.TotalConsumption / totalGeneration);
+            _debugGridUtilization = utilization;
+
+            if (utilization < overheatUtilizationThreshold)
+            {
+                CoolOverheat(deltaTime);
+                return;
+            }
+
+            _overheatTimer += deltaTime;
+            if (_hostModule == null || _overheatTimer < overheatGraceSeconds)
+                return;
+
+            _hostModule.ApplyDamage(overheatIntegrityDamagePerSecond * deltaTime);
+            if (_hostModule.CurrentIntegrity <= 0f)
+                TriggerMeltdown();
+        }
+
+        private void CoolOverheat(float deltaTime)
+        {
+            _debugGridUtilization = 0f;
+            if (_overheatTimer <= 0f)
+                return;
+
+            _overheatTimer = Mathf.Max(0f, _overheatTimer - (deltaTime * Mathf.Max(0.1f, overheatCooldownRate)));
+        }
+
+        private void TriggerMeltdown()
+        {
+            if (_meltdownTriggered)
+                return;
+
+            _meltdownTriggered = true;
+            _overheatTimer = 0f;
+            _debugGridUtilization = 0f;
+            _isProducing = false;
+            _currentFuelLevel = 0f;
+            _totalFuelCapacity = 0f;
+            _fuelItems.Clear();
+            OnReactorStopped?.Invoke();
+            UpdateFuelIndicator();
+            NotifyGridBalanceChanged();
+
+            Vector3 origin = _cachedTransform != null ? _cachedTransform.position : transform.position;
+            int hitCount = UnityEngine.Physics.OverlapSphereNonAlloc(
+                origin,
+                meltdownRadius,
+                MeltdownOverlapBuffer,
+                meltdownMask,
+                QueryTriggerInteraction.Ignore);
+
+            int damagedModuleCount = 0;
+            int damagedSurvivalCount = 0;
+            for (int i = 0; i < hitCount; i++)
+            {
+                Collider hit = MeltdownOverlapBuffer[i];
+                MeltdownOverlapBuffer[i] = null;
+                if (hit == null)
+                    continue;
+
+                Vector3 offset = hit.bounds.ClosestPoint(origin) - origin;
+                float distance = offset.magnitude;
+                float damage01 = 1f - Mathf.Clamp01(distance / Mathf.Max(0.1f, meltdownRadius));
+                if (damage01 <= 0f)
+                    continue;
+
+                BaseModule module = hit.GetComponentInParent<BaseModule>();
+                if (module != null)
+                {
+                    int moduleId = GetRuntimeId(module);
+                    if (TryRegisterUniqueId(_damagedModuleIds, ref damagedModuleCount, moduleId))
+                        module.ApplyDamage(meltdownModuleDamage * damage01);
+                }
+
+                HectonSurvivalSystem survival = hit.GetComponentInParent<HectonSurvivalSystem>();
+                if (survival != null)
+                {
+                    int survivalId = GetRuntimeId(survival);
+                    if (TryRegisterUniqueId(_damagedSurvivalIds, ref damagedSurvivalCount, survivalId))
+                        survival.TakeDamage(meltdownPlayerDamage * damage01);
+                }
+            }
+
+            if (_hostModule != null && !_hostModule.IsFlooded)
+                _hostModule.ForceFlood();
+        }
+
+        private static bool TryRegisterUniqueId(int[] ids, ref int count, int value)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                if (ids[i] == value)
+                    return false;
+            }
+
+            if (count < ids.Length)
+            {
+                ids[count] = value;
+                count++;
+            }
+
+            return true;
+        }
+
+        private static int GetRuntimeId(Component owner)
+        {
+            return owner == null
+                ? 0
+                : unchecked((int)EntityId.ToULong(owner.GetEntityId()));
+        }
+
+        private void NotifyGridBalanceChanged()
+        {
+            PowerGrid grid = _powerNode != null ? _powerNode.Grid : null;
+            if (grid != null)
+                grid.UpdateBalance();
+        }
+
         private void UpdateFuelIndicator()
         {
             if (fuelIndicator == null)

@@ -125,6 +125,15 @@ namespace Hecton8.Audio
 
         private void OnEnable()
         {
+            if (PlayerCriticalProceduralAudioRenderer.IsRuntimeInstalled)
+            {
+                if (_audioSource != null && _audioSource.isPlaying)
+                    _audioSource.Stop();
+
+                enabled = false;
+                return;
+            }
+
             TryRegister();
 
             if (thrusterLoopClip != null && _audioSource != null)

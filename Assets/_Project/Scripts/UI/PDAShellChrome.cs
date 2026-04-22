@@ -1,6 +1,6 @@
-using Hecton8.Gameplay;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton.Localization;
 using Hecton8.Input;
@@ -21,6 +21,7 @@ namespace Hecton8.UI
         private const string ActiveTabBarter = "ACTIVE TAB // BARTER";
         private const string ActiveTabDataLog = "ACTIVE TAB // DATA LOG";
         private const string ActiveTabSpectrum = "ACTIVE TAB // SPECTRUM";
+        private const string ActiveTabDiagnostics = "ACTIVE TAB // DIAGNOSTICS";
         private const string ActiveTabUnknown = "ACTIVE TAB // UNKNOWN";
         private const string LeftFooterFormat = "CARGO {0}/{1}  |  MASS {2:0.0} kg  |  READY TOOLS {3}/{4}";
         private const string RightFooterOnlineFormat = "O2 {0:0}%  |  PWR {1:0}%  |  PDA ONLINE";
@@ -28,6 +29,7 @@ namespace Hecton8.UI
         private const string IntrusionTabOverride = "SYSTEM STATE // HACKED";
         private const string IntrusionHintFormat = "REBOOT // HOLD {0} FOR 3.0S";
         private const string IntrusionFooterFormat = "O2 {0:0}%  |  PWR {1:0}%  |  REBOOT {2}%";
+        private const string MechModeTag = "[MECH-MODE ACTIVE]";
 
         private static readonly Color Primary = new Color(0.46f, 0.98f, 0.94f, 0.96f);
         private static readonly Color Dim = new Color(0.78f, 0.96f, 0.93f, 0.84f);
@@ -37,6 +39,10 @@ namespace Hecton8.UI
         private static readonly Color Critical = new Color(0.34f, 0.12f, 0.12f, 0.84f);
         private static readonly Color Rule = new Color(0.46f, 0.98f, 0.94f, 0.18f);
         private static readonly Color AlertText = new Color(1f, 0.88f, 0.72f, 0.96f);
+        private static readonly Color MechModeTint = new Color(0.62f, 0.76f, 0.34f, 0.9f);
+        private static readonly Color MechModeText = new Color(0.9f, 0.96f, 0.72f, 0.94f);
+        private static readonly int ShaderColorId = Shader.PropertyToID("_Color");
+        private static readonly int FaceColorId = Shader.PropertyToID("_FaceColor");
 
         [Header("References")]
         [SerializeField] private PlayerPDA playerPDA;
@@ -54,8 +60,17 @@ namespace Hecton8.UI
         private TextMeshProUGUI _titleText;
         private TextMeshProUGUI _tabText;
         private TextMeshProUGUI _intrusionText;
+        private TextMeshProUGUI _contextTagText;
         private TextMeshProUGUI _leftFooterText;
         private TextMeshProUGUI _rightFooterText;
+        private Material _headerMaterial;
+        private Material _footerMaterial;
+        private Material _titleMaterial;
+        private Material _tabMaterial;
+        private Material _intrusionMaterial;
+        private Material _contextTagMaterial;
+        private Material _leftFooterMaterial;
+        private Material _rightFooterMaterial;
         private int _lastActiveTab = int.MinValue;
         private int _lastCargoCells = -1;
         private int _lastCargoTotal = -1;
@@ -75,6 +90,7 @@ namespace Hecton8.UI
         private string _localizedTabBarter = ActiveTabBarter;
         private string _localizedTabDataLog = ActiveTabDataLog;
         private string _localizedTabSpectrum = ActiveTabSpectrum;
+        private string _localizedTabDiagnostics = ActiveTabDiagnostics;
         private string _localizedTabUnknown = ActiveTabUnknown;
         private string _localizedLeftFooterFormat = LeftFooterFormat;
         private string _localizedRightFooterOnlineFormat = RightFooterOnlineFormat;
@@ -82,9 +98,13 @@ namespace Hecton8.UI
         private bool _registeredToTickManager;
         private int _lastStressCorruptionBucket = int.MinValue;
         private PDAIntrusionManager _intrusionManager;
+        private HectonPlayerMovement _playerMovement;
         private bool _lastIntrusionActive;
+        private bool _lastMechModeActive;
         private int _lastRebootProgressPercent = -1;
         private string _cachedRebootBinding = string.Empty;
+        private InputDisplayStyle _cachedRebootBindingStyle = (InputDisplayStyle)(-1);
+        private string _localizedMechModeTag = MechModeTag;
 
         private void Awake()
         {
@@ -108,6 +128,18 @@ namespace Hecton8.UI
             UnregisterFromTickManager();
         }
 
+        private void OnDestroy()
+        {
+            DestroyMaterialInstance(ref _headerMaterial);
+            DestroyMaterialInstance(ref _footerMaterial);
+            DestroyMaterialInstance(ref _titleMaterial);
+            DestroyMaterialInstance(ref _tabMaterial);
+            DestroyMaterialInstance(ref _intrusionMaterial);
+            DestroyMaterialInstance(ref _contextTagMaterial);
+            DestroyMaterialInstance(ref _leftFooterMaterial);
+            DestroyMaterialInstance(ref _rightFooterMaterial);
+        }
+
         private void AutoResolve()
         {
             if ((!playerPDA || !playerInventory || !toolManager || !survivalSystem) &&
@@ -128,6 +160,9 @@ namespace Hecton8.UI
 
                 if (_intrusionManager == null)
                     _intrusionManager = playerTransform.GetComponent<PDAIntrusionManager>();
+
+                if (_playerMovement == null)
+                    _playerMovement = playerTransform.GetComponent<HectonPlayerMovement>();
             }
 
             if (playerPDA == null)
@@ -287,17 +322,20 @@ namespace Hecton8.UI
                 _intrusionManager = PDAIntrusionManager.ActiveRuntimeInstance;
             int stressBucket = manager != null ? manager.GetHullStressCorruptionBucket() : 0;
             bool intrusionActive = _intrusionManager != null && _intrusionManager.IsHacked;
+            bool mechModeActive = _playerMovement != null && _playerMovement.CurrentLocomotionMode == PlayerLocomotionMode.ExosuitLocomotion;
             int rebootProgressPercent = intrusionActive
                 ? Mathf.RoundToInt(_intrusionManager.RebootProgressNormalized * 100f)
                 : 0;
 
             if (stressBucket == _lastStressCorruptionBucket &&
                 intrusionActive == _lastIntrusionActive &&
+                mechModeActive == _lastMechModeActive &&
                 rebootProgressPercent == _lastRebootProgressPercent)
                 return;
 
             _lastStressCorruptionBucket = stressBucket;
             _lastIntrusionActive = intrusionActive;
+            _lastMechModeActive = mechModeActive;
             _lastRebootProgressPercent = rebootProgressPercent;
             _lastActiveTab = int.MinValue;
             _lastCargoCells = -1;
@@ -358,13 +396,13 @@ namespace Hecton8.UI
             RectTransform header = CreateRect(_chromeRoot, "Header");
             Anchor(header, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(12f, -8f), new Vector2(-12f, 42f));
             _headerBg = EnsureImage(header.gameObject);
-            _headerBg.color = Stable;
+            _headerBg.color = Color.white;
             _headerBg.raycastTarget = false;
 
             RectTransform footer = CreateRect(_chromeRoot, "Footer");
             Anchor(footer, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(12f, 8f), new Vector2(-12f, 38f));
             _footerBg = EnsureImage(footer.gameObject);
-            _footerBg.color = Stable;
+            _footerBg.color = Color.white;
             _footerBg.raycastTarget = false;
 
             CreateRule(_chromeRoot, new Vector2(0.04f, 1f), new Vector2(0.96f, 1f), -54f);
@@ -376,26 +414,35 @@ namespace Hecton8.UI
 
             _titleText = CreateText(header, "Title", labelFont, 12f, FontStyles.Bold, TextAlignmentOptions.Left);
             Anchor(_titleText.rectTransform, new Vector2(0f, 0f), new Vector2(0.6f, 1f), new Vector2(14f, 0f), new Vector2(-8f, 0f));
-            _titleText.color = Primary;
+            _titleText.color = Color.white;
             _titleText.text = ResolveStressReactiveText(_localizedTitle);
 
             _tabText = CreateText(header, "Tab", numericFont, 11f, FontStyles.Bold, TextAlignmentOptions.Right);
             Anchor(_tabText.rectTransform, new Vector2(0.42f, 0f), new Vector2(1f, 1f), new Vector2(8f, 0f), new Vector2(-14f, 0f));
-            _tabText.color = Dim;
+            _tabText.color = Color.white;
 
             _intrusionText = CreateText(_chromeRoot, "Intrusion", numericFont, 10.5f, FontStyles.Bold, TextAlignmentOptions.Center);
             Anchor(_intrusionText.rectTransform, new Vector2(0.2f, 1f), new Vector2(0.8f, 1f), new Vector2(0f, -66f), new Vector2(0f, -38f));
-            _intrusionText.color = AlertText;
+            _intrusionText.color = Color.white;
             _intrusionText.alpha = 0f;
             _intrusionText.text = string.Empty;
 
+            _contextTagText = CreateText(_chromeRoot, "ContextTag", numericFont, 10f, FontStyles.Bold, TextAlignmentOptions.Right);
+            Anchor(_contextTagText.rectTransform, new Vector2(0.56f, 1f), new Vector2(0.96f, 1f), new Vector2(0f, -66f), new Vector2(0f, -40f));
+            _contextTagText.color = Color.white;
+            _contextTagText.alpha = 0f;
+            _contextTagText.text = string.Empty;
+
             _leftFooterText = CreateText(footer, "FooterLeft", numericFont, 10.5f, FontStyles.Normal, TextAlignmentOptions.Left);
             Anchor(_leftFooterText.rectTransform, new Vector2(0f, 0f), new Vector2(0.58f, 1f), new Vector2(14f, 0f), new Vector2(-8f, 0f));
-            _leftFooterText.color = Dim;
+            _leftFooterText.color = Color.white;
 
             _rightFooterText = CreateText(footer, "FooterRight", numericFont, 10.5f, FontStyles.Normal, TextAlignmentOptions.Right);
             Anchor(_rightFooterText.rectTransform, new Vector2(0.42f, 0f), new Vector2(1f, 1f), new Vector2(8f, 0f), new Vector2(-14f, 0f));
-            _rightFooterText.color = DimLow;
+            _rightFooterText.color = Color.white;
+
+            EnsureMaterialInstances();
+            ApplyChromeMaterialPalette(Stable, Primary, Dim, AlertText, Dim, DimLow, MechModeText);
 
             _built = true;
         }
@@ -418,8 +465,10 @@ namespace Hecton8.UI
             _lastOxygenPercent = int.MinValue;
             _lastEnergyPercent = int.MinValue;
             _lastIntrusionActive = false;
+            _lastMechModeActive = false;
             _lastRebootProgressPercent = -1;
             _cachedRebootBinding = string.Empty;
+            _cachedRebootBindingStyle = (InputDisplayStyle)(-1);
             if (_titleText != null)
                 _titleText.text = ResolveStressReactiveText(_localizedTitle);
             RefreshChrome();
@@ -459,6 +508,7 @@ namespace Hecton8.UI
             int energyPercent = Mathf.RoundToInt(energy * 100f);
             bool pdaOpen = PlayerPDA.IsOpen;
             bool intrusionActive = _intrusionManager != null && _intrusionManager.IsHacked;
+            bool mechModeActive = _playerMovement != null && _playerMovement.CurrentLocomotionMode == PlayerLocomotionMode.ExosuitLocomotion;
             int rebootProgressPercent = intrusionActive
                 ? Mathf.RoundToInt(_intrusionManager.RebootProgressNormalized * 100f)
                 : 0;
@@ -518,11 +568,31 @@ namespace Hecton8.UI
                 }
             }
 
+            if (_contextTagText != null)
+            {
+                if (mechModeActive)
+                {
+                    string contextTag = ResolveStressReactiveText(_localizedMechModeTag);
+                    if (!string.Equals(_contextTagText.text, contextTag, System.StringComparison.Ordinal))
+                        _contextTagText.text = contextTag;
+                    _contextTagText.alpha = 1f;
+                }
+                else
+                {
+                    if (!string.IsNullOrEmpty(_contextTagText.text))
+                        _contextTagText.text = string.Empty;
+                    _contextTagText.alpha = 0f;
+                }
+            }
+
             Color severity = GetShellSeverityColor(energy, oxygen, weight, readyTools, assignedTools);
-            if (_headerBg != null) _headerBg.color = severity;
-            if (_footerBg != null) _footerBg.color = severity;
-            if (_tabText != null) _tabText.color = intrusionActive || energy < 0.25f || oxygen < 0.3f ? AlertText : Dim;
-            if (_rightFooterText != null) _rightFooterText.color = intrusionActive || energy < 0.25f || oxygen < 0.3f ? AlertText : DimLow;
+            if (mechModeActive)
+                severity = Color.Lerp(severity, MechModeTint, 0.42f);
+            Color titleColor = mechModeActive ? MechModeText : Primary;
+            Color tabColor = intrusionActive || energy < 0.25f || oxygen < 0.3f ? AlertText : (mechModeActive ? MechModeText : Dim);
+            Color leftFooterColor = mechModeActive ? MechModeText : Dim;
+            Color rightFooterColor = intrusionActive || energy < 0.25f || oxygen < 0.3f ? AlertText : (mechModeActive ? MechModeText : DimLow);
+            ApplyChromeMaterialPalette(severity, titleColor, tabColor, AlertText, leftFooterColor, rightFooterColor, MechModeText);
             if (_chromeCanvasGroup != null)
                 _chromeCanvasGroup.alpha = pdaOpen ? 1f : 0f;
         }
@@ -540,6 +610,7 @@ namespace Hecton8.UI
                 case 3: return _localizedTabBarter;
                 case 4: return _localizedTabDataLog;
                 case 5: return _localizedTabSpectrum;
+                case 7: return _localizedTabDiagnostics;
                 default: return _localizedTabUnknown;
             }
         }
@@ -553,10 +624,12 @@ namespace Hecton8.UI
             _localizedTabBarter = ResolveLocalized(LocalizationKeys.PDA_TAB_BARTER, ActiveTabBarter);
             _localizedTabDataLog = ResolveLocalized(LocalizationKeys.PDA_TAB_DATA_LOG, ActiveTabDataLog);
             _localizedTabSpectrum = ResolveLocalized(LocalizationKeys.PDA_TAB_SPECTRUM, ActiveTabSpectrum);
+            _localizedTabDiagnostics = ResolveLocalized(LocalizationKeys.PDA_TAB_DIAGNOSTICS, ActiveTabDiagnostics);
             _localizedTabUnknown = ResolveLocalized(LocalizationKeys.PDA_TAB_UNKNOWN, ActiveTabUnknown);
             _localizedLeftFooterFormat = ResolveLocalized(LocalizationKeys.PDA_FOOTER_LEFT, LeftFooterFormat);
             _localizedRightFooterOnlineFormat = ResolveLocalized(LocalizationKeys.PDA_FOOTER_RIGHT_ONLINE, RightFooterOnlineFormat);
             _localizedRightFooterStandbyFormat = ResolveLocalized(LocalizationKeys.PDA_FOOTER_RIGHT_STANDBY, RightFooterStandbyFormat);
+            _localizedMechModeTag = ResolveLocalized(LocalizationKeys.PDA_MECH_MODE_ACTIVE, MechModeTag);
         }
 
         private static string ResolveLocalized(string key, string fallback)
@@ -581,18 +654,26 @@ namespace Hecton8.UI
 
         private string ResolveRebootBinding()
         {
-            if (!string.IsNullOrEmpty(_cachedRebootBinding))
+            InputManager inputManager = InputManager.Instance;
+            InputDisplayStyle displayStyle = inputManager != null
+                ? inputManager.CurrentDisplayStyle
+                : InputDisplayStyle.KeyboardMouse;
+
+            if (!string.IsNullOrEmpty(_cachedRebootBinding) && _cachedRebootBindingStyle == displayStyle)
                 return _cachedRebootBinding;
 
-            InputManager inputManager = InputManager.Instance;
-            string binding = inputManager != null
-                ? inputManager.GetBindingDisplayString("Submit", "UI", -1)
-                : string.Empty;
+            string binding = string.Empty;
+            if (inputManager != null)
+            {
+                if (!inputManager.TryGetBindingMarkupForToken("submit", out binding) || string.IsNullOrWhiteSpace(binding))
+                    binding = inputManager.GetBindingDisplayString("Submit", "UI", -1);
+            }
 
             if (string.IsNullOrWhiteSpace(binding))
                 binding = "SUBMIT";
 
-            _cachedRebootBinding = binding.ToUpperInvariant();
+            _cachedRebootBinding = binding;
+            _cachedRebootBindingStyle = displayStyle;
             return _cachedRebootBinding;
         }
 
@@ -736,6 +817,106 @@ namespace Hecton8.UI
             text.textWrappingMode = TextWrappingModes.NoWrap;
             LocalizedTMPAutoSizer.Configure(text, size * 0.72f, size, TextOverflowModes.Truncate, TextWrappingModes.NoWrap);
             return text;
+        }
+
+        private void EnsureMaterialInstances()
+        {
+            EnsureGraphicMaterialInstance(_headerBg, ref _headerMaterial);
+            EnsureGraphicMaterialInstance(_footerBg, ref _footerMaterial);
+            EnsureTextMaterialInstance(_titleText, ref _titleMaterial);
+            EnsureTextMaterialInstance(_tabText, ref _tabMaterial);
+            EnsureTextMaterialInstance(_intrusionText, ref _intrusionMaterial);
+            EnsureTextMaterialInstance(_contextTagText, ref _contextTagMaterial);
+            EnsureTextMaterialInstance(_leftFooterText, ref _leftFooterMaterial);
+            EnsureTextMaterialInstance(_rightFooterText, ref _rightFooterMaterial);
+        }
+
+        private void ApplyChromeMaterialPalette(
+            Color shellColor,
+            Color titleColor,
+            Color tabColor,
+            Color intrusionColor,
+            Color leftFooterColor,
+            Color rightFooterColor,
+            Color contextTagColor)
+        {
+            ApplyGraphicMaterialColor(_headerBg, _headerMaterial, shellColor);
+            ApplyGraphicMaterialColor(_footerBg, _footerMaterial, shellColor);
+            ApplyTextMaterialColor(_titleText, _titleMaterial, titleColor);
+            ApplyTextMaterialColor(_tabText, _tabMaterial, tabColor);
+            ApplyTextMaterialColor(_intrusionText, _intrusionMaterial, intrusionColor);
+            ApplyTextMaterialColor(_contextTagText, _contextTagMaterial, contextTagColor);
+            ApplyTextMaterialColor(_leftFooterText, _leftFooterMaterial, leftFooterColor);
+            ApplyTextMaterialColor(_rightFooterText, _rightFooterMaterial, rightFooterColor);
+        }
+
+        private static void EnsureGraphicMaterialInstance(Graphic graphic, ref Material material)
+        {
+            if (graphic == null || material != null)
+                return;
+
+            Material source = graphic.materialForRendering;
+            if (source == null)
+                return;
+
+            material = new Material(source); // COLD ALLOC: Material[1] — UI chrome palette instance — owner: PDAShellChrome
+            material.name = source.name + "_PDAShellChrome";
+            graphic.material = material;
+        }
+
+        private static void EnsureTextMaterialInstance(TextMeshProUGUI text, ref Material material)
+        {
+            if (text == null || material != null)
+                return;
+
+            Material source = text.fontSharedMaterial;
+            if (source == null)
+                return;
+
+            material = new Material(source); // COLD ALLOC: Material[1] — TMP chrome palette instance — owner: PDAShellChrome
+            material.name = source.name + "_PDAShellChrome";
+            text.fontSharedMaterial = material;
+        }
+
+        private static void ApplyGraphicMaterialColor(Graphic graphic, Material material, Color color)
+        {
+            if (graphic == null)
+                return;
+
+            if (material != null && material.HasProperty(ShaderColorId))
+            {
+                material.SetColor(ShaderColorId, color);
+                return;
+            }
+
+            graphic.color = color;
+        }
+
+        private static void ApplyTextMaterialColor(TextMeshProUGUI text, Material material, Color color)
+        {
+            if (text == null)
+                return;
+
+            if (material != null && material.HasProperty(FaceColorId))
+            {
+                material.SetColor(FaceColorId, color);
+                return;
+            }
+
+            text.color = color;
+        }
+
+        private static void DestroyMaterialInstance(ref Material material)
+        {
+            if (material == null)
+                return;
+
+            if (Application.isPlaying)
+                Object.Destroy(material);
+            else
+                Object.DestroyImmediate(material);
+
+            material = null;
         }
 
         private static Image EnsureImage(GameObject target)

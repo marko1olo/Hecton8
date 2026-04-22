@@ -49,9 +49,13 @@ Shader "Hidden/Hecton8/VegetationIndirectShadowCaster"
             StructuredBuffer<float4x4> _HectonInstanceMatrices;
             StructuredBuffer<float4> _HectonVegetationInstanceData;
             StructuredBuffer<uint> _HectonVisibleInstanceIndices;
+            float4 _ChunkWorldOffset;
+            float4 _GlobalFloatingOffset;
+            float4 _HectonFloatingOriginOffset;
             StructuredBuffer<FloraInteractionPointGpuData> _HectonFloraInteractionPoints;
 
             float4 _HectonVegetationCurrentVector;
+            float4 _GlobalOceanFlow;
             float4 _SargassumGlobalDriftOffset;
             float4 _HectonVegetationWakeTrailWorldRect;
             float4 _SargassumCutMaskWorldRect;
@@ -75,6 +79,7 @@ Shader "Hidden/Hecton8/VegetationIndirectShadowCaster"
                 float4 positionOS : POSITION;
                 float3 normalOS : NORMAL;
                 float2 uv : TEXCOORD0;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct Varyings
@@ -86,7 +91,7 @@ Shader "Hidden/Hecton8/VegetationIndirectShadowCaster"
 
             float3 TransformPoint(float4x4 matrixValue, float3 localPosition)
             {
-                return mul(matrixValue, float4(localPosition, 1.0)).xyz;
+                return mul(matrixValue, float4(localPosition, 1.0)).xyz + _HectonFloatingOriginOffset.xyz;
             }
 
             float3 TransformDirection(float4x4 matrixValue, float3 direction)
@@ -104,6 +109,19 @@ Shader "Hidden/Hecton8/VegetationIndirectShadowCaster"
             {
                 float lenSq = dot(value, value);
                 return lenSq > 0.0001 ? value * rsqrt(lenSq) : float3(0.0, 1.0, 0.0);
+            }
+
+            float2 ResolvePlanarCurrentDirection()
+            {
+                float2 flow = dot(_GlobalOceanFlow.xz, _GlobalOceanFlow.xz) > 0.0001
+                    ? _GlobalOceanFlow.xz
+                    : _HectonVegetationCurrentVector.xz;
+                return SafeNormalize2(flow);
+            }
+
+            float ResolvePlanarCurrentStrength()
+            {
+                return max(length(_GlobalOceanFlow.xyz), _HectonVegetationCurrentStrength);
             }
 
             float Hash21(float2 value)
@@ -228,7 +246,7 @@ Shader "Hidden/Hecton8/VegetationIndirectShadowCaster"
 
             float3 AnimatePositionWS(float3 localPosition, float3 normalOS, float2 uv, float4x4 instanceMatrix, float4 instanceData)
             {
-                float3 originWS = TransformPoint(instanceMatrix, float3(0.0, 0.0, 0.0));
+                float3 originWS = TransformPoint(instanceMatrix, float3(0.0, 0.0, 0.0)) + _GlobalFloatingOffset.xyz;
                 float instanceType = clamp(round(instanceData.x), 0.0, 2.0);
                 float heightScale = saturate(instanceData.y);
                 float widthScale = max(0.2, instanceData.z);
@@ -260,9 +278,10 @@ Shader "Hidden/Hecton8/VegetationIndirectShadowCaster"
                 float3 driftOffsetWS = instanceType > 1.5 ? _SargassumGlobalDriftOffset.xyz : float3(0.0, 0.0, 0.0);
                 float3 animatedPositionWS = TransformPoint(instanceMatrix, localPosition) + driftOffsetWS;
                 float timeValue = _Time.y;
-                float2 currentVector = SafeNormalize2(_HectonVegetationCurrentVector.xz + float2(0.25, 0.11));
+                float2 currentVector = ResolvePlanarCurrentDirection();
+                float currentStrength = ResolvePlanarCurrentStrength();
                 float swayWave = sin(timeValue * (0.55 + _HectonVegetationCurrentTimeScale * 0.35) + instanceNoise * 6.28318 + originWS.x * 0.015 + originWS.z * 0.01);
-                animatedPositionWS.xz += currentVector * (_HectonVegetationCurrentStrength * 0.28 * bendMask * swayWave);
+                animatedPositionWS.xz += currentVector * (currentStrength * 0.28 * bendMask * swayWave);
                 animatedPositionWS.y += swayWave * (_HectonVegetationCurrentVerticalFactor * 0.12 * bendMask);
                 animatedPositionWS += ResolveWakeTrailOffset(animatedPositionWS, baseNormalWS, bendMask, instanceType);
                 animatedPositionWS += ResolveInteractionOffset(animatedPositionWS, baseNormalWS, bendMask);
@@ -272,6 +291,7 @@ Shader "Hidden/Hecton8/VegetationIndirectShadowCaster"
             Varyings ShadowVert(Attributes input, uint instanceID : SV_InstanceID)
             {
                 Varyings output;
+                UNITY_SETUP_INSTANCE_ID(input);
                 uint sourceInstanceIndex = _HectonVisibleInstanceIndices[instanceID];
                 float4x4 instanceMatrix = _HectonInstanceMatrices[sourceInstanceIndex];
                 float4 instanceData = _HectonVegetationInstanceData[sourceInstanceIndex];

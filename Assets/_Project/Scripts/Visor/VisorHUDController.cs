@@ -70,6 +70,7 @@ namespace NASAPunk.Visor
         [SerializeField, Range(0f, 1.5f)] private float _surfaceRunoffHoldDuration = 0.24f;
         [SerializeField, Range(0.25f, 10f)] private float _submergeRunoffRecoverySpeed = 1.4f;
         [SerializeField, Range(0.25f, 10f)] private float _surfaceRunoffRecoverySpeed = 1.8f;
+        [SerializeField, Range(0.5f, 5f)] private float _surfaceBreakRunoffMinimumLifetime = 3f;
 
         [Header("Condensation")]
         [SerializeField, Range(0f, 0.05f)] private float _condensationDistortion = 0.008f;
@@ -83,6 +84,13 @@ namespace NASAPunk.Visor
         [SerializeField, Range(0f, 1f)] private float _condensationShockHoldDuration = 0.22f;
         [SerializeField, Range(0.25f, 8f)] private float _condensationShockRecoverySpeed = 1.3f;
         [SerializeField, Range(0.25f, 8f)] private float _criticalPressureCondensationBlendSpeed = 2.2f;
+
+        [Header("Abyssal Frost")]
+        [SerializeField, Range(0f, 1f)] private float _screenFrostMaximum = 0.78f;
+        [SerializeField, Range(-40f, 10f)] private float _frostStartTemperature = -6f;
+        [SerializeField, Range(-60f, 0f)] private float _frostFullTemperature = -24f;
+        [SerializeField, Range(0f, 1f)] private float _abyssalColdFrostBoost = 0.35f;
+        [SerializeField, Range(0.25f, 8f)] private float _screenFrostBlendSpeed = 1.9f;
 
         [Header("Environmental Interference")]
         [SerializeField, Range(0f, 0.05f)] private float _interferenceDistortionMax = 0.016f;
@@ -133,6 +141,8 @@ namespace NASAPunk.Visor
         private float _condensationShockHoldTimer;
         private float _criticalPressureCondensationTarget;
         private float _criticalPressureCondensation;
+        private float _screenFrostTarget;
+        private float _screenFrostStrength;
         private float _interferenceDistortionIntensity;
         private float _interferenceDistortionHoldTimer;
         private float _interferenceDistortionRecoverySpeed;
@@ -161,6 +171,7 @@ namespace NASAPunk.Visor
         private static readonly int ID_CondensationDistortion = Shader.PropertyToID("_CondensationDistortion");
         private static readonly int ID_CondensationEdgeExponent = Shader.PropertyToID("_CondensationEdgeExponent");
         private static readonly int ID_CondensationDriftSpeed = Shader.PropertyToID("_CondensationDriftSpeed");
+        private static readonly int ID_ScreenFrostStrength = Shader.PropertyToID("_ScreenFrostStrength");
 
         public Camera HudCamera => _hudCamera;
         public RenderTexture SharedRenderTexture => _sharedRenderTexture;
@@ -233,6 +244,7 @@ namespace NASAPunk.Visor
             if (_condensationShockIntensity > 0f ||
                 _condensationShockHoldTimer > 0f ||
                 _criticalPressureCondensation > 0f ||
+                _screenFrostStrength > 0f ||
                 _interferenceDistortionIntensity > 0f ||
                 _interferenceDistortionHoldTimer > 0f)
             {
@@ -240,6 +252,8 @@ namespace NASAPunk.Visor
                 _condensationShockHoldTimer = 0f;
                 _criticalPressureCondensationTarget = 0f;
                 _criticalPressureCondensation = 0f;
+                _screenFrostTarget = 0f;
+                _screenFrostStrength = 0f;
                 _interferenceDistortionIntensity = 0f;
                 _interferenceDistortionHoldTimer = 0f;
                 _materialPropertiesDirty = true;
@@ -311,6 +325,7 @@ namespace NASAPunk.Visor
             UpdateGlitchState(deltaTime);
             UpdateWaterRunoffState(deltaTime);
             UpdateCondensationState(deltaTime);
+            UpdateFrostState(deltaTime);
             UpdateInterferenceState(deltaTime);
             if (_materialPropertiesDirty)
                 ApplyMaterialProperties();
@@ -484,6 +499,7 @@ namespace NASAPunk.Visor
             _mpb.SetFloat(ID_CondensationDistortion, _condensationDistortion);
             _mpb.SetFloat(ID_CondensationEdgeExponent, _condensationEdgeExponent);
             _mpb.SetFloat(ID_CondensationDriftSpeed, _condensationDriftSpeed);
+            _mpb.SetFloat(ID_ScreenFrostStrength, _screenFrostStrength);
             _visorRenderer.SetPropertyBlock(_mpb);
             _materialPropertiesDirty = false;
         }
@@ -576,6 +592,7 @@ namespace NASAPunk.Visor
 
             _subscribedSurvivalSystem.OnTemperatureChanged += HandleTemperatureChanged;
             _subscribedSurvivalSystem.OnPressureChanged += HandlePressureChanged;
+            HandleTemperatureChanged(_subscribedSurvivalSystem.EnvironmentTemperature);
             HandlePressureChanged(_subscribedSurvivalSystem.Pressure);
         }
 
@@ -675,6 +692,30 @@ namespace NASAPunk.Visor
             if (!Mathf.Approximately(nextIntensity, _condensationShockIntensity))
             {
                 _condensationShockIntensity = nextIntensity;
+                _materialPropertiesDirty = true;
+            }
+        }
+
+        private void UpdateFrostState(float deltaTime)
+        {
+            float target = 0f;
+            if (_subscribedSurvivalSystem != null)
+            {
+                float temperature = _subscribedSurvivalSystem.EnvironmentTemperature;
+                float temperatureT = Mathf.InverseLerp(_frostStartTemperature, _frostFullTemperature, temperature);
+                float coldSeverity = Mathf.Clamp01(_subscribedSurvivalSystem.ColdStressSeverity01);
+                target = Mathf.Max(temperatureT, coldSeverity * (0.62f + _abyssalColdFrostBoost));
+                target *= _screenFrostMaximum;
+            }
+
+            if (!Mathf.Approximately(target, _screenFrostTarget))
+                _screenFrostTarget = target;
+
+            float blendT = 1f - Mathf.Exp(-Mathf.Max(0.1f, _screenFrostBlendSpeed) * deltaTime);
+            float blendedFrost = Mathf.Lerp(_screenFrostStrength, _screenFrostTarget, blendT);
+            if (!Mathf.Approximately(blendedFrost, _screenFrostStrength))
+            {
+                _screenFrostStrength = blendedFrost;
                 _materialPropertiesDirty = true;
             }
         }
@@ -1318,10 +1359,21 @@ namespace NASAPunk.Visor
         /// </summary>
         public void TriggerSurfaceBreakRunoff()
         {
+            float holdDuration = _surfaceRunoffHoldDuration;
+            float recoverySpeed = _surfaceRunoffRecoverySpeed;
+            float desiredLifetime = Mathf.Max(0f, _surfaceBreakRunoffMinimumLifetime);
+            float remainingRecoveryWindow = desiredLifetime - holdDuration;
+            if (remainingRecoveryWindow > 0.05f)
+            {
+                // Exponential decay reaches ~1% after ~4.6 / speed seconds.
+                float maximumRecoverySpeed = 4.6f / remainingRecoveryWindow;
+                recoverySpeed = Mathf.Min(recoverySpeed, Mathf.Max(0.1f, maximumRecoverySpeed));
+            }
+
             TriggerWaterRunoff(
                 _surfaceRunoffIntensity,
-                _surfaceRunoffHoldDuration,
-                _surfaceRunoffRecoverySpeed);
+                holdDuration,
+                recoverySpeed);
         }
 
         internal void TriggerEnvironmentalDistortion(float normalizedIntensity, float holdDuration, float recoverySpeed)

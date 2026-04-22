@@ -62,7 +62,7 @@ namespace Hecton8.UI
 
         /// <summary>Кэшированный StringBuilder для сборки preset текста (избегает аллокаций в RefreshPresets)</summary>
         private readonly System.Text.StringBuilder _presetBuilder = new System.Text.StringBuilder(128);
-        private readonly System.Collections.Generic.Dictionary<int, PlayerTool> _prefabToolCache = new System.Collections.Generic.Dictionary<int, PlayerTool>(32); // COLD ALLOC: Dictionary<int, PlayerTool>(32) — caches prefab PlayerTool owners for repeated loadout refreshes — owner: PDALoadoutTab
+        private readonly System.Collections.Generic.Dictionary<ulong, PlayerTool> _prefabToolCache = new System.Collections.Generic.Dictionary<ulong, PlayerTool>(32); // COLD ALLOC: Dictionary<ulong, PlayerTool>(32) — caches prefab PlayerTool owners for repeated loadout refreshes — owner: PDALoadoutTab
 
         /// <summary>Кэшированные строки для ToUpperInvariant (избегает повторных аллокаций)</summary>
         private static readonly string[] _cachedUpperStrings = new string[16];
@@ -1240,7 +1240,7 @@ namespace Hecton8.UI
             if (prefab == null)
                 return null;
 
-            int prefabId = prefab.GetEntityId();
+            ulong prefabId = EntityId.ToULong(prefab.GetEntityId());
             if (_prefabToolCache.TryGetValue(prefabId, out PlayerTool cachedTool) &&
                 cachedTool != null)
             {

@@ -1,6 +1,7 @@
 using Hecton.Localization;
 using Hecton8.AI;
 using Hecton8.Core;
+using Hecton8.Gameplay;
 using Hecton8.Input;
 using Hecton8.Systems.AI;
 using Hecton8.World;
@@ -25,10 +26,11 @@ namespace Hecton8.UI
             Glyphs = 3
         }
 
+        private const float HullStressHackThreshold = 0.85f;
         private const float EquipmentGlitchHackThreshold = 0.75f;
         private const float LeviathanCheckInterval = 0.25f;
         private const float LeviathanHackRadius = 54f;
-        private const float VisualPhaseDuration = 0.55f;
+        private const float VisualPhaseDuration = 2f;
         private const float RebootHoldDuration = 3f;
         private const float TextDriftRescanInterval = 0.35f;
         private const float TextDriftAmplitudeMin = 1.5f;
@@ -78,8 +80,10 @@ namespace Hecton8.UI
         private readonly float[] _driftPhaseOffsets = new float[MaxDriftTargets];
 
         private PlayerPDA _playerPda;
+        private HectonPlayerMovement _playerMovement;
         private InputManager _inputManager;
         private InputAction _submitAction;
+        private HectonMapMagicVegetationBridge _vegetationBridge;
         private GameObject _driftPanelRoot;
         private bool _registeredToTick;
         private bool _isHacked;
@@ -163,7 +167,7 @@ namespace Hecton8.UI
             if (!_isHacked)
             {
                 RestoreTextDriftPositions();
-                TickLeviathanProximity(dt);
+                TickAmbientIntrusionThreat(dt);
                 return;
             }
 
@@ -180,13 +184,19 @@ namespace Hecton8.UI
             TriggerHack();
         }
 
-        private void TickLeviathanProximity(float dt)
+        private void TickAmbientIntrusionThreat(float dt)
         {
             _leviathanScanTimer -= dt;
             if (_leviathanScanTimer > 0f)
                 return;
 
             _leviathanScanTimer = Mathf.Max(0.05f, leviathanScanInterval);
+
+            if (ShouldTriggerAbyssalHack())
+            {
+                TriggerHack();
+                return;
+            }
 
             Vector3 origin = transform.position;
             int contactCount = WorldSpatialHashGrid.CollectContactsNonAlloc(
@@ -209,6 +219,24 @@ namespace Hecton8.UI
                 TriggerHack();
                 return;
             }
+        }
+
+        private bool ShouldTriggerAbyssalHack()
+        {
+            if (_playerMovement != null && _playerMovement.CurrentHullStress01 > HullStressHackThreshold)
+                return true;
+
+            return IsInsideDeadZone();
+        }
+
+        private bool IsInsideDeadZone()
+        {
+            HectonMapMagicVegetationBridge bridge = _vegetationBridge;
+            if (bridge == null)
+                return false;
+
+            HectonMapMagicVegetationBridge.VegetationDensitySample densitySample = bridge.GetVegetationDensity(transform.position);
+            return densitySample.BiomeLayer == HectonMapMagicVegetationBridge.VegetationBiomeLayer.DeadZone;
         }
 
         private void TickVisualCadence(float dt)
@@ -420,6 +448,12 @@ namespace Hecton8.UI
                 if (!TryGetComponent(out _playerPda))
                     _playerPda = GetComponentInChildren<PlayerPDA>(true);
             }
+
+            if (_playerMovement == null)
+                TryGetComponent(out _playerMovement);
+
+            if (_vegetationBridge == null)
+                _vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
 
             InputManager inputManager = InputManager.Instance;
             if (ReferenceEquals(_inputManager, inputManager))

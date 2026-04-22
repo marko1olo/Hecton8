@@ -12,6 +12,7 @@ namespace Hecton8.Physics
     public sealed class Crest4KinematicsAdapter : MonoBehaviour, IHectonOceanKinematics
     {
         private const int MaxBatchSampleCount = 5;
+        private const int ProviderPriority = 400;
 
         [Header("References")]
         [Tooltip("Optional explicit Crest ocean owner. Leave empty to resolve OceanRenderer.Instance or scan the scene.")]
@@ -30,6 +31,9 @@ namespace Hecton8.Physics
             new List<GameObject>(16); // COLD ALLOC: List<GameObject>(16) — reusable scene root scan buffer for delayed Crest owner recovery — owner: Crest4KinematicsAdapter
         private readonly float[] _heightScratch =
             new float[MaxBatchSampleCount]; // COLD ALLOC: float[5] — temporary Crest height scratch buffer for wave-only queries — owner: Crest4KinematicsAdapter
+
+        /// <inheritdoc />
+        public int Priority => ProviderPriority;
 
         /// <inheritdoc />
         public bool IsAvailable
@@ -51,6 +55,16 @@ namespace Hecton8.Physics
             _waveQueryOwnerHash = ownerHash ^ 0x2F31;
             _displacementQueryOwnerHash = ownerHash ^ 0x53C9;
             _flowQueryOwnerHash = ownerHash ^ 0x7A4D;
+        }
+
+        private void OnEnable()
+        {
+            HectonOceanRegistry.Register(this);
+        }
+
+        private void OnDisable()
+        {
+            HectonOceanRegistry.Unregister(this);
         }
 
         /// <inheritdoc />

@@ -58,6 +58,16 @@ namespace Hecton8.Gameplay
         [Tooltip("Cable extension treated as full tension for drag, COM shift, and camera response.")]
         [SerializeField, Range(0.1f, 10f)] private float fullTensionExtension = 3.8f;
 
+        [Header("Cable Bending")]
+        [Tooltip("Obstacle mask used when probing whether the tow cable should bend around geometry.")]
+        [SerializeField] private LayerMask cableBendObstructionMask = ~0;
+
+        [Tooltip("How far the stored bend point is pushed off the blocking surface normal to avoid self-intersection.")]
+        [SerializeField, Range(0.01f, 1f)] private float cableBendSurfaceOffset = 0.12f;
+
+        [Tooltip("Inset applied to both cable endpoints before the bend raycast starts so the tow line does not instantly hit the rider or payload colliders.")]
+        [SerializeField, Range(0.005f, 0.5f)] private float cableBendEndpointInset = 0.08f;
+
         [Header("Payload Current Drag")]
         [Tooltip("Baseline environmental flow coupling applied to the payload body.")]
         [SerializeField, Range(0f, 10f)] private float payloadCurrentStrength = 1.15f;
@@ -105,6 +115,12 @@ namespace Hecton8.Gameplay
 
         [Tooltip("How quickly accumulated stress bleeds off when the line relaxes.")]
         [SerializeField, Range(0f, 4f)] private float tetherStressRecoveryRate = 0.28f;
+
+        [Tooltip("Cable extension above rest length that must stay exceeded continuously before the tow line hard-snaps from over-tension.")]
+        [SerializeField, Range(0f, 20f)] private float tetherSnapExtensionThreshold = 4.25f;
+
+        [Tooltip("Continuous time the cable may remain above the critical extension threshold before snapping.")]
+        [SerializeField, Range(0.1f, 5f)] private float tetherSnapHoldDuration = 1.5f;
 
         [Tooltip("Minimum forward velocity change applied to the player when the cable snaps.")]
         [SerializeField, Range(0f, 20f)] private float snapReleaseVelocityChangeMin = 5.4f;
@@ -166,6 +182,10 @@ namespace Hecton8.Gameplay
         private float _signedLateralPull01;
         private float _backwardPull01;
         private float _payloadDrift01;
+        private float _criticalSnapHoldTimer;
+        private bool _hasCableBendPoint;
+        private Vector3 _cableBendPointWS;
+        private Vector3 _cableBendNormalWS = Vector3.up;
         private Vector3 _bioCableRequestedAnchorWS;
         private Vector3 _bioCableCurrentAnchorWS;
         private float _bioCableRequestedTension01;
@@ -174,6 +194,7 @@ namespace Hecton8.Gameplay
         private float _bioCableCurrentCutProgress01 = 1f;
         private float _bioCableHoldTimer;
         private bool _bioCableRequestedThisStep;
+        private readonly RaycastHit[] _cableBendHitBuffer = new RaycastHit[8]; // COLD ALLOC: RaycastHit[8] — tow cable bend probe results — owner: HeavyTowWinch
 
         /// <summary>
         /// True while a valid heavy tow target is currently attached.
@@ -399,7 +420,7 @@ namespace Hecton8.Gameplay
 
             float currentScale = math.lerp(0.55f, 1f, _payloadMass01);
             currentScale *= math.lerp(1f, payloadSideCurrentBoost, sideExposure);
-            Vector3 currentForce = currentDelta * (_payloadMass * payloadCurrentDamping * currentScale);
+            Vector3 currentForce = currentDelta * (payloadCurrentDamping * currentScale);
             float currentForceMagnitude = currentForce.magnitude;
             if (currentForceMagnitude > maxPayloadCurrentForce)
                 currentForce *= maxPayloadCurrentForce / math.max(currentForceMagnitude, 0.0001f);
@@ -412,7 +433,7 @@ namespace Hecton8.Gameplay
         private void ApplyPayloadCurrentForce(Vector3 payloadCurrentForce, float fixedDeltaTime)
         {
             if (payloadCurrentForce.sqrMagnitude > 0.0001f)
-                _payloadBody.AddForce(payloadCurrentForce, ForceMode.Force);
+                ApplyClampedAcceleration(_payloadBody, payloadCurrentForce, maxPayloadCurrentForce);
 
             ApplyExternalCableSnareForce(fixedDeltaTime);
 
@@ -434,29 +455,33 @@ namespace Hecton8.Gameplay
 
         private void SolveCable(Vector3 anchorPosition, Vector3 payloadPosition, float fixedDeltaTime)
         {
-            Vector3 line = payloadPosition - anchorPosition;
-            float directDistance = line.magnitude;
-            if (directDistance > maxTowBreakDistance)
-            {
-                ReleaseTow(false);
-                return;
-            }
-
-            Vector3 shapedLine = line;
-            shapedLine.y *= cableVerticalInfluence;
-            float shapedDistance = shapedLine.magnitude;
-            if (shapedDistance <= 0.0001f)
+            if (!ResolveCablePath(
+                    anchorPosition,
+                    payloadPosition,
+                    out Vector3 playerSegmentDirection,
+                    out Vector3 payloadSegmentDirection,
+                    out float pathLength))
             {
                 ResetRuntimeLoads();
                 return;
             }
 
-            Vector3 lineDirection = shapedLine / shapedDistance;
+            if (pathLength > maxTowBreakDistance)
+            {
+                ReleaseTow(false);
+                return;
+            }
             Vector3 payloadVelocity = _payloadBody.linearVelocity;
             Vector3 playerVelocity = _playerRigidbody.linearVelocity;
-            float extension = math.max(0f, shapedDistance - _cableRestLength);
-            float relativeSpeedAlongCable = Vector3.Dot(payloadVelocity - playerVelocity, lineDirection);
-            float cableForceMagnitude = extension * cableSpring + relativeSpeedAlongCable * cableDamping;
+            float verticalContribution = math.abs(payloadPosition.y - anchorPosition.y);
+            float effectivePathLength = math.max(
+                0f,
+                pathLength - verticalContribution + (verticalContribution * math.clamp(cableVerticalInfluence, 0f, 1f)));
+            float extension = math.max(0f, effectivePathLength - _cableRestLength);
+            float cableLengthRate =
+                Vector3.Dot(playerVelocity, playerSegmentDirection) -
+                Vector3.Dot(payloadVelocity, payloadSegmentDirection);
+            float cableForceMagnitude = extension * cableSpring + cableLengthRate * cableDamping;
             if (cableForceMagnitude < 0f)
                 cableForceMagnitude = 0f;
             if (cableForceMagnitude > maxCableForce)
@@ -464,13 +489,12 @@ namespace Hecton8.Gameplay
 
             float fullExtension = math.max(fullTensionExtension, 0.01f);
             _tension01 = math.saturate(extension / fullExtension);
-            UpdateTowDirectionResponse(lineDirection);
+            UpdateTowDirectionResponse(playerSegmentDirection);
 
             if (cableForceMagnitude > 0f)
             {
-                Vector3 cableForce = lineDirection * cableForceMagnitude;
-                _playerRigidbody.AddForce(cableForce, ForceMode.Force);
-                _payloadBody.AddForce(-cableForce, ForceMode.Force);
+                ApplyClampedAcceleration(_playerRigidbody, playerSegmentDirection * cableForceMagnitude, maxCableForce);
+                ApplyClampedAcceleration(_payloadBody, payloadSegmentDirection * cableForceMagnitude, maxCableForce);
             }
 
             float load01 = math.saturate(math.max(_tension01, _payloadDrift01 * 0.72f) * math.lerp(0.45f, 1f, _payloadMass01));
@@ -478,7 +502,116 @@ namespace Hecton8.Gameplay
             if (playerMovement != null)
                 playerMovement.ApplyEnvironmentalDrag(_towDragMultiplier);
 
-            UpdateStress(relativeSpeedAlongCable, load01, fixedDeltaTime, lineDirection);
+            UpdateStress(cableLengthRate, extension, load01, fixedDeltaTime, playerSegmentDirection, payloadSegmentDirection);
+        }
+
+        private bool ResolveCablePath(
+            Vector3 anchorPosition,
+            Vector3 payloadPosition,
+            out Vector3 playerSegmentDirection,
+            out Vector3 payloadSegmentDirection,
+            out float pathLength)
+        {
+            playerSegmentDirection = Vector3.zero;
+            payloadSegmentDirection = Vector3.zero;
+            pathLength = 0f;
+
+            Vector3 directLine = payloadPosition - anchorPosition;
+            float directDistance = directLine.magnitude;
+            if (directDistance <= 0.0001f)
+            {
+                _hasCableBendPoint = false;
+                _cableBendPointWS = Vector3.zero;
+                _cableBendNormalWS = Vector3.up;
+                return false;
+            }
+
+            Vector3 directDirection = directLine / directDistance;
+            if (TryResolveCableBendPoint(payloadPosition, anchorPosition, directDirection, directDistance, out Vector3 bendPoint, out Vector3 bendNormal))
+            {
+                Vector3 payloadSegment = bendPoint - payloadPosition;
+                Vector3 playerSegment = bendPoint - anchorPosition;
+                float payloadSegmentLength = payloadSegment.magnitude;
+                float playerSegmentLength = playerSegment.magnitude;
+                if (payloadSegmentLength > 0.0001f && playerSegmentLength > 0.0001f)
+                {
+                    payloadSegmentDirection = payloadSegment / payloadSegmentLength;
+                    playerSegmentDirection = playerSegment / playerSegmentLength;
+                    pathLength = payloadSegmentLength + playerSegmentLength;
+                    _hasCableBendPoint = true;
+                    _cableBendPointWS = bendPoint;
+                    _cableBendNormalWS = bendNormal;
+                    return true;
+                }
+            }
+
+            playerSegmentDirection = directDirection;
+            payloadSegmentDirection = -directDirection;
+            pathLength = directDistance;
+            _hasCableBendPoint = false;
+            _cableBendPointWS = Vector3.zero;
+            _cableBendNormalWS = Vector3.up;
+            return true;
+        }
+
+        private bool TryResolveCableBendPoint(
+            Vector3 payloadPosition,
+            Vector3 anchorPosition,
+            Vector3 directDirection,
+            float directDistance,
+            out Vector3 bendPoint,
+            out Vector3 bendNormal)
+        {
+            bendPoint = Vector3.zero;
+            bendNormal = Vector3.up;
+
+            float endpointInset = math.clamp(cableBendEndpointInset, 0.005f, directDistance * 0.45f);
+            float castDistance = directDistance - endpointInset * 2f;
+            if (castDistance <= 0.0001f)
+                return false;
+
+            Vector3 rayOrigin = payloadPosition - directDirection * endpointInset;
+            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
+                rayOrigin,
+                -directDirection,
+                _cableBendHitBuffer,
+                castDistance,
+                cableBendObstructionMask,
+                QueryTriggerInteraction.Ignore);
+            if (hitCount <= 0)
+                return false;
+
+            float closestDistance = float.PositiveInfinity;
+            RaycastHit bestHit = default;
+            bool foundHit = false;
+            for (int i = 0; i < hitCount; i++)
+            {
+                RaycastHit candidate = _cableBendHitBuffer[i];
+                Collider collider = candidate.collider;
+                if (collider == null)
+                    continue;
+
+                if (ReferenceEquals(collider, _payloadCollider))
+                    continue;
+
+                Rigidbody attachedBody = collider.attachedRigidbody;
+                if (attachedBody == _payloadBody || attachedBody == _playerRigidbody)
+                    continue;
+
+                if (candidate.distance < closestDistance)
+                {
+                    closestDistance = candidate.distance;
+                    bestHit = candidate;
+                    foundHit = true;
+                }
+            }
+
+            if (!foundHit)
+                return false;
+
+            bendPoint = bestHit.point + bestHit.normal * math.max(0.01f, cableBendSurfaceOffset);
+            bendNormal = bestHit.normal.sqrMagnitude > 0.0001f ? bestHit.normal.normalized : Vector3.up;
+            return true;
         }
 
         private void AdvanceExternalCableSnare(float fixedDeltaTime)
@@ -525,7 +658,7 @@ namespace Hecton8.Gameplay
             if (toAnchor.sqrMagnitude > 0.0001f)
             {
                 Vector3 snareForce = toAnchor.normalized * (bioCablePayloadPullForce * effectiveTension);
-                _payloadBody.AddForce(snareForce, ForceMode.Force);
+                ApplyClampedAcceleration(_payloadBody, snareForce, bioCablePayloadPullForce);
             }
 
             _stress01 = math.saturate(_stress01 + effectiveTension * bioCableStressBuildMultiplier * fixedDeltaTime);
@@ -539,6 +672,28 @@ namespace Hecton8.Gameplay
             _backwardPull01 = math.saturate(-Vector3.Dot(lineDirection, playerForward));
         }
 
+        private static void ApplyClampedAcceleration(Rigidbody targetBody, Vector3 acceleration, float maxAcceleration)
+        {
+            if (targetBody == null || maxAcceleration <= 0f)
+                return;
+
+            float3 acceleration3 = new float3(acceleration.x, acceleration.y, acceleration.z);
+            if (!math.all(math.isfinite(acceleration3)))
+                return;
+
+            float sqrMagnitude = math.lengthsq(acceleration3);
+            if (sqrMagnitude <= 0.000001f)
+                return;
+
+            float maxAccelerationSq = maxAcceleration * maxAcceleration;
+            if (sqrMagnitude > maxAccelerationSq)
+            {
+                acceleration3 *= maxAcceleration / math.sqrt(sqrMagnitude);
+            }
+
+            targetBody.AddForce(new Vector3(acceleration3.x, acceleration3.y, acceleration3.z), ForceMode.Acceleration);
+        }
+
         private float ResolveTowDragMultiplier(float load01)
         {
             if (load01 <= 0.0001f || maxTowEnvironmentalDrag <= 0f)
@@ -549,9 +704,15 @@ namespace Hecton8.Gameplay
             return 1f + normalizedExp * maxTowEnvironmentalDrag;
         }
 
-        private void UpdateStress(float relativeSpeedAlongCable, float load01, float fixedDeltaTime, Vector3 lineDirection)
+        private void UpdateStress(
+            float cableLengthRate,
+            float extension,
+            float load01,
+            float fixedDeltaTime,
+            Vector3 playerSegmentDirection,
+            Vector3 payloadSegmentDirection)
         {
-            float speedDelta = math.abs(relativeSpeedAlongCable);
+            float speedDelta = math.abs(cableLengthRate);
             float speedT = 0f;
             if (speedDelta > stressVelocityDeltaStart)
             {
@@ -570,21 +731,34 @@ namespace Hecton8.Gameplay
             }
 
             _stress01 = math.saturate(_stress01);
-            if (_stress01 < 1f)
+            if (extension > tetherSnapExtensionThreshold && load01 > 0.0001f)
+            {
+                _criticalSnapHoldTimer += fixedDeltaTime;
+            }
+            else
+            {
+                _criticalSnapHoldTimer = 0f;
+            }
+
+            bool overextensionSnap = _criticalSnapHoldTimer >= tetherSnapHoldDuration;
+            if (_stress01 < 1f && !overextensionSnap)
                 return;
 
-            float snapSeverity = math.saturate(math.max(load01, speedT));
+            float holdSeverity = tetherSnapHoldDuration > 0.0001f
+                ? math.saturate(_criticalSnapHoldTimer / tetherSnapHoldDuration)
+                : 1f;
+            float snapSeverity = math.saturate(math.max(math.max(load01, speedT), holdSeverity));
             Vector3 forward = _cachedTransform != null ? _cachedTransform.forward : transform.forward;
             Vector3 releasedVelocityChange = forward * math.lerp(
                 snapReleaseVelocityChangeMin,
                 snapReleaseVelocityChangeMax,
                 snapSeverity);
-            Vector3 snapTraumaImpulse = -lineDirection * (
+            Vector3 snapTraumaImpulse = -playerSegmentDirection * (
                 snapRecoilImpulse *
                 math.lerp(0.65f, 1.2f, snapSeverity) *
                 _playerRigidbody.mass);
-            float signedRoll = math.clamp(Vector3.Dot(lineDirection, _cachedTransform.right), -1f, 1f);
-            ApplyPayloadSnapResponse(lineDirection, snapSeverity);
+            float signedRoll = math.clamp(Vector3.Dot(playerSegmentDirection, _cachedTransform.right), -1f, 1f);
+            ApplyPayloadSnapResponse(payloadSegmentDirection, snapSeverity);
             if (playerMovement != null)
             {
                 playerMovement.ApplyTowCableSnapFeedback(releasedVelocityChange, snapTraumaImpulse, snapSeverity, signedRoll);
@@ -597,19 +771,19 @@ namespace Hecton8.Gameplay
             ReleaseTow(true);
         }
 
-        private void ApplyPayloadSnapResponse(Vector3 lineDirection, float snapSeverity)
+        private void ApplyPayloadSnapResponse(Vector3 payloadSegmentDirection, float snapSeverity)
         {
             if (_payloadBody == null)
                 return;
 
-            Vector3 payloadVelocityChange = lineDirection * math.lerp(
+            Vector3 payloadVelocityChange = -payloadSegmentDirection * math.lerp(
                 snapPayloadVelocityChangeMin,
                 snapPayloadVelocityChangeMax,
                 snapSeverity);
             _payloadBody.AddForce(payloadVelocityChange, ForceMode.VelocityChange);
 
             Vector3 upAxis = _cachedTransform != null ? _cachedTransform.up : transform.up;
-            Vector3 torqueAxis = Vector3.Cross(lineDirection, upAxis);
+            Vector3 torqueAxis = Vector3.Cross(payloadSegmentDirection, upAxis);
             if (torqueAxis.sqrMagnitude <= 0.0001f)
                 torqueAxis = _cachedTransform != null ? _cachedTransform.right : transform.right;
             else
@@ -627,7 +801,7 @@ namespace Hecton8.Gameplay
                 snapReceiver.HandleTowCableSnap(
                     new TowSnapEventData(
                         _payloadBody,
-                        lineDirection,
+                        payloadSegmentDirection,
                         payloadVelocityChange,
                         payloadTorqueVelocityChange,
                         snapSeverity));
@@ -637,7 +811,7 @@ namespace Hecton8.Gameplay
                 snapReceiver.HandleTowCableSnap(
                     new TowSnapEventData(
                         _payloadBody,
-                        lineDirection,
+                        payloadSegmentDirection,
                         payloadVelocityChange,
                         payloadTorqueVelocityChange,
                         snapSeverity));
@@ -692,6 +866,7 @@ namespace Hecton8.Gameplay
             _bioCableRequestedCutProgress01 = 1f;
             _bioCableCurrentCutProgress01 = 1f;
             _bioCableHoldTimer = 0f;
+            _criticalSnapHoldTimer = 0f;
             _bioCableRequestedThisStep = false;
             UpdateDiagnostics();
         }
@@ -708,6 +883,21 @@ namespace Hecton8.Gameplay
         }
 
 #if UNITY_EDITOR
+        private void OnDrawGizmosSelected()
+        {
+            if (!_hasCableBendPoint || _payloadBody == null)
+                return;
+
+            Vector3 anchorPosition = ResolveTowAnchorPosition();
+            Vector3 payloadPosition = _payloadBody.worldCenterOfMass;
+            Gizmos.color = new Color(0.2f, 0.95f, 0.9f, 0.85f);
+            Gizmos.DrawLine(anchorPosition, _cableBendPointWS);
+            Gizmos.DrawLine(_cableBendPointWS, payloadPosition);
+            Gizmos.DrawWireSphere(_cableBendPointWS, 0.08f);
+            Gizmos.color = new Color(1f, 0.65f, 0.2f, 0.85f);
+            Gizmos.DrawLine(_cableBendPointWS, _cableBendPointWS + (_cableBendNormalWS * 0.35f));
+        }
+
         private void OnValidate()
         {
             if (maxTowMass < minTowMass)
@@ -726,6 +916,10 @@ namespace Hecton8.Gameplay
                 maxPayloadCurrentForce = 50f;
             if (maxPayloadAngularSpeed < 0.1f)
                 maxPayloadAngularSpeed = 0.1f;
+            if (tetherSnapHoldDuration < 0.1f)
+                tetherSnapHoldDuration = 0.1f;
+            if (tetherSnapExtensionThreshold < 0f)
+                tetherSnapExtensionThreshold = 0f;
             if (snapPayloadVelocityChangeMin < 0f)
                 snapPayloadVelocityChangeMin = 0f;
             if (snapPayloadVelocityChangeMax < snapPayloadVelocityChangeMin)

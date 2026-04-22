@@ -50,6 +50,7 @@ namespace Hecton8.UI
         private const string DefaultFailedStatus = "FAILED";
         private const string DefaultDegradedStatus = "DEGRADED";
         private const float IntegrityFailureThreshold01 = 0.94f;
+        private const float IntegrityDegradedThreshold01 = 0.82f;
 
         [Header("── Font ──────────────────")]
         [Tooltip("Optional TMP font override for the boot log. Leave empty to use the readable fallback resolver.")]
@@ -303,15 +304,12 @@ namespace Hecton8.UI
                 : slotName.ToUpperInvariant();
             bool hasStats = stats != null;
             bool hasZone = currentZone != null;
-            bool hullFailure = !_survivalSystem ||
-                               integrityNormalized < IntegrityFailureThreshold01 ||
-                               _survivalSystem.IsBeyondSafeDepth ||
-                               reason == BootReason.PressureRecovery;
-            bool pressureFailure = !_survivalSystem || _survivalSystem.IsBeyondSafeDepth;
             string memoryStatus = hasStats ? DefaultOkStatus : DefaultFailedStatus;
             string dataStatus = hasZone ? DefaultOkStatus : DefaultDegradedStatus;
-            string hullStatus = hullFailure ? DefaultFailedStatus : DefaultOkStatus;
-            string pressureStatus = pressureFailure ? DefaultFailedStatus : DefaultOkStatus;
+            string localizationStatus = manager != null ? DefaultOkStatus : DefaultDegradedStatus;
+            string hullStatus = ResolveHullIntegrityStatus(integrityNormalized, _survivalSystem, reason);
+            string pressureStatus = ResolvePressureBusStatus(_survivalSystem);
+            string languageTag = manager != null ? manager.CurrentLanguage.ToString().ToUpperInvariant() : "FALLBACK";
 
             System.Text.StringBuilder builder = StringBuilderPool.Get();
             builder.AppendLine(DefaultBootHeader);
@@ -331,6 +329,11 @@ namespace Hecton8.UI
                 .Append(depthLabel).Append(' ').Append(liveDepth.ToString("0")).Append(' ').Append(metersLabel)
                 .Append(" | ")
                 .Append(zoneName)
+                .Append(']')
+                .AppendLine();
+            builder.Append("LOADING LOCALIZATION MODULES ... ").Append(localizationStatus)
+                .Append(" [LANG ")
+                .Append(languageTag)
                 .Append(']')
                 .AppendLine();
             builder.Append("CALIBRATING HULL INTEGRITY ... ").Append(hullStatus)
@@ -365,6 +368,34 @@ namespace Hecton8.UI
                 default:
                     return DefaultLoadVector;
             }
+        }
+
+        private static string ResolveHullIntegrityStatus(float integrityNormalized, HectonSurvivalSystem survivalSystem, BootReason reason)
+        {
+            if (survivalSystem == null)
+                return DefaultFailedStatus;
+
+            if (integrityNormalized < IntegrityDegradedThreshold01)
+                return DefaultFailedStatus;
+
+            if (reason == BootReason.PressureRecovery ||
+                integrityNormalized < IntegrityFailureThreshold01 ||
+                survivalSystem.IsBeyondSafeDepth)
+            {
+                return DefaultDegradedStatus;
+            }
+
+            return DefaultOkStatus;
+        }
+
+        private static string ResolvePressureBusStatus(HectonSurvivalSystem survivalSystem)
+        {
+            if (survivalSystem == null)
+                return DefaultFailedStatus;
+
+            return survivalSystem.IsBeyondSafeDepth
+                ? DefaultDegradedStatus
+                : DefaultOkStatus;
         }
 
         private void RegisterToTickManager()
@@ -419,32 +450,49 @@ namespace Hecton8.UI
             if (targetCanvas == null)
                 return;
 
-            GameObject overlayObject = new GameObject(
-                OverlayName,
-                typeof(RectTransform),
-                typeof(CanvasGroup),
-                typeof(Image));
-            overlayObject.layer = targetCanvas.gameObject.layer;
+            RectTransform contentRoot = HectonUIScaler.ResolveContentRoot(targetCanvas);
+            if (contentRoot == null)
+                return;
 
-            _overlayRoot = overlayObject.GetComponent<RectTransform>();
-            _overlayRoot.SetParent(targetCanvas.transform, false);
+            _overlayRoot = FindExistingChild(contentRoot, OverlayName);
+            if (_overlayRoot == null)
+            {
+                GameObject overlayObject = new GameObject(
+                    OverlayName,
+                    typeof(RectTransform),
+                    typeof(CanvasGroup),
+                    typeof(Image));
+                overlayObject.layer = targetCanvas.gameObject.layer;
+
+                _overlayRoot = overlayObject.GetComponent<RectTransform>();
+                _overlayRoot.SetParent(contentRoot, false);
+            }
+
             _overlayRoot.anchorMin = new Vector2(0f, 1f);
             _overlayRoot.anchorMax = new Vector2(0f, 1f);
             _overlayRoot.pivot = new Vector2(0f, 1f);
             _overlayRoot.anchoredPosition = new Vector2(48f, -52f);
             _overlayRoot.sizeDelta = new Vector2(OverlayWidth, OverlayHeight);
+            _overlayRoot.localScale = Vector3.one;
+            _overlayRoot.SetAsLastSibling();
 
-            _overlayGroup = overlayObject.GetComponent<CanvasGroup>();
+            _overlayGroup = _overlayRoot.GetComponent<CanvasGroup>();
+            if (_overlayGroup == null)
+                _overlayGroup = _overlayRoot.gameObject.AddComponent<CanvasGroup>();
             _overlayGroup.alpha = 0f;
             _overlayGroup.blocksRaycasts = false;
             _overlayGroup.interactable = false;
 
-            Image background = overlayObject.GetComponent<Image>();
+            Image background = _overlayRoot.GetComponent<Image>();
+            if (background == null)
+                background = _overlayRoot.gameObject.AddComponent<Image>();
             background.color = new Color(0.02f, 0.06f, 0.08f, 0.82f);
             background.raycastTarget = false;
 
+            ClearChildren(_overlayRoot);
+
             GameObject textObject = new GameObject("ConsoleText", typeof(RectTransform), typeof(TextMeshProUGUI));
-            textObject.layer = overlayObject.layer;
+            textObject.layer = _overlayRoot.gameObject.layer;
             RectTransform textRoot = textObject.GetComponent<RectTransform>();
             textRoot.SetParent(_overlayRoot, false);
             textRoot.anchorMin = Vector2.zero;
@@ -462,6 +510,7 @@ namespace Hecton8.UI
             _consoleLabel.textWrappingMode = TextWrappingModes.NoWrap;
             _consoleLabel.overflowMode = TextOverflowModes.Overflow;
             _consoleLabel.maxVisibleCharacters = int.MaxValue;
+            TMP_TextRegistry.EnsureRegistered(_consoleLabel);
 
             _uiBuilt = true;
         }
@@ -480,6 +529,33 @@ namespace Hecton8.UI
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;
+        }
+
+        private static RectTransform FindExistingChild(Transform parent, string childName)
+        {
+            if (parent == null)
+                return null;
+
+            for (int i = 0; i < parent.childCount; i++)
+            {
+                Transform child = parent.GetChild(i);
+                if (child.name == childName)
+                    return child as RectTransform;
+            }
+
+            return null;
+        }
+
+        private static void ClearChildren(Transform parent)
+        {
+            for (int i = parent.childCount - 1; i >= 0; i--)
+            {
+                Transform child = parent.GetChild(i);
+                if (Application.isPlaying)
+                    Object.Destroy(child.gameObject);
+                else
+                    Object.DestroyImmediate(child.gameObject);
+            }
         }
     }
 }

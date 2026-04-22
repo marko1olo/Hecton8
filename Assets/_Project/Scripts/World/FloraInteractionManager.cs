@@ -45,6 +45,7 @@ namespace Hecton8.World
         private static readonly int _VegetationTurbidityId = Shader.PropertyToID("_HectonVegetationTurbidity");
         private static readonly int _VegetationWaterLevelId = Shader.PropertyToID("_HectonVegetationWaterLevel");
         private static readonly int _VegetationCurrentVectorId = Shader.PropertyToID("_HectonVegetationCurrentVector");
+        private static readonly int _GlobalOceanFlowId = Shader.PropertyToID("_GlobalOceanFlow");
         private static readonly int _VegetationCurrentStrengthId = Shader.PropertyToID("_HectonVegetationCurrentStrength");
         private static readonly int _VegetationCurrentNoiseScaleId = Shader.PropertyToID("_HectonVegetationCurrentNoiseScale");
         private static readonly int _VegetationCurrentTimeScaleId = Shader.PropertyToID("_HectonVegetationCurrentTimeScale");
@@ -63,6 +64,8 @@ namespace Hecton8.World
         private static readonly int _WakeTrailDiffusionId = Shader.PropertyToID("_HectonWakeTrailDiffusion");
         private static readonly int _WakeTrailWaveStrengthId = Shader.PropertyToID("_HectonWakeTrailWaveStrength");
         private static readonly int _WakeTrailDampingId = Shader.PropertyToID("_HectonWakeTrailDamping");
+        private static readonly int _WakeTrailCurlStrengthId = Shader.PropertyToID("_HectonWakeTrailCurlStrength");
+        private static readonly int _WakeTrailSimulationTimeId = Shader.PropertyToID("_HectonWakeTrailSimulationTime");
         private static readonly int _WakeTrailTexelSizeId = Shader.PropertyToID("_HectonWakeTrailTexelSize");
 
         [Header("Runtime Wiring")]
@@ -217,6 +220,10 @@ namespace Hecton8.World
         [Tooltip("Per-step damping used by the wake ripple simulation.")]
         private float _wakeTrailWaveDamping = 0.94f;
 
+        [SerializeField, Range(0f, 1f)]
+        [Tooltip("Curl-noise advection strength used to form micro-vortices inside the reactive wake field.")]
+        private float _wakeTrailCurlStrength = 0.42f;
+
         [Header("Sediment Interaction")]
         [SerializeField]
         [Tooltip("Optional scene particle system used for sediment bursts kicked out of dense grass. If null, a hidden local system is created once.")]
@@ -290,6 +297,9 @@ namespace Hecton8.World
         private int _wakeTrailQualityLevel = -1;
         private int _wakeTrailSimulationKernel = -1;
         private HectonMapMagicVegetationBridge _vegetationBridge;
+        private IHectonOceanKinematics _oceanKinematicsProvider;
+        private Vector3[] _oceanFlowSamplePositions;
+        private Vector3[] _oceanFlowSampleResults;
         private ParticleSystem.EmitParams _sedimentEmitParams;
 
         /// <summary>Last interaction point count pushed into the global flora buffer.</summary>
@@ -340,12 +350,16 @@ namespace Hecton8.World
             _interactionBodies = new Rigidbody[MaxQueryColliders];
             // COLD ALLOC: ComputeBuffer[_maxInteractionPoints] - global vegetation interaction StructuredBuffer - owner: FloraInteractionManager
             _interactionBuffer = new ComputeBuffer(_maxInteractionPoints, InteractionPointStride, ComputeBufferType.Structured);
+            // COLD ALLOC: Vector3[1] - caller-owned ocean provider sample positions for vegetation flow publishing - owner: FloraInteractionManager
+            _oceanFlowSamplePositions = new Vector3[1];
+            // COLD ALLOC: Vector3[1] - caller-owned ocean provider sample results for vegetation flow publishing - owner: FloraInteractionManager
+            _oceanFlowSampleResults = new Vector3[1];
 
             Shader.SetGlobalBuffer(_InteractionBufferId, _interactionBuffer);
             CreateWakeTrailResources();
             EnsureSedimentParticleSystem();
             ResetInteractionGlobals();
-            PublishEnvironmentGlobals();
+            PublishEnvironmentGlobals(Vector3.zero);
         }
 
         private void OnEnable()
@@ -355,6 +369,7 @@ namespace Hecton8.World
 
             PublishWakeTrailGlobals();
             TryRegister();
+            PublishEnvironmentGlobals(_playerTransform != null ? _playerTransform.position : Vector3.zero);
         }
 
         private void OnDisable()
@@ -384,10 +399,10 @@ namespace Hecton8.World
         public void Tick(float deltaTime)
         {
             RefreshQualityDependentResourcesIfNeeded();
-            PublishEnvironmentGlobals();
             UpdateSedimentCooldowns(deltaTime);
 
             Transform runtimePlayerTransform = ResolveRuntimePlayerTransform();
+            PublishEnvironmentGlobals(runtimePlayerTransform != null ? runtimePlayerTransform.position : Vector3.zero);
             if (runtimePlayerTransform == null)
             {
                 ResetInteractionGlobals();
@@ -850,7 +865,7 @@ namespace Hecton8.World
             return interactionCount + 1;
         }
 
-        private void PublishEnvironmentGlobals()
+        private void PublishEnvironmentGlobals(Vector3 samplePositionWS)
         {
             HectonUnderwaterVisuals underwaterVisuals = HectonUnderwaterVisuals.ActiveRuntimeInstance;
             float depth = underwaterVisuals != null ? underwaterVisuals.CurrentDepth : 0f;
@@ -859,8 +874,8 @@ namespace Hecton8.World
 
             HectonFluidEngine fluidEngine = HectonFluidEngine.Instance;
             float waterLevel = fluidEngine != null ? fluidEngine.WaterLevel : DefaultVegetationWaterLevel;
-            Vector3 currentVector = fluidEngine != null ? fluidEngine.CurrentVector : Vector3.zero;
-            float currentStrength = fluidEngine != null ? fluidEngine.CurrentStrength : 0f;
+            Vector3 currentVector = ResolveGlobalOceanFlow(samplePositionWS, fluidEngine);
+            float currentStrength = currentVector.magnitude;
             float currentNoiseScale = fluidEngine != null && fluidEngine.EnablePhantomCurrent ? fluidEngine.CurrentNoiseScale : 0f;
             float currentTimeScale = fluidEngine != null && fluidEngine.EnablePhantomCurrent ? fluidEngine.CurrentTimeScale : 0f;
             float currentVerticalFactor = fluidEngine != null && fluidEngine.EnablePhantomCurrent ? fluidEngine.CurrentVerticalFactor : 0f;
@@ -871,6 +886,7 @@ namespace Hecton8.World
             Shader.SetGlobalFloat(_VegetationLightFactorId, lightFactor);
             Shader.SetGlobalFloat(_VegetationTurbidityId, turbidity);
             Shader.SetGlobalFloat(_VegetationWaterLevelId, waterLevel);
+            Shader.SetGlobalVector(_GlobalOceanFlowId, new Vector4(currentVector.x, currentVector.y, currentVector.z, 0f));
             Shader.SetGlobalVector(
                 _VegetationCurrentVectorId,
                 new Vector4(currentVector.x, currentVector.y, currentVector.z, 0f));
@@ -878,6 +894,25 @@ namespace Hecton8.World
             Shader.SetGlobalFloat(_VegetationCurrentNoiseScaleId, currentNoiseScale);
             Shader.SetGlobalFloat(_VegetationCurrentTimeScaleId, currentTimeScale);
             Shader.SetGlobalFloat(_VegetationCurrentVerticalFactorId, currentVerticalFactor);
+        }
+
+        private Vector3 ResolveGlobalOceanFlow(Vector3 samplePositionWS, HectonFluidEngine fluidEngine)
+        {
+            IHectonOceanKinematics provider = HectonOceanRegistry.ActiveProvider;
+            _oceanKinematicsProvider = provider;
+            if (provider != null &&
+                provider.IsAvailable &&
+                _oceanFlowSamplePositions != null &&
+                _oceanFlowSampleResults != null &&
+                _oceanFlowSamplePositions.Length > 0 &&
+                _oceanFlowSampleResults.Length > 0)
+            {
+                _oceanFlowSamplePositions[0] = samplePositionWS;
+                if (provider.GetSurfaceFlow(_oceanFlowSamplePositions, 1, 1f, _oceanFlowSampleResults))
+                    return _oceanFlowSampleResults[0];
+            }
+
+            return fluidEngine != null ? fluidEngine.CurrentVector : Vector3.zero;
         }
 
         private void CreateWakeTrailResources()
@@ -1067,6 +1102,8 @@ namespace Hecton8.World
             _wakeTrailSimulationCompute.SetFloat(_WakeTrailDiffusionId, _wakeTrailDiffusion);
             _wakeTrailSimulationCompute.SetFloat(_WakeTrailWaveStrengthId, _wakeTrailWaveStrength);
             _wakeTrailSimulationCompute.SetFloat(_WakeTrailDampingId, _wakeTrailWaveDamping);
+            _wakeTrailSimulationCompute.SetFloat(_WakeTrailCurlStrengthId, _wakeTrailCurlStrength);
+            _wakeTrailSimulationCompute.SetFloat(_WakeTrailSimulationTimeId, Time.unscaledTime);
             _wakeTrailSimulationCompute.SetVector(
                 _WakeTrailTexelSizeId,
                 new Vector4(
@@ -1192,6 +1229,9 @@ namespace Hecton8.World
             Shader.SetGlobalVector(_PropWashPosId, Vector4.zero);
             Shader.SetGlobalFloat(_PropWashForceId, 0f);
             Shader.SetGlobalInt(_InteractionCountId, 0);
+            Shader.SetGlobalVector(_GlobalOceanFlowId, Vector4.zero);
+            Shader.SetGlobalVector(_VegetationCurrentVectorId, Vector4.zero);
+            Shader.SetGlobalFloat(_VegetationCurrentStrengthId, 0f);
             _lastPublishedInteractionCount = 0;
             _lastPublishedPlayerVelocity = Vector3.zero;
             _lastPublishedScooterWakePosition = Vector3.zero;

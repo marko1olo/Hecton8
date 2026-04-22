@@ -1226,5 +1226,11 @@
   "MADNESS_WHISPERS_12": "ГЛУБИНА НОСИТ ТВОЁ ЛИЦО.",
   "MADNESS_WHISPERS_13": "ОНО УСЛЫШАЛО ТЕБЯ РАНЬШЕ, ЧЕМ ТЫ ЗАГОВОРИЛ.",
   "MADNESS_WHISPERS_14": "ОБШИВКА ИЗУЧАЕТ ТВОИ КОСТИ.",
-  "MADNESS_WHISPERS_15": "КОГДА СВЕТ ПОГАСНЕТ, НЕ ДВИГАЙСЯ."
+  "MADNESS_WHISPERS_15": "КОГДА СВЕТ ПОГАСНЕТ, НЕ ДВИГАЙСЯ.",
+  "PDA_MECH_MODE_ACTIVE": "[РЕЖИМ ЭКЗОКОСТЮМА АКТИВЕН]",
+  "SONAR_CONTACT_HEADER": "[СОНАРНЫЙ КОНТАКТ]",
+  "SONAR_CLASSIFICATION_PREFIX": "КЛАССИФИКАЦИЯ",
+  "SONAR_CLASS_LEVIATHAN": "НЕИЗВЕСТНАЯ БИОМАССА // ЛЕВИАФАН",
+  "SONAR_CLASS_WRECKAGE": "ОБЛОМОК // ОТКЛИК ЯКОРЯ",
+  "PDA_DEATH_DUMP_FINAL": "МОДУЛЬ ЛОКАЛИЗАЦИИ... УНИЧТОЖЕН."
 }

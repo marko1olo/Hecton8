@@ -1,45 +1,45 @@
-// ╔══════════════════════════════════════════════════════════════════════════════╗
-// ║  HectonVoxelEngine.cs — Project HECTON-8 Localized Voxel Volumes           ║
-// ║  Unity 6 (URP) | Burst + Jobs | Marching Cubes | Multi-Primitive SDF      ║
-// ║  v4.0 — Complete cave SDF rewrite                                          ║
-// ║                                                                             ║
-// ║  CHANGES v4.0:                                                              ║
-// ║  ─────────────                                                              ║
-// ║  1. VoxelDensityJob completely rewritten:                                  ║
-// ║     — Multi-primitive SDF: rooms (sphere/ellipsoid/shaft/hall/crevice)     ║
-// ║     — Tunnel capsules with conic taper and elliptic cross-section          ║
-// ║     — Entrance funnels connecting to terrain surface                       ║
-// ║     — CaveStructure support (columns/bridges/boulders — future use)       ║
-// ║     — Polynomial smooth-min blending for organic shapes                   ║
-// ║     — Domain warping via fractal noise for curved tunnels                 ║
-// ║     — Wall noise (FBM) for rocky surface detail                           ║
-// ║     — Horizontal terracing for rock strata layers                         ║
-// ║     — Floor flattening per-room                                            ║
-// ║     — Near-surface-only noise evaluation (performance optimization)        ║
-// ║                                                                             ║
-// ║  2. GenerateVolumeAsync new signature:                                     ║
-// ║     — Accepts seed + CavePreset (or raw NativeArrays)                     ║
-// ║     — Calls CaveGraphGenerator internally                                 ║
-// ║     — gridDimension and voxelSize per-call (not global)                   ║
-// ║     — Raw MC buffer sized at totalCells*2 (not *15) — safe truncation     ║
-// ║                                                                             ║
-// ║  3. VoxelPOIType, VoxelPOIData, VoxelPOIDefinition — REMOVED              ║
-// ║     Replaced by CavePreset / CaveGenerationParams from CaveTypes.cs       ║
-// ║                                                                             ║
-// ║  4. maxGridDimension raised to 128                                         ║
-// ║                                                                             ║
-// ║  PRESERVED from v3.2:                                                       ║
-// ║  ─────────────────────                                                      ║
-// ║  • Awaitable API (Unity 6 native async, zero GC)                           ║
-// ║  • MCTables (edge/tri lookup, thread-safe init/shutdown)                   ║
-// ║  • VoxelMCExtractJob (marching cubes extraction, unchanged)                ║
-// ║  • VoxelWeldJob (edge-based vertex welding, unchanged)                     ║
-// ║  • VoxelNormalJob (density gradient normals, unchanged)                    ║
-// ║  • VoxelBiomeSampleJob (biome grid sampling, unchanged)                    ║
-// ║  • BuildWeldedMeshNative (mesh assembly, unchanged)                        ║
-// ║  • Pool integration (ObjectPoolManager)                                    ║
-// ║  • MapMagicBridge height sampling on main thread                           ║
-// ╚══════════════════════════════════════════════════════════════════════════════╝
+﻿// â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+// â•‘  HectonVoxelEngine.cs â€” Project HECTON-8 Localized Voxel Volumes           â•‘
+// â•‘  Unity 6 (URP) | Burst + Jobs | Marching Cubes | Multi-Primitive SDF      â•‘
+// â•‘  v4.0 â€” Complete cave SDF rewrite                                          â•‘
+// â•‘                                                                             â•‘
+// â•‘  CHANGES v4.0:                                                              â•‘
+// â•‘  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€                                                              â•‘
+// â•‘  1. VoxelDensityJob completely rewritten:                                  â•‘
+// â•‘     â€” Multi-primitive SDF: rooms (sphere/ellipsoid/shaft/hall/crevice)     â•‘
+// â•‘     â€” Tunnel capsules with conic taper and elliptic cross-section          â•‘
+// â•‘     â€” Entrance funnels connecting to terrain surface                       â•‘
+// â•‘     â€” CaveStructure support (columns/bridges/boulders â€” future use)       â•‘
+// â•‘     â€” Polynomial smooth-min blending for organic shapes                   â•‘
+// â•‘     â€” Domain warping via fractal noise for curved tunnels                 â•‘
+// â•‘     â€” Wall noise (FBM) for rocky surface detail                           â•‘
+// â•‘     â€” Horizontal terracing for rock strata layers                         â•‘
+// â•‘     â€” Floor flattening per-room                                            â•‘
+// â•‘     â€” Near-surface-only noise evaluation (performance optimization)        â•‘
+// â•‘                                                                             â•‘
+// â•‘  2. GenerateVolumeAsync new signature:                                     â•‘
+// â•‘     â€” Accepts seed + CavePreset (or raw NativeArrays)                     â•‘
+// â•‘     â€” Calls CaveGraphGenerator internally                                 â•‘
+// â•‘     â€” gridDimension and voxelSize per-call (not global)                   â•‘
+// â•‘     â€” Raw MC buffer sized at totalCells*2 (not *15) â€” safe truncation     â•‘
+// â•‘                                                                             â•‘
+// â•‘  3. VoxelPOIType, VoxelPOIData, VoxelPOIDefinition â€” REMOVED              â•‘
+// â•‘     Replaced by CavePreset / CaveGenerationParams from CaveTypes.cs       â•‘
+// â•‘                                                                             â•‘
+// â•‘  4. maxGridDimension raised to 128                                         â•‘
+// â•‘                                                                             â•‘
+// â•‘  PRESERVED from v3.2:                                                       â•‘
+// â•‘  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€                                                      â•‘
+// â•‘  â€¢ Awaitable API (Unity 6 native async, zero GC)                           â•‘
+// â•‘  â€¢ MCTables (edge/tri lookup, thread-safe init/shutdown)                   â•‘
+// â•‘  â€¢ VoxelMCExtractJob (marching cubes extraction, unchanged)                â•‘
+// â•‘  â€¢ VoxelWeldJob (edge-based vertex welding, unchanged)                     â•‘
+// â•‘  â€¢ VoxelNormalJob (density gradient normals, unchanged)                    â•‘
+// â•‘  â€¢ VoxelBiomeSampleJob (biome grid sampling, unchanged)                    â•‘
+// â•‘  â€¢ BuildWeldedMeshNative (mesh assembly, unchanged)                        â•‘
+// â•‘  â€¢ Pool integration (ObjectPoolManager)                                    â•‘
+// â•‘  â€¢ MapMagicBridge height sampling on main thread                           â•‘
+// â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 using System;
 using UnityEngine;
@@ -54,14 +54,15 @@ using Hecton8.Caves;
 using Unity.Collections.LowLevel.Unsafe;
 using Hecton8.Core;
 using Hecton8.Dev;
+using Hecton8.World;
 using Stopwatch = System.Diagnostics.Stopwatch;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
-// ════════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  REGION: MARCHING CUBES LOOKUP TABLES (unchanged from v3.2)
-// ════════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 #region Marching Cubes Tables
 
 public static class MCTables
@@ -441,9 +442,9 @@ public static class MCTables
 
 #endregion
 
-// ════════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  REGION: MC RAW VERTEX (unchanged)
-// ════════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 #region MC Types
 
 public struct MCRawVertex
@@ -454,43 +455,46 @@ public struct MCRawVertex
 
 #endregion
 
-// ════════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  REGION: BURST JOBS
-// ════════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 #region Voxel Burst Jobs
 
-// ═══════════════════════════════════════════════════════════════════════════════
-//  JOB 1: DENSITY FIELD — Multi-primitive SDF cave system (v4.0 REWRITE)
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+//  JOB 1: DENSITY FIELD â€” Multi-primitive SDF cave system (v4.0 REWRITE)
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 [BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
 public struct VoxelDensityJob : IJobParallelFor
 {
-    // ── Grid dimensions ──
+    // â”€â”€ Grid dimensions â”€â”€
     public int ptsX, ptsY, ptsZ;
     public float3 volumeOrigin;
     public float voxelStep;
 
-    // ── Terrain ──
+    // â”€â”€ Terrain â”€â”€
     [ReadOnly] public NativeArray<float> terrainHeights;
 
-    // ── Cave SDF primitives ──
+    // â”€â”€ Cave SDF primitives â”€â”€
     [ReadOnly] public NativeArray<CaveNode> caveNodes;
     [ReadOnly] public NativeArray<CaveTunnel> caveTunnels;
     [ReadOnly] public NativeArray<CaveEntrance> caveEntrances;
     [ReadOnly] public NativeArray<CaveStructure> caveStructures;
+    [ReadOnly] public NativeArray<VoxelCraterStamp> craterStamps;
 
-    // ── Cave parameters ──
+    // â”€â”€ Cave parameters â”€â”€
     public CaveGenerationParams caveParams;
 
-    // ── Edge sealing ──
+    // â”€â”€ Edge sealing â”€â”€
     public float sealMargin;
+    public int lodLevel;
+    public float lodTransitionBand;
 
-    // ── Output ──
+    // â”€â”€ Output â”€â”€
     [WriteOnly] public NativeArray<float> density;
 
-    // ════════════════════════════════════════════════════════════════════════
-    //  EXECUTE — Per voxel point
-    // ════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  EXECUTE â€” Per voxel point
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     public void Execute(int idx)
     {
@@ -514,21 +518,24 @@ public struct VoxelDensityJob : IJobParallelFor
         float densityValue = terrainDensity;
 
         if (!structureOnlyMode && caveSDF < caveParams.shellThickness)
-            densityValue = SmoothSubtraction(-caveSDF, terrainDensity, caveParams.shellThickness);
+            densityValue = SmoothSubtractionExp(-caveSDF, terrainDensity, caveParams.shellThickness);
 
         if (!structureOnlyMode && caveEntrances.Length > 0)
         {
             float entranceSkirtSDF = EvaluateEntranceSkirtSDF(wp);
             if (entranceSkirtSDF < caveParams.entranceBlendK)
-                densityValue = SmoothMax(densityValue, -entranceSkirtSDF, caveParams.entranceBlendK * 0.45f);
+                densityValue = SmoothMaxExp(densityValue, -entranceSkirtSDF, caveParams.entranceBlendK * 0.45f);
         }
 
         if (caveStructures.Length > 0 && (structureOnlyMode || caveSDF < 0f))
         {
             float structureSDF = EvaluateStructuresSDF(wp);
             if (structureSDF < caveParams.structureBlendK)
-                densityValue = SmoothMax(densityValue, -structureSDF, caveParams.structureBlendK);
+                densityValue = SmoothMaxExp(densityValue, -structureSDF, caveParams.structureBlendK);
         }
+
+        if (craterStamps.IsCreated && craterStamps.Length > 0)
+            densityValue = EvaluateCraterModifiers(wp, densityValue);
 
         if (!structureOnlyMode)
             densityValue = ApplyEdgeSeal(wp, densityValue);
@@ -572,10 +579,13 @@ public struct VoxelDensityJob : IJobParallelFor
         {
             CaveEntrance entrance = caveEntrances[e];
             float influenceRadius = math.max(entrance.radius * 2.6f, entrance.innerRadius + entrance.funnelLength * 0.35f);
-            float horizontalDist = math.distance(wp.xz, entrance.surfacePosition.xz);
-            if (horizontalDist >= influenceRadius)
+            float2 horizontalDelta = wp.xz - entrance.surfacePosition.xz;
+            float horizontalDistSq = math.lengthsq(horizontalDelta);
+            float influenceRadiusSq = influenceRadius * influenceRadius;
+            if (horizontalDistSq >= influenceRadiusSq)
                 continue;
 
+            float horizontalDist = math.sqrt(horizontalDistSq);
             float exemption = 1f - math.smoothstep(entrance.radius * 0.4f, influenceRadius, horizontalDist);
             topSealStrength = math.min(topSealStrength, 1f - exemption);
             if (entrance.inwardDirection.y > 0.3f)
@@ -585,8 +595,12 @@ public struct VoxelDensityJob : IJobParallelFor
         float effectiveYTop = dMinYTop / math.max(topSealStrength, 0.01f);
         float effectiveYBottom = dMinYBottom / math.max(bottomSealStrength, 0.01f);
         float dMinY = math.min(effectiveYBottom, effectiveYTop);
-        float dEdge = math.min(dMinX, math.min(dMinY, dMinZ));
-        float sealFactor = math.saturate(dEdge / math.max(sealMargin, 0.01f));
+        float horizontalSealMargin = math.max(sealMargin + (lodLevel > 0 ? lodTransitionBand : 0f), 0.01f);
+        float verticalSealMargin = math.max(sealMargin, 0.01f);
+        float horizontalEdge = math.min(dMinX, dMinZ);
+        float horizontalSeal = math.saturate(horizontalEdge / horizontalSealMargin);
+        float verticalSeal = math.saturate(dMinY / verticalSealMargin);
+        float sealFactor = math.min(horizontalSeal, verticalSeal);
         return math.lerp(1f, densityValue, sealFactor);
     }
 
@@ -599,7 +613,8 @@ public struct VoxelDensityJob : IJobParallelFor
             CaveEntrance entrance = caveEntrances[i];
             float3 direction = math.normalizesafe(entrance.inwardDirection, new float3(0f, -1f, 0f));
             float3 innerPoint = entrance.surfacePosition + direction * entrance.funnelLength;
-            float embedDepth = math.max(voxelStep * 1.5f, entrance.radius * 0.35f);
+            float embedDepth = math.max(5f, math.max(voxelStep * 1.5f, entrance.radius * 0.35f));
+            float transitionZone = math.clamp(math.max(2.5f, entrance.radius * 0.18f), 2f, 3.5f);
             float3 skirtStart = entrance.surfacePosition + direction * math.min(entrance.funnelLength * 0.18f, entrance.radius);
             float3 skirtEnd = innerPoint + direction * (entrance.innerRadius + embedDepth * 0.6f);
 
@@ -619,21 +634,23 @@ public struct VoxelDensityJob : IJobParallelFor
 
             float shell = math.max(outer, -inner);
             float terrainClip = wp.y - (SampleTerrainHeight(wp.xz) - embedDepth);
+            float transitionClip = wp.y - (SampleTerrainHeight(wp.xz) - embedDepth - transitionZone);
+            shell = SmoothMaxExp(shell, transitionClip, transitionZone);
             shell = math.max(shell, terrainClip);
-            skirtDist = SmoothMin(skirtDist, shell, caveParams.entranceBlendK * 0.3f);
+            skirtDist = SmoothMinExp(skirtDist, shell, caveParams.entranceBlendK * 0.3f);
         }
 
         return skirtDist;
     }
 
 
-    // ════════════════════════════════════════════════════════════════════════
-    //  CAVE SDF EVALUATION — Core of the cave generation system
-    // ════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  CAVE SDF EVALUATION â€” Core of the cave generation system
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     float EvaluateCaveSDF(float3 wp)
     {
-        // ── Domain warping — distort coordinates for organic shapes ──
+        // â”€â”€ Domain warping â€” distort coordinates for organic shapes â”€â”€
         float3 warpedPos = wp;
         if (caveParams.warpAmplitude > 0.001f)
         {
@@ -647,39 +664,110 @@ public struct VoxelDensityJob : IJobParallelFor
         // Start with a very large distance (outside all caves)
         float caveDist = 99999f;
 
-        // ── Evaluate all rooms ──
+        // â”€â”€ Evaluate all rooms â”€â”€
         for (int i = 0; i < caveNodes.Length; i++)
         {
             float nodeDist = EvaluateRoom(warpedPos, wp, caveNodes[i]);
-            caveDist = SmoothMin(caveDist, nodeDist, caveNodes[i].blendRadius);
+            caveDist = SmoothMinExp(caveDist, nodeDist, caveNodes[i].blendRadius);
         }
 
-        // ── Evaluate all tunnels ──
+        // â”€â”€ Evaluate all tunnels â”€â”€
         for (int i = 0; i < caveTunnels.Length; i++)
         {
             float tunnelDist = EvaluateTunnel(warpedPos, wp, caveTunnels[i]);
-            caveDist = SmoothMin(caveDist, tunnelDist, caveTunnels[i].blendRadius);
+            caveDist = SmoothMinExp(caveDist, tunnelDist, caveTunnels[i].blendRadius);
         }
 
-        // ── Evaluate all entrances ──
+        // â”€â”€ Evaluate all entrances â”€â”€
         for (int i = 0; i < caveEntrances.Length; i++)
         {
             float entranceDist = EvaluateEntrance(warpedPos, caveEntrances[i]);
-            caveDist = SmoothMin(caveDist, entranceDist, caveParams.entranceBlendK);
+            caveDist = SmoothMinExp(caveDist, entranceDist, caveParams.entranceBlendK);
         }
 
-        // ── Wall detail (only near cave surface for performance) ──
+        // â”€â”€ Wall detail (only near cave surface for performance) â”€â”€
         if (math.abs(caveDist) < caveParams.noiseEvalDistance)
         {
             caveDist += EvaluateWallDetail(wp, caveDist);
+            caveDist -= EvaluateFractalNoiseCarve(warpedPos, wp, caveDist);
         }
 
         return caveDist;
     }
 
-    // ════════════════════════════════════════════════════════════════════════
-    //  ROOM SDF — Sphere, Ellipsoid, Shaft, Hall, Crevice
-    // ════════════════════════════════════════════════════════════════════════
+    float EvaluateFractalNoiseCarve(float3 warpedPos, float3 originalPos, float caveDist)
+    {
+        float amplitude = caveParams.wallNoiseAmplitude * 0.55f + caveParams.terraceAmplitude * 0.3f;
+        if (amplitude <= 0.001f)
+            return 0f;
+
+        float surfaceMask = 1f - math.saturate(math.abs(caveDist) / math.max(caveParams.noiseEvalDistance, 0.001f));
+        if (surfaceMask <= 0.001f)
+            return 0f;
+
+        float coarse = FractalNoise3D(
+            warpedPos + new float3(17.1f, 4.3f, 9.7f),
+            math.max(caveParams.wallNoiseFrequency * 0.65f, 0.025f),
+            math.max(2, caveParams.wallNoiseOctaves - 1),
+            caveParams.wallNoiseLacunarity,
+            caveParams.wallNoisePersistence,
+            caveParams.seed + 401u);
+
+        float medium = FractalNoise3D(
+            warpedPos + new float3(3.7f, 13.1f, 5.9f),
+            math.max(caveParams.wallNoiseFrequency * 1.25f, 0.05f),
+            math.max(2, caveParams.wallNoiseOctaves),
+            caveParams.wallNoiseLacunarity,
+            caveParams.wallNoisePersistence,
+            caveParams.seed + 607u);
+
+        float strata = FractalNoise3D(
+            originalPos + new float3(5.3f, 19.7f, 2.1f),
+            math.max(caveParams.terraceFrequency * 0.45f, 0.03f),
+            3,
+            2f,
+            0.5f,
+            caveParams.seed + 809u);
+
+        float layered = (coarse * 0.45f + medium * 0.4f + strata * 0.15f) * 0.5f + 0.5f;
+        float carveMask = math.saturate((layered - 0.22f) * 1.45f);
+        float derivativeBudget =
+            EstimateFractalDerivative(math.max(caveParams.wallNoiseFrequency * 0.65f, 0.025f), math.max(2, caveParams.wallNoiseOctaves - 1), caveParams.wallNoiseLacunarity, caveParams.wallNoisePersistence) * 0.45f +
+            EstimateFractalDerivative(math.max(caveParams.wallNoiseFrequency * 1.25f, 0.05f), math.max(2, caveParams.wallNoiseOctaves), caveParams.wallNoiseLacunarity, caveParams.wallNoisePersistence) * 0.4f +
+            EstimateFractalDerivative(math.max(caveParams.terraceFrequency * 0.45f, 0.03f), 3, 2f, 0.5f) * 0.15f;
+
+        float safeAmplitude = ApplyDerivativeSafeAmplitude(amplitude, derivativeBudget);
+        return carveMask * safeAmplitude * surfaceMask;
+    }
+
+    float EvaluateCraterModifiers(float3 wp, float densityValue)
+    {
+        for (int i = 0; i < craterStamps.Length; i++)
+        {
+            VoxelCraterStamp crater = craterStamps[i];
+            float outerRadius = crater.radius + math.max(crater.blendRadius, voxelStep);
+            float3 delta = wp - (float3)crater.position;
+            if (math.any(math.abs(delta) > outerRadius))
+                continue;
+
+            float distSq = math.lengthsq(delta);
+            float outerRadiusSq = outerRadius * outerRadius;
+            if (distSq >= outerRadiusSq)
+                continue;
+
+            float craterDist = math.sqrt(distSq) - crater.radius;
+            if (craterDist >= crater.blendRadius)
+                continue;
+
+            densityValue = SmoothSubtractionExp(-craterDist, densityValue, math.max(crater.blendRadius, voxelStep));
+        }
+
+        return densityValue;
+    }
+
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  ROOM SDF â€” Sphere, Ellipsoid, Shaft, Hall, Crevice
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     float EvaluateRoom(float3 warpedPos, float3 originalPos, CaveNode node)
     {
@@ -692,7 +780,7 @@ public struct VoxelDensityJob : IJobParallelFor
                 break;
 
             case CaveRoomType.Ellipsoid:
-                dist = SDEllipsoid(warpedPos, node.position, node.radii);
+                dist = SDEllipsoidAnalytic(warpedPos, node.position, node.radii);
                 break;
 
             case CaveRoomType.VerticalShaft:
@@ -706,7 +794,7 @@ public struct VoxelDensityJob : IJobParallelFor
                     node.radii.x * 1.5f,
                     node.radii.y * 0.35f,
                     node.radii.z * 1.5f);
-                dist = SDEllipsoid(warpedPos, node.position, hallRadii);
+                dist = SDEllipsoidAnalytic(warpedPos, node.position, hallRadii);
                 break;
 
             case CaveRoomType.Crevice:
@@ -715,7 +803,7 @@ public struct VoxelDensityJob : IJobParallelFor
                     node.radii.x * 0.25f,
                     node.radii.y * 1.3f,
                     node.radii.z);
-                dist = SDEllipsoid(warpedPos, node.position, creviceRadii);
+                dist = SDEllipsoidAnalytic(warpedPos, node.position, creviceRadii);
                 break;
 
             default:
@@ -742,9 +830,9 @@ public struct VoxelDensityJob : IJobParallelFor
         return dist;
     }
 
-    // ════════════════════════════════════════════════════════════════════════
-    //  TUNNEL SDF — Conic capsule with optional cross-section scaling
-    // ════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  TUNNEL SDF â€” Conic capsule with optional cross-section scaling
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     float EvaluateTunnel(float3 warpedPos, float3 originalPos, CaveTunnel tunnel)
     {
@@ -799,7 +887,7 @@ public struct VoxelDensityJob : IJobParallelFor
                     math.max(tunnel.widthScale, 0.2f));
             }
 
-            tunnelDist = SmoothMin(tunnelDist, segmentDist, math.max(tunnel.blendRadius * 0.35f, 1.5f));
+            tunnelDist = SmoothMinExp(tunnelDist, segmentDist, math.max(tunnel.blendRadius * 0.35f, 1.5f));
         }
 
         return tunnelDist;
@@ -825,7 +913,7 @@ public struct VoxelDensityJob : IJobParallelFor
             entrance.radius * 1.3f,
             math.max(entrance.innerRadius, entrance.radius * 0.85f));
 
-        return SmoothMin(core, flare, caveParams.entranceBlendK * 0.4f);
+        return SmoothMinExp(core, flare, caveParams.entranceBlendK * 0.4f);
     }
 
     float EvaluateStructuresSDF(float3 wp)
@@ -888,7 +976,7 @@ public struct VoxelDensityJob : IJobParallelFor
                 sd += noise;
             }
 
-            structDist = SmoothMin(structDist, sd, s.blendRadius);
+            structDist = SmoothMinExp(structDist, sd, s.blendRadius);
         }
 
         return structDist;
@@ -942,7 +1030,7 @@ public struct VoxelDensityJob : IJobParallelFor
             float radius0 = math.lerp(tubeRadius * 1.05f, tubeRadius * 0.85f, t0);
             float radius1 = math.lerp(tubeRadius * 1.05f, tubeRadius * 0.85f, t1);
             float segmentDist = SDCapsuleConic(wp, p0, p1, radius0, radius1);
-            archDist = SmoothMin(archDist, segmentDist, math.max(s.blendRadius * 0.45f, 1.25f));
+            archDist = SmoothMinExp(archDist, segmentDist, math.max(s.blendRadius * 0.45f, 1.25f));
         }
 
         return archDist;
@@ -960,15 +1048,16 @@ public struct VoxelDensityJob : IJobParallelFor
     }
 
 
-    // ════════════════════════════════════════════════════════════════════════
-    //  WALL DETAIL — Noise + terraces applied near cave surface
-    // ════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  WALL DETAIL â€” Noise + terraces applied near cave surface
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     float EvaluateWallDetail(float3 wp, float currentSDF)
     {
         float detail = 0f;
+        float nearSurfaceMask = 1f - math.saturate(math.abs(currentSDF) / math.max(caveParams.noiseEvalDistance, 0.001f));
 
-        // ── Fractal wall noise ──
+        // â”€â”€ Fractal wall noise â”€â”€
         if (caveParams.wallNoiseAmplitude > 0.001f)
         {
             float wallNoise = FractalNoise3D(
@@ -980,9 +1069,19 @@ public struct VoxelDensityJob : IJobParallelFor
                 caveParams.seed);
 
             detail += wallNoise * caveParams.wallNoiseAmplitude;
+
+            float accretionNoise = FractalNoise3D(
+                wp + new float3(9.4f, 17.2f, 3.1f),
+                math.max(caveParams.wallNoiseFrequency * 0.7f, 0.04f),
+                math.max(2, caveParams.wallNoiseOctaves - 1),
+                caveParams.wallNoiseLacunarity,
+                caveParams.wallNoisePersistence,
+                caveParams.seed + 913u);
+            float dripMask = math.saturate((accretionNoise - 0.18f) * 1.4f);
+            detail += dripMask * caveParams.wallNoiseAmplitude * 0.45f * nearSurfaceMask;
         }
 
-        // ── Horizontal terraces (rock strata) ──
+        // â”€â”€ Horizontal terraces (rock strata) â”€â”€
         if (caveParams.terraceAmplitude > 0.001f)
         {
             float terrace = EvaluateTerrace(
@@ -994,12 +1093,39 @@ public struct VoxelDensityJob : IJobParallelFor
             detail += terrace;
         }
 
-        return detail;
+        float maxDisplacement = math.max(voxelStep * 0.45f, 0.2f);
+        return math.clamp(detail * nearSurfaceMask, -maxDisplacement, maxDisplacement);
     }
 
-    // ════════════════════════════════════════════════════════════════════════
-    //  SDF PRIMITIVES — Inlined for Burst performance
-    // ════════════════════════════════════════════════════════════════════════
+    float ApplyDerivativeSafeAmplitude(float amplitude, float derivativeBudget)
+    {
+        float maxAmplitude = math.max(voxelStep * 0.45f, 0.2f);
+        if (derivativeBudget <= 0.85f)
+            return math.min(amplitude, maxAmplitude);
+
+        return math.min(amplitude * (0.85f / derivativeBudget), maxAmplitude);
+    }
+
+    static float EstimateFractalDerivative(float frequency, int octaves, float lacunarity, float persistence)
+    {
+        float derivative = 0f;
+        float octaveFrequency = math.max(frequency, 0.0001f);
+        float octaveAmplitude = 1f;
+        int octaveCount = math.max(octaves, 1);
+
+        for (int i = 0; i < octaveCount; i++)
+        {
+            derivative += octaveFrequency * octaveAmplitude;
+            octaveFrequency *= math.max(lacunarity, 1f);
+            octaveAmplitude *= math.saturate(persistence);
+        }
+
+        return derivative;
+    }
+
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  SDF PRIMITIVES â€” Inlined for Burst performance
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     /// <summary>Signed distance to sphere.</summary>
     static float SDSphere(float3 p, float3 center, float radius)
@@ -1017,9 +1143,20 @@ public struct VoxelDensityJob : IJobParallelFor
         if (lenScaled < 0.0001f)
             return -math.cmin(radii); // Deep inside
 
-        // Approximate: distance in scaled space × minimum radius
+        // Approximate: distance in scaled space Ã— minimum radius
         // This is not exact but good enough for MC and much cheaper than analytic
         return (lenScaled - 1f) * math.cmin(radii);
+    }
+
+    static float SDEllipsoidAnalytic(float3 p, float3 center, float3 radii)
+    {
+        float3 q = math.abs(p - center);
+        float3 safeRadii = math.max(radii, new float3(0.001f));
+        float3 invRadii = 1f / safeRadii;
+        float3 invRadiiSq = invRadii / safeRadii;
+        float k0 = math.length(q * invRadii);
+        float k1 = math.length(q * invRadiiSq);
+        return (k0 - 1f) * k0 / math.max(k1, 0.0001f);
     }
 
     /// <summary>Signed distance to rounded vertical cylinder (shaft/chimney).</summary>
@@ -1052,7 +1189,7 @@ public struct VoxelDensityJob : IJobParallelFor
         float baba = math.dot(ba, ba);
 
         if (baba < 0.0001f)
-            return math.length(pa) - radiusA; // Degenerate: a ≈ b → sphere
+            return math.length(pa) - radiusA; // Degenerate: a â‰ˆ b â†’ sphere
 
         float h = math.saturate(math.dot(pa, ba) / baba);
         float radius = math.lerp(radiusA, radiusB, h);
@@ -1097,9 +1234,9 @@ public struct VoxelDensityJob : IJobParallelFor
         return math.length(scaled) - radius;
     }
 
-    // ════════════════════════════════════════════════════════════════════════
-    //  CSG OPERATIONS — Smooth blending
-    // ════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  CSG OPERATIONS â€” Smooth blending
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     /// <summary>Polynomial smooth minimum (cubic). Merges shapes organically.</summary>
     static float SmoothMin(float a, float b, float k)
@@ -1109,10 +1246,24 @@ public struct VoxelDensityJob : IJobParallelFor
         return math.min(a, b) - h * h * h * k * (1f / 6f);
     }
 
+    static float SmoothMinExp(float a, float b, float k)
+    {
+        k = math.max(k, 0.0001f);
+        float minValue = math.min(a, b);
+        float expA = math.exp(-k * (a - minValue));
+        float expB = math.exp(-k * (b - minValue));
+        return minValue - math.log(expA + expB) / k;
+    }
+
     /// <summary>Smooth maximum. Inverse of smooth min.</summary>
     static float SmoothMax(float a, float b, float k)
     {
         return -SmoothMin(-a, -b, k);
+    }
+
+    static float SmoothMaxExp(float a, float b, float k)
+    {
+        return -SmoothMinExp(-a, -b, k);
     }
 
     /// <summary>Smooth subtraction: carve shape B out of shape A.</summary>
@@ -1121,9 +1272,14 @@ public struct VoxelDensityJob : IJobParallelFor
         return SmoothMax(distBase, -distCarve, k);
     }
 
-    // ════════════════════════════════════════════════════════════════════════
-    //  NOISE FUNCTIONS — Burst-safe, no managed allocations
-    // ════════════════════════════════════════════════════════════════════════
+    static float SmoothSubtractionExp(float distCarve, float distBase, float k)
+    {
+        return SmoothMaxExp(distBase, -distCarve, k);
+    }
+
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  NOISE FUNCTIONS â€” Burst-safe, no managed allocations
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     /// <summary>3D gradient noise via Unity.Mathematics.noise.snoise.
     /// Returns [-1, 1] range.</summary>
@@ -1132,7 +1288,7 @@ public struct VoxelDensityJob : IJobParallelFor
         return noise.snoise(p);
     }
 
-    /// <summary>Fractal Brownian Motion — layered noise.</summary>
+    /// <summary>Fractal Brownian Motion â€” layered noise.</summary>
     static float FractalNoise3D(float3 p, float frequency, int octaves,
                                  float lacunarity, float persistence, uint seed)
     {
@@ -1168,9 +1324,9 @@ public struct VoxelDensityJob : IJobParallelFor
         return v;
     }
 
-    // ════════════════════════════════════════════════════════════════════════
-    //  DOMAIN WARPING — Distort coordinates with noise
-    // ════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  DOMAIN WARPING â€” Distort coordinates with noise
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     /// <summary>
     /// Warp world coordinates using 3-channel fractal noise.
@@ -1195,9 +1351,9 @@ public struct VoxelDensityJob : IJobParallelFor
         return p + new float3(dx, dy, dz) * amplitude;
     }
 
-    // ════════════════════════════════════════════════════════════════════════
-    //  TERRACE — Horizontal rock strata layers
-    // ════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  TERRACE â€” Horizontal rock strata layers
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     /// <summary>Evaluate horizontal terrace effect.
     /// Creates periodic ledges in cave walls based on Y coordinate.</summary>
@@ -1212,9 +1368,9 @@ public struct VoxelDensityJob : IJobParallelFor
         return terrace * amplitude;
     }
 
-    // ════════════════════════════════════════════════════════════════════════
-    //  FLOOR FLATTENING — Makes room bottoms more walkable
-    // ════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  FLOOR FLATTENING â€” Makes room bottoms more walkable
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     /// <summary>Flatten the bottom portion of a room.
     /// Only affects the lower 30% of the room height.
@@ -1239,9 +1395,45 @@ public struct VoxelDensityJob : IJobParallelFor
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+[BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
+struct VoxelColliderChunkClassifyJob : IJobParallelFor
+{
+    [ReadOnly] public NativeArray<float3> positions;
+    [ReadOnly] public NativeArray<int> triangleIndices;
+    public float3 boundsMin;
+    public float3 boundsSize;
+    public int chunkCount;
+    [WriteOnly] public NativeArray<byte> triangleBuckets;
+
+    public void Execute(int triangleIndex)
+    {
+        int triBase = triangleIndex * 3;
+        int i0 = triangleIndices[triBase];
+        int i1 = triangleIndices[triBase + 1];
+        int i2 = triangleIndices[triBase + 2];
+
+        float3 centroid = (positions[i0] + positions[i1] + positions[i2]) * (1f / 3f);
+        triangleBuckets[triangleIndex] = (byte)ResolveChunkIndex(centroid);
+    }
+
+    int ResolveChunkIndex(float3 point)
+    {
+        float3 safeSize = math.max(boundsSize, new float3(0.01f));
+        float3 normalized = math.saturate((point - boundsMin) / safeSize);
+        int x = normalized.x >= 0.5f ? 1 : 0;
+        int z = normalized.z >= 0.5f ? 1 : 0;
+
+        if (chunkCount <= 4)
+            return x | (z << 1);
+
+        int y = normalized.y >= 0.5f ? 1 : 0;
+        return x | (z << 1) | (y << 2);
+    }
+}
+
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  JOB 2: Marching Cubes extraction (UNCHANGED from v3.2)
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 [BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
 public unsafe struct VoxelMCExtractJob : IJobParallelFor
 {
@@ -1398,9 +1590,9 @@ public unsafe struct VoxelMCExtractJob : IJobParallelFor
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  JOB 2.5: Vertex Welding (UNCHANGED from v3.2)
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 [BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
 public unsafe struct VoxelWeldJob : IJob
 {
@@ -1436,9 +1628,9 @@ public unsafe struct VoxelWeldJob : IJob
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  JOB 3: Normals from density gradient (UNCHANGED from v3.2)
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 [BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
 public struct VoxelNormalJob : IJobParallelFor
 {
@@ -1450,29 +1642,47 @@ public struct VoxelNormalJob : IJobParallelFor
     [ReadOnly] public NativeArray<CaveTunnel> caveTunnels;
     [ReadOnly] public NativeArray<CaveEntrance> caveEntrances;
     [ReadOnly] public NativeArray<CaveStructure> caveStructures;
+    [ReadOnly] public NativeArray<VoxelCraterStamp> craterStamps;
     public CaveGenerationParams caveParams;
     public float sealMargin;
+    public int lodLevel;
+    public float lodTransitionBand;
     [ReadOnly] public NativeArray<float3> positions;
     [WriteOnly] public NativeArray<float3> normals;
+    [WriteOnly] public NativeArray<float> curvatureValues;
 
     public void Execute(int idx)
     {
         VoxelDensityJob densityEvaluator = CreateDensityEvaluator();
         float3 wp = positions[idx];
-        float epsilon = math.max(0.1f, voxelStep * 0.45f);
+        float epsilon = math.max(0.1f, voxelStep * 0.4f);
+        float3 offsetX = new float3(epsilon, 0f, 0f);
+        float3 offsetY = new float3(0f, epsilon, 0f);
+        float3 offsetZ = new float3(0f, 0f, epsilon);
 
-        float3 e0 = new float3(1f, -1f, -1f);
-        float3 e1 = new float3(-1f, -1f, 1f);
-        float3 e2 = new float3(-1f, 1f, -1f);
-        float3 e3 = new float3(1f, 1f, 1f);
+        float centerDensity = densityEvaluator.EvaluateDensityAt(wp);
+        float samplePosX = densityEvaluator.EvaluateDensityAt(wp + offsetX);
+        float sampleNegX = densityEvaluator.EvaluateDensityAt(wp - offsetX);
+        float samplePosY = densityEvaluator.EvaluateDensityAt(wp + offsetY);
+        float sampleNegY = densityEvaluator.EvaluateDensityAt(wp - offsetY);
+        float samplePosZ = densityEvaluator.EvaluateDensityAt(wp + offsetZ);
+        float sampleNegZ = densityEvaluator.EvaluateDensityAt(wp - offsetZ);
 
-        float d0 = densityEvaluator.EvaluateDensityAt(wp + e0 * epsilon);
-        float d1 = densityEvaluator.EvaluateDensityAt(wp + e1 * epsilon);
-        float d2 = densityEvaluator.EvaluateDensityAt(wp + e2 * epsilon);
-        float d3 = densityEvaluator.EvaluateDensityAt(wp + e3 * epsilon);
+        float dx = samplePosX - sampleNegX;
+        float dy = samplePosY - sampleNegY;
+        float dz = samplePosZ - sampleNegZ;
 
-        float3 gradient = e0 * d0 + e1 * d1 + e2 * d2 + e3 * d3;
+        float3 gradient = new float3(dx, dy, dz);
         normals[idx] = math.normalizesafe(-gradient, new float3(0f, 1f, 0f));
+
+        float invEpsilonSq = 1f / math.max(epsilon * epsilon, 0.0001f);
+        float laplacian =
+            (samplePosX + sampleNegX - (2f * centerDensity)) +
+            (samplePosY + sampleNegY - (2f * centerDensity)) +
+            (samplePosZ + sampleNegZ - (2f * centerDensity));
+
+        float signedCurvature = (laplacian * invEpsilonSq) * epsilon;
+        curvatureValues[idx] = math.saturate(0.5f + signedCurvature * 0.35f);
     }
 
     VoxelDensityJob CreateDensityEvaluator()
@@ -1489,17 +1699,20 @@ public struct VoxelNormalJob : IJobParallelFor
             caveTunnels = caveTunnels,
             caveEntrances = caveEntrances,
             caveStructures = caveStructures,
+            craterStamps = craterStamps,
             caveParams = caveParams,
             sealMargin = sealMargin,
+            lodLevel = lodLevel,
+            lodTransitionBand = lodTransitionBand,
             density = default
         };
     }
 }
 
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  JOB 3.5: Biome Sampling (UNCHANGED from v3.2)
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 [BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
 public struct VoxelBiomeSampleJob : IJobParallelFor
 {
@@ -1529,21 +1742,27 @@ public struct VoxelBiomeSampleJob : IJobParallelFor
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-//  JOB 4: Vertex Colors (v4.0 — updated for cave SDF)
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+//  JOB 4: Vertex Colors (v4.0 â€” updated for cave SDF)
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 [BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
 public struct VoxelColorJob : IJobParallelFor
 {
     public float maxDepth;
     public float caveEdgeWidth;
-
-    // Simplified: we store volume center and half-extent for depth estimation
     public float3 volumeCenter;
     public float volumeHalfExtent;
+    public int ptsX;
+    public int ptsZ;
+    public float3 volumeOrigin;
+    public float voxelStep;
+    public int lodLevel;
+    public float lodTransitionBand;
 
     [ReadOnly] public NativeArray<float3> positions;
     [ReadOnly] public NativeArray<float3> normals;
+    [ReadOnly] public NativeArray<float> terrainHeights;
+    [ReadOnly] public NativeArray<float> curvatureValues;
     [ReadOnly] public NativeArray<float> biomeValues;
 
     [WriteOnly] public NativeArray<Color> colors;
@@ -1559,24 +1778,62 @@ public struct VoxelColorJob : IJobParallelFor
         // G = depth below sea level (normalized 0-1)
         float depth = math.saturate(-p.y / math.max(maxDepth, 1f));
 
-        // B = distance from volume center (normalized)
-        // Useful for shader effects: darker deeper inside cave
         float distFromCenter = math.length(p - volumeCenter) / math.max(volumeHalfExtent, 1f);
         float interiorFade = math.saturate(distFromCenter);
-
-        // A = biome
         float biome = biomeValues[idx];
+        float curvature = curvatureValues[idx];
 
-        colors[idx] = new Color(slope, depth, interiorFade, biome);
+        float terrainSkirt = 0f;
+        if (terrainHeights.IsCreated && ptsX > 1 && ptsZ > 1)
+        {
+            float terrainHeight = SampleTerrainHeight(p.xz);
+            float terrainBand = math.max(voxelStep * 2.5f, 4f);
+            terrainSkirt = 1f - math.smoothstep(0f, terrainBand, math.abs(terrainHeight - p.y));
+        }
+
+        float lodEdgeSkirt = 0f;
+        if (lodLevel > 0)
+        {
+            float volumeSizeX = (ptsX - 1) * voxelStep;
+            float volumeSizeZ = (ptsZ - 1) * voxelStep;
+            float localX = p.x - volumeOrigin.x;
+            float localZ = p.z - volumeOrigin.z;
+            float edgeDist = math.min(localX, math.min(volumeSizeX - localX, math.min(localZ, volumeSizeZ - localZ)));
+            lodEdgeSkirt = 1f - math.smoothstep(0f, math.max(lodTransitionBand, voxelStep), edgeDist);
+        }
+
+        float skirtAlpha = math.saturate(math.max(terrainSkirt, lodEdgeSkirt));
+        colors[idx] = new Color(slope, depth, skirtAlpha, curvature);
+    }
+
+    float SampleTerrainHeight(float2 worldXZ)
+    {
+        float localX = (worldXZ.x - volumeOrigin.x) / voxelStep;
+        float localZ = (worldXZ.y - volumeOrigin.z) / voxelStep;
+        localX = math.clamp(localX, 0f, ptsX - 1f);
+        localZ = math.clamp(localZ, 0f, ptsZ - 1f);
+
+        int x0 = (int)localX;
+        int z0 = (int)localZ;
+        int x1 = math.min(x0 + 1, ptsX - 1);
+        int z1 = math.min(z0 + 1, ptsZ - 1);
+        float fx = localX - x0;
+        float fz = localZ - z0;
+
+        float h00 = terrainHeights[x0 + z0 * ptsX];
+        float h10 = terrainHeights[x1 + z0 * ptsX];
+        float h01 = terrainHeights[x0 + z1 * ptsX];
+        float h11 = terrainHeights[x1 + z1 * ptsX];
+        return math.lerp(math.lerp(h00, h10, fx), math.lerp(h01, h11, fx), fz);
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-//  JOB 5: Cave Interior Spawn Points (v4.1 — deterministic hash IDs)
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+//  JOB 5: Cave Interior Spawn Points (v4.1 â€” deterministic hash IDs)
 //  Extracts floor positions from welded mesh for loot/flora/fauna spawning.
 //  Each point carries a deterministic hashId derived from world position,
 //  ensuring save system consistency regardless of parallel execution order.
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 [BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
 public struct VoxelSpawnPointJob : IJobParallelFor
 {
@@ -1588,7 +1845,7 @@ public struct VoxelSpawnPointJob : IJobParallelFor
     public float volumeHalfExtent;
 
     /// <summary>Minimum upward normal component to qualify as "floor".
-    /// 0.75 ≈ 41° from horizontal. Flat surfaces only.</summary>
+    /// 0.75 â‰ˆ 41Â° from horizontal. Flat surfaces only.</summary>
     public float floorNormalThreshold;
 
     /// <summary>Minimum normalized interior depth to qualify.
@@ -1609,26 +1866,26 @@ public struct VoxelSpawnPointJob : IJobParallelFor
         float3 pos = positions[idx];
         float3 nrm = normals[idx];
 
-        // ── Filter 1: Floor normal ──
+        // â”€â”€ Filter 1: Floor normal â”€â”€
         float upDot = math.dot(nrm, new float3(0, 1, 0));
         if (upDot < floorNormalThreshold)
             return;
 
-        // ── Filter 2: Interior depth ──
+        // â”€â”€ Filter 2: Interior depth â”€â”€
         float distFromCenter = math.length(pos - volumeCenter);
         float normalizedDist = distFromCenter / math.max(volumeHalfExtent, 1f);
         float interiorness = 1f - math.saturate(normalizedDist);
         if (interiorness < minInteriorDepth)
             return;
 
-        // ── Filter 3: Spatial hash (deterministic thinning) ──
+        // â”€â”€ Filter 3: Spatial hash (deterministic thinning) â”€â”€
         uint hash = SpatialHash(pos, seed);
         float hashNormalized = (hash & 0xFFFF) / 65535f;
         if (hashNormalized > keepFraction)
             return;
 
-        // ── Passed all filters ──
-        // hashId is deterministic: same position → same hash → same ID always
+        // â”€â”€ Passed all filters â”€â”€
+        // hashId is deterministic: same position â†’ same hash â†’ same ID always
         int hashId = (int)(hash & 0x7FFFFFFF); // Positive int, stable across runs
 
         spawnPoints.AddNoResize(new CaveSpawnData
@@ -1644,7 +1901,7 @@ public struct VoxelSpawnPointJob : IJobParallelFor
     /// </summary>
     static uint SpatialHash(float3 p, uint seed)
     {
-        // Quantize to 10cm grid — prevents floating-point jitter
+        // Quantize to 10cm grid â€” prevents floating-point jitter
         int3 ip = (int3)math.floor(p * 10f);
 
         uint h = seed;
@@ -1665,61 +1922,61 @@ public struct VoxelSpawnPointJob : IJobParallelFor
 
 #endregion
 
-// ════════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  REGION: HECTON VOXEL ENGINE (v4.0)
-// ════════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 #region HectonVoxelEngine
 
 public class HectonVoxelEngine : MonoBehaviour
 {
-    // ╔═══════════════════════════════════════════════╗
-    // ║           INSPECTOR SETTINGS                  ║
-    // ╚═══════════════════════════════════════════════╝
+    // â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+    // â•‘           INSPECTOR SETTINGS                  â•‘
+    // â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-    [Header("═══ DEFAULT CAVE PRESET ═══")]
+    [Header("â•â•â• DEFAULT CAVE PRESET â•â•â•")]
     [Tooltip("Default preset used when GenerateVolumeAsync is called without explicit preset.")]
     public CavePreset defaultPreset = new CavePreset();
-    [Header("═══ MAPMAGIC INTEGRATION ═══")]
+    [Header("â•â•â• MAPMAGIC INTEGRATION â•â•â•")]
     [Tooltip("MapMagic tile size in meters.\n" +
              "Must match your MapMagic Tile Size setting.\n" +
              "Used to compute chunkCoord for ScavengePopulator spawn points.")]
     [SerializeField]
     private float mapMagicTileSize = 999f;
-    [Header("═══ EDGE SEAL ═══")]
+    [Header("â•â•â• EDGE SEAL â•â•â•")]
     [Tooltip("Margin (m) where density fades to solid at volume borders.")]
     [Range(1f, 10f)]
     public float sealMargin = 3f;
 
-    [Header("═══ CAVE EDGE COLOR ═══")]
+    [Header("â•â•â• CAVE EDGE COLOR â•â•â•")]
     [Tooltip("Width (m) for cave-edge fade in vertex color B channel.")]
     [Range(1f, 20f)]
     public float caveEdgeColorWidth = 5f;
 
-    [Header("═══ RENDERING ═══")]
+    [Header("â•â•â• RENDERING â•â•â•")]
     public Material voxelMaterial;
 
-    [Header("═══ REFERENCES ═══")]
+    [Header("â•â•â• REFERENCES â•â•â•")]
     [Tooltip("Bridge to MapMagic terrain for height sampling.")]
     public MapMagicBridge mapMagicBridge;
 
-    [Header("═══ POOL ═══")]
+    [Header("â•â•â• POOL â•â•â•")]
     [Tooltip("Prefab for pooled voxel volume GameObjects.")]
     public GameObject voxelVolumePrefab;
     [Tooltip("Reusable native scratch slots reserved for streaming cave generation. Separate from flora pools.")]
     [SerializeField] private int streamingScratchSlotCount = 2;
 
-    // ── Constants ──
+    // â”€â”€ Constants â”€â”€
     const float ABYSSAL_MAX_DEPTH = 5000f;
     const int JOB_BATCH = 64;
 
     /// <summary>
-    /// MC raw buffer multiplier. 2× totalCells instead of 15× (worst case).
+    /// MC raw buffer multiplier. 2Ã— totalCells instead of 15Ã— (worst case).
     /// Atomic counter in MC job truncates gracefully if buffer fills.
     /// Saves ~85% peak memory allocation.
     /// </summary>
     const int MC_BUFFER_MULTIPLIER = 2;
 
-    // ── Internal ──
+    // â”€â”€ Internal â”€â”€
     static int _liveEngineCount;
     static int _activeGenerationOperations;
     static int _shutdownRequested;
@@ -1819,9 +2076,67 @@ public class HectonVoxelEngine : MonoBehaviour
         }
     }
 
-    // ╔═══════════════════════════════════════════════╗
-    // ║              LIFECYCLE                        ║
-    // ╚═══════════════════════════════════════════════╝
+    sealed class VoxelPipelineData : IDisposable
+    {
+        public Vector3 WorldCenter;
+        public Vector3 ShiftAtStart;
+        public float TerrainHeightCenter;
+        public int LODLevel;
+        public int GridDimension;
+        public float VoxelStep;
+        public float EffectiveSealMargin;
+        public float LodTransitionBand;
+        public int PtsX;
+        public int PtsY;
+        public int PtsZ;
+        public int TotalPts;
+        public int TotalCells;
+        public int MaxVerts;
+        public float VolumeHalfExtent;
+        public float3 VolumeOrigin;
+        public uint Seed;
+        public CaveGenerationParams CaveParams;
+        public bool BuildCollider;
+        public bool ExtractSpawnPoints;
+        public VoxelStreamingScratchLease ScratchLease;
+        public NativeArray<CaveNode> Nodes;
+        public NativeArray<CaveTunnel> Tunnels;
+        public NativeArray<CaveEntrance> Entrances;
+        public NativeArray<CaveStructure> Structures;
+        public NativeArray<VoxelCraterStamp> CraterStamps;
+        public NativeArray<float3> Normals;
+        public NativeArray<float> CurvatureValues;
+        public NativeArray<float> BiomeValues;
+        public NativeArray<Color> Colors;
+        public NativeList<CaveSpawnData> SpawnPointList;
+        public int RawCount;
+        public int WeldedCount;
+
+        public void Dispose()
+        {
+            ScratchLease.Dispose();
+            if (Normals.IsCreated) Normals.Dispose();
+            if (CurvatureValues.IsCreated) CurvatureValues.Dispose();
+            if (BiomeValues.IsCreated) BiomeValues.Dispose();
+            if (Colors.IsCreated) Colors.Dispose();
+            if (SpawnPointList.IsCreated) SpawnPointList.Dispose();
+        }
+    }
+
+    struct VoxelMeshBakeJob : IJob
+    {
+        public EntityId MeshId;
+        public bool Convex;
+
+        public void Execute()
+        {
+            UnityEngine.Physics.BakeMesh(MeshId, Convex);
+        }
+    }
+
+    // â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+    // â•‘              LIFECYCLE                        â•‘
+    // â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     void OnEnable()
     {
@@ -1850,9 +2165,9 @@ public class HectonVoxelEngine : MonoBehaviour
         TeardownRuntimeState();
     }
 
-    // ╔═══════════════════════════════════════════════╗
-    // ║       PUBLIC API — CAVE GENERATION            ║
-    // ╚═══════════════════════════════════════════════╝
+    // â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+    // â•‘       PUBLIC API â€” CAVE GENERATION            â•‘
+    // â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     /// <summary>
     /// Generate a complete cave volume from seed and preset.
@@ -1879,329 +2194,148 @@ public class HectonVoxelEngine : MonoBehaviour
         CavePreset preset = null,
         CancellationToken ct = default)
     {
+        return await GenerateVolumeAsync(worldCenter, seed, preset, 0, ct);
+    }
+
+    /// <summary>
+    /// Generates a single voxel cave volume with an explicit voxel LOD level.
+    /// </summary>
+    /// <param name="worldCenter">World-space center of the voxel volume.</param>
+    /// <param name="seed">Deterministic seed for cave generation.</param>
+    /// <param name="preset">Cave configuration. Null = use defaultPreset.</param>
+    /// <param name="lodLevel">Voxel LOD level. 0 = full resolution, 1 = doubled voxel step.</param>
+    /// <param name="ct">Cancellation token for async cancellation.</param>
+    /// <returns>Generated GameObject with mesh, or null if generation produced no geometry.</returns>
+    public async Awaitable<GameObject> GenerateVolumeAsync(
+        Vector3 worldCenter,
+        uint seed,
+        CavePreset preset,
+        int lodLevel,
+        CancellationToken ct = default)
+    {
         BeginGenerationOperation();
-        if (mapMagicBridge == null)
-        {
-            Debug.LogError("[HectonVoxel] No MapMagicBridge assigned!");
-            EndGenerationOperation();
-            return null;
-        }
-
-        MCTables.Initialize();
-
-        // ── Resolve preset ──
-        if (preset == null) preset = defaultPreset;
-        if (preset == null) preset = CavePresetLibrary.Create(CavePresetType.Grotto);
-
-        // ── Grid sizing from preset ──
-        int gridDim = math.clamp(preset.gridDimension, 32, 128);
-        float voxelStep = math.max(preset.voxelSize, 0.25f);
-
-        int ptsX = gridDim + 1, ptsY = gridDim + 1, ptsZ = gridDim + 1;
-        int totalPts = ptsX * ptsY * ptsZ;
-        int totalCells = gridDim * gridDim * gridDim;
-        int maxVerts = totalCells * MC_BUFFER_MULTIPLIER;
-
-        float volumeHalfExtent = gridDim * voxelStep * 0.5f;
-        float3 actualSize = new float3(gridDim, gridDim, gridDim) * voxelStep;
-        float3 volumeOrigin = (float3)worldCenter - actualSize * 0.5f;
-
-
-        // Record current world shift state to compensate if it changes during async work
-        Vector3 shiftAtStart = HectonFloatingOrigin.Instance != null 
-            ? HectonFloatingOrigin.Instance.TotalOffset 
-            : Vector3.zero;
-        // ── Terrain height at center (for cave graph) ──
-        float terrainHeightCenter = worldCenter.y - 10f; // fallback
-        if (mapMagicBridge.TryGetHeight(worldCenter.x, worldCenter.z, out float h))
-            terrainHeightCenter = h;
-
-        // ════════════════════════════════════════════════════════════════
-        //  PHASE 0: Generate cave graph (main thread)
-        // ════════════════════════════════════════════════════════════════
-
-        CaveGenerationParams caveParams = preset.ToGenerationParams(seed);
-
-        CaveGraphGenerator.Generate(
-            seed, preset, worldCenter, terrainHeightCenter, volumeHalfExtent,
-            out var caveNodes, out var caveTunnels,
-            out var caveEntrances, out var caveStructures,
-            Allocator.Persistent);
-
-        // Validate in editor
-        #if UNITY_EDITOR
-        CaveGraphGenerator.Validate(caveNodes, caveTunnels, caveEntrances,
-                                     worldCenter, volumeHalfExtent);
-        #endif
-
-        Debug.Log(CaveGraphGenerator.GetSummary(caveNodes, caveTunnels, caveEntrances));
-
-        // ════════════════════════════════════════════════════════════════
-        //  ALLOCATE ALL NATIVE CONTAINERS
-        // ════════════════════════════════════════════════════════════════
-
-        VoxelStreamingScratchLease scratchLease = await AcquireStreamingScratchLeaseAsync(ptsX * ptsZ, totalPts, maxVerts, ct);
-        var terrainHeights = scratchLease.TerrainHeights;
-        var gridBiome = scratchLease.GridBiome;
-        var densityField = scratchLease.DensityField;
-        var rawVerts = scratchLease.RawVerts;
-        var counter = scratchLease.Counter;
-        var weldedPositions = scratchLease.WeldedPositions;
-        var triangleIndices = scratchLease.TriangleIndices;
-        var weldedCounter = scratchLease.WeldedCounter;
-        var edgeToVertex = scratchLease.EdgeToVertex;
+        NativeArray<CaveNode> caveNodes = default;
+        NativeArray<CaveTunnel> caveTunnels = default;
+        NativeArray<CaveEntrance> caveEntrances = default;
+        NativeArray<CaveStructure> caveStructures = default;
+        VoxelPipelineData pipelineData = null;
 
         try
         {
-            // ════════════════════════════════════════════════════════════
-            //  PHASE 1: Sample terrain heights (main thread)
-            // ════════════════════════════════════════════════════════════
-
-            float fallbackHeight = terrainHeightCenter;
-            for (int iz = 0; iz < ptsZ; iz++)
-            for (int ix = 0; ix < ptsX; ix++)
+            if (mapMagicBridge == null)
             {
-                float wx = volumeOrigin.x + ix * voxelStep;
-                float wz = volumeOrigin.z + iz * voxelStep;
-                int hi = ix + iz * ptsX;
-
-                if (mapMagicBridge.TryGetHeight(wx, wz, out float height))
-                    terrainHeights[hi] = height;
-                else
-                    terrainHeights[hi] = fallbackHeight;
-
-                gridBiome[hi] = 0f; // Biome stub
+                Debug.LogError("[HectonVoxel] No MapMagicBridge assigned!");
+                return null;
             }
 
-            ct.ThrowIfCancellationRequested();
+            MCTables.Initialize();
 
-            // ════════════════════════════════════════════════════════════
-            //  PHASE 2: Density field (async Burst)
-            // ════════════════════════════════════════════════════════════
+            if (preset == null)
+                preset = defaultPreset;
+            if (preset == null)
+                preset = CavePresetLibrary.Create(CavePresetType.Grotto);
 
-            var densityHandle = new VoxelDensityJob
+            int clampedLodLevel = math.clamp(lodLevel, 0, 1);
+            int baseGridDim = math.clamp(preset.gridDimension, 32, 128);
+            float baseVoxelStep = math.max(preset.voxelSize, 0.25f);
+            int gridDim = math.max(16, baseGridDim >> clampedLodLevel);
+            float voxelStep = baseVoxelStep * (1 << clampedLodLevel);
+            int ptsX = gridDim + 1;
+            int ptsY = gridDim + 1;
+            int ptsZ = gridDim + 1;
+            int totalPts = ptsX * ptsY * ptsZ;
+            int totalCells = gridDim * gridDim * gridDim;
+            int maxVerts = totalCells * MC_BUFFER_MULTIPLIER;
+            float volumeHalfExtent = gridDim * voxelStep * 0.5f;
+            float3 actualSize = new float3(gridDim, gridDim, gridDim) * voxelStep;
+            float3 volumeOrigin = (float3)worldCenter - actualSize * 0.5f;
+            float lodTransitionBand = clampedLodLevel > 0 ? math.max(baseVoxelStep * 2f, voxelStep * 1.25f) : 0f;
+            float effectiveSealMargin = sealMargin + lodTransitionBand;
+            Vector3 shiftAtStart = HectonFloatingOrigin.Instance != null
+                ? HectonFloatingOrigin.Instance.TotalOffset
+                : Vector3.zero;
+
+            float terrainHeightCenter = worldCenter.y - 10f;
+            if (mapMagicBridge.TryGetHeight(worldCenter.x, worldCenter.z, out float sampledHeight))
+                terrainHeightCenter = sampledHeight;
+
+            CaveGenerationParams caveParams = preset.ToGenerationParams(seed);
+            CaveGraphGenerator.Generate(
+                seed,
+                preset,
+                worldCenter,
+                terrainHeightCenter,
+                volumeHalfExtent,
+                out caveNodes,
+                out caveTunnels,
+                out caveEntrances,
+                out caveStructures,
+                Allocator.Persistent);
+
+#if UNITY_EDITOR
+            CaveGraphGenerator.Validate(caveNodes, caveTunnels, caveEntrances, worldCenter, volumeHalfExtent);
+#endif
+
+            Debug.Log(CaveGraphGenerator.GetSummary(caveNodes, caveTunnels, caveEntrances));
+
+            pipelineData = new VoxelPipelineData
             {
-                ptsX = ptsX, ptsY = ptsY, ptsZ = ptsZ,
-                volumeOrigin = volumeOrigin,
-                voxelStep = voxelStep,
-                terrainHeights = terrainHeights,
-                caveNodes = caveNodes,
-                caveTunnels = caveTunnels,
-                caveEntrances = caveEntrances,
-                caveStructures = caveStructures,
-                caveParams = caveParams,
-                sealMargin = sealMargin,
-                density = densityField
-            }.Schedule(totalPts, JOB_BATCH);
+                WorldCenter = worldCenter,
+                ShiftAtStart = shiftAtStart,
+                TerrainHeightCenter = terrainHeightCenter,
+                LODLevel = clampedLodLevel,
+                GridDimension = gridDim,
+                VoxelStep = voxelStep,
+                EffectiveSealMargin = effectiveSealMargin,
+                LodTransitionBand = lodTransitionBand,
+                PtsX = ptsX,
+                PtsY = ptsY,
+                PtsZ = ptsZ,
+                TotalPts = totalPts,
+                TotalCells = totalCells,
+                MaxVerts = maxVerts,
+                VolumeHalfExtent = volumeHalfExtent,
+                VolumeOrigin = volumeOrigin,
+                Seed = seed,
+                CaveParams = caveParams,
+                BuildCollider = true,
+                ExtractSpawnPoints = true,
+                Nodes = caveNodes,
+                Tunnels = caveTunnels,
+                Entrances = caveEntrances,
+                Structures = caveStructures,
+                CraterStamps = default
+            };
 
-            // ════════════════════════════════════════════════════════════
-            //  PHASE 3: Marching Cubes extraction (async Burst)
-            // ════════════════════════════════════════════════════════════
+            if (!await ExecuteVoxelPipelineAsync(pipelineData, ct))
+                return null;
 
-            var mcHandle = new VoxelMCExtractJob
-            {
-                cellsX = gridDim, cellsY = gridDim, cellsZ = gridDim,
-                ptsX = ptsX, ptsY = ptsY, ptsZ = ptsZ,
-                volumeOrigin = volumeOrigin,
-                voxelStep = voxelStep,
-                density = densityField,
-                edgeTable = MCTables.EdgeTable,
-                triTable = MCTables.TriTable,
-                outVertices = rawVerts,
-                vertexCounter = counter
-            }.Schedule(totalCells, JOB_BATCH, densityHandle);
+            GameObject targetGO = SpawnVolume();
+            targetGO.name = $"Cave_{preset.presetType}_{seed}_{worldCenter.x:F0}_{worldCenter.z:F0}";
 
-            await AwaitForJobCompletionAsync(mcHandle, ct);
+            Vector3 currentShift = HectonFloatingOrigin.Instance != null
+                ? HectonFloatingOrigin.Instance.TotalOffset
+                : Vector3.zero;
+            targetGO.transform.position = -(currentShift - shiftAtStart);
 
-            int rawCount = counter[0];
-            if (rawCount < 3) return null;
+            await ApplyVolumeMeshAsync(targetGO, pipelineData, ct);
+            ConfigureVolumeRuntimeData(targetGO, seed, worldCenter, preset, gridDim, voxelStep, clampedLodLevel, caveParams,
+                caveNodes, caveTunnels, caveEntrances, caveStructures, true);
+            RegisterEntranceTerrainHoles(targetGO, caveEntrances, voxelStep);
+            _activeVolumes.Add(targetGO);
+            RegisterPipelineSpawnPoints(worldCenter, caveParams.spawnContext, pipelineData.SpawnPointList);
 
-            ct.ThrowIfCancellationRequested();
-
-            // ════════════════════════════════════════════════════════════
-            //  PHASE 4: Vertex welding (async Burst)
-            // ════════════════════════════════════════════════════════════
-
-            var weldHandle = new VoxelWeldJob
-            {
-                rawCount = rawCount,
-                rawVertices = rawVerts,
-                edgeToVertex = edgeToVertex,
-                weldedPositions = weldedPositions,
-                triangleIndices = triangleIndices,
-                weldedCounter = weldedCounter
-            }.Schedule();
-
-            await AwaitForJobCompletionAsync(weldHandle, ct);
-
-            int weldedCount = weldedCounter[0];
-            if (weldedCount < 3) return null;
-
-            ct.ThrowIfCancellationRequested();
-
-            // ════════════════════════════════════════════════════════════
-            //  PHASE 5: Normals + Biome + Colors + Spawn Points (async)
-            // ════════════════════════════════════════════════════════════
-
-            var normals = new NativeArray<float3>(weldedCount, Allocator.Persistent,
-                                                    NativeArrayOptions.UninitializedMemory);
-            var biomeVals = new NativeArray<float>(weldedCount, Allocator.Persistent,
-                                                     NativeArrayOptions.UninitializedMemory);
-            var colors = new NativeArray<Color>(weldedCount, Allocator.Persistent,
-                                                  NativeArrayOptions.UninitializedMemory);
-
-            // Spawn point extraction: allocate for ~5% of vertices worst case
-            int maxSpawnPoints = math.max(weldedCount / 20, 64);
-            var spawnPointList = new NativeList<CaveSpawnData>(maxSpawnPoints, Allocator.Persistent);
-
-            try
-            {
-                // 5a: Normals
-                var normalHandle = new VoxelNormalJob
-                {
-                    ptsX = ptsX, ptsY = ptsY, ptsZ = ptsZ,
-                    volumeOrigin = volumeOrigin, voxelStep = voxelStep,
-                    terrainHeights = terrainHeights,
-                    caveNodes = caveNodes,
-                    caveTunnels = caveTunnels,
-                    caveEntrances = caveEntrances,
-                    caveStructures = caveStructures,
-                    caveParams = caveParams,
-                    sealMargin = sealMargin,
-                    positions = weldedPositions,
-                    normals = normals
-                }.Schedule(weldedCount, JOB_BATCH);
-
-                // 5b: Biome
-                var biomeHandle = new VoxelBiomeSampleJob
-                {
-                    ptsX = ptsX, ptsZ = ptsZ,
-                    volumeOrigin = volumeOrigin, voxelStep = voxelStep,
-                    gridBiome = gridBiome, positions = weldedPositions,
-                    biomeValues = biomeVals
-                }.Schedule(weldedCount, JOB_BATCH);
-
-                // 5c: Colors (depends on normals + biome)
-                var colorDeps = JobHandle.CombineDependencies(normalHandle, biomeHandle);
-                var colorHandle = new VoxelColorJob
-                {
-                    maxDepth = ABYSSAL_MAX_DEPTH,
-                    caveEdgeWidth = caveEdgeColorWidth,
-                    volumeCenter = worldCenter,
-                    volumeHalfExtent = volumeHalfExtent,
-                    positions = weldedPositions, normals = normals,
-                    biomeValues = biomeVals, colors = colors
-                }.Schedule(weldedCount, JOB_BATCH, colorDeps);
-
-                // 5d: Spawn points with deterministic hash IDs (depends on normals)
-                var spawnHandle = new VoxelSpawnPointJob
-                {
-                    positions = weldedPositions,
-                    normals = normals,
-                    volumeCenter = worldCenter,
-                    volumeHalfExtent = volumeHalfExtent,
-                    floorNormalThreshold = 0.75f,
-                    minInteriorDepth = 0.15f,
-                    keepFraction = 0.03f,
-                    seed = seed,
-                    spawnPoints = spawnPointList.AsParallelWriter()
-                }.Schedule(weldedCount, JOB_BATCH, normalHandle);
-
-                // Await all
-                var allPhase5 = JobHandle.CombineDependencies(colorHandle, spawnHandle);
-
-                await AwaitForJobCompletionAsync(allPhase5, ct);
-
-                ct.ThrowIfCancellationRequested();
-
-                // ════════════════════════════════════════════════════════
-                //  PHASE 6: Build mesh (main thread)
-                // ════════════════════════════════════════════════════════
-
-                GameObject targetGO = SpawnVolume();
-                targetGO.name = $"Cave_{preset.presetType}_{seed}_{worldCenter.x:F0}_{worldCenter.z:F0}";
-                
-                // Compensate for any world shifts that happened during generation
-                Vector3 currentShift = HectonFloatingOrigin.Instance != null 
-                    ? HectonFloatingOrigin.Instance.TotalOffset 
-                    : Vector3.zero;
-                Vector3 shiftDelta = currentShift - shiftAtStart;
-                targetGO.transform.position = -shiftDelta;
-
-
-                BuildWeldedMeshNative(targetGO, weldedPositions, normals, colors,
-                                     triangleIndices, rawCount, weldedCount, voxelMaterial, true);
-                _activeVolumes.Add(targetGO);
-
-                // ════════════════════════════════════════════════════════
-                //  PHASE 7: Register spawn points (deterministic IDs)
-                //
-                //  localIndex = hashId from spatial hash of world position.
-                //  This is DETERMINISTIC: same cave seed + same position =
-                //  same hashId, regardless of thread execution order in
-                //  VoxelSpawnPointJob. Save system integrity preserved.
-                // ════════════════════════════════════════════════════════
-
-                // ════════════════════════════════════════════════════════
-                //  PHASE 7: Register spawn points (deterministic IDs)
-                //
-                //  localIndex = hashId from spatial hash of world position.
-                //  context = SpawnContext from cave preset (CaveShallow/CaveDeep).
-                //  Both are deterministic across save/load cycles.
-                // ════════════════════════════════════════════════════════
-
-                int spawnCount = spawnPointList.Length;
-                if (spawnCount > 0 && ScavengePopulator.Instance != null)
-                {
-                    float tileSize = mapMagicTileSize > 0f ? mapMagicTileSize : 999f;
-                    Vector2Int chunkCoord = new Vector2Int(
-                        Mathf.FloorToInt(worldCenter.x / tileSize),
-                        Mathf.FloorToInt(worldCenter.z / tileSize));
-
-                    // Resolve spawn context from cave params
-                    SpawnContext caveContext = caveParams.spawnContext;
-
-                    for (int sp = 0; sp < spawnCount; sp++)
-                    {
-                        CaveSpawnData data = spawnPointList[sp];
-
-                        ScavengePopulator.Instance.RegisterSpawnPoint(
-                            (Vector3)data.position,
-                            Quaternion.identity,
-                            Vector3.one,
-                            chunkCoord,
-                            data.hashId,
-                            caveContext
-                        );
-                    }
-
-                    Debug.Log($"[HectonVoxel] Registered {spawnCount} spawn points " +
-                              $"(context={caveContext}) in chunk {chunkCoord}");
-                }
-
-                float reduction = (1f - (float)weldedCount / rawCount) * 100f;
-                float coverageM = gridDim * voxelStep;
-                Debug.Log($"[HectonVoxel] Cave '{targetGO.name}': " +
-                          $"grid={gridDim}³ voxel={voxelStep}m coverage={coverageM:F0}m | " +
-                          $"{rawCount} raw → {weldedCount} welded ({reduction:F0}% reduction) | " +
-                          $"{rawCount / 3} tris | {spawnCount} spawn points");
-
-                return targetGO;
-            }
-            finally
-            {
-                if (normals.IsCreated) normals.Dispose();
-                if (biomeVals.IsCreated) biomeVals.Dispose();
-                if (colors.IsCreated) colors.Dispose();
-                if (spawnPointList.IsCreated) spawnPointList.Dispose();
-            }
+            int spawnCount = pipelineData.SpawnPointList.IsCreated ? pipelineData.SpawnPointList.Length : 0;
+            float reduction = (1f - (float)pipelineData.WeldedCount / pipelineData.RawCount) * 100f;
+            float coverageM = gridDim * voxelStep;
+            Debug.Log($"[HectonVoxel] Cave '{targetGO.name}': lod={clampedLodLevel} grid={gridDim}^3 voxel={voxelStep}m coverage={coverageM:F0}m | " +
+                      $"{pipelineData.RawCount} raw -> {pipelineData.WeldedCount} welded ({reduction:F0}% reduction) | " +
+                      $"{pipelineData.RawCount / 3} tris | {spawnCount} spawn points");
+            return targetGO;
         }
         finally
         {
-            // ═══ DISPOSE ALL ═══
-            scratchLease.Dispose();
-
-            // Cave graph arrays
+            pipelineData?.Dispose();
             if (caveNodes.IsCreated) caveNodes.Dispose();
             if (caveTunnels.IsCreated) caveTunnels.Dispose();
             if (caveEntrances.IsCreated) caveEntrances.Dispose();
@@ -2209,7 +2343,6 @@ public class HectonVoxelEngine : MonoBehaviour
             EndGenerationOperation();
         }
     }
-
     /// <summary>
     /// Overload accepting pre-built cave data.
     /// Use when you want to generate the graph externally (e.g. custom editor tool)
@@ -2229,290 +2362,279 @@ public class HectonVoxelEngine : MonoBehaviour
         bool buildCollider = true,
         CancellationToken ct = default)
     {
+        return await GenerateVolumeFromDataAsync(
+            worldCenter,
+            gridDimension,
+            voxelSize,
+            nodes,
+            tunnels,
+            entrances,
+            structures,
+            caveParams,
+            0,
+            buildCollider,
+            ct);
+    }
+
+    /// <summary>
+    /// Overload accepting pre-built cave data with an explicit voxel LOD level.
+    /// Use when you want to generate the graph externally (e.g. custom editor tool)
+    /// and pass raw NativeArrays directly.
+    ///
+    /// Caller is responsible for disposing input NativeArrays AFTER this method completes.
+    /// </summary>
+    public async Awaitable<GameObject> GenerateVolumeFromDataAsync(
+        Vector3 worldCenter,
+        int gridDimension,
+        float voxelSize,
+        NativeArray<CaveNode> nodes,
+        NativeArray<CaveTunnel> tunnels,
+        NativeArray<CaveEntrance> entrances,
+        NativeArray<CaveStructure> structures,
+        CaveGenerationParams caveParams,
+        int lodLevel,
+        bool buildCollider = true,
+        CancellationToken ct = default)
+    {
         BeginGenerationOperation();
         long generationStartTimestamp = Stopwatch.GetTimestamp();
-
-        if (mapMagicBridge == null)
-        {
-            Debug.LogError("[HectonVoxel] No MapMagicBridge assigned!");
-            EndGenerationOperation();
-            return null;
-        }
-
-        MCTables.Initialize();
-
-        int gridDim = math.clamp(gridDimension, 32, 128);
-        float voxelStep = math.max(voxelSize, 0.25f);
-
-        int ptsX = gridDim + 1, ptsY = gridDim + 1, ptsZ = gridDim + 1;
-        int totalPts = ptsX * ptsY * ptsZ;
-        int totalCells = gridDim * gridDim * gridDim;
-        int maxVerts = totalCells * MC_BUFFER_MULTIPLIER;
-
-        float3 actualSize = new float3(gridDim, gridDim, gridDim) * voxelStep;
-        float3 volumeOrigin = (float3)worldCenter - actualSize * 0.5f;
-
-        // Record current world shift state to compensate if it changes during async work
-        Vector3 shiftAtStart = HectonFloatingOrigin.Instance != null 
-            ? HectonFloatingOrigin.Instance.TotalOffset 
-            : Vector3.zero;
-
-        float terrainHeightCenter = worldCenter.y - 10f;
-        if (mapMagicBridge.TryGetHeight(worldCenter.x, worldCenter.z, out float h))
-            terrainHeightCenter = h;
-
-        VoxelStreamingScratchLease scratchLease = await AcquireStreamingScratchLeaseAsync(ptsX * ptsZ, totalPts, maxVerts, ct);
-        var terrainHeights = scratchLease.TerrainHeights;
-        var gridBiome = scratchLease.GridBiome;
-        var densityField = scratchLease.DensityField;
-        var rawVerts = scratchLease.RawVerts;
-        var counter = scratchLease.Counter;
-        var weldedPositions = scratchLease.WeldedPositions;
-        var triangleIndices = scratchLease.TriangleIndices;
-        var weldedCounter = scratchLease.WeldedCounter;
-        var edgeToVertex = scratchLease.EdgeToVertex;
+        VoxelPipelineData pipelineData = null;
 
         try
         {
-            long setupStartTimestamp = Stopwatch.GetTimestamp();
-            float fallbackHeight = terrainHeightCenter;
-            for (int iz = 0; iz < ptsZ; iz++)
-            for (int ix = 0; ix < ptsX; ix++)
+            if (mapMagicBridge == null)
             {
-                float wx = volumeOrigin.x + ix * voxelStep;
-                float wz = volumeOrigin.z + iz * voxelStep;
-                int hi = ix + iz * ptsX;
-
-                if (mapMagicBridge.TryGetHeight(wx, wz, out float height))
-                    terrainHeights[hi] = height;
-                else
-                    terrainHeights[hi] = fallbackHeight;
-
-                gridBiome[hi] = 0f;
+                Debug.LogError("[HectonVoxel] No MapMagicBridge assigned!");
+                return null;
             }
 
-            float terrainSampleMs = (float)((Stopwatch.GetTimestamp() - setupStartTimestamp) * 1000.0d / Stopwatch.Frequency);
+            MCTables.Initialize();
 
-            ct.ThrowIfCancellationRequested();
+            int clampedLodLevel = math.clamp(lodLevel, 0, 1);
+            int baseGridDim = math.clamp(gridDimension, 32, 128);
+            float baseVoxelStep = math.max(voxelSize, 0.25f);
+            int gridDim = math.max(16, baseGridDim >> clampedLodLevel);
+            float voxelStep = baseVoxelStep * (1 << clampedLodLevel);
+            int ptsX = gridDim + 1;
+            int ptsY = gridDim + 1;
+            int ptsZ = gridDim + 1;
+            int totalPts = ptsX * ptsY * ptsZ;
+            int totalCells = gridDim * gridDim * gridDim;
+            int maxVerts = totalCells * MC_BUFFER_MULTIPLIER;
+            float volumeHalfExtent = gridDim * voxelStep * 0.5f;
+            float lodTransitionBand = clampedLodLevel > 0 ? math.max(baseVoxelStep * 2f, voxelStep * 1.25f) : 0f;
+            float effectiveSealMargin = sealMargin + lodTransitionBand;
+            float3 actualSize = new float3(gridDim, gridDim, gridDim) * voxelStep;
+            float3 volumeOrigin = (float3)worldCenter - actualSize * 0.5f;
+            Vector3 shiftAtStart = HectonFloatingOrigin.Instance != null
+                ? HectonFloatingOrigin.Instance.TotalOffset
+                : Vector3.zero;
 
-            var densityHandle = new VoxelDensityJob
+            float terrainHeightCenter = worldCenter.y - 10f;
+            if (mapMagicBridge.TryGetHeight(worldCenter.x, worldCenter.z, out float sampledHeight))
+                terrainHeightCenter = sampledHeight;
+
+            pipelineData = new VoxelPipelineData
             {
-                ptsX = ptsX, ptsY = ptsY, ptsZ = ptsZ,
-                volumeOrigin = volumeOrigin,
-                voxelStep = voxelStep,
-                terrainHeights = terrainHeights,
-                caveNodes = nodes,
-                caveTunnels = tunnels,
-                caveEntrances = entrances,
-                caveStructures = structures,
-                caveParams = caveParams,
-                sealMargin = sealMargin,
-                density = densityField
-            }.Schedule(totalPts, JOB_BATCH);
+                WorldCenter = worldCenter,
+                ShiftAtStart = shiftAtStart,
+                TerrainHeightCenter = terrainHeightCenter,
+                LODLevel = clampedLodLevel,
+                GridDimension = gridDim,
+                VoxelStep = voxelStep,
+                EffectiveSealMargin = effectiveSealMargin,
+                LodTransitionBand = lodTransitionBand,
+                PtsX = ptsX,
+                PtsY = ptsY,
+                PtsZ = ptsZ,
+                TotalPts = totalPts,
+                TotalCells = totalCells,
+                MaxVerts = maxVerts,
+                VolumeHalfExtent = volumeHalfExtent,
+                VolumeOrigin = volumeOrigin,
+                Seed = caveParams.seed,
+                CaveParams = caveParams,
+                BuildCollider = buildCollider,
+                ExtractSpawnPoints = true,
+                Nodes = nodes,
+                Tunnels = tunnels,
+                Entrances = entrances,
+                Structures = structures,
+                CraterStamps = default
+            };
 
-            var mcHandle = new VoxelMCExtractJob
-            {
-                cellsX = gridDim, cellsY = gridDim, cellsZ = gridDim,
-                ptsX = ptsX, ptsY = ptsY, ptsZ = ptsZ,
-                volumeOrigin = volumeOrigin,
-                voxelStep = voxelStep,
-                density = densityField,
-                edgeTable = MCTables.EdgeTable,
-                triTable = MCTables.TriTable,
-                outVertices = rawVerts,
-                vertexCounter = counter
-            }.Schedule(totalCells, JOB_BATCH, densityHandle);
-
-            float preAwaitSetupMs = (float)((Stopwatch.GetTimestamp() - generationStartTimestamp) * 1000.0d / Stopwatch.Frequency);
             if (RuntimeDiagnosticsTrace.IsActive)
             {
+                float setupMs = (float)((Stopwatch.GetTimestamp() - generationStartTimestamp) * 1000.0d / Stopwatch.Frequency);
                 RuntimeDiagnosticsTrace.WriteEvent(
                     "voxel.pipeline",
-                    $"preawait grid={gridDim} voxel={voxelStep:0.00} pts={totalPts} cells={totalCells} " +
-                    $"terrainSample={terrainSampleMs:0.00}ms setup={preAwaitSetupMs:0.00}ms collider={buildCollider}");
+                    $"preawait grid={gridDim} voxel={voxelStep:0.00} lod={clampedLodLevel} pts={totalPts} cells={totalCells} setup={setupMs:0.00}ms collider={buildCollider}");
             }
 
-            await AwaitForJobCompletionAsync(mcHandle, ct);
-
-            int rawCount = counter[0];
-            float marchingCubesMs = (float)((Stopwatch.GetTimestamp() - generationStartTimestamp) * 1000.0d / Stopwatch.Frequency);
-            if (RuntimeDiagnosticsTrace.IsActive)
-            {
-                RuntimeDiagnosticsTrace.WriteEvent(
-                    "voxel.pipeline",
-                    $"marching-cubes grid={gridDim} voxel={voxelStep:0.00} rawVerts={rawCount} elapsed={marchingCubesMs:0.00}ms");
-            }
-            if (rawCount < 3)
+            if (!await ExecuteVoxelPipelineAsync(pipelineData, ct))
                 return null;
 
-            ct.ThrowIfCancellationRequested();
-
-            var weldHandle = new VoxelWeldJob
-            {
-                rawCount = rawCount,
-                rawVertices = rawVerts,
-                edgeToVertex = edgeToVertex,
-                weldedPositions = weldedPositions,
-                triangleIndices = triangleIndices,
-                weldedCounter = weldedCounter
-            }.Schedule();
-
-            await AwaitForJobCompletionAsync(weldHandle, ct);
-
-            int weldedCount = weldedCounter[0];
-            float weldMs = (float)((Stopwatch.GetTimestamp() - generationStartTimestamp) * 1000.0d / Stopwatch.Frequency);
             if (RuntimeDiagnosticsTrace.IsActive)
             {
+                float surfaceMs = (float)((Stopwatch.GetTimestamp() - generationStartTimestamp) * 1000.0d / Stopwatch.Frequency);
                 RuntimeDiagnosticsTrace.WriteEvent(
                     "voxel.pipeline",
-                    $"weld grid={gridDim} voxel={voxelStep:0.00} weldedVerts={weldedCount} elapsed={weldMs:0.00}ms");
+                    $"surface-data grid={gridDim} voxel={voxelStep:0.00} lod={clampedLodLevel} rawVerts={pipelineData.RawCount} weldedVerts={pipelineData.WeldedCount} spawnPoints={pipelineData.SpawnPointList.Length} elapsed={surfaceMs:0.00}ms");
             }
-            if (weldedCount < 3)
-                return null;
 
-            ct.ThrowIfCancellationRequested();
+            GameObject targetGO = SpawnVolume();
+            targetGO.name = $"Cave_Data_{caveParams.seed}_{worldCenter.x:F0}_{worldCenter.z:F0}";
 
-            var normals = new NativeArray<float3>(weldedCount, Allocator.Persistent,
-                                                    NativeArrayOptions.UninitializedMemory);
-            var biomeVals = new NativeArray<float>(weldedCount, Allocator.Persistent,
-                                                     NativeArrayOptions.UninitializedMemory);
-            var colors = new NativeArray<Color>(weldedCount, Allocator.Persistent,
-                                                  NativeArrayOptions.UninitializedMemory);
-            int maxSpawnPoints = math.max(weldedCount / 20, 64);
-            var spawnPointList = new NativeList<CaveSpawnData>(maxSpawnPoints, Allocator.Persistent);
+            Vector3 currentShift = HectonFloatingOrigin.Instance != null
+                ? HectonFloatingOrigin.Instance.TotalOffset
+                : Vector3.zero;
+            targetGO.transform.position = -(currentShift - shiftAtStart);
 
-            try
+            await ApplyVolumeMeshAsync(targetGO, pipelineData, ct);
+            ConfigureVolumeRuntimeData(targetGO, caveParams.seed, worldCenter, null, gridDim, voxelStep, clampedLodLevel, caveParams,
+                nodes, tunnels, entrances, structures, buildCollider);
+            RegisterEntranceTerrainHoles(targetGO, entrances, voxelStep);
+            _activeVolumes.Add(targetGO);
+            RegisterPipelineSpawnPoints(worldCenter, caveParams.spawnContext, pipelineData.SpawnPointList);
+
+            if (RuntimeDiagnosticsTrace.IsActive)
             {
-                float volumeHalfExtent = gridDim * voxelStep * 0.5f;
-
-                var normalHandle = new VoxelNormalJob
-                {
-                    ptsX = ptsX, ptsY = ptsY, ptsZ = ptsZ,
-                    volumeOrigin = volumeOrigin, voxelStep = voxelStep,
-                    terrainHeights = terrainHeights,
-                    caveNodes = nodes,
-                    caveTunnels = tunnels,
-                    caveEntrances = entrances,
-                    caveStructures = structures,
-                    caveParams = caveParams,
-                    sealMargin = sealMargin,
-                    positions = weldedPositions,
-                    normals = normals
-                }.Schedule(weldedCount, JOB_BATCH);
-
-                var biomeHandle = new VoxelBiomeSampleJob
-                {
-                    ptsX = ptsX, ptsZ = ptsZ,
-                    volumeOrigin = volumeOrigin, voxelStep = voxelStep,
-                    gridBiome = gridBiome, positions = weldedPositions,
-                    biomeValues = biomeVals
-                }.Schedule(weldedCount, JOB_BATCH);
-
-                var colorDeps = JobHandle.CombineDependencies(normalHandle, biomeHandle);
-                var colorHandle = new VoxelColorJob
-                {
-                    maxDepth = ABYSSAL_MAX_DEPTH,
-                    caveEdgeWidth = caveEdgeColorWidth,
-                    volumeCenter = worldCenter,
-                    volumeHalfExtent = volumeHalfExtent,
-                    positions = weldedPositions,
-                    normals = normals,
-                    biomeValues = biomeVals,
-                    colors = colors
-                }.Schedule(weldedCount, JOB_BATCH, colorDeps);
-
-                var spawnHandle = new VoxelSpawnPointJob
-                {
-                    positions = weldedPositions,
-                    normals = normals,
-                    volumeCenter = worldCenter,
-                    volumeHalfExtent = volumeHalfExtent,
-                    floorNormalThreshold = 0.75f,
-                    minInteriorDepth = 0.15f,
-                    keepFraction = 0.03f,
-                    seed = caveParams.seed,
-                    spawnPoints = spawnPointList.AsParallelWriter()
-                }.Schedule(weldedCount, JOB_BATCH, normalHandle);
-
-                var allPhase5 = JobHandle.CombineDependencies(colorHandle, spawnHandle);
-                await AwaitForJobCompletionAsync(allPhase5, ct);
-
-                ct.ThrowIfCancellationRequested();
-
-                float shadingMs = (float)((Stopwatch.GetTimestamp() - generationStartTimestamp) * 1000.0d / Stopwatch.Frequency);
-                if (RuntimeDiagnosticsTrace.IsActive)
-                {
-                    RuntimeDiagnosticsTrace.WriteEvent(
-                        "voxel.pipeline",
-                        $"surface-data grid={gridDim} voxel={voxelStep:0.00} spawnPoints={spawnPointList.Length} elapsed={shadingMs:0.00}ms");
-                }
-
-                GameObject targetGO = SpawnVolume();
-                targetGO.name = $"Cave_Data_{caveParams.seed}_{worldCenter.x:F0}_{worldCenter.z:F0}";
-
-                // Compensate for any world shifts that happened during generation
-                Vector3 currentShift = HectonFloatingOrigin.Instance != null 
-                    ? HectonFloatingOrigin.Instance.TotalOffset 
-                    : Vector3.zero;
-                Vector3 shiftDelta = currentShift - shiftAtStart;
-                targetGO.transform.position = -shiftDelta;
-
-                BuildWeldedMeshNative(targetGO, weldedPositions, normals, colors,
-                                     triangleIndices, rawCount, weldedCount, voxelMaterial, buildCollider);
-                _activeVolumes.Add(targetGO);
-
-                int spawnCount = spawnPointList.Length;
-                if (spawnCount > 0 && ScavengePopulator.Instance != null)
-                {
-                    float tileSize = mapMagicTileSize > 0f ? mapMagicTileSize : 999f;
-                    Vector2Int chunkCoord = new Vector2Int(
-                        Mathf.FloorToInt(worldCenter.x / tileSize),
-                        Mathf.FloorToInt(worldCenter.z / tileSize));
-
-                    SpawnContext caveContext = caveParams.spawnContext;
-                    for (int sp = 0; sp < spawnCount; sp++)
-                    {
-                        CaveSpawnData data = spawnPointList[sp];
-                        ScavengePopulator.Instance.RegisterSpawnPoint(
-                            (Vector3)data.position,
-                            Quaternion.identity,
-                            Vector3.one,
-                            chunkCoord,
-                            data.hashId,
-                            caveContext);
-                    }
-                }
-
                 float totalMs = (float)((Stopwatch.GetTimestamp() - generationStartTimestamp) * 1000.0d / Stopwatch.Frequency);
-                if (RuntimeDiagnosticsTrace.IsActive)
-                {
-                    RuntimeDiagnosticsTrace.WriteEvent(
-                        "voxel.pipeline",
-                        $"mesh-build grid={gridDim} voxel={voxelStep:0.00} collider={buildCollider} spawnPoints={spawnCount} total={totalMs:0.00}ms");
-                }
+                RuntimeDiagnosticsTrace.WriteEvent(
+                    "voxel.pipeline",
+                    $"mesh-build grid={gridDim} voxel={voxelStep:0.00} lod={clampedLodLevel} collider={buildCollider} spawnPoints={pipelineData.SpawnPointList.Length} total={totalMs:0.00}ms");
+            }
 
-                Debug.Log($"[HectonVoxel] Data volume generated seed={caveParams.seed} grid={gridDim} voxel={voxelStep:F2}.");
-                return targetGO;
-            }
-            finally
-            {
-                if (normals.IsCreated) normals.Dispose();
-                if (biomeVals.IsCreated) biomeVals.Dispose();
-                if (colors.IsCreated) colors.Dispose();
-                if (spawnPointList.IsCreated) spawnPointList.Dispose();
-            }
+            Debug.Log($"[HectonVoxel] Data volume generated seed={caveParams.seed} grid={gridDim} voxel={voxelStep:F2} lod={clampedLodLevel}.");
+            return targetGO;
         }
         finally
         {
-            scratchLease.Dispose();
+            pipelineData?.Dispose();
             EndGenerationOperation();
         }
     }
+    internal async Awaitable<bool> RebuildVolumeAsync(
+        HectonVoxelVolume volume,
+        int expectedRuntimeStamp,
+        CancellationToken ct = default)
+    {
+        BeginGenerationOperation();
+        NativeArray<CaveNode> nodes = default;
+        NativeArray<CaveTunnel> tunnels = default;
+        NativeArray<CaveEntrance> entrances = default;
+        NativeArray<CaveStructure> structures = default;
+        NativeArray<VoxelCraterStamp> craterStamps = default;
+        VoxelPipelineData pipelineData = null;
 
-    // ╔═══════════════════════════════════════════════╗
-    // ║       PUBLIC API — VOLUME MANAGEMENT          ║
-    // ╚═══════════════════════════════════════════════╝
+        try
+        {
+            if (volume == null || !volume.HasRuntimeData || !volume.MatchesRuntimeStamp(expectedRuntimeStamp))
+                return false;
 
+            if (mapMagicBridge == null)
+            {
+                Debug.LogError("[HectonVoxel] No MapMagicBridge assigned!");
+                return false;
+            }
+
+            MCTables.Initialize();
+
+            int lodLevel = math.clamp(volume.LODLevel, 0, 1);
+            int gridDim = math.clamp(volume.GridDimension, 16, 128);
+            float voxelStep = math.max(volume.VoxelSize, 0.25f);
+            Vector3 worldCenter = volume.generationPosition;
+            CaveGenerationParams caveParams = volume.CaveParams;
+            float lodTransitionBand = lodLevel > 0 ? math.max(voxelStep * 1.25f, 0.5f) : 0f;
+            float effectiveSealMargin = sealMargin + lodTransitionBand;
+
+            CaveNode[] nodeSnapshot = volume.Nodes;
+            CaveTunnel[] tunnelSnapshot = volume.Tunnels;
+            CaveEntrance[] entranceSnapshot = volume.Entrances;
+            CaveStructure[] structureSnapshot = volume.Structures;
+            VoxelCraterStamp[] craterSnapshot = volume.CraterStamps;
+            int craterCount = volume.CraterStampCount;
+
+            nodes = new NativeArray<CaveNode>(nodeSnapshot.Length, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            tunnels = new NativeArray<CaveTunnel>(tunnelSnapshot.Length, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            entrances = new NativeArray<CaveEntrance>(entranceSnapshot.Length, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            structures = new NativeArray<CaveStructure>(structureSnapshot.Length, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            craterStamps = new NativeArray<VoxelCraterStamp>(craterCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+
+            for (int i = 0; i < nodeSnapshot.Length; i++)
+                nodes[i] = nodeSnapshot[i];
+            for (int i = 0; i < tunnelSnapshot.Length; i++)
+                tunnels[i] = tunnelSnapshot[i];
+            for (int i = 0; i < entranceSnapshot.Length; i++)
+                entrances[i] = entranceSnapshot[i];
+            for (int i = 0; i < structureSnapshot.Length; i++)
+                structures[i] = structureSnapshot[i];
+            for (int i = 0; i < craterCount; i++)
+                craterStamps[i] = craterSnapshot[i];
+
+            int ptsX = gridDim + 1;
+            int ptsY = gridDim + 1;
+            int ptsZ = gridDim + 1;
+            int totalPts = ptsX * ptsY * ptsZ;
+            int totalCells = gridDim * gridDim * gridDim;
+            int maxVerts = totalCells * MC_BUFFER_MULTIPLIER;
+            float volumeHalfExtent = gridDim * voxelStep * 0.5f;
+            float3 actualSize = new float3(gridDim, gridDim, gridDim) * voxelStep;
+            float3 volumeOrigin = (float3)worldCenter - actualSize * 0.5f;
+
+            float terrainHeightCenter = worldCenter.y - 10f;
+            if (mapMagicBridge.TryGetHeight(worldCenter.x, worldCenter.z, out float sampledHeight))
+                terrainHeightCenter = sampledHeight;
+
+            pipelineData = new VoxelPipelineData
+            {
+                WorldCenter = worldCenter,
+                ShiftAtStart = Vector3.zero,
+                TerrainHeightCenter = terrainHeightCenter,
+                LODLevel = lodLevel,
+                GridDimension = gridDim,
+                VoxelStep = voxelStep,
+                EffectiveSealMargin = effectiveSealMargin,
+                LodTransitionBand = lodTransitionBand,
+                PtsX = ptsX,
+                PtsY = ptsY,
+                PtsZ = ptsZ,
+                TotalPts = totalPts,
+                TotalCells = totalCells,
+                MaxVerts = maxVerts,
+                VolumeHalfExtent = volumeHalfExtent,
+                VolumeOrigin = volumeOrigin,
+                Seed = caveParams.seed,
+                CaveParams = caveParams,
+                BuildCollider = volume.BuildCollider,
+                ExtractSpawnPoints = false,
+                Nodes = nodes,
+                Tunnels = tunnels,
+                Entrances = entrances,
+                Structures = structures,
+                CraterStamps = craterStamps
+            };
+
+            if (!await ExecuteVoxelPipelineAsync(pipelineData, ct))
+                return false;
+
+            if (volume == null || !volume.MatchesRuntimeStamp(expectedRuntimeStamp))
+                return false;
+
+            await ApplyVolumeMeshAsync(volume.gameObject, pipelineData, ct);
+            return volume != null && volume.MatchesRuntimeStamp(expectedRuntimeStamp);
+        }
+        finally
+        {
+            pipelineData?.Dispose();
+            if (nodes.IsCreated) nodes.Dispose();
+            if (tunnels.IsCreated) tunnels.Dispose();
+            if (entrances.IsCreated) entrances.Dispose();
+            if (structures.IsCreated) structures.Dispose();
+            if (craterStamps.IsCreated) craterStamps.Dispose();
+            EndGenerationOperation();
+        }
+    }
     /// <summary>Despawns a volume, cleans its mesh, returns to pool.</summary>
     public void DespawnVolume(GameObject volume)
     {
@@ -2628,6 +2750,188 @@ public class HectonVoxelEngine : MonoBehaviour
         {
             handle.Complete();
         }
+    }
+
+    async Awaitable<bool> ExecuteVoxelPipelineAsync(VoxelPipelineData data, CancellationToken ct)
+    {
+        data.ScratchLease = await AcquireStreamingScratchLeaseAsync(data.PtsX * data.PtsZ, data.TotalPts, data.MaxVerts, ct);
+        NativeArray<float> terrainHeights = data.ScratchLease.TerrainHeights;
+        NativeArray<float> gridBiome = data.ScratchLease.GridBiome;
+        NativeArray<float> densityField = data.ScratchLease.DensityField;
+        NativeArray<MCRawVertex> rawVerts = data.ScratchLease.RawVerts;
+        NativeArray<int> counter = data.ScratchLease.Counter;
+        NativeArray<float3> weldedPositions = data.ScratchLease.WeldedPositions;
+        NativeArray<int> triangleIndices = data.ScratchLease.TriangleIndices;
+        NativeArray<int> weldedCounter = data.ScratchLease.WeldedCounter;
+        NativeParallelHashMap<long, int> edgeToVertex = data.ScratchLease.EdgeToVertex;
+
+        float fallbackHeight = data.TerrainHeightCenter;
+        for (int iz = 0; iz < data.PtsZ; iz++)
+        for (int ix = 0; ix < data.PtsX; ix++)
+        {
+            float wx = data.VolumeOrigin.x + ix * data.VoxelStep;
+            float wz = data.VolumeOrigin.z + iz * data.VoxelStep;
+            int hi = ix + iz * data.PtsX;
+
+            if (mapMagicBridge.TryGetHeight(wx, wz, out float sampledHeight))
+                terrainHeights[hi] = sampledHeight;
+            else
+                terrainHeights[hi] = fallbackHeight;
+
+            gridBiome[hi] = 0f;
+        }
+
+        ct.ThrowIfCancellationRequested();
+
+        JobHandle densityHandle = new VoxelDensityJob
+        {
+            ptsX = data.PtsX,
+            ptsY = data.PtsY,
+            ptsZ = data.PtsZ,
+            volumeOrigin = data.VolumeOrigin,
+            voxelStep = data.VoxelStep,
+            terrainHeights = terrainHeights,
+            caveNodes = data.Nodes,
+            caveTunnels = data.Tunnels,
+            caveEntrances = data.Entrances,
+            caveStructures = data.Structures,
+            craterStamps = data.CraterStamps,
+            caveParams = data.CaveParams,
+            sealMargin = data.EffectiveSealMargin,
+            lodLevel = data.LODLevel,
+            lodTransitionBand = data.LodTransitionBand,
+            density = densityField
+        }.Schedule(data.TotalPts, JOB_BATCH);
+
+        JobHandle mcHandle = new VoxelMCExtractJob
+        {
+            cellsX = data.GridDimension,
+            cellsY = data.GridDimension,
+            cellsZ = data.GridDimension,
+            ptsX = data.PtsX,
+            ptsY = data.PtsY,
+            ptsZ = data.PtsZ,
+            volumeOrigin = data.VolumeOrigin,
+            voxelStep = data.VoxelStep,
+            density = densityField,
+            edgeTable = MCTables.EdgeTable,
+            triTable = MCTables.TriTable,
+            outVertices = rawVerts,
+            vertexCounter = counter
+        }.Schedule(data.TotalCells, JOB_BATCH, densityHandle);
+
+        await AwaitForJobCompletionAsync(mcHandle, ct);
+
+        data.RawCount = counter[0];
+        if (data.RawCount < 3)
+            return false;
+
+        ct.ThrowIfCancellationRequested();
+
+        JobHandle weldHandle = new VoxelWeldJob
+        {
+            rawCount = data.RawCount,
+            rawVertices = rawVerts,
+            edgeToVertex = edgeToVertex,
+            weldedPositions = weldedPositions,
+            triangleIndices = triangleIndices,
+            weldedCounter = weldedCounter
+        }.Schedule();
+
+        await AwaitForJobCompletionAsync(weldHandle, ct);
+
+        data.WeldedCount = weldedCounter[0];
+        if (data.WeldedCount < 3)
+            return false;
+
+        ct.ThrowIfCancellationRequested();
+
+        data.Normals = new NativeArray<float3>(data.WeldedCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+        data.CurvatureValues = new NativeArray<float>(data.WeldedCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+        data.BiomeValues = new NativeArray<float>(data.WeldedCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+        data.Colors = new NativeArray<Color>(data.WeldedCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+        if (data.ExtractSpawnPoints)
+        {
+            int maxSpawnPoints = math.max(data.WeldedCount / 20, 64);
+            data.SpawnPointList = new NativeList<CaveSpawnData>(maxSpawnPoints, Allocator.Persistent);
+        }
+
+        JobHandle normalHandle = new VoxelNormalJob
+        {
+            ptsX = data.PtsX,
+            ptsY = data.PtsY,
+            ptsZ = data.PtsZ,
+            volumeOrigin = data.VolumeOrigin,
+            voxelStep = data.VoxelStep,
+            terrainHeights = terrainHeights,
+            caveNodes = data.Nodes,
+            caveTunnels = data.Tunnels,
+            caveEntrances = data.Entrances,
+            caveStructures = data.Structures,
+            craterStamps = data.CraterStamps,
+            caveParams = data.CaveParams,
+            sealMargin = data.EffectiveSealMargin,
+            lodLevel = data.LODLevel,
+            lodTransitionBand = data.LodTransitionBand,
+            positions = weldedPositions,
+            normals = data.Normals,
+            curvatureValues = data.CurvatureValues
+        }.Schedule(data.WeldedCount, JOB_BATCH);
+
+        JobHandle biomeHandle = new VoxelBiomeSampleJob
+        {
+            ptsX = data.PtsX,
+            ptsZ = data.PtsZ,
+            volumeOrigin = data.VolumeOrigin,
+            voxelStep = data.VoxelStep,
+            gridBiome = gridBiome,
+            positions = weldedPositions,
+            biomeValues = data.BiomeValues
+        }.Schedule(data.WeldedCount, JOB_BATCH);
+
+        JobHandle colorDeps = JobHandle.CombineDependencies(normalHandle, biomeHandle);
+        JobHandle colorHandle = new VoxelColorJob
+        {
+            maxDepth = ABYSSAL_MAX_DEPTH,
+            caveEdgeWidth = caveEdgeColorWidth,
+            volumeCenter = data.WorldCenter,
+            volumeHalfExtent = data.VolumeHalfExtent,
+            ptsX = data.PtsX,
+            ptsZ = data.PtsZ,
+            volumeOrigin = data.VolumeOrigin,
+            voxelStep = data.VoxelStep,
+            lodLevel = data.LODLevel,
+            lodTransitionBand = data.LodTransitionBand,
+            positions = weldedPositions,
+            normals = data.Normals,
+            terrainHeights = terrainHeights,
+            curvatureValues = data.CurvatureValues,
+            biomeValues = data.BiomeValues,
+            colors = data.Colors
+        }.Schedule(data.WeldedCount, JOB_BATCH, colorDeps);
+
+        JobHandle phase5Handle = colorHandle;
+        if (data.ExtractSpawnPoints)
+        {
+            JobHandle spawnHandle = new VoxelSpawnPointJob
+            {
+                positions = weldedPositions,
+                normals = data.Normals,
+                volumeCenter = data.WorldCenter,
+                volumeHalfExtent = data.VolumeHalfExtent,
+                floorNormalThreshold = 0.75f,
+                minInteriorDepth = 0.15f,
+                keepFraction = 0.03f,
+                seed = data.Seed,
+                spawnPoints = data.SpawnPointList.AsParallelWriter()
+            }.Schedule(data.WeldedCount, JOB_BATCH, normalHandle);
+
+            phase5Handle = JobHandle.CombineDependencies(colorHandle, spawnHandle);
+        }
+
+        await AwaitForJobCompletionAsync(phase5Handle, ct);
+        ct.ThrowIfCancellationRequested();
+        return true;
     }
 
     async Awaitable<VoxelStreamingScratchLease> AcquireStreamingScratchLeaseAsync(
@@ -2808,9 +3112,9 @@ public class HectonVoxelEngine : MonoBehaviour
         array = new NativeArray<T>(requiredLength, Allocator.Persistent, options);
     }
 
-    // ╔═══════════════════════════════════════════════╗
-    // ║            INTERNAL HELPERS                   ║
-    // ╚═══════════════════════════════════════════════╝
+    // â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+    // â•‘            INTERNAL HELPERS                   â•‘
+    // â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     static void BeginGenerationOperation()
     {
@@ -2860,15 +3164,14 @@ public class HectonVoxelEngine : MonoBehaviour
         return go;
     }
 
-    void BuildWeldedMeshNative(GameObject go,
+    Mesh BuildWeldedMeshNative(GameObject go,
                                NativeArray<float3> positions,
                                NativeArray<float3> normals,
                                NativeArray<Color> colors,
                                NativeArray<int> triangleIndices,
                                int triIndexCount,
                                int vertCount,
-                               Material mat,
-                               bool buildCollider)
+                               Material mat)
     {
         var mf = go.GetComponent<MeshFilter>();
         if (mf == null) mf = go.AddComponent<MeshFilter>();
@@ -2890,32 +3193,18 @@ public class HectonVoxelEngine : MonoBehaviour
 
         mesh.indexFormat = vertCount > 65535 ? IndexFormat.UInt32 : IndexFormat.UInt16;
 
-        var mPos = new NativeArray<Vector3>(vertCount, Allocator.Temp,
-                                              NativeArrayOptions.UninitializedMemory);
-        var mNrm = new NativeArray<Vector3>(vertCount, Allocator.Temp,
-                                              NativeArrayOptions.UninitializedMemory);
-        var mCol = new NativeArray<Color>(vertCount, Allocator.Temp,
-                                           NativeArrayOptions.UninitializedMemory);
+        NativeArray<Vector3> positionView = positions.Reinterpret<Vector3>(UnsafeUtility.SizeOf<float3>());
+        NativeArray<Vector3> normalView = normals.Reinterpret<Vector3>(UnsafeUtility.SizeOf<float3>());
+        MeshUpdateFlags uploadFlags =
+            MeshUpdateFlags.DontNotifyMeshUsers |
+            MeshUpdateFlags.DontResetBoneBounds |
+            MeshUpdateFlags.DontValidateIndices;
 
-        for (int i = 0; i < vertCount; i++)
-        {
-            mPos[i] = (Vector3)positions[i];
-            mNrm[i] = (Vector3)normals[i];
-            mCol[i] = colors[i];
-        }
-
-        mesh.SetVertices(mPos);
-        mesh.SetNormals(mNrm);
-        mesh.SetColors(mCol);
-        mPos.Dispose();
-        mNrm.Dispose();
-        mCol.Dispose();
-
-        var mIdx = new NativeArray<int>(triIndexCount, Allocator.Temp,
-                                          NativeArrayOptions.UninitializedMemory);
-        NativeArray<int>.Copy(triangleIndices, mIdx, triIndexCount);
-        mesh.SetIndices(mIdx, MeshTopology.Triangles, 0);
-        mIdx.Dispose();
+        mesh.SetVertices(positionView, 0, vertCount, uploadFlags);
+        mesh.SetNormals(normalView, 0, vertCount, uploadFlags);
+        mesh.SetColors(colors, 0, vertCount, uploadFlags);
+        mesh.SetUVs(3, positionView, 0, vertCount, uploadFlags);
+        mesh.SetIndices<int>(triangleIndices, 0, triIndexCount, MeshTopology.Triangles, 0, false, 0);
 
         mesh.RecalculateTangents();
         mesh.RecalculateBounds();
@@ -2926,18 +3215,189 @@ public class HectonVoxelEngine : MonoBehaviour
         mr.shadowCastingMode = ShadowCastingMode.Off;
         mr.receiveShadows = true;
         mr.enabled = true;
+        return mesh;
+    }
+
+    async Awaitable ApplyVolumeMeshAsync(GameObject go, VoxelPipelineData data, CancellationToken ct)
+    {
+        Mesh mesh = BuildWeldedMeshNative(
+            go,
+            data.ScratchLease.WeldedPositions,
+            data.Normals,
+            data.Colors,
+            data.ScratchLease.TriangleIndices,
+            data.RawCount,
+            data.WeldedCount,
+            voxelMaterial);
 
         var mcol = go.GetComponent<MeshCollider>();
         if (mcol == null) mcol = go.AddComponent<MeshCollider>();
-        if (buildCollider)
+        mcol.sharedMesh = null;
+        mcol.enabled = false;
+
+        HectonVoxelVolume volume = go.GetComponent<HectonVoxelVolume>();
+        if (volume != null)
+            volume.ResetColliderChunks(false);
+
+        if (!data.BuildCollider)
+            return;
+
+        if (volume == null)
         {
+            JobHandle fallbackBakeHandle = new VoxelMeshBakeJob
+            {
+                MeshId = mesh.GetEntityId(),
+                Convex = false
+            }.Schedule();
+
+            await AwaitForJobCompletionAsync(fallbackBakeHandle, ct);
+
+            ct.ThrowIfCancellationRequested();
             mcol.sharedMesh = mesh;
             mcol.enabled = true;
+            return;
         }
-        else
+
+        await ApplyChunkedColliderMeshesAsync(volume, data, ct);
+    }
+
+    static int ResolveColliderChunkCount(int triangleCount)
+    {
+        return triangleCount >= 120000 ? 8 : 4;
+    }
+
+    async Awaitable ApplyChunkedColliderMeshesAsync(
+        HectonVoxelVolume volume,
+        VoxelPipelineData data,
+        CancellationToken ct)
+    {
+        int triangleIndexCount = data.RawCount;
+        int triangleCount = triangleIndexCount / 3;
+        if (triangleCount <= 0)
         {
-            mcol.sharedMesh = null;
-            mcol.enabled = false;
+            volume.ResetColliderChunks(false);
+            return;
+        }
+
+        int colliderChunkCount = ResolveColliderChunkCount(triangleCount);
+        volume.EnsureColliderChunkCapacity(colliderChunkCount);
+
+        NativeArray<byte> triangleBuckets = default;
+        NativeArray<int> bucketCounts = default;
+        NativeArray<int> bucketOffsets = default;
+        NativeArray<int> bucketWriteHeads = default;
+        NativeArray<int> chunkTriangleIndices = default;
+        bool completed = false;
+
+        try
+        {
+            triangleBuckets = new NativeArray<byte>(triangleCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            bucketCounts = new NativeArray<int>(colliderChunkCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            bucketOffsets = new NativeArray<int>(colliderChunkCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            bucketWriteHeads = new NativeArray<int>(colliderChunkCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            chunkTriangleIndices = new NativeArray<int>(triangleIndexCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+
+            float3 boundsMin = data.VolumeOrigin;
+            float3 boundsSize = new float3(data.GridDimension, data.GridDimension, data.GridDimension) * data.VoxelStep;
+
+            JobHandle classifyHandle = new VoxelColliderChunkClassifyJob
+            {
+                positions = data.ScratchLease.WeldedPositions,
+                triangleIndices = data.ScratchLease.TriangleIndices,
+                boundsMin = boundsMin,
+                boundsSize = boundsSize,
+                chunkCount = colliderChunkCount,
+                triangleBuckets = triangleBuckets
+            }.Schedule(triangleCount, 64);
+
+            await AwaitForJobCompletionAsync(classifyHandle, ct);
+
+            for (int triangleIndex = 0; triangleIndex < triangleCount; triangleIndex++)
+                bucketCounts[triangleBuckets[triangleIndex]] += 3;
+
+            int runningOffset = 0;
+            for (int chunkIndex = 0; chunkIndex < colliderChunkCount; chunkIndex++)
+            {
+                bucketOffsets[chunkIndex] = runningOffset;
+                bucketWriteHeads[chunkIndex] = runningOffset;
+                runningOffset += bucketCounts[chunkIndex];
+            }
+
+            for (int triangleIndex = 0; triangleIndex < triangleCount; triangleIndex++)
+            {
+                int bucket = triangleBuckets[triangleIndex];
+                int writeHead = bucketWriteHeads[bucket];
+                int triBase = triangleIndex * 3;
+                chunkTriangleIndices[writeHead] = data.ScratchLease.TriangleIndices[triBase];
+                chunkTriangleIndices[writeHead + 1] = data.ScratchLease.TriangleIndices[triBase + 1];
+                chunkTriangleIndices[writeHead + 2] = data.ScratchLease.TriangleIndices[triBase + 2];
+                bucketWriteHeads[bucket] = writeHead + 3;
+            }
+
+            NativeArray<Vector3> positionView = data.ScratchLease.WeldedPositions.Reinterpret<Vector3>(UnsafeUtility.SizeOf<float3>());
+            MeshUpdateFlags uploadFlags =
+                MeshUpdateFlags.DontNotifyMeshUsers |
+                MeshUpdateFlags.DontResetBoneBounds |
+                MeshUpdateFlags.DontValidateIndices;
+
+            int assignedChunkCount = 0;
+            for (int chunkIndex = 0; chunkIndex < colliderChunkCount; chunkIndex++)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                MeshCollider chunkCollider = volume.GetColliderChunkCollider(chunkIndex);
+                Mesh chunkMesh = volume.GetOrCreateColliderChunkMesh(chunkIndex);
+                if (chunkCollider == null || chunkMesh == null)
+                    continue;
+
+                int chunkIndexCount = bucketCounts[chunkIndex];
+                chunkCollider.sharedMesh = null;
+                chunkCollider.enabled = false;
+
+                if (chunkIndexCount <= 0)
+                {
+                    chunkMesh.Clear(false);
+                    chunkCollider.gameObject.SetActive(false);
+                    continue;
+                }
+
+                chunkCollider.gameObject.SetActive(true);
+                chunkMesh.Clear(false);
+                chunkMesh.indexFormat = data.WeldedCount > 65535 ? IndexFormat.UInt32 : IndexFormat.UInt16;
+                chunkMesh.SetVertices(positionView, 0, data.WeldedCount, uploadFlags);
+                chunkMesh.SetIndices<int>(chunkTriangleIndices, bucketOffsets[chunkIndex], chunkIndexCount, MeshTopology.Triangles, 0, false, 0);
+                chunkMesh.RecalculateBounds();
+
+                JobHandle bakeHandle = new VoxelMeshBakeJob
+                {
+                    MeshId = chunkMesh.GetEntityId(),
+                    Convex = false
+                }.Schedule();
+
+                await AwaitForJobCompletionAsync(bakeHandle, ct);
+
+                ct.ThrowIfCancellationRequested();
+                chunkCollider.sharedMesh = chunkMesh;
+                chunkCollider.enabled = true;
+                assignedChunkCount++;
+
+                if ((assignedChunkCount & 1) == 0)
+                    await Awaitable.NextFrameAsync(cancellationToken: ct);
+            }
+
+            volume.SetActiveColliderChunkCount(colliderChunkCount);
+            completed = true;
+        }
+        finally
+        {
+            if (!completed)
+                volume.ResetColliderChunks(false);
+
+            if (triangleBuckets.IsCreated) triangleBuckets.Dispose();
+            if (bucketCounts.IsCreated) bucketCounts.Dispose();
+            if (bucketOffsets.IsCreated) bucketOffsets.Dispose();
+            if (bucketWriteHeads.IsCreated) bucketWriteHeads.Dispose();
+            if (chunkTriangleIndices.IsCreated) chunkTriangleIndices.Dispose();
         }
     }
 
@@ -2962,6 +3422,87 @@ public class HectonVoxelEngine : MonoBehaviour
         }
     }
 
+    void ConfigureVolumeRuntimeData(
+        GameObject go,
+        uint seed,
+        Vector3 worldCenter,
+        CavePreset preset,
+        int gridDimension,
+        float voxelSize,
+        int lodLevel,
+        CaveGenerationParams caveParams,
+        NativeArray<CaveNode> nodes,
+        NativeArray<CaveTunnel> tunnels,
+        NativeArray<CaveEntrance> entrances,
+        NativeArray<CaveStructure> structures,
+        bool buildCollider)
+    {
+        if (go == null)
+            return;
+
+        var volume = go.GetComponent<HectonVoxelVolume>();
+        if (volume == null)
+            return;
+
+        volume.ConfigureRuntimeData(
+            this,
+            seed,
+            worldCenter,
+            preset,
+            gridDimension,
+            voxelSize,
+            lodLevel,
+            caveParams,
+            nodes,
+            tunnels,
+            entrances,
+            structures,
+            buildCollider);
+    }
+
+    void RegisterEntranceTerrainHoles(GameObject go, NativeArray<CaveEntrance> entrances, float voxelSize)
+    {
+        HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+        if (vegetationBridge == null || go == null || !entrances.IsCreated || entrances.Length <= 0)
+            return;
+
+        HectonVoxelVolume volume = go.GetComponent<HectonVoxelVolume>();
+        if (volume == null)
+            return;
+
+        float holePadding = math.max(voxelSize * 1.5f, 1f);
+        for (int i = 0; i < entrances.Length; i++)
+        {
+            CaveEntrance entrance = entrances[i];
+            float radius = math.max(entrance.radius, entrance.innerRadius) + holePadding;
+            int holeHandle = vegetationBridge.RegisterTerrainHoleHandle((Vector3)entrance.surfacePosition, radius);
+            volume.TrackTerrainHoleHandle(holeHandle);
+        }
+    }
+
+    void RegisterPipelineSpawnPoints(Vector3 worldCenter, SpawnContext caveContext, NativeList<CaveSpawnData> spawnPointList)
+    {
+        if (!spawnPointList.IsCreated || spawnPointList.Length <= 0 || ScavengePopulator.Instance == null)
+            return;
+
+        float tileSize = mapMagicTileSize > 0f ? mapMagicTileSize : 999f;
+        Vector2Int chunkCoord = new Vector2Int(
+            Mathf.FloorToInt(worldCenter.x / tileSize),
+            Mathf.FloorToInt(worldCenter.z / tileSize));
+
+        for (int sp = 0; sp < spawnPointList.Length; sp++)
+        {
+            CaveSpawnData spawnData = spawnPointList[sp];
+            ScavengePopulator.Instance.RegisterSpawnPoint(
+                (Vector3)spawnData.position,
+                Quaternion.identity,
+                Vector3.one,
+                chunkCoord,
+                spawnData.hashId,
+                caveContext);
+        }
+    }
+
     void SafeDestroy(UnityEngine.Object obj)
     {
         if (obj == null) return;
@@ -2973,9 +3514,9 @@ public class HectonVoxelEngine : MonoBehaviour
 #endif
     }
 
-    // ╔═══════════════════════════════════════════════╗
-    // ║                GIZMOS                         ║
-    // ╚═══════════════════════════════════════════════╝
+    // â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+    // â•‘                GIZMOS                         â•‘
+    // â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     void OnDrawGizmosSelected()
     {
@@ -2992,9 +3533,9 @@ public class HectonVoxelEngine : MonoBehaviour
 
 #endregion
 
-// ════════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  CUSTOM EDITOR (v4.0)
-// ════════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 #if UNITY_EDITOR
 
 [CustomEditor(typeof(HectonVoxelEngine))]
@@ -3012,7 +3553,7 @@ public class HectonVoxelEngineEditor : Editor
         if (Application.isPlaying)
         {
             EditorGUILayout.HelpBox(
-                $"═══ CAVE VOXEL ENGINE v4.0 ═══\n" +
+                $"â•â•â• CAVE VOXEL ENGINE v4.0 â•â•â•\n" +
                 $"Active Volumes: {engine.ActiveVolumeCount}\n" +
                 $"MC Tables: {(MCTables.IsReady ? "Ready" : "Not Init")}\n" +
                 $"Height Source: MapMagicBridge\n" +
@@ -3035,18 +3576,18 @@ public class HectonVoxelEngineEditor : Editor
         float totalMB = densityMB + rawMB + weldMapMB;
 
         EditorGUILayout.HelpBox(
-            $"═══ CURRENT PRESET: {preset.presetName} ═══\n" +
-            $"Grid: {dim}³ | Voxel: {vox}m | Coverage: {coverage:F0}m\n" +
+            $"â•â•â• CURRENT PRESET: {preset.presetName} â•â•â•\n" +
+            $"Grid: {dim}Â³ | Voxel: {vox}m | Coverage: {coverage:F0}m\n" +
             $"Rooms: {preset.minRooms}-{preset.maxRooms}\n" +
             $"Density: {densityMB:F1} MB | MC Buffer: {rawMB:F1} MB\n" +
             $"Peak temp: {totalMB:F1} MB (freed after gen)\n" +
-            $"MC Buffer: ×{MC_BUFFER_MULTIPLIER} (safe truncation)",
+            $"MC Buffer: Ã—{MC_BUFFER_MULTIPLIER} (safe truncation)",
             totalMB > 100f ? MessageType.Warning : MessageType.None);
 
         EditorGUILayout.Space(5);
 
         GUI.backgroundColor = new Color(1f, 0.5f, 0.4f);
-        if (GUILayout.Button("✕  Clear All Volumes", GUILayout.Height(28)))
+        if (GUILayout.Button("âœ•  Clear All Volumes", GUILayout.Height(28)))
         {
             Undo.RegisterFullObjectHierarchyUndo(engine.gameObject, "Clear Caves");
             engine.ClearAllVolumes();
@@ -3056,3 +3597,4 @@ public class HectonVoxelEngineEditor : Editor
 }
 
 #endif
+

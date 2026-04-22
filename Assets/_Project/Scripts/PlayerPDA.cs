@@ -40,8 +40,12 @@ using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Input;
+using Hecton8.World;
 using System;
+using System.Text;
+using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Hecton8.UI
 {
@@ -93,8 +97,8 @@ namespace Hecton8.UI
         [Tooltip("CanvasGroup для fade-анимации. Если null — мгновенное появление.")]
         [SerializeField] private CanvasGroup pdaCanvasGroup;
 
-        [Tooltip("Вкладки PDA. Порядок: 0=Inventory, 1=Loadout, 2=Construction, 3=Barter, 4=Data Log.")]
-        [SerializeField] private GameObject[] tabs = new GameObject[5];
+        [Tooltip("Вкладки PDA. Порядок: 0=Inventory, 1=Loadout, 2=Construction, 3=Barter, 4=Data Log, 5=Spectrum, 6=Atlas Signal, 7=Diagnostics.")]
+        [SerializeField] private GameObject[] tabs = new GameObject[8];
 
         [Tooltip("HectonSurvivalSystem для battery drain. Опционально.")]
         [SerializeField] private HectonSurvivalSystem survivalSystem;
@@ -104,7 +108,7 @@ namespace Hecton8.UI
         // ══════════════════════════════════════════════════════════
 
         [Header("── Settings ────────────────────────────────")]
-        [Tooltip("Вкладка по умолчанию при открытии (0=Inventory, 1=Loadout, 2=Construction, 3=Barter, 4=Data Log).")]
+        [Tooltip("Вкладка по умолчанию при открытии (0=Inventory, 1=Loadout, 2=Construction, 3=Barter, 4=Data Log, 5=Spectrum, 6=Atlas Signal, 7=Diagnostics).")]
         [SerializeField] private int defaultTab = 0;
 
         [Tooltip("Скорость fade-анимации (alpha/sec). 0 = мгновенно.")]
@@ -334,8 +338,12 @@ namespace Hecton8.UI
             if (atlasSignal == null)
                 atlasSignal = EnsureRuntimeTab(root, "Tab_AtlasSignal", typeof(Hecton8.UI.PDAAtlasSignalTab));
 
-            if (tabs == null || tabs.Length != 7)
-                tabs = new GameObject[7];
+            GameObject diagnostics = root.Find("Tab_Diagnostics")?.gameObject;
+            if (diagnostics == null)
+                diagnostics = EnsureRuntimeTab(root, "Tab_Diagnostics", typeof(Hecton8.UI.PDADiagnosticTerminal));
+
+            if (tabs == null || tabs.Length != 8)
+                tabs = new GameObject[8];
 
             if (inventory != null)   tabs[0] = inventory;
             if (loadout != null)     tabs[1] = loadout;
@@ -344,6 +352,7 @@ namespace Hecton8.UI
             if (dataLog != null)     tabs[4] = dataLog;
             if (spectrum != null)    tabs[5] = spectrum;
             if (atlasSignal != null) tabs[6] = atlasSignal;
+            if (diagnostics != null) tabs[7] = diagnostics;
         }
 
         private static GameObject EnsureRuntimeTab(Transform root, string name, Type tabComponentType)
@@ -884,6 +893,319 @@ namespace Hecton8.UI
             int next = _activeTab + 1;
             if (next >= tabs.Length) next = 0;
             SetActiveTab(next);
+        }
+    }
+
+    /// <summary>
+    /// PDA diagnostics tab showing slow-tick memory and FPS state in a monospaced terminal layout.
+    /// </summary>
+    [DisallowMultipleComponent]
+    [AddComponentMenu("Hecton8/UI/PDA Diagnostic Terminal")]
+    public sealed class PDADiagnosticTerminal : MonoBehaviour, ISlowTickable
+    {
+        private const int DiagnosticsTabIndex = 7;
+        private const string TitleText = "DIAGNOSTIC TERMINAL // PERF / HULL / OFFSET";
+
+        private static readonly Color BackgroundColor = new Color(0.03f, 0.08f, 0.10f, 0.86f);
+        private static readonly Color RuleColor = new Color(0.46f, 0.98f, 0.94f, 0.16f);
+        private static readonly Color TitleColor = new Color(0.79f, 0.96f, 0.92f, 0.96f);
+        private static readonly Color BodyColor = new Color(0.84f, 0.94f, 0.88f, 0.92f);
+
+        [Header("References")]
+        [SerializeField] private PlayerPDA playerPda;
+        [SerializeField] private TMP_FontAsset labelFont;
+        [SerializeField] private TMP_FontAsset numericFont;
+
+        // COLD ALLOC: StringBuilder[192] — PDA diagnostics terminal text assembly — owner: PDADiagnosticTerminal
+        private readonly StringBuilder _builder = new StringBuilder(192);
+
+        private bool _built;
+        private bool _registered;
+        private CanvasGroup _group;
+        private TextMeshProUGUI _titleLabel;
+        private TextMeshProUGUI _bodyLabel;
+        private HectonPlayerMovement _playerMovement;
+        private SargassumMicroFaunaBoids _microFaunaBoids;
+        private int _lastMemoryMb = int.MinValue;
+        private int _lastFps = int.MinValue;
+        private int _lastBoidCount = int.MinValue;
+        private int _lastHullStressPercent = int.MinValue;
+        private Vector3 _lastUniverseOffset = new Vector3(float.NaN, float.NaN, float.NaN);
+
+        private void Awake()
+        {
+            if (playerPda == null)
+                playerPda = GetComponentInParent<PlayerPDA>();
+
+            if (_playerMovement == null &&
+                SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                playerTransform != null)
+            {
+                _playerMovement = playerTransform.GetComponent<HectonPlayerMovement>();
+            }
+
+            labelFont = LocalizedFontResolver.ResolveReadableFont(labelFont);
+            numericFont = LocalizedFontResolver.ResolveNumericFont(numericFont, labelFont);
+        }
+
+        private void OnEnable()
+        {
+            EnsureBuilt();
+            PDAEvents.OnOpened += HandlePdaStateChanged;
+            PDAEvents.OnClosed += HandlePdaClosed;
+            PDAEvents.OnTabChanged += HandlePdaTabChanged;
+            EvaluateTickRegistration();
+            RefreshTerminal(force: true);
+        }
+
+        private void OnDisable()
+        {
+            PDAEvents.OnOpened -= HandlePdaStateChanged;
+            PDAEvents.OnClosed -= HandlePdaClosed;
+            PDAEvents.OnTabChanged -= HandlePdaTabChanged;
+            UnregisterFromTickManager();
+        }
+
+        private void OnDestroy()
+        {
+            PDAEvents.OnOpened -= HandlePdaStateChanged;
+            PDAEvents.OnClosed -= HandlePdaClosed;
+            PDAEvents.OnTabChanged -= HandlePdaTabChanged;
+            UnregisterFromTickManager();
+        }
+
+        public void SlowTick()
+        {
+            if (!IsDiagnosticsVisible())
+                return;
+
+            RefreshTerminal(force: false);
+        }
+
+        private void HandlePdaStateChanged(int initialTab)
+        {
+            EvaluateTickRegistration();
+            if (initialTab == DiagnosticsTabIndex)
+                RefreshTerminal(force: true);
+        }
+
+        private void HandlePdaClosed(float openDuration)
+        {
+            UnregisterFromTickManager();
+        }
+
+        private void HandlePdaTabChanged(int previousTab, int newTab)
+        {
+            EvaluateTickRegistration();
+            if (newTab == DiagnosticsTabIndex)
+                RefreshTerminal(force: true);
+        }
+
+        private void EnsureBuilt()
+        {
+            if (_built)
+                return;
+
+            RectTransform root = GetComponent<RectTransform>();
+            if (root == null)
+                return;
+
+            Image background = gameObject.GetComponent<Image>();
+            if (background == null)
+                background = gameObject.AddComponent<Image>();
+            background.color = BackgroundColor;
+
+            _group = gameObject.GetComponent<CanvasGroup>();
+            if (_group == null)
+                _group = gameObject.AddComponent<CanvasGroup>();
+            _group.alpha = 1f;
+            _group.blocksRaycasts = false;
+            _group.interactable = false;
+
+            CreateRule(root, "RuleTop", -54f);
+            CreateRule(root, "RuleBottom", -118f);
+
+            _titleLabel = CreateText(root, "Title", labelFont, 12f, FontStyles.Bold, TextAlignmentOptions.TopLeft, TitleColor);
+            Anchor(_titleLabel.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(16f, -14f), new Vector2(-16f, -42f));
+            _titleLabel.text = TitleText;
+
+            _bodyLabel = CreateText(root, "Body", numericFont != null ? numericFont : labelFont, 15f, FontStyles.Normal, TextAlignmentOptions.TopLeft, BodyColor);
+            _bodyLabel.textWrappingMode = TextWrappingModes.NoWrap;
+            Anchor(_bodyLabel.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(16f, -72f), new Vector2(-16f, -236f));
+            _bodyLabel.text = string.Empty;
+
+            _built = true;
+        }
+
+        private void RefreshTerminal(bool force)
+        {
+            if (!_built || _bodyLabel == null)
+                return;
+
+            ResolveDiagnosticsSources();
+            int fps = Mathf.RoundToInt(1f / Mathf.Max(0.0001f, Time.unscaledDeltaTime));
+            long totalMemoryBytes = GC.GetTotalMemory(false);
+            int memoryMb = (int)(totalMemoryBytes / (1024L * 1024L));
+            int boidCount = _microFaunaBoids != null ? _microFaunaBoids.BoidCount : 0;
+            int hullStressPercent = _playerMovement != null
+                ? Mathf.RoundToInt(Mathf.Clamp01(_playerMovement.CurrentHullStress01) * 100f)
+                : 0;
+            Vector3 universeOffset = HectonFloatingOrigin.Instance != null
+                ? HectonFloatingOrigin.Instance.TotalUniverseOffset
+                : HectonMapMagicVegetationBridge.GlobalTotalUniverseOffset;
+
+            if (!force &&
+                fps == _lastFps &&
+                memoryMb == _lastMemoryMb &&
+                boidCount == _lastBoidCount &&
+                hullStressPercent == _lastHullStressPercent &&
+                universeOffset == _lastUniverseOffset)
+            {
+                return;
+            }
+
+            _lastFps = fps;
+            _lastMemoryMb = memoryMb;
+            _lastBoidCount = boidCount;
+            _lastHullStressPercent = hullStressPercent;
+            _lastUniverseOffset = universeOffset;
+
+            _builder.Clear();
+            _builder.Append("GC RESERVED  ").Append(memoryMb).Append(" MB\n");
+            _builder.Append("FRAME RATE   ").Append(fps).Append(" FPS\n");
+            _builder.Append("BOIDS LIVE   ").Append(boidCount).Append('\n');
+            _builder.Append("HULL STRESS  ").Append(hullStressPercent).Append("%\n");
+            _builder.Append("UNIV OFFSET  ");
+            AppendSignedRoundedVector(_builder, universeOffset);
+            _builder.Append('\n');
+            _builder.Append("SLOW TICK    2 HZ\n");
+            _builder.Append("STATUS       ONLINE");
+            _bodyLabel.SetText(_builder);
+        }
+
+        private void ResolveDiagnosticsSources()
+        {
+            if (_playerMovement == null &&
+                SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                playerTransform != null)
+            {
+                _playerMovement = playerTransform.GetComponent<HectonPlayerMovement>();
+            }
+
+            if (_microFaunaBoids == null)
+                _microFaunaBoids = UnityEngine.Object.FindAnyObjectByType<SargassumMicroFaunaBoids>(FindObjectsInactive.Exclude);
+        }
+
+        private bool IsDiagnosticsVisible()
+        {
+            return isActiveAndEnabled &&
+                   gameObject.activeInHierarchy &&
+                   PlayerPDA.IsOpen &&
+                   playerPda != null &&
+                   playerPda.ActiveTab == DiagnosticsTabIndex;
+        }
+
+        private void EvaluateTickRegistration()
+        {
+            if (IsDiagnosticsVisible())
+                RegisterToTickManager();
+            else
+                UnregisterFromTickManager();
+        }
+
+        private void RegisterToTickManager()
+        {
+            if (_registered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager == null)
+                return;
+
+            tickManager.Register((ISlowTickable)this);
+            _registered = true;
+        }
+
+        private void UnregisterFromTickManager()
+        {
+            if (!_registered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+                tickManager.Unregister((ISlowTickable)this);
+
+            _registered = false;
+        }
+
+        private static void CreateRule(RectTransform parent, string name, float anchoredY)
+        {
+            // COLD ALLOC: GameObject[1] — PDA diagnostics divider rule — owner: PDADiagnosticTerminal
+            GameObject ruleObject = new GameObject(name, typeof(RectTransform), typeof(Image));
+            ruleObject.layer = parent.gameObject.layer;
+            RectTransform rect = ruleObject.GetComponent<RectTransform>();
+            rect.SetParent(parent, false);
+            Anchor(rect, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(16f, anchoredY - 1f), new Vector2(-16f, anchoredY + 1f));
+            Image image = ruleObject.GetComponent<Image>();
+            image.color = RuleColor;
+            image.raycastTarget = false;
+        }
+
+        private static TextMeshProUGUI CreateText(
+            RectTransform parent,
+            string name,
+            TMP_FontAsset font,
+            float fontSize,
+            FontStyles fontStyle,
+            TextAlignmentOptions alignment,
+            Color color)
+        {
+            // COLD ALLOC: GameObject[1] — PDA diagnostics TMP label — owner: PDADiagnosticTerminal
+            GameObject textObject = new GameObject(name, typeof(RectTransform));
+            textObject.layer = parent.gameObject.layer;
+            RectTransform rect = textObject.GetComponent<RectTransform>();
+            rect.SetParent(parent, false);
+
+            TextMeshProUGUI text = textObject.AddComponent<TextMeshProUGUI>();
+            text.font = font != null ? font : TMP_Settings.defaultFontAsset;
+            text.fontSize = fontSize;
+            text.fontStyle = fontStyle;
+            text.alignment = alignment;
+            text.color = color;
+            text.raycastTarget = false;
+            Hecton8.UI.TMP_TextRegistry.EnsureRegistered(text);
+            return text;
+        }
+
+        private static void AppendSignedRoundedVector(StringBuilder builder, Vector3 value)
+        {
+            builder.Append('[');
+            AppendSignedRounded(builder, value.x);
+            builder.Append(',');
+            AppendSignedRounded(builder, value.y);
+            builder.Append(',');
+            AppendSignedRounded(builder, value.z);
+            builder.Append(']');
+        }
+
+        private static void AppendSignedRounded(StringBuilder builder, float value)
+        {
+            int rounded = Mathf.RoundToInt(value);
+            if (rounded >= 0)
+                builder.Append('+');
+
+            builder.Append(rounded);
+        }
+
+        private static void Anchor(RectTransform rect, Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax)
+        {
+            if (rect == null)
+                return;
+
+            rect.anchorMin = anchorMin;
+            rect.anchorMax = anchorMax;
+            rect.offsetMin = offsetMin;
+            rect.offsetMax = offsetMax;
         }
     }
 }

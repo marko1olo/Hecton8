@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Narrative;
+using Hecton8.World;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -68,6 +69,7 @@ namespace Hecton8.UI
         private TextMeshProUGUI _authorLabel;
         private TextMeshProUGUI _dateLabel;
         private TextMeshProUGUI _summaryLabel;
+        private TextMeshProUGUI _summaryDecryptOverlayLabel;
         private TextMeshProUGUI _subtitleLabel;
         private TextMeshProUGUI _playbackTimerLabel;
         private Image _playButtonBg;
@@ -94,8 +96,23 @@ namespace Hecton8.UI
         private int _prevTimerSeconds = -1;
         private string _prevSubtitleText;
         private int _lastStressCorruptionBucket = int.MinValue;
+        private float _detailReadTimer;
+        private float _hiddenRecordFlashTimer;
+        private float _summaryDecryptTimer;
+        private int _summaryVisibleCharacterTarget = int.MaxValue;
+        private int _summaryHexVisibleCharacterTarget = int.MaxValue;
+        private bool _hiddenRecordFlashActive;
+        private bool _hiddenRecordFlashConsumed;
+        private bool _summaryDecryptActive;
+        private string _activeDetailLogId = string.Empty;
+        private string _pendingSummaryDecryptLogId = string.Empty;
+        private string _resolvedSummaryBaseText = string.Empty;
+        private string _resolvedSummaryHexText = string.Empty;
 
         private const float TICK_DT = 1f / 60f;
+        private const float HiddenRecordDelaySeconds = 5f;
+        private const float HiddenRecordBlinkSeconds = 0.18f;
+        private const float SummaryDecryptDuration = 3f;
         private const string PlayAudioLabel = "PLAY AUDIO";
         private const string OpenTextLogLabel = "OPEN LOG";
         private const string StopAudioLabel = "STOP";
@@ -104,6 +121,8 @@ namespace Hecton8.UI
         private const string NoPayloadLabel = "NO PLAYBACK";
         private const string TextOnlySummaryPrefix = "TEXT LOG\n";
         private const string ArchiveOnlySummaryPrefix = "ARCHIVE FRAGMENT\n";
+        private const string SummaryHiddenSurfaceId = "detail.summary.hidden";
+        private const string HexDigits = "0123456789ABCDEF";
 
         private string _localizedArchiveTitle = "DATA ARCHIVE - HECTON-8 COLONY";
         private string _localizedCountFormat = "{0}/{1} LOGS";
@@ -224,6 +243,7 @@ namespace Hecton8.UI
                 UpdatePlaybackTimer();
             }
 
+            TickDetailNarrativeFx(deltaTime);
             RefreshStressReactiveDetailIfNeeded();
         }
 
@@ -262,7 +282,21 @@ namespace Hecton8.UI
         //  EVENT HANDLERS
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        private void HandleLogDiscovered(string logId) => _dirty = true;
+        private void HandleLogDiscovered(string logId)
+        {
+            if (ShouldArmSummaryDecryption())
+                _pendingSummaryDecryptLogId = logId ?? string.Empty;
+
+            _dirty = true;
+            AudioLogData selectedLog = GetSelectedLog();
+            if (selectedLog != null &&
+                !string.IsNullOrEmpty(logId) &&
+                string.Equals(selectedLog.logId, logId, System.StringComparison.Ordinal))
+            {
+                RefreshDetail();
+                RefreshPlayButton();
+            }
+        }
 
         private void HandlePDAOpened(int tab) => _dirty = true;
 
@@ -495,6 +529,13 @@ namespace Hecton8.UI
 
             _summaryMadnessFx.Bind(_summaryLabel);
 
+            _summaryDecryptOverlayLabel = CreateText("SummaryDecryptOverlay", _detailPanel, 10f, colorAccent, TextAlignmentOptions.TopLeft);
+            _summaryDecryptOverlayLabel.textWrappingMode = TMPro.TextWrappingModes.Normal;
+            _summaryDecryptOverlayLabel.color = new Color(colorAccent.r, colorAccent.g, colorAccent.b, 0.86f);
+            Anchor(_summaryDecryptOverlayLabel.rectTransform, new Vector2(0, 1), new Vector2(1, 1),
+                new Vector2(12, -200), new Vector2(-12, -96));
+            _summaryDecryptOverlayLabel.gameObject.SetActive(false);
+
             // Subtitle (playback)
             _subtitleLabel = CreateText("Subtitle", _detailPanel, 9f, colorAccent, TextAlignmentOptions.TopLeft);
             _subtitleLabel.textWrappingMode = TMPro.TextWrappingModes.Normal;
@@ -616,11 +657,22 @@ namespace Hecton8.UI
                     : ResolveStressReactiveText(string.Concat(_localizedDatePrefix, _localizedUnknownDate));
 
             if (_summaryLabel != null)
-                _summaryLabel.text = isDiscovered
+            {
+                string summaryText = isDiscovered
                     ? ResolveLogStressReactiveText(log, "detail.summary", GetCachedSummaryText(log))
                     : ResolveStressReactiveText(_localizedEncryptedSummary);
+                ApplySummaryNarrativePresentation(log, isDiscovered, summaryText);
+            }
 
-            UpdateMadnessFxState(isDiscovered ? log : null, _summaryMadnessFx);
+            if (_summaryMadnessFx != null)
+            {
+                if (_summaryDecryptActive)
+                    _summaryMadnessFx.SetEffectActive(false);
+                else if (_hiddenRecordFlashActive)
+                    _summaryMadnessFx.SetEffectActive(true);
+                else
+                    UpdateMadnessFxState(isDiscovered ? log : null, _summaryMadnessFx);
+            }
 
             RefreshPlayButton();
         }
@@ -707,9 +759,11 @@ namespace Hecton8.UI
             if (_playbackTimerLabel != null) _playbackTimerLabel.gameObject.SetActive(visible);
             if (_playButtonBg != null) _playButtonBg.gameObject.SetActive(visible);
             if (_playButtonLabel != null) _playButtonLabel.gameObject.SetActive(visible);
+            if (_summaryDecryptOverlayLabel != null) _summaryDecryptOverlayLabel.gameObject.SetActive(visible && _summaryDecryptActive);
 
             if (!visible)
             {
+                ResetDetailNarrativeState(clearPendingDecryption: false);
                 if (_summaryMadnessFx != null)
                     _summaryMadnessFx.SetEffectActive(false);
 
@@ -791,6 +845,7 @@ namespace Hecton8.UI
         private void HandleLanguageChanged(GameLanguage language)
         {
             _lastStressCorruptionBucket = int.MinValue;
+            ResetDetailNarrativeState(clearPendingDecryption: false);
             RebuildLocalizationCache();
             ApplyLocalizedStaticText();
             _dirty = true;
@@ -956,6 +1011,272 @@ namespace Hecton8.UI
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;
+        }
+
+        private void TickDetailNarrativeFx(float deltaTime)
+        {
+            if (!_detailVisible || _summaryLabel == null)
+                return;
+
+            AudioLogData log = GetSelectedLog();
+            AudioLogSystem system = AudioLogSystem.Instance;
+            bool isDiscovered = system != null &&
+                                log != null &&
+                                !string.IsNullOrWhiteSpace(log.logId) &&
+                                system.IsDiscovered(log.logId);
+            if (!isDiscovered)
+                return;
+
+            if (_summaryDecryptActive)
+            {
+                _summaryDecryptTimer += deltaTime;
+                UpdateSummaryDecryptPresentation();
+                if (_summaryDecryptTimer >= SummaryDecryptDuration)
+                    CompleteSummaryDecryption(log);
+                return;
+            }
+
+            if (_hiddenRecordFlashActive)
+            {
+                _hiddenRecordFlashTimer -= deltaTime;
+                if (_hiddenRecordFlashTimer <= 0f)
+                    CompleteHiddenRecordFlash(log);
+                return;
+            }
+
+            _detailReadTimer += deltaTime;
+            if (!_hiddenRecordFlashConsumed && _detailReadTimer >= HiddenRecordDelaySeconds)
+                TriggerHiddenRecordFlash(log);
+        }
+
+        private void ApplySummaryNarrativePresentation(AudioLogData log, bool isDiscovered, string summaryText)
+        {
+            if (_summaryLabel == null)
+                return;
+
+            if (!isDiscovered || log == null || string.IsNullOrWhiteSpace(log.logId))
+            {
+                ResetDetailNarrativeState(clearPendingDecryption: false);
+                _summaryLabel.maxVisibleCharacters = int.MaxValue;
+                _summaryLabel.text = summaryText;
+                if (_summaryDecryptOverlayLabel != null)
+                    _summaryDecryptOverlayLabel.gameObject.SetActive(false);
+                return;
+            }
+
+            bool logChanged = !string.Equals(_activeDetailLogId, log.logId, System.StringComparison.Ordinal);
+            if (logChanged)
+            {
+                ResetDetailNarrativeState(clearPendingDecryption: false);
+                _activeDetailLogId = log.logId;
+            }
+
+            _resolvedSummaryBaseText = summaryText ?? string.Empty;
+
+            if (_summaryDecryptActive)
+            {
+                _summaryLabel.text = _resolvedSummaryBaseText;
+                _summaryLabel.ForceMeshUpdate();
+                _summaryVisibleCharacterTarget = _summaryLabel.textInfo.characterCount;
+                UpdateSummaryDecryptPresentation();
+                return;
+            }
+
+            if (_hiddenRecordFlashActive)
+                return;
+
+            _summaryLabel.maxVisibleCharacters = int.MaxValue;
+            if (!string.Equals(_summaryLabel.text, _resolvedSummaryBaseText, System.StringComparison.Ordinal))
+                _summaryLabel.text = _resolvedSummaryBaseText;
+
+            if (_summaryDecryptOverlayLabel != null)
+                _summaryDecryptOverlayLabel.gameObject.SetActive(false);
+
+            if (TryConsumePendingSummaryDecryption(log.logId))
+                BeginSummaryDecryption(log);
+        }
+
+        private void BeginSummaryDecryption(AudioLogData log)
+        {
+            if (_summaryLabel == null || _summaryDecryptOverlayLabel == null || log == null)
+                return;
+
+            _summaryDecryptActive = true;
+            _summaryDecryptTimer = 0f;
+            _hiddenRecordFlashActive = false;
+            _hiddenRecordFlashConsumed = true;
+            _resolvedSummaryHexText = BuildHexCipherText(_resolvedSummaryBaseText);
+
+            _summaryLabel.text = _resolvedSummaryBaseText;
+            _summaryLabel.ForceMeshUpdate();
+            _summaryVisibleCharacterTarget = _summaryLabel.textInfo.characterCount;
+
+            _summaryDecryptOverlayLabel.text = _resolvedSummaryHexText;
+            _summaryDecryptOverlayLabel.maxVisibleCharacters = int.MaxValue;
+            _summaryDecryptOverlayLabel.gameObject.SetActive(true);
+            _summaryDecryptOverlayLabel.ForceMeshUpdate();
+            _summaryHexVisibleCharacterTarget = _summaryDecryptOverlayLabel.textInfo.characterCount;
+
+            UpdateSummaryDecryptPresentation();
+            if (_summaryMadnessFx != null)
+                _summaryMadnessFx.SetEffectActive(false);
+        }
+
+        private void UpdateSummaryDecryptPresentation()
+        {
+            if (!_summaryDecryptActive || _summaryLabel == null || _summaryDecryptOverlayLabel == null)
+                return;
+
+            float t = Mathf.Clamp01(_summaryDecryptTimer / SummaryDecryptDuration);
+            int summaryVisible = Mathf.Clamp(Mathf.CeilToInt(_summaryVisibleCharacterTarget * t), 0, _summaryVisibleCharacterTarget);
+            int hexVisible = Mathf.Clamp(
+                Mathf.CeilToInt(_summaryHexVisibleCharacterTarget * (1f - t)),
+                0,
+                _summaryHexVisibleCharacterTarget);
+
+            _summaryLabel.maxVisibleCharacters = summaryVisible;
+            _summaryDecryptOverlayLabel.maxVisibleCharacters = hexVisible;
+            if (!_summaryDecryptOverlayLabel.gameObject.activeSelf)
+                _summaryDecryptOverlayLabel.gameObject.SetActive(true);
+        }
+
+        private void CompleteSummaryDecryption(AudioLogData log)
+        {
+            _summaryDecryptActive = false;
+            _summaryDecryptTimer = 0f;
+            _summaryVisibleCharacterTarget = int.MaxValue;
+            _summaryHexVisibleCharacterTarget = int.MaxValue;
+            _summaryLabel.maxVisibleCharacters = int.MaxValue;
+
+            if (_summaryDecryptOverlayLabel != null)
+            {
+                _summaryDecryptOverlayLabel.maxVisibleCharacters = int.MaxValue;
+                _summaryDecryptOverlayLabel.text = string.Empty;
+                _summaryDecryptOverlayLabel.gameObject.SetActive(false);
+            }
+
+            if (!string.Equals(_summaryLabel.text, _resolvedSummaryBaseText, System.StringComparison.Ordinal))
+                _summaryLabel.text = _resolvedSummaryBaseText;
+
+            _detailReadTimer = 0f;
+            if (_summaryMadnessFx != null)
+                UpdateMadnessFxState(log, _summaryMadnessFx);
+        }
+
+        private void TriggerHiddenRecordFlash(AudioLogData log)
+        {
+            LocalizationManager manager = LocalizationManager.Instance;
+            if (manager == null || _summaryLabel == null || log == null)
+                return;
+
+            int cycle = Mathf.Max(1, Mathf.FloorToInt(Time.unscaledTime));
+            if (!manager.TryResolveMadnessWhisperPreview(string.Concat(log.logId, ".", SummaryHiddenSurfaceId), cycle, out string hiddenText) ||
+                string.IsNullOrEmpty(hiddenText))
+            {
+                _hiddenRecordFlashConsumed = true;
+                return;
+            }
+
+            _hiddenRecordFlashActive = true;
+            _hiddenRecordFlashConsumed = true;
+            _hiddenRecordFlashTimer = HiddenRecordBlinkSeconds;
+            _summaryLabel.maxVisibleCharacters = int.MaxValue;
+            _summaryLabel.text = hiddenText;
+            if (_summaryMadnessFx != null)
+                _summaryMadnessFx.SetEffectActive(true);
+        }
+
+        private void CompleteHiddenRecordFlash(AudioLogData log)
+        {
+            _hiddenRecordFlashActive = false;
+            _hiddenRecordFlashTimer = 0f;
+            _summaryLabel.maxVisibleCharacters = int.MaxValue;
+            _summaryLabel.text = _resolvedSummaryBaseText;
+            if (_summaryMadnessFx != null)
+                UpdateMadnessFxState(log, _summaryMadnessFx);
+        }
+
+        private void ResetDetailNarrativeState(bool clearPendingDecryption)
+        {
+            _detailReadTimer = 0f;
+            _hiddenRecordFlashTimer = 0f;
+            _summaryDecryptTimer = 0f;
+            _hiddenRecordFlashActive = false;
+            _hiddenRecordFlashConsumed = false;
+            _summaryDecryptActive = false;
+            _summaryVisibleCharacterTarget = int.MaxValue;
+            _summaryHexVisibleCharacterTarget = int.MaxValue;
+            _activeDetailLogId = string.Empty;
+            _resolvedSummaryBaseText = string.Empty;
+            _resolvedSummaryHexText = string.Empty;
+
+            if (clearPendingDecryption)
+                _pendingSummaryDecryptLogId = string.Empty;
+
+            if (_summaryLabel != null)
+                _summaryLabel.maxVisibleCharacters = int.MaxValue;
+
+            if (_summaryDecryptOverlayLabel != null)
+            {
+                _summaryDecryptOverlayLabel.maxVisibleCharacters = int.MaxValue;
+                _summaryDecryptOverlayLabel.text = string.Empty;
+                _summaryDecryptOverlayLabel.gameObject.SetActive(false);
+            }
+        }
+
+        private bool TryConsumePendingSummaryDecryption(string logId)
+        {
+            if (string.IsNullOrEmpty(logId) ||
+                !string.Equals(_pendingSummaryDecryptLogId, logId, System.StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            _pendingSummaryDecryptLogId = string.Empty;
+            return true;
+        }
+
+        private static bool ShouldArmSummaryDecryption()
+        {
+            HectonMapMagicVegetationBridge bridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            if (bridge == null || !bridge.TryGetActiveArtificialInteriorState(out ArtificialInteriorState state))
+                return false;
+
+            return state.Type == StructureType.MegaWreck;
+        }
+
+        private static string BuildHexCipherText(string sourceText)
+        {
+            if (string.IsNullOrEmpty(sourceText))
+                return string.Empty;
+
+            System.Text.StringBuilder builder = StringBuilderPool.Get();
+            for (int i = 0; i < sourceText.Length; i++)
+            {
+                char current = sourceText[i];
+                if (current == '\n' || current == '\r')
+                {
+                    builder.Append(current);
+                    continue;
+                }
+
+                if (char.IsWhiteSpace(current))
+                {
+                    builder.Append(' ');
+                    continue;
+                }
+
+                int value = current & 0xFF;
+                builder.Append(HexDigits[(value >> 4) & 0x0F]);
+                builder.Append(HexDigits[value & 0x0F]);
+
+                if (i + 1 < sourceText.Length && !char.IsWhiteSpace(sourceText[i + 1]))
+                    builder.Append(' ');
+            }
+
+            string cipherText = builder.ToString();
+            StringBuilderPool.Return(builder);
+            return cipherText;
         }
 
         private RectTransform CreateRect(string name, RectTransform parent)

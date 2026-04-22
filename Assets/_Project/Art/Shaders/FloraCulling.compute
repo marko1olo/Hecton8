@@ -17,6 +17,7 @@ uint _HectonSourceInstanceCount;
 float4x4 _HectonViewProjection;
 float4x4 _HectonViewMatrix;
 float3 _HectonCameraPosition;
+float4 _GlobalFloatingOffset;
 float _HectonLodNearDistance;
 float _HectonLodFarDistance;
 float _HectonLodTransitionRange;
@@ -44,6 +45,11 @@ float4 _CascadeShadowSplitSphereRadii;
 float3 TransformPoint(float4x4 matrixValue, float3 localPosition)
 {
     return mul(matrixValue, float4(localPosition, 1.0)).xyz;
+}
+
+float3 ResolveShiftedWorldPosition(float3 positionWS)
+{
+    return positionWS + _GlobalFloatingOffset.xyz;
 }
 
 void ResolveInstanceShape(float instanceType, float heightScale, float widthScale, out float instanceHeight, out float instanceWidth)
@@ -322,11 +328,11 @@ void CullFloraInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
     float instanceWidth;
     ResolveInstanceShape(instanceType, instanceData.y, instanceData.z, instanceHeight, instanceWidth);
 
-    float3 originWS = TransformPoint(instanceMatrix, float3(0.0, 0.0, 0.0));
-    float3 centerWS = TransformPoint(instanceMatrix, float3(0.0, instanceHeight * 0.5, 0.0));
-    float3 topWS = TransformPoint(instanceMatrix, float3(0.0, instanceHeight, 0.0));
-    float3 sideAWS = TransformPoint(instanceMatrix, float3(instanceWidth, instanceHeight * 0.5, 0.0));
-    float3 sideBWS = TransformPoint(instanceMatrix, float3(-instanceWidth, instanceHeight * 0.5, 0.0));
+    float3 originWS = ResolveShiftedWorldPosition(TransformPoint(instanceMatrix, float3(0.0, 0.0, 0.0)));
+    float3 centerWS = ResolveShiftedWorldPosition(TransformPoint(instanceMatrix, float3(0.0, instanceHeight * 0.5, 0.0)));
+    float3 topWS = ResolveShiftedWorldPosition(TransformPoint(instanceMatrix, float3(0.0, instanceHeight, 0.0)));
+    float3 sideAWS = ResolveShiftedWorldPosition(TransformPoint(instanceMatrix, float3(instanceWidth, instanceHeight * 0.5, 0.0)));
+    float3 sideBWS = ResolveShiftedWorldPosition(TransformPoint(instanceMatrix, float3(-instanceWidth, instanceHeight * 0.5, 0.0)));
 
     float4 clipRoot = mul(_HectonViewProjection, float4(originWS, 1.0));
     float4 clipCenter = mul(_HectonViewProjection, float4(centerWS, 1.0));
@@ -373,11 +379,11 @@ void CullFloraShadowInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
     float instanceWidth;
     ResolveInstanceShape(instanceType, instanceData.y, instanceData.z, instanceHeight, instanceWidth);
 
-    float3 rootWS = TransformPoint(instanceMatrix, float3(0.0, 0.0, 0.0));
-    float3 centerWS = TransformPoint(instanceMatrix, float3(0.0, instanceHeight * 0.5, 0.0));
-    float3 topWS = TransformPoint(instanceMatrix, float3(0.0, instanceHeight, 0.0));
-    float3 sideAWS = TransformPoint(instanceMatrix, float3(instanceWidth, instanceHeight * 0.5, 0.0));
-    float3 sideBWS = TransformPoint(instanceMatrix, float3(-instanceWidth, instanceHeight * 0.5, 0.0));
+    float3 rootWS = ResolveShiftedWorldPosition(TransformPoint(instanceMatrix, float3(0.0, 0.0, 0.0)));
+    float3 centerWS = ResolveShiftedWorldPosition(TransformPoint(instanceMatrix, float3(0.0, instanceHeight * 0.5, 0.0)));
+    float3 topWS = ResolveShiftedWorldPosition(TransformPoint(instanceMatrix, float3(0.0, instanceHeight, 0.0)));
+    float3 sideAWS = ResolveShiftedWorldPosition(TransformPoint(instanceMatrix, float3(instanceWidth, instanceHeight * 0.5, 0.0)));
+    float3 sideBWS = ResolveShiftedWorldPosition(TransformPoint(instanceMatrix, float3(-instanceWidth, instanceHeight * 0.5, 0.0)));
 
     if (!IsVisibleInAnyShadowCascade(rootWS, centerWS, topWS, sideAWS, sideBWS))
         return;

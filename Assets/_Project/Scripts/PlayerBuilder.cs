@@ -183,6 +183,11 @@ namespace Hecton8.Building
         private bool _wasSnapped;
         private ModuleCatalog _buildCatalog;
         private int _activeBuildableIndex = -1;
+        // COLD ALLOC: List<MonoBehaviour>[2] — authored placement-rule scan buffer for the active buildable prefab — owner: PlayerBuilder
+        private readonly List<MonoBehaviour> _placementRuleBuffer = new List<MonoBehaviour>(2);
+        private IBuildPlacementRule _activePlacementRule;
+        private bool _semanticPlacementValid = true;
+        private string _semanticPlacementBlockReason = string.Empty;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC API
@@ -192,7 +197,7 @@ namespace Hecton8.Building
         public int ActiveBuildableIndex => _activeBuildableIndex;
         public int BuildableCount => _buildCatalog != null ? _buildCatalog.Count : 0;
         public bool HasResourcesForActiveBuildable => activeBuildable != null && HasResources(activeBuildable);
-        public bool CanPlaceActiveBuildable => _currentGhost != null && _currentGhost.CanBuild;
+        public bool CanPlaceActiveBuildable => _currentGhost != null && _currentGhost.CanBuild && _semanticPlacementValid;
         public bool HasPlacementPreview => _currentGhostObj != null;
         public BuildReadiness ActiveBuildReadiness => GetActiveBuildReadiness();
 
@@ -289,6 +294,8 @@ namespace Hecton8.Building
         {
             if (_currentGhost == null || !_currentGhost.CanBuild)
                 return false;
+            if (!UpdateSemanticPlacementState())
+                return false;
             if (activeBuildable == null)
                 return false;
             if (!HasResources(activeBuildable))
@@ -324,6 +331,8 @@ namespace Hecton8.Building
                 case BuildReadiness.MissingCost:
                     return $"{purpose} Recover materials first. Need {GetActiveCostDigest()}.";
                 case BuildReadiness.PlacementBlocked:
+                    if (!string.IsNullOrEmpty(_semanticPlacementBlockReason))
+                        return $"{purpose} {_semanticPlacementBlockReason}.";
                     return IsSnapped
                         ? $"{purpose} Socket alignment is good, but the final volume is obstructed."
                         : $"{purpose} Reposition, rotate, or snap to a valid socket.";
@@ -392,6 +401,7 @@ namespace Hecton8.Building
                 DespawnGhost();
 
             activeBuildable = data;
+            CacheActivePlacementRule();
             SyncActiveBuildableIndex();
 
             if (wasEquipped)
@@ -460,7 +470,10 @@ namespace Hecton8.Building
         {
             // Position update only — input handled via events
             if (_currentGhostObj != null)
+            {
                 UpdateGhostPosition(deltaTime);
+                UpdateSemanticPlacementState();
+            }
         }
 
         private void HandlePrimaryAction()
@@ -595,6 +608,8 @@ namespace Hecton8.Building
             {
                 _currentGhostObj.TryGetComponent(out _currentGhost);
             }
+
+            UpdateSemanticPlacementState();
         }
 
         private void DespawnGhost()
@@ -613,6 +628,8 @@ namespace Hecton8.Building
 
             _currentGhostObj = null;
             _currentGhost    = null;
+            _semanticPlacementValid = true;
+            _semanticPlacementBlockReason = string.Empty;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -843,9 +860,9 @@ namespace Hecton8.Building
                 return;
             }
 
-            if (_currentGhostObj == null || _currentGhost == null || !_currentGhost.CanBuild)
+            if (_currentGhostObj == null || _currentGhost == null || !_currentGhost.CanBuild || !UpdateSemanticPlacementState())
             {
-                NotifyBuildBlocked("PLACEMENT INVALID");
+                NotifyBuildBlocked(string.IsNullOrEmpty(_semanticPlacementBlockReason) ? "PLACEMENT INVALID" : _semanticPlacementBlockReason);
                 PlaySound(errorSound);
                 return;
             }
@@ -981,6 +998,7 @@ namespace Hecton8.Building
                 if (candidate == null) continue;
 
                 activeBuildable = candidate;
+                CacheActivePlacementRule();
                 _activeBuildableIndex = i;
                 LogBuilderDebug($"EnsureCatalogSelection picked={candidate.moduleName} index={i}");
                 return;
@@ -1148,10 +1166,56 @@ namespace Hecton8.Building
             if (_currentGhost == null)
                 return BuildReadiness.Ready;
 
-            if (!_currentGhost.CanBuild)
+            if (!_currentGhost.CanBuild || !UpdateSemanticPlacementState())
                 return BuildReadiness.PlacementBlocked;
 
             return _isSnapped ? BuildReadiness.SnappedReady : BuildReadiness.Ready;
+        }
+
+        private void CacheActivePlacementRule()
+        {
+            _activePlacementRule = null;
+            _semanticPlacementValid = true;
+            _semanticPlacementBlockReason = string.Empty;
+
+            if (activeBuildable == null || activeBuildable.finalPrefab == null)
+                return;
+
+            _placementRuleBuffer.Clear();
+            activeBuildable.finalPrefab.GetComponents(_placementRuleBuffer);
+
+            for (int i = 0; i < _placementRuleBuffer.Count; i++)
+            {
+                MonoBehaviour behaviour = _placementRuleBuffer[i];
+                if (behaviour is IBuildPlacementRule rule)
+                {
+                    _activePlacementRule = rule;
+                    break;
+                }
+            }
+
+            _placementRuleBuffer.Clear();
+        }
+
+        private bool UpdateSemanticPlacementState()
+        {
+            if (_activePlacementRule == null || _currentGhostObj == null)
+            {
+                _semanticPlacementValid = true;
+                _semanticPlacementBlockReason = string.Empty;
+                return true;
+            }
+
+            Transform ghostTransform = _currentGhostObj.transform;
+            _semanticPlacementValid = _activePlacementRule.ValidatePlacement(
+                ghostTransform.position,
+                ghostTransform.rotation,
+                out _semanticPlacementBlockReason);
+
+            if (_semanticPlacementValid)
+                _semanticPlacementBlockReason = string.Empty;
+
+            return _semanticPlacementValid;
         }
 
         private string GetCostDigest(BuildableData data)

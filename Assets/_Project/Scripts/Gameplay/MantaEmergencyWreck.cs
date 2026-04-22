@@ -1,5 +1,6 @@
 namespace Hecton8.Gameplay
 {
+    using Hecton8.AI;
     using Hecton8.Core;
     using Hecton8.Interaction;
     using UnityEngine;
@@ -30,6 +31,19 @@ namespace Hecton8.Gameplay
         [Tooltip("Maximum angular spin applied on bailout.")]
         [SerializeField, Range(0f, 24f)] private float spinVelocityMax = 4.6f;
 
+        [Header("── Collision Damage ───────────────────────────")]
+        [Tooltip("Minimum collision speed where the drifting wreck starts dealing catastrophic kinetic damage to fauna.")]
+        [SerializeField, Range(0f, 60f)] private float collisionDamageStartSpeed = 15f;
+
+        [Tooltip("Collision speed where the drifting wreck reaches maximum kinetic damage.")]
+        [SerializeField, Range(0f, 80f)] private float collisionDamageMaxSpeed = 32f;
+
+        [Tooltip("Maximum damage applied when the emergency wreck slams into a fauna target at full authored speed.")]
+        [SerializeField, Range(0f, 500f)] private float collisionDamageAtMaxSpeed = 260f;
+
+        [Tooltip("Cooldown preventing the same wreck body from reapplying catastrophic collision damage every single contact frame.")]
+        [SerializeField, Range(0f, 1f)] private float collisionDamageCooldown = 0.18f;
+
         [Header("── Idle Reset ─────────────────────────────")]
         [Tooltip("Linear damping used when the wreck object returns to idle pooled pickup behavior.")]
         [SerializeField, Range(0f, 16f)] private float idleLinearDamping = 8f;
@@ -43,6 +57,7 @@ namespace Hecton8.Gameplay
         private bool _registeredFixedTick;
         private bool _emergencyActive;
         private float _remainingLifetime;
+        private float _collisionDamageCooldownTimer;
 
         /// <summary>
         /// Arms the pooled wreck body with inherited bailout inertia and enables short-lived physics drift.
@@ -113,6 +128,13 @@ namespace Hecton8.Gameplay
             if (!_emergencyActive)
                 return;
 
+            if (_collisionDamageCooldownTimer > 0f)
+            {
+                _collisionDamageCooldownTimer -= Mathf.Max(0f, fixedDeltaTime);
+                if (_collisionDamageCooldownTimer < 0f)
+                    _collisionDamageCooldownTimer = 0f;
+            }
+
             _remainingLifetime -= Mathf.Max(0f, fixedDeltaTime);
             if (_remainingLifetime <= 0f)
             {
@@ -125,6 +147,36 @@ namespace Hecton8.Gameplay
                 return;
 
             _rigidbody.AddForce(Vector3.down * sinkVelocityChangePerSecond * fixedDeltaTime, ForceMode.VelocityChange);
+        }
+
+        private void OnCollisionEnter(Collision collision)
+        {
+            if (!_emergencyActive || _collisionDamageCooldownTimer > 0f || collision == null)
+                return;
+
+            float impactSpeed = collision.relativeVelocity.magnitude;
+            if (impactSpeed <= collisionDamageStartSpeed)
+                return;
+
+            Collider hitCollider = collision.collider;
+            if (hitCollider == null)
+                return;
+
+            FaunaBrain faunaBrain = hitCollider.GetComponent<FaunaBrain>();
+            if (faunaBrain == null)
+                faunaBrain = hitCollider.GetComponentInParent<FaunaBrain>();
+
+            if (faunaBrain == null)
+                return;
+
+            float maxSpeed = Mathf.Max(collisionDamageStartSpeed + 0.01f, collisionDamageMaxSpeed);
+            float damageT = Mathf.InverseLerp(collisionDamageStartSpeed, maxSpeed, impactSpeed);
+            float damage = Mathf.Lerp(0f, collisionDamageAtMaxSpeed, damageT);
+            if (damage <= 0f)
+                return;
+
+            faunaBrain.TakeDamage(damage);
+            _collisionDamageCooldownTimer = collisionDamageCooldown;
         }
 
         private void CachePassiveReferences()
@@ -154,6 +206,7 @@ namespace Hecton8.Gameplay
         {
             _emergencyActive = false;
             _remainingLifetime = 0f;
+            _collisionDamageCooldownTimer = 0f;
             TryUnregisterFixedTick();
 
             if (_pickupItem != null)

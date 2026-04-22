@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Hecton8.Core;
+using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -18,11 +19,13 @@ namespace Hecton8.World
         private static readonly int _SinkTextureId = Shader.PropertyToID("_SargassumBuoyancySinkRT");
         private static readonly int _SinkWorldRectId = Shader.PropertyToID("_SargassumBuoyancySinkWorldRect");
         private static readonly int _MaxSinkDepthId = Shader.PropertyToID("_SargassumBuoyancySinkDepth");
+        private static readonly int _ScavengerMatricesId = Shader.PropertyToID("_HectonScavengerMatrices");
 
         private const uint NestingHashSeed = 0x7F4A7C15u;
         private const int InitialCellCapacity = 4096;
         private const int DefaultDensityTextureResolution = 128;
         private const int MaxDisruptionZoneCapacity = 16;
+        private const int IndirectArgsCount = 5;
         private const float MinDensityThreshold = 0.025f;
         private const byte CollapseChunkBurstSpawnedFlag = 1 << 0;
 
@@ -100,6 +103,23 @@ namespace Hecton8.World
         {
             public float Suppression01;
             public float SinkDepthWS;
+        }
+
+        private struct ScavengerHostState
+        {
+            public SargassumCollapseChunk Chunk;
+            public Vector3 AnchorWS;
+            public float SettledTime;
+            public float Consumed01;
+            public uint Seed;
+        }
+
+        private struct ExternalScavengerSiteState
+        {
+            public Vector3 AnchorWS;
+            public float RadiusWS;
+            public float RemainingTime;
+            public uint Seed;
         }
 
         [Serializable]
@@ -360,6 +380,59 @@ namespace Hecton8.World
         [Tooltip("Minimum flee radius broadcast to GPU boids when a leviathan or submarine rips through the canopy.")]
         private float massiveDisplacementExtremePanicRadius = HectonVegetationConstants.BoidMassiveDisplacementPanicRadius;
 
+        [Header("── Procedural Scavengers ──────────────────")]
+        [SerializeField]
+        [Tooltip("Optional authored indirect mesh rendered for bottom scavengers feeding on fallen collapse chunks.")]
+        private Mesh scavengerMesh;
+
+        [SerializeField]
+        [Tooltip("Optional authored material used for indirect scavenger rendering. If missing, a first-party fallback material is created from the indirect scavenger shader.")]
+        private Material scavengerMaterial;
+
+        [SerializeField, Range(2, 24)]
+        [Tooltip("Maximum number of settled collapse chunks tracked as active scavenger hosts.")]
+        private int maxScavengerHostCount = 12;
+
+        [SerializeField, Range(4, 32)]
+        [Tooltip("Maximum indirect scavenger instance count spawned around one settled collapse chunk.")]
+        private int scavengersPerHost = 12;
+
+        [SerializeField, Range(30f, 90f)]
+        [Tooltip("Seconds a fallen chunk must hang on the seabed before scavengers begin feeding.")]
+        private float scavengerActivationDelay = 30f;
+
+        [SerializeField, Range(4f, 30f)]
+        [Tooltip("Seconds required for a full scavenger swarm to consume one collapse chunk once feeding begins.")]
+        private float scavengerConsumeDuration = 12f;
+
+        [SerializeField, Range(0.2f, 4f)]
+        [Tooltip("Horizontal feeding radius used when scattering scavengers around one fallen chunk.")]
+        private float scavengerOrbitRadius = 1.1f;
+
+        [SerializeField, Range(-1f, 1f)]
+        [Tooltip("Vertical local offset applied to scavenger swarms relative to the chunk anchor.")]
+        private float scavengerVerticalOffset = -0.12f;
+
+        [SerializeField, Range(0f, 0.5f)]
+        [Tooltip("Vertical bob amplitude applied to indirect scavenger motion.")]
+        private float scavengerBobAmplitude = 0.06f;
+
+        [SerializeField, Range(0.02f, 0.4f)]
+        [Tooltip("Uniform scale range minimum for one scavenger instance.")]
+        private float scavengerScaleMin = 0.08f;
+
+        [SerializeField, Range(0.04f, 0.6f)]
+        [Tooltip("Uniform scale range maximum for one scavenger instance.")]
+        private float scavengerScaleMax = 0.16f;
+
+        [SerializeField, Range(1, 16)]
+        [Tooltip("Hard cap for temporary corpse or carcass sites that feed the same bottom-scavenger renderer without requiring a collapse chunk host.")]
+        private int maxExternalScavengerSiteCount = 6;
+
+        [SerializeField, Range(4f, 90f)]
+        [Tooltip("Default lifetime applied to externally registered corpse sites before the scavenger swarm clears them away.")]
+        private float externalScavengerSiteDuration = 26f;
+
         [Header("── Gameplay Response ──────────────────")]
         [SerializeField, Range(0.3f, 1f)]
         [Tooltip("Maximum swim-speed multiplier when the sampled density reaches full saturation.")]
@@ -368,6 +441,10 @@ namespace Hecton8.World
         [SerializeField, Range(1f, 4f)]
         [Tooltip("Maximum drag multiplier when the sampled density reaches full saturation.")]
         private float maxDragMultiplier = 2.35f;
+
+        [SerializeField, Range(0.1f, 1f)]
+        [Tooltip("Directional relief applied to extra drag when movement aligns with the canopy flow axis. 0.1 means along-flow travel only keeps 10% of the extra drag, while cross-flow keeps 100%.")]
+        private float alongFlowDragScale = 0.1f;
 
         [SerializeField, Range(0.1f, 1f)]
         [Tooltip("Minimum density required before the sticky field upgrades from drag into an entangling snare.")]
@@ -418,6 +495,18 @@ namespace Hecton8.World
         [Tooltip("Maximum sink depth currently encoded into the global buoyancy sink texture.")]
         private float _debugMaxSinkDepth;
 
+        [SerializeField]
+        [Tooltip("Number of settled collapse chunks currently tracked as scavenger hosts.")]
+        private int _debugScavengerHostCount;
+
+        [SerializeField]
+        [Tooltip("Total indirect scavenger instances rendered this frame.")]
+        private int _debugScavengerInstanceCount;
+
+        [SerializeField]
+        [Tooltip("Bounds used for the current indirect scavenger draw call.")]
+        private Bounds _debugScavengerBounds;
+
         // COLD ALLOC: Dictionary<long, CellData>[4096] - coarse sargassum density field keyed by XZ cell hash - owner: SargassumGlobalDragManager
         private readonly Dictionary<long, CellData> _densityCells = new Dictionary<long, CellData>(InitialCellCapacity);
         private byte[] _densityTextureRaw;
@@ -428,15 +517,28 @@ namespace Hecton8.World
         private int[] _nestedMatrixCounts;
         private NestedAttachmentState[] _nestedAttachmentStates;
         private DisruptionZoneState[] _disruptionZones;
+        private ScavengerHostState[] _scavengerHosts;
+        private ExternalScavengerSiteState[] _externalScavengerSites;
+        private Matrix4x4[] _scavengerMatrices;
+        private ComputeBuffer _scavengerMatrixBuffer;
+        private ComputeBuffer _scavengerArgsBuffer;
+        private MaterialPropertyBlock _scavengerPropertyBlock;
         private int _nestedPrototypeCapacity;
         private int _activeNestedPrototypeCount;
         private int _activeNestedAttachmentStateCount;
         private int _activeDisruptionZoneCount;
+        private int _activeScavengerHostCount;
+        private int _activeExternalScavengerSiteCount;
+        private int _scavengerInstanceCapacity;
         private NestedAttachmentPrototype[] _activeNestingPrototypes;
         private NestedAttachmentPrototype[] _fallbackNestingPrototypes;
         private Mesh _fallbackAttachmentMesh;
         private Material _fallbackCrateMaterial;
         private Material _fallbackScrapMaterial;
+        private Mesh _fallbackScavengerMesh;
+        private Material _fallbackScavengerMaterial;
+        private Bounds _scavengerDrawBounds;
+        private readonly uint[] _scavengerIndirectArgs = new uint[IndirectArgsCount]; // COLD ALLOC: uint[5] - indirect draw arguments for bottom scavenger swarms - owner: SargassumGlobalDragManager
 
         private bool _registeredTick;
         private bool _registeredSlowTick;
@@ -534,6 +636,8 @@ namespace Hecton8.World
             ResolveActiveNestingPrototypes();
             CreateDensityTexture();
             EnsureDisruptionStorage();
+            EnsureScavengerStorage();
+            EnsureScavengerRenderResources();
             ClearField();
             ClearDisruptionZones();
             ClearSinkTexture();
@@ -544,6 +648,8 @@ namespace Hecton8.World
         {
             ResolveActiveNestingPrototypes();
             EnsureDisruptionStorage();
+            EnsureScavengerStorage();
+            EnsureScavengerRenderResources();
             PublishShaderGlobals();
             TryRegister();
         }
@@ -556,6 +662,7 @@ namespace Hecton8.World
             ClearDisruptionZones();
             ClearDensityTexture();
             ClearSinkTexture();
+            ClearScavengerHosts();
             Shader.SetGlobalVector(_GlobalDriftOffsetId, Vector4.zero);
             Shader.SetGlobalVector(_SinkWorldRectId, Vector4.zero);
             Shader.SetGlobalFloat(_MaxSinkDepthId, 0f);
@@ -569,6 +676,7 @@ namespace Hecton8.World
             ReleaseFallbackNestingResources();
             ReleaseDensityTexture();
             ReleaseSinkTexture();
+            ReleaseScavengerResources();
             Shader.SetGlobalVector(_GlobalDriftOffsetId, Vector4.zero);
             Shader.SetGlobalVector(_SinkWorldRectId, Vector4.zero);
             Shader.SetGlobalFloat(_MaxSinkDepthId, 0f);
@@ -597,21 +705,19 @@ namespace Hecton8.World
         /// <param name="dt">Frame delta supplied by GameTickManager.</param>
         public void Tick(float dt)
         {
-            if (!_hasFieldData || _activeNestedPrototypeCount <= 0 || _nestedMatricesByPrototype == null || _nestedMatrixCounts == null || _activeNestingPrototypes == null)
-            {
-                if (UpdateDisruptionZones(dt))
-                {
-                    RefreshDynamicTextures(incrementRevision: false);
-                    PublishShaderGlobals();
-                }
-
-                return;
-            }
-
-            if (UpdateDisruptionZones(dt))
+            bool texturesChanged = UpdateDisruptionZones(dt);
+            if (texturesChanged)
             {
                 RefreshDynamicTextures(incrementRevision: false);
                 PublishShaderGlobals();
+            }
+
+            UpdateScavengerHosts(dt);
+
+            if (!_hasFieldData || _activeNestedPrototypeCount <= 0 || _nestedMatricesByPrototype == null || _nestedMatrixCounts == null || _activeNestingPrototypes == null)
+            {
+                DrawScavengers();
+                return;
             }
 
             UpdateNestedAttachmentBatches(dt);
@@ -643,6 +749,8 @@ namespace Hecton8.World
                     LightProbeUsage.Off,
                     null);
             }
+
+            DrawScavengers();
         }
 
         /// <summary>
@@ -661,7 +769,19 @@ namespace Hecton8.World
             out float dragMultiplier,
             out float density01)
         {
-            bool hasSample = SampleDetailedInfluence(positionWS, radius, entanglementSpeedThreshold + 1f, out SargassumFieldSample sample);
+            bool hasSample = SampleInfluence(positionWS, radius, Vector3.zero, out speedMultiplier, out dragMultiplier, out density01);
+            return hasSample;
+        }
+
+        public bool SampleInfluence(
+            Vector3 positionWS,
+            float radius,
+            Vector3 movementVelocityWS,
+            out float speedMultiplier,
+            out float dragMultiplier,
+            out float density01)
+        {
+            bool hasSample = SampleDetailedInfluence(positionWS, radius, movementVelocityWS, entanglementSpeedThreshold + 1f, out SargassumFieldSample sample);
             speedMultiplier = sample.SpeedMultiplier;
             dragMultiplier = sample.DragMultiplier;
             density01 = sample.Density01;
@@ -749,6 +869,16 @@ namespace Hecton8.World
             float currentSpeed,
             out SargassumFieldSample sample)
         {
+            return SampleDetailedInfluence(positionWS, radius, Vector3.zero, currentSpeed, out sample);
+        }
+
+        internal bool SampleDetailedInfluence(
+            Vector3 positionWS,
+            float radius,
+            Vector3 movementVelocityWS,
+            float currentSpeed,
+            out SargassumFieldSample sample)
+        {
             sample = default;
             sample.SpeedMultiplier = 1f;
             sample.DragMultiplier = 1f;
@@ -829,7 +959,9 @@ namespace Hecton8.World
             sample.AnchorWS = Vector3.Lerp(centroidWS, strongestCenterWS, 0.65f) + _globalDriftOffset;
             sample.AnchorWS.y -= disruption.SinkDepthWS;
             sample.SpeedMultiplier = Mathf.Lerp(1f, minSpeedMultiplier, sample.Density01);
-            sample.DragMultiplier = Mathf.Lerp(1f, maxDragMultiplier, sample.Density01);
+            float isotropicDragMultiplier = Mathf.Lerp(1f, maxDragMultiplier, sample.Density01);
+            float directionalDragScale = ResolveDirectionalDragScale(movementVelocityWS);
+            sample.DragMultiplier = 1f + (isotropicDragMultiplier - 1f) * directionalDragScale;
             sample.Window01 = EvaluateCanopyWindow01(sampledPositionWS);
             sample.Occlusion01 = Mathf.Clamp01(sample.Density01 * (1f - sample.Window01 * 0.78f));
             sample.Entanglement01 = ResolveEntanglement01(sample.Density01, currentSpeed);
@@ -851,15 +983,18 @@ namespace Hecton8.World
             if (mapMagicVegetationBridge == null)
                 return;
 
-            Matrix4x4[] matrices = mapMagicVegetationBridge.ActiveSurfaceMatrices;
-            int[] types = mapMagicVegetationBridge.ActiveSurfaceTypes;
-            int activeCount = mapMagicVegetationBridge.ActiveSurfaceInstanceCount;
-            if (matrices == null || types == null || activeCount <= 0)
+            if (!mapMagicVegetationBridge.TryGetActiveSurfaceNativePayload(
+                    out NativeArray<Matrix4x4> matrices,
+                    out _,
+                    out NativeArray<int> types,
+                    out int activeCount) ||
+                activeCount <= 0)
                 return;
 
             Bounds fieldBounds = default;
             bool boundsInitialized = false;
             int trackedInstances = 0;
+            Vector3 universeOffset = mapMagicVegetationBridge.TotalUniverseOffset;
 
             for (int i = 0; i < activeCount; i++)
             {
@@ -867,7 +1002,7 @@ namespace Hecton8.World
                     continue;
 
                 Matrix4x4 matrix = matrices[i];
-                Vector3 origin = matrix.GetColumn(3);
+                Vector3 origin = new Vector3(matrix.m03, matrix.m13, matrix.m23) + universeOffset;
                 float scale = ExtractUniformScale(matrix);
                 float influenceRadius = Mathf.Max(baseInfluenceRadius * scale, cellSize * 0.35f);
                 float verticalHalfExtent = Mathf.Max(baseVerticalHalfExtent * scale, 0.5f);
@@ -1594,6 +1729,462 @@ namespace Hecton8.World
             _activeNestedAttachmentStateCount = 0;
         }
 
+        internal bool RegisterSettledCollapseChunk(SargassumCollapseChunk chunk)
+        {
+            if (chunk == null)
+                return false;
+
+            EnsureScavengerStorage();
+
+            for (int i = 0; i < _activeScavengerHostCount; i++)
+            {
+                if (_scavengerHosts[i].Chunk == chunk)
+                    return true;
+            }
+
+            if (_activeScavengerHostCount >= _scavengerHosts.Length)
+                return false;
+
+            int slot = _activeScavengerHostCount;
+            _scavengerHosts[slot] = new ScavengerHostState
+            {
+                Chunk = chunk,
+                AnchorWS = chunk.GetScavengerAnchorWS(),
+                SettledTime = 0f,
+                Consumed01 = 0f,
+                Seed = unchecked((uint)EntityId.ToULong(chunk.GetEntityId())) ^ NestingHashSeed
+            };
+            _activeScavengerHostCount++;
+            return true;
+        }
+
+        internal void UnregisterSettledCollapseChunk(SargassumCollapseChunk chunk)
+        {
+            if (chunk == null || _scavengerHosts == null)
+                return;
+
+            for (int i = 0; i < _activeScavengerHostCount; i++)
+            {
+                if (_scavengerHosts[i].Chunk != chunk)
+                    continue;
+
+                _scavengerHosts[i].Chunk = null;
+                return;
+            }
+        }
+
+        internal void RegisterExternalScavengerSite(Vector3 anchorWS, float radiusWS, float duration)
+        {
+            EnsureScavengerStorage();
+            if (_externalScavengerSites == null || _externalScavengerSites.Length == 0)
+                return;
+
+            float clampedRadius = Mathf.Clamp(radiusWS, 0.2f, scavengerOrbitRadius * 3f);
+            float clampedDuration = duration > 0f ? duration : externalScavengerSiteDuration;
+            int targetIndex = -1;
+            float weakestRemaining = float.MaxValue;
+
+            for (int i = 0; i < _externalScavengerSites.Length; i++)
+            {
+                ExternalScavengerSiteState site = _externalScavengerSites[i];
+                if (site.RemainingTime <= 0f)
+                {
+                    targetIndex = i;
+                    break;
+                }
+
+                float mergeRadius = Mathf.Max(site.RadiusWS, clampedRadius);
+                if ((site.AnchorWS - anchorWS).sqrMagnitude <= mergeRadius * mergeRadius)
+                {
+                    targetIndex = i;
+                    break;
+                }
+
+                if (site.RemainingTime < weakestRemaining)
+                {
+                    weakestRemaining = site.RemainingTime;
+                    targetIndex = i;
+                }
+            }
+
+            if (targetIndex < 0)
+                targetIndex = 0;
+
+            _externalScavengerSites[targetIndex] = new ExternalScavengerSiteState
+            {
+                AnchorWS = anchorWS,
+                RadiusWS = clampedRadius,
+                RemainingTime = clampedDuration,
+                Seed = (uint)targetIndex * 0x45D9F3Bu ^ (uint)Mathf.Abs(anchorWS.GetHashCode()) ^ NestingHashSeed
+            };
+        }
+
+        private void EnsureScavengerStorage()
+        {
+            int hostCapacity = Mathf.Clamp(maxScavengerHostCount, 2, 24);
+            int externalSiteCapacity = Mathf.Clamp(maxExternalScavengerSiteCount, 1, 16);
+            int instanceCapacity = Mathf.Max(1, hostCapacity * Mathf.Clamp(scavengersPerHost, 4, 32));
+            if (_scavengerHosts != null &&
+                _externalScavengerSites != null &&
+                _scavengerMatrices != null &&
+                _scavengerHosts.Length == hostCapacity &&
+                _externalScavengerSites.Length == externalSiteCapacity &&
+                _scavengerInstanceCapacity == instanceCapacity)
+            {
+                return;
+            }
+
+            _activeScavengerHostCount = 0;
+            _activeExternalScavengerSiteCount = 0;
+            // COLD ALLOC: ScavengerHostState[hostCapacity] - tracked settled collapse chunks feeding the indirect scavenger renderer - owner: SargassumGlobalDragManager
+            _scavengerHosts = new ScavengerHostState[hostCapacity];
+            // COLD ALLOC: ExternalScavengerSiteState[externalSiteCapacity] - corpse/carcass scavenger targets without live chunk owners - owner: SargassumGlobalDragManager
+            _externalScavengerSites = new ExternalScavengerSiteState[externalSiteCapacity];
+            // COLD ALLOC: Matrix4x4[instanceCapacity] - CPU-side indirect transform payload for bottom scavenger instances - owner: SargassumGlobalDragManager
+            _scavengerMatrices = new Matrix4x4[instanceCapacity];
+            _scavengerInstanceCapacity = instanceCapacity;
+            ReleaseScavengerBuffers();
+        }
+
+        private void EnsureScavengerRenderResources()
+        {
+            EnsureScavengerStorage();
+
+            if (_scavengerPropertyBlock == null)
+                _scavengerPropertyBlock = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - indirect scavenger draw bindings - owner: SargassumGlobalDragManager
+
+            if (scavengerMesh == null && _fallbackScavengerMesh == null)
+                _fallbackScavengerMesh = BuildFallbackScavengerMesh();
+
+            if (scavengerMaterial == null && _fallbackScavengerMaterial == null)
+            {
+                Shader shader = Shader.Find("Hecton8/World/CollapseScavengerIndirect");
+                if (shader != null)
+                {
+                    _fallbackScavengerMaterial = new Material(shader)
+                    {
+                        name = "__CollapseScavengerIndirectFallback",
+                        hideFlags = HideFlags.HideAndDontSave,
+                        enableInstancing = true
+                    }; // COLD ALLOC: Material[1] - indirect scavenger fallback material bound to first-party shader - owner: SargassumGlobalDragManager
+                }
+            }
+
+            if (_scavengerMatrixBuffer == null || _scavengerArgsBuffer == null)
+            {
+                _scavengerMatrixBuffer = new ComputeBuffer(Mathf.Max(1, _scavengerInstanceCapacity), 64, ComputeBufferType.Structured); // COLD ALLOC: ComputeBuffer[instanceCapacity] - indirect scavenger matrices - owner: SargassumGlobalDragManager
+                _scavengerArgsBuffer = new ComputeBuffer(1, IndirectArgsCount * sizeof(uint), ComputeBufferType.IndirectArguments); // COLD ALLOC: ComputeBuffer[1] - indirect scavenger draw arguments - owner: SargassumGlobalDragManager
+            }
+
+            if (_scavengerPropertyBlock != null && _scavengerMatrixBuffer != null)
+                _scavengerPropertyBlock.SetBuffer(_ScavengerMatricesId, _scavengerMatrixBuffer);
+        }
+
+        private void ReleaseScavengerBuffers()
+        {
+            if (_scavengerMatrixBuffer != null)
+            {
+                _scavengerMatrixBuffer.Release();
+                _scavengerMatrixBuffer = null;
+            }
+
+            if (_scavengerArgsBuffer != null)
+            {
+                _scavengerArgsBuffer.Release();
+                _scavengerArgsBuffer = null;
+            }
+        }
+
+        private void ReleaseScavengerResources()
+        {
+            ReleaseScavengerBuffers();
+            _scavengerHosts = null;
+            _externalScavengerSites = null;
+            _scavengerMatrices = null;
+            _scavengerPropertyBlock = null;
+            _scavengerInstanceCapacity = 0;
+            _activeScavengerHostCount = 0;
+            _activeExternalScavengerSiteCount = 0;
+
+            if (_fallbackScavengerMaterial != null)
+            {
+                Destroy(_fallbackScavengerMaterial);
+                _fallbackScavengerMaterial = null;
+            }
+
+            if (_fallbackScavengerMesh != null)
+            {
+                Destroy(_fallbackScavengerMesh);
+                _fallbackScavengerMesh = null;
+            }
+        }
+
+        private void ClearScavengerHosts()
+        {
+            if (_scavengerHosts != null)
+            {
+                for (int i = 0; i < _activeScavengerHostCount; i++)
+                {
+                    SargassumCollapseChunk chunk = _scavengerHosts[i].Chunk;
+                    if (chunk != null)
+                        chunk.ClearScavengerHostRegistration();
+                }
+
+                Array.Clear(_scavengerHosts, 0, _scavengerHosts.Length);
+            }
+
+            if (_externalScavengerSites != null)
+                Array.Clear(_externalScavengerSites, 0, _externalScavengerSites.Length);
+
+            _activeScavengerHostCount = 0;
+            _activeExternalScavengerSiteCount = 0;
+            _debugScavengerHostCount = 0;
+            _debugScavengerInstanceCount = 0;
+            _debugScavengerBounds = default;
+            _scavengerDrawBounds = default;
+
+            if (_scavengerArgsBuffer != null)
+            {
+                _scavengerIndirectArgs[0] = 0;
+                _scavengerIndirectArgs[1] = 0;
+                _scavengerIndirectArgs[2] = 0;
+                _scavengerIndirectArgs[3] = 0;
+                _scavengerIndirectArgs[4] = 0;
+                _scavengerArgsBuffer.SetData(_scavengerIndirectArgs);
+            }
+        }
+
+        private void UpdateScavengerHosts(float dt)
+        {
+            if (_scavengerHosts == null || _activeScavengerHostCount <= 0)
+            {
+                _debugScavengerHostCount = 0;
+                _debugScavengerInstanceCount = 0;
+                _debugScavengerBounds = default;
+                UploadScavengerInstances(0);
+                return;
+            }
+
+            EnsureScavengerRenderResources();
+
+            int writeHostIndex = 0;
+            int matrixCount = 0;
+            bool boundsInitialized = false;
+            Bounds drawBounds = default;
+            float safeDeltaTime = Mathf.Max(0f, dt);
+
+            for (int readHostIndex = 0; readHostIndex < _activeScavengerHostCount; readHostIndex++)
+            {
+                ScavengerHostState host = _scavengerHosts[readHostIndex];
+                if (host.Chunk == null || !host.Chunk.CanHostScavengers)
+                    continue;
+
+                host.AnchorWS = host.Chunk.GetScavengerAnchorWS();
+                host.SettledTime += safeDeltaTime;
+                if (host.SettledTime >= scavengerActivationDelay)
+                {
+                    float consumeDelta01 = safeDeltaTime / Mathf.Max(0.1f, scavengerConsumeDuration);
+                    host.Chunk.ApplyScavengerConsumptionDelta(consumeDelta01);
+                    if (host.Chunk == null || !host.Chunk.CanHostScavengers)
+                        continue;
+
+                    host.Consumed01 = Mathf.Clamp01(host.Consumed01 + consumeDelta01);
+                    int instanceCount = Mathf.Clamp(
+                        Mathf.RoundToInt(Mathf.Lerp(scavengersPerHost, 2f, host.Consumed01)),
+                        1,
+                        scavengersPerHost);
+                    float activeTime = host.SettledTime - scavengerActivationDelay;
+                    float consumeBias = 1f - host.Consumed01 * 0.35f;
+
+                    for (int instanceIndex = 0; instanceIndex < instanceCount && matrixCount < _scavengerInstanceCapacity; instanceIndex++)
+                    {
+                        float phase01 = (instanceIndex + 0.5f) / instanceCount;
+                        float radialHash = HashToFloat01(host.Seed, (uint)(instanceIndex + 1), 0xA53C91E5u);
+                        float scaleHash = HashToFloat01(host.Seed, (uint)(instanceIndex + 7), 0x9E3779B9u);
+                        float bobHash = HashToFloat01(host.Seed, (uint)(instanceIndex + 13), 0x7F4A7C15u);
+                        float angle = phase01 * Mathf.PI * 2f + activeTime * Mathf.Lerp(0.55f, 1.1f, radialHash);
+                        float radius = scavengerOrbitRadius * Mathf.Lerp(0.35f, 1f, radialHash) * consumeBias;
+                        Vector3 orbitOffset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radius;
+                        float bob = Mathf.Sin(activeTime * 4.2f + bobHash * Mathf.PI * 2f) * scavengerBobAmplitude;
+                        Vector3 positionWS = host.AnchorWS + orbitOffset + new Vector3(0f, scavengerVerticalOffset + bob, 0f);
+                        Vector3 forward = new Vector3(-Mathf.Sin(angle), 0f, Mathf.Cos(angle));
+                        if (forward.sqrMagnitude <= 0.0001f)
+                            forward = Vector3.forward;
+
+                        float scale = Mathf.Lerp(scavengerScaleMin, scavengerScaleMax, scaleHash);
+                        _scavengerMatrices[matrixCount] = Matrix4x4.TRS(positionWS, Quaternion.LookRotation(forward, Vector3.up), Vector3.one * scale);
+                        matrixCount++;
+
+                        Bounds instanceBounds = new Bounds(positionWS, Vector3.one * Mathf.Max(0.2f, scale * 2.8f));
+                        if (!boundsInitialized)
+                        {
+                            drawBounds = instanceBounds;
+                            boundsInitialized = true;
+                        }
+                        else
+                        {
+                            drawBounds.Encapsulate(instanceBounds);
+                        }
+                    }
+                }
+
+                _scavengerHosts[writeHostIndex] = host;
+                writeHostIndex++;
+            }
+
+            int writeExternalSiteIndex = 0;
+            if (_externalScavengerSites != null)
+            {
+                for (int readExternalSiteIndex = 0; readExternalSiteIndex < _externalScavengerSites.Length; readExternalSiteIndex++)
+                {
+                    ExternalScavengerSiteState site = _externalScavengerSites[readExternalSiteIndex];
+                    if (site.RemainingTime <= 0f)
+                        continue;
+
+                    site.RemainingTime = Mathf.Max(0f, site.RemainingTime - safeDeltaTime);
+                    if (site.RemainingTime <= 0f)
+                        continue;
+
+                    int instanceCount = Mathf.Clamp(scavengersPerHost / 2, 1, scavengersPerHost);
+                    float life01 = 1f - site.RemainingTime / Mathf.Max(0.1f, externalScavengerSiteDuration);
+                    float activeTime = (externalScavengerSiteDuration - site.RemainingTime) * 0.85f;
+                    for (int instanceIndex = 0; instanceIndex < instanceCount && matrixCount < _scavengerInstanceCapacity; instanceIndex++)
+                    {
+                        float phase01 = (instanceIndex + 0.5f) / instanceCount;
+                        float radialHash = HashToFloat01(site.Seed, (uint)(instanceIndex + 3), 0x6D2B79F5u);
+                        float scaleHash = HashToFloat01(site.Seed, (uint)(instanceIndex + 11), 0xA53C91E5u);
+                        float bobHash = HashToFloat01(site.Seed, (uint)(instanceIndex + 19), 0x9E3779B9u);
+                        float angle = phase01 * Mathf.PI * 2f + activeTime * Mathf.Lerp(0.35f, 0.9f, radialHash);
+                        float radius = site.RadiusWS * Mathf.Lerp(0.2f, 1f, radialHash) * Mathf.Lerp(1f, 0.55f, life01);
+                        Vector3 orbitOffset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radius;
+                        float bob = Mathf.Sin(activeTime * 3.4f + bobHash * Mathf.PI * 2f) * scavengerBobAmplitude;
+                        Vector3 positionWS = site.AnchorWS + orbitOffset + new Vector3(0f, scavengerVerticalOffset + bob, 0f);
+                        Vector3 forward = new Vector3(-Mathf.Sin(angle), 0f, Mathf.Cos(angle));
+                        if (forward.sqrMagnitude <= 0.0001f)
+                            forward = Vector3.forward;
+
+                        float scale = Mathf.Lerp(scavengerScaleMin, scavengerScaleMax, scaleHash) * Mathf.Lerp(0.7f, 1f, 1f - life01);
+                        _scavengerMatrices[matrixCount] = Matrix4x4.TRS(positionWS, Quaternion.LookRotation(forward, Vector3.up), Vector3.one * scale);
+                        matrixCount++;
+
+                        Bounds instanceBounds = new Bounds(positionWS, Vector3.one * Mathf.Max(0.2f, scale * 2.8f));
+                        if (!boundsInitialized)
+                        {
+                            drawBounds = instanceBounds;
+                            boundsInitialized = true;
+                        }
+                        else
+                        {
+                            drawBounds.Encapsulate(instanceBounds);
+                        }
+                    }
+
+                    _externalScavengerSites[writeExternalSiteIndex] = site;
+                    writeExternalSiteIndex++;
+                }
+            }
+
+            for (int clearIndex = writeHostIndex; clearIndex < _activeScavengerHostCount; clearIndex++)
+                _scavengerHosts[clearIndex] = default;
+
+            if (_externalScavengerSites != null)
+            {
+                for (int clearIndex = writeExternalSiteIndex; clearIndex < _externalScavengerSites.Length; clearIndex++)
+                    _externalScavengerSites[clearIndex] = default;
+            }
+
+            _activeScavengerHostCount = writeHostIndex;
+            _activeExternalScavengerSiteCount = writeExternalSiteIndex;
+            _debugScavengerHostCount = writeHostIndex + writeExternalSiteIndex;
+            _debugScavengerInstanceCount = matrixCount;
+            _scavengerDrawBounds = boundsInitialized ? drawBounds : default;
+            _debugScavengerBounds = _scavengerDrawBounds;
+            UploadScavengerInstances(matrixCount);
+        }
+
+        private void UploadScavengerInstances(int instanceCount)
+        {
+            if (_scavengerMatrixBuffer == null || _scavengerArgsBuffer == null)
+                return;
+
+            Mesh activeMesh = scavengerMesh != null ? scavengerMesh : _fallbackScavengerMesh;
+            uint indexCount = activeMesh != null ? activeMesh.GetIndexCount(0) : 0u;
+            uint indexStart = activeMesh != null ? activeMesh.GetIndexStart(0) : 0u;
+            uint baseVertex = activeMesh != null ? activeMesh.GetBaseVertex(0) : 0u;
+            if (instanceCount > 0)
+                _scavengerMatrixBuffer.SetData(_scavengerMatrices, 0, 0, instanceCount);
+
+            _scavengerIndirectArgs[0] = indexCount;
+            _scavengerIndirectArgs[1] = (uint)Mathf.Max(0, instanceCount);
+            _scavengerIndirectArgs[2] = indexStart;
+            _scavengerIndirectArgs[3] = baseVertex;
+            _scavengerIndirectArgs[4] = 0u;
+            _scavengerArgsBuffer.SetData(_scavengerIndirectArgs);
+        }
+
+        private void DrawScavengers()
+        {
+            if (_debugScavengerInstanceCount <= 0 || _scavengerArgsBuffer == null)
+                return;
+
+            Mesh activeMesh = scavengerMesh != null ? scavengerMesh : _fallbackScavengerMesh;
+            Material activeMaterial = scavengerMaterial != null ? scavengerMaterial : _fallbackScavengerMaterial;
+            if (activeMesh == null || activeMaterial == null || _scavengerPropertyBlock == null)
+                return;
+
+            Graphics.DrawMeshInstancedIndirect(
+                activeMesh,
+                0,
+                activeMaterial,
+                _scavengerDrawBounds,
+                _scavengerArgsBuffer,
+                0,
+                _scavengerPropertyBlock,
+                ShadowCastingMode.Off,
+                false,
+                gameObject.layer,
+                null,
+                LightProbeUsage.Off,
+                null);
+        }
+
+        private Mesh BuildFallbackScavengerMesh()
+        {
+            Mesh mesh = new Mesh
+            {
+                name = "__CollapseScavengerFallback",
+                hideFlags = HideFlags.HideAndDontSave
+            }; // COLD ALLOC: Mesh[1] - first-party fallback indirect scavenger mesh - owner: SargassumGlobalDragManager
+
+            Vector3[] vertices =
+            {
+                new Vector3(0f, 0f, 0.28f),
+                new Vector3(0f, 0f, -0.28f),
+                new Vector3(-0.16f, 0f, 0f),
+                new Vector3(0.16f, 0f, 0f),
+                new Vector3(0f, 0.08f, 0f),
+                new Vector3(0f, -0.05f, 0f)
+            }; // COLD ALLOC: Vector3[6] - fallback scavenger octahedron vertices - owner: SargassumGlobalDragManager
+
+            int[] triangles =
+            {
+                0, 4, 3,
+                0, 3, 5,
+                0, 5, 2,
+                0, 2, 4,
+                1, 3, 4,
+                1, 5, 3,
+                1, 2, 5,
+                1, 4, 2
+            }; // COLD ALLOC: int[24] - fallback scavenger octahedron triangles - owner: SargassumGlobalDragManager
+
+            mesh.vertices = vertices;
+            mesh.triangles = triangles;
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            return mesh;
+        }
+
         private int ResolveNestedPrototypeIndex(SargassumFieldSample fieldSample, int sampleX, int sampleZ)
         {
             if (_activeNestingPrototypes == null || _activeNestingPrototypes.Length == 0)
@@ -1743,8 +2334,10 @@ namespace Hecton8.World
             ResolveActiveNestingPrototypes();
             EnsureNestedAttachmentStorage();
             EnsureDisruptionStorage();
+            EnsureScavengerStorage();
             CreateDensityTexture();
             ClearNestedAttachments();
+            ClearScavengerHosts();
             ClearDensityTexture();
             ClearSinkTexture();
             PublishShaderGlobals();
@@ -1843,6 +2436,17 @@ namespace Hecton8.World
             massiveDisplacementRampDuration = Mathf.Clamp(massiveDisplacementRampDuration, 0.1f, 4f);
             massiveDisplacementFadeDuration = Mathf.Clamp(massiveDisplacementFadeDuration, 0.1f, 8f);
             massiveDisplacementExtremePanicRadius = Mathf.Clamp(massiveDisplacementExtremePanicRadius, 50f, 96f);
+            maxScavengerHostCount = Mathf.Clamp(maxScavengerHostCount, 2, 24);
+            scavengersPerHost = Mathf.Clamp(scavengersPerHost, 4, 32);
+            scavengerActivationDelay = Mathf.Clamp(scavengerActivationDelay, 30f, 90f);
+            scavengerConsumeDuration = Mathf.Clamp(scavengerConsumeDuration, 4f, 30f);
+            scavengerOrbitRadius = Mathf.Clamp(scavengerOrbitRadius, 0.2f, 4f);
+            scavengerVerticalOffset = Mathf.Clamp(scavengerVerticalOffset, -1f, 1f);
+            scavengerBobAmplitude = Mathf.Clamp(scavengerBobAmplitude, 0f, 0.5f);
+            scavengerScaleMin = Mathf.Clamp(scavengerScaleMin, 0.02f, 0.4f);
+            scavengerScaleMax = Mathf.Max(scavengerScaleMin, Mathf.Clamp(scavengerScaleMax, 0.04f, 0.6f));
+            maxExternalScavengerSiteCount = Mathf.Clamp(maxExternalScavengerSiteCount, 1, 16);
+            externalScavengerSiteDuration = Mathf.Clamp(externalScavengerSiteDuration, 4f, 90f);
             fallbackPatchThreshold = Mathf.Clamp01(fallbackPatchThreshold);
             canopyFlowAnisotropy = Mathf.Clamp(canopyFlowAnisotropy, 0.2f, 1f);
             canopyPrimaryCellSize = Mathf.Max(4f, canopyPrimaryCellSize);
@@ -1853,6 +2457,7 @@ namespace Hecton8.World
             entanglementMinDensity = Mathf.Clamp01(entanglementMinDensity);
             entanglementSpeedThreshold = Mathf.Max(0.25f, entanglementSpeedThreshold);
             maxEntanglementStrength = Mathf.Clamp01(maxEntanglementStrength);
+            alongFlowDragScale = Mathf.Clamp(alongFlowDragScale, 0.1f, 1f);
             _fallbackLabyrinthConfig = new HectonMapMagicVegetationBridge.FloatingLabyrinthConfig(
                 fallbackPatchThreshold,
                 canopyWarpNoiseScale,
@@ -1862,6 +2467,26 @@ namespace Hecton8.World
                 canopyWarpMeters,
                 NormalizeFlowDirection(canopyFlowDirection),
                 canopyFlowAnisotropy);
+        }
+
+        private float ResolveDirectionalDragScale(Vector3 movementVelocityWS)
+        {
+            Vector2 movementXZ = new Vector2(movementVelocityWS.x, movementVelocityWS.z);
+            float movementMagnitudeSq = movementXZ.sqrMagnitude;
+            if (movementMagnitudeSq <= 0.0001f)
+                return 1f;
+
+            HectonMapMagicVegetationBridge.FloatingLabyrinthConfig config = ResolveLabyrinthConfig();
+            Vector2 flowDirection = NormalizeFlowDirection(config.FlowDirection);
+            if (flowDirection.sqrMagnitude <= 0.0001f)
+                return 1f;
+
+            movementXZ /= Mathf.Sqrt(movementMagnitudeSq);
+            float alongFlow01 = Mathf.Abs(Vector2.Dot(movementXZ, flowDirection));
+            float crossFlow01 = 1f - alongFlow01;
+            float anisotropy = Mathf.Clamp01(config.FlowAnisotropy);
+            float directionalBlend = Mathf.Lerp(1f, crossFlow01, anisotropy);
+            return Mathf.Lerp(alongFlowDragScale, 1f, directionalBlend);
         }
 
         private float ResolveEntanglement01(float density01, float currentSpeed)

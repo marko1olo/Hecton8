@@ -129,7 +129,7 @@ namespace Hecton8.UI
             if (_uiBuilt || _targetCanvas == null)
                 return;
 
-            RectTransform canvasRoot = _targetCanvas.transform as RectTransform;
+            RectTransform canvasRoot = HectonUIScaler.ResolveContentRoot(_targetCanvas);
             if (canvasRoot == null)
                 return;
 

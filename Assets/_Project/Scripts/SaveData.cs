@@ -43,7 +43,7 @@ namespace Hecton8.SaveSystem
         public float totalPlayTime;
 
         /// <summary>Текущая версия формата. Используется для миграции.</summary>
-        public const int CurrentVersion = 33; // v33: broken suit upgrade persistence added to the official save format
+        public const int CurrentVersion = 36; // v36: module-local logistics transit, sorter buffer, and deep drill output persisted inside construction DTO
 
         // ─────────────────────── DTO Sections ────────────────────
 
@@ -826,6 +826,17 @@ namespace Hecton8.SaveSystem
     public struct ModuleDTO
     {
         public string prefabId;
+        public string slottedToolItemId;
+        public string pipeInFlightItemId;
+        public int pipeInFlightAmount;
+        public float pipeTransitProgress;
+        public float pipeExportTimerSeconds;
+        public string drillBufferedItemId;
+        public int drillBufferedAmount;
+        public float drillCycleTimerSeconds;
+        public int sorterBufferedSlotCount;
+        public string[] sorterBufferedItemIds;
+        public int[] sorterBufferedQuantities;
         public float posX;
         public float posY;
         public float posZ;
@@ -836,6 +847,7 @@ namespace Hecton8.SaveSystem
         public float integrity;
         public float repairIntegrityCap;
         public float airReserveNormalized;
+        public float co2Normalized;
         public bool isFlooded;
         public byte failureMode;
 

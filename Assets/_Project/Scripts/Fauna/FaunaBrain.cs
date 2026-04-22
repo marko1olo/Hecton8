@@ -75,6 +75,8 @@ namespace Hecton8.AI
         private static readonly int _HashSwimSpeed = Animator.StringToHash("SwimSpeed");
         private const float AmbientCurrentInfluence = 0.22f;
         private const float AmbientCurrentMaxVelocity = 3.8f;
+        private const float AmbientCurrentCullDistance = 100f;
+        private const float AmbientCurrentCullDistanceSqr = AmbientCurrentCullDistance * AmbientCurrentCullDistance;
         
         // --- LOD & Stagger ---
         private bool _lodDisabled;
@@ -82,6 +84,7 @@ namespace Hecton8.AI
         private int _tickStaggerShift;
         private Vector3 _cachedDesiredDirection;
         private AIState _currentStateCache;
+        private Transform _currentCullingPlayerTransform;
         
         // --- Buffers ---
         private static readonly Collider[] _panicBuffer = new Collider[10];
@@ -363,6 +366,19 @@ namespace Hecton8.AI
         {
             if (_rb == null || fdt <= 0f)
                 return;
+
+            WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _currentCullingPlayerTransform);
+            if (_currentCullingPlayerTransform != null)
+            {
+                Vector3 toPlayer = _currentCullingPlayerTransform.position - _rb.worldCenterOfMass;
+                if (toPlayer.sqrMagnitude > AmbientCurrentCullDistanceSqr)
+                {
+                    if (_rb.linearVelocity.sqrMagnitude <= 0.04f && !_rb.IsSleeping())
+                        _rb.Sleep();
+
+                    return;
+                }
+            }
 
             Vector3 sampledCurrent = CurrentVolume.SampleCombinedCurrent(_rb.worldCenterOfMass);
             if (sampledCurrent.sqrMagnitude <= 0.0001f)

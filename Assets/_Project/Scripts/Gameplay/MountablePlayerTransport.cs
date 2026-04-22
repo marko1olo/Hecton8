@@ -17,7 +17,7 @@ namespace Hecton8.Gameplay
     [RequireComponent(typeof(Collider))]
     [RequireComponent(typeof(PlayerTransportFeelContract))]
     [AddComponentMenu("Hecton8/Gameplay/Transport/Mountable Player Transport")]
-    public sealed class MountablePlayerTransport : MonoBehaviour, IInteractable, ITickable, IFixedTickable, IPlayerTransportSource, IPlayerTransportLifecycleOwner
+    public sealed class MountablePlayerTransport : MonoBehaviour, IInteractable, ITickable, IFixedTickable, IPlayerTransportSource, IPlayerTransportLifecycleOwner, ITransportPlatform
     {
         private const string DefaultMountText = "Board Transport";
         private const string DefaultDismountText = "Dismount";
@@ -93,6 +93,11 @@ namespace Hecton8.Gameplay
         private float _cachedAngularDamping;
         private bool _hasCachedBodyDamping;
         private bool _cachedBodyWasKinematic = true;
+        private bool _platformMotionInitialized;
+        private Vector3 _platformLinearVelocity;
+        private Vector3 _platformAngularVelocity;
+        private Vector3 _previousPlatformPosition;
+        private Quaternion _previousPlatformRotation = Quaternion.identity;
 
         /// <summary>True while this external transport is actively mounted by the rider.</summary>
         public bool IsMounted => _mounted;
@@ -112,6 +117,15 @@ namespace Hecton8.Gameplay
         /// <summary>Current normalized transport integrity.</summary>
         public float TransportIntegrityNormalized => ResolveIntegrityNormalized();
 
+        /// <inheritdoc />
+        public bool IsTransportPlatformActive => _mounted && PlatformTransform != null;
+
+        /// <inheritdoc />
+        public Transform PlatformTransform => riderAnchor != null ? riderAnchor : _cachedTransform;
+
+        /// <inheritdoc />
+        public bool InheritPlatformRotation => false;
+
         private void Awake()
         {
             _cachedTransform = transform;
@@ -123,6 +137,7 @@ namespace Hecton8.Gameplay
             BindPresetToFeelContract();
             RebuildPromptCache();
             EnsureLifecycleInitialized();
+            ResetPlatformMotionCache();
         }
 
         private void OnEnable()
@@ -133,6 +148,7 @@ namespace Hecton8.Gameplay
             ResolveVehicleUpgradeModule();
             RebuildPromptCache();
             EnsureLifecycleInitialized();
+            ResetPlatformMotionCache();
         }
 
         private void OnDisable()
@@ -274,12 +290,14 @@ namespace Hecton8.Gameplay
             if (_mounted && _riderTransform != null)
             {
                 AlignTransportToRider(fixedDeltaTime);
+                UpdatePlatformMotionCache(fixedDeltaTime);
                 return;
             }
 
             if (_bailoutDriftTimer <= 0f || _transportBody == null)
             {
                 TryRestoreBodyFromBailoutDrift();
+                ResetPlatformMotionCache();
                 return;
             }
 
@@ -290,6 +308,21 @@ namespace Hecton8.Gameplay
             _transportBody.linearDamping = bailoutLinearDamping;
             _transportBody.angularDamping = bailoutAngularDamping;
             _transportBody.AddForce(Vector3.down * bailoutSinkAcceleration * fixedDeltaTime, ForceMode.VelocityChange);
+            UpdatePlatformMotionCache(fixedDeltaTime);
+        }
+
+        /// <inheritdoc />
+        public Vector3 GetPlatformPointVelocity(Vector3 worldPoint)
+        {
+            Transform platformTransform = PlatformTransform;
+            if (!_mounted || platformTransform == null)
+                return Vector3.zero;
+
+            if (_transportBody != null && !_transportBody.isKinematic)
+                return _transportBody.GetPointVelocity(worldPoint);
+
+            Vector3 relativePoint = worldPoint - platformTransform.position;
+            return _platformLinearVelocity + Vector3.Cross(_platformAngularVelocity, relativePoint);
         }
 
         /// <summary>Current propulsion force contributed by this transport.</summary>
@@ -396,6 +429,7 @@ namespace Hecton8.Gameplay
             RefreshMountedInputSubscription();
             BindPresetToFeelContract();
             AlignTransportToRider(0f);
+            ResetPlatformMotionCache();
             ZeroRiderVelocity();
             PlayTransportOneShot(mountSound);
         }
@@ -424,6 +458,7 @@ namespace Hecton8.Gameplay
                 UnsubscribeMountedInput();
                 RestoreInteractionCollider();
                 ClearRiderReferences();
+                ResetPlatformMotionCache();
                 return;
             }
 
@@ -438,6 +473,7 @@ namespace Hecton8.Gameplay
             _mounted = false;
             _transportActive = false;
             _currentThrottle = 0f;
+            ResetPlatformMotionCache();
         }
 
         private bool ResolveRiderReferences(Transform interactor)
@@ -662,7 +698,10 @@ namespace Hecton8.Gameplay
             float drainScale = _vehicleUpgradeModule != null
                 ? Mathf.Max(0.1f, _vehicleUpgradeModule.EnergyDrainScale)
                 : 1f;
-            return baseDrain * drainScale;
+            float abyssalOverstrainMultiplier = _riderMovement != null
+                ? _riderMovement.CurrentAbyssalCounterDriveEnergyMultiplier
+                : 1f;
+            return baseDrain * drainScale * abyssalOverstrainMultiplier;
         }
 
         private float ResolveConfiguredDriveChargeDrainPerSecond()
@@ -713,6 +752,7 @@ namespace Hecton8.Gameplay
             _mounted = false;
             _transportActive = false;
             _currentThrottle = 0f;
+            ResetPlatformMotionCache();
         }
 
         private void BeginEmergencyBailoutDrift(Vector3 inheritedVelocity, float severity)
@@ -737,6 +777,57 @@ namespace Hecton8.Gameplay
             _transportBody.linearDamping = bailoutLinearDamping;
             _transportBody.angularDamping = bailoutAngularDamping;
             _bailoutDriftTimer = bailoutDriftDuration;
+            ResetPlatformMotionCache();
+        }
+
+        private void UpdatePlatformMotionCache(float fixedDeltaTime)
+        {
+            Transform platformTransform = PlatformTransform;
+            if (platformTransform == null || fixedDeltaTime <= 0f)
+            {
+                ResetPlatformMotionCache();
+                return;
+            }
+
+            Vector3 currentPosition = platformTransform.position;
+            Quaternion currentRotation = platformTransform.rotation;
+            if (!_platformMotionInitialized)
+            {
+                _platformMotionInitialized = true;
+                _previousPlatformPosition = currentPosition;
+                _previousPlatformRotation = currentRotation;
+                _platformLinearVelocity = Vector3.zero;
+                _platformAngularVelocity = Vector3.zero;
+                return;
+            }
+
+            _platformLinearVelocity = (currentPosition - _previousPlatformPosition) / fixedDeltaTime;
+            Quaternion deltaRotation = currentRotation * Quaternion.Inverse(_previousPlatformRotation);
+            deltaRotation.ToAngleAxis(out float angleDegrees, out Vector3 axis);
+            if (float.IsNaN(axis.x) || axis.sqrMagnitude <= 0.000001f || angleDegrees <= 0.0001f)
+            {
+                _platformAngularVelocity = Vector3.zero;
+            }
+            else
+            {
+                if (angleDegrees > 180f)
+                    angleDegrees -= 360f;
+
+                _platformAngularVelocity = axis.normalized * (angleDegrees * Mathf.Deg2Rad / fixedDeltaTime);
+            }
+
+            _previousPlatformPosition = currentPosition;
+            _previousPlatformRotation = currentRotation;
+        }
+
+        private void ResetPlatformMotionCache()
+        {
+            Transform platformTransform = PlatformTransform;
+            _platformMotionInitialized = platformTransform != null;
+            _previousPlatformPosition = platformTransform != null ? platformTransform.position : Vector3.zero;
+            _previousPlatformRotation = platformTransform != null ? platformTransform.rotation : Quaternion.identity;
+            _platformLinearVelocity = Vector3.zero;
+            _platformAngularVelocity = Vector3.zero;
         }
 
         private void TryRestoreBodyFromBailoutDrift()

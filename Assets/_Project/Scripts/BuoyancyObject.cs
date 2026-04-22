@@ -120,6 +120,7 @@ namespace Hecton8.Physics
         /// Causes IsInAir to return true → disabling buoyancy on islands.
         /// </summary>
         private bool _isGrounded;
+        private bool _externallySuppressed;
 
         /// <summary>
         /// Fixed-frame counter for staggered ground checks.
@@ -194,6 +195,11 @@ namespace Hecton8.Physics
         public BuoyancyProfile Profile => profile;
 
         /// <summary>
+        /// True while another system explicitly suppresses buoyancy forces for this body.
+        /// </summary>
+        public bool IsExternallySuppressed => _externallySuppressed;
+
+        /// <summary>
         /// True when fluid simulation should be fully suppressed for this object.
         /// Dry interiors always suppress fluid. Ground contact suppresses fluid only
         /// when the object is effectively above the waterline, so underwater bottom
@@ -201,6 +207,9 @@ namespace Hecton8.Physics
         /// </summary>
         public bool ShouldSuppressFluid(float waterLevel)
         {
+            if (_externallySuppressed)
+                return true;
+
             if (_dryZoneRefCount > 0)
                 return true;
 
@@ -214,6 +223,15 @@ namespace Hecton8.Physics
                 bottomY = _cachedTransform.position.y - Mathf.Max(0.05f, height * 0.5f);
 
             return bottomY >= waterLevel - 0.02f;
+        }
+
+        /// <summary>
+        /// Enables or suppresses external fluid influence without unregistering this component.
+        /// Used by heavy locomotion modes that must own the vertical force budget outright.
+        /// </summary>
+        public void SetExternalSuppression(bool suppressed)
+        {
+            _externallySuppressed = suppressed;
         }
 
         /// <summary>

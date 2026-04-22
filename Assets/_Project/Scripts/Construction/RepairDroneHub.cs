@@ -322,7 +322,7 @@ namespace Hecton8.Construction
             ObjectPoolManager pool = ObjectPoolManager.Instance;
             if (pool == null)
             {
-                ReleaseClaim(target.GetInstanceID());
+                ReleaseClaim(GetModuleRuntimeId(target));
                 return;
             }
 
@@ -333,14 +333,14 @@ namespace Hecton8.Construction
                 if (droneObject != null)
                     pool.Despawn(droneObject);
 
-                ReleaseClaim(target.GetInstanceID());
+                ReleaseClaim(GetModuleRuntimeId(target));
                 return;
             }
 
             if (!TryConsumeRepairSupply())
             {
                 pool.Despawn(droneObject);
-                ReleaseClaim(target.GetInstanceID());
+                ReleaseClaim(GetModuleRuntimeId(target));
                 return;
             }
 
@@ -348,7 +348,7 @@ namespace Hecton8.Construction
                 grid.ConsumePower(launchBurstPowerCost);
 
             _activeDrones[freeSlot] = drone;
-            _activeTargetIds[freeSlot] = target.GetInstanceID();
+            _activeTargetIds[freeSlot] = GetModuleRuntimeId(target);
             _launchCountTotal++;
             _debugCurrentTargetName = target.name;
             drone.AssignMission(this, target, launchPosition, droneRepairRate);
@@ -417,7 +417,7 @@ namespace Hecton8.Construction
             if (module == null)
                 return false;
 
-            int moduleId = module.GetInstanceID();
+            int moduleId = GetModuleRuntimeId(module);
             if (s_ClaimedModuleIds.Contains(moduleId))
                 return false;
 
@@ -597,7 +597,7 @@ namespace Hecton8.Construction
             if (module == null)
                 return false;
 
-            int instanceId = module.GetInstanceID();
+            int instanceId = GetModuleRuntimeId(module);
             return s_ClaimedModuleIds.Add(instanceId);
         }
 
@@ -607,6 +607,13 @@ namespace Hecton8.Construction
                 return;
 
             s_ClaimedModuleIds.Remove(instanceId);
+        }
+
+        private static int GetModuleRuntimeId(BaseModule module)
+        {
+            return module == null
+                ? 0
+                : unchecked((int)EntityId.ToULong(module.GetEntityId()));
         }
 
         private Vector3 ResolveLaunchPosition()

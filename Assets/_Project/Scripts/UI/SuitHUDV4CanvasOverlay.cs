@@ -240,6 +240,7 @@ namespace Hecton8.UI
         private Color _appliedDim;
         private Color _appliedWarning;
         private CanvasScaler _cachedCanvasScaler;
+        private HectonUIScaler _cachedUiScaler;
         private HectonSurvivalSystem _depthSignalSource;
         private int _cachedHullStressWhisperBucket = int.MinValue;
         private string _cachedHullStressWhisperText;
@@ -552,14 +553,13 @@ namespace Hecton8.UI
                 canvasRect.localScale = Vector3.one;
             }
 
+            HectonUIScaler uiScaler = ResolveUiScaler();
+            if (uiScaler != null)
+                uiScaler.Configure(new Vector2(1600f, 900f), 0.5f);
+
             CanvasScaler scaler = ResolveCanvasScaler();
-            if (scaler != null)
-            {
-                scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-                scaler.referenceResolution = new Vector2(1600f, 900f);
-                scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-                scaler.matchWidthOrHeight = 0.5f;
-            }
+            if (scaler != null && scaler.enabled)
+                scaler.enabled = false;
             _canvasStateApplied = true;
             _appliedCanvasTarget = targetCanvas;
             _appliedProjectionCamera = projectionCamera;
@@ -594,17 +594,8 @@ namespace Hecton8.UI
             }
 
             CanvasScaler scaler = ResolveCanvasScaler();
-            if (scaler != null)
-            {
-                if (scaler.uiScaleMode != CanvasScaler.ScaleMode.ScaleWithScreenSize)
-                    return false;
-                if (!Approximately(scaler.referenceResolution, new Vector2(1600f, 900f)))
-                    return false;
-                if (scaler.screenMatchMode != CanvasScaler.ScreenMatchMode.MatchWidthOrHeight)
-                    return false;
-                if (!Mathf.Approximately(scaler.matchWidthOrHeight, 0.5f))
-                    return false;
-            }
+            if (scaler != null && scaler.enabled)
+                return false;
 
             return true;
         }
@@ -615,13 +606,24 @@ namespace Hecton8.UI
             if (targetCanvas == null)
                 return;
 
+            RectTransform parentRoot = ResolveUiParent(targetCanvas);
             if (_root == null)
-                _root = targetCanvas.transform.Find(RootName) as RectTransform;
+                _root = FindChildRect(parentRoot, RootName);
+
+            if (_root == null && parentRoot != null && parentRoot != targetCanvas.transform)
+                _root = FindChildRect(targetCanvas.transform, RootName);
 
             if (_root == null)
             {
-                _root = CreateRect(RootName, targetCanvas.transform as RectTransform);
+                _root = CreateRect(RootName, parentRoot);
                 Stretch(_root, 0f, 0f, 0f, 0f);
+                _root.SetAsLastSibling();
+                _layoutBuilt = false;
+                InvalidateVisualCaches();
+            }
+            else if (parentRoot != null && _root.parent != parentRoot)
+            {
+                _root.SetParent(parentRoot, false);
                 _root.SetAsLastSibling();
                 _layoutBuilt = false;
                 InvalidateVisualCaches();
@@ -1812,6 +1814,7 @@ namespace Hecton8.UI
             _appliedRenderPath = default;
             _appliedOverlaySortingOrder = 0;
             _cachedCanvasScaler = null;
+            _cachedUiScaler = null;
             _cachedHullStressWhisperBucket = int.MinValue;
             _cachedHullStressWhisperText = null;
         }
@@ -1837,6 +1840,47 @@ namespace Hecton8.UI
                 _cachedCanvasScaler = canvas.GetComponent<CanvasScaler>();
 
             return _cachedCanvasScaler;
+        }
+
+        private HectonUIScaler ResolveUiScaler()
+        {
+            Canvas canvas = ResolveTargetCanvas();
+            if (canvas == null)
+            {
+                _cachedUiScaler = null;
+                return null;
+            }
+
+            if (_cachedUiScaler == null || _cachedUiScaler.gameObject != canvas.gameObject)
+                _cachedUiScaler = canvas.GetComponent<HectonUIScaler>();
+
+            if (_cachedUiScaler == null)
+                _cachedUiScaler = canvas.gameObject.AddComponent<HectonUIScaler>();
+
+            return _cachedUiScaler;
+        }
+
+        private static RectTransform ResolveUiParent(Canvas canvas)
+        {
+            RectTransform resolved = HectonUIScaler.ResolveContentRoot(canvas);
+            return resolved != null
+                ? resolved
+                : canvas != null ? canvas.transform as RectTransform : null;
+        }
+
+        private static RectTransform FindChildRect(Transform parent, string childName)
+        {
+            if (parent == null)
+                return null;
+
+            for (int i = 0; i < parent.childCount; i++)
+            {
+                Transform child = parent.GetChild(i);
+                if (child.name == childName)
+                    return child as RectTransform;
+            }
+
+            return null;
         }
 
         private void CacheResolvedPalette(SuitHUDProfile profile, Color primary, Color secondary, Color dim, Color warning)
@@ -2005,6 +2049,239 @@ namespace Hecton8.UI
         private void UnregisterActiveOverlay()
         {
             s_activeOverlays.Remove(this);
+        }
+    }
+
+    /// <summary>
+    /// Canvas-root scaler that applies a single matrix-driven transform to a dedicated content root instead of using CanvasScaler relayout.
+    /// </summary>
+    [DisallowMultipleComponent]
+    [AddComponentMenu("Hecton8/UI/Hecton UI Scaler")]
+    [RequireComponent(typeof(Canvas))]
+    public sealed class HectonUIScaler : MonoBehaviour, ITickable
+    {
+        private const string ContentRootName = "HectonUI_ScaledRoot";
+
+        [Header("── Scale Policy ──────────────────")]
+        [Tooltip("Reference UI resolution used by the root transform matrix.")]
+        [SerializeField] private Vector2 referenceResolution = new Vector2(1600f, 900f);
+        [Tooltip("CanvasScaler-compatible logarithmic width/height blend. 0 = width, 1 = height.")]
+        [SerializeField, Range(0f, 1f)] private float matchWidthOrHeight = 0.5f;
+        [Tooltip("Lower clamp for the matrix scale to keep the HUD readable on 720p displays.")]
+        [SerializeField, Range(0.5f, 1.5f)] private float minimumScale = 0.72f;
+        [Tooltip("Upper clamp for the matrix scale so HUD chrome does not bloat on larger displays.")]
+        [SerializeField, Range(0.75f, 2f)] private float maximumScale = 1.35f;
+
+        private Canvas _targetCanvas;
+        private RectTransform _contentRoot;
+        private bool _registeredToTickManager;
+        private int _lastScreenWidth = -1;
+        private int _lastScreenHeight = -1;
+        private float _lastAppliedScale = -1f;
+        private Vector2 _lastAppliedReferenceResolution = Vector2.zero;
+        private float _lastAppliedMatch = -1f;
+        private Matrix4x4 _uiMatrix = Matrix4x4.identity;
+
+        /// <summary>Current matrix applied to the scaled content root.</summary>
+        public Matrix4x4 CurrentMatrix => _uiMatrix;
+
+        /// <summary>Scaled content parent used by first-party HUD overlays.</summary>
+        public RectTransform ContentRoot => EnsureContentRoot();
+
+        private void OnEnable()
+        {
+            ResolveCanvas();
+            EnsureContentRoot();
+            ApplyScale(force: true);
+            RegisterToTickManager();
+        }
+
+        private void OnDisable()
+        {
+            UnregisterFromTickManager();
+        }
+
+        private void OnDestroy()
+        {
+            UnregisterFromTickManager();
+        }
+
+        /// <inheritdoc />
+        public void Tick(float dt)
+        {
+            ApplyScale(force: false);
+        }
+
+        /// <summary>
+        /// Configures the scaler from an owning canvas system.
+        /// </summary>
+        public void Configure(Vector2 nextReferenceResolution, float nextMatchWidthOrHeight)
+        {
+            Vector2 sanitizedResolution = new Vector2(
+                Mathf.Max(1f, nextReferenceResolution.x),
+                Mathf.Max(1f, nextReferenceResolution.y));
+            float sanitizedMatch = Mathf.Clamp01(nextMatchWidthOrHeight);
+            if (Approximately(referenceResolution, sanitizedResolution) &&
+                Mathf.Approximately(matchWidthOrHeight, sanitizedMatch))
+            {
+                return;
+            }
+
+            referenceResolution = sanitizedResolution;
+            matchWidthOrHeight = sanitizedMatch;
+            ApplyScale(force: true);
+        }
+
+        /// <summary>
+        /// Resolves the scaled content parent for a canvas, or falls back to the canvas RectTransform when no scaler is present.
+        /// </summary>
+        public static RectTransform ResolveContentRoot(Canvas canvas)
+        {
+            if (canvas == null)
+                return null;
+
+            if (canvas.TryGetComponent(out HectonUIScaler scaler))
+            {
+                RectTransform contentRoot = scaler.ContentRoot;
+                if (contentRoot != null)
+                    return contentRoot;
+            }
+
+            return canvas.transform as RectTransform;
+        }
+
+        private void ResolveCanvas()
+        {
+            if (_targetCanvas == null)
+                _targetCanvas = GetComponent<Canvas>();
+        }
+
+        private RectTransform EnsureContentRoot()
+        {
+            ResolveCanvas();
+            if (_targetCanvas == null)
+                return null;
+
+            RectTransform canvasRoot = _targetCanvas.transform as RectTransform;
+            if (canvasRoot == null)
+                return null;
+
+            if (_contentRoot == null || _contentRoot.gameObject == null)
+                _contentRoot = FindExistingChild(canvasRoot, ContentRootName);
+
+            if (_contentRoot == null)
+            {
+                // COLD ALLOC: GameObject[1] — matrix-scaled HUD content root — owner: HectonUIScaler
+                GameObject rootObject = new GameObject(ContentRootName, typeof(RectTransform));
+                rootObject.layer = canvasRoot.gameObject.layer;
+                _contentRoot = rootObject.GetComponent<RectTransform>();
+                _contentRoot.SetParent(canvasRoot, false);
+            }
+
+            _contentRoot.anchorMin = new Vector2(0.5f, 0.5f);
+            _contentRoot.anchorMax = new Vector2(0.5f, 0.5f);
+            _contentRoot.pivot = new Vector2(0.5f, 0.5f);
+            _contentRoot.anchoredPosition = Vector2.zero;
+            _contentRoot.localRotation = Quaternion.identity;
+            return _contentRoot;
+        }
+
+        private void ApplyScale(bool force)
+        {
+            RectTransform contentRoot = EnsureContentRoot();
+            if (contentRoot == null)
+                return;
+
+            int screenWidth = Mathf.Max(1, Screen.width);
+            int screenHeight = Mathf.Max(1, Screen.height);
+            if (!force &&
+                screenWidth == _lastScreenWidth &&
+                screenHeight == _lastScreenHeight &&
+                Approximately(referenceResolution, _lastAppliedReferenceResolution) &&
+                Mathf.Approximately(matchWidthOrHeight, _lastAppliedMatch))
+            {
+                return;
+            }
+
+            float scale = ComputeScale(screenWidth, screenHeight);
+            if (!force &&
+                Mathf.Approximately(scale, _lastAppliedScale) &&
+                contentRoot.sizeDelta == referenceResolution)
+            {
+                _lastScreenWidth = screenWidth;
+                _lastScreenHeight = screenHeight;
+                return;
+            }
+
+            _uiMatrix = Matrix4x4.TRS(
+                Vector3.zero,
+                Quaternion.identity,
+                new Vector3(scale, scale, 1f));
+
+            contentRoot.sizeDelta = referenceResolution;
+            contentRoot.localScale = new Vector3(_uiMatrix.m00, _uiMatrix.m11, 1f);
+
+            _lastScreenWidth = screenWidth;
+            _lastScreenHeight = screenHeight;
+            _lastAppliedScale = scale;
+            _lastAppliedReferenceResolution = referenceResolution;
+            _lastAppliedMatch = matchWidthOrHeight;
+        }
+
+        private float ComputeScale(int screenWidth, int screenHeight)
+        {
+            float scaleX = screenWidth / Mathf.Max(1f, referenceResolution.x);
+            float scaleY = screenHeight / Mathf.Max(1f, referenceResolution.y);
+            float logWidth = Mathf.Log(Mathf.Max(0.0001f, scaleX), 2f);
+            float logHeight = Mathf.Log(Mathf.Max(0.0001f, scaleY), 2f);
+            float blendedScale = Mathf.Pow(2f, Mathf.Lerp(logWidth, logHeight, matchWidthOrHeight));
+            return Mathf.Clamp(blendedScale, minimumScale, maximumScale);
+        }
+
+        private void RegisterToTickManager()
+        {
+            if (_registeredToTickManager)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager == null)
+                return;
+
+            tickManager.Register(this);
+            _registeredToTickManager = true;
+        }
+
+        private void UnregisterFromTickManager()
+        {
+            if (!_registeredToTickManager)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+                tickManager.Unregister(this);
+
+            _registeredToTickManager = false;
+        }
+
+        private static RectTransform FindExistingChild(Transform parent, string childName)
+        {
+            if (parent == null)
+                return null;
+
+            for (int i = 0; i < parent.childCount; i++)
+            {
+                Transform child = parent.GetChild(i);
+                if (child.name == childName)
+                    return child as RectTransform;
+            }
+
+            return null;
+        }
+
+        private static bool Approximately(Vector2 a, Vector2 b)
+        {
+            return Mathf.Approximately(a.x, b.x) &&
+                   Mathf.Approximately(a.y, b.y);
         }
     }
 }

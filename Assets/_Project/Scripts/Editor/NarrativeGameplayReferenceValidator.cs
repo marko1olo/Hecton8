@@ -352,7 +352,7 @@ namespace Hecton8.EditorTools
         private static void ValidateActiveSceneRelayRoutes(ref int errorCount, ref int warningCount)
         {
             EmergencyServiceRelay[] relays =
-                Object.FindObjectsByType<EmergencyServiceRelay>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+                Object.FindObjectsByType<EmergencyServiceRelay>(FindObjectsInactive.Include);
             if (relays == null || relays.Length <= 0)
                 return;
 

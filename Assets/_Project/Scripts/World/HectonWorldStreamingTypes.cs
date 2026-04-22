@@ -50,8 +50,22 @@ namespace Hecton8.World
     [Serializable]
     public struct TerrainHoleStreamingRecord
     {
+        public int HoleId;
         public Vector3 Position;
         public float Radius;
         public TerrainHoleSourceType SourceType;
+    }
+
+    /// <summary>
+    /// Immutable HLOD registry payload for distant large-structure rendering.
+    /// </summary>
+    [Serializable]
+    public struct HLODData
+    {
+        public int StructureId;
+        public StructureType Type;
+        public Vector3 Center;
+        public Vector3 Size;
+        public float Fade01;
     }
 }

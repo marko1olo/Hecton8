@@ -1528,6 +1528,9 @@ namespace Hecton8.UI
         private int CountItemInInventory(ItemData item)
         {
             if (item == null) return 0;
+            if (_currentFabricator != null)
+                return _currentFabricator.CountAccessibleItem(item, playerInventory);
+
             if (playerInventory == null || playerInventory.Grid == null) return 0;
 
             InventoryGrid grid = playerInventory.Grid;

@@ -31,6 +31,7 @@ namespace Hecton8.World
         private struct CaveEntranceRequest
         {
             public long Key;
+            public int HoleId;
             public Vector3 Position;
             public float Radius;
             public float Priority;
@@ -151,7 +152,7 @@ namespace Hecton8.World
                     ? cavePresetOverride
                     : voxelEngine.defaultPreset;
                 Vector3 caveCenter = request.Position + (Vector3.down * Mathf.Max(1f, caveVerticalOffset));
-                GameObject volume = await voxelEngine.GenerateVolumeAsync(caveCenter, request.Seed, preset, token);
+                GameObject volume = await voxelEngine.GenerateVolumeAsync(caveCenter, request.Seed, preset, lodLevel: 0, ct: token);
                 if (volume == null)
                     return;
 
@@ -195,13 +196,17 @@ namespace Hecton8.World
                 if (hole.SourceType != TerrainHoleSourceType.CaveEntrance)
                     continue;
 
+                long requestKey = hole.HoleId != 0
+                    ? hole.HoleId
+                    : BuildHoleKey(hole.Position, hole.Radius);
                 float distanceSq = (hole.Position - playerPosition).sqrMagnitude;
-                if (distanceSq > requestDistanceSq && !_activeVolumes.ContainsKey(BuildHoleKey(hole.Position, hole.Radius)))
+                if (distanceSq > requestDistanceSq && !_activeVolumes.ContainsKey(requestKey))
                     continue;
 
                 CaveEntranceRequest request = new CaveEntranceRequest
                 {
-                    Key = BuildHoleKey(hole.Position, hole.Radius),
+                    Key = requestKey,
+                    HoleId = hole.HoleId,
                     Position = hole.Position,
                     Radius = Mathf.Max(4f, hole.Radius),
                     Priority = distanceSq,

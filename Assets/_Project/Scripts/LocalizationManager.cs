@@ -6,6 +6,7 @@ using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Input;
+using Hecton8.UI;
 using Hecton8.World;
 using UnityEngine;
 #if UNITY_EDITOR
@@ -80,7 +81,7 @@ namespace Hecton.Localization
         private const int MadnessVisualBucket = MaxStressCorruptionBucket + 1;
         private const int MadnessChancePercent = 15;
         private const float MadnessRollInterval = 0.5f;
-        private const float MadnessBlinkDuration = 1.5f;
+        private const float MadnessBlinkDuration = 2f;
         private const string DeepAbyssZoneId = "zone_deep_abyss";
         private const string CorruptionBlocks = "#%&█";
         private const string LatinCorruptionAlphabet = "AEINORSTUVWXYZ";
@@ -153,6 +154,9 @@ namespace Hecton.Localization
 
             Instance = this;
             DontDestroyOnLoad(gameObject);
+
+            if (GetComponent<FontStreamingManager>() == null)
+                gameObject.AddComponent<FontStreamingManager>(); // COLD ALLOC: FontStreamingManager[1] — runtime staged localized font swap owner — owner: LocalizationManager
 
             LoadAllTables();
             RestoreSavedLanguage();
@@ -261,6 +265,9 @@ namespace Hecton.Localization
         {
             float liveIntensity = Mathf.Max(intensity, GetHullStressCorruptionIntensity());
             string expanded = GetExpanded(key);
+            if (TryResolveMadnessOverride(key, out string madnessText))
+                return madnessText;
+
             return CorruptExpandedText(expanded, liveIntensity);
         }
 
@@ -852,12 +859,29 @@ namespace Hecton.Localization
         }
 
         /// <summary>
-        /// True while the one-second madness whisper replacement window is active for PDA lore surfaces.
+        /// True while the active madness whisper replacement window is live for PDA lore surfaces.
         /// </summary>
         internal bool IsMadnessWhisperVisualActive()
         {
             EvaluateMadnessOverrideState();
             return IsMadnessOverrideActive();
+        }
+
+        /// <summary>
+        /// Resolves a deterministic localized madness whisper for explicit UI hallucination beats without
+        /// mutating the active madness override window.
+        /// </summary>
+        internal bool TryResolveMadnessWhisperPreview(string sourceToken, int cycle, out string madnessText)
+        {
+            madnessText = string.Empty;
+            string normalizedSourceToken = string.IsNullOrEmpty(sourceToken) ? "<null>" : sourceToken;
+            int seed = ComputeMadnessSeed(normalizedSourceToken, cycle, (int)CurrentLanguage);
+            string madnessKey = ResolveMadnessWhisperKey(seed);
+            if (!TryGet(CurrentLanguage, madnessKey, out madnessText) || string.IsNullOrEmpty(madnessText))
+                return false;
+
+            madnessText = ExpandRuntimeTokens(madnessText);
+            return !string.IsNullOrEmpty(madnessText);
         }
 
         private void EvaluateMadnessOverrideState()

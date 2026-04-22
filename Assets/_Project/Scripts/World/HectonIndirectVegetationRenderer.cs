@@ -1,5 +1,7 @@
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Unity.Collections;
+using Unity.Jobs;
 using UnityEngine;
 using UnityEngine.Rendering;
 #if UNITY_EDITOR
@@ -34,6 +36,8 @@ namespace Hecton8.World
         private static readonly int _InstanceMatricesId = Shader.PropertyToID("_HectonInstanceMatrices");
         private static readonly int _InstanceDataId = Shader.PropertyToID("_HectonVegetationInstanceData");
         private static readonly int _VisibleInstanceIndicesId = Shader.PropertyToID("_HectonVisibleInstanceIndices");
+        private static readonly int _ChunkWorldOffsetId = Shader.PropertyToID("_ChunkWorldOffset");
+        private static readonly int _GlobalFloatingOffsetId = Shader.PropertyToID("_GlobalFloatingOffset");
         private static readonly int _LodPassModeId = Shader.PropertyToID("_HectonLodPassMode");
         private static readonly int _LodNearDistanceId = Shader.PropertyToID("_HectonLodNearDistance");
         private static readonly int _LodFarDistanceId = Shader.PropertyToID("_HectonLodFarDistance");
@@ -251,6 +255,7 @@ namespace Hecton8.World
         private Vector3 _previousMotionCameraPosition;
         private Camera _previousMotionCamera;
         private bool _hasPreviousMotionCameraPosition;
+        private Vector4 _lastGlobalFloatingOffset = new Vector4(float.NaN, float.NaN, float.NaN, float.NaN);
         private PlayerToolManager _playerToolManager;
         private float _nextToolManagerResolveTime;
 
@@ -532,19 +537,40 @@ namespace Hecton8.World
             BindInstanceArrays(instanceMatrices, null, instanceCount);
         }
 
+        private bool BindInstanceNativeArrays(
+            NativeArray<Matrix4x4> instanceMatrices,
+            NativeArray<HectonVegetationInstanceData> instanceData,
+            int instanceCount)
+        {
+            if (!instanceMatrices.IsCreated || !instanceData.IsCreated || instanceCount <= 0)
+                return false;
+
+            if (instanceMatrices.Length < instanceCount || instanceData.Length < instanceCount)
+                return false;
+
+            EnsureUploadedInstanceBufferCapacity(instanceCount, true);
+            if (_uploadedInstanceMatrixBuffer == null || _uploadedInstanceDataBuffer == null)
+                return false;
+
+            _uploadedInstanceMatrixBuffer.SetData(instanceMatrices, 0, 0, instanceCount);
+            _uploadedInstanceDataBuffer.SetData(instanceData, 0, 0, instanceCount);
+            _instanceMatrixBuffer = _uploadedInstanceMatrixBuffer;
+            _instanceDataBuffer = _uploadedInstanceDataBuffer;
+            _matrixBindingDirty = true;
+            _dataBindingDirty = true;
+            _visibleBindingDirty = true;
+            _legacyDataDirty = false;
+            SetInstanceCount(instanceCount);
+            return true;
+        }
+
         /// <summary>
         /// Clears the current external instance buffer binding.
         /// </summary>
         public void ClearInstanceBuffer()
         {
             _bufferSource = null;
-            _instanceMatrixBuffer = null;
-            _instanceDataBuffer = null;
-            _instanceCount = 0;
-            _argsDirty = true;
-            _matrixBindingDirty = true;
-            _dataBindingDirty = true;
-            _legacyDataDirty = true;
+            ClearBoundInstanceState();
         }
 
         /// <summary>
@@ -668,13 +694,58 @@ namespace Hecton8.World
             if (_bufferSource == null)
                 return;
 
+            if (_bufferSource is IHectonIndirectVegetationNativeBufferSource nativeBufferSource)
+            {
+                if (!nativeBufferSource.TryAcquireNativeReadBuffer(out HectonIndirectVegetationNativeReadBuffer readBuffer) ||
+                    !readBuffer.IsValid)
+                {
+                    ClearBoundInstanceState();
+                    if (_bufferSource.HasExplicitBounds)
+                        SetDrawBounds(_bufferSource.DrawBounds);
+                    else
+                        ClearDrawBoundsOverride();
+                    return;
+                }
+
+                JobHandle producerHandle = readBuffer.ProducerHandle;
+                if (!producerHandle.Equals(default) && !producerHandle.IsCompleted)
+                {
+                    nativeBufferSource.ReleaseNativeReadBuffer(readBuffer, default);
+                    return;
+                }
+
+                bool uploadSucceeded = BindInstanceNativeArrays(
+                    readBuffer.InstanceMatrices,
+                    readBuffer.InstanceData,
+                    readBuffer.InstanceCount);
+
+                nativeBufferSource.ReleaseNativeReadBuffer(readBuffer, default);
+
+                if (!uploadSucceeded)
+                {
+                    ClearBoundInstanceState();
+                    if (readBuffer.HasExplicitBounds)
+                        SetDrawBounds(readBuffer.DrawBounds);
+                    else
+                        ClearDrawBoundsOverride();
+                    return;
+                }
+
+                if (readBuffer.HasExplicitBounds)
+                    SetDrawBounds(readBuffer.DrawBounds);
+                else
+                    ClearDrawBoundsOverride();
+
+                return;
+            }
+
             ComputeBuffer sourceMatrixBuffer = _bufferSource.InstanceMatrixBuffer;
             ComputeBuffer sourceDataBuffer = _bufferSource.InstanceDataBuffer;
             int sourceInstanceCount = _bufferSource.InstanceCount;
 
             if (sourceMatrixBuffer == null || sourceInstanceCount <= 0 || sourceMatrixBuffer.count <= 0)
             {
-                ClearInstanceBuffer();
+                ClearBoundInstanceState();
                 if (_bufferSource.HasExplicitBounds)
                     SetDrawBounds(_bufferSource.DrawBounds);
                 else
@@ -701,6 +772,18 @@ namespace Hecton8.World
                 SetDrawBounds(_bufferSource.DrawBounds);
             else
                 ClearDrawBoundsOverride();
+        }
+
+        private void ClearBoundInstanceState()
+        {
+            _instanceMatrixBuffer = null;
+            _instanceDataBuffer = null;
+            _instanceCount = 0;
+            _argsDirty = true;
+            _matrixBindingDirty = true;
+            _dataBindingDirty = true;
+            _visibleBindingDirty = true;
+            _legacyDataDirty = true;
         }
 
         private bool TryBindPropertyBlocks()
@@ -753,6 +836,26 @@ namespace Hecton8.World
                 _visibleBindingDirty = false;
             }
 
+            Vector4 globalFloatingOffset = ResolveGlobalFloatingOffset();
+            if (_lastGlobalFloatingOffset != globalFloatingOffset)
+            {
+                _nearPropertyBlock.SetVector(_GlobalFloatingOffsetId, globalFloatingOffset);
+                _nearPropertyBlock.SetVector(_ChunkWorldOffsetId, globalFloatingOffset);
+                _farPropertyBlock.SetVector(_GlobalFloatingOffsetId, globalFloatingOffset);
+                _farPropertyBlock.SetVector(_ChunkWorldOffsetId, globalFloatingOffset);
+                _depthNearPropertyBlock.SetVector(_GlobalFloatingOffsetId, globalFloatingOffset);
+                _depthNearPropertyBlock.SetVector(_ChunkWorldOffsetId, globalFloatingOffset);
+                _depthFarPropertyBlock.SetVector(_GlobalFloatingOffsetId, globalFloatingOffset);
+                _depthFarPropertyBlock.SetVector(_ChunkWorldOffsetId, globalFloatingOffset);
+                _shadowPropertyBlock.SetVector(_GlobalFloatingOffsetId, globalFloatingOffset);
+                _shadowPropertyBlock.SetVector(_ChunkWorldOffsetId, globalFloatingOffset);
+                _motionNearPropertyBlock.SetVector(_GlobalFloatingOffsetId, globalFloatingOffset);
+                _motionNearPropertyBlock.SetVector(_ChunkWorldOffsetId, globalFloatingOffset);
+                _motionFarPropertyBlock.SetVector(_GlobalFloatingOffsetId, globalFloatingOffset);
+                _motionFarPropertyBlock.SetVector(_ChunkWorldOffsetId, globalFloatingOffset);
+                _lastGlobalFloatingOffset = globalFloatingOffset;
+            }
+
             return true;
         }
 
@@ -785,6 +888,7 @@ namespace Hecton8.World
             _cullingCompute.SetMatrix(_ViewProjectionId, viewProjection);
             _cullingCompute.SetMatrix(_ViewMatrixId, cullCamera.worldToCameraMatrix);
             _cullingCompute.SetVector(_CameraPositionId, cullCamera.transform.position);
+            _cullingCompute.SetVector(_GlobalFloatingOffsetId, ResolveGlobalFloatingOffset());
             _cullingCompute.SetFloat(_LodNearDistanceId, _nearLodDistance);
             _cullingCompute.SetFloat(_LodFarDistanceId, _farLodDistance);
             _cullingCompute.SetFloat(_LodTransitionRangeId, _lodTransitionRange);
@@ -810,6 +914,7 @@ namespace Hecton8.World
             if (canDispatchShadowCulling)
             {
                 _cullingCompute.SetInt(_SourceInstanceCountId, _instanceCount);
+                _cullingCompute.SetVector(_GlobalFloatingOffsetId, ResolveGlobalFloatingOffset());
                 _cullingCompute.SetFloat(_LodNearDistanceId, _nearLodDistance);
                 _cullingCompute.SetFloat(_LodFarDistanceId, _farLodDistance);
                 _cullingCompute.SetFloat(_LodTransitionRangeId, _lodTransitionRange);
@@ -894,6 +999,12 @@ namespace Hecton8.World
                 _scooterHeadlightColors[headlightIndex] = Vector4.zero;
                 _scooterHeadlightConeData[headlightIndex] = Vector4.zero;
             }
+        }
+
+        private static Vector4 ResolveGlobalFloatingOffset()
+        {
+            Vector3 totalOffset = HectonMapMagicVegetationBridge.GlobalTotalUniverseOffset;
+            return new Vector4(totalOffset.x, totalOffset.y, totalOffset.z, 0f);
         }
 
         private static void EnsureDepthTextureMode(Camera targetCamera)

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Interaction;
 using Hecton8.Inventory;
@@ -10,7 +11,8 @@ using UnityEngine;
 namespace Hecton8.Economy
 {
     /// <summary>
-    /// Powered base endpoint that converts one recyclable inventory item into cleaned resources over time instead of instant scrap conversion.
+    /// Powered base recycler with a local inventory buffer. Processing only consumes items that have been
+    /// explicitly loaded into the module; it never auto-pulls from the player's inventory during interaction.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
@@ -18,10 +20,12 @@ namespace Hecton8.Economy
     [AddComponentMenu("Hecton8/Economy/Resource Recycler Module")]
     public sealed class ResourceRecyclerModule : MonoBehaviour, ITickable, IPowerComponent, IInteractable
     {
-        private const string DefaultReadyText = "Recycle Inventory Junk";
+        private const string DefaultReadyText = "Start Recycler Batch";
+        private const string DefaultEmptyText = "Recycler Buffer Empty";
         private const string DefaultBusyText = "Recycler Processing";
         private const string DefaultPausedText = "Recycler Paused";
         private const string DefaultCollectText = "Collect Recycled Output";
+        private const int MaxBufferSlots = 8;
 
         private static readonly List<ResourceRecyclerModule> s_ActiveModules = new List<ResourceRecyclerModule>(8);
 
@@ -31,7 +35,7 @@ namespace Hecton8.Economy
             s_ActiveModules.Clear();
         }
 
-        [Header("── Process Settings ───────────────────")]
+        [Header("── Process Settings ───────────────────────")]
         [Tooltip("Baseline recycle duration for one item batch.")]
         [SerializeField, Range(1f, 30f)] private float recycleDurationSeconds = 6f;
 
@@ -44,15 +48,21 @@ namespace Hecton8.Economy
         [Tooltip("Power-shedding priority. Lower is more critical.")]
         [SerializeField, Range(0, 100)] private int powerPriority = 55;
 
-        [Header("── Diagnostics ─────────────────────────")]
+        [Header("── Buffer ───────────────────────────────")]
+        [Tooltip("Active slot count inside the recycler's local inventory buffer.")]
+        [SerializeField, Range(4, MaxBufferSlots)] private int bufferSlotCount = 6;
+
+        [Header("── Diagnostics ───────────────────────────")]
+        #pragma warning disable CS0414
         [SerializeField] private bool _debugHasPower = true;
         [SerializeField] private bool _debugIsProcessing;
         [SerializeField] private bool _debugHasPendingOutput;
+        #pragma warning restore CS0414
         [SerializeField] private string _debugActiveItemId;
         [SerializeField] private int _debugPendingYieldUnits;
         [SerializeField] private int _debugProcessedBatchCount;
+        [SerializeField] private int _debugBufferedItemCount;
 
-        private Transform _cachedTransform;
         private PowerNode _powerNode;
         private PlayerInventory _cachedInventory;
         private bool _registered;
@@ -66,6 +76,9 @@ namespace Hecton8.Economy
         private ResourceStack[] _pendingYield;
         private int _pendingYieldUnits;
         private int _processedBatchCount;
+        private readonly ItemData[] _bufferItems = new ItemData[MaxBufferSlots];
+        private readonly int[] _bufferQuantities = new int[MaxBufferSlots];
+        private int _bufferedItemCount;
 
         /// <summary>Live registry used by world pollution telemetry.</summary>
         internal static List<ResourceRecyclerModule> ActiveModules => s_ActiveModules;
@@ -75,6 +88,9 @@ namespace Hecton8.Economy
 
         /// <summary>Total completed recycle batches since scene load.</summary>
         internal int TotalProcessedBatchCount => _processedBatchCount;
+
+        /// <summary>True when at least one buffered recyclable item is waiting locally.</summary>
+        public bool HasBufferedInput => _bufferedItemCount > 0;
 
         /// <summary>Dynamic active load injected into the power grid while processing is underway.</summary>
         public float PowerRating => _isProcessing ? -activePowerDraw * _activePowerMultiplier : 0f;
@@ -87,19 +103,21 @@ namespace Hecton8.Economy
 
         private void Awake()
         {
-            _cachedTransform = transform;
             TryGetComponent(out _powerNode);
+            ClampBufferSlotCount();
         }
 
         private void OnEnable()
         {
             RegisterModuleInstance();
+            BaseLogisticsNetwork.RegisterRecycler(this, _powerNode);
             TryRegister();
         }
 
         private void OnDisable()
         {
             TryUnregister();
+            BaseLogisticsNetwork.UnregisterRecycler(this);
             UnregisterModuleInstance();
         }
 
@@ -117,9 +135,6 @@ namespace Hecton8.Economy
             _hasPendingOutput = _pendingYield != null && _pendingYield.Length > 0;
             _debugHasPendingOutput = _hasPendingOutput;
             NotifyGridBalanceChanged();
-
-            if (_hasPendingOutput)
-                TryDeliverPendingYield(ResolveInventory(null));
         }
 
         void IInteractable.OnHoverStart()
@@ -133,9 +148,6 @@ namespace Hecton8.Economy
         void IInteractable.Interact(Transform interactor)
         {
             PlayerInventory inventory = ResolveInventory(interactor);
-            if (inventory == null)
-                return;
-
             if (_hasPendingOutput)
             {
                 TryDeliverPendingYield(inventory);
@@ -145,28 +157,7 @@ namespace Hecton8.Economy
             if (_isProcessing || !_hasPower)
                 return;
 
-            if (!TryResolveNextRecyclableItem(inventory, out ItemData sourceItem, out ResourceStack[] resolvedYield))
-                return;
-
-            if (!inventory.TryRemoveQuantity(sourceItem, 1))
-                return;
-
-            _activeSourceItem = sourceItem;
-            _pendingYield = resolvedYield;
-            _pendingYieldUnits = ScrapManager.CountYieldUnits(resolvedYield);
-            _debugPendingYieldUnits = _pendingYieldUnits;
-            _currentDuration = ResolveRecycleDuration(sourceItem, _pendingYieldUnits);
-            _activePowerMultiplier = ResolvePowerMultiplier(sourceItem, _pendingYieldUnits);
-            _processTimer = 0f;
-            _isProcessing = true;
-            _debugIsProcessing = true;
-            _debugActiveItemId = sourceItem.PersistentId;
-
-            PowerGrid grid = _powerNode != null ? _powerNode.Grid : null;
-            if (grid != null && startupBurstPowerCost > 0f)
-                grid.ConsumePower(startupBurstPowerCost);
-
-            NotifyGridBalanceChanged();
+            TryStartBufferedRecycle();
         }
 
         string IInteractable.GetInteractText()
@@ -177,13 +168,68 @@ namespace Hecton8.Economy
             if (_isProcessing)
                 return _hasPower ? DefaultBusyText : DefaultPausedText;
 
-            return _hasPower ? DefaultReadyText : DefaultPausedText;
+            if (!_hasPower)
+                return DefaultPausedText;
+
+            return _bufferedItemCount > 0 ? DefaultReadyText : DefaultEmptyText;
         }
 
         public void OnPowerStatusChanged(bool hasPower)
         {
             _hasPower = hasPower;
             _debugHasPower = hasPower;
+        }
+
+        /// <summary>
+        /// UI / interaction bridge: moves recyclable items from player inventory into the recycler's local buffer.
+        /// This is the supported transfer contract for future drag-drop or PDA inventory wiring.
+        /// </summary>
+        public bool TryInsertFromInventory(PlayerInventory inventory, ItemData item, int quantity = 1)
+        {
+            if (inventory == null || item == null || quantity <= 0)
+                return false;
+
+            if (!IsRecyclableCandidate(item))
+                return false;
+
+            int inserted = 0;
+            int targetQuantity = Mathf.Max(1, quantity);
+            for (int i = 0; i < targetQuantity; i++)
+            {
+                if (!TryBufferItem(item))
+                    break;
+
+                if (!inventory.TryRemoveQuantity(item, 1))
+                {
+                    RemoveLastBufferedItem(item);
+                    break;
+                }
+
+                inserted++;
+            }
+
+            _debugBufferedItemCount = _bufferedItemCount;
+            return inserted > 0;
+        }
+
+        /// <summary>
+        /// Returns the currently buffered item stack snapshot for lightweight UI inspection.
+        /// </summary>
+        public int CopyBufferSnapshot(ItemData[] items, int[] quantities)
+        {
+            if (items == null || quantities == null)
+                return 0;
+
+            int maxCount = items.Length < quantities.Length ? items.Length : quantities.Length;
+            int copied = 0;
+            for (int i = 0; i < bufferSlotCount && copied < maxCount; i++)
+            {
+                items[copied] = _bufferItems[i];
+                quantities[copied] = _bufferQuantities[i];
+                copied++;
+            }
+
+            return copied;
         }
 
         private void TryRegister()
@@ -238,43 +284,39 @@ namespace Hecton8.Economy
             return _cachedInventory;
         }
 
-        private static bool TryResolveNextRecyclableItem(PlayerInventory inventory, out ItemData sourceItem, out ResourceStack[] resolvedYield)
+        private bool TryStartBufferedRecycle()
         {
-            sourceItem = null;
-            resolvedYield = null;
-
-            InventoryGrid grid = inventory != null ? inventory.Grid : null;
-            if (grid == null)
+            if (_isProcessing || !_hasPower || _hasPendingOutput)
                 return false;
 
-            int cols = grid.Columns;
-            int rows = grid.Rows;
-            for (int y = 0; y < rows; y++)
+            if (!TryDequeueNextBufferedItem(out ItemData sourceItem))
+                return false;
+
+            if (!ScrapManager.TryResolveRecycleYield(sourceItem, out ResourceStack[] resolvedYield) ||
+                resolvedYield == null ||
+                resolvedYield.Length == 0)
             {
-                for (int x = 0; x < cols; x++)
-                {
-                    ItemData item = grid.GetCell(x, y);
-                    if (item == null)
-                        continue;
-
-                    if (x > 0 && ReferenceEquals(grid.GetCell(x - 1, y), item))
-                        continue;
-
-                    if (y > 0 && ReferenceEquals(grid.GetCell(x, y - 1), item))
-                        continue;
-
-                    if (!IsRecyclableCandidate(item))
-                        continue;
-
-                    if (!ScrapManager.TryResolveRecycleYield(item, out resolvedYield) || resolvedYield == null || resolvedYield.Length == 0)
-                        continue;
-
-                    sourceItem = item;
-                    return true;
-                }
+                return false;
             }
 
-            return false;
+            _activeSourceItem = sourceItem;
+            _pendingYield = resolvedYield;
+            _pendingYieldUnits = ScrapManager.CountYieldUnits(resolvedYield);
+            _debugPendingYieldUnits = _pendingYieldUnits;
+            _currentDuration = ResolveRecycleDuration(sourceItem, _pendingYieldUnits);
+            _activePowerMultiplier = ResolvePowerMultiplier(sourceItem, _pendingYieldUnits);
+            _processTimer = 0f;
+            _isProcessing = true;
+            _debugIsProcessing = true;
+            _debugActiveItemId = sourceItem.PersistentId;
+            _debugBufferedItemCount = _bufferedItemCount;
+
+            PowerGrid grid = _powerNode != null ? _powerNode.Grid : null;
+            if (grid != null && startupBurstPowerCost > 0f)
+                grid.ConsumePower(startupBurstPowerCost);
+
+            NotifyGridBalanceChanged();
+            return true;
         }
 
         private bool TryDeliverPendingYield(PlayerInventory inventory)
@@ -296,6 +338,86 @@ namespace Hecton8.Economy
             return true;
         }
 
+        private bool TryBufferItem(ItemData item)
+        {
+            if (item == null)
+                return false;
+
+            ClampBufferSlotCount();
+
+            for (int i = 0; i < bufferSlotCount; i++)
+            {
+                if (ReferenceEquals(_bufferItems[i], item))
+                {
+                    _bufferQuantities[i]++;
+                    _bufferedItemCount++;
+                    return true;
+                }
+            }
+
+            for (int i = 0; i < bufferSlotCount; i++)
+            {
+                if (_bufferItems[i] != null)
+                    continue;
+
+                _bufferItems[i] = item;
+                _bufferQuantities[i] = 1;
+                _bufferedItemCount++;
+                return true;
+            }
+
+            return false;
+        }
+
+        private void RemoveLastBufferedItem(ItemData item)
+        {
+            if (item == null)
+                return;
+
+            for (int i = bufferSlotCount - 1; i >= 0; i--)
+            {
+                if (!ReferenceEquals(_bufferItems[i], item) || _bufferQuantities[i] <= 0)
+                    continue;
+
+                _bufferQuantities[i]--;
+                _bufferedItemCount--;
+                if (_bufferQuantities[i] <= 0)
+                {
+                    _bufferQuantities[i] = 0;
+                    _bufferItems[i] = null;
+                }
+
+                return;
+            }
+        }
+
+        private bool TryDequeueNextBufferedItem(out ItemData item)
+        {
+            item = null;
+            if (_bufferedItemCount <= 0)
+                return false;
+
+            for (int i = 0; i < bufferSlotCount; i++)
+            {
+                if (_bufferItems[i] == null || _bufferQuantities[i] <= 0)
+                    continue;
+
+                item = _bufferItems[i];
+                _bufferQuantities[i]--;
+                _bufferedItemCount--;
+                if (_bufferQuantities[i] <= 0)
+                {
+                    _bufferQuantities[i] = 0;
+                    _bufferItems[i] = null;
+                }
+
+                return true;
+            }
+
+            _bufferedItemCount = 0;
+            return false;
+        }
+
         private static bool IsRecyclableCandidate(ItemData item)
         {
             if (item == null)
@@ -307,6 +429,7 @@ namespace Hecton8.Economy
                 case ItemCategory.Component:
                 case ItemCategory.Tool:
                 case ItemCategory.Equipment:
+                case ItemCategory.Organic:
                     return true;
                 default:
                     return false;
@@ -364,6 +487,14 @@ namespace Hecton8.Economy
             _processTimer = 0f;
             _currentDuration = 1f;
             _activePowerMultiplier = 1f;
+        }
+
+        private void ClampBufferSlotCount()
+        {
+            if (bufferSlotCount < 4)
+                bufferSlotCount = 4;
+            else if (bufferSlotCount > MaxBufferSlots)
+                bufferSlotCount = MaxBufferSlots;
         }
     }
 }

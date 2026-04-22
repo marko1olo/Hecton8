@@ -12,7 +12,8 @@ namespace Hecton8.Gameplay
         {
             None = 0,
             Reel = 1,
-            HeavyTow = 2
+            HeavyTow = 2,
+            Grapple = 3
         }
 
         private readonly struct HarpoonAssessment
@@ -72,8 +73,14 @@ namespace Hecton8.Gameplay
         private Rigidbody _tetheredBody;
         private Collider _tetheredCollider;
         private HeavyTowWinch _heavyTowWinch;
+        private HectonPlayerMovement _playerMovement;
         private string _tetheredName;
         private string _tetheredNameUpper;
+        private Collider _grappleAnchorCollider;
+        private Transform _grappleAnchorTransform;
+        private Vector3 _grappleAnchorLocalPoint;
+        private string _grappleAnchorName;
+        private string _grappleAnchorNameUpper;
         private int _cachedAssessmentFrame = -1;
         private bool _cachedAssessmentValid;
         private HarpoonAssessment _cachedAssessment;
@@ -91,6 +98,7 @@ namespace Hecton8.Gameplay
         {
             base.UsePrimary(deltaTime);
             ResolveHeavyTowWinch();
+            ResolvePlayerMovement();
 
             if (!IsEquipped || _cooldown > 0f)
                 return;
@@ -113,7 +121,8 @@ namespace Hecton8.Gameplay
                 {
                     bool lightTetherReady = tetherResult == TetherRegistrationResult.Reel;
                     bool heavyTowReady = tetherResult == TetherRegistrationResult.HeavyTow;
-                    HarpoonAssessment assessment = BuildAssessment(hit.collider, hit.distance, lightTetherReady || heavyTowReady);
+                    bool grappleReady = tetherResult == TetherRegistrationResult.Grapple;
+                    HarpoonAssessment assessment = BuildAssessment(hit.collider, hit.distance, lightTetherReady || heavyTowReady || grappleReady);
                     HarpoonAssessment outboundAssessment = lightTetherReady
                         ? new HarpoonAssessment(
                             string.Format(
@@ -128,6 +137,13 @@ namespace Hecton8.Gameplay
                                     _heavyTowWinch != null ? _heavyTowWinch.CurrentTargetNameUpper ?? "CARGO" : "CARGO"),
                                 assessment.Summary,
                                 "Throttle gently. Tow drag is now loading the suit and scooter.",
+                                assessment.Severity)
+                        : grappleReady
+                            ? new HarpoonAssessment(
+                                string.Format("HARPOON - EXOSUIT GRAPPLE LOCK [{0}]",
+                                    _grappleAnchorNameUpper ?? "ANCHOR"),
+                                assessment.Summary,
+                                "Secondary reels the exosuit toward the locked structure. Release input to bleed the line.",
                                 assessment.Severity)
                         : new HarpoonAssessment(
                             ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_TARGET_PINNED, "HARPOON - TARGET PINNED"),
@@ -166,6 +182,7 @@ namespace Hecton8.Gameplay
         {
             base.UseSecondary(deltaTime);
             ResolveHeavyTowWinch();
+            ResolvePlayerMovement();
 
             if (!IsEquipped || _cooldown > 0f)
                 return;
@@ -179,6 +196,9 @@ namespace Hecton8.Gameplay
             }
 
             if (TryReelTetheredTarget())
+                return;
+
+            if (TryReelExosuitGrapple())
                 return;
 
             if (!TryGetTargetHit(out RaycastHit hit))
@@ -245,7 +265,7 @@ namespace Hecton8.Gameplay
             if (_tetherRemaining > 0f)
             {
                 _tetherRemaining -= deltaTime;
-                if (_tetherRemaining <= 0f || !IsTetherValid())
+                if (_tetherRemaining <= 0f || (!IsTetherValid() && !IsGrappleValid()))
                     ClearTether();
             }
 
@@ -255,6 +275,9 @@ namespace Hecton8.Gameplay
                 if (_tracerTimer <= 0f)
                     SetTracer(false, Vector3.zero);
             }
+
+            if (!IsGrappleValid() && _grappleAnchorCollider != null)
+                ClearTether();
         }
 
         public override string GetOperationalSummary()
@@ -270,6 +293,9 @@ namespace Hecton8.Gameplay
                 return string.Format(
                     ResolveLocalized(LocalizationKeys.HARPOON_OPERATIONAL_TETHER_LOCK, "HARPOON // TETHER LOCK // {0}"),
                     _tetheredNameUpper ?? ResolveLocalized(LocalizationKeys.HARPOON_TARGET, "TARGET"));
+
+            if (IsGrappleValid())
+                return string.Format("HARPOON // EXOSUIT GRAPPLE // {0}", _grappleAnchorNameUpper ?? "ANCHOR");
 
             if (_heavyTowWinch != null && _heavyTowWinch.HasActiveTow)
                 return string.Format("HARPOON // HEAVY TOW // {0}", _heavyTowWinch.CurrentTargetNameUpper ?? "CARGO");
@@ -291,6 +317,9 @@ namespace Hecton8.Gameplay
 
             if (IsTetherValid())
                 return ResolveLocalized(LocalizationKeys.HARPOON_DIRECTIVE_TETHERED, "Secondary reels the tethered target. Keep distance or break the line if needed.");
+
+            if (IsGrappleValid())
+                return "Secondary reels the exosuit toward the locked anchor. Stop reeling to let the line relax.";
 
             if (_heavyTowWinch != null && _heavyTowWinch.HasActiveTow)
                 return "Secondary releases the heavy tow. Keep thrust smooth or the cable will snap.";
@@ -359,6 +388,12 @@ namespace Hecton8.Gameplay
                 _heavyTowWinch = GetComponentInParent<HeavyTowWinch>();
         }
 
+        private void ResolvePlayerMovement()
+        {
+            if (_playerMovement == null)
+                _playerMovement = GetComponentInParent<HectonPlayerMovement>();
+        }
+
         private void WarnReel(string message)
         {
             if (Time.time < _nextFeedbackAt)
@@ -388,14 +423,22 @@ namespace Hecton8.Gameplay
 
         private TetherRegistrationResult TryRegisterTether(RaycastHit hit)
         {
+            ResolvePlayerMovement();
+
             if (!ToolHitUtility.TryGetRigidbody(hit.collider, out Rigidbody body))
             {
+                if (TryRegisterExosuitGrapple(hit, null))
+                    return TetherRegistrationResult.Grapple;
+
                 ClearTether();
                 return TetherRegistrationResult.None;
             }
 
             if (body == null || body.isKinematic)
             {
+                if (TryRegisterExosuitGrapple(hit, body))
+                    return TetherRegistrationResult.Grapple;
+
                 ClearTether();
                 return TetherRegistrationResult.None;
             }
@@ -420,7 +463,34 @@ namespace Hecton8.Gameplay
             if (_heavyTowWinch != null && _heavyTowWinch.TryAttach(body, hit.collider, hit.distance))
                 return TetherRegistrationResult.HeavyTow;
 
+            if (TryRegisterExosuitGrapple(hit, body))
+                return TetherRegistrationResult.Grapple;
+
             return TetherRegistrationResult.None;
+        }
+
+        private bool TryRegisterExosuitGrapple(RaycastHit hit, Rigidbody body)
+        {
+            if (_playerMovement == null ||
+                _playerMovement.CurrentLocomotionMode != PlayerLocomotionMode.ExosuitLocomotion ||
+                hit.collider == null)
+            {
+                return false;
+            }
+
+            if (body != null && !body.isKinematic && body.mass <= maxReelMass)
+                return false;
+
+            _grappleAnchorCollider = hit.collider;
+            _grappleAnchorTransform = hit.collider.transform;
+            _grappleAnchorLocalPoint = _grappleAnchorTransform != null
+                ? _grappleAnchorTransform.InverseTransformPoint(hit.point)
+                : hit.point;
+            _grappleAnchorName = hit.collider.gameObject.name;
+            _grappleAnchorNameUpper = string.IsNullOrWhiteSpace(_grappleAnchorName) ? "ANCHOR" : _grappleAnchorName.ToUpperInvariant();
+            _tetherRemaining = tetherDuration;
+            InvalidateAssessmentCache();
+            return true;
         }
 
         private bool TryReelTetheredTarget()
@@ -460,6 +530,30 @@ namespace Hecton8.Gameplay
             return true;
         }
 
+        private bool TryReelExosuitGrapple()
+        {
+            if (!IsGrappleValid() || _playerMovement == null || !TryGetGrappleAnchorPoint(out Vector3 anchorPointWS))
+                return false;
+
+            _playerMovement.ApplyExosuitGrappleAnchor(anchorPointWS);
+            SetTracer(true, anchorPointWS);
+            _tracerTimer = tracerLifetime;
+            _cooldown = shotCooldown * 0.35f;
+            _tetherRemaining = tetherDuration;
+
+            if (Time.time >= _nextFeedbackAt)
+            {
+                PublishAssessment(new HarpoonAssessment(
+                    string.Format("HARPOON - EXOSUIT REEL [{0}]", _grappleAnchorNameUpper ?? "ANCHOR"),
+                    string.Format("{0} is holding the climb line at {1:0.0} m.", _grappleAnchorName, Vector3.Distance(_cachedTransform.position, anchorPointWS)),
+                    "Keep reeling to climb. Stop reeling to bleed force before the next ledge move.",
+                    "INFO"));
+                _nextFeedbackAt = Time.time + feedbackInterval;
+            }
+
+            return true;
+        }
+
         private bool IsTetherValid()
         {
             return _tetheredBody != null &&
@@ -469,12 +563,38 @@ namespace Hecton8.Gameplay
                    _tetheredBody.mass <= maxReelMass;
         }
 
+        private bool IsGrappleValid()
+        {
+            return _grappleAnchorCollider != null &&
+                   _grappleAnchorTransform != null &&
+                   _grappleAnchorCollider.gameObject.activeInHierarchy;
+        }
+
+        private bool TryGetGrappleAnchorPoint(out Vector3 anchorPointWS)
+        {
+            if (!IsGrappleValid())
+            {
+                anchorPointWS = Vector3.zero;
+                return false;
+            }
+
+            anchorPointWS = _grappleAnchorTransform.TransformPoint(_grappleAnchorLocalPoint);
+            return true;
+        }
+
         private void ClearTether()
         {
             _tetheredBody = null;
             _tetheredCollider = null;
             _tetheredName = null;
             _tetheredNameUpper = null;
+            _grappleAnchorCollider = null;
+            _grappleAnchorTransform = null;
+            _grappleAnchorLocalPoint = Vector3.zero;
+            _grappleAnchorName = null;
+            _grappleAnchorNameUpper = null;
+            if (_playerMovement != null)
+                _playerMovement.ClearExosuitGrappleAnchor();
             InvalidateAssessmentCache();
             _tetherRemaining = 0f;
         }
@@ -592,6 +712,15 @@ namespace Hecton8.Gameplay
 
             if (!ToolHitUtility.TryGetRigidbody(target, out Rigidbody body))
             {
+                if (tetherReady && IsGrappleValid())
+                {
+                    return new HarpoonAssessment(
+                        "HARPOON - EXOSUIT GRAPPLE LOCK",
+                        string.Format("{0} accepted a static grapple lane at {1:0.0} m.", target.gameObject.name, distance),
+                        "Secondary reels the exosuit toward the anchor. Release input to stop climbing.",
+                        "INFO");
+                }
+
                 return new HarpoonAssessment(
                     ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_CANNOT_REEL, "HARPOON - TARGET CANNOT BE REELED"),
                     string.Format(
@@ -603,6 +732,15 @@ namespace Hecton8.Gameplay
 
             if (body == null || body.isKinematic)
             {
+                if (tetherReady && IsGrappleValid())
+                {
+                    return new HarpoonAssessment(
+                        "HARPOON - EXOSUIT GRAPPLE LOCK",
+                        string.Format("{0} is fixed hard enough to hold a climb line at {1:0.0} m.", target.gameObject.name, distance),
+                        "Secondary reels the exosuit toward the anchor. Release input to stop climbing.",
+                        "INFO");
+                }
+
                 return new HarpoonAssessment(
                     ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_LOCKED_STRUCTURE, "HARPOON - TARGET LOCKED TO STRUCTURE"),
                     string.Format(

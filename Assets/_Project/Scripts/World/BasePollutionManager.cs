@@ -47,6 +47,12 @@ namespace Hecton8.World
         [Tooltip("Microplastic residue emitted per successfully processed recycle batch.")]
         [SerializeField, Range(0f, 10f)] private float recycledBatchMicroplastic = 0.75f;
 
+        [Tooltip("Local noise emitted per active deep drill during one slow-tick window.")]
+        [SerializeField, Range(0f, 40f)] private float activeDrillNoise = 6.5f;
+
+        [Tooltip("Noise spike emitted each time a deep drill completes one extraction cycle.")]
+        [SerializeField, Range(0f, 80f)] private float drillCycleNoise = 14f;
+
         [Header("── Local Retention ─────────────────────")]
         [Tooltip("Retention factor applied to the local acoustic signature each slow tick.")]
         [SerializeField, Range(0f, 0.999f)] private float noiseRetention = 0.91f;
@@ -63,12 +69,15 @@ namespace Hecton8.World
         [SerializeField] private int _debugDroneLaunchDelta;
         [SerializeField] private int _debugActiveRecyclerCount;
         [SerializeField] private int _debugRecyclerBatchDelta;
+        [SerializeField] private int _debugActiveDrillCount;
+        [SerializeField] private int _debugDrillCycleDelta;
 
         private bool _registered;
         private float _currentNoiseLevel;
         private float _currentMicroplasticLevel;
         private int _lastDroneLaunchTotal;
         private int _lastProcessedRecycleTotal;
+        private int _lastCompletedDrillCycles;
 
         /// <summary>Runtime singleton while the world scene is active.</summary>
         public static BasePollutionManager Instance => _instance;
@@ -122,6 +131,10 @@ namespace Hecton8.World
             int totalProcessedRecycleBatches = 0;
             CollectRecyclerTelemetry(ref activeRecyclerCount, ref totalProcessedRecycleBatches);
 
+            int activeDrillCount = 0;
+            int totalCompletedDrillCycles = 0;
+            CollectDeepDrillTelemetry(ref activeDrillCount, ref totalCompletedDrillCycles);
+
             int droneLaunchDelta = totalDroneLaunches - _lastDroneLaunchTotal;
             if (droneLaunchDelta < 0)
                 droneLaunchDelta = totalDroneLaunches;
@@ -132,12 +145,19 @@ namespace Hecton8.World
                 recyclerBatchDelta = totalProcessedRecycleBatches;
             _lastProcessedRecycleTotal = totalProcessedRecycleBatches;
 
+            int drillCycleDelta = totalCompletedDrillCycles - _lastCompletedDrillCycles;
+            if (drillCycleDelta < 0)
+                drillCycleDelta = totalCompletedDrillCycles;
+            _lastCompletedDrillCycles = totalCompletedDrillCycles;
+
             float emittedNoise =
                 totalConsumption * powerNoisePerWattTick +
                 deficitGridCount * deficitGridNoise +
                 activeDroneCount * activeDroneNoise +
                 droneLaunchDelta * droneLaunchNoise +
-                activeRecyclerCount * activeRecyclerNoise;
+                activeRecyclerCount * activeRecyclerNoise +
+                activeDrillCount * activeDrillNoise +
+                drillCycleDelta * drillCycleNoise;
 
             float emittedMicroplastic =
                 activeDroneCount * activeDroneMicroplastic +
@@ -163,6 +183,8 @@ namespace Hecton8.World
             _debugDroneLaunchDelta = droneLaunchDelta;
             _debugActiveRecyclerCount = activeRecyclerCount;
             _debugRecyclerBatchDelta = recyclerBatchDelta;
+            _debugActiveDrillCount = activeDrillCount;
+            _debugDrillCycleDelta = drillCycleDelta;
         }
 
         private void TryRegister()
@@ -231,6 +253,23 @@ namespace Hecton8.World
                     activeRecyclerCount++;
 
                 totalProcessedRecycleBatches += recycler.TotalProcessedBatchCount;
+            }
+        }
+
+        private static void CollectDeepDrillTelemetry(ref int activeDrillCount, ref int totalCompletedDrillCycles)
+        {
+            List<DeepDrillModule> drills = DeepDrillModule.ActiveModules;
+            int drillCount = drills.Count;
+            for (int i = 0; i < drillCount; i++)
+            {
+                DeepDrillModule drill = drills[i];
+                if (drill == null || !drill.isActiveAndEnabled)
+                    continue;
+
+                if (drill.IsOperating)
+                    activeDrillCount++;
+
+                totalCompletedDrillCycles += drill.CompletedCycleCount;
             }
         }
     }

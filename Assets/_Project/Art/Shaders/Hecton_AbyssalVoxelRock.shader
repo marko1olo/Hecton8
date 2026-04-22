@@ -20,6 +20,14 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         _CutScarSharpness ("Cut Scar Sharpness", Range(0.5, 8)) = 2.2
         _CutScarDarkening ("Cut Scar Darkening", Range(0, 1)) = 0.24
         _ShadowScarErosion ("Shadow Scar Erosion", Range(0, 0.35)) = 0.14
+        _SkirtDepthBias ("Skirt Depth Bias", Range(0, 0.01)) = 0.00035
+        _CurvatureWearTint ("Curvature Wear Tint", Color) = (0.84, 0.81, 0.77, 1)
+        _CurvatureEdgeWearStrength ("Curvature Edge Wear Strength", Range(0, 1)) = 0.24
+        _CurvatureCavityDarkenStrength ("Curvature Cavity Darken Strength", Range(0, 1)) = 0.28
+        _CurvatureContrast ("Curvature Contrast", Range(0.5, 4)) = 1.35
+        _LocalCausticStrength ("Local Caustic Strength", Range(0, 1)) = 0.22
+        _LocalCausticScale ("Local Caustic Scale", Range(0.1, 4)) = 0.7
+        _LocalCausticSpeed ("Local Caustic Speed", Range(0, 4)) = 0.36
         [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Cull", Float) = 2
     }
 
@@ -46,6 +54,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             float4 _CutScarColor;
             float4 _CutScarWarmColor;
             float4 _CutScarCharColor;
+            float4 _CurvatureWearTint;
             float _Tiling;
             float _Smoothness;
             float _SkirtBlendContrast;
@@ -53,6 +62,13 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             float _CutScarSharpness;
             float _CutScarDarkening;
             float _ShadowScarErosion;
+            float _SkirtDepthBias;
+            float _CurvatureEdgeWearStrength;
+            float _CurvatureCavityDarkenStrength;
+            float _CurvatureContrast;
+            float _LocalCausticStrength;
+            float _LocalCausticScale;
+            float _LocalCausticSpeed;
         CBUFFER_END
 
         float4 _SargassumCutMaskWorldRect;
@@ -82,6 +98,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             float4 positionOS : POSITION;
             float3 normalOS : NORMAL;
             float4 color : COLOR;
+            float3 absolutePositionWS : TEXCOORD3;
         };
 
         struct SurfaceVaryings
@@ -92,6 +109,8 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             half3 viewDirWS : TEXCOORD2;
             half fogFactor : TEXCOORD3;
             half skirtAlpha : TEXCOORD4;
+            float3 absolutePositionWS : TEXCOORD5;
+            half curvature : TEXCOORD6;
         };
 
         struct ClipVaryings
@@ -113,6 +132,19 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         {
             half lenSq = dot(value, value);
             return lenSq > 0.0001h ? value * rsqrt(lenSq) : half3(0.0h, 1.0h, 0.0h);
+        }
+
+        float4 ApplySkirtDepthBias(float4 positionCS, half skirtAlpha)
+        {
+            float skirtMask = saturate(skirtAlpha);
+            float gradientBias = skirtMask * skirtMask;
+            float clipBias = gradientBias * _SkirtDepthBias * positionCS.w;
+            #if UNITY_REVERSED_Z
+            positionCS.z += clipBias;
+            #else
+            positionCS.z -= clipBias;
+            #endif
+            return positionCS;
         }
 
         float Hash21(float2 value)
@@ -209,6 +241,20 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             return SAMPLE_TEXTURE2D_LOD(_HectonVoxelSSAOTex, sampler_HectonVoxelSSAOTex, screenUV, 0).r;
         }
 
+        half ResolveLocalLightCaustic(float3 positionWS, half3 normalWS)
+        {
+            float3 samplePositionWS = ResolveSamplePositionWS(positionWS);
+            float scale = max(_LocalCausticScale, 0.05);
+            float2 causticUv = samplePositionWS.xz * scale
+                + float2(_Time.y * _LocalCausticSpeed, _Time.y * (_LocalCausticSpeed * 0.63));
+            float primaryWave = sin(causticUv.x * 1.9 + sin(causticUv.y * 1.3));
+            float secondaryWave = cos(causticUv.y * 2.2 - causticUv.x * 0.85);
+            float interference = sin((causticUv.x + causticUv.y) * 1.27 + _Time.y * (_LocalCausticSpeed * 0.41));
+            half normalMod = saturate(0.4h + dot(abs(normalWS), half3(0.28h, 0.18h, 0.28h)));
+            half caustic = saturate(0.58h + (primaryWave * secondaryWave + interference * 0.45h) * _LocalCausticStrength);
+            return lerp(1.0h, caustic, saturate(_LocalCausticStrength * normalMod));
+        }
+
         void EvaluateRecentCutHeat(float3 positionWS, out half heatMask, out half age01)
         {
             heatMask = 0.0h;
@@ -245,7 +291,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             }
         }
 
-        half3 EvaluateLighting(float3 positionWS, half3 normalWS, half3 viewDirWS, half3 albedo, half metallic, half smoothness, half occlusion)
+        half3 EvaluateLighting(float3 positionWS, half3 normalWS, half3 viewDirWS, half3 albedo, half metallic, half smoothness, half occlusion, half localCausticMask)
         {
             half3 color = SampleSH(normalWS) * albedo * occlusion;
             half specularStrength = lerp(0.04h, 0.22h, metallic);
@@ -267,7 +313,8 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 half additionalNdotL = saturate(dot(normalWS, additionalDir));
                 half3 additionalHalfDir = SafeNormalize3(additionalDir + viewDirWS);
                 half additionalSpecular = pow(saturate(dot(normalWS, additionalHalfDir)), specularPower) * smoothness * specularStrength;
-                color += (albedo * additionalNdotL + additionalSpecular) * light.color * (light.distanceAttenuation * light.shadowAttenuation);
+                half causticLightMask = lerp(1.0h, localCausticMask, saturate(additionalNdotL * light.distanceAttenuation));
+                color += ((albedo * additionalNdotL + additionalSpecular) * causticLightMask) * light.color * (light.distanceAttenuation * light.shadowAttenuation);
             LIGHT_LOOP_END
             #endif
 
@@ -283,8 +330,11 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             output.positionWS = positionInputs.positionWS;
             output.normalWS = normalize(normalInputs.normalWS);
             output.viewDirWS = SafeNormalize3(GetWorldSpaceViewDir(positionInputs.positionWS));
-            output.fogFactor = ComputeFogFactor(positionInputs.positionCS.z);
-            output.skirtAlpha = saturate(input.color.a);
+            output.skirtAlpha = saturate(input.color.b);
+            output.absolutePositionWS = input.absolutePositionWS;
+            output.curvature = saturate(input.color.a);
+            output.positionCS = ApplySkirtDepthBias(output.positionCS, output.skirtAlpha);
+            output.fogFactor = ComputeFogFactor(output.positionCS.z);
             return output;
         }
 
@@ -292,9 +342,9 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         {
             ClipVaryings output;
             VertexPositionInputs positionInputs = GetVertexPositionInputs(input.positionOS.xyz);
-            output.positionCS = positionInputs.positionCS;
+            output.skirtAlpha = saturate(input.color.b);
+            output.positionCS = ApplySkirtDepthBias(positionInputs.positionCS, output.skirtAlpha);
             output.positionWS = positionInputs.positionWS;
-            output.skirtAlpha = saturate(input.color.a);
             return output;
         }
 
@@ -305,8 +355,9 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS);
             output.positionWS = positionInputs.positionWS;
             output.normalWS = normalize(normalInputs.normalWS);
-            output.skirtAlpha = saturate(input.color.a);
+            output.skirtAlpha = saturate(input.color.b);
             output.positionCS = TransformWorldToHClip(ApplyShadowBias(positionInputs.positionWS, output.normalWS, _LightDirection));
+            output.positionCS = ApplySkirtDepthBias(output.positionCS, output.skirtAlpha);
 
             #if UNITY_REVERSED_Z
             output.positionCS.z = min(output.positionCS.z, UNITY_NEAR_CLIP_VALUE);
@@ -346,7 +397,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 half skirtCoverage = ResolveSkirtCoverage(input.skirtAlpha, input.positionCS.xy);
                 half3 baseNormalWS = normalize(input.normalWS);
                 half3 triplanarWeights = ComputeTriplanarWeights(baseNormalWS);
-                float3 samplePositionWS = ResolveSamplePositionWS(input.positionWS);
+                float3 samplePositionWS = input.absolutePositionWS;
                 half3 triplanarNormalWS = SampleTriplanarNormal(samplePositionWS, baseNormalWS, triplanarWeights);
                 half3 normalWS = SafeNormalize3(baseNormalWS + triplanarNormalWS);
 
@@ -358,9 +409,15 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 half recentHeatAge01;
                 EvaluateRecentCutHeat(input.positionWS, recentHeatMask, recentHeatAge01);
                 half skirtBlend = 1.0h - skirtCoverage;
+                half curvature = saturate(input.curvature);
+                half curvatureContrast = max(_CurvatureContrast, 0.5h);
+                half convexMask = pow(saturate((curvature - 0.5h) * 2.0h), curvatureContrast);
+                half cavityMask = pow(saturate((0.5h - curvature) * 2.0h), curvatureContrast);
 
                 half3 albedo = baseSample.rgb * _Instance_Color.rgb;
                 albedo = lerp(albedo, _SkirtSandTint.rgb, skirtBlend * 0.72h);
+                albedo = lerp(albedo, lerp(albedo, _CurvatureWearTint.rgb, 0.4h), convexMask * _CurvatureEdgeWearStrength);
+                albedo *= 1.0h - cavityMask * (_CurvatureCavityDarkenStrength * 0.32h);
                 albedo *= lerp(1.0h, 1.0h - _CutScarDarkening, scarMask);
                 albedo = lerp(albedo, _CutScarCharColor.rgb, scarMask * 0.38h);
 
@@ -368,10 +425,11 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 albedo = lerp(albedo, thermalColor, recentHeatMask * 0.18h);
 
                 half metallic = 0.0h;
-                half smoothness = saturate(lerp(_Smoothness, 0.88h, scarMask * 0.65h));
-                half ambientOcclusion = saturate(maskSample.g) * SampleVoxelAmbientOcclusion(input.positionCS);
+                half smoothness = saturate(lerp(_Smoothness, 0.88h, scarMask * 0.65h) + convexMask * (_CurvatureEdgeWearStrength * 0.08h));
+                half ambientOcclusion = saturate(maskSample.g * (1.0h - cavityMask * _CurvatureCavityDarkenStrength)) * SampleVoxelAmbientOcclusion(input.positionCS);
+                half localCausticMask = ResolveLocalLightCaustic(input.positionWS, normalWS);
 
-                half3 litColor = EvaluateLighting(input.positionWS, normalWS, normalize(input.viewDirWS), albedo, metallic, smoothness, ambientOcclusion);
+                half3 litColor = EvaluateLighting(input.positionWS, normalWS, normalize(input.viewDirWS), albedo, metallic, smoothness, ambientOcclusion, localCausticMask);
                 half thermalEmission = _CutScarEmission * recentHeatMask * lerp(0.22h, 1.0h, saturate(1.0h - recentHeatAge01));
                 half3 emission = (_CutScarWarmColor.rgb * (_CutScarEmission * scarMask * 0.12h)) + (thermalColor * thermalEmission);
                 half3 finalColor = MixFog(litColor + emission, input.fogFactor);

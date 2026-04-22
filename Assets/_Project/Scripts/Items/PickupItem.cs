@@ -19,6 +19,8 @@ namespace Hecton8.Interaction
     {
         private const float LooseCurrentVelocityInfluence = 0.45f;
         private const float LooseCurrentSpinInfluence = 0.12f;
+        private const float CurrentSimulationCullDistance = 100f;
+        private const float CurrentSimulationCullDistanceSqr = CurrentSimulationCullDistance * CurrentSimulationCullDistance;
 
         [Header("Item Configuration")]
         [SerializeField] private ItemData itemData;
@@ -41,6 +43,7 @@ namespace Hecton8.Interaction
         private long _worldStatePersistenceKey;
         private long _worldStateChunkKey;
         private Vector3 _worldStateAnchorPosition;
+        private Transform _playerTransform;
 
         public ItemData ItemData => itemData;
         public int Quantity => quantity;
@@ -118,6 +121,22 @@ namespace Hecton8.Interaction
         {
             if (_rigidbody == null || _rigidbody.isKinematic || fdt <= 0f)
                 return;
+
+            WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _playerTransform);
+            if (_playerTransform != null)
+            {
+                Vector3 toPlayer = _playerTransform.position - _rigidbody.worldCenterOfMass;
+                if (toPlayer.sqrMagnitude > CurrentSimulationCullDistanceSqr)
+                {
+                    if (!_rigidbody.IsSleeping())
+                        _rigidbody.Sleep();
+
+                    return;
+                }
+
+                if (_rigidbody.IsSleeping())
+                    _rigidbody.WakeUp();
+            }
 
             if (!ResolveSubmergedState())
                 return;

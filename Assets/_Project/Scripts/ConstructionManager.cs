@@ -25,8 +25,10 @@
 using System.Collections.Generic;
 using Hecton8.Building;
 using Hecton8.Core;
-using Hecton8.SaveSystem;
 using Hecton8.Gameplay;
+using Hecton8.Inventory;
+using Hecton8.Items;
+using Hecton8.SaveSystem;
 using UnityEngine;
 
 namespace Hecton8.Construction
@@ -385,6 +387,7 @@ namespace Hecton8.Construction
                 moduleDto.prefabId = prefabId;
                 moduleDto.SetPosition(t.position);
                 moduleDto.SetRotation(t.rotation);
+                moduleDto.slottedToolItemId = string.Empty;
 
                 // ── Serialize dynamic state ──
                 // Пассивные модули (опоры, декор) не имеют BaseModule.
@@ -394,6 +397,7 @@ namespace Hecton8.Construction
                     moduleDto.integrity = baseModule.CurrentIntegrity;
                     moduleDto.repairIntegrityCap = baseModule.MaxRecoverableIntegrity;
                     moduleDto.airReserveNormalized = baseModule.AirReserveNormalized;
+                    moduleDto.co2Normalized = baseModule.Co2Normalized;
                     moduleDto.isFlooded = baseModule.IsFlooded;
                     moduleDto.failureMode = (byte)baseModule.CurrentFailureMode;
                 }
@@ -402,9 +406,22 @@ namespace Hecton8.Construction
                     moduleDto.integrity = DefaultIntegrity;
                     moduleDto.repairIntegrityCap = DefaultIntegrity;
                     moduleDto.airReserveNormalized = 1f;
+                    moduleDto.co2Normalized = 0f;
                     moduleDto.isFlooded = DefaultIsFlooded;
                     moduleDto.failureMode = (byte)BaseModuleFailureMode.None;
                 }
+
+                if (module.TryGetComponent(out MaintenanceStationModule maintenanceStation) && maintenanceStation.HasSlottedTool)
+                    moduleDto.slottedToolItemId = maintenanceStation.SlottedToolPersistentId;
+
+                if (module.TryGetComponent(out LogisticsSorterModule logisticsSorter))
+                    logisticsSorter.PopulateSaveData(ref moduleDto);
+
+                if (module.TryGetComponent(out DeepDrillModule deepDrill))
+                    deepDrill.PopulateSaveData(ref moduleDto);
+
+                if (module.TryGetComponent(out LogisticsPipeNode logisticsPipe))
+                    logisticsPipe.PopulateSaveData(ref moduleDto);
 
                 dto.modules[moduleIndex] = moduleDto;
                 moduleIndex++;
@@ -450,6 +467,7 @@ namespace Hecton8.Construction
             }
 
             ConstructionDTO dto = data.construction;
+            ItemCatalog itemCatalog = PlayerInventory.Instance != null ? PlayerInventory.Instance.ItemCatalog : null;
 
             // ── 1. Удаляем текущую базу ──
 
@@ -560,16 +578,42 @@ namespace Hecton8.Construction
                     float loadedAirReserveNormalized = data.version >= 28
                         ? Mathf.Clamp01(moduleDto.airReserveNormalized)
                         : 1f;
+                    float loadedCo2Normalized = data.version >= 34
+                        ? Mathf.Clamp01(moduleDto.co2Normalized)
+                        : 0f;
 
                     baseModule.SetState(
                         loadedIntegrity,
                         moduleDto.isFlooded,
                         (BaseModuleFailureMode)moduleDto.failureMode,
                         loadedRepairCap,
-                        loadedAirReserveNormalized);
+                        loadedAirReserveNormalized,
+                        loadedCo2Normalized);
+                }
+
+                if (data.version >= 35 &&
+                    itemCatalog != null &&
+                    !string.IsNullOrWhiteSpace(moduleDto.slottedToolItemId) &&
+                    module.TryGetComponent(out MaintenanceStationModule maintenanceStation))
+                {
+                    ItemData slottedToolItem = itemCatalog.FindById(moduleDto.slottedToolItemId);
+                    if (slottedToolItem != null)
+                        maintenanceStation.TryRestoreSlottedTool(slottedToolItem);
                 }
 
                 // ── Register с привязкой к BuildableData ──
+                if (data.version >= 36 && itemCatalog != null)
+                {
+                    if (module.TryGetComponent(out LogisticsSorterModule logisticsSorter))
+                        logisticsSorter.RestoreFromSaveData(moduleDto, itemCatalog);
+
+                    if (module.TryGetComponent(out DeepDrillModule deepDrill))
+                        deepDrill.RestoreFromSaveData(moduleDto, itemCatalog);
+
+                    if (module.TryGetComponent(out LogisticsPipeNode logisticsPipe))
+                        logisticsPipe.RestoreFromSaveData(moduleDto, itemCatalog);
+                }
+
                 RegisterModule(module, buildData);
                 loadedCount++;
             }

@@ -28,6 +28,21 @@ namespace Hecton8.Progression
 
             if (playerObject.GetComponent<SonarHoloCompass>() == null)
                 playerObject.AddComponent<SonarHoloCompass>();
+
+            if (playerObject.GetComponent<AcousticEcholocationTranslator>() == null)
+                playerObject.AddComponent<AcousticEcholocationTranslator>();
+
+            if (playerObject.GetComponent<AudioCaptionOverlay>() == null)
+                playerObject.AddComponent<AudioCaptionOverlay>();
+
+            if (playerObject.GetComponent<TerminalBootSequence>() == null)
+                playerObject.AddComponent<TerminalBootSequence>();
+
+            if (playerObject.GetComponent<PDADeathMemoryDump>() == null)
+                playerObject.AddComponent<PDADeathMemoryDump>();
+
+            if (playerObject.GetComponent<ARWaypointOverlay>() == null)
+                playerObject.AddComponent<ARWaypointOverlay>();
         }
     }
 }

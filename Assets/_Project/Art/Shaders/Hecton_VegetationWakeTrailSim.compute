@@ -7,7 +7,54 @@ float _HectonWakeTrailFadeDelta;
 float _HectonWakeTrailDiffusion;
 float _HectonWakeTrailWaveStrength;
 float _HectonWakeTrailDamping;
+float _HectonWakeTrailCurlStrength;
+float _HectonWakeTrailSimulationTime;
 float4 _HectonWakeTrailTexelSize;
+
+float Hash31(float3 value)
+{
+    return frac(sin(dot(value, float3(127.1, 311.7, 74.7))) * 43758.5453);
+}
+
+float ValueNoise3(float3 samplePosition)
+{
+    float3 cell = floor(samplePosition);
+    float3 fracPart = frac(samplePosition);
+    float3 smoothFrac = fracPart * fracPart * (3.0 - 2.0 * fracPart);
+
+    float n000 = Hash31(cell + float3(0.0, 0.0, 0.0));
+    float n100 = Hash31(cell + float3(1.0, 0.0, 0.0));
+    float n010 = Hash31(cell + float3(0.0, 1.0, 0.0));
+    float n110 = Hash31(cell + float3(1.0, 1.0, 0.0));
+    float n001 = Hash31(cell + float3(0.0, 0.0, 1.0));
+    float n101 = Hash31(cell + float3(1.0, 0.0, 1.0));
+    float n011 = Hash31(cell + float3(0.0, 1.0, 1.0));
+    float n111 = Hash31(cell + float3(1.0, 1.0, 1.0));
+
+    float nx00 = lerp(n000, n100, smoothFrac.x);
+    float nx10 = lerp(n010, n110, smoothFrac.x);
+    float nx01 = lerp(n001, n101, smoothFrac.x);
+    float nx11 = lerp(n011, n111, smoothFrac.x);
+    float nxy0 = lerp(nx00, nx10, smoothFrac.y);
+    float nxy1 = lerp(nx01, nx11, smoothFrac.y);
+    return lerp(nxy0, nxy1, smoothFrac.z);
+}
+
+float2 ResolveCurlNoise(float2 uv)
+{
+    float epsilon = 0.35;
+    float timePhase = _HectonWakeTrailSimulationTime * 0.12;
+    float3 samplePosition = float3(uv * 14.0, timePhase);
+
+    float noiseLeft = ValueNoise3(samplePosition - float3(epsilon, 0.0, 0.0));
+    float noiseRight = ValueNoise3(samplePosition + float3(epsilon, 0.0, 0.0));
+    float noiseDown = ValueNoise3(samplePosition - float3(0.0, epsilon, 0.0));
+    float noiseUp = ValueNoise3(samplePosition + float3(0.0, epsilon, 0.0));
+
+    float2 curl = float2(noiseUp - noiseDown, noiseLeft - noiseRight);
+    float curlLengthSq = dot(curl, curl);
+    return curlLengthSq > 0.000001 ? curl * rsqrt(curlLengthSq) : float2(0.0, 1.0);
+}
 
 [numthreads(8, 8, 1)]
 void SimulateWakeTrail(uint3 dispatchThreadId : SV_DispatchThreadID)
@@ -35,7 +82,11 @@ void SimulateWakeTrail(uint3 dispatchThreadId : SV_DispatchThreadID)
     float neighborAverage = (left.b + right.b + down.b + up.b) * 0.25;
     float diffusedIntensity = lerp(currentIntensity, neighborAverage, saturate(_HectonWakeTrailDiffusion));
     float waveIntensity = ((neighborAverage * 2.0) - previousIntensity) * saturate(_HectonWakeTrailDamping);
+    float2 uv = (float2(dispatchThreadId.xy) + 0.5) * _HectonWakeTrailTexelSize.xy;
+    float2 curlNoise = ResolveCurlNoise(uv + currentIntensity * 0.17);
+    float curlInfluence = saturate(_HectonWakeTrailCurlStrength) * (0.35 + currentIntensity * 0.65);
     float propagatedIntensity = saturate(lerp(diffusedIntensity, waveIntensity, saturate(_HectonWakeTrailWaveStrength)) - _HectonWakeTrailFadeDelta);
+    propagatedIntensity = saturate(propagatedIntensity + curlInfluence * abs(dot(curlNoise, float2(right.b - left.b, up.b - down.b))) * 0.14);
 
     float2 currentDirection = center.rg * 2.0 - 1.0;
     float2 gradientDirection = float2(right.b - left.b, up.b - down.b);
@@ -43,6 +94,8 @@ void SimulateWakeTrail(uint3 dispatchThreadId : SV_DispatchThreadID)
     float2 blendedDirection = currentDirection;
     if (gradientLengthSq > 0.000001)
         blendedDirection += normalize(gradientDirection) * (_HectonWakeTrailWaveStrength * 0.75);
+
+    blendedDirection += curlNoise * curlInfluence;
 
     float directionLengthSq = dot(blendedDirection, blendedDirection);
     if (directionLengthSq <= 0.000001)

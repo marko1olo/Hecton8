@@ -193,7 +193,7 @@ namespace Hecton8.AI
             }
 
             if (_infectionHazardSourceId == 0)
-                _infectionHazardSourceId = unchecked(GetInstanceID() ^ 0x4E434654);
+                _infectionHazardSourceId = unchecked((int)(EntityId.ToULong(GetEntityId()) ^ 0x4E434654u));
 
             float aggressionScale = Mathf.Clamp(_runtimeAggressionScale, 0.85f, 2f);
             float radius = InfectionHazardRadiusBase * Mathf.Lerp(0.9f, 1.3f, _infectionSeverity) * aggressionScale;

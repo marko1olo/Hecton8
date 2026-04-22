@@ -1,16 +1,93 @@
-Packages\com.waveharmonic.crest\Editor\Scripts\BuildProcessor.cs(112,9): error CS0122: 'WaterResources' is inaccessible due to its protection level
 
-Packages\com.waveharmonic.crest\Editor\Scripts\Gizmos.cs(307,32): error CS0122: 'WaterChunkRenderer' is inaccessible due to its protection level
+Твой ответ проверяется Lead Architect & CTO. Фаза 3 требует максимальной инженерной отдачи.
+Для каждой выполненной задачи предоставь подробный отчет, разделенный на следующие блоки:
 
-Packages\com.waveharmonic.crest\Editor\Scripts\Editors.cs(339,26): error CS0122: 'WaterChunkRenderer' is inaccessible due to its protection level
+1. ARCHITECTURE & REFACTORING (Core Logic)
 
-Packages\com.waveharmonic.crest\Editor\Scripts\Validators.cs(836,30): error CS0122: 'CollisionAreaVisualizer' is inaccessible due to its protection level
+SNIPPETS: Приведи ключевые фрагменты кода, демонстрирующие новую архитектуру (например, разделение God Object, реализацию AR, или Audio Ring Buffer).
 
-Packages\com.waveharmonic.crest\Editor\Scripts\Validators.cs(835,27): error CS0122: 'CollisionAreaVisualizer' is inaccessible due to its protection level
+DESIGN PATTERNS: Обоснуй выбор паттернов проектирования. Почему интерфейсы и зависимости выстроены именно так? Как предотвращены циклические связи?
 
-Assets\_Project\Scripts\World\SargassumCrestDampingController.cs(177,100): error CS0165: Use of unassigned local variable 'cutMaskWorldRect'
+2. PERFORMANCE & HOT PATH OPTIMIZATION (MX350 Targeting)
 
-Assets\_Project\Scripts\World\SargassumCrestDampingController.cs(241,58): error CS0165: Use of unassigned local variable 'cutMaskWorldRect'
+ALGORITHMIC COMPLEXITY: Опиши сложность новых алгоритмов (например, O(N) для Path Smoothing, сложность SSDO).
 
-Assets\_Project\Scripts\World\SargassumCrestDampingController.cs(245,65): error CS0165: Use of unassigned local variable 'cutMaskTexture'
+STALL AVOIDANCE: Как ты избежал фризов главного потока? Докажи асинхронность тяжелых операций.
+
+GPU/CPU BALANCE: Аргументируй распределение нагрузки (почему коллизии на GPU, а сглаживание путей на Burst).
+
+3. MEMORY ARCHITECTURE & ZERO-GC AUDIT
+
+ALLOCATION CHECK: Подтверди статус Zero-GC в горячих путях.
+
+LIFETIME MANAGEMENT: Опиши жизненный цикл новых структур (HLODInstance, Audio Buffer, AR Waypoints). Где вызывается Dispose? Как защищены данные при выгрузке сцены?
+
+4. MATHEMATICAL & DSP RIGOR
+
+FORMULA EXPLANATION: Распиши примененные формулы (Laplacian для Curvature, формулы проекции 3D->2D для AR, уравнение затухания для Reverb, физику Hard Constraint для сфер).
+
+STABILITY: Опиши защиты от деления на ноль, бесконечностей (NaN) и дрейфа данных с течением времени.
+
+5. INTEGRATION & REGRESSION VERIFICATION
+
+BLOCKER CLEARANCE: (Если была задача на фикс компиляции) Приведи точный код устранения ошибки.
+
+DEPENDENCY IMPACT: Какие шины данных и глобальные контракты были расширены?
+
+ESTIMATED GAIN / COST: Напиши честную оценку стоимости новых фич. Сколько миллисекунд (или памяти) заберет SSDO, Curvature или HLOD-система? Мы должны знать бюджет.
+
+Отправляй. У них работы минимум на 40 минут плотного кодинга. Я буду ждать их отчетов, чтобы разобрать их на атомы
+
+🚨 [SYSTEM MANDATE v3.5: UNIVERSAL STRICT AUDIT REPORT]
+
+Твой ответ проверяется Lead Architect & CTO. Любое отклонение от формы — REJECT.
+После выполнения задачи предоставь отчет строго по форме:
+
+1. ARCHITECTURE & REFACTORING
+
+SNIPPETS: Приведи код новой структуры (разделение классов, AR-система, или Ring Buffer).
+
+SRP COMPLIANCE: Докажи, что логика разделена и зависимости инвертированы.
+
+2. PERFORMANCE & HOT PATH OPTIMIZATION
+
+ALGORITHMIC COMPLEXITY: Опиши сложность (O(N), O(N log N) и т.д.).
+
+STALL AVOIDANCE: Как ты убрал фризы Main Thread?
+
+3. MEMORY ARCHITECTURE & ZERO-GC AUDIT
+
+ALLOCATION CHECK: Подтверди статус Zero-GC.
+
+LIFETIME: Где вызывается Dispose для новых коллекций?
+
+4. MATHEMATICAL & DSP RIGOR
+
+FORMULAS: Опиши формулы (PBD коллизии, Laplacian, Эффект Доплера).
+
+STABILITY: Как защищен код от NaN и деления на ноль?
+
+5. INTEGRATION & REGRESSION VERIFICATION
+
+BLOCKER FIX: Приведи код исправления ошибки компиляции (если была).
+
+DEPENDENCY IMPACT: Что изменилось в глобальных шинах данных?
+
+ESTIMATED GAIN: Честная оценка стоимости фичи в мс и МБ для MX350.
+
+
+Твой ответ проверяется Lead Architect & CTO. Фаза 4 (Инквизиция) требует абсолютного технического совершенства.
+Любое использование Resources.FindObjectsOfTypeAll, LINQ, несинхронизированных потоков или O(N^2) алгоритмов приведет к отклонению.
+Предоставь жесткий технический отчет по форме:
+1. CRITICAL DEBT & ARCHITECTURE CLEARANCE
+SNIPPETS: Покажи код, где ты устранил архитектурный мусор (убрал оркестрацию из God Object, убрал FindObjectsOfTypeAll, или добавил 6-осевой радар).
+BLOCKER FIX: (Для Агента 5/4) Приведи точный исправленный код для консольного блокера.
+2. ALGORITHMIC & MEMORY PERFECTION
+COMPLEXITY DROP: Докажи математически, что твой алгоритм стал O(N) (для путей) или что твой GPU-хэш защищен от Thread Contention.
+ZERO-GC PROOF: Явно перечисли, какие статические пулы или реестры ты применил вместо поиска по сцене.
+3. HARDWARE SYNCHRONIZATION (GPU/Threads/PhysX)
+SYNC PRIMITIVES: Опиши, как ты использовал MemoryBarrier, распределенное создание GameObject'ов (NextFrameAsync) или Depth Bias для предотвращения глитчей на железе.
+4. REGRESSION & DEPENDENCY INTEGRITY
+API STABILITY: Убедись, что новые интерфейсы или шейдерные макросы не сломали предыдущие наработки (SSDO, Floating Origin).
+ESTIMATED GAIN: Жесткие цифры. Сколько Raycast'ов сэкономлено? Какова разница в ms между O(N^2) и O(N)?
 

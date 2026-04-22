@@ -330,7 +330,7 @@ namespace Hecton8.Narrative
             if (_catalogCount > 0)
                 return true;
 
-            PDADataLogTab[] tabs = UnityEngine.Object.FindObjectsByType<PDADataLogTab>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            PDADataLogTab[] tabs = UnityEngine.Object.FindObjectsByType<PDADataLogTab>(FindObjectsInactive.Include);
             if (tabs == null || tabs.Length == 0)
                 return false;
 
@@ -353,7 +353,7 @@ namespace Hecton8.Narrative
             if (_pickupTemplate != null)
                 return true;
 
-            AudioLogPickup[] pickups = UnityEngine.Object.FindObjectsByType<AudioLogPickup>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            AudioLogPickup[] pickups = UnityEngine.Object.FindObjectsByType<AudioLogPickup>(FindObjectsInactive.Include);
             if (pickups == null || pickups.Length == 0)
                 return false;
 

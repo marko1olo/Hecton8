@@ -268,10 +268,12 @@ namespace Hecton.Localization
         public const string PDA_TAB_BARTER = "PDA_TAB_BARTER";
         public const string PDA_TAB_DATA_LOG = "PDA_TAB_DATA_LOG";
         public const string PDA_TAB_SPECTRUM = "PDA_TAB_SPECTRUM";
+        public const string PDA_TAB_DIAGNOSTICS = "PDA_TAB_DIAGNOSTICS";
         public const string PDA_TAB_UNKNOWN = "PDA_TAB_UNKNOWN";
         public const string PDA_FOOTER_LEFT = "PDA_FOOTER_LEFT";
         public const string PDA_FOOTER_RIGHT_ONLINE = "PDA_FOOTER_RIGHT_ONLINE";
         public const string PDA_FOOTER_RIGHT_STANDBY = "PDA_FOOTER_RIGHT_STANDBY";
+        public const string PDA_MECH_MODE_ACTIVE = "PDA_MECH_MODE_ACTIVE";
         public const string TECH_O2_SPEC = "TECH_O2_SPEC";
         public const string TECH_HULL_SPEC = "TECH_HULL_SPEC";
         public const string TECH_PWR_BUS = "TECH_PWR_BUS";
@@ -357,6 +359,11 @@ namespace Hecton.Localization
         public const string SPECTRUM_MODE_THERMAL = "SPECTRUM_MODE_THERMAL";
         public const string SPECTRUM_MODE_SONAR = "SPECTRUM_MODE_SONAR";
         public const string SPECTRUM_MODE_ECHOLOCATION = "SPECTRUM_MODE_ECHOLOCATION";
+        public const string SONAR_CONTACT_HEADER = "SONAR_CONTACT_HEADER";
+        public const string SONAR_CLASSIFICATION_PREFIX = "SONAR_CLASSIFICATION_PREFIX";
+        public const string SONAR_CLASS_LEVIATHAN = "SONAR_CLASS_LEVIATHAN";
+        public const string SONAR_CLASS_WRECKAGE = "SONAR_CLASS_WRECKAGE";
+        public const string PDA_DEATH_DUMP_FINAL = "PDA_DEATH_DUMP_FINAL";
         public const string ENDING_CORE_REACHED = "ENDING_CORE_REACHED";
         public const string ENDING_SHUTDOWN_COMPLETE = "ENDING_SHUTDOWN_COMPLETE";
         public const string ENDING_LEAVE_COMPLETE = "ENDING_LEAVE_COMPLETE";

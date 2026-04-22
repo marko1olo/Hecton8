@@ -1008,16 +1008,18 @@ public static class CaveGraphGenerator
 
         for (int i = 0; i < archCount; i++)
         {
-            float span = rng.NextFloat(volumeHalfExtent * 0.9f, volumeHalfExtent * 1.35f);
-            float rise = rng.NextFloat(12f, volumeHalfExtent * 0.85f);
-            float tubeRadius = rng.NextFloat(2.5f, 5.5f);
+            float maxSupportedSpan = math.max(48f, volumeHalfExtent * 1.55f);
+            float maxSupportedRise = math.max(48f, volumeHalfExtent * 1.45f);
+            float span = math.min(rng.NextFloat(100f, 200f), maxSupportedSpan);
+            float rise = math.min(rng.NextFloat(90f, 180f), maxSupportedRise);
+            float tubeRadius = math.min(rng.NextFloat(6f, 14f), math.max(4f, volumeHalfExtent * 0.12f));
             float3 direction = rng.NextFloat3(new float3(-1f, 0f, -1f), new float3(1f, 0f, 1f));
             direction = math.normalizesafe(new float3(direction.x, 0f, direction.z), new float3(1f, 0f, 0f));
 
             float3 center = anchorRoom.position + rng.NextFloat3(
-                new float3(-volumeHalfExtent * 0.2f, 0f, -volumeHalfExtent * 0.2f),
-                new float3(volumeHalfExtent * 0.2f, 0f, volumeHalfExtent * 0.2f));
-            center.y = math.clamp(terrainHeight - rng.NextFloat(2f, 8f), volumeMin.y + 2f, volumeMax.y - rise * 0.35f);
+                new float3(-volumeHalfExtent * 0.14f, 0f, -volumeHalfExtent * 0.14f),
+                new float3(volumeHalfExtent * 0.14f, 0f, volumeHalfExtent * 0.14f));
+            center.y = math.clamp(terrainHeight - rng.NextFloat(1.5f, 4.5f), volumeMin.y + 3f, volumeMax.y - rise * 0.82f);
 
             CaveStructure arch = new CaveStructure
             {
@@ -1025,8 +1027,8 @@ public static class CaveGraphGenerator
                 position = math.clamp(center - direction * (span * 0.5f), volumeMin, volumeMax),
                 pointB = math.clamp(center + direction * (span * 0.5f), volumeMin, volumeMax),
                 size = new float3(span * 0.5f, rise, tubeRadius),
-                blendRadius = 4f,
-                noiseAmount = rng.NextFloat(0.25f, 0.55f)
+                blendRadius = 6f,
+                noiseAmount = rng.NextFloat(0.35f, 0.7f)
             };
 
             if (!IsStructureBlocked(arch, tunnels))

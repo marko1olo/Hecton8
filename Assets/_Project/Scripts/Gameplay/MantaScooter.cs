@@ -365,7 +365,9 @@ namespace Hecton8.Gameplay
 
             // Setup motor audio
             TryGetComponent(out _motorAudioSource);
-            if (_motorAudioSource == null && motorLoopClip != null)
+            if (!PlayerCriticalProceduralAudioRenderer.IsRuntimeInstalled &&
+                _motorAudioSource == null &&
+                motorLoopClip != null)
             {
                 _motorAudioSource = gameObject.AddComponent<AudioSource>();
                 _motorAudioSource.playOnAwake = false;
@@ -631,6 +633,15 @@ namespace Hecton8.Gameplay
             _isActive = true;
             _debugActivationState = ActivationStateActivated;
 
+            if (PlayerCriticalProceduralAudioRenderer.IsRuntimeInstalled)
+            {
+                if (_motorAudioSource != null && _motorAudioSource.isPlaying)
+                    _motorAudioSource.Stop();
+
+                UpdatePowerIndicator();
+                return;
+            }
+
             // Start motor sound
             if (_motorAudioSource != null && motorLoopClip != null && !_motorAudioSource.isPlaying)
             {
@@ -649,6 +660,17 @@ namespace Hecton8.Gameplay
             _driveThrottleCurrent = 0f;
             _debugActivationState = ActivationStateIdle;
             ResetMisfireState();
+
+            if (PlayerCriticalProceduralAudioRenderer.IsRuntimeInstalled)
+            {
+                if (_motorAudioSource != null && _motorAudioSource.isPlaying)
+                    _motorAudioSource.Stop();
+
+                RestoreHeadlightDefaults();
+                ClearHeadlightGlobals();
+                UpdatePowerIndicator();
+                return;
+            }
 
             // Stop motor sound
             if (_motorAudioSource != null && _motorAudioSource.isPlaying)
@@ -938,7 +960,10 @@ namespace Hecton8.Gameplay
             float drainScale = _vehicleUpgradeModule != null
                 ? Mathf.Max(0.1f, _vehicleUpgradeModule.ChargeDrainScale)
                 : 1f;
-            return Mathf.Max(0f, batteryDrainRate * drainScale);
+            float abyssalOverstrainMultiplier = _playerMovement != null
+                ? _playerMovement.CurrentAbyssalCounterDriveEnergyMultiplier
+                : 1f;
+            return Mathf.Max(0f, batteryDrainRate * drainScale * abyssalOverstrainMultiplier);
         }
 
         private void EnsureTransportLifecycleInitialized()

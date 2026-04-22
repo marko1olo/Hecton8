@@ -3,7 +3,8 @@
     "rootNamespace": "Hecton8.Input",
     "references": [
         "Hecton8.Input.Generated",
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

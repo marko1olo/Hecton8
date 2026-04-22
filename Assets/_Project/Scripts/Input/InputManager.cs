@@ -737,12 +737,33 @@ namespace Hecton8.Input
             if (!TryResolveTokenBinding(token, out string actionName, out string actionMap))
                 return false;
 
-            string display = GetBindingDisplayString(actionName, actionMap, -1);
+            InputAction action = GetAction(actionName, actionMap);
+            if (action == null)
+                return false;
+
+            int bindingIndex = GetPreferredBindingIndex(action, CurrentDisplayStyle);
+            if (TryGetBindingGlyphMarkup(action, bindingIndex, out markup))
+                return true;
+
+            string display = GetBindingDisplayString(actionName, actionMap, bindingIndex);
             if (string.IsNullOrWhiteSpace(display))
                 return false;
 
             markup = FormatBindingChip(display, CurrentDisplayStyle);
             return !string.IsNullOrWhiteSpace(markup);
+        }
+
+        public bool TryGetBindingGlyphMarkup(string actionName, string actionMap, int bindingIndex, out string markup)
+        {
+            markup = string.Empty;
+            InputAction action = GetAction(actionName, actionMap);
+            if (action == null)
+                return false;
+
+            if (bindingIndex < 0 || bindingIndex >= action.bindings.Count)
+                bindingIndex = GetPreferredBindingIndex(action, CurrentDisplayStyle);
+
+            return TryGetBindingGlyphMarkup(action, bindingIndex, out markup);
         }
 
         public static bool TryGetBindingDisplayStringSafe(InputAction action, int bindingIndex, out string display)
@@ -869,6 +890,32 @@ namespace Hecton8.Input
             string sanitized = string.IsNullOrWhiteSpace(display) ? "?" : display.Trim().ToUpperInvariant();
             string prefix = displayStyle == InputDisplayStyle.Gamepad ? "\u25C6" : "\u2328";
             return $"<b><color=#AEE8FF>{prefix}</color> {sanitized}</b>";
+        }
+
+        private static bool TryGetBindingGlyphMarkup(InputAction action, int bindingIndex, out string markup)
+        {
+            markup = string.Empty;
+            if (action == null || bindingIndex < 0)
+                return false;
+
+            InputBinding binding;
+            try
+            {
+                if (bindingIndex >= action.bindings.Count)
+                    return false;
+
+                binding = action.bindings[bindingIndex];
+            }
+            catch
+            {
+                return false;
+            }
+
+            string path = binding.effectivePath;
+            if (string.IsNullOrWhiteSpace(path))
+                path = !string.IsNullOrWhiteSpace(binding.overridePath) ? binding.overridePath : binding.path;
+
+            return GlyphProvider.TryGetBindingMarkup(path, out markup);
         }
 
         private static bool TryResolveTokenBinding(string token, out string actionName, out string actionMap)
@@ -1323,6 +1370,160 @@ namespace Hecton8.Input
             catch (Exception)
             {
                 return false;
+            }
+        }
+        /// <summary>
+        /// Resolves first-party TMP sprite glyph markup for input bindings.
+        /// Falls back to text chips when the assigned TMP sprite asset does not contain the requested glyph.
+        /// Nested here deliberately so InputManager has no external compile dependency on a second type.
+        /// </summary>
+        public static class GlyphProvider
+        {
+            private enum GlyphId : byte
+            {
+                None = 0,
+                KeyboardE = 1,
+                KeyboardF = 2,
+                KeyboardM = 3,
+                KeyboardQ = 4,
+                KeyboardR = 5,
+                KeyboardTab = 6,
+                KeyboardSpace = 7,
+                KeyboardEnter = 8,
+                KeyboardEscape = 9,
+                MouseLeft = 10,
+                MouseRight = 11,
+                GamepadSouth = 12,
+                GamepadEast = 13,
+                GamepadWest = 14,
+                GamepadNorth = 15,
+                GamepadLeftShoulder = 16,
+                GamepadRightShoulder = 17,
+                GamepadLeftTrigger = 18,
+                GamepadRightTrigger = 19,
+                GamepadStart = 20,
+                GamepadSelect = 21,
+                GamepadDpadUp = 22,
+                GamepadDpadDown = 23,
+                GamepadDpadLeft = 24,
+                GamepadDpadRight = 25
+            }
+
+            private const string KeyboardDeviceToken = "Keyboard";
+            private const string MouseDeviceToken = "Mouse";
+            private const string GamepadDeviceToken = "Gamepad";
+
+            // COLD ALLOC: string[26] — cached TMP sprite markups indexed by GlyphId — owner: InputManager.GlyphProvider
+            private static readonly string[] SpriteMarkups =
+            {
+                string.Empty,
+                "<voffset=-0.08em><sprite name=\"kbd_e\"></voffset>",
+                "<voffset=-0.08em><sprite name=\"kbd_f\"></voffset>",
+                "<voffset=-0.08em><sprite name=\"kbd_m\"></voffset>",
+                "<voffset=-0.08em><sprite name=\"kbd_q\"></voffset>",
+                "<voffset=-0.08em><sprite name=\"kbd_r\"></voffset>",
+                "<voffset=-0.08em><sprite name=\"kbd_tab\"></voffset>",
+                "<voffset=-0.08em><sprite name=\"kbd_space\"></voffset>",
+                "<voffset=-0.08em><sprite name=\"kbd_enter\"></voffset>",
+                "<voffset=-0.08em><sprite name=\"kbd_escape\"></voffset>",
+                "<voffset=-0.08em><sprite name=\"mouse_left\"></voffset>",
+                "<voffset=-0.08em><sprite name=\"mouse_right\"></voffset>",
+                "<voffset=-0.08em><sprite name=\"pad_south\"></voffset>",
+                "<voffset=-0.08em><sprite name=\"pad_east\"></voffset>",
+                "<voffset=-0.08em><sprite name=\"pad_west\"></voffset>",
+                "<voffset=-0.08em><sprite name=\"pad_north\"></voffset>",
+                "<voffset=-0.08em><sprite name=\"pad_lb\"></voffset>",
+                "<voffset=-0.08em><sprite name=\"pad_rb\"></voffset>",
+                "<voffset=-0.08em><sprite name=\"pad_lt\"></voffset>",
+                "<voffset=-0.08em><sprite name=\"pad_rt\"></voffset>",
+                "<voffset=-0.08em><sprite name=\"pad_start\"></voffset>",
+                "<voffset=-0.08em><sprite name=\"pad_select\"></voffset>",
+                "<voffset=-0.08em><sprite name=\"pad_up\"></voffset>",
+                "<voffset=-0.08em><sprite name=\"pad_down\"></voffset>",
+                "<voffset=-0.08em><sprite name=\"pad_left\"></voffset>",
+                "<voffset=-0.08em><sprite name=\"pad_right\"></voffset>"
+            };
+
+            /// <summary>
+            /// Attempts to resolve TMP sprite markup for a binding path.
+            /// </summary>
+            public static bool TryGetBindingMarkup(string bindingPath, out string markup)
+            {
+                markup = string.Empty;
+                if (string.IsNullOrWhiteSpace(bindingPath))
+                    return false;
+
+                GlyphId glyphId = ResolveGlyphId(bindingPath);
+                if (glyphId == GlyphId.None)
+                    return false;
+
+                markup = SpriteMarkups[(int)glyphId];
+                return !string.IsNullOrEmpty(markup);
+            }
+
+            private static GlyphId ResolveGlyphId(string bindingPath)
+            {
+                string controlName = ExtractControlName(bindingPath);
+                if (string.IsNullOrEmpty(controlName))
+                    return GlyphId.None;
+
+                if (bindingPath.IndexOf(KeyboardDeviceToken, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    switch (controlName)
+                    {
+                        case "e": return GlyphId.KeyboardE;
+                        case "f": return GlyphId.KeyboardF;
+                        case "m": return GlyphId.KeyboardM;
+                        case "q": return GlyphId.KeyboardQ;
+                        case "r": return GlyphId.KeyboardR;
+                        case "tab": return GlyphId.KeyboardTab;
+                        case "space": return GlyphId.KeyboardSpace;
+                        case "enter": return GlyphId.KeyboardEnter;
+                        case "escape": return GlyphId.KeyboardEscape;
+                    }
+                }
+
+                if (bindingPath.IndexOf(MouseDeviceToken, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    switch (controlName)
+                    {
+                        case "leftbutton": return GlyphId.MouseLeft;
+                        case "rightbutton": return GlyphId.MouseRight;
+                    }
+                }
+
+                if (bindingPath.IndexOf(GamepadDeviceToken, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    switch (controlName)
+                    {
+                        case "buttonsouth": return GlyphId.GamepadSouth;
+                        case "buttoneast": return GlyphId.GamepadEast;
+                        case "buttonwest": return GlyphId.GamepadWest;
+                        case "buttonnorth": return GlyphId.GamepadNorth;
+                        case "leftshoulder": return GlyphId.GamepadLeftShoulder;
+                        case "rightshoulder": return GlyphId.GamepadRightShoulder;
+                        case "lefttrigger": return GlyphId.GamepadLeftTrigger;
+                        case "righttrigger": return GlyphId.GamepadRightTrigger;
+                        case "start": return GlyphId.GamepadStart;
+                        case "select": return GlyphId.GamepadSelect;
+                        case "dpadup": return GlyphId.GamepadDpadUp;
+                        case "dpaddown": return GlyphId.GamepadDpadDown;
+                        case "dpadleft": return GlyphId.GamepadDpadLeft;
+                        case "dpadright": return GlyphId.GamepadDpadRight;
+                    }
+                }
+
+                return GlyphId.None;
+            }
+
+            private static string ExtractControlName(string bindingPath)
+            {
+                int slashIndex = bindingPath.LastIndexOf('/');
+                if (slashIndex < 0 || slashIndex >= bindingPath.Length - 1)
+                    return string.Empty;
+
+                string controlName = bindingPath.Substring(slashIndex + 1);
+                return controlName.Replace("-", string.Empty).ToLowerInvariant();
             }
         }
     }

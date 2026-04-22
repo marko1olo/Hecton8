@@ -1,4 +1,6 @@
 using System.Runtime.InteropServices;
+using Unity.Collections;
+using Unity.Jobs;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -78,5 +80,78 @@ namespace Hecton8.World
 
         /// <summary>World-space bounds for the indirect draw call when available.</summary>
         Bounds DrawBounds { get; }
+    }
+
+    /// <summary>
+    /// Immutable native read token for front/back buffered vegetation export.
+    /// The producer owns lifetime and the consumer must release the token after upload.
+    /// </summary>
+    public readonly struct HectonIndirectVegetationNativeReadBuffer
+    {
+        /// <summary>
+        /// Creates one native read token for the indirect vegetation renderer.
+        /// </summary>
+        public HectonIndirectVegetationNativeReadBuffer(
+            NativeArray<Matrix4x4> instanceMatrices,
+            NativeArray<HectonVegetationInstanceData> instanceData,
+            int instanceCount,
+            int bufferIndex,
+            JobHandle producerHandle,
+            bool hasExplicitBounds,
+            Bounds drawBounds)
+        {
+            InstanceMatrices = instanceMatrices;
+            InstanceData = instanceData;
+            InstanceCount = instanceCount;
+            BufferIndex = bufferIndex;
+            ProducerHandle = producerHandle;
+            HasExplicitBounds = hasExplicitBounds;
+            DrawBounds = drawBounds;
+        }
+
+        /// <summary>Native matrix payload exported by the producer.</summary>
+        public NativeArray<Matrix4x4> InstanceMatrices { get; }
+
+        /// <summary>Native metadata payload exported by the producer.</summary>
+        public NativeArray<HectonVegetationInstanceData> InstanceData { get; }
+
+        /// <summary>Valid entry count in both native arrays.</summary>
+        public int InstanceCount { get; }
+
+        /// <summary>Producer-owned front/back buffer index that was acquired for this read.</summary>
+        public int BufferIndex { get; }
+
+        /// <summary>Producer job fence that must complete before the renderer reads the arrays.</summary>
+        public JobHandle ProducerHandle { get; }
+
+        /// <summary>True when the producer exported explicit world-space bounds.</summary>
+        public bool HasExplicitBounds { get; }
+
+        /// <summary>Explicit world-space bounds for the acquired read token.</summary>
+        public Bounds DrawBounds { get; }
+
+        /// <summary>True when the token contains enough data for upload.</summary>
+        public bool IsValid =>
+            InstanceCount > 0 &&
+            InstanceMatrices.IsCreated &&
+            InstanceData.IsCreated &&
+            InstanceMatrices.Length >= InstanceCount &&
+            InstanceData.Length >= InstanceCount;
+    }
+
+    /// <summary>
+    /// Native double-buffer export seam used by the indirect vegetation renderer.
+    /// </summary>
+    public interface IHectonIndirectVegetationNativeBufferSource
+    {
+        /// <summary>
+        /// Acquires the currently readable front/back native buffer for upload into renderer-owned staging buffers.
+        /// </summary>
+        bool TryAcquireNativeReadBuffer(out HectonIndirectVegetationNativeReadBuffer readBuffer);
+
+        /// <summary>
+        /// Releases a previously acquired read buffer and returns the consumer reader fence to the producer.
+        /// </summary>
+        void ReleaseNativeReadBuffer(in HectonIndirectVegetationNativeReadBuffer readBuffer, JobHandle readerHandle);
     }
 }

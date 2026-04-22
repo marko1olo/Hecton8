@@ -115,8 +115,8 @@ Shader "Hecton8/BoidFishInstanced"
             {
                 float3 position;    // 12 bytes
                 float3 velocity;    // 12 bytes
-                float  pad0;        // 4 bytes
-                float  pad1;        // 4 bytes
+                float  panic;       // 4 bytes
+                float  state;       // 4 bytes
                 // TOTAL: 32 bytes
             };
 
@@ -179,6 +179,7 @@ Shader "Hecton8/BoidFishInstanced"
                 float3 normalWS   : TEXCOORD1;
                 float  colorBlend : TEXCOORD2;   // belly/back blend factor
                 float  instanceRand : TEXCOORD3; // per-instance random [0..1]
+                float  aliveMask : TEXCOORD4;
             };
 
             // ══════════════════════════════════════════════════════
@@ -256,6 +257,9 @@ Shader "Hecton8/BoidFishInstanced"
                 float3 boidPos = boid.position;
                 float3 boidVel = boid.velocity;
                 float  speed   = length(boidVel);
+                float  consumed01 = boid.state < 1.5 ? 0.0 : saturate(boid.panic);
+                float  aliveMask = consumed01 < 0.999 ? 1.0 : 0.0;
+                float  consumedScale = 1.0 - consumed01;
 
                 // ══════════════════════════════════════════════════
                 //  2. PER-INSTANCE RANDOM
@@ -315,7 +319,7 @@ Shader "Hecton8/BoidFishInstanced"
 
                 // Per-instance size variation (±15%)
                 float scaleVariation = 0.85 + instRand * 0.3;
-                localPos *= _FishScale * scaleVariation;
+                localPos *= _FishScale * scaleVariation * consumedScale;
 
                 // ══════════════════════════════════════════════════
                 //  5. ROTATION (LookRotation from velocity)
@@ -333,6 +337,7 @@ Shader "Hecton8/BoidFishInstanced"
                 output.positionCS = TransformWorldToHClip(worldPos);
                 output.normalWS   = normalize(worldNrm);
                 output.uv         = TRANSFORM_TEX(input.uv, _BaseMap);
+                output.aliveMask  = aliveMask;
 
                 // Belly blend: vertices below local Y center → belly color
                 output.colorBlend = saturate(-input.positionOS.y - _BellyBlend);
@@ -346,6 +351,7 @@ Shader "Hecton8/BoidFishInstanced"
 
             half4 frag(Varyings input) : SV_Target
             {
+                clip(input.aliveMask - 0.5);
                 // ── Texture sample ──
                 half4 texColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
 

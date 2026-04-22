@@ -597,8 +597,9 @@ namespace Hecton8.World
                         entrances,
                         structureArray,
                         generationParams,
-                        buildCollider,
-                        token);
+                        lodLevel: 0,
+                        buildCollider: buildCollider,
+                        ct: token);
 
                     if (volume == null)
                         return;

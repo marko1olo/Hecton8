@@ -34,6 +34,9 @@ Shader "Hecton8/Vegetation/IndirectStrip"
         _AnisotropicSssPower ("Anisotropic SSS Power", Range(1, 12)) = 4.5
         _BacklightViewBias ("Backlight View Bias", Range(0, 1)) = 0.58
         _EdgeBloomStrength ("Edge Bloom Strength", Range(0, 2)) = 0.62
+        _LocalCausticStrength ("Local Caustic Strength", Range(0, 1)) = 0.18
+        _LocalCausticScale ("Local Caustic Scale", Range(0.1, 4)) = 0.82
+        _LocalCausticSpeed ("Local Caustic Speed", Range(0, 4)) = 0.48
         _SurfaceWaterLevelFallback ("Surface Water Level Fallback", Float) = 4900
         [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Cull", Float) = 0
     }
@@ -113,6 +116,9 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 half _AnisotropicSssPower;
                 half _BacklightViewBias;
                 half _EdgeBloomStrength;
+                half _LocalCausticStrength;
+                half _LocalCausticScale;
+                half _LocalCausticSpeed;
                 float _SurfaceWaterLevelFallback;
                 float _HectonLodPassMode;
                 float _HectonLodNearDistance;
@@ -131,12 +137,16 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             StructuredBuffer<float4x4> _HectonInstanceMatrices;
             StructuredBuffer<float4> _HectonVegetationInstanceData;
             StructuredBuffer<uint> _HectonVisibleInstanceIndices;
+            float4 _ChunkWorldOffset;
+            float4 _GlobalFloatingOffset;
             StructuredBuffer<FloraInteractionPointGpuData> _HectonFloraInteractionPoints;
             StructuredBuffer<float4> _HectonImpactSpheres;
 
             float4 _HectonVegetationFogColor;
             float4 _HectonVegetationAmbientColor;
             float4 _HectonVegetationCurrentVector;
+            float4 _GlobalOceanFlow;
+            float4 _HectonFloatingOriginOffset;
             float4 _SargassumGlobalDriftOffset;
             float4 _SargassumCutMaskWorldRect;
             float4 _HectonVegetationWakeTrailWorldRect;
@@ -263,7 +273,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
 
             float3 TransformPoint(float4x4 matrixValue, float3 localPosition)
             {
-                return mul(matrixValue, float4(localPosition, 1.0)).xyz;
+                return mul(matrixValue, float4(localPosition, 1.0)).xyz + _ChunkWorldOffset.xyz;
             }
 
             float3 TransformDirection(float4x4 matrixValue, float3 direction)
@@ -338,6 +348,37 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             {
                 float lenSq = dot(value, value);
                 return lenSq > 0.0001 ? value * rsqrt(lenSq) : float3(0.0, 1.0, 0.0);
+            }
+
+            float2 ResolvePlanarOceanFlowDirection(float2 fallbackFlow)
+            {
+                float2 flow = dot(_GlobalOceanFlow.xz, _GlobalOceanFlow.xz) > 0.0001 ? _GlobalOceanFlow.xz : fallbackFlow;
+                float lenSq = dot(flow, flow);
+                return lenSq > 0.0001 ? flow * rsqrt(lenSq) : float2(0.0, 0.0);
+            }
+
+            float ResolvePlanarOceanFlowStrength(float2 fallbackFlow, float fallbackStrength)
+            {
+                return max(length(dot(_GlobalOceanFlow.xz, _GlobalOceanFlow.xz) > 0.0001 ? _GlobalOceanFlow.xz : fallbackFlow), fallbackStrength);
+            }
+
+            float3 ResolveCausticSamplePositionWS(float3 positionWS)
+            {
+                return positionWS + _HectonFloatingOriginOffset.xyz;
+            }
+
+            half ResolveLocalLightCaustic(float3 positionWS, half3 normalWS, half heightMask)
+            {
+                float3 samplePositionWS = ResolveCausticSamplePositionWS(positionWS);
+                float scale = max(_LocalCausticScale, 0.05h);
+                float2 causticUv = samplePositionWS.xz * scale
+                    + float2(_Time.y * _LocalCausticSpeed, _Time.y * (_LocalCausticSpeed * 0.67h));
+                float primaryWave = sin(causticUv.x * 2.1 + sin(causticUv.y * 1.2));
+                float secondaryWave = cos(causticUv.y * 2.4 - causticUv.x * 0.9);
+                float tertiaryWave = sin((causticUv.x + causticUv.y) * 1.36 + _Time.y * (_LocalCausticSpeed * 0.53));
+                half normalMod = saturate(0.34h + abs(normalWS.y) * 0.42h + heightMask * 0.16h);
+                half caustic = saturate(0.56h + (primaryWave * secondaryWave + tertiaryWave * 0.42h) * _LocalCausticStrength);
+                return lerp(1.0h, caustic, saturate(_LocalCausticStrength * normalMod));
             }
 
             void ResolveInstanceShape(float instanceType, float heightScale, float widthScale, out float instanceHeight, out float instanceWidth)
@@ -547,8 +588,13 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             {
                 float currentTimeScale = max(_HectonVegetationCurrentTimeScale, 0.05);
                 float currentNoiseScale = max(_HectonVegetationCurrentNoiseScale, 0.002);
-                float currentMagnitude = max(currentStrength, 0.1);
-                float2 currentDirection = SafeNormalize2(currentVector + float2(0.35, 0.18));
+                float currentMagnitude = max(currentStrength, 0.0);
+                float2 currentDirection = ResolvePlanarOceanFlowDirection(currentVector);
+                if (currentMagnitude <= 0.0001 || dot(currentDirection, currentDirection) <= 0.0001)
+                {
+                    torsion = 0.0;
+                    return float3(0.0, 0.0, 0.0);
+                }
                 float2 currentPerpendicular = float2(-currentDirection.y, currentDirection.x);
 
                 float3 samplePosition = float3(
@@ -604,7 +650,8 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 uint sourceInstanceIndex = _HectonVisibleInstanceIndices[instanceID];
                 float4x4 instanceMatrix = _HectonInstanceMatrices[sourceInstanceIndex];
                 float4 instanceData = _HectonVegetationInstanceData[sourceInstanceIndex];
-                float3 originWS = TransformPoint(instanceMatrix, float3(0.0, 0.0, 0.0));
+                float3 floatingOriginOffsetWS = _GlobalFloatingOffset.xyz;
+                float3 originWS = TransformPoint(instanceMatrix, float3(0.0, 0.0, 0.0)) + floatingOriginOffsetWS;
                 float distanceToCamera = distance(originWS, _WorldSpaceCameraPos);
                 float lodAlpha = ResolveLodAlpha(distanceToCamera, _HectonLodPassMode);
 
@@ -627,8 +674,9 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 float3 driftOffsetWS = instanceType > 1.5 ? _SargassumGlobalDriftOffset.xyz : float3(0.0, 0.0, 0.0);
                 float3 renderOriginWS = originWS + driftOffsetWS;
                 float timeValue = _Time.y;
-                float2 currentVector = _HectonVegetationCurrentVector.xz;
-                float currentStrength = _HectonVegetationCurrentStrength;
+                float2 currentVector = dot(_GlobalOceanFlow.xz, _GlobalOceanFlow.xz) > 0.0001 ? _GlobalOceanFlow.xz : _HectonVegetationCurrentVector.xz;
+                float currentStrength = ResolvePlanarOceanFlowStrength(_HectonVegetationCurrentVector.xz, _HectonVegetationCurrentStrength);
+                float2 currentDirection = ResolvePlanarOceanFlowDirection(currentVector);
 
                 if (instanceType < 0.5)
                 {
@@ -647,7 +695,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                     localPosition.x *= instanceWidth * lerp(1.0, 0.30, heightMask);
                 }
 
-                float3 basePositionWS = TransformPoint(instanceMatrix, localPosition) + driftOffsetWS;
+                float3 basePositionWS = TransformPoint(instanceMatrix, localPosition) + driftOffsetWS + floatingOriginOffsetWS;
                 float3 animatedPositionWS = basePositionWS;
                 float3 wakeTrailOffset = ResolveWakeTrailOffset(basePositionWS, baseNormalWS, bendMask, heightMask, instanceType);
 
@@ -688,7 +736,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                         float2 noiseFlow = float2(
                             sin(phase),
                             cos(phase * 0.71 + heightMask * _KelpCurrentFrequency));
-                        float2 kelpFlow = SafeNormalize2(currentVector + noiseFlow * max(currentStrength, 0.15));
+                        float2 kelpFlow = ResolvePlanarOceanFlowDirection(currentVector + noiseFlow * currentStrength);
                         float kelpAmplitude = _KelpCurrentAmplitude;
                         #if defined(_QUALITY_MX350)
                         kelpAmplitude *= 0.8;
@@ -711,7 +759,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                         float verticalFromRoot = basePositionWS.y - renderOriginWS.y;
                         renderOriginWS.y = resolvedWaterLevel + driftOffsetWS.y + waveLift;
                         animatedPositionWS.y = renderOriginWS.y + verticalFromRoot + bob * bendMask;
-                        float2 surfaceDrift = SafeNormalize2(float2(sin(phase * 0.73), cos(phase * 0.91))) + currentVector * 0.25;
+                        float2 surfaceDrift = currentDirection + float2(sin(phase * 0.73), cos(phase * 0.91)) * (currentStrength * 0.15);
                         animatedPositionWS.xz += SafeNormalize2(surfaceDrift) * (_SargassumWaveAmplitude * 0.22 * bendMask * detailAmplitude);
                         float pulsePhase = timeValue * _SargassumPulsationSpeed + instanceNoise * 9.7 + organicDensity * (_SargassumPulsationFrequency * 6.28318);
                         float pulse = sin(pulsePhase) * _SargassumPulsationAmplitude * edgePulse * bendMask * detailAmplitude;
@@ -746,7 +794,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
 
                     animatedPositionWS = ResolveBillboardPositionWS(renderOriginWS, localPosition, instanceHeight, instanceWidth, heightMask);
 
-                    float2 farFlow = SafeNormalize2(currentVector + float2(sin(farPhase), cos(farPhase * 0.83)) * max(currentStrength, 0.2));
+                    float2 farFlow = ResolvePlanarOceanFlowDirection(currentVector + float2(sin(farPhase), cos(farPhase * 0.83)) * currentStrength);
                     float farSwayStrength = instanceType < 0.5 ? _GrassWindAmplitude * 0.55 : _KelpCurrentAmplitude * 0.42;
                     animatedPositionWS += wakeTrailOffset * 0.8;
                     animatedPositionWS.xz += farFlow * (farSwayStrength * bendMask * lodAlpha);
@@ -868,6 +916,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 half3 edgeBloomTint = lerp(kelpGoldTint, sargassumGoldTint, sargassumMask);
                 half3 edgeBloom = edgeBloomTint * (edgeBloomMask * _EdgeBloomStrength * (0.35h + 0.65h * max(kelpMask, sargassumMask)));
                 half rimLightingVisibility = max(sunVisibility, ambientVisibility);
+                half localCausticMask = ResolveLocalLightCaustic(input.positionWS, normalWS, input.heightMask);
                 half3 finalColor = diffuse + transmission + tipColor * rim * (0.08h * rimLightingVisibility);
                 finalColor += anisotropicSss * mainLight.color * sunVisibility;
                 finalColor += edgeBloom * mainLight.color * (1.45h * sunVisibility);
@@ -887,7 +936,8 @@ Shader "Hecton8/Vegetation/IndirectStrip"
 
                     half localNdotL = saturate(dot(normalWS, addLight.direction));
                     half localBacklight = saturate(dot(-normalWS, addLight.direction));
-                    half3 localContribution = gradientColor * (addLight.color * localNdotL * attenuation);
+                    half causticLightMask = lerp(1.0h, localCausticMask, saturate(localNdotL * attenuation));
+                    half3 localContribution = gradientColor * (addLight.color * localNdotL * attenuation * causticLightMask);
                     half3 localTranslucency = edgeBloomTint * (localBacklight * input.heightMask * attenuation * (_TranslucencyStrength * 0.8h));
                     half phaseCos = saturate(dot(viewDirectionWS, -addLight.direction));
                     half forwardScatter = EvaluateSchlickPhase(phaseCos, 0.68h);

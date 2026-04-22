@@ -378,7 +378,7 @@ namespace Hecton8.World
                 if (voxelEngine == null)
                     return;
 
-                caveVolume = await voxelEngine.GenerateVolumeAsync(position, seed, preset, token);
+                caveVolume = await voxelEngine.GenerateVolumeAsync(position, seed, preset, lodLevel: 0, ct: token);
                 if (caveVolume == null)
                 {
                     LogNoGeometry(position);

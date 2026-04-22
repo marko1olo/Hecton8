@@ -1,11 +1,14 @@
+#pragma kernel ClearLatchStats
+#pragma kernel ClearSpatialGrid
+#pragma kernel BuildSpatialGrid
 #pragma kernel CSMain
 
 struct BoidData
 {
     float3 Position;
     float3 Velocity;
-    float Seed;
     float Panic;
+    float State;
 };
 
 struct GrazingAnchorData
@@ -48,7 +51,7 @@ struct MassiveThreatData
     float InnerRadius;
     float PanicRadius;
     float Strength;
-    float RemainingDuration;
+    float EndTime;
     float3 Padding;
 };
 
@@ -60,6 +63,9 @@ StructuredBuffer<FormationObstacleData> _FormationObstacles;
 StructuredBuffer<LeviathanNodeData> _LeviathanNodes;
 StructuredBuffer<MassiveThreatData> _MassiveThreats;
 RWStructuredBuffer<int> _LatchStats;
+RWStructuredBuffer<int> _SpatialGridHeads;
+RWStructuredBuffer<int> _SpatialGridCounts;
+RWStructuredBuffer<int> _SpatialGridNext;
 
 Texture2D<float4> _DensityTex;
 SamplerState sampler_DensityTex;
@@ -79,6 +85,8 @@ float _MaxSpeed;
 float _PanicSpeedBoost;
 float _PerceptionRadius;
 float _SeparationRadius;
+float _BoidBodyRadius;
+int _SpatialGridMaxBoidsPerCell;
 float _SeparationWeight;
 float _AlignmentWeight;
 float _CohesionWeight;
@@ -97,6 +105,7 @@ float _GrazingRestSpeedScale;
 float _GrazingRestHoldThreshold;
 float _CanopyAffinityWeight;
 float _SimulationTime;
+float _PhaseOffset;
 float3 _PlayerPositionWS;
 float3 _PlayerVelocityWS;
 float3 _PlayerRightWS;
@@ -143,6 +152,11 @@ float _LeviathanSurroundThreatThreshold;
 float _LeviathanSurroundRadius;
 float _LeviathanSurroundWeight;
 float _LeviathanSurroundSpinSpeed;
+float _LeviathanModeBlend;
+float3 _SpatialGridMinWS;
+float3 _SpatialGridCellSize;
+float4 _SpatialGridResolution;
+float _ConsumedCollapseSpeed;
 
 #define LATCH_STATS_QUANTIZE 2048.0
 #define LATCH_STATS_COUNT_INDEX 0
@@ -152,6 +166,19 @@ float _LeviathanSurroundSpinSpeed;
 
 #define THREAD_GROUP_SIZE 64
 #define EPSILON 0.0001
+#define BOID_STATE_ALIVE 0.0
+#define BOID_STATE_FLEE 1.0
+#define BOID_STATE_CONSUMED 2.0
+
+float GetPhaseTime()
+{
+    return _SimulationTime + _PhaseOffset;
+}
+
+float SeedFromIndex(uint index)
+{
+    return Hash11((float)index * 0.6180339 + 0.12345);
+}
 
 float Hash11(float inputValue)
 {
@@ -165,6 +192,23 @@ float3 SafeNormalize(float3 value)
         return float3(0.0, 0.0, 0.0);
 
     return value * rsqrt(lengthSq);
+}
+
+int3 ResolveGridResolution()
+{
+    return max(int3(1, 1, 1), (int3)round(_SpatialGridResolution.xyz));
+}
+
+int FlattenGridCell(int3 cell, int3 resolution)
+{
+    return cell.x + cell.y * resolution.x + cell.z * resolution.x * resolution.y;
+}
+
+int3 ResolveGridCell(float3 positionWS, int3 resolution)
+{
+    float3 safeCellSize = max(_SpatialGridCellSize, float3(0.001, 0.001, 0.001));
+    float3 local = (positionWS - _SpatialGridMinWS) / safeCellSize;
+    return clamp((int3)floor(local), int3(0, 0, 0), resolution - 1);
 }
 
 float SampleDensity01(float2 worldXZ)
@@ -243,6 +287,64 @@ void ApplyObstacleRepulsion(float3 positionWS, float bodyRadius, out float3 obst
     }
 }
 
+[numthreads(1, 1, 1)]
+void ClearLatchStats(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    if (dispatchThreadID.x != 0)
+        return;
+
+    _LatchStats[LATCH_STATS_COUNT_INDEX] = 0;
+    _LatchStats[LATCH_STATS_SUM_X_INDEX] = 0;
+    _LatchStats[LATCH_STATS_SUM_Y_INDEX] = 0;
+    _LatchStats[LATCH_STATS_SUM_Z_INDEX] = 0;
+    _LatchStats[4] = 0;
+    _LatchStats[5] = 0;
+    _LatchStats[6] = 0;
+}
+
+[numthreads(THREAD_GROUP_SIZE, 1, 1)]
+void ClearSpatialGrid(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    int3 resolution = ResolveGridResolution();
+    int cellCount = resolution.x * resolution.y * resolution.z;
+    uint cellIndex = dispatchThreadID.x;
+    if (cellIndex >= cellCount)
+        return;
+
+    _SpatialGridHeads[cellIndex] = -1;
+    _SpatialGridCounts[cellIndex] = 0;
+}
+
+[numthreads(THREAD_GROUP_SIZE, 1, 1)]
+void BuildSpatialGrid(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    uint index = dispatchThreadID.x;
+    if (index >= _BoidCount)
+        return;
+
+    _SpatialGridNext[index] = -1;
+
+    BoidData boid = _BoidsBufferRead[index];
+    if (boid.State >= BOID_STATE_CONSUMED - 0.5)
+        return;
+
+    int3 resolution = ResolveGridResolution();
+    int3 cell = ResolveGridCell(boid.Position + _GlobalDriftDelta, resolution);
+    int cellIndex = FlattenGridCell(cell, resolution);
+    int previousCount = 0;
+    InterlockedAdd(_SpatialGridCounts[cellIndex], 1, previousCount);
+    if (previousCount >= max(_SpatialGridMaxBoidsPerCell, 1))
+    {
+        int ignoredCount = 0;
+        InterlockedAdd(_SpatialGridCounts[cellIndex], -1, ignoredCount);
+        return;
+    }
+
+    int previousHead = -1;
+    InterlockedExchange(_SpatialGridHeads[cellIndex], (int)index, previousHead);
+    _SpatialGridNext[index] = previousHead;
+}
+
 [numthreads(THREAD_GROUP_SIZE, 1, 1)]
 void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
@@ -251,9 +353,24 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         return;
 
     BoidData selfBoid = _BoidsBufferRead[index];
+    if (selfBoid.State >= BOID_STATE_CONSUMED - 0.5)
+    {
+        BoidData consumedBoid = selfBoid;
+        consumedBoid.Velocity = float3(0.0, 0.0, 0.0);
+        consumedBoid.Panic = saturate(selfBoid.Panic + _DeltaTime * max(_ConsumedCollapseSpeed, 0.01));
+        consumedBoid.State = BOID_STATE_CONSUMED;
+        _BoidsBufferWrite[index] = consumedBoid;
+        return;
+    }
+
+    float seed = SeedFromIndex(index);
     float3 position = selfBoid.Position + _GlobalDriftDelta;
     float3 velocity = selfBoid.Velocity;
     float panic = max(0.0, selfBoid.Panic - _PanicDecay * _DeltaTime);
+    float state = selfBoid.State;
+    float phaseTime = GetPhaseTime();
+    int3 gridResolution = ResolveGridResolution();
+    int3 homeCell = ResolveGridCell(position, gridResolution);
 
     float perceptionRadiusSq = _PerceptionRadius * _PerceptionRadius;
     float separationRadiusSq = _SeparationRadius * _SeparationRadius;
@@ -264,25 +381,50 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     float separationCount = 0.0;
 
     [loop]
-    for (uint otherIndex = 0; otherIndex < _BoidCount; otherIndex++)
+    for (int offsetZ = -1; offsetZ <= 1; offsetZ++)
     {
-        if (otherIndex == index)
-            continue;
-
-        BoidData otherBoid = _BoidsBufferRead[otherIndex];
-        float3 toOther = otherBoid.Position - selfBoid.Position;
-        float distanceSq = dot(toOther, toOther);
-        if (distanceSq > perceptionRadiusSq || distanceSq <= EPSILON)
-            continue;
-
-        alignmentSum += otherBoid.Velocity;
-        cohesionSum += otherBoid.Position;
-        neighbourCount += 1.0;
-
-        if (distanceSq <= separationRadiusSq)
+        [loop]
+        for (int offsetY = -1; offsetY <= 1; offsetY++)
         {
-            separationSum -= toOther * rsqrt(distanceSq + 0.025);
-            separationCount += 1.0;
+            [loop]
+            for (int offsetX = -1; offsetX <= 1; offsetX++)
+            {
+                int3 neighbourCell = homeCell + int3(offsetX, offsetY, offsetZ);
+                if (any(neighbourCell < 0) || neighbourCell.x >= gridResolution.x || neighbourCell.y >= gridResolution.y || neighbourCell.z >= gridResolution.z)
+                    continue;
+
+                int otherIndex = _SpatialGridHeads[FlattenGridCell(neighbourCell, gridResolution)];
+                int visitedInCell = 0;
+                [loop]
+                while (otherIndex >= 0 && visitedInCell < max(_SpatialGridMaxBoidsPerCell, 1))
+                {
+                    int nextIndex = _SpatialGridNext[otherIndex];
+                    visitedInCell++;
+                    if ((uint)otherIndex != index)
+                    {
+                        BoidData otherBoid = _BoidsBufferRead[otherIndex];
+                        if (otherBoid.State < BOID_STATE_CONSUMED - 0.5)
+                        {
+                            float3 toOther = otherBoid.Position - selfBoid.Position;
+                            float distanceSq = dot(toOther, toOther);
+                            if (distanceSq <= perceptionRadiusSq && distanceSq > EPSILON)
+                            {
+                                alignmentSum += otherBoid.Velocity;
+                                cohesionSum += otherBoid.Position;
+                                neighbourCount += 1.0;
+
+                                if (distanceSq <= separationRadiusSq)
+                                {
+                                    separationSum -= toOther * rsqrt(distanceSq + 0.025);
+                                    separationCount += 1.0;
+                                }
+                            }
+                        }
+                    }
+
+                    otherIndex = nextIndex;
+                }
+            }
         }
     }
 
@@ -298,11 +440,17 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         : max(playerSpeedGate * playerThreatGate, _HeadlightPanic * playerThreatGate);
     float panicFromMassive = 0.0;
     float3 fleeFromMassive = float3(0.0, 0.0, 0.0);
+    bool consumedByLeviathan = false;
     [loop]
     for (uint threatIndex = 0; threatIndex < _MassiveThreatCount; threatIndex++)
     {
         MassiveThreatData threat = _MassiveThreats[threatIndex];
-        if (threat.Strength <= 0.0 || threat.RemainingDuration <= 0.0)
+        if (threat.Strength <= 0.0 || threat.EndTime <= phaseTime)
+            continue;
+
+        float3 fieldDelta = abs(threat.Position - _FieldCenterWS);
+        float3 fieldLimit = _FieldExtents + threat.PanicRadius;
+        if (any(fieldDelta > fieldLimit))
             continue;
 
         float3 awayFromThreat = position - threat.Position;
@@ -315,9 +463,31 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         float threatPanic = threatGate * threat.Strength;
         panicFromMassive = max(panicFromMassive, threatPanic);
         fleeFromMassive += SafeNormalize(awayFromThreat) * threatPanic;
+        if (_LeviathanModeBlend < 0.001)
+            state = max(state, BOID_STATE_FLEE);
+
+        float mouthRadius = max(threat.InnerRadius * 0.85, _SeparationRadius * 0.5);
+        if (_LeviathanModeBlend < 0.001 && distanceToThreat <= mouthRadius)
+        {
+            consumedByLeviathan = true;
+            break;
+        }
     }
 
     panic = max(panic, max(max(panicFromCut, panicFromPlayer), panicFromMassive));
+    if (state >= BOID_STATE_FLEE && panic < 0.05)
+        state = BOID_STATE_ALIVE;
+
+    if (consumedByLeviathan)
+    {
+        BoidData consumedBoid;
+        consumedBoid.Position = position;
+        consumedBoid.Velocity = float3(0.0, 0.0, 0.0);
+        consumedBoid.Panic = 0.0;
+        consumedBoid.State = BOID_STATE_CONSUMED;
+        _BoidsBufferWrite[index] = consumedBoid;
+        return;
+    }
 
     float density = _DeepMode > 0.5 ? 1.0 : SampleDensity01(worldXZ);
     float effectiveDensity = _DeepMode > 0.5 ? 1.0 : density * (1.0 - cutMask);
@@ -370,7 +540,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 
         float anchorDistance = sqrt(anchorDistanceSq + EPSILON);
         float anchorFalloff = 1.0 - saturate(anchorDistance / max(anchorRadius, 0.001));
-        float phase = selfBoid.Seed * 6.2831853 + anchor.Phase * 6.2831853;
+        float phase = seed * 6.2831853 + anchor.Phase * 6.2831853;
         float3 swirl = float3(-toAnchor.z, sin(phase) * 0.18, toAnchor.x);
         float deepAnchorBlend = saturate(_DeepMode);
         float3 anchorForce = SafeNormalize(toAnchor) * lerp(0.78, 0.96, deepAnchorBlend) + SafeNormalize(swirl) * lerp(0.22, 0.04, deepAnchorBlend);
@@ -386,36 +556,39 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     }
 
     float feedingHold = 0.0;
-    if (_LeviathanMode < 0.5 && grazingWeightSum > 0.0 && panic < 0.2)
+    float leviathanModeBlend = saturate(_LeviathanModeBlend);
+    float nonLeviathanBlend = 1.0 - leviathanModeBlend;
+
+    if (grazingWeightSum > 0.0 && panic < 0.2 && nonLeviathanBlend > 0.001)
     {
         float grazingPullWeight = lerp(_GrazingWeight, max(_GrazingWeight, _DeepClusterWeight), saturate(_DeepMode));
-        acceleration += SafeNormalize(grazingForce / grazingWeightSum) * ((1.0 - panic) * grazingPullWeight);
-        float grazePauseSignal = sin(_SimulationTime * lerp(1.35, 1.85, saturate(_DeepMode)) + selfBoid.Seed * 11.0 + grazingHoldPhase * 6.2831853) * 0.5 + 0.5;
+        acceleration += SafeNormalize(grazingForce / grazingWeightSum) * ((1.0 - panic) * grazingPullWeight * nonLeviathanBlend);
+        float grazePauseSignal = sin(phaseTime * lerp(1.35, 1.85, saturate(_DeepMode)) + seed * 11.0 + grazingHoldPhase * 6.2831853) * 0.5 + 0.5;
         float grazeHold = saturate((grazingHoldPeak - _GrazingRestHoldThreshold) / max(1.0 - _GrazingRestHoldThreshold, 0.001));
-        feedingHold = grazeHold * saturate((grazePauseSignal - lerp(0.72, 0.6, saturate(_DeepMode))) / lerp(0.18, 0.24, saturate(_DeepMode))) * (1.0 - panic);
+        feedingHold = grazeHold * saturate((grazePauseSignal - lerp(0.72, 0.6, saturate(_DeepMode))) / lerp(0.18, 0.24, saturate(_DeepMode))) * (1.0 - panic) * nonLeviathanBlend;
         if (feedingHold > 0.0)
             acceleration += SafeNormalize(closestAnchorDelta) * (feedingHold * grazingPullWeight * lerp(0.3, 0.6, saturate(_DeepMode)));
     }
 
-    if (_LeviathanMode < 0.5 && _DeepMode < 0.5 && panic < 0.2 && _CanopyAffinityWeight > 0.0)
+    if (_DeepMode < 0.5 && panic < 0.2 && _CanopyAffinityWeight > 0.0 && nonLeviathanBlend > 0.001)
     {
         float calmCanopyThreshold = saturate(_DensityThreshold * 0.85);
         float canopyAffinity = saturate((effectiveDensity - calmCanopyThreshold) / max(1.0 - calmCanopyThreshold, 0.001));
         if (canopyAffinity > 0.0)
         {
             float3 canopyForce = SafeNormalize(float3(densityGradient.x, 0.0, densityGradient.y));
-            acceleration += canopyForce * ((1.0 - panic) * canopyAffinity * _CanopyAffinityWeight);
+            acceleration += canopyForce * ((1.0 - panic) * canopyAffinity * _CanopyAffinityWeight * nonLeviathanBlend);
         }
     }
 
-    if (_FormationMode > 0.5 && _FormationBeaconCount > 0 && panic < _FormationBreakPanicThreshold)
+    if (_FormationMode > 0.5 && _FormationBeaconCount > 0 && panic < _FormationBreakPanicThreshold && nonLeviathanBlend > 0.001)
     {
         FormationBeaconData beacon = _FormationBeacons[index % _FormationBeaconCount];
         float formationCalm = 1.0 - saturate(panic / max(_FormationBreakPanicThreshold, 0.001));
-        float baseAngle = selfBoid.Seed * 6.2831853 + beacon.Phase * 6.2831853 + _SimulationTime * 0.18 + index * 0.03125;
-        float pulse = sin(_SimulationTime * _FormationPulseSpeed + beacon.Phase * 6.2831853 + selfBoid.Seed * 9.0);
+        float baseAngle = seed * 6.2831853 + beacon.Phase * 6.2831853 + phaseTime * 0.18 + index * 0.03125;
+        float pulse = sin(phaseTime * _FormationPulseSpeed + beacon.Phase * 6.2831853 + seed * 9.0);
         float ringRadius = max(_FormationRingThickness, beacon.Radius * (1.0 + pulse * _FormationPulseAmplitude));
-        float verticalWave = sin(_SimulationTime * (_FormationPulseSpeed * 0.73) + selfBoid.Seed * 13.0) * (_FormationRingThickness * 0.35);
+        float verticalWave = sin(phaseTime * (_FormationPulseSpeed * 0.73) + seed * 13.0) * (_FormationRingThickness * 0.35);
         float3 ringOffset = float3(cos(baseAngle), verticalWave, sin(baseAngle)) * ringRadius;
         float3 ringTarget = beacon.Position + ringOffset;
         float3 obstacleForce = float3(0.0, 0.0, 0.0);
@@ -425,13 +598,13 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         float3 radialForce = SafeNormalize(toRingTarget);
         float3 tangentForce = SafeNormalize(cross(float3(0.0, 1.0, 0.0), SafeNormalize(ringOffset)));
         float3 targetVelocity = tangentForce * (_CruiseSpeed * lerp(0.65, 1.05, formationCalm));
-        acceleration += radialForce * (_FormationWeight * formationCalm * beacon.Strength);
-        acceleration += SafeNormalize(targetVelocity - velocity) * (_FormationWeight * 0.45 * formationCalm * beacon.Strength);
+        acceleration += radialForce * (_FormationWeight * formationCalm * beacon.Strength * nonLeviathanBlend);
+        acceleration += SafeNormalize(targetVelocity - velocity) * (_FormationWeight * 0.45 * formationCalm * beacon.Strength * nonLeviathanBlend);
         if (dot(obstacleForce, obstacleForce) > EPSILON)
-            acceleration += SafeNormalize(obstacleForce) * (_FormationObstacleWeight * formationCalm);
+            acceleration += SafeNormalize(obstacleForce) * (_FormationObstacleWeight * formationCalm * nonLeviathanBlend);
     }
 
-    if (_LeviathanMode > 0.5 && _LeviathanNodeCount > 1)
+    if (leviathanModeBlend > 0.001 && _LeviathanNodeCount > 1)
     {
         float bodyT = _BoidCount > 1 ? (float)index / max((float)(_BoidCount - 1), 1.0) : 0.0;
         LeviathanNodeData previousNode = _LeviathanNodes[0];
@@ -462,7 +635,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         if (dot(lateral, lateral) <= EPSILON)
             lateral = float3(1.0, 0.0, 0.0);
         float3 vertical = SafeNormalize(cross(splineTangent, lateral));
-        float wavePhase = (_SimulationTime * _LeviathanWaveFrequency) + bodyT * 18.0 + selfBoid.Seed * 6.2831853;
+        float wavePhase = (phaseTime * _LeviathanWaveFrequency) + bodyT * 18.0 + seed * 6.2831853;
         float lateralWave = sin(wavePhase) * (bodyRadius * _LeviathanWaveAmplitude);
         float verticalWaveOffset = cos(wavePhase * 0.63) * (bodyRadius * _LeviathanWaveAmplitude * 0.35);
         float3 leviathanTarget = splinePosition + lateral * lateralWave + vertical * verticalWaveOffset;
@@ -470,9 +643,9 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         float leviathanThreatScale = lerp(0.85, 1.45, saturate(_LeviathanThreatLevel));
         float surroundAttack = saturate((_LeviathanThreatLevel - _LeviathanSurroundThreatThreshold) / max(1.0 - _LeviathanSurroundThreatThreshold, 0.001));
 
-        float ringAngle = bodyT * 6.2831853 + _SimulationTime * _LeviathanSurroundSpinSpeed + selfBoid.Seed * 0.35;
+        float ringAngle = bodyT * 6.2831853 + phaseTime * _LeviathanSurroundSpinSpeed + seed * 0.35;
         float ringRadius = max(_LeviathanSurroundRadius, bodyRadius * 2.4);
-        float ringPulse = sin(_SimulationTime * (_LeviathanWaveFrequency * 0.7) + bodyT * 12.0 + selfBoid.Seed * 3.1415926);
+        float ringPulse = sin(phaseTime * (_LeviathanWaveFrequency * 0.7) + bodyT * 12.0 + seed * 3.1415926);
         float3 ringOffset = float3(cos(ringAngle), ringPulse * (bodyRadius * 0.18), sin(ringAngle)) * (ringRadius + ringPulse * bodyRadius * 0.22);
         float3 ringTarget = _PlayerPositionWS + ringOffset;
         float3 ringTangent = SafeNormalize(float3(-sin(ringAngle), 0.0, cos(ringAngle)));
@@ -489,19 +662,19 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         ApplyObstacleRepulsion(position, bodyRadius, obstacleForce, targetPosition);
 
         float3 toLeviathanTarget = targetPosition - position;
-        acceleration += SafeNormalize(toLeviathanTarget) * ((_LeviathanBodyWeight + _LeviathanSurroundWeight * surroundAttack) * leviathanCalm * leviathanThreatScale);
-        acceleration += SafeNormalize(targetVelocity - velocity) * ((_LeviathanForwardWeight + _LeviathanSurroundWeight * surroundAttack * 0.35) * leviathanThreatScale);
+        acceleration += SafeNormalize(toLeviathanTarget) * ((_LeviathanBodyWeight + _LeviathanSurroundWeight * surroundAttack) * leviathanCalm * leviathanThreatScale * leviathanModeBlend);
+        acceleration += SafeNormalize(targetVelocity - velocity) * ((_LeviathanForwardWeight + _LeviathanSurroundWeight * surroundAttack * 0.35) * leviathanThreatScale * leviathanModeBlend);
         if (surroundAttack > 0.0)
         {
             float3 ringCenterForce = SafeNormalize(_PlayerPositionWS - position);
-            acceleration += ringCenterForce * (_LeviathanSurroundWeight * surroundAttack * leviathanCalm * 0.3);
+            acceleration += ringCenterForce * (_LeviathanSurroundWeight * surroundAttack * leviathanCalm * 0.3 * leviathanModeBlend);
         }
 
         if (dot(obstacleForce, obstacleForce) > EPSILON)
-            acceleration += SafeNormalize(obstacleForce) * (_FormationObstacleWeight * leviathanCalm);
+            acceleration += SafeNormalize(obstacleForce) * (_FormationObstacleWeight * leviathanCalm * leviathanModeBlend);
     }
 
-    if (_LeviathanMode < 0.5 && _ParasiteMode > 0.5 && _ParasiteAffinityWeight > 0.0)
+    if (_ParasiteMode > 0.5 && _ParasiteAffinityWeight > 0.0 && nonLeviathanBlend > 0.001)
     {
         float3 toPlayer = _PlayerPositionWS - position;
         float playerDistanceToHull = length(toPlayer);
@@ -515,7 +688,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 
             float3 affinityDirection = SafeNormalize(toPlayer + orbitDirection * lerp(0.35, 0.08, saturate(_ParasiteAggression)));
             float affinityWeight = _ParasiteAffinityWeight * lerp(0.55, 1.85, saturate(_ParasiteAggression));
-            acceleration += affinityDirection * parasiteGate * affinityWeight;
+            acceleration += affinityDirection * parasiteGate * affinityWeight * nonLeviathanBlend;
 
             if (playerDistanceToHull < _ParasiteLatchRadius)
             {
@@ -566,7 +739,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
             acceleration += SafeNormalize(fromCamera) * (cameraAvoidGate * _CameraAvoidWeight);
     }
 
-    float noisePhase = selfBoid.Seed * 17.0 + position.x * 0.13 + position.z * 0.21 + position.y * 0.09;
+    float noisePhase = seed * 17.0 + position.x * 0.13 + position.z * 0.21 + position.y * 0.09;
     float3 noiseForce = float3(
         Hash11(noisePhase + 1.0) * 2.0 - 1.0,
         Hash11(noisePhase + 2.0) * 2.0 - 1.0,
@@ -609,7 +782,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     float speed = length(velocity);
     if (speed <= EPSILON)
     {
-        float fallbackAngle = selfBoid.Seed * 6.2831853 + index * 0.173;
+        float fallbackAngle = seed * 6.2831853 + index * 0.173;
         velocity = float3(cos(fallbackAngle), 0.0, sin(fallbackAngle)) * targetMinSpeed;
     }
     else
@@ -618,7 +791,76 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         velocity = velocity * (clampedSpeed / speed);
     }
 
-    position += velocity * _DeltaTime;
+    float3 predictedPosition = position + velocity * _DeltaTime;
+    float minDistance = max(_BoidBodyRadius * 2.0, 0.001);
+    float minDistanceSq = minDistance * minDistance;
+    float3 hardConstraintOffset = float3(0.0, 0.0, 0.0);
+    float hardConstraintWeight = 0.0;
+
+    [loop]
+    for (int offsetZ = -1; offsetZ <= 1; offsetZ++)
+    {
+        [loop]
+        for (int offsetY = -1; offsetY <= 1; offsetY++)
+        {
+            [loop]
+            for (int offsetX = -1; offsetX <= 1; offsetX++)
+            {
+                int3 neighbourCell = homeCell + int3(offsetX, offsetY, offsetZ);
+                if (any(neighbourCell < 0) || neighbourCell.x >= gridResolution.x || neighbourCell.y >= gridResolution.y || neighbourCell.z >= gridResolution.z)
+                    continue;
+
+                int otherIndex = _SpatialGridHeads[FlattenGridCell(neighbourCell, gridResolution)];
+                int visitedInCell = 0;
+                [loop]
+                while (otherIndex >= 0 && visitedInCell < max(_SpatialGridMaxBoidsPerCell, 1))
+                {
+                    int nextIndex = _SpatialGridNext[otherIndex];
+                    visitedInCell++;
+                    if ((uint)otherIndex != index)
+                    {
+                        BoidData otherBoid = _BoidsBufferRead[otherIndex];
+                        if (otherBoid.State < BOID_STATE_CONSUMED - 0.5)
+                        {
+                            float3 toSelf = predictedPosition - (otherBoid.Position + _GlobalDriftDelta);
+                            float distanceSq = dot(toSelf, toSelf);
+                            if (distanceSq < minDistanceSq)
+                            {
+                                float3 separationNormal;
+                                if (distanceSq <= EPSILON)
+                                {
+                                    float fallbackAngle = (seed + (float)otherIndex * 0.6180339) * 6.2831853;
+                                    separationNormal = float3(cos(fallbackAngle), 0.0, sin(fallbackAngle));
+                                }
+                                else
+                                {
+                                    separationNormal = toSelf * rsqrt(distanceSq);
+                                }
+
+                                float distanceValue = sqrt(max(distanceSq, EPSILON));
+                                float penetration = minDistance - distanceValue;
+                                hardConstraintOffset += separationNormal * (penetration * 0.5);
+                                hardConstraintWeight += 1.0;
+                            }
+                        }
+                    }
+
+                    otherIndex = nextIndex;
+                }
+            }
+        }
+    }
+
+    if (hardConstraintWeight > 0.0)
+    {
+        float3 correctedPosition = predictedPosition + hardConstraintOffset / hardConstraintWeight;
+        velocity += (correctedPosition - predictedPosition) / max(_DeltaTime, 0.0001);
+        position = correctedPosition;
+    }
+    else
+    {
+        position = predictedPosition;
+    }
 
     if (_CameraAvoidRadius > 0.0)
     {
@@ -642,7 +884,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     BoidData result;
     result.Position = position;
     result.Velocity = velocity;
-    result.Seed = selfBoid.Seed;
     result.Panic = panic;
+    result.State = state;
     _BoidsBufferWrite[index] = result;
 }

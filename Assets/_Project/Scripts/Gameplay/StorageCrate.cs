@@ -23,10 +23,12 @@
 
 using Hecton.Localization;
 using Hecton8.Audio;
+using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Interaction;
 using Hecton8.Inventory;
 using Hecton8.Items;
+using Hecton8.Power;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -149,6 +151,8 @@ namespace Hecton8.Gameplay
         private Transform _transform;
         private Collider _collider;
         private CrateState _state;
+        private PowerNode _logisticsPowerNode;
+        private int[] _reservedSlotIds;
 
         /// <summary>
         /// Cached animator hash for open trigger.
@@ -191,6 +195,7 @@ namespace Hecton8.Gameplay
         {
             _transform = transform;
             _collider = GetComponent<Collider>();
+            _logisticsPowerNode = GetComponent<PowerNode>() ?? GetComponentInParent<PowerNode>();
             _openTriggerHash = Animator.StringToHash(string.IsNullOrEmpty(openTriggerName) ? "Open" : openTriggerName);
             _closeTriggerHash = Animator.StringToHash(string.IsNullOrEmpty(closeTriggerName) ? "Close" : closeTriggerName);
 
@@ -204,12 +209,14 @@ namespace Hecton8.Gameplay
 
             // Set initial state
             _state = initialState;
+            EnsureReservationCapacity();
         }
 
         private void OnEnable()
         {
             LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
             RebuildLocalizedTextCache();
+            BaseLogisticsNetwork.RegisterStorage(this, _logisticsPowerNode);
             // Reset to initial state if needed
             if (_state == CrateState.Opening)
             {
@@ -220,6 +227,7 @@ namespace Hecton8.Gameplay
         private void OnDisable()
         {
             LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+            BaseLogisticsNetwork.UnregisterStorage(this);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -479,6 +487,50 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
+        /// Counts how many units of the requested item are currently stored inside this crate.
+        /// Used by the base logistics network; does not require the crate to be open.
+        /// </summary>
+        public int CountItem(ItemData item)
+        {
+            if (containedItems == null || item == null)
+                return 0;
+
+            int count = 0;
+            for (int i = 0; i < containedItems.Length; i++)
+            {
+                if (ReferenceEquals(containedItems[i], item) && !IsReservedSlot(i))
+                    count++;
+            }
+
+            return count;
+        }
+
+        /// <summary>
+        /// Removes a single matching item for logistics consumption.
+        /// This bypasses the open/closed interaction state because internal base routing is not a player action.
+        /// </summary>
+        public bool TryConsumeItem(ItemData item)
+        {
+            if (containedItems == null || item == null)
+                return false;
+
+            for (int i = 0; i < containedItems.Length; i++)
+            {
+                if (!ReferenceEquals(containedItems[i], item) || IsReservedSlot(i))
+                    continue;
+
+                containedItems[i] = null;
+                _reservedSlotIds[i] = 0;
+                if (IsEmpty())
+                    OnEmpty?.Invoke();
+
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// Takes an item from the crate.
         /// </summary>
         /// <param name="itemIndex">Index of the item to take.</param>
@@ -487,6 +539,7 @@ namespace Hecton8.Gameplay
         {
             if (_state != CrateState.Open) return null;
             if (containedItems == null || itemIndex < 0 || itemIndex >= containedItems.Length) return null;
+            if (IsReservedSlot(itemIndex)) return null;
 
             ItemData item = containedItems[itemIndex];
             if (item == null) return null;
@@ -517,19 +570,149 @@ namespace Hecton8.Gameplay
         {
             if (item == null) return;
 
+            EnsureReservationCapacity();
+
             // Find empty slot or expand array
             for (int i = 0; i < containedItems.Length; i++)
             {
                 if (containedItems[i] == null)
                 {
                     containedItems[i] = item;
+                    _reservedSlotIds[i] = 0;
                     return;
                 }
             }
 
             // Expand array if no empty slot
             System.Array.Resize(ref containedItems, containedItems.Length + 1);
+            System.Array.Resize(ref _reservedSlotIds, containedItems.Length);
             containedItems[containedItems.Length - 1] = item;
+            _reservedSlotIds[containedItems.Length - 1] = 0;
+        }
+
+        /// <summary>
+        /// Automated logistics insert that respects authored crate limits and never resizes storage at runtime.
+        /// </summary>
+        public bool TryAddAutomatedItem(ItemData item)
+        {
+            if (item == null || containedItems == null)
+                return false;
+
+            EnsureReservationCapacity();
+
+            for (int i = 0; i < containedItems.Length; i++)
+            {
+                if (containedItems[i] != null)
+                    continue;
+
+                containedItems[i] = item;
+                _reservedSlotIds[i] = 0;
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Checks whether the crate still has a free slot available for logistics automation.
+        /// </summary>
+        public bool HasAutomatedCapacity()
+        {
+            if (containedItems == null)
+                return false;
+
+            for (int i = 0; i < containedItems.Length; i++)
+            {
+                if (containedItems[i] == null)
+                    return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Reserve one matching unreserved item slot for a logistics transaction.
+        /// </summary>
+        public bool TryReserveItem(ItemData item, int reservationId)
+        {
+            if (containedItems == null || item == null || reservationId <= 0)
+                return false;
+
+            EnsureReservationCapacity();
+
+            for (int i = 0; i < containedItems.Length; i++)
+            {
+                if (!ReferenceEquals(containedItems[i], item) || IsReservedSlot(i))
+                    continue;
+
+                _reservedSlotIds[i] = reservationId;
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Reserve the first unreserved item slot regardless of item type. Used by generalized automation links.
+        /// </summary>
+        public bool TryReserveAnyItem(int reservationId, out ItemData item)
+        {
+            item = null;
+
+            if (containedItems == null || reservationId <= 0)
+                return false;
+
+            EnsureReservationCapacity();
+
+            for (int i = 0; i < containedItems.Length; i++)
+            {
+                if (containedItems[i] == null || IsReservedSlot(i))
+                    continue;
+
+                _reservedSlotIds[i] = reservationId;
+                item = containedItems[i];
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Release all slot reservations belonging to the provided logistics transaction.
+        /// </summary>
+        public void ReleaseReservation(int reservationId)
+        {
+            if (_reservedSlotIds == null || reservationId <= 0)
+                return;
+
+            for (int i = 0; i < _reservedSlotIds.Length; i++)
+            {
+                if (_reservedSlotIds[i] == reservationId)
+                    _reservedSlotIds[i] = 0;
+            }
+        }
+
+        /// <summary>
+        /// Commit all slot reservations belonging to the provided logistics transaction.
+        /// </summary>
+        public void CommitReservation(int reservationId)
+        {
+            if (containedItems == null || _reservedSlotIds == null || reservationId <= 0)
+                return;
+
+            bool anyRemoved = false;
+            for (int i = 0; i < containedItems.Length; i++)
+            {
+                if (_reservedSlotIds[i] != reservationId)
+                    continue;
+
+                containedItems[i] = null;
+                _reservedSlotIds[i] = 0;
+                anyRemoved = true;
+            }
+
+            if (anyRemoved && IsEmpty())
+                OnEmpty?.Invoke();
         }
 
         /// <summary>
@@ -538,6 +721,29 @@ namespace Hecton8.Gameplay
         public void Lock()
         {
             _state = CrateState.Locked;
+        }
+
+        private void EnsureReservationCapacity()
+        {
+            int itemCount = containedItems != null ? containedItems.Length : 0;
+            if (itemCount <= 0)
+            {
+                if (_reservedSlotIds == null)
+                    _reservedSlotIds = new int[0];
+
+                return;
+            }
+
+            if (_reservedSlotIds == null || _reservedSlotIds.Length != itemCount)
+                System.Array.Resize(ref _reservedSlotIds, itemCount);
+        }
+
+        private bool IsReservedSlot(int index)
+        {
+            return _reservedSlotIds != null &&
+                   index >= 0 &&
+                   index < _reservedSlotIds.Length &&
+                   _reservedSlotIds[index] != 0;
         }
 
         /// <summary>
