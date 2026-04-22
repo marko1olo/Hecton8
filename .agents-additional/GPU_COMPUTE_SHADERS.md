@@ -1,0 +1,651 @@
+
+# GPU_COMPUTE_SHADERS.md
+# HECTON-8 | Compute Mandate v1.0 | MX350-First Architecture
+
+---
+
+## §0 — HARDWARE TRUTH TABLE
+
+| Target GPU     | VRAM  | Warp Size | Max CUs | Shared Mem/CU | Preferred Dispatch |
+|----------------|-------|-----------|---------|---------------|--------------------|
+| MX350 (Pascal) | 2GB   | 32        | 5       | 48KB          | 64x1x1             |
+| GTX1660        | 6GB   | 32        | 22      | 96KB          | 256x1x1            |
+| RTX3070+       | 8GB+  | 32        | 46+     | 100KB         | 512x1x1            |
+
+**[RULE]**: Never assume >5 CUs. All kernels must saturate MX350 first. Scale up via `DISPATCH_SCALE` macro.
+
+---
+
+## §1 — BUS MANAGEMENT PROTOCOL
+
+### 1.1 PCIe Stall Prevention
+
+```
+[RULE]: NEVER call SetData/GetData inside Update/FixedUpdate.
+[RULE]: All CPU→GPU data: frame-start upload block only.
+[RULE]: All GPU→CPU readback: AsyncGPUReadback, 3-frame ring buffer delay.
+
+UPLOAD SCHEDULE (per frame):
+  Frame N:   Dispatch compute kernels
+  Frame N+1: (no CPU touch)
+  Frame N+2: (no CPU touch)
+  Frame N+3: AsyncGPUReadback.Request() safe window
+```
+
+### 1.2 Constant Buffer Layout
+
+```
+[RULE]: Group ALL per-frame uniforms into single CBUFFER. Max 1 SetBuffer call per kernel.
+
+CBUFFER _HectonFrame {
+  float3 CameraPositionWS;    // 12b
+  float  SimulationTime;      // 4b  [0..60] wrapped
+  float  PhaseOffset;         // 4b  accumulated drift compensation
+  float  DeltaTime;           // 4b
+  int    EntityCount;         // 4b
+  int    GridCellCount;       // 4b
+  float  GridCellSize;        // 4b
+  float  DepthFogDensity;     // 4b
+  float  BioluminescentPhase; // 4b
+  int    FrameIndex;          // 4b  mod 3 ring
+  float2 _pad;                // align to 16b boundary
+}  // Total: 64b — fits single cache line
+```
+
+### 1.3 Buffer Strategy Matrix
+
+```
+READ-ONLY input        → StructuredBuffer<T>
+READ-WRITE state       → RWStructuredBuffer<T>
+Raw byte addressing    → RWByteAddressBuffer (atomic counters, indirect args)
+High-freq scalar atom  → RWByteAddressBuffer (InterlockedAdd on byte offset)
+
+[FORBID]: Mixing RWStructuredBuffer and raw atomics on same resource without UAV barrier.
+[RULE]:   Indirect dispatch args → always RWByteAddressBuffer. Never StructuredBuffer.
+```
+
+---
+
+## §2 — SPATIAL GRID ARCHITECTURE
+
+### 2.1 Grid Spec
+
+```
+CellSize = NeighborSearchRadius * 1.0f   // exact alignment, no remainder waste
+GridDims = ceil(WorldBounds / CellSize)
+MaxCells = GridDims.x * GridDims.y * GridDims.z
+
+[RULE]: WorldBounds must be power-of-2 aligned. Enforce at runtime init.
+[RULE]: Max entities per cell = 32. Hard cap via InterlockedAdd guard.
+[MATH]: CellIndex(pos) = floor((pos - GridOrigin) / CellSize)
+        FlatIndex = cell.x + cell.y*GridDims.x + cell.z*GridDims.x*GridDims.y
+```
+
+### 2.2 Grid Buffer Layout
+
+```
+GridCountBuffer : RWByteAddressBuffer
+  Layout: [uint count] * MaxCells
+  Byte offset: flatIndex * 4
+
+GridEntityBuffer : RWStructuredBuffer<uint>
+  Layout: [entityId] * MaxCells * 32
+  Access: gridEntityBuffer[flatIndex * 32 + slotIndex]
+
+[RULE]: Clear GridCountBuffer via ComputeShader (not CPU memset). Dispatch ceil(MaxCells/64) groups.
+```
+
+### 2.3 Cell Insertion Kernel (Logic Kernel)
+
+```
+KERNEL: GridInsert [64x1x1]
+  entityId = groupId.x * 64 + threadId.x
+  if(entityId >= EntityCount) return
+
+  pos = EntityPositions[entityId] - CameraPositionWS  // camera-relative
+  cell = floor((pos + WorldHalfExtents) / CellSize)
+
+  [GUARD]: if any(cell < 0 || cell >= GridDims) discard entity, mark INVALID
+
+  flatIdx = FlatIndex(cell)
+  byteOff = flatIdx * 4
+
+  uint prev; InterlockedAdd(GridCountBuffer, byteOff, 1, prev)
+
+  [GUARD]: if(prev >= 32) { InterlockedAdd(GridCountBuffer, byteOff, -1); return; }
+           // rollback on overflow — grid slot exhausted
+
+  [SAFE]: isfinite(pos.x) && isfinite(pos.y) && isfinite(pos.z) — check BEFORE cell math
+          if(!isfinite) { mark entity dead; return; }
+
+  GridEntityBuffer[flatIdx * 32 + prev] = entityId
+```
+
+### 2.4 Neighbor Query (Logic Kernel)
+
+```
+FUNC: QueryNeighbors(float3 posWS, float radius) → entityId[]
+  minCell = floor((posWS - radius - GridOrigin) / CellSize)
+  maxCell = floor((posWS + radius - GridOrigin) / CellSize)
+  clamp both to [0, GridDims-1]
+
+  LOOP: cx in [minCell.x..maxCell.x]
+    LOOP: cy in [minCell.y..maxCell.y]
+      LOOP: cz in [minCell.z..maxCell.z]
+        flatIdx = FlatIndex(cx,cy,cz)
+        count = GridCountBuffer.Load(flatIdx * 4)
+        count = min(count, 32)  // clamp to safe range always
+        LOOP: i in [0..count)
+          candidate = GridEntityBuffer[flatIdx * 32 + i]
+          distSq = dot(pos-candidatePos, pos-candidatePos)
+          if(distSq < radius*radius) yield candidate
+```
+
+---
+
+## §3 — ATOM STABILITY PROTOCOL
+
+### 3.1 InterlockedAdd Safety Chain
+
+```
+ORDER OF OPERATIONS (mandatory):
+  1. isfinite() check on all float inputs
+  2. Bounds check on target buffer index
+  3. Cell capacity guard (prev >= MAX → rollback)
+  4. InterlockedAdd execute
+  5. Write payload ONLY after successful atom
+
+[FORBID]: Writing to GridEntityBuffer before verifying prev < 32.
+[FORBID]: Using InterlockedAdd on StructuredBuffer. Only ByteAddressBuffer.
+```
+
+### 3.2 Atomic Counter Pattern (Indirect Dispatch Prep)
+
+```
+RWByteAddressBuffer IndirectArgs  // stride: 12 bytes (x,y,z dispatch)
+
+RESET (frame start, separate kernel):
+  IndirectArgs.Store(0, 0)  // reset entity count
+
+INCREMENT (during cull):
+  uint slot; InterlockedAdd(IndirectArgs, 0, 1, slot)
+  if(slot >= MAX_VISIBLE) return
+  VisibleEntities[slot] = entityId
+
+READ (CPU, async, 3 frames late):
+  AsyncGPUReadback → VisibleCount for audio/gameplay systems
+  [FORBID]: Use on render hot path. Gameplay-latency only.
+```
+
+---
+
+## §4 — SIMULATION TIME & PHASE STABILITY
+
+### 4.1 Phase Wrapping Protocol
+
+```
+[MATH]: Wrap SimulationTime every 60s:
+  _PhaseOffset += floor(_SimulationTime / 60.0) * 60.0
+  _SimulationTime = fmod(_SimulationTime, 60.0)
+
+  EffectivePhase(freq, entity) = _SimulationTime * freq + _PhaseOffset + entity.seedOffset
+  BioluminescentPulse = sin(EffectivePhase * TAU)
+
+[RULE]: _PhaseOffset updated CPU-side, injected via CBUFFER. Never computed in shader.
+[RULE]: sin/cos input always in [0..TAU]. Clamp before trig.
+```
+
+### 4.2 Polynomial sin Approximation (MX350 ALU Budget)
+
+```
+[SCALE]: Replace sin(x) in inner loops with degree-5 minimax:
+  x in [-PI, PI] (normalize first)
+  sin_approx(x) = x*(1 - x²*(1/6 - x²*(1/120 - x²/5040)))
+  Max error: ~1.8e-7 — sufficient for bioluminescence flicker
+
+[SCALE]: LUT fallback for branchy paths:
+  BiolumLUT: RWStructuredBuffer<float>[256]
+  index = (uint)(phase * 256) & 0xFF
+  value = BiolumLUT[index]
+  [RULE]: LUT populated CPU-side once at init. Never rewritten per-frame.
+```
+
+---
+
+## §5 — CREATURE / ENTITY SIMULATION KERNELS
+
+### 5.1 Entity Budget
+
+```
+MAX_ENTITIES_TOTAL    = 100,000
+MAX_ENTITIES_SIMULATED = 50,000  // GPU-side full sim
+MAX_ENTITIES_LOD1      = 30,000  // position integration only
+MAX_ENTITIES_LOD2      = 20,000  // frozen, grid-tracked only
+
+LOD Assignment:
+  dist = length(entityPos - CameraPositionWS)
+  LOD0: dist < 40m   → full sim
+  LOD1: dist < 120m  → integration only
+  LOD2: dist >= 120m → grid-only, no forces
+
+[RULE]: LOD tier written to EntityMetaBuffer uint8 flag. Checked at kernel entry. Early-out.
+```
+
+### 5.2 Flocking / Swarm Kernel (Logic Kernel)
+
+```
+KERNEL: SwarmUpdate [64x1x1]
+  entityId = GlobalThreadId
+  if(entityId >= ActiveEntityCount) return
+  if(EntityMeta[entityId].lod > 0) return  // LOD1+ skip forces
+
+  pos = EntityPositions[entityId] - CameraPositionWS
+  vel = EntityVelocities[entityId]
+
+  // Neighbor accumulation
+  sepForce = float3(0,0,0)
+  alignForce = float3(0,0,0)
+  cohForce = float3(0,0,0)
+  neighborCount = 0
+
+  FOR each neighbor n in QueryNeighbors(pos, SearchRadius):
+    if(n == entityId) continue
+    offset = pos - EntityPositions[n]
+    distSq = dot(offset,offset)
+    if(distSq < SeparationRadSq):
+      sepForce += normalize(offset) * (1.0 - sqrt(distSq)/SeparationRad)
+    alignForce += EntityVelocities[n]
+    cohForce += EntityPositions[n]
+    neighborCount++
+
+  if(neighborCount > 0):
+    alignForce = normalize(alignForce/neighborCount) * AlignWeight
+    cohForce = normalize(cohForce/neighborCount - pos) * CohesionWeight
+  sepForce *= SeparationWeight
+
+  // Depth pressure (horror: creatures cluster at crush depth)
+  depthBias = saturate((pos.y - CrushDepth) / -50.0)
+  depthForce = float3(0, -depthBias * DepthPressureStrength, 0)
+
+  // Integration
+  accel = sepForce + alignForce + cohForce + depthForce
+  vel += accel * DeltaTime
+  vel = clamp(length(vel), 0, MaxSpeed) * normalize(vel)  // speed clamp, preserve dir
+  pos += vel * DeltaTime
+
+  // NaN guard before write
+  [SAFE]: if(!isfinite(pos.x+pos.y+pos.z+vel.x+vel.y+vel.z)):
+    pos = EntitySpawnPositions[entityId]  // reset to spawn
+    vel = float3(0,0,0)
+
+  EntityPositions[entityId] = pos + CameraPositionWS
+  EntityVelocities[entityId] = vel
+```
+
+### 5.3 LOD1 Integration Kernel (Logic Kernel)
+
+```
+KERNEL: LOD1PositionUpdate [64x1x1]
+  if(EntityMeta[entityId].lod != 1) return
+  pos = EntityPositions[entityId]
+  vel = EntityVelocities[entityId]
+  // No force computation — only euler integrate existing velocity
+  // Apply light drag
+  vel *= (1.0 - DragCoeff * DeltaTime)
+  pos += vel * DeltaTime
+  [SAFE]: finitecheck → reset
+  EntityPositions[entityId] = pos
+  EntityVelocities[entityId] = vel
+```
+
+---
+
+## §6 — BIOLUMINESCENCE COMPUTE
+
+### 6.1 Pulse Kernel (Logic Kernel)
+
+```
+KERNEL: BiolumUpdate [64x1x1]
+  entityId = GlobalThreadId
+  meta = EntityMeta[entityId]
+
+  t = SimulationTime + meta.phaseOffset  // unique per entity
+  base = sin_approx(fmod(t * meta.pulseFreq, TAU))  // poly approx
+
+  // Proximity amplification: player disturbs creatures
+  playerDist = length(EntityPositions[entityId] - PlayerPosition)
+  proximity = saturate(1.0 - playerDist / ProximityRadius)
+  // Exponential replaced with pow2 approximation:
+  proximityGain = proximity * proximity * ProximityGainMax
+
+  // Stress response: creature fleeing = brighter
+  speedFrac = length(EntityVelocities[entityId]) / MaxSpeed
+  stressGain = speedFrac * StressGainMax
+
+  intensity = saturate(base * 0.5 + 0.5 + proximityGain + stressGain)
+  BiolumBuffer[entityId] = half(intensity)  // write as half — halves bandwidth
+```
+
+### 6.2 Biolum-to-Render Bridge
+
+```
+[RULE]: BiolumBuffer → Texture2DArray (entity atlas) via CopyBuffer-to-Texture path.
+        Never sample RWStructuredBuffer in fragment shader directly (perf cliff on Pascal).
+[RULE]: Update atlas every 2 frames on MX350 (temporal interpolation in shader compensates).
+        Update every frame on RTX+ (SCALE macro).
+
+TEMPORAL INTERP (fragment):
+  prev = BiolumAtlas.Sample(sampler, uv, prevFrameSlice)
+  curr = BiolumAtlas.Sample(sampler, uv, currFrameSlice)
+  result = lerp(prev, curr, FrameBlendAlpha)  // FrameBlendAlpha: 0..1 per frame
+```
+
+---
+
+## §7 — FLUID / CURRENT SIMULATION
+
+### 7.1 Current Field Architecture
+
+```
+CurrentFieldTex: RenderTexture3D, R16G16B16A16_SFLOAT
+  Dims: 64x32x64 (MX350 budget) → 128x64x128 (RTX+)
+  RGB: velocity field (m/s)
+  A:   turbulence scalar
+
+[RULE]: Update CurrentField at 4Hz (not per-frame). Amortize over 15 frames.
+[MATH]: Advection step (semi-Lagrangian):
+  prevPos = texcoord - velocity * DeltaTime / FieldWorldSize
+  newVelocity = CurrentFieldTex.SampleLevel(sampler, prevPos, 0).rgb
+  // No exp/log. Pure texture fetch + lerp.
+```
+
+### 7.2 Current Force on Entities
+
+```
+FUNC: SampleCurrentForce(float3 worldPos) → float3
+  uvw = (worldPos - FieldOrigin) / FieldWorldSize
+  uvw = saturate(uvw)  // clamp to field bounds
+  sample = CurrentFieldTex.SampleLevel(BilinearClamp, uvw, 0)
+  velocity = sample.rgb
+  turbulence = sample.a
+  // Add turbulence as high-freq noise without sin:
+  // Use hash-based noise (bitwise):
+  seed = asuint(worldPos.x*73856093u) ^ asuint(worldPos.z*19349663u) ^ FrameIndex
+  hashNoise = (seed ^ seed>>13) * 1664525u + 1013904223u
+  noiseFrac = float(hashNoise & 0xFFFF) / 65535.0  // [0,1]
+  turbVec = float3(noiseFrac-0.5, 0, noiseFrac-0.3) * turbulence * TurbulenceScale
+  return velocity + turbVec
+```
+
+---
+
+## §8 — UNDERWATER PARTICLE SYSTEM (GPU)
+
+### 8.1 Particle Buffer
+
+```
+ParticleBuffer: RWStructuredBuffer<Particle>
+  Particle {
+    float3 position;     // camera-relative
+    float  lifetime;     // [0..1] normalized
+    half2  velocity;     // compressed, 4B saved per particle
+    half   size;
+    half   biolumBlend;
+    uint   flags;        // bit0=dead, bit1=debris, bit2=spore, bit3=parasite
+  }
+
+MAX_PARTICLES = 65536 (MX350) | 262144 (RTX+)
+[RULE]: Dead particles → recycled via free-list (ByteAddressBuffer atomic counter).
+```
+
+### 8.2 Particle Update Kernel (Logic Kernel)
+
+```
+KERNEL: ParticleUpdate [64x1x1]
+  p = ParticleBuffer[id]
+  if(p.flags & 1) return  // dead
+
+  p.lifetime -= DeltaTime * p.decayRate
+  if(p.lifetime <= 0):
+    p.flags |= 1  // mark dead
+    InterlockedAdd(FreeListCounter, 0, 1)  // return slot
+    ParticleBuffer[id] = p
+    return
+
+  current = SampleCurrentForce(p.position + CameraPositionWS)
+  vel = float3(p.velocity.x, 0, p.velocity.y) + current * CurrentInfluence
+  vel.y += Buoyancy * DeltaTime  // upward drift
+
+  p.position += vel * DeltaTime
+  p.velocity = half2(vel.x, vel.z)
+
+  // Biolum response: parasites glow near player
+  if(p.flags & 8):  // parasite flag
+    d = length(p.position - (PlayerPosition - CameraPositionWS))
+    p.biolumBlend = half(saturate(1.0 - d/ParasiteGlowRadius))
+
+  [SAFE]: if(!isfinite(p.position.x)): p.flags |= 1; return  // kill NaN particles
+
+  ParticleBuffer[id] = p
+```
+
+### 8.3 Parasite Count Readback
+
+```
+[RULE]: ParasiteCount (gameplay metric) read via AsyncGPUReadback only.
+        Dispatch frame N → Request readback frame N+3 → C# callback frame N+3+latency.
+        Never block render thread.
+[DATA]: Maintain ParasiteCountBuffer: RWByteAddressBuffer, single uint.
+        Reset each frame (compute clear kernel, 1 thread).
+        Increment: InterlockedAdd during ParticleUpdate when parasite near player.
+```
+
+---
+
+## §9 — PRESSURE / DEPTH PHYSICS
+
+### 9.1 Crush Depth Simulation
+
+```
+[MATH]: PressureAtDepth(y) = SeaSurfacePressure + WaterDensity * Gravity * abs(y)
+        // No exp. Linear approximation valid for game-scale depths.
+
+StructuralStress(entity):
+  p = PressureAtDepth(entity.position.y)
+  stress = saturate((p - entity.pressureThreshold) / entity.pressureRange)
+  // stress=0: fine | stress=1: critical
+  entity.hullIntegrity -= stress * StressRate * DeltaTime
+  if(entity.hullIntegrity <= 0): emit ImplodeEvent  // async, not sync dispatch
+```
+
+### 9.2 Buoyancy Grid
+
+```
+[DATA]: BuoyancyField: RWStructuredBuffer<float>[MaxCells]
+        float = water density at cell (accounts for thermoclines, debris)
+
+FUNC: SampleBuoyancy(float3 worldPos) → float
+  cell = WorldToCell(worldPos)
+  flatIdx = FlatIndex(cell)
+  localDensity = BuoyancyField[flatIdx]
+  return (localDensity - ObjectDensity) * Gravity * ObjectVolume
+  // positive = upward force
+```
+
+---
+
+## §10 — TDR PROTECTION & DISPATCH BUDGETING
+
+### 10.1 Dispatch Limits (MX350)
+
+```
+[RULE]: Max threads per dispatch: 1,048,576 (1M). Never exceed.
+[RULE]: Split large dispatches (>512 groups) across multiple frames OR use indirect dispatch.
+[RULE]: No single kernel > 2ms GPU time. Profile with RenderDoc. Hard gate at CI.
+
+TDR GUARD:
+  if(EntityCount > MAX_SAFE_DISPATCH):
+    dispatchGroups = ceil(MAX_SAFE_DISPATCH / 64)
+    // remaining entities deferred to next frame via ring offset
+    DispatchOffset = (DispatchOffset + MAX_SAFE_DISPATCH) % EntityCount
+  else:
+    dispatchGroups = ceil(EntityCount / 64)
+```
+
+### 10.2 Frame Budget Allocation (MX350 Target: 16.6ms total)
+
+```
+GridClear          : 0.2ms
+GridInsert         : 0.8ms
+SwarmUpdate (LOD0) : 2.5ms
+LOD1Update         : 0.8ms
+BiolumUpdate       : 0.6ms
+ParticleUpdate     : 1.5ms
+CurrentField (4Hz) : 0.4ms amortized
+BiolumAtlas Blit   : 0.3ms
+TOTAL COMPUTE      : ~7.1ms
+RENDER BUDGET      : ~9.5ms remaining
+```
+
+---
+
+## §11 — SCALABILITY MACROS
+
+### 11.1 Compile-Time Quality Gates
+
+```
+[SCALE_MACRO]: DISPATCH_ENTITY_MAX
+  LOW:    16,384
+  MEDIUM: 50,000
+  HIGH:   100,000
+
+[SCALE_MACRO]: CURRENT_FIELD_DIMS
+  LOW:    32x16x32
+  MEDIUM: 64x32x64
+  HIGH:   128x64x128
+
+[SCALE_MACRO]: BIOLUM_UPDATE_RATE
+  LOW:    every 4 frames (lerp compensates)
+  MEDIUM: every 2 frames
+  HIGH:   every frame
+
+[SCALE_MACRO]: PARTICLE_MAX
+  LOW:    16,384
+  MEDIUM: 65,536
+  HIGH:   262,144
+
+[RULE]: Quality tier detected at runtime: VRAM < 2.5GB → LOW. VRAM < 6GB → MEDIUM. else HIGH.
+        Pass tier as CBUFFER int. Kernel branches on it (uniform branch = no divergence).
+```
+
+---
+
+## §12 — NaN VACCINATION PROTOCOL
+
+```
+[SAFE]: ALL positions before grid insert       → isfinite() guard
+[SAFE]: ALL velocities before integration      → isfinite() guard
+[SAFE]: ALL InterlockedAdd targets             → isfinite() on float source before conversion
+[SAFE]: ALL normalize() calls                 → only if dot(v,v) > 1e-8
+[SAFE]: ALL division operations               → denominator = max(denom, EPSILON) where EPSILON=1e-6
+[SAFE]: Biolum intensity                      → saturate() clamp before write
+
+NaN PROPAGATION KILL:
+  On NaN detection in entity state:
+    1. Reset position to EntitySpawnPositions[id]
+    2. Zero velocity
+    3. Log to RWByteAddressBuffer NaNLog (async read CPU-side for debugging)
+    4. Do NOT kill entity (avoids free-list corruption mid-dispatch)
+```
+
+---
+
+## §13 — SYNCHRONIZATION DEPENDENCY GRAPH
+
+```
+FRAME START
+  │
+  ├─ [CPU UPLOAD]: CBUFFER update (SimTime, CameraPos, EntityCount)
+  │
+  ├─ DISPATCH: GridClear
+  │    └─ UAV Barrier
+  ├─ DISPATCH: GridInsert
+  │    └─ UAV Barrier
+  ├─ DISPATCH: SwarmUpdate  ──→  reads: Grid, EntityPos, EntityVel
+  │    └─ UAV Barrier              writes: EntityPos, EntityVel
+  ├─ DISPATCH: LOD1Update
+  │    └─ UAV Barrier
+  ├─ DISPATCH: BiolumUpdate ──→  reads: EntityPos, EntityVel, PlayerPos
+  │    └─ UAV Barrier              writes: BiolumBuffer
+  ├─ DISPATCH: ParticleUpdate
+  │    └─ UAV Barrier
+  ├─ DISPATCH (4Hz): CurrentFieldAdvect
+  │    └─ UAV Barrier
+  ├─ DISPATCH: BiolumAtlasWrite  ──→ Texture write
+  │
+  ├─ RENDER PASSES (consume read-only views of above buffers)
+  │
+  └─ AsyncGPUReadback.Request(ParasiteCountBuffer)  ← N+3 frames safe
+
+[FORBID]: UAV read-after-write without barrier between dependent dispatches.
+[FORBID]: Render pass consuming buffer written in same frame without barrier.
+```
+
+---
+
+## §14 — PRECISION & CAMERA-RELATIVE MANDATE
+
+```
+[RULE]: ALL world-space positions stored as camera-relative offsets inside shaders.
+        Absolute world pos only in CPU-side C# logic.
+
+CONVERSION AT SHADER ENTRY:
+  posCS = posWS - CameraPositionWS  // inject via CBUFFER
+  ALL subsequent math in camera-space
+  Reconvert for writes: posWS = posCS + CameraPositionWS
+
+[MATH]: Float precision at 1km depth with 0.01m accuracy:
+  float32 mantissa = 23 bits → ~7 decimal digits
+  At 1000m: error = 1000 / 10^7 = 0.0001m → acceptable
+  At 10km: error = 0.001m → acceptable with camera-relative
+  Without camera-relative at 10km: 10000 / 10^7 = 0.001m → jitter visible
+
+[RULE]: Entity spawn positions stored as float64 CPU-side. Compressed to float32 camera-relative on upload.
+```
+
+---
+
+## §15 — APPENDIX: FAST MATH REFERENCE
+
+```
+// Normalize safe
+float3 SafeNormalize(float3 v):
+  lenSq = dot(v,v)
+  return lenSq > 1e-8 ? v * rsqrt(lenSq) : float3(0,1,0)
+
+// Fast hash noise (no sin/cos/exp)
+float HashNoise(uint3 p):
+  seed = p.x * 1664525u ^ p.y * 1013904223u ^ p.z * 22695477u
+  seed = seed ^ (seed >> 13)
+  seed = seed * 1664525u + 1013904223u
+  return float(seed & 0xFFFFFF) / float(0x1000000)
+
+// Poly sin degree-5 (input: [-PI, PI])
+float SinApprox(float x):
+  x2 = x*x
+  return x * (1.0 - x2*(0.16666667 - x2*(0.00833333 - x2*0.000198413)))
+
+// LUT biolum (precomputed 256-entry, 1 sample = 4B)
+float LUTBiolum(float phase):
+  idx = uint(frac(phase) * 256.0) & 0xFF
+  return BiolumLUT[idx]
+
+// Soft clamp (avoids hard discontinuity on speed limits)
+float SoftClamp(float x, float limit):
+  return limit * tanh_approx(x / limit)
+  // tanh_approx(x) = x*(27+x*x)/(27+9*x*x)  [rational approx, no exp]
+
+// Depth pressure (linear, no pow)
+float DepthPressure(float y):
+  return max(0.0, -y) * 0.010052  // 10.052 kPa/m seawater
+```

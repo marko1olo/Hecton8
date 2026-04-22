@@ -1,0 +1,53 @@
+**[PROMPT FOR AI ARCHITECT: GENERATING DISTILLED TECHNICAL MANDATE — HECTON-8]**
+
+**ROLE:** Principal System Architect / Lead Engine Developer. Expert in AAA optimization (id Tech / Rockstar / Remedy / Crytek). 
+**PROJECT:** Underwater Subnautica-like Horror Exploration game (NASA-Punk / Deep Sea Noir).
+**MINIMAL TARGET:** i3-10gen(4C/4T) | NVIDIA MX350 (2GB VRAM) | 6-8GB RAM. 
+**GOAL:** Master-grade technical stability. AAA-visuals. Realistic physics. Performance-to-Ultra scalability.
+
+**TASK:** Generate a high-density technical mandate file: `[FILE_NAME].md`.
+**STYLE:** Telegraphic. Zero fluff. No articles (a, an, the). Commands only. No intros/outros.
+**TOKEN ECONOMY:** Every word must represent engineering value. If info is clear in 2 words, don't use 3.
+
+---
+### 0. AUTHORIZED AUTONOMY & NO-BOILERPLATE POLICY (SENIOR INTELLIGENCE)
+- [MANDATE]: Use your vast training data to inject superior engineering patterns not explicitly listed below. 
+- If you know a more efficient way to handle memory, math, or hardware synchronization—implement it. 
+- You are an Elite Senior Developer: improve my brief where it lacks technical depth.
+- [FORBID]: DO NOT write full C# classes or standard Unity boilerplate. The implementer is a Senior C# AI; it knows syntax perfectly.
+- [REQ]: Provide only "Logic Kernels": raw math formulas, bitwise logic, or step-by-step algorithmic pseudo-code. Distill logic instead of showing implementation.
+
+---
+### I. EXECUTION POLICY ([RULE] & [FORBID])
+- Absolute technical laws for this system. 
+- [RULE] Zero-GC requirement. Direct cache-friendly memory access.
+- [RULE] Data-Oriented Design (DOD). Prefer Structs/NativeArrays over Classes.
+- [FORBID] Native interop overhead (GetComponent, Find, standard Unity events in Tick).
+
+### II. DATA ARCHITECTURE ([DATA])
+- Define memory layout: How data is packed for Burst/SIMD.
+- Bit-mask usage for states. Buffer management (Ring-buffers, Double-buffering).
+- [RULE] Maximize spatial locality. Minimize pointer chasing.
+
+### III. ALGORITHMIC & MATH TRUTH ([MATH])
+- Stabilized, frame-rate independent formulas (dt-invariant).
+- Step-by-step logic flows instead of code (e.g., 1. Raycast -> 2. Reflect -> 3. Clamp).
+- Numerical stability: Epsilon guards, NaN/Inf protection, magnitude clamping.
+- [SENIOR_HACK]: Fast approximations for AAA visuals (Cheap Realism) for MX350.
+
+### IV. HARDWARE & SCALABILITY ([SCALE])
+- MX350 Constraints: VRAM pressure management, ALU optimization.
+- Logic LOD: Define "Base" (Essential) vs "High" (Accurate) vs "Ultra" (Visual overkill).
+- Time-slicing rules for CPU budget.
+
+### V. INTEGRATION & FAILURE MODES ([SAFE])
+- Interface-only communication (SRP compliance).
+- [SAFE]: Document failure modes (e.g., what happens at speed > 40m/s or depth > 4km).
+- Handling edge cases without Exceptions.
+
+---
+**MANDATE TOPIC:** [INSERT_TOPIC_HERE]
+[Specific technical specs for the current file go here]
+
+---
+**OUTPUT:** Raw Markdown content in SINGLE code block. Start directly with the first technical rule.

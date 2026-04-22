@@ -1,0 +1,416 @@
+# SHADER_AESTHETICS_NOIR.md
+# HECTON-8 | Distilled Technical Mandate | Rev 1.0
+# Scope: Noir Shader Aesthetics, Dithering, Volumetric Fog, Caustics
+
+---
+
+## §0 — CORE COLOR DOCTRINE
+
+**FORBID** pure #000000 anywhere in scene geometry or post-stack.
+Abyssal floor minimum luminance: `RGB(4, 6, 8)` → linear `(0.0015, 0.0023, 0.0031)`.
+Reason: depth-buffer precision collapses at absolute black; perceptual depth requires micro-contrast.
+
+Noir palette anchors (linear space):
+```
+ABYSSAL_FLOOR  = float3(0.0015, 0.0023, 0.0031)
+DEEP_MID       = float3(0.008,  0.012,  0.018 )
+SURFACE_SILT   = float3(0.04,   0.052,  0.06  )
+BIOLUM_ACCENT  = float3(0.0,    0.38,   0.55  )  // teal-cold push
+DECAY_AMBER    = float3(0.55,   0.28,   0.04  )  // corroded metal emissive
+```
+
+All palette values live in `_NoirPaletteCB` constant buffer. Never hardcode in shader body.
+
+---
+
+## §1 — 10-BIT HDR INTERNAL PIPELINE
+
+Internal render format: `R11G11B10_UFLOAT` (bandwidth < `RGBA16F`, ALU identical).
+- MX350 VRAM pressure: R11G11B10 saves ~33% vs RGBA16F at equivalent perceptual quality.
+- Final resolve: ACES tonemapper → gamma 2.2 → 8-bit UNORM output.
+- ACES fast approximation (Hill 2016, GPU-friendly):
+```
+// Input: x = linear HDR value
+x = (x * (2.51*x + 0.03)) / (x * (2.43*x + 0.59) + 0.14)
+x = saturate(x)
+```
+Apply per-channel before gamma encode. Do NOT apply ACES mid-pass.
+
+Pre-tonemap: all blending, fog, caustic accumulation runs in linear HDR.
+Post-tonemap: dither injection, film grain, UI composite.
+
+---
+
+## §2 — BLUE NOISE DITHER SYSTEM
+
+### 2.1 Noise Texture Spec
+- 64×64 tileable blue noise, `R8_UNORM`, authored via void-and-cluster.
+- Tile wrap: `REPEAT`. No mipmaps. No aniso. Point-sample only.
+- Bind as global texture `_BlueNoiseTex` in URP renderer feature pass.
+
+### 2.2 Core Dither Kernel
+```
+// uv_screen = screenUV (0..1), not scaled — tile by texture repeat
+bn = _BlueNoiseTex.Sample(point_repeat, uv_screen).r   // [0,1]
+dither_offset = (bn - 0.5) / 255.0                     // [-0.00196, +0.00196]
+color_out = color_hdr_tonemapped + dither_offset        // add AFTER tonemap, BEFORE encode
+```
+Apply dither in final blit pass, NOT inside geometry shaders.
+Single sample per pixel. No multi-sample averaging — defeats blue noise distribution.
+
+### 2.3 Temporal Dither Rotation
+Prevent static pattern ghosting on static scenes:
+```
+frame_parity  = (_FrameCount & 0x3)                    // 4-frame cycle, bitwise AND
+uv_rotated    = uv_screen + float2(frame_parity * 0.25, frame_parity * 0.25)
+bn            = _BlueNoiseTex.Sample(point_repeat, uv_rotated).r
+```
+Rotation vector: golden-ratio offset optional but `(0.25, 0.25)` sufficient for 4C GPU cache.
+
+### 2.4 UI Dither Bypass
+UI canvas renders to separate `_UIRenderTexture` (Overlay camera, UNORM8 target).
+Dither blit pass: skip pixels where `stencil_ui_bit == 1`.
+Stencil layer reserved: bit 7 (`0x80`) → UI geometry writes this bit, dither pass reads & discards.
+
+---
+
+## §3 — FOG SYSTEM: EXPONENTIAL NOIR REMAP
+
+### 3.1 Base Fog Density Formula
+```
+depth_linear = LinearEyeDepth(raw_depth, _ZBufferParams)
+fog_raw      = 1.0 - exp(-depth_linear * _FogDensity)       // [0,1] classic exp fog
+```
+`_FogDensity` range: [0.002 .. 0.04]. Default 0.008 for mid-water column.
+
+### 3.2 Non-Linear Blackout Power Curve
+```
+fog_noir     = pow(fog_raw, _NoirPower)                     // _NoirPower in [1.5 .. 4.0]
+```
+`_NoirPower = 2.2` default → matches human depth-perception falloff in turbid water.
+At `_NoirPower = 4.0`: hard cinematic blackout beyond ~40m. Horror trigger zone.
+
+### 3.3 Noir Gradient LUT Integration
+```
+lut_uv       = float2(fog_noir, depth_linear / _MaxFogDepth)
+fog_color    = _NoirFogLUT.Sample(bilinear_clamp, lut_uv).rgb
+scene_color  = lerp(scene_color, fog_color, fog_noir)
+```
+LUT dimensions: 256×16 (`R11G11B10` format). X-axis: fog factor. Y-axis: depth zone.
+LUT authoring zones:
+- Y[0..4]:   surface scatter (green-teal shift)
+- Y[5..10]:  thermocline transition (desaturated grey-blue)
+- Y[11..15]: abyssal (ABYSSAL_FLOOR → slight luminance pulse for biolum ambient)
+
+### 3.4 Vertical Fog Stratification (No Homogeneous Fog)
+```
+world_y_norm  = saturate((world_pos.y - _FogFloorY) / _FogDepthRange)
+density_local = _FogDensity * (1.0 + (1.0 - world_y_norm) * _AbyssalDensityBoost)
+```
+`_AbyssalDensityBoost` = 2.5 default. Floor zones 3× denser than water column.
+Feeds back into §3.1 as `_FogDensity` override per pixel.
+
+### 3.5 Hardware Tier Switching
+```
+// LOW:  pre-baked density from depth buffer only (1 tex fetch)
+// HIGH: raymarch 8-step volumetric density (loop unroll, STATIC_UNROLL hint)
+#if defined(QUALITY_HIGH)
+    [unroll(8)] for(int i=0; i<8; i++) { ... }
+#else
+    fog_noir = pow(1.0 - exp(-depth_linear * density_local), _NoirPower)
+#endif
+```
+
+---
+
+## §4 — CAUSTIC PROJECTION SYSTEM
+
+### 4.1 UV Derivation (World-Space Stable)
+```
+caustic_uv   = abs_world_pos.xz / _CausticWorldScale          // scale ~8.0 default
+caustic_uv  += _Time.y * _CausticFlowDir * _CausticSpeed      // _CausticSpeed ~0.04
+```
+`abs_world_pos` = `TransformObjectToWorld(v.positionOS)` — must use world, not view.
+Prevents UV swimming on camera movement (critical for VR-adjacent comfort).
+
+### 4.2 Dual-Layer Animated Noise Sampling
+```
+layer_A = _CausticTex.Sample(bilinear_wrap, caustic_uv * 1.0              ).r
+layer_B = _CausticTex.Sample(bilinear_wrap, caustic_uv * 1.37 + float2(0.5, 0.13)).r
+caustic_raw = layer_A * layer_B                                // multiplicative → sharper peaks
+caustic_raw = pow(caustic_raw, _CausticContrast)              // _CausticContrast ~3.0
+```
+Texture spec: `_CausticTex` 512×512, single-channel Voronoi-based caustic pattern, tiling.
+Dual-scale ratio 1.37: avoids visible periodicity without third sample overhead.
+
+### 4.3 Shadow Mask Modulation
+```
+shadow_term  = SAMPLE_TEXTURE2D_SHADOW(_MainLightShadowmapTexture, sampler_shadow, shadow_coord)
+caustic_final = caustic_raw * shadow_term * _CausticIntensity  // _CausticIntensity ~0.35
+```
+Shadow mask prevents caustics appearing on self-shadowed geometry (rock undersides, cave ceilings).
+Caustics only valid in lit zones — biologically correct, aesthetically noir-clean.
+
+### 4.4 Additive Blend Integration Point
+```
+surface_color += caustic_final * _SurfaceWaterColor           // additive in linear HDR
+```
+Inject in lighting pass BEFORE fog application (§3). Fog naturally attenuates caustics by depth.
+Depth gate: `if (depth_linear > _CausticMaxDepth) caustic_final = 0;` — no caustics below 30m default.
+
+### 4.5 MX350 ALU Budget
+All caustic math uses `half` precision:
+```
+half layer_A, layer_B, caustic_raw, caustic_final, shadow_term
+```
+`caustic_uv` uses `float` — UV precision loss at world scale causes visible swimming artifacts.
+Rule: coordinates = `float`. Everything else = `half`.
+
+---
+
+## §5 — PROCEDURAL ANALOG LENS ARTIFACTS
+
+**FORBID** URP standard LensFlare component. Entirely custom procedural pass.
+
+### 5.1 Lens Flare Generation Kernel
+```
+// For each light source L:
+screen_pos_L  = WorldToScreenPoint(L.position)              // NDC [-1,1]
+flare_vec     = screen_center - screen_pos_L                // vector toward screen center
+flare_len     = length(flare_vec)
+
+// Ghost sprites: place 3 ghosts along flare_vec
+for i in [0, 1, 2]:
+    ghost_pos[i] = screen_pos_L + flare_vec * ghost_offsets[i]  // offsets: [0.3, 0.7, 1.2]
+    ghost_uv     = map_to_ghost_atlas(ghost_pos[i], i)
+    ghost_col    = _LensGhostTex.Sample(..., ghost_uv) * L.color * _FlareIntensity
+    ghost_col   *= saturate(1.0 - flare_len * 0.8)             // fade at screen edges
+```
+
+### 5.2 Chromatic Aberration (Edge-Weighted)
+```
+edge_factor   = saturate(length(uv - 0.5) * 2.2)           // 0 at center, 1 at corners
+ca_offset     = edge_factor * _CAStrength                   // _CAStrength: [0.001 .. 0.006]
+
+r_channel     = scene_tex.Sample(s, uv + float2(ca_offset,  0)).r
+g_channel     = scene_tex.Sample(s, uv                       ).g
+b_channel     = scene_tex.Sample(s, uv - float2(ca_offset,  0)).b
+```
+3 samples. No iterative multi-sample. No TAA dependency.
+`_CAStrength` scales with `_NoirIntensityGlobal` parameter → CA intensifies in horror zones.
+
+### 5.3 Anamorphic Streak (Horizontal Only)
+Horizontal bokeh streak on bright pixels:
+```
+streak_mask   = saturate((luminance(color) - _StreakThreshold) / (1.0 - _StreakThreshold))
+// _StreakThreshold ~0.85
+streak_color  = 0
+[unroll(8)] for (int s = 1; s <= 8; s++):
+    offset         = float2(s * _StreakWidth / _ScreenWidth, 0)  // horizontal only
+    streak_color  += scene_tex.Sample(bilinear, uv + offset) * (1.0 / s)  // 1/s falloff
+    streak_color  += scene_tex.Sample(bilinear, uv - offset) * (1.0 / s)
+streak_color  *= streak_mask * _StreakIntensity * float3(0.85, 0.9, 1.0)  // blue tint
+color_out     += streak_color
+```
+
+### 5.4 Film Grain (High Quality Tier Only)
+```
+// HIGH tier: animated per-frame
+grain_uv   = uv + float2(_FrameCount * 0.013, _FrameCount * 0.007)  // temporal drift
+grain      = _BlueNoiseTex.Sample(point_repeat, grain_uv).r
+grain      = (grain - 0.5) * _GrainStrength * (1.0 - luminance(color))  // dark areas: more grain
+color_out += grain
+
+// LOW tier: static dithered noise from §2 only. No grain pass.
+```
+
+---
+
+## §6 — TEXTURE PACKING: NOIR MASK ATLAS
+
+Single RGBA texture `_NoirMaskTex` per material:
+```
+R → Emissive Mask      (0=no emissive, 1=full emissive bleed)
+G → Scratches/Wear     (feeds roughness + normal micro-detail)
+B → Moisture/Wetness   (modulates specular, adds refraction wobble)
+A → Ambient Occlusion  (baked micro-AO, multiplied with SSAO)
+```
+
+### 6.1 Channel Decode Patterns
+```
+emissive_out  = base_emissive_col * noir_mask.r * _EmissiveIntensity
+roughness_mod = lerp(roughness_base, 1.0, noir_mask.g * _WearStrength)
+specular_mod  = lerp(specular_base, specular_base * 2.5, noir_mask.b)  // wet = high spec
+ao_final      = min(baked_ao_lightmap, 1.0) * noir_mask.a              // multiplicative AO stack
+```
+
+### 6.2 Moisture Normal Wobble
+```
+// Only on pixels where noir_mask.b > 0.3
+moisture_normal = UnpackNormal(_MoistureNormalTex.Sample(..., uv + _Time.y * 0.01))
+normal_final    = normalize(lerp(base_normal, moisture_normal, noir_mask.b * 0.4))
+```
+Simulates water film distortion on corroded/submerged surfaces.
+
+---
+
+## §7 — AUTO-EXPOSURE GATE (LIGHT BURST SAFETY)
+
+### 7.1 Luminance Histogram (Compute Pass)
+```
+// 64-bin luminance histogram over 1/4 resolution downsampled frame
+// Bin index: floor(log2(luminance) * 8 + 32)  → maps [2^-4 .. 2^4] to [0..63]
+// Dispatch: threadgroups cover (width/4 * height/4) pixels
+// Each thread: atomicAdd(_HistogramBuffer[bin_idx], 1)
+```
+
+### 7.2 Weighted Average EV Extraction
+```
+// Exclude bottom 10% (shadow noise) and top 5% (specular spikes)
+low_cutoff   = total_pixels * 0.10
+high_cutoff  = total_pixels * 0.95
+weighted_sum = 0; pixel_count = 0
+for bin in [0..63]:
+    accumulated += _HistogramBuffer[bin]
+    if (accumulated < low_cutoff || accumulated > high_cutoff): continue
+    weighted_sum += bin * _HistogramBuffer[bin]
+    pixel_count  += _HistogramBuffer[bin]
+ev_target = weighted_sum / max(pixel_count, 1)
+ev_target = remap(ev_target, [0,63], [-4.0, 4.0])  // back to EV space
+```
+
+### 7.3 Temporal Smoothing + Hard Clamp
+```
+ev_smoothed  = lerp(_PrevEV, ev_target, _DeltaTime * _ExposureAdaptSpeed)
+// _ExposureAdaptSpeed: dark→bright = 0.5 (slow), bright→dark = 3.0 (fast horror snap)
+ev_smoothed  = clamp(ev_smoothed, _EVMin, _EVMax)  // _EVMin=-3, _EVMax=2 for cave scenario
+exposure_mul = exp2(ev_smoothed)
+```
+Store `ev_smoothed` → `_PrevEV` (persistent compute buffer, 1 float).
+Apply `exposure_mul` to linear HDR color BEFORE ACES tonemap (§1).
+
+### 7.4 Glitch Prevention Gate
+Hard ceiling prevents white-out when player activates dive light in dark cave:
+```
+if (ev_target - _PrevEV > _EVMaxDeltaPerFrame):  // _EVMaxDeltaPerFrame = 0.5
+    ev_target = _PrevEV + _EVMaxDeltaPerFrame     // rate-limit sudden EV jumps
+```
+This preserves horror atmosphere — eyes don't instantly adapt.
+
+---
+
+## §8 — SCALABILITY MATRIX
+
+| Feature              | LOW (MX350)                      | MED (GTX 1060)                  | HIGH (RTX 3060+)                  |
+|----------------------|----------------------------------|---------------------------------|-----------------------------------|
+| Fog                  | Depth-only exp fog, 1 LUT fetch  | + Vertical stratification       | + 8-step raymarch volumetric      |
+| Caustics             | Disabled or static baked LM      | Dual-layer, no shadow mask      | Dual-layer + shadow mask modulate |
+| Dither               | Blue noise, 4-frame rotation     | Identical                       | + TAA integration                 |
+| Film Grain           | Static noise (reuse blue noise)  | Static noise                    | Animated blue-noise grain         |
+| CA                   | 3-sample horizontal only         | 3-sample H+V                    | 3-sample H+V + ghost sprites      |
+| Lens Flare           | 1 ghost, no streak               | 3 ghosts, streak disabled       | 3 ghosts + anamorphic streak      |
+| Auto-Exposure        | 16-bin CPU histogram (approx)    | 64-bin compute histogram        | 64-bin + temporal adaptation      |
+| Precision            | `half` all non-UV math           | `half` non-UV math              | `float` selectively               |
+| Noir Mask            | R+A channels only (2-channel)    | RGBA full decode                | RGBA + moisture normal wobble     |
+
+---
+
+## §9 — MATH REFERENCE BLOCK (FAST LOOKUP)
+
+```
+// Blue Noise Dither
+color += (BlueNoiseSample(uv_rotated) - 0.5) / 255.0
+
+// Exp Fog Base
+fog_raw = 1.0 - exp(-linear_depth * fog_density)
+
+// Noir Blackout Power
+fog_noir = pow(fog_raw, noir_power)                   // noir_power in [1.5, 4.0]
+
+// ACES Fast (Hill)
+x = (x*(2.51x+0.03)) / (x*(2.43x+0.59)+0.14)
+
+// Caustic Dual-Layer
+caustic = pow(layer_A * layer_B, contrast)
+
+// CA Edge Weight
+edge = saturate(length(uv - 0.5) * 2.2)
+uv_r = uv + float2(edge * ca_strength, 0)
+uv_b = uv - float2(edge * ca_strength, 0)
+
+// Luminance (Rec.709)
+L = dot(color.rgb, float3(0.2126, 0.7152, 0.0722))
+
+// EV to exposure multiplier
+exposure = exp2(ev_smoothed)
+
+// Moisture specular amplification
+spec_wet = lerp(spec_base, spec_base * 2.5, moisture_mask)
+
+// Abyssal density boost
+density_px = fog_density * (1.0 + (1.0 - world_y_norm) * abyssal_boost)
+
+// Streak falloff
+streak += sample(uv ± offset_s) * (1.0 / s)          // s in [1..8]
+```
+
+---
+
+## §10 — SHADER PASS EXECUTION ORDER
+
+```
+[GEOMETRY PASS]
+    1. Sample _NoirMaskTex → decode RGBA channels
+    2. Apply moisture normal wobble (if mask.b > 0.3)
+    3. Compute roughness/specular modulation
+    4. Output: GBuffer (albedo, normal, roughness, emissive, AO)
+
+[LIGHTING PASS]  — linear HDR accumulation
+    5. Directional light + shadow
+    6. Caustic injection (additive, if depth < _CausticMaxDepth)
+    7. Point lights (bioluminescent accents)
+    8. Emissive (mask.r driven)
+
+[FOG PASS]
+    9. Compute depth_linear from raw_depth
+   10. Compute density_px (vertical stratification)
+   11. fog_raw → fog_noir (power curve)
+   12. Sample _NoirFogLUT → blend with scene_color
+
+[AUTO-EXPOSURE COMPUTE]
+   13. Downsample 1/4 res
+   14. Histogram dispatch
+   15. Weighted EV extraction + temporal smooth + gate clamp
+   16. Write exposure_mul to persistent CB
+
+[POST-PROCESS PASS]
+   17. Apply exposure_mul (pre-tonemap)
+   18. ACES tonemap
+   19. CA (chromatic aberration)
+   20. Anamorphic streak (HIGH tier)
+   21. Lens ghost sprites (HIGH tier)
+   22. Film grain (HIGH) / static noise (LOW)
+   23. Blue noise dither inject (stencil-bypass UI)
+   24. Gamma 2.2 encode → 8-bit output
+
+[UI COMPOSITE]
+   25. Overlay _UIRenderTexture (UNORM8, no dither)
+   26. Set stencil bit 0x80 — dither bypass enforced
+```
+
+---
+
+## §11 — CRITICAL FORBID SUMMARY
+
+```
+FORBID: #000000 anywhere in scene — minimum luminance (0.0015, 0.0023, 0.0031)
+FORBID: URP LensFlare component — procedural only (§5)
+FORBID: float precision for non-UV shader math on LOW tier — use half
+FORBID: Dither on UI canvas — stencil gate bit 0x80 mandatory
+FORBID: ACES tonemap mid-pass — apply once, final resolve only
+FORBID: Caustics below _CausticMaxDepth (default 30m) — depth gate enforced
+FORBID: EV jump > 0.5 per frame — rate-limit gate §7.4 mandatory
+FORBID: Caustic UV in view-space — world-space only, prevents camera-swim
+FORBID: Blue noise mipmaps or aniso — point-sample REPEAT only
+FORBID: RGBA16F for main color target — use R11G11B10_UFLOAT
+```

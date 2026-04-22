@@ -1,0 +1,525 @@
+# FLOATING_ORIGIN_PRECISION.md
+## HECTON-8 | COORDINATE STABILITY | JITTER PREVENTION | 64-BIT UNIVERSE EMULATION
+
+---
+
+## 0. AUTHORIZED AUTONOMY & NO-BOILERPLATE POLICY
+
+[MANDATE] Inject fixed-point arithmetic patterns from large-world simulation engines (Space Engineers, KSP2, Star Citizen).
+[MANDATE] Apply camera-relative rendering tricks from Unreal Engine's World Composition.
+[MANDATE] Use double-precision emulation via high/low component splitting where native double unavailable on GPU.
+[FORBID] Full class implementations. Logic kernels only.
+[FORBID] String-based coordinate lookups. Hash-based spatial indexing mandatory.
+
+---
+
+## I. EXECUTION POLICY
+
+[RULE] Universe coordinates: int64 grid + float32 local offset. Never raw double in hot paths.
+[RULE] World shifts atomic. Single-frame operation. No multi-frame interpolation of origin.
+[RULE] GPU matrix pools immutable during shift. Offset applied per-vertex in shader.
+[FORBID] Transform.position writes during shift. Queue-based batch teleport only.
+[FORBID] Physics queries across shift boundary. Pause simulation during rebase.
+[FORBID] Lerp/Slerp operations spanning pre/post-shift coordinates.
+
+---
+
+## II. DATA ARCHITECTURE
+
+### [DATA] Coordinate Representation
+
+**UniversePosition (CPU-side):**
+```
+struct UniversePos {
+    int64 gridX, gridY, gridZ;     // 5000m cells
+    float32 localX, localY, localZ; // offset within cell [-2500, +2500]
+}
+```
+
+**Conversion Logic:**
+```
+UniversePos → WorldPos:
+    worldPos = (gridXYZ * CELL_SIZE) + localXYZ - _GlobalFloatingOffset
+WorldPos → UniversePos:
+    gridXYZ = floor(absPos / CELL_SIZE)
+    localXYZ = absPos - (gridXYZ * CELL_SIZE)
+```
+
+**Bitmask State Flags (8-bit):**
+```
+0x01: SHIFT_PENDING
+0x02: PHYSICS_FROZEN
+0x04: NAVIGATION_STALE
+0x08: SHADER_OFFSET_DIRTY
+0x10: INTEGRATOR_RESET_REQ
+```
+
+### [DATA] Memory Layout
+
+**Global Offset Buffer (GPU Constant):**
+```
+cbuffer FloatingOrigin : register(b7) {
+    float3 _GlobalFloatingOffset;       // Current world shift
+    float3 _TotalUniverseOffset;        // Accumulated all-time offset
+    float3 _PreviousFloatingOffset;     // For velocity correction
+    uint _ShiftFrameID;                 // Detect stale cached values
+}
+```
+
+**Entity Transform Cache (DOD):**
+```
+NativeArray<float3> worldPositions;         // Volatile, shifts
+NativeArray<int64x3> universeGrids;         // Immutable
+NativeArray<float3> universeLocalOffsets;   // Immutable
+NativeArray<quaternion> rotations;          // Unaffected by shift
+NativeArray<uint8> shiftStateMask;
+```
+
+**Matrix Pool (GPU Upload):**
+```
+ComputeBuffer matrixPool;  // float4x4[4096]
+// Matrices stored in Universe Space
+// Shader applies _GlobalFloatingOffset during transform
+```
+
+---
+
+## III. ALGORITHMIC & MATH TRUTH
+
+### [MATH] Shift Trigger Threshold
+
+**Distance Check (Every 5 seconds via time-slice):**
+```
+distSq = dot(playerWorldPos, playerWorldPos)
+if distSq > SHIFT_THRESHOLD_SQ:  // (5000m)^2
+    trigger_shift()
+```
+
+### [MATH] Atomic World Shift Protocol
+
+**Step-by-step (Single Frame):**
+```
+1. Set SHIFT_PENDING flag globally
+2. Freeze physics (PhysX.Simulate = false)
+3. Read all Rigidbody velocities → cache
+4. Calculate shift vector:
+   shiftVec = -playerWorldPos
+   shiftVec = round(shiftVec / SNAP_GRID) * SNAP_GRID  // 100m snap for determinism
+5. Update _PreviousFloatingOffset = _GlobalFloatingOffset
+6. _GlobalFloatingOffset += shiftVec
+7. _TotalUniverseOffset += shiftVec  // Infinite accumulator
+8. Batch Transform Updates:
+   For each entity:
+       entity.worldPos += shiftVec
+       entity.transform.position = entity.worldPos  // Single write
+9. Velocity Reapplication (Integrator Reset):
+   For each Rigidbody:
+       rb.velocity = cachedVelocity  // Prevent velocity corruption
+       rb.angularVelocity = cachedAngular
+10. Clear SHIFT_PENDING, set SHADER_OFFSET_DIRTY
+11. Resume physics
+12. Increment _ShiftFrameID
+```
+
+**Numerical Stability Guards:**
+```
+shiftVec = clamp(shiftVec, -10000m, +10000m)  // Prevent overflow
+if dot(shiftVec, shiftVec) < 1.0:  // Sub-meter shift ignored
+    abort_shift()
+```
+
+### [MATH] GPU Vertex Offset Application
+
+**Vertex Shader Pattern:**
+```
+// Input: localPos (object space), ObjectToWorld matrix
+float3 worldPos = mul(ObjectToWorld, float4(localPos, 1.0)).xyz;
+worldPos += _GlobalFloatingOffset;  // Apply shift
+
+// For camera-relative rendering (MX350 depth precision boost):
+float3 cameraRelativePos = worldPos - _WorldSpaceCameraPos;
+float4 clipPos = mul(UNITY_MATRIX_VP, float4(cameraRelativePos, 1.0));
+```
+
+**Matrix Pool Usage (Instanced Rendering):**
+```
+// Matrices stored as ObjectToUniverse (no shift baked in)
+float4x4 objectMatrix = matrixPool[instanceID];
+float3 worldPos = mul(objectMatrix, float4(localPos, 1.0)).xyz;
+worldPos += _GlobalFloatingOffset;  // Shift applied here
+```
+
+### [MATH] Noise Phase Stability
+
+**Problem:** Simplex noise samples drift during coordinate shift.
+
+**Solution - Absolute Universe Coordinate Reconstruction:**
+```
+// Fragment Shader
+float3 absoluteNoiseCoord = worldPos - _GlobalFloatingOffset + _TotalUniverseOffset;
+
+// For deterministic multi-octave noise:
+float3 noiseInput = absoluteNoiseCoord * noiseScale + noiseSeed;
+float noise = SimplexNoise3D(noiseInput);
+```
+
+**High-Precision Emulation (Double via Component Split):**
+```
+// When _TotalUniverseOffset exceeds float32 precision (~16777216)
+float3 offsetHigh = floor(_TotalUniverseOffset / 1000000.0) * 1000000.0;
+float3 offsetLow = _TotalUniverseOffset - offsetHigh;
+
+float3 absolutePos = worldPos - _GlobalFloatingOffset;
+absolutePos += offsetLow;  // Low component fits in float32 precision
+absolutePos += offsetHigh; // High component (coarse)
+
+// Use absolutePos for noise sampling
+```
+
+### [MATH] Triplanar UV Stability via UV3 Baking
+
+**Mesh Preprocessing (Asset Pipeline):**
+```
+For each vertex:
+    UniversePos absolutePos = CalculateUniversePosition(vertex.position, meshOrigin)
+    vertex.uv3.xyz = absolutePos.ToFloat3()  // Bake absolute coords
+```
+
+**Shader Triplanar Sampling:**
+```
+// Use UV3 instead of recalculating from shifted worldPos
+float3 absPos = input.uv3;
+float3 blendWeights = abs(worldNormal);
+blendWeights /= (blendWeights.x + blendWeights.y + blendWeights.z);
+
+float4 texX = tex2D(_MainTex, absPos.yz * _Scale);
+float4 texY = tex2D(_MainTex, absPos.xz * _Scale);
+float4 texZ = tex2D(_MainTex, absPos.xy * _Scale);
+
+return texX * blendWeights.x + texY * blendWeights.y + texZ * blendWeights.z;
+```
+
+**LOD Consistency:**
+```
+// All LOD meshes must share same UV3 bake origin
+// Store origin in mesh asset metadata:
+MeshMetadata {
+    int64x3 universeOriginGrid;
+    float3 universeOriginLocal;
+}
+```
+
+### [MATH] A* Path Preservation
+
+**Waypoint Storage (Universe Coordinates):**
+```
+struct Waypoint {
+    int64x3 universeGrid;
+    float3 universeLocal;
+    uint pathID;
+    uint waypointIndex;
+}
+```
+
+**Path Traversal During Shift:**
+```
+1. Detect shift via _ShiftFrameID increment
+2. For active paths:
+    currentWaypoint.worldPos = UniverseToWorld(currentWaypoint.universe)
+    // worldPos auto-updated by shift
+3. No path recalculation required
+4. Clear NAVIGATION_STALE flag
+```
+
+**Path Caching (Avoid Recalc):**
+```
+// Store paths in Universe Space
+PathCache {
+    Waypoint[] waypoints;  // Universe coords
+    uint cacheFrameID;     // Match against _ShiftFrameID
+}
+
+On path query:
+    if path.cacheFrameID != _ShiftFrameID:
+        // Convert all waypoints to current World Space
+        for wp in waypoints:
+            wp.cachedWorldPos = UniverseToWorld(wp.universe)
+        path.cacheFrameID = _ShiftFrameID
+```
+
+**Pathfinding Grid Shift:**
+```
+// Navigation grid stored as offset from origin
+// Grid itself doesn't shift - query coordinates do
+
+Vector3Int GridCoord(UniversePos pos):
+    worldPos = UniverseToWorld(pos)
+    gridX = floor(worldPos.x / gridCellSize)
+    return new Vector3Int(gridX, gridY, gridZ)
+```
+
+---
+
+## IV. HARDWARE & SCALABILITY
+
+### [SCALE] MX350 Depth Precision Recovery
+
+**Camera-Relative Rendering (Near-Plane Precision):**
+```
+// Instead of world-space depth buffer
+float depth = distance(cameraRelativePos, float3(0,0,0));
+// Effective near-plane: 0.01m even at 15km distance
+```
+
+**Logarithmic Depth Buffer (Ultra Setting):**
+```
+// Vertex Shader
+output.z = log(C * clipPos.w + 1) / log(C * farPlane + 1) * clipPos.w;
+
+// C = 1.0 for MX350 (cheaper)
+// C = 10.0 for RTX (better precision)
+```
+
+### [SCALE] Logic LOD for Shift Frequency
+
+**Base (MX350):**
+```
+SHIFT_THRESHOLD = 5000m
+CHECK_INTERVAL = 5.0 seconds
+SNAP_GRID = 100m  // Coarse determinism
+```
+
+**High (GTX 1660):**
+```
+SHIFT_THRESHOLD = 8000m
+CHECK_INTERVAL = 2.0 seconds
+SNAP_GRID = 10m
+```
+
+**Ultra (RTX 3060):**
+```
+SHIFT_THRESHOLD = 12000m
+CHECK_INTERVAL = 1.0 seconds
+SNAP_GRID = 1m
+ENABLE_DOUBLE_PRECISION_EMULATION = true
+```
+
+### [SCALE] VRAM Budget for Coordinate Buffers
+
+**MX350 (2GB):**
+```
+Matrix Pool: 4096 instances × 64 bytes = 256KB
+Universe Grid Index: 64MB max (spatial hash)
+Waypoint Cache: 1MB
+Total Overhead: ~65MB
+```
+
+**Compression (If exceeding budget):**
+```
+// Half-precision for _GlobalFloatingOffset (range ±65504m)
+half3 _GlobalFloatingOffsetHalf;
+// Reconstruct in shader:
+float3 offset = float3(_GlobalFloatingOffsetHalf) * 1000.0;
+```
+
+---
+
+## V. INTEGRATION & FAILURE MODES
+
+### [SAFE] Interface Contracts
+
+**IFloatingOriginEntity:**
+```
+OnBeforeShift(float3 shiftVector)  // Cache velocity, pause integrators
+OnAfterShift()                      // Resume, validate position
+GetUniversePosition() → UniversePos
+SetUniversePosition(UniversePos)
+```
+
+**IShaderOffsetReceiver:**
+```
+UpdateShaderOffset(float3 globalOffset, float3 totalOffset, uint frameID)
+ValidateOffsetState() → bool
+```
+
+### [SAFE] Failure Modes & Guards
+
+**Mode 1: Physics "Kraken" (Velocity Spike)**
+```
+Cause: Rigidbody velocity not cached before shift
+Detect: if velocity.magnitude > 1000 m/s after shift
+Recovery:
+    rb.velocity = Vector3.ClampMagnitude(rb.velocity, maxSpeed)
+    rb.angularVelocity = Vector3.zero
+    Log warning + entity ID
+```
+
+**Mode 2: Shader Offset Desync**
+```
+Cause: Material not updated with new _GlobalFloatingOffset
+Detect: _ShiftFrameID mismatch in material property block
+Recovery:
+    Force material.SetVector("_GlobalFloatingOffset", current)
+    Flag SHADER_OFFSET_DIRTY cleared
+```
+
+**Mode 3: Navigation Path Corruption**
+```
+Cause: Waypoint world position queried during shift frame
+Detect: SHIFT_PENDING flag set during path query
+Recovery:
+    Stall path query until shift complete (max 1 frame)
+    Return cached last-valid waypoint
+```
+
+**Mode 4: Float Precision Exhaustion (>100km travel)**
+```
+Cause: _TotalUniverseOffset exceeds float32 mantissa
+Detect: if _TotalUniverseOffset.magnitude > 16777216
+Recovery:
+    Enable high/low component splitting (see [MATH])
+    Fallback: Quantize to 1m grid permanently
+```
+
+**Mode 5: Noise Discontinuity**
+```
+Cause: UV3 not baked or precision loss
+Detect: Visual texture "sliding" during shift
+Recovery:
+    Validate mesh.uv3 != null in asset validator
+    Re-bake UV3 for affected meshes
+    Emergency fallback: Use world-space UVs with 10m quantization
+```
+
+### [SAFE] Edge Case Handling
+
+**Speed > 40 m/s During Shift:**
+```
+if entity.velocity.magnitude > 40:
+    defer_shift()  // Wait until speed < 40 or timeout 10s
+    if timeout:
+        force_shift()
+        clamp_velocity(entity, 40)
+```
+
+**Depth > 4km (Terrain LOD Transition During Shift):**
+```
+// Prevent LOD pop during shift
+Lock terrain LOD state:
+    terrainLOD.FreezeTransitions(shiftDuration)
+    shift_world()
+    terrainLOD.ResumeTransitions()
+```
+
+**NaN Propagation from Offset Arithmetic:**
+```
+// Guard in shader
+if (any(isnan(_GlobalFloatingOffset))) {
+    _GlobalFloatingOffset = float3(0,0,0);  // Failsafe
+    clipPos = float4(0,0,0,1);  // Cull vertex
+}
+```
+
+**Shift During Asset Streaming:**
+```
+// Coordinate in load request may be stale
+AssetLoadRequest {
+    UniversePos requestOrigin;
+    uint requestFrameID;
+}
+
+On asset load complete:
+    if request.frameID != _ShiftFrameID:
+        recalculate_world_position(asset, request.universeOrigin)
+```
+
+---
+
+## CRITICAL IMPLEMENTATION NOTES
+
+**Init Sequence:**
+```
+1. Set _GlobalFloatingOffset = (0,0,0)
+2. Set _TotalUniverseOffset = (0,0,0)
+3. Set _ShiftFrameID = 0
+4. Validate all meshes have UV3 channel
+5. Pre-cache physics velocities buffer (NativeArray<float3>)
+6. Register all IFloatingOriginEntity instances
+```
+
+**Determinism for Multiplayer (Future):**
+```
+// All shifts must occur at identical simulation ticks
+// Use fixed timestep, deterministic snap grid
+SNAP_GRID must match across clients (100m recommended)
+_TotalUniverseOffset transmitted as int64x3 (lossless)
+```
+
+**Profiling Targets (MX350):**
+```
+Shift execution: < 2ms (includes physics pause)
+Shader offset update: < 0.1ms
+Path cache refresh: < 0.5ms
+Total frame spike: < 5ms (acceptable once per 5km travel)
+```
+
+**Memory Corruption Prevention:**
+```
+// Never hold pointers to worldPos across frames
+// Always derive from UniversePos + _GlobalFloatingOffset
+[FORBID] Cached Transform references
+[FORBID] Static world-space collision geometry (use Universe coords)
+```
+
+---
+
+## SENIOR AUTONOMY INJECTIONS
+
+**Fixed-Point Alternative (Ultra-Low VRAM):**
+```
+// Replace float3 with int32 at 1mm resolution
+int3 fixedPointPos = floor(worldPos * 1000.0);
+// Range: ±2147km at 1mm precision
+// GPU: Reconstruct float in vertex shader
+float3 worldPos = float3(fixedPointPos) * 0.001;
+```
+
+**Hierarchical Floating Origin (Nested Universes):**
+```
+// For scales > 1000km
+struct HierarchicalUniverse {
+    int32 megaGridXYZ;  // 5000km cells
+    int32 gridXYZ;      // 5000m cells
+    float localXYZ;     // meter offsets
+}
+// Allows Earth-scale maps on MX350
+```
+
+**Adaptive Shift Hysteresis:**
+```
+// Prevent thrashing at threshold boundary
+if distSq > SHIFT_THRESHOLD_SQ + HYSTERESIS:
+    shift()
+else if distSq < SHIFT_THRESHOLD_SQ - HYSTERESIS:
+    no_shift()
+// HYSTERESIS = 500m
+```
+
+**SIMD Batch Coordinate Conversion:**
+```
+// Burst compile with AVX2
+[BurstCompile(FloatMode.Fast)]
+void UniverseToWorldBatch(
+    NativeArray<UniversePos> universe,
+    NativeArray<float3> world,
+    float3 globalOffset,
+    int count)
+{
+    for (int i = 0; i < count; i += 4) {
+        // Process 4 positions per iteration
+        float4x3 positions = LoadUniversePositions(universe, i);
+        positions = ConvertToWorld(positions, globalOffset);
+        StoreWorldPositions(world, i, positions);
+    }
+}
+```

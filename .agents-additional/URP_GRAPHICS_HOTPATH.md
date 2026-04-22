@@ -1,0 +1,435 @@
+# URP_GRAPHICS_HOTPATH.md
+# HECTON-8 — Distilled Technical Mandate v1.0
+# Minimal target: i3-10gen / MX350 2GB / 6-8GB RAM | URP 14+
+
+---
+
+## §1 — RENDER PIPELINE CONTRACT
+
+[RULE] URP Asset settings: HDR=ON, MSAA=OFF (use FXAA post), Depth Texture=ON, Opaque Texture=ON.
+[RULE] RenderScale floor=0.65 (MX350), ceil=1.0 (dGPU). Dynamic resolution via PerformanceAdaptiveScaler.
+[RULE] SRP Batcher=MANDATORY. Zero MaterialPropertyBlock on instanced geometry. All per-material data inside CBUFFER_START(UnityPerMaterial).
+[FORBID] Built-in Camera.Render() calls inside gameplay loop. Use RenderPipelineManager.beginCameraRendering delegate exclusively.
+[RULE] Single URP ForwardRenderer asset. No stacked cameras except HUD overlay (separate renderer, ClearDepth=true).
+[RULE] DrawCall budget: Opaque=180, Transparent=35, Shadow=80 per frame on MIN spec.
+
+---
+
+## §2 — VRAM DISCIPLINE & TEXTURE STRATEGY
+
+[RULE] VRAM hard ceiling: 1.6GB (leave 400MB driver overhead on MX350 2GB).
+[DATA] Texture budget allocation:
+  - Hero props (interact radius <4m): 1024px max, BC7
+  - World geometry: 512px, BC1/BC3
+  - Terrain: 512px, BC1 + RGBA channel-pack
+  - UI: 256-512px atlas, BC7
+  - Particle flipbooks: 256px, BC1
+
+[RULE] Channel-pack ALL PBR masks. Single RGBA texture per object:
+  R = Metallic | G = AO | B = Smoothness | A = Emission Mask
+[FORBID] Separate AO map. Bake into G-channel above.
+[RULE] Streaming Mip Bias = +1.5 on MIN spec. Force via QualitySettings.streamingMipmapsMemoryBudget = 512 (MB).
+[RULE] Texture arrays for repeated tileable surfaces (rock/coral/panel). Max 8-layer array, 512px slices.
+[MATH] Adaptive mip bias per camera depth:
+  mipBias = lerp(0.0, 2.0, saturate((camDepth - 10.0) / 80.0))
+  — deeper water = lower mip demand = bandwidth saved.
+[FORBID] Runtime Texture.Compress() calls. All compression offline via AssetPostprocessor.
+
+---
+
+## §3 — SHADER ARCHITECTURE & VARIANT BUDGET
+
+[RULE] Max 8 multi_compile keywords per shader. Enforce via ShaderVariantCollection preload.
+[RULE] Non-critical toggles (foam ripple, parallax intensity): use uniform branch [branch] HLSL, not multi_compile.
+[DATA] Global keyword set (project-wide, never per-shader):
+  QUALITY_LOW / QUALITY_MED / QUALITY_HIGH — drive all perf branches.
+[RULE] Shader LOD system:
+  LOD 300 = Full PBR + parallax + detail normal
+  LOD 200 = PBR no parallax, single normal
+  LOD 100 = Diffuse + AO only, no specular
+  LOD 0   = Unlit fog card (HLOD 2+)
+[FORBID] Shader.WarmupAllShaders() in gameplay. Use ShaderVariantCollection.WarmUp() during loading screens only.
+[RULE] All underwater shaders inherit from single URP base HLSL include: Hecton8_CoreLit.hlsl. No copy-paste of lighting loops.
+
+---
+
+## §4 — DITHERED TRANSPARENCY (ANTI-OVERDRAW)
+
+[FORBID] Alpha Blend on any mesh rendered >30 draw calls/frame on MX350. Zero exceptions.
+[RULE] All foliage/coral/debris: Alpha-to-Coverage via dithered clip.
+[MATH] Bayer 4x4 dither threshold:
+  BayerMatrix[4][4] = {
+    { 0, 8, 2,10},
+    {12, 4,14, 6},
+    { 3,11, 1, 9},
+    {15, 7,13, 5}
+  } / 16.0
+  pixelCoord = (uint2)(IN.positionCS.xy) % 4
+  threshold  = BayerMatrix[pixelCoord.x][pixelCoord.y]
+  clip(alpha - threshold)
+
+[RULE] Blue Noise fallback for organic surfaces (kelp, creature membranes):
+  blueNoiseSample = SAMPLE_TEXTURE2D(_BlueNoiseLUT, sampler_point_repeat, screenUV * _ScreenParams.xy / 128.0).r
+  clip(alpha - blueNoiseSample)
+  — 128px tileable Blue Noise LUT, R8 format, 16KB VRAM cost.
+
+[RULE] Dither fade at distance [20m–40m]:
+  fadeFactor = saturate((dist - 20.0) / 20.0)
+  alpha *= (1.0 - fadeFactor)
+  then apply clip above — objects dissolve without blending.
+
+---
+
+## §5 — WORLD-SPACE FLOATING ORIGIN SYSTEM
+
+[DATA] Global shader registers (set once per frame via Shader.SetGlobalVector):
+  _GlobalFloatingOffset  : float3 — accumulated world offset (rebase delta)
+  _TotalUniverseOffset   : float3 — full simulation-space position for large-scale parallax
+[RULE] Every vertex shader: apply _GlobalFloatingOffset before any world-space calculation.
+  float3 worldPos = TransformObjectToWorld(IN.positionOS) - _GlobalFloatingOffset;
+[RULE] Rebase trigger: when camera drifts >1000m from world origin, snap origin, broadcast new _GlobalFloatingOffset to all systems.
+[SAFE] Precision floor: store all runtime positions as float3 relative offset + int3 chunk coords. Reconstruct in HLSL:
+  highPrecisionPos = float3(chunkOffset) * CHUNK_SIZE + localOffset - _GlobalFloatingOffset
+  — eliminates float jitter at depth >5km.
+
+---
+
+## §6 — HLOD & GPU INSTANCING PIPELINE
+
+[DATA] HLOD instance record (per-object, uploaded to ComputeBuffer):
+  struct HLODInstance {
+    float4x4 TRS;       // 64B: Transform
+    float    Fade01;    // 4B:  LOD cross-fade alpha
+    uint     MeshID;    // 4B:  index into mesh array
+    uint     MatID;     // 4B:  index into material array
+    float    DistSq;    // 4B:  squared camera distance (updated CPU-side)
+  } // 80B per instance
+
+[RULE] Render via Graphics.DrawMeshInstancedIndirect. CPU builds draw args buffer once per cluster-dirty-frame.
+[FLOW] Per-frame HLOD cull pipeline (compute shader, 64-thread groups):
+  1. Load HLODInstance from StructuredBuffer
+  2. Frustum cull: dot(planes[i], float4(center,1)) > -radius for 6 planes
+  3. Distance sort bucket: <15m=LOD0 | 15-40m=LOD1 | 40-80m=LOD2 | >80m=Billboard
+  4. Occlusion: HiZ pyramid sample at projected bounds. Reject if occluded.
+  5. Append visible to DrawArgsBuffer via AppendStructuredBuffer
+  6. Issue DrawMeshInstancedIndirect per LOD bucket
+
+[MATH] HiZ occlusion test:
+  mipLevel  = ceil(log2(max(screenBoundsW, screenBoundsH)))
+  hizSample = HiZPyramid.SampleLevel(sampler_point, screenCenter, mipLevel).r
+  occluded  = (projectedDepthMin > hizSample)  // reject if behind stored max-depth
+
+[RULE] LOD cross-fade: dither-based, not alpha blend. Fade01 drives per-instance dither threshold offset.
+  crossFadeThreshold = BayerMatrix[pixelCoord] + (instance.Fade01 * 2.0 - 1.0)
+  clip(1.0 - crossFadeThreshold)  // LOD0 fades out
+  clip(crossFadeThreshold)        // LOD1 fades in
+
+[RULE] HLOD 2+ (>80m): silhouette-only unlit card shader.
+  — No lighting. No shadows. Texture = pre-baked normal+AO composite. Single draw call per cluster.
+
+---
+
+## §7 — UNDERWATER VOLUMETRIC LIGHTING (GATED)
+
+[FORBID] Full volumetric raymarch on MX350 at native resolution. Render at half-res, bilateral upsample.
+[FLOW] Volumetric gate logic (per-light, CPU):
+  1. dist = Vector3.Distance(cam.pos, light.pos)
+  2. if dist > 30.0f → skip entirely (zero shader cost)
+  3. if dist > 20.0f → opacity = 1.0 - ((dist-20)/10) → write to _VolLightOpacity
+  4. if dist <= 20.0f → full raymarch pass enabled
+
+[MATH] Half-res volumetric raymarch (8 steps, jittered):
+  stepSize    = rayLength / 8.0
+  jitter      = blueNoiseSample * stepSize
+  accumLight  = 0
+  transmit    = 1.0
+  for i in 0..7:
+    samplePos   = rayOrigin + rayDir * (i * stepSize + jitter)
+    density     = SampleFogVolume(samplePos)              // 3D texture or ALU noise
+    extinction  = density * _ExtinctionCoeff
+    scattering  = density * _ScatterCoeff * PhaseHG(cosTheta, _Anisotropy)
+    transmit   *= exp(-extinction * stepSize)
+    accumLight += scattering * transmit * stepSize
+  finalColor  = accumLight * lightColor * _VolLightOpacity
+
+[MATH] Henyey-Greenstein phase function:
+  PhaseHG(cosT, g) = (1 - g²) / (4π * pow(1 + g² - 2g*cosT, 1.5))
+
+[RULE] Bilateral depth-aware upsample from half-res:
+  for each 2x2 tap:
+    weight = exp(-abs(tapDepth - centerDepth) * _BilateralDepthScale)
+  output = dot(tapColors, weights) / dot(1,1,1,1 * weights)
+
+[RULE] Caustics: single additive fullscreen pass, ALU-only. No caustic texture sampling.
+[MATH] ALU caustic approximation:
+  uv2 = worldPos.xz * _CausticScale + _Time.y * float2(0.03, 0.02)
+  uv3 = worldPos.xz * _CausticScale * 1.3 + _Time.y * float2(-0.02, 0.04)
+  c1  = ValueNoise(uv2)
+  c2  = ValueNoise(uv3)
+  caustic = pow(c1 * c2, _CausticSharpness) * depthFade * lightDot
+
+---
+
+## §8 — LIGHTWEIGHT SSDO / HBAO-LITE
+
+[FORBID] URP SSAO feature. Disabled in renderer asset.
+[RULE] Custom half-res SSDO pass. 4-tap gather. Injected via ScriptableRenderPass after opaque.
+[MATH] SSDO 4-tap kernel (view-space hemisphere):
+  taps[4] = { normalize(float3(1,1,0)), normalize(float3(-1,1,0)),
+               normalize(float3(0,1,1)), normalize(float3(0,1,-1)) }
+  ao = 0
+  for i in 0..3:
+    sampleVS  = centerVS + (taps[i] * _AORadius)
+    sampleSS  = ProjectToScreen(sampleVS)
+    tapDepth  = SampleDepth(sampleSS)
+    tapVS     = ReconstructVS(sampleSS, tapDepth)
+    horizonV  = normalize(tapVS - centerVS)
+    contrib   = max(0, dot(horizonV, normalVS) - _AOBias)
+    // bilateral reject:
+    depthDiff = abs(sampleVS.z - centerVS.z)
+    weight    = depthDiff < _BilateralThreshold ? 1.0 : 0.0
+    ao       += contrib * weight
+  ao = 1.0 - saturate(ao / 4.0 * _AOIntensity)
+
+[RULE] Upsample SSDO to full-res with 3x3 bilateral filter before multiply into lighting.
+[SCALE] On QUALITY_LOW: skip SSDO entirely. Use baked AO from G-channel only.
+
+---
+
+## §9 — ALU-PRIORITY NOISE & PROCEDURAL DETAIL
+
+[RULE] MX350 bandwidth bottleneck. Prefer ALU noise over texture lookups for all distance/fog/detail overlays.
+[MATH] Value Noise (2D, ALU-only):
+  hash2(p) = frac(sin(dot(p, float2(127.1, 311.7))) * 43758.5453)
+  ValueNoise(p):
+    i = floor(p); f = frac(p)
+    u = f*f*(3-2*f)  // smoothstep
+    return lerp(lerp(hash2(i), hash2(i+float2(1,0)), u.x),
+                lerp(hash2(i+float2(0,1)), hash2(i+float2(1,1)), u.x), u.y)
+
+[MATH] FBM (3 octaves max on MIN spec):
+  fbm(p): sum = 0; amp = 0.5; freq = 1.0
+  for i in 0..2:
+    sum  += ValueNoise(p * freq) * amp
+    freq *= 2.13; amp *= 0.48
+  return sum
+
+[SCALE] QUALITY_HIGH: allow 1 extra octave (4 total). QUALITY_LOW: 2 octaves.
+[RULE] Ocean surface detail: FBM drives normal perturbation only. No height-based tessellation on MIN spec.
+
+---
+
+## §10 — DEPTH & Z-FIGHTING DEFENSE
+
+[SAFE] Reversed-Z depth buffer: MANDATORY. Eliminates precision loss at far distances.
+  — Enable via SystemInfo check; fallback to log-depth bias on GL targets.
+[MATH] Logarithmic depth encoding (fallback):
+  Fcoef    = 2.0 / log2(farPlane + 1.0)
+  gl_FragDepth = log2(max(1e-6, 1.0 + clipPos.w)) * Fcoef * 0.5
+[SAFE] Clip-space depth bias for voxel skirts / decals:
+  IN.positionCS.z -= _DepthBias * IN.positionCS.w * decalMask
+  — multiply by .w to keep perspective-correct. Never add flat bias.
+[SAFE] Coplanar geometry (grates/grids on hull): offset index 1 via:
+  depthOffset = 0.0005 * (1.0 / max(0.001, -viewZ))  // recedes with distance
+
+---
+
+## §11 — SHADOW STRATEGY
+
+[RULE] Shadow Atlas: 1024px on MIN spec, 2048px on MED+. Zero runtime resize.
+[RULE] MaxShadowDistance = 40m (underwater visibility cap). CSM: 2 cascades only on MIN spec.
+[SCALE] Cascade splits: QUALITY_LOW = [8m, 25m] | QUALITY_HIGH = [5m, 15m, 35m] (3 cascades).
+[RULE] Spot lights (bioluminescent creatures, dive lights): 512px shadow map each. Max 2 casting spots active simultaneously.
+[FORBID] Point light shadows on MIN spec. Fake via SDF proximity shadow in shader:
+[MATH] SDF soft shadow approximation (for point lights on LOW):
+  softShadow(ro, rd, mint, maxt, k):
+    res = 1.0; t = mint
+    while t < maxt:
+      h = SDFScene(ro + rd*t)
+      if h < 0.001: return 0.0
+      res = min(res, k*h/t)
+      t  += clamp(h, 0.01, 0.2)
+    return res
+[RULE] Underwater caustic shadows: baked into shadow map via shadow caster pass with caustic modulation. Not runtime raycast.
+
+---
+
+## §12 — WATER SURFACE & SCREEN-SPACE REFRACTION
+
+[RULE] Water surface: single mesh plane per zone. Subdivide 64x64 on QUALITY_HIGH, 16x16 on LOW.
+[FORBID] Tessellation on MIN spec GPU. Use vertex-displaced grid with pre-sampled FFT baked into vertex animation texture (VAT).
+[MATH] Gerstner wave (2 dominant waves, ALU):
+  GerstnerWave(pos, wavelength, amplitude, speed, direction, steepness, time):
+    k  = 2π / wavelength
+    c  = sqrt(9.81 / k)
+    d  = normalize(direction)
+    f  = k * (dot(d, pos.xz) - c * time)
+    Q  = steepness / (k * amplitude)
+    Δx = Q * amplitude * d.x * cos(f)
+    Δy = amplitude * sin(f)
+    Δz = Q * amplitude * d.z * cos(f)
+    return float3(Δx, Δy, Δz)
+  — Sum 2 calls. Output drives vertex offset + normal reconstruction.
+
+[MATH] Surface normal from Gerstner (analytic, no tex sample):
+  ∂x/∂u = 1 - Q*k*amplitude*(d.x²)*sin(f)
+  ∂y/∂u = k*amplitude*d.x*cos(f)
+  ∂z/∂u = -Q*k*amplitude*d.x*d.z*sin(f)
+  normal = normalize(cross(tangentU, tangentV))
+
+[RULE] Screen-space refraction: offset GrabTexture/OpaqueTexture UVs by compressed normal.
+  refractUV = screenUV + normalWS.xz * _RefractionStrength * depthFade
+  — clamp offset: max magnitude = 0.03 NDC to prevent sample-outside-frame.
+[RULE] depthFade for refraction: kills offset at surface edges.
+  depthFade = saturate(sceneDepth - surfaceDepth) / _RefractionFadeRange
+
+---
+
+## §13 — PARTICLE & VFX OPTIMIZATION
+
+[RULE] VFX Graph mandatory over Shuriken for all underwater particles (bubbles, debris, spores).
+[RULE] GPU particle budget: MAX 4000 particles on MIN spec. Enforce via VFX capacity override.
+[RULE] All particles: soft-particle depth fade. No opaque particle overdraw.
+[MATH] Soft particle fade:
+  sceneDepth  = SampleSceneDepth(screenUV) linearized
+  partDepth   = IN.positionCS.z / IN.positionCS.w linearized
+  softFactor  = saturate((sceneDepth - partDepth) / _SoftParticleFade)
+  alpha      *= softFactor
+[FORBID] Particle shadow casting. Zero exceptions. Set shadow casting=OFF in VFX output.
+[RULE] Bioluminescent glow particles: additive blend ONLY. No alpha-blend glow sprites.
+[RULE] Particle texture atlas: single 512x512 atlas, BC1. Max 16 sprites. No per-particle texture assignment.
+
+---
+
+## §14 — MEMORY & CPU FRAME CONTRACT
+
+[RULE] Main thread GPU submission budget: <2.0ms (leaves room for physics + AI).
+[RULE] Render thread (job-ified): Culling + HLOD bucket sort = <1.5ms on i3.
+[FLOW] Frame budget allocation (16.6ms total @ 60fps, MIN spec):
+  CPU Simulation   : 4.0ms  (physics, AI, gameplay)
+  Render Prep      : 2.0ms  (culling, HLOD, batch build)
+  GPU Opaque       : 5.0ms
+  GPU Transparent  : 2.0ms
+  GPU PostFX       : 2.5ms
+  GPU Present      : 1.1ms  (driver overhead)
+
+[RULE] C# GC contract: ZERO allocations per frame on hot path. Pre-allocate all NativeArray / List via persistent allocator.
+[RULE] Command Buffer pooling: maintain ring buffer of 3 CommandBuffers. Recycle via index % 3.
+[DATA] NativeArray<HLODInstance> pre-allocated at scene load: capacity = 2048. Never reallocate in gameplay.
+[RULE] Physics: FixedUpdate budget = 3.0ms. Rigidbody count ceiling = 64 active simultaneous.
+[RULE] Jobs: IJobParallelFor for HLOD frustum cull. Min batch size = 32 instances per job chunk.
+
+---
+
+## §15 — POST-PROCESSING STACK (MINIMAL OVERHEAD)
+
+[RULE] Active post FX on MIN spec (hard limit):
+  1. URP FXAA (free, resolve-pass)
+  2. Custom Depth-of-Field (CoC only, no bokeh, half-res blur)
+  3. Tonemapper: ACES approximation (ALU-only, no LUT on LOW)
+  4. Chromatic Aberration: screen-edge only (UV dist > 0.7 from center), 3-tap
+  5. Vignette: ALU polynomial, zero texture
+  6. Custom CRT-noir scanline (1-tap, 0.02ms) — aesthetic mandate
+
+[FORBID] Bloom on MIN spec. On MED+: dual-filter bloom (downsample x4 → upsample x4, kawase-style).
+[FORBID] Lens Flares runtime on MIN spec. Bake into environment lighting.
+[MATH] ACES ALU approximation (no LUT):
+  ACESFilm(x): a=2.51; b=0.03; c=2.43; d=0.59; e=0.14
+  return saturate((x*(a*x+b))/(x*(c*x+d)+e))
+[MATH] Chromatic aberration (edge-gated):
+  distFromCenter = length(uv - 0.5) * 2.0
+  aberrationStr  = max(0, distFromCenter - 0.7) / 0.3 * _AberrationIntensity
+  r = SceneColor(uv + float2( aberrationStr, 0)).r
+  b = SceneColor(uv + float2(-aberrationStr, 0)).b
+  g = SceneColor(uv).g
+[MATH] Depth-of-Field CoC:
+  CoC = abs(sceneDepth - _FocusDepth) / sceneDepth * _ApertureScale
+  CoC = clamp(CoC, 0, _MaxCoC)
+  blurRadius = CoC * _ScreenHeight * 0.5
+
+---
+
+## §16 — SCALABILITY MATRIX
+
+| System              | QUALITY_LOW (MX350)         | QUALITY_MED               | QUALITY_HIGH                  |
+|---------------------|-----------------------------|---------------------------|-------------------------------|
+| RenderScale         | 0.65                        | 0.80                      | 1.00                          |
+| ShadowAtlas         | 1024px, 2 cascades          | 2048px, 2 cascades        | 2048px, 3 cascades            |
+| SSDO                | OFF (baked AO only)         | Half-res, 4-tap           | Half-res, 4-tap + blur        |
+| Volumetric          | OFF                         | Half-res, 8-step          | Half-res, 16-step             |
+| FBM Octaves         | 2                           | 3                         | 4                             |
+| Particle Cap        | 4000                        | 8000                      | 16000                         |
+| Bloom               | OFF                         | Dual-filter x4            | Dual-filter x6                |
+| Water Subdivisions  | 16x16                       | 32x32                     | 64x64                         |
+| HLOD LOD2 dist      | 40m                         | 60m                       | 80m                           |
+| Texture Mip Bias    | +1.5                        | +0.5                      | 0.0                           |
+| Spot Shadow Count   | 1 active                    | 2 active                  | 3 active                      |
+| DoF                 | OFF                         | CoC blur, half-res        | CoC + bokeh, half-res         |
+
+[RULE] Quality detection on startup:
+  QUALITY_LOW  if: VRAM <= 2GB  OR SystemMemory <= 6GB  OR GPUScore < threshold
+  QUALITY_MED  if: VRAM <= 4GB  AND SystemMemory <= 12GB
+  QUALITY_HIGH if: VRAM > 4GB   AND SystemMemory > 12GB
+[RULE] Allow runtime user override. Persist to PlayerPrefs. Re-apply without scene reload via pipeline asset swap.
+
+---
+
+## §17 — BIOLUMINESCENCE & HORROR LIGHTING CONTRACT
+
+[RULE] Bioluminescent emission: emissive mask (A-channel PBR texture) × pulsed intensity only.
+[MATH] Biological pulse:
+  pulse = pow(abs(sin(_Time.y * _PulseFreq + _PhaseOffset)), _PulseSharpness)
+  emission = _EmissionColor * _EmissionIntensity * pulse
+  — _PulseSharpness > 4.0 = sharp pulse. < 1.0 = smooth breathe.
+
+[RULE] Creature illumination: point lights attached to creatures use Light Layers. World geometry NOT lit by creature lights (perf gate).
+[RULE] Horror darkness: ambient light floor = 0.002 linear. Player flashlight = sole reliable key light.
+[RULE] Flashlight: spot light, 512px shadow, 1 cascade. Volumetric cone via half-res raymarch (gated §7).
+[MATH] Underwater light extinction (Beer-Lambert per channel):
+  extinction = exp(-_WaterExtinction * depth)
+  // _WaterExtinction = float3(0.45, 0.12, 0.03) → red extinct fast, blue persists
+  lightColor *= extinction
+
+[RULE] Zone-based fog: per-zone _FogDensity, _FogColor injected via Shader.SetGlobalFloat/Vector on zone enter. No full scene rebake.
+
+---
+
+## §18 — FAILURE MODES & DEFENSIVE CONTRACTS
+
+[SAFE] GPU crash guard: all ComputeShader dispatches wrapped in error check. Log + fallback to CPU path if Dispatch fails.
+[SAFE] VRAM OOM: AssetBundleLoadAsync checks SystemInfo.graphicsMemorySize before load. Defer load or downgrade mip if < 300MB headroom.
+[SAFE] Shader compile failure at runtime: fallback to Hecton8_ErrorMagenta.shader (flat color). NEVER crash. Log variant + keyword combo.
+[SAFE] NaN propagation defense: in all fragment shaders computing lighting:
+  finalColor = isnan(finalColor) || isinf(finalColor) ? float4(0,0,0,1) : finalColor
+[SAFE] Depth buffer feedback loop: ensure no shader samples _CameraDepthTexture in same pass writing depth. Use previous-frame depth for effects needing depth+write.
+[SAFE] DrawMeshInstancedIndirect arg buffer: validate args[1] (instance count) < 2048 before dispatch. Clamp CPU-side before write.
+[SAFE] FloatingOrigin rebase: disable physics simulation for 1 FixedUpdate frame during rebase. Prevents impulse artifacts from repositioned rigidbodies.
+[SAFE] LOD hysteresis: LOD transitions require 3 consecutive frames in new bucket before switching. Prevents LOD flicker at distance boundary.
+  lodHysteresis[instanceID]++ if sameBucket else reset to 0
+  doSwitch = lodHysteresis[instanceID] >= 3
+
+---
+
+## §19 — ASSET PIPELINE MANDATES
+
+[RULE] All mesh imports: Read/Write=OFF (post-bake). Enables GPU-only buffer. Exception: procedural deformation meshes.
+[RULE] Mesh compression: ON for all static geometry. OFF for skinned meshes (precision loss on bone weights).
+[RULE] Normal map import: BC5 (RG only). Reconstruct Z in shader:
+  normalTS.z = sqrt(saturate(1.0 - dot(normalTS.xy, normalTS.xy)))
+[RULE] All audio: Vorbis 80kbps. 3D audio max distance = 60m (matches fog render distance).
+[RULE] Scene streaming: additive async scene load per ocean zone. Never single-scene world.
+[RULE] Lightmapping: Progressive GPU baker. Lightmap texel density = 10px/unit hero areas, 4px/unit background.
+[RULE] Lightmap atlas: 1024px per zone on MIN spec. Pack >85% efficiency enforced via CI lightmap report.
+[FORBID] Runtime lightmap switching. Zone transitions: cross-fade two lightmap UV sets via lerp in shader.
+
+---
+
+## §20 — CI / PROFILER CONTRACTS
+
+[RULE] Frame time regression gate: automated test fails build if avg frame time increases >0.5ms on MIN spec config.
+[RULE] VRAM snapshot test: post-build script checks VRAM peak via RenderDoc API or Unity Profiler capture. Fail if >1.6GB.
+[RULE] Shader variant count limit: ShaderVariantCollection.variantCount < 512. CI enforces. Fail build if exceeded.
+[RULE] DrawCall automated test: PlayMode test in MIN spec profile, target scene. Assert opaqueDrawCalls < 180.
+[RULE] GC Alloc test: ProfilerMarker wraps hot path per-frame code. Assert GCAlloc = 0B in Play mode after 300 frames.
+[RULE] Profiler markers mandatory on: HLOD cull pass | Volumetric pass | SSDO pass | Shadow render. Names: "Hecton8.HLOD", "Hecton8.Vol", "Hecton8.SSDO", "Hecton8.Shadow".
+```

@@ -1,0 +1,360 @@
+# MAPMAGIC_VOXEL_INTEGRATION.md
+# HECTON-8 | ENGINE MANDATE v1.0 | CLASSIFICATION: CORE-CRITICAL
+
+---
+
+## §0. DOMAIN SCOPE
+
+Governs all intersection logic between MapMagic2 terrain surface and Voxel (Digger/Density-based) cave volumes.
+Covers: seam geometry, normal-space unification, collision arbitration, raycasting unification, LOD synchronization, floating-origin safety.
+
+---
+
+## §1. SEAM GEOMETRY — SEAMLESS SEAMS MANDATE
+
+### §1.1 Transition Band Specification
+- Overlap zone: **3.5m** measured from voxel mesh boundary inward toward terrain surface.
+- Band contains: skirt geometry, blended normals, collision handoff zone, dither VFX emitters.
+- Band coordinate system: always `AbsoluteUniversePosition` (AUP). Never local Transform space.
+
+### §1.2 Skirt Generation — FLOW
+
+```
+SKIRT_SNAP(voxel_chunk):
+  1. Marching-Cubes → extract boundary edge loop E at chunk Y-ceiling
+  2. For each vertex V in E:
+       h = MapMagic.SampleHeightAUP(V.xz)          // bilinear, no GC
+       V.y = min(V.y, h + 0.10)                     // 0.10m guaranteed overlap
+       V.y = max(V.y, h - 3.50)                     // clamp to band floor
+  3. Weld duplicate XZ positions: tolerance = 0.02m
+  4. Recalculate skirt normals → pass to §2 blending
+  5. Submit skirt mesh to MeshBaker, mark dirty in SeamRegistry
+```
+
+### §1.3 Terrain Hole Synchronization — FLOW
+
+```
+HOLE_SYNC(cave_entrance_bounds AABB):
+  1. Compute terrain chunk coords: chunk_id = floor(AUP.xz / TerrainChunkSize)
+  2. Call TerrainHoleAPI.RegisterHole(chunk_id, AABB)
+  3. Invalidate MapMagic chunk residency: MMChunkCache.Evict(chunk_id)
+  4. Force MM re-bake at next scheduler tick (non-blocking, job-threaded)
+  5. Register in SeamRegistry: seam_map[chunk_id.xy] = AUP.y (float)
+  6. Set flag: CollisionArbiter.MarkVoxelOverride(chunk_id) → disables terrain collider
+```
+
+### §1.4 Seam Registry — DATA
+
+```
+SeamRegistry:
+  store   : NativeParallelHashMap<int2, float>
+              key   = terrain chunk XZ index
+              value = seam world Y (AUP)
+  capacity: pre-alloc 512 entries (streaming ocean floor scale)
+  thread  : read/write from Burst jobs only (no main-thread access mid-frame)
+  persist : serialized to save-blob on scene unload
+  drift   : on floating origin shift → iterate all values, apply delta Y offset
+```
+
+---
+
+## §2. NORMAL SPACE UNIFICATION — SHARED NORMAL MANDATE
+
+### §2.1 Blend Formula — MATH
+
+```
+t   = smoothstep(band_edge, band_center, dist_from_seam)
+     // band_edge   = 3.50m  (voxel skirt outer)
+     // band_center = 0.00m  (exact seam line)
+
+N_final = normalize(slerp(N_terrain, N_voxel, t))
+```
+
+- `slerp` over normals (unit-sphere geodesic). NOT lerp. Lerp introduces magnitude shrinkage at t=0.5.
+- `dist_from_seam`: signed distance sampled per-vertex against seam polyline in AUP space.
+- Apply N_final to: vertex normal buffer, tangent recalculation, lightmap UV2 rebake trigger.
+
+### §2.2 Tangent Frame Reconstruction
+
+```
+AFTER normal blend:
+  T_new = normalize(T_old - dot(T_old, N_final) * N_final)   // Gram-Schmidt
+  B_new = cross(N_final, T_new) * sign(B_old)
+  write [T_new, B_new, N_final] to mesh vertex stream
+```
+
+- Prevents NormalMap artifacts at seam when underwater caustic detail maps sample tangent space.
+
+### §2.3 Hardware Budget Gate — MX350 [SCALE]
+
+```
+BLEND_GATE(player_AUP):
+  for each seam S in SeamRegistry:
+    dist = length(S.worldPos.xz - player_AUP.xz)
+    if dist > 15.0:
+      skip normal blend for S entirely
+      use N_voxel raw at voxel side, N_terrain raw at terrain side
+      activate §5.2 dither VFX emitter as gap mask
+    else:
+      execute §2.1 full slerp blend
+```
+
+- Budget: ≤ 3 seam blend zones simultaneously on MX350 tier.
+- MX350 VRAM constraint: blended normal atlas max 512×512 R11G11B10 (no alpha waste).
+
+---
+
+## §3. COLLISION ARBITRATION
+
+### §3.1 Double-Collision Elimination — [FORBID] enforced
+
+```
+CollisionArbiter.MarkVoxelOverride(chunk_id):
+  1. Fetch terrain chunk collider reference
+  2. Set collider.enabled = false
+  3. Write to NativeBitArray: voxel_override_mask[chunk_id_flat_index] = 1
+  4. Register with PhysicsWorld rebuild queue (next fixed-update)
+  5. On voxel chunk unload: restore terrain collider, clear bitmask bit
+```
+
+- Flat index: `chunk_id_flat = chunk_id.x * WORLD_CHUNK_STRIDE + chunk_id.y`
+- `WORLD_CHUNK_STRIDE` = max world width in chunks (power-of-2, compile-time const).
+- Collider swap must complete within same FixedUpdate as voxel mesh becoming visible. Zero-frame gap tolerance.
+
+### §3.2 Transition Band Collision Blending
+
+```
+In 3.5m band: BOTH colliders may exist transiently ONLY during:
+  - Voxel chunk load-in (grace window: ≤ 2 FixedUpdate frames)
+  - Never during steady-state gameplay
+
+Grace window guard: if grace_timer[chunk_id] > 2 frames → force disable terrain collider
+```
+
+---
+
+## §4. UNIFIED RAYCASTING — GLOBALWORLDRAYCASTER
+
+### §4.1 Architecture — [FORBID] DISJOINT RAYCASTS enforced
+
+```
+GlobalWorldRaycaster.Query(ray, maxDist, layerMask):
+  // Phase 1: Classify ray origin zone
+  zone = SeamRegistry.ClassifyAUP(ray.origin)
+    // returns: TERRAIN_ONLY | VOXEL_ONLY | BLEND_BAND | UNREGISTERED
+
+  // Phase 2: Route queries
+  switch zone:
+    TERRAIN_ONLY  → Unity terrain raycast only
+    VOXEL_ONLY    → VoxelPhysics.Raycast only
+    BLEND_BAND    → run BOTH, merge results (§4.2)
+    UNREGISTERED  → Unity Physics.Raycast (fallback, log warning)
+
+  // Phase 3: Return unified RayHit struct
+  return RayHit { point_AUP, normal_blended, surface_type, chunk_id }
+```
+
+### §4.2 Dual-Hit Merge Logic — MATH
+
+```
+MERGE_HITS(hit_terrain, hit_voxel, query_ray):
+  if !hit_terrain.valid: return hit_voxel
+  if !hit_voxel.valid:   return hit_terrain
+
+  // Select nearer hit as primary geometry contact
+  primary   = (hit_terrain.dist < hit_voxel.dist) ? hit_terrain : hit_voxel
+  secondary = other
+
+  // Blend normal if secondary within 0.5m of primary
+  if abs(hit_terrain.dist - hit_voxel.dist) < 0.50:
+    t = 1.0 - (abs_delta / 0.50)
+    primary.normal = slerp(primary.normal, secondary.normal, t * 0.4)
+    // 0.4 cap: prevent secondary from dominating merged normal
+
+  return primary
+```
+
+### §4.3 Performance: Job-Burst Batching
+
+```
+Batch all raycasts per frame into NativeArray<RaycastCommand>:
+  - Terrain commands → Unity RaycastCommand batch (IJobParallelFor)
+  - Voxel commands   → VoxelRaycastBatch job (Burst, unmanaged)
+  - Merge results    → MergeHitsJob (Burst, reads both result arrays)
+  - Total latency target: ≤ 0.3ms per 64-ray batch on i3-10gen
+```
+
+---
+
+## §5. FLOATING ORIGIN SAFETY
+
+### §5.1 Integration Math — [SAFE] AUP Mandate
+
+```
+ORIGIN_SHIFT_EVENT(shift_vector float3):
+  // SeamRegistry
+  SeamRegistry.ApplyDelta(shift_vector.y):
+    for all keys K in seam_map:
+      seam_map[K] -= shift_vector.y   // Burst parallel job
+
+  // Skirt vertex buffers
+  SkirtMeshBuffer.ApplyDelta(-shift_vector):  // GPU-side, compute shader
+    dispatch: CS_OffsetVertices(vertex_buffer, -shift_vector)
+
+  // Dither VFX emitters
+  VFXEmitterRegistry.ShiftAll(-shift_vector)
+
+  // Collision Arbiter chunk index remapping
+  CollisionArbiter.RemapChunkOrigin(shift_vector)
+
+RULE: Zero floating-point seam position ever stored in Unity Transform.
+      All positions stored as AUP (double3 or int3+float3 fixed-point).
+      Convert to camera-relative float3 only at render submission.
+```
+
+### §5.2 Gap Dither VFX — Microgap Concealment [SAFE]
+
+```
+VFX_EMITTER_PLACEMENT(seam_point_AUP):
+  // Place ribbon particle emitter along seam polyline
+  particle_type   : "BioluminescentDustMote" (matches NASA-Punk aesthetic)
+  emission_width  : 0.15m (covers 1cm microgap + perceptual margin)
+  depth_fade      : fade alpha at dist > 0.5m from camera
+  activation_rule : always active on LOW/MED quality tier
+                    active only if seam_delta > 0.005m on HIGH/ULTRA tier
+  cost            : ≤ 48 GPU particles per seam point (MX350 budget)
+  blend_mode      : Additive (no overdraw depth-sort cost)
+```
+
+---
+
+## §6. LOD SYNCHRONIZATION [SCALE]
+
+### §6.1 Voxel LOD ↔ MapMagic Chunk Resolution Sync
+
+```
+LOD_SYNC_RULE:
+  VoxelLOD0_threshold  == MM_chunk_highres_distance    (must match, configure both)
+  VoxelLOD1_threshold  == MM_chunk_lowres_distance
+
+  Transition callback:
+    MM_OnChunkResolutionChange(chunk_id, new_res):
+      VoxelLODController.ForceEvaluation(chunk_id)
+      SkirtMeshBuffer.MarkDirty(chunk_id)
+      SeamRegistry.InvalidateNormals(chunk_id)
+      → triggers skirt resnap (§1.2) at new resolution
+```
+
+### §6.2 LOD Transition Stagger — Anti-Pop
+
+```
+STAGGER(chunk_id):
+  delay_frames = hash(chunk_id) % 3     // 0,1,2 frame offset
+  // Prevents all seam chunks from rebuilding same frame
+  // hash: chunk_id.x * 2654435761u ^ chunk_id.y * 2246822519u (Knuth multiplicative)
+  schedule SkirtSnap at: current_frame + delay_frames
+```
+
+---
+
+## §7. QUALITY SCALABILITY MATRIX
+
+```
+TIER        NORMAL_BLEND   RAYCAST_MODE      SKIRT_VERTS   VFX_EMITTERS   SEAM_RADIUS
+LOW         disabled       terrain-priority  64/chunk       always-on       8m
+MEDIUM      15m gate       dual-merge        128/chunk      gap>0.5cm      12m
+HIGH        15m gate       dual-merge        256/chunk      gap>0.5cm      15m
+ULTRA       20m gate       dual-merge        512/chunk      gap>0.1cm      20m
+
+MX350 = force MEDIUM tier regardless of user selection.
+i3-10gen = force LOW or MEDIUM based on frame budget sampler (§7.1).
+```
+
+### §7.1 Dynamic Tier Downgrade
+
+```
+BUDGET_SAMPLER (runs every 120 frames):
+  avg_ms = rolling_avg(frame_time, 120 samples)
+  if avg_ms > 20.0ms AND current_tier > LOW:
+    current_tier--
+    log "SEAM_TIER_DOWNGRADE: " + current_tier
+  if avg_ms < 14.0ms AND current_tier < user_max_tier:
+    current_tier++
+```
+
+---
+
+## §8. VALIDATION & FAILURE DETECTION
+
+### §8.1 Seam Gap Detector — Runtime Assert
+
+```
+SEAM_VALIDATE(chunk_id) [DEBUG build only]:
+  for each skirt vertex V:
+    h_terrain = MapMagic.SampleHeightAUP(V.xz)
+    gap = abs(V.y - h_terrain)
+    if gap > 0.05m:
+      log ERROR "GAP EXCEED: chunk=" + chunk_id + " gap=" + gap
+      DEBUG_DrawSphere(V, 0.2, RED, 5sec)
+```
+
+### §8.2 Collision Overlap Detector
+
+```
+COLLISION_VALIDATE(chunk_id) [DEBUG build only]:
+  if voxel_override_mask[chunk_flat] == 1:
+    if terrain_collider[chunk_id].enabled == true:
+      log CRITICAL "DOUBLE_COLLIDER: chunk=" + chunk_id
+      force terrain_collider.enabled = false
+```
+
+### §8.3 AUP Drift Monitor
+
+```
+DRIFT_CHECK (every 600 frames):
+  for sample seam S in SeamRegistry (random 8 samples):
+    rendered_pos = S.worldPos - FloatingOrigin.CurrentOffset
+    if length(rendered_pos) > 1000.0m:
+      log WARNING "AUP_DRIFT: seam drifting beyond safe float range"
+      trigger OriginShift
+```
+
+---
+
+## §9. DEPENDENCY CONTRACTS
+
+```
+REQUIRES:
+  MapMagic2           ≥ 2.1.9   (TerrainHoleAPI stable)
+  Digger/VoxelPro     ≥ 3.x     (Burst-compatible mesh output)
+  Unity.Collections   ≥ 1.4     (NativeParallelHashMap)
+  Unity.Burst         ≥ 1.8     (unmanaged job math)
+  Unity.Jobs          ≥ 0.70    (IJobParallelFor batch raycast)
+  Unity Physics       ≥ 1.x     OR PhysX backend (NOT both active)
+  Shader target       ≥ 3.5     (R11G11B10 normal atlas format)
+
+INCOMPATIBLE:
+  MM Legacy Stamp system        (conflicts with hole invalidation §1.3)
+  Terrain Draw Instanced = ON   (breaks hole API on DX11 fallback)
+  Any Transform-space seam math (violates AUP mandate §5.1)
+```
+
+---
+
+## §10. OPEN TECHNICAL DEBT — KNOWN LIMITATIONS
+
+```
+[DEBT-01] MM async bake latency: hole registration visible for ≤1 frame on slow HDD.
+          Mitigation: black fade plane at cave entrance during bake window.
+
+[DEBT-02] Skirt weld tolerance 0.02m may cause T-junctions on high-curvature terrain.
+          Mitigation: increase to 0.04m + recalculate normals post-weld.
+
+[DEBT-03] Dual-raycast merge adds ~0.15ms per 64 rays. Budget against AI/sensor systems.
+
+[DEBT-04] Particle VFX emitters cast additional overdraw in scenes with heavy volumetric fog.
+          Mitigation: disable VFX emitters inside active VolumetricFog bounds.
+
+[DEBT-05] slerp at t=0 and t=1 numerically unstable if N_terrain == N_voxel (parallel).
+          Guard: if dot(N_terrain, N_voxel) > 0.9999 → skip slerp, use N_terrain.
+```

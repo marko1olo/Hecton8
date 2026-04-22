@@ -1,0 +1,422 @@
+
+# WORLD_STREAMING_RESIDENCY.md
+# Hecton-8 — Chunk Management, Defragmentation, Caching
+# Authority: Principal System Architect | Rev: 1.0 | Status: BINDING
+
+---
+
+## I. EXECUTION POLICY
+
+### [RULE] Absolute Laws
+- Zero GC allocations on streaming hot path. No `new`, no LINQ, no boxing.
+- All chunk state transitions driven by bitmask operations on `NativeArray<byte>`.
+- All background work via `IJobParallelFor` + `JobHandle`. Main thread: scheduling only.
+- Native buffer free FORBIDDEN until `JobHandle.IsCompleted == true`.
+- Stop-the-world defrag: **PERMANENTLY FORBIDDEN**. Violation = build failure.
+- `Terrain.GetHeights()` / `GetAlphamaps()`: **PERMANENTLY FORBIDDEN**. Clones heap arrays.
+- `GetComponent`, `Find`, `SendMessage` inside any Update/Tick path: **FORBIDDEN**.
+- MapMagic graph re-evaluation on main thread during active streaming: **FORBIDDEN**.
+
+### [FORBID] Anti-Patterns
+- Single monolithic chunk array (cache thrash). Use SOA layout.
+- Synchronous `Resources.Load` for chunk data.
+- Coroutine-based loading (GC pressure, unpredictable timing).
+- Locking main thread waiting on `NativeArray` copy from background job.
+
+---
+
+## II. DATA ARCHITECTURE
+
+### [DATA] Chunk Identity & State Bitmask
+```
+ChunkState : byte (bitmask)
+  Bit 0 → RESIDENT      (fully loaded, GPU-ready)
+  Bit 1 → LOADING       (async job in-flight)
+  Bit 2 → EVICTING      (deferred disposal queued)
+  Bit 3 → STAGED        (written to StagingArea, not yet promoted)
+  Bit 4 → LOD0          (full detail active)
+  Bit 5 → LOD1          (proxy/HLOD active)
+  Bit 6 → HIGH_PRIORITY (inside movement cone)
+  Bit 7 → PINNED        (never evict: spawn, checkpoint, trigger volume)
+```
+
+State Machine Transitions (bitmask ops only):
+```
+Request Load   → state |=  LOADING
+Promote Staged → state |=  (RESIDENT | LOD0); state &= ~(LOADING | STAGED)
+Request Evict  → state |=  EVICTING; state &= ~RESIDENT
+Evict Complete → state  =  0x00
+Pin            → state |=  PINNED
+Force LOD1     → state |=  LOD1; state &= ~LOD0
+```
+
+### [DATA] Struct-of-Arrays Memory Layout (Burst/SIMD Friendly)
+```
+NativeArray<float3>   chunk_WorldPositions    [MAX_CHUNKS]  // spatial queries
+NativeArray<byte>     chunk_States            [MAX_CHUNKS]  // bitmask
+NativeArray<float>    chunk_Priority          [MAX_CHUNKS]  // scheduler weight
+NativeArray<int>      chunk_LODLevel          [MAX_CHUNKS]  // 0=full,1=proxy,2=culled
+NativeArray<double>   chunk_LastAccessTick    [MAX_CHUNKS]  // eviction age
+NativeArray<JobHandle>chunk_PendingJobs       [MAX_CHUNKS]  // in-flight handles
+
+// Heightmap tile cache (Zero-GC)
+NativeArray<ushort>   tile_HeightCache        [TILE_CACHE_SIZE * TILE_RES * TILE_RES]
+NativeArray<byte>     tile_AlphaCache         [TILE_CACHE_SIZE * ALPHA_RES * ALPHA_RES * LAYER_COUNT]
+NativeArray<int>      tile_CacheKeys          [TILE_CACHE_SIZE]  // chunkID hash
+NativeArray<byte>     tile_CacheValid         [TILE_CACHE_SIZE]  // 0=invalid,1=valid
+```
+
+### [DATA] Native Pool Architecture — Triple-Zone Layout
+```
+MemoryDomain layout (pre-allocated at startup, NO runtime alloc):
+
+ ┌──────────────────────────────────────────────────────┐
+ │  RESIDENT POOL       ~3.5 GB   (live chunk data)     │
+ │  STAGING AREA        ~512 MB   (incoming write dest) │
+ │  SCRATCH POOL        ~256 MB   (defrag compaction)   │
+ │  TILE CACHE          ~128 MB   (heightmap/alpha)     │
+ │  HLOD PROXY POOL     ~256 MB   (LOD1 geometry)       │
+ └──────────────────────────────────────────────────────┘
+
+Total ceiling: 4.65 GB → leaves OS+Unity headroom within 6-8 GB target.
+Pools: Allocator.Persistent. Sub-allocate via bump/ring-pointer. Never Allocator.Temp on hot path.
+```
+
+### [DATA] Ring Buffer — Load Request Queue
+```
+struct LoadRequest:
+  int   chunkID
+  byte  priority      // 0=low,1=normal,2=high,3=critical
+  float distanceSq
+  float3 direction    // world-space vec toward chunk center
+
+Ring buffer: capacity=256, head/tail atomic int (Interlocked)
+Sorted per-frame: radix sort on priority byte + distanceSq float (2-pass, NativeSort)
+```
+
+---
+
+## III. ALGORITHMIC & MATH TRUTH
+
+### [MATH] Residency Hysteresis — Load/Eviction Zones
+```
+residentRadius  = R_base                          // e.g., 600m
+evictionRadius  = R_base * 1.20f                  // 20% hysteresis band
+cullRadius      = R_base * 1.60f                  // hard cull (LOD2/invisible)
+
+Per-chunk per-frame (Burst job):
+  distSq = dot(chunkPos - playerPos, chunkPos - playerPos)
+
+Load condition:
+  distSq < residentRadius² AND NOT (state & RESIDENT) AND NOT (state & LOADING)
+
+Eviction condition:
+  distSq > evictionRadius² AND (state & RESIDENT) AND NOT (state & PINNED)
+  // Hysteresis gap [R_base → R_base*1.2] acts as dead zone → prevents thrashing
+
+Thrash guard (additional):
+  evict only if (currentTick - chunk_LastAccessTick[i]) > EVICTION_COOLDOWN_TICKS
+  EVICTION_COOLDOWN_TICKS = 300  // ~5 seconds @ 60Hz
+  → chunk oscillating at boundary cannot be evicted faster than this rate
+```
+
+### [MATH] Priority-Based Loading — Movement Cone Weighting
+```
+playerVelocityDir = normalize(playerVelocity)     // world-space, pre-normalized
+chunkDir          = normalize(chunkPos - playerPos)
+
+dotProduct = dot(playerVelocityDir, chunkDir)     // range [-1, +1]
+
+// Cone classification:
+  HIGH_PRIORITY  : dotProduct > cos(30°)  = 0.866f   AND distSq < residentRadius²
+  NORMAL         : dotProduct > cos(60°)  = 0.500f
+  LOW            : dotProduct > cos(90°)  = 0.000f
+  THROTTLED      : dotProduct ≤ 0.000f                // behind player
+
+Priority score formula:
+  score = (dotProduct * 0.6f) + (1.0f - saturate(dist / residentRadius)) * 0.4f
+  // Blend: 60% cone alignment, 40% proximity
+
+State bit:
+  if dotProduct > 0.866f → state |= HIGH_PRIORITY
+  else                   → state &= ~HIGH_PRIORITY
+
+Scheduler per-frame budget:
+  HIGH_PRIORITY  → max 4 concurrent load jobs
+  NORMAL         → max 2 concurrent load jobs
+  LOW/THROTTLED  → max 1 concurrent load job, every 3rd frame only
+```
+
+### [MATH] Double-Staging Defragmentation (Non-Blocking)
+```
+PHASE 0 — Trigger condition (evaluate once per 60-tick window):
+  fragRatio = freeFragmentedBytes / totalPoolBytes
+  if fragRatio > 0.15f → schedule compaction pass
+
+PHASE 1 — Background Compaction (Scratch Pool):
+  Job: CompactionJob (IJob, Burst)
+  1. Walk RESIDENT POOL free-block list (stored as NativeList<MemBlock>)
+  2. For each live block: memcpy → SCRATCH POOL at compacted offset
+  3. Update chunk pointer table: chunk_PoolOffset[i] = newScratchOffset
+  4. Record CompactionJobHandle
+
+  Main thread during Phase 1:
+  → ALL new incoming chunk writes directed to STAGING AREA
+  → STAGING AREA is contiguous bump-allocator, no fragmentation possible
+
+PHASE 2 — Swap (single-frame, < 0.1ms):
+  if CompactionJobHandle.IsCompleted:
+  1. Swap pool base pointers: RESIDENT ↔ SCRATCH  (pointer swap, ~4 bytes)
+  2. Flush STAGING AREA → new RESIDENT POOL tail (bulk memcpy, job-dispatched)
+  3. Reset SCRATCH POOL bump pointer to 0
+  4. Resume normal writes to RESIDENT POOL
+
+Guarantee: Main thread never stalls. Pointer swap is atomic write. No lock contention.
+```
+
+### [MATH] Non-Blocking Eviction — Deferred Disposal
+```
+Eviction request lifecycle:
+  Frame N:   state |= EVICTING; state &= ~RESIDENT
+             enqueue to EvictionQueue (ring buffer, capacity=64)
+  Frame N+k: per-frame, check front of EvictionQueue:
+             if chunk_PendingJobs[id].IsCompleted:
+               free PoolBlock(chunk_PoolOffset[id], chunk_PoolSize[id])
+               chunk_States[id]  = 0x00
+               chunk_PoolOffset[id] = -1
+             else:
+               skip, retry next frame (no spin-wait, no block)
+
+NativeArray buffer free sequence (strict order):
+  1. chunk_PendingJobs[id].Complete()   // ONLY safe barrier
+  2. if buffer is NativeArray: buffer.Dispose()
+  3. zero slot in pool
+
+NEVER call .Dispose() without .Complete() guard. Assert: IsCreated && IsCompleted.
+```
+
+### [MATH] Tile Cache — Zero-GC Heightmap Access
+```
+// Retrieve heightmap tile without allocation:
+Texture2D.GetPixelData<ushort>(mipLevel:0)
+  → returns NativeArray<ushort> alias into texture memory (zero-copy)
+  → store into tile_HeightCache slice: offset = tileIndex * TILE_RES²
+
+// Bilinear height sampling (pure math, no Unity Terrain API):
+  u = (worldX - tileOriginX) / tileSize          // [0..1]
+  v = (worldZ - tileOriginZ) / tileSize          // [0..1]
+
+  px = u * (TILE_RES - 1)
+  pz = v * (TILE_RES - 1)
+
+  x0 = (int)px;  x1 = x0 + 1  (clamp to TILE_RES-1)
+  z0 = (int)pz;  z1 = z0 + 1
+
+  fx = px - x0;  fz = pz - z0   // fractional parts
+
+  h00 = tile_HeightCache[tileBase + z0*TILE_RES + x0]
+  h10 = tile_HeightCache[tileBase + z0*TILE_RES + x1]
+  h01 = tile_HeightCache[tileBase + z1*TILE_RES + x0]
+  h11 = tile_HeightCache[tileBase + z1*TILE_RES + x1]
+
+  height_ushort = lerp(lerp(h00,h10,fx), lerp(h01,h11,fx), fz)
+  height_world  = (height_ushort / 65535.0f) * terrainHeight
+
+// Cache lookup (open-addressing hash, no Dictionary):
+  hashKey = chunkID ^ (mipLevel << 24)
+  slot    = hashKey % TILE_CACHE_SIZE
+  if tile_CacheKeys[slot] == hashKey AND tile_CacheValid[slot] == 1:
+    → hit: return slice at slot*TILE_RES²
+  else:
+    → miss: load via GetPixelData, write to slot (LRU evict if valid)
+
+// LRU without GC: NativeArray<uint> tile_AccessFrame[TILE_CACHE_SIZE]
+  on access: tile_AccessFrame[slot] = currentFrame
+  on miss requiring evict: find slot with min(tile_AccessFrame[i]) via linear scan (small N≤64)
+```
+
+### [MATH] Streaming LOD Swap — Pop Prevention
+```
+LOD transition driven by screen-space size estimate (no Camera.main poll in job):
+  screenFraction = (chunkRadius * 2.0f) / (dist * tanHalfFOV * 2.0f)
+  // tanHalfFOV cached at camera init, never recomputed per-chunk
+
+LOD thresholds:
+  screenFraction > 0.15f → LOD0 (full geometry, full terrain detail)
+  screenFraction > 0.04f → LOD1 (proxy mesh, half-res heightmap)
+  screenFraction ≤ 0.04f → LOD2 (invisible / impostor only)
+
+Pop prevention — cross-fade blend weight:
+  blendBand = 0.02f   // 2% screen-fraction overlap zone
+
+  if screenFraction in [threshold ± blendBand]:
+    alpha = saturate((screenFraction - (threshold - blendBand)) / (blendBand * 2.0f))
+    → render BOTH LOD levels; LOD0 at alpha, LOD1 at (1-alpha)
+    → use GPU instancing for proxy; no CPU blend cost
+    → swap completes when alpha reaches 0.0 or 1.0 (no hard pop)
+
+LOD swap sequence (deferred, not immediate):
+  Frame N:   flag chunk LOD_TRANSITIONING; begin loading target LOD resource (job)
+  Frame N+k: target LOD job complete → start blend timer (blendFrames = 8)
+  Frame N+k+8: blend complete → hard swap state bit; unload previous LOD resource (deferred eviction queue)
+
+HLOD proxy (distant ocean floor stand-ins):
+  generated offline via MapMagic bake pipeline
+  stored in HLOD PROXY POOL (pre-allocated 256MB)
+  loaded at startup for entire world extent (low memory cost, simplified meshes)
+  activated via state |= LOD1; state &= ~LOD0
+```
+
+---
+
+## IV. HARDWARE & SCALABILITY
+
+### [SCALE] Memory Budget by Quality Tier (8 GB target)
+```
+Tier        residentRadius  maxConcurrentChunks  TileCacheSize  Notes
+─────────── ─────────────── ──────────────────── ────────────── ───────────────────
+Base(6GB)   400m            32                   32 tiles       MX350 / i3 / 6GB
+High(8GB)   600m            64                   64 tiles       GTX1650 / i5 / 8GB
+Ultra(12GB) 900m            128                  128 tiles      RTX3060+ / Ryzen
+```
+
+### [SCALE] CPU Time-Slice Budget (i3-10gen, 4C/4T, ~16.7ms frame @ 60Hz)
+```
+System                    Budget(ms)   Thread
+────────────────────────  ──────────   ──────────────────
+Residency evaluation job  0.8ms        Job Worker
+Load queue sort           0.2ms        Job Worker
+Defrag compaction job     2.0ms        Job Worker (background, amortized)
+Eviction check            0.3ms        Main (quick loop)
+Tile cache LRU            0.1ms        Main
+LOD blend update          0.2ms        Main
+MapMagic graph dispatch   1.0ms        Job Worker
+Total streaming overhead  < 4.6ms      (27% of frame budget)
+```
+
+### [SCALE] MX350 VRAM Constraints (2GB)
+```
+LOD0 terrain texture sets: max 4 chunks simultaneous in VRAM (512MB each = 2GB)
+LOD1 proxy textures: shared atlas, 256MB max
+Evict GPU resource (RenderTexture, ComputeBuffer) SAME FRAME as chunk eviction trigger
+  → do not defer GPU resource release beyond 2 frames
+GPU memory eviction sequence:
+  1. chunk flagged EVICTING on CPU
+  2. EndOfFrame: GPU resource.Release() (safe: no in-flight draw referencing evicted chunk after culling)
+  3. Frame N+1: CPU NativeArray disposal via deferred queue
+```
+
+### [SCALE] Base-Tier Degradation (i3 / MX350 / 6GB)
+```
+- residentRadius reduced to 400m automatically if MemoryPressure() > 85%
+- maxConcurrentLoadJobs = 2 (vs 4 on High)
+- Tile cache reduced to 32 entries
+- LOD blend disabled (hard swap, acceptable on slow GPU where pop less visible due to lower res)
+- Defrag trigger threshold raised: fragRatio > 0.25f (less frequent, cheaper)
+- Throttled chunks: skip entirely (no LOW-priority loading on Base tier)
+```
+
+---
+
+## V. INTEGRATION & FAILURE MODES
+
+### [SAFE] Interface Contracts (SRP)
+```
+IChunkResidencySystem:
+  void  RequestLoad(int chunkID, byte priority)
+  void  RequestEvict(int chunkID)
+  bool  IsResident(int chunkID)
+  float GetPriority(int chunkID)
+
+IMemoryPoolAllocator:
+  int   Allocate(int bytes)   // returns pool offset, -1 on failure
+  void  Free(int offset, int bytes)
+  float GetFragmentationRatio()
+
+ITileSampler:
+  float SampleHeight(float3 worldPos)   // zero-GC guaranteed
+  byte  SampleAlphaLayer(float3 worldPos, int layer)
+
+ILODController:
+  void  SetLOD(int chunkID, int level)
+  float GetBlendAlpha(int chunkID)
+
+// MapMagic integration: only via IChunkResidencySystem callbacks
+// No direct MapMagic type references outside adapter layer
+```
+
+### [SAFE] Failure Modes & Guards
+```
+FAILURE: Pool allocation returns -1 (pool full)
+  → Do NOT load chunk. Set priority=0. Log warning (throttled: max 1/sec).
+  → Trigger emergency eviction: find lowest-priority RESIDENT chunk beyond 0.8*evictionRadius, evict immediately.
+  → If still no space after emergency evict: skip frame loading entirely.
+
+FAILURE: CompactionJob exceeds 3ms (detected via Stopwatch in editor only)
+  → Reduce compaction batch size by 50% next pass.
+  → Split into 2-frame job sequence via dependency chain.
+
+FAILURE: Eviction queue full (>64 pending)
+  → Halt new load requests until queue drains below 32.
+  → Assert in editor. Silent throttle in build.
+
+FAILURE: Player speed > 80m/s (submarine boost / debug teleport)
+  → residentRadius temporarily *= 1.5f for 3 seconds (anticipation buffer)
+  → maxConcurrentLoadJobs temporarily = MAX for 3 seconds
+  → Log speed anomaly for QA.
+
+FAILURE: NaN in playerVelocityDir (zero velocity)
+  → Guard: if dot(vel,vel) < 0.0001f → skip cone weighting, use proximity-only priority.
+  → Default all chunks to NORMAL priority.
+
+FAILURE: Tile cache key collision (hash aliasing)
+  → Linear probe: check tile_CacheKeys[slot], if mismatch probe slot+1 (max 4 probes).
+  → If no valid slot found after 4 probes: bypass cache, sample directly (GC-free path still valid via GetPixelData).
+
+FAILURE: JobHandle.IsCompleted false for > 120 frames (job hung)
+  → Force Complete() on frame 121. Log error.
+  → Mark chunk state = 0x00 (reset). Do not free memory (potential corruption risk → flag for GC collect on next scene load only).
+
+FAILURE: VRAM over 1.8GB (MX350 threshold)
+  → Immediately downgrade furthest 2 LOD0 chunks to LOD1 (skip blend, hard swap).
+  → Suspend new LOD0 promotions until VRAM < 1.5GB.
+```
+
+### [SAFE] Depth / Coordinate Edge Cases (Underwater World)
+```
+- World uses Y-down depth convention. Ensure chunkPos.y comparison uses Abs() for hysteresis.
+- At depth > 4000m: chunk density may spike (procedural detail). Cap mapmagic resolution at half for depth > 3000m.
+- Chunk seams at domain boundaries (MapMagic pin edges): mark PINNED | RESIDENT permanently. Never evict.
+- Biome transition chunks: mark as double-buffered (both LOD levels pre-loaded). Accept 2x memory cost for seam chunks.
+```
+
+---
+
+## CONSTANTS REFERENCE
+```
+MAX_CHUNKS            = 512
+TILE_CACHE_SIZE       = 64        // Base=32, High=64, Ultra=128
+TILE_RES              = 512       // ushort heightmap resolution per tile
+ALPHA_RES             = 512
+LAYER_COUNT           = 4         // terrain blend layers
+EVICTION_COOLDOWN_TICKS = 300
+LOD_BLEND_FRAMES      = 8
+LOD_SCREEN_THRESH_0   = 0.15f
+LOD_SCREEN_THRESH_1   = 0.04f
+LOD_BLEND_BAND        = 0.02f
+DEFRAG_TRIGGER_RATIO  = 0.15f     // Base=0.25
+MAX_LOAD_JOBS_HIGH    = 4
+MAX_LOAD_JOBS_NORMAL  = 2
+MAX_LOAD_JOBS_LOW     = 1
+CONE_HIGH_DOT         = 0.866f    // cos(30°)
+CONE_NORMAL_DOT       = 0.500f    // cos(60°)
+PRIORITY_CONE_WEIGHT  = 0.6f
+PRIORITY_DIST_WEIGHT  = 0.4f
+POOL_RESIDENT_BYTES   = 3_758_096_384   // 3.5 GB
+POOL_STAGING_BYTES    =   536_870_912   // 512 MB
+POOL_SCRATCH_BYTES    =   268_435_456   // 256 MB
+POOL_TILE_CACHE_BYTES =   134_217_728   // 128 MB
+POOL_HLOD_BYTES       =   268_435_456   // 256 MB
+VRAM_EVICT_THRESHOLD  = 1_887_436_800   // 1.8 GB
+VRAM_RESUME_THRESHOLD = 1_610_612_736   // 1.5 GB
+```
