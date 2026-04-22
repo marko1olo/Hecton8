@@ -2,6 +2,8 @@ using Hecton8.Core;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Systems.AI;
+using Hecton8.Atmosphere;
+using Hecton8.Bootstrap;
 using Hecton8.World;
 using UnityEngine;
 using UnityEngine.Audio;
@@ -30,6 +32,8 @@ namespace Hecton8.Audio
 
         private const int MusicVoiceCount = 2;
         private const int InvalidVoiceIndex = -1;
+        private const float MixerFloorDb = -80f;
+        private const float MixerCeilingDb = 0f;
 
         private static readonly string[] MenuSceneTokens = { "main_menu" };
         private static readonly string[] PrologueSceneTokens = { "prologue" };
@@ -114,6 +118,27 @@ namespace Hecton8.Audio
 
         [Tooltip("Dedicated stinger mixer group. If null, the music group is reused.")]
         [SerializeField] private AudioMixerGroup _stingerMixerGroup;
+
+        [Tooltip("Exposed mixer parameter controlling the rhythmic music layer in dB.")]
+        [SerializeField] private string _rhythmLayerParameter = "MusicLayer_Rhythm_dB";
+
+        [Tooltip("Exposed mixer parameter controlling the low-end bass layer in dB.")]
+        [SerializeField] private string _bassLayerParameter = "MusicLayer_Bass_dB";
+
+        [Tooltip("Exposed mixer parameter controlling the ambient texture layer in dB.")]
+        [SerializeField] private string _atmosphereLayerParameter = "MusicLayer_Atmosphere_dB";
+
+        [Tooltip("Exposed mixer parameter controlling the danger layer in dB.")]
+        [SerializeField] private string _dangerLayerParameter = "MusicLayer_Danger_dB";
+
+        [Tooltip("Attack speed for music-layer mixer routing.")]
+        [SerializeField, Min(0.01f)] private float _layerAttackSpeed = 2.8f;
+
+        [Tooltip("Release speed for music-layer mixer routing.")]
+        [SerializeField, Min(0.01f)] private float _layerReleaseSpeed = 1.4f;
+
+        [Tooltip("Radius used to sample nearby aggressive fauna for danger-layer routing.")]
+        [SerializeField, Min(1f)] private float _predatorSenseRadius = 70f;
 
         [Header("Thresholds")]
         [Tooltip("Tension threshold that enters combat routing.")]
@@ -209,6 +234,13 @@ namespace Hecton8.Audio
         [SerializeField] private float _debugRewardUnease01;
         [SerializeField] private float _debugSafePocketSuppression01;
         [SerializeField] private float _debugFirstHourPressureBoost01;
+        [SerializeField] private float _debugLayerRhythm01;
+        [SerializeField] private float _debugLayerBass01;
+        [SerializeField] private float _debugLayerAtmosphere01;
+        [SerializeField] private float _debugLayerDanger01;
+        [SerializeField] private float _debugPredatorProximity01;
+        [SerializeField] private float _debugStormPressure01;
+        [SerializeField] private float _debugOxygenDanger01;
 
         private AudioSource[] _musicSources;
         private HectonMusicBiomeProfile[] _voiceProfiles;
@@ -272,6 +304,20 @@ namespace Hecton8.Audio
         private bool _tenseExplorationLatched;
         private bool _lastAcousticInteriorState;
         private bool _hasLastAcousticInteriorState;
+        private Transform _playerTransform;
+        private HectonSurvivalSystem _survivalSystem;
+        private AudioMixer _layerMixer;
+        private float _layerRhythm01;
+        private float _layerBass01;
+        private float _layerAtmosphere01;
+        private float _layerDanger01;
+        private float _predatorProximity01;
+        private float _stormPressure01;
+        private float _oxygenDanger01;
+        private float _lastRhythmDb = float.MinValue;
+        private float _lastBassDb = float.MinValue;
+        private float _lastAtmosphereDb = float.MinValue;
+        private float _lastDangerDb = float.MinValue;
 
         /// <summary>
         /// Global access to the music director.
@@ -402,6 +448,7 @@ namespace Hecton8.Audio
             UpdateVoices(deltaTime);
             UpdateStingerState();
             UpdateStingerCooldowns(deltaTime);
+            UpdateLayerRouting(deltaTime);
 
             if (_shortTrackCooldownRemaining > 0f)
             {
@@ -475,6 +522,7 @@ namespace Hecton8.Audio
         /// </summary>
         public void SlowTick()
         {
+            RefreshLayerThreatSnapshot();
             ReevaluateContext(false);
         }
 
@@ -710,8 +758,19 @@ namespace Hecton8.Audio
             if (_directorAI == null)
                 _directorAI = HectonDirectorAI.ActiveRuntimeInstance;
 
+            if ((_playerTransform == null || _survivalSystem == null) &&
+                SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                playerTransform != null)
+            {
+                _playerTransform = playerTransform;
+
+                if (_survivalSystem == null)
+                    _playerTransform.TryGetComponent(out _survivalSystem);
+            }
+
             AudioMixerGroup musicGroup = ResolveMusicMixerGroup();
             AudioMixerGroup stingerGroup = ResolveStingerMixerGroup();
+            _layerMixer = musicGroup != null ? musicGroup.audioMixer : null;
 
             if (_musicSources != null)
             {
@@ -724,6 +783,137 @@ namespace Hecton8.Audio
 
             if (_stingerSource != null)
                 _stingerSource.outputAudioMixerGroup = stingerGroup;
+
+            ApplyLayerMixerState(false);
+        }
+
+        private void RefreshLayerThreatSnapshot()
+        {
+            ResolveDependencies();
+
+            float depthMeters = ResolveLayerDepthMeters();
+            _oxygenDanger01 = ResolveLayerOxygenDanger01();
+            _stormPressure01 = ResolveStormPressure01(depthMeters);
+
+            if (_playerTransform == null)
+            {
+                _predatorProximity01 = 0f;
+                _debugPredatorProximity01 = 0f;
+                _debugStormPressure01 = _stormPressure01;
+                _debugOxygenDanger01 = _oxygenDanger01;
+                return;
+            }
+
+            if (WorldSpatialHashGrid.TryGetNearestAggressiveBioform(
+                _playerTransform.position,
+                Mathf.Max(1f, _predatorSenseRadius),
+                ~0,
+                _playerTransform,
+                out SpatialQueryHit predatorHit))
+            {
+                float distance = Mathf.Sqrt(predatorHit.DistanceSqr);
+                _predatorProximity01 = 1f - Mathf.Clamp01(distance / Mathf.Max(1f, _predatorSenseRadius));
+            }
+            else
+            {
+                _predatorProximity01 = 0f;
+            }
+
+            _debugPredatorProximity01 = _predatorProximity01;
+            _debugStormPressure01 = _stormPressure01;
+            _debugOxygenDanger01 = _oxygenDanger01;
+        }
+
+        private void UpdateLayerRouting(float deltaTime)
+        {
+            if (deltaTime <= 0f)
+                return;
+
+            float depthMeters = ResolveLayerDepthMeters();
+            float depth01 = Mathf.InverseLerp(20f, 900f, depthMeters);
+            float rhythmTarget = Mathf.Clamp01(_resolvedTension01 * 0.65f + _predatorProximity01 * 0.55f + _stormPressure01 * 0.18f);
+            float bassTarget = Mathf.Clamp01(depth01 * 0.62f + _resolvedTension01 * 0.28f + _oxygenDanger01 * 0.26f + _stormPressure01 * 0.12f);
+            float atmosphereTarget = Mathf.Clamp01(0.24f + depth01 * 0.58f + _stormPressure01 * 0.16f - (_currentBaseContext ? 0.16f : 0f));
+            float dangerTarget = Mathf.Clamp01(Mathf.Max(_predatorProximity01, _oxygenDanger01, _resolvedTension01 * 0.82f) + _stormPressure01 * 0.18f);
+
+            if (_currentBaseContext)
+            {
+                rhythmTarget *= 0.38f;
+                bassTarget *= 0.55f;
+                atmosphereTarget *= 0.72f;
+                dangerTarget *= 0.3f;
+            }
+
+            _layerRhythm01 = MoveLayerValue(_layerRhythm01, rhythmTarget, deltaTime);
+            _layerBass01 = MoveLayerValue(_layerBass01, bassTarget, deltaTime);
+            _layerAtmosphere01 = MoveLayerValue(_layerAtmosphere01, atmosphereTarget, deltaTime);
+            _layerDanger01 = MoveLayerValue(_layerDanger01, dangerTarget, deltaTime);
+
+            _debugLayerRhythm01 = _layerRhythm01;
+            _debugLayerBass01 = _layerBass01;
+            _debugLayerAtmosphere01 = _layerAtmosphere01;
+            _debugLayerDanger01 = _layerDanger01;
+
+            ApplyLayerMixerState(false);
+        }
+
+        private float ResolveLayerDepthMeters()
+        {
+            if (_survivalSystem != null)
+                return Mathf.Max(0f, _survivalSystem.Depth);
+
+            if (_biomeMatrixDirector != null)
+                return Mathf.Max(0f, _biomeMatrixDirector.CurrentDepthMeters);
+
+            return 0f;
+        }
+
+        private float ResolveLayerOxygenDanger01()
+        {
+            if (_survivalSystem == null)
+                return 0f;
+
+            return Mathf.Clamp01(Mathf.InverseLerp(0.35f, 0.05f, _survivalSystem.OxygenNormalized));
+        }
+
+        private float ResolveStormPressure01(float depthMeters)
+        {
+            HectonSurfaceWeatherDirector weatherDirector = HectonSurfaceWeatherDirector.Instance;
+            if (weatherDirector == null || depthMeters > 120f)
+                return 0f;
+
+            float depthAttenuation = 1f - Mathf.Clamp01(depthMeters / 120f);
+            return Mathf.Clamp01(weatherDirector.CurrentElectricalActivity * depthAttenuation);
+        }
+
+        private float MoveLayerValue(float current, float target, float deltaTime)
+        {
+            float speed = target > current ? _layerAttackSpeed : _layerReleaseSpeed;
+            return Mathf.MoveTowards(current, target, deltaTime * Mathf.Max(0.01f, speed));
+        }
+
+        private void ApplyLayerMixerState(bool force)
+        {
+            if (_layerMixer == null)
+                return;
+
+            SetMixerFloatIfChanged(_rhythmLayerParameter, _layerRhythm01, ref _lastRhythmDb, force);
+            SetMixerFloatIfChanged(_bassLayerParameter, _layerBass01, ref _lastBassDb, force);
+            SetMixerFloatIfChanged(_atmosphereLayerParameter, _layerAtmosphere01, ref _lastAtmosphereDb, force);
+            SetMixerFloatIfChanged(_dangerLayerParameter, _layerDanger01, ref _lastDangerDb, force);
+        }
+
+        private void SetMixerFloatIfChanged(string parameterName, float normalizedValue, ref float cachedDb, bool force)
+        {
+            if (string.IsNullOrEmpty(parameterName))
+                return;
+
+            float db = Mathf.Lerp(MixerFloorDb, MixerCeilingDb, Mathf.Clamp01(normalizedValue));
+            if (!force && Mathf.Abs(db - cachedDb) < 0.1f)
+                return;
+
+            _layerMixer.SetFloat(parameterName, db);
+            cachedDb = db;
         }
 
         private void ApplyConfig(HectonMusicDirectorConfig config)

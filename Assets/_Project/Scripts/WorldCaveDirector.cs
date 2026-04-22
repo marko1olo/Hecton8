@@ -25,6 +25,7 @@ using System.Threading;
 using Hecton8.Core;
 using Hecton8.Caves;
 using Hecton8.Environment;
+using Hecton8.Physics;
 using UnityEngine;
 using Unity.Collections;
 using Unity.Jobs;
@@ -121,6 +122,7 @@ namespace Hecton8.World
         private static readonly int _CrustColorId = Shader.PropertyToID("_CrustColor");
         private static readonly int _CrustRoughnessId = Shader.PropertyToID("_CrustRoughness");
         private static MaterialPropertyBlock _CaveSurfacePropertyBlock;
+        private readonly RaycastHit[] _cavePlacementHits = new RaycastHit[4]; // COLD ALLOC: RaycastHit[4] - bounded cave-floor placement probe buffer - owner: WorldCaveDirector
         private static readonly CaveStructureType[] _CliffStructureTypes =
         {
             CaveStructureType.Stalactite,
@@ -546,13 +548,25 @@ namespace Hecton8.World
                     preset.verticalSpread = 0.8f;
                     preset.minTunnelRadius = 3f;
                     preset.maxTunnelRadius = 7f;
+                    preset.tunnelWarpAmount = 4.5f;
                     preset.extraConnectionChance = 0.3f;
                     preset.entranceRadius = 3f;
                     preset.entranceFunnelLength = 25f;
+                    preset.warpFrequency = 0.03f;
+                    preset.warpAmplitude = 6.5f;
+                    preset.warpOctaves = 3;
+                    preset.wallNoiseFrequency = 0.1f;
+                    preset.wallNoiseAmplitude = 2.8f;
+                    preset.wallNoiseOctaves = 4;
+                    preset.terraceFrequency = 0.28f;
+                    preset.terraceAmplitude = 0.85f;
+                    preset.terraceSharpness = 3.5f;
+                    preset.globalBlendK = 18f;
+                    preset.floorFlatness = 0.35f;
                     preset.spawnContext = SpawnContext.CaveDeep;
                     preset.hazardLevel = 0.8f;
                     preset.moodLevel = 0.2f;
-                    preset.maxStructures = 10;
+                    preset.maxStructures = 12;
                     preset.structureDensity = 0.8f;
                     preset.allowedStructureTypes = _AbyssStructureTypes;
                     break;
@@ -922,6 +936,16 @@ namespace Hecton8.World
                 ApplyServiceRemnants(instance, dressingConfig);
             }
 
+            if (dressingConfig.bioRoots.enabled)
+            {
+                ApplyBioRoots(instance, dressingConfig);
+            }
+
+            if (dressingConfig.thermalGeysers.enabled)
+            {
+                ApplyThermalGeysers(instance, dressingConfig);
+            }
+
             // Spawn fungi particles if enabled
             if (dressingConfig.deepFungi.enabled)
             {
@@ -986,6 +1010,124 @@ namespace Hecton8.World
                 instance.preset,
                 dressingConfig.serviceRemnants,
                 dressingConfig.globalIntensity);
+        }
+
+        private void ApplyBioRoots(CaveInstance instance, CaveDressingConfig dressingConfig)
+        {
+            if (instance.volume == null || dressingConfig == null || dressingConfig.bioRoots == null)
+                return;
+
+            Transform dressingRoot = GetOrCreateDressingRoot(instance.volume.transform);
+            if (dressingRoot == null)
+                return;
+
+            Transform rootsTransform = dressingRoot.Find("_CaveBioRoots");
+            GameObject rootsObject = rootsTransform != null ? rootsTransform.gameObject : new GameObject("_CaveBioRoots");
+            if (rootsTransform == null)
+            {
+                rootsTransform = rootsObject.transform;
+                rootsTransform.SetParent(dressingRoot, false);
+            }
+
+            if (!rootsObject.TryGetComponent(out CaveBioRootsGenerator generator))
+                generator = rootsObject.AddComponent<CaveBioRootsGenerator>();
+
+            generator.Configure(instance.volume, instance.preset, dressingConfig.bioRoots, dressingConfig.globalIntensity);
+        }
+
+        private void ApplyThermalGeysers(CaveInstance instance, CaveDressingConfig dressingConfig)
+        {
+            if (instance.volume == null || dressingConfig == null || dressingConfig.thermalGeysers == null)
+                return;
+
+            ThermalGeyserConfig geyserConfig = dressingConfig.thermalGeysers;
+            int geyserCount = Mathf.Clamp(Mathf.RoundToInt(geyserConfig.maxCount * Mathf.Clamp01(dressingConfig.globalIntensity)), 0, geyserConfig.maxCount);
+            Transform dressingRoot = GetOrCreateDressingRoot(instance.volume.transform);
+            if (dressingRoot == null)
+                return;
+
+            Transform geyserRoot = dressingRoot.Find("_ThermalGeysers");
+            GameObject geyserRootObject = geyserRoot != null ? geyserRoot.gameObject : new GameObject("_ThermalGeysers");
+            if (geyserRoot == null)
+            {
+                geyserRoot = geyserRootObject.transform;
+                geyserRoot.SetParent(dressingRoot, false);
+            }
+
+            for (int geyserIndex = 0; geyserIndex < geyserCount; geyserIndex++)
+            {
+                Transform geyserTransform = geyserRoot.Find($"_ThermalGeyser_{geyserIndex:00}");
+                GameObject geyserObject = geyserTransform != null ? geyserTransform.gameObject : new GameObject($"_ThermalGeyser_{geyserIndex:00}");
+                if (geyserTransform == null)
+                {
+                    geyserTransform = geyserObject.transform;
+                    geyserTransform.SetParent(geyserRoot, false);
+                }
+
+                if (!geyserObject.TryGetComponent(out CurrentVolume currentVolume))
+                    currentVolume = geyserObject.AddComponent<CurrentVolume>();
+
+                if (!geyserObject.TryGetComponent(out ThermalGeyser geyser))
+                    geyser = geyserObject.AddComponent<ThermalGeyser>();
+
+                geyserTransform.localPosition = ResolveThermalGeyserLocalPosition(instance.volume, instance.preset, geyserIndex);
+                geyserTransform.localRotation = Quaternion.identity;
+                geyser.Configure(geyserConfig, dressingConfig.globalIntensity);
+
+                if (!geyserObject.activeSelf)
+                    geyserObject.SetActive(true);
+            }
+
+            for (int childIndex = geyserCount; childIndex < geyserRoot.childCount; childIndex++)
+            {
+                Transform child = geyserRoot.GetChild(childIndex);
+                if (child != null && child.gameObject.activeSelf)
+                    child.gameObject.SetActive(false);
+            }
+        }
+
+        private Vector3 ResolveThermalGeyserLocalPosition(HectonVoxelVolume volume, CavePreset preset, int geyserIndex)
+        {
+            if (volume == null || !CaveRuntimeBoundsUtility.TryResolveLocalVolumeBounds(volume, preset, out Bounds bounds))
+                return Vector3.zero;
+
+            float margin = 1.25f;
+            float sampleX = Mathf.Lerp(bounds.min.x + margin, bounds.max.x - margin, Hash01(geyserIndex + 1, 41));
+            float sampleZ = Mathf.Lerp(bounds.min.z + margin, bounds.max.z - margin, Hash01(geyserIndex + 1, 83));
+            float rayDistance = bounds.size.y + 2f;
+            Vector3 rayOriginWS = volume.transform.TransformPoint(new Vector3(sampleX, bounds.max.y + 1f, sampleZ));
+            Ray ray = new Ray(rayOriginWS, Vector3.down);
+
+            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
+                ray,
+                _cavePlacementHits,
+                rayDistance,
+                ~0,
+                QueryTriggerInteraction.Ignore);
+
+            float nearestDistance = float.PositiveInfinity;
+            Vector3 resolvedPointWS = volume.transform.TransformPoint(new Vector3(sampleX, bounds.min.y + 0.35f, sampleZ));
+            for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
+            {
+                RaycastHit hit = _cavePlacementHits[hitIndex];
+                Collider hitCollider = hit.collider;
+                if (hitCollider == null || (!hitCollider.transform.IsChildOf(volume.transform) && hitCollider.transform != volume.transform))
+                    continue;
+
+                if (hit.distance >= nearestDistance)
+                    continue;
+
+                nearestDistance = hit.distance;
+                resolvedPointWS = hit.point + (hit.normal.normalized * 0.08f);
+            }
+
+            return volume.transform.InverseTransformPoint(resolvedPointWS);
+        }
+
+        private static float Hash01(int index, int salt)
+        {
+            float hash = Mathf.Sin((index * 15.271f) + (salt * 61.713f)) * 43758.5453f;
+            return hash - Mathf.Floor(hash);
         }
 
         private void SpawnSedimentShelves(GameObject parent, CaveInstance instance, CaveDressingConfig dressingConfig)

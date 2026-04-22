@@ -8,6 +8,13 @@ namespace Hecton8.Gameplay
     public sealed class HarpoonLauncherTool : PlayerTool
     {
         private const string HarpoonCategory = "HARPOON";
+        private enum TetherRegistrationResult : byte
+        {
+            None = 0,
+            Reel = 1,
+            HeavyTow = 2
+        }
+
         private readonly struct HarpoonAssessment
         {
             public readonly string Headline;
@@ -64,6 +71,7 @@ namespace Hecton8.Gameplay
         private readonly RaycastHit[] _targetHits = new RaycastHit[1]; // COLD ALLOC: harpoon resolves only the nearest target per shot.
         private Rigidbody _tetheredBody;
         private Collider _tetheredCollider;
+        private HeavyTowWinch _heavyTowWinch;
         private string _tetheredName;
         private string _tetheredNameUpper;
         private int _cachedAssessmentFrame = -1;
@@ -74,6 +82,7 @@ namespace Hecton8.Gameplay
         private void Awake()
         {
             _cachedTransform = transform;
+            ResolveHeavyTowWinch();
             EnsureTracer();
             SetTracer(false, Vector3.zero);
         }
@@ -81,6 +90,7 @@ namespace Hecton8.Gameplay
         public override void UsePrimary(float deltaTime)
         {
             base.UsePrimary(deltaTime);
+            ResolveHeavyTowWinch();
 
             if (!IsEquipped || _cooldown > 0f)
                 return;
@@ -97,12 +107,14 @@ namespace Hecton8.Gameplay
                     _cachedTransform.forward,
                     impulse);
 
-                TryRegisterTether(hit);
+                TetherRegistrationResult tetherResult = TryRegisterTether(hit);
 
                 if (Time.time >= _nextFeedbackAt)
                 {
-                    HarpoonAssessment assessment = BuildAssessment(hit.collider, hit.distance, _tetheredBody != null);
-                    PublishAssessment(_tetheredBody != null
+                    bool lightTetherReady = tetherResult == TetherRegistrationResult.Reel;
+                    bool heavyTowReady = tetherResult == TetherRegistrationResult.HeavyTow;
+                    HarpoonAssessment assessment = BuildAssessment(hit.collider, hit.distance, lightTetherReady || heavyTowReady);
+                    HarpoonAssessment outboundAssessment = lightTetherReady
                         ? new HarpoonAssessment(
                             string.Format(
                                 ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_TETHER_LOCK, "HARPOON - TETHER LOCK [{0}]"),
@@ -110,14 +122,22 @@ namespace Hecton8.Gameplay
                             assessment.Summary,
                             assessment.Recommendation,
                             assessment.Severity)
+                        : heavyTowReady
+                            ? new HarpoonAssessment(
+                                string.Format("HARPOON - HEAVY TOW LOCK [{0}]",
+                                    _heavyTowWinch != null ? _heavyTowWinch.CurrentTargetNameUpper ?? "CARGO" : "CARGO"),
+                                assessment.Summary,
+                                "Throttle gently. Tow drag is now loading the suit and scooter.",
+                                assessment.Severity)
                         : new HarpoonAssessment(
                             ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_TARGET_PINNED, "HARPOON - TARGET PINNED"),
                             assessment.Summary,
                             assessment.Recommendation,
-                            assessment.Severity));
+                            assessment.Severity);
+                    PublishAssessment(outboundAssessment);
                     FieldOperationLogSystem.RecordOperation(
                         ResolveLocalized(LocalizationKeys.HARPOON_CATEGORY, HarpoonCategory),
-                        assessment.Headline,
+                        outboundAssessment.Headline,
                         string.Format(
                             ResolveLocalized(LocalizationKeys.HARPOON_LOG_ASSESSMENT, "{0} | {1}"),
                             assessment.Summary,
@@ -145,9 +165,18 @@ namespace Hecton8.Gameplay
         public override void UseSecondary(float deltaTime)
         {
             base.UseSecondary(deltaTime);
+            ResolveHeavyTowWinch();
 
             if (!IsEquipped || _cooldown > 0f)
                 return;
+
+            if (_heavyTowWinch != null && _heavyTowWinch.HasActiveTow)
+            {
+                _heavyTowWinch.ReleaseTow(false);
+                ToolHitUtility.ShowInfo("HARPOON - HEAVY TOW RELEASED");
+                _cooldown = shotCooldown * 0.35f;
+                return;
+            }
 
             if (TryReelTetheredTarget())
                 return;
@@ -230,6 +259,8 @@ namespace Hecton8.Gameplay
 
         public override string GetOperationalSummary()
         {
+            ResolveHeavyTowWinch();
+
             if (_cooldown > 0f)
                 return string.Format(
                     ResolveLocalized(LocalizationKeys.HARPOON_OPERATIONAL_RECHARGING, "HARPOON // RECHARGING {0:0.0}S"),
@@ -239,6 +270,9 @@ namespace Hecton8.Gameplay
                 return string.Format(
                     ResolveLocalized(LocalizationKeys.HARPOON_OPERATIONAL_TETHER_LOCK, "HARPOON // TETHER LOCK // {0}"),
                     _tetheredNameUpper ?? ResolveLocalized(LocalizationKeys.HARPOON_TARGET, "TARGET"));
+
+            if (_heavyTowWinch != null && _heavyTowWinch.HasActiveTow)
+                return string.Format("HARPOON // HEAVY TOW // {0}", _heavyTowWinch.CurrentTargetNameUpper ?? "CARGO");
 
             if (TryGetAssessmentCached(out HarpoonAssessment assessment))
                 return string.Format(
@@ -250,11 +284,16 @@ namespace Hecton8.Gameplay
 
         public override string GetOperationalDirective()
         {
+            ResolveHeavyTowWinch();
+
             if (_cooldown > 0f)
                 return ResolveLocalized(LocalizationKeys.HARPOON_DIRECTIVE_RECHARGING, "Winch and launcher are resetting for the next shot.");
 
             if (IsTetherValid())
                 return ResolveLocalized(LocalizationKeys.HARPOON_DIRECTIVE_TETHERED, "Secondary reels the tethered target. Keep distance or break the line if needed.");
+
+            if (_heavyTowWinch != null && _heavyTowWinch.HasActiveTow)
+                return "Secondary releases the heavy tow. Keep thrust smooth or the cable will snap.";
 
             if (TryGetAssessmentCached(out HarpoonAssessment assessment))
                 return assessment.Recommendation;
@@ -314,6 +353,12 @@ namespace Hecton8.Gameplay
             return s_tracerMaterial;
         }
 
+        private void ResolveHeavyTowWinch()
+        {
+            if (_heavyTowWinch == null)
+                _heavyTowWinch = GetComponentInParent<HeavyTowWinch>();
+        }
+
         private void WarnReel(string message)
         {
             if (Time.time < _nextFeedbackAt)
@@ -341,28 +386,41 @@ namespace Hecton8.Gameplay
             return true;
         }
 
-        private void TryRegisterTether(RaycastHit hit)
+        private TetherRegistrationResult TryRegisterTether(RaycastHit hit)
         {
             if (!ToolHitUtility.TryGetRigidbody(hit.collider, out Rigidbody body))
             {
                 ClearTether();
-                return;
+                return TetherRegistrationResult.None;
             }
 
-            if (body == null || body.isKinematic || body.mass > maxReelMass)
+            if (body == null || body.isKinematic)
             {
                 ClearTether();
-                return;
+                return TetherRegistrationResult.None;
             }
 
-            _tetheredBody = body;
-            _tetheredCollider = hit.collider;
-            _tetheredName = body.gameObject.name;
-            _tetheredNameUpper = string.IsNullOrWhiteSpace(_tetheredName)
-                ? ResolveLocalized(LocalizationKeys.HARPOON_TARGET, "TARGET")
-                : _tetheredName.ToUpperInvariant();
-            InvalidateAssessmentCache();
-            _tetherRemaining = tetherDuration;
+            if (body.mass <= maxReelMass)
+            {
+                if (_heavyTowWinch != null && _heavyTowWinch.HasActiveTow)
+                    _heavyTowWinch.ReleaseTow(false);
+
+                _tetheredBody = body;
+                _tetheredCollider = hit.collider;
+                _tetheredName = body.gameObject.name;
+                _tetheredNameUpper = string.IsNullOrWhiteSpace(_tetheredName)
+                    ? ResolveLocalized(LocalizationKeys.HARPOON_TARGET, "TARGET")
+                    : _tetheredName.ToUpperInvariant();
+                InvalidateAssessmentCache();
+                _tetherRemaining = tetherDuration;
+                return TetherRegistrationResult.Reel;
+            }
+
+            ClearTether();
+            if (_heavyTowWinch != null && _heavyTowWinch.TryAttach(body, hit.collider, hit.distance))
+                return TetherRegistrationResult.HeavyTow;
+
+            return TetherRegistrationResult.None;
         }
 
         private bool TryReelTetheredTarget()
@@ -556,6 +614,19 @@ namespace Hecton8.Gameplay
 
             if (body.mass > maxReelMass)
             {
+                if (_heavyTowWinch != null && _heavyTowWinch.CanTowMass(body.mass))
+                {
+                    return new HarpoonAssessment(
+                        tetherReady
+                            ? "HARPOON - HEAVY TOW LOCKED"
+                            : "HARPOON - HEAVY TOW CANDIDATE",
+                        string.Format("{0} weighs {1:0.0} kg at {2:0.0} m.", target.gameObject.name, body.mass, distance),
+                        tetherReady
+                            ? "Maintain thrust discipline. Excess speed delta will snap the cable."
+                            : "Primary fire can lock a heavy tow line. Expect major drag and current drift.",
+                        "WARN");
+                }
+
                 if (TryBuildDescriptorAssessment(target, body, distance, tetherReady, out HarpoonAssessment descriptorAssessment))
                     return descriptorAssessment;
 

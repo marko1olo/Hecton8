@@ -159,3 +159,50 @@ WARNING: Regression risk in shared canopy visuals. `family.kelp.canopy` material
   - headlight panic is now suppressed in parasite mode so lights drive aggression/latching instead of flee behavior
 - Polished Crest oil-film color:
   - `Crest_SargassumOilFilm.shader` now applies an iridescent spectral shift driven by world-space density coordinates plus time
+- Wired collapse chunk VFX fallback and parasite hull drag:
+  - `SargassumCollapseChunk` now hard-resolves `siltTrail`, and if prefab wiring is missing it cold-creates a fallback muddy `ParticleSystem` child so collapse chunks still leave a dense silt wake
+  - `SargassumMicroFaunaBoids` now counts parasite latches on the GPU into a 1-word stats buffer, reads that back asynchronously on a throttled cadence, and forwards the latest latched count into `HectonPlayerMovement.ApplyEnvironmentalDrag`
+  - `Crest_SargassumOilFilm.shader` now adds `_ChromaticAberration` plus Fresnel-weighted spectral phase offset so the slick shifts color at grazing view angles
+- Added abyssal hive-mind cable/decal slice:
+  - new `BioCableIK` provides a fixed-segment spring cable rig with manager-driven oscillation so abyssal bio-cables can stretch toward the scooter hull and visually wrap under sustained tension
+  - `AbyssalThermalManager` now pools one `BioCableIK` rig per vent slot, drives those rigs from live cable tension/cut progress, caches player rigidbody velocity, and stamps `AbyssalFluidDecalManager` when a cable is severed
+  - new `AbyssalFluidDecalManager` + `AbyssalFluidDecal.shader` render capped synthetic oil/blood aftermath quads that spread and drift with ambient current plus `GlobalDriftOffset`
+  - `SargassumMicroFaunaBoids` now uploads nearby beacon anchors and obstacle spheres into the compute shader so calm deep-sea drones can assemble into pulsing ring formations that bend around rock silhouettes and rupture into decals on massive displacement
+- Added Crest-5 facade and parasite/tow polish:
+  - `SargassumCrestDampingController` now bakes public `_SargassumWaveDampingMaskRT` and `_SargassumOilFilmMaskRT` facade textures from density + cut mask, disables legacy Crest input renderers, and stops depending on runtime Crest material/shader edits
+  - reverted the direct `Crest/Ocean URP` smoothness hook in `Ocean.shader` / `OceanReflection.hlsl`; future Crest 5 `AlbedoInput` / `WaterDepthInput` components can now consume only the public facade RTs
+  - parasite boids now return both latched count and quantized local center-of-mass through the throttled async readback path, and `HectonPlayerMovement` applies off-axis hull pull plus harvester drag toward the nearest `DeadZoneMassiveStructure`
+  - `AbyssalFluidDecalManager` now advects decals from `GlobalDriftOffset` + `CurrentManager.SampleCurrent` + `CurrentVolume.SampleAt`, while `AbyssalFluidDecal.shader` tears and distorts decals against the global scooter wake trail texture
+  - `HeavyTowWinch` now exposes payload sampling and accepts abyssal bio-cable snare requests so towing cargo through cable fields increases tether stress and pulls the payload into rupture states
+- Added swarm-leviathan / EMP / hanging-chunk destruction slice:
+  - `SargassumMicroFaunaBoids` now stages capped abyssal nav-path payloads from `HectonMapMagicVegetationBridge`, uploads `LeviathanNodeData` into the compute shader, and can collapse deep parasite swarms into a 100m-class centipede body that follows threat hotspots while still using obstacle proxies
+  - `SargassumMicroFaunaBoids.compute` now supports `LeviathanForm`, blending spline-body attraction, forward tangent steering, and obstacle repulsion without CPU per-boid steering
+  - `AbyssalThermalManager` now derives dense cable EMP nests, charges them only against active transport, fires a bounded `SphereCastNonAlloc` pulse, forces Manta EMP misfire through `MantaScooter.ApplyEmpDisruption`, and requests temporary PDA corrosion through `LocalizationManager`
+  - `SargassumCollapseChunk` now caches `SpringJoint` + `HingeJoint`, probes snag anchors with `OverlapSphereNonAlloc`, and can hang from rocks or neighboring debris instead of always free-falling cleanly to the seabed
+- Added leviathan surround / EMP charge / cable snap polish:
+  - `SargassumMicroFaunaBoids.compute` now upgrades LeviathanForm into a player encirclement attack once threat exceeds `0.8`, computing the surround ring entirely on GPU from existing nav-node, player, and obstacle buffers
+  - `BioCableIK` now exposes charge-state tint/spark control plus recoil motion, so EMP nests visibly white-out nearby cables before discharge and severed cables snap away instead of disappearing
+  - `AbyssalThermalManager` now forwards EMP charge into cable rigs, detects cut-release threshold crossings, injects snap recoil, and stamps synthetic cable fluid when a live bio-cable finally tears
+- Added collapse cascade / cable elasticity polish:
+  - `SargassumGlobalDragManager` now re-fragments high-energy `SargassumCollapseChunk` impacts into smaller pooled bursts, reinforcing local collapse disruption zones so failed canopy knots keep opening secondary passages
+  - `SargassumCollapseChunk` now arms `ContinuousDynamic` collision, offsets snag anchors by the hit normal, and preserves spring/hinge docking against cave walls so hanging debris is less likely to bury itself into voxelized rock
+  - `BioCableIK` now tracks chain stretch, emits a pending elastic rupture when over-tension is sustained, and lets `AbyssalThermalManager` convert that rupture into snap recoil plus fresh ichor decals
+  - parasite center-of-mass pull remains on the existing async readback path from `SargassumMicroFaunaBoids` into `HectonPlayerMovement.ApplyParasiteLatchInfluence`, where `ApplyParasiteLatchForces` still applies the force at the reported local COM during `IFixedTickable`
+- Added leviathan impact / EMP chain reaction / static snag hardening:
+  - `SargassumMicroFaunaBoids` now resolves a deterministic leviathan-head pose from the same nav spline uploaded to compute, calls `HectonPlayerMovement.ApplyPhysicalTrauma` on head-body overlap, and emits fixed-step shockwaves that push nearby rigidbodies through a spatial-hash prepass plus fallback `OverlapSphereNonAlloc`
+  - `AbyssalThermalManager` now propagates EMP discharge across linked cable slots with per-slot delay/glow timers, keeping `BioCableIK` charge tint and sparks alive as the overcharge front walks the vent network
+  - `SargassumCollapseChunk` now offsets static snag anchors after `ClosestPoint` as well, reducing the chance that hanging spring/hinge joints spawn inside voxel cave surfaces when the chunk catches on raw rock
+- Added violent-nature strike / silt / voxel-snag pass:
+  - `SargassumCollapseChunk` now force-stops muddy emission once the chunk settles or snags, scales emission only from live downward speed, and supports cached `ConfigurableJoint` snagging when it hits `VoxelRock`
+  - `SargassumMicroFaunaBoids` now resolves the leviathan strike from the CPU-side `Boid 0` head pose every fixed step and forwards both trauma and direct `HectonPlayerHealth` damage without waiting on GPU readback
+- Added collapse prefab self-heal / spring snag alignment:
+  - `SargassumCollapseChunk` editor validation now authors its fallback `SiltTrail` child directly into prefab assets when the serialized reference is missing, keeping prefab ownership on the source asset instead of runtime-only recovery
+  - `SargassumCollapseChunk` now routes `VoxelRock` cave catches back through the cached `SpringJoint` path, matching the current wreckage requirement while preserving pooled joint reuse
+- Added cave-root / geyser / collapse-decay slice:
+  - `CaveDressingConfig` now owns `bioRoots` and `thermalGeysers` profiles so cave dressing can author hanging ceiling biomass and eruptive hazard cadence per spawn context
+  - new `CaveBioRootsGenerator` resolves deterministic ceiling anchors with `Physics.RaycastNonAlloc`, falls back to preset bounds before the voxel mesh is ready, and drives zero-alloc line-rendered root sway from player prop-wash proximity
+  - new `ThermalGeyser` owns quiet/eruption state, injects a local `CurrentVolume` updraft, applies cavitation drag/downward acceleration to nearby bodies, and damages hanging `SargassumCollapseChunk` debris in the plume
+  - `WorldCaveDirector` now mounts cave-root and geyser runtime owners under `_CaveDressing`, keeping cave hazards on the existing cave lifecycle owner instead of forking a parallel subsystem
+  - `SargassumCollapseChunk` now tracks hang lifetime and thermal integrity, auto-assigns the titanium scrap pickup prefab in editor, and disintegrates into pooled `PFB_Resource_TitaniumScrap` loot once it hangs too long or cooks inside a geyser
+- Leviathan combat slice aligned to current spec:
+  - `SargassumMicroFaunaBoids` already resolves CPU-side leviathan head pose, applies `ApplyPhysicalTrauma` + `HectonPlayerHealth.TakeDamage`, and emits rigidbody shockwaves through spatial-hash + `OverlapSphereNonAlloc`; shockwave radius is now aligned to the requested `15m`

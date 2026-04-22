@@ -446,6 +446,12 @@ namespace Hecton8.Gameplay
                     DecaySwimEffects(dt, suit);
                     break;
 
+                case PlayerLocomotionMode.ExosuitLocomotion:
+                    ProcessHeadBob(in input, suit, dt, 0.46f * heavyCarryAmplitudeScale, 0.58f * heavyCarryCadenceScale);
+                    ProcessLandingImpact(in input, suit, dt, 1.45f * heavyCarryLandingScale);
+                    DecaySwimEffects(dt, suit);
+                    break;
+
                 case PlayerLocomotionMode.SurfaceSwim:
                     ProcessSurfaceBob(in input, suit, dt, heavyCarrySurfaceScale);
                     ProcessSwimBob(in input, suit, dt);

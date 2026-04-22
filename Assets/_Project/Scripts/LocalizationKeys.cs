@@ -275,6 +275,21 @@ namespace Hecton.Localization
         public const string TECH_O2_SPEC = "TECH_O2_SPEC";
         public const string TECH_HULL_SPEC = "TECH_HULL_SPEC";
         public const string TECH_PWR_BUS = "TECH_PWR_BUS";
+        public const string MADNESS_WHISPERS_01 = "MADNESS_WHISPERS_01";
+        public const string MADNESS_WHISPERS_02 = "MADNESS_WHISPERS_02";
+        public const string MADNESS_WHISPERS_03 = "MADNESS_WHISPERS_03";
+        public const string MADNESS_WHISPERS_04 = "MADNESS_WHISPERS_04";
+        public const string MADNESS_WHISPERS_05 = "MADNESS_WHISPERS_05";
+        public const string MADNESS_WHISPERS_06 = "MADNESS_WHISPERS_06";
+        public const string MADNESS_WHISPERS_07 = "MADNESS_WHISPERS_07";
+        public const string MADNESS_WHISPERS_08 = "MADNESS_WHISPERS_08";
+        public const string MADNESS_WHISPERS_09 = "MADNESS_WHISPERS_09";
+        public const string MADNESS_WHISPERS_10 = "MADNESS_WHISPERS_10";
+        public const string MADNESS_WHISPERS_11 = "MADNESS_WHISPERS_11";
+        public const string MADNESS_WHISPERS_12 = "MADNESS_WHISPERS_12";
+        public const string MADNESS_WHISPERS_13 = "MADNESS_WHISPERS_13";
+        public const string MADNESS_WHISPERS_14 = "MADNESS_WHISPERS_14";
+        public const string MADNESS_WHISPERS_15 = "MADNESS_WHISPERS_15";
 
         // Save station / world notifications
         public const string SAVE_STATION_OFFLINE = "SAVE_STATION_OFFLINE";

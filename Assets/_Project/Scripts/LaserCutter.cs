@@ -135,6 +135,14 @@ namespace Hecton8.Gameplay
         [Tooltip("Seconds of continuous cutting to fully deconstruct a module.\n" +
                  "Progress resets if target changes or R/LKM released.")]
         [SerializeField] private float deconstructThreshold = 3f;
+        [Tooltip("Normalized spring load required before salvage recovery progress can move.")]
+        [SerializeField, Range(0f, 1f)] private float heavySalvageRequiredTension01 = 0.42f;
+        [Tooltip("Normalized pull-back intent required to tear a heavy module free while cutting.")]
+        [SerializeField, Range(0f, 1f)] private float heavySalvageRequiredPull01 = 0.36f;
+        [Tooltip("Velocity away from the cut seam that counts as full pull intent.")]
+        [SerializeField, Range(0.1f, 6f)] private float heavySalvagePullVelocityForFullIntent = 1.75f;
+        [Tooltip("Retracts the cutter anchor slightly into the surface so the spring loads against the seam instead of hovering in open air.")]
+        [SerializeField, Range(0f, 0.2f)] private float heavySalvageAnchorRetraction = 0.03f;
 
         [Header("── Visual References ─────────────────────────")]
         [Tooltip("LineRenderer for beam visualization.")]
@@ -214,6 +222,9 @@ namespace Hecton8.Gameplay
 
         /// <summary>Cached PlayerInventory for Deconstruct calls.</summary>
         private PlayerInventory _cachedInventory;
+        private Transform _cachedPlayerTransform;
+        private HectonPlayerMovement _cachedPlayerMovement;
+        private Rigidbody _cachedPlayerRigidbody;
 
         /// <summary>Cached StringBuilder for zero-GC diagnosis strings.</summary>
         private System.Text.StringBuilder _diagnosisSB;
@@ -222,6 +233,8 @@ namespace Hecton8.Gameplay
         private bool _deconstructStartReported;
         private bool _deconstructBlockedReported;
         private float _nextProgressFeedbackAt;
+        private Vector3 _cachedDeconstructAnchorPoint;
+        private Vector3 _cachedDeconstructAnchorNormal = Vector3.up;
 
         // ── Sparks cache ──
 
@@ -278,9 +291,7 @@ namespace Hecton8.Gameplay
             CacheSparksEmission();
             SetVisualsActive(false);
             
-            // ONE-TIME cache: Try to resolve PlayerInventory at startup (not in hot loop)
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
-                playerTransform.TryGetComponent(out _cachedInventory);
+            EnsurePlayerBindings();
         }
 
         public override void OnSpawn()
@@ -374,7 +385,6 @@ namespace Hecton8.Gameplay
 
                 if (deconstructMode)
                 {
-                    ResetDeconstructState(); // reset cut-mode state
                     ProcessDeconstructMode(deltaTime);
                 }
                 else
@@ -600,20 +610,24 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            EnsurePlayerBindings();
+
             #pragma warning disable CS0618
             int targetId = _hitInfo.collider.GetInstanceID();
             #pragma warning restore CS0618
 
-            // ── Target changed? ──
             if (targetId != _cachedDeconstructTargetId)
             {
                 _deconstructProgress = 0f;
                 _cachedDeconstructTargetId = targetId;
-                _cachedDeconstructModule = null;
-                _hitInfo.collider.TryGetComponent(out _cachedDeconstructModule);
+                _cachedDeconstructModule = _hitInfo.collider.GetComponent<BaseModule>() ?? _hitInfo.collider.GetComponentInParent<BaseModule>();
             }
 
-            // ── No BaseModule → standard cut ──
+            if (_hitInfo.normal.sqrMagnitude > 0.0001f)
+                _cachedDeconstructAnchorNormal = _hitInfo.normal.normalized;
+            else
+                _cachedDeconstructAnchorNormal = Vector3.up;
+
             if (_cachedDeconstructModule == null)
             {
                 if (!_deconstructBlockedReported)
@@ -625,7 +639,6 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            // ── Can't deconstruct → standard cut ──
             if (!_cachedDeconstructModule.CanDeconstruct())
             {
                 if (!_deconstructBlockedReported)
@@ -637,11 +650,35 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            // ── Accumulate progress ──
-            _deconstructProgress += deltaTime;
+            _cachedDeconstructAnchorPoint = _hitInfo.point - _cachedDeconstructAnchorNormal * heavySalvageAnchorRetraction;
+            if (_cachedPlayerMovement != null)
+                _cachedPlayerMovement.ApplyCuttingTensionAnchor(_cachedDeconstructAnchorPoint, _cachedDeconstructAnchorNormal);
+
+            float tension01 = ResolveCuttingTension01();
+            float pull01 = ResolveDetachmentPull01(_cachedDeconstructAnchorPoint);
+            if (tension01 < heavySalvageRequiredTension01 || pull01 < heavySalvageRequiredPull01)
+            {
+                if (!_deconstructStartReported)
+                {
+                    ToolHitUtility.ShowInfo("RECOVERY MODE - LOAD THE CUT");
+                    _deconstructStartReported = true;
+                }
+
+                if (Time.time >= _nextProgressFeedbackAt)
+                {
+                    int tensionPercent = Mathf.RoundToInt(tension01 * 100f);
+                    int pullPercent = Mathf.RoundToInt(pull01 * 100f);
+                    ToolHitUtility.ShowInfo("RECOVERY MODE - PULL BACK " + tensionPercent + "/" + pullPercent);
+                    _nextProgressFeedbackAt = Time.time + 0.6f;
+                }
+                return;
+            }
+
+            float progressGain = deltaTime * tension01 * math.lerp(0.75f, 1.25f, pull01);
+            _deconstructProgress += progressGain;
             if (!_deconstructStartReported)
             {
-                ToolHitUtility.ShowInfo(ResolveLocalized(LocalizationKeys.LASER_HUD_RECOVERY_HOLD, "RECOVERY MODE - HOLD CUT"));
+                ToolHitUtility.ShowInfo("RECOVERY MODE - TEAR IT FREE");
                 _deconstructStartReported = true;
             }
 
@@ -652,7 +689,6 @@ namespace Hecton8.Gameplay
                 _nextProgressFeedbackAt = Time.time + 0.6f;
             }
 
-            // ── Complete deconstruction ──
             if (_deconstructProgress >= deconstructThreshold)
             {
                 EnsurePlayerInventory();
@@ -674,12 +710,17 @@ namespace Hecton8.Gameplay
 
         private void ResetDeconstructState()
         {
+            if (_cachedPlayerMovement != null)
+                _cachedPlayerMovement.ClearCuttingTensionAnchor();
+
             _deconstructProgress = 0f;
             _cachedDeconstructTargetId = -1;
             _cachedDeconstructModule = null;
             _deconstructStartReported = false;
             _deconstructBlockedReported = false;
             _nextProgressFeedbackAt = 0f;
+            _cachedDeconstructAnchorPoint = Vector3.zero;
+            _cachedDeconstructAnchorNormal = Vector3.up;
         }
 
         private static string GetRecoveryProgressMessage(float progress01)
@@ -713,16 +754,71 @@ namespace Hecton8.Gameplay
 
         private void EnsurePlayerInventory()
         {
-            // PlayerInventory was cached once during Awake()
-            // If still null, player probably despawned or wasn't initialized
-            if (_cachedInventory != null)
+            EnsurePlayerBindings();
+        }
+
+        private void EnsurePlayerBindings()
+        {
+            if (_cachedInventory != null && _cachedPlayerMovement != null && _cachedPlayerRigidbody != null && _cachedPlayerTransform != null)
                 return;
 
             if (!gameObject.scene.isLoaded)
                 return;
 
             if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
-                playerTransform.TryGetComponent(out _cachedInventory);
+            {
+                _cachedPlayerTransform = playerTransform;
+                if (_cachedInventory == null)
+                    playerTransform.TryGetComponent(out _cachedInventory);
+                if (_cachedPlayerMovement == null)
+                    playerTransform.TryGetComponent(out _cachedPlayerMovement);
+                if (_cachedPlayerRigidbody == null)
+                    playerTransform.TryGetComponent(out _cachedPlayerRigidbody);
+            }
+        }
+
+        private float ResolveCuttingTension01()
+        {
+            return _cachedPlayerMovement != null
+                ? _cachedPlayerMovement.CurrentCuttingTensionNormalized
+                : 0f;
+        }
+
+        private float ResolveDetachmentPull01(Vector3 anchorPoint)
+        {
+            EnsurePlayerBindings();
+            if (_cachedPlayerTransform == null)
+                return 0f;
+
+            Vector3 awayFromAnchor = _cachedPlayerTransform.position - anchorPoint;
+            awayFromAnchor.y = 0f;
+            float sqrMagnitude = awayFromAnchor.sqrMagnitude;
+            if (sqrMagnitude <= 0.0001f)
+                return 0f;
+
+            awayFromAnchor *= 1f / Mathf.Sqrt(sqrMagnitude);
+            Vector3 playerForward = _cachedPlayerTransform.forward;
+            playerForward.y = 0f;
+            float forwardSqrMagnitude = playerForward.sqrMagnitude;
+            if (forwardSqrMagnitude > 0.0001f)
+                playerForward *= 1f / Mathf.Sqrt(forwardSqrMagnitude);
+            else
+                playerForward = awayFromAnchor;
+
+            float facingAway01 = Mathf.Clamp01((Vector3.Dot(playerForward, awayFromAnchor) + 1f) * 0.5f);
+            float backpedal01 = 0f;
+            InputManager inputManager = InputManager.Instance;
+            if (inputManager != null)
+                backpedal01 = Mathf.Clamp01(-inputManager.MoveInput.y);
+
+            float awayVelocity01 = 0f;
+            if (_cachedPlayerRigidbody != null && heavySalvagePullVelocityForFullIntent > 0.01f)
+            {
+                float awayVelocity = Mathf.Max(0f, Vector3.Dot(_cachedPlayerRigidbody.linearVelocity, awayFromAnchor));
+                awayVelocity01 = Mathf.Clamp01(awayVelocity / heavySalvagePullVelocityForFullIntent);
+            }
+
+            return Mathf.Max(awayVelocity01, backpedal01 * facingAway01);
         }
 
         private static void ArchiveRecoveredModule(BaseModule module)

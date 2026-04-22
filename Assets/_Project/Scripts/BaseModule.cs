@@ -326,6 +326,8 @@ namespace Hecton8.Gameplay
 
         /// <summary>Current repair ceiling after accumulated material fatigue.</summary>
         public float MaxRecoverableIntegrity => GetRepairIntegrityCap();
+        /// <summary>Estimated catastrophic repair cycles remaining before the module reaches its minimum recoverable ceiling. -1 means the cap is not authored.</summary>
+        public int RemainingRepairCycles => ResolveRemainingRepairCycles();
         /// <summary>Normalized breathable reserve available for dry-zone life support.</summary>
         public float AirReserveNormalized => breathableReserveCapacity > 0.01f ? Mathf.Clamp01(breathableReserve / breathableReserveCapacity) : 1f;
         /// <summary>True when the player is currently inside this module's interior volume.</summary>
@@ -952,6 +954,24 @@ namespace Hecton8.Gameplay
                 maxRecoverableIntegrity = maxIntegrity;
 
             maxRecoverableIntegrity = GetRepairIntegrityCap();
+        }
+
+        private int ResolveRemainingRepairCycles()
+        {
+            EnsureRepairIntegrityCapInitialized();
+
+            if (repairWearPerCascade <= 0f)
+                return -1;
+
+            float minimumCap = maxIntegrity * minimumRecoverableIntegrityRatio;
+            if (minimumCap < 1f)
+                minimumCap = 1f;
+
+            float remainingRecoverableMargin = maxRecoverableIntegrity - minimumCap;
+            if (remainingRecoverableMargin <= 0f)
+                return 0;
+
+            return Mathf.FloorToInt(remainingRecoverableMargin / repairWearPerCascade + 0.0001f);
         }
 
         private void InitializeBreathableReserveCold()

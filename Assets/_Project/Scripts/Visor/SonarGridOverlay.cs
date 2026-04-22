@@ -13,6 +13,8 @@ namespace Hecton8.Visor
             Shader.PropertyToID("_SonarGridHardColor");
         private static readonly int ShaderSonarGridOrganicColor =
             Shader.PropertyToID("_SonarGridOrganicColor");
+        private static readonly int ShaderSonarGridAbyssalColor =
+            Shader.PropertyToID("_SonarGridAbyssalColor");
 
         internal static void ApplyGlobals(
             float intensity,
@@ -20,7 +22,8 @@ namespace Hecton8.Visor
             float lineWidth,
             float contourBoost,
             Color hardColor,
-            Color organicColor)
+            Color organicColor,
+            Color abyssalColor)
         {
             Shader.SetGlobalVector(
                 ShaderSonarGridParams,
@@ -31,6 +34,7 @@ namespace Hecton8.Visor
                     Mathf.Max(0f, contourBoost)));
             Shader.SetGlobalColor(ShaderSonarGridHardColor, hardColor);
             Shader.SetGlobalColor(ShaderSonarGridOrganicColor, organicColor);
+            Shader.SetGlobalColor(ShaderSonarGridAbyssalColor, abyssalColor);
         }
 
         internal static void ClearGlobals()
@@ -38,6 +42,7 @@ namespace Hecton8.Visor
             Shader.SetGlobalVector(ShaderSonarGridParams, Vector4.zero);
             Shader.SetGlobalColor(ShaderSonarGridHardColor, Color.black);
             Shader.SetGlobalColor(ShaderSonarGridOrganicColor, Color.black);
+            Shader.SetGlobalColor(ShaderSonarGridAbyssalColor, Color.black);
         }
     }
 }

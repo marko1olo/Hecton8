@@ -204,10 +204,8 @@ namespace Hecton8.UI
                 playerExpressionManager = PlayerExpressionManager.Instance;
             if (hudNotification == null)
                 HUDNotification.TryGetActive(out hudNotification);
-            if (labelFont == null)
-                labelFont = TMP_Settings.defaultFontAsset;
-            if (numericFont == null)
-                numericFont = labelFont;
+            labelFont = LocalizedFontResolver.ResolveReadableFont(labelFont);
+            numericFont = LocalizedFontResolver.ResolveNumericFont(numericFont, labelFont);
         }
 
         private void AutoResolveTabIndex()

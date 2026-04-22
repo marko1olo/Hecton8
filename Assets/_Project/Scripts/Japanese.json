@@ -1,4 +1,4 @@
-﻿{
+{
   "ACTION_EATING": "食事中...",
   "ACTION_HEALING": "使用中...",
   "ACTION_OXYGEN": "吸入中...",
@@ -1209,5 +1209,20 @@
   "PDA_FOOTER_RIGHT_STANDBY": "O2 {0:0}%  |  PWR {1:0}%  |  PDA 待機",
   "TECH_O2_SPEC": "[Pressure: 300 bar | Mix: O2 96% | Rack: A-2]",
   "TECH_HULL_SPEC": "[Sealant: <key:ITEM_TITANIUM_SCRAP_NAME> laminate | Rating: 41 MPa]",
-  "TECH_PWR_BUS": "[Bus: 48V DC | Cell bank: Li-Salt MkII]"
+  "TECH_PWR_BUS": "[Bus: 48V DC | Cell bank: Li-Salt MkII]",
+  "MADNESS_WHISPERS_01": "息をするな。あれが見ている。",
+  "MADNESS_WHISPERS_02": "圧力はお前の名を知っている。",
+  "MADNESS_WHISPERS_03": "ガラス越しに見るな。",
+  "MADNESS_WHISPERS_04": "それを置け。あれは私たちのものだ。",
+  "MADNESS_WHISPERS_05": "船殻の下から話している。",
+  "MADNESS_WHISPERS_06": "水はお前の形を覚えている。",
+  "MADNESS_WHISPERS_07": "ノックに応えるな。",
+  "MADNESS_WHISPERS_08": "お前のスーツの中で何かが呼吸している。",
+  "MADNESS_WHISPERS_09": "お前の影が先に浮上した。",
+  "MADNESS_WHISPERS_10": "バルブを閉じろ。あれはその音が好きだ。",
+  "MADNESS_WHISPERS_11": "連中は隔壁の中を歩いている。",
+  "MADNESS_WHISPERS_12": "深みがお前の顔をかぶっている。",
+  "MADNESS_WHISPERS_13": "お前が話す前にあれは聞いていた。",
+  "MADNESS_WHISPERS_14": "船殻がお前の骨を覚え始めている。",
+  "MADNESS_WHISPERS_15": "明かりが死んだら、動くな。"
 }

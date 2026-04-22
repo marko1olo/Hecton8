@@ -10,6 +10,7 @@ using Hecton8.Bootstrap;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Items;
+using Hecton8.Modding;
 using Hecton.Localization;
 using Hecton8.Core;
 using TMPro;
@@ -132,6 +133,7 @@ namespace Hecton8.UI
         private TextMeshProUGUI _detailStatus;
         private TextMeshProUGUI _detailAction;
         private TextMeshProUGUI _detailHint;
+        private LocalizedTextMadnessFx _detailDescMadnessFx;
 
         // Tool strip
         private RectTransform _toolStripRoot;
@@ -272,6 +274,7 @@ namespace Hecton8.UI
             }
             PDAEvents.OnOpened += OnPdaOpened;
             PDAEvents.OnTabChanged += OnTabChanged;
+            LocalizationManager.OnCorruptionVisualStateChanged += OnCorruptionVisualStateChanged;
         }
 
         private void Unsubscribe()
@@ -285,11 +288,19 @@ namespace Hecton8.UI
             }
             PDAEvents.OnOpened -= OnPdaOpened;
             PDAEvents.OnTabChanged -= OnTabChanged;
+            LocalizationManager.OnCorruptionVisualStateChanged -= OnCorruptionVisualStateChanged;
         }
 
         private void OnInventoryChanged()
         {
             _gridDirty = true;
+            _detailsDirty = true;
+            if (IsTabActive)
+                FlushPendingRefresh();
+        }
+
+        private void OnCorruptionVisualStateChanged()
+        {
             _detailsDirty = true;
             if (IsTabActive)
                 FlushPendingRefresh();
@@ -626,6 +637,11 @@ namespace Hecton8.UI
                    new Vector2(14f, -144f), new Vector2(-28f, 80f));
             _detailDesc.color = A(Dim, 0.7f);
             _detailDesc.textWrappingMode = TextWrappingModes.Normal;
+            _detailDescMadnessFx = _detailDesc.gameObject.GetComponent<LocalizedTextMadnessFx>();
+            if (_detailDescMadnessFx == null)
+                _detailDescMadnessFx = _detailDesc.gameObject.AddComponent<LocalizedTextMadnessFx>();
+
+            _detailDescMadnessFx.Bind(_detailDesc);
 
             // Rule line
             Image detRule = CreateImage("DetailRule", _detailsRoot, A(RuleLine, 0.5f));
@@ -1169,6 +1185,9 @@ namespace Hecton8.UI
 
             if (!hasSelection)
             {
+                if (_detailDescMadnessFx != null)
+                    _detailDescMadnessFx.SetEffectActive(false);
+
                 if (_detailHint != null)
                     _detailHint.text = _currentFilter == InventoryViewFilter.All
                         ? "SELECT AN ITEM"
@@ -1208,9 +1227,14 @@ namespace Hecton8.UI
                 string desc = string.IsNullOrEmpty(_selectedItem.description)
                     ? ResolveLocalized(LocalizationKeys.ITEM_DESCRIPTION_FALLBACK, "No description available.")
                     : _selectedItem.description;
+                desc = ResolveStressReactiveItemDescription(_selectedItem, desc);
                 string cat = CachedToUpperInvariant(_selectedItem.category.ToString());
                 _detailDesc.text = $"<color=#7FBFBA>[{cat}]</color>\n{desc}";
             }
+
+            LocalizationManager localizationManager = LocalizationManager.Instance;
+            if (_detailDescMadnessFx != null)
+                _detailDescMadnessFx.SetEffectActive(localizationManager != null && localizationManager.IsMadnessWhisperVisualActive());
 
             if (_detailWeight != null)
             {
@@ -1386,6 +1410,8 @@ namespace Hecton8.UI
 
             ItemData dropped = playerInventory.RemoveOneItem(_selectedX, _selectedY);
             if (dropped == null) return;
+
+            HectonEventBus.Publish(new ItemDiscardedEvent(dropped, 1, ResolveDropOrigin()));
 
             // Спавн в мир
             if (dropped.worldPrefab != null)
@@ -2271,6 +2297,24 @@ namespace Hecton8.UI
             return LocalizationManager.Instance != null
                 ? LocalizationManager.Instance.GetOrFallback(LocalizationManager.Instance.CurrentLanguage, key, fallback)
                 : fallback;
+        }
+
+        private static string ResolveStressReactiveItemDescription(Hecton8.Items.ItemData item, string text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return string.Empty;
+
+            LocalizationManager manager = LocalizationManager.Instance;
+            if (manager == null)
+                return text;
+
+            if (item == null)
+                return manager.ApplyHullStressCorruptionIfNeeded(text);
+
+            string token = !string.IsNullOrWhiteSpace(item.DescriptionTableKey)
+                ? item.DescriptionTableKey
+                : item.PersistentId;
+            return manager.ApplyPdaLoreCorruptionIfNeeded(token, text);
         }
 
         private static string CachedToUpperInvariant(string input)

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
@@ -64,6 +65,16 @@ namespace Hecton8.World
             public float VentIndex;
         }
 
+        private struct EmpNestState
+        {
+            public Vector3 PositionWS;
+            public float RadiusWS;
+            public float Charge01;
+            public float Cooldown;
+            public float PulsePhase;
+            public int SourceVentIndex;
+        }
+
         private static readonly int _ParticlesReadId = Shader.PropertyToID("_ParticlesRead");
         private static readonly int _ParticlesWriteId = Shader.PropertyToID("_ParticlesWrite");
         private static readonly int _ThermalVentsId = Shader.PropertyToID("_ThermalVents");
@@ -85,6 +96,7 @@ namespace Hecton8.World
         private const int MaxVentCapacity = 16;
         private const int MaxAnchorScanCapacity = 32;
         private const int MaxSmokeParticleCapacity = 8192;
+        private const int MaxEmpNestCapacity = 8;
         private const int ParticleStride = 40;
         private const int VentStride = 32;
         private const int IndirectArgsCount = 4;
@@ -205,6 +217,88 @@ namespace Hecton8.World
         [Tooltip("Forward offset applied from the active cutter transform before stamping the cable sever cut.")]
         private float cableCutForwardOffset = 0.95f;
 
+        [Header("── Bio-Cable Visuals ───────────────")]
+        [SerializeField, Range(0.5f, 24f)]
+        [Tooltip("Maximum camera/player distance where procedural bio-cable rigs stay actively simulated.")]
+        private float cableVisualActivationDistance = 14f;
+
+        [SerializeField, Range(0.1f, 6f)]
+        [Tooltip("Approximate scooter hull radius used when resolving cable pull and wrap without per-segment colliders.")]
+        private float cableVisualHullRadius = 1.35f;
+
+        [SerializeField, Range(0f, 1f)]
+        [Tooltip("Tension threshold above which the cable starts visually wrapping instead of only stretching.")]
+        private float cableVisualWrapThreshold = 0.58f;
+
+        [SerializeField, Range(0f, 2f)]
+        [Tooltip("Extra attraction scale applied when a scooter is active inside a cable snare.")]
+        private float cableVisualTransportBoost = 1.25f;
+
+        [SerializeField, Range(0.1f, 24f)]
+        [Tooltip("Initial recoil speed injected into a severed cable rig when the cutter finally snaps it.")]
+        private float cableSnapRecoilSpeed = 8.5f;
+
+        [SerializeField, Range(0.1f, 4f)]
+        [Tooltip("Time window where a severed cable keeps rendering recoil motion before it is allowed to fade out.")]
+        private float cableSnapDuration = 1.35f;
+
+        [SerializeField, Range(0f, 4f)]
+        [Tooltip("Vertical lift added to severed cable recoil so cut strands flick upward before settling.")]
+        private float cableSnapVerticalLift = 0.85f;
+
+        [SerializeField, Range(0.1f, 4f)]
+        [Tooltip("How long an elastic over-tension rupture keeps the cable released before it is allowed to re-arm.")]
+        private float cableElasticReleaseDuration = 1.45f;
+
+        [Header("── EMP Nests ───────────────────")]
+        [SerializeField, Range(1, MaxEmpNestCapacity)]
+        [Tooltip("Hard cap for active EMP nests resolved from dense abyssal bio-cable anchors.")]
+        private int maxEmpNestCount = 4;
+
+        [SerializeField, Range(0.25f, 2f)]
+        [Tooltip("Multiplier applied to cable radii when deriving EMP nest trigger zones.")]
+        private float empNestRadiusMultiplier = 0.38f;
+
+        [SerializeField, Range(0.25f, 8f)]
+        [Tooltip("Seconds required to fully charge a nest while the active transport remains inside its trigger radius.")]
+        private float empChargeDuration = 2.6f;
+
+        [SerializeField, Range(0.1f, 6f)]
+        [Tooltip("Seconds required to fully bleed nest charge when the player leaves the trigger zone.")]
+        private float empDischargeDuration = 1.4f;
+
+        [SerializeField, Range(0.25f, 6f)]
+        [Tooltip("Cooldown applied after an EMP nest fires before it may charge again.")]
+        private float empCooldown = 3.5f;
+
+        [SerializeField, Range(0.1f, 6f)]
+        [Tooltip("Sphere radius used by the EMP impulse cast. Keeps the hit test broad without per-frame overlap spam.")]
+        private float empSphereCastRadius = 1.3f;
+
+        [SerializeField, Range(1f, 24f)]
+        [Tooltip("Maximum cast distance used when firing an EMP pulse toward the active scooter.")]
+        private float empPulseRange = 12f;
+
+        [SerializeField, Range(0.1f, 6f)]
+        [Tooltip("Duration of the forced 100 percent misfire override injected into the active Manta after an EMP hit.")]
+        private float empMisfireDuration = 2.1f;
+
+        [SerializeField, Range(0.1f, 10f)]
+        [Tooltip("Duration of the forced PDA corrosion window pushed into LocalizationManager after an EMP hit.")]
+        private float empPdaCorrosionDuration = 5f;
+
+        [SerializeField, Range(0.1f, 8f)]
+        [Tooltip("Pulse frequency used for deterministic EMP nest charging diagnostics and future VFX sync.")]
+        private float empPulseSpeed = 1.8f;
+
+        [SerializeField, Range(2f, 64f)]
+        [Tooltip("Propagation speed used when an EMP nest discharge walks its charge through linked bio-cables.")]
+        private float empChainPropagationSpeed = 18f;
+
+        [SerializeField, Range(0.1f, 4f)]
+        [Tooltip("How long each cable segment stays overcharged after the EMP chain reaction reaches it.")]
+        private float empChainGlowDuration = 0.8f;
+
         [Header("── Black Smoke ─────────────────────")]
         [SerializeField, Range(256, MaxSmokeParticleCapacity)]
         [Tooltip("Maximum compute-simulated ash particles rendered by the abyssal smoke pass.")]
@@ -275,6 +369,14 @@ namespace Hecton8.World
         [Tooltip("Latest cut progress reported by the active cable zone sampler.")]
         private float _debugCableCutProgress01;
 
+        [SerializeField]
+        [Tooltip("Current active EMP nest count derived from dense abyssal cable anchors.")]
+        private int _debugEmpNestCount;
+
+        [SerializeField]
+        [Tooltip("Highest EMP nest charge currently active in the local abyssal field.")]
+        private float _debugEmpCharge01;
+
         // COLD ALLOC: List<WorldZoneAnchor>[32] - reusable runtime cartographer anchor scratch list for abyssal vent selection - owner: AbyssalThermalManager
         private readonly List<WorldZoneAnchor> _zoneAnchors = new List<WorldZoneAnchor>(MaxAnchorScanCapacity);
         // COLD ALLOC: Plane[6] - frustum planes for smoke visibility checks - owner: AbyssalThermalManager
@@ -283,11 +385,13 @@ namespace Hecton8.World
         private ThermalVentState[] _ventStates;
         private ThermalVentGpuData[] _ventGpuData;
         private AshParticleData[] _initialParticles;
+        private EmpNestState[] _empNests;
         private ComputeBuffer _particleBufferA;
         private ComputeBuffer _particleBufferB;
         private ComputeBuffer _ventBuffer;
         private ComputeBuffer _argsBuffer;
         private MaterialPropertyBlock _materialPropertyBlock;
+        private BioCableIK[] _bioCableVisuals;
         private Bounds _smokeBounds;
         private bool _registeredTick;
         private bool _registeredSlowTick;
@@ -302,7 +406,18 @@ namespace Hecton8.World
         private int _instanceId;
         private float _simulationTime;
         private float _cableCutStampCooldown;
+        private float _cableFluidDecalCooldown;
         private Transform _activeCutterTransform;
+        private Rigidbody _playerRigidbody;
+        private PlayerTransportCoordinator _playerTransportCoordinator;
+        private HectonPlayerMovement _playerMovement;
+        private AbyssalFluidDecalManager _fluidDecalManager;
+        private readonly RaycastHit[] _empHits = new RaycastHit[4]; // COLD ALLOC: RaycastHit[4] - bounded EMP nest pulse cast hits - owner: AbyssalThermalManager
+        private bool[] _cableReleasedStates;
+        private float[] _cableReleaseProgress;
+        private float[] _cableElasticReleaseTimers;
+        private float[] _cableEmpChainDelayTimers;
+        private float[] _cableEmpChainGlowTimers;
 
         public static AbyssalThermalManager Instance => _instance;
 
@@ -320,6 +435,7 @@ namespace Hecton8.World
             SanitizeSettings();
             ResolveDependencies();
             EnsureStorage();
+            EnsureCableVisuals();
             EnsureBuffers();
             ConfigureIndirectArgs();
             ClearHazardSources();
@@ -331,6 +447,7 @@ namespace Hecton8.World
             LaserCutter.OnBeamStateChanged += HandleCutterBeamStateChanged;
             ResolveDependencies();
             EnsureStorage();
+            EnsureCableVisuals();
             EnsureBuffers();
             ConfigureIndirectArgs();
             RebuildVentField();
@@ -367,7 +484,16 @@ namespace Hecton8.World
             float deltaTime = Mathf.Max(0f, dt);
             if (_debugCutterSeveringCable && !_cutterBeamActive)
                 _debugCutterSeveringCable = false;
+            if (_cableFluidDecalCooldown > 0f)
+            {
+                _cableFluidDecalCooldown -= deltaTime;
+                if (_cableFluidDecalCooldown < 0f)
+                    _cableFluidDecalCooldown = 0f;
+            }
+            UpdateEmpChainReaction(deltaTime);
             UpdateCableCutting(deltaTime);
+            UpdateCableVisuals(deltaTime);
+            UpdateEmpNests(deltaTime);
 
             if (!_hasSmokeData || blackSmokeCompute == null || blackSmokeMaterial == null || _activeVentCount <= 0)
                 return;
@@ -477,8 +603,26 @@ namespace Hecton8.World
             if (playerTransform == null)
                 WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
 
+            if (_playerRigidbody == null && playerTransform != null)
+                playerTransform.TryGetComponent(out _playerRigidbody);
+
+            if (_playerTransportCoordinator == null && playerTransform != null)
+                playerTransform.TryGetComponent(out _playerTransportCoordinator);
+
+            if (_playerMovement == null && playerTransform != null)
+                playerTransform.TryGetComponent(out _playerMovement);
+
             if (viewCamera == null && playerTransform != null)
                 viewCamera = playerTransform.GetComponentInChildren<Camera>(true);
+
+            if (_fluidDecalManager == null)
+            {
+                if (!TryGetComponent(out _fluidDecalManager))
+                {
+                    // COLD ALLOC: Component[1] - local abyssal fluid decal owner added on the thermal manager host when authoring missed it - owner: AbyssalThermalManager
+                    _fluidDecalManager = gameObject.AddComponent<AbyssalFluidDecalManager>();
+                }
+            }
         }
 
         private void SanitizeSettings()
@@ -501,6 +645,26 @@ namespace Hecton8.World
             cableCutStampRadius = Mathf.Clamp(cableCutStampRadius, 0.1f, 3f);
             cableCutStampStrength = Mathf.Clamp01(cableCutStampStrength);
             cableCutForwardOffset = Mathf.Clamp(cableCutForwardOffset, 0f, 2f);
+            cableVisualActivationDistance = Mathf.Clamp(cableVisualActivationDistance, 0.5f, 24f);
+            cableVisualHullRadius = Mathf.Clamp(cableVisualHullRadius, 0.1f, 6f);
+            cableVisualWrapThreshold = Mathf.Clamp01(cableVisualWrapThreshold);
+            cableVisualTransportBoost = Mathf.Clamp(cableVisualTransportBoost, 0f, 2f);
+            cableSnapRecoilSpeed = Mathf.Clamp(cableSnapRecoilSpeed, 0.1f, 24f);
+            cableSnapDuration = Mathf.Clamp(cableSnapDuration, 0.1f, 4f);
+            cableSnapVerticalLift = Mathf.Clamp(cableSnapVerticalLift, 0f, 4f);
+            cableElasticReleaseDuration = Mathf.Clamp(cableElasticReleaseDuration, 0.1f, 4f);
+            maxEmpNestCount = Mathf.Clamp(maxEmpNestCount, 1, MaxEmpNestCapacity);
+            empNestRadiusMultiplier = Mathf.Clamp(empNestRadiusMultiplier, 0.25f, 2f);
+            empChargeDuration = Mathf.Clamp(empChargeDuration, 0.25f, 8f);
+            empDischargeDuration = Mathf.Clamp(empDischargeDuration, 0.1f, 8f);
+            empCooldown = Mathf.Clamp(empCooldown, 0.1f, 8f);
+            empSphereCastRadius = Mathf.Clamp(empSphereCastRadius, 0.1f, 6f);
+            empPulseRange = Mathf.Clamp(empPulseRange, 1f, 24f);
+            empMisfireDuration = Mathf.Clamp(empMisfireDuration, 0.1f, 6f);
+            empPdaCorrosionDuration = Mathf.Clamp(empPdaCorrosionDuration, 0.1f, 10f);
+            empPulseSpeed = Mathf.Clamp(empPulseSpeed, 0.1f, 8f);
+            empChainPropagationSpeed = Mathf.Clamp(empChainPropagationSpeed, 2f, 64f);
+            empChainGlowDuration = Mathf.Clamp(empChainGlowDuration, 0.1f, 4f);
             smokeParticleCount = Mathf.Clamp(smokeParticleCount, 256, MaxSmokeParticleCapacity);
             smokeParticleSizeMin = Mathf.Clamp(smokeParticleSizeMin, 0.02f, smokeParticleSizeMax);
             smokeParticleSizeMax = Mathf.Max(smokeParticleSizeMin, smokeParticleSizeMax);
@@ -531,6 +695,48 @@ namespace Hecton8.World
                 _initialParticles = new AshParticleData[smokeParticleCount];
             }
 
+            if (_empNests == null || _empNests.Length != MaxEmpNestCapacity)
+            {
+                // COLD ALLOC: EmpNestState[8] - EMP nest runtime state derived from dense abyssal cable anchors - owner: AbyssalThermalManager
+                _empNests = new EmpNestState[MaxEmpNestCapacity];
+            }
+
+            if (_cableReleasedStates == null || _cableReleasedStates.Length != MaxVentCapacity)
+            {
+                // COLD ALLOC: bool[16] - per-cable sever state used to detect snap transitions without allocations - owner: AbyssalThermalManager
+                _cableReleasedStates = new bool[MaxVentCapacity];
+            }
+
+            if (_cableReleaseProgress == null || _cableReleaseProgress.Length != MaxVentCapacity)
+            {
+                // COLD ALLOC: float[16] - per-cable previous cut progress used for snap/rearm gating - owner: AbyssalThermalManager
+                _cableReleaseProgress = new float[MaxVentCapacity];
+            }
+
+            if (_cableElasticReleaseTimers == null || _cableElasticReleaseTimers.Length != MaxVentCapacity)
+            {
+                // COLD ALLOC: float[16] - per-cable elastic rupture release timers so snapped cables do not instantly re-arm - owner: AbyssalThermalManager
+                _cableElasticReleaseTimers = new float[MaxVentCapacity];
+            }
+
+            if (_cableEmpChainDelayTimers == null || _cableEmpChainDelayTimers.Length != MaxVentCapacity)
+            {
+                // COLD ALLOC: float[16] - per-cable EMP chain propagation delays so overcharge walks deterministically across linked vents - owner: AbyssalThermalManager
+                _cableEmpChainDelayTimers = new float[MaxVentCapacity];
+            }
+
+            if (_cableEmpChainGlowTimers == null || _cableEmpChainGlowTimers.Length != MaxVentCapacity)
+            {
+                // COLD ALLOC: float[16] - per-cable EMP chain glow timers keeping emission and sparks alive after the charge front arrives - owner: AbyssalThermalManager
+                _cableEmpChainGlowTimers = new float[MaxVentCapacity];
+            }
+
+            if (_bioCableVisuals == null || _bioCableVisuals.Length != MaxVentCapacity)
+            {
+                // COLD ALLOC: BioCableIK[16] - reusable visual cable rigs paired to active abyssal vent cable zones - owner: AbyssalThermalManager
+                _bioCableVisuals = new BioCableIK[MaxVentCapacity];
+            }
+
             _materialPropertyBlock ??= new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - abyssal smoke draw parameters - owner: AbyssalThermalManager
         }
 
@@ -552,6 +758,34 @@ namespace Hecton8.World
             }
 
             _dispatchGroupCount = Mathf.Max(1, Mathf.CeilToInt(smokeParticleCount / (float)_threadGroupSizeX));
+        }
+
+        private void EnsureCableVisuals()
+        {
+            if (_bioCableVisuals == null)
+                return;
+
+            for (int i = 0; i < _bioCableVisuals.Length; i++)
+            {
+                if (_bioCableVisuals[i] != null)
+                    continue;
+
+                // COLD ALLOC: GameObject[1] - persistent abyssal bio-cable visual rig child created once per cable slot - owner: AbyssalThermalManager
+                GameObject cableObject = new GameObject($"BioCableIK_{i:00}");
+                cableObject.transform.SetParent(transform, false);
+                cableObject.transform.localPosition = Vector3.zero;
+                cableObject.transform.localRotation = Quaternion.identity;
+                cableObject.transform.localScale = Vector3.one;
+
+                LineRenderer lineRenderer = cableObject.AddComponent<LineRenderer>();
+                lineRenderer.enabled = false;
+
+                // COLD ALLOC: Component[1] - persistent abyssal bio-cable IK rig component - owner: AbyssalThermalManager
+                BioCableIK cableRig = cableObject.AddComponent<BioCableIK>();
+                cableRig.InitializeAt(transform.position, Vector3.up);
+                cableRig.SetCableActive(false);
+                _bioCableVisuals[i] = cableRig;
+            }
         }
 
         private static void EnsureBuffer(ref ComputeBuffer buffer, int count, int stride, ComputeBufferType type)
@@ -612,6 +846,23 @@ namespace Hecton8.World
             if (!_debugAbyssalContext)
             {
                 _hasSmokeData = false;
+                _debugEmpNestCount = 0;
+                _debugEmpCharge01 = 0f;
+                if (_empNests != null)
+                {
+                    for (int i = 0; i < _empNests.Length; i++)
+                        _empNests[i] = default;
+                }
+                if (_cableReleasedStates != null)
+                    System.Array.Clear(_cableReleasedStates, 0, _cableReleasedStates.Length);
+                if (_cableReleaseProgress != null)
+                    System.Array.Clear(_cableReleaseProgress, 0, _cableReleaseProgress.Length);
+                if (_cableElasticReleaseTimers != null)
+                    System.Array.Clear(_cableElasticReleaseTimers, 0, _cableElasticReleaseTimers.Length);
+                if (_cableEmpChainDelayTimers != null)
+                    System.Array.Clear(_cableEmpChainDelayTimers, 0, _cableEmpChainDelayTimers.Length);
+                if (_cableEmpChainGlowTimers != null)
+                    System.Array.Clear(_cableEmpChainGlowTimers, 0, _cableEmpChainGlowTimers.Length);
                 ClearHazardSources();
                 UploadVentBuffer();
                 return;
@@ -640,6 +891,7 @@ namespace Hecton8.World
 
             _debugActiveVentCount = _activeVentCount;
             _debugCableZoneCount = _activeCableZoneCount;
+            RebuildEmpNestField();
             _hasSmokeData = _activeVentCount > 0 && blackSmokeCompute != null && blackSmokeMaterial != null;
 
             UpdateSmokeBounds();
@@ -679,6 +931,61 @@ namespace Hecton8.World
             };
 
             _activeVentCount++;
+        }
+
+        private void RebuildEmpNestField()
+        {
+            _debugEmpNestCount = 0;
+            _debugEmpCharge01 = 0f;
+            if (_empNests == null)
+                return;
+
+            if (_activeVentCount <= 0)
+            {
+                for (int i = 0; i < _empNests.Length; i++)
+                    _empNests[i] = default;
+                return;
+            }
+
+            int empCount = 0;
+            for (int i = 0; i < _activeVentCount && empCount < maxEmpNestCount; i++)
+            {
+                ThermalVentState vent = _ventStates[i];
+                float empRadius = Mathf.Max(1.25f, vent.CableRadiusWS * empNestRadiusMultiplier);
+                if (empRadius <= 1.25f)
+                    continue;
+
+                float carriedCharge = 0f;
+                float carriedCooldown = 0f;
+                float carriedPulsePhase = HashToFloat01((uint)_instanceId, (uint)(i + 1), 0xA54FF53Au);
+                for (int previousIndex = 0; previousIndex < _empNests.Length; previousIndex++)
+                {
+                    EmpNestState previousNest = _empNests[previousIndex];
+                    if (previousNest.SourceVentIndex != i || previousNest.RadiusWS <= 0.0001f)
+                        continue;
+
+                    carriedCharge = previousNest.Charge01;
+                    carriedCooldown = previousNest.Cooldown;
+                    carriedPulsePhase = previousNest.PulsePhase;
+                    break;
+                }
+
+                _empNests[empCount] = new EmpNestState
+                {
+                    PositionWS = vent.CableAnchorWS + Vector3.up * 0.75f,
+                    RadiusWS = empRadius,
+                    Charge01 = carriedCharge,
+                    Cooldown = carriedCooldown,
+                    PulsePhase = carriedPulsePhase,
+                    SourceVentIndex = i
+                };
+                empCount++;
+            }
+
+            for (int i = empCount; i < _empNests.Length; i++)
+                _empNests[i] = default;
+
+            _debugEmpNestCount = empCount;
         }
 
         private void UpdateHazardSources()
@@ -881,7 +1188,7 @@ namespace Hecton8.World
                 return;
 
             Vector3 positionWS = cutterTransform.position;
-            if (!TryResolveCableZone(positionWS, out _, out float cableTension, out _))
+            if (!TryResolveCableZone(positionWS, out Vector3 cableAnchorWS, out float cableTension, out float cableCutProgress))
                 return;
 
             if (cableTension <= 0.0001f)
@@ -895,6 +1202,13 @@ namespace Hecton8.World
             cutManager.RegisterExternalCut(stampPosition, cableCutStampRadius, cableCutStampStrength, forward, 0.18f);
             _cableCutStampCooldown = cableCutStampInterval;
             _debugCutterSeveringCable = true;
+
+            if (_fluidDecalManager != null && cableCutProgress >= cableCutReleaseThreshold && _cableFluidDecalCooldown <= 0f)
+            {
+                float decalScale = Mathf.Clamp01(cableTension * Mathf.Lerp(0.65f, 1.15f, cableCutProgress));
+                _fluidDecalManager.RegisterCableFluid(cableAnchorWS, decalScale);
+                _cableFluidDecalCooldown = 1.2f;
+            }
         }
 
         private void HandleCutterBeamStateChanged(Transform cutterTransform, bool isActive)
@@ -903,6 +1217,348 @@ namespace Hecton8.World
             _cutterBeamActive = isActive;
             if (!isActive)
                 _debugCutterSeveringCable = false;
+        }
+
+        private void UpdateEmpNests(float dt)
+        {
+            if (_empNests == null || _debugEmpNestCount <= 0 || playerTransform == null)
+                return;
+
+            bool transportActive = _playerTransportCoordinator != null && _playerTransportCoordinator.IsTransportActive();
+            Vector3 playerPosition = playerTransform.position;
+            float highestCharge = 0f;
+
+            for (int i = 0; i < _debugEmpNestCount; i++)
+            {
+                EmpNestState nest = _empNests[i];
+                if (nest.RadiusWS <= 0.0001f)
+                    continue;
+
+                if (nest.Cooldown > 0f)
+                {
+                    nest.Cooldown -= dt;
+                    if (nest.Cooldown < 0f)
+                        nest.Cooldown = 0f;
+                }
+
+                float distance = Vector3.Distance(playerPosition, nest.PositionWS);
+                bool canCharge = transportActive && distance <= nest.RadiusWS;
+                if (canCharge && nest.Cooldown <= 0f)
+                {
+                    float chargeRate = empChargeDuration > 0.0001f ? 1f / empChargeDuration : 1f;
+                    float chargeWeight = 1f - Mathf.Clamp01(distance / Mathf.Max(0.001f, nest.RadiusWS));
+                    nest.Charge01 = Mathf.Clamp01(nest.Charge01 + chargeRate * chargeWeight * dt);
+                }
+                else
+                {
+                    float dischargeRate = empDischargeDuration > 0.0001f ? 1f / empDischargeDuration : 1f;
+                    nest.Charge01 = Mathf.Clamp01(nest.Charge01 - dischargeRate * dt);
+                }
+
+                if (nest.Charge01 >= 1f && nest.Cooldown <= 0f)
+                {
+                    FireEmpNest(ref nest, playerPosition);
+                }
+
+                highestCharge = Mathf.Max(highestCharge, nest.Charge01);
+                _empNests[i] = nest;
+            }
+
+            _debugEmpCharge01 = highestCharge;
+        }
+
+        private void UpdateEmpChainReaction(float dt)
+        {
+            if (_cableEmpChainDelayTimers == null || _cableEmpChainGlowTimers == null)
+                return;
+
+            int activeCount = Mathf.Min(_activeVentCount, Mathf.Min(_cableEmpChainDelayTimers.Length, _cableEmpChainGlowTimers.Length));
+            for (int i = 0; i < activeCount; i++)
+            {
+                if (_cableEmpChainDelayTimers[i] > 0f)
+                {
+                    _cableEmpChainDelayTimers[i] -= dt;
+                    if (_cableEmpChainDelayTimers[i] < 0f)
+                        _cableEmpChainDelayTimers[i] = 0f;
+
+                    if (_cableEmpChainDelayTimers[i] <= 0f)
+                        _cableEmpChainGlowTimers[i] = Mathf.Max(_cableEmpChainGlowTimers[i], empChainGlowDuration);
+                }
+
+                if (_cableEmpChainDelayTimers[i] <= 0f && _cableEmpChainGlowTimers[i] > 0f)
+                {
+                    _cableEmpChainGlowTimers[i] -= dt;
+                    if (_cableEmpChainGlowTimers[i] < 0f)
+                        _cableEmpChainGlowTimers[i] = 0f;
+                }
+            }
+
+            for (int i = activeCount; i < _cableEmpChainDelayTimers.Length; i++)
+            {
+                _cableEmpChainDelayTimers[i] = 0f;
+                if (i < _cableEmpChainGlowTimers.Length)
+                    _cableEmpChainGlowTimers[i] = 0f;
+            }
+        }
+
+        private void FireEmpNest(ref EmpNestState nest, Vector3 playerPosition)
+        {
+            if (_playerTransportCoordinator == null ||
+                !_playerTransportCoordinator.TryResolveTransportLifecycleOwner(out IPlayerTransportLifecycleOwner transportLifecycleOwner) ||
+                !(transportLifecycleOwner is MantaScooter mantaScooter))
+            {
+                nest.Charge01 = 0f;
+                nest.Cooldown = empCooldown;
+                return;
+            }
+
+            Vector3 toPlayer = playerPosition - nest.PositionWS;
+            float castDistance = Mathf.Min(empPulseRange, toPlayer.magnitude);
+            if (castDistance <= 0.0001f)
+                castDistance = empPulseRange;
+
+            Vector3 castDirection = toPlayer.sqrMagnitude > 0.0001f ? toPlayer.normalized : Vector3.forward;
+            int hitCount = UnityEngine.Physics.SphereCastNonAlloc(
+                nest.PositionWS,
+                empSphereCastRadius,
+                castDirection,
+                _empHits,
+                castDistance,
+                ~0,
+                QueryTriggerInteraction.Collide);
+
+            bool hitPlayerTransport = false;
+            for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
+            {
+                Collider hitCollider = _empHits[hitIndex].collider;
+                if (hitCollider == null)
+                    continue;
+
+                if (hitCollider.transform == playerTransform ||
+                    hitCollider.transform.IsChildOf(playerTransform) ||
+                    hitCollider.GetComponentInParent<MantaScooter>() == mantaScooter)
+                {
+                    hitPlayerTransport = true;
+                    break;
+                }
+            }
+
+            if (hitPlayerTransport)
+            {
+                mantaScooter.ApplyEmpDisruption(empMisfireDuration);
+                LocalizationManager manager = LocalizationManager.Instance;
+                if (manager != null)
+                    manager.RequestExternalPdaCorrosion(1f, empPdaCorrosionDuration);
+            }
+
+            TriggerEmpChainReaction(nest.SourceVentIndex, nest.PositionWS);
+            nest.Charge01 = 0f;
+            nest.Cooldown = empCooldown;
+        }
+
+        private void TriggerEmpChainReaction(int sourceVentIndex, Vector3 sourcePositionWS)
+        {
+            if (_cableEmpChainDelayTimers == null || _cableEmpChainGlowTimers == null || sourceVentIndex < 0 || sourceVentIndex >= _activeVentCount)
+                return;
+
+            Vector3 sourceAnchor = _ventStates[sourceVentIndex].CableAnchorWS;
+            int activeCount = Mathf.Min(_activeVentCount, Mathf.Min(_cableEmpChainDelayTimers.Length, _cableEmpChainGlowTimers.Length));
+            for (int i = 0; i < activeCount; i++)
+            {
+                Vector3 targetAnchor = _ventStates[i].CableAnchorWS;
+                float travelDistance = Vector3.Distance(sourceAnchor, targetAnchor);
+                float delay = i == sourceVentIndex
+                    ? 0f
+                    : travelDistance / Mathf.Max(empChainPropagationSpeed, 0.001f);
+
+                if (_cableEmpChainGlowTimers[i] > 0f || _cableEmpChainDelayTimers[i] > 0f)
+                {
+                    _cableEmpChainDelayTimers[i] = Mathf.Min(_cableEmpChainDelayTimers[i], delay);
+                    _cableEmpChainGlowTimers[i] = Mathf.Max(_cableEmpChainGlowTimers[i], empChainGlowDuration);
+                    continue;
+                }
+
+                _cableEmpChainDelayTimers[i] = delay;
+                _cableEmpChainGlowTimers[i] = i == sourceVentIndex ? empChainGlowDuration : 0f;
+            }
+
+            if (_fluidDecalManager != null)
+                _fluidDecalManager.RegisterCableFluid(sourcePositionWS, 0.42f);
+        }
+
+        private void UpdateCableVisuals(float dt)
+        {
+            if (_bioCableVisuals == null)
+                return;
+
+            bool hasPlayer = playerTransform != null;
+            bool transportActive = _playerTransportCoordinator != null && _playerTransportCoordinator.IsTransportActive();
+            Vector3 playerPosition = hasPlayer ? playerTransform.position : transform.position;
+            Vector3 playerVelocity = hasPlayer && _playerRigidbody != null ? _playerRigidbody.linearVelocity : Vector3.zero;
+
+            float hullRadius = Mathf.Max(0.1f, cableVisualHullRadius);
+            for (int i = 0; i < _bioCableVisuals.Length; i++)
+            {
+                BioCableIK cableRig = _bioCableVisuals[i];
+                if (cableRig == null)
+                    continue;
+
+                if (_cableElasticReleaseTimers != null && i < _cableElasticReleaseTimers.Length && _cableElasticReleaseTimers[i] > 0f)
+                {
+                    _cableElasticReleaseTimers[i] -= dt;
+                    if (_cableElasticReleaseTimers[i] < 0f)
+                        _cableElasticReleaseTimers[i] = 0f;
+                }
+
+                if (i >= _activeVentCount || !hasPlayer)
+                {
+                    if (_cableReleasedStates != null && i < _cableReleasedStates.Length)
+                        _cableReleasedStates[i] = false;
+                    if (_cableReleaseProgress != null && i < _cableReleaseProgress.Length)
+                        _cableReleaseProgress[i] = 0f;
+                    if (_cableElasticReleaseTimers != null && i < _cableElasticReleaseTimers.Length)
+                        _cableElasticReleaseTimers[i] = 0f;
+                    cableRig.SetEmpCharge(0f, 0f);
+                    cableRig.SetCableActive(false);
+                    continue;
+                }
+
+                ThermalVentState vent = _ventStates[i];
+                Vector3 cableAnchor = ResolveCableAnchor(playerPosition, vent.CableAnchorWS);
+                float cableRadius = Mathf.Max(0.1f, vent.CableRadiusWS);
+                float activationDistance = Mathf.Min(cableRadius, cableVisualActivationDistance);
+                Vector2 planarDelta = new Vector2(playerPosition.x - cableAnchor.x, playerPosition.z - cableAnchor.z);
+                float planarDistance = planarDelta.magnitude;
+                float chainCharge01 = ResolveEmpChainChargeForVent(i);
+                float empCharge01 = Mathf.Max(ResolveEmpChargeForVent(i), chainCharge01);
+                bool keepVisualAliveForEmp = empCharge01 > 0.0001f;
+                if (planarDistance > activationDistance && !keepVisualAliveForEmp)
+                {
+                    cableRig.SetEmpCharge(0f, 0f);
+                    if (_cableReleasedStates[i] && cableRig.HasTransientMotion)
+                    {
+                        cableRig.SetCableActive(true);
+                        cableRig.TickReleased(cableAnchor, Vector3.up, dt);
+                    }
+                    else
+                    {
+                        _cableReleasedStates[i] = false;
+                        _cableReleaseProgress[i] = 0f;
+                        if (_cableElasticReleaseTimers != null)
+                            _cableElasticReleaseTimers[i] = 0f;
+                        cableRig.SetCableActive(false);
+                    }
+                    continue;
+                }
+
+                float tension01 = 1f - planarDistance / Mathf.Max(activationDistance, 0.001f);
+                float cutProgress01 = ResolveCableCutProgress(playerPosition, cableAnchor, cableRadius);
+                float activeTension = tension01 * (1f - cutProgress01);
+                bool elasticReleased = _cableElasticReleaseTimers != null && _cableElasticReleaseTimers[i] > 0f;
+                bool snapped = cutProgress01 >= cableCutReleaseThreshold;
+                if (snapped && _cableReleaseProgress[i] < cableCutReleaseThreshold)
+                {
+                    _cableReleasedStates[i] = true;
+                    Vector3 snapDirection = playerPosition - cableAnchor;
+                    snapDirection.y = Mathf.Max(0f, snapDirection.y) + cableSnapVerticalLift;
+                    if (snapDirection.sqrMagnitude <= 0.0001f)
+                        snapDirection = Vector3.up;
+
+                    float recoilSpeed = cableSnapRecoilSpeed * Mathf.Lerp(0.65f, 1.25f, tension01);
+                    cableRig.TriggerSnapRecoil(snapDirection.normalized * recoilSpeed, cableSnapDuration);
+                    if (_fluidDecalManager != null)
+                        _fluidDecalManager.RegisterCableFluid(cableAnchor, Mathf.Clamp01(Mathf.Lerp(0.75f, 1.2f, tension01)));
+                }
+                else if (!snapped && !elasticReleased && _cableReleasedStates[i] && cutProgress01 <= cableCutReleaseThreshold * 0.45f)
+                {
+                    _cableReleasedStates[i] = false;
+                }
+
+                _cableReleaseProgress[i] = cutProgress01;
+                float empPulse01 = empCharge01 > 0f
+                    ? 0.5f + 0.5f * Mathf.Sin((_simulationTime * empPulseSpeed) + i * 0.6180339f)
+                    : 0f;
+                cableRig.SetEmpCharge(empCharge01, empPulse01);
+
+                if (_cableReleasedStates[i])
+                {
+                    cableRig.SetCableActive(true);
+                    cableRig.TickReleased(cableAnchor, Vector3.up, dt);
+                    if (!cableRig.HasTransientMotion && snapped)
+                        cableRig.SetCableActive(false);
+                    continue;
+                }
+
+                if (planarDistance > activationDistance && keepVisualAliveForEmp)
+                {
+                    cableRig.SetCableActive(true);
+                    cableRig.TickCable(cableAnchor, Vector3.up, cableAnchor + Vector3.up * Mathf.Max(0.4f, cableRadius * 0.18f), Vector3.zero, 0f, 0f, dt);
+                    continue;
+                }
+
+                float attraction01 = transportActive
+                    ? Mathf.Clamp01(activeTension * cableVisualTransportBoost)
+                    : activeTension;
+                float wrap01 = transportActive && activeTension > cableVisualWrapThreshold
+                    ? Mathf.InverseLerp(cableVisualWrapThreshold, 1f, activeTension)
+                    : 0f;
+
+                Vector3 toPlayer = playerPosition - cableAnchor;
+                Vector3 hullDirection = toPlayer.sqrMagnitude > 0.0001f ? toPlayer.normalized : Vector3.forward;
+                Vector3 attractorPosition = playerPosition - hullDirection * hullRadius;
+                cableRig.SetCableActive(true);
+                cableRig.TickCable(cableAnchor, Vector3.up, attractorPosition, playerVelocity, attraction01, wrap01, dt);
+                if (cableRig.ConsumeElasticRupture(out Vector3 ruptureVelocityWS))
+                {
+                    _cableReleasedStates[i] = true;
+                    if (_cableElasticReleaseTimers != null)
+                        _cableElasticReleaseTimers[i] = cableElasticReleaseDuration;
+
+                    Vector3 elasticRecoilVelocity = ruptureVelocityWS.sqrMagnitude > 0.0001f
+                        ? ruptureVelocityWS
+                        : (hullDirection.sqrMagnitude > 0.0001f ? hullDirection : Vector3.up) * cableSnapRecoilSpeed;
+                    cableRig.TriggerSnapRecoil(elasticRecoilVelocity, cableSnapDuration);
+                    if (_fluidDecalManager != null)
+                        _fluidDecalManager.RegisterCableFluid(cableAnchor, Mathf.Clamp01(Mathf.Lerp(0.8f, 1.35f, tension01)));
+                }
+            }
+        }
+
+        private float ResolveEmpChargeForVent(int ventIndex)
+        {
+            if (_empNests == null || ventIndex < 0)
+                return 0f;
+
+            int nestCount = Mathf.Min(_debugEmpNestCount, _empNests.Length);
+            for (int i = 0; i < nestCount; i++)
+            {
+                if (_empNests[i].SourceVentIndex != ventIndex)
+                    continue;
+
+                return _empNests[i].Charge01;
+            }
+
+            return 0f;
+        }
+
+        private float ResolveEmpChainChargeForVent(int ventIndex)
+        {
+            if (_cableEmpChainDelayTimers == null ||
+                _cableEmpChainGlowTimers == null ||
+                ventIndex < 0 ||
+                ventIndex >= _cableEmpChainDelayTimers.Length ||
+                ventIndex >= _cableEmpChainGlowTimers.Length)
+            {
+                return 0f;
+            }
+
+            if (_cableEmpChainDelayTimers[ventIndex] > 0f)
+                return 0f;
+
+            if (empChainGlowDuration <= 0.0001f)
+                return _cableEmpChainGlowTimers[ventIndex] > 0f ? 1f : 0f;
+
+            return Mathf.Clamp01(_cableEmpChainGlowTimers[ventIndex] / empChainGlowDuration);
         }
 
         private bool TryResolveCableZone(Vector3 positionWS, out Vector3 cableAnchorWS, out float cableTension01, out float cableCutProgress01)

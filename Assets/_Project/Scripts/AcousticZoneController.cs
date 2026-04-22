@@ -258,6 +258,14 @@ namespace Hecton8.Audio
         [Tooltip("Maximum sonar ping volume for full-strength active pulses.")]
         [SerializeField, Range(0f, 1f)] private float sonarPingVolumeMax = 0.42f;
 
+        [Header("Manta Misfire Audio")]
+        [Tooltip("Optional 2D sputter one-shot used when the handheld Manta drive misfires under hull stress.")]
+        [SerializeField] private AudioClip mantaMisfireClip;
+        [Tooltip("Minimum misfire sputter volume when the hull only barely exceeds the failure threshold.")]
+        [SerializeField, Range(0f, 1f)] private float mantaMisfireVolumeMin = 0.14f;
+        [Tooltip("Maximum misfire sputter volume when the hull is near catastrophic stress.")]
+        [SerializeField, Range(0f, 1f)] private float mantaMisfireVolumeMax = 0.36f;
+
         [Header("Fatal Pressure Audio")]
         [Tooltip("Primary 2D white-noise burst used during the fatal crush-depth glitch loop.")]
         [SerializeField] private AudioClip fatalPressureNoisePrimary;
@@ -271,6 +279,12 @@ namespace Hecton8.Audio
         [SerializeField, Range(0f, 1f)] private float fatalPressureNoiseVolumeMin = 0.16f;
         [Tooltip("Maximum white-noise burst volume at the end of the fatal-pressure loop.")]
         [SerializeField, Range(0f, 1f)] private float fatalPressureNoiseVolumeMax = 0.45f;
+
+        [Header("Madness Whisper Audio")]
+        [Tooltip("Very low 2D whisper/static cue played once when PDA lore is fully replaced by a madness line.")]
+        [SerializeField, Range(0f, 1f)] private float madnessWhisperVolume = 0.045f;
+        [Tooltip("Minimum cooldown between madness whisper cues so repeated PDA swaps do not stack into noise spam.")]
+        [SerializeField, Min(0.1f)] private float madnessWhisperCooldown = 0.9f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — PLAYER REFERENCE
@@ -484,6 +498,7 @@ namespace Hecton8.Audio
         private bool _stormStaticUsePrimaryNext = true;
         private float _underwaterVegetationPulseTimer;
         private float _fatalPressureNoiseTimer;
+        private float _nextMadnessWhisperTime;
         private bool _fatalPressureNoiseUsePrimaryNext = true;
         private bool _snapshotBindingsResolved;
         private bool _warnedMissingInteriorSnapshot;
@@ -558,6 +573,7 @@ namespace Hecton8.Audio
             _stormStaticUsePrimaryNext = true;
             _underwaterVegetationPulseTimer = 0f;
             _fatalPressureNoiseTimer = 0f;
+            _nextMadnessWhisperTime = 0f;
             _fatalPressureNoiseUsePrimaryNext = true;
             ResolveBiomeMatrixDirector(true);
             RefreshSoundscapeTierContext(true);
@@ -607,6 +623,7 @@ namespace Hecton8.Audio
             _stormAmbientFlutter = 0f;
             _underwaterVegetationPulseTimer = 0f;
             _fatalPressureNoiseTimer = 0f;
+            _nextMadnessWhisperTime = 0f;
             ResetSourceLevelAcousticFallback();
             TryUnregister();
         }
@@ -826,6 +843,28 @@ namespace Hecton8.Audio
                 return;
 
             sam.PlayStatic2D(clip, transitionVolume);
+        }
+
+        internal void PlayMadnessWhisperCue()
+        {
+            if (Time.unscaledTime < _nextMadnessWhisperTime || !SpatialAudioManager.TryGetInstance(out SpatialAudioManager sam))
+                return;
+
+            AudioClip clip = stormStaticPrimary;
+            if (clip == null)
+                clip = stormStaticSecondary;
+
+            if (clip == null)
+                clip = fatalPressureNoisePrimary;
+
+            if (clip == null)
+                clip = fatalPressureNoiseSecondary;
+
+            if (clip == null)
+                return;
+
+            sam.PlayStatic2D(clip, madnessWhisperVolume, sam.InterfaceGroup);
+            _nextMadnessWhisperTime = Time.unscaledTime + Mathf.Max(0.1f, madnessWhisperCooldown);
         }
 
         private AudioMixerSnapshot ResolveSurfaceSnapshot()
@@ -1560,6 +1599,15 @@ namespace Hecton8.Audio
 
             float volume = Mathf.Lerp(sonarPingVolumeMin, sonarPingVolumeMax, Mathf.Clamp01(intensity));
             sam.PlayStatic2D(sonarPingClip, volume, sam.InterfaceGroup);
+        }
+
+        internal void PlayMantaMisfire(float intensity)
+        {
+            if (mantaMisfireClip == null || !SpatialAudioManager.TryGetInstance(out SpatialAudioManager sam))
+                return;
+
+            float volume = Mathf.Lerp(mantaMisfireVolumeMin, mantaMisfireVolumeMax, Mathf.Clamp01(intensity));
+            sam.PlayStatic2D(mantaMisfireClip, volume, sam.InterfaceGroup);
         }
 
         private void PlayStormInterferencePulse(float stormInterference, AcousticZoneState zone)

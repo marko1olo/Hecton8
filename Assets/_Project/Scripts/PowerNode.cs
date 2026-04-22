@@ -101,6 +101,7 @@ namespace Hecton8.Power
 
         /// <summary>Текущее состояние питания.</summary>
         private bool _hasPower = true;
+        private int _topologyRevision;
 
         /// <summary>
         /// Статический буфер для OverlapSphereNonAlloc.
@@ -128,6 +129,7 @@ namespace Hecton8.Power
         /// Используется PowerGridManager.CheckAndSplitGrid() для BFS.
         /// </summary>
         public List<PowerNode> Neighbors => _neighbors;
+        internal int TopologyRevision => _topologyRevision;
 
         /// <summary>
         /// Устанавливает ссылку на сеть.
@@ -294,6 +296,7 @@ namespace Hecton8.Power
         /// </summary>
         private void FindAndConnectNeighbors()
         {
+            bool topologyChanged = false;
             int overlapCount = UnityEngine.Physics.OverlapSphereNonAlloc(
                 transform.position,
                 connectionRadius,
@@ -314,10 +317,16 @@ namespace Hecton8.Power
 
                 // ── Регистрируем как соседа (двусторонняя связь) ──
                 if (!ContainsRef(_neighbors, neighbor))
+                {
                     _neighbors.Add(neighbor);
+                    topologyChanged = true;
+                }
 
                 if (!ContainsRef(neighbor._neighbors, this))
+                {
                     neighbor._neighbors.Add(this);
+                    neighbor._topologyRevision++;
+                }
 
                 // ── Сетевая логика ──
                 if (neighbor._grid != null)
@@ -348,6 +357,9 @@ namespace Hecton8.Power
                 // Нет соседей с сетью → создаём свою
                 _grid = PowerGridManager.CreateGrid(this);
             }
+
+            if (topologyChanged)
+                _topologyRevision++;
         }
 
         /// <summary>
@@ -385,13 +397,18 @@ namespace Hecton8.Power
         private void RemoveSelfFromNeighbors()
         {
             int count = _neighbors.Count;
+            bool topologyChanged = count > 0;
             for (int i = 0; i < count; i++)
             {
                 PowerNode neighbor = _neighbors[i];
                 if (neighbor == null) continue;
 
-                RemoveRef(neighbor._neighbors, this);
+                if (RemoveRef(neighbor._neighbors, this))
+                    neighbor._topologyRevision++;
             }
+
+            if (topologyChanged)
+                _topologyRevision++;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -416,7 +433,7 @@ namespace Hecton8.Power
         /// <summary>
         /// Удаление по ссылке. Обычный RemoveAt (не swap — сохраняем порядок).
         /// </summary>
-        private static void RemoveRef<T>(List<T> list, T item) where T : class
+        private static bool RemoveRef<T>(List<T> list, T item) where T : class
         {
             int count = list.Count;
             for (int i = 0; i < count; i++)
@@ -424,9 +441,11 @@ namespace Hecton8.Power
                 if (ReferenceEquals(list[i], item))
                 {
                     list.RemoveAt(i);
-                    return;
+                    return true;
                 }
             }
+
+            return false;
         }
 
         // ══════════════════════════════════════════════════════════

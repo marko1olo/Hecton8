@@ -1,102 +1,66 @@
-What Was Wrong
 
-Explorer Points had no sink. New runs had no permanent-upgrade layer. Hardcore flags did not exist in local save schema, so there was no authoritative permadeath/nightmare contract. Global retention also stopped at records and achievements; there was no marathon-goal backend paying long-tail rewards across many runs.
 
-What I Did
+107 previous messages
+Что было не так
 
-Added permanent meta-upgrade definitions in MetaUpgradeRegistry.cs for:
-meta.oxygen_capacity
-meta.starting_resource_cache
-meta.swim_speed_boost
-Extended global profile data and owner:
-GlobalProfileData.cs
-GlobalProfileManager.cs
-profile now persists purchased upgrade levels and marathon-goal progress
-GlobalProfileManager.TryPurchaseUpgrade(...) now spends Explorer Points
-marathon goals now track:
-structural metal collected
-crafted items
-biomes discovered
-Added runtime buff application in MetaBuffInjector.cs:
-reads global profile on SceneBootstrap.OnGameReady
-applies oxygen-capacity and swim-speed buffs through runtime multipliers only
-injects starter resources on NewGame only
-Added local hardcore-run owner in RunModifierController.cs:
-persists RunModifiersDTO
-supports pending modifiers for the next new run
-deletes the slot through SaveManager.DeleteSave(...) on permadeath death when a slot exists
-Extended local save schema in SaveData.cs and SaveDataMigration.cs:
-bumped save format to v27
-added runModifiers
-added migration/repair for daily-seed and dead-run state
-Patched real gameplay owners instead of mutating authored assets:
-HectonSurvivalSystem.cs: runtime oxygen-capacity multiplier
-HectonPlayerMovement.cs: runtime swim-speed multiplier
-DynamicDifficultyDirector.cs: nightmare override forces DamageMultiplier=2, OxygenDepletionRate=1, PredatorAggressionScale=1.5
-PlayerInventory.cs and HectonGameEvents.cs: official ItemCollectedEvent for marathon progress
-MetaRuntimeInstaller.cs: now installs RunModifierController and MetaBuffInjector
-Updated docs:
-CHANGELOG.md
-HECTON8_DEEPSEEK_IDEAS_REALITY_AUDIT_AND_EXECUTION_PLAN.md
-In-Game Result
+[BLOCKER] рендер-путь был красным из-за RenderGraph API drift в HectonVoxelSsaoFeature.cs. Параллельно для загрязнения уже существовал owner: EnvironmentalStrainManager.cs. Делать второй глобальный pollution truth-owner было бы дубликатом.
 
-The game now has a real retention loop backend. Explorer Points can fund permanent account-wide buffs, future runs can inherit those buffs without touching authored ScriptableObject assets, permadeath/nightmare flags now live in slot save data, and marathon goals can drip new Explorer Points across many runs.
+Что я сделал
 
-Nightmare Mode now hard-overrides the adaptive director instead of blending with it. Permadeath now has a physical slot-deletion path. New Game can start with a profile-owned starter cache if that upgrade was purchased.
+Исправил SSAO feature: AO texture теперь публикуется через SetGlobalTextureAfterPass(...), а не через сломанный global bind внутри compute lambda. Это сняло compile blocker в моей зоне.
+Добавил BasePollutionManager.cs как industrial source-aggregator, а не новый global ecology owner.
+Он читает live telemetry из PowerGridManager, RepairDroneHub и ResourceRecyclerModule, считает Noise и Microplastic, затем вливает это в существующий EnvironmentalStrainManager.
+Расширил швы без архитектурного дрейфа:
+PowerGridManager.cs: internal access к runtime grids.
+EnvironmentalStrainManager.cs: internal industrial strain sink.
+RepairDroneHub.cs: internal registry и launch telemetry для pollution manager.
+Создал ResourceRecyclerModule.cs как powered state machine.
+Он не дублирует scrap logic, а использует existing recycling pipeline через ScrapManager.cs, который я вскрыл internal helper-методами для yield resolution / grant / rollback.
+Recycler создает пиковую нагрузку на сеть через startupBurstPowerCost и постоянную нагрузку через IPowerComponent.PowerRating.
+Дожал оптимизацию relay path:
+PowerNode.cs теперь ведет internal TopologyRevision.
+PowerRelayNode.cs больше не пересчитывает кабельную геометрию на каждом slow-tick, если topology не менялась и сам relay не двигался.
+Игровой результат
 
-WARNING: Regression risk in PredatorAggressionScale because the director now outputs nightmare aggression, but fauna owners still need to consume that multiplier for full behavioral hardening.
+База теперь реально оставляет след в океане: энергопотребление, перегруженные сети, ремонтные дроны и переработка мусора наращивают промышленный шум и микропластик. Этот след идет не в отдельную фейковую систему, а в уже существующий EnvironmentalStrainManager, а значит автоматически поднимает PredatorAggressionScale через DynamicDifficultyDirector.
 
-WARNING: Regression risk in StartingResourceCache if another bootstrap path duplicates OnGameReady or spawns multiple meta runtime roots; current injector is idempotent per runtime owner, not globally across duplicate roots.
+Recycler стал не instant helper, а модулем базы: переработка требует мощности, может встать на паузу без питания и создает сетевые пики. Relay visuals дополнительно разгружены: кабельная геометрия не дергается без topology change.
 
-WARNING: Regression risk in unsaved permadeath runs because there is no slot artifact to delete until the run has been saved at least once; fallback state is runMarkedDead in local save data.
+Что проверено
 
-What Was Verified
+git diff --check по моей зоне чистый, кроме line-ending warnings.
+После SSAO фикса compile blocker из HectonVoxelSsaoFeature.cs исчез.
+Последний Unity console срез по моей зоне: script errors/warnings не показал; остались только 2 editor assert без file/line: Internal error - unexpected guid mismatch.
+validate_script для BasePollutionManager.cs и HectonVoxelSsaoFeature.cs чистый. ResourceRecyclerModule.cs MCP validator дал шумные false-positive duplicate signature без line refs; ручная проверка файла конфликтов не показала.
+PENDING VERIFICATION: runtime gameplay не прогонялся. GC/CPU/memory numbers отсутствуют. Measured proof absent.
+WARNING: Regression risk in ResourceRecyclerModule inventory UX. Сейчас модуль берет первый подходящий recyclable item из инвентаря игрока, а не явно выбранный слот через отдельный UI.
+WARNING: Regression risk in PowerRelayNode visual refresh. Оптимизация предполагает статичность base power nodes; если соседний узел будет двигаться без topology change, redraw может запоздать до следующего topology event.
+Регрессионная модель
 
-Code-review-only:
-local readback confirms one real definition each for SubscribeToEventBus, UnsubscribeFromEventBus, MarkDirty, FlushIfDirty, TryDeleteCurrentSlot, and other methods that Unity validator flagged as duplicates
-rg readback confirms:
-purchase API exists on GlobalProfileManager
-marathon progress is driven from ItemCollectedEvent, ItemCraftedEvent, and BiomeDiscoveredEvent
-permadeath deletion path calls SaveManager.DeleteSave(...)
-runtime buff injection hits HectonSurvivalSystem and HectonPlayerMovement
-RunModifiersDTO is persisted in SaveData v27
-Validation:
-validate_script passed cleanly for MetaBuffInjector.cs
-validate_script returned duplicate-signature diagnostics for GlobalProfileManager.cs and RunModifierController.cs; manual readback showed single definitions, so this is treated as tool false positive, not compile proof
-Unity-verified:
-none
-Compile proof:
-absent
-Status: PENDING VERIFICATION
+CPU: низкий-средний риск. Новые системы сидят на ISlowTickable/ITickable, без Update.
+GC: горячих аллокаций не добавлял; recycler yield resolution остается cold-path на interaction.
+Memory: минимальный риск, новые registries фиксированной емкости.
+Cadence/correctness: главный риск в UX recycler и в static-node assumption для relay visuals.
+Почему kept: это сохраняет существующих owners, не плодит дубликаты и дает рабочую обратную связь база → экология → агрессия мира.
+Состояние: PENDING VERIFICATION.
 
 
 
 
 
-2:01 AM
-15 files changed
-+1232
--59
+3:18 AM
+9 files changed
++728
+-54
 Undo
 
 Review
-HectonPlayerMovement.cs
-+27
--15
-Too large to render inline
-
-Review
-Assets/_Project/Scripts/HectonSurvivalSystem.cs
-Assets/_Project/Scripts/Meta/DynamicDifficultyDirector.cs
-Assets/_Project/Scripts/Meta/GlobalProfileData.cs
-Assets/_Project/Scripts/Meta/GlobalProfileManager.cs
-Assets/_Project/Scripts/Meta/MetaBuffInjector.cs
-Assets/_Project/Scripts/Meta/MetaRuntimeInstaller.cs
-Assets/_Project/Scripts/Meta/MetaUpgradeRegistry.cs
-Assets/_Project/Scripts/Meta/RunModifierController.cs
-Assets/_Project/Scripts/ModdingAPI/HectonGameEvents.cs
-Assets/_Project/Scripts/PlayerInventory.cs
-Assets/_Project/Scripts/SaveData.cs
-Assets/_Project/Scripts/SaveDataMigration.cs
-Docs/2026-04-20_Deepseek_Ideas_Reality_Audit/CHANGELOG.md
-Docs/2026-04-20_Deepseek_Ideas_Reality_Audit/HECTON8_DEEPSEEK_IDEAS_REALITY_AUDIT_AND_EXECUTION_PLAN.md
+Assets/_Project/Scripts/Construction/RepairDroneHub.cs
+Assets/_Project/Scripts/Economy/ResourceRecyclerModule.cs
+Assets/_Project/Scripts/Economy/ScrapManager.cs
+Assets/_Project/Scripts/Power/PowerRelayNode.cs
+Assets/_Project/Scripts/PowerGridManager.cs
+Assets/_Project/Scripts/PowerNode.cs
+Assets/_Project/Scripts/Visor/HectonVoxelSsaoFeature.cs
+Assets/_Project/Scripts/World/BasePollutionManager.cs
+Assets/_Project/Scripts/World/EnvironmentalStrainManager.cs

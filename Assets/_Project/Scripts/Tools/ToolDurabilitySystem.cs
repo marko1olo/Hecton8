@@ -25,7 +25,9 @@
 
 using System;
 using System.Collections.Generic;
+using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Gameplay;
 using Hecton8.SaveSystem;
 using UnityEngine;
 
@@ -33,7 +35,7 @@ namespace Hecton8.Tools
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Tools/Tool Durability System")]
-    public sealed class ToolDurabilitySystem : MonoBehaviour, ISaveable
+    public sealed class ToolDurabilitySystem : MonoBehaviour, ISaveable, ISlowTickable
     {
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
@@ -61,6 +63,20 @@ namespace Hecton8.Tools
 
         [Tooltip("Автоматически ломать инструмент при durability = 0.")]
         [SerializeField] private bool autoBreakOnZero = true;
+        [Tooltip("Passive corrosion on the currently held tool while the player stays underwater.")]
+        [SerializeField] private bool enableEnvironmentalCorrosion = true;
+        [Tooltip("Base corrosion per second for a held underwater tool.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float heldUnderwaterCorrosionPerSecond = 0.04f;
+        [Tooltip("Extra corrosion per second when the held underwater tool was used recently.")]
+        [Range(0f, 2f)]
+        [SerializeField] private float activeUseCorrosionPerSecond = 0.12f;
+        [Tooltip("Extra corrosion multiplier applied during cold stress.")]
+        [Range(0f, 2f)]
+        [SerializeField] private float coldStressCorrosionMultiplier = 0.55f;
+        [Tooltip("Extra corrosion multiplier applied during heat stress.")]
+        [Range(0f, 2f)]
+        [SerializeField] private float heatStressCorrosionMultiplier = 0.35f;
 
         // ══════════════════════════════════════════════════════════
         //  RUNTIME STATE
@@ -76,6 +92,13 @@ namespace Hecton8.Tools
         /// Словарь: toolID → сломан ли инструмент.
         /// </summary>
         private readonly Dictionary<string, bool> _brokenMap = new Dictionary<string, bool>(32);
+        private HectonSurvivalSystem _playerSurvivalSystem;
+        private PlayerToolManager _playerToolManager;
+        private Transform _playerRoot;
+        private bool _registeredToTick;
+        private const float SlowTickDeltaTime = 0.5f;
+        private const float UnderwaterDepthThreshold = 0.5f;
+        private const float ActiveUseWindowSeconds = 0.7f;
 
         // ══════════════════════════════════════════════════════════
         //  EVENTS
@@ -117,11 +140,18 @@ namespace Hecton8.Tools
 
         private void OnEnable()
         {
+            TryRegisterWithTickManager();
             SaveManager.Instance?.Register(this);
+        }
+
+        private void Start()
+        {
+            TryRegisterWithTickManager();
         }
 
         private void OnDisable()
         {
+            UnregisterFromTickManager();
             SaveManager.Instance?.Unregister(this);
         }
 
@@ -308,6 +338,83 @@ namespace Hecton8.Tools
             {
                 _brokenMap[kvp.Key] = kvp.Value;
             }
+        }
+        public void SlowTick()
+        {
+            ApplyEnvironmentalCorrosion();
+        }
+
+        private void TryRegisterWithTickManager()
+        {
+            if (_registeredToTick || GameTickManager.Instance == null)
+                return;
+
+            GameTickManager.Instance.Register(this);
+            _registeredToTick = true;
+        }
+
+        private void UnregisterFromTickManager()
+        {
+            if (!_registeredToTick || GameTickManager.Instance == null)
+                return;
+
+            GameTickManager.Instance.Unregister(this);
+            _registeredToTick = false;
+        }
+
+        private void ApplyEnvironmentalCorrosion()
+        {
+            if (!enableEnvironmentalCorrosion)
+                return;
+
+            if (!ResolvePlayerOwners())
+                return;
+
+            if (_playerSurvivalSystem == null || _playerToolManager == null)
+                return;
+
+            if (_playerSurvivalSystem.Depth <= UnderwaterDepthThreshold)
+                return;
+
+            PlayerTool currentTool = _playerToolManager.CurrentTool;
+            if (currentTool == null || !currentTool.IsEquipped || currentTool.IsBroken)
+                return;
+
+            ToolMetadata metadata = currentTool.RuntimeMetadata;
+            if (metadata == null || string.IsNullOrEmpty(metadata.toolID))
+                return;
+
+            float drain = heldUnderwaterCorrosionPerSecond * SlowTickDeltaTime;
+            if (currentTool.WasRecentlyUsed(ActiveUseWindowSeconds))
+                drain += activeUseCorrosionPerSecond * SlowTickDeltaTime;
+
+            if (_playerSurvivalSystem.IsInColdStress)
+                drain *= 1f + (_playerSurvivalSystem.ColdStressSeverity01 * coldStressCorrosionMultiplier);
+
+            if (_playerSurvivalSystem.IsInHeatStress)
+                drain *= 1f + (_playerSurvivalSystem.HeatStressSeverity01 * heatStressCorrosionMultiplier);
+
+            if (drain <= 0.0001f)
+                return;
+
+            DrainDurability(metadata.toolID, drain, metadata.maxDurability);
+        }
+
+        private bool ResolvePlayerOwners()
+        {
+            if (_playerRoot == null)
+            {
+                if (!SceneBootstrap.TryGetCurrentPlayerTransform(out _playerRoot) || _playerRoot == null)
+                    return false;
+            }
+
+            if (_playerSurvivalSystem == null)
+                _playerRoot.TryGetComponent(out _playerSurvivalSystem);
+
+            if (_playerToolManager == null)
+                _playerToolManager = _playerRoot.GetComponentInChildren<PlayerToolManager>(true);
+
+            return _playerSurvivalSystem != null && _playerToolManager != null;
         }
     }
 }

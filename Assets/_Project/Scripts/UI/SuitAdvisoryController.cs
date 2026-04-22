@@ -20,6 +20,10 @@ namespace Hecton8.UI
         [SerializeField, Range(0.05f, 0.8f)] private float energyWarningThreshold = 0.25f;
         [SerializeField, Range(0.05f, 0.8f)] private float integrityWarningThreshold = 0.35f;
         [SerializeField, Range(0.05f, 0.5f)] private float integrityCriticalThreshold = 0.18f;
+        [SerializeField, Range(0.05f, 1f)] private float coldWarningThreshold = 0.28f;
+        [SerializeField, Range(0.05f, 1f)] private float coldCriticalThreshold = 0.62f;
+        [SerializeField, Range(0.05f, 1f)] private float heatWarningThreshold = 0.28f;
+        [SerializeField, Range(0.05f, 1f)] private float heatCriticalThreshold = 0.62f;
         [SerializeField] private float safeDepthWarningMargin = 20f;
         [SerializeField] private float safeDepthCriticalMargin = 6f;
         [SerializeField] private float resetHysteresis = 0.06f;
@@ -36,6 +40,12 @@ namespace Hecton8.UI
         private bool _integrityCritical;
         private bool _depthWarned;
         private bool _depthCritical;
+        private bool _coldWarned;
+        private bool _coldCritical;
+        private bool _heatWarned;
+        private bool _heatCritical;
+        private bool _bleedingWarned;
+        private bool _fractureWarned;
         private bool _deathTriggered;
 
         private const string MsgOxygenWarning = "OXYGEN RESERVES LOW";
@@ -52,6 +62,12 @@ namespace Hecton8.UI
         private const string MsgDeathDehydration = "FATALITY: DEHYDRATION";
         private const string MsgDeathIntegrity = "FATALITY: STRUCTURAL FAILURE";
         private const string MsgBaseBreach = "BASE BREACH DETECTED";
+        private const string MsgBleeding = "BLEEDING DETECTED // HULL LOSS ACTIVE";
+        private const string MsgFracture = "FRACTURE DETECTED // SWIM THRUST DEGRADED";
+        private const string MsgColdWarning = "THERMAL LOAD RISING // HEATING DRAW ACTIVE";
+        private const string MsgColdCritical = "EXTREME COLD // SUIT HEAT FAILING";
+        private const string MsgHeatWarning = "HEAT LOAD RISING // HYDRATION LOSS ACTIVE";
+        private const string MsgHeatCritical = "THERMAL OVERLOAD // BODY HEAT UNSAFE";
 
         private void Awake()
         {
@@ -101,7 +117,10 @@ namespace Hecton8.UI
             survival.OnEnergyChanged += HandleEnergyChanged;
             survival.OnIntegrityChanged += HandleIntegrityChanged;
             survival.OnDepthChanged += HandleDepthChanged;
+            survival.OnTemperatureChanged += HandleTemperatureChanged;
+            survival.ThermalStateChanged += HandleThermalStateChanged;
             survival.OnDeath += HandleDeath;
+            survival.InjuryStateChanged += HandleInjuryStateChanged;
         }
 
         private void Unsubscribe()
@@ -112,7 +131,10 @@ namespace Hecton8.UI
                 survival.OnEnergyChanged -= HandleEnergyChanged;
                 survival.OnIntegrityChanged -= HandleIntegrityChanged;
                 survival.OnDepthChanged -= HandleDepthChanged;
+                survival.OnTemperatureChanged -= HandleTemperatureChanged;
+                survival.ThermalStateChanged -= HandleThermalStateChanged;
                 survival.OnDeath -= HandleDeath;
+                survival.InjuryStateChanged -= HandleInjuryStateChanged;
             }
 
             BaseIntegrityEvents.OnModuleBreached -= HandleModuleBreached;
@@ -129,6 +151,8 @@ namespace Hecton8.UI
             HandleEnergyChanged(survival.Energy);
             HandleIntegrityChanged(survival.Integrity);
             HandleDepthChanged(survival.Depth);
+            HandleTemperatureChanged(survival.EnvironmentTemperature);
+            HandleInjuryStateChanged();
         }
 
         private void HandleOxygenChanged(float _)
@@ -231,6 +255,56 @@ namespace Hecton8.UI
             else if (remaining > safeDepthCriticalMargin + 3f)
             {
                 _depthCritical = false;
+            }
+        }
+
+        private void HandleTemperatureChanged(float _)
+        {
+            if (survival == null)
+                return;
+
+            EvaluateColdStress();
+            EvaluateHeatStress();
+        }
+
+        private void HandleThermalStateChanged()
+        {
+            if (survival == null)
+                return;
+
+            EvaluateColdStress();
+            EvaluateHeatStress();
+        }
+
+        private void HandleInjuryStateChanged()
+        {
+            if (survival == null)
+                return;
+
+            if (survival.IsBleeding)
+            {
+                if (!_bleedingWarned)
+                {
+                    _bleedingWarned = true;
+                    NotifyCritical(BuildBleedingMessage());
+                }
+            }
+            else
+            {
+                _bleedingWarned = false;
+            }
+
+            if (survival.HasFracture)
+            {
+                if (!_fractureWarned)
+                {
+                    _fractureWarned = true;
+                    NotifyWarning(BuildFractureMessage());
+                }
+            }
+            else
+            {
+                _fractureWarned = false;
             }
         }
 
@@ -368,6 +442,107 @@ namespace Hecton8.UI
         {
             int reservePercent = Mathf.Clamp(Mathf.RoundToInt(airQualityNormalized * 100f), 0, 100);
             return $"BASE AIR QUALITY LOW // SCRUBBERS {reservePercent}%";
+        }
+
+        private void EvaluateColdStress()
+        {
+            float severity = survival != null ? survival.ColdStressSeverity01 : 0f;
+
+            if (!_coldCritical && severity >= coldCriticalThreshold)
+            {
+                _coldCritical = true;
+                NotifyCritical(BuildColdStressMessage(true));
+            }
+            else if (!_coldWarned && severity >= coldWarningThreshold)
+            {
+                _coldWarned = true;
+                NotifyWarning(BuildColdStressMessage(false));
+            }
+
+            if (severity <= Mathf.Max(0f, coldWarningThreshold - resetHysteresis))
+            {
+                _coldWarned = false;
+                _coldCritical = false;
+            }
+            else if (severity <= Mathf.Max(0f, coldCriticalThreshold - resetHysteresis))
+            {
+                _coldCritical = false;
+            }
+        }
+
+        private void EvaluateHeatStress()
+        {
+            float severity = survival != null ? survival.HeatStressSeverity01 : 0f;
+
+            if (!_heatCritical && severity >= heatCriticalThreshold)
+            {
+                _heatCritical = true;
+                NotifyCritical(BuildHeatStressMessage(true));
+            }
+            else if (!_heatWarned && severity >= heatWarningThreshold)
+            {
+                _heatWarned = true;
+                NotifyWarning(BuildHeatStressMessage(false));
+            }
+
+            if (severity <= Mathf.Max(0f, heatWarningThreshold - resetHysteresis))
+            {
+                _heatWarned = false;
+                _heatCritical = false;
+            }
+            else if (severity <= Mathf.Max(0f, heatCriticalThreshold - resetHysteresis))
+            {
+                _heatCritical = false;
+            }
+        }
+
+        private string BuildBleedingMessage()
+        {
+            if (survival == null)
+                return MsgBleeding;
+
+            return string.Format(
+                "{0} // {1:0.0}/S",
+                MsgBleeding,
+                survival.BleedingSeverity01 * 1.8f);
+        }
+
+        private string BuildFractureMessage()
+        {
+            if (survival == null)
+                return MsgFracture;
+
+            int mobilityPercent = Mathf.Clamp(
+                Mathf.RoundToInt((1f - survival.FracturePenalty01) * 100f),
+                0,
+                100);
+            return $"{MsgFracture} // MOBILITY {mobilityPercent}%";
+        }
+
+        private string BuildColdStressMessage(bool critical)
+        {
+            if (survival == null)
+                return critical ? MsgColdCritical : MsgColdWarning;
+
+            string prefix = critical ? MsgColdCritical : MsgColdWarning;
+            return string.Format(
+                "{0} // {1:0}C // PWR {2:0}%",
+                prefix,
+                survival.EnvironmentTemperature,
+                survival.EnergyPercent);
+        }
+
+        private string BuildHeatStressMessage(bool critical)
+        {
+            if (survival == null)
+                return critical ? MsgHeatCritical : MsgHeatWarning;
+
+            string prefix = critical ? MsgHeatCritical : MsgHeatWarning;
+            return string.Format(
+                "{0} // {1:0}C // HYD {2:0}%",
+                prefix,
+                survival.EnvironmentTemperature,
+                survival.ThirstPercent);
         }
 
         private string BuildDepthWarningMessage(float safeDepthMarginMeters)

@@ -25,6 +25,15 @@ namespace Hecton8.World
             public float RemainingLifetime;
         }
 
+        private struct RecentCutHeatStamp
+        {
+            public Vector3 PositionWS;
+            public float RadiusWS;
+            public float Strength;
+            public float StartTime;
+            public float Lifetime;
+        }
+
         private static readonly int _CutMaskTextureId = Shader.PropertyToID("_SargassumCutMaskRT");
         private static readonly int _CutMaskWorldRectId = Shader.PropertyToID("_SargassumCutMaskWorldRect");
         private static readonly int _CutMaskActiveId = Shader.PropertyToID("_SargassumCutMaskActive");
@@ -32,6 +41,9 @@ namespace Hecton8.World
         private static readonly int _ScrollUvOffsetId = Shader.PropertyToID("_ScrollUvOffset");
         private static readonly int _RecoveryId = Shader.PropertyToID("_Recovery");
         private static readonly int _MainTexId = Shader.PropertyToID("_MainTex");
+        private static readonly int _RecentCutHeatCountId = Shader.PropertyToID("_HectonRecentCutHeatCount");
+        private static readonly int _RecentCutHeatPositionRadiusId = Shader.PropertyToID("_HectonRecentCutHeatPositionRadius");
+        private static readonly int _RecentCutHeatStrengthTimeId = Shader.PropertyToID("_HectonRecentCutHeatStrengthTime");
 
         private static SargassumCutManager _instance;
 
@@ -107,6 +119,10 @@ namespace Hecton8.World
         [Tooltip("How long a recent cut stamp remains queryable by debris and fauna after it was written into the scrolling mask.")]
         private float recentCutLifetime = 1.4f;
 
+        [SerializeField, Range(5f, 10f)]
+        [Tooltip("How long freshly cut rock scars stay thermally active before they settle into the cold charred mask.")]
+        private float shaderScarLifetime = 8f;
+
         [Header("── Diagnostics ──────────────────")]
         [SerializeField]
         [Tooltip("Approximate remaining cut energy. When it decays to zero, the manager stops blitting until a new cut arrives.")]
@@ -140,6 +156,14 @@ namespace Hecton8.World
         private int _maskQualityLevel = -1;
         // COLD ALLOC: RecentCutStamp[16] - CPU mirror of the newest cut stamps for zero-readback gameplay queries - owner: SargassumCutManager
         private readonly RecentCutStamp[] _recentCutStamps = new RecentCutStamp[RecentStampCapacity];
+        // COLD ALLOC: RecentCutHeatStamp[16] - timestamped cut heat stamps for voxel rock thermal scarring - owner: SargassumCutManager
+        private readonly RecentCutHeatStamp[] _recentCutHeatStamps = new RecentCutHeatStamp[RecentStampCapacity];
+        // COLD ALLOC: Vector4[16] - packed recent-cut thermal positions/radii published to shaders - owner: SargassumCutManager
+        private readonly Vector4[] _recentCutHeatPositionRadius = new Vector4[RecentStampCapacity];
+        // COLD ALLOC: Vector4[16] - packed recent-cut thermal strength/start/lifetime payload published to shaders - owner: SargassumCutManager
+        private readonly Vector4[] _recentCutHeatStrengthTime = new Vector4[RecentStampCapacity];
+        private int _recentCutHeatCount;
+        private bool _recentCutHeatDirty;
 
         /// <summary>
         /// Active singleton instance.
@@ -290,6 +314,7 @@ namespace Hecton8.World
             }
 
             RegisterRecentCutStamp(positionWS, clampedRadius, clampedStrength);
+            RegisterRecentCutHeatStamp(positionWS, clampedRadius, clampedStrength);
 
             Vector3 burstDirection = directionWS.sqrMagnitude > 0.0001f ? directionWS.normalized : Vector3.up;
             EmitDebrisBurst(positionWS, burstDirection, clampedStrength, bubbleWeight);
@@ -328,6 +353,7 @@ namespace Hecton8.World
         {
             TryUnregister();
             Shader.SetGlobalFloat(_CutMaskActiveId, 0f);
+            Shader.SetGlobalInt(_RecentCutHeatCountId, 0);
         }
 
         private void OnDestroy()
@@ -369,6 +395,7 @@ namespace Hecton8.World
             {
                 ExecuteStampPass(scooterStampPosition, scooterCutRadius, scooterCutStrength, !wrotePass ? deltaTime : 0f);
                 RegisterRecentCutStamp(scooterStampPosition, scooterCutRadius, scooterCutStrength);
+                RegisterRecentCutHeatStamp(scooterStampPosition, scooterCutRadius, scooterCutStrength);
                 EmitDebrisBurst(scooterStampPosition, scooterStampDirection, scooterCutStrength, 1f);
                 wrotePass = true;
                 _debugLastStampCount++;
@@ -379,6 +406,7 @@ namespace Hecton8.World
             {
                 ExecuteStampPass(knifeStampPosition, knifeCutRadius, knifeCutStrength, !wrotePass ? deltaTime : 0f);
                 RegisterRecentCutStamp(knifeStampPosition, knifeCutRadius, knifeCutStrength);
+                RegisterRecentCutHeatStamp(knifeStampPosition, knifeCutRadius, knifeCutStrength);
                 EmitDebrisBurst(knifeStampPosition, knifeStampDirection, knifeCutStrength, 0.45f);
                 wrotePass = true;
                 _debugLastStampCount++;
@@ -406,6 +434,7 @@ namespace Hecton8.World
             ResolveDependencies();
             RefreshQualityDependentResourcesIfNeeded();
             RefreshMaskWorldRect();
+            PublishGlobals(forceHeatRefresh: true);
         }
 
         private void ResolveDependencies()
@@ -494,6 +523,8 @@ namespace Hecton8.World
                 Destroy(_stampMaterial);
                 _stampMaterial = null;
             }
+
+            Shader.SetGlobalInt(_RecentCutHeatCountId, 0);
         }
 
         private void RefreshMaskWorldRect(bool forceClear = false)
@@ -641,6 +672,45 @@ namespace Hecton8.World
             };
         }
 
+        private void RegisterRecentCutHeatStamp(Vector3 positionWS, float radiusWS, float strength)
+        {
+            float currentTime = Time.time;
+            float lifetime = Mathf.Max(0.01f, shaderScarLifetime);
+            int targetIndex = -1;
+            float weakestScore = float.MaxValue;
+
+            for (int i = 0; i < RecentStampCapacity; i++)
+            {
+                RecentCutHeatStamp stamp = _recentCutHeatStamps[i];
+                float remainingLifetime = (stamp.StartTime + stamp.Lifetime) - currentTime;
+                if (remainingLifetime <= 0f)
+                {
+                    targetIndex = i;
+                    break;
+                }
+
+                float score = remainingLifetime * stamp.Strength;
+                if (score < weakestScore)
+                {
+                    weakestScore = score;
+                    targetIndex = i;
+                }
+            }
+
+            if (targetIndex < 0)
+                targetIndex = 0;
+
+            _recentCutHeatStamps[targetIndex] = new RecentCutHeatStamp
+            {
+                PositionWS = positionWS,
+                RadiusWS = Mathf.Max(0.05f, radiusWS),
+                Strength = Mathf.Clamp01(strength),
+                StartTime = currentTime,
+                Lifetime = lifetime
+            };
+            _recentCutHeatDirty = true;
+        }
+
         private void EmitDebrisBurst(Vector3 positionWS, Vector3 directionWS, float cutStrength, float bubbleWeight)
         {
             if (debrisParticleSystem == null)
@@ -726,17 +796,48 @@ namespace Hecton8.World
             RenderTexture.active = active;
         }
 
-        private void PublishGlobals()
+        private void PublishGlobals(bool forceHeatRefresh = false)
         {
             if (_maskRead == null)
             {
                 Shader.SetGlobalFloat(_CutMaskActiveId, 0f);
+                Shader.SetGlobalInt(_RecentCutHeatCountId, 0);
                 return;
             }
 
             Shader.SetGlobalTexture(_CutMaskTextureId, _maskRead);
             Shader.SetGlobalVector(_CutMaskWorldRectId, _maskWorldRect);
             Shader.SetGlobalFloat(_CutMaskActiveId, _maskWorldSize > 0f ? 1f : 0f);
+
+            if (!forceHeatRefresh && !_recentCutHeatDirty)
+                return;
+
+            _recentCutHeatCount = 0;
+            float currentTime = Time.time;
+            for (int i = 0; i < RecentStampCapacity; i++)
+            {
+                RecentCutHeatStamp stamp = _recentCutHeatStamps[i];
+                float remainingLifetime = (stamp.StartTime + stamp.Lifetime) - currentTime;
+                if (remainingLifetime <= 0f || stamp.Strength <= 0f || stamp.RadiusWS <= 0f)
+                    continue;
+
+                _recentCutHeatPositionRadius[_recentCutHeatCount] = new Vector4(
+                    stamp.PositionWS.x,
+                    stamp.PositionWS.y,
+                    stamp.PositionWS.z,
+                    stamp.RadiusWS);
+                _recentCutHeatStrengthTime[_recentCutHeatCount] = new Vector4(
+                    stamp.Strength,
+                    stamp.StartTime,
+                    stamp.Lifetime,
+                    0f);
+                _recentCutHeatCount++;
+            }
+
+            Shader.SetGlobalInt(_RecentCutHeatCountId, _recentCutHeatCount);
+            Shader.SetGlobalVectorArray(_RecentCutHeatPositionRadiusId, _recentCutHeatPositionRadius);
+            Shader.SetGlobalVectorArray(_RecentCutHeatStrengthTimeId, _recentCutHeatStrengthTime);
+            _recentCutHeatDirty = false;
         }
 
         private void TryRegister()

@@ -97,9 +97,27 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.SargassumCollapseChunk
   chunkRigidbody: {fileID: 3204588369501127003}
   siltTrail: {fileID: 0}
+  scrapPickupPrefab: {fileID: 131972386016503839, guid: cc05a4753de6c1f48b51d49126443a9c, type: 3}
   defaultLifetime: 18
   activeDrag: 0.18
   activeAngularDrag: 0.55
+  siltTrailBaseRate: 18
+  siltTrailMaxRate: 62
+  siltTrailFullSpeed: 2.6
+  siltTrailStopSpeed: 0.18
+  snagDisintegrationDelay: 16
+  scrapPickupCount: 3
+  thermalIntegrity: 4
+  scrapEjectSpeed: 1.8
+  snagLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  snagSearchRadius: 1.2
+  snagImpactSpeedThreshold: 1.6
+  snagSpring: 28
+  snagDamper: 4.2
+  snagMaxDistance: 0.45
+  snagSurfaceOffset: 0.08
 --- !u!1 &3204588369501127010
 GameObject:
   m_ObjectHideFlags: 0
@@ -126,7 +144,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3204588369501127010}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.055368677, y: 0.18476443, z: -0.03906281, w: 0.98027223}
+  m_LocalRotation: {x: -0.055378005, y: 0.18479556, z: -0.03906939, w: 0.9804374}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1.28, y: 0.62, z: 1.52}
   m_ConstrainProportionsScale: 0

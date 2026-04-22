@@ -28,14 +28,23 @@ namespace Hecton8.AI
 
             isAggressive = archetype.isAggressive;
             canFlee = archetype.canFlee;
+            _lootProfileId = archetype.lootProfileId ?? string.Empty;
 
-            _maxHealth = Mathf.Max(1f, archetype.maxHealth);
+            _baseMaxHealth = Mathf.Max(1f, archetype.maxHealth);
+            _maxHealth = _baseMaxHealth;
             _currentHealth = Mathf.Clamp(_currentHealth, 0f, _maxHealth);
             if (_currentHealth <= 0.001f)
                 _currentHealth = _maxHealth;
 
-            _sensorSuite.aggroDistance = Mathf.Max(0f, archetype.baseAggroDistance);
-            _sensorSuite.deaggroDistance = Mathf.Max(_sensorSuite.aggroDistance, archetype.baseDeaggroDistance);
+            _baseAggroDistance = Mathf.Max(0f, archetype.baseAggroDistance);
+            _baseDeaggroDistance = Mathf.Max(_baseAggroDistance, archetype.baseDeaggroDistance);
+            _baseAttackDamage = Mathf.Max(0f, archetype.attackDamage);
+            _baseCruiseSpeed = Mathf.Max(0.1f, archetype.cruiseSpeed);
+            _baseBurstSpeed = Mathf.Max(_baseCruiseSpeed, archetype.burstSpeed);
+            _baseTurnSpeed = Mathf.Max(0.1f, archetype.turnSpeed);
+
+            _sensorSuite.aggroDistance = _baseAggroDistance;
+            _sensorSuite.deaggroDistance = _baseDeaggroDistance;
             _sensorSuite.sleepDistance = Mathf.Max(1f, archetype.sleepDistance);
             _sensorSuite.reactToPlayerNoise = archetype.reactToPlayerNoise;
             _sensorSuite.reactToPlayerLight = archetype.reactToPlayerLight;
@@ -48,9 +57,11 @@ namespace Hecton8.AI
                 ? Mathf.Max(1f, archetype.homeWanderRadius)
                 : _stateMachine.wanderRadius;
 
-            _steeringEngine.maxSpeed = Mathf.Max(0.1f, archetype.cruiseSpeed);
-            _steeringEngine.turnSpeed = Mathf.Max(0.1f, archetype.turnSpeed);
-            _steeringEngine.swimForce = Mathf.Max(_steeringEngine.maxSpeed, archetype.burstSpeed);
+            _steeringEngine.moveSpeed = _baseCruiseSpeed;
+            _steeringEngine.maxSpeed = _baseCruiseSpeed;
+            _steeringEngine.turnSpeed = _baseTurnSpeed;
+            _steeringEngine.swimForce = Mathf.Max(_baseCruiseSpeed, _baseBurstSpeed);
+            ApplyRuntimeEcosystemOverlays();
         }
 
         public void SetSpawnPoint(Vector3 spawnPoint)

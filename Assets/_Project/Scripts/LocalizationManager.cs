@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using Hecton8.Audio;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Input;
+using Hecton8.World;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -73,7 +75,13 @@ namespace Hecton.Localization
         private const string AnalyzerPrefabToken = "EnvAnalyzer";
         private const string EnvironmentalAnalyzerToolTypeName = "EnvironmentalAnalyzerTool";
         private const float HullStressCorruptionThreshold = 0.7f;
+        private const float MadnessEligibilityThreshold = 0.9f;
         private const int MaxStressCorruptionBucket = 8;
+        private const int MadnessVisualBucket = MaxStressCorruptionBucket + 1;
+        private const int MadnessChancePercent = 15;
+        private const float MadnessRollInterval = 0.5f;
+        private const float MadnessBlinkDuration = 1.5f;
+        private const string DeepAbyssZoneId = "zone_deep_abyss";
         private const string CorruptionBlocks = "#%&█";
         private const string LatinCorruptionAlphabet = "AEINORSTUVWXYZ";
         private const string CyrillicCorruptionAlphabet = "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
@@ -85,6 +93,7 @@ namespace Hecton.Localization
         public static LocalizationManager Instance { get; private set; }
 
         public static event Action<GameLanguage> OnLanguageChanged;
+        public static event Action OnCorruptionVisualStateChanged;
 
         [Header("=== Config ===")]
         [SerializeField] private GameLanguage defaultLanguage = GameLanguage.English;
@@ -104,7 +113,22 @@ namespace Hecton.Localization
         private int _cachedAnalyzerFrame = -1;
         private bool _cachedAnalyzerInstalled;
         private int _cachedHullStressFrame = -1;
+        private float _cachedHullStress01;
         private float _cachedHullStressCorruptionIntensity;
+        private float _externalPdaCorrosionIntensity;
+        private float _externalPdaCorrosionEndTime;
+        private GameLanguage _savedLanguage = GameLanguage.English;
+        private bool _transientLanguageOverrideActive;
+        private bool _intrusionGlyphModeActive;
+        private float _madnessOverrideEndTime;
+        private int _madnessActiveWindowId = -1;
+        private int _madnessLastRollBucket = int.MinValue;
+        private int _lastMadnessAudioWindowId = -1;
+        private int _lastPublishedVisualBucket = int.MinValue;
+        private int _lastMadnessResolvedWindowId = -1;
+        private GameLanguage _lastMadnessResolvedLanguage = (GameLanguage)(-1);
+        private string _lastMadnessResolvedSourceToken = string.Empty;
+        private string _lastMadnessResolvedValue = string.Empty;
 
         /// <summary>
         /// Active language for runtime lookups.
@@ -116,6 +140,7 @@ namespace Hecton.Localization
         {
             Instance = null;
             OnLanguageChanged = null;
+            OnCorruptionVisualStateChanged = null;
         }
 
         private void Awake()
@@ -151,6 +176,7 @@ namespace Hecton.Localization
             {
                 Instance = null;
                 OnLanguageChanged = null;
+                OnCorruptionVisualStateChanged = null;
             }
         }
 
@@ -164,7 +190,7 @@ namespace Hecton.Localization
                 return string.Empty;
 
             if (TryGet(CurrentLanguage, key, out string value))
-                return ExpandNarrativeTokens(value);
+                return ApplyInterfaceIntrusionIfNeeded(ExpandNarrativeTokens(value));
 
 #if UNITY_EDITOR
             Debug.LogWarning($"[Localization] Missing key: \"{key}\" for {CurrentLanguage}");
@@ -233,8 +259,9 @@ namespace Hecton.Localization
         /// </summary>
         public string GetCorruptedText(string key, float intensity)
         {
+            float liveIntensity = Mathf.Max(intensity, GetHullStressCorruptionIntensity());
             string expanded = GetExpanded(key);
-            return CorruptExpandedText(expanded, intensity);
+            return CorruptExpandedText(expanded, liveIntensity);
         }
 
         /// <summary>
@@ -255,8 +282,24 @@ namespace Hecton.Localization
                 return _cachedHullStressCorruptionIntensity;
 
             _cachedHullStressFrame = frame;
-            _cachedHullStressCorruptionIntensity = ResolveHullStressCorruptionIntensity();
+            _cachedHullStressCorruptionIntensity = Mathf.Max(ResolveHullStressCorruptionIntensity(), ResolveExternalPdaCorrosionIntensity());
             return _cachedHullStressCorruptionIntensity;
+        }
+
+        /// <summary>
+        /// Forces a temporary PDA corrosion window without mutating hull-stress state.
+        /// </summary>
+        public void RequestExternalPdaCorrosion(float intensity, float duration)
+        {
+            float clampedIntensity = Mathf.Clamp01(intensity);
+            float clampedDuration = Mathf.Max(0f, duration);
+            if (clampedIntensity <= 0f || clampedDuration <= 0f)
+                return;
+
+            _externalPdaCorrosionIntensity = Mathf.Max(_externalPdaCorrosionIntensity, clampedIntensity);
+            _externalPdaCorrosionEndTime = Mathf.Max(_externalPdaCorrosionEndTime, Time.unscaledTime + clampedDuration);
+            _cachedHullStressFrame = -1;
+            OnCorruptionVisualStateChanged?.Invoke();
         }
 
         /// <summary>
@@ -264,11 +307,16 @@ namespace Hecton.Localization
         /// </summary>
         public int GetHullStressCorruptionBucket()
         {
+            EvaluateMadnessOverrideState();
             float intensity = GetHullStressCorruptionIntensity();
-            if (intensity <= 0f)
-                return 0;
+            int bucket = intensity <= 0f
+                ? 0
+                : Mathf.Clamp(Mathf.CeilToInt(intensity * MaxStressCorruptionBucket), 1, MaxStressCorruptionBucket);
 
-            return Mathf.Clamp(Mathf.CeilToInt(intensity * MaxStressCorruptionBucket), 1, MaxStressCorruptionBucket);
+            if (IsMadnessOverrideActive())
+                bucket = MadnessVisualBucket;
+
+            return PublishVisualBucket(bucket);
         }
 
         /// <summary>
@@ -279,11 +327,55 @@ namespace Hecton.Localization
             if (string.IsNullOrEmpty(text))
                 return string.Empty;
 
+            if (TryResolveMadnessOverride("hull_stress", out string madnessText))
+                return madnessText;
+
             float intensity = GetHullStressCorruptionIntensity();
             if (intensity <= 0f)
                 return text;
 
             return CorruptExpandedText(text, intensity);
+        }
+
+        /// <summary>
+        /// Force visible HUD consumers to refresh against the latest hull-stress corruption state.
+        /// </summary>
+        internal void RefreshHullStressHudCorruptionVisuals()
+        {
+            EvaluateMadnessOverrideState();
+            OnCorruptionVisualStateChanged?.Invoke();
+        }
+
+        /// <summary>
+        /// Resolve the current madness-whisper line for HUD takeover surfaces.
+        /// </summary>
+        internal string GetHullStressHudWhisper(string fallback)
+        {
+            EvaluateMadnessOverrideState();
+            int cycle = _madnessActiveWindowId >= 0
+                ? _madnessActiveWindowId
+                : Mathf.Max(0, Mathf.FloorToInt(Time.unscaledTime / MadnessRollInterval));
+            int seed = ComputeMadnessSeed("HUD", cycle, (int)CurrentLanguage);
+            string whisperKey = ResolveMadnessWhisperKey(seed);
+            return GetOrFallback(CurrentLanguage, whisperKey, fallback);
+        }
+
+        /// <summary>
+        /// Applies PDA-specific hull-stress corrosion and may replace the entire localized body with a localized madness whisper.
+        /// Intended only for item descriptions, log summaries, and audio-log subtitle surfaces.
+        /// </summary>
+        public string ApplyPdaLoreCorruptionIfNeeded(string sourceToken, string text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return string.Empty;
+
+            if (TryResolveMadnessOverride(sourceToken, out string madnessText))
+                return madnessText;
+
+            float intensity = GetHullStressCorruptionIntensity();
+            return intensity > 0f
+                ? CorruptExpandedText(text, intensity)
+                : text;
         }
 
         /// <summary>
@@ -334,7 +426,7 @@ namespace Hecton.Localization
         public string GetOrFallback(GameLanguage language, string key, string fallback)
         {
             string resolved = TryGet(language, key, out string value) ? value : (fallback ?? string.Empty);
-            return ExpandNarrativeTokens(resolved);
+            return ApplyInterfaceIntrusionIfNeeded(ExpandNarrativeTokens(resolved));
         }
 
         /// <summary>
@@ -342,20 +434,60 @@ namespace Hecton.Localization
         /// </summary>
         public void SetLanguage(GameLanguage language)
         {
-            if (CurrentLanguage == language)
+            bool savedChanged = _savedLanguage != language;
+            _savedLanguage = language;
+
+            if (savedChanged)
+                SavePersistentLanguagePreference(language);
+
+            if (_transientLanguageOverrideActive)
+                return;
+
+            if (CurrentLanguage == language && !_intrusionGlyphModeActive)
                 return;
 
             CurrentLanguage = language;
-
-            UserOptionsPersistence options = UserOptionsPersistence.Instance;
-            options.SetInt(PrefsLanguageKey, (int)language);
-            options.Save();
-
-            OnLanguageChanged?.Invoke(language);
+            _intrusionGlyphModeActive = false;
+            PublishVisualLanguageState();
 
 #if UNITY_EDITOR
             Debug.Log($"[Localization] Language changed to: {language}");
 #endif
+        }
+
+        /// <summary>
+        /// Applies a temporary visual language override without touching persisted player options.
+        /// Intended for runtime-only diegetic interference such as PDA intrusion states.
+        /// </summary>
+        /// <param name="language">Visual language override to expose to subscribers.</param>
+        /// <param name="enableGlyphMode">True to additionally corrupt visible text into glitched glyph output.</param>
+        public void SetTransientLanguageOverride(GameLanguage language, bool enableGlyphMode = false)
+        {
+            bool languageChanged = !_transientLanguageOverrideActive || CurrentLanguage != language;
+            bool glyphChanged = _intrusionGlyphModeActive != enableGlyphMode;
+
+            _transientLanguageOverrideActive = true;
+            _intrusionGlyphModeActive = enableGlyphMode;
+            CurrentLanguage = language;
+
+            if (!languageChanged && !glyphChanged)
+                return;
+
+            PublishVisualLanguageState();
+        }
+
+        /// <summary>
+        /// Clears the temporary visual language override and restores the persisted player language.
+        /// </summary>
+        public void ClearTransientLanguageOverride()
+        {
+            if (!_transientLanguageOverrideActive && !_intrusionGlyphModeActive && CurrentLanguage == _savedLanguage)
+                return;
+
+            _transientLanguageOverrideActive = false;
+            _intrusionGlyphModeActive = false;
+            CurrentLanguage = _savedLanguage;
+            PublishVisualLanguageState();
         }
 
         /// <summary>
@@ -662,14 +794,242 @@ namespace Hecton.Localization
         private float ResolveHullStressCorruptionIntensity()
         {
             HectonPlayerMovement playerMovement = ResolvePlayerMovement();
+            _cachedHullStress01 = 0f;
             if (playerMovement == null)
                 return 0f;
 
             float hullStress = Mathf.Clamp01(playerMovement.CurrentHullStress01);
+            _cachedHullStress01 = hullStress;
             if (hullStress <= HullStressCorruptionThreshold)
                 return 0f;
 
             return Mathf.InverseLerp(HullStressCorruptionThreshold, 1f, hullStress);
+        }
+
+        private float ResolveExternalPdaCorrosionIntensity()
+        {
+            if (_externalPdaCorrosionEndTime <= Time.unscaledTime)
+            {
+                _externalPdaCorrosionEndTime = 0f;
+                _externalPdaCorrosionIntensity = 0f;
+                return 0f;
+            }
+
+            return _externalPdaCorrosionIntensity;
+        }
+
+        private bool TryResolveMadnessOverride(string sourceToken, out string madnessText)
+        {
+            madnessText = string.Empty;
+            EvaluateMadnessOverrideState();
+            if (!IsMadnessOverrideActive())
+                return false;
+
+            string normalizedSourceToken = string.IsNullOrEmpty(sourceToken) ? "<null>" : sourceToken;
+            if (_lastMadnessResolvedWindowId == _madnessActiveWindowId &&
+                _lastMadnessResolvedLanguage == CurrentLanguage &&
+                string.Equals(_lastMadnessResolvedSourceToken, normalizedSourceToken, StringComparison.Ordinal))
+            {
+                madnessText = _lastMadnessResolvedValue;
+                if (!string.IsNullOrEmpty(madnessText))
+                    TriggerMadnessWhisperAudioIfNeeded();
+
+                return !string.IsNullOrEmpty(madnessText);
+            }
+
+            int seed = ComputeMadnessSeed(normalizedSourceToken, _madnessActiveWindowId, (int)CurrentLanguage);
+            string madnessKey = ResolveMadnessWhisperKey(seed);
+            if (!TryGet(CurrentLanguage, madnessKey, out madnessText) || string.IsNullOrEmpty(madnessText))
+                return false;
+
+            madnessText = ExpandRuntimeTokens(madnessText);
+            _lastMadnessResolvedWindowId = _madnessActiveWindowId;
+            _lastMadnessResolvedLanguage = CurrentLanguage;
+            _lastMadnessResolvedSourceToken = normalizedSourceToken;
+            _lastMadnessResolvedValue = madnessText;
+            TriggerMadnessWhisperAudioIfNeeded();
+            return !string.IsNullOrEmpty(madnessText);
+        }
+
+        /// <summary>
+        /// True while the one-second madness whisper replacement window is active for PDA lore surfaces.
+        /// </summary>
+        internal bool IsMadnessWhisperVisualActive()
+        {
+            EvaluateMadnessOverrideState();
+            return IsMadnessOverrideActive();
+        }
+
+        private void EvaluateMadnessOverrideState()
+        {
+            float intensity = GetHullStressCorruptionIntensity();
+            float now = Time.unscaledTime;
+            bool isActive = now < _madnessOverrideEndTime;
+
+            if (!IsMadnessEligible())
+            {
+                if (isActive)
+                    ClearMadnessOverride();
+
+                return;
+            }
+
+            if (isActive)
+                return;
+
+            int rollBucket = Mathf.FloorToInt(now / MadnessRollInterval);
+            if (rollBucket == _madnessLastRollBucket)
+                return;
+
+            _madnessLastRollBucket = rollBucket;
+
+            DepthZoneProfile currentZone = DepthZoneDirector.Instance != null
+                ? DepthZoneDirector.Instance.CurrentZone
+                : null;
+            string zoneToken = currentZone != null && !string.IsNullOrWhiteSpace(currentZone.zoneId)
+                ? currentZone.zoneId
+                : DeepAbyssZoneId;
+            int seed = ComputeMadnessSeed(zoneToken, rollBucket, Mathf.RoundToInt(intensity * 100f) + (int)CurrentLanguage);
+            if (((seed & int.MaxValue) % 100) >= MadnessChancePercent)
+                return;
+
+            _madnessActiveWindowId = rollBucket;
+            _madnessOverrideEndTime = now + MadnessBlinkDuration;
+        }
+
+        private bool IsMadnessEligible()
+        {
+            if (_cachedHullStress01 >= MadnessEligibilityThreshold)
+                return true;
+
+            if (IsInDeadZoneContext())
+                return true;
+
+            DepthZoneDirector director = DepthZoneDirector.Instance;
+            DepthZoneProfile currentZone = director != null ? director.CurrentZone : null;
+            return currentZone != null &&
+                   string.Equals(currentZone.zoneId, DeepAbyssZoneId, StringComparison.Ordinal);
+        }
+
+        private bool IsInDeadZoneContext()
+        {
+            HectonMapMagicVegetationBridge bridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            if (bridge == null)
+                return false;
+
+            Transform playerTransform = null;
+            HectonPlayerMovement playerMovement = ResolvePlayerMovement();
+            if (playerMovement != null)
+            {
+                playerTransform = playerMovement.transform;
+            }
+            else if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform resolvedTransform))
+            {
+                playerTransform = resolvedTransform;
+            }
+
+            if (playerTransform == null)
+                return false;
+
+            HectonMapMagicVegetationBridge.VegetationDensitySample densitySample = bridge.GetVegetationDensity(playerTransform.position);
+            return densitySample.BiomeLayer == HectonMapMagicVegetationBridge.VegetationBiomeLayer.DeadZone;
+        }
+
+        private bool IsMadnessOverrideActive()
+        {
+            if (Time.unscaledTime < _madnessOverrideEndTime)
+                return true;
+
+            if (_madnessActiveWindowId >= 0)
+                ClearMadnessOverride();
+
+            return false;
+        }
+
+        private void ClearMadnessOverride()
+        {
+            _madnessOverrideEndTime = 0f;
+            _madnessActiveWindowId = -1;
+            _lastMadnessAudioWindowId = -1;
+            _lastMadnessResolvedWindowId = -1;
+            _lastMadnessResolvedLanguage = (GameLanguage)(-1);
+            _lastMadnessResolvedSourceToken = string.Empty;
+            _lastMadnessResolvedValue = string.Empty;
+        }
+
+        private void TriggerMadnessWhisperAudioIfNeeded()
+        {
+            if (_madnessActiveWindowId < 0 || _lastMadnessAudioWindowId == _madnessActiveWindowId)
+                return;
+
+            AcousticZoneController controller = AcousticZoneController.Instance;
+            if (controller == null)
+                return;
+
+            _lastMadnessAudioWindowId = _madnessActiveWindowId;
+            controller.PlayMadnessWhisperCue();
+        }
+
+        private int PublishVisualBucket(int bucket)
+        {
+            if (_lastPublishedVisualBucket == bucket)
+                return bucket;
+
+            _lastPublishedVisualBucket = bucket;
+            OnCorruptionVisualStateChanged?.Invoke();
+            return bucket;
+        }
+
+        private static int ComputeMadnessSeed(string sourceToken, int cycle, int languageIndex)
+        {
+            unchecked
+            {
+                string token = string.IsNullOrEmpty(sourceToken) ? "<null>" : sourceToken;
+                int hash = 17;
+                for (int i = 0; i < token.Length; i++)
+                    hash = (hash * 31) + token[i];
+
+                hash = (hash * 31) + cycle;
+                hash = (hash * 31) + languageIndex;
+                return hash & int.MaxValue;
+            }
+        }
+
+        private static string ResolveMadnessWhisperKey(int hash)
+        {
+            switch ((hash & int.MaxValue) % 15)
+            {
+                case 0:
+                    return LocalizationKeys.MADNESS_WHISPERS_01;
+                case 1:
+                    return LocalizationKeys.MADNESS_WHISPERS_02;
+                case 2:
+                    return LocalizationKeys.MADNESS_WHISPERS_03;
+                case 3:
+                    return LocalizationKeys.MADNESS_WHISPERS_04;
+                case 4:
+                    return LocalizationKeys.MADNESS_WHISPERS_05;
+                case 5:
+                    return LocalizationKeys.MADNESS_WHISPERS_06;
+                case 6:
+                    return LocalizationKeys.MADNESS_WHISPERS_07;
+                case 7:
+                    return LocalizationKeys.MADNESS_WHISPERS_08;
+                case 8:
+                    return LocalizationKeys.MADNESS_WHISPERS_09;
+                case 9:
+                    return LocalizationKeys.MADNESS_WHISPERS_10;
+                case 10:
+                    return LocalizationKeys.MADNESS_WHISPERS_11;
+                case 11:
+                    return LocalizationKeys.MADNESS_WHISPERS_12;
+                case 12:
+                    return LocalizationKeys.MADNESS_WHISPERS_13;
+                case 13:
+                    return LocalizationKeys.MADNESS_WHISPERS_14;
+                default:
+                    return LocalizationKeys.MADNESS_WHISPERS_15;
+            }
         }
 
         private HectonPlayerMovement ResolvePlayerMovement()
@@ -757,7 +1117,7 @@ namespace Hecton.Localization
                     continue;
                 }
 
-                builder.Append(ResolveCorruptionGlyph(hash, alphabet));
+                builder.Append(ResolveCorruptionGlyph(hash, alphabet, !IsRightToLeftLanguage(language)));
                 previousCorrupted = true;
             }
 
@@ -822,9 +1182,9 @@ namespace Hecton.Localization
             }
         }
 
-        private static char ResolveCorruptionGlyph(int hash, string alphabet)
+        private static char ResolveCorruptionGlyph(int hash, string alphabet, bool allowNeutralBlocks)
         {
-            if ((hash & 7) == 0)
+            if (allowNeutralBlocks && (hash & 7) == 0)
                 return CorruptionBlocks[(hash >> 3) & (CorruptionBlocks.Length - 1)];
 
             int alphabetIndex = (hash & int.MaxValue) % alphabet.Length;
@@ -1007,15 +1367,18 @@ namespace Hecton.Localization
                 int saved = options.GetInt(PrefsLanguageKey, (int)defaultLanguage);
                 if (Enum.IsDefined(typeof(GameLanguage), saved))
                 {
-                    CurrentLanguage = (GameLanguage)saved;
+                    _savedLanguage = (GameLanguage)saved;
+                    CurrentLanguage = _savedLanguage;
                     return;
                 }
 
-                CurrentLanguage = defaultLanguage;
+                _savedLanguage = defaultLanguage;
+                CurrentLanguage = _savedLanguage;
                 return;
             }
 
-            CurrentLanguage = defaultLanguage;
+            _savedLanguage = defaultLanguage;
+            CurrentLanguage = _savedLanguage;
         }
 
 #if UNITY_EDITOR
@@ -1077,6 +1440,28 @@ namespace Hecton.Localization
 
             value = string.Empty;
             return false;
+        }
+
+        private void PublishVisualLanguageState()
+        {
+            _lastPublishedVisualBucket = int.MinValue;
+            OnLanguageChanged?.Invoke(CurrentLanguage);
+            OnCorruptionVisualStateChanged?.Invoke();
+        }
+
+        private static void SavePersistentLanguagePreference(GameLanguage language)
+        {
+            UserOptionsPersistence options = UserOptionsPersistence.Instance;
+            options.SetInt(PrefsLanguageKey, (int)language);
+            options.Save();
+        }
+
+        private string ApplyInterfaceIntrusionIfNeeded(string text)
+        {
+            if (string.IsNullOrEmpty(text) || !_intrusionGlyphModeActive)
+                return text ?? string.Empty;
+
+            return CorruptExpandedText(text, 0.98f);
         }
     }
 }

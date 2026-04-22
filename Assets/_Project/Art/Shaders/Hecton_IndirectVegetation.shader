@@ -867,7 +867,8 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 half edgeBloomMask = saturate(backlightPhase * edgeBacklightMask * rim);
                 half3 edgeBloomTint = lerp(kelpGoldTint, sargassumGoldTint, sargassumMask);
                 half3 edgeBloom = edgeBloomTint * (edgeBloomMask * _EdgeBloomStrength * (0.35h + 0.65h * max(kelpMask, sargassumMask)));
-                half3 finalColor = diffuse + transmission + tipColor * rim * 0.08h;
+                half rimLightingVisibility = max(sunVisibility, ambientVisibility);
+                half3 finalColor = diffuse + transmission + tipColor * rim * (0.08h * rimLightingVisibility);
                 finalColor += anisotropicSss * mainLight.color * sunVisibility;
                 finalColor += edgeBloom * mainLight.color * (1.45h * sunVisibility);
                 half porousCoverageMask = input.instanceType > 1.5h ? ResolveSargassumPorousCoverage(input.positionWS, input.heightMask) : 1.0h;

@@ -17,6 +17,31 @@ struct GrazingAnchorData
     float2 Padding;
 };
 
+struct FormationBeaconData
+{
+    float3 Position;
+    float Radius;
+    float Strength;
+    float Phase;
+    float2 Padding;
+};
+
+struct FormationObstacleData
+{
+    float3 Position;
+    float Radius;
+    float Weight;
+    float3 Padding;
+};
+
+struct LeviathanNodeData
+{
+    float3 Position;
+    float Distance01;
+    float3 Tangent;
+    float Radius;
+};
+
 struct MassiveThreatData
 {
     float3 Position;
@@ -30,7 +55,11 @@ struct MassiveThreatData
 StructuredBuffer<BoidData> _BoidsBufferRead;
 RWStructuredBuffer<BoidData> _BoidsBufferWrite;
 StructuredBuffer<GrazingAnchorData> _GrazingAnchors;
+StructuredBuffer<FormationBeaconData> _FormationBeacons;
+StructuredBuffer<FormationObstacleData> _FormationObstacles;
+StructuredBuffer<LeviathanNodeData> _LeviathanNodes;
 StructuredBuffer<MassiveThreatData> _MassiveThreats;
+RWStructuredBuffer<int> _LatchStats;
 
 Texture2D<float4> _DensityTex;
 SamplerState sampler_DensityTex;
@@ -70,6 +99,9 @@ float _CanopyAffinityWeight;
 float _SimulationTime;
 float3 _PlayerPositionWS;
 float3 _PlayerVelocityWS;
+float3 _PlayerRightWS;
+float3 _PlayerUpWS;
+float3 _PlayerForwardWS;
 float _PlayerSpeed;
 float _PanicPlayerSpeedThreshold;
 float _PanicPlayerRadius;
@@ -91,6 +123,32 @@ float _ParasiteMode;
 float _ParasiteAffinityWeight;
 float _ParasiteAggression;
 float _ParasiteLatchRadius;
+float _FormationMode;
+int _FormationBeaconCount;
+float _FormationWeight;
+float _FormationRingThickness;
+float _FormationPulseAmplitude;
+float _FormationPulseSpeed;
+float _FormationBreakPanicThreshold;
+int _FormationObstacleCount;
+float _FormationObstacleWeight;
+float _LeviathanMode;
+int _LeviathanNodeCount;
+float _LeviathanBodyWeight;
+float _LeviathanForwardWeight;
+float _LeviathanWaveAmplitude;
+float _LeviathanWaveFrequency;
+float _LeviathanThreatLevel;
+float _LeviathanSurroundThreatThreshold;
+float _LeviathanSurroundRadius;
+float _LeviathanSurroundWeight;
+float _LeviathanSurroundSpinSpeed;
+
+#define LATCH_STATS_QUANTIZE 2048.0
+#define LATCH_STATS_COUNT_INDEX 0
+#define LATCH_STATS_SUM_X_INDEX 1
+#define LATCH_STATS_SUM_Y_INDEX 2
+#define LATCH_STATS_SUM_Z_INDEX 3
 
 #define THREAD_GROUP_SIZE 64
 #define EPSILON 0.0001
@@ -152,6 +210,37 @@ float2 SampleCutGradient(float2 worldXZ)
     float sampleZPos = SampleCutMask01(worldXZ + float2(0.0, stepWorld));
     float sampleZNeg = SampleCutMask01(worldXZ - float2(0.0, stepWorld));
     return float2(sampleXPos - sampleXNeg, sampleZPos - sampleZNeg);
+}
+
+void ApplyObstacleRepulsion(float3 positionWS, float bodyRadius, out float3 obstacleForce, inout float3 targetWS)
+{
+    obstacleForce = float3(0.0, 0.0, 0.0);
+    [loop]
+    for (int obstacleIndex = 0; obstacleIndex < _FormationObstacleCount; obstacleIndex++)
+    {
+        FormationObstacleData obstacle = _FormationObstacles[obstacleIndex];
+        if (obstacle.Weight <= 0.0)
+            continue;
+
+        float3 targetDelta = targetWS - obstacle.Position;
+        float targetDistance = length(targetDelta);
+        float targetRadius = obstacle.Radius + bodyRadius;
+        if (targetDistance < targetRadius)
+        {
+            float3 targetNormal = SafeNormalize(targetDelta);
+            if (dot(targetNormal, targetNormal) <= EPSILON)
+                targetNormal = float3(0.0, 1.0, 0.0);
+
+            targetWS = obstacle.Position + targetNormal * targetRadius;
+        }
+
+        float3 fromObstacle = positionWS - obstacle.Position;
+        float distanceToObstacle = length(fromObstacle);
+        float repelRadius = obstacle.Radius + bodyRadius * 2.0;
+        float repelGate = 1.0 - saturate(distanceToObstacle / max(repelRadius, 0.001));
+        if (repelGate > 0.0)
+            obstacleForce += SafeNormalize(fromObstacle) * (repelGate * obstacle.Weight);
+    }
 }
 
 [numthreads(THREAD_GROUP_SIZE, 1, 1)]
@@ -297,7 +386,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     }
 
     float feedingHold = 0.0;
-    if (grazingWeightSum > 0.0 && panic < 0.2)
+    if (_LeviathanMode < 0.5 && grazingWeightSum > 0.0 && panic < 0.2)
     {
         float grazingPullWeight = lerp(_GrazingWeight, max(_GrazingWeight, _DeepClusterWeight), saturate(_DeepMode));
         acceleration += SafeNormalize(grazingForce / grazingWeightSum) * ((1.0 - panic) * grazingPullWeight);
@@ -308,7 +397,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
             acceleration += SafeNormalize(closestAnchorDelta) * (feedingHold * grazingPullWeight * lerp(0.3, 0.6, saturate(_DeepMode)));
     }
 
-    if (_DeepMode < 0.5 && panic < 0.2 && _CanopyAffinityWeight > 0.0)
+    if (_LeviathanMode < 0.5 && _DeepMode < 0.5 && panic < 0.2 && _CanopyAffinityWeight > 0.0)
     {
         float calmCanopyThreshold = saturate(_DensityThreshold * 0.85);
         float canopyAffinity = saturate((effectiveDensity - calmCanopyThreshold) / max(1.0 - calmCanopyThreshold, 0.001));
@@ -319,7 +408,100 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         }
     }
 
-    if (_ParasiteMode > 0.5 && _ParasiteAffinityWeight > 0.0)
+    if (_FormationMode > 0.5 && _FormationBeaconCount > 0 && panic < _FormationBreakPanicThreshold)
+    {
+        FormationBeaconData beacon = _FormationBeacons[index % _FormationBeaconCount];
+        float formationCalm = 1.0 - saturate(panic / max(_FormationBreakPanicThreshold, 0.001));
+        float baseAngle = selfBoid.Seed * 6.2831853 + beacon.Phase * 6.2831853 + _SimulationTime * 0.18 + index * 0.03125;
+        float pulse = sin(_SimulationTime * _FormationPulseSpeed + beacon.Phase * 6.2831853 + selfBoid.Seed * 9.0);
+        float ringRadius = max(_FormationRingThickness, beacon.Radius * (1.0 + pulse * _FormationPulseAmplitude));
+        float verticalWave = sin(_SimulationTime * (_FormationPulseSpeed * 0.73) + selfBoid.Seed * 13.0) * (_FormationRingThickness * 0.35);
+        float3 ringOffset = float3(cos(baseAngle), verticalWave, sin(baseAngle)) * ringRadius;
+        float3 ringTarget = beacon.Position + ringOffset;
+        float3 obstacleForce = float3(0.0, 0.0, 0.0);
+        ApplyObstacleRepulsion(position, _FormationRingThickness, obstacleForce, ringTarget);
+
+        float3 toRingTarget = ringTarget - position;
+        float3 radialForce = SafeNormalize(toRingTarget);
+        float3 tangentForce = SafeNormalize(cross(float3(0.0, 1.0, 0.0), SafeNormalize(ringOffset)));
+        float3 targetVelocity = tangentForce * (_CruiseSpeed * lerp(0.65, 1.05, formationCalm));
+        acceleration += radialForce * (_FormationWeight * formationCalm * beacon.Strength);
+        acceleration += SafeNormalize(targetVelocity - velocity) * (_FormationWeight * 0.45 * formationCalm * beacon.Strength);
+        if (dot(obstacleForce, obstacleForce) > EPSILON)
+            acceleration += SafeNormalize(obstacleForce) * (_FormationObstacleWeight * formationCalm);
+    }
+
+    if (_LeviathanMode > 0.5 && _LeviathanNodeCount > 1)
+    {
+        float bodyT = _BoidCount > 1 ? (float)index / max((float)(_BoidCount - 1), 1.0) : 0.0;
+        LeviathanNodeData previousNode = _LeviathanNodes[0];
+        LeviathanNodeData nextNode = _LeviathanNodes[_LeviathanNodeCount - 1];
+        [loop]
+        for (int nodeIndex = 1; nodeIndex < _LeviathanNodeCount; nodeIndex++)
+        {
+            LeviathanNodeData candidate = _LeviathanNodes[nodeIndex];
+            if (bodyT > candidate.Distance01 && nodeIndex < _LeviathanNodeCount - 1)
+            {
+                previousNode = candidate;
+                continue;
+            }
+
+            nextNode = candidate;
+            break;
+        }
+
+        float segmentLength01 = max(nextNode.Distance01 - previousNode.Distance01, 0.0001);
+        float segmentT = saturate((bodyT - previousNode.Distance01) / segmentLength01);
+        float3 splinePosition = lerp(previousNode.Position, nextNode.Position, segmentT);
+        float3 splineTangent = SafeNormalize(lerp(previousNode.Tangent, nextNode.Tangent, segmentT));
+        if (dot(splineTangent, splineTangent) <= EPSILON)
+            splineTangent = float3(0.0, 0.0, 1.0);
+
+        float bodyRadius = max(0.5, lerp(previousNode.Radius, nextNode.Radius, segmentT));
+        float3 lateral = SafeNormalize(cross(float3(0.0, 1.0, 0.0), splineTangent));
+        if (dot(lateral, lateral) <= EPSILON)
+            lateral = float3(1.0, 0.0, 0.0);
+        float3 vertical = SafeNormalize(cross(splineTangent, lateral));
+        float wavePhase = (_SimulationTime * _LeviathanWaveFrequency) + bodyT * 18.0 + selfBoid.Seed * 6.2831853;
+        float lateralWave = sin(wavePhase) * (bodyRadius * _LeviathanWaveAmplitude);
+        float verticalWaveOffset = cos(wavePhase * 0.63) * (bodyRadius * _LeviathanWaveAmplitude * 0.35);
+        float3 leviathanTarget = splinePosition + lateral * lateralWave + vertical * verticalWaveOffset;
+        float leviathanCalm = 1.0 - saturate(panic);
+        float leviathanThreatScale = lerp(0.85, 1.45, saturate(_LeviathanThreatLevel));
+        float surroundAttack = saturate((_LeviathanThreatLevel - _LeviathanSurroundThreatThreshold) / max(1.0 - _LeviathanSurroundThreatThreshold, 0.001));
+
+        float ringAngle = bodyT * 6.2831853 + _SimulationTime * _LeviathanSurroundSpinSpeed + selfBoid.Seed * 0.35;
+        float ringRadius = max(_LeviathanSurroundRadius, bodyRadius * 2.4);
+        float ringPulse = sin(_SimulationTime * (_LeviathanWaveFrequency * 0.7) + bodyT * 12.0 + selfBoid.Seed * 3.1415926);
+        float3 ringOffset = float3(cos(ringAngle), ringPulse * (bodyRadius * 0.18), sin(ringAngle)) * (ringRadius + ringPulse * bodyRadius * 0.22);
+        float3 ringTarget = _PlayerPositionWS + ringOffset;
+        float3 ringTangent = SafeNormalize(float3(-sin(ringAngle), 0.0, cos(ringAngle)));
+        if (dot(ringTangent, ringTangent) <= EPSILON)
+            ringTangent = splineTangent;
+
+        float3 targetPosition = lerp(leviathanTarget, ringTarget, surroundAttack);
+        float3 targetVelocity = lerp(
+            splineTangent * (_CruiseSpeed * lerp(0.95, 1.45, saturate(_LeviathanThreatLevel))),
+            ringTangent * (_CruiseSpeed * lerp(1.1, 1.6, surroundAttack)),
+            surroundAttack);
+
+        float3 obstacleForce = float3(0.0, 0.0, 0.0);
+        ApplyObstacleRepulsion(position, bodyRadius, obstacleForce, targetPosition);
+
+        float3 toLeviathanTarget = targetPosition - position;
+        acceleration += SafeNormalize(toLeviathanTarget) * ((_LeviathanBodyWeight + _LeviathanSurroundWeight * surroundAttack) * leviathanCalm * leviathanThreatScale);
+        acceleration += SafeNormalize(targetVelocity - velocity) * ((_LeviathanForwardWeight + _LeviathanSurroundWeight * surroundAttack * 0.35) * leviathanThreatScale);
+        if (surroundAttack > 0.0)
+        {
+            float3 ringCenterForce = SafeNormalize(_PlayerPositionWS - position);
+            acceleration += ringCenterForce * (_LeviathanSurroundWeight * surroundAttack * leviathanCalm * 0.3);
+        }
+
+        if (dot(obstacleForce, obstacleForce) > EPSILON)
+            acceleration += SafeNormalize(obstacleForce) * (_FormationObstacleWeight * leviathanCalm);
+    }
+
+    if (_LeviathanMode < 0.5 && _ParasiteMode > 0.5 && _ParasiteAffinityWeight > 0.0)
     {
         float3 toPlayer = _PlayerPositionWS - position;
         float playerDistanceToHull = length(toPlayer);
@@ -339,6 +521,18 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
             {
                 float latch01 = 1.0 - saturate(playerDistanceToHull / max(_ParasiteLatchRadius, 0.001));
                 velocity = lerp(velocity, _PlayerVelocityWS, latch01 * lerp(0.28, 0.82, saturate(_ParasiteAggression)));
+                if (_ParasiteAggression > 0.05)
+                {
+                    float3 localOffset = float3(
+                        dot(position - _PlayerPositionWS, _PlayerRightWS),
+                        dot(position - _PlayerPositionWS, _PlayerUpWS),
+                        dot(position - _PlayerPositionWS, _PlayerForwardWS));
+                    int3 quantizedLocalOffset = int3(round(localOffset * LATCH_STATS_QUANTIZE));
+                    InterlockedAdd(_LatchStats[LATCH_STATS_COUNT_INDEX], 1);
+                    InterlockedAdd(_LatchStats[LATCH_STATS_SUM_X_INDEX], quantizedLocalOffset.x);
+                    InterlockedAdd(_LatchStats[LATCH_STATS_SUM_Y_INDEX], quantizedLocalOffset.y);
+                    InterlockedAdd(_LatchStats[LATCH_STATS_SUM_Z_INDEX], quantizedLocalOffset.z);
+                }
             }
         }
     }

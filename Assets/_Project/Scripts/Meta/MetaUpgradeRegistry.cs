@@ -37,6 +37,12 @@ namespace Hecton8.Meta
             /// <summary>Whether this upgrade grants the starter-cache payload.</summary>
             public readonly bool GrantsStartingResourceCache;
 
+            /// <summary>Pollution reduction applied per level.</summary>
+            public readonly float PollutionReductionPerLevel;
+
+            /// <summary>Recycle-yield bonus applied per level.</summary>
+            public readonly float RecycleYieldBonusPerLevel;
+
             /// <summary>
             /// Creates a new immutable meta-upgrade definition.
             /// </summary>
@@ -48,7 +54,9 @@ namespace Hecton8.Meta
                 int costStep,
                 float oxygenCapacityBonusPerLevel,
                 float swimSpeedBonusPerLevel,
-                bool grantsStartingResourceCache)
+                bool grantsStartingResourceCache,
+                float pollutionReductionPerLevel = 0f,
+                float recycleYieldBonusPerLevel = 0f)
             {
                 Id = id ?? string.Empty;
                 Title = title ?? string.Empty;
@@ -58,6 +66,8 @@ namespace Hecton8.Meta
                 OxygenCapacityBonusPerLevel = Mathf.Max(0f, oxygenCapacityBonusPerLevel);
                 SwimSpeedBonusPerLevel = Mathf.Max(0f, swimSpeedBonusPerLevel);
                 GrantsStartingResourceCache = grantsStartingResourceCache;
+                PollutionReductionPerLevel = Mathf.Clamp01(pollutionReductionPerLevel);
+                RecycleYieldBonusPerLevel = Mathf.Max(0f, recycleYieldBonusPerLevel);
             }
 
             /// <summary>
@@ -80,7 +90,13 @@ namespace Hecton8.Meta
         /// <summary>Permanent swim-speed upgrade identifier.</summary>
         public const string SwimSpeedBoostId = "meta.swim_speed_boost";
 
-        // COLD ALLOC: MetaUpgradeDefinition[3] - fixed permanent progression catalog - owner: MetaUpgradeRegistry
+        /// <summary>Permanent pollution-reduction upgrade identifier.</summary>
+        public const string GreenTechId = "meta.green_tech";
+
+        /// <summary>Permanent recycle-efficiency upgrade identifier.</summary>
+        public const string EfficiencyExpertId = "meta.efficiency_expert";
+
+        // COLD ALLOC: MetaUpgradeDefinition[5] - fixed permanent progression catalog - owner: MetaUpgradeRegistry
         private static readonly MetaUpgradeDefinition[] _definitions =
         {
             new MetaUpgradeDefinition(
@@ -110,6 +126,28 @@ namespace Hecton8.Meta
                 0f,
                 0.05f,
                 false),
+            new MetaUpgradeDefinition(
+                GreenTechId,
+                "Green Tech",
+                3,
+                35,
+                25,
+                0f,
+                0f,
+                false,
+                0.10f,
+                0f),
+            new MetaUpgradeDefinition(
+                EfficiencyExpertId,
+                "Efficiency Expert",
+                3,
+                35,
+                25,
+                0f,
+                0f,
+                false,
+                0f,
+                0.05f),
         };
 
         /// <summary>

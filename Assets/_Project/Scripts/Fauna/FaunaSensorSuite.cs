@@ -260,6 +260,13 @@ namespace Hecton8.AI
 
         private void UpdateDistractorDetection()
         {
+            Transform bleedingTarget = ResolveNearestBleedingDistractor();
+            if (bleedingTarget != null)
+            {
+                currentDistractor = bleedingTarget;
+                return;
+            }
+
             currentDistractor = ResolveNearestDistractorByTag("Flare");
         }
 
@@ -342,6 +349,41 @@ namespace Hecton8.AI
 
                 bestDistanceSqr = hit.DistanceSqr;
                 nearestTransform = hitTransform;
+            }
+
+            return nearestTransform;
+        }
+
+        private Transform ResolveNearestBleedingDistractor()
+        {
+            if (_profile == null)
+                return null;
+
+            if (_profile.baseAggro < 0.45f)
+                return null;
+
+            int count = WorldSpatialHashGrid.CollectContactsNonAlloc(
+                _selfTransform.position,
+                distractorDetectRadius,
+                SpatialTargetKind.Signal,
+                _distractorSpatialBuffer);
+            Transform nearestTransform = null;
+            float bestWeightedDistance = float.MaxValue;
+
+            for (int i = 0; i < count; i++)
+            {
+                SpatialQueryHit hit = _distractorSpatialBuffer[i];
+                HectonSurvivalSystem survival = hit.Owner as HectonSurvivalSystem;
+                if (survival == null || !survival.IsBleeding)
+                    continue;
+
+                float bleedSeverity = Mathf.Max(0.1f, survival.BleedingSeverity01);
+                float weightedDistance = hit.DistanceSqr / bleedSeverity;
+                if (weightedDistance >= bestWeightedDistance)
+                    continue;
+
+                bestWeightedDistance = weightedDistance;
+                nearestTransform = hit.Transform;
             }
 
             return nearestTransform;

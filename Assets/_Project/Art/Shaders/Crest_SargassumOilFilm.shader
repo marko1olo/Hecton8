@@ -10,6 +10,8 @@ Shader "Crest/Inputs/Albedo/Sargassum Oil Film"
         _IridescenceStrength("Iridescence Strength", Range(0.0, 1.0)) = 0.34
         _IridescenceScale("Iridescence Scale", Range(0.01, 1.0)) = 0.12
         _IridescenceSpeed("Iridescence Speed", Range(0.0, 2.0)) = 0.28
+        _ChromaticAberration("Chromatic Aberration", Range(0.0, 1.0)) = 0.38
+        _FresnelPower("Fresnel Power", Range(0.5, 8.0)) = 3.2
     }
 
     SubShader
@@ -37,6 +39,8 @@ Shader "Crest/Inputs/Albedo/Sargassum Oil Film"
             float _IridescenceStrength;
             float _IridescenceScale;
             float _IridescenceSpeed;
+            float _ChromaticAberration;
+            float _FresnelPower;
             float4 _DensityWorldRect;
             float4 _SargassumGlobalDriftOffset;
             float4 _SargassumCutMaskWorldRect;
@@ -51,6 +55,7 @@ Shader "Crest/Inputs/Albedo/Sargassum Oil Film"
             {
                 float4 positionCS : SV_POSITION;
                 float2 worldXZ : TEXCOORD0;
+                float3 positionWS : TEXCOORD1;
             };
 
             float SampleRectTexture(sampler2D textureSampler, float2 worldXZ, float4 worldRect)
@@ -68,6 +73,7 @@ Shader "Crest/Inputs/Albedo/Sargassum Oil Film"
                 float3 positionWS = mul(unity_ObjectToWorld, input.vertex).xyz;
                 output.positionCS = UnityWorldToClipPos(positionWS);
                 output.worldXZ = positionWS.xz;
+                output.positionWS = positionWS;
                 return output;
             }
 
@@ -82,12 +88,17 @@ Shader "Crest/Inputs/Albedo/Sargassum Oil Film"
                 float effectiveDensity = saturate(density * (1.0 - saturate(cutMask * _CutRelief)));
                 effectiveDensity = pow(effectiveDensity, _DensityPower);
                 float alpha = saturate(effectiveDensity * _AlphaScale * _OilTint.a);
+                float3 toCameraWS = _WorldSpaceCameraPos.xyz - input.positionWS;
+                float cameraDistanceSq = max(dot(toCameraWS, toCameraWS), 1e-5);
+                float3 viewDirectionWS = toCameraWS * rsqrt(cameraDistanceSq);
+                float fresnel = pow(1.0 - saturate(dot(viewDirectionWS, float3(0.0, 1.0, 0.0))), _FresnelPower);
                 float spectralPhase =
                     (densitySampleXZ.x + densitySampleXZ.y) * _IridescenceScale +
                     _Time.y * _IridescenceSpeed +
                     effectiveDensity * 3.7;
-                float3 spectralShift = 0.5 + 0.5 * cos(float3(0.0, 2.0943951, 4.1887902) + spectralPhase);
-                float spectralMask = effectiveDensity * effectiveDensity * _IridescenceStrength;
+                float3 chromaPhaseOffset = float3(-_ChromaticAberration, 0.0, _ChromaticAberration) * (0.65 + fresnel * 1.75);
+                float3 spectralShift = 0.5 + 0.5 * cos(float3(0.0, 2.0943951, 4.1887902) + spectralPhase + chromaPhaseOffset);
+                float spectralMask = effectiveDensity * effectiveDensity * _IridescenceStrength * (1.0 + fresnel * _ChromaticAberration);
                 float3 oilyColor = lerp(_OilTint.rgb, saturate(_OilTint.rgb + spectralShift * 0.65), spectralMask);
                 return half4(oilyColor, alpha);
             }

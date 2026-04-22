@@ -178,6 +178,7 @@ namespace Hecton8.Gameplay
         private bool _swimContractResolved;
         private bool _transportFeelContractResolved;
         private string _cachedOperationalToolName;
+        private float _lastUseTime = float.NegativeInfinity;
 
         // ══════════════════════════════════════════════════════════
         //  IPoolable — POOL LIFECYCLE
@@ -196,6 +197,7 @@ namespace Hecton8.Gameplay
                 $"meta={(_toolMetadata != null ? _toolMetadata.name : "null")}");
             IsEquipped = false;
             _lowDurabilityWarningFired = false;
+            _lastUseTime = float.NegativeInfinity;
             RefreshOperationalToolNameCache();
             ResolveSwimContract();
             ResolveTransportFeelContract();
@@ -225,6 +227,7 @@ namespace Hecton8.Gameplay
 
             IsEquipped = false;
             _lowDurabilityWarningFired = false;
+            _lastUseTime = float.NegativeInfinity;
             _cachedOperationalToolName = null;
         }
 
@@ -313,6 +316,8 @@ namespace Hecton8.Gameplay
                 ApplyEnergyConsumption(deltaTime);
             }
 
+            _lastUseTime = Time.time;
+
             // v2.0 ENTERPRISE: Fire event
             OnToolUsed?.Invoke(true);
 
@@ -347,6 +352,8 @@ namespace Hecton8.Gameplay
             {
                 ApplyEnergyConsumption(deltaTime * 0.5f);
             }
+
+            _lastUseTime = Time.time;
 
             // v2.0 ENTERPRISE: Fire event
             OnToolUsed?.Invoke(false);
@@ -444,6 +451,21 @@ namespace Hecton8.Gameplay
             return _toolMetadata.GetTotalEnergyConsumption();
         }
 
+        /// <summary>
+        /// Returns a non-broken condition performance scale. Tools below 20% condition become less reliable before they fully fail.
+        /// </summary>
+        protected float GetConditionPerformanceScale()
+        {
+            if (_toolMetadata == null || IsBroken)
+                return 1f;
+
+            float durability = DurabilityNormalized;
+            if (durability >= 0.2f)
+                return 1f;
+
+            return Mathf.Lerp(0.65f, 1f, durability / 0.2f);
+        }
+
         // ══════════════════════════════════════════════════════════
         //  PRIVATE — DURABILITY & ENERGY (v2.0 ENTERPRISE)
         // ══════════════════════════════════════════════════════════
@@ -511,6 +533,16 @@ namespace Hecton8.Gameplay
         protected virtual void OnToolBrokenWhileUsing()
         {
             // Default: do nothing (tool is blocked)
+        }
+
+        internal ToolMetadata RuntimeMetadata => _toolMetadata;
+
+        internal bool WasRecentlyUsed(float maxIdleSeconds)
+        {
+            if (!IsEquipped)
+                return false;
+
+            return Time.time - _lastUseTime <= Mathf.Max(0.05f, maxIdleSeconds);
         }
 
         private void LogLifecycleDebug(string message)

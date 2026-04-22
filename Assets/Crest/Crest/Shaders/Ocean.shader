@@ -708,11 +708,7 @@ Shader "Crest/Ocean URP"
 				else
 				#endif
 				{
-					half sargassumOilSmoothness = 0.0;
-					#if _ALBEDO_ON
-					sargassumOilSmoothness = albedo.w;
-					#endif
-					ApplyReflectionSky(view, n_pixel, lightDir, shadow.y, screenPos.xyzz, pixelZ, reflAlpha, input.positionWS_fogFactor.xyz, sargassumOilSmoothness, col);
+					ApplyReflectionSky(view, n_pixel, lightDir, shadow.y, screenPos.xyzz, pixelZ, reflAlpha, input.positionWS_fogFactor.xyz, col);
 				}
 
 				// Override final result with white foam - bubbles on surface

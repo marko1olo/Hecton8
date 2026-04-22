@@ -594,6 +594,9 @@ namespace Hecton8.VFX
                 case PlayerLocomotionMode.ShallowWadeWalk:
                     return shallowWadeImpactMultiplier;
 
+                case PlayerLocomotionMode.ExosuitLocomotion:
+                    return 1.35f;
+
                 default:
                     return 1f;
             }

@@ -387,7 +387,9 @@ namespace Hecton8.Gameplay
                 return;
 
             float now = Time.time;
-            if (now - _lastScanTime < scanCooldown)
+            float effectiveCooldown = ResolveEffectiveScanCooldown();
+            float effectiveScanRadius = ResolveEffectiveScanRadius();
+            if (now - _lastScanTime < effectiveCooldown)
             {
                 if (now >= _nextCooldownFeedbackAt)
                 {
@@ -400,7 +402,7 @@ namespace Hecton8.Gameplay
             _lastScanTime = now;
 
             Unity.Mathematics.float3 origin = _cachedTransform.position;
-            ScanResultSummary result = PerformScan(origin, _scanMode);
+            ScanResultSummary result = PerformScan(origin, _scanMode, effectiveScanRadius);
 
             PulseActive = true;
             PulseOrigin = origin;
@@ -409,7 +411,7 @@ namespace Hecton8.Gameplay
             if (pingClip != null && SpatialAudioManager.Instance != null)
                 SpatialAudioManager.Instance.PlayStatic2D(pingClip, pingVolume);
 
-            ScanEvents.OnScanTriggered?.Invoke(origin, scanRadius);
+            ScanEvents.OnScanTriggered?.Invoke(origin, effectiveScanRadius);
 
             if (now >= _nextResultFeedbackAt)
             {
@@ -420,7 +422,7 @@ namespace Hecton8.Gameplay
             FieldOperationLogSystem.RecordOperation(
                 ResolveLocalized(LocalizationKeys.SCANNER_CATEGORY, "SCAN"),
                 result.BuildOperationTitle(_scanMode),
-                result.BuildOperationSummary(_scanMode, scanRadius),
+                result.BuildOperationSummary(_scanMode, effectiveScanRadius),
                 "INFO");
 
             _lastResult = result;
@@ -462,7 +464,9 @@ namespace Hecton8.Gameplay
 
         public override string GetOperationalSummary()
         {
-            float cooldownRemaining = Mathf.Max(0f, (_lastScanTime + scanCooldown) - Time.time);
+            float effectiveCooldown = ResolveEffectiveScanCooldown();
+            float effectiveScanRadius = ResolveEffectiveScanRadius();
+            float cooldownRemaining = Mathf.Max(0f, (_lastScanTime + effectiveCooldown) - Time.time);
 
             // Сигнал Атлас-6 — показываем силу если обнаружен
             AtlasSignalSystem signal = AtlasSignalSystem.Instance;
@@ -503,7 +507,7 @@ namespace Hecton8.Gameplay
             return string.Format(
                 ResolveLocalized(LocalizationKeys.SCANNER_OPERATIONAL_READY, "SCANNER // {0} // READY {1:0}M"),
                 _currentModeLabel,
-                scanRadius);
+                effectiveScanRadius);
         }
 
         public override string GetOperationalDirective()
@@ -527,7 +531,7 @@ namespace Hecton8.Gameplay
                     Mathf.Abs(angle));
             }
 
-            float cooldownRemaining = Mathf.Max(0f, (_lastScanTime + scanCooldown) - Time.time);
+            float cooldownRemaining = Mathf.Max(0f, (_lastScanTime + ResolveEffectiveScanCooldown()) - Time.time);
             if (cooldownRemaining > 0.01f)
                 return string.Format(
                     ResolveLocalized(LocalizationKeys.SCANNER_DIRECTIVE_RECHARGING, "Hold for recharge. Next pulse in {0:0.0} seconds."),
@@ -536,13 +540,38 @@ namespace Hecton8.Gameplay
             if (_hasLastResult && Time.time - _lastResultTime <= 8f && _lastResult.totalContacts > 0)
                 return _lastResult.BuildRecommendation(_scanMode);
 
+            if (GetConditionPerformanceScale() < 0.999f)
+            {
+                return ResolveLocalized(
+                    LocalizationKeys.SCANNER_DIRECTIVE_RECHARGING,
+                    "Scanner lattice is drifting under corrosion. Expect shorter returns and slower recycle.");
+            }
+
             return _currentModeSummary;
         }
 
-        private ScanResultSummary PerformScan(Unity.Mathematics.float3 origin, ScanMode mode)
+        private float ResolveEffectiveScanCooldown()
+        {
+            float conditionScale = GetConditionPerformanceScale();
+            if (conditionScale >= 0.999f)
+                return scanCooldown;
+
+            return scanCooldown / Mathf.Max(0.45f, conditionScale);
+        }
+
+        private float ResolveEffectiveScanRadius()
+        {
+            float conditionScale = GetConditionPerformanceScale();
+            if (conditionScale >= 0.999f)
+                return scanRadius;
+
+            return scanRadius * Mathf.Lerp(0.72f, 1f, conditionScale);
+        }
+
+        private ScanResultSummary PerformScan(Unity.Mathematics.float3 origin, ScanMode mode, float effectiveScanRadius)
         {
             Vector3 scanOrigin = new Vector3(origin.x, origin.y, origin.z);
-            int hitCount = WorldSpatialHashGrid.CollectContactsNonAlloc(scanOrigin, scanRadius, s_ScannerSpatialKinds, s_SpatialHitBuffer);
+            int hitCount = WorldSpatialHashGrid.CollectContactsNonAlloc(scanOrigin, effectiveScanRadius, s_ScannerSpatialKinds, s_SpatialHitBuffer);
             ScanResultSummary result = default;
             bool genericResourceLogged = false;
             int aggregateCount = 0;
@@ -845,36 +874,75 @@ namespace Hecton8.Gameplay
 
         private static string BuildModuleSummary(ModuleMarker marker, BuildableData data)
         {
+            BaseModule baseModule = null;
             if (marker != null)
             {
-                if (marker.TryGetComponent(out BaseModule baseModule))
+                if (marker.TryGetComponent(out baseModule))
                 {
+                    string wearSummary = BuildModuleWearSummary(baseModule);
                     switch (baseModule.CurrentFailureMode)
                     {
                         case BaseModuleFailureMode.OxygenLeak:
-                            return "Service module is venting breathable reserves. Stabilize seals and restore compartment safety before reuse.";
+                            return $"Service module is venting breathable reserves. Stabilize seals and restore compartment safety before reuse. {wearSummary}";
                         case BaseModuleFailureMode.Fire:
-                            return "Service module is in active fire state. Hull repair and immediate compartment suppression take priority.";
+                            return $"Service module is in active fire state. Hull repair and immediate compartment suppression take priority. {wearSummary}";
                         case BaseModuleFailureMode.ShortCircuit:
-                            return "Service module is shorted and power-locked. Restore hull integrity and electrical service before restart.";
+                            return $"Service module is shorted and power-locked. Restore hull integrity and electrical service before restart. {wearSummary}";
                     }
 
                     if (baseModule.IsAirQualityLow)
-                        return "Service module is holding stale breathable reserve. Restore scrubber margin before treating this compartment as safe shelter.";
+                        return $"Service module is holding stale breathable reserve. Restore scrubber margin before treating this compartment as safe shelter. {wearSummary}";
                 }
 
                 switch (marker.SpatialRole)
                 {
                     case FieldTargetRole.ServiceDamaged:
-                        return "Service module is damaged and should be prioritized for hull repair before deeper field work.";
+                        return $"Service module is damaged and should be prioritized for hull repair before deeper field work. {BuildModuleWearSummary(baseModule)}";
                     case FieldTargetRole.ServiceFlooded:
-                        return "Service module is flooded or venting and now reads as an emergency recovery target.";
+                        return $"Service module is flooded or venting and now reads as an emergency recovery target. {BuildModuleWearSummary(baseModule)}";
                 }
             }
 
-            return string.IsNullOrWhiteSpace(data.description)
+            string baseSummary = string.IsNullOrWhiteSpace(data.description)
                 ? $"Base module archived. Power role: {DescribePowerRole(data)}."
                 : data.description.Trim();
+
+            string wearAppendix = BuildModuleWearSummary(baseModule);
+            return string.IsNullOrWhiteSpace(wearAppendix)
+                ? baseSummary
+                : $"{baseSummary} {wearAppendix}";
+        }
+
+        private static string BuildModuleWearSummary(BaseModule baseModule)
+        {
+            if (baseModule == null)
+                return string.Empty;
+
+            float recoverableIntegrity = Mathf.Max(0f, baseModule.MaxRecoverableIntegrity);
+            float originalIntegrity = Mathf.Max(1f, baseModule.MaxIntegrity);
+            float permanentlyLostIntegrity = Mathf.Max(0f, originalIntegrity - recoverableIntegrity);
+            int remainingCycles = baseModule.RemainingRepairCycles;
+
+            if (remainingCycles < 0)
+            {
+                return string.Format(
+                    "Structural wear margin: recoverable hull {0:0}/{1:0}. No authored service-cycle cap is currently limiting repairs.",
+                    recoverableIntegrity,
+                    originalIntegrity);
+            }
+
+            if (remainingCycles <= 0)
+            {
+                return string.Format(
+                    "Structural wear critical: recoverable hull capped at {0:0}/{1:0}. Catastrophic failure now requires rebuild, not another field-service loop.",
+                    recoverableIntegrity,
+                    originalIntegrity);
+            }
+
+            return string.Format(
+                "Structural wear: {0:0} integrity permanently lost. Estimated catastrophic repair cycles remaining before rebuild: {1}.",
+                permanentlyLostIntegrity,
+                remainingCycles);
         }
 
         private static bool MatchesMode(

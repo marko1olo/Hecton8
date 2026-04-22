@@ -43,7 +43,7 @@ namespace Hecton8.SaveSystem
         public float totalPlayTime;
 
         /// <summary>Текущая версия формата. Используется для миграции.</summary>
-        public const int CurrentVersion = 28; // v28: hardcore run modifiers, permadeath state, and module breathable reserve state persisted in the official save format
+        public const int CurrentVersion = 33; // v33: broken suit upgrade persistence added to the official save format
 
         // ─────────────────────── DTO Sections ────────────────────
 
@@ -63,6 +63,9 @@ namespace Hecton8.SaveSystem
         public ProceduralLoreStateDTO proceduralLore;
         public AchievementRegistryDTO achievements;
         public RunModifiersDTO runModifiers;
+        public ResourceScarcityDTO resourceScarcity;
+        public EnvironmentalStrainDTO environmentalStrain;
+        public EcosystemStateDTO ecosystemState;
 
         /// <summary>Прочность инструментов (toolID → durability). v2.0 ENTERPRISE</summary>
         public Dictionary<string, float> toolDurabilityMap = new Dictionary<string, float>();
@@ -111,6 +114,9 @@ namespace Hecton8.SaveSystem
 
         /// <summary>Разблокированные чертежи апгрейдов. v4.1 UPGRADES</summary>
         public List<string> suitUnlockedBlueprintIds = new List<string>();
+
+        /// <summary>Сломанные, но установленные апгрейды скафандра. v33 WIPEOUT</summary>
+        public List<string> suitBrokenUpgradeIds = new List<string>();
 
         /// <summary>ÐÐºÑ‚Ð¸Ð²Ð½Ñ‹Ð¹ Ð¿Ñ€Ð¾Ñ„Ð¸Ð»ÑŒ ÑÐ°Ð¼Ð¾Ð²Ñ‹Ñ€Ð°Ð¶ÐµÐ½Ð¸Ñ Ð¸Ð³Ñ€Ð¾ÐºÐ°. v4.9 EXPRESSION</summary>
         public string playerExpressionProfileId = string.Empty;
@@ -196,6 +202,9 @@ namespace Hecton8.SaveSystem
                 {
                     dailySeedId = string.Empty
                 },
+                resourceScarcity = new ResourceScarcityDTO(),
+                environmentalStrain = new EnvironmentalStrainDTO(),
+                ecosystemState = new EcosystemStateDTO(),
                 discoveredBiomeIds = null,
                 // COLD ALLOC: long[BiomeDiscoveryBitMask.WordCount] — packed discovered biome persistence — owner: SaveData
                 discoveredBiomeBitWords = new long[BiomeDiscoveryBitMask.WordCount],
@@ -211,6 +220,7 @@ namespace Hecton8.SaveSystem
                 atlasSignalRevealStage = 0,
                 suitInstalledUpgradeIds = new List<string>(),
                 suitUnlockedBlueprintIds = new List<string>(),
+                suitBrokenUpgradeIds = new List<string>(),
                 playerExpressionProfileId = string.Empty,
                 atlas6PlayerStatus = 0,
                 atlas6BarterCount = 0,
@@ -253,6 +263,15 @@ namespace Hecton8.SaveSystem
         public float currentLifeLowestOxygenNormalized;
         public float currentLifeLowestEnergyNormalized;
         public float currentLifeLowestIntegrityNormalized;
+        public byte injuryFlags;
+        public float bleedingSecondsRemaining;
+        public float bleedingDamagePerSecond;
+        public float bleedingSeverity01;
+        public float fractureSecondsRemaining;
+        public float fracturePenalty01;
+        public float environmentTemperature;
+        public float coldStressSeverity01;
+        public float heatStressSeverity01;
         public bool hasLastDeathRecord;
         public byte lastDeathCause;
         public float lastDeathPosX;
@@ -645,7 +664,14 @@ namespace Hecton8.SaveSystem
         public int issuedFlags;
         public int oxygenDeathCount;
         public int inventoryFullAttemptCount;
+        public int pressureDeathCount;
+        public int baseEmergencyCount;
+        public int staleAirIncidentCount;
+        public int coldStressIncidentCount;
+        public int heatStressIncidentCount;
         public float deepExposureSeconds;
+        public float coldStressExposureSeconds;
+        public float heatStressExposureSeconds;
     }
 
     [Serializable]
@@ -710,6 +736,90 @@ namespace Hecton8.SaveSystem
         public bool isDailySeed;
         public bool runMarkedDead;
         public string dailySeedId;
+    }
+
+    [Serializable]
+    public struct ResourceScarcityDTO
+    {
+        public const int MaxTrackedResources = 96;
+
+        public int entryCount;
+        public string[] itemIds;
+        public int[] collectedCounts;
+
+        public void EnsureCapacity()
+        {
+            if (itemIds == null || itemIds.Length != MaxTrackedResources)
+            {
+                string[] replacement = new string[MaxTrackedResources];
+                if (itemIds != null)
+                {
+                    int copyCount = itemIds.Length < replacement.Length ? itemIds.Length : replacement.Length;
+                    Array.Copy(itemIds, replacement, copyCount);
+                }
+
+                itemIds = replacement;
+            }
+
+            if (collectedCounts == null || collectedCounts.Length != MaxTrackedResources)
+            {
+                int[] replacement = new int[MaxTrackedResources];
+                if (collectedCounts != null)
+                {
+                    int copyCount = collectedCounts.Length < replacement.Length ? collectedCounts.Length : replacement.Length;
+                    Array.Copy(collectedCounts, replacement, copyCount);
+                }
+
+                collectedCounts = replacement;
+            }
+        }
+    }
+
+    [Serializable]
+    public struct EnvironmentalStrainDTO
+    {
+        public float microplasticStrain;
+        public float generalPollution;
+        public int recycledPlasticItemCount;
+        public int discardedItemCount;
+    }
+
+    [Serializable]
+    public struct EcosystemStateDTO
+    {
+        public const int MaxInfectedZones = 64;
+
+        public int worldSeed;
+        public int infectedZoneCount;
+        public long[] infectedChunkKeys;
+        public float[] infectedSeverities;
+
+        public void EnsureCapacity()
+        {
+            if (infectedChunkKeys == null || infectedChunkKeys.Length != MaxInfectedZones)
+            {
+                long[] replacement = new long[MaxInfectedZones];
+                if (infectedChunkKeys != null)
+                {
+                    int copyCount = infectedChunkKeys.Length < replacement.Length ? infectedChunkKeys.Length : replacement.Length;
+                    Array.Copy(infectedChunkKeys, replacement, copyCount);
+                }
+
+                infectedChunkKeys = replacement;
+            }
+
+            if (infectedSeverities == null || infectedSeverities.Length != MaxInfectedZones)
+            {
+                float[] replacement = new float[MaxInfectedZones];
+                if (infectedSeverities != null)
+                {
+                    int copyCount = infectedSeverities.Length < replacement.Length ? infectedSeverities.Length : replacement.Length;
+                    Array.Copy(infectedSeverities, replacement, copyCount);
+                }
+
+                infectedSeverities = replacement;
+            }
+        }
     }
 
     [Serializable]

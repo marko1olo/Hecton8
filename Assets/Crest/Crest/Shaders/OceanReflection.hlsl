@@ -51,7 +51,6 @@ void ApplyReflectionSky
 	in const float i_pixelZ,
 	in const half i_weight,
 	in const float3 i_positionWS,
-	in const half i_albedoSmoothnessWeight,
 	inout half3 io_col
 )
 {
@@ -102,7 +101,6 @@ void ApplyReflectionSky
 #if _VARYSMOOTHNESSOVERDISTANCE_ON
 	smoothness = lerp(smoothness, _SmoothnessFar, pow(saturate(i_pixelZ / _SmoothnessFarDistance), _SmoothnessPower));
 #endif
-	smoothness = lerp(smoothness, 1.0, saturate(i_albedoSmoothnessWeight));
 
 	half alpha = 1.0;
 	BRDFData brdfData;

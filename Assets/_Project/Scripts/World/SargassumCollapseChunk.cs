@@ -1,5 +1,9 @@
 using Hecton8.Core;
 using UnityEngine;
+using UnityEngine.Rendering;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Hecton8.World
 {
@@ -11,7 +15,15 @@ namespace Hecton8.World
     [RequireComponent(typeof(Rigidbody))]
     public sealed class SargassumCollapseChunk : MonoBehaviour, ITickable, IPoolable
     {
-        [Header("── Runtime Wiring ──────────────────")]
+        private const string ScrapPickupPrefabAssetPath = "Assets/_Project/Prefabs/Resources/Pickups/PFB_Resource_TitaniumScrap.prefab";
+        private static readonly Vector3[] ScrapEjectDirections =
+        {
+            new Vector3(0.22f, 1f, 0.12f),
+            new Vector3(-0.28f, 1f, 0.06f),
+            new Vector3(0.09f, 1f, -0.25f),
+            new Vector3(-0.12f, 1f, -0.18f)
+        };
+        [Header("Ã¢â€â‚¬Ã¢â€â‚¬ Runtime Wiring Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬")]
         [SerializeField]
         [Tooltip("Cached rigidbody used to drive the falling chunk.")]
         private Rigidbody chunkRigidbody;
@@ -20,7 +32,11 @@ namespace Hecton8.World
         [Tooltip("Optional looping particle trail emitted while the chunk sinks.")]
         private ParticleSystem siltTrail;
 
-        [Header("── Defaults ────────────────────────")]
+        [SerializeField]
+        [Tooltip("Pooled physical scrap pickup prefab spawned when the chunk disintegrates into salvage.")]
+        private GameObject scrapPickupPrefab;
+
+        [Header("Ã¢â€â‚¬Ã¢â€â‚¬ Defaults Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬")]
         [SerializeField, Min(0.5f)]
         [Tooltip("Fallback lifetime used when ActivateChunk receives an invalid despawn delay.")]
         private float defaultLifetime = 18f;
@@ -33,22 +49,97 @@ namespace Hecton8.World
         [Tooltip("Angular-drag blend applied while the chunk tumbles downward.")]
         private float activeAngularDrag = 0.55f;
 
+        [SerializeField, Range(0f, 96f)]
+        [Tooltip("Minimum muddy emission rate while the chunk is actively sinking.")]
+        private float siltTrailBaseRate = 18f;
+
+        [SerializeField, Range(0f, 160f)]
+        [Tooltip("Maximum muddy emission rate reached by faster downward collapse chunks.")]
+        private float siltTrailMaxRate = 62f;
+
+        [SerializeField, Range(0.1f, 8f)]
+        [Tooltip("Downward speed at which the muddy trail reaches full emission.")]
+        private float siltTrailFullSpeed = 2.6f;
+
+        [SerializeField, Range(0.01f, 1f)]
+        [Tooltip("Downward-speed threshold below which the chunk is considered settled and the muddy trail is forced to stop.")]
+        private float siltTrailStopSpeed = 0.18f;
+
+        [Header("── Disintegration ──────────────────")]
+        [SerializeField, Range(1f, 60f)]
+        [Tooltip("How long a snagged chunk can hang before it tears apart into physical scrap.")]
+        private float snagDisintegrationDelay = 16f;
+
+        [SerializeField, Range(1, 4)]
+        [Tooltip("How many pooled scrap pickups are released when the chunk disintegrates.")]
+        private int scrapPickupCount = 3;
+
+        [SerializeField, Range(0f, 16f)]
+        [Tooltip("Thermal integrity budget consumed by cave geysers before this chunk disintegrates.")]
+        private float thermalIntegrity = 4f;
+
+        [SerializeField, Range(0f, 8f)]
+        [Tooltip("Initial eject speed applied to released scrap pieces.")]
+        private float scrapEjectSpeed = 1.8f;
+
+        [Header("Ã¢â€â‚¬Ã¢â€â‚¬ Snag Joints Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬")]
+        [SerializeField]
+        [Tooltip("Layers treated as snag targets when a collapse chunk slams into the seabed or surrounding wreckage.")]
+        private LayerMask snagLayers = ~0;
+
+        [SerializeField, Range(0.1f, 4f)]
+        [Tooltip("Search radius used when probing nearby rock or chunk anchors after impact.")]
+        private float snagSearchRadius = 1.2f;
+
+        [SerializeField, Range(0.1f, 12f)]
+        [Tooltip("Minimum impact speed required before the chunk attempts to snag instead of simply bouncing.")]
+        private float snagImpactSpeedThreshold = 1.6f;
+
+        [SerializeField, Range(0.1f, 120f)]
+        [Tooltip("Spring used by the hanging debris joint once the chunk snags into surrounding geometry.")]
+        private float snagSpring = 28f;
+
+        [SerializeField, Range(0f, 16f)]
+        [Tooltip("Damper applied to the hanging debris spring to keep the joint heavy instead of rubbery.")]
+        private float snagDamper = 4.2f;
+
+        [SerializeField, Range(0f, 2f)]
+        [Tooltip("Maximum free distance preserved by the hanging spring before the chunk starts pulling taut.")]
+        private float snagMaxDistance = 0.45f;
+
+        [SerializeField, Range(0.01f, 0.5f)]
+        [Tooltip("Surface-normal offset applied to snag anchors so hanging chunks pin against cave walls instead of embedding into them.")]
+        private float snagSurfaceOffset = 0.08f;
+
         private Vector3 _defaultLocalScale = Vector3.one;
         private float _defaultLinearDamping;
         private float _defaultAngularDamping;
+        private CollisionDetectionMode _defaultCollisionDetectionMode;
+        private RigidbodyInterpolation _defaultInterpolation;
         private float _remainingLifetime;
         private bool _registeredTick;
+        private bool _hasSnag;
+        private bool _cascadeImpactConsumed;
+        private int _fragmentDepth;
+        private SpringJoint _snagSpringJoint;
+        private HingeJoint _snagHingeJoint;
+        private bool _siltTrailSettled;
+        private float _snagHangTimer;
+        private float _remainingThermalIntegrity;
+        private readonly Collider[] _snagColliders = new Collider[8]; // COLD ALLOC: Collider[8] - bounded snag-target probe buffer for collapse chunks - owner: SargassumCollapseChunk
 
         private void Awake()
         {
-            if (chunkRigidbody == null)
-                TryGetComponent(out chunkRigidbody);
+            ResolveRuntimeWiring(createFallbackTrail: true);
+            EnsureSnagJoints();
 
             _defaultLocalScale = transform.localScale;
             if (chunkRigidbody != null)
             {
                 _defaultLinearDamping = chunkRigidbody.linearDamping;
                 _defaultAngularDamping = chunkRigidbody.angularDamping;
+                _defaultCollisionDetectionMode = chunkRigidbody.collisionDetectionMode;
+                _defaultInterpolation = chunkRigidbody.interpolation;
             }
         }
 
@@ -61,12 +152,22 @@ namespace Hecton8.World
         /// <param name="despawnDelay">Seconds before the chunk is returned to the pool.</param>
         public void ActivateChunk(Vector3 linearVelocityWS, Vector3 angularVelocityWS, float uniformScale, float despawnDelay)
         {
+            ActivateChunk(linearVelocityWS, angularVelocityWS, uniformScale, despawnDelay, 0);
+        }
+
+        /// <summary>
+        /// Arms the pooled chunk with its release velocities, lifetime, and cascade-fragment depth.
+        /// </summary>
+        public void ActivateChunk(Vector3 linearVelocityWS, Vector3 angularVelocityWS, float uniformScale, float despawnDelay, int fragmentDepth)
+        {
             if (chunkRigidbody != null)
             {
                 chunkRigidbody.isKinematic = false;
                 chunkRigidbody.WakeUp();
                 chunkRigidbody.linearDamping = activeDrag;
                 chunkRigidbody.angularDamping = activeAngularDrag;
+                chunkRigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+                chunkRigidbody.interpolation = RigidbodyInterpolation.Interpolate;
                 chunkRigidbody.linearVelocity = linearVelocityWS;
                 chunkRigidbody.angularVelocity = angularVelocityWS;
             }
@@ -75,11 +176,19 @@ namespace Hecton8.World
 
             if (siltTrail != null)
             {
+                UpdateSiltTrailEmission();
                 siltTrail.Clear(true);
                 siltTrail.Play(true);
             }
 
             _remainingLifetime = despawnDelay > 0f ? despawnDelay : defaultLifetime;
+            _fragmentDepth = Mathf.Max(0, fragmentDepth);
+            _hasSnag = false;
+            _cascadeImpactConsumed = false;
+            _siltTrailSettled = false;
+            _snagHangTimer = 0f;
+            _remainingThermalIntegrity = Mathf.Max(0.01f, thermalIntegrity);
+            DisableSnagJoints();
             TryRegister();
         }
 
@@ -93,6 +202,17 @@ namespace Hecton8.World
                 return;
 
             _remainingLifetime -= Mathf.Max(0f, dt);
+            UpdateSiltTrailEmission();
+            if (_hasSnag)
+            {
+                _snagHangTimer += Mathf.Max(0f, dt);
+                if (_snagHangTimer >= snagDisintegrationDelay)
+                {
+                    DisintegrateIntoScrap();
+                    return;
+                }
+            }
+
             if (_remainingLifetime > 0f)
                 return;
 
@@ -106,17 +226,34 @@ namespace Hecton8.World
         /// </summary>
         public void OnSpawn()
         {
+            ResolveRuntimeWiring(createFallbackTrail: true);
             transform.localScale = _defaultLocalScale;
             _remainingLifetime = 0f;
-            if (chunkRigidbody == null)
-                return;
+            if (chunkRigidbody != null)
+            {
+                chunkRigidbody.isKinematic = false;
+                chunkRigidbody.linearVelocity = Vector3.zero;
+                chunkRigidbody.angularVelocity = Vector3.zero;
+                chunkRigidbody.linearDamping = _defaultLinearDamping;
+                chunkRigidbody.angularDamping = _defaultAngularDamping;
+                chunkRigidbody.collisionDetectionMode = _defaultCollisionDetectionMode;
+                chunkRigidbody.interpolation = _defaultInterpolation;
+                chunkRigidbody.Sleep();
+            }
 
-            chunkRigidbody.isKinematic = false;
-            chunkRigidbody.linearVelocity = Vector3.zero;
-            chunkRigidbody.angularVelocity = Vector3.zero;
-            chunkRigidbody.linearDamping = _defaultLinearDamping;
-            chunkRigidbody.angularDamping = _defaultAngularDamping;
-            chunkRigidbody.Sleep();
+            _hasSnag = false;
+            _cascadeImpactConsumed = false;
+            _fragmentDepth = 0;
+            _siltTrailSettled = false;
+            _snagHangTimer = 0f;
+            _remainingThermalIntegrity = Mathf.Max(0.01f, thermalIntegrity);
+            DisableSnagJoints();
+
+            if (siltTrail != null)
+            {
+                UpdateSiltTrailEmission();
+                siltTrail.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            }
         }
 
         /// <summary>
@@ -133,11 +270,50 @@ namespace Hecton8.World
                 chunkRigidbody.angularVelocity = Vector3.zero;
                 chunkRigidbody.linearDamping = _defaultLinearDamping;
                 chunkRigidbody.angularDamping = _defaultAngularDamping;
+                chunkRigidbody.collisionDetectionMode = _defaultCollisionDetectionMode;
+                chunkRigidbody.interpolation = _defaultInterpolation;
                 chunkRigidbody.Sleep();
             }
 
+            _hasSnag = false;
+            _cascadeImpactConsumed = false;
+            _fragmentDepth = 0;
+            _siltTrailSettled = false;
+            _snagHangTimer = 0f;
+            _remainingThermalIntegrity = Mathf.Max(0.01f, thermalIntegrity);
+            DisableSnagJoints();
+
             if (siltTrail != null)
                 siltTrail.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        }
+
+        private void OnCollisionEnter(Collision collision)
+        {
+            if (_hasSnag || collision == null || collision.contactCount <= 0 || chunkRigidbody == null)
+                return;
+
+            float impactSpeed = collision.relativeVelocity.magnitude;
+            if (impactSpeed < snagImpactSpeedThreshold)
+                return;
+
+            int collisionLayerMask = 1 << collision.collider.gameObject.layer;
+            if ((snagLayers.value & collisionLayerMask) == 0)
+                return;
+
+            ContactPoint contact = collision.GetContact(0);
+            bool useVoxelRockSpring = collision.collider.CompareTag("VoxelRock");
+            TryConfigureSnag(contact.point, contact.normal, collision.rigidbody, useVoxelRockSpring);
+            if (ShouldStopSiltTrail(contact.normal, impactSpeed))
+                StopSiltTrailEmission(clearParticles: false);
+
+            if (_cascadeImpactConsumed)
+                return;
+
+            SargassumGlobalDragManager dragManager = SargassumGlobalDragManager.Instance;
+            if (dragManager != null)
+                dragManager.RegisterCollapseChunkImpact(contact.point, contact.normal, impactSpeed, _fragmentDepth + 1);
+
+            _cascadeImpactConsumed = true;
         }
 
         private void OnDisable()
@@ -174,5 +350,336 @@ namespace Hecton8.World
 
             _registeredTick = false;
         }
+
+        private void ResolveRuntimeWiring(bool createFallbackTrail)
+        {
+            if (chunkRigidbody == null)
+                TryGetComponent(out chunkRigidbody);
+
+            if (siltTrail == null)
+                siltTrail = GetComponentInChildren<ParticleSystem>(true);
+
+            if (siltTrail == null && createFallbackTrail)
+                siltTrail = CreateFallbackSiltTrail();
+        }
+
+        internal void ApplyThermalGeyserDamage(float damage)
+        {
+            if (damage <= 0f || !gameObject.activeInHierarchy)
+                return;
+
+            _remainingThermalIntegrity -= damage;
+            if (_remainingThermalIntegrity > 0f)
+                return;
+
+            DisintegrateIntoScrap();
+        }
+
+        private void EnsureSnagJoints()
+        {
+            if (_snagSpringJoint == null && !TryGetComponent(out _snagSpringJoint))
+            {
+                // COLD ALLOC: SpringJoint[1] - cached hanging-debris spring joint on pooled collapse chunks - owner: SargassumCollapseChunk
+                _snagSpringJoint = gameObject.AddComponent<SpringJoint>();
+            }
+
+            if (_snagHingeJoint == null && !TryGetComponent(out _snagHingeJoint))
+            {
+                // COLD ALLOC: HingeJoint[1] - cached hanging-debris hinge joint on pooled collapse chunks - owner: SargassumCollapseChunk
+                _snagHingeJoint = gameObject.AddComponent<HingeJoint>();
+            }
+
+            DisableSnagJoints();
+        }
+
+        private void DisableSnagJoints()
+        {
+            if (_snagSpringJoint != null)
+            {
+                _snagSpringJoint.connectedBody = null;
+                _snagSpringJoint.autoConfigureConnectedAnchor = false;
+                _snagSpringJoint.enableCollision = false;
+                _snagSpringJoint.spring = 0f;
+                _snagSpringJoint.damper = 0f;
+                _snagSpringJoint.maxDistance = 0f;
+            }
+
+            if (_snagHingeJoint != null)
+            {
+                _snagHingeJoint.connectedBody = null;
+                _snagHingeJoint.autoConfigureConnectedAnchor = false;
+                _snagHingeJoint.enableCollision = false;
+                _snagHingeJoint.useSpring = false;
+            }
+
+        }
+
+        private void TryConfigureSnag(Vector3 contactPointWS, Vector3 contactNormalWS, Rigidbody preferredBody, bool useVoxelRockSpring)
+        {
+            if (_snagSpringJoint == null || _snagHingeJoint == null)
+                return;
+
+            Rigidbody connectedBody = preferredBody;
+            Vector3 safeNormal = contactNormalWS.sqrMagnitude > 0.0001f ? contactNormalWS.normalized : Vector3.up;
+            Vector3 connectedAnchorWS = contactPointWS + safeNormal * snagSurfaceOffset;
+
+            int hitCount = UnityEngine.Physics.OverlapSphereNonAlloc(
+                contactPointWS,
+                snagSearchRadius,
+                _snagColliders,
+                snagLayers,
+                QueryTriggerInteraction.Ignore);
+
+            float nearestDistanceSq = float.PositiveInfinity;
+            for (int i = 0; i < hitCount; i++)
+            {
+                Collider candidate = _snagColliders[i];
+                if (candidate == null || candidate.attachedRigidbody == chunkRigidbody)
+                    continue;
+
+                Vector3 candidatePoint = candidate.ClosestPoint(contactPointWS);
+                float distanceSq = (candidatePoint - contactPointWS).sqrMagnitude;
+                if (distanceSq >= nearestDistanceSq)
+                    continue;
+
+                nearestDistanceSq = distanceSq;
+                connectedAnchorWS = candidate.attachedRigidbody != null
+                    ? candidatePoint
+                    : candidatePoint + safeNormal * snagSurfaceOffset;
+                connectedBody = candidate.attachedRigidbody;
+            }
+
+            Vector3 localAnchor = transform.InverseTransformPoint(contactPointWS);
+            Vector3 connectedAnchor = connectedBody != null
+                ? connectedBody.transform.InverseTransformPoint(connectedAnchorWS)
+                : connectedAnchorWS;
+
+            if (useVoxelRockSpring)
+            {
+                _snagSpringJoint.autoConfigureConnectedAnchor = false;
+                _snagSpringJoint.anchor = localAnchor;
+                _snagSpringJoint.connectedAnchor = connectedAnchor;
+                _snagSpringJoint.connectedBody = connectedBody;
+                _snagSpringJoint.spring = snagSpring;
+                _snagSpringJoint.damper = snagDamper;
+                _snagSpringJoint.maxDistance = snagMaxDistance;
+                _snagSpringJoint.enableCollision = false;
+                _hasSnag = true;
+                _siltTrailSettled = true;
+                return;
+            }
+
+            _snagSpringJoint.autoConfigureConnectedAnchor = false;
+            _snagSpringJoint.anchor = localAnchor;
+            _snagSpringJoint.connectedAnchor = connectedAnchor;
+            _snagSpringJoint.connectedBody = connectedBody;
+            _snagSpringJoint.spring = snagSpring;
+            _snagSpringJoint.damper = snagDamper;
+            _snagSpringJoint.maxDistance = snagMaxDistance;
+            _snagSpringJoint.enableCollision = false;
+
+            _snagHingeJoint.autoConfigureConnectedAnchor = false;
+            _snagHingeJoint.anchor = localAnchor;
+            _snagHingeJoint.connectedAnchor = connectedAnchor;
+            _snagHingeJoint.connectedBody = connectedBody;
+            _snagHingeJoint.axis = Vector3.up;
+            _snagHingeJoint.enableCollision = false;
+            _snagHingeJoint.useSpring = false;
+
+            _hasSnag = true;
+            _siltTrailSettled = true;
+        }
+
+        private void UpdateSiltTrailEmission()
+        {
+            if (siltTrail == null)
+                return;
+
+            float downwardSpeed = chunkRigidbody != null ? Mathf.Max(0f, -chunkRigidbody.linearVelocity.y) : 0f;
+            if (_siltTrailSettled || downwardSpeed <= siltTrailStopSpeed)
+            {
+                ParticleSystem.EmissionModule settledEmission = siltTrail.emission;
+                settledEmission.rateOverTime = 0f;
+                if (siltTrail.isPlaying)
+                    siltTrail.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+                return;
+            }
+
+            float speed01 = Mathf.Clamp01(downwardSpeed / Mathf.Max(0.1f, siltTrailFullSpeed));
+            ParticleSystem.EmissionModule emission = siltTrail.emission;
+            emission.rateOverTime = Mathf.Lerp(siltTrailBaseRate, siltTrailMaxRate, speed01);
+            if (!siltTrail.isPlaying)
+                siltTrail.Play(true);
+        }
+
+        private bool ShouldStopSiltTrail(Vector3 contactNormalWS, float impactSpeed)
+        {
+            if (impactSpeed <= 0.0001f)
+                return false;
+
+            if (_hasSnag)
+                return true;
+
+            return contactNormalWS.y >= 0.35f;
+        }
+
+        private void StopSiltTrailEmission(bool clearParticles)
+        {
+            _siltTrailSettled = true;
+            if (siltTrail == null)
+                return;
+
+            ParticleSystem.EmissionModule emission = siltTrail.emission;
+            emission.rateOverTime = 0f;
+            siltTrail.Stop(true, clearParticles
+                ? ParticleSystemStopBehavior.StopEmittingAndClear
+                : ParticleSystemStopBehavior.StopEmitting);
+        }
+
+        private ParticleSystem CreateFallbackSiltTrail()
+        {
+            // COLD ALLOC: GameObject[1] Ã¢â‚¬â€ fallback collapse-chunk muddy trail child created when prefab wiring is missing Ã¢â‚¬â€ owner: SargassumCollapseChunk
+            GameObject trailObject = new GameObject("SiltTrail");
+            trailObject.transform.SetParent(transform, false);
+            trailObject.transform.localPosition = Vector3.zero;
+            trailObject.transform.localRotation = Quaternion.identity;
+            trailObject.transform.localScale = Vector3.one;
+
+            // COLD ALLOC: ParticleSystem[1] Ã¢â‚¬â€ fallback muddy trail component for collapse chunks Ã¢â‚¬â€ owner: SargassumCollapseChunk
+            ParticleSystem particleSystem = trailObject.AddComponent<ParticleSystem>();
+            // COLD ALLOC: ParticleSystemRenderer[1] Ã¢â‚¬â€ fallback muddy trail renderer for collapse chunks Ã¢â‚¬â€ owner: SargassumCollapseChunk
+            ParticleSystemRenderer particleRenderer = trailObject.GetComponent<ParticleSystemRenderer>();
+
+            ParticleSystem.MainModule main = particleSystem.main;
+            main.loop = true;
+            main.playOnAwake = false;
+            main.duration = 4f;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(1.8f, 3.6f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(0.18f, 0.65f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.28f, 0.62f);
+            main.startColor = new ParticleSystem.MinMaxGradient(new Color(0.24f, 0.22f, 0.18f, 0.55f), new Color(0.11f, 0.1f, 0.09f, 0.0f));
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.maxParticles = 192;
+            main.gravityModifier = 0f;
+            main.stopAction = ParticleSystemStopAction.None;
+
+            ParticleSystem.EmissionModule emission = particleSystem.emission;
+            emission.enabled = true;
+            emission.rateOverTime = siltTrailBaseRate;
+
+            ParticleSystem.ShapeModule shape = particleSystem.shape;
+            shape.enabled = true;
+            shape.shapeType = ParticleSystemShapeType.Sphere;
+            shape.radius = 0.28f;
+            shape.radiusThickness = 1f;
+
+            ParticleSystem.ColorOverLifetimeModule colorOverLifetime = particleSystem.colorOverLifetime;
+            colorOverLifetime.enabled = true;
+            Gradient colorGradient = new Gradient();
+            colorGradient.SetKeys(
+                new[]
+                {
+                    new GradientColorKey(new Color(0.22f, 0.2f, 0.17f), 0f),
+                    new GradientColorKey(new Color(0.14f, 0.13f, 0.12f), 0.55f),
+                    new GradientColorKey(new Color(0.09f, 0.09f, 0.09f), 1f)
+                },
+                new[]
+                {
+                    new GradientAlphaKey(0.52f, 0f),
+                    new GradientAlphaKey(0.34f, 0.42f),
+                    new GradientAlphaKey(0f, 1f)
+                });
+            colorOverLifetime.color = new ParticleSystem.MinMaxGradient(colorGradient);
+
+            ParticleSystem.SizeOverLifetimeModule sizeOverLifetime = particleSystem.sizeOverLifetime;
+            sizeOverLifetime.enabled = true;
+            AnimationCurve sizeCurve = new AnimationCurve(
+                new Keyframe(0f, 0.65f),
+                new Keyframe(0.4f, 1f),
+                new Keyframe(1f, 1.85f));
+            sizeOverLifetime.size = new ParticleSystem.MinMaxCurve(1f, sizeCurve);
+
+            ParticleSystem.LimitVelocityOverLifetimeModule limitVelocity = particleSystem.limitVelocityOverLifetime;
+            limitVelocity.enabled = true;
+            limitVelocity.limit = 0.55f;
+            limitVelocity.dampen = 0.38f;
+
+            ParticleSystem.NoiseModule noise = particleSystem.noise;
+            noise.enabled = true;
+            noise.separateAxes = false;
+            noise.strength = 0.42f;
+            noise.frequency = 0.34f;
+            noise.scrollSpeed = 0.16f;
+
+            if (particleRenderer != null)
+            {
+                particleRenderer.renderMode = ParticleSystemRenderMode.Billboard;
+                particleRenderer.sortMode = ParticleSystemSortMode.Distance;
+                particleRenderer.minParticleSize = 0.015f;
+                particleRenderer.maxParticleSize = 0.16f;
+                particleRenderer.shadowCastingMode = ShadowCastingMode.Off;
+                particleRenderer.receiveShadows = false;
+                particleRenderer.motionVectorGenerationMode = MotionVectorGenerationMode.ForceNoMotion;
+            }
+
+            return particleSystem;
+        }
+
+        private void DisintegrateIntoScrap()
+        {
+            ObjectPoolManager poolManager = ObjectPoolManager.Instance;
+            if (poolManager != null && scrapPickupPrefab != null)
+            {
+                Vector3 origin = transform.position;
+                for (int i = 0; i < scrapPickupCount && i < ScrapEjectDirections.Length; i++)
+                {
+                    GameObject scrap = poolManager.Spawn(scrapPickupPrefab, origin + (ScrapEjectDirections[i] * 0.18f), Quaternion.identity);
+                    if (scrap == null || !scrap.TryGetComponent(out Rigidbody scrapRigidbody))
+                        continue;
+
+                    scrapRigidbody.linearVelocity = ScrapEjectDirections[i].normalized * scrapEjectSpeed;
+                }
+            }
+
+            if (poolManager != null)
+                poolManager.Despawn(gameObject);
+        }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            siltTrailBaseRate = Mathf.Clamp(siltTrailBaseRate, 0f, 96f);
+            siltTrailMaxRate = Mathf.Clamp(siltTrailMaxRate, siltTrailBaseRate, 160f);
+            siltTrailFullSpeed = Mathf.Clamp(siltTrailFullSpeed, 0.1f, 8f);
+            siltTrailStopSpeed = Mathf.Clamp(siltTrailStopSpeed, 0.01f, 1f);
+            snagSearchRadius = Mathf.Clamp(snagSearchRadius, 0.1f, 4f);
+            snagImpactSpeedThreshold = Mathf.Clamp(snagImpactSpeedThreshold, 0.1f, 12f);
+            snagSpring = Mathf.Clamp(snagSpring, 0.1f, 120f);
+            snagDamper = Mathf.Clamp(snagDamper, 0f, 16f);
+            snagMaxDistance = Mathf.Clamp(snagMaxDistance, 0f, 2f);
+            snagSurfaceOffset = Mathf.Clamp(snagSurfaceOffset, 0.01f, 0.5f);
+            snagDisintegrationDelay = Mathf.Clamp(snagDisintegrationDelay, 1f, 60f);
+            scrapPickupCount = Mathf.Clamp(scrapPickupCount, 1, ScrapEjectDirections.Length);
+            thermalIntegrity = Mathf.Clamp(thermalIntegrity, 0f, 16f);
+            scrapEjectSpeed = Mathf.Clamp(scrapEjectSpeed, 0f, 8f);
+
+            if (!Application.isPlaying)
+            {
+                bool shouldAuthorPrefabTrail = siltTrail == null && PrefabUtility.IsPartOfPrefabAsset(gameObject);
+                ResolveRuntimeWiring(createFallbackTrail: shouldAuthorPrefabTrail);
+                if (scrapPickupPrefab == null)
+                    scrapPickupPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(ScrapPickupPrefabAssetPath);
+                if (shouldAuthorPrefabTrail && siltTrail != null)
+                {
+                    EditorUtility.SetDirty(this);
+                    EditorUtility.SetDirty(gameObject);
+                    EditorUtility.SetDirty(siltTrail.gameObject);
+                }
+
+                if (scrapPickupPrefab != null)
+                    EditorUtility.SetDirty(this);
+            }
+        }
+#endif
     }
 }

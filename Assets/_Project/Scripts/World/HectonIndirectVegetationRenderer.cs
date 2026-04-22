@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Hecton8.Gameplay;
 using UnityEngine;
 using UnityEngine.Rendering;
 #if UNITY_EDITOR
@@ -49,12 +50,23 @@ namespace Hecton8.World
         private static readonly int _OcclusionZBufferParamsId = Shader.PropertyToID("_HectonZBufferParams");
         private static readonly int _GlobalCameraDepthTextureId = Shader.PropertyToID("_CameraDepthTexture");
         private static readonly int _GlobalZBufferParamsId = Shader.PropertyToID("_ZBufferParams");
+        private static readonly int _DarknessCullEnabledId = Shader.PropertyToID("_HectonDarknessCullEnabled");
+        private static readonly int _DarknessBiolumThresholdId = Shader.PropertyToID("_HectonDarknessBiolumThreshold");
+        private static readonly int _ScooterHeadlightCountId = Shader.PropertyToID("_HectonScooterHeadlightCount");
+        private static readonly int _ScooterHeadlightPositionsWsId = Shader.PropertyToID("_HectonScooterHeadlightPositionsWS");
+        private static readonly int _ScooterHeadlightDirectionsWsId = Shader.PropertyToID("_HectonScooterHeadlightDirectionsWS");
+        private static readonly int _ScooterHeadlightColorsId = Shader.PropertyToID("_HectonScooterHeadlightColors");
+        private static readonly int _ScooterHeadlightConeDataId = Shader.PropertyToID("_HectonScooterHeadlightConeData");
+        private static readonly int _FloorBiolumStrengthId = Shader.PropertyToID("_HectonFloorBiolumStrength");
+        private static readonly int _OceanBiolumStrengthId = Shader.PropertyToID("_HectonOceanBiolumStrength");
+        private static readonly int _GlobalBiolumIntensityId = Shader.PropertyToID("_BiolumIntensity");
         private static readonly int _SourceMatricesId = Shader.PropertyToID("_HectonSourceInstanceMatrices");
         private static readonly int _SourceDataId = Shader.PropertyToID("_HectonSourceVegetationInstanceData");
         private static readonly int _VisibleIndicesLod0Id = Shader.PropertyToID("_HectonVisibleInstanceIndicesLOD0");
         private static readonly int _VisibleIndicesLod1Id = Shader.PropertyToID("_HectonVisibleInstanceIndicesLOD1");
         private static readonly int _VisibleIndicesShadowId = Shader.PropertyToID("_HectonVisibleInstanceIndicesShadow");
         private static readonly int _PreviousCameraPositionId = Shader.PropertyToID("_HectonPreviousCameraPosition");
+        private const int MaxScooterHeadlights = 2;
 
         [Header("Rendering")]
         [SerializeField]
@@ -177,6 +189,15 @@ namespace Hecton8.World
         [Tooltip("Depth bias in view-space meters used to avoid false occlusion rejection on grazing surfaces.")]
         private float _occlusionDepthBias = 0.35f;
 
+        [Header("Darkness Culling")]
+        [SerializeField]
+        [Tooltip("Rejects flora instances that are outside the published scooter headlights and below the global biolum threshold.")]
+        private bool _enableDarknessCulling = true;
+
+        [SerializeField, Range(0.001f, 0.25f)]
+        [Tooltip("Minimum combined global biolum scalar required to keep completely unlit instances alive.")]
+        private float _darknessBiolumThreshold = 0.05f;
+
         [Header("Legacy Fallback")]
         [SerializeField]
         [Tooltip("Fallback vegetation type used when no external instance metadata buffer is bound.")]
@@ -230,14 +251,21 @@ namespace Hecton8.World
         private Vector3 _previousMotionCameraPosition;
         private Camera _previousMotionCamera;
         private bool _hasPreviousMotionCameraPosition;
+        private PlayerToolManager _playerToolManager;
+        private float _nextToolManagerResolveTime;
+
+        private Vector4[] _scooterHeadlightPositionsWs;
+        private Vector4[] _scooterHeadlightDirectionsWs;
+        private Vector4[] _scooterHeadlightColors;
+        private Vector4[] _scooterHeadlightConeData;
 
         // COLD ALLOC: Camera[8] - camera discovery cache for GPU culling dispatch - owner: HectonIndirectVegetationRenderer
         private readonly Camera[] _cameraSearchCache = new Camera[8];
 
         // COLD ALLOC: uint[5] - near-pass indirect draw arguments payload - owner: HectonIndirectVegetationRenderer
         private readonly uint[] _nearIndirectArgs = new uint[IndirectArgsCount];
-        // COLD ALLOC: uint[5] - far-pass indirect draw arguments payload - owner: HectonIndirectVegetationRenderer
-        private readonly uint[] _farIndirectArgs = new uint[IndirectArgsCount];
+            // COLD ALLOC: uint[5] - far-pass indirect draw arguments payload - owner: HectonIndirectVegetationRenderer
+            private readonly uint[] _farIndirectArgs = new uint[IndirectArgsCount];
 
         private HectonVegetationInstanceData[] _legacyInstanceData;
 
@@ -323,6 +351,14 @@ namespace Hecton8.World
             _motionNearPropertyBlock = new MaterialPropertyBlock();
             // COLD ALLOC: MaterialPropertyBlock[1] - motion-vector far draw property block - owner: HectonIndirectVegetationRenderer
             _motionFarPropertyBlock = new MaterialPropertyBlock();
+            // COLD ALLOC: Vector4[2] - scooter headlight world-position payload cache for compute darkness culling - owner: HectonIndirectVegetationRenderer
+            _scooterHeadlightPositionsWs = new Vector4[MaxScooterHeadlights];
+            // COLD ALLOC: Vector4[2] - scooter headlight direction payload cache for compute darkness culling - owner: HectonIndirectVegetationRenderer
+            _scooterHeadlightDirectionsWs = new Vector4[MaxScooterHeadlights];
+            // COLD ALLOC: Vector4[2] - scooter headlight color/intensity payload cache for compute darkness culling - owner: HectonIndirectVegetationRenderer
+            _scooterHeadlightColors = new Vector4[MaxScooterHeadlights];
+            // COLD ALLOC: Vector4[2] - scooter headlight cone payload cache for compute darkness culling - owner: HectonIndirectVegetationRenderer
+            _scooterHeadlightConeData = new Vector4[MaxScooterHeadlights];
             // COLD ALLOC: ComputeBuffer[1] - near indirect arguments buffer - owner: HectonIndirectVegetationRenderer
             _nearIndirectArgsBuffer = new ComputeBuffer(1, sizeof(uint) * IndirectArgsCount, ComputeBufferType.IndirectArguments);
             // COLD ALLOC: ComputeBuffer[1] - far indirect arguments buffer - owner: HectonIndirectVegetationRenderer
@@ -755,6 +791,7 @@ namespace Hecton8.World
             _cullingCompute.SetInt(_OcclusionEnabledId, canUseOcclusion ? 1 : 0);
             _cullingCompute.SetFloat(_OcclusionDepthBiasId, Mathf.Max(0.01f, _occlusionDepthBias));
             _cullingCompute.SetVector(_OcclusionZBufferParamsId, Shader.GetGlobalVector(_GlobalZBufferParamsId));
+            UploadDarknessCullingInputs();
             _cullingCompute.SetBuffer(_cullingKernelIndex, _SourceMatricesId, _instanceMatrixBuffer);
             _cullingCompute.SetBuffer(_cullingKernelIndex, _SourceDataId, activeInstanceDataBuffer);
             _cullingCompute.SetBuffer(_cullingKernelIndex, _VisibleIndicesLod0Id, _visibleIndexBufferLod0);
@@ -783,6 +820,80 @@ namespace Hecton8.World
             }
 
             return true;
+        }
+
+        private void UploadDarknessCullingInputs()
+        {
+            _cullingCompute.SetInt(_DarknessCullEnabledId, _enableDarknessCulling ? 1 : 0);
+            _cullingCompute.SetFloat(_DarknessBiolumThresholdId, Mathf.Max(0.001f, _darknessBiolumThreshold));
+            _cullingCompute.SetFloat(_FloorBiolumStrengthId, Shader.GetGlobalFloat(_FloorBiolumStrengthId));
+            _cullingCompute.SetFloat(_OceanBiolumStrengthId, Shader.GetGlobalFloat(_OceanBiolumStrengthId));
+            _cullingCompute.SetFloat(_GlobalBiolumIntensityId, Shader.GetGlobalFloat(_GlobalBiolumIntensityId));
+
+            int headlightCount = CopyScooterHeadlightPayload();
+            _cullingCompute.SetInt(_ScooterHeadlightCountId, headlightCount);
+            _cullingCompute.SetVectorArray(_ScooterHeadlightPositionsWsId, _scooterHeadlightPositionsWs);
+            _cullingCompute.SetVectorArray(_ScooterHeadlightDirectionsWsId, _scooterHeadlightDirectionsWs);
+            _cullingCompute.SetVectorArray(_ScooterHeadlightColorsId, _scooterHeadlightColors);
+            _cullingCompute.SetVectorArray(_ScooterHeadlightConeDataId, _scooterHeadlightConeData);
+        }
+
+        private int CopyScooterHeadlightPayload()
+        {
+            ClearScooterHeadlightPayload();
+
+            if (!_enableDarknessCulling)
+                return 0;
+
+            if (_playerToolManager == null)
+                ResolvePlayerToolManager();
+
+            if (_playerToolManager == null || _playerToolManager.IsSwapping)
+                return 0;
+
+            if (!(_playerToolManager.CurrentTool is MantaScooter scooter) || !scooter.IsTransportActive)
+                return 0;
+
+            return scooter.CopyHeadlightPayloadNonAlloc(
+                _scooterHeadlightPositionsWs,
+                _scooterHeadlightDirectionsWs,
+                _scooterHeadlightColors,
+                _scooterHeadlightConeData);
+        }
+
+        private void ResolvePlayerToolManager()
+        {
+            if (_playerToolManager != null)
+                return;
+
+            float currentTime = Time.unscaledTime;
+            if (currentTime < _nextToolManagerResolveTime)
+                return;
+
+            _nextToolManagerResolveTime = currentTime + 2f;
+            if (!BootstrapState.TryGetCurrentPlayerTransform(out Transform playerTransform) || playerTransform == null)
+                return;
+
+            _playerToolManager = playerTransform.GetComponentInChildren<PlayerToolManager>(true);
+        }
+
+        private void ClearScooterHeadlightPayload()
+        {
+            if (_scooterHeadlightPositionsWs == null ||
+                _scooterHeadlightDirectionsWs == null ||
+                _scooterHeadlightColors == null ||
+                _scooterHeadlightConeData == null)
+            {
+                return;
+            }
+
+            for (int headlightIndex = 0; headlightIndex < MaxScooterHeadlights; headlightIndex++)
+            {
+                _scooterHeadlightPositionsWs[headlightIndex] = Vector4.zero;
+                _scooterHeadlightDirectionsWs[headlightIndex] = Vector4.zero;
+                _scooterHeadlightColors[headlightIndex] = Vector4.zero;
+                _scooterHeadlightConeData[headlightIndex] = Vector4.zero;
+            }
         }
 
         private static void EnsureDepthTextureMode(Camera targetCamera)

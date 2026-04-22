@@ -4,6 +4,99 @@ Status: `ACTIVE`
 Verification: `PENDING VERIFICATION`
 Date: `2026-04-20`
 
+## 2026-04-21 Execution Update - Ecosystem Backend, Genetics, Infection Pressure, Migration
+
+### What was corrected
+
+- `DynamicDifficultyDirector` exported predator aggression pressure, but fauna did not consume it
+- fauna variants still depended on authored prefab count instead of deterministic runtime mutation
+- ecological debt had no physical world manifestation
+- biome migration pressure was static, so water composition did not breathe over time
+
+### Implemented now
+
+- `Assets/_Project/Scripts/Ecosystem/FaunaBrain.Ecosystem.cs`
+  - runtime overlay partial for:
+    - aggression bridge
+    - deterministic genetics application
+    - infected-state visuals
+    - toxicity hazard registration
+- `Assets/_Project/Scripts/Ecosystem/FaunaGeneticsManager.cs`
+  - persisted `worldSeed` owner
+  - deterministic trait generation from:
+    - biome
+    - spawn position
+    - creature ID
+  - mod mutation overlay merge via `ModEcosystemRegistry`
+- `Assets/_Project/Scripts/Ecosystem/EcosystemHealthDirector.cs`
+  - save-backed infected-zone owner driven by ecological strain
+  - uses explored chunk data from `PlayerExplorationTracker`
+  - configures spawned fauna infection state on entry
+- `Assets/_Project/Scripts/Ecosystem/MigrationDirector.cs`
+  - daily deterministic spawn-weight bias for ambient / territorial fauna by biome
+- `Assets/_Project/Scripts/FaunaDirector.cs`
+  - now applies:
+    - genetics
+    - infection state
+    - migration pressure
+  on normal and horde spawn paths
+- `Assets/_Project/Scripts/HectonSurvivalSystem.cs`
+  - now consumes toxicity hazard intensity as another continuous body threat
+- `Assets/_Project/Scripts/ModdingAPI/HectonAPI.cs`
+  - new supported facade:
+    - `HectonAPI.Ecosystem.RegisterBiomeMutation(...)`
+- `Assets/_Project/Scripts/SaveData.cs`
+  - new `EcosystemStateDTO` with:
+    - persisted `worldSeed`
+    - infected chunk keys
+    - infected-zone severity
+  - `SaveData.CurrentVersion` is now `v32`
+
+### Why this owner model was kept
+
+- predator pressure now lands in the actual fauna runtime owner instead of forking another hidden combat modifier path
+- deterministic genetics avoids prefab explosion and keeps variation math-driven, save-stable, and mod-overlay friendly
+- infection zones are local world state, so they belong to slot save data, not the global profile
+- migration stays deterministic from day index and seed, so there is no need to persist another heavy per-biome population snapshot
+
+## 2026-04-21 Execution Update - Economy Loop, Recycling, Scarcity, Ecological Stress
+
+### What was corrected
+
+- there was no official dismantle/recycling owner
+- the world did not remember extraction pressure for fabrication energy cost
+- pollution had no saved gameplay consequence, so waste carried no systemic penalty
+
+### Implemented now
+
+- `Assets/_Project/Scripts/Economy/RecyclingRegistry.cs`
+  - runtime-only recycling overlay store for first-party and mod-owned recycle yields
+- `Assets/_Project/Scripts/Economy/ScrapManager.cs`
+  - official dismantle owner
+  - uses explicit recycle overlays first, then derives fallback yield from official fabricator recipes
+- `Assets/_Project/Scripts/Economy/ResourceScarcityDirector.cs`
+  - save-backed extraction tracker keyed by stable item ID
+  - exposes recipe-level fabrication power multipliers consumed by `Fabricator`
+- `Assets/_Project/Scripts/World/EnvironmentalStrainManager.cs`
+  - save-backed ecological debt owner
+  - receives `ItemRecycledEvent` and `ItemDiscardedEvent`
+  - exports predator-aggression pressure into `DynamicDifficultyDirector`
+- `Assets/_Project/Scripts/ModdingAPI/HectonAPI.cs`
+  - new supported facades for recycle-yield registration and official recycle execution
+- `Assets/_Project/Scripts/Meta/GlobalProfileManager.cs`
+  - new marathon goal for cumulative recycling across all runs
+- `Assets/_Project/Scripts/Meta/MetaUpgradeRegistry.cs`
+  - new permanent upgrades:
+    - `GreenTech`
+    - `EfficiencyExpert`
+
+### Why this owner model was kept
+
+- recycle yields stay runtime-only and do not mutate authored `RecipeData` or `ItemData`
+- scarcity remains local-save world state because depletion belongs to a run, not to the account profile
+- ecological debt feeds the existing hidden-difficulty layer instead of forking a second predator system
+- deliberate discard is currently the only reliable first-party owner-path for waste telemetry; inventing a fake global despawn authority would be architecture drift
+
 ## 2026-04-21 Execution Update - Global Profile, Meta Currency, Dynamic Difficulty
 
 ### What was corrected
@@ -86,6 +179,70 @@ Reviewed sources and live repo state:
 - current worktree state via `git status`
 
 No Unity runtime proof was captured in this pass.
+
+Status remains `PENDING VERIFICATION`.
+
+---
+
+## Atmospheric Polish Slice
+
+Target:
+
+- `Assets/_Project/Scripts/Audio/HectonMusicDirector.cs`
+- `Assets/_Project/Scripts/Audio/DeepPsychosisController.cs`
+- `Assets/_Project/Scripts/Audio/AtmosphericAudioRuntimeInstaller.cs`
+- `Assets/_Project/Scripts/Visor/PlayerStressVFX.cs`
+- `Assets/_Project/Scripts/Visor/CausticsProjectorManager.cs`
+- `Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs`
+- `Assets/_Project/Scripts/SceneBootstrap.cs`
+
+Result required:
+
+- dynamic mixer-layer routing for rhythm, bass, atmosphere, and danger inside the real `HectonMusicDirector`
+- predator proximity sampled through existing spatial registry instead of scene scans
+- deep hallucination cue owner driven by depth, oxygen pressure, and ecological strain
+- dedicated critical-state visor pulse owner using a runtime-only post-process profile
+- camera-local URP caustics projector around the player using an authored decal material only
+- bootstrap wiring through the existing player-runtime publication path
+
+Constraints:
+
+- no `SaveData` expansion in this slice
+- no new physics systems in this slice
+- no runtime material clones for third-party stacks
+- no authored `VolumeProfile` mutation for the new stress pulse; runtime-only profile owner required
+- no `FindObjects*` / hot-path scene scans for predator checks; must route through existing registry
+
+Current pass result:
+
+- aggressive-fauna proximity query added to `WorldSpatialHashGrid`
+- `HectonMusicDirector` now owns mixer-layer routing from depth / oxygen / predator / storm pressure
+- player-owned `DeepPsychosisController`, `PlayerStressVFX`, and `CausticsProjectorManager` added
+- `SceneBootstrap` now installs the atmospheric slice on the active player
+- compile/runtime proof still missing in current environment
+
+Regression model:
+
+- CPU:
+  - low risk in hot path
+  - predator sampling runs on `ISlowTickable`
+  - per-frame work limited to scalar interpolation, mixer writes, and volume/decal parameter updates
+- GC:
+  - no intentional frame allocations added
+  - measured proof absent
+- memory:
+  - one runtime `VolumeProfile`
+  - one runtime `Volume`
+  - one runtime `DecalProjector`
+  - bounded clip arrays only
+- cadence:
+  - music layers updated every tick
+  - predator/oxygen/storm threat snapshot refreshed on slow tick
+  - psychosis cues timer-driven, not coroutine-driven
+- correctness risk:
+  - mixer parameter names may not exist in authored mixer
+  - caustics projector may visually overlap existing shallow caustics owner
+  - psychosis cue quality depends on authored clip palette
 
 Status remains `PENDING VERIFICATION`.
 
@@ -285,7 +442,7 @@ Status: `PENDING VERIFICATION`
     - oxygen penalty when breathable reserve fully collapses
   - stale-air threshold crossings now write into `FieldOperationLogSystem`
 - `Assets/_Project/Scripts/SaveData.cs`
-  - `SaveData.CurrentVersion` is now `v28`
+  - `SaveData.CurrentVersion` moved through this slice and is now beyond `v28`; module breathable reserve persistence was introduced in the `v28` step
   - `ModuleDTO` now persists `airReserveNormalized`
 - `Assets/_Project/Scripts/ConstructionManager.cs`
   - construction save/load now serializes breathable reserve state for `BaseModule`
@@ -307,7 +464,7 @@ Status: `PENDING VERIFICATION`
 - memory:
   - one extra scalar is now persisted per saved module through `ModuleDTO.airReserveNormalized`
 - correctness:
-  - old saves now default loaded module air reserve to full via `v28` gating
+  - old saves now default loaded module air reserve to full via version-gated fallback
   - stale air is intentionally constrained to dry shelter behavior only; no second atmosphere simulation was added
 
 ### Why kept
@@ -315,6 +472,50 @@ Status: `PENDING VERIFICATION`
 - this closes `[71]` inside the already correct owner: `BaseModule`
 - it gives base shelter a maintenance cost without inventing a separate CO2 simulation stack
 - the player-facing loop now exists across module runtime, scanner, suit advisory, and save/load persistence
+
+## 2026-04-21 Execution Update - Hint-Without-Tutorial Layer
+
+### What was corrected
+
+- contextual advisories already existed, but they were still too narrow to count as a real hint-without-tutorial layer
+- the player could repeat pressure deaths, stale-air shelter misuse, and base emergencies without the PDA learning from those failures
+- base gameplay had signals, but not enough memory or escalation inside the advisory owner
+
+### Implemented now
+
+- `Assets/_Project/Scripts/Progression/PDAContextualAdvisorySystem.cs`
+  - advisory owner now tracks and escalates:
+    - repeated pressure deaths
+    - repeated base emergency exposure
+    - repeated stale-air incidents
+  - the system now listens to existing `BaseIntegrityEvents` instead of inventing a second hint bus
+  - repeated failure patterns are deduplicated through stable advisory IDs and still mirror into PDA logbook + `PlayerAdvisoryIssuedEvent`
+- `Assets/_Project/Scripts/SaveData.cs`
+  - `SaveData.CurrentVersion` is now `v29`
+  - `PDAContextualAdvisoryDTO` now persists:
+    - `pressureDeathCount`
+    - `baseEmergencyCount`
+    - `staleAirIncidentCount`
+
+### Regression model
+
+- CPU:
+  - hint evaluation remains inside the existing advisory owner and existing base-event bridge
+  - no new scan loop or world search was introduced
+- GC:
+  - new hint messages allocate only on actual advisory pushes
+  - counter accumulation uses scalar fields only
+- memory:
+  - save payload grows by three integer counters inside `PDAContextualAdvisoryDTO`
+- correctness:
+  - advisory escalation now comes from real repeated failures instead of authored tutorial triggers
+  - coverage is still limited to survival/base loops, not the full game
+
+### Why kept
+
+- this turns `[6]` from pure fantasy into a real partial system on the correct owner
+- it teaches through repeated failure patterns without explicit popup tutorial scripting
+- no separate tutorial manager, quest hack, or UI flow was added
 
 Status remains `PENDING VERIFICATION`.
 
@@ -763,9 +964,10 @@ Status remains `PENDING VERIFICATION`.
   Decision: `implement next`
   Reason: finish low-tier usability rather than invent new systems.
 
-- `[6] Hint-without-tutorial system` — `absent`
-  Decision: `defer`
-  Reason: worthwhile, but needs event/trigger design and UX priority.
+- `[6] Hint-without-tutorial system` — `partial`
+  Evidence: `PDAContextualAdvisorySystem` now escalates repeated oxygen deaths, pressure exposure, repeated pressure deaths, repeated base emergencies, inventory saturation, and stale-air incidents through existing PDA/logbook/event owners.
+  Decision: `keep and extend`
+  Reason: the correct advisory owner now exists, but coverage is still focused on survival/base loops rather than the whole game.
 
 - `[7] Modder console` — `absent`
   Decision: `reject`
@@ -815,12 +1017,15 @@ Status remains `PENDING VERIFICATION`.
   Decision: `defer`
   Reason: heavy building/system cost.
 
-- `[29] Injury system` — `absent`
-  Decision: `defer`
-  Reason: wide systemic surface, high regression risk.
+- `[29] Injury system` — `partial`
+  Evidence: `HectonSurvivalSystem` now owns persisted `Bleeding` and `Fracture` states with damage-over-time, timed recovery, death-safe save/load, and collision-linked trauma escalation from `HectonPlayerMovement`; fracture now suppresses swim mobility through a dedicated runtime movement multiplier.
+  Decision: `keep and verify`
+  Reason: body-state trauma is now grounded in existing player owners, but treatment / healing items and fauna-specific blood-trail consumers are still absent.
 
-- `[31v1] Corrosion of gear` — `absent`
-  Decision: `defer`
+- `[31v1] Corrosion of gear` — `partial`
+  Evidence: `ToolDurabilitySystem` now applies passive underwater corrosion to the currently held tool, scales corrosion under thermal stress, and `ScannerTool` now degrades below critical condition before hard break.
+  Decision: `keep constrained`
+  Reason: this is now real runtime wear on the active tool path, but the repo still has no per-instance inventory identity for duplicate tools.
 
 - `[32v2] Manual sample gathering mini-game` — `absent`
   Decision: `defer`
@@ -861,8 +1066,10 @@ Status remains `PENDING VERIFICATION`.
   Decision: `keep scoped to base modules`
   Reason: finite repair depth now exists where the ownership is already clear; broader gear/fabrication fatigue is still absent.
 
-- `[62] Cold and heat system` — `absent`
-  Decision: `defer`
+- `[62] Cold and heat system` — `partial`
+  Evidence: `HectonSurvivalSystem` now resolves explicit `Cold` / `Heat` stress states from existing atmosphere + local hazard input; cold burns suit energy, heat burns hydration, and both feed `SuitAdvisoryController` plus `PDAContextualAdvisorySystem`.
+  Decision: `keep and verify`
+  Reason: the gameplay contract exists now, but authored biome/zone balancing and dedicated thermal shelter items are still absent.
 
 - `[63] Random base accidents` — `partial`
   Evidence: `ConstructionManager` now runs a low-frequency ambient-accident scheduler on neglected modules and escalates through existing `BaseModule` cascade failures.

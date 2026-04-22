@@ -1,4 +1,4 @@
-﻿{
+{
   "ACTION_EATING": "Поедание...",
   "ACTION_HEALING": "Применение...",
   "ACTION_OXYGEN": "Вдыхание...",
@@ -1211,5 +1211,20 @@
   "PDA_FOOTER_RIGHT_STANDBY": "O2 {0:0}%  |  PWR {1:0}%  |  PDA ОЖИДАНИЕ",
   "TECH_O2_SPEC": "[Давление: 300 бар | Смесь: O2 96% | Стойка: A-2]",
   "TECH_HULL_SPEC": "[Герметик: ламинат <key:ITEM_TITANIUM_SCRAP_NAME> | Рейтинг: 41 МПа]",
-  "TECH_PWR_BUS": "[Шина: 48В DC | Блок ячеек: Li-Salt MkII]"
+  "TECH_PWR_BUS": "[Шина: 48В DC | Блок ячеек: Li-Salt MkII]",
+  "MADNESS_WHISPERS_01": "НЕ ДЫШИ. ОН СМОТРИТ.",
+  "MADNESS_WHISPERS_02": "ДАВЛЕНИЕ ЗНАЕТ ТВОЁ ИМЯ.",
+  "MADNESS_WHISPERS_03": "НЕ СМОТРИ ЧЕРЕЗ СТЕКЛО.",
+  "MADNESS_WHISPERS_04": "ОСТАВЬ ЭТО. ОНО НАШЕ.",
+  "MADNESS_WHISPERS_05": "ОНО ГОВОРИТ ИЗ-ПОД ОБШИВКИ.",
+  "MADNESS_WHISPERS_06": "ВОДА ПОМНИТ ТВОЮ ФОРМУ.",
+  "MADNESS_WHISPERS_07": "НЕ ОТВЕЧАЙ НА СТУК.",
+  "MADNESS_WHISPERS_08": "В ТВОЁМ КОСТЮМЕ ЧТО-ТО ДЫШИТ.",
+  "MADNESS_WHISPERS_09": "ТВОЯ ТЕНЬ ВСПЛЫЛА РАНЬШЕ ТЕБЯ.",
+  "MADNESS_WHISPERS_10": "ЗАКРОЙ КЛАПАН. ЕМУ НРАВИТСЯ ЭТОТ ЗВУК.",
+  "MADNESS_WHISPERS_11": "ОНИ ХОДЯТ ВНУТРИ ПЕРЕБОРОК.",
+  "MADNESS_WHISPERS_12": "ГЛУБИНА НОСИТ ТВОЁ ЛИЦО.",
+  "MADNESS_WHISPERS_13": "ОНО УСЛЫШАЛО ТЕБЯ РАНЬШЕ, ЧЕМ ТЫ ЗАГОВОРИЛ.",
+  "MADNESS_WHISPERS_14": "ОБШИВКА ИЗУЧАЕТ ТВОИ КОСТИ.",
+  "MADNESS_WHISPERS_15": "КОГДА СВЕТ ПОГАСНЕТ, НЕ ДВИГАЙСЯ."
 }

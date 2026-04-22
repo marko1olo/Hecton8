@@ -107,6 +107,11 @@ namespace Hecton8.World
             return Register(descriptor, descriptor != null ? descriptor.transform : null, SpatialTargetKind.Signal, role, 0);
         }
 
+        public static int RegisterSignal(Component owner, Transform targetTransform, FieldTargetRole signalRole)
+        {
+            return Register(owner, targetTransform, SpatialTargetKind.Signal, signalRole, 0);
+        }
+
         public static int RegisterSignal(DeployableFlare flare)
         {
             return Register(flare, flare != null ? flare.transform : null, SpatialTargetKind.Signal, FieldTargetRole.Generic, 0);
@@ -247,6 +252,79 @@ namespace Hecton8.World
                                 continue;
 
                             if (requirePreyTag && !candidateTransform.CompareTag("Prey"))
+                                continue;
+
+                            Vector3 position = candidateTransform.position;
+                            float distanceSqr = (position - origin).sqrMagnitude;
+                            if (distanceSqr > bestDistanceSqr)
+                                continue;
+
+                            bestDistanceSqr = distanceSqr;
+                            bestHit = new SpatialQueryHit(
+                                candidateTransform,
+                                entry.Owner,
+                                position,
+                                distanceSqr,
+                                entry.Kind,
+                                entry.SignalRole,
+                                entry.SpeciesId,
+                                entry.Layer);
+                            found = true;
+                        }
+                    }
+                }
+            }
+
+            hit = bestHit;
+            return found;
+        }
+
+        public static bool TryGetNearestAggressiveBioform(
+            Vector3 origin,
+            float radius,
+            int layerMask,
+            Transform ignoreTransform,
+            out SpatialQueryHit hit)
+        {
+            SpatialQueryHit bestHit = default;
+            bool found = false;
+            float bestDistanceSqr = radius * radius;
+            int minCellX = ToCell(origin.x - radius);
+            int maxCellX = ToCell(origin.x + radius);
+            int minCellY = ToCell(origin.y - radius);
+            int maxCellY = ToCell(origin.y + radius);
+            int minCellZ = ToCell(origin.z - radius);
+            int maxCellZ = ToCell(origin.z + radius);
+
+            for (int x = minCellX; x <= maxCellX; x++)
+            {
+                for (int y = minCellY; y <= maxCellY; y++)
+                {
+                    for (int z = minCellZ; z <= maxCellZ; z++)
+                    {
+                        long cellKey = PackCell(x, y, z);
+                        if (!_cells.TryGetValue(cellKey, out List<int> bucket))
+                            continue;
+
+                        int bucketCount = bucket.Count;
+                        for (int i = 0; i < bucketCount; i++)
+                        {
+                            int handle = bucket[i];
+                            if (!_entries.TryGetValue(handle, out Entry entry) || entry == null)
+                                continue;
+
+                            if ((entry.Kind & SpatialTargetKind.Bioform) == 0)
+                                continue;
+
+                            Transform candidateTransform = entry.Transform;
+                            if (candidateTransform == null || candidateTransform == ignoreTransform)
+                                continue;
+
+                            if (!MatchesLayer(entry.Layer, layerMask))
+                                continue;
+
+                            FaunaBrain brain = entry.Owner as FaunaBrain;
+                            if (brain == null || !brain.isAggressive)
                                 continue;
 
                             Vector3 position = candidateTransform.position;

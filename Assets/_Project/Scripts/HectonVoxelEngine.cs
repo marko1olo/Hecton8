@@ -41,6 +41,7 @@
 // ║  • MapMagicBridge height sampling on main thread                           ║
 // ╚══════════════════════════════════════════════════════════════════════════════╝
 
+using System;
 using UnityEngine;
 using UnityEngine.Rendering;
 using System.Collections.Generic;
@@ -493,151 +494,138 @@ public struct VoxelDensityJob : IJobParallelFor
 
     public void Execute(int idx)
     {
-        // ── Unpack 3D index ──
         int ix = idx % ptsX;
         int iy = (idx / ptsX) % ptsY;
         int iz = idx / (ptsX * ptsY);
 
         float3 wp = volumeOrigin + new float3(ix, iy, iz) * voxelStep;
+        density[idx] = EvaluateDensityAt(wp);
+    }
 
-        // ════════════════════════════════════════════════════════════════
-        //  STEP 1: Terrain density
-        // ════════════════════════════════════════════════════════════════
-
+    public float EvaluateDensityAt(float3 wp)
+    {
         bool structureOnlyMode = caveParams.structureOnlyMode != 0;
-        float terrainH = terrainHeights[ix + iz * ptsX];
+        float terrainH = SampleTerrainHeight(wp.xz);
         float terrainDensity = structureOnlyMode
             ? -1f
             : math.clamp(terrainH - wp.y, -50f, 50f);
 
-        // ════════════════════════════════════════════════════════════════
-        //  STEP 2: Cave SDF
-        // ════════════════════════════════════════════════════════════════
-
         float caveSDF = structureOnlyMode ? 1f : EvaluateCaveSDF(wp);
-
-        // ════════════════════════════════════════════════════════════════
-        //  STEP 3: Subtract cave from terrain
-        // ════════════════════════════════════════════════════════════════
-
-        float d_final;
+        float densityValue = terrainDensity;
 
         if (!structureOnlyMode && caveSDF < caveParams.shellThickness)
-        {
-            d_final = SmoothSubtraction(-caveSDF, terrainDensity, caveParams.shellThickness);
-        }
-        else
-        {
-            d_final = terrainDensity;
-        }
+            densityValue = SmoothSubtraction(-caveSDF, terrainDensity, caveParams.shellThickness);
 
-        // ════════════════════════════════════════════════════════════════
-        //  STEP 4: Add structures back
-        // ════════════════════════════════════════════════════════════════
+        if (!structureOnlyMode && caveEntrances.Length > 0)
+        {
+            float entranceSkirtSDF = EvaluateEntranceSkirtSDF(wp);
+            if (entranceSkirtSDF < caveParams.entranceBlendK)
+                densityValue = SmoothMax(densityValue, -entranceSkirtSDF, caveParams.entranceBlendK * 0.45f);
+        }
 
         if (caveStructures.Length > 0 && (structureOnlyMode || caveSDF < 0f))
         {
-            float structSDF = EvaluateStructuresSDF(wp);
-            if (structSDF < caveParams.structureBlendK)
-            {
-                d_final = SmoothMax(d_final, -structSDF, caveParams.structureBlendK);
-            }
+            float structureSDF = EvaluateStructuresSDF(wp);
+            if (structureSDF < caveParams.structureBlendK)
+                densityValue = SmoothMax(densityValue, -structureSDF, caveParams.structureBlendK);
         }
-
-        // ════════════════════════════════════════════════════════════════
-        //  STEP 5: Edge sealing — WITH ENTRANCE EXEMPTION
-        //
-        //  The seal pushes density to 1 (solid) near volume borders to
-        //  prevent the cave mesh from showing open holes into the void.
-        //
-        //  BUT: cave entrances intentionally punch through the TOP face
-        //  of the volume to connect with the terrain surface above.
-        //  If we seal the top face blindly, we brick the entrance.
-        //
-        //  Fix: For each face, check if the current point is near any
-        //  CaveEntrance. If yes, reduce seal influence on that face.
-        //  This creates a "hole in the seal" where the entrance is,
-        //  while keeping the rest of the border airtight.
-        // ════════════════════════════════════════════════════════════════
 
         if (!structureOnlyMode)
-        {
+            densityValue = ApplyEdgeSeal(wp, densityValue);
+
+        return densityValue;
+    }
+
+    float SampleTerrainHeight(float2 worldXZ)
+    {
+        float localX = (worldXZ.x - volumeOrigin.x) / voxelStep;
+        float localZ = (worldXZ.y - volumeOrigin.z) / voxelStep;
+        localX = math.clamp(localX, 0f, ptsX - 1f);
+        localZ = math.clamp(localZ, 0f, ptsZ - 1f);
+
+        int x0 = (int)localX;
+        int z0 = (int)localZ;
+        int x1 = math.min(x0 + 1, ptsX - 1);
+        int z1 = math.min(z0 + 1, ptsZ - 1);
+        float fx = localX - x0;
+        float fz = localZ - z0;
+
+        float h00 = terrainHeights[x0 + z0 * ptsX];
+        float h10 = terrainHeights[x1 + z0 * ptsX];
+        float h01 = terrainHeights[x0 + z1 * ptsX];
+        float h11 = terrainHeights[x1 + z1 * ptsX];
+        return math.lerp(math.lerp(h00, h10, fx), math.lerp(h01, h11, fx), fz);
+    }
+
+    float ApplyEdgeSeal(float3 wp, float densityValue)
+    {
         float3 localPos = wp - volumeOrigin;
         float3 volumeSize = new float3(ptsX - 1, ptsY - 1, ptsZ - 1) * voxelStep;
-
-        // Distance to each face
         float dMinX = math.min(localPos.x, volumeSize.x - localPos.x);
         float dMinZ = math.min(localPos.z, volumeSize.z - localPos.z);
-        float dMinYBottom = localPos.y;                    // distance to bottom face
-        float dMinYTop    = volumeSize.y - localPos.y;     // distance to top face
-
-        // ── Entrance exemption for top face ──
-        // Check if this point is within any entrance's horizontal footprint.
-        // If yes, disable sealing on the top face so entrance can punch through.
-        float topSealStrength = 1f; // 1 = full seal, 0 = no seal
-
-        for (int e = 0; e < caveEntrances.Length; e++)
-        {
-            CaveEntrance entrance = caveEntrances[e];
-
-            // Horizontal distance from entrance axis
-            float2 horizontalDelta = wp.xz - entrance.surfacePosition.xz;
-            float horizontalDist = math.length(horizontalDelta);
-
-            // Entrance influence radius: entrance radius + blend margin
-            float influenceRadius = entrance.radius * 2.5f;
-
-            if (horizontalDist < influenceRadius)
-            {
-                // Smooth falloff: full exemption at center, fading to full seal at edge
-                float exemption = 1f - math.smoothstep(
-                    entrance.radius * 0.5f,  // full exemption within half radius
-                    influenceRadius,          // no exemption beyond influence radius
-                    horizontalDist);
-
-                topSealStrength = math.min(topSealStrength, 1f - exemption);
-            }
-        }
-
-        // Also check bottom face for entrances that might come from below
-        // (rare but possible with vertical shaft entrances)
+        float dMinYBottom = localPos.y;
+        float dMinYTop = volumeSize.y - localPos.y;
+        float topSealStrength = 1f;
         float bottomSealStrength = 1f;
+
         for (int e = 0; e < caveEntrances.Length; e++)
         {
             CaveEntrance entrance = caveEntrances[e];
+            float influenceRadius = math.max(entrance.radius * 2.6f, entrance.innerRadius + entrance.funnelLength * 0.35f);
+            float horizontalDist = math.distance(wp.xz, entrance.surfacePosition.xz);
+            if (horizontalDist >= influenceRadius)
+                continue;
 
-            // Only if entrance direction points upward (entrance from below)
+            float exemption = 1f - math.smoothstep(entrance.radius * 0.4f, influenceRadius, horizontalDist);
+            topSealStrength = math.min(topSealStrength, 1f - exemption);
             if (entrance.inwardDirection.y > 0.3f)
-            {
-                float2 horizontalDelta = wp.xz - entrance.surfacePosition.xz;
-                float horizontalDist = math.length(horizontalDelta);
-                float influenceRadius = entrance.radius * 2.5f;
-
-                if (horizontalDist < influenceRadius)
-                {
-                    float exemption = 1f - math.smoothstep(
-                        entrance.radius * 0.5f,
-                        influenceRadius,
-                        horizontalDist);
-
-                    bottomSealStrength = math.min(bottomSealStrength, 1f - exemption);
-                }
-            }
+                bottomSealStrength = math.min(bottomSealStrength, 1f - exemption);
         }
 
-        // Compute effective distance to nearest sealed edge
-        // Top and bottom faces use modulated seal strength
-        float effectiveYTop    = dMinYTop / math.max(topSealStrength, 0.01f);
+        float effectiveYTop = dMinYTop / math.max(topSealStrength, 0.01f);
         float effectiveYBottom = dMinYBottom / math.max(bottomSealStrength, 0.01f);
         float dMinY = math.min(effectiveYBottom, effectiveYTop);
-
         float dEdge = math.min(dMinX, math.min(dMinY, dMinZ));
         float sealFactor = math.saturate(dEdge / math.max(sealMargin, 0.01f));
-        d_final = math.lerp(1f, d_final, sealFactor);
+        return math.lerp(1f, densityValue, sealFactor);
+    }
+
+    float EvaluateEntranceSkirtSDF(float3 wp)
+    {
+        float skirtDist = 99999f;
+
+        for (int i = 0; i < caveEntrances.Length; i++)
+        {
+            CaveEntrance entrance = caveEntrances[i];
+            float3 direction = math.normalizesafe(entrance.inwardDirection, new float3(0f, -1f, 0f));
+            float3 innerPoint = entrance.surfacePosition + direction * entrance.funnelLength;
+            float embedDepth = math.max(voxelStep * 1.5f, entrance.radius * 0.35f);
+            float3 skirtStart = entrance.surfacePosition + direction * math.min(entrance.funnelLength * 0.18f, entrance.radius);
+            float3 skirtEnd = innerPoint + direction * (entrance.innerRadius + embedDepth * 0.6f);
+
+            float outer = SDCapsuleConic(
+                wp,
+                skirtStart,
+                skirtEnd,
+                entrance.radius * 1.35f,
+                math.max(entrance.innerRadius * 1.55f, entrance.innerRadius + 1.35f));
+
+            float inner = SDCapsuleConic(
+                wp,
+                entrance.surfacePosition - direction * embedDepth,
+                innerPoint + direction * (entrance.innerRadius * 0.75f),
+                entrance.radius * 0.92f,
+                math.max(entrance.innerRadius * 0.92f, 0.1f));
+
+            float shell = math.max(outer, -inner);
+            float terrainClip = wp.y - (SampleTerrainHeight(wp.xz) - embedDepth);
+            shell = math.max(shell, terrainClip);
+            skirtDist = SmoothMin(skirtDist, shell, caveParams.entranceBlendK * 0.3f);
         }
 
-        density[idx] = d_final;
+        return skirtDist;
     }
+
 
     // ════════════════════════════════════════════════════════════════════════
     //  CAVE SDF EVALUATION — Core of the cave generation system
@@ -760,53 +748,85 @@ public struct VoxelDensityJob : IJobParallelFor
 
     float EvaluateTunnel(float3 warpedPos, float3 originalPos, CaveTunnel tunnel)
     {
-        // Additional per-tunnel warp
         float3 evalPos = warpedPos;
         if (tunnel.warpAmount > 0.001f)
         {
-            evalPos = ApplyDomainWarp(warpedPos,
+            evalPos = ApplyDomainWarp(
+                originalPos,
                 caveParams.warpFrequency * 1.7f,
                 tunnel.warpAmount,
                 math.min(caveParams.warpOctaves, 2),
                 caveParams.seed + 54321u);
         }
 
-        float dist;
+        float3 axis = tunnel.pointB - tunnel.pointA;
+        float axisLength = math.length(axis);
+        if (axisLength < 0.01f)
+            return SDSphere(evalPos, tunnel.pointA, math.max(tunnel.radiusA, tunnel.radiusB));
 
-        if (tunnel.tunnelType == CaveTunnelType.Round)
+        float3 tangent = axis / axisLength;
+        float lateralAmplitude = math.max(tunnel.warpAmount, math.max(tunnel.heightScale, tunnel.widthScale) * 0.35f);
+        float3 controlA = tunnel.pointA + tangent * (axisLength * 0.28f)
+            + ComputeTunnelCurveOffset(tunnel.pointA, tunnel.pointB, tangent, 0.25f, lateralAmplitude, 901u);
+        float3 controlB = tunnel.pointA + tangent * (axisLength * 0.72f)
+            + ComputeTunnelCurveOffset(tunnel.pointA, tunnel.pointB, tangent, 0.75f, lateralAmplitude, 1459u);
+
+        const int segmentCount = 6;
+        float tunnelDist = 99999f;
+        for (int seg = 0; seg < segmentCount; seg++)
         {
-            // Simple conic capsule
-            dist = SDCapsuleConic(evalPos, tunnel.pointA, tunnel.pointB,
-                tunnel.radiusA, tunnel.radiusB);
-        }
-        else
-        {
-            // Elliptic cross-section capsule
-            dist = SDCapsuleElliptic(evalPos, tunnel.pointA, tunnel.pointB,
-                math.lerp(tunnel.radiusA, tunnel.radiusB, 0.5f),
-                tunnel.heightScale, tunnel.widthScale);
+            float t0 = seg / (float)segmentCount;
+            float t1 = (seg + 1) / (float)segmentCount;
+            float3 p0 = EvaluateCubicBezier(tunnel.pointA, controlA, controlB, tunnel.pointB, t0);
+            float3 p1 = EvaluateCubicBezier(tunnel.pointA, controlA, controlB, tunnel.pointB, t1);
+            float r0 = math.lerp(tunnel.radiusA, tunnel.radiusB, t0);
+            float r1 = math.lerp(tunnel.radiusA, tunnel.radiusB, t1);
+            float segmentDist;
+
+            if (tunnel.tunnelType == CaveTunnelType.Round)
+            {
+                segmentDist = SDCapsuleConic(evalPos, p0, p1, r0, r1);
+            }
+            else
+            {
+                float baseRadius = math.max((r0 + r1) * 0.5f, 0.1f);
+                segmentDist = SDCapsuleElliptic(
+                    evalPos,
+                    p0,
+                    p1,
+                    baseRadius,
+                    math.max(tunnel.heightScale, 0.2f),
+                    math.max(tunnel.widthScale, 0.2f));
+            }
+
+            tunnelDist = SmoothMin(tunnelDist, segmentDist, math.max(tunnel.blendRadius * 0.35f, 1.5f));
         }
 
-        return dist;
+        return tunnelDist;
     }
-
-    // ════════════════════════════════════════════════════════════════════════
-    //  ENTRANCE SDF — Conic capsule from surface inward
-    // ════════════════════════════════════════════════════════════════════════
 
     float EvaluateEntrance(float3 warpedPos, CaveEntrance entrance)
     {
-        float3 innerPoint = entrance.surfacePosition +
-                            entrance.inwardDirection * entrance.funnelLength;
+        float3 direction = math.normalizesafe(entrance.inwardDirection, new float3(0f, -1f, 0f));
+        float3 innerPoint = entrance.surfacePosition + direction * entrance.funnelLength;
+        float core = SDCapsuleConic(
+            warpedPos,
+            entrance.surfacePosition,
+            innerPoint,
+            entrance.radius,
+            entrance.innerRadius);
 
-        return SDCapsuleConic(warpedPos,
-            entrance.surfacePosition, innerPoint,
-            entrance.radius, entrance.innerRadius);
+        float3 flareStart = entrance.surfacePosition - direction * math.max(entrance.radius * 0.65f, voxelStep);
+        float3 flareEnd = entrance.surfacePosition + direction * math.min(entrance.funnelLength * 0.45f, entrance.radius * 2.2f);
+        float flare = SDCapsuleConic(
+            warpedPos,
+            flareStart,
+            flareEnd,
+            entrance.radius * 1.3f,
+            math.max(entrance.innerRadius, entrance.radius * 0.85f));
+
+        return SmoothMin(core, flare, caveParams.entranceBlendK * 0.4f);
     }
-
-    // ════════════════════════════════════════════════════════════════════════
-    //  STRUCTURE SDF — Internal solid geometry (future use)
-    // ════════════════════════════════════════════════════════════════════════
 
     float EvaluateStructuresSDF(float3 wp)
     {
@@ -832,28 +852,26 @@ public struct VoxelDensityJob : IJobParallelFor
                     break;
 
                 case CaveStructureType.Stalagmite:
-                    // Approximate as cone: capsule from base to tip with tapering radius
-                    float3 tip = s.position + new float3(0, s.size.y, 0);
+                {
+                    float3 tip = s.position + new float3(0f, s.size.y, 0f);
                     sd = SDCapsuleConic(wp, s.position, tip, s.size.x, s.size.z);
                     break;
+                }
 
                 case CaveStructureType.Stalactite:
-                    // Inverted cone hanging from ceiling
-                    float3 hangTip = s.position - new float3(0, s.size.y, 0);
+                {
+                    float3 hangTip = s.position - new float3(0f, s.size.y, 0f);
                     sd = SDCapsuleConic(wp, s.position, hangTip, s.size.x, s.size.z);
                     break;
+                }
 
                 case CaveStructureType.Block:
-                    sd = SDBox(wp, s.position, s.size);
-                    break;
-
                 case CaveStructureType.Wall:
                     sd = SDBox(wp, s.position, s.size);
                     break;
 
                 case CaveStructureType.Arch:
-                    // Approximate arch as thick capsule
-                    sd = SDCapsuleConic(wp, s.position, s.pointB, s.size.x, s.size.x);
+                    sd = EvaluateArchSDF(wp, s);
                     break;
 
                 default:
@@ -861,10 +879,13 @@ public struct VoxelDensityJob : IJobParallelFor
                     break;
             }
 
-            // Per-structure noise
             if (s.noiseAmount > 0.001f)
             {
-                sd += Fractal3DFast(wp * 0.3f, 2, caveParams.seed + 9999u) * s.noiseAmount;
+                float noise = Fractal3DFast((wp + s.position * 0.17f) * 0.3f, 2, caveParams.seed + 9999u) * s.noiseAmount;
+                if (s.structureType == CaveStructureType.Arch)
+                    noise += EvaluateLayeredArchNoise(wp, s) * s.noiseAmount;
+
+                sd += noise;
             }
 
             structDist = SmoothMin(structDist, sd, s.blendRadius);
@@ -872,6 +893,72 @@ public struct VoxelDensityJob : IJobParallelFor
 
         return structDist;
     }
+
+    float3 ComputeTunnelCurveOffset(float3 pointA, float3 pointB, float3 tangent, float t, float amplitude, uint seedOffset)
+    {
+        float3 upHint = math.abs(tangent.y) > 0.8f ? new float3(1f, 0f, 0f) : new float3(0f, 1f, 0f);
+        float3 right = math.normalizesafe(math.cross(upHint, tangent), new float3(1f, 0f, 0f));
+        float3 up = math.normalizesafe(math.cross(tangent, right), new float3(0f, 1f, 0f));
+        float3 noisePoint = (pointA + pointB) * 0.03125f + new float3(t * 3.1f, t * 5.7f, t * 7.9f);
+        float lateralNoise = Fractal3DFast(noisePoint + new float3(13.1f, 1.7f, 0.3f), 2, caveParams.seed + seedOffset);
+        float verticalNoise = Fractal3DFast(noisePoint + new float3(2.9f, 11.3f, 4.1f), 2, caveParams.seed + seedOffset + 101u);
+        float envelope = math.sin(t * math.PI);
+        return (right * lateralNoise + up * verticalNoise * 0.75f) * (amplitude * envelope);
+    }
+
+    static float3 EvaluateCubicBezier(float3 p0, float3 p1, float3 p2, float3 p3, float t)
+    {
+        float omt = 1f - t;
+        return omt * omt * omt * p0
+             + 3f * omt * omt * t * p1
+             + 3f * omt * t * t * p2
+             + t * t * t * p3;
+    }
+
+    static float3 EvaluateQuadraticBezier(float3 p0, float3 p1, float3 p2, float t)
+    {
+        float omt = 1f - t;
+        return omt * omt * p0 + 2f * omt * t * p1 + t * t * p2;
+    }
+
+    float EvaluateArchSDF(float3 wp, CaveStructure s)
+    {
+        float3 footA = s.position;
+        float3 footB = math.lengthsq(s.pointB - s.position) > 0.01f
+            ? s.pointB
+            : s.position + new float3(math.max(s.size.x, 2f) * 2f, 0f, 0f);
+        float rise = math.max(s.size.y, math.max(s.size.z * 3f, 3f));
+        float tubeRadius = math.max(s.size.z, 0.75f);
+        float3 crown = (footA + footB) * 0.5f + new float3(0f, rise, 0f);
+
+        const int segmentCount = 6;
+        float archDist = 99999f;
+        for (int seg = 0; seg < segmentCount; seg++)
+        {
+            float t0 = seg / (float)segmentCount;
+            float t1 = (seg + 1) / (float)segmentCount;
+            float3 p0 = EvaluateQuadraticBezier(footA, crown, footB, t0);
+            float3 p1 = EvaluateQuadraticBezier(footA, crown, footB, t1);
+            float radius0 = math.lerp(tubeRadius * 1.05f, tubeRadius * 0.85f, t0);
+            float radius1 = math.lerp(tubeRadius * 1.05f, tubeRadius * 0.85f, t1);
+            float segmentDist = SDCapsuleConic(wp, p0, p1, radius0, radius1);
+            archDist = SmoothMin(archDist, segmentDist, math.max(s.blendRadius * 0.45f, 1.25f));
+        }
+
+        return archDist;
+    }
+
+    float EvaluateLayeredArchNoise(float3 wp, CaveStructure s)
+    {
+        float fbm = Fractal3DFast((wp + s.position * 0.13f) * 0.12f, 3, caveParams.seed + 4049u);
+        float strata = EvaluateTerrace(
+            wp.y + fbm * 2.5f,
+            math.max(caveParams.terraceFrequency * 0.55f, 0.08f),
+            math.max(caveParams.terraceAmplitude * 0.45f, 0.12f),
+            math.max(caveParams.terraceSharpness * 0.8f, 2f));
+        return fbm * 0.55f + strata * 0.75f;
+    }
+
 
     // ════════════════════════════════════════════════════════════════════════
     //  WALL DETAIL — Noise + terraces applied near cave surface
@@ -1358,47 +1445,57 @@ public struct VoxelNormalJob : IJobParallelFor
     public int ptsX, ptsY, ptsZ;
     public float3 volumeOrigin;
     public float voxelStep;
-    [ReadOnly] public NativeArray<float> density;
+    [ReadOnly] public NativeArray<float> terrainHeights;
+    [ReadOnly] public NativeArray<CaveNode> caveNodes;
+    [ReadOnly] public NativeArray<CaveTunnel> caveTunnels;
+    [ReadOnly] public NativeArray<CaveEntrance> caveEntrances;
+    [ReadOnly] public NativeArray<CaveStructure> caveStructures;
+    public CaveGenerationParams caveParams;
+    public float sealMargin;
     [ReadOnly] public NativeArray<float3> positions;
     [WriteOnly] public NativeArray<float3> normals;
 
     public void Execute(int idx)
     {
+        VoxelDensityJob densityEvaluator = CreateDensityEvaluator();
         float3 wp = positions[idx];
-        float3 lp = (wp - volumeOrigin) / voxelStep;
-        const float eps = 0.5f;
-        float dxp=Sample(lp+new float3(eps,0,0));
-        float dxm=Sample(lp-new float3(eps,0,0));
-        float dyp=Sample(lp+new float3(0,eps,0));
-        float dym=Sample(lp-new float3(0,eps,0));
-        float dzp=Sample(lp+new float3(0,0,eps));
-        float dzm=Sample(lp-new float3(0,0,eps));
-        float3 grad=new float3(dxp-dxm,dyp-dym,dzp-dzm);
-        normals[idx]=math.normalizesafe(-grad,new float3(0,1,0));
+        float epsilon = math.max(0.1f, voxelStep * 0.45f);
+
+        float3 e0 = new float3(1f, -1f, -1f);
+        float3 e1 = new float3(-1f, -1f, 1f);
+        float3 e2 = new float3(-1f, 1f, -1f);
+        float3 e3 = new float3(1f, 1f, 1f);
+
+        float d0 = densityEvaluator.EvaluateDensityAt(wp + e0 * epsilon);
+        float d1 = densityEvaluator.EvaluateDensityAt(wp + e1 * epsilon);
+        float d2 = densityEvaluator.EvaluateDensityAt(wp + e2 * epsilon);
+        float d3 = densityEvaluator.EvaluateDensityAt(wp + e3 * epsilon);
+
+        float3 gradient = e0 * d0 + e1 * d1 + e2 * d2 + e3 * d3;
+        normals[idx] = math.normalizesafe(-gradient, new float3(0f, 1f, 0f));
     }
 
-    float Sample(float3 lp)
+    VoxelDensityJob CreateDensityEvaluator()
     {
-        lp=math.clamp(lp,float3.zero,new float3(ptsX-1,ptsY-1,ptsZ-1));
-        int x0=(int)lp.x;int x1=math.min(x0+1,ptsX-1);
-        int y0=(int)lp.y;int y1=math.min(y0+1,ptsY-1);
-        int z0=(int)lp.z;int z1=math.min(z0+1,ptsZ-1);
-        float fx=lp.x-x0,fy=lp.y-y0,fz=lp.z-z0;
-        float c000=density[x0+y0*ptsX+z0*ptsX*ptsY];
-        float c100=density[x1+y0*ptsX+z0*ptsX*ptsY];
-        float c010=density[x0+y1*ptsX+z0*ptsX*ptsY];
-        float c110=density[x1+y1*ptsX+z0*ptsX*ptsY];
-        float c001=density[x0+y0*ptsX+z1*ptsX*ptsY];
-        float c101=density[x1+y0*ptsX+z1*ptsX*ptsY];
-        float c011=density[x0+y1*ptsX+z1*ptsX*ptsY];
-        float c111=density[x1+y1*ptsX+z1*ptsX*ptsY];
-        float c00=math.lerp(c000,c100,fx);
-        float c10=math.lerp(c010,c110,fx);
-        float c01=math.lerp(c001,c101,fx);
-        float c11=math.lerp(c011,c111,fx);
-        return math.lerp(math.lerp(c00,c10,fy),math.lerp(c01,c11,fy),fz);
+        return new VoxelDensityJob
+        {
+            ptsX = ptsX,
+            ptsY = ptsY,
+            ptsZ = ptsZ,
+            volumeOrigin = volumeOrigin,
+            voxelStep = voxelStep,
+            terrainHeights = terrainHeights,
+            caveNodes = caveNodes,
+            caveTunnels = caveTunnels,
+            caveEntrances = caveEntrances,
+            caveStructures = caveStructures,
+            caveParams = caveParams,
+            sealMargin = sealMargin,
+            density = default
+        };
     }
 }
+
 
 // ═══════════════════════════════════════════════════════════════════════════════
 //  JOB 3.5: Biome Sampling (UNCHANGED from v3.2)
@@ -1608,6 +1705,8 @@ public class HectonVoxelEngine : MonoBehaviour
     [Header("═══ POOL ═══")]
     [Tooltip("Prefab for pooled voxel volume GameObjects.")]
     public GameObject voxelVolumePrefab;
+    [Tooltip("Reusable native scratch slots reserved for streaming cave generation. Separate from flora pools.")]
+    [SerializeField] private int streamingScratchSlotCount = 2;
 
     // ── Constants ──
     const float ABYSSAL_MAX_DEPTH = 5000f;
@@ -1635,7 +1734,90 @@ public class HectonVoxelEngine : MonoBehaviour
         ActiveRuntimeInstance = null;
     }
     readonly List<GameObject> _activeVolumes = new List<GameObject>();
+    readonly object _streamingScratchGate = new object();
     bool _registeredLiveEngine;
+    bool _teardownStreamingScratchRequested;
+    VoxelStreamingScratchSlot[] _streamingScratchSlots;
+
+    sealed class VoxelStreamingScratchSlot
+    {
+        public NativeArray<float> TerrainHeights;
+        public NativeArray<float> GridBiome;
+        public NativeArray<float> DensityField;
+        public NativeArray<MCRawVertex> RawVerts;
+        public NativeArray<int> Counter;
+        public NativeArray<float3> WeldedPositions;
+        public NativeArray<int> TriangleIndices;
+        public NativeArray<int> WeldedCounter;
+        public NativeParallelHashMap<long, int> EdgeToVertex;
+        public bool InUse;
+
+        public void Dispose()
+        {
+            if (TerrainHeights.IsCreated) TerrainHeights.Dispose();
+            if (GridBiome.IsCreated) GridBiome.Dispose();
+            if (DensityField.IsCreated) DensityField.Dispose();
+            if (RawVerts.IsCreated) RawVerts.Dispose();
+            if (Counter.IsCreated) Counter.Dispose();
+            if (WeldedPositions.IsCreated) WeldedPositions.Dispose();
+            if (TriangleIndices.IsCreated) TriangleIndices.Dispose();
+            if (WeldedCounter.IsCreated) WeldedCounter.Dispose();
+            if (EdgeToVertex.IsCreated) EdgeToVertex.Dispose();
+            InUse = false;
+        }
+    }
+
+    struct VoxelStreamingScratchLease : System.IDisposable
+    {
+        HectonVoxelEngine _owner;
+        int _slotIndex;
+
+        public NativeArray<float> TerrainHeights;
+        public NativeArray<float> GridBiome;
+        public NativeArray<float> DensityField;
+        public NativeArray<MCRawVertex> RawVerts;
+        public NativeArray<int> Counter;
+        public NativeArray<float3> WeldedPositions;
+        public NativeArray<int> TriangleIndices;
+        public NativeArray<int> WeldedCounter;
+        public NativeParallelHashMap<long, int> EdgeToVertex;
+
+        public VoxelStreamingScratchLease(
+            HectonVoxelEngine owner,
+            int slotIndex,
+            NativeArray<float> terrainHeights,
+            NativeArray<float> gridBiome,
+            NativeArray<float> densityField,
+            NativeArray<MCRawVertex> rawVerts,
+            NativeArray<int> counter,
+            NativeArray<float3> weldedPositions,
+            NativeArray<int> triangleIndices,
+            NativeArray<int> weldedCounter,
+            NativeParallelHashMap<long, int> edgeToVertex)
+        {
+            _owner = owner;
+            _slotIndex = slotIndex;
+            TerrainHeights = terrainHeights;
+            GridBiome = gridBiome;
+            DensityField = densityField;
+            RawVerts = rawVerts;
+            Counter = counter;
+            WeldedPositions = weldedPositions;
+            TriangleIndices = triangleIndices;
+            WeldedCounter = weldedCounter;
+            EdgeToVertex = edgeToVertex;
+        }
+
+        public void Dispose()
+        {
+            if (_owner == null || _slotIndex < 0)
+                return;
+
+            _owner.ReleaseStreamingScratchLease(_slotIndex);
+            _owner = null;
+            _slotIndex = -1;
+        }
+    }
 
     // ╔═══════════════════════════════════════════════╗
     // ║              LIFECYCLE                        ║
@@ -1646,6 +1828,7 @@ public class HectonVoxelEngine : MonoBehaviour
         if (!Application.isPlaying)
             return;
 
+        _teardownStreamingScratchRequested = false;
         ActiveRuntimeInstance = this;
 
         if (!_registeredLiveEngine)
@@ -1696,9 +1879,11 @@ public class HectonVoxelEngine : MonoBehaviour
         CavePreset preset = null,
         CancellationToken ct = default)
     {
+        BeginGenerationOperation();
         if (mapMagicBridge == null)
         {
             Debug.LogError("[HectonVoxel] No MapMagicBridge assigned!");
+            EndGenerationOperation();
             return null;
         }
 
@@ -1755,23 +1940,16 @@ public class HectonVoxelEngine : MonoBehaviour
         //  ALLOCATE ALL NATIVE CONTAINERS
         // ════════════════════════════════════════════════════════════════
 
-        var terrainHeights = new NativeArray<float>(ptsX * ptsZ, Allocator.Persistent,
-                                                     NativeArrayOptions.UninitializedMemory);
-        var gridBiome = new NativeArray<float>(ptsX * ptsZ, Allocator.Persistent,
-                                                NativeArrayOptions.UninitializedMemory);
-        var densityField = new NativeArray<float>(totalPts, Allocator.Persistent,
-                                                    NativeArrayOptions.UninitializedMemory);
-        var rawVerts = new NativeArray<MCRawVertex>(maxVerts, Allocator.Persistent,
-                                                      NativeArrayOptions.UninitializedMemory);
-        var counter = new NativeArray<int>(1, Allocator.Persistent,
-                                            NativeArrayOptions.ClearMemory);
-        var weldedPositions = new NativeArray<float3>(maxVerts, Allocator.Persistent,
-                                                        NativeArrayOptions.UninitializedMemory);
-        var triangleIndices = new NativeArray<int>(maxVerts, Allocator.Persistent,
-                                                     NativeArrayOptions.UninitializedMemory);
-        var weldedCounter = new NativeArray<int>(1, Allocator.Persistent,
-                                                   NativeArrayOptions.ClearMemory);
-        var edgeToVertex = new NativeParallelHashMap<long, int>(maxVerts / 2, Allocator.Persistent);
+        VoxelStreamingScratchLease scratchLease = await AcquireStreamingScratchLeaseAsync(ptsX * ptsZ, totalPts, maxVerts, ct);
+        var terrainHeights = scratchLease.TerrainHeights;
+        var gridBiome = scratchLease.GridBiome;
+        var densityField = scratchLease.DensityField;
+        var rawVerts = scratchLease.RawVerts;
+        var counter = scratchLease.Counter;
+        var weldedPositions = scratchLease.WeldedPositions;
+        var triangleIndices = scratchLease.TriangleIndices;
+        var weldedCounter = scratchLease.WeldedCounter;
+        var edgeToVertex = scratchLease.EdgeToVertex;
 
         try
         {
@@ -1883,7 +2061,14 @@ public class HectonVoxelEngine : MonoBehaviour
                 {
                     ptsX = ptsX, ptsY = ptsY, ptsZ = ptsZ,
                     volumeOrigin = volumeOrigin, voxelStep = voxelStep,
-                    density = densityField, positions = weldedPositions,
+                    terrainHeights = terrainHeights,
+                    caveNodes = caveNodes,
+                    caveTunnels = caveTunnels,
+                    caveEntrances = caveEntrances,
+                    caveStructures = caveStructures,
+                    caveParams = caveParams,
+                    sealMargin = sealMargin,
+                    positions = weldedPositions,
                     normals = normals
                 }.Schedule(weldedCount, JOB_BATCH);
 
@@ -2014,15 +2199,7 @@ public class HectonVoxelEngine : MonoBehaviour
         finally
         {
             // ═══ DISPOSE ALL ═══
-            if (terrainHeights.IsCreated) terrainHeights.Dispose();
-            if (gridBiome.IsCreated) gridBiome.Dispose();
-            if (densityField.IsCreated) densityField.Dispose();
-            if (rawVerts.IsCreated) rawVerts.Dispose();
-            if (counter.IsCreated) counter.Dispose();
-            if (weldedPositions.IsCreated) weldedPositions.Dispose();
-            if (triangleIndices.IsCreated) triangleIndices.Dispose();
-            if (weldedCounter.IsCreated) weldedCounter.Dispose();
-            if (edgeToVertex.IsCreated) edgeToVertex.Dispose();
+            scratchLease.Dispose();
 
             // Cave graph arrays
             if (caveNodes.IsCreated) caveNodes.Dispose();
@@ -2084,23 +2261,16 @@ public class HectonVoxelEngine : MonoBehaviour
         if (mapMagicBridge.TryGetHeight(worldCenter.x, worldCenter.z, out float h))
             terrainHeightCenter = h;
 
-        var terrainHeights = new NativeArray<float>(ptsX * ptsZ, Allocator.Persistent,
-                                                     NativeArrayOptions.UninitializedMemory);
-        var gridBiome = new NativeArray<float>(ptsX * ptsZ, Allocator.Persistent,
-                                                NativeArrayOptions.UninitializedMemory);
-        var densityField = new NativeArray<float>(totalPts, Allocator.Persistent,
-                                                    NativeArrayOptions.UninitializedMemory);
-        var rawVerts = new NativeArray<MCRawVertex>(maxVerts, Allocator.Persistent,
-                                                      NativeArrayOptions.UninitializedMemory);
-        var counter = new NativeArray<int>(1, Allocator.Persistent,
-                                            NativeArrayOptions.ClearMemory);
-        var weldedPositions = new NativeArray<float3>(maxVerts, Allocator.Persistent,
-                                                        NativeArrayOptions.UninitializedMemory);
-        var triangleIndices = new NativeArray<int>(maxVerts, Allocator.Persistent,
-                                                     NativeArrayOptions.UninitializedMemory);
-        var weldedCounter = new NativeArray<int>(1, Allocator.Persistent,
-                                                   NativeArrayOptions.ClearMemory);
-        var edgeToVertex = new NativeParallelHashMap<long, int>(maxVerts / 2, Allocator.Persistent);
+        VoxelStreamingScratchLease scratchLease = await AcquireStreamingScratchLeaseAsync(ptsX * ptsZ, totalPts, maxVerts, ct);
+        var terrainHeights = scratchLease.TerrainHeights;
+        var gridBiome = scratchLease.GridBiome;
+        var densityField = scratchLease.DensityField;
+        var rawVerts = scratchLease.RawVerts;
+        var counter = scratchLease.Counter;
+        var weldedPositions = scratchLease.WeldedPositions;
+        var triangleIndices = scratchLease.TriangleIndices;
+        var weldedCounter = scratchLease.WeldedCounter;
+        var edgeToVertex = scratchLease.EdgeToVertex;
 
         try
         {
@@ -2219,7 +2389,14 @@ public class HectonVoxelEngine : MonoBehaviour
                 {
                     ptsX = ptsX, ptsY = ptsY, ptsZ = ptsZ,
                     volumeOrigin = volumeOrigin, voxelStep = voxelStep,
-                    density = densityField, positions = weldedPositions,
+                    terrainHeights = terrainHeights,
+                    caveNodes = nodes,
+                    caveTunnels = tunnels,
+                    caveEntrances = entrances,
+                    caveStructures = structures,
+                    caveParams = caveParams,
+                    sealMargin = sealMargin,
+                    positions = weldedPositions,
                     normals = normals
                 }.Schedule(weldedCount, JOB_BATCH);
 
@@ -2327,15 +2504,7 @@ public class HectonVoxelEngine : MonoBehaviour
         }
         finally
         {
-            if (terrainHeights.IsCreated) terrainHeights.Dispose();
-            if (gridBiome.IsCreated) gridBiome.Dispose();
-            if (densityField.IsCreated) densityField.Dispose();
-            if (rawVerts.IsCreated) rawVerts.Dispose();
-            if (counter.IsCreated) counter.Dispose();
-            if (weldedPositions.IsCreated) weldedPositions.Dispose();
-            if (triangleIndices.IsCreated) triangleIndices.Dispose();
-            if (weldedCounter.IsCreated) weldedCounter.Dispose();
-            if (edgeToVertex.IsCreated) edgeToVertex.Dispose();
+            scratchLease.Dispose();
             EndGenerationOperation();
         }
     }
@@ -2431,6 +2600,8 @@ public class HectonVoxelEngine : MonoBehaviour
             return;
 
         ClearAllVolumes();
+        _teardownStreamingScratchRequested = true;
+        TryFinalizeStreamingScratchTeardown();
 
         if (ReferenceEquals(ActiveRuntimeInstance, this))
             ActiveRuntimeInstance = null;
@@ -2457,6 +2628,184 @@ public class HectonVoxelEngine : MonoBehaviour
         {
             handle.Complete();
         }
+    }
+
+    async Awaitable<VoxelStreamingScratchLease> AcquireStreamingScratchLeaseAsync(
+        int heightCount,
+        int totalPointCount,
+        int maxVertexCount,
+        CancellationToken ct)
+    {
+        while (true)
+        {
+            ct.ThrowIfCancellationRequested();
+            if (TryAcquireStreamingScratchLease(heightCount, totalPointCount, maxVertexCount, out VoxelStreamingScratchLease lease))
+                return lease;
+
+            await Awaitable.NextFrameAsync(ct);
+        }
+    }
+
+    bool TryAcquireStreamingScratchLease(
+        int heightCount,
+        int totalPointCount,
+        int maxVertexCount,
+        out VoxelStreamingScratchLease lease)
+    {
+        lease = default;
+        lock (_streamingScratchGate)
+        {
+            EnsureStreamingScratchSlots();
+            if (_streamingScratchSlots == null || _streamingScratchSlots.Length == 0)
+                return false;
+
+            for (int i = 0; i < _streamingScratchSlots.Length; i++)
+            {
+                VoxelStreamingScratchSlot slot = _streamingScratchSlots[i];
+                if (slot == null || slot.InUse)
+                    continue;
+
+                slot.InUse = true;
+                EnsureStreamingScratchSlotCapacity(slot, heightCount, totalPointCount, maxVertexCount);
+                slot.Counter[0] = 0;
+                slot.WeldedCounter[0] = 0;
+                if (slot.EdgeToVertex.IsCreated)
+                    slot.EdgeToVertex.Clear();
+
+                lease = new VoxelStreamingScratchLease(
+                    this,
+                    i,
+                    slot.TerrainHeights,
+                    slot.GridBiome,
+                    slot.DensityField,
+                    slot.RawVerts,
+                    slot.Counter,
+                    slot.WeldedPositions,
+                    slot.TriangleIndices,
+                    slot.WeldedCounter,
+                    slot.EdgeToVertex);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    void ReleaseStreamingScratchLease(int slotIndex)
+    {
+        lock (_streamingScratchGate)
+        {
+            if (_streamingScratchSlots == null || slotIndex < 0 || slotIndex >= _streamingScratchSlots.Length)
+                return;
+
+            VoxelStreamingScratchSlot slot = _streamingScratchSlots[slotIndex];
+            if (slot != null)
+                slot.InUse = false;
+
+            if (_teardownStreamingScratchRequested)
+                TryFinalizeStreamingScratchTeardown_NoLock();
+        }
+    }
+
+    void EnsureStreamingScratchSlots()
+    {
+        int slotCount = Mathf.Clamp(streamingScratchSlotCount, 1, 8);
+        if (_streamingScratchSlots != null && _streamingScratchSlots.Length == slotCount)
+            return;
+
+        DisposeStreamingScratchSlots();
+        _streamingScratchSlots = new VoxelStreamingScratchSlot[slotCount];
+        for (int i = 0; i < slotCount; i++)
+            _streamingScratchSlots[i] = new VoxelStreamingScratchSlot();
+    }
+
+    void DisposeStreamingScratchSlots()
+    {
+        lock (_streamingScratchGate)
+        {
+            if (_streamingScratchSlots == null)
+                return;
+
+            for (int i = 0; i < _streamingScratchSlots.Length; i++)
+                _streamingScratchSlots[i]?.Dispose();
+
+            _streamingScratchSlots = null;
+        }
+    }
+
+    void TryFinalizeStreamingScratchTeardown()
+    {
+        lock (_streamingScratchGate)
+            TryFinalizeStreamingScratchTeardown_NoLock();
+    }
+
+    void TryFinalizeStreamingScratchTeardown_NoLock()
+    {
+        if (!_teardownStreamingScratchRequested || _streamingScratchSlots == null)
+            return;
+
+        for (int i = 0; i < _streamingScratchSlots.Length; i++)
+        {
+            if (_streamingScratchSlots[i] != null && _streamingScratchSlots[i].InUse)
+                return;
+        }
+
+        for (int i = 0; i < _streamingScratchSlots.Length; i++)
+            _streamingScratchSlots[i]?.Dispose();
+
+        _streamingScratchSlots = null;
+        _teardownStreamingScratchRequested = false;
+    }
+
+    static void EnsureStreamingScratchSlotCapacity(
+        VoxelStreamingScratchSlot slot,
+        int heightCount,
+        int totalPointCount,
+        int maxVertexCount)
+    {
+        EnsureNativeArrayCapacity(ref slot.TerrainHeights, heightCount);
+        EnsureNativeArrayCapacity(ref slot.GridBiome, heightCount);
+        EnsureNativeArrayCapacity(ref slot.DensityField, totalPointCount);
+        EnsureNativeArrayCapacity(ref slot.RawVerts, maxVertexCount);
+        EnsureNativeArrayCapacity(ref slot.Counter, 1, true);
+        EnsureNativeArrayCapacity(ref slot.WeldedPositions, maxVertexCount);
+        EnsureNativeArrayCapacity(ref slot.TriangleIndices, maxVertexCount);
+        EnsureNativeArrayCapacity(ref slot.WeldedCounter, 1, true);
+        EnsureNativeHashMapCapacity(ref slot.EdgeToVertex, Mathf.Max(1, maxVertexCount / 2));
+    }
+
+    static void EnsureNativeHashMapCapacity(ref NativeParallelHashMap<long, int> map, int requiredCapacity)
+    {
+        if (map.IsCreated && map.Capacity >= requiredCapacity)
+            return;
+
+        if (map.IsCreated)
+            map.Dispose();
+
+        // COLD ALLOC: NativeParallelHashMap<long,int>[requiredCapacity] - voxel streaming edge weld cache - owner: HectonVoxelEngine
+        map = new NativeParallelHashMap<long, int>(requiredCapacity, Allocator.Persistent);
+    }
+
+    static void EnsureNativeArrayCapacity<T>(ref NativeArray<T> array, int requiredLength, bool clear = false)
+        where T : struct
+    {
+        if (requiredLength <= 0)
+            requiredLength = 1;
+
+        if (array.IsCreated && array.Length >= requiredLength)
+        {
+            if (clear)
+                array[0] = default;
+
+            return;
+        }
+
+        if (array.IsCreated)
+            array.Dispose();
+
+        NativeArrayOptions options = clear ? NativeArrayOptions.ClearMemory : NativeArrayOptions.UninitializedMemory;
+        // COLD ALLOC: NativeArray<T>[requiredLength] - reusable voxel streaming scratch slot growth - owner: HectonVoxelEngine
+        array = new NativeArray<T>(requiredLength, Allocator.Persistent, options);
     }
 
     // ╔═══════════════════════════════════════════════╗
@@ -2613,7 +2962,7 @@ public class HectonVoxelEngine : MonoBehaviour
         }
     }
 
-    void SafeDestroy(Object obj)
+    void SafeDestroy(UnityEngine.Object obj)
     {
         if (obj == null) return;
 #if UNITY_EDITOR

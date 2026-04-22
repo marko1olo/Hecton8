@@ -1205,9 +1205,12 @@ namespace Hecton8.Bootstrap
                 playerObject = playerController.gameObject;
 
             Hecton8.Meta.MetaRuntimeInstaller.EnsureRuntimeSystems();
+            Hecton8.Economy.EconomyRuntimeInstaller.EnsureRuntimeSystems();
+            Hecton8.Ecosystem.EcosystemRuntimeInstaller.EnsureRuntimeSystems();
             Hecton8.PDA.PDARuntimeInstaller.EnsurePlayerSystems(playerObject);
             Hecton8.Progression.ProgressionRuntimeInstaller.EnsurePlayerSystems(playerObject);
             Hecton8.Narrative.NarrativeRuntimeInstaller.EnsurePlayerSystems(playerObject);
+            Hecton8.Audio.AtmosphericAudioRuntimeInstaller.EnsurePlayerSystems(playerObject);
             BootstrapState.PublishCurrentPlayerObject(playerObject);
         }
 

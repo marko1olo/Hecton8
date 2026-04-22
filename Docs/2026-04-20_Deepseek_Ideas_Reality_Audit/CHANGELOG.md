@@ -4,6 +4,142 @@ Status: `ACTIVE`
 Verification: `PENDING VERIFICATION`
 Date: `2026-04-20`
 
+## 2026-04-21 - Ecosystem Runtime: Aggression Bridge, Genetics, Infection Zones, Migration
+
+### Changed
+
+- added `Assets/_Project/Scripts/Ecosystem/FaunaGeneticTraits.cs`
+- added `Assets/_Project/Scripts/Ecosystem/FaunaBiomeMutationDefinition.cs`
+- added `Assets/_Project/Scripts/Ecosystem/FaunaGeneticsManager.cs`
+- added `Assets/_Project/Scripts/Ecosystem/EcosystemHealthDirector.cs`
+- added `Assets/_Project/Scripts/Ecosystem/MigrationDirector.cs`
+- added `Assets/_Project/Scripts/Ecosystem/EcosystemRuntimeInstaller.cs`
+- added `Assets/_Project/Scripts/Ecosystem/FaunaBrain.Ecosystem.cs`
+- patched `Assets/_Project/Scripts/Fauna/FaunaBrain.cs`
+- patched `Assets/_Project/Scripts/Fauna/FaunaBrain.Compatibility.cs`
+- patched `Assets/_Project/Scripts/FaunaDirector.cs`
+- patched `Assets/_Project/Scripts/HectonSurvivalSystem.cs`
+- patched `Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs`
+- patched `Assets/_Project/Scripts/ModdingAPI/HectonAPI.cs`
+- patched `Assets/_Project/Scripts/ModdingAPI/ModRuntimeState.cs`
+- patched `Assets/_Project/Scripts/SaveData.cs`
+- patched `Assets/_Project/Scripts/SaveDataMigration.cs`
+- patched `Assets/_Project/Scripts/SceneBootstrap.cs`
+
+### Result
+
+- predator fauna now consumes `DynamicDifficultyDirector.CurrentModifiers.PredatorAggressionScale` through real runtime owners:
+  - aggro radius
+  - deaggro distance
+  - attack damage
+  - pursuit speed
+- fauna spawn is now deterministically mutated from:
+  - persisted `worldSeed`
+  - spawn position
+  - biome index
+  - creature ID
+- mods can inject biome-specific mutation overlays through `HectonAPI.Ecosystem.RegisterBiomeMutation(...)`
+- ecological debt can now materialize as save-backed infected chunks that tint fauna and register live toxicity hazards
+- daily migration pressure now biases ambient and territorial fauna selection without spawning fake variant prefabs
+- official save format is now `v32`
+
+### Notes
+
+- WARNING: regression risk in `poisoned fauna loot` because this slice exposes infection state on fauna instances, but the repo still lacks one authoritative first-party loot-drop owner consuming that flag
+- WARNING: regression risk in `fauna material property blocks` if another runtime owner also writes overlapping color properties on the same renderer
+- verification remains `PENDING VERIFICATION`
+
+## 2026-04-21 - Survival Runtime: Trauma, Thermal Stress, Tool Corrosion
+
+### Changed
+
+- patched `Assets/_Project/Scripts/HectonSurvivalSystem.cs`
+- patched `Assets/_Project/Scripts/HectonPlayerMovement.cs`
+- patched `Assets/_Project/Scripts/Tools/ToolDurabilitySystem.cs`
+- patched `Assets/_Project/Scripts/PlayerTool.cs`
+- patched `Assets/_Project/Scripts/ScannerTool.cs`
+- patched `Assets/_Project/Scripts/Progression/PDAContextualAdvisorySystem.cs`
+- patched `Assets/_Project/Scripts/UI/SuitAdvisoryController.cs`
+- patched `Assets/_Project/Scripts/SaveData.cs`
+- patched `Assets/_Project/Scripts/SaveDataMigration.cs`
+- patched `Docs/2026-04-20_Deepseek_Ideas_Reality_Audit/HECTON8_DEEPSEEK_IDEAS_REALITY_AUDIT_AND_EXECUTION_PLAN.md`
+
+### Result
+
+- `HectonSurvivalSystem` now owns real body-state trauma with persisted `Bleeding` and `Fracture`, plus collision-linked injury escalation through `HectonPlayerMovement`
+- cold and heat are no longer flat thermal damage only: cold drains suit power, heat drains hydration, and both now feed suit/PDA advisory layers as explicit stress states
+- `ToolDurabilitySystem` now applies passive underwater corrosion to the actively held tool, instead of relying only on button-use drain
+- `ScannerTool` now degrades under low condition with shorter scan returns and slower recycle before the tool fully breaks
+- official save format is now `v31`
+
+### Notes
+
+- WARNING: regression risk in `ToolDurabilitySystem` ownership semantics because durability still follows the existing repo contract of `toolID`, not a new per-instance inventory identity model
+- WARNING: regression risk in `HectonPlayerMovement` swim-speed stacking if any downstream owner assumed a single runtime swim multiplier instead of composed buff × injury layers
+- verification remains `PENDING VERIFICATION`
+
+## 2026-04-21 - Economy Runtime: Recycling, Scarcity, Ecological Stress
+
+### Changed
+
+- added `Assets/_Project/Scripts/Economy/ResourceStack.cs`
+- added `Assets/_Project/Scripts/Economy/RecyclingRegistry.cs`
+- added `Assets/_Project/Scripts/Economy/ScrapManager.cs`
+- added `Assets/_Project/Scripts/Economy/ResourceScarcityDirector.cs`
+- added `Assets/_Project/Scripts/Economy/EconomyRuntimeInstaller.cs`
+- added `Assets/_Project/Scripts/World/EnvironmentalStrainManager.cs`
+- added `Assets/_Project/Scripts/Meta/MetaProfileUtility.cs`
+- patched `Assets/_Project/Scripts/Fabricator.cs`
+- patched `Assets/_Project/Scripts/ModdingAPI/HectonAPI.cs`
+- patched `Assets/_Project/Scripts/ModdingAPI/ModRuntimeState.cs`
+- patched `Assets/_Project/Scripts/ModdingAPI/HectonGameEvents.cs`
+- patched `Assets/_Project/Scripts/Meta/MetaUpgradeRegistry.cs`
+- patched `Assets/_Project/Scripts/Meta/GlobalProfileManager.cs`
+- patched `Assets/_Project/Scripts/Meta/DynamicDifficultyDirector.cs`
+- patched `Assets/_Project/Scripts/PDAInventoryTab.cs`
+- patched `Assets/_Project/Scripts/SceneBootstrap.cs`
+- patched `Assets/_Project/Scripts/SaveData.cs`
+- patched `Assets/_Project/Scripts/SaveDataMigration.cs`
+
+### Result
+
+- recycling is now an official runtime system with overlay-safe custom yields for mods
+- fabrication power cost now scales with slot-local extraction scarcity, creating persistent depletion pressure without fake trader logic
+- ecological debt now persists in the local save and raises hidden predator aggression through the adaptive difficulty layer
+- global retention now includes a recycling marathon goal plus permanent `GreenTech` and `EfficiencyExpert` upgrades
+- official event payloads now exist for item recycling and supported discard flow
+- official save format remains `v29`, now extended with scarcity and environmental strain payloads
+
+### Notes
+
+- WARNING: regression risk in discard pollution semantics because the repo still lacks a single authoritative post-drop despawn owner; pollution is currently counted on the supported discard action itself
+- verification remains `PENDING VERIFICATION`
+
+## 2026-04-21 - Progression Runtime: Hint-Without-Tutorial Layer Expansion
+
+### Changed
+
+- patched `Assets/_Project/Scripts/Progression/PDAContextualAdvisorySystem.cs`
+- patched `Assets/_Project/Scripts/SaveData.cs`
+- patched `Docs/2026-04-20_Deepseek_Ideas_Reality_Audit/HECTON8_DEEPSEEK_IDEAS_REALITY_AUDIT_AND_EXECUTION_PLAN.md`
+
+### Result
+
+- contextual advisory owner now escalates repeated:
+  - pressure deaths
+  - base emergencies
+  - stale-air incidents
+- the hint layer now listens to existing `BaseIntegrityEvents` instead of requiring authored tutorial triggers
+- repeated-failure hints continue to mirror into PDA logbook and publish `PlayerAdvisoryIssuedEvent`
+- `PDAContextualAdvisoryDTO` now persists extra advisory counters for these repeated-failure tracks
+- official save format is now `v29`
+
+### Notes
+
+- this is a real hint layer, but still only `partial` coverage for `[6]`
+- WARNING: regression risk in downstream systems such as dynamic difficulty if they implicitly assumed a lower advisory event volume
+- verification remains `PENDING VERIFICATION`
+
 ## 2026-04-21 - Base Runtime: Habitat Air Recycling And Stale Air
 
 ### Changed
@@ -27,7 +163,7 @@ Date: `2026-04-20`
 - nearest-module HUD/advisory bridge now surfaces low air quality for inhabited compartments
 - scanner summaries now distinguish stale breathable reserve from healthy service space
 - construction save/load now persists module breathable reserve through `ModuleDTO.airReserveNormalized`
-- official save format is now `v28`
+- module breathable reserve persistence entered the official save format in the `v28` step; current format has advanced further
 
 ### Notes
 
@@ -603,6 +739,46 @@ What was verified:
   - repeated `The referenced script (Unknown) on this Behaviour is missing!`
   - jobs leak warning for persistent allocations
 - runtime gameplay verification for this slice is still absent
+
+Status: `PENDING VERIFICATION`
+
+## 2026-04-21 - Atmospheric Audio And Visor Pressure Layer
+
+What was wrong:
+
+- the project had core survival, fauna pressure, and underwater visuals owners, but no dedicated atmosphere-polish layer tying them into player fear response
+- `HectonMusicDirector` owned cue routing, yet it did not drive mixer-exposed rhythm/bass/atmosphere/danger layers from oxygen stress or nearby predators
+- there was no first-party psychosis owner for deep hallucination cues
+- there was no isolated critical-state visor pulse owner; patching `CameraJuiceSystem` directly would have mixed unrelated responsibilities and risked write conflicts on authored volume profiles
+- shallow caustics existed in `HectonUnderwaterVisuals`, but there was no camera-local URP projector owner for premium near-player caustic projection
+
+What I changed:
+
+- patched `Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs`
+  - added zero-GC `TryGetNearestAggressiveBioform(...)` for predator proximity sampling without `FindObjects*`
+- patched `Assets/_Project/Scripts/Audio/HectonMusicDirector.cs`
+  - added mixer-layer routing for rhythm, bass, atmosphere, and danger
+  - layer targets now respond to depth, oxygen danger, predator proximity, and storm pressure
+  - routing stays inside the real music owner instead of spawning a parallel music system
+- added `Assets/_Project/Scripts/Audio/DeepPsychosisController.cs`
+  - player-owned deep hallucination cue driver using `SpatialAudioManager` and optional `AcousticZoneController.PlayMadnessWhisperCue()`
+- added `Assets/_Project/Scripts/Visor/PlayerStressVFX.cs`
+  - dedicated runtime-only `VolumeProfile` owner for heartbeat-driven vignette/chromatic pulse
+  - keeps authored scene profiles immutable
+- added `Assets/_Project/Scripts/Visor/CausticsProjectorManager.cs`
+  - camera-local URP `DecalProjector` owner using an authored decal material only
+  - shallow-depth gated and storm-attenuated
+- added `Assets/_Project/Scripts/Audio/AtmosphericAudioRuntimeInstaller.cs`
+  - bootstrap wiring for player-owned atmosphere systems
+- patched `Assets/_Project/Scripts/SceneBootstrap.cs`
+  - player runtime publication now installs the new atmospheric systems
+
+What was verified:
+
+- local readback confirms `HectonMusicDirector` now resolves survival/player dependencies and writes mixer-layer parameters
+- local readback confirms `SceneBootstrap` now installs the atmospheric runtime slice on the player
+- local readback confirms `WorldSpatialHashGrid` now exposes aggressive-fauna proximity query support
+- Unity/runtime verification was not performed in this slice
 
 Status: `PENDING VERIFICATION`
 

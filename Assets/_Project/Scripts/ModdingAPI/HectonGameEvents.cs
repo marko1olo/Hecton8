@@ -106,6 +106,74 @@ namespace Hecton8.Modding
     }
 
     /// <summary>
+    /// Fired after the official recycling owner dismantles one or more inventory items into resource outputs.
+    /// </summary>
+    public sealed class ItemRecycledEvent : HectonEvent
+    {
+        /// <summary>
+        /// Creates a recycled-item payload.
+        /// </summary>
+        /// <param name="item">Source item consumed by the recycling owner.</param>
+        /// <param name="quantity">Number of source-item units recycled.</param>
+        /// <param name="yieldUnitCount">Total quantity of resource units returned to the player.</param>
+        public ItemRecycledEvent(ItemData item, int quantity, int yieldUnitCount)
+        {
+            Item = item;
+            Quantity = quantity < 0 ? 0 : quantity;
+            YieldUnitCount = yieldUnitCount < 0 ? 0 : yieldUnitCount;
+        }
+
+        /// <summary>
+        /// Source item consumed by the recycling owner.
+        /// </summary>
+        public ItemData Item { get; }
+
+        /// <summary>
+        /// Number of source-item units recycled.
+        /// </summary>
+        public int Quantity { get; }
+
+        /// <summary>
+        /// Total quantity of resource units returned to the player.
+        /// </summary>
+        public int YieldUnitCount { get; }
+    }
+
+    /// <summary>
+    /// Fired after the player deliberately removes an inventory item through the supported discard flow.
+    /// </summary>
+    public sealed class ItemDiscardedEvent : HectonEvent
+    {
+        /// <summary>
+        /// Creates a discarded-item payload.
+        /// </summary>
+        /// <param name="item">Discarded item asset.</param>
+        /// <param name="quantity">Number of discarded units.</param>
+        /// <param name="interactor">Player transform responsible for the discard flow when available.</param>
+        public ItemDiscardedEvent(ItemData item, int quantity, Transform interactor)
+        {
+            Item = item;
+            Quantity = quantity < 0 ? 0 : quantity;
+            Interactor = interactor;
+        }
+
+        /// <summary>
+        /// Discarded item asset.
+        /// </summary>
+        public ItemData Item { get; }
+
+        /// <summary>
+        /// Number of discarded units.
+        /// </summary>
+        public int Quantity { get; }
+
+        /// <summary>
+        /// Player transform responsible for the discard flow when available.
+        /// </summary>
+        public Transform Interactor { get; }
+    }
+
+    /// <summary>
     /// Fired after the game's discovery owner confirms a first-time biome discovery.
     /// </summary>
     public sealed class BiomeDiscoveredEvent : HectonEvent

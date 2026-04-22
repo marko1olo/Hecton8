@@ -110,6 +110,9 @@ namespace Hecton8.Systems.AI
         [Tooltip("Ссылка на ScavengePopulator. Если null — ищется автоматически один раз.")]
         [SerializeField] private ScavengePopulator scavengePopulator;
 
+        [Tooltip("Bridge растительности/угрозы. Если null — ищется автоматически один раз.")]
+        [SerializeField] private HectonMapMagicVegetationBridge vegetationThreatBridge;
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — TENSION WEIGHTS
         // ══════════════════════════════════════════════════════════
@@ -189,6 +192,16 @@ namespace Hecton8.Systems.AI
         [SerializeField] private float glitchIntensity   = 0.8f;
         [Range(0f, 1f)]
         [SerializeField] private float weatherIntensity  = 0.6f;
+
+        [Header("── Threat Hotspot Handoff ───────────────────")]
+        [Tooltip("Минимальный уровень угрозы для переноса хищного события в hotspot.")]
+        [SerializeField] private float predatorThreatHotspotMinimum = 0.18f;
+
+        [Tooltip("Минимальная дистанция hotspot от игрока.")]
+        [SerializeField] private float predatorThreatHotspotMinDistance = 90f;
+
+        [Tooltip("Максимальная дистанция hotspot от игрока.")]
+        [SerializeField] private float predatorThreatHotspotMaxDistance = 260f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — AUTOSAVE
@@ -859,7 +872,7 @@ namespace Hecton8.Systems.AI
 
         private void TriggerSpawnHorde()
         {
-            Vector3 center = GetEventPositionAroundPlayer();
+            Vector3 center = GetPredatorEventPosition();
 
             if (faunaDirector != null)
                 faunaDirector.ForceSpawnHorde(center);
@@ -934,6 +947,9 @@ namespace Hecton8.Systems.AI
 
             if (scavengePopulator == null)
                 WorldRuntimeReferenceUtility.TryResolveScavengePopulator(ref scavengePopulator);
+
+            if (vegetationThreatBridge == null)
+                WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref vegetationThreatBridge);
         }
 
         private Vector3 GetEventPositionAroundPlayer()
@@ -949,6 +965,28 @@ namespace Hecton8.Systems.AI
             pos.z += Mathf.Sin(angle) * dist;
 
             return pos;
+        }
+
+        private Vector3 GetPredatorEventPosition()
+        {
+            if (vegetationThreatBridge == null)
+                WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref vegetationThreatBridge);
+
+            if (playerTransform == null || vegetationThreatBridge == null)
+                return GetEventPositionAroundPlayer();
+
+            if (!vegetationThreatBridge.TryGetThreatHotspot(
+                    predatorThreatHotspotMinimum,
+                    predatorThreatHotspotMinDistance,
+                    predatorThreatHotspotMaxDistance,
+                    out Vector3 hotspotPosition,
+                    out _))
+            {
+                return GetEventPositionAroundPlayer();
+            }
+
+            hotspotPosition.y = playerTransform.position.y;
+            return hotspotPosition;
         }
 
 #if UNITY_EDITOR
@@ -1041,6 +1079,11 @@ namespace Hecton8.Systems.AI
             if (peakCooldownSeconds         < 0f)  peakCooldownSeconds         = 0f;
             if (buildUpEventIntervalSeconds < 1f)  buildUpEventIntervalSeconds = 1f;
             if (eventOffsetRadius           < 1f)  eventOffsetRadius           = 1f;
+            if (predatorThreatHotspotMinimum < 0f) predatorThreatHotspotMinimum = 0f;
+            if (predatorThreatHotspotMinimum > 1f) predatorThreatHotspotMinimum = 1f;
+            if (predatorThreatHotspotMinDistance < 0f) predatorThreatHotspotMinDistance = 0f;
+            if (predatorThreatHotspotMaxDistance < predatorThreatHotspotMinDistance)
+                predatorThreatHotspotMaxDistance = predatorThreatHotspotMinDistance;
             if (relaxMercyIntervalSeconds   < 5f)  relaxMercyIntervalSeconds   = 5f;
             if (relaxMercyTensionThreshold  < 0f)  relaxMercyTensionThreshold  = 0f;
             if (autoSaveCooldownSeconds     < 30f) autoSaveCooldownSeconds     = 30f;

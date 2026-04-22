@@ -164,8 +164,8 @@ public static class CaveGraphGenerator
         var structureList = new NativeList<CaveStructure>(preset.maxStructures, Allocator.Temp);
         if (preset.enableStructures && preset.maxStructures > 0)
         {
-            GenerateStructures(ref rng, preset, worldCenter, volumeHalfExtent,
-                               roomList, tunnelList, ref structureList);
+            GenerateStructures(ref rng, preset, worldCenter, terrainHeightAtCenter,
+                               volumeHalfExtent, roomList, tunnelList, ref structureList);
         }
 
         // Phase 5: Copy to output
@@ -824,12 +824,13 @@ public static class CaveGraphGenerator
         ref Random rng,
         CavePreset preset,
         float3 worldCenter,
+        float terrainHeight,
         float volumeHalfExtent,
         NativeList<CaveNode> rooms,
         NativeList<CaveTunnel> tunnels,
         ref NativeList<CaveStructure> structures)
     {
-        if (preset.allowedStructureTypes == null || preset.allowedStructureTypes.Length == 0)
+        if (preset.allowedStructureTypes == null || preset.allowedStructureTypes.Length == 0 || rooms.Length == 0)
             return;
 
         int targetCount = (int)(preset.maxStructures * preset.structureDensity);
@@ -837,22 +838,18 @@ public static class CaveGraphGenerator
 
         for (int i = 0; i < targetCount; i++)
         {
-            // Pick random room
             int roomIdx = rng.NextInt(0, rooms.Length);
             CaveNode room = rooms[roomIdx];
-
-            // Pick random structure type from allowed types
             CaveStructureType type = preset.allowedStructureTypes[
                 rng.NextInt(0, preset.allowedStructureTypes.Length)];
 
             CaveStructure structure = CreateStructure(ref rng, type, room, worldCenter, volumeHalfExtent);
-
-            // Check if structure overlaps with entrances or tunnels too much
             if (!IsStructureBlocked(structure, tunnels))
-            {
                 structures.Add(structure);
-            }
         }
+
+        if (preset.presetType == CavePresetType.Abyss || preset.presetType == CavePresetType.Mega)
+            AddAbyssalArchways(ref rng, preset, worldCenter, terrainHeight, volumeHalfExtent, rooms, tunnels, ref structures);
     }
 
     /// <summary>
@@ -933,14 +930,21 @@ public static class CaveGraphGenerator
                 break;
 
             case CaveStructureType.Arch:
-                // Curved opening
-                float3 archPos = roomCenter + rng.NextFloat3(-roomRadii * 0.6f, roomRadii * 0.6f);
-                s.position = archPos;
-                s.size = new float3(
-                    rng.NextFloat(2f, 4f),     // major radius
-                    rng.NextFloat(0.5f, 1.5f), // minor radius
-                    rng.NextFloat(0.3f, 0.8f)); // thickness
+            {
+                float span = rng.NextFloat(roomRadii.x * 0.9f, roomRadii.x * 1.6f);
+                float rise = rng.NextFloat(roomRadii.y * 0.45f, roomRadii.y * 0.9f);
+                float tubeRadius = rng.NextFloat(0.5f, 1.25f);
+                float3 archDirection = rng.NextFloat3(new float3(-1f, 0f, -1f), new float3(1f, 0f, 1f));
+                archDirection = math.normalizesafe(new float3(archDirection.x, 0f, archDirection.z), new float3(1f, 0f, 0f));
+                float3 archCenter = roomCenter + rng.NextFloat3(-roomRadii * 0.4f, roomRadii * 0.4f);
+                archCenter.y = roomCenter.y - roomRadii.y * 0.65f;
+                s.position = archCenter - archDirection * (span * 0.5f);
+                s.pointB = archCenter + archDirection * (span * 0.5f);
+                s.size = new float3(span * 0.5f, rise, tubeRadius);
+                s.blendRadius = 3f;
+                s.noiseAmount = rng.NextFloat(0.15f, 0.4f);
                 break;
+            }
 
             case CaveStructureType.Block:
                 // Rectangular ruin block
@@ -968,8 +972,66 @@ public static class CaveGraphGenerator
         float3 vMin = worldCenter - volumeHalfExtent + 2f;
         float3 vMax = worldCenter + volumeHalfExtent - 2f;
         s.position = math.clamp(s.position, vMin, vMax);
+        s.pointB = math.clamp(s.pointB, vMin, vMax);
 
         return s;
+    }
+
+    static void AddAbyssalArchways(
+        ref Random rng,
+        CavePreset preset,
+        float3 worldCenter,
+        float terrainHeight,
+        float volumeHalfExtent,
+        NativeList<CaveNode> rooms,
+        NativeList<CaveTunnel> tunnels,
+        ref NativeList<CaveStructure> structures)
+    {
+        if (structures.Length >= preset.maxStructures || rooms.Length == 0)
+            return;
+
+        int deepestRoomIndex = 0;
+        float deepestY = rooms[0].position.y;
+        for (int i = 1; i < rooms.Length; i++)
+        {
+            if (rooms[i].position.y < deepestY)
+            {
+                deepestY = rooms[i].position.y;
+                deepestRoomIndex = i;
+            }
+        }
+
+        CaveNode anchorRoom = rooms[deepestRoomIndex];
+        int archCount = math.min(preset.maxStructures - structures.Length, preset.presetType == CavePresetType.Abyss ? 2 : 1);
+        float3 volumeMin = worldCenter - volumeHalfExtent + 4f;
+        float3 volumeMax = worldCenter + volumeHalfExtent - 4f;
+
+        for (int i = 0; i < archCount; i++)
+        {
+            float span = rng.NextFloat(volumeHalfExtent * 0.9f, volumeHalfExtent * 1.35f);
+            float rise = rng.NextFloat(12f, volumeHalfExtent * 0.85f);
+            float tubeRadius = rng.NextFloat(2.5f, 5.5f);
+            float3 direction = rng.NextFloat3(new float3(-1f, 0f, -1f), new float3(1f, 0f, 1f));
+            direction = math.normalizesafe(new float3(direction.x, 0f, direction.z), new float3(1f, 0f, 0f));
+
+            float3 center = anchorRoom.position + rng.NextFloat3(
+                new float3(-volumeHalfExtent * 0.2f, 0f, -volumeHalfExtent * 0.2f),
+                new float3(volumeHalfExtent * 0.2f, 0f, volumeHalfExtent * 0.2f));
+            center.y = math.clamp(terrainHeight - rng.NextFloat(2f, 8f), volumeMin.y + 2f, volumeMax.y - rise * 0.35f);
+
+            CaveStructure arch = new CaveStructure
+            {
+                structureType = CaveStructureType.Arch,
+                position = math.clamp(center - direction * (span * 0.5f), volumeMin, volumeMax),
+                pointB = math.clamp(center + direction * (span * 0.5f), volumeMin, volumeMax),
+                size = new float3(span * 0.5f, rise, tubeRadius),
+                blendRadius = 4f,
+                noiseAmount = rng.NextFloat(0.25f, 0.55f)
+            };
+
+            if (!IsStructureBlocked(arch, tunnels))
+                structures.Add(arch);
+        }
     }
 
     /// <summary>

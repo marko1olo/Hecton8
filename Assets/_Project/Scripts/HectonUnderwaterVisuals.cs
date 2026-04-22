@@ -335,6 +335,8 @@ namespace Hecton8.Environment
         [SerializeField, UnityEngine.Range(0.25f, 12f)] private float bottomSiltFullSpeed = 3.4f;
         [Tooltip("Maximum extra emission injected into the existing suspended motes field near the seabed.")]
         [SerializeField, UnityEngine.Range(0f, 48f)] private float bottomSiltEmissionBoost = 14f;
+        [Tooltip("How quickly one-shot external bottom-silt bursts decay back into the normal seabed response.")]
+        [SerializeField, UnityEngine.Range(0.5f, 12f)] private float bottomSiltBurstRecoverySpeed = 4.5f;
 
         [Header("â”€â”€â”€ EXHALE BUBBLES â”€â”€â”€")]
         [Tooltip("Emits a short bubble burst on each underwater exhale event from the player movement owner.")]
@@ -651,6 +653,7 @@ namespace Hecton8.Environment
         private float _cachedSuspendedMotesEmission = -1f;
         private float _cachedBottomDistance = float.PositiveInfinity;
         private float _cachedBottomSiltBoost;
+        private float _externalBottomSiltBurstBoost;
         private float _cachedShallowSunBeamLightIntensity = -1f;
         private bool _cachedVisualIsUnderwater;
         private bool _underwaterSuspendedMotesPlaying;
@@ -1236,6 +1239,7 @@ namespace Hecton8.Environment
         public void Tick(float deltaTime)
         {
             EnsureRuntimeVisualOwners();
+            DecayExternalBottomSiltBurst(deltaTime);
 
             if (playerCamera == null)
             {
@@ -4043,7 +4047,7 @@ namespace Hecton8.Environment
                 (playerSpeed - bottomSiltMinSpeed) /
                 math.max(0.01f, bottomSiltFullSpeed - bottomSiltMinSpeed));
 
-            float boost = bottomSiltEmissionBoost * distanceFactor * speedFactor * _adaptiveMotesScale;
+            float boost = bottomSiltEmissionBoost * distanceFactor * speedFactor * _adaptiveMotesScale + _externalBottomSiltBurstBoost;
             _cachedBottomSiltBoost = boost;
 
 #if UNITY_EDITOR
@@ -4092,6 +4096,27 @@ namespace Hecton8.Environment
             }
 
             return bestDistance;
+        }
+
+        internal void TriggerExternalBottomSiltBurst(float intensity01)
+        {
+            float clampedIntensity = math.saturate(intensity01);
+            if (clampedIntensity <= 0f)
+                return;
+
+            float requestedBoost = bottomSiltEmissionBoost * clampedIntensity;
+            if (requestedBoost > _externalBottomSiltBurstBoost)
+                _externalBottomSiltBurstBoost = requestedBoost;
+        }
+
+        private void DecayExternalBottomSiltBurst(float deltaTime)
+        {
+            if (_externalBottomSiltBurstBoost <= 0f || deltaTime <= 0f)
+                return;
+
+            _externalBottomSiltBurstBoost = math.max(
+                0f,
+                _externalBottomSiltBurstBoost - bottomSiltBurstRecoverySpeed * bottomSiltEmissionBoost * deltaTime);
         }
 
         private bool ShouldIgnoreBottomSiltHit(RaycastHit hit)
@@ -4580,6 +4605,9 @@ namespace Hecton8.Environment
                 {
                     case PlayerLocomotionMode.UnderwaterSwim:
                         return true;
+
+                    case PlayerLocomotionMode.ExosuitLocomotion:
+                        return _playerMovement.CurrentDepth > 0.01f || _playerMovement.IsPlayerSubmerged || depthDrivenUnderwater;
 
                     case PlayerLocomotionMode.SurfaceSwim:
                         return _playerMovement.IsPlayerSubmerged || depthDrivenUnderwater;

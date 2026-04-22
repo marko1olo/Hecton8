@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using Hecton.Localization;
@@ -33,11 +34,13 @@ namespace Hecton8.UI
         private struct TimedSubtitleCue
         {
             public float StartTime;
+            public float SpeakerIntensity;
             public string Text;
         }
 
         private static readonly Color BackdropColor = new Color(0.01f, 0.04f, 0.06f, 0.64f);
         private static readonly Color TextColor = new Color(0.86f, 0.96f, 1f, 0.96f);
+        private static readonly Color WaveformColor = new Color(0.72f, 0.97f, 1f, 0.92f);
 
         public static SubtitleManager Instance { get; private set; }
 
@@ -53,8 +56,10 @@ namespace Hecton8.UI
 
         private RectTransform _root;
         private CanvasGroup _canvasGroup;
+        private CanvasGroup _audioCueGroup;
         private Image _backdrop;
         private TextMeshProUGUI _subtitleText;
+        private AudioWaveformAnimator _audioWaveformAnimator;
         private float _timer;
         private float _currentAlpha;
         private bool _built;
@@ -67,9 +72,11 @@ namespace Hecton8.UI
         private float _lastEnqueueTime = -999f;
         private bool _timedAudioLogActive;
         private float _timedAudioLogElapsed;
+        private float _timedAudioLogTotalDuration;
         private int _timedAudioLogNextCueIndex;
         private string _timedAudioLogTitleLine;
         private string _timedAudioLogCurrentBody;
+        private string _currentAudioLogId;
         private int _lastStressCorruptionBucket = int.MinValue;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -78,16 +85,21 @@ namespace Hecton8.UI
             Instance = null;
         }
 
+        /// <summary>
+        /// Raised when an audio-log subtitle cue changes. Args: cue duration, cue text, speaker intensity [0..1].
+        /// </summary>
+        public event Action<float, string, float> OnCueChanged;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureRuntimeInstance()
         {
             if (Instance != null)
                 return;
 
-            SuitHUDV4CanvasOverlay overlay = Object.FindAnyObjectByType<SuitHUDV4CanvasOverlay>();
+            SuitHUDV4CanvasOverlay overlay = UnityEngine.Object.FindAnyObjectByType<SuitHUDV4CanvasOverlay>();
             Canvas targetCanvas = overlay != null
                 ? overlay.TargetCanvas
-                : Object.FindAnyObjectByType<Canvas>();
+                : UnityEngine.Object.FindAnyObjectByType<Canvas>();
 
             if (targetCanvas == null)
                 return;
@@ -194,6 +206,9 @@ namespace Hecton8.UI
 
             if (_canvasGroup != null)
                 _canvasGroup.alpha = _currentAlpha;
+
+            if (_audioCueGroup != null)
+                _audioCueGroup.alpha = _currentSource == SubtitleSource.AudioLog ? _currentAlpha : 0f;
         }
 
         private void HandleNotificationPushed(string message, int severity)
@@ -207,6 +222,7 @@ namespace Hecton8.UI
                 return;
 
             ClearTimedAudioLogState();
+            _currentAudioLogId = data.SafeLogId;
 
             float duration = data.Duration > 0.01f
                 ? Mathf.Clamp(data.Duration, 1.5f, 30f)
@@ -218,12 +234,14 @@ namespace Hecton8.UI
                 return;
             }
 
+            NotifyCueChanged(duration, data.VisibleSubtitleOrFallback, 1f);
             Enqueue(BuildAudioLogSubtitle(data), duration, SubtitleSource.AudioLog, true);
         }
 
         private void HandleAudioLogPlaybackEnded(string logId)
         {
             ClearTimedAudioLogState();
+            _currentAudioLogId = string.Empty;
 
             if (_currentSource == SubtitleSource.AudioLog)
                 _timer = 0f;
@@ -292,9 +310,12 @@ namespace Hecton8.UI
             _isShowing = true;
             _lastStressCorruptionBucket = int.MinValue;
 
-            string displayMessage = ResolveDisplayMessage(message);
+            string displayMessage = ResolveDisplayMessage(source, message);
             if (_subtitleText != null && !string.Equals(_subtitleText.text, displayMessage, System.StringComparison.Ordinal))
                 _subtitleText.text = displayMessage;
+
+            if (_audioCueGroup != null)
+                _audioCueGroup.alpha = source == SubtitleSource.AudioLog ? _currentAlpha : 0f;
         }
 
         private static string BuildAudioLogSubtitle(AudioLogData data)
@@ -322,6 +343,7 @@ namespace Hecton8.UI
         {
             _timedAudioLogCues.Clear();
             _timedAudioLogElapsed = 0f;
+            _timedAudioLogTotalDuration = data != null ? Mathf.Max(0.5f, data.Duration) : 0f;
             _timedAudioLogNextCueIndex = 0;
             _timedAudioLogCurrentBody = string.Empty;
 
@@ -349,8 +371,10 @@ namespace Hecton8.UI
             while (_timedAudioLogNextCueIndex < _timedAudioLogCues.Count &&
                    _timedAudioLogCues[_timedAudioLogNextCueIndex].StartTime <= 0f)
             {
+                int cueIndex = _timedAudioLogNextCueIndex;
                 _timedAudioLogCurrentBody = _timedAudioLogCues[_timedAudioLogNextCueIndex].Text;
                 _timedAudioLogNextCueIndex++;
+                NotifyCueChanged(GetCueDuration(cueIndex), _timedAudioLogCurrentBody, _timedAudioLogCues[cueIndex].SpeakerIntensity);
             }
 
             initialMessage = BuildTimedAudioLogFrame();
@@ -361,10 +385,12 @@ namespace Hecton8.UI
         {
             _timedAudioLogElapsed += deltaTime;
             bool changed = false;
+            int lastCueIndex = -1;
 
             while (_timedAudioLogNextCueIndex < _timedAudioLogCues.Count &&
                    _timedAudioLogElapsed >= _timedAudioLogCues[_timedAudioLogNextCueIndex].StartTime)
             {
+                lastCueIndex = _timedAudioLogNextCueIndex;
                 _timedAudioLogCurrentBody = _timedAudioLogCues[_timedAudioLogNextCueIndex].Text;
                 _timedAudioLogNextCueIndex++;
                 changed = true;
@@ -373,9 +399,12 @@ namespace Hecton8.UI
             if (!changed)
                 return;
 
+            if (lastCueIndex >= 0)
+                NotifyCueChanged(GetCueDuration(lastCueIndex), _timedAudioLogCurrentBody, _timedAudioLogCues[lastCueIndex].SpeakerIntensity);
+
             string frameMessage = BuildTimedAudioLogFrame();
             _currentMessage = frameMessage;
-            string displayMessage = ResolveDisplayMessage(frameMessage);
+            string displayMessage = ResolveDisplayMessage(SubtitleSource.AudioLog, frameMessage);
             if (_subtitleText != null && !string.Equals(_subtitleText.text, displayMessage, System.StringComparison.Ordinal))
                 _subtitleText.text = displayMessage;
         }
@@ -395,11 +424,32 @@ namespace Hecton8.UI
         {
             _timedAudioLogActive = false;
             _timedAudioLogElapsed = 0f;
+            _timedAudioLogTotalDuration = 0f;
             _timedAudioLogNextCueIndex = 0;
             _timedAudioLogTitleLine = string.Empty;
             _timedAudioLogCurrentBody = string.Empty;
             _timedAudioLogCues.Clear();
             _lastStressCorruptionBucket = int.MinValue;
+            NotifyCueChanged(0f, string.Empty, 0f);
+        }
+
+        private float GetCueDuration(int cueIndex)
+        {
+            if ((uint)cueIndex >= (uint)_timedAudioLogCues.Count)
+                return 0f;
+
+            float currentStart = Mathf.Max(0f, _timedAudioLogCues[cueIndex].StartTime);
+            float nextStart = cueIndex + 1 < _timedAudioLogCues.Count
+                ? Mathf.Max(currentStart, _timedAudioLogCues[cueIndex + 1].StartTime)
+                : Mathf.Max(currentStart, _timedAudioLogTotalDuration);
+
+            float duration = nextStart - currentStart;
+            return duration > 0.05f ? duration : 0.05f;
+        }
+
+        private void NotifyCueChanged(float duration, string text, float speakerIntensity)
+        {
+            OnCueChanged?.Invoke(Mathf.Max(0f, duration), text ?? string.Empty, Mathf.Clamp01(speakerIntensity));
         }
 
         private void RefreshStressCorruptionIfNeeded()
@@ -410,20 +460,29 @@ namespace Hecton8.UI
                 return;
 
             _lastStressCorruptionBucket = stressBucket;
-            string displayMessage = ResolveDisplayMessage(_currentMessage);
+            string displayMessage = ResolveDisplayMessage(_currentSource, _currentMessage);
             if (_subtitleText != null && !string.Equals(_subtitleText.text, displayMessage, System.StringComparison.Ordinal))
                 _subtitleText.text = displayMessage;
         }
 
-        private static string ResolveDisplayMessage(string message)
+        private string ResolveDisplayMessage(SubtitleSource source, string message)
         {
             if (string.IsNullOrEmpty(message))
                 return string.Empty;
 
             LocalizationManager manager = LocalizationManager.Instance;
-            return manager != null
-                ? manager.ApplyHullStressCorruptionIfNeeded(message)
-                : message;
+            if (manager == null)
+                return message;
+
+            if (source == SubtitleSource.AudioLog)
+            {
+                string sourceToken = string.IsNullOrWhiteSpace(_currentAudioLogId)
+                    ? "audio_log"
+                    : _currentAudioLogId;
+                return manager.ApplyPdaLoreCorruptionIfNeeded(sourceToken, message);
+            }
+
+            return manager.ApplyHullStressCorruptionIfNeeded(message);
         }
 
         private static bool TryParseTimedSubtitleCues(string subtitle, List<TimedSubtitleCue> target)
@@ -453,7 +512,21 @@ namespace Hecton8.UI
                 }
 
                 string markerBody = subtitle.Substring(markerStart + 1, markerEnd - markerStart - 1);
-                if (!float.TryParse(markerBody, NumberStyles.Float, CultureInfo.InvariantCulture, out float startTime))
+                float speakerIntensity = 1f;
+                string startToken = markerBody;
+                int separatorIndex = markerBody.IndexOf('|');
+                if (separatorIndex < 0)
+                    separatorIndex = markerBody.IndexOf(',');
+
+                if (separatorIndex > 0)
+                {
+                    startToken = markerBody.Substring(0, separatorIndex).Trim();
+                    string intensityToken = markerBody.Substring(separatorIndex + 1).Trim();
+                    if (float.TryParse(intensityToken, NumberStyles.Float, CultureInfo.InvariantCulture, out float parsedIntensity))
+                        speakerIntensity = Mathf.Clamp01(parsedIntensity);
+                }
+
+                if (!float.TryParse(startToken, NumberStyles.Float, CultureInfo.InvariantCulture, out float startTime))
                 {
                     cursor++;
                     continue;
@@ -468,6 +541,7 @@ namespace Hecton8.UI
                     target.Add(new TimedSubtitleCue
                     {
                         StartTime = Mathf.Max(0f, startTime),
+                        SpeakerIntensity = speakerIntensity,
                         Text = cueText
                     });
                 }
@@ -537,7 +611,7 @@ namespace Hecton8.UI
             textRect.SetParent(_root, false);
             textRect.anchorMin = Vector2.zero;
             textRect.anchorMax = Vector2.one;
-            textRect.offsetMin = new Vector2(20f, 10f);
+            textRect.offsetMin = new Vector2(78f, 10f);
             textRect.offsetMax = new Vector2(-20f, -10f);
 
             _subtitleText = textOwner.AddComponent<TextMeshProUGUI>();
@@ -554,6 +628,49 @@ namespace Hecton8.UI
                 _subtitleText.fontSize,
                 TextOverflowModes.Ellipsis,
                 TextWrappingModes.Normal);
+
+            GameObject waveformOwner = new GameObject(
+                "AudioWaveformIcon",
+                typeof(RectTransform),
+                typeof(CanvasGroup),
+                typeof(AudioWaveformAnimator));
+            waveformOwner.layer = gameObject.layer;
+
+            RectTransform waveformRoot = waveformOwner.GetComponent<RectTransform>();
+            waveformRoot.SetParent(_root, false);
+            waveformRoot.anchorMin = new Vector2(0f, 0.5f);
+            waveformRoot.anchorMax = new Vector2(0f, 0.5f);
+            waveformRoot.pivot = new Vector2(0f, 0.5f);
+            waveformRoot.anchoredPosition = new Vector2(18f, 0f);
+            waveformRoot.sizeDelta = new Vector2(42f, 34f);
+
+            _audioCueGroup = waveformOwner.GetComponent<CanvasGroup>();
+            _audioCueGroup.alpha = 0f;
+            _audioCueGroup.interactable = false;
+            _audioCueGroup.blocksRaycasts = false;
+
+            // COLD ALLOC: RectTransform[4] — runtime subtitle waveform bars bound to AudioWaveformAnimator — owner: SubtitleManager
+            RectTransform[] waveformBars = new RectTransform[4];
+            for (int i = 0; i < waveformBars.Length; i++)
+            {
+                GameObject barObject = new GameObject("Bar" + i, typeof(RectTransform), typeof(Image));
+                barObject.layer = gameObject.layer;
+                RectTransform barRect = barObject.GetComponent<RectTransform>();
+                barRect.SetParent(waveformRoot, false);
+                barRect.anchorMin = new Vector2(0f, 0.5f);
+                barRect.anchorMax = new Vector2(0f, 0.5f);
+                barRect.pivot = new Vector2(0.5f, 0.5f);
+                barRect.sizeDelta = new Vector2(5f, 18f);
+                barRect.anchoredPosition = new Vector2(5f + i * 9f, 0f);
+
+                Image barImage = barObject.GetComponent<Image>();
+                barImage.color = WaveformColor;
+                barImage.raycastTarget = false;
+                waveformBars[i] = barRect;
+            }
+
+            _audioWaveformAnimator = waveformOwner.GetComponent<AudioWaveformAnimator>();
+            _audioWaveformAnimator.ConfigureWaveformTargets(waveformBars);
 
             _built = true;
         }

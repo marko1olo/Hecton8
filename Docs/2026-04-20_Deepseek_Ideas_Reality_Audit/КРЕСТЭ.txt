@@ -1,0 +1,16 @@
+Packages\com.waveharmonic.crest\Editor\Scripts\BuildProcessor.cs(112,9): error CS0122: 'WaterResources' is inaccessible due to its protection level
+
+Packages\com.waveharmonic.crest\Editor\Scripts\Gizmos.cs(307,32): error CS0122: 'WaterChunkRenderer' is inaccessible due to its protection level
+
+Packages\com.waveharmonic.crest\Editor\Scripts\Editors.cs(339,26): error CS0122: 'WaterChunkRenderer' is inaccessible due to its protection level
+
+Packages\com.waveharmonic.crest\Editor\Scripts\Validators.cs(836,30): error CS0122: 'CollisionAreaVisualizer' is inaccessible due to its protection level
+
+Packages\com.waveharmonic.crest\Editor\Scripts\Validators.cs(835,27): error CS0122: 'CollisionAreaVisualizer' is inaccessible due to its protection level
+
+Assets\_Project\Scripts\World\SargassumCrestDampingController.cs(177,100): error CS0165: Use of unassigned local variable 'cutMaskWorldRect'
+
+Assets\_Project\Scripts\World\SargassumCrestDampingController.cs(241,58): error CS0165: Use of unassigned local variable 'cutMaskWorldRect'
+
+Assets\_Project\Scripts\World\SargassumCrestDampingController.cs(245,65): error CS0165: Use of unassigned local variable 'cutMaskTexture'
+

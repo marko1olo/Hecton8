@@ -5,6 +5,8 @@ using Hecton8.Bootstrap;
 using Hecton8.Building;
 using Hecton8.Construction;
 using Hecton8.Crafting;
+using Hecton8.Economy;
+using Hecton8.Ecosystem;
 using Hecton8.Items;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
@@ -142,6 +144,46 @@ namespace Hecton8.Modding
 
                 return success;
             }
+
+            /// <summary>
+            /// Registers a runtime recycle-yield overlay for the specified source item without mutating authored item or recipe assets.
+            /// Explicit recycle yields override the built-in auto-derivation path used by the official recycling owner.
+            /// </summary>
+            /// <param name="itemId">Stable source item identifier used by the runtime item catalog.</param>
+            /// <param name="yield">Resource stacks granted when one unit of the source item is recycled.</param>
+            /// <returns>
+            /// True when the recycle-yield overlay was accepted by the runtime registry.
+            /// False when the source ID or yield payload is invalid.
+            /// </returns>
+            public static bool RegisterRecycleYield(string itemId, List<ResourceStack> yield)
+            {
+                bool success = ModRecycleRegistry.TryRegister(itemId, yield, out string error);
+                if (!success)
+                {
+                    Debug.LogWarning(
+                        $"[HectonAPI.Crafting] Failed to register recycle yield for '{itemId ?? "null"}': {error}");
+                }
+
+                return success;
+            }
+        }
+
+        /// <summary>
+        /// Recycling-facing API for the official dismantling owner.
+        /// </summary>
+        public static class Recycling
+        {
+            /// <summary>
+            /// Attempts to recycle one inventory unit of the specified item through the official recycling owner.
+            /// Recycle yields come from registered runtime overlays first and fall back to auto-derived dismantle results.
+            /// </summary>
+            /// <param name="itemId">Stable item identifier stored in the active runtime item catalog.</param>
+            /// <returns>True when one unit was removed from inventory and the recycle outputs were granted successfully.</returns>
+            public static bool ProcessRecycle(string itemId)
+            {
+                ScrapManager manager = ScrapManager.Instance;
+                return manager != null && manager.ProcessRecycle(itemId);
+            }
         }
 
         /// <summary>
@@ -191,6 +233,33 @@ namespace Hecton8.Modding
 
                 buildableData = catalog.FindDataById(persistentId);
                 return buildableData != null;
+            }
+        }
+
+        /// <summary>
+        /// Ecosystem-facing mod API for deterministic fauna mutation overlays.
+        /// </summary>
+        public static class Ecosystem
+        {
+            /// <summary>
+            /// Registers a biome-scoped mutation overlay that biases runtime fauna genetics without mutating authored creature assets.
+            /// Matching is deterministic and evaluated by the live ecosystem genetics owner during spawn.
+            /// </summary>
+            /// <param name="definition">Biome mutation definition to merge into the live runtime overlay registry.</param>
+            /// <returns>
+            /// True when the mutation definition was accepted by the runtime registry.
+            /// False when the payload is invalid.
+            /// </returns>
+            public static bool RegisterBiomeMutation(FaunaBiomeMutationDefinition definition)
+            {
+                bool success = ModEcosystemRegistry.TryRegister(definition, out string error);
+                if (!success)
+                {
+                    Debug.LogWarning(
+                        $"[HectonAPI.Ecosystem] Failed to register biome mutation for biome '{(definition != null ? definition.BiomeId : 0)}': {error}");
+                }
+
+                return success;
             }
         }
 

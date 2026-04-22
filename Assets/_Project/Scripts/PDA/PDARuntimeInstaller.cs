@@ -1,4 +1,5 @@
 using UnityEngine;
+using Hecton8.UI;
 
 namespace Hecton8.PDA
 {
@@ -23,6 +24,9 @@ namespace Hecton8.PDA
 
             if (playerObject.GetComponent<PDAMarkerRegistry>() == null)
                 playerObject.AddComponent<PDAMarkerRegistry>();
+
+            if (playerObject.GetComponent<PDAIntrusionManager>() == null)
+                playerObject.AddComponent<PDAIntrusionManager>();
         }
     }
 }

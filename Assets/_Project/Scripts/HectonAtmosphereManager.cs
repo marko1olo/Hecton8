@@ -832,6 +832,9 @@ namespace Hecton8.Atmosphere
                 case PlayerLocomotionMode.UnderwaterSwim:
                     return true;
 
+                case PlayerLocomotionMode.ExosuitLocomotion:
+                    return _playerMovement.CurrentDepth > 0.01f || _playerMovement.IsPlayerSubmerged;
+
                 case PlayerLocomotionMode.SurfaceSwim:
                     return _playerMovement.IsPlayerSubmerged;
 

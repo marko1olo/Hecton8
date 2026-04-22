@@ -1,4 +1,5 @@
 using UnityEngine;
+using Hecton8.UI;
 
 namespace Hecton8.Progression
 {
@@ -21,6 +22,12 @@ namespace Hecton8.Progression
 
             if (playerObject.GetComponent<PlayerAchievementRegistry>() == null)
                 playerObject.AddComponent<PlayerAchievementRegistry>();
+
+            if (playerObject.GetComponent<HectonOSBootManager>() == null)
+                playerObject.AddComponent<HectonOSBootManager>();
+
+            if (playerObject.GetComponent<SonarHoloCompass>() == null)
+                playerObject.AddComponent<SonarHoloCompass>();
         }
     }
 }

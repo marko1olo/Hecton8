@@ -1,4 +1,4 @@
-﻿{
+{
   "ACTION_EATING": "섭취 중...",
   "ACTION_HEALING": "사용 중...",
   "ACTION_OXYGEN": "흡입 중...",
@@ -1209,5 +1209,20 @@
   "PDA_FOOTER_RIGHT_STANDBY": "O2 {0:0}%  |  PWR {1:0}%  |  PDA 대기",
   "TECH_O2_SPEC": "[Pressure: 300 bar | Mix: O2 96% | Rack: A-2]",
   "TECH_HULL_SPEC": "[Sealant: <key:ITEM_TITANIUM_SCRAP_NAME> laminate | Rating: 41 MPa]",
-  "TECH_PWR_BUS": "[Bus: 48V DC | Cell bank: Li-Salt MkII]"
+  "TECH_PWR_BUS": "[Bus: 48V DC | Cell bank: Li-Salt MkII]",
+  "MADNESS_WHISPERS_01": "숨 쉬지 마. 그것이 보고 있다.",
+  "MADNESS_WHISPERS_02": "압력이 네 이름을 알고 있다.",
+  "MADNESS_WHISPERS_03": "유리 너머를 보지 마.",
+  "MADNESS_WHISPERS_04": "그걸 놔둬. 그건 우리 거야.",
+  "MADNESS_WHISPERS_05": "선체 아래에서 말하고 있다.",
+  "MADNESS_WHISPERS_06": "물이 네 형태를 기억한다.",
+  "MADNESS_WHISPERS_07": "두드리는 소리에 대답하지 마.",
+  "MADNESS_WHISPERS_08": "네 잠수복 안에서 무언가 숨 쉬고 있다.",
+  "MADNESS_WHISPERS_09": "네 그림자가 먼저 떠올랐다.",
+  "MADNESS_WHISPERS_10": "밸브를 닫아. 그건 그 소리를 좋아한다.",
+  "MADNESS_WHISPERS_11": "그것들은 격벽 안을 걷고 있다.",
+  "MADNESS_WHISPERS_12": "심해가 네 얼굴을 쓰고 있다.",
+  "MADNESS_WHISPERS_13": "네가 말하기 전에 그것이 너를 들었다.",
+  "MADNESS_WHISPERS_14": "선체가 네 뼈를 배우고 있다.",
+  "MADNESS_WHISPERS_15": "빛이 죽으면, 움직이지 마."
 }

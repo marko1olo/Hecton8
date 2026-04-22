@@ -65,6 +65,7 @@ namespace Hecton8.Gameplay
         // COLD ALLOC: 32 entries — max installed upgrades
         private readonly HashSet<string> _installedUpgrades  = new HashSet<string>(32);
         private readonly HashSet<string> _unlockedBlueprints = new HashSet<string>(32);
+        private readonly HashSet<string> _brokenUpgrades = new HashSet<string>(16);
 
         // Runtime stats — clone of baseStats with deltas applied
         private SurvivalStats _runtimeStats;
@@ -237,8 +238,84 @@ namespace Hecton8.Gameplay
         }
 
         public bool IsInstalled(string upgradeId) => _installedUpgrades.Contains(upgradeId);
+        public bool IsBroken(string upgradeId) => !string.IsNullOrEmpty(upgradeId) && _brokenUpgrades.Contains(upgradeId);
 
         public bool IsBlueprintUnlocked(string blueprintId) => _unlockedBlueprints.Contains(blueprintId);
+
+        /// <summary>
+        /// Randomly breaks one installed module and removes its runtime bonuses until repaired.
+        /// </summary>
+        public bool TryBreakRandomInstalledUpgrade(float chance01, out SuitUpgradeData brokenUpgrade)
+        {
+            brokenUpgrade = null;
+
+            if (_installedUpgrades.Count <= 0 || chance01 <= 0f)
+                return false;
+
+            if (Random.value > Mathf.Clamp01(chance01))
+                return false;
+
+            int eligibleCount = 0;
+            for (int i = 0; i < allUpgrades.Length; i++)
+            {
+                SuitUpgradeData upgrade = allUpgrades[i];
+                if (upgrade == null || string.IsNullOrEmpty(upgrade.upgradeId))
+                    continue;
+
+                if (!_installedUpgrades.Contains(upgrade.upgradeId) || _brokenUpgrades.Contains(upgrade.upgradeId))
+                    continue;
+
+                eligibleCount++;
+            }
+
+            if (eligibleCount <= 0)
+                return false;
+
+            int targetIndex = Random.Range(0, eligibleCount);
+            for (int i = 0; i < allUpgrades.Length; i++)
+            {
+                SuitUpgradeData upgrade = allUpgrades[i];
+                if (upgrade == null || string.IsNullOrEmpty(upgrade.upgradeId))
+                    continue;
+
+                if (!_installedUpgrades.Contains(upgrade.upgradeId) || _brokenUpgrades.Contains(upgrade.upgradeId))
+                    continue;
+
+                if (targetIndex > 0)
+                {
+                    targetIndex--;
+                    continue;
+                }
+
+                _brokenUpgrades.Add(upgrade.upgradeId);
+                brokenUpgrade = upgrade;
+                RebuildRuntimeStats();
+                NotificationEvents.PushWarning("SUIT MODULE BROKEN: " + upgrade.DisplayNameOrFallback);
+                LogUpgradeBroken(upgrade.upgradeId);
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Repairs a previously broken installed module and restores its runtime bonuses.
+        /// </summary>
+        public bool RepairUpgrade(string upgradeId)
+        {
+            if (string.IsNullOrEmpty(upgradeId) || !_installedUpgrades.Contains(upgradeId))
+                return false;
+
+            if (!_brokenUpgrades.Remove(upgradeId))
+                return false;
+
+            RebuildRuntimeStats();
+
+            SuitUpgradeData upgrade = FindUpgradeById(upgradeId);
+            NotificationEvents.PushInfo("SUIT MODULE REPAIRED: " + (upgrade != null ? upgrade.DisplayNameOrFallback : upgradeId));
+            LogUpgradeRepaired(upgradeId);
+            return true;
+        }
 
         // ══════════════════════════════════════════════════════════
         //  PRIVATE
@@ -282,6 +359,18 @@ namespace Hecton8.Gameplay
             Debug.Log($"[SuitUpgrade] Blueprint unlocked: {discoveryId} → {displayName}");
         }
 
+        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+        private static void LogUpgradeBroken(string upgradeId)
+        {
+            Debug.Log($"[SuitUpgrade] Broken: {upgradeId}");
+        }
+
+        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+        private static void LogUpgradeRepaired(string upgradeId)
+        {
+            Debug.Log($"[SuitUpgrade] Repaired: {upgradeId}");
+        }
+
         /// <summary>
         /// Пересчитывает runtime stats из baseStats + все установленные апгрейды.
         /// Вызывается при установке апгрейда и при загрузке.
@@ -302,7 +391,7 @@ namespace Hecton8.Gameplay
             for (int i = 0; i < allUpgrades.Length; i++)
             {
                 SuitUpgradeData u = allUpgrades[i];
-                if (u == null || !_installedUpgrades.Contains(u.upgradeId)) continue;
+                if (u == null || !_installedUpgrades.Contains(u.upgradeId) || _brokenUpgrades.Contains(u.upgradeId)) continue;
 
                 dOxygen    += u.deltaMaxOxygen;
                 dEnergy    += u.deltaMaxEnergy;
@@ -354,18 +443,23 @@ namespace Hecton8.Gameplay
 
             data.suitInstalledUpgradeIds.Clear();
             data.suitUnlockedBlueprintIds.Clear();
+            data.suitBrokenUpgradeIds.Clear();
 
             foreach (string id in _installedUpgrades)
                 data.suitInstalledUpgradeIds.Add(id);
 
             foreach (string id in _unlockedBlueprints)
                 data.suitUnlockedBlueprintIds.Add(id);
+
+            foreach (string id in _brokenUpgrades)
+                data.suitBrokenUpgradeIds.Add(id);
         }
 
         public void LoadFromSaveData(SaveData data)
         {
             _installedUpgrades.Clear();
             _unlockedBlueprints.Clear();
+            _brokenUpgrades.Clear();
 
             if (data == null) return;
 
@@ -377,7 +471,26 @@ namespace Hecton8.Gameplay
                 foreach (string id in data.suitUnlockedBlueprintIds)
                     if (!string.IsNullOrEmpty(id)) _unlockedBlueprints.Add(id);
 
+            if (data.suitBrokenUpgradeIds != null)
+                foreach (string id in data.suitBrokenUpgradeIds)
+                    if (!string.IsNullOrEmpty(id) && _installedUpgrades.Contains(id)) _brokenUpgrades.Add(id);
+
             RebuildRuntimeStats();
+        }
+
+        private SuitUpgradeData FindUpgradeById(string upgradeId)
+        {
+            if (string.IsNullOrEmpty(upgradeId) || allUpgrades == null)
+                return null;
+
+            for (int i = 0; i < allUpgrades.Length; i++)
+            {
+                SuitUpgradeData upgrade = allUpgrades[i];
+                if (upgrade != null && upgrade.upgradeId == upgradeId)
+                    return upgrade;
+            }
+
+            return null;
         }
     }
 }

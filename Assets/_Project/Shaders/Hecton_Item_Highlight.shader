@@ -156,7 +156,7 @@ Shader "Hecton/Item/Highlight"
                 inputData.viewDirectionWS = GetWorldSpaceNormalizeViewDir(input.positionWS);
                 inputData.shadowCoord = TransformWorldToShadowCoord(input.positionWS);
                 inputData.fogCoord = input.fogFactor;
-                inputData.bakedGI = SampleSHPixel(input.normalWS);
+                inputData.bakedGI = max(half3(0, 0, 0), SampleSH(inputData.normalWS));
                 inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(input.positionCS);
                 inputData.shadowMask = 1.0;
 

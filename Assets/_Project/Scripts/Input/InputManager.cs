@@ -984,53 +984,53 @@ namespace Hecton8.Input
 
         private void SafeEnableActionMap(InputActionMap actionMap)
         {
-            if (!IsActionMapUsable(actionMap))
+            if (!TryResolveRuntimeActionMap(actionMap, out InputActionMap resolvedActionMap) || !IsActionMapUsable(resolvedActionMap))
                 return;
 
             try
             {
-                if (actionMap.enabled)
+                if (resolvedActionMap.enabled)
                     return;
 
-                actionMap.Enable();
+                resolvedActionMap.Enable();
             }
             catch (InvalidOperationException)
             {
-                HandleStaleActionMap(actionMap);
+                RecoverActionMapAfterStateFault(actionMap, resolvedActionMap, enable: true);
             }
             catch (ArgumentOutOfRangeException)
             {
-                HandleStaleActionMap(actionMap);
+                RecoverActionMapAfterStateFault(actionMap, resolvedActionMap, enable: true);
             }
             catch (Exception)
             {
-                HandleStaleActionMap(actionMap);
+                RecoverActionMapAfterStateFault(actionMap, resolvedActionMap, enable: true);
             }
         }
 
         private void SafeDisableActionMap(InputActionMap actionMap)
         {
-            if (!IsActionMapUsable(actionMap))
+            if (!TryResolveRuntimeActionMap(actionMap, out InputActionMap resolvedActionMap) || !IsActionMapUsable(resolvedActionMap))
                 return;
 
             try
             {
-                if (!actionMap.enabled)
+                if (!resolvedActionMap.enabled)
                     return;
 
-                actionMap.Disable();
+                resolvedActionMap.Disable();
             }
             catch (InvalidOperationException)
             {
-                HandleStaleActionMap(actionMap);
+                RecoverActionMapAfterStateFault(actionMap, resolvedActionMap, enable: false);
             }
             catch (ArgumentOutOfRangeException)
             {
-                HandleStaleActionMap(actionMap);
+                RecoverActionMapAfterStateFault(actionMap, resolvedActionMap, enable: false);
             }
             catch (Exception)
             {
-                HandleStaleActionMap(actionMap);
+                RecoverActionMapAfterStateFault(actionMap, resolvedActionMap, enable: false);
             }
         }
 
@@ -1052,6 +1052,97 @@ namespace Hecton8.Input
             catch (Exception)
             {
             }
+        }
+
+        private bool TryResolveRuntimeActionMap(InputActionMap actionMap, out InputActionMap resolvedActionMap)
+        {
+            resolvedActionMap = actionMap;
+            if (_runtimeInputActionAsset == null)
+                return false;
+
+            if (resolvedActionMap == null)
+                return false;
+
+            if (IsActionMapOwnedByRuntimeAsset(resolvedActionMap))
+                return true;
+
+            string actionMapName;
+            try
+            {
+                actionMapName = resolvedActionMap.name;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(actionMapName))
+                return false;
+
+            try
+            {
+                resolvedActionMap = _runtimeInputActionAsset.FindActionMap(actionMapName);
+            }
+            catch (Exception)
+            {
+                resolvedActionMap = null;
+            }
+
+            if (resolvedActionMap == null)
+                return false;
+
+            BindResolvedActionMapReference(actionMapName, resolvedActionMap);
+            return true;
+        }
+
+        private void RecoverActionMapAfterStateFault(InputActionMap requestedActionMap, InputActionMap resolvedActionMap, bool enable)
+        {
+            if (TryResolveRuntimeActionMap(requestedActionMap, out InputActionMap refreshedActionMap) &&
+                refreshedActionMap != null &&
+                !ReferenceEquals(refreshedActionMap, resolvedActionMap) &&
+                IsActionMapUsable(refreshedActionMap))
+            {
+                try
+                {
+                    if (enable)
+                    {
+                        if (!refreshedActionMap.enabled)
+                            refreshedActionMap.Enable();
+                    }
+                    else if (refreshedActionMap.enabled)
+                    {
+                        refreshedActionMap.Disable();
+                    }
+
+                    return;
+                }
+                catch (InvalidOperationException)
+                {
+                }
+                catch (ArgumentOutOfRangeException)
+                {
+                }
+                catch (Exception)
+                {
+                }
+            }
+
+            HandleStaleActionMap(requestedActionMap);
+        }
+
+        private void BindResolvedActionMapReference(string actionMapName, InputActionMap actionMap)
+        {
+            if (actionMap == null || string.IsNullOrWhiteSpace(actionMapName))
+                return;
+
+            if (string.Equals(actionMapName, "Player", StringComparison.Ordinal))
+            {
+                _playerActionMap = actionMap;
+                return;
+            }
+
+            if (string.Equals(actionMapName, "UI", StringComparison.Ordinal))
+                _uiActionMap = actionMap;
         }
 
         private void HandleStaleActionMap(InputActionMap actionMap)

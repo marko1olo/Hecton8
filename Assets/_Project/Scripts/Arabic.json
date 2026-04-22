@@ -1,4 +1,4 @@
-﻿{
+{
   "ACTION_EATING": "الأكل...",
   "ACTION_HEALING": "الاستخدام...",
   "ACTION_OXYGEN": "الاستنشاق...",
@@ -1213,5 +1213,20 @@
   "PDA_FOOTER_RIGHT_STANDBY": "O2 {0:0}%  |  PWR {1:0}%  |  PDA استعداد",
   "TECH_O2_SPEC": "[Pressure: 300 bar | Mix: O2 96% | Rack: A-2]",
   "TECH_HULL_SPEC": "[Sealant: <key:ITEM_TITANIUM_SCRAP_NAME> laminate | Rating: 41 MPa]",
-  "TECH_PWR_BUS": "[Bus: 48V DC | Cell bank: Li-Salt MkII]"
+  "TECH_PWR_BUS": "[Bus: 48V DC | Cell bank: Li-Salt MkII]",
+  "MADNESS_WHISPERS_01": "لا تتنفس. إنه يراقبك.",
+  "MADNESS_WHISPERS_02": "الضغط يعرف اسمك.",
+  "MADNESS_WHISPERS_03": "لا تنظر عبر الزجاج.",
+  "MADNESS_WHISPERS_04": "اتركه. إنه لنا.",
+  "MADNESS_WHISPERS_05": "إنها تتكلم من تحت الهيكل.",
+  "MADNESS_WHISPERS_06": "الماء يتذكر هيئتك.",
+  "MADNESS_WHISPERS_07": "لا ترد على الطرق.",
+  "MADNESS_WHISPERS_08": "شيء ما يتنفس داخل بدلتك.",
+  "MADNESS_WHISPERS_09": "ظلك صعد أولا.",
+  "MADNESS_WHISPERS_10": "أغلق الصمام. إنه يحب هذا الصوت.",
+  "MADNESS_WHISPERS_11": "إنهم يمشون داخل الحواجز.",
+  "MADNESS_WHISPERS_12": "العمق يرتدي وجهك.",
+  "MADNESS_WHISPERS_13": "لقد سمعك قبل أن تتكلم.",
+  "MADNESS_WHISPERS_14": "الهيكل يتعلم عظامك.",
+  "MADNESS_WHISPERS_15": "عندما يموت الضوء، ابق ساكنا."
 }

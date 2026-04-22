@@ -146,8 +146,7 @@ namespace Hecton8.UI
             if (_built) return;
             _built = true;
 
-            if (_labelFont == null)
-                _labelFont = TMPro.TMP_Settings.defaultFontAsset;
+            _labelFont = LocalizedFontResolver.ResolveReadableFont(_labelFont);
 
             RectTransform root = GetComponent<RectTransform>();
 

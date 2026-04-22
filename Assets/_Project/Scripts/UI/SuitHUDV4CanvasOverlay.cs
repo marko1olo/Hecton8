@@ -193,12 +193,15 @@ namespace Hecton8.UI
         private Color _appliedHeadingLabelColor;
         private string _appliedStatusLabelText;
         private Color _appliedStatusLabelColor;
+        private string _appliedDepthText;
         private int _appliedDepthValue;
         private bool _hasAppliedDepthValue;
         private Color _appliedDepthColor;
+        private string _appliedTemperatureText;
         private int _appliedTemperatureTenths;
         private bool _hasAppliedTemperatureTenths;
         private Color _appliedTemperatureColor;
+        private string _appliedPressureText;
         private int _appliedPressureTenths;
         private bool _hasAppliedPressureTenths;
         private Color _appliedPressureColor;
@@ -238,6 +241,8 @@ namespace Hecton8.UI
         private Color _appliedWarning;
         private CanvasScaler _cachedCanvasScaler;
         private HectonSurvivalSystem _depthSignalSource;
+        private int _cachedHullStressWhisperBucket = int.MinValue;
+        private string _cachedHullStressWhisperText;
 
         public Canvas TargetCanvas => ResolveTargetCanvas();
         public Camera ProjectionCamera => projectionCamera;
@@ -267,6 +272,7 @@ namespace Hecton8.UI
             public TextMeshProUGUI Value;
             public TextMeshProUGUI Sub;
             public string CachedLabel;
+            public string CachedValueText;
             public string CachedSubLabel;
             public int CachedRoundedValue;
             public bool HasCachedRoundedValue;
@@ -284,6 +290,7 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
+            LocalizationManager.OnCorruptionVisualStateChanged += HandleCorruptionVisualStateChanged;
             SceneBootstrap.OnGameReady += HandleSceneBootstrapReady;
             RegisterActiveOverlay();
             _layoutBuilt = false;
@@ -306,6 +313,7 @@ namespace Hecton8.UI
         private void OnDisable()
         {
             LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+            LocalizationManager.OnCorruptionVisualStateChanged -= HandleCorruptionVisualStateChanged;
             SceneBootstrap.OnGameReady -= HandleSceneBootstrapReady;
             UnregisterActiveOverlay();
             UnregisterRuntimeTick();
@@ -853,6 +861,9 @@ namespace Hecton8.UI
             Color pulsedPrimary = ResolveStressPulseColor(primary, warning, stressPulse, stressPulseBrightnessBoost, stressPulseWarningBlend);
             Color pulsedDim = ResolveStressPulseColor(dim, warning, stressPulse, stressPulseBrightnessBoost * 0.45f, stressPulseWarningBlend * 0.38f);
             Color pulsedWarning = ResolveStressPulseColor(warning, primary, stressPulse, stressPulseBrightnessBoost * 0.22f, 0f);
+            LocalizationManager manager = LocalizationManager.Instance;
+            bool hullStressWhisperMode = ShouldUseHullStressWhisperMode(manager);
+            string hullStressWhisperText = hullStressWhisperMode ? ResolveHullStressWhisperText(manager) : null;
 
             float targetTemp = EstimateTemperature(depth);
             _displayTemperature = Mathf.Lerp(_displayTemperature, targetTemp, 1f - Mathf.Exp(-4f * dt));
@@ -862,22 +873,38 @@ namespace Hecton8.UI
             ApplyStaticStyleIfNeeded(primary, secondary, dim, warning);
             ApplyStressPulseStyle(primary, warning, stressPulse);
 
-            SetTextIfChanged(_suitLabel, ResolveSuitLabel(), Alpha(primary, 0.95f), ref _appliedSuitLabelText, ref _appliedSuitLabelColor);
-            SetTextIfChanged(_headingLabel, ResolveHeadingLabel(Mathf.RoundToInt(heading)), Alpha(dim, 0.58f), ref _appliedHeadingLabelText, ref _appliedHeadingLabelColor);
+            SetTextIfChanged(_suitLabel, hullStressWhisperMode ? hullStressWhisperText : ResolveSuitLabel(), Alpha(primary, 0.95f), ref _appliedSuitLabelText, ref _appliedSuitLabelColor);
+            SetTextIfChanged(_headingLabel, hullStressWhisperMode ? hullStressWhisperText : ResolveHeadingLabel(Mathf.RoundToInt(heading)), Alpha(dim, 0.58f), ref _appliedHeadingLabelText, ref _appliedHeadingLabelColor);
             float localizedDepth = LocalizedMeasurementFormatter.ConvertDistanceMeters(depth, _localizedMeasurementLanguage);
             float localizedTemperature = LocalizedMeasurementFormatter.ConvertTemperatureCelsius(_displayTemperature, _localizedMeasurementLanguage);
-            SetMetricIntIfChanged(_depthLabel, _localizedDepthPattern, Mathf.RoundToInt(localizedDepth), Alpha(pulsedPrimary, 0.96f), ref _appliedDepthValue, ref _hasAppliedDepthValue, ref _appliedDepthColor);
-            SetMetricFloatTenthsIfChanged(_temperatureLabel, _localizedTemperaturePattern, localizedTemperature, Alpha(pulsedDim, 0.84f), ref _appliedTemperatureTenths, ref _hasAppliedTemperatureTenths, ref _appliedTemperatureColor);
-            SetMetricFloatTenthsIfChanged(_pressureLabel, _localizedPressurePattern, pressure, Alpha(pulsedDim, 0.64f), ref _appliedPressureTenths, ref _hasAppliedPressureTenths, ref _appliedPressureColor);
-            SetTextIfChanged(_statusLabel, ResolveStatus(oxygen, power, health, safeDepthNormalized, depth, safeDepth, depthDelta), PickAccent(oxygen, power, health, safeDepthNormalized, pulsedPrimary, pulsedWarning), ref _appliedStatusLabelText, ref _appliedStatusLabelColor);
+            if (hullStressWhisperMode)
+            {
+                SetTextIfChanged(_depthLabel, hullStressWhisperText, Alpha(pulsedPrimary, 0.96f), ref _appliedDepthText, ref _appliedDepthColor);
+                SetTextIfChanged(_temperatureLabel, hullStressWhisperText, Alpha(pulsedDim, 0.84f), ref _appliedTemperatureText, ref _appliedTemperatureColor);
+                SetTextIfChanged(_pressureLabel, hullStressWhisperText, Alpha(pulsedDim, 0.64f), ref _appliedPressureText, ref _appliedPressureColor);
+                _hasAppliedDepthValue = false;
+                _hasAppliedTemperatureTenths = false;
+                _hasAppliedPressureTenths = false;
+            }
+            else
+            {
+                _appliedDepthText = null;
+                _appliedTemperatureText = null;
+                _appliedPressureText = null;
+                SetMetricIntIfChanged(_depthLabel, _localizedDepthPattern, Mathf.RoundToInt(localizedDepth), Alpha(pulsedPrimary, 0.96f), ref _appliedDepthValue, ref _hasAppliedDepthValue, ref _appliedDepthColor);
+                SetMetricFloatTenthsIfChanged(_temperatureLabel, _localizedTemperaturePattern, localizedTemperature, Alpha(pulsedDim, 0.84f), ref _appliedTemperatureTenths, ref _hasAppliedTemperatureTenths, ref _appliedTemperatureColor);
+                SetMetricFloatTenthsIfChanged(_pressureLabel, _localizedPressurePattern, pressure, Alpha(pulsedDim, 0.64f), ref _appliedPressureTenths, ref _hasAppliedPressureTenths, ref _appliedPressureColor);
+            }
+
+            SetTextIfChanged(_statusLabel, hullStressWhisperMode ? hullStressWhisperText : ResolveStatus(oxygen, power, health, safeDepthNormalized, depth, safeDepth, depthDelta), PickAccent(oxygen, power, health, safeDepthNormalized, pulsedPrimary, pulsedWarning), ref _appliedStatusLabelText, ref _appliedStatusLabelColor);
 
             Color oxygenAccent = pulsedPrimary;
             Color healthAccent = Color.Lerp(pulsedPrimary, pulsedDim, 0.24f);
             Color energyAccent = Color.Lerp(pulsedPrimary, pulsedWarning, 0.28f);
 
-            UpdateGauge(ref _oxygenGauge, _localizedGaugeO2Label, string.Empty, oxygen, oxygenCurrent, oxygenAccent, secondary, pulsedDim, pulsedWarning);
-            UpdateGauge(ref _healthGauge, _localizedGaugeHullLabel, string.Empty, health, healthCurrent, healthAccent, secondary, pulsedDim, pulsedWarning);
-            UpdateGauge(ref _powerGauge, _localizedGaugePowerLabel, string.Empty, power, energyCurrent, energyAccent, secondary, pulsedDim, pulsedWarning);
+            UpdateGauge(ref _oxygenGauge, _localizedGaugeO2Label, string.Empty, oxygen, oxygenCurrent, oxygenAccent, secondary, pulsedDim, pulsedWarning, hullStressWhisperText);
+            UpdateGauge(ref _healthGauge, _localizedGaugeHullLabel, string.Empty, health, healthCurrent, healthAccent, secondary, pulsedDim, pulsedWarning, hullStressWhisperText);
+            UpdateGauge(ref _powerGauge, _localizedGaugePowerLabel, string.Empty, power, energyCurrent, energyAccent, secondary, pulsedDim, pulsedWarning, hullStressWhisperText);
         }
 
         private void RefreshDepthSignalSubscription()
@@ -916,6 +943,13 @@ namespace Hecton8.UI
         private void HandleDepthChanged(float depth)
         {
             _depthMeters = Mathf.Max(0f, depth);
+        }
+
+        private void HandleCorruptionVisualStateChanged()
+        {
+            _cachedHullStressWhisperBucket = int.MinValue;
+            _cachedHullStressWhisperText = null;
+            InvalidateVisualCaches();
         }
 
         private void ResolveProfile()
@@ -1095,6 +1129,26 @@ namespace Hecton8.UI
                 : fallback;
         }
 
+        private static bool ShouldUseHullStressWhisperMode(LocalizationManager manager)
+        {
+            return manager != null && manager.GetHullStressCorruptionIntensity() > 0.9f;
+        }
+
+        private string ResolveHullStressWhisperText(LocalizationManager manager)
+        {
+            if (manager == null)
+                return "THE SEA IS INSIDE THE GLASS";
+
+            int bucket = manager.GetHullStressCorruptionBucket();
+            if (_cachedHullStressWhisperBucket == bucket && !string.IsNullOrEmpty(_cachedHullStressWhisperText))
+                return _cachedHullStressWhisperText;
+
+            _cachedHullStressWhisperBucket = bucket;
+            _cachedHullStressWhisperText = manager.ApplyHullStressCorruptionIfNeeded(
+                manager.GetHullStressHudWhisper("THE SEA IS INSIDE THE GLASS"));
+            return _cachedHullStressWhisperText;
+        }
+
         private static Color PickAccent(float oxygen, float power, float health, float safeDepthNormalized, Color primary, Color warning)
         {
             if (oxygen <= 0.2f || power <= 0.2f || health <= 0.2f || safeDepthNormalized <= 0.18f)
@@ -1111,10 +1165,11 @@ namespace Hecton8.UI
             return 1f - Mathf.Clamp01(depth / safeDepth);
         }
 
-        private static void UpdateGauge(ref GaugeRefs gauge, string label, string subLabel, float normalized, float currentValue, Color primary, Color secondary, Color dim, Color warning)
+        private static void UpdateGauge(ref GaugeRefs gauge, string label, string subLabel, float normalized, float currentValue, Color primary, Color secondary, Color dim, Color warning, string hullStressWhisperText)
         {
             float clamped = Mathf.Clamp01(normalized);
             Color accent = clamped <= 0.2f ? warning : primary;
+            bool hullStressWhisperMode = !string.IsNullOrEmpty(hullStressWhisperText);
             if (gauge.Icon != null)
             {
                 Color iconColor = Alpha(accent, 0.94f);
@@ -1165,10 +1220,11 @@ namespace Hecton8.UI
             Color labelColor = Alpha(dim, 0.84f);
             if (gauge.Label != null)
             {
-                if (!string.Equals(gauge.CachedLabel, label, System.StringComparison.Ordinal))
+                string labelText = hullStressWhisperMode ? hullStressWhisperText : label;
+                if (!string.Equals(gauge.CachedLabel, labelText, System.StringComparison.Ordinal))
                 {
-                    gauge.Label.text = label;
-                    gauge.CachedLabel = label;
+                    gauge.Label.text = labelText;
+                    gauge.CachedLabel = labelText;
                 }
 
                 if (gauge.CachedLabelColor != labelColor)
@@ -1182,11 +1238,21 @@ namespace Hecton8.UI
             int roundedValue = Mathf.RoundToInt(currentValue);
             if (gauge.Value != null)
             {
-                if (!gauge.HasCachedRoundedValue || gauge.CachedRoundedValue != roundedValue)
+                if (hullStressWhisperMode)
+                {
+                    if (!string.Equals(gauge.CachedValueText, hullStressWhisperText, System.StringComparison.Ordinal))
+                    {
+                        gauge.Value.text = hullStressWhisperText;
+                        gauge.CachedValueText = hullStressWhisperText;
+                    }
+                    gauge.HasCachedRoundedValue = false;
+                }
+                else if (!gauge.HasCachedRoundedValue || gauge.CachedRoundedValue != roundedValue)
                 {
                     gauge.Value.SetText("{0:0}", roundedValue);
                     gauge.CachedRoundedValue = roundedValue;
                     gauge.HasCachedRoundedValue = true;
+                    gauge.CachedValueText = null;
                 }
 
                 if (gauge.CachedValueColor != valueColor)
@@ -1198,10 +1264,11 @@ namespace Hecton8.UI
 
             if (gauge.Sub != null)
             {
-                if (!string.Equals(gauge.CachedSubLabel, subLabel, System.StringComparison.Ordinal))
+                string resolvedSubLabel = hullStressWhisperMode ? hullStressWhisperText : subLabel;
+                if (!string.Equals(gauge.CachedSubLabel, resolvedSubLabel, System.StringComparison.Ordinal))
                 {
-                    gauge.Sub.text = subLabel;
-                    gauge.CachedSubLabel = subLabel;
+                    gauge.Sub.text = resolvedSubLabel;
+                    gauge.CachedSubLabel = resolvedSubLabel;
                 }
 
                 Color subColor = Alpha(secondary, 0.55f);
@@ -1719,12 +1786,15 @@ namespace Hecton8.UI
             _appliedHeadingLabelColor = default;
             _appliedStatusLabelText = null;
             _appliedStatusLabelColor = default;
+            _appliedDepthText = null;
             _appliedDepthValue = 0;
             _hasAppliedDepthValue = false;
             _appliedDepthColor = default;
+            _appliedTemperatureText = null;
             _appliedTemperatureTenths = 0;
             _hasAppliedTemperatureTenths = false;
             _appliedTemperatureColor = default;
+            _appliedPressureText = null;
             _appliedPressureTenths = 0;
             _hasAppliedPressureTenths = false;
             _appliedPressureColor = default;
@@ -1742,6 +1812,8 @@ namespace Hecton8.UI
             _appliedRenderPath = default;
             _appliedOverlaySortingOrder = 0;
             _cachedCanvasScaler = null;
+            _cachedHullStressWhisperBucket = int.MinValue;
+            _cachedHullStressWhisperText = null;
         }
 
         private Canvas ResolveTargetCanvas()

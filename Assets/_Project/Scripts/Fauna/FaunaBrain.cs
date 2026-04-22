@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.Serialization;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Hecton8.Physics;
 using Hecton8.VFX;
 using Hecton8.World;
 
@@ -72,6 +73,8 @@ namespace Hecton8.AI
         
         // --- Animator Hashes (Prime Directive #18) ---
         private static readonly int _HashSwimSpeed = Animator.StringToHash("SwimSpeed");
+        private const float AmbientCurrentInfluence = 0.22f;
+        private const float AmbientCurrentMaxVelocity = 3.8f;
         
         // --- LOD & Stagger ---
         private bool _lodDisabled;
@@ -183,11 +186,13 @@ namespace Hecton8.AI
                 _registered = false;
             }
 
+            ClearInfectionHazardRegistration();
             UnregisterSpatialHandle();
         }
 
         private void OnDestroy()
         {
+            ClearInfectionHazardRegistration();
             if (_stateMachine != null)
                 _stateMachine.OnAttackPerform -= HandleAttackPerform;
         }
@@ -195,16 +200,24 @@ namespace Hecton8.AI
         public void OnSpawn()
         {
             _isDead = false;
+            _runtimeAggressionScale = 1f;
+            ClearGeneticTraits();
+            SetInfectedState(false, 0f);
             _currentHealth = _maxHealth;
             _stateMachine.Init(transform, _speciesProfile);
+            RefreshRuntimeEcosystemState();
             RegisterSpatialHandle();
         }
 
         public void OnDespawn()
         {
             _isDead = true;
+            _runtimeAggressionScale = 1f;
+            ClearGeneticTraits();
+            SetInfectedState(false, 0f);
             _rb.linearVelocity = Vector3.zero;
             _rb.angularVelocity = Vector3.zero;
+            ClearInfectionHazardRegistration();
             UnregisterSpatialHandle();
         }
 
@@ -308,19 +321,26 @@ namespace Hecton8.AI
             Vector3 playerTargetPosition = default;
             if (_sensorSuite.TryGetPerceivedPlayerPosition(out Vector3 perceivedPlayerPosition))
                 playerTargetPosition = perceivedPlayerPosition;
+
+            float runtimeSpeedScale = ResolveRuntimeSpeedMultiplierForState(_stateMachine.currentState);
             
             _steeringEngine.FixedTick(
                 fdt, 
                 _cachedDesiredDirection, 
                 _stateMachine.currentForceMultiplier, 
-                _stateMachine.currentSpeedMultiplier, 
+                _stateMachine.currentSpeedMultiplier * runtimeSpeedScale,
                 _stateMachine.currentTurnMultiplier,
                 _stateMachine.currentState == AIState.Retreat,
                 playerTargetPosition
             );
+
+            ApplyAmbientCurrentDrift(fdt);
         }
 
-        public void SlowTick() { }
+        public void SlowTick()
+        {
+            RefreshRuntimeEcosystemState();
+        }
 
         private void RegisterSpatialHandle()
         {
@@ -339,6 +359,19 @@ namespace Hecton8.AI
             _spatialHandle = 0;
         }
 
+        private void ApplyAmbientCurrentDrift(float fdt)
+        {
+            if (_rb == null || fdt <= 0f)
+                return;
+
+            Vector3 sampledCurrent = CurrentVolume.SampleCombinedCurrent(_rb.worldCenterOfMass);
+            if (sampledCurrent.sqrMagnitude <= 0.0001f)
+                return;
+
+            Vector3 velocityChange = Vector3.ClampMagnitude(sampledCurrent, AmbientCurrentMaxVelocity) * (AmbientCurrentInfluence * fdt);
+            _rb.AddForce(velocityChange, ForceMode.VelocityChange);
+        }
+
         // ══════════════════════════════════════════════════════════
         //  PUBLIC API
         // ══════════════════════════════════════════════════════════
@@ -354,7 +387,7 @@ namespace Hecton8.AI
         {
             if (target == null || _isDead) return;
             
-            float damage = _speciesProfile != null ? _speciesProfile.attackDamage : _stateMachine.attackDamage;
+            float damage = ResolveCurrentAttackDamage();
 
             // 1. PREY INTERACTION (Food Chain)
             if (target.CompareTag("Prey"))

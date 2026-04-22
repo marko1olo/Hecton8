@@ -141,9 +141,11 @@ Shader "NASAPunk/SuitVisor"
             TEXTURE2D(_CameraOpaqueTexture); SAMPLER(sampler_CameraOpaqueTexture);
             float4 _SonarRevealOriginWS;
             float4 _SonarRevealWaveParams;
+            float _SonarWaveFront;
             float4 _SonarGridParams0;
             float4 _SonarGridHardColor;
             float4 _SonarGridOrganicColor;
+            float4 _SonarGridAbyssalColor;
             float4 _SonarRevealContacts[24];
             float4 _SonarRevealContactMeta[24];
             float _SonarRevealExpireTime;
@@ -430,7 +432,7 @@ Shader "NASAPunk/SuitVisor"
                     float timeSinceArrival = _Time.y - (_SonarRevealWaveParams.x + distanceToOrigin / sonarWaveSpeed);
                     float arrivalMask = step(0.0, timeSinceArrival);
                     float terrainFade = arrivalMask * saturate(1.0 - (timeSinceArrival / sonarFadeDuration));
-                    float waveRadius = max(0.0, (_Time.y - _SonarRevealWaveParams.x) * sonarWaveSpeed);
+                    float waveRadius = max(0.0, _SonarWaveFront);
                     float waveBandWidth = lerp(6.0, 2.0, saturate(_SonarRevealWaveParams.w));
                     float waveFront = 1.0 - smoothstep(waveBandWidth, waveBandWidth * 2.0, abs(distanceToOrigin - waveRadius));
                     float contourMask = ComputeSonarContourMask(screenUV, sonarSceneDepth);
@@ -440,6 +442,7 @@ Shader "NASAPunk/SuitVisor"
 
                     float hardAccum = terrainGrid * 0.55;
                     float organicAccum = terrainGrid * 0.18;
+                    float abyssalAccum = 0.0;
 
                     [unroll(24)]
                     for (int contactIndex = 0; contactIndex < 24; contactIndex++)
@@ -451,16 +454,20 @@ Shader "NASAPunk/SuitVisor"
                         float contactRadius = max(0.25, _SonarRevealContactMeta[contactIndex].z);
                         float contactDistance = distance(sonarSceneWorldPos, _SonarRevealContacts[contactIndex].xyz);
                         float contactMask = (1.0 - smoothstep(contactRadius * 0.55, contactRadius, contactDistance)) * contactFade;
-                        hardAccum += contactMask * _SonarRevealContactMeta[contactIndex].x;
-                        organicAccum += contactMask * _SonarRevealContactMeta[contactIndex].y;
+                        float abyssalMask = step(0.5, _SonarRevealContactMeta[contactIndex].w);
+                        hardAccum += contactMask * _SonarRevealContactMeta[contactIndex].x * (1.0 - abyssalMask);
+                        organicAccum += contactMask * _SonarRevealContactMeta[contactIndex].y * (1.0 - abyssalMask);
+                        abyssalAccum += contactMask * abyssalMask * 1.15;
                     }
 
                     float hardStrength = saturate(hardAccum);
                     float organicStrength = saturate(organicAccum);
+                    float abyssalStrength = saturate(abyssalAccum);
                     sonarOverlayColor =
                         (_SonarGridHardColor.rgb * hardStrength) +
-                        (_SonarGridOrganicColor.rgb * organicStrength);
-                    sonarOverlayMask = sonarGridIntensity * saturate(max(hardStrength, organicStrength) + waveFront * contourMask * 0.4);
+                        (_SonarGridOrganicColor.rgb * organicStrength) +
+                        (_SonarGridAbyssalColor.rgb * abyssalStrength);
+                    sonarOverlayMask = sonarGridIntensity * saturate(max(max(hardStrength, organicStrength), abyssalStrength) + waveFront * contourMask * 0.4);
                 }
 
                 float hudEdgeFade;

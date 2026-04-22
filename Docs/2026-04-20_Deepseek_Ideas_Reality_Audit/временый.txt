@@ -1,303 +1,326 @@
+
+-=-=-=-=-=-
 ДИАЛОГ ""НАСТРОИТЬ ГПУ ТРАВУ И БЛЕНД""
 
 
+
+Worked for 10m 27s
 What was wrong
 
-LOD1 motion vectors were still wrong. The impostor cards in Hecton_IndirectVegetationMotionVectors.shader (line 227) built both current and previous billboards from the current camera position, so a fast scooter turn could smear the far cards. Additional lights in Hecton_IndirectVegetation.shader (line 879) also stayed too readable in the abyss because there was no camera-distance extinction below the deep-fog band.
+Crest 5 was not actually fixed. In Lighting.hlsl (line 149) AdditionalLighting() had been neutered with an early return color;. That only hides the Unity 6 breakage. It does not repair it. On current URP, clustered light looping expects a live inputData symbol for LIGHT_LOOP_BEGIN, and Crest was not providing it.
 
-I did not add a standalone empty-space volumetric spotlight renderer. That is a separate fullscreen/light-volume subsystem, outside the strict vegetation owner, and wiring it here would be architecture drift.
+The abyss water path was also too flat. UnderwaterShared.hlsl (line 392) had no hard deep-sea extinction ramp that takes water from readable near-surface to near-black by roughly 600m.
+
+The volumetric shaft system the task asks for already existed as the owner HectonScooterVolumetricShaftsFeature.cs (line 13) plus Hecton_ScooterVolumetricShafts.shader (line 276). Duplicating it under a second feature name would be architecture drift.
+
+V-SSAO existed too, but it was still configured too wide for the brief: HectonVoxelSsaoFeature.cs (line 37) was 1.0m / 6 taps, not the requested lightweight ~1.5m / 4 taps cave-only solve.
 
 What I did
 
-In HectonIndirectVegetationRenderer.cs (line 57) I added _HectonPreviousCameraPosition binding plus cached motion-camera history fields at 230 (line 230). The motion pass now pushes previous camera position before each draw in DrawMotionVectorPasses (line 1267) and resets safely on disable at 346 (line 346).
+I repaired Crest’s Unity 6 clustered-light path instead of masking it. In Lighting.hlsl (line 156) I now reconstruct the minimal valid URP InputData needed by the clustered light iterator:
 
-In Hecton_IndirectVegetationMotionVectors.shader (line 59) I added the new uniform and rewired billboard history. ResolveBillboardPositionWS(...) now accepts an explicit camera position at 227 (line 227), AnimatePositionWS(...) carries it through at 238 (line 238), and the vertex path now uses _WorldSpaceCameraPos for current plus _HectonPreviousCameraPosition for previous at 293 (line 293).
+inputData.positionWS = i_PositionWS
+inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(i_ScreenPosition)
+Then I switched Crest back onto the real URP clustered loop in Lighting.hlsl (line 179) with LIGHT_LOOP_BEGIN / LIGHT_LOOP_END. That removes the fake early-out and restores additional-light contribution under Unity 6000’s clustered path.
 
-In Hecton_IndirectVegetation.shader (line 312) I added ResolveAbyssalAdditionalLightVisibility(...). The additional-light loop now multiplies both local diffuse/translucency and local shaft energy by this deep-water extinction term at 879 (line 879), 898 (line 898), and 899 (line 899). Below 1000m, headlights get progressively eaten by distance through the water column instead of reading cleanly to the far plane.
+For optical parity, I hardened underwater extinction in UnderwaterShared.hlsl (line 392). The new abyssFactor starts after a shallow clear band, then ramps quadratically toward a stronger exponential extinction by ~600m. Result: near-surface stays clearer, deep water goes ink-dark instead of blue mush.
+
+I did not fork a second volumetric-shafts feature. The correct owner already exists. I audited the existing fullscreen path:
+
+raymarch in IntegrateHeadlightShafts (line 276)
+depth-aware bilateral blur in BlurShafts (line 340)
+composite in HectonScooterVolumetricShaftsFeature.cs (line 170)
+That owner already gives the requested fullscreen raymarch, blue-noise jitter, bilateral cleanup, and depth termination against cave geometry. Duplicating it would have been bad engineering.
+
+I tightened V-SSAO to the brief in HectonVoxelSsaoFeature.cs (line 37):
+
+radiusMeters = 1.5f
+sampleCount = 4
+The compute path remains the existing owner and still consumes the camera depth prepass for ambient-only cave occlusion.
 
 In-game result
 
-LOD1 impostor cards now have a proper previous-camera billboard basis, so rapid scooter yaw should produce less far-field ghosting in TAA/motion blur. In abyss scenes, local lights still drive the vegetation, but their reach is shorter and dirtier because the water now absorbs them with camera distance.
+Crest water is no longer relying on a fake disabled additional-light path. Under Unity 6 clustered lighting, water now has the minimal InputData state it needs to compile and participate in URP’s additional-light loop again.
 
-Empty-space volumetric headlight shafts through pure void are still not present. The vegetation-side scattering is stronger and more coherent, but it is not a new fullscreen raymarch system.
+The underwater volume should read less like blue gel and more like actual deep water: readable near the surface, then progressively crushed toward black as depth approaches the abyss band.
+
+The headlight shafts owner remains the same fullscreen system, but it is already the correct architecture for this repo. It raymarchs only up to scene depth, so cave walls, base walls, and voxel arches terminate the beam instead of letting it punch through geometry.
+
+V-SSAO is now cheaper and more on-brief for MX350 cave use: 4 depth taps over a 1.5m neighborhood, ambient only.
 
 What was verified
 
-Static patch verification only:
+Unity-verified:
 
-motion-camera history property and cached state exist in renderer
-motion shader now consumes previous camera position for LOD1 billboard history
-abyss additional-light extinction exists and is applied in the forward additional-light loop
-Unity-side verification is blocked. refresh_unity timed out waiting for readiness, and subsequent console calls returned Unity session not available. I do not have live compile or Frame Debugger proof for this turn. Status remains PENDING VERIFICATION.
+refresh_unity succeeded and requested compilation.
+Filtered console returned 0 entries for:
+Lighting.hlsl
+UnderwaterShared.hlsl
+HectonVoxelSsaoFeature
+Hecton_ScooterVolumetricShafts
+General console is not clean. Current unrelated entries are Crest [SerializeReference] warnings for multiple *Lod types and two Internal error - unexpected guid mismatch messages. No owner-zone compile error from this patch was present in the filtered readback.
+Code-review-only:
 
-Экзамен
+Crest clustered fix lives at Lighting.hlsl (line 156)
+Abyss extinction lives at UnderwaterShared.hlsl (line 392)
+Existing fullscreen shafts owner remains at HectonScooterVolumetricShaftsFeature.cs (line 13)
+Existing raymarch/blur anchors remain at Hecton_ScooterVolumetricShafts.shader (line 276) and 340 (line 340)
+V-SSAO budget change is at HectonVoxelSsaoFeature.cs (line 37) and 46 (line 46)
+Экзамен:
 
-Why ZWrite Off in the main pass after Z-prepass:
-The depth-only pass owns visibility. That lets the expensive forward pass shade only pixels that survived the alpha-tested depth prime instead of rewriting depth on every overlapping layer. For algae with cutout holes, only the clipped-in coverage writes depth in prepass; clipped-out transparent holes stay empty, so the forward pass preserves the porous silhouette instead of sealing it.
-
-How shadow culling interacts with scooter headlights:
-It does not. The current shadow culling path is directional-light only. CullFloraShadowInstances is built around the main sun shadow domain, not local spot/point shadow frusta. Scooter headlights can still light the vegetation through URP additional lights, but this GPU shadow-culling path is not handling local spotlight shadow maps.
-
+Лучи не проходят сквозь стены, потому что shafts raymarch идет не в бесконечность. В IntegrateHeadlightShafts (line 276) сначала реконструируется scenePositionWS из SceneDepth, потом rayLength = min(distance(camera, scenePositionWS), MaxRayDistance). Это значит, что depth-writing геометрия и Z-prepass фактически обрезают луч на первом видимом препятствии. Потом BlurShafts (line 340) еще и depth-reject’ом не дает свету размазываться через резкие silhouette edges.
+Для фикса Crest inputData я не вводил новый lighting approximation. Я сделал минимальную реконструкцию URP InputData, достаточную для clustered light loop: world position плюс perspective-normalized screen UV через GetNormalizedScreenSpaceUV(i_ScreenPosition). Математически это пост-проективная нормализация экранных координат, а не новая модель света. Этого достаточно, потому что ClusterInit() в текущем URP реально требует только inputData.positionWS и inputData.normalizedScreenSpaceUV.
 GC VALIDATION: BEFORE: unknown · AFTER: unknown · STATUS: measured proof absent.
-REGRESSION MODEL: CPU/GC unchanged on managed hot paths; GPU cost rises trivially from one extra motion uniform and one abyss-light attenuation eval, while expected correctness improves for LOD1 history and deep-water light falloff.
-HOT PATH IMPACT: no new managed allocations in Tick; renderer only updates cached camera-history vectors; shader cost increase is one extra extinction function per lit pixel in _ADDITIONAL_LIGHTS.
-FAILURE MODES: if the render camera changes abruptly between frames, the motion path falls back to current camera position for one frame; if URP motion vectors are disabled in the renderer asset, the shader path exists but will not be consumed; empty-space spotlight shafts still require a separate volumetric renderer outside this owner.
-WARNING: Regression risk in very spotlight-heavy abyss scenes because additional-light shading still scales with URP’s per-draw light list and fragment count.
+[REGRESSION CHECK] BEFORE→AFTER (Mean GC · Peak GC · Reserved): measured proof absent. STATUS: PENDING VERIFICATION.
+REGRESSION MODEL: CPU/GC hot paths unchanged. Crest patch is shader-side only. V-SSAO got cheaper by reducing default taps from 6 to 4 while increasing radius to 1.5m. Underwater extinction adds a few shader ALU ops in Crest’s underwater volume path.
+HOT PATH IMPACT: no new managed allocations introduced. Existing fullscreen shafts owner and existing SSAO compute owner remain the runtime owners.
+FAILURE MODES: if the active URP renderer asset does not include the existing shafts feature or voxel SSAO feature, none of that runtime work appears on screen. Crest package warnings remain. The global console still has unrelated guid mismatch noise, so project-wide health is not clean.
+WARNING: Regression risk in very bright shallow scenes if the new Crest abyss extinction constants are too aggressive for artist-authored biome palettes; the next step is measured in-scene tuning, not another blind package patch.
 STATUS: PENDING VERIFICATION.
 
 
 
 
 
-2:22 AM
+3:10 AM
 3 files changed
-+52
--8
++21
+-10
 Undo
 
 Review
-Assets/_Project/Art/Shaders/Hecton_IndirectVegetation.shader
-Assets/_Project/Art/Shaders/Hecton_IndirectVegetationMotionVectors.shader
-Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs
-
+Assets/_Project/Scripts/Visor/HectonVoxelSsaoFeature.cs
+Packages/com.waveharmonic.crest/Runtime/Shaders/Library/Utility/Lighting.hlsl
+Packages/com.waveharmonic.crest/Runtime/Shaders/Volume/UnderwaterShared.
 
 =--=-==--==-=--==-=-=-
 
 
-ДИАЛОГ "" УЛУЧШИТЬ ПЛАВАНИЕ НА ВОЛНАХ""
+ДИАЛОГ ""ДОБАВЬ ФИЗИЧЕСКУЮ ТРАВМУ ИГРОКА"" 
+Worked for 13m 47s
+Что было не так
+
+InputManager держал риск stale InputActionMap ссылок. Когда PDA/UI дергал карту после reset/clone input asset, SafeEnableActionMap и SafeDisableActionMap работали с уже оторванной от runtime state картой. Отсюда и типовая ошибка Map must be contained in state.
+FloraInteractionManager.AppendInteractionPoint писал в _interactionPoints без жесткой проверки буфера. Если массив не был готов или _maxInteractionPoints расходился с фактической длиной, это вело к NullReference/out-of-bounds.
+Crest5KinematicsAdapter по задаче требовал heartbeat и fallback. После аудита выяснилось: это уже реализовано и ломать его повторной хирургией было бы вредно.
+ExosuitLocomotion и Heavy Salvage Cutting уже были внедрены раньше. Этот проход не требовал второй подсистемы поверх первой.
+Что я сделал
+
+Починил stale-map recovery в Assets/_Project/Scripts/Input/InputManager.cs:985, Assets/_Project/Scripts/Input/InputManager.cs:1011, Assets/_Project/Scripts/Input/InputManager.cs:1057, Assets/_Project/Scripts/Input/InputManager.cs:1098.
+Добавил runtime rebinding карты по имени через TryResolveRuntimeActionMap в Assets/_Project/Scripts/Input/InputManager.cs:1057. Теперь перед Enable/Disable менеджер пере-разрешает карту из _runtimeInputActionAsset и обновляет owner refs через BindResolvedActionMapReference в Assets/_Project/Scripts/Input/InputManager.cs:1133.
+Добавил controlled retry после state fault в Assets/_Project/Scripts/Input/InputManager.cs:1098. Если карта словила InvalidOperationException, менеджер сначала пытается поднять свежую runtime map, и только потом идет в полный HandleStaleActionMap.
+Закрыл flora crash hard guards в Assets/_Project/Scripts/World/FloraInteractionManager.cs:825: early return при _interactionPoints == null, защита от _maxInteractionPoints <= 0, clamp отрицательного interactionCount, и запись только в min(_maxInteractionPoints, _interactionPoints.Length).
+Перепроверил Crest 5 heartbeat и не трогал его без причины. Требуемый wake-up уже есть в Assets/_Project/Scripts/Crest5KinematicsAdapter.cs:176, helper-prime в Assets/_Project/Scripts/Crest5KinematicsAdapter.cs:218, fallback sea level 4900f в Assets/_Project/Scripts/Crest5KinematicsAdapter.cs:16 и Assets/_Project/Scripts/Crest5KinematicsAdapter.cs:76.
+Перепроверил, что тяжелая меха и physics cutting уже сидят у правильных owners:
+exosuit negative buoyancy / slope grip / jump jets: Assets/_Project/Scripts/HectonPlayerMovement.cs:688, Assets/_Project/Scripts/HectonPlayerMovement.cs:5382, Assets/_Project/Scripts/HectonPlayerMovement.cs:5443, Assets/_Project/Scripts/HectonPlayerMovement.cs:5691
+cutting spring ownership: Assets/_Project/Scripts/HectonPlayerMovement.cs:1205, Assets/_Project/Scripts/HectonPlayerMovement.cs:2528
+cutter-side tension gating: Assets/_Project/Scripts/LaserCutter.cs:605, Assets/_Project/Scripts/LaserCutter.cs:655, Assets/_Project/Scripts/LaserCutter.cs:657, Assets/_Project/Scripts/LaserCutter.cs:787
+In-game result
+
+PDA/UI больше не должны поднимать action map через протухшую ссылку после пересборки runtime input asset. Сначала идет rebinding на актуальную карту, потом Enable.
+Flora interaction buffer больше не пишет в пустой или укороченный массив. Ошибка смещена из runtime crash в безопасный early-out.
+Crest 5 path остается прежним: пока CollisionProvider спит, адаптер форсирует helper query + heartbeat WaterRenderer, а при неудаче отдает fallback Y=4900.
+Exosuit и heavy salvage не дублировал. Ownership сохранен: rigidbody/grounding у HectonPlayerMovement, резка/anchor request у LaserCutter.
+Что было verified
+
+Unity-verified: после refresh_unity и compile request read_console вернул 0 текущих error entries.
+Code-review-only: реальный Play Mode repro для Map must be contained in state, flora interaction stress, Crest 5 wake-up в момент старта сцены, ощущения веса экзокостюма и tear-off у MegaWreck не прогонялся.
+Crest 5 heartbeat verified only by source audit, not by live provider log.
+BEFORE: measured proof absent · AFTER: measured proof absent · STATUS: PENDING VERIFICATION.
+[REGRESSION MODEL]
+
+CPU: input fix живет на cold path при enable/disable карты и exception recovery; flora fix это один min + несколько guard checks на append path.
+GC: новых hot-path коллекций/делегатов/корутин не добавлено; measured proof absent.
+Memory: без значимого runtime роста; только несколько новых private methods в InputManager.
+Cadence: tick/fixed-tick cadence не менялся.
+Correctness: WARNING: Regression risk in input map restoration if в asset позже переименуют "Player" или "UI" карты без обновления кода. WARNING: Crest 5 wake-up в реальном Play Mode все еще не доказан пользовательским логом.
+HOT PATH IMPACT
+
+InputManager изменения сидят в Enable/Disable action maps, не в per-frame input read.
+FloraInteractionManager.AppendInteractionPoint получил только scalar guards и bounds clamp в существующем path, без новых alloc.
+FAILURE MODES
+
+Если runtime asset вообще не создан, TryResolveRuntimeActionMap корректно вернет false, и карта не будет насильно включаться.
+Если карта переименована и больше не называется "Player"/"UI", rebinding по имени не обновит owner field; потребуется синхронизация asset naming.
+Если Crest 5 renderer присутствует, но его внутренний lifecycle так и не поднимет provider, адаптер продолжит жить на fallback sea level.
+Для heavy salvage все еще есть архитектурная дыра по настоящему runtime owner для streamed MegaWreck. LaserCutter сейчас корректно покрывает BaseModule и общий tension path, но не invent-ит несуществующий salvage wrapper.
+WHY KEPT/REJECTED
+
+Kept: восстановление action map внутри InputManager, потому что именно он владеет runtime clone asset и знает, какая карта является canonical.
+Kept: guard clauses в FloraInteractionManager, потому что это прямой owner _interactionPoints.
+Rejected: повторная переделка Crest5KinematicsAdapter, потому что heartbeat/fallback уже реализованы и соответствуют задаче.
+Rejected: новая exosuit/cutting subsystem поверх старой. Это был бы дублирующий owner и архитектурный мусор.
+Экзамен
+
+Почему CollisionProvider в Crest 5 оставался null и как я его будил:
+Причина была не в выборе не того адаптера. Контроллер уже находил Crest5KinematicsAdapter.
+Проблема была в lifecycle Crest 5: WaterRenderer уже существует, но query-side provider еще не поднят к моменту, когда locomotion начинает спрашивать воду.
+В Assets/_Project/Scripts/Crest5KinematicsAdapter.cs:176 адаптер сначала проверяет CollisionProvider/FlowProvider. Если их нет, он делает warm-up через SampleCollisionHelper/SampleFlowHelper в Assets/_Project/Scripts/Crest5KinematicsAdapter.cs:218.
+Если после helper-prime provider все еще пустой, адаптер на cooldown делает heartbeat через WaterRenderer.enabled = false/true, затем повторяет query-prime.
+Пока GetWaterHeight не получил валидный ответ, он пишет fallback Y=4900 в Assets/_Project/Scripts/Crest5KinematicsAdapter.cs:76. Это удерживает локомоцию в стабильном состоянии, пока Crest просыпается.
+Как реализован “вес” экзокостюма, чтобы он не скользил по дну:
+Не через CharacterController и не через root motion. Авторитет у rigidbody.
+Отрицательная плавучесть задается exosuitNegativeBuoyancyScale в Assets/_Project/Scripts/HectonPlayerMovement.cs:688 и включается в underwater physics branch в Assets/_Project/Scripts/HectonPlayerMovement.cs:3777.
+За сцепление отвечают dual foot probes: exosuit slope support собирается в Assets/_Project/Scripts/HectonPlayerMovement.cs:5382, сами raycast-based foot probes считаются в Assets/_Project/Scripts/HectonPlayerMovement.cs:5879.
+После получения опорной нормали контроллер усиливает slope hold и ground snap в Assets/_Project/Scripts/HectonPlayerMovement.cs:5443.
+Плюс walk force/speed для мехи отдельно утяжелены в Assets/_Project/Scripts/HectonPlayerMovement.cs:6546 и Assets/_Project/Scripts/HectonPlayerMovement.cs:6747.
+Итог: экзокостюм не “скользит”, потому что его вниз тянет отрицательная плавучесть, а удержание на рельефе идет через физические foot probes + slope stick + ground snap, а не через декоративную анимацию.
+Следующее
+
+Нужен Play Mode repro на PDA open/close spam, чтобы поймать или снять Map must be contained in state фактом.
+Нужен live Crest 5 log: provider null -> heartbeat -> provider alive. Без этого Crest часть остается PENDING VERIFICATION.
+Нужен runtime test на flora interaction и heavy salvage pull-away, иначе это только compile-safe cleanup, не доказанная gameplay верификация.
 
 
-What Was Wrong
-
-Активный сонар уже умел собирать контакты, но не продавал эффект визуально. Глубинные течения были слишком гладкими: без рваных seam-hits корпус скутера читал их как обычный drift. Катапультирование снимало контроль, но не давало короткой дезориентации, а mounted transport не продолжал физически уходить по инерции.
-
-What I Did
-
-В SpectrumSystem.cs я уже публикуемый sonar payload добил до grid-ready формата: _SonarRevealContacts теперь сопровождается _SonarRevealContactMeta, где отдельно кодируются hard/organic response и локальный radius контакта. Источник различения не выдуман: это SpatialTargetKind плюс GetVegetationDensity и semantic/acoustic sample от картографа. Для глобальных параметров сетки добавлен SonarGridOverlay.cs.
-
-В SuitVisor.shader добавлен сам noir-grid overlay. Он:
-
-реконструирует scene world position из depth,
-считает arrival-aware wavefront от _SonarRevealWaveParams,
-подсвечивает depth contours,
-рисует world-space grid,
-держит terrain mask коротко,
-отдельно даёт per-contact fade по arrival time через _SonarRevealContacts.w,
-смешивает hard/organic tint через _SonarRevealContactMeta.x/y.
-По глубинным течениям в HectonPlayerMovement.cs добавил noisy abyssal flow path через новый owner-bridge ApplyAbyssalFlowNoise. ApplyAbyssalCurrents теперь:
-
-берёт noisy flow,
-наклоняет им downdraft direction,
-отслеживает seam crossing по flowDelta,
-даёт короткий VelocityChange hull jolt,
-шлёт micro-hit в CameraJuiceProcessor через RegisterCollisionImpulse и новый RegisterExternalRollImpulse.
-По bailout в HectonPlayerMovement.cs TriggerTransportBailout теперь:
-
-для mounted transport зовёт TriggerEmergencyBailoutDrift,
-даёт игроку signed roll impulse,
-запускает visor distortion через VisorHUDController.TriggerEnvironmentalDistortion.
-В MountablePlayerTransport.cs добавлен owner-путь emergency drift/sink:
-
-rider снимается без zeroing velocity,
-rigidbody транспорта получает inherited velocity,
-потом коротко дрейфует,
-постепенно уходит вниз,
-если transport не broken, authored body damping/kinematic mode восстанавливаются после drift window.
-In-Game Result
-
-Сонар теперь не просто “пишет в буфер”. Через визор пробегает сферическая сетка, рельеф и инстансы вспыхивают в момент прихода волны и затухают, причём органика и твёрдые объекты читаются разным откликом.
-
-На большой глубине currents стали злее. Переход через шумные границы потока больше не выглядит как математически гладкий lerp: корпус получает короткие удары, камера ловит roll-jolt, а downdraft сам стал менее “идеально вертикальным”.
-
-Emergency eject теперь читается как авария, а не как сухой state flip. Игрок теряет ориентацию на короткое окно, а mounted transport не замирает на месте, а реально уходит дальше по инерции и начинает тонуть. WARNING: handheld MantaScooter по-прежнему не имеет отдельного world-body owner, поэтому полноценный inertial drift/sink в этом случае архитектурно ограничен.
-
-What Was Verified
-
-Unity-verified:
-
-refresh + compile дошли до idle.
-Новых console errors по HectonPlayerMovement.cs, CameraJuiceProcessor.cs, MountablePlayerTransport.cs, SpectrumSystem.cs, HectonMapMagicVegetationBridge.cs не surfaced.
-Текущие compile blockers внешние: Assets\_Project\Scripts\World\EnvironmentalStrainManager.cs(104,41) и (117,42).
-Code-review-only:
-
-Sonar grid использует уже существующие globals и fixed arrays, без новых per-frame allocations.
-Abyssal turbulence path — scalar-only в fixed step.
-Emergency drift/sink живёт в owner-е транспорта, а не в player controller.
-Экзамен:
-
-HullStress от скорости погружения считается не как жёсткий бан по depth, а как взвешенный blend depthT * 0.72 + depthRateT * 0.28 в UpdateHullStress. Поэтому при очень медленном и осторожном спуске rate-term остаётся низким, и игрок может пройти глубже, чем при агрессивном пикировании. Но depth-term всё равно копится и в итоге дожимает к лимиту.
-Сонар отличает органику от твёрдых объектов не “по названию объекта”, а через два канала в ResolveRevealContactMeta: SpatialTargetKind даёт hard bias для модулей/сигналов/сканируемых вещей, а GetVegetationDensity(...) + semantic type от картографа добавляют organic bias для травы/саргассов. В shader это уходит в _SonarRevealContactMeta.x/y и красится разными цветами.
-REGRESSION MODEL: CPU impact низкий на main thread, кроме одного extra noisy-flow compare в fixed step; GPU impact локален в visor pass и фиксирован 24-contact loop только в одном transparent shader. GC validation: measured proof absent. HOT PATH IMPACT: fixed-step turbulence seam detection + one extra roll impulse path; shader cost растёт только на визоре. FAILURE MODES: sonar grid зависит от scene depth и от того, что visor реально использует NASAPunk/SuitVisor; mounted bailout drift полноценно работает только для MountablePlayerTransport; aggressive sonar contour boost может дать слишком шумный оverlay на геометрии с грязным depth discontinuity. Status: PENDING VERIFICATION.
 
 
-
-
-
-2:34 AM
-7 files changed
-+533
--48
-Undo
-
-Review
-Assets/_Project/Art/Shaders/SuitVisor.shader
-Assets/_Project/Scripts/CameraJuiceProcessor.cs
-Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs
-Assets/_Project/Scripts/HectonPlayerMovement.cs
-Assets/_Project/Scripts/Visor/SonarGridOverlay.cs
-Assets/_Project/Scripts/Visor/SpectrumSystem.cs
-Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs
-
+3:15 AM
 
 
 =-=--==-=-=-=-=-=-
 
 
-ДИАЛОГ ""ДОРАБОТАЙ СТРИМИНГ ФЛОРЫ""
+ДИАЛОГ ""ДОБАВЬ СЕТКУ УГРОЗЫ""
+74 previous messages
 What Was Wrong
 
-HectonFloatingOrigin and the bridge were misaligned.
+HectonMapMagicVegetationBridge already had abyssal safe nodes, conduits, threat-weighted native A*, and mega-wreck terrain-hole masking. The real gap was ownership and query cost.
 
-HectonFloatingOrigin shifts scene roots by -offset and then fires OnWorldShift(offset). The bridge’s ApplyWorldOffsetToAllChunks (line 1390) was doing the opposite sign and was walking the whole pool by capacity, not by live used slices. That was wrong twice:
-
-wrong world-space direction
-unnecessary cold-path stall risk
-The deep-biome path also still needed harder dead-zone behavior. It was already semantic, but the 3-4 km band was not sparse and huge enough.
-
-There was also a live external compile blocker trail in Editor.log outside the bridge path. The freshest one I directly touched was MetaBuffInjector.cs missing Hecton8.SaveSystem for ItemCatalog.
+FindNearestAbyssalNavNodeIndex(...) still degraded to a full linear scan over the active node snapshot, there was no explicit NativeAbyssalNavGraph handoff for other systems, and mega-wreck interior masking did not publish a global runtime interior state for downstream biome suppression. That left the world “working”, but still half-blind for large-scale AI and cross-system interior logic.
 
 What I Did
 
-In HectonMapMagicVegetationBridge.cs (line 1390) I rewired origin shifting to the real project contract.
+In HectonWorldStreamingTypes.cs (line 39) I added ArtificialInteriorState.
 
-Subscribed the bridge to HectonFloatingOrigin.OnWorldShift in TrySubscribeEvents (line 4958) and HandleWorldShift (line 4971).
-Fixed the sign: the bridge now applies appliedOffset = -offset, matching HectonFloatingOrigin.
-Stopped touching full pool capacity. The bridge now schedules Burst offset jobs only for live payload slices through ScheduleShiftChunkSlice (line 3963) and the two calls at 1412 (line 1412) and 1415 (line 1415).
-Killed in-flight chunk jobs before origin shift so old job output cannot finalize against pre-shift coordinates.
-For techno-jungle / abyss variety:
+In HectonMapMagicVegetationBridge.cs (line 1908) I added TryGetNativeAbyssalNavGraph(...). It publishes the active immutable node snapshot, node types, conduit vectors, conduit strengths, and a new NativeParallelMultiHashMap<int,int> spatial hash. I kept one owner: the bridge. I did not create a second graph system.
 
-Kept the semantic family split and made it explicit in the Burst path with deterministic local-hash family selection in ResolveColonySemanticTypeStatic (line 3722).
-Continued using the dedicated techno Voronoi field in TryEvaluateTechnoJungle (line 3737), not the floating sargassum path.
-Made dead-zone anchors materially rarer and much larger in the anchored job at 3339-3361 (line 3339). The deeper the sample goes past the dead-zone threshold, the lower the keep chance and the larger the surviving structure scale.
-Kept abyssal 3D turbulence in ApplyAbyssalFlowNoiseStatic (line 3770).
-For the external unblock:
+In RebuildAbyssalNavNodeSnapshot (line 5034) I now build that spatial hash from the streamed resident nodes, with lifecycle handled by EnsureAbyssalNavGraphHashCapacity (line 9482). FindNearestAbyssalNavNodeIndex(...) now tries hashed lookup first via TryFindNearestAbyssalNavNodeIndexFromHash (line 10098), then falls back to the old full scan only if the local buckets are empty.
 
-Added the missing namespace in MetaBuffInjector.cs (line 6) so ItemCatalog resolves through Hecton8.SaveSystem.
+For conduit handoff, GetAbyssalConduitVector (line 2178) now gives Oceanolog a zero-allocation runtime sample from the nearest nav node’s conduit payload instead of forcing every consumer to reconstruct that logic.
+
+For mega-wreck interiors, SyncMegaWreckInteriorTerrainHoles (line 3721) still owns terrain-hole masking, but now also publishes a global runtime interior state through SetArtificialInteriorState (line 3820) / ClearArtificialInteriorState (line 3835). That state is shifted correctly during ApplyWorldOffsetToAllChunks (line 3847). Public readback is exposed through TryGetActiveArtificialInteriorState (line 2068) plus static globals GlobalArtificialInteriorActive/Type/Id/Bounds.
+
+I also wired cleanup for the new native hash into the existing bridge lifetime so this change does not introduce another persistent native leak.
+
 In-Game Result
 
-The bridge is now wired to the floating-origin system instead of free-running on stale absolute coordinates. On origin shift it should:
-
-cancel stale build jobs
-shift only used pool slices
-shift cached chunk bounds and tile positions with the correct sign
-refresh residency against the shifted player/world state
-Deep biome output is harsher now:
-
-Colony Graveyard still uses tech-jungle clustering
-Dead Zone now trends toward rare mega-anchors instead of medium-density clutter
-semantic family selection remains deterministic and renderer-safe because legacy render type 0/1/2 is still preserved
-Status: PENDING VERIFICATION.
+Abyssal pathfinding stays resident-ring scoped instead of pretending the full 15x15 km world is one giant graph. Leviathan path queries can resolve nearest nodes through a native spatial hash instead of scanning the whole active snapshot every time. Deep current conduits are now readable as a proper runtime payload, and mega-wreck interiors no longer just cut grass; they also publish a global “you are inside an artificial interior” state that other systems can consume to suppress exterior biome effects.
 
 What Was Verified
 
 Code-review-only:
 
-Origin-shift event integration is present in HandleWorldShift (line 4971).
-The sign bug is fixed in ApplyWorldOffsetToAllChunks (line 1390).
-Offset work now targets used slices, not full pool capacity, through ScheduleShiftChunkSlice (line 3963).
-Dead-zone mega-structure thinning and scaling are in the Burst generation path around 3339 (line 3339).
-MetaBuffInjector now imports Hecton8.SaveSystem at line 6 (line 6).
+No new Update, coroutine, LINQ, or per-query managed allocation.
+No second nav owner introduced. The bridge still owns generation, snapshots, and handoff.
+New spatial hash is immutable between rebuilds and disposed with the same owner.
+WARNING: Regression risk in nav lookup tuning if abyssalNavGraphCellSize is set too small and agents fall back to wider bucket expansion too often.
+Build-verified:
+
+dotnet build .\Assembly-CSharp.csproj -nologo completed with 0 errors.
+Build still emits existing warnings across unrelated files; no new compile blocker was introduced by this patch.
 Unity-verified:
 
-Not complete. Unity MCP session dropped during domain reload.
-Editor.log fallback still shows external compile blockers in the Meta/* area and an older HectonPlayerMovement/VisorHUDController trace. I cannot call that clean.
-I do not have a fresh stable live console pass after the last patch set.
-Regression model:
+read_console returned 0 error/warning entries after the change set in the current editor session.
+GC validation: measured proof absent.
 
-CPU: origin shift no longer walks dormant pool capacity. It now scales with live used slices only. Cold path still completes Burst work synchronously at shift time.
-GC: no new hot-path managed allocations were added.
-Memory: unchanged in pool design; dead-zone sparsity reduces live occupancy pressure in abyss chunks.
-Cadence: origin shift now invalidates in-flight builds instead of allowing stale post-shift payload finalization.
-Correctness: sign alignment with HectonFloatingOrigin is now consistent.
-FAILURE MODE: Unity reload instability prevented a trustworthy final live console read.
-WARNING: Regression risk in origin-shift hitching if the live used slice count is extreme in one frame. This is materially better than shifting full capacity, but not measured proof of zero pause.
+REGRESSION MODEL:
+
+CPU: nearest-node lookup moved from unconditional O(N) scan to hashed bucket search with bounded fallback. Snapshot rebuild now pays one extra native hash fill on active-node refresh.
+GC: no new hot-path managed allocations.
+Memory: one persistent NativeParallelMultiHashMap<int,int> added for active abyssal nav graph lookup.
+Cadence: graph rebuild still happens only on chunk-finalization / active-set refresh, not per-frame.
+Correctness: interior state is runtime-only and tied to streamed mega-wreck residency. If a wreck section is not resident, downstream consumers will not see that interior state.
+HOT PATH IMPACT:
+
+GetAbyssalConduitVector(...) is O(local bucket) with zero allocations.
+TryScheduleAbyssalPath(...) benefits from faster nearest-node resolution before the Burst solve starts.
+Terrain-hole masking cadence did not change; only global state publication was added to the existing owner path.
+FAILURE MODES:
+
+If the active nav snapshot is empty, hashed lookup returns false and pathing still degrades to “no path”, not garbage.
+If the spatial hash misses because tuning is too coarse/fine, code falls back to the old linear scan instead of failing hard.
+If the player leaves streamed mega-wreck bounds, the artificial interior state is cleared immediately and downstream systems must tolerate that transition.
+WHY KEPT / REJECTED:
+
+Kept: one bridge owner for nav graph + interior state. That matches existing architecture.
+Kept: NativeParallelMultiHashMap instead of NativeParallelHashMap because multiple nodes can occupy the same spatial cell.
+Rejected: a second NativeAbyssalNavGraph manager. That would duplicate residency and snapshot ownership.
+Rejected: world-scale precomputed 3D grid. It would explode memory for no gain when the bridge already streams only the active resident ring.
 Экзамен:
 
-Как я гарантирую отсутствие паузы при ApplyWorldOffset на 500,000 инстансов: строго не гарантирую без profiler capture. Что я сделал реально: убрал полный проход по capacity и свел работу к живым used slices, плюс отменяю in-flight jobs до shift. Это режет худший сценарий, но не доказывает zero-stall. Для настоящей гарантии нужен либо GPU/global offset path, либо многокадровый phased shift с explicit render compensation.
-Как double buffering tile cache защищает при быстром вертикальном погружении: recache пишет в inactive buffer и только потом atomically свапает active index. Читающие systems и Burst jobs продолжают работать по старому стабильному буферу, пока новый полностью не готов. Это убирает half-written mask state и sync-блокировки на чтении. Это защита от corruption/stale-read, не магическая отмена всей стоимости recache.
+A* в 3D на карте 15x15 км не хранит глобальную решетку мира. Я оставил graph только на активном streamed ring, а узлы строятся per-chunk во время payload finalization. Память не взрывается, потому что хранится не весь океан, а только безопасные узлы активных чанков, их типы, conduit metadata и spatial hash по этим же узлам. Threat тоже уже сжат в byte, а не float, поэтому cost sampling дешевый.
+Double buffering tile cache защищает не сам solve magic’ом, а ownership-моделью. Chunk rebuild пишет во вторичный tile/native cache, а текущие path queries читают только завершенный immutable snapshot: _abyssalNavNodeSnapshotNative, _abyssalNavGraphHashNative, _ecosystemThreatGridCurrentNative. Поэтому 10 ИИ не заставляют bridge ждать terrain recook или читать полузаписанные данные. Они бьют в один и тот же read-only snapshot. Текущий bridge-owner по-прежнему сериализует собственный path job, то есть фризов от simultaneous cache mutation нет, но если понадобится реально много параллельных A* solve jobs, нужен отдельный pooled path worker layer. Сейчас этого нет.
+Status: PENDING VERIFICATION.
 
 
 
 
-2:23 AM
+
+3:16 AM
 2 files changed
-+62
--17
++265
+-0
 Undo
 
 Review
-Assets/_Project/Scripts/Meta/MetaBuffInjector.cs
-Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs
+HectonMapMagicVegetationBridge.cs
++253
+-0
+Too large to render inline
 
+Review
+Assets/_Project/Scripts/World/HectonWorldStreamingTypes.cs
 
 -==-=-==-=-=-=-
 
 
 ДИАЛОГ ""СОЗДАТЬ САРГАССЫ ДОБАВИТЬ ГАШЕНИЕ ВОЛН И БОЙДС""
 
+
+Worked for 12m 38s
 What Was Wrong
 
-Catastrophic cut clusters stopped at canopy sinking. There was no pooled heavy debris escalation, no hadal parasite-drone override for boids, and the oil-film shader had no spectral shift.
-Parasite mode had a logic conflict: headlight panic could still route boids into flee behavior inside the new latch state.
-Unity verification is unavailable. The MCP session is disconnected, so scene wiring and runtime readback remain PENDING VERIFICATION.
+The requested combat/destruction slice was mostly already implemented in the existing owners. The real mismatch was narrower: the leviathan shockwave radius was authored at 11.5m, while the current spec requires 15m.
+No new EMP-chain or VoxelRock spring-snag logic was missing. Duplicating those paths would have been architecture drift.
 What I Did
 
-Added catastrophic collapse chunk escalation in Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs:27, Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs:1033, Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs:1135, and editor autowire in Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs:1636.
-Added pooled chunk owner Assets/_Project/Scripts/World/SargassumCollapseChunk.cs:12 with activation/reset paths at Assets/_Project/Scripts/World/SargassumCollapseChunk.cs:62, Assets/_Project/Scripts/World/SargassumCollapseChunk.cs:107, and Assets/_Project/Scripts/World/SargassumCollapseChunk.cs:125; added prefab shell Assets/_Project/Prefabs/Construction/Final/PFB_SargassumCollapseChunk.prefab:16.
-Optimized cut-area sampling in Assets/_Project/Scripts/World/SargassumCutManager.cs:184 and Assets/_Project/Scripts/World/SargassumCutManager.cs:226 so collapse checks stay bounded on the fixed recent-stamp ring instead of scaling with player count.
-Added parasite-drone mode in Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:324, Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:802, Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:1070, Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:1234, and hull-stress intake in Assets/_Project/Scripts/HectonPlayerMovement.cs:1061 plus blend in Assets/_Project/Scripts/HectonPlayerMovement.cs:3698.
-Fixed parasite compute behavior in Assets/_Project/Art/Shaders/SargassumMicroFaunaBoids.compute:322, Assets/_Project/Art/Shaders/SargassumMicroFaunaBoids.compute:340, and Assets/_Project/Art/Shaders/SargassumMicroFaunaBoids.compute:350; added parasite visual pass in Assets/_Project/Scripts/BoidFishInstanced.shader:67 and Assets/_Project/Scripts/BoidFishInstanced.shader:399.
-Added Crest oil iridescence in Assets/_Project/Art/Shaders/Crest_SargassumOilFilm.shader:10 and Assets/_Project/Art/Shaders/Crest_SargassumOilFilm.shader:85; logged the slice in Docs/2026-04-20_Sargassum_Reality_Audit/CHANGELOG.md:152.
+Audited the live owners and confirmed literal implementation already exists:
+CPU leviathan head pose reconstruction in Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:1606
+player trauma + HP damage in Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:2268
+rigidbody shockwave via spatial hash + OverlapSphereNonAlloc in Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:2292
+VoxelRock spring snag path in Assets/_Project/Scripts/World/SargassumCollapseChunk.cs:304 and Assets/_Project/Scripts/World/SargassumCollapseChunk.cs:457
+EMP cable-chain glow propagation in Assets/_Project/Scripts/World/AbyssalThermalManager.cs:1270, Assets/_Project/Scripts/World/AbyssalThermalManager.cs:1354, Assets/_Project/Scripts/World/AbyssalThermalManager.cs:1481
+Aligned the only spec mismatch by changing leviathan shockwave radius to 15m in Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:545.
+Logged that alignment in Docs/2026-04-20_Sargassum_Reality_Audit/CHANGELOG.md:207.
 In-Game Result
 
-Large local canopy failures now escalate into pooled rigidbody chunks instead of only sinking the mat.
-Below -2000m in synthetic/service/power/construction zones, boids switch to parasite drones, bias toward the player hull, and convert light-driven aggression into external hull stress instead of fleeing.
-Oil-film patches can now read as iridescent slicks instead of flat tint only.
-WARNING: Regression risk in collapse turbidity. Assets/_Project/Prefabs/Construction/Final/PFB_SargassumCollapseChunk.prefab:99 still has siltTrail unassigned, so the chunk payload is live but the attached mud-trail visual is not Unity-wired yet.
+Leviathan head contact remains CPU-driven and already applies both body trauma and HP damage.
+High-speed swarm passes already push nearby rigidbodies through a two-stage query: WorldSpatialHashGrid first, OverlapSphereNonAlloc second.
+VoxelRock impacts already create hanging debris through the cached SpringJoint path.
+EMP nests already propagate a timed emission wave across linked bio-cables.
+Status: PENDING VERIFICATION.
 What Was Verified
 
-Code-review-only: git diff --check on the touched files returned no whitespace errors; only existing LF→CRLF warnings on Assets/_Project/Scripts/BoidFishInstanced.shader and Assets/_Project/Scripts/HectonPlayerMovement.cs.
-Code-review-only: parasite mode no longer mixes headlight flee with latch mode; the compute panic gate is explicit at Assets/_Project/Art/Shaders/SargassumMicroFaunaBoids.compute:350.
-Unity-verified: none. Unity MCP session is disconnected; no compile, prefab, scene, or runtime log confirmation was possible. Status: PENDING VERIFICATION.
-Exam — smoke drift: GlobalDriftOffset does not drive abyssal smoke. AbyssalThermalManager emits from vent world anchors (Assets/_Project/Scripts/World/AbyssalThermalManager.cs:759, Assets/_Project/Scripts/World/AbyssalThermalManager.cs:766) and samples flow separately (Assets/_Project/Scripts/World/AbyssalThermalManager.cs:433), so smoke stays pinned to the seabed vent mouth.
-Exam — SampleRecentCutArea: the query stays bounded because it only scans the fixed recent-stamp ring in Assets/_Project/Scripts/World/SargassumCutManager.cs:226; rejection is squared-distance first, overlap sqrt only after passing the cheap test, and the collapse caller runs from the drag-manager slow path at Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs:1033. Four scooters increase stamp replacement pressure, not algorithmic complexity.
-REGRESSION MODEL: CPU = one bounded slow-tick collapse query plus pooled chunk activation; GC = no new hot-path managed allocations; memory = one pooled chunk prefab/class plus existing boid buffers; cadence = unchanged gameplay ticks, collapse work remains in SlowTick; correctness = parasite mode now resolves to latch/aggression instead of conflicting flee input.
-HOT PATH IMPACT: boid cost is GPU-only math inside the existing kernel; chunk cost is on catastrophic events only, not per-frame steady state.
-FAILURE MODES: disconnected Unity session blocked scene wiring proof; PFB_SargassumCollapseChunk currently lacks a wired siltTrail; hadal “AI zone” detection is mapped to existing runtime zone kinds because there is no dedicated AI-zone enum in the live contract.
-WHY KEPT/REJECTED: kept pooled rigidbody chunks because this respects ObjectPoolManager and avoids instantiation spikes; kept parasite mode in the existing boid compute path instead of a second fauna stack; rejected any runtime Crest material cloning per asset-integrity rules.
-If you want the next pass, the correct move is Unity-side verification and prefab wiring for the chunk silt trail once the editor session is back.
+Build-verified: dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1 completed with 0 errors and 70 warnings.
+Code-review-only: touched-file diff hygiene passed for Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs and Docs/2026-04-20_Sargassum_Reality_Audit/CHANGELOG.md. Only LF→CRLF warnings remain.
+Unity-verified: none. refresh_unity still returns Unity session not available; please retry.
+Exam 1: I do not read leviathan head coordinates back from the compute shader. The CPU reconstructs the head pose from the same LeviathanNodeData spline already staged before dispatch in Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:1574 and Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:1606, then consumes that pose in fixed-step at Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:888 and Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:2268. That removes GPU readback latency entirely, so there is no 1-frame hitch from synchronization.
+Exam 2: yes, joint pooling is already used. SargassumCollapseChunk caches SpringJoint and HingeJoint once in Assets/_Project/Scripts/World/SargassumCollapseChunk.cs:380 and Assets/_Project/Scripts/World/SargassumCollapseChunk.cs:387, then reuses them on every snag in Assets/_Project/Scripts/World/SargassumCollapseChunk.cs:417. No per-impact joint allocation path is active.
+REGRESSION MODEL: CPU impact is effectively neutral except the shockwave radius now includes more rigidbody candidates; GC hot path target remains 0 B/frame; memory unchanged; cadence unchanged; correctness improved only by matching the authored shockwave reach to the current spec.
+HOT PATH IMPACT: slightly higher worst-case shockwave target count because 15m covers a larger area than 11.5m. The path remains bounded by spatial-hash capacity and deduplicated rigidbody buffers.
+FAILURE MODES: Unity runtime proof is still absent; larger shockwave radius can over-affect dense debris clusters if the authored impulse magnitude stays too high for the zone.
+WHY KEPT/REJECTED: kept the existing CPU-spline hitbox model, cached spring-joint snagging, and existing EMP chain path because they already satisfy the requested architecture. Rejected any new GPU readback hitbox path and rejected duplicate EMP/snag subsystems. WARNING: Regression risk in Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:2292 if 15m shockwaves push too many nearby lightweight props in dense salvage fields.
 
 
 
 
-
-2:40 AM
-12 files changed
-+896
--18
+3:13 AM
+2 files changed
++3
+-1
 Undo
 
 Review
-Assets/_Project/Art/Shaders/Crest_SargassumOilFilm.shader
-Assets/_Project/Art/Shaders/SargassumMicroFaunaBoids.compute
-Assets/_Project/Prefabs/Construction/Final/PFB_SargassumCollapseChunk.prefab
-Assets/_Project/Prefabs/Construction/Final/PFB_SargassumCollapseChunk.prefab.meta
-Assets/_Project/Scripts/BoidFishInstanced.shader
-Assets/_Project/Scripts/HectonPlayerMovement.cs
-Assets/_Project/Scripts/World/SargassumCollapseChunk.cs
-Assets/_Project/Scripts/World/SargassumCollapseChunk.cs.meta
-Assets/_Project/Scripts/World/SargassumCutManager.cs
-Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs
 Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs
 Docs/2026-04-20_Sargassum_Reality_Audit/CHANGELOG.md
 
@@ -305,54 +328,59 @@ Docs/2026-04-20_Sargassum_Reality_Audit/CHANGELOG.md
 
 ОТЧЕТ ЛОКАЛИЗАТОРА (ОТДЕЛЬНЫЙ ПРОМПТ)
 
+
+
+
+-=-=-=-=-
+
+ОТЧЕТ ПОЧИНКИ КРЕСТА
+
+
+
+-==-=-=-=-=-=-=-
+
+ОТЧЕТ МУЗЫКАНТА
+
+
+-=---=-=-==--=-=-
+
+отчет вокселееба
+Worked for 35m 47s
 What Was Wrong
+VoxelDensityJob still carved mostly straight primitive tunnels, Arch was a thick capsule proxy, and normals came from interpolating the baked density grid instead of sampling the continuous cave field. That gave you boxy topology, weak abyss silhouettes, and normals that were better than triangle averaging but still not true field-driven shading. Terrain seam hiding was also too shallow at the entrance edge.
 
-Новых правок в проект в этом сообщении не делал. Запрос сейчас организационный: зафиксировать следующие задачи и ответить на sanity check до следующего прохода.
-
-Риски на завтра понятны:
-
-Madness-слой может засорить PDA и сломать читабельность.
-lip-sync waveform нельзя делать через шумный per-frame парсинг.
-CJK fallback всё ещё не release-grade.
-nested keys уже ограничены, но это нужно держать под жёстким контролем.
 What I Did
+In HectonVoxelEngine.cs (line 505) I moved density evaluation into EvaluateDensityAt, so the same continuous field is used for voxel fill and for normal extraction. Tunnels at line 749 (line 749) are now sampled as smooth-min chains of curved Bezier capsule segments with domain-warped control offsets. Entrances at line 808 (line 808) got a flared throat, and the new skirt pass at line 593 (line 593) pushes solid shell back under the terrain plane to hide the seam. Arch structures at line 924 (line 924) are now actual curved spans with layered fBm plus terrace breakup. VoxelNormalJob at line 1443 (line 1443) now samples the SDF field through tetrahedral offsets via CreateDensityEvaluator, not welded triangle data or trilinear grid normals.
 
-Сформировал техническую рамку на следующий проход.
+In CaveGraphGenerator.cs (line 823) I passed terrain height into structure generation, rewired normal arch placement to use position + pointB as feet, and added AddAbyssalArchways at line 980 (line 980) so Abyss/Mega presets spawn seabed-scale arches anchored near the terrain floor. In WorldCaveDirector.cs (line 538) I pushed the Abyss preset harder on warp, wall layering, terrace breakup, tunnel warp, blend radius, and room/structure pressure.
 
-Для Madness-слоя:
-
-не буду подменять source JSON или save-data;
-подмена пойдёт только в display path;
-порог HullStress > 0.9;
-переключение сделаю через отдельный madness resolver поверх уже существующего <tech:id> path, чтобы TECH_O2_SPEC мог разворачиваться либо в нормальный tech readout, либо в authored AI intrusion line.
-Для waveform у аудиологов:
-
-не через повторный парсинг [0.5] каждый кадр;
-SubtitleManager уже умеет парсить cues на старте playback;
-из этих cues можно вывести cheap envelope/signal для UI-иконки, обновляемый только по таймеру и смене cue.
-Для CJK fallback:
-
-завтра нужен отдельный font pass с импортом легального Noto Sans CJK source и настройкой TMP fallback chain;
-без этого Chinese/Japanese остаются неготовыми к релизу.
 In-Game Result
+Expected result: caves stop reading as capsule corridors and start reading as warped connected voids, arches become large abyssal landmarks instead of room clutter, and entrance lips should bury under the terrain enough to hide the hole seam from below.
 
-Немедленного in-game изменения в этом сообщении нет. Это техническая фиксация следующего рабочего пакета.
+Direct MapMagic TerrainHole runtime registration is still not added. Reason: the current bridge exposes RegisterTerrainHole plus global ClearTerrainHoles, but no safe per-cave unregister path. Blindly wiring that in risks stale holes and cross-system regressions.
 
-Ответы на экзамен:
-
-Overflow/glitch safety: гарантия идёт не через “надеюсь символы влезут”, а через уже существующий autosize path и bucketed refresh. Дополнительно правильный путь — ограничивать corrosion alphabet на UI-critical surfaces символами близкой визуальной ширины и не вставлять новые символы сверх исходной длины. Я заменяю glyph in-place, не расширяю строку. Это ключевое.
-Nested-key recursion safety: сейчас защита уже есть через MaxExpansionPasses = 3 в LocalizationManager. Это режет бесконечную цепочку A -> B -> A. Если завтра добивать систему до жёсткого production-grade состояния, правильное усиление — добавить visited-key guard на один expansion call, чтобы циклы резались детерминированно, а не только лимитом проходов.
 What Was Verified
+Unity script compile completed clean after the last pass: console returned 0 entries after refresh. Status remains PENDING VERIFICATION.
 
-Код/данные:
+Not verified:
 
-в этом сообщении файловые изменения не выполнялись;
-новых compile/readback данных не собиралось.
-Unity:
+runtime mesh shape in scene
+seam quality against actual MapMagic terrain holes
+GC/CPU impact of the new field-sampled normals
+whether the new abyss arches oversaturate specific presets
+WARNING: Regression risk in HectonVoxelEngine generation cost. VoxelNormalJob now re-evaluates the density field per vertex, so shading quality is higher but Burst cost will rise until profiler data confirms budget.
 
-live verification в этом сообщении не запускалась.
-Статус: PENDING VERIFICATION
 
-WARNING: Текущая защита nested keys от циклов достаточна для остановки бесконечной рекурсии, но не идеальна для диагностики. Для release-grade поведения нужен ещё explicit visited-set guard с логом цикла.
 
-WARNING: Glitch text уже не ломает rich-text теги, но overflow-proof для extreme-width glyph sets зависит от конкретного TMP owner и его autosize limits. Это надо проверять на живом PDA screen pass, а не только по коду.
+
+
+3:37 AM
+3 files changed
++127
+-53
+Undo
+
+Review
+Assets/_Project/Scripts/CaveGraphGenerator.cs
+Assets/_Project/Scripts/HectonVoxelEngine.cs
+Assets/_Project/Scripts/WorldCaveDirector.cs

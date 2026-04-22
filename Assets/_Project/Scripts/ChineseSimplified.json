@@ -1,4 +1,4 @@
-﻿{
+{
   "ACTION_EATING": "进食...",
   "ACTION_HEALING": "使用中...",
   "ACTION_OXYGEN": "吸入中...",
@@ -1209,5 +1209,20 @@
   "PDA_FOOTER_RIGHT_STANDBY": "O2 {0:0}%  |  PWR {1:0}%  |  PDA 待机",
   "TECH_O2_SPEC": "[Pressure: 300 bar | Mix: O2 96% | Rack: A-2]",
   "TECH_HULL_SPEC": "[Sealant: <key:ITEM_TITANIUM_SCRAP_NAME> laminate | Rating: 41 MPa]",
-  "TECH_PWR_BUS": "[Bus: 48V DC | Cell bank: Li-Salt MkII]"
+  "TECH_PWR_BUS": "[Bus: 48V DC | Cell bank: Li-Salt MkII]",
+  "MADNESS_WHISPERS_01": "不要呼吸。祗在看着你。",
+  "MADNESS_WHISPERS_02": "压力知道你的名字。",
+  "MADNESS_WHISPERS_03": "不要透过玻璃看。",
+  "MADNESS_WHISPERS_04": "放下它。那是我们的。",
+  "MADNESS_WHISPERS_05": "它正从壳体下面说话。",
+  "MADNESS_WHISPERS_06": "水记得你的形状。",
+  "MADNESS_WHISPERS_07": "不要回应敲击声。",
+  "MADNESS_WHISPERS_08": "你的潜水服里有东西在呼吸。",
+  "MADNESS_WHISPERS_09": "你的影子先浮了上来。",
+  "MADNESS_WHISPERS_10": "关上阀门。它喜欢这个声音。",
+  "MADNESS_WHISPERS_11": "他们在舱壁里行走。",
+  "MADNESS_WHISPERS_12": "深处正戴着你的脸。",
+  "MADNESS_WHISPERS_13": "它在你开口前就听见了你。",
+  "MADNESS_WHISPERS_14": "船壳正在学习你的骨头。",
+  "MADNESS_WHISPERS_15": "灯灭时，别动。"
 }

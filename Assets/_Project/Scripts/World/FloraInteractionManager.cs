@@ -824,7 +824,14 @@ namespace Hecton8.World
 
         private int AppendInteractionPoint(Vector3 position, Vector3 velocity, float radius, int interactionCount)
         {
-            if (interactionCount >= _maxInteractionPoints)
+            if (_interactionPoints == null || _maxInteractionPoints <= 0)
+                return 0;
+
+            if (interactionCount < 0)
+                interactionCount = 0;
+
+            int interactionCapacity = Mathf.Min(_maxInteractionPoints, _interactionPoints.Length);
+            if (interactionCount >= interactionCapacity)
                 return interactionCount;
 
             _interactionPoints[interactionCount] = new FloraInteractionPointGpuData

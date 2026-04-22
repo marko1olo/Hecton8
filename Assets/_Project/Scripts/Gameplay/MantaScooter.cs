@@ -60,6 +60,31 @@ namespace Hecton8.Gameplay
         [Tooltip("Motor volume.")]
         [SerializeField, Range(0f, 1f)] private float motorVolume = 0.6f;
 
+        [Header("Drive Misfires")]
+        [Tooltip("Hull-stress threshold where the scooter starts suffering propulsion misfires.")]
+        [SerializeField, Range(0f, 1f)] private float misfireStressThreshold = 0.7f;
+
+        [Tooltip("Longest delay between misfire events when the hull is only barely above the failure threshold.")]
+        [SerializeField, Range(0.1f, 10f)] private float misfireIntervalMax = 2.6f;
+
+        [Tooltip("Shortest delay between misfire events under extreme hull stress.")]
+        [SerializeField, Range(0.05f, 5f)] private float misfireIntervalMin = 0.72f;
+
+        [Tooltip("Shortest time that a misfire stalls propulsion output.")]
+        [SerializeField, Range(0.02f, 0.75f)] private float misfireStallDurationMin = 0.08f;
+
+        [Tooltip("Longest time that a misfire stalls propulsion output.")]
+        [SerializeField, Range(0.02f, 1.2f)] private float misfireStallDurationMax = 0.24f;
+
+        [Tooltip("Minimum steering deviation applied to transport thrust during a misfire event.")]
+        [SerializeField, Range(0f, 20f)] private float misfireDeviationMinDegrees = 5f;
+
+        [Tooltip("Maximum steering deviation applied to transport thrust during a misfire event.")]
+        [SerializeField, Range(0f, 20f)] private float misfireDeviationMaxDegrees = 10f;
+
+        [Tooltip("Minimum duration of a forced EMP misfire lockout injected by abyssal hazards.")]
+        [SerializeField, Range(0.1f, 6f)] private float empMisfireMinimumDuration = 1.5f;
+
         [Header("── Visuals ────────────────────────────────────")]
         [Tooltip("Mesh to hide when battery is removed.")]
         [SerializeField] private GameObject batteryMesh;
@@ -67,11 +92,36 @@ namespace Hecton8.Gameplay
         [Tooltip("Renderer for power indicator light.")]
         [SerializeField] private Renderer powerIndicatorRenderer;
 
+        [Tooltip("Optional pooled world-body prefab used when a handheld Manta catastrophically bails out at speed. Falls back to ToolData.worldPrefab when unset.")]
+        [SerializeField] private GameObject bailoutWreckPrefab;
+
         [Tooltip("Emission color when powered.")]
         [SerializeField] private Color powerOnColor = new Color(0f, 0.9f, 1f);
 
         [Tooltip("Emission color when low battery.")]
         [SerializeField] private Color lowBatteryColor = new Color(1f, 0.3f, 0f);
+
+        [Header("── Headlights ────────────────────────────────")]
+        [Tooltip("Optional primary spotlight used for scooter volumetric shafts and abyssal lens failure.")]
+        [SerializeField] private Light primaryHeadlight;
+
+        [Tooltip("Optional secondary spotlight used for scooter volumetric shafts and abyssal lens failure.")]
+        [SerializeField] private Light secondaryHeadlight;
+
+        [Tooltip("Base shaft energy injected into the screen-space volumetric pass.")]
+        [SerializeField, Range(0f, 4f)] private float headlightVolumetricStrength = 1.15f;
+
+        [Tooltip("How aggressively hull stress shifts the headlight spectrum.")]
+        [SerializeField, Range(0f, 1f)] private float headlightSpectrumGlitchStrength = 0.28f;
+
+        [Tooltip("Maximum spotlight cone jitter introduced by hull stress.")]
+        [SerializeField, Range(0f, 12f)] private float headlightAngleJitterMaxDegrees = 4.5f;
+
+        [Tooltip("Maximum intensity modulation injected into the headlights by hull stress.")]
+        [SerializeField, Range(0f, 0.5f)] private float headlightIntensityJitter = 0.16f;
+
+        [Tooltip("Temporal frequency of the headlight lens-glitch noise.")]
+        [SerializeField, Range(0.1f, 20f)] private float headlightGlitchFrequency = 4.8f;
 
         [Header("── HUD Display ────────────────────────────────")]
         [Tooltip("Canvas group for the HUD display.")]
@@ -97,6 +147,7 @@ namespace Hecton8.Gameplay
 
         private HectonPlayerMovement _playerMovement;
         private HectonSurvivalSystem _mantaSurvivalSystem;
+        private VehicleUpgradeModule _vehicleUpgradeModule;
         private AudioSource _motorAudioSource;
         private Rigidbody _playerRigidbody;
         private Transform _cachedTransform;
@@ -151,6 +202,34 @@ namespace Hecton8.Gameplay
         private float _currentIntegrity = -1f;
         private bool _transportLifecycleInitialized;
         private bool _isTransportBroken;
+        private float _misfireIntervalTimer;
+        private float _misfireStallTimer;
+        private float _misfireDeviationPitchDegrees;
+        private float _misfireDeviationYawDegrees;
+        private uint _misfireSequence;
+        private float _empMisfireTimer;
+        private Light[] _headlightSlots;
+        private Vector4[] _headlightPositionsWs;
+        private Vector4[] _headlightDirectionsWs;
+        private Vector4[] _headlightColors;
+        private Vector4[] _headlightConeData;
+        private Color[] _headlightBaseColors;
+        private float[] _headlightBaseSpotAngles;
+        private float[] _headlightBaseIntensities;
+        private float[] _headlightBaseRanges;
+        private bool _headlightStateInitialized;
+        private float _headlightGlitchPhase;
+        private Vector3 _lastPublishedVolumetricVelocity;
+        private bool _hasLastPublishedVolumetricVelocity;
+
+        private const int MaxHeadlights = 2;
+        private static readonly int _HeadlightCountId = Shader.PropertyToID("_HectonScooterHeadlightCount");
+        private static readonly int _HeadlightPositionsWsId = Shader.PropertyToID("_HectonScooterHeadlightPositionsWS");
+        private static readonly int _HeadlightDirectionsWsId = Shader.PropertyToID("_HectonScooterHeadlightDirectionsWS");
+        private static readonly int _HeadlightColorsId = Shader.PropertyToID("_HectonScooterHeadlightColors");
+        private static readonly int _HeadlightConeDataId = Shader.PropertyToID("_HectonScooterHeadlightConeData");
+        private static readonly int _ScooterVelocityWsId = Shader.PropertyToID("_HectonScooterVelocityWS");
+        private static readonly int _ScooterBrakeCloudId = Shader.PropertyToID("_HectonScooterBrakeCloud");
 
         // ══════════════════════════════════════════════════════════
         //  IBatteryTool IMPLEMENTATION
@@ -182,6 +261,46 @@ namespace Hecton8.Gameplay
 
         /// <summary>Current normalized transport integrity.</summary>
         public float TransportIntegrityNormalized => ResolveCurrentIntegrityNormalized();
+
+        internal int CopyHeadlightPayloadNonAlloc(
+            Vector4[] positionsWs,
+            Vector4[] directionsWs,
+            Vector4[] colors,
+            Vector4[] coneData)
+        {
+            if (positionsWs == null ||
+                directionsWs == null ||
+                colors == null ||
+                coneData == null ||
+                positionsWs.Length < MaxHeadlights ||
+                directionsWs.Length < MaxHeadlights ||
+                colors.Length < MaxHeadlights ||
+                coneData.Length < MaxHeadlights ||
+                _headlightPositionsWs == null ||
+                _headlightDirectionsWs == null ||
+                _headlightColors == null ||
+                _headlightConeData == null)
+            {
+                return 0;
+            }
+
+            int activeCount = 0;
+            for (int slotIndex = 0; slotIndex < MaxHeadlights; slotIndex++)
+            {
+                Vector4 payloadPosition = _headlightPositionsWs[slotIndex];
+                Vector4 payloadDirection = _headlightDirectionsWs[slotIndex];
+                Vector4 payloadColor = _headlightColors[slotIndex];
+                Vector4 payloadCone = _headlightConeData[slotIndex];
+                positionsWs[slotIndex] = payloadPosition;
+                directionsWs[slotIndex] = payloadDirection;
+                colors[slotIndex] = payloadColor;
+                coneData[slotIndex] = payloadCone;
+                if (payloadColor.w > 0.0001f && payloadPosition.w > 0.0001f)
+                    activeCount++;
+            }
+
+            return activeCount;
+        }
 
         /// <summary>
         /// Removes the battery from the tool.
@@ -227,10 +346,22 @@ namespace Hecton8.Gameplay
         private void Awake()
         {
             _cachedTransform = transform;
+            TryGetComponent(out _vehicleUpgradeModule);
+            _headlightSlots = new Light[MaxHeadlights]; // COLD ALLOC: Light[2] â€” scooter headlight cache for volumetric shafts â€” owner: MantaScooter
+            _headlightPositionsWs = new Vector4[MaxHeadlights]; // COLD ALLOC: Vector4[2] â€” scooter headlight world-position payloads â€” owner: MantaScooter
+            _headlightDirectionsWs = new Vector4[MaxHeadlights]; // COLD ALLOC: Vector4[2] â€” scooter headlight direction payloads â€” owner: MantaScooter
+            _headlightColors = new Vector4[MaxHeadlights]; // COLD ALLOC: Vector4[2] â€” scooter headlight spectral payloads â€” owner: MantaScooter
+            _headlightConeData = new Vector4[MaxHeadlights]; // COLD ALLOC: Vector4[2] â€” scooter headlight cone payloads â€” owner: MantaScooter
+            _headlightBaseColors = new Color[MaxHeadlights]; // COLD ALLOC: Color[2] â€” authored headlight colors for recovery after hull-stress glitches â€” owner: MantaScooter
+            _headlightBaseSpotAngles = new float[MaxHeadlights]; // COLD ALLOC: float[2] â€” authored headlight cone cache for recovery after hull-stress glitches â€” owner: MantaScooter
+            _headlightBaseIntensities = new float[MaxHeadlights]; // COLD ALLOC: float[2] â€” authored headlight intensity cache for recovery after hull-stress glitches â€” owner: MantaScooter
+            _headlightBaseRanges = new float[MaxHeadlights]; // COLD ALLOC: float[2] â€” authored headlight range cache for shaft falloff publishing â€” owner: MantaScooter
             _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — power indicator emission — owner: MantaScooter
             RefreshMantaLocalizationCache();
             BindTransportPresetToFeelContract();
             EnsureTransportLifecycleInitialized();
+            CacheHeadlightDefaults();
+            ClearHeadlightGlobals();
 
             // Setup motor audio
             TryGetComponent(out _motorAudioSource);
@@ -252,18 +383,25 @@ namespace Hecton8.Gameplay
         private void OnDisable()
         {
             LocalizationManager.OnLanguageChanged -= HandleMantaLanguageChanged;
+            RestoreHeadlightDefaults();
+            ClearHeadlightGlobals();
         }
 
         public override void OnSpawn()
         {
             base.OnSpawn();
+            ResolveVehicleUpgradeModule();
             _isActive = false;
             _registeredTick = false;
             _debugActivationState = ActivationStateSpawned;
+            ResetMisfireState();
+            _empMisfireTimer = 0f;
             BindTransportPresetToFeelContract();
             EnsureTransportLifecycleInitialized();
             ResolvePlayerReferences();
             ResetHudStateCache();
+            CacheHeadlightDefaults();
+            ClearHeadlightGlobals();
             UpdateBatteryVisuals();
             UpdatePowerIndicator();
         }
@@ -271,6 +409,8 @@ namespace Hecton8.Gameplay
         public override void OnDespawn()
         {
             DeactivateScooter();
+            RestoreHeadlightDefaults();
+            ClearHeadlightGlobals();
             UnregisterFromTick();
             ResetHudStateCache();
             base.OnDespawn();
@@ -291,6 +431,8 @@ namespace Hecton8.Gameplay
         public override void OnUnequip()
         {
             DeactivateScooter();
+            RestoreHeadlightDefaults();
+            ClearHeadlightGlobals();
             UnregisterFromTick();
             _debugActivationState = ActivationStateUnequipped;
             ResetHudStateCache();
@@ -369,12 +511,13 @@ namespace Hecton8.Gameplay
             _isMoving = IsPlayerMoving();
             _debugActivationState = _isMoving ? ActivationStateMoving : ActivationStateIdleInWater;
             _driveThrottleCurrent = AdvanceDriveThrottle(_driveThrottleCurrent, 1f, deltaTime);
-            float driveThrottleOutput = ResolveDriveThrottleOutput();
+            UpdateHullStressMisfire(deltaTime, _isMoving);
+            float driveThrottleOutput = ResolveEffectiveDriveThrottleOutput();
 
             if (_isMoving)
             {
                 // Drain battery while moving
-                _currentCharge = Mathf.Max(0f, _currentCharge - batteryDrainRate * driveThrottleOutput * deltaTime);
+                _currentCharge = Mathf.Max(0f, _currentCharge - ResolveEffectiveBatteryDrainRate() * driveThrottleOutput * deltaTime);
                 UpdatePowerIndicator();
                 UpdateHUD();
 
@@ -406,8 +549,23 @@ namespace Hecton8.Gameplay
             if (!IsEquipped)
                 return;
 
+            if (_empMisfireTimer > 0f)
+            {
+                _empMisfireTimer -= deltaTime;
+                if (_empMisfireTimer < 0f)
+                    _empMisfireTimer = 0f;
+            }
+
+            UpdateHeadlightState(deltaTime);
+
             if (_isActive)
+            {
+                InputManager inputManager = InputManager.Instance;
+                if (inputManager == null || !inputManager.IsPrimaryActionHeld)
+                    UpdateHullStressMisfire(deltaTime, false);
+
                 TickDriveRelease(deltaTime);
+            }
 
             UpdateHUD();
         }
@@ -490,11 +648,14 @@ namespace Hecton8.Gameplay
             _isMoving = false;
             _driveThrottleCurrent = 0f;
             _debugActivationState = ActivationStateIdle;
+            ResetMisfireState();
 
             // Stop motor sound
             if (_motorAudioSource != null && _motorAudioSource.isPlaying)
                 _motorAudioSource.Stop();
 
+            RestoreHeadlightDefaults();
+            ClearHeadlightGlobals();
             UpdatePowerIndicator();
         }
 
@@ -518,7 +679,7 @@ namespace Hecton8.Gameplay
             if (_isTransportBroken || !_isActive || !_hasBattery || _currentCharge < minChargeToActivate)
                 return 1f;
 
-            return Mathf.Lerp(1f, ResolveConfiguredTransportSpeedMultiplier(), ResolveDriveThrottleOutput());
+            return Mathf.Lerp(1f, ResolveConfiguredTransportSpeedMultiplier(), ResolveEffectiveDriveThrottleOutput());
         }
 
         /// <summary>
@@ -531,7 +692,7 @@ namespace Hecton8.Gameplay
                 return 0f;
 
             // Return additional force based on battery charge
-            return ResolveConfiguredTransportPropulsionForce() * ResolveDriveThrottleOutput() * _currentCharge; // Scale force with battery level
+            return ResolveConfiguredTransportPropulsionForce() * ResolveEffectiveDriveThrottleOutput() * _currentCharge; // Scale force with battery level
         }
 
         /// <summary>
@@ -557,6 +718,67 @@ namespace Hecton8.Gameplay
         {
             float propulsionReference = ResolveTransportPropulsionReference();
             return Mathf.Clamp01(GetPropulsionForce() / propulsionReference);
+        }
+
+        /// <summary>
+        /// Forces a temporary EMP misfire lockout on the active transport without spoofing hull stress.
+        /// </summary>
+        internal void ApplyEmpDisruption(float duration)
+        {
+            float disruptionDuration = Mathf.Max(empMisfireMinimumDuration, duration);
+            if (disruptionDuration <= 0.0001f)
+                return;
+
+            _empMisfireTimer = Mathf.Max(_empMisfireTimer, disruptionDuration);
+            _misfireIntervalTimer = 0f;
+        }
+
+        /// <summary>
+        /// Returns the currently active misfire thrust deviation authored by hull stress.
+        /// X = local pitch offset, Y = local yaw offset.
+        /// </summary>
+        internal bool TryGetHullStressMisfireDeviation(out Vector2 deviationDegrees)
+        {
+            if (_misfireStallTimer <= 0.0001f)
+            {
+                deviationDegrees = Vector2.zero;
+                return false;
+            }
+
+            deviationDegrees = new Vector2(_misfireDeviationPitchDegrees, _misfireDeviationYawDegrees);
+            return true;
+        }
+
+        /// <summary>
+        /// Spawns a detached pooled wreck body for high-speed handheld bailout events.
+        /// </summary>
+        /// <param name="inheritedVelocity">Player body velocity at bailout time.</param>
+        /// <param name="bailoutImpulse">Controller-resolved bailout impulse.</param>
+        /// <param name="severity">Normalized crash severity.</param>
+        internal bool TrySpawnEmergencyBailoutWreck(Vector3 inheritedVelocity, Vector3 bailoutImpulse, float severity)
+        {
+            GameObject wreckPrefab = bailoutWreckPrefab != null
+                ? bailoutWreckPrefab
+                : ToolData != null ? ToolData.worldPrefab : null;
+            if (wreckPrefab == null)
+                return false;
+
+            ObjectPoolManager poolManager = ObjectPoolManager.Instance;
+            if (poolManager == null)
+                return false;
+
+            Transform spawnTransform = _cachedTransform != null ? _cachedTransform : transform;
+            GameObject wreckInstance = poolManager.Spawn(wreckPrefab, spawnTransform.position, spawnTransform.rotation);
+            if (wreckInstance == null)
+                return false;
+
+            if (!wreckInstance.TryGetComponent(out MantaEmergencyWreck wreck))
+                wreck = wreckInstance.AddComponent<MantaEmergencyWreck>();
+
+            wreck.ActivateEmergencyDrift(inheritedVelocity, bailoutImpulse, severity);
+            BreakTransport();
+            spawnTransform.gameObject.SetActive(false);
+            return true;
         }
 
         /// <summary>
@@ -670,6 +892,16 @@ namespace Hecton8.Gameplay
             return Mathf.Pow(Mathf.Clamp01(_driveThrottleCurrent), ResolveConfiguredThrottleOutputExponent());
         }
 
+        private float ResolveEffectiveDriveThrottleOutput()
+        {
+            return ResolveDriveThrottleOutput() * ResolveMisfireThrottleScale();
+        }
+
+        private float ResolveMisfireThrottleScale()
+        {
+            return (_misfireStallTimer > 0.0001f || _empMisfireTimer > 0.0001f) ? 0f : 1f;
+        }
+
         private float ResolveConfiguredThrottleRiseSharpness()
         {
             if (transportPreset != null)
@@ -694,6 +926,21 @@ namespace Hecton8.Gameplay
             return 1f;
         }
 
+        private void ResolveVehicleUpgradeModule()
+        {
+            if (_vehicleUpgradeModule == null)
+                TryGetComponent(out _vehicleUpgradeModule);
+        }
+
+        private float ResolveEffectiveBatteryDrainRate()
+        {
+            ResolveVehicleUpgradeModule();
+            float drainScale = _vehicleUpgradeModule != null
+                ? Mathf.Max(0.1f, _vehicleUpgradeModule.ChargeDrainScale)
+                : 1f;
+            return Mathf.Max(0f, batteryDrainRate * drainScale);
+        }
+
         private void EnsureTransportLifecycleInitialized()
         {
             if (_transportLifecycleInitialized)
@@ -712,10 +959,15 @@ namespace Hecton8.Gameplay
 
         private float ResolveMaxIntegrity()
         {
-            if (transportPreset != null)
-                return Mathf.Max(1f, transportPreset.MaxIntegrity);
+            ResolveVehicleUpgradeModule();
+            float integrityBonus = _vehicleUpgradeModule != null
+                ? Mathf.Max(0f, _vehicleUpgradeModule.MaxIntegrityBonus)
+                : 0f;
 
-            return 100f;
+            if (transportPreset != null)
+                return Mathf.Max(1f, transportPreset.MaxIntegrity + integrityBonus);
+
+            return 100f + integrityBonus;
         }
 
         private float ResolveCollisionDamageStartSpeed()
@@ -750,6 +1002,99 @@ namespace Hecton8.Gameplay
             return 1f;
         }
 
+        private void UpdateHullStressMisfire(float deltaTime, bool driveRequested)
+        {
+            if (!driveRequested || (_playerMovement == null && _empMisfireTimer <= 0.0001f))
+            {
+                ResetMisfireState();
+                return;
+            }
+
+            float stress01 = Mathf.Max(ResolveHullStressMisfire01(), ResolveEmpMisfire01());
+            if (stress01 <= 0f)
+            {
+                ResetMisfireState();
+                return;
+            }
+
+            if (_misfireStallTimer > 0f)
+            {
+                _misfireStallTimer -= deltaTime;
+                if (_misfireStallTimer <= 0f)
+                {
+                    _misfireStallTimer = 0f;
+                    _misfireDeviationPitchDegrees = 0f;
+                    _misfireDeviationYawDegrees = 0f;
+                }
+            }
+
+            _misfireIntervalTimer -= deltaTime;
+            if (_misfireIntervalTimer > 0f)
+                return;
+
+            StartHullStressMisfire(stress01);
+        }
+
+        private float ResolveEmpMisfire01()
+        {
+            return _empMisfireTimer > 0.0001f ? 1f : 0f;
+        }
+
+        private float ResolveHullStressMisfire01()
+        {
+            float threshold = Mathf.Clamp01(misfireStressThreshold);
+            if (_playerMovement == null || _playerMovement.CurrentHullStress01 <= threshold)
+                return 0f;
+
+            return Mathf.InverseLerp(threshold, 1f, _playerMovement.CurrentHullStress01);
+        }
+
+        private void StartHullStressMisfire(float stress01)
+        {
+            _misfireSequence++;
+            float interval = Mathf.Lerp(
+                Mathf.Max(0.1f, misfireIntervalMax),
+                Mathf.Max(0.05f, misfireIntervalMin),
+                stress01);
+            float duration = Mathf.Lerp(
+                Mathf.Max(0.02f, misfireStallDurationMin),
+                Mathf.Max(0.02f, misfireStallDurationMax),
+                stress01);
+            float deviationMagnitude = Mathf.Lerp(
+                Mathf.Max(0f, misfireDeviationMinDegrees),
+                Mathf.Max(0f, misfireDeviationMaxDegrees),
+                stress01);
+            float signedPitch = Mathf.Lerp(-1f, 1f, Hash01(_misfireSequence * 92821u + 17u));
+            float signedYaw = Mathf.Lerp(-1f, 1f, Hash01(_misfireSequence * 68917u + 53u));
+
+            _misfireIntervalTimer = interval;
+            _misfireStallTimer = duration;
+            _misfireDeviationPitchDegrees = signedPitch * deviationMagnitude * 0.55f;
+            _misfireDeviationYawDegrees = signedYaw * deviationMagnitude;
+
+            AcousticZoneController controller = AcousticZoneController.Instance;
+            if (controller != null)
+                controller.PlayMantaMisfire(stress01);
+        }
+
+        private void ResetMisfireState()
+        {
+            _misfireIntervalTimer = 0f;
+            _misfireStallTimer = 0f;
+            _misfireDeviationPitchDegrees = 0f;
+            _misfireDeviationYawDegrees = 0f;
+        }
+
+        private static float Hash01(uint value)
+        {
+            value ^= 2747636419u;
+            value *= 2654435769u;
+            value ^= value >> 16;
+            value *= 2654435769u;
+            value ^= value >> 16;
+            return (value & 0x00FFFFFFu) / 16777215f;
+        }
+
         private void BreakTransport()
         {
             if (_isTransportBroken)
@@ -757,6 +1102,8 @@ namespace Hecton8.Gameplay
 
             _currentIntegrity = 0f;
             _isTransportBroken = true;
+            ResetMisfireState();
+            _empMisfireTimer = 0f;
             DeactivateScooter();
             _debugActivationState = ActivationStateBroken;
             ToolHitUtility.ShowWarning(_localizedTransportBrokenWarning);
@@ -791,6 +1138,245 @@ namespace Hecton8.Gameplay
             }
 
             powerIndicatorRenderer.SetPropertyBlock(_mpb);
+        }
+
+        private void CacheHeadlightDefaults()
+        {
+            if (_headlightSlots == null ||
+                _headlightBaseColors == null ||
+                _headlightBaseSpotAngles == null ||
+                _headlightBaseIntensities == null ||
+                _headlightBaseRanges == null)
+            {
+                return;
+            }
+
+            _headlightSlots[0] = primaryHeadlight;
+            _headlightSlots[1] = secondaryHeadlight;
+
+            for (int slotIndex = 0; slotIndex < MaxHeadlights; slotIndex++)
+            {
+                Light headlight = _headlightSlots[slotIndex];
+                if (headlight == null)
+                {
+                    _headlightBaseColors[slotIndex] = Color.black;
+                    _headlightBaseSpotAngles[slotIndex] = 0f;
+                    _headlightBaseIntensities[slotIndex] = 0f;
+                    _headlightBaseRanges[slotIndex] = 0f;
+                    continue;
+                }
+
+                _headlightBaseColors[slotIndex] = headlight.color;
+                _headlightBaseSpotAngles[slotIndex] = headlight.spotAngle;
+                _headlightBaseIntensities[slotIndex] = headlight.intensity;
+                _headlightBaseRanges[slotIndex] = headlight.range;
+            }
+
+            _headlightStateInitialized = true;
+        }
+
+        private void UpdateHeadlightState(float deltaTime)
+        {
+            if (!_headlightStateInitialized)
+                CacheHeadlightDefaults();
+
+            if (_headlightSlots == null ||
+                _headlightPositionsWs == null ||
+                _headlightDirectionsWs == null ||
+                _headlightColors == null ||
+                _headlightConeData == null)
+            {
+                return;
+            }
+
+            bool allowHeadlights = _isActive && !_isTransportBroken;
+            float stress01 = allowHeadlights ? ResolveHullStressMisfire01() : 0f;
+            _headlightGlitchPhase += deltaTime * Mathf.Lerp(0.35f, headlightGlitchFrequency, stress01);
+
+            int activeCount = 0;
+            for (int slotIndex = 0; slotIndex < MaxHeadlights; slotIndex++)
+            {
+                Light headlight = _headlightSlots[slotIndex];
+                if (headlight == null)
+                    continue;
+
+                if (headlight.type != LightType.Spot)
+                {
+                    RestoreHeadlight(slotIndex, headlight);
+                    continue;
+                }
+
+                if (!allowHeadlights || !headlight.enabled || !headlight.gameObject.activeInHierarchy)
+                {
+                    RestoreHeadlight(slotIndex, headlight);
+                    continue;
+                }
+
+                ApplyHeadlightMalfunction(slotIndex, headlight, stress01);
+                WriteHeadlightPayload(activeCount, headlight);
+                activeCount++;
+            }
+
+            for (int payloadIndex = activeCount; payloadIndex < MaxHeadlights; payloadIndex++)
+            {
+                _headlightPositionsWs[payloadIndex] = Vector4.zero;
+                _headlightDirectionsWs[payloadIndex] = Vector4.zero;
+                _headlightColors[payloadIndex] = Vector4.zero;
+                _headlightConeData[payloadIndex] = Vector4.zero;
+            }
+
+            PublishVolumetricSiltGlobals(deltaTime, allowHeadlights);
+            Shader.SetGlobalInt(_HeadlightCountId, activeCount);
+            Shader.SetGlobalVectorArray(_HeadlightPositionsWsId, _headlightPositionsWs);
+            Shader.SetGlobalVectorArray(_HeadlightDirectionsWsId, _headlightDirectionsWs);
+            Shader.SetGlobalVectorArray(_HeadlightColorsId, _headlightColors);
+            Shader.SetGlobalVectorArray(_HeadlightConeDataId, _headlightConeData);
+        }
+
+        private void PublishVolumetricSiltGlobals(float deltaTime, bool allowHeadlights)
+        {
+            Vector3 velocity = allowHeadlights && _playerRigidbody != null ? _playerRigidbody.linearVelocity : Vector3.zero;
+            float speed = velocity.magnitude;
+            float previousSpeed = _lastPublishedVolumetricVelocity.magnitude;
+            float brakeStrength = 0f;
+            if (_hasLastPublishedVolumetricVelocity && deltaTime > 0.0001f && previousSpeed > 0.1f)
+            {
+                Vector3 acceleration = (velocity - _lastPublishedVolumetricVelocity) / deltaTime;
+                float brakingDeceleration = Mathf.Max(0f, Vector3.Dot(-acceleration, _lastPublishedVolumetricVelocity.normalized));
+                float speedDrop = Mathf.Max(0f, previousSpeed - speed);
+                brakeStrength = Mathf.Clamp01(brakingDeceleration * 0.035f + speedDrop * 0.18f);
+            }
+
+            Shader.SetGlobalVector(_ScooterVelocityWsId, new Vector4(velocity.x, velocity.y, velocity.z, speed));
+            Shader.SetGlobalFloat(_ScooterBrakeCloudId, brakeStrength);
+            _lastPublishedVolumetricVelocity = velocity;
+            _hasLastPublishedVolumetricVelocity = allowHeadlights;
+        }
+
+        private void ApplyHeadlightMalfunction(int slotIndex, Light headlight, float stress01)
+        {
+            if (headlight == null || slotIndex < 0 || slotIndex >= MaxHeadlights)
+                return;
+
+            Color baseColor = _headlightBaseColors[slotIndex];
+            float baseSpotAngle = _headlightBaseSpotAngles[slotIndex];
+            float baseIntensity = _headlightBaseIntensities[slotIndex];
+            float baseRange = _headlightBaseRanges[slotIndex];
+
+            if (stress01 <= 0.0001f)
+            {
+                headlight.color = baseColor;
+                headlight.spotAngle = baseSpotAngle;
+                headlight.intensity = baseIntensity;
+                headlight.range = baseRange;
+                return;
+            }
+
+            float primaryNoise = Mathf.PerlinNoise(_headlightGlitchPhase + slotIndex * 0.37f, 0.19f + slotIndex * 0.23f) * 2f - 1f;
+            float secondaryNoise = Mathf.PerlinNoise(0.41f + slotIndex * 0.29f, _headlightGlitchPhase * 0.71f) * 2f - 1f;
+            float spectrumNoise = Mathf.PerlinNoise(_headlightGlitchPhase * 0.43f + slotIndex, 0.67f);
+            float stressPulse = stress01 * Mathf.Clamp01(0.5f + 0.5f * Mathf.Sin(_headlightGlitchPhase * 1.37f + slotIndex * 1.11f));
+            float glitchNoise = Mathf.Max(Mathf.Abs(primaryNoise), Mathf.Abs(secondaryNoise));
+
+            Color glitchedColor = new Color(
+                Mathf.Clamp01(baseColor.r * (1f + headlightSpectrumGlitchStrength * stressPulse)),
+                Mathf.Clamp01(baseColor.g * (1f - headlightSpectrumGlitchStrength * glitchNoise * 0.72f)),
+                Mathf.Clamp01(baseColor.b * (1f + headlightSpectrumGlitchStrength * Mathf.Lerp(-0.18f, 0.52f, spectrumNoise) * stress01)),
+                baseColor.a);
+
+            headlight.color = Color.Lerp(baseColor, glitchedColor, stress01);
+            headlight.spotAngle = Mathf.Clamp(baseSpotAngle + primaryNoise * headlightAngleJitterMaxDegrees * stress01, 4f, 179f);
+            headlight.intensity = Mathf.Max(0f, baseIntensity * (1f - headlightIntensityJitter * stress01 + Mathf.Abs(secondaryNoise) * headlightIntensityJitter * stress01));
+            headlight.range = Mathf.Max(0.1f, baseRange * Mathf.Lerp(1f, 0.92f, stress01 * Mathf.Abs(primaryNoise)));
+        }
+
+        private void WriteHeadlightPayload(int payloadIndex, Light headlight)
+        {
+            if (payloadIndex < 0 || payloadIndex >= MaxHeadlights || headlight == null)
+                return;
+
+            float outerAngleRadians = Mathf.Max(1f, headlight.spotAngle * 0.5f) * Mathf.Deg2Rad;
+            float innerAngleRadians = outerAngleRadians * 0.76f;
+            float outerCos = Mathf.Cos(outerAngleRadians);
+            float innerCos = Mathf.Cos(innerAngleRadians);
+            Vector3 directionWs = headlight.transform.forward;
+            Color lightColor = headlight.color;
+            Vector3 positionWs = headlight.transform.position;
+
+            _headlightPositionsWs[payloadIndex] = new Vector4(
+                positionWs.x,
+                positionWs.y,
+                positionWs.z,
+                Mathf.Max(0.1f, headlight.range));
+
+            _headlightDirectionsWs[payloadIndex] = new Vector4(
+                directionWs.x,
+                directionWs.y,
+                directionWs.z,
+                innerCos);
+
+            _headlightColors[payloadIndex] = new Vector4(
+                lightColor.r,
+                lightColor.g,
+                lightColor.b,
+                Mathf.Max(0f, headlight.intensity));
+
+            _headlightConeData[payloadIndex] = new Vector4(
+                outerCos,
+                Mathf.Max(0f, headlightVolumetricStrength),
+                Mathf.Max(0f, headlight.range > 0.0001f ? 1f / headlight.range : 0f),
+                1f);
+        }
+
+        private void RestoreHeadlightDefaults()
+        {
+            if (_headlightSlots == null)
+                return;
+
+            for (int slotIndex = 0; slotIndex < MaxHeadlights; slotIndex++)
+            {
+                RestoreHeadlight(slotIndex, _headlightSlots[slotIndex]);
+            }
+        }
+
+        private void RestoreHeadlight(int slotIndex, Light headlight)
+        {
+            if (headlight == null || slotIndex < 0 || slotIndex >= MaxHeadlights)
+                return;
+
+            headlight.color = _headlightBaseColors[slotIndex];
+            headlight.spotAngle = _headlightBaseSpotAngles[slotIndex];
+            headlight.intensity = _headlightBaseIntensities[slotIndex];
+            headlight.range = _headlightBaseRanges[slotIndex];
+        }
+
+        private void ClearHeadlightGlobals()
+        {
+            if (_headlightPositionsWs == null ||
+                _headlightDirectionsWs == null ||
+                _headlightColors == null ||
+                _headlightConeData == null)
+            {
+                return;
+            }
+
+            for (int slotIndex = 0; slotIndex < MaxHeadlights; slotIndex++)
+            {
+                _headlightPositionsWs[slotIndex] = Vector4.zero;
+                _headlightDirectionsWs[slotIndex] = Vector4.zero;
+                _headlightColors[slotIndex] = Vector4.zero;
+                _headlightConeData[slotIndex] = Vector4.zero;
+            }
+
+            Shader.SetGlobalInt(_HeadlightCountId, 0);
+            Shader.SetGlobalVectorArray(_HeadlightPositionsWsId, _headlightPositionsWs);
+            Shader.SetGlobalVectorArray(_HeadlightDirectionsWsId, _headlightDirectionsWs);
+            Shader.SetGlobalVectorArray(_HeadlightColorsId, _headlightColors);
+            Shader.SetGlobalVectorArray(_HeadlightConeDataId, _headlightConeData);
+            Shader.SetGlobalVector(_ScooterVelocityWsId, Vector4.zero);
+            Shader.SetGlobalFloat(_ScooterBrakeCloudId, 0f);
+            _lastPublishedVolumetricVelocity = Vector3.zero;
+            _hasLastPublishedVolumetricVelocity = false;
         }
 
         private void UpdateHUD()
@@ -938,6 +1524,7 @@ namespace Hecton8.Gameplay
 #if UNITY_EDITOR
         private void OnValidate()
         {
+            empMisfireMinimumDuration = Mathf.Clamp(empMisfireMinimumDuration, 0.1f, 6f);
             BindTransportPresetToFeelContract();
         }
 #endif

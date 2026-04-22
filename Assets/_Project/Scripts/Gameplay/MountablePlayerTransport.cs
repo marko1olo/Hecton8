@@ -63,6 +63,7 @@ namespace Hecton8.Gameplay
         private Collider _interactionCollider;
         private Rigidbody _transportBody;
         private PlayerTransportFeelContract _transportFeelContract;
+        private VehicleUpgradeModule _vehicleUpgradeModule;
         private bool _registered;
         private bool _interactionColliderWasEnabled;
         private Vector3 _riderAnchorLocalPosition;
@@ -117,6 +118,7 @@ namespace Hecton8.Gameplay
             _interactionCollider = GetComponent<Collider>();
             TryGetComponent(out _transportBody);
             TryGetComponent(out _transportFeelContract);
+            TryGetComponent(out _vehicleUpgradeModule);
             ResolveAnchorCache();
             BindPresetToFeelContract();
             RebuildPromptCache();
@@ -128,6 +130,7 @@ namespace Hecton8.Gameplay
             TryRegister();
             ResolveAnchorCache();
             BindPresetToFeelContract();
+            ResolveVehicleUpgradeModule();
             RebuildPromptCache();
             EnsureLifecycleInitialized();
         }
@@ -215,7 +218,8 @@ namespace Hecton8.Gameplay
             Vector2 moveInput = inputManager != null ? inputManager.MoveInput : Vector2.zero;
             float verticalInput = inputManager != null ? inputManager.VerticalMovementInput : 0f;
             float throttle = ResolveThrottle(moveInput, verticalInput);
-            if (throttle > 0f && _riderSurvival != null && preset.EnergyDrainPerSecond > 0f)
+            float configuredSuitEnergyDrain = ResolveConfiguredSuitEnergyDrainPerSecond();
+            if (throttle > 0f && _riderSurvival != null && configuredSuitEnergyDrain > 0f)
             {
                 if (_riderSurvival.Energy <= 0.01f)
                 {
@@ -225,11 +229,12 @@ namespace Hecton8.Gameplay
 
             _currentThrottle = AdvanceDriveThrottle(_currentThrottle, throttle, deltaTime);
             float throttleOutput = ResolveThrottleOutput(_currentThrottle);
-            if (throttleOutput > 0f && preset.DriveChargeDrainPerSecond > 0f)
+            float configuredDriveChargeDrain = ResolveConfiguredDriveChargeDrainPerSecond();
+            if (throttleOutput > 0f && configuredDriveChargeDrain > 0f)
             {
                 _currentChargeNormalized = Mathf.Max(
                     0f,
-                    _currentChargeNormalized - preset.DriveChargeDrainPerSecond * throttleOutput * deltaTime);
+                    _currentChargeNormalized - configuredDriveChargeDrain * throttleOutput * deltaTime);
 
                 if (_currentChargeNormalized <= 0.0001f)
                 {
@@ -239,9 +244,9 @@ namespace Hecton8.Gameplay
                 }
             }
 
-            if (throttleOutput > 0f && _riderSurvival != null && preset.EnergyDrainPerSecond > 0f)
+            if (throttleOutput > 0f && _riderSurvival != null && configuredSuitEnergyDrain > 0f)
             {
-                _riderSurvival.DrainEnergy(preset.EnergyDrainPerSecond * throttleOutput * deltaTime);
+                _riderSurvival.DrainEnergy(configuredSuitEnergyDrain * throttleOutput * deltaTime);
                 if (_riderSurvival.Energy <= 0.01f)
                 {
                     _currentThrottle = 0f;
@@ -620,9 +625,14 @@ namespace Hecton8.Gameplay
 
         private float ResolveMaxIntegrity()
         {
+            ResolveVehicleUpgradeModule();
+            float integrityBonus = _vehicleUpgradeModule != null
+                ? Mathf.Max(0f, _vehicleUpgradeModule.MaxIntegrityBonus)
+                : 0f;
+
             return preset != null
-                ? Mathf.Max(1f, preset.MaxIntegrity)
-                : 100f;
+                ? Mathf.Max(1f, preset.MaxIntegrity + integrityBonus)
+                : 100f + integrityBonus;
         }
 
         private float ResolveIntegrityNormalized()
@@ -636,6 +646,34 @@ namespace Hecton8.Gameplay
             return preset != null
                 ? Mathf.Max(0f, preset.StationChargeRateScale)
                 : 1f;
+        }
+
+        private void ResolveVehicleUpgradeModule()
+        {
+            if (_vehicleUpgradeModule == null)
+                TryGetComponent(out _vehicleUpgradeModule);
+        }
+
+        private float ResolveConfiguredSuitEnergyDrainPerSecond()
+        {
+            ResolveVehicleUpgradeModule();
+
+            float baseDrain = preset != null ? Mathf.Max(0f, preset.EnergyDrainPerSecond) : 0f;
+            float drainScale = _vehicleUpgradeModule != null
+                ? Mathf.Max(0.1f, _vehicleUpgradeModule.EnergyDrainScale)
+                : 1f;
+            return baseDrain * drainScale;
+        }
+
+        private float ResolveConfiguredDriveChargeDrainPerSecond()
+        {
+            ResolveVehicleUpgradeModule();
+
+            float baseDrain = preset != null ? Mathf.Max(0f, preset.DriveChargeDrainPerSecond) : 0f;
+            float drainScale = _vehicleUpgradeModule != null
+                ? Mathf.Max(0.1f, _vehicleUpgradeModule.ChargeDrainScale)
+                : 1f;
+            return baseDrain * drainScale;
         }
 
         private void BreakTransport()

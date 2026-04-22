@@ -14,6 +14,8 @@ namespace Hecton8.Gameplay
         /// <summary>Unsupported swim motion in the top water band near the surface.</summary>
         SurfaceSwim = 3,
         /// <summary>Unsupported full 3D underwater swim motion.</summary>
-        UnderwaterSwim = 4
+        UnderwaterSwim = 4,
+        /// <summary>Heavy exosuit locomotion with seabed grounding and jump-jet support.</summary>
+        ExosuitLocomotion = 5
     }
 }

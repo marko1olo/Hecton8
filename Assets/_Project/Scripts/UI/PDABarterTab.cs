@@ -109,10 +109,8 @@ namespace Hecton8.UI
                 if (playerPDA == null)
                     playerPDA = GetComponentInParent<PlayerPDA>();
             }
-            if (labelFont == null)
-                labelFont = TMP_Settings.defaultFontAsset;
-            if (numericFont == null)
-                numericFont = labelFont;
+            labelFont = LocalizedFontResolver.ResolveReadableFont(labelFont);
+            numericFont = LocalizedFontResolver.ResolveNumericFont(numericFont, labelFont);
             if (_snapshotBuffer == null || _snapshotBuffer.Length != Mathf.Max(1, maxVisibleOffers))
                 _snapshotBuffer = new PDAExchangeSystem.OfferSnapshot[Mathf.Max(1, maxVisibleOffers)];
             if (_transactionBuffer == null || _transactionBuffer.Length < 3)

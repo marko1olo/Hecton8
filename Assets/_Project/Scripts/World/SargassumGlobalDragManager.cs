@@ -324,6 +324,26 @@ namespace Hecton8.World
         [Tooltip("Maximum uniform scale applied to pooled collapse chunks.")]
         private float collapseChunkScaleMax = 1.65f;
 
+        [SerializeField, Range(0.5f, 12f)]
+        [Tooltip("Impact speed required before a falling collapse chunk is allowed to fracture again on collision.")]
+        private float collapseCascadeImpactThreshold = 3.8f;
+
+        [SerializeField, Range(1, 3)]
+        [Tooltip("Maximum recursive fragment depth allowed when collapse chunks keep tearing on impact.")]
+        private int collapseCascadeMaxDepth = 2;
+
+        [SerializeField, Range(1, 4)]
+        [Tooltip("Maximum secondary chunk count spawned by one collapse-chunk impact.")]
+        private int collapseCascadeSpawnCount = 2;
+
+        [SerializeField, Range(0.2f, 1f)]
+        [Tooltip("Uniform scale multiplier applied per cascade depth so secondary fragments stay smaller than the parent chunk.")]
+        private float collapseCascadeScaleMultiplier = 0.62f;
+
+        [SerializeField, Range(0.5f, 2f)]
+        [Tooltip("Velocity multiplier applied to secondary cascade fragments.")]
+        private float collapseCascadeVelocityMultiplier = 0.9f;
+
         [SerializeField, Range(0.1f, 2f)]
         [Tooltip("Strength written into the global cut mask when a leviathan or submarine punches through the canopy.")]
         private float massiveDisplacementCutStrength = 1f;
@@ -1195,7 +1215,7 @@ namespace Hecton8.World
 
                 if (chunkInstance.TryGetComponent(out SargassumCollapseChunk collapseChunk))
                 {
-                    collapseChunk.ActivateChunk(linearVelocity, angularVelocity, uniformScale, collapseChunkLifetime);
+                    collapseChunk.ActivateChunk(linearVelocity, angularVelocity, uniformScale, collapseChunkLifetime, 0);
                 }
                 else
                 {
@@ -1214,6 +1234,89 @@ namespace Hecton8.World
 
             zone.Flags |= CollapseChunkBurstSpawnedFlag;
             _disruptionZones[zoneIndex] = zone;
+        }
+
+        internal void RegisterCollapseChunkImpact(Vector3 impactPointWS, Vector3 impactNormalWS, float impactSpeed, int fragmentDepth)
+        {
+            if (collapseChunkPrefab == null ||
+                fragmentDepth > collapseCascadeMaxDepth ||
+                impactSpeed < collapseCascadeImpactThreshold)
+            {
+                return;
+            }
+
+            ObjectPoolManager poolManager = ObjectPoolManager.Instance;
+            if (poolManager == null)
+                return;
+
+            float severity01 = Mathf.Clamp01((impactSpeed - collapseCascadeImpactThreshold) / Mathf.Max(collapseCascadeImpactThreshold, 0.001f));
+            Vector3 sampleSpaceImpact = impactPointWS - _globalDriftOffset;
+            float radiusScale = Mathf.Pow(collapseCascadeScaleMultiplier, Mathf.Max(0, fragmentDepth));
+            RegisterOrReinforceDisruptionZone(
+                sampleSpaceImpact,
+                Mathf.Max(cellSize * 0.35f, buoyancyCollapseRadius * radiusScale),
+                Mathf.Lerp(0.2f, 0.55f, severity01),
+                Mathf.Lerp(buoyancyCollapseSinkDepth * 0.18f, buoyancyCollapseSinkDepth * 0.42f, severity01),
+                Mathf.Lerp(buoyancyCollapseSinkDuration * 0.35f, buoyancyCollapseSinkDuration * 0.65f, severity01),
+                0f,
+                0f,
+                DisruptionZoneMode.CutCollapse);
+
+            Vector3 safeNormal = impactNormalWS.sqrMagnitude > 0.0001f ? impactNormalWS.normalized : Vector3.up;
+            Vector3 tangent = Vector3.Cross(safeNormal, Vector3.up);
+            if (tangent.sqrMagnitude <= 0.0001f)
+                tangent = Vector3.Cross(safeNormal, Vector3.right);
+            tangent.Normalize();
+            Vector3 bitangent = Vector3.Cross(safeNormal, tangent).normalized;
+            int spawnCount = Mathf.Clamp(
+                Mathf.RoundToInt(Mathf.Lerp(1f, collapseCascadeSpawnCount, severity01)),
+                1,
+                collapseCascadeSpawnCount);
+
+            for (int chunkIndex = 0; chunkIndex < spawnCount; chunkIndex++)
+            {
+                float angle = HashToFloat01((uint)fragmentDepth, (uint)(chunkIndex + 1), 0x6C8E9CF5u) * Mathf.PI * 2f;
+                float radialT = Mathf.Sqrt(HashToFloat01((uint)fragmentDepth, (uint)(chunkIndex + 5), 0x5D588B65u));
+                Vector3 lateralDirection =
+                    tangent * Mathf.Cos(angle) +
+                    bitangent * Mathf.Sin(angle);
+                Vector3 spawnPosition = impactPointWS + safeNormal * 0.18f + lateralDirection * (collapseChunkSpawnRadius * 0.35f * radialT);
+                Vector3 linearVelocity =
+                    safeNormal * (collapseChunkHorizontalSpeed * collapseCascadeVelocityMultiplier * Mathf.Lerp(0.45f, 0.95f, severity01)) +
+                    lateralDirection * (collapseChunkHorizontalSpeed * collapseCascadeVelocityMultiplier * Mathf.Lerp(0.35f, 0.9f, severity01)) +
+                    Vector3.down * (collapseChunkDownwardSpeed * Mathf.Lerp(0.55f, 1.1f, severity01));
+                Vector3 angularVelocity = new Vector3(
+                    Mathf.Lerp(-3.4f, 3.4f, HashToFloat01((uint)fragmentDepth, (uint)(chunkIndex + 9), 0x8CB92BA7u)),
+                    Mathf.Lerp(-2.8f, 2.8f, HashToFloat01((uint)fragmentDepth, (uint)(chunkIndex + 13), 0x4CF5AD43u)),
+                    Mathf.Lerp(-3.1f, 3.1f, HashToFloat01((uint)fragmentDepth, (uint)(chunkIndex + 17), 0x9D12A0F1u)));
+                float parentScaleMultiplier = Mathf.Pow(collapseCascadeScaleMultiplier, Mathf.Max(1, fragmentDepth));
+                float uniformScale = Mathf.Lerp(collapseChunkScaleMin, collapseChunkScaleMax, HashToFloat01((uint)fragmentDepth, (uint)(chunkIndex + 21), 0x3D8E1129u)) * parentScaleMultiplier;
+
+                GameObject chunkInstance = poolManager.Spawn(
+                    collapseChunkPrefab,
+                    spawnPosition,
+                    Quaternion.LookRotation(lateralDirection.sqrMagnitude > 0.0001f ? lateralDirection : Vector3.forward, safeNormal));
+                if (chunkInstance == null)
+                    continue;
+
+                if (chunkInstance.TryGetComponent(out SargassumCollapseChunk collapseChunk))
+                {
+                    collapseChunk.ActivateChunk(linearVelocity, angularVelocity, uniformScale, collapseChunkLifetime * 0.7f, fragmentDepth);
+                }
+                else
+                {
+                    chunkInstance.transform.localScale = chunkInstance.transform.localScale * uniformScale;
+                    if (chunkInstance.TryGetComponent(out Rigidbody chunkRigidbody))
+                    {
+                        chunkRigidbody.isKinematic = false;
+                        chunkRigidbody.WakeUp();
+                        chunkRigidbody.linearVelocity = linearVelocity;
+                        chunkRigidbody.angularVelocity = angularVelocity;
+                    }
+
+                    poolManager.Despawn(chunkInstance, collapseChunkLifetime * 0.7f);
+                }
+            }
         }
 
         private DisruptionSample SampleDisruptionNoDrift(Vector3 sampledPositionWS)
@@ -1731,6 +1834,11 @@ namespace Hecton8.World
             collapseChunkLifetime = Mathf.Clamp(collapseChunkLifetime, 0.5f, 24f);
             collapseChunkScaleMin = Mathf.Clamp(collapseChunkScaleMin, 0.25f, 3f);
             collapseChunkScaleMax = Mathf.Max(collapseChunkScaleMin, Mathf.Clamp(collapseChunkScaleMax, 0.5f, 4f));
+            collapseCascadeImpactThreshold = Mathf.Clamp(collapseCascadeImpactThreshold, 0.5f, 12f);
+            collapseCascadeMaxDepth = Mathf.Clamp(collapseCascadeMaxDepth, 1, 3);
+            collapseCascadeSpawnCount = Mathf.Clamp(collapseCascadeSpawnCount, 1, 4);
+            collapseCascadeScaleMultiplier = Mathf.Clamp(collapseCascadeScaleMultiplier, 0.2f, 1f);
+            collapseCascadeVelocityMultiplier = Mathf.Clamp(collapseCascadeVelocityMultiplier, 0.5f, 2f);
             massiveDisplacementCutStrength = Mathf.Clamp(massiveDisplacementCutStrength, 0.1f, 2f);
             massiveDisplacementRampDuration = Mathf.Clamp(massiveDisplacementRampDuration, 0.1f, 4f);
             massiveDisplacementFadeDuration = Mathf.Clamp(massiveDisplacementFadeDuration, 0.1f, 8f);

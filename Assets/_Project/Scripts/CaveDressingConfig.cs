@@ -211,6 +211,106 @@ namespace Hecton8.Caves
     }
 
     /// <summary>
+    /// Configuration for ceiling-attached glowing bio-roots inside cave chambers.
+    /// Runtime owner resolves anchor points with NonAlloc raycasts and updates sway through ITickable.
+    /// </summary>
+    [System.Serializable]
+    public class CaveBioRootConfig
+    {
+        [Tooltip("Enable hanging cave bio-roots.")]
+        public bool enabled = true;
+
+        [Tooltip("Maximum number of roots per cave volume.")]
+        [Range(0, 24)]
+        public int maxCount = 8;
+
+        [Tooltip("Segments per procedural root line. Higher = smoother sway at extra CPU cost.")]
+        [Range(3, 16)]
+        public int segmentsPerRoot = 8;
+
+        [Tooltip("Shortest allowed root length in meters.")]
+        [Range(0.5f, 24f)]
+        public float minLength = 3f;
+
+        [Tooltip("Longest allowed root length in meters.")]
+        [Range(0.5f, 32f)]
+        public float maxLength = 9f;
+
+        [Tooltip("Base sway amplitude applied even without scooter prop wash.")]
+        [Range(0f, 4f)]
+        public float swayAmplitude = 0.45f;
+
+        [Tooltip("Base sway frequency in Hz.")]
+        [Range(0.05f, 3f)]
+        public float swayFrequency = 0.55f;
+
+        [Tooltip("Radius where scooter prop wash starts bending nearby roots.")]
+        [Range(0.5f, 18f)]
+        public float propWashRadius = 6f;
+
+        [Tooltip("Additional bend strength injected when the scooter passes under a root.")]
+        [Range(0f, 8f)]
+        public float propWashStrength = 2.2f;
+
+        [Tooltip("Root line width at the ceiling anchor.")]
+        [Range(0.01f, 0.5f)]
+        public float topWidth = 0.14f;
+
+        [Tooltip("Root line width at the hanging tip.")]
+        [Range(0.005f, 0.3f)]
+        public float tipWidth = 0.04f;
+
+        [Tooltip("Bioluminescent tint used by the hanging roots.")]
+        public Color glowColor = new Color(0.26f, 0.92f, 0.88f, 0.9f);
+    }
+
+    /// <summary>
+    /// Configuration for eruptive cave geysers. Owns updraft cadence and cavitation stress budget.
+    /// </summary>
+    [System.Serializable]
+    public class ThermalGeyserConfig
+    {
+        [Tooltip("Enable thermal geyser hazards in this cave family.")]
+        public bool enabled = true;
+
+        [Tooltip("Maximum number of geysers placed per cave volume.")]
+        [Range(0, 8)]
+        public int maxCount = 2;
+
+        [Tooltip("Seconds spent idle before the next eruption window.")]
+        [Range(1f, 30f)]
+        public float quietDuration = 10f;
+
+        [Tooltip("Seconds spent erupting once the plume fires.")]
+        [Range(0.5f, 12f)]
+        public float eruptionDuration = 3.2f;
+
+        [Tooltip("Sphere radius affected by the upward thermal impulse.")]
+        [Range(0.5f, 18f)]
+        public float eruptionRadius = 4.5f;
+
+        [Tooltip("Outer radius affected by cavitation drag and density loss.")]
+        [Range(0.5f, 24f)]
+        public float cavitationRadius = 6.5f;
+
+        [Tooltip("Upward impulse strength authored into the local CurrentVolume during eruption.")]
+        [Range(1f, 500f)]
+        public float updraftStrength = 500f;
+
+        [Tooltip("Additional drag multiplier applied to the scooter while cavitating over the geyser throat.")]
+        [Range(1f, 8f)]
+        public float cavitationDragMultiplier = 2.4f;
+
+        [Tooltip("Downward acceleration applied to bodies at the geyser rim when the water loses density.")]
+        [Range(0f, 80f)]
+        public float cavitationSinkAcceleration = 14f;
+
+        [Tooltip("Damage per second applied to hanging collapse chunks caught in the erupting plume.")]
+        [Range(0f, 12f)]
+        public float chunkThermalDamagePerSecond = 2.4f;
+    }
+
+    /// <summary>
     /// Complete cave dressing configuration (all layers).
     /// One instance per cave or shared across biome family.
     /// </summary>
@@ -229,6 +329,8 @@ namespace Hecton8.Caves
         public WallGrowthConfig wallGrowth = new WallGrowthConfig();
         public GlowingTissueConfig glowingTissue = new GlowingTissueConfig();
         public ServiceRemnantConfig serviceRemnants = new ServiceRemnantConfig();
+        public CaveBioRootConfig bioRoots = new CaveBioRootConfig();
+        public ThermalGeyserConfig thermalGeysers = new ThermalGeyserConfig();
 
         [Tooltip("Overall dressing intensity multiplier (0-1).")]
         [Range(0f, 1f)]
@@ -279,6 +381,21 @@ namespace Hecton8.Caves
                 {
                     enabled = false,
                     maxCount = 0
+                },
+                bioRoots = new CaveBioRootConfig
+                {
+                    enabled = false,
+                    maxCount = 0,
+                    swayAmplitude = 0.2f,
+                    propWashStrength = 1.2f
+                },
+                thermalGeysers = new ThermalGeyserConfig
+                {
+                    enabled = false,
+                    maxCount = 0,
+                    updraftStrength = 160f,
+                    cavitationDragMultiplier = 1.35f,
+                    cavitationSinkAcceleration = 4f
                 },
                 globalIntensity = 0.7f
             };
@@ -334,6 +451,31 @@ namespace Hecton8.Caves
                     minScale = 0.4f,
                     maxScale = 1.6f,
                     accentEmission = 0.42f
+                },
+                bioRoots = new CaveBioRootConfig
+                {
+                    enabled = true,
+                    maxCount = 5,
+                    segmentsPerRoot = 7,
+                    minLength = 2.5f,
+                    maxLength = 6f,
+                    swayAmplitude = 0.34f,
+                    propWashRadius = 5f,
+                    propWashStrength = 1.65f,
+                    glowColor = new Color(0.3f, 0.86f, 0.82f, 0.85f)
+                },
+                thermalGeysers = new ThermalGeyserConfig
+                {
+                    enabled = true,
+                    maxCount = 1,
+                    quietDuration = 11f,
+                    eruptionDuration = 2.6f,
+                    eruptionRadius = 3.8f,
+                    cavitationRadius = 5.6f,
+                    updraftStrength = 280f,
+                    cavitationDragMultiplier = 1.75f,
+                    cavitationSinkAcceleration = 8f,
+                    chunkThermalDamagePerSecond = 1.6f
                 },
                 globalIntensity = 1.0f
             };
@@ -394,6 +536,34 @@ namespace Hecton8.Caves
                     baseColor = new Color(0.18f, 0.22f, 0.28f),
                     accentColor = new Color(0.12f, 0.82f, 1f),
                     accentEmission = 0.55f
+                },
+                bioRoots = new CaveBioRootConfig
+                {
+                    enabled = true,
+                    maxCount = 10,
+                    segmentsPerRoot = 9,
+                    minLength = 4f,
+                    maxLength = 11f,
+                    swayAmplitude = 0.62f,
+                    swayFrequency = 0.7f,
+                    propWashRadius = 7.5f,
+                    propWashStrength = 2.8f,
+                    topWidth = 0.18f,
+                    tipWidth = 0.05f,
+                    glowColor = new Color(0.18f, 0.98f, 0.96f, 0.92f)
+                },
+                thermalGeysers = new ThermalGeyserConfig
+                {
+                    enabled = true,
+                    maxCount = 3,
+                    quietDuration = 10f,
+                    eruptionDuration = 3.8f,
+                    eruptionRadius = 5.2f,
+                    cavitationRadius = 7.8f,
+                    updraftStrength = 500f,
+                    cavitationDragMultiplier = 2.8f,
+                    cavitationSinkAcceleration = 18f,
+                    chunkThermalDamagePerSecond = 3.2f
                 },
                 globalIntensity = 1.2f
             };

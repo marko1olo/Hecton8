@@ -75,6 +75,8 @@ namespace Hecton8.UI
         private TextMeshProUGUI _countLabel;
         private TextMeshProUGUI _emptyStateLabel;
         private TextMeshProUGUI _headerTitleLabel;
+        private LocalizedTextMadnessFx _summaryMadnessFx;
+        private LocalizedTextMadnessFx _subtitleMadnessFx;
 
         // List rows â€” pre-allocated
         private readonly List<LogRow> _rows = new List<LogRow>(32);
@@ -270,9 +272,11 @@ namespace Hecton8.UI
             if (_subtitleLabel != null && data != null)
             {
                 string visibleSubtitle = data.VisibleSubtitleOrFallback;
-                _subtitleLabel.text = ResolveStressReactiveText(visibleSubtitle);
+                _subtitleLabel.text = ResolveLogStressReactiveText(data, "subtitle", visibleSubtitle);
                 _prevSubtitleText = visibleSubtitle;
             }
+
+            UpdateMadnessFxState(data, _subtitleMadnessFx);
 
             RefreshPlayButton();
         }
@@ -287,6 +291,9 @@ namespace Hecton8.UI
                 _subtitleLabel.text = string.Empty;
                 _prevSubtitleText = string.Empty;
             }
+
+            if (_subtitleMadnessFx != null)
+                _subtitleMadnessFx.SetEffectActive(false);
         }
 
         private void HandlePlaybackCompleted(string logId)
@@ -294,6 +301,8 @@ namespace Hecton8.UI
             _playbackRemaining = 0f;
             ResetPlaybackTimerDisplay();
             RefreshPlayButton();
+            if (_subtitleMadnessFx != null)
+                _subtitleMadnessFx.SetEffectActive(false);
         }
 
         private void TryRegister()
@@ -330,8 +339,7 @@ namespace Hecton8.UI
             if (_built) return;
             _built = true;
 
-            if (_labelFont == null)
-                _labelFont = TMPro.TMP_Settings.defaultFontAsset;
+            _labelFont = LocalizedFontResolver.ResolveReadableFont(_labelFont);
 
             // Background
             Image bg = gameObject.GetComponent<Image>();
@@ -481,12 +489,22 @@ namespace Hecton8.UI
             _summaryLabel.textWrappingMode = TMPro.TextWrappingModes.Normal;
             Anchor(_summaryLabel.rectTransform, new Vector2(0, 1), new Vector2(1, 1),
                 new Vector2(12, -200), new Vector2(-12, -96));
+            _summaryMadnessFx = _summaryLabel.gameObject.GetComponent<LocalizedTextMadnessFx>();
+            if (_summaryMadnessFx == null)
+                _summaryMadnessFx = _summaryLabel.gameObject.AddComponent<LocalizedTextMadnessFx>();
+
+            _summaryMadnessFx.Bind(_summaryLabel);
 
             // Subtitle (playback)
             _subtitleLabel = CreateText("Subtitle", _detailPanel, 9f, colorAccent, TextAlignmentOptions.TopLeft);
             _subtitleLabel.textWrappingMode = TMPro.TextWrappingModes.Normal;
             Anchor(_subtitleLabel.rectTransform, new Vector2(0, 0.3f), new Vector2(1, 0.7f),
                 new Vector2(12, 0), new Vector2(-12, 0));
+            _subtitleMadnessFx = _subtitleLabel.gameObject.GetComponent<LocalizedTextMadnessFx>();
+            if (_subtitleMadnessFx == null)
+                _subtitleMadnessFx = _subtitleLabel.gameObject.AddComponent<LocalizedTextMadnessFx>();
+
+            _subtitleMadnessFx.Bind(_subtitleLabel);
 
             // Playback timer
             _playbackTimerLabel = CreateText("Timer", _detailPanel, 9f, colorDim, TextAlignmentOptions.BottomRight);
@@ -558,7 +576,9 @@ namespace Hecton8.UI
 
                 // Replace title with ??? for undiscovered
                 if (row.TitleLabel != null)
-                    row.TitleLabel.text = ResolveStressReactiveText(isDiscovered ? log.DisplayTitleOrFallback : _localizedEncryptedLabel);
+                    row.TitleLabel.text = isDiscovered
+                        ? ResolveLogStressReactiveText(log, "row.title", log.DisplayTitleOrFallback)
+                        : ResolveStressReactiveText(_localizedEncryptedLabel);
             }
 
             RefreshRowHighlights();
@@ -581,22 +601,26 @@ namespace Hecton8.UI
             SetDetailVisible(true);
 
             if (_titleLabel != null)
-                _titleLabel.text = ResolveStressReactiveText(isDiscovered ? log.DisplayTitleOrFallback.ToUpperInvariant() : _localizedEncryptedLabel);
+                _titleLabel.text = isDiscovered
+                    ? ResolveLogStressReactiveText(log, "detail.title", log.DisplayTitleOrFallback.ToUpperInvariant())
+                    : ResolveStressReactiveText(_localizedEncryptedLabel);
 
             if (_authorLabel != null)
-                _authorLabel.text = ResolveStressReactiveText(isDiscovered
-                    ? string.Concat(_localizedAuthorPrefix, log.AuthorOrFallback)
-                    : string.Concat(_localizedAuthorPrefix, _localizedUnknownAuthor));
+                _authorLabel.text = isDiscovered
+                    ? ResolveLogStressReactiveText(log, "detail.author", string.Concat(_localizedAuthorPrefix, log.AuthorOrFallback))
+                    : ResolveStressReactiveText(string.Concat(_localizedAuthorPrefix, _localizedUnknownAuthor));
 
             if (_dateLabel != null)
-                _dateLabel.text = ResolveStressReactiveText(isDiscovered
-                    ? log.RecordDateOrFallback
-                    : string.Concat(_localizedDatePrefix, _localizedUnknownDate));
+                _dateLabel.text = isDiscovered
+                    ? ResolveLogStressReactiveText(log, "detail.date", log.RecordDateOrFallback)
+                    : ResolveStressReactiveText(string.Concat(_localizedDatePrefix, _localizedUnknownDate));
 
             if (_summaryLabel != null)
-                _summaryLabel.text = ResolveStressReactiveText(isDiscovered
-                    ? GetCachedSummaryText(log)
-                    : _localizedEncryptedSummary);
+                _summaryLabel.text = isDiscovered
+                    ? ResolveLogStressReactiveText(log, "detail.summary", GetCachedSummaryText(log))
+                    : ResolveStressReactiveText(_localizedEncryptedSummary);
+
+            UpdateMadnessFxState(isDiscovered ? log : null, _summaryMadnessFx);
 
             RefreshPlayButton();
         }
@@ -683,6 +707,15 @@ namespace Hecton8.UI
             if (_playbackTimerLabel != null) _playbackTimerLabel.gameObject.SetActive(visible);
             if (_playButtonBg != null) _playButtonBg.gameObject.SetActive(visible);
             if (_playButtonLabel != null) _playButtonLabel.gameObject.SetActive(visible);
+
+            if (!visible)
+            {
+                if (_summaryMadnessFx != null)
+                    _summaryMadnessFx.SetEffectActive(false);
+
+                if (_subtitleMadnessFx != null)
+                    _subtitleMadnessFx.SetEffectActive(false);
+            }
         }
 
         private AudioLogData GetLog(int index)
@@ -868,10 +901,27 @@ namespace Hecton8.UI
 
             if (_subtitleLabel != null)
             {
-                string displaySubtitle = ResolveStressReactiveText(_prevSubtitleText);
+                AudioLogSystem system = AudioLogSystem.Instance;
+                AudioLogData subtitleLog = system != null && system.IsPlaying ? system.CurrentLog : GetSelectedLog();
+                string displaySubtitle = ResolveLogStressReactiveText(subtitleLog, "subtitle", _prevSubtitleText);
                 if (!string.Equals(_subtitleLabel.text, displaySubtitle, System.StringComparison.Ordinal))
                     _subtitleLabel.text = displaySubtitle;
+
+                UpdateMadnessFxState(subtitleLog, _subtitleMadnessFx);
             }
+        }
+
+        private static void UpdateMadnessFxState(AudioLogData log, LocalizedTextMadnessFx effect)
+        {
+            if (effect == null)
+                return;
+
+            LocalizationManager manager = LocalizationManager.Instance;
+            effect.SetEffectActive(
+                manager != null &&
+                log != null &&
+                !string.IsNullOrWhiteSpace(log.logId) &&
+                manager.IsMadnessWhisperVisualActive());
         }
 
         private static string ResolveStressReactiveText(string text)
@@ -883,6 +933,21 @@ namespace Hecton8.UI
             return manager != null
                 ? manager.ApplyHullStressCorruptionIfNeeded(text)
                 : text;
+        }
+
+        private static string ResolveLogStressReactiveText(AudioLogData log, string surfaceId, string text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return string.Empty;
+
+            LocalizationManager manager = LocalizationManager.Instance;
+            if (manager == null)
+                return text;
+
+            if (log == null || string.IsNullOrWhiteSpace(log.logId))
+                return manager.ApplyHullStressCorruptionIfNeeded(text);
+
+            return manager.ApplyPdaLoreCorruptionIfNeeded(string.Concat(log.logId, ".", surfaceId), text);
         }
 
         private static string ResolveLocalized(string key, string fallback)
@@ -994,5 +1059,6 @@ namespace Hecton8.UI
             { if (_bg != null) _bg.color = _normal; }
         }
     }
+
 }
 

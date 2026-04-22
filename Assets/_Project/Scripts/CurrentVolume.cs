@@ -13,6 +13,11 @@ namespace Hecton8.Physics
     [AddComponentMenu("Hecton/Physics/Current Volume")]
     public sealed class CurrentVolume : MonoBehaviour
     {
+        private const float SharedAmbientNoiseScale = 0.0135f;
+        private const float SharedAmbientTimeScale = 0.11f;
+        private const float SharedAmbientStrength = 0.9f;
+        private const float SharedAmbientVerticalFactor = 0.08f;
+
         public enum VolumeShape
         {
             Box = 0,
@@ -89,6 +94,19 @@ namespace Hecton8.Physics
             return total;
         }
 
+        internal static Vector3 SampleCombinedCurrent(Vector3 worldPos)
+        {
+            Unity.Mathematics.float3 ambient = CurrentManager.SampleCurrent(
+                new Unity.Mathematics.float3(worldPos.x, worldPos.y, worldPos.z),
+                Time.time,
+                SharedAmbientNoiseScale,
+                SharedAmbientTimeScale,
+                SharedAmbientStrength,
+                SharedAmbientVerticalFactor);
+            Vector3 ambientCurrent = new Vector3(ambient.x, ambient.y, ambient.z);
+            return ambientCurrent + SampleAt(worldPos);
+        }
+
         /// <summary>
         /// Samples this volume only at the specified world position.
         /// </summary>
@@ -96,6 +114,44 @@ namespace Hecton8.Physics
         public Vector3 Sample(Vector3 worldPos)
         {
             return SampleInternal(worldPos);
+        }
+
+        internal void ApplySemanticFlowPreset(
+            FlowPattern targetPattern,
+            Vector3 targetLocalDirection,
+            float targetStrength,
+            float targetVerticalFactor,
+            float targetVortexRadialPull)
+        {
+            flowPattern = targetPattern;
+            localDirection = targetLocalDirection.sqrMagnitude > 0.0001f
+                ? targetLocalDirection.normalized
+                : Vector3.forward;
+            strength = Mathf.Max(0f, targetStrength);
+            verticalFactor = Mathf.Clamp(targetVerticalFactor, -1f, 1f);
+            vortexRadialPull = Mathf.Clamp(targetVortexRadialPull, -1f, 1f);
+        }
+
+        internal void ApplySemanticBoundsPreset(
+            VolumeShape targetShape,
+            Vector3 targetBoxSize,
+            float targetSphereRadius)
+        {
+            shape = targetShape;
+            boxSize = new Vector3(
+                Mathf.Max(0.01f, targetBoxSize.x),
+                Mathf.Max(0.01f, targetBoxSize.y),
+                Mathf.Max(0.01f, targetBoxSize.z));
+            sphereRadius = Mathf.Max(0.01f, targetSphereRadius);
+        }
+
+        internal float GetApproximateInfluenceRadius()
+        {
+            if (shape == VolumeShape.Sphere)
+                return Mathf.Max(0.01f, sphereRadius);
+
+            Vector3 halfExtents = boxSize * 0.5f;
+            return Mathf.Max(0.01f, halfExtents.magnitude);
         }
 
         private void OnEnable()

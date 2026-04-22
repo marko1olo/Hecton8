@@ -4,6 +4,7 @@ using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Modding;
 using Hecton8.SaveSystem;
+using Hecton8.World;
 using UnityEngine;
 
 namespace Hecton8.Meta
@@ -262,9 +263,11 @@ namespace Hecton8.Meta
                 modifiers.PredatorAggressionScale *= 1.2f;
             }
 
+            modifiers.PredatorAggressionScale *= EnvironmentalStrainManager.CurrentPredatorAggressionScale;
+
             modifiers.DamageMultiplier = Mathf.Clamp(modifiers.DamageMultiplier, 0.75f, 1.35f);
             modifiers.OxygenDepletionRate = Mathf.Clamp(modifiers.OxygenDepletionRate, 0.75f, 1.2f);
-            modifiers.PredatorAggressionScale = Mathf.Clamp(modifiers.PredatorAggressionScale, 0.85f, 1.35f);
+            modifiers.PredatorAggressionScale = Mathf.Clamp(modifiers.PredatorAggressionScale, 0.85f, 1.6f);
 
             if (Mathf.Abs(CurrentModifiers.DamageMultiplier - modifiers.DamageMultiplier) < 0.001f &&
                 Mathf.Abs(CurrentModifiers.OxygenDepletionRate - modifiers.OxygenDepletionRate) < 0.001f &&

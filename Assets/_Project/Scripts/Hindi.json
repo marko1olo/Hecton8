@@ -1,4 +1,4 @@
-﻿{
+{
   "ACTION_EATING": "खा रहा है...",
   "ACTION_HEALING": "लागू कर रहा है...",
   "ACTION_OXYGEN": "सांस ले रहा है...",
@@ -1209,5 +1209,20 @@
   "PDA_FOOTER_RIGHT_STANDBY": "O2 {0:0}%  |  PWR {1:0}%  |  PDA प्रतीक्षा",
   "TECH_O2_SPEC": "[Pressure: 300 bar | Mix: O2 96% | Rack: A-2]",
   "TECH_HULL_SPEC": "[Sealant: <key:ITEM_TITANIUM_SCRAP_NAME> laminate | Rating: 41 MPa]",
-  "TECH_PWR_BUS": "[Bus: 48V DC | Cell bank: Li-Salt MkII]"
+  "TECH_PWR_BUS": "[Bus: 48V DC | Cell bank: Li-Salt MkII]",
+  "MADNESS_WHISPERS_01": "साँस मत लो। वह देख रहा है।",
+  "MADNESS_WHISPERS_02": "दबाव तुम्हारा नाम जानता है।",
+  "MADNESS_WHISPERS_03": "काँच के उस पार मत देखो।",
+  "MADNESS_WHISPERS_04": "इसे छोड़ दो। यह हमारा है।",
+  "MADNESS_WHISPERS_05": "यह पतवार के नीचे से बोल रहा है।",
+  "MADNESS_WHISPERS_06": "पानी तुम्हारा आकार याद रखता है।",
+  "MADNESS_WHISPERS_07": "दस्तक का जवाब मत दो।",
+  "MADNESS_WHISPERS_08": "तुम्हारे सूट के भीतर कुछ सांस ले रहा है।",
+  "MADNESS_WHISPERS_09": "तुम्हारी परछाईं पहले ऊपर आई।",
+  "MADNESS_WHISPERS_10": "वाल्व बंद करो। उसे यह आवाज पसंद है।",
+  "MADNESS_WHISPERS_11": "वे विभाजक दीवारों के भीतर चलते हैं।",
+  "MADNESS_WHISPERS_12": "गहराई तुम्हारा चेहरा पहने हुए है।",
+  "MADNESS_WHISPERS_13": "तुम्हारे बोलने से पहले उसने तुम्हें सुन लिया।",
+  "MADNESS_WHISPERS_14": "बाहरी खोल तुम्हारी हड्डियां सीख रहा है।",
+  "MADNESS_WHISPERS_15": "जब रोशनी मर जाए, स्थिर रहो।"
 }

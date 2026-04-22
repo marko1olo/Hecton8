@@ -70,7 +70,7 @@ namespace Hecton8.Economy
             if (inventory == null)
                 return false;
 
-            if (!TryBuildRecycleYield(sourceItem, out ResourceStack[] resolvedYield))
+            if (!TryResolveRecycleYield(sourceItem, out ResourceStack[] resolvedYield))
                 return false;
 
             if (!inventory.TryRemoveQuantity(sourceItem, 1))
@@ -88,7 +88,7 @@ namespace Hecton8.Economy
             return true;
         }
 
-        private static bool TryBuildRecycleYield(ItemData sourceItem, out ResourceStack[] resolvedYield)
+        internal static bool TryResolveRecycleYield(ItemData sourceItem, out ResourceStack[] resolvedYield)
         {
             if (sourceItem == null)
             {
@@ -171,11 +171,18 @@ namespace Hecton8.Economy
             }
 
             int efficiencyLevel = MetaProfileUtility.ResolveUpgradeLevel(MetaUpgradeRegistry.EfficiencyExpertId);
-            float bonus = efficiencyLevel * 0.05f;
+            float bonusPerLevel = 0.05f;
+            if (MetaUpgradeRegistry.TryGetDefinition(MetaUpgradeRegistry.EfficiencyExpertId, out MetaUpgradeRegistry.MetaUpgradeDefinition definition) &&
+                definition.RecycleYieldBonusPerLevel > 0f)
+            {
+                bonusPerLevel = definition.RecycleYieldBonusPerLevel;
+            }
+
+            float bonus = efficiencyLevel * bonusPerLevel;
             return Mathf.Clamp(baseRatio + bonus, 0.25f, 0.80f);
         }
 
-        private static bool GrantYield(PlayerInventory inventory, ResourceStack[] resolvedYield, ref int grantedStackCount)
+        internal static bool GrantYield(PlayerInventory inventory, ResourceStack[] resolvedYield, ref int grantedStackCount)
         {
             if (inventory == null || resolvedYield == null)
                 return false;
@@ -198,7 +205,7 @@ namespace Hecton8.Economy
             return true;
         }
 
-        private static void RollbackYield(PlayerInventory inventory, ResourceStack[] resolvedYield, int grantedStackCount)
+        internal static void RollbackYield(PlayerInventory inventory, ResourceStack[] resolvedYield, int grantedStackCount)
         {
             if (inventory == null || resolvedYield == null || grantedStackCount <= 0)
                 return;
@@ -216,7 +223,7 @@ namespace Hecton8.Economy
             }
         }
 
-        private static int CountYieldUnits(ResourceStack[] resolvedYield)
+        internal static int CountYieldUnits(ResourceStack[] resolvedYield)
         {
             if (resolvedYield == null)
                 return 0;

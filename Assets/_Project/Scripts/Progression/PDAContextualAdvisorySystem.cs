@@ -23,26 +23,57 @@ namespace Hecton8.Progression
             None = 0,
             OxygenDeaths = 1 << 0,
             InventoryFull = 1 << 1,
-            PressureExposure = 1 << 2
+            PressureExposure = 1 << 2,
+            PressureDeaths = 1 << 3,
+            BaseEmergency = 1 << 4,
+            StaleAir = 1 << 5,
+            ColdStress = 1 << 6,
+            HeatStress = 1 << 7
         }
 
         private const int OxygenDeathThreshold = 3;
         private const int InventoryFullThreshold = 3;
+        private const int PressureDeathThreshold = 2;
+        private const int BaseEmergencyThreshold = 3;
+        private const int StaleAirThreshold = 3;
+        private const int ColdStressThreshold = 2;
+        private const int HeatStressThreshold = 2;
         private const float PressureExposureDurationSeconds = 14f;
         private const float PressureExposureEmergencySeverity = 0.92f;
+        private const float ColdStressExposureDurationSeconds = 18f;
+        private const float HeatStressExposureDurationSeconds = 14f;
         private const string OxygenDeathsAdvisoryId = "advisory.oxygen_deaths";
         private const string InventoryFullAdvisoryId = "advisory.inventory_full";
         private const string PressureExposureAdvisoryId = "advisory.pressure_exposure";
+        private const string PressureDeathsAdvisoryId = "advisory.pressure_deaths";
+        private const string BaseEmergencyAdvisoryId = "advisory.base_emergency";
+        private const string StaleAirAdvisoryId = "advisory.stale_air";
+        private const string ColdStressAdvisoryId = "advisory.cold_stress";
+        private const string HeatStressAdvisoryId = "advisory.heat_stress";
         private const string AdvisoryLogTitle = "SUIT ADVISORY";
         private const string OxygenDeathsMessage = "Repeated oxygen loss detected. Expand reserve discipline before the next descent. Carry refill margin and respect the ascent window.";
         private const string InventoryFullMessage = "Collection attempts are stalling against a saturated hold. Compress the loadout, discard dead weight, or route salvage back to shelter before continuing.";
+        private const string PressureDeathsMessage = "Pressure fatalities are repeating. The route is now beyond current hull readiness. Shorten the descent profile or install a deeper shell before pushing again.";
+        private const string BaseEmergencyMessage = "Base emergencies are repeating faster than service recovery. Expansion is no longer the bottleneck. Stabilize power, hull, and compartment service before adding more structure.";
+        private const string StaleAirMessage = "Shelter occupancy is outrunning breathable reserve recovery. A powered room is not automatically a safe room once scrubber margin collapses.";
+        private const string ColdStressMessage = "Cold stress is repeating. The suit is burning reserve just to stay operational. Shorten the exposure window or push with more power margin before entering that water column.";
+        private const string HeatStressMessage = "Thermal overload is repeating. Local heat is converting time into hydration debt. Re-route through cooler water or carry reserve fluids before re-entering the vent field.";
 
         private HectonSurvivalSystem _survivalSystem;
         private bool _registeredToTick;
         private bool _registeredToSave;
         private int _oxygenDeathCount;
         private int _inventoryFullAttemptCount;
+        private int _pressureDeathCount;
+        private int _baseEmergencyCount;
+        private int _staleAirIncidentCount;
+        private int _coldStressIncidentCount;
+        private int _heatStressIncidentCount;
         private float _deepExposureSeconds;
+        private float _coldStressExposureSeconds;
+        private float _heatStressExposureSeconds;
+        private bool _coldStressLatched;
+        private bool _heatStressLatched;
         private AdvisoryFlags _issuedFlags;
         private HectonEventSubscription _gameLoadedSubscription;
         private HectonEventSubscription _playerSpawnedSubscription;
@@ -65,6 +96,8 @@ namespace Hecton8.Progression
             SubscribeToEventBus();
             RebindOwnerSubscriptions();
             InventoryEvents.OnInventoryFull += HandleInventoryFull;
+            BaseIntegrityEvents.OnModuleEmergency += HandleModuleEmergency;
+            BaseIntegrityEvents.OnModuleAirQualityWarning += HandleModuleAirQualityWarning;
         }
 
         private void Start()
@@ -77,6 +110,8 @@ namespace Hecton8.Progression
         private void OnDisable()
         {
             InventoryEvents.OnInventoryFull -= HandleInventoryFull;
+            BaseIntegrityEvents.OnModuleEmergency -= HandleModuleEmergency;
+            BaseIntegrityEvents.OnModuleAirQualityWarning -= HandleModuleAirQualityWarning;
             UnbindOwnerSubscriptions();
             UnsubscribeFromEventBus();
             UnregisterFromTickManager();
@@ -86,6 +121,8 @@ namespace Hecton8.Progression
         private void OnDestroy()
         {
             InventoryEvents.OnInventoryFull -= HandleInventoryFull;
+            BaseIntegrityEvents.OnModuleEmergency -= HandleModuleEmergency;
+            BaseIntegrityEvents.OnModuleAirQualityWarning -= HandleModuleAirQualityWarning;
             UnbindOwnerSubscriptions();
             UnsubscribeFromEventBus();
             UnregisterFromTickManager();
@@ -123,21 +160,8 @@ namespace Hecton8.Progression
             if (_survivalSystem == null || !_survivalSystem.IsAlive)
                 return;
 
-            if ((_issuedFlags & AdvisoryFlags.PressureExposure) != 0)
-                return;
-
-            if (_survivalSystem.IsBeyondSafeDepth)
-            {
-                _deepExposureSeconds += 0.5f * Mathf.Lerp(1f, 2f, _survivalSystem.PressureExposureSeverity01);
-                if (_deepExposureSeconds >= PressureExposureDurationSeconds ||
-                    _survivalSystem.PressureExposureSeverity01 >= PressureExposureEmergencySeverity)
-                {
-                    PushAdvisory(PressureExposureAdvisoryId, BuildPressureExposureMessage());
-                }
-                return;
-            }
-
-            _deepExposureSeconds = 0f;
+            EvaluatePressureExposureAdvisory();
+            EvaluateThermalStressAdvisories();
         }
 
         /// <inheritdoc />
@@ -149,7 +173,14 @@ namespace Hecton8.Progression
             data.pdaAdvisories.issuedFlags = (int)_issuedFlags;
             data.pdaAdvisories.oxygenDeathCount = Mathf.Max(0, _oxygenDeathCount);
             data.pdaAdvisories.inventoryFullAttemptCount = Mathf.Max(0, _inventoryFullAttemptCount);
+            data.pdaAdvisories.pressureDeathCount = Mathf.Max(0, _pressureDeathCount);
+            data.pdaAdvisories.baseEmergencyCount = Mathf.Max(0, _baseEmergencyCount);
+            data.pdaAdvisories.staleAirIncidentCount = Mathf.Max(0, _staleAirIncidentCount);
+            data.pdaAdvisories.coldStressIncidentCount = Mathf.Max(0, _coldStressIncidentCount);
+            data.pdaAdvisories.heatStressIncidentCount = Mathf.Max(0, _heatStressIncidentCount);
             data.pdaAdvisories.deepExposureSeconds = Mathf.Max(0f, _deepExposureSeconds);
+            data.pdaAdvisories.coldStressExposureSeconds = Mathf.Max(0f, _coldStressExposureSeconds);
+            data.pdaAdvisories.heatStressExposureSeconds = Mathf.Max(0f, _heatStressExposureSeconds);
         }
 
         /// <inheritdoc />
@@ -158,7 +189,16 @@ namespace Hecton8.Progression
             _issuedFlags = AdvisoryFlags.None;
             _oxygenDeathCount = 0;
             _inventoryFullAttemptCount = 0;
+            _pressureDeathCount = 0;
+            _baseEmergencyCount = 0;
+            _staleAirIncidentCount = 0;
+            _coldStressIncidentCount = 0;
+            _heatStressIncidentCount = 0;
             _deepExposureSeconds = 0f;
+            _coldStressExposureSeconds = 0f;
+            _heatStressExposureSeconds = 0f;
+            _coldStressLatched = false;
+            _heatStressLatched = false;
 
             if (data == null)
                 return;
@@ -166,7 +206,14 @@ namespace Hecton8.Progression
             _issuedFlags = (AdvisoryFlags)Mathf.Max(0, data.pdaAdvisories.issuedFlags);
             _oxygenDeathCount = Mathf.Max(0, data.pdaAdvisories.oxygenDeathCount);
             _inventoryFullAttemptCount = Mathf.Max(0, data.pdaAdvisories.inventoryFullAttemptCount);
+            _pressureDeathCount = Mathf.Max(0, data.pdaAdvisories.pressureDeathCount);
+            _baseEmergencyCount = Mathf.Max(0, data.pdaAdvisories.baseEmergencyCount);
+            _staleAirIncidentCount = Mathf.Max(0, data.pdaAdvisories.staleAirIncidentCount);
+            _coldStressIncidentCount = Mathf.Max(0, data.pdaAdvisories.coldStressIncidentCount);
+            _heatStressIncidentCount = Mathf.Max(0, data.pdaAdvisories.heatStressIncidentCount);
             _deepExposureSeconds = Mathf.Max(0f, data.pdaAdvisories.deepExposureSeconds);
+            _coldStressExposureSeconds = Mathf.Max(0f, data.pdaAdvisories.coldStressExposureSeconds);
+            _heatStressExposureSeconds = Mathf.Max(0f, data.pdaAdvisories.heatStressExposureSeconds);
         }
 
         private void HandleInventoryFull(Hecton8.Items.ItemData item)
@@ -181,15 +228,54 @@ namespace Hecton8.Progression
 
         private void HandleSurvivalDeath()
         {
-            if (_survivalSystem == null || _survivalSystem.LastDeathCause != SurvivalDeathCause.OxygenDepletion)
+            if (_survivalSystem == null)
                 return;
 
-            if ((_issuedFlags & AdvisoryFlags.OxygenDeaths) != 0)
+            switch (_survivalSystem.LastDeathCause)
+            {
+                case SurvivalDeathCause.OxygenDepletion:
+                    if ((_issuedFlags & AdvisoryFlags.OxygenDeaths) == 0)
+                    {
+                        _oxygenDeathCount++;
+                        if (_oxygenDeathCount >= OxygenDeathThreshold)
+                            PushAdvisory(OxygenDeathsAdvisoryId, OxygenDeathsMessage);
+                    }
+                    break;
+                case SurvivalDeathCause.PressureCollapse:
+                    if ((_issuedFlags & AdvisoryFlags.PressureDeaths) == 0)
+                    {
+                        _pressureDeathCount++;
+                        if (_pressureDeathCount >= PressureDeathThreshold)
+                            PushAdvisory(PressureDeathsAdvisoryId, PressureDeathsMessage);
+                    }
+                    break;
+            }
+        }
+
+        private void HandleModuleEmergency(BaseModuleFailureMode failureMode, float integrity)
+        {
+            if ((_issuedFlags & AdvisoryFlags.BaseEmergency) != 0)
                 return;
 
-            _oxygenDeathCount++;
-            if (_oxygenDeathCount >= OxygenDeathThreshold)
-                PushAdvisory(OxygenDeathsAdvisoryId, OxygenDeathsMessage);
+            if (failureMode == BaseModuleFailureMode.None)
+                return;
+
+            _baseEmergencyCount++;
+            if (_baseEmergencyCount >= BaseEmergencyThreshold)
+                PushAdvisory(BaseEmergencyAdvisoryId, BaseEmergencyMessage);
+        }
+
+        private void HandleModuleAirQualityWarning(float airQualityNormalized)
+        {
+            if ((_issuedFlags & AdvisoryFlags.StaleAir) != 0)
+                return;
+
+            if (airQualityNormalized > 0.25f)
+                return;
+
+            _staleAirIncidentCount++;
+            if (_staleAirIncidentCount >= StaleAirThreshold)
+                PushAdvisory(StaleAirAdvisoryId, StaleAirMessage);
         }
 
         private void HandleGameLoaded(GameLoadedEvent gameLoadedEvent)
@@ -269,7 +355,79 @@ namespace Hecton8.Progression
             if (string.Equals(advisoryId, PressureExposureAdvisoryId, StringComparison.Ordinal))
                 return AdvisoryFlags.PressureExposure;
 
+            if (string.Equals(advisoryId, PressureDeathsAdvisoryId, StringComparison.Ordinal))
+                return AdvisoryFlags.PressureDeaths;
+
+            if (string.Equals(advisoryId, BaseEmergencyAdvisoryId, StringComparison.Ordinal))
+                return AdvisoryFlags.BaseEmergency;
+
+            if (string.Equals(advisoryId, StaleAirAdvisoryId, StringComparison.Ordinal))
+                return AdvisoryFlags.StaleAir;
+
+            if (string.Equals(advisoryId, ColdStressAdvisoryId, StringComparison.Ordinal))
+                return AdvisoryFlags.ColdStress;
+
+            if (string.Equals(advisoryId, HeatStressAdvisoryId, StringComparison.Ordinal))
+                return AdvisoryFlags.HeatStress;
+
             return AdvisoryFlags.None;
+        }
+
+        private void EvaluatePressureExposureAdvisory()
+        {
+            if ((_issuedFlags & AdvisoryFlags.PressureExposure) != 0)
+                return;
+
+            if (_survivalSystem.IsBeyondSafeDepth)
+            {
+                _deepExposureSeconds += 0.5f * Mathf.Lerp(1f, 2f, _survivalSystem.PressureExposureSeverity01);
+                if (_deepExposureSeconds >= PressureExposureDurationSeconds ||
+                    _survivalSystem.PressureExposureSeverity01 >= PressureExposureEmergencySeverity)
+                {
+                    PushAdvisory(PressureExposureAdvisoryId, BuildPressureExposureMessage());
+                }
+
+                return;
+            }
+
+            _deepExposureSeconds = 0f;
+        }
+
+        private void EvaluateThermalStressAdvisories()
+        {
+            if (_survivalSystem.IsInColdStress)
+            {
+                _coldStressExposureSeconds += 0.5f * Mathf.Lerp(1f, 2f, _survivalSystem.ColdStressSeverity01);
+                if (!_coldStressLatched && _coldStressExposureSeconds >= ColdStressExposureDurationSeconds)
+                {
+                    _coldStressLatched = true;
+                    _coldStressIncidentCount++;
+                    if ((_issuedFlags & AdvisoryFlags.ColdStress) == 0 && _coldStressIncidentCount >= ColdStressThreshold)
+                        PushAdvisory(ColdStressAdvisoryId, ColdStressMessage);
+                }
+            }
+            else
+            {
+                _coldStressExposureSeconds = 0f;
+                _coldStressLatched = false;
+            }
+
+            if (_survivalSystem.IsInHeatStress)
+            {
+                _heatStressExposureSeconds += 0.5f * Mathf.Lerp(1f, 2f, _survivalSystem.HeatStressSeverity01);
+                if (!_heatStressLatched && _heatStressExposureSeconds >= HeatStressExposureDurationSeconds)
+                {
+                    _heatStressLatched = true;
+                    _heatStressIncidentCount++;
+                    if ((_issuedFlags & AdvisoryFlags.HeatStress) == 0 && _heatStressIncidentCount >= HeatStressThreshold)
+                        PushAdvisory(HeatStressAdvisoryId, HeatStressMessage);
+                }
+            }
+            else
+            {
+                _heatStressExposureSeconds = 0f;
+                _heatStressLatched = false;
+            }
         }
 
         private string BuildPressureExposureMessage()

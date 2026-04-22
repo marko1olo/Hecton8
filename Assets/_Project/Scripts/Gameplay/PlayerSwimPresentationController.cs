@@ -466,6 +466,37 @@ namespace Hecton8.Gameplay
         [Tooltip("Wave slope magnitude that maps to a full animator response of 1.")]
         [SerializeField, Range(0.1f, 3f)] private float animatorWaveSlopeNormalization = 1.15f;
 
+        [Header("-- Active Trauma Blend ---------------")]
+        [Tooltip("World-impulse magnitude treated as full authored trauma pose response.")]
+        [SerializeField, Range(0.5f, 80f)] private float activeTraumaImpulseNormalization = 18f;
+
+        [Tooltip("How quickly trauma blend weight spikes when a physical hit lands.")]
+        [SerializeField, Range(1f, 30f)] private float activeTraumaBlendInSpeed = 14f;
+
+        [Tooltip("How long the trauma pose holds before blending back to authored swim animation.")]
+        [SerializeField, Range(0.02f, 1f)] private float activeTraumaHoldTime = 0.18f;
+
+        [Tooltip("Smooth time used when trauma motion settles back toward normal swim posing.")]
+        [SerializeField, Range(0.02f, 0.4f)] private float activeTraumaRecoverySmoothTime = 0.12f;
+
+        [Tooltip("How much authored swim presentation is suppressed while trauma owns the pose.")]
+        [SerializeField, Range(0f, 1f)] private float activeTraumaPresentationSuppression = 0.58f;
+
+        [Tooltip("How much hand-guide visibility is suppressed while trauma owns the pose.")]
+        [SerializeField, Range(0f, 1f)] private float activeTraumaGuideSuppression = 0.35f;
+
+        [Tooltip("Maximum local root offset driven by trauma blend.")]
+        [SerializeField, Range(0f, 0.2f)] private float activeTraumaRootOffsetDistance = 0.08f;
+
+        [Tooltip("Maximum local root angular displacement driven by trauma blend.")]
+        [SerializeField, Range(0f, 35f)] private float activeTraumaRootEulerDegrees = 14f;
+
+        [Tooltip("Maximum local hand-guide offset driven by trauma blend.")]
+        [SerializeField, Range(0f, 0.24f)] private float activeTraumaGuideOffsetDistance = 0.11f;
+
+        [Tooltip("Maximum local hand-guide angular displacement driven by trauma blend.")]
+        [SerializeField, Range(0f, 45f)] private float activeTraumaGuideEulerDegrees = 18f;
+
         [Header("-- Root Obstacle Response -------------")]
         [Tooltip("How much nearby wall pressure shifts the swim root sideways away from the blocked hand.")]
         [SerializeField, Range(0f, 0.05f)] private float obstacleRootLateralBias = 0.012f;
@@ -599,6 +630,13 @@ namespace Hecton8.Gameplay
         private float _heavyCarryLoadVelocity;
         private float _transportBoostCurrent;
         private float _transportBoostVelocity;
+        private float _physicalTraumaBlendCurrent;
+        private float _physicalTraumaBlendVelocity;
+        private float _physicalTraumaBlendTarget;
+        private float _physicalTraumaHoldTimer;
+        private Vector3 _physicalTraumaLocalImpulseCurrent;
+        private Vector3 _physicalTraumaLocalImpulseTarget;
+        private Vector3 _physicalTraumaLocalImpulseVelocity;
         private PlayerTransportFeelContract _transportFeelContractCurrent;
         private float _previousCameraYaw;
         private int _lastDrivenFrame = -1;
@@ -659,6 +697,9 @@ namespace Hecton8.Gameplay
         /// <summary>Current normalized vertical swim pose bias. Positive = ascend, negative = descend.</summary>
         public float CurrentVerticalPoseBias => _currentVerticalPoseBias;
 
+        /// <summary>Current normalized physical-trauma blend suppressing authored swim posing.</summary>
+        public float CurrentPhysicalTraumaBlend => _physicalTraumaBlendCurrent;
+
         /// <summary>Current normalized directional steering correction read.</summary>
         public float CurrentDirectionalCorrection => _directionalCorrectionCurrent;
 
@@ -704,6 +745,13 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
+            _physicalTraumaBlendCurrent = 0f;
+            _physicalTraumaBlendVelocity = 0f;
+            _physicalTraumaBlendTarget = 0f;
+            _physicalTraumaHoldTimer = 0f;
+            _physicalTraumaLocalImpulseCurrent = Vector3.zero;
+            _physicalTraumaLocalImpulseTarget = Vector3.zero;
+            _physicalTraumaLocalImpulseVelocity = Vector3.zero;
             _waveSlopeForwardCurrent = 0f;
             _waveSlopeLateralCurrent = 0f;
             _waveCrestReachCurrent = 0f;
@@ -750,6 +798,27 @@ namespace Hecton8.Gameplay
         public void Tick(float dt)
         {
             SyncFromLocomotion(dt);
+        }
+
+        internal void ApplyPhysicalTrauma(Vector3 worldImpulse, float weight)
+        {
+            float clampedWeight = math.saturate(weight);
+            if (clampedWeight <= 0f)
+                return;
+
+            Transform reference = viewModelRoot != null ? viewModelRoot : transform;
+            Vector3 localImpulse = reference.InverseTransformDirection(worldImpulse);
+            float normalization = math.max(0.5f, activeTraumaImpulseNormalization);
+            Vector3 normalizedImpulse = Vector3.ClampMagnitude(localImpulse / normalization, 1f);
+            if (normalizedImpulse.sqrMagnitude <= 0.0001f)
+                normalizedImpulse = reference.InverseTransformDirection(Vector3.down);
+
+            _physicalTraumaLocalImpulseTarget = Vector3.ClampMagnitude(
+                _physicalTraumaLocalImpulseTarget + normalizedImpulse * clampedWeight,
+                1f);
+            _physicalTraumaLocalImpulseVelocity = Vector3.zero;
+            _physicalTraumaBlendTarget = math.max(_physicalTraumaBlendTarget, clampedWeight);
+            _physicalTraumaHoldTimer = math.max(_physicalTraumaHoldTimer, activeTraumaHoldTime * math.lerp(0.6f, 1f, clampedWeight));
         }
 
         /// <summary>Drives swim presentation from the authoritative locomotion owner. Safe to call from player movement each render tick.</summary>
@@ -819,6 +888,7 @@ namespace Hecton8.Gameplay
                 presentationBlendSmoothTime,
                 dt);
 
+            UpdatePhysicalTrauma(dt);
             UpdateStrokeState(profile, planarSpeed, speedDelta, dt);
             UpdateStrokePowerPulse(activeSwimPresentation, dt);
             UpdateCameraTurnSway(dt);
@@ -1152,6 +1222,14 @@ namespace Hecton8.Gameplay
                 targetImmersionDepth = math.max(0f, playerMovement.CurrentDepth) * shorelineWeight;
             }
 
+            float traumaAnimatorScale = 1f - _physicalTraumaBlendCurrent * activeTraumaPresentationSuppression;
+            targetWeight *= traumaAnimatorScale;
+            targetForward *= traumaAnimatorScale;
+            targetLateral *= traumaAnimatorScale;
+            targetCrestReach *= traumaAnimatorScale;
+            targetDescentTuck *= traumaAnimatorScale;
+            targetImmersionDepth *= traumaAnimatorScale;
+
             float blendT = 1f - math.exp(-math.max(animatorWaveSignalBlendSpeed, 0.01f) * dt);
             _waveSlopeForwardCurrent = math.lerp(_waveSlopeForwardCurrent, targetForward, blendT);
             _waveSlopeLateralCurrent = math.lerp(_waveSlopeLateralCurrent, targetLateral, blendT);
@@ -1199,7 +1277,8 @@ namespace Hecton8.Gameplay
             float strokeSin = math.sin(_strokePhase * TwoPi);
             float strokeCos = math.cos(_strokePhase * TwoPi);
             float accelKick = math.clamp(speedDelta * profile.AccelerationKickAmplitude, -profile.AccelerationKickAmplitude, profile.AccelerationKickAmplitude);
-            float presentationWeight = _presentationBlend * _toolSuppressionWeight;
+            float traumaPresentationScale = 1f - _physicalTraumaBlendCurrent * activeTraumaPresentationSuppression;
+            float presentationWeight = _presentationBlend * _toolSuppressionWeight * traumaPresentationScale;
             float surfaceFramingWeight = ResolveSurfaceFramingWeight();
             float toolFramingWeight = _equippedToolBlendCurrent;
             float surfaceIdleWeight = ResolveSurfaceIdleWeight();
@@ -1271,6 +1350,8 @@ namespace Hecton8.Gameplay
             localEuler.z -= _rootObstacleDifferenceCurrent * obstacleRootRollBias * presentationWeight;
             localEuler += _rootToolEulerBiasCurrent * presentationWeight;
 
+            ApplyTraumaRootBias(ref localPosition, ref localEuler);
+
             float poseLagMultiplier = ResolvePoseLagMultiplier(profile);
             float rootPositionSmooth = math.max(0.0001f, rootPosePositionSmoothTime * poseLagMultiplier);
             float rootRotationSmooth = math.max(0.0001f, rootPoseRotationSmoothTime * poseLagMultiplier);
@@ -1315,7 +1396,8 @@ namespace Hecton8.Gameplay
             Vector3 velocity,
             float dt)
         {
-            float presentationWeight = _presentationBlend * _toolSuppressionWeight;
+            float traumaGuideScale = 1f - _physicalTraumaBlendCurrent * activeTraumaGuideSuppression;
+            float presentationWeight = _presentationBlend * _toolSuppressionWeight * traumaGuideScale;
             float modeWeight;
             float reachScale;
             float pullScale;
@@ -1668,6 +1750,7 @@ namespace Hecton8.Gameplay
                 isLeft,
                 guideWeight,
                 dt);
+            ApplyTraumaGuideBias(ref localPosition, ref localEuler, isLeft, guideWeight);
             localPosition = Vector3.Lerp(basePosition, localPosition, guideWeight);
             Vector3 blendedEuler = Vector3.Lerp(baseEuler, localEuler, guideWeight);
             float obstacleLagWeight = isLeft ? _leftObstacleWeightCurrent : _rightObstacleWeightCurrent;
@@ -1735,6 +1818,82 @@ namespace Hecton8.Gameplay
 
             if (guide != null)
                 guide.SetLocalPositionAndRotation(appliedLocalPosition, appliedLocalRotation);
+        }
+
+        private void UpdatePhysicalTrauma(float dt)
+        {
+            if (_physicalTraumaHoldTimer > 0f)
+            {
+                _physicalTraumaHoldTimer = math.max(0f, _physicalTraumaHoldTimer - dt);
+            }
+            else
+            {
+                _physicalTraumaBlendTarget = 0f;
+            }
+
+            if (_physicalTraumaBlendTarget > _physicalTraumaBlendCurrent)
+            {
+                float blendT = 1f - math.exp(-math.max(activeTraumaBlendInSpeed, 0.01f) * dt);
+                _physicalTraumaBlendCurrent = math.lerp(_physicalTraumaBlendCurrent, _physicalTraumaBlendTarget, blendT);
+            }
+            else
+            {
+                _physicalTraumaBlendCurrent = SmoothDampValue(
+                    _physicalTraumaBlendCurrent,
+                    _physicalTraumaBlendTarget,
+                    ref _physicalTraumaBlendVelocity,
+                    activeTraumaRecoverySmoothTime,
+                    dt);
+            }
+
+            Vector3 targetImpulse = _physicalTraumaBlendTarget > 0f ? _physicalTraumaLocalImpulseTarget : Vector3.zero;
+            _physicalTraumaLocalImpulseCurrent = SmoothDampVector(
+                _physicalTraumaLocalImpulseCurrent,
+                targetImpulse,
+                ref _physicalTraumaLocalImpulseVelocity,
+                activeTraumaRecoverySmoothTime,
+                dt);
+
+            if (_physicalTraumaBlendCurrent <= 0.001f && _physicalTraumaBlendTarget <= 0.001f)
+            {
+                _physicalTraumaBlendCurrent = 0f;
+                _physicalTraumaBlendVelocity = 0f;
+                _physicalTraumaLocalImpulseCurrent = Vector3.zero;
+                _physicalTraumaLocalImpulseTarget = Vector3.zero;
+                _physicalTraumaLocalImpulseVelocity = Vector3.zero;
+            }
+        }
+
+        private void ApplyTraumaRootBias(ref Vector3 localPosition, ref Vector3 localEuler)
+        {
+            float traumaBlend = _physicalTraumaBlendCurrent;
+            if (traumaBlend <= 0.001f)
+                return;
+
+            Vector3 traumaImpulse = _physicalTraumaLocalImpulseCurrent;
+            localPosition.x += traumaImpulse.x * activeTraumaRootOffsetDistance * 0.8f * traumaBlend;
+            localPosition.y += traumaImpulse.y * activeTraumaRootOffsetDistance * 0.65f * traumaBlend;
+            localPosition.z += traumaImpulse.z * activeTraumaRootOffsetDistance * traumaBlend;
+            localEuler.x += -traumaImpulse.y * activeTraumaRootEulerDegrees * traumaBlend;
+            localEuler.y += traumaImpulse.x * activeTraumaRootEulerDegrees * 0.55f * traumaBlend;
+            localEuler.z += (-traumaImpulse.x + traumaImpulse.z * 0.35f) * activeTraumaRootEulerDegrees * traumaBlend;
+        }
+
+        private void ApplyTraumaGuideBias(ref Vector3 localPosition, ref Vector3 localEuler, bool isLeft, float guideWeight)
+        {
+            float traumaBlend = _physicalTraumaBlendCurrent * guideWeight;
+            if (traumaBlend <= 0.001f)
+                return;
+
+            Vector3 traumaImpulse = _physicalTraumaLocalImpulseCurrent;
+            float sideSign = isLeft ? -1f : 1f;
+            float sideBias = sideSign * (-traumaImpulse.x * 0.55f + traumaImpulse.z * 0.18f);
+            localPosition.x += sideBias * activeTraumaGuideOffsetDistance * traumaBlend;
+            localPosition.y += traumaImpulse.y * activeTraumaGuideOffsetDistance * 0.7f * traumaBlend;
+            localPosition.z += traumaImpulse.z * activeTraumaGuideOffsetDistance * traumaBlend;
+            localEuler.x += -traumaImpulse.y * activeTraumaGuideEulerDegrees * traumaBlend;
+            localEuler.y += sideSign * traumaImpulse.x * activeTraumaGuideEulerDegrees * 0.8f * traumaBlend;
+            localEuler.z += sideSign * (traumaImpulse.z + traumaImpulse.x * 0.4f) * activeTraumaGuideEulerDegrees * traumaBlend;
         }
 
         private void UpdateToolSuppression(float dt)

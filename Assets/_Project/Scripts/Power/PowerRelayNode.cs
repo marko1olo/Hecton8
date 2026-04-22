@@ -1,0 +1,257 @@
+using System.Collections.Generic;
+using Hecton8.Core;
+using UnityEngine;
+
+namespace Hecton8.Power
+{
+    /// <summary>
+    /// Lightweight authored relay that extends the existing PowerNode network with cable visuals and passive transmission loss.
+    /// </summary>
+    [DisallowMultipleComponent]
+    [RequireComponent(typeof(PowerNode))]
+    [AddComponentMenu("Hecton8/Power/Power Relay Node")]
+    public sealed class PowerRelayNode : MonoBehaviour, IPowerComponent, IPoolable, ISlowTickable
+    {
+        private const float PositionRefreshEpsilonSqr = 0.0004f;
+
+        [Header("── Cable Visualization ──────────────────")]
+        [Tooltip("Optional LineRenderer used to visualize relay cable spokes to neighboring PowerNode links.")]
+        [SerializeField] private LineRenderer cableRenderer;
+
+        [Tooltip("Cable color while the relay still has power.")]
+        [SerializeField] private Color poweredCableColor = new Color(0.25f, 0.95f, 1f, 0.95f);
+
+        [Tooltip("Cable color while the relay has been depowered by grid deficit.")]
+        [SerializeField] private Color unpoweredCableColor = new Color(0.35f, 0.42f, 0.48f, 0.55f);
+
+        [Header("── Resistance Loss ──────────────────────")]
+        [Tooltip("Baseline relay standby draw once at least one cable path is connected.")]
+        [SerializeField, Range(0f, 20f)] private float standbyDrain = 1.5f;
+
+        [Tooltip("Extra passive draw for each relay-to-relay handoff in the local path graph.")]
+        [SerializeField, Range(0f, 10f)] private float relayHandoffLoss = 0.35f;
+
+        [Tooltip("Passive line loss applied per meter of connected cable path.")]
+        [SerializeField, Range(0f, 1f)] private float resistanceLossPerMeter = 0.06f;
+
+        [Tooltip("Priority used when the grid starts shedding non-critical loads. Lower is more critical.")]
+        [SerializeField, Range(0, 100)] private int powerPriority = 15;
+
+        [Header("── Diagnostics ─────────────────────────")]
+        [SerializeField] private bool _debugHasPower = true;
+        [SerializeField] private int _debugNeighborCount;
+        [SerializeField] private int _debugRelayNeighborCount;
+        [SerializeField] private float _debugCableLengthMeters;
+        [SerializeField] private float _debugPassiveLoss;
+
+        private PowerNode _powerNode;
+        private Transform _cachedTransform;
+        private bool _registered;
+        private bool _hasPower = true;
+        private float _currentPassiveLoss;
+        private Vector3 _lastPosition;
+        private int _lastVisualPointCount = -1;
+        private int _lastTopologyRevision = -1;
+
+        /// <summary>Dynamic passive drain authored by this relay.</summary>
+        public float PowerRating => -_currentPassiveLoss;
+
+        /// <summary>Power deficit shedding priority. Lower values stay online longer.</summary>
+        public int PowerPriority => powerPriority;
+
+        /// <summary>Cached power availability propagated by the active grid.</summary>
+        public bool HasPower => _hasPower;
+
+        public void OnPowerStatusChanged(bool hasPower)
+        {
+            _hasPower = hasPower;
+            _debugHasPower = hasPower;
+            UpdateCableColor();
+        }
+
+        private void Awake()
+        {
+            _cachedTransform = transform;
+            TryGetComponent(out _powerNode);
+        }
+
+        private void OnEnable()
+        {
+            TryRegister();
+            RefreshRelayLinks(true);
+        }
+
+        private void OnDisable()
+        {
+            TryUnregister();
+            ClearCableVisuals();
+        }
+
+        public void OnSpawn()
+        {
+            _hasPower = true;
+            _debugHasPower = true;
+            ResolveReferences();
+            TryRegister();
+            RefreshRelayLinks(true);
+        }
+
+        public void OnDespawn()
+        {
+            TryUnregister();
+            _currentPassiveLoss = 0f;
+            _debugPassiveLoss = 0f;
+            _debugCableLengthMeters = 0f;
+            _debugNeighborCount = 0;
+            _debugRelayNeighborCount = 0;
+            ClearCableVisuals();
+            _hasPower = true;
+            _debugHasPower = true;
+            _lastTopologyRevision = -1;
+        }
+
+        public void SlowTick()
+        {
+            RefreshRelayLinks(false);
+        }
+
+        private void ResolveReferences()
+        {
+            if (_cachedTransform == null)
+                _cachedTransform = transform;
+
+            if (_powerNode == null)
+                TryGetComponent(out _powerNode);
+
+            if (cableRenderer == null)
+                TryGetComponent(out cableRenderer);
+        }
+
+        private void TryRegister()
+        {
+            if (_registered || GameTickManager.Instance == null)
+                return;
+
+            GameTickManager.Instance.Register((ISlowTickable)this);
+            _registered = true;
+        }
+
+        private void TryUnregister()
+        {
+            if (!_registered || GameTickManager.Instance == null)
+                return;
+
+            GameTickManager.Instance.Unregister((ISlowTickable)this);
+            _registered = false;
+        }
+
+        private void RefreshRelayLinks(bool forceVisualRefresh)
+        {
+            ResolveReferences();
+
+            if (_powerNode == null)
+            {
+                _currentPassiveLoss = 0f;
+                ClearCableVisuals();
+                return;
+            }
+
+            List<PowerNode> neighbors = _powerNode.Neighbors;
+            int neighborCount = neighbors != null ? neighbors.Count : 0;
+            Vector3 relayPosition = _cachedTransform.position;
+            bool moved = (relayPosition - _lastPosition).sqrMagnitude > PositionRefreshEpsilonSqr;
+            int topologyRevision = _powerNode.TopologyRevision;
+            if (!forceVisualRefresh && !moved && topologyRevision == _lastTopologyRevision)
+                return;
+
+            _lastPosition = relayPosition;
+            _lastTopologyRevision = topologyRevision;
+            float totalHalfCableLength = 0f;
+            int relayNeighborCount = 0;
+
+            for (int i = 0; i < neighborCount; i++)
+            {
+                PowerNode neighbor = neighbors[i];
+                if (neighbor == null)
+                    continue;
+
+                totalHalfCableLength += Vector3.Distance(relayPosition, neighbor.transform.position) * 0.5f;
+
+                if (neighbor.TryGetComponent(out PowerRelayNode relayNeighbor) && relayNeighbor != null)
+                    relayNeighborCount++;
+            }
+
+            _currentPassiveLoss = neighborCount > 0
+                ? standbyDrain + relayNeighborCount * relayHandoffLoss + totalHalfCableLength * resistanceLossPerMeter
+                : 0f;
+
+            _debugNeighborCount = neighborCount;
+            _debugRelayNeighborCount = relayNeighborCount;
+            _debugCableLengthMeters = totalHalfCableLength * 2f;
+            _debugPassiveLoss = _currentPassiveLoss;
+
+            if (forceVisualRefresh || moved || neighborCount != _lastVisualPointCount / 2)
+                RefreshCableVisuals(relayPosition, neighbors, neighborCount);
+        }
+
+        private void RefreshCableVisuals(Vector3 relayPosition, List<PowerNode> neighbors, int neighborCount)
+        {
+            if (cableRenderer == null)
+                return;
+
+            if (neighborCount <= 0)
+            {
+                ClearCableVisuals();
+                return;
+            }
+
+            int pointCount = neighborCount * 2;
+            if (_lastVisualPointCount != pointCount)
+            {
+                cableRenderer.positionCount = pointCount;
+                _lastVisualPointCount = pointCount;
+            }
+
+            int pointIndex = 0;
+            for (int i = 0; i < neighborCount; i++)
+            {
+                PowerNode neighbor = neighbors[i];
+                if (neighbor == null)
+                    continue;
+
+                cableRenderer.SetPosition(pointIndex++, relayPosition);
+                cableRenderer.SetPosition(pointIndex++, neighbor.transform.position);
+            }
+
+            if (pointIndex != pointCount)
+            {
+                cableRenderer.positionCount = pointIndex;
+                _lastVisualPointCount = pointIndex;
+            }
+
+            cableRenderer.enabled = pointIndex > 1;
+            UpdateCableColor();
+        }
+
+        private void UpdateCableColor()
+        {
+            if (cableRenderer == null)
+                return;
+
+            Color activeColor = _hasPower ? poweredCableColor : unpoweredCableColor;
+            cableRenderer.startColor = activeColor;
+            cableRenderer.endColor = activeColor;
+        }
+
+        private void ClearCableVisuals()
+        {
+            if (cableRenderer != null)
+            {
+                cableRenderer.positionCount = 0;
+                cableRenderer.enabled = false;
+            }
+
+            _lastVisualPointCount = -1;
+        }
+    }
+}

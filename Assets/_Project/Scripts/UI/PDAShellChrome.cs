@@ -3,6 +3,7 @@ using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Inventory;
 using Hecton.Localization;
+using Hecton8.Input;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -24,6 +25,9 @@ namespace Hecton8.UI
         private const string LeftFooterFormat = "CARGO {0}/{1}  |  MASS {2:0.0} kg  |  READY TOOLS {3}/{4}";
         private const string RightFooterOnlineFormat = "O2 {0:0}%  |  PWR {1:0}%  |  PDA ONLINE";
         private const string RightFooterStandbyFormat = "O2 {0:0}%  |  PWR {1:0}%  |  PDA STANDBY";
+        private const string IntrusionTabOverride = "SYSTEM STATE // HACKED";
+        private const string IntrusionHintFormat = "REBOOT // HOLD {0} FOR 3.0S";
+        private const string IntrusionFooterFormat = "O2 {0:0}%  |  PWR {1:0}%  |  REBOOT {2}%";
 
         private static readonly Color Primary = new Color(0.46f, 0.98f, 0.94f, 0.96f);
         private static readonly Color Dim = new Color(0.78f, 0.96f, 0.93f, 0.84f);
@@ -49,6 +53,7 @@ namespace Hecton8.UI
         private Image _footerBg;
         private TextMeshProUGUI _titleText;
         private TextMeshProUGUI _tabText;
+        private TextMeshProUGUI _intrusionText;
         private TextMeshProUGUI _leftFooterText;
         private TextMeshProUGUI _rightFooterText;
         private int _lastActiveTab = int.MinValue;
@@ -76,6 +81,10 @@ namespace Hecton8.UI
         private string _localizedRightFooterStandbyFormat = RightFooterStandbyFormat;
         private bool _registeredToTickManager;
         private int _lastStressCorruptionBucket = int.MinValue;
+        private PDAIntrusionManager _intrusionManager;
+        private bool _lastIntrusionActive;
+        private int _lastRebootProgressPercent = -1;
+        private string _cachedRebootBinding = string.Empty;
 
         private void Awake()
         {
@@ -116,10 +125,19 @@ namespace Hecton8.UI
 
                 if (playerPDA == null)
                     playerPDA = playerTransform.GetComponentInChildren<PlayerPDA>(true);
+
+                if (_intrusionManager == null)
+                    _intrusionManager = playerTransform.GetComponent<PDAIntrusionManager>();
             }
 
             if (playerPDA == null)
                 playerPDA = GetComponent<PlayerPDA>() ?? GetComponentInParent<PlayerPDA>();
+
+            if (_intrusionManager == null && playerPDA != null)
+                _intrusionManager = playerPDA.GetComponent<PDAIntrusionManager>();
+
+            if (_intrusionManager == null)
+                _intrusionManager = GetComponent<PDAIntrusionManager>() ?? GetComponentInParent<PDAIntrusionManager>();
             labelFont = LocalizedFontResolver.ResolveReadableFont(labelFont);
             numericFont = LocalizedFontResolver.ResolveNumericFont(numericFont, labelFont);
         }
@@ -258,16 +276,29 @@ namespace Hecton8.UI
             if (!PlayerPDA.IsOpen)
             {
                 _lastStressCorruptionBucket = int.MinValue;
+                _lastIntrusionActive = false;
+                _lastRebootProgressPercent = -1;
                 UnregisterFromTickManager();
                 return;
             }
 
             LocalizationManager manager = LocalizationManager.Instance;
+            if (_intrusionManager == null)
+                _intrusionManager = PDAIntrusionManager.ActiveRuntimeInstance;
             int stressBucket = manager != null ? manager.GetHullStressCorruptionBucket() : 0;
-            if (stressBucket == _lastStressCorruptionBucket)
+            bool intrusionActive = _intrusionManager != null && _intrusionManager.IsHacked;
+            int rebootProgressPercent = intrusionActive
+                ? Mathf.RoundToInt(_intrusionManager.RebootProgressNormalized * 100f)
+                : 0;
+
+            if (stressBucket == _lastStressCorruptionBucket &&
+                intrusionActive == _lastIntrusionActive &&
+                rebootProgressPercent == _lastRebootProgressPercent)
                 return;
 
             _lastStressCorruptionBucket = stressBucket;
+            _lastIntrusionActive = intrusionActive;
+            _lastRebootProgressPercent = rebootProgressPercent;
             _lastActiveTab = int.MinValue;
             _lastCargoCells = -1;
             _lastCargoTotal = -1;
@@ -352,6 +383,12 @@ namespace Hecton8.UI
             Anchor(_tabText.rectTransform, new Vector2(0.42f, 0f), new Vector2(1f, 1f), new Vector2(8f, 0f), new Vector2(-14f, 0f));
             _tabText.color = Dim;
 
+            _intrusionText = CreateText(_chromeRoot, "Intrusion", numericFont, 10.5f, FontStyles.Bold, TextAlignmentOptions.Center);
+            Anchor(_intrusionText.rectTransform, new Vector2(0.2f, 1f), new Vector2(0.8f, 1f), new Vector2(0f, -66f), new Vector2(0f, -38f));
+            _intrusionText.color = AlertText;
+            _intrusionText.alpha = 0f;
+            _intrusionText.text = string.Empty;
+
             _leftFooterText = CreateText(footer, "FooterLeft", numericFont, 10.5f, FontStyles.Normal, TextAlignmentOptions.Left);
             Anchor(_leftFooterText.rectTransform, new Vector2(0f, 0f), new Vector2(0.58f, 1f), new Vector2(14f, 0f), new Vector2(-8f, 0f));
             _leftFooterText.color = Dim;
@@ -380,6 +417,9 @@ namespace Hecton8.UI
             _lastAssignedTools = -1;
             _lastOxygenPercent = int.MinValue;
             _lastEnergyPercent = int.MinValue;
+            _lastIntrusionActive = false;
+            _lastRebootProgressPercent = -1;
+            _cachedRebootBinding = string.Empty;
             if (_titleText != null)
                 _titleText.text = ResolveStressReactiveText(_localizedTitle);
             RefreshChrome();
@@ -390,6 +430,9 @@ namespace Hecton8.UI
         {
             if (!_built)
                 return;
+
+            if (_intrusionManager == null)
+                _intrusionManager = PDAIntrusionManager.ActiveRuntimeInstance;
 
             if (_titleText != null)
             {
@@ -415,10 +458,14 @@ namespace Hecton8.UI
             int oxygenPercent = Mathf.RoundToInt(oxygen * 100f);
             int energyPercent = Mathf.RoundToInt(energy * 100f);
             bool pdaOpen = PlayerPDA.IsOpen;
+            bool intrusionActive = _intrusionManager != null && _intrusionManager.IsHacked;
+            int rebootProgressPercent = intrusionActive
+                ? Mathf.RoundToInt(_intrusionManager.RebootProgressNormalized * 100f)
+                : 0;
 
             if (_tabText != null && _lastActiveTab != activeTabIndex)
             {
-                _tabText.text = ResolveStressReactiveText(tabName);
+                _tabText.text = ResolveStressReactiveText(intrusionActive ? IntrusionTabOverride : tabName);
                 _lastActiveTab = activeTabIndex;
             }
 
@@ -436,22 +483,46 @@ namespace Hecton8.UI
              if (_rightFooterText != null &&
                  (_lastOxygenPercent != oxygenPercent ||
                   _lastEnergyPercent != energyPercent ||
-                  _lastPdaOpen != pdaOpen))
+                  _lastPdaOpen != pdaOpen ||
+                  _lastIntrusionActive != intrusionActive ||
+                  _lastRebootProgressPercent != rebootProgressPercent))
              {
-                 if (pdaOpen)
+                 if (intrusionActive)
+                     _rightFooterText.text = ResolveStressReactiveText(string.Format(IntrusionFooterFormat, oxygenPercent, energyPercent, rebootProgressPercent));
+                 else if (pdaOpen)
                      _rightFooterText.text = ResolveStressReactiveText(string.Format(_localizedRightFooterOnlineFormat, oxygenPercent, energyPercent));
                  else
                      _rightFooterText.text = ResolveStressReactiveText(string.Format(_localizedRightFooterStandbyFormat, oxygenPercent, energyPercent));
                  _lastOxygenPercent = oxygenPercent;
                  _lastEnergyPercent = energyPercent;
                  _lastPdaOpen = pdaOpen;
+                 _lastIntrusionActive = intrusionActive;
+                 _lastRebootProgressPercent = rebootProgressPercent;
              }
+
+            if (_intrusionText != null)
+            {
+                if (intrusionActive)
+                {
+                    string rebootBinding = ResolveRebootBinding();
+                    string intrusionLine = ResolveStressReactiveText(string.Format(IntrusionHintFormat, rebootBinding));
+                    if (!string.Equals(_intrusionText.text, intrusionLine, System.StringComparison.Ordinal))
+                        _intrusionText.text = intrusionLine;
+                    _intrusionText.alpha = 1f;
+                }
+                else
+                {
+                    if (!string.IsNullOrEmpty(_intrusionText.text))
+                        _intrusionText.text = string.Empty;
+                    _intrusionText.alpha = 0f;
+                }
+            }
 
             Color severity = GetShellSeverityColor(energy, oxygen, weight, readyTools, assignedTools);
             if (_headerBg != null) _headerBg.color = severity;
             if (_footerBg != null) _footerBg.color = severity;
-            if (_tabText != null) _tabText.color = energy < 0.25f || oxygen < 0.3f ? AlertText : Dim;
-            if (_rightFooterText != null) _rightFooterText.color = energy < 0.25f || oxygen < 0.3f ? AlertText : DimLow;
+            if (_tabText != null) _tabText.color = intrusionActive || energy < 0.25f || oxygen < 0.3f ? AlertText : Dim;
+            if (_rightFooterText != null) _rightFooterText.color = intrusionActive || energy < 0.25f || oxygen < 0.3f ? AlertText : DimLow;
             if (_chromeCanvasGroup != null)
                 _chromeCanvasGroup.alpha = pdaOpen ? 1f : 0f;
         }
@@ -506,6 +577,23 @@ namespace Hecton8.UI
             return manager != null
                 ? manager.ApplyHullStressCorruptionIfNeeded(text)
                 : text;
+        }
+
+        private string ResolveRebootBinding()
+        {
+            if (!string.IsNullOrEmpty(_cachedRebootBinding))
+                return _cachedRebootBinding;
+
+            InputManager inputManager = InputManager.Instance;
+            string binding = inputManager != null
+                ? inputManager.GetBindingDisplayString("Submit", "UI", -1)
+                : string.Empty;
+
+            if (string.IsNullOrWhiteSpace(binding))
+                binding = "SUBMIT";
+
+            _cachedRebootBinding = binding.ToUpperInvariant();
+            return _cachedRebootBinding;
         }
 
         private void EvaluateTickRegistration()

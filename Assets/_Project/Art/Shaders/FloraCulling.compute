@@ -4,6 +4,7 @@
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
 #define HECTON_THREADS_PER_GROUP 64
+#define HECTON_MAX_SCOOTER_HEADLIGHTS 2
 
 StructuredBuffer<float4x4> _HectonSourceInstanceMatrices;
 StructuredBuffer<float4> _HectonSourceVegetationInstanceData;
@@ -22,6 +23,16 @@ float _HectonLodTransitionRange;
 float4 _HectonZBufferParams;
 float _HectonOcclusionDepthBias;
 uint _HectonOcclusionEnabled;
+uint _HectonDarknessCullEnabled;
+int _HectonScooterHeadlightCount;
+float4 _HectonScooterHeadlightPositionsWS[HECTON_MAX_SCOOTER_HEADLIGHTS];
+float4 _HectonScooterHeadlightDirectionsWS[HECTON_MAX_SCOOTER_HEADLIGHTS];
+float4 _HectonScooterHeadlightColors[HECTON_MAX_SCOOTER_HEADLIGHTS];
+float4 _HectonScooterHeadlightConeData[HECTON_MAX_SCOOTER_HEADLIGHTS];
+float _HectonFloorBiolumStrength;
+float _HectonOceanBiolumStrength;
+float _BiolumIntensity;
+float _HectonDarknessBiolumThreshold;
 
 float4x4 _MainLightWorldToShadow[5];
 float4 _CascadeShadowSplitSpheres0;
@@ -238,6 +249,64 @@ bool IsVisibleInAnyShadowCascade(float3 rootWS, float3 centerWS, float3 topWS, f
     return false;
 }
 
+float SafeRcp(float value)
+{
+    return value > 0.00001 ? rcp(value) : 0.0;
+}
+
+float3 SafeNormalize3(float3 value)
+{
+    float lenSq = dot(value, value);
+    return lenSq > 0.00001 ? value * rsqrt(lenSq) : float3(0.0, 1.0, 0.0);
+}
+
+float ResolveSpotConeAttenuation(float cosAngle, float innerCos, float outerCos)
+{
+    float coneRange = max(innerCos - outerCos, 0.0001);
+    return saturate((cosAngle - outerCos) / coneRange);
+}
+
+bool IsVisibleInDarkness(float3 samplePositionWS)
+{
+    if (_HectonDarknessCullEnabled == 0)
+        return true;
+
+    float globalBiolum = max(_BiolumIntensity, max(_HectonFloorBiolumStrength, _HectonOceanBiolumStrength));
+    if (globalBiolum >= _HectonDarknessBiolumThreshold)
+        return true;
+
+    [unroll(HECTON_MAX_SCOOTER_HEADLIGHTS)]
+    for (int headlightIndex = 0; headlightIndex < HECTON_MAX_SCOOTER_HEADLIGHTS; headlightIndex++)
+    {
+        if (headlightIndex >= _HectonScooterHeadlightCount)
+            break;
+
+        float3 lightPositionWS = _HectonScooterHeadlightPositionsWS[headlightIndex].xyz;
+        float lightRange = max(0.1, _HectonScooterHeadlightPositionsWS[headlightIndex].w);
+        float3 toSampleWS = samplePositionWS - lightPositionWS;
+        float sampleDistance = length(toSampleWS);
+        if (sampleDistance >= lightRange)
+            continue;
+
+        float3 sampleDirectionWS = toSampleWS * SafeRcp(sampleDistance);
+        float3 lightDirectionWS = SafeNormalize3(_HectonScooterHeadlightDirectionsWS[headlightIndex].xyz);
+        float coneAttenuation = ResolveSpotConeAttenuation(
+            dot(lightDirectionWS, sampleDirectionWS),
+            _HectonScooterHeadlightDirectionsWS[headlightIndex].w,
+            _HectonScooterHeadlightConeData[headlightIndex].x);
+        if (coneAttenuation <= 0.0001)
+            continue;
+
+        float rangeAttenuation = saturate(1.0 - sampleDistance * _HectonScooterHeadlightConeData[headlightIndex].z);
+        rangeAttenuation *= rangeAttenuation;
+        float intensity = _HectonScooterHeadlightColors[headlightIndex].w * _HectonScooterHeadlightConeData[headlightIndex].y;
+        if (coneAttenuation * rangeAttenuation * intensity >= 0.02)
+            return true;
+    }
+
+    return false;
+}
+
 [numthreads(HECTON_THREADS_PER_GROUP, 1, 1)]
 void CullFloraInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
@@ -269,6 +338,9 @@ void CullFloraInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
         return;
 
     if (IsOccludedByDepth(originWS, centerWS, topWS, sideAWS, sideBWS, clipRoot, clipCenter, clipTop, clipSideA, clipSideB))
+        return;
+
+    if (!IsVisibleInDarkness(centerWS))
         return;
 
     float distanceToCamera = distance(originWS, _HectonCameraPosition);

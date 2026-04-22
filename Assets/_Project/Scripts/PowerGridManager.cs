@@ -70,6 +70,8 @@ namespace Hecton8.Power
             }
         }
 
+        internal static List<PowerGrid> RuntimeGrids => _allGrids;
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════

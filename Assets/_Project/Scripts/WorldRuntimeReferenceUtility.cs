@@ -16,6 +16,7 @@ namespace Hecton8.World
         private static Transform _CachedPlayerTransform;
         private static MapMagicBridge _CachedMapMagicBridge;
         private static ScavengePopulator _CachedScavengePopulator;
+        private static HectonMapMagicVegetationBridge _CachedVegetationBridge;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -23,6 +24,7 @@ namespace Hecton8.World
             _CachedPlayerTransform = null;
             _CachedMapMagicBridge = null;
             _CachedScavengePopulator = null;
+            _CachedVegetationBridge = null;
         }
 
         public static bool TryResolvePlayerTransform(ref Transform target)
@@ -261,6 +263,23 @@ namespace Hecton8.World
             target = MapMagicBridge.Instance;
             if (target != null)
                 _CachedMapMagicBridge = target;
+            return target != null;
+        }
+
+        public static bool TryResolveHectonMapMagicVegetationBridge(ref HectonMapMagicVegetationBridge target)
+        {
+            if (target != null)
+                return true;
+
+            if (_CachedVegetationBridge != null)
+            {
+                target = _CachedVegetationBridge;
+                return true;
+            }
+
+            target = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            if (target != null)
+                _CachedVegetationBridge = target;
             return target != null;
         }
 

@@ -131,6 +131,15 @@ namespace Hecton8.World
             return Mathf.Lerp(1f, 1.35f, normalizedDebt);
         }
 
+        internal void AccumulateIndustrialStrain(float generalPollutionDelta, float microplasticDelta)
+        {
+            if (generalPollutionDelta > 0f)
+                _generalPollution += ApplyGreenTechReduction(generalPollutionDelta);
+
+            if (microplasticDelta > 0f)
+                _microplasticStrain += ApplyGreenTechReduction(microplasticDelta);
+        }
+
         private static float ResolveDiscardPollution(ItemData item)
         {
             if (item == null)
@@ -192,7 +201,14 @@ namespace Hecton8.World
                 return 0f;
 
             int greenTechLevel = MetaProfileUtility.ResolveUpgradeLevel(MetaUpgradeRegistry.GreenTechId);
-            float reduction = Mathf.Clamp01(greenTechLevel * 0.10f);
+            float reductionPerLevel = 0.10f;
+            if (MetaUpgradeRegistry.TryGetDefinition(MetaUpgradeRegistry.GreenTechId, out MetaUpgradeRegistry.MetaUpgradeDefinition definition) &&
+                definition.PollutionReductionPerLevel > 0f)
+            {
+                reductionPerLevel = definition.PollutionReductionPerLevel;
+            }
+
+            float reduction = Mathf.Clamp01(greenTechLevel * reductionPerLevel);
             return baseAmount * (1f - reduction);
         }
 

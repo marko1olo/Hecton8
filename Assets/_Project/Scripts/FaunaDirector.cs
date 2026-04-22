@@ -47,6 +47,7 @@
 
 using System.Collections.Generic;
 using Hecton8.Core;
+using Hecton8.Ecosystem;
 using Hecton8.Environment;
 using Hecton8.World;
 using UnityEngine;
@@ -110,6 +111,7 @@ namespace Hecton8.AI
             public int maxAlive;
             public int creatureTypeIndex;
             public bool isLargeThreat;
+            public bool isPredator;
             public bool blockedWhenPressureDisabled;
             public bool prefersClaustrophobicZone;
             public bool prefersThermalZone;
@@ -336,6 +338,7 @@ namespace Hecton8.AI
 
         /// <summary>Кэшированный Transform игрока.</summary>
         private Transform _playerTransform;
+        private HectonMapMagicVegetationBridge _vegetationThreatBridge;
 
         /// <summary>Квадрат killDistance для sqrMagnitude.</summary>
         private float _killDistanceSqr;
@@ -455,6 +458,7 @@ namespace Hecton8.AI
             ResolveBiomeMatrixDirector();
             ResolveWorldZoneDirector();
             ResolveDepthZoneDirector();
+            ResolveVegetationThreatBridge();
             RefreshRuntimeStreamingSettings();
             TryWarmupCreaturePools();
             _runtimeSettingsDirty = false;
@@ -479,6 +483,8 @@ namespace Hecton8.AI
 
             if (depthZoneDirector == null)
                 ResolveDepthZoneDirector();
+            if (_vegetationThreatBridge == null)
+                ResolveVegetationThreatBridge();
 
             if (!_creaturePoolsWarmed)
                 TryWarmupCreaturePools();
@@ -515,6 +521,7 @@ namespace Hecton8.AI
             ResolveBiomeMatrixDirector();
             ResolveWorldZoneDirector();
             ResolveDepthZoneDirector();
+            ResolveVegetationThreatBridge();
             if (!_creaturePoolsWarmed)
                 TryWarmupCreaturePools();
             if (_runtimeSettingsDirty || Time.time >= _nextRuntimeSettingsRefreshTime)
@@ -776,6 +783,7 @@ namespace Hecton8.AI
                     resolvedEntries,
                     creatureTypeCounts,
                     availablePoolCounts,
+                    biomeData.biomeIndex,
                     _pressureEnabled,
                     _currentPassiveSelectionScale,
                     _currentAggressiveSelectionScale,
@@ -820,6 +828,25 @@ namespace Hecton8.AI
                 if (!hasSpawnPoint)
                     continue;
 
+                if (!TrySelectResolvedEntryForSpawnPoint(
+                        resolvedEntries,
+                        creatureTypeCounts,
+                        availablePoolCounts,
+                        biomeData.biomeIndex,
+                        _pressureEnabled,
+                        _currentPassiveSelectionScale,
+                        _currentAggressiveSelectionScale,
+                        _currentLargeThreatSelectionScale,
+                        _currentDepthZone,
+                        _currentDepthZoneSpecialistScale,
+                        isLargeThreat,
+                        spawnPos,
+                        _vegetationThreatBridge,
+                        out selectedEntry))
+                {
+                    continue;
+                }
+
                 Quaternion spawnRot = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
                 WorldChunkCoordinate spawnChunk = WorldChunkCoordinate.FromWorldPosition(spawnPos, _runtimeChunkSize);
 
@@ -857,6 +884,8 @@ namespace Hecton8.AI
                 {
                     ai.ApplyArchetype(selectedEntry.archetype);
                     ai.SetSpawnPoint(spawnPos);
+                    FaunaGeneticsManager.Instance?.ApplyTraits(ai, selectedEntry.archetype, biomeIdx, spawnPos);
+                    EcosystemHealthDirector.Instance?.ConfigureSpawnedFauna(ai, selectedEntry.archetype, spawnChunk);
                 }
 
                 int typeIndex = selectedEntry.creatureTypeIndex;
@@ -1088,6 +1117,7 @@ namespace Hecton8.AI
             ResolvedFaunaEntry[] resolvedEntries,
             int[] currentCounts,
             int[] availablePoolCounts,
+            int biomeIndex,
             bool pressureEnabled,
             float passiveSelectionScale,
             float aggressiveSelectionScale,
@@ -1127,6 +1157,7 @@ namespace Hecton8.AI
                     passiveSelectionScale,
                     aggressiveSelectionScale,
                     largeThreatSelectionScale,
+                    biomeIndex,
                     currentDepthZone,
                     depthZoneSpecialistScale);
                 if (selectionWeight <= 0f)
@@ -1165,8 +1196,124 @@ namespace Hecton8.AI
                     passiveSelectionScale,
                     aggressiveSelectionScale,
                     largeThreatSelectionScale,
+                    biomeIndex,
                     currentDepthZone,
                     depthZoneSpecialistScale);
+                if (selectionWeight <= 0f)
+                    continue;
+
+                roll -= selectionWeight;
+                if (roll <= 0f)
+                {
+                    selectedEntry = entry;
+                    return true;
+                }
+            }
+
+            if (fallbackIndex >= 0)
+            {
+                selectedEntry = resolvedEntries[fallbackIndex];
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool TrySelectResolvedEntryForSpawnPoint(
+            ResolvedFaunaEntry[] resolvedEntries,
+            int[] currentCounts,
+            int[] availablePoolCounts,
+            int biomeIndex,
+            bool pressureEnabled,
+            float passiveSelectionScale,
+            float aggressiveSelectionScale,
+            float largeThreatSelectionScale,
+            DepthZoneProfile currentDepthZone,
+            float depthZoneSpecialistScale,
+            bool requireLargeThreatClass,
+            Vector3 spawnPosition,
+            HectonMapMagicVegetationBridge vegetationBridge,
+            out ResolvedFaunaEntry selectedEntry)
+        {
+            selectedEntry = default;
+            if (resolvedEntries == null || resolvedEntries.Length == 0 || availablePoolCounts == null || availablePoolCounts.Length < resolvedEntries.Length)
+                return false;
+
+            float availableWeight = 0f;
+            int fallbackIndex = -1;
+            for (int i = 0; i < resolvedEntries.Length; i++)
+            {
+                ResolvedFaunaEntry entry = resolvedEntries[i];
+                if (entry.isLargeThreat != requireLargeThreatClass || entry.prefab == null || entry.spawnWeight <= 0f)
+                    continue;
+                if (!pressureEnabled && entry.blockedWhenPressureDisabled)
+                    continue;
+
+                int typeIndex = entry.creatureTypeIndex;
+                if (currentCounts != null &&
+                    typeIndex >= 0 &&
+                    typeIndex < currentCounts.Length &&
+                    currentCounts[typeIndex] >= entry.maxAlive)
+                {
+                    continue;
+                }
+
+                if (availablePoolCounts[i] <= 0)
+                    continue;
+
+                float selectionWeight = ResolveSelectionWeight(
+                    in entry,
+                    passiveSelectionScale,
+                    aggressiveSelectionScale,
+                    largeThreatSelectionScale,
+                    biomeIndex,
+                    currentDepthZone,
+                    depthZoneSpecialistScale);
+                if (entry.isPredator && vegetationBridge != null)
+                    selectionWeight *= vegetationBridge.GetSpawnWeightModifier(spawnPosition);
+
+                if (selectionWeight <= 0f)
+                    continue;
+
+                availableWeight += selectionWeight;
+                fallbackIndex = i;
+            }
+
+            if (availableWeight <= 0f)
+                return false;
+
+            float roll = Random.Range(0f, availableWeight);
+            for (int i = 0; i < resolvedEntries.Length; i++)
+            {
+                ResolvedFaunaEntry entry = resolvedEntries[i];
+                if (entry.isLargeThreat != requireLargeThreatClass || entry.prefab == null || entry.spawnWeight <= 0f)
+                    continue;
+                if (!pressureEnabled && entry.blockedWhenPressureDisabled)
+                    continue;
+
+                int typeIndex = entry.creatureTypeIndex;
+                if (currentCounts != null &&
+                    typeIndex >= 0 &&
+                    typeIndex < currentCounts.Length &&
+                    currentCounts[typeIndex] >= entry.maxAlive)
+                {
+                    continue;
+                }
+
+                if (availablePoolCounts[i] <= 0)
+                    continue;
+
+                float selectionWeight = ResolveSelectionWeight(
+                    in entry,
+                    passiveSelectionScale,
+                    aggressiveSelectionScale,
+                    largeThreatSelectionScale,
+                    biomeIndex,
+                    currentDepthZone,
+                    depthZoneSpecialistScale);
+                if (entry.isPredator && vegetationBridge != null)
+                    selectionWeight *= vegetationBridge.GetSpawnWeightModifier(spawnPosition);
+
                 if (selectionWeight <= 0f)
                     continue;
 
@@ -1312,6 +1459,10 @@ namespace Hecton8.AI
                                 maxAlive = Mathf.Max(1, faunaEntry.GetResolvedMaxAlive()),
                                 creatureTypeIndex = creatureIndex,
                                 isLargeThreat = IsLargeThreatEntry(data, faunaEntry),
+                                isPredator = faunaEntry.archetype != null &&
+                                             (faunaEntry.archetype.isAggressive ||
+                                              faunaEntry.archetype.roleType == CreatureRoleType.Hunter ||
+                                              faunaEntry.archetype.roleType == CreatureRoleType.Leviathan),
                                 blockedWhenPressureDisabled = ShouldBlockEntryWhenPressureDisabled(faunaEntry.archetype),
                                 prefersClaustrophobicZone = DoesEntryPreferClaustrophobicZone(faunaEntry.archetype),
                                 prefersThermalZone = DoesEntryPreferThermalZone(faunaEntry.archetype),
@@ -1452,6 +1603,12 @@ namespace Hecton8.AI
         {
             if (depthZoneDirector == null)
                 depthZoneDirector = DepthZoneDirector.Instance;
+        }
+
+        private void ResolveVegetationThreatBridge()
+        {
+            if (_vegetationThreatBridge == null)
+                WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _vegetationThreatBridge);
         }
 
         private int ResolveEffectiveGlobalMaxCount(WorldProceduralFaunaMood faunaMood, DepthZoneProfile depthZone)
@@ -1651,6 +1808,7 @@ namespace Hecton8.AI
             float passiveSelectionScale,
             float aggressiveSelectionScale,
             float largeThreatSelectionScale,
+            int biomeIndex,
             DepthZoneProfile currentDepthZone,
             float depthZoneSpecialistScale)
         {
@@ -1681,7 +1839,17 @@ namespace Hecton8.AI
                 }
             }
 
+            weight *= MigrationDirector.ResolveSelectionMultiplier(biomeIndex, archetype);
+
             return Mathf.Max(0f, weight);
+        }
+
+        private static bool IsPredatorArchetype(CreatureArchetypeData archetype)
+        {
+            return archetype != null &&
+                   (archetype.isAggressive ||
+                    archetype.roleType == CreatureRoleType.Hunter ||
+                    archetype.roleType == CreatureRoleType.Leviathan);
         }
 
         private float ResolveDepthZoneBudgetScale(DepthZoneProfile currentDepthZone)
@@ -2251,6 +2419,8 @@ namespace Hecton8.AI
                 {
                     ai.ApplyArchetype(selectedEntry.archetype);
                     ai.SetSpawnPoint(spawnPos);
+                    FaunaGeneticsManager.Instance?.ApplyTraits(ai, selectedEntry.archetype, biomeIdx, spawnPos);
+                    EcosystemHealthDirector.Instance?.ConfigureSpawnedFauna(ai, selectedEntry.archetype, spawnChunk);
                     ai.ForceState(FaunaBrain.AIState.Aggressive);
                 }
 

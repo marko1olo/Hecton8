@@ -105,10 +105,8 @@ namespace Hecton8.UI
                 playerPda = GetComponentInParent<PlayerPDA>();
             }
 
-            if (labelFont == null)
-                labelFont = TMP_Settings.defaultFontAsset;
-            if (bindingFont == null)
-                bindingFont = labelFont;
+            labelFont = LocalizedFontResolver.ResolveReadableFont(labelFont);
+            bindingFont = LocalizedFontResolver.ResolveReadableFont(bindingFont != null ? bindingFont : labelFont);
 
             if (rows == null) rows = Array.Empty<RebindRow>();
             EnsureRowsConfigured();

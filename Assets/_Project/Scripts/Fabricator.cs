@@ -36,6 +36,7 @@ using Hecton8.Audio;
 using Hecton8.Building;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Hecton8.Economy;
 using Hecton8.Interaction;
 using Hecton8.Inventory;
 using Hecton8.Items;
@@ -49,6 +50,9 @@ namespace Hecton8.Crafting
     [RequireComponent(typeof(Collider))]
     public sealed class Fabricator : MonoBehaviour, IInteractable, ITickable, IPowerComponent, IFabricator
     {
+        // COLD ALLOC: List<Fabricator>[8] - active fabricator registry for cold-path recipe lookups - owner: Fabricator
+        private static readonly List<Fabricator> _activeFabricators = new List<Fabricator>(8);
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -108,6 +112,7 @@ namespace Hecton8.Crafting
         private bool _recipeCacheDirty = true;
         private bool _tickRegistered;
         private int _lockedRecipeCount;
+        private float _activeCraftPowerMultiplier = 1f;
 
         // ── Craft State ──
         private bool       _isCrafting;
@@ -202,7 +207,7 @@ namespace Hecton8.Crafting
         /// Итого при крафте: BuildableData.powerRating + (-craftPowerDraw).
         ///   Пример: -20 (базовый) + (-100) (крафт) = -120 Вт.
         /// </summary>
-        public float PowerRating => _isCrafting ? -craftPowerDraw : 0f;
+        public float PowerRating => _isCrafting ? -craftPowerDraw * _activeCraftPowerMultiplier : 0f;
 
         /// <summary>Приоритет отключения.</summary>
         public int PowerPriority => powerPriority;
@@ -245,10 +250,12 @@ namespace Hecton8.Crafting
             TryGetComponent(out _powerNode);
             EnsureScanLogSystem();
             MarkRecipeCacheDirty();
+            _activeCraftPowerMultiplier = 1f;
         }
 
         private void OnEnable()
         {
+            RegisterActiveFabricator(this);
             LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
             ModRecipeRegistry.RegistryChanged += HandleModRecipeRegistryChanged;
             RebuildInteractText();
@@ -260,6 +267,7 @@ namespace Hecton8.Crafting
 
         private void OnDisable()
         {
+            UnregisterActiveFabricator(this);
             LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
             ModRecipeRegistry.RegistryChanged -= HandleModRecipeRegistryChanged;
             UnsubscribeFromScanLog();
@@ -272,6 +280,7 @@ namespace Hecton8.Crafting
 
         private void OnDestroy()
         {
+            UnregisterActiveFabricator(this);
             TryUnregister();
         }
 
@@ -343,6 +352,7 @@ namespace Hecton8.Crafting
         {
             if (!CanCraft(recipe)) return false;
 
+            _activeCraftPowerMultiplier = ResolveCraftPowerMultiplier(recipe);
             _activeRecipe = recipe;
             _craftTimer   = 0f;
             _isCrafting   = true;
@@ -378,6 +388,7 @@ namespace Hecton8.Crafting
             _isCrafting   = false;
             _activeRecipe = null;
             _craftTimer   = 0f;
+            _activeCraftPowerMultiplier = 1f;
 
             // ── Уведомляем энергосеть: PowerRating изменился (-craftPowerDraw → 0) ──
             NotifyGridBalanceChanged();
@@ -460,24 +471,27 @@ namespace Hecton8.Crafting
                 _isCrafting = false;
                 _craftTimer = 0f;
                 _lastPublishedProgress = 0f;
+                _activeCraftPowerMultiplier = 1f;
                 NotifyGridBalanceChanged();
                 return;
             }
 
             ItemData   result = recipe.resultItem;
+            float powerCost = ResolveCraftPowerCost(recipe);
 
             _isCrafting   = false;
             _activeRecipe = null;
             _craftTimer   = 0f;
             _consumedCellCount = 0;
+            _activeCraftPowerMultiplier = 1f;
 
             // ── Уведомляем энергосеть: PowerRating изменился (-craftPowerDraw → 0) ──
             NotifyGridBalanceChanged();
 
             // ── Потребляем энергию из сети при завершении крафта ──
-            if (recipe.powerCost > 0f && _powerNode != null && _powerNode.Grid != null)
+            if (powerCost > 0f && _powerNode != null && _powerNode.Grid != null)
             {
-                _powerNode.Grid.ConsumePower(recipe.powerCost);
+                _powerNode.Grid.ConsumePower(powerCost);
             }
 
             if (result != null && _playerInventory != null)
@@ -797,6 +811,108 @@ namespace Hecton8.Crafting
         {
             MarkRecipeCacheDirty();
             EnsureRecipeCache();
+        }
+
+        internal static bool TryResolveRecipeForResultItem(ItemData resultItem, out RecipeData recipe)
+        {
+            if (resultItem != null)
+            {
+                for (int i = 0; i < _activeFabricators.Count; i++)
+                {
+                    Fabricator fabricator = _activeFabricators[i];
+                    if (fabricator == null)
+                        continue;
+
+                    if (TryResolveRecipeForResultItem(fabricator.availableRecipes, resultItem, out recipe))
+                        return true;
+                }
+
+                int runtimeRecipeCount = ModRecipeRegistry.Count;
+                for (int i = 0; i < runtimeRecipeCount; i++)
+                {
+                    RecipeData runtimeRecipe = ModRecipeRegistry.GetAt(i);
+                    if (RecipeProducesItem(runtimeRecipe, resultItem))
+                    {
+                        recipe = runtimeRecipe;
+                        return true;
+                    }
+                }
+            }
+
+            recipe = null;
+            return false;
+        }
+
+        private static bool TryResolveRecipeForResultItem(List<RecipeData> recipes, ItemData resultItem, out RecipeData recipe)
+        {
+            if (recipes != null && resultItem != null)
+            {
+                for (int i = 0; i < recipes.Count; i++)
+                {
+                    RecipeData candidate = recipes[i];
+                    if (RecipeProducesItem(candidate, resultItem))
+                    {
+                        recipe = candidate;
+                        return true;
+                    }
+                }
+            }
+
+            recipe = null;
+            return false;
+        }
+
+        private static bool RecipeProducesItem(RecipeData recipe, ItemData resultItem)
+        {
+            if (recipe == null || recipe.resultItem == null || resultItem == null)
+                return false;
+
+            if (ReferenceEquals(recipe.resultItem, resultItem))
+                return true;
+
+            return !string.IsNullOrWhiteSpace(recipe.resultItem.PersistentId) &&
+                   string.Equals(recipe.resultItem.PersistentId, resultItem.PersistentId, System.StringComparison.Ordinal);
+        }
+
+        private static void RegisterActiveFabricator(Fabricator fabricator)
+        {
+            if (fabricator == null)
+                return;
+
+            for (int i = 0; i < _activeFabricators.Count; i++)
+            {
+                if (ReferenceEquals(_activeFabricators[i], fabricator))
+                    return;
+            }
+
+            _activeFabricators.Add(fabricator);
+        }
+
+        private static void UnregisterActiveFabricator(Fabricator fabricator)
+        {
+            if (fabricator == null)
+                return;
+
+            for (int i = _activeFabricators.Count - 1; i >= 0; i--)
+            {
+                if (ReferenceEquals(_activeFabricators[i], fabricator))
+                {
+                    _activeFabricators.RemoveAt(i);
+                    break;
+                }
+            }
+        }
+
+        private static float ResolveCraftPowerMultiplier(RecipeData recipe)
+        {
+            return Mathf.Max(1f, ResourceScarcityDirector.ResolveCraftPowerMultiplier(recipe));
+        }
+
+        private float ResolveCraftPowerCost(RecipeData recipe)
+        {
+            return recipe != null && recipe.powerCost > 0f
+                ? recipe.powerCost * _activeCraftPowerMultiplier
+                : 0f;
         }
 
         // ══════════════════════════════════════════════════════════

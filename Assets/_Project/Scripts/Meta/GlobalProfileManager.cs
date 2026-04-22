@@ -24,7 +24,8 @@ namespace Hecton8.Meta
         {
             StructuralMetalCollected = 0,
             CraftedItems = 1,
-            DiscoveredBiomes = 2
+            DiscoveredBiomes = 2,
+            RecycledItems = 3
         }
 
         private readonly struct AchievementRewardDefinition
@@ -75,7 +76,7 @@ namespace Hecton8.Meta
             new AchievementRewardDefinition("achievement.biome.12", 30),
         };
 
-        // COLD ALLOC: MarathonGoalDefinition[3] - fixed all-time meta retention goals - owner: GlobalProfileManager
+        // COLD ALLOC: MarathonGoalDefinition[4] - fixed all-time meta retention goals - owner: GlobalProfileManager
         private static readonly MarathonGoalDefinition[] _marathonDefinitions =
         {
             new MarathonGoalDefinition(
@@ -96,6 +97,12 @@ namespace Hecton8.Meta
                 MarathonMetric.DiscoveredBiomes,
                 100,
                 125),
+            new MarathonGoalDefinition(
+                "marathon.recycle.items.500",
+                "Waste-not manufacturing",
+                MarathonMetric.RecycledItems,
+                500,
+                175),
         };
 
         private static GlobalProfileManager _instance;
@@ -110,6 +117,7 @@ namespace Hecton8.Meta
         private HectonEventSubscription _playerDiedSubscription;
         private HectonEventSubscription _itemCollectedSubscription;
         private HectonEventSubscription _itemCraftedSubscription;
+        private HectonEventSubscription _itemRecycledSubscription;
         private bool _registeredToTick;
         private bool _dirty;
         private float _flushTimer;
@@ -362,6 +370,14 @@ namespace Hecton8.Meta
             AdvanceMarathonProgress(MarathonMetric.CraftedItems, 1);
         }
 
+        private void HandleItemRecycled(ItemRecycledEvent itemRecycledEvent)
+        {
+            if (itemRecycledEvent == null || itemRecycledEvent.Quantity <= 0)
+                return;
+
+            AdvanceMarathonProgress(MarathonMetric.RecycledItems, itemRecycledEvent.Quantity);
+        }
+
         private void SubscribeToEventBus()
         {
             if (_achievementUnlockedSubscription == null)
@@ -381,6 +397,9 @@ namespace Hecton8.Meta
 
             if (_itemCraftedSubscription == null)
                 _itemCraftedSubscription = HectonEventBus.Subscribe<ItemCraftedEvent>(HandleItemCrafted, "meta.profile");
+
+            if (_itemRecycledSubscription == null)
+                _itemRecycledSubscription = HectonEventBus.Subscribe<ItemRecycledEvent>(HandleItemRecycled, "meta.profile");
         }
 
         private void UnsubscribeFromEventBus()
@@ -397,6 +416,8 @@ namespace Hecton8.Meta
             _itemCollectedSubscription = null;
             _itemCraftedSubscription?.Dispose();
             _itemCraftedSubscription = null;
+            _itemRecycledSubscription?.Dispose();
+            _itemRecycledSubscription = null;
         }
 
         private void RebindOwnerSubscriptions()

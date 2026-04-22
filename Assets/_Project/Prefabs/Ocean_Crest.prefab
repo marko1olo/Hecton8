@@ -350,6 +350,8 @@ GameObject:
   - component: {fileID: 8503459892740325226}
   - component: {fileID: 631104235710018481}
   - component: {fileID: 631104235710018482}
+  - component: {fileID: 4153056372701123456}
+  - component: {fileID: 7666709485588549063}
   m_Layer: 4
   m_Name: Ocean_Crest
   m_TagString: Untagged
@@ -496,6 +498,8 @@ MonoBehaviour:
   wavesInputRenderer: {fileID: 661104235710018484}
   foamInputTransform: {fileID: 771104235710018482}
   foamInputRenderer: {fileID: 771104235710018484}
+  oilFilmInputTransform: {fileID: 0}
+  oilFilmInputRenderer: {fileID: 0}
   waterLevel: 4900
   surfaceOffset: 0.05
   _debugDensityWorldRect: {x: 0, y: 0, z: 0, w: 0}
@@ -517,6 +521,7 @@ MonoBehaviour:
   boidMaterial: {fileID: 2100000, guid: a3e4cd9f5f99492cc5705fb11b348966, type: 2}
   dragManager: {fileID: 0}
   cutManager: {fileID: 0}
+  biolumManager: {fileID: 0}
   viewCamera: {fileID: 0}
   playerTransform: {fileID: 0}
   boidCount: 768
@@ -542,11 +547,47 @@ MonoBehaviour:
   grazingWeight: 1.25
   canopyAffinityWeight: 0.85
   grazingDensityThreshold: 0.58
+  grazingRestSpeedScale: 0.12
+  grazingRestHoldThreshold: 0.48
   panicPlayerSpeedThreshold: 2.4
   panicPlayerRadius: 3.6
+  cameraAvoidRadius: 0.95
+  cameraAvoidWeight: 4.8
+  maxMassiveThreatCount: 4
+  massiveThreatPanicRadius: 56
+  massiveThreatWeight: 8.6
   waterLevel: 4900
   minDepthBelowSurface: 0.8
   maxDepthBelowSurface: 4.5
+  deepSeaWorldYThreshold: -1000
+  deepBiolumAnchorCapacity: 8
+  deepBiolumSearchRadius: 140
+  deepBaitBallRadius: 4.5
+  deepBaitBallHeight: 2.1
+  deepClusterWeight: 3.8
+  deepHeadlightPanicDuration: 3.5
+  deepHeadlightPanicRadiusScale: 2.8
+  parasiteDroneWorldYThreshold: -2000
+  parasiteAffinityWeight: 4.6
+  parasiteHullStressIntensity: 0.42
+  parasiteHullStressLightBoost: 0.34
+  parasiteLatchRadius: 1.35
+  parasiteMaxLatchedDronesForFullDrag: 24
+  parasiteMaxEnvironmentalDragMultiplier: 1.85
+  parasiteLatchReadbackInterval: 0.12
+  formationBeaconCapacity: 4
+  formationBeaconSearchRadius: 120
+  formationWeight: 3.2
+  formationRingThickness: 1.8
+  formationPulseAmplitude: 0.26
+  formationPulseSpeed: 1.1
+  formationBreakPanicThreshold: 0.24
+  formationObstacleCapacity: 8
+  formationObstacleLayers:
+    serializedVersion: 2
+    m_Bits: 1048575
+  formationObstacleSearchRadius: 24
+  formationObstacleWeight: 3.6
   shadowCastingMode: 0
   useGameObjectLayer: 1
   _debugFieldRevision: 0
@@ -559,3 +600,40 @@ MonoBehaviour:
   _debugPlayerSpeed: 0
   _debugPlayerPanicRadiusScale: 1
   _debugVisible: 0
+  _debugMassiveThreatCount: 0
+  _debugDeepModeActive: 0
+  _debugHeadlightPanic01: 0
+  _debugParasiteModeActive: 0
+  _debugParasiteAggression01: 0
+  _debugLatchedDroneCount: 0
+  _debugFormationModeActive: 0
+  _debugFormationBeaconCount: 0
+  _debugFormationObstacleCount: 0
+--- !u!114 &7666709485588549063
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5513631557248329811}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 64660468a19de6246ba98d46adabdcc1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Physics.Crest4KinematicsAdapter
+  crestOceanRenderer: {fileID: 0}
+  sceneSearchRetryInterval: 1
+--- !u!114 &4153056372701123456
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5513631557248329811}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 51fcb9de0aa92b842be404fec8bf21d4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Physics.Crest5KinematicsAdapter
+  crestWaterRenderer: {fileID: 0}
+  sceneSearchRetryInterval: 1

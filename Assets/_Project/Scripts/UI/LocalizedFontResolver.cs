@@ -9,6 +9,9 @@ namespace Hecton8.UI
     /// </summary>
     public static class LocalizedFontResolver
     {
+        private const string PrimaryPdaFontName = "\u0442\u0435\u043A\u0441\u0442 SDF";
+        private const string TextFontToken = "\u0442\u0435\u043A\u0441\u0442";
+        private const string NumericFontToken = "\u0446\u0438\u0444";
         private static TMP_FontAsset _cachedReadableFont;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -29,6 +32,7 @@ namespace Hecton8.UI
                 return _cachedReadableFont;
 
             TMP_FontAsset[] fonts = Resources.FindObjectsOfTypeAll<TMP_FontAsset>(); // COLD ALLOC: TMP_FontAsset[] — loaded font scan for readable localized font — owner: LocalizedFontResolver
+            TMP_FontAsset fallbackCandidate = null;
             for (int i = 0; i < fonts.Length; i++)
             {
                 TMP_FontAsset candidate = fonts[i];
@@ -36,16 +40,22 @@ namespace Hecton8.UI
                     continue;
 
                 string name = candidate.name;
-                if (name.IndexOf("текст", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                    name.IndexOf("text", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                    name.IndexOf("noto", StringComparison.OrdinalIgnoreCase) >= 0)
+                if (string.Equals(name, PrimaryPdaFontName, StringComparison.Ordinal))
                 {
                     _cachedReadableFont = candidate;
                     return candidate;
                 }
+
+                if (fallbackCandidate == null &&
+                    (name.IndexOf(TextFontToken, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                     name.IndexOf("text", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                     name.IndexOf("noto", StringComparison.OrdinalIgnoreCase) >= 0))
+                {
+                    fallbackCandidate = candidate;
+                }
             }
 
-            _cachedReadableFont = TMP_Settings.defaultFontAsset;
+            _cachedReadableFont = fallbackCandidate != null ? fallbackCandidate : TMP_Settings.defaultFontAsset;
             return _cachedReadableFont;
         }
 
@@ -70,7 +80,7 @@ namespace Hecton8.UI
                 return false;
 
             string name = font.name;
-            return name.IndexOf("циф", StringComparison.OrdinalIgnoreCase) >= 0 ||
+            return name.IndexOf(NumericFontToken, StringComparison.OrdinalIgnoreCase) >= 0 ||
                    name.IndexOf("digit", StringComparison.OrdinalIgnoreCase) >= 0 ||
                    name.IndexOf("number", StringComparison.OrdinalIgnoreCase) >= 0;
         }

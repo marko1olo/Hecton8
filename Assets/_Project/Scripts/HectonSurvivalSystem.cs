@@ -3,6 +3,7 @@ using Hecton8.Core;
 using Hecton8.Meta;
 using Hecton8.Modding;
 using Hecton8.SaveSystem;
+using Hecton8.World;
 using UnityEngine;
 using Unity.Mathematics;
 using Hecton8.Atmosphere;
@@ -19,6 +20,21 @@ namespace Hecton8.Gameplay
         Starvation = 5,
         Dehydration = 6,
         IntegrityFailure = 7
+    }
+
+    [Flags]
+    internal enum PlayerInjuryStatus : byte
+    {
+        None = 0,
+        Bleeding = 1 << 0,
+        Fracture = 1 << 1
+    }
+
+    internal enum ThermalStressMode : byte
+    {
+        None = 0,
+        Cold = 1,
+        Heat = 2
     }
 
     /// <summary>
@@ -127,6 +143,7 @@ namespace Hecton8.Gameplay
         private float _radGraceTimer;
         private HectonPlayerMovement _playerMovement;
         private PlayerTransportCoordinator _playerTransportCoordinator;
+        private HectonMapMagicVegetationBridge _vegetationBridge;
         private bool _surfaceContractUnderwater;
         private float _runtimeOxygenCapacityMultiplier = 1f;
         private SurvivalDeathCause _lastDeathCause;
@@ -141,9 +158,51 @@ namespace Hecton8.Gameplay
         private float _currentPressurePeakDamagePerSecond;
         private SurvivalDeathRecord _lastDeathRecord;
         private bool _hasLastDeathRecord;
+        private PlayerInjuryStatus _injuryStatus;
+        private float _bleedingSecondsRemaining;
+        private float _bleedingDamagePerSecond;
+        private float _bleedingSeverity01;
+        private float _fractureSecondsRemaining;
+        private float _fracturePenalty01;
+        private float _environmentTemperature = 20f;
+        private float _coldSeverity01;
+        private float _heatSeverity01;
+        private ThermalStressMode _thermalStressMode;
+        private float _lastTrackedDepthMeters;
+        private float _decompressionRisk01;
+        private float _rapidAscentMetersPerSecond;
+        private int _bloodScentSpatialHandle;
         private const float HazardGraceDuration = 3f;
         private const float PressureIncidentLogDurationThreshold = 4f;
         private const float PressureIncidentLogExcessThreshold = 6f;
+        private const float ThermalSeverityReferenceRange = 35f;
+        private const float ExtremeColdIntegrityThreshold = 24f;
+        private const float ExtremeHeatIntegrityThreshold = 32f;
+        private const float HeatThirstOverloadScale = 0.9f;
+        private const float AbyssalColdDepthMeters = 3000f;
+        private const float AbyssalColdFullDepthRangeMeters = 750f;
+        private const float AbyssalColdPenaltyCelsius = 42f;
+        private const float AbyssalColdHeatingMultiplier = 10f;
+        private const float MajorPhysicalDamageThreshold = 16f;
+        private const float SeverePhysicalDamageThreshold = 28f;
+        private const float MajorTraumaSeverityThreshold = 0.42f;
+        private const float BleedingBaseDurationSeconds = 48f;
+        private const float BleedingMaxDurationSeconds = 135f;
+        private const float BleedingBaseDamagePerSecond = 0.35f;
+        private const float BleedingMaxDamagePerSecond = 1.65f;
+        private const float FractureBaseDurationSeconds = 75f;
+        private const float FractureMaxDurationSeconds = 210f;
+        private const float FractureBasePenalty = 0.18f;
+        private const float FractureMaxPenalty = 0.52f;
+        private const float BleedingTrailPulseThreshold = 0.08f;
+        private const float RapidAscentRiskStartDepth = 85f;
+        private const float RapidAscentRiskMaxDepth = 260f;
+        private const float RapidAscentRiskStartMetersPerSecond = 3.25f;
+        private const float RapidAscentRiskMaxMetersPerSecond = 10.5f;
+        private const float RapidAscentThermalBoostThreshold = 0.28f;
+        private const float RapidAscentDamagePerSecond = 1.6f;
+        private const float RapidAscentRiskDecayPerSecond = 0.38f;
+        private const float RapidAscentDamageThreshold = 0.52f;
 
         private const float Epsilon       = 0.1f;
         private const float DirtySentinel = -9999f;
@@ -166,6 +225,9 @@ namespace Hecton8.Gameplay
         public event Action<float> OnHungerCritical;
         public event Action<float> OnThirstCritical;
         public event Action        OnDeath;
+        internal event Action InjuryStateChanged;
+        internal event Action ThermalStateChanged;
+        internal event Action<float, Vector3> BleedingTrailPulse;
 
         // ═════════════════════════════════════════════════════════
         //  PROPERTIES
@@ -202,15 +264,41 @@ namespace Hecton8.Gameplay
         /// <summary>Latest persisted death telemetry record.</summary>
         public SurvivalDeathRecord LastDeathRecord => _lastDeathRecord;
         /// <summary>Signed margin to the authored safe depth. Negative values mean active overpressure.</summary>
-        public float SafeDepthMarginMeters => stats != null ? stats.SafeDepth - depth : 0f;
+        public float SafeDepthMarginMeters => stats != null ? ResolveEffectiveSafeDepthMeters() - depth : 0f;
         /// <summary>Positive metres beyond the safe depth envelope.</summary>
-        public float OverpressureMeters => stats != null ? math.max(0f, depth - stats.SafeDepth) : 0f;
+        public float OverpressureMeters => stats != null ? math.max(0f, depth - ResolveEffectiveSafeDepthMeters()) : 0f;
         /// <summary>True when the suit is already deeper than its safe depth rating.</summary>
         public bool IsBeyondSafeDepth => OverpressureMeters > 0f;
         /// <summary>Current integrity attrition per second caused by overpressure.</summary>
         public float PressureDamagePerSecond => ResolveCurrentPressureDamagePerSecond();
         /// <summary>Normalized live overpressure severity for advisory systems.</summary>
         public float PressureExposureSeverity01 => ResolvePressureExposureSeverity01();
+        /// <summary>True while the player is actively bleeding.</summary>
+        public bool IsBleeding => (_injuryStatus & PlayerInjuryStatus.Bleeding) != 0;
+        /// <summary>True while the player is carrying a fracture movement penalty.</summary>
+        public bool HasFracture => (_injuryStatus & PlayerInjuryStatus.Fracture) != 0;
+        /// <summary>Combined live injury flags for UI and progression systems.</summary>
+        internal PlayerInjuryStatus CurrentInjuries => _injuryStatus;
+        /// <summary>Normalized severity of the active bleeding state.</summary>
+        public float BleedingSeverity01 => _bleedingSeverity01;
+        /// <summary>Normalized fracture penalty currently applied to swim mobility.</summary>
+        public float FracturePenalty01 => _fracturePenalty01;
+        /// <summary>Resolved environment temperature after local thermal hazards are added.</summary>
+        public float EnvironmentTemperature => _environmentTemperature;
+        /// <summary>True while cold stress is actively affecting the suit and body.</summary>
+        public bool IsInColdStress => _thermalStressMode == ThermalStressMode.Cold;
+        /// <summary>True while heat stress is actively affecting the suit and body.</summary>
+        public bool IsInHeatStress => _thermalStressMode == ThermalStressMode.Heat;
+        /// <summary>Resolved thermal stress mode currently applied to the player.</summary>
+        internal ThermalStressMode CurrentThermalStressMode => _thermalStressMode;
+        /// <summary>Normalized cold-stress severity for advisory systems.</summary>
+        public float ColdStressSeverity01 => _coldSeverity01;
+        /// <summary>Normalized heat-stress severity for advisory systems.</summary>
+        public float HeatStressSeverity01 => _heatSeverity01;
+        /// <summary>Highest normalized thermal-stress severity currently active.</summary>
+        public float ThermalStressSeverity01 => Mathf.Max(_coldSeverity01, _heatSeverity01);
+        /// <summary>Normalized decompression-risk state generated by rapid ascent and thermal updrafts.</summary>
+        internal float RapidAscentRisk01 => _decompressionRisk01;
 
         // ═════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -227,6 +315,7 @@ namespace Hecton8.Gameplay
 
             TryGetComponent(out _playerMovement);
             TryGetComponent(out _playerTransportCoordinator);
+            WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _vegetationBridge);
             ResetToMax();
         }
 
@@ -237,12 +326,15 @@ namespace Hecton8.Gameplay
                 GameTickManager.Instance.RegisterAll(this);
                 _slowTickDt = 0.5f; // Match with manager
             }
+
+            RegisterBloodScentSignal();
             SaveManager.Instance?.Register(this);
         }
 
         private void OnDisable()
         {
             GameTickManager.Instance?.UnregisterAll(this);
+            UnregisterBloodScentSignal();
             SaveManager.Instance?.Unregister(this);
         }
 
@@ -255,6 +347,8 @@ namespace Hecton8.Gameplay
             if (!alive) return;
 
             ComputeDepthAndPressure();
+            TrackRapidAscentRisk(deltaTime);
+            RefreshBloodScentSignal();
             TrackCurrentLifeTelemetry(deltaTime);
             TrackPressureExposure(deltaTime);
             PublishDirty();
@@ -270,9 +364,13 @@ namespace Hecton8.Gameplay
             UpdateOxygen(dt);
             DrainPassiveEnergy(dt);
             ApplyPressureDamage(dt);
+            ApplyRapidAscentDamage(dt);
             HandleTemperature(dt);
             HandleRadiation(dt);
+            HandleToxicity(dt);
             UpdateHungerAndThirst(dt);
+            HandleInjuries(dt);
+            ApplyInjuryMovementPenalty();
         }
 
         // ═════════════════════════════════════════════════════════
@@ -323,6 +421,9 @@ namespace Hecton8.Gameplay
                     case PlayerLocomotionMode.UnderwaterSwim:
                         return true;
 
+                    case PlayerLocomotionMode.ExosuitLocomotion:
+                        return _playerMovement.CurrentDepth > 0.01f || _playerMovement.IsPlayerSubmerged;
+
                     case PlayerLocomotionMode.SurfaceSwim:
                         return _playerMovement.IsPlayerSubmerged;
 
@@ -344,12 +445,13 @@ namespace Hecton8.Gameplay
 
         private void ApplyPressureDamage(float dt)
         {
-            if (depth <= stats.SafeDepth) return;
+            float effectiveSafeDepth = ResolveEffectiveSafeDepthMeters();
+            if (depth <= effectiveSafeDepth) return;
 
             float pressureDamageScale = ResolveTransportPressureDamageScale();
             if (pressureDamageScale <= 0f) return;
 
-            float excess = depth - stats.SafeDepth;
+            float excess = depth - effectiveSafeDepth;
             float scale  = 1f + excess * stats.PressureScalePerMeter;
             float damageMultiplier = DynamicDifficultyDirector.Current.DamageMultiplier;
             integrity = math.max(0f, integrity - stats.PressureDamageRate * scale * pressureDamageScale * damageMultiplier * dt);
@@ -360,20 +462,24 @@ namespace Hecton8.Gameplay
         {
             var atmosphere = HectonAtmosphereManager.Instance;
             float baseTemp = atmosphere != null ? atmosphere.CurrentTemperature : 20f;
-            
-            // Add local heat sources
             float localHeat = HectonHazardManager.GetHazardIntensity(transform.position, HazardType.Heat);
-            float currentTemp = baseTemp + localHeat;
+            float abyssalColdPenalty = ResolveAbyssalColdPenaltyCelsius();
+            _environmentTemperature = baseTemp + localHeat - abyssalColdPenalty;
 
-            float excess = 0f;
-            if (currentTemp < stats.MinSafeTemp)
-                excess = stats.MinSafeTemp - currentTemp;
-            else if (currentTemp > stats.MaxSafeTemp)
-                excess = currentTemp - stats.MaxSafeTemp;
+            float coldExcess = 0f;
+            float heatExcess = 0f;
+            if (_environmentTemperature < stats.MinSafeTemp)
+                coldExcess = stats.MinSafeTemp - _environmentTemperature;
+            else if (_environmentTemperature > stats.MaxSafeTemp)
+                heatExcess = _environmentTemperature - stats.MaxSafeTemp;
 
-            if (excess <= 0f)
+            if (coldExcess <= 0f && heatExcess <= 0f)
             {
                 _tempGraceTimer = 0f;
+                _thermalStressMode = ThermalStressMode.None;
+                _coldSeverity01 = 0f;
+                _heatSeverity01 = 0f;
+                ThermalStateChanged?.Invoke();
                 return;
             }
 
@@ -381,20 +487,137 @@ namespace Hecton8.Gameplay
             if (thermalExposureScale <= 0f)
             {
                 _tempGraceTimer = 0f;
+                _thermalStressMode = ThermalStressMode.None;
+                _coldSeverity01 = 0f;
+                _heatSeverity01 = 0f;
+                ThermalStateChanged?.Invoke();
                 return;
             }
 
+            float deepColdStressMultiplier = ResolveDeepColdPocketStressMultiplier();
+            _thermalStressMode = coldExcess > 0f ? ThermalStressMode.Cold : ThermalStressMode.Heat;
+            _coldSeverity01 = ResolveThermalSeverity01(coldExcess);
+            _heatSeverity01 = ResolveThermalSeverity01(heatExcess);
             _tempGraceTimer += dt;
-            if (_tempGraceTimer < HazardGraceDuration) return;
+            ThermalStateChanged?.Invoke();
+            if (_tempGraceTimer < HazardGraceDuration)
+                return;
 
-            // Suit energy drain for thermal regulation
-            float heatDrain = excess * stats.TempEnergyScale * thermalExposureScale * dt;
-            energy = math.max(0f, energy - heatDrain);
+            if (coldExcess > 0f)
+            {
+                float heatingDrain = coldExcess * stats.TempEnergyScale * thermalExposureScale * ResolveAbyssalHeatingDrainMultiplier() * deepColdStressMultiplier * dt;
+                energy = math.max(0f, energy - heatingDrain);
 
-            // Thermal integrity damage
-            float damage = stats.TempDamageRate * (1f + excess * 0.1f) * thermalExposureScale * dt;
+                if (energy <= 0.01f || coldExcess >= ExtremeColdIntegrityThreshold)
+                {
+                    float coldDamage = stats.TempDamageRate * (1f + coldExcess * 0.1f) * thermalExposureScale * deepColdStressMultiplier * dt;
+                    integrity = math.max(0f, integrity - coldDamage);
+                    MarkIntegrityDeathCauseIfNeeded(SurvivalDeathCause.ThermalFailure);
+                }
+
+                return;
+            }
+
+            float hydrationDrain = heatExcess * stats.TempEnergyScale * HeatThirstOverloadScale * thermalExposureScale * dt;
+            thirst = math.max(0f, thirst - hydrationDrain);
+
+            if (thirst <= 0f || heatExcess >= ExtremeHeatIntegrityThreshold)
+            {
+                float heatDamage = stats.TempDamageRate * (1f + heatExcess * 0.1f) * thermalExposureScale * dt;
+                integrity = math.max(0f, integrity - heatDamage);
+                MarkIntegrityDeathCauseIfNeeded(SurvivalDeathCause.ThermalFailure);
+            }
+        }
+
+        private float ResolveAbyssalColdPenaltyCelsius()
+        {
+            if (_playerMovement == null)
+                return 0f;
+
+            if (_playerMovement.CurrentLocomotionMode == PlayerLocomotionMode.ExosuitLocomotion)
+                return 0f;
+
+            if (!_surfaceContractUnderwater || depth <= AbyssalColdDepthMeters)
+                return 0f;
+
+            float depthT = math.saturate((depth - AbyssalColdDepthMeters) / math.max(AbyssalColdFullDepthRangeMeters, 0.01f));
+            return AbyssalColdPenaltyCelsius * depthT;
+        }
+
+        private float ResolveAbyssalHeatingDrainMultiplier()
+        {
+            if (_playerMovement == null)
+                return 1f;
+
+            if (_playerMovement.CurrentLocomotionMode == PlayerLocomotionMode.ExosuitLocomotion)
+                return 1f;
+
+            if (!_surfaceContractUnderwater || depth <= AbyssalColdDepthMeters)
+                return 1f;
+
+            float depthT = math.saturate((depth - AbyssalColdDepthMeters) / math.max(AbyssalColdFullDepthRangeMeters, 0.01f));
+            return math.lerp(1f, AbyssalColdHeatingMultiplier, depthT);
+        }
+
+        private float ResolveDeepColdPocketStressMultiplier()
+        {
+            if (_playerMovement != null && _playerMovement.CurrentLocomotionMode == PlayerLocomotionMode.ExosuitLocomotion)
+                return 1f;
+
+            if (!WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _vegetationBridge) || _vegetationBridge == null)
+                return 1f;
+
+            return math.max(1f, _vegetationBridge.GetDeepColdStressMultiplier(transform.position));
+        }
+
+        private void TrackRapidAscentRisk(float deltaTime)
+        {
+            if (deltaTime <= 0f)
+                return;
+
+            float trackedDepthBeforeUpdate = _lastTrackedDepthMeters;
+            float ascentMeters = math.max(0f, trackedDepthBeforeUpdate - depth);
+            _rapidAscentMetersPerSecond = ascentMeters / deltaTime;
+            _lastTrackedDepthMeters = depth;
+
+            if (_playerMovement == null)
+            {
+                _decompressionRisk01 = math.max(0f, _decompressionRisk01 - RapidAscentRiskDecayPerSecond * deltaTime);
+                return;
+            }
+
+            float ascentOriginDepth = math.max(depth, trackedDepthBeforeUpdate);
+            float depthRisk01 = math.saturate(
+                (ascentOriginDepth - RapidAscentRiskStartDepth) /
+                math.max(0.01f, RapidAscentRiskMaxDepth - RapidAscentRiskStartDepth));
+            float ascentRisk01 = math.saturate(
+                (_rapidAscentMetersPerSecond - RapidAscentRiskStartMetersPerSecond) /
+                math.max(0.01f, RapidAscentRiskMaxMetersPerSecond - RapidAscentRiskStartMetersPerSecond));
+            float thermalBoost01 = math.saturate(
+                (_playerMovement.CurrentThermalUpdraftIntensity01 - RapidAscentThermalBoostThreshold) /
+                math.max(0.01f, 1f - RapidAscentThermalBoostThreshold));
+
+            float targetRisk = math.saturate(depthRisk01 * (ascentRisk01 * 0.72f + thermalBoost01 * 0.28f));
+            if (targetRisk > _decompressionRisk01)
+            {
+                _decompressionRisk01 = targetRisk;
+                return;
+            }
+
+            _decompressionRisk01 = math.max(0f, _decompressionRisk01 - RapidAscentRiskDecayPerSecond * deltaTime);
+        }
+
+        private void ApplyRapidAscentDamage(float dt)
+        {
+            if (_decompressionRisk01 < RapidAscentDamageThreshold)
+                return;
+
+            float severity = math.saturate(
+                (_decompressionRisk01 - RapidAscentDamageThreshold) /
+                math.max(0.01f, 1f - RapidAscentDamageThreshold));
+            float damage = RapidAscentDamagePerSecond * severity * dt;
             integrity = math.max(0f, integrity - damage);
-            MarkIntegrityDeathCauseIfNeeded(SurvivalDeathCause.ThermalFailure);
+            MarkIntegrityDeathCauseIfNeeded(SurvivalDeathCause.PressureCollapse);
         }
 
         private void HandleRadiation(float dt)
@@ -429,11 +652,60 @@ namespace Hecton8.Gameplay
             MarkIntegrityDeathCauseIfNeeded(SurvivalDeathCause.RadiationExposure);
         }
 
+        private void HandleToxicity(float dt)
+        {
+            float toxicity = HectonHazardManager.GetHazardIntensity(transform.position, HazardType.Toxicity);
+            if (toxicity <= 0.001f)
+                return;
+
+            float toxicityExposureScale = ResolveTransportRadiationExposureScale();
+            if (toxicityExposureScale <= 0f)
+                return;
+
+            float damageMultiplier = DynamicDifficultyDirector.Current.DamageMultiplier;
+            float damage = stats.RadiationDamageRate * 0.65f * toxicity * toxicityExposureScale * damageMultiplier * dt;
+            integrity = math.max(0f, integrity - damage);
+            MarkIntegrityDeathCauseIfNeeded(SurvivalDeathCause.IntegrityFailure);
+        }
+
         private PlayerTransportPreset ResolveActiveTransportPreset()
         {
             return _playerTransportCoordinator != null
                 ? _playerTransportCoordinator.ResolveTransportPreset()
                 : null;
+        }
+
+        private VehicleUpgradeModule ResolveActiveVehicleUpgradeModule()
+        {
+            if (_playerTransportCoordinator == null ||
+                !_playerTransportCoordinator.TryResolveTransportLifecycleOwner(out IPlayerTransportLifecycleOwner lifecycleOwner) ||
+                lifecycleOwner == null)
+            {
+                return null;
+            }
+
+            MonoBehaviour transportBehaviour = lifecycleOwner as MonoBehaviour;
+            if (transportBehaviour == null)
+                return null;
+
+            return transportBehaviour.TryGetComponent(out VehicleUpgradeModule upgradeModule)
+                ? upgradeModule
+                : null;
+        }
+
+        private float ResolveTransportSafeDepthBonusMeters()
+        {
+            VehicleUpgradeModule upgradeModule = ResolveActiveVehicleUpgradeModule();
+            return upgradeModule != null
+                ? math.max(0f, upgradeModule.SafeDepthBonusMeters)
+                : 0f;
+        }
+
+        private float ResolveEffectiveSafeDepthMeters()
+        {
+            return stats != null
+                ? math.max(0f, stats.SafeDepth + ResolveTransportSafeDepthBonusMeters())
+                : 0f;
         }
 
         private float ResolveTransportOxygenConsumptionScale()
@@ -532,7 +804,9 @@ namespace Hecton8.Gameplay
             
             // Temperature Publishing (Atmosphere + Local)
             float baseTemp = atmosphere != null ? atmosphere.CurrentTemperature : 20f;
-            float totalTemp = baseTemp + HectonHazardManager.GetHazardIntensity(transform.position, HazardType.Heat);
+            float totalTemp = baseTemp +
+                HectonHazardManager.GetHazardIntensity(transform.position, HazardType.Heat) -
+                ResolveAbyssalColdPenaltyCelsius();
             if (math.abs(totalTemp - lastPubTemp) > Epsilon)
             {
                 lastPubTemp = totalTemp;
@@ -651,8 +925,26 @@ namespace Hecton8.Gameplay
 
             integrity = math.max(0f, integrity - amount);
             MarkIntegrityDeathCauseIfNeeded(SurvivalDeathCause.IntegrityFailure);
+            TryApplyDamageTrauma(amount);
             ForceDirty(ref lastPubIntegrity);
             CheckLethalConditions();
+        }
+
+        /// <summary>
+        /// Reports heavy physical trauma from collision or fauna impact so survival injuries can be applied without inventing a second body-state owner.
+        /// </summary>
+        /// <param name="damageMagnitude">Raw incoming trauma magnitude.</param>
+        /// <param name="severity01">Normalized trauma severity.</param>
+        internal void ReportPhysicalTrauma(float damageMagnitude, float severity01)
+        {
+            if (!alive)
+                return;
+
+            float clampedSeverity = Mathf.Clamp01(severity01);
+            if (damageMagnitude < MajorPhysicalDamageThreshold && clampedSeverity < MajorTraumaSeverityThreshold)
+                return;
+
+            TryApplyTraumaStates(damageMagnitude, clampedSeverity);
         }
 
         public void Repair(float amount)
@@ -734,6 +1026,15 @@ namespace Hecton8.Gameplay
             dto.currentLifeLowestOxygenNormalized = _currentLifeLowestOxygenNormalized;
             dto.currentLifeLowestEnergyNormalized = _currentLifeLowestEnergyNormalized;
             dto.currentLifeLowestIntegrityNormalized = _currentLifeLowestIntegrityNormalized;
+            dto.injuryFlags = (byte)_injuryStatus;
+            dto.bleedingSecondsRemaining = _bleedingSecondsRemaining;
+            dto.bleedingDamagePerSecond = _bleedingDamagePerSecond;
+            dto.bleedingSeverity01 = _bleedingSeverity01;
+            dto.fractureSecondsRemaining = _fractureSecondsRemaining;
+            dto.fracturePenalty01 = _fracturePenalty01;
+            dto.environmentTemperature = _environmentTemperature;
+            dto.coldStressSeverity01 = _coldSeverity01;
+            dto.heatStressSeverity01 = _heatSeverity01;
             dto.hasLastDeathRecord = _hasLastDeathRecord;
             dto.lastDeathCause = (byte)_lastDeathRecord.Cause;
             dto.lastDeathLifeDurationSeconds = _lastDeathRecord.LifeDurationSeconds;
@@ -761,6 +1062,16 @@ namespace Hecton8.Gameplay
             _currentLifeLowestOxygenNormalized = hasTelemetryV23 ? Mathf.Clamp01(dto.currentLifeLowestOxygenNormalized) : OxygenNormalized;
             _currentLifeLowestEnergyNormalized = hasTelemetryV23 ? Mathf.Clamp01(dto.currentLifeLowestEnergyNormalized) : EnergyNormalized;
             _currentLifeLowestIntegrityNormalized = hasTelemetryV23 ? Mathf.Clamp01(dto.currentLifeLowestIntegrityNormalized) : IntegrityNormalized;
+            _injuryStatus = (PlayerInjuryStatus)dto.injuryFlags;
+            _bleedingSecondsRemaining = Mathf.Max(0f, dto.bleedingSecondsRemaining);
+            _bleedingDamagePerSecond = Mathf.Max(0f, dto.bleedingDamagePerSecond);
+            _bleedingSeverity01 = Mathf.Clamp01(dto.bleedingSeverity01);
+            _fractureSecondsRemaining = Mathf.Max(0f, dto.fractureSecondsRemaining);
+            _fracturePenalty01 = Mathf.Clamp01(dto.fracturePenalty01);
+            _environmentTemperature = dto.environmentTemperature;
+            _coldSeverity01 = Mathf.Clamp01(dto.coldStressSeverity01);
+            _heatSeverity01 = Mathf.Clamp01(dto.heatStressSeverity01);
+            _thermalStressMode = ResolveThermalStressModeFromState();
             alive     = oxygen > 0f && integrity > 0f;
             _lastDeathCause = alive ? SurvivalDeathCause.None : ResolveDeathCause();
             _pendingIntegrityDeathCause = SurvivalDeathCause.None;
@@ -780,6 +1091,7 @@ namespace Hecton8.Gameplay
             Vector3 pos = dto.GetPosition();
             if (!float.IsNaN(pos.x)) transform.SetPositionAndRotation(pos, dto.GetRotation());
 
+            ApplyInjuryMovementPenalty();
             ForceAllDirty();
         }
 
@@ -806,10 +1118,13 @@ namespace Hecton8.Gameplay
             _currentLifeLowestEnergyNormalized = 1f;
             _currentLifeLowestIntegrityNormalized = 1f;
             ResetPressureExposureTracking();
+            ResetInjuryState();
+            ResetThermalState();
 
             _tempGraceTimer = 0f;
             _radGraceTimer  = 0f;
 
+            ApplyInjuryMovementPenalty();
             ForceAllDirty();
         }
 
@@ -830,6 +1145,54 @@ namespace Hecton8.Gameplay
         {
             if (integrity <= 0f && cause != SurvivalDeathCause.None)
                 _pendingIntegrityDeathCause = cause;
+        }
+
+        private void HandleInjuries(float dt)
+        {
+            bool injuryChanged = false;
+
+            if (IsBleeding)
+            {
+                integrity = math.max(0f, integrity - _bleedingDamagePerSecond * dt);
+                MarkIntegrityDeathCauseIfNeeded(SurvivalDeathCause.IntegrityFailure);
+
+                if (_bleedingSeverity01 > BleedingTrailPulseThreshold)
+                    BleedingTrailPulse?.Invoke(_bleedingSeverity01, transform.position);
+
+                _bleedingSecondsRemaining = math.max(0f, _bleedingSecondsRemaining - dt);
+                if (_bleedingSecondsRemaining <= 0f)
+                {
+                    _injuryStatus &= ~PlayerInjuryStatus.Bleeding;
+                    _bleedingDamagePerSecond = 0f;
+                    _bleedingSeverity01 = 0f;
+                    injuryChanged = true;
+                }
+            }
+
+            if (HasFracture)
+            {
+                _fractureSecondsRemaining = math.max(0f, _fractureSecondsRemaining - dt);
+                if (_fractureSecondsRemaining <= 0f)
+                {
+                    _injuryStatus &= ~PlayerInjuryStatus.Fracture;
+                    _fracturePenalty01 = 0f;
+                    injuryChanged = true;
+                }
+            }
+
+            if (injuryChanged)
+                NotifyInjuryStateChanged();
+        }
+
+        private void ApplyInjuryMovementPenalty()
+        {
+            if (_playerMovement == null)
+                return;
+
+            float injuryMultiplier = HasFracture
+                ? Mathf.Clamp(1f - _fracturePenalty01, 0.35f, 1f)
+                : 1f;
+            _playerMovement.SetRuntimeInjurySwimSpeedMultiplier(injuryMultiplier);
         }
 
         private void TrackCurrentLifeTelemetry(float deltaTime)
@@ -984,7 +1347,7 @@ namespace Hecton8.Gameplay
             if (stats == null)
                 return 0f;
 
-            float safeDepth = Mathf.Max(1f, stats.SafeDepth);
+            float safeDepth = Mathf.Max(1f, ResolveEffectiveSafeDepthMeters());
             float overpressureSeverity = Mathf.Clamp01(OverpressureMeters / Mathf.Max(8f, safeDepth * 0.3f));
             float damageSeverity = Mathf.Clamp01(ResolveCurrentPressureDamagePerSecond() / Mathf.Max(1f, stats.MaxIntegrity * 0.08f));
             return Mathf.Clamp01(overpressureSeverity * 0.65f + damageSeverity * 0.35f);
@@ -997,7 +1360,7 @@ namespace Hecton8.Gameplay
                 _currentPressurePeakExcessMeters,
                 _currentPressureExposureSeconds,
                 _currentPressurePeakDamagePerSecond,
-                stats != null ? stats.SafeDepth : 0f);
+                ResolveEffectiveSafeDepthMeters());
         }
 
         private void ResetPressureExposureTracking()
@@ -1005,6 +1368,145 @@ namespace Hecton8.Gameplay
             _currentPressureExposureSeconds = 0f;
             _currentPressurePeakExcessMeters = 0f;
             _currentPressurePeakDamagePerSecond = 0f;
+        }
+
+        private void ResetInjuryState()
+        {
+            _injuryStatus = PlayerInjuryStatus.None;
+            _bleedingSecondsRemaining = 0f;
+            _bleedingDamagePerSecond = 0f;
+            _bleedingSeverity01 = 0f;
+            _fractureSecondsRemaining = 0f;
+            _fracturePenalty01 = 0f;
+            NotifyInjuryStateChanged();
+        }
+
+        private void ResetThermalState()
+        {
+            _environmentTemperature = 20f;
+            _coldSeverity01 = 0f;
+            _heatSeverity01 = 0f;
+            _thermalStressMode = ThermalStressMode.None;
+            _decompressionRisk01 = 0f;
+            _rapidAscentMetersPerSecond = 0f;
+            _lastTrackedDepthMeters = 0f;
+        }
+
+        private void NotifyInjuryStateChanged()
+        {
+            InjuryStateChanged?.Invoke();
+        }
+
+        private void RegisterBloodScentSignal()
+        {
+            if (_bloodScentSpatialHandle != 0)
+                return;
+
+            _bloodScentSpatialHandle = WorldSpatialHashGrid.RegisterSignal(this, transform, FieldTargetRole.HazardProbe);
+        }
+
+        private void UnregisterBloodScentSignal()
+        {
+            if (_bloodScentSpatialHandle == 0)
+                return;
+
+            WorldSpatialHashGrid.Unregister(_bloodScentSpatialHandle);
+            _bloodScentSpatialHandle = 0;
+        }
+
+        private void RefreshBloodScentSignal()
+        {
+            if (_bloodScentSpatialHandle == 0)
+                return;
+
+            WorldSpatialHashGrid.Refresh(_bloodScentSpatialHandle);
+        }
+
+        private void TryApplyDamageTrauma(float damageAmount)
+        {
+            if (damageAmount < MajorPhysicalDamageThreshold)
+                return;
+
+            float severity = damageAmount >= SeverePhysicalDamageThreshold
+                ? 1f
+                : Mathf.InverseLerp(MajorPhysicalDamageThreshold, SeverePhysicalDamageThreshold, damageAmount);
+            TryApplyTraumaStates(damageAmount, severity);
+        }
+
+        private void TryApplyTraumaStates(float damageMagnitude, float severity01)
+        {
+            float clampedSeverity = Mathf.Clamp01(severity01);
+            if (clampedSeverity <= 0f)
+                return;
+
+            if (ShouldApplyBleeding(clampedSeverity))
+                ApplyBleeding(clampedSeverity, damageMagnitude);
+
+            if (ShouldApplyFracture(clampedSeverity))
+                ApplyFracture(clampedSeverity, damageMagnitude);
+        }
+
+        private static bool ShouldApplyBleeding(float severity01)
+        {
+            float bleedChance = Mathf.Lerp(0.22f, 0.82f, severity01);
+            return UnityEngine.Random.value <= bleedChance;
+        }
+
+        private static bool ShouldApplyFracture(float severity01)
+        {
+            float fractureChance = Mathf.Lerp(0.08f, 0.54f, severity01);
+            return UnityEngine.Random.value <= fractureChance;
+        }
+
+        private void ApplyBleeding(float severity01, float damageMagnitude)
+        {
+            float severityScale = Mathf.Clamp01(Mathf.Max(severity01, damageMagnitude / SeverePhysicalDamageThreshold));
+            float duration = Mathf.Lerp(BleedingBaseDurationSeconds, BleedingMaxDurationSeconds, severityScale);
+            float damagePerSecond = Mathf.Lerp(BleedingBaseDamagePerSecond, BleedingMaxDamagePerSecond, severityScale);
+            bool stateChanged = !IsBleeding;
+
+            _injuryStatus |= PlayerInjuryStatus.Bleeding;
+            _bleedingSecondsRemaining = Mathf.Max(_bleedingSecondsRemaining, duration);
+            _bleedingDamagePerSecond = Mathf.Max(_bleedingDamagePerSecond, damagePerSecond);
+            _bleedingSeverity01 = Mathf.Max(_bleedingSeverity01, severityScale);
+
+            if (stateChanged)
+                NotifyInjuryStateChanged();
+        }
+
+        private void ApplyFracture(float severity01, float damageMagnitude)
+        {
+            float severityScale = Mathf.Clamp01(Mathf.Max(severity01, damageMagnitude / SeverePhysicalDamageThreshold));
+            float duration = Mathf.Lerp(FractureBaseDurationSeconds, FractureMaxDurationSeconds, severityScale);
+            float penalty = Mathf.Lerp(FractureBasePenalty, FractureMaxPenalty, severityScale);
+            bool stateChanged = !HasFracture;
+
+            _injuryStatus |= PlayerInjuryStatus.Fracture;
+            _fractureSecondsRemaining = Mathf.Max(_fractureSecondsRemaining, duration);
+            _fracturePenalty01 = Mathf.Max(_fracturePenalty01, penalty);
+            ApplyInjuryMovementPenalty();
+
+            if (stateChanged)
+                NotifyInjuryStateChanged();
+        }
+
+        private static float ResolveThermalSeverity01(float excess)
+        {
+            if (excess <= 0f)
+                return 0f;
+
+            return Mathf.Clamp01(excess / ThermalSeverityReferenceRange);
+        }
+
+        private ThermalStressMode ResolveThermalStressModeFromState()
+        {
+            if (_coldSeverity01 > 0f)
+                return ThermalStressMode.Cold;
+
+            if (_heatSeverity01 > 0f)
+                return ThermalStressMode.Heat;
+
+            return ThermalStressMode.None;
         }
 
         private static string ResolveDeathCauseLabel(SurvivalDeathCause cause)

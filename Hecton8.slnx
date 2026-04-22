@@ -1,9 +1,13 @@
 ﻿<Solution>
+  <Project Path="Unity.ShaderGraph.Editor.csproj" />
   <Project Path="RealtimeCSG.csproj" />
+  <Project Path="WaveHarmonic.Crest.csproj" />
   <Project Path="Hecton8.Core.csproj" />
   <Project Path="MoreMountains.Feedbacks.csproj" />
+  <Project Path="Unity.RenderPipelines.Universal.Editor.csproj" />
   <Project Path="Assembly-CSharp-Editor-firstpass.csproj" />
   <Project Path="EasySave3.csproj" />
+  <Project Path="Unity.RenderPipelines.Core.Editor.csproj" />
   <Project Path="ShapesRuntime.csproj" />
   <Project Path="Crest.csproj" />
   <Project Path="MoreMountains.Tools.csproj" />
@@ -13,7 +17,9 @@
   <Project Path="VolumetricLightBeam.csproj" />
   <Project Path="ShapesEditor.csproj" />
   <Project Path="Assembly-CSharp.csproj" />
+  <Project Path="Unity.RenderPipelines.Universal.Runtime.csproj" />
   <Project Path="AstarPathfindingProject.csproj" />
+  <Project Path="WaveHarmonic.Crest.Shared.Editor.csproj" />
   <Project Path="MoreMountains.Feedbacks.PostProcessing.csproj" />
   <Project Path="VolumetricLightBeam.Editor.csproj" />
   <Project Path="MoreMountains.Feedbacks.MMTools.csproj" />
@@ -26,6 +32,7 @@
   <Project Path="Assembly-CSharp-firstpass.csproj" />
   <Project Path="BakeryEditorAssembly.csproj" />
   <Project Path="PackageToolsEditor.csproj" />
+  <Project Path="WaveHarmonic.Crest.Editor.csproj" />
   <Project Path="MoreMountains.Feedbacks.HDRP.csproj" />
   <Project Path="MoreMountains.Feedbacks.URP.csproj" />
   <Project Path="Den.Tools.csproj" />
@@ -33,6 +40,7 @@
   <Project Path="GPUInstancer.Editor.csproj" />
   <Project Path="Lofelt.NiceVibrations.csproj" />
   <Project Path="MapMagic.Editor.csproj" />
+  <Project Path="WaveHarmonic.Crest.Shared.csproj" />
   <Project Path="Tayx.Graphy.csproj" />
   <Project Path="MoreMountains.Feedbacks.NiceVibrations.csproj" />
   <Project Path="MoreMountains.Feedbacks.Authorizations.csproj" />
@@ -42,6 +50,7 @@
   <Project Path="JBooth.MicroSplat.Core.Editor.csproj" />
   <Project Path="Lofelt.NiceVibrations.Editor.csproj" />
   <Project Path="AstarPathfindingProjectEditor.csproj" />
+  <Project Path="WaveHarmonic.Crest.Samples.csproj" />
   <Project Path="BakeryRuntimeAssembly.csproj" />
   <Project Path="AmplifyImpostors.Runtime.csproj" />
   <Project Path="MoreMountains.Feedbacks.Editor.csproj" />
@@ -50,6 +59,7 @@
   <Project Path="Den.Tools.Editor.csproj" />
   <Project Path="Technie.PhysicsCreator.Updater.csproj" />
   <Project Path="Sirenix.OdinInspector.Modules.UnityMathematics.csproj" />
+  <Project Path="WaveHarmonic.Crest.Scripting.csproj" />
   <Project Path="JBooth.MicroSplat.Core.csproj" />
   <Project Path="Hecton8.Bootstrap.Contracts.csproj" />
   <Project Path="MapMagic.Settings.csproj" />
@@ -59,4 +69,5 @@
   <Project Path="Hecton8.Input.Generated.csproj" />
   <Project Path="Tayx.Graphy.Editor.csproj" />
   <Project Path="MapMagic.MicroSplat.csproj" />
+  <Project Path="WaveHarmonic.Crest.Editor.Dependents.csproj" />
 </Solution>

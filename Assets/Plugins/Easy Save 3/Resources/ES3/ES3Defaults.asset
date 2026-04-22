@@ -69,6 +69,10 @@ MonoBehaviour:
     - Tayx.Graphy
     - TechniePhysicsCreator
     - VolumetricLightBeam
+    - WaveHarmonic.Crest
+    - WaveHarmonic.Crest.Samples
+    - WaveHarmonic.Crest.Scripting
+    - WaveHarmonic.Crest.Shared
     showAdvancedSettings: 0
   addMgrToSceneAutomatically: 0
   autoUpdateReferences: 1

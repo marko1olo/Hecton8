@@ -20,6 +20,7 @@
 
 using Hecton8.Core;
 using Hecton8.Audio;
+using Hecton8.Environment;
 using Hecton8.Interaction;
 using Hecton8.Physics;
 using Hecton8.UI;
@@ -28,11 +29,13 @@ using Hecton8.Meta;
 using Hecton8.Tools;
 using Hecton8.Visor;
 using Hecton8.World;
+using Hecton.Localization;
 using NASAPunk.Visor;
 using System.Collections.Generic;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Serialization;
 
 namespace Hecton8.Gameplay
 {
@@ -42,6 +45,7 @@ namespace Hecton8.Gameplay
     {
         private const float GroundCheckSkin = 0.02f;
         private float _runtimeSwimSpeedMultiplier = 1f;
+        private float _runtimeInjurySwimSpeedMultiplier = 1f;
         private const float TwoPi = 6.28318530718f;
         private const string DefaultWaterEntrySplashClipPath = "Assets/_Project/Audio/Movement/dive_splash.wav";
         private const int CrestBodySampleCount = 5;
@@ -56,8 +60,9 @@ namespace Hecton8.Gameplay
             "DryInteriorWalk",
             "ShallowWadeWalk",
             "SurfaceSwim",
-            "UnderwaterSwim"
-        }; // COLD ALLOC: string[5] â€” editor diagnostics labels â€” owner: HectonPlayerMovement
+            "UnderwaterSwim",
+            "ExosuitLocomotion"
+        }; // COLD ALLOC: string[6] â€” editor diagnostics labels â€” owner: HectonPlayerMovement
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  INSPECTOR â€” REFERENCES
@@ -204,6 +209,8 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(0f, 20f)] private float wipeoutReboundImpulse = 6.5f;
         [Tooltip("Additional transport damage multiplier applied when a wipeout crash happens on an active scooter or mount.")]
         [SerializeField, Range(1f, 4f)] private float wipeoutTransportDamageScale = 1.55f;
+        [Tooltip("Chance that a hard wipeout breaks one installed suit upgrade module and disables its runtime bonuses.")]
+        [SerializeField, Range(0f, 1f)] private float wipeoutSuitUpgradeBreakChance = 0.2f;
         [Tooltip("How long a fast breach exit keeps solid-land collision eligible for wipeout logic.")]
         [SerializeField, Range(0.1f, 2f)] private float wipeoutBreachLandingGraceTime = 1.15f;
 
@@ -214,8 +221,9 @@ namespace Hecton8.Gameplay
         [Header("â”€â”€ Crest Ocean Integration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Enable dynamic water height from Crest Ocean waves.")]
         [SerializeField] private bool useCrestOceanHeight = true;
-        [Tooltip("Optional explicit Crest ocean owner. Use this when OceanRenderer.Instance comes up late during world bootstrap.")]
-        [SerializeField] private Crest.OceanRenderer crestOceanRenderer;
+        [Tooltip("Optional explicit ocean-kinematics provider. Scene scan prefers the active Crest adapter when no provider is assigned.")]
+        [FormerlySerializedAs("crestOceanRenderer")]
+        [SerializeField] private MonoBehaviour oceanKinematicsProvider;
         [Tooltip("How much Crest flow velocity is converted into passive player drift velocity.")]
         [SerializeField, Range(0f, 2f)] private float crestFlowVelocityScale = 0.35f;
         [Tooltip("How strongly Crest flow is applied as a drift force to the rigidbody.")]
@@ -301,6 +309,17 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(1f, 2f)] private float dynamicCollisionMaxRadiusScale = 1.32f;
         [Tooltip("Center offset applied while the swimmer tucks so the collider collapses downward toward a compact ball.")]
         [SerializeField, Range(-0.5f, 0.5f)] private float dynamicCollisionCenterYOffset = -0.14f;
+        [Header("Active Trauma Collision")]
+        [Tooltip("How long active-trauma collision inflation stays armed before the collider starts recovering.")]
+        [SerializeField, Range(0.02f, 1f)] private float physicalTraumaCollisionHoldTime = 0.24f;
+        [Tooltip("How quickly active-trauma collision recovery settles back toward the baseline capsule.")]
+        [SerializeField, Range(1f, 30f)] private float physicalTraumaCollisionRecoverySharpness = 9f;
+        [Tooltip("Additional radius scale applied while active trauma keeps the body in a defensive tucked collision state.")]
+        [SerializeField, Range(1f, 2f)] private float physicalTraumaCollisionRadiusScale = 1.18f;
+        [Tooltip("Additional height scale applied while active trauma compresses the body away from nearby geometry.")]
+        [SerializeField, Range(0.3f, 1f)] private float physicalTraumaCollisionHeightScale = 0.76f;
+        [Tooltip("Additional downward center offset applied during active trauma so the collision capsule protects the bent torso.")]
+        [SerializeField, Range(-0.5f, 0.2f)] private float physicalTraumaCollisionCenterYOffset = -0.1f;
         [Header("Abyssal Currents")]
         [Tooltip("Depth where abyssal downdrafts start arming below otherwise stable underwater swim.")]
         [SerializeField, Range(50f, 500f)] private float abyssalCurrentStartDepth = 100f;
@@ -328,6 +347,14 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(0.02f, 1f)] private float abyssalFlowNoiseBoundaryCooldown = 0.18f;
         [Tooltip("Signed camera-roll impulse fired when abyssal-current turbulence slams the rider across a noisy seam.")]
         [SerializeField, Range(0f, 12f)] private float abyssalFlowNoiseBoundaryRollImpulse = 2.8f;
+        [Tooltip("Velocity-change torque injected into active transport control when abyssal turbulence snaps across a noisy seam.")]
+        [SerializeField, Range(0f, 8f)] private float abyssalTransportTurbulenceTorqueVelocityChange = 0.7f;
+        [Tooltip("Maximum temporary pitch deviation injected into transport thrust by abyssal turbulence seam hits.")]
+        [SerializeField, Range(0f, 12f)] private float abyssalTransportTurbulencePitchDegrees = 2.8f;
+        [Tooltip("Maximum temporary yaw deviation injected into transport thrust by abyssal turbulence seam hits.")]
+        [SerializeField, Range(0f, 16f)] private float abyssalTransportTurbulenceYawDegrees = 5.5f;
+        [Tooltip("How quickly abyssal turbulence steering offsets decay back to neutral once the seam hit passes.")]
+        [SerializeField, Range(1f, 20f)] private float abyssalTransportTurbulenceRecoverySharpness = 8f;
         [Header("Crush Depth")]
         [Tooltip("Depth where hull stress starts accumulating from abyssal pressure and rapid depth changes.")]
         [SerializeField, Range(500f, 3000f)] private float crushDepthStart = 1000f;
@@ -365,6 +392,18 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(0.02f, 0.5f)] private float fatalPressureGlitchDurationMin = 0.08f;
         [Tooltip("Longest visor glitch pulse duration right before implosion.")]
         [SerializeField, Range(0.02f, 0.75f)] private float fatalPressureGlitchDurationMax = 0.26f;
+        [Tooltip("Gameplay FOV floor reached near the end of the fatal pressure squeeze.")]
+        [SerializeField, Range(15f, 25f)] private float fatalPressureMinFov = 18f;
+        [Tooltip("Mouse-look sensitivity floor reached near the end of the fatal pressure squeeze.")]
+        [SerializeField, Range(0f, 0.35f)] private float fatalPressureLookSensitivityFloor = 0.08f;
+        [Tooltip("Initial yaw freedom around the locked neck pose when the fatal pressure sequence begins.")]
+        [SerializeField, Range(5f, 90f)] private float fatalPressureYawFreedomStart = 42f;
+        [Tooltip("Final yaw freedom right before the implosion fires.")]
+        [SerializeField, Range(1f, 25f)] private float fatalPressureYawFreedomEnd = 8f;
+        [Tooltip("Initial pitch freedom around the locked neck pose when the fatal pressure sequence begins.")]
+        [SerializeField, Range(5f, 60f)] private float fatalPressurePitchFreedomStart = 26f;
+        [Tooltip("Final pitch freedom right before the implosion fires.")]
+        [SerializeField, Range(1f, 20f)] private float fatalPressurePitchFreedomEnd = 5f;
         [Header("Thermal Updrafts")]
         [Tooltip("Minimum sampled upward current speed treated as a black-smoker thermal updraft.")]
         [SerializeField, Range(0f, 10f)] private float thermalUpdraftSpeedThreshold = 1.8f;
@@ -374,6 +413,10 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(0f, 20f)] private float thermalUpdraftVelocityChangePerSecond = 8.5f;
         [Tooltip("Minimum depth where authored upward currents are allowed to behave like abyssal thermal vents.")]
         [SerializeField, Range(0f, 5000f)] private float thermalUpdraftStartDepth = 120f;
+        [Tooltip("Normalized thermal-updraft intensity that is violent enough to force an active-trauma body bend.")]
+        [SerializeField, Range(0f, 1f)] private float thermalUpdraftTraumaThreshold = 0.62f;
+        [Tooltip("Minimum delay between repeated thermal-updraft trauma hits so continuous vents do not spam the blend state.")]
+        [SerializeField, Range(0.05f, 2f)] private float thermalUpdraftTraumaCooldown = 0.45f;
         [Header("Active Sonar")]
         [Tooltip("Cooldown between controller-owned active sonar pings.")]
         [SerializeField, Range(0.1f, 10f)] private float activeSonarPingCooldown = 2.35f;
@@ -413,6 +456,17 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(0f, 0.35f)] private float externalEnvironmentalDragHoldTime = 0.12f;
         [Tooltip("How quickly external environmental drag blends toward the requested multiplier and recovers after release.")]
         [SerializeField, Range(1f, 24f)] private float externalEnvironmentalDragBlendSpeed = 9f;
+        [Header("Parasite Latch Physics")]
+        [Tooltip("How long parasite COM and harvester pull stay active without refresh before recovering to neutral.")]
+        [SerializeField, Range(0f, 0.35f)] private float parasiteLatchInfluenceHoldTime = 0.14f;
+        [Tooltip("How quickly parasite COM and harvester pull blend toward the latest async GPU readback sample.")]
+        [SerializeField, Range(1f, 24f)] private float parasiteLatchInfluenceBlendSpeed = 8.5f;
+        [Tooltip("Base force applied from the parasite center of mass when the swarm is latched to one side of the active hull.")]
+        [SerializeField, Range(0f, 80f)] private float parasiteCenterOfMassForce = 18f;
+        [Tooltip("Additional force applied toward the nearest DeadZone massive-structure anchor once the hive enters harvester mode.")]
+        [SerializeField, Range(0f, 120f)] private float parasiteHarvesterPullForce = 42f;
+        [Tooltip("Latched parasite count treated as full parasite force on the active transport hull.")]
+        [SerializeField, Range(1f, 64f)] private float parasiteLatchCountForFullForce = 18f;
         [Header("Sargassum Entanglement")]
         [Tooltip("Spring force applied when the player or scooter gets snared inside dense sargassum and loses momentum.")]
         [SerializeField, Range(0f, 40f)] private float sargassumEntanglementSpring = 11.5f;
@@ -598,6 +652,62 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(0.3f, 0.95f)] private float surfaceBreachMinImmersion = 0.45f;
         [SerializeField, Range(0.05f, 1f)] private float dryAirControlMultiplier = 0.4f;
         [SerializeField, Range(0f, 1f)] private float dryAirDampingMultiplier = 0.18f;
+        [Tooltip("Dry-interior grounded walk force multiplier for heavy NASA-punk suit movement inside airlocks and wreck corridors.")]
+        [SerializeField, Range(0.4f, 2f)] private float dryInteriorWalkForceMultiplier = 0.82f;
+        [Tooltip("Dry-interior grounded walk speed multiplier for heavy NASA-punk suit movement inside airlocks and wreck corridors.")]
+        [SerializeField, Range(0.3f, 1.5f)] private float dryInteriorWalkSpeedMultiplier = 0.76f;
+        [Tooltip("How far to either side each dry-interior foot probe samples metal-floor support.")]
+        [SerializeField, Range(0.05f, 0.6f)] private float dryInteriorFootProbeLateralOffset = 0.16f;
+        [Tooltip("Forward offset applied to each dry-interior foot probe from body center.")]
+        [SerializeField, Range(-0.25f, 0.5f)] private float dryInteriorFootProbeForwardOffset = 0.05f;
+        [Tooltip("Height above the capsule bottom used when casting dry-interior foot-support rays.")]
+        [SerializeField, Range(0.05f, 0.8f)] private float dryInteriorFootProbeHeight = 0.24f;
+        [Tooltip("Maximum distance used by each dry-interior foot-support raycast.")]
+        [SerializeField, Range(0.1f, 1.6f)] private float dryInteriorFootProbeDistance = 0.7f;
+
+        [Header("Exosuit Locomotion")]
+        [Tooltip("Extra grounded walk force multiplier while an exosuit transport owns locomotion.")]
+        [SerializeField, Range(0.5f, 4f)] private float exosuitWalkForceMultiplier = 1.4f;
+        [Tooltip("Ground-speed multiplier while an exosuit transport owns locomotion.")]
+        [SerializeField, Range(0.5f, 3f)] private float exosuitWalkSpeedMultiplier = 0.82f;
+        [Tooltip("Upward force applied by exosuit jump jets while the pilot commands vertical launch.")]
+        [SerializeField, Range(0f, 120f)] private float exosuitJumpJetForce = 42f;
+        [Tooltip("Immediate upward kick applied when jump jets ignite from the seabed.")]
+        [SerializeField, Range(0f, 12f)] private float exosuitJumpJetLaunchImpulse = 3.2f;
+        [Tooltip("Suit energy drained per second while exosuit jump jets are firing.")]
+        [SerializeField, Range(0f, 40f)] private float exosuitJumpJetEnergyDrainPerSecond = 8.5f;
+        [Tooltip("Multiplier applied against mounted transport energy drain when exosuit jump jets ignite.")]
+        [SerializeField, Range(1f, 10f)] private float exosuitJumpJetScooterDrainMultiplier = 5f;
+        [Tooltip("Normalized heat accumulated per second while exosuit jump jets are firing.")]
+        [SerializeField, Range(0f, 4f)] private float exosuitJumpJetHeatPerSecond = 0.85f;
+        [Tooltip("Normalized heat removed per second while exosuit jump jets are idle.")]
+        [SerializeField, Range(0f, 4f)] private float exosuitJumpJetCoolRate = 0.55f;
+        [Tooltip("Heat level below which overheated jump jets recover and can fire again.")]
+        [SerializeField, Range(0f, 1f)] private float exosuitJumpJetRecoverThreshold = 0.32f;
+        [Tooltip("Extra gravity scale applied while an exosuit transport owns locomotion underwater.")]
+        [SerializeField, Range(1f, 3f)] private float exosuitNegativeBuoyancyScale = 1.2f;
+        [Tooltip("How far to either side each exosuit foot probe samples slope support.")]
+        [SerializeField, Range(0.1f, 1.5f)] private float exosuitFootProbeLateralOffset = 0.34f;
+        [Tooltip("Forward offset applied to each exosuit foot probe from body center.")]
+        [SerializeField, Range(-0.5f, 1f)] private float exosuitFootProbeForwardOffset = 0.12f;
+        [Tooltip("Height above the capsule bottom used when casting exosuit foot-support rays.")]
+        [SerializeField, Range(0.05f, 1.5f)] private float exosuitFootProbeHeight = 0.55f;
+        [Tooltip("Maximum distance used by each exosuit foot-support raycast.")]
+        [SerializeField, Range(0.1f, 3f)] private float exosuitFootProbeDistance = 1.35f;
+        [Tooltip("Minimum normal Y still accepted as footing while the exosuit grips steep cave slopes.")]
+        [SerializeField, Range(0.05f, 0.8f)] private float exosuitMinGroundNormalY = 0.18f;
+        [Tooltip("How quickly dual-foot slope probes overwrite the default ground normal while the exosuit is planted.")]
+        [SerializeField, Range(1f, 40f)] private float exosuitFootSlopeBlendSharpness = 22f;
+        [Tooltip("Additional slope-hold force multiplier applied while the exosuit is grounded.")]
+        [SerializeField, Range(1f, 4f)] private float exosuitSlopeStickForceMultiplier = 2.25f;
+        [Tooltip("Additional snap-force multiplier applied while the exosuit is grounded to keep it glued to cave slopes.")]
+        [SerializeField, Range(1f, 4f)] private float exosuitGroundSnapForceMultiplier = 1.85f;
+        [Tooltip("Collision speed threshold where exosuit rock landings trigger the heavy impact response.")]
+        [SerializeField, Range(0f, 30f)] private float exosuitImpactShakeSpeedThreshold = 7.5f;
+        [Tooltip("Collision shake scale applied on heavy exosuit rock impacts.")]
+        [SerializeField, Range(1f, 4f)] private float exosuitImpactShakeScale = 2.1f;
+        [Tooltip("One-shot disturbed-silt injection fired by heavy exosuit rock impacts.")]
+        [SerializeField, Range(0f, 2f)] private float exosuitImpactSiltBurstScale = 0.95f;
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  INSPECTOR â€” FOV
@@ -608,6 +718,34 @@ namespace Hecton8.Gameplay
         [SerializeField] private float baseFov = 70f;
         [Tooltip("How much underwater body-yaw responsiveness remains while dragging the heaviest heavy-carry object.")]
         [SerializeField, Range(0.1f, 1f)] private float maxHeavyCarryBodyYawSpringMultiplier = 0.58f;
+        [Header("Heavy Tow Response")]
+        [Tooltip("How much the camera pitches upward while a heavy tow line is loading the player from behind.")]
+        [SerializeField, Range(0f, 20f)] private float heavyTowCameraPitchDegrees = 5.5f;
+        [Tooltip("How much the camera rolls toward a laterally drifting tow payload.")]
+        [SerializeField, Range(0f, 20f)] private float heavyTowCameraRollDegrees = 8.5f;
+        [Tooltip("How far the camera shifts backward at peak tow load.")]
+        [SerializeField, Range(0f, 0.4f)] private float heavyTowCameraBackwardOffset = 0.09f;
+        [Tooltip("How far the camera shifts sideways toward the payload at peak tow load.")]
+        [SerializeField, Range(0f, 0.25f)] private float heavyTowCameraSideOffset = 0.055f;
+        [Tooltip("How quickly heavy-tow COM and camera response converge.")]
+        [SerializeField, Range(1f, 24f)] private float heavyTowResponseBlendSharpness = 7f;
+        [Tooltip("Rearward center-of-mass shift applied while the tow line is loaded.")]
+        [SerializeField, Range(0f, 0.6f)] private float heavyTowCenterOfMassRearShift = 0.22f;
+        [Tooltip("Lateral center-of-mass shift applied toward the towed mass.")]
+        [SerializeField, Range(0f, 0.35f)] private float heavyTowCenterOfMassLateralShift = 0.14f;
+        [Tooltip("Downward center-of-mass sink applied while the tow line is loaded.")]
+        [SerializeField, Range(0f, 0.25f)] private float heavyTowCenterOfMassDownShift = 0.05f;
+        [Header("Cutting Tension Physics")]
+        [Tooltip("Maximum slack allowed between the player and the current cut anchor before virtual spring tension starts loading.")]
+        [SerializeField, Range(0.2f, 3f)] private float cuttingTensionRestLength = 1.1f;
+        [Tooltip("Hooke spring strength applied while the cutter anchor is loaded.")]
+        [SerializeField, Range(0f, 120f)] private float cuttingTensionSpring = 24f;
+        [Tooltip("Velocity damping applied along the cutter spring axis so the player does not oscillate forever while pulling metal free.")]
+        [SerializeField, Range(0f, 40f)] private float cuttingTensionDamping = 8f;
+        [Tooltip("Maximum force the virtual cutter spring is allowed to inject into the player body.")]
+        [SerializeField, Range(0f, 120f)] private float cuttingTensionMaxForce = 34f;
+        [Tooltip("How long a cutter anchor request is kept alive without a fresh tool update before the spring fully releases.")]
+        [SerializeField, Range(0f, 0.25f)] private float cuttingTensionHoldTime = 0.08f;
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  INSPECTOR â€” DIAGNOSTICS
@@ -653,6 +791,9 @@ namespace Hecton8.Gameplay
         [SerializeField] private float _debugExternalEnvironmentalDragMultiplier = 1f;
         [SerializeField] private float _debugExternalEnvironmentalSpeedMultiplier = 1f;
         [SerializeField] private float _debugExternalEnvironmentalThrustMultiplier = 1f;
+        [SerializeField] private int _debugParasiteLatchedCount;
+        [SerializeField] private Vector3 _debugParasiteCenterOfMassLS;
+        [SerializeField] private Vector3 _debugParasiteHarvesterPullWS;
         [SerializeField] private float _debugSurfaceWavePitch;
         [SerializeField] private float _debugSurfaceWaveRoll;
         [SerializeField] private float _debugStormIntensity01;
@@ -667,6 +808,12 @@ namespace Hecton8.Gameplay
         [SerializeField] private float _debugWipeoutTimer;
         [SerializeField] private float _debugDynamicCollisionTuck;
         [SerializeField] private float _debugAbyssalCurrentIntensity;
+        [SerializeField] private bool _debugHeavyTowActive;
+        [SerializeField] private float _debugHeavyTowTension01;
+        [SerializeField] private float _debugHeavyTowStress01;
+        [SerializeField] private float _debugHeavyTowDragMultiplier = 1f;
+        [SerializeField] private float _debugHeavyTowSignedLateralPull;
+        [SerializeField] private float _debugHeavyTowBackwardPull;
 #pragma warning restore CS0414
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -684,14 +831,19 @@ namespace Hecton8.Gameplay
         private PlayerTransportCoordinator _playerTransportCoordinator;
         private PlayerSwimPresentationController _swimPresentationController;
         private PhysicalInteractionHandler _physicalInteractionHandler;
+        private HeavyTowWinch _heavyTowWinch;
         private SargassumMovementInfluence _sargassumMovementInfluence;
         private HectonSurvivalSystem _survivalSystem;
+        private HectonUnderwaterVisuals _underwaterVisuals;
         private bool _resolvedPhysicalInteractionHandler;
+        private bool _resolvedHeavyTowWinch;
+        private bool _resolvedUnderwaterVisuals;
         private int _instanceId;
         private float _nextSargassumEntanglementAudioTime = float.NegativeInfinity;
         private float _basePlayerHeight;
         private float _baseCapsuleHeight;
         private float _baseCapsuleRadius;
+        private Vector3 _baseCenterOfMass;
         private Vector3 _baseCapsuleCenter;
         private float _appliedCollisionHeightScale = 1f;
         private float _appliedCollisionRadiusScale = 1f;
@@ -700,14 +852,14 @@ namespace Hecton8.Gameplay
         private float _requestedTransportCollisionRadiusScale = 1f;
         private float _requestedTransportCollisionCenterYOffset;
         private float _dynamicCollisionTuck01;
+        private float _physicalTraumaCollisionWeight;
+        private float _physicalTraumaCollisionHoldTimer;
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  CREST OCEAN â€” runtime state
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        private int _crestQueryOwnerHash;
-        private int _crestDisplacementQueryOwnerHash;
-        private int _crestFlowQueryOwnerHash;
+        private IHectonOceanKinematics _oceanKinematics;
         private bool _crestAvailable;
         private float _dynamicWaterSurfaceY;
         private Vector3 _dynamicWaterSurfaceNormal = Vector3.up;
@@ -721,7 +873,7 @@ namespace Hecton8.Gameplay
         private float _dynamicStormIntensity;
         private bool _crestSamplingSucceeded;
         private bool _crestFlowSamplingSucceeded;
-        private float _nextCrestResolveTime = float.NegativeInfinity;
+        private float _nextOceanKinematicsResolveTime = float.NegativeInfinity;
         private readonly Vector3[] _crestQueryPoints = new Vector3[CrestBodySampleCount]; // COLD ALLOC: Vector3[5] â€” batched Crest body-query points (center/head/feet/left/right) â€” owner: HectonPlayerMovement
         private readonly float[] _crestQueryHeights = new float[CrestBodySampleCount]; // COLD ALLOC: float[5] â€” batched Crest sampled water heights â€” owner: HectonPlayerMovement
         private readonly Vector3[] _crestQueryNormals = new Vector3[CrestBodySampleCount]; // COLD ALLOC: Vector3[5] â€” batched Crest sampled normals â€” owner: HectonPlayerMovement
@@ -729,7 +881,9 @@ namespace Hecton8.Gameplay
         private readonly Vector3[] _crestQueryDisplacements = new Vector3[CrestBodySampleCount]; // COLD ALLOC: Vector3[5] â€” batched Crest sampled displacements â€” owner: HectonPlayerMovement
         private readonly Vector3[] _crestQueryFlows = new Vector3[CrestBodySampleCount]; // COLD ALLOC: Vector3[5] â€” batched Crest flow samples â€” owner: HectonPlayerMovement
         private readonly System.Collections.Generic.List<GameObject> _sceneRootBuffer =
-            new System.Collections.Generic.List<GameObject>(16); // COLD ALLOC: List<GameObject>(16) â€” reusable root scan buffer for one-shot Crest owner recovery â€” owner: HectonPlayerMovement
+            new System.Collections.Generic.List<GameObject>(16); // COLD ALLOC: List<GameObject>(16) â€” reusable root scan buffer for delayed ocean-kinematics owner recovery â€” owner: HectonPlayerMovement
+        private readonly System.Collections.Generic.List<MonoBehaviour> _sceneOceanProviderBuffer =
+            new System.Collections.Generic.List<MonoBehaviour>(32); // COLD ALLOC: List<MonoBehaviour>(32) â€” reusable scene component scan buffer for ocean-kinematics provider recovery â€” owner: HectonPlayerMovement
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  CAMERA JUICE
@@ -795,6 +949,10 @@ namespace Hecton8.Gameplay
         private float _shoreBuoyancyBlend = 1f;
         private float _bottomClearance = float.PositiveInfinity;
         private Vector3 _bottomNormal = Vector3.up;
+        private float _exosuitJumpJetHeat01;
+        private bool _exosuitJumpJetsOverheated;
+        private Vector3 _exosuitFootingNormal = Vector3.up;
+        private bool _exosuitFootingValid;
         private float _wetLensSignalIntensity;
         private float _wetLensPulseCooldownTimer;
         private float _underwaterStressSignalIntensity;
@@ -803,6 +961,13 @@ namespace Hecton8.Gameplay
         private float _externalEnvironmentalDragCurrentMultiplier = 1f;
         private float _externalEnvironmentalDragHoldTimer;
         private bool _externalEnvironmentalDragRequestedThisStep;
+        private Vector3 _cuttingTensionAnchorRequestedWS = Vector3.zero;
+        private Vector3 _cuttingTensionAnchorCurrentWS = Vector3.zero;
+        private Vector3 _cuttingTensionAnchorNormalRequestedWS = Vector3.up;
+        private Vector3 _cuttingTensionAnchorNormalCurrentWS = Vector3.up;
+        private float _cuttingTensionHoldTimer;
+        private float _cuttingTensionCurrentForce;
+        private bool _cuttingTensionRequestedThisStep;
         private float _vegetationDensityLinearDamping;
         private float _sargassumFieldDensity01;
         private float _sargassumMatBuoyancyBlend;
@@ -813,6 +978,10 @@ namespace Hecton8.Gameplay
         private Quaternion _surfaceWavePoseRotation = Quaternion.identity;
         private Quaternion _underwaterTurbulencePoseRotation = Quaternion.identity;
         private float _transportCavitationEfficiency = 1f;
+        private float _heavyTowCameraPitchOffset;
+        private float _heavyTowCameraRollOffset;
+        private Vector3 _heavyTowCameraLocalOffset;
+        private Vector3 _heavyTowCenterOfMassOffset;
         private float _previousTransportForwardVelocity;
         private Vector2 _dynamicWaveLocalSlope = Vector2.zero;
         private Vector3 _dynamicWaveLongitudinalGradient = Vector3.zero;
@@ -829,18 +998,32 @@ namespace Hecton8.Gameplay
         private Vector3 _abyssalDowndraftVelocityChange = Vector3.zero;
         private float _abyssalFlowNoiseBoundaryCooldownTimer;
         private Vector3 _previousAbyssalNoisyFlow = Vector3.zero;
+        private float _abyssalTransportTurbulencePitchOffset;
+        private float _abyssalTransportTurbulenceYawOffset;
         private float _hullStressIntensity;
         private float _hullStressGroanCooldownTimer;
+        private float _hullStressHudCorruptionRefreshTimer;
         private float _externalHullStressRequestedIntensity;
         private bool _externalHullStressRequestedThisStep;
         private float _fatalPressureSequenceTimer;
         private float _fatalPressureSequenceGlitchPulseTimer;
         private float _fatalPressureSequenceIntensity;
+        private float _fatalPressureLookYawAnchor;
+        private float _fatalPressureLookPitchAnchor;
         private float _activeSonarPingCooldownTimer;
         private float _thermalUpdraftIntensity;
         private Vector3 _thermalUpdraftVelocityChange = Vector3.zero;
         private Vector3 _externalThermalUpdraftVelocityChange = Vector3.zero;
         private bool _externalThermalUpdraftRequestedThisStep;
+        private int _parasiteLatchedRequestedCount;
+        private int _parasiteLatchedCurrentCount;
+        private Vector3 _parasiteCenterOfMassRequestedLS = Vector3.zero;
+        private Vector3 _parasiteCenterOfMassCurrentLS = Vector3.zero;
+        private Vector3 _parasiteHarvesterPullRequestedWS = Vector3.zero;
+        private Vector3 _parasiteHarvesterPullCurrentWS = Vector3.zero;
+        private bool _parasiteLatchRequestedThisStep;
+        private float _parasiteLatchHoldTimer;
+        private float _thermalUpdraftTraumaCooldownTimer;
         private float _surfaceGaspUnderwaterTimer;
         private float _surfaceGaspCooldownTimer;
         private float _sargassumRestRecoveryBlend;
@@ -953,6 +1136,14 @@ namespace Hecton8.Gameplay
             _runtimeSwimSpeedMultiplier = Mathf.Clamp(multiplier, 0.5f, 3f);
         }
 
+        /// <summary>
+        /// Applies a body-state penalty without overwriting external runtime swim buffs.
+        /// </summary>
+        internal void SetRuntimeInjurySwimSpeedMultiplier(float multiplier)
+        {
+            _runtimeInjurySwimSpeedMultiplier = Mathf.Clamp(multiplier, 0.35f, 1f);
+        }
+
         public SuitData CurrentSuit => currentSuitData;
         public float WaterImmersionRatio => _waterImmersionRatio;
         public bool IsGrounded => _isGrounded && _isWalking;
@@ -982,6 +1173,8 @@ namespace Hecton8.Gameplay
         public float CurrentThermalUpdraftIntensity01 => _thermalUpdraftIntensity;
         /// <summary>True while the controller is in wipeout recovery and player movement input is suppressed.</summary>
         public bool IsInWipeoutState => _wipeoutTimer > 0f;
+        internal float CurrentCuttingTensionForce => _cuttingTensionCurrentForce;
+        internal float CurrentCuttingTensionNormalized => math.saturate(_cuttingTensionCurrentForce / math.max(0.01f, cuttingTensionMaxForce));
 
         /// <summary>
         /// Applies a sticky external drag request that smoothly suppresses swim thrust and swim max speed.
@@ -1003,6 +1196,77 @@ namespace Hecton8.Gameplay
             }
 
             _externalEnvironmentalDragHoldTimer = externalEnvironmentalDragHoldTime;
+        }
+
+        /// <summary>
+        /// Arms the fixed-step cutter spring so locomotion can pull the body back toward the active cut anchor.
+        /// LaserCutter owns target acquisition; movement owns actual force application.
+        /// </summary>
+        internal void ApplyCuttingTensionAnchor(Vector3 anchorPointWS, Vector3 anchorNormalWS)
+        {
+            _cuttingTensionAnchorRequestedWS = anchorPointWS;
+            _cuttingTensionAnchorNormalRequestedWS = anchorNormalWS.sqrMagnitude > 0.0001f
+                ? anchorNormalWS.normalized
+                : Vector3.up;
+            _cuttingTensionRequestedThisStep = true;
+            _cuttingTensionHoldTimer = cuttingTensionHoldTime;
+        }
+
+        /// <summary>
+        /// Explicitly clears the current cutter spring request when the tool stops cutting.
+        /// </summary>
+        internal void ClearCuttingTensionAnchor()
+        {
+            _cuttingTensionRequestedThisStep = false;
+            _cuttingTensionHoldTimer = 0f;
+            _cuttingTensionCurrentForce = 0f;
+        }
+
+        /// <summary>
+        /// Temporarily releases authored swim posing so a physical hit can bend the body through the active-trauma presentation path.
+        /// Also inflates the collision capsule for a short defensive window so the bent pose does not clip through nearby geometry.
+        /// </summary>
+        public void ApplyPhysicalTrauma(Vector3 impulse, float weight)
+        {
+            float clampedWeight = math.saturate(weight);
+            if (clampedWeight <= 0f)
+                return;
+
+            if (_swimPresentationController == null)
+                TryGetComponent(out _swimPresentationController);
+
+            if (_swimPresentationController != null)
+                _swimPresentationController.ApplyPhysicalTrauma(impulse, clampedWeight);
+
+            if (clampedWeight > _physicalTraumaCollisionWeight)
+                _physicalTraumaCollisionWeight = clampedWeight;
+
+            _physicalTraumaCollisionHoldTimer = math.max(
+                _physicalTraumaCollisionHoldTimer,
+                physicalTraumaCollisionHoldTime * math.lerp(0.6f, 1f, clampedWeight));
+        }
+
+        /// <summary>
+        /// Applies snap-release feedback when a heavy tow cable catastrophically fails.
+        /// </summary>
+        internal void ApplyTowCableSnapFeedback(Vector3 releasedVelocityChange, Vector3 traumaImpulse, float severity, float signedRoll)
+        {
+            float clampedSeverity = math.saturate(severity);
+            if (clampedSeverity <= 0f)
+                return;
+
+            _rb.AddForce(releasedVelocityChange, ForceMode.VelocityChange);
+            ApplyPhysicalTrauma(
+                traumaImpulse.sqrMagnitude > 0.0001f
+                    ? traumaImpulse
+                    : -releasedVelocityChange * (_rb != null ? _rb.mass : 1f),
+                math.lerp(0.18f, 0.55f, clampedSeverity));
+
+            if (_juiceProcessor != null)
+            {
+                _juiceProcessor.RegisterEntanglementStrain(math.lerp(0.18f, 0.62f, clampedSeverity));
+                _juiceProcessor.RegisterExternalRollImpulse(signedRoll * math.lerp(2.5f, 8f, clampedSeverity));
+            }
         }
 
         /// <summary>
@@ -1051,6 +1315,22 @@ namespace Hecton8.Gameplay
             }
 
             _externalThermalUpdraftRequestedThisStep = true;
+        }
+
+        /// <summary>
+        /// Accepts the latest parasite latch aggregate from the asynchronous GPU readback path.
+        /// Center of mass is expected in player-local space so side-biased parasite clusters can pull the hull laterally.
+        /// </summary>
+        public void ApplyParasiteLatchInfluence(int latchedCount, Vector3 parasiteCenterOfMassLS, Vector3 harvesterPullWS)
+        {
+            int clampedCount = math.max(0, latchedCount);
+            if (!_parasiteLatchRequestedThisStep || clampedCount > _parasiteLatchedRequestedCount)
+                _parasiteLatchedRequestedCount = clampedCount;
+
+            _parasiteCenterOfMassRequestedLS = parasiteCenterOfMassLS;
+            _parasiteHarvesterPullRequestedWS = harvesterPullWS;
+            _parasiteLatchRequestedThisStep = true;
+            _parasiteLatchHoldTimer = parasiteLatchInfluenceHoldTime;
         }
 
         /// <summary>
@@ -1103,6 +1383,10 @@ namespace Hecton8.Gameplay
             TryGetComponent(out _buoyancy);
             TryGetComponent(out _swimPresentationController);
             TryGetComponent(out _physicalInteractionHandler);
+            if (!TryGetComponent(out _heavyTowWinch))
+            {
+                _heavyTowWinch = gameObject.AddComponent<HeavyTowWinch>(); // COLD ALLOC: HeavyTowWinch[1] — player-owned salvage tow runtime for harpoon/winch towing — owner: HectonPlayerMovement
+            }
             TryGetComponent(out _survivalSystem);
             if (!TryGetComponent(out _sargassumMovementInfluence))
             {
@@ -1110,6 +1394,7 @@ namespace Hecton8.Gameplay
             }
 
             _resolvedPhysicalInteractionHandler = true;
+            _resolvedHeavyTowWinch = true;
             CacheBaseCollisionProfile();
             ResolvePlayerToolManager();
 
@@ -1118,6 +1403,7 @@ namespace Hecton8.Gameplay
             _rb.freezeRotation = true;
             _rb.constraints = RigidbodyConstraints.FreezeRotation;
             _rb.useGravity = false;
+            _baseCenterOfMass = _rb.centerOfMass;
 
             // Cache camera component for FOV manipulation
             if (playerCamera != null)
@@ -1144,10 +1430,6 @@ namespace Hecton8.Gameplay
             _cachedGravityMagnitude = _cachedGravity.magnitude;
             _smoothedGroundNormal = Vector3.up;
             RefreshGroundSlopeCache();
-            _crestQueryOwnerHash = GetHashCode();
-            _crestDisplacementQueryOwnerHash = _crestQueryOwnerHash ^ 0x2F31;
-            _crestFlowQueryOwnerHash = _crestQueryOwnerHash ^ 0x53C9;
-
             EnsureJuiceProcessor();
             _juiceProcessor.Initialize(leanIntoTurn);
 
@@ -1159,7 +1441,7 @@ namespace Hecton8.Gameplay
             _dynamicWaterFlowVelocity = Vector3.zero;
             _crestSamplingSucceeded = false;
             _crestFlowSamplingSucceeded = false;
-            InitCrest();
+            InitOceanKinematics();
 
             _waterImmersionRatio = ComputeImmersionRatio();
             _smoothedImmersionRatio = _waterImmersionRatio;
@@ -1216,18 +1498,39 @@ namespace Hecton8.Gameplay
             _externalEnvironmentalDragCurrentMultiplier = 1f;
             _externalEnvironmentalDragHoldTimer = 0f;
             _externalEnvironmentalDragRequestedThisStep = false;
+            _cuttingTensionAnchorRequestedWS = Vector3.zero;
+            _cuttingTensionAnchorCurrentWS = Vector3.zero;
+            _cuttingTensionAnchorNormalRequestedWS = Vector3.up;
+            _cuttingTensionAnchorNormalCurrentWS = Vector3.up;
+            _cuttingTensionHoldTimer = 0f;
+            _cuttingTensionCurrentForce = 0f;
+            _cuttingTensionRequestedThisStep = false;
+            _parasiteLatchedRequestedCount = 0;
+            _parasiteLatchedCurrentCount = 0;
+            _parasiteCenterOfMassRequestedLS = Vector3.zero;
+            _parasiteCenterOfMassCurrentLS = Vector3.zero;
+            _parasiteHarvesterPullRequestedWS = Vector3.zero;
+            _parasiteHarvesterPullCurrentWS = Vector3.zero;
+            _parasiteLatchRequestedThisStep = false;
+            _parasiteLatchHoldTimer = 0f;
             _requestedTransportCollisionHeightScale = 1f;
             _requestedTransportCollisionRadiusScale = 1f;
             _requestedTransportCollisionCenterYOffset = 0f;
             _dynamicCollisionTuck01 = 0f;
+            _physicalTraumaCollisionWeight = 0f;
+            _physicalTraumaCollisionHoldTimer = 0f;
+            ResetHeavyTowRuntimeResponse();
             _abyssalDowndraftCooldownTimer = 0f;
             _abyssalDowndraftActiveTimer = 0f;
             _abyssalDowndraftIntensity = 0f;
             _abyssalDowndraftVelocityChange = Vector3.zero;
             _abyssalFlowNoiseBoundaryCooldownTimer = 0f;
             _previousAbyssalNoisyFlow = Vector3.zero;
+            _abyssalTransportTurbulencePitchOffset = 0f;
+            _abyssalTransportTurbulenceYawOffset = 0f;
             _hullStressIntensity = 0f;
             _hullStressGroanCooldownTimer = 0f;
+            _hullStressHudCorruptionRefreshTimer = 0f;
             _externalHullStressRequestedIntensity = 0f;
             _externalHullStressRequestedThisStep = false;
             _fatalPressureSequenceTimer = 0f;
@@ -1238,6 +1541,7 @@ namespace Hecton8.Gameplay
             _thermalUpdraftVelocityChange = Vector3.zero;
             _externalThermalUpdraftVelocityChange = Vector3.zero;
             _externalThermalUpdraftRequestedThisStep = false;
+            _thermalUpdraftTraumaCooldownTimer = 0f;
             _vegetationDensityLinearDamping = 0f;
             _debugSargassumEntanglementDragRequest = 1f;
 
@@ -1275,7 +1579,7 @@ namespace Hecton8.Gameplay
                 Debug.LogError("[HectonPlayerMovement] GameTickManager.Instance is null.", this);
 
             if (useCrestOceanHeight && !_crestAvailable)
-                InitCrest();
+                InitOceanKinematics();
         }
 
         private void OnDisable()
@@ -1288,6 +1592,13 @@ namespace Hecton8.Gameplay
             _externalEnvironmentalDragCurrentMultiplier = 1f;
             _externalEnvironmentalDragHoldTimer = 0f;
             _externalEnvironmentalDragRequestedThisStep = false;
+            _cuttingTensionAnchorRequestedWS = Vector3.zero;
+            _cuttingTensionAnchorCurrentWS = Vector3.zero;
+            _cuttingTensionAnchorNormalRequestedWS = Vector3.up;
+            _cuttingTensionAnchorNormalCurrentWS = Vector3.up;
+            _cuttingTensionHoldTimer = 0f;
+            _cuttingTensionCurrentForce = 0f;
+            _cuttingTensionRequestedThisStep = false;
             _debugSargassumEntanglementDragRequest = 1f;
             _shoreBuoyancyBlend = 1f;
             _bottomClearance = float.PositiveInfinity;
@@ -1323,22 +1634,31 @@ namespace Hecton8.Gameplay
             _requestedTransportCollisionRadiusScale = 1f;
             _requestedTransportCollisionCenterYOffset = 0f;
             _dynamicCollisionTuck01 = 0f;
+            _physicalTraumaCollisionWeight = 0f;
+            _physicalTraumaCollisionHoldTimer = 0f;
+            ResetHeavyTowRuntimeResponse();
             _abyssalDowndraftCooldownTimer = 0f;
             _abyssalDowndraftActiveTimer = 0f;
             _abyssalDowndraftIntensity = 0f;
             _abyssalDowndraftVelocityChange = Vector3.zero;
             _abyssalFlowNoiseBoundaryCooldownTimer = 0f;
             _previousAbyssalNoisyFlow = Vector3.zero;
+            _abyssalTransportTurbulencePitchOffset = 0f;
+            _abyssalTransportTurbulenceYawOffset = 0f;
             _hullStressIntensity = 0f;
             _hullStressGroanCooldownTimer = 0f;
+            _hullStressHudCorruptionRefreshTimer = 0f;
             _fatalPressureSequenceTimer = 0f;
             _fatalPressureSequenceGlitchPulseTimer = 0f;
             _fatalPressureSequenceIntensity = 0f;
+            _fatalPressureLookYawAnchor = _cameraYaw;
+            _fatalPressureLookPitchAnchor = _cameraPitch;
             _activeSonarPingCooldownTimer = 0f;
             _thermalUpdraftIntensity = 0f;
             _thermalUpdraftVelocityChange = Vector3.zero;
             _externalThermalUpdraftVelocityChange = Vector3.zero;
             _externalThermalUpdraftRequestedThisStep = false;
+            _thermalUpdraftTraumaCooldownTimer = 0f;
             _vegetationDensityLinearDamping = 0f;
             ApplyResolvedCollisionProfile(1f, 1f, 0f);
 
@@ -1647,6 +1967,62 @@ namespace Hecton8.Gameplay
             return math.lerp(1f, maxHeavyCarryBodyYawSpringMultiplier, heavyCarryLoad);
         }
 
+        private bool IsHeavyTowActive()
+        {
+            if (!_resolvedHeavyTowWinch)
+            {
+                TryGetComponent(out _heavyTowWinch);
+                _resolvedHeavyTowWinch = true;
+            }
+
+            return _heavyTowWinch != null && _heavyTowWinch.HasActiveTow;
+        }
+
+        private void UpdateHeavyTowRuntimeResponse(float fixedDeltaTime)
+        {
+            float targetPitchOffset = 0f;
+            float targetRollOffset = 0f;
+            Vector3 targetCameraOffset = Vector3.zero;
+            Vector3 targetCenterOfMassOffset = Vector3.zero;
+
+            if (IsHeavyTowActive())
+            {
+                float tension01 = _heavyTowWinch.CurrentTension01;
+                float stress01 = _heavyTowWinch.CurrentStress01;
+                float lateralPull = _heavyTowWinch.CurrentSignedLateralPull01;
+                float backwardPull = _heavyTowWinch.CurrentBackwardPull01;
+                float response01 = math.saturate(math.max(tension01, stress01 * 0.65f));
+
+                targetPitchOffset = -backwardPull * heavyTowCameraPitchDegrees * response01;
+                targetRollOffset = -lateralPull * heavyTowCameraRollDegrees * response01;
+                targetCameraOffset.x = -lateralPull * heavyTowCameraSideOffset * response01;
+                targetCameraOffset.z = -backwardPull * heavyTowCameraBackwardOffset * response01;
+
+                targetCenterOfMassOffset.x = lateralPull * heavyTowCenterOfMassLateralShift * response01;
+                targetCenterOfMassOffset.y = -heavyTowCenterOfMassDownShift * response01;
+                targetCenterOfMassOffset.z = -backwardPull * heavyTowCenterOfMassRearShift * response01;
+            }
+
+            float blendT = 1f - math.exp(-math.max(heavyTowResponseBlendSharpness, 0.01f) * fixedDeltaTime);
+            _heavyTowCameraPitchOffset = math.lerp(_heavyTowCameraPitchOffset, targetPitchOffset, blendT);
+            _heavyTowCameraRollOffset = math.lerp(_heavyTowCameraRollOffset, targetRollOffset, blendT);
+            _heavyTowCameraLocalOffset = Vector3.Lerp(_heavyTowCameraLocalOffset, targetCameraOffset, blendT);
+            _heavyTowCenterOfMassOffset = Vector3.Lerp(_heavyTowCenterOfMassOffset, targetCenterOfMassOffset, blendT);
+
+            if (_rb != null)
+                _rb.centerOfMass = _baseCenterOfMass + _heavyTowCenterOfMassOffset;
+        }
+
+        private void ResetHeavyTowRuntimeResponse()
+        {
+            _heavyTowCameraPitchOffset = 0f;
+            _heavyTowCameraRollOffset = 0f;
+            _heavyTowCameraLocalOffset = Vector3.zero;
+            _heavyTowCenterOfMassOffset = Vector3.zero;
+            if (_rb != null)
+                _rb.centerOfMass = _baseCenterOfMass;
+        }
+
         private void AdvanceSargassumInfluence(float fixedDeltaTime, PlayerTransportPreset transportPreset)
         {
             if (_sargassumMovementInfluence == null)
@@ -1700,7 +2076,9 @@ namespace Hecton8.Gameplay
 
             Vector3 samplePosition = _cachedTransform.position;
             float sampleRadius = _capsuleCollider != null ? Mathf.Max(0.35f, _capsuleCollider.radius) : 0.5f;
-            if (!thermalManager.SampleThermalFlow(samplePosition, sampleRadius, out AbyssalThermalManager.ThermalFlowSample sample))
+            bool hasPlayerSample = thermalManager.SampleThermalFlow(samplePosition, sampleRadius, out AbyssalThermalManager.ThermalFlowSample sample);
+            AdvanceHeavyTowCableSnare(thermalManager);
+            if (!hasPlayerSample)
                 return;
 
             _abyssalThermalFlowSample = sample;
@@ -1714,6 +2092,30 @@ namespace Hecton8.Gameplay
 
             if (sample.HasFlow && fixedDeltaTime > 0f)
                 ApplyExternalThermalUpdraft(sample.FlowVelocityWS * fixedDeltaTime);
+        }
+
+        private void AdvanceHeavyTowCableSnare(AbyssalThermalManager thermalManager)
+        {
+            if (_heavyTowWinch == null || thermalManager == null)
+                return;
+
+            if (!_heavyTowWinch.TryGetTowPayloadSample(out Vector3 payloadPositionWS, out float payloadRadiusWS))
+            {
+                _heavyTowWinch.ApplyExternalCableSnare(Vector3.zero, 0f, 1f);
+                return;
+            }
+
+            if (!thermalManager.SampleThermalFlow(payloadPositionWS, payloadRadiusWS, out AbyssalThermalManager.ThermalFlowSample payloadSample) ||
+                !payloadSample.IsCableZone)
+            {
+                _heavyTowWinch.ApplyExternalCableSnare(Vector3.zero, 0f, 1f);
+                return;
+            }
+
+            _heavyTowWinch.ApplyExternalCableSnare(
+                payloadSample.CableAnchorWS,
+                payloadSample.CableTension01,
+                payloadSample.CableCutProgress01);
         }
 
         private float ResolveSargassumSpeedMultiplier()
@@ -2099,6 +2501,128 @@ namespace Hecton8.Gameplay
             return math.rcp(ResolveExternalEnvironmentalDragMultiplier());
         }
 
+        private void AdvanceCuttingTensionRequest(float fixedDeltaTime)
+        {
+            if (_cuttingTensionRequestedThisStep)
+            {
+                _cuttingTensionAnchorCurrentWS = _cuttingTensionAnchorRequestedWS;
+                _cuttingTensionAnchorNormalCurrentWS = _cuttingTensionAnchorNormalRequestedWS;
+            }
+            else if (_cuttingTensionHoldTimer > 0f)
+            {
+                _cuttingTensionHoldTimer -= fixedDeltaTime;
+                if (_cuttingTensionHoldTimer <= 0f)
+                {
+                    _cuttingTensionHoldTimer = 0f;
+                    _cuttingTensionCurrentForce = 0f;
+                }
+            }
+            else
+            {
+                _cuttingTensionCurrentForce = 0f;
+            }
+
+            _cuttingTensionRequestedThisStep = false;
+        }
+
+        private void ApplyCuttingTensionPhysics(float fixedDeltaTime)
+        {
+            AdvanceCuttingTensionRequest(fixedDeltaTime);
+            if (_cuttingTensionHoldTimer <= 0f)
+                return;
+
+            Vector3 anchorOffset = _cuttingTensionAnchorCurrentWS - _cachedTransform.position;
+            float anchorDistance = anchorOffset.magnitude;
+            if (anchorDistance <= 0.0001f)
+                return;
+
+            float extension = anchorDistance - math.max(0.01f, cuttingTensionRestLength);
+            if (extension <= 0f)
+            {
+                _cuttingTensionCurrentForce = 0f;
+                return;
+            }
+
+            Vector3 springDirection = anchorOffset / anchorDistance;
+            float velocityAlongSpring = Vector3.Dot(_rb.linearVelocity, springDirection);
+            float forceMagnitude = extension * cuttingTensionSpring;
+            forceMagnitude -= velocityAlongSpring * cuttingTensionDamping;
+            forceMagnitude = math.clamp(forceMagnitude, 0f, cuttingTensionMaxForce);
+            _cuttingTensionCurrentForce = forceMagnitude;
+            if (forceMagnitude <= 0.0001f)
+                return;
+
+            _rb.AddForce(springDirection * forceMagnitude, ForceMode.Force);
+            if (_juiceProcessor != null)
+                _juiceProcessor.RegisterEntanglementStrain(math.saturate(forceMagnitude / math.max(0.01f, cuttingTensionMaxForce)) * 0.55f);
+        }
+
+        private void AdvanceParasiteLatchInfluence(float fixedDeltaTime)
+        {
+            if (_parasiteLatchRequestedThisStep)
+            {
+                if (_parasiteLatchedRequestedCount > 0)
+                    _parasiteLatchHoldTimer = parasiteLatchInfluenceHoldTime;
+            }
+            else if (_parasiteLatchHoldTimer > 0f)
+            {
+                _parasiteLatchHoldTimer -= fixedDeltaTime;
+                if (_parasiteLatchHoldTimer < 0f)
+                    _parasiteLatchHoldTimer = 0f;
+            }
+
+            bool keepInfluenceAlive = _parasiteLatchRequestedThisStep || _parasiteLatchHoldTimer > 0f;
+            float targetCount = keepInfluenceAlive ? _parasiteLatchedRequestedCount : 0f;
+            Vector3 targetCenterOfMass = keepInfluenceAlive ? _parasiteCenterOfMassRequestedLS : Vector3.zero;
+            Vector3 targetHarvesterPull = keepInfluenceAlive ? _parasiteHarvesterPullRequestedWS : Vector3.zero;
+            float blendT = 1f - math.exp(-math.max(parasiteLatchInfluenceBlendSpeed, 0.01f) * fixedDeltaTime);
+
+            _parasiteLatchedCurrentCount = Mathf.RoundToInt(math.lerp(_parasiteLatchedCurrentCount, targetCount, blendT));
+            _parasiteCenterOfMassCurrentLS = Vector3.Lerp(_parasiteCenterOfMassCurrentLS, targetCenterOfMass, blendT);
+            _parasiteHarvesterPullCurrentWS = Vector3.Lerp(_parasiteHarvesterPullCurrentWS, targetHarvesterPull, blendT);
+
+            _parasiteLatchedRequestedCount = 0;
+            _parasiteCenterOfMassRequestedLS = Vector3.zero;
+            _parasiteHarvesterPullRequestedWS = Vector3.zero;
+            _parasiteLatchRequestedThisStep = false;
+
+            _debugParasiteLatchedCount = _parasiteLatchedCurrentCount;
+            _debugParasiteCenterOfMassLS = _parasiteCenterOfMassCurrentLS;
+            _debugParasiteHarvesterPullWS = _parasiteHarvesterPullCurrentWS;
+        }
+
+        private void ApplyParasiteLatchForces(float fixedDeltaTime)
+        {
+            if (_parasiteLatchedCurrentCount <= 0 || _playerTransportCoordinator == null || !_playerTransportCoordinator.IsTransportActive())
+                return;
+
+            float latchForce01 = math.saturate(_parasiteLatchedCurrentCount / math.max(1f, parasiteLatchCountForFullForce));
+            if (latchForce01 <= 0.0001f)
+                return;
+
+            Vector3 applicationPoint = _cachedTransform.TransformPoint(_parasiteCenterOfMassCurrentLS);
+            Vector3 localCenter = _parasiteCenterOfMassCurrentLS;
+            Vector3 localLateral = new Vector3(localCenter.x, 0f, localCenter.z);
+            float localLateralMagnitude = localLateral.magnitude;
+            Vector3 centerOfMassForce = Vector3.zero;
+            if (localLateralMagnitude > 0.0001f)
+            {
+                Vector3 localBiasDirection = localLateral / localLateralMagnitude;
+                float sideBias01 = math.saturate(localLateralMagnitude / math.max(0.25f, parasiteLatchCountForFullForce * 0.05f));
+                centerOfMassForce = _cachedTransform.TransformDirection(localBiasDirection) * (parasiteCenterOfMassForce * latchForce01 * sideBias01);
+            }
+
+            Vector3 harvesterForce = Vector3.zero;
+            if (_parasiteHarvesterPullCurrentWS.sqrMagnitude > 0.0001f)
+                harvesterForce = _parasiteHarvesterPullCurrentWS.normalized * (parasiteHarvesterPullForce * latchForce01);
+
+            Vector3 totalForce = centerOfMassForce + harvesterForce;
+            if (totalForce.sqrMagnitude <= 0.0001f)
+                return;
+
+            _rb.AddForceAtPosition(totalForce, applicationPoint, ForceMode.Force);
+        }
+
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  COLLISION â€” camera shake integration
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -2132,7 +2656,34 @@ namespace Hecton8.Gameplay
             if (transportLifecycleOwner != null)
                 transportLifecycleOwner.ApplyTransportCollisionImpact(relSpeed, hitPoint, hitNormal);
 
+            TryTriggerExosuitCollisionImpactFeedback(collision, relSpeed);
             TryStartWipeoutFromCollision(collision, relSpeed, hitPoint, hitNormal, transportLifecycleOwner);
+        }
+
+        private void TryTriggerExosuitCollisionImpactFeedback(Collision collision, float relativeSpeed)
+        {
+            if (_currentLocomotionMode != PlayerLocomotionMode.ExosuitLocomotion)
+                return;
+
+            if (collision == null || collision.collider == null || collision.collider.isTrigger)
+                return;
+
+            int collisionLayerMask = 1 << collision.collider.gameObject.layer;
+            if ((groundLayers.value & collisionLayerMask) == 0)
+                return;
+
+            if (relativeSpeed < exosuitImpactShakeSpeedThreshold)
+                return;
+
+            if (_juiceProcessor != null && currentSuitData != null)
+                _juiceProcessor.RegisterCollisionImpulse(relativeSpeed * exosuitImpactShakeScale, currentSuitData);
+
+            ResolveUnderwaterVisuals();
+            if (_underwaterVisuals != null && exosuitImpactSiltBurstScale > 0f)
+            {
+                float burst01 = math.saturate(relativeSpeed / math.max(exosuitImpactShakeSpeedThreshold * 2f, 0.01f));
+                _underwaterVisuals.TriggerExternalBottomSiltBurst(burst01 * exosuitImpactSiltBurstScale);
+            }
         }
 
         private void TryStartWipeoutFromCollision(
@@ -2183,6 +2734,7 @@ namespace Hecton8.Gameplay
             bool requestTransportBailout,
             Vector3 bailoutImpulse)
         {
+            bool wasAlreadyInWipeout = _wipeoutTimer > 0f;
             _wipeoutSeverity = math.max(_wipeoutSeverity, severity);
             _wipeoutTimer = math.max(_wipeoutTimer, wipeoutDuration);
             _recentBreachExitTimer = 0f;
@@ -2199,6 +2751,8 @@ namespace Hecton8.Gameplay
             if (transportLifecycleOwner != null)
                 transportLifecycleOwner.ApplyTransportCollisionImpact(impactSpeed * wipeoutTransportDamageScale, hitPoint, hitNormal);
 
+            if (!wasAlreadyInWipeout)
+                TryBreakSuitUpgradeFromWipeout();
             EmitWipeoutImpactFeedback(severity);
 
             Vector3 reboundDirection = hitNormal + Vector3.up * 0.28f;
@@ -2210,16 +2764,34 @@ namespace Hecton8.Gameplay
             float reboundImpulse = wipeoutReboundImpulse * math.lerp(0.75f, 1.35f, severity);
             _forceVector = reboundDirection * reboundImpulse * _rb.mass;
             _rb.AddForce(_forceVector, ForceMode.Impulse);
+            ApplyPhysicalTrauma(reboundDirection * reboundImpulse * _rb.mass, severity);
+
+            if (_survivalSystem == null)
+                TryGetComponent(out _survivalSystem);
+
+            _survivalSystem?.ReportPhysicalTrauma(impactSpeed, severity);
 
             if (requestTransportBailout)
                 TriggerTransportBailout(severity, hitNormal, transportLifecycleOwner, bailoutImpulse);
+        }
+
+        private void TryBreakSuitUpgradeFromWipeout()
+        {
+            if (wipeoutSuitUpgradeBreakChance <= 0f)
+                return;
+
+            SuitUpgradeManager suitUpgradeManager = SuitUpgradeManager.Instance;
+            if (suitUpgradeManager == null)
+                return;
+
+            suitUpgradeManager.TryBreakRandomInstalledUpgrade(wipeoutSuitUpgradeBreakChance, out _);
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  CREST OCEAN HEIGHT SAMPLING
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        private void InitCrest()
+        private void InitOceanKinematics()
         {
             _fallbackWaterSurfaceY = ResolveFallbackWaterSurfaceY();
             _dynamicWaterSurfaceY = _fallbackWaterSurfaceY;
@@ -2239,17 +2811,17 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            Crest.OceanRenderer oceanRenderer = ResolveCrestOceanRenderer(forceSceneSearch: true);
-            if (oceanRenderer != null)
+            IHectonOceanKinematics oceanKinematics = ResolveOceanKinematics(forceSceneSearch: true);
+            if (oceanKinematics != null && oceanKinematics.IsAvailable)
             {
-                _crestAvailable = oceanRenderer.CollisionProvider != null;
-                _dynamicWaterSurfaceY = ResolveCrestSeaLevel(oceanRenderer);
+                _crestAvailable = true;
+                _dynamicWaterSurfaceY = ResolveOceanSeaLevel(oceanKinematics);
             }
 
             UpdateCrestDiagnostics();
         }
 
-        private void UpdateCrestWaterHeight()
+        private void UpdateOceanWaterHeight()
         {
             _fallbackWaterSurfaceY = ResolveFallbackWaterSurfaceY();
 
@@ -2265,8 +2837,8 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            Crest.OceanRenderer oceanRenderer = ResolveCrestOceanRenderer(forceSceneSearch: !_crestAvailable);
-            if (oceanRenderer == null)
+            IHectonOceanKinematics oceanKinematics = ResolveOceanKinematics(forceSceneSearch: !_crestAvailable);
+            if (oceanKinematics == null || !oceanKinematics.IsAvailable)
             {
                 _crestAvailable = false;
                 _crestSamplingSucceeded = false;
@@ -2282,52 +2854,42 @@ namespace Hecton8.Gameplay
             float lateralSampleDistance = ResolveCrestLateralSampleDistance();
             float minSpatialLength = ResolveCrestBodySampleMinLength(forwardSampleDistance, lateralSampleDistance);
             UpdateCrestQueryPoints(forwardSampleDistance, lateralSampleDistance);
-            Crest.ICollProvider collisionProvider = oceanRenderer.CollisionProvider;
-            if (collisionProvider == null)
-            {
-                _crestAvailable = false;
-                _crestSamplingSucceeded = false;
-                ResetDynamicWaveSampling();
-                _dynamicWaterSurfaceY = ResolveCrestSeaLevel(oceanRenderer);
-                UpdateCrestFlowSampling(oceanRenderer, minSpatialLength);
-                UpdateCrestDiagnostics();
-                return;
-            }
 
             _crestAvailable = true;
-            int queryStatus = collisionProvider.Query(
-                _crestQueryOwnerHash,
-                minSpatialLength,
+            _crestSamplingSucceeded = oceanKinematics.GetWaterHeight(
                 _crestQueryPoints,
-                _crestQueryHeights,
-                _crestQueryNormals,
-                _crestQueryVelocities);
-            _crestSamplingSucceeded = collisionProvider.RetrieveSucceeded(queryStatus);
+                CrestBodySampleCount,
+                minSpatialLength,
+                _crestQueryHeights);
 
             if (_crestSamplingSucceeded)
             {
-                int displacementStatus = collisionProvider.Query(
-                    _crestDisplacementQueryOwnerHash,
-                    minSpatialLength,
+                bool waveQuerySucceeded = oceanKinematics.GetWaveNormal(
                     _crestQueryPoints,
-                    _crestQueryDisplacements,
-                    null,
-                    null);
-                if (!collisionProvider.RetrieveSucceeded(displacementStatus))
+                    CrestBodySampleCount,
+                    minSpatialLength,
+                    _crestQueryNormals,
+                    _crestQueryVelocities,
+                    _crestQueryDisplacements);
+                if (!waveQuerySucceeded)
                 {
                     for (int i = 0; i < CrestBodySampleCount; i++)
+                    {
+                        _crestQueryNormals[i] = Vector3.up;
+                        _crestQueryVelocities[i] = Vector3.zero;
                         _crestQueryDisplacements[i] = Vector3.zero;
+                    }
                 }
 
-                UpdateDynamicWaveSampling(oceanRenderer);
+                UpdateDynamicWaveSampling();
             }
             else
             {
                 ResetDynamicWaveSampling();
-                _dynamicWaterSurfaceY = ResolveCrestSeaLevel(oceanRenderer);
+                _dynamicWaterSurfaceY = ResolveOceanSeaLevel(oceanKinematics);
             }
 
-            UpdateCrestFlowSampling(oceanRenderer, minSpatialLength);
+            UpdateOceanFlowSampling(oceanKinematics, minSpatialLength);
             UpdateCrestDiagnostics();
         }
 
@@ -2337,33 +2899,28 @@ namespace Hecton8.Gameplay
             return fluidEngine != null ? fluidEngine.WaterLevel : waterSurfaceY;
         }
 
-        private float ResolveCrestSeaLevel(Crest.OceanRenderer oceanRenderer)
+        private float ResolveOceanSeaLevel(IHectonOceanKinematics oceanKinematics)
         {
-            if (oceanRenderer != null && oceanRenderer.Root != null)
-                return oceanRenderer.Root.position.y;
+            if (oceanKinematics != null)
+                return oceanKinematics.SeaLevel;
 
             return _fallbackWaterSurfaceY;
         }
 
-        private void UpdateCrestFlowSampling(Crest.OceanRenderer oceanRenderer, float minSpatialLength)
+        private void UpdateOceanFlowSampling(IHectonOceanKinematics oceanKinematics, float minSpatialLength)
         {
-            if (oceanRenderer == null)
+            if (oceanKinematics == null || !oceanKinematics.IsAvailable)
             {
                 _dynamicWaterFlowVelocity = Vector3.zero;
                 _crestFlowSamplingSucceeded = false;
                 return;
             }
 
-            Crest.IFlowProvider flowProvider = oceanRenderer.FlowProvider;
-            if (flowProvider == null)
-            {
-                _dynamicWaterFlowVelocity = Vector3.zero;
-                _crestFlowSamplingSucceeded = false;
-                return;
-            }
-
-            int flowStatus = flowProvider.Query(_crestFlowQueryOwnerHash, minSpatialLength, _crestQueryPoints, _crestQueryFlows);
-            _crestFlowSamplingSucceeded = flowProvider.RetrieveSucceeded(flowStatus);
+            _crestFlowSamplingSucceeded = oceanKinematics.GetSurfaceFlow(
+                _crestQueryPoints,
+                CrestBodySampleCount,
+                minSpatialLength,
+                _crestQueryFlows);
             if (_crestFlowSamplingSucceeded)
             {
                 Vector3 averageFlow = Vector3.zero;
@@ -2426,7 +2983,7 @@ namespace Hecton8.Gameplay
             _crestQueryPoints[CrestSampleRight] = center + bodyRight * lateralDistance;
         }
 
-        private void UpdateDynamicWaveSampling(Crest.OceanRenderer oceanRenderer)
+        private void UpdateDynamicWaveSampling()
         {
             Vector3 headPoint = _crestQueryPoints[CrestSampleHead];
             headPoint.y = _crestQueryHeights[CrestSampleHead];
@@ -2507,50 +3064,98 @@ namespace Hecton8.Gameplay
                 math.max(underwaterTurbulenceDisplacementMax - underwaterTurbulenceDisplacementStart, 0.01f));
             float velocityStormT = math.saturate(horizontalVelocityMagnitude / math.max(underwaterTurbulenceVelocityMax, 0.01f));
             _dynamicStormIntensity = math.max(heightStormT, math.max(displacementStormT, velocityStormT));
-
-            if (!_crestAvailable && oceanRenderer != null)
-                _dynamicWaterSurfaceY = ResolveCrestSeaLevel(oceanRenderer);
         }
 
-        private Crest.OceanRenderer ResolveCrestOceanRenderer(bool forceSceneSearch)
+        private IHectonOceanKinematics ResolveOceanKinematics(bool forceSceneSearch)
         {
-            if (crestOceanRenderer != null)
-                return crestOceanRenderer;
-
-            Crest.OceanRenderer instance = Crest.OceanRenderer.Instance;
-            if (instance != null)
+            if (oceanKinematicsProvider is IHectonOceanKinematics assignedProvider)
             {
-                crestOceanRenderer = instance;
-                return crestOceanRenderer;
+                _oceanKinematics = assignedProvider;
+                return _oceanKinematics;
             }
 
+            _oceanKinematics = null;
             if (!forceSceneSearch || !Application.isPlaying)
                 return null;
 
             float now = Time.unscaledTime;
-            if (now < _nextCrestResolveTime)
+            if (now < _nextOceanKinematicsResolveTime)
                 return null;
 
-            _nextCrestResolveTime = now + 1f;
+            _nextOceanKinematicsResolveTime = now + 1f;
 
             _sceneRootBuffer.Clear();
             gameObject.scene.GetRootGameObjects(_sceneRootBuffer);
             int rootCount = _sceneRootBuffer.Count;
+            IHectonOceanKinematics bestCandidate = null;
+            MonoBehaviour bestBehaviour = null;
+            int bestPriority = int.MinValue;
             for (int i = 0; i < rootCount; i++)
             {
                 GameObject rootObject = _sceneRootBuffer[i];
                 if (rootObject == null)
                     continue;
 
-                Crest.OceanRenderer candidate = rootObject.GetComponentInChildren<Crest.OceanRenderer>(true);
-                if (candidate == null)
-                    continue;
+                _sceneOceanProviderBuffer.Clear();
+                rootObject.GetComponentsInChildren(true, _sceneOceanProviderBuffer);
+                for (int componentIndex = 0; componentIndex < _sceneOceanProviderBuffer.Count; componentIndex++)
+                {
+                    MonoBehaviour candidateBehaviour = _sceneOceanProviderBuffer[componentIndex];
+                    if (!(candidateBehaviour is IHectonOceanKinematics candidate))
+                        continue;
 
-                crestOceanRenderer = candidate;
-                return crestOceanRenderer;
+                    int priority = ResolveOceanKinematicsProviderPriority(candidateBehaviour);
+                    if (priority <= bestPriority)
+                        continue;
+
+                    bestPriority = priority;
+                    bestBehaviour = candidateBehaviour;
+                    bestCandidate = candidate;
+                }
             }
 
-            return null;
+            if (bestCandidate == null)
+                return null;
+
+            oceanKinematicsProvider = bestBehaviour;
+            _oceanKinematics = bestCandidate;
+            return _oceanKinematics;
+        }
+
+        private static int ResolveOceanKinematicsProviderPriority(MonoBehaviour provider)
+        {
+            if (provider is Crest5KinematicsAdapter)
+                return 200;
+
+            if (provider is Crest4KinematicsAdapter)
+                return 100;
+
+            return 0;
+        }
+
+        private PlayerTransportOccupancyMode ResolveActiveTransportOccupancyMode()
+        {
+            ResolvePlayerTransportCoordinator();
+            return _playerTransportCoordinator != null
+                ? _playerTransportCoordinator.ResolveTransportOccupancyMode()
+                : PlayerTransportOccupancyMode.Handheld;
+        }
+
+        private bool IsExosuitTransportActive()
+        {
+            if (ResolveActiveTransportPreset() == null)
+                return false;
+
+            return ResolveActiveTransportOccupancyMode() == PlayerTransportOccupancyMode.Exosuit;
+        }
+
+        private void ResolveUnderwaterVisuals()
+        {
+            if (_resolvedUnderwaterVisuals)
+                return;
+
+            _underwaterVisuals = GetComponentInChildren<HectonUnderwaterVisuals>(true);
+            _resolvedUnderwaterVisuals = true;
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -2664,10 +3269,7 @@ namespace Hecton8.Gameplay
             if (_inputManager != null && _inputManager.IsPlayerInputEnabled)
             {
                 Vector2 lookDelta = _inputManager.LookInput;
-                _mouseXDelta = lookDelta.x;
-                _cameraYaw += lookDelta.x * mouseSensitivity;
-                _cameraPitch -= lookDelta.y * mouseSensitivity;
-                _cameraPitch = math.clamp(_cameraPitch, pitchMin, pitchMax);
+                ApplyLookInput(lookDelta);
 
                 Vector2 moveInput = _inputManager.MoveInput;
                 _inputH = moveInput.x;
@@ -2678,10 +3280,7 @@ namespace Hecton8.Gameplay
             else
             {
                 Vector2 lookDelta = ReadLookFallback();
-                _mouseXDelta = lookDelta.x;
-                _cameraYaw += lookDelta.x * mouseSensitivity;
-                _cameraPitch -= lookDelta.y * mouseSensitivity;
-                _cameraPitch = math.clamp(_cameraPitch, pitchMin, pitchMax);
+                ApplyLookInput(lookDelta);
 
                 Vector2 moveInput = ReadMoveFallback();
                 _inputH = moveInput.x;
@@ -2845,6 +3444,44 @@ namespace Hecton8.Gameplay
             return Mouse.current != null ? Mouse.current.delta.ReadValue() : Vector2.zero;
         }
 
+        private void ApplyLookInput(Vector2 lookDelta)
+        {
+            float squeeze01 = ResolveFatalPressureSqueeze01();
+            float lookSensitivityScale = math.lerp(1f, fatalPressureLookSensitivityFloor, squeeze01);
+            float scaledLookX = lookDelta.x * mouseSensitivity * lookSensitivityScale;
+            float scaledLookY = lookDelta.y * mouseSensitivity * lookSensitivityScale;
+
+            _mouseXDelta = lookDelta.x * lookSensitivityScale;
+            _cameraYaw += scaledLookX;
+            _cameraPitch -= scaledLookY;
+            ApplyFatalPressureLookClamp(squeeze01);
+        }
+
+        private float ResolveFatalPressureSqueeze01()
+        {
+            if (_fatalPressureSequenceTimer <= 0f)
+                return 0f;
+
+            return math.saturate(_fatalPressureSequenceIntensity);
+        }
+
+        private void ApplyFatalPressureLookClamp(float squeeze01)
+        {
+            if (squeeze01 <= 0f)
+            {
+                _cameraPitch = math.clamp(_cameraPitch, pitchMin, pitchMax);
+                return;
+            }
+
+            float yawFreedom = math.lerp(fatalPressureYawFreedomStart, fatalPressureYawFreedomEnd, squeeze01);
+            float pitchFreedom = math.lerp(fatalPressurePitchFreedomStart, fatalPressurePitchFreedomEnd, squeeze01);
+            _cameraYaw = math.clamp(_cameraYaw, _fatalPressureLookYawAnchor - yawFreedom, _fatalPressureLookYawAnchor + yawFreedom);
+            _cameraPitch = math.clamp(
+                _cameraPitch,
+                math.max(pitchMin, _fatalPressureLookPitchAnchor - pitchFreedom),
+                math.min(pitchMax, _fatalPressureLookPitchAnchor + pitchFreedom));
+        }
+
         private static bool IsSprintFallbackHeld()
         {
             return KeyHeld(KeyCode.LeftControl) ||
@@ -2880,23 +3517,26 @@ namespace Hecton8.Gameplay
             float sargassumPitchOffset = _sargassumMovementInfluence != null ? _sargassumMovementInfluence.CameraPitchOffset : 0f;
             float sargassumRollOffset = _sargassumMovementInfluence != null ? _sargassumMovementInfluence.CameraRollOffset : 0f;
             Vector3 sargassumLocalOffset = _sargassumMovementInfluence != null ? _sargassumMovementInfluence.CameraLocalOffset : Vector3.zero;
-            float finalPitch = _cameraPitch + _juiceOutput.pitchOffset + sargassumPitchOffset;
+            float finalPitch = _cameraPitch + _juiceOutput.pitchOffset + sargassumPitchOffset + _heavyTowCameraPitchOffset;
             finalPitch = math.clamp(finalPitch, pitchMin - 5f, pitchMax + 5f);
-            float finalRoll = _juiceOutput.rollOffset + sargassumRollOffset;
+            float finalRoll = _juiceOutput.rollOffset + sargassumRollOffset + _heavyTowCameraRollOffset;
 
             _cameraWorldRotation = Quaternion.Euler(finalPitch, _cameraYaw, finalRoll);
             playerCamera.rotation = _cameraWorldRotation;
 
             Vector3 finalPos;
-            finalPos.x = _cameraBaseLocalPos.x + _juiceOutput.localPositionOffset.x + sargassumLocalOffset.x;
-            finalPos.y = _cameraBaseLocalPos.y + _juiceOutput.localPositionOffset.y + sargassumLocalOffset.y;
-            finalPos.z = _cameraBaseLocalPos.z + _juiceOutput.localPositionOffset.z + sargassumLocalOffset.z;
+            finalPos.x = _cameraBaseLocalPos.x + _juiceOutput.localPositionOffset.x + sargassumLocalOffset.x + _heavyTowCameraLocalOffset.x;
+            finalPos.y = _cameraBaseLocalPos.y + _juiceOutput.localPositionOffset.y + sargassumLocalOffset.y + _heavyTowCameraLocalOffset.y;
+            finalPos.z = _cameraBaseLocalPos.z + _juiceOutput.localPositionOffset.z + sargassumLocalOffset.z + _heavyTowCameraLocalOffset.z;
             playerCamera.localPosition = finalPos;
 
             // FOV compression
             if (_cameraComponent != null)
             {
                 float targetFov = baseFov + _juiceOutput.fovOffset;
+                float pressureSqueeze01 = ResolveFatalPressureSqueeze01();
+                if (pressureSqueeze01 > 0f)
+                    targetFov = math.lerp(targetFov, fatalPressureMinFov, pressureSqueeze01);
                 _cameraComponent.fieldOfView = math.lerp(
                     _cameraComponent.fieldOfView, targetFov,
                     1f - math.exp(-8f * _juiceInput.deltaTime));
@@ -2968,7 +3608,7 @@ namespace Hecton8.Gameplay
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             //  5. CREST HEIGHT + WATER IMMERSION + DEPTH
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-            UpdateCrestWaterHeight();
+            UpdateOceanWaterHeight();
             _waterImmersionRatio = ComputeImmersionRatio();
             _currentDepth = ComputeDepth();
             UpdateBottomClearance();
@@ -3081,6 +3721,7 @@ namespace Hecton8.Gameplay
                 _fatalPressureSequenceTimer -= fixedDeltaTime;
                 float duration = math.max(fatalPressureSequenceDuration, 0.01f);
                 _fatalPressureSequenceIntensity = math.saturate(1f - (_fatalPressureSequenceTimer / duration));
+                ApplyFatalPressureVisorCorruption(ResolveFatalPressureCorruptionIntensity(_fatalPressureSequenceIntensity));
                 _fatalPressureSequenceGlitchPulseTimer -= fixedDeltaTime;
                 if (_fatalPressureSequenceGlitchPulseTimer <= 0f)
                 {
@@ -3098,9 +3739,11 @@ namespace Hecton8.Gameplay
 
                 if (_fatalPressureSequenceTimer <= 0f)
                 {
-                    _fatalPressureSequenceTimer = 0f;
-                    _fatalPressureSequenceGlitchPulseTimer = 0f;
-                    _fatalPressureSequenceIntensity = 0f;
+            _fatalPressureSequenceTimer = 0f;
+            _fatalPressureSequenceGlitchPulseTimer = 0f;
+            _fatalPressureSequenceIntensity = 0f;
+            _fatalPressureLookYawAnchor = _cameraYaw;
+            _fatalPressureLookPitchAnchor = _cameraPitch;
                     TriggerFatalPressureImplosion();
                 }
             }
@@ -3122,15 +3765,16 @@ namespace Hecton8.Gameplay
             bool hasShoreGroundSupport = hasImmediateShoreFooting || (_shoreGroundGraceTimer > 0f && isShallowEnoughForShore);
             bool groundedOnDryLand = hasDryGroundSupport && isDryLand;
             bool groundedOnShore = hasShoreGroundSupport && isShallowEnoughForShore;
+            bool exosuitActive = IsExosuitTransportActive();
             RefreshSurfaceBreachLock(physicsImmersion);
             UpdateSurfaceDiveCommitTimer(fixedDeltaTime, activeTransportPreset);
 
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             //  7A. GRADUATED GRAVITY
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-            if (groundedOnShore)
+            if (exosuitActive || groundedOnShore)
             {
-                _gravityScale = 1f;
+                _gravityScale = exosuitActive ? exosuitNegativeBuoyancyScale : 1f;
             }
             else
             {
@@ -3149,7 +3793,7 @@ namespace Hecton8.Gameplay
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             //  7B. GROUND SNAP SCALE
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-            if (groundedOnShore)
+            if ((exosuitActive && _isGrounded) || groundedOnShore)
             {
                 _snapScale = 1f;
             }
@@ -3185,11 +3829,12 @@ namespace Hecton8.Gameplay
                 UpdateModeDiagnostics();
             }
 
-            _isSurfaceSwimming = !_isWalking && ResolveSurfaceSwimState(physicsImmersion, activeTransportPreset);
+            _isSurfaceSwimming = !exosuitActive && !_isWalking && ResolveSurfaceSwimState(physicsImmersion, activeTransportPreset);
             _currentLocomotionMode = ResolveLocomotionMode(physicsImmersion);
             UpdateSurfaceLockState(fixedDeltaTime);
             UpdateWaterPresentationPose(fixedDeltaTime);
             UpdateDynamicCollisionProfile(fixedDeltaTime);
+            UpdateHeavyTowRuntimeResponse(fixedDeltaTime);
             UpdateWetLensSignal(fixedDeltaTime);
             UpdateHeadSurfaceRecovery(fixedDeltaTime);
             UpdateTransportCriticalBailout();
@@ -3207,7 +3852,7 @@ namespace Hecton8.Gameplay
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             if (_jumpRequested)
             {
-                if ((groundedOnDryLand || groundedOnShore) && _jumpBufferTimer > 0f)
+                if (!exosuitActive && (groundedOnDryLand || groundedOnShore) && _jumpBufferTimer > 0f)
                 {
                     if (TryApplyJumpImpulse(suit.jumpImpulse))
                     {
@@ -3227,9 +3872,14 @@ namespace Hecton8.Gameplay
                 bool hasLandInput = _inputH != 0f || _inputV != 0f;
                 ApplyEnvironmentalDrag(1f);
                 AdvanceExternalEnvironmentalDrag(fixedDeltaTime);
+                AdvanceParasiteLatchInfluence(fixedDeltaTime);
                 _sargassumFieldDensity01 = 0f;
                 UpdateSargassumMatBuoyancyBlend(fixedDeltaTime);
                 WalkPhysics(suit, fixedDeltaTime);
+                ApplyCuttingTensionPhysics(fixedDeltaTime);
+                ApplyExosuitJumpJets(fixedDeltaTime);
+                if (!exosuitActive)
+                    CoolExosuitJumpJets(fixedDeltaTime);
 
                 if (hasLandInput)
                     TryApplyStepAssist(groundedOnDryLand, groundedOnShore);
@@ -3239,11 +3889,14 @@ namespace Hecton8.Gameplay
             }
             else
             {
+                CoolExosuitJumpJets(fixedDeltaTime);
+                AdvanceCuttingTensionRequest(fixedDeltaTime);
                 _currentTimer += fixedDeltaTime;
                 if (_currentTimer > 100000f) _currentTimer -= 100000f;
                 AdvanceSargassumInfluence(fixedDeltaTime, activeTransportPreset);
                 AdvanceAbyssalThermalInfluence(fixedDeltaTime, activeTransportPreset);
                 AdvanceExternalEnvironmentalDrag(fixedDeltaTime);
+                AdvanceParasiteLatchInfluence(fixedDeltaTime);
                 SwimPhysics(suit, fixedDeltaTime, activeTransportPreset);
 
                 if (_surfaceLockBlend > 0.001f)
@@ -3255,6 +3908,7 @@ namespace Hecton8.Gameplay
                 ApplyUnderwaterTurbulence(fixedDeltaTime, activeTransportPreset);
                 ApplyAbyssalCurrents(fixedDeltaTime, activeTransportPreset);
                 ApplyThermalUpdrafts(fixedDeltaTime, activeTransportPreset);
+                ApplyParasiteLatchForces(fixedDeltaTime);
                 UpdateHullStress(fixedDeltaTime, activeTransportPreset);
             }
 
@@ -3360,6 +4014,9 @@ namespace Hecton8.Gameplay
         {
             if (IsInDryInterior())
                 return PlayerLocomotionMode.DryInteriorWalk;
+
+            if (IsExosuitTransportActive())
+                return PlayerLocomotionMode.ExosuitLocomotion;
 
             if (_isWalking)
             {
@@ -3497,12 +4154,29 @@ namespace Hecton8.Gameplay
                 targetTuck = math.max(downhillSlopeT, descentPoseT) * immersionDepthT * _surfaceLockBlend * _shoreBuoyancyBlend;
             }
 
+            if (_physicalTraumaCollisionHoldTimer > 0f)
+            {
+                _physicalTraumaCollisionHoldTimer -= fixedDeltaTime;
+                if (_physicalTraumaCollisionHoldTimer < 0f)
+                    _physicalTraumaCollisionHoldTimer = 0f;
+            }
+
             float blendT = 1f - math.exp(-math.max(dynamicCollisionDeformationBlendSharpness, 0.01f) * fixedDeltaTime);
             _dynamicCollisionTuck01 = math.lerp(_dynamicCollisionTuck01, targetTuck, blendT);
 
-            float collisionHeightScale = _requestedTransportCollisionHeightScale * math.lerp(1f, dynamicCollisionMinHeightScale, _dynamicCollisionTuck01);
-            float collisionRadiusScale = _requestedTransportCollisionRadiusScale * math.lerp(1f, dynamicCollisionMaxRadiusScale, _dynamicCollisionTuck01);
-            float collisionCenterYOffset = _requestedTransportCollisionCenterYOffset + math.lerp(0f, dynamicCollisionCenterYOffset, _dynamicCollisionTuck01);
+            float traumaCollisionTarget = _physicalTraumaCollisionHoldTimer > 0f ? _physicalTraumaCollisionWeight : 0f;
+            float traumaBlendT = 1f - math.exp(-math.max(physicalTraumaCollisionRecoverySharpness, 0.01f) * fixedDeltaTime);
+            _physicalTraumaCollisionWeight = math.lerp(_physicalTraumaCollisionWeight, traumaCollisionTarget, traumaBlendT);
+
+            float waveCollisionHeightScale = _requestedTransportCollisionHeightScale * math.lerp(1f, dynamicCollisionMinHeightScale, _dynamicCollisionTuck01);
+            float waveCollisionRadiusScale = _requestedTransportCollisionRadiusScale * math.lerp(1f, dynamicCollisionMaxRadiusScale, _dynamicCollisionTuck01);
+            float waveCollisionCenterYOffset = _requestedTransportCollisionCenterYOffset + math.lerp(0f, dynamicCollisionCenterYOffset, _dynamicCollisionTuck01);
+            float traumaCollisionHeightScale = math.lerp(1f, physicalTraumaCollisionHeightScale, _physicalTraumaCollisionWeight);
+            float traumaCollisionRadiusScale = math.lerp(1f, physicalTraumaCollisionRadiusScale, _physicalTraumaCollisionWeight);
+            float traumaCollisionCenterYOffset = math.lerp(0f, physicalTraumaCollisionCenterYOffset, _physicalTraumaCollisionWeight);
+            float collisionHeightScale = waveCollisionHeightScale * traumaCollisionHeightScale;
+            float collisionRadiusScale = waveCollisionRadiusScale * traumaCollisionRadiusScale;
+            float collisionCenterYOffset = waveCollisionCenterYOffset + traumaCollisionCenterYOffset;
             ApplyResolvedCollisionProfile(collisionRadiusScale, collisionHeightScale, collisionCenterYOffset);
         }
 
@@ -3586,6 +4260,8 @@ namespace Hecton8.Gameplay
 
         private void ApplyAbyssalCurrents(float fixedDeltaTime, PlayerTransportPreset transportPreset)
         {
+            AdvanceAbyssalTransportTurbulenceSteering(fixedDeltaTime);
+
             if (_abyssalDowndraftCooldownTimer > 0f)
             {
                 _abyssalDowndraftCooldownTimer -= fixedDeltaTime;
@@ -3659,6 +4335,13 @@ namespace Hecton8.Gameplay
 
         private void ApplyThermalUpdrafts(float fixedDeltaTime, PlayerTransportPreset transportPreset)
         {
+            if (_thermalUpdraftTraumaCooldownTimer > 0f)
+            {
+                _thermalUpdraftTraumaCooldownTimer -= fixedDeltaTime;
+                if (_thermalUpdraftTraumaCooldownTimer < 0f)
+                    _thermalUpdraftTraumaCooldownTimer = 0f;
+            }
+
             Vector3 totalVelocityChange = Vector3.zero;
             float strongestIntensity = 0f;
 
@@ -3689,7 +4372,14 @@ namespace Hecton8.Gameplay
             _thermalUpdraftIntensity = strongestIntensity;
 
             if (totalVelocityChange.sqrMagnitude > 0.0001f)
+            {
                 _rb.AddForce(totalVelocityChange, ForceMode.VelocityChange);
+                if (strongestIntensity >= thermalUpdraftTraumaThreshold && _thermalUpdraftTraumaCooldownTimer <= 0f)
+                {
+                    ApplyPhysicalTrauma(totalVelocityChange * _rb.mass, strongestIntensity);
+                    _thermalUpdraftTraumaCooldownTimer = thermalUpdraftTraumaCooldown;
+                }
+            }
 
             _externalThermalUpdraftVelocityChange = Vector3.zero;
             _externalThermalUpdraftRequestedThisStep = false;
@@ -3697,6 +4387,13 @@ namespace Hecton8.Gameplay
 
         private void UpdateHullStress(float fixedDeltaTime, PlayerTransportPreset transportPreset)
         {
+            if (_hullStressHudCorruptionRefreshTimer > 0f)
+            {
+                _hullStressHudCorruptionRefreshTimer -= fixedDeltaTime;
+                if (_hullStressHudCorruptionRefreshTimer < 0f)
+                    _hullStressHudCorruptionRefreshTimer = 0f;
+            }
+
             if (_hullStressGroanCooldownTimer > 0f)
             {
                 _hullStressGroanCooldownTimer -= fixedDeltaTime;
@@ -3736,10 +4433,24 @@ namespace Hecton8.Gameplay
             }
 
             TryPlayCrushDepthGroan();
+            RefreshFatalPressureHudCorruptionIfNeeded();
 
             if (_hullStressIntensity < crushDepthImplosionThreshold || _wipeoutTimer > 0f || _fatalPressureSequenceTimer > 0f)
                 return;
             StartFatalPressureSequence();
+        }
+
+        private void RefreshFatalPressureHudCorruptionIfNeeded()
+        {
+            if (_hullStressIntensity <= 0.9f || _hullStressHudCorruptionRefreshTimer > 0f)
+                return;
+
+            LocalizationManager localization = LocalizationManager.Instance;
+            if (localization == null)
+                return;
+
+            localization.RefreshHullStressHudCorruptionVisuals();
+            _hullStressHudCorruptionRefreshTimer = 0.5f;
         }
 
         private void TryPlayCrushDepthGroan()
@@ -3886,18 +4597,21 @@ namespace Hecton8.Gameplay
             IPlayerTransportLifecycleOwner transportLifecycleOwner,
             Vector3 requestedBailoutImpulse)
         {
+            Vector3 bailoutImpulse = requestedBailoutImpulse.sqrMagnitude > 0.0001f
+                ? requestedBailoutImpulse
+                : ResolveTransportBailoutImpulse(hitNormal, severity);
+
             ResolvePlayerToolManager();
             if (_playerToolManager != null &&
                 _playerToolManager.CurrentTool != null &&
                 transportLifecycleOwner != null &&
                 ReferenceEquals(_playerToolManager.CurrentTool, transportLifecycleOwner))
             {
+                if (transportLifecycleOwner is MantaScooter mantaScooter)
+                    mantaScooter.TrySpawnEmergencyBailoutWreck(_rb.linearVelocity, bailoutImpulse, severity);
+
                 _playerToolManager.Holster();
             }
-
-            Vector3 bailoutImpulse = requestedBailoutImpulse.sqrMagnitude > 0.0001f
-                ? requestedBailoutImpulse
-                : ResolveTransportBailoutImpulse(hitNormal, severity);
 
             if (transportLifecycleOwner is MountablePlayerTransport mountableTransport)
                 mountableTransport.TriggerEmergencyBailoutDrift(_rb.linearVelocity, severity);
@@ -3949,6 +4663,7 @@ namespace Hecton8.Gameplay
                 return;
 
             _rb.AddForce(velocityChange, ForceMode.VelocityChange);
+            ApplyAbyssalTransportTurbulenceTorque(joltDirection, boundaryT, depthT, transportPreset);
             if (_juiceProcessor != null)
             {
                 _juiceProcessor.RegisterCollisionImpulse(
@@ -3963,6 +4678,50 @@ namespace Hecton8.Gameplay
             }
 
             _abyssalFlowNoiseBoundaryCooldownTimer = abyssalFlowNoiseBoundaryCooldown;
+        }
+
+        private void AdvanceAbyssalTransportTurbulenceSteering(float fixedDeltaTime)
+        {
+            float recoverySharpness = math.max(abyssalTransportTurbulenceRecoverySharpness, 0.01f);
+            float blendT = 1f - math.exp(-recoverySharpness * fixedDeltaTime);
+            _abyssalTransportTurbulencePitchOffset = math.lerp(_abyssalTransportTurbulencePitchOffset, 0f, blendT);
+            _abyssalTransportTurbulenceYawOffset = math.lerp(_abyssalTransportTurbulenceYawOffset, 0f, blendT);
+        }
+
+        private void ApplyAbyssalTransportTurbulenceTorque(
+            Vector3 joltDirection,
+            float boundaryT,
+            float depthT,
+            PlayerTransportPreset transportPreset)
+        {
+            if (ResolveActiveTransportPropulsionReference(transportPreset) <= 0.01f)
+                return;
+
+            float transportInfluence = ResolveTransportAmbientCurrentInfluenceScale(transportPreset);
+            float turbulenceT = boundaryT * depthT * transportInfluence;
+            if (turbulenceT <= 0.0001f)
+                return;
+
+            Vector3 torqueAxis = Vector3.Cross(_cachedTransform.forward, joltDirection);
+            if (torqueAxis.sqrMagnitude <= 0.0001f)
+                torqueAxis = Vector3.Cross(_cachedTransform.up, joltDirection);
+            if (torqueAxis.sqrMagnitude > 0.0001f)
+            {
+                torqueAxis.Normalize();
+                _rb.AddTorque(
+                    torqueAxis * abyssalTransportTurbulenceTorqueVelocityChange * turbulenceT,
+                    ForceMode.VelocityChange);
+            }
+
+            Vector3 localJolt = _cachedTransform.InverseTransformDirection(joltDirection);
+            _abyssalTransportTurbulencePitchOffset = math.clamp(
+                _abyssalTransportTurbulencePitchOffset - localJolt.y * abyssalTransportTurbulencePitchDegrees * turbulenceT,
+                -abyssalTransportTurbulencePitchDegrees,
+                abyssalTransportTurbulencePitchDegrees);
+            _abyssalTransportTurbulenceYawOffset = math.clamp(
+                _abyssalTransportTurbulenceYawOffset + localJolt.x * abyssalTransportTurbulenceYawDegrees * turbulenceT,
+                -abyssalTransportTurbulenceYawDegrees,
+                abyssalTransportTurbulenceYawDegrees);
         }
 
         private Vector3 ResolveAbyssalDowndraftDirection(Vector3 noisyFlow)
@@ -4032,8 +4791,54 @@ namespace Hecton8.Gameplay
             _fatalPressureSequenceTimer = math.max(0.01f, fatalPressureSequenceDuration);
             _fatalPressureSequenceGlitchPulseTimer = 0f;
             _fatalPressureSequenceIntensity = 0.01f;
+            _fatalPressureLookYawAnchor = _cameraYaw;
+            _fatalPressureLookPitchAnchor = _cameraPitch;
             _jumpRequested = false;
             _jumpBufferTimer = 0f;
+
+            float corruptionIntensity = ResolveFatalPressureCorruptionIntensity(_fatalPressureSequenceIntensity);
+            ApplyFatalPressureVisorCorruption(corruptionIntensity);
+            PushFatalPressureCorruptionWarning(corruptionIntensity);
+        }
+
+        private float ResolveFatalPressureCorruptionIntensity(float sequenceIntensity)
+        {
+            LocalizationManager localization = LocalizationManager.Instance;
+            float localizationIntensity = localization != null
+                ? localization.GetHullStressCorruptionIntensity()
+                : 0f;
+            return math.saturate(math.max(localizationIntensity, sequenceIntensity));
+        }
+
+        private void ApplyFatalPressureVisorCorruption(float corruptionIntensity)
+        {
+            float clampedIntensity = math.saturate(corruptionIntensity);
+            if (clampedIntensity <= 0f)
+                return;
+
+            VisorHUDController.CopyActiveControllersTo(s_fatalPressureGlitchControllers);
+            float holdDuration = math.lerp(0.08f, fatalPressureGlitchDurationMax, clampedIntensity);
+            float recoverySpeed = math.lerp(6f, 1.4f, clampedIntensity);
+            for (int i = 0; i < s_fatalPressureGlitchControllers.Count; i++)
+            {
+                VisorHUDController controller = s_fatalPressureGlitchControllers[i];
+                if (controller != null)
+                    controller.TriggerEnvironmentalDistortion(clampedIntensity, holdDuration, recoverySpeed);
+            }
+
+            s_fatalPressureGlitchControllers.Clear();
+        }
+
+        private void PushFatalPressureCorruptionWarning(float corruptionIntensity)
+        {
+            LocalizationManager localization = LocalizationManager.Instance;
+            string message = localization != null
+                ? localization.GetOrFallback(localization.CurrentLanguage, LocalizationKeys.HUD_STATUS_PRESSURE_LIMIT_EXCEEDED, "PRESSURE LIMIT EXCEEDED")
+                : "PRESSURE LIMIT EXCEEDED";
+            if (localization != null && corruptionIntensity > 0f)
+                message = localization.CorruptExpandedText(message, corruptionIntensity);
+
+            NotificationEvents.PushCritical(message);
         }
 
         private void TriggerFatalPressureImplosion()
@@ -4441,7 +5246,7 @@ namespace Hecton8.Gameplay
 
             if (_isWalking)
             {
-                _currentLinearDamping = currentSuitData.walkDrag;
+                _currentLinearDamping = IsInDryInterior() ? 0f : currentSuitData.walkDrag;
                 _rb.linearDamping = _currentLinearDamping;
             }
             else
@@ -4453,7 +5258,7 @@ namespace Hecton8.Gameplay
 
         private void ApplyModePhysics(SuitData suit)
         {
-            if (!_isWalking)
+            if (!_isWalking || IsInDryInterior())
             {
                 _rb.linearDamping = 0f;
                 _currentLinearDamping = 0f;
@@ -4465,11 +5270,18 @@ namespace Hecton8.Gameplay
             float targetDamping;
             if (_isWalking)
             {
-                float wadeFactor = 1f + _waterImmersionRatio * suit.wadeSlowdownFactor;
-                targetDamping = suit.walkDrag * wadeFactor;
+                if (IsInDryInterior())
+                {
+                    targetDamping = 0f;
+                }
+                else
+                {
+                    float wadeFactor = 1f + _waterImmersionRatio * suit.wadeSlowdownFactor;
+                    targetDamping = suit.walkDrag * wadeFactor;
 
-                if (IsDryLandAirborne())
-                    targetDamping *= dryAirDampingMultiplier;
+                    if (IsDryLandAirborne())
+                        targetDamping *= dryAirDampingMultiplier;
+                }
             }
             else
             {
@@ -4519,6 +5331,11 @@ namespace Hecton8.Gameplay
         {
             Vector3 rbPos = _rb.position;
             float bodyBottomY = GetBodyBottomY();
+            bool exosuitActive = IsExosuitTransportActive();
+            bool dryInteriorActive = IsInDryInterior();
+            float requiredGroundNormalY = exosuitActive
+                ? math.min(_minGroundNormalY, exosuitMinGroundNormalY)
+                : _minGroundNormalY;
             _groundCheckOrigin.x = rbPos.x;
             _groundCheckOrigin.y = bodyBottomY + groundCheckRadius + GroundCheckSkin;
             _groundCheckOrigin.z = rbPos.z;
@@ -4534,7 +5351,7 @@ namespace Hecton8.Gameplay
 
             _isGrounded = false;
             float bestDistance = float.MaxValue;
-            float bestNormalY = _minGroundNormalY;
+            float bestNormalY = requiredGroundNormalY;
 
             for (int i = 0; i < hitCount; i++)
             {
@@ -4547,7 +5364,7 @@ namespace Hecton8.Gameplay
                     continue;
 
                 float normalY = hit.normal.y;
-                if (normalY < _minGroundNormalY)
+                if (normalY < requiredGroundNormalY)
                     continue;
 
                 if (!_isGrounded || hit.distance < bestDistance || (math.abs(hit.distance - bestDistance) <= 0.001f && normalY > bestNormalY))
@@ -4559,10 +5376,46 @@ namespace Hecton8.Gameplay
                 }
             }
 
+            Vector3 resolvedGroundNormal = _groundHit.normal;
+            _exosuitFootingValid = false;
+            _exosuitFootingNormal = Vector3.up;
+            if (exosuitActive &&
+                TryResolveExosuitFootSlope(rbPos, bodyBottomY, requiredGroundNormalY, out RaycastHit exosuitSupportHit, out Vector3 exosuitSupportNormal))
+            {
+                resolvedGroundNormal = exosuitSupportNormal;
+                _exosuitFootingNormal = exosuitSupportNormal;
+                _exosuitFootingValid = true;
+
+                if (!_isGrounded ||
+                    exosuitSupportHit.distance < bestDistance ||
+                    (math.abs(exosuitSupportHit.distance - bestDistance) <= 0.001f && exosuitSupportNormal.y > bestNormalY))
+                {
+                    _groundHit = exosuitSupportHit;
+                    bestDistance = exosuitSupportHit.distance;
+                    bestNormalY = exosuitSupportNormal.y;
+                    _isGrounded = true;
+                }
+            }
+            else if (dryInteriorActive &&
+                TryResolveDryInteriorFootSlope(rbPos, bodyBottomY, requiredGroundNormalY, out RaycastHit dryInteriorSupportHit, out Vector3 dryInteriorSupportNormal))
+            {
+                resolvedGroundNormal = dryInteriorSupportNormal;
+                if (!_isGrounded ||
+                    dryInteriorSupportHit.distance < bestDistance ||
+                    (math.abs(dryInteriorSupportHit.distance - bestDistance) <= 0.001f && dryInteriorSupportNormal.y > bestNormalY))
+                {
+                    _groundHit = dryInteriorSupportHit;
+                    bestDistance = dryInteriorSupportHit.distance;
+                    bestNormalY = dryInteriorSupportNormal.y;
+                    _isGrounded = true;
+                }
+            }
+
             if (_isGrounded)
             {
-                float normalT = 1f - math.exp(-15f * fixedDeltaTime);
-                _smoothedGroundNormal = Vector3.Slerp(_smoothedGroundNormal, _groundHit.normal, normalT);
+                float blendSharpness = exosuitActive && _exosuitFootingValid ? exosuitFootSlopeBlendSharpness : 15f;
+                float normalT = 1f - math.exp(-math.max(0.01f, blendSharpness) * fixedDeltaTime);
+                _smoothedGroundNormal = Vector3.Slerp(_smoothedGroundNormal, resolvedGroundNormal, normalT);
 
                 float sqrMag = _smoothedGroundNormal.sqrMagnitude;
                 if (sqrMag > 0.001f && math.abs(sqrMag - 1f) > 0.001f)
@@ -4587,6 +5440,9 @@ namespace Hecton8.Gameplay
             if (scale <= 0.001f) return;
 
             float mass = _rb.mass;
+            bool exosuitActive = _currentLocomotionMode == PlayerLocomotionMode.ExosuitLocomotion;
+            float slopeStickMultiplier = exosuitActive ? exosuitSlopeStickForceMultiplier : 1f;
+            float snapForceMultiplier = exosuitActive ? exosuitGroundSnapForceMultiplier : 1f;
             float gravityAlongNormal = Vector3.Dot(_cachedGravity, _smoothedGroundNormal);
             _forceVector.x = (_smoothedGroundNormal.x * gravityAlongNormal) - _cachedGravity.x;
             _forceVector.y = (_smoothedGroundNormal.y * gravityAlongNormal) - _cachedGravity.y;
@@ -4595,7 +5451,7 @@ namespace Hecton8.Gameplay
             float tangentSqr = _forceVector.x * _forceVector.x + _forceVector.y * _forceVector.y + _forceVector.z * _forceVector.z;
             if (tangentSqr > 0.000001f)
             {
-                float slopeHoldForce = mass * _gravityScale * scale;
+                float slopeHoldForce = mass * _gravityScale * scale * slopeStickMultiplier;
                 _forceVector.x *= slopeHoldForce;
                 _forceVector.y *= slopeHoldForce;
                 _forceVector.z *= slopeHoldForce;
@@ -4605,7 +5461,7 @@ namespace Hecton8.Gameplay
             float gravityIntoGround = Vector3.Dot(-_cachedGravity, _smoothedGroundNormal);
             if (gravityIntoGround > 0f)
             {
-                float supportForce = gravityIntoGround * mass * slopeStabilityFactor * scale;
+                float supportForce = gravityIntoGround * mass * slopeStabilityFactor * scale * slopeStickMultiplier;
                 _forceVector.x = _smoothedGroundNormal.x * supportForce;
                 _forceVector.y = _smoothedGroundNormal.y * supportForce;
                 _forceVector.z = _smoothedGroundNormal.z * supportForce;
@@ -4614,7 +5470,7 @@ namespace Hecton8.Gameplay
 
             if (groundSnapForce > 0f)
             {
-                float snapForce = groundSnapForce * mass * scale;
+                float snapForce = groundSnapForce * mass * scale * snapForceMultiplier;
                 _forceVector.x = -_smoothedGroundNormal.x * snapForce;
                 _forceVector.y = -_smoothedGroundNormal.y * snapForce;
                 _forceVector.z = -_smoothedGroundNormal.z * snapForce;
@@ -4830,6 +5686,267 @@ namespace Hecton8.Gameplay
         {
             _jumpRequested = false;
             _jumpBufferTimer = 0f;
+        }
+
+        private void ApplyExosuitJumpJets(float fixedDeltaTime)
+        {
+            if (!IsExosuitTransportActive())
+                return;
+
+            if (_rb == null || fixedDeltaTime <= 0f)
+                return;
+
+            float jumpIntent = ResolveExosuitJumpJetIntent();
+            if (jumpIntent <= 0.0001f)
+            {
+                CoolExosuitJumpJets(fixedDeltaTime);
+                return;
+            }
+
+            if (!HasJumpHeadClearance())
+            {
+                ConsumeJumpRequest();
+                CoolExosuitJumpJets(fixedDeltaTime);
+                return;
+            }
+
+            if (_survivalSystem != null && _survivalSystem.Energy <= 0.01f)
+            {
+                ConsumeJumpRequest();
+                CoolExosuitJumpJets(fixedDeltaTime);
+                return;
+            }
+
+            if (_exosuitJumpJetsOverheated)
+            {
+                CoolExosuitJumpJets(fixedDeltaTime);
+                ConsumeJumpRequest();
+                return;
+            }
+
+            if (_isGrounded && _jumpRequested && exosuitJumpJetLaunchImpulse > 0f)
+            {
+                _rb.AddForce(Vector3.up * exosuitJumpJetLaunchImpulse, ForceMode.VelocityChange);
+                _isGrounded = false;
+                _wasGroundedLastFrame = false;
+                _dryGroundGraceTimer = 0f;
+                _shoreGroundGraceTimer = 0f;
+            }
+
+            float thrustForce = exosuitJumpJetForce * jumpIntent;
+            if (thrustForce > 0.001f)
+            {
+                _rb.AddForce(Vector3.up * thrustForce, ForceMode.Force);
+
+                float energyDrainPerSecond = ResolveExosuitJumpJetEnergyDrainPerSecond();
+                if (_survivalSystem != null && energyDrainPerSecond > 0f)
+                    _survivalSystem.DrainEnergy(energyDrainPerSecond * jumpIntent * fixedDeltaTime);
+
+                if (exosuitJumpJetHeatPerSecond > 0f)
+                {
+                    _exosuitJumpJetHeat01 = math.saturate(_exosuitJumpJetHeat01 + exosuitJumpJetHeatPerSecond * jumpIntent * fixedDeltaTime);
+                    if (_exosuitJumpJetHeat01 >= 0.999f)
+                        _exosuitJumpJetsOverheated = true;
+                }
+            }
+
+            if (_subscribedInputManager == null || !_subscribedInputManager.IsJumping)
+                ConsumeJumpRequest();
+        }
+
+        private void CoolExosuitJumpJets(float fixedDeltaTime)
+        {
+            if (_exosuitJumpJetHeat01 <= 0f)
+                return;
+
+            _exosuitJumpJetHeat01 = math.max(0f, _exosuitJumpJetHeat01 - exosuitJumpJetCoolRate * fixedDeltaTime);
+            if (_exosuitJumpJetsOverheated && _exosuitJumpJetHeat01 <= exosuitJumpJetRecoverThreshold)
+                _exosuitJumpJetsOverheated = false;
+        }
+
+        private float ResolveExosuitJumpJetEnergyDrainPerSecond()
+        {
+            PlayerTransportPreset activeTransportPreset = ResolveActiveTransportPreset();
+            if (activeTransportPreset != null && activeTransportPreset.EnergyDrainPerSecond > 0f)
+            {
+                return activeTransportPreset.EnergyDrainPerSecond * math.max(1f, exosuitJumpJetScooterDrainMultiplier);
+            }
+
+            return math.max(0f, exosuitJumpJetEnergyDrainPerSecond);
+        }
+
+        private float ResolveExosuitJumpJetIntent()
+        {
+            if (_subscribedInputManager != null && _subscribedInputManager.IsJumping)
+                return 1f;
+
+            return _jumpRequested ? 1f : 0f;
+        }
+
+        private bool TryResolveDryInteriorFootSlope(
+            Vector3 rbPosition,
+            float bodyBottomY,
+            float minimumNormalY,
+            out RaycastHit supportHit,
+            out Vector3 supportNormal)
+        {
+            supportHit = default;
+            supportNormal = Vector3.up;
+
+            float lateralOffset = math.max(0.01f, dryInteriorFootProbeLateralOffset);
+            float probeDistance = math.max(0.05f, dryInteriorFootProbeDistance);
+            float probeOriginY = bodyBottomY + math.max(0.01f, dryInteriorFootProbeHeight);
+            float yawRad = _bodyYaw * DEG_TO_RAD;
+            Vector3 bodyForward = new Vector3(math.sin(yawRad), 0f, math.cos(yawRad));
+            Vector3 bodyRight = new Vector3(bodyForward.z, 0f, -bodyForward.x);
+            Vector3 center = new Vector3(rbPosition.x, probeOriginY, rbPosition.z);
+            Vector3 forwardOffset = bodyForward * dryInteriorFootProbeForwardOffset;
+
+            bool leftValid = TrySampleDryInteriorFootSupport(
+                center + forwardOffset - bodyRight * lateralOffset,
+                probeDistance,
+                minimumNormalY,
+                out RaycastHit leftHit);
+            bool rightValid = TrySampleDryInteriorFootSupport(
+                center + forwardOffset + bodyRight * lateralOffset,
+                probeDistance,
+                minimumNormalY,
+                out RaycastHit rightHit);
+            if (!leftValid && !rightValid)
+                return false;
+
+            if (leftValid && rightValid)
+            {
+                Vector3 combinedNormal = leftHit.normal + rightHit.normal;
+                supportNormal = combinedNormal.sqrMagnitude > 0.0001f
+                    ? combinedNormal.normalized
+                    : Vector3.up;
+                supportHit = leftHit.distance <= rightHit.distance ? leftHit : rightHit;
+                return true;
+            }
+
+            supportHit = leftValid ? leftHit : rightHit;
+            supportNormal = supportHit.normal;
+            return true;
+        }
+
+        private bool TrySampleDryInteriorFootSupport(
+            Vector3 origin,
+            float distance,
+            float minimumNormalY,
+            out RaycastHit supportHit)
+        {
+            supportHit = default;
+            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
+                origin,
+                Vector3.down,
+                _groundHitBuffer,
+                distance,
+                groundLayers,
+                QueryTriggerInteraction.Ignore);
+
+            float bestDistance = float.MaxValue;
+            for (int i = 0; i < hitCount; i++)
+            {
+                RaycastHit hit = _groundHitBuffer[i];
+                Collider hitCollider = hit.collider;
+                if (hitCollider == null || hitCollider.attachedRigidbody == _rb)
+                    continue;
+
+                if (hit.normal.y < minimumNormalY)
+                    continue;
+
+                if (hit.distance < bestDistance)
+                {
+                    bestDistance = hit.distance;
+                    supportHit = hit;
+                }
+            }
+
+            return bestDistance < float.MaxValue;
+        }
+
+        private bool TryResolveExosuitFootSlope(
+            Vector3 rbPosition,
+            float bodyBottomY,
+            float minimumNormalY,
+            out RaycastHit supportHit,
+            out Vector3 supportNormal)
+        {
+            supportHit = default;
+            supportNormal = Vector3.up;
+
+            float lateralOffset = math.max(0.01f, exosuitFootProbeLateralOffset);
+            float probeDistance = math.max(0.05f, exosuitFootProbeDistance);
+            float probeOriginY = bodyBottomY + math.max(0.01f, exosuitFootProbeHeight);
+            float yawRad = _bodyYaw * DEG_TO_RAD;
+            Vector3 bodyForward = new Vector3(math.sin(yawRad), 0f, math.cos(yawRad));
+            Vector3 bodyRight = new Vector3(bodyForward.z, 0f, -bodyForward.x);
+            Vector3 center = new Vector3(rbPosition.x, probeOriginY, rbPosition.z);
+            Vector3 forwardOffset = bodyForward * exosuitFootProbeForwardOffset;
+
+            bool leftValid = TrySampleExosuitFootSupport(
+                center + forwardOffset - bodyRight * lateralOffset,
+                probeDistance,
+                minimumNormalY,
+                out RaycastHit leftHit);
+            bool rightValid = TrySampleExosuitFootSupport(
+                center + forwardOffset + bodyRight * lateralOffset,
+                probeDistance,
+                minimumNormalY,
+                out RaycastHit rightHit);
+            if (!leftValid && !rightValid)
+                return false;
+
+            if (leftValid && rightValid)
+            {
+                Vector3 combinedNormal = leftHit.normal + rightHit.normal;
+                supportNormal = combinedNormal.sqrMagnitude > 0.0001f
+                    ? combinedNormal.normalized
+                    : Vector3.up;
+                supportHit = leftHit.distance <= rightHit.distance ? leftHit : rightHit;
+                return true;
+            }
+
+            supportHit = leftValid ? leftHit : rightHit;
+            supportNormal = supportHit.normal;
+            return true;
+        }
+
+        private bool TrySampleExosuitFootSupport(
+            Vector3 origin,
+            float distance,
+            float minimumNormalY,
+            out RaycastHit supportHit)
+        {
+            supportHit = default;
+            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
+                origin,
+                Vector3.down,
+                _groundHitBuffer,
+                distance,
+                groundLayers,
+                QueryTriggerInteraction.Ignore);
+
+            float bestDistance = float.MaxValue;
+            for (int i = 0; i < hitCount; i++)
+            {
+                RaycastHit hit = _groundHitBuffer[i];
+                Collider hitCollider = hit.collider;
+                if (hitCollider == null || hitCollider.attachedRigidbody == _rb)
+                    continue;
+
+                if (hit.normal.y < minimumNormalY)
+                    continue;
+
+                if (hit.distance < bestDistance)
+                {
+                    bestDistance = hit.distance;
+                    supportHit = hit;
+                }
+            }
+
+            return bestDistance < float.MaxValue;
         }
 
         private bool TryApplyJumpImpulse(float impulse)
@@ -5153,8 +6270,9 @@ namespace Hecton8.Gameplay
 
             bool heavyCarryActive = IsHeavyCarryActive();
             float sprintMult = _isSprinting && !heavyCarryActive ? suit.sprintMultiplier : 1f;
-            float effectiveSwimForce = suit.swimForce * depthSlowdown * sprintMult * _runtimeSwimSpeedMultiplier;
-            float effectiveVerticalForce = suit.swimVerticalForce * depthSlowdown * sprintMult * _runtimeSwimSpeedMultiplier;
+            float runtimeSwimSpeedScale = _runtimeSwimSpeedMultiplier * _runtimeInjurySwimSpeedMultiplier;
+            float effectiveSwimForce = suit.swimForce * depthSlowdown * sprintMult * runtimeSwimSpeedScale;
+            float effectiveVerticalForce = suit.swimVerticalForce * depthSlowdown * sprintMult * runtimeSwimSpeedScale;
             float heavyCarryForceMultiplier = ResolveHeavyCarryForceMultiplier();
             effectiveSwimForce *= heavyCarryForceMultiplier;
             effectiveVerticalForce *= heavyCarryForceMultiplier;
@@ -5292,24 +6410,29 @@ namespace Hecton8.Gameplay
 
             if (transportPropulsionForce > 0f)
             {
-                float propulsionDirSqr =
-                    _forceVector.x * _forceVector.x +
-                    _forceVector.y * _forceVector.y +
-                    _forceVector.z * _forceVector.z;
-
-                if (propulsionDirSqr <= 0.0001f)
-                {
-                    _forceVector.x = fwdX * transportPropulsionForce;
-                    _forceVector.y = fwdY * transportPropulsionForce;
-                    _forceVector.z = fwdZ * transportPropulsionForce;
-                }
+                Vector3 transportPropulsionDirection = new Vector3(_forceVector.x, _forceVector.y, _forceVector.z);
+                if (transportPropulsionDirection.sqrMagnitude <= 0.0001f)
+                    transportPropulsionDirection = new Vector3(fwdX, fwdY, fwdZ);
                 else
+                    transportPropulsionDirection.Normalize();
+
+                if (ResolveActiveTransportSource() is MantaScooter mantaScooter &&
+                    mantaScooter.TryGetHullStressMisfireDeviation(out Vector2 misfireDeviationDegrees))
                 {
-                    float propulsionScale = transportPropulsionForce / math.sqrt(propulsionDirSqr);
-                    _forceVector.x += _forceVector.x * propulsionScale;
-                    _forceVector.y += _forceVector.y * propulsionScale;
-                    _forceVector.z += _forceVector.z * propulsionScale;
+                    transportPropulsionDirection = Quaternion.Euler(misfireDeviationDegrees.x, misfireDeviationDegrees.y, 0f) * transportPropulsionDirection;
                 }
+
+                if (math.abs(_abyssalTransportTurbulencePitchOffset) > 0.001f ||
+                    math.abs(_abyssalTransportTurbulenceYawOffset) > 0.001f)
+                {
+                    transportPropulsionDirection =
+                        Quaternion.Euler(_abyssalTransportTurbulencePitchOffset, _abyssalTransportTurbulenceYawOffset, 0f) *
+                        transportPropulsionDirection;
+                }
+
+                _forceVector.x += transportPropulsionDirection.x * transportPropulsionForce;
+                _forceVector.y += transportPropulsionDirection.y * transportPropulsionForce;
+                _forceVector.z += transportPropulsionDirection.z * transportPropulsionForce;
             }
 
             _rb.AddForce(_forceVector, ForceMode.Force);
@@ -5378,6 +6501,9 @@ namespace Hecton8.Gameplay
         {
             if (_inputH == 0f && _inputV == 0f) return;
 
+            bool exosuitActive = _currentLocomotionMode == PlayerLocomotionMode.ExosuitLocomotion;
+            bool dryInteriorActive = _currentLocomotionMode == PlayerLocomotionMode.DryInteriorWalk;
+
             float yawRad = _bodyYaw * DEG_TO_RAD;
             float sinYaw = math.sin(yawRad);
             float cosYaw = math.cos(yawRad);
@@ -5407,7 +6533,7 @@ namespace Hecton8.Gameplay
                 }
             }
 
-            float wadeMultiplier = 1f - _waterImmersionRatio * suit.wadeSlowdownFactor;
+            float wadeMultiplier = exosuitActive ? 1f : 1f - _waterImmersionRatio * suit.wadeSlowdownFactor;
             wadeMultiplier = math.max(wadeMultiplier, 0.2f);
             float sprintMult = CanUseLandSprint() ? suit.sprintMultiplier : 1f;
             float force =
@@ -5416,6 +6542,11 @@ namespace Hecton8.Gameplay
                 sprintMult *
                 ResolveHeavyCarryForceMultiplier() *
                 ResolveExternalEnvironmentalThrustMultiplier();
+
+            if (exosuitActive)
+                force *= exosuitWalkForceMultiplier;
+            else if (dryInteriorActive)
+                force *= dryInteriorWalkForceMultiplier;
 
             if (IsDryLandAirborne())
                 force *= dryAirControlMultiplier;
@@ -5429,6 +6560,9 @@ namespace Hecton8.Gameplay
         private bool ShouldUseLandLocomotion(float physicsImmersion, bool hasShoreGroundSupport, bool hasImmediateShoreFooting)
         {
             if (IsInDryInterior())
+                return true;
+
+            if (IsExosuitTransportActive())
                 return true;
 
             if (physicsImmersion <= 0.01f)
@@ -5602,12 +6736,18 @@ namespace Hecton8.Gameplay
 
             if (_isWalking)
             {
+                bool exosuitActive = _currentLocomotionMode == PlayerLocomotionMode.ExosuitLocomotion;
+                bool dryInteriorActive = _currentLocomotionMode == PlayerLocomotionMode.DryInteriorWalk;
                 float maxSpd = suit.maxWalkSpeed;
-                float wadeMultiplier = 1f - _waterImmersionRatio * suit.wadeSlowdownFactor;
+                float wadeMultiplier = exosuitActive ? 1f : 1f - _waterImmersionRatio * suit.wadeSlowdownFactor;
                 maxSpd *= math.max(wadeMultiplier, 0.2f);
                 if (CanUseLandSprint()) maxSpd *= suit.sprintMultiplier;
                 maxSpd *= ResolveHeavyCarrySpeedMultiplier();
                 maxSpd *= ResolveExternalEnvironmentalSpeedMultiplier();
+                if (exosuitActive)
+                    maxSpd *= exosuitWalkSpeedMultiplier;
+                else if (dryInteriorActive)
+                    maxSpd *= dryInteriorWalkSpeedMultiplier;
 
                 if (maxSpd > 0f)
                 {
@@ -5641,7 +6781,7 @@ namespace Hecton8.Gameplay
             }
             else
             {
-                float maxSpd = suit.maxSwimSpeed * _runtimeSwimSpeedMultiplier;
+                float maxSpd = suit.maxSwimSpeed * (_runtimeSwimSpeedMultiplier * _runtimeInjurySwimSpeedMultiplier);
                 if (_isSurfaceSwimming)
                 {
                     maxSpd *= surfaceMaxSpeedMultiplier;
@@ -5726,6 +6866,12 @@ namespace Hecton8.Gameplay
             _debugWipeoutTimer = _wipeoutTimer;
             _debugDynamicCollisionTuck = _dynamicCollisionTuck01;
             _debugAbyssalCurrentIntensity = _abyssalDowndraftIntensity;
+            _debugHeavyTowActive = IsHeavyTowActive();
+            _debugHeavyTowTension01 = IsHeavyTowActive() ? _heavyTowWinch.CurrentTension01 : 0f;
+            _debugHeavyTowStress01 = IsHeavyTowActive() ? _heavyTowWinch.CurrentStress01 : 0f;
+            _debugHeavyTowDragMultiplier = IsHeavyTowActive() ? _heavyTowWinch.CurrentTowDragMultiplier : 1f;
+            _debugHeavyTowSignedLateralPull = IsHeavyTowActive() ? _heavyTowWinch.CurrentSignedLateralPull01 : 0f;
+            _debugHeavyTowBackwardPull = IsHeavyTowActive() ? _heavyTowWinch.CurrentBackwardPull01 : 0f;
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
@@ -5776,6 +6922,12 @@ namespace Hecton8.Gameplay
             _debugWipeoutTimer = _wipeoutTimer;
             _debugDynamicCollisionTuck = _dynamicCollisionTuck01;
             _debugAbyssalCurrentIntensity = _abyssalDowndraftIntensity;
+            _debugHeavyTowActive = IsHeavyTowActive();
+            _debugHeavyTowTension01 = IsHeavyTowActive() ? _heavyTowWinch.CurrentTension01 : 0f;
+            _debugHeavyTowStress01 = IsHeavyTowActive() ? _heavyTowWinch.CurrentStress01 : 0f;
+            _debugHeavyTowDragMultiplier = IsHeavyTowActive() ? _heavyTowWinch.CurrentTowDragMultiplier : 1f;
+            _debugHeavyTowSignedLateralPull = IsHeavyTowActive() ? _heavyTowWinch.CurrentSignedLateralPull01 : 0f;
+            _debugHeavyTowBackwardPull = IsHeavyTowActive() ? _heavyTowWinch.CurrentBackwardPull01 : 0f;
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -5802,6 +6954,60 @@ namespace Hecton8.Gameplay
             if (playerHeight < 0.5f) playerHeight = 0.5f;
             if (baseFov < 30f) baseFov = 30f;
             if (baseFov > 120f) baseFov = 120f;
+            if (exosuitJumpJetScooterDrainMultiplier < 1f) exosuitJumpJetScooterDrainMultiplier = 1f;
+            if (exosuitJumpJetScooterDrainMultiplier > 10f) exosuitJumpJetScooterDrainMultiplier = 10f;
+            if (exosuitNegativeBuoyancyScale < 1f) exosuitNegativeBuoyancyScale = 1f;
+            if (exosuitNegativeBuoyancyScale > 3f) exosuitNegativeBuoyancyScale = 3f;
+            if (exosuitFootProbeLateralOffset < 0.1f) exosuitFootProbeLateralOffset = 0.1f;
+            if (exosuitFootProbeLateralOffset > 1.5f) exosuitFootProbeLateralOffset = 1.5f;
+            if (exosuitFootProbeForwardOffset < -0.5f) exosuitFootProbeForwardOffset = -0.5f;
+            if (exosuitFootProbeForwardOffset > 1f) exosuitFootProbeForwardOffset = 1f;
+            if (exosuitFootProbeHeight < 0.05f) exosuitFootProbeHeight = 0.05f;
+            if (exosuitFootProbeHeight > 1.5f) exosuitFootProbeHeight = 1.5f;
+            if (exosuitFootProbeDistance < 0.1f) exosuitFootProbeDistance = 0.1f;
+            if (exosuitFootProbeDistance > 3f) exosuitFootProbeDistance = 3f;
+            if (exosuitMinGroundNormalY < 0.05f) exosuitMinGroundNormalY = 0.05f;
+            if (exosuitMinGroundNormalY > 0.8f) exosuitMinGroundNormalY = 0.8f;
+            if (exosuitFootSlopeBlendSharpness < 1f) exosuitFootSlopeBlendSharpness = 1f;
+            if (exosuitFootSlopeBlendSharpness > 40f) exosuitFootSlopeBlendSharpness = 40f;
+            if (exosuitSlopeStickForceMultiplier < 1f) exosuitSlopeStickForceMultiplier = 1f;
+            if (exosuitSlopeStickForceMultiplier > 4f) exosuitSlopeStickForceMultiplier = 4f;
+            if (exosuitGroundSnapForceMultiplier < 1f) exosuitGroundSnapForceMultiplier = 1f;
+            if (exosuitGroundSnapForceMultiplier > 4f) exosuitGroundSnapForceMultiplier = 4f;
+            if (dryInteriorWalkForceMultiplier < 0.1f) dryInteriorWalkForceMultiplier = 0.1f;
+            if (dryInteriorWalkForceMultiplier > 2f) dryInteriorWalkForceMultiplier = 2f;
+            if (dryInteriorWalkSpeedMultiplier < 0.1f) dryInteriorWalkSpeedMultiplier = 0.1f;
+            if (dryInteriorWalkSpeedMultiplier > 2f) dryInteriorWalkSpeedMultiplier = 2f;
+            if (dryInteriorFootProbeLateralOffset < 0.05f) dryInteriorFootProbeLateralOffset = 0.05f;
+            if (dryInteriorFootProbeLateralOffset > 1f) dryInteriorFootProbeLateralOffset = 1f;
+            if (dryInteriorFootProbeForwardOffset < -0.25f) dryInteriorFootProbeForwardOffset = -0.25f;
+            if (dryInteriorFootProbeForwardOffset > 0.5f) dryInteriorFootProbeForwardOffset = 0.5f;
+            if (dryInteriorFootProbeHeight < 0.05f) dryInteriorFootProbeHeight = 0.05f;
+            if (dryInteriorFootProbeHeight > 1f) dryInteriorFootProbeHeight = 1f;
+            if (dryInteriorFootProbeDistance < 0.1f) dryInteriorFootProbeDistance = 0.1f;
+            if (dryInteriorFootProbeDistance > 2f) dryInteriorFootProbeDistance = 2f;
+            if (cuttingTensionRestLength < 0.2f) cuttingTensionRestLength = 0.2f;
+            if (cuttingTensionRestLength > 3f) cuttingTensionRestLength = 3f;
+            if (cuttingTensionSpring < 0f) cuttingTensionSpring = 0f;
+            if (cuttingTensionSpring > 120f) cuttingTensionSpring = 120f;
+            if (cuttingTensionDamping < 0f) cuttingTensionDamping = 0f;
+            if (cuttingTensionDamping > 40f) cuttingTensionDamping = 40f;
+            if (cuttingTensionMaxForce < 0f) cuttingTensionMaxForce = 0f;
+            if (cuttingTensionMaxForce > 120f) cuttingTensionMaxForce = 120f;
+            if (cuttingTensionHoldTime < 0f) cuttingTensionHoldTime = 0f;
+            if (cuttingTensionHoldTime > 0.25f) cuttingTensionHoldTime = 0.25f;
+            if (fatalPressureMinFov < 15f) fatalPressureMinFov = 15f;
+            if (fatalPressureMinFov > 25f) fatalPressureMinFov = 25f;
+            if (wipeoutSuitUpgradeBreakChance < 0f) wipeoutSuitUpgradeBreakChance = 0f;
+            if (wipeoutSuitUpgradeBreakChance > 1f) wipeoutSuitUpgradeBreakChance = 1f;
+            if (fatalPressureLookSensitivityFloor < 0f) fatalPressureLookSensitivityFloor = 0f;
+            if (fatalPressureLookSensitivityFloor > 0.35f) fatalPressureLookSensitivityFloor = 0.35f;
+            if (fatalPressureYawFreedomStart < 5f) fatalPressureYawFreedomStart = 5f;
+            if (fatalPressureYawFreedomEnd < 1f) fatalPressureYawFreedomEnd = 1f;
+            if (fatalPressureYawFreedomStart < fatalPressureYawFreedomEnd) fatalPressureYawFreedomStart = fatalPressureYawFreedomEnd;
+            if (fatalPressurePitchFreedomStart < 5f) fatalPressurePitchFreedomStart = 5f;
+            if (fatalPressurePitchFreedomEnd < 1f) fatalPressurePitchFreedomEnd = 1f;
+            if (fatalPressurePitchFreedomStart < fatalPressurePitchFreedomEnd) fatalPressurePitchFreedomStart = fatalPressurePitchFreedomEnd;
             if (surfaceSwimDepthBand < 0.1f) surfaceSwimDepthBand = 0.1f;
             if (surfaceAscendReleaseDepth < 0.02f) surfaceAscendReleaseDepth = 0.02f;
             if (surfaceDivePitchCommit < 0f) surfaceDivePitchCommit = 0f;
@@ -5913,6 +7119,10 @@ namespace Hecton8.Gameplay
             if (underwaterStressSignalThreshold < 0f) underwaterStressSignalThreshold = 0f;
             if (underwaterStressSignalThreshold > 1f) underwaterStressSignalThreshold = 1f;
             if (underwaterStressSignalBlendSharpness < 1f) underwaterStressSignalBlendSharpness = 1f;
+            if (abyssalTransportTurbulenceTorqueVelocityChange < 0f) abyssalTransportTurbulenceTorqueVelocityChange = 0f;
+            if (abyssalTransportTurbulencePitchDegrees < 0f) abyssalTransportTurbulencePitchDegrees = 0f;
+            if (abyssalTransportTurbulenceYawDegrees < 0f) abyssalTransportTurbulenceYawDegrees = 0f;
+            if (abyssalTransportTurbulenceRecoverySharpness < 1f) abyssalTransportTurbulenceRecoverySharpness = 1f;
             if (transportCavitationStartDepth < 0.1f) transportCavitationStartDepth = 0.1f;
             if (transportCavitationRecoveryDepth < transportCavitationStartDepth)
                 transportCavitationRecoveryDepth = transportCavitationStartDepth;
@@ -5925,6 +7135,15 @@ namespace Hecton8.Gameplay
             if (externalEnvironmentalDragHoldTime < 0f) externalEnvironmentalDragHoldTime = 0f;
             if (externalEnvironmentalDragHoldTime > 0.35f) externalEnvironmentalDragHoldTime = 0.35f;
             if (externalEnvironmentalDragBlendSpeed < 1f) externalEnvironmentalDragBlendSpeed = 1f;
+            if (parasiteLatchInfluenceHoldTime < 0f) parasiteLatchInfluenceHoldTime = 0f;
+            if (parasiteLatchInfluenceHoldTime > 0.35f) parasiteLatchInfluenceHoldTime = 0.35f;
+            if (parasiteLatchInfluenceBlendSpeed < 1f) parasiteLatchInfluenceBlendSpeed = 1f;
+            if (parasiteCenterOfMassForce < 0f) parasiteCenterOfMassForce = 0f;
+            if (parasiteCenterOfMassForce > 80f) parasiteCenterOfMassForce = 80f;
+            if (parasiteHarvesterPullForce < 0f) parasiteHarvesterPullForce = 0f;
+            if (parasiteHarvesterPullForce > 120f) parasiteHarvesterPullForce = 120f;
+            if (parasiteLatchCountForFullForce < 1f) parasiteLatchCountForFullForce = 1f;
+            if (parasiteLatchCountForFullForce > 64f) parasiteLatchCountForFullForce = 64f;
             if (sargassumEntanglementMassReference < 40f) sargassumEntanglementMassReference = 40f;
             if (sargassumEntanglementMassReference > 500f) sargassumEntanglementMassReference = 500f;
             if (sargassumEntanglementSwimEnvironmentalDrag < 0f) sargassumEntanglementSwimEnvironmentalDrag = 0f;
@@ -5986,6 +7205,14 @@ namespace Hecton8.Gameplay
             if (underwaterImpactMinVolume > underwaterImpactMaxVolume) underwaterImpactMinVolume = underwaterImpactMaxVolume;
             if (maxHeavyCarryBodyYawSpringMultiplier < 0.1f) maxHeavyCarryBodyYawSpringMultiplier = 0.1f;
             if (maxHeavyCarryBodyYawSpringMultiplier > 1f) maxHeavyCarryBodyYawSpringMultiplier = 1f;
+            if (heavyTowCameraPitchDegrees < 0f) heavyTowCameraPitchDegrees = 0f;
+            if (heavyTowCameraRollDegrees < 0f) heavyTowCameraRollDegrees = 0f;
+            if (heavyTowCameraBackwardOffset < 0f) heavyTowCameraBackwardOffset = 0f;
+            if (heavyTowCameraSideOffset < 0f) heavyTowCameraSideOffset = 0f;
+            if (heavyTowResponseBlendSharpness < 1f) heavyTowResponseBlendSharpness = 1f;
+            if (heavyTowCenterOfMassRearShift < 0f) heavyTowCenterOfMassRearShift = 0f;
+            if (heavyTowCenterOfMassLateralShift < 0f) heavyTowCenterOfMassLateralShift = 0f;
+            if (heavyTowCenterOfMassDownShift < 0f) heavyTowCenterOfMassDownShift = 0f;
 
             TryAssignEditorAuthoringDefaults();
 

@@ -58,6 +58,13 @@ namespace Hecton8.SaveSystem
                 steps.Add("custom mod data created");
             }
 
+            if (data.suitBrokenUpgradeIds == null)
+            {
+                data.suitBrokenUpgradeIds = new List<string>();
+                changed = true;
+                steps.Add("suit broken upgrades created");
+            }
+
             bool hadPackedBiomeCapacity = BiomeDiscoveryBitMask.HasExpectedCapacity(data.discoveredBiomeBitWords);
             if (!hadPackedBiomeCapacity)
             {
@@ -103,6 +110,9 @@ namespace Hecton8.SaveSystem
             changed |= EnsureProceduralLore(ref data.proceduralLore, steps);
             changed |= EnsureAchievements(ref data.achievements, steps);
             changed |= EnsureRunModifiers(ref data.runModifiers, steps);
+            changed |= EnsureResourceScarcity(ref data.resourceScarcity, steps);
+            changed |= EnsureEnvironmentalStrain(ref data.environmentalStrain, steps);
+            changed |= EnsureEcosystemState(ref data.ecosystemState, steps);
             changed |= EnsureLoreSystems(ref data, sourceVersion, steps);
             changed |= EnsurePlayerExpression(ref data, steps);
             changed |= EnsurePerformanceSettings(ref data, sourceVersion, steps);
@@ -215,6 +225,61 @@ namespace Hecton8.SaveSystem
                 dto.depletedPickupWordCount = clampedPickupWords;
                 changed = true;
                 steps.Add("world pickup word count clamped");
+            }
+
+            return changed;
+        }
+
+        private static bool EnsureEcosystemState(ref EcosystemStateDTO dto, List<string> steps)
+        {
+            bool changed = false;
+            int existingCount = dto.infectedChunkKeys != null ? dto.infectedChunkKeys.Length : 0;
+            long[] previousKeys = null;
+            float[] previousSeverities = null;
+
+            if (existingCount > 0)
+            {
+                previousKeys = dto.infectedChunkKeys;
+                previousSeverities = dto.infectedSeverities;
+            }
+
+            if (dto.infectedChunkKeys == null ||
+                dto.infectedChunkKeys.Length < EcosystemStateDTO.MaxInfectedZones ||
+                dto.infectedSeverities == null ||
+                dto.infectedSeverities.Length < EcosystemStateDTO.MaxInfectedZones)
+            {
+                dto.EnsureCapacity();
+                if (previousKeys != null)
+                {
+                    int copyCount = Mathf.Min(previousKeys.Length, dto.infectedChunkKeys.Length);
+                    Array.Copy(previousKeys, dto.infectedChunkKeys, copyCount);
+                    if (previousSeverities != null)
+                    {
+                        int severityCopyCount = Mathf.Min(previousSeverities.Length, dto.infectedSeverities.Length);
+                        Array.Copy(previousSeverities, dto.infectedSeverities, severityCopyCount);
+                    }
+                }
+
+                changed = true;
+                steps.Add("ecosystem state capacity repaired");
+            }
+
+            int clampedCount = Mathf.Clamp(dto.infectedZoneCount, 0, dto.infectedChunkKeys != null ? dto.infectedChunkKeys.Length : 0);
+            if (clampedCount != dto.infectedZoneCount)
+            {
+                dto.infectedZoneCount = clampedCount;
+                changed = true;
+                steps.Add("ecosystem infected-zone count clamped");
+            }
+
+            for (int i = 0; i < clampedCount; i++)
+            {
+                float clampedSeverity = Mathf.Clamp01(dto.infectedSeverities[i]);
+                if (Mathf.Abs(clampedSeverity - dto.infectedSeverities[i]) > 0.0001f)
+                {
+                    dto.infectedSeverities[i] = clampedSeverity;
+                    changed = true;
+                }
             }
 
             return changed;
@@ -356,11 +421,60 @@ namespace Hecton8.SaveSystem
                 steps.Add("pda advisory inventory-full count repaired");
             }
 
+            if (dto.pressureDeathCount < 0)
+            {
+                dto.pressureDeathCount = 0;
+                changed = true;
+                steps.Add("pda advisory pressure-death count repaired");
+            }
+
+            if (dto.baseEmergencyCount < 0)
+            {
+                dto.baseEmergencyCount = 0;
+                changed = true;
+                steps.Add("pda advisory base-emergency count repaired");
+            }
+
+            if (dto.staleAirIncidentCount < 0)
+            {
+                dto.staleAirIncidentCount = 0;
+                changed = true;
+                steps.Add("pda advisory stale-air count repaired");
+            }
+
+            if (dto.coldStressIncidentCount < 0)
+            {
+                dto.coldStressIncidentCount = 0;
+                changed = true;
+                steps.Add("pda advisory cold-stress count repaired");
+            }
+
+            if (dto.heatStressIncidentCount < 0)
+            {
+                dto.heatStressIncidentCount = 0;
+                changed = true;
+                steps.Add("pda advisory heat-stress count repaired");
+            }
+
             if (dto.deepExposureSeconds < 0f || float.IsNaN(dto.deepExposureSeconds))
             {
                 dto.deepExposureSeconds = 0f;
                 changed = true;
                 steps.Add("pda advisory deep-exposure time repaired");
+            }
+
+            if (dto.coldStressExposureSeconds < 0f || float.IsNaN(dto.coldStressExposureSeconds))
+            {
+                dto.coldStressExposureSeconds = 0f;
+                changed = true;
+                steps.Add("pda advisory cold-stress exposure repaired");
+            }
+
+            if (dto.heatStressExposureSeconds < 0f || float.IsNaN(dto.heatStressExposureSeconds))
+            {
+                dto.heatStressExposureSeconds = 0f;
+                changed = true;
+                steps.Add("pda advisory heat-stress exposure repaired");
             }
 
             return changed;
@@ -462,6 +576,77 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("run modifiers dead-run flag repaired");
             }
+
+            return changed;
+        }
+
+        private static bool EnsureResourceScarcity(ref ResourceScarcityDTO dto, List<string> steps)
+        {
+            bool changed = false;
+            int previousItemCapacity = dto.itemIds != null ? dto.itemIds.Length : 0;
+            int previousCountCapacity = dto.collectedCounts != null ? dto.collectedCounts.Length : 0;
+
+            dto.EnsureCapacity();
+            if (dto.itemIds.Length != previousItemCapacity || dto.collectedCounts.Length != previousCountCapacity)
+            {
+                changed = true;
+                steps.Add("resource scarcity capacity repaired");
+            }
+
+            int clampedEntryCount = Mathf.Clamp(
+                dto.entryCount,
+                0,
+                Mathf.Min(dto.itemIds.Length, dto.collectedCounts.Length));
+
+            if (clampedEntryCount != dto.entryCount)
+            {
+                dto.entryCount = clampedEntryCount;
+                changed = true;
+                steps.Add("resource scarcity entry count clamped");
+            }
+
+            for (int i = 0; i < dto.entryCount; i++)
+            {
+                if (dto.collectedCounts[i] < 0)
+                {
+                    dto.collectedCounts[i] = 0;
+                    changed = true;
+                }
+            }
+
+            return changed;
+        }
+
+        private static bool EnsureEnvironmentalStrain(ref EnvironmentalStrainDTO dto, List<string> steps)
+        {
+            bool changed = false;
+
+            if (dto.microplasticStrain < 0f)
+            {
+                dto.microplasticStrain = 0f;
+                changed = true;
+            }
+
+            if (dto.generalPollution < 0f)
+            {
+                dto.generalPollution = 0f;
+                changed = true;
+            }
+
+            if (dto.recycledPlasticItemCount < 0)
+            {
+                dto.recycledPlasticItemCount = 0;
+                changed = true;
+            }
+
+            if (dto.discardedItemCount < 0)
+            {
+                dto.discardedItemCount = 0;
+                changed = true;
+            }
+
+            if (changed)
+                steps.Add("environmental strain values clamped");
 
             return changed;
         }

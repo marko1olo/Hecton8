@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using Hecton8.Building;
 using Hecton8.Construction;
 using Hecton8.Crafting;
+using Hecton8.Economy;
+using Hecton8.Ecosystem;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.SaveSystem;
@@ -405,6 +407,128 @@ namespace Hecton8.Modding
             }
 
             return false;
+        }
+    }
+
+    internal static class ModRecycleRegistry
+    {
+        internal static bool TryRegister(string itemId, IList<ResourceStack> yield, out string error)
+        {
+            return RecyclingRegistry.TryRegister(itemId, yield, out error);
+        }
+    }
+
+    internal static class ModEcosystemRegistry
+    {
+        // COLD ALLOC: List<FaunaBiomeMutationDefinition>[16] - runtime-only biome mutation overlay registry - owner: ModEcosystemRegistry
+        private static readonly List<FaunaBiomeMutationDefinition> _runtimeMutations = new List<FaunaBiomeMutationDefinition>(16);
+
+        internal static int Count => _runtimeMutations.Count;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _runtimeMutations.Clear();
+        }
+
+        internal static bool TryRegister(FaunaBiomeMutationDefinition definition, out string error)
+        {
+            error = null;
+
+            if (definition == null)
+            {
+                error = "Mutation definition is null.";
+                return false;
+            }
+
+            if (definition.BiomeId <= 0)
+            {
+                error = "BiomeId must be greater than zero.";
+                return false;
+            }
+
+            if (definition.MinScaleMultiplier <= 0f || definition.MaxScaleMultiplier <= 0f)
+            {
+                error = "Scale multipliers must be greater than zero.";
+                return false;
+            }
+
+            if (definition.MaxScaleMultiplier < definition.MinScaleMultiplier)
+            {
+                error = "MaxScaleMultiplier must be greater than or equal to MinScaleMultiplier.";
+                return false;
+            }
+
+            if (definition.SpeedMultiplier <= 0f)
+            {
+                error = "SpeedMultiplier must be greater than zero.";
+                return false;
+            }
+
+            if (definition.HealthMultiplier <= 0f)
+            {
+                error = "HealthMultiplier must be greater than zero.";
+                return false;
+            }
+
+            if (ContainsMatchingDefinition(definition))
+                return true;
+
+            _runtimeMutations.Add(CloneDefinition(definition));
+            return true;
+        }
+
+        internal static FaunaBiomeMutationDefinition GetAt(int index)
+        {
+            if ((uint)index >= (uint)_runtimeMutations.Count)
+                return null;
+
+            return _runtimeMutations[index];
+        }
+
+        private static bool ContainsMatchingDefinition(FaunaBiomeMutationDefinition definition)
+        {
+            for (int i = 0; i < _runtimeMutations.Count; i++)
+            {
+                FaunaBiomeMutationDefinition existing = _runtimeMutations[i];
+                if (existing == null)
+                    continue;
+
+                if (existing.BiomeId != definition.BiomeId)
+                    continue;
+
+                if (!string.Equals(existing.SpeciesId ?? string.Empty, definition.SpeciesId ?? string.Empty, System.StringComparison.Ordinal))
+                    continue;
+
+                if (Mathf.Abs(existing.MinScaleMultiplier - definition.MinScaleMultiplier) > 0.0001f)
+                    continue;
+
+                if (Mathf.Abs(existing.MaxScaleMultiplier - definition.MaxScaleMultiplier) > 0.0001f)
+                    continue;
+
+                if (Mathf.Abs(existing.SpeedMultiplier - definition.SpeedMultiplier) > 0.0001f)
+                    continue;
+
+                if (Mathf.Abs(existing.HealthMultiplier - definition.HealthMultiplier) > 0.0001f)
+                    continue;
+
+                return true;
+            }
+
+            return false;
+        }
+
+        private static FaunaBiomeMutationDefinition CloneDefinition(FaunaBiomeMutationDefinition definition)
+        {
+            return new FaunaBiomeMutationDefinition
+            {
+                BiomeId = definition.BiomeId,
+                SpeciesId = definition.SpeciesId ?? string.Empty,
+                MinScaleMultiplier = definition.MinScaleMultiplier,
+                MaxScaleMultiplier = definition.MaxScaleMultiplier,
+                SpeedMultiplier = definition.SpeedMultiplier,
+                HealthMultiplier = definition.HealthMultiplier
+            };
         }
     }
 }

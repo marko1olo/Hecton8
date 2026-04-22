@@ -169,6 +169,22 @@ namespace Hecton8.PDA
             return count;
         }
 
+        internal int CopyExploredChunkKeys(long[] buffer)
+        {
+            if (buffer == null || buffer.Length == 0 || _exploredChunkKeys.Count == 0)
+                return 0;
+
+            int count = 0;
+            HashSet<long>.Enumerator enumerator = _exploredChunkKeys.GetEnumerator();
+            while (enumerator.MoveNext() && count < buffer.Length)
+            {
+                buffer[count] = enumerator.Current;
+                count++;
+            }
+
+            return count;
+        }
+
         /// <summary>
         /// Marks a chunk as explored. Repeated calls are ignored.
         /// </summary>
