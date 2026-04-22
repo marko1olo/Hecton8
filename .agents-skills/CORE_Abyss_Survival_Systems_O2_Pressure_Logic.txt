@@ -1,0 +1,618 @@
+# TECHNICAL MANDATE #4: `ABYSS_SURVIVAL_LOGIC.md`
+# HECTON-8 PROJECT — DEEP ABYSS SURVIVAL SYSTEMS
+Classification: Core Systems Architecture
+
+---
+
+## SECTION 0: AUTHORIZED AUTONOMY DECLARATION
+
+This document governs all code, data structures, and runtime behavior related to:
+- Hull/suit structural integrity and pressure simulation
+- Implosion event sequencing
+- Life support resource management (O₂, Battery)
+- Thermal regulation and cold current simulation
+- Glitch state propagation to dependent systems
+- Failure recovery and safe-zone restoration
+
+**No contributor may deviate from formulas, thresholds, or architectural patterns
+defined herein without formal revision approved by Principal System Architect.**
+Violations will trigger mandatory code review and rollback.
+
+---
+
+## SECTION 1: EXECUTION POLICY
+
+### 1.1 Non-Negotiable Rules
+
+| Rule ID | Rule |
+|---------|------|
+| `EP-01` | Stress is `float` in `[0.0 ... 1.0]`. It NEVER goes below `0.0`. It MAY exceed `1.0` only as an internal pre-clamp sentinel to trigger fatal event before hard clamping. |
+| `EP-02` | Zero garbage-collection (0-GC) is mandatory in all Update paths. No `string` allocations, no `new`, no LINQ, no boxing in hot loops. |
+| `EP-03` | HUD numeric values MUST use pre-cached string buffers or TextMeshPro integer/float mode. `ToString()` is FORBIDDEN in `Update()`. |
+| `EP-04` | All physics formulas are deterministic. Given same inputs and `dt`, output is identical across platforms and frames. |
+| `EP-05` | `FatalPressureImplosion` event fires EXACTLY ONCE per session. It is guarded by boolean flag. |
+| `EP-06` | Temperature calculations use exponential decay. Linear approximation is explicitly rejected. |
+| `EP-07` | Input noise injection and HUD glitch are DATA-DRIVEN from stress value. No hardcoded branches outside threshold table. |
+| `EP-08` | Safe-zone restoration must complete in single frame with no async overhead on restore path. |
+
+### 1.2 Update Loop Budget
+
+| System | Max CPU Budget (per frame at 60Hz) | Threading |
+|--------|------------------------------------|-----------|
+| Hull Stress Accumulation | 0.05 ms | Main Thread |
+| Life Support Depletion | 0.02 ms | Main Thread |
+| Thermal Calculation | 0.03 ms | Main Thread |
+| Glitch State Propagation | 0.02 ms | Main Thread |
+| HUD Buffer Refresh | 0.04 ms (throttled, not every frame) | Main Thread |
+
+Total survival system budget: ≤ 0.16 ms per frame.
+
+---
+
+## SECTION 2: DATA ARCHITECTURE
+
+### 2.1 Core Survival State Struct
+
+/// <summary>
+/// Pure value-type survival state. NO heap allocations.
+/// Passed by ref across all survival subsystems.
+/// </summary>
+[System.Serializable]
+public struct SurvivalState
+{
+    // --- Hull / Pressure ---
+    public float hullStress;          // [0.0 ... 1.0+sentinel]
+    public float hullIntegrity;       // Base structural rating. Degrades via fatigue. [0.0 ... 1.0]
+    public float depthPressure;       // Current ambient pressure in MPa. Derived from depth.
+    public bool  isFatalSequenceArmed;// Guards single-fire implosion event.
+
+    // --- Life Support ---
+    public float oxygenLevel;         // [0.0 ... 1.0]  1.0 = full tank
+    public float batteryLevel;        // [0.0 ... 1.0]  1.0 = full charge
+    public bool  isConscious;         // False = player has fainted
+
+    // --- Thermal ---
+    public float internalTemp;        // Celsius, suit interior
+    public float externalTemp;        // Celsius, ambient water
+    public float insulationFactor;    // [0.0 ... 1.0]  1.0 = perfect insulation
+
+    // --- Glitch State ---
+    public float glitchIntensity;     // [0.0 ... 1.0] derived from hullStress
+    public bool  isGlitchActive;
+
+    // --- Recovery ---
+    public Vector3 lastSafeZonePosition;
+    public float   lastSafeZoneDepth;
+}
+
+### 2.2 Survival Configuration (ScriptableObject)
+
+[CreateAssetMenu(fileName = "SurvivalConfig", menuName = "Hecton8/SurvivalConfig")]
+public class SurvivalConfig : ScriptableObject
+{
+    [Header("Pressure / Hull")]
+    public float pressureStressMultiplier  = 1.2f;   // Tuning scalar on stress accumulation
+    public float fatigueDecayExponent      = 0.85f;  // Structural fatigue non-linearity
+    public float glitchOnsetThreshold      = 0.70f;  // Stress level that arms glitch
+    public float criticalStressThreshold   = 0.95f;  // Visual/audio warning onset
+    public float fatalStressThreshold      = 1.00f;  // Implosion trigger
+
+    [Header("Life Support")]
+    public float oxygenDepletionRate       = 0.0008f; // Per second, base
+    public float batteryDepletionRate      = 0.0005f; // Per second, base
+    public float faintOxygenThreshold      = 0.05f;   // O2 level that triggers faint
+
+    [Header("Thermal")]
+    public float thermalTimeConstant       = 45.0f;   // τ in seconds for exponential decay
+    public float dangerousInternalTemp     = 4.0f;    // Celsius — hypothermia onset
+    public float criticalInternalTemp      = 1.0f;    // Celsius — system failure
+
+    [Header("HUD Refresh")]
+    public float hudRefreshInterval        = 0.1f;    // Seconds between string-buffer updates
+}
+
+### 2.3 HUD String Cache
+
+/// <summary>
+/// Pre-allocated string buffers. Updated on throttled timer, NOT every frame.
+/// All char[] buffers sized for maximum expected digit count + units suffix.
+/// </summary>
+public sealed class SurvivalHUDCache
+{
+    // Char buffers — fixed allocation at startup
+    private readonly char[] _oxygenBuf    = new char[8];  // "O2: 100%"
+    private readonly char[] _batteryBuf   = new char[8];  // "BAT: 99%"
+    private readonly char[] _stressBuf    = new char[10]; // "STR: 0.97"
+    private readonly char[] _depthBuf     = new char[10]; // "4000m"
+    private readonly char[] _tempBuf      = new char[10]; // "INT:  3°C"
+
+    // Cached display strings built from char buffers
+    // TextMeshPro SetCharArray() is used — zero GC string path
+    public char[] OxygenDisplay  => _oxygenBuf;
+    public char[] BatteryDisplay => _batteryBuf;
+    public char[] StressDisplay  => _stressBuf;
+    public char[] DepthDisplay   => _depthBuf;
+    public char[] TempDisplay    => _tempBuf;
+
+    private float _refreshTimer = 0f;
+
+    public void TickRefresh(float dt, in SurvivalState state, SurvivalConfig cfg)
+    {
+        _refreshTimer += dt;
+        if (_refreshTimer < cfg.hudRefreshInterval) return;
+        _refreshTimer = 0f;
+
+        // Write integer percentages into char arrays without string allocation
+        WritePercent(_oxygenBuf,  "O2:",  (int)(state.oxygenLevel   * 100f));
+        WritePercent(_batteryBuf, "BAT:", (int)(state.batteryLevel  * 100f));
+        WriteFloat3( _stressBuf,  "STR:", state.hullStress);
+        WriteInt(    _depthBuf,   "",     (int)(state.depthPressure * 100f), "m");
+        WriteInt(    _tempBuf,    "INT:", (int)state.internalTemp,           "C");
+    }
+
+    //  Internal zero-alloc writers
+    private static void WritePercent(char[] buf, string prefix, int value) { /* impl */ }
+    private static void WriteFloat3(char[] buf, string prefix, float value) { /* impl */ }
+    private static void WriteInt(char[] buf, string prefix, int value, string suffix) { /* impl */ }
+}
+
+> Note: Full `WritePercent` / `WriteFloat3` / `WriteInt` implementations use manual
+> base-10 decomposition into `char[]` slots. No intermediate `string` objects are created.
+> Reference implementation in `Runtime/Util/CharBufferWriter.cs`.
+
+---
+
+## SECTION 3: MATH TRUTH — FORMULAS
+
+> All formulas below are SINGLE SOURCE OF TRUTH.
+> Any implementation diverging from these equations is defect.
+
+---
+
+### 3.1 Depth → Pressure Mapping
+
+depthPressure (MPa) = (depth_meters / 100.0) * 1.0 MPa
+
+At 4,000 m:  `depthPressure = 40.0 MPa`
+
+Implementation:
+
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+public static float DepthToMPa(float depthMeters)
+    => depthMeters * 0.01f; // 1 MPa per 100 m (simplified ocean model)
+
+---
+
+### 3.2 Hull Stress Accumulation — Asymptotic Fatigue Model
+
+Formula:
+
+Δstress = (depthPressure / hullIntegrity) * pressureStressMultiplier * dt
+stress   = stress + Δstress
+
+Structural Fatigue — Integrity Degradation:
+
+Integrity does NOT recover. It decays via fatigue exponent whenever stress is non-zero:
+
+hullIntegrity_new = hullIntegrity * (1 - (stress^fatigueDecayExponent) * dt * 0.001)
+hullIntegrity_new = clamp(hullIntegrity_new, 0.01, 1.0)
+
+The exponent `fatigueDecayExponent < 1.0` creates sub-linear early degradation
+that accelerates as stress accumulates — matching real material fatigue curves.
+
+> Design Intent: At low stress (0.0–0.3) integrity erodes slowly. Above 0.6,
+> feedback loop (lower integrity → higher stress → lower integrity) becomes
+> self-reinforcing. system has no natural equilibrium at 4 km depth.
+> Survival requires active ascent or structural repair items.
+
+Stress does NOT decrease passively. Stress reduction is ONLY possible via:
+- `RepairKitConsumable` (reduces stress by fixed delta, defined in item config)
+- Ascending above `config.safeDepthThreshold` (stress frozen, not reduced)
+
+Implementation:
+
+public static void TickHullStress(
+    ref SurvivalState  state,
+    SurvivalConfig     cfg,
+    float              dt)
+{
+    // Guard: already imploded
+    if (state.isFatalSequenceArmed) return;
+
+    // 1. Compute pressure-driven stress increment
+    float integrityGuard = Mathf.Max(state.hullIntegrity, 0.001f); // avoid /0
+    float delta = (state.depthPressure / integrityGuard)
+                * cfg.pressureStressMultiplier
+                * dt;
+
+    state.hullStress += delta;
+
+    // 2. Apply structural fatigue to integrity (non-linear, sub-linear exponent)
+    float fatigueDelta = Mathf.Pow(state.hullStress, cfg.fatigueDecayExponent)
+                       * dt
+                       * 0.001f;
+    state.hullIntegrity = Mathf.Clamp(state.hullIntegrity - fatigueDelta, 0.01f, 1.0f);
+
+    // 3. Arm fatal sequence — do NOT clamp yet; sentinel value propagates to event check
+    if (state.hullStress >= cfg.fatalStressThreshold && !state.isFatalSequenceArmed)
+    {
+        state.isFatalSequenceArmed = true;
+        // Event firing handled in ImplosionSequencer (Section 3.3)
+    }
+
+    // 4. Hard clamp AFTER event check
+    state.hullStress = Mathf.Clamp(state.hullStress, 0f, 1.05f); // 1.05 sentinel ceiling
+}
+
+---
+
+### 3.3 Implosion Sequence — Fatal Pressure Loop
+
+State machine:
+
+[Normal]  (stress > 0.70)► [GlitchOnset]
+[GlitchOnset] (stress > 0.95)► [CriticalWarning]
+[CriticalWarning] (stress >= 1.00)► [FatalImplosion]
+
+CriticalWarning Phase (stress 0.95 → 1.00):
+- Visual: chromatic aberration ramp, screen crack overlay alpha = `(stress - 0.95) / 0.05`
+- Audio: hull groan pitch-shifted up by `stress * 2.0` semitones, loop interval shortened
+- HUD: stress display blinks at `4 Hz`
+
+FatalImplosion Phase (stress ≥ 1.00):
+
+public sealed class ImplosionSequencer
+{
+    private bool _fired = false;
+
+    public void Evaluate(in SurvivalState state, IEventBus eventBus)
+    {
+        if (_fired) return;
+        if (!state.isFatalSequenceArmed) return;
+
+        _fired = true;
+
+        // Fire exactly once — no repeat, no async
+        eventBus.Publish(new FatalPressureImplosionEvent
+        {
+            Position    = state.lastSafeZonePosition, // for VFX spawn
+            StressValue = state.hullStress,
+            Timestamp   = Time.time
+        });
+    }
+}
+
+// Event data — value type, zero heap cost on publish
+public readonly struct FatalPressureImplosionEvent
+{
+    public readonly Vector3 Position;
+    public readonly float   StressValue;
+    public readonly float   Timestamp;
+}
+
+Downstream consumers of `FatalPressureImplosionEvent`:
+- `VFXSpawner` → play implosion particle system at player position
+- `AudioDirector` → play `SFX_Implosion` (non-looping, priority MAX)
+- `GameStateManager` → transition to `DeathState`
+- `AchievementSystem` → check depth-death milestone
+- `AnalyticsRecorder` → log terminal event (depth, stress, o2, battery)
+
+---
+
+### 3.4 Life Support Depletion — Zero-GC Resource Logic
+
+Oxygen:
+
+oxygenLevel -= oxygenDepletionRate * stressModifier * dt
+
+Where:
+
+stressModifier = 1.0 + (hullStress * 0.5)
+// Higher stress = micro-leaks increase O2 loss rate by up to 50%
+
+Battery:
+
+batteryLevel -= batteryDepletionRate * thermalLoadModifier * dt
+
+Where:
+
+thermalLoadModifier = 1.0 + max(0, (dangerousInternalTemp - internalTemp) / dangerousInternalTemp)
+// Heating elements draw extra power in cold conditions
+
+Faint Trigger:
+
+if (oxygenLevel <= faintOxygenThreshold && isConscious):
+    isConscious = false
+    → Initiate FaintRecoverySequence (Section 3.6)
+
+Implementation:
+
+public static void TickLifeSupport(
+    ref SurvivalState  state,
+    SurvivalConfig     cfg,
+    float              dt)
+{
+    //  Oxygen
+    float stressModifier = 1.0f + (state.hullStress * 0.5f);
+    state.oxygenLevel -= cfg.oxygenDepletionRate * stressModifier * dt;
+    state.oxygenLevel  = Mathf.Max(state.oxygenLevel, 0f);
+
+    //  Battery
+    float tempDelta         = Mathf.Max(0f, cfg.dangerousInternalTemp - state.internalTemp);
+    float thermalLoadMod    = 1.0f + (tempDelta / Mathf.Max(cfg.dangerousInternalTemp, 0.001f));
+    state.batteryLevel     -= cfg.batteryDepletionRate * thermalLoadMod * dt;
+    state.batteryLevel      = Mathf.Max(state.batteryLevel, 0f);
+
+    //  Faint Check
+    if (state.oxygenLevel <= cfg.faintOxygenThreshold && state.isConscious)
+    {
+        state.isConscious = false;
+        // Caller responsible for routing to FaintRecoverySequence
+    }
+}
+
+---
+
+### 3.5 Temperature Pockets — Cold Current Thermal Model
+
+Exponential Decay Formula:
+
+The suit's internal temperature converges toward external temperature following
+Newton's Law of Cooling with exponential decay:
+
+ΔT = (externalTemp - internalTemp) * (1 - e^(-dt / τ)) * (1 - insulationFactor)
+internalTemp_new = internalTemp + ΔT
+
+Where:
+- `τ` = `thermalTimeConstant` (seconds) — insulation time constant
+- `insulationFactor` ∈ `[0, 1]` — 1.0 = perfect insulation (no heat exchange)
+- At `insulationFactor = 0.0`, suit reaches external temp in ~3τ seconds
+
+Cold Current Detection:
+
+A "cold current" zone is tagged trigger volume with `externalTemp` override.
+
+| Current Class | External Temp | τ Override | Notes |
+|---------------|--------------|------------|-------|
+| `Mild`        | 4°C          | 60s        | Marginal heat drain |
+| `Deep`        | 1°C          | 30s        | Significant — player warned |
+| `Abyss`       | -0.5°C       | 15s        | Critical — emergency ascent advised |
+
+> Seawater at 4 km can reach -0.5°C due to pressure effects on freezing point.
+
+Implementation:
+
+public static void TickThermal(
+    ref SurvivalState  state,
+    SurvivalConfig     cfg,
+    float              dt)
+{
+    // Exponential decay toward external temperature
+    // Uses 1 - e^(-dt/τ) approximated accurately for small dt values
+    float tau           = cfg.thermalTimeConstant;
+    float decayFactor   = 1.0f - Mathf.Exp(-dt / tau);
+    float tempDelta     = (state.externalTemp - state.internalTemp)
+                        * decayFactor
+                        * (1.0f - state.insulationFactor);
+
+    state.internalTemp += tempDelta;
+}
+
+Insulation Damage:
+
+Insulation degrades with stress (micro-fractures in thermal lining):
+
+insulationFactor_new = insulationFactor * (1 - stress * 0.0001 * dt)
+insulationFactor_new = clamp(insulationFactor_new, 0.0, 1.0)
+
+---
+
+### 3.6 Glitch State Integration
+
+Threshold Table (DATA-DRIVEN — no hardcoded branches beyond this table):
+
+| Stress Range | `glitchIntensity` | InputManager Noise | HUDRenderer Noise | Notes |
+|--------------|-------------------|--------------------|-------------------|-------|
+| 0.00 – 0.69  | 0.0               | None               | None              | Nominal |
+| 0.70 – 0.79  | 0.1 – 0.3         | ±2° yaw drift      | Flicker 0.5 Hz    | Warning onset |
+| 0.80 – 0.89  | 0.3 – 0.6         | ±5° yaw, ±1° pitch | Flicker 1 Hz, scan lines | Structural alarm |
+| 0.90 – 0.94  | 0.6 – 0.9         | ±10°, random input drop 5% | Flicker 2 Hz, color desaturate | Pre-critical |
+| 0.95 – 1.00  | 0.9 – 1.0         | ±20°, drop 15%, invert 2% | 4 Hz blink, crack overlay | CRITICAL |
+
+Intensity Mapping:
+
+glitchIntensity = clamp((stress - glitchOnsetThreshold) / (1.0 - glitchOnsetThreshold), 0, 1)
+
+InputManager Noise Injection:
+
+public static Vector2 ApplyInputNoise(Vector2 rawLookDelta, float glitchIntensity, ref uint rngState)
+{
+    if (glitchIntensity <= 0f) return rawLookDelta;
+
+    // Deterministic noise via xorshift32 — zero GC, no Random.Range
+    float noise    = NextFloat(ref rngState) * 2f - 1f; // [-1, +1]
+    float maxDrift = glitchIntensity * 20f;             // degrees
+
+    return new Vector2(
+        rawLookDelta.x + noise * maxDrift,
+        rawLookDelta.y + noise * maxDrift * 0.5f
+    );
+}
+
+// xorshift32 — deterministic, zero-alloc PRNG
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+private static float NextFloat(ref uint state)
+{
+    state ^= state << 13;
+    state ^= state >> 17;
+    state ^= state << 5;
+    return (state & 0x7FFFFF) / (float)0x800000; // [0, 1)
+}
+
+HUDRenderer Noise:
+
+HUDRenderer receives `GlitchPayload` struct (value type) each frame:
+
+public readonly struct GlitchPayload
+{
+    public readonly float Intensity;     // [0...1]
+    public readonly float FlickerPhase;  // Time.time * flickerHz * 2π
+    public readonly bool  CrackOverlay;  // stress > 0.95
+}
+
+HUDRenderer applies `Intensity` to material property block — no string ops,
+no new allocations. Shader reads `_GlitchIntensity` float uniform.
+
+---
+
+### 3.7 Failure Recovery — Faint & Safe-Zone Restoration
+
+Faint State Rules:
+
+When `isConscious = false`:
+1. Player loses locomotion input (movement set to zero)
+2. Camera begins slow drift downward (simulated loss of control)
+3. `FaintRecoveryTimer` starts: `t = 8.0 seconds`
+4. During timer: oxygen auto-refills at `emergencyO2Rate = 0.02/sec` (emergency reserve canister)
+5. At timer expiry: trigger `RestoreToSafeZone()`
+
+Safe-Zone Registration:
+
+A safe zone is any trigger volume tagged `SafeZone` with recorded depth ≤ 1000 m.
+Updated continuously while player is conscious and within volume.
+
+// Called while player is alive and inside SafeZone trigger
+public static void RegisterSafeZone(ref SurvivalState state, Vector3 position, float depth)
+{
+    state.lastSafeZonePosition = position;
+    state.lastSafeZoneDepth    = depth;
+}
+
+`RestoreToSafeZone()` — Zero-GC Teleport Path:
+
+public static void RestoreToSafeZone(
+    ref SurvivalState state,
+    CharacterController characterController,
+    SurvivalConfig cfg)
+{
+    // 1. Disable CharacterController to allow position write (Unity requirement)
+    characterController.enabled = false;
+
+    // 2. Teleport — single frame, no async, no coroutine
+    characterController.transform.position = state.lastSafeZonePosition;
+
+    // 3. Re-enable
+    characterController.enabled = true;
+
+    // 4. Restore minimum viable life support
+    state.oxygenLevel   = Mathf.Max(state.oxygenLevel, 0.15f);  // Emergency O2 floor
+    state.batteryLevel  = Mathf.Max(state.batteryLevel, 0.10f); // Emergency power floor
+    state.isConscious   = true;
+
+    // 5. Recalculate pressure for new depth
+    state.depthPressure = DepthToMPa(state.lastSafeZoneDepth);
+
+    // 6. Stress is PRESERVED — structural damage does not heal on revival
+    //    (Stress reduction requires RepairKit consumable)
+
+    // 7. Thermal reset to safe-zone ambient (safe zones are heated)
+    state.internalTemp  = 18.0f; // Heated safe-zone baseline
+
+    // 8. Disarm glitch state
+    state.glitchIntensity = 0f;
+    state.isGlitchActive  = false;
+}
+
+> RULE: Safe-zone restoration preserves `hullStress` and `hullIntegrity`.
+> player returns damaged. This is intentional — revival is not reset.
+> If stress ≥ 0.95 at revival, critical warning loop immediately resumes.
+
+Stress Preservation Rationale:
+
+Resetting stress on revival would negate asymptotic fatigue model and allow
+exploit loops. structural damage hull sustained is physical fact. Players
+must manage stress proactively or carry repair consumables.
+
+---
+
+## SECTION 4: SCALE & INTEGRATION MAP
+
+[STRUCT_START]
+                     SURVIVAL SYSTEM OVERVIEW
+
+  DepthTracker ► DepthToMPa() ► SurvivalState
+                                            .depthPressure
+
+                              ┌
+
+                         TickHullStress()    TickThermal()
+
+                         hullStress          internalTemp
+
+                    ┌┐      TickLifeSupport()
+
+             GlitchState     ImplosionSequencer
+                                         oxygenLevel
+           ┌┐       FatalPressure
+                              ImplosionEvent
+    InputManager   HUDRenderer             faintCheck
+    (noise inject) (glitch mat)  EventBus
+                                            FaintRecovery
+                            GameStateManager
+                            VFXSpawner       RestoreToSafeZone()
+                            AudioDirector
+[STRUCT_END]
+
+### 4.1 System Update Order (Guaranteed)
+
+Frame Update():
+  1. DepthTracker.UpdateDepth()
+  2. SurvivalSystem.TickHullStress(ref state, cfg, dt)
+  3. SurvivalSystem.TickThermal(ref state, cfg, dt)
+  4. SurvivalSystem.TickLifeSupport(ref state, cfg, dt)
+  5. GlitchStateSystem.Evaluate(ref state, cfg)
+  6. GlitchStateSystem.InjectInputNoise(ref inputDelta, state.glitchIntensity)
+  7. ImplosionSequencer.Evaluate(in state, eventBus)
+  8. SurvivalHUDCache.TickRefresh(dt, in state, cfg)
+  9. HUDRenderer.Apply(in hudCache, in glitchPayload)
+
+No system may query `SurvivalState` before its upstream tick in this order.
+
+---
+
+## SECTION 5: SAFE — FALLBACKS & EDGE CASES
+
+| Scenario | Handling |
+|----------|----------|
+| `hullIntegrity` reaches `0.01` floor | Stress accumulation rate reaches ~40× baseline. Implosion is seconds away. Intentional design. |
+| Player has no registered safe zone (spawn case) | `lastSafeZonePosition` defaults to spawn point, depth = 0. `RestoreToSafeZone()` sends player to surface. |
+| `dt` spike (>0.2s, e.g., loading stall) | All tick functions clamp `dt = min(dt, 0.05f)` to prevent single-frame stress spikes from instant death. |
+| Battery reaches 0.0 | Suit heating disabled. `insulationFactor` set to `0.0`. Thermal decay accelerates to uninsulated rate. |
+| Both O2 and battery at 0.0 | O2 depletion continues (no pump = no circulation). Faint trigger fires normally. Revival still possible if safe zone exists. |
+| `externalTemp > internalTemp` (geothermal vent) | Exponential decay formula works identically — convergence direction reverses. No special case required. |
+| Repair kit used at stress > 0.95 | Stress delta applied: `stress -= repairKit.stressReduction`. Fatal sequence re-checked. If stress drops below 0.95, `isFatalSequenceArmed` remains true but `ImplosionSequencer._fired` is false — implosion does NOT re-trigger unless stress returns to 1.0. |
+| Multiple cold current volumes overlapping | Take `externalTemp` from volume with lowest temperature (worst case). Evaluated by `ThermalZoneManager`. |
+
+---
+
+## SECTION 6: TESTING & VALIDATION CONTRACTS
+
+Every formula in Section 3 MUST have corresponding deterministic unit test in
+`Tests/Runtime/SurvivalMathTests.cs`.
+
+### Required Test Cases
+
+| Test ID | Description | Pass Condition |
+|---------|-------------|----------------|
+| `SM-01` | Stress accumulation at 4000m, nominal integrity, 60s simulation | `stress ∈ [0.4, 0.8]` — not instant death, not trivial |
+| `SM-02` | Fatigue feedback loop — integrity degrades faster as stress rises | `integrity(t=120) < integrity(t=60) * 0.7` |
+| `SM-03` | `FatalPressureImplosionEvent` fires exactly once at stress ≥ 1.0 | Event count == 1 over 300s simulation |
+| `SM-04` | Thermal convergence to external temp without insulation | `abs(internalTemp - externalTemp) < 0.1` after `5 * τ` seconds |
+| `SM-05` | Thermal isolation — perfect insulation, no change | `internalTemp` unchanged over 300s when `insulationFactor = 1.0` |
+| `SM-06` | O2 depletes faster at high stress | `o2_at_stress_0.9(60s) < o2_at_stress_0.1(60s)` |
+| `SM-07` | Faint triggers at correct O2 threshold | `isConscious = false` exactly when `oxygenLevel ≤ 0.05` |
+| `SM-08` | Safe-zone restore preserves stress | `stress_post_restore == stress_pre_restore` |
+| `SM-09` | `dt` spike clamped — no instant death on 1s frame | `stress_delta(dt=1.0)` == `stress_delta(dt=0.05)` |
+| `SM-10` | Zero GC validation — profiler allocation count = 0 in 1000-frame sim | GC.Collect count unchanged |
+
+---

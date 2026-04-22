@@ -1,0 +1,352 @@
+# VEHICLES_SUBMARINES.md
+# HECTON-8 — Relative Kinematics & Reference Frames
+
+---
+
+## 0. AUTHORIZED AUTONOMY — NO-BOILERPLATE POLICY
+[MANDATE]: Logic Kernels only. Raw math, bitwise logic, pseudo-code.
+[FORBID]: Full C# classes. Parenting via `transform.parent`. Y-axis flattening on tilted hulls.
+[FORBID]: Redundant `Matrix4x4.Inverse()` calls per sub-tick. Cache once. Reuse everywhere.
+
+---
+
+## I. `ITransportPlatform` CONTRACT
+AUP = { int64x3 grid_sector, float3 local_offset } (Absolute Universe Position)
+[STRICT] - All AUP, AUPition, AUP -> AUP (Absolute Universe Position)
+### Mandatory Interface Members
+
+ITransportPlatform {
+    Transform   PlatformTransform         // Source-of-truth world transform. READ-ONLY from client.
+    Vector3     GetPlatformPointVelocity(Vector3 worldPoint)  // Rigid-body point velocity at arbitrary world pos.
+    bool        InheritPlatformRotation   // Toggle: player yaw tracks vessel yaw delta. See §III.
+}
+
+### `GetPlatformPointVelocity` — Logic Kernel
+
+// Replicates Rigidbody.GetPointVelocity without Rigidbody reference leak.
+// Caller caches result: do NOT call mid-frame multiple times.
+fn GetPlatformPointVelocity(worldPoint):
+    r      = worldPoint - rb.worldCenterOfMass
+    return   rb.linearVelocity + Cross(rb.angularVelocity, r)
+
+### Attachment State Bitmask
+
+[Flags] PlatformState : byte {
+    None        = 0b00000000,
+    Clamped     = 0b00000001,   // Magnetically/physically locked to hull
+    FreeRoaming = 0b00000010,   // Inside vessel, gravity active
+    Docked      = 0b00000100,   // In dock-seat / cockpit
+    EVA         = 0b00001000,   // Exited vessel, inertia handoff active
+    Crushing    = 0b00010000    // Bulkhead pressure detected — emergency
+}
+
+---
+
+## II. DATA ARCHITECTURE — PRTS CACHE
+
+### Per-FixedTick Cache Struct (update at TOP of FixedUpdate, before any solver)
+
+PlatformCache {
+    Matrix4x4  worldToLocal       // PlatformTransform.worldToLocalMatrix
+    Matrix4x4  localToWorld       // PlatformTransform.localToWorldMatrix
+    Vector3    position_curr      // PlatformTransform.position
+    Vector3    position_last      // Stored from prev tick
+    Quaternion rotation_curr      // PlatformTransform.rotation
+    Quaternion rotation_last      // Stored from prev tick
+    Vector3    linearVelocity     // rb.linearVelocity snapshot
+    Vector3    angularVelocity    // rb.angularVelocity snapshot
+    Vector3    delta_position     // position_curr - position_last
+    Quaternion delta_rotation     // rotation_curr * Inverse(rotation_last)
+}
+
+### Cache Update Pseudo-Code (FixedUpdate entry point — BEFORE player solver)
+
+fn UpdatePlatformCache(cache, platform):
+    cache.position_last   = cache.position_curr
+    cache.rotation_last   = cache.rotation_curr
+    cache.position_curr   = platform.PlatformTransform.position
+    cache.rotation_curr   = platform.PlatformTransform.rotation
+    cache.worldToLocal    = platform.PlatformTransform.worldToLocalMatrix   // Unity stores this: no Inverse() call
+    cache.localToWorld    = platform.PlatformTransform.localToWorldMatrix   // Complement: also stored, not computed
+    cache.delta_position  = cache.position_curr - cache.position_last
+    cache.delta_rotation  = cache.rotation_curr * Inverse(cache.rotation_last)
+    cache.linearVelocity  = rb_platform.linearVelocity
+    cache.angularVelocity = rb_platform.angularVelocity
+
+[RULE]: Unity's `Transform.worldToLocalMatrix` is a cached property — zero inverse cost. NEVER call `Matrix4x4.Inverse(localToWorld)` manually.
+
+---
+
+## III. RELATIVE INPUT TRANSFORMATION
+
+### Problem
+WASD input in world-space ignores vessel heading. Submarine pitches 30°: player walks into ceiling.
+
+### Solution — Project Input Through `worldToLocalMatrix`
+
+fn TransformInputToLocal(rawInput_world, cache):
+    // rawInput_world: float3 from input axes, already camera-relative in WORLD space
+    // Step 1: express desired move direction in platform-local space
+    input_local = cache.worldToLocal.MultiplyVector(rawInput_world)
+    // [FORBID]: DO NOT zero input_local.y here. Preserve full 3D on tilted hulls.
+    // Step 2: normalize preserving magnitude
+    mag         = Length(rawInput_world)
+    input_local = Normalize(input_local) * mag
+    return input_local
+
+### Movement Flow (Canonical 4-Step)
+
+[1] READ:    rawInput        = GetAxis(H, V) → float3 camera-forward in world
+[2] LOCALIZE: localInput    = worldToLocal.MultiplyVector(rawInput)        // §III above
+[3] SOLVE:   localMove      = CharacterSolver(localInput, localGravity)    // local-space KCC step
+[4] PROJECT: worldMove      = localToWorld.MultiplyVector(localMove)       // back to world for MovePosition
+
+---
+
+## IV. THE SUBMARINE PROBLEM — ADDITIVE YAW (ROTATION INHERITANCE)
+
+### Rule Set
+
+if platform.InheritPlatformRotation == true AND state.HasFlag(FreeRoaming | Clamped):
+    Apply delta_rotation to player world rotation.
+    Player local rotation relative to hull: UNCHANGED.
+    Player appears to "turn with the ship" from external observer.
+    Player's internal perspective: vessel interior is stationary.
+
+### Delta-Rotation Solve — Logic Kernel
+
+fn ApplyPlatformRotationDelta(playerWorldRot, cache):
+    dq              = cache.delta_rotation                   // pre-computed: q_new * Inverse(q_old)
+    newWorldRot     = dq * playerWorldRot                    // left-multiply: apply vessel rotation first
+    return newWorldRot
+
+// [MATH]: dq = q_curr * Inverse(q_last)
+// [MATH]: Decompose dq to axis-angle for angular velocity: dq.ToAxisAngle(out axis, out angle); ω = axis * (angle / dt)
+// [FORBID]: Euler decomposition of dq — Gimbal Lock on full 6DOF submarine roll/pitch.
+
+### Local Rotation Invariance Check
+
+// Verification: player's rotation expressed in platform local space must not drift.
+localRot_before = Inverse(cache.rotation_last) * playerWorldRot_before
+localRot_after  = Inverse(cache.rotation_curr) * playerWorldRot_after
+Assert(Approximately(localRot_before, localRot_after), tolerance = 0.001°)
+
+---
+
+## V. MOTION INTEGRATION — `MovePosition` WITH PLATFORM DELTA
+
+### Problem
+Submarine translates 2m between FixedUpdate ticks. Player's rigidbody/KCC stays behind — clips through bulkhead.
+
+### Formula — Carrier-Relative MovePosition
+
+// [MATH]: pos_world_new = dq * (pos_world_old - pos_last) + pos_curr + localMove_world
+//
+// Breakdown:
+//   (pos_world_old - pos_last)  : player offset from last platform origin
+//   dq * (...)                  : rotate that offset by platform's angular delta
+//   + pos_curr                  : translate to new platform origin
+//   + localMove_world           : add player's own volitional movement (from §III step 4)
+
+fn IntegratePlayerPosition(pos_old, localMove_world, cache):
+    offset_rotated = cache.delta_rotation * (pos_old - cache.position_last)
+    pos_new        = cache.position_curr + offset_rotated + localMove_world
+    rb_player.MovePosition(pos_new)
+
+### Anti-Clipping Rule
+
+[RULE]: Apply platform delta BEFORE player movement delta in same tick.
+[RULE]: Platform delta is not optional — apply even if player input == zero.
+[FORBID]: Adding platform velocity to player velocity as force/impulse — causes integration error accumulation.
+
+### Velocity Correction (Continuous Collision Guard)
+
+// Sync player rigidbody velocity to match platform at attachment point.
+// Prevents physics engine from seeing relative velocity as collision impulse.
+fn SyncAttachedVelocity(worldPoint, cache, platform):
+    platformPointVel      = platform.GetPlatformPointVelocity(worldPoint)
+    rb_player.linearVelocity = platformPointVel + playerRelativeVel
+    // playerRelativeVel: player's own locomotion velocity in world space
+
+---
+
+## VI. INERTIA HANDOFF — EVA PROTOCOL (VEHICLE EXIT)
+
+### Rule: Conservation of Momentum
+
+// [MATH]: v_world_exit = v_vessel + v_player_relative
+//
+// v_vessel        = platform.GetPlatformPointVelocity(player.worldPosition)  // point velocity at exit pos
+// v_player_relative = player's local locomotion velocity expressed in world space at moment of exit
+
+fn ExecuteEVAHandoff(playerExitWorldPos, playerLocalVel_atExit, cache, platform):
+    v_vessel          = platform.GetPlatformPointVelocity(playerExitWorldPos)
+    v_player_world    = cache.localToWorld.MultiplyVector(playerLocalVel_atExit)
+    v_final           = v_vessel + v_player_world
+    rb_player.linearVelocity = v_final
+    state             = PlatformState.EVA
+    activePlatform    = NULL
+
+### [FORBID] — Hard Rules for EVA
+
+[FORBID]: rb_player.linearVelocity = Vector3.zero on exit.
+[FORBID]: rb_player.linearVelocity = playerLocalVel only (ignores vessel momentum — player stops mid-ocean).
+[FORBID]: Instant platform detach before handoff calculation executes.
+[RULE]:   EVA state persists minimum 3 physics ticks before new platform attachment permitted.
+          Prevents immediate re-grab canceling handoff inertia.
+
+### Re-Entry Inertia Absorption
+
+// Player grabs vessel handle while EVA. Must bleed relative velocity, not snap.
+fn EVAReEntry(rb_player, platform, worldPoint, blendRate):
+    targetVel    = platform.GetPlatformPointVelocity(worldPoint)
+    rb_player.linearVelocity = Lerp(rb_player.linearVelocity, targetVel, blendRate * fixedDt)
+    // blendRate: tunable 5.0–15.0 depending on grip strength simulation
+
+---
+
+## VII. COLLISION LOGIC — INTERIOR RAYCASTING ON MOVING PLATFORM
+
+### Problem
+Platform moves. Raycast origins in world space. Interior colliders shift between cast-issued and result-evaluated frames.
+
+### Solution — Local-Space Sweep, World-Space Result
+
+fn InteriorCapsuleCast(origin_world, dir_world, radius, height, cache):
+    // Convert sweep to platform local space — colliders are stable in local space
+    origin_local = cache.worldToLocal.MultiplyPoint3x4(origin_world)
+    dir_local    = cache.worldToLocal.MultiplyVector(dir_world)
+
+    // Execute cast in world space BUT against layermask: Interior_Colliders only
+    // Physics.CapsuleCast operates world-space — platform colliders have moved with rigidbody
+    // Unity PhysX syncs collider world positions after MovePosition: cast is valid same tick if called AFTER MovePosition
+
+    hit = Physics.CapsuleCast(
+        point1      = origin_world + Up * (height * 0.5 - radius),
+        point2      = origin_world - Up * (height * 0.5 - radius),
+        radius      = radius,
+        direction   = dir_world,
+        maxDistance = castDist,
+        layerMask   = LAYER_INTERIOR | LAYER_HULL
+    )
+    return hit
+
+### Tick Ordering — Collision Validity Window
+
+[ORDER]:
+    1. Platform Rigidbody.MovePosition() executes (PhysX internal)
+    2. FixedUpdate begins
+    3. Cache platform transform (§II)
+    4. Apply player MovePosition via §V formula
+    5. Execute interior raycasts ← VALID HERE: colliders in sync with new platform pos
+    6. Resolve penetration
+    7. Store last positions for next tick
+
+[FORBID]: Raycasting in Update() against moving interior colliders — interpolation desync.
+
+### Penetration Recovery — Bulkhead Pressure (Crushing State)
+
+fn ResolvePenetration(playerPos, overlapColliders, cache):
+    for each col in overlapColliders:
+        Physics.ComputePenetration(
+            playerCollider, playerPos, playerRot,
+            col, col.transform.position, col.transform.rotation,
+            out dir, out dist
+        )
+        correctionVec = dir * (dist + SKIN_WIDTH)    // SKIN_WIDTH = 0.01m
+        playerPos    += correctionVec
+
+    if dist > CRUSH_THRESHOLD (0.15m):               // Cannot resolve: crushing
+        state |= PlatformState.Crushing
+        TriggerCrushDamage()
+        EmergencyTeleport(lastSafeLocalPos, cache)   // §VIII
+
+---
+
+## VIII. TELEPORT SAFETY — HIGH-G MANEUVERS
+
+### Teleport Guard
+
+fn EmergencyTeleport(safeLocalPos, cache):
+    safeWorldPos     = cache.localToWorld.MultiplyPoint3x4(safeLocalPos)
+    rb_player.position = safeWorldPos                // Bypass MovePosition — direct set
+    rb_player.linearVelocity = cache.linearVelocity  // Match vessel linear vel instantly
+    // [RULE]: Store lastSafeLocalPos every tick player is NOT in Crushing state.
+    //         Expressed in LOCAL space — valid even if vessel teleports.
+
+fn UpdateLastSafeLocal(playerWorldPos, cache):
+    if NOT state.HasFlag(Crushing):
+        lastSafeLocalPos = cache.worldToLocal.MultiplyPoint3x4(playerWorldPos)
+
+### High-G Delta Guard
+
+// If platform_delta_position > MAX_SAFE_DELTA_PER_TICK, vessel is teleporting or desyncing.
+MAX_SAFE_DELTA_PER_TICK = 5.0m   // tune per max vessel speed * fixedDt
+
+fn ValidatePlatformDelta(cache):
+    if Length(cache.delta_position) > MAX_SAFE_DELTA_PER_TICK:
+        cache.delta_position = Vector3.zero          // Suppress invalid delta
+        cache.delta_rotation = Quaternion.identity   // Suppress invalid rotation
+        LogWarning("Platform delta spike — suppressed. Frame desync suspected.")
+
+---
+
+## IX. HARDWARE OPTIMIZATION — MX350 / i3-10gen TARGETS
+
+### Cache Policy
+
+[RULE]: PlatformCache updated ONCE per FixedUpdate. Shared by all systems (KCC, Camera, IK, Audio).
+[RULE]: worldToLocal / localToWorld read from Transform property (Unity-cached). Never recompute.
+[FORBID]: Any system calling platform.PlatformTransform.worldToLocalMatrix more than once per tick.
+          Route all access through singleton PlatformCache ref.
+
+### LOD — Physics Precision Tiers
+
+Distance from vessel center:
+    0–3m   (Interior Core)    : Full PRTS. Full penetration solve. Full EVA protocol.
+    3–10m  (Interior Perimeter): PRTS active. Penetration solve simplified (sphere only).
+    10–25m (Near Exterior)    : Silhouette sync only. No interior raycasts. Velocity match only.
+    >25m   (Far Exterior)     : Detach from PRTS entirely. Standard world-space physics.
+
+[SCALE]: LOD tier evaluated once per 10 FixedUpdate ticks. Not per-tick.
+[SCALE]: Tier stored as 2-bit value in PlatformState bitmask upper nibble.
+
+### Computation Budget per FixedTick (Target: i3-10gen, 50Hz Physics)
+
+PlatformCache update     : < 0.05ms
+Player PRTS solve        : < 0.10ms
+Interior CapsuleCast x3  : < 0.20ms
+Penetration resolve      : < 0.10ms
+Total PRTS budget        : < 0.45ms / FixedTick
+
+---
+
+## X. FAILURE MODE REGISTRY
+
+| ID    | Failure                              | Detection                              | Mitigation                                      |
+|-------|--------------------------------------|----------------------------------------|-------------------------------------------------|
+| F-01  | Player drifts from vessel on turn    | localRot invariance check fails        | Re-apply dq to world rotation §IV               |
+| F-02  | Player clips through bulkhead        | Penetration dist > SKIN_WIDTH          | ResolvePenetration + EmergencyTeleport §VII      |
+| F-03  | EVA player stops dead in water       | linearVelocity ≈ 0 post-exit           | FORBID velocity zero — enforce §VI formula       |
+| F-04  | Input feels rotated inside vessel    | Player moves "wrong" direction on WASD | Verify worldToLocal transform applied §III       |
+| F-05  | Physics explosion on re-entry        | Impulse spike on attach                | EVA re-entry Lerp blend §VI                      |
+| F-06  | Platform delta spike (teleport)      | delta_pos > MAX_SAFE_DELTA_PER_TICK   | Suppress delta §VIII ValidatePlatformDelta       |
+| F-07  | Gimbal lock during pitch maneuver    | Rotation behaves erratically           | FORBID Euler decomp — quaternion path only §IV   |
+| F-08  | Crushing with no safe pos stored     | lastSafeLocalPos stale                 | Fallback: vessel center in local space           |
+| F-09  | Redundant Inverse() calls            | Profiler spike on matrix math          | Enforce cache policy §II — property access only  |
+| F-10  | Interior cast hits exterior world    | Raycast returns wrong geometry         | LayerMask strictly INTERIOR \| HULL only §VII   |
+
+---
+
+## XI. INTEGRATION CHECKLIST — PER SYSTEM
+
+[ ] ITransportPlatform implemented on all vessel Rigidbodies
+[ ] PlatformCache singleton initialized before first FixedUpdate
+[ ] Input pipeline routes through worldToLocal §III before any movement solve
+[ ] MovePosition formula uses §V kernel — NOT direct velocity add
+[ ] EVA handoff uses §VI formula — velocity zero FORBIDDEN in exit path
+[ ] Interior raycasts called AFTER platform MovePosition in tick order §VII
+[ ] lastSafeLocalPos updated every non-crushing tick §VIII
+[ ] Platform delta spike guard active §VIII
+[ ] LOD tiers assigned and evaluated every 10 ticks §IX
+[ ] Failure modes F-01 through F-10 have runtime assertions or log guards

@@ -1,0 +1,440 @@
+# VOXEL_SDF_GEOMETRY.md
+## DISTILLED TECHNICAL MANDATE — HECTON-8 ENGINE | REV 4.1
+
+---
+
+## §0 — PIPELINE CONTRACT
+
+DensityField(3D NativeArray<half>)
+  → SDF_Compose(CSG + smin_exp)
+    → MarchingCubes(IJob, burst)
+      → WeldVertices(HashMap dedup)
+        → NormalBake(densityField sample, NO recompute)
+          → CurvatureBake(Laplacian6, → Color.a)
+            → SkirtStitch(LOD boundary mask → Color.b)
+              → UV3_Encode(AbsWorldPos)
+                → MeshUpload(UploadMeshData, non-blocking)
+                  → PhysicsBake(BakeDistributed, N frames)
+
+Violation of sequence order → pipeline invalidation. No exceptions.
+
+---
+
+## §1 — DENSITY FIELD SPECIFICATIONS
+
+### 1.1 Storage Layout
+
+NativeArray<half> densityField
+  Stride: [x + y*W + z*W*H]
+  Padding: +1 voxel each axis (border ghost cells for gradient sampling)
+  Allocation: Persistent, scratch-slot pooled
+  Count: (ChunkRes+2)³ per slot
+  Max concurrent: PoolSize = 8 slots (2M voxel budget total)
+
+### 1.2 Coordinate Contracts
+
+LocalVoxelPos  : int3  [0 .. ChunkRes+1]  (includes ghost border)
+LocalFloatPos  : float3 = LocalVoxelPos * VoxelStep
+WorldPos       : float3 = ChunkOriginWS + LocalFloatPos
+UV3_AbsPos     : float3 = WorldPos  (stored as-is in UV3, decoded in shader)
+
+### 1.3 Precision Policy
+
+Storage  : half  (density query result)
+Compute  : float (all SDF math, no half arithmetic in ALU path)
+Write    : (half)clamp(result, -MAX_DIST, +MAX_DIST)
+MAX_DIST : VoxelStep * ChunkRes * 0.5f
+
+---
+
+## §2 — SDF COMPOSITION KERNEL
+
+### 2.1 Boolean CSG Hierarchy
+
+Priority order (evaluated once per voxel, early-exit on terminal ops):
+  Union      → smin_exp(a, b, k)
+  Subtract   → max(a, -b)           [no smooth variant: crisp cuts only]
+  Intersect  → max(a, b)
+  Replace    → b                    [material override zones]
+
+### 2.2 smin_exp — Exponential Smooth Min
+
+MATH: res = -log(exp(-k*a) + exp(-k*b)) / k
+
+k range  : [0.5 .. 32.0]  (terrain=4.0, coral=16.0, bio-mass=8.0)
+Guard    : clamp inputs to [-80/k, +80/k] before exp() → prevents inf
+Blend    : t = exp(-k*a) / (exp(-k*a) + exp(-k*b))  → material lerp weight
+Material : lerp(matA, matB, t)  → pass to color buffer
+
+### 2.3 Analytic Ellipsoid SDF (Quilez-Style)
+
+MATH (exact, no gradient distortion):
+  p'  = p / radii                          // scale to sphere space
+  k0  = length(p')
+  k1  = length(p' / radii)
+  res = k0 * (k0 - 1.0) / k1
+
+GUARD: radii components → max(radii, float3(1e-5))   // div-zero shield
+USAGE: oceanic boulders, bio-domes, pressure-pod geometry
+
+### 2.4 Primitive Library — Distilled Kernels
+
+// Rounded Box
+q = abs(p) - halfExtents + float3(r)
+sdRBox = length(max(q, 0)) + min(max(q.x, max(q.y, q.z)), 0) - r
+
+// Capped Cylinder
+d = float2(abs(length(p.xz) - radius), abs(p.y) - halfH)
+sdCylinder = min(max(d.x, d.y), 0) + length(max(d, 0))
+
+// Torus
+q = float2(length(p.xz) - R, p.y)
+sdTorus = length(q) - r
+
+// Displacement (macro-detail, world-space noise)
+sdDisplace(p) = sdPrimitive(p) + Noise3D(p * freq) * amplitude
+  → amplitude ≤ VoxelStep * 0.4  (prevent topology inversion)
+
+### 2.5 Terrain Layering Stack
+
+Pass 0: Base Heightfield SDF       → large-scale cave/floor silhouette
+Pass 1: sdRBox subtract ops        → tunnel carving
+Pass 2: smin_exp union             → organic protrusion blend
+Pass 3: Displacement noise         → micro-surface roughness
+Pass 4: Bio-mass overlay           → sdTorus/sdEllipsoid clusters
+Pass 5: Clamp + write densityField
+
+All passes: single flat loop over ghost-padded voxel buffer.
+No nested dispatch. One write per voxel.
+
+---
+
+## §3 — MARCHING CUBES KERNEL
+
+### 3.1 Job Architecture
+
+IJobParallelFor over (ChunkRes)³ voxels
+  InnerloopBatchCount: 64
+  Burst: [BurstCompile(FloatMode=Fast, FloatPrecision=Standard)]
+  Read:  densityField NativeArray<half> [ReadOnly]
+  Write: vertexScratch, indexScratch NativeArray (pre-allocated scratch slot)
+
+### 3.2 Cube Sample Pattern
+
+Corner offsets (canonical MC winding, CCW front-face):
+  c[0]=int3(0,0,0) c[1]=int3(1,0,0) c[2]=int3(1,1,0) c[3]=int3(0,1,0)
+  c[4]=int3(0,0,1) c[5]=int3(1,0,1) c[6]=int3(1,1,1) c[7]=int3(0,1,1)
+
+Sample: d[i] = (float)densityField[FlatIdx(voxelPos + c[i])]
+IsoLevel: 0.0f  (signed density convention)
+CubeIndex: bitfield  →  cubeIndex |= (d[i] < IsoLevel) ? (1 << i) : 0
+
+### 3.3 Edge Interpolation
+
+t = d[v0] / (d[v0] - d[v1])       // precise crossing parameter
+t = clamp(t, 0.001f, 0.999f)      // prevent degenerate verts at corners
+vertPos = lerp(posV0, posV1, t)   // local float3
+
+### 3.4 Buffer Overflow Guard
+
+PRE-EMIT check:
+  if (vertexWriteHead + triVertCount > vertexScratch.Length)
+    → atomicFlag SafeExit = true  (interlocked)
+    → return immediately (no write)
+
+POST-JOB:
+  if (SafeExit) → schedule SecondPassAllocation(2x buffer) → re-run job
+  Max re-runs: 2. Third failure → log CRITICAL, skip chunk this frame.
+
+### 3.5 LOD Voxel Step Scaling
+
+LOD0: VoxelStep = BaseStep          (full resolution, ≤32m from camera)
+LOD1: VoxelStep = BaseStep * 2.0   (32-96m)
+LOD2: VoxelStep = BaseStep * 4.0   (96-256m, normals: 4-tap fallback)
+LOD3: VoxelStep = BaseStep * 8.0   (256m+, density-only, no physics bake)
+
+Transition hysteresis: 4m band → suppress flicker
+
+---
+
+## §4 — VERTEX WELD & DEDUPLICATION
+
+### 4.1 Weld Strategy
+
+Key: int3 = round(vertPos / WeldEpsilon)  →  WeldEpsilon = VoxelStep * 0.01f
+HashMap<int3, ushort> weldMap  (NativeHashMap, Persistent scratch)
+  Capacity: ChunkRes³ * 3  (conservative upper bound, pre-sized)
+  On collision: reuse existing index
+  On insert: write vertex to final buffer, store index
+
+Output: tightly packed vertex buffer + index remapping
+
+### 4.2 Vertex Layout Contract
+
+Pos     : float3   [stream 0]
+Normal  : float3   [stream 1]  ← baked from densityField, NOT recomputed
+Color.r : Material blend weight (smin_exp t value, [0..1])
+Color.g : Reserved (wetness mask, populated by fluid sim integration)
+Color.b : SkirtMask [0=interior, 1=LOD seam skirt vertex]
+Color.a : Curvature [Laplacian6 result, normalized]
+UV0     : float2   [triplanar blend weights, derived from normal]
+UV3     : float3   [AbsoluteWorldPos → float3 packed as UV3]
+
+---
+
+## §5 — NORMAL COMPUTATION
+
+### 5.1 Policy
+
+[FORBID]: Recomputing SDF expressions inside VoxelNormalJob.
+[RULE]:   Sample pre-computed densityField via central differences ONLY.
+
+### 5.2 Central Difference — 6-Tap (LOD0/LOD1 High Quality)
+
+h = VoxelStep * 0.5f
+
+n.x = D(x+h,y,z) - D(x-h,y,z)
+n.y = D(x,y+h,z) - D(x,y-h,z)
+n.z = D(x,y,z+h) - D(x,y,z-h)
+
+n = normalize(n)
+
+D(p) = SampleDensityField(p)   // trilinear interp from NativeArray<half>
+  → convert half→float at sample point
+  → ghost border cells supply valid data for boundary verts
+
+### 5.3 Central Difference — 4-Tap (LOD2+ Distance Fallback)
+
+// Tetrahedron-pattern, 4 samples vs 6 — 33% ALU reduction on MX350
+k0 = float3( 1,-1,-1)
+k1 = float3(-1,-1, 1)
+k2 = float3(-1, 1,-1)
+k3 = float3( 1, 1, 1)
+
+n = normalize(
+  k0 * D(p + k0*h) +
+  k1 * D(p + k1*h) +
+  k2 * D(p + k2*h) +
+  k3 * D(p + k3*h)
+)
+
+### 5.4 Boundary Ghost Cell Extrapolation
+
+Ghost voxels at border: copy nearest interior density value (clamp-to-edge).
+No wrap. No zero-fill (zero-fill produces inverted normals at chunk edge).
+Ghost write: single pre-pass before MC job launch.
+
+---
+
+## §6 — CURVATURE BAKE → Color.a
+
+### 6.1 Discrete SDF Laplacian (6-Sample)
+
+MATH:
+  center = D(x,y,z)
+  L = D(x+h,y,z) + D(x-h,y,z)
+    + D(x,y+h,z) + D(x,y-h,z)
+    + D(x,y,z+h) + D(x,y,z-h)
+    - 6.0f * center
+
+  curvature_raw = L / (h * h)
+
+Normalize to [0..1]:
+  Color.a = saturate((curvature_raw - CurvMin) / (CurvMax - CurvMin))
+  CurvMin = -2.0 / VoxelStep
+  CurvMax = +2.0 / VoxelStep
+
+### 6.2 Usage Contract (Shader Side)
+
+Color.a → drives:
+  [1] Edge wear albedo darkening  : lerp(baseAlbedo, wornAlbedo, Color.a)
+  [2] Ambient occlusion proxy     : AO_factor = 1 - Color.a * 0.6
+  [3] Barnacle/growth mask        : step(GrowthThreshold, Color.a)
+  [4] Specular cavity suppression : spec *= (1 - Color.a * 0.8)
+
+---
+
+## §7 — LOD SEAM STITCHING
+
+### 7.1 Skirt Generation
+
+Skirt vertices: extruded outward from chunk boundary faces by SkirtDepth.
+  SkirtDepth(LOD0→LOD1) = VoxelStep_LOD1 * 1.5f
+  SkirtDepth(LOD1→LOD2) = VoxelStep_LOD2 * 1.5f
+
+Skirt vertices: Color.b = 1.0  (shader clips/fades skirt in deep distance)
+Interior verts: Color.b = 0.0
+
+### 7.2 World-Space Noise Seam Alignment
+
+Shared noise seed across LOD levels: seed derived from ChunkID only (not LOD level).
+  offset = fbm3D(WorldPos * SeamNoiseFreq, octaves=2) * SeamNoiseAmp
+  SeamNoiseFreq = 1.0 / (ChunkSize * 4.0)
+  SeamNoiseAmp  = VoxelStep_LOD1 * 0.3f
+
+Both LOD sides sample identical world-pos → identical offset → seam vanishes.
+Apply offset to density BEFORE MC, not to final vertex positions.
+
+### 7.3 T-Junction Prevention
+
+LOD1 chunk boundary verts must snap to LOD0 edge midpoints.
+Snap kernel:
+  if (onBoundary && LOD_mismatch_detected)
+    vertPos = round(vertPos / VoxelStep_LOD0) * VoxelStep_LOD0
+Applied post-weld, pre-normal-bake.
+
+---
+
+## §8 — MESH UPLOAD & PHYSICS BAKE
+
+### 8.1 Non-Blocking Mesh Upload
+
+MeshDataArray mda = Mesh.AllocateWritableMeshData(1)
+  → fill via NativeArray views (zero-copy)
+Mesh.ApplyAndDisposeWritableMeshData(mda, targetMesh)
+  → flags: MeshUpdateFlags.DontRecalculateBounds | DontValidateIndices
+RecalculateBounds(): manual call, only when AABBDirty flag set.
+
+### 8.2 Sub-Chunk Staging (Large Chunk Overflow)
+
+If VertexCount > 65535 (ushort index limit):
+  Split into SubChunks along dominant axis (longest AABB edge)
+  Each SubChunk: independent NativeArray segment, independent Mesh
+  Max SubChunks per chunk: 4
+  Index format: UInt32 only if SubChunk split fails (rare, LOD0 dense zones)
+
+### 8.3 Physics Bake Distribution
+
+BakeDistributed:
+  Frame N+0: Generate mesh, upload geometry
+  Frame N+1: Physics.BakeMesh(meshID, convex=false)  [JobHandle dependency]
+  Frame N+2: Assign baked MeshCollider.sharedMesh
+  Frame N+3: Enable collider active flag
+
+  During bake window: use previous-frame collider (no physics gap for static geo)
+  LOD2+: No physics bake. Collision disabled. Visual only.
+  LOD3:  No upload to GPU collider pipeline. Occlusion proxy only.
+
+---
+
+## §9 — MEMORY & ALLOCATION POLICY
+
+### 9.1 Scratch Slot Pool
+
+Pool: 8 persistent NativeArray scratch slots
+Slot content per slot:
+  densityField     : NativeArray<half>  [(ChunkRes+2)³]
+  vertexScratch    : NativeArray<Vertex>[ChunkRes³ * 5]   (worst-case MC)
+  indexScratch     : NativeArray<uint>  [ChunkRes³ * 15]
+  weldHashMap      : NativeHashMap<int3,ushort>
+  normalScratch    : NativeArray<float3>[ChunkRes³ * 5]
+
+Allocation: Allocator.Persistent at engine init.
+Acquisition: atomic slot-lock (interlocked int bitmask, bit per slot).
+Release: clear data flag only, no Dispose(). Reuse next request.
+
+### 9.2 Budget Enforcement
+
+Max active voxels (all slots combined): 2,000,000
+  → ChunkRes=32 → 32,768 voxels/chunk → max 61 concurrent builds
+  → ChunkRes=64 → 262,144 voxels/chunk → max 7 concurrent builds
+
+Exceed budget: queue remainder, stagger across frames.
+Priority: player-adjacent chunks first (Manhattan dist from camera chunk).
+
+### 9.3 Forbidden Patterns
+
+[FORBID] Allocator.Temp inside IJob  → use pre-allocated scratch
+[FORBID] new Mesh() inside build job → use Mesh.AllocateWritableMeshData
+[FORBID] GetComponent inside density evaluation loop
+[FORBID] Any GC-heap allocation on hot path (zero-alloc contract)
+[FORBID] densityField resampling in NormalJob → read pre-computed array
+
+---
+
+## §10 — SCALABILITY MATRIX
+
+| Config       | ChunkRes | VoxelStep | Normal Taps | PhysicsBake | MaxConcurrent |
+|-------------|----------|-----------|-------------|-------------|---------------|
+| MinSpec     | 16       | 0.5m      | 4-tap all   | LOD0 only   | 2             |
+| Low         | 24       | 0.4m      | 4-tap LOD1+ | LOD0-1      | 4             |
+| Medium      | 32       | 0.3m      | 6/4 split   | LOD0-1      | 6             |
+| High        | 48       | 0.25m     | 6-tap LOD0  | LOD0-2      | 8             |
+| Ultra       | 64       | 0.2m      | 6-tap all   | LOD0-2      | 8             |
+
+MinSpec target: i3-10gen / MX350 / 6GB RAM.
+Ultra target: i7-12gen / RTX 3070 / 16GB RAM.
+Scalability switch: runtime detection via SystemInfo, no manual quality preset required.
+
+---
+
+## §11 — FAILURE MODES & GUARDS
+
+### 11.1 Division-by-Zero
+
+All analytic SDF radii params: max(value, 1e-5f)
+Normal normalize: if (length(n) < 1e-6f) → n = float3(0,1,0)  (up fallback)
+Curvature normalize denominator: max(CurvMax - CurvMin, 1e-4f)
+smin_exp k parameter: max(k, 0.01f)
+Edge interp denominator: max(abs(d[v0]-d[v1]), 1e-7f)
+
+### 11.2 MC Buffer Overflow
+
+Safe-exit flag: NativeReference<bool> SafeExit (atomic write from parallel job)
+If triggered:
+  → abort current vertex/index emission (partial mesh discarded)
+  → log [WARN] ChunkID + VertexHead + BufferCapacity
+  → schedule RetryJob with capacity *= 2
+  → max 2 retries → fallback to empty collision mesh, visual placeholder
+
+### 11.3 Stale Chunk Detection
+
+ChunkVersion: uint per chunk (increment on any density modification)
+NormalJob caches ChunkVersion at dispatch time.
+On mesh assignment: verify NormalJob.CapturedVersion == ChunkVersion
+  Mismatch → discard result → re-queue dirty chunk
+
+### 11.4 NaN Propagation Shield
+
+Post-normal-bake: isnan(n.x|n.y|n.z) → replace with float3(0,1,0)
+Post-curvature:   isnan(curv)         → replace with 0.5f
+Post-vertex:      isnan(any component) → vertex flagged, excluded from index buffer
+
+---
+
+## §12 — INTEGRATION CHECKPOINTS
+
+[CHECK-01] densityField fully written before MC job scheduled  → JobHandle.Complete() fence
+[CHECK-02] Ghost border pass completes before normal job reads boundary verts
+[CHECK-03] WeldMap cleared between chunk builds              → NativeHashMap.Clear(), not Dispose
+[CHECK-04] SkirtMask (Color.b) set BEFORE normal bake (normal job reads weld output)
+[CHECK-05] UV3 written as AbsWorldPos = ChunkOriginWS + LocalFloatPos (no camera-relative drift)
+[CHECK-06] PhysicsBake scheduled ONLY after Mesh.ApplyAndDisposeWritableMeshData completes
+[CHECK-07] Scratch slot released ONLY after physics bake job dependency chain resolves
+[CHECK-08] SeamNoise offset applied to densityField write pass, not vertex post-process
+
+---
+
+## §13 — SHADER INTEGRATION CONTRACTS
+
+### 13.1 Normal Reconstruction (Receiver Shader)
+
+// Normals baked in world-space (not object-space). Shader must not apply
+// object-to-world transform to vertex normals.
+// World-space encoding: mandatory for correct triplanar mapping.
+
+### 13.2 Triplanar UV Derivation
+
+// Derived from world normal in vertex shader, NOT stored in UV0/UV1.
+// UV0 stores triplanar blend weights: float2(blendXY, blendZ)
+// blendXZ = saturate(abs(n.y) - 0.2) / 0.8
+// blendXY = saturate(abs(n.z) - 0.2) / 0.8  [remaining weight = n.x face]
+
+### 13.3 UV3 World Position Usage
+
+UV3 = AbsoluteWorldPos (float3, full precision)
+Shader usage:
+  → Caustics: procedural UV = UV3.xz * causticsTile + Time
+  → Fog depth: length(UV3 - _CameraWS)
+  → Pressure zones: UV3.y → depth-based pressure darkening
+  → Bioluminescence: snoise(UV3 * bioFreq + Time) > threshold

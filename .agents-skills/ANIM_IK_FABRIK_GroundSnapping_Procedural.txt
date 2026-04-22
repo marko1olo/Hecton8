@@ -1,0 +1,539 @@
+# PROCEDURAL_ANIMATION_IK.md
+
+## CORE_ARCHITECTURE
+
+### IK_SOLVER_SELECTION
+- FABRIK: Legs, tentacles, robotic arms (multi-joint chains 3+)
+- Two-Bone IK (Analytical): Humanoid arms/legs (exactly 2 joints) — faster than FABRIK
+- CCD (Cyclic Coordinate Descent): Tails, spines, flexible appendages — better convergence for curved paths
+- Trigonometric Solver: Simple 2-bone chains (elbow/knee) — single-pass analytical solution
+
+### HYBRID_ANIMATION_STRATEGY
+- Root motion: Baked animation (Unity Animator)
+- Limb endpoints: Procedural IK overrides
+- Secondary motion (cloth, fins): Verlet integration (separate system)
+- Micro-details (finger curl, eye darts): Pre-baked animation clips blended at runtime
+
+---
+
+## BURST_JOB_PIPELINE
+
+### FRAME_EXECUTION_ORDER
+
+1. GatherTransformDataJob (read bone world-space pos/rot into NativeArray)
+2. GroundDetectionJob (parallel raycasts for foot targets)
+3. IK_SolverJob (FABRIK/CCD calculation)
+4. ConstraintApplicationJob (angle limits, twist prevention)
+5. TransformWritebackJob (write to TransformAccessArray)
+
+### JOB_STRUCTS
+
+IKChainData {
+  NativeArray<float3> positions      // bone world positions
+  NativeArray<quaternion> rotations  // bone world rotations
+  NativeArray<float> lengths         // segment lengths (cached)
+  float3 targetPos
+  float3 poleVector                  // elbow/knee hint direction
+  int iterations                     // FABRIK pass count (3-5 typical)
+  float tolerance                    // early-exit threshold (0.001f)
+}
+
+GroundCastResult {
+  float3 hitPoint
+  float3 hitNormal
+  bool validHit
+  float distanceToGround
+}
+
+### BURST_OPTIMIZATION_FLAGS
+
+[BurstCompile(CompileSynchronously = false,
+              FloatPrecision.Standard,
+              FloatMode.Fast,
+              OptimizeFor = OptimizeFor.Performance)]
+
+- FloatMode.Fast: Skip NaN checks (validate inputs upstream)
+- Avoid branches in hot loop: Use math.select() instead of if/else
+- Vectorize: Process 4 chains simultaneously using float4 operations where possible
+
+---
+
+## FABRIK_IMPLEMENTATION
+
+### CORE_ALGORITHM
+
+Input: positions[n], targetPos, rootPos
+
+BACKWARD_PASS:
+  positions[n-1] = targetPos
+  for i = n-2 down to 0:
+    direction = normalize(positions[i] - positions[i+1])
+    positions[i] = positions[i+1] + direction * lengths[i]
+
+FORWARD_PASS:
+  positions[0] = rootPos
+  for i = 1 to n-1:
+    direction = normalize(positions[i] - positions[i-1])
+    positions[i] = positions[i-1] + direction * lengths[i-1]
+
+ITERATE: Repeat until distance(positions[n-1], targetPos) < tolerance OR max_iterations
+
+### POLE_VECTOR_CONSTRAINT
+
+Apply after each FABRIK iteration:
+  midJoint = positions[1] (for 3-bone chain)
+  toMid = midJoint - positions[0]
+  toPole = poleVector - positions[0]
+
+  projectionPlane = cross(normalize(positions[2] - positions[0]), toPole)
+  correctedDir = cross(projectionPlane, normalize(positions[2] - positions[0]))
+
+  positions[1] = positions[0] + normalize(correctedDir) * lengths[0]
+
+### ANGLE_CONSTRAINTS
+
+Post-solve joint clamping:
+  for each joint i:
+    parentToJoint = positions[i] - positions[i-1]
+    jointToChild = positions[i+1] - positions[i]
+
+    currentAngle = acos(dot(normalize(parentToJoint), normalize(jointToChild)))
+
+    if currentAngle < minAngle[i]:
+      axis = cross(parentToJoint, jointToChild)
+      correction = quaternion.AxisAngle(axis, minAngle[i] - currentAngle)
+      positions[i+1] = positions[i] + rotate(correction, jointToChild)
+
+    if currentAngle > maxAngle[i]:
+      // similar correction for max
+
+---
+
+## TWO_BONE_ANALYTICAL_SOLVER
+
+### TRIGONOMETRIC_SOLUTION
+
+Input: rootPos, midPos, endPos, targetPos, poleVector
+
+a = length(rootPos, midPos)   // upper arm/thigh
+b = length(midPos, endPos)    // forearm/shin
+c = length(rootPos, targetPos) // distance to target
+
+// Clamp unreachable targets
+c = min(c, a + b - 0.001)
+c = max(c, abs(a - b) + 0.001)
+
+// Law of cosines
+cos_elbow = (a*a + b*b - c*c) / (2*a*b)
+elbow_angle = acos(clamp(cos_elbow, -1, 1))
+
+cos_shoulder = (a*a + c*c - b*b) / (2*a*c)
+shoulder_angle = acos(clamp(cos_shoulder, -1, 1))
+
+// Construct rotations
+toTarget = normalize(targetPos - rootPos)
+toPole = normalize(poleVector - rootPos)
+
+bendAxis = normalize(cross(toTarget, toPole))
+shoulderRot = quaternion.AxisAngle(bendAxis, shoulder_angle)
+elbowRot = quaternion.AxisAngle(bendAxis, PI - elbow_angle)
+
+// Apply
+midPos_new = rootPos + rotate(shoulderRot, float3(0,a,0))
+endPos_new = midPos_new + rotate(shoulderRot * elbowRot, float3(0,b,0))
+
+---
+
+## GROUND_SNAPPING
+
+### RAYCAST_STRATEGY
+
+Origin: Hip position + lateral offset (for foot placement width)
+Direction: -up (character space)
+Distance: leg_length * 1.5
+
+If hit:
+  footTargetPos = hitPoint + hitNormal * footThickness
+  footTargetRot = quaternion.LookRotationSafe(forward, hitNormal)
+Else:
+  footTargetPos = hipPos - up * leg_length (fallback straight down)
+
+### SLOPE_ADAPTATION
+
+Surface angle = acos(dot(hitNormal, worldUp))
+
+If angle > 45°:
+  Reduce IK weight: weight = lerp(1, 0, (angle - 45) / 45)
+  Blend to animated foot position (prevents foot sliding on walls)
+
+### STEP_CYCLE_DETECTION
+
+Foot plants when:
+  velocity.magnitude < 0.1 AND distanceToGround < 0.05
+
+Lift foot when:
+  other_foot.isPlanted AND strideDistance > stepThreshold
+
+stepThreshold = baseStepLength * (1 + velocity.magnitude * 0.2) // adaptive stride
+
+---
+
+## DISTANCE_BASED_THROTTLING
+
+### UPDATE_FREQUENCY_TIERS
+
+Tier 0 (0-10m):   Every frame
+Tier 1 (10-25m):  Every 2nd frame (offset by entity.id % 2)
+Tier 2 (25-50m):  Every 4th frame (offset by entity.id % 4)
+Tier 3 (50m+):    Freeze IK, use static pose or vertex animation
+
+### BATCH_SCHEDULING
+
+IKUpdateBitfield (64-bit):
+  Frame 0: Update entities where (id & 0b11) == 0b00
+  Frame 1: Update entities where (id & 0b11) == 0b01
+  Frame 2: Update entities where (id & 0b11) == 0b10
+  Frame 3: Update entities where (id & 0b11) == 0b11
+
+Bitwise mask avoids modulo operation (faster branch prediction)
+
+---
+
+## TRANSFORM_ACCESS_OPTIMIZATION
+
+### MINIMIZE_TRANSFORM_READS
+
+Cache on entity spawn:
+  - Bone hierarchy indices
+  - Local-space rest pose
+  - Parent transform reference (root only)
+
+Per-frame workflow:
+  1. Read root.position + root.rotation ONCE
+  2. All IK math in world-space using NativeArrays
+  3. Convert final positions to local-space using cached parent inverse matrices
+  4. Write to TransformAccessArray in single job
+
+### WRITEBACK_JOB
+
+[BurstCompile]
+struct ApplyIKTransformsJob : IJobParallelForTransform {
+  [ReadOnly] public NativeArray<quaternion> boneRotations;
+  [ReadOnly] public NativeArray<float3> bonePositions;
+  [ReadOnly] public NativeArray<quaternion> parentInverseRotations;
+
+  public void Execute(int index, TransformAccess transform) {
+    // Convert world to local
+    quaternion localRot = math.mul(parentInverseRotations[index], boneRotations[index]);
+    transform.localRotation = localRot;
+    // Position usually not overridden (rotation propagates down chain)
+  }
+}
+
+---
+
+## LOOK_AT_SYSTEM
+
+### HEAD_TRACKING
+
+Smoothed rotation:
+  targetRot = quaternion.LookRotationSafe(targetPos - headPos, worldUp)
+
+  // Exponential smoothing (frame-rate independent)
+  k = 5.0f // stiffness
+  t = 1.0f - math.exp(-k * deltaTime)
+
+  currentRot = math.slerp(currentRot, targetRot, t)
+
+### CONSTRAINT_CONE
+
+Max look angle from forward: 80° horizontal, 60° vertical
+
+lookDir = math.mul(currentRot, float3(0,0,1))
+forwardDir = math.mul(bodyRot, float3(0,0,1))
+
+angle = math.acos(math.dot(lookDir, forwardDir))
+
+if angle > maxAngle:
+  axis = math.cross(forwardDir, lookDir)
+  clampedRot = quaternion.AxisAngle(axis, maxAngle)
+  currentRot = math.mul(bodyRot, clampedRot)
+
+### MULTI_TARGET_PRIORITY
+
+Targets sorted by:
+  1. Threat level (attacking entity = highest)
+  2. Angular distance from current look direction
+  3. Distance (closer = higher priority)
+
+Blend between top 2 targets:
+  weight = threat_delta / (threat_delta + angle_delta)
+  finalTarget = lerp(target1, target2, weight)
+
+---
+
+## JITTER_PREVENTION
+
+### ROTATION_DELTA_CLAMPING
+
+maxRotationSpeed = 360° per second
+
+Per bone per frame:
+  deltaRot = math.mul(math.inverse(prevRot), newRot)
+  (angle, axis) = deltaRot.ToAngleAxis()
+
+  maxDelta = maxRotationSpeed * deltaTime
+
+  if angle > maxDelta:
+    clampedRot = quaternion.AxisAngle(axis, maxDelta)
+    newRot = math.mul(prevRot, clampedRot)
+
+### POSITION_STABILIZATION
+
+If target moves < 0.01 units AND solver converged:
+  Skip IK calculation, reuse previous frame's result
+  Prevents micro-jitter from floating-point accumulation
+
+### VELOCITY_SMOOTHING
+
+Track bone angular velocity:
+  angularVel = (currentRot - prevRot) / deltaTime
+
+Filter with moving average (window size 3):
+  smoothedVel = (angularVel[t] + angularVel[t-1] + angularVel[t-2]) / 3
+
+Apply smoothed velocity:
+  currentRot = prevRot + smoothedVel * deltaTime
+
+---
+
+## UNREACHABLE_TARGET_HANDLING
+
+### DISTANCE_CHECK
+
+maxReach = sum(chainLengths)
+distanceToTarget = length(targetPos - rootPos)
+
+if distanceToTarget > maxReach * 0.95:
+  ikWeight = math.unlerp(maxReach * 0.95, maxReach * 1.05, distanceToTarget)
+  ikWeight = 1 - math.saturate(ikWeight)
+
+  // Blend to fallback animation
+  finalRot[i] = math.slerp(animatedRot[i], ikRot[i], ikWeight)
+
+### STRETCH_PREVENTION
+
+Never fully extend joints (prevents locked-limb visual artifacts):
+  For each segment:
+    clampedLength = originalLength * 0.98
+
+Maintain slight bend even at maximum reach
+
+---
+
+## MEMORY_LAYOUT
+
+### POOLING_STRATEGY
+
+Pre-allocate per entity type:
+  IKChainPool<Humanoid>: 50 chains (2 arms, 2 legs, head)
+  IKChainPool<Creature_4Leg>: 40 chains
+  IKChainPool<Tentacle_8Limb>: 80 chains
+
+Use NativeArray<T> with Allocator.Persistent
+Reuse arrays when entity despawns (avoid GC churn)
+
+### STRUCT_PACKING
+
+Align data for SIMD:
+  Use float3 (12 bytes) but pad structs to 16-byte boundaries
+  Quaternions naturally 16 bytes (4 floats)
+
+Avoid:
+  Bool fields (use int or bitfield)
+  Mixed float/int in same struct (causes alignment gaps)
+
+---
+
+## INTEGRATION_CHECKLIST
+
+### INITIALIZATION
+
+On entity spawn:
+  1. Cache bone hierarchy (parent indices, initial lengths)
+  2. Allocate NativeArrays from pools
+  3. Register with IKUpdateScheduler
+  4. Set initial IK targets to bind-pose positions
+
+### PER_FRAME_EXECUTION
+
+EarlyUpdate: GroundDetectionJob.Schedule()
+Update:      IK_SolverJob.Schedule(GroundDetectionJob.handle)
+LateUpdate:  TransformWritebackJob.Schedule(IK_SolverJob.handle)
+             JobHandle.Complete() before rendering
+
+### CLEANUP
+
+On entity despawn:
+  1. Complete any in-flight jobs
+  2. Return NativeArrays to pool
+  3. Unregister from scheduler
+  4. Clear cached bone references
+
+---
+
+## PERFORMANCE_TARGETS
+
+### MX350_BUDGET
+
+Max simultaneous IK entities: 8 full-res + 16 throttled
+Per-frame cost:
+  - FABRIK (5 iterations, 4 bones): ~0.08ms
+  - Two-bone analytical: ~0.02ms
+  - Ground raycast: ~0.05ms (batched)
+
+Total IK budget: 1.5ms per frame (10% of 16.6ms frame time)
+
+### SCALABILITY_KNOBS
+
+Quality presets:
+  Ultra:  All entities full IK, 5 iterations, every frame
+  High:   8 entities full, rest throttled, 4 iterations
+  Medium: 4 entities full, rest LOD2, 3 iterations
+  Low:    2 entities full, rest baked vertex animation, 2 iterations
+
+---
+
+## ADVANCED_TECHNIQUES
+
+### PHYSICS_INTEGRATION
+
+Ragdoll blending:
+  When entity dies:
+    1. Transition IK weight 1→0 over 0.2s
+    2. Enable ragdoll physics
+    3. Apply IK velocities to rigidbody bones (preserves momentum)
+
+### ANTICIPATION_OFFSET
+
+For legged locomotion:
+  Predict foot target position 0.1s ahead:
+    predictedPos = currentPos + velocity * 0.1 + 0.5 * acceleration * 0.01
+
+  Prevents foot sliding during acceleration changes
+
+### SPINE_CURVATURE
+
+Use Catmull-Rom spline for spine chain:
+  Input: Hip position, chest target, head target
+  Output: Smooth curve through 5 spine bones
+
+  for each bone i:
+    t = i / (boneCount - 1)
+    pos[i] = CatmullRom(hipPos, chestTarget, headTarget, t)
+
+### SECONDARY_MOTION_DAMPENING
+
+Apply to IK results to simulate muscle lag:
+  Spring-damper per bone:
+    acceleration = (targetPos - currentPos) * stiffness - velocity * damping
+    velocity += acceleration * deltaTime
+    currentPos += velocity * deltaTime
+
+  Stiffness: 50-200 (higher = stiffer)
+  Damping: 5-20 (higher = less oscillation)
+
+---
+
+## DEBUGGING_TOOLS
+
+### GIZMO_VISUALIZATION
+
+Draw in Scene view:
+  - IK chain bones (yellow lines)
+  - Target positions (red spheres)
+  - Pole vectors (blue arrows)
+  - Constraint cones (wireframe cones)
+  - Ground raycast hits (green dots)
+
+### PERFORMANCE_PROFILER_MARKERS
+
+using Unity.Profiling;
+
+static readonly ProfilerMarker s_FABRIKMarker = new ProfilerMarker("IK.FABRIK");
+static readonly ProfilerMarker s_GroundCastMarker = new ProfilerMarker("IK.GroundCast");
+
+Usage:
+  s_FABRIKMarker.Begin();
+  // solver code
+  s_FABRIKMarker.End();
+
+### VALIDATION_ASSERTS
+
+Debug builds only:
+  - Assert segment lengths never change
+  - Assert bone positions never NaN/Infinity
+  - Assert rotation quaternions normalized (w²+x²+y²+z²=1)
+  - Assert job handles completed before transform access
+
+---
+
+## FAILURE_MODE_MITIGATIONS
+
+### NAN_PROPAGATION_GUARD
+
+After every math operation in hot path:
+  result = math.select(fallbackValue, result, math.isfinite(result))
+
+Fallback values:
+  Position: Last valid position
+  Rotation: quaternion.identity
+
+### SINGULARITY_AVOIDANCE
+
+When normalizing vectors:
+  len = math.length(v)
+  v = math.select(float3(0,1,0), v / len, len > 0.0001f)
+
+Prevents division by zero when direction undefined
+
+### CONSTRAINT_CONFLICT_RESOLUTION
+
+If angle constraints cannot be satisfied simultaneously:
+  1. Prioritize proximal joints (closer to root)
+  2. Solve iteratively from root to tip
+  3. Allow distal joints to violate constraints if necessary
+  4. Flag entity for animator blend-in (override IK with baked animation)
+
+---
+
+## OPTIMIZATION_WINS
+
+### CACHE_COHERENCY
+
+Structure IK data as Array-of-Structs-of-Arrays:
+  class IKBatch {
+    NativeArray<float3> allPositions;  // [entity0_bone0, entity0_bone1, ..., entity1_bone0, ...]
+    NativeArray<int> entityOffsets;    // [0, 4, 8, ...] (where each entity's data starts)
+  }
+
+Sequential memory access improves L1 cache hit rate
+
+### SIMD_VECTORIZATION
+
+Process 4 bones simultaneously:
+  float4x3 positions;  // 4 float3 packed
+  float4x3 directions = normalizesafe(positions - prevPositions);
+  positions = prevPositions + directions * lengths;
+
+Requires Burst 1.8+ with explicit SIMD intrinsics
+
+### EARLY_EXIT_CONVERGENCE
+
+Track error per iteration:
+  error = distance(endEffector, target)
+
+If error < tolerance OR error_delta < 0.0001:
+  Break loop (no need for remaining iterations)
+
+Saves ~40% CPU on simple poses

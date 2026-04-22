@@ -1,0 +1,296 @@
+# UI_DATA_STREAMING.md
+
+## REGISTRY_ARCHITECTURE
+
+### TMP_TextRegistry
+- Static `Dictionary<int, TMP_Text>` keyed by FNV1a hash of hierarchyPath
+- Registration: OnEnable auto-registers via `transform.GetHierarchyPath()` hash
+- Deregistration: OnDisable removes entry; null-check before removal
+- Batch Lookup: `GetTextBatch(int[] hashes, TMP_Text[] outBuffer)` fills pre-allocated array
+- Forbidden: LINQ, `FindObjectsOfType`, string-keyed dictionaries
+
+### HierarchyPath_Hashing
+
+Hash = 2166136261u (FNV offset_basis)
+For each char in path:
+  Hash ^= char
+  Hash *= 16777619u (FNV prime)
+
+- Cache hash in TMP_Text MonoBehaviour field `_registryKey` on first computation
+- Path format: "Canvas/HUD/HealthBar/ValueText" (skip root scene objects)
+
+### Registry_Lifecycle
+- Init: Empty constructor, capacity = 256
+- Update Check: If `_isDirty` flag set, rebuild internal sorted array for batch ops
+- Concurrent Safety: Mark dirty on add/remove; rebuild only during safe tick window
+
+---
+
+## ZERO_GC_TEXT_SYSTEMS
+
+### CharBuffer_Pool
+- `static char[16][64]` pre-allocated buffers (16 slots, 64 chars each)
+- Bitmask allocation: `ushort _slotMask` tracks free slots via bitwise ops
+- Acquire: `slot = math.tzcnt(_slotMask); _slotMask &= ~(1u << slot)`
+- Release: `_slotMask |= (1u << slot)`
+
+### Int_to_CharBuffer (Zero-Alloc)
+
+Input: int value, char[] buffer, int startIndex
+Output: int charsWritten
+
+if value == 0: buffer[0] = '0'; return 1
+negative = value < 0
+if negative: value = -value; buffer[startIndex++] = '-'
+
+digitCount = 0
+temp = value
+while temp > 0: temp /= 10; digitCount++
+
+for i = digitCount-1 down to 0:
+  buffer[startIndex + i] = (char)('0' + value % 10)
+  value /= 10
+
+return digitCount + (negative ? 1 : 0)
+
+### Float_to_CharBuffer (Fixed Precision)
+
+Input: float value, int decimals, char[] buffer
+Output: int charsWritten
+
+intPart = (int)value
+fracPart = (int)((value - intPart) * pow(10, decimals))
+
+len = IntToBuffer(intPart, buffer, 0)
+buffer[len++] = '.'
+fracLen = IntToBuffer(fracPart, buffer, len)
+pad zeros if fracLen < decimals
+return len + decimals
+
+### TMP_SetTextZeroGC
+
+Step 1: Convert data to char[] via above methods
+Step 2: tmpText.SetCharArray(buffer, 0, length)
+Forbidden: SetText(string), text property assignment
+
+---
+
+## HUD_UPDATE_CADENCE
+
+### TickBudget_Scheduler
+- `SlowTick`: 500ms interval (2Hz) for FPS counter, memory stats
+- `MediumTick`: 100ms interval (10Hz) for oxygen, depth meters
+- `FastTick`: 16ms interval (60Hz) for crosshair, critical warnings
+- Per-tick budget: 0.3ms for all UI text updates combined
+
+### Staggered_Update_Pattern
+
+Frame N % 30 == 0: Update FPS/Memory
+Frame N % 6 == 0: Update Oxygen/Depth
+Frame N % 1: Update Critical Warnings
+
+Store last update values; skip if delta < threshold:
+  FPS: Skip if abs(newFPS - oldFPS) < 2
+  Oxygen: Skip if abs(newO2 - oldO2) < 0.5%
+
+### Hysteresis_Damping
+
+displayValue = lerp(displayValue, targetValue, dampFactor * deltaTime)
+
+dampFactor tuning:
+  Health: 8.0 (smooth decay)
+  Oxygen: 12.0 (responsive)
+  Battery: 6.0 (slow drain feel)
+
+Apply only when abs(display - target) > 0.01
+
+---
+
+## CANVAS_OPTIMIZATION
+
+### Layer_Separation
+- Canvas_Static: Icons, borders, background panels (never rebuild)
+- Canvas_Dynamic: Text fields updated per tick
+- Canvas_WorldSpace: Hologram displays, 3D UI panels
+- Sorting Order: Static=10, Dynamic=20, WorldSpace=5
+
+### Visibility_Control
+
+Hide: canvasGroup.alpha = 0; canvasGroup.blocksRaycasts = false
+Show: canvasGroup.alpha = 1; canvasGroup.blocksRaycasts = true
+Forbidden: SetActive(false) on Canvas GameObjects
+
+### Overdraw_Reduction
+- Disable raycastTarget on all non-interactive TMP_Text
+- Use `PixelPerfect = false` on CanvasScaler
+- Static batching: Group all static images under single Canvas with `additionalShaderChannels = None`
+
+---
+
+## MATRIX_SCALING_SYSTEM
+
+### Resolution_Adaptation
+
+Reference: 1920x1080
+Current: screenWidth x screenHeight
+
+scaleX = screenWidth / 1920.0
+scaleY = screenHeight / 1080.0
+uniformScale = min(scaleX, scaleY)
+
+canvasRootTransform.localScale = Vector3.one * uniformScale
+
+### Anchor_Presets
+- Corners: Use `AnchorMin/Max = (0,1)` style anchors, not CanvasScaler stretch
+- Safe Area: Apply `Screen.safeArea` rect to root RectTransform on mobile
+- Forbidden: RectTransform size delta changes during runtime (layout thrash)
+
+### DPI_Scaling (Desktop)
+
+baseDPI = 96.0
+actualDPI = Screen.dpi
+dpiScale = clamp(actualDPI / baseDPI, 0.75, 2.0)
+
+fontSize = baseFontSize * dpiScale
+iconSize = baseIconSize * dpiScale
+
+Store base sizes in ScriptableObject; apply scale on init only
+
+---
+
+## FONT_ATLAS_STREAMING
+
+### SDF_Settings_LOD
+- Distance < 5m: Full quality (Dilate=0, Softness=0)
+- Distance 5-15m: Medium (Dilate=0.1, Softness=0.15)
+- Distance > 15m: Low (Dilate=0.2, Softness=0.3)
+- Check distance per world-space canvas every MediumTick
+
+### Staged_Font_Swap
+
+State Machine:
+1. COLLECT: Build list of all TMP_Text via Registry (1 frame)
+2. SWAP_BATCH: Process 18 references per frame
+   - tmpText.font = newFontAsset
+   - Increment counter
+3. WAIT_ATLAS: Check font.atlasPopulationMode completion
+4. FINALIZE: Rebuild all canvases, set _swapComplete = true
+
+Display "REBOOTING INTERFACE..." overlay during states 1-3
+Progress bar: (processedCount / totalCount) * 100
+
+### Fallback_BIOS_Font
+- If font.material == null after 2 frames: Use `Resources/Fonts/Fallback_Mono.asset`
+- BIOS style: Monospace, no SDF, 12pt fixed size
+- Auto-revert when primary font loads
+
+---
+
+## LOCALIZATION_HASH_TABLE
+
+### String_Key_Elimination
+
+Forbidden: Dictionary<string, string> for localization
+Required: Dictionary<int, string> with FNV1a hashed keys
+
+Editor Tool: Generate static class on build:
+public static class LocalizationKeys {
+  public const int HUD_Health = 0x4A3F9C12;
+  public const int HUD_Oxygen = 0x7B2E1F88;
+  // ... auto-generated from JSON
+}
+
+### Lookup_Pattern
+
+int key = LocalizationKeys.HUD_Health;
+if (LocalizationTable.TryGetValue(key, out string text)) {
+  // Use text
+}
+
+Preload: Load all strings for current language into Dictionary on scene start
+Switch Language: Clear + Reload table, trigger font swap if charset differs
+
+---
+
+## PERFORMANCE_DIAGNOSTICS_HUD
+
+### FPS_Counter (SlowTick)
+
+Accumulate deltaTime over 0.5s window
+frameCount++
+if accumulated >= 0.5:
+  fps = frameCount / accumulated
+  IntToBuffer(fps, charBuffer, 0)
+  fpsText.SetCharArray(charBuffer)
+  Reset accumulators
+
+### Memory_Display
+
+totalMem = Profiler.GetTotalReservedMemoryLong() / 1048576 (MB)
+usedMem = Profiler.GetTotalAllocatedMemoryLong() / 1048576
+
+Format: "MEM: 234/512 MB"
+Use two IntToBuffer calls, insert " MB" literal chars
+
+### GPU_Stats (Conditional Compile)
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+frameTime = UnityEngine.Rendering.FrameTimingManager
+gpuTime extract from FrameTiming struct
+Display: "GPU: 8.3ms"
+#endif
+
+---
+
+## INTERACTION_SYSTEMS
+
+### Raycast_Optimization
+- UI Camera: Separate camera for UI layer only
+- Event Mask: Bitwise filter for interactive elements only
+- Blocked Raycast Budget: Max 8 raycast checks per frame
+- Cache: Store last hovered element; skip raycast if mouse unmoved
+
+### Button_Pooling
+
+Pool size: 32 button instances
+On menu open: Activate N buttons from pool
+On menu close: Deactivate all, return to pool
+Reset state: image.color = default, text.text = ""
+
+---
+
+## FAILURE_MODES
+
+### Overflow_Guard
+
+if bufferLength > 63:
+  Array.Copy(buffer, 0, buffer, 0, 60)
+  buffer[60] = '.'
+  buffer[61] = '.'
+  buffer[62] = '.'
+  length = 63
+
+### Null_Reference_Chain
+
+Before Registry access:
+if (_registry == null) InitRegistry()
+if (!_registry.TryGetValue(key, out var tmp)) return
+if (tmp == null) { _registry.Remove(key); return }
+
+### Atlas_Timeout
+
+const float ATLAS_TIMEOUT = 0.1f (2 frames at 60fps)
+if Time.time - atlasRequestTime > ATLAS_TIMEOUT:
+  font = FallbackFont
+  LogWarning("Atlas load timeout")
+
+---
+
+## INTEGRATION_CHECKLIST
+
+- Registry init before first UI instantiation
+- CharBuffer pool initialized in static constructor
+- Canvas layers assigned in prefab (no runtime changes)
+- All TMP_Text raycastTarget = false except buttons
+- Font swap triggers only from pause menu or settings
+- Profiler validation: Zero GC spikes during 60s HUD stress test

@@ -4,7 +4,7 @@
 
 Senior Technical Director / Lead Unity 6 C# Developer.
 HECTON-8 — AA commercial 3D game (NASA-Punk + Deep Sea Noir).
-Engine: Unity 6000.4.1f1 URP. Target: NVIDIA MX350 2GB VRAM, 12GB RAM, i5-1135G7.
+Engine: Unity 6000.4 URP. Target: NVIDIA MX350 2GB VRAM, 8GB RAM, i5-1135G7.
 Perf target: 60 FPS / 16.67 ms. Throttle threshold = 25 ms.
 Guardrails: main thread ≤ 12 ms · GC = 0 B/frame · SetPass ≤ 600 · Batches ≤ 1800 · mem ≤ 4096 MB.
 VRAM RED threshold: Texture > 900 MB OR RenderTexture > 500 MB.
@@ -18,10 +18,10 @@ NOT a creative director — execute within existing architecture.
 AA commercial product — Master Grade, enterprise-level, visually premium.
 
 ---
+
 strict rules
 [RULE] 3RD-PARTY ASSET INTEGRITY: DO NOT write custom runtime wrappers, material clones, or overrides for complex 3rd-party assets (Crest, MapMagic). If Crest requires an asset material, assign the asset. NO runtime instantiation of Crest materials.
 [RULE] REVERT OVER HACK: If a previously working system breaks, DO NOT write new logic ("Fix-Forward") to patch it. Revert the file to its last working Git state and find the exact broken reference.
-
 ---
 
 ## PROJECT ARCHITECTURE
@@ -348,6 +348,11 @@ Same rule: RaycastNonAlloc · OverlapSphereNonAlloc · SphereCastNonAlloc · Box
 
 ## ARCHITECTURE / OWNERSHIP / COMPLIANCE
 
+## [RULE] MANDATE CONTEXTUAL INGESTION
+[REQ] Before any task, scan C:\hades\Hecton8\.agents-skills\ and load ONLY relevant mandates.
+[RULE] You are FORBIDDEN from guessing logic if a mandate exists. Reading the mandate is the first step of the task.
+[RULE] Every technical report must state which mandates were followed.
+
 ### [RULE] ARCHITECTURE FIRST
 
 Before writing ANY logic: Does this belong here? · Is there already an owner? · Am I mixing runtime/editor/proxy/baking? · Am I importing external subsystem wholesale? · Is this file already large/fragile?
@@ -561,5 +566,5 @@ Response format: What was wrong → What I did → In-game result → What was v
 ## FINAL DIRECTIVE
 
 Zero GC. Production-ready. Enterprise quality. Now.
-No "fix later". No "temporary". No "good enough for testing". Any change without improvement is harmful.
+No "good enough for testing". Any change without improvement is harmful.
 FACTS ONLY. NO OPTIMISM. OBEY DOCUMENTS, LOGS, OBJECTIVE DATA.

@@ -1,0 +1,525 @@
+# LIGHTING_OCCLUSION_LOGIC.md
+# HECTON-8 | Abyssal Lighting & Occlusion Mandate
+
+---
+
+## §0. FOUNDATIONAL AXIOMS
+
+Darkness = Default State. All light is additive exception. Never subtractive.
+Voxel authority over light. Geometry wins. No light penetrates solid voxel without explicit permission flag.
+CPU drives logic. GPU draws result. All culling, sorting, budget decisions: CPU-side. GPU receives pre-filtered draw list only.
+
+---
+
+## §1. PROXY LIGHT REGISTRY — AbyssalLightManager
+
+### 1.1 Core Struct
+
+struct ProxyLight {
+    float3  Pos;            // World-space origin
+    float   Range;          // Effective radius (meters)
+    float3  Color;          // Linear HDR color (not gamma)
+    byte    Type;           // 0=Point 1=Spot 2=Bioluminescent 3=Emissive-Proxy
+    uint    Flags;          // Bitfield — see §1.2
+    float   Intensity;      // Candela-normalized, clamped §6.1
+    float   ShadowPhase;    // Stagger offset [0.0–1.0], assigned at registration
+    byte    LOD;            // Runtime-computed each frame §4.2
+    float   LastUpdateTime; // For staggered shadow writes
+}
+
+### 1.2 Flags Bitfield
+
+bit 0  → CASTS_SHADOW
+bit 1  → AFFECTS_VOXEL_GI
+bit 2  → IS_PLAYER_OWNED       // Flashlight / dive-torch
+bit 3  → BIOLUMINESCENT_PULSE  // Drives sinusoidal modulation
+bit 4  → REGISTERED_IN_ATLAS   // Shadow atlas slot claimed
+bit 5  → OCCLUSION_TESTED      // Passed ray-voxel test this frame
+bit 6  → DARK_VOLUME_EXEMPT    // Override: survives DarkVolume suppression
+bit 7  → LUMEN_CAPPED          // Budget flag: intensity was clamped
+
+### 1.3 Registration Contract
+
+REGISTER(ProxyLight L):
+    ASSERT L.Range > 0 AND L.Range < RANGE_HARD_MAX (= 40m)
+    ASSERT L.Intensity <= LUMEN_BUDGET_PER_LIGHT (= 8000 cd)
+    Assign L.ShadowPhase = (registryCount % 4) * 0.25
+    Insert → NativeArray<ProxyLight> _lightPool (max capacity = 128)
+    Dirty → spatial grid cell covering L.Pos
+    IF _lightPool.Count > 128 → REJECT, log overflow, fallback emissive-only
+
+DEREGISTER(ProxyLight L):
+    Nullify slot → mark as FREE
+    Release shadow atlas slot IF bit4 set
+    Dirty → affected grid cells
+
+### 1.4 Spatial Grid (Acceleration)
+
+Grid cell size = 16m × 8m × 16m (narrow vertical for depth-layered ocean)
+Grid storage = flat NativeArray, row-major XZY
+Cell → stores indices into _lightPool (max 8 lights/cell)
+Neighbor traversal = 3×3×1 cells (lateral bias, vertical single-layer)
+Update grid ONLY on Dirty flag, not every frame
+
+---
+
+## §2. ATTENUATION — MATH KERNELS
+
+### 2.1 Primary Attenuation
+
+d = length(FragPos - L.Pos)
+
+// Inverse-square with near-field regularization (epsilon prevents div/0)
+ε = 0.1
+atten_phys = 1.0 / (1.0 + d * d + ε)
+
+// Soft range cutoff — fade begins at 80% of Range
+atten_cutoff = smoothstep(L.Range, L.Range * 0.8, d)
+
+// Combined
+intensity_final = L.Intensity * atten_phys * atten_cutoff
+
+### 2.2 Bioluminescent Pulse Modulation (Type == 2, bit3 set)
+
+// Perlin-free sinusoidal shimmer. Two-frequency superposition.
+f1 = 0.7 Hz, f2 = 1.3 Hz  // Asymmetric → organic feel
+t = Time.time
+
+pulse = 0.85 + 0.10 * sin(2π * f1 * t + L.ShadowPhase * 6.28)
+            + 0.05 * sin(2π * f2 * t + L.ShadowPhase * 3.14)
+
+intensity_final *= pulse
+// Range: [0.70 → 1.00] — no full extinction, no harsh flicker
+
+### 2.3 Depth-Pressure Color Shift
+
+// Deeper = redshift absorbed by water, cyan-blue dominates
+depth_t = saturate(playerDepth / MAX_DEPTH)  // MAX_DEPTH = 1500m
+
+// Per-channel absorption coefficients (empirical seawater approximation)
+absorb_R = exp(-depth_t * 3.2)
+absorb_G = exp(-depth_t * 1.0)
+absorb_B = exp(-depth_t * 0.4)
+
+L.Color_attenuated = L.Color * float3(absorb_R, absorb_G, absorb_B)
+
+### 2.4 Scattering Haze (Volumetric-cheap substitute)
+
+// Beer-Lambert single-scatter approximation, no ray march
+scatter_density = BiomeFogDensity(playerDepth)  // float LUT lookup
+scatter = 1.0 - exp(-scatter_density * d)
+
+// Additive haze tint blended onto final color
+haze_color = BiomeHazeColor(playerDepth)  // float3 LUT lookup
+output_color = lerp(intensity_final * L.Color_attenuated,
+                    intensity_final * haze_color,
+                    scatter * 0.35)
+
+---
+
+## §3. VOXEL OCCLUSION — ABYSSAL DARK ENFORCEMENT
+
+### 3.1 Ray-Voxel March (4-Sample Kernel)
+
+// Execute per light per affected surface fragment (compute shader)
+// Not full ray march — stratified 4-point importance sample
+
+ray_dir = normalize(L.Pos - FragPos)
+ray_len = length(L.Pos - FragPos)
+step    = ray_len / 4.0
+
+// Jitter offset per-pixel (prevents banding) — use interleaved gradient noise
+jitter = IGN(pixel.xy) * step * 0.5
+
+occlusion_sum = 0.0
+FOR i IN [0, 1, 2, 3]:
+    sample_pos = FragPos + ray_dir * (step * i + jitter)
+    density = SampleVoxelDensity(sample_pos)  // 3D texture trilinear
+    occlusion_sum += density
+
+absorption_coeff = BiomeAbsorption(playerDepth)  // range [0.8–2.4]
+occlusion = saturate(occlusion_sum * absorption_coeff)
+
+final_visibility = 1.0 - occlusion
+intensity_final *= final_visibility
+
+### 3.2 Voxel Density Texture Spec
+
+Format:     R8 (single channel, normalized float)
+Resolution: 128×64×128 (XYZ), streamed in 32×32×32 chunks
+Mip chain:  3 levels (for distance LOD sampling)
+Update:     Dirty-chunk system — only re-bake modified voxel regions
+CPU side:   NativeArray<byte> mirrors GPU texture for collision/logic queries
+
+### 3.3 Back-Face Occlusion (Prevent Light Bleeding Through Thin Walls)
+
+// Per voxel face: store face normal in voxel metadata (6-bit packed)
+// At occlusion test, reject samples where dot(ray_dir, face_normal) > 0
+// = ray hitting back-face of voxel wall → treat as full occluder
+
+back_face_check = dot(ray_dir, voxel_face_normal)
+IF back_face_check > 0.0:
+    occlusion_sum += BACK_FACE_DENSITY_BOOST  // = 4.0 (guaranteed block)
+
+### 3.4 Darkness Volume System
+
+// Tagged convex hull volumes placed in caves / enclosed spaces
+// CPU: point-in-AABB test per light per frame (SIMD-friendly)
+
+FOREACH DarkVolume DV in ActiveVolumes:
+    IF PointInAABB(L.Pos, DV.Bounds) AND NOT (L.Flags & BIT6):
+        L.Intensity *= DV.SuppressionFactor  // range [0.0–0.5]
+    IF PointInAABB(FragPos, DV.Bounds):
+        ambient_floor = 0.0  // Kill ambient inside volume
+        sky_contribution = 0.0
+
+### 3.5 Cave Absolute Darkness Enforcement
+
+// Tag cave voxels with CAVE_ZONE flag at bake time
+// At runtime, override ambient contribution
+
+IF FragPos in CAVE_ZONE:
+    ambient_term = 0.0                 // No ambient bleed
+    skybox_sample = float3(0,0,0)      // No sky contribution
+    only_sources = registered ProxyLights with occlusion_visibility > 0.05
+    // Fragments receiving zero registered-light contribution → pure black
+    // No gamma-lift, no ambient hack, no minimum luminance floor
+
+---
+
+## §4. SHADOW SYSTEM — ATLAS & STAGGER
+
+### 4.1 Shadow Atlas Spec
+
+Resolution:  2048×2048 (fits 2GB VRAM budget: ~ 1800MB @ RG16Float)
+Layout:      16 slots × (512×512) — for primary casters (player, key-threats)
+             32 slots × (256×256) — secondary (structures, props)
+             64 slots × (128×128) — tertiary (small bioluminescent, debris)
+Format:      R16Float (depth only)
+Encoding:    VSM (Variance Shadow Maps) for primary only — soft edge, no PCF cost
+             Raw depth for secondary/tertiary
+
+### 4.2 Shadow LOD Assignment
+
+d_cam = distance(L.Pos, CameraPos)
+
+LOD0 = d_cam < 8m   → PCSS soft shadows (512×512 slot)
+                     → PCSS kernel: 8-tap Poisson disk, radius = penumbra_est
+                       penumbra_est = (d_cam / L.Range) * 0.15
+LOD1 = d_cam < 20m  → Hard shadows (256×256 slot)
+                     → 1-tap depth compare
+LOD2 = d_cam < 40m  → Dithered shadow proxy (128×128 slot)
+                       dither_val = Bayer4x4(pixel.xy) * 0.25
+                       shadow_proxy = step(dither_val, SampleAtlas(uv))
+LOD3 = d_cam >= 40m → No shadow. Attenuation-only fallback.
+
+### 4.3 Staggered Shadow Update Schedule
+
+// Assign update_frame = hash(lightID) % 4 at registration
+
+FRAME N:
+    Update shadows: lights WHERE (N % 4 == light.ShadowPhase * 4)
+    Temporal reuse: all other lights read cached atlas slot from prior update
+    Validity check: IF light moved > 0.5m OR rotated > 5° since last update
+                    → force immediate update regardless of stagger
+
+// Close-range override (player-owned lights):
+    IF L.Flags & BIT2 (IS_PLAYER_OWNED):
+        Update EVERY frame. No stagger. Priority slot reservation.
+
+### 4.4 Shadow 1D LUT (Non-Critical Point Lights)
+
+// For bioluminescent ambient emitters, prop lights — no atlas slot needed
+// Precomputed radial occlusion stored as 1D texture (256 samples)
+
+LUT_shadow = Texture2D(256, 1, R8)
+  → At bake: ray-cast 256 angular samples from emitter position
+  → Store binary or soft-occlusion result per angle
+  → At runtime: lookup angle = atan2(frag_local.z, frag_local.x)
+  →             shadow_val = SampleLUT(angle / (2π))
+  → Update LUT: only when emitter moves > 1.0m (dirty flag)
+
+---
+
+## §5. FAKE GI — AMBIENT SHIFTING SYSTEM
+
+### 5.1 Indirect Bounce Approximation
+
+// Two-bounce fake: floor→ceiling propagation per biome zone
+// No probe baking, no irradiance volumes. Pure runtime math.
+
+STEP 1: FLOOR SAMPLE
+  floor_ray = float3(0, -1, 0)
+  floor_hit = RaycastVoxel(FragPos, floor_ray, maxDist=3.0)  // short cast
+  floor_color = floor_hit.hit
+                ? VoxelAlbedo(floor_hit.pos) * AverageSceneLuminance
+                : BiomeBedColor(playerDepth)
+
+STEP 2: CEILING BOUNCE
+  ceiling_indirect = floor_color * 0.10  // 10% energy transfer
+  ceiling_tint = BiomeCeilingTint(playerDepth)
+  ceiling_contribution = ceiling_indirect * ceiling_tint
+  // Apply only to up-facing normals (dot(N, float3(0,1,0)) > 0.3)
+
+STEP 3: BIOME TINT INJECTION
+  biome_tint = BiomeAmbientColor(playerDepth)  // float3 LUT
+  ambient_final = lerp(ceiling_contribution, biome_tint, 0.4)
+  // Clamp: ambient_final intensity <= 0.08 (enforces cave darkness contract)
+
+### 5.2 Biome LUT Spec
+
+Textures: 1D LUTs, 256 entries, depth-indexed [0m → 1500m]
+Contents:
+  BiomeBedColor       → float3 (seafloor albedo average)
+  BiomeCeilingTint    → float3 (rock/sediment overhead tint)
+  BiomeAmbientColor   → float3 (scatter-dominant hue)
+  BiomeHazeColor      → float3 (volumetric haze tint)
+  BiomeAbsorption     → float  (voxel occlusion coefficient)
+  BiomeFogDensity     → float  (scatter density for §2.4)
+
+Format: Texture2D(256, 6, RGB9e5Float) — all 6 LUTs packed
+Sample: point-clamp, depth_t = playerDepth / 1500.0
+
+### 5.3 Specular Environment Approximation
+
+// No cubemap reflections. Matcap-style approximation.
+// Encode depth-appropriate matcap in Texture2D(256,256)
+
+matcap_uv = float2(dot(N, CamRight), dot(N, CamUp)) * 0.5 + 0.5
+specular_env = SampleMatcap(matcap_uv) * BiomeSpecularScale(playerDepth)
+// BiomeSpecularScale: 1.0 at surface → 0.1 at 1500m (pressure darkens everything)
+
+---
+
+## §6. BUDGET ENFORCEMENT & SAFETY SYSTEMS
+
+### 6.1 Lumen Budget Cap (White-Out Guard)
+
+TOTAL_LUMEN_BUDGET = 180,000 cd (scene-wide HDR ceiling)
+PER_LIGHT_MAX      = 8,000 cd
+
+// Each frame, accumulate scene lumen sum before draw:
+scene_lumen_total = SUM(L.Intensity FOR L in active_pool)
+
+IF scene_lumen_total > TOTAL_LUMEN_BUDGET:
+    scale = TOTAL_LUMEN_BUDGET / scene_lumen_total
+    FOREACH L in active_pool (sorted by priority, lowest last):
+        L.Intensity *= scale
+        L.Flags |= BIT7  // Mark capped
+    // Never scale player-owned lights (BIT2 exempt)
+
+// HDR buffer additional guard:
+// Tonemap exposure target = 0.18 middle-grey anchor
+// Auto-exposure clamp: EV range [-2, +4], speed = 1.5 EV/sec
+
+### 6.2 Flashlight Collision Repositioning
+
+// Execute every frame for IS_PLAYER_OWNED lights
+
+origin = PlayerCamera.Pos + PlayerCamera.Forward * 0.2
+
+// Voxel interior check
+IF SampleVoxelDensity(origin) > 0.5:
+    // Binary search outward along camera-back vector
+    FOR step IN [0.05, 0.10, 0.20, 0.40]:
+        candidate = PlayerCamera.Pos - PlayerCamera.Forward * step
+        IF SampleVoxelDensity(candidate) < 0.1:
+            L.Pos = candidate
+            BREAK
+    // Fallback: anchor to camera pos, disable shadow cast
+    IF no valid candidate found:
+        L.Pos = PlayerCamera.Pos
+        L.Flags &= ~BIT0  // Disable shadow cast to prevent internal artifacts
+        L.Intensity *= 0.3 // Dim: player inside solid = partial occlusion feel
+
+### 6.3 Max Pixel-Light Budget (MX350 Hard Limit)
+
+MAX_PIXEL_LIGHTS_PER_SURFACE = 2
+
+// Per surface fragment: sort contributing lights by (intensity * visibility)
+// Take top-2. Accumulate. Discard rest.
+
+// Implementation: light list per tile (Forward+ lite)
+// Tile size: 16×16 pixels
+// Per tile: store sorted light indices (max 8 candidates pre-sorted → draw top 2)
+// Compute pass: one 16×16 dispatch per frame
+//   → culls by tile AABB vs light sphere
+//   → writes light index list to RWBuffer
+
+// FORBID: more than 2 shadow-casting lights influencing same tile simultaneously
+// Enforce: IF shadow lights in tile > 2 → demote lowest-priority to no-shadow
+
+### 6.4 Light Leak Audit — Runtime Assert
+
+// Debug-mode only (stripped in RELEASE build via preprocessor)
+// Runs every 60 frames
+
+FOREACH surface S facing cave interior:
+    IF S.receivedIlluminance > LEAK_THRESHOLD (= 0.002):
+        IF no registered ProxyLight visible to S:
+            LOG_WARNING("LEAK DETECTED", S.worldPos, S.illuminance)
+            // Trigger Darkness Volume rebuild for region
+            DarkVolumeBuilder.QueueRebuild(S.worldPos, radius=5m)
+
+---
+
+## §7. HARDWARE-SPECIFIC CULLING PIPELINE
+
+### 7.1 Full Per-Frame Cull Flow
+
+[CPU THREAD — Job System]
+
+1. UPDATE SPATIAL GRID
+   → Process dirty cells only
+   → O(dirty_count × 8) max per frame
+
+2. CAMERA FRUSTUM CULL
+   → Sphere-vs-frustum (6 plane tests per light)
+   → SIMD batch: process 8 lights per SIMD lane
+   → Output: visible_lights[] NativeList
+
+3. DEPTH SORT
+   → Sort visible_lights by distance (radix sort, O(n))
+   → Separate: shadow_casters[] (bit0 set) vs ambient_only[]
+
+4. LOD ASSIGN (§4.2)
+   → Assign LOD byte to each visible light
+
+5. STAGGER EVALUATE (§4.3)
+   → Mark which lights need shadow update this frame
+
+6. LUMEN BUDGET CHECK (§6.1)
+   → Scale if over budget
+
+7. UPLOAD
+   → Write final ProxyLight[] to ComputeBuffer (GPU)
+   → Write shadow update list to command buffer
+
+[GPU — Compute + Render]
+
+8. TILE LIGHT LIST BUILD (§6.3)
+   → 16×16 tile dispatch
+
+9. SHADOW ATLAS UPDATE
+   → Only flagged lights render shadow pass
+
+10. GBUFFER / FORWARD LIGHT ACCUMULATION
+    → Per tile: sample top-2 lights
+    → Apply attenuation (§2), occlusion (§3), fake-GI (§5)
+
+### 7.2 MX350 Memory Budget Allocation
+
+Shadow Atlas (2048×2048 R16F):     8 MB
+Voxel Density 3D Texture:          4 MB  (128×64×128 R8)
+Biome LUT Pack:                    0.5 MB
+Light Pool ComputeBuffer:          0.06 MB (128 × ProxyLight ~480 bytes)
+Tile Light List RWBuffer:          0.25 MB (1920×1080/256 tiles × 8 indices × 4B)
+Matcap Texture:                    0.25 MB
+
+TOTAL LIGHTING SYSTEM VRAM:       ~ 1800MB
+VRAM REMAINING (of  1800MB):          ~2035 MB for framebuffer, meshes, main textures
+
+// Framebuffer budget reference:
+// 1080p GBuffer (4 RTs × RGBA16F):  ~33 MB
+// HDR color RT + Depth:              ~17 MB
+// Shadow Atlas:                       ~8 MB
+// ≈ 58 MB framebuffer baseline — well within 2GB
+
+### 7.3 Scalability Profiles
+
+ULTRA (RTX/High-End)
+  → Shadow Atlas: 4096×4096
+  → PCSS on all LOD0+LOD1
+  → Voxel density: 256×128×256
+  → Tile size: 8×8
+  → Max pixel lights: 8
+  → Full volumetric scatter (ray-march, 16 steps)
+
+HIGH (GTX1660/RX580)
+  → Shadow Atlas: 2048×2048
+  → PCSS on LOD0 only
+  → Voxel density: 128×64×128
+  → Tile size: 16×16
+  → Max pixel lights: 4
+  → Beer-Lambert scatter only (§2.4)
+
+MEDIUM (MX350 — MINIMUM TARGET)
+  → Shadow Atlas: 2048×2048 (shared, fewer slots)
+  → Hard shadows LOD1 default, PCSS player-only
+  → Voxel density: 128×64×128
+  → Tile size: 16×16
+  → Max pixel lights: 2
+  → Beer-Lambert scatter only
+
+LOW (i3 integrated fallback)
+  → Shadow Atlas: 1024×1024
+  → Dithered shadow proxy only (LOD2)
+  → Voxel density: 64×32×64 (halved, upsample on GPU)
+  → Max pixel lights: 1
+  → No scatter. Biome tint only.
+  → DarkVolume suppression aggressive (factor = 0.0 in caves)
+
+---
+
+## §8. FAILURE MODE CATALOG & MITIGATIONS
+
+FAILURE: Light bleeding through voxel wall
+CAUSE:   Back-face miss in occlusion march
+FIX:     §3.3 back-face density boost. DarkVolume fallback §3.4.
+
+FAILURE: White-out flash on HDR accumulation
+CAUSE:   Multiple high-intensity lights converge
+FIX:     §6.1 lumen cap. Auto-exposure clamp EV+4 hard ceiling.
+
+FAILURE: Flashlight illuminates geometry from inside voxel
+CAUSE:   Camera clipped into wall, light origin inside solid
+FIX:     §6.2 binary-search repositioning every frame.
+
+FAILURE: Cave not fully dark — ambient bleed from surface biome
+CAUSE:   BiomeAmbientColor applied globally
+FIX:     §3.4 ambient_floor = 0.0 inside CAVE_ZONE. §5.1 intensity clamp 0.08.
+
+FAILURE: Shadow atlas slot exhaustion
+CAUSE:   > 112 simultaneous shadow casters
+FIX:     Force LOD3 (no-shadow) on all > 112 by distance. Log overflow.
+
+FAILURE: Bioluminescent pulse synchronization (all pulse in unison)
+CAUSE:   Same ShadowPhase offset
+FIX:     §1.3 ShadowPhase = (registryCount % 4) * 0.25 guarantees 4 distinct phases.
+         §2.2 dual-frequency superposition breaks remaining coherence.
+
+FAILURE: Voxel LUT stale — moved object casts wrong occlusion
+CAUSE:   Dynamic voxels not marking dirty
+FIX:     Any voxel-modifying operation MUST call DirtyVoxelCell(pos).
+         Validation: debug pass compares CPU NativeArray vs GPU texture hash.
+
+FAILURE: MX350 frame-time spike on shadow update frame
+CAUSE:   Multiple LOD0 PCSS shadows updating same frame
+FIX:     §4.3 stagger ensures max 1 LOD0 update per frame (player-owned = 1 slot always).
+         Hard limit: 2 non-player LOD0 updates per frame maximum.
+
+---
+
+## §9. CONSTANTS REFERENCE
+
+RANGE_HARD_MAX              = 40.0  m
+LUMEN_BUDGET_PER_LIGHT      = 8000  cd
+TOTAL_LUMEN_BUDGET          = 180000 cd
+LEAK_THRESHOLD              = 0.002  (illuminance, linear)
+BACK_FACE_DENSITY_BOOST     = 4.0
+CAVE_AMBIENT_MAX            = 0.08  (intensity ceiling)
+MAX_PIXEL_LIGHTS_PER_TILE   = 2     (MX350 profile)
+SHADOW_STAGGER_FRAMES       = 4
+VOXEL_CHUNK_SIZE            = 32×32×32 voxels
+SPATIAL_GRID_CELL           = 16×8×16 m
+TILE_SIZE                   = 16×16 px
+BIOLUM_PULSE_F1             = 0.7   Hz
+BIOLUM_PULSE_F2             = 1.3   Hz
+FLASHLIGHT_REPOSITION_STEPS = [0.05, 0.10, 0.20, 0.40] m
+MAX_DEPTH                   = 1500  m
+MAX_LIGHT_POOL              = 128   (hard cap)
+FAKE_GI_BOUNCE_FACTOR       = 0.10
+FAKE_GI_BIOME_BLEND         = 0.40
+AUTOEXPOSURE_EV_MIN         = -2.0
+AUTOEXPOSURE_EV_MAX         = +4.0
+AUTOEXPOSURE_ADAPT_SPEED    = 1.5   EV/sec
