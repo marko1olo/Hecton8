@@ -52,7 +52,8 @@ EnemyToken (32 bytes):
 Ring-buffer: `EnemyTokenRing[32]` (max simultaneous entities = 32, hard cap)
 Double-buffer: `DirectorStateBuffer[2]` — write frame N+1 while read frame N
 NativeArray stride: 32 bytes → fits 2 EnemyTokens per cache line (64B)
-Spatial hash: `NativeHashMap<int2, NativeList<int>>` — grid cell (25m) → entity indices
+// Use flat multi-mapping. Nested native containers are physically illegal.
+NativeMultiHashMap<int2, int> spatialHash;
 Player history ring: `PlayerStateHistory[64]` — 64 frames at 1Hz = 64 seconds lookback
 
 ### 1.4 Bitmask Definitions
@@ -198,7 +199,8 @@ SpawnEvaluate():
      IF SpawnPoint == INVALID → return NO_SPAWN  // no valid point = abort, not exception
 
   8. // Deterministic selection — NO RNG. Use hash of PlayerPosition + Phase + TokenBudget:
-     SelectionSeed = hash(PlayerPosition.xz * 73856093 ^ ActivePhase * 19349663 ^ (int)TokenBudget)
+uint2 posInt = math.asuint(PlayerPosition.xz);
+SelectionSeed = hash((posInt.x * 73856093) ^ (posInt.y * 19349663) ^ ActivePhase...);
      // XOR spatial hash — fast, deterministic, seed varies per game-state
      ThreatVariant = SelectionSeed % candidate.VariantCount
 
@@ -227,7 +229,11 @@ hash(int3 p):
 
 ```
 // Main thread pre-pass (NOT in Job):
-FrustumPlanes[6] = GeometryUtility.CalculateFrustumPlanes(Camera.main)
+// Pre-allocate managed array once, avoid allocation in the hot path.
+static readonly Plane[] _frustumPlanes = new Plane[6];
+GeometryUtility.CalculateFrustumPlanes(Camera.main, _frustumPlanes);
+// Pass to Burst Job as NativeArray if needed:
+NativeArray<Plane> nativePlanes = new NativeArray<Plane>(_frustumPlanes, Allocator.TempJob);
 // Pass to Job via NativeArray<float4> (6 planes as float4: xyz=normal, w=distance)
 ```
 
@@ -375,8 +381,8 @@ DirectorJobInput (blittable, 128 bytes):
 ```
 DirectorJobOutput (blittable, 96 bytes):
   [0..3]    int             SpawnRequestCount     // 0–4 this tick
-  [4..35]   int[8]          SpawnEntityTypes      // threat class IDs
-  [36..67]  float3[8]       SpawnPositions        // world positions
+Unity.Collections.LowLevel.Unsafe.FixedList32Bytes<int> SpawnEntityTypes;
+Unity.Collections.LowLevel.Unsafe.FixedList128Bytes<float3> SpawnPositions;
   [68..71]  int             DespawnRequestCount
   [72..103] int[8]          DespawnEntityIDs
   // Fixed-size: no dynamic alloc, Burst-safe

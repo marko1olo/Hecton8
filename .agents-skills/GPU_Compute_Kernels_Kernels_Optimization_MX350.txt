@@ -110,7 +110,8 @@ KERNEL: GridInsert [64x1x1]
   flatIdx = FlatIndex(cell)
   byteOff = flatIdx * 4
 
-  uint prev; InterlockedAdd(GridCountBuffer, byteOff, 1, prev)
+  // [FORBID] InterlockedAdd for dense swarm clustering.
+// Write (CellHash, EntityID) pairs and use GPU Bitonic Sort or Radix Sort.
 
   [GUARD]: if(prev >= 32) { InterlockedAdd(GridCountBuffer, byteOff, -1); return; }
            // rollback on overflow — grid slot exhausted

@@ -1,4 +1,6 @@
 using Hecton8.Core;
+using Hecton8.Interaction;
+using Hecton8.Input;
 using Hecton8.Physics;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -111,7 +113,9 @@ namespace Hecton8.Bootstrap
         {
             SystemDispatcher.EnsureRuntimeInstance();
             SceneRuntimeService sceneRuntimeService = SceneRuntimeService.EnsureRuntimeInstance();
+            EquipmentInteractionHandler interactionHandler = EquipmentInteractionHandler.EnsureRuntimeInstance();
             sceneRuntimeService.InitializeService();
+            interactionHandler.InitializeService();
         }
 
         private void InitializeEnvironmentLayer()
@@ -122,8 +126,12 @@ namespace Hecton8.Bootstrap
 
         private void InitializePlayerLayer()
         {
-            // No player-layer GlobalRegistry adapter exists yet.
-            // Existing project ownership remains on InputManager / HectonPlayerMovement.
+            InputManager inputManager = InputManager.Instance;
+            if (inputManager != null && Application.isPlaying)
+                DontDestroyOnLoad(inputManager.gameObject);
+
+            InputDispatcher inputDispatcher = InputDispatcher.EnsureRuntimeInstance();
+            inputDispatcher.InitializeService();
         }
 
         private void InitializeUILayer()

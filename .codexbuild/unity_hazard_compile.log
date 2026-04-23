@@ -1,0 +1,25 @@
+.codexbuild is not a valid directory name. Please make sure there are no unallowed characters in the name.
+.codexbuild is not a valid directory name. Please make sure there are no unallowed characters in the name.
+[Licensing::Module] Trying to connect to existing licensing client channel...
+Built from '6000.4/staging' branch; Version is '6000.4.1f1 (8535861f39e1) revision 8729990'; Using compiler version '194234433'; Build Type 'Release'
+OS: 'Windows 11  (10.0.26200) CoreSingleLanguage' Language: 'en' Physical Memory: 32407 MB
+BatchMode: 1, IsHumanControllingUs: 0, StartBugReporterOnCrash: 0, Is64bit: 1
+System  architecture: x64
+Process architecture: x64
+[Licensing::IpcConnector] Channel LicenseClient-danat doesn't exist
+Date: 2026-04-23T14:59:35Z
+[Licensing::Module] Successfully launched the LicensingClient (PId: 64520)
+
+COMMAND LINE ARGUMENTS:
+C:\Program Files\Unity\Hub\Editor\6000.4.1f1\Editor\Unity.exe
+-batchmode
+-nographics
+-projectPath
+C:\hades\Hecton8
+-quit
+-accept-apiupdate
+-logFile
+C:\hades\Hecton8\.codexbuild\unity_hazard_compile.log
+Successfully changed project path to: C:\hades\Hecton8
+C:/hades/Hecton8
+Exiting without the bug reporter. Application will terminate with return code 1

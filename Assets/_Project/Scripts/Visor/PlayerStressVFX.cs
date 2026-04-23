@@ -95,6 +95,11 @@ namespace Hecton8.Visor
         private float _heartbeatTimer;
         private float _lastEnvironmentTemperature = 20f;
         private bool _hasEnvironmentTemperatureSample;
+        private float _interactionStress01;
+        private float _interactionVolume01 = 1f;
+        private float _interactionPitchScale = 1f;
+        private float _interactionFrequency01;
+        private bool _hasInteractionSignal;
 
         private void Awake()
         {
@@ -105,15 +110,22 @@ namespace Hecton8.Visor
 
         private void OnEnable()
         {
+            PlayerSignalEvents.OnInteractionSignal += HandleInteractionSignal;
             TryRegisterTickHandler();
         }
 
         private void OnDisable()
         {
+            PlayerSignalEvents.OnInteractionSignal -= HandleInteractionSignal;
             TryUnregisterTickHandler();
             ResetRuntimeEffects();
             _heartbeatTimer = heartbeatIntervalMaxSeconds;
             _hasEnvironmentTemperatureSample = false;
+            _interactionStress01 = 0f;
+            _interactionVolume01 = 1f;
+            _interactionPitchScale = 1f;
+            _interactionFrequency01 = 0f;
+            _hasInteractionSignal = false;
         }
 
         private void OnDestroy()
@@ -136,11 +148,12 @@ namespace Hecton8.Visor
             TryResolveDependencies();
 
             float stress01 = ResolveStress01();
+            float audioStress01 = _hasInteractionSignal ? Mathf.Max(stress01, _interactionStress01) : stress01;
             _debugStress01 = stress01;
             float fog01 = ResolveFogging01();
             float frost01 = ResolveFrost01();
 
-            if (stress01 <= 0.001f && fog01 <= 0.001f && frost01 <= 0.001f)
+            if (audioStress01 <= 0.001f && fog01 <= 0.001f && frost01 <= 0.001f)
             {
                 _pulsePhase = 0f;
                 _heartbeatTimer = heartbeatIntervalMaxSeconds;
@@ -148,7 +161,10 @@ namespace Hecton8.Visor
                 return;
             }
 
-            float heartbeatInterval = Mathf.Lerp(heartbeatIntervalMaxSeconds, heartbeatIntervalMinSeconds, stress01);
+            float heartbeatBlend01 = _hasInteractionSignal
+                ? Mathf.Clamp01(_interactionFrequency01)
+                : audioStress01;
+            float heartbeatInterval = Mathf.Lerp(heartbeatIntervalMaxSeconds, heartbeatIntervalMinSeconds, heartbeatBlend01);
             float pulseFrequency = 1f / Mathf.Max(0.05f, heartbeatInterval);
             _pulsePhase += deltaTime * pulseFrequency * PulseTwoPi;
             if (_pulsePhase > PulseTwoPi)
@@ -161,12 +177,21 @@ namespace Hecton8.Visor
             _heartbeatTimer -= deltaTime;
             if (_heartbeatTimer <= 0f)
             {
-                PlayHeartbeat(stress01);
+                PlayHeartbeat(audioStress01);
                 _heartbeatTimer = heartbeatInterval;
             }
 
             _debugPulse01 = beat01;
             ApplyStressPulse(stress01, beat01, fog01, frost01);
+        }
+
+        private void HandleInteractionSignal(InteractionSignal signal)
+        {
+            _interactionStress01 = Mathf.Clamp01(signal.Stress01);
+            _interactionVolume01 = Mathf.Clamp01(signal.Volume01);
+            _interactionPitchScale = Mathf.Clamp(signal.PitchScale, 0.1f, 3f);
+            _interactionFrequency01 = Mathf.Clamp01(signal.Frequency01);
+            _hasInteractionSignal = true;
         }
 
         private void TryResolveDependencies()
@@ -313,8 +338,10 @@ namespace Hecton8.Visor
             if (heartbeatClip == null || !SpatialAudioManager.TryGetInstance(out SpatialAudioManager audioManager))
                 return;
 
-            float volume = Mathf.Lerp(heartbeatVolumeMin, heartbeatVolumeMax, stress01);
-            audioManager.PlayStatic2D(heartbeatClip, volume, audioManager.InterfaceGroup);
+            float signalVolume = _hasInteractionSignal ? _interactionVolume01 : 1f;
+            float signalPitch = _hasInteractionSignal ? _interactionPitchScale : 1f;
+            float volume = Mathf.Lerp(heartbeatVolumeMin, heartbeatVolumeMax, stress01) * signalVolume;
+            audioManager.PlayAtPoint(heartbeatClip, transform.position, volume, signalPitch, audioManager.InterfaceGroup);
         }
 
         private float ResolveFogging01()

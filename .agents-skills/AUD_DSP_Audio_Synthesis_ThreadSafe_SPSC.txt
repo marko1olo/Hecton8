@@ -3,12 +3,12 @@ CONTROL_DATA_TRANSFER: Double-buffered params via Interlocked/Volatile. Final sa
 ## RING_BUFFER_ARCHITECTURE
 
 ### [RULE] SPSC_LOCK_FREE_QUEUE
-- Backing: `float[]` managed array. Capacity: power-of-two (16384/32768/65536). Mask wrap: `index & (capacity - 1)`
+- // [FORBID] float[] managed arrays in DSP. Audio Thread MUST use NativeArray.
+- Backing: `NativeArray<float>` allocated with `Allocator.AudioKernel`. Capacity: power-of-two (16384/32768/65536). Mask wrap: `index & (capacity - 1)`
 - `writeIdx`: producer-owned. `readIdx`: consumer-owned. Both `volatile int`.
-- Producer write sequence: write sample → `Volatile.Write(ref writeIdx, w + 1)`
-- Consumer read sequence: `Volatile.Read(ref writeIdx)` → compute available → read sample → `Volatile.Write(ref readIdx, r + 1)`
-- Available: `(writeIdx - readIdx) & mask`. Free slots: `capacity - available - 1` (never fill last slot — full/empty ambiguity guard)
-- [FORBID] `NativeArray` as ring buffer backing. Audio Thread must never touch `NativeArray`.
+- Producer write sequence: write sample -> `Volatile.Write(ref writeIdx, w + 1)`
+- Consumer read sequence: `Volatile.Read(ref writeIdx)` -> compute available -> read sample -> `Volatile.Write(ref readIdx, r + 1)`
+- Available: `(writeIdx - readIdx) & mask`. Free slots: `capacity - available - 1` (never fill last slot - full/empty ambiguity guard)
 - [FORBID] `Volatile.Read(ref writeIdx)` more than once per audio block.
 
 ### [RULE] UNDERRUN_PROTOCOL
@@ -93,7 +93,9 @@ BANDPASS_SHAPING:
 
 COMB_RESONANCE:
   delaysamples = sampleRate / (120Hz + throttle * 400Hz)  // Blade-pass frequency simulation
-  combOut = delayLine[writeIdx - delaySamples] * 0.6 + bp * 0.4
+  // [FORBID] Naked offset reads on ring buffers.
+// You MUST bitwise wrap the read pointer: 
+combOut = delayLine[(writeIdx - delaySamples) & delayMask] * 0.6f; + bp * 0.4
   delayLine[writeIdx] = combOut
   writeIdx = (writeIdx + 1) & delayMask
 
@@ -190,7 +192,8 @@ shiftedFreq = baseFreq * dopplerRatio
 
 frac = readPtr - floor(readPtr)
 i = floor(readPtr)
-out = hermite(buffer[i-1], buffer[i], buffer[i+1], buffer[i+2], frac)
+out = hermite(// [FORBID] Naked offset reads on ring buffers. Apply bitwise mask to EVERY tap:
+buffer[(i-1) & mask], buffer[i & mask], buffer[(i+1) & mask], buffer[(i+2) & mask], frac)
 readPtr += dopplerRatio
 
 ### DISCONTINUITY_SMOOTHING

@@ -504,7 +504,8 @@ Use `Interlocked` or `System.Threading.Volatile` for all index mutations:
 /// </summary>
 [NativeContainer]
 [NativeContainerIsAtomicWriteOnly]  // Hint to safety system re: write access
-public unsafe struct SPSCResultQueue<T> where T : unmanaged
+// [FORBID] Hand-rolled lock-free atomics in C#.
+// Use Unity.Collections.LowLevel.Unsafe.UnsafeRingQueue<T>.
 {
     [NativeDisableUnsafePtrRestriction]
     private T*  _buffer;

@@ -113,15 +113,14 @@ struct NavNode
 - Input: `float3 StartPos`, `float3 GoalPos`.
 - Output: appended into `NativeList<float3> WaypointBuffer`.
 
-### 3.2 Cross Product Sign Test (2D projected onto XZ plane)
+### 3.2 Portal Winding Test (3D Scalar Triple Product)
 
-TriArea2D(a, b, c):
-    return (b.x - a.x) * (c.z - a.z) - (b.z - a.z) * (c.x - a.x)
-    // > 0 → c is left of (a→b)
-    // < 0 → c is right of (a→b)
-    // = 0 → collinear
+//[FORBID] 2D funnel projection in a 6DOF environment.
+// You MUST use the 3D Triple Product (Scalar Triple Product) to determine portal winding, OR rely on a voxel-based flow-field steering behavior.
 
-- For 3D underwater (Y matters): project to dominant plane per corridor segment, or use full 3D cross for non-horizontal passages. Default: XZ for horizontal, XY for vertical shafts. Detect via `abs(corridor_up.y) < 0.3f`.
+TripleProduct(a, b, c):
+    return dot(a, cross(b, c))
+    // sign determines left/right winding in full 3D
 
 ### 3.3 Step-By-Step Funnel Logic
 
@@ -138,8 +137,8 @@ FOR i = 1 TO N-1:
     newRight = Portal[i].Right
 
     // --- UPDATE RIGHT FUNNEL SIDE ---
-    if TriArea2D(Apex, RightRay_endpoint, newRight) <= 0.0f:
-        if SameOrCloser(Apex, RightRay_endpoint, newRight) OR TriArea2D(Apex, LeftRay_endpoint, newRight) > 0.0f:
+    if TripleProduct(Apex, RightRay_endpoint - Apex, newRight - Apex) <= 0.0f:
+        if SameOrCloser(Apex, RightRay_endpoint, newRight) OR TripleProduct(Apex, LeftRay_endpoint - Apex, newRight - Apex) > 0.0f:
             // newRight tightens right side
             state.RightRay = newRight - Apex
             state.RightIdx = i
@@ -153,8 +152,8 @@ FOR i = 1 TO N-1:
             CONTINUE
 
     // --- UPDATE LEFT FUNNEL SIDE ---
-    if TriArea2D(Apex, LeftRay_endpoint, newLeft) >= 0.0f:
-        if SameOrCloser(Apex, LeftRay_endpoint, newLeft) OR TriArea2D(Apex, RightRay_endpoint, newLeft) < 0.0f:
+    if TripleProduct(Apex, LeftRay_endpoint - Apex, newLeft - Apex) >= 0.0f:
+        if SameOrCloser(Apex, LeftRay_endpoint, newLeft) OR TripleProduct(Apex, RightRay_endpoint - Apex, newLeft - Apex) < 0.0f:
             state.LeftRay = newLeft - Apex
             state.LeftIdx = i
         else:
@@ -344,7 +343,9 @@ OriginAccumulator: double3   // accumulates all shifts, never reset
 
         ▼
 [MainThread]
-    CompleteAndDispatch()           // JobHandle.Complete(), read results
+    // Yield main thread via Awaitable
+    await jobHandle
+    // OR evaluate results in Frame N+1
 
 - Never `.Complete()` mid-chain. Chain with `JobHandle` dependencies only.
 - `AStarSliceJob` for 8 agents: use `NativeArray<JobHandle>` + `JobHandle.CombineDependencies`.
@@ -364,7 +365,7 @@ OriginAccumulator: double3   // accumulates all shifts, never reset
 
 ### 9.1 Wedge Collapse
 
-Detect: TriArea2D(Apex, LeftRayEnd, RightRayEnd) ≈ 0 (< EPSILON = 1e-5f)
+Detect: TripleProduct(Apex, LeftRayEnd - Apex, RightRayEnd - Apex) ≈ 0 (< EPSILON = 1e-5f)
 Action: treat as zero-width portal → add midpoint to WaypointBuffer, advance Apex
 
 ### 9.2 Infinite Loop Guard
@@ -381,19 +382,16 @@ IF A* open set exhausted without reaching goal:
 
 ### 9.4 Portal Winding Violation
 
-IF TriArea2D(Apex, Portal[i].Left, Portal[i].Right) < 0:
+IF TripleProduct(Apex, Portal[i].Left - Apex, Portal[i].Right - Apex) < 0:
     SWAP Portal[i].Left, Portal[i].Right   // correct on-the-fly, log warning
+
+[FORBID] XY/XZ plane projection flags in runtime funnel logic.
+Use full 3D winding tests only.
 
 ### 9.5 Vertical Shaft Handling (Y-dominant corridors)
 
-IF abs(Portal[i].Left.y - Portal[i].Right.y) > abs(Portal[i].Left.x - Portal[i].Right.x)
-   AND abs(Portal[i].Left.y - Portal[i].Right.y) > abs(Portal[i].Left.z - Portal[i].Right.z):
-    Project funnel onto XY plane for this portal
-    Tag portal with PlaneFlag = XY
-ELSE:
-    PlaneFlag = XZ (default)
-
-- Store `PlaneFlag` per `NavPortal`. Funnel step reads flag, selects TriArea2D projection.
+Vertical shafts remain in the same 3D triple-product funnel path.
+No plane projection. No `PlaneFlag`. No `TriArea2D` fallback.
 
 ---
 

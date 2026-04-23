@@ -261,7 +261,8 @@ public sealed class SystemDispatcher : MonoBehaviour
             T[]  raw   = bucket.RawArray;
             int  count = bucket.Count;
 
-            for (int i = 0; i < count; i++)
+            // [FORBID] Forward iteration on swap-with-last buffers.
+            for (int i = count - 1; i >= 0; i--)
             {
                 raw[i].Tick(dt);
             }

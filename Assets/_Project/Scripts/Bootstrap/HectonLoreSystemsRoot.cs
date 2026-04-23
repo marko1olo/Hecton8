@@ -19,7 +19,7 @@ namespace Hecton8.Bootstrap
     [AddComponentMenu("Hecton8/Bootstrap/Hecton Lore Systems Root")]
     public sealed class HectonLoreSystemsRoot : MonoBehaviour
     {
-        public const int ExpectedSystemCount = 16;
+        public const int ExpectedSystemCount = 17;
 
         private enum RecoveryLoreKind
         {
@@ -111,6 +111,7 @@ namespace Hecton8.Bootstrap
 
         [Header("Status")]
         [SerializeField] private bool _audioLogSystemFound;
+        [SerializeField] private bool _loreDatabaseManagerFound;
         [SerializeField] private bool _questManagerFound;
         [SerializeField] private bool _atlasSignalSystemFound;
         [SerializeField] private bool _suitUpgradeManagerFound;
@@ -170,6 +171,7 @@ namespace Hecton8.Bootstrap
         public void SetupAllSystems()
         {
             EnsureSystem<Hecton8.Narrative.AudioLogSystem>("AudioLogSystem", ref _audioLogSystemFound);
+            EnsureSystem<Hecton8.Narrative.LoreDatabaseManager>("LoreDatabaseManager", ref _loreDatabaseManagerFound);
             EnsureSystem<Hecton8.Quest.QuestManager>("QuestManager", ref _questManagerFound);
             EnsureSystem<Hecton8.AtlasSignal.AtlasSignalSystem>("AtlasSignalSystem", ref _atlasSignalSystemFound);
             EnsureAuthoringBoundSystem<Hecton8.Gameplay.SuitUpgradeManager>("SuitUpgradeManager", ref _suitUpgradeManagerFound);

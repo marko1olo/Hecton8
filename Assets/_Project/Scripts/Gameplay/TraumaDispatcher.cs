@@ -28,6 +28,7 @@ namespace Hecton8.Gameplay
         private float _integrityChannel01;
         private float _powerChannel01;
         private float _clarityChannel01;
+        private float _activeTransportChargeNormalized = 1f;
         private float _activeTransportIntegrityNormalized = 1f;
         private HabitatIntegrityManager _activeHabitatManager;
         private IDamageSignalEmitter _activeHabitatEmitter;
@@ -35,6 +36,8 @@ namespace Hecton8.Gameplay
         private IPlayerTransportLifecycleOwner _activeTransportOwner;
         private IDamageSignalEmitter _activeTransportEmitter;
         private MonoBehaviour _activeTransportEmitterBehaviour;
+        private int _lastPublishedTraumaSignature = int.MinValue;
+        private int _lastPublishedInteractionSignature = int.MinValue;
 
         /// <summary>Current integrity trauma channel intensity.</summary>
         public float IntegrityChannel01 => _integrityChannel01;
@@ -56,6 +59,18 @@ namespace Hecton8.Gameplay
         public float FloodedThermalInsulationFactor => FloodLevelNormalized > FloodThermalThreshold
             ? FloodedInsulationFactor
             : 1f;
+
+        /// <summary>
+        /// True while the active habitat is publishing a flooded-compartment temperature override.
+        /// </summary>
+        public bool HasFloodedTemperatureOverride => _activeHabitatManager != null && _activeHabitatManager.HasFloodedTemperatureOverride;
+
+        /// <summary>
+        /// Local habitat ambient temperature resolved by the active flood owner.
+        /// </summary>
+        public float FloodedModuleAmbientTemperatureCelsius => _activeHabitatManager != null
+            ? _activeHabitatManager.ModuleAmbientTemperatureCelsius
+            : 0f;
 
         /// <summary>
         /// Extra oxygen-drain multiplier caused by transport leaks below the integrity threshold.
@@ -99,6 +114,7 @@ namespace Hecton8.Gameplay
             ClearTransportBinding();
             TryUnregister();
             ResetChannels();
+            PublishSignals(true);
         }
 
         /// <summary>
@@ -110,11 +126,19 @@ namespace Hecton8.Gameplay
             _powerChannel01 = DecayChannel(_powerChannel01, PowerChannelDecayPerSecond, deltaTime);
             _clarityChannel01 = DecayChannel(_clarityChannel01, ClarityChannelDecayPerSecond, deltaTime);
 
+            if (_activeTransportOwner != null)
+            {
+                _activeTransportChargeNormalized = Mathf.Clamp01(_activeTransportOwner.TransportChargeNormalized);
+                _activeTransportIntegrityNormalized = Mathf.Clamp01(_activeTransportOwner.TransportIntegrityNormalized);
+            }
+
             if ((object)_activeHabitatEmitterBehaviour != null && _activeHabitatEmitterBehaviour == null)
                 ClearHabitatBinding();
 
             if ((object)_activeTransportEmitterBehaviour != null && _activeTransportEmitterBehaviour == null)
                 ClearTransportBinding();
+
+            PublishSignals(false);
         }
 
         /// <summary>
@@ -271,6 +295,9 @@ namespace Hecton8.Gameplay
 
             ClearTransportBinding();
             _activeTransportOwner = lifecycleOwner;
+            _activeTransportChargeNormalized = lifecycleOwner != null
+                ? Mathf.Clamp01(lifecycleOwner.TransportChargeNormalized)
+                : 1f;
             _activeTransportIntegrityNormalized = lifecycleOwner != null
                 ? Mathf.Clamp01(lifecycleOwner.TransportIntegrityNormalized)
                 : 1f;
@@ -291,6 +318,7 @@ namespace Hecton8.Gameplay
             _activeTransportOwner = null;
             _activeTransportEmitter = null;
             _activeTransportEmitterBehaviour = null;
+            _activeTransportChargeNormalized = 1f;
             _activeTransportIntegrityNormalized = 1f;
         }
 
@@ -299,6 +327,87 @@ namespace Hecton8.Gameplay
             _integrityChannel01 = 0f;
             _powerChannel01 = 0f;
             _clarityChannel01 = 0f;
+            _lastPublishedTraumaSignature = int.MinValue;
+            _lastPublishedInteractionSignature = int.MinValue;
+        }
+
+        private void PublishSignals(bool force)
+        {
+            float underwaterStress01 = _playerMovement != null
+                ? Mathf.Clamp01(_playerMovement.CurrentUnderwaterStressIntensity01)
+                : 0f;
+            float hullStress01 = _playerMovement != null
+                ? Mathf.Clamp01(_playerMovement.CurrentHullStress01)
+                : 0f;
+            float fatalPressure01 = _playerMovement != null
+                ? Mathf.Clamp01(_playerMovement.CurrentFatalPressureSequence01)
+                : 0f;
+            float playerIntegrity01 = _survivalSystem != null
+                ? Mathf.Clamp01(_survivalSystem.IntegrityNormalized)
+                : 1f;
+            float hullIntegrity01 = Mathf.Min(playerIntegrity01, _activeTransportIntegrityNormalized);
+            float glitchIntensity = Mathf.Clamp01(Mathf.Max(
+                _clarityChannel01,
+                _integrityChannel01 * 0.82f,
+                _powerChannel01 * 0.68f,
+                hullStress01 * 0.92f,
+                fatalPressure01));
+            float recoilScalar = Mathf.Clamp01(Mathf.Max(
+                hullStress01,
+                _integrityChannel01 * 0.86f,
+                _powerChannel01 * 0.34f));
+            bool biosRecoveryMode = _activeTransportChargeNormalized <= 0.0001f || hullIntegrity01 < 0.05f;
+
+            int traumaSignature = ComposeSignalSignature(
+                glitchIntensity,
+                recoilScalar,
+                _activeTransportChargeNormalized,
+                hullIntegrity01,
+                biosRecoveryMode ? 1f : 0f);
+            if (force || traumaSignature != _lastPublishedTraumaSignature)
+            {
+                _lastPublishedTraumaSignature = traumaSignature;
+                PlayerSignalEvents.RaiseTraumaHudSignal(new TraumaHudSignal(
+                    glitchIntensity,
+                    recoilScalar,
+                    _activeTransportChargeNormalized,
+                    hullIntegrity01,
+                    biosRecoveryMode));
+            }
+
+            float stress01 = Mathf.Clamp01(Mathf.Max(
+                underwaterStress01,
+                hullStress01,
+                fatalPressure01,
+                _clarityChannel01 * 0.7f,
+                _integrityChannel01 * 0.45f));
+            float volume01 = Mathf.Lerp(0.24f, 1f, stress01);
+            float pitchScale = Mathf.Lerp(0.92f, 1.18f, stress01);
+            float frequency01 = Mathf.Lerp(0.35f, 1f, stress01);
+            int interactionSignature = ComposeSignalSignature(stress01, volume01, pitchScale, frequency01, 0f);
+            if (force || interactionSignature != _lastPublishedInteractionSignature)
+            {
+                _lastPublishedInteractionSignature = interactionSignature;
+                PlayerSignalEvents.RaiseInteractionSignal(new InteractionSignal(
+                    stress01,
+                    volume01,
+                    pitchScale,
+                    frequency01));
+            }
+        }
+
+        private static int ComposeSignalSignature(float value0, float value1, float value2, float value3, float value4)
+        {
+            unchecked
+            {
+                int hash = 17;
+                hash = (hash * 31) + Mathf.RoundToInt(value0 * 1000f);
+                hash = (hash * 31) + Mathf.RoundToInt(value1 * 1000f);
+                hash = (hash * 31) + Mathf.RoundToInt(value2 * 1000f);
+                hash = (hash * 31) + Mathf.RoundToInt(value3 * 1000f);
+                hash = (hash * 31) + Mathf.RoundToInt(value4 * 1000f);
+                return hash;
+            }
         }
 
         private static float DecayChannel(float current, float decayPerSecond, float deltaTime)

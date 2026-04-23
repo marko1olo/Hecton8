@@ -9,11 +9,11 @@
 [RULE] All flora tick logic executes inside `IJobParallelFor` with `[BurstCompile]` attribute. No exceptions.
 [RULE] Zero managed heap allocations per frame. All persistent buffers pre-allocated at chunk load.
 [RULE] Struct-of-Arrays (SoA) layout mandatory. No Array-of-Structs for GPU-bound data.
-[RULE] `NativeArray<T>` with `Allocator.Persistent` for CPU-side. `ComputeBuffer` with `ComputeBufferType.Structured` for GPU-side.
+[RULE] `NativeArray<T>` with `Allocator.Persistent` for CPU-side. `GraphicsBuffer` with `GraphicsBuffer.Target.Structured` for GPU-side.
 [FORBID] `GetComponent`, `FindObjectOfType`, `SendMessage`, `Invoke`, `UnityEvent` in any per-frame path.
-[FORBID] `Graphics.DrawMeshInstanced` — CPU-culled variant forbidden. Indirect GPU path mandatory.
+[FORBID] `Graphics.DrawMeshInstanced` and manual `Graphics.DrawMeshInstancedIndirect` dispatch. BatchRendererGroup / GPU Resident Drawer mandatory.
 [FORBID] `new T[]` or `List<T>` during chunk streaming. Use pre-warmed `NativeArray` pools.
-[FORBID] `ComputeBuffer.GetData` per frame (CPU stall). Read-back only for debug builds behind `#if UNITY_EDITOR`.
+[FORBID] `GraphicsBuffer.GetData` per frame (CPU stall). Read-back only for debug builds behind `#if UNITY_EDITOR`.
 
 ---
 
@@ -63,11 +63,12 @@ Bit 7 (0x80): DIRTY            — GPU buffer needs re-upload this frame
 ### II.C — GPU Buffer Set (Per Active Chunk)
 
 ```
-ComputeBuffer instanceBuffer      // FloraInstance[], RW Structured — source of truth
-ComputeBuffer visibleIDBuffer     // uint[], AppendStructuredBuffer — FloraCull output
-ComputeBuffer indirectArgsBuffer  // uint[5], IndirectArguments type — DrawMeshInstancedIndirect
-ComputeBuffer flowFieldBuffer     // float4[], 3D linearized grid — shared global singleton
-ComputeBuffer playerDataBuffer    // float4[MAX_PLAYERS=4] — pos.xyz + radius.w
+GraphicsBuffer instanceBuffer      // FloraInstance[], Structured - source of truth
+GraphicsBuffer visibleIDBuffer     // uint[], Append/Structured - FloraCull output
+GraphicsBuffer indirectArgsBuffer;
+// Delegate culling and draw submission to Unity 6 BatchRendererGroup / GPU Resident Drawer
+GraphicsBuffer flowFieldBuffer     // float4[], 3D linearized grid - shared global singleton
+GraphicsBuffer playerDataBuffer    // float4[MAX_PLAYERS=4] - pos.xyz + radius.w
 ```
 
 ### II.D — Ring Buffer for Chunk Stream Data (Zero-GC Handoff)
@@ -172,20 +173,18 @@ mortonEncode3D(x,y,z):  // x,y,z are 10-bit integers (0-1023)
 ### III.B — IndirectArguments Buffer Layout
 
 ```
-// ComputeBufferType.IndirectArguments, stride=4, count=5
-// Layout maps to DrawMeshInstancedIndirect signature:
+// GraphicsBuffer.Target.IndirectArguments, stride=4, count=5
+// Buffer consumed by BatchRendererGroup / GPU Resident Drawer:
 
-uint[0] = indexCountPerInstance   // mesh triangle count * 3, set once at load
-uint[1] = instanceCount           // TARGET of CopyCount — GPU writes here
-uint[2] = startIndex              // 0
-uint[3] = baseVertexIndex         // 0
-uint[4] = startInstance           // 0
+uint[0] = indexCountPerInstance
+uint[1] = instanceCount           // TARGET of GraphicsBuffer.CopyCount
+uint[2] = startIndex
+uint[3] = baseVertexIndex
+uint[4] = startInstance
 
 // CopyCount pipeline:
-// After cull dispatch completes:
-ComputeBuffer.CopyCount(visibleIDBuffer, indirectArgsBuffer, dstOffsetBytes: 4)
-// dstOffsetBytes=4 targets uint[1] — writes visible count into instanceCount slot
-// Cost: single GPU copy operation, no CPU readback, zero stall
+GraphicsBuffer.CopyCount(visibleIDBuffer, indirectArgsBuffer, 4)
+// No CPU readback. No Graphics.DrawMeshInstancedIndirect call.
 ```
 
 ### III.C — FlowField Bending: HLSL Vertex Shader Math
@@ -228,14 +227,10 @@ float theta = clamp(totalMag * influence, -_MaxBendAngle, _MaxBendAngle)
 
 float3 k = normalize(cross(float3(0,1,0), flowDir) + float3(1e-5,0,0))  // NaN guard
 float3 relV = vertex.xyz - rootPivot
-float cosT = cos(theta), sinT = sin(theta)
+float sinT = sin(theta);
+float cosT = cos(theta);
 float3 bent = relV*cosT + cross(k,relV)*sinT + k*dot(k,relV)*(1-cosT)
 vertex.xyz = bent + rootPivot
-
-// 6. SENIOR_HACK: Approximate sin/cos with fast polynomial for MX350
-// cos(x) ≈ 1 - x²/2 + x⁴/24   [valid |x| < π/2]
-// sin(x) ≈ x - x³/6            [valid |x| < π/2]
-// Guaranteed valid since theta clamped to _MaxBendAngle (~0.5 rad default)
 ```
 
 **Numerical Guards:**
@@ -250,7 +245,7 @@ theta = isnan(theta) || isinf(theta) ? 0.0 : theta         // NaN/Inf kill
 **Player buffer:**
 ```
 // float4 _PlayerData[4]: xyz = world position, w = interaction radius
-// Passed via ComputeBuffer.SetData(NativeArray<float4>) — zero GC, see II.E pattern
+// Upload via GraphicsBuffer.LockBufferForWrite + UnsafeUtility.MemCpy — zero-copy, zero GC
 ```
 
 **Vertex shader displacement (runs after FlowField bending):**
@@ -285,13 +280,10 @@ vertex.xyz += totalDisplace
 
 **SENIOR_HACK — Fast `length` approximation for MX350 ALU:**
 ```
-// Use rsqrt for normalized direction simultaneously:
 float3 delta = vertex - playerPos
-float  distSq = dot(delta, delta) + 1e-5
-float  invDist = rsqrt(distSq)         // single ALU instruction on GCN/Turing
-float  dist = distSq * invDist         // = sqrt(distSq), cheaper than length()
-float3 dir = delta * invDist           // normalized direction, free
-// Replace length(delta) with dist, normalize(delta) with dir — saves 2 instructions per player
+float dist = math.length(delta); // Let Burst use RSQRTPS intrinsic
+float3 dir = delta / max(dist, 1e-5)
+// [FORBID] Manual rsqrt cargo cult. Use the hardware path.
 ```
 
 ### III.E — LOD Distance Math (CPU-Side Burst Job)
@@ -362,11 +354,15 @@ chunkUpdateBudgetPerFrame = floor(frameBudget_ms / avgChunkUpdateCost_ms)
 frame 0: Cull dispatch + IndirectArgs copy (always, every frame)
 frame 1: LOD update job (Burst, time-sliced)
 frame 2: State mask propagation (dirty flag resolution)
-frame 3: Player data buffer upload (NativeArray → ComputeBuffer.SetData)
+frame 3: Player data buffer upload (LockBufferForWrite + MemCpy)
 frame 0: [cycle repeats]
 
 // Player buffer upload: only if player moved > 0.05m since last upload
-// Dirty check: if dot(posDelta, posDelta) < 0.0025: skip SetData
+// Dirty check: if dot(posDelta, posDelta) < 0.0025: skip buffer map
+// Zero-copy async write mapping
+var ptr = buffer.LockBufferForWrite<FloraInstance>(0, count);
+UnsafeUtility.MemCpy(ptr.GetUnsafePtr(), nativeArray.GetUnsafePtr(), byteCount);
+buffer.UnlockBufferAfterWrite<FloraInstance>(count);
 ```
 
 ### IV.C — LOD Tier Definitions
@@ -397,17 +393,13 @@ ULTRA (RTX-class):
 ```
 Per active chunk per frame:
   1x Compute dispatch: FloraCull.compute
-  1x ComputeBuffer.CopyCount
-  1x DrawMeshInstancedIndirect
+  1x GraphicsBuffer.CopyCount
+  1x BatchRendererGroup / GPU Resident Drawer submission
 
-Total for 16 chunks: 16 draw calls, 16 dispatches
-GPU driver overhead (MX350): ~0.2ms per draw call → 3.2ms total acceptable
-Merge-instanced single draw per species: group chunks by material → target <8 draw calls total
-  Strategy: Per-species AppendBuffer. All chunks write to shared visibleID pool per species.
-            Single DrawMeshInstancedIndirect per species. Chunk identity via instanceBuffer offset.
+Total for 16 chunks: native GPU culling, native draw submission
+CPU driver overhead target: remove manual DrawMeshInstancedIndirect dispatch entirely
+Group by species/material so GPU Resident Drawer keeps total submissions < 8
 ```
-
----
 
 ## V. INTEGRATION & FAILURE MODES
 
@@ -415,20 +407,20 @@ Merge-instanced single draw per species: group chunks by material → target <8 
 
 ```
 IFloraChunkProvider:
-  bool TryGetChunkInstanceBuffer(ChunkID id, out ComputeBuffer buffer)
+  bool TryGetChunkInstanceBuffer(ChunkID id, out GraphicsBuffer buffer)
   bool TryGetChunkBounds(ChunkID id, out Bounds bounds)
-  void OnChunkUnload(ChunkID id)  // releases ComputeBuffer.Release() 
+  void OnChunkUnload(ChunkID id)  // releases GraphicsBuffer.Release()
 
 IFlowFieldSampler:
   float4 SampleAtWorldPos(float3 worldPos)  // CPU-side sampling for debug
-  ComputeBuffer GetGPUBuffer()
+  GraphicsBuffer GetGPUBuffer()
 
 IFloraPlayerInterface:
   void GetPlayerData(NativeArray<float4> output)  // writes into pre-allocated NativeArray
 
 IFloraCullDispatcher:
   void DispatchCull(Camera cam, IFloraChunkProvider provider)
-  ComputeBuffer GetVisibleIDBuffer(ChunkID id)
+  GraphicsBuffer GetVisibleIDBuffer(ChunkID id)
 ```
 
 ### V.B — Failure Mode Catalog
@@ -446,11 +438,10 @@ FAILURE: depth > 4km (depth value exceeds FlowField Z extent)
   RESULT: Constant boundary flow value. Acceptable deep-ocean stillness. Intentional fallback.
 
 FAILURE: instanceCount = 0 (empty chunk / all culled)
-  SYMPTOM: DrawMeshInstancedIndirect with 0 instances
-  GUARD: No guard needed — GPU draws 0 instances silently. No CPU check required.
-         indirectArgs[1] = 0 after CopyCount. Valid API behavior.
+  SYMPTOM: GPU Resident Drawer submission with 0 visible instances
+  GUARD: No guard needed - indirectArgs[1] = 0 after GraphicsBuffer.CopyCount. Valid API behavior.
 
-FAILURE: ComputeBuffer not initialized (chunk still loading)
+FAILURE: GraphicsBuffer not initialized (chunk still loading)
   GUARD: IFloraChunkProvider.TryGetChunkInstanceBuffer returns false
          Dispatcher skips dispatch for that chunk. No null deref, no exception.
          Frame skip budget: max 4 frames before chunk considered failed → log warning only.
@@ -492,21 +483,19 @@ FAILURE: Rodrigues rotation with flowDir = (0,1,0) exactly (vertical flow)
 ```
 Disposal order (strict):
 1. Stop all Burst jobs: JobHandle.Complete() for all outstanding handles
-2. Release ComputeBuffers: indirectArgsBuffer.Release(), visibleIDBuffer.Release(), instanceBuffer.Release()
+2. Release GraphicsBuffers: indirectArgsBuffer.Release(), visibleIDBuffer.Release(), instanceBuffer.Release()
 3. Dispose NativeArrays: chunkRing[i].Dispose() for all slots
-4. Release FlowField ComputeBuffer (singleton, last)
+4. Release FlowField GraphicsBuffer (singleton, last)
 
-All Release/Dispose calls inside OnDestroy — guaranteed by IDisposable pattern on system MonoBehaviour.
+All Release/Dispose calls inside OnDestroy - guaranteed by IDisposable pattern on system MonoBehaviour.
 No static mutable state survives domain reload.
 ```
-
----
 
 ## APPENDIX A — Shader Property Binding Reference
 
 ```
 // Set once at material init or via MaterialPropertyBlock (per-chunk, zero alloc):
-_MarineSnowFlowField        : Texture3D / ComputeBuffer (tier-dependent)
+_MarineSnowFlowField        : Texture3D / GraphicsBuffer (tier-dependent)
 _FlowFieldOrigin            : float3
 _FlowFieldExtents           : float3
 _FloraSwayFreq              : float    (default 0.8 Hz)
@@ -523,14 +512,14 @@ _VisibleIDs                 : StructuredBuffer<uint>         // read-only in ver
 ## APPENDIX B — Per-Frame Execution Order
 
 ```
-1. [CPU/Burst]  Player pos delta check → conditional NativeArray write
-2. [CPU/Main]   ComputeBuffer.SetData(playerDataNative) — if dirty only
+1. [CPU/Burst]  Player pos delta check -> conditional NativeArray write
+2. [CPU/Main]   GraphicsBuffer.LockBufferForWrite(playerDataBuffer) -> MemCpy -> Unlock
 3. [CPU/Main]   Upload frustum planes to FloraCull.compute constants
-4. [GPU]        FloraCull.compute dispatch — per active chunk
-5. [GPU]        ComputeBuffer.CopyCount — per active chunk
-6. [GPU]        DrawMeshInstancedIndirect — per species (merged chunks)
-7. [CPU/Burst]  LOD update job — time-sliced (see IV.B)
-8. [CPU/Burst]  State mask propagation — time-sliced
-9. [CPU/Async]  Chunk ring buffer poll → upload new chunks if available
+4. [GPU]        FloraCull.compute dispatch - per active chunk
+5. [GPU]        GraphicsBuffer.CopyCount - per active chunk
+6. [GPU]        BatchRendererGroup / GPU Resident Drawer submission - per species
+7. [CPU/Burst]  LOD update job - time-sliced (see IV.B)
+8. [CPU/Burst]  State mask propagation - time-sliced
+9. [CPU/Async]  Chunk ring buffer poll -> upload new chunks if available
 ```
 ```

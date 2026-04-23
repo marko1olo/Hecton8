@@ -586,8 +586,11 @@ namespace Hecton8.World
             if (!(_playerToolManager.CurrentTool is KnifeTool knife) || !knife.IsEquipped)
                 return false;
 
-            InputManager inputManager = InputManager.Instance;
-            if (inputManager == null || !inputManager.IsPrimaryActionHeld)
+            IInputService inputService = GlobalRegistry.Input;
+            PlayerInputState inputState = inputService != null && inputService.IsPlayerInputEnabled
+                ? inputService.GetState()
+                : default;
+            if (!inputState.HasAction(PlayerInputAction.PrimaryFire))
                 return false;
 
             Transform knifeTransform = knife.transform;

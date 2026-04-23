@@ -7,7 +7,8 @@
 ## [RULE] ZERO-GC CONTRACT
 - No `new` allocations post-Init. No LINQ. No boxing. No delegates in hot path.
 - All creature state evaluated inside Burst-compiled Jobs.
-- Communication via `NativeQueue<CognitionEvent>` (SPSC pattern per creature).
+NativeStream cognitionEventStream; 
+// Stream.AsWriter().BeginForEachIndex(creatureIndex)
 - Entity identity = `int creatureIndex`. No object refs cross job boundary.
 
 ---
@@ -170,7 +171,9 @@ EPSILON = 1e-6f
      intensity = stimulusMagnitude,
      stimType  = stimulusBitmask
    }
-3. memoryHead = (memoryHead + 1) % 5
+// [FORBID] Modulo on non-power-of-2 numbers in hot loops.
+MEMORY_SLOTS = 8; // Waste 3 slots to save the CPU pipeline.
+memoryHead = (memoryHead + 1) & 7;
    // No bounds check needed: modulo guarantees [0..4]
 ```
 
@@ -275,7 +278,10 @@ NativeArray<int> boidClaimTable;   // length = MAX_BOIDS (e.g. 500)
 2. CAS attempt:
      expected = -1
      desired  = creatureIndex
-     success  = Interlocked.CompareExchange(ref boidClaimTable[boidIdx], desired, expected) == expected
+unsafe {
+    int* ptr = (int*)boidClaimTable.GetUnsafePtr() + boidIdx;
+    Interlocked.CompareExchange(ref *ptr, desired, expected);
+}
 3. if success:
      core.claimedBoidIndex = boidIdx
      // Set EAT score modifier active

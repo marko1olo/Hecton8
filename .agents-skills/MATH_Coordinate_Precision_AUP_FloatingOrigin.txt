@@ -17,7 +17,7 @@
 
 [RULE] Universe coordinates: int64 grid + float32 local offset. Never raw double in hot paths.
 [RULE] World shifts atomic. Single-frame operation. No multi-frame interpolation of origin.
-[RULE] GPU matrix pools immutable during shift. Offset applied per-vertex in shader.
+[RULE] GPU matrix pools rebuilt on CPU as camera-relative float32 matrices. Shader-side global offset accumulation forbidden.
 [FORBID] Transform.position writes during shift. Queue-based batch teleport only.
 [FORBID] Physics queries across shift boundary. Pause simulation during rebase.
 [FORBID] Lerp/Slerp operations spanning pre/post-shift coordinates.
@@ -100,78 +100,49 @@ if distSq > SHIFT_THRESHOLD_SQ:  // (5000m)^2
 
 Step-by-step (Single Frame):
 
-1. Set SHIFT_PENDING flag globally
-2. Freeze physics (PhysX.Simulate = false)
-3. Read all Rigidbody velocities → cache
-4. Calculate shift vector:
+1. Set SHIFT_PENDING flag globally.
+2. Freeze gameplay-side physics integration.
+3. Cache all Rigidbody linear/angular velocities once.
+4. Compute shift vector:
    shiftVec = -playerWorldPos
-   shiftVec = round(shiftVec / SNAP_GRID) * SNAP_GRID  // 100m snap for determinism
-5. Update _PreviousFloatingOffset = _GlobalFloatingOffset
-6. _GlobalFloatingOffset += shiftVec
-7. _TotalUniverseOffset += shiftVec  // Infinite accumulator
-8. Batch Transform Updates:
-   Schedule `OriginShiftJob : IJobParallelForTransform`
-   - read cached worldPositions
-   - add `shiftVec`
-   - write transform positions in parallel during frozen shift window
-   - no serial foreach transform mutation on main thread
-9. Velocity Reapplication (Integrator Reset):
-   For each Rigidbody:
-       rb.velocity = cachedVelocity  // Prevent velocity corruption
-       rb.angularVelocity = cachedAngular
-10. Clear SHIFT_PENDING, set SHADER_OFFSET_DIRTY
-11. Resume physics
-12. Increment _ShiftFrameID
+   shiftVec = round(shiftVec / SNAP_GRID) * SNAP_GRID
+5. Update CPU-side universe origin accumulators.
+6. // Group all physics objects under a root GameObject. Shift the Root Transform ONCE.
+7. Rebuild renderer / collider transforms from rebased AUP data on the CPU.
+8. Reapply cached velocities unchanged.
+9. Clear SHIFT_PENDING and resume simulation.
+10. Increment _ShiftFrameID.
 
 Numerical Stability Guards:
 
-shiftVec = clamp(shiftVec, -10000m, +10000m)  // Prevent overflow
-if dot(shiftVec, shiftVec) < 1.0:  // Sub-meter shift ignored
+shiftVec = clamp(shiftVec, -10000m, +10000m)
+if dot(shiftVec, shiftVec) < 1.0:
     abort_shift()
 
 ### [MATH] GPU Vertex Offset Application
 
+CPU Render Path:
+
+// [FORBID] Global offsets accumulating in the shader.
+// CPU computes Object-to-Camera relative matrix, casts to float32, uploads to GPU.
+
+float4x4 objectToUniverse = BuildObjectToUniverse(aup, localTransform)
+float4x4 objectToCameraRelative = BuildCameraRelative(objectToUniverse, cameraUniversePos)
+matrixPool[instanceID] = (float4x4)objectToCameraRelative
+
 Vertex Shader Pattern:
 
-// Input: localPos (object space), ObjectToWorld matrix
-float3 worldPos = mul(ObjectToWorld, float4(localPos, 1.0)).xyz;
-worldPos += _GlobalFloatingOffset;  // Applied from constant buffer pack
-
-// For camera-relative rendering (MX350 depth precision boost):
-float3 cameraRelativePos = worldPos - _WorldSpaceCameraPos;
-float4 clipPos = mul(UNITY_MATRIX_VP, float4(cameraRelativePos, 1.0));
-
-Matrix Pool Usage (Instanced Rendering):
-
-// Matrices stored as ObjectToUniverse (no shift baked in)
-float4x4 objectMatrix = matrixPool[instanceID];
-float3 worldPos = mul(objectMatrix, float4(localPos, 1.0)).xyz;
-worldPos += _GlobalFloatingOffset;  // Shift applied here
+float4 clipPos = mul(UNITY_MATRIX_VP, mul(matrixPool[instanceID], float4(localPos, 1.0)))
 
 ### [MATH] Noise Phase Stability
 
-Problem: Simplex noise samples drift during coordinate shift.
+CPU-side absolute noise anchor:
 
-Solution - Absolute Universe Coordinate Reconstruction:
+absoluteNoiseCoord = AUPToAbsoluteFloat3(aup, localXYZ) + universeNoiseOffset
+noiseInput = absoluteNoiseCoord * noiseScale + noiseSeed
 
-// Fragment Shader
-float3 absoluteNoiseCoord = worldPos - _GlobalFloatingOffset + _TotalUniverseOffset;
-
-// For deterministic multi-octave noise:
-float3 noiseInput = absoluteNoiseCoord * noiseScale + noiseSeed;
-float noise = SimplexNoise3D(noiseInput);
-
-High-Precision Emulation (Double via Component Split):
-
-// When _TotalUniverseOffset exceeds float32 precision (~16777216)
-float3 offsetHigh = floor(_TotalUniverseOffset / 1000000.0) * 1000000.0;
-float3 offsetLow = _TotalUniverseOffset - offsetHigh;
-
-float3 absolutePos = worldPos - _GlobalFloatingOffset;
-absolutePos += offsetLow;  // Low component fits in float32 precision
-absolutePos += offsetHigh; // High component (coarse)
-
-// Use absolutePos for noise sampling
+Do NOT reconstruct absolute coordinates in the shader from accumulated float offsets.
+Do NOT add `_GlobalFloatingOffset` inside the shader.
 
 ### [MATH] Triplanar UV Stability via UV3 Baking
 

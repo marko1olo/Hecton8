@@ -7,6 +7,7 @@
 namespace Hecton8.Gameplay
 {
     using Hecton8.Bootstrap;
+    using Hecton8.Core;
     using Hecton8.Input;
     using Hecton8.Interaction;
     using Hecton8.Items;
@@ -265,14 +266,15 @@ namespace Hecton8.Gameplay
 
         public override void ToolTick(float deltaTime)
         {
-            InputManager input = InputManager.Instance;
-            if (input == null)
-                return;
+            IInputService inputService = GlobalRegistry.Input;
+            PlayerInputState inputState = inputService != null && inputService.IsPlayerInputEnabled
+                ? inputService.GetState()
+                : default;
 
-            if (!input.IsPrimaryActionHeld)
+            if (!inputState.HasAction(PlayerInputAction.PrimaryFire))
                 _primaryLatched = false;
 
-            if (!input.IsSecondaryActionHeld)
+            if (!inputState.HasAction(PlayerInputAction.SecondaryFire))
                 _secondaryLatched = false;
         }
 

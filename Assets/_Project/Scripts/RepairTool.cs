@@ -25,6 +25,7 @@
 // ============================================================================
 
 using Hecton.Localization;
+using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Items;
 using Hecton8.Tools;
@@ -304,7 +305,14 @@ namespace Hecton8.Gameplay
                     return;
                 }
 
-                module.Repair(repairSpeed * deltaTime);
+                float repairAmount = repairSpeed * deltaTime;
+                ToolEffectEvents.RaiseEffectApplied(
+                    EffectType.Weld,
+                    module,
+                    _cachedTransform,
+                    repairAmount,
+                    _hit.point);
+                module.Repair(repairAmount);
                 UpdateBeamHit(_hit.point, _hit.normal);
 
                 if (!_activeRepairReportedThisUse)
@@ -399,11 +407,12 @@ namespace Hecton8.Gameplay
             _wasRepairingLastFrame = _isRepairing;
             _isRepairing = false;
 
-            Hecton8.Input.InputManager input = Hecton8.Input.InputManager.Instance;
-            if (input == null)
-                return;
+            IInputService inputService = GlobalRegistry.Input;
+            PlayerInputState inputState = inputService != null && inputService.IsPlayerInputEnabled
+                ? inputService.GetState()
+                : default;
 
-            if (!input.IsPrimaryActionHeld)
+            if (!inputState.HasAction(PlayerInputAction.PrimaryFire))
             {
                 _invalidTargetReportedThisUse = false;
                 _noTargetReportedThisUse = false;
@@ -411,7 +420,7 @@ namespace Hecton8.Gameplay
                 _activeRepairReportedThisUse = false;
             }
 
-            if (!input.IsSecondaryActionHeld)
+            if (!inputState.HasAction(PlayerInputAction.SecondaryFire))
                 _secondaryLatched = false;
         }
 

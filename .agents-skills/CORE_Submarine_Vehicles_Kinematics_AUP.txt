@@ -217,9 +217,8 @@ fn InteriorCapsuleCast(origin_world, dir_world, radius, height, cache):
     origin_local = cache.worldToLocal.MultiplyPoint3x4(origin_world)
     dir_local    = cache.worldToLocal.MultiplyVector(dir_world)
 
-    // Execute cast in world space BUT against layermask: Interior_Colliders only
-    // Physics.CapsuleCast operates world-space — platform colliders have moved with rigidbody
-    // Unity PhysX syncs collider world positions after MovePosition: cast is valid same tick if called AFTER MovePosition
+    // [FORBID] Assuming automatic mid-frame broadphase syncs.
+    // Use local-space mathematical overlap checks against custom interior arrays, OR accept Physics.SyncTransforms() cost.
 
     hit = Physics.CapsuleCast(
         point1      = origin_world + Up * (height * 0.5 - radius),
@@ -270,7 +269,8 @@ fn ResolvePenetration(playerPos, overlapColliders, cache):
 fn EmergencyTeleport(safeLocalPos, cache):
     safeWorldPos     = cache.localToWorld.MultiplyPoint3x4(safeLocalPos)
     rb_player.position = safeWorldPos                // Bypass MovePosition — direct set
-    rb_player.linearVelocity = cache.linearVelocity  // Match vessel linear vel instantly
+// [FORBID] Momentum deletion. You MUST preserve the player's relative velocity:
+rb_player.linearVelocity = cache.linearVelocity + playerRelativeVel;
     // [RULE]: Store lastSafeLocalPos every tick player is NOT in Crushing state.
     //         Expressed in LOCAL space — valid even if vessel teleports.
 

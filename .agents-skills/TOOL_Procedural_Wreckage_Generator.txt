@@ -1,0 +1,438 @@
+```markdown
+# TOOL_Procedural_Wreckage_Generator.md
+
+## I. EXECUTION_POLICY
+
+[RULE] Socket validation via bitmask AND ops. No string comparisons. No dictionary lookups in hot path.
+[FORBID] Dynamic mesh allocation per module. Merge pass writes single MeshData buffer.
+
+## II. DATA_ARCHITECTURE
+
+### GridCell (16 bytes, cache-aligned)
+```
+uint16 PossibleModuleMask  // Bitfield: 1 bit per module type (max 16 modules)
+uint8  CollapsedModuleID   // 255 = uncollapsed
+uint8  SocketConstraints   // 6-bit directional socket locks (NESWTB)
+float  Entropy             // Shannon entropy cache
+```
+
+### ModuleDefinition (struct)
+```
+uint16 SocketMask[6]       // Per-face: North/East/South/West/Top/Bottom
+Bounds LocalAABB
+MeshDataSlice              // Vertex/Index range in shared buffer
+uint8  DrawCallPriority    // LOD tier: 0=essential 1=detail 2=clutter
+```
+
+### WFC_State (NativeArrays)
+```
+NativeArray<GridCell> Grid               // [ChunkRes^3]
+NativeQueue<int3> PropagationQueue       // Fixed capacity = ChunkRes^3 * 6
+NativeArray<uint> RNG_State              // [4] XorShift128 state
+NativeHashMap<int3, uint8> CollapseOrder // Pre-sorted entropy indices
+```
+
+[DATA] Grid stored in Morton Z-order for cache coherency during 3D neighbor lookups.
+[DATA] Socket bitmasks: Each module face encoded as 16-bit value. Compatible sockets share at least 1 set bit after AND.
+
+## III. ALGORITHMIC_TRUTH
+
+### A. Deterministic_RNG_Kernel
+
+XorShift32 (Burst-compatible):
+```
+Input: uint seed (derived from AUP hash)
+State: uint[4] = {seed, seed^0x9E3779B9, seed<<13, seed>>17}
+
+Next():
+  t = state[0] ^ (state[0] << 11)
+  state[0] = state[1]
+  state[1] = state[2]
+  state[2] = state[3]
+  state[3] = state[3] ^ (state[3] >> 19) ^ (t ^ (t >> 8))
+  return state[3]
+
+NextFloat01(): return Next() * 2.328306e-10
+```
+
+AUP to Seed:
+```
+uint hash = (math.asuint(AUP.x) * 73856093) ^
+            (math.asuint(AUP.y) * 19349663) ^
+            (math.asuint(AUP.z) * 83492791);
+seed = hash ^ (hash >> 16)
+```
+
+### B. WFC_Collapse_Loop
+
+#### 1. Initialization
+```
+For each GridCell:
+  PossibleModuleMask = 0xFFFF (all modules valid)
+  CollapsedModuleID = 255
+  Entropy = log2(popcount(PossibleModuleMask))
+```
+
+#### 2. Entropy-Driven Collapse
+```
+While uncollapsed cells exist:
+  
+  Step1_SelectCell:
+    minEntropy = float.MaxValue
+    For each uncollapsed cell:
+      If Entropy < minEntropy:
+        minEntropy = Entropy
+        selectedCell = cell
+      If Entropy == minEntropy:
+        // Deterministic tiebreak using RNG seeded by grid index
+        tiebreakRNG = XorShift32(seed ^ CellIndexHash)
+        If tiebreakRNG.NextFloat01() > 0.5:
+          selectedCell = cell
+  
+  Step2_CollapseCell:
+    validModules = ExtractSetBits(selectedCell.PossibleModuleMask)
+    chosenModule = validModules[RNG.Next() % validModules.Length]
+    selectedCell.CollapsedModuleID = chosenModule
+    selectedCell.PossibleModuleMask = (1 << chosenModule)
+    selectedCell.Entropy = 0
+  
+  Step3_PropagateConstraints:
+    PropagationQueue.Enqueue(selectedCell.GridIndex)
+    
+    While PropagationQueue.NotEmpty:
+      currentIdx = PropagationQueue.Dequeue()
+      currentCell = Grid[currentIdx]
+      
+      For each direction D in [N,E,S,W,T,B]:
+        neighborIdx = currentIdx + DirectionOffset[D]
+        If OutOfBounds(neighborIdx): continue
+        neighborCell = Grid[neighborIdx]
+        If neighborCell.CollapsedModuleID != 255: continue
+        
+        // Constrain neighbor based on current cell's sockets
+        validNeighborMask = 0
+        For each possibleModule in ExtractSetBits(currentCell.PossibleModuleMask):
+          currentSocket = ModuleDefs[possibleModule].SocketMask[D]
+          oppositeDir = OppositeDirection[D]
+          For each neighborModule in ExtractSetBits(neighborCell.PossibleModuleMask):
+            neighborSocket = ModuleDefs[neighborModule].SocketMask[oppositeDir]
+            If (currentSocket & neighborSocket) != 0:
+              validNeighborMask |= (1 << neighborModule)
+        
+        newMask = neighborCell.PossibleModuleMask & validNeighborMask
+        
+        If newMask == 0:
+          // Contradiction: backtrack or force compatible module
+          [SAFE] Force emergency module (ID=0, universal connector)
+          newMask = 1
+        
+        If newMask != neighborCell.PossibleModuleMask:
+          neighborCell.PossibleModuleMask = newMask
+          neighborCell.Entropy = log2(popcount(newMask)) + SmallNoise(RNG) // Break ties
+          PropagationQueue.Enqueue(neighborIdx)
+```
+
+[MATH] Shannon Entropy = -Σ(p_i * log(p_i)) simplified to log2(popcount) assuming uniform probability.
+[MATH] SmallNoise adds ±0.001 * RNG.NextFloat01() to prevent identical entropy causing non-deterministic sort.
+
+### C. Socket_Validation_Bitmask
+
+Socket encoding (16-bit per face):
+```
+Bit 0: Generic corridor
+Bit 1: Blast door frame
+Bit 2: Flooded breach
+Bit 3: Airlock seal
+Bit 4: Window panel
+Bit 5: Vent shaft
+Bits 6-15: Reserved
+```
+
+Compatibility check:
+```
+IsCompatible(socketA, socketB):
+  return (socketA & socketB) != 0
+```
+
+Example:
+```
+Corridor module: North socket = 0b0000001 (generic)
+FloodedRoom: South socket = 0b0000111 (generic + blast door + breach)
+Valid connection: 0b0000001 & 0b0000111 = 0b0000001 ✓
+```
+
+### D. Mesh_Merge_Kernel
+
+#### 1. CombineMeshData (Burst job)
+```
+Input: NativeArray<ModulePlacement> (moduleID, position, rotation)
+Output: Single Mesh.MeshData
+
+Step1_CountVertices:
+  totalVerts = 0, totalIndices = 0
+  For each placement:
+    totalVerts += ModuleDefs[placement.moduleID].MeshData.vertexCount
+    totalIndices += ModuleDefs[placement.moduleID].MeshData.indexCount
+
+Step2_AllocateBuffer:
+  MeshData = Mesh.AllocateWritableMeshData(1)
+  MeshData[0].SetVertexBufferParams(totalVerts, VertexLayout)
+  MeshData[0].SetIndexBufferParams(totalIndices, IndexFormat.UInt32)
+
+Step3_WriteTransformed:
+  vertOffset = 0, idxOffset = 0
+  For each placement:
+    srcMesh = ModuleDefs[placement.moduleID].MeshData
+    // Pass MeshDataArray into Burst Job. Read via meshData.GetVertexData<Vector3>()
+    // meshDataArray.Dispose() upon completion
+    Mesh.MeshDataArray meshDataArray = Mesh.AcquireReadOnlyMeshData(srcMesh);
+    meshData = meshDataArray[0]
+    pos = placement.position
+    rot = placement.rotation
+    float4x4 transform = float4x4.TRS(pos, rot, new float3(1f));
+
+    For v in meshData.GetVertexData<Vector3>():
+      dstVerts = math.transform(transform, v)
+      dstNormals[vertOffset-1] = math.rotate(placement.rotation, meshData.GetVertexData<Vector3>()[vertOffset-1])
+
+    meshDataArray.Dispose()
+    
+    For i in srcMesh.indices:
+      dstIndices[idxOffset++] = i + (vertOffset - srcMesh.vertexCount)
+
+Step4_SetSubMeshes:
+  MeshData[0].subMeshCount = 1
+  MeshData[0].SetSubMesh(0, new SubMeshDescriptor(0, totalIndices, MeshTopology.Triangles))
+```
+
+[RULE] Transform math uses quaternion + SIMD matrix multiply. No Quaternion.Euler in loop.
+[RULE] Vertex buffer layout: Position(float3), Normal(half3), UV(half2) = 16 bytes/vert.
+
+#### 2. DrawCall_Optimization
+```
+LOD0 (Essential): Structural walls, floors, major props (always render)
+LOD1 (Detail): Small debris, wiring, decals (fade 30-60m)
+LOD2 (Clutter): Micro-detail (fade 15-30m)
+
+Merge strategy:
+  Generate 3 separate meshes per LOD tier
+  Assign DrawCallPriority during module authoring
+  Use single material with atlas texture (2K base, 4K ultra)
+```
+
+### E. NavMesh_Async_Bake
+
+```
+Trigger conditions:
+  - WFC grid 100% collapsed
+  - Mesh merge complete
+  - Static colliders updated
+
+Routine:
+  1. Mark wreck GameObject as Navigation Static
+  2. Define NavMeshBuildSettings:
+       agentRadius = 0.3 (slim diver)
+       agentHeight = 1.8
+       agentSlope = 45
+       agentClimb = 0.4
+  3. Calculate LocalBounds from grid AABB
+  // Generate and pass lightweight PhysicsCollider proxy meshes (convex hulls) to UpdateNavMeshDataAsync.
+  4. Build lightweight PhysicsCollider proxy meshes (convex hulls) during merge
+  5. NavMeshBuilder.UpdateNavMeshDataAsync(data, buildSettings, proxySources, localBounds)
+  5. On completion callback:
+       - Add NavMeshData to scene
+       - Enable AI pathfinding queries
+       - Set wreck state = NAVMESH_READY
+
+[SAFE] If bake fails (invalid geometry):
+  - Revert to simple box collider navigation
+  - Log error with chunk AUP for reproduction
+  - Continue game without AI pathing in this wreck
+```
+
+## IV. HARDWARE_SCALABILITY
+
+### MX350_Constraints
+
+VRAM budget per wreck: 6MB (assumes 20 wrecks in streaming radius)
+```
+LOD0 mesh: 2MB (10K verts, 1K draw)
+LOD1 mesh: 1.5MB (5K verts)
+LOD2 mesh: 1MB (3K verts)
+Textures: 1.5MB (BC7 compressed albedo+normal atlas)
+```
+
+ALU optimization:
+```
+WFC solve cost: ~800μs for 16³ grid on i3-10100
+  - Amortize over 4 frames (200μs/frame)
+  - Use JobHandle dependencies to pipeline mesh merge
+
+Mesh merge cost: ~1.2ms for 50 modules
+  - Schedule during low-activity frames (player in menu, loading screen)
+```
+
+### Scalability_Tiers
+
+**Base (MX350):**
+- Grid resolution: 16³ cells
+- Max modules per wreck: 50
+- Socket types: 6
+- Mesh LODs: 2 (essential + detail)
+
+**High (GTX 1650):**
+- Grid resolution: 24³ cells
+- Max modules: 120
+- Socket types: 12
+- Mesh LODs: 3
+
+**Ultra (RTX 3060):**
+- Grid resolution: 32³ cells
+- Max modules: 250
+- Socket types: 16
+- Mesh LODs: 3 + GPU tessellation on walls
+
+## V. INTEGRATION_SAFETY
+
+### Interface
+```
+IProceduralGenerator:
+  WreckageData Generate(int3 chunkAUP, uint seed)
+  void Dispose()
+
+WreckageData (struct):
+  Mesh CombinedMesh
+  NavMeshData Navigation
+  Bounds WorldBounds
+  uint GenerationSeed (for debug/repro)
+```
+
+### Failure_Modes
+
+**Contradiction in WFC:**
+```
+Cause: Impossible socket constraints (e.g., all neighbors require incompatible sockets)
+Mitigation:
+  - Force module ID 0 (universal empty space) at contradiction cell
+  - Log warning with grid coordinates
+  - Continue generation (graceful degradation)
+```
+
+**Mesh buffer overflow:**
+```
+Cause: More modules than VRAM budget allows
+Detection: totalVerts > MaxVertexCount (65535 for 16-bit indices)
+Mitigation:
+  - Switch to UInt32 indices
+  - Split into multiple sub-meshes
+  - Reduce module placement density by 20%
+```
+
+**NavMesh bake timeout:**
+```
+Cause: Complex geometry (10K+ triangles) on weak CPU
+Detection: Bake duration > 500ms
+Mitigation:
+  - Cancel async bake
+  - Generate simplified collision proxy (convex hull of grid cells)
+  - Bake proxy instead of full mesh
+```
+
+**Seed collision (different AUPs produce identical seeds):**
+```
+Probability: ~1 in 4 billion (uint32 space)
+Detection: Hash collision check during chunk registration
+Mitigation:
+  - Salt seed with world generation version number
+  - Re-hash using FNV-1a if collision detected
+```
+
+[SAFE] NaN protection in entropy calculation:
+```
+If popcount(mask) == 0:
+  Entropy = float.MaxValue (force low priority)
+Else:
+  Entropy = math.log2(popcount) + epsilon
+```
+
+[SAFE] Depth > 4km edge case:
+```
+Apply pressure damage modifier to wreck integrity:
+  - Increased breach modules (flooded sections)
+  - Collapsed corridors (reduce module count by 30%)
+  - Adjusted socket probabilities (more sealed airlocks)
+```
+
+### Performance_Budgets
+
+Per-frame (60 FPS target):
+- WFC propagation step: Max 200μs (time-sliced over 4 frames)
+- Mesh merge: Off-thread (JobSystem async)
+- NavMesh bake: Async (no main thread impact)
+
+Total generation time (budget):
+- Base: 15ms (amortized)
+- High: 40ms
+- Ultra: 80ms
+
+[RULE] Never block main thread > 2ms. Use JobHandle.ScheduleBatchedJobs() for dependencies.
+
+## VI. ADVANCED_OPTIMIZATIONS
+
+### Spatial_Hashing for Module Lookup
+```
+Hash grid cells to 1D index:
+  Morton encode: Interleave X,Y,Z bits
+  Index = (X & 0x3FF) | ((Y & 0x3FF) << 10) | ((Z & 0x3FF) << 20)
+  
+Cache line optimization:
+  Align GridCell array to 64-byte boundaries
+  Process cells in Morton order (spatial locality)
+```
+
+### SIMD Socket Validation
+```
+Use AVX2 (if available) to check 8 socket pairs simultaneously:
+  Load 8 socketA values into __m256i
+  Load 8 socketB values into __m256i
+  result = _mm256_and_si256(socketA, socketB)
+  validMask = _mm256_cmpgt_epi32(result, _mm256_setzero_si256())
+```
+
+### Incremental Mesh Updates
+```
+For dynamic destruction:
+  - Store module placement array
+  - On module removal:
+      1. Mark affected vertices/indices as deleted (set to degenerate triangle)
+      2. Lazy rebuild: Only regenerate mesh when 20% destroyed
+      3. Use GPU instancing for intact modules (reduce merge cost)
+```
+
+### Texture Atlas Packing
+```
+Socket-aware UV mapping:
+  - Group modules by visual theme (corroded, pristine, flooded)
+  - Pack textures into 2K atlas with 256px border padding
+  - Use hardware BC7 compression (3:1 ratio)
+  - Mipmap generation: Box filter down to 4x4
+```
+
+[SENIOR_HACK] Fake AO via vertex colors:
+```
+During mesh merge:
+  - Sample grid cell neighbors
+  - If 4+ solid neighbors: vertex.color = 0.6 (darkened)
+  - If 2-3 neighbors: vertex.color = 0.8
+  - If 0-1 neighbors: vertex.color = 1.0 (full bright)
+  - Costs zero GPU (baked into vertex buffer)
+```
+
+[SENIOR_HACK] Deterministic "chaos" for visual variety:
+```
+Use seed to offset module rotation by ±5°:
+  rotationOffset = (RNG.NextFloat01() - 0.5) * 10.0
+  Apply only to non-critical modules (clutter, props)
+  Ensures identical grid layout but varied visual appearance
+```
+```

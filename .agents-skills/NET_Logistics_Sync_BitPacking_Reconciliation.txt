@@ -13,7 +13,7 @@ struct DeltaPacket {
     half  Value;         // IEEE 754 fp16 — normalized [0..1] resource ratio
 }
 
-### AbsoluteAUPition (Networked Transform — 12 bytes)
+### AbsolutePosition (Networked Transform — 16 bytes)
 
 struct AUP {
     int32 SectorX;   // grid sector [-32768..32767] @ 512m resolution
@@ -126,10 +126,12 @@ UnpackLogisticsFrame(uint64 u64) → (O2, PW, TH, PR, FU):
 // Flow rate range assumed [-8.0 .. +8.0] units/sec
 int8 EncodeFlowRate(float rate):
     clamped ← clamp(rate, -8.0, 8.0)
-    return (int8)(clamped * 15.875)     // 127/8 = 15.875
+// [FORBID] Raw float-to-int casts on bidirectional data. 
+// You MUST round to nearest: 
+return (sbyte)math.round(clamped * 15.875f);
 
 float DecodeFlowRate(int8 v):
-    return (float)v / 15.875
+    return (float)v / 15.875f
 
 ---
 

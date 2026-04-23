@@ -148,7 +148,11 @@ namespace Hecton8.Gameplay
             if (_cooldown > 0f)
                 _cooldown = Mathf.Max(0f, _cooldown - deltaTime);
 
-            if (_secondaryLatched && !(InputManager.Instance?.IsSecondaryActionHeld ?? false))
+            IInputService inputService = GlobalRegistry.Input;
+            PlayerInputState inputState = inputService != null && inputService.IsPlayerInputEnabled
+                ? inputService.GetState()
+                : default;
+            if (_secondaryLatched && !inputState.HasAction(PlayerInputAction.SecondaryFire))
                 _secondaryLatched = false;
         }
 

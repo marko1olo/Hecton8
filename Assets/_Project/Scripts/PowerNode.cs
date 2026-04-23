@@ -105,6 +105,7 @@ namespace Hecton8.Power
         private int _graphScratchIndex = -1;
         private int _graphScratchVersion;
         private bool _isRuptured;
+        private bool _isShortCircuited;
 
         /// <summary>
         /// Статический буфер для OverlapSphereNonAlloc.
@@ -146,6 +147,7 @@ namespace Hecton8.Power
         }
 
         internal bool IsRuptured => _isRuptured;
+        internal bool IsShortCircuited => _isShortCircuited;
 
         /// <summary>
         /// Устанавливает ссылку на сеть.
@@ -162,6 +164,15 @@ namespace Hecton8.Power
                 return;
 
             _isRuptured = ruptured;
+            _topologyRevision++;
+        }
+
+        internal void SetShortCircuited(bool shortCircuited)
+        {
+            if (_isShortCircuited == shortCircuited)
+                return;
+
+            _isShortCircuited = shortCircuited;
             _topologyRevision++;
         }
 
@@ -272,6 +283,7 @@ namespace Hecton8.Power
             _graphScratchIndex = -1;
             _graphScratchVersion = 0;
             _isRuptured = false;
+            _isShortCircuited = false;
         }
 
         // ══════════════════════════════════════════════════════════

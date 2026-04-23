@@ -1,4 +1,5 @@
 using System;
+using Hecton8.Interaction;
 using UnityEngine;
 
 namespace Hecton8.Core
@@ -18,6 +19,8 @@ namespace Hecton8.Core
         private static IAudioService _audio;
         private static ISceneService _scene;
         private static IUIService _ui;
+        private static IWeatherService _weather;
+        private static IInteractionSignalService _interactionSignals;
 
         /// <summary>
         /// Registered input service slot.
@@ -45,6 +48,16 @@ namespace Hecton8.Core
         public static IUIService UI => _ui;
 
         /// <summary>
+        /// Registered weather service slot.
+        /// </summary>
+        public static IWeatherService Weather => _weather;
+
+        /// <summary>
+        /// Registered interaction signal service slot.
+        /// </summary>
+        public static IInteractionSignalService InteractionSignals => _interactionSignals;
+
+        /// <summary>
         /// Dense multi-instance update registry.
         /// </summary>
         public static RegistryBucket<IUpdatable> Updatables => _updatables;
@@ -62,6 +75,8 @@ namespace Hecton8.Core
             _audio = null;
             _scene = null;
             _ui = null;
+            _weather = null;
+            _interactionSignals = null;
             _updatables.Clear();
             _renderables.Clear();
             SystemDispatcher.ClearAllLanes();
@@ -113,6 +128,24 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Registers the authoritative weather service.
+        /// </summary>
+        /// <param name="instance">Weather service instance.</param>
+        public static void RegisterWeatherService(IWeatherService instance)
+        {
+            RegisterService(ref _weather, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative interaction signal service.
+        /// </summary>
+        /// <param name="instance">Interaction signal service instance.</param>
+        public static void RegisterInteractionSignalService(IInteractionSignalService instance)
+        {
+            RegisterService(ref _interactionSignals, instance);
+        }
+
+        /// <summary>
         /// Unregisters the current input service if the owner matches.
         /// </summary>
         /// <param name="instance">Service owner requesting unregistration.</param>
@@ -155,6 +188,24 @@ namespace Hecton8.Core
         public static void UnregisterUIService(IUIService instance)
         {
             UnregisterService(ref _ui, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current weather service if the owner matches.
+        /// </summary>
+        /// <param name="instance">Service owner requesting unregistration.</param>
+        public static void UnregisterWeatherService(IWeatherService instance)
+        {
+            UnregisterService(ref _weather, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current interaction signal service if the owner matches.
+        /// </summary>
+        /// <param name="instance">Service owner requesting unregistration.</param>
+        public static void UnregisterInteractionSignalService(IInteractionSignalService instance)
+        {
+            UnregisterService(ref _interactionSignals, instance);
         }
 
         /// <summary>

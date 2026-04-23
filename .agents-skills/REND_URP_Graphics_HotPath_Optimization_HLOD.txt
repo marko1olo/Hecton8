@@ -107,9 +107,10 @@
 
 [RULE] Render through RenderGraph + BatchRendererGroup / GPU Resident Drawer. No raw `DrawMeshInstancedIndirect` path.
 [FLOW] Per-frame HLOD submission pipeline:
-  1. Upload instance state to `GraphicsBuffer`
-  2. Register instances with BatchRendererGroup
-  3. Let GPU Resident Drawer handle frustum/occlusion culling natively
+// Pick ONE system.
+//[FORBID] Manual BRG writes expecting auto-culling.
+// Either: Use Unity GameObjects + GPU Resident Drawer (Auto Culling).
+// Or: Use manual BRG + Custom Compute Culling Shader.
   4. Submit a RenderGraph raster pass that consumes the BRG renderer list
   5. Draw via `context.cmd.DrawRendererList(data.rendererList)`
 
@@ -223,7 +224,8 @@
   Fcoef    = 2.0 / log2(farPlane + 1.0)
   gl_FragDepth = log2(max(1e-6, 1.0 + clipPos.w)) * Fcoef * 0.5
 [SAFE] Clip-space depth bias for voxel skirts / decals:
-  IN.positionCS.z -= _DepthBias * IN.positionCS.w * decalMask
+  // [FORBID] Subtracting bias in Reversed-Z. You MUST ADD the bias to pull vertices toward the near plane:
+IN.positionCS.z += _DepthBias * IN.positionCS.w * decalMask;
   — multiply by .w to keep perspective-correct. Never add flat bias.
 [SAFE] Coplanar geometry (grates/grids on hull): offset index 1 via:
   depthOffset = 0.0005 * (1.0 / max(0.001, -viewZ))  // recedes with distance

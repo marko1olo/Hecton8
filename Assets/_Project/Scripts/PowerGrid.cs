@@ -18,6 +18,7 @@ namespace Hecton8.Power
     {
         private const float MinEdgeResistance = 0.0001f;
         private const float RuptureDemandFactor = 0.015f;
+        private const float ShortCircuitResistanceMultiplier = 100f;
 
         /// <summary>Unique runtime ID for diagnostics.</summary>
         public readonly int Id;
@@ -500,7 +501,11 @@ namespace Hecton8.Power
         private static float ResolveEdgeResistance(PowerNode sourceNode, PowerNode destinationNode)
         {
             Vector3 delta = destinationNode.transform.position - sourceNode.transform.position;
-            return Mathf.Max(MinEdgeResistance, delta.magnitude);
+            float resistance = Mathf.Max(MinEdgeResistance, delta.magnitude);
+            if (sourceNode.IsShortCircuited || destinationNode.IsShortCircuited)
+                resistance *= ShortCircuitResistanceMultiplier;
+
+            return resistance;
         }
 
         private static float ResolveRuptureDemand(PowerNode node)

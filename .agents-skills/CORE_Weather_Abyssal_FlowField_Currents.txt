@@ -241,7 +241,7 @@ JOB: FlowFieldUpdateJob [IJobParallelFor]
         8. normalizesafe(direction)
         9. Write FlowNode
 
-SCHEDULE: JobHandle flowJob = FlowFieldUpdateJob.Schedule(totalNodes, 64, deps)
+// Use double-buffering. 60Hz job reads FrontBuffer unblocked. 5Hz job writes BackBuffer.
 // Fence: Complete before any entity sampling — use explicit JobHandle dependency chain
 
 ### 6.2 Entity Sampling Job (Per-Frame, ~60Hz)
@@ -455,6 +455,8 @@ worldToGrid(worldPos, layer):
     gridCoordI = int3(floor(gridCoordF))
     frac       = frac(gridCoordF)                  // fractional for trilinear
     gridCoordI = clamp(gridCoordI, 0, layer.dims - 1)
+    // [FORBID] Lazy coordinate clamping. Clamp integers BEFORE 1D index flattening:
+    int x1 = math.min((int)px + 1, layer.dims.x - 1);
     index      = gridCoordI.x + gridCoordI.y * layer.dims.x + gridCoordI.z * layer.dims.x * layer.dims.y
     RETURN (index, frac)
 

@@ -84,7 +84,7 @@ ReadSDF(worldVoxel: int3) → half:
 
 Serialize(tileID):
   header  : [magic:4B][version:2B][tileID:12B][entryCount:4B]
-  entries : array of [int3:12B][half:2B] packed structs  // 14B per cell
+// Store a 1-bit bitmask per voxel (32768 bits = 4KB) and a dense array of 'half' deltas.
   compress: LZ4 block compression post-pack              // typical 60-70% reduction on SDF deltas
   write   : async FileStream, non-blocking main thread
 

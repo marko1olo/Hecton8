@@ -25,6 +25,7 @@
 namespace Hecton8.Gameplay
 {
     using System;
+    using Hecton.Localization;
     using Hecton8.Building;
     using Hecton8.Core;
     using Hecton8.Construction;
@@ -38,7 +39,7 @@ namespace Hecton8.Gameplay
 #endif
 
     [DisallowMultipleComponent]
-    public sealed class PlayerToolManager : MonoBehaviour, ITickable
+    public sealed class PlayerToolManager : MonoBehaviour, ITickable, IUpdatable
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -115,10 +116,12 @@ namespace Hecton8.Gameplay
 
         /// <summary>Целевая позиция при опускании (rest + offset).</summary>
         private Vector3 _anchorLoweredPosition;
-        private InputManager _subscribedInputManager;
+        private IInputService _subscribedInputManager;
         private readonly string[] _slotNameCache = new string[4];
         private bool _assignedPoolsWarmed;
         private bool _constructionGhostPoolsWarmed;
+        private bool _handlingEquippedToolBreak;
+        private bool _suppressInventoryChangedHandling;
 
         public event Action<int> ActiveSlotChanged;
         public event Action ToolAssignmentsChanged;
@@ -178,7 +181,7 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
-            GameTickManager.Instance?.Register((ITickable)this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
             RefreshInputSubscriptions();
             WarmRuntimePoolsIfNeeded();
 
@@ -188,7 +191,7 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
-            GameTickManager.Instance?.Unregister((ITickable)this);
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
             UnsubscribeFromInputManager();
 
             if (playerInventory != null)
@@ -200,7 +203,7 @@ namespace Hecton8.Gameplay
 
         private void RefreshInputSubscriptions()
         {
-            InputManager currentManager = InputManager.Instance;
+            IInputService currentManager = GlobalRegistry.Input;
             if (ReferenceEquals(_subscribedInputManager, currentManager))
                 return;
 
@@ -264,19 +267,19 @@ namespace Hecton8.Gameplay
                 // ── Tick инструмента (idle-анимация, покачивание) ──
                 _currentTool.ToolTick(deltaTime);
 
-                if (InputManager.Instance != null)
-                {
-                    // ── Основное действие (ЛКМ) ──
-                    if (InputManager.Instance.IsPrimaryActionHeld)
-                    {
-                        _currentTool.UsePrimary(deltaTime);
-                    }
+                IInputService inputService = GlobalRegistry.Input;
+                PlayerInputState inputState = inputService != null && inputService.IsPlayerInputEnabled
+                    ? inputService.GetState()
+                    : default;
 
-                    // ── Альтернативное действие (ПКМ) ──
-                    if (InputManager.Instance.IsSecondaryActionHeld)
-                    {
-                        _currentTool.UseSecondary(deltaTime);
-                    }
+                if (inputState.HasAction(PlayerInputAction.PrimaryFire))
+                {
+                    _currentTool.UsePrimary(deltaTime);
+                }
+
+                if (inputState.HasAction(PlayerInputAction.SecondaryFire))
+                {
+                    _currentTool.UseSecondary(deltaTime);
                 }
             }
 
@@ -926,20 +929,62 @@ namespace Hecton8.Gameplay
 
         private void HandleEquippedToolBroken()
         {
-            int replacementSlot = TryResolveReplacementSlotForBrokenCurrentTool();
-            if (replacementSlot >= 0)
+            if (_handlingEquippedToolBreak || _currentTool == null)
+                return;
+
+            _handlingEquippedToolBreak = true;
+            try
             {
-                if (replacementSlot == _currentSlotIndex)
+                ItemData brokenToolData = _currentTool.ToolData;
+                ToolMetadata metadata = _currentTool.Metadata;
+                if (brokenToolData == null || metadata == null)
                 {
+                    Holster();
+                    return;
+                }
+
+                int toolHashId = LocHash.Compute(brokenToolData.PersistentId);
+                if (toolHashId == 0)
+                {
+                    Holster();
+                    return;
+                }
+
+                ConsumeBrokenToolInventoryEntry(toolHashId);
+                PlayerSignalEvents.RaiseToolDepletedSignal(new ToolDepletedSignal(toolHashId));
+
+                if (playerInventory != null && playerInventory.TryFindFirstAnchorByHash(toolHashId, out _))
+                {
+                    ToolDurabilitySystem durabilitySystem = ToolDurabilitySystem.Instance;
+                    if (durabilitySystem != null)
+                        durabilitySystem.ResetDurability(metadata.toolID, metadata.maxDurability);
+
                     ForceEquipCurrentSlotReplacement();
                     return;
                 }
 
-                SwitchToSlot(replacementSlot);
-                return;
+                Holster();
             }
+            finally
+            {
+                _handlingEquippedToolBreak = false;
+            }
+        }
 
-            Holster();
+        private void ConsumeBrokenToolInventoryEntry(int toolHashId)
+        {
+            if (playerInventory == null)
+                return;
+
+            _suppressInventoryChangedHandling = true;
+            try
+            {
+                playerInventory.TryRemoveFirstMatchingItemByHash(toolHashId);
+            }
+            finally
+            {
+                _suppressInventoryChangedHandling = false;
+            }
         }
 
         private int TryResolveReplacementSlotForBrokenCurrentTool()
@@ -1076,6 +1121,9 @@ namespace Hecton8.Gameplay
 
         private void HandleInventoryChanged()
         {
+            if (_suppressInventoryChangedHandling || _handlingEquippedToolBreak)
+                return;
+
             if (_currentSlotIndex < 0 || _swapState != SwapState.Idle)
                 return;
 

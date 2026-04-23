@@ -1,0 +1,653 @@
+```markdown
+# PROJECT_LTS_Compatibility_Layer.md
+
+---
+
+## 0. AUTHORIZED AUTONOMY INJECTIONS
+
+[INJECT] Assembly Definition isolation: every compatibility layer lives in dedicated `.asmdef` with explicit dependency graph. Zero circular refs. Enforced via CI.
+[INJECT] Reflection-free modding boundary. All mod communication via serialized command buffers—never direct method invocation on engine internals.
+[INJECT] Interface versioning via integer monotonic counter, not semantic strings. Cheaper comparison, Burst-compatible.
+[INJECT] All adapter implementations pooled via static flyweight registries—zero per-frame alloc on adapter resolution.
+[INJECT] Hash-based API surface fingerprinting: CI step hashes all public interface signatures per build. Delta detection triggers mandatory review.
+
+---
+
+## I. EXECUTION POLICY
+
+### [RULE] ZERO DIRECT ENGINE COUPLING
+
+- Core gameplay assemblies (`Hecton.Core`, `Hecton.Simulation`, `Hecton.Voxel`) MUST NOT reference `UnityEngine` namespace directly.
+- Exception: `UnityEngine.Mathematics` (Burst-compatible, stable, no managed overhead).
+- Exception: `Unity.Collections` (NativeArray/NativeSlice/NativeHashMap — foundational DOD types).
+- All other Unity contact points routed through `Hecton.EngineAbstraction` assembly.
+
+### [RULE] ASSEMBLY DEPENDENCY GRAPH (STRICT)
+
+```
+Layer 0 (Pure):    Hecton.Core          → zero engine refs
+Layer 1 (Math):    Hecton.Simulation    → refs Layer 0 + Unity.Mathematics + Unity.Collections + Unity.Burst
+Layer 2 (Bridge):  Hecton.EngineAbstraction → refs Layer 0+1, defines interfaces
+Layer 3 (Impl):    Hecton.UnityBackend  → refs Layer 2 + UnityEngine.* (ONLY assembly touching volatile APIs)
+Layer 4 (Mod):     Hecton.ModdingFacade → refs Layer 0 only. Serialization boundary.
+Layer 5 (Editor):  Hecton.EditorTools   → refs all, editor-only
+```
+
+### [FORBID]
+
+- `UnityEngine.Rendering.*` in any assembly below Layer 3.
+- `UnityEngine.SceneManagement` in any assembly below Layer 3.
+- `MonoBehaviour` inheritance in Layer 0/1/2. Use thin MonoBehaviour shells in Layer 3 only (bootstrappers).
+- `using UnityEngine;` blanket imports in Layer 0/1/2 `.cs` files → CI hard fail.
+- `GetComponent<T>()`, `Find*()`, `SendMessage()` anywhere. Zero tolerance.
+
+### [RULE] TICK ISOLATION
+
+- Game logic ticks via `ISimulationTick.Execute(ref FrameContext ctx)` — pure struct context, no engine types.
+- `FrameContext`: `{ float dt; float fixedDt; uint frameIndex; uint64 simTick; DepthPressureState depthState; }`
+- Unity `Update/FixedUpdate` exists ONLY in Layer 3 bootstrapper → calls `ISimulationTick`.
+
+---
+
+## II. DATA ARCHITECTURE
+
+### [DATA] ADAPTER REGISTRY — ZERO-ALLOC RESOLUTION
+
+```
+Layout:
+  NativeHashMap<int, IntPtr> adapterTable;
+  Key = InterfaceTypeHash (compile-time const via nameof + FNV-1a)
+  Value = Burst FunctionPointer<T>.Value stored as raw pointer
+
+Resolution Path:
+  1. Game init → Layer 3 registers FunctionPointer<T>.Value into adapterTable
+  2. Runtime → Layer 1 resolves via adapterTable.TryGetValue(hash, out rawPtr)
+  3. Rehydrate: var ptr = new FunctionPointer<T>(rawPtr)
+  4. Invoke via ptr.Invoke(args) — zero virtual dispatch, zero GC
+  5. Fallback: if key missing → default no-op adapter (silent degrade, logged once)
+```
+
+### [DATA] INTERFACE VERSION BUFFER
+
+```
+Layout:
+  NativeArray<uint> interfaceVersions — length = InterfaceCount (compile-time const)
+  Index = enum InterfaceID : byte { Rendering=0, Physics=1, Audio=2, Voxel=3, ... }
+  Value = monotonic uint32 version counter
+
+Compatibility Check (Burst-safe):
+  bool compatible = (interfaceVersions[id] >= minRequired) & (interfaceVersions[id] <= maxSupported)
+```
+
+### [DATA] MOD COMMAND BUFFER
+
+```
+Layout:
+  Ring buffer: NativeRingQueue<ModCommand> — fixed capacity 4096 commands/frame
+  ModCommand struct (64 bytes, cache-line aligned):
+    uint16 commandType     // enum: SpawnEntity, ModifyTerrain, QueryState, ...
+    uint16 targetSystem    // enum: Voxel, Physics, Creature, ...
+    uint16 flags           // bit0=deferred, bit1=validated, bit2=sandboxed
+    uint16 padding
+    fixed byte payload[56] // blittable payload, interpreted per commandType
+
+Flow:
+  1. Mod writes → ModdingFacade.Enqueue(cmd) — validation gate here
+  2. End of frame → Core drains buffer, executes validated commands only
+  3. Invalid commands → logged to mod error stream, dropped silently
+  4. Buffer full → oldest unprocessed commands dropped, warning counter incremented
+```
+
+### [DATA] API SURFACE HASH TABLE (CI)
+
+```
+Per-build artifact: api_surface.hash
+Format: sorted list of "<AssemblyName>::<TypeName>::<MemberSignature>" → FNV-1a 64-bit hash
+CI compares current vs previous build hash file.
+Delta > 0 in Layer 0/1/2 public surface → MANDATORY architect review gate.
+Delta in Layer 3 → warning + auto-ticket.
+```
+
+---
+
+## III. ALGORITHMIC & MATH TRUTH
+
+### [MATH] ADAPTER PATTERN — LOGIC KERNEL
+
+```
+ADAPTER RESOLUTION ALGORITHM:
+  Input: InterfaceID id, uint minVersion
+  
+  1. hash = CompileTimeHash(id)                    // FNV-1a, computed at compile via const
+  2. found = adapterTable.TryGetValue(hash, out rawPtr)
+  3. IF !found → ptr = defaultNoOpTable[id]        // pre-registered safe fallback
+  4. ELSE ptr = new FunctionPointer<T>(rawPtr)
+  5. versionOk = interfaceVersions[id] >= minVersion
+  6. IF !versionOk → ptr = legacyShimTable[id]     // backward-compat shim
+  7. RETURN ptr
+
+  Cost: 1 hash lookup + 1 compare + 1 branch. O(1). Zero alloc.
+```
+
+### [MATH] FNV-1a HASH (COMPILE-TIME INTERFACE HASHING)
+
+```
+Input: byte[] of interface name (ASCII)
+State: uint hash = 2166136261
+Loop:
+  hash ^= byte[i]
+  hash *= 16777619
+Output: hash
+
+Burst-compatible. No managed string ops at runtime.
+```
+
+### [MATH] PREPROCESSOR GUARD DECISION TREE
+
+```
+For any Unity API usage in Layer 3:
+
+1. IS API stable across LTS? (documented in Unity migration guide)
+   YES → use directly, no guard needed
+   NO → step 2
+
+2. IS API deprecated with replacement?
+   YES → step 3
+   NO → wrap in adapter interface, implement in Layer 3
+
+3. WRITE conditional compile:
+   #if UNITY_6000_0_OR_NEWER
+     NewAPI.Call(args);
+   #elif UNITY_2022_3_OR_NEWER
+     OldAPI.Call(args);
+   #else
+     FallbackAdapter.Call(args);    // Layer 2 interface, Layer 3 fallback impl
+   #endif
+
+4. BOTH paths must compile independently. CI validates BOTH defines.
+```
+
+### [MATH] ANTI-CORRUPTION LAYER — WRAPPING ALGORITHM
+
+```
+For external package P (e.g., Crest, MapMagic, Odin):
+
+1. Define IPackageContract<P> in Layer 2 — ONLY project-relevant methods
+   Example: IOceanSurface { float SampleHeight(float3 worldPos); float3 SampleNormal(float3 worldPos); }
+
+2. Implement CrestOceanAdapter : IOceanSurface in dedicated assembly:
+   Hecton.ThirdParty.Crest.asmdef → refs Crest + Layer 2
+
+3. Adapter registered at init via adapterTable
+4. If Crest removed → swap CrestOceanAdapter for ProceduralOceanAdapter
+   (same interface, different impl, zero core changes)
+
+5. MAXIMUM adapter surface area per package: 12 methods.
+   Exceeding → architectural review required. Package likely over-coupled.
+
+Replacement cost target: < 4 hours for any single package.
+```
+
+### [SENIOR_HACK] FAST INTERFACE DISPATCH WITHOUT VIRTUAL
+
+```
+Problem: C# interface dispatch = vtable = cache miss + branch mispredict
+Solution: Static dispatch table with FunctionPointers
+
+Pattern:
+  - Each adapter exposes static method matching delegate signature
+  - At init: store FunctionPointer<DelegateType> in static field
+  - At call site: direct function pointer invocation
+  - Burst can inline across function pointers in same compilation unit
+  - Fallback for non-Burst paths: cached delegate (allocated once at init, never GC'd)
+
+Result: virtual dispatch cost → direct call cost. ~3-5ns vs ~15-25ns per call.
+```
+
+---
+
+## IV. HARDWARE & SCALABILITY
+
+### [SCALE] COMPATIBILITY LAYER BUDGET
+
+| Component | CPU Budget/Frame | Memory Budget |
+|---|---|---|
+| Adapter resolution | <0.01ms | 4KB (hash table) |
+| Mod command buffer drain | <0.5ms | 256KB (ring buffer) |
+| Preprocessor paths | 0 (compile-time) | 0 |
+| Anti-corruption wrappers | <0.1ms total | 1KB per wrapper |
+| Version checks | <0.001ms | 128B |
+
+Total compatibility overhead: <0.62ms/frame. Acceptable on i3-10gen single-thread.
+
+### [SCALE] LOGIC LOD — COMPATIBILITY FEATURES
+
+| Feature | Base (MX350) | High | Ultra |
+|---|---|---|---|
+| Mod command buffer size | 1024/frame | 4096/frame | 16384/frame |
+| Mod validation depth | CRC only | CRC + type check | CRC + type + bounds |
+| Adapter hot-swap | Disabled | Editor-only | Runtime (dev builds) |
+| API surface hash check | Build-time | Build-time | Build-time + runtime assert |
+| Interface version negotiation | Hard fail | Graceful degrade | Graceful + telemetry |
+
+### [SCALE] MX350 SPECIFIC — MODDING OVERHEAD
+
+- [RULE] Mod command processing time-sliced: max 0.3ms/frame on Base.
+- Unprocessed commands carry to next frame via ring buffer.
+- Mod-triggered rendering changes (custom shaders, etc.) → FORBIDDEN on Base tier.
+- Mod data uploads (textures, meshes) → queued, max 64KB/frame upload on MX350.
+
+### [SCALE] ASSEMBLY HOT-RELOAD BUDGET
+
+- Editor iteration: Layer 3 reload < 2s. Layer 0/1/2 should rarely change.
+- [RULE] Layer 0/1 recompile must not trigger Layer 3 recompile unless interface changed.
+- Achieved via `.asmdef` `autoReferenced: false` + explicit deps only.
+
+---
+
+## V. INTEGRATION & FAILURE MODES
+
+### [SAFE] ADAPTER MISSING AT RUNTIME
+
+```
+Trigger: Layer 1 requests adapter not registered in adapterTable
+Response:
+  1. Return pre-allocated NoOpAdapter (does nothing, returns safe defaults)
+  2. Log warning ONCE (frame-gated: max 1 log per 300 frames per adapter)
+  3. Set bit in systemHealthMask: bit[adapterID] = 0
+  4. Downstream systems check systemHealthMask before relying on adapter output
+  5. NO exception. NO crash. Game continues degraded.
+```
+
+### [SAFE] UNITY API REMOVED IN UPGRADE
+
+```
+Trigger: #if guard fails — neither old nor new API available
+Response:
+  1. Preprocessor fallback path activates (mandatory third branch in all guards)
+  2. Fallback calls Layer 2 interface → resolved to software fallback impl
+  3. Software fallback: reduced quality, guaranteed function
+  4. Example: RenderGraph removed + old CommandBuffer removed →
+     Fallback: single-pass forward rendering via manual GL calls
+```
+
+### [SAFE] THIRD-PARTY PACKAGE NULL/EXCEPTION
+
+```
+Trigger: Wrapped package throws or returns null unexpectedly
+Response:
+  1. Anti-corruption adapter catches at boundary (try-finally, NOT try-catch in hot path)
+  2. Returns default safe value (0, identity matrix, flat normal, sea-level height)
+  3. Sets packageHealthFlags[packageID] = DEGRADED
+  4. After 3 consecutive failures → adapter auto-swaps to fallback impl for remainder of session
+  5. Never propagate third-party exception into Layer 0/1/2
+```
+
+### [SAFE] MOD COMMAND VALIDATION FAILURES
+
+```
+Trigger: Mod submits invalid command (out-of-range, wrong type, buffer overflow)
+Response:
+  1. commandType bounds check: if (cmd.commandType >= MAX_COMMAND_TYPE) → DROP
+  2. targetSystem bounds check: if (cmd.targetSystem >= MAX_SYSTEM) → DROP
+  3. Payload size validation: implicit (fixed 56 bytes, blittable — can't overflow)
+  4. Semantic validation: per-commandType validator (e.g., SpawnEntity checks entity cap)
+  5. Dropped commands increment modErrorCounter[modID]
+  6. modErrorCounter[modID] > 100/second → mod quarantined, all commands from that mod dropped for 10s
+  7. Quarantine counter > 5 per session → mod disabled, user notified
+
+FORBIDDEN mod operations (hard-reject regardless of validation):
+  - Raw NativeArray access (not exposed through facade)
+  - Direct JobHandle scheduling
+  - Direct pointer manipulation
+  - Texture/Mesh write to engine-owned resources
+  - Synchronous file I/O (mod file ops → async queue only)
+```
+
+### [SAFE] VERSION MISMATCH — MOD API vs ENGINE
+
+```
+Trigger: Mod compiled against ModAPI v3, engine running ModAPI v5
+Response:
+  1. Mod declares requiredAPIVersion in manifest (uint32)
+  2. ModdingFacade checks: currentVersion >= mod.requiredVersion
+  3. IF currentVersion.major != mod.requiredVersion.major → hard reject, mod not loaded
+  4. IF currentVersion.minor > mod.requiredVersion.minor → load with compat shim
+  5. Compat shim translates old command formats to new (lookup table, O(1))
+  6. Max supported backward versions: 2 major versions back. Older → reject.
+```
+
+### [SAFE] BUILD SYSTEM — DEPTH > 4km / SPEED > 40m/s RELEVANCE
+
+```
+Compatibility layer has no direct physics interaction.
+However: mod commands that request entity spawn below 4km depth or apply velocity > 40m/s:
+  1. Validator clamps values to safe range BEFORE command enters ring buffer
+  2. depth = min(cmd.depth, MAX_DEPTH=4000f)
+  3. velocity = cmd.velocity * min(1.0f, 40.0f / max(length(cmd.velocity), EPSILON))
+  4. Clamped flag set in cmd.flags (bit3) — mod can query if its command was modified
+```
+
+---
+
+## VI. CI/CD ENFORCEMENT RULES
+
+### [RULE] DEPRECATED WARNING → HARD BUILD FAILURE
+
+```
+Implementation:
+  1. .csproj / Directory.Build.props:
+     <WarningsAsErrors>CS0618;CS0619;CS0672</WarningsAsErrors>
+     CS0618 = Obsolete with message (warning-level)
+     CS0619 = Obsolete with error (already error, but explicit)
+     CS0672 = Member overrides obsolete member
+
+  2. Unity ProjectSettings → Player → Additional Compiler Arguments:
+     -warnaserror:CS0618 -warnaserror:CS0619
+
+  3. CI pipeline (GitHub Actions / Jenkins):
+     Step: "Zero Warning Build"
+     Command: unity -batchmode -buildTarget StandaloneWindows64 -logFile - | grep -c "warning CS"
+     IF count > 0 → EXIT 1 → pipeline FAILS
+     No bypass. No #pragma warning disable for CS0618/CS0619 without architect sign-off.
+
+  4. Pre-commit hook (git):
+     Scan staged .cs files for "#pragma warning disable CS0618"
+     IF found → reject commit with message: "BLOCKED: Obsolete suppression requires architect approval. File: {path}"
+
+  5. Weekly automated scan:
+     Unity upgrade dry-run against next LTS candidate
+     Report all new warnings → auto-create JIRA tickets with P1 priority
+     Target: zero API debt at all times
+```
+
+### [RULE] ASSEMBLY BOUNDARY VALIDATION (CI)
+
+```
+CI Step: "Assembly Dependency Audit"
+Tool: custom Roslyn analyzer OR dotnet-depends
+
+Checks:
+  1. Hecton.Core.asmdef → ZERO refs to UnityEngine.* (except Mathematics, Collections, Burst)
+  2. Hecton.Simulation.asmdef → same constraint
+  3. Hecton.EngineAbstraction.asmdef → ZERO refs to concrete UnityEngine.Rendering.* types
+     (interfaces only, no concrete impl)
+  4. Hecton.ModdingFacade.asmdef → ZERO refs to Unity.Collections.NativeArray
+     (mod-facing types must be managed-safe: byte[], ReadOnlySpan<byte>, custom SafeBuffer)
+  5. No assembly in Layer 0-2 references any ThirdParty.*.asmdef
+
+Violation → hard build failure. No exception.
+```
+
+### [RULE] API SURFACE HASH DELTA CHECK (CI)
+
+```
+CI Step: "API Surface Stability Check"
+
+Algorithm:
+  1. Roslyn source generator extracts all public/protected members from Layer 0/1/2
+  2. Sort alphabetically, concatenate signatures
+  3. Compute FNV-1a 64-bit hash per assembly
+  4. Compare against committed api_surface.hash file
+  5. IF delta in Layer 0 → BLOCK merge. Requires 2 architect approvals.
+  6. IF delta in Layer 1 → BLOCK merge. Requires 1 architect approval.
+  7. IF delta in Layer 2 → WARNING + auto-assign review.
+  8. Layer 3/4 → informational only.
+
+api_surface.hash committed to repo. Updated only via approved PR.
+```
+
+---
+
+## VII. MODDING FACADE — DETAILED ISOLATION
+
+### [RULE] MODDING SURFACE AREA
+
+```
+ModdingFacade exposes ONLY:
+  1. EnqueueCommand(ModCommand cmd) → bool (success/reject)
+  2. QueryState(StateQuery query, out StateResult result) → bool
+  3. RegisterCallback(ModEventType type, ModCallbackID id) → bool
+  4. GetModConfig() → ReadOnlyModConfig (blittable copy, not reference)
+  5. GetAPIVersion() → uint32
+
+MAX 8 public methods on facade. Exceeding → split into sub-facades by domain.
+```
+
+### [RULE] MOD DATA SERIALIZATION BOUNDARY
+
+```
+All data crossing mod boundary serialized to flat byte buffers.
+FORBIDDEN crossing types:
+  - NativeArray<T>, NativeSlice<T>, NativeList<T>
+  - Unity.Entities.* (if ECS used)
+  - Raw pointers (void*, IntPtr)
+  - JobHandle
+  - Any IDisposable (ownership must not cross boundary)
+
+ALLOWED crossing types:
+  - Primitive value types (int, float, bool, byte)
+  - Fixed-size structs (max 256 bytes, blittable)
+  - byte[] for bulk data (copied, not shared)
+  - ReadOnlySpan<byte> for zero-copy reads (pinned, scope-limited)
+  - Enum types backed by byte/ushort
+```
+
+### [RULE] MOD SANDBOXING — MEMORY
+
+```
+Each mod gets:
+  - Managed heap allowance: 16MB (configurable per mod manifest)
+  - Command budget: 256 commands/frame (Base tier), 1024 (High), 4096 (Ultra)
+  - File I/O: async only, max 1MB/s read, 256KB/s write, sandboxed to mod directory
+  - No thread spawning. Mods execute on main thread during designated mod-tick window.
+  - Mod-tick window budget: 1ms (Base), 2ms (High), 4ms (Ultra)
+  - Exceeding time budget → mod suspended for remainder of frame, warning issued.
+  - 30 consecutive suspensions → mod disabled.
+```
+
+---
+
+## VIII. PREPROCESSOR GUARD CATALOG
+
+### [RULE] REQUIRED GUARDS FOR KNOWN VOLATILE APIS
+
+```
+// Rendering Pipeline
+#if UNITY_6000_0_OR_NEWER
+  // RenderGraph API (mandatory in Unity 6+)
+  // Use: IRenderGraphAdapter → RenderGraphAdapterImpl
+#elif UNITY_2022_3_OR_NEWER
+  // CommandBuffer + ScriptableRenderPass (URP 14.x)
+  // Use: IRenderPassAdapter → CommandBufferAdapterImpl
+#else
+  // Fallback: built-in RP forward rendering
+  // Use: IRenderPassAdapter → BuiltinForwardAdapterImpl
+#endif
+
+// Physics
+#if UNITY_6000_0_OR_NEWER
+  // Unity Physics (DOTS) or PhysX 5
+  // Use: IPhysicsAdapter → UnityPhysicsAdapterImpl
+#elif UNITY_2022_3_OR_NEWER
+  // PhysX 4.1 via Physics.Raycast etc.
+  // Use: IPhysicsAdapter → PhysX4AdapterImpl
+#else
+  // Custom raycast against voxel SDF (no engine physics)
+  // Use: IPhysicsAdapter → SDFRaycastAdapterImpl
+#endif
+
+// Audio
+#if UNITY_6000_0_OR_NEWER
+  // DSPGraph (if retained) or new audio system
+  // Use: IAudioAdapter → DSPGraphAdapterImpl
+#elif UNITY_2022_3_OR_NEWER  
+  // AudioSource + OnAudioFilterRead
+  // Use: IAudioAdapter → ClassicAudioAdapterImpl
+#else
+  // FMOD direct (if licensed) or silent fallback
+  // Use: IAudioAdapter → FMODAdapterImpl | SilentAdapterImpl
+#endif
+
+// Input
+#if ENABLE_INPUT_SYSTEM
+  // New Input System
+  // Use: IInputAdapter → NewInputAdapterImpl
+#elif ENABLE_LEGACY_INPUT_MANAGER
+  // Legacy Input.GetKey etc.
+  // Use: IInputAdapter → LegacyInputAdapterImpl
+#endif
+```
+
+### [RULE] GUARD HYGIENE
+
+```
+1. Every #if block MUST have matching #else with functional fallback. No empty #else.
+2. Nested #if depth: MAX 2. Deeper nesting → refactor to adapter method.
+3. #if blocks only in Layer 3 (Hecton.UnityBackend). NEVER in Layer 0/1/2.
+4. Each guard documented with comment: // VOLATILITY: <API name> — deprecated since <version>
+5. CI scans for orphaned guards (referencing Unity versions older than min-supported LTS minus 1).
+   Orphaned guards → auto-ticket for removal.
+```
+
+---
+
+## IX. UPGRADE PROCEDURE — ENGINE VERSION MIGRATION
+
+### [RULE] LTS MIGRATION PROTOCOL
+
+```
+1. BRANCH: create "upgrade/unity-XXXX.X" branch
+2. DRY-RUN: compile in new Unity version, collect ALL warnings/errors
+3. CATALOG: list every broken API, map to adapter interface
+4. IMPLEMENT: new adapter impl in Layer 3 behind appropriate #if guard
+5. TEST: run full integration test suite on BOTH old and new Unity
+6. VERIFY: api_surface.hash unchanged for Layer 0/1/2 (if changed → regression)
+7. PERF: benchmark critical path on MX350 target — regression > 5% → block upgrade
+8. MERGE: only after all CI gates green on both Unity versions
+9. DEPRECATE: remove oldest Unity version support after 1 release cycle
+10. CLEANUP: remove orphaned #if guards for unsupported versions
+
+Target migration time: < 5 working days for LTS-to-LTS jump.
+Zero gameplay code changes required if adapter layer properly maintained.
+```
+
+---
+
+## X. ANTI-CORRUPTION LAYER — PACKAGE REGISTRY
+
+### [DATA] REGISTERED THIRD-PARTY PACKAGES
+
+| Package | Interface | Adapter Assembly | Fallback | Max Methods |
+|---|---|---|---|---|
+| Crest Ocean | IOceanSurface | Hecton.ThirdParty.Crest | ProceduralWaveSim | 6 |
+| MapMagic | ITerrainGenerator | Hecton.ThirdParty.MapMagic | SimplexNoiseTerrain | 8 |
+| Odin Inspector | (Editor only) | Hecton.Editor.OdinBridge | Unity default inspector | 4 |
+| FMOD | IAudioBackend | Hecton.ThirdParty.FMOD | Unity AudioSource | 10 |
+| DOTween | (FORBIDDEN) | — | Custom tween system | — |
+| TextMeshPro | ITextRenderer | Hecton.ThirdParty.TMP | (none — TMP is Unity-owned, low risk) | 3 |
+
+### [RULE] PACKAGE ADDITION PROTOCOL
+
+```
+1. Justify: why can't this be built in-house in < 2 weeks?
+2. Interface-first: define IPackageContract BEFORE importing package
+3. Implement adapter in isolated .asmdef
+4. Implement fallback adapter (even if primitive) BEFORE shipping
+5. Document replacement cost estimate in hours
+6. Annual review: is package still maintained? If not → migrate to fallback
+7. MAX external packages: 8 runtime, 4 editor-only. Hard cap.
+```
+
+---
+
+## XI. SENIOR ARCHITECTURE INJECTIONS
+
+### [INJECT] SOURCE GENERATOR FOR ADAPTER BOILERPLATE
+
+```
+Roslyn source generator: Hecton.Generators.AdapterGen
+Input: interface marked with [AdapterContract(version: 3)]
+Output: 
+  - FunctionPointer delegate types
+  - Registration method
+  - NoOp fallback implementation
+  - Version check wrapper
+  
+Eliminates hand-written adapter ceremony. Compile-time. Zero runtime cost.
+```
+
+### [INJECT] FEATURE FLAGS VIA BITMASK (RUNTIME SCALABILITY)
+
+```
+uint64 featureFlags — one bit per optional system
+Bit layout:
+  [0]  = OceanSimulation
+  [1]  = VolumetricLighting  
+  [2]  = ParticlePhysics
+  [3]  = CreatureAI_Full
+  [4]  = ModdingEnabled
+  [5]  = VoxelDeformation
+  [6]  = CausticsRendering
+  [7]  = SubsurfaceScattering
+  [8-15] = reserved rendering
+  [16-31] = reserved simulation
+  [32-47] = reserved gameplay
+  [48-63] = reserved debug/dev
+
+Check: if ((featureFlags & (1UL << FEATURE_ID)) != 0) → feature active
+Set at boot based on hardware detection + user quality preset.
+Adapters check featureFlags before executing optional paths.
+Branch-free: multiply result by feature bit instead of branching.
+```
+
+### [INJECT] DUAL-COMPILATION CI MATRIX
+
+```
+CI must build and test against:
+  - Unity LTS Current (e.g., 2022.3.x)
+  - Unity LTS Next (e.g., 6000.0.x)
+  
+Matrix:
+  [OS: Win64, Linux64] × [Unity: Current, Next] × [Scripting: Mono, IL2CPP]
+  = 8 build configurations minimum
+
+All 8 must pass. Any single failure → merge blocked.
+Nightly: full test run on all 8.
+PR: fast subset (Win64 × Current × Mono + Win64 × Next × IL2CPP).
+```
+
+### [INJECT] TOMBSTONE PATTERN FOR REMOVED APIS
+
+```
+When removing deprecated adapter:
+  1. Don't delete class. Replace body with:
+     [Obsolete("TOMBSTONE: Removed in v{X}. See migration guide {LINK}.", true)]
+     // 'true' = compile error if anyone references
+  2. Keep tombstone for 2 release cycles
+  3. Tombstone contains migration comment pointing to replacement
+  4. After 2 cycles → delete, update api_surface.hash
+  
+Prevents silent breakage when old branches merge late.
+```
+
+---
+
+## XII. VALIDATION CHECKLIST — PER PULL REQUEST
+
+```
+□ No new UnityEngine.* references in Layer 0/1/2
+□ All new Unity API usage behind preprocessor guard with fallback
+□ All new third-party usage behind interface + adapter + fallback
+□ api_surface.hash unchanged for Layer 0/1/2 (or approved change)
+□ Zero CS0618/CS0619 warnings
+□ ModdingFacade public surface ≤ 8 methods
+□ No NativeArray/pointer types in mod-facing APIs
+□ Adapter method count per package ≤ 12
+□ New adapter has NoOp fallback registered
+□ Build passes on both LTS Current and LTS Next
+```
+
+---
+*END OF MANDATE — PROJECT_LTS_Compatibility_Layer.md*
+```

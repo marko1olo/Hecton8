@@ -871,8 +871,8 @@ namespace Hecton8.Gameplay
         private HectonPlayerMotor _playerMotor;
         private HectonPlayerEnvironmentHandler _environmentHandler;
         private HectonPlayerStateMachine _stateMachine;
-        private InputManager _inputManager;
-        private InputManager _subscribedInputManager;
+        private IInputService _inputManager;
+        private IInputService _subscribedInputManager;
         private PlayerToolManager _playerToolManager;
         private PlayerTransportCoordinator _playerTransportCoordinator;
         private ITransportPlatform _activeTransportPlatform;
@@ -957,6 +957,7 @@ namespace Hecton8.Gameplay
         private float _inputV;
         private float _inputVertical;
         private float _mouseXDelta;
+        private PlayerInputState _currentInputState;
         private Vector2 _cachedMoveInput;
         private Vector2 _pendingLookInput;
         private float _cachedVerticalInput;
@@ -1264,6 +1265,27 @@ namespace Hecton8.Gameplay
         internal float CurrentCuttingTensionForce => _cuttingTensionCurrentForce;
         internal float CurrentCuttingTensionNormalized => math.saturate(_cuttingTensionCurrentForce / math.max(0.01f, cuttingTensionMaxForce));
         internal float CurrentAbyssalCounterDriveEnergyMultiplier => math.max(1f, _abyssalCounterDriveEnergyMultiplier);
+        internal bool HasActiveTowCable => ResolveHeavyTowWinchRuntime() && _heavyTowWinch != null && _heavyTowWinch.HasActiveTow;
+
+        internal bool TryGetActiveTransportPlatform(out ITransportPlatform transportPlatform)
+        {
+            ResolveActiveTransportPlatform();
+            if (_activeTransportPlatform != null && _activeTransportPlatformTransform != null)
+            {
+                transportPlatform = _activeTransportPlatform;
+                return true;
+            }
+
+            transportPlatform = null;
+            return false;
+        }
+
+        internal bool TryTransferHeavyTowToTransport(Rigidbody transportBody, Transform transportAnchor)
+        {
+            return ResolveHeavyTowWinchRuntime() &&
+                   _heavyTowWinch != null &&
+                   _heavyTowWinch.TryTransferTowToTransport(transportBody, transportAnchor);
+        }
 
         private struct QueuedCollisionEvent
         {
@@ -2508,13 +2530,19 @@ namespace Hecton8.Gameplay
 
         private bool IsHeavyTowActive()
         {
+            ResolveHeavyTowWinchRuntime();
+            return _heavyTowWinch != null && _heavyTowWinch.HasActiveTow;
+        }
+
+        private bool ResolveHeavyTowWinchRuntime()
+        {
             if (!_resolvedHeavyTowWinch)
             {
                 TryGetComponent(out _heavyTowWinch);
                 _resolvedHeavyTowWinch = true;
             }
 
-            return _heavyTowWinch != null && _heavyTowWinch.HasActiveTow;
+            return _heavyTowWinch != null;
         }
 
         private void UpdateHeavyTowRuntimeResponse(float fixedDeltaTime)
@@ -3724,14 +3752,8 @@ namespace Hecton8.Gameplay
             if (_inputManager == null || _subscribedInputManager == _inputManager)
                 return;
 
-            _inputManager.OnMove += HandleMoveInput;
-            _inputManager.OnLook += HandleLookInput;
-            _inputManager.OnVerticalMove += HandleVerticalInput;
-            _inputManager.OnJump += HandleJumpInput;
-            _inputManager.OnSprint += HandleSprintStarted;
-            _inputManager.OnSprintCanceled += HandleSprintCanceled;
             _subscribedInputManager = _inputManager;
-            SeedInputStateFromManager(_inputManager);
+            SeedInputStateFromService(_inputManager);
         }
 
         private void UnsubscribeFromInput()
@@ -3739,13 +3761,12 @@ namespace Hecton8.Gameplay
             if (_subscribedInputManager == null)
                 return;
 
-            _subscribedInputManager.OnMove -= HandleMoveInput;
-            _subscribedInputManager.OnLook -= HandleLookInput;
-            _subscribedInputManager.OnVerticalMove -= HandleVerticalInput;
-            _subscribedInputManager.OnJump -= HandleJumpInput;
-            _subscribedInputManager.OnSprint -= HandleSprintStarted;
-            _subscribedInputManager.OnSprintCanceled -= HandleSprintCanceled;
             _subscribedInputManager = null;
+            _currentInputState = default;
+            _cachedMoveInput = Vector2.zero;
+            _cachedVerticalInput = 0f;
+            _pendingLookInput = Vector2.zero;
+            SetSprintingState(false);
         }
 
         private void ResolveInputManagerBinding()
@@ -3753,7 +3774,7 @@ namespace Hecton8.Gameplay
             if (_resolvedInputManager && _inputManager != null && _subscribedInputManager == _inputManager)
                 return;
 
-            InputManager currentManager = InputManager.Instance;
+            IInputService currentManager = GlobalRegistry.Input;
             if (ReferenceEquals(_subscribedInputManager, currentManager) && ReferenceEquals(_inputManager, currentManager))
             {
                 _resolvedInputManager = true;
@@ -3773,48 +3794,35 @@ namespace Hecton8.Gameplay
         public event System.Action OnSprintStarted;
         public event System.Action OnSprintEnded;
 
-        private void HandleMoveInput(Vector2 moveInput)
+        private void SetSprintingState(bool isSprinting)
         {
-            _cachedMoveInput = moveInput;
-        }
-
-        private void HandleLookInput(Vector2 lookInput)
-        {
-            _pendingLookInput += lookInput;
-        }
-
-        private void HandleVerticalInput(float verticalInput)
-        {
-            _cachedVerticalInput = math.clamp(verticalInput, -1f, 1f);
-        }
-
-        private void HandleJumpInput()
-        {
-            _jumpRequested = true;
-            _jumpBufferTimer = jumpBufferTime;
-        }
-
-        private void HandleSprintStarted()
-        {
-            _isSprinting = true;
-            OnSprintStarted?.Invoke();
-        }
-
-        private void HandleSprintCanceled()
-        {
-            _isSprinting = false;
-            OnSprintEnded?.Invoke();
-        }
-
-        private void SeedInputStateFromManager(InputManager inputManager)
-        {
-            if (inputManager == null)
+            if (_isSprinting == isSprinting)
                 return;
 
-            _cachedMoveInput = inputManager.MoveInput;
-            _cachedVerticalInput = math.clamp(inputManager.VerticalMovementInput, -1f, 1f);
+            _isSprinting = isSprinting;
+            if (isSprinting)
+                OnSprintStarted?.Invoke();
+            else
+                OnSprintEnded?.Invoke();
+        }
+
+        private void SeedInputStateFromService(IInputService inputService)
+        {
+            if (inputService == null || !inputService.IsPlayerInputEnabled)
+            {
+                _currentInputState = default;
+                _cachedMoveInput = Vector2.zero;
+                _cachedVerticalInput = 0f;
+                _pendingLookInput = Vector2.zero;
+                SetSprintingState(false);
+                return;
+            }
+
+            _currentInputState = inputService.GetState();
+            _cachedMoveInput = _currentInputState.MoveDelta;
+            _cachedVerticalInput = math.clamp(_currentInputState.VerticalDelta, -1f, 1f);
             _pendingLookInput = Vector2.zero;
-            _isSprinting = inputManager.IsSprinting;
+            SetSprintingState(_currentInputState.HasAction(PlayerInputAction.Sprint));
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -3826,6 +3834,7 @@ namespace Hecton8.Gameplay
             SuitData suit = currentSuitData;
             if (suit == null) return;
 
+            ResolveInputManagerBinding();
             EnsureJuiceProcessor();
             ResolveSwimPresentationController();
 
@@ -3840,9 +3849,10 @@ namespace Hecton8.Gameplay
 
             if (IsGameplayInputBlockedByMenu())
             {
+                _currentInputState = default;
                 _pendingLookInput = Vector2.zero;
                 _inputH = 0f; _inputV = 0f; _inputVertical = 0f; _mouseXDelta = 0f;
-                _isSprinting = false;
+                SetSprintingState(false);
                 _inputCleared = true;
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
@@ -3861,6 +3871,16 @@ namespace Hecton8.Gameplay
 
             if (_inputManager != null && _inputManager.IsPlayerInputEnabled)
             {
+                _currentInputState = _inputManager.GetState();
+                _cachedMoveInput = _currentInputState.MoveDelta;
+                _cachedVerticalInput = math.clamp(_currentInputState.VerticalDelta, -1f, 1f);
+                _pendingLookInput = _currentInputState.LookDelta;
+                if (_inputManager.TryConsumeBufferedAction(PlayerBufferedAction.Jump, jumpBufferTime))
+                {
+                    _jumpRequested = true;
+                    _jumpBufferTimer = jumpBufferTime;
+                }
+
                 Vector2 lookDelta = _pendingLookInput;
                 _pendingLookInput = Vector2.zero;
                 ApplyLookInput(lookDelta);
@@ -3868,25 +3888,28 @@ namespace Hecton8.Gameplay
                 _inputH = _cachedMoveInput.x;
                 _inputV = _cachedMoveInput.y;
                 _inputVertical = _isWalking ? 0f : ResolveVerticalInput();
+                SetSprintingState(_currentInputState.HasAction(PlayerInputAction.Sprint));
             }
             else
             {
+                _currentInputState = default;
                 _pendingLookInput = Vector2.zero;
                 _inputH = 0f;
                 _inputV = 0f;
                 _inputVertical = 0f;
-                _isSprinting = false;
+                SetSprintingState(false);
                 _mouseXDelta = 0f;
             }
 
             if (_wipeoutTimer > 0f || _fatalPressureSequenceTimer > 0f)
             {
+                _currentInputState = default;
                 _pendingLookInput = Vector2.zero;
                 _mouseXDelta = 0f;
                 _inputH = 0f;
                 _inputV = 0f;
                 _inputVertical = 0f;
-                _isSprinting = false;
+                SetSprintingState(false);
                 _jumpRequested = false;
                 _jumpBufferTimer = 0f;
             }
@@ -3987,7 +4010,7 @@ namespace Hecton8.Gameplay
 
         private float ResolveVerticalInput()
         {
-            return math.clamp(_cachedVerticalInput, -1f, 1f);
+            return math.clamp(_currentInputState.VerticalDelta, -1f, 1f);
         }
 
         private void ApplyLookInput(Vector2 lookDelta)
@@ -6477,7 +6500,7 @@ namespace Hecton8.Gameplay
                 }
             }
 
-            if (_subscribedInputManager == null || !_subscribedInputManager.IsJumping)
+            if (!_currentInputState.HasAction(PlayerInputAction.Jump))
                 ConsumeJumpRequest();
         }
 
@@ -6506,7 +6529,7 @@ namespace Hecton8.Gameplay
 
         private float ResolveExosuitJumpJetIntent()
         {
-            if (_subscribedInputManager != null && _subscribedInputManager.IsJumping)
+            if (_currentInputState.HasAction(PlayerInputAction.Jump))
                 return 1f;
 
             return _jumpRequested ? 1f : 0f;

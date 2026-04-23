@@ -84,13 +84,10 @@ volumeRate = breachArea * v_ingress * Cd                  // m³/s
             Cd = 0.62 (sharp-edge discharge coefficient)
 
 // dt-invariant mass accumulation:
-deltaVolume = volumeRate * dt                             // m³
+deltaVolume = math.sqrt(2f * 9.81f * depth); // Hardware SIMD
+deltaVolume = deltaVolume * breachArea * Cd * dt
 deltaVolume = clamp(deltaVolume, 0, maxVolume - currentVolume)
 currentVolume += deltaVolume
-
-// MX350 fast path (LOD_Base): skip sqrt, use linear approx below 200m depth
-// v_approx = 1.4 * depth_m^0.5  →  precompute LUT[256] indexed by depth>>3
-// LUT[i] = sqrt(2 * g * (i * 8))  — 256 entries × 4 bytes = 1KB, L1-resident
 
 deltaMass = deltaVolume * WATER_DENSITY                   // kg, WATER_DENSITY=1025.0
 rigidbody.mass += deltaMass
@@ -134,7 +131,9 @@ if (deltaMag > MAX_COM_DELTA_PER_FRAME):                 // MAX_COM_DELTA = 0.05
   newCoM = currentCoM + (delta / deltaMag) * MAX_COM_DELTA_PER_FRAME
 
 // Step 5: Apply
-rigidbody.centerOfMass = newCoM
+// [FORBID] Changing mass/CoM dynamically every frame. It stalls PhysX.
+rigidbody.mass = newMass;
+rigidbody.inertiaTensor = math.lerp(dryTensor, fullTensor, fillRatio);
 
 // EPSILON = 0.001 (mass), MAX_FLOOD_MASS = hullVolume * WATER_DENSITY
 // DRY_COM_LOCAL = designer-set dry vessel CoM in local space (const float3)
@@ -145,7 +144,8 @@ rigidbody.centerOfMass = newCoM
 **Delayed angular counter-torque approximation:**
 ```
 // Step 1: Write current angular velocity to ring buffer
-angVelHistory[ringHead] = rigidbody.angularVelocity   // world-space float3
+// Store in Local Space
+angVelHistory[ringHead] = transform.InverseTransformDirection(rigidbody.angularVelocity)
 ringHead = (ringHead + 1) & 7                          // mod-8 via bitmask
 
 // Step 2: Sample delayed velocity (simulates fluid lag)
@@ -175,7 +175,8 @@ if (torqueMag > MAX_SLOSH_TORQUE):
   totalSloshTorque = (totalSloshTorque / torqueMag) * MAX_SLOSH_TORQUE
 
 // Step 5: Apply
-rigidbody.AddTorque(totalSloshTorque, ForceMode.Force)
+// Apply in Local Space 3 frames later
+rigidbody.AddRelativeTorque(totalSloshTorque, ForceMode.Force);
 
 // SLOSH_FACTOR         = 0.15  (tune: higher = more unstable feel)
 // SLOSH_MIN_VOLUME     = 0.05  m³ (skip near-empty compartments)
@@ -259,7 +260,7 @@ for i in [0..7]:
 - Sloshing: 1 ring-buffer sample, SLOSH_DELAY_FRAMES=2, skip freesurf multiply
 - CoM: Update every 2 FixedTicks (alt-frame). TAU_COM = 2.0s
 - Transfer: Evaluate only 4 of 7 pairs per tick (round-robin, ring-indexed by tick counter)
-- Ingress: LUT-based v_ingress (no sqrt per tick)
+- Ingress: math.sqrt SIMD path. No LUT.
 - FLAG_FROZEN: Auto-set on compartments with fillRatio < 0.01 (skip entirely)
 - Physics timestep: 0.02s (50Hz). No sub-stepping on base.
 ```
@@ -373,7 +374,7 @@ IFloodEvent:
 ## [SENIOR_HACK] APPROXIMATION CATALOG (MX350 AAA Visuals)
 
 ```
-HACK_01: sqrt LUT (256 entries, depth-indexed) → eliminates per-tick sqrt. Cost: 1KB L1.
+HACK_01: SIMD math.sqrt path retained. No LUT indirection.
 HACK_02: exp(-dt/TAU) precomputed per LOD tier at system init. Stored as float alphaCoM.
          Recomputed only if TAU changes (designer event). Zero runtime exp() calls.
 HACK_03: freesurf = (1-f)² computed as tmp=(1-f); tmp*tmp. No pow() call.
@@ -383,7 +384,7 @@ HACK_04: torque magnitude clamp: use dot-product fast magnitude estimate before 
 HACK_05: Transfer loop round-robin on LOD_Base: tick & 1 selects even/odd pairs.
          7 pairs → 4 evaluated per tick → halved cost, imperceptible visual error.
 HACK_06: FLAG_FROZEN skip: ~50% compartments dry in early game → ~50% kernel reduction free.
-HACK_07: CoM alt-frame on LOD_Base: rigidbody.centerOfMass write every 2 ticks.
+HACK_07: Tensor update alt-frame on LOD_Base: rigidbody.inertiaTensor write every 2 ticks.
          Interpolate externally for VFX/audio queries without touching Rigidbody.
 ```
 

@@ -67,7 +67,8 @@ Trigger conditions:
 Export algorithm:
 
 1. Determine export range: last min(writeIndex, 50) entries from ring
-2. Open FileStream at: Application.persistentDataPath/crash_YYYYMMDD_HHMMSS.hbin
+// [FORBID] Managed C# I/O during crash event.
+// Use Native Memory-Mapped Files (MMF) OR CrashReportHandler.SetUserMetadata.
 3. Write 8B magic header: 0x48454354_4F4E3800  ("HECTON8\0")
 4. Write uint32 entryCount
 5. Write uint32 structSizeBytes (64)
@@ -203,7 +204,7 @@ Dispatch:
 
 1. Group requests by (meshType, lod) — radix sort on uint key = (meshType<<2)|lod
 2. Per group: extract Matrix4x4[] slice from matrixScratch
-3. Graphics.DrawMeshInstanced(mesh, 0, material, matrices, count, mpb)
+3. // Use Unity 6 'Graphics.RenderPrimitives' OR inject a custom RenderGraph pass using 'Graphics.RenderMeshIndirect'.
 4. Clear NativeList (no dealloc — just set Length=0)
 
 Silhouette markers (replaces `Instantiate` for debug objects):

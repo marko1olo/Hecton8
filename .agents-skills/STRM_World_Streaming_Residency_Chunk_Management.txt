@@ -210,7 +210,8 @@ Texture2D.GetPixelData<ushort>(mipLevel:0)
 
 // Cache lookup (open-addressing hash, no Dictionary):
   hashKey = chunkID ^ (mipLevel << 24)
-  slot    = hashKey % TILE_CACHE_SIZE
+// [FORBID] Raw modulo on signed hashes. You MUST strip the sign bit before modulo:
+slot = (hashKey & 0x7FFFFFFF) % TILE_CACHE_SIZE;
   if tile_CacheKeys[slot] == hashKey AND tile_CacheValid[slot] == 1:
     → hit: return slice at slot*TILE_RES²
   else:

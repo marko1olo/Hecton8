@@ -285,6 +285,7 @@ namespace Hecton8.Physics
         private NativeArray<float3>         _angularVelocities;
         private NativeArray<float3>         _upVectors;
         private NativeArray<BuoyancyParams> _params;
+        private NativeArray<float>          _waveOffsets;
         private NativeArray<float3>         _resultForces;
         private NativeArray<float3>         _resultTorques;
 
@@ -465,6 +466,20 @@ namespace Hecton8.Physics
             }
 
             // ── 3. Schedule Job ──
+            WeatherRuntimeSnapshot weatherSnapshot = ResolveWeatherSnapshot();
+
+            WaveQueryJob waveJob = new WaveQueryJob
+            {
+                PositionsWS = _positions,
+                VerticalOffsets = _waveOffsets,
+                Wave0 = weatherSnapshot.Wave0,
+                Wave1 = weatherSnapshot.Wave1,
+                Wave2 = weatherSnapshot.Wave2,
+                TimeSeconds = weatherSnapshot.CurrentMeta.TimeAccumulator
+            };
+
+            JobHandle waveHandle = waveJob.Schedule(count, jobBatchSize);
+
             BuoyancyJob job = new BuoyancyJob
             {
                 positions        = _positions,
@@ -472,6 +487,7 @@ namespace Hecton8.Physics
                 angularVelocities = _angularVelocities,
                 upVectors        = _upVectors,
                 objParams        = _params,
+                waveOffsets      = _waveOffsets,
                 resultForces     = _resultForces,
                 resultTorques    = _resultTorques,
 
@@ -493,7 +509,7 @@ namespace Hecton8.Physics
                 dt               = fixedDeltaTime
             };
 
-            JobHandle handle = job.Schedule(count, jobBatchSize);
+            JobHandle handle = job.Schedule(count, jobBatchSize, waveHandle);
 
             // ── 4. Complete ──
             handle.Complete();
@@ -695,6 +711,8 @@ namespace Hecton8.Physics
                                  NativeArrayOptions.UninitializedMemory);
             _params        = new NativeArray<BuoyancyParams>(newCapacity, Allocator.Persistent,
                                  NativeArrayOptions.UninitializedMemory);
+            _waveOffsets   = new NativeArray<float>(newCapacity, Allocator.Persistent,
+                                 NativeArrayOptions.ClearMemory);
             _resultForces  = new NativeArray<float3>(newCapacity, Allocator.Persistent,
                                  NativeArrayOptions.ClearMemory);
             _resultTorques = new NativeArray<float3>(newCapacity, Allocator.Persistent,
@@ -713,6 +731,7 @@ namespace Hecton8.Physics
             if (_angularVelocities.IsCreated) _angularVelocities.Dispose();
             if (_upVectors.IsCreated)     _upVectors.Dispose();
             if (_params.IsCreated)        _params.Dispose();
+            if (_waveOffsets.IsCreated)   _waveOffsets.Dispose();
             if (_resultForces.IsCreated)  _resultForces.Dispose();
             if (_resultTorques.IsCreated) _resultTorques.Dispose();
 
@@ -725,6 +744,15 @@ namespace Hecton8.Physics
                 return;
 
             DisposeNativeArrays();
+        }
+
+        private static WeatherRuntimeSnapshot ResolveWeatherSnapshot()
+        {
+            IWeatherService weatherService = GlobalRegistry.Weather;
+            if (weatherService == null || !weatherService.IsInitialized)
+                return default;
+
+            return weatherService.GetRuntimeSnapshot();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -886,7 +914,68 @@ namespace Hecton8.Physics
     ///   Течение:    F_curr  = currentForce × subRatio     (по направлению)
     ///   AngDrag:    T_drag  = -ω × C_angDrag × subRatio  (против вращения)
     /// </summary>
+    /// <summary>
+    /// Burst-compiled fallback wave evaluator used by CPU-side buoyancy systems.
+    /// This samples the first-party weather spectrum for physics consumers and does not replace Crest FFT rendering.
+    /// </summary>
     [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast)]
+    public struct WaveQueryJob : IJobParallelFor
+    {
+        private const float Gravity = 9.81f;
+        private const float TwoPi = 6.28318530718f;
+
+        [ReadOnly] public NativeArray<float3> PositionsWS;
+        [WriteOnly] public NativeArray<float> VerticalOffsets;
+
+        public GerstnerWaveComponent Wave0;
+        public GerstnerWaveComponent Wave1;
+        public GerstnerWaveComponent Wave2;
+        public float TimeSeconds;
+
+        public void Execute(int index)
+        {
+            float2 worldXZ = PositionsWS[index].xz;
+            float3 displacement = ComputeTotalDisplacement(worldXZ);
+
+            float2 correctedXZ = worldXZ - displacement.xz;
+            displacement = ComputeTotalDisplacement(correctedXZ);
+
+            correctedXZ = worldXZ - displacement.xz;
+            displacement = ComputeTotalDisplacement(correctedXZ);
+
+            VerticalOffsets[index] = displacement.y;
+        }
+
+        private float3 ComputeTotalDisplacement(float2 worldXZ)
+        {
+            float3 total = float3.zero;
+            total += ComputeDisplacement(worldXZ, Wave0);
+            total += ComputeDisplacement(worldXZ, Wave1);
+            total += ComputeDisplacement(worldXZ, Wave2);
+            return total;
+        }
+
+        private float3 ComputeDisplacement(float2 worldXZ, GerstnerWaveComponent wave)
+        {
+            if (wave.Amplitude <= 0f || wave.Wavelength <= 0.01f)
+                return float3.zero;
+
+            float2 direction = math.normalizesafe(wave.DirectionXZ, new float2(1f, 0f));
+            float waveNumber = TwoPi / math.max(0.01f, wave.Wavelength);
+            float phaseVelocity = math.sqrt(Gravity / waveNumber) * math.max(0.01f, wave.SpeedMultiplier);
+            float phase = waveNumber * math.dot(direction, worldXZ) - phaseVelocity * waveNumber * TimeSeconds + wave.PhaseOffset;
+            float sinPhase = math.sin(phase);
+            float cosPhase = math.cos(phase);
+            float horizontalDisplacement = wave.Steepness * wave.Amplitude;
+
+            float3 displacement;
+            displacement.x = -direction.x * horizontalDisplacement * sinPhase;
+            displacement.y = wave.Amplitude * cosPhase;
+            displacement.z = -direction.y * horizontalDisplacement * sinPhase;
+            return displacement;
+        }
+    }
+
     public struct BuoyancyJob : IJobParallelFor
     {
         // ── Input (ReadOnly) ──
@@ -895,6 +984,7 @@ namespace Hecton8.Physics
         [ReadOnly] public NativeArray<float3>         angularVelocities;
         [ReadOnly] public NativeArray<float3>         upVectors;
         [ReadOnly] public NativeArray<BuoyancyParams> objParams;
+        [ReadOnly] public NativeArray<float>          waveOffsets;
 
         // ── Output (WriteOnly) ──
         [WriteOnly] public NativeArray<float3> resultForces;
@@ -947,7 +1037,8 @@ namespace Hecton8.Physics
             float3 up = math.normalizesafe(upVectors[i], new float3(0f, 1f, 0f));
 
             // ── Глубина погружения центра масс ──
-            float depthBelowSurface = waterLevel - pos.y;
+            float waveOffset = waveOffsets[i];
+            float depthBelowSurface = waterLevel + waveOffset - pos.y;
 
             // ── Объект над водой → нулевые силы ──
             if (depthBelowSurface <= 0f)

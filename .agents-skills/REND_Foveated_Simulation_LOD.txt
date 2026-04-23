@@ -1,0 +1,364 @@
+## I. EXECUTION POLICY
+
+[RULE] Zero heap allocation during scoring/throttling updates
+[FORBID] Per-entity Update() polling — centralized dispatcher only
+[FORBID] Raycast scheduling for Score < 0.2 entities
+[FORBID] Direct dt multiplication on throttled entities — cache tick interval
+
+## II. DATA ARCHITECTURE
+
+### Entity Simulation State (Struct, 64-byte aligned)
+```
+struct SimEntity {
+    float3 position;
+    float3 velocity;
+    quaternion rotation;
+    float importanceScore;      // [0.0 - 1.0]
+    float tickInterval;         // seconds between updates
+    float timeSinceLastTick;    // accumulator
+    float3 interpStartPos;      // snapshot position at tick boundary
+    float3 interpTargetPos;     // predicted position at next tick
+    uint16 tickRate;            // Hz: 60, 30, 20, 10, 5
+    uint8 raycastBudgetMask;    // bit 0 = LoS allowed, bit 1 = environment probes
+    uint8 audioDopplerLock;     // freeze Doppler when throttled
+}
+```
+
+[DATA] NativeArray<SimEntity> — SoA transform for position/velocity SIMD batch
+[DATA] NativeHashMap<EntityID, uint16> — entity → array index lookup
+[DATA] Ring buffer (capacity 256) for raycast command queue, drained 16/frame
+[DATA] Double-buffered interpolation targets: read from T-1, write to T
+
+### Importance Score LUT (Precompute)
+```
+static float[] dotToScore = new float[512]; // index = (int)((dot + 1.0) * 255.5)
+// Initialization: dotToScore[i] = pow((i / 511.0), 2.2) clamped [0.1, 1.0]
+```
+
+## III. ALGORITHMIC & MATH TRUTH
+
+### A. Importance Score Calculation (Per Entity, Burst)
+
+**Step 1: Camera-Relative Vector**
+```
+dir = normalize(entity.position - cameraPosition)
+dot = dot(dir, cameraForward)
+```
+
+**Step 2: Hemisphere Bias Mapping**
+```
+if dot >= 0.0:
+    rawScore = dot * dot  // quadratic falloff front hemisphere
+else:
+    rawScore = dot * 0.05 // harsh penalty rear hemisphere
+```
+
+**Step 3: Distance Attenuation**
+```
+dist = length(entity.position - cameraPosition)
+distFactor = 1.0 / (1.0 + dist * 0.01)  // hyperbolic decay
+finalScore = clamp(rawScore * distFactor, 0.05, 1.0)
+```
+
+**Step 4: Vertical Frustum Penalty (Optional — MX350 saver)**
+```
+verticalDot = dot(dir, cameraUp)
+if abs(verticalDot) > 0.7:  // entity above/below 45° cone
+    finalScore *= 0.6
+```
+
+**Step 5: Write**
+```
+entity.importanceScore = finalScore
+```
+
+### B. Tick Rate Assignment (Dispatch Logic)
+
+**Thresholds (tunable per scene complexity):**
+```
+Score >= 0.75  →  60 Hz (0.0167s interval)
+Score >= 0.50  →  30 Hz (0.0333s)
+Score >= 0.30  →  20 Hz (0.0500s)
+Score >= 0.15  →  10 Hz (0.1000s)
+Score <  0.15  →   5 Hz (0.2000s)
+```
+
+**Hysteresis Guard (prevent jitter at threshold boundaries):**
+```
+if abs(newTickRate - entity.tickRate) == 1 tier AND framesSinceChange < 30:
+    retain entity.tickRate
+else:
+    entity.tickRate = newTickRate
+    entity.tickInterval = 1.0 / newTickRate
+```
+
+### C. Tick Accumulator & Dispatch
+
+**Per Frame (Dispatcher MainThread or Job):**
+```
+entity.timeSinceLastTick += Time.deltaTime
+
+if entity.timeSinceLastTick >= entity.tickInterval:
+    remainderTime = entity.timeSinceLastTick - entity.tickInterval
+    entity.timeSinceLastTick = clamp(remainderTime, 0, entity.tickInterval * 0.5)  // prevent spiral
+    
+    // Snapshot interpolation anchors
+    entity.interpStartPos = entity.position
+    
+    // Execute simulation step with dt = entity.tickInterval
+    ExecutePhysicsStep(entity, entity.tickInterval)
+    
+    // Predict next position for interpolation
+    entity.interpTargetPos = entity.position + entity.velocity * entity.tickInterval
+```
+
+### D. Transform Interpolation (Visual Update — Every Frame)
+
+**Interpolation Alpha:**
+```
+alpha = entity.timeSinceLastTick / entity.tickInterval
+alpha = clamp(alpha, 0.0, 1.0)
+```
+
+**Hermite Smoothing (reduce stutter on 5Hz → 60Hz transition):**
+```
+// [FORBID] Implicit double-precision promotion. Enforce 32-bit floats.
+smoothAlpha = alpha * alpha * (3.0f - 2.0f * alpha);
+visualPosition = lerp(entity.interpStartPos, entity.interpTargetPos, smoothAlpha)
+```
+
+**Write to Transform (ECS or Hybrid):**
+```
+// Schedule IJobParallelForTransform
+// Apply interpTargetPos via TransformStreamHandle
+transform.position = visualPosition
+transform.rotation = slerp(entity.interpStartRot, entity.interpTargetRot, smoothAlpha)
+```
+
+**NaN Guard:**
+```
+if any(isnan(visualPosition)) OR any(isinf(visualPosition)):
+    visualPosition = entity.interpStartPos  // fallback to last valid
+```
+
+### E. Raycast Command Culling
+
+**Raycast Budget Mask Assignment:**
+```
+if entity.importanceScore < 0.2:
+    entity.raycastBudgetMask = 0b00000000  // deny all raycast types
+else if entity.importanceScore < 0.5:
+    entity.raycastBudgetMask = 0b00000001  // LoS only, 1 ray/tick
+else:
+    entity.raycastBudgetMask = 0b11111111  // full budget
+```
+
+**Command Queue Injection (AI System):**
+```
+if (entity.raycastBudgetMask & RAYCAST_LOS_BIT) != 0:
+    if raycastQueue.count < RAYCAST_QUEUE_CAPACITY:
+        raycastQueue.Enqueue(new RaycastCommand(origin, direction, maxDist))
+    else:
+        // Drop command — queue saturated (acceptable for Score < 0.5 entities)
+```
+
+**Drain Strategy (Physics JobHandle chain):**
+```
+maxRaycastsPerFrame = 16  // MX350 thermal budget
+batchSize = min(raycastQueue.count, maxRaycastsPerFrame)
+NativeList<RaycastCommand> raycastList;
+RaycastCommand.ScheduleBatch(raycastList.AsDeferredJobArray(), results, 16, dependencies);
+```
+
+### F. Audio Doppler Protection
+
+**Problem:** Throttled tick = sparse velocity updates → Doppler pitch spikes
+
+**Solution: Velocity Smoothing Buffer**
+```
+struct AudioDopplerCache {
+    float3 smoothedVelocity;
+    float smoothingFactor;  // 0.9 for Score < 0.5, 0.0 for Score >= 0.5
+}
+```
+
+**Per Audio Tick (MainThread or Audio Job):**
+```
+if entity.importanceScore < 0.5:
+    entity.audioCache.smoothingFactor = 0.92  // heavy smoothing
+else:
+    entity.audioCache.smoothingFactor = 0.0   // raw velocity
+
+entity.audioCache.smoothedVelocity = lerp(
+    entity.audioCache.smoothedVelocity,
+    entity.velocity,
+    1.0 - entity.audioCache.smoothingFactor
+)
+
+float approachSpeed = math.dot(smoothedVelocity, toListenerDir);
+audioSource.pitch = 1f + (approachSpeed / SPEED_OF_SOUND);
+```
+
+**Pop Suppression on Throttle Tier Change:**
+```
+if entity.tickRate changed this frame:
+    entity.audioCache.smoothedVelocity = entity.velocity  // snap reset to prevent discontinuity
+```
+
+## IV. HARDWARE & SCALABILITY
+
+### MX350 Constraints (Pascal 640 CUDA cores, 2GB VRAM)
+
+[SCALE] Base: 50 active entities @ mixed tick rates, 16 raycasts/frame
+[SCALE] High: 100 entities, 24 raycasts/frame, extended frustum cone (60° → 75°)
+[SCALE] Ultra: 150 entities, 32 raycasts/frame, vertical penalty disabled
+
+### CPU Budget (i3-10100 4C/4T)
+
+**Scoring Job:** 0.3ms for 150 entities (Burst SIMD)
+**Dispatcher:** 0.1ms (branchless threshold table)
+**Interpolation:** 0.05ms (parallel write)
+**Total Overhead:** < 0.5ms per frame (< 3% of 16.67ms budget)
+
+### Time-Slicing Strategy
+
+**Frame N:** Score top 50 entities
+**Frame N+1:** Score next 50 entities
+**Frame N+2:** Score remaining entities
+**Stagger:** Prevents single-frame spike when entity count >> 100
+
+### VRAM Pressure
+
+**Interpolation Buffer:** 150 entities × 64 bytes = 9.6 KB (negligible)
+**Raycast Results:** 256 × RaycastHit (16 bytes) = 4 KB
+**LUT Cache:** 2 KB (dotToScore table)
+**Total:** < 16 KB — safe for MX350
+
+## V. INTEGRATION & FAILURE MODES
+
+### Interface Contract
+
+**ISimulationTarget (implemented by AI/Physics entities):**
+```
+void OnSimulationTick(float tickDelta)
+float3 GetPosition()
+float3 GetVelocity()
+void SetVisualTransform(float3 position, quaternion rotation)
+```
+
+**IFoveatedDispatcher (single instance, ECS System):**
+```
+void RegisterEntity(EntityID id, ISimulationTarget target)
+void UnregisterEntity(EntityID id)
+void ExecuteFrame(float3 cameraPos, float3 cameraForward, float3 cameraUp)
+```
+
+### Failure Modes & Guards
+
+**[SAFE] Camera Velocity > 40 m/s:**
+```
+if length(cameraDelta) > 40.0 * Time.deltaTime:
+    forceRefreshAllScores = true  // prevent stale scores during rapid rotation
+    minTickRate = 20 Hz  // raise floor to prevent missed visibility
+```
+
+**[SAFE] Entity Speed > 50 m/s:**
+```
+if length(entity.velocity) > 50.0:
+    entity.tickRate = max(entity.tickRate, 30)  // force faster updates
+    entity.interpTargetPos = entity.position + clamp(entity.velocity, -50, 50) * entity.tickInterval
+```
+
+**[SAFE] Depth > 4000m (Numerical Precision Loss):**
+```
+if entity.position.y < -4000.0:
+    entity.tickInterval = min(entity.tickInterval, 0.05)  // max 20 Hz to maintain stability
+    entity.velocity *= 0.98  // damping to prevent float drift accumulation
+```
+
+**[SAFE] Score Flicker (Threshold Oscillation):**
+```
+entity.scoreHistory[frameIndex % 4] = rawScore
+entity.importanceScore = median(entity.scoreHistory)  // 4-frame median filter
+```
+
+**[SAFE] Interpolation Overshoot (Entity Teleports):**
+```
+predictionError = length(entity.position - entity.interpTargetPos)
+if predictionError > 5.0:  // threshold = 5 meters
+    entity.interpStartPos = entity.position  // reset interpolation anchor
+    entity.interpTargetPos = entity.position
+    entity.timeSinceLastTick = 0
+```
+
+**[SAFE] Raycast Queue Overflow:**
+```
+if raycastQueue.count >= RAYCAST_QUEUE_CAPACITY * 0.9:
+    // Prioritize high-score entities: drop commands from Score < 0.3 entities
+    PurgeQueueWhere(command => command.sourceScore < 0.3)
+```
+
+### Debug Telemetry (Editor Only)
+
+**Gizmos (Scene View):**
+```
+Color by Tick Rate:
+    60 Hz → Green
+    30 Hz → Yellow
+    20 Hz → Orange
+    10 Hz → Red
+     5 Hz → Dark Red
+    
+Line from camera to entity, thickness = importanceScore
+```
+
+**Performance Stats (On-Screen):**
+```
+Total Entities: {count}
+Avg Score: {mean}
+60Hz: {count60} | 30Hz: {count30} | 20Hz: {count20} | 10Hz: {count10} | 5Hz: {count5}
+Raycast Queue: {queueDepth}/{capacity}
+Frame Budget: {dispatcherMs:F2}ms
+```
+
+## IMPLEMENTATION NOTES
+
+**Job Dependencies:**
+```
+ScoringJob → TickRateAssignmentJob → DispatchTicksJob → InterpolationJob
+    ↓
+RaycastScheduleJob (conditional fork, filtered by raycastBudgetMask)
+```
+
+**Thread Safety:**
+```
+Scoring/Interpolation: Parallel Burst jobs (read-only camera transform)
+Dispatcher: MainThread (writes tickInterval, queues simulation callbacks)
+Raycast Drain: Physics job chain (CommandBuffer isolated)
+```
+
+**Tuning Hooks:**
+```
+static class FoveatedConfig {
+    public static AnimationCurve scoreToTickRate;  // artist-editable
+    public static float raycastCullThreshold = 0.2f;
+    public static float dopplerSmoothThreshold = 0.5f;
+    public static int maxRaycastsPerFrame = 16;
+}
+```
+
+**Memory Budget Validation:**
+```
+Assert(sizeof(SimEntity) == 64);  // cache line alignment
+Assert(NativeArray<SimEntity>.IsCreated && array.Length <= 512);  // max entity cap
+```
+
+**Regression Test Cases:**
+```
+1. Spin camera 360° in 0.5s → no Score NaN, no tick rate flicker
+2. Teleport entity behind camera → raycast mask = 0 within 2 frames
+3. Entity at 5Hz enters center screen → visual position smooth within 3 frames (no pop)
+4. 150 entities active → frame time < 0.6ms for foveated system
+5. Audio source moving 20 m/s at 5Hz → Doppler pitch variance < 5%
+```
+```

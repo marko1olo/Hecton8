@@ -18,7 +18,7 @@ Scope: All tether, cable, and grapple physics interactions
 - The spring stiffness `k` or rest-length multiplier for any tether class.
 - The snap threshold tension value or stress accumulation rate.
 - The over-damping coefficient (currently mandated at 1.2x critical).
-- Whether Unity Joints are used. They are not. Ever.
+- Constraint family and TGS policy. ConfigurableJoint only for primary tether constraint.
 - The definition of "Cable Slicing" (see Section 6).
 
 ---
@@ -26,12 +26,13 @@ Scope: All tether, cable, and grapple physics interactions
 ## SECTION 1: EXECUTION POLICY
 
 ### Non-Negotiable Rules
-1. NO UNITY JOINTS. `HingeJoint`, `SpringJoint`, `ConfigurableJoint`, and all derivatives are FORBIDDEN on any tether-classified object. Violation fails code review.
-2. ForceMode.Acceleration is mandatory for all spring force application. `ForceMode.Force` is forbidden for tether springs. `ForceMode.Impulse` is reserved exclusively for the Wipeout snap event.
-3. Bend point calculation runs only when LOS is broken. Do not run `RaycastNonAlloc` bend logic every frame if the direct Player→Payload segment is unobstructed. Cache the result.
-4. Verlet position correction fires before spring force. The hard distance constraint (Section 5) is a pre-pass. It is not a competing system; it is a floor beneath the spring.
-5. All tether logic executes in `FixedUpdate`. Visual segment positions update in `LateUpdate`. Zero tether physics in `Update`.
-6. Stress timer is cumulative, not instantaneous. A single frame of high tension does not snap a cable. The `_stressTimer` must breach the threshold duration.
+1. Use Unity 6 ConfigurableJoint for tether-class primary constraints. Legacy custom spring / Verlet primary solvers are forbidden.
+// [FORBID] Custom Verlet fighting the engine.
+2. Enable TGS (Temporal Gauss-Seidel) solver in Physics Settings. Joint projection is recovery-only, not steady-state transport.
+3. Bend point calculation runs only when LOS is broken. Cache topology. Do not raycast every frame when the direct segment is clear.
+4. All tether state evaluation executes in `FixedUpdate`. Visual segment positions update in `LateUpdate`. Zero tether physics in `Update`.
+5. Stress timer is cumulative, not instantaneous. A single frame of high tension does not snap a cable.
+6. `ForceMode.Impulse` is reserved for explicit snap / release events. It is not the steady-state cable solver.
 
 ### Enforcement
 Any script applying a tether spring force that does not use `ForceMode.Acceleration` will be rejected at PR. The reviewer will leave the comment: `MANDATE #3 VIOLATION: ForceMode`.
@@ -91,26 +92,28 @@ public class TetherInstance : MonoBehaviour
     public Rigidbody payloadRb;
     public TetherProfileSO profile;
     public TetherClass tetherClass;
+    public ConfigurableJoint joint;
 
     // --- Runtime State ---
     [NonSerialized] public float restLength;
     [NonSerialized] public float currentLength;
-    [NonSerialized] public float dampingCoefficient_c;   // Calculated once on attach or mass change
     [NonSerialized] public float reducedMass;
+    [NonSerialized] public float dampingCoefficient_c;
+    [NonSerialized] public SoftJointLimit linearLimit;
+    [NonSerialized] public JointDrive tetherDrive;
 
     // --- Bend Points ---
-    // Ordered: index 0 is closest to Player, last index is closest to Payload.
     [NonSerialized] public List<Vector3> bendPoints = new List<Vector3>(4);
     [NonSerialized] public bool losBlocked = false;
-    [NonSerialized] public int losCheckCooldownFrames = 0; // Amortization counter
+    [NonSerialized] public int losCheckCooldownFrames = 0;
 
     // --- Stress ---
     [NonSerialized] public float _stressTimer = 0f;
     [NonSerialized] public bool isSnapped = false;
 
     // --- Visual ---
-    [NonSerialized] public NativeArray<float3> visualSegmentPositions; // CPU staging only
-    [NonSerialized] public GraphicsBuffer visualSegmentBuffer;         // GPU render source
+    [NonSerialized] public NativeArray<float3> visualSegmentPositions;
+    [NonSerialized] public GraphicsBuffer visualSegmentBuffer;
 }
 
 ### 2.4 Manager: `TetherManager`
@@ -139,124 +142,79 @@ c_actual   = c_critical * overDampingMultiplier
 - `TowCable`: `overDampingMultiplier` = 1.2 (mandatory minimum).
 - This eliminates oscillation in tow scenarios. The cable will not "bounce" the wreck.
 
-### 3.3 Spring Force in Acceleration Space
+### 3.3 Primary Constraint Solver (ConfigurableJoint + TGS)
 
-For each segment between anchor A and anchor B (where B may be a bend point or the payload):
+Attach sequence:
 
-// 1. Geometry
-delta         = B.position - A.position
-currentDist   = delta.magnitude
-direction     = delta / currentDist          // normalized
+joint = payloadRb.gameObject.AddComponent<ConfigurableJoint>()
+joint.connectedBody = playerRb
+joint.autoConfigureConnectedAnchor = false
+joint.xMotion = ConfigurableJointMotion.Limited
+joint.yMotion = ConfigurableJointMotion.Limited
+joint.zMotion = ConfigurableJointMotion.Limited
+joint.linearLimit.limit = restLength
+joint.projectionMode = JointProjectionMode.PositionAndRotation
+joint.projectionDistance = 0.05f
+joint.projectionAngle = 5f
 
-// 2. Spring extension (only pulls, never pushes — cable, not rod)
-extension     = currentDist - segmentRestLength
-if (extension <= 0) → skip force application for this segment
+reducedMass = (m_player * m_payload) / (m_player + m_payload)
+dampingCoefficient_c = 2 * sqrt(k * reducedMass) * overDampingMultiplier
 
-// 3. Relative velocity along cable axis
-relVel        = B.velocity - A.velocity      // use Rigidbody.velocity for dynamic bodies
-                                             // use Vector3.zero for static bend points
-relVelAlongCable = Vector3.Dot(relVel, direction)
+JointDrive drive:
+  positionSpring = k
+  positionDamper = dampingCoefficient_c
+  maximumForce   = float.MaxValue
 
-// 4. Raw spring-damper force magnitude (Newtons, conceptual)
-F_spring  = k * extension
-F_damping = c * relVelAlongCable
-F_total   = F_spring + F_damping             // positive = attractive
+joint.xDrive = drive
+joint.yDrive = drive
+joint.zDrive = drive
 
-// 5. Convert to acceleration (mass-independent) — THIS IS WHY WE USE ForceMode.Acceleration
-// ForceMode.Acceleration applies: force_applied = acceleration (Unity multiplies by mass internally)
-// So we simply pass the acceleration vector directly.
-acceleration_A = +direction * F_total       // pulls A toward B
-acceleration_B = -direction * F_total       // pulls B toward A
+[FORBID] `playerRb.AddForce(..., ForceMode.Acceleration)` as the steady-state tether solver.
+[FORBID] Manual primary-position correction loops fighting the joint solver.
 
-// 6. Apply
-playerRb.AddForce(acceleration_A, ForceMode.Acceleration)
-payloadRb.AddForce(acceleration_B, ForceMode.Acceleration)
+### 3.4 Bend Point Topology (LOS Only)
 
-Why Acceleration mode prevents energy spikes on heavy objects:
-With `ForceMode.Force`, `a = F/m`. A 50,000 kg wreck yields near-zero acceleration from moderate spring forces, causing the spring to overextend and accumulate massive energy. With `ForceMode.Acceleration`, the acceleration is mass-independent — the heavy wreck moves at the same corrective rate as a light object, and energy is bounded by `k` and `c`, not by mass ratio.
+Bend points are topology / render anchors only.
+They do NOT run a competing Verlet chain.
 
-### 3.4 Chain Tension Through Bend Points
+If LOS is broken:
+  Rebuild corner chain from cached raycast hits
+  Update visual spline control points
+  Optionally split visual cable into subsegments
 
-Bend points are massless virtual pivots. They do not receive force. Tension propagates through them geometrally.
+If LOS is clear:
+  Clear cached bend points
+  Keep single primary ConfigurableJoint constraint active
 
-For a chain: Player → BP[0] → BP[1] → Payload
+### 3.5 Hard Limit Recovery / Projection
 
-Segment[0]: Player   → BP[0]    restLength = restLength * segmentFraction[0]
-Segment[1]: BP[0]   → BP[1]    restLength = restLength * segmentFraction[1]
-Segment[2]: BP[1]   → Payload  restLength = restLength * segmentFraction[2]
+If currentLength > restLength * nonElasticLimitRatio:
+  rely on ConfigurableJoint projection + TGS stabilization
+  projectionDistance = 0.05m
+  projectionAngle    = 5deg
 
-Each segment fraction = `segmentLength_at_attach / totalLength_at_attach`.
-
-Apply Section 3.3 logic independently per segment. Only Player and Payload Rigidbodies receive `AddForce`. Bend points update their world position to remain on their registered voxel corner (they do not drift).
-
-Tension scalar for stress evaluation = the largest `F_total` across all active segments.
-
-### 3.5 Non-Elastic Hard Constraint (Verlet Correction)
-
-Fires in `FixedUpdate` before spring force is applied. Only activates when `currentLength > restLength * nonElasticLimitRatio`.
-
-// Per segment (or direct Player→Payload if no bend points)
-overExtension   = currentDist - (segmentRestLength * nonElasticLimitRatio)
-if (overExtension <= 0) → skip
-
-// Correction split proportional to inverse mass (heavier body moves less)
-totalInvMass    = (1/m_player) + (1/m_payload)
-correctionA     = direction *  overExtension * (1/m_player) / totalInvMass
-correctionB     = direction * -overExtension * (1/m_payload) / totalInvMass
-
-playerRb.position  += correctionA
-payloadRb.position += correctionB
-
-// Kill velocity component along cable that caused overextension
-relVelAlongCable = Vector3.Dot(relVel, direction)
-if (relVelAlongCable > 0):  // bodies moving apart
-    velCorrection        = direction * relVelAlongCable
-    playerRb.velocity   -= velCorrection * (1/m_player) / totalInvMass
-    payloadRb.velocity  += velCorrection * (1/m_payload) / totalInvMass
-
-This is a positional correction pass, not a force. It is the inelastic floor.
+No manual `Rigidbody.position += correction` pass.
+No manual velocity kill-pass in the primary constraint loop.
 
 ### 3.6 Stress Accumulation & Snap Protocol
 
-// In FixedUpdate, after force application:
-float peakTension = GetPeakSegmentTension(); // Max F_total across segments
+peakTension = length(joint.currentForce)
 
-if (peakTension > profile.snapTensionThreshold)
+if peakTension > profile.snapTensionThreshold:
 {
     _stressTimer += Time.fixedDeltaTime;
 }
 else
 {
-    // Recover at half the accumulation rate (cable "heals" slowly)
     _stressTimer = Mathf.Max(0f, _stressTimer - Time.fixedDeltaTime * 0.5f);
 }
 
 if (_stressTimer >= profile.snapStressDuration)
 {
-    InvokeSnapProtocol();
-}
-
-SnapProtocol:
-
-private void InvokeSnapProtocol()
-{
+    Destroy(joint);
+    payloadRb.AddForce(playerRb.transform.forward * profile.wipeoutImpulseMagnitude, ForceMode.Impulse);
     isSnapped = true;
-
-    // 1. Wipeout impulse — direction is AWAY from payload (cable recoil)
-    Vector3 snapDir = (playerRb.position - payloadRb.position).normalized;
-    playerRb.AddForce(snapDir * profile.wipeoutImpulseMagnitude, ForceMode.Impulse);
-
-    // 2. Detach payload — zero out any residual tether velocity contribution
-    //    (do NOT zero payload velocity — it should continue moving under momentum)
-
-    // 3. Notify TetherManager for cleanup
-    TetherManager.Instance.OnTetherSnapped(this);
-
-    // 4. Trigger VFX/SFX event (via event bus, not direct reference)
-    GameEvents.TetherSnapped?.Invoke(transform.position);
 }
-
----
 
 ## SECTION 4: SCALE & PERFORMANCE
 
@@ -390,8 +348,7 @@ If slicing is detected for 3 consecutive FixedUpdate frames on the same segment 
 
 ### ✅ SAFE — Do This
 
-// CORRECT: Acceleration mode, mass-independent
-payloadRb.AddForce(springAccelVector, ForceMode.Acceleration);
+// CORRECT: Primary tether constraint uses ConfigurableJoint + TGS. No steady-state AddForce solver.
 
 // CORRECT: Recalculate damping when payload mass changes
 void OnPayloadMassChanged() => RecalculateDampingCoefficient();
@@ -402,15 +359,14 @@ Vector3 corner = VoxelGrid.GetNearestCorner(hit.point);
 // CORRECT: Stress timer recovers slowly; does not reset instantly on one calm frame
 _stressTimer = Mathf.Max(0f, _stressTimer - Time.fixedDeltaTime * 0.5f);
 
-// CORRECT: Verlet correction fires BEFORE spring force
-ApplyVerletConstraint();
-ApplySpringForces();
+// CORRECT: Joint projection handles rare recovery cases.
+SolveConfigurableJoint();
 
 ### ❌ ANTI-PATTERNS — These Will Fail Code Review
 
 // FORBIDDEN: Unity Joint
 gameObject.AddComponent<SpringJoint>();
-// REVIEWER NOTE: MANDATE #3 VIOLATION — NO UNITY JOINTS.
+// REVIEWER NOTE: SpringJoint forbidden. ConfigurableJoint is the only allowed primary tether constraint.
 
 // FORBIDDEN: ForceMode.Force for spring
 payloadRb.AddForce(springForceVector, ForceMode.Force);

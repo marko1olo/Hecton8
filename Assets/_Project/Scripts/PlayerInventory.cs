@@ -15,11 +15,14 @@
 namespace Hecton8.Inventory
 {
     using System;
+    using Hecton.Localization;
     using Hecton8.Gameplay;
     using Hecton8.Interaction;
     using Hecton8.Items;
     using Hecton8.Modding;
     using Hecton8.SaveSystem;
+    using Unity.Collections;
+    using Unity.Jobs;
     using UnityEngine;
 
     [DisallowMultipleComponent]
@@ -62,6 +65,7 @@ namespace Hecton8.Inventory
         /// </summary>
         private int[] _stackCounts;
         private int[] _scavengeSimStackCounts;
+        private NativeArray<int> _anchorHashIds;
         // ══════════════════════════════════════════════════════════
         //  SAVE HELPERS (pre-allocated, reused)
         // ══════════════════════════════════════════════════════════
@@ -150,6 +154,9 @@ namespace Hecton8.Inventory
             _scavengeSimStackCounts = new int[columns * rows];
             // COLD ALLOC: ItemPlacement[columns * rows] — inventory placement snapshot buffer — owner: PlayerInventory
             _sortBuffer = new ItemPlacement[columns * rows];
+            // COLD ALLOC: NativeArray<int>[columns * rows] — anchor hash cache for zero-GC inventory queries — owner: PlayerInventory
+            _anchorHashIds = new NativeArray<int>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            RefreshAnchorHashCache();
         }
 
         private void OnEnable()
@@ -168,6 +175,12 @@ namespace Hecton8.Inventory
 
         private void OnDestroy()
         {
+            if (_anchorHashIds.IsCreated)
+            {
+                _anchorHashIds.Dispose(default(JobHandle));
+                _anchorHashIds = default;
+            }
+
             if (_instance == this)
                 _instance = null;
         }
@@ -296,6 +309,35 @@ namespace Hecton8.Inventory
             }
 
             return total;
+        }
+
+        internal bool TryFindFirstAnchorByHash(int itemHashId, out int anchorIndex)
+        {
+            anchorIndex = -1;
+            if (!_anchorHashIds.IsCreated || itemHashId == 0)
+                return false;
+
+            for (int i = 0; i < _anchorHashIds.Length; i++)
+            {
+                if (_anchorHashIds[i] != itemHashId)
+                    continue;
+
+                anchorIndex = i;
+                return true;
+            }
+
+            return false;
+        }
+
+        internal bool TryRemoveFirstMatchingItemByHash(int itemHashId)
+        {
+            if (!TryFindFirstAnchorByHash(itemHashId, out int anchorIndex) || _grid == null)
+                return false;
+
+            int cols = _grid.Columns;
+            int anchorX = anchorIndex % cols;
+            int anchorY = anchorIndex / cols;
+            return RemoveOneItem(anchorX, anchorY) != null;
         }
         /// <summary>
         /// Прибавляет вес напрямую (без прохода через RemoveItem).
@@ -943,7 +985,34 @@ namespace Hecton8.Inventory
         private int AnchorIndex(int x, int y) => y * _grid.Columns + x;
         private void NotifyInventoryChanged()
         {
+            RefreshAnchorHashCache();
             InventoryChanged?.Invoke();
+        }
+
+        private void RefreshAnchorHashCache()
+        {
+            if (!_anchorHashIds.IsCreated)
+                return;
+
+            for (int i = 0; i < _anchorHashIds.Length; i++)
+                _anchorHashIds[i] = 0;
+
+            int placementCount = GetPlacements(_sortBuffer);
+            for (int i = 0; i < placementCount; i++)
+            {
+                ItemPlacement placement = _sortBuffer[i];
+                int itemHashId = ComputeItemHash(placement.item);
+                if (itemHashId == 0)
+                    continue;
+
+                int anchorIndex = AnchorIndex(placement.x, placement.y);
+                _anchorHashIds[anchorIndex] = itemHashId;
+            }
+        }
+
+        private static int ComputeItemHash(ItemData item)
+        {
+            return item == null ? 0 : LocHash.Compute(item.PersistentId);
         }
 
         // ══════════════════════════════════════════════════════════

@@ -144,7 +144,10 @@ csharp
 // Applied per-axis independently for directional drag coefficients
 [MethodImpl(MethodImplOptions.AggressiveInlining)]
 private static float3 AnalyticalDrag(float3 v0, float3 k, float dt) {
-    float3 speed = new float3(math.abs(v0.x), math.abs(v0.y), math.abs(v0.z));
+    //[FORBID] Per-axis quadratic drag. Use the scalar magnitude:
+float speedMag = math.length(v0);
+float3 denom = 1f + k * speedMag * dt;
+return v0 / math.max(denom, 0.001f);
     float3 denom = 1f + k * speed * dt;
     return v0 / math.max(denom, 0.001f); // guard zero-divide
 }
@@ -228,7 +231,7 @@ bool TrySweepGatedMove(Rigidbody rb, CapsuleCollider cap, Vector3 delta) {
         new CapsulecastCommand(p1, p2, cap.radius, dir, dist + SKIN_WIDTH,
             PhysicsLayers.Static | PhysicsLayers.Terrain, QueryTriggerInteraction.Ignore);
 
-    JobHandle handle = CapsulecastCommand.ScheduleBatch(
+// If executing a single query and blocking immediately, use synchronous Physics.CapsuleCast().
         PhysicsBuffers.SweepCommands,
         PhysicsBuffers.SweepResults,
         1,
@@ -399,7 +402,7 @@ public struct PhysicsEvent {
 public static class PhysicsEventBus {
     private static readonly FixedCircularBuffer<PhysicsEvent> _queue
         = new FixedCircularBuffer<PhysicsEvent>(128);
-    public static void Post(PhysicsEvent e) => _queue.Enqueue(e);
+// Use Unity's NativeQueue<PhysicsEvent>.ParallelWriter for concurrent enqueuing.
     // Called from LateUpdate by subscriber systems
     public static bool Poll(out PhysicsEvent e) => _queue.TryDequeue(out e);
 }

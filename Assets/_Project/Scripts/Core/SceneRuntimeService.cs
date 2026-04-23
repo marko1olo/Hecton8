@@ -119,6 +119,9 @@ namespace Hecton8.Core
                 GlobalRegistry.Physics.ClearQueuedPackets();
             else
                 PhysicsApplySystem.ClearQueuedPacketsStatic();
+
+            if (GlobalRegistry.InteractionSignals != null)
+                GlobalRegistry.InteractionSignals.ClearQueuedSignals();
         }
     }
 }

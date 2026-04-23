@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using Hecton8.Core;
 using Hecton8.SaveSystem;
+using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
@@ -24,7 +25,6 @@ namespace Hecton8.SaveSystem
         internal const int RawPayloadCapacityBytes = 64 * 1024 * 1024;
         internal const int MaxCompressedPayloadBytes = 67378176;
 
-        private const int AupCellSizeMeters = 5000;
         private const long UnixEpochTicks = 621355968000000000L;
         private const int PayloadPrefixSizeBytes = 60;
         private const string Lz4DllName = "liblz4";
@@ -81,23 +81,12 @@ namespace Hecton8.SaveSystem
             public uint Reserved;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 36)]
-        private struct AupPosition
-        {
-            public long GridX;
-            public long GridY;
-            public long GridZ;
-            public float LocalX;
-            public float LocalY;
-            public float LocalZ;
-        }
-
         [StructLayout(LayoutKind.Sequential, Pack = 1, Size = PayloadPrefixSizeBytes)]
         private struct PayloadPrefix
         {
             public ulong TimestampUnixMs;
             public float PlayTimeSeconds;
-            public AupPosition PlayerPosition;
+            public AbsoluteUniversePosition PlayerPosition;
             public int SaveDataVersion;
             public uint SaveDataByteLength;
             public ushort SceneNameByteLength;
@@ -132,6 +121,7 @@ namespace Hecton8.SaveSystem
             string absolutePath,
             SaveMetadata metadata,
             SaveData data,
+            NativeArray<PersistentWorldItemRecord> persistentWorldItems,
             NativeArray<byte> rawBuffer,
             NativeArray<byte> compressedBuffer,
             out string error)
@@ -173,7 +163,10 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            int rawPayloadLength = PayloadPrefixSizeBytes + sceneBytes.Length + versionBytes.Length + saveBytes.Length;
+            int entityRecordSize = UnsafeUtility.SizeOf<PersistentWorldItemRecord>();
+            int entityCount = persistentWorldItems.IsCreated ? persistentWorldItems.Length : 0;
+            int entityBytesLength = entityCount * entityRecordSize;
+            int rawPayloadLength = PayloadPrefixSizeBytes + sceneBytes.Length + versionBytes.Length + saveBytes.Length + entityBytesLength;
             if (rawPayloadLength > rawBuffer.Length)
             {
                 error = $"Save payload ({rawPayloadLength} bytes) exceeded the {rawBuffer.Length} byte raw buffer ceiling.";
@@ -205,6 +198,14 @@ namespace Hecton8.SaveSystem
             payloadCursor += versionBytes.Length;
             CopyManagedBytesToUnmanaged(saveBytes, rawPtr + payloadCursor);
             payloadCursor += saveBytes.Length;
+            int entityOffsetInPayload = payloadCursor;
+
+            if (entityBytesLength > 0)
+            {
+                void* entitySourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(persistentWorldItems);
+                UnsafeUtility.MemCpy(rawPtr + payloadCursor, entitySourcePtr, entityBytesLength);
+                payloadCursor += entityBytesLength;
+            }
 
             uint payloadHash = Hash32(rawPtr, rawPayloadLength);
 
@@ -215,11 +216,11 @@ namespace Hecton8.SaveSystem
                 CompatMask = CurrentCompatMask,
                 Flags = FlagLz4Blocks,
                 TimestampUnixMs = timestampUnixMs,
-                DeltaCount = (uint)Mathf.Max(data.voxelDeltaPersistence.totalCellCount, 0),
-                EntityCount = 0u,
+                DeltaCount = 0u,
+                EntityCount = (uint)entityCount,
                 PlayerOffset = HeaderSize,
-                DeltaOffset = (uint)(HeaderSize + rawPayloadLength),
-                EntityOffset = (uint)(HeaderSize + rawPayloadLength),
+                DeltaOffset = (uint)(HeaderSize + entityOffsetInPayload),
+                EntityOffset = (uint)(HeaderSize + entityOffsetInPayload),
                 HashHeader32 = 0u,
                 HashPayload32 = payloadHash
             };
@@ -275,7 +276,7 @@ namespace Hecton8.SaveSystem
             metadata = null;
             detectedVersion = 0;
 
-            if (!TryReadPayload(absolutePath, rawBuffer, out SaveFileHeader header, out PayloadPrefix prefix, out byte* rawPtr, out string readError))
+            if (!TryReadPayload(absolutePath, rawBuffer, out SaveFileHeader header, out PayloadPrefix prefix, out byte* rawPtr, out _, out string readError))
             {
                 error = readError;
                 return false;
@@ -309,15 +310,17 @@ namespace Hecton8.SaveSystem
             string slotName,
             NativeArray<byte> rawBuffer,
             out SaveData data,
+            out PersistentWorldItemRecord[] persistentWorldItems,
             out SaveMetadata metadata,
             out int detectedVersion,
             out string error)
         {
             data = null;
+            persistentWorldItems = null;
             metadata = null;
             detectedVersion = 0;
 
-            if (!TryReadPayload(absolutePath, rawBuffer, out SaveFileHeader header, out PayloadPrefix prefix, out byte* rawPtr, out string readError))
+            if (!TryReadPayload(absolutePath, rawBuffer, out SaveFileHeader header, out PayloadPrefix prefix, out byte* rawPtr, out int rawPayloadLength, out string readError))
             {
                 error = readError;
                 return false;
@@ -331,7 +334,7 @@ namespace Hecton8.SaveSystem
                 return false;
 
             int saveDataLength = checked((int)prefix.SaveDataByteLength);
-            if (saveDataLength < 0 || cursor + saveDataLength > rawBuffer.Length)
+            if (saveDataLength < 0 || cursor + saveDataLength > rawPayloadLength)
             {
                 error = "Save payload byte range is invalid.";
                 return false;
@@ -345,6 +348,18 @@ namespace Hecton8.SaveSystem
             if (data == null)
             {
                 error = "Binary save payload deserialized to null.";
+                return false;
+            }
+
+            int entityDataStart = cursor + saveDataLength;
+            if (!TryReadPersistentWorldItems(
+                    rawPtr,
+                    rawPayloadLength,
+                    header,
+                    entityDataStart,
+                    out persistentWorldItems,
+                    out error))
+            {
                 return false;
             }
 
@@ -407,11 +422,13 @@ namespace Hecton8.SaveSystem
             out SaveFileHeader header,
             out PayloadPrefix prefix,
             out byte* rawPtr,
+            out int rawPayloadLength,
             out string error)
         {
             header = default;
             prefix = default;
             rawPtr = null;
+            rawPayloadLength = 0;
             error = string.Empty;
 
             if (string.IsNullOrEmpty(absolutePath) || !File.Exists(absolutePath))
@@ -461,7 +478,7 @@ namespace Hecton8.SaveSystem
                     return false;
                 }
 
-                int rawPayloadLength = Lz4BlockDecompress(filePtr + HeaderSize, compressedPayloadLength, rawPtr, rawBuffer.Length);
+                rawPayloadLength = Lz4BlockDecompress(filePtr + HeaderSize, compressedPayloadLength, rawPtr, rawBuffer.Length);
                 if (rawPayloadLength <= 0)
                 {
                     error = "LZ4 block decompression failed.";
@@ -489,10 +506,17 @@ namespace Hecton8.SaveSystem
                     return false;
                 }
 
-                int expectedPayloadBytes = metadataBytes + checked((int)prefix.SaveDataByteLength);
-                if (expectedPayloadBytes > rawPayloadLength)
+                int playerPayloadLength = metadataBytes + checked((int)prefix.SaveDataByteLength);
+                if (playerPayloadLength > rawPayloadLength)
                 {
                     error = "Serialized save data exceeds the decompressed payload length.";
+                    return false;
+                }
+
+                int entitySectionOffset = checked((int)header.EntityOffset) - HeaderSize;
+                if (entitySectionOffset < playerPayloadLength || entitySectionOffset > rawPayloadLength)
+                {
+                    error = "Entity payload offset exceeds the decompressed payload bounds.";
                     return false;
                 }
 
@@ -513,6 +537,55 @@ namespace Hecton8.SaveSystem
                 encryptionType = ES3.EncryptionType.None,
                 compressionType = ES3.CompressionType.None
             };
+        }
+
+        private static bool TryReadPersistentWorldItems(
+            byte* rawPtr,
+            int rawPayloadLength,
+            SaveFileHeader header,
+            int entityDataStart,
+            out PersistentWorldItemRecord[] persistentWorldItems,
+            out string error)
+        {
+            persistentWorldItems = null;
+            error = string.Empty;
+
+            int entityCount = checked((int)header.EntityCount);
+            if (entityCount <= 0)
+                return true;
+
+            int entityRecordSize = UnsafeUtility.SizeOf<PersistentWorldItemRecord>();
+            int entitySectionOffset = checked((int)header.EntityOffset) - HeaderSize;
+            if (entitySectionOffset != entityDataStart)
+            {
+                error = "Entity payload offset does not match the serialized player payload length.";
+                return false;
+            }
+
+            long entityBytesLong = (long)entityCount * entityRecordSize;
+            if (entityBytesLong > int.MaxValue)
+            {
+                error = "Entity payload length exceeds the supported range.";
+                return false;
+            }
+
+            int entityBytes = (int)entityBytesLong;
+            if (entitySectionOffset < 0 || entitySectionOffset + entityBytes > rawPayloadLength)
+            {
+                error = "Entity payload exceeds the decompressed payload bounds.";
+                return false;
+            }
+
+            persistentWorldItems = new PersistentWorldItemRecord[entityCount];
+            if (entityBytes == 0)
+                return true;
+
+            fixed (PersistentWorldItemRecord* destinationPtr = persistentWorldItems)
+            {
+                UnsafeUtility.MemCpy(destinationPtr, rawPtr + entitySectionOffset, entityBytes);
+            }
+
+            return true;
         }
 
         private static uint ComputeHeaderHash(ref SaveFileHeader header)
@@ -603,41 +676,15 @@ namespace Hecton8.SaveSystem
             return UnixEpochTicks + ((long)unixMilliseconds * TimeSpan.TicksPerMillisecond);
         }
 
-        private static AupPosition ToAup(Vector3 runtimePosition)
+        private static AbsoluteUniversePosition ToAup(Vector3 runtimePosition)
         {
-            Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimePosition);
-
-            float gx = Mathf.Floor(absolutePosition.x / AupCellSizeMeters);
-            float gy = Mathf.Floor(absolutePosition.y / AupCellSizeMeters);
-            float gz = Mathf.Floor(absolutePosition.z / AupCellSizeMeters);
-
-            long gridX = (long)gx;
-            long gridY = (long)gy;
-            long gridZ = (long)gz;
-
-            float originX = gridX * AupCellSizeMeters;
-            float originY = gridY * AupCellSizeMeters;
-            float originZ = gridZ * AupCellSizeMeters;
-
-            return new AupPosition
-            {
-                GridX = gridX,
-                GridY = gridY,
-                GridZ = gridZ,
-                LocalX = absolutePosition.x - originX,
-                LocalY = absolutePosition.y - originY,
-                LocalZ = absolutePosition.z - originZ
-            };
+            return AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
         }
 
-        private static Vector3 ToRuntimePosition(AupPosition position)
+        private static Vector3 ToRuntimePosition(AbsoluteUniversePosition position)
         {
-            Vector3 absolutePosition = new Vector3(
-                (position.GridX * AupCellSizeMeters) + position.LocalX,
-                (position.GridY * AupCellSizeMeters) + position.LocalY,
-                (position.GridZ * AupCellSizeMeters) + position.LocalZ);
-
-            return HectonFloatingOrigin.ToRuntimePosition(absolutePosition);
+            float3 runtimePosition = position.ToRuntimeFloat3();
+            return new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
         }
 
         private static bool TryReadUtf8String(

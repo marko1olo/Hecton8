@@ -1,4 +1,5 @@
 using UnityEngine;
+using Hecton8.Core;
 using Hecton8.Items;
 using Hecton.Localization;
 
@@ -148,8 +149,11 @@ namespace Hecton8.Gameplay
             if (_cooldown > 0f)
                 _cooldown = Mathf.Max(0f, _cooldown - deltaTime);
 
-            Hecton8.Input.InputManager input = Hecton8.Input.InputManager.Instance;
-            if (input != null && !input.IsSecondaryActionHeld)
+            IInputService inputService = GlobalRegistry.Input;
+            PlayerInputState inputState = inputService != null && inputService.IsPlayerInputEnabled
+                ? inputService.GetState()
+                : default;
+            if (!inputState.HasAction(PlayerInputAction.SecondaryFire))
                 _secondaryLatched = false;
         }
 

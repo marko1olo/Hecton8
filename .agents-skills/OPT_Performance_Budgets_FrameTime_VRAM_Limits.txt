@@ -176,7 +176,8 @@ Runtime authority law:
 
 ### 3.5 Render Resolution & Upscaling
 
-MINIMAL:  Render at 75% native → FSR2 Quality (1.5x)     → output native
+// [FORBID] Heavy temporal upscalers (FSR2/DLSS) on MX350.
+// Use FSR 1.0 (Spatial) OR Unity STP.
 LOW:      Render at 85% native → FSR2 Balanced (1.7x)    → output native
 MED:      Render at native     → FSR2 optional            → output native
 HIGH:     Render at native     → TAA                      → output native

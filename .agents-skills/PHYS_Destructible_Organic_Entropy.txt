@@ -70,7 +70,8 @@ struct ItemDropData  // 16 bytes
     half   qualityFactor         // 2B — 0.0–1.0, drives rarity roll
     float3 worldSpawnPos         // 12B — pre-computed at destruction moment
 }
-// Ring buffer: capacity = 256 entries. Write head advances mod 256.
+NativeArray<ItemDropData> DropBuffer; // Fixed array
+int WriteHead; // Advanced via Interlocked.Increment(ref WriteHead) & 255
 // Reader (InventorySystem) consumes tail. No mutex: single-producer single-consumer.
 // NativeQueue<ItemDropData> with Allocator.Persistent initialized at scene load.
 ```
@@ -221,7 +222,8 @@ For each active chunkData c:
 
     Phase 0→1 transition (t >= 3.0f):
         if !(c.stateFlags & CHUNK_NOCOLLIDE):
-            pooledRigidbodies[c.poolIndex].isKinematic = true
+// Burst job writes to NativeArray<DebrisStateResult>.
+// Main thread applies to Rigidbody components post-JobHandle.Complete()
             pooledRigidbodies[c.poolIndex].detectCollisions = false
             c.stateFlags |= CHUNK_NOCOLLIDE | CHUNK_SINKING
             // Record sinkStartY = rb.position.y at this moment (stored in scratch NativeArray)

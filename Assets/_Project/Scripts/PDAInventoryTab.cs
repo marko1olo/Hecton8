@@ -11,6 +11,7 @@ using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Modding;
+using Hecton8.World;
 using Hecton.Localization;
 using Hecton8.Core;
 using TMPro;
@@ -1408,33 +1409,47 @@ namespace Hecton8.UI
 
             PlayUISound(dropSound);
 
+            Transform dropOrigin = ResolveDropOrigin();
+            if (dropOrigin == null)
+            {
+                NotifyWarning("DROP BLOCKED - NO PLAYER VIEW ORIGIN");
+                return;
+            }
+
             ItemData dropped = playerInventory.RemoveOneItem(_selectedX, _selectedY);
             if (dropped == null) return;
 
-            HectonEventBus.Publish(new ItemDiscardedEvent(dropped, 1, ResolveDropOrigin()));
+            Vector3 spawnPos = dropOrigin.position
+                + dropOrigin.forward * 2.5f
+                + Vector3.down * 0.3f;
 
-            // Спавн в мир
-            if (dropped.worldPrefab != null)
+            bool dropCommitted = false;
+            PersistentWorldRegistry persistentWorldRegistry = PersistentWorldRegistry.Instance;
+            if (persistentWorldRegistry != null)
             {
-                Transform dropOrigin = ResolveDropOrigin();
-                if (dropOrigin == null)
+                dropCommitted = persistentWorldRegistry.TryRegisterDroppedItem(dropped, 1, spawnPos);
+                if (!dropCommitted)
                 {
-                    NotifyWarning("DROP BLOCKED - NO PLAYER VIEW ORIGIN");
+                    playerInventory.TryAddItem(dropped, 1);
+                    NotifyWarning("DROP BLOCKED - PERSISTENT REGISTRY REJECTED ITEM");
                     return;
                 }
-
-                ObjectPoolManager pool = ObjectPoolManager.Instance;
-                if (pool == null)
-                {
-                    NotifyWarning("DROP BLOCKED - OBJECT POOL UNAVAILABLE");
-                    return;
-                }
-                Vector3 spawnPos = dropOrigin.position
-                    + dropOrigin.forward * 2.5f
-                    + Vector3.down * 0.3f;
-
-                pool.Spawn(dropped.worldPrefab, spawnPos, Quaternion.identity);
             }
+
+            if (!dropCommitted)
+            {
+                if (dropped.worldPrefab != null)
+                {
+                    ObjectPoolManager pool = ObjectPoolManager.Instance;
+                    if (pool != null)
+                    {
+                        pool.Spawn(dropped.worldPrefab, spawnPos, Quaternion.identity);
+                        dropCommitted = true;
+                    }
+                }
+            }
+
+            HectonEventBus.Publish(new ItemDiscardedEvent(dropped, 1, dropOrigin));
 
             // Проверяем остался ли предмет на этой позиции
             ItemData remaining = playerInventory.Grid.GetCell(_selectedX, _selectedY);

@@ -6,6 +6,7 @@
 
 using System;
 using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 using Hecton8.Core;
 using Hecton8.World;
@@ -24,6 +25,17 @@ namespace Hecton8.Caves
     }
 
     /// <summary>
+    /// Runtime physics/collider bake gate for voxel chunk interaction safety.
+    /// </summary>
+    public enum VoxelBakeState : byte
+    {
+        Idle = 0,
+        Pending = 1,
+        Baking = 2,
+        Complete = 3
+    }
+
+    /// <summary>
     /// Simple component attached to generated cave volume GameObjects.
     /// Provides a way to identify and manage cave volumes in the scene.
     /// </summary>
@@ -37,8 +49,12 @@ namespace Hecton8.Caves
         private const int MaxCraterStampCount = 16;
         private const int MaxTerrainHoleHandleCount = 8;
         private const int MaxColliderChunkCount = 8;
+        private const int MaxPlasmaCutSteps = 24;
+        private const float MinPlasmaCutPower = 0.02f;
+        private const byte DefaultDeltaMaterialId = 0;
 
         private HectonVoxelEngine _engine;
+        private VoxelDeltaProcessor _deltaProcessor;
         private CaveNode[] _nodes = Array.Empty<CaveNode>();
         private CaveTunnel[] _tunnels = Array.Empty<CaveTunnel>();
         private CaveEntrance[] _entrances = Array.Empty<CaveEntrance>();
@@ -61,6 +77,9 @@ namespace Hecton8.Caves
         private Transform _colliderChunkRoot;
         private MeshCollider[] _colliderChunkColliders = Array.Empty<MeshCollider>();
         private Mesh[] _colliderChunkMeshes = Array.Empty<Mesh>();
+        private MeshRenderer _meshRenderer;
+        private MeshCollider _rootMeshCollider;
+        private VoxelBakeState _bakeState;
 
         /// <summary>Reference to the cave instance key for cleanup.</summary>
         public long caveKey;
@@ -149,6 +168,9 @@ namespace Hecton8.Caves
         /// <summary>Whether this pooled volume currently has enough data to rebuild itself.</summary>
         public bool HasRuntimeData => _runtimeDataReady;
 
+        /// <summary>Current bake gate state used for collider and interaction locking.</summary>
+        public VoxelBakeState BakeState => _bakeState;
+
         private static int ResolveDominantAxis(Vector3 normal)
         {
             Vector3 absNormal = new Vector3(Mathf.Abs(normal.x), Mathf.Abs(normal.y), Mathf.Abs(normal.z));
@@ -183,12 +205,14 @@ namespace Hecton8.Caves
         /// </summary>
         public void PrepareForReuse()
         {
+            _deltaProcessor?.UnregisterVolume(this);
             UnregisterTerrainHoles();
             ResetColliderChunks(false);
             caveKey = 0L;
             generationPosition = Vector3.zero;
             preset = null;
             _engine = null;
+            _deltaProcessor = null;
             _generationAbsoluteUniversePosition = Vector3.zero;
             _nodes = Array.Empty<CaveNode>();
             _tunnels = Array.Empty<CaveTunnel>();
@@ -208,6 +232,8 @@ namespace Hecton8.Caves
             _terrainHoleHandles = Array.Empty<int>();
             _terrainHoleHandleCount = 0;
             _runtimeStamp++;
+            CacheRuntimeComponents();
+            SetBakeState(VoxelBakeState.Idle);
 
             ToggleChildRoot(CaveDressingRootName, false);
             ToggleChildRoot(EntranceQualityRootName, false);
@@ -338,12 +364,15 @@ namespace Hecton8.Caves
                 if (collider == null)
                     continue;
 
-                if (i >= clampedActive && collider.gameObject.activeSelf)
-                    collider.gameObject.SetActive(false);
+                bool shouldBeActive = i < clampedActive;
+                if (collider.gameObject.activeSelf != shouldBeActive)
+                    collider.gameObject.SetActive(shouldBeActive);
             }
 
             if (_colliderChunkRoot != null)
                 _colliderChunkRoot.gameObject.SetActive(clampedActive > 0);
+
+            RefreshBakePresentation();
         }
 
         /// <summary>
@@ -367,6 +396,7 @@ namespace Hecton8.Caves
             bool buildCollider)
         {
             _engine = engine;
+            _deltaProcessor = engine != null ? engine.DeltaProcessor : null;
             _seed = seed;
             generationPosition = worldCenter;
             _generationAbsoluteUniversePosition = worldCenter + absoluteUniverseOffset;
@@ -433,6 +463,9 @@ namespace Hecton8.Caves
             _rebuildQueued = false;
             _rebuildRunning = false;
             _runtimeStamp++;
+            CacheRuntimeComponents();
+            SetBakeState(VoxelBakeState.Complete);
+            _deltaProcessor?.RegisterVolume(this);
         }
 
         /// <summary>
@@ -452,41 +485,15 @@ namespace Hecton8.Caves
             if (!_runtimeDataReady || radius <= 0f)
                 return;
 
-            float clampedRadius = Mathf.Max(_voxelSize * 1.25f, radius);
-            float blendRadius = Mathf.Max(_voxelSize, clampedRadius * 0.35f);
-            Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(pos);
-
-            for (int i = 0; i < _craterStampCount; i++)
+            if (_deltaProcessor != null)
             {
-                VoxelCraterStamp existing = _craterStamps[i];
-                float mergeDistance = existing.radius + clampedRadius * 0.35f;
-                if ((existing.position - absolutePosition).sqrMagnitude > mergeDistance * mergeDistance)
-                    continue;
-
-                existing.position = Vector3.Lerp(existing.position, absolutePosition, 0.5f);
-                existing.radius = Mathf.Max(existing.radius, clampedRadius);
-                existing.blendRadius = Mathf.Max(existing.blendRadius, blendRadius);
-                _craterStamps[i] = existing;
-                QueueRebuild();
+                SetBakeState(VoxelBakeState.Pending);
+                _deltaProcessor.ApplyImmediateCrater(this, pos, radius, DefaultDeltaMaterialId);
                 return;
             }
 
-            if (_craterStampCount >= MaxCraterStampCount)
-            {
-                for (int i = 1; i < _craterStampCount; i++)
-                    _craterStamps[i - 1] = _craterStamps[i];
-
-                _craterStampCount = MaxCraterStampCount - 1;
-            }
-
-            _craterStamps[_craterStampCount++] = new VoxelCraterStamp
-            {
-                position = absolutePosition,
-                radius = clampedRadius,
-                blendRadius = blendRadius
-            };
-
-            QueueRebuild();
+            Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(pos);
+            AppendCraterStamp(absolutePosition, radius, true);
         }
 
         /// <summary>
@@ -496,6 +503,129 @@ namespace Hecton8.Caves
         public void CarveAbyssalCrater(Vector3 pos, float radius)
         {
             CarveCrater(pos, radius);
+        }
+
+        /// <summary>
+        /// Marches a bounded DDA cut path through the runtime voxel volume and converts the traversed cells
+        /// into subtractive crater stamps owned by the authoritative rebuild pipeline.
+        /// </summary>
+        /// <param name="absoluteHitPoint">Absolute-universe entry point on the volume surface.</param>
+        /// <param name="direction">Runtime beam direction.</param>
+        /// <param name="normalizedPower">Normalized beam power [0..1].</param>
+        /// <param name="maxDistance">Maximum authored beam range.</param>
+        /// <returns>True when at least one voxel cell was converted into a crater stamp.</returns>
+        public bool ApplyPlasmaCutDda(
+            Vector3 absoluteHitPoint,
+            Vector3 direction,
+            float normalizedPower,
+            float maxDistance)
+        {
+            if (!_runtimeDataReady || _gridDimension <= 0 || _voxelSize <= 0f || _bakeState != VoxelBakeState.Complete)
+                return false;
+
+            if (!CaveRuntimeBoundsUtility.TryResolveLocalVolumeBounds(this, preset, out Bounds localBounds))
+                return false;
+
+            float clampedPower = Mathf.Clamp01(normalizedPower);
+            if (clampedPower < MinPlasmaCutPower)
+                return false;
+
+            Vector3 runtimeHitPoint = HectonFloatingOrigin.ToRuntimePosition(absoluteHitPoint);
+            Transform cachedTransform = transform;
+            Vector3 localDirection = cachedTransform.InverseTransformDirection(direction);
+            if (localDirection.sqrMagnitude < 0.0001f)
+                return false;
+
+            localDirection.Normalize();
+
+            Vector3 localStart = cachedTransform.InverseTransformPoint(runtimeHitPoint) + localDirection * (_voxelSize * 0.55f);
+            if (!localBounds.Contains(localStart))
+            {
+                localStart += localDirection * (_voxelSize * 0.55f);
+                if (!localBounds.Contains(localStart))
+                    return false;
+            }
+
+            Vector3 relative = localStart - localBounds.min;
+            int3 voxel = (int3)math.floor(new float3(relative.x, relative.y, relative.z) / _voxelSize);
+            if (!IsVoxelIndexInBounds(voxel))
+                return false;
+
+            int3 step = new int3(
+                ResolveStep(localDirection.x),
+                ResolveStep(localDirection.y),
+                ResolveStep(localDirection.z));
+            float3 start = new float3(localStart.x, localStart.y, localStart.z);
+            float3 dir = new float3(localDirection.x, localDirection.y, localDirection.z);
+            float3 tMax = new float3(
+                ResolveBoundaryDistance(localBounds.min.x, start.x, dir.x, voxel.x, step.x, _voxelSize),
+                ResolveBoundaryDistance(localBounds.min.y, start.y, dir.y, voxel.y, step.y, _voxelSize),
+                ResolveBoundaryDistance(localBounds.min.z, start.z, dir.z, voxel.z, step.z, _voxelSize));
+            float3 tDelta = new float3(
+                ResolveDeltaDistance(dir.x, _voxelSize),
+                ResolveDeltaDistance(dir.y, _voxelSize),
+                ResolveDeltaDistance(dir.z, _voxelSize));
+
+            float travel = 0f;
+            float maxTravel = Mathf.Max(_voxelSize, Mathf.Min(maxDistance, _voxelSize * MaxPlasmaCutSteps));
+            float remainingPower = clampedPower;
+            float stampRadius = Mathf.Max(_voxelSize * 0.6f, _voxelSize * Mathf.Lerp(0.75f, 1.1f, clampedPower));
+            Vector3 committedOffset = HectonFloatingOrigin.CurrentTotalOffset;
+            bool modified = false;
+
+            if (_deltaProcessor != null)
+                SetBakeState(VoxelBakeState.Pending);
+
+            for (int stepIndex = 0; stepIndex < MaxPlasmaCutSteps; stepIndex++)
+            {
+                if (!IsVoxelIndexInBounds(voxel) || remainingPower < MinPlasmaCutPower || travel > maxTravel)
+                    break;
+
+                Vector3 localCenter = localBounds.min + new Vector3(
+                    (voxel.x + 0.5f) * _voxelSize,
+                    (voxel.y + 0.5f) * _voxelSize,
+                    (voxel.z + 0.5f) * _voxelSize);
+                Vector3 worldCenter = cachedTransform.TransformPoint(localCenter);
+                Vector3 absoluteCenter = worldCenter + committedOffset;
+                if (_deltaProcessor != null)
+                {
+                    _deltaProcessor.ApplyImmediateAbsoluteCrater(this, absoluteCenter, stampRadius * remainingPower, DefaultDeltaMaterialId);
+                    modified = true;
+                }
+                else
+                {
+                    modified |= AppendCraterStamp(absoluteCenter, stampRadius * remainingPower, false);
+                }
+
+                float nextTravel;
+                int axis = ResolveMarchAxis(tMax, out nextTravel);
+                float segmentLength = Mathf.Max(_voxelSize * 0.25f, nextTravel - travel);
+                remainingPower *= Mathf.Exp(-segmentLength);
+                travel = nextTravel;
+                if (travel > maxTravel)
+                    break;
+
+                switch (axis)
+                {
+                    case 0:
+                        voxel.x += step.x;
+                        tMax.x += tDelta.x;
+                        break;
+                    case 1:
+                        voxel.y += step.y;
+                        tMax.y += tDelta.y;
+                        break;
+                    default:
+                        voxel.z += step.z;
+                        tMax.z += tDelta.z;
+                        break;
+                }
+            }
+
+            if (modified && _deltaProcessor == null)
+                QueueRebuild();
+
+            return modified;
         }
 
         /// <summary>
@@ -541,6 +671,14 @@ namespace Hecton8.Caves
             return child;
         }
 
+        internal void RequestDeltaRebuild()
+        {
+            if (!_runtimeDataReady)
+                return;
+
+            QueueRebuild();
+        }
+
         private void ToggleChildRoot(string childName, bool active)
         {
             if (string.IsNullOrEmpty(childName))
@@ -553,9 +691,62 @@ namespace Hecton8.Caves
             child.gameObject.SetActive(active);
         }
 
+        private void CacheRuntimeComponents()
+        {
+            if (_meshRenderer == null)
+                TryGetComponent(out _meshRenderer);
+
+            if (_rootMeshCollider == null)
+                TryGetComponent(out _rootMeshCollider);
+        }
+
+        private void SetBakeState(VoxelBakeState state)
+        {
+            if (_bakeState == state)
+                return;
+
+            _bakeState = state;
+            RefreshBakePresentation();
+        }
+
+        private void RefreshBakePresentation()
+        {
+            CacheRuntimeComponents();
+
+            bool interactionAllowed = _bakeState == VoxelBakeState.Complete;
+            if (_meshRenderer != null)
+            {
+                Material targetMaterial = null;
+                if (_engine != null && interactionAllowed)
+                    targetMaterial = _engine.voxelMaterial;
+                else if (_engine != null)
+                    targetMaterial = _engine.ResolvedVoxelBakeGhostMaterial != null
+                        ? _engine.ResolvedVoxelBakeGhostMaterial
+                        : _engine.voxelMaterial;
+
+                if (targetMaterial != null && _meshRenderer.sharedMaterial != targetMaterial)
+                    _meshRenderer.sharedMaterial = targetMaterial;
+            }
+
+            if (_rootMeshCollider != null)
+                _rootMeshCollider.enabled = interactionAllowed && _rootMeshCollider.sharedMesh != null;
+
+            for (int i = 0; i < _colliderChunkColliders.Length; i++)
+            {
+                MeshCollider collider = _colliderChunkColliders[i];
+                if (collider == null)
+                    continue;
+
+                collider.enabled = interactionAllowed && collider.sharedMesh != null && collider.gameObject.activeSelf;
+            }
+        }
+
         private void QueueRebuild()
         {
             _rebuildQueued = true;
+            if (_bakeState == VoxelBakeState.Complete || _bakeState == VoxelBakeState.Idle)
+                SetBakeState(VoxelBakeState.Pending);
+
             if (_rebuildRunning)
                 return;
 
@@ -573,16 +764,20 @@ namespace Hecton8.Caves
                 while (_rebuildQueued && MatchesRuntimeStamp(expectedRuntimeStamp))
                 {
                     _rebuildQueued = false;
+                    SetBakeState(VoxelBakeState.Baking);
                     HectonVoxelEngine engine = _engine != null ? _engine : HectonVoxelEngine.ActiveRuntimeInstance;
                     if (engine == null)
                         return;
 
                     if (!await engine.RebuildVolumeAsync(this, expectedRuntimeStamp))
                         return;
+
+                    SetBakeState(_rebuildQueued ? VoxelBakeState.Pending : VoxelBakeState.Complete);
                 }
             }
             catch (Exception ex)
             {
+                SetBakeState(VoxelBakeState.Pending);
                 Debug.LogError($"[HectonVoxelVolume] Crater rebuild failed on '{name}': {ex.Message}", this);
             }
             finally
@@ -618,6 +813,7 @@ namespace Hecton8.Caves
 
         private void OnDestroy()
         {
+            _deltaProcessor?.UnregisterVolume(this);
             UnregisterTerrainHoles();
             ResetColliderChunks(true);
             _runtimeStamp++;
@@ -633,6 +829,103 @@ namespace Hecton8.Caves
 #else
             Destroy(obj);
 #endif
+        }
+
+        private static int ResolveStep(float axis)
+        {
+            if (axis > 0.0001f)
+                return 1;
+
+            return axis < -0.0001f ? -1 : 0;
+        }
+
+        private static float ResolveBoundaryDistance(float min, float start, float direction, int voxelIndex, int step, float voxelSize)
+        {
+            if (step == 0 || Mathf.Abs(direction) < 0.0001f)
+                return float.PositiveInfinity;
+
+            float nextBoundary = min + ((step > 0 ? voxelIndex + 1 : voxelIndex) * voxelSize);
+            return (nextBoundary - start) / direction;
+        }
+
+        private static float ResolveDeltaDistance(float direction, float voxelSize)
+        {
+            if (Mathf.Abs(direction) < 0.0001f)
+                return float.PositiveInfinity;
+
+            return voxelSize / Mathf.Abs(direction);
+        }
+
+        private static int ResolveMarchAxis(float3 tMax, out float nextTravel)
+        {
+            if (tMax.x <= tMax.y && tMax.x <= tMax.z)
+            {
+                nextTravel = tMax.x;
+                return 0;
+            }
+
+            if (tMax.y <= tMax.z)
+            {
+                nextTravel = tMax.y;
+                return 1;
+            }
+
+            nextTravel = tMax.z;
+            return 2;
+        }
+
+        private bool IsVoxelIndexInBounds(int3 voxel)
+        {
+            return voxel.x >= 0 && voxel.x < _gridDimension &&
+                   voxel.y >= 0 && voxel.y < _gridDimension &&
+                   voxel.z >= 0 && voxel.z < _gridDimension;
+        }
+
+        private bool AppendCraterStamp(Vector3 absolutePosition, float radius, bool queueRebuild)
+        {
+            if (!_runtimeDataReady || radius <= 0f)
+                return false;
+
+            float clampedRadius = Mathf.Max(_voxelSize * 1.25f, radius);
+            float blendRadius = Mathf.Max(_voxelSize, clampedRadius * 0.35f);
+
+            for (int i = 0; i < _craterStampCount; i++)
+            {
+                VoxelCraterStamp existing = _craterStamps[i];
+                float mergeDistance = existing.radius + clampedRadius * 0.35f;
+                if ((existing.position - absolutePosition).sqrMagnitude > mergeDistance * mergeDistance)
+                    continue;
+
+                existing.position = Vector3.Lerp(existing.position, absolutePosition, 0.5f);
+                existing.radius = Mathf.Max(existing.radius, clampedRadius);
+                existing.blendRadius = Mathf.Max(existing.blendRadius, blendRadius);
+                _craterStamps[i] = existing;
+
+                if (queueRebuild)
+                    QueueRebuild();
+
+                return true;
+            }
+
+            if (_craterStampCount >= MaxCraterStampCount)
+            {
+                for (int i = 1; i < _craterStampCount; i++)
+                    _craterStamps[i - 1] = _craterStamps[i];
+
+                _craterStampCount = MaxCraterStampCount - 1;
+            }
+
+            _craterStamps[_craterStampCount++] = new VoxelCraterStamp
+            {
+                position = absolutePosition,
+                radius = clampedRadius,
+                blendRadius = blendRadius
+            };
+
+            if (queueRebuild)
+                QueueRebuild();
+
+            return true;
         }
     }
 }

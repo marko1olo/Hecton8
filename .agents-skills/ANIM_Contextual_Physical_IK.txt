@@ -1,0 +1,546 @@
+# ANIM_CONTEXTUAL_PHYSICAL_IK
+
+## I. EXECUTION_POLICY
+
+[RULE] All IK computations execute in Burst-compiled jobs
+[RULE] Zero dynamic allocation post-init; preallocate buffers for max concurrent characters
+[RULE] IK jobs batch across all entities (player + AI) single dispatch per frame
+[RULE] AnimationPlayableGraph direct manipulation via IAnimationJob; bypass Animator component
+[RULE] Async raycast execution; consume results frame N+1 with temporal smoothing
+[FORBID] LateUpdate IK application; must integrate into Animation pass
+[FORBID] Per-bone Transform hierarchy traversal; cache bone indices at spawn
+[FORBID] GetComponent calls in IK evaluation path
+
+## II. DATA_ARCHITECTURE
+
+### IK_Entity_Buffer (NativeArray<IKEntity>)
+```
+struct IKEntity {
+    float3 rootPos;
+    quaternion rootRot;
+    float3 comOffset;           // Center-of-mass local offset
+    uint16 leftFootBoneIdx;
+    uint16 rightFootBoneIdx;
+    uint16 leftHandBoneIdx;
+    uint16 rightHandBoneIdx;
+    uint16 hipBoneIdx;
+    float leftLegLength;        // Cached bone chain total length
+    float rightLegLength;
+    float leftArmLength;
+    float rightArmLength;
+    byte contextMask;           // Bit0=InNarrowTunnel, Bit1=UnevenTerrain, Bit2=Submerged
+    byte stateMask;             // Bit0=LeftFootActive, Bit1=RightFootActive, Bit2=HandBraceActive
+}
+```
+
+### IK_Target_Buffer (NativeArray<IKTarget>)
+```
+struct IKTarget {
+    float3 worldPos;
+    float3 normal;
+    float blend;                // 0-1 activation weight
+    float maxReach;             // Cached limb max extension
+    half deltaHeight;           // Terrain delta for COM shift
+}
+```
+
+### Raycast_Batch_Buffer (NativeArray<RaycastCommand>)
+```
+Per entity: 
+- 2x foot rays (origin=hip+footOffset, dir=down, distance=legLength*1.2)
+- 2x hand rays (origin=shoulder, dir=lateral+down, distance=armLength)
+- 1x clearance ray (origin=root, dir=forward, distance=1.5m for tunnel detect)
+Total: 5 rays/entity; stride = entityCount*5
+```
+
+### Double_Buffer_Results (NativeArray<RaycastHit>)
+```
+Ping-pong buffers for async consume
+Current frame writes to buffer[frameIdx&1]
+IK jobs read from buffer[(frameIdx-1)&1]
+```
+
+## III. ALGORITHMIC_MATH_TRUTH
+
+### A. BURST_RAYCAST_BATCH_JOB
+
+**Step 1: Command Population**
+```
+for entity in entities:
+    baseIdx = entity.idx * 5
+    
+    // Foot rays
+    leftOrigin = rootPos + rootRot * leftHipOffset
+    raycastCmds[baseIdx] = new RaycastCommand(leftOrigin, down, new QueryParameters(terrainMask, false, QueryTriggerInteraction.Ignore, false), legLength * 1.2)
+    rightOrigin = rootPos + rootRot * rightHipOffset
+    raycastCmds[baseIdx+1] = new RaycastCommand(rightOrigin, down, new QueryParameters(terrainMask, false, QueryTriggerInteraction.Ignore, false), legLength * 1.2)
+    
+    // Hand brace rays (lateral-down 45° when in narrow context)
+    if contextMask & 0x01:
+        leftHandDir = normalize(rootRot * float3(-0.7, -0.7, 0))
+        raycastCmds[baseIdx+2] = new RaycastCommand(leftShoulderPos, leftHandDir, new QueryParameters(wallMask, false, QueryTriggerInteraction.Ignore, false), armLength)
+        rightHandDir = normalize(rootRot * float3(0.7, -0.7, 0))
+        raycastCmds[baseIdx+3] = new RaycastCommand(rightShoulderPos, rightHandDir, new QueryParameters(wallMask, false, QueryTriggerInteraction.Ignore, false), armLength)
+    else:
+        raycastCmds[baseIdx+2].distance = 0  // Disable
+        raycastCmds[baseIdx+3].distance = 0
+    
+    // Tunnel clearance
+    raycastCmds[baseIdx+4] = new RaycastCommand(rootPos + float3(0,0.8,0), rootRot * forward, new QueryParameters(wallMask, false, QueryTriggerInteraction.Ignore, false), 1.5)
+```
+
+**Step 2: Batch Schedule**
+```
+JobHandle rayJob = RaycastCommand.ScheduleBatch(raycastCmds, raycastHits, 32, default(JobHandle))
+```
+
+### B. IK_TARGET_EXTRACTION_JOB
+
+**Dependencies:** Raycast completion
+**Execution:** Frame N+1 after raycast dispatch
+
+```
+for entity in entities:
+    baseIdx = entity.idx * 5
+    
+    // Left foot processing
+// Unmanaged bounds/hit check
+if (raycastHits[baseIdx+0].colliderInstanceID != 0 && raycastHits[baseIdx+0].distance > 0f)
+        targetPos = raycastHits[baseIdx+0].point
+        normal = raycastHits[baseIdx+0].normal
+        deltaHeight = targetPos.y - (rootPos.y - hipToFootDist)
+        
+        // Slope adherence: project foot forward along normal plane
+        tangent = normalize(cross(normal, rootRot * right))
+        slopedTarget = targetPos + tangent * footForwardBias
+        
+        ikTargets[entity.idx*4 + 0].worldPos = slopedTarget
+        ikTargets[entity.idx*4 + 0].normal = normal
+        ikTargets[entity.idx*4 + 0].blend = 1.0
+        ikTargets[entity.idx*4 + 0].deltaHeight = deltaHeight
+    else:
+        ikTargets[entity.idx*4 + 0].blend = 0  // Airborne/swimming
+    
+    // Right foot (mirror logic)
+    [... same as left ...]
+    
+    // Hand brace targets (only if tunnel detected)
+    if raycastHits[baseIdx+4].distance < 1.5:
+        contextMask |= 0x01  // Set tunnel bit
+        
+        if raycastHits[baseIdx+2].collider.IsValid():
+            wallPos = raycastHits[baseIdx+2].point
+            wallNormal = raycastHits[baseIdx+2].normal
+            // Push hand 8cm off wall
+            ikTargets[entity.idx*4 + 2].worldPos = wallPos + wallNormal * 0.08
+            ikTargets[entity.idx*4 + 2].blend = saturate((1.5 - clearance) / 0.5)  // Fade in when <1.5m
+    else:
+        contextMask &= ~0x01  // Clear tunnel bit
+        ikTargets[entity.idx*4 + 2].blend = 0
+```
+
+### C. TWO_BONE_IK_MATH
+
+**Input:** 
+- rootPos (hip/shoulder)
+- targetPos (foot/hand IK target)
+- polePos (knee/elbow hint direction)
+- upperLength (femur/humerus)
+- lowerLength (tibia/radius)
+
+**Output:**
+- middleJointPos (knee/elbow world position)
+- middleJointRot (knee/elbow rotation)
+
+**Algorithm:**
+```
+1. limbVector = targetPos - rootPos
+   limbDist = length(limbVector)
+   limbDir = limbVector / limbDist
+   
+2. maxReach = upperLength + lowerLength
+   if limbDist > maxReach - epsilon:
+       limbDist = maxReach - epsilon  // Clamp to prevent hyper-extension
+       targetPos = rootPos + limbDir * limbDist  // Pull target inward
+   
+3. // Law of cosines for joint angles
+   a = upperLength
+   b = lowerLength
+   c = limbDist
+   
+   upperAngle = acos(clamp((a² + c² - b²) / (2*a*c), -1, 1))
+   lowerAngle = acos(clamp((a² + b² - c²) / (2*a*b), -1, 1))
+   
+4. // Pole vector projection
+   toTarget = normalize(limbVector)
+   toPole = normalize(polePos - rootPos)
+   bendDir = normalize(toPole - toTarget * dot(toPole, toTarget))
+   
+5. // Middle joint position
+   upperDir = RotateTowards(toTarget, bendDir, upperAngle)
+   middleJointPos = rootPos + upperDir * upperLength
+   
+6. // Rotations
+   upperRot = LookRotation(upperDir, bendDir)
+   lowerDir = normalize(targetPos - middleJointPos)
+   lowerRot = LookRotation(lowerDir, bendDir)
+```
+
+**Fast RotateTowards (axis-angle):**
+```
+axis = normalize(cross(from, towards))
+angle = inputAngle
+return from * cos(angle) + cross(axis, from) * sin(angle) + axis * dot(axis, from) * (1 - cos(angle))
+```
+
+### D. CENTER_OF_MASS_SHIFT
+
+**Trigger:** When foot IK delta height > threshold (0.15m)
+
+**Math:**
+```
+maxDelta = max(leftFoot.deltaHeight, rightFoot.deltaHeight)
+
+if maxDelta > 0.15:
+    // Shift root COM opposite to higher foot
+    higherSide = (leftFoot.deltaHeight > rightFoot.deltaHeight) ? -1 : 1
+    lateralShift = higherSide * clamp(maxDelta * 0.4, 0, 0.25)  // Max 25cm shift
+    
+    // Forward lean to maintain balance
+    forwardLean = clamp(maxDelta * 0.3, 0, 0.15)
+    
+    comOffset.x = lerp(comOffset.x, lateralShift, deltaTime * 3.0)
+    comOffset.z = lerp(comOffset.z, forwardLean, deltaTime * 3.0)
+    
+    // Apply to root transform before IK solve
+    rootPos += rootRot * comOffset
+```
+
+**Vertical COM compression:**
+```
+// Crouch slightly when stepping up
+verticalCompress = -maxDelta * 0.2
+comOffset.y = lerp(comOffset.y, verticalCompress, deltaTime * 5.0)
+```
+
+### E. LIMB_OVER_EXTENSION_GUARD
+
+**Pre-IK Target Validation:**
+```
+for each limb:
+    toTarget = ikTarget.worldPos - limbRoot.worldPos
+    distSq = dot(toTarget, toTarget)
+    maxReachSq = (upperBone + lowerBone - safetyMargin)²
+    
+    if distSq > maxReachSq:
+        // Clamp target to reachable sphere
+        dist = sqrt(distSq)
+        maxReach = sqrt(maxReachSq)
+        clampedPos = limbRoot.worldPos + (toTarget / dist) * maxReach
+        
+        // Blend back with hysteresis to prevent jitter
+        ikTarget.worldPos = lerp(ikTarget.worldPos, clampedPos, 0.8)
+        ikTarget.blend *= 0.5  // Reduce IK influence when clamping
+```
+
+**Epsilon safety margin:**
+```
+safetyMargin = 0.02  // 2cm below full extension to prevent singularity
+```
+
+**NaN/Inf guard in IK solve:**
+```
+After every sqrt/division:
+    result = select(result, fallbackValue, isnan(result) | isinf(result))
+```
+
+## IV. ZERO_GC_PLAYABLE_GRAPH_INTEGRATION
+
+### Animation_Job_Structure
+
+**Custom IAnimationJob (Burst-compiled):**
+```
+struct IKApplyJob : IAnimationJob {
+    NativeArray<IKTarget> targets;
+    NativeArray<TransformStreamHandle> boneHandles;
+    int entityIndex;
+    
+    void ProcessRootMotion(AnimationStream stream) {}
+    
+    void ProcessAnimation(AnimationStream stream) {
+        // Direct bone manipulation via handles
+        leftFootHandle = boneHandles[entityIndex * 4 + 0];
+        rightFootHandle = boneHandles[entityIndex * 4 + 1];
+        
+        // Write world positions
+// [FORBID] World Space injection in local Animation Streams.
+float4x4 rootToWorld = stream.GetRootTransform();
+float4x4 worldToRoot = math.inverse(rootToWorld);
+float3 localTarget = math.transform(worldToRoot, targets.worldPos);
+leftFootHandle.SetLocalPosition(stream, localTarget);
+// Align the UP axis to the normal, preserving the character's forward toe orientation.
+quaternion alignRot = quaternion.AxisAngle(math.cross(math.up(), targets.normal), math.acos(math.clamp(math.dot(math.up(), targets.normal), -1f, 1f)));
+leftFootHandle.SetRotation(stream, math.mul(alignRot, currentFootRot));
+        
+        // Apply blend weights
+        weight = targets[entityIndex*4 + 0].blend;
+        // Stream internally handles blending with animation clip data
+    }
+}
+```
+
+### Playable_Graph_Setup
+
+**Init (once per character):**
+```
+1. Create AnimationPlayableGraph
+2. Create AnimationClipPlayable for base animation
+3. Create AnimationScriptPlayable wrapping IKApplyJob
+4. Connect: ClipPlayable -> ScriptPlayable -> Output
+5. Cache TransformStreamHandles for all IK bones (done in job initialization)
+```
+
+**Runtime (per frame):**
+```
+1. Dispatch raycast batch job
+2. Queue IKTargetExtractionJob with raycast dependency
+3. IKTargetExtractionJob completes, writes to targets buffer
+4. PlayableGraph.Evaluate() executes IKApplyJob reading targets buffer
+5. No GC, no Transform.position sets, direct bone stream writes
+```
+
+### TransformStreamHandle_Caching
+
+**Eliminates GetComponent overhead:**
+```
+At spawn:
+    for each bone in IK chain:
+        handles[boneIdx] = animator.BindStreamTransform(boneTransform)
+        
+In job:
+    // Direct access via handle index, zero pointer chasing
+    boneHandle.SetLocalPosition(stream, localPos)
+```
+
+## V. HARDWARE_SCALE
+
+### MX350_Base (Essential)
+
+- Single-pass IK solve per limb (no iterative refinement)
+- 2-bone IK only (no finger/toe chains)
+- Raycast batch size: 64 entities max
+- Update frequency: 30Hz for AI, 60Hz for player
+- Hand brace: Only when contextMask active (saves 40% rays)
+
+### High (Accurate)
+
+- Add knee/elbow pole vector smoothing (temporal filter 3-frame)
+- Foot rotation blending with terrain normal (quaternion slerp)
+- COM shift secondary motion (hip sway)
+- Update frequency: 60Hz all entities
+
+### Ultra (Visual_Overkill)
+
+- 3-bone IK chains (add ankle/wrist twist bones)
+- Toe IK for ground contact refinement
+- Dynamic foot slide prevention (velocity-aware target offsetting)
+- Muscle tension simulation (procedural upper-leg bulge on step-up)
+
+### Time_Slicing_Rules
+
+**CPU Budget: 2.5ms total animation budget (60fps)**
+```
+Priority tiers:
+1. Player IK: Always 60Hz (0.4ms)
+2. Visible AI <10m: 60Hz (1.2ms budget, time-slice if >6 entities)
+3. Visible AI 10-30m: 30Hz (0.6ms)
+4. Occluded AI: 15Hz (0.3ms)
+
+If frame budget exceeded:
+    Drop hand brace IK first (-30% cost)
+    Drop COM shift second (-15% cost)
+    Reduce raycast distance by 50% (-20% cost)
+```
+
+## VI. INTEGRATION_SAFE
+
+### Interface_Contract
+
+**IK System exposes:**
+```
+interface IIKSystem {
+    void RegisterEntity(EntityID id, Animator animator, IKProfile profile);
+    void UnregisterEntity(EntityID id);
+    void SetContextMask(EntityID id, byte mask);
+    void ForceUpdateImmediate(EntityID id);  // For cutscenes
+}
+```
+
+**Consumers (PlayerController, AILocomotion) only call:**
+```
+SetContextMask when environment changes (voxel query detects tunnel)
+```
+
+**Zero direct coupling to animation system**
+
+### Failure_Modes
+
+**RaycastHit.collider == null (airborne/swimming):**
+```
+Action: Blend IK weight to 0 over 0.2s
+Fallback: Use animation clip foot positions
+State: Set stateMask Bit for "IK_Inactive"
+```
+
+**Limb length cache mismatch (modular character parts):**
+```
+Detection: If computed IK distance > cached maxReach * 1.1
+Action: Recalculate bone chain length from TransformStreamHandles
+Frequency: Once per part swap, not per frame
+```
+
+**NaN in IK solve (degenerate triangle):**
+```
+Guard: All acos inputs clamped [-1, 1]
+Fallback: If NaN detected, use previous frame's joint position
+Log: Increment diagnostic counter (not Exception)
+Recovery: Gradually blend back to IK over 5 frames
+```
+
+**Speed > 40m/s (vehicle transition):**
+```
+Detection: velocity.sqrMagnitude > 1600
+Action: Disable ground IK, enable kinematic mode
+Reason: Raycasts can't keep up, physics stability at risk
+Re-enable: When speed < 35m/s for 0.5s (hysteresis)
+```
+
+**Depth > 4km (extreme pressure zones):**
+```
+Animation override: Force "compressed posture" clip
+IK disable: COM shift disabled (character locked to swim animation)
+Reason: Art direction—body should look constrained
+```
+
+**Raycast batch overflow (>64 entities):**
+```
+Prevention: Entity limit enforced at registration
+Handling: Reject RegisterEntity calls, return error code
+Alternative: Spatial hash culling to keep only closest 64 active
+```
+
+### Edge_Case_Epsilon_Values
+
+```
+MIN_IK_BLEND = 0.01          // Below this, skip bone writes
+MAX_DELTA_HEIGHT = 0.8       // Clamp terrain steps to prevent over-shift
+EXTENSION_SAFETY = 0.98      // Max reach multiplier (2% safety margin)
+ROTATION_EPSILON = 0.001     // Quaternion near-identity threshold
+VELOCITY_DEADZONE = 0.05     // Ignore micro-movements for COM shift
+```
+
+## VII. SENIOR_HACKS_OPTIMIZATIONS
+
+### Fast_Inverse_Sqrt (for normalization)
+
+```
+Use math.rsqrt(x) instead of 1.0/sqrt(x)
+Burst auto-vectorizes to RSQRTPS on x86
+Error: <0.2% at distances >0.1m (acceptable for IK)
+```
+
+### SIMD_Batch_Normalization
+
+```
+Process 4 limb vectors simultaneously:
+float4x3 limbVectors = ...
+float4 lengthsSq = limbVectors.c0*limbVectors.c0 + limbVectors.c1*limbVectors.c1 + limbVectors.c2*limbVectors.c2
+float4 invLengths = rsqrt(lengthsSq)
+limbVectors.c0 *= invLengths
+limbVectors.c1 *= invLengths
+limbVectors.c2 *= invLengths
+```
+
+### Quaternion_LookRotation_Approximation
+
+**Standard quaternion.LookRotation is expensive**
+**Cheap alternative for non-critical rotations (hands):**
+```
+forward = normalize(targetDir)
+right = normalize(cross(float3(0,1,0), forward))
+up = cross(forward, right)
+return quaternion(float3x3(right, up, forward))
+
+Cost: 60% faster, error <2° for IK blending
+```
+
+### Temporal_Coherence_Exploitation
+
+**IK targets don't teleport frame-to-frame**
+```
+Store previous frame target positions
+If distance(prevTarget, newTarget) < 0.05m:
+    Reuse previous IK solution's joint angles as seed
+    Reduces iteration count in complex IK solvers
+```
+
+### Raycast_Early_Exit_Optimization
+
+```
+In tunnel detection ray:
+    Use queryTriggerInteraction = Ignore
+    Use maxDistance = 1.5 exactly (not 1.51)
+    Reason: Driver can early-exit BVH traversal at exact distance
+    Saves ~18% raycast cost vs overshooting
+```
+
+### Bone_Handle_Index_Packing
+
+**Instead of storing 4 separate handle indices per entity:**
+```
+Pack into single uint64:
+    Bits 0-15:  leftFootIdx
+    Bits 16-31: rightFootIdx
+    Bits 32-47: leftHandIdx
+    Bits 48-63: rightHandIdx
+
+Extract: (packedHandles >> (limbType * 16)) & 0xFFFF
+Benefit: Cache-friendly, single load for all handles
+```
+
+### Double_Buffered_Result_Compression
+
+**RaycastHit is 56 bytes; only need 20 bytes for IK**
+```
+struct CompressedHit {
+    half3 point;      // 6 bytes (sufficient precision at <100m range)
+    half3 normal;     // 6 bytes
+    half distance;    // 2 bytes
+    ushort colliderID; // 2 bytes (for validity check)
+}
+
+Compress raycast results before storing in result buffer
+Saves 64% memory bandwidth on read
+```
+
+### Predictive_IK_Target_Placement
+
+**Use velocity to predict foot placement 1 frame ahead:**
+```
+predictedPos = currentPos + velocity * deltaTime
+Launch raycast from predictedPos instead of currentPos
+Result: IK targets "lead" motion, smoother foot plants
+Cost: Nearly zero (just vector math before raycast)
+```
+
+### Context_Mask_Spatial_Caching
+
+**Tunnel detection is expensive (forward raycast)**
+```
+Cache result in 4x4x4m voxel grid
+Only re-raycast when entity crosses voxel boundary
+Lookup: O(1) via position hash
+Invalidation: When voxel geometry changes
+Saves: 80% of tunnel detection raycasts
+```
+```

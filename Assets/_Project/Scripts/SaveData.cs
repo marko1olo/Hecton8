@@ -20,6 +20,7 @@
 
 using System;
 using System.Collections.Generic;
+using Hecton8.Narrative;
 using UnityEngine;
 
 namespace Hecton8.SaveSystem
@@ -43,7 +44,7 @@ namespace Hecton8.SaveSystem
         public float totalPlayTime;
 
         /// <summary>Текущая версия формата. Используется для миграции.</summary>
-        public const int CurrentVersion = 37; // v37: voxel delta persistence snapshot added for carved voxel chunks
+        public const int CurrentVersion = 38; // v38: packed industrial lore unlock bit words added for the zero-GC PDA archive
 
         // ─────────────────────── DTO Sections ────────────────────
 
@@ -94,6 +95,9 @@ namespace Hecton8.SaveSystem
 
         /// <summary>Список ID обнаруженных аудиодневников. v4.0 LORE</summary>
         public List<string> audioLogDiscoveredIds = new List<string>();
+
+        /// <summary>Packed industrial-lore discovery words for the fixed 50-record archive bank.</summary>
+        public long[] industrialLoreUnlockWords;
 
         /// <summary>Активные квесты. v4.0 QUEST</summary>
         public List<string> questActiveIds = new List<string>();
@@ -215,6 +219,8 @@ namespace Hecton8.SaveSystem
                 narrativeDiscoveryIds = new string[MaxNarrativeDiscoveries],
                 narrativeDepthTier = 0,
                 audioLogDiscoveredIds = new List<string>(),
+                // COLD ALLOC: long[IndustrialLoreBitMask.WordCount] — packed industrial lore discovery persistence — owner: SaveData
+                industrialLoreUnlockWords = new long[IndustrialLoreBitMask.WordCount],
                 questActiveIds = new List<string>(),
                 questCompletedIds = new List<string>(),
                 atlasSignalDetected = false,

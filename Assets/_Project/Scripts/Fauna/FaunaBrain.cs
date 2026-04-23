@@ -16,7 +16,7 @@ namespace Hecton8.AI
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
-    public partial class FaunaBrain : MonoBehaviour, ITickable, IFixedTickable, ISlowTickable, IPoolable, ISerializationCallbackReceiver
+    public partial class FaunaBrain : MonoBehaviour, IUpdatable, ITickable, IFixedTickable, ISlowTickable, IPoolable, ISerializationCallbackReceiver
     {
         /// <summary>
         /// Global state definition for all fauna.
@@ -68,11 +68,16 @@ namespace Hecton8.AI
         private Rigidbody _rb;
         private Animator _animator;
         private bool _isDead;
-        private bool _registered;
+        private bool _dispatcherRegistered;
         private int _spatialHandle;
+        private readonly CreatureUtilityBrain _utilityBrain = new CreatureUtilityBrain();
         
         // --- Animator Hashes (Prime Directive #18) ---
         private static readonly int _HashSwimSpeed = Animator.StringToHash("SwimSpeed");
+        private const float SteeringTickIntervalSeconds = 0.02f;
+        private const float SlowTickIntervalSeconds = 0.5f;
+        private const int MaxSteeringTicksPerDispatcherTick = 4;
+        private const int MaxSlowTicksPerDispatcherTick = 2;
         private const float AmbientCurrentInfluence = 0.22f;
         private const float AmbientCurrentMaxVelocity = 3.8f;
         private const float AmbientCurrentCullDistance = 100f;
@@ -97,6 +102,8 @@ namespace Hecton8.AI
         public UnityEngine.Events.UnityEvent OnPanicTriggered;
 
         private int _stasisFrameCount;
+        private float _steeringTickAccumulator;
+        private float _slowTickAccumulator;
 
         // ══════════════════════════════════════════════════════════
         //  SERIALIZATION MIGRATION (Option B Data Preservation)
@@ -162,35 +169,41 @@ namespace Hecton8.AI
             _steeringEngine.Init(_rb, transform, _speciesProfile);
             _sensorSuite.Init(transform, _speciesProfile);
             _stateMachine.Init(transform, _speciesProfile);
+            _utilityBrain.Initialize(transform.position, _speciesProfile, _archetype);
             
             _stateMachine.OnAttackPerform += HandleAttackPerform;
         }
 
         private void OnEnable()
         {
-            if (GameTickManager.Instance != null && !_registered)
+            if (!Application.isPlaying)
+                return;
+
+            SystemDispatcher.EnsureRuntimeInstance();
+            if (!_dispatcherRegistered)
             {
-                GameTickManager.Instance.Register((ITickable)this);
-                GameTickManager.Instance.Register((IFixedTickable)this);
-                GameTickManager.Instance.Register((ISlowTickable)this);
-                _registered = true;
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+                _dispatcherRegistered = true;
             }
 
             RegisterSpatialHandle();
+            ResetDispatcherCadence();
         }
 
         private void OnDisable()
         {
-            if (GameTickManager.Instance != null && _registered)
+            if (!Application.isPlaying)
+                return;
+
+            if (_dispatcherRegistered)
             {
-                GameTickManager.Instance.Unregister((ITickable)this);
-                GameTickManager.Instance.Unregister((IFixedTickable)this);
-                GameTickManager.Instance.Unregister((ISlowTickable)this);
-                _registered = false;
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _dispatcherRegistered = false;
             }
 
             ClearInfectionHazardRegistration();
             UnregisterSpatialHandle();
+            ResetDispatcherCadence();
         }
 
         private void OnDestroy()
@@ -198,6 +211,8 @@ namespace Hecton8.AI
             ClearInfectionHazardRegistration();
             if (_stateMachine != null)
                 _stateMachine.OnAttackPerform -= HandleAttackPerform;
+
+            _utilityBrain.Dispose();
         }
 
         public void OnSpawn()
@@ -208,8 +223,10 @@ namespace Hecton8.AI
             SetInfectedState(false, 0f);
             _currentHealth = _maxHealth;
             _stateMachine.Init(transform, _speciesProfile);
+            _utilityBrain.ResetRuntimeState(transform.position);
             RefreshRuntimeEcosystemState();
             RegisterSpatialHandle();
+            ResetDispatcherCadence();
         }
 
         public void OnDespawn()
@@ -220,8 +237,10 @@ namespace Hecton8.AI
             SetInfectedState(false, 0f);
             _rb.linearVelocity = Vector3.zero;
             _rb.angularVelocity = Vector3.zero;
+            _utilityBrain.ResetRuntimeState(transform.position);
             ClearInfectionHazardRegistration();
             UnregisterSpatialHandle();
+            ResetDispatcherCadence();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -229,6 +248,9 @@ namespace Hecton8.AI
         // ══════════════════════════════════════════════════════════
         public void Tick(float dt)
         {
+            if (dt <= 0f)
+                return;
+
             // [REQ] Frustum-based Brain LOD (CPU Salvage)
             // If the player isn't looking, we drop update frequency to ~1Hz (once every 30 frames)
             bool isVisible = _renderer != null && _renderer.isVisible;
@@ -236,7 +258,12 @@ namespace Hecton8.AI
             if (!isVisible)
             {
                 _stasisFrameCount++;
-                if (_stasisFrameCount < 30) return; 
+                if (_stasisFrameCount < 30)
+                {
+                    AdvanceDispatcherCadence(dt);
+                    return;
+                }
+
                 _stasisFrameCount = 0;
             }
             else
@@ -251,11 +278,35 @@ namespace Hecton8.AI
             _sensorSuite.Tick(dt, _rb.linearVelocity);
             if (_sensorSuite.lodDisabled) _lodDisabled = true; 
 
-            if (_lodDisabled || _sensorSuite.isSleeping) return;
+            if (_lodDisabled || _sensorSuite.isSleeping)
+            {
+                AdvanceDispatcherCadence(dt);
+                return;
+            }
 
             AIState oldState = _currentStateCache;
-            _cachedDesiredDirection = _stateMachine.EvaluateAndGetDirection(dt, _sensorSuite, isAggressive, canFlee, HealthNormalized, transform.position);
-            _currentStateCache = _stateMachine.currentState;
+            Vector3 selfPosition = transform.position;
+            if (TryEvaluateUtilityPredatorBrain(dt, selfPosition, out CreatureUtilityEvaluation utilityEvaluation, out Transform attackTarget))
+            {
+                _cachedDesiredDirection = utilityEvaluation.DesiredDirection;
+                _currentStateCache = utilityEvaluation.LegacyState;
+                _stateMachine.currentState = utilityEvaluation.LegacyState;
+                _stateMachine.currentForceMultiplier = utilityEvaluation.ForceMultiplier;
+                _stateMachine.currentSpeedMultiplier = utilityEvaluation.SpeedMultiplier;
+                _stateMachine.currentTurnMultiplier = utilityEvaluation.TurnMultiplier;
+
+                if (utilityEvaluation.ShouldAttack && attackTarget != null)
+                {
+                    HandleAttackPerform(attackTarget);
+                    float attackCooldown = _speciesProfile != null ? _speciesProfile.attackCooldown : 1f;
+                    _utilityBrain.NotifyAttackPerformed(Time.time, attackCooldown);
+                }
+            }
+            else
+            {
+                _cachedDesiredDirection = _stateMachine.EvaluateAndGetDirection(dt, _sensorSuite, isAggressive, canFlee, HealthNormalized, selfPosition);
+                _currentStateCache = _stateMachine.currentState;
+            }
 
             if (_currentStateCache != oldState)
             {
@@ -280,6 +331,7 @@ namespace Hecton8.AI
 
             // [REQ] Procedural Eye Tracking (The "Stare")
             UpdateEyeTracking(dt);
+            AdvanceDispatcherCadence(dt);
         }
 
         private void UpdateEyeTracking(float dt)
@@ -315,6 +367,41 @@ namespace Hecton8.AI
             LookDirection = Vector3.Slerp(LookDirection, transform.forward, 5f * dt);
         }
 
+        private bool TryEvaluateUtilityPredatorBrain(
+            float dt,
+            Vector3 selfPosition,
+            out CreatureUtilityEvaluation evaluation,
+            out Transform attackTarget)
+        {
+            if (!_utilityBrain.IsActivePredator)
+            {
+                evaluation = default;
+                attackTarget = null;
+                return false;
+            }
+
+            bool hasPerceivedPlayerPosition = _sensorSuite.TryGetPerceivedPlayerPosition(out Vector3 perceivedPlayerPosition);
+            bool hasDirectPlayerTransform = _sensorSuite.TryGetDirectPlayerTransform(out Transform directPlayerTransform);
+            float fearPressure01 = _sensorSuite.isThreatened ? 0.35f : 0f;
+            if (_sensorSuite.currentThreat != null)
+                fearPressure01 += 0.2f;
+
+            CreatureUtilityContext context = new CreatureUtilityContext(
+                selfPosition,
+                transform.forward,
+                HealthNormalized,
+                canFlee,
+                _sensorSuite.hasVisualPlayerContact,
+                hasPerceivedPlayerPosition,
+                perceivedPlayerPosition,
+                _sensorSuite.distSqrToPlayer,
+                _speciesProfile != null ? _speciesProfile.attackRadius : 3f,
+                Mathf.Clamp01(fearPressure01));
+            evaluation = _utilityBrain.Evaluate(dt, Time.time, in context);
+            attackTarget = hasDirectPlayerTransform ? directPlayerTransform : null;
+            return true;
+        }
+
         public void FixedTick(float fdt)
         {
             if (_spatialHandle != 0)
@@ -343,6 +430,52 @@ namespace Hecton8.AI
         public void SlowTick()
         {
             RefreshRuntimeEcosystemState();
+        }
+
+        private void AdvanceDispatcherCadence(float dt)
+        {
+            AdvanceSlowTickCadence(dt);
+            AdvanceSteeringTickCadence(dt);
+        }
+
+        private void AdvanceSlowTickCadence(float dt)
+        {
+            _slowTickAccumulator += dt;
+
+            int iterationCount = 0;
+            while (_slowTickAccumulator >= SlowTickIntervalSeconds &&
+                   iterationCount < MaxSlowTicksPerDispatcherTick)
+            {
+                _slowTickAccumulator -= SlowTickIntervalSeconds;
+                SlowTick();
+                iterationCount++;
+            }
+
+            if (_slowTickAccumulator > SlowTickIntervalSeconds)
+                _slowTickAccumulator = SlowTickIntervalSeconds;
+        }
+
+        private void AdvanceSteeringTickCadence(float dt)
+        {
+            _steeringTickAccumulator += dt;
+
+            int iterationCount = 0;
+            while (_steeringTickAccumulator >= SteeringTickIntervalSeconds &&
+                   iterationCount < MaxSteeringTicksPerDispatcherTick)
+            {
+                _steeringTickAccumulator -= SteeringTickIntervalSeconds;
+                FixedTick(SteeringTickIntervalSeconds);
+                iterationCount++;
+            }
+
+            if (_steeringTickAccumulator > SteeringTickIntervalSeconds)
+                _steeringTickAccumulator = SteeringTickIntervalSeconds;
+        }
+
+        private void ResetDispatcherCadence()
+        {
+            _steeringTickAccumulator = 0f;
+            _slowTickAccumulator = 0f;
         }
 
         private void RegisterSpatialHandle()
@@ -397,6 +530,7 @@ namespace Hecton8.AI
                 return;
 
             _sensorSuite.ReceivePlayerNoiseSignal(signal);
+            _utilityBrain.RecordAuditoryStimulus(signal.Position, Time.time);
         }
 
         private void HandleAttackPerform(Transform target)
@@ -531,6 +665,14 @@ namespace Hecton8.AI
         public void Provoke(Vector3 threatPosition)
         {
             if (_isDead) return;
+
+            if (_utilityBrain.IsActivePredator)
+            {
+                _utilityBrain.ForceRetreat(threatPosition, Time.time, 8f);
+                _stateMachine.currentState = AIState.Retreat;
+                return;
+            }
+
             _stateMachine.ForceRetreat(threatPosition, 8.0f); // Default 8s retreat
         }
 

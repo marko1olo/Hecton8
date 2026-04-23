@@ -94,11 +94,14 @@ Population: Bake at AssetPostprocessor stage. No runtime SO reads.
 
 instanceUID generation:
   entityCounter: static uint64 — atomic increment per session
-  timestamp: uint64 = UnixMilliseconds() & 0xFFFFFFFFFF   // 40-bit mask
+// [FORBID] Millisecond-based UIDs for high-speed physics objects.
+// You MUST use a monotonic atomic counter: 
+uid = Interlocked.Increment(ref globalCounter);
   entityID:  uint64 = Interlocked.Increment(ref entityCounter) & 0xFFFFFF  // 24-bit mask
   uid = (entityID << 40) | timestamp
   collapse to uint32 via FNV-1a fold:
-    fold = (uint)(uid ^ (uid >> 32))
+// [FORBID] 32-bit collapse. Retain full 64-bit integrity.
+instanceUID : ulong = (entityID << 40) | timestamp;
 
 Collision probability at 10K items/session: < 2^-18. Acceptable. Use uint32 form as instanceUID.
 
@@ -216,13 +219,15 @@ PRESSURE_CHECK(ItemData item, float ambientPressure, float ambientTemp):
 INVENTORY_SORT(NativeArray<ItemData> items, NativeArray<uint> sortKeys, int count):
   // Rebuild sortKeys pass:
   for i in [0, count):
-    cat    = ItemTemplateRegistry.Get(items[i].hashID).categoryMask & 0xF
-    rar    = (items[i].flags >> 12) & 0xF
+// [FORBID] Bitmasks in sort keys. 
+// Define a mutually exclusive sequential 'byte CategoryID' and pack that into the sort key.
     id     = items[i].hashID & 0xFFFF
     sortKeys[i] = (cat << 20) | (rar << 16) | id
 
   // Native Burst sort on contiguous key/value buffers:
-  NativeSortExtension.Sort(sortKeys, items)
+  // [FORBID] Fictional API calls. You MUST create a single NativeArray of a packed struct and sort it.
+struct SortEntry { public uint key; public ItemData item; }
+// NativeSortExtension.Sort(sortEntries);
 
 Schedule as Burst job over contiguous key/value buffers. Off main-thread. No GC.
 
@@ -292,8 +297,9 @@ DROP_OVERFLOW(ItemData item, float3 playerPos, WorldStateManager* wsm):
 
 SCATTER_OFFSET():
   // Deterministic random offset from instanceUID:
-  seed  = item.instanceUID ^ 0xDEADBEEF
-  seed  = (seed ^ (seed >> 16)) * 0x45D9F3B
+// [FORBID] Implicit size casting in Burst. Use 64-bit literal suffixes (UL):
+ulong seed = item.instanceUID ^ 0xDEADBEEFUL;
+seed = (seed ^ (seed >> 16)) * 0x45D9F3BUL;
   x     = ((seed & 0xFF) / 255.0f - 0.5f) * 0.8f
   z     = (((seed >> 8) & 0xFF) / 255.0f - 0.5f) * 0.8f
   return float3(x, 0.05f, z)

@@ -480,6 +480,7 @@ public struct VoxelDensityJob : IJobParallelFor
     [ReadOnly] public NativeArray<CaveEntrance> caveEntrances;
     [ReadOnly] public NativeArray<CaveStructure> caveStructures;
     [ReadOnly] public NativeArray<VoxelCraterStamp> craterStamps;
+    [ReadOnly] public NativeParallelHashMap<int3, half> modifiedCells;
     [ReadOnly] public NativeArray<int> nodeBucketOffsets;
     [ReadOnly] public NativeArray<int> nodeBucketIndices;
     [ReadOnly] public NativeArray<int> tunnelBucketOffsets;
@@ -570,11 +571,28 @@ public struct VoxelDensityJob : IJobParallelFor
             finalDensityValue = EvaluateCraterModifiers(wp, finalDensityValue);
         }
 
+        if (modifiedCells.IsCreated)
+        {
+            int3 absoluteCell = ResolveAbsoluteCell(wp + absoluteNoiseOffset);
+            if (modifiedCells.TryGetValue(absoluteCell, out half storedDensity))
+            {
+                float deltaDensity = (float)storedDensity;
+                smoothDensityValue = math.min(smoothDensityValue, deltaDensity);
+                finalDensityValue = math.min(finalDensityValue, deltaDensity);
+            }
+        }
+
         if (!structureOnlyMode)
         {
             smoothDensityValue = ApplyEdgeSeal(wp, smoothDensityValue);
             finalDensityValue = ApplyEdgeSeal(wp, finalDensityValue);
         }
+    }
+
+    int3 ResolveAbsoluteCell(float3 absolutePosition)
+    {
+        float inverseStep = 1f / math.max(voxelStep, 0.0001f);
+        return (int3)math.floor(absolutePosition * inverseStep);
     }
 
     float SampleTerrainHeight(float2 worldXZ)
@@ -2198,6 +2216,8 @@ public struct VoxelSpawnPointJob : IJobParallelFor
 
 public class HectonVoxelEngine : MonoBehaviour
 {
+    private const string DefaultVoxelBakeGhostShaderName = "Hecton8/Environment/Hecton_VoxelBakeGhost";
+
     // â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
     // â•‘           INSPECTOR SETTINGS                  â•‘
     // â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -2223,6 +2243,7 @@ public class HectonVoxelEngine : MonoBehaviour
 
     [Header("â•â•â• RENDERING â•â•â•")]
     public Material voxelMaterial;
+    public Material voxelBakeGhostMaterial;
 
     [Header("â•â•â• REFERENCES â•â•â•")]
     [Tooltip("Bridge to MapMagic terrain for height sampling.")]
@@ -2265,6 +2286,11 @@ public class HectonVoxelEngine : MonoBehaviour
     bool _registeredLiveEngine;
     bool _teardownStreamingScratchRequested;
     VoxelStreamingScratchSlot[] _streamingScratchSlots;
+    VoxelDeltaProcessor _deltaProcessor;
+    Material _runtimeVoxelBakeGhostMaterial;
+
+    internal VoxelDeltaProcessor DeltaProcessor => _deltaProcessor;
+    internal Material ResolvedVoxelBakeGhostMaterial => voxelBakeGhostMaterial != null ? voxelBakeGhostMaterial : _runtimeVoxelBakeGhostMaterial;
 
     sealed class VoxelStreamingScratchSlot
     {
@@ -2360,6 +2386,7 @@ public class HectonVoxelEngine : MonoBehaviour
         public NativeArray<CaveEntrance> Entrances;
         public NativeArray<CaveStructure> Structures;
         public NativeArray<VoxelCraterStamp> CraterStamps;
+        public NativeParallelHashMap<int3, half> ModifiedCells;
         public NativeArray<MCRawVertex> RawVertices;
         public NativeArray<float3> WeldedPositions;
         public NativeArray<int> TriangleIndices;
@@ -2384,6 +2411,7 @@ public class HectonVoxelEngine : MonoBehaviour
         public void Dispose()
         {
             ScratchLease.Dispose();
+            if (ModifiedCells.IsCreated) ModifiedCells.Dispose();
             if (RawVertices.IsCreated) RawVertices.Dispose();
             if (WeldedPositions.IsCreated) WeldedPositions.Dispose();
             if (TriangleIndices.IsCreated) TriangleIndices.Dispose();
@@ -2422,6 +2450,10 @@ public class HectonVoxelEngine : MonoBehaviour
 
         _teardownStreamingScratchRequested = false;
         ActiveRuntimeInstance = this;
+        EnsureVoxelBakeGhostMaterial();
+        _deltaProcessor = GetComponent<VoxelDeltaProcessor>();
+        if (_deltaProcessor == null)
+            _deltaProcessor = gameObject.AddComponent<VoxelDeltaProcessor>();
 
         if (!_registeredLiveEngine)
         {
@@ -2885,6 +2917,10 @@ public class HectonVoxelEngine : MonoBehaviour
             if (mapMagicBridge.TryGetHeight(worldCenter.x, worldCenter.z, out float sampledHeight))
                 terrainHeightCenter = sampledHeight;
 
+            NativeParallelHashMap<int3, half> modifiedCells = default;
+            if (_deltaProcessor != null)
+                _deltaProcessor.TryBuildDeltaMapForVolume(volume, out modifiedCells);
+
             pipelineData = new VoxelPipelineData
             {
                 WorldCenter = worldCenter,
@@ -2912,7 +2948,8 @@ public class HectonVoxelEngine : MonoBehaviour
                 Tunnels = tunnels,
                 Entrances = entrances,
                 Structures = structures,
-                CraterStamps = craterStamps
+                CraterStamps = craterStamps,
+                ModifiedCells = modifiedCells
             };
 
             if (!await ExecuteVoxelPipelineAsync(pipelineData, ct))
@@ -3036,6 +3073,36 @@ public class HectonVoxelEngine : MonoBehaviour
             if (Interlocked.Decrement(ref _liveEngineCount) <= 0)
                 RequestSharedTableShutdown();
         }
+
+        if (_runtimeVoxelBakeGhostMaterial != null)
+        {
+            SafeDestroy(_runtimeVoxelBakeGhostMaterial);
+            _runtimeVoxelBakeGhostMaterial = null;
+        }
+    }
+
+    void EnsureVoxelBakeGhostMaterial()
+    {
+        if (voxelBakeGhostMaterial != null || _runtimeVoxelBakeGhostMaterial != null)
+            return;
+
+        Shader ghostShader = Shader.Find(DefaultVoxelBakeGhostShaderName);
+        if (ghostShader == null)
+            return;
+
+        // COLD ALLOC: Material[1] - runtime fallback voxel bake ghost material when serialized scene reference is absent - owner: HectonVoxelEngine
+        _runtimeVoxelBakeGhostMaterial = new Material(ghostShader)
+        {
+            name = "Runtime_VoxelBakeGhost"
+        };
+        _runtimeVoxelBakeGhostMaterial.SetColor("_BaseColor", new Color(0.045f, 0.068f, 0.082f, 1f));
+        _runtimeVoxelBakeGhostMaterial.SetColor("_EdgeColor", new Color(0.16f, 0.38f, 0.46f, 1f));
+        _runtimeVoxelBakeGhostMaterial.SetColor("_EmissionColor", new Color(0f, 0.16f, 0.22f, 1f));
+        _runtimeVoxelBakeGhostMaterial.SetFloat("_Opacity", 0.42f);
+        _runtimeVoxelBakeGhostMaterial.SetFloat("_InstabilityScale", 1.4f);
+        _runtimeVoxelBakeGhostMaterial.SetFloat("_InstabilitySpeed", 1.25f);
+        _runtimeVoxelBakeGhostMaterial.SetFloat("_InstabilityStrength", 0.28f);
+        _runtimeVoxelBakeGhostMaterial.SetFloat("_FresnelPower", 2.3f);
     }
 
     static async Awaitable AwaitForJobCompletionAsync(JobHandle handle, CancellationToken ct)
@@ -3114,6 +3181,7 @@ public class HectonVoxelEngine : MonoBehaviour
             caveEntrances = data.Entrances,
             caveStructures = data.Structures,
             craterStamps = data.CraterStamps,
+            modifiedCells = data.ModifiedCells,
             nodeBucketOffsets = data.NodeBucketOffsets,
             nodeBucketIndices = data.NodeBucketIndices,
             tunnelBucketOffsets = data.TunnelBucketOffsets,

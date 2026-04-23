@@ -134,13 +134,14 @@ public sealed class SurvivalHUDCache
     public char[] DepthDisplay   => _depthBuf;
     public char[] TempDisplay    => _tempBuf;
 
-    private float _refreshTimer = 0f;
+    private float _refreshTimer;
 
     public void TickRefresh(float dt, in SurvivalState state, SurvivalConfig cfg)
     {
         _refreshTimer += dt;
         if (_refreshTimer < cfg.hudRefreshInterval) return;
-        _refreshTimer = 0f;
+        // [FORBID] Resetting time accumulators to zero. Preserve the remainder:
+_refreshTimer -= cfg.hudRefreshInterval;
 
         // Write integer percentages into char arrays without string allocation
         WritePercent(_oxygenBuf,  "O2:",  (int)(state.oxygenLevel   * 100f));
@@ -390,7 +391,8 @@ public static void TickThermal(
     // Exponential decay toward external temperature
     // Uses 1 - e^(-dt/τ) approximated accurately for small dt values
     float tau           = cfg.thermalTimeConstant;
-    float decayFactor   = 1.0f - Mathf.Exp(-dt / tau);
+    // Use Unity.Mathematics
+    float decayFactor   = 1.0f - math.exp(-dt / tau);
     float tempDelta     = (state.externalTemp - state.internalTemp)
                         * decayFactor
                         * (1.0f - state.insulationFactor);

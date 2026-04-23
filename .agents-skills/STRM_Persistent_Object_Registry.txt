@@ -1,0 +1,206 @@
+# PERSISTENT_OBJECT_REGISTRY.md
+## HECTON-8 | Persistent Object Hydration / Dehydration Registry
+
+---
+
+## I. EXECUTION POLICY
+
+[RULE] Zero GameObject instancing post-init. All entities hydrated from AddressablePool.
+[RULE] Pool capacity fixed at boot. No runtime growth.
+[RULE] Hydration keyed by uint64 GUID only. No name lookups. No scene scans.
+[RULE] Main thread owns Transform / Rigidbody mutation. Jobs own unmanaged state only.
+[RULE] Settlement window gates Rigidbody simulation. Sleeping debris must go kinematic after stabilization.
+[FORBID] NativeArray with managed Transform or Rigidbody references.
+[FORBID] Transform.position polling for residency. Residency derives from cached AUP + player AUP delta.
+[FORBID] OnDestroy dehydration callbacks. Dehydration = pool return + registry state persist only.
+[FORBID] O(N) pool scans inside hydration / dehydration loops.
+
+---
+
+## II. DATA ARCHITECTURE
+
+### PoolSlotData (Unmanaged)
+```
+struct PoolSlotData
+{
+    ulong BoundGUID;
+    int3  AUPCell;
+    float3 LocalOffset;
+    ushort HydrationFrame;
+    byte  RefCount;
+    byte  StateFlags;      // bit0=hydrated bit1=settled bit2=dirty bit3=reserved
+    ushort StableFrames;
+    ushort LastVisibleFrame;
+}
+```
+
+### Registry Memory Layout
+```
+NativeArray<PoolSlotData> objectPoolData; // Unmanaged
+Transform[] objectPoolTransforms;         // Managed
+Rigidbody[] objectPoolRigidbodies;
+NativeHashMap<uint64, int> GuidToPoolIndex; // O(1) lookup
+NativeParallelHashSet<ulong> hydratedSet;
+NativeQueue<ulong>        settlementQueue;
+TransformAccessArray      hydratedTransformAccess;
+```
+
+[DATA] `objectPoolData` owns GUIDs, AUP, state flags, timers.
+[DATA] Managed arrays own `Transform` / `Rigidbody` references only.
+[DATA] Pool slots prebound at bootstrap. GUID -> slot index never requires a linear scan.
+
+---
+
+## III. HYDRATION PROTOCOL
+
+### HydrateByGuid
+```
+Input: uint64 guid, in SpawnPacket packet
+
+1. if !GuidToPoolIndex.TryGetValue(guid, out slot): REJECT
+2. slotData = objectPoolData[slot]
+3. if slotData.StateFlags & HYDRATED: return
+4. tr = objectPoolTransforms[slot]
+5. rb = objectPoolRigidbodies[slot]
+6. tr.SetPositionAndRotation(packet.worldPos, packet.worldRot)
+7. rb.isKinematic = false
+8. rb.linearVelocity = packet.linearVelocity
+9. rb.angularVelocity = packet.angularVelocity
+10. slotData.HydrationFrame = frameIndex
+11. slotData.StateFlags |= HYDRATED
+12. slotData.RefCount = 1
+13. objectPoolData[slot] = slotData
+14. hydratedSet.Add(guid)
+```
+
+[RULE] Hydration touches managed refs once, then returns to unmanaged state tracking.
+[RULE] AUP snapshot written immediately after spawn. No follow-up Transform polling.
+
+---
+
+## IV. DEHYDRATION PROTOCOL
+
+### Residency Test
+```
+FOR guid in hydratedSet:
+    int slot = GuidToPoolIndex[guid];
+        slotData = objectPoolData[slot]
+        distSq = AUPDistanceSq(slotData.AUPCell, slotData.LocalOffset, playerAUPCell, playerLocalOffset)
+    IF distSq > DEHYDRATE_RADIUS_SQ:
+        QueueDehydrate(slot)
+```
+
+### QueueDehydrate
+```
+1. tr = objectPoolTransforms[slot]
+2. rb = objectPoolRigidbodies[slot]
+3. rb.linearVelocity = float3.zero
+4. rb.angularVelocity = float3.zero
+5. rb.isKinematic = true
+6. tr.gameObject.SetActive(false)
+7. slotData.StateFlags &= ~HYDRATED
+8. slotData.RefCount = 0
+9. objectPoolData[slot] = slotData
+10. hydratedSet.Remove(slotData.BoundGUID)
+```
+
+[RULE] No `FindPoolSlot(guid)` loop. `GuidToPoolIndex` is the only legal match path.
+[RULE] Dehydration radius compares cached AUP values only.
+
+---
+
+## V. SETTLEMENT WINDOW
+
+### Stabilization Gather
+```
+FOR each hydrated slot:
+    rb = objectPoolRigidbodies[slot]
+    if rb == null: continue
+    if lengthsq(rb.linearVelocity) < SETTLE_LIN_VEL_SQ && lengthsq(rb.angularVelocity) < SETTLE_ANG_VEL_SQ:
+        slotData.StableFrames += 1
+    else:
+        slotData.StableFrames = 0
+
+    if slotData.StableFrames >= SETTLE_FRAME_THRESHOLD:
+        settlementQueue.Enqueue(slotData.BoundGUID)
+```
+
+### Settlement Apply
+```
+WHILE settlementQueue not empty:
+    guid = settlementQueue.Dequeue()
+    slot = GuidToPoolIndex[guid]
+    rb = objectPoolRigidbodies[slot]
+    rb.isKinematic = true
+    slotData = objectPoolData[slot]
+    slotData.StateFlags |= SETTLED
+    objectPoolData[slot] = slotData
+```
+
+[RULE] Jobs write queue intent only. Main thread applies Rigidbody state.
+[RULE] Settlement uses velocity thresholds plus consecutive-frame hysteresis.
+
+---
+
+## VI. SCALE / BUDGETS
+
+### Base Tier
+```
+POOL_CAPACITY            = 8192
+MAX_HYDRATED_OBJECTS     = 2048
+DEHYDRATE_RADIUS         = 96m
+SETTLE_FRAME_THRESHOLD   = 8
+SETTLE_LIN_VEL_SQ        = 0.0025
+SETTLE_ANG_VEL_SQ        = 0.0025
+```
+
+### High Tier
+```
+MAX_HYDRATED_OBJECTS     = 4096
+DEHYDRATE_RADIUS         = 160m
+```
+
+[RULE] Hydration cap breach = deny farthest candidates first. Never grow pool.
+
+---
+
+## VII. FAILURE MODES
+
+### Missing GUID
+```
+Cause: save references stale object
+Response: reject hydrate request, log once in dev builds, continue
+```
+
+### Slot / GUID Drift
+```
+Cause: registry corruption
+Response: rebuild GuidToPoolIndex from objectPoolData during safe loading window only
+```
+
+### Dense Field CPU Spike
+```
+    Cause: linear scan implementation
+    Response: forbidden by mandate
+    Fix: NativeHashMap<uint64, int> GuidToPoolIndex; // O(1) lookup
+```
+
+### Managed Ref Missing
+```
+Cause: pool slot lost Transform or Rigidbody binding
+Response: mark slot invalid, quarantine GUID, never touch null ref in hot path
+```
+
+---
+
+## VIII. ENFORCEMENT CHECKLIST
+
+```
+[] NativeArray<PoolSlotData> objectPoolData; // Unmanaged
+[] Transform[] objectPoolTransforms;         // Managed
+[] NativeHashMap<uint64, int> GuidToPoolIndex
+[] No Transform.position polling for residency
+[] No O(N) pool scans in hydration / dehydration
+[] Main thread only for Transform / Rigidbody mutation
+[] AddressablePool is sole spawn source post-init
+```

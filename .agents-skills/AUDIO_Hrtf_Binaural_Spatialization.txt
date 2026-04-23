@@ -1,0 +1,440 @@
+## I. EXECUTION_POLICY
+
+[RULE] All filters pre-computed LUT. No runtime division/sqrt in DSP callback.
+[RULE] ITD/ILD/HRTF processing per-sample via Burst-compiled IAudioKernel.
+[FORBID] AudioSource OnAudioFilterRead. Managed callback = instant termination.
+[FORBID] AnimationCurve evaluation in audio thread. Bake to float[] at init.
+[RULE] Fixed 48kHz sample rate. No dynamic rate switching. Removes branch cost.
+[RULE] Double-buffered filter coefficient updates. Avoid zipper noise on parameter change.
+
+---
+
+## II. DATA_ARCHITECTURE
+
+### Core_Memory_Layout
+
+```
+struct BinauralAudioState (128 bytes, cache-line aligned)
+{
+    float3 ListenerForward;      // 12b
+    float3 ListenerRight;        // 12b
+    float3 ListenerUp;           // 12b
+    float3 SourcePosition;       // 12b
+    float SourceDistance;        // 4b
+    float AzimuthRad;            // 4b (horizontal angle -π to π)
+    float ElevationRad;          // 4b (vertical angle -π/2 to π/2)
+    float WaterDensityMul;       // 4b (1.0 air, 0.2326 water = 1/4.3)
+    uint FilterMask;             // 4b (bit0=ITD, bit1=ILD, bit2=HRTF, bit3=UnderwaterMode)
+    ulong currentSampleCount;    // Native DSP clock. No managed AudioSettings access.
+    // Pad to 128b
+}
+
+struct FilterCoefficients (64 bytes)
+{
+    float ILD_CutoffHz;          // 4b
+    float ILD_Q;                 // 4b
+    float HRTF_NotchHz;          // 4b
+    float HRTF_NotchQ;           // 4b
+    float HRTF_NotchGain;        // 4b
+    float2 ILD_B[3];             // 24b (biquad numerator)
+    float2 ILD_A[2];             // 16b (biquad denominator, a0=1 implicit)
+}
+
+struct DelayLine (ring buffer per ear)
+{
+    NativeArray<float> Buffer;   // Max 96 samples (2ms at 48kHz)
+    int WriteIndex;
+    int ReadIndexL;
+    int ReadIndexR;
+}
+```
+
+[DATA] Allocate BinauralAudioState[] array = poolSize. Job batches 64 sources/frame.
+[DATA] FilterCoefficients double-buffered. Swap pointer on DSP block boundary.
+[DATA] LUT: float[360][180] azimuth/elevation -> HRTF notch frequency. 64KB ROM.
+[DATA] LUT: float[180] azimuth -> ITD offset samples. 720 bytes.
+
+---
+
+## III. ALGORITHMIC_MATH_TRUTH
+
+### A. INTERAURAL_TIME_DIFFERENCE (ITD)
+
+**Goal:** Delay contralateral ear by microseconds based on horizontal angle.
+
+**Physics:**
+- Head radius: r = 0.0875m (average human)
+- Speed of sound: c_air = 343 m/s, c_water = 1481 m/s
+- Max ITD air: τ_max = (r + r) / c = 0.175 / 343 = 0.00051s = 510μs
+- Max ITD water: τ_max = 0.175 / 1481 = 118μs (4.3x faster)
+
+**Woodworth Formula (low-frequency approximation):**
+```
+θ = azimuth angle (-π to π, 0 = front)
+τ(θ) = (r/c) * (|θ| + sin(|θ|))
+```
+
+**Discrete Sample Delay:**
+```
+sampleRate = 48000
+delayAir_samples = τ(θ) * sampleRate
+delayWater_samples = delayAir_samples * 0.2326  // 1/4.3
+
+delaySamples = lerp(delayAir_samples, delayWater_samples, WaterDensityMul)
+clamp(delaySamples, 0, 96)  // Max 2ms buffer
+```
+
+**Channel Assignment:**
+```
+if θ > 0:  // Source right of center
+    delayLeft = delaySamples
+    delayRight = 0
+else:
+    delayLeft = 0
+    delayRight = delaySamples
+```
+
+BufferSize = 128; // Pad to next Power of 2
+WriteIndex = (WriteIndex + 1) & 127; // 1-cycle bitwise AND
+ReadIndexL = (WriteIndex - delayLeft) & 127
+ReadIndexR = (WriteIndex - delayRight) & 127
+
+outputL = Buffer[ReadIndexL]
+outputR = Buffer[ReadIndexR]
+```
+
+[MATH] Pre-compute LUT: `ITD_LUT[azimuthDegrees + 180] = delaySamples`. 360 entries.
+[MATH] Interpolate between LUT entries: `lerp(LUT[floor(az)], LUT[ceil(az)], frac(az))`.
+
+---
+
+### B. INTERAURAL_LEVEL_DIFFERENCE (ILD)
+
+**Goal:** Attenuate high frequencies (>1.5kHz) in shadowed ear via head diffraction.
+
+**Frequency Dependency:**
+```
+f < 500Hz:   ILD ≈ 0 dB (wavelength > head diameter, diffraction wraps)
+f > 4kHz:    ILD ≈ 20 dB (geometric shadow, -20dB at contralateral ear)
+```
+
+**Shadow Attenuation Function:**
+```
+shadowGain(θ, f) = 1.0 - (|sin(θ)| * FrequencyRamp(f))
+
+FrequencyRamp(f):
+    if f < 500: return 0.0
+    if f > 4000: return 1.0
+    return (f - 500) / 3500  // Linear 500Hz-4kHz
+```
+
+**Biquad Low-Pass (head shadow):**
+```
+Cutoff frequency scales with angle:
+fc(θ) = lerp(8000, 1200, |sin(θ)|)  // Front=8kHz, Side=1.2kHz
+
+Q = 0.707  // Butterworth response
+
+Biquad coefficients (standard cookbook):
+ω0 = 2π * fc / sampleRate
+α = sin(ω0) / (2 * Q)
+cosω0 = cos(ω0)
+
+b0 = (1 - cosω0) / 2
+b1 = 1 - cosω0
+b2 = (1 - cosω0) / 2
+a0 = 1 + α
+a1 = -2 * cosω0
+a2 = 1 - α
+
+Normalize:
+b0 /= a0
+b1 /= a0
+b2 /= a0
+a1 /= a0
+a2 /= a0
+```
+
+**Per-Sample Filter (Direct Form I):**
+```
+y[n] = b0*x[n] + b1*x[n-1] + b2*x[n-2] - a1*y[n-1] - a2*y[n-2]
+
+Apply to contralateral channel only:
+if θ > 0:
+// Persist filter delay lines across DSP chunks
+struct BiquadState { float2 z1; float2 z2; } 
+// Process
+outputL = biquad(inputL, ILD_Coeffs, ref state.leftEar);
+else:
+    outputL = inputL
+    outputR = biquad(inputR, ILD_Coeffs)
+```
+
+[MATH] Update coefficients max 60Hz. Store in double-buffer. Swap on sample boundary modulo 800 (48000/60).
+[MATH] Underwater: Reduce ILD magnitude 50%. `fc(θ) = lerp(8000, 3000, |sin(θ)|)`. Less shadowing due to density.
+
+---
+
+### C. VERTICAL_ELEVATION_HRTF (Pinna Notch Filter)
+
+**Goal:** Insert spectral notches 4-16kHz depending on elevation to simulate ear shape reflections.
+
+**Pinna Reflection Physics:**
+- Sound above head: Notch ≈ 7-9kHz
+- Sound at ear level: Minimal notch
+- Sound below: Notch ≈ 5-6kHz
+- Rear sounds: Additional 10-12kHz notch
+
+**Notch Frequency Mapping:**
+```
+elevation = atan2(sourcePos.y - listenerPos.y, horizontalDist)  // -π/2 to π/2
+
+NotchHz(elev):
+    if elev > π/4:       // Above 45°
+        return 8500
+    elif elev > 0:       // Above horizon
+        return lerp(7000, 8500, elev / (π/4))
+    elif elev > -π/4:    // Below horizon
+        return lerp(7000, 5500, -elev / (π/4))
+    else:                // Below -45°
+        return 5500
+```
+
+**Rear Hemisphere Modifier:**
+```
+azimuth = atan2(sourceLocal.x, sourceLocal.z)  // Forward = 0
+if |azimuth| > π/2:  // Behind listener
+    notchHz += 2500  // Add upper notch at ~11kHz
+    notchGain *= 0.7  // Deeper cut
+```
+
+**Notch Biquad (Peaking EQ with negative gain):**
+```
+fc = NotchHz(elevation)
+Q = 4.0  // Narrow notch
+peakGain_dB = -12.0  // Attenuation
+
+A = math.pow(10f, peakGain_dB / 40f);
+ω0 = 2π * fc / sampleRate
+α = sin(ω0) / (2 * Q)
+
+b0 = 1 + α * A
+b1 = -2 * cos(ω0)
+b2 = 1 - α * A
+a0 = 1 + α / A
+a1 = -2 * cos(ω0)
+a2 = 1 - α / A
+
+Normalize by a0.
+```
+
+**Cascade Filters:**
+```
+HRTF output = biquad_notch1(biquad_notch2(input))
+// Two notches: primary elevation + rear modifier if applicable
+```
+
+[MATH] Bake LUT: `HRTF_NotchHz[elevationDegrees + 90][azimuthDegrees + 180]`. 180x360 = 64KB.
+[MATH] Bilinear interpolate LUT at runtime. 4 samples, 3 lerps.
+
+---
+
+### D. UNDERWATER_ACOUSTIC_MODIFICATIONS
+
+**Speed of Sound Compression:**
+```
+c_ratio = c_water / c_air = 1481 / 343 = 4.317
+
+ITD_underwater = ITD_air / c_ratio
+```
+
+**Frequency Absorption (high-freq rolloff):**
+```
+Water absorbs >10kHz aggressively. Apply global low-pass 8kHz.
+
+Biquad LP 8kHz, Q=0.5:
+ω0 = 2π * 8000 / 48000
+α = sin(ω0) / (2 * 0.5)
+[Standard cookbook coefficients]
+```
+
+**Reverberation Density:**
+```
+Underwater: Sound reflects off surface, floor, particles.
+Increase wet mix 40%. Reduce RT60 by 30% (faster decay due to absorption).
+```
+
+**Directionality Degradation:**
+```
+ILD effectiveness *= 0.6  // Less head shadowing
+HRTF notch depth *= 0.7   // Pinna less effective underwater
+ITD remains primary cue but ambiguous due to speed.
+```
+
+[MATH] `WaterDensityMul` lerps all parameters. 0.0 = air, 1.0 = full water physics.
+
+---
+
+## IV. HARDWARE_SCALE
+
+### MX350_Constraints
+
+[SCALE] DSPGraph processes 512-sample buffers. At 48kHz = 10.67ms latency.
+[SCALE] Burst SIMD: Process 4 sources simultaneously (float4 lanes). Max 64 sources = 16 batches.
+[SCALE] Filter coefficient update: Max 240 sources @ 60fps. Time-slice 4 sources/frame.
+
+### Quality_Tiers
+
+**Base (MX350):**
+- ITD: Full precision (LUT interpolated)
+- ILD: Single biquad per ear
+- HRTF: Single notch filter
+- Update rate: 60Hz parameter refresh
+
+**High (GTX 1650):**
+- ITD: Fractional delay interpolation (Lagrange 3rd order)
+- ILD: Dual-biquad cascade (sharper rolloff)
+- HRTF: Dual notch + shelf filter
+- Update rate: 120Hz
+
+**Ultra (RTX 3060):**
+- ITD: All-pass fractional delay (phase-linear)
+- ILD: 4-pole Linkwitz-Riley crossover
+- HRTF: Full 32-band HRTF convolution (MIT KEMAR dataset)
+- Update rate: 240Hz
+
+[SCALE] Detect VRAM < 3GB: Disable HRTF convolution, fallback notch filter.
+[SCALE] CPU < 6 threads: Reduce max sources 64 -> 32.
+
+---
+
+## V. INTEGRATION_SAFE
+
+### Interface_Contract
+
+```
+interface IBinauralProcessor
+{
+    void UpdateListenerTransform(float3 pos, quaternion rot);
+    void UpdateSourceTransform(uint sourceID, float3 pos);
+    void SetUnderwaterDensity(float density);  // 0-1
+    NativeArray<float> GetStereoOutput(uint sourceID);
+}
+```
+
+### Failure_Modes
+
+**[SAFE] sourceDistance > 500m:**
+- ITD = 0 (too far for binaural cues)
+- ILD disabled
+- HRTF disabled
+- Output mono sum
+
+**[SAFE] NaN in position:**
+```
+if any(isnan(sourcePos)):
+    sourcePos = listenerPos  // Collapse to listener
+    distance = 0.001
+```
+
+**[SAFE] Extreme velocity (>100m/s):**
+- Clamp Doppler shift max ±2 semitones
+- ITD calculated from clamped position delta
+
+**[SAFE] Filter instability (a2 > 0.99):**
+```
+if |a2| > 0.99 or |a1| > 1.98:
+    Reset biquad state (z1=0, z2=0)
+    Recalculate coefficients with Q clamped [0.5, 10]
+```
+
+**[SAFE] Audio thread stall (buffer underrun):**
+- Detect via native sample-count delta > 720 samples (15ms @ 48kHz)
+- Fill with last valid sample (hold)
+- Log telemetry, do NOT throw exception
+
+### Init_Sequence
+
+1. Allocate NativeArray<BinauralAudioState> persistent, Allocator.Persistent
+2. Bake ITD_LUT, HRTF_LUT at startup (2ms total)
+3. Create DSPGraph, attach AudioOutputJob
+4. Register IBinauralProcessor to audio manager singleton
+5. Pre-warm biquad coefficient cache (double-buffer A/B)
+
+### Shutdown_Sequence
+
+1. Dispose NativeArrays
+2. Flush DSPGraph
+3. Zero all filter states
+4. Null interface references
+
+---
+
+## SENIOR_HACKS
+
+### Fast_Azimuth_Elevation
+
+Avoid atan2 in hot path:
+```
+// Vector to source in listener local space
+localDir = quaternion_rotate(inverse(listenerRot), sourcePos - listenerPos)
+
+// Azimuth approximation (x/z ratio)
+azimuthFast = localDir.x / (abs(localDir.z) + 0.001)  // -1 to 1
+azimuthRad = azimuthFast * (π/2)  // Good enough for LUT index
+
+// Elevation approximation
+horizontalLen = sqrt(localDir.x² + localDir.z²)
+elevationFast = localDir.y / (horizontalLen + 0.001)
+elevationRad = elevationFast * (π/2)
+```
+
+Cost: 1 sqrt vs 2 atan2. 4x faster.
+
+### SIMD_Biquad_Batch
+
+Process 4 channels (2 stereo pairs) in single loop:
+```
+float4 x_n = load_float4(input)
+float4 y_n = b0_4 * x_n + b1_4 * x_n1 + b2_4 * x_n2 - a1_4 * y_n1 - a2_4 * y_n2
+store_float4(output, y_n)
+```
+
+Burst auto-vectorizes. 4 sources processed in parallel.
+
+### Coefficient_Quantization
+
+Store biquad coefficients as int16:
+```
+coeff_int16 = round(coeff_float * 32767)
+Runtime: coeff_float = coeff_int16 * (1.0 / 32767)
+```
+
+Halves memory bandwidth. Imperceptible quality loss.
+
+### Underwater_Psychological_Trick
+
+Randomly modulate ITD ±10% at 0.3Hz (breathing rate):
+```
+// In BinauralAudioState: increment ulong currentSampleCount
+double nativeDspTime = (double)currentSampleCount / 48000.0;
+itdJitter = math.sin((float)nativeDspTime * 0.3f * math.PI * 2f) * 0.1f;
+finalDelay = delaySamples * (1 + itdJitter)
+```
+
+Creates subtle directionality ambiguity. Brain cannot lock onto source. Increases dread.
+
+---
+
+## TELEMETRY
+
+[MONITOR] DSP callback execution time. Target <0.5ms (5% of 10.67ms buffer).
+[MONITOR] Filter coefficient update time. Target <0.1ms per source.
+[MONITOR] LUT cache miss rate. Target <1%.
+[PROFILE] Burst inspector: Verify SIMD codegen (check for `vmulps`, `vaddps`).
+
+**Perf Budget (MX350 worst case):**
+- 64 sources * 0.5ms = 32ms total audio DSP
+- Amortize over 10.67ms buffer = 3 frame overlap
+- Actual per-frame: 10.67ms / 3 = ~3.5ms CPU audio thread
+```

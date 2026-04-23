@@ -54,18 +54,26 @@ namespace Hecton8.Gameplay
     using Hecton8.Building;
     using Hecton8.Construction;
     using Hecton8.Core;
+    using Hecton8.Interaction;
     using Hecton8.Inventory;
     using Hecton8.Input;
     using Hecton.Localization;
+    using Hecton8.Physics;
     using Hecton8.Scavenging;
     using Unity.Mathematics;
     using UnityEngine;
 
     [DisallowMultipleComponent]
-    public sealed class LaserCutter : PlayerTool
+    public sealed class LaserCutter : PlayerTool, IToolModule
     {
         private const string CutterCategory = "CUTTER";
         private const int RecoveryProgressMessageCount = 101;
+        private const float MaxRecoilImpulse = 12f;
+        private const byte IdleState = (byte)ToolStateBits.Idle;
+        private const byte ActiveState = (byte)ToolStateBits.Active;
+        private const byte BusyState = (byte)ToolStateBits.Busy;
+        private const byte OverheatedState = (byte)ToolStateBits.Overheated;
+        private const byte CooldownState = (byte)ToolStateBits.Cooldown;
 
         private struct CutterDiagnosis
         {
@@ -123,6 +131,15 @@ namespace Hecton8.Gameplay
         [Range(0f, 0.5f)]
         [SerializeField] private float heatDamageBonus = 0.15f;
 
+        [Tooltip("Passive heat decay bonus applied while the player remains submerged.")]
+        [SerializeField, Range(0f, 1.2f)] private float passiveWaterCoolingBonus = 0.45f;
+
+        [Tooltip("Base recoil impulse used for deferred player-body kickback.")]
+        [SerializeField, Range(0f, 12f)] private float recoilImpulseBase = 4f;
+
+        [Tooltip("Additional recoil damping applied while submerged.")]
+        [SerializeField, Range(0.1f, 1f)] private float submergedRecoilScale = 0.6f;
+
         [Header("── Beam Visual ───────────────────────────────")]
         [Tooltip("Maximum jitter amplitude at full heat (meters).\n" +
                  "Beam endpoint vibrates more as tool heats up.")]
@@ -170,7 +187,6 @@ namespace Hecton8.Gameplay
 
         /// <summary>Raycast result (reused, zero GC).</summary>
         private RaycastHit _hitInfo;
-        private readonly RaycastHit[] _raycastHits = new RaycastHit[1]; // COLD ALLOC: laser cutter consumes only the nearest contact per pass.
 
         /// <summary>Cached diagnosis result (reused, zero GC).</summary>
         private CutterDiagnosis _cachedDiagnosis;
@@ -235,6 +251,8 @@ namespace Hecton8.Gameplay
         private float _nextProgressFeedbackAt;
         private Vector3 _cachedDeconstructAnchorPoint;
         private Vector3 _cachedDeconstructAnchorNormal = Vector3.up;
+        private uint _cachedToolId;
+        private byte _toolStateFlags = IdleState;
 
         // ── Sparks cache ──
 
@@ -289,6 +307,7 @@ namespace Hecton8.Gameplay
             _cachedTransform = transform;
             _diagnosisSB = new System.Text.StringBuilder(256);
             CacheSparksEmission();
+            CacheToolId();
             SetVisualsActive(false);
             
             EnsurePlayerBindings();
@@ -297,6 +316,7 @@ namespace Hecton8.Gameplay
         public override void OnSpawn()
         {
             base.OnSpawn();
+            CacheToolId();
             ResetAllState();
             SetVisualsActive(false);
         }
@@ -317,9 +337,7 @@ namespace Hecton8.Gameplay
 
         public override void OnUnequip()
         {
-            PublishBeamState(false);
-            _isFiring = false;
-            _wasFiringLastFrame = false;
+            CancelAction();
             ResetDeconstructState();
             SetVisualsActive(false);
             base.OnUnequip();
@@ -340,6 +358,7 @@ namespace Hecton8.Gameplay
             // ── Overheat lockout check ──
             if (_isLockedOut)
             {
+                SetOverheatedState();
                 // Play error sound once per lockout cycle
                 if (!_lockoutSoundPlayed && overheatErrorClip != null)
                 {
@@ -354,6 +373,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            Activate();
             _isFiring = true;
             PublishBeamState(true);
 
@@ -379,9 +399,11 @@ namespace Hecton8.Gameplay
             // ── Damage / Deconstruct ──
             if (didHit)
             {
-                InputManager inputManager = InputManager.Instance;
-                bool deconstructMode = inputManager != null
-                    && inputManager.IsSecondaryActionHeld;
+                IInputService inputService = GlobalRegistry.Input;
+                PlayerInputState inputState = inputService != null && inputService.IsPlayerInputEnabled
+                    ? inputService.GetState()
+                    : default;
+                bool deconstructMode = inputState.HasAction(PlayerInputAction.SecondaryFire);
 
                 if (deconstructMode)
                 {
@@ -447,6 +469,8 @@ namespace Hecton8.Gameplay
                     _isLockedOut = false;
                     _lockoutSoundPlayed = false;
                     _heatLevel = math.min(_heatLevel, 0.8f);
+                    ClearFlag(OverheatedState);
+                    EnterCooldownState();
                     PublishHeat();
                     ToolHitUtility.ShowInfo(ResolveLocalized(LocalizationKeys.LASER_HUD_CORE_STABLE, "LASER CUTTER - CORE STABLE"));
                 }
@@ -456,8 +480,13 @@ namespace Hecton8.Gameplay
             {
                 if (_heatLevel > 0f)
                 {
-                    _heatLevel = math.max(0f, _heatLevel - deltaTime * cooldownRate);
+                    _heatLevel = math.max(0f, _heatLevel - deltaTime * cooldownRate * (1f + ResolvePassiveCoolingBonus()));
+                    EnterCooldownState();
                     PublishHeat();
+                }
+                else
+                {
+                    Deactivate();
                 }
             }
 
@@ -475,8 +504,11 @@ namespace Hecton8.Gameplay
             // ── Invalidate diagnosis cache at end of frame ──
             _diagnosisCached = false;
 
-            InputManager inputManager = InputManager.Instance;
-            if (inputManager != null && !inputManager.IsSecondaryActionHeld)
+            IInputService inputService = GlobalRegistry.Input;
+            PlayerInputState inputState = inputService != null && inputService.IsPlayerInputEnabled
+                ? inputService.GetState()
+                : default;
+            if (!inputState.HasAction(PlayerInputAction.SecondaryFire))
                 _secondaryLatched = false;
         }
 
@@ -547,6 +579,7 @@ namespace Hecton8.Gameplay
             _lockoutTimer = math.max(0f, overheatLockoutTime);
             _lockoutSoundPlayed = false;
             _isFiring = false;
+            SetOverheatedState();
             SetVisualsActive(false);
             ResetDeconstructState();
             ToolHitUtility.ShowWarning(ResolveLocalized(LocalizationKeys.LASER_HUD_CORE_OVERHEATED, "LASER CUTTER - CORE OVERHEATED"));
@@ -588,14 +621,48 @@ namespace Hecton8.Gameplay
         /// </summary>
         private void ApplyCutDamage(float deltaTime)
         {
-            if (_hitInfo.collider == null) return;
+            if (_hitInfo.collider == null)
+                return;
 
-            if (_hitInfo.collider.TryGetComponent(out ICuttable cuttable))
-            {
-                float heatMultiplier = 1f + _heatLevel * heatDamageBonus;
-                float damage = damagePerSecond * deltaTime * heatMultiplier;
-                cuttable.ApplyCutDamage(damage, _hitInfo.point);
-            }
+            IInteractionSignalService interactionService = GlobalRegistry.InteractionSignals;
+            if (interactionService == null || !interactionService.IsInitialized)
+                return;
+
+            float powerScale = GetEfficiency() * GetConditionPerformanceScale();
+            float heatMultiplier = 1f + _heatLevel * heatDamageBonus;
+            float damage = damagePerSecond * deltaTime * powerScale * heatMultiplier;
+            if (damage <= 0f)
+                return;
+
+            Vector3 direction = _cachedTransform.forward;
+            if (direction.sqrMagnitude < 0.0001f)
+                direction = Vector3.forward;
+            else
+                direction.Normalize();
+
+            Vector3 absoluteOrigin = HectonFloatingOrigin.ToAbsoluteUniversePosition(_cachedTransform.position);
+            Vector3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePosition(_hitInfo.point);
+            float normalizedPower = ResolveNormalizedPower(powerScale, heatMultiplier);
+            InteractionPacket packet = new InteractionPacket(
+                _cachedToolId,
+                new float3(absoluteOrigin.x, absoluteOrigin.y, absoluteOrigin.z),
+                new float3(direction.x, direction.y, direction.z),
+                normalizedPower,
+                maxRange,
+                (byte)ToolActionMode.Primary,
+                _toolStateFlags,
+                (uint)Time.frameCount);
+            Hecton8.Interaction.InteractionSignal signal = new Hecton8.Interaction.InteractionSignal(
+                packet,
+                unchecked((int)EntityId.ToULong(_hitInfo.collider.GetEntityId())),
+                new float3(absoluteHitPoint.x, absoluteHitPoint.y, absoluteHitPoint.z),
+                new float3(_hitInfo.normal.x, _hitInfo.normal.y, _hitInfo.normal.z),
+                damage,
+                (byte)InteractionEffectType.PlasmaCut,
+                0);
+
+            if (interactionService.Publish(signal, _hitInfo.collider))
+                ApplyRecoilImpulse(direction, normalizedPower);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -612,9 +679,7 @@ namespace Hecton8.Gameplay
 
             EnsurePlayerBindings();
 
-            #pragma warning disable CS0618
-            int targetId = _hitInfo.collider.GetInstanceID();
-            #pragma warning restore CS0618
+            int targetId = unchecked((int)EntityId.ToULong(_hitInfo.collider.GetEntityId()));
 
             if (targetId != _cachedDeconstructTargetId)
             {
@@ -807,9 +872,11 @@ namespace Hecton8.Gameplay
 
             float facingAway01 = Mathf.Clamp01((Vector3.Dot(playerForward, awayFromAnchor) + 1f) * 0.5f);
             float backpedal01 = 0f;
-            InputManager inputManager = InputManager.Instance;
-            if (inputManager != null)
-                backpedal01 = Mathf.Clamp01(-inputManager.MoveInput.y);
+            IInputService inputService = GlobalRegistry.Input;
+            PlayerInputState inputState = inputService != null && inputService.IsPlayerInputEnabled
+                ? inputService.GetState()
+                : default;
+            backpedal01 = Mathf.Clamp01(-inputState.MoveDelta.y);
 
             float awayVelocity01 = 0f;
             if (_cachedPlayerRigidbody != null && heavySalvagePullVelocityForFullIntent > 0.01f)
@@ -995,9 +1062,7 @@ namespace Hecton8.Gameplay
         /// </summary>
         private void ResetAllState()
         {
-            PublishBeamState(false);
-            _isFiring = false;
-            _wasFiringLastFrame = false;
+            CancelAction();
             _heatLevel = 0f;
             _isLockedOut = false;
             _lockoutTimer = 0f;
@@ -1005,6 +1070,37 @@ namespace Hecton8.Gameplay
             _lastPublishedHeat = -1f;
             _secondaryLatched = false;
             ResetDeconstructState();
+        }
+
+        /// <inheritdoc />
+        public void Activate()
+        {
+            SetFlag(ActiveState);
+            ClearFlag(IdleState);
+            ClearFlag(CooldownState);
+        }
+
+        /// <inheritdoc />
+        public void Deactivate()
+        {
+            SetFlag(IdleState);
+            ClearFlag(ActiveState);
+            ClearFlag(BusyState);
+        }
+
+        /// <inheritdoc />
+        public void CancelAction()
+        {
+            PublishBeamState(false);
+            _isFiring = false;
+            _wasFiringLastFrame = false;
+            _toolStateFlags = IdleState;
+        }
+
+        /// <inheritdoc />
+        public uint GetCapabilityMask()
+        {
+            return ToolCapabilityMasks.PlasmaCut;
         }
 
         private void PublishBeamState(bool isActive)
@@ -1187,19 +1283,9 @@ namespace Hecton8.Gameplay
 
         private bool TryGetCutHit(out RaycastHit hit)
         {
-            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
-                _cachedTransform.position,
-                _cachedTransform.forward,
-                _raycastHits,
-                maxRange,
-                cuttableLayer,
-                QueryTriggerInteraction.Ignore);
-
-            if (hitCount > 0)
-            {
-                hit = _raycastHits[0];
-                return true;
-            }
+            IInteractionSignalService interactionService = GlobalRegistry.InteractionSignals;
+            if (interactionService != null && interactionService.IsInitialized)
+                return interactionService.TryRaycastPrimary(_cachedTransform.position, _cachedTransform.forward, maxRange, cuttableLayer.value, out hit);
 
             hit = default;
             return false;
@@ -1222,6 +1308,70 @@ namespace Hecton8.Gameplay
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;
+        }
+
+        private void CacheToolId()
+        {
+            string toolIdSource =
+                RuntimeMetadata != null && !string.IsNullOrWhiteSpace(RuntimeMetadata.toolID)
+                    ? RuntimeMetadata.toolID
+                    : "tool_laser_cutter";
+            _cachedToolId = unchecked((uint)Animator.StringToHash(toolIdSource));
+        }
+
+        private float ResolveNormalizedPower(float powerScale, float heatMultiplier)
+        {
+            float normalizedPower = powerScale * (heatMultiplier / math.max(1f + heatDamageBonus, 0.0001f));
+            return math.saturate(normalizedPower);
+        }
+
+        private void ApplyRecoilImpulse(Vector3 direction, float normalizedPower)
+        {
+            EnsurePlayerBindings();
+            if (_cachedPlayerRigidbody == null || normalizedPower <= 0f)
+                return;
+
+            float mass = Mathf.Max(_cachedPlayerRigidbody.mass, 0.1f);
+            float recoilScale = _cachedPlayerMovement != null && _cachedPlayerMovement.IsPlayerSubmerged
+                ? submergedRecoilScale
+                : 1f;
+            float impulseMagnitude = Mathf.Min(MaxRecoilImpulse, (recoilImpulseBase * normalizedPower * recoilScale) / mass);
+            if (impulseMagnitude <= 0.0001f)
+                return;
+
+            PhysicsForceRouter.QueueForce(_cachedPlayerRigidbody, -direction * impulseMagnitude, ForceMode.Impulse);
+        }
+
+        private float ResolvePassiveCoolingBonus()
+        {
+            EnsurePlayerBindings();
+            return _cachedPlayerMovement != null && _cachedPlayerMovement.IsPlayerSubmerged
+                ? passiveWaterCoolingBonus
+                : 0f;
+        }
+
+        private void EnterCooldownState()
+        {
+            SetFlag(CooldownState);
+            SetFlag(IdleState);
+            ClearFlag(ActiveState);
+        }
+
+        private void SetOverheatedState()
+        {
+            SetFlag(OverheatedState);
+            ClearFlag(ActiveState);
+            ClearFlag(BusyState);
+        }
+
+        private void SetFlag(byte flag)
+        {
+            _toolStateFlags |= flag;
+        }
+
+        private void ClearFlag(byte flag)
+        {
+            _toolStateFlags &= unchecked((byte)~flag);
         }
     }
 }

@@ -42,6 +42,7 @@ using Hecton8.Input;
 using Hecton8.Modding;
 using Hecton8.Construction;
 using Hecton8.UI;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Building
@@ -91,6 +92,12 @@ namespace Hecton8.Building
 
         [Tooltip("Слой поверхности для размещения (Terrain, Default)")]
         [SerializeField] private LayerMask surfaceMask = ~0;
+        [Tooltip("Rigid world-space grid size used for free placement positions.")]
+        [SerializeField] private float constructionGridSize = 2.5f;
+        [Tooltip("Total structural integrity budget available to the current habitat graph.")]
+        [SerializeField] private float structuralIntegrityBudget = 240f;
+        [Tooltip("Integrity penalty applied for every BFS depth step away from the support root.")]
+        [SerializeField] private float structuralDepthPenalty = 0.75f;
 
         [Header("── Rotation ──────────────────────────────────")]
         [Tooltip("Угол поворота призрака при нажатии ПКМ (градусы)")]
@@ -185,9 +192,19 @@ namespace Hecton8.Building
         private int _activeBuildableIndex = -1;
         // COLD ALLOC: List<MonoBehaviour>[2] — authored placement-rule scan buffer for the active buildable prefab — owner: PlayerBuilder
         private readonly List<MonoBehaviour> _placementRuleBuffer = new List<MonoBehaviour>(2);
+        private readonly List<ModuleSocket> _ghostSocketBuffer = new List<ModuleSocket>(8);
         private IBuildPlacementRule _activePlacementRule;
         private bool _semanticPlacementValid = true;
         private string _semanticPlacementBlockReason = string.Empty;
+        private HabitatConstructionManager _habitatConstructionManager;
+        private ModuleSocket _snappedGhostSocket;
+        private bool _integrityPlacementValid = true;
+        private bool _integrityValidationDirty;
+        private string _integrityPlacementBlockReason = string.Empty;
+        private ValidationSnapshot _scheduledValidationSnapshot;
+        private ValidationSnapshot _completedValidationSnapshot;
+        private bool _hasScheduledValidationSnapshot;
+        private bool _hasCompletedValidationSnapshot;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC API
@@ -197,12 +214,21 @@ namespace Hecton8.Building
         public int ActiveBuildableIndex => _activeBuildableIndex;
         public int BuildableCount => _buildCatalog != null ? _buildCatalog.Count : 0;
         public bool HasResourcesForActiveBuildable => activeBuildable != null && HasResources(activeBuildable);
-        public bool CanPlaceActiveBuildable => _currentGhost != null && _currentGhost.CanBuild && _semanticPlacementValid;
+        public bool CanPlaceActiveBuildable => _currentGhost != null && _currentGhost.CanBuild && _semanticPlacementValid && _integrityPlacementValid;
         public bool HasPlacementPreview => _currentGhostObj != null;
         public BuildReadiness ActiveBuildReadiness => GetActiveBuildReadiness();
 
         /// <summary>Сейчас призрак прилип к сокету.</summary>
         public bool IsSnapped => _isSnapped;
+
+        private struct ValidationSnapshot
+        {
+            public BuildableData Buildable;
+            public ModuleSocket TargetSocket;
+            public int ModuleCount;
+            public Vector3 Position;
+            public Quaternion Rotation;
+        }
 
         public BuildableData GetBuildableAt(int index)
         {
@@ -294,7 +320,7 @@ namespace Hecton8.Building
         {
             if (_currentGhost == null || !_currentGhost.CanBuild)
                 return false;
-            if (!UpdateSemanticPlacementState())
+            if (!UpdatePlacementValidityState())
                 return false;
             if (activeBuildable == null)
                 return false;
@@ -331,8 +357,9 @@ namespace Hecton8.Building
                 case BuildReadiness.MissingCost:
                     return $"{purpose} Recover materials first. Need {GetActiveCostDigest()}.";
                 case BuildReadiness.PlacementBlocked:
-                    if (!string.IsNullOrEmpty(_semanticPlacementBlockReason))
-                        return $"{purpose} {_semanticPlacementBlockReason}.";
+                    string blockReason = ResolvePlacementBlockReason();
+                    if (!string.IsNullOrEmpty(blockReason))
+                        return $"{purpose} {blockReason}.";
                     return IsSnapped
                         ? $"{purpose} Socket alignment is good, but the final volume is obstructed."
                         : $"{purpose} Reposition, rotate, or snap to a valid socket.";
@@ -414,6 +441,9 @@ namespace Hecton8.Building
 
         public override void OnSpawn()
         {
+            if (_habitatConstructionManager == null)
+                _habitatConstructionManager = new HabitatConstructionManager();
+
             base.OnSpawn();
             ResolveRuntimeReferences();
             ResetBuilderState();
@@ -424,6 +454,15 @@ namespace Hecton8.Building
             DespawnGhost();
             ResetBuilderState();
             base.OnDespawn();
+        }
+
+        private void OnDestroy()
+        {
+            if (_habitatConstructionManager == null)
+                return;
+
+            _habitatConstructionManager.Dispose();
+            _habitatConstructionManager = null;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -472,7 +511,7 @@ namespace Hecton8.Building
             if (_currentGhostObj != null)
             {
                 UpdateGhostPosition(deltaTime);
-                UpdateSemanticPlacementState();
+                UpdatePlacementValidationState();
             }
         }
 
@@ -490,6 +529,7 @@ namespace Hecton8.Building
             if (_ghostYawOffset >= 360f)
                 _ghostYawOffset -= 360f;
 
+            _integrityValidationDirty = true;
             PlaySound(rotateSound);
         }
 
@@ -566,6 +606,15 @@ namespace Hecton8.Building
             _wasSnapped          = false;
             _snappedSocketTransform = null;
             _snappedSocket       = null;
+            _snappedGhostSocket  = null;
+            _integrityPlacementValid = true;
+            _integrityValidationDirty = false;
+            _integrityPlacementBlockReason = string.Empty;
+            _hasScheduledValidationSnapshot = false;
+            _hasCompletedValidationSnapshot = false;
+            _ghostSocketBuffer.Clear();
+            _currentGhost?.SetExternalValidity(true);
+            _habitatConstructionManager?.ResetValidation();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -607,9 +656,14 @@ namespace Hecton8.Building
             if (_currentGhostObj != null)
             {
                 _currentGhostObj.TryGetComponent(out _currentGhost);
+                CacheGhostSockets();
+                _currentGhost?.SetExternalValidity(true);
             }
 
-            UpdateSemanticPlacementState();
+            _integrityPlacementValid = true;
+            _integrityPlacementBlockReason = string.Empty;
+            _integrityValidationDirty = true;
+            UpdatePlacementValidationState();
         }
 
         private void DespawnGhost()
@@ -628,8 +682,15 @@ namespace Hecton8.Building
 
             _currentGhostObj = null;
             _currentGhost    = null;
+            _ghostSocketBuffer.Clear();
             _semanticPlacementValid = true;
             _semanticPlacementBlockReason = string.Empty;
+            _integrityPlacementValid = true;
+            _integrityPlacementBlockReason = string.Empty;
+            _integrityValidationDirty = false;
+            _hasScheduledValidationSnapshot = false;
+            _hasCompletedValidationSnapshot = false;
+            _habitatConstructionManager?.ResetValidation();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -660,19 +721,23 @@ namespace Hecton8.Building
         /// </summary>
         private void UpdateGhostPosition(float dt)
         {
-            if (playerCamera == null) return;
+            if (playerCamera == null || _currentGhostObj == null || _habitatConstructionManager == null)
+                return;
 
             Ray ray = playerCamera.ViewportPointToRay(ViewportCenter);
 
-            Vector3    targetPos;
+            Vector3 targetPos;
             Quaternion targetRot;
 
             bool rayHit = TryGetBuildHit(ray, surfaceMask, out _hit);
 
             // ── Точка луча (для поиска сокетов и fallback) ──
-            Vector3 hitPoint = rayHit
+            Vector3 rawTargetPoint = rayHit
                 ? _hit.point
                 : ray.origin + ray.direction * buildDistance;
+
+            float3 snappedFreePosition = _habitatConstructionManager.SnapWorldPosition(rawTargetPoint, constructionGridSize);
+            Vector3 freePlacementPosition = new Vector3(snappedFreePosition.x, snappedFreePosition.y, snappedFreePosition.z);
 
             // ═══════════════════════════════════════════════════
             //  SOCKET SEARCH (v3.0)
@@ -687,7 +752,7 @@ namespace Hecton8.Building
 
             float searchRadius = unsnapRadius; // ищем в большем радиусе
             int socketCount = UnityEngine.Physics.OverlapSphereNonAlloc(
-                hitPoint,
+                rawTargetPoint,
                 searchRadius,
                 _socketBuffer,
                 socketLayerMask,
@@ -698,14 +763,17 @@ namespace Hecton8.Building
             float   bestDist      = float.MaxValue;
             Transform bestTransform = null;
             ModuleSocket bestSocket = null;
+            Vector3 bestAlignedPosition = default;
+            Quaternion bestAlignedRotation = default;
+            ModuleSocket bestGhostSocket = null;
 
             for (int i = 0; i < socketCount; i++)
             {
-                Collider col = _socketBuffer[i];
-                if (col == null) continue;
+                Collider socketCollider = _socketBuffer[i];
+                if (socketCollider == null) continue;
 
                 // ── Получаем ModuleSocket (zero GC) ──
-                if (!col.TryGetComponent(out ModuleSocket socket))
+                if (!socketCollider.TryGetComponent(out ModuleSocket socket))
                     continue;
 
                 // ── Пропускаем занятые ──
@@ -713,13 +781,28 @@ namespace Hecton8.Building
                     continue;
 
                 // ── Дистанция от hitPoint до сокета ──
-                float dist = Vector3.Distance(hitPoint, col.transform.position);
+                if (!_habitatConstructionManager.TryResolveSocketAlignment(
+                        _currentGhostObj.transform,
+                        _ghostSocketBuffer,
+                        socket,
+                        _ghostYawOffset,
+                        out Vector3 alignedPosition,
+                        out Quaternion alignedRotation,
+                        out ModuleSocket alignedGhostSocket))
+                {
+                    continue;
+                }
+
+                float dist = (socketCollider.transform.position - rawTargetPoint).sqrMagnitude;
 
                 if (dist < bestDist)
                 {
-                    bestDist      = dist;
-                    bestTransform = col.transform;
-                    bestSocket    = socket;
+                    bestDist = dist;
+                    bestTransform = socketCollider.transform;
+                    bestSocket = socket;
+                    bestAlignedPosition = alignedPosition;
+                    bestAlignedRotation = alignedRotation;
+                    bestGhostSocket = alignedGhostSocket;
                 }
             }
 
@@ -739,15 +822,20 @@ namespace Hecton8.Building
             //  каждый кадр snap→unsnap→snap→unsnap (flicker).
             // ═══════════════════════════════════════════════════
 
+            bool previousSnapState = _isSnapped;
+            ModuleSocket previousSocket = _snappedSocket;
+            ModuleSocket previousGhostSocket = _snappedGhostSocket;
+
             if (_isSnapped)
             {
                 // ── Сейчас снапнут: проверяем условие ОТРЫВА ──
-                if (bestTransform == null || bestDist > unsnapRadius)
+                if (bestTransform == null || bestDist > (unsnapRadius * unsnapRadius))
                 {
                     // Отрываемся: нет сокетов поблизости ИЛИ слишком далеко
                     _isSnapped = false;
                     _snappedSocketTransform = null;
                     _snappedSocket = null;
+                    _snappedGhostSocket = null;
                 }
                 else
                 {
@@ -755,16 +843,18 @@ namespace Hecton8.Building
                     // (игрок навёл на другой сокет того же модуля)
                     _snappedSocketTransform = bestTransform;
                     _snappedSocket = bestSocket;
+                    _snappedGhostSocket = bestGhostSocket;
                 }
             }
             else
             {
                 // ── Сейчас НЕ снапнут: проверяем условие ПРИЛИПАНИЯ ──
-                if (bestTransform != null && bestDist <= snapRadius)
+                if (bestTransform != null && bestDist <= (snapRadius * snapRadius))
                 {
                     _isSnapped = true;
                     _snappedSocketTransform = bestTransform;
                     _snappedSocket = bestSocket;
+                    _snappedGhostSocket = bestGhostSocket;
                 }
             }
 
@@ -779,22 +869,20 @@ namespace Hecton8.Building
             //  TARGET POSITION / ROTATION
             // ═══════════════════════════════════════════════════
 
-            if (_isSnapped && _snappedSocketTransform != null)
+            if (_isSnapped && _snappedSocket != null)
             {
                 // ── SNAP MODE: позиция и ротация от сокета ──
-                targetPos = _snappedSocketTransform.position;
+                targetPos = bestAlignedPosition;
 
                 // Socket.forward = направление стыковки.
                 // YawOffset позволяет игроку вращать модуль
                 // вокруг оси стыковки (если нужно).
-                Quaternion socketRot = _snappedSocketTransform.rotation;
-                Quaternion yawRot    = Quaternion.Euler(0f, _ghostYawOffset, 0f);
-                targetRot = socketRot * yawRot;
+                targetRot = bestAlignedRotation;
             }
             else if (rayHit)
             {
                 // ── SURFACE MODE: обычное поведение (raycast) ──
-                targetPos = _hit.point;
+                targetPos = freePlacementPosition;
 
                 Quaternion surfaceRot = Quaternion.FromToRotation(Vector3.up, _hit.normal);
                 Quaternion yawRot     = Quaternion.Euler(0f, _ghostYawOffset, 0f);
@@ -805,12 +893,13 @@ namespace Hecton8.Building
                 // ── FALLBACK: призрак висит перед камерой ──
                 if (buildAnchor != null)
                 {
-                    targetPos = buildAnchor.position;
+                    float3 snappedAnchorPosition = _habitatConstructionManager.SnapWorldPosition(buildAnchor.position, constructionGridSize);
+                    targetPos = new Vector3(snappedAnchorPosition.x, snappedAnchorPosition.y, snappedAnchorPosition.z);
                     targetRot = buildAnchor.rotation * Quaternion.Euler(0f, _ghostYawOffset, 0f);
                 }
                 else
                 {
-                    targetPos = ray.origin + ray.direction * buildDistance;
+                    targetPos = freePlacementPosition;
                     targetRot = Quaternion.Euler(0f, _ghostYawOffset, 0f);
                 }
             }
@@ -826,11 +915,22 @@ namespace Hecton8.Building
             // ═══════════════════════════════════════════════════
 
             Transform t = _currentGhostObj.transform;
+            Vector3 previousPosition = t.position;
+            Quaternion previousRotation = t.rotation;
             float speed = _isSnapped ? snapSpeed : ghostFollowSpeed;
             float lerpFactor = 1f - Mathf.Exp(-speed * dt);
 
-            t.position = Vector3.Lerp(t.position, targetPos, lerpFactor);
-            t.rotation = Quaternion.Slerp(t.rotation, targetRot, lerpFactor);
+            t.position = Vector3.Lerp(previousPosition, targetPos, lerpFactor);
+            t.rotation = Quaternion.Slerp(previousRotation, targetRot, lerpFactor);
+
+            if (previousSnapState != _isSnapped ||
+                !ReferenceEquals(previousSocket, _snappedSocket) ||
+                !ReferenceEquals(previousGhostSocket, _snappedGhostSocket) ||
+                (t.position - previousPosition).sqrMagnitude > 0.0001f ||
+                Quaternion.Dot(previousRotation, t.rotation) < 0.9999f)
+            {
+                _integrityValidationDirty = true;
+            }
         }
 
         // ══════════════════════════════════════════════════════════
@@ -860,9 +960,16 @@ namespace Hecton8.Building
                 return;
             }
 
-            if (_currentGhostObj == null || _currentGhost == null || !_currentGhost.CanBuild || !UpdateSemanticPlacementState())
+            if (_currentGhostObj == null || _currentGhost == null)
             {
-                NotifyBuildBlocked(string.IsNullOrEmpty(_semanticPlacementBlockReason) ? "PLACEMENT INVALID" : _semanticPlacementBlockReason);
+                NotifyBuildBlocked("PLACEMENT INVALID");
+                PlaySound(errorSound);
+                return;
+            }
+
+            if (!UpdatePlacementValidityState() || !_currentGhost.CanBuild)
+            {
+                NotifyBuildBlocked(ResolvePlacementBlockReason());
                 PlaySound(errorSound);
                 return;
             }
@@ -897,7 +1004,18 @@ namespace Hecton8.Building
                 return;
             }
 
-            ConsumeResources(activeBuildable);
+            if (!ConsumeResources(activeBuildable))
+            {
+                ConstructionManager constructionManager = ConstructionManager.Instance;
+                if (constructionManager != null)
+                    constructionManager.DestroyModule(placedModule);
+                else
+                    pool.Despawn(placedModule);
+
+                NotifyBuildBlocked("RESOURCE TRANSACTION FAILED");
+                PlaySound(errorSound);
+                return;
+            }
 
             if (_isSnapped && _snappedSocket != null)
             {
@@ -912,6 +1030,7 @@ namespace Hecton8.Building
             _isSnapped = false;
             _snappedSocketTransform = null;
             _snappedSocket = null;
+            _snappedGhostSocket = null;
 
             // ── Пересоздаём призрак ──
             DespawnGhost();
@@ -924,24 +1043,18 @@ namespace Hecton8.Building
 
         private bool HasResources(BuildableData data)
         {
-            if (data == null || data.buildCost == null || data.buildCost.Count == 0) return true;
-            if (inventory == null || inventory.Grid == null) return false;
-            List<InventoryCost> costs = data.buildCost;
+            if (_habitatConstructionManager == null)
+                return false;
 
-            for (int c = 0, cCount = costs.Count; c < cCount; c++)
-            {
-                InventoryCost cost = costs[c];
-                if (cost == null || cost.item == null || cost.amount <= 0) continue;
-                if (inventory.CountTotal(cost.item) < cost.amount)
-                    return false;
-            }
-
-            return true;
+            return _habitatConstructionManager.HasBuildResources(inventory, data);
         }
 
         private void ResolveRuntimeReferences()
         {
             LogBuilderDebug("ResolveRuntimeReferences begin");
+            if (_habitatConstructionManager == null)
+                _habitatConstructionManager = new HabitatConstructionManager();
+
             if (inventory == null)
                 inventory = GetComponent<PlayerInventory>() ?? GetComponentInParent<PlayerInventory>();
             LogBuilderDebug($"ResolveRuntimeReferences inventory={(inventory != null ? "Y" : "N")}");
@@ -1166,7 +1279,7 @@ namespace Hecton8.Building
             if (_currentGhost == null)
                 return BuildReadiness.Ready;
 
-            if (!_currentGhost.CanBuild || !UpdateSemanticPlacementState())
+            if (!UpdatePlacementValidityState() || !_currentGhost.CanBuild)
                 return BuildReadiness.PlacementBlocked;
 
             return _isSnapped ? BuildReadiness.SnappedReady : BuildReadiness.Ready;
@@ -1216,6 +1329,129 @@ namespace Hecton8.Building
                 _semanticPlacementBlockReason = string.Empty;
 
             return _semanticPlacementValid;
+        }
+
+        private void CacheGhostSockets()
+        {
+            _ghostSocketBuffer.Clear();
+            if (_currentGhostObj == null)
+                return;
+
+            _currentGhostObj.GetComponentsInChildren<ModuleSocket>(true, _ghostSocketBuffer);
+        }
+
+        private bool UpdatePlacementValidityState()
+        {
+            bool semanticValid = UpdateSemanticPlacementState();
+            bool finalValid = semanticValid && _integrityPlacementValid;
+
+            if (_currentGhost != null)
+                _currentGhost.SetExternalValidity(finalValid);
+
+            return finalValid;
+        }
+
+        private void UpdatePlacementValidationState()
+        {
+            if (_habitatConstructionManager == null || activeBuildable == null || _currentGhostObj == null)
+            {
+                _integrityPlacementValid = true;
+                _integrityPlacementBlockReason = string.Empty;
+                UpdatePlacementValidityState();
+                return;
+            }
+
+            if (_habitatConstructionManager.TryConsumeCompletedValidation())
+            {
+                _integrityPlacementValid = _habitatConstructionManager.LastPlacementAllowed;
+                _integrityPlacementBlockReason = _habitatConstructionManager.LastBlockReason;
+                if (_hasScheduledValidationSnapshot)
+                {
+                    _completedValidationSnapshot = _scheduledValidationSnapshot;
+                    _hasCompletedValidationSnapshot = true;
+                }
+            }
+
+            if (!TryCaptureValidationSnapshot(out ValidationSnapshot snapshot))
+            {
+                _integrityPlacementValid = true;
+                _integrityPlacementBlockReason = string.Empty;
+                UpdatePlacementValidityState();
+                return;
+            }
+
+            if (_habitatConstructionManager.IsValidationPending &&
+                _hasScheduledValidationSnapshot &&
+                !AreEquivalentSnapshots(snapshot, _scheduledValidationSnapshot))
+            {
+                _integrityValidationDirty = true;
+            }
+
+            bool needsValidation =
+                _integrityValidationDirty ||
+                !_hasCompletedValidationSnapshot ||
+                !AreEquivalentSnapshots(snapshot, _completedValidationSnapshot);
+
+            if (!_habitatConstructionManager.IsValidationPending && needsValidation)
+            {
+                if (_habitatConstructionManager.ScheduleIntegrityValidation(
+                        ConstructionManager.Instance,
+                        _currentGhostObj,
+                        activeBuildable,
+                        constructionGridSize,
+                        structuralIntegrityBudget,
+                        structuralDepthPenalty))
+                {
+                    _scheduledValidationSnapshot = snapshot;
+                    _hasScheduledValidationSnapshot = true;
+                    _integrityPlacementValid = false;
+                    _integrityPlacementBlockReason = HabitatConstructionManager.PendingReason;
+                    _integrityValidationDirty = false;
+                }
+                else
+                {
+                    _integrityPlacementValid = _habitatConstructionManager.LastPlacementAllowed;
+                    _integrityPlacementBlockReason = _habitatConstructionManager.LastBlockReason;
+                    _integrityValidationDirty = false;
+                }
+            }
+
+            UpdatePlacementValidityState();
+        }
+
+        private bool TryCaptureValidationSnapshot(out ValidationSnapshot snapshot)
+        {
+            snapshot = default;
+            if (_currentGhostObj == null || activeBuildable == null)
+                return false;
+
+            Transform ghostTransform = _currentGhostObj.transform;
+            snapshot.Buildable = activeBuildable;
+            snapshot.TargetSocket = _snappedSocket;
+            snapshot.ModuleCount = ConstructionManager.Instance != null ? ConstructionManager.Instance.ModuleCount : 0;
+            snapshot.Position = ghostTransform.position;
+            snapshot.Rotation = ghostTransform.rotation;
+            return true;
+        }
+
+        private static bool AreEquivalentSnapshots(ValidationSnapshot lhs, ValidationSnapshot rhs)
+        {
+            return ReferenceEquals(lhs.Buildable, rhs.Buildable) &&
+                   ReferenceEquals(lhs.TargetSocket, rhs.TargetSocket) &&
+                   lhs.ModuleCount == rhs.ModuleCount &&
+                   (lhs.Position - rhs.Position).sqrMagnitude <= 0.0001f &&
+                   Quaternion.Dot(lhs.Rotation, rhs.Rotation) >= 0.9999f;
+        }
+
+        private string ResolvePlacementBlockReason()
+        {
+            if (!string.IsNullOrEmpty(_semanticPlacementBlockReason))
+                return _semanticPlacementBlockReason;
+
+            if (!_integrityPlacementValid && !string.IsNullOrEmpty(_integrityPlacementBlockReason))
+                return _integrityPlacementBlockReason;
+
+            return "PLACEMENT INVALID";
         }
 
         private string GetCostDigest(BuildableData data)
@@ -1366,47 +1602,12 @@ namespace Hecton8.Building
             return false;
         }
 
-        private void ConsumeResources(BuildableData data)
+        private bool ConsumeResources(BuildableData data)
         {
-            if (data == null || data.buildCost == null || data.buildCost.Count == 0) return;
-            if (inventory == null || inventory.Grid == null) return;
+            if (_habitatConstructionManager == null)
+                return false;
 
-            InventoryGrid grid = inventory.Grid;
-            int cols = grid.Columns;
-            int rows = grid.Rows;
-            List<InventoryCost> costs = data.buildCost;
-
-            for (int c = 0, cCount = costs.Count; c < cCount; c++)
-            {
-                InventoryCost cost = costs[c];
-                if (cost == null || cost.item == null || cost.amount <= 0) continue;
-
-                int remaining = cost.amount;
-
-                for (int y = 0; y < rows && remaining > 0; y++)
-                {
-                    for (int x = 0; x < cols && remaining > 0; x++)
-                    {
-                        if (!ReferenceEquals(grid.GetCell(x, y), cost.item))
-                            continue;
-
-                        bool isAnchor =
-                            (x == 0 || !ReferenceEquals(grid.GetCell(x - 1, y), cost.item)) &&
-                            (y == 0 || !ReferenceEquals(grid.GetCell(x, y - 1), cost.item));
-
-                        if (!isAnchor)
-                            continue;
-
-                        int stackCount = Mathf.Max(1, inventory.GetStackCount(x, y));
-                        while (stackCount > 0 && remaining > 0)
-                        {
-                            inventory.RemoveOneItem(x, y);
-                            remaining--;
-                            stackCount--;
-                        }
-                    }
-                }
-            }
+            return _habitatConstructionManager.ConsumeBuildResources(inventory, data);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1438,6 +1639,9 @@ namespace Hecton8.Building
             if (buildDistance     < 1f) buildDistance     = 1f;
             if (ghostFollowSpeed < 1f) ghostFollowSpeed = 1f;
             if (rotationStep     < 1f) rotationStep     = 1f;
+            if (constructionGridSize < 0.25f) constructionGridSize = 0.25f;
+            if (structuralIntegrityBudget < 1f) structuralIntegrityBudget = 1f;
+            if (structuralDepthPenalty < 0.01f) structuralDepthPenalty = 0.01f;
             if (snapRadius       < 0.1f) snapRadius     = 0.1f;
             if (unsnapRadius     <= snapRadius) unsnapRadius = snapRadius + 0.5f;
             if (snapSpeed        < 1f) snapSpeed        = 1f;

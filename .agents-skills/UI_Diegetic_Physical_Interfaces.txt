@@ -50,7 +50,10 @@ Bit 12-15: RESERVED
 ### Native Containers
 ```
 NativeArray<PanelData>          panelRegistry       [MAX_PANELS = 32]
-NativeArray<RenderTexture>      rtPool              [MAX_RT_SLOTS = 8]
+// Store standard managed array on the CPU
+RenderTexture[] rtPool;
+// Burst passes around the integer ID
+int activeRTIndex;
 NativeArray<int>                rtRefCount          [8] — slot occupancy
 NativeArray<float2>             cursorWorldPos      [MAX_PANELS]
 NativeArray<float2>             cursorCanvasPos     [MAX_PANELS]
@@ -83,7 +86,7 @@ UIInputEvent {
 
 **Step 1 — Transform hit point into panel local space:**
 ```
-localHit = panelData.worldToLocal.MultiplyPoint3x4(raycastHit.point)
+localHit = math.transform(panelData.worldToLocal, raycastHit.point);
 // worldToLocal is pre-inverted float4x4, cached in PanelData
 // MultiplyPoint3x4 NOT MultiplyPoint — avoids w-divide overhead
 ```
@@ -132,7 +135,7 @@ uv = clamp(uv, float2(0,0), float2(1,1))        // post-clamp safety
 **Step 1 — Project ray onto panel plane:**
 ```
 panelNormal  = panelData.localToWorld.MultiplyVector(float3(0,0,1))  // world-space normal
-panelOrigin  = panelData.localToWorld.GetColumn(3).xyz               // panel center world
+panelOrigin = panelData.localToWorld.c3.xyz;
 rayOrigin    = camera.position
 rayDir       = camera.forward   // or controller aim direction
 
@@ -143,7 +146,7 @@ worldHit = rayOrigin + rayDir * t
 
 **Step 2 — To local space:**
 ```
-localHit = worldToLocal.MultiplyPoint3x4(worldHit)
+localHit = math.transform(worldToLocal, worldHit)
 ```
 
 **Step 3 — Clamp to bounds (math.clamp, zero allocation):**
@@ -205,7 +208,7 @@ Alloc:
     claim slot: rtRefCount[slot] = 1
     IF rtPool[slot] size != needed:
         rtPool[slot].Release()
-        rtPool[slot] = new RenderTexture(w, h, 16, RenderTextureFormat.RGB565)
+        new RenderTexture(w, h, GraphicsFormat.B5G6R5_UNormPack16, GraphicsFormat.D16_UNorm);
         // RGB565 not ARGB32 — saves 50% VRAM per RT on MX350
         // depth=16 sufficient for UI depth reads inside panel camera
         rtPool[slot].filterMode = FilterMode.Bilinear
@@ -215,10 +218,10 @@ Alloc:
 
 **RT Format selection per tier:**
 ```
-tier 00-01: RenderTextureFormat.RGB565   (no alpha needed, saves VRAM)
-tier 10   : RenderTextureFormat.RGB565
-tier 11   : RenderTextureFormat.ARGB32   (only for holographic, needs alpha for glow)
-// FORBID: RenderTextureFormat.ARGBFloat, RenderTextureFormat.ARGBHalf on UI RTs
+tier 00-01: GraphicsFormat.B5G6R5_UNormPack16 + GraphicsFormat.D16_UNorm
+tier 10   : GraphicsFormat.B5G6R5_UNormPack16 + GraphicsFormat.D16_UNorm
+tier 11   : GraphicsFormat.R8G8B8A8_UNorm + GraphicsFormat.D16_UNorm
+// FORBID: GraphicsFormat.R16G16B16A16_SFloat, GraphicsFormat.R32G32B32A32_SFloat on UI RTs
 ```
 
 **Sleep/Wake protocol:**
@@ -483,7 +486,9 @@ IF playerSpeed > 40.0:
 
 ```
 FORBID: GetComponent<>() in any Update/FixedUpdate path
-FORBID: Camera.main access (cache ref at init into static readonly)
+// [FORBID] static readonly UnityEngine.Object references.
+static Camera _cachedCam;
+void OnEnable() { _cachedCam = Camera.main; } // Update via lifecycle hooks
 FORBID: GraphicRaycaster.Raycast() per-frame
 FORBID: RenderTexture construction outside RTPool alloc path
 FORBID: Canvas.ForceUpdateCanvases() — triggers full layout rebuild

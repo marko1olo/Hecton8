@@ -65,6 +65,16 @@ namespace Hecton.Localization
         [ThreadStatic] private static char[] _stagingBuffer;
 
         /// <summary>
+        /// Copy a literal template into the thread-local staging buffer without heap allocation.
+        /// </summary>
+        public static void Write(ReadOnlySpan<char> template, out char[] buffer, out int length)
+        {
+            buffer = GetBuffer(template.Length + 1);
+            template.CopyTo(buffer);
+            length = template.Length;
+        }
+
+        /// <summary>
         /// Write one numeric payload into a localized template without heap allocation.
         /// </summary>
         public static void Write(ReadOnlySpan<char> template, LocNumericArg value0, out char[] buffer, out int length)

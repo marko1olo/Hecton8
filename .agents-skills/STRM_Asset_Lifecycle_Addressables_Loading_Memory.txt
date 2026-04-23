@@ -202,7 +202,8 @@ PressureFactor = CurrentReservedMemory_bytes / MaxSystemRAM_bytes
 MaxSystemRAM = SystemInfo.systemMemorySize × 1024 × 1024  [bytes]
 CurrentReservedMemory = Profiler.GetTotalReservedMemory()  + NativeHeap_estimate
 
-NativeHeap_estimate = Registry.Values.Sum(r => r.SizeBytes) × 1.15  (15% overhead factor)
+// [FORBID] LINQ .Sum() in hot path.
+// Maintain a static running integer _totalRegistrySizeBytes updated on Acquire/Release.  (15% overhead factor)
 
 ### 6.2 Graduated Response Thresholds
 

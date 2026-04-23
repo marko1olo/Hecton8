@@ -10,7 +10,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Player Swim Blockout Rig")]
-    public sealed partial class PlayerSwimBlockoutRig : MonoBehaviour, ITickable
+    public sealed partial class PlayerSwimBlockoutRig : MonoBehaviour, ITickable, IUpdatable
     {
         private const string LeftShoulderName = "Swim_LeftShoulder";
         private const string RightShoulderName = "Swim_RightShoulder";
@@ -287,14 +287,6 @@ namespace Hecton8.Gameplay
             TryUnregister();
         }
 
-        private void LateUpdate()
-        {
-            if (!Application.isPlaying)
-                return;
-
-            SyncFromPresentation(Time.deltaTime);
-        }
-
 #if UNITY_EDITOR
         private void OnValidate()
         {
@@ -472,11 +464,7 @@ namespace Hecton8.Gameplay
             if (_registered)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager == null)
-                return;
-
-            gameTickManager.Register(this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
             _registered = true;
         }
 
@@ -485,10 +473,7 @@ namespace Hecton8.Gameplay
             if (!_registered)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager != null)
-                gameTickManager.Unregister(this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
             _registered = false;
         }
 

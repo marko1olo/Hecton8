@@ -18,7 +18,7 @@ namespace Hecton8.Physics
     /// Per-tether runtime state and solver.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class TetherInstance : MonoBehaviour, IOriginShiftListener
+    public sealed class TetherInstance : MonoBehaviour
     {
         private const int MaxSupportedBendPoints = 4;
         private const int MaxSegments = MaxSupportedBendPoints + 1;
@@ -40,6 +40,10 @@ namespace Hecton8.Physics
         private readonly Vector3[] _anchorPositions = new Vector3[MaxAnchors];
         // COLD ALLOC: Vector3[6] — anchor velocities aligned to _anchorPositions — owner: TetherInstance
         private readonly Vector3[] _anchorVelocities = new Vector3[MaxAnchors];
+        // COLD ALLOC: Vector3[6] — solver-space anchor positions (world or platform-local) used by the constraint solver — owner: TetherInstance
+        private readonly Vector3[] _solverAnchorPositions = new Vector3[MaxAnchors];
+        // COLD ALLOC: Vector3[6] — solver-space anchor velocities aligned to _solverAnchorPositions — owner: TetherInstance
+        private readonly Vector3[] _solverAnchorVelocities = new Vector3[MaxAnchors];
         // COLD ALLOC: float[5] — per-segment rest-length distribution across bends — owner: TetherInstance
         private readonly float[] _segmentRestLengths = new float[MaxSegments];
         // COLD ALLOC: float[5] — per-segment runtime lengths used by solver and visual sampling — owner: TetherInstance
@@ -48,6 +52,10 @@ namespace Hecton8.Physics
         private readonly RaycastHit[] _bendHitBuffer = new RaycastHit[16];
         // COLD ALLOC: RaycastHit[8] — anti-slice integrity validation buffer for this tether instance — owner: TetherInstance
         private readonly RaycastHit[] _integrityHitBuffer = new RaycastHit[8];
+        // COLD ALLOC: HectonVoxelVolume[4] — dynamic voxel owners for active bend points — owner: TetherInstance
+        private readonly HectonVoxelVolume[] _bendVolumes = new HectonVoxelVolume[MaxSupportedBendPoints];
+        // COLD ALLOC: int[4] — cached runtime stamps for bend-volume invalidation — owner: TetherInstance
+        private readonly int[] _bendVolumeRuntimeStamps = new int[MaxSupportedBendPoints];
 
         private HeavyTowWinch _owner;
         private HectonPlayerMotor _playerMotor;
@@ -108,7 +116,11 @@ namespace Hecton8.Physics
         private float _bioCableHoldTimer;
         private bool _bioCableRequestedThisStep;
         private Bounds _visualBounds;
-        private bool _originShiftListenerRegistered;
+        private ITransportPlatform _solverPlatform;
+        private Transform _solverPlatformTransform;
+        private Matrix4x4 _solverWorldToLocalMatrix = Matrix4x4.identity;
+        private Matrix4x4 _solverLocalToWorldMatrix = Matrix4x4.identity;
+        private bool _solveInPlatformLocalSpace;
 
         /// <summary>Active owner facade that exposes tether state to the rest of gameplay.</summary>
         public HeavyTowWinch Owner => _owner;
@@ -144,6 +156,9 @@ namespace Hecton8.Physics
 
         /// <summary>CPU staging buffer used by the LateUpdate visual upload path.</summary>
         public NativeArray<float3> VisualSegmentPositions => _visualSegmentPositions;
+
+        /// <summary>Active payload rigidbody resolved by this tether.</summary>
+        internal Rigidbody PayloadBody => _payloadBody;
 
         /// <summary>
         /// Configures the tether against a player/payload pair.
@@ -212,10 +227,15 @@ namespace Hecton8.Physics
             _bioCableCurrentCutProgress01 = 1f;
             _bioCableHoldTimer = 0f;
             _bioCableRequestedThisStep = false;
+            _solverPlatform = null;
+            _solverPlatformTransform = null;
+            _solverWorldToLocalMatrix = Matrix4x4.identity;
+            _solverLocalToWorldMatrix = Matrix4x4.identity;
+            _solveInPlatformLocalSpace = false;
+            ClearBendMetadata(0);
             EnsureVisualBuffers(_visualSegmentCount);
             RecalculateDampingCoefficient();
             _isActive = true;
-            RegisterOriginShiftListener();
             _visualBounds = new Bounds(
                 owner != null ? owner.ResolveTowAnchorPosition() : Vector3.zero,
                 Vector3.one);
@@ -284,6 +304,7 @@ namespace Hecton8.Physics
                 RecalculateDampingCoefficient();
             }
 
+            ResolveSolverReferenceFrame();
             AdvanceExternalCableSnare(fixedDeltaTime);
             Vector3 payloadCurrentForce = ComputePayloadCurrentForce(anchorPosition, payloadPosition);
             ApplyPayloadCurrentForce(payloadCurrentForce, fixedDeltaTime);
@@ -338,6 +359,7 @@ namespace Hecton8.Physics
 
             Vector3 anchorPosition = _owner != null ? _owner.ResolveTowAnchorPosition() : Vector3.zero;
             Vector3 payloadPosition = _payloadBody != null ? _payloadBody.worldCenterOfMass : anchorPosition;
+            ResolveSolverReferenceFrame();
             int anchorCount = BuildAnchorChain(anchorPosition, payloadPosition);
             if (anchorCount < 2)
                 return;
@@ -386,7 +408,6 @@ namespace Hecton8.Physics
         /// </summary>
         public void Deactivate()
         {
-            UnregisterOriginShiftListener();
             _isActive = false;
             _owner = null;
             _playerMotor = null;
@@ -445,6 +466,12 @@ namespace Hecton8.Physics
             _bioCableHoldTimer = 0f;
             _bioCableRequestedThisStep = false;
             _visualBounds = new Bounds(Vector3.zero, Vector3.one);
+            _solverPlatform = null;
+            _solverPlatformTransform = null;
+            _solverWorldToLocalMatrix = Matrix4x4.identity;
+            _solverLocalToWorldMatrix = Matrix4x4.identity;
+            _solveInPlatformLocalSpace = false;
+            ClearBendMetadata(0);
             gameObject.SetActive(false);
         }
 
@@ -465,45 +492,7 @@ namespace Hecton8.Physics
 
         private void OnDestroy()
         {
-            UnregisterOriginShiftListener();
             DisposeRuntimeResources();
-        }
-
-        /// <inheritdoc />
-        public void OnOriginShift(in OriginShiftEventData shiftData)
-        {
-            if (!_isActive)
-                return;
-
-            Vector3 shiftOffset = shiftData.ShiftOffset;
-            if (shiftOffset.sqrMagnitude <= MinVectorMagnitudeSq)
-                return;
-
-            for (int i = 0; i < _bendPointCount; i++)
-                _bendPoints[i] -= shiftOffset;
-
-            for (int i = 0; i < _anchorPositions.Length; i++)
-                _anchorPositions[i] -= shiftOffset;
-
-            _bioCableRequestedAnchorWS -= shiftOffset;
-            _bioCableCurrentAnchorWS -= shiftOffset;
-
-            if (_visualSegmentPositions.IsCreated)
-            {
-                for (int i = 0; i < _visualSegmentPositions.Length; i++)
-                {
-                    float3 point = _visualSegmentPositions[i];
-                    point.x -= shiftOffset.x;
-                    point.y -= shiftOffset.y;
-                    point.z -= shiftOffset.z;
-                    _visualSegmentPositions[i] = point;
-                }
-
-                if (VisualSegmentBuffer != null)
-                    VisualSegmentBuffer.SetData(_visualSegmentPositions);
-            }
-
-            _visualBounds.SetMinMax(_visualBounds.min - shiftOffset, _visualBounds.max - shiftOffset);
         }
 
         private void EnsureVisualBuffers(int pointCount)
@@ -558,24 +547,6 @@ namespace Hecton8.Physics
                 : math.max(1f, requestedMultiplier);
             float criticalDamping = 2f * math.sqrt(math.max(_springStiffness, 0f) * math.max(_reducedMass, 0f));
             _dampingCoefficient = criticalDamping * overDampingMultiplier;
-        }
-
-        private void RegisterOriginShiftListener()
-        {
-            if (_originShiftListenerRegistered)
-                return;
-
-            HectonFloatingOrigin.RegisterListener(this);
-            _originShiftListenerRegistered = true;
-        }
-
-        private void UnregisterOriginShiftListener()
-        {
-            if (!_originShiftListenerRegistered)
-                return;
-
-            HectonFloatingOrigin.UnregisterListener(this);
-            _originShiftListenerRegistered = false;
         }
 
         private void AdvanceExternalCableSnare(float fixedDeltaTime)
@@ -686,6 +657,9 @@ namespace Hecton8.Physics
 
         private void UpdateLineOfSight(Vector3 anchorPosition, Vector3 payloadPosition, bool allowBendPoints)
         {
+            if (InvalidateBendPointsForDynamicVoxelChange())
+                _losCheckCooldownFrames = 0;
+
             if (!allowBendPoints)
             {
                 if (_bendPointCount > 0)
@@ -693,6 +667,7 @@ namespace Hecton8.Physics
                 _bendPointCount = 0;
                 _losBlocked = false;
                 _losCheckCooldownFrames = BendRecheckCooldownFrames;
+                ClearBendMetadata(0);
                 return;
             }
 
@@ -708,6 +683,7 @@ namespace Hecton8.Physics
                 _bendPointCount = 0;
                 _losBlocked = false;
                 _losCheckCooldownFrames = BendRecheckCooldownFrames;
+                ClearBendMetadata(0);
                 return;
             }
 
@@ -738,7 +714,13 @@ namespace Hecton8.Physics
                     break;
                 }
 
-                if (!TryResolveBendCorner(hit, target - origin, out Vector3 bendPoint, out Vector3 bendNormal))
+                if (!TryResolveBendCorner(
+                        hit,
+                        target - origin,
+                        out Vector3 bendPoint,
+                        out Vector3 bendNormal,
+                        out HectonVoxelVolume bendVolume,
+                        out int bendRuntimeStamp))
                     break;
 
                 if (_bendPointCount > 0)
@@ -750,18 +732,30 @@ namespace Hecton8.Physics
 
                 _bendPoints[_bendPointCount] = bendPoint;
                 _bendNormals[_bendPointCount] = bendNormal;
+                _bendVolumes[_bendPointCount] = bendVolume;
+                _bendVolumeRuntimeStamps[_bendPointCount] = bendRuntimeStamp;
                 _bendPointCount++;
                 origin = bendPoint + (target - origin).normalized * _bendPointClearanceRadius;
             }
 
             if (previousCount != _bendPointCount)
                 _segmentRestLengthsDirty = true;
+
+            ClearBendMetadata(_bendPointCount);
         }
 
-        private bool TryResolveBendCorner(RaycastHit hit, Vector3 lineDirection, out Vector3 bendPoint, out Vector3 bendNormal)
+        private bool TryResolveBendCorner(
+            RaycastHit hit,
+            Vector3 lineDirection,
+            out Vector3 bendPoint,
+            out Vector3 bendNormal,
+            out HectonVoxelVolume bendVolume,
+            out int bendRuntimeStamp)
         {
             bendPoint = Vector3.zero;
             bendNormal = Vector3.up;
+            bendVolume = null;
+            bendRuntimeStamp = 0;
 
             if (hit.collider == null)
                 return false;
@@ -774,6 +768,8 @@ namespace Hecton8.Physics
             if (voxelVolume != null && voxelVolume.TryResolveNearestVoxelCorner(hit.point, bendNormal, out Vector3 cornerWorld))
             {
                 bendPoint = cornerWorld + bendNormal * math.max(0.01f, _bendSurfaceOffset);
+                bendVolume = voxelVolume;
+                bendRuntimeStamp = voxelVolume.RuntimeStamp;
                 return IsFinite(bendPoint);
             }
 
@@ -863,11 +859,13 @@ namespace Hecton8.Physics
             _anchorVelocities[anchorCount] = _payloadBody != null ? _payloadBody.linearVelocity : Vector3.zero;
             anchorCount++;
 
+            PopulateSolverAnchors(anchorCount);
+
             float totalLength = 0f;
             int segmentCount = anchorCount - 1;
             for (int i = 0; i < segmentCount; i++)
             {
-                float segmentLength = Vector3.Distance(_anchorPositions[i], _anchorPositions[i + 1]);
+                float segmentLength = Vector3.Distance(_solverAnchorPositions[i], _solverAnchorPositions[i + 1]);
                 _segmentLengths[i] = segmentLength;
                 totalLength += segmentLength;
             }
@@ -909,7 +907,9 @@ namespace Hecton8.Physics
             {
                 Vector3 start = _anchorPositions[i];
                 Vector3 end = _anchorPositions[i + 1];
-                Vector3 delta = end - start;
+                Vector3 solverStart = _solverAnchorPositions[i];
+                Vector3 solverEnd = _solverAnchorPositions[i + 1];
+                Vector3 delta = solverEnd - solverStart;
                 float currentDistance = delta.magnitude;
                 if (currentDistance <= MinDistance)
                     continue;
@@ -919,7 +919,8 @@ namespace Hecton8.Physics
                 if (overExtension <= 0f)
                     continue;
 
-                Vector3 direction = delta / currentDistance;
+                Vector3 solverDirection = delta / currentDistance;
+                Vector3 worldDirection = ResolveSolverDirectionToWorld(solverDirection);
                 bool startDynamic = i == 0;
                 bool endDynamic = i == segmentCount - 1;
                 float startInvMass = startDynamic && _playerRigidbody != null
@@ -934,22 +935,22 @@ namespace Hecton8.Physics
 
                 if (startDynamic)
                 {
-                    Vector3 correction = direction * (overExtension * (startInvMass / totalInvMass));
+                    Vector3 correction = worldDirection * (overExtension * (startInvMass / totalInvMass));
                     MovePlayerPosition(_playerRigidbody.position + correction);
                 }
 
                 if (endDynamic)
                 {
-                    Vector3 correction = direction * (-overExtension * (endInvMass / totalInvMass));
+                    Vector3 correction = worldDirection * (-overExtension * (endInvMass / totalInvMass));
                     _payloadBody.MovePosition(_payloadBody.position + correction);
                 }
 
-                Vector3 relativeVelocity = _anchorVelocities[i + 1] - _anchorVelocities[i];
-                float relVelAlongCable = Vector3.Dot(relativeVelocity, direction);
+                Vector3 relativeVelocity = _solverAnchorVelocities[i + 1] - _solverAnchorVelocities[i];
+                float relVelAlongCable = Vector3.Dot(relativeVelocity, solverDirection);
                 if (relVelAlongCable <= 0f)
                     continue;
 
-                Vector3 velocityCorrection = direction * relVelAlongCable;
+                Vector3 velocityCorrection = worldDirection * relVelAlongCable;
                 if (startDynamic)
                     ApplyPlayerVelocityChange(velocityCorrection * (startInvMass / totalInvMass));
                 if (endDynamic)
@@ -966,20 +967,20 @@ namespace Hecton8.Physics
 
             for (int i = 0; i < segmentCount; i++)
             {
-                Vector3 start = _anchorPositions[i];
-                Vector3 end = _anchorPositions[i + 1];
-                Vector3 delta = end - start;
+                Vector3 solverStart = _solverAnchorPositions[i];
+                Vector3 solverEnd = _solverAnchorPositions[i + 1];
+                Vector3 delta = solverEnd - solverStart;
                 float currentDistance = delta.magnitude;
                 if (currentDistance <= MinDistance)
                     continue;
 
-                Vector3 direction = delta / currentDistance;
+                Vector3 solverDirection = delta / currentDistance;
                 float extension = currentDistance - _segmentRestLengths[i];
                 if (extension <= 0f)
                     continue;
 
-                Vector3 relativeVelocity = _anchorVelocities[i + 1] - _anchorVelocities[i];
-                float relVelAlongCable = Vector3.Dot(relativeVelocity, direction);
+                Vector3 relativeVelocity = _solverAnchorVelocities[i + 1] - _solverAnchorVelocities[i];
+                float relVelAlongCable = Vector3.Dot(relativeVelocity, solverDirection);
                 float springForce = _springStiffness * extension;
                 float dampingForce = _dampingCoefficient * relVelAlongCable;
                 float tension = springForce + dampingForce;
@@ -989,11 +990,12 @@ namespace Hecton8.Physics
                 if (tension > peakTension)
                     peakTension = tension;
 
+                Vector3 worldDirection = ResolveSolverDirectionToWorld(solverDirection);
                 if (i == 0)
-                    playerAcceleration += direction * tension;
+                    playerAcceleration += worldDirection * tension;
 
                 if (i == segmentCount - 1)
-                    payloadAcceleration += -direction * tension;
+                    payloadAcceleration += -worldDirection * tension;
             }
 
             ApplyPlayerAcceleration(playerAcceleration);
@@ -1238,6 +1240,149 @@ namespace Hecton8.Physics
                 return;
 
             PhysicsForceRouter.QueueForce(body, clamped, ForceMode.Acceleration);
+        }
+
+        internal void RebaseManagedRuntimeState(Vector3 shiftOffset)
+        {
+            if (!_isActive || shiftOffset.sqrMagnitude <= MinVectorMagnitudeSq)
+                return;
+
+            for (int i = 0; i < _bendPointCount; i++)
+                _bendPoints[i] -= shiftOffset;
+
+            for (int i = 0; i < _anchorPositions.Length; i++)
+                _anchorPositions[i] -= shiftOffset;
+
+            if (!_solveInPlatformLocalSpace)
+            {
+                for (int i = 0; i < _solverAnchorPositions.Length; i++)
+                    _solverAnchorPositions[i] -= shiftOffset;
+            }
+
+            _bioCableRequestedAnchorWS -= shiftOffset;
+            _bioCableCurrentAnchorWS -= shiftOffset;
+            _visualBounds.SetMinMax(_visualBounds.min - shiftOffset, _visualBounds.max - shiftOffset);
+        }
+
+        internal void CommitVisualRebaseUpload()
+        {
+            if (_visualSegmentPositions.IsCreated && VisualSegmentBuffer != null)
+                VisualSegmentBuffer.SetData(_visualSegmentPositions);
+        }
+
+        internal void RetargetAnchorEndpoint(HectonPlayerMotor playerMotor, Rigidbody anchorBody)
+        {
+            if (anchorBody == null)
+                return;
+
+            _playerMotor = playerMotor;
+            _playerRigidbody = anchorBody;
+            RecalculateDampingCoefficient();
+        }
+
+        internal bool TryGetPayloadBody(out Rigidbody payloadBody)
+        {
+            payloadBody = _payloadBody;
+            return payloadBody != null;
+        }
+
+        private void ResolveSolverReferenceFrame()
+        {
+            _solverPlatform = null;
+            _solverPlatformTransform = null;
+            _solverWorldToLocalMatrix = Matrix4x4.identity;
+            _solverLocalToWorldMatrix = Matrix4x4.identity;
+            _solveInPlatformLocalSpace = false;
+
+            if (_owner == null || _payloadBody == null)
+                return;
+
+            if (!_owner.TryResolveSharedTransportPlatform(
+                    _payloadBody.transform,
+                    _payloadCollider,
+                    out ITransportPlatform platform,
+                    out Matrix4x4 worldToLocalMatrix,
+                    out Matrix4x4 localToWorldMatrix))
+                return;
+
+            _solverPlatform = platform;
+            _solverPlatformTransform = platform.PlatformTransform;
+            _solverWorldToLocalMatrix = worldToLocalMatrix;
+            _solverLocalToWorldMatrix = localToWorldMatrix;
+            _solveInPlatformLocalSpace = true;
+        }
+
+        private void PopulateSolverAnchors(int anchorCount)
+        {
+            if (_solveInPlatformLocalSpace && _solverPlatform != null && _solverPlatformTransform != null)
+            {
+                for (int i = 0; i < anchorCount; i++)
+                {
+                    Vector3 worldAnchor = _anchorPositions[i];
+                    _solverAnchorPositions[i] = _solverWorldToLocalMatrix.MultiplyPoint3x4(worldAnchor);
+
+                    if (i == 0 || i == anchorCount - 1)
+                    {
+                        Vector3 platformVelocity = _solverPlatform.GetPlatformPointVelocity(worldAnchor);
+                        Vector3 relativeVelocity = _anchorVelocities[i] - platformVelocity;
+                        _solverAnchorVelocities[i] = _solverWorldToLocalMatrix.MultiplyVector(relativeVelocity);
+                    }
+                    else
+                    {
+                        _solverAnchorVelocities[i] = Vector3.zero;
+                    }
+                }
+
+                return;
+            }
+
+            for (int i = 0; i < anchorCount; i++)
+            {
+                _solverAnchorPositions[i] = _anchorPositions[i];
+                _solverAnchorVelocities[i] = _anchorVelocities[i];
+            }
+        }
+
+        private Vector3 ResolveSolverDirectionToWorld(Vector3 solverDirection)
+        {
+            if (!_solveInPlatformLocalSpace)
+                return solverDirection;
+
+            Vector3 worldDirection = _solverLocalToWorldMatrix.MultiplyVector(solverDirection);
+            if (worldDirection.sqrMagnitude <= MinVectorMagnitudeSq)
+                return Vector3.zero;
+
+            return worldDirection.normalized;
+        }
+
+        private bool InvalidateBendPointsForDynamicVoxelChange()
+        {
+            for (int i = 0; i < _bendPointCount; i++)
+            {
+                HectonVoxelVolume bendVolume = _bendVolumes[i];
+                if (bendVolume != null && bendVolume.MatchesRuntimeStamp(_bendVolumeRuntimeStamps[i]))
+                    continue;
+
+                if (bendVolume == null && _bendVolumeRuntimeStamps[i] == 0)
+                    continue;
+
+                _bendPointCount = 0;
+                _losBlocked = false;
+                _segmentRestLengthsDirty = true;
+                ClearBendMetadata(0);
+                return true;
+            }
+
+            return false;
+        }
+
+        private void ClearBendMetadata(int startIndex)
+        {
+            for (int i = math.max(0, startIndex); i < MaxSupportedBendPoints; i++)
+            {
+                _bendVolumes[i] = null;
+                _bendVolumeRuntimeStamps[i] = 0;
+            }
         }
 
         private static Vector3 ClampVector(Vector3 value, float maxMagnitude)

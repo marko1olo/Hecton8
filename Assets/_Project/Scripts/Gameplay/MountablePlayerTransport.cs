@@ -20,7 +20,7 @@ namespace Hecton8.Gameplay
     [RequireComponent(typeof(Collider))]
     [RequireComponent(typeof(PlayerTransportFeelContract))]
     [AddComponentMenu("Hecton8/Gameplay/Transport/Mountable Player Transport")]
-    public sealed class MountablePlayerTransport : MonoBehaviour, IInteractable, ITickable, IFixedTickable, IPlayerTransportSource, IPlayerTransportLifecycleOwner, ITransportPlatform, IDamageSignalEmitter
+    public sealed class MountablePlayerTransport : MonoBehaviour, IInteractable, ITickable, IUpdatable, IFixedTickable, IPlayerTransportSource, IPlayerTransportLifecycleOwner, ITransportPlatform, IDamageSignalEmitter
     {
         private const string DefaultMountText = "Board Transport";
         private const string DefaultDismountText = "Dismount";
@@ -81,7 +81,7 @@ namespace Hecton8.Gameplay
         private PlayerInteraction _riderInteraction;
         private bool _riderInteractionWasEnabled;
 
-        private InputManager _subscribedInputManager;
+        private IInputService _subscribedInputManager;
         private bool _mounted;
         private bool _transportActive;
         private bool _isBroken;
@@ -236,9 +236,12 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            InputManager inputManager = InputManager.Instance;
-            Vector2 moveInput = inputManager != null ? inputManager.MoveInput : Vector2.zero;
-            float verticalInput = inputManager != null ? inputManager.VerticalMovementInput : 0f;
+            IInputService inputService = GlobalRegistry.Input;
+            PlayerInputState inputState = inputService != null && inputService.IsPlayerInputEnabled
+                ? inputService.GetState()
+                : default;
+            Vector2 moveInput = inputState.MoveDelta;
+            float verticalInput = inputState.VerticalDelta;
             float throttle = ResolveThrottle(moveInput, verticalInput);
             float configuredSuitEnergyDrain = ResolveConfiguredSuitEnergyDrainPerSecond();
             if (throttle > 0f && _riderSurvival != null && configuredSuitEnergyDrain > 0f)
@@ -492,7 +495,7 @@ namespace Hecton8.Gameplay
 
         private void DismountRider(bool placeRiderAtExit)
         {
-            DismountRiderInternal(placeRiderAtExit, applyEvaHandoff: true);
+            DismountRiderInternal(placeRiderAtExit, applyEvaHandoff: true, transferTowToTransport: true);
         }
 
         internal void TriggerEmergencyBailoutDrift(Vector3 inheritedVelocity, float severity)
@@ -503,8 +506,10 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            DismountRiderInternal(placeRiderAtExit: false, applyEvaHandoff: true);
+            HectonPlayerMovement riderMovement = _riderMovement;
+            DismountRiderInternal(placeRiderAtExit: false, applyEvaHandoff: true, transferTowToTransport: false);
             BeginEmergencyBailoutDrift(inheritedVelocity, severity);
+            TryTransferTowHandoffToTransport(riderMovement);
         }
 
         private void ForceReleaseMountedRider()
@@ -868,7 +873,7 @@ namespace Hecton8.Gameplay
                 DismountRider(true);
         }
 
-        private void DismountRiderInternal(bool placeRiderAtExit, bool applyEvaHandoff)
+        private void DismountRiderInternal(bool placeRiderAtExit, bool applyEvaHandoff, bool transferTowToTransport)
         {
             if (!_mounted)
                 return;
@@ -893,6 +898,8 @@ namespace Hecton8.Gameplay
             RestoreInteractionCollider();
             if (hasExitVelocity)
                 ApplyRiderExitVelocity(exitVelocity);
+            if (transferTowToTransport)
+                TryTransferTowHandoffToTransport(_riderMovement);
 
             PlayTransportOneShot(dismountSound);
             ClearRiderReferences();
@@ -951,6 +958,42 @@ namespace Hecton8.Gameplay
             _transportBody.linearDamping = bailoutLinearDamping;
             _transportBody.angularDamping = bailoutAngularDamping;
             _bailoutDriftTimer = bailoutDriftDuration;
+            ResetPlatformMotionCache();
+        }
+
+        private bool TryTransferTowHandoffToTransport(HectonPlayerMovement riderMovement)
+        {
+            if (riderMovement == null || !riderMovement.HasActiveTowCable || _transportBody == null)
+                return false;
+
+            Transform platformTransform = PlatformTransform;
+            if (platformTransform == null)
+                return false;
+
+            PrepareTowHandoffBody();
+            return riderMovement.TryTransferHeavyTowToTransport(_transportBody, platformTransform);
+        }
+
+        private void PrepareTowHandoffBody()
+        {
+            if (_transportBody == null)
+                return;
+
+            if (!_hasCachedBodyDamping)
+            {
+                _cachedLinearDamping = _transportBody.linearDamping;
+                _cachedAngularDamping = _transportBody.angularDamping;
+                _cachedBodyWasKinematic = _transportBody.isKinematic;
+                _hasCachedBodyDamping = true;
+            }
+
+            if (_transportBody.isKinematic)
+                _transportBody.isKinematic = false;
+
+            _transportBody.WakeUp();
+            _transportBody.linearDamping = bailoutLinearDamping;
+            _transportBody.angularDamping = bailoutAngularDamping;
+            _bailoutDriftTimer = math.max(_bailoutDriftTimer, bailoutDriftDuration);
             ResetPlatformMotionCache();
         }
 
@@ -1041,8 +1084,8 @@ namespace Hecton8.Gameplay
             if (tickManager == null)
                 return;
 
-            tickManager.Register((ITickable)this);
             tickManager.Register((IFixedTickable)this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
             _registered = true;
         }
 
@@ -1053,17 +1096,15 @@ namespace Hecton8.Gameplay
 
             GameTickManager tickManager = GameTickManager.Instance;
             if (tickManager != null)
-            {
-                tickManager.Unregister((ITickable)this);
                 tickManager.Unregister((IFixedTickable)this);
-            }
 
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
             _registered = false;
         }
 
         private void RefreshMountedInputSubscription()
         {
-            InputManager currentInputManager = InputManager.Instance;
+            IInputService currentInputManager = GlobalRegistry.Input;
             if (ReferenceEquals(_subscribedInputManager, currentInputManager))
                 return;
 

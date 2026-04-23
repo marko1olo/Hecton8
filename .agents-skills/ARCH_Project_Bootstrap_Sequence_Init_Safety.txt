@@ -23,7 +23,7 @@ PRIORITY_QUEUE (ordered, blocking):
   [P1] GameTickManager          → Fixed/Variable tick registration
   [P2] SaveManager              → Version audit, migration check
   [P3] InputManager             → Device enumeration, rebind load
-  [P4] ShaderWarmupExecutor     → WarmUp() during splash window
+  [P4] ShaderWarmupExecutor     → background shader prewarm during splash window
   [P5] OceanBridge              → Crest/custom FFT ocean link
   [P6] MapMagicBridge           → Terrain chunk pipeline init
   [P7] AudioGraphBootstrap      → DSPGraph + native spatializer init
@@ -123,7 +123,8 @@ PRESET MATRIX (GPU_TIER × CPU_TIER → ConfigBundle):
     TextureStreamingBudget = 768MB
     MaxLODLevel            = 1
     ParticleMaxBudget      = 512
-    AsyncUploadBufferSize  = 8MB
+    // [FORBID] 8MB upload buffers for dynamic streaming.
+    AsyncUploadBufferSize  = 64MB
     QualitySettings.SetQualityLevel(1)   → "Performance"
 
   [MX350 × CPU_MID]:   → same GPU tier, relax PhysicsSolverQuality(3)
@@ -158,12 +159,15 @@ WARMUP SEQUENCE:
 
   3. Execute warmup (non-blocking via frame spread):
        svc = handle.Result
-       svc.WarmUp()       → triggers GPU PSO compilation
+       // [FORBID] Synchronous Shader Warmup.
+       // You MUST use Unity 6's background shader prewarming APIs or render a dummy camera over several frames.
+       for frame in 0..2:
+           RenderWarmupDummyCamera()
+           await Awaitable.NextFrameAsync()
 
   4. Post-warmup stall guard:
-       await Awaitable.EndOfFrameAsync()
-       await Awaitable.EndOfFrameAsync()
-       await Awaitable.EndOfFrameAsync()
+       await Awaitable.NextFrameAsync()
+       await Awaitable.NextFrameAsync()
 
   5. Dispose handle reference; retain svc ref for runtime lookup
 
@@ -238,8 +242,8 @@ STEP SEQUENCE (blocking per step):
        StreamLeaseRegistry.ReleaseSceneLeases(target)
        EvictQueue.DrainSynchronously()
        GC.Collect(1, GCCollectionMode.Forced)
-       await Awaitable.EndOfFrameAsync()
-       await Awaitable.EndOfFrameAsync()
+       await Awaitable.NextFrameAsync()
+       await Awaitable.NextFrameAsync()
 
   5. FINALIZING:
        InputManager.UnlockAll()
@@ -250,7 +254,7 @@ STEP SEQUENCE (blocking per step):
 VRAM FLUSH (MX350 critical path, between steps 3→4):
   IF TIER == TIER_MX350 OR TIER_LOW:
     TextureStreamingManager.SetBudget(256MB)   → force eviction
-    await Awaitable.EndOfFrameAsync()
+    await Awaitable.NextFrameAsync()
     TextureStreamingManager.SetBudget(preset.TextureStreamingBudget)
 
 ---
@@ -281,7 +285,7 @@ HALT SEQUENCE:
        Debug.LogError → write to Application.persistentDataPath/crash_{timestamp}.log
        Include: full step execution timeline, hardware profile, exception stack
   5. HALT:
-       WHILE true: await Awaitable.EndOfFrameAsync()   → preserve UI, block all game logic
+       WHILE true: await Awaitable.NextFrameAsync()   → preserve UI, block all game logic
        ON_QUIT_BUTTON: Application.Quit(-1)
 
 RECOVERY_OPTION (non-critical subsystems only):

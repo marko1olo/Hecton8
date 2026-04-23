@@ -43,6 +43,7 @@ bit 7  → LUMEN_CAPPED          // Budget flag: intensity was clamped
 REGISTER(ProxyLight L):
     ASSERT L.Range > 0 AND L.Range < RANGE_HARD_MAX (= 40m)
     ASSERT L.Intensity <= LUMEN_BUDGET_PER_LIGHT (= 8000 cd)
+    // When claiming a FREE atlas slot, you MUST force an immediate atlas update (bypassing the stagger) for frame 1, OR explicitly clear that tile in the depth buffer to white.
     Assign L.ShadowPhase = (registryCount % 4) * 0.25
     Insert → NativeArray<ProxyLight> _lightPool (max capacity = 128)
     Dirty → spatial grid cell covering L.Pos
@@ -169,9 +170,8 @@ IF back_face_check > 0.0:
 FOREACH DarkVolume DV in ActiveVolumes:
     IF PointInAABB(L.Pos, DV.Bounds) AND NOT (L.Flags & BIT6):
         L.Intensity *= DV.SuppressionFactor  // range [0.0–0.5]
-    IF PointInAABB(FragPos, DV.Bounds):
-        ambient_floor = 0.0  // Kill ambient inside volume
-        sky_contribution = 0.0
+    // [FORBID] Spatial math bounds-checks in the fragment shader.
+    // Use URP Decals to project negative multipliers, OR URP Light Layers.
 
 ### 3.5 Cave Absolute Darkness Enforcement
 

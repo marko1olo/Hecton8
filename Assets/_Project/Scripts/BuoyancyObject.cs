@@ -32,6 +32,9 @@
 
 using Hecton8.Core;
 using UnityEngine;
+#if UNITY_EDITOR
+using Sirenix.OdinInspector;
+#endif
 
 namespace Hecton8.Physics
 {
@@ -41,6 +44,9 @@ namespace Hecton8.Physics
     public sealed class BuoyancyObject : MonoBehaviour, IFixedTickable
     {
         [Header("Profile")]
+#if UNITY_EDITOR
+        [Required("BuoyancyObject requires a BuoyancyProfile reference.")]
+#endif
         [SerializeField] private BuoyancyProfile profile;
         [SerializeField] private bool autoApplyProfile = true;
         // ══════════════════════════════════════════════════════════
@@ -50,26 +56,50 @@ namespace Hecton8.Physics
         [Header("── Physical Properties ───────────────────────")]
         [Tooltip("Плотность объекта (кг/м³). " +
                  "Вода ≈ 1000, Дерево ≈ 600, Железо ≈ 7800, Титан ≈ 4500")]
+#if UNITY_EDITOR
+        [MinValue(0.01d)]
+        [ValidateInput(nameof(IsFinitePositive), "Density must be finite and greater than zero.")]
+#endif
         [SerializeField] private float density = 500f;
 
         [Tooltip("Объём объекта (м³). Определяет выталкивающую силу. " +
                  "Куб 10см = 0.001 м³")]
+#if UNITY_EDITOR
+        [MinValue(0.0001d)]
+        [ValidateInput(nameof(IsFinitePositive), "Volume must be finite and greater than zero.")]
+#endif
         [SerializeField] private float volume = 0.01f;
 
         [Tooltip("Высота объекта (м). Для расчёта частичного погружения. " +
                  "0 = считать полностью погружённым")]
+#if UNITY_EDITOR
+        [MinValue(0.01d)]
+        [ValidateInput(nameof(IsFinitePositive), "Height must be finite and greater than zero.")]
+#endif
         [SerializeField] private float height = 0.3f;
 
         [Tooltip("Насколько сильно объект реагирует на течение. " +
                  "1 = стандартно, 0 = игнорирует поток, >1 = лёгкий/парусный объект.")]
+#if UNITY_EDITOR
+        [MinValue(0d)]
+        [ValidateInput(nameof(IsFiniteNonNegative), "Current Response must be finite and non-negative.")]
+#endif
         [SerializeField] private float currentResponse = 1f;
 
         [Tooltip("Стабилизирующий момент у поверхности. " +
                  "Помогает объекту красиво выравниваться и не болтаться как мусорный баг.")]
+#if UNITY_EDITOR
+        [MinValue(0d)]
+        [ValidateInput(nameof(IsFiniteNonNegative), "Surface Stability must be finite and non-negative.")]
+#endif
         [SerializeField] private float surfaceStability = 0.75f;
 
         [Tooltip("Насколько важен объект для high-fidelity симуляции на расстоянии. " +
                  "1 = стандарт, >1 = дольше остаётся в high LOD, <1 = раньше упрощается.")]
+#if UNITY_EDITOR
+        [MinValue(0.1d)]
+        [ValidateInput(nameof(IsFinitePositive), "LOD Bias must be finite and greater than zero.")]
+#endif
         [SerializeField] private float lodBias = 1f;
 
         [Tooltip("Если выключено — объект всегда считается в полном качестве, без distance LOD.")]
@@ -83,6 +113,10 @@ namespace Hecton8.Physics
 
         [Tooltip("Distance to raycast downward for ground detection (meters). " +
                  "Should be slightly more than half the object height.")]
+#if UNITY_EDITOR
+        [MinValue(0.01d)]
+        [ValidateInput(nameof(IsFinitePositive), "Ground Check Distance must be finite and greater than zero.")]
+#endif
         [SerializeField] private float groundCheckDistance = 1.0f;
 
         [Tooltip("Layers considered as ground (Terrain, Default, etc). " +
@@ -426,6 +460,16 @@ namespace Hecton8.Physics
         // ══════════════════════════════════════════════════════════
 
 #if UNITY_EDITOR
+        private static bool IsFinitePositive(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value) && value > 0f;
+        }
+
+        private static bool IsFiniteNonNegative(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value) && value >= 0f;
+        }
+
         private void OnValidate()
         {
             ApplyProfileIfNeeded();

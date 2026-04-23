@@ -66,6 +66,7 @@ using Hecton8.Items;
 using Hecton8.Physics;
 using Hecton8.Power;
 using Hecton8.UI;
+using Hecton8.World;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -347,6 +348,10 @@ namespace Hecton8.Gameplay
         public float Co2Normalized => _lifeSupportComponent.Co2Normalized;
         /// <summary>True when CO2 saturation has reached the life-support lockout threshold.</summary>
         public bool IsCo2Critical => _lifeSupportComponent.IsCo2Critical;
+        /// <summary>True when CO2 saturation has crossed the toxic dry-room threshold.</summary>
+        public bool IsCo2Toxic => _lifeSupportComponent.IsCo2Toxic;
+        /// <summary>Normalized dry-room toxicity hazard intensity derived from local CO2 saturation.</summary>
+        public float Co2ToxicHazardIntensity => _lifeSupportComponent.ToxicHazardIntensity;
         internal float BreathableReserve => _lifeSupportComponent.BreathableReserve;
         internal float BreathableReserveCapacity => _lifeSupportComponent.BreathableReserveCapacity;
 
@@ -953,6 +958,24 @@ namespace Hecton8.Gameplay
         /// </summary>
         private void SpawnWorldItem(ItemData itemData, Vector3 position, ObjectPoolManager pool)
         {
+            if (itemData == null)
+                return;
+
+            // Небольшой случайный разброс, чтобы предметы не стакались
+            Vector3 offset;
+            offset.x = UnityEngine.Random.Range(-0.4f, 0.4f);
+            offset.y = UnityEngine.Random.Range(0f, 0.3f);
+            offset.z = UnityEngine.Random.Range(-0.4f, 0.4f);
+
+            Vector3 spawnPosition = position + offset;
+            PersistentWorldRegistry persistentWorldRegistry = PersistentWorldRegistry.Instance;
+            if (persistentWorldRegistry != null &&
+                itemData.worldPrefab != null &&
+                persistentWorldRegistry.TryRegisterDroppedItem(itemData, 1, spawnPosition))
+            {
+                return;
+            }
+
             if (worldItemPrefab == null)
             {
 #if UNITY_EDITOR
@@ -974,13 +997,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            // Небольшой случайный разброс, чтобы предметы не стакались
-            Vector3 offset;
-            offset.x = UnityEngine.Random.Range(-0.4f, 0.4f);
-            offset.y = UnityEngine.Random.Range(0f, 0.3f);
-            offset.z = UnityEngine.Random.Range(-0.4f, 0.4f);
-
-            GameObject itemGO = pool.Spawn(worldItemPrefab, position + offset, Quaternion.identity);
+            GameObject itemGO = pool.Spawn(worldItemPrefab, spawnPosition, Quaternion.identity);
 
             if (itemGO == null)
                 return;
@@ -1566,6 +1583,22 @@ namespace Hecton8.Gameplay
             _lifeSupportComponent.ApplyFloodExposure(normalizedFloodDelta, co2Amplifier);
         }
 
+        internal bool ClampRepairIntegrityCap(float repairIntegrityCap)
+        {
+            bool changed = _integrityComponent.ClampRepairIntegrityCap(repairIntegrityCap);
+            if (!changed)
+                return false;
+
+            UpdateDrainDiagnostics();
+            RefreshVisualStateImmediate();
+            return true;
+        }
+
+        internal bool RestoreRepairIntegrityCap(float amount)
+        {
+            return _integrityComponent.RestoreRepairIntegrityCap(amount);
+        }
+
         internal void EmitHullBreachJet(Vector3 localPoint, float pressureDelta)
         {
             if (leakVfx == null)
@@ -1592,6 +1625,18 @@ namespace Hecton8.Gameplay
             leakVfx.Emit(emitParams, Mathf.RoundToInt(Mathf.Lerp(6f, 24f, burst01)));
             if (!leakVfx.isPlaying)
                 leakVfx.Play();
+        }
+
+        internal bool TryGetInteriorHazardBounds(out Vector3 worldCenter, out float radius)
+        {
+            if (!TryGetInteriorOverlapQuery(out worldCenter, out Vector3 halfExtents, out _))
+            {
+                radius = 0f;
+                return false;
+            }
+
+            radius = halfExtents.magnitude;
+            return radius > 0.01f;
         }
 
         private void ConfigureRuntimeComponentsFromSerializedState()

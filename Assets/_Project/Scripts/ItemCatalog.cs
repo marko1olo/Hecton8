@@ -117,6 +117,36 @@ namespace Hecton8.SaveSystem
             return !_hasLookupAmbiguity;
         }
 
+        internal int GetAllItemsNonAlloc(List<ItemData> results)
+        {
+            if (results == null)
+                return 0;
+
+            results.Clear();
+
+            if (allItems != null)
+            {
+                for (int i = 0; i < allItems.Count; i++)
+                {
+                    ItemData item = allItems[i];
+                    if (item != null)
+                        results.Add(item);
+                }
+            }
+
+            if (_runtimeItems != null)
+            {
+                for (int i = 0; i < _runtimeItems.Count; i++)
+                {
+                    ItemData item = _runtimeItems[i];
+                    if (item != null)
+                        results.Add(item);
+                }
+            }
+
+            return results.Count;
+        }
+
         private void RebuildLookup()
         {
             int itemCount = allItems != null ? allItems.Count : 0;

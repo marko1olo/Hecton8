@@ -127,8 +127,10 @@ Kp/Kd are frequency-domain params, not frame-count params. Invariant by construc
 
 **Delta Rotation Extraction (shortest path, NaN-safe):**
 ```
-1. deltaRot    = targetRot * Inverse(objectRot)
-2. deltaRot.ToAngleAxis(out angle, out axis)
+quaternion deltaRot = math.mul(targetRot, math.inverse(objectRot));
+// Burst-compatible math intrinsics
+float angle = math.angle(deltaRot);
+float3 axis = math.axis(deltaRot);
 3. GUARD:      if magnitude(axis) < 1e-6f → axis = float3.up, angle = 0
 4. GUARD:      if abs(angle) < 1e-4f → skip torque
 5. WRAP:       if angle > π → angle -= 2π   (always take shortest arc)
@@ -289,7 +291,7 @@ Step 1 — PREPARE (Main Thread, zero-alloc):
   WriteFingerCommandsJob {
     Input:  NativeArray<float3> knuckleWorldPos (derived from hand transform, IJobFor)
     Output: NativeArray<SpherecastCommand> commands
-    Logic:  commands[i] = new SpherecastCommand(rayOrigin[i], castRadius, rayDir[i], castLength, layerMask)
+new SpherecastCommand(origin, radius, dir, new QueryParameters(layerMask, false, QueryTriggerInteraction.Ignore, false), length)
   }
   handle1 = WriteFingerCommandsJob.Schedule(FINGER_COUNT, 1)
 
@@ -325,7 +327,7 @@ Step 4 — APPLY POSE (Main Thread, after handle3.Complete()):
 ```
 if results[i].normal == float3.zero → normal = -rayDir[i]   (degenerate surface)
 bendAngle = clamp(bendAngle, 0.0f, 1.0f)
-if isNaN(results[i].point) → treat as no-hit
+if (math.any(math.isnan(results[i].point)))
 ```
 
 ---
@@ -387,7 +389,7 @@ TOTAL (BASE):          ~1.65ms  (headroom for fluid, audio, AI)
 ```
 Hand physics: CPU-only. No GPU buffers.
 Finger pose result → drives SkinnedMeshRenderer bone weights (CPU skinning on BASE).
-HIGH/ULTRA: GPU skinning via ComputeBuffer. BoneWeight upload: 10 bones × 2 hands = 80 floats. Negligible.
+HIGH/ULTRA: GPU skinning via GraphicsBuffer. BoneWeight upload: 10 bones x 2 hands = 80 floats. Negligible.
 ```
 
 ### [SCALE] Time-Slicing — Finger Pose on Low-End

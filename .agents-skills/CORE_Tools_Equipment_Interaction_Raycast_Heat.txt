@@ -136,9 +136,8 @@ power_final = power_init × exp(−voxel_density × travel_distance)
 ### 3.2 Tool Recoil Impulse
 
 impulse_vector = −packet.Direction × packet.Power × BasePower × (1.0 / max(rigidbody.mass, 0.1))
-rigidbody.AddForce(impulse_vector, ForceMode.Impulse)
-
-- Apply on owning-player Rigidbody only
+// [FORBID] Direct player-only recoil inside moving structures.
+// If on a platform, apply the inverse impulse to the Submarine Rigidbody to ensure conservation of momentum.
 - Scale by `underwater_drag_factor` (0.4 – 0.8 based on water viscosity zone)
 - [RULE] Clamp impulse magnitude: `|impulse| ≤ 12.0` to prevent physics destabilization on MX350-tier simulation
 
@@ -190,7 +189,9 @@ for iter in 0..3:
   for each segment (i, i+1):
     delta     = node[i+1].pos − node[i].pos
     dist      = |delta|
-    error     = (dist − rest_length) / dist × 0.5
+// [FORBID] Naked division in distance constraints. Guard it:
+float safe_dist = math.max(dist, 1e-5f);
+error = (safe_dist - rest_length) / safe_dist * 0.5f;
     node[i].pos   += delta × error
     node[i+1].pos −= delta × error
 // Anchor node[0] to harpoon tip (world), node[N] to target hit-point
@@ -297,7 +298,9 @@ Init:
   voxel    = floor(origin / voxelSize)
   step     = sign(dir)                          // int3: (-1,0,1) per axis
   tDelta   = abs(voxelSize / dir)               // distance per axis step
-  tMax     = ((voxel + max(step,0)) * voxelSize − origin) / dir
+//[FORBID] Naked division by ray direction. You MUST guard against zero:
+float3 safeDir = math.select(dir, 1e-7f, dir == 0.0f);
+tMax = ((voxel + math.max(step,0)) * voxelSize - origin) / safeDir;
 
 March loop (i = 0..maxSteps):
   axis = argmin(tMax)                           // cheapest axis select
@@ -317,7 +320,7 @@ PIPELINE:
              On complete: write positions + indices + normals through MeshDataArray
              Normals computed analytically in Burst via SDF central differences
              Apply via Mesh.ApplyAndDisposeWritableMeshData(..., MeshUpdateFlags.DontValidateIndices)
-             Upload to GPU: Mesh.UploadMeshData(markNoLongerReadable: false)
+             Upload to GPU: Mesh.UploadMeshData(markNoLongerReadable: true) // Unless procedurally deforming
 PRIORITY: Cut operations = high priority job. Drill = normal. Weld deposit = low.
 COALESCE: Accumulate dirty chunks for 3 frames before scheduling — batch merges adjacent chunks.
 

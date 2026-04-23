@@ -24,6 +24,7 @@ using Hecton.Localization;
 using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Hecton8.Modding;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
 using UnityEngine;
@@ -176,6 +177,7 @@ namespace Hecton8.Narrative
 
             // Также регистрируем в NarrativeDirector
             NarrativeEvents.RaiseDiscoveryMade(data.logId);
+            HectonEventBus.Publish(new LoreAcquiredEvent(LoreDatabaseManager.ComputeLoreHash(data.logId)));
 
             LogDiscovered(data.logId, displayTitle);
         }

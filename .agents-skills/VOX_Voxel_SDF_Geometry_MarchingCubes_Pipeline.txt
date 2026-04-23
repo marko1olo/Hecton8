@@ -166,9 +166,10 @@ Rule:
   - Use deterministic edge ownership instead
 
 Canonical layout:
-  NativeArray<ushort> edgeX;
-  NativeArray<ushort> edgeY;
-  NativeArray<ushort> edgeZ;
+// [FORBID] 16-bit indices for high-res procedural voxels.
+NativeArray<uint> edgeX; // Use 32-bit uint
+NativeArray<uint> edgeY;
+NativeArray<uint> edgeZ;
 
 Ownership:
   - each voxel owns only positive X/Y/Z edges
@@ -208,7 +209,8 @@ n.z = D(x,y,z+h) - D(x,y,z-h)
 
 n = normalize(n)
 
-D(p) = SampleDensityField(p)   // trilinear interp from NativeArray<half>
+// [FORBID] Trilinear sampling for normals. 
+// Compute the 6-tap normal at the INTEGER voxel grid nodes, then lerp to the vertex edge position.
   → convert half→float at sample point
   → ghost border cells supply valid data for boundary verts
 
@@ -306,17 +308,17 @@ RecalculateBounds(): manual call, only when AABBDirty flag set.
 
 ### 8.2 Sub-Chunk Staging (Large Chunk Overflow)
 
-If VertexCount > 65535 (ushort index limit):
+If VertexCount > 65535:
   Split into SubChunks along dominant axis (longest AABB edge)
   Each SubChunk: independent NativeArray segment, independent Mesh
   Max SubChunks per chunk: 4
-  Index format: UInt16 only. If split still exceeds limit, reject chunk and re-partition at smaller build granularity.
+  Index format: UInt32 in canonical build buffers. Downcast to UInt16 only if subchunk vertex count <= 65535.
 
 ### 8.3 Physics Bake Distribution
 
 BakeDistributed:
   Frame N+0: Generate mesh, upload geometry
-  Frame N+1: Physics.BakeMesh(meshID, convex=false)  [JobHandle dependency]
+  Frame N+1: Physics.BakeMesh(meshData.GetVertexData<Vector3>(), meshData.GetIndexData<int>(), ...)
   Frame N+2: Assign baked MeshCollider.sharedMesh
   Frame N+3: Enable collider active flag
 
@@ -335,9 +337,9 @@ Slot content per slot:
   densityField     : NativeArray<half>  [(ChunkRes+2)³]
   vertexScratch    : NativeArray<Vertex>[ChunkRes³ * 5]   (worst-case MC)
   indexScratch     : NativeArray<ushort> [ChunkRes³ * 15]
-  edgeX            : NativeArray<ushort>
-  edgeY            : NativeArray<ushort>
-  edgeZ            : NativeArray<ushort>
+  edgeX            : NativeArray<uint>
+  edgeY            : NativeArray<uint>
+  edgeZ            : NativeArray<uint>
   normalScratch    : NativeArray<float3>[ChunkRes³ * 5]
 
 Allocation: Allocator.Persistent at engine init.

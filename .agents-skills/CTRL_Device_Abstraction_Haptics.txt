@@ -118,7 +118,10 @@ IsHeld(action)           := IsPressed(action, Current) & IsPressed(action, Prev)
 
 ```
 POLL SEQUENCE (execute once, top of Update, before all game systems):
-1. Read InputSystem.actions["Move"].ReadValue<Vector2>()        → state.MoveAxis
+1. Read // Inside Awake():
+CachedMoveAction = InputSystem.actions.FindAction("Move");
+// Inside Poll():
+CachedMoveAction.ReadValue<Vector2>()        → state.MoveAxis
 2. Read InputSystem.actions["Look"].ReadValue<Vector2>()        → state.LookAxis
 3. Read InputSystem.actions["Thrust"].ReadValue<float>()        → state.ThrustAxis
 4. Read InputSystem.actions["Brake"].ReadValue<float>()         → state.BrakeAxis
@@ -268,8 +271,7 @@ HAPTIC UPDATE (end-of-frame, after gameplay writes to front buffer):
 
 ```
 // exp(-x) Padé [1/2] approximation:
-fastExp(x):  // x = t × λ, must be positive
-  return 1.0f / (1.0f + x + 0.5f × x × x)
+math.exp(-x);
 
 // Valid range: x ∈ [0, 3]. Clamp x before call:
 x = clamp(t × λ, 0.0f, 3.0f)
@@ -380,7 +382,8 @@ FAILURE: signal = Magnitude / MaxExpectedMagnitude with MaxExpectedMagnitude = 0
   Guard: if MaxExpectedMagnitude < EPSILON (0.0001f): signal = 0.0f. Skip divide.
 
 FAILURE: MoveAxis magnitude > 1.0 (analog stick hardware drift on worn controllers):
-  Guard: MoveAxis = normalize(MoveAxis) × clamp(length(MoveAxis), 0.0f, 1.0f)
+// Use normalizesafe to prevent division by zero.
+MoveAxis = math.normalizesafe(MoveAxis) * ...
   Applied at poll boundary. All downstream sees clean [-1,1]² disk.
 
 FAILURE: Buffer scan finds ConsumedFlag=1 entries accumulating (consumed but not recycled):

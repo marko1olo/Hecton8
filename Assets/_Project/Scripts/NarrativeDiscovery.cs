@@ -7,6 +7,7 @@ using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
+using Hecton8.Modding;
 using Hecton8.Narrative;
 using UnityEngine;
 
@@ -134,6 +135,7 @@ namespace Hecton8.Interaction
             }
 
             NarrativeEvents.RaiseDiscoveryMade(discoveryId);
+            HectonEventBus.Publish(new LoreAcquiredEvent(LoreDatabaseManager.ComputeLoreHash(discoveryId)));
 
             if (linkedAudioLog != null && AudioLogSystem.Instance != null)
                 AudioLogSystem.Instance.PlayLog(linkedAudioLog);

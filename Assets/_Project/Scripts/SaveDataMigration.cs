@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Hecton8.Narrative;
 using UnityEngine;
 
 namespace Hecton8.SaveSystem
@@ -949,6 +950,13 @@ namespace Hecton8.SaveSystem
                 data.audioLogDiscoveredIds = new System.Collections.Generic.List<string>();
                 changed = true;
                 steps.Add("audioLog list created");
+            }
+
+            if (!IndustrialLoreBitMask.HasExpectedCapacity(data.industrialLoreUnlockWords))
+            {
+                IndustrialLoreBitMask.EnsureCapacity(ref data.industrialLoreUnlockWords);
+                changed = true;
+                steps.Add("industrial lore bit words created");
             }
 
             if (data.questActiveIds == null)

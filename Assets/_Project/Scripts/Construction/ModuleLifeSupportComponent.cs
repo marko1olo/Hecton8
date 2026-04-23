@@ -17,6 +17,8 @@ namespace Hecton8.Construction
     [System.Serializable]
     internal sealed class ModuleLifeSupportComponent
     {
+        private const float ToxicCo2ThresholdNormalized = 0.75f;
+
         private float _oxygenRefillRate;
         private float _breathableReserveCapacity;
         private float _breathableReserve;
@@ -37,6 +39,8 @@ namespace Hecton8.Construction
         public bool IsAirQualityLow => AirReserveNormalized <= _staleAirThreshold;
         public float Co2Normalized => _co2Capacity > 0.01f ? Mathf.Clamp01(_co2Level / _co2Capacity) : 0f;
         public bool IsCo2Critical => _co2Level >= _co2CriticalThreshold;
+        public bool IsCo2Toxic => Co2Normalized >= ToxicCo2ThresholdNormalized;
+        public float ToxicHazardIntensity => Mathf.InverseLerp(ToxicCo2ThresholdNormalized, 1f, Co2Normalized);
         public float BreathableReserve => _breathableReserve;
         public float BreathableReserveCapacity => _breathableReserveCapacity;
         public float Co2Level => _co2Level;
@@ -146,6 +150,16 @@ namespace Hecton8.Construction
                     _breathableReserve = _breathableReserveCapacity;
             }
 
+            if (!dryCompartment)
+            {
+                if (_co2GenerationRate > 0f)
+                    AccumulateCo2(_co2GenerationRate * dt);
+            }
+            else if (!hasOperationalPower && _airRecycleRate > 0f)
+            {
+                AccumulateCo2(_airRecycleRate * dt);
+            }
+
             if (trackedPlayerSurvival != null && dryCompartment)
             {
                 if (_occupiedAirDrainRate > 0f)
@@ -155,12 +169,12 @@ namespace Hecton8.Construction
                         _breathableReserve = 0f;
                 }
 
+                float co2AccumulationRate = 0f;
                 if (_co2GenerationRate > 0f)
-                {
-                    _co2Level += _co2GenerationRate * dt;
-                    if (_co2Level > _co2Capacity)
-                        _co2Level = _co2Capacity;
-                }
+                    co2AccumulationRate += _co2GenerationRate;
+
+                if (co2AccumulationRate > 0f)
+                    AccumulateCo2(co2AccumulationRate * dt);
 
                 if (_breathableReserve > 0f && !IsCo2Critical)
                 {
@@ -233,6 +247,16 @@ namespace Hecton8.Construction
                 _breathableReserve = 0f;
 
             _co2Level += _co2Capacity * floodDelta * Mathf.Max(0f, co2Amplifier);
+            if (_co2Level > _co2Capacity)
+                _co2Level = _co2Capacity;
+        }
+
+        private void AccumulateCo2(float amount)
+        {
+            if (amount <= 0f)
+                return;
+
+            _co2Level += amount;
             if (_co2Level > _co2Capacity)
                 _co2Level = _co2Capacity;
         }

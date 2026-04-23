@@ -19,6 +19,7 @@ using Hecton8.Core;
 using Hecton8.Inventory;
 using Hecton8.Interaction;
 using Hecton8.Physics;
+using Hecton8.World;
 using Hecton.Localization;
 
 namespace Hecton8.Items
@@ -71,6 +72,8 @@ namespace Hecton8.Items
         private Rigidbody _rb;
         private BuoyancyObject _buoyancy;
         private string _cachedInteractText = "???";
+        private PersistentWorldRegistry _persistentWorldRegistry;
+        private int _persistentWorldRecordIndex = -1;
 
         // ═════════════════════════════════════════════════════════
         private void Awake()
@@ -104,6 +107,7 @@ namespace Hecton8.Items
             // Гарантированная отписка при деактивации (пулинг).
             // Сбрасываем фазу — при следующем OnEnable начнём заново.
             StopSettle();
+            ClearPersistentWorldRecord();
         }
 
         // ─────────────────────── ITickable ───────────────────────
@@ -232,6 +236,18 @@ namespace Hecton8.Items
         /// <summary>Текущее количество (read-only).</summary>
         public int Quantity => quantity;
 
+        internal void BindPersistentWorldRecord(PersistentWorldRegistry registry, int recordIndex)
+        {
+            _persistentWorldRegistry = registry;
+            _persistentWorldRecordIndex = recordIndex;
+        }
+
+        internal void ClearPersistentWorldRecord()
+        {
+            _persistentWorldRegistry = null;
+            _persistentWorldRecordIndex = -1;
+        }
+
         private void ConfigureWaterDynamicsFromData()
         {
             if (itemData == null || itemData.worldBuoyancyProfile == null || _rb == null)
@@ -281,6 +297,7 @@ namespace Hecton8.Items
                 return;
             }
 
+            _persistentWorldRegistry?.MarkRecordCollected(_persistentWorldRecordIndex);
             ConsumeWorldProxy();
         }
 

@@ -34,7 +34,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Tools/Manta Scooter")]
-    public sealed class MantaScooter : PlayerTool, IBatteryTool, ITickable, IPlayerTransportSource, IPlayerTransportLifecycleOwner, IDamageSignalEmitter
+    public sealed class MantaScooter : PlayerTool, IBatteryTool, ITickable, IUpdatable, IPlayerTransportSource, IPlayerTransportLifecycleOwner, IDamageSignalEmitter
     {
         private const float DefaultTransportPropulsionReference = 800f;
 
@@ -567,8 +567,11 @@ namespace Hecton8.Gameplay
 
             if (_isActive)
             {
-                InputManager inputManager = InputManager.Instance;
-                if (inputManager == null || !inputManager.IsPrimaryActionHeld)
+                IInputService inputService = GlobalRegistry.Input;
+                PlayerInputState inputState = inputService != null && inputService.IsPlayerInputEnabled
+                    ? inputService.GetState()
+                    : default;
+                if (!inputState.HasAction(PlayerInputAction.PrimaryFire))
                     UpdateHullStressMisfire(deltaTime, false);
 
                 TickDriveRelease(deltaTime);
@@ -940,8 +943,11 @@ namespace Hecton8.Gameplay
 
         private void TickDriveRelease(float deltaTime)
         {
-            InputManager inputManager = InputManager.Instance;
-            bool primaryHeld = inputManager != null && inputManager.IsPrimaryActionHeld;
+            IInputService inputService = GlobalRegistry.Input;
+            PlayerInputState inputState = inputService != null && inputService.IsPlayerInputEnabled
+                ? inputService.GetState()
+                : default;
+            bool primaryHeld = inputState.HasAction(PlayerInputAction.PrimaryFire);
             if (primaryHeld)
                 return;
 
@@ -1623,11 +1629,8 @@ namespace Hecton8.Gameplay
             if (_registeredTick)
                 return;
 
-            if (GameTickManager.Instance != null)
-            {
-                GameTickManager.Instance.Register(this);
-                _registeredTick = true;
-            }
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
+            _registeredTick = true;
         }
 
         private void UnregisterFromTick()
@@ -1635,11 +1638,8 @@ namespace Hecton8.Gameplay
             if (!_registeredTick)
                 return;
 
-            if (GameTickManager.Instance != null)
-            {
-                GameTickManager.Instance.Unregister(this);
-                _registeredTick = false;
-            }
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+            _registeredTick = false;
         }
 
         private void HandleMantaLanguageChanged(GameLanguage language)

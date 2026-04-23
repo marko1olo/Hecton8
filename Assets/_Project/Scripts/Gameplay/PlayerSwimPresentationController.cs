@@ -11,7 +11,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Player Swim Presentation Controller")]
-    public sealed class PlayerSwimPresentationController : MonoBehaviour, ITickable
+    public sealed class PlayerSwimPresentationController : MonoBehaviour, ITickable, IUpdatable
     {
         private const float TwoPi = 6.28318530718f;
         private const float UtilitySuitMassThreshold = 120f;
@@ -649,7 +649,7 @@ namespace Hecton8.Gameplay
         private bool _hasInitializedActiveBlend;
         private bool _cameraYawInitialized;
         private bool _poseStateInitialized;
-        private Hecton8.Input.InputManager _inputManager;
+        private IInputService _inputService;
         private readonly RaycastHit[] _handObstacleHits = new RaycastHit[4]; // COLD ALLOC: RaycastHit[4] — swim hand obstacle probes — owner: PlayerSwimPresentationController
 
         /// <summary>Current resolved swim presentation mode.</summary>
@@ -784,14 +784,6 @@ namespace Hecton8.Gameplay
             TryUnregister();
         }
 
-        private void LateUpdate()
-        {
-            if (!Application.isPlaying)
-                return;
-
-            SyncFromLocomotion(Time.deltaTime);
-        }
-
 #if UNITY_EDITOR
         private void OnValidate()
         {
@@ -912,11 +904,7 @@ namespace Hecton8.Gameplay
             if (_registered)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager == null)
-                return;
-
-            gameTickManager.Register(this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
             _registered = true;
         }
 
@@ -925,10 +913,7 @@ namespace Hecton8.Gameplay
             if (!_registered)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager != null)
-                gameTickManager.Unregister(this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
             _registered = false;
         }
 
@@ -956,8 +941,8 @@ namespace Hecton8.Gameplay
                     swimAnimator = GetComponentInChildren<Animator>(true);
             }
 
-            if (allowSingletonAccess && _inputManager == null)
-                _inputManager = Hecton8.Input.InputManager.Instance;
+            if (allowSingletonAccess && _inputService == null)
+                _inputService = GlobalRegistry.Input;
         }
 
         private void ResolveGuideReferences()
@@ -1904,8 +1889,12 @@ namespace Hecton8.Gameplay
 
         private void UpdateToolSuppression(float dt)
         {
-            if (_inputManager == null)
-                _inputManager = Hecton8.Input.InputManager.Instance;
+            if (_inputService == null)
+                _inputService = GlobalRegistry.Input;
+
+            PlayerInputState inputState = _inputService != null && _inputService.IsPlayerInputEnabled
+                ? _inputService.GetState()
+                : default;
 
             bool toolEquipped = playerToolManager != null &&
                                 playerToolManager.CurrentTool != null &&
@@ -1914,9 +1903,8 @@ namespace Hecton8.Gameplay
                 ? playerToolManager.CurrentToolSwimContract
                 : null;
             bool toolUsing = toolEquipped &&
-                             _inputManager != null &&
-                             (_inputManager.IsPrimaryActionHeld ||
-                              _inputManager.IsSecondaryActionHeld);
+                             (inputState.HasAction(PlayerInputAction.PrimaryFire) ||
+                              inputState.HasAction(PlayerInputAction.SecondaryFire));
 
             PlayerToolSwimHandedness toolHand = toolSwimContract != null
                 ? toolSwimContract.ToolHand
@@ -2035,6 +2023,12 @@ namespace Hecton8.Gameplay
             Vector3 velocity,
             float dt)
         {
+            if (_inputService == null)
+                _inputService = GlobalRegistry.Input;
+
+            PlayerInputState inputState = _inputService != null && _inputService.IsPlayerInputEnabled
+                ? _inputService.GetState()
+                : default;
             float targetCorrection = 0f;
             if (_currentMode != PlayerSwimPresentationMode.Dry &&
                 _currentMode != PlayerSwimPresentationMode.ShallowWade)
@@ -2047,9 +2041,7 @@ namespace Hecton8.Gameplay
                     localLateralVelocity / math.max(0.5f, _activeProfile.UnderwaterStrokeStartSpeed * 1.5f),
                     -1f,
                     1f);
-                float inputStrafe = _inputManager != null
-                    ? math.clamp(_inputManager.MoveInput.x, -1f, 1f)
-                    : 0f;
+                float inputStrafe = math.clamp(inputState.MoveDelta.x, -1f, 1f);
                 float yawDisagreement = Mathf.DeltaAngle(playerMovement.BodyYaw, playerMovement.CameraYaw);
                 float turnIntent = math.clamp(yawDisagreement / 45f, -1f, 1f);
                 float swimSpeedWeight = math.saturate(planarSpeed / math.max(0.25f, _activeProfile.UnderwaterStrokeStartSpeed));

@@ -310,7 +310,6 @@ namespace Hecton8.Gameplay
         private const float RapidAscentRiskDecayPerSecond = 0.38f;
         private const float RapidAscentDamageThreshold = 0.52f;
         private const float DefaultInternalTemperatureCelsius = 20f;
-        private const float FloodedModuleWaterTemperatureCelsius = -1.4f;
         private const float OxygenMovementScaleCeiling = 1.55f;
         private const float OxygenStressScaleCeilingBonus = 0.50f;
         private const float OxygenLeakScaleCeilingBonus = 0.70f;
@@ -590,9 +589,7 @@ namespace Hecton8.Gameplay
             float abyssalColdPenalty = ResolveAbyssalColdPenaltyCelsius();
             _environmentTemperature = baseTemp + localHeat - abyssalColdPenalty;
             float floodedThermalInsulationFactor = ResolveFloodedThermalInsulationFactor();
-            float floodedExternalTemperature = floodedThermalInsulationFactor < 0.999f
-                ? FloodedModuleWaterTemperatureCelsius
-                : _environmentTemperature;
+            float floodedExternalTemperature = ResolveFloodedExternalTemperature(_environmentTemperature);
             float thermalExposureScale = ResolveTransportThermalExposureScale();
             float tauEff = math.max(0.01f, internalTemperatureTimeConstantSeconds * floodedThermalInsulationFactor / thermalExposureScale);
             _internalTemperature = ResolveExponentialTemperatureStep(
@@ -782,6 +779,9 @@ namespace Hecton8.Gameplay
 
         private void HandleToxicity(float dt)
         {
+            if (HazardZoneManager.Instance != null)
+                return;
+
             float toxicity = HectonHazardManager.GetHazardIntensity(transform.position, HazardType.Toxicity);
             if (toxicity <= 0.001f)
                 return;
@@ -794,6 +794,17 @@ namespace Hecton8.Gameplay
             float damage = stats.RadiationDamageRate * 0.65f * toxicity * toxicityExposureScale * damageMultiplier * dt;
             integrity = math.max(0f, integrity - damage);
             MarkIntegrityDeathCauseIfNeeded(SurvivalDeathCause.IntegrityFailure);
+        }
+
+        internal float ResolveEnvironmentalResistance(HazardType hazardType)
+        {
+            float exposureScale = hazardType == HazardType.Heat
+                ? ResolveTransportThermalExposureScale()
+                : ResolveTransportRadiationExposureScale();
+            if (exposureScale <= 0.0001f)
+                return 1000f;
+
+            return 1f / exposureScale;
         }
 
         private PlayerTransportPreset ResolveActiveTransportPreset()
@@ -1123,6 +1134,14 @@ namespace Hecton8.Gameplay
             return _traumaDispatcher != null
                 ? _traumaDispatcher.FloodedThermalInsulationFactor
                 : 1f;
+        }
+
+        private float ResolveFloodedExternalTemperature(float fallbackEnvironmentTemperature)
+        {
+            if (_traumaDispatcher == null || !_traumaDispatcher.HasFloodedTemperatureOverride)
+                return fallbackEnvironmentTemperature;
+
+            return _traumaDispatcher.FloodedModuleAmbientTemperatureCelsius;
         }
 
         private void DisposeInjectedSurvivalDatabase()

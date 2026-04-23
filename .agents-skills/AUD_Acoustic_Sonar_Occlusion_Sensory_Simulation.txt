@@ -42,8 +42,8 @@ ALGORITHM — OnSlowTick():
   dist      = max(dist, EPSILON_DIST)            // NaN guard
   hit_buffer[axis]    = dist
   rayCommands[0] = new RaycastCommand(origin, dir, new QueryParameters(SENSORY_MASK), MAX_PROBE_DIST)
-  rayHandle = RaycastCommand.ScheduleBatch(rayCommands, rayResults, 1, default)
-  axis_index++
+// Accumulate ALL sensory rays for ALL entities into one NativeArray.
+// Schedule EXACTLY ONE batch per frame.
   // Full 6-axis scan completes in 6 SlowTick cycles = 0.6s @ 10Hz
 
 ### 1.2 Axis Table
@@ -223,7 +223,8 @@ ECHO_CLASS_TABLE = {
 
 CELL_SIZE = 5.0f   // meters — tuned to CULL_RADIUS / 6
 hash(pos) = (floor(pos.x/CELL_SIZE) * P1) XOR
-            (floor(pos.y/CELL_SIZE) * P2) XOR
+// [FORBID] Signed integers in spatial hashes. Cast to UNSIGNED integers before multiplying:
+((uint)math.floor(pos.x/CELL_SIZE) * P1) ^ ...
             (floor(pos.z/CELL_SIZE) * P3)
 P1 = 73856093, P2 = 19349663, P3 = 83492791   // large primes
 

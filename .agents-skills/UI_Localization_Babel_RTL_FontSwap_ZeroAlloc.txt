@@ -216,8 +216,8 @@ public static class RTLProcessor
                 left++;
                 continue;
             }
-            (buf[left], buf[right]) = (buf[right], buf[left]);
-            left++;
+//[FORBID] Manual character reversal.
+// Enable "Is Right To Left" on TMP_Text and pass the logical string unmodified.
             right--;
         }
 

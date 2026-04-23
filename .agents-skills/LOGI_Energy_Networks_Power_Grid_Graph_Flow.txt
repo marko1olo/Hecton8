@@ -105,7 +105,8 @@ if CurrentLoad[node] > Capacity[node] * 1.15:
 
 INIT:
     enqueue all producer-nodes
-    visited = NativeBitArray(4096, Allocator.TempJob)
+// Pre-allocate 'visited' using Allocator.Persistent ONCE at subsystem boot.
+// Inside loop: visited.Clear()
 
 LOOP:
     node = queue.Dequeue()
@@ -132,8 +133,8 @@ for i in 0..MAX_ITERATIONS:
     max_delta = 0
     for each edge(A,B):
         old_flow = EdgeFlow[edge]
-        new_flow = (Potential[A] - Potential[B]) / Resistance[edge]
-        EdgeFlow[edge] = lerp(old_flow, new_flow, 0.6)    // damped update
+// [FORBID] Edge-based relaxation for closed loops. 
+// You MUST relax Node Potentials iteratively, then derive edge flow.
         max_delta = max(max_delta, abs(new_flow - old_flow))
     if max_delta < CONVERGENCE_DELTA: break
 

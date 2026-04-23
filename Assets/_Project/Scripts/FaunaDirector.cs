@@ -56,7 +56,7 @@ namespace Hecton8.AI
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-5000)]
-    public sealed class FaunaDirector : MonoBehaviour, ISlowTickable
+    public sealed class FaunaDirector : MonoBehaviour, IUpdatable, ISlowTickable
     {
         private const int CreaturePoolMinimumReserve = 8;
         private const int CreaturePoolBurstReserveMultiplier = 2;
@@ -64,6 +64,9 @@ namespace Hecton8.AI
         private const int SmallPassiveProxyBurstReserveMultiplier = 3;
         private const string SmallPassiveProxyPrefabName = "SmallPassiveProxy";
         private const float PlayerResolveRetryInterval = 1f;
+        private const float DirectorSlowTickIntervalSeconds = 0.5f;
+        private const float SpawnVisibilityDotThreshold = 0.5f;
+        private const float MinimumSpawnViewDirectionMagnitudeSqr = 0.0001f;
         private const float RuntimeSettingsRefreshInterval = 5f;
         private static readonly string[] ThermalHabitatTokens = { "thermal", "brine", "heat", "furnace", "volcanic", "chemical" };
         private static readonly string[] CaveHabitatTokens = { "cave", "nest", "ambush", "rift", "pocket", "burrow", "crevice" };
@@ -338,7 +341,10 @@ namespace Hecton8.AI
 
         /// <summary>Кэшированный Transform игрока.</summary>
         private Transform _playerTransform;
+        private Transform _playerViewTransform;
         private HectonMapMagicVegetationBridge _vegetationThreatBridge;
+        private bool _dispatcherRegistered;
+        private float _slowTickAccumulator;
 
         /// <summary>Квадрат killDistance для sqrMagnitude.</summary>
         private float _killDistanceSqr;
@@ -467,10 +473,20 @@ namespace Hecton8.AI
 
         private void OnEnable()
         {
-            GameTickManager.Instance?.Register((ISlowTickable)this);
+            if (!Application.isPlaying)
+                return;
+
+            SystemDispatcher.EnsureRuntimeInstance();
+            if (!_dispatcherRegistered)
+            {
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+                _dispatcherRegistered = true;
+            }
 
             if (_playerTransform == null)
                 FindPlayer(true);
+            else
+                ResolvePlayerViewTransform();
 
             if (spawnRegistry == null)
                 ResolveSpawnRegistry();
@@ -488,11 +504,22 @@ namespace Hecton8.AI
 
             if (!_creaturePoolsWarmed)
                 TryWarmupCreaturePools();
+
+            _slowTickAccumulator = 0f;
         }
 
         private void OnDisable()
         {
-            GameTickManager.Instance?.Unregister((ISlowTickable)this);
+            if (!Application.isPlaying)
+                return;
+
+            if (_dispatcherRegistered)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _dispatcherRegistered = false;
+            }
+
+            _slowTickAccumulator = 0f;
         }
 
         private void OnDestroy()
@@ -514,6 +541,30 @@ namespace Hecton8.AI
         ///
         /// ZERO GC: struct math, pre-allocated collections, no LINQ.
         /// Biome check throttled — GetAlphamaps вызывается раз в BiomeCheckInterval.
+        /// </summary>
+        /// <summary>
+        /// Advances the director cadence on the registry dispatcher lane.
+        /// </summary>
+        /// <param name="deltaTime">Scaled frame delta supplied by <see cref="SystemDispatcher"/>.</param>
+        public void Tick(float deltaTime)
+        {
+            if (deltaTime <= 0f)
+                return;
+
+            _slowTickAccumulator += deltaTime;
+            if (_slowTickAccumulator < DirectorSlowTickIntervalSeconds)
+                return;
+
+            _slowTickAccumulator -= DirectorSlowTickIntervalSeconds;
+            if (_slowTickAccumulator > DirectorSlowTickIntervalSeconds)
+                _slowTickAccumulator = DirectorSlowTickIntervalSeconds;
+
+            SlowTick();
+        }
+
+        /// <summary>
+        /// Main ecology evaluation pass.
+        /// Handles player resolution, culling, biome probing, and spawn issuance without allocations.
         /// </summary>
         public void SlowTick()
         {
@@ -541,10 +592,13 @@ namespace Hecton8.AI
                     return;
             }
 
+            ResolvePlayerViewTransform();
+
             // Unity null check (player could be destroyed)
             if (_playerTransform == null)
             {
                 _playerTransform = null;
+                _playerViewTransform = null;
                 _nextPlayerResolveTime = 0f;
                 return;
             }
@@ -804,6 +858,7 @@ namespace Hecton8.AI
                 bool hasSpawnPoint = isLargeThreat
                     ? TryResolveLargeThreatSpawnLocation(
                         playerPos,
+                        _playerViewTransform,
                         bridge,
                         biomeData,
                         out spawnPos,
@@ -816,6 +871,7 @@ namespace Hecton8.AI
                         ref fallbackRingSpawns)
                     : TryResolveOrdinarySpawnLocation(
                         playerPos,
+                        _playerViewTransform,
                         bridge,
                         biomeData,
                         out spawnPos,
@@ -936,6 +992,7 @@ namespace Hecton8.AI
         /// </summary>
         private bool TryResolveOrdinarySpawnLocation(
             Vector3 playerPos,
+            Transform playerViewTransform,
             MapMagicBridge bridge,
             FaunaBiomeData biomeData,
             out Vector3 spawnPos,
@@ -952,7 +1009,7 @@ namespace Hecton8.AI
             {
                 WorldChunkCoordinate playerChunk = WorldChunkCoordinate.FromWorldPosition(playerPos, _runtimeChunkSize);
                 if (spawnRegistry.TryGetOrdinaryAnchor(playerPos, playerChunk, _runtimeFaunaAnchorChunkDistance, out WorldFaunaSpawnRegistry.Anchor anchor) &&
-                    TryBuildSpawnPointAroundAnchor(anchor.position, anchor.radius, biomeData, bridge, out spawnPos, ref spawnValidationAttempts, ref spawnValidationSuccesses))
+                    TryBuildSpawnPointAroundAnchor(anchor.position, anchor.radius, playerViewTransform, biomeData, bridge, out spawnPos, ref spawnValidationAttempts, ref spawnValidationSuccesses))
                 {
                     registryAnchor = anchor;
                     usedRegistryAnchor = true;
@@ -967,6 +1024,7 @@ namespace Hecton8.AI
                 playerPos,
                 _runtimeSpawnRingInner,
                 _runtimeSpawnRingOuter,
+                playerViewTransform,
                 biomeData,
                 bridge,
                 out spawnPos,
@@ -980,6 +1038,7 @@ namespace Hecton8.AI
 
         private bool TryResolveLargeThreatSpawnLocation(
             Vector3 playerPos,
+            Transform playerViewTransform,
             MapMagicBridge bridge,
             FaunaBiomeData biomeData,
             out Vector3 spawnPos,
@@ -998,7 +1057,7 @@ namespace Hecton8.AI
                 WorldMacroZoneCoordinate playerMacroZone = WorldMacroZoneCoordinate.FromWorldPosition(playerPos, _runtimeMacroZoneSize);
                 if (spawnRegistry.TryGetLargeThreatZone(playerPos, playerMacroZone, _runtimeLargeThreatMacroZoneDistance, out WorldFaunaSpawnRegistry.Anchor zoneAnchor) &&
                     CanSpawnLargeThreatNearPlayer(zoneAnchor.macroZoneCoord, playerPos) &&
-                    TryBuildSpawnPointAroundAnchor(zoneAnchor.position, zoneAnchor.radius, biomeData, bridge, out spawnPos, ref spawnValidationAttempts, ref spawnValidationSuccesses))
+                    TryBuildSpawnPointAroundAnchor(zoneAnchor.position, zoneAnchor.radius, playerViewTransform, biomeData, bridge, out spawnPos, ref spawnValidationAttempts, ref spawnValidationSuccesses))
                 {
                     macroZoneCoord = zoneAnchor.macroZoneCoord;
                     registryAnchor = zoneAnchor;
@@ -1012,6 +1071,7 @@ namespace Hecton8.AI
                     playerPos,
                     _runtimeLargeThreatSpawnInner,
                     _runtimeLargeThreatSpawnOuter,
+                    playerViewTransform,
                     biomeData,
                     bridge,
                     out spawnPos,
@@ -1036,6 +1096,7 @@ namespace Hecton8.AI
             Vector3 center,
             float innerRadius,
             float outerRadius,
+            Transform playerViewTransform,
             FaunaBiomeData biomeData,
             MapMagicBridge bridge,
             out Vector3 spawnPos,
@@ -1051,7 +1112,7 @@ namespace Hecton8.AI
                     center.y,
                     center.z + Mathf.Sin(angle) * distance);
 
-                if (TryBuildValidatedSpawnPoint(candidateCenter, biomeData, bridge, out spawnPos, ref spawnValidationAttempts, ref spawnValidationSuccesses))
+                if (TryBuildValidatedSpawnPoint(candidateCenter, playerViewTransform, biomeData, bridge, out spawnPos, ref spawnValidationAttempts, ref spawnValidationSuccesses))
                     return true;
             }
 
@@ -1062,6 +1123,7 @@ namespace Hecton8.AI
         private static bool TryBuildSpawnPointAroundAnchor(
             Vector3 anchorPosition,
             float anchorRadius,
+            Transform playerViewTransform,
             FaunaBiomeData biomeData,
             MapMagicBridge bridge,
             out Vector3 spawnPos,
@@ -1078,7 +1140,7 @@ namespace Hecton8.AI
                     anchorPosition.y,
                     anchorPosition.z + Mathf.Sin(angle) * distance);
 
-                if (TryBuildValidatedSpawnPoint(candidateCenter, biomeData, bridge, out spawnPos, ref spawnValidationAttempts, ref spawnValidationSuccesses))
+                if (TryBuildValidatedSpawnPoint(candidateCenter, playerViewTransform, biomeData, bridge, out spawnPos, ref spawnValidationAttempts, ref spawnValidationSuccesses))
                     return true;
             }
 
@@ -1088,6 +1150,7 @@ namespace Hecton8.AI
 
         private static bool TryBuildValidatedSpawnPoint(
             Vector3 candidateCenter,
+            Transform playerViewTransform,
             FaunaBiomeData biomeData,
             MapMagicBridge bridge,
             out Vector3 spawnPos,
@@ -1109,8 +1172,29 @@ namespace Hecton8.AI
             }
 
             spawnPos = new Vector3(candidateCenter.x, spawnY, candidateCenter.z);
+            if (!IsSpawnPointValid(playerViewTransform, spawnPos))
+            {
+                spawnPos = default;
+                return false;
+            }
+
             spawnValidationSuccesses++;
             return true;
+        }
+
+        private static bool IsSpawnPointValid(Transform viewTransform, Vector3 spawnPoint)
+        {
+            if (viewTransform == null)
+                return true;
+
+            Vector3 toSpawn = spawnPoint - viewTransform.position;
+            float sqrMagnitude = toSpawn.sqrMagnitude;
+            if (sqrMagnitude <= MinimumSpawnViewDirectionMagnitudeSqr)
+                return false;
+
+            float inverseMagnitude = 1f / Mathf.Sqrt(sqrMagnitude);
+            float dot = Vector3.Dot(viewTransform.forward, toSpawn * inverseMagnitude);
+            return dot <= SpawnVisibilityDotThreshold;
         }
 
         private static bool TrySelectResolvedEntry(
@@ -1566,7 +1650,25 @@ namespace Hecton8.AI
             WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _playerTransform);
 
             if (_playerTransform != null)
+            {
                 _nextPlayerResolveTime = float.NegativeInfinity;
+                ResolvePlayerViewTransform();
+            }
+        }
+
+        private void ResolvePlayerViewTransform()
+        {
+            if (_playerTransform == null)
+            {
+                _playerViewTransform = null;
+                return;
+            }
+
+            if (_playerViewTransform != null)
+                return;
+
+            Camera playerCamera = _playerTransform.GetComponentInChildren<Camera>(true);
+            _playerViewTransform = playerCamera != null ? playerCamera.transform : _playerTransform;
         }
 
         private void ResolveSpawnRegistry()
@@ -2286,6 +2388,8 @@ namespace Hecton8.AI
             if (!_pressureEnabled)
                 return;
 
+            ResolvePlayerViewTransform();
+
             ObjectPoolManager pool = ObjectPoolManager.Instance;
             if (pool == null)
                 return;
@@ -2383,6 +2487,9 @@ namespace Hecton8.AI
                 Vector3    spawnPos = new Vector3(spawnX, spawnY, spawnZ);
                 Quaternion spawnRot = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
                 WorldChunkCoordinate spawnChunk = WorldChunkCoordinate.FromWorldPosition(spawnPos, _runtimeChunkSize);
+
+                if (!IsSpawnPointValid(_playerViewTransform, spawnPos))
+                    continue;
 
                 if (GetChunkCreatureCount(spawnChunk) >= _runtimePerChunkMaxCount)
                     continue;

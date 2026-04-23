@@ -1,6 +1,10 @@
-using System.Collections.Generic;
 using Hecton8.Core;
+using System.Collections.Generic;
 using Hecton8.Gameplay;
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Jobs;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -12,8 +16,20 @@ namespace Hecton8.Physics
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Physics/Tether Manager")]
-    public sealed class TetherManager : MonoBehaviour, IFixedTickable
+    public sealed class TetherManager : MonoBehaviour, IFixedTickable, IOriginShiftListener
     {
+        [BurstCompile]
+        private struct TranslateVisualPointsJob : IJobParallelFor
+        {
+            public float3 ShiftOffset;
+            public NativeArray<float3> Points;
+
+            public void Execute(int index)
+            {
+                Points[index] -= ShiftOffset;
+            }
+        }
+
         private const string RuntimeShaderName = "Hecton8/Physics/TetherLineStrip";
         private static readonly int _TetherPositionsId = Shader.PropertyToID("_TetherPositions");
         private static readonly int _TetherColorId = Shader.PropertyToID("_TetherColor");
@@ -48,6 +64,7 @@ namespace Hecton8.Physics
         private Material _runtimeRenderMaterial;
         private bool _ownsRuntimeMaterial;
         private bool _registeredFixedTick;
+        private bool _registeredOriginShiftListener;
 
         private void Awake()
         {
@@ -68,6 +85,12 @@ namespace Hecton8.Physics
                 GameTickManager.Instance.Register((IFixedTickable)this);
                 _registeredFixedTick = true;
             }
+
+            if (!_registeredOriginShiftListener)
+            {
+                HectonFloatingOrigin.RegisterListener(this);
+                _registeredOriginShiftListener = true;
+            }
         }
 
         private void OnDisable()
@@ -78,12 +101,24 @@ namespace Hecton8.Physics
                 _registeredFixedTick = false;
             }
 
+            if (_registeredOriginShiftListener)
+            {
+                HectonFloatingOrigin.UnregisterListener(this);
+                _registeredOriginShiftListener = false;
+            }
+
             for (int i = _activeInstances.Count - 1; i >= 0; i--)
                 DetachTether(_activeInstances[i], false, true);
         }
 
         private void OnDestroy()
         {
+            if (_registeredOriginShiftListener)
+            {
+                HectonFloatingOrigin.UnregisterListener(this);
+                _registeredOriginShiftListener = false;
+            }
+
             for (int i = 0; i < _pooledInstances.Count; i++)
             {
                 if (_pooledInstances[i] != null)
@@ -155,6 +190,37 @@ namespace Hecton8.Physics
                 owner.OnTetherDetached(instance, snapped);
 
             _debugActiveTetherCount = _activeInstances.Count;
+        }
+
+        /// <inheritdoc />
+        public void OnOriginShift(in OriginShiftEventData shiftData)
+        {
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            if (shiftOffset.sqrMagnitude <= 0.000001f)
+                return;
+
+            float3 shiftOffsetF3 = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z);
+            for (int i = 0; i < _activeInstances.Count; i++)
+            {
+                TetherInstance instance = _activeInstances[i];
+                if (instance == null || !instance.IsActive)
+                    continue;
+
+                instance.RebaseManagedRuntimeState(shiftOffset);
+                NativeArray<float3> visualPoints = instance.VisualSegmentPositions;
+                if (!visualPoints.IsCreated || visualPoints.Length == 0)
+                    continue;
+
+                TranslateVisualPointsJob translateJob = new TranslateVisualPointsJob
+                {
+                    ShiftOffset = shiftOffsetF3,
+                    Points = visualPoints
+                };
+
+                JobHandle handle = translateJob.Schedule(visualPoints.Length, 32);
+                handle.Complete();
+                instance.CommitVisualRebaseUpload();
+            }
         }
 
         /// <inheritdoc />

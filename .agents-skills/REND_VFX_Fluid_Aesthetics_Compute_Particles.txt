@@ -274,9 +274,9 @@ ParticleDepth   = ClipPos.w   // Eye-space depth
 // Collision threshold: particle radius in view-space
 CollisionMargin = Particle.Size * 0.5 / ParticleDepth
 
-if (SceneDepth_lin < ParticleDepth + CollisionMargin):
-    Flags |= (1u << 4)   // Set collided bit
-    // Reflect velocity along surface normal (approx: Y-up)
+// [FORBID] Unfiltered depth collision.
+// You MUST check if the particle was previously in front of the depth buffer:
+if (ParticleDepth < SceneDepth_lin && NextFrameParticleDepth > SceneDepth_lin) { TriggerCollision(); }
     Vel.y = abs(Vel.y) * Restitution
 
 MX350 Fillrate Protection:
@@ -364,7 +364,8 @@ LPPV Update (separate pass, every 4 frames, jittered):
 UpdateMask = (ClusterID + FrameCount) % 4 == 0
 
 if UpdateMask && isClusterAnchor:
-    SH_L0L1 = LPPV.SampleSH(Pos)   // Unity LPPV API call via CB injection
+    // [FORBID] LPPV. Query Unity 6 Adaptive Probe Volumes via ProbeReferenceVolume.Sample(...)
+    SH_L0L1 = ProbeReferenceVolume.Sample(Pos)
     CB_ClusterSH[ClusterID] = SH_L0L1
 
 Shader Evaluation:

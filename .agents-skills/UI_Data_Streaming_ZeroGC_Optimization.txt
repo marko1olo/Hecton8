@@ -33,7 +33,10 @@ Runtime law:
 ### CharBuffer_Pool
 - `static char[16][64]` pre-allocated buffers (16 slots, 64 chars each)
 - Bitmask allocation: `ushort _slotMask` tracks free slots via bitwise ops
-- Acquire: `slot = math.tzcnt(_slotMask); _slotMask &= ~(1u << slot)`
+//[FORBID] Unchecked bit-math. You MUST guard the tzcnt:
+if (_slotMask == 0) return ERROR_POOL_FULL;
+slot = math.tzcnt(_slotMask);
+_slotMask &= ~(1u << slot);
 - Release: `_slotMask |= (1u << slot)`
 
 ### Numeric_Formatters_SpanBased_ZeroGC
@@ -57,7 +60,8 @@ Rules:
 ### TMP_SetTextZeroGC
 
 Step 1: Format numeric payload into pooled `Span<char>` via `TryFormat`
-Step 2: `tmpText.SetCharArray(buffer, 0, charsWritten)`
+Step 2: `// [FORBID] uGUI mutation for 60Hz readouts.
+// Use UI Toolkit (UIElements) OR directly call TMP's UpdateVertexData() if uGUI is strictly required.`
 Forbidden: `SetText(string)`, `text =`, interpolated strings, manual digit extraction
 
 ---

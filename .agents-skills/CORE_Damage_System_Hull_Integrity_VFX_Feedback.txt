@@ -96,7 +96,7 @@ Clarity       = math.max(0.0, Clarity - clarityBleed)
 recoil_scalar = saturate(signal.magnitude * 1.5)
 glitchVal     = saturate((1.0 - Clarity) * noise(time * freq) * recoil_scalar)
 // freq: MINOR=4.0, SIGNIFICANT=8.0, CRITICAL=14.0, CATASTROPHIC=22.0
-// Push glitchVal to material property block. Half-res buffer only.
+// Modify shared material directly for global effects, or use DOTS Instancing/CBUFFER. Half-res buffer only.
 
 ### Natural Recovery Rates (Passive, SlowTick)
 
@@ -196,7 +196,8 @@ recoilDecay    = glitchVal * exp(-3.0 * timeSinceEvent)  // Exponential falloff,
 
 ### Shader Property Push Protocol
 
-// Never SetGlobalFloat per-frame. Batch via MaterialPropertyBlock.
+// Modify shared material directly for global effects, or use DOTS Instancing/CBUFFER.
+// [FORBID] MaterialPropertyBlock on SRP-batched meshes.
 // Update ONLY on IDamageReceiver events + recoilDecay tick (separate 30Hz update job).
 Properties pushed: _GlitchIntensity, _ChromaOffset, _ScanlineFreq, _HUDOpacity, _RecoveryMode
 

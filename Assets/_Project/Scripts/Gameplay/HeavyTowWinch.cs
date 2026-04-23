@@ -175,6 +175,8 @@ namespace Hecton8.Gameplay
         private string _payloadName;
         private string _payloadNameUpper;
         private float _payloadMass;
+        private Transform _overrideTowAnchor;
+        private Rigidbody _overrideTowBody;
 
         /// <summary>True while a valid heavy tow target is currently attached.</summary>
         public bool HasActiveTow => _activeTether != null && _activeTether.IsActive;
@@ -198,9 +200,10 @@ namespace Hecton8.Gameplay
         public string CurrentTargetNameUpper => _payloadNameUpper;
 
         internal Transform CachedTransform => _cachedTransform != null ? _cachedTransform : transform;
-        internal Vector3 PlayerRight => CachedTransform.right;
-        internal Vector3 PlayerForward => CachedTransform.forward;
-        internal Vector3 PlayerUp => CachedTransform.up;
+        internal Transform ActiveTowAnchorTransform => _overrideTowAnchor != null ? _overrideTowAnchor : (towAnchor != null ? towAnchor : CachedTransform);
+        internal Vector3 PlayerRight => ActiveTowAnchorTransform.right;
+        internal Vector3 PlayerForward => ActiveTowAnchorTransform.forward;
+        internal Vector3 PlayerUp => ActiveTowAnchorTransform.up;
         internal bool ShouldSuppressTow => playerMovement != null && playerMovement.IsDraggingHeavyCargo;
 
         private void Awake()
@@ -245,6 +248,8 @@ namespace Hecton8.Gameplay
             if (_activeTether != null)
                 ReleaseTow(false);
 
+            _overrideTowAnchor = null;
+            _overrideTowBody = null;
             _activeTether = _tetherManager.AttachTowCable(this, _playerMotor, _playerRigidbody, payloadBody, payloadCollider, initialDistance);
             if (_activeTether == null)
                 return false;
@@ -319,10 +324,7 @@ namespace Hecton8.Gameplay
 
         internal Vector3 ResolveTowAnchorPosition()
         {
-            if (towAnchor != null)
-                return towAnchor.position;
-
-            return CachedTransform.position;
+            return ActiveTowAnchorTransform.position;
         }
 
         internal bool IsTowPayloadValid(Rigidbody payloadBody, Collider payloadCollider)
@@ -389,8 +391,75 @@ namespace Hecton8.Gameplay
 
         internal void ApplyTowLoad(float towDragMultiplier)
         {
-            if (playerMovement != null)
-                playerMovement.ApplyEnvironmentalDrag(towDragMultiplier);
+            if (playerMovement == null)
+                return;
+
+            playerMovement.ApplyEnvironmentalDrag(IsTowBoundToPlayer() ? towDragMultiplier : 1f);
+        }
+
+        internal bool TryResolveSharedTransportPlatform(
+            Transform payloadTransform,
+            Collider payloadCollider,
+            out ITransportPlatform platform,
+            out Matrix4x4 worldToLocalMatrix,
+            out Matrix4x4 localToWorldMatrix)
+        {
+            platform = null;
+            worldToLocalMatrix = Matrix4x4.identity;
+            localToWorldMatrix = Matrix4x4.identity;
+            if (playerMovement == null || payloadTransform == null || !playerMovement.TryGetActiveTransportPlatform(out platform))
+                return false;
+
+            Transform platformTransform = platform.PlatformTransform;
+            if (platformTransform == null)
+            {
+                platform = null;
+                return false;
+            }
+
+            bool payloadInsidePlatform =
+                ReferenceEquals(payloadTransform, platformTransform) ||
+                payloadTransform.IsChildOf(platformTransform) ||
+                (payloadCollider != null && (
+                    ReferenceEquals(payloadCollider.transform, platformTransform) ||
+                    payloadCollider.transform.IsChildOf(platformTransform)));
+            if (!payloadInsidePlatform)
+            {
+                platform = null;
+                return false;
+            }
+
+            worldToLocalMatrix = platformTransform.worldToLocalMatrix;
+            localToWorldMatrix = platformTransform.localToWorldMatrix;
+            return true;
+        }
+
+        internal bool TryTransferTowToTransport(Rigidbody transportBody, Transform transportAnchor)
+        {
+            if (_activeTether == null || transportBody == null || transportAnchor == null)
+                return false;
+
+            if (!_activeTether.TryGetPayloadBody(out Rigidbody payloadBody) || payloadBody == null)
+                return false;
+
+            float exosuitMass = math.max(transportBody.mass, 0.0001f);
+            float wreckMass = math.max(payloadBody.mass, 0.0001f);
+            Vector3 exosuitVelocity = transportBody.linearVelocity;
+            Vector3 wreckVelocity = payloadBody.linearVelocity;
+            Vector3 targetVelocity = ((exosuitMass * exosuitVelocity) + (wreckMass * wreckVelocity)) /
+                                     math.max(exosuitMass + wreckMass, 0.0001f);
+            Vector3 velocityChange = targetVelocity - exosuitVelocity;
+
+            _overrideTowAnchor = transportAnchor;
+            _overrideTowBody = transportBody;
+            _activeTether.RetargetAnchorEndpoint(null, transportBody);
+            transportBody.WakeUp();
+            if (velocityChange.sqrMagnitude > 0.000001f)
+                PhysicsForceRouter.QueueForce(transportBody, velocityChange, ForceMode.VelocityChange);
+
+            ApplyTowLoad(1f);
+            UpdateDiagnostics();
+            return true;
         }
 
         internal void HandleTetherSnap(
@@ -412,21 +481,23 @@ namespace Hecton8.Gameplay
             Vector3 snapTraumaImpulse = -playerSegmentDirection * (
                 snapRecoilImpulse *
                 math.lerp(0.65f, 1.2f, clampedSeverity) *
-                (_playerRigidbody != null ? _playerRigidbody.mass : 1f));
+                (ResolveActiveTowBody() != null ? ResolveActiveTowBody().mass : 1f));
             float signedRoll = math.clamp(Vector3.Dot(playerSegmentDirection, PlayerRight), -1f, 1f);
             ApplyPayloadSnapResponse(payloadBody, payloadCollider, payloadSegmentDirection, clampedSeverity);
 
-            if (playerMovement != null)
+            if (IsTowBoundToPlayer() && playerMovement != null)
             {
                 playerMovement.ApplyTowCableSnapFeedback(releasedVelocityChange, snapTraumaImpulse, clampedSeverity, signedRoll);
             }
-            else if (_playerMotor != null)
+            else if (IsTowBoundToPlayer() && _playerMotor != null)
             {
                 _playerMotor.ApplyVelocityChange(releasedVelocityChange);
             }
-            else if (_playerRigidbody != null)
+            else
             {
-                PhysicsForceRouter.QueueForce(_playerRigidbody, releasedVelocityChange, ForceMode.VelocityChange);
+                Rigidbody activeTowBody = ResolveActiveTowBody();
+                if (activeTowBody != null)
+                    PhysicsForceRouter.QueueForce(activeTowBody, releasedVelocityChange, ForceMode.VelocityChange);
             }
         }
 
@@ -502,6 +573,18 @@ namespace Hecton8.Gameplay
             _payloadName = null;
             _payloadNameUpper = null;
             _payloadMass = 0f;
+            _overrideTowAnchor = null;
+            _overrideTowBody = null;
+        }
+
+        private Rigidbody ResolveActiveTowBody()
+        {
+            return _overrideTowBody != null ? _overrideTowBody : _playerRigidbody;
+        }
+
+        private bool IsTowBoundToPlayer()
+        {
+            return _overrideTowBody == null || ReferenceEquals(_overrideTowBody, _playerRigidbody);
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]

@@ -27,14 +27,9 @@ GPU_PROCEDURAL_NOISE = ALU-only hash function (no textures)
 
 Internal render format: `R11G11B10_UFLOAT` (bandwidth < `RGBA16F`, ALU identical).
 - MX350 VRAM pressure: R11G11B10 saves ~33% vs RGBA16F at equivalent perceptual quality.
-- Final resolve: ACES tonemapper → gamma 2.2 → 8-bit UNORM output.
-- ACES fast approximation (Hill 2016, GPU-friendly):
-
-// Input: x = linear HDR value
-x = (x * (2.51*x + 0.03)) / (x * (2.43*x + 0.59) + 0.14)
-x = saturate(x)
-
-Apply per-channel before gamma encode. Do NOT apply ACES mid-pass.
+- Final resolve: ACES tonemapper in URP Volume Profile -> gamma 2.2 -> 8-bit UNORM output.
+- // [FORBID] Manual tonemapping in fragment shaders.
+- Output raw linear HDR. Configure ACES globally in the URP Volume Profile.
 
 Pre-tonemap: all blending, fog, caustic accumulation runs in linear HDR.
 Post-tonemap: dither injection, film grain, UI composite.
@@ -55,17 +50,18 @@ bn = _BlueNoiseTex.Sample(point_repeat, uv_screen).r   // [0,1]
 dither_offset = (bn - 0.5) / 255.0                     // [-0.00196, +0.00196]
 color_out = color_hdr_tonemapped + dither_offset        // add AFTER tonemap, BEFORE encode
 
+// [FORBID] clip() or discard on MX350.
+// Use Alpha-to-Coverage (A2C) OR URP Depth Prepass natively.
 Apply dither in final blit pass, NOT inside geometry shaders.
 Single sample per pixel. No multi-sample averaging — defeats blue noise distribution.
 
 ### 2.3 Temporal Dither Rotation
 Prevent static pattern ghosting on static scenes:
 
-frame_parity  = (_FrameCount & 0x3)                    // 4-frame cycle, bitwise AND
-uv_rotated    = uv_screen + float2(frame_parity * 0.25, frame_parity * 0.25)
-bn            = _BlueNoiseTex.Sample(point_repeat, uv_rotated).r
-
-Rotation vector: golden-ratio offset optional but `(0.25, 0.25)` sufficient for 4C GPU cache.
+// [FORBID] Linear fractional translation.
+// You MUST use a Golden Ratio / R2 sequence for temporal noise offsets:
+uv_rotated = uv_screen + frac(_FrameCount * float2(0.75487766, 0.56984029));
+bn         = _BlueNoiseTex.Sample(point_repeat, uv_rotated).r
 
 ### 2.4 UI Dither Bypass
 UI canvas renders to separate `_UIRenderTexture` (Overlay camera, UNORM8 target).
@@ -317,8 +313,8 @@ fog_raw = 1.0 - exp(-linear_depth * fog_density)
 // Noir Blackout Power
 fog_noir = pow(fog_raw, noir_power)                   // noir_power in [1.5, 4.0]
 
-// ACES Fast (Hill)
-x = (x*(2.51x+0.03)) / (x*(2.43x+0.59)+0.14)
+// [FORBID] Manual tonemapping in fragment shaders.
+// Output raw linear HDR. Configure ACES globally in the URP Volume Profile.
 
 // Caustic Dual-Layer
 caustic = pow(layer_A * layer_B, contrast)

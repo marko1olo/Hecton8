@@ -48,6 +48,8 @@ namespace Hecton8.Interaction
         private long _worldStateChunkKey;
         private Vector3 _worldStateAnchorPosition;
         private Transform _playerTransform;
+        private PersistentWorldRegistry _persistentWorldRegistry;
+        private int _persistentWorldRecordIndex = -1;
 
         public ItemData ItemData => itemData;
         public int Quantity => quantity;
@@ -58,6 +60,18 @@ namespace Hecton8.Interaction
             quantity = Mathf.Max(1, itemQuantity);
             InvalidateWorldStateIdentity();
             RebuildInteractTextCache();
+        }
+
+        internal void BindPersistentWorldRecord(PersistentWorldRegistry registry, int recordIndex)
+        {
+            _persistentWorldRegistry = registry;
+            _persistentWorldRecordIndex = recordIndex;
+        }
+
+        internal void ClearPersistentWorldRecord()
+        {
+            _persistentWorldRegistry = null;
+            _persistentWorldRecordIndex = -1;
         }
 
         private void Awake()
@@ -96,6 +110,7 @@ namespace Hecton8.Interaction
             TryUnregisterSlowTick();
             TryUnregisterFixedTick();
             UnregisterSpatialHandle();
+            ClearPersistentWorldRecord();
         }
 
         private void OnDestroy()
@@ -271,6 +286,7 @@ namespace Hecton8.Interaction
             if (_worldStateIdentityAvailable)
                 WorldStateManager.Instance?.RegisterCollectedPickup(_worldStatePersistenceKey, _worldStateChunkKey);
 
+            _persistentWorldRegistry?.MarkRecordCollected(_persistentWorldRecordIndex);
             ConsumeWorldProxy();
         }
 

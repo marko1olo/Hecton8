@@ -7,7 +7,8 @@
 grid_res = 32
 cell_size = world_bounds / grid_res
 cell_index(pos) = (
-  clamp(floor(pos.x / cell_size), 0, 31) +
+  // [FORBID] Raw position hashing in signed spaces. You MUST offset by the world origin first:
+clamp(floor((pos.x - bounds_min.x) / cell_size), 0, 31) +
   clamp(floor(pos.y / cell_size), 0, 31) * 32 +
   clamp(floor(pos.z / cell_size), 0, 31) * 1024
 )

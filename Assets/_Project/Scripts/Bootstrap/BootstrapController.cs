@@ -31,6 +31,7 @@ using Hecton8.Core;
 using Hecton8.Dev;
 using Hecton8.Input;
 using Hecton8.SaveSystem;
+using Hecton8.World;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -55,6 +56,7 @@ namespace Hecton8.Bootstrap
         private const string SaveManagerRuntimeName = "[SaveManager]";
         private const string ObjectPoolManagerRuntimeName = "[ObjectPoolManager]";
         private const string PrefabRegistryRuntimeName = "[PrefabRegistry]";
+        private const string PersistentWorldRegistryRuntimeName = "[PersistentWorldRegistry]";
         private const string RuntimePerformanceProfilerRuntimeName = "[RuntimePerformanceProfiler]";
         private const string BootstrapAudioListenerRuntimeName = "[BootstrapAudioListener]";
         private static BootstrapController _instance;
@@ -268,7 +270,7 @@ namespace Hecton8.Bootstrap
             EnsureDontDestroyOnLoad(objectPoolManager.gameObject);
             Log("  ✓ ObjectPoolManager initialized");
 
-            Log("[5/5] Initializing PrefabRegistry...");
+            Log("[5/6] Initializing PrefabRegistry...");
             PrefabRegistry prefabRegistry = EnsurePrefabRegistry();
             if (prefabRegistry == null)
             {
@@ -278,7 +280,17 @@ namespace Hecton8.Bootstrap
             EnsureDontDestroyOnLoad(prefabRegistry.gameObject);
             Log("  PrefabRegistry initialized");
 
-            Log("[6/6] Initializing GameBootstrapper core...");
+            Log("[6/7] Initializing PersistentWorldRegistry...");
+            PersistentWorldRegistry persistentWorldRegistry = EnsurePersistentWorldRegistry();
+            if (persistentWorldRegistry == null)
+            {
+                LogError("PersistentWorldRegistry.Instance is null after access!");
+                return;
+            }
+            EnsureDontDestroyOnLoad(persistentWorldRegistry.gameObject);
+            Log("  PersistentWorldRegistry initialized");
+
+            Log("[7/7] Initializing GameBootstrapper core...");
             GameBootstrapper gameBootstrapper = EnsureGameBootstrapper();
             if (gameBootstrapper == null)
             {
@@ -401,6 +413,21 @@ namespace Hecton8.Bootstrap
             // COLD ALLOC: bootstrap fallback singleton root when scene authoring omitted registry.
             GameObject go = new GameObject(PrefabRegistryRuntimeName);
             return go.AddComponent<PrefabRegistry>();
+        }
+
+        private static PersistentWorldRegistry EnsurePersistentWorldRegistry()
+        {
+            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            if (registry != null)
+                return registry;
+
+            PersistentWorldRegistry existing = UnityEngine.Object.FindAnyObjectByType<PersistentWorldRegistry>(FindObjectsInactive.Include);
+            if (existing != null)
+                return existing;
+
+            // COLD ALLOC: bootstrap fallback singleton root when scene authoring omitted persistent world registry.
+            GameObject go = new GameObject(PersistentWorldRegistryRuntimeName);
+            return go.AddComponent<PersistentWorldRegistry>();
         }
 
         private static void EnsureBootstrapAudioListener(Scene bootstrapScene)

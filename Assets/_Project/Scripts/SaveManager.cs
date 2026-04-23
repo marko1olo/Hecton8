@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using Hecton8.Modding;
+using Hecton8.World;
 using Unity.Collections;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
@@ -263,6 +264,8 @@ namespace Hecton8.SaveSystem
             var totalTimer = Stopwatch.StartNew();
             float playTime = _totalPlayTime + (Time.realtimeSinceStartup - _sessionStartTime);
             SaveData data = SaveData.CreateNew(playTime);
+            PersistentWorldRegistry persistentWorldRegistry = PersistentWorldRegistry.Instance;
+            NativeArray<PersistentWorldItemRecord> persistentWorldSnapshot = default;
 
             try
             {
@@ -273,6 +276,11 @@ namespace Hecton8.SaveSystem
                 }
 
                 ModSaveStateStore.PopulateSaveData(data);
+                if (persistentWorldRegistry != null)
+                {
+                    persistentWorldRegistry.CaptureSaveSnapshot();
+                    persistentWorldSnapshot = persistentWorldRegistry.GetSaveSnapshotArray();
+                }
 
                 SaveMetadata metadata = new SaveMetadata
                 {
@@ -294,6 +302,7 @@ namespace Hecton8.SaveSystem
                     absoluteTempPath,
                     metadata,
                     data,
+                    persistentWorldSnapshot,
                     _savePayloadBuffer,
                     _compressedSaveBuffer,
                     out string writeError))
@@ -370,6 +379,7 @@ namespace Hecton8.SaveSystem
             {
                 await Awaitable.BackgroundThreadAsync();
                 SaveData data = null;
+                PersistentWorldItemRecord[] loadedWorldItems = null;
                 SaveMetadata loadedMetadata = null;
                 SaveLoadCandidate loadedCandidate = default;
                 Exception lastError = null;
@@ -382,11 +392,13 @@ namespace Hecton8.SaveSystem
                         slotName,
                         candidates[i],
                         out SaveData candidateData,
+                        out PersistentWorldItemRecord[] candidateWorldItems,
                         out SaveMetadata candidateMetadata,
                         out bool candidateUsedLegacyFormat,
                         out string candidateError))
                     {
                         data = candidateData;
+                        loadedWorldItems = candidateWorldItems;
                         loadedCandidate = candidates[i];
                         loadedMetadata = candidateMetadata;
                         usedLegacyFormat = candidateUsedLegacyFormat;
@@ -422,6 +434,8 @@ namespace Hecton8.SaveSystem
                     if (IsAlive(_saveables[i])) _saveables[i].LoadFromSaveData(data);
                 }
 
+                PersistentWorldRegistry.Instance?.RestoreFromLoadedRecords(loadedWorldItems);
+
                 string activeSceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
                 Vector3 playerPosition = data.playerStats.GetPosition();
                 bool repairedPrimaryArtifacts = false;
@@ -438,7 +452,7 @@ namespace Hecton8.SaveSystem
                         SceneName = string.IsNullOrEmpty(activeSceneName) ? "Unknown" : activeSceneName,
                         PlayerPosition = playerPosition
                     };
-                    repairedPrimaryArtifacts = SelfRepairPrimaryArtifacts(slotName, data, repairMetadata);
+                    repairedPrimaryArtifacts = SelfRepairPrimaryArtifacts(slotName, data, repairMetadata, loadedWorldItems);
                     await Awaitable.MainThreadAsync();
                 }
 
@@ -792,6 +806,7 @@ namespace Hecton8.SaveSystem
 
             List<SaveLoadCandidate> candidates = BuildLoadCandidates(slotName);
             SaveData repairedData = null;
+            PersistentWorldItemRecord[] persistentWorldItems = null;
             SaveMetadata metadataSource = beforeInfo.Metadata;
             SaveLoadCandidate selectedCandidate = default;
             bool usedLegacyFormat = false;
@@ -803,11 +818,13 @@ namespace Hecton8.SaveSystem
                     slotName,
                     candidates[i],
                     out SaveData candidateData,
+                    out PersistentWorldItemRecord[] candidateWorldItems,
                     out SaveMetadata candidateMetadata,
                     out bool candidateUsedLegacyFormat,
                     out string candidateError))
                 {
                     repairedData = candidateData;
+                    persistentWorldItems = candidateWorldItems;
                     metadataSource = candidateMetadata ?? beforeInfo.Metadata;
                     selectedCandidate = candidates[i];
                     usedLegacyFormat = candidateUsedLegacyFormat;
@@ -837,6 +854,7 @@ namespace Hecton8.SaveSystem
                 slotName,
                 repairedData,
                 metadataSource,
+                persistentWorldItems,
                 shouldRewritePrimarySave);
 
             SaveSlotInfo afterInfo = BuildSaveSlotInfoInternal(slotName);
@@ -896,6 +914,7 @@ namespace Hecton8.SaveSystem
                     slotName,
                     candidate,
                     out SaveData candidateData,
+                    out _,
                     out SaveMetadata _,
                     out bool candidateLegacyFormat,
                     out string candidateError))
@@ -978,12 +997,17 @@ namespace Hecton8.SaveSystem
             return usedLegacyFormat;
         }
 
-        private bool SelfRepairPrimaryArtifacts(string slotName, SaveData data, SaveMetadata metadata)
+        private bool SelfRepairPrimaryArtifacts(
+            string slotName,
+            SaveData data,
+            SaveMetadata metadata,
+            PersistentWorldItemRecord[] persistentWorldItems)
         {
             return RepairPrimaryArtifacts(
                 slotName,
                 data,
                 metadata,
+                persistentWorldItems,
                 overwritePrimarySave: true);
         }
 
@@ -991,11 +1015,13 @@ namespace Hecton8.SaveSystem
             string slotName,
             SaveLoadCandidate candidate,
             out SaveData data,
+            out PersistentWorldItemRecord[] persistentWorldItems,
             out SaveMetadata metadata,
             out bool usedLegacyFormat,
             out string errorMessage)
         {
             data = null;
+            persistentWorldItems = null;
             metadata = null;
             usedLegacyFormat = false;
             errorMessage = string.Empty;
@@ -1003,7 +1029,7 @@ namespace Hecton8.SaveSystem
             string absolutePath = GetPersistentAbsolutePath(candidate.SavePath);
             if (SaveBinaryStorage.IsBinaryContainer(absolutePath))
             {
-                return TryLoadBinaryCandidate(slotName, candidate, out data, out metadata, out errorMessage);
+                return TryLoadBinaryCandidate(slotName, candidate, out data, out persistentWorldItems, out metadata, out errorMessage);
             }
 
             errorMessage = $"Unsupported non-binary save artifact '{candidate.SavePath}'.";
@@ -1014,10 +1040,12 @@ namespace Hecton8.SaveSystem
             string slotName,
             SaveLoadCandidate candidate,
             out SaveData data,
+            out PersistentWorldItemRecord[] persistentWorldItems,
             out SaveMetadata metadata,
             out string errorMessage)
         {
             data = null;
+            persistentWorldItems = null;
             metadata = null;
             errorMessage = string.Empty;
 
@@ -1029,6 +1057,7 @@ namespace Hecton8.SaveSystem
                     slotName,
                     readBuffer,
                     out data,
+                    out persistentWorldItems,
                     out metadata,
                     out _,
                     out errorMessage))
@@ -1079,6 +1108,7 @@ namespace Hecton8.SaveSystem
             string slotName,
             SaveData data,
             SaveMetadata metadataSource,
+            PersistentWorldItemRecord[] persistentWorldItems,
             bool overwritePrimarySave)
         {
             string primarySavePath = GetPrimarySaveFilePath(slotName);
@@ -1091,12 +1121,23 @@ namespace Hecton8.SaveSystem
             {
                 SaveMetadata writeMetadata = CreateMetadataFromData(slotName, data, metadataSource);
                 AcquireWriteBuffers(out NativeArray<byte> rawBuffer, out bool ownsRawBuffer, out NativeArray<byte> compressedBuffer, out bool ownsCompressedBuffer);
+                NativeArray<PersistentWorldItemRecord> persistentWorldItemBuffer = default;
                 try
                 {
+                    if (persistentWorldItems != null && persistentWorldItems.Length > 0)
+                    {
+                        persistentWorldItemBuffer = new NativeArray<PersistentWorldItemRecord>(
+                            persistentWorldItems.Length,
+                            Allocator.Temp,
+                            NativeArrayOptions.UninitializedMemory);
+                        persistentWorldItemBuffer.CopyFrom(persistentWorldItems);
+                    }
+
                     if (!SaveBinaryStorage.TryWriteSaveFile(
                         GetPersistentAbsolutePath(tempSavePath),
                         writeMetadata,
                         data,
+                        persistentWorldItemBuffer,
                         rawBuffer,
                         compressedBuffer,
                         out string error))
@@ -1106,6 +1147,9 @@ namespace Hecton8.SaveSystem
                 }
                 finally
                 {
+                    if (persistentWorldItemBuffer.IsCreated)
+                        persistentWorldItemBuffer.Dispose();
+
                     ReleaseBuffer(rawBuffer, ownsRawBuffer);
                     ReleaseBuffer(compressedBuffer, ownsCompressedBuffer);
                 }

@@ -1,4 +1,7 @@
 using UnityEngine;
+#if UNITY_EDITOR
+using Sirenix.OdinInspector;
+#endif
 
 namespace Hecton8.Gameplay
 {
@@ -33,6 +36,10 @@ namespace Hecton8.Gameplay
 
         [Header("-- Locomotion -----------------------")]
         [Tooltip("Maximum propulsion force injected into HectonPlayerMovement at full throttle.")]
+#if UNITY_EDITOR
+        [MinValue(50d)]
+        [ValidateInput(nameof(IsFinitePositive), "Propulsion Force must be finite and greater than zero.")]
+#endif
         [SerializeField, Range(50f, 3000f)] private float propulsionForce = 1100f;
 
         [Tooltip("Maximum swim speed multiplier injected into HectonPlayerMovement at full throttle.")]
@@ -77,9 +84,17 @@ namespace Hecton8.Gameplay
 
         [Header("-- Drive Response -------------------")]
         [Tooltip("How quickly drive throttle ramps up after the transport commits to propulsion.")]
+#if UNITY_EDITOR
+        [MinValue(0.5d)]
+        [ValidateInput(nameof(IsFinitePositive), "Throttle Rise Sharpness must be finite and greater than zero.")]
+#endif
         [SerializeField, Range(0.5f, 30f)] private float throttleRiseSharpness = 10f;
 
         [Tooltip("How quickly drive throttle bleeds off after the rider releases propulsion input.")]
+#if UNITY_EDITOR
+        [MinValue(0.5d)]
+        [ValidateInput(nameof(IsFinitePositive), "Throttle Fall Sharpness must be finite and greater than zero.")]
+#endif
         [SerializeField, Range(0.5f, 30f)] private float throttleFallSharpness = 8f;
 
         [Tooltip("Non-linear output curve applied after throttle smoothing. 1 = linear, >1 = heavier motor build.")]
@@ -93,12 +108,24 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(0f, 4f)] private float stationChargeRateScale = 1f;
 
         [Tooltip("Maximum structural integrity for collision damage and failure state.")]
+#if UNITY_EDITOR
+        [MinValue(1d)]
+        [ValidateInput(nameof(IsFinitePositive), "Max Integrity must be finite and greater than zero.")]
+#endif
         [SerializeField, Range(1f, 500f)] private float maxIntegrity = 100f;
 
         [Tooltip("Impact speed below which transport collision damage is ignored.")]
+#if UNITY_EDITOR
+        [MinValue(0d)]
+        [ValidateInput(nameof(IsFiniteNonNegative), "Collision Damage Start Speed must be finite and non-negative.")]
+#endif
         [SerializeField, Range(0f, 40f)] private float collisionDamageStartSpeed = 6f;
 
         [Tooltip("Impact speed at which collision damage reaches its authored ceiling.")]
+#if UNITY_EDITOR
+        [MinValue(0.1d)]
+        [ValidateInput(nameof(IsFinitePositive), "Collision Damage Max Speed must be finite and greater than zero.")]
+#endif
         [SerializeField, Range(0.1f, 60f)] private float collisionDamageMaxSpeed = 14f;
 
         [Tooltip("Integrity damage applied when collision speed reaches the authored ceiling.")]
@@ -209,6 +236,18 @@ namespace Hecton8.Gameplay
             thermalExposureScale = ClampSurvivalShieldingScale(thermalExposureScale);
             radiationExposureScale = ClampSurvivalShieldingScale(radiationExposureScale);
         }
+
+#if UNITY_EDITOR
+        private static bool IsFinitePositive(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value) && value > 0f;
+        }
+
+        private static bool IsFiniteNonNegative(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value) && value >= 0f;
+        }
+#endif
 
         /// <summary>Display label used by transport prompts when no override text is supplied.</summary>
         public string TransportName => transportName;

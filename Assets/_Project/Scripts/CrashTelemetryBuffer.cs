@@ -128,10 +128,98 @@ namespace Hecton8.Core
         // COLD ALLOC: byte[3216] - binary export scratch for 16B header + 50 x 64B entries - owner: CrashTelemetryBuffer
         private readonly byte[] _exportScratch = new byte[ExportScratchSizeBytes];
 
+#if UNITY_EDITOR
+        /// <summary>
+        /// Editor-only view model for the latest retained crash telemetry frames.
+        /// </summary>
+        public readonly struct EditorSnapshotEntry
+        {
+            public readonly uint FrameIndex;
+            public readonly uint SystemMask;
+            public readonly float DeltaTime;
+            public readonly float FixedDeltaTime;
+            public readonly float GpuFrameTime;
+            public readonly float MemoryUsedMb;
+            public readonly Vector3 PlayerPosition;
+            public readonly uint ActiveChunkCount;
+            public readonly uint BoidAgentCount;
+            public readonly uint ErrorFlags;
+            public readonly uint ExportReason;
+
+            public EditorSnapshotEntry(
+                uint frameIndex,
+                uint systemMask,
+                float deltaTime,
+                float fixedDeltaTime,
+                float gpuFrameTime,
+                float memoryUsedMb,
+                Vector3 playerPosition,
+                uint activeChunkCount,
+                uint boidAgentCount,
+                uint errorFlags,
+                uint exportReason)
+            {
+                FrameIndex = frameIndex;
+                SystemMask = systemMask;
+                DeltaTime = deltaTime;
+                FixedDeltaTime = fixedDeltaTime;
+                GpuFrameTime = gpuFrameTime;
+                MemoryUsedMb = memoryUsedMb;
+                PlayerPosition = playerPosition;
+                ActiveChunkCount = activeChunkCount;
+                BoidAgentCount = boidAgentCount;
+                ErrorFlags = errorFlags;
+                ExportReason = exportReason;
+            }
+        }
+#endif
+
         /// <summary>
         /// Returns true when the telemetry ring buffer is initialized.
         /// </summary>
         public bool IsInitialized => _ringBuffer.IsCreated;
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// Copies the latest retained crash telemetry rows into an editor-owned destination list.
+        /// </summary>
+        /// <param name="destination">Editor-owned destination list.</param>
+        /// <returns>Copied frame count.</returns>
+        public int CopyEditorSnapshot(System.Collections.Generic.List<EditorSnapshotEntry> destination)
+        {
+            if (destination == null)
+                return 0;
+
+            destination.Clear();
+            if (!_ringBuffer.IsCreated)
+                return 0;
+
+            long committedEntries = math.min(_writeCursor, ExportSnapshotEntries);
+            if (committedEntries <= 0)
+                return 0;
+
+            long startCursor = _writeCursor - committedEntries;
+            for (int i = 0; i < committedEntries; i++)
+            {
+                int ringIndex = (int)(startCursor + i) & PhysicalRingMask;
+                DebugLogEntry entry = _ringBuffer[ringIndex];
+                destination.Add(new EditorSnapshotEntry(
+                    entry.FrameIndex,
+                    entry.SystemMask,
+                    entry.DeltaTime,
+                    entry.FixedDeltaTime,
+                    entry.GpuFrameTime,
+                    entry.MemoryUsedMb,
+                    new Vector3(entry.PlayerPos.x, entry.PlayerPos.y, entry.PlayerPos.z),
+                    entry.ActiveChunkCount,
+                    entry.BoidAgentCount,
+                    entry.ErrorFlags,
+                    entry.ExportReason));
+            }
+
+            return destination.Count;
+        }
+#endif
 
         private void Awake()
         {

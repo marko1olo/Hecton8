@@ -91,6 +91,7 @@ namespace Hecton8.Gameplay
         public const ushort HabitatIntegrity = 1;
         public const ushort MountableTransport = 2;
         public const ushort MantaScooter = 3;
+        public const ushort EnvironmentHazard = 4;
     }
 
     [DisallowMultipleComponent]
@@ -107,6 +108,17 @@ namespace Hecton8.Gameplay
         private const float FloodedReserveCutoff = 0.3f;
         private const float NearDryThreshold = 0.01f;
         private const int MaxStepIterationsPerSlowTick = 8;
+        private const float ThermalCollapseFloodThreshold = 0.5f;
+        private const float DefaultDryAmbientTemperatureCelsius = 20f;
+        private const float ExternalFloodWaterTemperatureCelsius = -1.4f;
+        private const float DryAmbientTemperatureTauSeconds = 18f;
+        private const float FloodedAmbientTemperatureTauSeconds = 2.5f;
+        private const float FullyFloodedThreshold = 0.999f;
+        private const float StructuralMemoryDwellSeconds = 120f;
+        private const float DegradedIntegrityCapNormalized = 0.75f;
+        private const float WeldCapRestoreScale = 0.15f;
+        private const float ToxicHazardMinimumRadius = 0.5f;
+        private const int ToxicHazardIdSalt = 0x5A17;
 
         private static float s_globalBaseOxygenReserve;
         private static float s_globalBaseOxygenCapacity;
@@ -130,15 +142,24 @@ namespace Hecton8.Gameplay
         [SerializeField] private bool _debugPowerNodeRuptured;
         [SerializeField] private float _debugGlobalBaseOxygenReserve;
         [SerializeField] private float _debugGlobalBaseOxygenNormalized;
+        [SerializeField] private float _debugModuleAmbientTemperatureCelsius;
+        [SerializeField] private float _debugFullyFloodedDurationSeconds;
+        [SerializeField] private bool _debugShortCircuitActive;
+        [SerializeField] private float _debugCo2HazardIntensity;
 
         private BaseModule _baseModule;
         private PowerNode _powerNode;
         private Transform _cachedTransform;
         private bool _registered;
         private bool _breachActive;
+        private bool _shortCircuitActive;
+        private bool _toxicityHazardRegistered;
+        private int _toxicityHazardId;
         private float _floodLevel;
         private float _pressureDelta;
         private float _stepAccumulator;
+        private float _moduleAmbientTemperatureCelsius = DefaultDryAmbientTemperatureCelsius;
+        private float _fullyFloodedDurationSeconds;
         private float3 _breachLocalPoint;
         private float _lastReserveContribution;
         private float _lastCapacityContribution;
@@ -170,11 +191,22 @@ namespace Hecton8.Gameplay
         /// <summary>Normalized local integrity ratio for downstream coupling.</summary>
         public float IntegrityNormalized => ResolveZoneIntegrity();
 
+        /// <summary>Resolved ambient temperature inside the module after flood-water thermal collapse.</summary>
+        public float ModuleAmbientTemperatureCelsius => _moduleAmbientTemperatureCelsius;
+
+        /// <summary>True while the flooded compartment is overriding occupant thermal exchange.</summary>
+        public bool HasFloodedTemperatureOverride => _floodLevel > ThermalCollapseFloodThreshold;
+
         private void Awake()
         {
             ResolveReferences();
+            _toxicityHazardId = unchecked(GetHashCode() * 397 ^ ToxicHazardIdSalt);
+            _moduleAmbientTemperatureCelsius = ResolveDryAmbientTemperatureCelsius();
             if (_baseModule != null && _baseModule.IsFlooded)
+            {
                 _floodLevel = 1f;
+                _moduleAmbientTemperatureCelsius = ExternalFloodWaterTemperatureCelsius;
+            }
 
             UpdateDiagnostics();
         }
@@ -182,6 +214,7 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             ResolveReferences();
+            ToolEffectEvents.OnEffectApplied += HandleToolEffectApplied;
             TryRegister();
             SyncOxygenContribution();
             UpdateDiagnostics();
@@ -189,7 +222,9 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
-            ClearNodeRupture();
+            ToolEffectEvents.OnEffectApplied -= HandleToolEffectApplied;
+            ClearNodeCompromise();
+            ClearToxicityHazard();
             RemoveOxygenContribution();
             TryUnregister();
             _damageReceivers.Clear();
@@ -198,7 +233,9 @@ namespace Hecton8.Gameplay
 
         private void OnDestroy()
         {
-            ClearNodeRupture();
+            ToolEffectEvents.OnEffectApplied -= HandleToolEffectApplied;
+            ClearNodeCompromise();
+            ClearToxicityHazard();
             RemoveOxygenContribution();
             TryUnregister();
             _damageReceivers.Clear();
@@ -213,6 +250,8 @@ namespace Hecton8.Gameplay
             if (_baseModule == null)
                 return;
 
+            float slowTickInterval = ResolveSlowTickInterval();
+
             if (!_breachActive &&
                 _baseModule.IsBreached &&
                 _baseModule.CurrentFailureMode != BaseModuleFailureMode.Fire)
@@ -225,12 +264,15 @@ namespace Hecton8.Gameplay
 
             if (!_breachActive && !_baseModule.IsFlooded && _floodLevel <= 0f)
             {
+                UpdateModuleAmbientTemperature(slowTickInterval);
+                UpdateStructuralMemory(slowTickInterval);
+                UpdateToxicityHazard();
                 SyncOxygenContribution();
                 UpdateDiagnostics();
                 return;
             }
 
-            _stepAccumulator += ResolveSlowTickInterval();
+            _stepAccumulator += slowTickInterval;
             int iterations = 0;
             while (_stepAccumulator >= HabitatStepInterval && iterations < MaxStepIterationsPerSlowTick)
             {
@@ -244,9 +286,12 @@ namespace Hecton8.Gameplay
                 _floodLevel = 0f;
                 _breachActive = false;
                 _pressureDelta = 0f;
-                ClearNodeRupture();
+                ClearNodeCompromise();
             }
 
+            UpdateModuleAmbientTemperature(slowTickInterval);
+            UpdateStructuralMemory(slowTickInterval);
+            UpdateToxicityHazard();
             SyncOxygenContribution();
             UpdateDiagnostics();
         }
@@ -308,6 +353,7 @@ namespace Hecton8.Gameplay
             _debugDepthMeters = depth;
 
             EmitBreachVfx(localPoint, depth, _pressureDelta);
+            SyncOxygenContribution();
             UpdateDiagnostics();
         }
 
@@ -432,16 +478,15 @@ namespace Hecton8.Gameplay
             if (positiveFloodDelta > 0f)
                 _baseModule.ApplyFloodExposure(positiveFloodDelta, floodCo2Amplifier);
 
-            if (_floodLevel > FloodedReserveCutoff)
-                SetNodeRupture(true);
-            else if (_floodLevel <= FloodedReserveCutoff)
-                SetNodeRupture(false);
+            bool shortCircuitActive = _floodLevel > FloodedReserveCutoff;
+            SetNodeCompromise(shortCircuitActive);
 
             if (_floodLevel <= NearDryThreshold && !_baseModule.IsFlooded)
             {
                 _floodLevel = 0f;
                 _breachActive = false;
                 _pressureDelta = 0f;
+                ClearNodeCompromise();
             }
         }
 
@@ -496,18 +541,28 @@ namespace Hecton8.Gameplay
             _registered = false;
         }
 
-        private void SetNodeRupture(bool ruptured)
+        private void SetNodeCompromise(bool compromised)
         {
             if (_powerNode == null)
+            {
+                _shortCircuitActive = compromised;
                 return;
+            }
 
-            _powerNode.SetRuptured(ruptured);
+            _powerNode.SetRuptured(compromised);
+            _powerNode.SetShortCircuited(compromised);
+            _shortCircuitActive = compromised;
         }
 
-        private void ClearNodeRupture()
+        private void ClearNodeCompromise()
         {
             if (_powerNode != null)
+            {
                 _powerNode.SetRuptured(false);
+                _powerNode.SetShortCircuited(false);
+            }
+
+            _shortCircuitActive = false;
         }
 
         private void SyncOxygenContribution()
@@ -515,7 +570,7 @@ namespace Hecton8.Gameplay
             float reserveContribution = 0f;
             float capacityContribution = 0f;
 
-            if (_baseModule != null && !_baseModule.IsFlooded && _floodLevel <= FloodedReserveCutoff)
+            if (_baseModule != null && !_breachActive && !_baseModule.IsFlooded && _floodLevel <= NearDryThreshold)
             {
                 reserveContribution = _baseModule.BreathableReserve;
                 capacityContribution = _baseModule.BreathableReserveCapacity;
@@ -552,6 +607,95 @@ namespace Hecton8.Gameplay
 
             _lastReserveContribution = 0f;
             _lastCapacityContribution = 0f;
+        }
+
+        private void UpdateModuleAmbientTemperature(float dt)
+        {
+            float dryAmbientTemperature = ResolveDryAmbientTemperatureCelsius();
+            float floodBlend = _floodLevel > ThermalCollapseFloodThreshold
+                ? Mathf.InverseLerp(ThermalCollapseFloodThreshold, 1f, _floodLevel)
+                : 0f;
+            float targetTemperature = Mathf.Lerp(dryAmbientTemperature, ExternalFloodWaterTemperatureCelsius, floodBlend);
+            float tau = Mathf.Lerp(DryAmbientTemperatureTauSeconds, FloodedAmbientTemperatureTauSeconds, floodBlend);
+            float temperatureDecay = Mathf.Exp(-dt / Mathf.Max(0.01f, tau));
+            _moduleAmbientTemperatureCelsius = targetTemperature + (_moduleAmbientTemperatureCelsius - targetTemperature) * temperatureDecay;
+        }
+
+        private void UpdateStructuralMemory(float dt)
+        {
+            if (_baseModule == null)
+                return;
+
+            if (_floodLevel < FullyFloodedThreshold)
+            {
+                _fullyFloodedDurationSeconds = 0f;
+                return;
+            }
+
+            _fullyFloodedDurationSeconds += dt;
+            if (_fullyFloodedDurationSeconds < StructuralMemoryDwellSeconds)
+                return;
+
+            float degradedRepairCap = _baseModule.MaxIntegrity * DegradedIntegrityCapNormalized;
+            if (_baseModule.ClampRepairIntegrityCap(degradedRepairCap))
+                _fullyFloodedDurationSeconds = StructuralMemoryDwellSeconds;
+        }
+
+        private void HandleToolEffectApplied(ToolEffectSignal signal)
+        {
+            if (signal.EffectType != EffectType.Weld || _baseModule == null || !ReferenceEquals(signal.Module, _baseModule))
+                return;
+
+            float restoreAmount = signal.Magnitude * WeldCapRestoreScale;
+            if (restoreAmount <= 0f)
+                return;
+
+            _baseModule.RestoreRepairIntegrityCap(restoreAmount);
+        }
+
+        private void UpdateToxicityHazard()
+        {
+            if (_baseModule == null ||
+                _baseModule.IsFlooded ||
+                _floodLevel > FloodedReserveCutoff ||
+                !_baseModule.IsCo2Toxic ||
+                !_baseModule.TryGetInteriorHazardBounds(out Vector3 worldCenter, out float radius))
+            {
+                ClearToxicityHazard();
+                return;
+            }
+
+            float intensity = _baseModule.Co2ToxicHazardIntensity;
+            if (intensity <= 0.001f)
+            {
+                ClearToxicityHazard();
+                return;
+            }
+
+            HectonHazardManager.Register(
+                _toxicityHazardId,
+                worldCenter,
+                intensity,
+                Mathf.Max(ToxicHazardMinimumRadius, radius),
+                HazardType.Toxicity);
+            _toxicityHazardRegistered = true;
+        }
+
+        private void ClearToxicityHazard()
+        {
+            if (!_toxicityHazardRegistered)
+                return;
+
+            HectonHazardManager.Unregister(_toxicityHazardId);
+            _toxicityHazardRegistered = false;
+        }
+
+        private float ResolveDryAmbientTemperatureCelsius()
+        {
+            HectonAtmosphereManager atmosphereManager = HectonAtmosphereManager.Instance;
+            return atmosphereManager != null
+                ? atmosphereManager.CurrentTemperature
+                : DefaultDryAmbientTemperatureCelsius;
         }
 
         private float ResolveZoneIntegrity()
@@ -629,6 +773,10 @@ namespace Hecton8.Gameplay
             _debugPowerNodeRuptured = _powerNode != null && _powerNode.IsRuptured;
             _debugGlobalBaseOxygenReserve = s_globalBaseOxygenReserve;
             _debugGlobalBaseOxygenNormalized = GlobalBaseOxygenReserveNormalized;
+            _debugModuleAmbientTemperatureCelsius = _moduleAmbientTemperatureCelsius;
+            _debugFullyFloodedDurationSeconds = _fullyFloodedDurationSeconds;
+            _debugShortCircuitActive = _shortCircuitActive;
+            _debugCo2HazardIntensity = _baseModule != null ? _baseModule.Co2ToxicHazardIntensity : 0f;
 
             if (_cachedTransform != null)
                 _debugDepthMeters = ResolveDepthMeters();

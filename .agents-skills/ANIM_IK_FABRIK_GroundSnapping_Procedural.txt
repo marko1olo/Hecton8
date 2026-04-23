@@ -288,7 +288,8 @@ Per bone per frame:
   deltaRot = math.mul(math.inverse(prevRot), newRot)
   (angle, axis) = deltaRot.ToAngleAxis()
 
-  maxDelta = maxRotationSpeed * deltaTime
+// [FORBID] Mixing radians and degrees. You MUST define speeds in radians when using math intrinsics:
+float maxRotationSpeed = math.radians(360f);
 
   if angle > maxDelta:
     clampedRot = quaternion.AxisAngle(axis, maxDelta)

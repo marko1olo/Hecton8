@@ -61,7 +61,7 @@ t   = smoothstep(band_edge, band_center, dist_from_seam)
      // band_edge   = 3.50m  (voxel skirt outer)
      // band_center = 0.00m  (exact seam line)
 
-N_final = normalize(slerp(N_terrain, N_voxel, t))
+N_final = normalize(math.lerp(N_terrain, N_voxel, t)); // Nlerp
 
 - `slerp` over normals (unit-sphere geodesic). NOT lerp. Lerp introduces magnitude shrinkage at t=0.5.
 - `dist_from_seam`: signed distance sampled per-vertex against seam polyline in AUP space.

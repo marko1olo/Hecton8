@@ -112,11 +112,7 @@ namespace Hecton8.Construction
 
         public float GetRepairIntegrityCap()
         {
-            float minimumCap = _maxIntegrity * _minimumRecoverableIntegrityRatio;
-            if (minimumCap < 1f)
-                minimumCap = 1f;
-
-            return Mathf.Clamp(_maxRecoverableIntegrity, minimumCap, _maxIntegrity);
+            return Mathf.Clamp(_maxRecoverableIntegrity, ResolveMinimumRepairIntegrityCap(), _maxIntegrity);
         }
 
         public int ResolveRemainingRepairCycles()
@@ -126,10 +122,7 @@ namespace Hecton8.Construction
             if (_repairWearPerCascade <= 0f)
                 return -1;
 
-            float minimumCap = _maxIntegrity * _minimumRecoverableIntegrityRatio;
-            if (minimumCap < 1f)
-                minimumCap = 1f;
-
+            float minimumCap = ResolveMinimumRepairIntegrityCap();
             float remainingRecoverableMargin = _maxRecoverableIntegrity - minimumCap;
             if (remainingRecoverableMargin <= 0f)
                 return 0;
@@ -170,13 +163,43 @@ namespace Hecton8.Construction
             if (_repairWearPerCascade <= 0f)
                 return;
 
-            float minimumCap = _maxIntegrity * _minimumRecoverableIntegrityRatio;
-            if (minimumCap < 1f)
-                minimumCap = 1f;
-
+            float minimumCap = ResolveMinimumRepairIntegrityCap();
             _maxRecoverableIntegrity -= _repairWearPerCascade;
             if (_maxRecoverableIntegrity < minimumCap)
                 _maxRecoverableIntegrity = minimumCap;
+        }
+
+        public bool ClampRepairIntegrityCap(float repairIntegrityCap)
+        {
+            EnsureRepairIntegrityCapInitialized();
+
+            float nextCap = Mathf.Clamp(repairIntegrityCap, ResolveMinimumRepairIntegrityCap(), _maxIntegrity);
+            if (_maxRecoverableIntegrity <= nextCap + 0.0001f)
+                return false;
+
+            _maxRecoverableIntegrity = nextCap;
+            if (_currentIntegrity > _maxRecoverableIntegrity)
+                _currentIntegrity = _maxRecoverableIntegrity;
+
+            return true;
+        }
+
+        public bool RestoreRepairIntegrityCap(float amount)
+        {
+            if (amount <= 0f)
+                return false;
+
+            EnsureRepairIntegrityCapInitialized();
+
+            float nextCap = Mathf.Clamp(
+                _maxRecoverableIntegrity + amount,
+                ResolveMinimumRepairIntegrityCap(),
+                _maxIntegrity);
+            if (nextCap <= _maxRecoverableIntegrity + 0.0001f)
+                return false;
+
+            _maxRecoverableIntegrity = nextCap;
+            return true;
         }
 
         public ModuleDamageOutcome ApplyDamage(float amount)
@@ -310,6 +333,15 @@ namespace Hecton8.Construction
                 default:
                     return BaseModuleFailureMode.OxygenLeak;
             }
+        }
+
+        private float ResolveMinimumRepairIntegrityCap()
+        {
+            float minimumCap = _maxIntegrity * _minimumRecoverableIntegrityRatio;
+            if (minimumCap < 1f)
+                minimumCap = 1f;
+
+            return minimumCap;
         }
 
         private void EnsureRepairIntegrityCapInitialized()
