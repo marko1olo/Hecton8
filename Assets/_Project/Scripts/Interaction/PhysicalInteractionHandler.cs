@@ -112,6 +112,7 @@ namespace Hecton8.Interaction
 
         private Transform _cachedTransform;
         private Camera _playerCamera;
+        private PhysicalHandController _physicalHandController;
         private InteractionState _state;
         private bool _registeredTick;
         private bool _registeredFixedTick;
@@ -134,7 +135,10 @@ namespace Hecton8.Interaction
         /// <summary>
         /// True while the player is actively dragging a heavy rigidbody object.
         /// </summary>
-        public bool IsDraggingHeavyObject => _state == InteractionState.DraggingHeavyObject && _activeBody != null;
+        public bool IsDraggingHeavyObject =>
+            _state == InteractionState.DraggingHeavyObject &&
+            _physicalHandController != null &&
+            _physicalHandController.IsGrabbing;
 
         /// <summary>
         /// Normalized 0-1 load factor for the currently dragged heavy object.
@@ -163,6 +167,11 @@ namespace Hecton8.Interaction
                 _playerCamera = GetComponentInChildren<Camera>(true);
                 if (_playerCamera != null)
                     interactionAnchor = _playerCamera.transform;
+            }
+
+            if (!TryGetComponent(out _physicalHandController))
+            {
+                _physicalHandController = gameObject.AddComponent<PhysicalHandController>(); // COLD ALLOC: PhysicalHandController[1] — heavy-object articulation grab proxy — owner: PhysicalInteractionHandler
             }
         }
 
@@ -220,8 +229,8 @@ namespace Hecton8.Interaction
         {
             if (_state == InteractionState.PullingPocketItem)
                 RestorePocketPickupState();
-            else if (_state == InteractionState.DraggingHeavyObject && _activeHeavyCarry != null)
-                _activeHeavyCarry.SetDraggedState(false);
+            else if (_state == InteractionState.DraggingHeavyObject && _physicalHandController != null)
+                _physicalHandController.EndGrab(PhysicalHandGrabEndReason.ManualRelease);
 
             ClearActiveState();
         }
@@ -251,6 +260,13 @@ namespace Hecton8.Interaction
 
         public void FixedTick(float fixedDeltaTime)
         {
+            if (_physicalHandController != null)
+            {
+                Vector3 controllerPosition = GetAnchorTargetPosition();
+                Quaternion controllerRotation = interactionAnchor != null ? interactionAnchor.rotation : _cachedTransform.rotation;
+                _physicalHandController.StepFixed(fixedDeltaTime, controllerPosition, controllerRotation);
+            }
+
             if (_state == InteractionState.Idle)
                 return;
 
@@ -333,6 +349,9 @@ namespace Hecton8.Interaction
                 return false;
             }
 
+            if (_physicalHandController == null || !_physicalHandController.BeginGrab(heavyCarry, carryBody))
+                return false;
+
             _activeInteractable = interactable;
             _activeBehaviour = behaviour;
             _activeTargetTransform = carryBody.transform;
@@ -344,7 +363,6 @@ namespace Hecton8.Interaction
             _stateTimer = 0f;
             _pullSmoothDampVelocity = Vector3.zero;
             _activeHeavyCarryMass = carryBody.mass;
-            _activeHeavyCarry.SetDraggedState(true);
 
             _state = InteractionState.DraggingHeavyObject;
             _debugState = "DraggingHeavyObject";
@@ -389,14 +407,22 @@ namespace Hecton8.Interaction
 
         private void TickHeavyCarry(float deltaTime)
         {
-            if (_activeBody == null || interactionAnchor == null)
+            if (_physicalHandController == null)
             {
-                CancelActiveInteraction();
-                return;
-            }
+                if (_activeBody == null || interactionAnchor == null)
+                {
+                    CancelActiveInteraction();
+                    return;
+                }
 
-            Vector3 separation = interactionAnchor.position - _activeBody.worldCenterOfMass;
-            if (separation.sqrMagnitude > heavyCarryBreakDistance * heavyCarryBreakDistance)
+                Vector3 fallbackSeparation = interactionAnchor.position - _activeBody.worldCenterOfMass;
+                if (fallbackSeparation.sqrMagnitude > heavyCarryBreakDistance * heavyCarryBreakDistance)
+                {
+                    CancelActiveInteraction();
+                    return;
+                }
+            }
+            else if (!_physicalHandController.IsGrabbing)
             {
                 CancelActiveInteraction();
                 return;
@@ -415,16 +441,8 @@ namespace Hecton8.Interaction
 
         private void FixedTickHeavyCarry(float fixedDeltaTime)
         {
-            if (_activeBody == null || interactionAnchor == null)
+            if (_physicalHandController == null || !_physicalHandController.IsGrabbing)
                 return;
-
-            Vector3 targetPosition = GetAnchorTargetPosition();
-            Vector3 currentPosition = _activeBody.position;
-            float separationDistance = Vector3.Distance(currentPosition, targetPosition);
-            float followSpeed = ResolveHeavyCarryFollowSpeed(separationDistance);
-            Vector3 nextPosition = Vector3.MoveTowards(currentPosition, targetPosition, followSpeed * fixedDeltaTime);
-            _activeBody.MovePosition(nextPosition);
-            _activeBody.angularVelocity = Vector3.zero;
         }
 
         private void CompletePocketPickup()

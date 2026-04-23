@@ -101,7 +101,6 @@ namespace Hecton8.AI
         [Tooltip("Triggered when a Panic Pulse occurs. Hook audio agents here for zero-GC sound dispatch.")]
         public UnityEngine.Events.UnityEvent OnPanicTriggered;
 
-        private int _stasisFrameCount;
         private float _steeringTickAccumulator;
         private float _slowTickAccumulator;
 
@@ -163,6 +162,7 @@ namespace Hecton8.AI
             _rb = GetComponent<Rigidbody>();
             _renderer = GetComponentInChildren<Renderer>();
             TryGetComponent(out _animator);
+            ResolveFoveatedBindings();
             _tickStaggerShift = UnityEngine.Random.Range(0, 10);
 
             // Inject profile into subsystems
@@ -251,32 +251,8 @@ namespace Hecton8.AI
             if (dt <= 0f)
                 return;
 
-            // [REQ] Frustum-based Brain LOD (CPU Salvage)
-            // If the player isn't looking, we drop update frequency to ~1Hz (once every 30 frames)
-            bool isVisible = _renderer != null && _renderer.isVisible;
-            
-            if (!isVisible)
-            {
-                _stasisFrameCount++;
-                if (_stasisFrameCount < 30)
-                {
-                    AdvanceDispatcherCadence(dt);
-                    return;
-                }
-
-                _stasisFrameCount = 0;
-            }
-            else
-            {
-                _stasisFrameCount = 100; // Reset stasis counter if visible (force immediate catch-up next hide)
-            }
-
-            // [REQ] Distance-based LOD Override
-            bool isVeryClose = _sensorSuite.distSqrToPlayer < brainOptimizationDistance * brainOptimizationDistance;
-            _lodDisabled = !isVisible && !isVeryClose;
-
             _sensorSuite.Tick(dt, _rb.linearVelocity);
-            if (_sensorSuite.lodDisabled) _lodDisabled = true; 
+            _lodDisabled = _sensorSuite.lodDisabled;
 
             if (_lodDisabled || _sensorSuite.isSleeping)
             {

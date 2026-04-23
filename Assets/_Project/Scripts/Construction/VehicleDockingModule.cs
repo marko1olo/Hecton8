@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Hecton8.Physics;
 using Hecton8.Power;
 using UnityEngine;
 
@@ -219,6 +220,8 @@ namespace Hecton8.Construction
             ResolveDockedBody(transportBehaviour);
             SnapDockedBodyToAnchor();
             ConnectDockedCargoCrates();
+            if (_dockedBody != null)
+                GlobalPhysicsStateManager.RegisterDockConnection(this, _dockedBody);
         }
 
         private void ReleaseDockedTransport()
@@ -232,6 +235,7 @@ namespace Hecton8.Construction
                 _dockedBody.constraints = _cachedBodyConstraints;
             }
 
+            GlobalPhysicsStateManager.UnregisterDockConnection(this);
             _dockedBody = null;
             _dockedTransport = null;
             _dockedBehaviour = null;

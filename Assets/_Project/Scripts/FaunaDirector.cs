@@ -49,6 +49,7 @@ using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.Ecosystem;
 using Hecton8.Environment;
+using Hecton8.Systems.AI;
 using Hecton8.World;
 using UnityEngine;
 
@@ -2271,6 +2272,136 @@ namespace Hecton8.AI
         /// <summary>Количество активных существ в мире.</summary>
         public int ActiveCreatureCount => _activeCreatures != null ? _activeCreatures.Count : 0;
 
+        internal bool TrySpawnEncounterThreat(
+            EncounterThreatClass threatClass,
+            Vector3 spawnPosition,
+            uint deterministicSeed,
+            out GameObject spawnedInstance)
+        {
+            spawnedInstance = null;
+
+            EnsureRuntimeStateInitialized();
+            ResolvePlayerViewTransform();
+
+            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            if (pool == null)
+                return false;
+
+            if (!TryResolveEncounterBiomeData(
+                    pool,
+                    out FaunaBiomeData biomeData,
+                    out ResolvedFaunaEntry[] resolvedEntries,
+                    out int[] creatureTypeCounts,
+                    out int[] availablePoolCounts))
+            {
+                return false;
+            }
+
+            if (!TrySelectEncounterEntry(
+                    resolvedEntries,
+                    creatureTypeCounts,
+                    availablePoolCounts,
+                    biomeData,
+                    threatClass,
+                    spawnPosition,
+                    deterministicSeed,
+                    out ResolvedFaunaEntry selectedEntry))
+            {
+                return false;
+            }
+
+            WorldChunkCoordinate spawnChunk = WorldChunkCoordinate.FromWorldPosition(spawnPosition, _runtimeChunkSize);
+            if (GetChunkCreatureCount(spawnChunk) >= _runtimePerChunkMaxCount)
+                return false;
+
+            WorldMacroZoneCoordinate spawnMacroZone = WorldMacroZoneCoordinate.FromWorldPosition(spawnPosition, _runtimeMacroZoneSize);
+            if (selectedEntry.isLargeThreat &&
+                _playerTransform != null &&
+                !CanSpawnLargeThreatNearPlayer(spawnMacroZone, _playerTransform.position))
+            {
+                return false;
+            }
+
+            GameObject resolvedPrefab = selectedEntry.prefab;
+            if (resolvedPrefab == null)
+                return false;
+
+            Quaternion spawnRotation = Quaternion.Euler(0f, ResolveDeterministicEncounterYaw(deterministicSeed), 0f);
+            GameObject instance = pool.Spawn(resolvedPrefab, spawnPosition, spawnRotation, false);
+            if (instance == null)
+                return false;
+
+            int biomeIndex = biomeData.biomeIndex;
+            int typeIndex = selectedEntry.creatureTypeIndex;
+
+            ActiveCreature record = new ActiveCreature
+            {
+                gameObject = instance,
+                transform = instance.transform,
+                creatureTypeIndex = typeIndex,
+                biomeIndex = biomeIndex,
+                prefabSource = resolvedPrefab,
+                chunkCoord = spawnChunk,
+                macroZoneCoord = spawnMacroZone,
+                isLargeThreat = selectedEntry.isLargeThreat
+            };
+
+            _activeCreatures.Add(record);
+            IncrementCreatureCounters(biomeIndex, typeIndex, biomeData);
+            IncrementChunkCount(spawnChunk);
+            if (selectedEntry.isLargeThreat)
+                IncrementMacroZoneCount(spawnMacroZone);
+
+            if (typeIndex >= 0 && typeIndex < availablePoolCounts.Length && availablePoolCounts[typeIndex] > 0)
+                availablePoolCounts[typeIndex]--;
+
+            if (instance.TryGetComponent(out FaunaBrain ai))
+            {
+                ai.ApplyArchetype(selectedEntry.archetype);
+                ai.SetSpawnPoint(spawnPosition);
+                FaunaGeneticsManager.Instance?.ApplyTraits(ai, selectedEntry.archetype, biomeIndex, spawnPosition);
+                EcosystemHealthDirector.Instance?.ConfigureSpawnedFauna(ai, selectedEntry.archetype, spawnChunk);
+
+                if (selectedEntry.isPredator || threatClass != EncounterThreatClass.Drone)
+                    ai.ForceState(FaunaBrain.AIState.Aggressive);
+            }
+
+            spawnedInstance = instance;
+            return true;
+        }
+
+        internal bool TryRecallEncounterThreat(int instanceId)
+        {
+            if (instanceId == 0 || _activeCreatures == null || _activeCreatures.Count <= 0)
+                return false;
+
+            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            for (int i = _activeCreatures.Count - 1; i >= 0; i--)
+            {
+                ActiveCreature creature = _activeCreatures[i];
+                if (creature.gameObject == null)
+                {
+                    DecrementCreatureCounters(in creature);
+                    SwapRemoveAt(i);
+                    continue;
+                }
+
+                if (creature.gameObject.GetInstanceID() != instanceId)
+                    continue;
+
+                if (pool != null)
+                    pool.Despawn(creature.gameObject);
+                else
+                    creature.gameObject.SetActive(false);
+
+                DecrementCreatureCounters(in creature);
+                SwapRemoveAt(i);
+                return true;
+            }
+
+            return false;
+        }
+
         /// <summary>
         /// Принудительный деспавн ВСЕХ существ.
         /// Используется при смене зоны, загрузке сейва, телепорте.
@@ -2333,6 +2464,222 @@ namespace Hecton8.AI
         /// не аллоцирует (generic constrained). Никаких LINQ/foreach.
         /// </summary>
         /// <param name="enabled">true = давление разрешено, false = отступление.</param>
+        private bool TryResolveEncounterBiomeData(
+            ObjectPoolManager pool,
+            out FaunaBiomeData biomeData,
+            out ResolvedFaunaEntry[] resolvedEntries,
+            out int[] creatureTypeCounts,
+            out int[] availablePoolCounts)
+        {
+            biomeData = null;
+            resolvedEntries = null;
+            creatureTypeCounts = null;
+            availablePoolCounts = null;
+
+            if (_cachedBiomeIndex >= 0)
+                _biomeLookup.TryGetValue(_cachedBiomeIndex, out biomeData);
+
+            if (biomeData == null && biomeDatasets != null)
+            {
+                for (int i = 0; i < biomeDatasets.Length; i++)
+                {
+                    if (biomeDatasets[i] != null)
+                    {
+                        biomeData = biomeDatasets[i];
+                        break;
+                    }
+                }
+            }
+
+            if (biomeData == null ||
+                _resolvedEntriesPerBiome == null ||
+                !_resolvedEntriesPerBiome.TryGetValue(biomeData, out resolvedEntries) ||
+                resolvedEntries == null ||
+                resolvedEntries.Length == 0 ||
+                !_countsPerTypePerBiome.TryGetValue(biomeData, out creatureTypeCounts) ||
+                _availablePoolCountsPerBiome == null ||
+                !_availablePoolCountsPerBiome.TryGetValue(biomeData, out availablePoolCounts) ||
+                availablePoolCounts == null ||
+                availablePoolCounts.Length < resolvedEntries.Length)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < resolvedEntries.Length; i++)
+            {
+                GameObject prefab = resolvedEntries[i].prefab;
+                availablePoolCounts[i] = prefab != null ? pool.GetAvailableCount(prefab) : 0;
+            }
+
+            return true;
+        }
+
+        private bool TrySelectEncounterEntry(
+            ResolvedFaunaEntry[] resolvedEntries,
+            int[] currentCounts,
+            int[] availablePoolCounts,
+            FaunaBiomeData biomeData,
+            EncounterThreatClass threatClass,
+            Vector3 spawnPosition,
+            uint deterministicSeed,
+            out ResolvedFaunaEntry selectedEntry)
+        {
+            selectedEntry = default;
+            if (resolvedEntries == null || resolvedEntries.Length == 0)
+                return false;
+
+            float totalWeight = 0f;
+            int fallbackIndex = -1;
+            for (int i = 0; i < resolvedEntries.Length; i++)
+            {
+                ResolvedFaunaEntry entry = resolvedEntries[i];
+                if (!MatchesEncounterThreatClass(in entry, threatClass))
+                    continue;
+                if (!_pressureEnabled && entry.blockedWhenPressureDisabled)
+                    continue;
+
+                int typeIndex = entry.creatureTypeIndex;
+                if (typeIndex >= 0 &&
+                    typeIndex < currentCounts.Length &&
+                    currentCounts[typeIndex] >= entry.maxAlive)
+                {
+                    continue;
+                }
+
+                if (availablePoolCounts[i] <= 0)
+                    continue;
+
+                float selectionWeight = ResolveSelectionWeight(
+                    in entry,
+                    _currentPassiveSelectionScale,
+                    _currentAggressiveSelectionScale,
+                    _currentLargeThreatSelectionScale,
+                    biomeData.biomeIndex,
+                    _currentDepthZone,
+                    _currentDepthZoneSpecialistScale);
+                selectionWeight *= ResolveEncounterThreatBias(in entry, threatClass);
+                if (selectionWeight <= 0f)
+                    continue;
+
+                totalWeight += selectionWeight;
+                fallbackIndex = i;
+            }
+
+            if (totalWeight <= 0f)
+                return false;
+
+            uint seed = EncounterDirector.BuildDeterministicSeed(spawnPosition, unchecked((int)deterministicSeed), biomeData.biomeIndex, _activeCreatures.Count);
+            float roll = EncounterDirector.HashToUnit01(seed) * totalWeight;
+
+            for (int i = 0; i < resolvedEntries.Length; i++)
+            {
+                ResolvedFaunaEntry entry = resolvedEntries[i];
+                if (!MatchesEncounterThreatClass(in entry, threatClass))
+                    continue;
+                if (!_pressureEnabled && entry.blockedWhenPressureDisabled)
+                    continue;
+
+                int typeIndex = entry.creatureTypeIndex;
+                if (typeIndex >= 0 &&
+                    typeIndex < currentCounts.Length &&
+                    currentCounts[typeIndex] >= entry.maxAlive)
+                {
+                    continue;
+                }
+
+                if (availablePoolCounts[i] <= 0)
+                    continue;
+
+                float selectionWeight = ResolveSelectionWeight(
+                    in entry,
+                    _currentPassiveSelectionScale,
+                    _currentAggressiveSelectionScale,
+                    _currentLargeThreatSelectionScale,
+                    biomeData.biomeIndex,
+                    _currentDepthZone,
+                    _currentDepthZoneSpecialistScale);
+                selectionWeight *= ResolveEncounterThreatBias(in entry, threatClass);
+                if (selectionWeight <= 0f)
+                    continue;
+
+                roll -= selectionWeight;
+                if (roll <= 0f)
+                {
+                    selectedEntry = entry;
+                    return true;
+                }
+            }
+
+            if (fallbackIndex >= 0)
+            {
+                selectedEntry = resolvedEntries[fallbackIndex];
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool MatchesEncounterThreatClass(in ResolvedFaunaEntry entry, EncounterThreatClass threatClass)
+        {
+            CreatureArchetypeData archetype = entry.archetype;
+            switch (threatClass)
+            {
+                case EncounterThreatClass.Leviathan:
+                    return entry.isLargeThreat || (archetype != null && archetype.roleType == CreatureRoleType.Leviathan);
+
+                case EncounterThreatClass.Stalker:
+                    return !entry.isLargeThreat && entry.isPredator;
+
+                case EncounterThreatClass.Swarm:
+                    if (entry.isLargeThreat || archetype == null)
+                        return false;
+
+                    return archetype.usePackHunt ||
+                           archetype.callNearbyAllies ||
+                           archetype.roleType == CreatureRoleType.Territorial ||
+                           archetype.roleType == CreatureRoleType.Hunter;
+
+                default:
+                    return !entry.isLargeThreat;
+            }
+        }
+
+        private static float ResolveEncounterThreatBias(in ResolvedFaunaEntry entry, EncounterThreatClass threatClass)
+        {
+            CreatureArchetypeData archetype = entry.archetype;
+            switch (threatClass)
+            {
+                case EncounterThreatClass.Leviathan:
+                    return entry.isLargeThreat ? 2f : 0.25f;
+
+                case EncounterThreatClass.Stalker:
+                    return entry.isPredator ? 1.5f : 0.35f;
+
+                case EncounterThreatClass.Swarm:
+                    if (archetype == null)
+                        return 0.5f;
+
+                    if (archetype.usePackHunt || archetype.callNearbyAllies)
+                        return 1.8f;
+
+                    if (archetype.roleType == CreatureRoleType.Territorial || archetype.roleType == CreatureRoleType.Hunter)
+                        return 1.25f;
+
+                    return 0.45f;
+
+                default:
+                    if (archetype != null && archetype.roleType == CreatureRoleType.DroneTrader)
+                        return 2f;
+
+                    return entry.isPredator ? 0.35f : 1f;
+            }
+        }
+
+        private static float ResolveDeterministicEncounterYaw(uint seed)
+        {
+            return EncounterDirector.HashToUnit01(seed ^ 0xC13FA9A9u) * 360f;
+        }
+
         public void SetPredatorPressure(bool enabled)
         {
             _pressureEnabled = enabled;

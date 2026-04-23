@@ -1,6 +1,7 @@
 using Hecton8.Interaction;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Hecton8.Core
 {
@@ -37,6 +38,92 @@ namespace Hecton8.Core
         /// </summary>
         /// <param name="deltaTime">Scaled frame delta supplied by the caller.</param>
         void Render(float deltaTime);
+    }
+
+    /// <summary>
+    /// Immutable authored debris definition consumed by the runtime debris manager.
+    /// </summary>
+    public interface IDebrisDefinition
+    {
+        /// <summary>
+        /// True when the definition has at least one authored chunk and material binding.
+        /// </summary>
+        bool IsValid { get; }
+
+        /// <summary>
+        /// Total authored Voronoi chunk count.
+        /// </summary>
+        int ChunkCount { get; }
+
+        /// <summary>
+        /// Shared material used for all runtime chunk draws.
+        /// </summary>
+        Material SharedMaterial { get; }
+
+        /// <summary>
+        /// Shadow-casting mode used by the debris burst.
+        /// </summary>
+        ShadowCastingMode ShadowCastingMode { get; }
+
+        /// <summary>
+        /// True when the runtime chunks should receive shadows.
+        /// </summary>
+        bool ReceiveShadows { get; }
+
+        /// <summary>
+        /// Rendering layer mask applied to the runtime chunk draw calls.
+        /// </summary>
+        uint RenderingLayerMask { get; }
+
+        /// <summary>
+        /// Base outward impulse multiplier applied on burst spawn.
+        /// </summary>
+        float BaseImpulse { get; }
+
+        /// <summary>
+        /// Linear damping applied while collision remains enabled.
+        /// </summary>
+        float LinearDamping { get; }
+
+        /// <summary>
+        /// Angular damping applied per simulated chunk.
+        /// </summary>
+        float AngularDamping { get; }
+
+        /// <summary>
+        /// Extra kinematic sink distance applied after the collision phase ends.
+        /// </summary>
+        float SinkDistance { get; }
+
+        /// <summary>
+        /// Duration of the sink phase after collision is disabled.
+        /// </summary>
+        float SinkDuration { get; }
+
+        /// <summary>
+        /// Offset below the spawn origin used as the simple ground collision plane.
+        /// </summary>
+        float GroundPlaneOffset { get; }
+
+        /// <summary>
+        /// Bounce attenuation used by the simple collision response.
+        /// </summary>
+        float BounceDamping { get; }
+
+        /// <summary>
+        /// Returns the authored mesh for one chunk index.
+        /// </summary>
+        Mesh GetChunkMesh(int index);
+
+        /// <summary>
+        /// Returns the authored local transform matrix for one chunk index.
+        /// </summary>
+        Matrix4x4 GetLocalMatrix(int index);
+
+        /// <summary>
+        /// Returns the authored mass scale for one chunk index.
+        /// </summary>
+        float GetMassScale(int index);
     }
 
     /// <summary>
@@ -366,5 +453,41 @@ namespace Hecton8.Core
         /// Clears all queued interaction signals and associated transient target references.
         /// </summary>
         void ClearQueuedSignals();
+    }
+
+    /// <summary>
+    /// Runtime debris burst service exposed through <see cref="GlobalRegistry"/>.
+    /// </summary>
+    public interface IDebrisService
+    {
+        /// <summary>
+        /// True once the service is registered and ready to accept debris spawn requests.
+        /// </summary>
+        bool IsInitialized { get; }
+
+        /// <summary>
+        /// Spawns one debris burst using a pre-baked chunk definition.
+        /// </summary>
+        /// <param name="definition">Authoritative chunk definition.</param>
+        /// <param name="runtimeOrigin">Runtime-space origin of the intact object.</param>
+        /// <param name="runtimeRotation">Runtime-space rotation of the intact object.</param>
+        /// <param name="runtimeHitPoint">Runtime-space impact point.</param>
+        /// <param name="runtimeHitNormal">Runtime-space impact normal.</param>
+        /// <param name="power01">Normalized tool power.</param>
+        /// <param name="seed">Deterministic burst seed.</param>
+        /// <returns>True when the burst was accepted.</returns>
+        bool SpawnBurst(
+            IDebrisDefinition definition,
+            Vector3 runtimeOrigin,
+            Quaternion runtimeRotation,
+            Vector3 runtimeHitPoint,
+            Vector3 runtimeHitNormal,
+            float power01,
+            uint seed);
+
+        /// <summary>
+        /// Clears all active chunk bursts immediately.
+        /// </summary>
+        void ClearActiveDebris();
     }
 }

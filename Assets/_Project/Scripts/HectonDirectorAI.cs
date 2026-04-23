@@ -1,1204 +1,402 @@
-// ============================================================================
-// HECTON-8 — HectonDirectorAI.cs  (v2 — Optimized)
-// AI Director системы темпа игры для Submerge.
-//
-// РОЛЬ:
-//   • Управляет ритмом сессии в духе Left 4 Dead Director.
-//   • Считает TensionScore (0..100).
-//   • Ведёт фазовую машину: BuildUp → Peak → Relax.
-//   • Координирует FaunaDirector и ScavengePopulator напрямую
-//     (кэшированные ссылки) + публикует decoupled-события для остальных систем.
-//   • Работает на ISlowTickable, без Update().
-//
-// ОПТИМИЗАЦИИ v2:
-//   • Instance-level predator buffer вместо static (safe multi-scene).
-//   • HashSet<Collider> registration — TryGetComponent убран из горячего цикла.
-//   • Ленивый resolve зависимостей через runtime reference helpers.
-//   • SafeInvoke для event protection при scene transitions.
-//   • Единый WeightedRoll метод без копипасты.
-//   • Новые event types: WeatherShift, MissionTrigger.
-//   • Zero GC в горячем пути. Никаких new/List/LINQ в SlowTick.
-//
-// АВТОСОХРАНЕНИЕ:
-//   • При входе в фазу Relax — автосохранение через SaveManager.
-//   • Кулдаун: не чаще чем раз в autoSaveCooldownSeconds (по умолчанию 300с).
-//   • Fire-and-forget: async Task запускается, но не await-ится в SlowTick.
-//
-// Namespace: Hecton8.Systems.AI
-// ============================================================================
-
 using System;
-using System.Collections.Generic;
 using Hecton8.AI;
-using Hecton8.Celestial;
 using Hecton8.Core;
 using Hecton8.Gameplay;
-using Hecton8.Interaction;
-using Hecton8.Items;
-using Hecton8.SaveSystem;
 using Hecton8.World;
 using UnityEngine;
 
 namespace Hecton8.Systems.AI
 {
+    /// <summary>
+    /// Scene-facing compatibility owner for the encounter pacing director.
+    /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4500)]
-    public sealed class HectonDirectorAI : MonoBehaviour, ISlowTickable
+    public sealed class HectonDirectorAI : MonoBehaviour, IUpdatable
     {
-        // ══════════════════════════════════════════════════════════
-        //  TYPES
-        // ══════════════════════════════════════════════════════════
-
-        private enum DirectorPhase
-        {
-            BuildUp,
-            Peak,
-            Relax
-        }
-
-        private enum DirectorEventType
-        {
-            None             = 0,
-            SpawnHorde       = 1,
-            EquipmentGlitch  = 2,
-            RareDiscovery    = 3,
-            WeatherShift     = 4,
-            MissionTrigger   = 5
-        }
-
-        // ══════════════════════════════════════════════════════════
-        //  PUBLIC EVENTS — DECOUPLED COMMAND BUS
-        // ══════════════════════════════════════════════════════════
-
-        /// <summary>Запрос на спавн волны угрозы. Param: мировая позиция центра.</summary>
         public static event Action<Vector3> OnRequestSpawnHorde;
-
-        /// <summary>Запрос на помехи оборудования / HUD glitch. Param: интенсивность [0..1].</summary>
         public static event Action<float> OnRequestEquipmentGlitch;
-
-        /// <summary>Запрос на редкую находку. Param: мировая позиция интереса.</summary>
         public static event Action<Vector3> OnRequestRareDiscovery;
-
-        /// <summary>Запрос на смену погоды / условий среды. Param: интенсивность [0..1].</summary>
         public static event Action<float> OnRequestWeatherShift;
-
-        /// <summary>Запрос на mission trigger / narrative beat. Param: мировая позиция.</summary>
         public static event Action<Vector3> OnRequestMissionTrigger;
-
-        /// <summary>
-        /// Уведомление о глобальном разрешении/запрете хищного давления.
-        /// true = давление разрешено (BuildUp / Peak), false = запрещено (Relax).
-        /// </summary>
         public static event Action<bool> OnPredatorPressureChanged;
 
         internal static HectonDirectorAI ActiveRuntimeInstance { get; private set; }
 
-        // ══════════════════════════════════════════════════════════
-        //  INSPECTOR — REFERENCES
-        // ══════════════════════════════════════════════════════════
-
-        [Header("── References ────────────────────────────────")]
-        [Tooltip("Transform игрока. Если null — будет найден по тегу Player.")]
+        [Header("── References ─────────────────────────────")]
+        [Tooltip("Authoritative player transform. Resolved from bootstrap when left null.")]
         [SerializeField] private Transform playerTransform;
-
-        [Tooltip("Система выживания для чтения O2 и энергии.")]
+        [Tooltip("Optional explicit gameplay camera. Resolved from the player hierarchy when left null.")]
+        [SerializeField] private Camera playerCamera;
+        [Tooltip("Player survival system used to feed the director stress inputs.")]
         [SerializeField] private HectonSurvivalSystem survivalSystem;
-
-        [Tooltip("Ссылка на FaunaDirector. Если null — ищется автоматически один раз.")]
+        [Tooltip("Fauna spawn owner. Resolved from the runtime reference utility when left null.")]
         [SerializeField] private FaunaDirector faunaDirector;
 
-        [Tooltip("Ссылка на ScavengePopulator. Если null — ищется автоматически один раз.")]
-        [SerializeField] private ScavengePopulator scavengePopulator;
-
-        [Tooltip("Bridge растительности/угрозы. Если null — ищется автоматически один раз.")]
-        [SerializeField] private HectonMapMagicVegetationBridge vegetationThreatBridge;
-
-        // ══════════════════════════════════════════════════════════
-        //  INSPECTOR — TENSION WEIGHTS
-        // ══════════════════════════════════════════════════════════
-
-        [Header("── Tension Weights ───────────────────────────")]
-        [SerializeField] private float predatorsWeight = 25f;
-        [SerializeField] private float oxygenWeight    = 20f;
-        [SerializeField] private float energyWeight    = 15f;
-        [SerializeField] private float calmWeight      = 10f;
-        [SerializeField] private float depthWeight     = 15f;
-        [SerializeField] private float speedWeight     = 10f;
-        [SerializeField] private float lootWeight      = 5f;
-
-        // ══════════════════════════════════════════════════════════
-        //  INSPECTOR — PREDATOR SCAN
-        // ══════════════════════════════════════════════════════════
-
-        [Header("── Predator Detection ────────────────────────")]
-        [SerializeField] private float     predatorScanRadius       = 40f;
-        [SerializeField] private LayerMask predatorMask              = ~0;
-        [SerializeField] private int       predatorsForMaxTension    = 4;
-
-        [Tooltip("true — HashSet registration mode (рекомендуется).\n" +
-                 "false — fallback на CompareTag(\"Predator\").")]
-        [SerializeField] private bool useRegistrationMode = true;
-
-        // ══════════════════════════════════════════════════════════
-        //  INSPECTOR — PHASE THRESHOLDS
-        // ══════════════════════════════════════════════════════════
-
-        [Header("── Phase Thresholds ──────────────────────────")]
-        [SerializeField] private float lowTensionThreshold    = 25f;
-        [SerializeField] private float highTensionThreshold   = 60f;
-        [SerializeField] private float calmBeforePeakSeconds  = 90f;
-        [SerializeField] private float relaxDurationSeconds   = 120f;
-        [SerializeField] private float peakCooldownSeconds    = 60f;
-
-        // ══════════════════════════════════════════════════════════
-        //  INSPECTOR — BUILD-UP
-        // ══════════════════════════════════════════════════════════
-
-        [Header("── Build-Up Behaviour ───────────────────────")]
-        [SerializeField] private float buildUpEventIntervalSeconds = 45f;
-        [Range(0f, 1f)]
-        [SerializeField] private float buildUpEventChance          = 0.35f;
-        [SerializeField] private float deepLureDepthThreshold      = 120f;
-
-        // ══════════════════════════════════════════════════════════
-        //  INSPECTOR — RELAX MERCY
-        // ══════════════════════════════════════════════════════════
-
-        [Header("── Relax Mercy (Director's Grace) ────────────")]
-        [Tooltip("Порог tension, ниже которого срабатывает «Милость Директора».")]
-        [SerializeField] private float relaxMercyTensionThreshold  = 15f;
-
-        [Tooltip("Интервал между discovery-подарками в фазе Relax (сек).")]
-        [SerializeField] private float relaxMercyIntervalSeconds   = 30f;
-
-        // ══════════════════════════════════════════════════════════
-        //  INSPECTOR — PEAK EVENT WEIGHTS
-        // ══════════════════════════════════════════════════════════
-
-        [Header("── Peak Event Weights ────────────────────────")]
-        [SerializeField] private int spawnHordeWeight       = 40;
-        [SerializeField] private int equipmentGlitchWeight  = 20;
-        [SerializeField] private int rareDiscoveryWeight    = 15;
-        [SerializeField] private int weatherShiftWeight     = 15;
-        [SerializeField] private int missionTriggerWeight   = 10;
-
-        // ══════════════════════════════════════════════════════════
-        //  INSPECTOR — EVENT OUTPUT
-        // ══════════════════════════════════════════════════════════
-
-        [Header("── Event Output ──────────────────────────────")]
-        [SerializeField] private float eventOffsetRadius = 25f;
-        [Range(0f, 1f)]
-        [SerializeField] private float glitchIntensity   = 0.8f;
-        [Range(0f, 1f)]
-        [SerializeField] private float weatherIntensity  = 0.6f;
-
-        [Header("── Threat Hotspot Handoff ───────────────────")]
-        [Tooltip("Минимальный уровень угрозы для переноса хищного события в hotspot.")]
-        [SerializeField] private float predatorThreatHotspotMinimum = 0.18f;
-
-        [Tooltip("Минимальная дистанция hotspot от игрока.")]
-        [SerializeField] private float predatorThreatHotspotMinDistance = 90f;
-
-        [Tooltip("Максимальная дистанция hotspot от игрока.")]
-        [SerializeField] private float predatorThreatHotspotMaxDistance = 260f;
-
-        // ══════════════════════════════════════════════════════════
-        //  INSPECTOR — AUTOSAVE
-        // ══════════════════════════════════════════════════════════
-
-        [Header("── Autosave ──────────────────────────────────")]
-        [Tooltip("Минимальный интервал между автосохранениями (секунды).")]
-        [SerializeField] private float  autoSaveCooldownSeconds = 300f;
-
-        [Tooltip("Имя слота автосохранения.")]
-        [SerializeField] private string autoSaveSlotName        = "autosave";
-
-        [Tooltip("Включить автосохранение при входе в Relax.")]
-        [SerializeField] private bool   enableAutoSave          = true;
-
-        // ══════════════════════════════════════════════════════════
-        //  INSPECTOR — PLAYER POS SHADER SYNC
-        // ══════════════════════════════════════════════════════════
-
-        [Header("── Shader Integration ────────────────────────")]
-        [Tooltip("Публиковать позицию игрока в Shader.SetGlobalVector " +
-                 "для proximity reaction в бiolum-шейдерах.")]
-        [SerializeField] private bool publishPlayerPosToShader = true;
-
-        // ══════════════════════════════════════════════════════════
-        //  RUNTIME STATE
-        // ══════════════════════════════════════════════════════════
-
-        private DirectorPhase     _phase          = DirectorPhase.BuildUp;
-        private DirectorEventType _lastEventType  = DirectorEventType.None;
-
-        private float _tensionScore;
-        private float   _narrativeBonus;
-        private float   _timeSinceLastLoot;
-        private Vector3 _lastFramePos;
-        private float _calmTimer;
-        private float _phaseTimer;
-        private float _peakCooldownTimer;
-        private float _buildUpTimer;
-        private float _relaxMercyTimer;
-
-        private bool _predatorPressureEnabled = true;
-
-        // Dynamic delta
-        private float _lastTickTime;
-        private bool  _hasTickedOnce;
-
-        // Cached factors (debug + reuse)
-        private float _predatorFactor;
-        private float _oxygenFactor;
-        private float _energyFactor;
-        private float _calmFactor;
-        private float _debugDepthFactor;
-        private float _debugSpeedFactor;
-        private float _debugLootFactor;
-
-        // Autosave cooldown
-        private float _lastAutoSaveTime = float.NegativeInfinity;
-
-        // Lazy resolve flag
-        private bool _resolvedDirectors;
-
-        // Eclipse tension bonus — лор: ночные хищники поднимаются во время затмения
-        private float _eclipseTensionBonus;
-        private bool  _eclipseActive;
-
-        // ══════════════════════════════════════════════════════════
-        //  PREDATOR REGISTRATION — REPLACES TryGetComponent
-        // ══════════════════════════════════════════════════════════
-
-        // Instance-level buffer — safe for multi-scene / multiple Directors
-        private readonly Collider[] _predatorScanBuffer = new Collider[32];
-
-        // Registered predator colliders — O(1) lookup instead of TryGetComponent
-        private static readonly HashSet<Collider> _registeredPredators = new(64);
-
-        /// <summary>
-        /// Регистрирует коллайдер как хищник. Вызывается из FaunaBrain.OnEnable.
-        /// Zero GC: HashSet.Add на pre-allocated set.
-        /// </summary>
-        public static void RegisterPredator(Collider c)
-        {
-            if (c != null)
-                _registeredPredators.Add(c);
-        }
-
-        /// <summary>
-        /// Снимает регистрацию хищника. Вызывается из FaunaBrain.OnDisable.
-        /// </summary>
-        public static void UnregisterPredator(Collider c)
-        {
-            if (c != null)
-                _registeredPredators.Remove(c);
-        }
-
-        /// <summary>
-        /// Очищает все регистрации. Вызывается при смене сцены.
-        /// </summary>
-        public static void ClearAllPredatorRegistrations()
-        {
-            _registeredPredators.Clear();
-        }
-
-        // Shader property ID — cached once
-        private static readonly int ShaderPlayerPosID = Shader.PropertyToID("_PlayerPos");
-
-        // ══════════════════════════════════════════════════════════
-        //  DIAGNOSTICS
-        // ══════════════════════════════════════════════════════════
+        [Header("── Event Output ───────────────────────────")]
+        [Tooltip("Deterministic offset radius used for non-spawn director event hints.")]
+        [SerializeField, Range(8f, 48f)] private float eventOffsetRadius = 25f;
 
 #if UNITY_EDITOR
-        [Header("── Diagnostics ───────────────────────────────")]
-        [SerializeField] private float  _debugTensionScore;
-        [SerializeField] private float  _debugPredatorFactor;
-        [SerializeField] private float  _debugOxygenFactor;
-        [SerializeField] private float  _debugEnergyFactor;
-        [SerializeField] private float  _debugCalmFactor;
-        [SerializeField] private float  _debugCalmTimer;
-        [SerializeField] private float  _debugPhaseTimer;
-        [SerializeField] private float  _debugPeakCooldown;
-        [SerializeField] private float  _debugDeltaTime;
-
-        [SerializeField] private string _debugPhase;
-        [SerializeField] private string _debugLastEvent;
-        [SerializeField] private bool   _debugPredatorPressureEnabled;
-        [SerializeField] private bool   _debugHasFaunaDirector;
-        [SerializeField] private bool   _debugHasScavengePopulator;
-        [SerializeField] private float  _debugTimeSinceLastAutoSave;
-        [SerializeField] private int    _debugRegisteredPredatorCount;
-        [SerializeField] private bool   _debugEclipseActive;
+        [Header("── Diagnostics ────────────────────────────")]
+        [SerializeField] private float _debugStressLevel;
+        [SerializeField] private float _debugIntensityLevel;
+        [SerializeField] private float _debugTokenBudget;
+        [SerializeField] private float _debugAverageFrameTimeMs;
+        [SerializeField] private int _debugActiveEnemyCount;
+        [SerializeField] private string _debugPhaseName;
 #endif
 
-        // ══════════════════════════════════════════════════════════
-        //  LIFECYCLE
-        // ══════════════════════════════════════════════════════════
+        // COLD ALLOC: EncounterDirector[1] — dispatcher-driven encounter kernel — owner: HectonDirectorAI
+        private readonly EncounterDirector _encounterDirector = new EncounterDirector();
+        // COLD ALLOC: Plane[6] — reusable frustum plane scratch for zero-allocation camera extraction — owner: HectonDirectorAI
+        private readonly Plane[] _frustumPlaneScratch = new Plane[EncounterDirector.FrustumPlaneCount];
+        // COLD ALLOC: FrameTiming[1] — reusable frame-timing sample buffer — owner: HectonDirectorAI
+        private readonly FrameTiming[] _frameTimingScratch = new FrameTiming[1];
+        // COLD ALLOC: float[8] — rolling frame-time history for shed hysteresis — owner: HectonDirectorAI
+        private readonly float[] _frameTimeHistory = new float[8];
+
+        private HectonPlayerMovement _playerMovement;
+        private bool _dispatcherRegistered;
+        private float _resolveRetryTimer;
+        private int _frameTimeHistoryCount;
+        private int _frameTimeHistoryIndex;
+        private Vector3 _previousPlayerPosition;
+        private bool _hasPreviousPlayerPosition;
+
+        /// <summary>
+        /// Current normalized director tension score in the legacy 0..100 presentation range.
+        /// </summary>
+        public float TensionScore => _encounterDirector.StressLevel * 100f;
+
+        /// <summary>
+        /// True while the director is in the Relax phase.
+        /// </summary>
+        public bool IsRelaxPhase => _encounterDirector.CurrentPhase == EncounterPhase.Relax;
+
+        /// <summary>
+        /// True while predator pressure is allowed to escalate.
+        /// </summary>
+        public bool IsPredatorPressureEnabled => _encounterDirector.CurrentPhase != EncounterPhase.Relax;
+
+        /// <summary>
+        /// Human-readable current phase name for legacy diagnostics consumers.
+        /// </summary>
+        public string CurrentPhaseName => _encounterDirector.CurrentPhaseName;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            ActiveRuntimeInstance = null;
+        }
 
         private void Awake()
         {
             ActiveRuntimeInstance = this;
-            ResolvePlayerAndSurvival();
+            ResolveDependencies(force: true);
         }
 
         private void OnEnable()
         {
-            _lastTickTime  = Time.time;
-            _hasTickedOnce = false;
-            _resolvedDirectors = false;
+            if (!Application.isPlaying)
+                return;
 
-            GameTickManager.Instance?.Register((ISlowTickable)this);
+            SystemDispatcher.EnsureRuntimeInstance();
+            if (!_dispatcherRegistered)
+            {
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+                _dispatcherRegistered = true;
+            }
 
-            InteractionEvents.OnItemCollected += HandleItemCollected;
-            NarrativeEvents.OnDiscoveryMade   += HandleNarrativeDiscovery;
-            HectonCelestialEngine.OnEclipseStart += HandleEclipseStart;
-            HectonCelestialEngine.OnEclipseEnd   += HandleEclipseEnd;
-
+            _encounterDirector.Reset();
+            _hasPreviousPlayerPosition = false;
             PublishPredatorPressure(true);
         }
 
         private void OnDisable()
         {
-            GameTickManager.Instance?.Unregister((ISlowTickable)this);
+            if (!Application.isPlaying)
+                return;
 
-            InteractionEvents.OnItemCollected -= HandleItemCollected;
-            NarrativeEvents.OnDiscoveryMade   -= HandleNarrativeDiscovery;
-            HectonCelestialEngine.OnEclipseStart -= HandleEclipseStart;
-            HectonCelestialEngine.OnEclipseEnd   -= HandleEclipseEnd;
+            if (_dispatcherRegistered)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _dispatcherRegistered = false;
+            }
         }
 
         private void OnDestroy()
         {
-            if (ActiveRuntimeInstance == this)
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
+
+            _encounterDirector.Dispose();
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  ISlowTickable
-        // ══════════════════════════════════════════════════════════
-
-        public void SlowTick()
+        /// <summary>
+        /// Executes one dispatcher step.
+        /// </summary>
+        /// <param name="deltaTime">Scaled frame delta supplied by the dispatcher.</param>
+        public void Tick(float deltaTime)
         {
-            // ── Dynamic Delta ──
-            float now = Time.time;
-            float dt;
+            if (deltaTime <= 0f)
+                return;
 
-            if (!_hasTickedOnce)
-            {
-                dt = 0.5f;
-                _hasTickedOnce = true;
-            }
-            else
-            {
-                dt = now - _lastTickTime;
-            }
-
-            _lastTickTime = now;
-
-            // ── Track Loot & Speed ──
-            _timeSinceLastLoot += dt;
-            _lastFramePos = playerTransform.position;
-
-            // Clamp delta to sane range
-            if (dt < 0.001f) dt = 0.001f;
-            if (dt > 5f)     dt = 5f;
-
-            // ── Resolve player ──
+            ResolveDependencies(force: false);
             if (playerTransform == null)
+                return;
+
+            FrameTimingManager.CaptureFrameTimings();
+            float averageFrameTimeMs = UpdateFrameTimeAverage(deltaTime);
+
+            Vector3 playerPosition = playerTransform.position;
+            Vector3 playerVelocity = ResolvePlayerVelocity(playerPosition, deltaTime);
+            Vector3 playerForward = ResolvePlayerForward();
+            float surfaceWorldY = ResolveSurfaceWorldY(playerPosition);
+            float healthNormalized = survivalSystem != null ? Mathf.Clamp01(survivalSystem.IntegrityNormalized) : 1f;
+            float oxygenNormalized = survivalSystem != null ? Mathf.Clamp01(survivalSystem.OxygenNormalized) : 1f;
+            float internalStress = ResolveInternalStress(healthNormalized, oxygenNormalized);
+
+            if (playerCamera != null)
+                GeometryUtility.CalculateFrustumPlanes(playerCamera, _frustumPlaneScratch);
+            else
+                EncounterDirector.FillFallbackFrustumPlanes(playerPosition, playerForward, _frustumPlaneScratch);
+
+            _encounterDirector.CopyFrustumPlanes(_frustumPlaneScratch);
+
+            EncounterFrameContext frameContext = new EncounterFrameContext
             {
-                ResolvePlayerAndSurvival();
-                if (playerTransform == null)
-                    return;
-            }
+                DeltaTime = deltaTime,
+                PlayerPosition = playerPosition,
+                PlayerVelocity = playerVelocity,
+                PlayerForward = playerForward,
+                PlayerHealthNormalized = healthNormalized,
+                PlayerOxygenNormalized = oxygenNormalized,
+                PlayerInternalStress = internalStress,
+                PlayerDepth = ResolvePlayerDepth(playerPosition, surfaceWorldY),
+                AvgFrameTimeMs = averageFrameTimeMs,
+                SurfaceWorldY = surfaceWorldY
+            };
 
-            // ── Lazy resolve directors (one time) ──
-            if (!_resolvedDirectors)
-                ResolveDirectors();
-
-            // ── Publish player pos to shaders ──
-            if (publishPlayerPosToShader)
-            {
-                Vector3 pp = playerTransform.position;
-                Shader.SetGlobalVector(ShaderPlayerPosID,
-                    new Vector4(pp.x, pp.y, pp.z, 1f)); // w=1 = valid
-            }
-
-            // ── Core logic ──
-            UpdateTimers(dt);
-            // Decaying narrative relief
-            if (_narrativeBonus > 0f)
-            {
-                _narrativeBonus -= dt * 0.5f;
-                if (_narrativeBonus < 0f) _narrativeBonus = 0f;
-            }
-
-            _tensionScore = ComputeTensionScore();
-            UpdateCalmTimer(dt);
-            UpdatePhaseMachine();
-
-            switch (_phase)
-            {
-                case DirectorPhase.BuildUp:
-                    ProcessBuildUp();
-                    break;
-
-                case DirectorPhase.Peak:
-                    ProcessPeak();
-                    break;
-
-                case DirectorPhase.Relax:
-                    ProcessRelax(dt);
-                    break;
-            }
+            _encounterDirector.Advance(frameContext, faunaDirector, this);
 
 #if UNITY_EDITOR
-            WriteDebugFields(now, dt);
+            _debugStressLevel = _encounterDirector.StressLevel;
+            _debugIntensityLevel = _encounterDirector.IntensityLevel;
+            _debugTokenBudget = _encounterDirector.TokenBudget;
+            _debugAverageFrameTimeMs = averageFrameTimeMs;
+            _debugActiveEnemyCount = _encounterDirector.ActiveEnemyCount;
+            _debugPhaseName = _encounterDirector.CurrentPhaseName;
 #endif
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  TENSION CALCULATION
-        // ══════════════════════════════════════════════════════════
-
-        private float ComputeTensionScore()
+        /// <summary>
+        /// Forces the next completed encounter tick into the Peak phase.
+        /// </summary>
+        public void ForcePeak()
         {
-            _predatorFactor   = ComputePredatorFactor();
-            _oxygenFactor     = ComputeLowOxygenFactor();
-            _energyFactor     = ComputeLowEnergyFactor();
-            _calmFactor       = ComputeCalmFactor();
-            _debugDepthFactor = ComputeDepthFactor();
-            _debugSpeedFactor = ComputeSpeedFactor();
-            _debugLootFactor  = ComputeLootFactor();
-
-            float tension =
-                _predatorFactor   * predatorsWeight +
-                _oxygenFactor     * oxygenWeight    +
-                _energyFactor     * energyWeight    +
-                _calmFactor       * calmWeight      +
-                _debugDepthFactor * depthWeight     +
-                _debugSpeedFactor * speedWeight     +
-                _debugLootFactor  * lootWeight;
-
-            // Narrative Relief
-            tension -= _narrativeBonus;;
-
-            // Eclipse bonus — ночные хищники поднимаются, tension растёт
-            tension += _eclipseTensionBonus;
-
-            // Manual clamp — no Mathf call overhead
-            if (tension < 0f)   tension = 0f;
-            if (tension > 100f) tension = 100f;
-
-            return tension;
+            _encounterDirector.RequestPhaseOverride(EncounterPhase.Peak);
         }
 
-        private float ComputePredatorFactor()
+        /// <summary>
+        /// Resets the runtime encounter state.
+        /// </summary>
+        public void ResetDirector()
         {
+            _encounterDirector.RequestReset();
+        }
+
+        /// <summary>
+        /// Forces the next completed encounter tick into the Relax phase.
+        /// </summary>
+        public void ForceRelax()
+        {
+            _encounterDirector.RequestPhaseOverride(EncounterPhase.Relax);
+        }
+
+        /// <summary>
+        /// Legacy predator registration hook retained for compatibility.
+        /// </summary>
+        /// <param name="collider">Predator collider.</param>
+        public static void RegisterPredator(Collider collider)
+        {
+        }
+
+        /// <summary>
+        /// Legacy predator unregistration hook retained for compatibility.
+        /// </summary>
+        /// <param name="collider">Predator collider.</param>
+        public static void UnregisterPredator(Collider collider)
+        {
+        }
+
+        /// <summary>
+        /// Legacy global predator registration clear retained for compatibility.
+        /// </summary>
+        public static void ClearAllPredatorRegistrations()
+        {
+        }
+
+        internal void HandleEncounterPhaseChanged(EncounterPhase previousPhase, EncounterPhase newPhase)
+        {
+            PublishPredatorPressure(newPhase != EncounterPhase.Relax);
+
             if (playerTransform == null)
-                return 0f;
+                return;
 
-            Vector3 playerPos = playerTransform.position;
+            uint seed = EncounterDirector.BuildDeterministicSeed(playerTransform.position, _encounterDirector.FrameIndex, (int)newPhase, _encounterDirector.ActiveEnemyCount);
+            Vector3 eventPosition = ResolveDeterministicOffsetPosition(playerTransform.position, seed, eventOffsetRadius);
 
-            int hitCount = UnityEngine.Physics.OverlapSphereNonAlloc(
-                playerPos,
-                predatorScanRadius,
-                _predatorScanBuffer,
-                predatorMask,
-                QueryTriggerInteraction.Ignore);
-
-            if (hitCount == 0)
-                return 0f;
-
-            float tensionSum = 0f;
-            float invRadius  = 1f / predatorScanRadius;
-
-            for (int i = 0; i < hitCount; i++)
+            switch (newPhase)
             {
-                Collider col = _predatorScanBuffer[i];
-                if (col == null) continue;
+                case EncounterPhase.Peak:
+                    SafeInvoke(OnRequestEquipmentGlitch, Mathf.Lerp(0.35f, 0.85f, _encounterDirector.IntensityLevel));
+                    SafeInvoke(OnRequestMissionTrigger, eventPosition);
+                    break;
 
-                // ── Predator identification ──
-                // Registration mode: O(1) HashSet lookup, zero GC
-                // Fallback mode: CompareTag (no alloc)
-                if (useRegistrationMode)
-                {
-                    if (!_registeredPredators.Contains(col))
-                        continue;
-                }
-                else
-                {
-                    if (!col.CompareTag("Predator"))
-                        continue;
-                }
+                case EncounterPhase.Decay:
+                    SafeInvoke(OnRequestWeatherShift, Mathf.Lerp(0.2f, 0.6f, _encounterDirector.StressLevel));
+                    break;
 
-                float dist = Vector3.Distance(playerPos, col.transform.position);
-                float contribution = 1f - (dist * invRadius);
-
-                if (contribution < 0f) contribution = 0f;
-                if (contribution > 1f) contribution = 1f;
-
-                tensionSum += contribution;
+                case EncounterPhase.Relax:
+                    SafeInvoke(OnRequestRareDiscovery, eventPosition);
+                    break;
             }
-
-            if (predatorsForMaxTension <= 0)
-                return tensionSum > 0f ? 1f : 0f;
-
-            float factor = tensionSum / predatorsForMaxTension;
-            if (factor > 1f) factor = 1f;
-            return factor;
         }
 
-        private float ComputeLowOxygenFactor()
+        internal void HandleThreatSpawned(EncounterThreatClass threatClass, Vector3 spawnPosition)
+        {
+            if (threatClass == EncounterThreatClass.Swarm)
+                SafeInvoke(OnRequestSpawnHorde, spawnPosition);
+        }
+
+        private void ResolveDependencies(bool force)
+        {
+            if (!force && _resolveRetryTimer > 0f)
+            {
+                _resolveRetryTimer -= Time.unscaledDeltaTime;
+                return;
+            }
+
+            _resolveRetryTimer = 1f;
+
+            if (playerTransform == null)
+                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
+
+            if (survivalSystem == null && playerTransform != null)
+                playerTransform.TryGetComponent(out survivalSystem);
+
+            if (_playerMovement == null && playerTransform != null)
+                playerTransform.TryGetComponent(out _playerMovement);
+
+            if (faunaDirector == null)
+                WorldRuntimeReferenceUtility.TryResolveFaunaDirector(ref faunaDirector);
+
+            if (playerCamera == null && playerTransform != null)
+                playerCamera = playerTransform.GetComponentInChildren<Camera>(true);
+        }
+
+        private float UpdateFrameTimeAverage(float deltaTime)
+        {
+            uint timingCount = FrameTimingManager.GetLatestTimings(1u, _frameTimingScratch);
+            float sampleMs = timingCount > 0u ? (float)_frameTimingScratch[0].cpuFrameTime : deltaTime * 1000f;
+            if (sampleMs <= 0f)
+                sampleMs = deltaTime * 1000f;
+
+            _frameTimeHistory[_frameTimeHistoryIndex] = sampleMs;
+            _frameTimeHistoryIndex++;
+            if (_frameTimeHistoryIndex >= _frameTimeHistory.Length)
+                _frameTimeHistoryIndex = 0;
+
+            if (_frameTimeHistoryCount < _frameTimeHistory.Length)
+                _frameTimeHistoryCount++;
+
+            float sum = 0f;
+            for (int i = 0; i < _frameTimeHistoryCount; i++)
+                sum += _frameTimeHistory[i];
+
+            return _frameTimeHistoryCount > 0 ? sum / _frameTimeHistoryCount : sampleMs;
+        }
+
+        private Vector3 ResolvePlayerVelocity(Vector3 playerPosition, float deltaTime)
+        {
+            Vector3 velocity = Vector3.zero;
+            if (_hasPreviousPlayerPosition && deltaTime > 0f)
+                velocity = (playerPosition - _previousPlayerPosition) / deltaTime;
+
+            _previousPlayerPosition = playerPosition;
+            _hasPreviousPlayerPosition = true;
+            return velocity;
+        }
+
+        private Vector3 ResolvePlayerForward()
+        {
+            if (playerCamera != null)
+                return playerCamera.transform.forward;
+
+            if (playerTransform != null)
+                return playerTransform.forward;
+
+            return Vector3.forward;
+        }
+
+        private float ResolveSurfaceWorldY(Vector3 playerPosition)
         {
             if (survivalSystem == null)
                 return 0f;
 
-            float normalized = survivalSystem.OxygenNormalized;
-            if (normalized < 0f) normalized = 0f;
-            if (normalized > 1f) normalized = 1f;
-            return 1f - normalized;
+            return playerPosition.y + survivalSystem.Depth;
         }
 
-        private float ComputeLowEnergyFactor()
+        private float ResolvePlayerDepth(Vector3 playerPosition, float surfaceWorldY)
+        {
+            if (survivalSystem != null)
+                return Mathf.Max(0f, survivalSystem.Depth);
+
+            return Mathf.Max(0f, surfaceWorldY - playerPosition.y);
+        }
+
+        private float ResolveInternalStress(float healthNormalized, float oxygenNormalized)
         {
             if (survivalSystem == null)
-                return 0f;
+                return Mathf.Max(1f - healthNormalized, 1f - oxygenNormalized);
 
-            float normalized = survivalSystem.EnergyNormalized;
-            if (normalized < 0f) normalized = 0f;
-            if (normalized > 1f) normalized = 1f;
-            return 1f - normalized;
-        }
-
-        private float ComputeCalmFactor()
-        {
-            if (calmBeforePeakSeconds <= 0.01f)
-                return 1f;
-
-            float factor = _calmTimer / calmBeforePeakSeconds;
-            if (factor > 1f) factor = 1f;
-            return factor;
-        }
-
-        // ══════════════════════════════════════════════════════════
-        //  TIMERS
-        // ══════════════════════════════════════════════════════════
-
-        private void UpdateTimers(float dt)
-        {
-            _phaseTimer   += dt;
-            _buildUpTimer += dt;
-
-            if (_peakCooldownTimer > 0f)
-            {
-                _peakCooldownTimer -= dt;
-                if (_peakCooldownTimer < 0f)
-                    _peakCooldownTimer = 0f;
-            }
-        }
-
-        private void UpdateCalmTimer(float dt)
-        {
-            if (_tensionScore <= lowTensionThreshold)
-            {
-                _calmTimer += dt;
-                return;
-            }
-
-            if (_tensionScore >= highTensionThreshold)
-            {
-                _calmTimer = 0f;
-                return;
-            }
-
-            // Mid-range: slow decay
-            _calmTimer -= dt * 0.5f;
-            if (_calmTimer < 0f)
-                _calmTimer = 0f;
-        }
-
-        // ══════════════════════════════════════════════════════════
-        //  PHASE MACHINE
-        // ══════════════════════════════════════════════════════════
-
-        private void UpdatePhaseMachine()
-        {
-            switch (_phase)
-            {
-                case DirectorPhase.BuildUp:
-                {
-                    if (_calmTimer >= calmBeforePeakSeconds &&
-                        _peakCooldownTimer <= 0f)
-                    {
-                        EnterPhase(DirectorPhase.Peak);
-                    }
-                    break;
-                }
-
-                case DirectorPhase.Peak:
-                    // Peak is processed and exited in ProcessPeak
-                    break;
-
-                case DirectorPhase.Relax:
-                {
-                    if (_phaseTimer >= relaxDurationSeconds)
-                    {
-                        EnterPhase(DirectorPhase.BuildUp);
-                    }
-                    break;
-                }
-            }
-        }
-
-        private void EnterPhase(DirectorPhase next)
-        {
-            _phase          = next;
-            _phaseTimer     = 0f;
-            _relaxMercyTimer = 0f;
-
-            switch (next)
-            {
-                case DirectorPhase.BuildUp:
-                    PublishPredatorPressure(true);
-                    break;
-
-                case DirectorPhase.Peak:
-                    PublishPredatorPressure(true);
-                    break;
-
-                case DirectorPhase.Relax:
-                    PublishPredatorPressure(false);
-                    TryAutoSave();
-                    break;
-            }
-        }
-
-        // ══════════════════════════════════════════════════════════
-        //  AUTOSAVE
-        // ══════════════════════════════════════════════════════════
-
-        private void TryAutoSave()
-        {
-            if (!enableAutoSave)
-                return;
-
-            float now = Time.time;
-
-            if (now - _lastAutoSaveTime < autoSaveCooldownSeconds)
-                return;
-
-            SaveManager saveManager = SaveManager.Instance;
-            if (saveManager == null || saveManager.IsBusy)
-                return;
-
-            _lastAutoSaveTime = now;
-
-#pragma warning disable CS4014
-            saveManager.SaveGameAsync(autoSaveSlotName);
-#pragma warning restore CS4014
-
-            Debug.Log(
-                $"[HectonDirectorAI] Autosave triggered on Relax phase entry " +
-                $"(slot: '{autoSaveSlotName}').");
-        }
-
-        // ══════════════════════════════════════════════════════════
-        //  PHASE PROCESSING
-        // ══════════════════════════════════════════════════════════
-
-        private void ProcessBuildUp()
-        {
-            if (_buildUpTimer < buildUpEventIntervalSeconds)
-                return;
-
-            _buildUpTimer = 0f;
-
-            if (UnityEngine.Random.value > buildUpEventChance)
-                return;
-
-            // Deep lure: rare discovery at depth
-            if (survivalSystem != null && survivalSystem.Depth >= deepLureDepthThreshold)
-            {
-                TriggerRareDiscovery();
-                return;
-            }
-
-            // Weighted pick between soft build-up events
-            int pick = WeightedRoll(
-                rareDiscoveryWeight,
-                equipmentGlitchWeight,
-                weatherShiftWeight);
-
-            switch (pick)
-            {
-                case 0: TriggerRareDiscovery();        break;
-                case 1: TriggerEquipmentGlitch(0.35f); break;
-                case 2: TriggerWeatherShift(0.3f);     break;
-            }
-        }
-
-        private void ProcessPeak()
-        {
-            DirectorEventType evt = PickPeakEvent();
-
-            switch (evt)
-            {
-                case DirectorEventType.SpawnHorde:
-                    TriggerSpawnHorde();
-                    break;
-
-                case DirectorEventType.EquipmentGlitch:
-                    TriggerEquipmentGlitch(glitchIntensity);
-                    break;
-
-                case DirectorEventType.RareDiscovery:
-                    TriggerRareDiscovery();
-                    break;
-
-                case DirectorEventType.WeatherShift:
-                    TriggerWeatherShift(weatherIntensity);
-                    break;
-
-                case DirectorEventType.MissionTrigger:
-                    TriggerMissionTrigger();
-                    break;
-            }
-
-            _lastEventType     = evt;
-            _calmTimer         = 0f;
-            _peakCooldownTimer = peakCooldownSeconds;
-
-            EnterPhase(DirectorPhase.Relax);
-        }
-
-        private void ProcessRelax(float dt)
-        {
-            _relaxMercyTimer += dt;
-
-            if (_tensionScore > relaxMercyTensionThreshold)
-                return;
-
-            if (_relaxMercyTimer < relaxMercyIntervalSeconds)
-                return;
-
-            _relaxMercyTimer = 0f;
-            TriggerRareDiscovery();
-        }
-
-        // ══════════════════════════════════════════════════════════
-        //  EVENT PICKING — UNIFIED WEIGHTED RANDOM
-        // ══════════════════════════════════════════════════════════
-
-        private DirectorEventType PickPeakEvent()
-        {
-            int pick = WeightedRoll(
-                spawnHordeWeight,
-                equipmentGlitchWeight,
-                rareDiscoveryWeight,
-                weatherShiftWeight,
-                missionTriggerWeight);
-
-            switch (pick)
-            {
-                case 0:  return DirectorEventType.SpawnHorde;
-                case 1:  return DirectorEventType.EquipmentGlitch;
-                case 2:  return DirectorEventType.RareDiscovery;
-                case 3:  return DirectorEventType.WeatherShift;
-                case 4:  return DirectorEventType.MissionTrigger;
-                default: return DirectorEventType.EquipmentGlitch;
-            }
-        }
-
-        /// <summary>
-        /// Unified weighted random selection. Zero GC.
-        /// Accepts 2-5 weights via params-free overloads.
-        /// Returns index of chosen weight (0-based).
-        /// </summary>
-        private static int WeightedRoll(int w0, int w1)
-        {
-            int total = w0 + w1;
-            if (total <= 0) return 0;
-            int roll = UnityEngine.Random.Range(0, total);
-            return roll < w0 ? 0 : 1;
-        }
-
-        private static int WeightedRoll(int w0, int w1, int w2)
-        {
-            int total = w0 + w1 + w2;
-            if (total <= 0) return 0;
-            int roll = UnityEngine.Random.Range(0, total);
-            if (roll < w0) return 0;
-            roll -= w0;
-            return roll < w1 ? 1 : 2;
-        }
-
-        private static int WeightedRoll(int w0, int w1, int w2, int w3, int w4)
-        {
-            int total = w0 + w1 + w2 + w3 + w4;
-            if (total <= 0) return 0;
-            int roll = UnityEngine.Random.Range(0, total);
-            if (roll < w0) return 0;
-            roll -= w0;
-            if (roll < w1) return 1;
-            roll -= w1;
-            if (roll < w2) return 2;
-            roll -= w2;
-            return roll < w3 ? 3 : 4;
-        }
-
-        // ══════════════════════════════════════════════════════════
-        //  EVENT COMMANDS — SAFE INVOKE
-        // ══════════════════════════════════════════════════════════
-
-        /// <summary>
-        /// Safe event invocation. Catches exceptions from destroyed subscribers
-        /// during scene transitions. Zero GC in normal path.
-        /// </summary>
-        private static void SafeInvoke<T>(Action<T> action, T arg)
-        {
-            if (action == null) return;
-            try
-            {
-                action.Invoke(arg);
-            }
-            catch (Exception e)
-            {
-                Debug.LogException(e);
-            }
-        }
-
-        private void TriggerSpawnHorde()
-        {
-            Vector3 center = GetPredatorEventPosition();
-
-            if (faunaDirector != null)
-                faunaDirector.ForceSpawnHorde(center);
-
-            SafeInvoke(OnRequestSpawnHorde, center);
-        }
-
-        private void TriggerEquipmentGlitch(float intensity)
-        {
-            SafeInvoke(OnRequestEquipmentGlitch, intensity);
-        }
-
-        private void TriggerRareDiscovery()
-        {
-            Vector3 hintPos = GetEventPositionAroundPlayer();
-
-            if (scavengePopulator != null)
-                scavengePopulator.HighlightNearbyResource(hintPos);
-
-            SafeInvoke(OnRequestRareDiscovery, hintPos);
-        }
-
-        private void TriggerWeatherShift(float intensity)
-        {
-            SafeInvoke(OnRequestWeatherShift, intensity);
-        }
-
-        private void TriggerMissionTrigger()
-        {
-            Vector3 pos = GetEventPositionAroundPlayer();
-            SafeInvoke(OnRequestMissionTrigger, pos);
+            float pressureStress = Mathf.Clamp01(survivalSystem.PressureExposureSeverity01);
+            float thermalStress = Mathf.Clamp01(survivalSystem.ThermalStressSeverity01);
+            float healthStress = 1f - healthNormalized;
+            float oxygenStress = 1f - oxygenNormalized;
+            return Mathf.Clamp01(Mathf.Max(Mathf.Max(pressureStress, thermalStress), Mathf.Max(healthStress, oxygenStress)));
         }
 
         private void PublishPredatorPressure(bool enabled)
         {
-            if (_predatorPressureEnabled == enabled)
-                return;
-
-            _predatorPressureEnabled = enabled;
-
             if (faunaDirector != null)
                 faunaDirector.SetPredatorPressure(enabled);
 
             SafeInvoke(OnPredatorPressureChanged, enabled);
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  HELPERS
-        // ══════════════════════════════════════════════════════════
-
-        private void ResolvePlayerAndSurvival()
+        private Vector3 ResolveDeterministicOffsetPosition(Vector3 origin, uint seed, float radius)
         {
-            if (playerTransform == null)
-                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
-
-            if (survivalSystem == null && playerTransform != null)
-            {
-                playerTransform.TryGetComponent(out survivalSystem);
-            }
+            float angle = EncounterDirector.HashToUnit01(seed ^ 0xA511E9B3u) * (Mathf.PI * 2f);
+            float distance = Mathf.Lerp(radius * 0.4f, radius, EncounterDirector.HashToUnit01(seed ^ 0x6C8E9CF5u));
+            Vector3 offset = new Vector3(Mathf.Cos(angle) * distance, 0f, Mathf.Sin(angle) * distance);
+            return origin + offset;
         }
 
-        /// <summary>
-        /// Lazy resolve of FaunaDirector and ScavengePopulator.
-        /// Called once per enable cycle through runtime reference helpers.
-        /// </summary>
-        private void ResolveDirectors()
+        private static void SafeInvoke<T>(Action<T> action, T arg)
         {
-            _resolvedDirectors = true;
-
-            if (faunaDirector == null)
-                WorldRuntimeReferenceUtility.TryResolveFaunaDirector(ref faunaDirector);
-
-            if (scavengePopulator == null)
-                WorldRuntimeReferenceUtility.TryResolveScavengePopulator(ref scavengePopulator);
-
-            if (vegetationThreatBridge == null)
-                WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref vegetationThreatBridge);
-        }
-
-        private Vector3 GetEventPositionAroundPlayer()
-        {
-            if (playerTransform == null)
-                return transform.position;
-
-            float angle = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
-            float dist  = UnityEngine.Random.Range(eventOffsetRadius * 0.4f, eventOffsetRadius);
-
-            Vector3 pos = playerTransform.position;
-            pos.x += Mathf.Cos(angle) * dist;
-            pos.z += Mathf.Sin(angle) * dist;
-
-            return pos;
-        }
-
-        private Vector3 GetPredatorEventPosition()
-        {
-            if (vegetationThreatBridge == null)
-                WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref vegetationThreatBridge);
-
-            if (playerTransform == null || vegetationThreatBridge == null)
-                return GetEventPositionAroundPlayer();
-
-            if (!vegetationThreatBridge.TryGetThreatHotspot(
-                    predatorThreatHotspotMinimum,
-                    predatorThreatHotspotMinDistance,
-                    predatorThreatHotspotMaxDistance,
-                    out Vector3 hotspotPosition,
-                    out _))
-            {
-                return GetEventPositionAroundPlayer();
-            }
-
-            hotspotPosition.y = playerTransform.position.y;
-            return hotspotPosition;
-        }
-
-#if UNITY_EDITOR
-        private void WriteDebugFields(float now, float dt)
-        {
-            _debugTensionScore            = _tensionScore;
-            _debugPredatorFactor          = _predatorFactor;
-            _debugOxygenFactor            = _oxygenFactor;
-            _debugEnergyFactor            = _energyFactor;
-            _debugCalmFactor              = _calmFactor;
-            _debugCalmTimer               = _calmTimer;
-            _debugPhaseTimer              = _phaseTimer;
-            _debugPeakCooldown            = _peakCooldownTimer;
-            _debugDeltaTime               = dt;
-            _debugPhase                   = _phase.ToString();
-            _debugLastEvent               = _lastEventType.ToString();
-            _debugPredatorPressureEnabled = _predatorPressureEnabled;
-            _debugHasFaunaDirector        = faunaDirector != null;
-            _debugHasScavengePopulator    = scavengePopulator != null;
-            _debugTimeSinceLastAutoSave   = now - _lastAutoSaveTime;
-            _debugRegisteredPredatorCount = _registeredPredators.Count;
-            _debugEclipseActive           = _eclipseActive;
-        }
-#endif
-
-        // ══════════════════════════════════════════════════════════
-        //  PUBLIC API
-        // ══════════════════════════════════════════════════════════
-
-        /// <summary>Текущий уровень напряжения 0..100.</summary>
-        public float TensionScore => _tensionScore;
-
-        /// <summary>Находится ли Director в фазе отдыха.</summary>
-        public bool IsRelaxPhase => _phase == DirectorPhase.Relax;
-
-        /// <summary>Разрешено ли сейчас хищное давление.</summary>
-        public bool IsPredatorPressureEnabled => _predatorPressureEnabled;
-
-        /// <summary>Текущая фаза в виде строки (для внешней диагностики).</summary>
-        public string CurrentPhaseName => _phase.ToString();
-
-        /// <summary>Принудительно вызывает пик-событие.</summary>
-        public void ForcePeak()
-        {
-            EnterPhase(DirectorPhase.Peak);
-            ProcessPeak();
-        }
-
-        /// <summary>Сбрасывает Director в спокойное состояние.</summary>
-        public void ResetDirector()
-        {
-            _phase              = DirectorPhase.BuildUp;
-            _lastEventType      = DirectorEventType.None;
-            _tensionScore       = 0f;
-            _calmTimer          = 0f;
-            _phaseTimer         = 0f;
-            _peakCooldownTimer  = 0f;
-            _buildUpTimer       = 0f;
-            _relaxMercyTimer    = 0f;
-            _hasTickedOnce      = false;
-            _resolvedDirectors  = false;
-            _lastTickTime       = Time.time;
-
-            PublishPredatorPressure(true);
-        }
-
-        /// <summary>Принудительно переводит Director в фазу Relax.</summary>
-        public void ForceRelax()
-        {
-            EnterPhase(DirectorPhase.Relax);
-        }
-
-        // ══════════════════════════════════════════════════════════
-        //  EDITOR
-        // ══════════════════════════════════════════════════════════
-
-#if UNITY_EDITOR
-        private void OnValidate()
-        {
-#if UNITY_EDITOR
-            if (UnityEditor.EditorApplication.isCompiling ||
-                UnityEditor.EditorApplication.isUpdating ||
-                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+            if (action == null)
                 return;
-#endif
-            if (predatorScanRadius          < 1f)  predatorScanRadius          = 1f;
-            if (predatorsForMaxTension      < 1)   predatorsForMaxTension      = 1;
-            if (calmBeforePeakSeconds       < 5f)  calmBeforePeakSeconds       = 5f;
-            if (relaxDurationSeconds        < 5f)  relaxDurationSeconds        = 5f;
-            if (peakCooldownSeconds         < 0f)  peakCooldownSeconds         = 0f;
-            if (buildUpEventIntervalSeconds < 1f)  buildUpEventIntervalSeconds = 1f;
-            if (eventOffsetRadius           < 1f)  eventOffsetRadius           = 1f;
-            if (predatorThreatHotspotMinimum < 0f) predatorThreatHotspotMinimum = 0f;
-            if (predatorThreatHotspotMinimum > 1f) predatorThreatHotspotMinimum = 1f;
-            if (predatorThreatHotspotMinDistance < 0f) predatorThreatHotspotMinDistance = 0f;
-            if (predatorThreatHotspotMaxDistance < predatorThreatHotspotMinDistance)
-                predatorThreatHotspotMaxDistance = predatorThreatHotspotMinDistance;
-            if (relaxMercyIntervalSeconds   < 5f)  relaxMercyIntervalSeconds   = 5f;
-            if (relaxMercyTensionThreshold  < 0f)  relaxMercyTensionThreshold  = 0f;
-            if (autoSaveCooldownSeconds     < 30f) autoSaveCooldownSeconds     = 30f;
 
-            if (string.IsNullOrEmpty(autoSaveSlotName))
-                autoSaveSlotName = "autosave";
-
-            // Weight sanity
-            if (spawnHordeWeight      < 0) spawnHordeWeight      = 0;
-            if (equipmentGlitchWeight < 0) equipmentGlitchWeight = 0;
-            if (rareDiscoveryWeight   < 0) rareDiscoveryWeight   = 0;
-            if (weatherShiftWeight    < 0) weatherShiftWeight    = 0;
-            if (missionTriggerWeight  < 0) missionTriggerWeight  = 0;
-        }
-
-#endif
-
-        private float ComputeDepthFactor()
-        {
-            if (playerTransform == null) return 0f;
-            float depth = -playerTransform.position.y;
-            if (depth < 0) return 0f;
-            // Normalize: 0 to 1 over 800m depth
-            float factor = depth / 800f;
-            return factor > 1f ? 1f : factor;
-        }
-
-        private float ComputeSpeedFactor()
-        {
-            if (playerTransform == null) return 0f;
-            float dist = Vector3.Distance(playerTransform.position, _lastFramePos);
-            // Quick movement increases visibility/tension. 
-            // 8m per SlowTick (~16m/s) = 1.0 factor
-            float factor = dist / 8f; 
-            return factor > 1f ? 1f : factor;
-        }
-
-        private float ComputeLootFactor()
-        {
-            // Max tension relief thirst at 8 minutes without loot
-            float factor = _timeSinceLastLoot / 480f;
-            return factor > 1f ? 1f : factor;
-        }
-
-        private void HandleItemCollected(ItemData itemData, int quantity, Transform interactor)
-        {
-            _timeSinceLastLoot = 0f;
-        }
-
-        private void HandleNarrativeDiscovery(string id)
-        {
-            // Significant tension relief upon discovery
-            _narrativeBonus += 25f;
-            if (_narrativeBonus > 40f) _narrativeBonus = 40f; // Cap relief
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[DirectorAI] Narrative Relief Active: +25 tension drop. (ID: {id})");
-#endif
-        }
-
-        /// <summary>
-        /// Лор: Великое Затмение — ночные хищники поднимаются.
-        /// Director получает +20 tension bonus на время затмения.
-        /// Это форсирует переход в Peak фазу — хищное давление усиливается.
-        /// </summary>
-        private void HandleEclipseStart()
-        {
-            _eclipseActive = true;
-            _eclipseTensionBonus = 20f;
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log("[DirectorAI] Eclipse started — tension +20 (night predators rising).");
-#endif
-        }
-
-        private void HandleEclipseEnd()
-        {
-            _eclipseActive = false;
-            _eclipseTensionBonus = 0f;
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log("[DirectorAI] Eclipse ended — tension bonus cleared.");
-#endif
-        }
-
-#if UNITY_EDITOR
-        private void OnDrawGizmosSelected()
-        {
-            Transform t = playerTransform != null ? playerTransform : transform;
-
-            // Predator scan radius
-            Gizmos.color = new Color(1f, 0.25f, 0.1f, 0.15f);
-            Gizmos.DrawWireSphere(t.position, predatorScanRadius);
-
-            // Event offset radius
-            Gizmos.color = new Color(0.1f, 0.8f, 1f, 0.12f);
-            Gizmos.DrawWireSphere(t.position, eventOffsetRadius);
-
-            // Phase indicator
-            switch (_phase)
+            try
             {
-                case DirectorPhase.BuildUp:
-                    Gizmos.color = new Color(1f, 0.9f, 0.2f, 0.25f);
-                    break;
-                case DirectorPhase.Peak:
-                    Gizmos.color = new Color(1f, 0.1f, 0.1f, 0.35f);
-                    break;
-                case DirectorPhase.Relax:
-                    Gizmos.color = new Color(0.2f, 1f, 0.3f, 0.2f);
-                    break;
+                action.Invoke(arg);
             }
-
-            Gizmos.DrawSphere(t.position + Vector3.up * 3f, 0.5f);
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+            }
         }
-#endif
     }
 }
-

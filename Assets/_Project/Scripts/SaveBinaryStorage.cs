@@ -27,6 +27,7 @@ namespace Hecton8.SaveSystem
 
         private const long UnixEpochTicks = 621355968000000000L;
         private const int PayloadPrefixSizeBytes = 60;
+        private const int PackedQuestStateSectionHeaderSize = 8;
         private const string Lz4DllName = "liblz4";
 
         [StructLayout(LayoutKind.Sequential, Pack = 1, Size = HeaderSize)]
@@ -93,6 +94,13 @@ namespace Hecton8.SaveSystem
             public ushort GameVersionByteLength;
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = PackedQuestStateSectionHeaderSize)]
+        private struct PackedQuestStateSectionHeader
+        {
+            public uint WordCount;
+            public uint Checksum;
+        }
+
         internal static void WarmRuntime()
         {
             byte value = 0;
@@ -122,6 +130,7 @@ namespace Hecton8.SaveSystem
             SaveMetadata metadata,
             SaveData data,
             NativeArray<PersistentWorldItemRecord> persistentWorldItems,
+            NativeArray<uint> packedQuestStateWords,
             NativeArray<byte> rawBuffer,
             NativeArray<byte> compressedBuffer,
             out string error)
@@ -166,7 +175,11 @@ namespace Hecton8.SaveSystem
             int entityRecordSize = UnsafeUtility.SizeOf<PersistentWorldItemRecord>();
             int entityCount = persistentWorldItems.IsCreated ? persistentWorldItems.Length : 0;
             int entityBytesLength = entityCount * entityRecordSize;
-            int rawPayloadLength = PayloadPrefixSizeBytes + sceneBytes.Length + versionBytes.Length + saveBytes.Length + entityBytesLength;
+            int packedQuestWordCount = packedQuestStateWords.IsCreated ? packedQuestStateWords.Length : 0;
+            int packedQuestSectionLength = packedQuestWordCount > 0
+                ? PackedQuestStateSectionHeaderSize + (packedQuestWordCount * UnsafeUtility.SizeOf<uint>())
+                : 0;
+            int rawPayloadLength = PayloadPrefixSizeBytes + sceneBytes.Length + versionBytes.Length + saveBytes.Length + packedQuestSectionLength + entityBytesLength;
             if (rawPayloadLength > rawBuffer.Length)
             {
                 error = $"Save payload ({rawPayloadLength} bytes) exceeded the {rawBuffer.Length} byte raw buffer ceiling.";
@@ -198,6 +211,24 @@ namespace Hecton8.SaveSystem
             payloadCursor += versionBytes.Length;
             CopyManagedBytesToUnmanaged(saveBytes, rawPtr + payloadCursor);
             payloadCursor += saveBytes.Length;
+            int packedQuestOffsetInPayload = payloadCursor;
+
+            if (packedQuestWordCount > 0)
+            {
+                PackedQuestStateSectionHeader packedQuestHeader = new PackedQuestStateSectionHeader
+                {
+                    WordCount = (uint)packedQuestWordCount,
+                    Checksum = ComputePackedQuestStateChecksum(packedQuestStateWords)
+                };
+
+                UnsafeUtility.CopyStructureToPtr(ref packedQuestHeader, rawPtr + payloadCursor);
+                payloadCursor += PackedQuestStateSectionHeaderSize;
+
+                void* packedQuestSourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(packedQuestStateWords);
+                UnsafeUtility.MemCpy(rawPtr + payloadCursor, packedQuestSourcePtr, packedQuestWordCount * UnsafeUtility.SizeOf<uint>());
+                payloadCursor += packedQuestWordCount * UnsafeUtility.SizeOf<uint>();
+            }
+
             int entityOffsetInPayload = payloadCursor;
 
             if (entityBytesLength > 0)
@@ -216,10 +247,10 @@ namespace Hecton8.SaveSystem
                 CompatMask = CurrentCompatMask,
                 Flags = FlagLz4Blocks,
                 TimestampUnixMs = timestampUnixMs,
-                DeltaCount = 0u,
+                DeltaCount = (uint)packedQuestWordCount,
                 EntityCount = (uint)entityCount,
                 PlayerOffset = HeaderSize,
-                DeltaOffset = (uint)(HeaderSize + entityOffsetInPayload),
+                DeltaOffset = (uint)(HeaderSize + packedQuestOffsetInPayload),
                 EntityOffset = (uint)(HeaderSize + entityOffsetInPayload),
                 HashHeader32 = 0u,
                 HashPayload32 = payloadHash
@@ -310,12 +341,14 @@ namespace Hecton8.SaveSystem
             string slotName,
             NativeArray<byte> rawBuffer,
             out SaveData data,
+            out uint[] packedQuestStateWords,
             out PersistentWorldItemRecord[] persistentWorldItems,
             out SaveMetadata metadata,
             out int detectedVersion,
             out string error)
         {
             data = null;
+            packedQuestStateWords = null;
             persistentWorldItems = null;
             metadata = null;
             detectedVersion = 0;
@@ -351,12 +384,21 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            int entityDataStart = cursor + saveDataLength;
+            if (!TryReadPackedQuestStateWords(
+                    rawPtr,
+                    rawPayloadLength,
+                    header,
+                    cursor + saveDataLength,
+                    out packedQuestStateWords,
+                    out error))
+            {
+                return false;
+            }
+
             if (!TryReadPersistentWorldItems(
                     rawPtr,
                     rawPayloadLength,
                     header,
-                    entityDataStart,
                     out persistentWorldItems,
                     out error))
             {
@@ -513,8 +555,15 @@ namespace Hecton8.SaveSystem
                     return false;
                 }
 
+                int deltaSectionOffset = checked((int)header.DeltaOffset) - HeaderSize;
                 int entitySectionOffset = checked((int)header.EntityOffset) - HeaderSize;
-                if (entitySectionOffset < playerPayloadLength || entitySectionOffset > rawPayloadLength)
+                if (deltaSectionOffset < playerPayloadLength || deltaSectionOffset > rawPayloadLength)
+                {
+                    error = "Packed quest-state offset exceeds the decompressed payload bounds.";
+                    return false;
+                }
+
+                if (entitySectionOffset < deltaSectionOffset || entitySectionOffset > rawPayloadLength)
                 {
                     error = "Entity payload offset exceeds the decompressed payload bounds.";
                     return false;
@@ -539,11 +588,84 @@ namespace Hecton8.SaveSystem
             };
         }
 
+        private static bool TryReadPackedQuestStateWords(
+            byte* rawPtr,
+            int rawPayloadLength,
+            SaveFileHeader header,
+            int playerPayloadLength,
+            out uint[] packedQuestStateWords,
+            out string error)
+        {
+            packedQuestStateWords = null;
+            error = string.Empty;
+
+            int packedQuestWordCount = checked((int)header.DeltaCount);
+            int packedQuestSectionOffset = checked((int)header.DeltaOffset) - HeaderSize;
+            int entitySectionOffset = checked((int)header.EntityOffset) - HeaderSize;
+            if (packedQuestWordCount <= 0 || packedQuestSectionOffset == entitySectionOffset)
+            {
+                if (packedQuestSectionOffset < playerPayloadLength || packedQuestSectionOffset > rawPayloadLength)
+                {
+                    error = "Packed quest-state section offset is invalid.";
+                    return false;
+                }
+
+                return true;
+            }
+
+            if (packedQuestSectionOffset < playerPayloadLength || packedQuestSectionOffset >= entitySectionOffset)
+            {
+                error = "Packed quest-state section overlaps the serialized player payload.";
+                return false;
+            }
+
+            int sectionLength = entitySectionOffset - packedQuestSectionOffset;
+            if (sectionLength < PackedQuestStateSectionHeaderSize)
+            {
+                error = "Packed quest-state section is truncated.";
+                return false;
+            }
+
+            PackedQuestStateSectionHeader sectionHeader = UnsafeUtility.ReadArrayElement<PackedQuestStateSectionHeader>(rawPtr + packedQuestSectionOffset, 0);
+            if (sectionHeader.WordCount != header.DeltaCount)
+            {
+                error = "Packed quest-state word count header mismatch.";
+                return false;
+            }
+
+            int expectedSectionLength = PackedQuestStateSectionHeaderSize + (packedQuestWordCount * UnsafeUtility.SizeOf<uint>());
+            if (sectionLength != expectedSectionLength)
+            {
+                error = "Packed quest-state section length mismatch.";
+                return false;
+            }
+
+            packedQuestStateWords = new uint[packedQuestWordCount];
+            if (packedQuestWordCount <= 0)
+                return true;
+
+            fixed (uint* destinationPtr = packedQuestStateWords)
+            {
+                UnsafeUtility.MemCpy(
+                    destinationPtr,
+                    rawPtr + packedQuestSectionOffset + PackedQuestStateSectionHeaderSize,
+                    packedQuestWordCount * UnsafeUtility.SizeOf<uint>());
+            }
+
+            uint computedChecksum = ComputePackedQuestStateChecksum(packedQuestStateWords);
+            if (computedChecksum != sectionHeader.Checksum)
+            {
+                error = "Packed quest-state checksum mismatch.";
+                return false;
+            }
+
+            return true;
+        }
+
         private static bool TryReadPersistentWorldItems(
             byte* rawPtr,
             int rawPayloadLength,
             SaveFileHeader header,
-            int entityDataStart,
             out PersistentWorldItemRecord[] persistentWorldItems,
             out string error)
         {
@@ -556,11 +678,6 @@ namespace Hecton8.SaveSystem
 
             int entityRecordSize = UnsafeUtility.SizeOf<PersistentWorldItemRecord>();
             int entitySectionOffset = checked((int)header.EntityOffset) - HeaderSize;
-            if (entitySectionOffset != entityDataStart)
-            {
-                error = "Entity payload offset does not match the serialized player payload length.";
-                return false;
-            }
 
             long entityBytesLong = (long)entityCount * entityRecordSize;
             if (entityBytesLong > int.MaxValue)
@@ -663,6 +780,26 @@ namespace Hecton8.SaveSystem
 
             error = $"Unsupported save compatibility migration path from version {header.Version} mask 0x{header.CompatMask:X2}.";
             return false;
+        }
+
+        private static uint ComputePackedQuestStateChecksum(NativeArray<uint> packedQuestStateWords)
+        {
+            if (!packedQuestStateWords.IsCreated || packedQuestStateWords.Length <= 0)
+                return 0u;
+
+            void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(packedQuestStateWords);
+            return Hash32(sourcePtr, (long)packedQuestStateWords.Length * UnsafeUtility.SizeOf<uint>());
+        }
+
+        private static uint ComputePackedQuestStateChecksum(uint[] packedQuestStateWords)
+        {
+            if (packedQuestStateWords == null || packedQuestStateWords.Length <= 0)
+                return 0u;
+
+            fixed (uint* sourcePtr = packedQuestStateWords)
+            {
+                return Hash32(sourcePtr, (long)packedQuestStateWords.Length * UnsafeUtility.SizeOf<uint>());
+            }
         }
 
         private static ulong ToUnixMilliseconds(long utcTicks)

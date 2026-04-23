@@ -20,6 +20,7 @@ namespace Hecton8.Core
             new RegistryBucket<IUpdatable>(16),
         };
 
+        private static FoveatedSimulationManager _foveatedSimulationManager = new FoveatedSimulationManager();
         private static SystemDispatcher _instance;
 
         /// <summary>
@@ -30,6 +31,8 @@ namespace Hecton8.Core
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            _foveatedSimulationManager.Dispose();
+            _foveatedSimulationManager = new FoveatedSimulationManager();
             _instance = null;
             ClearAllLanes();
         }
@@ -68,6 +71,9 @@ namespace Hecton8.Core
             if (item == null)
                 return;
 
+            if (item is IFoveatedSimulationTarget foveatedTarget)
+                _foveatedSimulationManager.RegisterTarget(foveatedTarget);
+
             GetLane(layer).Register(item);
         }
 
@@ -81,6 +87,9 @@ namespace Hecton8.Core
             if (item == null)
                 return;
 
+            if (item is IFoveatedSimulationTarget foveatedTarget)
+                _foveatedSimulationManager.UnregisterTarget(foveatedTarget);
+
             GetLane(layer).Unregister(item);
         }
 
@@ -91,6 +100,8 @@ namespace Hecton8.Core
         {
             for (int i = 0; i < LaneCount; i++)
                 _priorityLanes[i].Clear();
+
+            _foveatedSimulationManager.ResetRuntimeState();
         }
 
         private void Awake()
@@ -121,6 +132,7 @@ namespace Hecton8.Core
         private void Update()
         {
             float deltaTime = Time.deltaTime;
+            _foveatedSimulationManager.BeginDispatcherFrame(deltaTime);
 
             for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
             {
@@ -130,9 +142,21 @@ namespace Hecton8.Core
 
                 for (int itemIndex = 0; itemIndex < count; itemIndex++)
                 {
-                    rawArray[itemIndex].Tick(deltaTime);
+                    IUpdatable updatable = rawArray[itemIndex];
+                    if (!_foveatedSimulationManager.TryResolveTick(updatable, deltaTime, out float effectiveDeltaTime))
+                        continue;
+
+                    updatable.Tick(effectiveDeltaTime);
+                    _foveatedSimulationManager.NotifyTickCompleted(updatable);
                 }
             }
+
+            _foveatedSimulationManager.ScheduleFrameJobs();
+        }
+
+        private void LateUpdate()
+        {
+            _foveatedSimulationManager.CompleteFrameJobs();
         }
 
         private static int GetLaneIndex(PriorityLayer layer)

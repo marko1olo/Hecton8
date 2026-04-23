@@ -138,6 +138,7 @@ namespace Hecton8.Physics
             if (!IsFiniteNonZero(force) || body == null || body.isKinematic)
                 return false;
 
+            GlobalPhysicsStateManager.RegisterTrackedBody(body);
             int rigidbodyIndex = ResolveBodyIndex(body);
             if (rigidbodyIndex < 0 || _backCount >= _backPackets.Length)
             {
@@ -165,6 +166,7 @@ namespace Hecton8.Physics
             if (!IsFiniteNonZero(torque) || body == null || body.isKinematic)
                 return false;
 
+            GlobalPhysicsStateManager.RegisterTrackedBody(body);
             int rigidbodyIndex = ResolveBodyIndex(body);
             if (rigidbodyIndex < 0 || _backCount >= _backPackets.Length)
             {

@@ -1,0 +1,458 @@
+# [AUTHORITY: GRAND INQUISITOR] - TARGET RECONSTRUCTION DATA
+# STATUS: MANDATORY FIX BEFORE PRODUCTION
+
+## ОБЗОР СИТУАЦИИ
+Этот реестр содержит 28 задокументированных "Смертных Грехов" архитектуры в файлах:
+- HectonPlayerMovement.cs
+- WorldProceduralScatterDirector.cs
+- HectonUnderwaterVisuals.cs
+
+## ПРАВИЛА ИСПРАВЛЕНИЯ ДЛЯ АГЕНТОВ:
+1. [ZERO TOLERANCE]: Любое упоминание .gameObject, .name или .collider внутри цикла (for/foreach) должно быть заменено на кэшированные InstanceID.
+2. [AUP SYNC]: Все Vector3 мировых координат должны быть перебазированы в OnOriginShift.
+3. [GC PURGE]: Вырезать все string.Format, LINQ и ручные аллокации массивов в Update/FixedUpdate.
+4. [PHYSX 5.0]: Прекратить насилие над BVH. Масштаб (localScale) и Масса (mass) не должны меняться в рантайме без жесткой необходимости.
+
+## ТЕКУЩИЙ СПИСОК ГРЕХОВ:
+[Сюда вставляешь мои две таблицы из этого и прошлого ответа]
+
+
+
+🚩 ТОТАЛЬНЫЙ РЕЕСТР АРХИТЕКТУРНЫХ ПРЕСТУПЛЕНИЙ HECTON-8
+
+| Система / Файл                  | Смертный Грех (Finding)                  | Локация / Метод                                                    | Как это убивает проект                                                                                                                          | Оценка Тяжести       |
+| :------------------------------ | :--------------------------------------- | :----------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------- | :------------------- |
+| **PHYSICS** (PlayerMovement)    | **Floating Origin Atomic Detonation**    | `_lastTransportPlatformPosition`, `_cuttingTensionAnchorCurrentWS` | Кэширование мировых Vector3 без учета смещения. При прыжке мира на 5км, дельта составит 5000м за кадр → бесконечный импульс силы → краш PhysX.  | **P0 - КРИТИЧЕСКИЙ** |
+| **PHYSICS** (PlayerMovement)    | **Managed Wrapper Thrashing (Thunking)** | `GroundCheck`, `TryFindStepLanding`                                | Вызов `.collider` и `.attachedRigidbody` на `RaycastHit` внутри циклов. Это P/Invoke в C++, создающий гору мусорных C\#-оберток каждый кадр.    | **P0 - КРИТИЧЕСКИЙ** |
+| **PHYSICS** (PlayerMovement)    | **GC Murder in Hot Path**                | `UpdateHullStress`, `PushFatalPressureCorruptionWarning`           | Прямая манипуляция строками и вызов `localization.CorruptExpandedText` в `FixedUpdate`. 50 аллокаций в секунду = микрофризы каждые 2-3 секунды. | **P0 - КРИТИЧЕСКИЙ** |
+| **PHYSICS** (PlayerMovement)    | **Determinism Annihilation**             | `_instanceId = GetHashCode()`                                      | GetHashCode() не детерминирован. Физика течений и дрейфа будет разной на каждом ПК. Мультиплеер и реплеи невозможны.                            | **P1 - ВЫСОКИЙ**     |
+| **PHYSICS** (PlayerMovement)    | **Hierarchy Traversal Bloat**            | `GetCapsuleWorldMetrics` (вызовы `lossyScale`)                     | `lossyScale` — это не переменная, а рекурсивный геттер, который обходит всё дерево транформов. Вызывается 10 раз за кадр.                       | **P1 - ВЫСОКИЙ**     |
+| **PHYSICS** (PlayerMovement)    | **Temporal Aliasing (Rotation Jitter)**  | `SyncTransportPlatformRotation` (Fixed vs Render clock)            | Обновление вращения в `FixedTick`, а применение в `Tick` без интерполяции. Камера будет «дергаться» при поворотах подлодки.                     | **P1 - ВЫСОКИЙ**     |
+| **PHYSICS** (PlayerMovement)    | **Inter-Frame Data Race**                | `TryApplyStepAssist`                                               | Использование `_rb.position` сразу после `MovePosition`. Трансформ обновляется только в конце шага PhysX. Логика читает «старые» данные.        | **P2 - СРЕДНИЙ**     |
+| **PHYSICS** (PlayerMovement)    | **Transcendental Instruction Bloat**     | Избыточные вызовы `math.exp()`                                     | `exp()` — дорогая операция. Использование её для 20+ косметических переменных забивает ALU на i3.                                               | **P2 - СРЕДНИЙ**     |
+| **SCATTER** (ScatterDirector)   | **O(N^2) Cache Miss Hell**               | `CanAcceptCandidate`, `FindPoolSlot`                               | Линейный поиск по тысячам объектов в `List` и `Dictionary`. Процессор ждет данных из RAM дольше, чем считает логику.                            | **P0 - КРИТИЧЕСКИЙ** |
+| **SCATTER** (ScatterDirector)   | **Object Pool Leak**                     | `ClearRootChildren`                                                | Вызов `Destroy(child)` на объектах, взятых из `ObjectPoolManager`. Пул переполняется «призраками», память утекает до вылета.                    | **P0 - КРИТИЧЕСКИЙ** |
+| **SCATTER** (ScatterDirector)   | **Heap Abuse (Object-Oriented)**         | `new ScatterPlacement()`                                           | Создание 5,000 объектов-классов при входе в биом вместо использования структур. Огромная нагрузка на Gen0 GC.                                   | **P0 - КРИТИЧЕСКИЙ** |
+| **SCATTER** (ScatterDirector)   | **Bitwise Spatial Corruption**           | `ComposeKey`, `ComposeWindowKey`                                   | Сдвиг знаковых `int` в `long` без маскировки. Отрицательные координаты коррумпируют биты, ломая пространственное хеширование.                   | **P0 - КРИТИЧЕСКИЙ** |
+| **SCATTER** (ScatterDirector)   | **Bit Boundary Overlap**                 | `ComposeWindowKey` (overlap bits)                                  | Перекрытие битов в ключе (80 бит данных пытаются влезть в 64 бита). Ячейки мира будут «накладываться» друг на друга.                            | **P0 - КРИТИЧЕСКИЙ** |
+| **SCATTER** (ScatterDirector)   | **Native Object Equality P/Invoke**      | `if (profile == _profileA)` (ScriptableObject)                     | Оператор `==` для объектов Unity — это скрытый вызов в нативный код для проверки «жив ли объект». Миллионы вызовов в кадр.                      | **P1 - ВЫСОКИЙ**     |
+| **SCATTER** (ScatterDirector)   | **PhysX BVH Rebuilds**                   | `transform.localScale` в `ApplyPlacement`                          | Изменение масштаба объекта с коллайдером заставляет PhysX полностью перестраивать дерево BVH. Фриз кадра гарантирован.                          | **P1 - ВЫСОКИЙ**     |
+| **VISUALS** (UnderwaterVisuals) | **Native Render Loop Violation**         | `AddComponent` в `EnforceFogState`                                 | Добавление компонентов внутри рендер-колбэка. Приводит к `InvalidOperationException` и непредсказуемым крашам GPU.                              | **P0 - КРИТИЧЕСКИЙ** |
+| **VISUALS** (UnderwaterVisuals) | **Buffer Overrun Crash**                 | `Camera.GetAllCameras`                                             | Итерация по списку камер превышает размер жестко заданного массива `_runtimeCameraBuffer[8]`. Вылет при 9-й камере.                             | **P0 - КРИТИЧЕСКИЙ** |
+| **VISUALS** (UnderwaterVisuals) | **Raycast BVH Exhaustion**               | `ResolveBottomSiltDistance` (40km ray)                             | Луч на 40,000 метров с маской `~0`. Проверка всего мира PhysX ради одного эффекта ила. Массив на 4 хита забивается мусором.                     | **P1 - ВЫСОКИЙ**     |
+| **VISUALS** (UnderwaterVisuals) | **SRP Global State Poisoning**           | `EnforceFogState` (early return)                                   | Игнорирование Reflection-камер. Глобальный туман RenderSettings остается «черным» от подводной камеры. Отражения сломаны.                       | **P1 - ВЫСОКИЙ**     |
+| **VISUALS** (UnderwaterVisuals) | **Celestial Fog Blackout**               | `ShouldRenderUnderwaterFogForCamera`                               | SpaceCamera (небо) считается «подводной», потому что её корень у игрока. Звезды и небо закрашиваются туманом в ноль.                            | **P1 - ВЫСОКИЙ**     |
+| **VISUALS** (UnderwaterVisuals) | **Cache-and-Destroy Suicide**            | `PurgeSecondaryUnderwaterRenderers`                                | Скрипт записывает ссылку на рендерер и тут же вызывает `Destroy` для него. Итог: `MissingReferenceException`.                                   | **P1 - ВЫСОКИЙ**     |
+
+Самые опасные зоны:
+
+1.  Floating Origin: В обоих файлах (Movement и Scatter) это реализовано с
+    ошибками, которые гарантированно взорвут физику при первом же
+    перемещении на большое расстояние.
+2.  Managed-Native Bridge: Количество ненужных переходов через границу
+    (Thunking) в Tick-циклах зашкаливает. Мы не вытянем 60 FPS на MX350, пока не
+    заменим все .gameObject, .collider и .name на кэшированные ID.
+3.  Логика Смерти (GC): Все системы игнорируют мандат Zero-GC. В горячих циклах
+    (тексты, локализация, массивы) идет постоянная аллокация.
+
+
+Это Дополнение №1 (Technical Supplement). 
+🚩 ДОПОЛНЕНИЕ: СКРЫТЫЕ АРХИТЕКТУРНЫЕ УГРОЗЫ (PHASE 2)
+
+| Система / Файл         | Грех (Finding)                     | Метод / Локация                  | Почему это критично                                                                                                                  | Тяжесть |
+| :--------------------- | :--------------------------------- | :------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------- | :------ |
+| **PHYSICS** (Movement) | **Managed Array Pinning (Crest)**  | `UpdateOceanWaterHeight`         | Передача `Vector3[]` в нативный Crest. Unity «пинит» память каждый кадр, блокируя GC и сбрасывая кэш CPU. Нужно `NativeArray`.       | **P1**  |
+| **PHYSICS** (Movement) | **Rigidbody Wake-Up Abuse**        | `SmoothDampingTransition`        | Перезапись `linearDamping` каждый кадр. Это не дает PhysX усыплять Rigidbody, заставляя CPU обсчитывать «неподвижные» объекты.       | **P2**  |
+| **PHYSICS** (Movement) | **Spatial Query Stacking**         | `FixedTick` (5 разных кастов)    | 5 раздельных запросов `SphereCast`. На MX350 это вешает шину. Нужно объединить в один «Deep Sweep».                                  | **P1**  |
+| **SCATTER** (Director) | **Enum Boxing in Hashing**         | `ComputePlacementSyncSignature`  | Вызов `.GetHashCode()` на Enum в IL2CPP (Unity 6). Это создает неявную аллокацию (boxing) в самом горячем цикле спавна.              | **P2**  |
+| **SCATTER** (Director) | **Redundant Matrix Recalculation** | `SetParent(..., true)`           | Использование `worldPositionStays: true`. Форсирует пересчет мировых матриц, которые мы всё равно перезаписываем через миллисекунду. | **P1**  |
+| **SCATTER** (Director) | **Unbounded Array Reallocation**   | `TryRegisterFloraGpuiPlacement`  | Использование `new Matrix4x4[]` при расширении. Вызывает лаг при входе в густой лес. Нужно использовать `ArrayPool`.                 | **P1**  |
+| **VISUALS** (Visuals)  | **Array Bounds Crash (Fatal)**     | `Camera.GetAllCameras`           | Попытка записать список камер в массив `[8]`. Если в сцене 9 камер (пробы, UI, миникарта) — мгновенный вылет (IndexOutOfRange).      | **P0**  |
+| **VISUALS** (Visuals)  | **Native C++ Interop Burn**        | `ResolveBottomSiltEmissionBoost` | Вызов `TryGetComponent` каждый кадр в Update, когда Rigidbody отсутствует. Бесконечный поиск в C++ ядре «того, чего нет».            | **P1**  |
+
+
+
+
+
+
+
+🏛 ТОТАЛЬНЫЙ РЕЕСТР СИСТЕМНЫХ ГРЕХОВ (ДОПОЛНЕНИЕ КО ВСЕМ МАНДАТАМ)
+
+1. СЕКТОР: РЕНДЕР И GPU (MX350 DEATH SQUAD)
+
+  - [REND-01] Кастомные синусы: Агенты пытались внедрить полиномы Тейлора для
+    sin/cos в шейдеры. На MX350 есть железные блоки SFU, которые делают это
+    быстрее. Тяжесть: P2.
+  - [REND-02] PCIe Bus Saturation: Использование ComputeBuffer.SetData() для
+    загрузки позиций игрока. Это блокирует CPU, пока GPU не ответит. Нужно
+    использовать GraphicsBuffer.LockBufferForWrite. Тяжесть: P0.
+  - [REND-03] Alpha-to-Coverage vs Clip: Использование clip() в фрагментном
+    шейдере отключает Early-Z на Pascal-архитектуре. Это убивает филлрейт
+    MX350. Нужно использовать A2C или Depth Prepass. Тяжесть: P1.
+  - [REND-04] Reversed-Z Decal Inversion: Ошибка в формуле смещения (-= bias). В
+    Reversed-Z буфере (Unity 6) это вжимает декали ВНУТРЬ стен. Нужно += bias.
+    Тяжесть: P1.
+  - [REND-05] Broken HDR Bloom: Применение ACES-тонемаппинга вручную внутри
+    шейдеров материалов. Это зажимает яркость в [0..1] и убивает эффект
+    Bloom. Тонемаппинг должен быть только в финальном Resolve-пассе. Тяжесть:
+    P1.
+
+2. СЕКТОР: ФИЗИКА И МАТЕМАТИКА (KINETIC BOMBS)
+
+  - [PHYS-01] Diagonal Drag Warp: Квадратичный драг считался по осям независимо.
+    Это создает «магнитное» притяжение к диагоналям мира. Нужно считать от
+    общего вектора скорости (math.length). Тяжесть: P1.
+  - [PHYS-02] Verlet Zero-Distance NaN: В формуле троса при нулевом расстоянии
+    (overlap) происходит деление на 0. Вся цепочка троса превращается в NaN и
+    исчезает. Тяжесть: P0.
+  - [PHYS-03] Internal Momentum Deletion: При экстренном телепорте игрока внутри
+    подлодки скорость игрока тупо приравнивалась к скорости лодки. Относительная
+    инерция (бег) стиралась — игрок «бил мордой стену». Тяжесть: P2.
+  - [PHYS-04] Relative Recoil Catapult: Отдача от резака прикладывалась только к
+    игроку, игнорируя массу подлодки. В итоге игрока «выстреливало» сквозь
+    обшивку внутри судна. Тяжесть: P1.
+  - [PHYS-05] Inertia Tensor Thrashing: Скрипт менял mass и centerOfMass
+    подлодки каждый кадр. В PhysX это вызывает пересчет тензора и фриз
+    Main Thread. Нужно менять inertiaTensor напрямую. Тяжесть: P0.
+
+3. СЕКТОР: ПАМЯТЬ И ПОТОКИ (BURST/JOB CRASHERS)
+
+  - [MEM-01] Managed Rigidbody in Burst: Попытка передать массив Rigidbody[]
+    (ссылочный тип) внутрь Burst-джобы. Мгновенный краш сборки. Тяжесть: P0.
+  - [MEM-02] Managed Mesh.vertices in Job: Попытка читать mesh.vertices в
+    потоке. Это вызывает аллокацию массива в куче и
+    InvalidOperationException. Нужно AcquireReadOnlyMeshData. Тяжесть: P0.
+  - [MEM-03] Nested NativeContainers: Попытка засунуть NativeList внутрь
+    NativeHashMap. Это «смертный грех» Unity — утечки памяти, которые нельзя
+    отследить. Тяжесть: P0.
+  - [MEM-04] Illegal Ref Access: Попытка сделать ref array[index] для атомарных
+    операций. Индексатор NativeArray возвращает значение, а не ссылку. Нужно
+    использовать указатели (void*). Тяжесть: P0.
+  - [MEM-05] Managed AudioSettings in Burst: Вызов AudioSettings.dspTime из
+    аудио-потока. Потоки аудио не имеют доступа к манагед-классам. Тяжесть:
+    P0.
+
+4. СЕКТОР: ДАННЫЕ И ЛОГИКА (ARCHITECTURAL DEBTS)
+
+  - [DATA-01] UID Birthday Paradox: Использование миллисекунд для генерации ID
+    предметов. При взрыве и выпадении 20 кусков руды в один кадр они получат
+    одинаковый ID, и 19 из них исчезнут. Нужен атомарный счетчик. Тяжесть: P1.
+  - [DATA-02] O(N*M) Dehydration Hell: Линейный поиск по тысячам объектов в
+    реестре для их удаления. При плотных сценах CPU просто встанет. Нужна
+    NativeHashMap для обратного поиска. Тяжесть: P0.
+  - [DATA-03] Save-Corrupting Pointers: Ошибка в LoadBinaryBlock. Прибавление
+    +64 к указателю uint* прыгает на 256 байт вместо 64. Сейв будет прочитать
+    невозможно. Тяжесть: P0.
+  - [DATA-04] Non-Conservative Energy Leak: Использование Якоби-релаксации для
+    токов без соблюдения закона Кирхгофа. База будет сама «создавать» или
+    «пожирать» электричество из пустоты. Тяжесть: P1.
+  - [DATA-05] Negative Modulo Array Crash: Расчет хеша hash % TILE_SIZE на
+    отрицательных координатах выдает отрицательный индекс. Мгновенный
+    вылет потока стриминга. Тяжесть: P0.
+
+5. СЕКТОР: ИИ И СЕНСОРИКА (SENSORY FAILURES)
+
+  - [AI-01] Negative-Space Grid Collapse: Кламп координат в ячейку [0,0,0] для
+    всех объектов в отрицательных координатах. Половина рыб в океане будет
+    обсчитываться в одной точке, вызывая TDR-краш видеокарты. Тяжесть: P0.
+  - [AI-02] Spatial Hash Negative Cluster: XOR-хеширование отрицательных чисел
+    забивает все ячейки сонара в одну кучу. Сонар ослепнет в половине мира.
+    Тяжесть: P1.
+  - [AI-03] Impossible Compute Logic: Попытка вернуть List<int> из функции в
+    HLSL. Шейдеры не умеют работать с динамическими списками. Тяжесть: P0.
+
+
+🏛 TOTAL_SYSTEM_SINS.md: РЕЕСТР АРХИТЕКТУРНЫХ ДИВЕРСИЙ
+
+AUTHORITY: GRAND INQUISITOR / CTO STATUS: ENFORCED REPAIR
+
+1. ФАЙЛ: HectonPlayerMovement.cs
+
+| Finding (Грех)           | Контекстная привязка (Где искать)                                                                           | Техническая опасность                                                                                                      |
+| :----------------------- | :---------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------- |
+| **Floating Origin Bomb** | Поля: `_lastTransportPlatformPosition`, `_cuttingTensionAnchorCurrentWS`, `_exosuitGrappleAnchorCurrentWS`. | Кэшируют мировые координаты. При прыжке мира на 5км дельта составит 5000м за кадр → бесконечный импульс силы → краш PhysX. |
+| **Wrapper Thrashing**    | Методы: `GroundCheck`, `TryFindStepLanding`, `TrySampleExosuitFootSupport`.                                 | Вызов `.collider` и `.attachedRigidbody` на `RaycastHit` внутри циклов. Создает гору мусорных C\#-оберток в hot-path.      |
+| **Determinism Sabotage** | Метод: `Awake`/`FixedUpdate`. Поле: `_instanceId = GetHashCode()`.                                          | `GetHashCode()` разный на каждом ПК. Физика течений и дрейфа будет непредсказуемой.                                        |
+| **Hierarchy Bloat**      | Метод: `GetCapsuleWorldMetrics`. Свойство: `_cachedTransform.lossyScale`.                                   | `lossyScale` — рекурсивный геттер. Вызывается 10 раз за кадр, обходя все дерево трансформов в C++.                         |
+| **Temporal Aliasing**    | Метод: `SyncTransportPlatformRotation`.                                                                     | Вращение обновляется в `FixedTick`, а применяется в `Tick` без интерполяции. Камера будет «стробить» при поворотах судна.  |
+| **Instruction Bloat**    | По всему файлу: избыточные вызовы `math.exp()` для косметики.                                               | `exp()` дорог. На i3 забивает ALU. Нужно заменить на `math.lerp` или упрощенные кривые для некритичных параметров.         |
+| **Crest Pinning Burn**   | Метод: `UpdateOceanWaterHeight`. Передача `Vector3[]` в `GetWaterHeight`.                                   | Unity «пинит» манагед-массив каждый кадр для передачи в C++. Нужно использовать `NativeArray`.                             |
+| **Rigidbody Dirtying**   | Метод: `SmoothDampingTransition`. Поле: `_rb.linearDamping`.                                                | Запись в `linearDamping` каждый кадр, даже если значение не меняется. PhysX не дает Rigidbody уснуть.                      |
+
+2. ФАЙЛ: WorldProceduralScatterDirector.cs
+
+| Finding (Грех)           | Контекстная привязка (Где искать)                                                    | Техническая опасность                                                                                                    |
+| :----------------------- | :----------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------- |
+| **AUP Oblivion**         | Методы: `TryGetScatterCenterCell`, `ReconcileInstances`.                             | Использование `playerTransform.position`. При прыжке мира (Origin Shift) все ячейки спавна мгновенно станут невалидными. |
+| **P/Invoke String Burn** | Метод: `ApplyScatterPoolWarmupAllowances`. Лог: `$"warmup prefab={prefab.name}..."`. | Доступ к `.name` — это P/Invoke. В цикле на 1000 итераций это убивает производительность Main Thread.                    |
+| **GC Reallocation**      | Метод: `TryRegisterFloraGpuiPlacement`.                                              | Вызов `new Matrix4x4[newCapacity]`. Создает лаги при входе в плотные леса. Нужно использовать `ArrayPool`.               |
+| **Spatial Overlap**      | Метод: `ComposeWindowKey`. Сдвиги: `windowX << 32` и `safeHeightLayer << 48`.        | Биты данных перекрываются в 64-битном ключе. Разные ячейки мира получат одинаковый хеш.                                  |
+| **Object Leak**          | Метод: `ClearRootChildren`. Команда: `Destroy(child)`.                               | Уничтожение объектов, взятых из пула. Пул теряет контроль, память утекает до краша.                                      |
+| **O(N^2) Complexity**    | Метод: `CanAcceptCandidate`. Цикл по `_gridPlacements`.                              | Линейный скан по всей базе объектов для проверки дистанции. Смерть процессора при 5000+ объектах.                        |
+
+3. ФАЙЛ: HectonUnderwaterVisuals.cs
+
+| Finding (Грех)        | Контекстная привязка (Где искать)                                           | Техническая опасность                                                                                       |
+| :-------------------- | :-------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------- |
+| **Render Violation**  | Метод: `EnforceFogState`. Команда: `AddComponent<CrestUnderwaterRenderer>`. | Структурные изменения сцены внутри колбэка отрисовки (`beginCameraRendering`) запрещены Unity.              |
+| **Array Overflow**    | Поле: `_runtimeCameraBuffer[8]`. Метод: `Camera.GetAllCameras`.             | Если в сцене 9 камер (включая пробы и UI), игра мгновенно вылетает с `IndexOutOfRangeException`.            |
+| **Broadphase Choke**  | Метод: `ResolveBottomSiltDistance`. Raycast на 40,000м.                     | Поиск ила через весь мир PhysX с маской `~0`. Огромный скачок нагрузки на CPU каждые 0.18с.                 |
+| **Reflection Poison** | Метод: `EnforceFogState`. Проверка `CameraType.Reflection`.                 | Глобальный туман не сбрасывается для камер отражений. Вода будет выглядеть черной или мерцать.              |
+| **Logic Suicide**     | Метод: `PurgeSecondaryUnderwaterRenderers`.                                 | Скрипт записывает ссылку на рендерер и тут же вызывает `Destroy(candidateRenderer)`. Ссылка ведет в никуда. |
+
+4. ГЛОБАЛЬНЫЕ СИСТЕМНЫЕ ОШИБКИ (МАНДАТЫ)
+
+| Сектор        | Ошибка и Контекст                                                                            | Почему нужно исправить                                                                    |
+| :------------ | :------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------- |
+| **GPU / VFX** | **PCIe Saturation.** Использование `ComputeBuffer.SetData()` для динамических данных.        | На MX350 это блокирует CPU. Заменить на `GraphicsBuffer.LockBufferForWrite`.              |
+| **GPU / VFX** | **LPPV Deprecation.** Попытка использовать `LPPV.SampleSH`.                                  | Unity 6 вырезала этот API. Нужно использовать `Adaptive Probe Volumes (APV)`.             |
+| **PHYSICS**   | **Verlet NaN.** Деление на `dist` в `error = (dist - rest_length) / dist` без проверки на 0. | Если трос сжат в точку, вся система физики превращается в `NaN` и исчезает.               |
+| **PHYSICS**   | **PD Controller.** Попытка сделать физические руки через `AddForce` на обычных Rigidbody.    | Приводит к «Тормозному Кракену» (дрожанию). Нужно использовать `ArticulationBody`.        |
+| **AUDIO**     | **IDIV Stall.** Использование `%` на числах типа `96` (не степень двойки).                   | На i3 это стоит 40 циклов вместо 1. Все буферы ДОЛЖНЫ быть кратны степени 2.              |
+| **AUDIO**     | **Managed Time.** Вызов `AudioSettings.dspTime` внутри Burst-джобы звука.                    | Потоки аудио не имеют доступа к Main Thread. Нужно считать время по количеству сэмплов.   |
+| **SAVE**      | **Pointer Corruption.** Код `src + 64` для указателя `uint*`.                                | В C\# это прыжок на 256 байт. Заменить на `(byte*)src + 64`. Сейвы сейчас нечитаемы.      |
+| **DATA**      | **Birthday Paradox.** UID на основе миллисекунд в `DATA_ORIENTED_RESOURCES`.                 | 1% шанс потери предметов при массовом выпадении лута. Перейти на `Interlocked.Increment`. |
+
+👨‍💻 ИНСТРУКЦИЯ ДЛЯ АГЕНТОВ:
+
+1.  Prioritize P0: Сначала исправляем вылеты (IndexOutOfRange, NaN, Render
+    Violation).
+2.  Rebase WS Vectors: В методе OnOriginShift все закэшированные мировые позиции
+    ОБЯЗАНЫ получить прибавку +offset.
+3.  Cache Wrapper IDs: Заменить if (hit.collider == myCollider) на if
+    (hit.colliderInstanceID == myInstanceID).
+4.  Unity 6 Parity: Все ComputeBuffer заменить на GraphicsBuffer.
+
+
+
+🏛 TOTAL ARCHITECTURAL PURGE: 124 SINS OF HECTON-8
+
+STATUS: DEADLY CRITICAL | TARGET: NVIDIA MX350 | 60 FPS OR DEATH
+
+СЕКТОР 1: PHYSICS & LOCOMOTION (35 ГРЕХОВ)
+
+1.  [PHYS-01] WS Caching: _lastTransportPlatformPosition хранит мировые Vector3.
+    При прыжке Floating Origin дельта превращается в бесконечную силу.
+2.  [PHYS-02] WS Caching: _cuttingTensionAnchorCurrentWS игнорирует ребейз мира.
+3.  [PHYS-03] WS Caching: _exosuitGrappleAnchorCurrentWS взрывает физику после
+    перемещения на 5км.
+4.  [PHYS-04] Wrapper Thrashing: GroundCheck вызывает .collider внутри цикла.
+    Смерть L1 кэша.
+5.  [PHYS-05] Wrapper Thrashing: TryFindStepLanding лезет в C++ за
+    .attachedRigidbody.
+6.  [PHYS-06] Wrapper Thrashing: TrySampleExosuitFootSupport создает
+    managed-обертки 128 раз за кадр.
+7.  [PHYS-07] Determinism Kill: _instanceId сидируется через GetHashCode().
+    Рандом на разных ПК.
+8.  [PHYS-08] Time Bleed: TryPlaySargassumEntanglementAudio использует Time.time
+    (рендер) в FixedUpdate.
+9.  [PHYS-09] Hierarchy Traversal: GetCapsuleWorldMetrics вызывает lossyScale.
+    Рекурсивный поиск по всем родителям.
+10. [PHYS-10] Hierarchy Traversal: GetBodyTopY дергает матрицу мира 6-10 раз за
+    кадр.
+11. [PHYS-11] Interface Impurity: HectonPlayerMovement лезет в
+    GameTickManager.Instance вместо Глобального Регистра.
+12. [PHYS-12] Managed Wrapper: collision.collider.gameObject.layer в
+    OnCollisionEnter. Каждая точка коллизии создает мусор.
+13. [PHYS-13] Matrix Stall: TransformTransportPlatformDirectionToWorld
+    пересчитывает матрицу вручную.
+14. [PHYS-14] Rigidbody Abuse: Перезапись linearDamping в
+    SmoothDampingTransition мешает Rigidbody заснуть.
+15. [PHYS-15] Instruction Cache Bloat: Кластер «Resolve» методов в начале Tick
+    создает тысячи лишних веток для CPU.
+16. [PHYS-16] GC Murder: localization.CorruptExpandedText создает новые строки в
+    горячем цикле 50Hz.
+17. [PHYS-17] Marshalling Overhead: Передача Vector3[] в Crest. Память «пинится»
+    и блокирует GC.
+18. [PHYS-18] Spatial Query Stacking: 5 разных SphereCast на одну и ту же
+    область дна.
+19. [PHYS-19] Data Race: TryApplyStepAssist читает позицию Rigidbody сразу после
+    перемещения, получая старые данные.
+20. [PHYS-20] Transcendental Bloat: math.exp() используется для 20+
+    косметических переменных разом.
+21. [PHYS-21] Interpolation Bypass: Camera Juice считает скорость по
+    rb.linearVelocity (физика), а не по интерполированному транформу.
+22. [PHYS-22] Temporal Aliasing: _cameraYaw обновляется в Fixed, но применяется
+    в Render без сглаживания.
+23. [PHYS-23] Contact Buffer Overflow: _queuedCollisionEvents забит на 8
+    элементах. В густых лесах мы «слепнем» к сильным ударам.
+24. [PHYS-24] Double-to-Float: Использование 6.28318530718f без math.PI вызывает
+    неявные касты в 64 бита.
+25. [PHYS-25] BVH Corruption: Прямая запись в transform.position у активных
+    Rigidbody.
+26. [PHYS-26] PD Controller Kraken: Попытка сделать физические руки через
+    AddForce на обычных Rigidbody (нужен ArticulationBody).
+27. [PHYS-27] Diagonal Drag Warp: Драг по осям X/Y/Z считается раздельно.
+    Корабль «притягивает» к диагоналям сетки.
+28. [PHYS-28] Verlet Zero-NaN: error = (dist - rest) / dist взрывает мир при
+    dist = 0.
+29. [PHYS-29] Momentum Deletion: EmergencyTeleport стирает относительную
+    скорость игрока.
+30. [PHYS-30] Recoil Catapult: Отдача инструмента игнорирует массу подлодки.
+31. [PHYS-31] Tensor Thrashing: Смена centerOfMass каждый кадр блокирует
+    многопоточность PhysX.
+32. [PHYS-32] Job Overload: ScheduleBatch для одного луча — в 20 раз медленнее
+    обычного рейкаста.
+33. [PHYS-33] Managed Rigidbody in Burst: pooledRigidbodies[i] внутри
+    DebrisDespawnJob. Fatal Error.
+34. [PHYS-34] Physics Event Bus Race: Enqueue в круговой буфер из разных потоков
+    без локов.
+35. [PHYS-35] SyncTransforms Stall: Вызов Raycast сразу после MovePosition без
+    SyncTransforms (устаревшие коллизии).
+
+СЕКТОР 2: RENDERING & GPU (30 ГРЕХОВ)
+
+36. [REND-01] ComputeBuffer Legacy: Использование ComputeBuffer вместо
+    GraphicsBuffer (Unity 6).
+37. [REND-02] Indirect Drawing Overhead: Использование DrawMeshInstancedIndirect
+    вне GPU Resident Drawer.
+38. [REND-03] SFU Ignorance: Полиномы Тейлора для sin/cos вместо нативных
+    функций.
+39. [REND-04] PCIe Choke: ComputeBuffer.SetData() блокирует шину. Нужен
+    LockBufferForWrite.
+40. [REND-05] Early-Z Kill: clip() в шейдере отключает аппаратную отсечку
+    невидимых пикселей на MX350.
+41. [REND-06] Reversed-Z Inversion: Ошибка -= bias в мандате по декалям (в
+    Reversed-Z надо +=).
+42. [REND-07] Bloom Sabotage: ACES-тонемаппинг внутри материалов убивает HDR
+    выше 1.0.
+43. [REND-08] LPPV Deprecation: Попытка вызвать LPPV.SampleSH (вырезано в
+    Unity 6).
+44. [REND-09] Slerp in Vertex: Использование slerp для нормалей швов. Нужно
+    Nlerp.
+45. [REND-10] ALU length Manual: Ручной rsqrt(dot) вместо оптимизированного
+    math.length.
+46. [REND-11] 6-Tap Trilinear: 48 чтений из памяти на один воксельный нормаль.
+    Нужно читать 6 целых узлов.
+47. [REND-12] Matrix Pool Trap: Передача абсолютных координат (500км) в шейдер.
+    Тряска вершин.
+48. [REND-13] Draw Call Limit: Превышение 1800 батчей на MINIMAL тире.
+49. [REND-14] Stencil UI Bypass: Отсутствие бита 0x80 для обхода дизеринга на
+    кнопках.
+50. [REND-15] Dither Pattern Drift: Линейный сдвиг синего шума (0.25) вместо
+    последовательности R2.
+51. [REND-16] Fragment Spatial Math: Проверка PointInAABB внутри шейдера для
+    пещер.
+52. [REND-17] Alpha-to-Coverage Gap: Попытка сделать clip() в густых лесах на
+    MX350.
+53. [REND-18] Shadow Atlas Bleed: Переиспользование слота тени без очистки в
+    белый цвет.
+54. [REND-19] Vertex Shader Cull: Расчет дистанции в шейдере вместо GPU Resident
+    Drawer.
+55. [REND-20] FSR2 on Pascal: Попытка запустить FSR2 на MX350 (убьет 2ms без
+    профита).
+56. [REND-21] APV Absence: Игнорирование Adaptive Probe Volumes в воксельных
+    интерьерах.
+57. [REND-22] Double Tonemapping: ACES в Crest + ACES в URP Volume.
+58. [REND-23] PCIe Bubbles: Синхронный SetData в середине кадра.
+59. [REND-24] Z-Fighting Bias: Неверный Depth Bias юбки вокселя.
+60. [REND-25] Unlit card HLOD: Отсутствие теней на объектах >80м.
+61. [REND-26] RenderTarget Format: Использование RenderTextureFormat.RGB565
+    (нужно GraphicsFormat).
+62. [REND-27] VRAM OOM: Загрузка 4K атласов на 2GB карточке.
+63. [REND-28] Bandwidth Thrashing: 7 раздельных копий массивов вместо одного
+    прохода Burst.
+64. [REND-29] MRT Sync: Попытка записи в CameraDepthTexture во время её чтения.
+65. [REND-30] Static readonly UnityEngine.Object: Кэширование Camera.main в
+    статическое поле (краш при смене сцены).
+
+СЕКТОР 3: DATA, SAVES & REGISTRY (30 ГРЕХОВ)
+
+66. [DATA-01] Birthday Paradox: UID предметов на миллисекундах. 1% шанс
+    исчезновения лута.
+67. [DATA-02] Pointer Math Crash: src + 64 на uint* прыгает на 256 байт.
+68. [DATA-03] Nested Containers: NativeList внутри NativeHashMap. Утечка памяти.
+69. [DATA-04] Dictionary Foreach: foreach по _desiredPlacements в горячем цикле.
+70. [DATA-05] O(N*M) Dehydration: Линейный поиск GUID в пуле из 8000 слотов.
+71. [DATA-06] Stringly-Typed AI: Сравнение "family.coral.low" в цикле на 5000
+    итераций.
+72. [DATA-07] P/Invoke name: Обращение к prefab.name внутри Tick.
+73. [DATA-08] Registry Resize: Вызов Array.Resize для Registry<T> во время игры.
+74. [DATA-09] Swap-With-Last Forward: Пропуск элементов при удалении в for (i=0;
+    i < count).
+75. [DATA-10] Save Corrupting Unsafe: MemCpy с неверным смещением байт.
+76. [DATA-11] Enum Boxing: .GetHashCode() на типе слоя в
+    ComputePlacementSyncSignature.
+77. [DATA-12] Managed Array in Struct: int[8] внутри Burst-джобы
+    DirectorJobOutput.
+78. [DATA-13] Voxel Index Overflow: ushort индексы (65к) для сложных коралловых
+    рифов (нужен uint).
+79. [DATA-14] AbsoluteAUP Memory Overflow: Структура AUP на 14 байт, ломающая
+    выравнивание по 8 байт.
+80. [DATA-15] Radix Sort Overflow: Битовое смещение маски на 20 позиций влево
+    стирает данные.
+81. [DATA-16] Phantom Sort API: Вызов несуществующего
+    NativeSortExtension.Sort(keys, values).
+82. [DATA-17] Negative Modulo: hash % TILE_SIZE выдает отрицательный индекс на
+    Западе/Юге.
+83. [DATA-18] Unchecked tzcnt: Вызов math.tzcnt(0) возвращает 32, что ломает
+    сдвиг 1u << 32.
+84. [DATA-19] Binary Rollback missing: Потеря предметов при отмене крафта (нет
+    транзакционности).
+85. [DATA-20] Large Voxel Deltas: Хранение (int3, half) дает 85% оверхеда. Нужна
+    битовая маска.
+86. [DATA-21] 64-Bit Literal missing: item.instanceUID ^ 0xDEADBEEF без суффикса
+    UL.
+87. [DATA-22] SyncHeightmap Stall: Блокировка Main Thread при ожидании данных с
+    GPU.
+88. [DATA-23] Memory Bloat Pools: Отсутствие логики Shrink в пулах
+    Native-памяти.
+89. [DATA-24] Static Hell: Глобальный TotalUniverseOffset мешает мульти-мирам.
+90. [DATA-25] Defrag Race: Worker дефрагментирует память, пока Main Thread в неё
+    пишет.
+91. [DATA-26] Heterogeneous Map: NativeHashMap<int, FunctionPointer<T>> (не
+    скомпилируется).
+92. [DATA-27] Managed FileStream: Использование FileStream.Write в потоках
+    (нужен AsyncWriteManager).
+93. [DATA-28] Double-Checked Locking error: Ошибка в паттерне EnsureInitialized.
+94. [DATA-29] Registry Leak: List.Remove в реестре за O(N).
+95. [DATA-30] Memory Guard Hypocrisy: Использование LINQ .Sum() для проверки
+    бюджета памяти.
+
+СЕКТОР 4: AI, AUDIO & UI (29 ГРЕХОВ)
+
+96. [AI-01] Negative Grid Collapse: pos.x / size без офсета bounds_min. Весь мир
+    в ячейке 0.
+97. [AI-02] Impossible Return: get_neighbors возвращает List<int> в HLSL.
+98. [AI-03] Atomic Gridlock: Нет лимита боидов в ячейке (InterlockedAdd повесит
+    GPU).
+99. [AI-04] Frustum Stop: Симуляция боидов за спиной отключается, ломая логику.
+100. [AI-05] Stale Path: Рассинхрон головы Левиафана и его визуального тела.
+101. [AI-06] Spatial Aliasing: Границы сетки дрожат при движении игрока.
+102. [AI-07] Navigation Wedge Collapse: 2D-фуннель ломается в вертикальных
+     шахтах.
+103. [AI-08] Threat Diffusion Stall: Использование byte убивает градиент угрозы
+     при малых dt.
+104. [AI-09] NativeQueue in Schedule: Попытка передать NativeQueue в
+     RaycastCommand.ScheduleBatch.
+105. [AI-10] Cognitive Fragmentation: 100 отдельных NativeQueue на каждого моба
+     (нужен NativeStream).
+106. [AUD-01] Managed float[] array: Бэкенд аудио-очереди на управляемом массиве
+     внутри нативной джобы.
+107. [AUD-02] Phase Discontinuity: time * freq в осцилляторах.
+108. [AUD-03] Denormal Death: Падение FPS в тишине из-за subnormal-чисел в
+     фильтрах.
+109. [AUD-04] Ring Buffer Segfault: Обращение к buffer[i-1] без маски & mask при
+     i=0.
+110. [AUD-05] Torn Read Sonar: Разрыв данных (новая громкость + старый тайминг).
+111. [AUD-06] Join(250) Violation: Убийство памяти раньше, чем умер поток.
+112. [AUD-07] Reverb Hierarchy Fail: IsChildOf не видит игрока внутри подлодки.
+113. [AUD-08] Managed Time in DSP: AudioSettings.dspTime внутри Burst.
+114. [AUD-09] Sound Speed Constant: Использование 343 м/с (воздух) вместо 1480
+     м/с (вода).
+115. [AUD-10] AudioSource.velocity: Попытка вызвать несуществующий API у
+     AudioSource.
+116. [UI-01] Stack Overflow: Рекурсия в try-catch при ошибке джойстика.
+117. [UI-02] Type-check Spam: is Gamepad в каждом кадре Update.
+118. [UI-03] Canvas Rebuild loop: TMP_Text.SetCharArray в 60Hz заставляет CPU
+     перестраивать весь меш UI.
+119. [UI-04] Bit-Shift Overflow: slot = tzcnt(_slotMask) при полной маске
+     затирает 0-й слот.
+120. [UI-05] Matrix Scaling error: Применение localScale вместо localMatrix
+     ломает вложенные слои.
+121. [UI-06] Diagnostic CLI: Аллокация строк при выводе FPS.
+122. [UI-07] String-Keyed Input: InputSystem.actions["Move"] в каждом кадре.
+123. [UI-08] Memory Leak HUD: Статические ссылки на TMP_Text мешают выгрузке
+     сцены.
+124. [UI-09] Staged Font Swap Fail: Попытка сменить шрифт у null ссылок в
+     реестре.

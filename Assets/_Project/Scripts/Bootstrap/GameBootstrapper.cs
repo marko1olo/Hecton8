@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Input;
 using Hecton8.Physics;
@@ -120,8 +121,11 @@ namespace Hecton8.Bootstrap
 
         private void InitializeEnvironmentLayer()
         {
+            GlobalPhysicsStateManager.EnsureRuntimeInstance();
             PhysicsApplySystem physicsApplySystem = PhysicsApplySystem.EnsureRuntimeInstance();
+            DebrisManager debrisManager = DebrisManager.EnsureRuntimeInstance();
             physicsApplySystem.InitializeService();
+            debrisManager.InitializeService();
         }
 
         private void InitializePlayerLayer()

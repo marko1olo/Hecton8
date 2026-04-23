@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using Unity.Mathematics;
+using UnityEngine;
 
 namespace Hecton8.Interaction
 {
@@ -144,5 +145,18 @@ namespace Hecton8.Interaction
         /// </summary>
         /// <returns>Bitmask of authored capabilities.</returns>
         uint GetCapabilityMask();
+    }
+
+    /// <summary>
+    /// Optional cut-target contract for systems that need the full queued interaction payload.
+    /// </summary>
+    public interface IInteractionSignalConsumer
+    {
+        /// <summary>
+        /// Applies one deferred interaction signal after the queue owner resolves the final target.
+        /// </summary>
+        /// <param name="signal">Authoritative interaction payload.</param>
+        /// <param name="runtimeHitPoint">Runtime-space hit point.</param>
+        void ApplyInteractionSignal(in InteractionSignal signal, Vector3 runtimeHitPoint);
     }
 }

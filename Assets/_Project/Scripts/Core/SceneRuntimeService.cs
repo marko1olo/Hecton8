@@ -122,6 +122,11 @@ namespace Hecton8.Core
 
             if (GlobalRegistry.InteractionSignals != null)
                 GlobalRegistry.InteractionSignals.ClearQueuedSignals();
+
+            if (GlobalRegistry.Debris != null)
+                GlobalRegistry.Debris.ClearActiveDebris();
+
+            GlobalPhysicsStateManager.ClearRuntimeStateStatic();
         }
     }
 }

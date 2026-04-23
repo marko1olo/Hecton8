@@ -21,6 +21,7 @@ namespace Hecton8.Core
         private static IUIService _ui;
         private static IWeatherService _weather;
         private static IInteractionSignalService _interactionSignals;
+        private static IDebrisService _debris;
 
         /// <summary>
         /// Registered input service slot.
@@ -58,6 +59,11 @@ namespace Hecton8.Core
         public static IInteractionSignalService InteractionSignals => _interactionSignals;
 
         /// <summary>
+        /// Registered debris service slot.
+        /// </summary>
+        public static IDebrisService Debris => _debris;
+
+        /// <summary>
         /// Dense multi-instance update registry.
         /// </summary>
         public static RegistryBucket<IUpdatable> Updatables => _updatables;
@@ -77,6 +83,7 @@ namespace Hecton8.Core
             _ui = null;
             _weather = null;
             _interactionSignals = null;
+            _debris = null;
             _updatables.Clear();
             _renderables.Clear();
             SystemDispatcher.ClearAllLanes();
@@ -146,6 +153,15 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Registers the authoritative debris service.
+        /// </summary>
+        /// <param name="instance">Debris service instance.</param>
+        public static void RegisterDebrisService(IDebrisService instance)
+        {
+            RegisterService(ref _debris, instance);
+        }
+
+        /// <summary>
         /// Unregisters the current input service if the owner matches.
         /// </summary>
         /// <param name="instance">Service owner requesting unregistration.</param>
@@ -206,6 +222,15 @@ namespace Hecton8.Core
         public static void UnregisterInteractionSignalService(IInteractionSignalService instance)
         {
             UnregisterService(ref _interactionSignals, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current debris service if the owner matches.
+        /// </summary>
+        /// <param name="instance">Service owner requesting unregistration.</param>
+        public static void UnregisterDebrisService(IDebrisService instance)
+        {
+            UnregisterService(ref _debris, instance);
         }
 
         /// <summary>

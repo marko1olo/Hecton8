@@ -121,6 +121,7 @@ namespace Hecton8.Physics
         private Matrix4x4 _solverWorldToLocalMatrix = Matrix4x4.identity;
         private Matrix4x4 _solverLocalToWorldMatrix = Matrix4x4.identity;
         private bool _solveInPlatformLocalSpace;
+        private bool _kinematicAnchorCompensationEnabled;
 
         /// <summary>Active owner facade that exposes tether state to the rest of gameplay.</summary>
         public HeavyTowWinch Owner => _owner;
@@ -232,8 +233,11 @@ namespace Hecton8.Physics
             _solverWorldToLocalMatrix = Matrix4x4.identity;
             _solverLocalToWorldMatrix = Matrix4x4.identity;
             _solveInPlatformLocalSpace = false;
+            _kinematicAnchorCompensationEnabled = false;
             ClearBendMetadata(0);
             EnsureVisualBuffers(_visualSegmentCount);
+            GlobalPhysicsStateManager.RegisterTetherConnection(this, _playerRigidbody, _payloadBody);
+            RefreshKinematicAnchorCompensationState(forceRecalculateDamping: true);
             RecalculateDampingCoefficient();
             _isActive = true;
             _visualBounds = new Bounds(
@@ -303,6 +307,8 @@ namespace Hecton8.Physics
                 _payloadMass01 = _owner.ResolvePayloadMass01(_payloadMass);
                 RecalculateDampingCoefficient();
             }
+
+            RefreshKinematicAnchorCompensationState(forceRecalculateDamping: false);
 
             ResolveSolverReferenceFrame();
             AdvanceExternalCableSnare(fixedDeltaTime);
@@ -408,6 +414,7 @@ namespace Hecton8.Physics
         /// </summary>
         public void Deactivate()
         {
+            GlobalPhysicsStateManager.UnregisterTetherConnection(this);
             _isActive = false;
             _owner = null;
             _playerMotor = null;
@@ -471,6 +478,7 @@ namespace Hecton8.Physics
             _solverWorldToLocalMatrix = Matrix4x4.identity;
             _solverLocalToWorldMatrix = Matrix4x4.identity;
             _solveInPlatformLocalSpace = false;
+            _kinematicAnchorCompensationEnabled = false;
             ClearBendMetadata(0);
             gameObject.SetActive(false);
         }
@@ -528,7 +536,7 @@ namespace Hecton8.Physics
         private void RecalculateDampingCoefficient()
         {
             float playerMass = _playerRigidbody != null ? math.max(_playerRigidbody.mass, 0.0001f) : 1f;
-            float payloadMass = _payloadBody == null || _payloadBody.isKinematic
+            float payloadMass = _payloadBody == null || _payloadBody.isKinematic || _kinematicAnchorCompensationEnabled
                 ? float.PositiveInfinity
                 : math.max(_payloadBody.mass, 0.0001f);
 
@@ -922,7 +930,7 @@ namespace Hecton8.Physics
                 Vector3 solverDirection = delta / currentDistance;
                 Vector3 worldDirection = ResolveSolverDirectionToWorld(solverDirection);
                 bool startDynamic = i == 0;
-                bool endDynamic = i == segmentCount - 1;
+                bool endDynamic = i == segmentCount - 1 && !_kinematicAnchorCompensationEnabled;
                 float startInvMass = startDynamic && _playerRigidbody != null
                     ? 1f / math.max(_playerRigidbody.mass, 0.0001f)
                     : 0f;
@@ -994,7 +1002,7 @@ namespace Hecton8.Physics
                 if (i == 0)
                     playerAcceleration += worldDirection * tension;
 
-                if (i == segmentCount - 1)
+                if (i == segmentCount - 1 && !_kinematicAnchorCompensationEnabled)
                     payloadAcceleration += -worldDirection * tension;
             }
 
@@ -1277,6 +1285,8 @@ namespace Hecton8.Physics
 
             _playerMotor = playerMotor;
             _playerRigidbody = anchorBody;
+            GlobalPhysicsStateManager.RegisterTetherConnection(this, _playerRigidbody, _payloadBody);
+            RefreshKinematicAnchorCompensationState(forceRecalculateDamping: true);
             RecalculateDampingCoefficient();
         }
 
@@ -1405,6 +1415,17 @@ namespace Hecton8.Physics
         {
             float3 value3 = new float3(value.x, value.y, value.z);
             return math.all(math.isfinite(value3));
+        }
+
+        private void RefreshKinematicAnchorCompensationState(bool forceRecalculateDamping)
+        {
+            bool nextState = GlobalPhysicsStateManager.IsKinematicAnchorCompensationEnabled(this, PhysicsConnectionKind.Tether);
+            if (!forceRecalculateDamping && nextState == _kinematicAnchorCompensationEnabled)
+                return;
+
+            _kinematicAnchorCompensationEnabled = nextState;
+            if (_playerRigidbody != null && _payloadBody != null)
+                RecalculateDampingCoefficient();
         }
     }
 }

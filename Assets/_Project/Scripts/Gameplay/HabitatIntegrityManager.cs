@@ -200,7 +200,7 @@ namespace Hecton8.Gameplay
         private void Awake()
         {
             ResolveReferences();
-            _toxicityHazardId = unchecked(GetHashCode() * 397 ^ ToxicHazardIdSalt);
+            _toxicityHazardId = unchecked((int)(EntityId.ToULong(GetEntityId()) ^ (uint)ToxicHazardIdSalt));
             _moduleAmbientTemperatureCelsius = ResolveDryAmbientTemperatureCelsius();
             if (_baseModule != null && _baseModule.IsFlooded)
             {

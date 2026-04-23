@@ -241,8 +241,30 @@ namespace Hecton8.Interaction
                 return;
 
             Vector3 runtimeHitPoint = HectonFloatingOrigin.ToRuntimePosition(new Vector3(signal.HitPoint.x, signal.HitPoint.y, signal.HitPoint.z));
+            if (TryResolveSignalConsumer(targetCollider, out IInteractionSignalConsumer signalConsumer))
+            {
+                signalConsumer.ApplyInteractionSignal(in signal, runtimeHitPoint);
+                return;
+            }
+
             if (TryResolveCuttable(targetCollider, out ICuttable cuttable))
                 cuttable.ApplyCutDamage(signal.PowerDelivered, runtimeHitPoint);
+        }
+
+        private static bool TryResolveSignalConsumer(Collider targetCollider, out IInteractionSignalConsumer signalConsumer)
+        {
+            signalConsumer = null;
+            if (targetCollider == null)
+                return false;
+
+            if (targetCollider.TryGetComponent(out IInteractionSignalConsumer directConsumer))
+            {
+                signalConsumer = directConsumer;
+                return true;
+            }
+
+            signalConsumer = targetCollider.GetComponentInParent<IInteractionSignalConsumer>();
+            return signalConsumer != null;
         }
 
         private static bool TryResolveCuttable(Collider targetCollider, out ICuttable cuttable)
