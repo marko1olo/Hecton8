@@ -936,6 +936,7 @@ namespace Hecton8.SaveSystem
                     candidate,
                     out SaveData candidateData,
                     out _,
+                    out _,
                     out SaveMetadata _,
                     out bool candidateLegacyFormat,
                     out string candidateError))

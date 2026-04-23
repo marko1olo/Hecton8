@@ -33,6 +33,13 @@ namespace Hecton8.Quest
 
     internal struct QuestSignal
     {
+        public QuestSignal(QuestSignalKind kind, uint payloadHash, float numericValue)
+        {
+            Kind = kind;
+            PayloadHash = payloadHash;
+            NumericValue = numericValue;
+        }
+
         public QuestSignalKind Kind;
         public uint PayloadHash;
         public float NumericValue;
@@ -400,9 +407,12 @@ namespace Hecton8.Quest
             if (!_globalPrerequisites.IsCreated)
                 return;
 
-            UnsafeUtility.MemClear(
-                NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_globalPrerequisites),
-                WordCapacity * UnsafeUtility.SizeOf<uint>());
+            unsafe
+            {
+                UnsafeUtility.MemClear(
+                    NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_globalPrerequisites),
+                    WordCapacity * UnsafeUtility.SizeOf<uint>());
+            }
 
             if (packedWords == null || packedWords.Length <= 0)
                 return;
@@ -600,7 +610,7 @@ namespace Hecton8.Quest
                 return;
             }
 
-            _compileErrorSummary += Environment.NewLine + message;
+            _compileErrorSummary += System.Environment.NewLine + message;
         }
 
         private bool TrySetResolvedBit(uint bitHash)

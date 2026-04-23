@@ -105,12 +105,12 @@ namespace Hecton8.Systems.AI
         private const float DespawnKeepDistanceSq = 25f * 25f;
         private const float FrustumRejectPadding = 3f;
 
-        private readonly NativeArray<EncounterDirectorState> _frontState;
-        private readonly NativeArray<EncounterDirectorState> _backState;
-        private readonly NativeArray<EncounterEnemyToken> _enemyTokens;
-        private readonly NativeArray<float4> _frustumPlanes;
-        private readonly NativeArray<float3> _candidateDirections;
-        private readonly NativeArray<EncounterJobOutput> _jobOutput;
+        private NativeArray<EncounterDirectorState> _frontState;
+        private NativeArray<EncounterDirectorState> _backState;
+        private NativeArray<EncounterEnemyToken> _enemyTokens;
+        private NativeArray<float4> _frustumPlanes;
+        private NativeArray<float3> _candidateDirections;
+        private NativeArray<EncounterJobOutput> _jobOutput;
         // COLD ALLOC: Transform[32] — tracked live encounter proxies for token refresh — owner: EncounterDirector
         private readonly Transform[] _trackedTransforms;
         // COLD ALLOC: int[32] — tracked live encounter entity ids — owner: EncounterDirector
@@ -434,13 +434,14 @@ namespace Hecton8.Systems.AI
             if (spawnedInstance == null)
                 return;
 
-            int slot = FindTrackedSlot(spawnedInstance.GetInstanceID());
+            int entityId = unchecked((int)EntityId.ToULong(spawnedInstance.GetEntityId()));
+            int slot = FindTrackedSlot(entityId);
             if (slot < 0)
                 slot = FindFreeTrackedSlot();
             if (slot < 0)
                 return;
 
-            _trackedEntityIds[slot] = spawnedInstance.GetInstanceID();
+            _trackedEntityIds[slot] = entityId;
             _trackedTransforms[slot] = spawnedInstance.transform;
             _trackedThreatClasses[slot] = threatClass;
             _trackedTokenCosts[slot] = ResolveTokenCost(threatClass);

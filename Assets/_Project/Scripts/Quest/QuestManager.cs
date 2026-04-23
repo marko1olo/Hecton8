@@ -1,23 +1,6 @@
 // ============================================================================
 // HECTON-8 — QuestManager.cs
-// Stateless quest hub — слушает события мира и продвигает квесты.
-//
-// АРХИТЕКТУРА:
-//   • Все квесты — QuestData ScriptableObjects (data-driven).
-//   • QuestManager слушает глобальные события (NarrativeEvents, AudioLogEvents,
-//     HectonCelestialEngine.OnEclipseStart, AtlasSignalEvents).
-//   • Состояние квестов: активные / завершённые HashSet<string>.
-//   • ISaveable: сохраняет активные и завершённые questId.
-//
-// ZERO GC:
-//   • HashSet<string> для O(1) проверки.
-//   • ISlowTickable для depth-based триггеров.
-//   • Никаких new/LINQ в hot path.
-//
-// ИНТЕГРАЦИЯ С ЛОРОМ:
-//   • QuestTriggerType.OnEclipseStart → квест "Пережить Великое Затмение"
-//   • NarrativeEvents.OnDiscoveryMade("atlas6_signal_identified") → Atlas quest handoff
-//   • QuestTriggerType.OnAudioLogFound → квест "Собрать записи Chen_M"
+// Stateless quest hub — listens to world events and advances quests.
 // ============================================================================
 
 using System.Collections.Generic;
@@ -25,12 +8,13 @@ using Hecton.Localization;
 using Hecton8.AtlasSignal;
 using Hecton8.Celestial;
 using Hecton8.Core;
-using Hecton8.Interaction;
 using Hecton8.Gameplay;
+using Hecton8.Interaction;
 using Hecton8.Items;
 using Hecton8.Narrative;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
+using Unity.Collections;
 using UnityEngine;
 
 #if UNITY_EDITOR
@@ -43,53 +27,29 @@ namespace Hecton8.Quest
     [DefaultExecutionOrder(-130)]
     public sealed class QuestManager : MonoBehaviour, ISaveable, ISlowTickable
     {
-        // ══════════════════════════════════════════════════════════
-        //  INSPECTOR
-        // ══════════════════════════════════════════════════════════
-
         [Header("── Quest Registry ──────────────────────────")]
-        [Tooltip("Все квесты проекта. Назначить в инспекторе.")]
+        [Tooltip("All project quests. Assign in the inspector.")]
         [SerializeField] private QuestData[] allQuests = new QuestData[0];
 
-        private const string kQuestFolder = "Assets/_Project/Data/Lore/Quests";
-
-        // ══════════════════════════════════════════════════════════
-        //  SINGLETON
-        // ══════════════════════════════════════════════════════════
+        private const string QuestFolder = "Assets/_Project/Data/Lore/Quests";
 
         public static QuestManager Instance { get; private set; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState() => Instance = null;
 
-        // ══════════════════════════════════════════════════════════
-        //  PRIVATE STATE
-        // ══════════════════════════════════════════════════════════
-
-        // COLD ALLOC: 64 entries — max concurrent active quests
-        private readonly HashSet<string> _activeQuests    = new HashSet<string>(64);
+        private readonly HashSet<string> _activeQuests = new HashSet<string>(64);
         private readonly HashSet<string> _completedQuests = new HashSet<string>(128);
-
-        // Lookup: questId → QuestData (COLD ALLOC)
-        private readonly Dictionary<string, QuestData> _questLookup =
-            new Dictionary<string, QuestData>(64);
-        private bool _hasLookupAmbiguity;
-        private string _lookupAmbiguitySummary;
+        private readonly Dictionary<string, QuestData> _questLookup = new Dictionary<string, QuestData>(64);
 
         private float _currentDepth;
         private bool _registered;
         private bool _biomeDiscoveryRegistered;
-
-        // ══════════════════════════════════════════════════════════
-        //  ISaveable
-        // ══════════════════════════════════════════════════════════
+        private bool _hasLookupAmbiguity;
+        private string _lookupAmbiguitySummary;
 
         public int SavePriority => 7;
         public int LoadPriority => 7;
-
-        // ══════════════════════════════════════════════════════════
-        //  LIFECYCLE
-        // ══════════════════════════════════════════════════════════
 
         private void Awake()
         {
@@ -98,6 +58,7 @@ namespace Hecton8.Quest
                 Destroy(gameObject);
                 return;
             }
+
             Instance = this;
             BuildLookup();
         }
@@ -134,12 +95,11 @@ namespace Hecton8.Quest
 
         private void Start()
         {
-            // Активируем квесты с autoActivateOnStart
             for (int i = 0; i < allQuests.Length; i++)
             {
-                QuestData q = allQuests[i];
-                if (q != null && q.autoActivateOnStart)
-                    ActivateQuest(q.questId);
+                QuestData quest = allQuests[i];
+                if (quest != null && quest.autoActivateOnStart)
+                    ActivateQuest(quest.questId);
             }
 
             TrySubscribeToBiomeDiscovery();
@@ -153,42 +113,136 @@ namespace Hecton8.Quest
         }
 #endif
 
-        // ══════════════════════════════════════════════════════════
-        //  ISlowTickable — depth-based триггеры
-        // ══════════════════════════════════════════════════════════
-
         public void SlowTick()
         {
-            // Проверяем depth-based триггеры
             for (int i = 0; i < allQuests.Length; i++)
             {
-                QuestData q = allQuests[i];
-                if (q == null) continue;
+                QuestData quest = allQuests[i];
+                if (quest == null)
+                    continue;
 
-                // Активация по глубине
-                if (q.triggerType == QuestTriggerType.OnDepthReached &&
-                    !_activeQuests.Contains(q.questId) &&
-                    !_completedQuests.Contains(q.questId) &&
-                    _currentDepth >= q.triggerValue)
+                if (quest.triggerType == QuestTriggerType.OnDepthReached &&
+                    !_activeQuests.Contains(quest.questId) &&
+                    !_completedQuests.Contains(quest.questId) &&
+                    _currentDepth >= quest.triggerValue)
                 {
-                    ActivateQuest(q.questId);
+                    ActivateQuest(quest.questId);
                 }
 
-                // Завершение по глубине
-                if (q.completionType == QuestCompletionType.OnDepthReached &&
-                    _activeQuests.Contains(q.questId) &&
-                    _currentDepth >= q.completionValue)
+                if (quest.completionType == QuestCompletionType.OnDepthReached &&
+                    _activeQuests.Contains(quest.questId) &&
+                    _currentDepth >= quest.completionValue)
                 {
-                    CompleteQuest(q.questId);
+                    CompleteQuest(quest.questId);
                 }
             }
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  PUBLIC API
-        // ══════════════════════════════════════════════════════════
+        public void ActivateQuest(string questId)
+        {
+            if (string.IsNullOrEmpty(questId))
+                return;
 
-        /// <summary>Активировать квест по ID.</summary>
+            if (IsRegistryAmbiguous() || _activeQuests.Contains(questId) || _completedQuests.Contains(questId))
+                return;
+
+            if (!TryResolveQuestData(questId, out QuestData quest))
+            {
+                Debug.LogWarning($"[Quest] Cannot activate unknown questId '{questId}'.");
+                return;
+            }
+
+            _activeQuests.Add(questId);
+            QuestEvents.RaiseActivated(questId);
+
+            string title = quest.DisplayTitleOrFallback;
+            LocalizationManager localization = LocalizationManager.Instance;
+            NotificationEvents.PushInfo(localization != null
+                ? localization.GetFormatted(LocalizationKeys.QUEST_NEW_OBJECTIVE, title)
+                : "NEW OBJECTIVE: " + title);
+        }
+
+        public void CompleteQuest(string questId)
+        {
+            if (string.IsNullOrEmpty(questId))
+                return;
+
+            if (IsRegistryAmbiguous() || !_activeQuests.Contains(questId))
+                return;
+
+            if (!TryResolveQuestData(questId, out QuestData quest))
+            {
+                Debug.LogWarning($"[Quest] Cannot complete unknown questId '{questId}'.");
+                _activeQuests.Remove(questId);
+                return;
+            }
+
+            _activeQuests.Remove(questId);
+            _completedQuests.Add(questId);
+            QuestEvents.RaiseCompleted(questId);
+
+            string title = quest.DisplayTitleOrFallback;
+            LocalizationManager localization = LocalizationManager.Instance;
+            NotificationEvents.PushInfo(localization != null
+                ? localization.GetFormatted(LocalizationKeys.QUEST_COMPLETED, title)
+                : "OBJECTIVE COMPLETED: " + title);
+        }
+
+        public bool IsActive(string questId) => _activeQuests.Contains(questId);
+        public bool IsCompleted(string questId) => _completedQuests.Contains(questId);
+        public void UpdateDepth(float depthMeters) => _currentDepth = depthMeters;
+
+        public NativeArray<uint> CapturePackedStateSnapshot(Allocator allocator)
+        {
+            return new NativeArray<uint>(0, allocator, NativeArrayOptions.ClearMemory);
+        }
+
+        public static void StageLoadedPackedState(uint[] packedWords)
+        {
+        }
+
+        public void PopulateSaveData(SaveData data)
+        {
+            if (data == null)
+                return;
+
+            data.questActiveIds.Clear();
+            data.questCompletedIds.Clear();
+
+            foreach (string id in _activeQuests)
+                data.questActiveIds.Add(id);
+
+            foreach (string id in _completedQuests)
+                data.questCompletedIds.Add(id);
+        }
+
+        public void LoadFromSaveData(SaveData data)
+        {
+            _activeQuests.Clear();
+            _completedQuests.Clear();
+
+            if (data == null || IsRegistryAmbiguous())
+                return;
+
+            if (data.questActiveIds != null)
+            {
+                foreach (string id in data.questActiveIds)
+                {
+                    if (!string.IsNullOrEmpty(id) && TryResolveQuestData(id, out _))
+                        _activeQuests.Add(id);
+                }
+            }
+
+            if (data.questCompletedIds != null)
+            {
+                foreach (string id in data.questCompletedIds)
+                {
+                    if (!string.IsNullOrEmpty(id) && TryResolveQuestData(id, out _))
+                        _completedQuests.Add(id);
+                }
+            }
+        }
+
         private void TryRegister()
         {
             if (_registered)
@@ -214,68 +268,50 @@ namespace Hecton8.Quest
             _registered = false;
         }
 
-        /// <summary>Activate quest by ID.</summary>
-        public void ActivateQuest(string questId)
+        private void SubscribeToEvents()
         {
-            if (string.IsNullOrEmpty(questId)) return;
-            if (IsRegistryAmbiguous()) return;
-            if (_activeQuests.Contains(questId)) return;
-            if (_completedQuests.Contains(questId)) return;
-            if (!TryResolveQuestData(questId, out QuestData q))
-            {
-                Debug.LogWarning($"[Quest] Cannot activate unknown questId '{questId}'.");
-                return;
-            }
-
-            _activeQuests.Add(questId);
-            QuestEvents.RaiseActivated(questId);
-
-            // HUD notification — показываем название квеста если есть в lookup
-            string title = q.DisplayTitleOrFallback;
-            LocalizationManager localization = LocalizationManager.Instance;
-            NotificationEvents.PushInfo(localization != null
-                ? localization.GetFormatted(LocalizationKeys.QUEST_NEW_OBJECTIVE, title)
-                : "NEW OBJECTIVE: " + title);
-
+            InteractionEvents.OnItemCollected += HandleItemCollected;
+            NarrativeEvents.OnDiscoveryMade += HandleDiscoveryMade;
+            NarrativeEvents.OnDepthTierReached += HandleDepthTierReached;
+            AudioLogEvents.OnLogDiscovered += HandleAudioLogDiscovered;
+            HectonCelestialEngine.OnEclipseStart += HandleEclipseStart;
+            AtlasSignalEvents.OnSignalDecoded += HandleSignalDecoded;
         }
 
-        /// <summary>Завершить квест по ID.</summary>
-        public void CompleteQuest(string questId)
+        private void UnsubscribeFromEvents()
         {
-            if (string.IsNullOrEmpty(questId)) return;
-            if (IsRegistryAmbiguous()) return;
-            if (!_activeQuests.Contains(questId)) return;
-            if (!TryResolveQuestData(questId, out QuestData q))
-            {
-                Debug.LogWarning($"[Quest] Cannot complete unknown questId '{questId}'.");
-                _activeQuests.Remove(questId);
-                return;
-            }
-
-            _activeQuests.Remove(questId);
-            _completedQuests.Add(questId);
-            QuestEvents.RaiseCompleted(questId);
-
-            string title = q.DisplayTitleOrFallback;
-            LocalizationManager localization = LocalizationManager.Instance;
-            NotificationEvents.PushInfo(localization != null
-                ? localization.GetFormatted(LocalizationKeys.QUEST_COMPLETED, title)
-                : "OBJECTIVE COMPLETED: " + title);
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[Quest] Completed: {questId}");
-#endif
+            InteractionEvents.OnItemCollected -= HandleItemCollected;
+            NarrativeEvents.OnDiscoveryMade -= HandleDiscoveryMade;
+            NarrativeEvents.OnDepthTierReached -= HandleDepthTierReached;
+            AudioLogEvents.OnLogDiscovered -= HandleAudioLogDiscovered;
+            HectonCelestialEngine.OnEclipseStart -= HandleEclipseStart;
+            AtlasSignalEvents.OnSignalDecoded -= HandleSignalDecoded;
         }
 
-        public bool IsActive(string questId)    => _activeQuests.Contains(questId);
-        public bool IsCompleted(string questId) => _completedQuests.Contains(questId);
+        private void TrySubscribeToBiomeDiscovery()
+        {
+            if (_biomeDiscoveryRegistered)
+                return;
 
-        /// <summary>Обновить текущую глубину (вызывается из HectonSurvivalSystem или NarrativeDirector).</summary>
-        public void UpdateDepth(float depthMeters) => _currentDepth = depthMeters;
+            HectonDiscoveryManager discoveryManager = HectonDiscoveryManager.Instance;
+            if (discoveryManager == null)
+                return;
 
-        // ══════════════════════════════════════════════════════════
-        //  EVENT HANDLERS
-        // ══════════════════════════════════════════════════════════
+            discoveryManager.OnBiomeDiscovered += HandleBiomeDiscovered;
+            _biomeDiscoveryRegistered = true;
+        }
+
+        private void UnsubscribeFromBiomeDiscovery()
+        {
+            if (!_biomeDiscoveryRegistered)
+                return;
+
+            HectonDiscoveryManager discoveryManager = HectonDiscoveryManager.Instance;
+            if (discoveryManager != null)
+                discoveryManager.OnBiomeDiscovered -= HandleBiomeDiscovered;
+
+            _biomeDiscoveryRegistered = false;
+        }
 
         private void HandleDiscoveryMade(string discoveryId)
         {
@@ -314,41 +350,35 @@ namespace Hecton8.Quest
 
         private void HandleDepthTierReached(int tier)
         {
-            // Конвертируем тир в примерную глубину для depth-based квестов
-            float approxDepth = tier switch
+            _currentDepth = tier switch
             {
                 1 => 0f,
                 2 => 100f,
                 3 => 300f,
                 4 => 1000f,
-                _ => 0f
+                _ => 0f,
             };
-            _currentDepth = approxDepth;
         }
-
-        // ══════════════════════════════════════════════════════════
-        //  PRIVATE
-        // ══════════════════════════════════════════════════════════
 
         private void BuildLookup()
         {
             _questLookup.Clear();
             _hasLookupAmbiguity = false;
             _lookupAmbiguitySummary = string.Empty;
+
             for (int i = 0; i < allQuests.Length; i++)
             {
-                QuestData q = allQuests[i];
-                if (q == null || string.IsNullOrEmpty(q.questId))
+                QuestData quest = allQuests[i];
+                if (quest == null || string.IsNullOrEmpty(quest.questId))
                     continue;
 
-                if (_questLookup.TryGetValue(q.questId, out QuestData existing) && !ReferenceEquals(existing, q))
+                if (_questLookup.TryGetValue(quest.questId, out QuestData existing) && !ReferenceEquals(existing, quest))
                 {
-                    RegisterLookupAmbiguity(q.questId, existing, q);
-                    Debug.LogError($"[Quest] Duplicate questId '{q.questId}' between '{existing.name}' and '{q.name}'.", q);
+                    RegisterLookupAmbiguity(quest.questId, existing, quest);
                     continue;
                 }
 
-                _questLookup[q.questId] = q;
+                _questLookup[quest.questId] = quest;
             }
         }
 
@@ -365,53 +395,47 @@ namespace Hecton8.Quest
             if (_questLookup.Count == 0 && allQuests != null && allQuests.Length > 0)
                 BuildLookup();
 
-            if (!_hasLookupAmbiguity)
-                return false;
-
-            Debug.LogError(
-                "[Quest] Quest registry has ambiguous quest IDs. " +
-                $"Operation aborted: {_lookupAmbiguitySummary}");
-            return true;
+            return _hasLookupAmbiguity;
         }
 
         private void RegisterLookupAmbiguity(string questId, QuestData existing, QuestData incoming)
         {
             _hasLookupAmbiguity = true;
-
             if (!string.IsNullOrEmpty(_lookupAmbiguitySummary))
                 return;
 
             string existingName = existing != null ? existing.name : "null";
             string incomingName = incoming != null ? incoming.name : "null";
-            _lookupAmbiguitySummary =
-                $"questId '{questId}' resolves to both '{existingName}' and '{incomingName}'.";
+            _lookupAmbiguitySummary = $"questId '{questId}' resolves to both '{existingName}' and '{incomingName}'.";
         }
 
         private void ProcessTrigger(QuestTriggerType type, string id, float value)
         {
             for (int i = 0; i < allQuests.Length; i++)
             {
-                QuestData q = allQuests[i];
-                if (q == null) continue;
-                if (q.triggerType != type) continue;
-                if (_activeQuests.Contains(q.questId)) continue;
-                if (_completedQuests.Contains(q.questId)) continue;
+                QuestData quest = allQuests[i];
+                if (quest == null || quest.triggerType != type || _activeQuests.Contains(quest.questId) || _completedQuests.Contains(quest.questId))
+                    continue;
 
-                if (q.triggerType == QuestTriggerType.OnBiomeEntered)
+                if (quest.triggerType == QuestTriggerType.OnBiomeEntered)
                 {
-                    if (!Mathf.Approximately(q.triggerValue, value)) continue;
+                    if (!Mathf.Approximately(quest.triggerValue, value))
+                        continue;
                 }
-                else if (q.triggerType == QuestTriggerType.OnItemCollected)
+                else if (quest.triggerType == QuestTriggerType.OnItemCollected)
                 {
-                    if (!string.IsNullOrEmpty(q.triggerId) && q.triggerId != id) continue;
-                    if (q.triggerValue > 0f && value < q.triggerValue) continue;
+                    if (!string.IsNullOrEmpty(quest.triggerId) && quest.triggerId != id)
+                        continue;
+
+                    if (quest.triggerValue > 0f && value < quest.triggerValue)
+                        continue;
                 }
-                else if (!string.IsNullOrEmpty(q.triggerId) && q.triggerId != id)
+                else if (!string.IsNullOrEmpty(quest.triggerId) && quest.triggerId != id)
                 {
                     continue;
                 }
 
-                ActivateQuest(q.questId);
+                ActivateQuest(quest.questId);
             }
         }
 
@@ -419,72 +443,30 @@ namespace Hecton8.Quest
         {
             for (int i = 0; i < allQuests.Length; i++)
             {
-                QuestData q = allQuests[i];
-                if (q == null) continue;
-                if (q.completionType != type) continue;
-                if (!_activeQuests.Contains(q.questId)) continue;
+                QuestData quest = allQuests[i];
+                if (quest == null || quest.completionType != type || !_activeQuests.Contains(quest.questId))
+                    continue;
 
-                if (q.completionType == QuestCompletionType.OnBiomeEntered)
+                if (quest.completionType == QuestCompletionType.OnBiomeEntered)
                 {
-                    if (!Mathf.Approximately(q.completionValue, value)) continue;
+                    if (!Mathf.Approximately(quest.completionValue, value))
+                        continue;
                 }
-                else if (q.completionType == QuestCompletionType.OnItemCollected)
+                else if (quest.completionType == QuestCompletionType.OnItemCollected)
                 {
-                    if (!string.IsNullOrEmpty(q.completionId) && q.completionId != id) continue;
-                    if (q.completionValue > 0f && value < q.completionValue) continue;
+                    if (!string.IsNullOrEmpty(quest.completionId) && quest.completionId != id)
+                        continue;
+
+                    if (quest.completionValue > 0f && value < quest.completionValue)
+                        continue;
                 }
-                else if (!string.IsNullOrEmpty(q.completionId) && q.completionId != id)
+                else if (!string.IsNullOrEmpty(quest.completionId) && quest.completionId != id)
                 {
                     continue;
                 }
 
-                CompleteQuest(q.questId);
+                CompleteQuest(quest.questId);
             }
-        }
-
-        private void SubscribeToEvents()
-        {
-            InteractionEvents.OnItemCollected    += HandleItemCollected;
-            NarrativeEvents.OnDiscoveryMade      += HandleDiscoveryMade;
-            NarrativeEvents.OnDepthTierReached   += HandleDepthTierReached;
-            AudioLogEvents.OnLogDiscovered       += HandleAudioLogDiscovered;
-            HectonCelestialEngine.OnEclipseStart += HandleEclipseStart;
-            AtlasSignalEvents.OnSignalDecoded    += HandleSignalDecoded;
-        }
-
-        private void UnsubscribeFromEvents()
-        {
-            InteractionEvents.OnItemCollected    -= HandleItemCollected;
-            NarrativeEvents.OnDiscoveryMade      -= HandleDiscoveryMade;
-            NarrativeEvents.OnDepthTierReached   -= HandleDepthTierReached;
-            AudioLogEvents.OnLogDiscovered       -= HandleAudioLogDiscovered;
-            HectonCelestialEngine.OnEclipseStart -= HandleEclipseStart;
-            AtlasSignalEvents.OnSignalDecoded    -= HandleSignalDecoded;
-        }
-
-        private void TrySubscribeToBiomeDiscovery()
-        {
-            if (_biomeDiscoveryRegistered)
-                return;
-
-            HectonDiscoveryManager discoveryManager = HectonDiscoveryManager.Instance;
-            if (discoveryManager == null)
-                return;
-
-            discoveryManager.OnBiomeDiscovered += HandleBiomeDiscovered;
-            _biomeDiscoveryRegistered = true;
-        }
-
-        private void UnsubscribeFromBiomeDiscovery()
-        {
-            if (!_biomeDiscoveryRegistered)
-                return;
-
-            HectonDiscoveryManager discoveryManager = HectonDiscoveryManager.Instance;
-            if (discoveryManager != null)
-                discoveryManager.OnBiomeDiscovered -= HandleBiomeDiscovered;
-
-            _biomeDiscoveryRegistered = false;
         }
 
 #if UNITY_EDITOR
@@ -493,7 +475,7 @@ namespace Hecton8.Quest
             if (allQuests != null && allQuests.Length > 0)
                 return;
 
-            string[] guids = AssetDatabase.FindAssets("t:QuestData", new[] { kQuestFolder });
+            string[] guids = AssetDatabase.FindAssets("t:QuestData", new[] { QuestFolder });
             if (guids == null || guids.Length == 0)
                 return;
 
@@ -519,50 +501,5 @@ namespace Hecton8.Quest
             EditorUtility.SetDirty(this);
         }
 #endif
-
-        // ══════════════════════════════════════════════════════════
-        //  ISaveable
-        // ══════════════════════════════════════════════════════════
-
-        public void PopulateSaveData(SaveData data)
-        {
-            if (data == null) return;
-
-            data.questActiveIds.Clear();
-            data.questCompletedIds.Clear();
-
-            foreach (string id in _activeQuests)
-                data.questActiveIds.Add(id);
-
-            foreach (string id in _completedQuests)
-                data.questCompletedIds.Add(id);
-        }
-
-        public void LoadFromSaveData(SaveData data)
-        {
-            _activeQuests.Clear();
-            _completedQuests.Clear();
-
-            if (data == null) return;
-            if (IsRegistryAmbiguous()) return;
-
-            if (data.questActiveIds != null)
-                foreach (string id in data.questActiveIds)
-                    if (!string.IsNullOrEmpty(id) && TryResolveQuestData(id, out _))
-                        _activeQuests.Add(id);
-                    else if (!string.IsNullOrEmpty(id))
-                        Debug.LogWarning($"[Quest] Save references unknown active questId '{id}'. Skipping.");
-
-            if (data.questCompletedIds != null)
-                foreach (string id in data.questCompletedIds)
-                    if (!string.IsNullOrEmpty(id) && TryResolveQuestData(id, out _))
-                        _completedQuests.Add(id);
-                    else if (!string.IsNullOrEmpty(id))
-                        Debug.LogWarning($"[Quest] Save references unknown completed questId '{id}'. Skipping.");
-
-            HashSet<string>.Enumerator completedEnumerator = _completedQuests.GetEnumerator();
-            while (completedEnumerator.MoveNext())
-                _activeQuests.Remove(completedEnumerator.Current);
-        }
     }
 }

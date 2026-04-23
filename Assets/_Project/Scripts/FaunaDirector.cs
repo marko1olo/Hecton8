@@ -2386,7 +2386,7 @@ namespace Hecton8.AI
                     continue;
                 }
 
-                if (creature.gameObject.GetInstanceID() != instanceId)
+                if (unchecked((int)EntityId.ToULong(creature.gameObject.GetEntityId())) != instanceId)
                     continue;
 
                 if (pool != null)

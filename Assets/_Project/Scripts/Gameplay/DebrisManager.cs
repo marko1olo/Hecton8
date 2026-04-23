@@ -5,6 +5,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
+using BurstRandom = Unity.Mathematics.Random;
 
 namespace Hecton8.Gameplay
 {
@@ -311,7 +312,7 @@ namespace Hecton8.Gameplay
                 if (requiredSlots <= 0 || CountFreeSlots() < requiredSlots)
                     continue;
 
-                Random rng = new Random(request.Seed != 0u ? request.Seed : 1u);
+                BurstRandom rng = new BurstRandom(request.Seed != 0u ? request.Seed : 1u);
                 float power = math.max(MinimumPower, request.Power01);
                 float3 hitNormal = math.normalizesafe(
                     new float3(request.RuntimeHitNormal.x, request.RuntimeHitNormal.y, request.RuntimeHitNormal.z),
@@ -464,7 +465,7 @@ namespace Hecton8.Gameplay
                     renderingLayerMask = _batchLayerMasks[batchIndex]
                 };
                 Graphics.RenderMeshInstanced(
-                    ref renderParams,
+                    renderParams,
                     _batchMeshes[batchIndex],
                     0,
                     _batchInstanceData,
@@ -711,7 +712,7 @@ namespace Hecton8.Gameplay
 
             public void Execute()
             {
-                Random rng = new Random(RandomSeed != 0u ? RandomSeed : 1u);
+                BurstRandom rng = new BurstRandom(RandomSeed != 0u ? RandomSeed : 1u);
                 float dt = math.max(0.0001f, DeltaTime);
 
                 for (int i = 0; i < ReadStates.Length; i++)

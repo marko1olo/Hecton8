@@ -276,14 +276,14 @@ namespace Hecton8.World
             int vertexBase = index * 8;
             int indexBase = index * 36;
 
-            float3 p0 = math.transform(placement.Rotation, new float3(-halfExtents.x, -halfExtents.y, -halfExtents.z)) + localCenter;
-            float3 p1 = math.transform(placement.Rotation, new float3(halfExtents.x, -halfExtents.y, -halfExtents.z)) + localCenter;
-            float3 p2 = math.transform(placement.Rotation, new float3(halfExtents.x, halfExtents.y, -halfExtents.z)) + localCenter;
-            float3 p3 = math.transform(placement.Rotation, new float3(-halfExtents.x, halfExtents.y, -halfExtents.z)) + localCenter;
-            float3 p4 = math.transform(placement.Rotation, new float3(-halfExtents.x, -halfExtents.y, halfExtents.z)) + localCenter;
-            float3 p5 = math.transform(placement.Rotation, new float3(halfExtents.x, -halfExtents.y, halfExtents.z)) + localCenter;
-            float3 p6 = math.transform(placement.Rotation, new float3(halfExtents.x, halfExtents.y, halfExtents.z)) + localCenter;
-            float3 p7 = math.transform(placement.Rotation, new float3(-halfExtents.x, halfExtents.y, halfExtents.z)) + localCenter;
+            float3 p0 = math.rotate(placement.Rotation, new float3(-halfExtents.x, -halfExtents.y, -halfExtents.z)) + localCenter;
+            float3 p1 = math.rotate(placement.Rotation, new float3(halfExtents.x, -halfExtents.y, -halfExtents.z)) + localCenter;
+            float3 p2 = math.rotate(placement.Rotation, new float3(halfExtents.x, halfExtents.y, -halfExtents.z)) + localCenter;
+            float3 p3 = math.rotate(placement.Rotation, new float3(-halfExtents.x, halfExtents.y, -halfExtents.z)) + localCenter;
+            float3 p4 = math.rotate(placement.Rotation, new float3(-halfExtents.x, -halfExtents.y, halfExtents.z)) + localCenter;
+            float3 p5 = math.rotate(placement.Rotation, new float3(halfExtents.x, -halfExtents.y, halfExtents.z)) + localCenter;
+            float3 p6 = math.rotate(placement.Rotation, new float3(halfExtents.x, halfExtents.y, halfExtents.z)) + localCenter;
+            float3 p7 = math.rotate(placement.Rotation, new float3(-halfExtents.x, halfExtents.y, halfExtents.z)) + localCenter;
 
             Positions[vertexBase + 0] = p0;
             Positions[vertexBase + 1] = p1;
@@ -1068,7 +1068,7 @@ namespace Hecton8.World
 
         private static float ComputeEntropy(ushort mask)
         {
-            int optionCount = math.countbits(mask);
+            int optionCount = math.countbits((uint)mask);
             if (optionCount <= 0)
                 return float.MaxValue;
 
@@ -1084,7 +1084,7 @@ namespace Hecton8.World
 
         private byte SelectModuleFromMask(ushort mask, int moduleCount, ref XorShift128State rng)
         {
-            int optionCount = math.countbits(mask);
+            int optionCount = math.countbits((uint)mask);
             if (optionCount <= 0)
                 return 0;
 

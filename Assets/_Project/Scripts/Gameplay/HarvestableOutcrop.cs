@@ -232,7 +232,7 @@ namespace Hecton8.Gameplay
             if (debrisService == null || !debrisService.IsInitialized || debrisProfile == null || !debrisProfile.IsValid)
                 return;
 
-            uint seed = unchecked((uint)Mathf.Abs(GetInstanceID())) ^ (uint)(Time.frameCount + 1);
+            uint seed = unchecked((uint)EntityId.ToULong(GetEntityId())) ^ (uint)(Time.frameCount + 1);
             debrisService.SpawnBurst(
                 debrisProfile,
                 _cachedTransform.position,
@@ -276,7 +276,7 @@ namespace Hecton8.Gameplay
             if (_resolvedLootItems == null || _resolvedLootItems.Length == 0)
                 return null;
 
-            uint seed = unchecked((uint)Mathf.Abs(GetInstanceID())) ^ (uint)Mathf.CeilToInt(toolPower * 100f);
+            uint seed = unchecked((uint)EntityId.ToULong(GetEntityId())) ^ (uint)Mathf.CeilToInt(toolPower * 100f);
             int index = (int)(seed % (uint)_resolvedLootItems.Length);
             return _resolvedLootItems[index];
         }

@@ -47,6 +47,8 @@ namespace Hecton8.Physics
         private const uint FlagOverflow = 1u << 7;
         private const uint PersistentFlagsMask = FlagBreached | FlagPurging | FlagFrozen;
 
+        // Inspector-authored DTO. Unity serialization populates these fields outside constructor flow.
+#pragma warning disable CS0649
         [System.Serializable]
         private struct CompartmentDefinition
         {
@@ -80,6 +82,7 @@ namespace Hecton8.Physics
             [Tooltip("When true, fluid transfer across this bulkhead pair halts immediately.")]
             public bool isSealed;
         }
+#pragma warning restore CS0649
 
         [Header("── Compartments ──────────────────")]
         [Tooltip("Authored compartment capacities, breach openings, and local centroids. Maximum supported count is eight.")]
