@@ -362,16 +362,27 @@ namespace Hecton8.World
                     if (!_retainedPlansByKey.TryGetValue(runtimeKey, out plan))
                         continue;
 
-                    Vector3 worldPosition = binding.transform.position;
-                    float playerDistance = Vector3.Distance(playerTransform.position, worldPosition);
+                    Vector3 runtimeWorldPosition = binding.transform.position;
+                    float playerDistance = Vector3.Distance(playerTransform.position, runtimeWorldPosition);
                     float residencyRadius = searchRadius + Mathf.Max(4f, plan.seamBlendRadius);
                     if (playerDistance > residencyRadius)
                         continue;
 
-                    plan.worldPosition = worldPosition;
+                    plan.absoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimeWorldPosition);
                     plan.worldRotation = binding.transform.rotation;
                     plan.worldScale = binding.transform.lossyScale;
                     plan.playerDistance = playerDistance;
+                    float terrainHeight = 0f;
+                    bool hasTerrainSample = mapMagicBridge != null && mapMagicBridge.TryGetHeight(runtimeWorldPosition.x, runtimeWorldPosition.z, out terrainHeight);
+                    float voxelCenterY = hasTerrainSample
+                        ? terrainHeight - plan.suggestedTerrainCut * 0.35f + plan.voxelVolumeSize.y * 0.5f
+                        : runtimeWorldPosition.y;
+                    Vector3 runtimeTerrainPosition = new Vector3(runtimeWorldPosition.x, hasTerrainSample ? terrainHeight : runtimeWorldPosition.y, runtimeWorldPosition.z);
+                    plan.hasTerrainSample = hasTerrainSample;
+                    plan.absoluteTerrainHeight = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimeTerrainPosition).y;
+                    plan.terrainDelta = hasTerrainSample ? runtimeWorldPosition.y - terrainHeight : 0f;
+                    plan.absoluteVoxelVolumeCenter = HectonFloatingOrigin.ToAbsoluteUniversePosition(
+                        new Vector3(runtimeWorldPosition.x, voxelCenterY, runtimeWorldPosition.z));
                 }
 
                 _plansByKey[runtimeKey] = plan;
@@ -449,7 +460,9 @@ namespace Hecton8.World
                 return false;
 
             Transform targetTransform = binding.transform;
-            float playerDistance = Vector3.Distance(playerTransform.position, targetTransform.position);
+            Vector3 runtimeWorldPosition = targetTransform.position;
+            Vector3 absoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimeWorldPosition);
+            float playerDistance = Vector3.Distance(playerTransform.position, runtimeWorldPosition);
             float residencyRadius = searchRadius + Mathf.Max(4f, binding.SeamBlendRadius);
             if (playerDistance > residencyRadius)
                 return false;
@@ -457,13 +470,13 @@ namespace Hecton8.World
             WorldProceduralProxyInstance metadata = binding.CachedProxyInstance;
             long runtimeKey = binding.RuntimeKey != 0L
                 ? binding.RuntimeKey
-                : (binding.CachedProxyRuntimeKey != 0L ? binding.CachedProxyRuntimeKey : targetTransform.position.GetHashCode());
+                : (binding.CachedProxyRuntimeKey != 0L ? binding.CachedProxyRuntimeKey : absoluteUniversePosition.GetHashCode());
             if (runtimeKey == 0L)
                 return false;
 
             float terrainHeight = 0f;
-            bool hasTerrainSample = mapMagicBridge != null && mapMagicBridge.TryGetHeight(targetTransform.position.x, targetTransform.position.z, out terrainHeight);
-            float terrainDelta = hasTerrainSample ? targetTransform.position.y - terrainHeight : 0f;
+            bool hasTerrainSample = mapMagicBridge != null && mapMagicBridge.TryGetHeight(runtimeWorldPosition.x, runtimeWorldPosition.z, out terrainHeight);
+            float terrainDelta = hasTerrainSample ? runtimeWorldPosition.y - terrainHeight : 0f;
             float terrainAnchor = hasTerrainSample
                 ? 1f - Mathf.Clamp01(Mathf.Abs(terrainDelta) / Mathf.Max(6f, terrainDeltaBlendWindow))
                 : 0.45f;
@@ -483,17 +496,20 @@ namespace Hecton8.World
 
             WorldChunkCoordinate chunkCoord = metadata != null
                 ? metadata.ChunkCoord
-                : WorldChunkCoordinate.FromWorldPosition(targetTransform.position, ResolveChunkSize());
+                : WorldChunkCoordinate.FromWorldPosition(absoluteUniversePosition, ResolveChunkSize());
             bool hasMacroZone = metadata != null && metadata.HasMacroZone;
             WorldMacroZoneCoordinate macroZoneCoord = hasMacroZone
                 ? metadata.MacroZoneCoord
-                : WorldMacroZoneCoordinate.FromWorldPosition(targetTransform.position, ResolveMacroZoneSize());
+                : WorldMacroZoneCoordinate.FromWorldPosition(absoluteUniversePosition, ResolveMacroZoneSize());
             float blendRadius = Mathf.Max(2f, binding.SeamBlendRadius);
             float voxelHeight = Mathf.Max(10f, binding.SuggestedTerrainRaise + binding.SuggestedTerrainCut + blendRadius * 0.75f);
             Vector3 voxelSize = new Vector3(blendRadius * 2f, voxelHeight, blendRadius * 2f);
             float voxelCenterY = hasTerrainSample
                 ? terrainHeight - binding.SuggestedTerrainCut * 0.35f + voxelHeight * 0.5f
-                : targetTransform.position.y;
+                : runtimeWorldPosition.y;
+            Vector3 runtimeVoxelVolumeCenter = new Vector3(runtimeWorldPosition.x, voxelCenterY, runtimeWorldPosition.z);
+            Vector3 absoluteTerrainPosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(
+                new Vector3(runtimeWorldPosition.x, hasTerrainSample ? terrainHeight : runtimeWorldPosition.y, runtimeWorldPosition.z));
 
             plan = new WorldGenerativeGeologySeamPlan
             {
@@ -510,12 +526,12 @@ namespace Hecton8.World
                 hasMacroZone = hasMacroZone,
                 macroZoneX = macroZoneCoord.x,
                 macroZoneZ = macroZoneCoord.z,
-                worldPosition = targetTransform.position,
+                absoluteUniversePosition = absoluteUniversePosition,
                 worldRotation = targetTransform.rotation,
                 worldScale = targetTransform.lossyScale,
                 playerDistance = playerDistance,
                 hasTerrainSample = hasTerrainSample,
-                terrainHeight = terrainHeight,
+                absoluteTerrainHeight = absoluteTerrainPosition.y,
                 terrainDelta = terrainDelta,
                 seamBlendRadius = blendRadius,
                 suggestedTerrainRaise = binding.SuggestedTerrainRaise,
@@ -531,7 +547,7 @@ namespace Hecton8.World
                 caveBlendWeight = voxelWeight,
                 debrisWeight = debrisWeight,
                 planWeight = planWeight,
-                voxelVolumeCenter = new Vector3(targetTransform.position.x, voxelCenterY, targetTransform.position.z),
+                absoluteVoxelVolumeCenter = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimeVoxelVolumeCenter),
                 voxelVolumeSize = voxelSize
             };
 
@@ -654,7 +670,7 @@ namespace Hecton8.World
                 Gizmos.DrawWireSphere(plan.TerrainContactPosition, plan.seamBlendRadius);
 
                 if (plan.RequiresVoxelBlend)
-                    Gizmos.DrawWireCube(plan.voxelVolumeCenter, plan.voxelVolumeSize);
+                    Gizmos.DrawWireCube(plan.RuntimeVoxelVolumeCenter, plan.voxelVolumeSize);
             }
         }
     }

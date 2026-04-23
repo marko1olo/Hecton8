@@ -43,7 +43,7 @@ namespace Hecton8.SaveSystem
         public float totalPlayTime;
 
         /// <summary>Текущая версия формата. Используется для миграции.</summary>
-        public const int CurrentVersion = 36; // v36: module-local logistics transit, sorter buffer, and deep drill output persisted inside construction DTO
+        public const int CurrentVersion = 37; // v37: voxel delta persistence snapshot added for carved voxel chunks
 
         // ─────────────────────── DTO Sections ────────────────────
 
@@ -66,6 +66,7 @@ namespace Hecton8.SaveSystem
         public ResourceScarcityDTO resourceScarcity;
         public EnvironmentalStrainDTO environmentalStrain;
         public EcosystemStateDTO ecosystemState;
+        public VoxelDeltaPersistenceDTO voxelDeltaPersistence;
 
         /// <summary>Прочность инструментов (toolID → durability). v2.0 ENTERPRISE</summary>
         public Dictionary<string, float> toolDurabilityMap = new Dictionary<string, float>();
@@ -205,6 +206,7 @@ namespace Hecton8.SaveSystem
                 resourceScarcity = new ResourceScarcityDTO(),
                 environmentalStrain = new EnvironmentalStrainDTO(),
                 ecosystemState = new EcosystemStateDTO(),
+                voxelDeltaPersistence = VoxelDeltaPersistenceDTO.CreateDefault(),
                 discoveredBiomeIds = null,
                 // COLD ALLOC: long[BiomeDiscoveryBitMask.WordCount] — packed discovered biome persistence — owner: SaveData
                 discoveredBiomeBitWords = new long[BiomeDiscoveryBitMask.WordCount],

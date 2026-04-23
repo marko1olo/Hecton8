@@ -73,6 +73,12 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
 
         float4 _SargassumCutMaskWorldRect;
         float4 _HectonFloatingOriginOffset;
+        float4 _HectonNoirResolveSettings;
+        float4 _HectonNoirFogStratification;
+        float4 _HectonNoirCausticsLayerA;
+        float4 _HectonNoirCausticsLayerB;
+        float4 _HectonNoirCausticsShape;
+        float4 _HectonNoirCaveAttenuation;
         float _SargassumCutMaskActive;
         float _HectonVoxelSSAOActive;
         int _HectonRecentCutHeatCount;
@@ -138,7 +144,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         {
             float skirtMask = saturate(skirtAlpha);
             float gradientBias = skirtMask * skirtMask;
-            float clipBias = gradientBias * _SkirtDepthBias * positionCS.w;
+            float clipBias = gradientBias * _SkirtDepthBias * max(positionCS.w, 0.0001);
             #if UNITY_REVERSED_Z
             positionCS.z += clipBias;
             #else
@@ -156,6 +162,37 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         {
             float2 pixel = floor(positionCS);
             return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+        }
+
+        float Hash31(float3 value)
+        {
+            value = frac(value * 0.1031);
+            value += dot(value, value.yzx + 33.33);
+            return frac((value.x + value.y) * value.z);
+        }
+
+        float ValueNoise3(float3 value)
+        {
+            float3 cell = floor(value);
+            float3 fracValue = frac(value);
+            float3 smoothValue = fracValue * fracValue * (3.0 - 2.0 * fracValue);
+
+            float n000 = Hash31(cell + float3(0.0, 0.0, 0.0));
+            float n100 = Hash31(cell + float3(1.0, 0.0, 0.0));
+            float n010 = Hash31(cell + float3(0.0, 1.0, 0.0));
+            float n110 = Hash31(cell + float3(1.0, 1.0, 0.0));
+            float n001 = Hash31(cell + float3(0.0, 0.0, 1.0));
+            float n101 = Hash31(cell + float3(1.0, 0.0, 1.0));
+            float n011 = Hash31(cell + float3(0.0, 1.0, 1.0));
+            float n111 = Hash31(cell + float3(1.0, 1.0, 1.0));
+
+            float nx00 = lerp(n000, n100, smoothValue.x);
+            float nx10 = lerp(n010, n110, smoothValue.x);
+            float nx01 = lerp(n001, n101, smoothValue.x);
+            float nx11 = lerp(n011, n111, smoothValue.x);
+            float nxy0 = lerp(nx00, nx10, smoothValue.y);
+            float nxy1 = lerp(nx01, nx11, smoothValue.y);
+            return lerp(nxy0, nxy1, smoothValue.z);
         }
 
         float3 ResolveSamplePositionWS(float3 positionWS)
@@ -241,18 +278,58 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             return SAMPLE_TEXTURE2D_LOD(_HectonVoxelSSAOTex, sampler_HectonVoxelSSAOTex, screenUV, 0).r;
         }
 
-        half ResolveLocalLightCaustic(float3 positionWS, half3 normalWS)
+        half ResolveNoirVoxelCaustic(float3 absolutePositionWS, half3 normalWS, float4 positionCS)
         {
-            float3 samplePositionWS = ResolveSamplePositionWS(positionWS);
+            float waterDepth = max(0.0, _HectonNoirFogStratification.x - absolutePositionWS.y);
+            float depthFade = 1.0 - saturate((waterDepth - _HectonNoirCausticsShape.z) / max(_HectonNoirCausticsShape.w, 0.25));
+            if (depthFade <= 0.0)
+                return 1.0h;
+
+            float timePhase = _Time.y;
+            float3 layerABasis = absolutePositionWS * max(_HectonNoirCausticsLayerA.x, 0.02);
+            float3 layerBSampleAnchor = absolutePositionWS * max(_HectonNoirCausticsLayerB.x, 0.02);
+            float3 layerAInput = float3(
+                layerABasis.x + timePhase * _HectonNoirCausticsLayerA.y,
+                layerABasis.y * 0.23 + timePhase * (_HectonNoirCausticsLayerA.y * 0.31 + _HectonNoirCausticsLayerA.z * 0.17),
+                layerABasis.z + timePhase * _HectonNoirCausticsLayerA.z);
+            float distortion = (ValueNoise3(layerAInput * 0.73 + 7.1) * 2.0 - 1.0) * _HectonNoirCausticsShape.y;
+            float3 layerBInput = float3(
+                layerBSampleAnchor.x + timePhase * _HectonNoirCausticsLayerB.y + distortion,
+                layerBSampleAnchor.y * 0.19 + timePhase * (_HectonNoirCausticsLayerB.y * 0.27 + _HectonNoirCausticsLayerB.z * 0.23),
+                layerBSampleAnchor.z + timePhase * _HectonNoirCausticsLayerB.z - distortion);
+            half layerA = (half)ValueNoise3(layerAInput);
+            half layerB = (half)ValueNoise3(layerBInput);
+            half causticRaw = pow(saturate(layerA * layerB), (half)max(_HectonNoirCausticsShape.x, 1.0));
+            half upFacingMask = saturate(normalWS.y * 1.25h);
+            half caveOcclusion = 1.0h - SampleVoxelAmbientOcclusion(positionCS);
+            half caveFade = saturate(1.0h - caveOcclusion * _HectonNoirCaveAttenuation.x);
+            half strength = saturate((_HectonNoirCausticsLayerA.w + _HectonNoirCausticsLayerB.w) * depthFade);
+            return lerp(1.0h, 1.0h + causticRaw * strength * caveFade, upFacingMask);
+        }
+
+        half ResolveLocalLightCaustic(float3 absolutePositionWS, half3 normalWS, float4 positionCS)
+        {
+            if (_HectonNoirResolveSettings.z > 0.5h)
+                return ResolveNoirVoxelCaustic(absolutePositionWS, normalWS, positionCS);
+
             float scale = max(_LocalCausticScale, 0.05);
-            float2 causticUv = samplePositionWS.xz * scale
-                + float2(_Time.y * _LocalCausticSpeed, _Time.y * (_LocalCausticSpeed * 0.63));
-            float primaryWave = sin(causticUv.x * 1.9 + sin(causticUv.y * 1.3));
-            float secondaryWave = cos(causticUv.y * 2.2 - causticUv.x * 0.85);
-            float interference = sin((causticUv.x + causticUv.y) * 1.27 + _Time.y * (_LocalCausticSpeed * 0.41));
-            half normalMod = saturate(0.4h + dot(abs(normalWS), half3(0.28h, 0.18h, 0.28h)));
-            half caustic = saturate(0.58h + (primaryWave * secondaryWave + interference * 0.45h) * _LocalCausticStrength);
-            return lerp(1.0h, caustic, saturate(_LocalCausticStrength * normalMod));
+            float speed = max(_LocalCausticSpeed, 0.0);
+            float timePhase = _Time.y * speed;
+            float3 causticBasis = absolutePositionWS * scale;
+            float3 layerASample = float3(
+                causticBasis.x + timePhase * 0.83,
+                causticBasis.y * 0.27 + timePhase * 0.19,
+                causticBasis.z + timePhase * 0.56);
+            float3 layerBSample = float3(
+                causticBasis.x * 1.37 - timePhase * 0.41 + 13.1,
+                causticBasis.y * 0.19 + timePhase * 0.23 + 7.3,
+                causticBasis.z * 1.37 + timePhase * 0.91 + 5.7);
+            half layerA = (half)ValueNoise3(layerASample);
+            half layerB = (half)ValueNoise3(layerBSample);
+            half causticRaw = pow(saturate(layerA * layerB), 3.0h);
+            half upFacingMask = saturate(normalWS.y * 0.9h + 0.1h);
+            half causticMask = saturate(_LocalCausticStrength * upFacingMask);
+            return lerp(1.0h, 1.0h + causticRaw * _LocalCausticStrength, causticMask);
         }
 
         void EvaluateRecentCutHeat(float3 positionWS, out half heatMask, out half age01)
@@ -427,7 +504,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 half metallic = 0.0h;
                 half smoothness = saturate(lerp(_Smoothness, 0.88h, scarMask * 0.65h) + convexMask * (_CurvatureEdgeWearStrength * 0.08h));
                 half ambientOcclusion = saturate(maskSample.g * (1.0h - cavityMask * _CurvatureCavityDarkenStrength)) * SampleVoxelAmbientOcclusion(input.positionCS);
-                half localCausticMask = ResolveLocalLightCaustic(input.positionWS, normalWS);
+                half localCausticMask = ResolveLocalLightCaustic(samplePositionWS, normalWS, input.positionCS);
 
                 half3 litColor = EvaluateLighting(input.positionWS, normalWS, normalize(input.viewDirWS), albedo, metallic, smoothness, ambientOcclusion, localCausticMask);
                 half thermalEmission = _CutScarEmission * recentHeatMask * lerp(0.22h, 1.0h, saturate(1.0h - recentHeatAge01));

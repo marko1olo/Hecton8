@@ -160,6 +160,7 @@ namespace Hecton.Localization
 
             LoadAllTables();
             RestoreSavedLanguage();
+            RefreshRuntimeRegistry();
         }
 
 #if UNITY_EDITOR
@@ -578,6 +579,9 @@ namespace Hecton.Localization
 
                 table[key] = enumerator.Current.Value ?? string.Empty;
             }
+
+            if (CurrentLanguage == language || language == GameLanguage.English)
+                RefreshRuntimeRegistry();
 
             if (CurrentLanguage == language)
                 OnLanguageChanged?.Invoke(language);
@@ -1469,8 +1473,14 @@ namespace Hecton.Localization
         private void PublishVisualLanguageState()
         {
             _lastPublishedVisualBucket = int.MinValue;
+            RefreshRuntimeRegistry();
             OnLanguageChanged?.Invoke(CurrentLanguage);
             OnCorruptionVisualStateChanged?.Invoke();
+        }
+
+        private void RefreshRuntimeRegistry()
+        {
+            LocRegistry.Reload(_tables, CurrentLanguage);
         }
 
         private static void SavePersistentLanguagePreference(GameLanguage language)

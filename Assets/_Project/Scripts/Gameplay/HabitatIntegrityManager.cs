@@ -1,0 +1,637 @@
+// ============================================================================
+// HECTON-8 — HabitatIntegrityManager.cs
+// Per-module habitat flood controller. Adds normalized pressure-flood math,
+// logistics rupture coupling, and breathable-reserve aggregation on top of the
+// existing BaseModule binary flood/save owner.
+// ============================================================================
+
+using Hecton8.Atmosphere;
+using Hecton8.Core;
+using Hecton8.Power;
+using Hecton8.World;
+using System.Collections.Generic;
+using Unity.Mathematics;
+using UnityEngine;
+
+namespace Hecton8.Gameplay
+{
+    /// <summary>
+    /// Ordered trauma severity used by downstream damage receivers.
+    /// </summary>
+    public enum TraumaLevel : byte
+    {
+        None = 0,
+        Minor = 1,
+        Significant = 2,
+        Critical = 3,
+        Catastrophic = 4
+    }
+
+    /// <summary>
+    /// Damage-type bitmask used by the habitat breach receiver contract.
+    /// </summary>
+    [System.Flags]
+    public enum DamageTypeMask : uint
+    {
+        None = 0,
+        Pressure = 1u << 0,
+        Thermal = 1u << 1,
+        Impact = 1u << 2,
+        Parasite = 1u << 3
+    }
+
+    /// <summary>
+    /// Canonical event packet for integrity/power/clarity damage signals.
+    /// </summary>
+    public struct DamageSignal
+    {
+        public float magnitude;
+        public float3 localPoint;
+        public uint damageType;
+        public byte integrityDelta;
+        public float depth;
+        public ushort sourceID;
+    }
+
+    /// <summary>
+    /// Event-only damage receiver contract. Downstream systems consume damage via callbacks, not polling.
+    /// </summary>
+    public interface IDamageReceiver
+    {
+        /// <summary>Receives an integrity-channel change.</summary>
+        void OnIntegrityChanged(float prev, float next, DamageSignal src);
+
+        /// <summary>Receives a power-channel change.</summary>
+        void OnPowerChanged(float prev, float next, DamageSignal src);
+
+        /// <summary>Receives a clarity-channel change.</summary>
+        void OnClarityChanged(float prev, float next, DamageSignal src);
+
+        /// <summary>Receives a discrete trauma threshold crossing.</summary>
+        void OnTraumaThresholdCrossed(TraumaLevel level);
+
+        /// <summary>Receives a confirmed hull breach for the owning zone.</summary>
+        void OnHullBreach(float3 localPoint, float depth, float pressureDelta);
+    }
+
+    /// <summary>
+    /// Event emitter contract for habitat and vehicle owners that can stream damage channels to listeners.
+    /// </summary>
+    public interface IDamageSignalEmitter
+    {
+        /// <summary>Registers a damage receiver for channel callbacks.</summary>
+        void RegisterDamageReceiver(IDamageReceiver receiver);
+
+        /// <summary>Unregisters a previously registered damage receiver.</summary>
+        void UnregisterDamageReceiver(IDamageReceiver receiver);
+    }
+
+    internal static class DamageSourceIds
+    {
+        public const ushort HabitatIntegrity = 1;
+        public const ushort MountableTransport = 2;
+        public const ushort MantaScooter = 3;
+    }
+
+    [DisallowMultipleComponent]
+    [RequireComponent(typeof(BaseModule))]
+    [DefaultExecutionOrder(-5600)] // Registers before PowerGridManager so rupture flags land ahead of the balance pass.
+    public sealed class HabitatIntegrityManager : MonoBehaviour, ISlowTickable, IDamageReceiver, IDamageSignalEmitter
+    {
+        private const float HabitatStepInterval = 0.1f;
+        private const float DefaultSlowTickInterval = 0.5f;
+        private const float BasePressureAtm = 1f;
+        private const float BreachDepthThresholdMeters = 200f;
+        private const float HighPressureJetDepthMeters = 1000f;
+        private const float BreachIntegrityThreshold = 0.4f;
+        private const float FloodedReserveCutoff = 0.3f;
+        private const float NearDryThreshold = 0.01f;
+        private const int MaxStepIterationsPerSlowTick = 8;
+
+        private static float s_globalBaseOxygenReserve;
+        private static float s_globalBaseOxygenCapacity;
+
+        [Header("── Flood Settings ──────────────────")]
+        [Tooltip("Normalized pump authority used in drainRate = pumpPower * 0.015.")]
+        [SerializeField, Range(0f, 1f)] private float pumpPowerNormalized = 1f;
+
+        [Tooltip("Extra CO2 contamination multiplier applied when flood water enters the habitat volume.")]
+        [SerializeField, Range(0f, 4f)] private float floodCo2Amplifier = 1f;
+
+        [Header("── VFX ─────────────────────────────")]
+        [Tooltip("Registers abyssal rupture fluid decals when a breach is confirmed.")]
+        [SerializeField] private bool emitFluidDecals = true;
+
+        [Header("── Diagnostics ─────────────────────")]
+        [SerializeField] private bool _debugBreachActive;
+        [SerializeField, Range(0f, 1f)] private float _debugFloodLevel;
+        [SerializeField] private float _debugPressureDelta;
+        [SerializeField] private float _debugDepthMeters;
+        [SerializeField] private bool _debugPowerNodeRuptured;
+        [SerializeField] private float _debugGlobalBaseOxygenReserve;
+        [SerializeField] private float _debugGlobalBaseOxygenNormalized;
+
+        private BaseModule _baseModule;
+        private PowerNode _powerNode;
+        private Transform _cachedTransform;
+        private bool _registered;
+        private bool _breachActive;
+        private float _floodLevel;
+        private float _pressureDelta;
+        private float _stepAccumulator;
+        private float3 _breachLocalPoint;
+        private float _lastReserveContribution;
+        private float _lastCapacityContribution;
+        // COLD ALLOC: List<IDamageReceiver>[2] — habitat damage listeners (player trauma + future HUD bridges) — owner: HabitatIntegrityManager
+        private readonly List<IDamageReceiver> _damageReceivers = new List<IDamageReceiver>(2);
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            s_globalBaseOxygenReserve = 0f;
+            s_globalBaseOxygenCapacity = 0f;
+        }
+
+        /// <summary>Current breathable reserve across all non-flooded habitat modules.</summary>
+        public static float GlobalBaseOxygenReserve => s_globalBaseOxygenReserve;
+
+        /// <summary>Total breathable reserve capacity across all non-flooded habitat modules.</summary>
+        public static float GlobalBaseOxygenCapacity => s_globalBaseOxygenCapacity;
+
+        /// <summary>Normalized breathable reserve ratio across all currently serviceable habitat modules.</summary>
+        public static float GlobalBaseOxygenReserveNormalized
+            => s_globalBaseOxygenCapacity > 0.01f
+                ? Mathf.Clamp01(s_globalBaseOxygenReserve / s_globalBaseOxygenCapacity)
+                : 1f;
+
+        /// <summary>Normalized local flood ratio for downstream thermal and trauma coupling.</summary>
+        public float FloodLevelNormalized => Mathf.Clamp01(_floodLevel);
+
+        /// <summary>Normalized local integrity ratio for downstream coupling.</summary>
+        public float IntegrityNormalized => ResolveZoneIntegrity();
+
+        private void Awake()
+        {
+            ResolveReferences();
+            if (_baseModule != null && _baseModule.IsFlooded)
+                _floodLevel = 1f;
+
+            UpdateDiagnostics();
+        }
+
+        private void OnEnable()
+        {
+            ResolveReferences();
+            TryRegister();
+            SyncOxygenContribution();
+            UpdateDiagnostics();
+        }
+
+        private void OnDisable()
+        {
+            ClearNodeRupture();
+            RemoveOxygenContribution();
+            TryUnregister();
+            _damageReceivers.Clear();
+            UpdateDiagnostics();
+        }
+
+        private void OnDestroy()
+        {
+            ClearNodeRupture();
+            RemoveOxygenContribution();
+            TryUnregister();
+            _damageReceivers.Clear();
+        }
+
+        /// <summary>
+        /// Advances pressure-flood state on 10Hz substeps inside the existing GameTickManager slow tick.
+        /// </summary>
+        public void SlowTick()
+        {
+            ResolveReferences();
+            if (_baseModule == null)
+                return;
+
+            if (!_breachActive &&
+                _baseModule.IsBreached &&
+                _baseModule.CurrentFailureMode != BaseModuleFailureMode.Fire)
+            {
+                NotifyHullBreach(new Vector3(_breachLocalPoint.x, _breachLocalPoint.y, _breachLocalPoint.z));
+            }
+
+            if (_baseModule.IsFlooded && _floodLevel < FloodedReserveCutoff)
+                _floodLevel = 1f;
+
+            if (!_breachActive && !_baseModule.IsFlooded && _floodLevel <= 0f)
+            {
+                SyncOxygenContribution();
+                UpdateDiagnostics();
+                return;
+            }
+
+            _stepAccumulator += ResolveSlowTickInterval();
+            int iterations = 0;
+            while (_stepAccumulator >= HabitatStepInterval && iterations < MaxStepIterationsPerSlowTick)
+            {
+                StepFloodState(HabitatStepInterval);
+                _stepAccumulator -= HabitatStepInterval;
+                iterations++;
+            }
+
+            if (!_baseModule.IsFlooded && _floodLevel > 0f)
+            {
+                _floodLevel = 0f;
+                _breachActive = false;
+                _pressureDelta = 0f;
+                ClearNodeRupture();
+            }
+
+            SyncOxygenContribution();
+            UpdateDiagnostics();
+        }
+
+        /// <summary>
+        /// Reacts to integrity-channel damage and arms a breach when the packet satisfies the habitat rules.
+        /// </summary>
+        public void OnIntegrityChanged(float prev, float next, DamageSignal src)
+        {
+            if ((src.damageType & (uint)DamageTypeMask.Pressure) == 0u)
+                return;
+
+            if (next >= BreachIntegrityThreshold)
+                return;
+
+            DispatchHullBreach(src.localPoint, src.depth, ResolvePressureDelta(src.depth));
+        }
+
+        /// <summary>
+        /// Habitat flood logic does not respond directly to power-channel packets.
+        /// </summary>
+        public void OnPowerChanged(float prev, float next, DamageSignal src)
+        {
+        }
+
+        /// <summary>
+        /// Habitat flood logic does not respond directly to clarity-channel packets.
+        /// </summary>
+        public void OnClarityChanged(float prev, float next, DamageSignal src)
+        {
+        }
+
+        /// <summary>
+        /// Catastrophic trauma upgrades an already-breached zone to an armed flood state.
+        /// </summary>
+        public void OnTraumaThresholdCrossed(TraumaLevel level)
+        {
+            if (level < TraumaLevel.Catastrophic || _baseModule == null || _baseModule.CurrentFailureMode == BaseModuleFailureMode.Fire)
+                return;
+
+            NotifyHullBreach(Vector3.zero);
+        }
+
+        /// <summary>
+        /// Arms the local habitat zone for pressure flooding and rupture coupling.
+        /// </summary>
+        public void OnHullBreach(float3 localPoint, float depth, float pressureDelta)
+        {
+            if (_baseModule == null || depth < BreachDepthThresholdMeters)
+                return;
+
+            float zoneIntegrity = ResolveZoneIntegrity();
+            if (zoneIntegrity >= BreachIntegrityThreshold)
+                return;
+
+            _breachActive = true;
+            _breachLocalPoint = localPoint;
+            _pressureDelta = Mathf.Max(ResolvePressureDelta(depth), pressureDelta);
+            _debugDepthMeters = depth;
+
+            EmitBreachVfx(localPoint, depth, _pressureDelta);
+            UpdateDiagnostics();
+        }
+
+        /// <summary>
+        /// Registers a listener for habitat damage events.
+        /// </summary>
+        public void RegisterDamageReceiver(IDamageReceiver receiver)
+        {
+            if (receiver == null || ReferenceEquals(receiver, this))
+                return;
+
+            for (int i = 0; i < _damageReceivers.Count; i++)
+            {
+                if (ReferenceEquals(_damageReceivers[i], receiver))
+                    return;
+            }
+
+            _damageReceivers.Add(receiver);
+        }
+
+        /// <summary>
+        /// Removes a previously registered habitat damage listener.
+        /// </summary>
+        public void UnregisterDamageReceiver(IDamageReceiver receiver)
+        {
+            if (receiver == null)
+                return;
+
+            for (int i = _damageReceivers.Count - 1; i >= 0; i--)
+            {
+                if (ReferenceEquals(_damageReceivers[i], receiver))
+                {
+                    _damageReceivers.RemoveAt(i);
+                    break;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Routes an integrity-channel packet through the local habitat logic and downstream listeners.
+        /// </summary>
+        public void DispatchIntegrityChanged(float prev, float next, DamageSignal src)
+        {
+            OnIntegrityChanged(prev, next, src);
+            for (int i = 0; i < _damageReceivers.Count; i++)
+                _damageReceivers[i].OnIntegrityChanged(prev, next, src);
+        }
+
+        /// <summary>
+        /// Routes a power-channel packet through downstream listeners.
+        /// </summary>
+        public void DispatchPowerChanged(float prev, float next, DamageSignal src)
+        {
+            OnPowerChanged(prev, next, src);
+            for (int i = 0; i < _damageReceivers.Count; i++)
+                _damageReceivers[i].OnPowerChanged(prev, next, src);
+        }
+
+        /// <summary>
+        /// Routes a clarity-channel packet through downstream listeners.
+        /// </summary>
+        public void DispatchClarityChanged(float prev, float next, DamageSignal src)
+        {
+            OnClarityChanged(prev, next, src);
+            for (int i = 0; i < _damageReceivers.Count; i++)
+                _damageReceivers[i].OnClarityChanged(prev, next, src);
+        }
+
+        /// <summary>
+        /// Routes a discrete trauma threshold to downstream listeners.
+        /// </summary>
+        public void DispatchTraumaThresholdCrossed(TraumaLevel level)
+        {
+            OnTraumaThresholdCrossed(level);
+            for (int i = 0; i < _damageReceivers.Count; i++)
+                _damageReceivers[i].OnTraumaThresholdCrossed(level);
+        }
+
+        /// <summary>
+        /// Bridges existing BaseModule catastrophic damage into the mandate breach contract.
+        /// </summary>
+        internal void NotifyHullBreach(Vector3 localPoint)
+        {
+            float depth = ResolveDepthMeters();
+            DispatchHullBreach(new float3(localPoint.x, localPoint.y, localPoint.z), depth, ResolvePressureDelta(depth));
+        }
+
+        private void StepFloodState(float dt)
+        {
+            if (dt <= 0f)
+                return;
+
+            float zoneIntegrity = ResolveZoneIntegrity();
+            float floodRate = _breachActive
+                ? _pressureDelta * 0.04f * (1f - zoneIntegrity)
+                : 0f;
+            float drainRate = _baseModule.HasPower
+                ? Mathf.Max(0f, pumpPowerNormalized) * 0.015f
+                : 0f;
+
+            float previousFloodLevel = _floodLevel;
+            _floodLevel = Mathf.Clamp01(_floodLevel + floodRate - drainRate);
+
+            float previousPowerChannel = previousFloodLevel > FloodedReserveCutoff
+                ? Mathf.Clamp01(1f - Mathf.InverseLerp(FloodedReserveCutoff, 1f, previousFloodLevel))
+                : 1f;
+            float nextPowerChannel = _floodLevel > FloodedReserveCutoff
+                ? Mathf.Clamp01(1f - Mathf.InverseLerp(FloodedReserveCutoff, 1f, _floodLevel))
+                : 1f;
+            if (Mathf.Abs(nextPowerChannel - previousPowerChannel) > 0.0001f)
+            {
+                DamageSignal powerSignal = BuildSignal(
+                    _pressureDelta,
+                    _breachLocalPoint,
+                    (uint)DamageTypeMask.Pressure,
+                    ResolveDepthMeters(),
+                    Mathf.Abs(nextPowerChannel - previousPowerChannel));
+                DispatchPowerChanged(previousPowerChannel, nextPowerChannel, powerSignal);
+            }
+
+            float positiveFloodDelta = _floodLevel - previousFloodLevel;
+            if (positiveFloodDelta > 0f)
+                _baseModule.ApplyFloodExposure(positiveFloodDelta, floodCo2Amplifier);
+
+            if (_floodLevel > FloodedReserveCutoff)
+                SetNodeRupture(true);
+            else if (_floodLevel <= FloodedReserveCutoff)
+                SetNodeRupture(false);
+
+            if (_floodLevel <= NearDryThreshold && !_baseModule.IsFlooded)
+            {
+                _floodLevel = 0f;
+                _breachActive = false;
+                _pressureDelta = 0f;
+            }
+        }
+
+        private void EmitBreachVfx(float3 localPoint, float depth, float pressureDelta)
+        {
+            Vector3 breachPoint = new Vector3(localPoint.x, localPoint.y, localPoint.z);
+            _baseModule.EmitHullBreachJet(breachPoint, pressureDelta);
+
+            if (!emitFluidDecals || AbyssalFluidDecalManager.Instance == null || depth < HighPressureJetDepthMeters)
+                return;
+
+            float radiusScale = Mathf.Clamp01(pressureDelta * 0.25f);
+            AbyssalFluidDecalManager.Instance.RegisterRuptureFluid(
+                _cachedTransform.TransformPoint(breachPoint),
+                radiusScale);
+        }
+
+        private void ResolveReferences()
+        {
+            if (_cachedTransform == null)
+                _cachedTransform = transform;
+
+            if (_baseModule == null)
+                TryGetComponent(out _baseModule);
+
+            if (_powerNode == null)
+                TryGetComponent(out _powerNode);
+        }
+
+        private void TryRegister()
+        {
+            if (_registered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager == null)
+                return;
+
+            tickManager.Register((ISlowTickable)this);
+            _registered = true;
+        }
+
+        private void TryUnregister()
+        {
+            if (!_registered)
+                return;
+
+            GameTickManager tickManager = GameTickManager.Instance;
+            if (tickManager != null)
+                tickManager.Unregister((ISlowTickable)this);
+
+            _registered = false;
+        }
+
+        private void SetNodeRupture(bool ruptured)
+        {
+            if (_powerNode == null)
+                return;
+
+            _powerNode.SetRuptured(ruptured);
+        }
+
+        private void ClearNodeRupture()
+        {
+            if (_powerNode != null)
+                _powerNode.SetRuptured(false);
+        }
+
+        private void SyncOxygenContribution()
+        {
+            float reserveContribution = 0f;
+            float capacityContribution = 0f;
+
+            if (_baseModule != null && !_baseModule.IsFlooded && _floodLevel <= FloodedReserveCutoff)
+            {
+                reserveContribution = _baseModule.BreathableReserve;
+                capacityContribution = _baseModule.BreathableReserveCapacity;
+            }
+
+            s_globalBaseOxygenReserve += reserveContribution - _lastReserveContribution;
+            s_globalBaseOxygenCapacity += capacityContribution - _lastCapacityContribution;
+
+            if (s_globalBaseOxygenReserve < 0f)
+                s_globalBaseOxygenReserve = 0f;
+
+            if (s_globalBaseOxygenCapacity < 0f)
+                s_globalBaseOxygenCapacity = 0f;
+
+            _lastReserveContribution = reserveContribution;
+            _lastCapacityContribution = capacityContribution;
+        }
+
+        private void RemoveOxygenContribution()
+        {
+            if (_lastReserveContribution > 0f)
+            {
+                s_globalBaseOxygenReserve -= _lastReserveContribution;
+                if (s_globalBaseOxygenReserve < 0f)
+                    s_globalBaseOxygenReserve = 0f;
+            }
+
+            if (_lastCapacityContribution > 0f)
+            {
+                s_globalBaseOxygenCapacity -= _lastCapacityContribution;
+                if (s_globalBaseOxygenCapacity < 0f)
+                    s_globalBaseOxygenCapacity = 0f;
+            }
+
+            _lastReserveContribution = 0f;
+            _lastCapacityContribution = 0f;
+        }
+
+        private float ResolveZoneIntegrity()
+        {
+            if (_baseModule == null || _baseModule.MaxIntegrity <= 0.01f)
+                return 0f;
+
+            return Mathf.Clamp01(_baseModule.CurrentIntegrity / _baseModule.MaxIntegrity);
+        }
+
+        private float ResolveSlowTickInterval()
+        {
+            GameTickManager tickManager = GameTickManager.Instance;
+            return tickManager != null
+                ? Mathf.Max(HabitatStepInterval, tickManager.SlowTickIntervalSeconds)
+                : DefaultSlowTickInterval;
+        }
+
+        private float ResolveDepthMeters()
+        {
+            float seaLevelY = 0f;
+            MapMagicBridge mapMagicBridge = MapMagicBridge.Instance;
+            if (mapMagicBridge != null)
+                seaLevelY = mapMagicBridge.WaterSurfaceLevel;
+            else if (HectonAtmosphereManager.Instance != null)
+                seaLevelY = HectonAtmosphereManager.Instance.SeaLevelY;
+
+            return Mathf.Max(0f, seaLevelY - _cachedTransform.position.y);
+        }
+
+        private static float ResolvePressureDelta(float depthMeters)
+        {
+            return Mathf.Max(0f, (depthMeters / 1000f) * BasePressureAtm);
+        }
+
+        private DamageSignal BuildSignal(
+            float magnitude,
+            float3 localPoint,
+            uint damageType,
+            float depthMeters,
+            float normalizedDelta)
+        {
+            DamageSignal signal = default;
+            signal.magnitude = magnitude;
+            signal.localPoint = localPoint;
+            signal.damageType = damageType;
+            signal.integrityDelta = (byte)Mathf.Clamp(Mathf.RoundToInt(Mathf.Clamp01(normalizedDelta) * byte.MaxValue), 0, byte.MaxValue);
+            signal.depth = depthMeters;
+            signal.sourceID = DamageSourceIds.HabitatIntegrity;
+            return signal;
+        }
+
+        private void DispatchHullBreach(float3 localPoint, float depth, float pressureDelta)
+        {
+            OnHullBreach(localPoint, depth, pressureDelta);
+
+            for (int i = 0; i < _damageReceivers.Count; i++)
+                _damageReceivers[i].OnHullBreach(localPoint, depth, pressureDelta);
+
+            DamageSignal claritySignal = BuildSignal(
+                pressureDelta,
+                localPoint,
+                (uint)DamageTypeMask.Pressure,
+                depth,
+                Mathf.Clamp01(pressureDelta * 0.35f));
+            DispatchClarityChanged(0f, Mathf.Clamp01(pressureDelta * 0.35f), claritySignal);
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        private void UpdateDiagnostics()
+        {
+            _debugBreachActive = _breachActive;
+            _debugFloodLevel = _floodLevel;
+            _debugPressureDelta = _pressureDelta;
+            _debugPowerNodeRuptured = _powerNode != null && _powerNode.IsRuptured;
+            _debugGlobalBaseOxygenReserve = s_globalBaseOxygenReserve;
+            _debugGlobalBaseOxygenNormalized = GlobalBaseOxygenReserveNormalized;
+
+            if (_cachedTransform != null)
+                _debugDepthMeters = ResolveDepthMeters();
+        }
+    }
+}

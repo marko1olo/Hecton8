@@ -113,6 +113,7 @@ namespace Hecton8.SaveSystem
             changed |= EnsureResourceScarcity(ref data.resourceScarcity, steps);
             changed |= EnsureEnvironmentalStrain(ref data.environmentalStrain, steps);
             changed |= EnsureEcosystemState(ref data.ecosystemState, steps);
+            changed |= EnsureVoxelDeltaPersistence(ref data.voxelDeltaPersistence, steps);
             changed |= EnsureLoreSystems(ref data, sourceVersion, steps);
             changed |= EnsurePlayerExpression(ref data, steps);
             changed |= EnsurePerformanceSettings(ref data, sourceVersion, steps);
@@ -280,6 +281,59 @@ namespace Hecton8.SaveSystem
                     dto.infectedSeverities[i] = clampedSeverity;
                     changed = true;
                 }
+            }
+
+            return changed;
+        }
+
+        private static bool EnsureVoxelDeltaPersistence(ref VoxelDeltaPersistenceDTO dto, List<string> steps)
+        {
+            bool changed = false;
+
+            if (dto.chunks == null)
+            {
+                dto = VoxelDeltaPersistenceDTO.CreateDefault();
+                changed = true;
+                steps.Add("voxel delta persistence created");
+            }
+
+            int chunkCapacity = dto.chunks != null ? dto.chunks.Length : 0;
+            int clampedChunkCount = Mathf.Clamp(dto.chunkCount, 0, chunkCapacity);
+            if (clampedChunkCount != dto.chunkCount)
+            {
+                dto.chunkCount = clampedChunkCount;
+                changed = true;
+                steps.Add("voxel delta chunk count clamped");
+            }
+
+            int totalCellCount = 0;
+            for (int i = 0; i < dto.chunkCount; i++)
+            {
+                VoxelDeltaChunkDTO chunk = dto.chunks[i];
+                int cellCapacity = chunk.cells != null ? chunk.cells.Length : 0;
+                int clampedCellCount = Mathf.Clamp(chunk.cellCount, 0, cellCapacity);
+                if (clampedCellCount != chunk.cellCount)
+                {
+                    chunk.cellCount = clampedCellCount;
+                    dto.chunks[i] = chunk;
+                    changed = true;
+                }
+
+                if (chunk.cells == null)
+                {
+                    chunk.cells = Array.Empty<VoxelDeltaCellDTO>();
+                    dto.chunks[i] = chunk;
+                    changed = true;
+                }
+
+                totalCellCount += chunk.cellCount;
+            }
+
+            if (dto.totalCellCount != totalCellCount)
+            {
+                dto.totalCellCount = totalCellCount;
+                changed = true;
+                steps.Add("voxel delta total count repaired");
             }
 
             return changed;

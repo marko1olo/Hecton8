@@ -1,0 +1,686 @@
+HECTON-8 GLOBAL ECONOMY AND PROGRESSION MATRIX
+Status: PENDING VERIFICATION
+Authoring date: 2026-04-23
+Owner lens: Chief Economy and Progression Scientist
+
+MANDATES FOLLOWED
+- CORE_Abyss_Survival_Systems_O2_Pressure_Logic.txt
+- DATA_Inventory_Resources_Items_SOA_Layout.txt
+- LOGI_Energy_Networks_Power_Grid_Graph_Flow.txt
+- CORE_Weather_Abyssal_FlowField_Currents.txt
+
+PRIMARY SOURCE OWNERS
+- Assets/_Project/Scripts/HectonSurvivalSystem.cs
+- Assets/_Project/Scripts/HectonPlayerMovement.cs
+- Assets/_Project/Scripts/UI/SuitAdvisoryController.cs
+- Assets/_Project/Scripts/Visor/PlayerStressVFX.cs
+- Assets/_Project/Scripts/Audio/DeepPsychosisController.cs
+- Assets/_Project/Scripts/LocalizationManager.cs
+- Assets/_Project/Scripts/Economy/ResourceScarcityDirector.cs
+- Assets/_Project/Data/Survival/Standard_Suit_V1.asset
+- Assets/_Project/Data/Transport/*.asset
+- Assets/_Project/Data/Lore/SuitUpgrades/*.asset
+- Assets/_Project/Data/Crafting/Recipes/*.asset
+- Assets/_Project/Data/Biomes/PlayProfiles/*.asset
+- Assets/_Project/Data/Biomes/ResourceChannels/*.asset
+- Assets/_Project/Data/Construction/*.asset
+
+ASSUMPTION FLAGS
+- LIVE RUNTIME = directly backed by current code or assets.
+- TARGET BALANCE = recommended design numbers for brutal-but-fair progression.
+- PROPOSED = not present as a live asset owner yet. Explicitly marked.
+
+======================================================================
+0. HARD FINDINGS
+======================================================================
+
+F1. LIVE RUNTIME SAFE-DEPTH PROGRESSION IS UNDERCUT BY OXYGEN MATH.
+Live hull upgrades stack to SafeDepth 4900m and Integrity 150, but live oxygen
+drain scales with raw pressureFactor = max(1, pressure * 0.5). Result: fully
+stacked suit still dies to oxygen at 4000m in 1.45s. That is not player fault.
+That is formula fault.
+
+F2. LIVE PRESSURE MATH IS CONSISTENT. LIVE OXYGEN MATH IS NOT.
+Pressure death curve respects suit safe depth. Oxygen curve does not. This
+breaks intended deep EVA progression and forces Micro Sub access too early.
+
+F3. LIVE THERMAL MODEL IS GOOD ENOUGH TO CARRY ABYSSAL FEAR ONCE O2 IS FLATTENED.
+At 4000m, the live abyssal cold model creates a strong battery-to-integrity
+death chain. That already gives the required "short deep EVA" feeling.
+
+F4. LIVE POWER GRID HAS NO THERMAL GENERATOR OWNER.
+Current Turbine exists and outputs static +18W. Thermal Generator does not
+exist as a live buildable owner. Thermal-generator counts below are PROPOSED
+design normalization, not current runtime fact.
+
+F5. LIVE ECONOMY HAS 45 MATERIAL LINES, NOT 50.
+The requested 50-line matrix is closed by using 45 live material/component/
+processed lines plus 5 live craft outputs that are core economy gates.
+
+F6. LIVE UI LIE THRESHOLDS ALREADY EXIST.
+Soft corruption starts at hull stress 0.70. Hard madness override becomes
+eligible at 0.90. The project already has the right late-stress language.
+
+======================================================================
+1. FORMULA SHEET
+======================================================================
+
+1.1 LIVE RUNTIME SURVIVAL CURVES
+
+pressure(d) = 1 + 0.1d
+
+oxygenDrainLive =
+    OxygenConsumptionRate
+  * max(1, pressure(d) * 0.5)
+  * transportOxygenScale
+  * difficultyOxygenScale
+
+For d > 10m and base suit values:
+OxygenConsumptionRate = 0.5
+oxygenTTD_live(d, O2cap) = O2cap / (0.5 * (0.5 + 0.05d))
+
+For base cap O2cap = 100:
+oxygenTTD_live(d) = 4000 / (d + 10)
+
+pressureDpsLive =
+    PressureDamageRate
+  * (1 + (d - SafeDepth) * PressureScalePerMeter)
+  * transportPressureScale
+
+Base suit values:
+PressureDamageRate = 2
+SafeDepth = 50
+PressureScalePerMeter = 0.02
+
+For base suit at d > 50:
+pressureTTD_live(d) = 2500 / d
+
+passiveEnergyDrainLive = 0.8 * (1 + 0.005 * carryWeightKg)
+
+thermalDrainLive =
+    coldExcessC
+  * TempEnergyScale
+  * transportThermalScale
+  * AbyssalHeatingMultiplier
+  * deepColdPocketMultiplier
+
+At 4000m in baseline water:
+baseTemp = 20C
+abyssalPenalty = 42C
+envTemp = -22C
+starterSuit coldExcess = 17C
+T4 shell coldExcess = 12C
+AbyssalHeatingMultiplier = 10
+hazardGrace = 3s
+
+warningWindow_oxygen = 0.35 * oxygenTTD
+criticalWindow_oxygen = 0.15 * oxygenTTD
+warningWindow_energy = remaining25pctEnergy / totalDrainAfterGrace
+
+safeDepthPrewarning =
+20m margin warning
+6m margin critical
+
+At nominal descent 2.0 m/s:
+pressure prewarning window = 10.0s
+pressure critical window   = 3.0s
+
+1.2 TARGET BALANCE CURVES
+
+TARGET RULE:
+Pressure should attack hull.
+Thermal should attack power reserve.
+Oxygen should accelerate through stress, not through raw absolute pressure.
+
+Recommended target oxygen curve:
+oxygenDrainTarget = BaseOxygenDrain * (1 + 0.5 * stress01)
+
+stress01 =
+    0.60 * overpressure01
+  + 0.20 * thermalStress01
+  + 0.10 * pollutionStress01
+  + 0.10 * panicStress01
+
+Clamp stress01 to [0, 1].
+This matches ABYSS_SURVIVAL_LOGIC intent: O2 multiplier envelope is 1.0x..1.5x.
+
+Recommended overpressure carrier:
+overpressure01 = clamp((depth - effectiveSafeDepth) / max(150, effectiveSafeDepth * 0.35), 0, 1)
+
+Result:
+- Within rated depth, O2 remains a planning timer, not a fake instant-death timer.
+- Beyond rated depth, pressure stress ramps into the same HUD corruption stack.
+
+Recommended suit cost curve:
+SuitERU(Tier) = 15 + 7T + 2T^2
+
+Recommended transport cost curve:
+TransportERU(ClassTier) = 10 + 7C + 5C^2
+
+Recommended horror-preservation curve:
+RiskCost(depthTier)   = 1 + 0.80D + 0.35D^2
+RewardValue(depthTier)= 1 + 0.55D + 0.20D^2
+
+Interpretation:
+At D >= 2, RiskCost grows faster than RewardValue.
+Power-up never deletes horror. It only makes deeper commitment possible.
+
+======================================================================
+2. SURVIVAL LOOP TIMINGS
+======================================================================
+
+2.1 LIVE RUNTIME AUDIT - BASE SUIT, NO UPGRADES, NO EXTRA WEIGHT
+
+| Depth | O2 death | O2 first alarm | O2 panic window | Pressure death | Battery zero | Temp death | Composite killer |
+| 0m    | 200.00s  | 130.00s        | 70.00s          | safe           | 250.00s      | n/a        | O2               |
+| 1000m | 3.96s    | 2.57s          | 1.39s           | 2.50s          | 250.00s      | n/a        | Pressure         |
+| 4000m | 1.00s    | 0.65s          | 0.35s           | 0.62s          | 24.51s       | 61.54s     | Pressure         |
+
+Interpretation:
+- 1000m starter failure is acceptable.
+- 4000m starter failure is acceptable.
+- 4000m fully upgraded O2 failure in 1.45s is not acceptable.
+
+2.2 LIVE RUNTIME OVERLAY - 4000m HEAVY TRAVEL LOAD
+Assumption: transport rows use authored suit-energy drain under sustained active drive.
+
+| Loadout      | O2 death | Pressure death | Battery zero | Temp death | Read |
+| Suit         | 1.00s    | 0.62s          | 24.51s       | 61.54s     | impossible |
+| ScoutGlider  | 1.00s    | 0.66s          | 20.21s       | 66.46s     | impossible |
+| ExosuitFrame | 2.38s    | 1.84s          | 31.75s       | safe temp   | impossible without O2 fix |
+| MicroSub     | sealed   | sealed         | 24.91s       | 294.60s     | only live deep-safe shell |
+
+Critical note:
+Micro Sub currently solves oxygen and pressure, but not suit battery collapse.
+If suit energy reaches 0, propulsion authority dies. That is a viable stressor,
+but the current envelope is too short for fair hadal logistics unless docking
+and recharge cadence are extremely dense.
+
+2.3 LIVE STACKED SUIT AUDIT - ALL CURRENT HULL TIERS + LIVE OXYGEN T1
+
+Live stacked deltas:
+- SafeDepth = 4900m
+- O2 cap = 145
+- Integrity = 150
+- MinSafeTemp = -10C
+
+At 1000m:
+- pressure death = safe
+- O2 death = 5.74s
+
+At 4000m:
+- pressure death = safe
+- O2 death = 1.45s
+- battery zero = 32.41s
+- thermal death = 77.86s
+
+Conclusion:
+Live hull progression works.
+Live oxygen progression does not.
+Deep EVA cannot be called fair until O2 is decoupled from raw absolute pressure.
+
+2.4 TARGET PROGRESSION TIMINGS
+
+| Intended loadout             | Depth band   | O2 death target | Battery zero target | Temp death target | First explicit panic window | Read |
+| Starter Suit                 | 0m to 150m   | 200s to 220s    | 220s to 250s        | n/a               | 60s to 70s                 | readable early route learning |
+| Hull T2 + Aux O2             | 500m to 1500m| 190s to 210s    | 200s to 240s        | n/a               | 55s to 70s                 | medium commitment, no fake collapse |
+| Hull T4 EVA                  | 3500m to 4000m| 220s to 240s   | 30s to 35s          | 75s to 80s        | 50s to 55s composite       | fear comes from power and cold |
+| Micro Sub sealed run         | 3500m to 4000m| sealed         | 45s to 60s sprint   | 270s to 320s      | 20s to 30s battery window  | access vehicle, not comfort vehicle |
+
+How to reach the target table from current runtime:
+1. Keep live pressure and live thermal math.
+2. Replace live O2 pressureFactor curve with stress01 envelope capped at 1.5x.
+3. Reduce sealed-cabin suit-energy coupling:
+   - Exosuit target suit-energy scale = 0.55 of current
+   - Micro Sub target suit-energy scale = 0.35 of current
+
+2.5 PANIC WINDOW BY CHANNEL
+
+Oxygen:
+- First warning threshold = 35%
+- Critical threshold = 15%
+- In any stable loadout, player needs 18s minimum from first truthful oxygen warning to irreversible kill.
+- 25s to 35s is the preferred deep-route reserve.
+
+Battery:
+- First warning threshold = 25%
+- Deep EVA should hit battery warning first, not O2 warning.
+- Deep EVA preferred window from first battery warning to thermal death: 45s to 60s.
+
+Pressure:
+- Pre-breach warning = safe-depth margin <= 20m
+- Critical margin = 6m
+- Nominal descent doctrine at 2.0 m/s gives 10s warning, 3s critical.
+- Faster descent is player fault. That is fair.
+
+Temperature:
+- No thermal warning should fire at 0m or 1000m in neutral water.
+- At 4000m, first cold-state alarm should be immediate after the 3s hazard grace.
+- On-foot T4 EVA should be survivable for one short repair or one short extraction, not for route wandering.
+
+======================================================================
+3. RESOURCE SCARCITY MATRIX
+======================================================================
+
+3.1 BIOME SELECTION
+
+The 5 major economy biomes used here are the ones already backed by live
+play-profile and resource-channel owners:
+- Littoral Karst
+- Fossil Reef
+- Granite Escarpment
+- Chemosynthetic Brine
+- Rift Void
+
+3.2 SCAVENGE DENSITY TARGETS
+
+Definition:
+VisibleDensity      = all interactable pickups, nodes, salvage points per 100m^2
+UsefulDensity       = economy-relevant items for the current route goal per 100m^2
+RareDensity         = rare or progression-gate lines per 100m^2
+SafePocketCadence   = relief spaces per 100m^2
+
+Target starvation doctrine:
+- UsefulDensity below 0.8 = route stalls
+- UsefulDensity 0.9 to 2.2 = player keeps moving but stays hungry
+- UsefulDensity above 2.6 = camp-farm failure
+
+3.3 BIOME DENSITY TARGETS
+
+| Biome                 | Play profile read | VisibleDensity | UsefulDensity | RareDensity | SafePocketCadence | Starvation pressure |
+| Littoral Karst        | starter fuel      | 3.8            | 2.1           | 0.15        | 0.60              | Low                 |
+| Fossil Reef           | sustain organics  | 3.5            | 1.8           | 0.35        | 0.35              | Medium              |
+| Granite Escarpment    | structural metal  | 3.1            | 1.4           | 0.40        | 0.28              | Medium              |
+| Chemosynthetic Brine  | energy chemistry  | 2.8            | 1.2           | 0.55        | 0.18              | High                |
+| Rift Void             | hadal jackpots    | 1.4            | 0.45          | 0.85        | 0.06              | Extreme             |
+
+Interpretation:
+- Littoral keeps the player supplied, not rich.
+- Fossil keeps oxygen and med support alive.
+- Granite pays for infrastructure.
+- Brine pays for power and thermal readiness.
+- Rift pays for late-game breakthroughs but cannot be farmed like a pantry.
+
+3.4 LIVE SCARCITY MULTIPLIER OWNER
+
+ResourceScarcityDirector current rule:
+Multiplier(item) = clamp(1 + floor(collectedUnits / 100) * 0.04, 1, 1.80)
+
+Implication:
+- 100 units of one line = +4% ingredient multiplier
+- 500 units = +20%
+- 1000 units = +40%
+- 2000 units = cap 1.80x
+
+Balance doctrine:
+- Common route fuel can hit +8% to +16% over a long file without breaking fairness.
+- Rare hadal lines should almost never cross +8% in one file unless the player is abusing a route.
+
+3.5 50-LINE GLOBAL ECONOMY MATRIX
+Abundance code:
+0 = none
+1 = trace
+2 = sparse
+3 = stable
+4 = rich
+5 = dominant
+
+Crafted lines use craft-availability, not direct spawn availability.
+
+| ID | Economy line              | Type       | Littoral | Fossil | Granite | Brine | Rift | Primary use |
+| 01 | Data_TitaniumScrap        | raw        | 5 | 2 | 3 | 1 | 1 | base metal and plates |
+| 02 | Data_SilicaShards         | raw        | 5 | 2 | 2 | 1 | 1 | glass and optics |
+| 03 | Data_Copper               | raw        | 4 | 1 | 5 | 2 | 1 | wire and cells |
+| 04 | Data_FiberKelp            | raw        | 2 | 5 | 1 | 1 | 0 | mesh and soft seals |
+| 05 | Data_MembraneTissue       | raw        | 1 | 5 | 1 | 2 | 1 | pressure sealing and O2 aid |
+| 06 | Data_EnzymeCoral          | raw        | 1 | 4 | 0 | 2 | 0 | resin and med lines |
+| 07 | Data_IronComposite        | raw        | 2 | 1 | 5 | 1 | 1 | structure and frame mass |
+| 08 | Data_LithiumCrystal       | raw        | 2 | 1 | 4 | 2 | 2 | plates and high-cap cells |
+| 09 | Data_SilverOre            | raw        | 2 | 2 | 4 | 3 | 2 | circuits and power links |
+| 10 | Data_HydrocarbonResin     | raw        | 1 | 3 | 1 | 5 | 1 | lubricant and sealant |
+| 11 | Data_ElectrolyteSalts     | raw        | 1 | 1 | 1 | 5 | 2 | cells and thermal chemistry |
+| 12 | Data_SulfurClumps         | raw        | 0 | 1 | 1 | 5 | 2 | sealant and reactive chemistry |
+| 13 | Data_GoldOre              | raw        | 1 | 0 | 3 | 2 | 3 | precision electronics |
+| 14 | Data_ThermalGel           | raw        | 0 | 0 | 0 | 5 | 3 | cooling and deep thermal prep |
+| 15 | Data_NickelOre            | raw        | 0 | 0 | 1 | 2 | 5 | hadal hulls and deep cells |
+| 16 | Data_CobaltAlloy          | raw        | 0 | 0 | 1 | 2 | 4 | coils and relay hardware |
+| 17 | Data_RareEarthDust        | raw        | 0 | 0 | 1 | 2 | 5 | guidance and high-end logic |
+| 18 | Data_AbyssalCrystal       | raw        | 0 | 0 | 0 | 1 | 5 | hadal shell gate |
+| 19 | Data_TungstenChunk        | raw        | 0 | 0 | 2 | 1 | 4 | mass anchors and dense tools |
+| 20 | Data_BiolumPaste          | raw        | 1 | 5 | 0 | 3 | 1 | med and visor chemistry |
+| 21 | Comp_CopperWire           | component  | 4 | 1 | 5 | 2 | 1 | first electrical backbone |
+| 22 | Comp_GlassPanel           | component  | 5 | 1 | 2 | 1 | 1 | glass and optics package |
+| 23 | Comp_FiberMesh            | component  | 2 | 5 | 1 | 1 | 0 | seals, med, O2 aids |
+| 24 | Comp_BatteryCell          | component  | 3 | 1 | 3 | 5 | 2 | baseline power line |
+| 25 | Comp_ReinforcedPlate      | component  | 4 | 1 | 5 | 1 | 1 | structure and hull mass |
+| 26 | Comp_LubricantResin       | component  | 1 | 3 | 1 | 5 | 1 | pumps and actuators |
+| 27 | Comp_PressureSeal         | component  | 2 | 4 | 1 | 4 | 1 | pressure-rated junctions |
+| 28 | Comp_StructuralBracket    | component  | 3 | 1 | 5 | 1 | 1 | frames and mounts |
+| 29 | Comp_CircuitBoard         | component  | 2 | 1 | 4 | 3 | 3 | logic and scanning |
+| 30 | Comp_SealantPack          | component  | 1 | 4 | 1 | 4 | 1 | repair and med loop |
+| 31 | Comp_SensorPackage        | component  | 2 | 1 | 3 | 3 | 4 | scanning and env analysis |
+| 32 | Comp_PowerCoupler         | component  | 2 | 2 | 3 | 4 | 3 | power lane expansion |
+| 33 | Comp_HighCapacityCell     | component  | 2 | 1 | 3 | 4 | 4 | deep transport energy |
+| 34 | Comp_HydraulicActuator    | component  | 2 | 1 | 4 | 2 | 2 | lift, frame, docking |
+| 35 | Comp_PrecisionLens        | component  | 2 | 1 | 3 | 2 | 4 | optics and guidance |
+| 36 | Comp_StabilizerCoil       | component  | 1 | 0 | 2 | 3 | 5 | hadal steering and coil work |
+| 37 | Comp_RelayMatrix          | component  | 1 | 0 | 3 | 3 | 5 | grid brain and deep signal routing |
+| 38 | Comp_PumpRotor            | component  | 1 | 2 | 3 | 4 | 2 | flood and fluid handling |
+| 39 | Comp_GuidanceModule       | component  | 1 | 0 | 2 | 2 | 5 | transport nav and deep targeting |
+| 40 | Comp_CoolingCartridge     | component  | 0 | 0 | 1 | 5 | 3 | thermal field survival |
+| 41 | Comp_BeaconCore           | component  | 2 | 0 | 3 | 2 | 2 | route persistence |
+| 42 | Comp_AbyssPressureShell   | component  | 0 | 0 | 1 | 2 | 5 | final hull gate |
+| 43 | Data_ElectrolyteAmpoule   | processed  | 1 | 0 | 1 | 5 | 2 | emergency power chemistry |
+| 44 | Data_EmergencyO2Canister  | processed  | 1 | 4 | 1 | 3 | 1 | panic reserve |
+| 45 | Data_FieldMedGel          | processed  | 1 | 5 | 0 | 2 | 0 | sustain and recovery |
+| 46 | Item_Tool_BeaconDeployer  | utility    | 2 | 0 | 3 | 2 | 2 | long route memory |
+| 47 | Item_Tool_Repair          | utility    | 2 | 4 | 2 | 2 | 1 | hull and module maintenance |
+| 48 | Item_Tool_EnvAnalyzer     | utility    | 1 | 0 | 3 | 2 | 4 | stress read and hazard truth |
+| 49 | Item_Tool_Scanner         | utility    | 1 | 0 | 3 | 2 | 4 | route certainty and contact truth |
+| 50 | Item_Tool_SalvageSampler  | utility    | 1 | 3 | 3 | 2 | 3 | cache cracking and rare pulls |
+
+3.6 EXTRACTION DOCTRINE BY BIOME
+
+Littoral Karst:
+- Route fuel biome.
+- Player should leave with wire, glass, plates, and one utility craft.
+- Do not hide tier-gate rares here.
+
+Fossil Reef:
+- Sustain biome.
+- O2 aids, med gels, seals, and repair sustain live here.
+- Risk comes from pockets and line-of-sight traps, not pure scarcity.
+
+Granite Escarpment:
+- Infrastructure biome.
+- The player should feel heavier after each run.
+- This is where structures, brackets, and grid hardware become credible.
+
+Chemosynthetic Brine:
+- Power chemistry biome.
+- Item count is lower than Littoral, but value density is higher.
+- The biome must punish greed with heat, haze, and route corruption.
+
+Rift Void:
+- Jackpot biome.
+- One successful run should pay a breakthrough, not a pantry refill.
+- Retreat with one rare objective is success. Empty greed-runs are expected.
+
+======================================================================
+4. UPGRADE COSTS AND GATING
+======================================================================
+
+4.1 SUIT DOCTRINE
+
+The suit should not become stronger in every axis.
+The suit should only trade one impossible failure mode for another:
+- Hull tiers solve pressure access.
+- Oxygen tiers solve route length.
+- Thermal shell solves hadal ambient survival.
+- Nothing removes panic, logistics, or retreat discipline.
+
+4.2 PROPOSED SUIT COST STACK
+These bills are PROPOSED but intentionally built only from live recipe outputs.
+
+| Tier | Gate | Component bill | ERU | Bottleneck read |
+| T1 Pressure Shell | first_colony_module_spotted | 2 ReinforcedPlate, 2 PressureSeal, 2 BatteryCell, 1 GlassPanel | 24 | early metal plus soft-seal competence |
+| T2 Pressure Lattice | zone_drowned_factories | 2 ReinforcedPlate, 2 PressureSeal, 2 HydraulicActuator, 1 HighCapacityCell, 1 RelayMatrix | 40 | infrastructure build-out, not random luck |
+| T3 Abyssal Frame | zone_the_drop_upper | 3 AbyssPressureShell, 2 HighCapacityCell, 2 StabilizerCoil, 2 GuidanceModule, 1 RelayMatrix | 55 | hadal metallurgy and guidance commitment |
+| T4 Thermal Shell | zone_thermal_fields | 4 AbyssPressureShell, 2 CoolingCartridge, 3 RelayMatrix, 2 GuidanceModule, 2 SensorPackage, 1 StabilizerCoil | 78 | final thermal and relay brain gate |
+
+Raw-equivalent bottlenecks:
+- T1 consumes mostly Titanium, Fiber, Copper, Silica.
+- T2 shifts demand into Silver, Lithium, Gold, Hydrocarbon, Nickel.
+- T3 adds AbyssalCrystal, RareEarthDust, CobaltAlloy, Nickel.
+- T4 spikes Gold, Silica, Silver, AbyssalCrystal, Cooling, Relay parts.
+
+4.3 PROPOSED TRANSPORT COST STACK
+These bills are PROPOSED because live transport recipes do not exist yet.
+They still stay inside the live item graph.
+
+| Transport | Class tier | Component bill | ERU | Role |
+| Scout Glider | 1 | 1 HighCapacityCell, 2 StructuralBracket, 1 GuidanceModule, 1 PressureSeal | 21 | first safe speed spike |
+| Cargo Sled | 2 | 2 ReinforcedPlate, 2 StructuralBracket, 2 HydraulicActuator, 1 PowerCoupler | 32 | logistics and haul pressure |
+| Exosuit Frame | 3 | 2 AbyssPressureShell, 2 HydraulicActuator, 2 HighCapacityCell, 2 PowerCoupler, 1 GuidanceModule | 56 | short hostile work windows |
+| Micro Sub | 4 | 4 AbyssPressureShell, 4 HighCapacityCell, 3 PowerCoupler, 2 GuidanceModule, 2 RelayMatrix, 2 CoolingCartridge, 1 SensorPackage | 102 | hadal access shell |
+
+4.4 GATING LADDER
+
+| Phase | Depth target | Mandatory unlock | Emotional read |
+| P0 | 0m to 150m | Repair, Scanner, Beacon | learn routes, do not drown to UI ignorance |
+| P1 | 150m to 500m | T1 hull, Scout Glider | first feeling of leverage |
+| P2 | 500m to 1500m | T2 hull, Aux O2, Cargo logistics | deliberate mid-depth work |
+| P3 | 1500m to 3500m | T3 hull, Exosuit, relay-heavy base support | real commitment, not tourism |
+| P4 | 3500m to 5000m | T4 shell, Micro Sub, stable power backbone | abyss access, still no comfort |
+
+4.5 POWER-UP WITHOUT COMFORT
+
+Keep:
+- SafeDepth increases
+- route length increases
+- repair confidence increases
+
+Do not let upgrades erase:
+- battery panic
+- thermal panic
+- scarcity pressure
+- return-route dependency
+- UI corruption risk at high stress
+
+The player should feel stronger in capability and weaker in consequence.
+
+======================================================================
+5. LOGISTICS NETWORK STRESS
+======================================================================
+
+5.1 LIVE POWER OWNERS USED FOR BUDGET
+
+Live owners:
+- Current Turbine = +18W
+- Corridor Straight = -6W
+- Service Pump = -8W
+- Repair Drone Hub standby = -2W
+- Repair Drone Hub active drone = additional -6W per drone
+- Maintenance Station active service = -48W total while repairing
+- Vehicle Docking Module charging = -120W
+- Fabricator crafting = -100W
+- Flood pump contingency in BaseModule = -65W per flooded compartment
+- Relay package example = about -6.2W for two relay nodes on a short mobile-base span
+
+5.2 PROPOSED THERMAL GENERATOR NORMALIZATION
+
+No live Thermal Generator owner exists.
+
+PROPOSED stable-output normalization:
+- Thermal Generator = +24W
+
+Reason:
+- It must beat Current Turbine's +18W in stability, not in explosive throughput.
+- It should be the storm baseload answer, not the general free-energy answer.
+
+5.3 TYPICAL MOBILE BASE BUDGET - MB-01
+
+MB-01 composition:
+- 2 Corridor Straight
+- 1 Service Pump
+- 2 short-span relay nodes
+- 1 Repair Drone Hub
+- 1 Vehicle Docking Module
+
+Idle shelter load:
+- Corridors      -12.0W
+- Service Pump    -8.0W
+- Relay package   -6.2W
+- Drone standby   -2.0W
+Total idle        -28.2W
+
+Storm contingency load:
+- Idle shelter    -28.2W
+- 1 flooded compartment pump -65.0W
+Total storm shelter          -93.2W
+
+Storm return load:
+- Storm shelter   -93.2W
+- Docked vehicle recharge -120.0W
+Total storm return        -213.2W
+
+Storm workshop spike:
+- Storm return    -213.2W
+- Maintenance station active -48.0W
+- 1 active drone extra       -6.0W
+- Fabricator active         -100.0W
+Total full spike           -367.2W
+
+5.4 GENERATOR COUNTS
+
+| Load case | Current Turbines at +18W | Thermal Generators at +24W |
+| Idle shelter 28.2W | 2 | 2 |
+| Great Current storm survival 93.2W | 6 | 4 |
+| Storm plus docked return 213.2W | 12 | 9 |
+| Full storm workshop spike 367.2W | 21 | 16 |
+
+Direct answer to the brief:
+- To merely survive a Great Current storm: 4 Thermal Generators.
+- To survive the storm and recharge a docked deep vehicle: 9 Thermal Generators.
+
+5.5 LOGISTICS STRESS RULES
+
+Rule A:
+The player may brute-force generation count, but not generation convenience.
+
+Rule B:
+Deep vehicle recharge during a storm is a strategic event, not background idle time.
+
+Rule C:
+Late-game power should fail through relay fragility, flood contingencies, and repair
+costs before it fails through raw impossible arithmetic.
+
+======================================================================
+6. PLAYER PSYCHOLOGY - STRESS TO CLARITY
+======================================================================
+
+6.1 LIVE THRESHOLDS ALREADY PRESENT
+
+Live thresholds:
+- SuitHUD stress pulse start threshold = 0.24
+- PlayerStressVFX oxygen critical threshold = 0.30
+- PlayerStressVFX integrity critical threshold = 0.35
+- ABYSS_SURVIVAL_LOGIC glitch onset = 0.70
+- Localization hull-stress corruption threshold = 0.70
+- PDA intrusion severe threshold band = 0.85
+- Madness eligibility threshold = 0.90
+- ABYSS_SURVIVAL_LOGIC critical warning = 0.95
+
+6.2 TARGET CLARITY CURVE
+
+clarity01 =
+clamp(1 - (0.55 * hullStress01 + 0.20 * oxygenStress01 + 0.15 * thermalStress01 + 0.10 * pollutionStress01), 0, 1)
+
+This is not a damage curve.
+This is a trust curve.
+
+6.3 STRESS BUCKETS
+
+| Stress band | Clarity state | UI behavior | Design rule |
+| 0.00 to 0.23 | clear | fully truthful | zero lies |
+| 0.24 to 0.69 | loaded | pulse, vignette, chroma, heartbeat | truthful but louder |
+| 0.70 to 0.84 | corruption onset | text corruption, HUD flicker, scan noise | soft lie starts here |
+| 0.85 to 0.89 | hostile ambiguity | route text withheld, bearing jitter, intrusion language | never hide all exits |
+| 0.90 to 1.00 | madness override | hallucinated strings, false-positive emphasis, whisper takeover | hard lie threshold |
+
+Direct answer to the brief:
+- The UI starts lying softly at stress 0.70.
+- The UI becomes mission-critically unreliable at stress 0.90.
+
+6.4 HARD RULE FOR FAIRNESS
+
+Mission-critical lies are only allowed when one of the following is true:
+- safe pocket is reachable inside 20s to 30s
+- beaconed return line already exists
+- the player owns a truth-restoring tool state: Analyzer, Scanner, or sheltered base link
+
+If none of those are true, do not push mission-critical UI into 0.90+.
+That becomes math cruelty, not horror.
+
+======================================================================
+7. IMPLEMENTATION PRIORITIES
+======================================================================
+
+P1. Flatten O2 from raw pressure into stress envelope 1.0x..1.5x.
+Without this, deep suit progression is fake.
+
+P2. Keep live pressure and thermal math.
+Those already create the correct hadal fear pattern.
+
+P3. Add live transport recipes using the proposed bills above.
+Without them, transport progression has no cost spine.
+
+P4. Add a live Thermal Generator owner or rename the design expectation.
+Right now that noun does not exist in the buildable graph.
+
+P5. Bind biome densities to route-length tests, not just item counts.
+A dense but wrong biome still feels empty.
+
+======================================================================
+8. VERIFICATION PROTOCOL
+======================================================================
+
+Simulation passes required before calling this balanced:
+- 20 route sims in Littoral, target return success 75% to 85%
+- 20 route sims in Granite/Brine mid game, target return success 55% to 70%
+- 20 hadal EVA sims at 4000m T4 on-foot, target death band 70s to 90s in neutral water
+- 20 Micro Sub deep-route sims, target propulsion-capable window 150s to 180s after sealed-cabin drain fix
+- 10 storm logistics sims, target shelter survival with 4 Thermal Generators and no fabrication
+- 10 storm return sims, target shelter plus recharge survival with 9 Thermal Generators
+
+Expected fail conditions:
+- If full stacked suit still oxygen-kills in under 10s at 4000m, progression remains invalid.
+- If useful density in Rift rises above 0.7 per 100m^2, late game stops feeling hungry.
+- If storm shelter survives on 2 or fewer Thermal Generators, power pressure collapses.
+
+======================================================================
+9. REGRESSION MODEL
+======================================================================
+
+CPU:
+- document only
+- no runtime change yet
+
+GC:
+- document only
+- no allocation impact yet
+
+Memory:
+- document only
+- no retention impact yet
+
+Cadence risk:
+- if O2 stays raw-pressure-coupled, deep suit progression remains mathematically impossible
+- if sealed-cabin suit-energy coupling is not reduced, Micro Sub becomes a docking toy instead of a hadal workhorse
+
+Correctness risk:
+- Thermal Generator counts are PROPOSED because no live generator owner exists
+- Transport costs are PROPOSED because no live transport recipe owners exist
+
+Why kept:
+- live thermal and pressure systems already produce useful fear
+- live stress thresholds already support truthful-to-lying UI escalation
+
+Why rejected:
+- live raw-pressure O2 hyperbola at hadal depth
+- any progression claim that pretends current O2 math is fair
+
+FINAL READ
+
+The soul of the loop is not abundance. It is managed suffocation.
+
+Early game fear:
+- not enough route memory
+
+Mid game fear:
+- not enough infrastructure
+
+Late game fear:
+- enough access to go deep, never enough slack to stay deep
+
+That is the correct HECTON-8 risk/reward shape.

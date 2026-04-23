@@ -21,10 +21,10 @@ namespace Hecton8.Visor
         private sealed class FeatureSettings
         {
             [Tooltip("Compute shader used to resolve cheap emission-threshold SSGI.")]
-            public ComputeShader computeShader;
+            public ComputeShader computeShader = null;
 
             [Tooltip("Fullscreen composite shader used to add the resolved SSGI back into camera color.")]
-            public Shader compositeShader;
+            public Shader compositeShader = null;
 
             [Tooltip("Where the biolum SSGI pass is injected into URP.")]
             public RenderPassEvent injectionPoint = RenderPassEvent.BeforeRenderingPostProcessing;

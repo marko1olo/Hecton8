@@ -23,6 +23,7 @@
 using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Hecton8.Physics;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -339,7 +340,7 @@ namespace Hecton8.Gameplay
             // Apply upward force
             if (loot.TryGetComponent(out Rigidbody rb))
             {
-                rb.AddForce(Vector3.up * lootUpwardForce, ForceMode.Impulse);
+                PhysicsForceRouter.QueueForce(rb, Vector3.up * lootUpwardForce, ForceMode.Impulse);
             }
         }
 

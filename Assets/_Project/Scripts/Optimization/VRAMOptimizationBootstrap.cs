@@ -1,3 +1,4 @@
+using Hecton8.Bootstrap;
 using UnityEngine;
 
 namespace Hecton8.Optimization
@@ -17,13 +18,17 @@ namespace Hecton8.Optimization
 
             GameObject bootstrap = null;
 
+            FindOrCreateManager<AssetLifecycleGovernor>(ref bootstrap);
+            FindOrCreateManager<AssetLoadDispatcher>(ref bootstrap);
             FindOrCreateManager<VRAMMonitor>(ref bootstrap);
+            FindOrCreateManager<VRAMPressureMonitor>(ref bootstrap);
             FindOrCreateManager<RenderTextureLifecycleTracker>(ref bootstrap);
             FindOrCreateManager<RenderTexturePool>(ref bootstrap);
             FindOrCreateManager<VisorRTManager>(ref bootstrap);
             FindOrCreateManager<CameraRTManager>(ref bootstrap);
             FindOrCreateManager<PostFXRTManager>(ref bootstrap);
             FindOrCreateManager<UIRTManager>(ref bootstrap);
+            FindOrCreateManager<SceneInstantiationGate>(ref bootstrap);
         }
 
         private static T FindOrCreateManager<T>(ref GameObject bootstrap) where T : Component

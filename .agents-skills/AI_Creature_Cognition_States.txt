@@ -1,0 +1,563 @@
+```markdown
+# AI_Creature_Cognition_States.md
+## HECTON-8 | Deep Cognition Mandate v1.0
+
+---
+
+## [RULE] ZERO-GC CONTRACT
+- No `new` allocations post-Init. No LINQ. No boxing. No delegates in hot path.
+- All creature state evaluated inside Burst-compiled Jobs.
+- Communication via `NativeQueue<CognitionEvent>` (SPSC pattern per creature).
+- Entity identity = `int creatureIndex`. No object refs cross job boundary.
+
+---
+
+## [DATA] CORE STRUCT LAYOUT
+
+### CognitionBlob — Cache-line aligned (64 bytes target)
+```
+struct CognitionBlob {            // offset | size
+  float3 position;               // 0      | 12
+  float3 velocity;               // 12     | 12
+  float  hunger;                 // 24     | 4
+  float  fatigue;                // 28     | 4
+  float  fear;                   // 32     | 4
+  float  threatLevel;            // 36     | 4
+  int    stateFlags;             // 40     | 4   ← bitmask
+  int    memoryHead;             // 44     | 4   ← ring ptr
+  int    claimedBoidIndex;       // 48     | 4   ← -1 = none
+  float  memoryTimestamps[5];    // 52     | 20  ← overflow: pad or split struct
+}
+// SOLUTION: Split into CognitionCore (64B) + CognitionMemory (separate NativeArray)
+```
+
+### CognitionCore — 64 bytes exact
+```
+struct CognitionCore {
+  float3 position;         // 12
+  float3 velocity;         // 12
+  float  hunger;           // 4
+  float  fatigue;          // 4
+  float  fear;             // 4
+  float  threatLevel;      // 4
+  int    stateFlags;       // 4   ← bitmask (see STATE FLAGS)
+  int    memoryHead;       // 4   ← [0..4] ring index
+  int    claimedBoidIndex; // 4   ← atomic lock target
+  int    speciesID;        // 4   ← drives curve selection
+  int    _pad;             // 4
+  // TOTAL: 60B → pad to 64
+}
+```
+
+### SpatialMemoryBank — separate NativeArray, indexed by [creatureIndex * 5 + slot]
+```
+struct MemoryEntry {
+  float3 worldPos;    // 12 — position of stimulus
+  float  timestamp;   // 4  — Time.ElapsedTime at write
+  float  intensity;   // 4  — original stimulus magnitude
+  int    stimType;    // 4  — bitmask: VISUAL=1, ACOUSTIC=2, CHEMICAL=4
+  // TOTAL: 24B
+}
+// Total memory array: 100 creatures × 5 slots × 24B = 12,000B = ~12KB (hot in L2)
+```
+
+### STATE FLAGS (stateFlags bitmask)
+```
+HUNT    = 1 << 0   // 0x01
+FLEE    = 1 << 1   // 0x02
+EAT     = 1 << 2   // 0x04
+SLEEP   = 1 << 3   // 0x08
+PATROL  = 1 << 4   // 0x10
+ALERT   = 1 << 5   // 0x20
+FEEDING = 1 << 6   // 0x40
+DORMANT = 1 << 7   // 0x80
+
+ACTIVE_MASK  = HUNT | FLEE | EAT | ALERT | FEEDING
+PASSIVE_MASK = SLEEP | PATROL | DORMANT
+```
+
+### Double-Buffer Pattern (CognitionCore)
+```
+NativeArray<CognitionCore> bufferA;  // read frame N
+NativeArray<CognitionCore> bufferB;  // write frame N → becomes read frame N+1
+// Swap ptr at end of JobBatch. Zero copy. Dependency fence via JobHandle.
+```
+
+---
+
+## [MATH] UTILITY SCORING SYSTEM
+
+### Curve Registry — polynomial per drive
+```
+// x = normalized drive [0..1]
+Score_Hunger(x)  = x^2                          // accelerating urgency
+Score_Fear(x)    = x^3                          // panic threshold steep
+Score_Fatigue(x) = 0.4x + 0.6x^3               // slow build, sharp peak
+Score_Threat(x)  = 1 - (1 - x)^2              // inverse ease-in (flee bias)
+
+// Species tuning: multiply by species weight vector W[4]
+FinalScore[i] = Curve_i(drive_i) * W[drive_i] * ContextModifier
+```
+
+### ContextModifier
+```
+// Suppresses conflicting drives
+if stateFlags & DORMANT:  W[HUNT] *= 0.05    // sleeping predator ignores prey
+if depth > 1000m:         W[SLEEP] *= 1.4    // pressure fatigue
+if hunger < 0.1:          W[EAT]  *= 0.0     // already full
+```
+
+### Full Evaluation Per Creature
+```
+1. Read CognitionCore[i]
+2. Normalize each drive → [0,1]:
+     hunger_n  = saturate(hunger / MAX_HUNGER)
+     fatigue_n = saturate(fatigue / MAX_FATIGUE)
+     fear_n    = saturate(fear / MAX_FEAR)
+     threat_n  = saturate(threatLevel / MAX_THREAT)
+3. Compute scores:
+     s[HUNT]  = hunger_n^2   * W[0] * (threatLevel < 0.3 ? 1 : 0.2)
+     s[FLEE]  = threat_n^3   * W[1]
+     s[EAT]   = hunger_n^2   * W[2] * (claimedBoidIndex >= 0 ? 1.5 : 0)
+     s[SLEEP] = fatigue_n    * W[3] * (threatLevel < 0.1 ? 1 : 0)
+4. argmax(s[]) → winnerState
+5. Epsilon guard: if max(s) < 0.01 → fallback PATROL
+6. Write stateFlags = (stateFlags & ~ACTIVE_MASK) | winnerState
+```
+
+### dt-Invariant Drive Decay
+```
+// Exponential decay, frame-rate independent
+hunger_new   = hunger  + (HUNGER_RATE  * dt)                // accumulates
+fatigue_new  = fatigue + (FATIGUE_RATE * dt)                // accumulates
+fear_new     = fear    * pow(FEAR_DECAY_BASE, dt)           // decays: base ≈ 0.1
+threat_new   = threat  * pow(THREAT_DECAY_BASE, dt)         // decays: base ≈ 0.05
+
+// FAST APPROX for Burst (replaces pow):
+// pow(base, dt) ≈ exp(log(base) * dt) → precompute log(base) as constant
+FEAR_LOG_K   = log(0.1)   // = -2.302585
+fear_new     = fear * exp(FEAR_LOG_K * dt)
+```
+
+### Numerical Stability Guards
+```
+// After every drive update:
+hunger   = clamp(hunger,   0, MAX_HUNGER)
+fatigue  = clamp(fatigue,  0, MAX_FATIGUE)
+fear     = clamp(fear,     0, MAX_FEAR)
+threat   = clamp(threat,   0, MAX_THREAT)
+
+// NaN protection (Burst: use math.select)
+hunger = isnan(hunger) ? 0.5 : hunger
+
+// Velocity magnitude clamp (physics safety)
+speed = length(velocity)
+if speed > MAX_SPEED: velocity = (velocity / speed) * MAX_SPEED
+if speed < EPSILON:   velocity = float3(0,0,0)   // flush denormal
+EPSILON = 1e-6f
+```
+
+---
+
+## [DATA] SPATIAL MEMORY RING BUFFER
+
+### Write Protocol (stimulus received)
+```
+1. slot = memoryHead % 5
+2. memory[creatureIdx * 5 + slot] = MemoryEntry {
+     worldPos  = stimulusPos,
+     timestamp = currentTime,
+     intensity = stimulusMagnitude,
+     stimType  = stimulusBitmask
+   }
+3. memoryHead = (memoryHead + 1) % 5
+   // No bounds check needed: modulo guarantees [0..4]
+```
+
+### Read Protocol (recall valid memories)
+```
+1. For slot in [0..4]:
+     entry = memory[creatureIdx * 5 + slot]
+     age   = currentTime - entry.timestamp
+     if age > 120.0f: skip   // decayed
+     decayWeight = 1 - saturate(age / 120.0f)
+     effectiveIntensity = entry.intensity * decayWeight * decayWeight  // quadratic fade
+     // Accumulate into threat or navigation target
+2. Most intense non-decayed entry → navigation investigate target
+3. All valid entries → average position for patrol sweep
+```
+
+### Memory Decay Curve
+```
+// age ∈ [0, 120]
+// decayWeight = 1 - (age/120)^2   ← quadratic, rapid fade near end
+// At age=0:   weight=1.0
+// At age=60:  weight=0.75
+// At age=108: weight=0.19
+// At age=120: weight=0.0
+```
+
+---
+
+## [MATH] SENSORY MULTIPLEXING → ThreatLevel
+
+### Visual Component
+```
+toTarget   = normalize(playerPos - creaturePos)
+forward    = normalize(creatureForward)
+dot        = dot(forward, toTarget)          // [-1, +1]
+inFOV      = dot > COS_HALF_FOV             // e.g. cos(70°) = 0.342
+distSq     = lengthsq(playerPos - creaturePos)
+
+visualScore = 0
+if inFOV AND distSq < VISUAL_RANGE_SQ:
+     visualScore = dot * (1 - sqrt(distSq) / VISUAL_RANGE)
+     visualScore = saturate(visualScore)
+     // Light attenuation: modulate by ambient light sample (single float from renderer)
+     visualScore *= playerLightExposure       // [0..1] from lighting system
+```
+
+### Acoustic Component (Spatial Hash Ping)
+```
+// Spatial hash: bucket = int3(floor(pos / CELL_SIZE))
+// Player movement generates acoustic ping: magnitude ∝ speed
+playerNoiseMag = length(playerVelocity) * NOISE_COEFFICIENT
+
+bucketDist  = distance(creatureBucket, playerBucket)   // in cell units
+if bucketDist <= ACOUSTIC_RANGE_CELLS:
+     acousticScore = playerNoiseMag / (1 + bucketDist * bucketDist)
+     acousticScore = saturate(acousticScore / MAX_ACOUSTIC)
+else:
+     acousticScore = 0
+```
+
+### Chemical Component (optional, Ultra tier)
+```
+// Cheap: single float per grid cell written by player (blood, exhaust bubbles)
+chemScore = ChemicalGrid[bucketKey] * CHEM_SENSITIVITY
+chemScore = saturate(chemScore)
+```
+
+### Combine → ThreatLevel
+```
+// Weighted sum, tunable per species
+raw = (W_VIS * visualScore) + (W_ACU * acousticScore) + (W_CHE * chemScore)
+
+// Non-linear emphasis: sharpen mid-range detection
+threatLevel_new = raw^0.7   // slight compression — feels more organic
+
+// Blend with previous (temporal smoothing, no spike jitter)
+threatLevel = lerp(threatLevel_prev, threatLevel_new, 1 - exp(-THREAT_SMOOTH * dt))
+// THREAT_SMOOTH ≈ 3.0 → 0.63 blend at t=0.33s
+
+// Write to CognitionCore
+core.threatLevel = saturate(threatLevel)
+```
+
+---
+
+## [DATA] ECOSYSTEM BOID CLAIM SYSTEM
+
+### BoidClaimTable — atomic lock array
+```
+NativeArray<int> boidClaimTable;   // length = MAX_BOIDS (e.g. 500)
+// Value: -1 = unclaimed, ≥0 = claiming creatureIndex
+// Type: NativeArray<int> with Allocator.Persistent
+// Access via Interlocked CAS: guarantees single predator per boid
+```
+
+### Claim Protocol (inside Job, single-threaded per creature via index)
+```
+1. Find candidate boidIdx (nearest unclaimed boid within HUNT_RANGE):
+     - Use spatial hash to enumerate boids in adjacent cells
+     - Filter: boidClaimTable[boidIdx] == -1
+     - Pick nearest by distanceSq
+2. CAS attempt:
+     expected = -1
+     desired  = creatureIndex
+     success  = Interlocked.CompareExchange(ref boidClaimTable[boidIdx], desired, expected) == expected
+3. if success:
+     core.claimedBoidIndex = boidIdx
+     // Set EAT score modifier active
+4. if fail (race lost):
+     core.claimedBoidIndex = -1
+     // Try next candidate next frame (no spin, no retry in same frame)
+```
+
+### Release Protocol
+```
+// On EAT complete OR creature dies OR target escapes range:
+if core.claimedBoidIndex >= 0:
+     boidClaimTable[core.claimedBoidIndex] = -1   // atomic store (int = naturally atomic on x86/ARM)
+     core.claimedBoidIndex = -1
+```
+
+### Boid Target Validity Check (per frame)
+```
+1. if claimedBoidIndex < 0: skip
+2. boidPos = boidPositions[claimedBoidIndex]
+3. dist = distance(core.position, boidPos)
+4. if dist > CLAIM_ABANDON_RANGE OR boidIsDead[claimedBoidIndex]:
+     Release(claimedBoidIndex)
+```
+
+---
+
+## [JOB] IJobParallelFor — Utility Evaluation
+
+### Job Struct Logic Kernel
+```
+INPUT (read-only):
+  NativeArray<CognitionCore>  coresRead        // double-buffer A
+  NativeArray<MemoryEntry>    memoryBank       // 5 slots per creature
+  NativeArray<float3>         boidPositions
+  NativeArray<int>            boidClaimTable
+  float3                      playerPos
+  float3                      playerVelocity
+  float                       playerLightExposure
+  float                       currentTime
+  float                       dt
+
+OUTPUT (write-only):
+  NativeArray<CognitionCore>  coresWrite       // double-buffer B
+  NativeArray<int>            chosenStates     // output enum per creature
+
+PARALLEL GRAIN: 1 creature per index i
+
+EXECUTE(i):
+  1. core = coresRead[i]
+
+  2. [SENSORY]
+       Compute visualScore   (dot product formula above)
+       Compute acousticScore (spatial hash formula above)
+       threatLevel = blend(core.threatLevel, combine(vis,acu), dt)
+
+  3. [MEMORY WRITE — if new stimulus]
+       if visualScore > VIS_THRESHOLD OR acousticScore > ACU_THRESHOLD:
+         WriteMemory(i, stimPos, stimIntensity, stimType, currentTime)
+
+  4. [DRIVE UPDATE]
+       hunger  += HUNGER_RATE * dt
+       fatigue += FATIGUE_RATE * dt
+       fear     = fear * exp(FEAR_LOG_K * dt)
+       fear    += threatLevel * FEAR_STIMULUS_GAIN * dt
+       Clamp all drives
+
+  5. [BOID CLAIM VALIDATE]
+       ValidateBoidClaim(i, ref core)
+
+  6. [UTILITY SCORING]
+       Compute s[HUNT], s[FLEE], s[EAT], s[SLEEP] (formulas above)
+       Apply ContextModifiers
+       winner = argmax(s)
+       if max(s) < 0.01: winner = PATROL
+
+  7. [STATE WRITE]
+       core.threatLevel   = threatLevel
+       core.hunger        = hunger
+       core.fatigue       = fatigue
+       core.fear          = fear
+       core.stateFlags    = (core.stateFlags & ~ACTIVE_MASK) | winner
+       coresWrite[i]      = core
+       chosenStates[i]    = winner
+```
+
+### Scheduling — Time-Sliced Budget
+```
+// Full eval: all 100 creatures per frame
+// If CPU budget exceeded (frame >14ms): slice into 2 batches of 50, alternate frames
+// Use JobHandle chaining: sensorJob → utilityJob → steeringJob
+
+JobHandle sensorHandle  = sensorJob.Schedule(CREATURE_COUNT, 16, default)
+JobHandle utilityHandle = utilityJob.Schedule(CREATURE_COUNT, 16, sensorHandle)
+JobHandle steeringHandle= steeringJob.Schedule(CREATURE_COUNT, 8, utilityHandle)
+// Batch size 16 = L1-friendly for 64B structs (16 × 64B = 1KB per batch)
+```
+
+---
+
+## [SCALE] LOD TIERS — COGNITION QUALITY
+
+### Base (MX350 / 4-core i3)
+```
+- Visual scoring only (no acoustic hash, no chemical grid)
+- Memory slots: 3 (not 5) — NativeArray stride unchanged, skip slots 3-4
+- Utility curves: linear only (hunger_n, no polynomial)
+- Fear decay: lerp instead of exp (cheap but less accurate)
+- Update frequency: every 2 frames for creatures >30m from player
+```
+
+### High (GTX 1060 / i5-8gen)
+```
+- Visual + Acoustic scoring
+- Full 5-slot memory ring
+- Polynomial curves (x^2, x^3)
+- Exp-based decay (Burst intrinsic: math.exp)
+- Full 100 creatures updated every frame
+```
+
+### Ultra (RTX 3060+ / i7+)
+```
+- Visual + Acoustic + Chemical grid
+- Emotional contagion: nearby creatures share fear state (average threat blob)
+- Memory: 8 slots (extend NativeArray, adjust stride constant)
+- Boid flocking disruption: predator proximity feeds into boid separation weight
+- Creature-to-creature acoustic propagation (sound echo simulation)
+```
+
+### VRAM Budget Note (MX350 = 2GB)
+```
+- Cognition data: CPU-side only (NativeArrays in RAM, not GPU buffers)
+- GPU receives only: final position + animationStateID (2× float3 + 1× int per creature)
+- Creature GPU upload: 100 × 28B = 2,800B per frame → negligible
+- No StructuredBuffer for AI state on MX350: keep GPU for rendering only
+```
+
+---
+
+## [SAFE] FAILURE MODES & EDGE CASES
+
+### Speed > 40m/s
+```
+- Clamp velocity magnitude to MAX_SPEED = 40 before any memory/sensory write
+- Acoustic score at v>40: cap playerNoiseMag = MAX_NOISE regardless of speed
+- Prevents threat runaway spiral: threatLevel hard-clamp at 1.0
+```
+
+### Depth > 4,000m
+```
+- DORMANT bias: W[SLEEP] *= 2.0, W[HUNT] *= 0.1 (pressure simulates hibernation)
+- Visual range reduced: VISUAL_RANGE = base * exp(-depth / 2000)
+  → At 4km: VISUAL_RANGE ≈ base * 0.135
+- Acoustic: sound travels faster/farther — ACOUSTIC_RANGE_CELLS *= 1.5 beyond 3km
+```
+
+### All Utility Scores == 0
+```
+→ Default: PATROL state. Prevents stateFlags = 0 (undefined behavior in animation system)
+```
+
+### NaN in threatLevel
+```
+→ Reset: threatLevel = 0. Log to NativeQueue<DebugEvent> (non-allocating).
+```
+
+### CAS Contention (100 predators, 1 boid)
+```
+→ Only 1 succeeds. Others get -1. No retry same frame.
+→ Next frame: spatial hash finds next nearest unclaimed. Distributes naturally.
+→ Deadlock impossible: no spin-wait, no blocking.
+```
+
+### Memory Decay Timestamp Overflow
+```
+→ Use float elapsed time. float32 loses second-precision after ~16M seconds (185 days).
+→ Acceptable. For longer sessions: reset all timestamps on scene reload.
+```
+
+### creatureIndex Out of Bounds
+```
+→ Burst jobs: NativeArray auto-bounds-check in Debug. Disable in Release.
+→ Validate: all indices clamped to [0, CREATURE_COUNT-1] at write site only.
+```
+
+---
+
+## [MATH] SENIOR HACKS — Cheap Realism (MX350)
+
+### Fast Dot-Product FOV (no acos)
+```
+// Skip: acos(dot) comparison (expensive)
+// Use: dot > precomputed COS_HALF_FOV constant
+COS_HALF_FOV_70deg = 0.342f   // cos(70°), computed offline
+inFOV = dot(forward, toTarget) > COS_HALF_FOV_70deg
+// Cost: 3 muls + 2 adds vs full acos (~20 ops)
+```
+
+### Fast Exponential Decay (Burst)
+```
+// math.exp is Burst-intrinsic SIMD → free on AVX2
+// But: precompute log(decayBase) as static readonly float
+// Avoids log() at runtime entirely
+```
+
+### Spatial Hash (no sqrt)
+```
+// Bucket distance comparison: use Manhattan distance on int3
+// |dx| + |dy| + |dz| < RANGE_IN_CELLS
+// Avoids float distance entirely for acoustic range check
+```
+
+### Utility argmax (branchless SIMD-friendly)
+```
+// Store s[] as float4 (HUNT, FLEE, EAT, SLEEP)
+// winner = index of max component
+// Burst: math.cmax(s) then bit-scan (or compare mask)
+// Avoids 4-branch if-else chain
+float4 scores = float4(s_hunt, s_flee, s_eat, s_sleep)
+float  best   = math.cmax(scores)
+int    winner = scores.x==best ? HUNT : scores.y==best ? FLEE : scores.z==best ? EAT : SLEEP
+// Branchless version: construct bitmask, ctz (count trailing zeros)
+```
+
+---
+
+## [RULE] INTERFACE CONTRACTS (SRP — No Cross-System Coupling)
+
+```
+ICognitionReader:
+  float  GetThreatLevel(int creatureIndex)
+  int    GetStateFlags(int creatureIndex)
+  float3 GetPosition(int creatureIndex)
+
+IBoidClaimBroker:
+  bool   TryClaim(int creatureIndex, int boidIndex)
+  void   Release(int creatureIndex)
+  int    GetClaim(int creatureIndex)
+
+ISensorySource:
+  float  GetVisualScore(float3 creaturePos, float3 creatureForward, float3 targetPos)
+  float  GetAcousticScore(int3 creatureBucket, int3 targetBucket, float targetNoise)
+
+ICognitionWriter:           // internal to Job only — not exposed
+  void   WriteCore(int i, CognitionCore core)
+```
+
+### No direct cross-reference between:
+```
+CognitionJob  → BoidFlockingJob   // communicate via boidClaimTable NativeArray only
+CognitionJob  → RenderingSystem   // communicate via chosenStates output array only
+CognitionJob  → PhysicsSystem     // communicate via position read-only snapshot
+```
+
+---
+
+## [RULE] CONSTANTS — Define as static readonly, never magic numbers
+```
+MAX_HUNGER           = 1.0f
+MAX_FATIGUE          = 1.0f
+MAX_FEAR             = 1.0f
+MAX_THREAT           = 1.0f
+MAX_SPEED            = 40.0f
+VISUAL_RANGE         = 30.0f       // meters, Base tier
+VISUAL_RANGE_SQ      = 900.0f
+COS_HALF_FOV_70      = 0.342f
+ACOUSTIC_RANGE_CELLS = 8
+CELL_SIZE            = 5.0f        // meters per spatial hash cell
+MEMORY_DECAY_TIME    = 120.0f      // seconds
+MEMORY_SLOTS         = 5
+CLAIM_ABANDON_RANGE  = 25.0f
+HUNGER_RATE          = 0.002f      // per second (full hunger in ~500s)
+FATIGUE_RATE         = 0.001f      // per second
+FEAR_LOG_K           = -2.302585f  // log(0.1)
+THREAT_SMOOTH        = 3.0f
+VIS_THRESHOLD        = 0.2f
+ACU_THRESHOLD        = 0.15f
+FEAR_STIMULUS_GAIN   = 0.8f
+NOISE_COEFFICIENT    = 0.4f
+MAX_ACOUSTIC         = 5.0f
+EPSILON              = 1e-6f
+MAX_BOIDS            = 500
+CREATURE_COUNT       = 100
+```
+```

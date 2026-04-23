@@ -29,6 +29,7 @@
 
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Hecton8.Physics;
 using Hecton8.World;
 using UnityEngine;
 
@@ -431,8 +432,9 @@ namespace Hecton8.Scavenging
                     Vector3 force = Random.insideUnitSphere * scatterForce;
                     force.y = Mathf.Abs(force.y) + upwardBias;
 
-                    rb.AddForce(force, ForceMode.Impulse);
-                    rb.AddTorque(
+                    PhysicsForceRouter.QueueForce(rb, force, ForceMode.Impulse);
+                    PhysicsForceRouter.QueueTorque(
+                        rb,
                         Random.insideUnitSphere * (scatterForce * 0.5f),
                         ForceMode.Impulse);
                 }

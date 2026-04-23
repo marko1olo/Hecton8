@@ -177,7 +177,7 @@ GizmoGeometryPool {
     Mesh         wireCube
     Mesh         arrowMesh
     Mesh         frustumMesh
-    ComputeBuffer instanceBuffer    // capacity: 1024 instances per type
+    GraphicsBuffer instanceBuffer   // capacity: 1024 instances per type
     MaterialPropertyBlock mpb       // reused, never reallocated
     Matrix4x4[]  matrixScratch      // pre-alloc 1024 — reused per Draw call
 }
@@ -247,27 +247,26 @@ Activation:
 
 DebugFlags |= (1u << 7)  // HECTON_DEBUG_OVERDRAW bit
 
-Implementation via replacement shader pass:
+Implementation via RenderGraph raster pass:
 
-Shader "H8/Debug/Overdraw":
-    Blend: One One (additive accumulation)
-    ZWrite: Off
-    ZTest: Always
-    Color output: fixed4(0.05, 0.0, 0.0, 0.0)
-    // Each overdraw layer adds +0.05 red
-    // 1 layer = near-black, 20 layers = saturated red
+1. Build renderer list for opaque + transparent debug layer
+2. Add raster pass `OverdrawHeatmap`
+3. Override material with additive overdraw shader
+4. Draw via `context.cmd.DrawRendererList(...)`
+5. Remap accumulated target through heat LUT in follow-up fullscreen pass
+6. Composite label overlay: "OVERDRAW | MX350 FILLRATE ANALYSIS"
 
-Heat LUT remap (applied in blit pass):
+Canonical law:
 
-t = saturate(accumulatedRed / MAX_OVERDRAW)  // MAX_OVERDRAW = 20
-// Remap through heat gradient:
-color = lerp(lerp(BLUE, GREEN, t*2), lerp(GREEN, RED, t*2-1), step(0.5, t))
-
-Dispatch:
-
-1. Camera.RenderWithShader(overdrawShader, "")  // replace all geometry
-2. Blit result with heat LUT pass
-3. Composite label overlay: "OVERDRAW | MX350 FILLRATE ANALYSIS"
+using (var builder = renderGraph.AddRasterRenderPass<PassData>("OverdrawHeatmap", out var passData))
+{
+    var overrideMaterial = debugOverdrawMaterial;
+    builder.SetRenderFunc((PassData data, RasterGraphContext context) =>
+    {
+        var stateBlock = new RenderStateBlock(RenderStateMask.Blend);
+        context.cmd.DrawRendererList(data.rendererList, overrideMaterial, 0, stateBlock);
+    });
+}
 
 Budget reference lines:
 
@@ -452,7 +451,7 @@ Shutdown order (reverse dependency):
 
 [1] Trigger final binary export if errorFlags != 0
 [2] Dispose all ProfilerRecorders
-[3] Dispose GizmoGeometryPool ComputeBuffer
+[3] Dispose GizmoGeometryPool GraphicsBuffer
 [4] Dispose safetySnapshot NativeArray
 [5] Dispose main telemetry NativeArray
 [6] Unregister Application.logMessageReceived

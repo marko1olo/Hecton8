@@ -76,9 +76,9 @@ public struct SystemNativeMemory : IDisposable
     public JobHandle WriteJobHandle;         // Handle for all back-buffer writers
     public JobHandle ReaderFence;            // Combined handle of all front readers
 
-    // --- DISPOSAL QUEUE (Section 5) ---
-    // Owned by subsystem manager, not this struct.
-    // See PendingDisposalQueue<T>.
+    // --- DEFERRED DISPOSAL HANDLES (Section 5) ---
+    // Disposal binds directly to producer handles.
+    // No polling queue.
 
     // --- CAPACITY METADATA (Section 6) ---
     public int LogicalCount;                 // Active element count (< Capacity)
@@ -105,7 +105,7 @@ public struct SystemNativeMemory : IDisposable
     public void Dispose()
     {
         // Caller MUST ensure all handles are complete before calling Dispose.
-        // Use PendingDisposalQueue for deferred cases. See Section 5.
+        // Use Dispose(JobHandle) for deferred cases. See Section 5.
         if (FrontBuffer.IsCreated) FrontBuffer.Dispose();
         if (BackBuffer.IsCreated)  BackBuffer.Dispose();
     }
@@ -352,85 +352,23 @@ Never call `Dispose()` on any collection whose associated handle is not confirme
 complete. This applies even when you "know" job should be done by now.
 Certainty is not knowledge. `handle.IsCompleted` is knowledge.
 
-### 5.2 PendingDisposalQueue Implementation
+### 5.2 Zero-Poll Deferred Disposal
 
-/// <summary>
-/// Thread-safe deferred disposal registry.
-/// Populated during Tick() when collection is logically retired.
-/// Drained during SlowTick() (every N frames) or on system teardown.
-/// </summary>
-public sealed class PendingDisposalQueue
-{
-    private struct DisposalEntry
-    {
-        public JobHandle     PendingHandle;
-        public INativeDisposable Target;
-        public string        DebugTag;      // For profiling/crash diagnostics
-        public int           EnqueuedFrame;
-    }
+Rule:
+  - Retired native containers bind disposal directly to the producer handle
+  - No `PendingDisposalQueue`
+  - No `IsCompleted` polling loop
+  - No SlowTick drain pass
 
-    private readonly List<DisposalEntry> _queue = new(64);
-    private const int MaxFrameAge = 8;  // Escalate to error after 8 frames
+Canonical pattern:
 
-    /// <summary>
-    /// Register collection for deferred disposal.
-    /// Call this instead of target.Dispose() whenever job handle is in flight.
-    /// </summary>
-    public void Enqueue(JobHandle pendingHandle, INativeDisposable target,
-                        string debugTag, int currentFrame)
-    {
-        _queue.Add(new DisposalEntry
-        {
-            PendingHandle = pendingHandle,
-            Target        = target,
-            DebugTag      = debugTag,
-            EnqueuedFrame = currentFrame
-        });
-    }
+oldBuffer.Dispose(activeWriteHandle);
+oldBuffer = default;
 
-    /// <summary>
-    /// Called from SlowTick() — e.g., every 4 frames or on dedicated thread.
-    /// Drains all entries whose jobs have completed.
-    /// </summary>
-    public void DrainCompleted(int currentFrame)
-    {
-        for (int i = _queue.Count - 1; i >= 0; i--)
-        {
-            var entry = _queue[i];
-
-            int age = currentFrame - entry.EnqueuedFrame;
-            if (age > MaxFrameAge)
-            {
-                // Handle has been pending too long. This indicates job leak.
-                // Log at Error level. Force complete to unblock disposal.
-                Debug.LogError(
-                    $"[PendingDisposal] Handle age exceeded {MaxFrameAge} frames. " +
-                    $"Tag: {entry.DebugTag}. Forcing complete. Investigate job leak.");
-                entry.PendingHandle.Complete();
-            }
-
-            if (entry.PendingHandle.IsCompleted)
-            {
-                entry.Target.Dispose();
-                _queue.RemoveAtSwapBack(i);
-            }
-        }
-    }
-
-    /// <summary>
-    /// Blocking drain for use in OnDestroy() only.
-    /// Forces all pending completions. Not for use during gameplay.
-    /// </summary>
-    public void ForceCompleteAndDrainAll()
-    {
-        foreach (var entry in _queue)
-        {
-            entry.PendingHandle.Complete();
-            entry.Target.Dispose();
-        }
-        _queue.Clear();
-    }
-}
+Result:
+  - disposal executes in the C++ Job Scheduler the instant the handle completes
+  - zero main-thread polling
+  - zero leak-prone bookkeeping
 
 ### 5.3 Usage Pattern
 
@@ -440,13 +378,7 @@ public sealed class PendingDisposalQueue
 oldBuffer.Dispose();  // Job may still be reading it. Use-After-Free.
 
 // ✅ CORRECT:
-disposalQueue.Enqueue(
-    pendingHandle: activeWriteHandle,
-
-    debugTag:      $"ChunkBuffer_Unload_{chunkId}",
-    currentFrame:  Time.frameCount
-);
-// oldBuffer is now owned by queue. Do not touch it again.
+oldBuffer.Dispose(activeWriteHandle);
 oldBuffer = default;  // Nullify local reference immediately to prevent accidental use.
 
 ---
@@ -491,7 +423,7 @@ exponential growth (doubling) to amortize future reallocations:
 
 /// <summary>
 /// Grows NativeList's backing capacity using exponential (x2) growth.
-/// Schedules old array for deferred disposal.
+/// Binds old storage disposal to the copy handle.
 /// Returns new handle incorporating copy job.
 /// MUST NOT be called on main thread during hot frame path.
 /// Call from capacity-validation step at frame boundaries only.
@@ -500,7 +432,6 @@ private JobHandle GrowNativeList<T>(
     ref NativeList<T>   list,
     int                 requiredCapacity,
     JobHandle           inputDeps,
-    PendingDisposalQueue disposalQueue,
     string              debugTag) where T : unmanaged
 {
     if (list.Capacity >= requiredCapacity)
@@ -921,7 +852,7 @@ IR_01: Capture Unity Memory Profiler snapshot immediately.
 IR_02: Enable Jobs Debugger and reproduce in Development build.
 IR_03: Attach Burst Inspector to suspected job pipeline.
 IR_04: Identify owning system of faulting collection.
-IR_05: Audit that system's handle tracking and disposal queue against this mandate.
+IR_05: Audit that system's handle tracking and `Dispose(JobHandle)` paths against this mandate.
 IR_06: Root cause MUST be documented in post-mortem before fix is merged.
 IR_07: If root cause is mandate violation, fix includes mandate compliance.
        mandate is not relaxed to accommodate bug.

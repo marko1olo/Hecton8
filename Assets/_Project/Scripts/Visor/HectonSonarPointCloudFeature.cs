@@ -17,7 +17,7 @@ namespace Hecton8.Visor
         private sealed class FeatureSettings
         {
             [Tooltip("Fullscreen sonar point-cloud shader. Uses pass 0 for history accumulation and pass 1 for composite.")]
-            public Shader shader;
+            public Shader shader = null;
 
             [Tooltip("Where the sonar point-cloud overlay is injected into URP.")]
             public RenderPassEvent injectionPoint = RenderPassEvent.BeforeRenderingPostProcessing;

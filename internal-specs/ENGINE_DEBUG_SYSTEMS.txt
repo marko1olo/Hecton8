@@ -1,0 +1,1840 @@
+# HECTON-8 ENGINE DEBUG SYSTEMS
+Date: 2026-04-23
+Status: PENDING VERIFICATION
+
+Mandates followed:
+- OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+- OPT_Native_Memory_Collections_JobSystem_Protocol.txt
+- MATH_Coordinate_Precision_AUP_FloatingOrigin.txt
+- AI_Flocking_Boids_Swarm_SpatialHash_Logic.txt
+- AUD_Acoustic_Sonar_Occlusion_Sensory_Simulation.txt
+- VOX_MapMagic_Voxel_Seam_Alignment_Integration.txt
+
+Existing owner alignment:
+- Floating origin owner: Assets/_Project/Scripts/HectonFloatingOrigin.cs
+- CPU spatial registry owner: Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs
+- GPU boid field owner: Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs
+- Acoustic owner: Assets/_Project/Scripts/AcousticZoneController.cs
+- Sonar visual owner: Assets/_Project/Scripts/Visor/HectonSonarPointCloudFeature.cs
+- Terrain seam owner: Assets/_Project/Scripts/WorldGenerativeGeologySeamExecutionDirector.cs
+- Voxel seam/runtime owner: Assets/_Project/Scripts/WorldGenerativeGeologyVoxelBridgeDirector.cs
+- Voxel volume owner: Assets/_Project/Scripts/HectonVoxelVolume.cs
+
+[ANALYSIS]
+Target:
+- Editor-only debug and profiling package for floating-origin kinematics, GPU boid spatial hash occupancy, six-axis sonar occlusion, native allocation leak tracking, and voxel seam/jitter diagnostics.
+
+Affected systems:
+- HectonFloatingOrigin
+- SargassumMicroFaunaBoids
+- WorldSpatialHashGrid
+- AcousticZoneController
+- HectonSonarPointCloudFeature
+- WorldGenerativeGeologySeamExecutionDirector
+- WorldGenerativeGeologyVoxelBridgeDirector
+- HectonVoxelVolume
+
+Zero GC proof:
+- No LINQ.
+- No per-repaint new arrays, lists, dictionaries, strings, lambdas, or mesh/material clones.
+- All SceneView draw paths use cached arrays, cached MaterialPropertyBlock instances, cached Mesh/Material refs, fixed-size ring buffers, and Graphics.DrawMeshInstanced batched at 1023 matrices max.
+- All physics probes use Physics.RaycastNonAlloc with preallocated RaycastHit buffers.
+- All native leak tracking records are added on allocation/disposal events only, not from hot gameplay loops.
+
+State check:
+- Every editor window guards subscription and unsubscribes on OnDisable and assembly reload.
+- Every SceneView draw callback exits if target is null, not playing, not enabled, or state is stale after OnDisable.
+- GPU grid debugger reads only active boid owner buffer state and refuses to draw if grid meta or buffer capacity is stale.
+- Sonar overlay stores only six ray states plus one shared hit chain buffer, avoiding per-axis heap churn.
+- Voxel seam analyzer tracks previous absolute sample positions keyed by stable runtime keys and rejects post-OnDisable data.
+- Native leak watchdog records allocation timestamp, frame index, source tag, owner instance id, element size, allocator, and live/disposed state.
+
+Rule quote:
+- "[REQ] Before any task, scan C:\\hades\\Hecton8\\.agents-skills\\ and load ONLY relevant mandates."
+- "[REQ] OnDrawGizmos/OnDrawGizmosSelected: #if UNITY_EDITOR only."
+- "[FORBID] Physics/Find/GetComponent in OnDrawGizmos - visualize cached data only."
+- "[REQ] Pre-allocate buffer once (COLD ALLOC), use NonAlloc variant every call."
+- "[RULE] Universe coordinates: int64 grid + float32 local offset. Never raw double in hot paths."
+
+WARNING: Regression risk in SceneView stalls if GPU occupancy readback cadence is raised above 8 Hz.
+WARNING: Regression risk in voxel seam analyzer if boundary sample count is raised beyond 8 samples per face pair on dense scenes.
+
+Architecture decisions:
+- These tools stay editor-only. They belong under Assets/_Project/Scripts/Editor/Debug/ and are wrapped in #if UNITY_EDITOR.
+- Visualization policy is split:
+  - Gizmos and Handles for lines, axes, bounds, and label-free scene vectors.
+  - Graphics.DrawMeshInstanced for all solid markers, ghosts, cell boxes, and seam alert markers.
+- No new runtime wrapper layer is added for Crest, MapMagic, or other third-party systems.
+- No player-build API surface is added. Any instrumentation patch is internal and editor-only.
+
+Required minimal instrumentation patches:
+- Change "public sealed class SargassumMicroFaunaBoids" to "public sealed partial class SargassumMicroFaunaBoids".
+- Optional but recommended: change "public sealed class WorldGenerativeGeologyVoxelBridgeDirector" to "public sealed partial class WorldGenerativeGeologyVoxelBridgeDirector" to expose editor-only active-runtime copying without FindObjects allocations.
+
+File map:
+- Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.EditorDebug.cs
+- Assets/_Project/Scripts/World/WorldGenerativeGeologyVoxelBridgeDirector.EditorDebug.cs
+- Assets/_Project/Scripts/Editor/Debug/Shared/EditorInstancedDrawUtility.cs
+- Assets/_Project/Scripts/Editor/Debug/FloatingOrigin/KinematicGhostWindow.cs
+- Assets/_Project/Scripts/Editor/Debug/Swarm/GpuBoidSpatialHashDebuggerWindow.cs
+- Assets/_Project/Scripts/Editor/Debug/Audio/SonarOcclusionRadarWindow.cs
+- Assets/_Project/Scripts/Editor/Debug/Memory/NativeLeakWatchdog.cs
+- Assets/_Project/Scripts/Editor/Debug/Memory/NativeLeakWatchdogWindow.cs
+- Assets/_Project/Scripts/Editor/Debug/Voxel/VoxelChunkBoundaryAnalyzerWindow.cs
+
+======================================================================
+KERNEL 00 - SHARED INSTANCED DRAW UTILITY
+======================================================================
+
+```csharp
+#if UNITY_EDITOR
+using UnityEditor;
+using UnityEngine;
+using UnityEngine.Rendering;
+
+namespace Hecton8.Editor.DebugTools
+{
+    internal static class EditorInstancedDrawUtility
+    {
+        internal const int MaxInstancesPerDraw = 1023;
+        private static readonly int _BaseColorId = Shader.PropertyToID("_BaseColor");
+
+        private static Material _instancedMaterial;
+        private static Mesh _cubeMesh;
+        private static Mesh _sphereMesh;
+        private static readonly MaterialPropertyBlock _sharedBlock = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - shared editor instanced draw block - owner: EditorInstancedDrawUtility
+
+        internal static Mesh CubeMesh
+        {
+            get
+            {
+                EnsureAssets();
+                return _cubeMesh;
+            }
+        }
+
+        internal static Mesh SphereMesh
+        {
+            get
+            {
+                EnsureAssets();
+                return _sphereMesh;
+            }
+        }
+
+        internal static Material InstancedMaterial
+        {
+            get
+            {
+                EnsureAssets();
+                return _instancedMaterial;
+            }
+        }
+
+        internal static void DrawBatch(
+            Mesh mesh,
+            Matrix4x4[] matrices,
+            int count,
+            Color color)
+        {
+            if (mesh == null || matrices == null || count <= 0)
+                return;
+
+            EnsureAssets();
+            _sharedBlock.Clear();
+            _sharedBlock.SetColor(_BaseColorId, color);
+            Graphics.DrawMeshInstanced(
+                mesh,
+                0,
+                _instancedMaterial,
+                matrices,
+                count,
+                _sharedBlock,
+                ShadowCastingMode.Off,
+                false,
+                0,
+                null,
+                LightProbeUsage.Off,
+                null);
+        }
+
+        private static void EnsureAssets()
+        {
+            if (_cubeMesh == null)
+            {
+                GameObject primitive = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                primitive.hideFlags = HideFlags.HideAndDontSave;
+                MeshFilter filter = primitive.GetComponent<MeshFilter>();
+                if (filter != null)
+                    _cubeMesh = filter.sharedMesh;
+                Object.DestroyImmediate(primitive);
+            }
+
+            if (_sphereMesh == null)
+            {
+                GameObject primitive = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                primitive.hideFlags = HideFlags.HideAndDontSave;
+                MeshFilter filter = primitive.GetComponent<MeshFilter>();
+                if (filter != null)
+                    _sphereMesh = filter.sharedMesh;
+                Object.DestroyImmediate(primitive);
+            }
+
+            if (_instancedMaterial == null)
+            {
+                Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
+                _instancedMaterial = new Material(shader)
+                {
+                    hideFlags = HideFlags.HideAndDontSave,
+                    enableInstancing = true
+                };
+            }
+        }
+    }
+}
+#endif
+```
+
+Inspector pseudo-code:
+- No inspector required.
+- Shared utility is called by all windows during SceneView repaint only.
+
+======================================================================
+KERNEL 01 - KINEMATIC GHOST
+======================================================================
+
+Purpose:
+- Show vehicle-local stability and absolute universe drift at the same time.
+- Local ghost trail collapses to attachment stability.
+- Universe ghost trail preserves absolute travel through floating-origin rebases.
+- Error vector exposes jitter between local-space expectation and rebased absolute motion.
+
+```csharp
+#if UNITY_EDITOR
+using UnityEditor;
+using UnityEngine;
+using Hecton8.Core;
+
+namespace Hecton8.Editor.DebugTools
+{
+    public sealed class KinematicGhostWindow : EditorWindow
+    {
+        private const int MaxHistorySamples = 96;
+        private const float DefaultSampleInterval = 0.05f;
+
+        [SerializeField] private Transform vehicleRoot;
+        [SerializeField] private Transform trackedTransform;
+        [SerializeField] private float sampleInterval = DefaultSampleInterval;
+        [SerializeField] private float markerScale = 0.2f;
+        [SerializeField] private Color localColor = new Color(0.22f, 0.92f, 1f, 0.85f);
+        [SerializeField] private Color universeColor = new Color(1f, 0.5f, 0.12f, 0.85f);
+        [SerializeField] private Color errorColor = new Color(1f, 0.12f, 0.12f, 1f);
+        [SerializeField] private bool drawTrails = true;
+        [SerializeField] private bool drawErrorVector = true;
+
+        // COLD ALLOC: Vector3[96] - vehicle-local history ring buffer - owner: KinematicGhostWindow
+        private readonly Vector3[] _localHistory = new Vector3[MaxHistorySamples];
+        // COLD ALLOC: Quaternion[96] - vehicle-local rotation history ring buffer - owner: KinematicGhostWindow
+        private readonly Quaternion[] _localRotationHistory = new Quaternion[MaxHistorySamples];
+        // COLD ALLOC: Vector3[96] - absolute universe position history ring buffer - owner: KinematicGhostWindow
+        private readonly Vector3[] _universeHistory = new Vector3[MaxHistorySamples];
+        // COLD ALLOC: Quaternion[96] - world rotation history ring buffer - owner: KinematicGhostWindow
+        private readonly Quaternion[] _worldRotationHistory = new Quaternion[MaxHistorySamples];
+        // COLD ALLOC: Matrix4x4[96] - cached local ghost matrices - owner: KinematicGhostWindow
+        private readonly Matrix4x4[] _localMatrices = new Matrix4x4[MaxHistorySamples];
+        // COLD ALLOC: Matrix4x4[96] - cached universe ghost matrices - owner: KinematicGhostWindow
+        private readonly Matrix4x4[] _universeMatrices = new Matrix4x4[MaxHistorySamples];
+
+        private int _historyCount;
+        private int _historyHead;
+        private double _nextSampleTime;
+        private Vector3 _absoluteOffset;
+        private bool _subscribed;
+
+        [MenuItem("Hecton8/Debug/Kinematic Ghost")]
+        private static void Open()
+        {
+            GetWindow<KinematicGhostWindow>("Kinematic Ghost");
+        }
+
+        private void OnEnable()
+        {
+            if (HectonFloatingOrigin.Instance != null)
+                _absoluteOffset = HectonFloatingOrigin.Instance.TotalOffset;
+            Subscribe();
+        }
+
+        private void OnDisable()
+        {
+            Unsubscribe();
+            ClearHistory();
+        }
+
+        private void OnGUI()
+        {
+            EditorGUILayout.LabelField("Vehicle / Target", EditorStyles.boldLabel);
+            vehicleRoot = (Transform)EditorGUILayout.ObjectField("Vehicle Root", vehicleRoot, typeof(Transform), true);
+            trackedTransform = (Transform)EditorGUILayout.ObjectField("Tracked Transform", trackedTransform, typeof(Transform), true);
+            sampleInterval = Mathf.Clamp(EditorGUILayout.FloatField("Sample Interval", sampleInterval), 0.01f, 1f);
+            markerScale = Mathf.Clamp(EditorGUILayout.FloatField("Marker Scale", markerScale), 0.02f, 4f);
+            drawTrails = EditorGUILayout.Toggle("Draw Trails", drawTrails);
+            drawErrorVector = EditorGUILayout.Toggle("Draw Error Vector", drawErrorVector);
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("Bind Selection"))
+                    BindFromSelection();
+
+                if (GUILayout.Button("Clear History"))
+                    ClearHistory();
+            }
+        }
+
+        private void BindFromSelection()
+        {
+            Transform selection = Selection.activeTransform;
+            if (selection == null)
+                return;
+
+            trackedTransform = selection;
+            if (vehicleRoot == null && selection.parent != null)
+                vehicleRoot = selection.parent;
+        }
+
+        private void Subscribe()
+        {
+            if (_subscribed)
+                return;
+
+            _subscribed = true;
+            SceneView.duringSceneGui += HandleSceneGui;
+            EditorApplication.update += HandleEditorUpdate;
+            HectonFloatingOrigin.OnWorldShift += HandleWorldShift;
+        }
+
+        private void Unsubscribe()
+        {
+            if (!_subscribed)
+                return;
+
+            _subscribed = false;
+            SceneView.duringSceneGui -= HandleSceneGui;
+            EditorApplication.update -= HandleEditorUpdate;
+            HectonFloatingOrigin.OnWorldShift -= HandleWorldShift;
+        }
+
+        private void HandleWorldShift(Vector3 shift)
+        {
+            _absoluteOffset += shift;
+        }
+
+        private void HandleEditorUpdate()
+        {
+            if (!Application.isPlaying || vehicleRoot == null || trackedTransform == null)
+                return;
+
+            double now = EditorApplication.timeSinceStartup;
+            if (now < _nextSampleTime)
+                return;
+
+            _nextSampleTime = now + sampleInterval;
+            SampleState();
+            SceneView.RepaintAll();
+        }
+
+        private void SampleState()
+        {
+            if (HectonFloatingOrigin.Instance != null)
+                _absoluteOffset = HectonFloatingOrigin.Instance.TotalOffset;
+
+            Vector3 localPosition = vehicleRoot.InverseTransformPoint(trackedTransform.position);
+            Quaternion localRotation = Quaternion.Inverse(vehicleRoot.rotation) * trackedTransform.rotation;
+            Vector3 universePosition = trackedTransform.position + _absoluteOffset;
+            Quaternion worldRotation = trackedTransform.rotation;
+
+            _localHistory[_historyHead] = localPosition;
+            _localRotationHistory[_historyHead] = localRotation;
+            _universeHistory[_historyHead] = universePosition;
+            _worldRotationHistory[_historyHead] = worldRotation;
+
+            _historyHead++;
+            if (_historyHead >= MaxHistorySamples)
+                _historyHead = 0;
+
+            if (_historyCount < MaxHistorySamples)
+                _historyCount++;
+        }
+
+        private void HandleSceneGui(SceneView sceneView)
+        {
+            if (Event.current.type != EventType.Repaint ||
+                vehicleRoot == null ||
+                trackedTransform == null ||
+                _historyCount <= 0)
+            {
+                return;
+            }
+
+            int localCount = BuildLocalMatrices();
+            int universeCount = BuildUniverseMatrices();
+
+            EditorInstancedDrawUtility.DrawBatch(
+                EditorInstancedDrawUtility.SphereMesh,
+                _localMatrices,
+                localCount,
+                localColor);
+            EditorInstancedDrawUtility.DrawBatch(
+                EditorInstancedDrawUtility.CubeMesh,
+                _universeMatrices,
+                universeCount,
+                universeColor);
+
+            DrawSceneLines();
+        }
+
+        private int BuildLocalMatrices()
+        {
+            int count = 0;
+            for (int i = 0; i < _historyCount; i++)
+            {
+                int index = ResolveHistoryIndex(i);
+                Vector3 worldPosition = vehicleRoot.TransformPoint(_localHistory[index]);
+                Quaternion worldRotation = vehicleRoot.rotation * _localRotationHistory[index];
+                _localMatrices[count] = Matrix4x4.TRS(
+                    worldPosition,
+                    worldRotation,
+                    Vector3.one * markerScale);
+                count++;
+            }
+
+            return count;
+        }
+
+        private int BuildUniverseMatrices()
+        {
+            Vector3 currentOffset = HectonFloatingOrigin.Instance != null
+                ? HectonFloatingOrigin.Instance.TotalOffset
+                : _absoluteOffset;
+
+            int count = 0;
+            for (int i = 0; i < _historyCount; i++)
+            {
+                int index = ResolveHistoryIndex(i);
+                Vector3 rebasedWorldPosition = _universeHistory[index] - currentOffset;
+                _universeMatrices[count] = Matrix4x4.TRS(
+                    rebasedWorldPosition,
+                    _worldRotationHistory[index],
+                    Vector3.one * markerScale * 0.82f);
+                count++;
+            }
+
+            return count;
+        }
+
+        private void DrawSceneLines()
+        {
+            if (!drawTrails)
+                return;
+
+            Handles.color = localColor;
+            for (int i = 1; i < _historyCount; i++)
+            {
+                int previousIndex = ResolveHistoryIndex(i - 1);
+                int currentIndex = ResolveHistoryIndex(i);
+                Vector3 previousPoint = vehicleRoot.TransformPoint(_localHistory[previousIndex]);
+                Vector3 currentPoint = vehicleRoot.TransformPoint(_localHistory[currentIndex]);
+                Handles.DrawLine(previousPoint, currentPoint);
+            }
+
+            Vector3 currentOffset = HectonFloatingOrigin.Instance != null
+                ? HectonFloatingOrigin.Instance.TotalOffset
+                : _absoluteOffset;
+            Handles.color = universeColor;
+            for (int i = 1; i < _historyCount; i++)
+            {
+                int previousIndex = ResolveHistoryIndex(i - 1);
+                int currentIndex = ResolveHistoryIndex(i);
+                Vector3 previousPoint = _universeHistory[previousIndex] - currentOffset;
+                Vector3 currentPoint = _universeHistory[currentIndex] - currentOffset;
+                Handles.DrawLine(previousPoint, currentPoint);
+            }
+
+            if (drawErrorVector)
+            {
+                int latest = ResolveHistoryIndex(_historyCount - 1);
+                Vector3 latestLocalWorld = vehicleRoot.TransformPoint(_localHistory[latest]);
+                Vector3 latestUniverseWorld = _universeHistory[latest] - currentOffset;
+                Handles.color = errorColor;
+                Handles.DrawLine(latestLocalWorld, latestUniverseWorld);
+            }
+        }
+
+        private int ResolveHistoryIndex(int chronologicalIndex)
+        {
+            int oldestIndex = _historyHead - _historyCount;
+            if (oldestIndex < 0)
+                oldestIndex += MaxHistorySamples;
+
+            int index = oldestIndex + chronologicalIndex;
+            if (index >= MaxHistorySamples)
+                index -= MaxHistorySamples;
+
+            return index;
+        }
+
+        private void ClearHistory()
+        {
+            _historyCount = 0;
+            _historyHead = 0;
+            _nextSampleTime = 0d;
+            _absoluteOffset = Vector3.zero;
+        }
+    }
+}
+#endif
+```
+
+Inspector pseudo-code:
+- Vehicle Root object field.
+- Tracked Transform object field.
+- Sample interval slider.
+- Marker scale slider.
+- Toggle: draw trails.
+- Toggle: draw error vector.
+- Button: bind selection.
+- Button: clear history.
+
+======================================================================
+KERNEL 02 - SARGASSUM GPU SPATIAL HASH DEBUGGER
+======================================================================
+
+Required instrumentation patch:
+
+```csharp
+#if UNITY_EDITOR
+using UnityEngine;
+
+namespace Hecton8.World
+{
+    public sealed partial class SargassumMicroFaunaBoids
+    {
+        internal bool TryCopySpatialGridDebugSnapshot(
+            int[] destinationCounts,
+            out Vector3 originWS,
+            out float cellSizeWS,
+            out Vector3Int resolution,
+            out int maxPerCell)
+        {
+            originWS = _spatialGridOriginWS;
+            cellSizeWS = _spatialGridCellSizeWS;
+            resolution = _spatialGridResolution;
+            maxPerCell = SpatialGridMaxBoidsPerCell;
+
+            if (_spatialGridCountBuffer == null || destinationCounts == null)
+                return false;
+
+            int requiredCount = resolution.x * resolution.y * resolution.z;
+            if (requiredCount <= 0 || destinationCounts.Length < requiredCount)
+                return false;
+
+            _spatialGridCountBuffer.GetData(destinationCounts, 0, 0, requiredCount);
+            return true;
+        }
+    }
+}
+#endif
+```
+
+Debugger window:
+
+```csharp
+#if UNITY_EDITOR
+using UnityEditor;
+using UnityEngine;
+using Hecton8.World;
+
+namespace Hecton8.Editor.DebugTools
+{
+    public sealed class GpuBoidSpatialHashDebuggerWindow : EditorWindow
+    {
+        private const int MaxCellCount = 32 * 32 * 32;
+        private const int DensityBucketCount = 4;
+
+        [SerializeField] private SargassumMicroFaunaBoids target;
+        [SerializeField] private float readbackInterval = 0.125f;
+        [SerializeField] private float occupancyAlpha = 0.18f;
+        [SerializeField] private bool drawGridBounds = true;
+        [SerializeField] private bool drawEmptyCells = false;
+        [SerializeField] private Color sparseColor = new Color(0.12f, 0.9f, 0.22f, 0.5f);
+        [SerializeField] private Color mediumColor = new Color(0.96f, 0.88f, 0.18f, 0.58f);
+        [SerializeField] private Color denseColor = new Color(1f, 0.55f, 0.12f, 0.68f);
+        [SerializeField] private Color saturatedColor = new Color(1f, 0.16f, 0.16f, 0.82f);
+
+        // COLD ALLOC: int[32768] - CPU occupancy cache for GPU boid spatial grid - owner: GpuBoidSpatialHashDebuggerWindow
+        private readonly int[] _cellCounts = new int[MaxCellCount];
+        // COLD ALLOC: Matrix4x4[4][1023] - per-bucket instanced draw batches - owner: GpuBoidSpatialHashDebuggerWindow
+        private readonly Matrix4x4[][] _bucketMatrices =
+        {
+            new Matrix4x4[EditorInstancedDrawUtility.MaxInstancesPerDraw],
+            new Matrix4x4[EditorInstancedDrawUtility.MaxInstancesPerDraw],
+            new Matrix4x4[EditorInstancedDrawUtility.MaxInstancesPerDraw],
+            new Matrix4x4[EditorInstancedDrawUtility.MaxInstancesPerDraw]
+        };
+
+        private double _nextReadbackTime;
+        private bool _subscribed;
+        private Vector3 _originWS;
+        private Vector3Int _resolution = Vector3Int.one;
+        private float _cellSizeWS = 1f;
+        private int _maxPerCell = 32;
+        private bool _hasSnapshot;
+
+        [MenuItem("Hecton8/Debug/GPU Boid Spatial Hash")]
+        private static void Open()
+        {
+            GetWindow<GpuBoidSpatialHashDebuggerWindow>("GPU Boid Grid");
+        }
+
+        private void OnEnable()
+        {
+            Subscribe();
+        }
+
+        private void OnDisable()
+        {
+            Unsubscribe();
+            _hasSnapshot = false;
+        }
+
+        private void OnGUI()
+        {
+            target = (SargassumMicroFaunaBoids)EditorGUILayout.ObjectField("Target", target, typeof(SargassumMicroFaunaBoids), true);
+            readbackInterval = Mathf.Clamp(EditorGUILayout.FloatField("Readback Interval", readbackInterval), 0.03f, 1f);
+            occupancyAlpha = Mathf.Clamp01(EditorGUILayout.Slider("Occupancy Alpha", occupancyAlpha, 0.05f, 1f));
+            drawGridBounds = EditorGUILayout.Toggle("Draw Grid Bounds", drawGridBounds);
+            drawEmptyCells = EditorGUILayout.Toggle("Draw Empty Cells", drawEmptyCells);
+
+            if (GUILayout.Button("Bind Selection") && Selection.activeGameObject != null)
+                target = Selection.activeGameObject.GetComponent<SargassumMicroFaunaBoids>();
+        }
+
+        private void Subscribe()
+        {
+            if (_subscribed)
+                return;
+
+            _subscribed = true;
+            SceneView.duringSceneGui += HandleSceneGui;
+            EditorApplication.update += HandleEditorUpdate;
+        }
+
+        private void Unsubscribe()
+        {
+            if (!_subscribed)
+                return;
+
+            _subscribed = false;
+            SceneView.duringSceneGui -= HandleSceneGui;
+            EditorApplication.update -= HandleEditorUpdate;
+        }
+
+        private void HandleEditorUpdate()
+        {
+            if (!Application.isPlaying || target == null)
+                return;
+
+            double now = EditorApplication.timeSinceStartup;
+            if (now < _nextReadbackTime)
+                return;
+
+            _nextReadbackTime = now + readbackInterval;
+            _hasSnapshot = target.TryCopySpatialGridDebugSnapshot(
+                _cellCounts,
+                out _originWS,
+                out _cellSizeWS,
+                out _resolution,
+                out _maxPerCell);
+
+            if (_hasSnapshot)
+                SceneView.RepaintAll();
+        }
+
+        private void HandleSceneGui(SceneView sceneView)
+        {
+            if (Event.current.type != EventType.Repaint || !_hasSnapshot)
+                return;
+
+            DrawCells();
+            if (drawGridBounds)
+                DrawBounds();
+        }
+
+        private void DrawCells()
+        {
+            Color sparse = ApplyAlpha(sparseColor, occupancyAlpha);
+            Color medium = ApplyAlpha(mediumColor, occupancyAlpha);
+            Color dense = ApplyAlpha(denseColor, occupancyAlpha);
+            Color saturated = ApplyAlpha(saturatedColor, occupancyAlpha);
+
+            int[] batchCounts = { 0, 0, 0, 0 };
+            Vector3 scale = Vector3.one * Mathf.Max(0.05f, _cellSizeWS * 0.92f);
+            int cellIndex = 0;
+
+            for (int z = 0; z < _resolution.z; z++)
+            {
+                for (int y = 0; y < _resolution.y; y++)
+                {
+                    for (int x = 0; x < _resolution.x; x++, cellIndex++)
+                    {
+                        int count = _cellCounts[cellIndex];
+                        if (!drawEmptyCells && count <= 0)
+                            continue;
+
+                        int bucket = ResolveBucket(count, _maxPerCell);
+                        Matrix4x4[] bucketMatrices = _bucketMatrices[bucket];
+                        int bucketCount = batchCounts[bucket];
+
+                        if (bucketCount >= bucketMatrices.Length)
+                        {
+                            FlushBucket(bucket, batchCounts[bucket], sparse, medium, dense, saturated);
+                            bucketCount = 0;
+                            batchCounts[bucket] = 0;
+                        }
+
+                        Vector3 center = _originWS + new Vector3(
+                            (x + 0.5f) * _cellSizeWS,
+                            (y + 0.5f) * _cellSizeWS,
+                            (z + 0.5f) * _cellSizeWS);
+                        bucketMatrices[bucketCount] = Matrix4x4.TRS(center, Quaternion.identity, scale);
+                        batchCounts[bucket] = bucketCount + 1;
+                    }
+                }
+            }
+
+            for (int bucket = 0; bucket < DensityBucketCount; bucket++)
+                FlushBucket(bucket, batchCounts[bucket], sparse, medium, dense, saturated);
+        }
+
+        private void FlushBucket(int bucket, int count, Color sparse, Color medium, Color dense, Color saturated)
+        {
+            if (count <= 0)
+                return;
+
+            Color color = bucket switch
+            {
+                0 => sparse,
+                1 => medium,
+                2 => dense,
+                _ => saturated
+            };
+
+            EditorInstancedDrawUtility.DrawBatch(
+                EditorInstancedDrawUtility.CubeMesh,
+                _bucketMatrices[bucket],
+                count,
+                color);
+        }
+
+        private void DrawBounds()
+        {
+            Vector3 size = new Vector3(
+                _resolution.x * _cellSizeWS,
+                _resolution.y * _cellSizeWS,
+                _resolution.z * _cellSizeWS);
+            Handles.color = Color.cyan;
+            Handles.DrawWireCube(_originWS + (size * 0.5f), size);
+        }
+
+        private static int ResolveBucket(int occupancy, int maxPerCell)
+        {
+            if (occupancy <= 4)
+                return 0;
+
+            if (occupancy <= Mathf.Max(8, maxPerCell / 3))
+                return 1;
+
+            if (occupancy < maxPerCell)
+                return 2;
+
+            return 3;
+        }
+
+        private static Color ApplyAlpha(Color color, float alpha)
+        {
+            color.a = alpha;
+            return color;
+        }
+    }
+}
+#endif
+```
+
+Inspector pseudo-code:
+- Target SargassumMicroFaunaBoids field.
+- Readback interval slider.
+- Occupancy alpha slider.
+- Toggle empty cells.
+- Toggle bounds.
+- Bind selection button.
+- Legend:
+  - Sparse: 1..4
+  - Medium: 5..10
+  - Dense: 11..31
+  - Saturated: 32
+
+======================================================================
+KERNEL 03 - SIX-AXIS SONAR OCCLUSION RADAR
+======================================================================
+
+Purpose:
+- Visualize reach, multi-hit occlusion, and blind axes around the listener.
+- Mirrors the six-axis mandate from AUD_Acoustic_Sonar_Occlusion_Sensory_Simulation.txt.
+- Uses one shared RaycastHit buffer and six cached axis states.
+
+```csharp
+#if UNITY_EDITOR
+using UnityEditor;
+using UnityEngine;
+
+namespace Hecton8.Editor.DebugTools
+{
+    public sealed class SonarOcclusionRadarWindow : EditorWindow
+    {
+        private const int AxisCount = 6;
+        private const int MaxOcclusionHitsPerAxis = 8;
+
+        private struct AxisState
+        {
+            public Vector3 Direction;
+            public float ClearDistance;
+            public int HitCount;
+            public int OcclusionLayerMask;
+        }
+
+        [SerializeField] private Transform listenerOrigin;
+        [SerializeField] private LayerMask sensoryMask = ~0;
+        [SerializeField] private float maxProbeDistance = 200f;
+        [SerializeField] private float markerScale = 0.18f;
+        [SerializeField] private bool timeSlice = false;
+        [SerializeField] private float refreshInterval = 0.08f;
+        [SerializeField] private Color clearColor = new Color(0.14f, 0.94f, 1f, 0.85f);
+        [SerializeField] private Color blockedColor = new Color(1f, 0.26f, 0.12f, 0.95f);
+        [SerializeField] private Color layeredColor = new Color(1f, 0.78f, 0.18f, 0.95f);
+
+        private static readonly Vector3[] _AxisDirections =
+        {
+            Vector3.up,
+            Vector3.down,
+            Vector3.left,
+            Vector3.right,
+            Vector3.forward,
+            Vector3.back
+        };
+
+        // COLD ALLOC: AxisState[6] - six-axis acoustic radar state cache - owner: SonarOcclusionRadarWindow
+        private readonly AxisState[] _axisStates = new AxisState[AxisCount];
+        // COLD ALLOC: RaycastHit[8] - shared multi-hit sonar occlusion scratch buffer - owner: SonarOcclusionRadarWindow
+        private readonly RaycastHit[] _hitBuffer = new RaycastHit[MaxOcclusionHitsPerAxis];
+        // COLD ALLOC: float[48] - persisted hit distances per axis and slot - owner: SonarOcclusionRadarWindow
+        private readonly float[] _hitDistances = new float[AxisCount * MaxOcclusionHitsPerAxis];
+        // COLD ALLOC: Matrix4x4[48] - hit marker instance batch - owner: SonarOcclusionRadarWindow
+        private readonly Matrix4x4[] _hitMatrices = new Matrix4x4[AxisCount * MaxOcclusionHitsPerAxis];
+
+        private bool _subscribed;
+        private int _nextAxis;
+        private double _nextRefreshTime;
+
+        [MenuItem("Hecton8/Debug/Sonar Occlusion Radar")]
+        private static void Open()
+        {
+            GetWindow<SonarOcclusionRadarWindow>("Sonar Radar");
+        }
+
+        private void OnEnable()
+        {
+            Subscribe();
+            InitializeAxisTable();
+        }
+
+        private void OnDisable()
+        {
+            Unsubscribe();
+        }
+
+        private void OnGUI()
+        {
+            listenerOrigin = (Transform)EditorGUILayout.ObjectField("Listener", listenerOrigin, typeof(Transform), true);
+            sensoryMask = EditorGUILayout.MaskField("Sensory Mask", sensoryMask, UnityEditorInternal.InternalEditorUtility.layers);
+            maxProbeDistance = Mathf.Clamp(EditorGUILayout.FloatField("Max Distance", maxProbeDistance), 1f, 500f);
+            markerScale = Mathf.Clamp(EditorGUILayout.FloatField("Marker Scale", markerScale), 0.02f, 2f);
+            timeSlice = EditorGUILayout.Toggle("Time Slice", timeSlice);
+            refreshInterval = Mathf.Clamp(EditorGUILayout.FloatField("Refresh Interval", refreshInterval), 0.02f, 1f);
+
+            if (GUILayout.Button("Bind Selection"))
+                listenerOrigin = Selection.activeTransform;
+        }
+
+        private void Subscribe()
+        {
+            if (_subscribed)
+                return;
+
+            _subscribed = true;
+            SceneView.duringSceneGui += HandleSceneGui;
+            EditorApplication.update += HandleEditorUpdate;
+        }
+
+        private void Unsubscribe()
+        {
+            if (!_subscribed)
+                return;
+
+            _subscribed = false;
+            SceneView.duringSceneGui -= HandleSceneGui;
+            EditorApplication.update -= HandleEditorUpdate;
+        }
+
+        private void InitializeAxisTable()
+        {
+            for (int i = 0; i < AxisCount; i++)
+            {
+                _axisStates[i].Direction = _AxisDirections[i];
+                _axisStates[i].ClearDistance = maxProbeDistance;
+                _axisStates[i].HitCount = 0;
+                _axisStates[i].OcclusionLayerMask = 0;
+            }
+        }
+
+        private void HandleEditorUpdate()
+        {
+            if (!Application.isPlaying || listenerOrigin == null)
+                return;
+
+            double now = EditorApplication.timeSinceStartup;
+            if (now < _nextRefreshTime)
+                return;
+
+            _nextRefreshTime = now + refreshInterval;
+
+            if (timeSlice)
+            {
+                SampleAxis(_nextAxis);
+                _nextAxis++;
+                if (_nextAxis >= AxisCount)
+                    _nextAxis = 0;
+            }
+            else
+            {
+                for (int axis = 0; axis < AxisCount; axis++)
+                    SampleAxis(axis);
+            }
+
+            SceneView.RepaintAll();
+        }
+
+        private void SampleAxis(int axisIndex)
+        {
+            Vector3 origin = listenerOrigin.position;
+            Vector3 direction = _AxisDirections[axisIndex];
+            int hitCount = Physics.RaycastNonAlloc(
+                origin,
+                direction,
+                _hitBuffer,
+                maxProbeDistance,
+                sensoryMask,
+                QueryTriggerInteraction.Ignore);
+
+            SortHitsByDistance(hitCount);
+
+            AxisState state = _axisStates[axisIndex];
+            state.Direction = direction;
+            state.HitCount = hitCount;
+            state.ClearDistance = hitCount > 0 ? _hitBuffer[0].distance : maxProbeDistance;
+            state.OcclusionLayerMask = 0;
+            for (int i = 0; i < hitCount; i++)
+            {
+                state.OcclusionLayerMask |= 1 << _hitBuffer[i].collider.gameObject.layer;
+                _hitDistances[(axisIndex * MaxOcclusionHitsPerAxis) + i] = _hitBuffer[i].distance;
+            }
+
+            for (int i = hitCount; i < MaxOcclusionHitsPerAxis; i++)
+                _hitDistances[(axisIndex * MaxOcclusionHitsPerAxis) + i] = 0f;
+
+            _axisStates[axisIndex] = state;
+        }
+
+        private void HandleSceneGui(SceneView sceneView)
+        {
+            if (Event.current.type != EventType.Repaint || listenerOrigin == null)
+                return;
+
+            Vector3 origin = listenerOrigin.position;
+            int hitMarkerCount = 0;
+            for (int axis = 0; axis < AxisCount; axis++)
+            {
+                AxisState state = _axisStates[axis];
+                Vector3 end = origin + (state.Direction * state.ClearDistance);
+                Handles.color = ResolveLineColor(state);
+                Handles.DrawLine(origin, end);
+
+                for (int i = 0; i < state.HitCount && i < _hitBuffer.Length; i++)
+                {
+                    float hitDistance = _hitDistances[(axis * MaxOcclusionHitsPerAxis) + i];
+                    Vector3 hitPoint = origin + (state.Direction * hitDistance);
+                    _hitMatrices[hitMarkerCount] = Matrix4x4.TRS(
+                        hitPoint,
+                        Quaternion.identity,
+                        Vector3.one * markerScale);
+                    hitMarkerCount++;
+                    if (hitMarkerCount >= _hitMatrices.Length)
+                        break;
+                }
+            }
+
+            if (hitMarkerCount > 0)
+            {
+                EditorInstancedDrawUtility.DrawBatch(
+                    EditorInstancedDrawUtility.SphereMesh,
+                    _hitMatrices,
+                    hitMarkerCount,
+                    layeredColor);
+            }
+        }
+
+        private static Color ResolveLineColor(in AxisState state)
+        {
+            if (state.HitCount <= 0)
+                return new Color(0.14f, 0.94f, 1f, 0.85f);
+
+            if (state.HitCount == 1)
+                return new Color(1f, 0.26f, 0.12f, 0.95f);
+
+            return new Color(1f, 0.78f, 0.18f, 0.95f);
+        }
+
+        private void SortHitsByDistance(int hitCount)
+        {
+            for (int i = 1; i < hitCount; i++)
+            {
+                RaycastHit current = _hitBuffer[i];
+                int insertIndex = i - 1;
+                while (insertIndex >= 0 && _hitBuffer[insertIndex].distance > current.distance)
+                {
+                    _hitBuffer[insertIndex + 1] = _hitBuffer[insertIndex];
+                    insertIndex--;
+                }
+
+                _hitBuffer[insertIndex + 1] = current;
+            }
+        }
+    }
+}
+#endif
+```
+
+Inspector pseudo-code:
+- Listener transform field.
+- Sensory layer mask field.
+- Max distance field.
+- Toggle: time-slice one axis per refresh.
+- Refresh interval field.
+- Marker scale field.
+- Bind selection button.
+
+======================================================================
+KERNEL 04 - NATIVE MEMORY AND LEAK WATCHDOG
+======================================================================
+
+Purpose:
+- Track NativeArray lifecycle with source tags, timestamps, frame ids, element counts, byte counts, allocator, and live/disposed state.
+- Detect allocations that survive scene changes or owner destruction.
+- No runtime player-build compilation. Integration calls are wrapped in #if UNITY_EDITOR.
+
+```csharp
+#if UNITY_EDITOR
+using System;
+using System.Collections.Generic;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
+using UnityEditor;
+using UnityEngine;
+
+namespace Hecton8.Editor.DebugTools
+{
+    internal static class NativeLeakWatchdog
+    {
+        internal readonly struct NativeRecord
+        {
+            public readonly ulong AllocationId;
+            public readonly long UtcTicks;
+            public readonly int FrameIndex;
+            public readonly string Source;
+            public readonly string OwnerName;
+            public readonly int OwnerInstanceId;
+            public readonly long PointerKey;
+            public readonly int Length;
+            public readonly int ElementSize;
+            public readonly long TotalBytes;
+            public readonly Allocator Allocator;
+            public readonly bool IsDisposed;
+            public readonly long DisposeUtcTicks;
+            public readonly int DisposeFrameIndex;
+
+            public NativeRecord(
+                ulong allocationId,
+                long utcTicks,
+                int frameIndex,
+                string source,
+                string ownerName,
+                int ownerInstanceId,
+                long pointerKey,
+                int length,
+                int elementSize,
+                long totalBytes,
+                Allocator allocator,
+                bool isDisposed,
+                long disposeUtcTicks,
+                int disposeFrameIndex)
+            {
+                AllocationId = allocationId;
+                UtcTicks = utcTicks;
+                FrameIndex = frameIndex;
+                Source = source;
+                OwnerName = ownerName;
+                OwnerInstanceId = ownerInstanceId;
+                PointerKey = pointerKey;
+                Length = length;
+                ElementSize = elementSize;
+                TotalBytes = totalBytes;
+                Allocator = allocator;
+                IsDisposed = isDisposed;
+                DisposeUtcTicks = disposeUtcTicks;
+                DisposeFrameIndex = disposeFrameIndex;
+            }
+
+            public NativeRecord MarkDisposed(long disposeUtcTicks, int disposeFrameIndex)
+            {
+                return new NativeRecord(
+                    AllocationId,
+                    UtcTicks,
+                    FrameIndex,
+                    Source,
+                    OwnerName,
+                    OwnerInstanceId,
+                    PointerKey,
+                    Length,
+                    ElementSize,
+                    TotalBytes,
+                    Allocator,
+                    true,
+                    disposeUtcTicks,
+                    disposeFrameIndex);
+            }
+        }
+
+        // COLD ALLOC: Dictionary<long, NativeRecord>(512) - native allocation live table - owner: NativeLeakWatchdog
+        private static readonly Dictionary<long, NativeRecord> _liveRecords = new Dictionary<long, NativeRecord>(512);
+        // COLD ALLOC: List<NativeRecord>(1024) - historical native allocation ledger - owner: NativeLeakWatchdog
+        private static readonly List<NativeRecord> _history = new List<NativeRecord>(1024);
+        private static ulong _nextAllocationId = 1;
+
+        [InitializeOnLoadMethod]
+        private static void InstallDomainHooks()
+        {
+            AssemblyReloadEvents.beforeAssemblyReload += FlushDomainState;
+            EditorApplication.playModeStateChanged += HandlePlayModeChanged;
+        }
+
+        internal static void TrackCreate<T>(
+            NativeArray<T> array,
+            string source,
+            UnityEngine.Object owner,
+            Allocator allocator) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            unsafe
+            {
+                void* pointer = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(array);
+                long pointerKey = (long)pointer;
+                if (pointerKey == 0)
+                    return;
+
+                int elementSize = UnsafeUtility.SizeOf<T>();
+                NativeRecord record = new NativeRecord(
+                    _nextAllocationId++,
+                    DateTime.UtcNow.Ticks,
+                    Time.frameCount,
+                    string.IsNullOrEmpty(source) ? typeof(T).Name : source,
+                    owner != null ? owner.name : "<null>",
+                    owner != null ? owner.GetInstanceID() : 0,
+                    pointerKey,
+                    array.Length,
+                    elementSize,
+                    (long)array.Length * elementSize,
+                    allocator,
+                    false,
+                    0L,
+                    -1);
+
+                _liveRecords[pointerKey] = record;
+                _history.Add(record);
+            }
+        }
+
+        internal static void TrackDispose<T>(NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            unsafe
+            {
+                void* pointer = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(array);
+                long pointerKey = (long)pointer;
+                if (pointerKey == 0 || !_liveRecords.TryGetValue(pointerKey, out NativeRecord record))
+                    return;
+
+                NativeRecord disposedRecord = record.MarkDisposed(DateTime.UtcNow.Ticks, Time.frameCount);
+                _liveRecords.Remove(pointerKey);
+                _history.Add(disposedRecord);
+            }
+        }
+
+        internal static void CopyLiveRecordsTo(List<NativeRecord> destination)
+        {
+            if (destination == null)
+                return;
+
+            destination.Clear();
+            Dictionary<long, NativeRecord>.Enumerator enumerator = _liveRecords.GetEnumerator();
+            while (enumerator.MoveNext())
+                destination.Add(enumerator.Current.Value);
+        }
+
+        internal static void CopyHistoryTo(List<NativeRecord> destination)
+        {
+            if (destination == null)
+                return;
+
+            destination.Clear();
+            destination.AddRange(_history);
+        }
+
+        private static void HandlePlayModeChanged(PlayModeStateChange state)
+        {
+            if (state == PlayModeStateChange.ExitingPlayMode || state == PlayModeStateChange.EnteredEditMode)
+                FlushDomainState();
+        }
+
+        private static void FlushDomainState()
+        {
+            _liveRecords.Clear();
+            _history.Clear();
+            _nextAllocationId = 1;
+        }
+    }
+}
+#endif
+```
+
+Watchdog window:
+
+```csharp
+#if UNITY_EDITOR
+using System;
+using System.Collections.Generic;
+using UnityEditor;
+using UnityEngine;
+
+namespace Hecton8.Editor.DebugTools
+{
+    public sealed class NativeLeakWatchdogWindow : EditorWindow
+    {
+        // COLD ALLOC: List<NativeLeakWatchdog.NativeRecord>(512) - live record UI cache - owner: NativeLeakWatchdogWindow
+        private readonly List<NativeLeakWatchdog.NativeRecord> _liveRecords = new List<NativeLeakWatchdog.NativeRecord>(512);
+        [SerializeField] private float staleSeconds = 10f;
+        [SerializeField] private bool showDisposedHistory = false;
+        private Vector2 _scroll;
+
+        [MenuItem("Hecton8/Debug/Native Leak Watchdog")]
+        private static void Open()
+        {
+            GetWindow<NativeLeakWatchdogWindow>("Native Leaks");
+        }
+
+        private void OnInspectorUpdate()
+        {
+            NativeLeakWatchdog.CopyLiveRecordsTo(_liveRecords);
+            Repaint();
+        }
+
+        private void OnGUI()
+        {
+            staleSeconds = Mathf.Clamp(EditorGUILayout.FloatField("Stale Seconds", staleSeconds), 1f, 600f);
+            showDisposedHistory = EditorGUILayout.Toggle("Show Disposed History", showDisposedHistory);
+
+            _scroll = EditorGUILayout.BeginScrollView(_scroll);
+            for (int i = 0; i < _liveRecords.Count; i++)
+            {
+                NativeLeakWatchdog.NativeRecord record = _liveRecords[i];
+                double ageSeconds = TimeSpan.FromTicks(DateTime.UtcNow.Ticks - record.UtcTicks).TotalSeconds;
+                GUI.color = ageSeconds >= staleSeconds ? Color.red : Color.white;
+                EditorGUILayout.LabelField(
+                    $"{record.Source} | owner={record.OwnerName}({record.OwnerInstanceId}) | bytes={record.TotalBytes} | alloc={record.Allocator} | age={ageSeconds:F1}s");
+            }
+
+            GUI.color = Color.white;
+            EditorGUILayout.EndScrollView();
+        }
+    }
+}
+#endif
+```
+
+Integration pseudo-code for existing owners:
+
+```csharp
+#if UNITY_EDITOR
+NativeLeakWatchdog.TrackCreate(
+    _leviathanNodeFrontNative,
+    "SargassumMicroFaunaBoids/_leviathanNodeFrontNative",
+    this,
+    Allocator.Persistent);
+#endif
+
+#if UNITY_EDITOR
+NativeLeakWatchdog.TrackDispose(_leviathanNodeFrontNative);
+#endif
+_leviathanNodeFrontNative.Dispose();
+```
+
+Recommended first integration points:
+- HectonMapMagicVegetationBridge native caches.
+- SargassumMicroFaunaBoids persistent NativeArray fields.
+- ScatterBackendBindingState.
+- ScatterEvaluator.
+- HectonWorldGenerator persistent NativeArray fields.
+- WorldGenerativeGeologyVoxelBridgeDirector temp/persistent native request buffers.
+
+Inspector pseudo-code:
+- Stale-seconds threshold field.
+- Toggle disposed history.
+- Live records table:
+  - Source
+  - Owner
+  - Bytes
+  - Allocator
+  - Age
+  - Frame created
+  - Frame disposed
+
+======================================================================
+KERNEL 05 - VOXEL CHUNK BOUNDARY ANALYZER
+======================================================================
+
+Optional instrumentation patch for zero-GC runtime copying:
+
+```csharp
+#if UNITY_EDITOR
+using System.Collections.Generic;
+
+namespace Hecton8.World
+{
+    public sealed partial class WorldGenerativeGeologyVoxelBridgeDirector
+    {
+        internal void CopyActiveVoxelRuntimesTo(List<WorldGenerativeGeologyVoxelRuntime> destination)
+        {
+            if (destination == null)
+                return;
+
+            destination.Clear();
+            Dictionary<long, WorldGenerativeGeologyVoxelRuntime>.Enumerator enumerator = _activeRuntimes.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                WorldGenerativeGeologyVoxelRuntime runtime = enumerator.Current.Value;
+                if (runtime != null && runtime.isActiveAndEnabled)
+                    destination.Add(runtime);
+            }
+        }
+    }
+}
+#endif
+```
+
+Analyzer window:
+
+```csharp
+#if UNITY_EDITOR
+using System.Collections.Generic;
+using UnityEditor;
+using UnityEngine;
+using Hecton8.Caves;
+using Hecton8.Core;
+using Hecton8.World;
+
+namespace Hecton8.Editor.DebugTools
+{
+    public sealed class VoxelChunkBoundaryAnalyzerWindow : EditorWindow
+    {
+        private const int MaxBoundaryPairs = 128;
+        private const int SamplesPerFace = 6;
+        private const int MaxMarkers = MaxBoundaryPairs * SamplesPerFace * SamplesPerFace;
+
+        private struct BoundaryHistory
+        {
+            public Vector3 LastAbsolutePoint;
+            public bool Valid;
+        }
+
+        [SerializeField] private WorldGenerativeGeologyVoxelBridgeDirector targetDirector;
+        [SerializeField] private float refreshInterval = 0.25f;
+        [SerializeField] private float adjacencyTolerance = 0.4f;
+        [SerializeField] private float seamGapThreshold = 0.12f;
+        [SerializeField] private float jitterThreshold = 0.05f;
+        [SerializeField] private float markerScale = 0.28f;
+        [SerializeField] private Color gapColor = new Color(1f, 0.12f, 0.12f, 0.92f);
+        [SerializeField] private Color jitterColor = new Color(1f, 0.12f, 1f, 0.92f);
+        [SerializeField] private Color lodMismatchColor = new Color(1f, 0.86f, 0.12f, 0.92f);
+
+        // COLD ALLOC: List<WorldGenerativeGeologyVoxelRuntime>(64) - active runtime scratch list - owner: VoxelChunkBoundaryAnalyzerWindow
+        private readonly List<WorldGenerativeGeologyVoxelRuntime> _runtimeScratch = new List<WorldGenerativeGeologyVoxelRuntime>(64);
+        // COLD ALLOC: Matrix4x4[512] - seam gap marker instances - owner: VoxelChunkBoundaryAnalyzerWindow
+        private readonly Matrix4x4[] _gapMatrices = new Matrix4x4[MaxMarkers];
+        // COLD ALLOC: Matrix4x4[512] - jitter marker instances - owner: VoxelChunkBoundaryAnalyzerWindow
+        private readonly Matrix4x4[] _jitterMatrices = new Matrix4x4[MaxMarkers];
+        // COLD ALLOC: Matrix4x4[512] - lod mismatch marker instances - owner: VoxelChunkBoundaryAnalyzerWindow
+        private readonly Matrix4x4[] _lodMatrices = new Matrix4x4[MaxMarkers];
+        // COLD ALLOC: Dictionary<long, BoundaryHistory>(512) - absolute boundary sample history across refreshes - owner: VoxelChunkBoundaryAnalyzerWindow
+        private readonly Dictionary<long, BoundaryHistory> _boundaryHistory = new Dictionary<long, BoundaryHistory>(512);
+
+        private double _nextRefreshTime;
+        private bool _subscribed;
+        private int _gapCount;
+        private int _jitterCount;
+        private int _lodCount;
+
+        [MenuItem("Hecton8/Debug/Voxel Boundary Analyzer")]
+        private static void Open()
+        {
+            GetWindow<VoxelChunkBoundaryAnalyzerWindow>("Voxel Boundaries");
+        }
+
+        private void OnEnable()
+        {
+            Subscribe();
+        }
+
+        private void OnDisable()
+        {
+            Unsubscribe();
+            _gapCount = 0;
+            _jitterCount = 0;
+            _lodCount = 0;
+        }
+
+        private void OnGUI()
+        {
+            targetDirector = (WorldGenerativeGeologyVoxelBridgeDirector)EditorGUILayout.ObjectField(
+                "Voxel Bridge Director",
+                targetDirector,
+                typeof(WorldGenerativeGeologyVoxelBridgeDirector),
+                true);
+            refreshInterval = Mathf.Clamp(EditorGUILayout.FloatField("Refresh Interval", refreshInterval), 0.05f, 5f);
+            adjacencyTolerance = Mathf.Clamp(EditorGUILayout.FloatField("Adjacency Tolerance", adjacencyTolerance), 0.01f, 4f);
+            seamGapThreshold = Mathf.Clamp(EditorGUILayout.FloatField("Seam Gap Threshold", seamGapThreshold), 0.005f, 1f);
+            jitterThreshold = Mathf.Clamp(EditorGUILayout.FloatField("Jitter Threshold", jitterThreshold), 0.001f, 1f);
+            markerScale = Mathf.Clamp(EditorGUILayout.FloatField("Marker Scale", markerScale), 0.05f, 2f);
+        }
+
+        private void Subscribe()
+        {
+            if (_subscribed)
+                return;
+
+            _subscribed = true;
+            EditorApplication.update += HandleEditorUpdate;
+            SceneView.duringSceneGui += HandleSceneGui;
+        }
+
+        private void Unsubscribe()
+        {
+            if (!_subscribed)
+                return;
+
+            _subscribed = false;
+            EditorApplication.update -= HandleEditorUpdate;
+            SceneView.duringSceneGui -= HandleSceneGui;
+        }
+
+        private void HandleEditorUpdate()
+        {
+            if (!Application.isPlaying || targetDirector == null)
+                return;
+
+            double now = EditorApplication.timeSinceStartup;
+            if (now < _nextRefreshTime)
+                return;
+
+            _nextRefreshTime = now + refreshInterval;
+            RefreshBoundaries();
+            SceneView.RepaintAll();
+        }
+
+        private void RefreshBoundaries()
+        {
+            _gapCount = 0;
+            _jitterCount = 0;
+            _lodCount = 0;
+            _runtimeScratch.Clear();
+            targetDirector.CopyActiveVoxelRuntimesTo(_runtimeScratch);
+
+            for (int a = 0; a < _runtimeScratch.Count; a++)
+            {
+                WorldGenerativeGeologyVoxelRuntime runtimeA = _runtimeScratch[a];
+                if (runtimeA == null || !runtimeA.TryGetComponent(out HectonVoxelVolume volumeA))
+                    continue;
+
+                Bounds boundsA = BuildBounds(volumeA);
+                for (int b = a + 1; b < _runtimeScratch.Count; b++)
+                {
+                    WorldGenerativeGeologyVoxelRuntime runtimeB = _runtimeScratch[b];
+                    if (runtimeB == null || !runtimeB.TryGetComponent(out HectonVoxelVolume volumeB))
+                        continue;
+
+                    Bounds boundsB = BuildBounds(volumeB);
+                    if (!TryResolveSharedFace(boundsA, boundsB, out Vector3 faceCenter, out Vector3 axisA, out Vector3 axisB, out Vector3 faceNormal))
+                        continue;
+
+                    bool lodMismatch = volumeA.LODLevel != volumeB.LODLevel;
+                    SampleFace(runtimeA, runtimeB, volumeA, volumeB, faceCenter, axisA, axisB, faceNormal, lodMismatch);
+                }
+            }
+        }
+
+        private void SampleFace(
+            WorldGenerativeGeologyVoxelRuntime runtimeA,
+            WorldGenerativeGeologyVoxelRuntime runtimeB,
+            HectonVoxelVolume volumeA,
+            HectonVoxelVolume volumeB,
+            Vector3 faceCenter,
+            Vector3 axisA,
+            Vector3 axisB,
+            Vector3 faceNormal,
+            bool lodMismatch)
+        {
+            float step = 1f / Mathf.Max(1, SamplesPerFace - 1);
+            Vector3 absoluteOffset = HectonFloatingOrigin.Instance != null ? HectonFloatingOrigin.Instance.TotalOffset : Vector3.zero;
+
+            for (int iy = 0; iy < SamplesPerFace; iy++)
+            {
+                float ty = (iy * step) - 0.5f;
+                Vector3 samplePoint = faceCenter + (axisB * ty);
+
+                for (int ix = 0; ix < SamplesPerFace; ix++)
+                {
+                    float tx = (ix * step) - 0.5f;
+                    Vector3 pointOnFace = samplePoint + (axisA * tx);
+                    Vector3 pointA = ResolveClosestPoint(volumeA, pointOnFace - (faceNormal * 0.05f));
+                    Vector3 pointB = ResolveClosestPoint(volumeB, pointOnFace + (faceNormal * 0.05f));
+                    Vector3 midpoint = (pointA + pointB) * 0.5f;
+                    float seamGap = Vector3.Distance(pointA, pointB);
+
+                    if (seamGap > seamGapThreshold && _gapCount < _gapMatrices.Length)
+                    {
+                        _gapMatrices[_gapCount] = Matrix4x4.TRS(midpoint, Quaternion.identity, Vector3.one * markerScale);
+                        _gapCount++;
+                    }
+
+                    ulong packedA = (ulong)runtimeA.RuntimeKey;
+                    ulong packedB = (ulong)runtimeB.RuntimeKey;
+                    long historyKey = unchecked((long)((packedA * 73856093UL) ^ (packedB * 19349663UL) ^ (ulong)(ix + (iy * 31))));
+                    Vector3 absoluteMidpoint = midpoint + absoluteOffset;
+                    if (_boundaryHistory.TryGetValue(historyKey, out BoundaryHistory history) && history.Valid)
+                    {
+                        float jitter = Vector3.Distance(history.LastAbsolutePoint, absoluteMidpoint);
+                        if (jitter > jitterThreshold && _jitterCount < _jitterMatrices.Length)
+                        {
+                            _jitterMatrices[_jitterCount] = Matrix4x4.TRS(midpoint, Quaternion.identity, Vector3.one * markerScale * 0.82f);
+                            _jitterCount++;
+                        }
+                    }
+
+                    _boundaryHistory[historyKey] = new BoundaryHistory
+                    {
+                        LastAbsolutePoint = absoluteMidpoint,
+                        Valid = true
+                    };
+
+                    if (lodMismatch && _lodCount < _lodMatrices.Length)
+                    {
+                        _lodMatrices[_lodCount] = Matrix4x4.TRS(midpoint + (faceNormal * 0.08f), Quaternion.identity, Vector3.one * markerScale * 0.65f);
+                        _lodCount++;
+                    }
+                }
+            }
+        }
+
+        private void HandleSceneGui(SceneView sceneView)
+        {
+            if (Event.current.type != EventType.Repaint)
+                return;
+
+            if (_gapCount > 0)
+            {
+                EditorInstancedDrawUtility.DrawBatch(
+                    EditorInstancedDrawUtility.CubeMesh,
+                    _gapMatrices,
+                    _gapCount,
+                    gapColor);
+            }
+
+            if (_jitterCount > 0)
+            {
+                EditorInstancedDrawUtility.DrawBatch(
+                    EditorInstancedDrawUtility.SphereMesh,
+                    _jitterMatrices,
+                    _jitterCount,
+                    jitterColor);
+            }
+
+            if (_lodCount > 0)
+            {
+                EditorInstancedDrawUtility.DrawBatch(
+                    EditorInstancedDrawUtility.CubeMesh,
+                    _lodMatrices,
+                    _lodCount,
+                    lodMismatchColor);
+            }
+        }
+
+        private Bounds BuildBounds(HectonVoxelVolume volume)
+        {
+            float size = volume.GridDimension * volume.VoxelSize;
+            return new Bounds(volume.transform.position, Vector3.one * size);
+        }
+
+        private bool TryResolveSharedFace(
+            Bounds a,
+            Bounds b,
+            out Vector3 faceCenter,
+            out Vector3 axisA,
+            out Vector3 axisB,
+            out Vector3 faceNormal)
+        {
+            faceCenter = Vector3.zero;
+            axisA = Vector3.right;
+            axisB = Vector3.up;
+            faceNormal = Vector3.forward;
+
+            float dx = Mathf.Abs(a.max.x - b.min.x);
+            float dz = Mathf.Abs(a.max.z - b.min.z);
+            float dxReverse = Mathf.Abs(b.max.x - a.min.x);
+            float dzReverse = Mathf.Abs(b.max.z - a.min.z);
+
+            if (dx <= adjacencyTolerance || dxReverse <= adjacencyTolerance)
+            {
+                float x = dx <= adjacencyTolerance ? (a.max.x + b.min.x) * 0.5f : (b.max.x + a.min.x) * 0.5f;
+                float minY = Mathf.Max(a.min.y, b.min.y);
+                float maxY = Mathf.Min(a.max.y, b.max.y);
+                float minZ = Mathf.Max(a.min.z, b.min.z);
+                float maxZ = Mathf.Min(a.max.z, b.max.z);
+                faceCenter = new Vector3(x, (minY + maxY) * 0.5f, (minZ + maxZ) * 0.5f);
+                axisA = Vector3.up * Mathf.Max(0.1f, maxY - minY);
+                axisB = Vector3.forward * Mathf.Max(0.1f, maxZ - minZ);
+                faceNormal = dx <= adjacencyTolerance ? Vector3.right : Vector3.left;
+                return true;
+            }
+
+            if (dz <= adjacencyTolerance || dzReverse <= adjacencyTolerance)
+            {
+                float z = dz <= adjacencyTolerance ? (a.max.z + b.min.z) * 0.5f : (b.max.z + a.min.z) * 0.5f;
+                float minY = Mathf.Max(a.min.y, b.min.y);
+                float maxY = Mathf.Min(a.max.y, b.max.y);
+                float minX = Mathf.Max(a.min.x, b.min.x);
+                float maxX = Mathf.Min(a.max.x, b.max.x);
+                faceCenter = new Vector3((minX + maxX) * 0.5f, (minY + maxY) * 0.5f, z);
+                axisA = Vector3.up * Mathf.Max(0.1f, maxY - minY);
+                axisB = Vector3.right * Mathf.Max(0.1f, maxX - minX);
+                faceNormal = dz <= adjacencyTolerance ? Vector3.forward : Vector3.back;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static Vector3 ResolveClosestPoint(HectonVoxelVolume volume, Vector3 queryPoint)
+        {
+            Vector3 bestPoint = queryPoint;
+            float bestDistanceSqr = float.MaxValue;
+            for (int i = 0; i < 8; i++)
+            {
+                MeshCollider collider = volume.GetColliderChunkCollider(i);
+                if (collider == null || !collider.enabled)
+                    continue;
+
+                Vector3 candidate = collider.ClosestPoint(queryPoint);
+                float candidateDistanceSqr = (candidate - queryPoint).sqrMagnitude;
+                if (candidateDistanceSqr >= bestDistanceSqr)
+                    continue;
+
+                bestDistanceSqr = candidateDistanceSqr;
+                bestPoint = candidate;
+            }
+
+            return bestPoint;
+        }
+    }
+}
+#endif
+```
+
+Inspector pseudo-code:
+- Voxel bridge director field.
+- Refresh interval field.
+- Adjacency tolerance field.
+- Seam gap threshold field.
+- Jitter threshold field.
+- Marker scale field.
+- Legend:
+  - Red cube: seam gap above threshold.
+  - Magenta sphere: floating-origin jitter above threshold.
+  - Yellow cube: neighboring chunks with mismatched LOD levels.
+
+======================================================================
+REGRESSION MODEL
+======================================================================
+
+CPU:
+- Kinematic ghost: editor-only; one ring-buffer write per sample and two instanced draws per repaint.
+- GPU grid debugger: editor-only; one ComputeBuffer.GetData on throttled cadence, then batched cube draws.
+- Sonar overlay: editor-only; 6 RaycastNonAlloc calls or 1 call per refresh when time-sliced.
+- Leak watchdog: cold-path only on allocation/disposal events.
+- Voxel analyzer: editor-only; throttled face sampling against active collider chunks.
+
+GC:
+- Expected hot-path allocation in runtime gameplay: 0 B/frame because all tools are #if UNITY_EDITOR only.
+- Expected editor repaint allocation: 0 B from these tools if arrays remain preallocated and no string formatting is moved into update loops.
+
+Memory:
+- Shared editor utility: one hidden instanced material plus built-in mesh refs.
+- Kinematic ghost: fixed arrays for 96 samples.
+- GPU grid debugger: one int[32768] plus four Matrix4x4[1023] batch arrays.
+- Sonar overlay: one RaycastHit[8], AxisState[6], Matrix4x4[8].
+- Leak watchdog: dictionary/list growth only when allocations are tracked.
+- Voxel analyzer: bounded marker arrays and boundary history dictionary.
+
+Cadence:
+- Kinematic ghost: 20 Hz default sample cadence.
+- GPU grid debugger: 8 Hz default readback cadence.
+- Sonar overlay: 12.5 Hz default refresh cadence or 1-axis time-slice per tick.
+- Voxel analyzer: 4 Hz default refresh cadence.
+
+Correctness:
+- Floating-origin absolute positions are reconstructed from current world position + TotalOffset.
+- GPU boid occupancy draws the actual _spatialGridCountBuffer contents, not a parallel CPU guess.
+- Sonar overlay sorts multi-hit RaycastNonAlloc results by distance before visualization.
+- Voxel analyzer compares closest points across actual collider chunks and keeps an absolute-point history across world shifts.
+
+HOT PATH IMPACT:
+- None in final build.
+- Editor play mode only; all work is throttled and isolated from shipping code paths.
+
+FAILURE MODES:
+- If SargassumMicroFaunaBoids instrumentation accessor is missing, GPU grid debugger refuses to draw.
+- If listener origin is null, sonar overlay draws nothing.
+- If HectonFloatingOrigin is absent, kinematic ghost still works in current world-space but absolute universe trail rebases to zero.
+- If voxel collider chunks are disabled, seam analyzer falls back to query-point midpoint and may under-report gaps.
+- If NativeLeakWatchdog integration calls are missing at a site, that NativeArray family will not appear in the live table.
+
+WHY KEPT:
+- Tools align to existing owners instead of inventing a second debug architecture.
+- Editor-only isolation preserves ship build cleanliness.
+- Instanced draw and cached buffers enforce the zero-GC requirement during repeated SceneView use.
+
+WHY REJECTED:
+- Rejected reflection-based GPU grid polling in draw loops because it boxes value-type fields and violates zero-GC discipline.
+- Rejected FindObjects-based voxel runtime enumeration because it allocates arrays on refresh.
+- Rejected coroutine-based editor refresh because explicit editor update cadence is simpler and allocation-free.
+
+======================================================================
+AUTOMATED SELF-TEST PROTOCOL
+======================================================================
+
+Kinematic ghost:
+1. Enter play mode in 02_HECTON_WORLD.
+2. Open Hecton8/Debug/Kinematic Ghost.
+3. Bind Vehicle Root and a moving child transform.
+4. Drive the vehicle through at least one floating-origin shift.
+Expected:
+- Cyan local trail remains compact around vehicle-local attachment behavior.
+- Orange universe trail preserves absolute travel path.
+- Error vector spikes only when attachment or rebase jitter occurs.
+
+GPU spatial hash debugger:
+1. Enter play mode with active SargassumMicroFaunaBoids.
+2. Open Hecton8/Debug/GPU Boid Spatial Hash.
+3. Bind the boid owner and enable SceneView.
+Expected:
+- Active cells appear in green/yellow/orange/red buckets.
+- Saturated red cells match high-density canopy or panic clustering.
+- Grid bounds match field extents exposed by the boid owner.
+
+Sonar occlusion radar:
+1. Enter play mode near dense geometry.
+2. Open Hecton8/Debug/Sonar Occlusion Radar.
+3. Bind current listener or player head.
+4. Rotate toward walls, glass, modules, and open water.
+Expected:
+- Clear axes draw cyan.
+- Single obstruction draws orange-red.
+- Multi-layered occlusion draws yellow/orange with multiple markers.
+
+Native leak watchdog:
+1. Add TrackCreate/TrackDispose calls to one known persistent NativeArray owner.
+2. Open Hecton8/Debug/Native Leak Watchdog.
+3. Enter play mode, trigger allocation, then dispose.
+Expected:
+- Live table shows source tag, owner, bytes, allocator, age.
+- Entry disappears after dispose.
+- If owner leaks past staleSeconds threshold, row turns red.
+
+Voxel boundary analyzer:
+1. Enter play mode with active geology voxel runtimes.
+2. Open Hecton8/Debug/Voxel Boundary Analyzer.
+3. Bind WorldGenerativeGeologyVoxelBridgeDirector.
+4. Move player enough to trigger voxel runtime churn and floating-origin activity.
+Expected:
+- Red cubes appear where collider seam gap exceeds threshold.
+- Magenta spheres appear where absolute boundary midpoint jitter exceeds threshold.
+- Yellow cubes appear where neighboring runtimes are at different LOD levels.
+
+Expected GCMonitor result:
+- Runtime gameplay hot paths: 0 B/frame from these tools because they do not compile into the final build.
+- Editor play mode: measured proof absent. Needs profiler confirmation after implementation.
+
+Edge cases:
+- Spam world shift x20.
+- Toggle SceneView visibility on/off while tools remain open.
+- Disable target owner during active draw session.
+- Despawn boid owner while grid debugger window remains open.
+- Remove collider chunk on one voxel runtime while seam analyzer is active.
+- Dispose NativeArray twice and confirm watchdog ignores second stale pointer.
+
+======================================================================
+IMPLEMENTATION ORDER
+======================================================================
+
+1. Land shared EditorInstancedDrawUtility.
+2. Mark SargassumMicroFaunaBoids partial and add editor-only grid snapshot accessor.
+3. Implement KinematicGhostWindow and SonarOcclusionRadarWindow first. Lowest coupling.
+4. Implement NativeLeakWatchdog and wire one pilot owner.
+5. Mark WorldGenerativeGeologyVoxelBridgeDirector partial and add active-runtime copier.
+6. Implement GPU grid debugger.
+7. Implement voxel boundary analyzer last. Highest scene coupling.
+
+Final status:
+- PENDING VERIFICATION
+- No runtime logs collected
+- No GCMonitor numbers collected
+- No Profiler capture collected

@@ -22,10 +22,10 @@ namespace Hecton8.Visor
         private sealed class FeatureSettings
         {
             [Tooltip("Compute shader used to resolve voxel-focused SSAO from the camera depth prepass.")]
-            public ComputeShader computeShader;
+            public ComputeShader computeShader = null;
 
             [Tooltip("Optional blue-noise texture used to rotate the low-sample kernel.")]
-            public Texture2D blueNoiseTexture;
+            public Texture2D blueNoiseTexture = null;
 
             [Tooltip("When the AO texture is generated in URP.")]
             public RenderPassEvent injectionPoint = RenderPassEvent.AfterRenderingPrePasses;
@@ -170,6 +170,8 @@ namespace Hecton8.Visor
                     builder.UseTexture(aoTexture, AccessFlags.Write);
                     builder.AllowGlobalStateModification(true);
                     builder.SetGlobalTextureAfterPass(aoTexture, ShaderConstants.GlobalTextureId);
+                    if (blueNoiseTexture.IsValid())
+                        builder.SetGlobalTextureAfterPass(blueNoiseTexture, ShaderConstants.BlueNoiseId);
 
                     builder.SetRenderFunc(static (ComputePassData data, ComputeGraphContext context) =>
                     {

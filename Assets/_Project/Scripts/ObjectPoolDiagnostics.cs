@@ -137,7 +137,7 @@ namespace Hecton8.Core
             public int lastMeasurementFrame;
 
             // For spawn rate acceleration detection
-            public float avgSpawnRateLastSecond;
+            public float avgSpawnRateLastSecond = 0f;
             public float avgSpawnRateLastFrame;
             public bool wasAccelerating;
         }

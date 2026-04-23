@@ -24,6 +24,7 @@ using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Interaction;
 using Hecton.Localization;
+using Hecton8.Physics;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -302,7 +303,7 @@ namespace Hecton8.Gameplay
             if (applyInFixedUpdate)
             {
                 Vector3 force = Vector3.up * buoyancyForce;
-                _attachedBody.AddForce(force, ForceMode.Force);
+                PhysicsForceRouter.QueueForce(_attachedBody, force, ForceMode.Force);
             }
 
             // Update position to follow attached object

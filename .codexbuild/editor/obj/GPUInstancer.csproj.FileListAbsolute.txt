@@ -1,0 +1,10 @@
+c:\hades\Hecton8\Temp\bin\Debug\GPUInstancer.deps.json
+c:\hades\Hecton8\Temp\bin\Debug\GPUInstancer.dll
+c:\hades\Hecton8\Temp\bin\Debug\GPUInstancer.pdb
+c:\hades\Hecton8\.codexbuild\editor\obj\GPUInstancer.csproj.AssemblyReference.cache
+c:\hades\Hecton8\.codexbuild\editor\obj\GPUInstancer.GeneratedMSBuildEditorConfig.editorconfig
+c:\hades\Hecton8\.codexbuild\editor\obj\GPUInstancer.csproj.CoreCompileInputs.cache
+c:\hades\Hecton8\.codexbuild\editor\obj\GPUInstancer.sourcelink.json
+c:\hades\Hecton8\.codexbuild\editor\obj\GPUInsta.C5028AAD.Up2Date
+c:\hades\Hecton8\.codexbuild\editor\obj\GPUInstancer.dll
+c:\hades\Hecton8\.codexbuild\editor\obj\GPUInstancer.pdb

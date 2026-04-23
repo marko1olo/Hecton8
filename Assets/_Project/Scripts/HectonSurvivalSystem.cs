@@ -1,11 +1,17 @@
 using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Items;
 using Hecton8.Meta;
 using Hecton8.Modding;
 using Hecton8.SaveSystem;
 using Hecton8.World;
 using UnityEngine;
 using Unity.Mathematics;
+using Unity.Collections;
 using Hecton8.Atmosphere;
 
 namespace Hecton8.Gameplay
@@ -84,6 +90,86 @@ namespace Hecton8.Gameplay
     }
 
     /// <summary>
+    /// Parsed item-parameter row injected from the survival database text source.
+    /// </summary>
+    public readonly struct SurvivalDatabaseItemParameters
+    {
+        public SurvivalDatabaseItemParameters(
+            string stableId,
+            uint stableHash,
+            float massKilograms,
+            float volumeLiters,
+            float energyDensityMegajoulesPerKilogram,
+            int baseDurability)
+        {
+            StableId = stableId;
+            StableHash = stableHash;
+            MassKilograms = massKilograms;
+            VolumeLiters = volumeLiters;
+            EnergyDensityMegajoulesPerKilogram = energyDensityMegajoulesPerKilogram;
+            BaseDurability = baseDurability;
+        }
+
+        /// <summary>Stable content identifier keyed to ItemData.PersistentId.</summary>
+        public string StableId { get; }
+
+        /// <summary>Authored stable hash parsed from the injected database row.</summary>
+        public uint StableHash { get; }
+
+        /// <summary>Authored item mass in kilograms.</summary>
+        public float MassKilograms { get; }
+
+        /// <summary>Authored item volume in liters.</summary>
+        public float VolumeLiters { get; }
+
+        /// <summary>Authored stored-energy density in MJ/kg.</summary>
+        public float EnergyDensityMegajoulesPerKilogram { get; }
+
+        /// <summary>Authored base durability budget for economy and survival consumers.</summary>
+        public int BaseDurability { get; }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct SurvivalDatabaseItemRecord
+    {
+        public uint StableHash;
+        public float MassKilograms;
+        public float VolumeLiters;
+        public float EnergyDensityMegajoulesPerKilogram;
+        public int BaseDurability;
+    }
+
+    internal struct SurvivalDatabaseColumnMap
+    {
+        public int StableId;
+        public int Hash;
+        public int MassKilograms;
+        public int VolumeLiters;
+        public int EnergyDensityMegajoulesPerKilogram;
+        public int BaseDurability;
+
+        public static SurvivalDatabaseColumnMap CreateInvalid()
+        {
+            SurvivalDatabaseColumnMap map = default;
+            map.StableId = -1;
+            map.Hash = -1;
+            map.MassKilograms = -1;
+            map.VolumeLiters = -1;
+            map.EnergyDensityMegajoulesPerKilogram = -1;
+            map.BaseDurability = -1;
+            return map;
+        }
+
+        public bool HasAllRequiredColumns =>
+            StableId >= 0 &&
+            Hash >= 0 &&
+            MassKilograms >= 0 &&
+            VolumeLiters >= 0 &&
+            EnergyDensityMegajoulesPerKilogram >= 0 &&
+            BaseDurability >= 0;
+    }
+
+    /// <summary>
     /// Core survival simulation for the Hecton diving suit.
     /// Attach to the player GameObject and assign a SurvivalStats asset.
     /// 
@@ -110,6 +196,14 @@ namespace Hecton8.Gameplay
         [SerializeField] private float surfaceWorldY;
         [Tooltip("Surface oxygen refill rate per second when the shared surface contract says the head is in air.")]
         [SerializeField] private float surfaceOxygenRefillRate = 15f;
+
+        [Header("── Thermal ─────────────────────────────────────")]
+        [Tooltip("Base Newton-cooling time constant in seconds for internal suit temperature exchange with ambient water.")]
+        [SerializeField, Range(1f, 600f)] private float internalTemperatureTimeConstantSeconds = 45f;
+
+        [Header("── Survival Database Injection ─────────────────")]
+        [Tooltip("Optional survival database source parsed at cold bootstrap to seed StableId mass, volume, energy density, and durability lookups.")]
+        [SerializeField] private TextAsset survivalDatabaseSource;
 
         // ═════════════════════════════════════════════════════════
         //  PRIVATE STATE
@@ -143,6 +237,8 @@ namespace Hecton8.Gameplay
         private float _radGraceTimer;
         private HectonPlayerMovement _playerMovement;
         private PlayerTransportCoordinator _playerTransportCoordinator;
+        private TraumaDispatcher _traumaDispatcher;
+        private Rigidbody _playerRigidbody;
         private HectonMapMagicVegetationBridge _vegetationBridge;
         private bool _surfaceContractUnderwater;
         private float _runtimeOxygenCapacityMultiplier = 1f;
@@ -165,6 +261,7 @@ namespace Hecton8.Gameplay
         private float _fractureSecondsRemaining;
         private float _fracturePenalty01;
         private float _environmentTemperature = 20f;
+        private float _internalTemperature = 20f;
         private float _coldSeverity01;
         private float _heatSeverity01;
         private ThermalStressMode _thermalStressMode;
@@ -172,6 +269,15 @@ namespace Hecton8.Gameplay
         private float _decompressionRisk01;
         private float _rapidAscentMetersPerSecond;
         private int _bloodScentSpatialHandle;
+        private NativeArray<uint> _survivalDatabaseStableHashes;
+        private NativeArray<float> _survivalDatabaseMassKilograms;
+        private NativeArray<float> _survivalDatabaseVolumeLiters;
+        private NativeArray<float> _survivalDatabaseEnergyDensityMegajoulesPerKilogram;
+        private NativeArray<int> _survivalDatabaseBaseDurability;
+        private int _survivalDatabaseItemCount;
+        private float _oxygenGraceTimer;
+        private float _oxygenGraceVisionBlur01;
+        private bool _oxygenGraceActive;
         private const float HazardGraceDuration = 3f;
         private const float PressureIncidentLogDurationThreshold = 4f;
         private const float PressureIncidentLogExcessThreshold = 6f;
@@ -203,6 +309,17 @@ namespace Hecton8.Gameplay
         private const float RapidAscentDamagePerSecond = 1.6f;
         private const float RapidAscentRiskDecayPerSecond = 0.38f;
         private const float RapidAscentDamageThreshold = 0.52f;
+        private const float DefaultInternalTemperatureCelsius = 20f;
+        private const float FloodedModuleWaterTemperatureCelsius = -1.4f;
+        private const float OxygenMovementScaleCeiling = 1.55f;
+        private const float OxygenStressScaleCeilingBonus = 0.50f;
+        private const float OxygenLeakScaleCeilingBonus = 0.70f;
+        private const float OxygenGraceDurationSeconds = 2f;
+        private const float OxygenGraceSpeedMultiplier = 1.2f;
+        private const float OverpressureSeverityFullRangeMeters = 150f;
+        private const float OverpressureSeveritySafeDepthScale = 0.35f;
+        private const int SurvivalDatabaseRowCapacity = 256;
+        private const int SurvivalDatabaseColumnCapacity = 16;
 
         private const float Epsilon       = 0.1f;
         private const float DirtySentinel = -9999f;
@@ -285,6 +402,8 @@ namespace Hecton8.Gameplay
         public float FracturePenalty01 => _fracturePenalty01;
         /// <summary>Resolved environment temperature after local thermal hazards are added.</summary>
         public float EnvironmentTemperature => _environmentTemperature;
+        /// <summary>Current internal suit temperature after exponential thermal convergence.</summary>
+        public float InternalTemperature => _internalTemperature;
         /// <summary>True while cold stress is actively affecting the suit and body.</summary>
         public bool IsInColdStress => _thermalStressMode == ThermalStressMode.Cold;
         /// <summary>True while heat stress is actively affecting the suit and body.</summary>
@@ -299,6 +418,10 @@ namespace Hecton8.Gameplay
         public float ThermalStressSeverity01 => Mathf.Max(_coldSeverity01, _heatSeverity01);
         /// <summary>Normalized decompression-risk state generated by rapid ascent and thermal updrafts.</summary>
         internal float RapidAscentRisk01 => _decompressionRisk01;
+        /// <summary>True while the oxygen-depletion grace pulse is suppressing immediate death.</summary>
+        public bool IsOxygenGraceActive => _oxygenGraceActive;
+        /// <summary>Normalized vision-blur pulse emitted during the oxygen grace window.</summary>
+        public float OxygenGraceVisionBlur01 => _oxygenGraceVisionBlur01;
 
         // ═════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -315,7 +438,10 @@ namespace Hecton8.Gameplay
 
             TryGetComponent(out _playerMovement);
             TryGetComponent(out _playerTransportCoordinator);
+            TryGetComponent(out _traumaDispatcher);
+            TryGetComponent(out _playerRigidbody);
             WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _vegetationBridge);
+            TryBootstrapInjectedSurvivalDatabase();
             ResetToMax();
         }
 
@@ -336,6 +462,12 @@ namespace Hecton8.Gameplay
             GameTickManager.Instance?.UnregisterAll(this);
             UnregisterBloodScentSignal();
             SaveManager.Instance?.Unregister(this);
+            ResetOxygenGraceState();
+        }
+
+        private void OnDestroy()
+        {
+            DisposeInjectedSurvivalDatabase();
         }
 
         // ═════════════════════════════════════════════════════════
@@ -351,6 +483,8 @@ namespace Hecton8.Gameplay
             RefreshBloodScentSignal();
             TrackCurrentLifeTelemetry(deltaTime);
             TrackPressureExposure(deltaTime);
+            PushPressureHullStress();
+            UpdateOxygenGraceState(deltaTime);
             PublishDirty();
             CheckLethalConditions();
         }
@@ -403,13 +537,8 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            float pressureFactor = math.max(1f, pressure * 0.5f);
-            float oxygenConsumptionScale = ResolveTransportOxygenConsumptionScale();
-            if (oxygenConsumptionScale <= 0f)
-                return;
-
-            DifficultyModifierData modifiers = DynamicDifficultyDirector.Current;
-            oxygen = math.max(0f, oxygen - stats.OxygenConsumptionRate * pressureFactor * oxygenConsumptionScale * modifiers.OxygenDepletionRate * dt);
+            float oxygenDrainPerSecond = ResolveCurrentOxygenDrainPerSecond();
+            oxygen = math.max(0f, oxygen - oxygenDrainPerSecond * dt);
         }
 
         private bool ResolveSurfaceContractUnderwater()
@@ -445,16 +574,11 @@ namespace Hecton8.Gameplay
 
         private void ApplyPressureDamage(float dt)
         {
-            float effectiveSafeDepth = ResolveEffectiveSafeDepthMeters();
-            if (depth <= effectiveSafeDepth) return;
+            float pressureDamagePerSecond = ResolveCurrentPressureDamagePerSecond();
+            if (pressureDamagePerSecond <= 0f)
+                return;
 
-            float pressureDamageScale = ResolveTransportPressureDamageScale();
-            if (pressureDamageScale <= 0f) return;
-
-            float excess = depth - effectiveSafeDepth;
-            float scale  = 1f + excess * stats.PressureScalePerMeter;
-            float damageMultiplier = DynamicDifficultyDirector.Current.DamageMultiplier;
-            integrity = math.max(0f, integrity - stats.PressureDamageRate * scale * pressureDamageScale * damageMultiplier * dt);
+            integrity = math.max(0f, integrity - pressureDamagePerSecond * dt);
             MarkIntegrityDeathCauseIfNeeded(SurvivalDeathCause.PressureCollapse);
         }
 
@@ -465,26 +589,26 @@ namespace Hecton8.Gameplay
             float localHeat = HectonHazardManager.GetHazardIntensity(transform.position, HazardType.Heat);
             float abyssalColdPenalty = ResolveAbyssalColdPenaltyCelsius();
             _environmentTemperature = baseTemp + localHeat - abyssalColdPenalty;
+            float floodedThermalInsulationFactor = ResolveFloodedThermalInsulationFactor();
+            float floodedExternalTemperature = floodedThermalInsulationFactor < 0.999f
+                ? FloodedModuleWaterTemperatureCelsius
+                : _environmentTemperature;
+            float thermalExposureScale = ResolveTransportThermalExposureScale();
+            float tauEff = math.max(0.01f, internalTemperatureTimeConstantSeconds * floodedThermalInsulationFactor / thermalExposureScale);
+            _internalTemperature = ResolveExponentialTemperatureStep(
+                floodedExternalTemperature,
+                _internalTemperature,
+                dt,
+                tauEff);
 
             float coldExcess = 0f;
             float heatExcess = 0f;
-            if (_environmentTemperature < stats.MinSafeTemp)
-                coldExcess = stats.MinSafeTemp - _environmentTemperature;
-            else if (_environmentTemperature > stats.MaxSafeTemp)
-                heatExcess = _environmentTemperature - stats.MaxSafeTemp;
+            if (_internalTemperature < stats.MinSafeTemp)
+                coldExcess = stats.MinSafeTemp - _internalTemperature;
+            else if (_internalTemperature > stats.MaxSafeTemp)
+                heatExcess = _internalTemperature - stats.MaxSafeTemp;
 
             if (coldExcess <= 0f && heatExcess <= 0f)
-            {
-                _tempGraceTimer = 0f;
-                _thermalStressMode = ThermalStressMode.None;
-                _coldSeverity01 = 0f;
-                _heatSeverity01 = 0f;
-                ThermalStateChanged?.Invoke();
-                return;
-            }
-
-            float thermalExposureScale = ResolveTransportThermalExposureScale();
-            if (thermalExposureScale <= 0f)
             {
                 _tempGraceTimer = 0f;
                 _thermalStressMode = ThermalStressMode.None;
@@ -503,14 +627,18 @@ namespace Hecton8.Gameplay
             if (_tempGraceTimer < HazardGraceDuration)
                 return;
 
+            float thermalPowerDrawPerSecond = ResolveThermalPowerDrawPerSecond(
+                coldExcess,
+                heatExcess,
+                deepColdStressMultiplier);
+            if (thermalPowerDrawPerSecond > 0f)
+                energy = math.max(0f, energy - thermalPowerDrawPerSecond * dt);
+
             if (coldExcess > 0f)
             {
-                float heatingDrain = coldExcess * stats.TempEnergyScale * thermalExposureScale * ResolveAbyssalHeatingDrainMultiplier() * deepColdStressMultiplier * dt;
-                energy = math.max(0f, energy - heatingDrain);
-
                 if (energy <= 0.01f || coldExcess >= ExtremeColdIntegrityThreshold)
                 {
-                    float coldDamage = stats.TempDamageRate * (1f + coldExcess * 0.1f) * thermalExposureScale * deepColdStressMultiplier * dt;
+                    float coldDamage = stats.TempDamageRate * (1f + coldExcess * 0.1f) * deepColdStressMultiplier * dt;
                     integrity = math.max(0f, integrity - coldDamage);
                     MarkIntegrityDeathCauseIfNeeded(SurvivalDeathCause.ThermalFailure);
                 }
@@ -518,12 +646,12 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            float hydrationDrain = heatExcess * stats.TempEnergyScale * HeatThirstOverloadScale * thermalExposureScale * dt;
+            float hydrationDrain = heatExcess * stats.TempEnergyScale * HeatThirstOverloadScale * dt;
             thirst = math.max(0f, thirst - hydrationDrain);
 
             if (thirst <= 0f || heatExcess >= ExtremeHeatIntegrityThreshold)
             {
-                float heatDamage = stats.TempDamageRate * (1f + heatExcess * 0.1f) * thermalExposureScale * dt;
+                float heatDamage = stats.TempDamageRate * (1f + heatExcess * 0.1f) * dt;
                 integrity = math.max(0f, integrity - heatDamage);
                 MarkIntegrityDeathCauseIfNeeded(SurvivalDeathCause.ThermalFailure);
             }
@@ -712,7 +840,7 @@ namespace Hecton8.Gameplay
         {
             PlayerTransportPreset transportPreset = ResolveActiveTransportPreset();
             return transportPreset != null
-                ? math.max(0f, transportPreset.OxygenConsumptionScale)
+                ? transportPreset.OxygenConsumptionScale
                 : 1f;
         }
 
@@ -720,7 +848,7 @@ namespace Hecton8.Gameplay
         {
             PlayerTransportPreset transportPreset = ResolveActiveTransportPreset();
             return transportPreset != null
-                ? math.max(0f, transportPreset.PressureDamageScale)
+                ? transportPreset.PressureDamageScale
                 : 1f;
         }
 
@@ -728,7 +856,7 @@ namespace Hecton8.Gameplay
         {
             PlayerTransportPreset transportPreset = ResolveActiveTransportPreset();
             return transportPreset != null
-                ? math.max(0f, transportPreset.ThermalExposureScale)
+                ? transportPreset.ThermalExposureScale
                 : 1f;
         }
 
@@ -736,8 +864,94 @@ namespace Hecton8.Gameplay
         {
             PlayerTransportPreset transportPreset = ResolveActiveTransportPreset();
             return transportPreset != null
-                ? math.max(0f, transportPreset.RadiationExposureScale)
+                ? transportPreset.RadiationExposureScale
                 : 1f;
+        }
+
+        private float ResolveCurrentOxygenDrainPerSecond()
+        {
+            float baseRate = ResolveBaseOxygenDrainPerSecond();
+            float pressureFactor = ResolveOxygenPressureScale();
+            float movementFactor = ResolveOxygenMovementScale();
+            float stressFactor = ResolveOxygenStressScale();
+            float leakFactor = ResolveOxygenLeakScale();
+            return ResolveMultiplicativeOxygenDrain(
+                baseRate,
+                pressureFactor,
+                movementFactor,
+                stressFactor,
+                leakFactor);
+        }
+
+        private float ResolveBaseOxygenDrainPerSecond()
+        {
+            DifficultyModifierData modifiers = DynamicDifficultyDirector.Current;
+            return stats.OxygenConsumptionRate *
+                   ResolveTransportOxygenConsumptionScale() *
+                   modifiers.OxygenDepletionRate;
+        }
+
+        private float ResolveOxygenPressureScale()
+        {
+            return 1f + ResolveOverpressureSeverity01();
+        }
+
+        private float ResolveOxygenMovementScale()
+        {
+            float authoredCruiseSpeed = ResolveAuthoredCruiseSpeedMetersPerSecond();
+            float currentSpeed = ResolveCurrentMovementSpeedMetersPerSecond();
+            float move01 = math.saturate(currentSpeed / authoredCruiseSpeed);
+            return math.lerp(1f, OxygenMovementScaleCeiling, move01);
+        }
+
+        private float ResolveOxygenStressScale()
+        {
+            return 1f + ResolveOxygenStressSeverity01() * OxygenStressScaleCeilingBonus;
+        }
+
+        private float ResolveOxygenLeakScale()
+        {
+            float suitLeakScale = 1f + (1f - IntegrityNormalized) * OxygenLeakScaleCeilingBonus;
+            float vehicleLeakScale = _traumaDispatcher != null
+                ? _traumaDispatcher.AdditionalVehicleOxygenDrainScale
+                : 1f;
+            return suitLeakScale * vehicleLeakScale;
+        }
+
+        private float ResolveOxygenStressSeverity01()
+        {
+            float injurySeverity = math.max(_bleedingSeverity01, _fracturePenalty01);
+            float thermalSeverity = math.max(_coldSeverity01, _heatSeverity01);
+            float hullStressSeverity = _playerMovement != null
+                ? _playerMovement.CurrentHullStress01
+                : 0f;
+            return math.saturate(
+                hullStressSeverity * 0.35f +
+                (1f - OxygenNormalized) * 0.20f +
+                injurySeverity * 0.15f +
+                thermalSeverity * 0.15f +
+                _decompressionRisk01 * 0.10f +
+                (1f - IntegrityNormalized) * 0.05f);
+        }
+
+        private float ResolveCurrentMovementSpeedMetersPerSecond()
+        {
+            return _playerRigidbody != null
+                ? _playerRigidbody.linearVelocity.magnitude
+                : 0f;
+        }
+
+        private float ResolveAuthoredCruiseSpeedMetersPerSecond()
+        {
+            float authoredCruiseSpeed = 1f;
+
+            if (_playerMovement != null && _playerMovement.CurrentSuit != null)
+                authoredCruiseSpeed = math.max(0.01f, _playerMovement.CurrentSuit.maxSwimSpeed);
+
+            if (_playerTransportCoordinator != null)
+                authoredCruiseSpeed *= math.max(0.01f, _playerTransportCoordinator.ResolveTransportSpeedMultiplier());
+
+            return math.max(0.01f, authoredCruiseSpeed);
         }
 
         private void UpdateHungerAndThirst(float dt)
@@ -841,7 +1055,10 @@ namespace Hecton8.Gameplay
 
         private void CheckLethalConditions()
         {
-            if (oxygen > 0f && integrity > 0f) return;
+            bool integrityFailure = integrity <= 0f;
+            bool oxygenFailure = oxygen <= 0f && !_oxygenGraceActive;
+            if (!integrityFailure && !oxygenFailure)
+                return;
 
             alive = false;
             _lastDeathCause = ResolveDeathCause();
@@ -850,6 +1067,87 @@ namespace Hecton8.Gameplay
             OnDeath?.Invoke();
             HectonEventBus.Publish(new PlayerDiedEvent(this, _lastDeathCause, _lastDeathRecord));
             enabled = false;
+        }
+
+        private void UpdateOxygenGraceState(float deltaTime)
+        {
+            if (integrity <= 0f)
+            {
+                ResetOxygenGraceState();
+                return;
+            }
+
+            if (oxygen > 0f)
+            {
+                ResetOxygenGraceState();
+                return;
+            }
+
+            if (!_oxygenGraceActive)
+            {
+                _oxygenGraceActive = true;
+                _oxygenGraceTimer = OxygenGraceDurationSeconds;
+            }
+            else
+            {
+                _oxygenGraceTimer = Mathf.Max(0f, _oxygenGraceTimer - Mathf.Max(0f, deltaTime));
+            }
+
+            float elapsedGraceSeconds = OxygenGraceDurationSeconds - _oxygenGraceTimer;
+            float gracePhase = Mathf.Clamp01(elapsedGraceSeconds / Mathf.Max(0.01f, OxygenGraceDurationSeconds));
+            _oxygenGraceVisionBlur01 = Mathf.Sin(gracePhase * Mathf.PI);
+
+            if (_playerMovement != null)
+                _playerMovement.SetRuntimeEmergencyMovementMultiplier(OxygenGraceSpeedMultiplier);
+
+            if (_oxygenGraceTimer <= 0f)
+            {
+                _oxygenGraceActive = false;
+                _oxygenGraceVisionBlur01 = 1f;
+                if (_playerMovement != null)
+                    _playerMovement.SetRuntimeEmergencyMovementMultiplier(1f);
+            }
+        }
+
+        private void ResetOxygenGraceState()
+        {
+            _oxygenGraceActive = false;
+            _oxygenGraceTimer = 0f;
+            _oxygenGraceVisionBlur01 = 0f;
+            if (_playerMovement != null)
+                _playerMovement.SetRuntimeEmergencyMovementMultiplier(1f);
+        }
+
+        private float ResolveFloodedThermalInsulationFactor()
+        {
+            return _traumaDispatcher != null
+                ? _traumaDispatcher.FloodedThermalInsulationFactor
+                : 1f;
+        }
+
+        private void DisposeInjectedSurvivalDatabase()
+        {
+            if (_survivalDatabaseStableHashes.IsCreated)
+                _survivalDatabaseStableHashes.Dispose();
+
+            if (_survivalDatabaseMassKilograms.IsCreated)
+                _survivalDatabaseMassKilograms.Dispose();
+
+            if (_survivalDatabaseVolumeLiters.IsCreated)
+                _survivalDatabaseVolumeLiters.Dispose();
+
+            if (_survivalDatabaseEnergyDensityMegajoulesPerKilogram.IsCreated)
+                _survivalDatabaseEnergyDensityMegajoulesPerKilogram.Dispose();
+
+            if (_survivalDatabaseBaseDurability.IsCreated)
+                _survivalDatabaseBaseDurability.Dispose();
+
+            _survivalDatabaseStableHashes = default;
+            _survivalDatabaseMassKilograms = default;
+            _survivalDatabaseVolumeLiters = default;
+            _survivalDatabaseEnergyDensityMegajoulesPerKilogram = default;
+            _survivalDatabaseBaseDurability = default;
+            _survivalDatabaseItemCount = 0;
         }
 
         // ═════════════════════════════════════════════════════════
@@ -1009,6 +1307,98 @@ namespace Hecton8.Gameplay
         //  SAVE SYSTEM
         // ═════════════════════════════════════════════════════════
 
+        /// <summary>
+        /// Parses and injects item parameters from a tabular survival database asset.
+        /// </summary>
+        /// <param name="databaseAsset">Text source containing StableId keyed item rows.</param>
+        public bool TryInjectSurvivalDatabase(TextAsset databaseAsset)
+        {
+            return databaseAsset != null && TryInjectSurvivalDatabase(databaseAsset.text);
+        }
+
+        /// <summary>
+        /// Parses and injects item parameters from raw survival database text.
+        /// </summary>
+        /// <param name="databaseText">Raw table text containing StableId keyed item rows.</param>
+        public bool TryInjectSurvivalDatabase(string databaseText)
+        {
+            if (!TryParseSurvivalDatabase(databaseText, out NativeArray<SurvivalDatabaseItemRecord> parsedItems, out int parsedItemCount))
+                return false;
+
+            DisposeInjectedSurvivalDatabase();
+            if (parsedItemCount <= 0)
+            {
+                parsedItems.Dispose();
+                return false;
+            }
+
+            _survivalDatabaseStableHashes = new NativeArray<uint>(parsedItemCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            _survivalDatabaseMassKilograms = new NativeArray<float>(parsedItemCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            _survivalDatabaseVolumeLiters = new NativeArray<float>(parsedItemCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            _survivalDatabaseEnergyDensityMegajoulesPerKilogram = new NativeArray<float>(parsedItemCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            _survivalDatabaseBaseDurability = new NativeArray<int>(parsedItemCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            _survivalDatabaseItemCount = parsedItemCount;
+
+            for (int i = 0; i < parsedItemCount; i++)
+            {
+                SurvivalDatabaseItemRecord parsedItem = parsedItems[i];
+                _survivalDatabaseStableHashes[i] = parsedItem.StableHash;
+                _survivalDatabaseMassKilograms[i] = parsedItem.MassKilograms;
+                _survivalDatabaseVolumeLiters[i] = parsedItem.VolumeLiters;
+                _survivalDatabaseEnergyDensityMegajoulesPerKilogram[i] = parsedItem.EnergyDensityMegajoulesPerKilogram;
+                _survivalDatabaseBaseDurability[i] = parsedItem.BaseDurability;
+            }
+
+            parsedItems.Dispose();
+            return _survivalDatabaseItemCount > 0;
+        }
+
+        /// <summary>
+        /// Resolves injected survival parameters for a stable item identifier.
+        /// </summary>
+        /// <param name="stableId">Persistent item identifier.</param>
+        /// <param name="parameters">Parsed item parameters when the lookup succeeds.</param>
+        public bool TryGetInjectedItemParameters(string stableId, out SurvivalDatabaseItemParameters parameters)
+        {
+            parameters = default;
+
+            if (string.IsNullOrWhiteSpace(stableId) ||
+                !_survivalDatabaseStableHashes.IsCreated ||
+                _survivalDatabaseItemCount <= 0)
+            {
+                return false;
+            }
+
+            uint stableHash = ComputeStableIdHash(stableId.AsSpan());
+            for (int i = 0; i < _survivalDatabaseItemCount; i++)
+            {
+                if (_survivalDatabaseStableHashes[i] != stableHash)
+                    continue;
+
+                parameters = new SurvivalDatabaseItemParameters(
+                    stableId,
+                    _survivalDatabaseStableHashes[i],
+                    _survivalDatabaseMassKilograms[i],
+                    _survivalDatabaseVolumeLiters[i],
+                    _survivalDatabaseEnergyDensityMegajoulesPerKilogram[i],
+                    _survivalDatabaseBaseDurability[i]);
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Resolves injected survival parameters for an ItemData asset via its persistent identifier.
+        /// </summary>
+        /// <param name="itemData">Authored item asset.</param>
+        /// <param name="parameters">Parsed item parameters when the lookup succeeds.</param>
+        public bool TryGetInjectedItemParameters(ItemData itemData, out SurvivalDatabaseItemParameters parameters)
+        {
+            parameters = default;
+            return itemData != null && TryGetInjectedItemParameters(itemData.PersistentId, out parameters);
+        }
+
         public int SavePriority => 10;
         public int LoadPriority => 10;
 
@@ -1069,10 +1459,12 @@ namespace Hecton8.Gameplay
             _fractureSecondsRemaining = Mathf.Max(0f, dto.fractureSecondsRemaining);
             _fracturePenalty01 = Mathf.Clamp01(dto.fracturePenalty01);
             _environmentTemperature = dto.environmentTemperature;
+            _internalTemperature = _environmentTemperature;
             _coldSeverity01 = Mathf.Clamp01(dto.coldStressSeverity01);
             _heatSeverity01 = Mathf.Clamp01(dto.heatStressSeverity01);
             _thermalStressMode = ResolveThermalStressModeFromState();
-            alive     = oxygen > 0f && integrity > 0f;
+            ResetOxygenGraceState();
+            alive     = integrity > 0f;
             _lastDeathCause = alive ? SurvivalDeathCause.None : ResolveDeathCause();
             _pendingIntegrityDeathCause = SurvivalDeathCause.None;
             _hasLastDeathRecord = hasTelemetryV23 && dto.hasLastDeathRecord;
@@ -1120,6 +1512,7 @@ namespace Hecton8.Gameplay
             ResetPressureExposureTracking();
             ResetInjuryState();
             ResetThermalState();
+            ResetOxygenGraceState();
 
             _tempGraceTimer = 0f;
             _radGraceTimer  = 0f;
@@ -1335,11 +1728,11 @@ namespace Hecton8.Gameplay
                 return 0f;
 
             float pressureDamageScale = ResolveTransportPressureDamageScale();
-            if (pressureDamageScale <= 0f)
-                return 0f;
-
-            float scale = 1f + overpressureMeters * stats.PressureScalePerMeter;
-            return stats.PressureDamageRate * scale * pressureDamageScale;
+            float pressureDamagePerSecond =
+                stats.PressureDamageRate *
+                (1f + overpressureMeters * stats.PressureScalePerMeter) *
+                pressureDamageScale;
+            return pressureDamagePerSecond * DynamicDifficultyDirector.Current.DamageMultiplier;
         }
 
         private float ResolvePressureExposureSeverity01()
@@ -1347,8 +1740,7 @@ namespace Hecton8.Gameplay
             if (stats == null)
                 return 0f;
 
-            float safeDepth = Mathf.Max(1f, ResolveEffectiveSafeDepthMeters());
-            float overpressureSeverity = Mathf.Clamp01(OverpressureMeters / Mathf.Max(8f, safeDepth * 0.3f));
+            float overpressureSeverity = ResolveOverpressureSeverity01();
             float damageSeverity = Mathf.Clamp01(ResolveCurrentPressureDamagePerSecond() / Mathf.Max(1f, stats.MaxIntegrity * 0.08f));
             return Mathf.Clamp01(overpressureSeverity * 0.65f + damageSeverity * 0.35f);
         }
@@ -1383,13 +1775,584 @@ namespace Hecton8.Gameplay
 
         private void ResetThermalState()
         {
-            _environmentTemperature = 20f;
+            _environmentTemperature = DefaultInternalTemperatureCelsius;
+            _internalTemperature = DefaultInternalTemperatureCelsius;
             _coldSeverity01 = 0f;
             _heatSeverity01 = 0f;
             _thermalStressMode = ThermalStressMode.None;
             _decompressionRisk01 = 0f;
             _rapidAscentMetersPerSecond = 0f;
             _lastTrackedDepthMeters = 0f;
+            _oxygenGraceVisionBlur01 = 0f;
+        }
+
+        private void TryBootstrapInjectedSurvivalDatabase()
+        {
+            if (survivalDatabaseSource == null)
+                return;
+
+            if (!TryInjectSurvivalDatabase(survivalDatabaseSource))
+                Debug.LogError("[HectonSurvival] Failed to parse injected survival database source. Item parameter lookup disabled.");
+        }
+
+        private static bool TryParseSurvivalDatabase(
+            string databaseText,
+            out SurvivalDatabaseItemParameters[] parsedItems,
+            out Dictionary<string, int> parsedLookup)
+        {
+            parsedItems = Array.Empty<SurvivalDatabaseItemParameters>();
+            parsedLookup = null;
+
+            if (string.IsNullOrWhiteSpace(databaseText))
+                return false;
+
+            // COLD ALLOC: List<SurvivalDatabaseItemParameters>[256] — injected survival database row staging during cold parse — owner: HectonSurvivalSystem
+            List<SurvivalDatabaseItemParameters> parsedRows = new List<SurvivalDatabaseItemParameters>(SurvivalDatabaseRowCapacity);
+            // COLD ALLOC: Dictionary<string, int>[16] — survival database header column map during cold parse — owner: HectonSurvivalSystem
+            Dictionary<string, int> columnLookup = new Dictionary<string, int>(SurvivalDatabaseColumnCapacity, StringComparer.Ordinal);
+
+            bool headerFound = false;
+
+            using (StringReader reader = new StringReader(databaseText))
+            {
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    if (string.IsNullOrWhiteSpace(line))
+                    {
+                        if (headerFound && parsedRows.Count > 0)
+                            break;
+
+                        continue;
+                    }
+
+                    if (!headerFound)
+                    {
+                        if (!line.StartsWith("StableId|", StringComparison.Ordinal))
+                            continue;
+
+                        PopulateSurvivalDatabaseColumnLookup(line, columnLookup);
+                        if (!HasRequiredSurvivalDatabaseColumns(columnLookup))
+                            return false;
+
+                        headerFound = true;
+                        continue;
+                    }
+
+                    if (line[0] == '=' || line[0] == '[' || line[0] == '-')
+                        break;
+
+                    if (line.IndexOf('|') < 0)
+                        break;
+
+                    if (!TryParseSurvivalDatabaseRow(line, columnLookup, out SurvivalDatabaseItemParameters row))
+                        return false;
+
+                    parsedRows.Add(row);
+                }
+            }
+
+            if (!headerFound || parsedRows.Count == 0)
+                return false;
+
+            // COLD ALLOC: Dictionary<string, int>[parsedRows.Count] — StableId to injected item-parameter index map — owner: HectonSurvivalSystem
+            parsedLookup = new Dictionary<string, int>(parsedRows.Count, StringComparer.Ordinal);
+            for (int i = 0; i < parsedRows.Count; i++)
+            {
+                string stableId = parsedRows[i].StableId;
+                if (parsedLookup.ContainsKey(stableId))
+                    return false;
+
+                parsedLookup.Add(stableId, i);
+            }
+
+            // COLD ALLOC: SurvivalDatabaseItemParameters[parsedRows.Count] — immutable injected item-parameter snapshot — owner: HectonSurvivalSystem
+            parsedItems = parsedRows.ToArray();
+            return true;
+        }
+
+        private static void PopulateSurvivalDatabaseColumnLookup(string headerLine, Dictionary<string, int> columnLookup)
+        {
+            columnLookup.Clear();
+            // COLD ALLOC: string[header token count] — survival database header tokenization during cold parse — owner: HectonSurvivalSystem
+            string[] headerTokens = headerLine.Split('|');
+            for (int i = 0; i < headerTokens.Length; i++)
+            {
+                string token = headerTokens[i].Trim();
+                if (token.Length == 0 || columnLookup.ContainsKey(token))
+                    continue;
+
+                columnLookup.Add(token, i);
+            }
+        }
+
+        private static bool HasRequiredSurvivalDatabaseColumns(Dictionary<string, int> columnLookup)
+        {
+            return
+                columnLookup.ContainsKey("StableId") &&
+                columnLookup.ContainsKey("Hash") &&
+                columnLookup.ContainsKey("MassKg") &&
+                columnLookup.ContainsKey("VolumeL") &&
+                columnLookup.ContainsKey("EnergyDensityMJkg") &&
+                columnLookup.ContainsKey("BaseDurability");
+        }
+
+        private static bool TryParseSurvivalDatabaseRow(
+            string rowLine,
+            Dictionary<string, int> columnLookup,
+            out SurvivalDatabaseItemParameters row)
+        {
+            row = default;
+            // COLD ALLOC: string[row token count] — survival database row tokenization during cold parse — owner: HectonSurvivalSystem
+            string[] tokens = rowLine.Split('|');
+
+            if (!TryGetRequiredColumnValue(tokens, columnLookup, "StableId", out string stableId) ||
+                !TryGetRequiredColumnValue(tokens, columnLookup, "Hash", out string hashToken) ||
+                !TryGetRequiredColumnValue(tokens, columnLookup, "MassKg", out string massToken) ||
+                !TryGetRequiredColumnValue(tokens, columnLookup, "VolumeL", out string volumeToken) ||
+                !TryGetRequiredColumnValue(tokens, columnLookup, "EnergyDensityMJkg", out string energyDensityToken) ||
+                !TryGetRequiredColumnValue(tokens, columnLookup, "BaseDurability", out string durabilityToken))
+            {
+                return false;
+            }
+
+            if (!TryParseStableHash(hashToken, out uint stableHash) ||
+                !float.TryParse(massToken, NumberStyles.Float, CultureInfo.InvariantCulture, out float massKilograms) ||
+                !float.TryParse(volumeToken, NumberStyles.Float, CultureInfo.InvariantCulture, out float volumeLiters) ||
+                !float.TryParse(energyDensityToken, NumberStyles.Float, CultureInfo.InvariantCulture, out float energyDensityMegajoulesPerKilogram) ||
+                !int.TryParse(durabilityToken, NumberStyles.Integer, CultureInfo.InvariantCulture, out int baseDurability))
+            {
+                return false;
+            }
+
+            row = new SurvivalDatabaseItemParameters(
+                stableId,
+                stableHash,
+                massKilograms,
+                volumeLiters,
+                energyDensityMegajoulesPerKilogram,
+                baseDurability);
+            return true;
+        }
+
+        private static bool TryGetRequiredColumnValue(
+            string[] tokens,
+            Dictionary<string, int> columnLookup,
+            string columnName,
+            out string value)
+        {
+            value = null;
+
+            if (!columnLookup.TryGetValue(columnName, out int columnIndex))
+                return false;
+
+            if ((uint)columnIndex >= (uint)tokens.Length)
+                return false;
+
+            value = tokens[columnIndex].Trim();
+            return value.Length > 0;
+        }
+
+        private static bool TryParseStableHash(string hashToken, out uint stableHash)
+        {
+            stableHash = 0u;
+            if (string.IsNullOrWhiteSpace(hashToken))
+                return false;
+
+            string normalizedHashToken = hashToken.Trim();
+            if (normalizedHashToken.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+                normalizedHashToken = normalizedHashToken.Substring(2);
+
+            return uint.TryParse(
+                normalizedHashToken,
+                NumberStyles.HexNumber,
+                CultureInfo.InvariantCulture,
+                out stableHash);
+        }
+
+        private static bool TryParseSurvivalDatabase(
+            string databaseText,
+            out NativeArray<SurvivalDatabaseItemRecord> parsedItems,
+            out int parsedItemCount)
+        {
+            parsedItems = default;
+            parsedItemCount = 0;
+
+            if (string.IsNullOrWhiteSpace(databaseText))
+                return false;
+
+            ReadOnlySpan<char> databaseSpan = databaseText.AsSpan();
+            // COLD ALLOC: SurvivalDatabaseItemRecord[256] — injected survival database row staging during cold parse — owner: HectonSurvivalSystem
+            NativeArray<SurvivalDatabaseItemRecord> stagingRows = new NativeArray<SurvivalDatabaseItemRecord>(
+                SurvivalDatabaseRowCapacity,
+                Allocator.Temp,
+                NativeArrayOptions.UninitializedMemory);
+            SurvivalDatabaseColumnMap columnMap = SurvivalDatabaseColumnMap.CreateInvalid();
+            bool headerFound = false;
+            int cursor = 0;
+
+            while (TryReadNextLine(databaseSpan, ref cursor, out ReadOnlySpan<char> line))
+            {
+                ReadOnlySpan<char> trimmedLine = TrimSurvivalDatabaseSpan(line);
+                if (trimmedLine.Length == 0)
+                {
+                    if (headerFound && parsedItemCount > 0)
+                        break;
+
+                    continue;
+                }
+
+                if (!headerFound)
+                {
+                    if (!HasSurvivalDatabaseHeaderPrefix(trimmedLine))
+                        continue;
+
+                    if (!TryBuildSurvivalDatabaseColumnMap(trimmedLine, out columnMap))
+                    {
+                        stagingRows.Dispose();
+                        return false;
+                    }
+
+                    headerFound = true;
+                    continue;
+                }
+
+                char lead = trimmedLine[0];
+                if (lead == '=' || lead == '[' || lead == '-')
+                    break;
+
+                if (trimmedLine.IndexOf('|') < 0)
+                    break;
+
+                if ((uint)parsedItemCount >= (uint)stagingRows.Length)
+                {
+                    stagingRows.Dispose();
+                    return false;
+                }
+
+                if (!TryParseSurvivalDatabaseRowFlat(trimmedLine, in columnMap, out SurvivalDatabaseItemRecord row))
+                {
+                    stagingRows.Dispose();
+                    return false;
+                }
+
+                stagingRows[parsedItemCount++] = row;
+            }
+
+            if (!headerFound || parsedItemCount == 0)
+            {
+                stagingRows.Dispose();
+                return false;
+            }
+
+            for (int i = 0; i < parsedItemCount; i++)
+            {
+                for (int j = i + 1; j < parsedItemCount; j++)
+                {
+                    if (stagingRows[i].StableHash == stagingRows[j].StableHash)
+                    {
+                        stagingRows.Dispose();
+                        return false;
+                    }
+                }
+            }
+
+            // COLD ALLOC: SurvivalDatabaseItemRecord[parsedRowCount] — immutable injected item-parameter snapshot — owner: HectonSurvivalSystem
+            parsedItems = new NativeArray<SurvivalDatabaseItemRecord>(
+                parsedItemCount,
+                Allocator.Persistent,
+                NativeArrayOptions.UninitializedMemory);
+
+            for (int i = 0; i < parsedItemCount; i++)
+                parsedItems[i] = stagingRows[i];
+
+            stagingRows.Dispose();
+            return true;
+        }
+
+        private static bool HasSurvivalDatabaseHeaderPrefix(ReadOnlySpan<char> line)
+        {
+            ReadOnlySpan<char> prefix = "StableId|".AsSpan();
+            return line.Length >= prefix.Length && line.Slice(0, prefix.Length).SequenceEqual(prefix);
+        }
+
+        private static bool TryBuildSurvivalDatabaseColumnMap(
+            ReadOnlySpan<char> headerLine,
+            out SurvivalDatabaseColumnMap columnMap)
+        {
+            columnMap = SurvivalDatabaseColumnMap.CreateInvalid();
+            int tokenCursor = 0;
+            int tokenIndex = 0;
+            while (TryReadNextDelimitedToken(headerLine, ref tokenCursor, '|', out ReadOnlySpan<char> token))
+            {
+                ReadOnlySpan<char> trimmedToken = TrimSurvivalDatabaseSpan(token);
+                if (trimmedToken.Length == 0)
+                {
+                    tokenIndex++;
+                    continue;
+                }
+
+                if (trimmedToken.SequenceEqual("StableId".AsSpan()))
+                    columnMap.StableId = tokenIndex;
+                else if (trimmedToken.SequenceEqual("Hash".AsSpan()))
+                    columnMap.Hash = tokenIndex;
+                else if (trimmedToken.SequenceEqual("MassKg".AsSpan()))
+                    columnMap.MassKilograms = tokenIndex;
+                else if (trimmedToken.SequenceEqual("VolumeL".AsSpan()))
+                    columnMap.VolumeLiters = tokenIndex;
+                else if (trimmedToken.SequenceEqual("EnergyDensityMJkg".AsSpan()))
+                    columnMap.EnergyDensityMegajoulesPerKilogram = tokenIndex;
+                else if (trimmedToken.SequenceEqual("BaseDurability".AsSpan()))
+                    columnMap.BaseDurability = tokenIndex;
+
+                tokenIndex++;
+            }
+
+            return columnMap.HasAllRequiredColumns;
+        }
+
+        private static bool TryParseSurvivalDatabaseRowFlat(
+            ReadOnlySpan<char> rowLine,
+            in SurvivalDatabaseColumnMap columnMap,
+            out SurvivalDatabaseItemRecord row)
+        {
+            row = default;
+            ReadOnlySpan<char> stableId = default;
+            ReadOnlySpan<char> hashToken = default;
+            ReadOnlySpan<char> massToken = default;
+            ReadOnlySpan<char> volumeToken = default;
+            ReadOnlySpan<char> energyDensityToken = default;
+            ReadOnlySpan<char> durabilityToken = default;
+            bool hasStableId = false;
+            bool hasHash = false;
+            bool hasMass = false;
+            bool hasVolume = false;
+            bool hasEnergyDensity = false;
+            bool hasDurability = false;
+            int tokenCursor = 0;
+            int tokenIndex = 0;
+
+            while (TryReadNextDelimitedToken(rowLine, ref tokenCursor, '|', out ReadOnlySpan<char> token))
+            {
+                ReadOnlySpan<char> trimmedToken = TrimSurvivalDatabaseSpan(token);
+                if (tokenIndex == columnMap.StableId)
+                {
+                    stableId = trimmedToken;
+                    hasStableId = trimmedToken.Length > 0;
+                }
+                else if (tokenIndex == columnMap.Hash)
+                {
+                    hashToken = trimmedToken;
+                    hasHash = trimmedToken.Length > 0;
+                }
+                else if (tokenIndex == columnMap.MassKilograms)
+                {
+                    massToken = trimmedToken;
+                    hasMass = trimmedToken.Length > 0;
+                }
+                else if (tokenIndex == columnMap.VolumeLiters)
+                {
+                    volumeToken = trimmedToken;
+                    hasVolume = trimmedToken.Length > 0;
+                }
+                else if (tokenIndex == columnMap.EnergyDensityMegajoulesPerKilogram)
+                {
+                    energyDensityToken = trimmedToken;
+                    hasEnergyDensity = trimmedToken.Length > 0;
+                }
+                else if (tokenIndex == columnMap.BaseDurability)
+                {
+                    durabilityToken = trimmedToken;
+                    hasDurability = trimmedToken.Length > 0;
+                }
+
+                tokenIndex++;
+            }
+
+            if (!hasStableId || !hasHash || !hasMass || !hasVolume || !hasEnergyDensity || !hasDurability)
+                return false;
+
+            if (!TryParseStableHash(hashToken, out uint stableHash) ||
+                !float.TryParse(massToken, NumberStyles.Float, CultureInfo.InvariantCulture, out float massKilograms) ||
+                !float.TryParse(volumeToken, NumberStyles.Float, CultureInfo.InvariantCulture, out float volumeLiters) ||
+                !float.TryParse(energyDensityToken, NumberStyles.Float, CultureInfo.InvariantCulture, out float energyDensityMegajoulesPerKilogram) ||
+                !int.TryParse(durabilityToken, NumberStyles.Integer, CultureInfo.InvariantCulture, out int baseDurability))
+            {
+                return false;
+            }
+
+            if (ComputeStableIdHash(stableId) != stableHash)
+                return false;
+
+            row.StableHash = stableHash;
+            row.MassKilograms = massKilograms;
+            row.VolumeLiters = volumeLiters;
+            row.EnergyDensityMegajoulesPerKilogram = energyDensityMegajoulesPerKilogram;
+            row.BaseDurability = baseDurability;
+            return true;
+        }
+
+        private static bool TryParseStableHash(ReadOnlySpan<char> hashToken, out uint stableHash)
+        {
+            stableHash = 0u;
+            ReadOnlySpan<char> normalizedHashToken = TrimSurvivalDatabaseSpan(hashToken);
+            if (normalizedHashToken.Length == 0)
+                return false;
+
+            if (normalizedHashToken.Length >= 2 &&
+                normalizedHashToken[0] == '0' &&
+                (normalizedHashToken[1] == 'x' || normalizedHashToken[1] == 'X'))
+            {
+                normalizedHashToken = normalizedHashToken.Slice(2);
+            }
+
+            return uint.TryParse(
+                normalizedHashToken,
+                NumberStyles.HexNumber,
+                CultureInfo.InvariantCulture,
+                out stableHash);
+        }
+
+        private static uint ComputeStableIdHash(ReadOnlySpan<char> stableId)
+        {
+            unchecked
+            {
+                uint hash = 2166136261u;
+                for (int i = 0; i < stableId.Length; i++)
+                {
+                    hash ^= stableId[i];
+                    hash *= 16777619u;
+                }
+
+                return hash;
+            }
+        }
+
+        private static bool TryReadNextLine(ReadOnlySpan<char> source, ref int cursor, out ReadOnlySpan<char> line)
+        {
+            line = default;
+            if ((uint)cursor >= (uint)source.Length)
+                return false;
+
+            int lineStart = cursor;
+            while ((uint)cursor < (uint)source.Length)
+            {
+                char c = source[cursor];
+                if (c == '\r' || c == '\n')
+                    break;
+
+                cursor++;
+            }
+
+            line = source.Slice(lineStart, cursor - lineStart);
+            if ((uint)cursor < (uint)source.Length && source[cursor] == '\r')
+                cursor++;
+            if ((uint)cursor < (uint)source.Length && source[cursor] == '\n')
+                cursor++;
+
+            return true;
+        }
+
+        private static bool TryReadNextDelimitedToken(
+            ReadOnlySpan<char> source,
+            ref int cursor,
+            char delimiter,
+            out ReadOnlySpan<char> token)
+        {
+            if (cursor > source.Length)
+            {
+                token = default;
+                return false;
+            }
+
+            int tokenStart = cursor;
+            while ((uint)cursor < (uint)source.Length && source[cursor] != delimiter)
+                cursor++;
+
+            token = source.Slice(tokenStart, cursor - tokenStart);
+            if ((uint)cursor < (uint)source.Length && source[cursor] == delimiter)
+                cursor++;
+
+            return true;
+        }
+
+        private static ReadOnlySpan<char> TrimSurvivalDatabaseSpan(ReadOnlySpan<char> value)
+        {
+            int start = 0;
+            int end = value.Length - 1;
+
+            while (start < value.Length && char.IsWhiteSpace(value[start]))
+                start++;
+
+            while (end >= start && char.IsWhiteSpace(value[end]))
+                end--;
+
+            return start > end
+                ? ReadOnlySpan<char>.Empty
+                : value.Slice(start, end - start + 1);
+        }
+
+        private static float ResolveMultiplicativeOxygenDrain(
+            float baseRate,
+            float pressureFactor,
+            float movementFactor,
+            float stressFactor,
+            float leakFactor)
+        {
+            return baseRate * pressureFactor * movementFactor * stressFactor * leakFactor;
+        }
+
+        private static float ResolveExponentialTemperatureStep(
+            float environmentTemperature,
+            float currentInternalTemperature,
+            float deltaTime,
+            float tauSeconds)
+        {
+            float safeTau = math.max(0.01f, tauSeconds);
+            float temperatureDecay = math.exp(-deltaTime / safeTau);
+            return environmentTemperature + (currentInternalTemperature - environmentTemperature) * temperatureDecay;
+        }
+
+        private float ResolveThermalPowerDrawPerSecond(
+            float coldExcess,
+            float heatExcess,
+            float deepColdStressMultiplier)
+        {
+            float coldHeatingDrawPerSecond =
+                coldExcess *
+                stats.TempEnergyScale *
+                ResolveAbyssalHeatingDrainMultiplier() *
+                deepColdStressMultiplier;
+            float heatCoolingDrawPerSecond = heatExcess * stats.TempEnergyScale;
+            return coldHeatingDrawPerSecond + heatCoolingDrawPerSecond;
+        }
+
+        private void PushPressureHullStress()
+        {
+            if (_playerMovement == null)
+                return;
+
+            _playerMovement.RequestExternalHullStress(ResolvePressureExposureSeverity01());
+        }
+
+        private float ResolveOverpressureSeverity01()
+        {
+            return ResolveOverpressureSeverity01(
+                OverpressureMeters,
+                ResolveEffectiveSafeDepthMeters());
+        }
+
+        private static float ResolveOverpressureSeverity01(
+            float overpressureMeters,
+            float effectiveSafeDepthMeters)
+        {
+            if (overpressureMeters <= 0f)
+                return 0f;
+
+            float fullSeverityRange = math.max(
+                OverpressureSeverityFullRangeMeters,
+                math.max(1f, effectiveSafeDepthMeters) * OverpressureSeveritySafeDepthScale);
+            return math.saturate(overpressureMeters / fullSeverityRange);
         }
 
         private void NotifyInjuryStateChanged()

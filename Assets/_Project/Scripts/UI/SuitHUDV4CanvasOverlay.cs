@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Hecton.Localization;
 using Hecton8.Bootstrap;
@@ -6,6 +7,7 @@ using Hecton8.Gameplay;
 using Hecton8.Core;
 using TMPro;
 using UnityEngine;
+using Unity.Mathematics;
 using UnityEngine.UI;
 using NASAPunk.Visor;
 #if UNITY_EDITOR
@@ -22,31 +24,93 @@ namespace Hecton8.UI
     {
         private static readonly List<SuitHUDV4CanvasOverlay> s_activeOverlays = new List<SuitHUDV4CanvasOverlay>(4);
         private static readonly List<VisorHUDController> s_controllerResolveBuffer = new List<VisorHUDController>(2);
-        private static readonly string[] s_headingLabels = BuildHeadingLabels();
+        private static readonly HeadingLabelCacheEntry[] s_headingLabels = BuildHeadingLabels();
         private const string DefaultSuitLabel = "EXPEDITION SUIT";
-        private const string DefaultDepthPattern = "DEPTH: -{0:0} m";
-        private const string DefaultTemperaturePattern = "TEMPERATURE: {0:0.0} C";
-        private const string DefaultPressurePattern = "PRESSURE: {0:0.0} atm";
+        private const string DefaultTemperatureLabel = "TEMP";
+        private const string DefaultPressureLabel = "PRESSURE";
+        private const string DefaultAtmLabel = "atm";
+        private const string DefaultMetersLabel = "m";
+        private const string DefaultFeetLabel = "ft";
+        private const string DefaultCelsiusLabel = "C";
+        private const string DefaultFahrenheitLabel = "F";
         private const string DefaultGaugeO2Label = "O2";
         private const string DefaultGaugePowerLabel = "PWR";
         private const string DefaultGaugeHullLabel = "HULL";
-        private const string DefaultPressureLabel = "PRESSURE";
-        private const string DefaultTemperatureLabel = "TEMP";
-        private const string StatusPressureLimitExceeded = "PRESSURE LIMIT EXCEEDED";
-        private const string StatusApproachingSafeDepth = "APPROACHING SAFE DEPTH LIMIT";
-        private const string StatusSuitDamageCritical = "SUIT DAMAGE CRITICAL";
-        private const string StatusOxygenReserveLow = "OXYGEN RESERVE LOW";
-        private const string StatusPowerCellsLow = "POWER CELLS LOW";
-        private const string StatusLampThermalLimit = "LAMP THERMAL LIMIT";
-        private const string StatusSuitLinkRoutingPda = "SUIT LINK ROUTING PDA";
-        private const string StatusLifeSupportNominalStable = "LIFE SUPPORT NOMINAL / STABLE";
-        private const string StatusLifeSupportNominalAscending = "LIFE SUPPORT NOMINAL / ASCENDING";
-        private const string StatusLifeSupportNominalDescending = "LIFE SUPPORT NOMINAL / DESCENDING";
+        private const string DefaultStatusPressureLimitExceeded = "PRESSURE LIMIT EXCEEDED";
+        private const string DefaultStatusApproachingSafeDepth = "APPROACHING SAFE DEPTH LIMIT";
+        private const string DefaultStatusSuitDamageCritical = "SUIT DAMAGE CRITICAL";
+        private const string DefaultStatusOxygenReserveLow = "OXYGEN RESERVE LOW";
+        private const string DefaultStatusPowerCellsLow = "POWER CELLS LOW";
+        private const string DefaultStatusLampThermalLimit = "LAMP THERMAL LIMIT";
+        private const string DefaultStatusSuitLinkRoutingPda = "SUIT LINK ROUTING PDA";
+        private const string DefaultStatusLifeSupportNominalStable = "LIFE SUPPORT NOMINAL / STABLE";
+        private const string DefaultStatusLifeSupportNominalAscending = "LIFE SUPPORT NOMINAL / ASCENDING";
+        private const string DefaultStatusLifeSupportNominalDescending = "LIFE SUPPORT NOMINAL / DESCENDING";
+        private const string DepthNumberToken = "{N0:F0}";
+        private const string FixedTenthsNumberToken = "{N0:F1}";
+        private const string HeadingNumberTemplate = "HEADING {N0:D3} / ";
+        private const float OxygenGaugeDamping = 12f;
+        private const float BatteryGaugeDamping = 6f;
+        private const float GaugeSmoothingEpsilon = 0.01f;
+        private static readonly char[] s_atmLabelChars = DefaultAtmLabel.ToCharArray();
+        private static readonly char[] s_depthLabelChars = "DEPTH".ToCharArray();
+        private static readonly char[] s_temperatureLabelChars = DefaultTemperatureLabel.ToCharArray();
+        private static readonly char[] s_pressureLabelChars = DefaultPressureLabel.ToCharArray();
+        private static readonly char[] s_metersLabelChars = DefaultMetersLabel.ToCharArray();
+        private static readonly char[] s_feetLabelChars = DefaultFeetLabel.ToCharArray();
+        private static readonly char[] s_celsiusLabelChars = DefaultCelsiusLabel.ToCharArray();
+        private static readonly char[] s_fahrenheitLabelChars = DefaultFahrenheitLabel.ToCharArray();
+        private static readonly char[] s_gaugeO2LabelChars = DefaultGaugeO2Label.ToCharArray();
+        private static readonly char[] s_gaugePowerLabelChars = DefaultGaugePowerLabel.ToCharArray();
+        private static readonly char[] s_gaugeHullLabelChars = DefaultGaugeHullLabel.ToCharArray();
+        private static readonly char[] s_statusPressureLimitExceededChars = DefaultStatusPressureLimitExceeded.ToCharArray();
+        private static readonly char[] s_statusApproachingSafeDepthChars = DefaultStatusApproachingSafeDepth.ToCharArray();
+        private static readonly char[] s_statusSuitDamageCriticalChars = DefaultStatusSuitDamageCritical.ToCharArray();
+        private static readonly char[] s_statusOxygenReserveLowChars = DefaultStatusOxygenReserveLow.ToCharArray();
+        private static readonly char[] s_statusPowerCellsLowChars = DefaultStatusPowerCellsLow.ToCharArray();
+        private static readonly char[] s_statusLampThermalLimitChars = DefaultStatusLampThermalLimit.ToCharArray();
+        private static readonly char[] s_statusSuitLinkRoutingPdaChars = DefaultStatusSuitLinkRoutingPda.ToCharArray();
+        private static readonly char[] s_statusLifeSupportNominalStableChars = DefaultStatusLifeSupportNominalStable.ToCharArray();
+        private static readonly char[] s_statusLifeSupportNominalAscendingChars = DefaultStatusLifeSupportNominalAscending.ToCharArray();
+        private static readonly char[] s_statusLifeSupportNominalDescendingChars = DefaultStatusLifeSupportNominalDescending.ToCharArray();
+        private static readonly int _HudDepthKeyHash = LocHash.Compute(LocalizationKeys.HUD_DEPTH);
+        private static readonly int _HudTemperatureKeyHash = LocHash.Compute(LocalizationKeys.HUD_TEMP);
+        private static readonly int _HudPressureKeyHash = LocHash.Compute(LocalizationKeys.HUD_PRESSURE);
+        private static readonly int _HudAtmKeyHash = LocHash.Compute(LocalizationKeys.HUD_ATM);
+        private static readonly int _HudOxygenKeyHash = LocHash.Compute(LocalizationKeys.HUD_O2);
+        private static readonly int _HudPowerKeyHash = LocHash.Compute(LocalizationKeys.HUD_PWR);
+        private static readonly int _HudHullKeyHash = LocHash.Compute(LocalizationKeys.HUD_HULL);
+        private static readonly int _HudMetersKeyHash = LocHash.Compute(LocalizationKeys.HUD_UNIT_METERS);
+        private static readonly int _HudFeetKeyHash = LocHash.Compute(LocalizationKeys.HUD_UNIT_FEET);
+        private static readonly int _HudCelsiusKeyHash = LocHash.Compute(LocalizationKeys.HUD_UNIT_CELSIUS);
+        private static readonly int _HudFahrenheitKeyHash = LocHash.Compute(LocalizationKeys.HUD_UNIT_FAHRENHEIT);
+        private static readonly int _StatusPressureLimitExceededKeyHash = LocHash.Compute(LocalizationKeys.HUD_STATUS_PRESSURE_LIMIT_EXCEEDED);
+        private static readonly int _StatusApproachingSafeDepthKeyHash = LocHash.Compute(LocalizationKeys.HUD_STATUS_APPROACHING_SAFE_DEPTH_LIMIT);
+        private static readonly int _StatusSuitDamageCriticalKeyHash = LocHash.Compute(LocalizationKeys.HUD_STATUS_SUIT_DAMAGE_CRITICAL);
+        private static readonly int _StatusOxygenReserveLowKeyHash = LocHash.Compute(LocalizationKeys.HUD_STATUS_OXYGEN_RESERVE_LOW);
+        private static readonly int _StatusPowerCellsLowKeyHash = LocHash.Compute(LocalizationKeys.HUD_STATUS_POWER_CELLS_LOW);
+        private static readonly int _StatusLampThermalLimitKeyHash = LocHash.Compute(LocalizationKeys.HUD_STATUS_LAMP_THERMAL_LIMIT);
+        private static readonly int _StatusSuitLinkRoutingPdaKeyHash = LocHash.Compute(LocalizationKeys.HUD_STATUS_SUIT_LINK_ROUTING_PDA);
+        private static readonly int _StatusLifeSupportNominalStableKeyHash = LocHash.Compute(LocalizationKeys.HUD_STATUS_LIFE_SUPPORT_NOMINAL_STABLE);
+        private static readonly int _StatusLifeSupportNominalAscendingKeyHash = LocHash.Compute(LocalizationKeys.HUD_STATUS_LIFE_SUPPORT_NOMINAL_ASCENDING);
+        private static readonly int _StatusLifeSupportNominalDescendingKeyHash = LocHash.Compute(LocalizationKeys.HUD_STATUS_LIFE_SUPPORT_NOMINAL_DESCENDING);
 
         public enum RenderPath
         {
             ScreenOverlay,
             ProjectionSource
+        }
+
+        private readonly struct HeadingLabelCacheEntry
+        {
+            public HeadingLabelCacheEntry(char[] buffer, int length)
+            {
+                Buffer = buffer;
+                Length = length;
+            }
+
+            public char[] Buffer { get; }
+            public int Length { get; }
         }
 
         private static readonly string[] _cachedUpperStrings = new string[16];
@@ -187,23 +251,27 @@ namespace Hecton8.UI
         private SuitData _cachedSuitLabelSuit;
         private string _cachedSuitLabelOverride;
         private string _cachedSuitLabelText = DefaultSuitLabel;
-        private string _appliedSuitLabelText;
+        private bool _cachedSuitLabelRtl;
+        private int _cachedSuitLabelVersion;
+        private int _appliedSuitLabelVersion = int.MinValue;
         private Color _appliedSuitLabelColor;
-        private string _appliedHeadingLabelText;
+        private int _appliedHeadingLabelVersion = int.MinValue;
         private Color _appliedHeadingLabelColor;
-        private string _appliedStatusLabelText;
+        private int _appliedStatusKeyHash;
+        private bool _hasAppliedStatusKeyHash;
+        private int _appliedStatusWhisperVersion = int.MinValue;
         private Color _appliedStatusLabelColor;
-        private string _appliedDepthText;
         private int _appliedDepthValue;
         private bool _hasAppliedDepthValue;
+        private int _appliedDepthWhisperVersion = int.MinValue;
         private Color _appliedDepthColor;
-        private string _appliedTemperatureText;
         private int _appliedTemperatureTenths;
         private bool _hasAppliedTemperatureTenths;
+        private int _appliedTemperatureWhisperVersion = int.MinValue;
         private Color _appliedTemperatureColor;
-        private string _appliedPressureText;
         private int _appliedPressureTenths;
         private bool _hasAppliedPressureTenths;
+        private int _appliedPressureWhisperVersion = int.MinValue;
         private Color _appliedPressureColor;
         private bool _styleApplied;
         private bool _canvasStateApplied;
@@ -212,23 +280,19 @@ namespace Hecton8.UI
         private float _stressPulseIntensity;
         private float _stressPulsePhase;
         private float _appliedStressPulseStrength = -1f;
-        private string _localizedDepthPattern = DefaultDepthPattern;
-        private string _localizedTemperaturePattern = DefaultTemperaturePattern;
-        private string _localizedPressurePattern = DefaultPressurePattern;
         private GameLanguage _localizedMeasurementLanguage = GameLanguage.English;
-        private string _localizedGaugeO2Label = DefaultGaugeO2Label;
-        private string _localizedGaugePowerLabel = DefaultGaugePowerLabel;
-        private string _localizedGaugeHullLabel = DefaultGaugeHullLabel;
-        private string _localizedStatusPressureLimitExceeded = StatusPressureLimitExceeded;
-        private string _localizedStatusApproachingSafeDepth = StatusApproachingSafeDepth;
-        private string _localizedStatusSuitDamageCritical = StatusSuitDamageCritical;
-        private string _localizedStatusOxygenReserveLow = StatusOxygenReserveLow;
-        private string _localizedStatusPowerCellsLow = StatusPowerCellsLow;
-        private string _localizedStatusLampThermalLimit = StatusLampThermalLimit;
-        private string _localizedStatusSuitLinkRoutingPda = StatusSuitLinkRoutingPda;
-        private string _localizedStatusLifeSupportNominalStable = StatusLifeSupportNominalStable;
-        private string _localizedStatusLifeSupportNominalAscending = StatusLifeSupportNominalAscending;
-        private string _localizedStatusLifeSupportNominalDescending = StatusLifeSupportNominalDescending;
+        // COLD ALLOC: char[64] — cached suit label staging buffer — owner: SuitHUDV4CanvasOverlay
+        private char[] _cachedSuitLabelBuffer = new char[64];
+        private int _cachedSuitLabelLength;
+        // COLD ALLOC: char[64] — localized depth metric template buffer — owner: SuitHUDV4CanvasOverlay
+        private char[] _depthTemplateBuffer = new char[64];
+        private int _depthTemplateLength;
+        // COLD ALLOC: char[64] — localized temperature metric template buffer — owner: SuitHUDV4CanvasOverlay
+        private char[] _temperatureTemplateBuffer = new char[64];
+        private int _temperatureTemplateLength;
+        // COLD ALLOC: char[64] — localized pressure metric template buffer — owner: SuitHUDV4CanvasOverlay
+        private char[] _pressureTemplateBuffer = new char[64];
+        private int _pressureTemplateLength;
         private Canvas _appliedCanvasTarget;
         private Camera _appliedProjectionCamera;
         private RenderPath _appliedRenderPath;
@@ -244,6 +308,10 @@ namespace Hecton8.UI
         private HectonSurvivalSystem _depthSignalSource;
         private int _cachedHullStressWhisperBucket = int.MinValue;
         private string _cachedHullStressWhisperText;
+        private bool _cachedHullStressWhisperRtl;
+        // COLD ALLOC: char[96] — cached hull-stress whisper text buffer — owner: SuitHUDV4CanvasOverlay
+        private char[] _cachedHullStressWhisperBuffer = new char[96];
+        private int _cachedHullStressWhisperLength;
 
         public Canvas TargetCanvas => ResolveTargetCanvas();
         public Camera ProjectionCamera => projectionCamera;
@@ -272,11 +340,14 @@ namespace Hecton8.UI
             public TextMeshProUGUI Label;
             public TextMeshProUGUI Value;
             public TextMeshProUGUI Sub;
-            public string CachedLabel;
-            public string CachedValueText;
-            public string CachedSubLabel;
+            public int LabelKeyHash;
+            public char[] ValueBuffer;
+            public int CachedLabelKeyHash;
+            public bool HasCachedLabelKeyHash;
             public int CachedRoundedValue;
             public bool HasCachedRoundedValue;
+            public int CachedLabelWhisperVersion;
+            public int CachedValueWhisperVersion;
             public float CachedFillAmount;
             public bool HasCachedFillAmount;
             public Color CachedIconColor;
@@ -285,7 +356,6 @@ namespace Hecton8.UI
             public Color CachedRingFrameColor;
             public Color CachedLabelColor;
             public Color CachedValueColor;
-            public Color CachedSubColor;
         }
 
         private void OnEnable()
@@ -745,9 +815,9 @@ namespace Hecton8.UI
             Anchor(_gaugeClusterRoot, new Vector2(0f, 0f), new Vector2(0f, 0f), resolvedGaugeClusterOffset, resolvedGaugeClusterSize);
             _gaugeClusterRoot.localEulerAngles = Vector3.zero;
 
-            _oxygenGauge = CreateGauge("Gauge_O2", _gaugeClusterRoot, new Vector2(-resolvedGaugeColumnSpacing, 0f), GetOxygenIconSprite());
-            _healthGauge = CreateGauge("Gauge_HLT", _gaugeClusterRoot, Vector2.zero, GetHealthIconSprite());
-            _powerGauge = CreateGauge("Gauge_PWR", _gaugeClusterRoot, new Vector2(resolvedGaugeColumnSpacing, 0f), GetEnergyIconSprite());
+            _oxygenGauge = CreateGauge("Gauge_O2", _gaugeClusterRoot, new Vector2(-resolvedGaugeColumnSpacing, 0f), GetOxygenIconSprite(), _HudOxygenKeyHash);
+            _healthGauge = CreateGauge("Gauge_HLT", _gaugeClusterRoot, Vector2.zero, GetHealthIconSprite(), _HudHullKeyHash);
+            _powerGauge = CreateGauge("Gauge_PWR", _gaugeClusterRoot, new Vector2(resolvedGaugeColumnSpacing, 0f), GetEnergyIconSprite(), _HudPowerKeyHash);
 
             _layoutBuilt = true;
         }
@@ -854,11 +924,8 @@ namespace Hecton8.UI
             float safeDepth = hasSurvivalStats ? Mathf.Max(1f, survival.Stats.SafeDepth) : 50f;
             float safeDepthNormalized = ResolveSafeDepthNormalized(depth, safeDepth);
             float oxygenCurrent = survival != null ? survival.Oxygen : oxygen * 100f;
-            float oxygenMax = hasSurvivalStats ? survival.Stats.MaxOxygen : 100f;
             float energyCurrent = survival != null ? survival.Energy : power * 100f;
-            float energyMax = hasSurvivalStats ? survival.Stats.MaxEnergy : 100f;
             float healthCurrent = survival != null ? survival.Integrity : health * 100f;
-            float healthMax = hasSurvivalStats ? survival.Stats.MaxIntegrity : 100f;
             float stressPulse = UpdateStressPulse(dt);
             Color pulsedPrimary = ResolveStressPulseColor(primary, warning, stressPulse, stressPulseBrightnessBoost, stressPulseWarningBlend);
             Color pulsedDim = ResolveStressPulseColor(dim, warning, stressPulse, stressPulseBrightnessBoost * 0.45f, stressPulseWarningBlend * 0.38f);
@@ -871,42 +938,73 @@ namespace Hecton8.UI
             _displayTemperature = Mathf.Lerp(_displayTemperature, targetTemp, 1f - Mathf.Exp(-4f * dt));
             float depthDelta = depth - _lastDepth;
             _lastDepth = depth;
-
             ApplyStaticStyleIfNeeded(primary, secondary, dim, warning);
             ApplyStressPulseStyle(primary, warning, stressPulse);
 
-            SetTextIfChanged(_suitLabel, hullStressWhisperMode ? hullStressWhisperText : ResolveSuitLabel(), Alpha(primary, 0.95f), ref _appliedSuitLabelText, ref _appliedSuitLabelColor);
-            SetTextIfChanged(_headingLabel, hullStressWhisperMode ? hullStressWhisperText : ResolveHeadingLabel(Mathf.RoundToInt(heading)), Alpha(dim, 0.58f), ref _appliedHeadingLabelText, ref _appliedHeadingLabelColor);
             float localizedDepth = LocalizedMeasurementFormatter.ConvertDistanceMeters(depth, _localizedMeasurementLanguage);
             float localizedTemperature = LocalizedMeasurementFormatter.ConvertTemperatureCelsius(_displayTemperature, _localizedMeasurementLanguage);
+            bool localizedRtl = LocalizedMeasurementFormatter.IsRightToLeft(_localizedMeasurementLanguage);
+            char[] hullStressWhisperBuffer = null;
+            int hullStressWhisperLength = 0;
+            int hullStressWhisperVersion = int.MinValue;
+            if (hullStressWhisperMode)
+                GetHullStressWhisperBuffer(manager, out hullStressWhisperBuffer, out hullStressWhisperLength, out hullStressWhisperVersion);
+
             if (hullStressWhisperMode)
             {
-                SetTextIfChanged(_depthLabel, hullStressWhisperText, Alpha(pulsedPrimary, 0.96f), ref _appliedDepthText, ref _appliedDepthColor);
-                SetTextIfChanged(_temperatureLabel, hullStressWhisperText, Alpha(pulsedDim, 0.84f), ref _appliedTemperatureText, ref _appliedTemperatureColor);
-                SetTextIfChanged(_pressureLabel, hullStressWhisperText, Alpha(pulsedDim, 0.64f), ref _appliedPressureText, ref _appliedPressureColor);
+                SetCharBufferIfChanged(_suitLabel, hullStressWhisperBuffer, hullStressWhisperLength, _cachedHullStressWhisperRtl, Alpha(primary, 0.95f), hullStressWhisperVersion, ref _appliedSuitLabelVersion, ref _appliedSuitLabelColor);
+                SetCharBufferIfChanged(_headingLabel, hullStressWhisperBuffer, hullStressWhisperLength, _cachedHullStressWhisperRtl, Alpha(dim, 0.58f), hullStressWhisperVersion, ref _appliedHeadingLabelVersion, ref _appliedHeadingLabelColor);
+            }
+            else
+            {
+                ResolveSuitLabelBuffer(out char[] suitLabelBuffer, out int suitLabelLength, out int suitLabelVersion, out bool suitLabelRtl);
+                SetCharBufferIfChanged(_suitLabel, suitLabelBuffer, suitLabelLength, suitLabelRtl, Alpha(primary, 0.95f), suitLabelVersion, ref _appliedSuitLabelVersion, ref _appliedSuitLabelColor);
+                HeadingLabelCacheEntry headingEntry = ResolveHeadingLabelEntry(Mathf.RoundToInt(heading));
+                int headingVersion = Mathf.RoundToInt(heading) % 360;
+                if (headingVersion < 0)
+                    headingVersion += 360;
+                SetCharBufferIfChanged(_headingLabel, headingEntry.Buffer, headingEntry.Length, false, Alpha(dim, 0.58f), headingVersion, ref _appliedHeadingLabelVersion, ref _appliedHeadingLabelColor);
+            }
+
+            if (hullStressWhisperMode)
+            {
+                SetCharBufferIfChanged(_depthLabel, hullStressWhisperBuffer, hullStressWhisperLength, localizedRtl, Alpha(pulsedPrimary, 0.96f), hullStressWhisperVersion, ref _appliedDepthWhisperVersion, ref _appliedDepthColor);
+                SetCharBufferIfChanged(_temperatureLabel, hullStressWhisperBuffer, hullStressWhisperLength, localizedRtl, Alpha(pulsedDim, 0.84f), hullStressWhisperVersion, ref _appliedTemperatureWhisperVersion, ref _appliedTemperatureColor);
+                SetCharBufferIfChanged(_pressureLabel, hullStressWhisperBuffer, hullStressWhisperLength, localizedRtl, Alpha(pulsedDim, 0.64f), hullStressWhisperVersion, ref _appliedPressureWhisperVersion, ref _appliedPressureColor);
                 _hasAppliedDepthValue = false;
                 _hasAppliedTemperatureTenths = false;
                 _hasAppliedPressureTenths = false;
             }
             else
             {
-                _appliedDepthText = null;
-                _appliedTemperatureText = null;
-                _appliedPressureText = null;
-                SetMetricIntIfChanged(_depthLabel, _localizedDepthPattern, Mathf.RoundToInt(localizedDepth), Alpha(pulsedPrimary, 0.96f), ref _appliedDepthValue, ref _hasAppliedDepthValue, ref _appliedDepthColor);
-                SetMetricFloatTenthsIfChanged(_temperatureLabel, _localizedTemperaturePattern, localizedTemperature, Alpha(pulsedDim, 0.84f), ref _appliedTemperatureTenths, ref _hasAppliedTemperatureTenths, ref _appliedTemperatureColor);
-                SetMetricFloatTenthsIfChanged(_pressureLabel, _localizedPressurePattern, pressure, Alpha(pulsedDim, 0.64f), ref _appliedPressureTenths, ref _hasAppliedPressureTenths, ref _appliedPressureColor);
+                _appliedDepthWhisperVersion = int.MinValue;
+                _appliedTemperatureWhisperVersion = int.MinValue;
+                _appliedPressureWhisperVersion = int.MinValue;
+                SetMetricIntTemplateIfChanged(_depthLabel, _depthTemplateBuffer, _depthTemplateLength, Mathf.RoundToInt(localizedDepth), localizedRtl, Alpha(pulsedPrimary, 0.96f), ref _appliedDepthValue, ref _hasAppliedDepthValue, ref _appliedDepthColor);
+                SetMetricFloatTenthsTemplateIfChanged(_temperatureLabel, _temperatureTemplateBuffer, _temperatureTemplateLength, localizedTemperature, localizedRtl, Alpha(pulsedDim, 0.84f), ref _appliedTemperatureTenths, ref _hasAppliedTemperatureTenths, ref _appliedTemperatureColor);
+                SetMetricFloatTenthsTemplateIfChanged(_pressureLabel, _pressureTemplateBuffer, _pressureTemplateLength, pressure, localizedRtl, Alpha(pulsedDim, 0.64f), ref _appliedPressureTenths, ref _hasAppliedPressureTenths, ref _appliedPressureColor);
             }
 
-            SetTextIfChanged(_statusLabel, hullStressWhisperMode ? hullStressWhisperText : ResolveStatus(oxygen, power, health, safeDepthNormalized, depth, safeDepth, depthDelta), PickAccent(oxygen, power, health, safeDepthNormalized, pulsedPrimary, pulsedWarning), ref _appliedStatusLabelText, ref _appliedStatusLabelColor);
+            Color statusColor = PickAccent(oxygen, power, health, safeDepthNormalized, pulsedPrimary, pulsedWarning);
+            if (hullStressWhisperMode)
+            {
+                _hasAppliedStatusKeyHash = false;
+                SetCharBufferIfChanged(_statusLabel, hullStressWhisperBuffer, hullStressWhisperLength, localizedRtl, statusColor, hullStressWhisperVersion, ref _appliedStatusWhisperVersion, ref _appliedStatusLabelColor);
+            }
+            else
+            {
+                _appliedStatusWhisperVersion = int.MinValue;
+                int statusKeyHash = ResolveStatusKeyHash(oxygen, power, health, safeDepthNormalized, depth, safeDepth, depthDelta);
+                SetLocalizedKeyIfChanged(_statusLabel, statusKeyHash, localizedRtl, statusColor, ref _appliedStatusKeyHash, ref _hasAppliedStatusKeyHash, ref _appliedStatusLabelColor);
+            }
 
             Color oxygenAccent = pulsedPrimary;
             Color healthAccent = Color.Lerp(pulsedPrimary, pulsedDim, 0.24f);
             Color energyAccent = Color.Lerp(pulsedPrimary, pulsedWarning, 0.28f);
 
-            UpdateGauge(ref _oxygenGauge, _localizedGaugeO2Label, string.Empty, oxygen, oxygenCurrent, oxygenAccent, secondary, pulsedDim, pulsedWarning, hullStressWhisperText);
-            UpdateGauge(ref _healthGauge, _localizedGaugeHullLabel, string.Empty, health, healthCurrent, healthAccent, secondary, pulsedDim, pulsedWarning, hullStressWhisperText);
-            UpdateGauge(ref _powerGauge, _localizedGaugePowerLabel, string.Empty, power, energyCurrent, energyAccent, secondary, pulsedDim, pulsedWarning, hullStressWhisperText);
+            UpdateGauge(ref _oxygenGauge, oxygen, oxygenCurrent, oxygenAccent, pulsedDim, pulsedWarning, localizedRtl, hullStressWhisperBuffer, hullStressWhisperLength, hullStressWhisperVersion);
+            UpdateGauge(ref _healthGauge, health, healthCurrent, healthAccent, pulsedDim, pulsedWarning, localizedRtl, hullStressWhisperBuffer, hullStressWhisperLength, hullStressWhisperVersion);
+            UpdateGauge(ref _powerGauge, power, energyCurrent, energyAccent, pulsedDim, pulsedWarning, localizedRtl, hullStressWhisperBuffer, hullStressWhisperLength, hullStressWhisperVersion);
         }
 
         private void RefreshDepthSignalSubscription()
@@ -1055,6 +1153,19 @@ namespace Hecton8.UI
             return _cachedSuitLabelText;
         }
 
+        private void ResolveSuitLabelBuffer(out char[] buffer, out int length, out int version, out bool rtl)
+        {
+            string label = ResolveSuitLabel();
+            _cachedSuitLabelRtl = LocalizedMeasurementFormatter.IsRightToLeft(LocRegistry.ActiveLanguage);
+            CopyTextToBuffer(label.AsSpan(), ref _cachedSuitLabelBuffer, out _cachedSuitLabelLength);
+            _cachedSuitLabelVersion = string.IsNullOrEmpty(label) ? 0 : label.GetHashCode();
+
+            buffer = _cachedSuitLabelBuffer;
+            length = _cachedSuitLabelLength;
+            version = _cachedSuitLabelVersion;
+            rtl = _cachedSuitLabelRtl;
+        }
+
         private static string ResolveCardinal(float heading)
         {
             if (heading >= 315f || heading < 45f) return "N";
@@ -1063,72 +1174,37 @@ namespace Hecton8.UI
             return "W";
         }
 
-        private static string ResolveTrend(float delta)
-        {
-            if (delta > 0.04f) return "DESCENDING";
-            if (delta < -0.04f) return "ASCENDING";
-            return "STABLE";
-        }
-
-        private string ResolveStatus(float oxygen, float power, float health, float safeDepthNormalized, float depth, float safeDepth, float depthDelta)
+        private int ResolveStatusKeyHash(float oxygen, float power, float health, float safeDepthNormalized, float depth, float safeDepth, float depthDelta)
         {
             if (safeDepthNormalized <= 0.08f || depth >= safeDepth)
-                return _localizedStatusPressureLimitExceeded;
+                return _StatusPressureLimitExceededKeyHash;
             if (safeDepthNormalized <= 0.22f)
-                return _localizedStatusApproachingSafeDepth;
+                return _StatusApproachingSafeDepthKeyHash;
             if (health <= 0.2f)
-                return _localizedStatusSuitDamageCritical;
+                return _StatusSuitDamageCriticalKeyHash;
             if (oxygen <= 0.2f)
-                return _localizedStatusOxygenReserveLow;
+                return _StatusOxygenReserveLowKeyHash;
             if (power <= 0.2f)
-                return _localizedStatusPowerCellsLow;
+                return _StatusPowerCellsLowKeyHash;
             if (flashlight != null && flashlight.IsOverheated)
-                return _localizedStatusLampThermalLimit;
+                return _StatusLampThermalLimitKeyHash;
             if (PlayerPDA.IsOpen)
-                return _localizedStatusSuitLinkRoutingPda;
+                return _StatusSuitLinkRoutingPdaKeyHash;
 
             if (depthDelta > 0.04f)
-                return _localizedStatusLifeSupportNominalDescending;
+                return _StatusLifeSupportNominalDescendingKeyHash;
             if (depthDelta < -0.04f)
-                return _localizedStatusLifeSupportNominalAscending;
-            return _localizedStatusLifeSupportNominalStable;
+                return _StatusLifeSupportNominalAscendingKeyHash;
+            return _StatusLifeSupportNominalStableKeyHash;
         }
 
         private void RebuildLocalizationCache()
         {
             LocalizationManager manager = LocalizationManager.Instance;
             _localizedMeasurementLanguage = manager != null ? manager.CurrentLanguage : GameLanguage.English;
-            string depthLabel = ResolveLocalized(LocalizationKeys.HUD_DEPTH, "DEPTH");
-            string temperatureLabel = ResolveLocalized(LocalizationKeys.HUD_TEMP, DefaultTemperatureLabel);
-            string pressureLabel = ResolveLocalized(LocalizationKeys.HUD_PRESSURE, DefaultPressureLabel);
-            string atmLabel = ResolveLocalized(LocalizationKeys.HUD_ATM, "atm");
-            string depthUnitLabel = LocalizedMeasurementFormatter.ResolveDistanceUnitLabel(_localizedMeasurementLanguage);
-            string temperatureUnitLabel = LocalizedMeasurementFormatter.ResolveTemperatureUnitLabel(_localizedMeasurementLanguage);
-
-            _localizedDepthPattern = string.Concat(depthLabel, ": -{0:0} ", depthUnitLabel);
-            _localizedTemperaturePattern = string.Concat(temperatureLabel, ": {0:0.0} ", temperatureUnitLabel);
-            _localizedPressurePattern = string.Concat(pressureLabel, ": {0:0.0} ", atmLabel);
-            _localizedGaugeO2Label = ResolveLocalized(LocalizationKeys.HUD_O2, DefaultGaugeO2Label);
-            _localizedGaugePowerLabel = ResolveLocalized(LocalizationKeys.HUD_PWR, DefaultGaugePowerLabel);
-            _localizedGaugeHullLabel = ResolveLocalized(LocalizationKeys.HUD_HULL, DefaultGaugeHullLabel);
-            _localizedStatusPressureLimitExceeded = ResolveLocalized(LocalizationKeys.HUD_STATUS_PRESSURE_LIMIT_EXCEEDED, StatusPressureLimitExceeded);
-            _localizedStatusApproachingSafeDepth = ResolveLocalized(LocalizationKeys.HUD_STATUS_APPROACHING_SAFE_DEPTH_LIMIT, StatusApproachingSafeDepth);
-            _localizedStatusSuitDamageCritical = ResolveLocalized(LocalizationKeys.HUD_STATUS_SUIT_DAMAGE_CRITICAL, StatusSuitDamageCritical);
-            _localizedStatusOxygenReserveLow = ResolveLocalized(LocalizationKeys.HUD_STATUS_OXYGEN_RESERVE_LOW, StatusOxygenReserveLow);
-            _localizedStatusPowerCellsLow = ResolveLocalized(LocalizationKeys.HUD_STATUS_POWER_CELLS_LOW, StatusPowerCellsLow);
-            _localizedStatusLampThermalLimit = ResolveLocalized(LocalizationKeys.HUD_STATUS_LAMP_THERMAL_LIMIT, StatusLampThermalLimit);
-            _localizedStatusSuitLinkRoutingPda = ResolveLocalized(LocalizationKeys.HUD_STATUS_SUIT_LINK_ROUTING_PDA, StatusSuitLinkRoutingPda);
-            _localizedStatusLifeSupportNominalStable = ResolveLocalized(LocalizationKeys.HUD_STATUS_LIFE_SUPPORT_NOMINAL_STABLE, StatusLifeSupportNominalStable);
-            _localizedStatusLifeSupportNominalAscending = ResolveLocalized(LocalizationKeys.HUD_STATUS_LIFE_SUPPORT_NOMINAL_ASCENDING, StatusLifeSupportNominalAscending);
-            _localizedStatusLifeSupportNominalDescending = ResolveLocalized(LocalizationKeys.HUD_STATUS_LIFE_SUPPORT_NOMINAL_DESCENDING, StatusLifeSupportNominalDescending);
-        }
-
-        private static string ResolveLocalized(string key, string fallback)
-        {
-            LocalizationManager manager = LocalizationManager.Instance;
-            return manager != null
-                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
-                : fallback;
+            BuildMetricTemplate(ref _depthTemplateBuffer, out _depthTemplateLength, _HudDepthKeyHash, ResolveDistanceUnitKeyHash(_localizedMeasurementLanguage), DepthNumberToken.AsSpan(), prependNegativeSign: true);
+            BuildMetricTemplate(ref _temperatureTemplateBuffer, out _temperatureTemplateLength, _HudTemperatureKeyHash, ResolveTemperatureUnitKeyHash(_localizedMeasurementLanguage), FixedTenthsNumberToken.AsSpan(), prependNegativeSign: false);
+            BuildMetricTemplate(ref _pressureTemplateBuffer, out _pressureTemplateLength, _HudPressureKeyHash, _HudAtmKeyHash, FixedTenthsNumberToken.AsSpan(), prependNegativeSign: false);
         }
 
         private static bool ShouldUseHullStressWhisperMode(LocalizationManager manager)
@@ -1139,7 +1215,13 @@ namespace Hecton8.UI
         private string ResolveHullStressWhisperText(LocalizationManager manager)
         {
             if (manager == null)
-                return "THE SEA IS INSIDE THE GLASS";
+            {
+                const string defaultWhisper = "THE SEA IS INSIDE THE GLASS";
+                _cachedHullStressWhisperBucket = 0;
+                _cachedHullStressWhisperText = defaultWhisper;
+                CopyTextToBuffer(defaultWhisper.AsSpan(), ref _cachedHullStressWhisperBuffer, out _cachedHullStressWhisperLength);
+                return defaultWhisper;
+            }
 
             int bucket = manager.GetHullStressCorruptionBucket();
             if (_cachedHullStressWhisperBucket == bucket && !string.IsNullOrEmpty(_cachedHullStressWhisperText))
@@ -1148,6 +1230,7 @@ namespace Hecton8.UI
             _cachedHullStressWhisperBucket = bucket;
             _cachedHullStressWhisperText = manager.ApplyHullStressCorruptionIfNeeded(
                 manager.GetHullStressHudWhisper("THE SEA IS INSIDE THE GLASS"));
+            CopyTextToBuffer(_cachedHullStressWhisperText.AsSpan(), ref _cachedHullStressWhisperBuffer, out _cachedHullStressWhisperLength);
             return _cachedHullStressWhisperText;
         }
 
@@ -1167,11 +1250,11 @@ namespace Hecton8.UI
             return 1f - Mathf.Clamp01(depth / safeDepth);
         }
 
-        private static void UpdateGauge(ref GaugeRefs gauge, string label, string subLabel, float normalized, float currentValue, Color primary, Color secondary, Color dim, Color warning, string hullStressWhisperText)
+        private static void UpdateGauge(ref GaugeRefs gauge, float normalized, float currentValue, Color primary, Color dim, Color warning, bool localizedRtl, char[] hullStressWhisperBuffer, int hullStressWhisperLength, int hullStressWhisperVersion)
         {
             float clamped = Mathf.Clamp01(normalized);
             Color accent = clamped <= 0.2f ? warning : primary;
-            bool hullStressWhisperMode = !string.IsNullOrEmpty(hullStressWhisperText);
+            bool hullStressWhisperMode = hullStressWhisperBuffer != null && hullStressWhisperLength > 0;
             if (gauge.Icon != null)
             {
                 Color iconColor = Alpha(accent, 0.94f);
@@ -1222,17 +1305,15 @@ namespace Hecton8.UI
             Color labelColor = Alpha(dim, 0.84f);
             if (gauge.Label != null)
             {
-                string labelText = hullStressWhisperMode ? hullStressWhisperText : label;
-                if (!string.Equals(gauge.CachedLabel, labelText, System.StringComparison.Ordinal))
+                if (hullStressWhisperMode)
                 {
-                    gauge.Label.text = labelText;
-                    gauge.CachedLabel = labelText;
+                    gauge.HasCachedLabelKeyHash = false;
+                    SetCharBufferIfChanged(gauge.Label, hullStressWhisperBuffer, hullStressWhisperLength, localizedRtl, labelColor, hullStressWhisperVersion, ref gauge.CachedLabelWhisperVersion, ref gauge.CachedLabelColor);
                 }
-
-                if (gauge.CachedLabelColor != labelColor)
+                else
                 {
-                    gauge.Label.color = labelColor;
-                    gauge.CachedLabelColor = labelColor;
+                    gauge.CachedLabelWhisperVersion = int.MinValue;
+                    SetLocalizedKeyIfChanged(gauge.Label, gauge.LabelKeyHash, localizedRtl, labelColor, ref gauge.CachedLabelKeyHash, ref gauge.HasCachedLabelKeyHash, ref gauge.CachedLabelColor);
                 }
             }
 
@@ -1242,49 +1323,26 @@ namespace Hecton8.UI
             {
                 if (hullStressWhisperMode)
                 {
-                    if (!string.Equals(gauge.CachedValueText, hullStressWhisperText, System.StringComparison.Ordinal))
-                    {
-                        gauge.Value.text = hullStressWhisperText;
-                        gauge.CachedValueText = hullStressWhisperText;
-                    }
+                    SetCharBufferIfChanged(gauge.Value, hullStressWhisperBuffer, hullStressWhisperLength, localizedRtl, valueColor, hullStressWhisperVersion, ref gauge.CachedValueWhisperVersion, ref gauge.CachedValueColor);
                     gauge.HasCachedRoundedValue = false;
                 }
-                else if (!gauge.HasCachedRoundedValue || gauge.CachedRoundedValue != roundedValue)
+                else
                 {
-                    gauge.Value.SetText("{0:0}", roundedValue);
-                    gauge.CachedRoundedValue = roundedValue;
-                    gauge.HasCachedRoundedValue = true;
-                    gauge.CachedValueText = null;
-                }
-
-                if (gauge.CachedValueColor != valueColor)
-                {
-                    gauge.Value.color = valueColor;
-                    gauge.CachedValueColor = valueColor;
+                    gauge.CachedValueWhisperVersion = int.MinValue;
+                    SetNumericIntIfChanged(gauge.Value, gauge.ValueBuffer, roundedValue, valueColor, ref gauge.CachedRoundedValue, ref gauge.HasCachedRoundedValue, ref gauge.CachedValueColor);
                 }
             }
 
-            if (gauge.Sub != null)
-            {
-                string resolvedSubLabel = hullStressWhisperMode ? hullStressWhisperText : subLabel;
-                if (!string.Equals(gauge.CachedSubLabel, resolvedSubLabel, System.StringComparison.Ordinal))
-                {
-                    gauge.Sub.text = resolvedSubLabel;
-                    gauge.CachedSubLabel = resolvedSubLabel;
-                }
-
-                Color subColor = Alpha(secondary, 0.55f);
-                if (gauge.CachedSubColor != subColor)
-                {
-                    gauge.Sub.color = subColor;
-                    gauge.CachedSubColor = subColor;
-                }
-            }
+            if (gauge.Sub != null && gauge.Sub.gameObject.activeSelf)
+                SetLocalizedRtlState(gauge.Sub, localizedRtl);
         }
 
-        private GaugeRefs CreateGauge(string name, RectTransform parent, Vector2 anchoredPosition, Sprite iconSprite)
+        private GaugeRefs CreateGauge(string name, RectTransform parent, Vector2 anchoredPosition, Sprite iconSprite, int labelKeyHash)
         {
             GaugeRefs refs = new GaugeRefs();
+            refs.LabelKeyHash = labelKeyHash;
+            refs.CachedLabelWhisperVersion = int.MinValue;
+            refs.CachedValueWhisperVersion = int.MinValue;
 
             refs.Root = CreateRect(name, parent);
             Anchor(refs.Root, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), anchoredPosition, new Vector2(86f, 92f));
@@ -1335,9 +1393,11 @@ namespace Hecton8.UI
 
             refs.Label = CreateText(name + "_Label", refs.Root, 10f, FontStyles.Bold, TextAlignmentOptions.Center, 0.82f, ResolveLabelFontAsset());
             Anchor(refs.Label.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, resolvedLabelOffsetY), new Vector2(86f, 16f));
+            TMP_TextRegistry.SetMetadata(refs.Label, labelKeyHash, LocLayer.Core);
 
             refs.Value = CreateText(name + "_Value", refs.Root, 15f, FontStyles.Bold, TextAlignmentOptions.Center, 0.98f, ResolveNumericFontAsset());
             Anchor(refs.Value.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 6f + resolvedValueOffsetY), new Vector2(44f, 22f));
+            refs.ValueBuffer = new char[12]; // COLD ALLOC: char[12] - gauge numeric buffer - owner: SuitHUDV4CanvasOverlay
 
             refs.Sub = CreateText(name + "_Sub", refs.Root, 10f, FontStyles.Normal, TextAlignmentOptions.Center, 0.52f, ResolveLabelFontAsset());
             Anchor(refs.Sub.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -48f), new Vector2(86f, 12f));
@@ -1522,7 +1582,8 @@ namespace Hecton8.UI
             label.textWrappingMode = TextWrappingModes.NoWrap;
             label.characterSpacing = size >= 36f ? 4f : 1.5f;
             label.color = Alpha(Color.white, alpha);
-            label.text = name;
+            label.text = string.Empty;
+            TMP_TextRegistry.EnsureRegistered(label);
             return label;
         }
 
@@ -1551,15 +1612,6 @@ namespace Hecton8.UI
             return color;
         }
 
-        private static void SetText(TextMeshProUGUI label, string text, Color color)
-        {
-            if (label == null)
-                return;
-
-            label.text = text;
-            label.color = color;
-        }
-
         private static void SetTextIfChanged(
             TextMeshProUGUI label,
             string text,
@@ -1583,28 +1635,12 @@ namespace Hecton8.UI
             }
         }
 
-        private static void SetMetricInt(TextMeshProUGUI label, string pattern, int value, Color color)
-        {
-            if (label == null)
-                return;
-
-            label.color = color;
-            label.SetText(pattern, value);
-        }
-
-        private static void SetMetricFloat(TextMeshProUGUI label, string pattern, float value, Color color)
-        {
-            if (label == null)
-                return;
-
-            label.color = color;
-            label.SetText(pattern, value);
-        }
-
-        private static void SetMetricIntIfChanged(
+        private static void SetMetricIntTemplateIfChanged(
             TextMeshProUGUI label,
-            string pattern,
+            char[] templateBuffer,
+            int templateLength,
             int value,
+            bool rtl,
             Color color,
             ref int cachedValue,
             ref bool hasCachedValue,
@@ -1615,7 +1651,9 @@ namespace Hecton8.UI
 
             if (!hasCachedValue || cachedValue != value)
             {
-                label.SetText(pattern, value);
+                SetLocalizedRtlState(label, rtl);
+                LocNumericBuffer.Write(templateBuffer.AsSpan(0, templateLength), LocNumericArg.Int(value), out char[] buffer, out int length);
+                label.SetCharArray(buffer, 0, length);
                 cachedValue = value;
                 hasCachedValue = true;
             }
@@ -1627,10 +1665,12 @@ namespace Hecton8.UI
             }
         }
 
-        private static void SetMetricFloatTenthsIfChanged(
+        private static void SetMetricFloatTenthsTemplateIfChanged(
             TextMeshProUGUI label,
-            string pattern,
+            char[] templateBuffer,
+            int templateLength,
             float value,
+            bool rtl,
             Color color,
             ref int cachedTenths,
             ref bool hasCachedTenths,
@@ -1642,7 +1682,9 @@ namespace Hecton8.UI
             int roundedTenths = Mathf.RoundToInt(value * 10f);
             if (!hasCachedTenths || cachedTenths != roundedTenths)
             {
-                label.SetText(pattern, roundedTenths * 0.1f);
+                SetLocalizedRtlState(label, rtl);
+                LocNumericBuffer.Write(templateBuffer.AsSpan(0, templateLength), LocNumericArg.Float(roundedTenths * 0.1f), out char[] buffer, out int length);
+                label.SetCharArray(buffer, 0, length);
                 cachedTenths = roundedTenths;
                 hasCachedTenths = true;
             }
@@ -1652,6 +1694,314 @@ namespace Hecton8.UI
                 label.color = color;
                 cachedColor = color;
             }
+        }
+
+        private static void SetNumericIntIfChanged(
+            TextMeshProUGUI label,
+            char[] stagingBuffer,
+            int value,
+            Color color,
+            ref int cachedValue,
+            ref bool hasCachedValue,
+            ref Color cachedColor)
+        {
+            if (label == null)
+                return;
+
+            if (!hasCachedValue || cachedValue != value)
+            {
+                SetLocalizedRtlState(label, false);
+                if (!value.TryFormat(stagingBuffer, out int length))
+                    length = 0;
+
+                label.SetCharArray(stagingBuffer, 0, length);
+                cachedValue = value;
+                hasCachedValue = true;
+            }
+
+            if (cachedColor != color)
+            {
+                label.color = color;
+                cachedColor = color;
+            }
+        }
+
+        private static void SetLocalizedKeyIfChanged(
+            TextMeshProUGUI label,
+            int keyHash,
+            bool rtl,
+            Color color,
+            ref int cachedKeyHash,
+            ref bool hasCachedKeyHash,
+            ref Color cachedColor)
+        {
+            if (label == null)
+                return;
+
+            if (!hasCachedKeyHash || cachedKeyHash != keyHash)
+            {
+                SetLocalizedRtlState(label, rtl);
+                char[] buffer;
+                int length;
+                if (LocalizationManager.Instance == null)
+                {
+                    TryGetFallbackBuffer(keyHash, out buffer, out length);
+                }
+                else
+                {
+                    LocRegistry.TryGetRawBuffer(keyHash, out buffer, out length);
+                }
+
+                label.SetCharArray(buffer, 0, length);
+                cachedKeyHash = keyHash;
+                hasCachedKeyHash = true;
+            }
+
+            if (cachedColor != color)
+            {
+                label.color = color;
+                cachedColor = color;
+            }
+        }
+
+        private static void SetCharBufferIfChanged(
+            TextMeshProUGUI label,
+            char[] buffer,
+            int length,
+            bool rtl,
+            Color color,
+            int version,
+            ref int cachedVersion,
+            ref Color cachedColor)
+        {
+            if (label == null || buffer == null)
+                return;
+
+            if (cachedVersion != version)
+            {
+                SetLocalizedRtlState(label, rtl);
+                label.SetCharArray(buffer, 0, length);
+                cachedVersion = version;
+            }
+
+            if (cachedColor != color)
+            {
+                label.color = color;
+                cachedColor = color;
+            }
+        }
+
+        private static void SetLocalizedRtlState(TMP_Text label, bool rtl)
+        {
+            if (label != null && label.isRightToLeftText != rtl)
+                label.isRightToLeftText = rtl;
+        }
+
+        private static int ResolveDistanceUnitKeyHash(GameLanguage language)
+        {
+            return language == GameLanguage.English
+                ? _HudFeetKeyHash
+                : _HudMetersKeyHash;
+        }
+
+        private static int ResolveTemperatureUnitKeyHash(GameLanguage language)
+        {
+            return language == GameLanguage.English
+                ? _HudFahrenheitKeyHash
+                : _HudCelsiusKeyHash;
+        }
+
+        private static bool TryGetFallbackBuffer(int keyHash, out char[] buffer, out int length)
+        {
+            switch (keyHash)
+            {
+                case var _ when keyHash == _HudDepthKeyHash:
+                    buffer = s_depthLabelChars;
+                    length = s_depthLabelChars.Length;
+                    return true;
+
+                case var _ when keyHash == _HudTemperatureKeyHash:
+                    buffer = s_temperatureLabelChars;
+                    length = s_temperatureLabelChars.Length;
+                    return true;
+
+                case var _ when keyHash == _HudPressureKeyHash:
+                    buffer = s_pressureLabelChars;
+                    length = s_pressureLabelChars.Length;
+                    return true;
+
+                case var _ when keyHash == _HudAtmKeyHash:
+                    buffer = s_atmLabelChars;
+                    length = s_atmLabelChars.Length;
+                    return true;
+
+                case var _ when keyHash == _HudOxygenKeyHash:
+                    buffer = s_gaugeO2LabelChars;
+                    length = s_gaugeO2LabelChars.Length;
+                    return true;
+
+                case var _ when keyHash == _HudPowerKeyHash:
+                    buffer = s_gaugePowerLabelChars;
+                    length = s_gaugePowerLabelChars.Length;
+                    return true;
+
+                case var _ when keyHash == _HudHullKeyHash:
+                    buffer = s_gaugeHullLabelChars;
+                    length = s_gaugeHullLabelChars.Length;
+                    return true;
+
+                case var _ when keyHash == _HudMetersKeyHash:
+                    buffer = s_metersLabelChars;
+                    length = s_metersLabelChars.Length;
+                    return true;
+
+                case var _ when keyHash == _HudFeetKeyHash:
+                    buffer = s_feetLabelChars;
+                    length = s_feetLabelChars.Length;
+                    return true;
+
+                case var _ when keyHash == _HudCelsiusKeyHash:
+                    buffer = s_celsiusLabelChars;
+                    length = s_celsiusLabelChars.Length;
+                    return true;
+
+                case var _ when keyHash == _HudFahrenheitKeyHash:
+                    buffer = s_fahrenheitLabelChars;
+                    length = s_fahrenheitLabelChars.Length;
+                    return true;
+
+                case var _ when keyHash == _StatusPressureLimitExceededKeyHash:
+                    buffer = s_statusPressureLimitExceededChars;
+                    length = s_statusPressureLimitExceededChars.Length;
+                    return true;
+
+                case var _ when keyHash == _StatusApproachingSafeDepthKeyHash:
+                    buffer = s_statusApproachingSafeDepthChars;
+                    length = s_statusApproachingSafeDepthChars.Length;
+                    return true;
+
+                case var _ when keyHash == _StatusSuitDamageCriticalKeyHash:
+                    buffer = s_statusSuitDamageCriticalChars;
+                    length = s_statusSuitDamageCriticalChars.Length;
+                    return true;
+
+                case var _ when keyHash == _StatusOxygenReserveLowKeyHash:
+                    buffer = s_statusOxygenReserveLowChars;
+                    length = s_statusOxygenReserveLowChars.Length;
+                    return true;
+
+                case var _ when keyHash == _StatusPowerCellsLowKeyHash:
+                    buffer = s_statusPowerCellsLowChars;
+                    length = s_statusPowerCellsLowChars.Length;
+                    return true;
+
+                case var _ when keyHash == _StatusLampThermalLimitKeyHash:
+                    buffer = s_statusLampThermalLimitChars;
+                    length = s_statusLampThermalLimitChars.Length;
+                    return true;
+
+                case var _ when keyHash == _StatusSuitLinkRoutingPdaKeyHash:
+                    buffer = s_statusSuitLinkRoutingPdaChars;
+                    length = s_statusSuitLinkRoutingPdaChars.Length;
+                    return true;
+
+                case var _ when keyHash == _StatusLifeSupportNominalStableKeyHash:
+                    buffer = s_statusLifeSupportNominalStableChars;
+                    length = s_statusLifeSupportNominalStableChars.Length;
+                    return true;
+
+                case var _ when keyHash == _StatusLifeSupportNominalAscendingKeyHash:
+                    buffer = s_statusLifeSupportNominalAscendingChars;
+                    length = s_statusLifeSupportNominalAscendingChars.Length;
+                    return true;
+
+                case var _ when keyHash == _StatusLifeSupportNominalDescendingKeyHash:
+                    buffer = s_statusLifeSupportNominalDescendingChars;
+                    length = s_statusLifeSupportNominalDescendingChars.Length;
+                    return true;
+            }
+
+            buffer = Array.Empty<char>();
+            length = 0;
+            return false;
+        }
+
+        private static void BuildMetricTemplate(
+            ref char[] buffer,
+            out int length,
+            int labelKeyHash,
+            int unitKeyHash,
+            ReadOnlySpan<char> numberToken,
+            bool prependNegativeSign)
+        {
+            char[] labelBuffer;
+            int labelLength;
+            char[] unitBuffer;
+            int unitLength;
+
+            if (LocalizationManager.Instance == null)
+            {
+                TryGetFallbackBuffer(labelKeyHash, out labelBuffer, out labelLength);
+                TryGetFallbackBuffer(unitKeyHash, out unitBuffer, out unitLength);
+            }
+            else
+            {
+                LocRegistry.TryGetRawBuffer(labelKeyHash, out labelBuffer, out labelLength);
+                LocRegistry.TryGetRawBuffer(unitKeyHash, out unitBuffer, out unitLength);
+            }
+
+            int totalLength = labelLength + 2 + (prependNegativeSign ? 1 : 0) + numberToken.Length + 1 + unitLength;
+            EnsureCharCapacity(ref buffer, totalLength);
+
+            int writeIndex = 0;
+            CopyChars(labelBuffer, labelLength, buffer, ref writeIndex);
+            buffer[writeIndex++] = ':';
+            buffer[writeIndex++] = ' ';
+            if (prependNegativeSign)
+                buffer[writeIndex++] = '-';
+
+            for (int i = 0; i < numberToken.Length; i++)
+                buffer[writeIndex++] = numberToken[i];
+
+            buffer[writeIndex++] = ' ';
+            CopyChars(unitBuffer, unitLength, buffer, ref writeIndex);
+            length = writeIndex;
+        }
+
+        private void GetHullStressWhisperBuffer(LocalizationManager manager, out char[] buffer, out int length, out int version)
+        {
+            ResolveHullStressWhisperText(manager);
+            _cachedHullStressWhisperRtl = manager != null && LocalizedMeasurementFormatter.IsRightToLeft(manager.CurrentLanguage);
+            buffer = _cachedHullStressWhisperBuffer;
+            length = _cachedHullStressWhisperLength;
+            version = _cachedHullStressWhisperBucket;
+        }
+
+        private static void CopyTextToBuffer(ReadOnlySpan<char> source, ref char[] buffer, out int length)
+        {
+            EnsureCharCapacity(ref buffer, source.Length);
+            for (int i = 0; i < source.Length; i++)
+                buffer[i] = source[i];
+
+            length = source.Length;
+        }
+
+        private static void EnsureCharCapacity(ref char[] buffer, int requiredLength)
+        {
+            if (buffer != null && buffer.Length >= requiredLength)
+                return;
+
+            int capacity = buffer == null ? 32 : buffer.Length;
+            while (capacity < requiredLength)
+                capacity <<= 1;
+
+            buffer = new char[capacity]; // COLD ALLOC: char[capacity] - expanded HUD text staging buffer - owner: SuitHUDV4CanvasOverlay
+        }
+
+        private static void CopyChars(char[] source, int sourceLength, char[] destination, ref int destinationIndex)
+        {
+            for (int i = 0; i < sourceLength; i++)
+                destination[destinationIndex++] = source[i];
         }
 
         private static void Stretch(RectTransform rect, float left, float right, float top, float bottom)
@@ -1782,23 +2132,25 @@ namespace Hecton8.UI
 
         private void InvalidateVisualCaches()
         {
-            _appliedSuitLabelText = null;
+            _appliedSuitLabelVersion = int.MinValue;
             _appliedSuitLabelColor = default;
-            _appliedHeadingLabelText = null;
+            _appliedHeadingLabelVersion = int.MinValue;
             _appliedHeadingLabelColor = default;
-            _appliedStatusLabelText = null;
+            _appliedStatusKeyHash = 0;
+            _hasAppliedStatusKeyHash = false;
+            _appliedStatusWhisperVersion = int.MinValue;
             _appliedStatusLabelColor = default;
-            _appliedDepthText = null;
             _appliedDepthValue = 0;
             _hasAppliedDepthValue = false;
+            _appliedDepthWhisperVersion = int.MinValue;
             _appliedDepthColor = default;
-            _appliedTemperatureText = null;
             _appliedTemperatureTenths = 0;
             _hasAppliedTemperatureTenths = false;
+            _appliedTemperatureWhisperVersion = int.MinValue;
             _appliedTemperatureColor = default;
-            _appliedPressureText = null;
             _appliedPressureTenths = 0;
             _hasAppliedPressureTenths = false;
+            _appliedPressureWhisperVersion = int.MinValue;
             _appliedPressureColor = default;
             _appliedStressPulseStrength = -1f;
             _styleApplied = false;
@@ -1892,7 +2244,7 @@ namespace Hecton8.UI
             _cachedPaletteWarning = warning;
         }
 
-        private static string ResolveHeadingLabel(int roundedHeading)
+        private static HeadingLabelCacheEntry ResolveHeadingLabelEntry(int roundedHeading)
         {
             int normalizedHeading = roundedHeading % 360;
             if (normalizedHeading < 0)
@@ -1901,11 +2253,22 @@ namespace Hecton8.UI
             return s_headingLabels[normalizedHeading];
         }
 
-        private static string[] BuildHeadingLabels()
+        private static HeadingLabelCacheEntry[] BuildHeadingLabels()
         {
-            string[] labels = new string[360];
+            HeadingLabelCacheEntry[] labels = new HeadingLabelCacheEntry[360];
             for (int i = 0; i < labels.Length; i++)
-                labels[i] = "HEADING " + i.ToString("000") + " / " + ResolveCardinal(i);
+            {
+                LocNumericBuffer.Write(HeadingNumberTemplate.AsSpan(), LocNumericArg.Int(i), out char[] prefixBuffer, out int prefixLength);
+                string cardinal = ResolveCardinal(i);
+                char[] labelBuffer = new char[prefixLength + cardinal.Length];
+                for (int j = 0; j < prefixLength; j++)
+                    labelBuffer[j] = prefixBuffer[j];
+
+                for (int j = 0; j < cardinal.Length; j++)
+                    labelBuffer[prefixLength + j] = cardinal[j];
+
+                labels[i] = new HeadingLabelCacheEntry(labelBuffer, labelBuffer.Length);
+            }
 
             return labels;
         }

@@ -18,17 +18,17 @@ namespace Hecton8.UI
     {
         private const string RootName = "FontStreamingStatus";
         private const string DefaultStatusText = "[REBOOTING LANG_MODULE...]";
-        private const int MaxTrackedTexts = 512;
-        private const int SwapBatchPerTick = 18;
+        private const string BiosFallbackStatusText = "[BIOS FONT FALLBACK ACTIVE]";
         private const float StatusFadeOutSpeed = 6f;
+        private const int FontReadinessTimeoutFrames = 2;
 
         private static readonly Color StatusTextColor = new Color(0.82f, 0.96f, 0.92f, 0.96f);
         private static readonly Color StatusBackgroundColor = new Color(0.02f, 0.08f, 0.10f, 0.82f);
         private static readonly System.Collections.Generic.List<SuitHUDV4CanvasOverlay> s_overlayResolveBuffer =
             new System.Collections.Generic.List<SuitHUDV4CanvasOverlay>(2);
 
-        // COLD ALLOC: TMP_Text[512] — staged font swap queue for active localized labels — owner: FontStreamingManager
-        private readonly TMP_Text[] _swapQueue = new TMP_Text[MaxTrackedTexts];
+        // COLD ALLOC: LabelSwapScheduler[1] — staged font swap queue owner for active localized labels — owner: FontStreamingManager
+        private readonly LabelSwapScheduler _swapScheduler = new LabelSwapScheduler();
         // COLD ALLOC: StringBuilder[64] — status label assembly for staged font streaming — owner: FontStreamingManager
         private readonly StringBuilder _statusBuilder = new StringBuilder(64);
         // COLD ALLOC: List[64] — active scene root cache for TMP registry bootstrap — owner: FontStreamingManager
@@ -42,6 +42,10 @@ namespace Hecton8.UI
         private int _queueCount;
         private int _queueIndex;
         private int _lastStatusPercent = int.MinValue;
+        private int _fontReadinessStartFrame = -1;
+        private bool _awaitingPrimaryFontReadiness;
+        private bool _biosFallbackActive;
+        private TMP_FontAsset _primaryFont;
         private TMP_FontAsset _targetFont;
         private Canvas _targetCanvas;
         private RectTransform _root;
@@ -67,10 +71,7 @@ namespace Hecton8.UI
             LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
             SceneManager.sceneLoaded -= HandleSceneLoaded;
             UnregisterFromTickManager();
-            _streaming = false;
-            _queueCount = 0;
-            _queueIndex = 0;
-            ApplyVisibleAlpha(0f);
+            ResetSwapState();
         }
 
         private void OnDestroy()
@@ -85,9 +86,18 @@ namespace Hecton8.UI
         {
             EnsureUiBuilt();
 
+            if (_awaitingPrimaryFontReadiness)
+                EvaluatePendingFontReadiness();
+
             if (_streaming)
             {
                 ProcessSwapBatch();
+                ApplyVisibleAlpha(1f);
+                return;
+            }
+
+            if (_awaitingPrimaryFontReadiness)
+            {
                 ApplyVisibleAlpha(1f);
                 return;
             }
@@ -100,15 +110,120 @@ namespace Hecton8.UI
         {
             TMP_FontAsset targetFont = LocalizedFontResolver.ResolveReadableFontForLanguage(null, language);
             if (targetFont == null)
+            {
+                ResetSwapState();
                 return;
+            }
 
+            _primaryFont = targetFont;
+            _targetFont = null;
+            _streaming = false;
+            _biosFallbackActive = false;
+            _awaitingPrimaryFontReadiness = true;
+            _fontReadinessStartFrame = Time.frameCount;
+            _queueCount = 0;
+            _queueIndex = 0;
+            _swapScheduler.Clear();
+            _lastStatusPercent = int.MinValue;
+            UpdateStatusLabel();
+            ApplyVisibleAlpha(1f);
+        }
+
+        private void CollectSwapQueue(TMP_FontAsset targetFont)
+        {
+            _swapScheduler.Clear();
+            _queueCount = 0;
+            int registeredCount = TMP_TextRegistry.Count;
+            for (int i = 0; i < registeredCount; i++)
+            {
+                TMP_TextEntry entry = TMP_TextRegistry.GetEntryAt(i);
+                TMP_Text text = entry.Text;
+                if (!IsSwapCandidate(text, targetFont))
+                    continue;
+
+                if (!_swapScheduler.Enqueue(entry))
+                    break;
+            }
+
+            _queueCount = _swapScheduler.PendingCount;
+        }
+
+        private void ProcessSwapBatch()
+        {
+            Material targetMaterial = _targetFont != null ? _targetFont.material : null;
+            int processed = _swapScheduler.DrainTick(_targetFont, targetMaterial);
+            _queueIndex += processed;
+
+            UpdateStatusLabel();
+            if (!_swapScheduler.HasPending)
+            {
+                _streaming = false;
+                _queueCount = 0;
+                _queueIndex = 0;
+                if (_biosFallbackActive)
+                {
+                    _awaitingPrimaryFontReadiness = true;
+                    _lastStatusPercent = int.MinValue;
+                    UpdateStatusLabel();
+                }
+            }
+        }
+
+        private void EvaluatePendingFontReadiness()
+        {
+            if (_primaryFont == null)
+            {
+                ResetSwapState();
+                return;
+            }
+
+            if (LocalizedFontResolver.IsFontReady(_primaryFont))
+            {
+                _awaitingPrimaryFontReadiness = false;
+                BeginSwapQueue(_primaryFont, biosFallbackActive: false);
+                return;
+            }
+
+            if (_biosFallbackActive)
+            {
+                UpdateStatusLabel();
+                return;
+            }
+
+            if (Time.frameCount - _fontReadinessStartFrame < FontReadinessTimeoutFrames)
+            {
+                UpdateStatusLabel();
+                return;
+            }
+
+            TMP_FontAsset biosFallback = LocalizedFontResolver.ResolveBiosFallbackFont();
+            if (biosFallback == null)
+            {
+                ResetSwapState();
+                return;
+            }
+
+            _awaitingPrimaryFontReadiness = false;
+            BeginSwapQueue(biosFallback, biosFallbackActive: true);
+        }
+
+        private void BeginSwapQueue(TMP_FontAsset targetFont, bool biosFallbackActive)
+        {
             _targetFont = targetFont;
+            _biosFallbackActive = biosFallbackActive;
             CollectSwapQueue(targetFont);
             if (_queueCount <= 0)
             {
-                _streaming = false;
-                _lastStatusPercent = int.MinValue;
-                ApplyVisibleAlpha(0f);
+                if (_biosFallbackActive)
+                {
+                    _awaitingPrimaryFontReadiness = true;
+                    _lastStatusPercent = int.MinValue;
+                    UpdateStatusLabel();
+                    ApplyVisibleAlpha(1f);
+                    return;
+                }
+
+                ResetSwapState();
                 return;
             }
 
@@ -116,54 +231,6 @@ namespace Hecton8.UI
             _queueIndex = 0;
             _lastStatusPercent = int.MinValue;
             UpdateStatusLabel();
-        }
-
-        private void CollectSwapQueue(TMP_FontAsset targetFont)
-        {
-            _queueCount = 0;
-            int registeredCount = TMP_TextRegistry.Count;
-            for (int i = 0; i < registeredCount && _queueCount < _swapQueue.Length; i++)
-            {
-                HectonTextNode node = TMP_TextRegistry.GetNodeAt(i);
-                TMP_Text text = node != null ? node.TextComponent : null;
-                if (!IsSwapCandidate(text, targetFont))
-                    continue;
-
-                _swapQueue[_queueCount] = text;
-                _queueCount++;
-            }
-
-            for (int i = _queueCount; i < _swapQueue.Length; i++)
-                _swapQueue[i] = null;
-        }
-
-        private void ProcessSwapBatch()
-        {
-            int processed = 0;
-            while (_queueIndex < _queueCount && processed < SwapBatchPerTick)
-            {
-                TMP_Text text = _swapQueue[_queueIndex];
-                _swapQueue[_queueIndex] = null;
-                _queueIndex++;
-                processed++;
-
-                if (text == null || _targetFont == null)
-                    continue;
-
-                text.font = _targetFont;
-                if (_targetFont.material != null)
-                    text.fontSharedMaterial = _targetFont.material;
-                text.SetMaterialDirty();
-                text.SetVerticesDirty();
-            }
-
-            UpdateStatusLabel();
-            if (_queueIndex >= _queueCount)
-            {
-                _streaming = false;
-                _queueCount = 0;
-                _queueIndex = 0;
-            }
         }
 
         private void EnsureUiBuilt()
@@ -245,6 +312,26 @@ namespace Hecton8.UI
             if (_statusLabel == null)
                 return;
 
+            if (_awaitingPrimaryFontReadiness && !_streaming)
+            {
+                if (_biosFallbackActive)
+                {
+                    if (_lastStatusPercent == 1000)
+                        return;
+
+                    _lastStatusPercent = 1000;
+                    _statusLabel.SetText(BiosFallbackStatusText);
+                    return;
+                }
+
+                if (_lastStatusPercent == -1000)
+                    return;
+
+                _lastStatusPercent = -1000;
+                _statusLabel.SetText(DefaultStatusText);
+                return;
+            }
+
             int percent = _queueCount > 0
                 ? Mathf.Clamp(Mathf.RoundToInt((_queueIndex / (float)_queueCount) * 100f), 0, 100)
                 : 100;
@@ -258,6 +345,21 @@ namespace Hecton8.UI
             _statusBuilder.Append(percent);
             _statusBuilder.Append('%');
             _statusLabel.SetText(_statusBuilder);
+        }
+
+        private void ResetSwapState()
+        {
+            _streaming = false;
+            _awaitingPrimaryFontReadiness = false;
+            _biosFallbackActive = false;
+            _primaryFont = null;
+            _targetFont = null;
+            _queueCount = 0;
+            _queueIndex = 0;
+            _fontReadinessStartFrame = -1;
+            _lastStatusPercent = int.MinValue;
+            _swapScheduler.Clear();
+            ApplyVisibleAlpha(0f);
         }
 
         private void ApplyVisibleAlpha(float alpha)

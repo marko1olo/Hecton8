@@ -7,6 +7,7 @@
 using System;
 using Unity.Collections;
 using UnityEngine;
+using Hecton8.Core;
 using Hecton8.World;
 
 namespace Hecton8.Caves
@@ -54,6 +55,7 @@ namespace Hecton8.Caves
         private int _lodLevel;
         private bool _buildCollider;
         private CaveGenerationParams _caveParams;
+        private Vector3 _generationAbsoluteUniversePosition;
         private int[] _terrainHoleHandles = Array.Empty<int>();
         private int _terrainHoleHandleCount;
         private Transform _colliderChunkRoot;
@@ -72,11 +74,47 @@ namespace Hecton8.Caves
         /// <summary>Deterministic seed used to generate this volume.</summary>
         public uint Seed => _seed;
 
+        /// <summary>Absolute-universe center captured when this volume payload was built.</summary>
+        public Vector3 GenerationAbsoluteUniversePosition => _generationAbsoluteUniversePosition;
+
         /// <summary>Voxel grid resolution used by this runtime volume.</summary>
         public int GridDimension => _gridDimension;
 
         /// <summary>Voxel step size used by this runtime volume.</summary>
         public float VoxelSize => _voxelSize;
+
+        /// <summary>
+        /// Resolves the nearest voxel-corner world position for a raycast hit on this volume.
+        /// The dominant hit-normal axis is preserved so cable bends snap onto the struck voxel face
+        /// instead of drifting across the polygon midpoint.
+        /// </summary>
+        public bool TryResolveNearestVoxelCorner(Vector3 worldPosition, Vector3 worldNormal, out Vector3 cornerWorld)
+        {
+            cornerWorld = worldPosition;
+            if (_gridDimension <= 0 || _voxelSize <= 0f)
+                return false;
+
+            if (!CaveRuntimeBoundsUtility.TryResolveLocalVolumeBounds(this, preset, out Bounds localBounds))
+                return false;
+
+            Transform cachedTransform = transform;
+            Vector3 localPoint = cachedTransform.InverseTransformPoint(worldPosition);
+            Vector3 localNormal = cachedTransform.InverseTransformDirection(worldNormal);
+            float voxelStep = Mathf.Max(0.0001f, _voxelSize);
+            Vector3 relative = (localPoint - localBounds.min) / voxelStep;
+            int dominantAxis = ResolveDominantAxis(localNormal);
+
+            float cornerX = ResolveCornerCoordinate(relative.x, dominantAxis == 0 ? localNormal.x : 0f, _gridDimension);
+            float cornerY = ResolveCornerCoordinate(relative.y, dominantAxis == 1 ? localNormal.y : 0f, _gridDimension);
+            float cornerZ = ResolveCornerCoordinate(relative.z, dominantAxis == 2 ? localNormal.z : 0f, _gridDimension);
+
+            Vector3 localCorner = localBounds.min + new Vector3(
+                cornerX * voxelStep,
+                cornerY * voxelStep,
+                cornerZ * voxelStep);
+            cornerWorld = cachedTransform.TransformPoint(localCorner);
+            return true;
+        }
 
         /// <summary>LOD level used to build this runtime volume.</summary>
         public int LODLevel => _lodLevel;
@@ -111,6 +149,34 @@ namespace Hecton8.Caves
         /// <summary>Whether this pooled volume currently has enough data to rebuild itself.</summary>
         public bool HasRuntimeData => _runtimeDataReady;
 
+        private static int ResolveDominantAxis(Vector3 normal)
+        {
+            Vector3 absNormal = new Vector3(Mathf.Abs(normal.x), Mathf.Abs(normal.y), Mathf.Abs(normal.z));
+            if (absNormal.x >= absNormal.y && absNormal.x >= absNormal.z)
+                return 0;
+
+            return absNormal.y >= absNormal.z ? 1 : 2;
+        }
+
+        private static float ResolveCornerCoordinate(float coordinate, float signedFaceAxis, int gridDimension)
+        {
+            float cornerIndex;
+            if (signedFaceAxis > 0.0001f)
+            {
+                cornerIndex = Mathf.Ceil(coordinate);
+            }
+            else if (signedFaceAxis < -0.0001f)
+            {
+                cornerIndex = Mathf.Floor(coordinate);
+            }
+            else
+            {
+                cornerIndex = Mathf.Round(coordinate);
+            }
+
+            return Mathf.Clamp(cornerIndex, 0f, gridDimension);
+        }
+
         /// <summary>
         /// Resets cave-owned runtime children so pooled volumes do not leak
         /// previous cave dressing or entrance readability state into the next build.
@@ -123,6 +189,7 @@ namespace Hecton8.Caves
             generationPosition = Vector3.zero;
             preset = null;
             _engine = null;
+            _generationAbsoluteUniversePosition = Vector3.zero;
             _nodes = Array.Empty<CaveNode>();
             _tunnels = Array.Empty<CaveTunnel>();
             _entrances = Array.Empty<CaveEntrance>();
@@ -287,6 +354,7 @@ namespace Hecton8.Caves
             HectonVoxelEngine engine,
             uint seed,
             Vector3 worldCenter,
+            Vector3 absoluteUniverseOffset,
             CavePreset cavePreset,
             int gridDimension,
             float voxelSize,
@@ -301,6 +369,7 @@ namespace Hecton8.Caves
             _engine = engine;
             _seed = seed;
             generationPosition = worldCenter;
+            _generationAbsoluteUniversePosition = worldCenter + absoluteUniverseOffset;
             preset = cavePreset;
             _gridDimension = gridDimension;
             _voxelSize = voxelSize;
@@ -311,22 +380,40 @@ namespace Hecton8.Caves
             // COLD ALLOC: CaveNode[nodes.Length] - runtime room graph snapshot for crater rebuilds - owner: HectonVoxelVolume
             _nodes = new CaveNode[nodes.Length];
             for (int i = 0; i < nodes.Length; i++)
-                _nodes[i] = nodes[i];
+            {
+                CaveNode snapshot = nodes[i];
+                snapshot.position += (Unity.Mathematics.float3)absoluteUniverseOffset;
+                _nodes[i] = snapshot;
+            }
 
             // COLD ALLOC: CaveTunnel[tunnels.Length] - runtime tunnel graph snapshot for crater rebuilds - owner: HectonVoxelVolume
             _tunnels = new CaveTunnel[tunnels.Length];
             for (int i = 0; i < tunnels.Length; i++)
-                _tunnels[i] = tunnels[i];
+            {
+                CaveTunnel snapshot = tunnels[i];
+                snapshot.pointA += (Unity.Mathematics.float3)absoluteUniverseOffset;
+                snapshot.pointB += (Unity.Mathematics.float3)absoluteUniverseOffset;
+                _tunnels[i] = snapshot;
+            }
 
             // COLD ALLOC: CaveEntrance[entrances.Length] - runtime entrance snapshot for terrain-hole/skirt rebuilds - owner: HectonVoxelVolume
             _entrances = new CaveEntrance[entrances.Length];
             for (int i = 0; i < entrances.Length; i++)
-                _entrances[i] = entrances[i];
+            {
+                CaveEntrance snapshot = entrances[i];
+                snapshot.surfacePosition += (Unity.Mathematics.float3)absoluteUniverseOffset;
+                _entrances[i] = snapshot;
+            }
 
             // COLD ALLOC: CaveStructure[structures.Length] - runtime structure snapshot for crater rebuilds - owner: HectonVoxelVolume
             _structures = new CaveStructure[structures.Length];
             for (int i = 0; i < structures.Length; i++)
-                _structures[i] = structures[i];
+            {
+                CaveStructure snapshot = structures[i];
+                snapshot.position += (Unity.Mathematics.float3)absoluteUniverseOffset;
+                snapshot.pointB += (Unity.Mathematics.float3)absoluteUniverseOffset;
+                _structures[i] = snapshot;
+            }
 
             if (_craterStamps.Length != MaxCraterStampCount)
             {
@@ -367,15 +454,16 @@ namespace Hecton8.Caves
 
             float clampedRadius = Mathf.Max(_voxelSize * 1.25f, radius);
             float blendRadius = Mathf.Max(_voxelSize, clampedRadius * 0.35f);
+            Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(pos);
 
             for (int i = 0; i < _craterStampCount; i++)
             {
                 VoxelCraterStamp existing = _craterStamps[i];
                 float mergeDistance = existing.radius + clampedRadius * 0.35f;
-                if ((existing.position - pos).sqrMagnitude > mergeDistance * mergeDistance)
+                if ((existing.position - absolutePosition).sqrMagnitude > mergeDistance * mergeDistance)
                     continue;
 
-                existing.position = Vector3.Lerp(existing.position, pos, 0.5f);
+                existing.position = Vector3.Lerp(existing.position, absolutePosition, 0.5f);
                 existing.radius = Mathf.Max(existing.radius, clampedRadius);
                 existing.blendRadius = Mathf.Max(existing.blendRadius, blendRadius);
                 _craterStamps[i] = existing;
@@ -393,7 +481,7 @@ namespace Hecton8.Caves
 
             _craterStamps[_craterStampCount++] = new VoxelCraterStamp
             {
-                position = pos,
+                position = absolutePosition,
                 radius = clampedRadius,
                 blendRadius = blendRadius
             };

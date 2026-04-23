@@ -1,0 +1,564 @@
+```markdown
+# UI_Diegetic_Physical_Interfaces.md
+## Technical Mandate — HECTON-8 Engine | Diegetic UI Subsystem
+
+---
+
+## [RULE-GLOBAL] RENDER MODE ENFORCEMENT
+
+- FORBID: `RenderMode.ScreenSpaceOverlay`, `RenderMode.ScreenSpaceCamera` on ANY interactive canvas
+- ENFORCE: `RenderMode.WorldSpace` exclusively
+- ALL Canvas components must bind to physical geometry transform OR holographic projection anchor
+- Holographic anchor = player hand-mount transform OR submarine panel socket transform
+- Canvas `sortingLayerName` = "WorldGeometry" — participates in depth sorting pipeline
+- FORBID: `Canvas.pixelPerfect = true` (breaks world-space sub-pixel alignment)
+
+---
+
+## [DATA] MEMORY ARCHITECTURE — DIEGETIC UI SYSTEM
+
+### Panel Registry Struct (Burst-compatible)
+```
+PanelData {
+    float4x4    localToWorld        // cached, updated only on panel-move
+    float4x4    worldToLocal        // pre-inverted, not computed at hit-time
+    float2      canvasSize          // world-units matching RectTransform size
+    float2      halfSize            // canvasSize * 0.5, precomputed
+    int         renderTextureIndex  // into RTPool NativeArray
+    int         stateFlags          // bitmask, see [BITMASK] below
+    float       distToCamera        // updated 4Hz time-sliced, not per-frame
+    float       lastInteractTime    // for sleep-state management
+}
+```
+
+### [BITMASK] Panel State Flags (uint16)
+```
+Bit 0  : IS_ACTIVE
+Bit 1  : IS_POWERED (submarine power state)
+Bit 2  : IS_SLEEPING (beyond interaction range, RT suspended)
+Bit 3  : IS_CURSOR_OVER
+Bit 4  : RT_RESOLUTION_DIRTY (needs RT resize next frame)
+Bit 5  : DEPTH_OCCLUSION_ACTIVE
+Bit 6  : IS_HOLOGRAPHIC (vs physical panel)
+Bit 7  : PLAYER_IN_RANGE
+Bit 8-9: RT_TIER (00=64, 01=256, 10=512, 11=1024)
+Bit 10 : FIRST_RENDER_DONE
+Bit 11 : CURSOR_LOCKED (modal UI active)
+Bit 12-15: RESERVED
+```
+
+### Native Containers
+```
+NativeArray<PanelData>          panelRegistry       [MAX_PANELS = 32]
+NativeArray<RenderTexture>      rtPool              [MAX_RT_SLOTS = 8]
+NativeArray<int>                rtRefCount          [8] — slot occupancy
+NativeArray<float2>             cursorWorldPos      [MAX_PANELS]
+NativeArray<float2>             cursorCanvasPos     [MAX_PANELS]
+NativeHashMap<int, int>         colliderIDToPanelID — built once at scene load
+```
+
+### Ring Buffer — Input Events
+```
+InputEventBuffer {
+    NativeArray<UIInputEvent>   events  [CAPACITY=64]
+    int                         head
+    int                         tail
+    // lock-free single-producer single-consumer
+}
+UIInputEvent {
+    int     panelID
+    float2  canvasHitPoint
+    int     eventType   // bitmask: 0x1=down, 0x2=up, 0x4=hold, 0x8=scroll
+    float   timestamp
+}
+```
+
+---
+
+## [MATH] RAY-TO-CANVAS TRANSLATION — EXACT FORMULAS
+
+### Problem: Convert 3D RaycastHit.point → Canvas (x,y) without GraphicRaycaster
+
+#### Step-by-step (per-frame, only when IS_CURSOR_OVER set)
+
+**Step 1 — Transform hit point into panel local space:**
+```
+localHit = panelData.worldToLocal.MultiplyPoint3x4(raycastHit.point)
+// worldToLocal is pre-inverted float4x4, cached in PanelData
+// MultiplyPoint3x4 NOT MultiplyPoint — avoids w-divide overhead
+```
+
+**Step 2 — Map local XY to normalized canvas UV [0,1]:**
+```
+// Panel local-space: X = horizontal, Y = vertical, Z ≈ 0 at surface
+uv.x = (localHit.x + halfSize.x) / canvasSize.x
+uv.y = (localHit.y + halfSize.y) / canvasSize.y
+// Result: uv in [0,1] if hit inside panel bounds
+```
+
+**Step 3 — Convert UV to Canvas pixel coordinates:**
+```
+canvasPos.x = uv.x * canvas.referenceResolution.x
+canvasPos.y = uv.y * canvas.referenceResolution.y
+// canvas.referenceResolution matches RT resolution tier
+```
+
+**Step 4 — Bounds guard (replaces GraphicRaycaster hit test):**
+```
+IF uv.x < 0 || uv.x > 1 || uv.y < 0 || uv.y > 1:
+    CLEAR stateFlags BIT_3 (IS_CURSOR_OVER)
+    skip event dispatch
+// No exceptions, no AABB — pure range check on normalized coords
+```
+
+**Numerical stability guards:**
+```
+canvasSize.x = max(canvasSize.x, EPSILON_1E4)   // prevent div-zero
+canvasSize.y = max(canvasSize.y, EPSILON_1E4)
+uv = clamp(uv, float2(0,0), float2(1,1))        // post-clamp safety
+```
+
+#### Why NOT GraphicRaycaster per frame:
+- GraphicRaycaster iterates ALL graphics under canvas — O(n) per element
+- Above method: O(1) matrix multiply + 2 divides + 4 compares
+- Pre-inverted worldToLocal eliminates runtime Matrix4x4.Inverse()
+
+---
+
+## [MATH] PHYSICAL CURSOR — PANEL-CLAMPED TRANSFORM
+
+### Cursor 3D position kept on panel surface, bounded by panel extents
+
+**Step 1 — Project ray onto panel plane:**
+```
+panelNormal  = panelData.localToWorld.MultiplyVector(float3(0,0,1))  // world-space normal
+panelOrigin  = panelData.localToWorld.GetColumn(3).xyz               // panel center world
+rayOrigin    = camera.position
+rayDir       = camera.forward   // or controller aim direction
+
+t = dot(panelOrigin - rayOrigin, panelNormal) / dot(rayDir, panelNormal)
+// Guard: if |dot(rayDir, panelNormal)| < 0.01 → panel nearly edge-on, skip cursor update
+worldHit = rayOrigin + rayDir * t
+```
+
+**Step 2 — To local space:**
+```
+localHit = worldToLocal.MultiplyPoint3x4(worldHit)
+```
+
+**Step 3 — Clamp to bounds (math.clamp, zero allocation):**
+```
+clampedLocal.x = math.clamp(localHit.x, -halfSize.x + CURSOR_MARGIN, halfSize.x - CURSOR_MARGIN)
+clampedLocal.y = math.clamp(localHit.y, -halfSize.y + CURSOR_MARGIN, halfSize.y - CURSOR_MARGIN)
+clampedLocal.z = CURSOR_HOVER_OFFSET   // e.g. 0.002f world units above surface
+// CURSOR_MARGIN = 0.01f world units — prevents cursor clipping panel edge geometry
+```
+
+**Step 4 — Back to world space for Transform assignment:**
+```
+cursorWorldPos = localToWorld.MultiplyPoint3x4(clampedLocal)
+cursorTransform.position = cursorWorldPos
+cursorTransform.rotation = Quaternion.LookRotation(-panelNormal, panelUp)
+```
+
+**Frame-rate independence — cursor smoothing:**
+```
+// Exponential lerp (dt-invariant):
+alpha = 1.0 - exp(-CURSOR_SPEED * dt)   // CURSOR_SPEED ≈ 20.0
+smoothedPos = lerp(prevCursorWorld, cursorWorldPos, alpha)
+// Store prevCursorWorld in NativeArray<float3> cursorSmoothState[panelID]
+```
+
+---
+
+## [DATA] RENDERTEXTURE POOL — VRAM MANAGEMENT (MX350 = 2GB)
+
+### RT Resolution Tier Logic
+
+**Tier determination (4Hz update, time-sliced):**
+```
+dist = panelData.distToCamera
+
+IF dist > 5.0m   → tier = RT_TIER_00 → resolution = 128x64  (or 256x128)
+IF dist > 2.0m   → tier = RT_TIER_01 → resolution = 512x256
+IF dist > 0.8m   → tier = RT_TIER_10 → resolution = 1024x512
+IF dist <= 0.8m  → tier = RT_TIER_11 → resolution = 2048x1024  (only for closest panel)
+
+// Holographic map panels: square RTs
+IF IS_HOLOGRAPHIC:
+    256x256 | 512x512 | 1024x1024 | 2048x2048 (cap at 1024 on MX350-budget)
+```
+
+**VRAM Budget Guard:**
+```
+totalRTVRAM = sum(rtPool[i].width * rtPool[i].height * bytesPerPixel) for active slots
+IF totalRTVRAM > VRAM_RT_BUDGET (= 180MB for UI, leaving headroom for scene):
+    FORCE sleep on farthest active panel (highest dist)
+    SET stateFlags BIT_2 (IS_SLEEPING) on that panel
+    release its RT slot → rtRefCount[slot]--
+```
+
+**RT Slot Allocation (pooled, not new each resize):**
+```
+Alloc:
+    scan rtRefCount[] for slot == 0
+    claim slot: rtRefCount[slot] = 1
+    IF rtPool[slot] size != needed:
+        rtPool[slot].Release()
+        rtPool[slot] = new RenderTexture(w, h, 16, RenderTextureFormat.RGB565)
+        // RGB565 not ARGB32 — saves 50% VRAM per RT on MX350
+        // depth=16 sufficient for UI depth reads inside panel camera
+        rtPool[slot].filterMode = FilterMode.Bilinear
+        rtPool[slot].useMipMap = false   // no streaming overhead
+    SET stateFlags BIT_4 (RT_RESOLUTION_DIRTY) — triggers re-render next frame
+```
+
+**RT Format selection per tier:**
+```
+tier 00-01: RenderTextureFormat.RGB565   (no alpha needed, saves VRAM)
+tier 10   : RenderTextureFormat.RGB565
+tier 11   : RenderTextureFormat.ARGB32   (only for holographic, needs alpha for glow)
+// FORBID: RenderTextureFormat.ARGBFloat, RenderTextureFormat.ARGBHalf on UI RTs
+```
+
+**Sleep/Wake protocol:**
+```
+SLEEP:
+    rtRefCount[panelData.renderTextureIndex]--
+    panelData.renderTextureIndex = -1
+    CLEAR stateFlags BIT_0, SET BIT_2
+    panelCamera.enabled = false
+
+WAKE (player enters range):
+    alloc RT slot (above)
+    panelCamera.enabled = true
+    CLEAR BIT_2, SET BIT_0
+    CLEAR BIT_10 (force first render)
+```
+
+---
+
+## [MATH] RT DIRTY UPDATE — ADAPTIVE RENDER FREQUENCY
+
+**Not all panels render every frame. Tier-based update budgets:**
+```
+tier 00 : render every 8 frames (static distant panel — 7.5Hz @60)
+tier 01 : render every 4 frames
+tier 10 : render every 2 frames
+tier 11 : render every frame (only if IS_CURSOR_OVER or animated content)
+
+// Staggered: distribute panel renders across frames
+renderFrame[panelID] = panelID % updatePeriod[tier]
+// Each frame: only render panels where (frameCount % period == panelOffset)
+```
+
+**Animation dirty flag:**
+```
+IF panel has animated element (spinner, gauge, waveform):
+    SET BIT_4 (RT_RESOLUTION_DIRTY) each tick that animation state changed
+    ELSE skip RT camera render even if within update window
+// Saves GPU time on panels showing static data
+```
+
+---
+
+## [SHADER] DEPTH-TESTED UI — DITHERED OCCLUSION
+
+### Forbid UI Drawing Through Walls
+
+**Shader Logic (per-pixel, world-space canvas materials):**
+
+**Step 1 — Sample scene depth buffer:**
+```
+sceneDepth = SampleSceneDepth(screenUV)
+// screenUV = ComputeScreenPos(clipPos) passed from vertex shader
+linearSceneDepth = LinearEyeDepth(sceneDepth, _ZBufferParams)
+linearFragDepth  = -positionVS.z   // view-space Z of UI fragment
+```
+
+**Step 2 — Compute occlusion ratio:**
+```
+depthDelta = linearSceneDepth - linearFragDepth
+// positive → UI in front of geometry (visible)
+// negative → UI behind geometry (occluded)
+occlusionFactor = saturate(depthDelta / DEPTH_FADE_RANGE)
+// DEPTH_FADE_RANGE = 0.05 world units — thin transition band
+```
+
+**Step 3 — Ordered dither matrix (4x4 Bayer):**
+```
+bayerMatrix[4][4] = {
+    { 0, 8, 2,10},
+    {12, 4,14, 6},
+    { 3,11, 1, 9},
+    {15, 7,13, 5}
+} / 16.0
+
+screenPixel = floor(screenUV * _ScreenParams.xy)
+ditherThresh = bayerMatrix[screenPixel.x % 4][screenPixel.y % 4]
+```
+
+**Step 4 — Discard test:**
+```
+IF occlusionFactor < ditherThresh:
+    discard
+// Result: geometry-occluded UI fragments dither out deterministically
+// No alpha blending overhead, no stencil buffer writes needed
+```
+
+**Depth Write rule:**
+```
+ZWrite Off
+ZTest LEqual
+Cull Off    // panels viewed from any angle in submarine
+// Do NOT use Cull Back — player can enter panels in cramped spaces
+```
+
+**Shader pass tags:**
+```
+Tags { "Queue"="Transparent+10" "RenderType"="Transparent" }
+// Renders after opaque, before particles — correct depth buffer is populated
+```
+
+**Holographic variant (additive):**
+```
+Blend SrcAlpha One   // additive for glow effect
+// occlusionFactor also modulates alpha output:
+finalAlpha = baseAlpha * occlusionFactor * panelPowerLevel
+// panelPowerLevel = Shader.SetGlobalFloat updated from submarine power system
+```
+
+---
+
+## [SCALE] LOD TIERS — QUALITY SCALABILITY
+
+### Base (i3 + MX350 — MINIMUM VIABLE)
+```
+- Max active panels simultaneously: 4
+- Max concurrent RenderTextures: 4
+- RT max resolution: 512x256 (RGB565)
+- Cursor update rate: 30Hz (every 2 frames)
+- No holographic map panels active (replaced with flat sprite)
+- Depth dither: 2x2 Bayer only (cheaper)
+- RT render frequency: tier00=8f, tier01=8f, tier10=4f, tier11=2f
+```
+
+### High (i5/i7 + GTX1060 class)
+```
+- Max active panels: 8
+- Max concurrent RTs: 6
+- RT max resolution: 1024x512
+- Cursor update: 60Hz
+- Holographic map: 1 active, 512x512
+- Depth dither: 4x4 Bayer
+- RT frequency: tier00=8f, tier01=4f, tier10=2f, tier11=1f
+```
+
+### Ultra (RTX class, 8GB+ VRAM)
+```
+- Max active panels: 16
+- Max concurrent RTs: 8
+- RT max resolution: 2048x1024 (ARGB32)
+- Cursor: every frame, sub-pixel precision, motion blur trail
+- Holographic map: 2 active, 2048x2048, 60Hz
+- Depth dither: 8x8 Bayer
+- RT frequency: all tier11
+- Enable: RT MSAA x2 on holographic panels
+```
+
+### Runtime Tier Detection
+```
+// At startup, measure:
+vramMB    = SystemInfo.graphicsMemorySize
+coreCount = SystemInfo.processorCount
+gpuTier   = SystemInfo.graphicsDeviceType
+
+IF vramMB < 3000 || gpuTier == Integrated:
+    forceTier = BASE
+ELIF vramMB < 6000:
+    forceTier = HIGH
+ELSE:
+    forceTier = ULTRA
+
+// Expose slider in settings — allow override
+```
+
+---
+
+## [SCALE] TIME-SLICING — CPU BUDGET RULES
+
+```
+Frame budget allocation for diegetic UI (target: < 0.8ms CPU total):
+
+Tick 0: UpdatePanelDistances (4Hz → run every 15 frames @60Hz)
+         → write distToCamera for all panelRegistry entries
+         → evaluate tier changes → SET RT_RESOLUTION_DIRTY if changed
+
+Tick 1: ProcessInputRaycast (per-frame, only if player in range)
+         → single Physics.Raycast against UI layer mask
+         → write result into InputEventBuffer ring buffer
+         → time budget: < 0.15ms
+
+Tick 2: CursorPositionUpdate (per-frame, only IS_CURSOR_OVER panel)
+         → matrix multiply + clamp + lerp
+         → < 0.05ms
+
+Tick 3: RTResizeBatch (runs on RT_RESOLUTION_DIRTY, max 1 per frame)
+         → pool realloc, avoid multiple RT resizes same frame
+         → if multiple panels dirty: queue, process one per frame
+
+Tick 4: DispatchInputEvents (per-frame, drain ring buffer)
+         → max 4 events per frame dequeued → rest deferred next frame
+         → prevents event spike on rapid interaction
+
+Tick 5: PanelSleepWake (4Hz)
+         → scan distances, apply sleep/wake
+```
+
+---
+
+## [SAFE] FAILURE MODES & EDGE CASES
+
+### Depth delta NaN protection:
+```
+IF isnan(linearSceneDepth) || isinf(linearSceneDepth):
+    occlusionFactor = 1.0   // assume visible, fail open
+```
+
+### Ray parallel to panel (dot product near zero):
+```
+denom = dot(rayDir, panelNormal)
+IF abs(denom) < 0.01:
+    skip hit, CLEAR BIT_3 (IS_CURSOR_OVER)
+    // No divide → no Inf/NaN propagation
+```
+
+### RT slot exhaustion:
+```
+IF all rtRefCount[] > 0 AND new panel needs RT:
+    find panel with lowest distToCamera among sleeping panels
+    IF none sleeping: force-sleep farthest active panel
+    // Never throw — degrade gracefully
+    // Panel renders black material until slot freed
+```
+
+### Panel disabled mid-interaction (submarine damage):
+```
+SET BIT_1 CLEAR (IS_POWERED)
+Shader reads _PanelPowerLevel = lerp(current, 0, alpha_dt)
+UI fades out without destroying RT — power can restore
+IF powerdown > 5 seconds: release RT slot (true sleep)
+```
+
+### canvasSize = 0 guard:
+```
+IF canvasSize.x < EPSILON || canvasSize.y < EPSILON:
+    CLEAR BIT_0 (IS_ACTIVE)
+    skip all processing
+    log error once via static flag (FORBID repeated per-frame logging)
+```
+
+### Player moving at speed > 10m/s near panel:
+```
+// Cursor jitter prevention at high velocity
+IF playerSpeed > 10.0:
+    CURSOR_SPEED = 5.0   // reduce lerp responsiveness
+    // prevents cursor thrashing across panel surface
+IF playerSpeed > 40.0:
+    CLEAR BIT_7 (PLAYER_IN_RANGE) on all panels
+    // no interaction at terminal velocity — physically implausible anyway
+```
+
+### Depth > 4000m (crush depth):
+```
+// Submarine panels: flicker effect on all IS_POWERED panels
+// Shader uniform: _PressureGlitchIntensity = remap(depth, 3500, 4000, 0, 1)
+// Drives UV distortion in panel shader — diegetic damage visual
+// Beyond 4000m: CLEAR BIT_1 on all panels (total power failure)
+```
+
+---
+
+## [RULE] FORBIDDEN PATTERNS — DIEGETIC UI SUBSYSTEM
+
+```
+FORBID: GetComponent<>() in any Update/FixedUpdate path
+FORBID: Camera.main access (cache ref at init into static readonly)
+FORBID: GraphicRaycaster.Raycast() per-frame
+FORBID: RenderTexture construction outside RTPool alloc path
+FORBID: Canvas.ForceUpdateCanvases() — triggers full layout rebuild
+FORBID: LayoutRebuilder.ForceRebuildLayoutImmediate()
+FORBID: new Material() at runtime (use MaterialPropertyBlock for per-panel params)
+FORBID: Shader.Find() at runtime (cache ShaderID at init)
+FORBID: string-keyed Shader.SetGlobalFloat (use Shader.PropertyToID cached int)
+FORBID: OnGUI(), GUILayout, any IMGUI on world-space panels
+FORBID: Unity EventSystem pointer events dispatched on WorldSpace canvas more than 1 per frame per panel
+FORBID: ARGB32 RenderTextures for panels below HIGH tier
+FORBID: RenderTexture.active assignment outside designated RTBlit utility
+```
+
+---
+
+## [RULE] INTEGRATION CONTRACTS (SRP INTERFACES)
+
+```
+IPanelPowerSource       → float GetPowerLevel(int panelID)
+IPanelInteractable      → void ReceiveCanvasInput(UIInputEvent e)
+IRTConsumer             → int RequestRTSlot(int2 resolution)
+IRTConsumer             → void ReleaseRTSlot(int slotIndex)
+ICursorHost             → float2 GetClampedCanvasPos(int panelID)
+IDepthOcclusionReceiver → void SetOcclusionParams(float fadeRange, bool active)
+```
+
+**All subsystem communication through above interfaces only.**
+**No direct struct field writes across system boundaries.**
+**InputEventBuffer owned exclusively by DiegeticUIInputSystem — no external write access.**
+
+---
+
+## [SENIOR_HACK] FAST APPROXIMATIONS FOR MX350
+
+**Cheap holographic scanline effect (vertex shader only):**
+```
+scanline = frac(positionOS.y * SCANLINE_DENSITY + _Time.y * SCANLINE_SPEED)
+emission += step(SCANLINE_THRESHOLD, scanline) * SCANLINE_BRIGHTNESS
+// Zero texture sample — pure math, near-zero ALU cost
+```
+
+**Cheap panel wetness (depth camera feed unused — math only):**
+```
+// Perturb UV with sine to fake water droplets on physical panel surface
+uvOffset.x = sin(uv.y * 18.3 + _Time.y * 0.7) * 0.003 * _WetnessFactor
+uvOffset.y = cos(uv.x * 22.1 + _Time.y * 1.1) * 0.002 * _WetnessFactor
+finalUV = uv + uvOffset
+// Sampled once from RT — no additional texture needed
+```
+
+**Power flicker (no coroutine, no animator):**
+```
+// Shader-side: driven by _Time and sin
+flicker = sin(_Time.y * 47.3) * sin(_Time.y * 13.7) * sin(_Time.y * 3.1)
+flicker = pow(abs(flicker), 0.3)   // bias toward mostly-on with sharp drops
+powerVis = lerp(_MinPowerVis, 1.0, flicker * _GlitchIntensity + (1 - _GlitchIntensity))
+// _GlitchIntensity from depth/damage system → CPU single SetGlobalFloat 4Hz
+```
+
+**RT bilinear upsample trick (avoid 1024 RT at mid-range):**
+```
+// Render at 512x256, material filterMode = Bilinear, scale UV by 1.0
+// Set panel material TextureScale to slight non-integer (e.g., 1.02x)
+// Bilinear + slight scale breaks aliasing → perceptually matches 1024 at >1.5m
+// Saves 75% VRAM vs direct 1024 render
+```
+
+**Pre-inverted matrix cache invalidation (avoid per-frame inversion):**
+```
+// Only recompute worldToLocal when panel transform dirty:
+isDirty = (localToWorld != cachedLocalToWorld)   // float4x4 compare
+IF isDirty:
+    worldToLocal = math.inverse(localToWorld)
+    cachedLocalToWorld = localToWorld
+// Panels on rigid submarines: matrix dirty ~never after init
+// Cost: 16 float compares vs full matrix inversion (significant win)
+```
+```

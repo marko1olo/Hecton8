@@ -8,7 +8,7 @@
 DensityField(3D NativeArray<half>)
   → SDF_Compose(CSG + smin_exp)
     → MarchingCubes(IJob, burst)
-      → WeldVertices(HashMap dedup)
+      → EdgeIndexedVertexBuild(lock-free edge arrays)
         → NormalBake(densityField sample, NO recompute)
           → CurvatureBake(Laplacian6, → Color.a)
             → SkirtStitch(LOD boundary mask → Color.b)
@@ -159,15 +159,24 @@ Transition hysteresis: 4m band → suppress flicker
 
 ## §4 — VERTEX WELD & DEDUPLICATION
 
-### 4.1 Weld Strategy
+### 4.1 Lock-Free Edge-Indexed Vertex Build
 
-Key: int3 = round(vertPos / WeldEpsilon)  →  WeldEpsilon = VoxelStep * 0.01f
-HashMap<int3, ushort> weldMap  (NativeHashMap, Persistent scratch)
-  Capacity: ChunkRes³ * 3  (conservative upper bound, pre-sized)
-  On collision: reuse existing index
-  On insert: write vertex to final buffer, store index
+Rule:
+  - Do not deduplicate with `NativeHashMap<int3, ushort>` inside parallel MC jobs
+  - Use deterministic edge ownership instead
 
-Output: tightly packed vertex buffer + index remapping
+Canonical layout:
+  NativeArray<ushort> edgeX;
+  NativeArray<ushort> edgeY;
+  NativeArray<ushort> edgeZ;
+
+Ownership:
+  - each voxel owns only positive X/Y/Z edges
+  - edge array index derived directly from voxel coordinate
+  - first writer computes interpolated vertex once and stores resulting ushort index
+  - readers fetch existing edge index without hash lookup or atomic map contention
+
+Output: tightly packed vertex buffer + deterministic index remapping with zero hash contention
 
 ### 4.2 Vertex Layout Contract
 
@@ -301,7 +310,7 @@ If VertexCount > 65535 (ushort index limit):
   Split into SubChunks along dominant axis (longest AABB edge)
   Each SubChunk: independent NativeArray segment, independent Mesh
   Max SubChunks per chunk: 4
-  Index format: UInt32 only if SubChunk split fails (rare, LOD0 dense zones)
+  Index format: UInt16 only. If split still exceeds limit, reject chunk and re-partition at smaller build granularity.
 
 ### 8.3 Physics Bake Distribution
 
@@ -325,8 +334,10 @@ Pool: 8 persistent NativeArray scratch slots
 Slot content per slot:
   densityField     : NativeArray<half>  [(ChunkRes+2)³]
   vertexScratch    : NativeArray<Vertex>[ChunkRes³ * 5]   (worst-case MC)
-  indexScratch     : NativeArray<uint>  [ChunkRes³ * 15]
-  weldHashMap      : NativeHashMap<int3,ushort>
+  indexScratch     : NativeArray<ushort> [ChunkRes³ * 15]
+  edgeX            : NativeArray<ushort>
+  edgeY            : NativeArray<ushort>
+  edgeZ            : NativeArray<ushort>
   normalScratch    : NativeArray<float3>[ChunkRes³ * 5]
 
 Allocation: Allocator.Persistent at engine init.
@@ -406,7 +417,7 @@ Post-vertex:      isnan(any component) → vertex flagged, excluded from index b
 
 [CHECK-01] densityField fully written before MC job scheduled  → JobHandle.Complete() fence
 [CHECK-02] Ghost border pass completes before normal job reads boundary verts
-[CHECK-03] WeldMap cleared between chunk builds              → NativeHashMap.Clear(), not Dispose
+[CHECK-03] Edge index arrays reset between chunk builds      → fill with INVALID_INDEX sentinel, no hash map clear path
 [CHECK-04] SkirtMask (Color.b) set BEFORE normal bake (normal job reads weld output)
 [CHECK-05] UV3 written as AbsWorldPos = ChunkOriginWS + LocalFloatPos (no camera-relative drift)
 [CHECK-06] PhysicsBake scheduled ONLY after Mesh.ApplyAndDisposeWritableMeshData completes

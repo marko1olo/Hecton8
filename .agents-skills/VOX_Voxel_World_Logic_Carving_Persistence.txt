@@ -21,30 +21,34 @@ GPU_PROCEDURAL_NOISE = ALU-only hash function (no textures)
 
 ### 1.1 World→Chunk Resolution
 
-tileID    : int3 = floor(worldPos / 16.0f)          // integer tile address
-localIdx  : int3 = floor(worldPos % 16.0f)          // [0..31] voxel local coord
+tileID    : int3 = floor(worldPos / 16.0f)                       // integer tile address
+localPos  : float3 = worldPos - (float3(tileID) * 16.0f)        // signed-safe remainder
+localIdx  : int3 = clamp(floor(localPos / 0.5f), 0, 31)         // [0..31] voxel local coord
 flatIdx   : int  = localIdx.x + localIdx.y*32 + localIdx.z*1024   // row-major, Z-major
 
 ### 1.2 Spatial Hash Key (AUP Encoding)
 
-// Pack int3 tileID into single int64 morton key
-mortonKey : long = MortonEncode3(tileID.x, tileID.y, tileID.z)
+// Pack signed int3 tileID into single uint64 morton key
+mortonKey : ulong = MortonEncodeSigned(tileID.x, tileID.y, tileID.z)
 // Use mortonKey as NativeParallelHashMap primary key for O(1) tile lookup
 // Morton encoding preserves spatial locality → cache-friendly neighbor queries
 
-### 1.3 Morton Encode (bitwise kernel)
+### 1.3 Morton Encode (signed-safe kernel)
 
-MortonEncode3(x,y,z):
-  x = ExpandBits(x)        // interleave bits: x←x_0, 0, 0, x_1, 0, 0 ...
-  y = ExpandBits(y) << 1
-  z = ExpandBits(z) << 2
-  return x | y | z
+MORTON_SIGN_OFFSET = 1048576   // 2^20, keeps signed tile coords positive inside 21-bit lane
 
-ExpandBits(v):             // 10-bit input → 30-bit spread
-  v = (v | v<<16) & 0x030000FF
-  v = (v | v<< 8) & 0x0300F00F
-  v = (v | v<< 4) & 0x030C30C3
-  v = (v | v<< 2) & 0x09249249
+MortonEncodeSigned(x,y,z):
+  ux = (uint)(x + MORTON_SIGN_OFFSET)
+  uy = (uint)(y + MORTON_SIGN_OFFSET)
+  uz = (uint)(z + MORTON_SIGN_OFFSET)
+  return ExpandBits(ux) | (ExpandBits(uy) << 1) | (ExpandBits(uz) << 2)
+
+ExpandBits(v):             // 21-bit unsigned input → 63-bit spread
+  v = (v | v<<32) & 0x001F00000000FFFF
+  v = (v | v<<16) & 0x001F0000FF0000FF
+  v = (v | v<< 8) & 0x100F00F00F00F00F
+  v = (v | v<< 4) & 0x10C30C30C30C30C3
+  v = (v | v<< 2) & 0x1249249249249249
   return v
 
 ---
@@ -468,5 +472,5 @@ Total voxel overhead : < 12ms / frame sustained (leaves 21ms for rendering)
 [ ] Ghost dither shader compiled into all voxel surface material variants
 [ ] LRU tile eviction tested with 128+ tile stress scenario before ship
 [ ] All NativeContainers disposed in OnDestroy; verified via LeakDetection.Debug mode
-[ ] MortonEncode3 unit-tested for collisions across full expected world bounds
+[ ] MortonEncodeSigned unit-tested for collisions across full expected world bounds
 [ ] Tier detection validated on MX350 hardware; MINIMUM tier confirmed 30fps in worst-case cave

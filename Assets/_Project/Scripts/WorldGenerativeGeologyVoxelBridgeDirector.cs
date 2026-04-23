@@ -588,8 +588,9 @@ namespace Hecton8.World
 
                 try
                 {
+                    Vector3 runtimeCenter = request.RuntimeCenter;
                     GameObject volume = await voxelEngine.GenerateVolumeFromDataAsync(
-                        request.center,
+                        runtimeCenter,
                         gridDimension,
                         voxelStep,
                         nodes,
@@ -789,9 +790,10 @@ namespace Hecton8.World
             float height = Mathf.Max(6f, request.size.y * (bridgeBias ? 0.66f : 0.58f));
             Vector3 lateral = RotateOffset(request.rotation, Vector3.right);
             Vector3 forward = RotateOffset(request.rotation, Vector3.forward);
-            Vector3 left = request.center + upOffset - lateral * (span * 0.36f);
-            Vector3 right = request.center + upOffset + lateral * (span * 0.36f);
-            Vector3 crown = request.center + upOffset + Vector3.up * (height * 0.7f);
+            Vector3 center = request.RuntimeCenter;
+            Vector3 left = center + upOffset - lateral * (span * 0.36f);
+            Vector3 right = center + upOffset + lateral * (span * 0.36f);
+            Vector3 crown = center + upOffset + Vector3.up * (height * 0.7f);
             Vector3 archStart = crown - lateral * (span * 0.28f);
             Vector3 archEnd = crown + lateral * (span * 0.28f);
             Vector3 bridgeStart = crown - forward * (request.size.z * 0.18f);
@@ -809,7 +811,7 @@ namespace Hecton8.World
             structures[4] = CreateBoulder(left + forward * (request.size.z * 0.12f), radius * 0.8f, request.weight * 0.72f);
             structures[5] = CreateBoulder(right - forward * (request.size.z * 0.1f), radius * 0.7f, request.weight * 0.68f);
             structures[6] = CreateBlock(
-                request.center + upOffset + Vector3.up * (height * 0.22f),
+                center + upOffset + Vector3.up * (height * 0.22f),
                 new Vector3(span * 0.1f, height * 0.1f, request.size.z * 0.14f),
                 request.weight * 0.55f);
         }
@@ -822,7 +824,7 @@ namespace Hecton8.World
             float height = Mathf.Max(4f, request.size.y * 0.44f);
             Vector3 forward = RotateOffset(request.rotation, Vector3.forward);
             Vector3 lateral = RotateOffset(request.rotation, Vector3.right);
-            Vector3 root = request.center + upOffset;
+            Vector3 root = request.RuntimeCenter + upOffset;
             Vector3 canopyA = root + Vector3.up * (height * 0.62f) - forward * (request.size.z * 0.12f);
             Vector3 canopyB = root + Vector3.up * (height * 0.62f) + forward * (request.size.z * 0.18f);
             structures[0] = CreateColumn(root - lateral * (request.size.x * 0.06f), Mathf.Max(1.6f, request.size.x * 0.1f), height);
@@ -841,21 +843,22 @@ namespace Hecton8.World
         {
             Vector3 forward = RotateOffset(request.rotation, Vector3.forward);
             Vector3 lateral = RotateOffset(request.rotation, Vector3.right);
-            structures[0] = CreateBlock(request.center, request.size * 0.22f, request.weight);
+            Vector3 center = request.RuntimeCenter;
+            structures[0] = CreateBlock(center, request.size * 0.22f, request.weight);
             structures[1] = CreateBlock(
-                request.center + lateral * (request.size.x * 0.12f) + Vector3.up * (request.size.y * 0.1f) - forward * (request.size.z * 0.08f),
+                center + lateral * (request.size.x * 0.12f) + Vector3.up * (request.size.y * 0.1f) - forward * (request.size.z * 0.08f),
                 request.size * 0.16f,
                 request.weight * 0.8f);
             structures[2] = CreateBlock(
-                request.center - lateral * (request.size.x * 0.08f) + Vector3.up * (request.size.y * 0.18f) + forward * (request.size.z * 0.06f),
+                center - lateral * (request.size.x * 0.08f) + Vector3.up * (request.size.y * 0.18f) + forward * (request.size.z * 0.06f),
                 request.size * 0.12f,
                 request.weight * 0.62f);
             structures[3] = CreateBoulder(
-                request.center - lateral * (request.size.x * 0.1f) + Vector3.up * (request.size.y * 0.06f) + forward * (request.size.z * 0.1f),
+                center - lateral * (request.size.x * 0.1f) + Vector3.up * (request.size.y * 0.06f) + forward * (request.size.z * 0.1f),
                 Mathf.Max(2f, request.size.x * 0.12f),
                 request.weight * 0.9f);
             structures[4] = CreateBoulder(
-                request.center + lateral * (request.size.x * 0.16f) + Vector3.up * (request.size.y * 0.03f) - forward * (request.size.z * 0.12f),
+                center + lateral * (request.size.x * 0.16f) + Vector3.up * (request.size.y * 0.03f) - forward * (request.size.z * 0.12f),
                 Mathf.Max(1.6f, request.size.x * 0.08f),
                 request.weight * 0.7f);
         }

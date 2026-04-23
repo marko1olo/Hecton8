@@ -618,6 +618,24 @@ namespace Hecton8.Modding
             public string[] Dependencies;
             public string EntryAssembly;
             public string EntryType;
+
+            public ModManifest(
+                string id,
+                string name,
+                string version,
+                string author,
+                string[] dependencies,
+                string entryAssembly,
+                string entryType)
+            {
+                Id = id;
+                Name = name;
+                Version = version;
+                Author = author;
+                Dependencies = dependencies;
+                EntryAssembly = entryAssembly;
+                EntryType = entryType;
+            }
         }
 
         private sealed class ModCandidate

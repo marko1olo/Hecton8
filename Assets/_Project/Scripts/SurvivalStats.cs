@@ -22,7 +22,7 @@ public class SurvivalStats : ScriptableObject
     [Min(1f)]
     [SerializeField] private float maxOxygen = 100f;
 
-    [Tooltip("Base oxygen drain per second at surface pressure (1 ATM).")]
+    [Tooltip("Base oxygen drain per second before multiplicative pressure, movement, stress, and leak factors are applied.")]
     [Min(0f)]
     [SerializeField] private float oxygenConsumptionRate = 1.5f;
 
@@ -104,7 +104,7 @@ public class SurvivalStats : ScriptableObject
     [Min(0f)]
     [SerializeField] private float tempDamageRate = 1f;
 
-    [Tooltip("Energy consumption multiplier per degree outside safe range.")]
+    [Tooltip("Energy consumption multiplier per degree outside safe range. Internal suit temperature drives both heating and cooling power draw.")]
     [Min(0f)]
     [SerializeField] private float tempEnergyScale = 0.05f;
 

@@ -1,0 +1,1075 @@
+{
+  "format": 1,
+  "restore": {
+    "C:\\hades\\Hecton8\\Hecton8.Core.csproj": {}
+  },
+  "projects": {
+    "C:\\hades\\Hecton8\\Crest.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\hades\\Hecton8\\Crest.csproj",
+        "projectName": "Crest",
+        "projectPath": "C:\\hades\\Hecton8\\Crest.csproj",
+        "packagesPath": "C:\\Users\\danat\\.nuget\\packages\\",
+        "outputPath": "C:\\hades\\Hecton8\\.codexbuild\\core\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\danat\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "netstandard2.1"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "netstandard2.1": {
+            "targetAlias": "netstandard2.1",
+            "projectReferences": {
+              "C:\\hades\\Hecton8\\Unity.RenderPipelines.Universal.Runtime.csproj": {
+                "projectPath": "C:\\hades\\Hecton8\\Unity.RenderPipelines.Universal.Runtime.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.200"
+      },
+      "frameworks": {
+        "netstandard2.1": {
+          "targetAlias": "netstandard2.1",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.202\\RuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\hades\\Hecton8\\Den.Tools.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\hades\\Hecton8\\Den.Tools.csproj",
+        "projectName": "Den.Tools",
+        "projectPath": "C:\\hades\\Hecton8\\Den.Tools.csproj",
+        "packagesPath": "C:\\Users\\danat\\.nuget\\packages\\",
+        "outputPath": "C:\\hades\\Hecton8\\.codexbuild\\core\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\danat\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "netstandard2.1"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "netstandard2.1": {
+            "targetAlias": "netstandard2.1",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.200"
+      },
+      "frameworks": {
+        "netstandard2.1": {
+          "targetAlias": "netstandard2.1",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.202\\RuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\hades\\Hecton8\\EasySave3.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\hades\\Hecton8\\EasySave3.csproj",
+        "projectName": "EasySave3",
+        "projectPath": "C:\\hades\\Hecton8\\EasySave3.csproj",
+        "packagesPath": "C:\\Users\\danat\\.nuget\\packages\\",
+        "outputPath": "C:\\hades\\Hecton8\\.codexbuild\\core\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\danat\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "netstandard2.1"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "netstandard2.1": {
+            "targetAlias": "netstandard2.1",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.200"
+      },
+      "frameworks": {
+        "netstandard2.1": {
+          "targetAlias": "netstandard2.1",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.202\\RuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\hades\\Hecton8\\GPUInstancer.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\hades\\Hecton8\\GPUInstancer.csproj",
+        "projectName": "GPUInstancer",
+        "projectPath": "C:\\hades\\Hecton8\\GPUInstancer.csproj",
+        "packagesPath": "C:\\Users\\danat\\.nuget\\packages\\",
+        "outputPath": "C:\\hades\\Hecton8\\.codexbuild\\core\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\danat\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "netstandard2.1"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "netstandard2.1": {
+            "targetAlias": "netstandard2.1",
+            "projectReferences": {
+              "C:\\hades\\Hecton8\\Unity.RenderPipelines.Universal.Runtime.csproj": {
+                "projectPath": "C:\\hades\\Hecton8\\Unity.RenderPipelines.Universal.Runtime.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.200"
+      },
+      "frameworks": {
+        "netstandard2.1": {
+          "targetAlias": "netstandard2.1",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.202\\RuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\hades\\Hecton8\\Hecton8.Bootstrap.Contracts.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\hades\\Hecton8\\Hecton8.Bootstrap.Contracts.csproj",
+        "projectName": "Hecton8.Bootstrap.Contracts",
+        "projectPath": "C:\\hades\\Hecton8\\Hecton8.Bootstrap.Contracts.csproj",
+        "packagesPath": "C:\\Users\\danat\\.nuget\\packages\\",
+        "outputPath": "C:\\hades\\Hecton8\\.codexbuild\\core\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\danat\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "netstandard2.1"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "netstandard2.1": {
+            "targetAlias": "netstandard2.1",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.200"
+      },
+      "frameworks": {
+        "netstandard2.1": {
+          "targetAlias": "netstandard2.1",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.202\\RuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\hades\\Hecton8\\Hecton8.Core.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\hades\\Hecton8\\Hecton8.Core.csproj",
+        "projectName": "Hecton8.Core",
+        "projectPath": "C:\\hades\\Hecton8\\Hecton8.Core.csproj",
+        "packagesPath": "C:\\Users\\danat\\.nuget\\packages\\",
+        "outputPath": "C:\\hades\\Hecton8\\.codexbuild\\core\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\danat\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "netstandard2.1"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "netstandard2.1": {
+            "targetAlias": "netstandard2.1",
+            "projectReferences": {
+              "C:\\hades\\Hecton8\\Crest.csproj": {
+                "projectPath": "C:\\hades\\Hecton8\\Crest.csproj"
+              },
+              "C:\\hades\\Hecton8\\Den.Tools.csproj": {
+                "projectPath": "C:\\hades\\Hecton8\\Den.Tools.csproj"
+              },
+              "C:\\hades\\Hecton8\\EasySave3.csproj": {
+                "projectPath": "C:\\hades\\Hecton8\\EasySave3.csproj"
+              },
+              "C:\\hades\\Hecton8\\GPUInstancer.csproj": {
+                "projectPath": "C:\\hades\\Hecton8\\GPUInstancer.csproj"
+              },
+              "C:\\hades\\Hecton8\\Hecton8.Bootstrap.Contracts.csproj": {
+                "projectPath": "C:\\hades\\Hecton8\\Hecton8.Bootstrap.Contracts.csproj"
+              },
+              "C:\\hades\\Hecton8\\Hecton8.Input.csproj": {
+                "projectPath": "C:\\hades\\Hecton8\\Hecton8.Input.csproj"
+              },
+              "C:\\hades\\Hecton8\\Hecton8.Input.Generated.csproj": {
+                "projectPath": "C:\\hades\\Hecton8\\Hecton8.Input.Generated.csproj"
+              },
+              "C:\\hades\\Hecton8\\Hecton8.World.Contracts.csproj": {
+                "projectPath": "C:\\hades\\Hecton8\\Hecton8.World.Contracts.csproj"
+              },
+              "C:\\hades\\Hecton8\\MapMagic.csproj": {
+                "projectPath": "C:\\hades\\Hecton8\\MapMagic.csproj"
+              },
+              "C:\\hades\\Hecton8\\ShapesRuntime.csproj": {
+                "projectPath": "C:\\hades\\Hecton8\\ShapesRuntime.csproj"
+              },
+              "C:\\hades\\Hecton8\\Unity.RenderPipelines.Universal.Runtime.csproj": {
+                "projectPath": "C:\\hades\\Hecton8\\Unity.RenderPipelines.Universal.Runtime.csproj"
+              },
+              "C:\\hades\\Hecton8\\VolumetricLightBeam.csproj": {
+                "projectPath": "C:\\hades\\Hecton8\\VolumetricLightBeam.csproj"
+              },
+              "C:\\hades\\Hecton8\\WaveHarmonic.Crest.csproj": {
+                "projectPath": "C:\\hades\\Hecton8\\WaveHarmonic.Crest.csproj"
+              },
+              "C:\\hades\\Hecton8\\WaveHarmonic.Crest.Shared.csproj": {
+                "projectPath": "C:\\hades\\Hecton8\\WaveHarmonic.Crest.Shared.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.200"
+      },
+      "frameworks": {
+        "netstandard2.1": {
+          "targetAlias": "netstandard2.1",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.202\\RuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\hades\\Hecton8\\Hecton8.Input.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\hades\\Hecton8\\Hecton8.Input.csproj",
+        "projectName": "Hecton8.Input",
+        "projectPath": "C:\\hades\\Hecton8\\Hecton8.Input.csproj",
+        "packagesPath": "C:\\Users\\danat\\.nuget\\packages\\",
+        "outputPath": "C:\\hades\\Hecton8\\.codexbuild\\core\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\danat\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "netstandard2.1"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "netstandard2.1": {
+            "targetAlias": "netstandard2.1",
+            "projectReferences": {
+              "C:\\hades\\Hecton8\\Hecton8.Input.Generated.csproj": {
+                "projectPath": "C:\\hades\\Hecton8\\Hecton8.Input.Generated.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.200"
+      },
+      "frameworks": {
+        "netstandard2.1": {
+          "targetAlias": "netstandard2.1",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.202\\RuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\hades\\Hecton8\\Hecton8.Input.Generated.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\hades\\Hecton8\\Hecton8.Input.Generated.csproj",
+        "projectName": "Hecton8.Input.Generated",
+        "projectPath": "C:\\hades\\Hecton8\\Hecton8.Input.Generated.csproj",
+        "packagesPath": "C:\\Users\\danat\\.nuget\\packages\\",
+        "outputPath": "C:\\hades\\Hecton8\\.codexbuild\\core\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\danat\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "netstandard2.1"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "netstandard2.1": {
+            "targetAlias": "netstandard2.1",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.200"
+      },
+      "frameworks": {
+        "netstandard2.1": {
+          "targetAlias": "netstandard2.1",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.202\\RuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\hades\\Hecton8\\Hecton8.World.Contracts.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\hades\\Hecton8\\Hecton8.World.Contracts.csproj",
+        "projectName": "Hecton8.World.Contracts",
+        "projectPath": "C:\\hades\\Hecton8\\Hecton8.World.Contracts.csproj",
+        "packagesPath": "C:\\Users\\danat\\.nuget\\packages\\",
+        "outputPath": "C:\\hades\\Hecton8\\.codexbuild\\core\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\danat\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "netstandard2.1"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "netstandard2.1": {
+            "targetAlias": "netstandard2.1",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.200"
+      },
+      "frameworks": {
+        "netstandard2.1": {
+          "targetAlias": "netstandard2.1",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.202\\RuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\hades\\Hecton8\\MapMagic.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\hades\\Hecton8\\MapMagic.csproj",
+        "projectName": "MapMagic",
+        "projectPath": "C:\\hades\\Hecton8\\MapMagic.csproj",
+        "packagesPath": "C:\\Users\\danat\\.nuget\\packages\\",
+        "outputPath": "C:\\hades\\Hecton8\\.codexbuild\\core\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\danat\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "netstandard2.1"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "netstandard2.1": {
+            "targetAlias": "netstandard2.1",
+            "projectReferences": {
+              "C:\\hades\\Hecton8\\Den.Tools.csproj": {
+                "projectPath": "C:\\hades\\Hecton8\\Den.Tools.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.200"
+      },
+      "frameworks": {
+        "netstandard2.1": {
+          "targetAlias": "netstandard2.1",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.202\\RuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\hades\\Hecton8\\ShapesRuntime.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\hades\\Hecton8\\ShapesRuntime.csproj",
+        "projectName": "ShapesRuntime",
+        "projectPath": "C:\\hades\\Hecton8\\ShapesRuntime.csproj",
+        "packagesPath": "C:\\Users\\danat\\.nuget\\packages\\",
+        "outputPath": "C:\\hades\\Hecton8\\.codexbuild\\core\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\danat\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "netstandard2.1"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "netstandard2.1": {
+            "targetAlias": "netstandard2.1",
+            "projectReferences": {
+              "C:\\hades\\Hecton8\\Unity.RenderPipelines.Universal.Runtime.csproj": {
+                "projectPath": "C:\\hades\\Hecton8\\Unity.RenderPipelines.Universal.Runtime.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.200"
+      },
+      "frameworks": {
+        "netstandard2.1": {
+          "targetAlias": "netstandard2.1",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.202\\RuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\hades\\Hecton8\\Unity.RenderPipelines.Core.Editor.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\hades\\Hecton8\\Unity.RenderPipelines.Core.Editor.csproj",
+        "projectName": "Unity.RenderPipelines.Core.Editor",
+        "projectPath": "C:\\hades\\Hecton8\\Unity.RenderPipelines.Core.Editor.csproj",
+        "packagesPath": "C:\\Users\\danat\\.nuget\\packages\\",
+        "outputPath": "C:\\hades\\Hecton8\\.codexbuild\\core\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\danat\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "netstandard2.1"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "netstandard2.1": {
+            "targetAlias": "netstandard2.1",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.200"
+      },
+      "frameworks": {
+        "netstandard2.1": {
+          "targetAlias": "netstandard2.1",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.202\\RuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\hades\\Hecton8\\Unity.RenderPipelines.Universal.Runtime.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\hades\\Hecton8\\Unity.RenderPipelines.Universal.Runtime.csproj",
+        "projectName": "Unity.RenderPipelines.Universal.Runtime",
+        "projectPath": "C:\\hades\\Hecton8\\Unity.RenderPipelines.Universal.Runtime.csproj",
+        "packagesPath": "C:\\Users\\danat\\.nuget\\packages\\",
+        "outputPath": "C:\\hades\\Hecton8\\.codexbuild\\core\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\danat\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "netstandard2.1"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "netstandard2.1": {
+            "targetAlias": "netstandard2.1",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.200"
+      },
+      "frameworks": {
+        "netstandard2.1": {
+          "targetAlias": "netstandard2.1",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.202\\RuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\hades\\Hecton8\\Unity.ShaderGraph.Editor.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\hades\\Hecton8\\Unity.ShaderGraph.Editor.csproj",
+        "projectName": "Unity.ShaderGraph.Editor",
+        "projectPath": "C:\\hades\\Hecton8\\Unity.ShaderGraph.Editor.csproj",
+        "packagesPath": "C:\\Users\\danat\\.nuget\\packages\\",
+        "outputPath": "C:\\hades\\Hecton8\\.codexbuild\\core\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\danat\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "netstandard2.1"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "netstandard2.1": {
+            "targetAlias": "netstandard2.1",
+            "projectReferences": {
+              "C:\\hades\\Hecton8\\Unity.RenderPipelines.Core.Editor.csproj": {
+                "projectPath": "C:\\hades\\Hecton8\\Unity.RenderPipelines.Core.Editor.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.200"
+      },
+      "frameworks": {
+        "netstandard2.1": {
+          "targetAlias": "netstandard2.1",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.202\\RuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\hades\\Hecton8\\VolumetricLightBeam.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\hades\\Hecton8\\VolumetricLightBeam.csproj",
+        "projectName": "VolumetricLightBeam",
+        "projectPath": "C:\\hades\\Hecton8\\VolumetricLightBeam.csproj",
+        "packagesPath": "C:\\Users\\danat\\.nuget\\packages\\",
+        "outputPath": "C:\\hades\\Hecton8\\.codexbuild\\core\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\danat\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "netstandard2.1"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "netstandard2.1": {
+            "targetAlias": "netstandard2.1",
+            "projectReferences": {
+              "C:\\hades\\Hecton8\\Unity.RenderPipelines.Universal.Runtime.csproj": {
+                "projectPath": "C:\\hades\\Hecton8\\Unity.RenderPipelines.Universal.Runtime.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.200"
+      },
+      "frameworks": {
+        "netstandard2.1": {
+          "targetAlias": "netstandard2.1",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.202\\RuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\hades\\Hecton8\\WaveHarmonic.Crest.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\hades\\Hecton8\\WaveHarmonic.Crest.csproj",
+        "projectName": "WaveHarmonic.Crest",
+        "projectPath": "C:\\hades\\Hecton8\\WaveHarmonic.Crest.csproj",
+        "packagesPath": "C:\\Users\\danat\\.nuget\\packages\\",
+        "outputPath": "C:\\hades\\Hecton8\\.codexbuild\\core\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\danat\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "netstandard2.1"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "netstandard2.1": {
+            "targetAlias": "netstandard2.1",
+            "projectReferences": {
+              "C:\\hades\\Hecton8\\Unity.RenderPipelines.Universal.Runtime.csproj": {
+                "projectPath": "C:\\hades\\Hecton8\\Unity.RenderPipelines.Universal.Runtime.csproj"
+              },
+              "C:\\hades\\Hecton8\\WaveHarmonic.Crest.Shared.csproj": {
+                "projectPath": "C:\\hades\\Hecton8\\WaveHarmonic.Crest.Shared.csproj"
+              },
+              "C:\\hades\\Hecton8\\WaveHarmonic.Crest.Shared.Editor.csproj": {
+                "projectPath": "C:\\hades\\Hecton8\\WaveHarmonic.Crest.Shared.Editor.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.200"
+      },
+      "frameworks": {
+        "netstandard2.1": {
+          "targetAlias": "netstandard2.1",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.202\\RuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\hades\\Hecton8\\WaveHarmonic.Crest.Shared.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\hades\\Hecton8\\WaveHarmonic.Crest.Shared.csproj",
+        "projectName": "WaveHarmonic.Crest.Shared",
+        "projectPath": "C:\\hades\\Hecton8\\WaveHarmonic.Crest.Shared.csproj",
+        "packagesPath": "C:\\Users\\danat\\.nuget\\packages\\",
+        "outputPath": "C:\\hades\\Hecton8\\.codexbuild\\core\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\danat\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "netstandard2.1"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "netstandard2.1": {
+            "targetAlias": "netstandard2.1",
+            "projectReferences": {
+              "C:\\hades\\Hecton8\\Unity.RenderPipelines.Universal.Runtime.csproj": {
+                "projectPath": "C:\\hades\\Hecton8\\Unity.RenderPipelines.Universal.Runtime.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.200"
+      },
+      "frameworks": {
+        "netstandard2.1": {
+          "targetAlias": "netstandard2.1",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.202\\RuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\hades\\Hecton8\\WaveHarmonic.Crest.Shared.Editor.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\hades\\Hecton8\\WaveHarmonic.Crest.Shared.Editor.csproj",
+        "projectName": "WaveHarmonic.Crest.Shared.Editor",
+        "projectPath": "C:\\hades\\Hecton8\\WaveHarmonic.Crest.Shared.Editor.csproj",
+        "packagesPath": "C:\\Users\\danat\\.nuget\\packages\\",
+        "outputPath": "C:\\hades\\Hecton8\\.codexbuild\\core\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\danat\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "netstandard2.1"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "netstandard2.1": {
+            "targetAlias": "netstandard2.1",
+            "projectReferences": {
+              "C:\\hades\\Hecton8\\Unity.RenderPipelines.Core.Editor.csproj": {
+                "projectPath": "C:\\hades\\Hecton8\\Unity.RenderPipelines.Core.Editor.csproj"
+              },
+              "C:\\hades\\Hecton8\\Unity.ShaderGraph.Editor.csproj": {
+                "projectPath": "C:\\hades\\Hecton8\\Unity.ShaderGraph.Editor.csproj"
+              },
+              "C:\\hades\\Hecton8\\WaveHarmonic.Crest.Shared.csproj": {
+                "projectPath": "C:\\hades\\Hecton8\\WaveHarmonic.Crest.Shared.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.200"
+      },
+      "frameworks": {
+        "netstandard2.1": {
+          "targetAlias": "netstandard2.1",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.202\\RuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

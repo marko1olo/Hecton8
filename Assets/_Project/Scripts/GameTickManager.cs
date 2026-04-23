@@ -106,6 +106,8 @@ namespace Hecton8.Core
             }
         }
 
+        internal float SlowTickIntervalSeconds => slowTickInterval;
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════

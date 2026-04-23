@@ -1,0 +1,10 @@
+c:\hades\Hecton8\Temp\bin\Debug\ShapesRuntime.deps.json
+c:\hades\Hecton8\Temp\bin\Debug\ShapesRuntime.dll
+c:\hades\Hecton8\Temp\bin\Debug\ShapesRuntime.pdb
+c:\hades\Hecton8\.codexbuild\core\obj\ShapesRuntime.csproj.AssemblyReference.cache
+c:\hades\Hecton8\.codexbuild\core\obj\ShapesRuntime.GeneratedMSBuildEditorConfig.editorconfig
+c:\hades\Hecton8\.codexbuild\core\obj\ShapesRuntime.csproj.CoreCompileInputs.cache
+c:\hades\Hecton8\.codexbuild\core\obj\ShapesRuntime.sourcelink.json
+c:\hades\Hecton8\.codexbuild\core\obj\ShapesRu.36DD35E8.Up2Date
+c:\hades\Hecton8\.codexbuild\core\obj\ShapesRuntime.dll
+c:\hades\Hecton8\.codexbuild\core\obj\ShapesRuntime.pdb

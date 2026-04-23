@@ -45,8 +45,8 @@ Offset  Size  Field
 0x18    4B    PLAYER_OFFSET = uint32 (byte offset from file start)
 0x1C    4B    DELTA_OFFSET  = uint32
 0x20    4B    ENTITY_OFFSET = uint32
-0x24    4B    XXH32_HEADER  = checksum of bytes [0x00..0x23]
-0x28    4B    XXH32_PAYLOAD = checksum of everything after header
+0x24    4B    HASH_HEADER32  = low-32 of `XXHash3.Hash64` over bytes [0x00..0x23]
+0x28    4B    HASH_PAYLOAD32 = low-32 of `XXHash3.Hash64` over everything after header
 0x2C    [N]   PAYLOAD       = LZ4-compressed blocks (see [MATH-02])
 
 Total header: 44 bytes fixed. Never changes size across versions (use COMPAT_MASK for extensions).
@@ -108,49 +108,21 @@ EntityRecord:
 
 ---
 
-## [MATH-01] CHECKSUM — XXHASH32 KERNEL
+## [MATH-01] CHECKSUM — NATIVE SIMD HASHING
 
-Use XXH32. Avoid MD5/CRC32 (slower). Avoid SHA (overkill, CPU-heavy on MX350 target).
+Use Unity's native `XXHash3.Hash64`. Do not hand-roll hashing kernels in C#.
 
-XXH32 Streaming Pseudo-kernel:
+[BurstCompile(CompileSynchronously = true)]
+public static unsafe uint HashPayload(void* ptr, int len)
+{
+    return (uint)Unity.Collections.LowLevel.Unsafe.XXHash3.Hash64(ptr, len);
+}
 
-CONST PRIME1 = 0x9E3779B1
-CONST PRIME2 = 0x85EBCA77
-CONST PRIME3 = 0xC2B2AE3D
-CONST PRIME4 = 0x27D4EB2F
-CONST PRIME5 = 0x165667B1
-
-XXH32(data_ptr, len, seed=0x48454354):
-    acc = seed + PRIME5
-    ptr = data_ptr
-    remaining = len
-
-    WHILE remaining >= 16:
-        FOR lane IN [0..3]:
-            acc_lane[lane] = ROTL32(acc_lane[lane] + READ_LE_U32(ptr) * PRIME2, 13) * PRIME1
-            ptr += 4
-        remaining -= 16
-
-    acc = ROTL32(acc_lane[0],1) + ROTL32(acc_lane[1],7) +
-          ROTL32(acc_lane[2],12)+ ROTL32(acc_lane[3],18)
-    acc += len
-
-    WHILE remaining >= 4:
-        acc = ROTL32(acc + READ_LE_U32(ptr) * PRIME3, 17) * PRIME4
-        ptr += 4; remaining -= 4
-
-    WHILE remaining > 0:
-        acc = ROTL32(acc + READ_U8(ptr) * PRIME5, 11) * PRIME1
-        ptr += 1; remaining -= 1
-
-    // Avalanche
-    acc ^= acc >> 15; acc *= PRIME2
-    acc ^= acc >> 13; acc *= PRIME3
-    acc ^= acc >> 16
-    RETURN acc
-
-Compute separately: `XXH32_HEADER` over bytes [0x00..0x23], `XXH32_PAYLOAD` over raw pre-compression payload.
-Store both in header before LZ4 pass. Verify both on load before decompression.
+Rules:
+  - hash raw header bytes with `HashPayload`
+  - hash raw pre-compression payload with `HashPayload`
+  - store low 32 bits only to preserve fixed 44-byte header layout
+  - verify both hashes before decompression or deserialize
 
 ---
 
@@ -195,8 +167,8 @@ STEP 2 — SERIALIZE TO TEMP BUFFER:
     SerializeEntities(buffer + ENTITY_OFFSET, entity_snapshot)
 
 STEP 3 — CHECKSUM:
-    header_xxh = XXH32(buffer, HEADER_SIZE - 8)  // exclude checksum fields themselves
-    payload_xxh = XXH32(buffer + PAYLOAD_START, payload_raw_len)
+    header_xxh = HashPayload(buffer, HEADER_SIZE - 8)  // exclude checksum fields themselves
+    payload_xxh = HashPayload(buffer + PAYLOAD_START, payload_raw_len)
     WRITE header_xxh → buffer[0x24]
     WRITE payload_xxh → buffer[0x28]
 
@@ -241,11 +213,11 @@ LoadGame(slot):
         header = ReadHeader(path_sav)
         IF header.MAGIC != 0x48454354: FAIL("bad magic")
         IF (header.COMPAT_MASK & SUPPORTED_MASK) != header.COMPAT_MASK: FAIL("compat")
-        verify = XXH32(header_bytes, HEADER_SIZE - 8)
-        IF verify != header.XXH32_HEADER: FAIL("header checksum")
+        verify = HashPayload(header_bytes, HEADER_SIZE - 8)
+        IF verify != header.HASH_HEADER32: FAIL("header checksum")
         payload_raw = LZ4_Decompress(ReadPayload(path_sav))
-        verify2 = XXH32(payload_raw, payload_raw.Length)
-        IF verify2 != header.XXH32_PAYLOAD: FAIL("payload checksum")
+        verify2 = HashPayload(payload_raw, payload_raw.Length)
+        IF verify2 != header.HASH_PAYLOAD32: FAIL("payload checksum")
         RETURN DeserializeDelta(payload_raw)
 
     result = TryLoad(path_sav)
@@ -401,6 +373,6 @@ PlayerState (72 bytes fixed):
   uint8    difficulty_flags
   uint8    narrative_flags[3]   (24 story-branch bits)
   uint32   rng_seed_state       (restore deterministic loot RNG continuity)
-  uint32   XXH32_player         (checksum of preceding 68 bytes)
+  uint32   HASH_player32        (low-32 of `XXHash3.Hash64` over preceding 68 bytes)
 
 ---

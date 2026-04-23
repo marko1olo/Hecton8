@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -23,10 +24,32 @@ namespace Hecton8.Gameplay
         private MonoBehaviour _externalTransportBehaviour;
         private PlayerTransportFeelContract _externalTransportFeelContract;
         private IPlayerTransportLifecycleOwner _externalTransportLifecycleOwner;
+        private PlayerToolManager _subscribedToolManager;
+        private IPlayerTransportLifecycleOwner _publishedLifecycleOwner;
+
+        /// <summary>
+        /// Raised when the resolved runtime transport lifecycle owner changes.
+        /// </summary>
+        public event Action<IPlayerTransportLifecycleOwner> ActiveTransportLifecycleChanged;
 
         private void Awake()
         {
             ResolveReferences();
+            RefreshToolManagerSubscription();
+            PublishActiveTransportLifecycleChanged();
+        }
+
+        private void OnEnable()
+        {
+            ResolveReferences();
+            RefreshToolManagerSubscription();
+            PublishActiveTransportLifecycleChanged();
+        }
+
+        private void OnDisable()
+        {
+            UnsubscribeFromToolManager();
+            _publishedLifecycleOwner = null;
         }
 
         /// <summary>
@@ -50,6 +73,7 @@ namespace Hecton8.Gameplay
             _externalTransportBehaviour = sourceBehaviour;
             sourceBehaviour.TryGetComponent(out _externalTransportFeelContract);
             _externalTransportLifecycleOwner = sourceBehaviour as IPlayerTransportLifecycleOwner;
+            PublishActiveTransportLifecycleChanged();
             return true;
         }
 
@@ -65,6 +89,7 @@ namespace Hecton8.Gameplay
             _externalTransportBehaviour = null;
             _externalTransportFeelContract = null;
             _externalTransportLifecycleOwner = null;
+            PublishActiveTransportLifecycleChanged();
         }
 
         /// <summary>
@@ -254,6 +279,56 @@ namespace Hecton8.Gameplay
         {
             if (playerToolManager == null)
                 gameObject.TryGetComponent(out playerToolManager);
+
+            if (!ReferenceEquals(_subscribedToolManager, playerToolManager))
+                RefreshToolManagerSubscription();
+        }
+
+        private void RefreshToolManagerSubscription()
+        {
+            if (ReferenceEquals(_subscribedToolManager, playerToolManager))
+                return;
+
+            UnsubscribeFromToolManager();
+            if (playerToolManager == null)
+                return;
+
+            playerToolManager.ActiveSlotChanged += HandleToolSlotChanged;
+            playerToolManager.ToolAssignmentsChanged += HandleToolAssignmentsChanged;
+            _subscribedToolManager = playerToolManager;
+        }
+
+        private void UnsubscribeFromToolManager()
+        {
+            if (_subscribedToolManager == null)
+                return;
+
+            _subscribedToolManager.ActiveSlotChanged -= HandleToolSlotChanged;
+            _subscribedToolManager.ToolAssignmentsChanged -= HandleToolAssignmentsChanged;
+            _subscribedToolManager = null;
+        }
+
+        private void HandleToolSlotChanged(int _)
+        {
+            PublishActiveTransportLifecycleChanged();
+        }
+
+        private void HandleToolAssignmentsChanged()
+        {
+            PublishActiveTransportLifecycleChanged();
+        }
+
+        private void PublishActiveTransportLifecycleChanged()
+        {
+            IPlayerTransportLifecycleOwner lifecycleOwner;
+            if (!TryResolveTransportLifecycleOwner(out lifecycleOwner))
+                lifecycleOwner = null;
+
+            if (ReferenceEquals(_publishedLifecycleOwner, lifecycleOwner))
+                return;
+
+            _publishedLifecycleOwner = lifecycleOwner;
+            ActiveTransportLifecycleChanged?.Invoke(lifecycleOwner);
         }
     }
 }

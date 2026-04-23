@@ -61,6 +61,7 @@ namespace Hecton8.Inventory
         /// Индекс = y * columns + x. Не-якорные ячейки = 0.
         /// </summary>
         private int[] _stackCounts;
+        private int[] _scavengeSimStackCounts;
         // ══════════════════════════════════════════════════════════
         //  SAVE HELPERS (pre-allocated, reused)
         // ══════════════════════════════════════════════════════════
@@ -97,6 +98,34 @@ namespace Hecton8.Inventory
         /// </summary>
         public event Action InventoryChanged;
 
+        /// <summary>
+        /// Result of a single SCAVENGE_ATTEMPT against the inventory.
+        /// </summary>
+        public readonly struct ScavengeAttemptResult
+        {
+            /// <summary>Requested quantity from the world pickup.</summary>
+            public readonly int RequestedQuantity;
+
+            /// <summary>Quantity committed into the inventory.</summary>
+            public readonly int AddedQuantity;
+
+            /// <summary>Quantity rejected and left in the world.</summary>
+            public readonly int RejectedQuantity;
+
+            /// <summary>True when at least one unit was inserted.</summary>
+            public bool AnyAdded => AddedQuantity > 0;
+
+            /// <summary>True when the full request was committed.</summary>
+            public bool IsSuccess => AddedQuantity > 0 && RejectedQuantity == 0;
+
+            internal ScavengeAttemptResult(int requestedQuantity, int addedQuantity)
+            {
+                RequestedQuantity = requestedQuantity;
+                AddedQuantity = addedQuantity;
+                RejectedQuantity = requestedQuantity - addedQuantity;
+            }
+        }
+
         // DEPRECATED: use InventoryEvents.OnInventoryFull
         // public event Action<ItemData> InventoryFull;
 
@@ -115,13 +144,16 @@ namespace Hecton8.Inventory
             _instance = this;
 
             _grid = new InventoryGrid(columns, rows);
+            // COLD ALLOC: int[columns * rows] — anchor stack counts — owner: PlayerInventory
             _stackCounts = new int[columns * rows];
+            // COLD ALLOC: int[columns * rows] — atomic pickup stack simulation buffer — owner: PlayerInventory
+            _scavengeSimStackCounts = new int[columns * rows];
+            // COLD ALLOC: ItemPlacement[columns * rows] — inventory placement snapshot buffer — owner: PlayerInventory
             _sortBuffer = new ItemPlacement[columns * rows];
         }
 
         private void OnEnable()
         {
-            InteractionEvents.OnItemCollected += HandleItemCollected;
 
             // ── Регистрация в SaveManager ──
             SaveManager.Instance?.Register(this);
@@ -129,7 +161,6 @@ namespace Hecton8.Inventory
 
         private void OnDisable()
         {
-            InteractionEvents.OnItemCollected -= HandleItemCollected;
 
             // ── Отписка от SaveManager ──
             SaveManager.Instance?.Unregister(this);
@@ -295,8 +326,47 @@ namespace Hecton8.Inventory
         /// </summary>
         public bool TryAddItem(ItemData item, int quantity = 1)
         {
+            if (!CanAcceptQuantity(item, quantity))
+            {
+                if (item != null && quantity > 0)
+                    InventoryEvents.NotifyInventoryFull(item);
+
+                return false;
+            }
+
             int addedQuantity;
             return TryAddItemInternal(item, quantity, out addedQuantity);
+        }
+
+        /// <summary>
+        /// Executes the zero-loss SCAVENGE_ATTEMPT protocol for a world pickup.
+        /// The caller owns the world proxy and decides how rejected quantity is handled.
+        /// </summary>
+        /// <param name="item">Item definition being scavenged.</param>
+        /// <param name="quantity">Requested quantity from the world proxy.</param>
+        /// <param name="interactor">Interactor that initiated the pickup.</param>
+        /// <returns>Committed vs rejected quantity for DROP_OVERFLOW handling.</returns>
+        public ScavengeAttemptResult ScavengeAttempt(ItemData item, int quantity, Transform interactor)
+        {
+            if (item == null || quantity <= 0)
+                return new ScavengeAttemptResult(Mathf.Max(0, quantity), 0);
+
+            if (!CanAcceptQuantity(item, quantity))
+            {
+                InventoryEvents.NotifyInventoryFull(item);
+                return new ScavengeAttemptResult(quantity, 0);
+            }
+
+            int addedQuantity;
+            TryAddItemInternal(item, quantity, out addedQuantity);
+
+            if (addedQuantity > 0)
+            {
+                InteractionEvents.RaiseItemCollected(item, addedQuantity, interactor);
+                HectonEventBus.Publish(new ItemCollectedEvent(item, addedQuantity, interactor));
+            }
+
+            return new ScavengeAttemptResult(quantity, addedQuantity);
         }
 
         private bool TryAddItemInternal(ItemData item, int quantity, out int addedQuantity)
@@ -333,10 +403,13 @@ namespace Hecton8.Inventory
                 }
             }
 
-            if (survival != null)
-                survival.SetWeight(TotalWeight);
+            if (addedQuantity > 0)
+            {
+                if (survival != null)
+                    survival.SetWeight(TotalWeight);
 
-            NotifyInventoryChanged();
+                NotifyInventoryChanged();
+            }
             return allAdded;
         }
 
@@ -606,6 +679,16 @@ namespace Hecton8.Inventory
             if (item == null)
                 return;
 
+            if (!CanAcceptQuantity(item, quantity))
+            {
+                InventoryEvents.NotifyInventoryFull(item);
+                Debug.LogWarning(
+                    $"[PlayerInventory] Ð˜Ð½Ð²ÐµÐ½Ñ‚Ð°Ñ€ÑŒ Ð¿Ð¾Ð»Ð¾Ð½! " +
+                    $"ÐÐµ ÑƒÐ´Ð°Ð»Ð¾ÑÑŒ Ð¿Ð¾Ð»Ð½Ð¾ÑÑ‚ÑŒÑŽ Ñ€Ð°Ð·Ð¼ÐµÑÑ‚Ð¸Ñ‚ÑŒ: {item.itemName} " +
+                    $"({item.width}Ã—{item.height}).");
+                return;
+            }
+
             int addedQuantity;
             bool allAdded = TryAddItemInternal(item, quantity, out addedQuantity);
             if (addedQuantity > 0)
@@ -649,6 +732,118 @@ namespace Hecton8.Inventory
             }
 
             return false;
+        }
+
+        private bool CanAcceptQuantity(ItemData item, int quantity)
+        {
+            if (item == null || quantity <= 0 || _grid == null || _stackCounts == null)
+                return false;
+
+            int cols = _grid.Columns;
+            int rows = _grid.Rows;
+            int stackSlotCount = cols * rows;
+
+            EnsureSaveDrawn(cols, rows);
+            System.Array.Copy(_stackCounts, _scavengeSimStackCounts, stackSlotCount);
+
+            for (int y = 0; y < rows; y++)
+            {
+                for (int x = 0; x < cols; x++)
+                    _saveDrawn[x, y] = _grid.GetCell(x, y) != null;
+            }
+
+            int remaining = quantity;
+            if (item.stackable)
+            {
+                for (int y = 0; y < rows && remaining > 0; y++)
+                {
+                    for (int x = 0; x < cols && remaining > 0; x++)
+                    {
+                        ItemData cell = _grid.GetCell(x, y);
+                        if (!ReferenceEquals(cell, item))
+                            continue;
+
+                        if (x > 0 && ReferenceEquals(_grid.GetCell(x - 1, y), item))
+                            continue;
+
+                        if (y > 0 && ReferenceEquals(_grid.GetCell(x, y - 1), item))
+                            continue;
+
+                        int idx = AnchorIndex(x, y);
+                        int stackCount = Mathf.Max(1, _scavengeSimStackCounts[idx]);
+                        if (stackCount >= item.maxStack)
+                            continue;
+
+                        int stackCapacity = item.maxStack - stackCount;
+                        int transfer = Mathf.Min(stackCapacity, remaining);
+                        _scavengeSimStackCounts[idx] = stackCount + transfer;
+                        remaining -= transfer;
+                    }
+                }
+            }
+
+            while (remaining > 0)
+            {
+                if (!TryReservePlacementInSimulation(item, cols, rows))
+                    return false;
+
+                remaining--;
+            }
+
+            return true;
+        }
+
+        private bool TryReservePlacementInSimulation(ItemData item, int cols, int rows)
+        {
+            int width = item.width;
+            int height = item.height;
+            if (width > cols || height > rows)
+                return false;
+
+            int maxX = cols - width;
+            int maxY = rows - height;
+            for (int y = 0; y <= maxY; y++)
+            {
+                for (int x = 0; x <= maxX; x++)
+                {
+                    if (_saveDrawn[x, y] || !CheckFitInSimulation(x, y, width, height))
+                        continue;
+
+                    MarkOccupiedInSimulation(x, y, width, height);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool CheckFitInSimulation(int startX, int startY, int width, int height)
+        {
+            int endX = startX + width;
+            int endY = startY + height;
+
+            for (int y = startY; y < endY; y++)
+            {
+                for (int x = startX; x < endX; x++)
+                {
+                    if (_saveDrawn[x, y])
+                        return false;
+                }
+            }
+
+            return true;
+        }
+
+        private void MarkOccupiedInSimulation(int startX, int startY, int width, int height)
+        {
+            int endX = startX + width;
+            int endY = startY + height;
+
+            for (int y = startY; y < endY; y++)
+            {
+                for (int x = startX; x < endX; x++)
+                    _saveDrawn[x, y] = true;
+            }
         }
         // ══════════════════════════════════════════════════════════
         //  PRIVATE — SAVE HELPERS

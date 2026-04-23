@@ -109,7 +109,8 @@ public class TetherInstance : MonoBehaviour
     [NonSerialized] public bool isSnapped = false;
 
     // --- Visual ---
-    [NonSerialized] public Vector3[] visualSegmentPositions; // Length = profile.visualSegmentCount + 1
+    [NonSerialized] public NativeArray<float3> visualSegmentPositions; // CPU staging only
+    [NonSerialized] public GraphicsBuffer visualSegmentBuffer;         // GPU render source
 }
 
 ### 2.4 Manager: `TetherManager`
@@ -317,7 +318,7 @@ private void RecalculateBendPoints()
 | System | Representation | Update Rate | Purpose |
 |---|---|---|---|
 | Physics | Direct Rigidbody↔Rigidbody segments through bend points | Every `FixedUpdate` | Force, stress, constraint |
-| Visual | `visualSegmentCount` interpolated points with catenary sag | Every `LateUpdate` | Rendering only |
+| Visual | `visualSegmentCount` interpolated points uploaded to `GraphicsBuffer` | Every `LateUpdate` | Rendering only |
 
 Visual catenary generation (LateUpdate):
 
@@ -326,7 +327,12 @@ Visual catenary generation (LateUpdate):
 // scaled by segmentLength and a sag factor (0.05 * segmentLength).
 // Smoothly Lerp each visual point toward its target each frame (no jitter).
 
-Visual segments have no Colliders, no Rigidbodies. They are `LineRenderer` control points only.
+Visual render law:
+  - segments have no Colliders, no Rigidbodies
+  - Burst job writes catenary points into `visualSegmentPositions`
+  - manager uploads points to `visualSegmentBuffer`
+  - render path uses `Graphics.RenderPrimitives(RenderParams, MeshTopology.LineStrip, ...)`
+  - `LineRenderer` is forbidden on tether visuals
 
 ### 4.4 Budget
 | Active Tethers | Max Bend Points Each | Physics Segments | Max FixedUpdate Raycasts |

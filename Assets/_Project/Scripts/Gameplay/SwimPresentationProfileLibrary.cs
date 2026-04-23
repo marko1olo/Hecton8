@@ -20,6 +20,12 @@ namespace Hecton8.Gameplay
 
             [Tooltip("Presentation profile used when this suit is active.")]
             public SwimPresentationProfile profile;
+
+            public SuitPresentationBinding(SuitData suit, SwimPresentationProfile profile)
+            {
+                this.suit = suit;
+                this.profile = profile;
+            }
         }
 
         [Header("── Explicit Bindings ──────────────────")]

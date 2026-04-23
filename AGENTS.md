@@ -7,7 +7,7 @@ HECTON-8 — AA commercial 3D game (NASA-Punk + Deep Sea Noir).
 Engine: Unity 6000.4 URP. Target: NVIDIA MX350 2GB VRAM, 8GB RAM, i5-1135G7.
 Perf target: 60 FPS / 16.67 ms. Throttle threshold = 25 ms.
 Guardrails: main thread ≤ 12 ms · GC = 0 B/frame · SetPass ≤ 600 · Batches ≤ 1800 · mem ≤ 4096 MB.
-VRAM RED threshold: Texture > 900 MB OR RenderTexture > 500 MB.
+VRAM HARD CEILING: 1800MB (MX350). Texture budget: 900MB. RT+Depth: 320MB. [REQ] Graduation response: used/total > 0.90 triggers Mip-downgrade.
 
 Every system: Complete · Robust · Optimized · Integrated · Documented.
 Tone: brutal, factual, pragmatic. No pleasantries. Criticize bad ideas with reasoning.
@@ -35,7 +35,7 @@ BuildSettings currently aligned — contains 00_BOOTSTRAP, 01_MAIN_MENU, 02_HECT
 
 [REQ] Heavy assets (terrain, ocean, caves) — Addressables async only.
 [FORBID] LoadSceneAsync(activateOnLoad:true) without loading screen — main thread freeze.
-[REQ] After scene unload: Resources.UnloadUnusedAssets() + GC.Collect() once (COLD path only).
+[REQ] After scene unload: Drain Addressables release queue. [FORBID] NEVER invoke Resources.UnloadUnusedAssets(). GC.Collect(0, Optimized) allowed only if frame_time < 14ms.
 [REQ] Addressables groups — split by logical zone. No single bundle for everything.
 [REQ] After scene load: measure Texture Memory + Total Reserved Memory before gameplay starts.
 
@@ -46,8 +46,8 @@ BuildSettings currently aligned — contains 00_BOOTSTRAP, 01_MAIN_MENU, 02_HECT
 Default Standalone quality = Surface (Medium).
 Global RP asset: Assets/_Project/Data/URP_Medium (PC_RPAsset).asset
 Low tier: URP_Low (PC_RPAsset).asset · Renderer: PC_Renderer.
-Medium: HDR · MSAA×2 · scale 1.0 · addLights 2 · shadowDist 200.
-Low:    HDR · MSAA×2 · scale 0.85 · addLights 2 · shadowDist 50.
+Medium: HDR · MSAA=OFF (use FXAA) · scale 1.0
+Low:    HDR · MSAA=OFF (use FXAA) · scale 0.65
 
 ### Folder Structure
 Assets/_Project/  ← ALL first-party
@@ -69,15 +69,15 @@ Hecton8: .Core .Gameplay .Interaction .Items .Inventory .Scavenging .Tools
 .SaveSystem .AI .Atmosphere .Celestial .VFX .Environment .Caves
 NASAPunk.Visor
 
-### Singletons (via ClassName.Instance)
-GameTickManager · ObjectPoolManager · InputManager · SaveManager · WorldStateManager · SpatialAudioManager · HectonAtmosphereManager · PowerGridManager · ConstructionManager · HectonFluidEngine · MapMagicBridge · LocalizationManager
+### GlobalRegistry (Service Locator Pattern)
+[FORBID] Classic Singletons and Awake() self-registration. [REQ] Managers accessed via GlobalRegistry (e.g., GlobalRegistry.Audio). Explicit init via GameBootstrapper.Initialize() only.
 
 ### Key Interfaces
 ITickable     { Tick(float dt) }
 IFixedTickable { FixedTick(float fdt) }
 ISlowTickable { SlowTick() }  // ~0.5 s
 IPoolable   { OnSpawn(); OnDespawn() }
-IInteractable  { OnHoverStart(); OnHoverEnd(); Interact(Transform); GetInteractText() }
+IInteractable  { Interact(InteractionPacket p); CanInteract(uint toolID); QueryState() -> byte }
 ICuttable    { ApplyCutDamage(float damage, Vector3 hitPoint) }
 ISaveable    { SavePriority; LoadPriority; PopulateSaveData(); LoadFromSaveData() }
 IPowerComponent { PowerRating; PowerPriority; HasPower; OnPowerStatusChanged(bool) }
@@ -89,14 +89,12 @@ Overloads: Register/Unregister(ITickable·IFixedTickable·ISlowTickable). Observ
 [REQ] Singleton managers: [DefaultExecutionOrder] < -100. Gameplay: no DefaultExecutionOrder without justification.
 
 ### SpatialAudioManager — API Contract
-Clip-based (not string-event). PlayAtPoint(clip,pos,vol,pitch[,mixer]) — 3D one-shots.
-PlayStatic2D(clip,vol[,mixer]) — helmet/UI. StopAll() available.
-Mixer groups: SfxGroup · InterfaceGroup · AmbientGroup. Pools: 16 world + 8 2D.
+[REQ] Native DSP Synthesis (IAudioOutputJob). All param sync via SPSC Lock-Free queues. [FORBID] Standard AudioSource.PlayOneShot in hot paths. Pools strictly for DSPGraph node instances.
 If task requests MasterAudio event names — confirm first; first-party does not use event strings.
 
 ### SaveManager — API Contract
-Backend: Easy Save 3. Slots: slot_1/slot_2/slot_3. Key prefix = save_.
-Category auto-detected (auto/quick/manual). Files: .sav · .meta · .bak/.bakN · .tmp.
+[FORBID] Easy Save 3, JSON, BinaryFormatter. [REQ] Backend: Native LZ4 Block Compression + SIMD XXHash3. Delta-persistence ONLY (store divergence from world seed). Fixed binary header.
+Slots: slot_0/slot_1/slot_2. Files: .sav · .bak · .tmp.
 Metadata: SlotName/GameVersion/Timestamp/PlayTimeSeconds/SceneName/PlayerPosition/Checksum.
 Migration: SaveDataMigration exists. Autosave: do not assume — verify via code/log only.
 [REQ] Atomic: .tmp→verify→rename .sav. Never write directly to .sav. Create .bak BEFORE overwrite.
@@ -114,13 +112,11 @@ FlashlightEvents : OnToggled, OnBatteryDepleted, OnOverheat
 PDAEvents       : OnOpened, OnClosed, OnTabChanged
 ModuleStatusEvents : OnModuleEnter, OnModuleExit
 ScanEvents      : OnScanTriggered, OnNodeFound, OnEntryDiscovered
-[REQ] All Event Bus calls: main thread only. Job result → NativeArray → read next Tick → invoke. [FORBID] invoke/subscribe from Job/Thread/async.
+[REQ] EventBus is backed by NativeQueue<T>. Publish() is O(1) and SAFE from Burst Jobs. Subscribe() is Awake-only. Main thread flushes queue in LateUpdate. [FORBID] String RPCs / Event names (use uint EventID).
 
 ### Third-Party
-MapMagic (terrain, via MapMagicBridge) · Crest (ocean, URP) · A* Pathfinding (AI)
-GPU Instancer (vegetation) · DOTween (zero-GC anims) · Easy Save 3 (via SaveManager)
-Odin Inspector (editor only) · Master Audio (via SpatialAudioManager)
-Feel/MMFeedbacks (juice) · VLB (VolumetricLightBeamHD)
+MapMagic (terrain, via MapMagicBridge) · Crest (ocean, URP) · Odin Inspector (editor only) · Feel/MMFeedbacks (juice)
+[FORBID] A* Pathfinding, DOTween, Easy Save 3, Master Audio — replaced by custom Native/Burst/DSP subsystems.
 
 ---
 
@@ -134,7 +130,7 @@ Hot paths = Tick / Update / LateUpdate / FixedUpdate / per-frame.
 |---|---|---|
 | Allocation | new class/List/Dict/array | new struct (Vector3/Color/Quaternion) |
 | Collections | LINQ (.Where .Select .Any .FirstOrDefault .ToList) · foreach on Dictionary/IEnumerable | for(int i) · foreach on List<T> or T[] · foreach on Dictionary<K,V> via explicit struct enumerator: var e=dict.GetEnumerator(); while(e.MoveNext()){} (no boxing) |
-| Strings | concat / interpolation / .ToString() / Enum.ToString/Parse | pre-cached strings |
+| Strings | concat / interpolation / .ToString() / Enum.ToString/Parse | pre-cached char
 | Components | GetComponent<T>() uncached · GetComponents<T>() (alloc array) | TryGetComponent · pre-allocated List<T> overload |
 | Scene search | FindObjectOfType · GameObject.Find/FindWithTag | cached refs / Singleton.Instance |
 | Coroutines | StartCoroutine / yield return new | ITickable state machine |
@@ -155,8 +151,8 @@ Hot paths = Tick / Update / LateUpdate / FixedUpdate / per-frame.
 ### 2. TICK SYSTEM
 
 [FORBID] Update/LateUpdate/FixedUpdate in gameplay code.
-[REQ] Use ITickable/IFixedTickable/ISlowTickable via GameTickManager.
-[REQ] Register/Unregister pattern: OnEnable→Register (guard: Instance!=null && !_registered), OnDisable→Unregister (guard: Instance!=null && _registered). Bool _registered prevents double calls.
+[REQ] Use IUpdatable via GlobalRegistry.Updatables / SystemDispatcher.
+[REQ] Register/Unregister pattern: OnEnable→Register, OnDisable→Unregister. Double buffering for jobs: read FrontBuffer, write BackBuffer.
 [EXCEPT] Update allowed: #if UNITY_EDITOR · camera controllers (post-Tick) · third-party timing wrappers · UI menu controllers (prefer ITickable).
 [FORBID] Time.deltaTime/fixedDeltaTime inside ITickable — use dt/fdt parameter only (tick scaling, dilation, testing).
 
@@ -168,8 +164,8 @@ Hot paths = Tick / Update / LateUpdate / FixedUpdate / per-frame.
 
 ### 4. MATERIAL PROPERTY BLOCK
 
-[FORBID] renderer.material (creates leaked copy).
-[REQ] MaterialPropertyBlock + renderer.Get/SetPropertyBlock. Cache Shader.PropertyToID as static readonly int.
+[FORBID] MaterialPropertyBlock on standard geometry (BREAKS SRP BATCHER). 
+[REQ] Use CBUFFER_START(UnityPerMaterial) for per-material data, or GraphicsBuffer for GPU Instanced/BRG geometry. MPB allowed ONLY for legacy ParticleSystems or UI.
 [REQ] Allocate once in Awake as field: private readonly MaterialPropertyBlock _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — per-renderer props — owner: self
 [FORBID] new MaterialPropertyBlock() in Tick or any hot path.
 
@@ -192,30 +188,28 @@ Hot paths = Tick / Update / LateUpdate / FixedUpdate / per-frame.
 
 ### 8. PHYSICS — NONALLOC ONLY
 
-[REQ] Pre-allocate buffer once (COLD ALLOC), use NonAlloc variant every call.
-Same rule: RaycastNonAlloc · OverlapSphereNonAlloc · SphereCastNonAlloc · BoxCastNonAlloc.
+[REQ] Primary query method: RaycastCommand.ScheduleBatch via Unity Jobs. 
+[REQ] Physics.*NonAlloc allowed ONLY for strict synchronous 1-off queries. Always use pre-allocated static buffers (e.g., PhysicsBuffers.OverlapResult).
 
 ### 9. DEBUG LOG HYGIENE
 
 [FORBID] Naked Debug.Log/LogWarning/LogError in hot paths (string alloc in release).
 [REQ] Guard: #if UNITY_EDITOR || DEVELOPMENT_BUILD OR [System.Diagnostics.Conditional("UNITY_EDITOR")].
 [REQ] SlowTick/high-frequency log throttle: static float _nextLogTime; if (Time.time >= _nextLogTime) { _nextLogTime = Time.time + 5f; Debug.Log(...); } — inside #if UNITY_EDITOR || DEVELOPMENT_BUILD guard.
-[FORBID] LogWarning / LogError in ISlowTickable without throttle — SlowTick is called ~2 times/sec, which is 120 log entries/min.
-[REQ] Development Build — check Console for log spam before each milestone.
+[FORBID] Naked Debug.Log/Warning/Error in hot paths. [REQ] High-frequency telemetry MUST write to NativeArray<DebugLogEntry> ring buffer (300 frames). Binary export on crash.[REQ] Development Build — check Console for log spam before each milestone.
 [EXCEPT] One-time critical init errors — allowed without guard.
 
 ### 10. UI PERFORMANCE
 
 [FORBID] SetActive on UI in hot paths (Canvas.Rebuild).
 [REQ] CanvasGroup.alpha 0/1 + blocksRaycasts for show/hide.
-[FORBID] Updating Text/TMP_Text.text every frame if value unchanged.
-[REQ] Dirty-flag: if (_prev != val) { _text.text = val; _prev = val; }
-[REQ] Separate Canvases: static vs dynamic.
+[FORBID] Updating Text/TMP_Text.text (allocates string).
+[REQ] Zero-GC UI: Use Span<char> + TryFormat + TMP_Text.SetCharArray(buf, 0, len). No string creation in HUD paths.
+[REQ] TMP_TextRegistry: Dictionary<int, TMP_Text> keyed by baked hierarchy hashes. [FORBID] String names or hierarchy traversal in UI updates.
 
 ### 11. TRANSFORM ACCESS
 
-[FORBID] Multiple transform.position/rotation reads per Tick.
-[REQ] Cache locally: var pos = transform.position; use SetPositionAndRotation().
+[FORBID] Multiple transform reads. [REQ] All universe math MUST use Absolute Universe Position (AUP = int64x3 grid + float3 local). Transform.position is presentation-only (camera-relative).
 
 ### 12. INIT ORDER SAFETY
 
@@ -228,7 +222,7 @@ Same rule: RaycastNonAlloc · OverlapSphereNonAlloc · SphereCastNonAlloc · Box
 
 [FORBID] Unbounded Texture2D/RT/Sprite/Material/Mesh/byte[]/NativeArray/List/Dict caches without owner, cap, eviction, and dispose path.
 [FORBID] RT/Texture2D/native containers without guaranteed Release/Destroy/Dispose on shutdown/despawn/unload.
-[REQ] NativeArray/NativeList/NativeHashMap in OnDisable/OnDestroy: (1) jobHandle.Complete() → (2) nativeArray.Dispose(). Reversed order = native memory corruption.
+[REQ] NativeArray/NativeList/NativeHashMap in OnDisable/OnDestroy: Deferred disposal ONLY. array.Dispose(activeHandle); array = default;[FORBID] Calling .Complete() on teardown.
 [REQ] NativeArray across frames: Allocator.Persistent + explicit owner with documented lifetime.
 [REQ] Allocator.Temp — single method only (never a field). Allocator.TempJob — single job cycle.
 [REQ] Every cache: owner · max size · eviction strategy · invalidation trigger.
@@ -239,7 +233,7 @@ Same rule: RaycastNonAlloc · OverlapSphereNonAlloc · SphereCastNonAlloc · Box
 [FORBID] Schedule()+Complete() in same Tick/hot path method.
 [EXCEPT] Awake/Start one-time init: allowed with // COLD SYNC JOB + justification.
 [REQ] NativeArrays: Dispose() after Complete(). Burst: no managed refs.
-[FORBID] JobHandle.Complete() in hot path without measured justification.
+[FORBID] JobHandle.Complete() in mid-frame hot paths. ZERO EXCEPTIONS. Only permitted in designated end-of-frame swap windows.
 ### 14. SCRIPTABLEOBJECT RUNTIME MUTATION
 
 [FORBID] Mutating SO fields at runtime (persists in Editor).
@@ -301,7 +295,7 @@ Same rule: RaycastNonAlloc · OverlapSphereNonAlloc · SphereCastNonAlloc · Box
 
 ### 25. SPAWNING
 
-[FORBID] Object.Instantiate() in gameplay code. ALL spawning through ObjectPoolManager.Instance.Spawn().
+[FORBID] Object.Instantiate() in hot paths. [REQ] World items are DATA RECORDS (Struct-of-Arrays) + DUMB PROXY MESHES. Render via BatchRendererGroup / GPU Resident Drawer. Do not spawn full GameObjects for resources.
 [EXCEPT] One-time scene setup with // COLD ALLOC comment · UI elements living entire scene lifetime.
 
 ### 26. ORGANIC ASSET RULES
@@ -318,9 +312,9 @@ Same rule: RaycastNonAlloc · OverlapSphereNonAlloc · SphereCastNonAlloc · Box
 [FORBID] LOD0-only on props visible beyond 20 m. LOD bias > 1.0 without justification.
 
 [REQ] Rigidbody.sleepThreshold: don't lower (default 0.005 sufficient). Static after spawn → isKinematic or Sleep().
-[FORBID] Rigidbody + complex Mesh Collider — Convex or primitives only.
+[FORBID] Rigidbody + complex Mesh Collider. [FORBID] ALL Unity Joints (Hinge, Spring, Configurable). Use custom Verlet/Acceleration constraints ONLY.
 [REQ] Max active non-sleeping Rigidbodies — define budget as a constant.
-[FORBID] AddForce/AddTorque in Tick() — use FixedTick() via IFixedTickable.
+[FORBID] Direct rb.AddForce() in gameplay code. [REQ] Write ForcePacket structs to physics NativeQueue during FixedUpdate gather phase. PhysicsApplySystem handles actual application.
 
 [REQ] ShaderVariantCollection: warm up in bootstrap via WarmupAllShaders() or .WarmUp().
 [FORBID] New shader keyword without adding variant to ShaderVariantCollection.
@@ -336,7 +330,7 @@ Same rule: RaycastNonAlloc · OverlapSphereNonAlloc · SphereCastNonAlloc · Box
 
 [REQ] MapMagic: only via MapMagicBridge.Instance. Direct API [FORBID].
 [REQ] Terrain chunk size — consistent with scatter budget, never changed at runtime.
-[FORBID] Terrain.SampleHeight in hot path — cache or use Physics.Raycast on terrain layer.
+[FORBID] Terrain.SampleHeight, Terrain.GetHeights() (allocates). [REQ] Heightmap access MUST use Texture2D.GetPixelData<ushort>() -> NativeArray alias + bilinear math interpolation (Zero-GC Tile Cache).
 [REQ] Terrain splat layers ≤ 4/chunk (+4 = +1 draw call). Draw Instanced = On. Pixel Error ≥ 5.
 [FORBID] TerrainData.heightmapTexture at runtime without explicit task.
 [REQ] After MapMagic graph change: check scatter budget + Stats draw calls.
@@ -428,7 +422,7 @@ Read full task · Grep existing systems · Identify dependencies · Find referen
 □ Physics.*Cast without NonAlloc?  → NonAlloc + buffer
 □ Camera.main in hot path?         → cache
 □ Debug.Log without #if guard?     → wrap
-□ UI text updated without dirty flag?   → add check
+□ UI text using string assignment?      → change to char[] + SetCharArray
 □ SetActive on UI in Tick?         → CanvasGroup
 □ Multiple transform reads?       → cache to local var
 □ OnGUI anywhere?                 → delete
@@ -524,8 +518,8 @@ Document changes + GC delta + reason → Revert → Different approach → Bundl
 [FORBID] All layers at same far clip without layerCullDistances.
 [REQ] Post Processing: URP Volume system. Global Volume + local overrides.
 [REQ] AA mandatory: Tonemapping (ACES) · Color Grading · Vignette · DoF (Bokeh cutscenes / Gaussian gameplay).
-[REQ] Bloom: Intensity ≤ 0.5 · threshold ≥ 0.9 · iterations ≤ 6. Check Frame Debugger.
-[FORBID] SSAO Medium on MX350 — use Baked AO. Motion Blur optional; Off by default for Low tier.
+[FORBID] Bloom on MX350 (MINIMAL tier).
+[FORBID] URP SSAO feature entirely. [REQ] Use custom half-res SSDO pass on MED+ tiers. Use Baked AO on MX350.
 [FORBID] Chromatic Aberration + Lens Distortion simultaneously without measured frame time.
 [REQ] All PP: verify 60 FPS on Low tier (renderScale 0.85).
 ---
@@ -552,13 +546,13 @@ Response format: What was wrong → What I did → In-game result → What was v
 [FORBID] Change public API without permission — list deps first, confirm.
 [FORBID] Editor tools unless asked. async/await + destroyCancellationToken on pooled objects.
 [FORBID] UnityWebRequest without explicit task. [ExecuteInEditMode]/[ExecuteAlways] without need.
-[FORBID] async void (uncaught exceptions) — use async Task only. Awaitable/Task in hot paths → ITickable state machine.
+[FORBID] async void (uncaught exceptions) and async Task (allocates). [REQ] Use Unity 6 Awaitable for all async ops (zero-alloc). No Awaitable in gameplay hot paths → use ITickable state machine.
 [EXCEPT] async only: bootstrap load · SaveManager internals · Addressables — outside hot path.
 [REQ] Non-pooled MonoBehaviour async: destroyCancellationToken with WithCancellation().
 [FORBID] async on pooled objects — destroyCancellationToken does not fire on Despawn → leak. Use ITickable + handle.IsDone instead.
 [FORBID] DontDestroyOnLoad without instruction.
 [FORBID] Singleton base classes (MonoSingleton<T> etc.).
-[REQ] Singleton pattern — only explicit field: private static T _instance; public static T Instance => _instance; Awake: null-check→Destroy duplicate→assign; OnDestroy: null if self.
+[REQ] GlobalRegistry pattern — explicit Initialize() and OnDisable() unregister. [FORBID] Cross-script wiring in Awake.
 [FORBID] Resources.Load. OnGUI(). Cross-scene Inspector refs.
 [FORBID] Exceptions in gameplay — LogError + disable + continue. Complex Mesh Collider without justification.
 [FORBID] Guessing/inventing. Unclear → ASK.

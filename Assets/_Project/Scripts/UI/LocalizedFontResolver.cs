@@ -21,6 +21,7 @@ namespace Hecton8.UI
         private static TMP_FontAsset _cachedReadableFontCjkSc;
         private static TMP_FontAsset _cachedReadableFontCjkJp;
         private static TMP_FontAsset _cachedReadableFontArabic;
+        private static TMP_FontAsset _cachedBiosFallbackFont;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -29,6 +30,7 @@ namespace Hecton8.UI
             _cachedReadableFontCjkSc = null;
             _cachedReadableFontCjkJp = null;
             _cachedReadableFontArabic = null;
+            _cachedBiosFallbackFont = null;
         }
 
         /// <summary>
@@ -72,6 +74,55 @@ namespace Hecton8.UI
 
             TMP_FontAsset resolvedReadable = ResolveReadableFont(readableFallback);
             return resolvedReadable != null ? resolvedReadable : TMP_Settings.defaultFontAsset;
+        }
+
+        /// <summary>
+        /// Resolve the low-risk BIOS fallback font used when a localized SDF atlas is not ready within two frames.
+        /// </summary>
+        public static TMP_FontAsset ResolveBiosFallbackFont()
+        {
+            if (IsFontReady(_cachedBiosFallbackFont))
+                return _cachedBiosFallbackFont;
+
+            TMP_FontAsset defaultFont = TMP_Settings.defaultFontAsset;
+            if (IsFontReady(defaultFont))
+            {
+                _cachedBiosFallbackFont = defaultFont;
+                return _cachedBiosFallbackFont;
+            }
+
+            if (TMP_Settings.fallbackFontAssets == null)
+                return defaultFont;
+
+            for (int i = 0; i < TMP_Settings.fallbackFontAssets.Count; i++)
+            {
+                TMP_FontAsset candidate = TMP_Settings.fallbackFontAssets[i];
+                if (!IsFontReady(candidate) || IsNumericOnlyFont(candidate))
+                    continue;
+
+                _cachedBiosFallbackFont = candidate;
+                return _cachedBiosFallbackFont;
+            }
+
+            _cachedBiosFallbackFont = defaultFont;
+            return _cachedBiosFallbackFont;
+        }
+
+        /// <summary>
+        /// True when the font asset exposes both a material and an atlas texture ready for staged swap.
+        /// </summary>
+        public static bool IsFontReady(TMP_FontAsset font)
+        {
+            if (font == null || font.material == null)
+                return false;
+
+            if (font.material.GetTexture(ShaderUtilities.ID_MainTex) != null)
+                return true;
+
+            Texture[] atlasTextures = font.atlasTextures;
+            return atlasTextures != null &&
+                   atlasTextures.Length > 0 &&
+                   atlasTextures[0] != null;
         }
 
         /// <summary>

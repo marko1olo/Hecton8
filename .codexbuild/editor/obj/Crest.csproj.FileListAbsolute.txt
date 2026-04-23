@@ -1,0 +1,10 @@
+c:\hades\Hecton8\Temp\bin\Debug\Crest.deps.json
+c:\hades\Hecton8\Temp\bin\Debug\Crest.dll
+c:\hades\Hecton8\Temp\bin\Debug\Crest.pdb
+c:\hades\Hecton8\.codexbuild\editor\obj\Crest.csproj.AssemblyReference.cache
+c:\hades\Hecton8\.codexbuild\editor\obj\Crest.GeneratedMSBuildEditorConfig.editorconfig
+c:\hades\Hecton8\.codexbuild\editor\obj\Crest.csproj.CoreCompileInputs.cache
+c:\hades\Hecton8\.codexbuild\editor\obj\Crest.sourcelink.json
+c:\hades\Hecton8\.codexbuild\editor\obj\Crest.csproj.Up2Date
+c:\hades\Hecton8\.codexbuild\editor\obj\Crest.dll
+c:\hades\Hecton8\.codexbuild\editor\obj\Crest.pdb

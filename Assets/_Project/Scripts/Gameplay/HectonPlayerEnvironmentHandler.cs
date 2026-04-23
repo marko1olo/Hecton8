@@ -1,23 +1,26 @@
 using Unity.Mathematics;
 using UnityEngine;
-using Hecton8.Core;
 
 namespace Hecton8.Gameplay
 {
     /// <summary>
-    /// Environment-side buffer for currents, thermal updrafts, and hull-stress requests.
+    /// Environment-side buffer and execution bridge for currents, updrafts, and hull stress.
     /// </summary>
-    [DefaultExecutionOrder(10)] // Explicit helper registration ordering: owner -> environment -> motor.
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Player/Hecton Player Environment Handler")]
-    public sealed class HectonPlayerEnvironmentHandler : MonoBehaviour, IHectonPlayerEnvironmentHandler, IFixedTickable
+    public sealed class HectonPlayerEnvironmentHandler : MonoBehaviour, IHectonPlayerEnvironmentHandler, IEnvironmentHandler
     {
         private HectonPlayerMovement _owner;
         private IMotorForces _motorForces;
         private Vector3 _bufferedExternalAcceleration;
         private Vector3 _bufferedVelocityChange;
         private float _bufferedHullStress;
-        private bool _registered;
+        private readonly RaycastHit[] _environmentHitBuffer = new RaycastHit[32]; // COLD ALLOC: RaycastHit[32] — reserved environment query buffer for external-force subsystem ownership isolation — owner: HectonPlayerEnvironmentHandler
+
+        /// <summary>
+        /// Dedicated environment query buffer. Environment-owned only.
+        /// </summary>
+        public RaycastHit[] EnvironmentHitBuffer => _environmentHitBuffer;
 
         /// <summary>Binds authoritative owner references.</summary>
         public void Bind(HectonPlayerMovement owner, IMotorForces motorForces)
@@ -30,22 +33,13 @@ namespace Hecton8.Gameplay
         {
             if (_owner == null)
                 TryGetComponent(out _owner);
-        }
-
-        private void OnEnable()
-        {
-            if (_owner == null)
-                TryGetComponent(out _owner);
 
             if (_motorForces == null && TryGetComponent(out HectonPlayerMotor motor))
                 _motorForces = motor;
-
-            TryRegister();
         }
 
         private void OnDisable()
         {
-            TryUnregister();
             ResetRuntimeState();
         }
 
@@ -61,6 +55,34 @@ namespace Hecton8.Gameplay
         public void ResetRuntimeState()
         {
             ResetStepBuffers();
+        }
+
+        /// <summary>
+        /// Executes the authoritative environment pass for the current fixed step.
+        /// </summary>
+        public void ExecuteStep(float fixedDeltaTime)
+        {
+            if (_owner == null || _motorForces == null)
+                return;
+
+            ResetStepBuffers();
+
+            PlayerTransportPreset activeTransportPreset = _owner.ResolveActiveTransportPresetForSubsystems();
+            _owner.ExecuteEnvironmentForcePhase(fixedDeltaTime, activeTransportPreset);
+
+            Vector3 bufferedAcceleration = ConsumeExternalAcceleration();
+            if (bufferedAcceleration.sqrMagnitude > 0.000001f)
+                _motorForces.AddExternalAcceleration(bufferedAcceleration);
+
+            Vector3 bufferedVelocityChange = ConsumeVelocityChange();
+            if (bufferedVelocityChange.sqrMagnitude > 0.000001f)
+                _motorForces.AddExternalVelocityChange(bufferedVelocityChange);
+
+            float bufferedHullStress = ConsumeHullStress();
+            if (bufferedHullStress > 0.0001f)
+                _owner.AccumulateBufferedEnvironmentalHullStress(bufferedHullStress);
+
+            _owner.ExecuteEnvironmentStressPhase(fixedDeltaTime, activeTransportPreset);
         }
 
         /// <inheritdoc />
@@ -119,48 +141,6 @@ namespace Hecton8.Gameplay
             float value = _bufferedHullStress;
             _bufferedHullStress = 0f;
             return value;
-        }
-
-        /// <inheritdoc />
-        public void FixedTick(float fixedDeltaTime)
-        {
-            if (_owner == null || _motorForces == null)
-                return;
-
-            PlayerTransportPreset activeTransportPreset = _owner.ResolveActiveTransportPresetForSubsystems();
-            _owner.ExecuteEnvironmentForcePhase(fixedDeltaTime, activeTransportPreset);
-
-            Vector3 bufferedAcceleration = ConsumeExternalAcceleration();
-            if (bufferedAcceleration.sqrMagnitude > 0.000001f)
-                _motorForces.AddExternalAcceleration(bufferedAcceleration);
-
-            Vector3 bufferedVelocityChange = ConsumeVelocityChange();
-            if (bufferedVelocityChange.sqrMagnitude > 0.000001f)
-                _motorForces.AddExternalVelocityChange(bufferedVelocityChange);
-
-            float bufferedHullStress = ConsumeHullStress();
-            if (bufferedHullStress > 0.0001f)
-                _owner.AccumulateBufferedEnvironmentalHullStress(bufferedHullStress);
-
-            _owner.ExecuteEnvironmentStressPhase(fixedDeltaTime, activeTransportPreset);
-        }
-
-        private void TryRegister()
-        {
-            if (_registered || GameTickManager.Instance == null)
-                return;
-
-            GameTickManager.Instance.Register((IFixedTickable)this);
-            _registered = true;
-        }
-
-        private void TryUnregister()
-        {
-            if (!_registered || GameTickManager.Instance == null)
-                return;
-
-            GameTickManager.Instance.Unregister((IFixedTickable)this);
-            _registered = false;
         }
     }
 }

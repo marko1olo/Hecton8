@@ -1,190 +1,148 @@
 // ============================================================================
 // HECTON-8 — PowerGrid.cs
-// Энергетическая сеть — чистый C# класс (не MonoBehaviour).
-//
-// ОТВЕТСТВЕННОСТИ:
-//   1. Хранение узлов (PowerNode) одной связной сети.
-//   2. Подсчёт энергетического баланса (генерация vs потребление).
-//   3. Приоритетное отключение потребителей при дефиците.
-//   4. Поглощение другой сети при объединении (merge).
-//
-// АЛГОРИТМ БАЛАНСА:
-//   1. Собрать все IPowerComponent из всех PowerNode.
-//   2. Разделить на генераторы (rating > 0) и потребителей (rating < 0).
-//   3. Суммировать генерацию и потребление.
-//   4. Если генерация >= потребление → все включены.
-//   5. Если генерация < потребление → приоритетное отключение:
-//      a. Сортировать потребителей по PowerPriority DESC (высокие первые).
-//      b. Включать потребителей пока хватает мощности.
-//      c. Остальных отключать.
-//
-// ZERO GC:
-//   • HashSet<PowerNode> — pre-allocated, Add/Remove = amortized O(1).
-//   • List<IPowerComponent> — кэшированы, Clear() не аллоцирует.
-//   • Sort с кэшированным static Comparison<T> — zero GC.
-//   • Вызовы OnPowerStatusChanged — direct method call, no boxing.
-//
-// ПОТОКОБЕЗОПАСНОСТЬ: нет. Вызывать только из Main Thread.
+// Energy grid owner. Uses a CSR-backed LogisticsNetworkGraph for alloc-free
+// topology, DSU island detection, and priority brownout distribution.
 // ============================================================================
 
 using System.Collections.Generic;
+using Hecton8.Gameplay;
+using UnityEngine;
 
 namespace Hecton8.Power
 {
     /// <summary>
-    /// Одна связная энергетическая сеть.
-    /// Содержит узлы, подсчитывает баланс, управляет отключением.
-    /// Не MonoBehaviour — чистые данные + логика.
+    /// One connected power grid.
+    /// Owns node membership, native graph scratch, and consumer power state application.
     /// </summary>
     public sealed class PowerGrid
     {
-        // ══════════════════════════════════════════════════════════
-        //  IDENTITY
-        // ══════════════════════════════════════════════════════════
+        private const float MinEdgeResistance = 0.0001f;
+        private const float RuptureDemandFactor = 0.015f;
 
-        /// <summary>Уникальный ID сети (для отладки и логирования).</summary>
+        /// <summary>Unique runtime ID for diagnostics.</summary>
         public readonly int Id;
 
         private static int _nextId;
 
-        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             _nextId = 0;
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  STORAGE — узлы сети
-        // ══════════════════════════════════════════════════════════
-
-        /// <summary>
-        /// Все узлы (PowerNode) в этой сети.
-        /// HashSet: O(1) Add, Remove, Contains. Pre-allocated.
-        /// </summary>
         private readonly HashSet<PowerNode> _nodes;
-
-        // ══════════════════════════════════════════════════════════
-        //  CACHED LISTS — переиспользуются в UpdateBalance
-        // ══════════════════════════════════════════════════════════
-
-        /// <summary>
-        /// Кэш потребителей (PowerRating &lt; 0).
-        /// Заполняется в UpdateBalance, Clear() в начале.
-        /// Clear() не аллоцирует — обнуляет Count, массив остаётся.
-        /// </summary>
-        private readonly List<IPowerComponent> _consumers;
-
-        // ══════════════════════════════════════════════════════════
-        //  BALANCE STATE
-        // ══════════════════════════════════════════════════════════
+        private readonly List<IPowerComponent> _consumerRefs;
+        private readonly List<PowerNode> _topologyNodes;
+        private readonly LogisticsNetworkGraph _logisticsGraph;
 
         private float _totalGeneration;
         private float _totalConsumption;
         private float _balance;
-        private bool  _hasPowerDeficit;
+        private float _supplyRatio = 1f;
+        private bool _hasPowerDeficit;
+        private LogisticsBrownoutTier _brownoutTier;
+        private int _islandCount = 1;
+        private int _cycleCount;
+        private int _graphBuildVersion;
 
-        // ══════════════════════════════════════════════════════════
-        //  PUBLIC ACCESSORS
-        // ══════════════════════════════════════════════════════════
-
-        /// <summary>Количество узлов в сети.</summary>
+        /// <summary>Number of registered nodes in this grid.</summary>
         public int NodeCount => _nodes.Count;
 
-        /// <summary>Суммарная генерация (Вт). Всегда ≥ 0.</summary>
+        /// <summary>Total positive generation across the current graph snapshot.</summary>
         public float TotalGeneration => _totalGeneration;
 
-        /// <summary>Суммарное потребление (Вт, положительное значение). Всегда ≥ 0.</summary>
+        /// <summary>Total requested consumption across the current graph snapshot.</summary>
         public float TotalConsumption => _totalConsumption;
 
-        /// <summary>Баланс (генерация − потребление). Отрицательный = дефицит.</summary>
+        /// <summary>Generation minus requested consumption.</summary>
         public float Balance => _balance;
 
-        /// <summary>true если текущий баланс &lt; 0.</summary>
+        /// <summary>Generation / requested consumption in the last distribution pass.</summary>
+        public float SupplyRatio => _supplyRatio;
+
+        /// <summary>True when requested consumption exceeds generation.</summary>
         public bool HasPowerDeficit => _hasPowerDeficit;
 
-        /// <summary>Read-only доступ к узлам (для BFS в PowerGridManager).</summary>
+        /// <summary>Brownout tier selected by the graph kernel.</summary>
+        public LogisticsBrownoutTier BrownoutTier => _brownoutTier;
+
+        /// <summary>Connected components detected in the most recent topology pass.</summary>
+        public int IslandCount => _islandCount;
+
+        /// <summary>Cycle count detected by DSU during the most recent topology pass.</summary>
+        public int CycleCount => _cycleCount;
+
+        /// <summary>Read-only access for manager-level membership changes.</summary>
         public HashSet<PowerNode> Nodes => _nodes;
 
-        // ══════════════════════════════════════════════════════════
-        //  POWER CONSUMPTION API
-        // ══════════════════════════════════════════════════════════
-
-        /// <summary>
-        /// Потребляет указанное количество энергии из накопленного баланса.
-        /// Используется для разовых операций (крафт, зарядка).
-        /// Уменьшает _totalGeneration на указанное значение.
-        /// </summary>
-        /// <param name="amount">Количество энергии для потребления (Вт·ч).</param>
-        public void ConsumePower(float amount)
-        {
-            if (amount <= 0f) return;
-            _totalGeneration = System.Math.Max(0f, _totalGeneration - amount);
-            _balance = _totalGeneration - _totalConsumption;
-        }
-
-        // ══════════════════════════════════════════════════════════
-        //  CONSTRUCTOR
-        // ══════════════════════════════════════════════════════════
-
-        /// <summary>
-        /// Создаёт новую энергетическую сеть.
-        /// </summary>
-        /// <param name="initialCapacity">Начальная ёмкость HashSet.</param>
         public PowerGrid(int initialCapacity = 16)
         {
+            int safeCapacity = Mathf.Max(1, initialCapacity);
+
             Id = _nextId++;
-            _nodes     = new HashSet<PowerNode>(initialCapacity);
-            _consumers = new List<IPowerComponent>(16);
+            // COLD ALLOC: HashSet<PowerNode>[initialCapacity] — grid membership cache — owner: PowerGrid
+            _nodes = new HashSet<PowerNode>(safeCapacity);
+            // COLD ALLOC: List<IPowerComponent>[initialCapacity] — consumer reference cache — owner: PowerGrid
+            _consumerRefs = new List<IPowerComponent>(safeCapacity);
+            // COLD ALLOC: List<PowerNode>[initialCapacity] — topology node snapshot — owner: PowerGrid
+            _topologyNodes = new List<PowerNode>(safeCapacity);
+            _logisticsGraph = new LogisticsNetworkGraph(safeCapacity, safeCapacity * 4, safeCapacity * 2);
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  NODE MANAGEMENT
-        // ══════════════════════════════════════════════════════════
+        public void Dispose()
+        {
+            _logisticsGraph.Dispose();
+        }
 
         /// <summary>
-        /// Добавляет узел в сеть. Устанавливает обратную ссылку.
-        /// Дубликаты игнорируются (HashSet).
+        /// Consumes buffered generation for one-shot systems. Next UpdateBalance rebuild overrides this cache.
         /// </summary>
+        public void ConsumePower(float amount)
+        {
+            if (amount <= 0f)
+                return;
+
+            _totalGeneration = Mathf.Max(0f, _totalGeneration - amount);
+            _balance = _totalGeneration - _totalConsumption;
+            _supplyRatio = _totalConsumption > 0.0001f ? Mathf.Clamp01(_totalGeneration / _totalConsumption) : 1f;
+            _hasPowerDeficit = _totalGeneration + 0.0001f < _totalConsumption;
+            _brownoutTier = ResolveBrownoutTier(_supplyRatio);
+        }
+
+        /// <summary>Adds a node to this grid and updates its owner reference.</summary>
         public void AddNode(PowerNode node)
         {
-            if (node == null) return;
+            if (node == null)
+                return;
+
             if (!_nodes.Add(node) && ReferenceEquals(node.Grid, this))
                 return;
 
             node.SetGrid(this);
         }
 
-        /// <summary>
-        /// Удаляет узел из сети. Сбрасывает обратную ссылку.
-        /// Безопасно при отсутствии узла (no-op).
-        /// </summary>
+        /// <summary>Removes a node from this grid and clears the owner reference.</summary>
         public void RemoveNode(PowerNode node)
         {
-            if (node == null) return;
-            _nodes.Remove(node);
+            if (node == null)
+                return;
 
+            _nodes.Remove(node);
             if (ReferenceEquals(node.Grid, this))
                 node.SetGrid(null);
         }
 
-        /// <summary>
-        /// Поглощает все узлы из другой сети.
-        /// Вызывается при объединении сетей (MergeGrids).
-        /// Другая сеть остаётся пустой после вызова.
-        /// </summary>
+        /// <summary>Absorbs all nodes from another grid.</summary>
         public void AbsorbAll(PowerGrid other)
         {
-            if (other == null) return;
-            if (ReferenceEquals(other, this)) return;
-            if (other._nodes == null || other._nodes.Count == 0)
-            {
-                other._nodes?.Clear();
+            if (other == null || ReferenceEquals(other, this))
                 return;
-            }
 
             foreach (PowerNode node in other._nodes)
             {
-                if (node == null) continue;
+                if (node == null)
+                    continue;
+
                 _nodes.Add(node);
                 node.SetGrid(this);
             }
@@ -192,165 +150,376 @@ namespace Hecton8.Power
             other._nodes.Clear();
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  BALANCE CALCULATION
-        // ══════════════════════════════════════════════════════════
-
         /// <summary>
-        /// Пересчитывает энергетический баланс всей сети.
-        ///
-        /// Алгоритм:
-        ///   1. Итерируем все узлы → все IPowerComponent.
-        ///   2. Суммируем генерацию (rating > 0) и потребление (rating &lt; 0).
-        ///   3. Если баланс ≥ 0 → включаем всех потребителей.
-        ///   4. Если баланс &lt; 0 → приоритетное отключение.
-        ///
-        /// Вызывается PowerGridManager.SlowTick() раз в ~0.5-1с.
-        ///
-        /// ZERO GC:
-        ///   • _consumers.Clear() — zero alloc.
-        ///   • Sort с кэшированным Comparison — zero alloc.
-        ///   • for-цикл по List — zero alloc.
-        ///   • HashSet foreach — struct enumerator, zero alloc.
+        /// Rebuilds the logistics graph snapshot and applies greedy distribution results to all consumers.
         /// </summary>
         public void UpdateBalance()
         {
-            _consumers.Clear();
-            _totalGeneration  = 0f;
-            _totalConsumption = 0f;
+            BuildGraphSnapshot();
 
-            // ════════════════════════════════════════════════════
-            //  1. СБОР КОМПОНЕНТОВ ИЗ ВСЕХ УЗЛОВ
-            // ════════════════════════════════════════════════════
+            if (_topologyNodes.Count <= 0)
+            {
+                _totalGeneration = 0f;
+                _totalConsumption = 0f;
+                _balance = 0f;
+                _supplyRatio = 1f;
+                _hasPowerDeficit = false;
+                _brownoutTier = LogisticsBrownoutTier.None;
+                _islandCount = 0;
+                _cycleCount = 0;
+                return;
+            }
+
+            LogisticsNetworkGraph.TopologySummary topology = _logisticsGraph.AnalyzeTopology();
+            LogisticsNetworkGraph.DistributionSummary distribution = _logisticsGraph.Distribute();
+
+            _totalGeneration = distribution.TotalGeneration;
+            _totalConsumption = distribution.TotalConsumption;
+            _balance = distribution.Balance;
+            _supplyRatio = distribution.SupplyRatio;
+            _hasPowerDeficit = distribution.HasDeficit;
+            _brownoutTier = distribution.BrownoutTier;
+            _islandCount = topology.IslandCount;
+            _cycleCount = topology.CycleCount;
+
+            ApplyConsumerStates();
+        }
+
+        /// <summary>Rebuilds the topology-only snapshot and returns current connectivity analysis.</summary>
+        internal LogisticsNetworkGraph.TopologySummary AnalyzeTopology()
+        {
+            BuildGraphSnapshot();
+            LogisticsNetworkGraph.TopologySummary topology = _logisticsGraph.AnalyzeTopology();
+            _islandCount = topology.IslandCount;
+            _cycleCount = topology.CycleCount;
+            return topology;
+        }
+
+        internal List<PowerNode> TopologyNodes => _topologyNodes;
+
+        internal int GetNodeComponentId(int nodeIndex)
+        {
+            return _logisticsGraph.GetNodeComponentId(nodeIndex);
+        }
+
+        internal int GetComponentSize(int componentIndex)
+        {
+            return _logisticsGraph.GetComponentSize(componentIndex);
+        }
+
+        private void BuildGraphSnapshot()
+        {
+            _consumerRefs.Clear();
+            _topologyNodes.Clear();
+
+            int rawNodeCount = _nodes.Count;
+            if (rawNodeCount <= 0)
+            {
+                _logisticsGraph.BeginBuild(LogisticsNetworkType.PowerDc, 1, 1, 1);
+                _logisticsGraph.FinalizeBuild();
+                return;
+            }
+
+            _graphBuildVersion++;
+            if (_graphBuildVersion == int.MaxValue)
+                _graphBuildVersion = 1;
 
             foreach (PowerNode node in _nodes)
             {
-                if (node == null) continue;
+                if (node == null)
+                    continue;
 
-                List<IPowerComponent> comps = node.Components;
-                if (comps == null) continue;
+                node.GraphScratchVersion = _graphBuildVersion;
+                node.GraphScratchIndex = _topologyNodes.Count;
+                _topologyNodes.Add(node);
+            }
 
-                int compCount = comps.Count;
+            int nodeCount = _topologyNodes.Count;
+            if (nodeCount <= 0)
+            {
+                _logisticsGraph.BeginBuild(LogisticsNetworkType.PowerDc, 1, 1, 1);
+                _logisticsGraph.FinalizeBuild();
+                return;
+            }
 
-                for (int i = 0; i < compCount; i++)
+            int edgeCount = 0;
+            int consumerCount = 0;
+
+            for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
+            {
+                PowerNode node = _topologyNodes[nodeIndex];
+
+                List<PowerNode> neighbors = node.Neighbors;
+                if (neighbors != null)
                 {
-                    IPowerComponent comp = comps[i];
-                    if (comp == null) continue;
-
-                    float rating = comp.PowerRating;
-
-                    if (rating > 0f)
+                    int neighborCount = neighbors.Count;
+                    for (int neighborIndex = 0; neighborIndex < neighborCount; neighborIndex++)
                     {
-                        // Генератор
-                        _totalGeneration += rating;
+                        PowerNode neighbor = neighbors[neighborIndex];
+                        if (neighbor == null ||
+                            !ReferenceEquals(neighbor.Grid, this) ||
+                            neighbor.GraphScratchVersion != _graphBuildVersion)
+                        {
+                            continue;
+                        }
+
+                        edgeCount++;
                     }
-                    else if (rating < 0f)
+                }
+
+                List<IPowerComponent> components = node.Components;
+                if (components == null)
+                {
+                    if (node.IsRuptured)
+                        consumerCount++;
+                    continue;
+                }
+
+                int componentCount = components.Count;
+                for (int componentIndex = 0; componentIndex < componentCount; componentIndex++)
+                {
+                    IPowerComponent component = components[componentIndex];
+                    if (component == null || component.PowerRating >= 0f)
+                        continue;
+
+                    consumerCount++;
+                }
+
+                if (node.IsRuptured)
+                    consumerCount++;
+            }
+
+            _logisticsGraph.BeginBuild(LogisticsNetworkType.PowerDc, nodeCount, edgeCount, consumerCount);
+
+            for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
+            {
+                PowerNode node = _topologyNodes[nodeIndex];
+                _logisticsGraph.AddNode(
+                    (uint)nodeIndex,
+                    ResolveNodeCapacity(node),
+                    1f,
+                    ResolveNodePriorityTier(node),
+                    ResolveNodeFlags(node));
+            }
+
+            for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
+            {
+                PowerNode node = _topologyNodes[nodeIndex];
+
+                List<IPowerComponent> components = node.Components;
+                if (components != null)
+                {
+                    int componentCount = components.Count;
+                    for (int componentIndex = 0; componentIndex < componentCount; componentIndex++)
                     {
-                        // Потребитель
-                        _totalConsumption += -rating; // Сохраняем как положительное
-                        _consumers.Add(comp);
+                        IPowerComponent component = components[componentIndex];
+                        if (component == null)
+                            continue;
+
+                        float rating = component.PowerRating;
+                        if (rating > 0f)
+                        {
+                            _logisticsGraph.AddProducer(nodeIndex, rating);
+                            continue;
+                        }
+
+                        if (rating >= 0f)
+                            continue;
+
+                        _consumerRefs.Add(component);
+                        _logisticsGraph.AddConsumer(
+                            nodeIndex,
+                            -rating,
+                            component.PowerPriority,
+                            ResolveConsumerPriorityTier(component),
+                            ResolveConsumerFlags(component));
                     }
-                    // rating == 0: пассивный — игнорируем
                 }
-            }
 
-            _balance = _totalGeneration - _totalConsumption;
-
-            // ════════════════════════════════════════════════════
-            //  2. РАСПРЕДЕЛЕНИЕ ЭНЕРГИИ
-            // ════════════════════════════════════════════════════
-
-            if (_balance >= 0f)
-            {
-                // Энергии хватает — включить всех
-                _hasPowerDeficit = false;
-                PowerOnAll();
-            }
-            else
-            {
-                // Дефицит — приоритетное отключение
-                _hasPowerDeficit = true;
-                PerformPriorityShutdown();
-            }
-        }
-
-        // ══════════════════════════════════════════════════════════
-        //  PRIVATE — POWER ON ALL
-        // ══════════════════════════════════════════════════════════
-
-        /// <summary>
-        /// Включает питание всем потребителям.
-        /// OnPowerStatusChanged вызывается ТОЛЬКО если статус изменился.
-        /// </summary>
-        private void PowerOnAll()
-        {
-            int count = _consumers.Count;
-            for (int i = 0; i < count; i++)
-            {
-                IPowerComponent consumer = _consumers[i];
-                if (!consumer.HasPower)
-                    consumer.OnPowerStatusChanged(true);
-            }
-        }
-
-        // ══════════════════════════════════════════════════════════
-        //  PRIVATE — PRIORITY SHUTDOWN
-        // ══════════════════════════════════════════════════════════
-
-        /// <summary>
-        /// Приоритетное отключение потребителей при дефиците.
-        ///
-        /// Алгоритм:
-        ///   1. Сортировать потребителей по PowerPriority DESC.
-        ///      Высокий приоритет (100 = роскошь) → отключить ПЕРВЫМ.
-        ///      Низкий приоритет (0 = критический) → отключить ПОСЛЕДНИМ.
-        ///   2. Пройти по списку, распределяя мощность.
-        ///   3. Потребителей, на которых хватает мощности → включить.
-        ///   4. Остальных → отключить.
-        ///
-        /// Сортировка: in-place List.Sort с кэшированным Comparison.
-        /// Zero GC (delegate не аллоцируется повторно).
-        /// </summary>
-        private void PerformPriorityShutdown()
-        {
-            // ── Сортировка: роскошь (100) первыми, критические (0) последними ──
-            _consumers.Sort(PriorityCompareDescending);
-
-            float remainingPower = _totalGeneration;
-
-            int count = _consumers.Count;
-
-            for (int i = count - 1; i >= 0; i--)
-            {
-                // Обходим от КОНЦА (низкий приоритет = критический = включаем первым)
-                IPowerComponent consumer = _consumers[i];
-                float demand = -consumer.PowerRating; // Положительное значение
-
-                if (remainingPower >= demand)
+                if (node.IsRuptured)
                 {
-                    // Мощности хватает — включаем
-                    remainingPower -= demand;
+                    float ruptureDemand = ResolveRuptureDemand(node);
+                    if (ruptureDemand > 0f)
+                    {
+                        _consumerRefs.Add(null);
+                        _logisticsGraph.AddConsumer(
+                            nodeIndex,
+                            ruptureDemand,
+                            0,
+                            0,
+                            LogisticsConsumerFlags.Essential);
+                    }
+                }
 
-                    if (!consumer.HasPower)
-                        consumer.OnPowerStatusChanged(true);
-                }
-                else
+                List<PowerNode> neighbors = node.Neighbors;
+                if (neighbors == null)
+                    continue;
+
+                int neighborCount = neighbors.Count;
+                for (int neighborIndex = 0; neighborIndex < neighborCount; neighborIndex++)
                 {
-                    // Не хватает — отключаем
-                    if (consumer.HasPower)
-                        consumer.OnPowerStatusChanged(false);
+                    PowerNode neighbor = neighbors[neighborIndex];
+                    if (neighbor == null ||
+                        !ReferenceEquals(neighbor.Grid, this) ||
+                        neighbor.GraphScratchVersion != _graphBuildVersion)
+                    {
+                        continue;
+                    }
+
+                    _logisticsGraph.AddEdge(nodeIndex, neighbor.GraphScratchIndex, ResolveEdgeResistance(node, neighbor));
                 }
+            }
+
+            _logisticsGraph.FinalizeBuild();
+        }
+
+        private void ApplyConsumerStates()
+        {
+            bool ambientLightsBrownedOut = _brownoutTier != LogisticsBrownoutTier.None;
+            int consumerCount = _consumerRefs.Count;
+            for (int consumerIndex = 0; consumerIndex < consumerCount; consumerIndex++)
+            {
+                IPowerComponent consumer = _consumerRefs[consumerIndex];
+                if (consumer == null)
+                    continue;
+
+                if (consumer is BaseModule baseModule)
+                    baseModule.SetAmbientLightsBrownout(ambientLightsBrownedOut);
+
+                bool shouldHavePower = _logisticsGraph.IsConsumerPowered(consumerIndex);
+                if (consumer.HasPower != shouldHavePower)
+                    consumer.OnPowerStatusChanged(shouldHavePower);
             }
         }
 
-        /// <summary>
-        /// Кэшированный компаратор для сортировки потребителей.
-        /// Сортировка по убыванию приоритета:
-        ///   100 (роскошь) → 50 (обычный) → 0 (критический).
-        ///
-        /// Static readonly delegate — одна аллокация при загрузке класса.
-        /// </summary>
-        private static readonly System.Comparison<IPowerComponent> PriorityCompareDescending =
-            (a, b) => b.PowerPriority.CompareTo(a.PowerPriority);
+        private static float ResolveNodeCapacity(PowerNode node)
+        {
+            List<IPowerComponent> components = node.Components;
+            if (components == null)
+                return 1f;
+
+            float totalCapacity = 0f;
+            int componentCount = components.Count;
+            for (int componentIndex = 0; componentIndex < componentCount; componentIndex++)
+            {
+                IPowerComponent component = components[componentIndex];
+                if (component == null)
+                    continue;
+
+                totalCapacity += Mathf.Abs(component.PowerRating);
+            }
+
+            return Mathf.Max(1f, totalCapacity);
+        }
+
+        private static LogisticsNodeFlags ResolveNodeFlags(PowerNode node)
+        {
+            LogisticsNodeFlags flags = LogisticsNodeFlags.Active | LogisticsNodeFlags.Dirty;
+            if (node.IsRuptured)
+                flags |= LogisticsNodeFlags.Ruptured;
+
+            List<IPowerComponent> components = node.Components;
+            if (components == null)
+                return flags;
+
+            int componentCount = components.Count;
+            for (int componentIndex = 0; componentIndex < componentCount; componentIndex++)
+            {
+                IPowerComponent component = components[componentIndex];
+                if (component == null)
+                    continue;
+
+                LogisticsConsumerFlags consumerFlags = ResolveConsumerFlags(component);
+                if ((consumerFlags & LogisticsConsumerFlags.EmergencyReserved) != 0)
+                {
+                    flags |= LogisticsNodeFlags.EmergencyReserved;
+                    break;
+                }
+            }
+
+            return flags;
+        }
+
+        private static byte ResolveNodePriorityTier(PowerNode node)
+        {
+            byte bestTier = 3;
+
+            List<IPowerComponent> components = node.Components;
+            if (components == null)
+                return bestTier;
+
+            int componentCount = components.Count;
+            for (int componentIndex = 0; componentIndex < componentCount; componentIndex++)
+            {
+                IPowerComponent component = components[componentIndex];
+                if (component == null)
+                    continue;
+
+                byte tier = ResolveConsumerPriorityTier(component);
+                if (tier < bestTier)
+                    bestTier = tier;
+            }
+
+            return bestTier;
+        }
+
+        private static byte ResolveConsumerPriorityTier(IPowerComponent consumer)
+        {
+            if (consumer is BaseModule)
+                return 0;
+
+            int priority = Mathf.Clamp(consumer.PowerPriority, 0, 100);
+            if (priority <= 25)
+                return 1;
+
+            if (priority <= 60)
+                return 2;
+
+            return 3;
+        }
+
+        private static LogisticsConsumerFlags ResolveConsumerFlags(IPowerComponent consumer)
+        {
+            LogisticsConsumerFlags flags = LogisticsConsumerFlags.None;
+
+            if (consumer is BaseModule)
+            {
+                flags |= LogisticsConsumerFlags.LifeSupport;
+                flags |= LogisticsConsumerFlags.AmbientLighting;
+                flags |= LogisticsConsumerFlags.Essential;
+                flags |= LogisticsConsumerFlags.EmergencyReserved;
+                return flags;
+            }
+
+            if (consumer.PowerPriority <= 25)
+                flags |= LogisticsConsumerFlags.Essential;
+
+            return flags;
+        }
+
+        private static float ResolveEdgeResistance(PowerNode sourceNode, PowerNode destinationNode)
+        {
+            Vector3 delta = destinationNode.transform.position - sourceNode.transform.position;
+            return Mathf.Max(MinEdgeResistance, delta.magnitude);
+        }
+
+        private static float ResolveRuptureDemand(PowerNode node)
+        {
+            return Mathf.Max(0.25f, ResolveNodeCapacity(node) * RuptureDemandFactor);
+        }
+
+        private static LogisticsBrownoutTier ResolveBrownoutTier(float supplyRatio)
+        {
+            if (supplyRatio < 0.10f)
+                return LogisticsBrownoutTier.EmergencyOnly;
+
+            if (supplyRatio < 0.40f)
+                return LogisticsBrownoutTier.EssentialOnly;
+
+            if (supplyRatio < 0.85f)
+                return LogisticsBrownoutTier.AmbientLightsOnly;
+
+            return LogisticsBrownoutTier.None;
+        }
     }
 }

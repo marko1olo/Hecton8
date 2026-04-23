@@ -26,6 +26,7 @@ using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton.Localization;
+using Hecton8.Physics;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -403,7 +404,7 @@ namespace Hecton8.Gameplay
                 // Apply upward force if has Rigidbody
                 if (loot.TryGetComponent(out Rigidbody rb))
                 {
-                    rb.AddForce(Vector3.up * lootUpwardForce, ForceMode.Impulse);
+                    PhysicsForceRouter.QueueForce(rb, Vector3.up * lootUpwardForce, ForceMode.Impulse);
                 }
             }
         }

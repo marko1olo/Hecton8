@@ -35,8 +35,8 @@ MonoBehaviour:
   throttleRiseSharpness: 2.2
   throttleFallSharpness: 1.7
   throttleOutputExponent: 1.34
-  oxygenConsumptionScale: 0
-  pressureDamageScale: 0
+  oxygenConsumptionScale: 0.1
+  pressureDamageScale: 0.25
   thermalExposureScale: 0.18
   radiationExposureScale: 0.22
   orientationMode: 1

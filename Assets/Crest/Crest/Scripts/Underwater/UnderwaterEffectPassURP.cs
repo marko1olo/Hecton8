@@ -17,6 +17,16 @@ namespace Crest
         const string PassName = "Underwater Effect";
         const string SHADER_UNDERWATER_EFFECT = "Hidden/Crest/Underwater/Underwater Effect URP";
         static readonly int sp_TemporaryColor = Shader.PropertyToID("_TemporaryColor");
+        static readonly int sp_ApplyAcesDither = Shader.PropertyToID("_HectonUnderwaterApplyAcesDither");
+        static readonly int sp_DitherStrength = Shader.PropertyToID("_HectonUnderwaterDitherStrength");
+        static readonly int sp_FrameIndex = Shader.PropertyToID("_HectonUnderwaterFrameIndex");
+        static readonly int sp_HasBlueNoise = Shader.PropertyToID("_HectonUnderwaterHasBlueNoiseTex");
+        static readonly int sp_BlueNoiseTex = Shader.PropertyToID("_BlueNoiseTex");
+        static readonly int sp_NoirPower = Shader.PropertyToID("_HectonUnderwaterNoirPower");
+        static readonly int sp_NoirResolveSettings = Shader.PropertyToID("_HectonNoirResolveSettings");
+
+        const float DefaultNoirPower = 2.35f;
+        const float DefaultWorldDitherStrength = 0.75f;
 
         readonly PropertyWrapperMaterial _underwaterEffectMaterial;
         RenderTargetIdentifier _colorTarget;
@@ -40,6 +50,33 @@ namespace Crest
             ConfigureInput(ScriptableRenderPassInput.Color | ScriptableRenderPassInput.Depth);
             _underwaterEffectMaterial = new PropertyWrapperMaterial(SHADER_UNDERWATER_EFFECT);
             _underwaterEffectMaterial.material.hideFlags = HideFlags.HideAndDontSave;
+        }
+
+        internal static Texture ResolveHectonBlueNoiseTexture()
+        {
+            Texture blueNoiseTexture = Shader.GetGlobalTexture(sp_BlueNoiseTex);
+            if (blueNoiseTexture != null)
+                return blueNoiseTexture;
+
+            UniversalRenderPipelineRuntimeTextures runtimeTextures = GraphicsSettings.GetRenderPipelineSettings<UniversalRenderPipelineRuntimeTextures>();
+            if (runtimeTextures == null || runtimeTextures.blueNoise64LTex == null)
+                return null;
+
+            blueNoiseTexture = runtimeTextures.blueNoise64LTex;
+            Shader.SetGlobalTexture(sp_BlueNoiseTex, blueNoiseTexture);
+            return blueNoiseTexture;
+        }
+
+        internal static float ResolveHectonNoirPower()
+        {
+            Vector4 resolveSettings = Shader.GetGlobalVector(sp_NoirResolveSettings);
+            return resolveSettings.x > 0.0001f ? resolveSettings.x : DefaultNoirPower;
+        }
+
+        internal static float ResolveHectonDitherStrength()
+        {
+            Vector4 resolveSettings = Shader.GetGlobalVector(sp_NoirResolveSettings);
+            return resolveSettings.y > 0.0001f ? resolveSettings.y : DefaultWorldDitherStrength;
         }
 
         internal void CleanUp()
@@ -184,6 +221,20 @@ namespace Crest
                 ref _underwaterRenderer._currentOceanMaterial,
                 _underwaterRenderer.EnableShaderAPI
             );
+
+            // ACES + dither now belong to the dedicated final resolve pass so the active underwater effect only
+            // applies noir fog / caustics here and never tonemaps mid-pipeline.
+            Texture blueNoiseTexture = ResolveHectonBlueNoiseTexture();
+            Material underwaterMaterial = _underwaterEffectMaterial.material;
+            underwaterMaterial.SetFloat(sp_ApplyAcesDither, 0f);
+            underwaterMaterial.SetFloat(sp_DitherStrength, ResolveHectonDitherStrength());
+            underwaterMaterial.SetFloat(sp_FrameIndex, Time.frameCount);
+            underwaterMaterial.SetFloat(sp_HasBlueNoise, blueNoiseTexture != null ? 1f : 0f);
+            underwaterMaterial.SetFloat(sp_NoirPower, ResolveHectonNoirPower());
+            if (blueNoiseTexture != null)
+            {
+                underwaterMaterial.SetTexture(sp_BlueNoiseTex, blueNoiseTexture);
+            }
 
             // Create a separate stencil buffer context by copying the depth texture.
             if (_underwaterRenderer.UseStencilBufferOnEffect)

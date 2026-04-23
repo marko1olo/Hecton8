@@ -90,6 +90,12 @@ namespace Hecton8.Core
 
             [Tooltip("Количество предсозданных экземпляров")]
             public int count;
+
+            public WarmupEntry(GameObject prefab, int count)
+            {
+                this.prefab = prefab;
+                this.count = count;
+            }
         }
 
         // ══════════════════════════════════════════════════════════

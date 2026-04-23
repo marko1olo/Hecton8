@@ -417,6 +417,8 @@ namespace Hecton8.AI.GPU
         /// </summary>
         public void Tick(float deltaTime)
         {
+            using (ProfilerRegistry.AiTick.Auto())
+            {
             if (!_initialized) return;
 
             // ══════════════════════════════════════════════════════
@@ -468,6 +470,7 @@ namespace Hecton8.AI.GPU
             if (isVisible)
             {
                 RenderBoids();
+            }
             }
         }
 

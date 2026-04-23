@@ -1,76 +1,12 @@
-using System.Collections.Generic;
+using Hecton.Localization;
 using TMPro;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Hecton8.UI
 {
-    /// <summary>
-    /// Static zero-alloc registry for runtime TMP text nodes.
-    /// </summary>
-    public static class TMP_TextRegistry
-    {
-        // COLD ALLOC: List[512] — registered runtime TMP text nodes for staged font swapping — owner: TMP_TextRegistry
-        private static readonly List<HectonTextNode> s_nodes = new List<HectonTextNode>(512);
-
-        /// <summary>Current registered TMP node count.</summary>
-        public static int Count => s_nodes.Count;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            s_nodes.Clear();
-        }
-
-        /// <summary>Returns the node at the provided registry index.</summary>
-        public static HectonTextNode GetNodeAt(int index)
-        {
-            return index >= 0 && index < s_nodes.Count ? s_nodes[index] : null;
-        }
-
-        /// <summary>
-        /// Ensures the provided TMP text has a registry node attached.
-        /// </summary>
-        public static void EnsureRegistered(TMP_Text text)
-        {
-            if (text == null)
-                return;
-
-            if (!text.TryGetComponent(out HectonTextNode _))
-                text.gameObject.AddComponent<HectonTextNode>(); // COLD ALLOC: HectonTextNode[1] — TMP registry node for staged font swapping — owner: TMP_TextRegistry
-        }
-
-        internal static void Register(HectonTextNode node)
-        {
-            if (node == null || node.RegistryIndex >= 0)
-                return;
-
-            node.RegistryIndex = s_nodes.Count;
-            s_nodes.Add(node);
-        }
-
-        internal static void Unregister(HectonTextNode node)
-        {
-            if (node == null)
-                return;
-
-            int index = node.RegistryIndex;
-            if (index < 0 || index >= s_nodes.Count)
-            {
-                node.RegistryIndex = -1;
-                return;
-            }
-
-            int lastIndex = s_nodes.Count - 1;
-            HectonTextNode tail = s_nodes[lastIndex];
-            s_nodes[index] = tail;
-            if (tail != null)
-                tail.RegistryIndex = index;
-
-            s_nodes.RemoveAt(lastIndex);
-            node.RegistryIndex = -1;
-        }
-    }
-
     /// <summary>
     /// Registry node attached to UI TMP text components so font streaming can avoid global scene scans.
     /// </summary>
@@ -78,24 +14,133 @@ namespace Hecton8.UI
     [RequireComponent(typeof(TMP_Text))]
     public sealed class HectonTextNode : MonoBehaviour
     {
+        [Header("── Localization Registry ──────────────────")]
+        [Tooltip("Deterministic hierarchy hash baked in the editor. Runtime-created texts fall back to an instance hash.")]
+        [SerializeField, HideInInspector] private int _bakedHierarchyHash;
+
+        [Tooltip("Optional zero-GC localization key hash for staged language refreshes.")]
+        [SerializeField] private int _localizationKeyHash;
+
+        [Tooltip("Runtime localization residency layer for this text owner.")]
+        [SerializeField] private LocLayer _layer = LocLayer.Core;
+
+        [Tooltip("True when this TMP owner is user-input driven and must not be overwritten by staged localization refreshes.")]
+        [SerializeField] private bool _isUserInput;
+
         private TMP_Text _text;
 
         /// <summary>Cached TMP text component.</summary>
         public TMP_Text TextComponent => _text;
 
+        /// <summary>Deterministic hierarchy hash for registry lookup.</summary>
+        public int HierarchyHash => _bakedHierarchyHash;
+
+        /// <summary>Optional zero-GC localization key hash.</summary>
+        public int LocalizationKeyHash => _localizationKeyHash;
+
+        /// <summary>Localization residency layer.</summary>
+        public LocLayer Layer => _layer;
+
+        /// <summary>True when this text is user-authored input.</summary>
+        public bool IsUserInput => _isUserInput;
+
         internal int RegistryIndex { get; set; } = -1;
 
         private void Awake()
         {
-            if (_text == null)
-                _text = GetComponent<TMP_Text>();
+            CacheTextComponent();
+            EnsureRuntimeHierarchyHash();
+            if (isActiveAndEnabled)
+                TMP_TextRegistry.Register(this);
+        }
 
+        private void OnEnable()
+        {
+            CacheTextComponent();
+            EnsureRuntimeHierarchyHash();
             TMP_TextRegistry.Register(this);
         }
 
-        private void OnDestroy()
+        private void OnDisable()
         {
             TMP_TextRegistry.Unregister(this);
         }
+
+        /// <summary>
+        /// Update zero-GC localization metadata for runtime-created TMP owners.
+        /// </summary>
+        public void SetMetadata(int localizationKeyHash, LocLayer layer, bool isUserInput)
+        {
+            _localizationKeyHash = localizationKeyHash;
+            _layer = layer;
+            _isUserInput = isUserInput;
+            TMP_TextRegistry.Refresh(this);
+        }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            if (Application.isPlaying)
+                return;
+
+            CacheTextComponent();
+            int bakedHash = ComputeEditorHierarchyHash(transform);
+            if (_bakedHierarchyHash == bakedHash)
+                return;
+
+            _bakedHierarchyHash = bakedHash;
+            EditorUtility.SetDirty(this);
+        }
+#endif
+
+        private void CacheTextComponent()
+        {
+            if (_text == null)
+                _text = GetComponent<TMP_Text>();
+        }
+
+        private void EnsureRuntimeHierarchyHash()
+        {
+            if (_bakedHierarchyHash != 0)
+                return;
+
+            unchecked
+            {
+                _bakedHierarchyHash = 0x40000000 | (gameObject.GetHashCode() & 0x3FFFFFFF);
+            }
+        }
+
+#if UNITY_EDITOR
+        private static int ComputeEditorHierarchyHash(Transform target)
+        {
+            ulong hash = 14695981039346656037UL;
+            AppendHierarchyHash(ref hash, target);
+            return unchecked((int)(hash ^ (hash >> 32)));
+        }
+
+        private static void AppendHierarchyHash(ref ulong hash, Transform current)
+        {
+            if (current == null)
+                return;
+
+            Transform parent = current.parent;
+            if (parent != null)
+                AppendHierarchyHash(ref hash, parent);
+
+            hash = HashByte(hash, (byte)'/');
+            string name = current.name;
+            for (int i = 0; i < name.Length; i++)
+            {
+                char symbol = name[i];
+                hash = HashByte(hash, (byte)symbol);
+                hash = HashByte(hash, (byte)(symbol >> 8));
+            }
+        }
+
+        private static ulong HashByte(ulong hash, byte value)
+        {
+            return (hash ^ value) * 1099511628211UL;
+        }
+#endif
     }
 }

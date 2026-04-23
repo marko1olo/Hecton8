@@ -102,6 +102,9 @@ namespace Hecton8.Power
         /// <summary>Текущее состояние питания.</summary>
         private bool _hasPower = true;
         private int _topologyRevision;
+        private int _graphScratchIndex = -1;
+        private int _graphScratchVersion;
+        private bool _isRuptured;
 
         /// <summary>
         /// Статический буфер для OverlapSphereNonAlloc.
@@ -130,6 +133,19 @@ namespace Hecton8.Power
         /// </summary>
         public List<PowerNode> Neighbors => _neighbors;
         internal int TopologyRevision => _topologyRevision;
+        internal int GraphScratchIndex
+        {
+            get => _graphScratchIndex;
+            set => _graphScratchIndex = value;
+        }
+
+        internal int GraphScratchVersion
+        {
+            get => _graphScratchVersion;
+            set => _graphScratchVersion = value;
+        }
+
+        internal bool IsRuptured => _isRuptured;
 
         /// <summary>
         /// Устанавливает ссылку на сеть.
@@ -138,6 +154,15 @@ namespace Hecton8.Power
         public void SetGrid(PowerGrid grid)
         {
             _grid = grid;
+        }
+
+        internal void SetRuptured(bool ruptured)
+        {
+            if (_isRuptured == ruptured)
+                return;
+
+            _isRuptured = ruptured;
+            _topologyRevision++;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -244,6 +269,9 @@ namespace Hecton8.Power
             _components.Clear();
             _grid = null;
             _hasPower = true;
+            _graphScratchIndex = -1;
+            _graphScratchVersion = 0;
+            _isRuptured = false;
         }
 
         // ══════════════════════════════════════════════════════════

@@ -65,7 +65,7 @@ No exceptions. Not for "just one query." Not for "it's small list." Banned.
 
 ### 2.2 `foreach` on Dictionaries and Interfaces — BANNED
 
-// ❌ FORBIDDEN — Boxes Dictionary enumerator, heap allocation per frame
+//❌ FORBIDDEN — IEnumerable<T> iteration causes boxing. Direct foreach on Dictionary is allocation-free in modern Unity, but we ban it to enforce index-based patterns for cache locality.
 foreach (var kvp in _unitRegistry)
 {
     kvp.Value.Tick(dt);

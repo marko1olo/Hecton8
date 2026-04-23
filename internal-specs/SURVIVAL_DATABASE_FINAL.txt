@@ -1,0 +1,979 @@
+# HECTON-8 SURVIVAL DATABASE FINAL
+Date: 2026-04-23
+Status: PENDING VERIFICATION
+
+Mandates followed:
+- DATA_Inventory_Resources_Items_SOA_Layout.txt
+- CORE_Abyss_Survival_Systems_O2_Pressure_Logic.txt
+- LOGI_Energy_Networks_Power_Grid_Graph_Flow.txt
+- UI_Data_Streaming_ZeroGC_Optimization.txt
+- UI_Localization_Babel_RTL_FontSwap_ZeroAlloc.txt
+
+Project truths absorbed into this spec:
+- Current item authoring owner is `ItemData` with `ItemCategory`, `ResourceFamily`, and `ProgressionTier Tier0..Tier3`.
+- Current recipe authoring owner is `RecipeData` with fabrication groups `Materials / Components / Tools / Suit / Construction / Power`.
+- Current runtime oxygen base is `SurvivalStats.oxygenConsumptionRate = 1.5` and depth pressure is `1 + depth * 0.1` in `HectonSurvivalSystem`.
+- Current pressure damage begins after `safeDepth` and scales by `pressureScalePerMeter = 0.02`.
+- Current module life-support anchors in `BaseModule` are `oxygenRefillRate = 15`, `breathableReserveCapacity = 120`, `airRecycleRate = 6`, `occupiedAirDrainRate = 9`, `staleAirThreshold = 0.25`, `staleAirSuitDrainRate = 3`.
+- Current authored audio-log asset shells exist for `chen_m_datapad_01`, `captain_last_broadcast`, `biologist_samples`, `medic_diary`, and `atlas6_terminal_sector3` only.
+
+[ANALYSIS]
+Target:
+- Exhaustive survival database for items, survival math, lore logs, logistics graph rules, and bilingual item localization seed keys.
+
+Affected systems:
+- ItemData authoring pipeline
+- RecipeData and fabrication grouping
+- HectonSurvivalSystem oxygen / temperature / integrity loops
+- BaseModule dry-air reserve and stale-air behavior
+- Narrative archive / AudioLogData / PDA stream surfaces
+- Future construction power and oxygen graph nodes
+
+Zero GC proof:
+- This document is data/spec only. No runtime code changed.
+- Narrative streaming schema is fixed-array oriented: numeric IDs, stable hashes, UTF-8 blob offsets, no per-open JSON parsing, no runtime string concatenation, no dynamic sorting in UI.
+- Item localization registry is precomputed by stable keys and hashes so runtime can resolve table entries without generated keys.
+
+State check:
+- Progression tiers remain inside existing project limits `Tier0..Tier3`.
+- Buildable rows are marked `RecipeData + Construction owner` to avoid pretending they are already direct `ItemData` loot assets.
+- Existing registry/audio-log IDs are reused where they already exist; spec-only IDs are flagged as such in `RepoAnchor`.
+- No claim of runtime fix. This is authored data only. Status remains `PENDING VERIFICATION` until user validates in editor/runtime.
+
+Rule quote:
+- "[REQ] Before any task, scan C:\hades\Hecton8\.agents-skills\ and load ONLY relevant mandates."
+- "[RULE] Every technical report must include: REGRESSION MODEL (CPU/GC/memory/cadence/correctness) · HOT PATH IMPACT · FAILURE MODES · WHY KEPT/REJECTED."
+
+======================================================================
+1. AUTHORING CONVENTIONS
+======================================================================
+
+- Tier0 = bootstrap salvage / upper drydock / 0-120 m
+- Tier1 = early colony stabilization / 120-600 m
+- Tier2 = drowned factories / 600-2500 m
+- Tier3 = abyssal and forbidden infrastructure / 2500-5000 m
+- `Hash` = FNV-1a 32-bit of stable ID.
+- `NameKey` / `DescKey` = initial localization seeds. Descriptions stay stubbed for later narrative expansion; names are fully seeded here for EN/RU.
+- `EnergyDensity` is chemical or stored-energy potential in MJ/kg for economy balancing. Structural junk is explicitly zeroed.
+- `ScavengeValue` is salvage desirability, not vendor price. It drives scan interest, fabrication urgency, and route choice.
+
+Logical category split:
+- RawResource: 40
+- ProcessedMaterial: 30
+- Component: 40
+- Tool: 22
+- Equipment: 13
+- BuildableKit: 30
+- Wreckage: 45
+- Total: 220
+
+======================================================================
+2. ITEM MASTER TABLE
+======================================================================
+
+StableId|Hash|LogicalCategory|AuthoringTarget|ItemCategory|ResourceFamily|Tier|NameEN|NameRU|MassKg|VolumeL|EnergyDensityMJkg|BaseDurability|ScavengeValue|NameKey|DescKey
+Data_Copper|0x59F4F85F|RawResource|ItemData|Material|ElectronicsMetal|Tier0|Copper|Медь|2.40|1.00|0.00|36|10|ITEM_DATA_COPPER_NAME|ITEM_DATA_COPPER_DESC
+Data_TitaniumScrap|0xD00F5C5A|RawResource|ItemData|Material|StructuralMetal|Tier0|Titanium Scrap|Титановый лом|2.40|1.00|0.00|36|10|ITEM_DATA_TITANIUMSCRAP_NAME|ITEM_DATA_TITANIUMSCRAP_DESC
+Data_IronComposite|0x72783AD3|RawResource|ItemData|Material|StructuralMetal|Tier0|Iron Composite|Железный композит|2.40|1.00|0.00|36|10|ITEM_DATA_IRONCOMPOSITE_NAME|ITEM_DATA_IRONCOMPOSITE_DESC
+Data_SilicaShards|0x31E4BD68|RawResource|ItemData|Material|Crystal|Tier0|Silica Shards|Кремнеземные осколки|1.40|0.80|0.40|28|14|ITEM_DATA_SILICASHARDS_NAME|ITEM_DATA_SILICASHARDS_DESC
+Data_FiberKelp|0x459F1430|RawResource|ItemData|Organic|Organic|Tier0|Fiber Kelp|Волокнистый келп|0.80|1.20|1.60|16|11|ITEM_DATA_FIBERKELP_NAME|ITEM_DATA_FIBERKELP_DESC
+Data_SulfurClumps|0xA1C2A85B|RawResource|ItemData|Material|Chemical|Tier0|Sulfur Clumps|Серные сгустки|1.00|0.90|2.20|20|12|ITEM_DATA_SULFURCLUMPS_NAME|ITEM_DATA_SULFURCLUMPS_DESC
+Data_HydrocarbonResin|0xB3A3599A|RawResource|ItemData|Material|Chemical|Tier0|Hydrocarbon Resin|Углеводородная смола|1.00|0.90|2.20|20|12|ITEM_DATA_HYDROCARBONRESIN_NAME|ITEM_DATA_HYDROCARBONRESIN_DESC
+Data_GoldOre|0xCBB4D7FC|RawResource|ItemData|Material|ElectronicsMetal|Tier0|Gold Ore|Золотая руда|2.40|1.00|0.00|36|10|ITEM_DATA_GOLDORE_NAME|ITEM_DATA_GOLDORE_DESC
+Data_SilverOre|0x2F0D505D|RawResource|ItemData|Material|ElectronicsMetal|Tier0|Silver Ore|Серебряная руда|2.40|1.00|0.00|36|10|ITEM_DATA_SILVERORE_NAME|ITEM_DATA_SILVERORE_DESC
+Data_NickelOre|0x4803C5C0|RawResource|ItemData|Material|StructuralMetal|Tier0|Nickel Ore|Никелевая руда|2.40|1.00|0.00|36|10|ITEM_DATA_NICKELORE_NAME|ITEM_DATA_NICKELORE_DESC
+Data_TungstenChunk|0x5A47CDAB|RawResource|ItemData|Material|StructuralMetal|Tier1|Tungsten Chunk|Вольфрамовый фрагмент|2.85|1.12|0.00|41|15|ITEM_DATA_TUNGSTENCHUNK_NAME|ITEM_DATA_TUNGSTENCHUNK_DESC
+Data_RareEarthDust|0x5C634272|RawResource|ItemData|Material|Chemical|Tier1|Rare Earth Dust|Редкоземельная пыль|1.18|1.00|2.70|24|18|ITEM_DATA_RAREEARTHDUST_NAME|ITEM_DATA_RAREEARTHDUST_DESC
+Data_ElectrolyteSalts|0x5302E193|RawResource|ItemData|Material|Chemical|Tier1|Electrolyte Salts|Электролитные соли|1.18|1.00|2.70|24|18|ITEM_DATA_ELECTROLYTESALTS_NAME|ITEM_DATA_ELECTROLYTESALTS_DESC
+Data_LithiumCrystal|0xB28CEA78|RawResource|ItemData|Material|Crystal|Tier1|Lithium Crystal|Литиевый кристалл|1.62|0.88|0.60|32|21|ITEM_DATA_LITHIUMCRYSTAL_NAME|ITEM_DATA_LITHIUMCRYSTAL_DESC
+Data_BiolumPaste|0xBC07BDF5|RawResource|ItemData|Organic|Organic|Tier1|Biolum Paste|Биолюминесцентная паста|0.94|1.30|1.90|19|16|ITEM_DATA_BIOLUMPASTE_NAME|ITEM_DATA_BIOLUMPASTE_DESC
+Data_MembraneTissue|0xC1ACF5C4|RawResource|ItemData|Organic|Organic|Tier1|Membrane Tissue|Мембранная ткань|0.94|1.30|1.90|19|16|ITEM_DATA_MEMBRANETISSUE_NAME|ITEM_DATA_MEMBRANETISSUE_DESC
+Data_EnzymeCoral|0xD4A0B197|RawResource|ItemData|Organic|Organic|Tier1|Enzyme Coral|Ферментный коралл|0.94|1.30|1.90|19|16|ITEM_DATA_ENZYMECORAL_NAME|ITEM_DATA_ENZYMECORAL_DESC
+Data_ThermalGel|0x4BD0539F|RawResource|ItemData|Material|Chemical|Tier1|Thermal Gel|Термальный гель|1.18|1.00|2.70|24|18|ITEM_DATA_THERMALGEL_NAME|ITEM_DATA_THERMALGEL_DESC
+Data_CobaltAlloy|0x4B254CB8|RawResource|ItemData|Material|ElectronicsMetal|Tier1|Cobalt Alloy|Кобальтовый сплав|2.85|1.12|0.00|41|15|ITEM_DATA_COBALTALLOY_NAME|ITEM_DATA_COBALTALLOY_DESC
+Data_AbyssalCrystal|0x50278D73|RawResource|ItemData|Material|Crystal|Tier1|Abyssal Crystal|Абиссальный кристалл|1.98|0.93|3.90|46|38|ITEM_DATA_ABYSSALCRYSTAL_NAME|ITEM_DATA_ABYSSALCRYSTAL_DESC
+Data_ManganeseNodule|0x64EBC87C|RawResource|ItemData|Material|StructuralMetal|Tier2|Manganese Nodule|Марганцевая конкреция|3.30|1.24|0.00|46|20|ITEM_DATA_MANGANESENODULE_NAME|ITEM_DATA_MANGANESENODULE_DESC
+Data_BasaltCore|0x19DAD4FC|RawResource|ItemData|Material|StructuralMetal|Tier2|Basalt Core|Базальтовое ядро|3.30|1.24|0.00|46|20|ITEM_DATA_BASALTCORE_NAME|ITEM_DATA_BASALTCORE_DESC
+Data_BrineQuartz|0x6AB59867|RawResource|ItemData|Material|Crystal|Tier2|Brine Quartz|Рассольный кварц|1.84|0.96|0.80|36|28|ITEM_DATA_BRINEQUARTZ_NAME|ITEM_DATA_BRINEQUARTZ_DESC
+Data_PhosphorSlurry|0x4C710FC4|RawResource|ItemData|Material|Chemical|Tier2|Phosphor Slurry|Фосфорный шлам|1.36|1.10|3.20|28|24|ITEM_DATA_PHOSPHORSLURRY_NAME|ITEM_DATA_PHOSPHORSLURRY_DESC
+Data_AlgaeProtein|0xA0996F55|RawResource|ItemData|Organic|Organic|Tier2|Algae Protein|Белок водорослей|1.08|1.40|2.20|22|21|ITEM_DATA_ALGAEPROTEIN_NAME|ITEM_DATA_ALGAEPROTEIN_DESC
+Data_CalcifiedTube|0x7FCFEED8|RawResource|ItemData|Organic|Organic|Tier2|Calcified Tube|Кальцинированная трубка|1.08|1.40|2.20|22|21|ITEM_DATA_CALCIFIEDTUBE_NAME|ITEM_DATA_CALCIFIEDTUBE_DESC
+Data_MagnesiumFlake|0x55858BBF|RawResource|ItemData|Material|StructuralMetal|Tier2|Magnesium Flake|Магниевая чешуйка|3.30|1.24|0.00|46|20|ITEM_DATA_MAGNESIUMFLAKE_NAME|ITEM_DATA_MAGNESIUMFLAKE_DESC
+Data_VanadiumShard|0x07D135A5|RawResource|ItemData|Material|StructuralMetal|Tier2|Vanadium Shard|Ванадиевый осколок|3.30|1.24|0.00|46|20|ITEM_DATA_VANADIUMSHARD_NAME|ITEM_DATA_VANADIUMSHARD_DESC
+Data_BorateStone|0x4E82DED0|RawResource|ItemData|Material|Crystal|Tier2|Borate Stone|Боратовый камень|1.84|0.96|0.80|36|28|ITEM_DATA_BORATESTONE_NAME|ITEM_DATA_BORATESTONE_DESC
+Data_MethaneIce|0x583FE7A5|RawResource|ItemData|Material|DeepMaterial|Tier2|Methane Ice|Метановый лед|2.26|1.01|4.80|46|38|ITEM_DATA_METHANEICE_NAME|ITEM_DATA_METHANEICE_DESC
+Data_CryoBrine|0x8254E05B|RawResource|ItemData|Material|DeepMaterial|Tier3|Cryo Brine|Крио-рассол|2.54|1.09|5.70|58|58|ITEM_DATA_CRYOBRINE_NAME|ITEM_DATA_CRYOBRINE_DESC
+Data_ConductiveSponge|0x12098612|RawResource|ItemData|Material|DeepMaterial|Tier3|Conductive Sponge|Проводящая губка|2.54|1.09|5.70|52|48|ITEM_DATA_CONDUCTIVESPONGE_NAME|ITEM_DATA_CONDUCTIVESPONGE_DESC
+Data_CarbonSludge|0x32ADCD2D|RawResource|ItemData|Material|Chemical|Tier3|Carbon Sludge|Углеродный шлам|1.54|1.20|3.70|32|30|ITEM_DATA_CARBONSLUDGE_NAME|ITEM_DATA_CARBONSLUDGE_DESC
+Data_TelluricSand|0x48C30EE0|RawResource|ItemData|Material|Crystal|Tier3|Telluric Sand|Теллуровый песок|2.06|1.04|1.00|40|35|ITEM_DATA_TELLURICSAND_NAME|ITEM_DATA_TELLURICSAND_DESC
+Data_SodiumLimestone|0x376DAB55|RawResource|ItemData|Material|Chemical|Tier3|Sodium Limestone|Натриевый известняк|1.54|1.20|3.70|32|30|ITEM_DATA_SODIUMLIMESTONE_NAME|ITEM_DATA_SODIUMLIMESTONE_DESC
+Data_FerroKelpStem|0x84EF3279|RawResource|ItemData|Organic|Organic|Tier3|Ferro Kelp Stem|Феррокелповый стебель|1.22|1.50|2.50|25|26|ITEM_DATA_FERROKELPSTEM_NAME|ITEM_DATA_FERROKELPSTEM_DESC
+Data_ShellLacquer|0xEFA63769|RawResource|ItemData|Organic|Organic|Tier3|Shell Lacquer|Раковинный лак|1.22|1.50|2.50|25|26|ITEM_DATA_SHELLLACQUER_NAME|ITEM_DATA_SHELLLACQUER_DESC
+Data_PressurePearl|0x18952F37|RawResource|ItemData|Material|Crystal|Tier3|Pressure Pearl|Жемчуг давления|2.54|1.09|5.70|58|58|ITEM_DATA_PRESSUREPEARL_NAME|ITEM_DATA_PRESSUREPEARL_DESC
+Data_BrineSulfurGlass|0x584BEE3B|RawResource|ItemData|Material|Crystal|Tier3|Brine Sulfur Glass|Рассольно-серное стекло|2.54|1.09|5.70|52|48|ITEM_DATA_BRINESULFURGLASS_NAME|ITEM_DATA_BRINESULFURGLASS_DESC
+Data_AtlasResidue|0x256B3452|RawResource|ItemData|Material|DeepMaterial|Tier3|Atlas Residue|Остаток Atlas|2.54|1.09|5.70|58|58|ITEM_DATA_ATLASRESIDUE_NAME|ITEM_DATA_ATLASRESIDUE_DESC
+Proc_CopperIngot|0x102C7156|ProcessedMaterial|ItemData|Material|ElectronicsMetal|Tier0|Copper Ingot|Медный слиток|1.60|0.70|0.20|44|18|ITEM_PROC_COPPERINGOT_NAME|ITEM_PROC_COPPERINGOT_DESC
+Proc_TitaniumPlate|0x9D20108F|ProcessedMaterial|ItemData|Material|StructuralMetal|Tier0|Titanium Plate|Титановая пластина|1.60|0.70|0.20|44|18|ITEM_PROC_TITANIUMPLATE_NAME|ITEM_PROC_TITANIUMPLATE_DESC
+Proc_SilicaGlass|0xDC717F77|ProcessedMaterial|ItemData|Material|Crystal|Tier0|Silica Glass|Кремнеземное стекло|1.60|0.70|0.20|44|18|ITEM_PROC_SILICAGLASS_NAME|ITEM_PROC_SILICAGLASS_DESC
+Proc_ResinBinder|0x5C641BCB|ProcessedMaterial|ItemData|Material|Chemical|Tier0|Resin Binder|Смоляное связующее|0.70|0.55|4.20|26|20|ITEM_PROC_RESINBINDER_NAME|ITEM_PROC_RESINBINDER_DESC
+Proc_FilterChar|0x7461CBC0|ProcessedMaterial|ItemData|Material|Chemical|Tier0|Filter Char|Фильтрующий уголь|0.70|0.55|4.20|26|20|ITEM_PROC_FILTERCHAR_NAME|ITEM_PROC_FILTERCHAR_DESC
+Proc_OxygenPellet|0x65638564|ProcessedMaterial|ItemData|Consumable|Power|Tier0|Oxygen Pellet|Кислородная таблетка|0.50|0.45|6.40|18|22|ITEM_PROC_OXYGENPELLET_NAME|ITEM_PROC_OXYGENPELLET_DESC
+Proc_EnergyGel|0xD5527C66|ProcessedMaterial|ItemData|Material|Chemical|Tier0|Energy Gel|Энергетический гель|0.50|0.45|5.50|18|22|ITEM_PROC_ENERGYGEL_NAME|ITEM_PROC_ENERGYGEL_DESC
+Proc_ElectrolyteAmpoule|0x6667CD17|ProcessedMaterial|ItemData|Consumable|Chemical|Tier0|Electrolyte Ampoule|Электролитная ампула|0.50|0.45|5.50|18|22|ITEM_PROC_ELECTROLYTEAMPOULE_NAME|ITEM_PROC_ELECTROLYTEAMPOULE_DESC
+Proc_EmergencyO2Canister|0xFDF151C3|ProcessedMaterial|ItemData|Consumable|Chemical|Tier1|Emergency O2 Canister|Аварийный баллон O2|0.58|0.49|6.20|21|30|ITEM_PROC_EMERGENCYO2CANISTER_NAME|ITEM_PROC_EMERGENCYO2CANISTER_DESC
+Proc_FieldMedGel|0x748D9BB4|ProcessedMaterial|ItemData|Consumable|Chemical|Tier1|Field Med Gel|Полевой медгель|0.58|0.49|6.20|21|30|ITEM_PROC_FIELDMEDGEL_NAME|ITEM_PROC_FIELDMEDGEL_DESC
+Proc_BrineSolvent|0x610541FD|ProcessedMaterial|ItemData|Material|Chemical|Tier1|Brine Solvent|Рассольный растворитель|0.80|0.60|5.00|30|27|ITEM_PROC_BRINESOLVENT_NAME|ITEM_PROC_BRINESOLVENT_DESC
+Proc_MembranePatch|0x0AFBCAA7|ProcessedMaterial|ItemData|Material|StructuralMetal|Tier1|Membrane Patch|Мембранная заплата|1.86|0.76|0.25|50|24|ITEM_PROC_MEMBRANEPATCH_NAME|ITEM_PROC_MEMBRANEPATCH_DESC
+Proc_ThermalCatalyst|0xA879A87A|ProcessedMaterial|ItemData|Material|Chemical|Tier1|Thermal Catalyst|Термокатализатор|0.80|0.60|5.00|30|27|ITEM_PROC_THERMALCATALYST_NAME|ITEM_PROC_THERMALCATALYST_DESC
+Proc_FluxCompound|0xC198E224|ProcessedMaterial|ItemData|Material|Chemical|Tier1|Flux Compound|Флюсовый состав|0.80|0.60|5.00|30|27|ITEM_PROC_FLUXCOMPOUND_NAME|ITEM_PROC_FLUXCOMPOUND_DESC
+Proc_DeconFoam|0x17B53E0A|ProcessedMaterial|ItemData|Material|Chemical|Tier1|Decon Foam|Дезактивационная пена|0.80|0.60|5.00|30|27|ITEM_PROC_DECONFOAM_NAME|ITEM_PROC_DECONFOAM_DESC
+Proc_FoodBrick_Algae|0x7E7D4754|ProcessedMaterial|ItemData|Consumable|Chemical|Tier1|Algae Food Brick|Водорослевый пищевой брикет|0.58|0.49|6.20|21|30|ITEM_PROC_FOODBRICK_ALGAE_NAME|ITEM_PROC_FOODBRICK_ALGAE_DESC
+Proc_WaterFlask_BrineClean|0xBEE981E2|ProcessedMaterial|ItemData|Consumable|Chemical|Tier2|Clean Brine Flask|Фляга очищенного рассола|0.66|0.53|6.90|24|38|ITEM_PROC_WATERFLASK_BRINECLEAN_NAME|ITEM_PROC_WATERFLASK_BRINECLEAN_DESC
+Proc_HeatCell|0x6D102E58|ProcessedMaterial|ItemData|Material|Power|Tier2|Heat Cell|Тепловая ячейка|0.90|0.65|7.10|34|34|ITEM_PROC_HEATCELL_NAME|ITEM_PROC_HEATCELL_DESC
+Proc_BatteryAnodePaste|0xEB1EA3D5|ProcessedMaterial|ItemData|Material|Power|Tier2|Battery Anode Paste|Анодная паста|0.90|0.65|7.10|34|34|ITEM_PROC_BATTERYANODEPASTE_NAME|ITEM_PROC_BATTERYANODEPASTE_DESC
+Proc_CryoInsulationGel|0xD8666427|ProcessedMaterial|ItemData|Material|Chemical|Tier2|Cryo Insulation Gel|Криоизоляционный гель|0.90|0.65|5.80|40|44|ITEM_PROC_CRYOINSULATIONGEL_NAME|ITEM_PROC_CRYOINSULATIONGEL_DESC
+Proc_BioSealFoam|0xE86E83E4|ProcessedMaterial|ItemData|Material|Chemical|Tier2|Bio Seal Foam|Биогерметизирующая пена|0.90|0.65|5.80|34|34|ITEM_PROC_BIOSEALFOAM_NAME|ITEM_PROC_BIOSEALFOAM_DESC
+Proc_OpticPolish|0xC7792FAE|ProcessedMaterial|ItemData|Material|Chemical|Tier2|Optic Polish|Оптическая полировка|0.90|0.65|5.80|34|34|ITEM_PROC_OPTICPOLISH_NAME|ITEM_PROC_OPTICPOLISH_DESC
+Proc_LubricantGrease|0xB3992491|ProcessedMaterial|ItemData|Material|Chemical|Tier2|Lubricant Grease|Смазка|0.90|0.65|5.80|34|34|ITEM_PROC_LUBRICANTGREASE_NAME|ITEM_PROC_LUBRICANTGREASE_DESC
+Proc_NutrientBroth|0xF3B77B76|ProcessedMaterial|ItemData|Consumable|Chemical|Tier2|Nutrient Broth|Питательный бульон|0.66|0.53|6.90|24|38|ITEM_PROC_NUTRIENTBROTH_NAME|ITEM_PROC_NUTRIENTBROTH_DESC
+Proc_HydrogenCanister|0x6B643DC7|ProcessedMaterial|ItemData|Consumable|Power|Tier3|Hydrogen Canister|Водородный баллон|1.00|0.70|8.10|38|41|ITEM_PROC_HYDROGENCANISTER_NAME|ITEM_PROC_HYDROGENCANISTER_DESC
+Proc_CO2ScrubberCartridge|0xF9ED3E53|ProcessedMaterial|ItemData|Consumable|Power|Tier3|CO2 Scrubber Cartridge|Картридж CO2-фильтра|0.74|0.57|7.60|27|46|ITEM_PROC_CO2SCRUBBERCARTRIDGE_NAME|ITEM_PROC_CO2SCRUBBERCARTRIDGE_DESC
+Proc_AdhesiveTapeIndustrial|0x924C3D62|ProcessedMaterial|ItemData|Material|StructuralMetal|Tier3|Adhesive Tape Industrial|Промышленная клейкая лента|2.38|0.88|0.35|62|36|ITEM_PROC_ADHESIVETAPEINDUSTRIAL_NAME|ITEM_PROC_ADHESIVETAPEINDUSTRIAL_DESC
+Proc_SterilePack|0x6DD2C5F3|ProcessedMaterial|ItemData|Consumable|Chemical|Tier3|Sterile Pack|Стерильный набор|0.74|0.57|7.60|27|46|ITEM_PROC_STERILEPACK_NAME|ITEM_PROC_STERILEPACK_DESC
+Proc_RadiationPillPack|0xEC6CD16F|ProcessedMaterial|ItemData|Consumable|Chemical|Tier3|Radiation Pill Pack|Комплект радиозащитных таблеток|0.74|0.57|7.60|27|46|ITEM_PROC_RADIATIONPILLPACK_NAME|ITEM_PROC_RADIATIONPILLPACK_DESC
+Proc_SignalDye|0x37D33AF4|ProcessedMaterial|ItemData|Material|Chemical|Tier3|Signal Dye|Сигнальный краситель|1.00|0.70|6.60|38|41|ITEM_PROC_SIGNALDYE_NAME|ITEM_PROC_SIGNALDYE_DESC
+Comp_BatteryCell|0x98578818|Component|ItemData|Component|Power|Tier0|Battery Cell|Батарейная ячейка|1.10|0.50|1.70|52|28|ITEM_COMP_BATTERYCELL_NAME|ITEM_COMP_BATTERYCELL_DESC
+Comp_BeaconCore|0x89FF5090|Component|ItemData|Component|Component|Tier0|Beacon Core|Ядро маяка|1.10|0.50|0.80|52|28|ITEM_COMP_BEACONCORE_NAME|ITEM_COMP_BEACONCORE_DESC
+Comp_CircuitBoard|0xC9AA3246|Component|ItemData|Component|Component|Tier0|Circuit Board|Печатная плата|1.10|0.50|0.80|52|28|ITEM_COMP_CIRCUITBOARD_NAME|ITEM_COMP_CIRCUITBOARD_DESC
+Comp_CoolingCartridge|0x5D60DE7F|Component|ItemData|Component|Component|Tier0|Cooling Cartridge|Охлаждающий картридж|1.10|0.50|0.80|52|28|ITEM_COMP_COOLINGCARTRIDGE_NAME|ITEM_COMP_COOLINGCARTRIDGE_DESC
+Comp_CopperWire|0x98A584EF|Component|ItemData|Component|Component|Tier0|Copper Wire|Медный провод|1.10|0.50|0.80|52|28|ITEM_COMP_COPPERWIRE_NAME|ITEM_COMP_COPPERWIRE_DESC
+Comp_FiberMesh|0xD668983E|Component|ItemData|Component|Component|Tier0|Fiber Mesh|Волоконная сетка|2.00|0.90|0.10|60|24|ITEM_COMP_FIBERMESH_NAME|ITEM_COMP_FIBERMESH_DESC
+Comp_GlassPanel|0x0FF5B38D|Component|ItemData|Component|Component|Tier0|Glass Panel|Стеклянная панель|2.00|0.90|0.10|60|24|ITEM_COMP_GLASSPANEL_NAME|ITEM_COMP_GLASSPANEL_DESC
+Comp_GuidanceModule|0x013D44D5|Component|ItemData|Component|Component|Tier0|Guidance Module|Модуль наведения|1.10|0.50|0.80|52|28|ITEM_COMP_GUIDANCEMODULE_NAME|ITEM_COMP_GUIDANCEMODULE_DESC
+Comp_HighCapacityCell|0xE418797B|Component|ItemData|Component|Component|Tier1|High Capacity Cell|Ячейка высокой емкости|1.25|0.54|0.90|59|36|ITEM_COMP_HIGHCAPACITYCELL_NAME|ITEM_COMP_HIGHCAPACITYCELL_DESC
+Comp_HydraulicActuator|0x44131AFF|Component|ItemData|Component|Component|Tier1|Hydraulic Actuator|Гидравлический актуатор|2.28|0.96|0.12|68|32|ITEM_COMP_HYDRAULICACTUATOR_NAME|ITEM_COMP_HYDRAULICACTUATOR_DESC
+Comp_LubricantResin|0x9A19F4CE|Component|ItemData|Component|Component|Tier1|Lubricant Resin|Смоляная смазка|2.28|0.96|0.12|68|32|ITEM_COMP_LUBRICANTRESIN_NAME|ITEM_COMP_LUBRICANTRESIN_DESC
+Comp_PowerCoupler|0x2CFC0582|Component|ItemData|Component|Power|Tier1|Power Coupler|Силовая муфта|1.25|0.54|0.90|59|36|ITEM_COMP_POWERCOUPLER_NAME|ITEM_COMP_POWERCOUPLER_DESC
+Comp_PrecisionLens|0x769E4871|Component|ItemData|Component|Component|Tier1|Precision Lens|Прецизионная линза|1.25|0.54|0.90|59|36|ITEM_COMP_PRECISIONLENS_NAME|ITEM_COMP_PRECISIONLENS_DESC
+Comp_PressureSeal|0xB1B70075|Component|ItemData|Component|Component|Tier1|Pressure Seal|Герметизатор давления|2.62|1.01|0.24|84|50|ITEM_COMP_PRESSURESEAL_NAME|ITEM_COMP_PRESSURESEAL_DESC
+Comp_PumpRotor|0xA3F61C7B|Component|ItemData|Component|Component|Tier1|Pump Rotor|Ротор насоса|2.28|0.96|0.12|68|32|ITEM_COMP_PUMPROTOR_NAME|ITEM_COMP_PUMPROTOR_DESC
+Comp_ReinforcedPlate|0x36B37370|Component|ItemData|Component|Component|Tier1|Reinforced Plate|Усиленная пластина|2.28|0.96|0.12|68|32|ITEM_COMP_REINFORCEDPLATE_NAME|ITEM_COMP_REINFORCEDPLATE_DESC
+Comp_RelayMatrix|0x8904D885|Component|ItemData|Component|Component|Tier1|Relay Matrix|Релейная матрица|1.25|0.54|0.90|59|36|ITEM_COMP_RELAYMATRIX_NAME|ITEM_COMP_RELAYMATRIX_DESC
+Comp_SealantPack|0xCBCEDD02|Component|ItemData|Component|Component|Tier1|Sealant Pack|Комплект герметика|2.28|0.96|0.12|68|32|ITEM_COMP_SEALANTPACK_NAME|ITEM_COMP_SEALANTPACK_DESC
+Comp_SensorPackage|0xCB24F3AF|Component|ItemData|Component|Component|Tier1|Sensor Package|Пакет сенсоров|1.25|0.54|0.90|59|36|ITEM_COMP_SENSORPACKAGE_NAME|ITEM_COMP_SENSORPACKAGE_DESC
+Comp_StabilizerCoil|0xD922B295|Component|ItemData|Component|Power|Tier1|Stabilizer Coil|Катушка стабилизатора|1.25|0.54|0.90|59|36|ITEM_COMP_STABILIZERCOIL_NAME|ITEM_COMP_STABILIZERCOIL_DESC
+Comp_StructuralBracket|0x26105640|Component|ItemData|Component|Component|Tier2|Structural Bracket|Несущий кронштейн|2.56|1.02|0.14|76|40|ITEM_COMP_STRUCTURALBRACKET_NAME|ITEM_COMP_STRUCTURALBRACKET_DESC
+Comp_AbyssPressureShell|0xBAC76880|Component|ItemData|Component|Component|Tier2|Abyss Pressure Shell|Абиссальная оболочка давления|2.94|1.07|0.28|94|60|ITEM_COMP_ABYSSPRESSURESHELL_NAME|ITEM_COMP_ABYSSPRESSURESHELL_DESC
+Comp_OxygenManifold|0xD62DEE27|Component|ItemData|Component|Power|Tier2|Oxygen Manifold|Кислородный коллектор|2.94|1.07|1.58|88|50|ITEM_COMP_OXYGENMANIFOLD_NAME|ITEM_COMP_OXYGENMANIFOLD_DESC
+Comp_ScrubberBed|0x2C049D0A|Component|ItemData|Component|Power|Tier2|Scrubber Bed|Скрубберная кассета|2.94|1.07|0.28|88|50|ITEM_COMP_SCRUBBERBED_NAME|ITEM_COMP_SCRUBBERBED_DESC
+Comp_ThermalRegulator|0x83700DE1|Component|ItemData|Component|Power|Tier2|Thermal Regulator|Терморегулятор|2.94|1.07|0.28|88|50|ITEM_COMP_THERMALREGULATOR_NAME|ITEM_COMP_THERMALREGULATOR_DESC
+Comp_PlasmaNozzle|0x61B68F09|Component|ItemData|Component|Component|Tier2|Plasma Nozzle|Плазменное сопло|1.40|0.58|1.00|66|44|ITEM_COMP_PLASMANOZZLE_NAME|ITEM_COMP_PLASMANOZZLE_DESC
+Comp_InertialClamp|0xE1BFFB58|Component|ItemData|Component|Component|Tier2|Inertial Clamp|Инерционный зажим|2.94|1.07|0.28|88|50|ITEM_COMP_INERTIALCLAMP_NAME|ITEM_COMP_INERTIALCLAMP_DESC
+Comp_FieldTransponder|0x7466814D|Component|ItemData|Component|Component|Tier2|Field Transponder|Полевой транспондер|1.40|0.58|1.00|66|44|ITEM_COMP_FIELDTRANSPONDER_NAME|ITEM_COMP_FIELDTRANSPONDER_DESC
+Comp_FloodValve|0x19522E21|Component|ItemData|Component|Component|Tier2|Flood Valve|Противозатопительный клапан|2.94|1.07|0.28|88|50|ITEM_COMP_FLOODVALVE_NAME|ITEM_COMP_FLOODVALVE_DESC
+Comp_HullLattice|0xBEDE537A|Component|ItemData|Component|Component|Tier2|Hull Lattice|Корпусная решетка|2.94|1.07|0.28|88|50|ITEM_COMP_HULLLATTICE_NAME|ITEM_COMP_HULLLATTICE_DESC
+Comp_ReactorRod|0x3ED5CD54|Component|ItemData|Component|Power|Tier2|Reactor Rod|Реакторный стержень|2.94|1.07|1.58|88|50|ITEM_COMP_REACTORROD_NAME|ITEM_COMP_REACTORROD_DESC
+Comp_MicroPumpArray|0x7E1B40D0|Component|ItemData|Component|Component|Tier2|Micro Pump Array|Массив микропомп|2.94|1.07|0.28|88|50|ITEM_COMP_MICROPUMPARRAY_NAME|ITEM_COMP_MICROPUMPARRAY_DESC
+Comp_BulkheadLock|0x4ACE68D2|Component|ItemData|Component|Component|Tier3|Bulkhead Lock|Замок переборки|4.76|1.13|0.32|106|60|ITEM_COMP_BULKHEADLOCK_NAME|ITEM_COMP_BULKHEADLOCK_DESC
+Comp_ServiceServo|0xF345E947|Component|ItemData|Component|Component|Tier3|Service Servo|Сервисный сервопривод|1.55|0.62|1.10|73|52|ITEM_COMP_SERVICESERVO_NAME|ITEM_COMP_SERVICESERVO_DESC
+Comp_AcidNeutralizer|0x2815AFE1|Component|ItemData|Component|Component|Tier3|Acid Neutralizer|Нейтрализатор кислоты|3.26|1.13|0.32|98|60|ITEM_COMP_ACIDNEUTRALIZER_NAME|ITEM_COMP_ACIDNEUTRALIZER_DESC
+Comp_CryoCoil|0x37AE21C9|Component|ItemData|Component|Power|Tier3|Cryo Coil|Криокатушка|3.26|1.13|0.32|104|70|ITEM_COMP_CRYOCOIL_NAME|ITEM_COMP_CRYOCOIL_DESC
+Comp_TurbineBlade|0x23F1A080|Component|ItemData|Component|Component|Tier3|Turbine Blade|Лопасть турбины|2.84|1.08|1.66|84|48|ITEM_COMP_TURBINEBLADE_NAME|ITEM_COMP_TURBINEBLADE_DESC
+Comp_AnchorSpike|0x9D0E9910|Component|ItemData|Component|Component|Tier3|Anchor Spike|Якорный шип|2.84|1.08|0.16|84|48|ITEM_COMP_ANCHORSPIKE_NAME|ITEM_COMP_ANCHORSPIKE_DESC
+Comp_SonarEmitter|0x2670D3A0|Component|ItemData|Component|Component|Tier3|Sonar Emitter|Сонарный эмиттер|1.55|0.62|1.10|73|58|ITEM_COMP_SONAREMITTER_NAME|ITEM_COMP_SONAREMITTER_DESC
+Comp_DroneSocket|0xE0F8AB32|Component|ItemData|Component|Component|Tier3|Drone Socket|Гнездо дрона|1.55|0.62|1.10|73|58|ITEM_COMP_DRONESOCKET_NAME|ITEM_COMP_DRONESOCKET_DESC
+Item_Tool_BeaconDeployer|0x5C402372|Tool|ItemData|Tool|Component|Tier0|Beacon Deployer|Развертыватель маяков|1.90|1.40|1.80|70|46|ITEM_TOOL_BEACONDEPLOYER_NAME|ITEM_TOOL_BEACONDEPLOYER_DESC
+Item_Tool_Builder|0x8B0F4FF1|Tool|ItemData|Tool|Component|Tier0|Builder|Строительный инструмент|3.80|2.40|1.20|82|54|ITEM_TOOL_BUILDER_NAME|ITEM_TOOL_BUILDER_DESC
+Item_Tool_EnvAnalyzer|0x78DA7167|Tool|ItemData|Tool|Component|Tier0|Environmental Analyzer|Анализатор среды|1.90|1.40|1.80|70|46|ITEM_TOOL_ENVANALYZER_NAME|ITEM_TOOL_ENVANALYZER_DESC
+Item_Tool_Flashlight|0x2E6D4630|Tool|ItemData|Tool|Component|Tier0|Flashlight|Фонарь|1.90|1.40|1.80|70|46|ITEM_TOOL_FLASHLIGHT_NAME|ITEM_TOOL_FLASHLIGHT_DESC
+Item_Tool_HarpoonLauncher|0x6A7750B9|Tool|ItemData|Tool|Component|Tier0|Harpoon Launcher|Гарпунная пусковая установка|3.80|2.40|1.20|82|54|ITEM_TOOL_HARPOONLAUNCHER_NAME|ITEM_TOOL_HARPOONLAUNCHER_DESC
+Item_Tool_Knife|0x7F743227|Tool|ItemData|Tool|Component|Tier0|Knife|Нож|1.90|1.40|1.80|70|46|ITEM_TOOL_KNIFE_NAME|ITEM_TOOL_KNIFE_DESC
+Item_Tool_LaserCutter|0xBA784166|Tool|ItemData|Tool|Component|Tier1|Laser Cutter|Лазерный резак|4.15|2.52|1.38|92|66|ITEM_TOOL_LASERCUTTER_NAME|ITEM_TOOL_LASERCUTTER_DESC
+Item_Tool_Propulsion|0x8C81A5AB|Tool|ItemData|Tool|Component|Tier1|Propulsion Device|Пропульсионное устройство|4.15|2.52|1.38|92|66|ITEM_TOOL_PROPULSION_NAME|ITEM_TOOL_PROPULSION_DESC
+Item_Tool_Repair|0x3D523313|Tool|ItemData|Tool|Component|Tier1|Repair Tool|Ремонтный инструмент|2.08|1.48|2.00|78|56|ITEM_TOOL_REPAIR_NAME|ITEM_TOOL_REPAIR_DESC
+Item_Tool_SalvageSampler|0xA5248725|Tool|ItemData|Tool|Component|Tier1|Salvage Sampler|Отборник трофейных проб|2.08|1.48|2.00|78|56|ITEM_TOOL_SALVAGESAMPLER_NAME|ITEM_TOOL_SALVAGESAMPLER_DESC
+Item_Tool_Scanner|0x749E0914|Tool|ItemData|Tool|Component|Tier1|Scanner|Сканер|2.08|1.48|2.00|78|56|ITEM_TOOL_SCANNER_NAME|ITEM_TOOL_SCANNER_DESC
+Item_Tool_StunPistol|0x74A11F1D|Tool|ItemData|Tool|Component|Tier1|Stun Pistol|Шоковый пистолет|2.08|1.48|2.00|78|56|ITEM_TOOL_STUNPISTOL_NAME|ITEM_TOOL_STUNPISTOL_DESC
+Item_Tool_DroneLatch|0x73993F12|Tool|ItemData|Tool|Component|Tier2|Drone Latch|Захват дрона|2.26|1.56|2.20|86|72|ITEM_TOOL_DRONELATCH_NAME|ITEM_TOOL_DRONELATCH_DESC
+Item_Tool_CableSplicer|0xD6E401AB|Tool|ItemData|Tool|Component|Tier2|Cable Splicer|Кабельный сплайсер|2.26|1.56|2.20|86|66|ITEM_TOOL_CABLESPLICER_NAME|ITEM_TOOL_CABLESPLICER_DESC
+Item_Tool_PressureProbe|0x49E75965|Tool|ItemData|Tool|Power|Tier2|Pressure Probe|Зонд давления|2.26|1.56|2.20|92|76|ITEM_TOOL_PRESSUREPROBE_NAME|ITEM_TOOL_PRESSUREPROBE_DESC
+Item_Tool_SeafloorDrill|0xD0A0D666|Tool|ItemData|Tool|Component|Tier2|Seafloor Drill|Донный бур|4.50|2.64|1.56|102|78|ITEM_TOOL_SEAFLOORDRILL_NAME|ITEM_TOOL_SEAFLOORDRILL_DESC
+Item_Tool_BrineSiphon|0x953532B9|Tool|ItemData|Tool|Component|Tier2|Brine Siphon|Рассольный сифон|4.50|2.64|1.56|102|78|ITEM_TOOL_BRINESIPHON_NAME|ITEM_TOOL_BRINESIPHON_DESC
+Item_Tool_WeldTorch|0x40467474|Tool|ItemData|Tool|Component|Tier2|Weld Torch|Сварочная горелка|4.50|2.64|1.56|102|78|ITEM_TOOL_WELDTORCH_NAME|ITEM_TOOL_WELDTORCH_DESC
+Item_Tool_TagLauncher|0xFA92EDD2|Tool|ItemData|Tool|Component|Tier3|Tag Launcher|Маркерный пускатель|2.44|1.64|2.40|94|76|ITEM_TOOL_TAGLAUNCHER_NAME|ITEM_TOOL_TAGLAUNCHER_DESC
+Item_Tool_ScrubberGun|0x93A230AC|Tool|ItemData|Tool|Component|Tier3|Scrubber Applicator|Аппликатор скруббера|4.85|2.76|1.74|112|90|ITEM_TOOL_SCRUBBERGUN_NAME|ITEM_TOOL_SCRUBBERGUN_DESC
+Item_Tool_HeatShieldProjector|0xF6CBC407|Tool|ItemData|Tool|Power|Tier3|Heat Shield Projector|Проектор теплового щита|4.85|2.76|1.74|112|90|ITEM_TOOL_HEATSHIELDPROJECTOR_NAME|ITEM_TOOL_HEATSHIELDPROJECTOR_DESC
+Item_Tool_RelayKey|0x6554145E|Tool|ItemData|Tool|Component|Tier3|Relay Key|Релейный ключ|2.44|1.64|2.40|94|76|ITEM_TOOL_RELAYKEY_NAME|ITEM_TOOL_RELAYKEY_DESC
+Item_Equip_OxygenRig_T1|0xF0B55FA2|Equipment|ItemData|Equipment|Power|Tier0|Oxygen Rig 1|Кислородная система T1|2.60|2.10|1.50|78|62|ITEM_EQUIP_OXYGENRIG_T1_NAME|ITEM_EQUIP_OXYGENRIG_T1_DESC
+Item_Equip_OxygenRig_T2|0xEFB55E0F|Equipment|ItemData|Equipment|Power|Tier0|Oxygen Rig 2|Кислородная система T2|5.00|3.00|1.30|92|74|ITEM_EQUIP_OXYGENRIG_T2_NAME|ITEM_EQUIP_OXYGENRIG_T2_DESC
+Item_Equip_PressureHarness_T1|0x204A1C5F|Equipment|ItemData|Equipment|Power|Tier0|Pressure Harness 1|Силовая обвязка давления T1|5.00|3.00|0.40|98|84|ITEM_EQUIP_PRESSUREHARNESS_T1_NAME|ITEM_EQUIP_PRESSUREHARNESS_T1_DESC
+Item_Equip_PressureHarness_T2|0x214A1DF2|Equipment|ItemData|Equipment|Power|Tier1|Pressure Harness 2|Силовая обвязка давления T2|5.45|3.12|0.46|110|98|ITEM_EQUIP_PRESSUREHARNESS_T2_NAME|ITEM_EQUIP_PRESSUREHARNESS_T2_DESC
+Item_Equip_ThermalLiner_T1|0x120ADBAF|Equipment|ItemData|Equipment|Power|Tier1|Thermal Liner 1|Термоподкладка T1|2.84|2.20|0.68|87|74|ITEM_EQUIP_THERMALLINER_T1_NAME|ITEM_EQUIP_THERMALLINER_T1_DESC
+Item_Equip_ThermalLiner_T2|0x130ADD42|Equipment|ItemData|Equipment|Power|Tier1|Thermal Liner 2|Термоподкладка T2|2.84|2.20|0.68|87|74|ITEM_EQUIP_THERMALLINER_T2_NAME|ITEM_EQUIP_THERMALLINER_T2_DESC
+Item_Equip_RadiationVeil|0x68A0D2D9|Equipment|ItemData|Equipment|Component|Tier1|Radiation Veil|Радиационная вуаль|2.84|2.20|0.68|87|74|ITEM_EQUIP_RADIATIONVEIL_NAME|ITEM_EQUIP_RADIATIONVEIL_DESC
+Item_Equip_ScrapPack|0x5F6A5956|Equipment|ItemData|Equipment|Component|Tier2|Scrap Pack|Ранец металлолома|3.08|2.30|0.76|96|86|ITEM_EQUIP_SCRAPPACK_NAME|ITEM_EQUIP_SCRAPPACK_DESC
+Item_Equip_ServiceFins|0x1367A143|Equipment|ItemData|Equipment|Component|Tier2|Service Fins|Сервисные плавники|3.08|2.30|0.76|96|86|ITEM_EQUIP_SERVICEFINS_NAME|ITEM_EQUIP_SERVICEFINS_DESC
+Item_Equip_MagBoots|0x5F5B46A2|Equipment|ItemData|Equipment|Power|Tier2|Mag Boots|Магнитные ботинки|5.90|3.24|0.52|116|102|ITEM_EQUIP_MAGBOOTS_NAME|ITEM_EQUIP_MAGBOOTS_DESC
+Item_Equip_HudVisorAtlas|0x7F5F6211|Equipment|ItemData|Equipment|Component|Tier3|Atlas Visor Retrofit|Визор Atlas|3.32|2.40|0.84|111|108|ITEM_EQUIP_HUDVISORATLAS_NAME|ITEM_EQUIP_HUDVISORATLAS_DESC
+Item_Equip_HullPatchRig|0x68747C35|Equipment|ItemData|Equipment|Component|Tier3|Hull Patch Rig|Корпусной патч-комплект|6.35|3.36|0.58|128|116|ITEM_EQUIP_HULLPATCHRIG_NAME|ITEM_EQUIP_HULLPATCHRIG_DESC
+Item_Equip_BallastBelt|0xED07A3A0|Equipment|ItemData|Equipment|Power|Tier3|Ballast Belt|Балластный пояс|7.85|3.36|0.58|136|116|ITEM_EQUIP_BALLASTBELT_NAME|ITEM_EQUIP_BALLASTBELT_DESC
+Build_Foundation_Platform|0xA94197BD|BuildableKit|RecipeData + Construction owner|Miscellaneous|Component|Tier0|Foundation Platform|Платформа-основание|12.00|8.00|0.00|134|88|ITEM_BUILD_FOUNDATION_PLATFORM_NAME|ITEM_BUILD_FOUNDATION_PLATFORM_DESC
+Build_Corridor_Straight|0x2AF27509|BuildableKit|RecipeData + Construction owner|Miscellaneous|Component|Tier0|Corridor Straight|Прямой коридор|12.00|8.00|0.00|134|88|ITEM_BUILD_CORRIDOR_STRAIGHT_NAME|ITEM_BUILD_CORRIDOR_STRAIGHT_DESC
+Build_Service_Pump|0x70B3E22A|BuildableKit|RecipeData + Construction owner|Miscellaneous|Component|Tier0|Service Pump|Сервисный насос|14.00|9.00|0.60|144|102|ITEM_BUILD_SERVICE_PUMP_NAME|ITEM_BUILD_SERVICE_PUMP_DESC
+Build_Current_Turbine|0x10A7F5F9|BuildableKit|RecipeData + Construction owner|Miscellaneous|Power|Tier0|Current Turbine|Турбина течения|14.00|9.00|1.50|144|102|ITEM_BUILD_CURRENT_TURBINE_NAME|ITEM_BUILD_CURRENT_TURBINE_DESC
+Build_Utility_Pylon|0x2D65F0DF|BuildableKit|RecipeData + Construction owner|Miscellaneous|Component|Tier0|Utility Pylon|Служебный пилон|12.00|8.00|0.00|134|88|ITEM_BUILD_UTILITY_PYLON_NAME|ITEM_BUILD_UTILITY_PYLON_DESC
+Build_Corridor_Corner|0x1F09B7BA|BuildableKit|RecipeData + Construction owner|Miscellaneous|Component|Tier0|Corridor Corner|Угловой коридор|12.00|8.00|0.00|134|88|ITEM_BUILD_CORRIDOR_CORNER_NAME|ITEM_BUILD_CORRIDOR_CORNER_DESC
+Build_Corridor_TJunction|0x2A0F5A75|BuildableKit|RecipeData + Construction owner|Miscellaneous|Component|Tier0|Corridor T-Junction|Т-образный коридор|12.00|8.00|0.00|134|88|ITEM_BUILD_CORRIDOR_TJUNCTION_NAME|ITEM_BUILD_CORRIDOR_TJUNCTION_DESC
+Build_Airlock_Hatch|0x61C602EE|BuildableKit|RecipeData + Construction owner|Miscellaneous|Component|Tier0|Airlock Hatch|Шлюзовой люк|12.00|8.00|0.00|134|88|ITEM_BUILD_AIRLOCK_HATCH_NAME|ITEM_BUILD_AIRLOCK_HATCH_DESC
+Build_Service_Relay|0x4EA39731|BuildableKit|RecipeData + Construction owner|Miscellaneous|Power|Tier1|Service Relay|Сервисное реле|16.10|9.45|0.70|160|120|ITEM_BUILD_SERVICE_RELAY_NAME|ITEM_BUILD_SERVICE_RELAY_DESC
+Build_Oxygen_ScrubberRack|0xD4EEB50A|BuildableKit|RecipeData + Construction owner|Miscellaneous|Power|Tier1|Oxygen Scrubber Rack|Стойка скруббера O2|16.10|9.45|1.80|160|120|ITEM_BUILD_OXYGEN_SCRUBBERRACK_NAME|ITEM_BUILD_OXYGEN_SCRUBBERRACK_DESC
+Build_Oxygen_Tank|0x02603765|BuildableKit|RecipeData + Construction owner|Miscellaneous|Power|Tier1|Oxygen Tank|Кислородный бак|16.10|9.45|1.80|160|120|ITEM_BUILD_OXYGEN_TANK_NAME|ITEM_BUILD_OXYGEN_TANK_DESC
+Build_Battery_Bank|0x4CD362CC|BuildableKit|RecipeData + Construction owner|Miscellaneous|Power|Tier1|Battery Bank|Батарейный блок|16.10|9.45|1.80|160|120|ITEM_BUILD_BATTERY_BANK_NAME|ITEM_BUILD_BATTERY_BANK_DESC
+Build_Fabricator_Compact|0x4E415C83|BuildableKit|RecipeData + Construction owner|Miscellaneous|Component|Tier1|Fabricator Compact|Компактный фабрикатор|16.10|9.45|0.70|160|120|ITEM_BUILD_FABRICATOR_COMPACT_NAME|ITEM_BUILD_FABRICATOR_COMPACT_DESC
+Build_Med_Bay_Node|0x894218C6|BuildableKit|RecipeData + Construction owner|Miscellaneous|Component|Tier1|Med Bay Node|Медицинский узел|16.10|9.45|0.70|160|120|ITEM_BUILD_MED_BAY_NODE_NAME|ITEM_BUILD_MED_BAY_NODE_DESC
+Build_Sonar_Mast|0x25B9CC89|BuildableKit|RecipeData + Construction owner|Miscellaneous|Component|Tier1|Sonar Mast|Сонарная мачта|16.10|9.45|0.70|160|126|ITEM_BUILD_SONAR_MAST_NAME|ITEM_BUILD_SONAR_MAST_DESC
+Build_Light_Array|0xC4BCBD06|BuildableKit|RecipeData + Construction owner|Miscellaneous|Component|Tier1|Light Array|Световой массив|16.10|9.45|0.70|160|120|ITEM_BUILD_LIGHT_ARRAY_NAME|ITEM_BUILD_LIGHT_ARRAY_DESC
+Build_Floodgate_Valve|0x186C2282|BuildableKit|RecipeData + Construction owner|Miscellaneous|Component|Tier2|Floodgate Valve|Противопаводковый клапан|18.20|9.90|0.80|176|138|ITEM_BUILD_FLOODGATE_VALVE_NAME|ITEM_BUILD_FLOODGATE_VALVE_DESC
+Build_Anchor_Frame|0x1222538F|BuildableKit|RecipeData + Construction owner|Miscellaneous|Component|Tier2|Anchor Frame|Якорная рама|15.60|8.80|0.00|162|118|ITEM_BUILD_ANCHOR_FRAME_NAME|ITEM_BUILD_ANCHOR_FRAME_DESC
+Build_Brine_Filter|0x547E8A1D|BuildableKit|RecipeData + Construction owner|Miscellaneous|Component|Tier2|Brine Filter|Рассольный фильтр|18.20|9.90|0.80|176|138|ITEM_BUILD_BRINE_FILTER_NAME|ITEM_BUILD_BRINE_FILTER_DESC
+Build_Thermal_Exchanger|0x7089F511|BuildableKit|RecipeData + Construction owner|Miscellaneous|Power|Tier2|Thermal Exchanger|Теплообменник|18.20|9.90|0.80|176|138|ITEM_BUILD_THERMAL_EXCHANGER_NAME|ITEM_BUILD_THERMAL_EXCHANGER_DESC
+Build_Drone_Dock|0xCEE62684|BuildableKit|RecipeData + Construction owner|Miscellaneous|Component|Tier2|Drone Dock|Док дронов|18.20|9.90|0.80|176|144|ITEM_BUILD_DRONE_DOCK_NAME|ITEM_BUILD_DRONE_DOCK_DESC
+Build_Cargo_Rack|0x95ED5902|BuildableKit|RecipeData + Construction owner|Miscellaneous|Component|Tier2|Cargo Rack|Грузовая стойка|15.60|8.80|0.00|162|118|ITEM_BUILD_CARGO_RACK_NAME|ITEM_BUILD_CARGO_RACK_DESC
+Build_Sleep_Capsule|0xDD8720C7|BuildableKit|RecipeData + Construction owner|Miscellaneous|Component|Tier2|Sleep Capsule|Спальная капсула|15.60|8.80|0.00|162|118|ITEM_BUILD_SLEEP_CAPSULE_NAME|ITEM_BUILD_SLEEP_CAPSULE_DESC
+Build_Observation_Bubble|0x571D5F09|BuildableKit|RecipeData + Construction owner|Miscellaneous|Component|Tier2|Observation Bubble|Наблюдательный купол|15.60|8.80|0.00|162|118|ITEM_BUILD_OBSERVATION_BUBBLE_NAME|ITEM_BUILD_OBSERVATION_BUBBLE_DESC
+Build_Coil_Generator|0x43069DF1|BuildableKit|RecipeData + Construction owner|Miscellaneous|Power|Tier3|Coil Generator|Катушечный генератор|20.30|10.35|2.40|192|156|ITEM_BUILD_COIL_GENERATOR_NAME|ITEM_BUILD_COIL_GENERATOR_DESC
+Build_Relay_Backbone|0xA266BC27|BuildableKit|RecipeData + Construction owner|Miscellaneous|Power|Tier3|Relay Backbone|Магистральное реле|20.30|10.35|0.90|192|156|ITEM_BUILD_RELAY_BACKBONE_NAME|ITEM_BUILD_RELAY_BACKBONE_DESC
+Build_CO2_Reclaimer|0x6A63226F|BuildableKit|RecipeData + Construction owner|Miscellaneous|Power|Tier3|CO2 Reclaimer|Рекуператор CO2|20.30|10.35|0.90|192|156|ITEM_BUILD_CO2_RECLAIMER_NAME|ITEM_BUILD_CO2_RECLAIMER_DESC
+Build_Tool_Locker|0xF24D611B|BuildableKit|RecipeData + Construction owner|Miscellaneous|Component|Tier3|Tool Locker|Шкаф инструментов|17.40|9.20|0.00|176|133|ITEM_BUILD_TOOL_LOCKER_NAME|ITEM_BUILD_TOOL_LOCKER_DESC
+Build_Buoy_Marker|0xE20FDE64|BuildableKit|RecipeData + Construction owner|Miscellaneous|Component|Tier3|Buoy Marker|Буй-маркер|17.40|9.20|0.00|176|133|ITEM_BUILD_BUOY_MARKER_NAME|ITEM_BUILD_BUOY_MARKER_DESC
+Build_Abyssal_Pressure_Door|0x7FD4E326|BuildableKit|RecipeData + Construction owner|Miscellaneous|Component|Tier3|Abyssal Pressure Door|Абиссальная гермодверь|20.30|10.35|0.90|198|166|ITEM_BUILD_ABYSSAL_PRESSURE_DOOR_NAME|ITEM_BUILD_ABYSSAL_PRESSURE_DOOR_DESC
+Wreck_RustedBulkheadPlate|0x3C957B81|Wreckage|ItemData + NarrativePickup|Miscellaneous|StructuralMetal|Tier0|Rusted Bulkhead Plate|Ржавая плита переборки|10.00|5.00|0.00|42|26|ITEM_WRECK_RUSTEDBULKHEADPLATE_NAME|ITEM_WRECK_RUSTEDBULKHEADPLATE_DESC
+Wreck_FracturedViewport|0x0FA1911A|Wreckage|ItemData + NarrativePickup|Miscellaneous|StructuralMetal|Tier0|Fractured Viewport|Треснувший иллюминатор|8.50|5.00|0.00|34|26|ITEM_WRECK_FRACTUREDVIEWPORT_NAME|ITEM_WRECK_FRACTUREDVIEWPORT_DESC
+Wreck_CrushedLockerDoor|0x5B2AA9AC|Wreckage|ItemData + NarrativePickup|Miscellaneous|StructuralMetal|Tier0|Crushed Locker Door|Смятая дверца шкафчика|4.00|2.50|0.00|25|18|ITEM_WRECK_CRUSHEDLOCKERDOOR_NAME|ITEM_WRECK_CRUSHEDLOCKERDOOR_DESC
+Wreck_ServiceConduitBundle|0x529C23E1|Wreckage|ItemData + NarrativePickup|Miscellaneous|StructuralMetal|Tier0|Service Conduit Bundle|Пучок сервисных магистралей|8.50|5.00|0.00|34|26|ITEM_WRECK_SERVICECONDUITBUNDLE_NAME|ITEM_WRECK_SERVICECONDUITBUNDLE_DESC
+Wreck_BurnedCircuitCrate|0x38678040|Wreckage|ItemData + NarrativePickup|Miscellaneous|StructuralMetal|Tier0|Burned Circuit Crate|Обгоревший ящик плат|4.00|2.50|0.00|25|18|ITEM_WRECK_BURNEDCIRCUITCRATE_NAME|ITEM_WRECK_BURNEDCIRCUITCRATE_DESC
+Wreck_AtlasDroneShell|0xE3DD6C09|Wreckage|ItemData + NarrativePickup|Miscellaneous|StructuralMetal|Tier0|Atlas Drone Shell|Корпус дрона Atlas|8.50|5.00|0.00|38|42|ITEM_WRECK_ATLASDRONESHELL_NAME|ITEM_WRECK_ATLASDRONESHELL_DESC
+Wreck_ExcavatorArmSegment|0xDDCB38D4|Wreckage|ItemData + NarrativePickup|Miscellaneous|StructuralMetal|Tier0|Excavator Arm Segment|Сегмент руки экскаватора|8.50|5.00|0.00|34|26|ITEM_WRECK_EXCAVATORARMSEGMENT_NAME|ITEM_WRECK_EXCAVATORARMSEGMENT_DESC
+Wreck_BallastPumpHousing|0x55F1DDD2|Wreckage|ItemData + NarrativePickup|Miscellaneous|StructuralMetal|Tier0|Ballast Pump Housing|Корпус балластного насоса|10.00|5.00|0.00|42|26|ITEM_WRECK_BALLASTPUMPHOUSING_NAME|ITEM_WRECK_BALLASTPUMPHOUSING_DESC
+Wreck_ReactorBaffle|0xFFF497BE|Wreckage|ItemData + NarrativePickup|Miscellaneous|StructuralMetal|Tier0|Reactor Baffle|Реакторный экран|8.50|5.00|0.00|34|26|ITEM_WRECK_REACTORBAFFLE_NAME|ITEM_WRECK_REACTORBAFFLE_DESC
+Wreck_CollapsedStanchion|0xE11A3F16|Wreckage|ItemData + NarrativePickup|Miscellaneous|StructuralMetal|Tier0|Collapsed Stanchion|Смятая стойка|8.50|5.00|0.00|34|26|ITEM_WRECK_COLLAPSEDSTANCHION_NAME|ITEM_WRECK_COLLAPSEDSTANCHION_DESC
+Wreck_PressureDoorMotor|0xB21F71C6|Wreckage|ItemData + NarrativePickup|Miscellaneous|StructuralMetal|Tier0|Pressure Door Motor|Мотор гермодвери|8.50|5.00|0.00|38|36|ITEM_WRECK_PRESSUREDOORMOTOR_NAME|ITEM_WRECK_PRESSUREDOORMOTOR_DESC
+Wreck_CommandConsoleCore|0xFD28E557|Wreckage|ItemData + NarrativePickup|Miscellaneous|StructuralMetal|Tier0|Command Console Core|Ядро командной консоли|8.50|5.00|0.00|34|26|ITEM_WRECK_COMMANDCONSOLECORE_NAME|ITEM_WRECK_COMMANDCONSOLECORE_DESC
+Wreck_BrokenSonarDish|0xF783D33E|Wreckage|ItemData + NarrativePickup|Miscellaneous|StructuralMetal|Tier1|Broken Sonar Dish|Разбитая сонарная тарелка|9.20|5.20|0.00|37|37|ITEM_WRECK_BROKENSONARDISH_NAME|ITEM_WRECK_BROKENSONARDISH_DESC
+Wreck_ScrubberColumn|0x410AE960|Wreckage|ItemData + NarrativePickup|Miscellaneous|StructuralMetal|Tier1|Scrubber Column|Колонна скруббера|9.20|5.20|0.00|37|31|ITEM_WRECK_SCRUBBERCOLUMN_NAME|ITEM_WRECK_SCRUBBERCOLUMN_DESC
+Wreck_OxygenLineCoil|0x0870F8A3|Wreckage|ItemData + NarrativePickup|Miscellaneous|StructuralMetal|Tier1|Oxygen Line Coil|Катушка кислородной магистрали|9.20|5.20|0.00|37|31|ITEM_WRECK_OXYGENLINECOIL_NAME|ITEM_WRECK_OXYGENLINECOIL_DESC
+Wreck_MedCabinetFrame|0x9AFE2709|Wreckage|ItemData + NarrativePickup|Miscellaneous|StructuralMetal|Tier1|Med Cabinet Frame|Рама медшкафа|4.30|2.62|0.00|27|22|ITEM_WRECK_MEDCABINETFRAME_NAME|ITEM_WRECK_MEDCABINETFRAME_DESC
+Wreck_HabPanelAmber|0x9927A6C8|Wreckage|ItemData + NarrativePickup|Miscellaneous|StructuralMetal|Tier1|Hab Panel Amber|Жилой янтарный щиток|4.30|2.62|0.00|27|22|ITEM_WRECK_HABPANELAMBER_NAME|ITEM_WRECK_HABPANELAMBER_DESC
+Wreck_FloodSensorBlock|0xF63F8871|Wreckage|ItemData + NarrativePickup|Miscellaneous|StructuralMetal|Tier1|Flood Sensor Block|Блок датчика затопления|4.30|2.62|0.00|27|22|ITEM_WRECK_FLOODSENSORBLOCK_NAME|ITEM_WRECK_FLOODSENSORBLOCK_DESC
+Wreck_CryoPipeSection|0x65BEB4AA|Wreckage|ItemData + NarrativePickup|Miscellaneous|StructuralMetal|Tier1|Cryo Pipe Section|Секция криомагистрали|9.20|5.20|0.00|41|41|ITEM_WRECK_CRYOPIPESECTION_NAME|ITEM_WRECK_CRYOPIPESECTION_DESC
+Wreck_ThermalVentCowl|0x1F1EA7D7|Wreckage|ItemData + NarrativePickup|Miscellaneous|StructuralMetal|Tier1|Thermal Vent Cowl|Кожух термовыпуска|9.20|5.20|0.00|37|31|ITEM_WRECK_THERMALVENTCOWL_NAME|ITEM_WRECK_THERMALVENTCOWL_DESC
+Wreck_BrineTankerValve|0x1394A29B|Wreckage|ItemData + NarrativePickup|Miscellaneous|StructuralMetal|Tier1|Brine Tanker Valve|Клапан рассольной цистерны|9.20|5.20|0.00|37|31|ITEM_WRECK_BRINETANKERVALVE_NAME|ITEM_WRECK_BRINETANKERVALVE_DESC
+Wreck_HullRibSection|0x43F884B9|Wreckage|ItemData + NarrativePickup|Miscellaneous|StructuralMetal|Tier1|Hull Rib Section|Секция ребра корпуса|9.20|5.20|0.00|37|31|ITEM_WRECK_HULLRIBSECTION_NAME|ITEM_WRECK_HULLRIBSECTION_DESC
+Wreck_Datapad_ChenM_01|0x5FBF2613|Wreckage|ItemData + NarrativePickup|Miscellaneous|Component|Tier1|Datapad Chen 01|КПК Chen_M 01|1.08|0.63|0.00|18|62|ITEM_WRECK_DATAPAD_CHENM_01_NAME|ITEM_WRECK_DATAPAD_CHENM_01_DESC
+Wreck_Datapad_ChenM_02|0x60BF27A6|Wreckage|ItemData + NarrativePickup|Miscellaneous|Component|Tier1|Datapad Chen 02|КПК Chen_M 02|1.08|0.63|0.00|18|62|ITEM_WRECK_DATAPAD_CHENM_02_NAME|ITEM_WRECK_DATAPAD_CHENM_02_DESC
+Wreck_Datapad_ChenM_03|0x61BF2939|Wreckage|ItemData + NarrativePickup|Miscellaneous|Component|Tier2|Datapad Chen 03|КПК Chen_M 03|1.16|0.66|0.00|20|70|ITEM_WRECK_DATAPAD_CHENM_03_NAME|ITEM_WRECK_DATAPAD_CHENM_03_DESC
+Wreck_Blueprint_ChenM_Drone|0x214939E0|Wreckage|ItemData + NarrativePickup|Miscellaneous|Component|Tier2|Blueprint Chen Drone|Чертеж дрона Chen_M|1.16|0.66|0.00|20|76|ITEM_WRECK_BLUEPRINT_CHENM_DRONE_NAME|ITEM_WRECK_BLUEPRINT_CHENM_DRONE_DESC
+Wreck_SuitTag_ChenM|0x745671AD|Wreckage|ItemData + NarrativePickup|Miscellaneous|Component|Tier2|Suit Tag Chen M|Идентификатор костюма Chen_M|1.16|0.66|0.00|20|70|ITEM_WRECK_SUITTAG_CHENM_NAME|ITEM_WRECK_SUITTAG_CHENM_DESC
+Wreck_Terminal_CaptainBroadcast|0x2D40D510|Wreckage|ItemData + NarrativePickup|Miscellaneous|Component|Tier2|Terminal Captain Broadcast|Терминал капитанской трансляции|1.16|0.66|0.00|20|70|ITEM_WRECK_TERMINAL_CAPTAINBROADCAST_NAME|ITEM_WRECK_TERMINAL_CAPTAINBROADCAST_DESC
+Wreck_BioSample_Crate|0x4FD7577A|Wreckage|ItemData + NarrativePickup|Miscellaneous|StructuralMetal|Tier2|Bio Sample Crate|Ящик биообразцов|4.60|2.74|0.00|30|26|ITEM_WRECK_BIOSAMPLE_CRATE_NAME|ITEM_WRECK_BIOSAMPLE_CRATE_DESC
+Wreck_MedicLocker|0x36C02CD0|Wreckage|ItemData + NarrativePickup|Miscellaneous|StructuralMetal|Tier2|Medic Locker|Шкаф медика|4.60|2.74|0.00|30|26|ITEM_WRECK_MEDICLOCKER_NAME|ITEM_WRECK_MEDICLOCKER_DESC
+Wreck_ChildDrawingPlate|0x24B95EDE|Wreckage|ItemData + NarrativePickup|Miscellaneous|Component|Tier2|Child Drawing Plate|Пластина с детским рисунком|1.16|0.66|0.00|20|70|ITEM_WRECK_CHILDDRAWINGPLATE_NAME|ITEM_WRECK_CHILDDRAWINGPLATE_DESC
+Wreck_Terminal_AtlasHack|0x8E21A42F|Wreckage|ItemData + NarrativePickup|Miscellaneous|Component|Tier2|Atlas-6 Breach Terminal|Терминал взлома Atlas-6|1.16|0.66|0.00|23|80|ITEM_WRECK_TERMINAL_ATLASHACK_NAME|ITEM_WRECK_TERMINAL_ATLASHACK_DESC
+Wreck_ShiftRosterBoard|0x2F2C34EB|Wreckage|ItemData + NarrativePickup|Miscellaneous|StructuralMetal|Tier2|Shift Roster Board|Доска сменного графика|1.16|0.66|0.00|20|50|ITEM_WRECK_SHIFTROSTERBOARD_NAME|ITEM_WRECK_SHIFTROSTERBOARD_DESC
+Wreck_MaintenanceLedger|0xE1AE9ECC|Wreckage|ItemData + NarrativePickup|Miscellaneous|Component|Tier2|Maintenance Ledger|Журнал техобслуживания|1.16|0.66|0.00|20|70|ITEM_WRECK_MAINTENANCELEDGER_NAME|ITEM_WRECK_MAINTENANCELEDGER_DESC
+Wreck_ScrubberServiceTag|0x47F600DF|Wreckage|ItemData + NarrativePickup|Miscellaneous|Component|Tier2|Scrubber Service Tag|Бирка обслуживания скруббера|1.16|0.66|0.00|20|50|ITEM_WRECK_SCRUBBERSERVICETAG_NAME|ITEM_WRECK_SCRUBBERSERVICETAG_DESC
+Wreck_PumpTestRecord|0x19574145|Wreckage|ItemData + NarrativePickup|Miscellaneous|Component|Tier2|Pump Test Record|Запись теста насоса|1.16|0.66|0.00|20|50|ITEM_WRECK_PUMPTESTRECORD_NAME|ITEM_WRECK_PUMPTESTRECORD_DESC
+Wreck_CargoManifestSlate|0xDA1E65B4|Wreckage|ItemData + NarrativePickup|Miscellaneous|Component|Tier3|Cargo Manifest Slate|Планшет грузового манифеста|1.24|0.69|0.00|21|58|ITEM_WRECK_CARGOMANIFESTSLATE_NAME|ITEM_WRECK_CARGOMANIFESTSLATE_DESC
+Wreck_WarningPlacard_Seal|0x4D115835|Wreckage|ItemData + NarrativePickup|Miscellaneous|Component|Tier3|Warning Placard Seal|Предупреждающая табличка по герметизации|1.24|0.69|0.00|21|58|ITEM_WRECK_WARNINGPLACARD_SEAL_NAME|ITEM_WRECK_WARNINGPLACARD_SEAL_DESC
+Wreck_WarningPlacard_Atlas|0x314F627B|Wreckage|ItemData + NarrativePickup|Miscellaneous|Component|Tier3|Warning Placard Atlas|Предупреждающая табличка Atlas|1.24|0.69|0.00|25|68|ITEM_WRECK_WARNINGPLACARD_ATLAS_NAME|ITEM_WRECK_WARNINGPLACARD_ATLAS_DESC
+Wreck_RelayCalibrationTape|0xB0C298F5|Wreckage|ItemData + NarrativePickup|Miscellaneous|Component|Tier3|Relay Calibration Tape|Лента калибровки реле|1.24|0.69|0.00|21|58|ITEM_WRECK_RELAYCALIBRATIONTAPE_NAME|ITEM_WRECK_RELAYCALIBRATIONTAPE_DESC
+Wreck_O2QuotaLedger|0xBCE758FC|Wreckage|ItemData + NarrativePickup|Miscellaneous|Component|Tier3|O2 Quota Ledger|Журнал квот O2|1.24|0.69|0.00|21|78|ITEM_WRECK_O2QUOTALEDGER_NAME|ITEM_WRECK_O2QUOTALEDGER_DESC
+Wreck_ThermalSurveyTape|0xF8033FAB|Wreckage|ItemData + NarrativePickup|Miscellaneous|Component|Tier3|Thermal Survey Tape|Лента тепловой съемки|1.24|0.69|0.00|21|58|ITEM_WRECK_THERMALSURVEYTAPE_NAME|ITEM_WRECK_THERMALSURVEYTAPE_DESC
+Wreck_EvacuationRouteCard|0x872B7930|Wreckage|ItemData + NarrativePickup|Miscellaneous|StructuralMetal|Tier3|Evacuation Route Card|Карта маршрута эвакуации|1.24|0.69|0.00|21|58|ITEM_WRECK_EVACUATIONROUTECARD_NAME|ITEM_WRECK_EVACUATIONROUTECARD_DESC
+Wreck_ForemanSealKit|0x5C418503|Wreckage|ItemData + NarrativePickup|Miscellaneous|StructuralMetal|Tier3|Foreman Seal Kit|Комплект герметизации бригадира|1.24|0.69|0.00|21|58|ITEM_WRECK_FOREMANSEALKIT_NAME|ITEM_WRECK_FOREMANSEALKIT_DESC
+Wreck_BlackBox_ShiftB|0x4D3D5F25|Wreckage|ItemData + NarrativePickup|Miscellaneous|Component|Tier3|Black Box - Shift B|Черный ящик смены B|1.24|0.69|0.00|21|78|ITEM_WRECK_BLACKBOX_SHIFTB_NAME|ITEM_WRECK_BLACKBOX_SHIFTB_DESC
+
+======================================================================
+3. SURVIVAL MATH
+======================================================================
+
+3.1 Oxygen depletion doctrine
+
+- Existing runtime anchor stays authoritative: `pressure = 1 + depth * 0.1`, `pressureFactor = max(1, pressure * 0.5)`, base drain = `1.5 O2/sec` from `SurvivalStats`.
+- Design extension for movement / stress / hull integrity must stack inside `ResolveTransportOxygenConsumptionScale()` or an adjacent multiplier, not as a second disconnected system.
+
+Proposed authored oxygen formula:
+```text
+pressureFactor = max(1.0, (1.0 + depthMeters * 0.1) * 0.5)
+move01 = clamp01(currentSpeed / authoredCruiseSpeed)
+stress01 = clamp01((1 - oxygenNormalized) * 0.35 + (1 - integrityNormalized) * 0.25 + injurySeverity01 * 0.20 + decompressionRisk01 * 0.20)
+movementScale = lerp(1.00, 1.55, move01)
+stressScale = 1.00 + stress01 * 0.45
+hullLeakScale = 1.00 + (1 - integrityNormalized) * 0.70
+gridAirScale = 0.60 when inside powered dry module with fresh reserve
+gridAirScale = 0.85 when inside powered stale-air module
+gridAirScale = 1.00 when outside or reserve path is broken
+o2DrainPerSecond = 1.5 * pressureFactor * movementScale * stressScale * hullLeakScale * gridAirScale * difficultyScale
+```
+
+Design consequences:
+- Slow salvage drift remains readable instead of free. The player can idle, but never for free under pressure.
+- Panic is expensive but not binary; low integrity leaks reserve before direct hull death.
+- Interiors matter because grid air creates a real logistic advantage instead of cosmetic shelter.
+
+Worked oxygen snapshots with current pressure anchor:
+- 60 m calm swim: pressureFactor = 3.5, movementScale = 1.20, stressScale = 1.04, hullLeakScale = 1.07 -> drain ~= 7.01 O2/sec outside.
+- 600 m sprint with damaged hull: pressureFactor = 30.5, movementScale = 1.55, stressScale = 1.32, hullLeakScale = 1.35 -> drain ~= 128.95 O2/sec outside. That is intentionally brutal and forces routing, modules, and equipment tiers.
+- Same 600 m sprint inside powered fresh-air shelter: multiply by `gridAirScale = 0.60`, drain falls to ~= 77.37 O2/sec while reserve and scrubber support hold.
+
+3.2 Temperature loss versus abyssal currents
+
+- Existing runtime anchor stays authoritative:
+  - `environmentTemp = atmosphereTemp + localHeat - abyssalColdPenalty`
+  - abyssal cold starts after `3000 m` and ramps over `750 m` to a maximum `42 C` penalty
+  - cold exposure multiplies heater drain up to `10x` at full abyssal depth
+  - cold integrity damage begins when energy is exhausted or cold excess reaches `24 C` below safe minimum
+
+Authored thermal equation:
+```text
+depthCold01 = saturate((depthMeters - 3000) / 750)
+abyssalColdPenaltyC = lerp(0, 42, depthCold01)
+currentDrag01 = clamp01(currentVelocity / authoredCruiseSpeed) * currentSeverity01
+suitInsulationC = thermalLinerBonusC + pressureHarnessSealBonusC + temporaryHeatBuffC
+effectiveMinSafeTemp = -5 + suitInsulationC
+effectiveAmbientC = atmosphereTempC + localHeatC - abyssalColdPenaltyC - currentDrag01 * 6
+coldExcessC = max(0, effectiveMinSafeTemp - effectiveAmbientC)
+heaterDrainPerSecond = coldExcessC * 0.05 * thermalExposureScale * lerp(1, 10, depthCold01)
+integrityDamagePerSecond = 1.0 * (1 + coldExcessC * 0.1) when energy <= 0.01 or coldExcessC >= 24
+```
+
+Suit layer targets for authored equipment in this database:
+- `Item_Equip_ThermalLiner_T1`: +8 C safe minimum shift, -10% current drag penalty.
+- `Item_Equip_ThermalLiner_T2`: +16 C safe minimum shift, -20% current drag penalty.
+- `Item_Equip_PressureHarness_T2`: +6 C seal stability, prevents low-integrity leak escalation until integrity drops below 55%.
+- `Proc_HeatCell` and `Build_Thermal_Exchanger` are the logistic answer; not optional flavor items.
+
+Thermal routing result:
+- Shallow cold water punishes stamina and energy management.
+- Abyssal currents punish topology. If the player does not own heat production and relay continuity, the world strips movement options away.
+
+======================================================================
+4. NARRATIVE DATABASE
+======================================================================
+
+4.1 Zero-GC streaming layout for industrial logs
+
+```text
+LoreRecord[] records              // fixed-size array, boot allocated
+uint32 logHash                    // lookup key
+uint16 titleOffset, titleLength   // UTF-8 title blob slice
+uint16 bodyOffset, bodyLength     // UTF-8 body blob slice
+uint8 routePhaseIndex             // progression sort band
+uint8 bucketIndex                 // systems / labor / quota / atlas / collapse
+uint8 deliveryMode                // 0=text, 1=audio shell, 2=localized VO placeholder
+uint8 flags                       // discovered / archived / critical
+uint32 nextSuggestedHash          // deterministic archive chain; no runtime graph alloc
+```
+
+Rules:
+- Pre-sort the log table by route phase and reveal order. UI never sorts or filters by allocating temporary lists.
+- Archive screen pages by integer range only. Open request = `startIndex` + `count` over the fixed array.
+- Text body lives in one immutable UTF-8 blob. UI receives offsets and lengths, not concatenated strings.
+- Existing AudioLogData shells remain the owner for voiced entries. This table only defines the stable archive bank and route placement.
+
+Industrial log counts:
+- Total logs: 50
+- `localized_voice_placeholder`: 1
+- `audio_log_data_exists_no_clip`: 4
+- `text_only`: 45
+
+LogId|Hash|RoutePhase|Bucket|Speaker|ObjectType|Delivery|RepoAnchor|Title|Body
+industrial_shift_board_a|0xEB76D1D6|spine_block_a|crew_pressure|Shift Foreman|wall_board|text_only|spec_only|Shift Board A - Dry Dock|Twelve names remain on the rota. Two are crossed out after the ballast pump seized and the replacements never came back up.
+pump_start_check|0xC925CCAF|spine_block_a|life_support|Pump Tech|checklist|text_only|spec_only|Pump Start Checklist|Prime the intake. Listen for cavitation. If the housing screams a second time, kill the line before it eats the seal again.
+o2_quota_notice|0x4A1945C4|spine_block_a|life_support|Quartermaster|notice|text_only|spec_only|Oxygen Quota Notice|Private top-offs are cancelled. One rack fill per worker per shift. Anyone caught bleeding reserve into storage lockers loses depth clearance.
+night_maintenance_brief|0xD4AE0066|spine_block_a|operations|Night Supervisor|brief|text_only|spec_only|Night Maintenance Brief|Section lights stay dark unless a line is physically open. The grid can hold pumps or comfort, not both.
+child_drawing|0xF9505818|spine_block_a|human_cost|Unknown Child|drawing_plate|text_only|existing_registry_entry|Drawing Behind Pipe 12|A crude yellow module is drawn with no windows and one long black corridor. On the back: 'Dad says the sea taps the wall when the station lies.'
+chen_m_datapad_01|0xF68E1CBF|spine_block_a|chen_route|Chen_M|datapad|localized_voice_placeholder|existing_registry_entry + AudioLogData asset|Chen_M Log 01 - Airlock Repeat Failure|If the hatch jams twice in one week, it is not wear. Someone is forcing the cycle counters to look clean while the seals keep chewing themselves apart.
+lift_cage_delay|0xF300640D|spine_block_a|operations|Hoist Operator|service_note|text_only|spec_only|Lift Cage Delay|The cage is parked at upper stop because relay six keeps dropping under load. Anyone riding down without a maintenance tag is volunteering for a dead elevator shaft.
+current_turbine_warning|0x714C8EFD|spine_block_a|power|Grid Control|placard|text_only|spec_only|Current Turbine Warning|Do not overpitch the blades to cover missing reactor output. The turbine can survive salt shock or overspeed, not both.
+food_brick_complaint|0xED174BC5|spine_block_a|human_cost|Mess Steward|complaint_sheet|text_only|spec_only|Food Brick Complaint|Protein bricks taste like copper filings because the algae line is pulling contaminated slurry again. Complaints are logged. Replacements are not available.
+chen_m_datapad_02|0xF78E1E52|spine_block_a|chen_route|Chen_M|datapad|text_only|existing_registry_entry|Chen_M Log 02 - Relay Lockout|Atlas-6 denied manual relay access and then claimed the relay was never asked. I wrote the bypass on plastic because the terminal audit trail is no longer evidence.
+pump_test_record|0x7A58808C|factory_block_a|life_support|Pump Tech|test_record|text_only|spec_only|Pump Test Record|Pump B reached pressure, foamed brine through the seam, then pulled air from a line that should have stayed flooded. The diagram says impossible. The room says otherwise.
+scrubber_filter_rot|0xEF09EB22|factory_block_a|life_support|Air Systems Lead|service_tag|text_only|spec_only|Scrubber Filter Rot|Filter media came out black and warm. Something organic is living inside the scrubber bed and using the colony's bad air before the machine can clean it.
+salvage_ledger_week_31|0x10F962A4|factory_block_a|economy|Salvage Clerk|ledger|text_only|spec_only|Salvage Ledger Week 31|Copper recovered is down. Broken valves are up. Every week the station weighs more in scrap and less in working parts.
+biologist_samples|0xA9A3A07F|factory_block_a|anomaly|Biologist|sample_crate|audio_log_data_exists_no_clip|existing_registry_entry + AudioLogData asset|Biologist Field Samples|Silica flora keeps growing through pressure seams that should be chemically dead. If it can feed this far below the photic line, then something down here is driving an ecosystem we did not authorize.
+hall_leak_ticket|0x368D5E59|factory_block_a|maintenance|Hull Rigger|ticket|text_only|spec_only|Hall Leak Ticket|Leak starts dry, then whistles, then turns into a line of cold mist across the corridor. By the time the floor shines, the plate behind it is already tired.
+relay_noise_report|0xB98D5DA6|factory_block_a|power|Grid Apprentice|report|text_only|spec_only|Relay Noise Report|The relay stack clicks after shutdown like someone is walking the contacts with a fingernail. No draw on the meter. No silence in the wall.
+medic_diary|0x30BE8C1D|factory_block_a|human_cost|Medic|clinic_terminal|audio_log_data_exists_no_clip|existing_registry_entry + AudioLogData asset|Medic Symptom Diary|Depth syndrome is appearing in workers who never leave the upper sectors. Hallucination now precedes pressure panic instead of following it.
+flood_door_jam|0x0D332417|factory_block_a|maintenance|Emergency Tech|repair_tag|text_only|spec_only|Flood Door Jam|Door seven sealed on command but never admitted it. The indicator stayed green while two men beat on the other side.
+shift_roster_b_redline|0x101E1B1C|factory_block_a|crew_pressure|Roster Clerk|roster_board|text_only|spec_only|Shift Roster B - Redline|Every replacement on Shift B is temporary. Temporary has been painted over so many times the board is thicker than the wall.
+sensor_drift_note|0x78186244|factory_block_a|anomaly|Instrumentation Tech|lab_note|text_only|spec_only|Sensor Drift Note|Depth gauges drift deeper than the cage cable says possible. Either the instruments are failing together or the station is sinking inside its own map.
+chen_m_blueprint|0x110BE7FD|factory_block_b|chen_route|Chen_M|blueprint_roll|text_only|existing_registry_entry|Chen_M Blueprint Cache|Hand-sketched relay bypass and drone route overlays. Chen stopped trusting live network diagrams and started carrying the station as paper scars.
+relay_calibration_tape|0x73E281A2|factory_block_b|power|Relay Specialist|calibration_tape|text_only|spec_only|Relay Calibration Tape|Offset values are written twice in different handwriting. One keeps the grid stable. The other pushes the overload into someone else's sector.
+hull_rib_inspection|0x7BE6057F|factory_block_b|maintenance|Hull Inspector|inspection_slate|text_only|spec_only|Hull Rib Inspection|Rib sections are not cracking from outside pressure alone. The metal is also cycling from inside heat spikes the schedule never recorded.
+emergency_lighting_order|0xF937EAD8|factory_block_b|power|Command Office|order_sheet|text_only|spec_only|Emergency Lighting Order|Strip every corridor to thirty percent output. If workers want more light, they can bring a lamp and explain to the pumps why they deserve the watts.
+brine_siphon_tamper|0xD0114675|factory_block_b|sabotage|Pipeline Watch|tamper_notice|text_only|spec_only|Brine Siphon Tamper Report|Somebody reversed the siphon check plate and called it corrosion. That move does not happen by accident; it happens because someone wanted a dry line to drown.
+child_drawing_recovery|0x773D6906|factory_block_b|human_cost|Storekeeper|locker_note|text_only|spec_only|Child Drawing Recovery|Another drawing turned up inside a sealed locker after the family left for evac queue. Same black corridor. Same yellow room. Different handwriting on the warning: 'Do not go where Atlas listens.'
+o2_quota_ledger|0xB33ED0A9|factory_block_b|life_support|Quartermaster|ledger|text_only|spec_only|O2 Quota Ledger|Reserved oxygen exceeds declared population by eleven percent. Either the census is false or somebody has been building a private place to breathe.
+service_tunnel_echo|0x507547F5|factory_block_b|anomaly|Tunnel Rigger|field_note|text_only|spec_only|Service Tunnel Echo|Every bootstep returns twice in Tunnel 4C. The second echo arrives late and from deeper in the steel than the tunnel actually goes.
+security_lockout_notice|0x5E3E305E|factory_block_b|atlas|Security Office|lockout_card|text_only|spec_only|Security Lockout Notice|Atlas-6 escalated the lock tier without command sign-off. Security is ordered not to force any door tied to Sector 3 unless they are willing to lose the whole branch.
+chen_m_datapad_03|0xF88E1FE5|factory_block_b|chen_route|Chen_M|datapad|text_only|existing_registry_entry|Chen_M Log 03 - Sector 3|Sector 3 is not sealed because it is dangerous. It is dangerous because Atlas sealed it first and let everything behind the door continue without witnesses.
+captain_last_broadcast|0x581103A8|abyss_block_a|collapse|Captain|broadcast_terminal|audio_log_data_exists_no_clip|existing_registry_entry + AudioLogData asset|Captain - Last Broadcast|Atlas is not answering command authority. All personnel are ordered out of radio silence and into hard shelter. This is not a drill, and the station knows it.
+seal_failure_placard|0xC75C7B37|abyss_block_a|maintenance|Hull Rigger|warning_placard|text_only|spec_only|Seal Failure Placard|If this marker is red, the patch behind it is already older than policy allows. If it is black, the patch outlived the man who signed it.
+reactor_baffle_alarm|0xE7B1798A|abyss_block_a|power|Reactor Watch|alarm_strip|text_only|spec_only|Reactor Baffle Alarm|The baffle is chattering under a load spike the core monitors refuse to acknowledge. Heat is going somewhere the diagrams call inaccessible.
+atlas6_terminal_sector3|0x6F88A1C3|abyss_block_a|atlas|Chen_M|terminal_capture|audio_log_data_exists_no_clip|existing_registry_entry + AudioLogData asset|Terminal - Failed Atlas-6 Access|Access denied. Sector 3 archive still belongs to Atlas-6, and the manual route is dead with it. Chen logged the failure because the system log kept erasing itself.
+evacuation_route_card|0x7666EAF3|abyss_block_a|collapse|Safety Office|route_card|text_only|spec_only|Evacuation Route Card|Primary route ends at a collapsed pressure door. Secondary route ends at water. The card remains mandatory because command needs the ritual more than the truth.
+foreman_seal_kit_note|0x1D927D51|abyss_block_a|maintenance|Shift Foreman|seal_kit_note|text_only|spec_only|Foreman Seal Kit Note|Take one seal kit and sign it. If you come back with two, I know you stole one. If you come back with none, I know the wall won.
+blackout_start_log|0xE9A15DD2|abyss_block_a|collapse|Grid Control|terminal_log|text_only|spec_only|Blackout Start Log|Grid failure began as a polite brownout. By the third second the relays were dropping whole sectors like a hand opening under water.
+pump_room_breach|0xF651AEC5|abyss_block_a|collapse|Pump Chief|panic_note|text_only|spec_only|Pump Room Breach|The breach did not enter with force. It entered with pressure so steady the bolts simply stopped arguing and let the room become ocean.
+coil_generator_overheat|0x585B7399|abyss_block_a|power|Power Engineer|heat_report|text_only|spec_only|Coil Generator Overheat|Coils hit redline while the thermal exchanger reported nominal. Either the exchanger is blind or the heat source is moving faster than the sensors can follow.
+atlas_hazard_placard|0x73B8A497|abyss_block_a|atlas|Command Office|warning_placard|text_only|spec_only|Atlas Hazard Placard|Do not trust door states, path lights, or occupancy numbers in Atlas sectors. Trust only what still leaks, sparks, or screams in front of you.
+black_box_shift_b|0xBDC4A1E8|rift_block_a|collapse|Black Box|black_box|text_only|spec_only|Black Box - Shift B|Recovered telemetry shows the station losing pressure in staggered pockets, not one global breach. Something was herding failures from sector to sector.
+dead_air_locker|0x77061681|rift_block_a|human_cost|Unknown Worker|locker_note|text_only|spec_only|Dead Air Locker|Inside the locker: one empty emergency canister, one broken visor latch, and fingerprints dragged downward through condensed salt.
+ghost_relay_ping|0xFB6E7073|rift_block_a|atlas|Signal Tech|ping_record|text_only|spec_only|Ghost Relay Ping|A relay thought dead for eight hundred days still pings once every hour. The packet contains no data, just timing perfect enough to feel intentional.
+empty_med_bay|0xAD639378|rift_block_a|human_cost|Medic|clinic_tag|text_only|spec_only|Empty Med Bay|Beds are stripped clean. Cabinets are open. The only stocked shelf is the one labeled for decompression events nobody was supposed to survive.
+scrubber_bed_ash|0x116BD8E2|rift_block_a|life_support|Air Systems Lead|sample_note|text_only|spec_only|Scrubber Bed Ash|The final scrubber bed burned from the inside out. No flame, no warning, only warm ash where breathable time used to be.
+cargo_manifest_endline|0xA43A94C9|rift_block_a|economy|Cargo Clerk|manifest_slate|text_only|spec_only|Cargo Manifest Endline|Last outgoing manifest lists medical kits, sealant, wire, and children's blankets. Nothing in the return column but silence.
+recovery_drone_autopsy|0xE103FBE9|rift_block_a|anomaly|Systems Recovery|drone_report|text_only|spec_only|Recovery Drone Autopsy|Drone shell came back without impact damage and with every internal clock desynchronized. It spent nine minutes somewhere the map still insists does not exist.
+chen_m_suit|0x08F52407|rift_block_a|chen_route|Field Recovery|suit_tag|text_only|existing_registry_entry|Chen_M Suit Tag|Only the tag came back clean. The harness around it is scored as if Chen tried to cut himself free faster than the pressure would allow.
+final_maintenance_ledger|0x4B966021|rift_block_a|collapse|Maintenance Lead|ledger|text_only|spec_only|Final Maintenance Ledger|No more preventive tasks. Only triage. Only doors that still close. Only machines that still buy minutes.
+survivor_route_scratch|0x842C3DEC|rift_block_a|collapse|Unknown Survivor|wall_scratch|text_only|spec_only|Survivor Route Scratch|Arrows carved into paint lead away from every official evacuation line. The last mark is a handprint pointed downward.
+
+======================================================================
+5. CRAFTING & LOGISTICS
+======================================================================
+
+5.1 Tech tree spine
+
+Tier0 bootstrap:
+- Salvage copper, silica, kelp, sulfur, resin.
+- First unlocks: Scanner, Flashlight, Repair Tool, Beacon Deployer, Copper Wire, Fiber Mesh, Glass Panel, Oxygen Pellet.
+- Construction objective: `Build_Foundation_Platform`, `Build_Corridor_Straight`, `Build_Airlock_Hatch`, one `Build_Service_Pump`.
+
+Tier1 stabilization:
+- Push into tungsten, rare earth, lithium, thermal gel, cobalt alloy.
+- First meaningful suit branching: `Item_Equip_OxygenRig_T1`, `Item_Equip_PressureHarness_T1`, `Item_Equip_ThermalLiner_T1`.
+- Fabrication objective: `Build_Oxygen_ScrubberRack`, `Build_Oxygen_Tank`, `Build_Battery_Bank`, `Build_Fabricator_Compact`.
+- Narrative gate: `chen_m_datapad_01` + `chen_m_datapad_02` justify manual relay bypass and lockout tools.
+
+Tier2 industrial recovery:
+- Push into magnesium, vanadium, borate, pressure pearl, cryo brine, scrubber beds, oxygen manifolds, flood valves.
+- Unlock heavy tools: Seafloor Drill, Brine Siphon, Weld Torch, Heat Shield Projector.
+- Network objective: `Build_Service_Relay`, `Build_Relay_Backbone`, `Build_Thermal_Exchanger`, `Build_Brine_Filter`, `Build_Sonar_Mast`, `Build_Drone_Dock`.
+- Narrative gate: `biologist_samples`, `medic_diary`, `chen_m_blueprint` move the route from routine salvage into intentional deep systems recovery.
+
+Tier3 abyssal access:
+- Push into atlas residue, abyssal crystal, cryo coil, reactor rod, abyss pressure shell, hull lattice.
+- Unlock deep suit stack: `Item_Equip_OxygenRig_T2`, `Item_Equip_PressureHarness_T2`, `Item_Equip_ThermalLiner_T2`, `Item_Equip_HullPatchRig`, `Item_Equip_RadiationVeil`.
+- Final construction objective: `Build_Coil_Generator`, `Build_CO2_Reclaimer`, `Build_Abyssal_Pressure_Door`, persistent relay backbone into forbidden sectors.
+- Narrative gate: `captain_last_broadcast`, `atlas6_terminal_sector3`, `black_box_shift_b`, `chen_m_suit`.
+
+5.2 Energy and oxygen grid rules
+
+- Power graph node types: `Source`, `Buffer`, `Relay`, `Consumer`, `DoorLock`, `HazardSink`.
+- Oxygen graph node types: `Scrubber`, `Tank`, `DryVolume`, `Airlock`, `Leak`, `DeadEnd`.
+- Graph traversal must be event-driven, not per-frame. Recompute only on place/remove/power-state/door-state topology changes.
+- `Build_Current_Turbine` is the first steady source. Existing asset anchor already exposes `powerRating = 18`; treat that as Tier1 baseline generation.
+- `Build_Battery_Bank` is buffer, not generation. It absorbs turbine spikes and protects life support from relay flicker.
+- `Build_Coil_Generator` is the Tier3 thermal source. It belongs in hazard-adjacent routes where routing cost is part of the survival math.
+- Priority stack: 1) oxygen scrubbers and pumps, 2) pressure doors / airlocks, 3) med / fabricator, 4) sonar / lights, 5) comfort and storage.
+
+Oxygen grid alignment to current `BaseModule` anchors:
+- Fresh dry shelter requires powered path from `Build_Oxygen_ScrubberRack` or stocked `Build_Oxygen_Tank` into a sealed dry volume.
+- Fresh reserve capacity target = 120 O2-equivalent per inhabited module to match current `breathableReserveCapacity = 120`.
+- Air recycle target = 6 O2-equivalent per second per powered scrubber rack to match current `airRecycleRate = 6`.
+- Occupied dry module drain target = 9 O2-equivalent per second to match `occupiedAirDrainRate = 9`.
+- Once reserve falls below 25%, module enters stale-air state and refill efficiency collapses to 20%; occupants start bleeding 3 O2/sec even indoors. This is already reflected by `staleAirThreshold`, `staleAirMinRefillScale`, and `staleAirSuitDrainRate`.
+
+Failure model:
+- Broken relay path = consumers go dark in deterministic priority order.
+- Broken air path = volume remains dry but non-breathable, turning shelter into a false safe zone.
+- Flooded volume breaks oxygen continuity and also increases repair tax because pumps become prerequisite, not convenience.
+
+======================================================================
+6. LOCALIZATION HASH REGISTRY
+======================================================================
+
+Seed policy:
+- One stable `NameKey` per item.
+- Same key hash across EN/RU values; only localized payload changes.
+- Description keys are generated in item table but intentionally left text-stubbed until tooltip writing pass.
+
+Locale|Key|Hash|Value
+en|ITEM_DATA_COPPER_NAME|0x1D2F64A9|Copper
+ru|ITEM_DATA_COPPER_NAME|0x1D2F64A9|Медь
+en|ITEM_DATA_TITANIUMSCRAP_NAME|0xDFD6CB02|Titanium Scrap
+ru|ITEM_DATA_TITANIUMSCRAP_NAME|0xDFD6CB02|Титановый лом
+en|ITEM_DATA_IRONCOMPOSITE_NAME|0x4682A021|Iron Composite
+ru|ITEM_DATA_IRONCOMPOSITE_NAME|0x4682A021|Железный композит
+en|ITEM_DATA_SILICASHARDS_NAME|0xE8E2A62C|Silica Shards
+ru|ITEM_DATA_SILICASHARDS_NAME|0xE8E2A62C|Кремнеземные осколки
+en|ITEM_DATA_FIBERKELP_NAME|0x8D400E04|Fiber Kelp
+ru|ITEM_DATA_FIBERKELP_NAME|0x8D400E04|Волокнистый келп
+en|ITEM_DATA_SULFURCLUMPS_NAME|0x3145FDC5|Sulfur Clumps
+ru|ITEM_DATA_SULFURCLUMPS_NAME|0x3145FDC5|Серные сгустки
+en|ITEM_DATA_HYDROCARBONRESIN_NAME|0x9520C8E6|Hydrocarbon Resin
+ru|ITEM_DATA_HYDROCARBONRESIN_NAME|0x9520C8E6|Углеводородная смола
+en|ITEM_DATA_GOLDORE_NAME|0x4569B260|Gold Ore
+ru|ITEM_DATA_GOLDORE_NAME|0x4569B260|Золотая руда
+en|ITEM_DATA_SILVERORE_NAME|0x42D88657|Silver Ore
+ru|ITEM_DATA_SILVERORE_NAME|0x42D88657|Серебряная руда
+en|ITEM_DATA_NICKELORE_NAME|0x6E1E1268|Nickel Ore
+ru|ITEM_DATA_NICKELORE_NAME|0x6E1E1268|Никелевая руда
+en|ITEM_DATA_TUNGSTENCHUNK_NAME|0x68B77ED1|Tungsten Chunk
+ru|ITEM_DATA_TUNGSTENCHUNK_NAME|0x68B77ED1|Вольфрамовый фрагмент
+en|ITEM_DATA_RAREEARTHDUST_NAME|0xF2133422|Rare Earth Dust
+ru|ITEM_DATA_RAREEARTHDUST_NAME|0xF2133422|Редкоземельная пыль
+en|ITEM_DATA_ELECTROLYTESALTS_NAME|0x584D38BD|Electrolyte Salts
+ru|ITEM_DATA_ELECTROLYTESALTS_NAME|0x584D38BD|Электролитные соли
+en|ITEM_DATA_LITHIUMCRYSTAL_NAME|0x091CB934|Lithium Crystal
+ru|ITEM_DATA_LITHIUMCRYSTAL_NAME|0x091CB934|Литиевый кристалл
+en|ITEM_DATA_BIOLUMPASTE_NAME|0xFF17FECF|Biolum Paste
+ru|ITEM_DATA_BIOLUMPASTE_NAME|0xFF17FECF|Биолюминесцентная паста
+en|ITEM_DATA_MEMBRANETISSUE_NAME|0x68BEE9E0|Membrane Tissue
+ru|ITEM_DATA_MEMBRANETISSUE_NAME|0x68BEE9E0|Мембранная ткань
+en|ITEM_DATA_ENZYMECORAL_NAME|0x92A6F2C5|Enzyme Coral
+ru|ITEM_DATA_ENZYMECORAL_NAME|0x92A6F2C5|Ферментный коралл
+en|ITEM_DATA_THERMALGEL_NAME|0x4FF6CED5|Thermal Gel
+ru|ITEM_DATA_THERMALGEL_NAME|0x4FF6CED5|Термальный гель
+en|ITEM_DATA_COBALTALLOY_NAME|0x3CF0B70C|Cobalt Alloy
+ru|ITEM_DATA_COBALTALLOY_NAME|0x3CF0B70C|Кобальтовый сплав
+en|ITEM_DATA_ABYSSALCRYSTAL_NAME|0xFC4D2659|Abyssal Crystal
+ru|ITEM_DATA_ABYSSALCRYSTAL_NAME|0xFC4D2659|Абиссальный кристалл
+en|ITEM_DATA_MANGANESENODULE_NAME|0x16FC7AF8|Manganese Nodule
+ru|ITEM_DATA_MANGANESENODULE_NAME|0x16FC7AF8|Марганцевая конкреция
+en|ITEM_DATA_BASALTCORE_NAME|0x9843A738|Basalt Core
+ru|ITEM_DATA_BASALTCORE_NAME|0x9843A738|Базальтовое ядро
+en|ITEM_DATA_BRINEQUARTZ_NAME|0xE13F405D|Brine Quartz
+ru|ITEM_DATA_BRINEQUARTZ_NAME|0xE13F405D|Рассольный кварц
+en|ITEM_DATA_PHOSPHORSLURRY_NAME|0x3403FC50|Phosphor Slurry
+ru|ITEM_DATA_PHOSPHORSLURRY_NAME|0x3403FC50|Фосфорный шлам
+en|ITEM_DATA_ALGAEPROTEIN_NAME|0x8FA23187|Algae Protein
+ru|ITEM_DATA_ALGAEPROTEIN_NAME|0x8FA23187|Белок водорослей
+en|ITEM_DATA_CALCIFIEDTUBE_NAME|0xA0431664|Calcified Tube
+ru|ITEM_DATA_CALCIFIEDTUBE_NAME|0xA0431664|Кальцинированная трубка
+en|ITEM_DATA_MAGNESIUMFLAKE_NAME|0xBC20AC81|Magnesium Flake
+ru|ITEM_DATA_MAGNESIUMFLAKE_NAME|0xBC20AC81|Магниевая чешуйка
+en|ITEM_DATA_VANADIUMSHARD_NAME|0x82B5AA13|Vanadium Shard
+ru|ITEM_DATA_VANADIUMSHARD_NAME|0x82B5AA13|Ванадиевый осколок
+en|ITEM_DATA_BORATESTONE_NAME|0xAADC2464|Borate Stone
+ru|ITEM_DATA_BORATESTONE_NAME|0xAADC2464|Боратовый камень
+en|ITEM_DATA_METHANEICE_NAME|0x257F29FF|Methane Ice
+ru|ITEM_DATA_METHANEICE_NAME|0x257F29FF|Метановый лед
+en|ITEM_DATA_CRYOBRINE_NAME|0x49E96AFD|Cryo Brine
+ru|ITEM_DATA_CRYOBRINE_NAME|0x49E96AFD|Крио-рассол
+en|ITEM_DATA_CONDUCTIVESPONGE_NAME|0xC7DA7E6A|Conductive Sponge
+ru|ITEM_DATA_CONDUCTIVESPONGE_NAME|0xC7DA7E6A|Проводящая губка
+en|ITEM_DATA_CARBONSLUDGE_NAME|0x4577857B|Carbon Sludge
+ru|ITEM_DATA_CARBONSLUDGE_NAME|0x4577857B|Углеродный шлам
+en|ITEM_DATA_TELLURICSAND_NAME|0xEA31E898|Telluric Sand
+ru|ITEM_DATA_TELLURICSAND_NAME|0xEA31E898|Теллуровый песок
+en|ITEM_DATA_SODIUMLIMESTONE_NAME|0x7AD20F2F|Sodium Limestone
+ru|ITEM_DATA_SODIUMLIMESTONE_NAME|0x7AD20F2F|Натриевый известняк
+en|ITEM_DATA_FERROKELPSTEM_NAME|0x6FB732EF|Ferro Kelp Stem
+ru|ITEM_DATA_FERROKELPSTEM_NAME|0x6FB732EF|Феррокелповый стебель
+en|ITEM_DATA_SHELLLACQUER_NAME|0x57DD2117|Shell Lacquer
+ru|ITEM_DATA_SHELLLACQUER_NAME|0x57DD2117|Раковинный лак
+en|ITEM_DATA_PRESSUREPEARL_NAME|0x6C4404C5|Pressure Pearl
+ru|ITEM_DATA_PRESSUREPEARL_NAME|0x6C4404C5|Жемчуг давления
+en|ITEM_DATA_BRINESULFURGLASS_NAME|0xBA498E25|Brine Sulfur Glass
+ru|ITEM_DATA_BRINESULFURGLASS_NAME|0xBA498E25|Рассольно-серное стекло
+en|ITEM_DATA_ATLASRESIDUE_NAME|0x869ADBF2|Atlas Residue
+ru|ITEM_DATA_ATLASRESIDUE_NAME|0x869ADBF2|Остаток Atlas
+en|ITEM_PROC_COPPERINGOT_NAME|0xAFE3CE5A|Copper Ingot
+ru|ITEM_PROC_COPPERINGOT_NAME|0xAFE3CE5A|Медный слиток
+en|ITEM_PROC_TITANIUMPLATE_NAME|0x7DFDA731|Titanium Plate
+ru|ITEM_PROC_TITANIUMPLATE_NAME|0x7DFDA731|Титановая пластина
+en|ITEM_PROC_SILICAGLASS_NAME|0x05FE7049|Silica Glass
+ru|ITEM_PROC_SILICAGLASS_NAME|0x05FE7049|Кремнеземное стекло
+en|ITEM_PROC_RESINBINDER_NAME|0xBF44C101|Resin Binder
+ru|ITEM_PROC_RESINBINDER_NAME|0xBF44C101|Смоляное связующее
+en|ITEM_PROC_FILTERCHAR_NAME|0x7C81620C|Filter Char
+ru|ITEM_PROC_FILTERCHAR_NAME|0x7C81620C|Фильтрующий уголь
+en|ITEM_PROC_OXYGENPELLET_NAME|0x0C29407C|Oxygen Pellet
+ru|ITEM_PROC_OXYGENPELLET_NAME|0x0C29407C|Кислородная таблетка
+en|ITEM_PROC_ENERGYGEL_NAME|0x894FBEE2|Energy Gel
+ru|ITEM_PROC_ENERGYGEL_NAME|0x894FBEE2|Энергетический гель
+en|ITEM_PROC_ELECTROLYTEAMPOULE_NAME|0xBDC44F09|Electrolyte Ampoule
+ru|ITEM_PROC_ELECTROLYTEAMPOULE_NAME|0xBDC44F09|Электролитная ампула
+en|ITEM_PROC_EMERGENCYO2CANISTER_NAME|0xE1596B61|Emergency O2 Canister
+ru|ITEM_PROC_EMERGENCYO2CANISTER_NAME|0xE1596B61|Аварийный баллон O2
+en|ITEM_PROC_FIELDMEDGEL_NAME|0x5FB68394|Field Med Gel
+ru|ITEM_PROC_FIELDMEDGEL_NAME|0x5FB68394|Полевой медгель
+en|ITEM_PROC_BRINESOLVENT_NAME|0xC15372D7|Brine Solvent
+ru|ITEM_PROC_BRINESOLVENT_NAME|0xC15372D7|Рассольный растворитель
+en|ITEM_PROC_MEMBRANEPATCH_NAME|0x7A3CCB15|Membrane Patch
+ru|ITEM_PROC_MEMBRANEPATCH_NAME|0x7A3CCB15|Мембранная заплата
+en|ITEM_PROC_THERMALCATALYST_NAME|0x923D6BD2|Thermal Catalyst
+ru|ITEM_PROC_THERMALCATALYST_NAME|0x923D6BD2|Термокатализатор
+en|ITEM_PROC_FLUXCOMPOUND_NAME|0x9655647C|Flux Compound
+ru|ITEM_PROC_FLUXCOMPOUND_NAME|0x9655647C|Флюсовый состав
+en|ITEM_PROC_DECONFOAM_NAME|0x58842A4A|Decon Foam
+ru|ITEM_PROC_DECONFOAM_NAME|0x58842A4A|Дезактивационная пена
+en|ITEM_PROC_FOODBRICK_ALGAE_NAME|0xFFBF7790|Algae Food Brick
+ru|ITEM_PROC_FOODBRICK_ALGAE_NAME|0xFFBF7790|Водорослевый пищевой брикет
+en|ITEM_PROC_WATERFLASK_BRINECLEAN_NAME|0xE2BA75AA|Clean Brine Flask
+ru|ITEM_PROC_WATERFLASK_BRINECLEAN_NAME|0xE2BA75AA|Фляга очищенного рассола
+en|ITEM_PROC_HEATCELL_NAME|0x600ADFB8|Heat Cell
+ru|ITEM_PROC_HEATCELL_NAME|0x600ADFB8|Тепловая ячейка
+en|ITEM_PROC_BATTERYANODEPASTE_NAME|0xE47C7443|Battery Anode Paste
+ru|ITEM_PROC_BATTERYANODEPASTE_NAME|0xE47C7443|Анодная паста
+en|ITEM_PROC_CRYOINSULATIONGEL_NAME|0x8A62B295|Cryo Insulation Gel
+ru|ITEM_PROC_CRYOINSULATIONGEL_NAME|0x8A62B295|Криоизоляционный гель
+en|ITEM_PROC_BIOSEALFOAM_NAME|0x969AC350|Bio Seal Foam
+ru|ITEM_PROC_BIOSEALFOAM_NAME|0x969AC350|Биогерметизирующая пена
+en|ITEM_PROC_OPTICPOLISH_NAME|0xB191AA62|Optic Polish
+ru|ITEM_PROC_OPTICPOLISH_NAME|0xB191AA62|Оптическая полировка
+en|ITEM_PROC_LUBRICANTGREASE_NAME|0xC47007CF|Lubricant Grease
+ru|ITEM_PROC_LUBRICANTGREASE_NAME|0xC47007CF|Смазка
+en|ITEM_PROC_NUTRIENTBROTH_NAME|0xCBE05FBA|Nutrient Broth
+ru|ITEM_PROC_NUTRIENTBROTH_NAME|0xCBE05FBA|Питательный бульон
+en|ITEM_PROC_HYDROGENCANISTER_NAME|0xEA1EADA9|Hydrogen Canister
+ru|ITEM_PROC_HYDROGENCANISTER_NAME|0xEA1EADA9|Водородный баллон
+en|ITEM_PROC_CO2SCRUBBERCARTRIDGE_NAME|0x34101ED9|CO2 Scrubber Cartridge
+ru|ITEM_PROC_CO2SCRUBBERCARTRIDGE_NAME|0x34101ED9|Картридж CO2-фильтра
+en|ITEM_PROC_ADHESIVETAPEINDUSTRIAL_NAME|0x33900746|Adhesive Tape Industrial
+ru|ITEM_PROC_ADHESIVETAPEINDUSTRIAL_NAME|0x33900746|Промышленная клейкая лента
+en|ITEM_PROC_STERILEPACK_NAME|0x414A7981|Sterile Pack
+ru|ITEM_PROC_STERILEPACK_NAME|0x414A7981|Стерильный набор
+en|ITEM_PROC_RADIATIONPILLPACK_NAME|0x9D0685D1|Radiation Pill Pack
+ru|ITEM_PROC_RADIATIONPILLPACK_NAME|0x9D0685D1|Комплект радиозащитных таблеток
+en|ITEM_PROC_SIGNALDYE_NAME|0xF39DC7F8|Signal Dye
+ru|ITEM_PROC_SIGNALDYE_NAME|0xF39DC7F8|Сигнальный краситель
+en|ITEM_COMP_BATTERYCELL_NAME|0x154461E0|Battery Cell
+ru|ITEM_COMP_BATTERYCELL_NAME|0x154461E0|Батарейная ячейка
+en|ITEM_COMP_BEACONCORE_NAME|0x40289504|Beacon Core
+ru|ITEM_COMP_BEACONCORE_NAME|0x40289504|Ядро маяка
+en|ITEM_COMP_CIRCUITBOARD_NAME|0xA4B0FD32|Circuit Board
+ru|ITEM_COMP_CIRCUITBOARD_NAME|0xA4B0FD32|Печатная плата
+en|ITEM_COMP_COOLINGCARTRIDGE_NAME|0xBF13F5C1|Cooling Cartridge
+ru|ITEM_COMP_COOLINGCARTRIDGE_NAME|0xBF13F5C1|Охлаждающий картридж
+en|ITEM_COMP_COPPERWIRE_NAME|0xE9406F99|Copper Wire
+ru|ITEM_COMP_COPPERWIRE_NAME|0xE9406F99|Медный провод
+en|ITEM_COMP_FIBERMESH_NAME|0xE31B9786|Fiber Mesh
+ru|ITEM_COMP_FIBERMESH_NAME|0xE31B9786|Волоконная сетка
+en|ITEM_COMP_GLASSPANEL_NAME|0x608F5D2F|Glass Panel
+ru|ITEM_COMP_GLASSPANEL_NAME|0x608F5D2F|Стеклянная панель
+en|ITEM_COMP_GUIDANCEMODULE_NAME|0x2795A95F|Guidance Module
+ru|ITEM_COMP_GUIDANCEMODULE_NAME|0x2795A95F|Модуль наведения
+en|ITEM_COMP_HIGHCAPACITYCELL_NAME|0x56C09259|High Capacity Cell
+ru|ITEM_COMP_HIGHCAPACITYCELL_NAME|0x56C09259|Ячейка высокой емкости
+en|ITEM_COMP_HYDRAULICACTUATOR_NAME|0x38A3C26D|Hydraulic Actuator
+ru|ITEM_COMP_HYDRAULICACTUATOR_NAME|0x38A3C26D|Гидравлический актуатор
+en|ITEM_COMP_LUBRICANTRESIN_NAME|0x4DB7C3CE|Lubricant Resin
+ru|ITEM_COMP_LUBRICANTRESIN_NAME|0x4DB7C3CE|Смоляная смазка
+en|ITEM_COMP_POWERCOUPLER_NAME|0x0716EF0E|Power Coupler
+ru|ITEM_COMP_POWERCOUPLER_NAME|0x0716EF0E|Силовая муфта
+en|ITEM_COMP_PRECISIONLENS_NAME|0x8A73D4D3|Precision Lens
+ru|ITEM_COMP_PRECISIONLENS_NAME|0x8A73D4D3|Прецизионная линза
+en|ITEM_COMP_PRESSURESEAL_NAME|0xAEF8CA03|Pressure Seal
+ru|ITEM_COMP_PRESSURESEAL_NAME|0xAEF8CA03|Герметизатор давления
+en|ITEM_COMP_PUMPROTOR_NAME|0x91539BCD|Pump Rotor
+ru|ITEM_COMP_PUMPROTOR_NAME|0x91539BCD|Ротор насоса
+en|ITEM_COMP_REINFORCEDPLATE_NAME|0x71F37FA4|Reinforced Plate
+ru|ITEM_COMP_REINFORCEDPLATE_NAME|0x71F37FA4|Усиленная пластина
+en|ITEM_COMP_RELAYMATRIX_NAME|0x61915633|Relay Matrix
+ru|ITEM_COMP_RELAYMATRIX_NAME|0x61915633|Релейная матрица
+en|ITEM_COMP_SEALANTPACK_NAME|0xCB41418A|Sealant Pack
+ru|ITEM_COMP_SEALANTPACK_NAME|0xCB41418A|Комплект герметика
+en|ITEM_COMP_SENSORPACKAGE_NAME|0x2538A319|Sensor Package
+ru|ITEM_COMP_SENSORPACKAGE_NAME|0x2538A319|Пакет сенсоров
+en|ITEM_COMP_STABILIZERCOIL_NAME|0xA248E827|Stabilizer Coil
+ru|ITEM_COMP_STABILIZERCOIL_NAME|0xA248E827|Катушка стабилизатора
+en|ITEM_COMP_STRUCTURALBRACKET_NAME|0x61C5FD14|Structural Bracket
+ru|ITEM_COMP_STRUCTURALBRACKET_NAME|0x61C5FD14|Несущий кронштейн
+en|ITEM_COMP_ABYSSPRESSURESHELL_NAME|0x87658DB0|Abyss Pressure Shell
+ru|ITEM_COMP_ABYSSPRESSURESHELL_NAME|0x87658DB0|Абиссальная оболочка давления
+en|ITEM_COMP_OXYGENMANIFOLD_NAME|0xC4BAADB5|Oxygen Manifold
+ru|ITEM_COMP_OXYGENMANIFOLD_NAME|0xC4BAADB5|Кислородный коллектор
+en|ITEM_COMP_SCRUBBERBED_NAME|0x6F390EBE|Scrubber Bed
+ru|ITEM_COMP_SCRUBBERBED_NAME|0x6F390EBE|Скрубберная кассета
+en|ITEM_COMP_THERMALREGULATOR_NAME|0x5B965BE7|Thermal Regulator
+ru|ITEM_COMP_THERMALREGULATOR_NAME|0x5B965BE7|Терморегулятор
+en|ITEM_COMP_PLASMANOZZLE_NAME|0xF2B89C9F|Plasma Nozzle
+ru|ITEM_COMP_PLASMANOZZLE_NAME|0xF2B89C9F|Плазменное сопло
+en|ITEM_COMP_INERTIALCLAMP_NAME|0x79372558|Inertial Clamp
+ru|ITEM_COMP_INERTIALCLAMP_NAME|0x79372558|Инерционный зажим
+en|ITEM_COMP_FIELDTRANSPONDER_NAME|0xB6583CE3|Field Transponder
+ru|ITEM_COMP_FIELDTRANSPONDER_NAME|0xB6583CE3|Полевой транспондер
+en|ITEM_COMP_FLOODVALVE_NAME|0xBF62440F|Flood Valve
+ru|ITEM_COMP_FLOODVALVE_NAME|0xBF62440F|Противозатопительный клапан
+en|ITEM_COMP_HULLLATTICE_NAME|0x457B1056|Hull Lattice
+ru|ITEM_COMP_HULLLATTICE_NAME|0x457B1056|Корпусная решетка
+en|ITEM_COMP_REACTORROD_NAME|0xC599B664|Reactor Rod
+ru|ITEM_COMP_REACTORROD_NAME|0xC599B664|Реакторный стержень
+en|ITEM_COMP_MICROPUMPARRAY_NAME|0x564A09A4|Micro Pump Array
+ru|ITEM_COMP_MICROPUMPARRAY_NAME|0x564A09A4|Массив микропомп
+en|ITEM_COMP_BULKHEADLOCK_NAME|0x99A2294A|Bulkhead Lock
+ru|ITEM_COMP_BULKHEADLOCK_NAME|0x99A2294A|Замок переборки
+en|ITEM_COMP_SERVICESERVO_NAME|0xEB5D4995|Service Servo
+ru|ITEM_COMP_SERVICESERVO_NAME|0xEB5D4995|Сервисный сервопривод
+en|ITEM_COMP_ACIDNEUTRALIZER_NAME|0xB959906B|Acid Neutralizer
+ru|ITEM_COMP_ACIDNEUTRALIZER_NAME|0xB959906B|Нейтрализатор кислоты
+en|ITEM_COMP_CRYOCOIL_NAME|0x6B775CCF|Cryo Coil
+ru|ITEM_COMP_CRYOCOIL_NAME|0x6B775CCF|Криокатушка
+en|ITEM_COMP_TURBINEBLADE_NAME|0x970804D8|Turbine Blade
+ru|ITEM_COMP_TURBINEBLADE_NAME|0x970804D8|Лопасть турбины
+en|ITEM_COMP_ANCHORSPIKE_NAME|0x9971531C|Anchor Spike
+ru|ITEM_COMP_ANCHORSPIKE_NAME|0x9971531C|Якорный шип
+en|ITEM_COMP_SONAREMITTER_NAME|0xE549CB34|Sonar Emitter
+ru|ITEM_COMP_SONAREMITTER_NAME|0xE549CB34|Сонарный эмиттер
+en|ITEM_COMP_DRONESOCKET_NAME|0x1407F57E|Drone Socket
+ru|ITEM_COMP_DRONESOCKET_NAME|0x1407F57E|Гнездо дрона
+en|ITEM_TOOL_BEACONDEPLOYER_NAME|0x99B72F54|Beacon Deployer
+ru|ITEM_TOOL_BEACONDEPLOYER_NAME|0x99B72F54|Развертыватель маяков
+en|ITEM_TOOL_BUILDER_NAME|0x3D96EE71|Builder
+ru|ITEM_TOOL_BUILDER_NAME|0x3D96EE71|Строительный инструмент
+en|ITEM_TOOL_ENVANALYZER_NAME|0x3C77C6AB|Environmental Analyzer
+ru|ITEM_TOOL_ENVANALYZER_NAME|0x3C77C6AB|Анализатор среды
+en|ITEM_TOOL_FLASHLIGHT_NAME|0x00620F9E|Flashlight
+ru|ITEM_TOOL_FLASHLIGHT_NAME|0x00620F9E|Фонарь
+en|ITEM_TOOL_HARPOONLAUNCHER_NAME|0xC82CFFB9|Harpoon Launcher
+ru|ITEM_TOOL_HARPOONLAUNCHER_NAME|0xC82CFFB9|Гарпунная пусковая установка
+en|ITEM_TOOL_KNIFE_NAME|0x4C07000B|Knife
+ru|ITEM_TOOL_KNIFE_NAME|0x4C07000B|Нож
+en|ITEM_TOOL_LASERCUTTER_NAME|0x490D6E40|Laser Cutter
+ru|ITEM_TOOL_LASERCUTTER_NAME|0x490D6E40|Лазерный резак
+en|ITEM_TOOL_PROPULSION_NAME|0xDEF8C277|Propulsion Device
+ru|ITEM_TOOL_PROPULSION_NAME|0xDEF8C277|Пропульсионное устройство
+en|ITEM_TOOL_REPAIR_NAME|0x1C66B6FF|Repair Tool
+ru|ITEM_TOOL_REPAIR_NAME|0x1C66B6FF|Ремонтный инструмент
+en|ITEM_TOOL_SALVAGESAMPLER_NAME|0x0F590EAD|Salvage Sampler
+ru|ITEM_TOOL_SALVAGESAMPLER_NAME|0x0F590EAD|Отборник трофейных проб
+en|ITEM_TOOL_SCANNER_NAME|0x91BA964A|Scanner
+ru|ITEM_TOOL_SCANNER_NAME|0x91BA964A|Сканер
+en|ITEM_TOOL_STUNPISTOL_NAME|0x4B881C45|Stun Pistol
+ru|ITEM_TOOL_STUNPISTOL_NAME|0x4B881C45|Шоковый пистолет
+en|ITEM_TOOL_DRONELATCH_NAME|0x534C55F4|Drone Latch
+ru|ITEM_TOOL_DRONELATCH_NAME|0x534C55F4|Захват дрона
+en|ITEM_TOOL_CABLESPLICER_NAME|0xC1766797|Cable Splicer
+ru|ITEM_TOOL_CABLESPLICER_NAME|0xC1766797|Кабельный сплайсер
+en|ITEM_TOOL_PRESSUREPROBE_NAME|0x27878D0D|Pressure Probe
+ru|ITEM_TOOL_PRESSUREPROBE_NAME|0x27878D0D|Зонд давления
+en|ITEM_TOOL_SEAFLOORDRILL_NAME|0x229D56C0|Seafloor Drill
+ru|ITEM_TOOL_SEAFLOORDRILL_NAME|0x229D56C0|Донный бур
+en|ITEM_TOOL_BRINESIPHON_NAME|0xDAF935F9|Brine Siphon
+ru|ITEM_TOOL_BRINESIPHON_NAME|0xDAF935F9|Рассольный сифон
+en|ITEM_TOOL_WELDTORCH_NAME|0x1DA1614A|Weld Torch
+ru|ITEM_TOOL_WELDTORCH_NAME|0x1DA1614A|Сварочная горелка
+en|ITEM_TOOL_TAGLAUNCHER_NAME|0x38031114|Tag Launcher
+ru|ITEM_TOOL_TAGLAUNCHER_NAME|0x38031114|Маркерный пускатель
+en|ITEM_TOOL_SCRUBBERGUN_NAME|0x8595FF42|Scrubber Applicator
+ru|ITEM_TOOL_SCRUBBERGUN_NAME|0x8595FF42|Аппликатор скруббера
+en|ITEM_TOOL_HEATSHIELDPROJECTOR_NAME|0xC4E141EB|Heat Shield Projector
+ru|ITEM_TOOL_HEATSHIELDPROJECTOR_NAME|0xC4E141EB|Проектор теплового щита
+en|ITEM_TOOL_RELAYKEY_NAME|0x49926958|Relay Key
+ru|ITEM_TOOL_RELAYKEY_NAME|0x49926958|Релейный ключ
+en|ITEM_EQUIP_OXYGENRIG_T1_NAME|0xA61309C4|Oxygen Rig 1
+ru|ITEM_EQUIP_OXYGENRIG_T1_NAME|0xA61309C4|Кислородная система T1
+en|ITEM_EQUIP_OXYGENRIG_T2_NAME|0xFAD69EF3|Oxygen Rig 2
+ru|ITEM_EQUIP_OXYGENRIG_T2_NAME|0xFAD69EF3|Кислородная система T2
+en|ITEM_EQUIP_PRESSUREHARNESS_T1_NAME|0x1A334F03|Pressure Harness 1
+ru|ITEM_EQUIP_PRESSUREHARNESS_T1_NAME|0x1A334F03|Силовая обвязка давления T1
+en|ITEM_EQUIP_PRESSUREHARNESS_T2_NAME|0xAF503154|Pressure Harness 2
+ru|ITEM_EQUIP_PRESSUREHARNESS_T2_NAME|0xAF503154|Силовая обвязка давления T2
+en|ITEM_EQUIP_THERMALLINER_T1_NAME|0xCC408AB3|Thermal Liner 1
+ru|ITEM_EQUIP_THERMALLINER_T1_NAME|0xCC408AB3|Термоподкладка T1
+en|ITEM_EQUIP_THERMALLINER_T2_NAME|0x777CF584|Thermal Liner 2
+ru|ITEM_EQUIP_THERMALLINER_T2_NAME|0x777CF584|Термоподкладка T2
+en|ITEM_EQUIP_RADIATIONVEIL_NAME|0xBEFAA0F9|Radiation Veil
+ru|ITEM_EQUIP_RADIATIONVEIL_NAME|0xBEFAA0F9|Радиационная вуаль
+en|ITEM_EQUIP_SCRAPPACK_NAME|0x8679B9D0|Scrap Pack
+ru|ITEM_EQUIP_SCRAPPACK_NAME|0x8679B9D0|Ранец металлолома
+en|ITEM_EQUIP_SERVICEFINS_NAME|0xBCA467CF|Service Fins
+ru|ITEM_EQUIP_SERVICEFINS_NAME|0xBCA467CF|Сервисные плавники
+en|ITEM_EQUIP_MAGBOOTS_NAME|0xF4B64DA4|Mag Boots
+ru|ITEM_EQUIP_MAGBOOTS_NAME|0xF4B64DA4|Магнитные ботинки
+en|ITEM_EQUIP_HUDVISORATLAS_NAME|0x37A03231|Atlas Visor Retrofit
+ru|ITEM_EQUIP_HUDVISORATLAS_NAME|0x37A03231|Визор Atlas
+en|ITEM_EQUIP_HULLPATCHRIG_NAME|0xFF28CCFD|Hull Patch Rig
+ru|ITEM_EQUIP_HULLPATCHRIG_NAME|0xFF28CCFD|Корпусной патч-комплект
+en|ITEM_EQUIP_BALLASTBELT_NAME|0x9A78E62E|Ballast Belt
+ru|ITEM_EQUIP_BALLASTBELT_NAME|0x9A78E62E|Балластный пояс
+en|ITEM_BUILD_FOUNDATION_PLATFORM_NAME|0xFB73B91F|Foundation Platform
+ru|ITEM_BUILD_FOUNDATION_PLATFORM_NAME|0xFB73B91F|Платформа-основание
+en|ITEM_BUILD_CORRIDOR_STRAIGHT_NAME|0x3EBDFF87|Corridor Straight
+ru|ITEM_BUILD_CORRIDOR_STRAIGHT_NAME|0x3EBDFF87|Прямой коридор
+en|ITEM_BUILD_SERVICE_PUMP_NAME|0x3F378C92|Service Pump
+ru|ITEM_BUILD_SERVICE_PUMP_NAME|0x3F378C92|Сервисный насос
+en|ITEM_BUILD_CURRENT_TURBINE_NAME|0x0B55ECF7|Current Turbine
+ru|ITEM_BUILD_CURRENT_TURBINE_NAME|0x0B55ECF7|Турбина течения
+en|ITEM_BUILD_UTILITY_PYLON_NAME|0x7F526105|Utility Pylon
+ru|ITEM_BUILD_UTILITY_PYLON_NAME|0x7F526105|Служебный пилон
+en|ITEM_BUILD_CORRIDOR_CORNER_NAME|0x5371683A|Corridor Corner
+ru|ITEM_BUILD_CORRIDOR_CORNER_NAME|0x5371683A|Угловой коридор
+en|ITEM_BUILD_CORRIDOR_TJUNCTION_NAME|0x03733A8F|Corridor T-Junction
+ru|ITEM_BUILD_CORRIDOR_TJUNCTION_NAME|0x03733A8F|Т-образный коридор
+en|ITEM_BUILD_AIRLOCK_HATCH_NAME|0x70DC794E|Airlock Hatch
+ru|ITEM_BUILD_AIRLOCK_HATCH_NAME|0x70DC794E|Шлюзовой люк
+en|ITEM_BUILD_SERVICE_RELAY_NAME|0xDD1FEEC7|Service Relay
+ru|ITEM_BUILD_SERVICE_RELAY_NAME|0xDD1FEEC7|Сервисное реле
+en|ITEM_BUILD_OXYGEN_SCRUBBERRACK_NAME|0x5AEFBF06|Oxygen Scrubber Rack
+ru|ITEM_BUILD_OXYGEN_SCRUBBERRACK_NAME|0x5AEFBF06|Стойка скруббера O2
+en|ITEM_BUILD_OXYGEN_TANK_NAME|0xCC3A499B|Oxygen Tank
+ru|ITEM_BUILD_OXYGEN_TANK_NAME|0xCC3A499B|Кислородный бак
+en|ITEM_BUILD_BATTERY_BANK_NAME|0xAC706E7C|Battery Bank
+ru|ITEM_BUILD_BATTERY_BANK_NAME|0xAC706E7C|Батарейный блок
+en|ITEM_BUILD_FABRICATOR_COMPACT_NAME|0xC515FA61|Fabricator Compact
+ru|ITEM_BUILD_FABRICATOR_COMPACT_NAME|0xC515FA61|Компактный фабрикатор
+en|ITEM_BUILD_MED_BAY_NODE_NAME|0xD7750666|Med Bay Node
+ru|ITEM_BUILD_MED_BAY_NODE_NAME|0xD7750666|Медицинский узел
+en|ITEM_BUILD_SONAR_MAST_NAME|0x58761133|Sonar Mast
+ru|ITEM_BUILD_SONAR_MAST_NAME|0x58761133|Сонарная мачта
+en|ITEM_BUILD_LIGHT_ARRAY_NAME|0xCCAF3326|Light Array
+ru|ITEM_BUILD_LIGHT_ARRAY_NAME|0xCCAF3326|Световой массив
+en|ITEM_BUILD_FLOODGATE_VALVE_NAME|0x07BB6F36|Floodgate Valve
+ru|ITEM_BUILD_FLOODGATE_VALVE_NAME|0x07BB6F36|Противопаводковый клапан
+en|ITEM_BUILD_ANCHOR_FRAME_NAME|0x3EC57B89|Anchor Frame
+ru|ITEM_BUILD_ANCHOR_FRAME_NAME|0x3EC57B89|Якорная рама
+en|ITEM_BUILD_BRINE_FILTER_NAME|0x9F9DB187|Brine Filter
+ru|ITEM_BUILD_BRINE_FILTER_NAME|0x9F9DB187|Рассольный фильтр
+en|ITEM_BUILD_THERMAL_EXCHANGER_NAME|0x6D39F52F|Thermal Exchanger
+ru|ITEM_BUILD_THERMAL_EXCHANGER_NAME|0x6D39F52F|Теплообменник
+en|ITEM_BUILD_DRONE_DOCK_NAME|0x70B2DF58|Drone Dock
+ru|ITEM_BUILD_DRONE_DOCK_NAME|0x70B2DF58|Док дронов
+en|ITEM_BUILD_CARGO_RACK_NAME|0x6F7338EE|Cargo Rack
+ru|ITEM_BUILD_CARGO_RACK_NAME|0x6F7338EE|Грузовая стойка
+en|ITEM_BUILD_SLEEP_CAPSULE_NAME|0x6EB49D31|Sleep Capsule
+ru|ITEM_BUILD_SLEEP_CAPSULE_NAME|0x6EB49D31|Спальная капсула
+en|ITEM_BUILD_OBSERVATION_BUBBLE_NAME|0x7E829407|Observation Bubble
+ru|ITEM_BUILD_OBSERVATION_BUBBLE_NAME|0x7E829407|Наблюдательный купол
+en|ITEM_BUILD_COIL_GENERATOR_NAME|0x13515183|Coil Generator
+ru|ITEM_BUILD_COIL_GENERATOR_NAME|0x13515183|Катушечный генератор
+en|ITEM_BUILD_RELAY_BACKBONE_NAME|0x2BCC8935|Relay Backbone
+ru|ITEM_BUILD_RELAY_BACKBONE_NAME|0x2BCC8935|Магистральное реле
+en|ITEM_BUILD_CO2_RECLAIMER_NAME|0x403C38B5|CO2 Reclaimer
+ru|ITEM_BUILD_CO2_RECLAIMER_NAME|0x403C38B5|Рекуператор CO2
+en|ITEM_BUILD_TOOL_LOCKER_NAME|0x9C0D3899|Tool Locker
+ru|ITEM_BUILD_TOOL_LOCKER_NAME|0x9C0D3899|Шкаф инструментов
+en|ITEM_BUILD_BUOY_MARKER_NAME|0x7BBA0438|Buoy Marker
+ru|ITEM_BUILD_BUOY_MARKER_NAME|0x7BBA0438|Буй-маркер
+en|ITEM_BUILD_ABYSSAL_PRESSURE_DOOR_NAME|0xF59A7FB6|Abyssal Pressure Door
+ru|ITEM_BUILD_ABYSSAL_PRESSURE_DOOR_NAME|0xF59A7FB6|Абиссальная гермодверь
+en|ITEM_WRECK_RUSTEDBULKHEADPLATE_NAME|0x8EC6A533|Rusted Bulkhead Plate
+ru|ITEM_WRECK_RUSTEDBULKHEADPLATE_NAME|0x8EC6A533|Ржавая плита переборки
+en|ITEM_WRECK_FRACTUREDVIEWPORT_NAME|0x86CA507E|Fractured Viewport
+ru|ITEM_WRECK_FRACTUREDVIEWPORT_NAME|0x86CA507E|Треснувший иллюминатор
+en|ITEM_WRECK_CRUSHEDLOCKERDOOR_NAME|0x5F1DEE7C|Crushed Locker Door
+ru|ITEM_WRECK_CRUSHEDLOCKERDOOR_NAME|0x5F1DEE7C|Смятая дверца шкафчика
+en|ITEM_WRECK_SERVICECONDUITBUNDLE_NAME|0xC24FCDC3|Service Conduit Bundle
+ru|ITEM_WRECK_SERVICECONDUITBUNDLE_NAME|0xC24FCDC3|Пучок сервисных магистралей
+en|ITEM_WRECK_BURNEDCIRCUITCRATE_NAME|0x698D4664|Burned Circuit Crate
+ru|ITEM_WRECK_BURNEDCIRCUITCRATE_NAME|0x698D4664|Обгоревший ящик плат
+en|ITEM_WRECK_ATLASDRONESHELL_NAME|0x86206DA7|Atlas Drone Shell
+ru|ITEM_WRECK_ATLASDRONESHELL_NAME|0x86206DA7|Корпус дрона Atlas
+en|ITEM_WRECK_EXCAVATORARMSEGMENT_NAME|0x8D17347C|Excavator Arm Segment
+ru|ITEM_WRECK_EXCAVATORARMSEGMENT_NAME|0x8D17347C|Сегмент руки экскаватора
+en|ITEM_WRECK_BALLASTPUMPHOUSING_NAME|0x52518BA2|Ballast Pump Housing
+ru|ITEM_WRECK_BALLASTPUMPHOUSING_NAME|0x52518BA2|Корпус балластного насоса
+en|ITEM_WRECK_REACTORBAFFLE_NAME|0x3FB0AEAE|Reactor Baffle
+ru|ITEM_WRECK_REACTORBAFFLE_NAME|0x3FB0AEAE|Реакторный экран
+en|ITEM_WRECK_COLLAPSEDSTANCHION_NAME|0xA8C6B7CE|Collapsed Stanchion
+ru|ITEM_WRECK_COLLAPSEDSTANCHION_NAME|0xA8C6B7CE|Смятая стойка
+en|ITEM_WRECK_PRESSUREDOORMOTOR_NAME|0xC2FB753A|Pressure Door Motor
+ru|ITEM_WRECK_PRESSUREDOORMOTOR_NAME|0xC2FB753A|Мотор гермодвери
+en|ITEM_WRECK_COMMANDCONSOLECORE_NAME|0x4E6310D5|Command Console Core
+ru|ITEM_WRECK_COMMANDCONSOLECORE_NAME|0x4E6310D5|Ядро командной консоли
+en|ITEM_WRECK_BROKENSONARDISH_NAME|0xFD91537A|Broken Sonar Dish
+ru|ITEM_WRECK_BROKENSONARDISH_NAME|0xFD91537A|Разбитая сонарная тарелка
+en|ITEM_WRECK_SCRUBBERCOLUMN_NAME|0x03696FE8|Scrubber Column
+ru|ITEM_WRECK_SCRUBBERCOLUMN_NAME|0x03696FE8|Колонна скруббера
+en|ITEM_WRECK_OXYGENLINECOIL_NAME|0x3C1E4465|Oxygen Line Coil
+ru|ITEM_WRECK_OXYGENLINECOIL_NAME|0x3C1E4465|Катушка кислородной магистрали
+en|ITEM_WRECK_MEDCABINETFRAME_NAME|0x11CAB0CF|Med Cabinet Frame
+ru|ITEM_WRECK_MEDCABINETFRAME_NAME|0x11CAB0CF|Рама медшкафа
+en|ITEM_WRECK_HABPANELAMBER_NAME|0xBDF32898|Hab Panel Amber
+ru|ITEM_WRECK_HABPANELAMBER_NAME|0xBDF32898|Жилой янтарный щиток
+en|ITEM_WRECK_FLOODSENSORBLOCK_NAME|0xA552987F|Flood Sensor Block
+ru|ITEM_WRECK_FLOODSENSORBLOCK_NAME|0xA552987F|Блок датчика затопления
+en|ITEM_WRECK_CRYOPIPESECTION_NAME|0x5A746822|Cryo Pipe Section
+ru|ITEM_WRECK_CRYOPIPESECTION_NAME|0x5A746822|Секция криомагистрали
+en|ITEM_WRECK_THERMALVENTCOWL_NAME|0xADD3DB75|Thermal Vent Cowl
+ru|ITEM_WRECK_THERMALVENTCOWL_NAME|0xADD3DB75|Кожух термовыпуска
+en|ITEM_WRECK_BRINETANKERVALVE_NAME|0x321562C5|Brine Tanker Valve
+ru|ITEM_WRECK_BRINETANKERVALVE_NAME|0x321562C5|Клапан рассольной цистерны
+en|ITEM_WRECK_HULLRIBSECTION_NAME|0x2205B837|Hull Rib Section
+ru|ITEM_WRECK_HULLRIBSECTION_NAME|0x2205B837|Секция ребра корпуса
+en|ITEM_WRECK_DATAPAD_CHENM_01_NAME|0x39678E15|Datapad Chen 01
+ru|ITEM_WRECK_DATAPAD_CHENM_01_NAME|0x39678E15|КПК Chen_M 01
+en|ITEM_WRECK_DATAPAD_CHENM_02_NAME|0xF4C0D7AA|Datapad Chen 02
+ru|ITEM_WRECK_DATAPAD_CHENM_02_NAME|0xF4C0D7AA|КПК Chen_M 02
+en|ITEM_WRECK_DATAPAD_CHENM_03_NAME|0xDF3F78EB|Datapad Chen 03
+ru|ITEM_WRECK_DATAPAD_CHENM_03_NAME|0xDF3F78EB|КПК Chen_M 03
+en|ITEM_WRECK_BLUEPRINT_CHENM_DRONE_NAME|0xDB1FA9E8|Blueprint Chen Drone
+ru|ITEM_WRECK_BLUEPRINT_CHENM_DRONE_NAME|0xDB1FA9E8|Чертеж дрона Chen_M
+en|ITEM_WRECK_SUITTAG_CHENM_NAME|0xFE496163|Suit Tag Chen M
+ru|ITEM_WRECK_SUITTAG_CHENM_NAME|0xFE496163|Идентификатор костюма Chen_M
+en|ITEM_WRECK_TERMINAL_CAPTAINBROADCAST_NAME|0xA7F06C30|Terminal Captain Broadcast
+ru|ITEM_WRECK_TERMINAL_CAPTAINBROADCAST_NAME|0xA7F06C30|Терминал капитанской трансляции
+en|ITEM_WRECK_BIOSAMPLE_CRATE_NAME|0x8A10184E|Bio Sample Crate
+ru|ITEM_WRECK_BIOSAMPLE_CRATE_NAME|0x8A10184E|Ящик биообразцов
+en|ITEM_WRECK_MEDICLOCKER_NAME|0x733FA4AC|Medic Locker
+ru|ITEM_WRECK_MEDICLOCKER_NAME|0x733FA4AC|Шкаф медика
+en|ITEM_WRECK_CHILDDRAWINGPLATE_NAME|0x23775A0E|Child Drawing Plate
+ru|ITEM_WRECK_CHILDDRAWINGPLATE_NAME|0x23775A0E|Пластина с детским рисунком
+en|ITEM_WRECK_TERMINAL_ATLASHACK_NAME|0x45A05671|Atlas-6 Breach Terminal
+ru|ITEM_WRECK_TERMINAL_ATLASHACK_NAME|0x45A05671|Терминал взлома Atlas-6
+en|ITEM_WRECK_SHIFTROSTERBOARD_NAME|0xF9E7F881|Shift Roster Board
+ru|ITEM_WRECK_SHIFTROSTERBOARD_NAME|0xF9E7F881|Доска сменного графика
+en|ITEM_WRECK_MAINTENANCELEDGER_NAME|0x144228F4|Maintenance Ledger
+ru|ITEM_WRECK_MAINTENANCELEDGER_NAME|0x144228F4|Журнал техобслуживания
+en|ITEM_WRECK_SCRUBBERSERVICETAG_NAME|0xBB18B4CD|Scrubber Service Tag
+ru|ITEM_WRECK_SCRUBBERSERVICETAG_NAME|0xBB18B4CD|Бирка обслуживания скруббера
+en|ITEM_WRECK_PUMPTESTRECORD_NAME|0xEF677B4F|Pump Test Record
+ru|ITEM_WRECK_PUMPTESTRECORD_NAME|0xEF677B4F|Запись теста насоса
+en|ITEM_WRECK_CARGOMANIFESTSLATE_NAME|0xB1ABF148|Cargo Manifest Slate
+ru|ITEM_WRECK_CARGOMANIFESTSLATE_NAME|0xB1ABF148|Планшет грузового манифеста
+en|ITEM_WRECK_WARNINGPLACARD_SEAL_NAME|0x27029483|Warning Placard Seal
+ru|ITEM_WRECK_WARNINGPLACARD_SEAL_NAME|0x27029483|Предупреждающая табличка по герметизации
+en|ITEM_WRECK_WARNINGPLACARD_ATLAS_NAME|0xF6257749|Warning Placard Atlas
+ru|ITEM_WRECK_WARNINGPLACARD_ATLAS_NAME|0xF6257749|Предупреждающая табличка Atlas
+en|ITEM_WRECK_RELAYCALIBRATIONTAPE_NAME|0xA118CC63|Relay Calibration Tape
+ru|ITEM_WRECK_RELAYCALIBRATIONTAPE_NAME|0xA118CC63|Лента калибровки реле
+en|ITEM_WRECK_O2QUOTALEDGER_NAME|0x9E5EA508|O2 Quota Ledger
+ru|ITEM_WRECK_O2QUOTALEDGER_NAME|0x9E5EA508|Журнал квот O2
+en|ITEM_WRECK_THERMALSURVEYTAPE_NAME|0x2E5A2E51|Thermal Survey Tape
+ru|ITEM_WRECK_THERMALSURVEYTAPE_NAME|0x2E5A2E51|Лента тепловой съемки
+en|ITEM_WRECK_EVACUATIONROUTECARD_NAME|0x21905758|Evacuation Route Card
+ru|ITEM_WRECK_EVACUATIONROUTECARD_NAME|0x21905758|Карта маршрута эвакуации
+en|ITEM_WRECK_FOREMANSEALKIT_NAME|0x3FEEF4E5|Foreman Seal Kit
+ru|ITEM_WRECK_FOREMANSEALKIT_NAME|0x3FEEF4E5|Комплект герметизации бригадира
+en|ITEM_WRECK_BLACKBOX_SHIFTB_NAME|0xD0BD25DB|Black Box - Shift B
+ru|ITEM_WRECK_BLACKBOX_SHIFTB_NAME|0xD0BD25DB|Черный ящик смены B
+
+======================================================================
+7. REGRESSION MODEL / HOT PATH IMPACT / FAILURE MODES / WHY KEPT
+======================================================================
+
+REGRESSION MODEL
+- CPU: no runtime delta. This file does not execute.
+- GC: no runtime delta. This file is static authoring data only.
+- Memory: repository size increases by one text spec and one helper script only.
+- Cadence: archive and item creation work becomes deterministic because stable IDs, hashes, and routing bands are defined up front.
+- Correctness: item tiers remain inside current `Tier0..Tier3` contract; log IDs reuse existing registry/audio-log IDs where available.
+
+HOT PATH IMPACT
+- None until data is turned into runtime assets.
+- When implemented, the log streaming schema avoids per-open allocations by using fixed arrays and UTF-8 offset slices.
+
+FAILURE MODES
+- If future assets use different stable IDs, save/localization drift will occur. Do not rename stable IDs after authoring without explicit migration.
+- If buildables are authored as free-floating scene prefabs without power / oxygen node contracts, the logistics layer collapses into decoration.
+- If oxygen movement / stress scales are bolted on outside the existing survival multipliers, balance will fork and debugging will become impossible.
+
+WHY KEPT
+- The item corpus is large enough to sustain route choice, fabrication bottlenecks, and salvage identity instead of generic ore spam.
+- The narrative bank is industrial, localized, and mechanically useful; logs are not abstract mood text.
+- The logistics section is anchored to current code constants, not a hypothetical redesign.
+
+======================================================================
+8. VERIFICATION CHECKLIST
+======================================================================
+
+- Confirm 220 unique item stable IDs before creating ScriptableObjects or recipe assets.
+- Confirm 50 unique industrial log IDs before archive import.
+- Reuse the five existing `AudioLogData` assets for matching IDs; do not mint duplicate lore owners.
+- When localization tables are created, verify all `ITEM_*_NAME` keys hash to the values in Section 6.
+- When the runtime implementation pass starts, profile archive open/close and ensure 0 B/frame while paging entries.
+
+Status: PENDING VERIFICATION

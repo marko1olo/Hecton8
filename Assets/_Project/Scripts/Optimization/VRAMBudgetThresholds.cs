@@ -16,15 +16,15 @@ namespace Hecton8.Optimization
         public long TextureMemoryBudgetBytes;
         
         /// <summary>
-        /// RenderTexture memory budget in bytes (default 500 MB).
+        /// RenderTexture memory budget in bytes (default 320 MB).
         /// </summary>
-        [Tooltip("RenderTexture memory budget in bytes (default 500 MB).")]
+        [Tooltip("RenderTexture memory budget in bytes (default 320 MB).")]
         public long RenderTextureMemoryBudgetBytes;
         
         /// <summary>
-        /// Total VRAM budget in bytes (default 1.2 GB).
+        /// Total VRAM budget in bytes (default 1.8 GB hard ceiling for MX350).
         /// </summary>
-        [Tooltip("Total VRAM budget in bytes (default 1.2 GB).")]
+        [Tooltip("Total VRAM budget in bytes (default 1.8 GB hard ceiling for MX350).")]
         public long TotalVRAMBudgetBytes;
         
         /// <summary>
@@ -54,12 +54,12 @@ namespace Hecton8.Optimization
         public static VRAMBudgetThresholds Default => new VRAMBudgetThresholds
         {
             TextureMemoryBudgetBytes = 900L * 1024L * 1024L,
-            RenderTextureMemoryBudgetBytes = 500L * 1024L * 1024L,
-            TotalVRAMBudgetBytes = 1200L * 1024L * 1024L,
+            RenderTextureMemoryBudgetBytes = 320L * 1024L * 1024L,
+            TotalVRAMBudgetBytes = 1800L * 1024L * 1024L,
             VisorRTBudgetBytes = 64L * 1024L * 1024L,
-            CameraRTBudgetBytes = 256L * 1024L * 1024L,
-            PostFXRTBudgetBytes = 128L * 1024L * 1024L,
-            UIRTBudgetBytes = 64L * 1024L * 1024L
+            CameraRTBudgetBytes = 160L * 1024L * 1024L,
+            PostFXRTBudgetBytes = 64L * 1024L * 1024L,
+            UIRTBudgetBytes = 32L * 1024L * 1024L
         };
     }
 }

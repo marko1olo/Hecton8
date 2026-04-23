@@ -113,7 +113,8 @@ namespace Hecton8.World
                 if (!plan.RequiresTerrainBlend || !plan.hasTerrainSample || plan.planWeight < minPlanWeight)
                     continue;
 
-                Terrain terrain = ResolveTerrainAt(plan.worldPosition.x, plan.worldPosition.z);
+                Vector3 runtimeWorldPosition = plan.RuntimeWorldPosition;
+                Terrain terrain = ResolveTerrainAt(runtimeWorldPosition.x, runtimeWorldPosition.z);
                 if (terrain == null || terrain.terrainData == null)
                     continue;
 
@@ -247,7 +248,7 @@ namespace Hecton8.World
                     float worldX = terrainPosition.x + (heightmapX / (float)(terrainData.heightmapResolution - 1)) * terrainSize.x;
                     float distance = Vector2.Distance(
                         new Vector2(worldX, worldZ),
-                        new Vector2(plan.worldPosition.x, plan.worldPosition.z));
+                        new Vector2(plan.RuntimeWorldPosition.x, plan.RuntimeWorldPosition.z));
                     if (distance > effectiveRadius)
                         continue;
 
@@ -441,10 +442,11 @@ namespace Hecton8.World
 
             int maxIndex = terrainData.heightmapResolution - 1;
             float radius = Mathf.Max(1f, plan.seamBlendRadius);
-            float minX01 = Mathf.Clamp01((plan.worldPosition.x - radius - position.x) / size.x);
-            float maxX01 = Mathf.Clamp01((plan.worldPosition.x + radius - position.x) / size.x);
-            float minZ01 = Mathf.Clamp01((plan.worldPosition.z - radius - position.z) / size.z);
-            float maxZ01 = Mathf.Clamp01((plan.worldPosition.z + radius - position.z) / size.z);
+            Vector3 runtimeWorldPosition = plan.RuntimeWorldPosition;
+            float minX01 = Mathf.Clamp01((runtimeWorldPosition.x - radius - position.x) / size.x);
+            float maxX01 = Mathf.Clamp01((runtimeWorldPosition.x + radius - position.x) / size.x);
+            float minZ01 = Mathf.Clamp01((runtimeWorldPosition.z - radius - position.z) / size.z);
+            float maxZ01 = Mathf.Clamp01((runtimeWorldPosition.z + radius - position.z) / size.z);
 
             int minX = Mathf.FloorToInt(minX01 * maxIndex);
             int maxX = Mathf.CeilToInt(maxX01 * maxIndex);

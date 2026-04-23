@@ -3,6 +3,8 @@ using Hecton8.Core;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Physics;
+using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 #if UNITY_EDITOR
@@ -28,7 +30,10 @@ namespace Hecton8.World
         private const int MaxPublishedInteractionPoints = 12;
         private const int MaxQueryColliders = 32;
         private const int InteractionPointStride = 32;
+        private const int FlowFieldStride = sizeof(float) * 2;
         private const float DefaultVegetationWaterLevel = 4900f;
+        private const float FlowFieldUploadIntervalSeconds = 0.1f;
+        private const float FlowFieldRecenterThresholdCells = 0.5f;
         private const string WakeTrailShaderName = "Hidden/Hecton8/VegetationWakeTrailStamp";
 #if UNITY_EDITOR
         private const string WakeTrailSimulationComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_VegetationWakeTrailSim.compute";
@@ -38,6 +43,11 @@ namespace Hecton8.World
         private static readonly int _PropWashForceId = Shader.PropertyToID("_HectonPropWashForce");
         private static readonly int _InteractionBufferId = Shader.PropertyToID("_HectonFloraInteractionPoints");
         private static readonly int _InteractionCountId = Shader.PropertyToID("_HectonFloraInteractionCount");
+        private static readonly int _MarineSnowFlowFieldId = Shader.PropertyToID("_MarineSnowFlowField");
+        private static readonly int _MarineSnowFlowFieldCenterCellSizeId = Shader.PropertyToID("_MarineSnowFlowFieldCenterCellSize");
+        private static readonly int _FloraFlowFieldResolutionId = Shader.PropertyToID("_HectonFloraFlowFieldResolution");
+        private static readonly int _PlayerAbsoluteUniversePositionId = Shader.PropertyToID("_HectonPlayerAbsoluteUniversePosition");
+        private static readonly int _PlayerFloraInteractionParamsId = Shader.PropertyToID("_HectonPlayerFloraInteractionParams");
         private static readonly int _VegetationFogColorId = Shader.PropertyToID("_HectonVegetationFogColor");
         private static readonly int _VegetationAmbientColorId = Shader.PropertyToID("_HectonVegetationAmbientColor");
         private static readonly int _VegetationDepthId = Shader.PropertyToID("_HectonVegetationDepth");
@@ -283,6 +293,7 @@ namespace Hecton8.World
         private Collider[] _interactionColliders;
         private Rigidbody[] _interactionBodies;
         private ComputeBuffer _interactionBuffer;
+        private GraphicsBuffer _flowFieldBuffer;
         private Material _wakeTrailMaterial;
         private RenderTexture _wakeTrailRead;
         private RenderTexture _wakeTrailWrite;
@@ -296,8 +307,13 @@ namespace Hecton8.World
         private int _wakeTrailRuntimeResolution;
         private int _wakeTrailQualityLevel = -1;
         private int _wakeTrailSimulationKernel = -1;
+        private int _flowFieldResolution;
+        private float _flowFieldCellSize;
+        private float _flowFieldUploadTimer;
         private HectonMapMagicVegetationBridge _vegetationBridge;
         private IHectonOceanKinematics _oceanKinematicsProvider;
+        private Vector3 _flowFieldCenterWS;
+        private Vector3 _lastUploadedFlowFieldCenterWS;
         private Vector3[] _oceanFlowSamplePositions;
         private Vector3[] _oceanFlowSampleResults;
         private ParticleSystem.EmitParams _sedimentEmitParams;
@@ -319,6 +335,7 @@ namespace Hecton8.World
         {
             long totalBytes = 0L;
             totalBytes += EstimateComputeBufferBytes(_interactionBuffer);
+            totalBytes += EstimateGraphicsBufferBytes(_flowFieldBuffer);
             totalBytes += EstimateRenderTextureBytes(_wakeTrailRead);
             totalBytes += EstimateRenderTextureBytes(_wakeTrailWrite);
             return totalBytes;
@@ -356,6 +373,7 @@ namespace Hecton8.World
             _oceanFlowSampleResults = new Vector3[1];
 
             Shader.SetGlobalBuffer(_InteractionBufferId, _interactionBuffer);
+            PublishFlowFieldGlobals();
             CreateWakeTrailResources();
             EnsureSedimentParticleSystem();
             ResetInteractionGlobals();
@@ -367,6 +385,7 @@ namespace Hecton8.World
             if (_interactionBuffer != null)
                 Shader.SetGlobalBuffer(_InteractionBufferId, _interactionBuffer);
 
+            PublishFlowFieldGlobals();
             PublishWakeTrailGlobals();
             TryRegister();
             PublishEnvironmentGlobals(_playerTransform != null ? _playerTransform.position : Vector3.zero);
@@ -389,6 +408,7 @@ namespace Hecton8.World
                 _interactionBuffer = null;
             }
 
+            ReleaseFlowFieldBuffer();
             ReleaseWakeTrailResources();
         }
 
@@ -403,6 +423,7 @@ namespace Hecton8.World
 
             Transform runtimePlayerTransform = ResolveRuntimePlayerTransform();
             PublishEnvironmentGlobals(runtimePlayerTransform != null ? runtimePlayerTransform.position : Vector3.zero);
+            RefreshFlowFieldGlobals(deltaTime);
             if (runtimePlayerTransform == null)
             {
                 ResetInteractionGlobals();
@@ -429,6 +450,7 @@ namespace Hecton8.World
                 _playerBendRadius + velocityMagnitude * _dynamicVelocityRadiusMultiplier,
                 0.5f,
                 _maxBendRadius);
+            PublishPlayerAbsoluteUniversePosition(targetPosition, playerBendRadius, velocityMagnitude, targetForce);
             interactionCount = AppendInteractionPoint(_smoothPosition, playerVelocity, playerBendRadius, interactionCount);
             interactionCount = AppendScooterInteractionPoint(playerVelocity, interactionCount, deltaTime);
             interactionCount = CollectDynamicInteractionPoints(targetPosition, interactionCount);
@@ -896,6 +918,104 @@ namespace Hecton8.World
             Shader.SetGlobalFloat(_VegetationCurrentVerticalFactorId, currentVerticalFactor);
         }
 
+        private void RefreshFlowFieldGlobals(float deltaTime)
+        {
+            _flowFieldUploadTimer -= deltaTime;
+            if (_vegetationBridge == null)
+                _vegetationBridge = ResolveVegetationBridge();
+
+            if (_vegetationBridge == null)
+            {
+                _flowFieldResolution = 0;
+                _flowFieldCellSize = 0f;
+                _flowFieldCenterWS = Vector3.zero;
+                PublishFlowFieldGlobals();
+                return;
+            }
+
+            bool hasPayload = _vegetationBridge.TryGetEcosystemFlowFieldPayload(
+                out NativeArray<float2> flowVectors,
+                out int gridResolution,
+                out Vector3 gridCenter,
+                out float cellSize);
+            if (!hasPayload)
+            {
+                _flowFieldResolution = 0;
+                _flowFieldCellSize = 0f;
+                _flowFieldCenterWS = Vector3.zero;
+                PublishFlowFieldGlobals();
+                return;
+            }
+
+            _flowFieldResolution = gridResolution;
+            _flowFieldCellSize = cellSize;
+            _flowFieldCenterWS = gridCenter;
+
+            float recenterThreshold = math.max(0.01f, cellSize * FlowFieldRecenterThresholdCells);
+            bool forceUpload =
+                _flowFieldBuffer == null ||
+                _flowFieldUploadTimer <= 0f ||
+                _lastUploadedFlowFieldCenterWS == Vector3.zero ||
+                (gridCenter - _lastUploadedFlowFieldCenterWS).sqrMagnitude >= recenterThreshold * recenterThreshold;
+
+            if (forceUpload)
+            {
+                int requiredCount = math.max(1, flowVectors.Length);
+                if (_flowFieldBuffer == null || _flowFieldBuffer.count != requiredCount)
+                {
+                    ReleaseFlowFieldBuffer();
+                    // COLD ALLOC: GraphicsBuffer[flowVectors.Length] - authoritative ecosystem flow-field GPU staging for flora shading - owner: FloraInteractionManager
+                    _flowFieldBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, requiredCount, FlowFieldStride);
+                }
+
+                _flowFieldBuffer.SetData(flowVectors);
+                _lastUploadedFlowFieldCenterWS = gridCenter;
+                _flowFieldUploadTimer = FlowFieldUploadIntervalSeconds;
+            }
+
+            PublishFlowFieldGlobals();
+        }
+
+        private void PublishFlowFieldGlobals()
+        {
+            if (_flowFieldBuffer != null)
+                Shader.SetGlobalBuffer(_MarineSnowFlowFieldId, _flowFieldBuffer);
+
+            Shader.SetGlobalVector(
+                _MarineSnowFlowFieldCenterCellSizeId,
+                new Vector4(_flowFieldCenterWS.x, _flowFieldCenterWS.y, _flowFieldCenterWS.z, _flowFieldCellSize));
+            Shader.SetGlobalInt(_FloraFlowFieldResolutionId, _flowFieldResolution);
+        }
+
+        private void PublishPlayerAbsoluteUniversePosition(
+            Vector3 playerRuntimePosition,
+            float playerBendRadius,
+            float playerSpeed,
+            float targetForce)
+        {
+            Vector3 playerAbsoluteUniversePosition = _vegetationBridge != null
+                ? HectonMapMagicVegetationBridge.ToUniverseSpace(playerRuntimePosition)
+                : HectonFloatingOrigin.ToAbsoluteUniversePosition(playerRuntimePosition);
+            float normalizedForce = _maxInteractionForce > 0.0001f
+                ? Mathf.Clamp01(targetForce / _maxInteractionForce)
+                : 0f;
+
+            Shader.SetGlobalVector(
+                _PlayerAbsoluteUniversePositionId,
+                new Vector4(
+                    playerAbsoluteUniversePosition.x,
+                    playerAbsoluteUniversePosition.y,
+                    playerAbsoluteUniversePosition.z,
+                    Mathf.Max(0.05f, playerBendRadius)));
+            Shader.SetGlobalVector(
+                _PlayerFloraInteractionParamsId,
+                new Vector4(
+                    playerSpeed,
+                    normalizedForce,
+                    _hasActiveScooterWake ? 1f : 0f,
+                    1f));
+        }
+
         private Vector3 ResolveGlobalOceanFlow(Vector3 samplePositionWS, HectonFluidEngine fluidEngine)
         {
             IHectonOceanKinematics provider = HectonOceanRegistry.ActiveProvider;
@@ -1229,9 +1349,13 @@ namespace Hecton8.World
             Shader.SetGlobalVector(_PropWashPosId, Vector4.zero);
             Shader.SetGlobalFloat(_PropWashForceId, 0f);
             Shader.SetGlobalInt(_InteractionCountId, 0);
+            Shader.SetGlobalVector(_PlayerAbsoluteUniversePositionId, Vector4.zero);
+            Shader.SetGlobalVector(_PlayerFloraInteractionParamsId, Vector4.zero);
             Shader.SetGlobalVector(_GlobalOceanFlowId, Vector4.zero);
             Shader.SetGlobalVector(_VegetationCurrentVectorId, Vector4.zero);
             Shader.SetGlobalFloat(_VegetationCurrentStrengthId, 0f);
+            Shader.SetGlobalVector(_MarineSnowFlowFieldCenterCellSizeId, Vector4.zero);
+            Shader.SetGlobalInt(_FloraFlowFieldResolutionId, 0);
             _lastPublishedInteractionCount = 0;
             _lastPublishedPlayerVelocity = Vector3.zero;
             _lastPublishedScooterWakePosition = Vector3.zero;
@@ -1251,6 +1375,15 @@ namespace Hecton8.World
 
             ClearWakeTrailTextures();
             PublishWakeTrailGlobals();
+        }
+
+        private void ReleaseFlowFieldBuffer()
+        {
+            if (_flowFieldBuffer == null)
+                return;
+
+            _flowFieldBuffer.Release();
+            _flowFieldBuffer = null;
         }
 
         private void TryRegister()
@@ -1279,6 +1412,11 @@ namespace Hecton8.World
         }
 
         private static long EstimateComputeBufferBytes(ComputeBuffer buffer)
+        {
+            return buffer != null ? (long)buffer.count * buffer.stride : 0L;
+        }
+
+        private static long EstimateGraphicsBufferBytes(GraphicsBuffer buffer)
         {
             return buffer != null ? (long)buffer.count * buffer.stride : 0L;
         }

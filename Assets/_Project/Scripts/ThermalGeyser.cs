@@ -125,10 +125,16 @@ namespace Hecton8.Caves
                 if (body != null)
                 {
                     if (eruptionT > 0f)
-                        body.AddForce(Vector3.up * (_updraftStrength * eruptionT), ForceMode.Acceleration);
+                        PhysicsForceRouter.QueueForce(
+                            body,
+                            Vector3.up * (_updraftStrength * eruptionT),
+                            ForceMode.Acceleration);
 
                     if (cavitationT > 0f)
-                        body.AddForce(Vector3.down * (_cavitationSinkAcceleration * cavitationT), ForceMode.Acceleration);
+                        PhysicsForceRouter.QueueForce(
+                            body,
+                            Vector3.down * (_cavitationSinkAcceleration * cavitationT),
+                            ForceMode.Acceleration);
                 }
 
                 if (hitCollider.TryGetComponent(out SargassumCollapseChunk chunk))
@@ -152,7 +158,10 @@ namespace Hecton8.Caves
                     {
                         _playerMovement.ApplyEnvironmentalDrag(Mathf.Lerp(1f, _cavitationDragMultiplier, cavitationT));
                         if (_playerRigidbody != null)
-                            _playerRigidbody.AddForce(Vector3.down * (_cavitationSinkAcceleration * cavitationT), ForceMode.Acceleration);
+                            PhysicsForceRouter.QueueForce(
+                                _playerRigidbody,
+                                Vector3.down * (_cavitationSinkAcceleration * cavitationT),
+                                ForceMode.Acceleration);
                     }
                 }
             }

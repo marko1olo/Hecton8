@@ -22,6 +22,7 @@
 
 using Hecton8.Audio;
 using Hecton8.Core;
+using Hecton8.Physics;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -284,7 +285,7 @@ namespace Hecton8.Gameplay
 
                 // Apply force
                 Vector3 force = direction * forceMagnitude;
-                rb.AddForce(force, ForceMode.Force);
+                PhysicsForceRouter.QueueForce(rb, force, ForceMode.Force);
             }
         }
 

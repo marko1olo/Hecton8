@@ -38,7 +38,6 @@ void TeleportBody(Rigidbody rb, Vector3 target, Quaternion rot) {
     rb.isKinematic = true;
     rb.detectCollisions = false;
     rb.transform.SetPositionAndRotation(target, rot);
-    Physics.SyncTransforms();
     rb.linearVelocity = Vector3.zero;
     rb.angularVelocity = Vector3.zero;
     rb.isKinematic = false;
@@ -114,12 +113,14 @@ public static class PhysicsBuffers {
     public static readonly RaycastHit[] GroundProbe    = new RaycastHit[32];
     public static readonly RaycastHit[] ObstacleProbe  = new RaycastHit[16];
     public static readonly RaycastHit[] SensorProbe    = new RaycastHit[8];
-    // Sweep gating
-    public static readonly RaycastHit[] SweepResult    = new RaycastHit[4];
+    // Sweep gating and buoyancy are batched through worker-thread query arrays
+    public static NativeArray<CapsulecastCommand> SweepCommands;
+    public static NativeArray<RaycastHit>         SweepResults;
     // Overlap queries
     public static readonly Collider[]   OverlapResult  = new Collider[24];
-    // Per-entity buoyancy sample points (max entities × max samples)
-    public static readonly RaycastHit[] BuoyancyProbe  = new RaycastHit[64];
+    // Scene-wide buoyancy manager dispatches these once per fixed step
+    public static NativeArray<RaycastCommand> BuoyancyCommands;
+    public static NativeArray<RaycastHit>     BuoyancyResults;
 }
 - [FORBID] Any system sharing buffer with another system executing same FixedUpdate frame without explicit ownership token.
 - [RULE] Buffer ownership via `BufferOwnershipTable` — static dictionary mapping `SystemID → BufferID`. Validated in DEBUG builds only (`#if UNITY_EDITOR`). Zero overhead in RELEASE.
@@ -222,18 +223,29 @@ bool TrySweepGatedMove(Rigidbody rb, CapsuleCollider cap, Vector3 delta) {
     GetCapsulePoints(rb.transform, cap, out p1, out p2);
     float dist = delta.magnitude;
     Vector3 dir = delta / math.max(dist, 0.0001f);
-    int hits = Physics.CapsuleCastNonAlloc(
-        p1, p2, cap.radius, dir, PhysicsBuffers.SweepResult,
-        dist + SKIN_WIDTH, PhysicsLayers.Static | PhysicsLayers.Terrain,
-        QueryTriggerInteraction.Ignore);
-    if (hits > 0) {
-        float safeDistance = PhysicsBuffers.SweepResult[0].distance - SKIN_WIDTH;
+
+    PhysicsBuffers.SweepCommands[0] =
+        new CapsulecastCommand(p1, p2, cap.radius, dir, dist + SKIN_WIDTH,
+            PhysicsLayers.Static | PhysicsLayers.Terrain, QueryTriggerInteraction.Ignore);
+
+    JobHandle handle = CapsulecastCommand.ScheduleBatch(
+        PhysicsBuffers.SweepCommands,
+        PhysicsBuffers.SweepResults,
+        1,
+        default);
+
+    // Interleave other fixed-step systems here. Block only when movement resolution is required.
+    handle.Complete();
+
+    if (PhysicsBuffers.SweepResults[0].distance > 0f) {
+        float safeDistance = PhysicsBuffers.SweepResults[0].distance - SKIN_WIDTH;
         if (safeDistance > 0.001f)
             rb.MovePosition(rb.position + dir * safeDistance);
-        return false; // blocked
+        return false;
     }
+
     rb.MovePosition(rb.position + delta);
-    return true; // clear
+    return true;
 }
 - [FORBID] `MovePosition` without preceding sweep on dynamic bodies in motion >0.5 m/s.
 - [RULE] Kinematic wrecks exempt from sweep (static by definition, already in broadphase).
@@ -299,7 +311,7 @@ void FixedUpdate() {
 | 30–60m | Convex Mesh | 32 | Reduced, still mesh |
 | 60–80m | Primitive | — | Box/Capsule/Sphere only |
 | >80m | Disabled | — | `detectCollisions = false` |
-- [RULE] Collider swap on LOD transition: disable old, enable new. One frame gap acceptable. Use `Physics.SyncTransforms()` post-swap.
+- [RULE] Collider swap on LOD transition: disable old, enable new. One frame gap acceptable. Never call `Physics.SyncTransforms()` manually.
 - [SCALE] MX350 target: lock ALL non-player dynamic objects to primitive colliders. Mesh colliders reserved for terrain and narrative-critical wrecks only.
 - [SENIOR_INJECT] Compound primitive approximation guide: use 2–3 box colliders to approximate wreck hull. Cheaper than convex mesh. Author in editor with `CompoundColliderBuilder` tool (build tool, not runtime).
 ### 4.6 Solver Configuration by Hardware Tier
@@ -342,27 +354,33 @@ public static class PhysicsFrame {
 csharp
 private const float MAX_LINEAR_SPEED  = 30f;  // m/s — submarine hard cap
 private const float MAX_ANGULAR_SPEED = 4f;   // rad/s
-// Applied end-of-FixedUpdate, after all forces resolved
-void ClampVelocities(Rigidbody rb) {
-    Vector3 v = rb.linearVelocity;
-    if (v.sqrMagnitude > MAX_LINEAR_SPEED * MAX_LINEAR_SPEED)
-        rb.linearVelocity = v.normalized * MAX_LINEAR_SPEED;
-    Vector3 av = rb.angularVelocity;
-    if (av.sqrMagnitude > MAX_ANGULAR_SPEED * MAX_ANGULAR_SPEED)
-        rb.angularVelocity = av.normalized * MAX_ANGULAR_SPEED;
+// Applied once at initialization. Solver enforces caps natively.
+void Awake() {
+    rb.maxLinearVelocity = MAX_LINEAR_SPEED;
+    rb.maxAngularVelocity = MAX_ANGULAR_SPEED;
 }
-- [RULE] Velocity clamp is last operation in FixedUpdate. After clamp: no further force application.
+- [RULE] Native PhysX velocity caps replace manual per-frame clamp logic. Remove ClampVelocities from FixedUpdate entirely.
 - [SENIOR_INJECT] Speed cap is not uniform. Expose per-class `PhysicsProfile` ScriptableObject with `maxLinearSpeed`, `maxAngularSpeed`, `buoyancyProfile`, `dragProfile`. Submarines, creatures, debris each own unique profile.
 ### 5.3 OnCollisionEnter Stability Rules
-- [FORBID] `Destroy()` inside `OnCollisionEnter`. Queue destruction via `DeferredDestroyQueue`. Process post-FixedUpdate.
-- [FORBID] `GetComponent<T>()` inside `OnCollisionEnter`. All component refs cached `Awake`.
-- [RULE] Collision force validation:
+- [FORBID] `OnCollisionEnter(Collision col)` in gameplay physics paths. Collision objects allocate GC.
+- [RULE] Contact handling must route through Burst contact jobs or scene-wide non-alloc overlap polling.
 csharp
-void OnCollisionEnter(Collision col) {
-    float impactForce = col.impulse.magnitude / Time.fixedDeltaTime;
-    if (!math.isfinite(impactForce) || impactForce > 100000f) return; // reject NaN / runaway
-    ProcessImpact(col, impactForce);
+[BurstCompile]
+public struct HectonContactJob : IPhysicsSceneContactJob {
+    public void Execute(ref ModifiableContactPair pair) {
+        // Read impact velocities and points directly from PhysX contact data.
+        // Queue VFX/audio payloads into native buffers. ZERO GC.
+    }
 }
+
+// Physics manager boot:
+Physics.ContactModifyEvent += (PhysicsScene scene, NativeArray<ModifiableContactPair> pairs) =>
+{
+    var job = new HectonContactJob();
+    job.Schedule(pairs).Complete();
+};
+
+- [RULE] Fallback path, if contact jobs are unavailable on the target stack: `OverlapSphereNonAlloc` plus manual impulse solve. Never `Collision` callbacks.
 ### 5.4 Physics Event Bus — Deferred, Zero-GC
 csharp
 public enum PhysicsEventType : byte {
@@ -462,9 +480,9 @@ PhysicsFrame.Tick()
      PhysicsApplySystem.Flush() ← drains ALL ForcePacket queues
          SafeVelocity() validation
          NeutralBuoyancyDeadzone()
-         ClampVelocities()
          SweepGate (if MovePosition needed)
          PhysicsEventBus.Post() (impact, NaN, state changes)
+         Native contact job / overlap polling handles collisions
 LateUpdate:
      PhysicsEventBus.Poll() → AudioSystem, VFXSystem, HapticSystem, UISystem
 - [RULE] Dependency direction: one-way. Audio/VFX/UI never writes to physics. Physics never reads from render systems.

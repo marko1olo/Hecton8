@@ -1,51 +1,54 @@
 using System;
 using System.Threading;
-using Unity.Collections;
 using Unity.Mathematics;
 
 namespace Hecton8.Audio
 {
-    internal sealed class NativeAudioFrameRingBuffer : IDisposable
+    internal sealed class AudioFrameSpscRingBuffer : IDisposable
     {
-        private NativeArray<float> _frames;
+        private float[] _frames;
+        private int _capacityFrames;
         private int _capacityMask;
         private long _readFrameCursor;
         private long _writeFrameCursor;
 
-        public bool IsCreated => _frames.IsCreated;
-        public int CapacityFrames => _frames.IsCreated ? _frames.Length : 0;
+        public bool IsCreated => _frames != null;
+        public int CapacityFrames => _capacityFrames;
         public long ReadFrameCursor => Interlocked.Read(ref _readFrameCursor);
-        public long WriteFrameCursor => Interlocked.Read(ref _writeFrameCursor);
+        public long WriteFrameCursor => Volatile.Read(ref _writeFrameCursor);
 
         public int BufferedFrames
         {
             get
             {
-                long available = WriteFrameCursor - ReadFrameCursor;
+                if (_frames == null)
+                    return 0;
+
+                long available = Volatile.Read(ref _writeFrameCursor) - Volatile.Read(ref _readFrameCursor);
                 if (available <= 0L)
                     return 0;
 
-                int capacityFrames = CapacityFrames;
-                if (available >= capacityFrames)
-                    return capacityFrames;
+                if (available >= _capacityFrames)
+                    return _capacityFrames - 1;
 
                 return (int)available;
             }
         }
 
-        public int WritableFrames => math.max(0, CapacityFrames - BufferedFrames);
+        public int WritableFrames => math.max(0, _capacityFrames - BufferedFrames - 1);
 
         public void Initialize(int capacityFrames)
         {
             int resolvedCapacity = math.max(256, NextPowerOfTwo(capacityFrames));
-            if (_frames.IsCreated && _frames.Length == resolvedCapacity)
+            if (_frames != null && _frames.Length == resolvedCapacity)
             {
                 Clear();
                 return;
             }
 
             Dispose();
-            _frames = new NativeArray<float>(resolvedCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[capacityFrames] - lock-free procedural audio frame ring buffer - owner: NativeAudioFrameRingBuffer
+            _frames = new float[resolvedCapacity]; // COLD ALLOC: float[capacityFrames] - lock-free procedural audio frame ring buffer - owner: AudioFrameSpscRingBuffer
+            _capacityFrames = resolvedCapacity;
             _capacityMask = resolvedCapacity - 1;
             _readFrameCursor = 0L;
             _writeFrameCursor = 0L;
@@ -57,31 +60,37 @@ namespace Hecton8.Audio
             Interlocked.Exchange(ref _writeFrameCursor, 0L);
         }
 
-        public bool TryWrite(NativeArray<float> source, int frameCount)
+        public bool TryWrite(float[] source, int frameCount)
         {
-            if (!_frames.IsCreated || !source.IsCreated || frameCount <= 0)
+            if (_frames == null || source == null || frameCount <= 0)
                 return false;
 
             int safeFrameCount = math.min(frameCount, source.Length);
-            if (safeFrameCount <= 0 || safeFrameCount > WritableFrames)
+            if (safeFrameCount <= 0)
                 return false;
 
-            long writeCursor = WriteFrameCursor;
+            long readCursor = Volatile.Read(ref _readFrameCursor);
+            long writeCursor = _writeFrameCursor;
+            long available = writeCursor - readCursor;
+            int freeFrames = math.max(0, _capacityFrames - (int)math.min(available, _capacityFrames) - 1);
+            if (safeFrameCount > freeFrames)
+                return false;
+
             for (int i = 0; i < safeFrameCount; i++)
                 _frames[(int)((writeCursor + i) & _capacityMask)] = source[i];
 
-            Thread.MemoryBarrier();
+            Interlocked.MemoryBarrier();
             Volatile.Write(ref _writeFrameCursor, writeCursor + safeFrameCount);
             return true;
         }
 
         public int AddToInterleaved(float[] destination, int channels, int frameCount)
         {
-            if (!_frames.IsCreated || destination == null || channels <= 0 || frameCount <= 0)
+            if (_frames == null || destination == null || channels <= 0 || frameCount <= 0)
                 return 0;
 
-            long readCursor = ReadFrameCursor;
-            long writeCursor = WriteFrameCursor;
+            long readCursor = _readFrameCursor;
+            long writeCursor = Volatile.Read(ref _writeFrameCursor);
             long availableFrames = writeCursor - readCursor;
             if (availableFrames <= 0L)
                 return 0;
@@ -90,7 +99,6 @@ namespace Hecton8.Audio
             if (readableFrames <= 0)
                 return 0;
 
-            Thread.MemoryBarrier();
             for (int frameIndex = 0; frameIndex < readableFrames; frameIndex++)
             {
                 float sample = _frames[(int)((readCursor + frameIndex) & _capacityMask)];
@@ -99,16 +107,15 @@ namespace Hecton8.Audio
                     destination[channelOffset + channelIndex] += sample;
             }
 
-            Thread.MemoryBarrier();
+            Interlocked.MemoryBarrier();
             Volatile.Write(ref _readFrameCursor, readCursor + readableFrames);
             return readableFrames;
         }
 
         public void Dispose()
         {
-            if (_frames.IsCreated)
-                _frames.Dispose();
-
+            _frames = null;
+            _capacityFrames = 0;
             _capacityMask = 0;
             _readFrameCursor = 0L;
             _writeFrameCursor = 0L;

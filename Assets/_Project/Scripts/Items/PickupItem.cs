@@ -4,6 +4,7 @@
 // ============================================================================
 
 using Hecton8.Core;
+using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Physics;
 using Hecton8.Gameplay;
@@ -21,6 +22,9 @@ namespace Hecton8.Interaction
         private const float LooseCurrentSpinInfluence = 0.12f;
         private const float CurrentSimulationCullDistance = 100f;
         private const float CurrentSimulationCullDistanceSqr = CurrentSimulationCullDistance * CurrentSimulationCullDistance;
+        private const float OverflowScatterImpulse = 2.5f;
+        private const float OverflowScatterLiftImpulse = 1.2f;
+        private const float OverflowScatterTorqueImpulse = 0.35f;
 
         [Header("Item Configuration")]
         [SerializeField] private ItemData itemData;
@@ -53,20 +57,14 @@ namespace Hecton8.Interaction
             itemData = data;
             quantity = Mathf.Max(1, itemQuantity);
             InvalidateWorldStateIdentity();
-
-            _cachedInteractText = itemData != null
-                ? itemData.GetInteractText()
-                : "Pick up Unknown";
+            RebuildInteractTextCache();
         }
 
         private void Awake()
         {
             TryGetComponent(out _highlighter);
             TryGetComponent(out _rigidbody);
-
-            _cachedInteractText = itemData != null
-                ? itemData.GetInteractText()
-                : "Pick up Unknown";
+            RebuildInteractTextCache();
         }
 
         private void OnEnable()
@@ -146,11 +144,14 @@ namespace Hecton8.Interaction
                 return;
 
             Vector3 velocityChange = Vector3.ClampMagnitude(sampledCurrent, 6f) * (LooseCurrentVelocityInfluence * fdt);
-            _rigidbody.AddForce(velocityChange, ForceMode.VelocityChange);
+            PhysicsForceRouter.QueueForce(_rigidbody, velocityChange, ForceMode.VelocityChange);
 
             Vector3 spinAxis = Vector3.Cross(Vector3.up, sampledCurrent);
             if (spinAxis.sqrMagnitude > 0.0001f)
-                _rigidbody.AddTorque(spinAxis.normalized * (LooseCurrentSpinInfluence * velocityChange.magnitude), ForceMode.VelocityChange);
+                PhysicsForceRouter.QueueTorque(
+                    _rigidbody,
+                    spinAxis.normalized * (LooseCurrentSpinInfluence * velocityChange.magnitude),
+                    ForceMode.VelocityChange);
 
             if (_spatialHandle != 0)
             {
@@ -250,14 +251,113 @@ namespace Hecton8.Interaction
 
         public void Interact(Transform interactor)
         {
-            WorldStateManager.Instance?.RegisterCollectedPickup(_worldStatePersistenceKey, _worldStateChunkKey);
-            InteractionEvents.RaiseItemCollected(itemData, quantity, interactor);
-            gameObject.SetActive(false);
+            if (itemData == null || quantity <= 0)
+                return;
+
+            PlayerInventory playerInventory = PlayerInventory.Instance;
+            if (playerInventory == null)
+            {
+                DropOverflow(interactor);
+                return;
+            }
+
+            PlayerInventory.ScavengeAttemptResult attempt = playerInventory.ScavengeAttempt(itemData, quantity, interactor);
+            if (!attempt.IsSuccess)
+            {
+                DropOverflow(interactor);
+                return;
+            }
+
+            if (_worldStateIdentityAvailable)
+                WorldStateManager.Instance?.RegisterCollectedPickup(_worldStatePersistenceKey, _worldStateChunkKey);
+
+            ConsumeWorldProxy();
         }
 
         public string GetInteractText()
         {
             return _cachedInteractText;
+        }
+
+        private void RebuildInteractTextCache()
+        {
+            if (itemData == null)
+            {
+                _cachedInteractText = "Pick up Unknown";
+                return;
+            }
+
+            string baseText = itemData.GetInteractText();
+            if (quantity > 1)
+            {
+                _cachedInteractText = baseText + " x" + quantity;
+                return;
+            }
+
+            _cachedInteractText = baseText;
+        }
+
+        private void ConsumeWorldProxy()
+        {
+            if (_highlighter != null)
+                _highlighter.SetHighlight(false);
+
+            if (ObjectPoolManager.Instance != null && TryGetComponent(out ObjectPoolManager.PoolItemMarker _))
+            {
+                ObjectPoolManager.Instance.Despawn(gameObject);
+                return;
+            }
+
+            gameObject.SetActive(false);
+        }
+
+        private void DropOverflow(Transform interactor)
+        {
+            if (_rigidbody == null || _rigidbody.isKinematic)
+                return;
+
+            Vector3 scatterDirection = ResolveScatterDirection(interactor);
+            Vector3 impulse = scatterDirection * OverflowScatterImpulse;
+            impulse.y += OverflowScatterLiftImpulse;
+
+            if (!IsFiniteVector(impulse))
+                return;
+
+            _rigidbody.WakeUp();
+            PhysicsForceRouter.QueueForce(_rigidbody, impulse, ForceMode.Impulse);
+
+            Vector3 torqueAxis = Vector3.Cross(Vector3.up, scatterDirection);
+            if (torqueAxis.sqrMagnitude <= 0.0001f)
+                torqueAxis = Vector3.right;
+
+            Vector3 torque = torqueAxis.normalized * OverflowScatterTorqueImpulse;
+            if (IsFiniteVector(torque))
+                PhysicsForceRouter.QueueTorque(_rigidbody, torque, ForceMode.Impulse);
+        }
+
+        private Vector3 ResolveScatterDirection(Transform interactor)
+        {
+            if (interactor != null)
+            {
+                Vector3 scatterDirection = transform.position - interactor.position;
+                scatterDirection.y = 0f;
+                if (scatterDirection.sqrMagnitude > 0.0001f)
+                    return scatterDirection.normalized;
+
+                Vector3 fallbackForward = -interactor.forward;
+                fallbackForward.y = 0f;
+                if (fallbackForward.sqrMagnitude > 0.0001f)
+                    return fallbackForward.normalized;
+            }
+
+            return Vector3.forward;
+        }
+
+        private static bool IsFiniteVector(Vector3 value)
+        {
+            return !float.IsNaN(value.x) && !float.IsInfinity(value.x) &&
+                   !float.IsNaN(value.y) && !float.IsInfinity(value.y) &&
+                   !float.IsNaN(value.z) && !float.IsInfinity(value.z);
         }
 
         private void ResolveWorldStateIdentity()

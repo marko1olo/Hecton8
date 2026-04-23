@@ -1,0 +1,9 @@
+c:\hades\Hecton8\Temp\bin\Debug\EasySave3.deps.json
+c:\hades\Hecton8\Temp\bin\Debug\EasySave3.dll
+c:\hades\Hecton8\Temp\bin\Debug\EasySave3.pdb
+c:\hades\Hecton8\.codexbuild\core\obj\EasySave3.csproj.AssemblyReference.cache
+c:\hades\Hecton8\.codexbuild\core\obj\EasySave3.GeneratedMSBuildEditorConfig.editorconfig
+c:\hades\Hecton8\.codexbuild\core\obj\EasySave3.csproj.CoreCompileInputs.cache
+c:\hades\Hecton8\.codexbuild\core\obj\EasySave3.sourcelink.json
+c:\hades\Hecton8\.codexbuild\core\obj\EasySave3.dll
+c:\hades\Hecton8\.codexbuild\core\obj\EasySave3.pdb

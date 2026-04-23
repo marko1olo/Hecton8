@@ -249,7 +249,7 @@ LANGUAGE REBOOT PIPELINE
    AsyncOperationHandle<TMP_FontAsset> handle =
        Addressables.LoadAssetAsync<TMP_FontAsset>(fontKey);
 
-   await handle.Task;  // Non-blocking. Background thread.
+   await handle;  // Zero-GC Unity async awaiter.
    TMP_FontAsset newFont = handle.Result;
 
                                COMPLETE → proceed
@@ -278,7 +278,7 @@ LANGUAGE REBOOT PIPELINE
   STAGE 4 — RELEASE OLD ATLAS
   [STRUCT_START]
    Addressables.Release(previousFontHandle);
-   Resources.UnloadUnusedAssets(); // deferred, async
+   // Deterministic ref-count release only. Never call Resources.UnloadUnusedAssets().
    previousFontHandle = handle; // track for next reboot
   [STRUCT_END]
 

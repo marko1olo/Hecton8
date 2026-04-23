@@ -1,0 +1,557 @@
+```markdown
+# PROG_Quest_State_Graph_Logic.md
+## Hecton-8 | Underwater Horror Progression | Technical Mandate v1.0
+
+---
+
+## [RULE-0] ABSOLUTE LAWS
+
+- Zero GC. Zero string comparison. Zero reflection.
+- No Update() polling. No GetComponent in hot path.
+- All state: `NativeArray<uint>`. All IDs: pre-baked `uint` hashes.
+- Event signals only. No observers. No delegates on heap.
+- Burst-compiled evaluation only. Main thread reads final results.
+
+---
+
+## [DATA-1] BIT-PACKED QUEST REGISTRY — MEMORY LAYOUT
+
+### Flag Encoding
+
+```
+Total flag capacity  = N_uint * 32 bits
+Quest flag index     = FlagID (uint, pre-baked at build time)
+Array slot           = FlagID >> 5          // divide by 32 → which uint
+Bit position         = FlagID & 0x1F        // mod 32 → which bit
+```
+
+### NativeArray Layout
+
+```
+Offset [0..63]   → QuestStateFlags[64]   (2048 flags: active/complete/locked)
+Offset [64..127] → ItemStateFlags[64]    (2048 item acquisition bits)
+Offset [128..191]→ LocationFlags[64]     (2048 visited/triggered bits)
+Offset [192..223]→ NarrativeFlags[32]    (1024 dialogue/cutscene seen bits)
+Offset [224..255]→ PhaseFlags[32]        (1024 chapter/act gate bits)
+Offset [256..287]→ EntityDestroyFlags[32](1024 entity-destroyed bits)
+Offset [288..319]→ DeadlockFlags[32]     (1024 revert-trigger bits)
+```
+
+Total footprint: 320 × 4 bytes = **1280 bytes flat**. Cache-resident. Blittable.
+
+### Struct Wrapper (No class. No heap.)
+
+```
+struct QuestStateBlock
+    flags : NativeArray<uint>  // 320 uints
+    version : uint             // monotonic increment on every write
+    checksum : uint            // XOR rolling checksum across all 320 uints
+```
+
+### Spatial Locality Rule
+
+Pack flags for same quest in contiguous 32-bit word when possible.
+Quest designer assigns FlagIDs in bands:
+```
+[0..31]   = Quest_01 all sub-flags
+[32..63]  = Quest_02 all sub-flags
+...
+```
+Evaluating entire quest requires single uint read → zero cache miss.
+
+---
+
+## [DATA-2] FLAG ID COMPILATION (BUILD-TIME, NOT RUNTIME)
+
+### Hash Kernel
+
+```
+FlagID = FNV1a_32(questNameLiteral) & 0x00003FFF   // 14-bit → max 16384 flags
+```
+
+FNV1a_32 pseudo-logic:
+```
+hash = 2166136261u
+for each byte b in input:
+    hash ^= b
+    hash *= 16777619u
+return hash
+```
+
+- Executed ONCE at build/pre-compile step → ScriptableObject lookup table baked.
+- Runtime sees only `uint` constants. No string ever crosses runtime boundary.
+- Collision detection: build-step asserts `FlagID uniqueness` across all registered names.
+
+### ID Lookup Table Layout
+
+```
+FlagLUT : NativeHashMap<uint, uint>   // key=FNV hash, value=FlagID
+                                       // populated at asset-load, read-only at runtime
+```
+
+---
+
+## [DATA-3] RING BUFFER — TRANSITION HISTORY
+
+Purpose: Rollback, anti-deadlock revert, debug replay. Zero alloc.
+
+```
+struct TransitionRecord
+    timestamp   : double   // Time.timeAsDouble, no float precision loss
+    fromFlagID  : uint
+    toFlagID    : uint
+    eventType   : ushort   // EventBus enum cast to ushort
+    reserved    : ushort   // padding, future use
+
+RING_CAPACITY = 256         // 256 × 12 bytes = 3072 bytes
+head          : uint        // atomic increment
+buffer        : NativeArray<TransitionRecord>[256]
+```
+
+Write:
+```
+idx = Interlocked.Increment(ref head) & 0xFF  // mod 256, lock-free
+buffer[idx] = new TransitionRecord(...)
+```
+
+Read last N: iterate `(head - N) & 0xFF` to `head & 0xFF`.
+
+---
+
+## [MATH-1] O(1) STATE VERIFICATION KERNEL
+
+### Prerequisite Gate: A AND B AND C → unlock D
+
+```
+slotA = flagID_A >> 5 ;  bitA = 1u << (flagID_A & 0x1F)
+slotB = flagID_B >> 5 ;  bitB = 1u << (flagID_B & 0x1F)
+slotC = flagID_C >> 5 ;  bitC = 1u << (flagID_C & 0x1F)
+
+// Same-slot fast path (quest band optimization):
+if slotA == slotB == slotC:
+    mask     = bitA | bitB | bitC
+    wordVal  = flags[slotA]
+    PASS     = (wordVal & mask) == mask      // single read, single compare
+
+// Cross-slot path:
+PASS = ((flags[slotA] & bitA) != 0)
+     & ((flags[slotB] & bitB) != 0)
+     & ((flags[slotC] & bitC) != 0)          // 3 reads, branchless AND
+```
+
+### Set Flag (atomic, Burst-safe)
+
+```
+slot = flagID >> 5
+bit  = 1u << (flagID & 0x1F)
+Interlocked.Or(ref flags[slot], bit)
+version++
+checksum ^= bit                              // O(1) rolling checksum update
+```
+
+### Clear Flag (atomic)
+
+```
+Interlocked.And(ref flags[slot], ~bit)
+version++
+checksum ^= bit
+```
+
+### Multi-flag bulk check (SIMD opportunity)
+
+When prerequisite count > 8, pack all into precomputed `MaskSet[N]`:
+```
+for i in 0..maskSet.length:
+    if (flags[maskSet[i].slot] & maskSet[i].mask) != maskSet[i].mask:
+        return FAIL
+return PASS
+```
+Burst auto-vectorizes `uint` array comparison → 4-wide SIMD on MX350 CPU.
+
+---
+
+## [MATH-2] DETERMINISTIC TRIGGER EVALUATION
+
+### Event → Graph Evaluation Flow (no Update, no coroutine)
+
+```
+1. EventBus.Signal(EventType, payload : EventPayload)
+2. QuestGraphEvaluator.OnSignal(type, payload)     // registered at init, ptr stored
+3. Resolve FlagID from payload.entityHash → FlagLUT
+4. SetFlag(resolvedFlagID)                          // atomic write
+5. For each QuestNode subscribed to this FlagID:
+   5a. Load prerequisiteMask from QuestNodeCache[nodeID]  // pre-baked NativeArray
+   5b. Execute O(1) gate check (MATH-1)
+   5c. If PASS: SetFlag(completionFlagID), emit QuestTransitionEvent
+   5d. If FAIL: no-op, no allocation, no branch explosion
+6. Write TransitionRecord to ring buffer
+7. Increment version
+```
+
+Signal resolution from EventBus is O(1) via `NativeMultiHashMap<EventType, QuestNodeID>`.
+Pre-baked at scene load. Read-only at runtime.
+
+### QuestNode Cache Layout
+
+```
+struct QuestNodeDescriptor
+    nodeID              : uint
+    prerequisiteMask    : NativeArray<uint2>   // (slot, mask) pairs, max 8
+    completionFlagID    : uint
+    failureFlagID       : uint
+    revertFlagID        : uint                 // anti-deadlock target
+    prerequisiteCount   : byte
+    nodeType            : byte                 // Acquire=0, Location=1, Destroy=2...
+    phaseGate           : byte                 // must be in this phase
+    _pad                : byte
+```
+
+Pack into `NativeArray<QuestNodeDescriptor>`. Sequential layout → prefetch-friendly.
+
+---
+
+## [DATA-4] EVENT BUS — ZERO-GC SIGNAL DISPATCH
+
+### Event Payload (unmanaged, blittable)
+
+```
+struct EventPayload
+    entityHash  : uint     // FNV1a of entity name, pre-baked
+    eventType   : ushort
+    subType     : ushort
+    position    : float3   // for LocationReachedEvent spatial check
+    itemID      : uint     // for ItemAcquiredEvent
+    timestamp   : double
+    flags       : uint     // bitfield of contextual booleans
+```
+
+Total: 36 bytes. Fits in cache line with companion data.
+
+### Dispatch Table
+
+```
+dispatchTable : NativeMultiHashMap<ushort, FunctionPointer<EvalDelegate>>
+             // key=EventType, value=Burst-compiled evaluator function pointers
+```
+
+Registration: boot-time only. Hot path: zero allocation, function pointer call.
+`FunctionPointer<T>` (Unity Burst-compatible): no delegate boxing.
+
+### Signal Flow Guard
+
+```
+if activeSignalDepth > 4: DROP signal, log to ring buffer, increment lostSignalCount
+// Prevents re-entrant cascade from destroying phase gates
+```
+
+---
+
+## [SAFE-1] ANTI-DEADLOCK — ENTITY DESTRUCTION REVERT
+
+### Trigger Condition
+
+```
+EntityDestroyedEvent fires:
+    payload.entityHash matches critical item hash in ItemStateFlags
+    AND ItemStateFlags[slot] & bit != 0   // item was acquired (flag set)
+    AND DeadlockFlags[slot] & bit == 0    // revert not already in progress
+```
+
+### Revert Kernel
+
+```
+1. SetFlag(EntityDestroyFlags, entityHash)          // mark entity gone
+2. ClearFlag(ItemStateFlags, itemFlagID)             // un-acquire item
+3. Load QuestNode linked to itemFlagID
+4. ClearFlag(QuestStateFlags, node.completionFlagID) // revert completion
+5. SetFlag(QuestStateFlags, node.revertFlagID)       // trigger respawn gate
+6. SetFlag(DeadlockFlags, entityHash)                // mark revert active
+7. Emit QuestRevertEvent(node.nodeID, itemFlagID)    // spawner listens
+8. Write TransitionRecord: type=REVERT
+9. Decrement version? NO — version still increments (monotonic)
+   checksum update: XOR cleared bits back
+```
+
+### Spawner Contract
+
+```
+ItemSpawnerSystem listens to QuestRevertEvent (zero-GC FunctionPointer)
+Respawn item at original spawn point (cached float3, pre-baked)
+On player re-acquires: ItemAcquiredEvent re-fires → normal flow resumes
+Deadlock flag cleared ONLY on successful re-acquisition
+```
+
+### Deadlock Detection Timeout
+
+```
+if Time.timeAsDouble - revertTimestamp > DEADLOCK_TIMEOUT (default 300s):
+    emit DeadlockEscalationEvent
+    PhaseGate override: grant item via alternate route FlagID
+    ClearFlag(DeadlockFlags, entityHash)
+```
+No polling. Evaluated on next EventBus signal via timestamp delta check.
+
+---
+
+## [DATA-5] SERIALIZATION — BLIT-SAFE BINARY CONTRACT
+
+### SavePayload Block
+
+```
+struct QuestSaveHeader
+    magic       : uint    = 0x48514753  // "HQGS"
+    version     : uint                  // QuestStateBlock.version
+    flagCount   : uint    = 320
+    checksum    : uint                  // QuestStateBlock.checksum
+    timestamp   : double
+    _pad        : uint[6]               // align to 64 bytes
+// Total header: 64 bytes
+
+QuestSaveBlobLayout:
+    [0..63]   = QuestSaveHeader (64 bytes)
+    [64..1343]= QuestStateBlock.flags raw (320 × 4 = 1280 bytes)
+    Total     = 1344 bytes flat
+```
+
+### MemCpy Kernel
+
+```
+SaveManager.WriteBinaryBlock():
+    ptr_dst = SaveBuffer.GetUnsafePtr() + questBlockOffset
+    ptr_src = questStateBlock.flags.GetUnsafeReadOnlyPtr()
+    UnsafeUtility.MemCpy(ptr_dst + 64, ptr_src, 320 * sizeof(uint))
+    WriteHeader(ptr_dst, header)
+    // No JSON. No XML. No ToString. No boxing.
+```
+
+### Load & Validate
+
+```
+LoadBinaryBlock():
+    UnsafeUtility.MemCpy(flags.GetUnsafePtr(), src + 64, 1280)
+    Recompute checksum: XOR all 320 uints
+    if computed != header.checksum: CORRUPTION → load backup slot or reset
+    if header.magic != 0x48514753: REJECT, log, fallback
+    version = header.version
+```
+
+### Cross-Version Migration
+
+```
+if savedVersion < currentSchemaVersion:
+    MigrationTable[savedVersion → currentVersion].Apply(flags)
+    // MigrationTable: NativeArray of (oldFlagID → newFlagID) remaps
+    // Applied as bitwise copy operations, no strings
+```
+
+---
+
+## [SCALE-1] LOD — EVALUATION BUDGET TIERS
+
+### Base (MX350 / i3-10gen minimum)
+
+```
+- Max active quest nodes evaluated per signal: 16
+- EventBus dispatch: synchronous, same frame
+- Ring buffer: 128 entries (not 256)
+- No TransitionHistory playback at runtime (debug-only stripped)
+- Serialization: async job on worker thread, no main thread stall
+```
+
+### High
+
+```
+- Max active quest nodes: 64
+- TransitionHistory: 256 entries, lightweight debug overlay
+- Checksum validated every 10 saves (not every save)
+- Migration table active
+```
+
+### Ultra
+
+```
+- Max active quest nodes: 256
+- Full TransitionHistory playback for developer telemetry
+- Checksum every save + background integrity scan job
+- Redundant save: write to slot A, verify, then slot B
+- Event signal profiling: NativeArray<SignalTimingRecord> for perf analysis
+```
+
+### Time-Slicing Rule
+
+```
+QuestGraphEvaluator time budget per frame: 0.3ms (Base), 0.8ms (High), 2.0ms (Ultra)
+If budget exceeded mid-evaluation:
+    Save current nodeIndex to NativeArray<uint> pendingEvals
+    Resume next frame BEFORE processing new signals
+    // No dropped transitions. No GC. Just deferred continuation.
+```
+
+---
+
+## [SAFE-2] FAILURE MODES & EDGE GUARDS
+
+### Numeric / State Guards
+
+```
+FlagID out of range (>= 16384):
+    → Clamp to 16383, log error code (not string), increment errorCounter
+
+flags[slot] read when NativeArray disposed:
+    → Safety handle check before any access (AtomicSafetyHandle)
+    → Evaluator returns FAIL-SAFE (no state change)
+
+version overflow (uint max):
+    → Wrap allowed. Monotonic only for ordering, not identity.
+
+checksum mismatch on load:
+    → Do NOT crash. Mark QuestStateBlock.integrity = DEGRADED
+    → Emit CorruptionEvent, load last known-good snapshot from ring buffer
+
+Circular quest dependency (A requires B, B requires A):
+    → Detected at build-time via topological sort of QuestNodeDescriptors
+    → Build step REJECTS graph, forces designer correction
+    → Runtime: no cycle detection needed (graph is DAG by construction)
+```
+
+### Speed / Depth Context (Physics Integration)
+
+```
+Player depth > 4000m:
+    → QuestPhase = ABYSS_PHASE active
+    → PhaseGate bits restrict available quest evaluations to abyss-tier nodes only
+    → Non-abyss ItemAcquiredEvents silently filtered (payload.flags bit 0 = depthGate)
+
+Signal flood (> 64 signals in single frame):
+    → Overflow queue: NativeQueue<EventPayload> (bounded, 256 max)
+    → Excess signals beyond 256: DROP oldest, increment droppedSignalCounter
+    → Never allocate. Never throw. Degrade gracefully.
+
+Entity hash collision (two entities same FNV hash):
+    → Build-step enforces collision check across all entity names
+    → Runtime: secondary 16-bit subType in EventPayload disambiguates
+```
+
+---
+
+## [MATH-3] PHASE GATE EVALUATION
+
+```
+struct PhaseGate
+    requiredPhase : byte    // 0=surface, 1=shallow, 2=deep, 3=abyss, 4=thermal
+    requiredFlags : uint2   // (slot, mask) for phase unlock condition
+    gateID        : uint
+
+EvaluatePhaseGate(gateID, currentPhase):
+    gate = phaseGates[gateID]
+    if currentPhase != gate.requiredPhase: return LOCKED
+    if (flags[gate.requiredFlags.x] & gate.requiredFlags.y)
+        != gate.requiredFlags.y: return LOCKED
+    return OPEN
+```
+
+Phase value stored in dedicated PhaseFlags band (offset 224..255).
+Phase transition: single bit-set in PhaseFlags, triggers phase-subscriber evaluators.
+
+---
+
+## [MATH-4] HASH ID FAST PATH VERIFICATION
+
+At runtime, before any flag operation, confirm FlagID valid:
+
+```
+valid = FlagID < MAX_FLAGS                    // MAX_FLAGS = 16384
+valid &= FlagLUT.ContainsKey(sourceHash)      // NativeHashMap lookup, O(1)
+if !valid: noop + errorCounter++
+```
+
+`NativeHashMap.ContainsKey`: Burst-compiled, O(1) average. No GC. No exception.
+
+---
+
+## [INTEGRATION-1] INTERFACE CONTRACTS (SRP)
+
+```
+IQuestStateReader
+    GetFlag(uint flagID) : bool
+    GetFlagBatch(NativeSlice<uint> flagIDs, NativeSlice<bool> results) : void
+    GetVersion() : uint
+
+IQuestStateWriter
+    SetFlag(uint flagID) : void
+    ClearFlag(uint flagID) : void
+    RevertQuestNode(uint nodeID) : void
+
+IQuestEventReceiver
+    OnSignal(ushort eventType, EventPayload payload) : void
+    // Implemented by QuestGraphEvaluator, registered to EventBus at init
+
+ISaveSerializable
+    WriteToBuffer(NativeSlice<byte> dst, int offset) : int   // returns bytes written
+    ReadFromBuffer(NativeSlice<byte> src, int offset) : bool // returns validity
+
+IPhaseGateQuery
+    EvaluateGate(uint gateID) : GateResult   // enum: OPEN/LOCKED/DEGRADED
+```
+
+No MonoBehaviour in any interface. No Unity lifecycle coupling.
+All cross-system communication through these interfaces only.
+Dependency injection at boot via ServiceLocator (static NativeArray of ptrs, not heap).
+
+---
+
+## [DATA-6] BOOT INITIALIZATION SEQUENCE
+
+```
+1. Allocate QuestStateBlock (NativeArray<uint>, Persistent allocator)
+2. Load QuestNodeDescriptors from ScriptableObject → NativeArray (baked binary asset)
+3. Build FlagLUT (NativeHashMap) from baked FlagID list
+4. Build dispatchTable (NativeMultiHashMap<EventType, FunctionPtr>) 
+5. Build phaseGates NativeArray from baked asset
+6. Build EventBus subscription table (NativeMultiHashMap<EventType, QuestNodeID>)
+7. Register IQuestEventReceiver.OnSignal to EventBus (single function pointer)
+8. If save exists: LoadBinaryBlock → validate checksum → restore flags
+   If no save: all flags = 0 (NativeArray default, memset-free)
+9. Evaluate initial phase gate for starting conditions
+10. System ready. Zero heap allocated during steps 1-10 beyond NativeContainers.
+```
+
+---
+
+## [SENIOR_HACK-1] AAA-CHEAP NARRATIVE DENSITY ON MX350
+
+Quest-state-driven visual hints without GPU overhead:
+
+```
+NarrativeFlags bit → drives shader keyword toggle (pre-baked keyword array)
+Keyword toggle: MaterialPropertyBlock (no material instantiation)
+Max 4 active keyword changes per QuestTransitionEvent
+Visual LOD of quest indicators: distance-based, resolved in QuestGraphEvaluator
+    dist² < 25.0  → full marker
+    dist² < 400.0 → simplified marker  
+    dist² >= 400.0→ NO marker (no draw call)
+dist² computed: sqrMagnitude (no sqrt), compared to pre-squared thresholds
+```
+
+Quest-state texture atlas: single 256×256 RGBA texture, index = FlagID & 0xFF.
+GPU reads bit-state via structured buffer (NativeArray blit to ComputeBuffer, 1KB).
+Shader samples quest-state in single texture fetch → no CB complexity.
+
+---
+
+## [RULE-FINAL] ENFORCEMENT CHECKLIST
+
+```
+□ No string ever crosses runtime quest evaluation boundary
+□ No new() allocation inside any quest evaluation path
+□ No Update() method on any quest-related component
+□ All EventBus receivers: Burst-compiled FunctionPointers only
+□ Save/Load: UnsafeUtility.MemCpy only. Zero serialization framework
+□ Anti-deadlock: covered for item-lost, item-destroyed, item-inaccessible
+□ Phase gates: validated at build time (topological sort, no runtime cycles)
+□ Checksum: validated on every load, degraded-mode on failure (no crash)
+□ MX350 VRAM: quest state ComputeBuffer ≤ 2KB (fits in L2 cache)
+□ CPU budget: 0.3ms Base / 0.8ms High / 2.0ms Ultra, deferred if exceeded
+□ All NativeContainers: disposed in explicit shutdown sequence (no finalizer leak)
+```
+```

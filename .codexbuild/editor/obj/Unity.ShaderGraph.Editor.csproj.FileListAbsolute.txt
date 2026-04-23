@@ -1,0 +1,10 @@
+c:\hades\Hecton8\Temp\bin\Debug\Unity.ShaderGraph.Editor.deps.json
+c:\hades\Hecton8\Temp\bin\Debug\Unity.ShaderGraph.Editor.dll
+c:\hades\Hecton8\Temp\bin\Debug\Unity.ShaderGraph.Editor.pdb
+c:\hades\Hecton8\.codexbuild\editor\obj\Unity.ShaderGraph.Editor.csproj.AssemblyReference.cache
+c:\hades\Hecton8\.codexbuild\editor\obj\Unity.ShaderGraph.Editor.GeneratedMSBuildEditorConfig.editorconfig
+c:\hades\Hecton8\.codexbuild\editor\obj\Unity.ShaderGraph.Editor.csproj.CoreCompileInputs.cache
+c:\hades\Hecton8\.codexbuild\editor\obj\Unity.ShaderGraph.Editor.sourcelink.json
+c:\hades\Hecton8\.codexbuild\editor\obj\Unity.Sh.1AC18AB2.Up2Date
+c:\hades\Hecton8\.codexbuild\editor\obj\Unity.ShaderGraph.Editor.dll
+c:\hades\Hecton8\.codexbuild\editor\obj\Unity.ShaderGraph.Editor.pdb

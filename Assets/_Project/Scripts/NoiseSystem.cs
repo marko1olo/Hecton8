@@ -16,7 +16,9 @@ namespace Hecton8.AI
         private const float MaximumToolNoiseRadius = 48f;
         private const float MinimumTransportNoiseRadius = 28f;
         private const float MaximumTransportNoiseRadius = 96f;
+        private const float ActiveSonarDetectionRadius = 80f;
         private const int MaxNoiseListenerCount = 256;
+        private const int MaxAcousticOcclusionHits = 8;
 
         /// <summary>
         /// Snapshot of player-generated noise state for the current frame window.
@@ -30,7 +32,11 @@ namespace Hecton8.AI
                 float transportBoost01,
                 float transportSignature,
                 float toolUseNoise01,
-                int reportedFrame)
+                int reportedFrame,
+                bool isActiveSonarPing = false,
+                float acousticTransmission01 = 1f,
+                float acousticLowPassCutoffHz = AcousticOcclusionUtility.OpenLowPassCutoffHertz,
+                float signalRadiusMeters = 0f)
             {
                 Position = position;
                 MovementSpeedSqr = movementSpeedSqr;
@@ -39,6 +45,10 @@ namespace Hecton8.AI
                 TransportSignature = transportSignature;
                 ToolUseNoise01 = toolUseNoise01;
                 ReportedFrame = reportedFrame;
+                IsActiveSonarPing = isActiveSonarPing;
+                AcousticTransmission01 = acousticTransmission01;
+                AcousticLowPassCutoffHz = acousticLowPassCutoffHz;
+                SignalRadiusMeters = signalRadiusMeters;
             }
 
             /// <summary>World position of the player noise source.</summary>
@@ -61,13 +71,28 @@ namespace Hecton8.AI
 
             /// <summary>Frame index when the signal was last reported.</summary>
             public int ReportedFrame { get; }
+
+            /// <summary>True when the signal originates from an active sonar ping.</summary>
+            public bool IsActiveSonarPing { get; }
+
+            /// <summary>Acoustic transmission factor after path absorption is applied.</summary>
+            public float AcousticTransmission01 { get; }
+
+            /// <summary>Occlusion-derived low-pass cutoff for the path.</summary>
+            public float AcousticLowPassCutoffHz { get; }
+
+            /// <summary>Authored audible radius for downstream evaluators.</summary>
+            public float SignalRadiusMeters { get; }
         }
 
         private const int MaxPlayerSignalAgeFrames = 30;
+        private static readonly int SensoryOcclusionMask = AcousticOcclusionUtility.BuildSensoryMask();
         private static PlayerNoiseSignal _playerNoiseSignal;
         private static bool _hasPlayerNoiseSignal;
         // COLD ALLOC: SpatialQueryHit[256] — centralized fauna noise dispatch buffer — owner: NoiseSystem
         private static readonly SpatialQueryHit[] _playerNoiseListenerBuffer = new SpatialQueryHit[MaxNoiseListenerCount];
+        // COLD ALLOC: RaycastHit[8] â€” active-sonar occlusion chain buffer â€” owner: NoiseSystem
+        private static readonly RaycastHit[] _activeSonarOcclusionHits = new RaycastHit[MaxAcousticOcclusionHits];
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -97,6 +122,28 @@ namespace Hecton8.AI
                 Time.frameCount);
             _hasPlayerNoiseSignal = true;
             DispatchPlayerSignal(_playerNoiseSignal);
+        }
+
+        /// <summary>
+        /// Reports an active sonar ping through the fauna hearing path with acoustic shadow validation.
+        /// </summary>
+        public static void ReportActiveSonarPing(Vector3 position, float intensity01)
+        {
+            float clampedIntensity = Mathf.Clamp01(intensity01);
+            _playerNoiseSignal = new PlayerNoiseSignal(
+                position,
+                0f,
+                false,
+                0f,
+                0f,
+                clampedIntensity,
+                Time.frameCount,
+                true,
+                1f,
+                AcousticOcclusionUtility.OpenLowPassCutoffHertz,
+                ActiveSonarDetectionRadius);
+            _hasPlayerNoiseSignal = true;
+            DispatchActiveSonarPing(_playerNoiseSignal);
         }
 
         /// <summary>
@@ -143,6 +190,46 @@ namespace Hecton8.AI
             }
         }
 
+        private static void DispatchActiveSonarPing(PlayerNoiseSignal signal)
+        {
+            int count = WorldSpatialHashGrid.CollectContactsNonAlloc(
+                signal.Position,
+                ActiveSonarDetectionRadius,
+                SpatialTargetKind.Bioform,
+                _playerNoiseListenerBuffer);
+
+            for (int i = 0; i < count; i++)
+            {
+                SpatialQueryHit listener = _playerNoiseListenerBuffer[i];
+                if (!(listener.Owner is FaunaBrain brain) || listener.Transform == null)
+                    continue;
+
+                AcousticOcclusionResult occlusion = AcousticOcclusionUtility.EvaluateOcclusionPath(
+                    signal.Position,
+                    listener.Position,
+                    SensoryOcclusionMask,
+                    _activeSonarOcclusionHits,
+                    null,
+                    listener.Transform.root);
+                if (occlusion.Transmission01 < AcousticOcclusionUtility.DeepShadowTransmissionThreshold)
+                    continue;
+
+                PlayerNoiseSignal transmittedSignal = new PlayerNoiseSignal(
+                    signal.Position,
+                    0f,
+                    false,
+                    0f,
+                    0f,
+                    signal.ToolUseNoise01 * occlusion.Transmission01,
+                    Time.frameCount,
+                    true,
+                    occlusion.Transmission01,
+                    occlusion.LowPassCutoffHz,
+                    ActiveSonarDetectionRadius);
+                brain.ReceivePlayerNoiseSignal(transmittedSignal);
+            }
+        }
+
         private static float ResolveDispatchRadius(PlayerNoiseSignal signal)
         {
             float dispatchRadius = 0f;
@@ -179,6 +266,9 @@ namespace Hecton8.AI
                 dispatchRadius = Mathf.Max(dispatchRadius, transportRadius);
             }
 
+            if (signal.IsActiveSonarPing)
+                dispatchRadius = Mathf.Max(dispatchRadius, signal.SignalRadiusMeters);
+
             return dispatchRadius;
         }
 
@@ -192,8 +282,11 @@ namespace Hecton8.AI
                 float distance = Vector3.Distance(listenerPosition, signal.Position);
                 float speed = Mathf.Sqrt(signal.MovementSpeedSqr);
                 float speed01 = Mathf.InverseLerp(0.75f, 8.5f, speed);
-                float distance01 = 1f - Mathf.InverseLerp(6f, 42f, distance);
+                float maxDistance = signal.SignalRadiusMeters > 0f ? signal.SignalRadiusMeters : 42f;
+                float distance01 = 1f - Mathf.InverseLerp(6f, maxDistance, distance);
                 float pulse01 = Mathf.Max(signal.TransportBoost01, signal.ToolUseNoise01);
+                if (signal.IsActiveSonarPing)
+                    pulse01 = Mathf.Max(pulse01, signal.ToolUseNoise01 * signal.AcousticTransmission01);
                 return Mathf.Clamp01(Mathf.Max(speed01 * distance01, pulse01 * distance01));
             }
 

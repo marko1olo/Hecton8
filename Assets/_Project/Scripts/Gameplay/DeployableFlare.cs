@@ -21,6 +21,7 @@
 
 using Hecton8.Audio;
 using Hecton8.Core;
+using Hecton8.Physics;
 using Hecton8.World;
 using UnityEngine;
 
@@ -231,7 +232,10 @@ namespace Hecton8.Gameplay
             if (enableSinking && _rigidbody != null)
             {
                 // Gentle constant sinking force
-                _rigidbody.AddForce(Vector3.down * sinkSpeed * deltaTime, ForceMode.VelocityChange);
+                PhysicsForceRouter.QueueForce(
+                    _rigidbody,
+                    Vector3.down * sinkSpeed * deltaTime,
+                    ForceMode.VelocityChange);
             }
 
             // Check for fuel depletion

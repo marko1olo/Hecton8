@@ -45,6 +45,7 @@ namespace Hecton8.Gameplay
         private const float GroundCheckSkin = 0.02f;
         private float _runtimeSwimSpeedMultiplier = 1f;
         private float _runtimeInjurySwimSpeedMultiplier = 1f;
+        private float _runtimeEmergencyMovementMultiplier = 1f;
         private const float TwoPi = 6.28318530718f;
         private const string DefaultWaterEntrySplashClipPath = "Assets/_Project/Audio/Movement/dive_splash.wav";
         private const int CrestBodySampleCount = 5;
@@ -877,6 +878,10 @@ namespace Hecton8.Gameplay
         private ITransportPlatform _activeTransportPlatform;
         private MonoBehaviour _activeTransportPlatformBehaviour;
         private Transform _activeTransportPlatformTransform;
+        private Vector3 _lastTransportPlatformPosition = Vector3.zero;
+        private Vector3 _currentTransportPlatformPosition = Vector3.zero;
+        private Quaternion _currentTransportPlatformRotation = Quaternion.identity;
+        private Quaternion _transportPlatformDeltaRotation = Quaternion.identity;
         private PlayerSwimPresentationController _swimPresentationController;
         private PhysicalInteractionHandler _physicalInteractionHandler;
         private HeavyTowWinch _heavyTowWinch;
@@ -1127,7 +1132,11 @@ namespace Hecton8.Gameplay
         private float _cachedGravityMagnitude;
         private Vector3 _smoothedGroundNormal;
         private float _minGroundNormalY;
-        private readonly RaycastHit[] _groundHitBuffer = new RaycastHit[32]; // COLD ALLOC: RaycastHit[32] — shared non-alloc ground and foot-probe buffer for dense terrain/vegetation — owner: HectonPlayerMovement
+        private readonly RaycastHit[] _groundProbeHitBuffer = new RaycastHit[32]; // COLD ALLOC: RaycastHit[32] - ground-contact query buffer dedicated to grounding resolution - owner: HectonPlayerMovement
+        private readonly RaycastHit[] _footProbeHitBuffer = new RaycastHit[32]; // COLD ALLOC: RaycastHit[32] - foot-probe query buffer dedicated to dry/exosuit support sampling - owner: HectonPlayerMovement
+        private readonly RaycastHit[] _stepProbeHitBuffer = new RaycastHit[32]; // COLD ALLOC: RaycastHit[32] - step-assist query buffer dedicated to obstacle, clearance, and landing probes - owner: HectonPlayerMovement
+        private readonly RaycastHit[] _overheadProbeHitBuffer = new RaycastHit[32]; // COLD ALLOC: RaycastHit[32] - overhead clearance query buffer dedicated to jump headroom checks - owner: HectonPlayerMovement
+        private readonly RaycastHit[] _bottomClearanceHitBuffer = new RaycastHit[32]; // COLD ALLOC: RaycastHit[32] - bottom-clearance query buffer dedicated to seabed clearance checks - owner: HectonPlayerMovement
         private const int MaxQueuedCollisionEvents = 8;
         // COLD ALLOC: QueuedCollisionEvent[8] — ring buffer bridging Unity collision callbacks into controller-owned FixedTick processing — owner: HectonPlayerMovement
         private readonly QueuedCollisionEvent[] _queuedCollisionEvents = new QueuedCollisionEvent[MaxQueuedCollisionEvents];
@@ -1161,6 +1170,8 @@ namespace Hecton8.Gameplay
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private const float DEG_TO_RAD = 0.01745329f;
+        private const float ParasiteLatchMaxLeverArm = 0.85f;
+        private const float ParasiteLatchMaxAngularAcceleration = 12f;
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  EFFECTIVE WATER SURFACE â€” Crest or fallback
@@ -1211,6 +1222,14 @@ namespace Hecton8.Gameplay
         internal void SetRuntimeInjurySwimSpeedMultiplier(float multiplier)
         {
             _runtimeInjurySwimSpeedMultiplier = Mathf.Clamp(multiplier, 0.35f, 1f);
+        }
+
+        /// <summary>
+        /// Applies a temporary emergency locomotion multiplier without overwriting authored buffs or injury penalties.
+        /// </summary>
+        internal void SetRuntimeEmergencyMovementMultiplier(float multiplier)
+        {
+            _runtimeEmergencyMovementMultiplier = Mathf.Clamp(multiplier, 0.5f, 2f);
         }
 
         public SuitData CurrentSuit => currentSuitData;
@@ -1352,7 +1371,7 @@ namespace Hecton8.Gameplay
             if (clampedSeverity <= 0f)
                 return;
 
-            _rb.AddForce(releasedVelocityChange, ForceMode.VelocityChange);
+            ApplyMotorVelocityChange(releasedVelocityChange);
             ApplyPhysicalTrauma(
                 traumaImpulse.sqrMagnitude > 0.0001f
                     ? traumaImpulse
@@ -1505,7 +1524,7 @@ namespace Hecton8.Gameplay
 
             if (_environmentHandler == null)
             {
-                _rb.AddForce(force, ForceMode.Force);
+                ApplyMotorForce(force);
                 return;
             }
 
@@ -1520,11 +1539,55 @@ namespace Hecton8.Gameplay
 
             if (_environmentHandler == null)
             {
-                _rb.AddForce(velocityChange, ForceMode.VelocityChange);
+                ApplyMotorVelocityChange(velocityChange);
                 return;
             }
 
             _environmentHandler.QueueVelocityChange(velocityChange);
+        }
+
+        private void ApplyMotorForce(Vector3 force)
+        {
+            _playerMotor?.ApplyForce(force);
+        }
+
+        private void ApplyMotorAcceleration(Vector3 acceleration)
+        {
+            _playerMotor?.ApplyAcceleration(acceleration);
+        }
+
+        private void ApplyMotorVelocityChange(Vector3 velocityChange)
+        {
+            _playerMotor?.ApplyVelocityChange(velocityChange);
+        }
+
+        private void ApplyMotorImpulse(Vector3 impulse)
+        {
+            _playerMotor?.ApplyImpulse(impulse);
+        }
+
+        private void ApplyMotorAngularVelocityChange(Vector3 angularVelocityChange, float maxAngularAcceleration, float fixedDeltaTime)
+        {
+            _playerMotor?.ApplyAngularVelocityChange(angularVelocityChange, maxAngularAcceleration, fixedDeltaTime);
+        }
+
+        private void ApplyMotorOffCenterForce(Vector3 force, Vector3 applicationPoint)
+        {
+            _playerMotor?.ApplyForceAtPositionSplit(
+                force,
+                applicationPoint,
+                ParasiteLatchMaxLeverArm,
+                ParasiteLatchMaxAngularAcceleration);
+        }
+
+        private void ApplyMotorLinearVelocity(Vector3 velocity)
+        {
+            _playerMotor?.SetLinearVelocity(velocity);
+        }
+
+        private void MoveMotorPosition(Vector3 position)
+        {
+            _playerMotor?.MovePosition(position);
         }
 
         private void QueueEnvironmentalHullStress(float normalizedStress)
@@ -1952,6 +2015,11 @@ namespace Hecton8.Gameplay
             _activeTransportPlatformBehaviour = null;
             _activeTransportPlatformTransform = null;
             _transportPlatformRotationInitialized = false;
+            _lastTransportPlatformPosition = Vector3.zero;
+            _currentTransportPlatformPosition = Vector3.zero;
+            _lastTransportPlatformRotation = Quaternion.identity;
+            _currentTransportPlatformRotation = Quaternion.identity;
+            _transportPlatformDeltaRotation = Quaternion.identity;
             ToggleBuoyancy(true);
 
             if (inst == null) return;
@@ -1998,6 +2066,11 @@ namespace Hecton8.Gameplay
                 _activeTransportPlatformBehaviour = null;
                 _activeTransportPlatformTransform = null;
                 _transportPlatformRotationInitialized = false;
+                _lastTransportPlatformPosition = Vector3.zero;
+                _currentTransportPlatformPosition = Vector3.zero;
+                _lastTransportPlatformRotation = Quaternion.identity;
+                _currentTransportPlatformRotation = Quaternion.identity;
+                _transportPlatformDeltaRotation = Quaternion.identity;
                 return;
             }
 
@@ -2009,11 +2082,19 @@ namespace Hecton8.Gameplay
                 _activeTransportPlatformBehaviour = null;
                 _activeTransportPlatformTransform = null;
                 _transportPlatformRotationInitialized = false;
+                _lastTransportPlatformPosition = Vector3.zero;
+                _currentTransportPlatformPosition = Vector3.zero;
+                _lastTransportPlatformRotation = Quaternion.identity;
+                _currentTransportPlatformRotation = Quaternion.identity;
+                _transportPlatformDeltaRotation = Quaternion.identity;
                 return;
             }
 
             if (!ReferenceEquals(_activeTransportPlatformBehaviour, platformBehaviour))
+            {
                 _transportPlatformRotationInitialized = false;
+                _transportPlatformDeltaRotation = Quaternion.identity;
+            }
 
             _activeTransportPlatform = platform;
             _activeTransportPlatformBehaviour = platformBehaviour;
@@ -2032,61 +2113,69 @@ namespace Hecton8.Gameplay
             if (!TryGetActiveTransportPlatformTransform(out Transform platformTransform))
             {
                 _transportPlatformRotationInitialized = false;
-                return;
-            }
-
-            if (_activeTransportPlatform == null || !_activeTransportPlatform.InheritPlatformRotation)
-            {
-                _transportPlatformRotationInitialized = false;
+                _transportPlatformDeltaRotation = Quaternion.identity;
                 return;
             }
 
             Quaternion currentPlatformRotation = platformTransform.rotation;
+            Vector3 currentPlatformPosition = platformTransform.position;
             if (!_transportPlatformRotationInitialized)
             {
+                _lastTransportPlatformPosition = currentPlatformPosition;
+                _currentTransportPlatformPosition = currentPlatformPosition;
+                _currentTransportPlatformRotation = currentPlatformRotation;
                 _lastTransportPlatformRotation = currentPlatformRotation;
+                _transportPlatformDeltaRotation = Quaternion.identity;
                 _transportPlatformRotationInitialized = true;
                 return;
             }
 
-            Quaternion deltaRotation = currentPlatformRotation * Quaternion.Inverse(_lastTransportPlatformRotation);
-            _lastTransportPlatformRotation = currentPlatformRotation;
+            _currentTransportPlatformPosition = currentPlatformPosition;
+            _currentTransportPlatformRotation = currentPlatformRotation;
+            _transportPlatformDeltaRotation = currentPlatformRotation * Quaternion.Inverse(_lastTransportPlatformRotation);
 
-            if (deltaRotation == Quaternion.identity)
+            if (_transportPlatformDeltaRotation == Quaternion.identity || _activeTransportPlatform == null || !_activeTransportPlatform.InheritPlatformRotation)
                 return;
 
-            _cameraYaw = RotateYawByDelta(_cameraYaw, deltaRotation);
-            _bodyYaw = RotateYawByDelta(_bodyYaw, deltaRotation);
-            _fatalPressureLookYawAnchor = RotateYawByDelta(_fatalPressureLookYawAnchor, deltaRotation);
+            _cameraYaw = RotateYawByDelta(_cameraYaw, _transportPlatformDeltaRotation);
+            _bodyYaw = RotateYawByDelta(_bodyYaw, _transportPlatformDeltaRotation);
+            _fatalPressureLookYawAnchor = RotateYawByDelta(_fatalPressureLookYawAnchor, _transportPlatformDeltaRotation);
         }
 
         private static float RotateYawByDelta(float currentYaw, Quaternion deltaRotation)
         {
-            float yawRad = currentYaw * DEG_TO_RAD;
-            Vector3 forward = new Vector3(math.sin(yawRad), 0f, math.cos(yawRad));
-            Vector3 rotatedForward = deltaRotation * forward;
-            rotatedForward.y = 0f;
-            if (rotatedForward.sqrMagnitude <= 0.0001f)
-                return currentYaw;
-
-            rotatedForward.Normalize();
-            return math.degrees(math.atan2(rotatedForward.x, rotatedForward.z));
+            Quaternion rotatedYaw = deltaRotation * ResolveWorldYawRotation(currentYaw);
+            return ExtractWorldYaw(rotatedYaw * Vector3.forward, currentYaw);
         }
 
         private float ResolveYawRelativeToTransportPlatform(float worldYaw)
         {
-            if (!TryGetActiveTransportPlatformTransform(out Transform platformTransform))
+            if (!TryGetActiveTransportPlatformTransform(out _))
                 return worldYaw;
 
-            float yawRad = worldYaw * DEG_TO_RAD;
-            Vector3 worldForward = new Vector3(math.sin(yawRad), 0f, math.cos(yawRad));
-            Vector3 localForward = platformTransform.worldToLocalMatrix.MultiplyVector(worldForward);
-            localForward.y = 0f;
-            if (localForward.sqrMagnitude <= 0.0001f)
+            Quaternion basisRotation = ResolveTransportPlatformBasisRotation();
+            Quaternion localRotation = Quaternion.Inverse(basisRotation) * ResolveWorldYawRotation(worldYaw);
+            Vector3 localForward = localRotation * Vector3.forward;
+            float localPlanarMagnitudeSq = localForward.x * localForward.x + localForward.z * localForward.z;
+            if (localPlanarMagnitudeSq <= 0.0001f)
                 return worldYaw;
 
-            localForward.Normalize();
             return math.degrees(math.atan2(localForward.x, localForward.z));
+        }
+
+        private static Quaternion ResolveWorldYawRotation(float worldYaw)
+        {
+            return Quaternion.AngleAxis(worldYaw, Vector3.up);
+        }
+
+        private static float ExtractWorldYaw(Vector3 worldForward, float fallbackYaw)
+        {
+            Vector3 planarForward = Vector3.ProjectOnPlane(worldForward, Vector3.up);
+            if (planarForward.sqrMagnitude <= 0.0001f)
+                return fallbackYaw;
+
+            planarForward.Normalize();
+            return math.degrees(math.atan2(planarForward.x, planarForward.z));
         }
 
         private Vector3 TransformTransportPlatformDirectionToWorld(Vector3 localDirection)
@@ -2115,14 +2204,22 @@ namespace Hecton8.Gameplay
 
         private void ApplyTransportPlatformCarrierMotion(float fixedDeltaTime)
         {
-            if (_activeTransportPlatform == null || fixedDeltaTime <= 0f)
+            if (_activeTransportPlatform == null || fixedDeltaTime <= 0f || !_transportPlatformRotationInitialized)
                 return;
 
-            Vector3 pointVelocity = _activeTransportPlatform.GetPlatformPointVelocity(_rb.position);
-            if (pointVelocity.sqrMagnitude <= 0.000001f)
+            Vector3 platformTranslation = _currentTransportPlatformPosition - _lastTransportPlatformPosition;
+            if (platformTranslation.sqrMagnitude <= 0.000001f && _transportPlatformDeltaRotation == Quaternion.identity)
                 return;
 
-            _rb.MovePosition(_rb.position + pointVelocity * fixedDeltaTime);
+            _playerMotor?.ApplyCarrierMotion(
+                _lastTransportPlatformPosition,
+                _currentTransportPlatformPosition,
+                _transportPlatformDeltaRotation,
+                Vector3.zero);
+
+            _lastTransportPlatformPosition = _currentTransportPlatformPosition;
+            _lastTransportPlatformRotation = _currentTransportPlatformRotation;
+            _transportPlatformDeltaRotation = Quaternion.identity;
         }
 
         private void ResolveSwimPresentationController()
@@ -2764,7 +2861,7 @@ namespace Hecton8.Gameplay
             _forceVector.x = 0f;
             _forceVector.y = buoyancyForce;
             _forceVector.z = 0f;
-            _rb.AddForce(_forceVector, ForceMode.Force);
+            ApplyMotorForce(_forceVector);
         }
 
         private void ApplyClampedAccelerationForce(Vector3 acceleration, float maxAcceleration)
@@ -2784,7 +2881,7 @@ namespace Hecton8.Gameplay
             if (sqrMagnitude > maxAccelerationSq)
                 acceleration3 *= maxAcceleration / math.sqrt(sqrMagnitude);
 
-            _rb.AddForce(new Vector3(acceleration3.x, acceleration3.y, acceleration3.z), ForceMode.Acceleration);
+            ApplyMotorAcceleration(new Vector3(acceleration3.x, acceleration3.y, acceleration3.z));
         }
 
         private void ApplySargassumEntanglementForce(PlayerTransportPreset transportPreset)
@@ -3158,7 +3255,7 @@ namespace Hecton8.Gameplay
             if (totalForce.sqrMagnitude <= 0.0001f)
                 return;
 
-            _rb.AddForceAtPosition(totalForce, applicationPoint, ForceMode.Force);
+            ApplyMotorOffCenterForce(totalForce, applicationPoint);
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -3507,9 +3604,6 @@ namespace Hecton8.Gameplay
 
             Vector3 longitudinalAxis = headPoint - feetPoint;
             Vector3 lateralAxis = rightPoint - leftPoint;
-            Vector3 derivedNormal = Vector3.Cross(lateralAxis, longitudinalAxis);
-            if (derivedNormal.y < 0f)
-                derivedNormal = -derivedNormal;
 
             float longitudinalHorizontalDistance = math.sqrt(
                 longitudinalAxis.x * longitudinalAxis.x +
@@ -3528,17 +3622,24 @@ namespace Hecton8.Gameplay
             _dynamicWaveLocalSlope.x = lateralGradientValue;
             _dynamicWaveLocalSlope.y = longitudinalGradientValue;
 
-            if (derivedNormal.sqrMagnitude > 0.0001f)
+            Vector3 crestNormalSum = Vector3.zero;
+            int crestNormalCount = 0;
+            for (int i = 0; i < CrestBodySampleCount; i++)
             {
-                derivedNormal.Normalize();
+                Vector3 sampledNormal = _crestQueryNormals[i];
+                if (sampledNormal.sqrMagnitude <= 0.0001f)
+                    continue;
+
+                if (sampledNormal.y < 0f)
+                    sampledNormal = -sampledNormal;
+
+                crestNormalSum += sampledNormal.normalized;
+                crestNormalCount++;
             }
-            else
-            {
-                Vector3 sampledNormal = _crestQueryNormals[CrestSampleCenter];
-                derivedNormal = sampledNormal.sqrMagnitude > 0.0001f
-                    ? sampledNormal.normalized
-                    : Vector3.up;
-            }
+
+            Vector3 derivedNormal = crestNormalCount > 0
+                ? (crestNormalSum / crestNormalCount).normalized
+                : Vector3.up;
 
             Vector3 averageVelocity = Vector3.zero;
             Vector3 averageDisplacement = Vector3.zero;
@@ -3897,26 +3998,15 @@ namespace Hecton8.Gameplay
             float scaledLookY = lookDelta.y * mouseSensitivity * lookSensitivityScale;
 
             _mouseXDelta = lookDelta.x * lookSensitivityScale;
-            if (TryGetActiveTransportPlatformTransform(out Transform platformTransform))
+            if (TryGetActiveTransportPlatformTransform(out _))
             {
-                float yawRad = _cameraYaw * DEG_TO_RAD;
-                Vector3 worldForward = new Vector3(math.sin(yawRad), 0f, math.cos(yawRad));
-                Vector3 localForward = platformTransform.worldToLocalMatrix.MultiplyVector(worldForward);
-                localForward.y = 0f;
-                if (localForward.sqrMagnitude <= 0.0001f)
-                    localForward = Vector3.forward;
-                else
-                    localForward.Normalize();
-
-                Quaternion localYawDelta = Quaternion.Euler(0f, scaledLookX, 0f);
-                localForward = localYawDelta * localForward;
-                Vector3 rotatedWorldForward = platformTransform.localToWorldMatrix.MultiplyVector(localForward);
-                rotatedWorldForward.y = 0f;
-                if (rotatedWorldForward.sqrMagnitude > 0.0001f)
-                {
-                    rotatedWorldForward.Normalize();
-                    _cameraYaw = math.degrees(math.atan2(rotatedWorldForward.x, rotatedWorldForward.z));
-                }
+                Quaternion basisRotation = ResolveTransportPlatformBasisRotation();
+                Quaternion platformYawDelta =
+                    basisRotation *
+                    Quaternion.AngleAxis(scaledLookX, Vector3.up) *
+                    Quaternion.Inverse(basisRotation);
+                Quaternion rotatedWorldYaw = platformYawDelta * ResolveWorldYawRotation(_cameraYaw);
+                _cameraYaw = ExtractWorldYaw(rotatedWorldYaw * Vector3.forward, _cameraYaw);
             }
             else
             {
@@ -4023,6 +4113,7 @@ namespace Hecton8.Gameplay
             _currentFixedDeltaTime = fixedDeltaTime;
             PlayerTransportPreset activeTransportPreset = ResolveActiveTransportPreset();
             ProcessQueuedCollisionEvents();
+            _stateMachine?.AdvanceFixed(fixedDeltaTime);
             ResolveActiveTransportPlatform();
             SyncTransportPlatformRotation();
             float previousWaterImmersionRatio = _waterImmersionRatio;
@@ -4042,7 +4133,7 @@ namespace Hecton8.Gameplay
                     ResolveHeavyCarryBodyYawSpringMultiplier() *
                     ResolveTransportBodyYawResponsivenessScale(activeTransportPreset) *
                     ResolveHullStressTurnResponsivenessScale(activeTransportPreset);
-                _bodyYaw = SpringDamp(_bodyYaw, _cameraYaw, ref _bodyYawVelocity, bodyYawOmega, fixedDeltaTime);
+                _bodyYaw = SpringDampAngle(_bodyYaw, _cameraYaw, ref _bodyYawVelocity, bodyYawOmega, fixedDeltaTime);
             }
 
             _juiceProcessor.TrackVerticalVelocity(_rb.linearVelocity.y);
@@ -4248,9 +4339,6 @@ namespace Hecton8.Gameplay
                 QueueEnvironmentalForce(_forceVector);
             }
 
-            ApplyTransportPlatformCarrierMotion(fixedDeltaTime);
-            ApplyHighSpeedWipeoutSweep(fixedDeltaTime);
-
             if ((exosuitActive && _isGrounded) || groundedOnShore)
             {
                 _snapScale = 1f;
@@ -4286,7 +4374,10 @@ namespace Hecton8.Gameplay
 
             _isSurfaceSwimming = !exosuitActive && !_isWalking && ResolveSurfaceSwimState(physicsImmersion, activeTransportPreset);
             _currentLocomotionMode = ResolveLocomotionMode(physicsImmersion);
-            _stateMachine?.SyncLocomotionMode(_currentLocomotionMode);
+            SyncStateMachineContext(exosuitActive, physicsImmersion, groundedOnDryLand, groundedOnShore);
+            _environmentHandler?.ExecuteStep(fixedDeltaTime);
+            ApplyTransportPlatformCarrierMotion(fixedDeltaTime);
+            ApplyHighSpeedWipeoutSweep(fixedDeltaTime);
             UpdateSurfaceLockState(fixedDeltaTime);
             UpdateWaterPresentationPose(fixedDeltaTime);
             UpdateDynamicCollisionProfile(fixedDeltaTime);
@@ -4453,6 +4544,53 @@ namespace Hecton8.Gameplay
             return _isSurfaceSwimming
                 ? PlayerLocomotionMode.SurfaceSwim
                 : PlayerLocomotionMode.UnderwaterSwim;
+        }
+
+        private PlayerEnvironmentState ResolveEnvironmentState(bool exosuitActive, float physicsImmersion)
+        {
+            if (IsInDryInterior())
+                return PlayerEnvironmentState.DryInterior;
+
+            if (physicsImmersion <= 0.01f)
+                return PlayerEnvironmentState.DryExterior;
+
+            if (exosuitActive || physicsImmersion < swimTransitionThreshold)
+                return PlayerEnvironmentState.ShallowExterior;
+
+            return _isSurfaceSwimming
+                ? PlayerEnvironmentState.SurfaceExterior
+                : PlayerEnvironmentState.UnderwaterExterior;
+        }
+
+        private PlayerSupportState ResolveSupportState(bool groundedOnDryLand, bool groundedOnShore)
+        {
+            return groundedOnDryLand || groundedOnShore || _isGrounded
+                ? PlayerSupportState.Grounded
+                : PlayerSupportState.Unsupported;
+        }
+
+        private PlayerOverrideState ResolveOverrideState(bool exosuitActive)
+        {
+            if (_wipeoutTimer > 0f)
+                return PlayerOverrideState.Wipeout;
+
+            if (exosuitActive)
+                return PlayerOverrideState.Exosuit;
+
+            return PlayerOverrideState.None;
+        }
+
+        private void SyncStateMachineContext(
+            bool exosuitActive,
+            float physicsImmersion,
+            bool groundedOnDryLand,
+            bool groundedOnShore)
+        {
+            _stateMachine?.SyncContext(
+                ResolveEnvironmentState(exosuitActive, physicsImmersion),
+                ResolveSupportState(groundedOnDryLand, groundedOnShore),
+                ResolveOverrideState(exosuitActive),
+                _currentLocomotionMode);
         }
 
         private bool HasSurfaceDiveIntent(PlayerTransportPreset transportPreset)
@@ -4666,7 +4804,7 @@ namespace Hecton8.Gameplay
                 _forceVector.x = (crossWave.x * lateralOscillation - horizontalWaveVector.x * undertowOscillation * 0.65f) * lateralForce;
                 _forceVector.y = (-math.abs(undertowOscillation) * 0.55f + verticalOscillation * 0.45f) * verticalForce;
                 _forceVector.z = (crossWave.z * lateralOscillation - horizontalWaveVector.z * undertowOscillation * 0.65f) * lateralForce;
-                _rb.AddForce(_forceVector, ForceMode.Force);
+                ApplyMotorForce(_forceVector);
 
                 float targetPitch = math.clamp(
                     (-undertowOscillation * underwaterTurbulencePitch) + verticalOscillation * underwaterTurbulencePitch * 0.35f,
@@ -5093,7 +5231,7 @@ namespace Hecton8.Gameplay
 
             float reboundImpulse = wipeoutReboundImpulse * math.lerp(0.75f, 1.35f, severity);
             _forceVector = reboundDirection * reboundImpulse * _rb.mass;
-            _rb.AddForce(_forceVector, ForceMode.Impulse);
+            ApplyMotorImpulse(_forceVector);
             ApplyPhysicalTrauma(reboundDirection * reboundImpulse * _rb.mass, severity);
 
             if (_survivalSystem == null)
@@ -5157,7 +5295,7 @@ namespace Hecton8.Gameplay
 
             _transportBailoutCooldownTimer = wipeoutDuration + 0.35f;
             _impulseBypassTimer = math.max(_impulseBypassTimer, wipeoutImpulseBypassDuration);
-            _rb.AddForce(bailoutImpulse, ForceMode.Impulse);
+            ApplyMotorImpulse(bailoutImpulse);
             TriggerBailoutDisorientation(severity, bailoutImpulse);
             OnTransportBailout?.Invoke(severity, bailoutImpulse);
         }
@@ -5202,7 +5340,7 @@ namespace Hecton8.Gameplay
             if (velocityChange.sqrMagnitude <= 0.0001f)
                 return;
 
-            _rb.AddForce(velocityChange, ForceMode.VelocityChange);
+            ApplyMotorVelocityChange(velocityChange);
             ApplyAbyssalTransportTurbulenceTorque(joltDirection, boundaryT, depthT, transportPreset);
             if (_juiceProcessor != null)
             {
@@ -5248,9 +5386,12 @@ namespace Hecton8.Gameplay
             if (torqueAxis.sqrMagnitude > 0.0001f)
             {
                 torqueAxis.Normalize();
-                _rb.AddTorque(
+                ApplyMotorAngularVelocityChange(
                     torqueAxis * abyssalTransportTurbulenceTorqueVelocityChange * turbulenceT,
-                    ForceMode.VelocityChange);
+                    _currentFixedDeltaTime > 0f
+                        ? abyssalTransportTurbulenceTorqueVelocityChange / _currentFixedDeltaTime
+                        : 0f,
+                    _currentFixedDeltaTime);
             }
 
             Vector3 localJolt = _cachedTransform.InverseTransformDirection(joltDirection);
@@ -5475,12 +5616,12 @@ namespace Hecton8.Gameplay
             _forceVector.x = -_velocity.x * invSpeed * dampingForceMagnitude;
             _forceVector.y = -_velocity.y * invSpeed * dampingForceMagnitude;
             _forceVector.z = -_velocity.z * invSpeed * dampingForceMagnitude;
-            _rb.AddForce(_forceVector, ForceMode.Force);
+            ApplyMotorForce(_forceVector);
         }
 
         private void ApplyHighSpeedWipeoutSweep(float fixedDeltaTime)
         {
-            if (_wipeoutTimer <= 0f || fixedDeltaTime <= 0f)
+            if (_wipeoutTimer <= 0f || fixedDeltaTime <= 0f || _playerMotor == null)
                 return;
 
             Vector3 velocity = _rb.linearVelocity;
@@ -5488,56 +5629,19 @@ namespace Hecton8.Gameplay
             if (speed <= wipeoutSweepSpeedThreshold)
                 return;
 
-            if (!TryGetCapsuleCastGeometry(wipeoutSweepCapsuleInset, out Vector3 point1, out Vector3 point2, out float radius))
+            Vector3 intendedDisplacement = velocity * fixedDeltaTime;
+            if (_playerMotor.TrySweepGatedMove(intendedDisplacement, groundLayers, wipeoutSweepSkinWidth, out RaycastHit blockingHit))
                 return;
 
-            Vector3 direction = velocity / math.max(speed, 0.0001f);
-            float castDistance = speed * fixedDeltaTime + wipeoutSweepSkinWidth;
-            int hitCount = UnityEngine.Physics.CapsuleCastNonAlloc(
-                point1,
-                point2,
-                radius,
-                direction,
-                _groundHitBuffer,
-                castDistance,
-                groundLayers,
-                QueryTriggerInteraction.Ignore);
-
-            bool foundHit = false;
-            RaycastHit nearestHit = default;
-            float nearestDistance = float.MaxValue;
-            for (int i = 0; i < hitCount; i++)
-            {
-                RaycastHit hit = _groundHitBuffer[i];
-                Collider hitCollider = hit.collider;
-                if (hitCollider == null || hitCollider.attachedRigidbody == _rb || hit.distance >= nearestDistance)
-                    continue;
-
-                nearestDistance = hit.distance;
-                nearestHit = hit;
-                foundHit = true;
-            }
-
-            if (!foundHit)
+            float blockedSpeed = (velocity - _rb.linearVelocity).magnitude;
+            if (blockedSpeed <= 0.0001f)
                 return;
 
-            float safeDistance = math.max(0f, nearestHit.distance - wipeoutSweepSkinWidth);
-            float allowedSpeed = safeDistance / math.max(fixedDeltaTime, 0.0001f);
-            if (allowedSpeed >= speed)
-                return;
-
-            Vector3 safeDisplacement = direction * safeDistance;
-            _rb.MovePosition(_rb.position + safeDisplacement);
-
-            Vector3 clampedVelocity = direction * allowedSpeed;
-            _rb.linearVelocity = clampedVelocity;
-
-            float blockedSpeed = speed - allowedSpeed;
             float severity = math.saturate(blockedSpeed / math.max(wipeoutImpactDeltaVelocityMax, 0.01f));
             if (severity <= 0f)
                 return;
 
-            ApplyPhysicalTrauma(-nearestHit.normal * blockedSpeed * _rb.mass, severity);
+            ApplyPhysicalTrauma(-blockingHit.normal * blockedSpeed * _rb.mass, severity);
 
             if (_juiceProcessor != null && currentSuitData != null)
                 _juiceProcessor.RegisterCollisionImpulse(blockedSpeed * math.lerp(1.1f, 1.7f, severity), currentSuitData);
@@ -5956,7 +6060,7 @@ namespace Hecton8.Gameplay
                 _groundCheckOrigin,
                 groundCheckRadius,
                 Vector3.down,
-                _groundHitBuffer,
+                _groundProbeHitBuffer,
                 groundCheckDistance + GroundCheckSkin,
                 groundLayers,
                 QueryTriggerInteraction.Ignore);
@@ -5967,7 +6071,7 @@ namespace Hecton8.Gameplay
 
             for (int i = 0; i < hitCount; i++)
             {
-                RaycastHit hit = _groundHitBuffer[i];
+                RaycastHit hit = _groundProbeHitBuffer[i];
                 Collider hitCollider = hit.collider;
                 if (hitCollider == null)
                     continue;
@@ -6069,7 +6173,7 @@ namespace Hecton8.Gameplay
                 _forceVector.x *= slopeHoldForce;
                 _forceVector.y *= slopeHoldForce;
                 _forceVector.z *= slopeHoldForce;
-                _rb.AddForce(_forceVector, ForceMode.Force);
+                ApplyMotorForce(_forceVector);
             }
 
             float gravityIntoGround = Vector3.Dot(-_cachedGravity, _smoothedGroundNormal);
@@ -6079,7 +6183,7 @@ namespace Hecton8.Gameplay
                 _forceVector.x = _smoothedGroundNormal.x * supportForce;
                 _forceVector.y = _smoothedGroundNormal.y * supportForce;
                 _forceVector.z = _smoothedGroundNormal.z * supportForce;
-                _rb.AddForce(_forceVector, ForceMode.Force);
+                ApplyMotorForce(_forceVector);
             }
 
             if (groundSnapForce > 0f)
@@ -6088,7 +6192,7 @@ namespace Hecton8.Gameplay
                 _forceVector.x = -_smoothedGroundNormal.x * snapForce;
                 _forceVector.y = -_smoothedGroundNormal.y * snapForce;
                 _forceVector.z = -_smoothedGroundNormal.z * snapForce;
-                _rb.AddForce(_forceVector, ForceMode.Force);
+                ApplyMotorForce(_forceVector);
             }
         }
 
@@ -6132,7 +6236,7 @@ namespace Hecton8.Gameplay
             _forceVector.x = 0f;
             _forceVector.y = totalForce;
             _forceVector.z = 0f;
-            _rb.AddForce(_forceVector, ForceMode.Force);
+            ApplyMotorForce(_forceVector);
         }
 
         private void GetCapsuleWorldMetrics(out Vector3 center, out float radius, out float halfHeight)
@@ -6222,7 +6326,7 @@ namespace Hecton8.Gameplay
                 origin,
                 radius,
                 Vector3.down,
-                _groundHitBuffer,
+                _bottomClearanceHitBuffer,
                 maxSampleDistance + GroundCheckSkin,
                 groundLayers,
                 QueryTriggerInteraction.Ignore);
@@ -6231,7 +6335,7 @@ namespace Hecton8.Gameplay
             Vector3 bestNormal = Vector3.up;
             for (int i = 0; i < hitCount; i++)
             {
-                RaycastHit hit = _groundHitBuffer[i];
+                RaycastHit hit = _bottomClearanceHitBuffer[i];
                 Collider hitCollider = hit.collider;
                 if (hitCollider == null)
                     continue;
@@ -6346,7 +6450,7 @@ namespace Hecton8.Gameplay
 
             if (_isGrounded && _jumpRequested && exosuitJumpJetLaunchImpulse > 0f)
             {
-                _rb.AddForce(Vector3.up * exosuitJumpJetLaunchImpulse, ForceMode.VelocityChange);
+                ApplyMotorVelocityChange(Vector3.up * exosuitJumpJetLaunchImpulse);
                 _isGrounded = false;
                 _isAirborne = true;
                 _wasGroundedLastFrame = false;
@@ -6357,7 +6461,7 @@ namespace Hecton8.Gameplay
             float thrustForce = exosuitJumpJetForce * jumpIntent;
             if (thrustForce > 0.001f)
             {
-                _rb.AddForce(Vector3.up * thrustForce, ForceMode.Force);
+                ApplyMotorForce(Vector3.up * thrustForce);
 
                 float energyDrainPerSecond = ResolveExosuitJumpJetEnergyDrainPerSecond();
                 if (_survivalSystem != null && energyDrainPerSecond > 0f)
@@ -6503,7 +6607,7 @@ namespace Hecton8.Gameplay
             int hitCount = UnityEngine.Physics.RaycastNonAlloc(
                 origin,
                 Vector3.down,
-                _groundHitBuffer,
+                _footProbeHitBuffer,
                 distance,
                 groundLayers,
                 QueryTriggerInteraction.Ignore);
@@ -6511,7 +6615,7 @@ namespace Hecton8.Gameplay
             float bestDistance = float.MaxValue;
             for (int i = 0; i < hitCount; i++)
             {
-                RaycastHit hit = _groundHitBuffer[i];
+                RaycastHit hit = _footProbeHitBuffer[i];
                 Collider hitCollider = hit.collider;
                 if (hitCollider == null || hitCollider.attachedRigidbody == _rb)
                     continue;
@@ -6602,7 +6706,7 @@ namespace Hecton8.Gameplay
             int hitCount = UnityEngine.Physics.RaycastNonAlloc(
                 origin,
                 Vector3.down,
-                _groundHitBuffer,
+                _footProbeHitBuffer,
                 distance,
                 groundLayers,
                 QueryTriggerInteraction.Ignore);
@@ -6610,7 +6714,7 @@ namespace Hecton8.Gameplay
             float bestDistance = float.MaxValue;
             for (int i = 0; i < hitCount; i++)
             {
-                RaycastHit hit = _groundHitBuffer[i];
+                RaycastHit hit = _footProbeHitBuffer[i];
                 Collider hitCollider = hit.collider;
                 if (hitCollider == null || hitCollider.attachedRigidbody == _rb)
                     continue;
@@ -6640,7 +6744,7 @@ namespace Hecton8.Gameplay
             if (_velocity.y < 0f)
             {
                 _velocity.y = 0f;
-                _rb.linearVelocity = _velocity;
+                ApplyMotorLinearVelocity(_velocity);
             }
 
             _isGrounded = false;
@@ -6653,7 +6757,7 @@ namespace Hecton8.Gameplay
             if (_juiceProcessor != null)
                 _juiceProcessor.RegisterLandJumpLaunch();
 
-            _rb.AddForce(Vector3.up * impulse, ForceMode.VelocityChange);
+            ApplyMotorVelocityChange(Vector3.up * impulse);
             return true;
         }
 
@@ -6670,14 +6774,14 @@ namespace Hecton8.Gameplay
                 point2,
                 radius,
                 Vector3.up,
-                _groundHitBuffer,
+                _overheadProbeHitBuffer,
                 jumpHeadClearanceDistance,
                 groundLayers,
                 QueryTriggerInteraction.Ignore);
 
             for (int i = 0; i < hitCount; i++)
             {
-                Collider hitCollider = _groundHitBuffer[i].collider;
+                Collider hitCollider = _overheadProbeHitBuffer[i].collider;
                 if (hitCollider == null)
                     continue;
 
@@ -6750,13 +6854,13 @@ namespace Hecton8.Gameplay
             newPosition.x += dirX * forwardDistance;
             newPosition.y += stepDeltaY;
             newPosition.z += dirZ * forwardDistance;
-            _rb.MovePosition(newPosition);
+            MoveMotorPosition(newPosition);
 
             _velocity = _rb.linearVelocity;
             if (_velocity.y < 0f)
             {
                 _velocity.y = 0f;
-                _rb.linearVelocity = _velocity;
+                ApplyMotorLinearVelocity(_velocity);
             }
 
             _stepAssistCooldownTimer = stepAssistCooldownTime;
@@ -6778,7 +6882,7 @@ namespace Hecton8.Gameplay
                 origin,
                 radius,
                 direction,
-                _groundHitBuffer,
+                _stepProbeHitBuffer,
                 stepAssistForwardDistance,
                 groundLayers,
                 QueryTriggerInteraction.Ignore);
@@ -6786,7 +6890,7 @@ namespace Hecton8.Gameplay
             float bestDistance = float.MaxValue;
             for (int i = 0; i < hitCount; i++)
             {
-                RaycastHit hit = _groundHitBuffer[i];
+                RaycastHit hit = _stepProbeHitBuffer[i];
                 Collider hitCollider = hit.collider;
                 if (hitCollider == null)
                     continue;
@@ -6817,14 +6921,14 @@ namespace Hecton8.Gameplay
                 origin,
                 radius,
                 direction,
-                _groundHitBuffer,
+                _stepProbeHitBuffer,
                 distance,
                 groundLayers,
                 QueryTriggerInteraction.Ignore);
 
             for (int i = 0; i < hitCount; i++)
             {
-                Collider hitCollider = _groundHitBuffer[i].collider;
+                Collider hitCollider = _stepProbeHitBuffer[i].collider;
                 if (hitCollider == null)
                     continue;
 
@@ -6844,7 +6948,7 @@ namespace Hecton8.Gameplay
                 origin,
                 radius,
                 Vector3.down,
-                _groundHitBuffer,
+                _stepProbeHitBuffer,
                 stepAssistHeight + radius + GroundCheckSkin,
                 groundLayers,
                 QueryTriggerInteraction.Ignore);
@@ -6853,7 +6957,7 @@ namespace Hecton8.Gameplay
             float bestNormalY = _minGroundNormalY;
             for (int i = 0; i < hitCount; i++)
             {
-                RaycastHit hit = _groundHitBuffer[i];
+                RaycastHit hit = _stepProbeHitBuffer[i];
                 Collider hitCollider = hit.collider;
                 if (hitCollider == null)
                     continue;
@@ -6916,15 +7020,11 @@ namespace Hecton8.Gameplay
             // â”€â”€ Quadratic drag â”€â”€
             if (speed > 0.01f)
             {
-                float dragMagnitude = effectiveDragCoeff * speed * speed;
-                float maxDrag = speed * _rb.mass * 0.9f / fixedDeltaTime;
-                if (dragMagnitude > maxDrag) dragMagnitude = maxDrag;
-
-                float invSpeed = 1f / speed;
-                _forceVector.x = -_velocity.x * invSpeed * dragMagnitude;
-                _forceVector.y = -_velocity.y * invSpeed * dragMagnitude;
-                _forceVector.z = -_velocity.z * invSpeed * dragMagnitude;
-                _rb.AddForce(_forceVector, ForceMode.Force);
+                float dragAccelerationCoefficient = effectiveDragCoeff / math.max(_rb.mass, 0.0001f);
+                Vector3 dampedVelocity = HectonPlayerMotor.AnalyticalQuadraticDrag(_velocity, dragAccelerationCoefficient, fixedDeltaTime);
+                ApplyMotorVelocityChange(dampedVelocity - _velocity);
+                _velocity = dampedVelocity;
+                speed = _velocity.magnitude;
             }
 
             // â”€â”€ Swim thrust â”€â”€
@@ -6950,7 +7050,7 @@ namespace Hecton8.Gameplay
 
             bool heavyCarryActive = IsHeavyCarryActive();
             float sprintMult = _isSprinting && !heavyCarryActive ? suit.sprintMultiplier : 1f;
-            float runtimeSwimSpeedScale = _runtimeSwimSpeedMultiplier * _runtimeInjurySwimSpeedMultiplier;
+            float runtimeSwimSpeedScale = _runtimeSwimSpeedMultiplier * _runtimeInjurySwimSpeedMultiplier * _runtimeEmergencyMovementMultiplier;
             float effectiveSwimForce = suit.swimForce * depthSlowdown * sprintMult * runtimeSwimSpeedScale;
             float effectiveVerticalForce = suit.swimVerticalForce * depthSlowdown * sprintMult * runtimeSwimSpeedScale;
             float heavyCarryForceMultiplier = ResolveHeavyCarryForceMultiplier();
@@ -7115,7 +7215,7 @@ namespace Hecton8.Gameplay
                 _forceVector.z += transportPropulsionDirection.z * transportPropulsionForce;
             }
 
-            _rb.AddForce(_forceVector, ForceMode.Force);
+            ApplyMotorForce(_forceVector);
             ApplySargassumEntanglementForce(transportPreset);
             ApplyAbyssalCableEntanglementForce(transportPreset);
             ApplySargassumMatBuoyancySupport();
@@ -7131,7 +7231,7 @@ namespace Hecton8.Gameplay
                     _forceVector.x = 0f;
                     _forceVector.y = -_velocity.y * _rb.mass * surfaceAscendVelocityDamping * upwardDampingT;
                     _forceVector.z = 0f;
-                    _rb.AddForce(_forceVector, ForceMode.Force);
+                    ApplyMotorForce(_forceVector);
                 }
             }
         }
@@ -7240,7 +7340,7 @@ namespace Hecton8.Gameplay
             _forceVector.x = _moveDirection.x * force;
             _forceVector.y = _moveDirection.y * force;
             _forceVector.z = _moveDirection.z * force;
-            _rb.AddForce(_forceVector, ForceMode.Force);
+            ApplyMotorForce(_forceVector);
         }
 
         private bool ShouldUseLandLocomotion(float physicsImmersion, bool hasShoreGroundSupport, bool hasImmediateShoreFooting)
@@ -7358,7 +7458,7 @@ namespace Hecton8.Gameplay
             _forceVector.x = ambientCurrentX + crestFlowForceX;
             _forceVector.y = ambientCurrentY;
             _forceVector.z = ambientCurrentZ + crestFlowForceZ;
-            _rb.AddForce(_forceVector, ForceMode.Force);
+            ApplyMotorForce(_forceVector);
         }
 
         private float ResolveCrestFlowInputAttenuation(float fixedDeltaTime)
@@ -7433,6 +7533,7 @@ namespace Hecton8.Gameplay
                 if (CanUseLandSprint()) maxSpd *= suit.sprintMultiplier;
                 maxSpd *= ResolveHeavyCarrySpeedMultiplier();
                 maxSpd *= ResolveExternalEnvironmentalSpeedMultiplier();
+                maxSpd *= _runtimeEmergencyMovementMultiplier;
                 if (exosuitActive)
                     maxSpd *= exosuitWalkSpeedMultiplier;
                 else if (dryInteriorActive)
@@ -7452,7 +7553,7 @@ namespace Hecton8.Gameplay
                             planarVelocity.x *= scale;
                             planarVelocity.y *= scale;
                             planarVelocity.z *= scale;
-                            _rb.linearVelocity = planarVelocity + normalVelocity;
+                            ApplyMotorLinearVelocity(planarVelocity + normalVelocity);
                         }
                     }
                     else
@@ -7463,14 +7564,14 @@ namespace Hecton8.Gameplay
                         {
                             float scale = maxSpd / math.sqrt(xzSqr);
                             _velocity.x *= scale; _velocity.z *= scale;
-                            _rb.linearVelocity = _velocity;
+                            ApplyMotorLinearVelocity(_velocity);
                         }
                     }
                 }
             }
             else
             {
-                float maxSpd = suit.maxSwimSpeed * (_runtimeSwimSpeedMultiplier * _runtimeInjurySwimSpeedMultiplier);
+                float maxSpd = suit.maxSwimSpeed * (_runtimeSwimSpeedMultiplier * _runtimeInjurySwimSpeedMultiplier * _runtimeEmergencyMovementMultiplier);
                 if (_isSurfaceSwimming)
                 {
                     maxSpd *= surfaceMaxSpeedMultiplier;
@@ -7490,7 +7591,7 @@ namespace Hecton8.Gameplay
                     {
                         float scale = maxSpd / math.sqrt(fullSqr);
                         _velocity.x *= scale; _velocity.y *= scale; _velocity.z *= scale;
-                        _rb.linearVelocity = _velocity;
+                        ApplyMotorLinearVelocity(_velocity);
                     }
                 }
             }
@@ -7506,6 +7607,13 @@ namespace Hecton8.Gameplay
             float n2 = 1f + omega * dt;
             velocity = n1 / (n2 * n2);
             return current + velocity * dt;
+        }
+
+        private static float SpringDampAngle(float current, float target, ref float velocity, float omega, float dt)
+        {
+            float adjustedTarget = current + Mathf.DeltaAngle(current, target);
+            float dampedAngle = SpringDamp(current, adjustedTarget, ref velocity, omega, dt);
+            return Mathf.Repeat(dampedAngle + 180f, 360f) - 180f;
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•

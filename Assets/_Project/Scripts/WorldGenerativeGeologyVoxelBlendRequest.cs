@@ -1,4 +1,5 @@
 using UnityEngine;
+using Hecton8.Core;
 
 namespace Hecton8.World
 {
@@ -9,7 +10,7 @@ namespace Hecton8.World
         public string familyId;
         public string geologyProfileId;
         public WorldGenerativeGeologyProfile.ShapeArchetype archetype;
-        public Vector3 center;
+        public Vector3 absoluteUniverseCenter;
         public Vector3 size;
         public Quaternion rotation;
         public float weight;
@@ -19,5 +20,6 @@ namespace Hecton8.World
         public WorldChunkCoordinate chunkCoord;
         public bool hasMacroZone;
         public WorldMacroZoneCoordinate macroZoneCoord;
+        public Vector3 RuntimeCenter => HectonFloatingOrigin.ToRuntimePosition(absoluteUniverseCenter);
     }
 }

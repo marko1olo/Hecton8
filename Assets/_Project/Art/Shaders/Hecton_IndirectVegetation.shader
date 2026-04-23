@@ -137,11 +137,13 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             StructuredBuffer<float4x4> _HectonInstanceMatrices;
             StructuredBuffer<float4> _HectonVegetationInstanceData;
             StructuredBuffer<uint> _HectonVisibleInstanceIndices;
+            StructuredBuffer<float2> _MarineSnowFlowField;
             float4 _ChunkWorldOffset;
             float4 _GlobalFloatingOffset;
             StructuredBuffer<FloraInteractionPointGpuData> _HectonFloraInteractionPoints;
             StructuredBuffer<float4> _HectonImpactSpheres;
 
+            float4 _MarineSnowFlowFieldCenterCellSize;
             float4 _HectonVegetationFogColor;
             float4 _HectonVegetationAmbientColor;
             float4 _HectonVegetationCurrentVector;
@@ -150,6 +152,9 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             float4 _SargassumGlobalDriftOffset;
             float4 _SargassumCutMaskWorldRect;
             float4 _HectonVegetationWakeTrailWorldRect;
+            float4 _HectonPlayerAbsoluteUniversePosition;
+            float4 _HectonPlayerFloraInteractionParams;
+            float4 _HectonFlowSynchronyParams;
             float _HectonVegetationDepth;
             float _HectonVegetationLightFactor;
             float _HectonVegetationTurbidity;
@@ -160,6 +165,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             float _HectonVegetationCurrentVerticalFactor;
             float _SargassumCutMaskActive;
             float _HectonVegetationWakeTrailActive;
+            int _HectonFloraFlowFieldResolution;
             int _HectonFloraInteractionCount;
             int _HectonImpactSphereCount;
 
@@ -239,6 +245,66 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 #endif
             }
 
+            float2 SampleMarineSnowFlowFieldXZ(float3 positionWS)
+            {
+                int resolution = _HectonFloraFlowFieldResolution;
+                float cellSize = max(_MarineSnowFlowFieldCenterCellSize.w, 0.001);
+                if (resolution <= 1 || cellSize <= 0.0)
+                    return float2(0.0, 0.0);
+
+                float halfExtent = (resolution - 1) * cellSize * 0.5;
+                float2 centerXZ = _MarineSnowFlowFieldCenterCellSize.xz;
+                float2 gridPosition = ((positionWS.xz - centerXZ) + halfExtent.xx) / cellSize;
+                gridPosition = clamp(gridPosition, float2(0.0, 0.0), float2(resolution - 1, resolution - 1));
+
+                int2 baseCell = (int2)floor(gridPosition);
+                int2 nextCell = min(baseCell + 1, int2(resolution - 1, resolution - 1));
+                float2 fracValue = frac(gridPosition);
+
+                int index00 = baseCell.x + baseCell.y * resolution;
+                int index10 = nextCell.x + baseCell.y * resolution;
+                int index01 = baseCell.x + nextCell.y * resolution;
+                int index11 = nextCell.x + nextCell.y * resolution;
+
+                float2 sample00 = _MarineSnowFlowField[index00];
+                float2 sample10 = _MarineSnowFlowField[index10];
+                float2 sample01 = _MarineSnowFlowField[index01];
+                float2 sample11 = _MarineSnowFlowField[index11];
+
+                float2 sample0 = lerp(sample00, sample10, fracValue.x);
+                float2 sample1 = lerp(sample01, sample11, fracValue.x);
+                return lerp(sample0, sample1, fracValue.y);
+            }
+
+            float3 ResolveMarineSnowFlowField(float3 positionWS)
+            {
+                float2 flowXZ = SampleMarineSnowFlowFieldXZ(positionWS);
+                return float3(flowXZ.x, 0.0, flowXZ.y);
+            }
+
+            float3 SafeNormalize3(float3 value);
+
+            float ResolveFlowSynchronyPhase(float3 positionWS, float instanceNoise)
+            {
+                return _HectonFlowSynchronyParams.z + dot(positionWS.xz, float2(0.031, -0.027)) + instanceNoise * 6.28318;
+            }
+
+            float3 ResolveFlowSynchronyOffset(float3 positionWS, float bendMask, float instanceType, float instanceNoise)
+            {
+                if (bendMask <= 0.0001)
+                    return float3(0.0, 0.0, 0.0);
+
+                float3 flowSample = ResolveMarineSnowFlowField(positionWS);
+                float flowMagnitude = length(flowSample.xz) * max(_HectonFlowSynchronyParams.x, 1.0);
+                if (flowMagnitude <= 0.0001)
+                    return float3(0.0, 0.0, 0.0);
+
+                float3 flowDirection = SafeNormalize3(float3(flowSample.x, 0.0, flowSample.z));
+                float typeScale = instanceType < 0.5 ? 0.24 : (instanceType < 1.5 ? 0.42 : 0.18);
+                float flowWave = sin(ResolveFlowSynchronyPhase(positionWS, instanceNoise));
+                return flowDirection * (flowWave * flowMagnitude * typeScale * bendMask);
+            }
+
             float ResolveBayer4x4(float2 pixel)
             {
                 float2 cell = fmod(pixel, 4.0);
@@ -273,7 +339,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
 
             float3 TransformPoint(float4x4 matrixValue, float3 localPosition)
             {
-                return mul(matrixValue, float4(localPosition, 1.0)).xyz + _ChunkWorldOffset.xyz;
+                return mul(matrixValue, float4(localPosition, 1.0)).xyz;
             }
 
             float3 TransformDirection(float4x4 matrixValue, float3 direction)
@@ -364,7 +430,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
 
             float3 ResolveCausticSamplePositionWS(float3 positionWS)
             {
-                return positionWS + _HectonFloatingOriginOffset.xyz;
+                return positionWS;
             }
 
             half ResolveLocalLightCaustic(float3 positionWS, half3 normalWS, half heightMask)
@@ -548,6 +614,39 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 return interactionOffset * bendMask;
             }
 
+            float3 ResolvePlayerBendOffset(float3 evaluationPositionWS, float3 baseNormalWS, float bendMask, float instanceType)
+            {
+                float playerRadius = _HectonPlayerAbsoluteUniversePosition.w;
+                if (bendMask <= 0.0001 ||
+                    _HectonPlayerFloraInteractionParams.w < 0.5 ||
+                    playerRadius <= 0.0001)
+                {
+                    return float3(0.0, 0.0, 0.0);
+                }
+
+                float3 playerRuntimePosition = _HectonPlayerAbsoluteUniversePosition.xyz + _GlobalFloatingOffset.xyz;
+                float playerSpeed = _HectonPlayerFloraInteractionParams.x;
+                float playerPush = _HectonPlayerFloraInteractionParams.y;
+                if (playerSpeed <= 0.0001 || playerPush <= 0.0001)
+                    return float3(0.0, 0.0, 0.0);
+
+                float3 delta = evaluationPositionWS - playerRuntimePosition;
+                delta.y *= 0.22;
+                float radiusSq = playerRadius * playerRadius;
+                float distSq = dot(delta, delta);
+                if (distSq >= radiusSq)
+                    return float3(0.0, 0.0, 0.0);
+
+                float dist = sqrt(max(distSq, 0.0001));
+                float proximity = saturate(1.0 - dist / playerRadius);
+                proximity *= proximity;
+                float typeScale = instanceType < 0.5 ? 0.72 : (instanceType < 1.5 ? 1.08 : 0.52);
+                float lift = lerp(0.01, 0.05, bendMask) * proximity * typeScale;
+                float pushStrength = saturate(playerSpeed * 0.16) * playerPush * typeScale;
+                return (SafeNormalize3(float3(delta.x, 0.0, delta.z)) + baseNormalWS * 0.04) *
+                    (proximity * pushStrength * bendMask) + float3(0.0, -lift, 0.0);
+            }
+
             float3 ResolveImpactOffset(float3 evaluationPositionWS, float3 baseNormalWS, float bendMask)
             {
                 if (bendMask <= 0.0001 || _HectonImpactSphereCount <= 0)
@@ -588,8 +687,12 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             {
                 float currentTimeScale = max(_HectonVegetationCurrentTimeScale, 0.05);
                 float currentNoiseScale = max(_HectonVegetationCurrentNoiseScale, 0.002);
-                float currentMagnitude = max(currentStrength, 0.0);
-                float2 currentDirection = ResolvePlanarOceanFlowDirection(currentVector);
+                float3 sampledFlow = ResolveMarineSnowFlowField(basePositionWS);
+                float2 localFlowVector = sampledFlow.xz;
+                bool hasLocalFlow = dot(localFlowVector, localFlowVector) > 0.0001;
+                float2 resolvedCurrentVector = hasLocalFlow ? localFlowVector : currentVector;
+                float currentMagnitude = max(currentStrength, length(resolvedCurrentVector));
+                float2 currentDirection = ResolvePlanarOceanFlowDirection(resolvedCurrentVector);
                 if (currentMagnitude <= 0.0001 || dot(currentDirection, currentDirection) <= 0.0001)
                 {
                     torsion = 0.0;
@@ -616,6 +719,8 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 float curl = cos(phaseA * 0.73 - phaseB * 1.12) * 0.45 + eddyNoise * 0.65;
                 float2 flowXZ = currentDirection * (0.55 + surge * 0.45 + gustNoise * 0.55) +
                     currentPerpendicular * (curl * 0.42);
+                if (hasLocalFlow)
+                    flowXZ += localFlowVector * 0.65;
 
                 float verticalFlow = (gustNoise * 0.35 + surge * 0.18) * _HectonVegetationCurrentVerticalFactor;
                 float3 flowVector = float3(flowXZ.x, verticalFlow, flowXZ.y);
@@ -674,9 +779,6 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 float3 driftOffsetWS = instanceType > 1.5 ? _SargassumGlobalDriftOffset.xyz : float3(0.0, 0.0, 0.0);
                 float3 renderOriginWS = originWS + driftOffsetWS;
                 float timeValue = _Time.y;
-                float2 currentVector = dot(_GlobalOceanFlow.xz, _GlobalOceanFlow.xz) > 0.0001 ? _GlobalOceanFlow.xz : _HectonVegetationCurrentVector.xz;
-                float currentStrength = ResolvePlanarOceanFlowStrength(_HectonVegetationCurrentVector.xz, _HectonVegetationCurrentStrength);
-                float2 currentDirection = ResolvePlanarOceanFlowDirection(currentVector);
 
                 if (instanceType < 0.5)
                 {
@@ -696,8 +798,17 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 }
 
                 float3 basePositionWS = TransformPoint(instanceMatrix, localPosition) + driftOffsetWS + floatingOriginOffsetWS;
+                float2 fallbackCurrentVector = dot(_GlobalOceanFlow.xz, _GlobalOceanFlow.xz) > 0.0001 ? _GlobalOceanFlow.xz : _HectonVegetationCurrentVector.xz;
+                float3 sampledFlowVector = ResolveMarineSnowFlowField(basePositionWS);
+                float2 sampledCurrentVector = sampledFlowVector.xz;
+                float2 currentVector = dot(sampledCurrentVector, sampledCurrentVector) > 0.0001 ? sampledCurrentVector : fallbackCurrentVector;
+                float currentStrength = max(
+                    ResolvePlanarOceanFlowStrength(_HectonVegetationCurrentVector.xz, _HectonVegetationCurrentStrength),
+                    length(sampledCurrentVector));
+                float2 currentDirection = ResolvePlanarOceanFlowDirection(currentVector);
                 float3 animatedPositionWS = basePositionWS;
                 float3 wakeTrailOffset = ResolveWakeTrailOffset(basePositionWS, baseNormalWS, bendMask, heightMask, instanceType);
+                float3 flowSynchronyOffset = ResolveFlowSynchronyOffset(basePositionWS, bendMask, instanceType, instanceNoise);
 
                 if (_HectonLodPassMode < 0.5)
                 {
@@ -724,6 +835,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                             sin(phase),
                             cos(phase * 1.37 + heightMask * _GrassWindFrequency)));
                         animatedPositionWS += wakeTrailOffset;
+                        animatedPositionWS += flowSynchronyOffset;
                         animatedPositionWS += currentOffset * (0.85 * detailAmplitude);
                         animatedPositionWS.xz += grassWind * (_GrassWindAmplitude * bendMask * detailAmplitude);
                         animatedPositionWS.y += sin(phase * 1.9 + variation * 5.0) * (0.05 * bendMask * detailAmplitude);
@@ -742,6 +854,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                         kelpAmplitude *= 0.8;
                         #endif
                         animatedPositionWS += wakeTrailOffset * 1.1;
+                        animatedPositionWS += flowSynchronyOffset;
                         animatedPositionWS += currentOffset * (1.15 * detailAmplitude);
                         animatedPositionWS.xz += kelpFlow * (kelpAmplitude * bendMask * detailAmplitude);
                         animatedPositionWS.xz += float2(currentTorsion, -currentTorsion) * (bendMask * 0.42 * detailAmplitude);
@@ -765,6 +878,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                         float pulse = sin(pulsePhase) * _SargassumPulsationAmplitude * edgePulse * bendMask * detailAmplitude;
                         float2 radialWS = SafeNormalize2(animatedPositionWS.xz - renderOriginWS.xz + float2(0.001, 0.001));
                         animatedPositionWS += wakeTrailOffset * 0.45;
+                        animatedPositionWS += flowSynchronyOffset;
                         animatedPositionWS.xz += currentOffset.xz * (0.5 * detailAmplitude);
                         animatedPositionWS.y += currentOffset.y * (0.18 * detailAmplitude);
                         animatedPositionWS.xz += radialWS * pulse;
@@ -797,15 +911,18 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                     float2 farFlow = ResolvePlanarOceanFlowDirection(currentVector + float2(sin(farPhase), cos(farPhase * 0.83)) * currentStrength);
                     float farSwayStrength = instanceType < 0.5 ? _GrassWindAmplitude * 0.55 : _KelpCurrentAmplitude * 0.42;
                     animatedPositionWS += wakeTrailOffset * 0.8;
+                    animatedPositionWS += flowSynchronyOffset * 0.85;
                     animatedPositionWS.xz += farFlow * (farSwayStrength * bendMask * lodAlpha);
                     animatedPositionWS += farCurrentOffset * 0.65;
                 }
 
                 float3 interactionOffset = ResolveInteractionOffset(animatedPositionWS, baseNormalWS, bendMask, distanceToCamera);
+                float3 playerBendOffset = ResolvePlayerBendOffset(animatedPositionWS, baseNormalWS, bendMask, instanceType);
                 float3 impactOffset = ResolveImpactOffset(animatedPositionWS, baseNormalWS, bendMask);
                 float interactionTypeScale = instanceType < 0.5 ? 0.7 : (instanceType < 1.5 ? 1.15 : 0.85);
                 animatedPositionWS += impactOffset * 0.95;
                 animatedPositionWS += interactionOffset * (_InteractionPushStrength * interactionTypeScale);
+                animatedPositionWS += playerBendOffset * (_InteractionPushStrength * 1.1);
 
                 if (instanceType > 1.5)
                 {

@@ -263,14 +263,6 @@ public sealed class SystemDispatcher : MonoBehaviour
 
             for (int i = 0; i < count; i++)
             {
-                // DEAD REFERENCE GUARD
-                if (raw[i] is UnityEngine.Object uObj && !uObj)
-                {
-                    bucket.Unregister(raw[i]);
-                    i--;          // recheck swapped-in element
-                    count--;
-                    continue;
-                }
                 raw[i].Tick(dt);
             }
         }
@@ -286,7 +278,7 @@ public enum PriorityLayer : byte
 }
 
 [SCALE] Total dispatch is O(N) with no allocation. No LINQ. No delegate invocation lists.
-[SAFE] Dead reference guard uses Unity null-operator (`!uObj`) before `Tick`. No NullRef exceptions.
+[SAFE] Dispatch path assumes `OnDisable` unregisters before destruction. Hot loop contains no Unity null interop.
 [FORBID] `LinkedList`, sorted containers, or any per-tick `OrderBy` / `Sort` calls.
 
 ---
@@ -329,35 +321,19 @@ public sealed partial class SystemDispatcher
 
 ---
 
-## RULE-08 · Dead Reference Guard — UnityObject Validity Check
+## RULE-08 · Lifecycle Contract — No Hot-Loop Unity Null Checks
 
-Registered items may be destroyed externally (pooling, editor stop, exception).
-Every dispatch site MUST validate Unity object validity before use.
+Registered items must unregister in `OnDisable` / `OnDestroy` before destruction.
+The dispatcher does not poll `uObj == null` or `!uObj` in the tick path.
 
-// CANONICAL GUARD PATTERN (inline, no allocation)
-private static bool IsAlive(object item)
-{
-    // Non-Unity objects (pure C# classes) are always valid if non-null
-    if (item is not UnityEngine.Object uObj) return item != null;
+Canonical enforcement:
+  - registration only while enabled
+  - unregistration mandatory in `OnDisable`
+  - scene flush clears buckets before unload
+  - broken lifecycle = architecture bug, not dispatch responsibility
 
-    // Unity objects: destroyed objects return true for (obj == null) due to operator overload
-    return uObj;   // implicit bool operator — false if destroyed or missing
-}
-
-// Applied in dispatch:
-for (int i = 0; i < count; i++)
-{
-    if (!IsAlive(raw[i]))
-    {
-        bucket.Unregister(raw[i]);
-        i--; count--;
-        continue;
-    }
-    raw[i].Tick(dt);
-}
-
-[SAFE] `IsAlive` correctly handles both pure C# and Unity object registrants.
-[FORBID] `try/catch` around `Tick()` calls as a substitute for validity checking.
+[SAFE] If a destroyed object survives in a bucket, fix the owner lifecycle. Do not add Unity null checks to the hot loop.
+[FORBID] `try/catch` around `Tick()` calls as a substitute for lifecycle correctness.
 [FORBID] `FindObjectOfType`, `GameObject.Find`, `GetComponentInChildren` inside `IsAlive` or any tick path.
 
 ---

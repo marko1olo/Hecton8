@@ -343,24 +343,31 @@ void CullFloraInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
     if (!IsVisibleInFrustum(clipRoot, clipCenter, clipTop, clipSideA, clipSideB))
         return;
 
-    if (IsOccludedByDepth(originWS, centerWS, topWS, sideAWS, sideBWS, clipRoot, clipCenter, clipTop, clipSideA, clipSideB))
-        return;
-
-    if (!IsVisibleInDarkness(centerWS))
-        return;
-
-    float distanceToCamera = distance(originWS, _HectonCameraPosition);
+    float3 cameraDelta = originWS - _HectonCameraPosition;
+    float distanceSq = dot(cameraDelta, cameraDelta);
     float lod0Distance = max(_HectonLodNearDistance, 0.01);
     float lod1Distance = max(_HectonLodFarDistance, lod0Distance);
     float lodTransition = max(_HectonLodTransitionRange, 0.01);
     float lod0MaxDistance = lod0Distance + lodTransition;
     float lod1MinDistance = max(0.0, lod0Distance - lodTransition);
     float lod1MaxDistance = lod1Distance + lodTransition;
+    float lod0MaxDistanceSq = lod0MaxDistance * lod0MaxDistance;
+    float lod1MinDistanceSq = lod1MinDistance * lod1MinDistance;
+    float lod1MaxDistanceSq = lod1MaxDistance * lod1MaxDistance;
 
-    if (distanceToCamera <= lod0MaxDistance)
+    if (distanceSq > lod1MaxDistanceSq)
+        return;
+
+    if (IsOccludedByDepth(originWS, centerWS, topWS, sideAWS, sideBWS, clipRoot, clipCenter, clipTop, clipSideA, clipSideB))
+        return;
+
+    if (!IsVisibleInDarkness(centerWS))
+        return;
+
+    if (distanceSq <= lod0MaxDistanceSq)
         _HectonVisibleInstanceIndicesLOD0.Append(instanceIndex);
 
-    if (distanceToCamera >= lod1MinDistance && distanceToCamera <= lod1MaxDistance)
+    if (distanceSq >= lod1MinDistanceSq && distanceSq <= lod1MaxDistanceSq)
         _HectonVisibleInstanceIndicesLOD1.Append(instanceIndex);
 }
 

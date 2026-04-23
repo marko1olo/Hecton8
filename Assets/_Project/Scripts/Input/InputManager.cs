@@ -11,6 +11,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using System;
+using System.Collections.Generic;
 
 namespace Hecton8.Input
 {
@@ -31,6 +32,14 @@ namespace Hecton8.Input
     [DefaultExecutionOrder(-31000)] // Must initialize before BootstrapController singleton access.
     public class InputManager : MonoBehaviour
     {
+        private enum InputRecoveryState : byte
+        {
+            Stable = 0,
+            AwaitingDeviceReconnect = 1,
+            RebuildPending = 2,
+            Rebuilding = 3
+        }
+
         // ═══════════════════════════════════════════════════════════════════════════════════════════
         // SINGLETON PATTERN
         // ═══════════════════════════════════════════════════════════════════════════════════════════
@@ -46,6 +55,20 @@ namespace Hecton8.Input
         private bool _initialActivationComplete;
         private bool _restorePlayerInputOnEnable;
         private bool _restoreUiInputOnEnable;
+        private bool _deviceChangeSubscribed;
+        private int _lastDisplayDeviceId;
+        private int _connectedGamepadCount;
+        private Vector2 _moveInput;
+        private Vector2 _lookInput;
+        private float _verticalMovementInput;
+        private bool _isJumping;
+        private bool _isSprinting;
+        private bool _isPrimaryActionHeld;
+        private bool _isSecondaryActionHeld;
+        private InputRecoveryState _inputRecoveryState;
+
+        // COLD ALLOC: Dictionary<int, InputDisplayStyle>[8] — cached device-display-style lookup for input callbacks — owner: InputManager
+        private readonly Dictionary<int, InputDisplayStyle> _displayStyleByDeviceId = new Dictionary<int, InputDisplayStyle>(8);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
@@ -69,6 +92,13 @@ namespace Hecton8.Input
                         {
                             if (_isShuttingDown || !Application.isPlaying)
                                 return null;
+
+                            InputManager existing = UnityEngine.Object.FindAnyObjectByType<InputManager>(FindObjectsInactive.Include);
+                            if (existing != null)
+                            {
+                                _instance = existing;
+                                return _instance;
+                            }
 
                             GameObject go = new GameObject("[InputManager]");
                             _instance = go.AddComponent<InputManager>();
@@ -160,13 +190,13 @@ namespace Hecton8.Input
         public bool CanSwitchActionMaps => !_isShuttingDown && _inputMapsInitialized && _runtimeInputActionAsset != null;
         public InputDisplayStyle CurrentDisplayStyle { get; private set; } = InputDisplayStyle.KeyboardMouse;
         
-        public Vector2 MoveInput => _moveAction?.ReadValue<Vector2>() ?? Vector2.zero;
-        public Vector2 LookInput => _lookAction?.ReadValue<Vector2>() ?? Vector2.zero;
-        public bool IsJumping => _jumpAction?.IsPressed() ?? false;
-        public bool IsSprinting => _sprintAction?.IsPressed() ?? false;
-        public bool IsPrimaryActionHeld => _primaryActionAction?.IsPressed() ?? false;
-        public bool IsSecondaryActionHeld => _secondaryActionAction?.IsPressed() ?? false;
-        public float VerticalMovementInput => _verticalMovementAction?.ReadValue<float>() ?? 0f;
+        public Vector2 MoveInput => _moveInput;
+        public Vector2 LookInput => _lookInput;
+        public bool IsJumping => _isJumping;
+        public bool IsSprinting => _isSprinting;
+        public bool IsPrimaryActionHeld => _isPrimaryActionHeld;
+        public bool IsSecondaryActionHeld => _isSecondaryActionHeld;
+        public float VerticalMovementInput => _verticalMovementInput;
         public InputActionAsset InputActionsAsset => _runtimeInputActionAsset;
 
         // ═══════════════════════════════════════════════════════════════════════════════════════════
@@ -199,6 +229,7 @@ namespace Hecton8.Input
             if (_isShuttingDown || _instance != this)
                 return;
 
+            SubscribeToDeviceChanges();
             EnsureInputActionsInitialized();
 
             if (!_initialActivationComplete)
@@ -218,6 +249,7 @@ namespace Hecton8.Input
 
             _restorePlayerInputOnEnable = IsActionMapEnabledForStateCapture(_playerActionMap);
             _restoreUiInputOnEnable = IsActionMapEnabledForStateCapture(_uiActionMap);
+            UnsubscribeFromDeviceChanges();
         }
 
         private void Start()
@@ -228,7 +260,7 @@ namespace Hecton8.Input
         
         private void InitializeInputActions()
         {
-            if (_inputMapsInitialized && IsActionMapUsable(_playerActionMap))
+            if (_inputMapsInitialized && TryValidateActionMap(_playerActionMap, scheduleRecoveryOnFailure: true))
                 return;
 
             ResetInputActionCaches(disposeRuntimeAsset: true);
@@ -342,6 +374,7 @@ namespace Hecton8.Input
             _moveAction.canceled += OnMoveCanceled;
             
             _lookAction.performed += OnLookPerformed;
+            _lookAction.canceled += OnLookCanceled;
             
             _jumpAction.performed += OnJumpPerformed;
             _jumpAction.canceled += OnJumpCanceledPerformed;
@@ -377,6 +410,7 @@ namespace Hecton8.Input
                 return;
 
             _navigateAction.performed += OnNavigatePerformed;
+            _navigateAction.canceled += OnNavigateCanceled;
             _submitAction.performed += OnSubmitPerformed;
             _cancelAction.performed += OnCancelPerformed;
             _tabNextAction.performed += OnTabNextPerformed;
@@ -397,7 +431,10 @@ namespace Hecton8.Input
             }
 
             if (_lookAction != null)
+            {
                 _lookAction.performed -= OnLookPerformed;
+                _lookAction.canceled -= OnLookCanceled;
+            }
 
             if (_jumpAction != null)
             {
@@ -462,7 +499,10 @@ namespace Hecton8.Input
                 return;
 
             if (_navigateAction != null)
+            {
                 _navigateAction.performed -= OnNavigatePerformed;
+                _navigateAction.canceled -= OnNavigateCanceled;
+            }
 
             if (_submitAction != null)
                 _submitAction.performed -= OnSubmitPerformed;
@@ -487,32 +527,57 @@ namespace Hecton8.Input
         private void OnMovePerformed(InputAction.CallbackContext context)
         {
             CaptureInputDisplayStyle(context);
-            OnMove?.Invoke(context.ReadValue<Vector2>());
+            _moveInput = context.ReadValue<Vector2>();
+            OnMove?.Invoke(_moveInput);
         }
-        private void OnMoveCanceled(InputAction.CallbackContext context) => OnMove?.Invoke(Vector2.zero);
+        private void OnMoveCanceled(InputAction.CallbackContext context)
+        {
+            _moveInput = Vector2.zero;
+            OnMove?.Invoke(Vector2.zero);
+        }
         private void OnLookPerformed(InputAction.CallbackContext context)
         {
             CaptureInputDisplayStyle(context);
-            OnLook?.Invoke(context.ReadValue<Vector2>());
+            _lookInput = context.ReadValue<Vector2>();
+            OnLook?.Invoke(_lookInput);
+        }
+        private void OnLookCanceled(InputAction.CallbackContext context)
+        {
+            _lookInput = Vector2.zero;
         }
         private void OnJumpPerformed(InputAction.CallbackContext context)
         {
             CaptureInputDisplayStyle(context);
+            _isJumping = true;
             OnJump?.Invoke();
         }
-        private void OnJumpCanceledPerformed(InputAction.CallbackContext context) => OnJumpCanceled?.Invoke();
+        private void OnJumpCanceledPerformed(InputAction.CallbackContext context)
+        {
+            _isJumping = false;
+            OnJumpCanceled?.Invoke();
+        }
         private void OnSprintPerformed(InputAction.CallbackContext context)
         {
             CaptureInputDisplayStyle(context);
+            _isSprinting = true;
             OnSprint?.Invoke();
         }
-        private void OnSprintCanceledPerformed(InputAction.CallbackContext context) => OnSprintCanceled?.Invoke();
+        private void OnSprintCanceledPerformed(InputAction.CallbackContext context)
+        {
+            _isSprinting = false;
+            OnSprintCanceled?.Invoke();
+        }
         private void OnVerticalMovementPerformed(InputAction.CallbackContext context)
         {
             CaptureInputDisplayStyle(context);
-            OnVerticalMove?.Invoke(context.ReadValue<float>());
+            _verticalMovementInput = context.ReadValue<float>();
+            OnVerticalMove?.Invoke(_verticalMovementInput);
         }
-        private void OnVerticalMovementCanceled(InputAction.CallbackContext context) => OnVerticalMove?.Invoke(0f);
+        private void OnVerticalMovementCanceled(InputAction.CallbackContext context)
+        {
+            _verticalMovementInput = 0f;
+            OnVerticalMove?.Invoke(0f);
+        }
         
         // Interaction Callbacks
         private void OnInteractPerformed(InputAction.CallbackContext context)
@@ -562,15 +627,25 @@ namespace Hecton8.Input
         private void OnPrimaryActionPerformed(InputAction.CallbackContext context)
         {
             CaptureInputDisplayStyle(context);
+            _isPrimaryActionHeld = true;
             OnPrimaryAction?.Invoke();
         }
-        private void OnPrimaryActionCanceledPerformed(InputAction.CallbackContext context) => OnPrimaryActionCanceled?.Invoke();
+        private void OnPrimaryActionCanceledPerformed(InputAction.CallbackContext context)
+        {
+            _isPrimaryActionHeld = false;
+            OnPrimaryActionCanceled?.Invoke();
+        }
         private void OnSecondaryActionPerformed(InputAction.CallbackContext context)
         {
             CaptureInputDisplayStyle(context);
+            _isSecondaryActionHeld = true;
             OnSecondaryAction?.Invoke();
         }
-        private void OnSecondaryActionCanceledPerformed(InputAction.CallbackContext context) => OnSecondaryActionCanceled?.Invoke();
+        private void OnSecondaryActionCanceledPerformed(InputAction.CallbackContext context)
+        {
+            _isSecondaryActionHeld = false;
+            OnSecondaryActionCanceled?.Invoke();
+        }
         
         // UI Callbacks
         private void OnNavigatePerformed(InputAction.CallbackContext context)
@@ -578,6 +653,7 @@ namespace Hecton8.Input
             CaptureInputDisplayStyle(context);
             OnNavigate?.Invoke(context.ReadValue<Vector2>());
         }
+        private void OnNavigateCanceled(InputAction.CallbackContext context) => OnNavigate?.Invoke(Vector2.zero);
         private void OnSubmitPerformed(InputAction.CallbackContext context)
         {
             CaptureInputDisplayStyle(context);
@@ -963,7 +1039,140 @@ namespace Hecton8.Input
 
         private void CaptureInputDisplayStyle(InputAction.CallbackContext context)
         {
-            InputDisplayStyle nextStyle = ResolveDisplayStyle(context.control);
+            InputDevice device = context.control?.device;
+            if (device == null)
+                return;
+
+            _lastDisplayDeviceId = device.deviceId;
+            SetCurrentDisplayStyle(ResolveCachedDisplayStyle(device.deviceId));
+        }
+
+        private void SubscribeToDeviceChanges()
+        {
+            if (_deviceChangeSubscribed)
+                return;
+
+            InputSystem.onDeviceChange += HandleInputDeviceChange;
+            _deviceChangeSubscribed = true;
+            RefreshTrackedDevices();
+        }
+
+        private void UnsubscribeFromDeviceChanges()
+        {
+            if (!_deviceChangeSubscribed)
+                return;
+
+            InputSystem.onDeviceChange -= HandleInputDeviceChange;
+            _deviceChangeSubscribed = false;
+        }
+
+        private void HandleInputDeviceChange(InputDevice device, InputDeviceChange change)
+        {
+            switch (change)
+            {
+                case InputDeviceChange.Added:
+                case InputDeviceChange.Reconnected:
+                case InputDeviceChange.Enabled:
+                case InputDeviceChange.ConfigurationChanged:
+                case InputDeviceChange.UsageChanged:
+                    TrackDevice(device);
+                    if (_inputRecoveryState == InputRecoveryState.AwaitingDeviceReconnect)
+                    {
+                        _inputRecoveryState = InputRecoveryState.RebuildPending;
+                        ProcessInputRecoveryStateMachine();
+                    }
+                    else
+                    {
+                        RefreshCurrentDisplayStyleFromTrackedDevices();
+                    }
+                    break;
+
+                case InputDeviceChange.Removed:
+                case InputDeviceChange.Disconnected:
+                case InputDeviceChange.Disabled:
+                    UntrackDevice(device);
+                    if (_inputMapsInitialized && !_isShuttingDown)
+                        _inputRecoveryState = InputRecoveryState.AwaitingDeviceReconnect;
+
+                    RefreshCurrentDisplayStyleFromTrackedDevices();
+                    break;
+            }
+        }
+
+        private void RefreshTrackedDevices()
+        {
+            _displayStyleByDeviceId.Clear();
+            _connectedGamepadCount = 0;
+
+            var devices = InputSystem.devices;
+            for (int i = 0; i < devices.Count; i++)
+                TrackDevice(devices[i]);
+
+            RefreshCurrentDisplayStyleFromTrackedDevices();
+        }
+
+        private void TrackDevice(InputDevice device)
+        {
+            if (device == null)
+                return;
+
+            int deviceId = device.deviceId;
+            if (deviceId == 0)
+                return;
+
+            InputDisplayStyle style = ResolveDisplayStyle(device);
+            if (_displayStyleByDeviceId.TryGetValue(deviceId, out InputDisplayStyle existingStyle))
+            {
+                if (existingStyle == style)
+                    return;
+
+                if (existingStyle == InputDisplayStyle.Gamepad)
+                    _connectedGamepadCount = Mathf.Max(0, _connectedGamepadCount - 1);
+            }
+
+            _displayStyleByDeviceId[deviceId] = style;
+            if (style == InputDisplayStyle.Gamepad)
+                _connectedGamepadCount++;
+        }
+
+        private void UntrackDevice(InputDevice device)
+        {
+            if (device == null)
+                return;
+
+            int deviceId = device.deviceId;
+            if (!_displayStyleByDeviceId.TryGetValue(deviceId, out InputDisplayStyle style))
+                return;
+
+            if (style == InputDisplayStyle.Gamepad)
+                _connectedGamepadCount = Mathf.Max(0, _connectedGamepadCount - 1);
+
+            _displayStyleByDeviceId.Remove(deviceId);
+            if (_lastDisplayDeviceId == deviceId)
+                _lastDisplayDeviceId = 0;
+        }
+
+        private void RefreshCurrentDisplayStyleFromTrackedDevices()
+        {
+            if (_lastDisplayDeviceId != 0 && _displayStyleByDeviceId.TryGetValue(_lastDisplayDeviceId, out InputDisplayStyle lastStyle))
+            {
+                SetCurrentDisplayStyle(lastStyle);
+                return;
+            }
+
+            if (CurrentDisplayStyle == InputDisplayStyle.Gamepad && _connectedGamepadCount == 0)
+                SetCurrentDisplayStyle(InputDisplayStyle.KeyboardMouse);
+        }
+
+        private InputDisplayStyle ResolveCachedDisplayStyle(int deviceId)
+        {
+            return _displayStyleByDeviceId.TryGetValue(deviceId, out InputDisplayStyle style)
+                ? style
+                : InputDisplayStyle.KeyboardMouse;
+        }
+
+        private void SetCurrentDisplayStyle(InputDisplayStyle nextStyle)
+        {
             if (CurrentDisplayStyle == nextStyle)
                 return;
 
@@ -971,13 +1180,9 @@ namespace Hecton8.Input
             OnInputDisplayStyleChanged?.Invoke(nextStyle);
         }
 
-        private static InputDisplayStyle ResolveDisplayStyle(InputControl control)
+        private static InputDisplayStyle ResolveDisplayStyle(InputDevice device)
         {
-            InputDevice device = control?.device;
-            if (device is Gamepad)
-                return InputDisplayStyle.Gamepad;
-
-            return InputDisplayStyle.KeyboardMouse;
+            return device is Gamepad ? InputDisplayStyle.Gamepad : InputDisplayStyle.KeyboardMouse;
         }
 
         public string SaveBindingOverridesAsJson()
@@ -1007,8 +1212,7 @@ namespace Hecton8.Input
             if (_isShuttingDown)
                 return;
 
-            ResetInputActionCaches(disposeRuntimeAsset: true);
-            InitializeInputActions();
+            RequestActionMapRecovery();
         }
 
         private void OnDestroy()
@@ -1016,6 +1220,7 @@ namespace Hecton8.Input
             if (_instance == this)
                 _isShuttingDown = true;
 
+            UnsubscribeFromDeviceChanges();
             ResetInputActionCaches(disposeRuntimeAsset: true);
             _generatedInputActions?.Dispose();
             _generatedInputActions = null;
@@ -1027,58 +1232,17 @@ namespace Hecton8.Input
         private void OnApplicationQuit()
         {
             _isShuttingDown = true;
+            _inputRecoveryState = InputRecoveryState.Stable;
         }
 
         private void SafeEnableActionMap(InputActionMap actionMap)
         {
-            if (!TryResolveRuntimeActionMap(actionMap, out InputActionMap resolvedActionMap) || !IsActionMapUsable(resolvedActionMap))
-                return;
-
-            try
-            {
-                if (resolvedActionMap.enabled)
-                    return;
-
-                resolvedActionMap.Enable();
-            }
-            catch (InvalidOperationException)
-            {
-                RecoverActionMapAfterStateFault(actionMap, resolvedActionMap, enable: true);
-            }
-            catch (ArgumentOutOfRangeException)
-            {
-                RecoverActionMapAfterStateFault(actionMap, resolvedActionMap, enable: true);
-            }
-            catch (Exception)
-            {
-                RecoverActionMapAfterStateFault(actionMap, resolvedActionMap, enable: true);
-            }
+            TrySetActionMapEnabled(actionMap, enable: true, scheduleRecoveryOnFailure: true);
         }
 
         private void SafeDisableActionMap(InputActionMap actionMap)
         {
-            if (!TryResolveRuntimeActionMap(actionMap, out InputActionMap resolvedActionMap) || !IsActionMapUsable(resolvedActionMap))
-                return;
-
-            try
-            {
-                if (!resolvedActionMap.enabled)
-                    return;
-
-                resolvedActionMap.Disable();
-            }
-            catch (InvalidOperationException)
-            {
-                RecoverActionMapAfterStateFault(actionMap, resolvedActionMap, enable: false);
-            }
-            catch (ArgumentOutOfRangeException)
-            {
-                RecoverActionMapAfterStateFault(actionMap, resolvedActionMap, enable: false);
-            }
-            catch (Exception)
-            {
-                RecoverActionMapAfterStateFault(actionMap, resolvedActionMap, enable: false);
-            }
+            TrySetActionMapEnabled(actionMap, enable: false, scheduleRecoveryOnFailure: true);
         }
 
         private void SafeDisableActionMapForTeardown(InputActionMap actionMap)
@@ -1099,6 +1263,55 @@ namespace Hecton8.Input
             catch (Exception)
             {
             }
+        }
+
+        private bool TrySetActionMapEnabled(InputActionMap requestedActionMap, bool enable, bool scheduleRecoveryOnFailure)
+        {
+            if (!TryResolveRuntimeActionMap(requestedActionMap, out InputActionMap resolvedActionMap))
+            {
+                if (scheduleRecoveryOnFailure)
+                    RequestActionMapRecovery();
+
+                return false;
+            }
+
+            if (!TryValidateActionMap(resolvedActionMap, scheduleRecoveryOnFailure))
+                return false;
+
+            try
+            {
+                if (enable)
+                {
+                    if (!resolvedActionMap.enabled)
+                        resolvedActionMap.Enable();
+                }
+                else
+                {
+                    if (resolvedActionMap.enabled)
+                        resolvedActionMap.Disable();
+
+                    ResetCachedActionState(resolvedActionMap);
+                }
+
+                return true;
+            }
+            catch (InvalidOperationException)
+            {
+                if (scheduleRecoveryOnFailure)
+                    RequestActionMapRecovery();
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                if (scheduleRecoveryOnFailure)
+                    RequestActionMapRecovery();
+            }
+            catch (Exception)
+            {
+                if (scheduleRecoveryOnFailure)
+                    RequestActionMapRecovery();
+            }
+
+            return false;
         }
 
         private bool TryResolveRuntimeActionMap(InputActionMap actionMap, out InputActionMap resolvedActionMap)
@@ -1142,39 +1355,49 @@ namespace Hecton8.Input
             return true;
         }
 
-        private void RecoverActionMapAfterStateFault(InputActionMap requestedActionMap, InputActionMap resolvedActionMap, bool enable)
+        private void RequestActionMapRecovery()
         {
-            if (TryResolveRuntimeActionMap(requestedActionMap, out InputActionMap refreshedActionMap) &&
-                refreshedActionMap != null &&
-                !ReferenceEquals(refreshedActionMap, resolvedActionMap) &&
-                IsActionMapUsable(refreshedActionMap))
-            {
-                try
-                {
-                    if (enable)
-                    {
-                        if (!refreshedActionMap.enabled)
-                            refreshedActionMap.Enable();
-                    }
-                    else if (refreshedActionMap.enabled)
-                    {
-                        refreshedActionMap.Disable();
-                    }
+            if (_isShuttingDown ||
+                _inputRecoveryState == InputRecoveryState.Rebuilding ||
+                _inputRecoveryState == InputRecoveryState.RebuildPending ||
+                _inputRecoveryState == InputRecoveryState.AwaitingDeviceReconnect)
+                return;
 
-                    return;
-                }
-                catch (InvalidOperationException)
-                {
-                }
-                catch (ArgumentOutOfRangeException)
-                {
-                }
-                catch (Exception)
-                {
-                }
+            _inputRecoveryState = InputRecoveryState.RebuildPending;
+            ProcessInputRecoveryStateMachine();
+        }
+
+        private void ProcessInputRecoveryStateMachine()
+        {
+            if (_isShuttingDown || _inputRecoveryState != InputRecoveryState.RebuildPending)
+                return;
+
+            _inputRecoveryState = InputRecoveryState.Rebuilding;
+            ResetInputActionCaches(disposeRuntimeAsset: true);
+
+            if (_isShuttingDown)
+            {
+                _inputRecoveryState = InputRecoveryState.Stable;
+                return;
             }
 
-            HandleStaleActionMap(requestedActionMap);
+            InitializeInputActions();
+            if (!_inputMapsInitialized)
+            {
+                _inputRecoveryState = InputRecoveryState.AwaitingDeviceReconnect;
+                return;
+            }
+
+            bool playerRestored = !_restorePlayerInputOnEnable || TrySetActionMapEnabled(_playerActionMap, enable: true, scheduleRecoveryOnFailure: false);
+            bool uiRestored = !_restoreUiInputOnEnable || _uiActionMap == null || TrySetActionMapEnabled(_uiActionMap, enable: true, scheduleRecoveryOnFailure: false);
+            if (!playerRestored || !uiRestored)
+            {
+                _inputRecoveryState = InputRecoveryState.AwaitingDeviceReconnect;
+                return;
+            }
+
+            _inputRecoveryState = InputRecoveryState.Stable;
+            RefreshCurrentDisplayStyleFromTrackedDevices();
         }
 
         private void BindResolvedActionMapReference(string actionMapName, InputActionMap actionMap)
@@ -1190,24 +1413,6 @@ namespace Hecton8.Input
 
             if (string.Equals(actionMapName, "UI", StringComparison.Ordinal))
                 _uiActionMap = actionMap;
-        }
-
-        private void HandleStaleActionMap(InputActionMap actionMap)
-        {
-            ResetInputActionCaches(disposeRuntimeAsset: true);
-
-            if (_isShuttingDown)
-                return;
-
-            InitializeInputActions();
-            if (!_inputMapsInitialized || !_initialActivationComplete)
-                return;
-
-            if (_restorePlayerInputOnEnable)
-                SafeEnableActionMap(_playerActionMap);
-
-            if (_restoreUiInputOnEnable && _uiActionMap != null)
-                SafeEnableActionMap(_uiActionMap);
         }
 
         private static bool IsActionMapEnabledForStateCapture(InputActionMap actionMap)
@@ -1233,7 +1438,7 @@ namespace Hecton8.Input
             }
         }
 
-        private bool IsActionMapUsable(InputActionMap actionMap)
+        private bool TryValidateActionMap(InputActionMap actionMap, bool scheduleRecoveryOnFailure)
         {
             if (!_inputMapsInitialized || actionMap == null || _isShuttingDown || _runtimeInputActionAsset == null)
                 return false;
@@ -1242,13 +1447,17 @@ namespace Hecton8.Input
             {
                 if (!ReferenceEquals(actionMap.asset, _runtimeInputActionAsset))
                 {
-                    HandleStaleActionMap(actionMap);
+                    if (scheduleRecoveryOnFailure)
+                        RequestActionMapRecovery();
+
                     return false;
                 }
             }
             catch (Exception)
             {
-                HandleStaleActionMap(actionMap);
+                if (scheduleRecoveryOnFailure)
+                    RequestActionMapRecovery();
+
                 return false;
             }
 
@@ -1260,11 +1469,11 @@ namespace Hecton8.Input
             if (_isShuttingDown)
                 return false;
 
-            if (_inputMapsInitialized && IsActionMapUsable(_playerActionMap))
+            if (_inputMapsInitialized && TryValidateActionMap(_playerActionMap, scheduleRecoveryOnFailure: true))
                 return true;
 
             InitializeInputActions();
-            return _inputMapsInitialized && IsActionMapUsable(_playerActionMap);
+            return _inputMapsInitialized && TryValidateActionMap(_playerActionMap, scheduleRecoveryOnFailure: true);
         }
 
         private bool TryGetActionMapEnabled(InputActionMap actionMap)
@@ -1272,29 +1481,26 @@ namespace Hecton8.Input
             if (actionMap == null || _isShuttingDown)
                 return false;
 
+            if (!TryValidateActionMap(actionMap, scheduleRecoveryOnFailure: true))
+                return false;
+
             try
             {
-                if (_runtimeInputActionAsset != null && !ReferenceEquals(actionMap.asset, _runtimeInputActionAsset))
-                {
-                    HandleStaleActionMap(actionMap);
-                    return false;
-                }
-
                 return actionMap.enabled;
             }
             catch (InvalidOperationException)
             {
-                HandleStaleActionMap(actionMap);
+                RequestActionMapRecovery();
                 return false;
             }
             catch (ArgumentOutOfRangeException)
             {
-                HandleStaleActionMap(actionMap);
+                RequestActionMapRecovery();
                 return false;
             }
             catch (Exception)
             {
-                HandleStaleActionMap(actionMap);
+                RequestActionMapRecovery();
                 return false;
             }
         }
@@ -1306,6 +1512,7 @@ namespace Hecton8.Input
 
             SafeDisableActionMapForTeardown(_playerActionMap);
             SafeDisableActionMapForTeardown(_uiActionMap);
+            ResetCachedInputState();
 
             _inputMapsInitialized = false;
             _playerActionMap = null;
@@ -1335,6 +1542,42 @@ namespace Hecton8.Input
                 return;
 
             DisposeRuntimeInputActionAsset();
+        }
+
+        private void ResetCachedInputState()
+        {
+            _moveInput = Vector2.zero;
+            _lookInput = Vector2.zero;
+            _verticalMovementInput = 0f;
+            _isJumping = false;
+            _isSprinting = false;
+            _isPrimaryActionHeld = false;
+            _isSecondaryActionHeld = false;
+        }
+
+        private void ResetCachedActionState(InputActionMap actionMap)
+        {
+            if (actionMap == null)
+                return;
+
+            string actionMapName;
+            try
+            {
+                actionMapName = actionMap.name;
+            }
+            catch (Exception)
+            {
+                return;
+            }
+
+            if (string.Equals(actionMapName, "Player", StringComparison.Ordinal))
+            {
+                ResetCachedInputState();
+                return;
+            }
+
+            if (string.Equals(actionMapName, "UI", StringComparison.Ordinal))
+                _lastDisplayDeviceId = 0;
         }
 
         private void DisposeRuntimeInputActionAsset()
@@ -1463,67 +1706,87 @@ namespace Hecton8.Input
 
             private static GlyphId ResolveGlyphId(string bindingPath)
             {
-                string controlName = ExtractControlName(bindingPath);
-                if (string.IsNullOrEmpty(controlName))
+                if (string.IsNullOrWhiteSpace(bindingPath))
                     return GlyphId.None;
 
-                if (bindingPath.IndexOf(KeyboardDeviceToken, StringComparison.OrdinalIgnoreCase) >= 0)
+                ReadOnlySpan<char> path = bindingPath.AsSpan();
+                ReadOnlySpan<char> controlName = ExtractControlName(path);
+                if (controlName.IsEmpty)
+                    return GlyphId.None;
+
+                if (PathContainsToken(path, KeyboardDeviceToken))
                 {
-                    switch (controlName)
-                    {
-                        case "e": return GlyphId.KeyboardE;
-                        case "f": return GlyphId.KeyboardF;
-                        case "m": return GlyphId.KeyboardM;
-                        case "q": return GlyphId.KeyboardQ;
-                        case "r": return GlyphId.KeyboardR;
-                        case "tab": return GlyphId.KeyboardTab;
-                        case "space": return GlyphId.KeyboardSpace;
-                        case "enter": return GlyphId.KeyboardEnter;
-                        case "escape": return GlyphId.KeyboardEscape;
-                    }
+                    if (ControlMatches(controlName, "e")) return GlyphId.KeyboardE;
+                    if (ControlMatches(controlName, "f")) return GlyphId.KeyboardF;
+                    if (ControlMatches(controlName, "m")) return GlyphId.KeyboardM;
+                    if (ControlMatches(controlName, "q")) return GlyphId.KeyboardQ;
+                    if (ControlMatches(controlName, "r")) return GlyphId.KeyboardR;
+                    if (ControlMatches(controlName, "tab")) return GlyphId.KeyboardTab;
+                    if (ControlMatches(controlName, "space")) return GlyphId.KeyboardSpace;
+                    if (ControlMatches(controlName, "enter")) return GlyphId.KeyboardEnter;
+                    if (ControlMatches(controlName, "escape")) return GlyphId.KeyboardEscape;
                 }
 
-                if (bindingPath.IndexOf(MouseDeviceToken, StringComparison.OrdinalIgnoreCase) >= 0)
+                if (PathContainsToken(path, MouseDeviceToken))
                 {
-                    switch (controlName)
-                    {
-                        case "leftbutton": return GlyphId.MouseLeft;
-                        case "rightbutton": return GlyphId.MouseRight;
-                    }
+                    if (ControlMatches(controlName, "leftbutton")) return GlyphId.MouseLeft;
+                    if (ControlMatches(controlName, "rightbutton")) return GlyphId.MouseRight;
                 }
 
-                if (bindingPath.IndexOf(GamepadDeviceToken, StringComparison.OrdinalIgnoreCase) >= 0)
+                if (PathContainsToken(path, GamepadDeviceToken))
                 {
-                    switch (controlName)
-                    {
-                        case "buttonsouth": return GlyphId.GamepadSouth;
-                        case "buttoneast": return GlyphId.GamepadEast;
-                        case "buttonwest": return GlyphId.GamepadWest;
-                        case "buttonnorth": return GlyphId.GamepadNorth;
-                        case "leftshoulder": return GlyphId.GamepadLeftShoulder;
-                        case "rightshoulder": return GlyphId.GamepadRightShoulder;
-                        case "lefttrigger": return GlyphId.GamepadLeftTrigger;
-                        case "righttrigger": return GlyphId.GamepadRightTrigger;
-                        case "start": return GlyphId.GamepadStart;
-                        case "select": return GlyphId.GamepadSelect;
-                        case "dpadup": return GlyphId.GamepadDpadUp;
-                        case "dpaddown": return GlyphId.GamepadDpadDown;
-                        case "dpadleft": return GlyphId.GamepadDpadLeft;
-                        case "dpadright": return GlyphId.GamepadDpadRight;
-                    }
+                    if (ControlMatches(controlName, "buttonsouth")) return GlyphId.GamepadSouth;
+                    if (ControlMatches(controlName, "buttoneast")) return GlyphId.GamepadEast;
+                    if (ControlMatches(controlName, "buttonwest")) return GlyphId.GamepadWest;
+                    if (ControlMatches(controlName, "buttonnorth")) return GlyphId.GamepadNorth;
+                    if (ControlMatches(controlName, "leftshoulder")) return GlyphId.GamepadLeftShoulder;
+                    if (ControlMatches(controlName, "rightshoulder")) return GlyphId.GamepadRightShoulder;
+                    if (ControlMatches(controlName, "lefttrigger")) return GlyphId.GamepadLeftTrigger;
+                    if (ControlMatches(controlName, "righttrigger")) return GlyphId.GamepadRightTrigger;
+                    if (ControlMatches(controlName, "start")) return GlyphId.GamepadStart;
+                    if (ControlMatches(controlName, "select")) return GlyphId.GamepadSelect;
+                    if (ControlMatches(controlName, "dpadup")) return GlyphId.GamepadDpadUp;
+                    if (ControlMatches(controlName, "dpaddown")) return GlyphId.GamepadDpadDown;
+                    if (ControlMatches(controlName, "dpadleft")) return GlyphId.GamepadDpadLeft;
+                    if (ControlMatches(controlName, "dpadright")) return GlyphId.GamepadDpadRight;
                 }
 
                 return GlyphId.None;
             }
 
-            private static string ExtractControlName(string bindingPath)
+            private static ReadOnlySpan<char> ExtractControlName(ReadOnlySpan<char> bindingPath)
             {
                 int slashIndex = bindingPath.LastIndexOf('/');
                 if (slashIndex < 0 || slashIndex >= bindingPath.Length - 1)
-                    return string.Empty;
+                    return ReadOnlySpan<char>.Empty;
 
-                string controlName = bindingPath.Substring(slashIndex + 1);
-                return controlName.Replace("-", string.Empty).ToLowerInvariant();
+                return bindingPath.Slice(slashIndex + 1);
+            }
+
+            private static bool PathContainsToken(ReadOnlySpan<char> bindingPath, string token)
+            {
+                return bindingPath.IndexOf(token.AsSpan(), StringComparison.OrdinalIgnoreCase) >= 0;
+            }
+
+            private static bool ControlMatches(ReadOnlySpan<char> controlName, string expectedNormalized)
+            {
+                ReadOnlySpan<char> expected = expectedNormalized.AsSpan();
+                int controlIndex = 0;
+                int expectedIndex = 0;
+
+                while (controlIndex < controlName.Length)
+                {
+                    char current = controlName[controlIndex++];
+                    if (current == '-')
+                        continue;
+
+                    if (expectedIndex >= expected.Length || char.ToLowerInvariant(current) != expected[expectedIndex])
+                        return false;
+
+                    expectedIndex++;
+                }
+
+                return expectedIndex == expected.Length;
             }
         }
     }

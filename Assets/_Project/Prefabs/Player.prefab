@@ -813,6 +813,8 @@ MonoBehaviour:
   stats: {fileID: 11400000, guid: 0f3f8f9307ea99f45a4039ed79ee8515, type: 2}
   surfaceWorldY: 4900
   surfaceOxygenRefillRate: 15
+  internalTemperatureTimeConstantSeconds: 45
+  survivalDatabaseSource: {fileID: 4900000, guid: 6bbac9ab5e924bc78c53429d6a6a9e1c, type: 3}
 --- !u!114 &9175752944215778709
 MonoBehaviour:
   m_ObjectHideFlags: 0

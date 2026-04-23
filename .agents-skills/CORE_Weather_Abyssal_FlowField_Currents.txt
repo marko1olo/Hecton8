@@ -308,11 +308,11 @@ IF entity_Y in [-310..-300]: // Mid/Abyssal boundary
 VFX_FLUID_AESTHETICS update: max 10Hz (decoupled from flow SlowTick)
 
 PER emitter:
-    1. Sample FlowField at emitter worldPos (trilinear, ReadOnly, Main Thread allowed — single sample)
-    2. emitter.SetVector3("FlowVelocity", sampledFlowVector)
-    3. emitter.SetFloat("Turbulence",     sampledNode.turbulence)
-    4. Align emitter velocity shape to match flow direction
-    5. Scale particle lifetime inversely with velocity:
+    1. Bind `FlowFieldGraphicsBuffer` once during init
+    2. VFX Graph samples velocity by world position in Custom HLSL
+    3. Turbulence comes from the same GPU buffer lookup
+    4. Align emitter velocity shape inside VFX Graph, not via per-emitter CPU API calls
+    5. Scale particle lifetime inversely with sampled velocity:
        lifetime = lerp(4.0, 0.8, velocity / 20.0)   // fast current = short particles
 
 // Bioluminescence surge (bit5): spike particle emission rate * 3 for 2s, then lerp back

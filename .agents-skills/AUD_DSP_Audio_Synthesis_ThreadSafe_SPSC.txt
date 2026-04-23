@@ -1,15 +1,15 @@
-AUDIO_DATA_TRANSFER: Strictly via SPSC RingBuffer using Interlocked/Volatile barriers. No Jobs/NativeArray access from Audio Thread.
+CONTROL_DATA_TRANSFER: Double-buffered params via Interlocked/Volatile. Final sample output via DSPGraph `IAudioOutputJob`. Managed audio callbacks forbidden.
 
 ## RING_BUFFER_ARCHITECTURE
 
 ### [RULE] SPSC_LOCK_FREE_QUEUE
 - Backing: `float[]` managed array. Capacity: power-of-two (16384/32768/65536). Mask wrap: `index & (capacity - 1)`
 - `writeIdx`: producer-owned. `readIdx`: consumer-owned. Both `volatile int`.
-- Producer write sequence: write sample → `Interlocked.MemoryBarrier()` → `Volatile.Write(ref writeIdx, w + 1)`
+- Producer write sequence: write sample → `Volatile.Write(ref writeIdx, w + 1)`
 - Consumer read sequence: `Volatile.Read(ref writeIdx)` → compute available → read sample → `Volatile.Write(ref readIdx, r + 1)`
 - Available: `(writeIdx - readIdx) & mask`. Free slots: `capacity - available - 1` (never fill last slot — full/empty ambiguity guard)
 - [FORBID] `NativeArray` as ring buffer backing. Audio Thread must never touch `NativeArray`.
-- [FORBID] `Volatile.Read(ref writeIdx)` more than once per `OnAudioFilterRead()` invocation.
+- [FORBID] `Volatile.Read(ref writeIdx)` more than once per audio block.
 
 ### [RULE] UNDERRUN_PROTOCOL
 - Consumer: if `available == 0` → `Array.Clear(output)` → `Interlocked.Increment(ref underrunCount)` → return.
@@ -249,7 +249,7 @@ if trigger:
 ### THERMAL_VENT_RUMBLE
 - Brownian noise (integrate white noise): `brown[n] = brown[n-1] * 0.998 + white[n] * 0.002`
 - Bandpass 15-60Hz. Amplitude tied to proximity to heat source (game world query)
-- Spatialize via HRTF or stereo pan
+- Output dry mono/stereo stem only. Native DSP spatializer owns placement.
 
 ---
 
@@ -274,7 +274,7 @@ if pool full:
 
 ---
 
-## SPATIALIZATION_KERNEL
+## NATIVE_DSP_SPATIALIZATION
 
 ### DISTANCE_ATTENUATION_CURVE
 
@@ -282,11 +282,8 @@ if pool full:
 attenuation = min(1.0, refDistance / (refDistance + rolloff * distance))
 
 - `refDistance = 1.0m`, `rolloff = 1.0` (underwater sound travels farther: use 0.5 rolloff)
-
-### HRTF_PANNING_LIGHTWEIGHT
-- Use azimuth-only HRTF lookup table (8° resolution, 45 entries)
-- Interpolate between nearest 2 entries via `frac = (azimuth % 8.0) / 8.0`
-- Elevation: Simple gain scaling `elevation > 0 ? 0.9 : 1.0` (cheap approximation)
+- Feed attenuation, occlusion, and spread into Unity 6 DSPGraph spatializer node.
+- C# does not pan, convolve, or evaluate spatializer kernels.
 
 ### OCCLUSION_LOWPASS
 
@@ -294,7 +291,7 @@ raycast from listener to emitter
 if hit:
   occlusionFactor = 1 - (material.density * 0.3)  // Metal=1.0, water=0.1
   lpfCutoff = lerp(400Hz, 8000Hz, occlusionFactor)
-  output = biquadLP(spatializedSignal, lpfCutoff, Q=0.7)
+  output = biquadLP(drySignal, lpfCutoff, Q=0.7)
 
 ---
 
@@ -391,25 +388,25 @@ jobHandles.Complete()  // Ensure no jobs reading disposed memory
 - Synthesis: 16 FM operators max
 - Reverb: Schroeder (8 filters)
 - Sample Rate: 24kHz (downsample all sources)
-- Spatialization: Stereo pan only
+- Spatialization: Native stereo panner node only
 
 ### MEDIUM
 - Synthesis: 32 operators
 - Reverb: FDN (12 filters)
 - Sample Rate: 48kHz
-- Spatialization: Azimuth-only HRTF
+- Spatialization: Native DSPGraph spatializer
 
 ### HIGH
 - Synthesis: 64 operators
 - Reverb: Hybrid convolution (early reflections) + FDN tail
 - Sample Rate: 48kHz
-- Spatialization: Full HRTF (azimuth + elevation)
+- Spatialization: Native DSPGraph spatializer + engine binaural path
 
 ### ULTRA
 - Synthesis: 128 operators
 - Reverb: 2-second convolution (ocean-acoustic IR)
 - Sample Rate: 96kHz (professional DAW integration)
-- Spatialization: Binaural Ambisonics (3rd order)
+- Spatialization: Native binaural / Ambisonics node chain
 
 ---
 
@@ -417,10 +414,10 @@ jobHandles.Complete()  // Ensure no jobs reading disposed memory
 
 ### [RULE] THREADING_CONTRACT
 
-MAIN/PRODUCER THREAD ONLY:  NativeArray access | JobHandle.Schedule() | JobHandle.Complete() | EnqueueBulk()
-AUDIO THREAD ONLY:          DequeueOrSilence() | AcquireReadSnapshot() | per-sample DSP
-SHARED VIA:                 SpscAudioRingBuffer (float[]) | DoubleBufferedParams (volatile int + ParamSnapshot[2])
-FORBID ON AUDIO THREAD:     NativeArray | JobHandle | lock() | Mutex | Thread.Sleep | Thread.Yield | SpinWait
+MAIN THREAD ONLY:           Game event writes | ParamSnapshot publish | DSPGraph node bootstrap
+DSP OUTPUT JOB ONLY:        AcquireReadSnapshot() | per-sample DSP | write `AudioOutputData`
+SHARED VIA:                 DoubleBufferedParams (volatile int + ParamSnapshot[2])
+FORBID IN OUTPUT JOB:       `NativeArray` disposal | `JobHandle.Complete()` | lock() | Mutex | Thread.Sleep | Thread.Yield | SpinWait
 
 ### GAME_EVENT_TO_SYNTHESIS_FLOW
 
@@ -432,19 +429,12 @@ DoubleBufferedParams.GetWriteBuffer()
 DoubleBufferedParams.Publish()
   → Interlocked.Exchange(ref currentReadIdx, pendingIdx)  // atomic snapshot swap
   ↓
-HullStressSynthJob.Schedule() → JobHandle.Complete()     [MAIN THREAD ONLY]
-  → NativeArray scratch filled with 512 synthesized samples
-  ↓
-NativeArray.Copy → managedScratch (float[])
-  ↓
-SpscAudioRingBuffer.EnqueueBulk(managedScratch, 0, 512) [MAIN THREAD ONLY]
-  ↓
-OnAudioFilterRead() callback                             [AUDIO THREAD]
+DSPGraph output node pulls next block                    [NATIVE AUDIO PIPELINE]
+  → `HullStressSynthJob : IAudioOutputJob`
   → AcquireReadSnapshot(): Volatile.Read(ref currentReadIdx) → local ParamSnapshot copy [ONCE per block]
-  → DequeueOrSilence(data, 0, monoSamples)              [reads float[] ONLY. No NativeArray. No JobHandle.]
-  → if available == 0: Array.Clear(data) → Interlocked.Increment(ref underrunCount) → return
-  → per-sample DSP loop using local snapshot fields only
-  → return                                              [no wait. no cleanup. no job interaction.]
+  → generate dry synthesis directly into `AudioOutputData`
+  → spatializer node consumes output natively
+  → return                                              [no marshaling. no managed callback.]
 
 ### [DATA] PARAM_UPDATE_EVENT_TABLE
 
@@ -476,20 +466,20 @@ latency_max  = prefill_min / sampleRate = 21.3ms @ 48kHz
 - Producer: check `freeSlots >= blockSize` before synthesizing. Skip tick if insufficient. No stall.
 
 ### [SAFE] BARRIER_FAILURE_MODES
-- Missing `MemoryBarrier()` after producer write → partial sample visible to consumer → noise burst under multi-core load
+- Missing release-store on producer write index → consumer reads stale data boundary → noise burst under load
 - Missing `Volatile.Read` on `writeIdx` in consumer → stale index → false underrun → silence despite full buffer
 - `AcquireReadSnapshot()` per-sample → intermodulation artifacts at param-update frequency
-- `JobHandle.Complete()` on Audio Thread → 40-100ms dropout spikes correlated with frame spikes
+- `JobHandle.Complete()` in output job → 40-100ms dropout spikes correlated with frame spikes
 - `NativeArray` access on Audio Thread → AccessViolation / silent memory corruption
 
 ### [RULE] MERGE_GATE_CHECKLIST
 
-□ OnAudioFilterRead: zero NativeArray | zero JobHandle | zero lock/mutex/sleep/spin
+□ DSPGraph output job: zero lock/mutex/sleep/spin
 □ writeIdx advanced ONLY via Volatile.Write on producer thread
 □ readIdx advanced ONLY via Volatile.Write on consumer thread
-□ Interlocked.MemoryBarrier() present AFTER sample write, BEFORE index advance (producer)
-□ Volatile.Read(ref writeIdx): max once per OnAudioFilterRead()
-□ AcquireReadSnapshot(): max once per OnAudioFilterRead()
+□ No explicit `Interlocked.MemoryBarrier()` paired with `Volatile.Write`
+□ Volatile.Read(ref writeIdx): max once per audio block
+□ AcquireReadSnapshot(): max once per output block
 □ All NativeArray disposed AFTER producerThread.Join()
 □ managedScratch (float[]) allocated at init. Never per-frame.
 □ underrunCount == 0 over 60s runtime (dev overlay monitored)
@@ -510,8 +500,8 @@ latency_max  = prefill_min / sampleRate = 21.3ms @ 48kHz
 
 ### RING_BUFFER_RACE_CONDITION
 - Symptom: Intermittent noise bursts or silence
-- Root Cause: Write/read index updated without memory barrier
-- Fix: `Interlocked.MemoryBarrier()` after index increment
+- Root Cause: Write/read index updated without release/acquire ordering
+- Fix: `Volatile.Write` on producer, `Volatile.Read` on consumer
 
 ### REVERB_EXPLOSION
 - Symptom: Output suddenly maxes at ±1.0 and stays

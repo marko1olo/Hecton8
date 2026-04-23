@@ -176,8 +176,8 @@ ORIGIN_SHIFT_EVENT(shift_vector float3):
       seam_map[K] -= shift_vector.y   // Burst parallel job
 
   // Skirt vertex buffers
-  SkirtMeshBuffer.ApplyDelta(-shift_vector):  // GPU-side, compute shader
-    dispatch: CS_OffsetVertices(vertex_buffer, -shift_vector)
+  // DO NOTHING. Vertex data remains immutable in VRAM.
+  // Existing `_GlobalFloatingOffset` CBUFFER shifts visuals in shader space.
 
   // Dither VFX emitters
   VFXEmitterRegistry.ShiftAll(-shift_vector)
@@ -221,7 +221,7 @@ LOD_SYNC_RULE:
 ### §6.2 LOD Transition Stagger — Anti-Pop
 
 STAGGER(chunk_id):
-  delay_frames = hash(chunk_id) % 3     // 0,1,2 frame offset
+  delay_frames = hash(chunk_id) & 3     // 0..3 frame offset
   // Prevents all seam chunks from rebuilding same frame
   // hash: chunk_id.x * 2654435761u ^ chunk_id.y * 2246822519u (Knuth multiplicative)
   schedule SkirtSnap at: current_frame + delay_frames

@@ -16,10 +16,10 @@ namespace Hecton8.Visor
         private sealed class FeatureSettings
         {
             [Tooltip("Hidden multi-pass shader used for the shaft raymarch, bilateral blur, and composite.")]
-            public Shader shader;
+            public Shader shader = null;
 
             [Tooltip("Optional blue-noise texture used to jitter raymarch steps. Leave null to fall back to procedural noise.")]
-            public Texture2D blueNoiseTexture;
+            public Texture2D blueNoiseTexture = null;
 
             [Tooltip("Where the volumetric shaft pass is injected into URP.")]
             public RenderPassEvent injectionPoint = RenderPassEvent.BeforeRenderingPostProcessing;

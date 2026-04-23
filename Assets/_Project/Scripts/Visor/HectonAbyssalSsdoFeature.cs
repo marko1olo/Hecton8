@@ -25,10 +25,10 @@ namespace Hecton8.Visor
         private sealed class FeatureSettings
         {
             [Tooltip("Hidden fullscreen shader used for occlusion, bilateral blur, and composite.")]
-            public Shader shader;
+            public Shader shader = null;
 
             [Tooltip("Optional blue-noise texture used to rotate the 4-tap kernel.")]
-            public Texture2D blueNoiseTexture;
+            public Texture2D blueNoiseTexture = null;
 
             [Tooltip("Where the SSDO composite is injected. Before transparents keeps water and visor overlays untouched.")]
             public RenderPassEvent injectionPoint = RenderPassEvent.BeforeRenderingTransparents;

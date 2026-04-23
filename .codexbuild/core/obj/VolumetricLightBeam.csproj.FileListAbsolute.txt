@@ -1,0 +1,10 @@
+c:\hades\Hecton8\Temp\bin\Debug\VolumetricLightBeam.deps.json
+c:\hades\Hecton8\Temp\bin\Debug\VolumetricLightBeam.dll
+c:\hades\Hecton8\Temp\bin\Debug\VolumetricLightBeam.pdb
+c:\hades\Hecton8\.codexbuild\core\obj\VolumetricLightBeam.csproj.AssemblyReference.cache
+c:\hades\Hecton8\.codexbuild\core\obj\VolumetricLightBeam.GeneratedMSBuildEditorConfig.editorconfig
+c:\hades\Hecton8\.codexbuild\core\obj\VolumetricLightBeam.csproj.CoreCompileInputs.cache
+c:\hades\Hecton8\.codexbuild\core\obj\VolumetricLightBeam.sourcelink.json
+c:\hades\Hecton8\.codexbuild\core\obj\Volumetr.01F3870B.Up2Date
+c:\hades\Hecton8\.codexbuild\core\obj\VolumetricLightBeam.dll
+c:\hades\Hecton8\.codexbuild\core\obj\VolumetricLightBeam.pdb

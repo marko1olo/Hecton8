@@ -51,7 +51,7 @@ struct Particle {
 // bit6  → clusterAnchor (LPPV probe assignment leader)
 // bit7  → reserved
 
-Dispatch group stride: 64 threads/group. AppendStructuredBuffer for emission; ConsumeStructuredBuffer for recycling dead slots.
+Dispatch group stride: 64 threads/group. Dead slots are managed via explicit `RWStructuredBuffer<uint>` plus `RWByteAddressBuffer` counters. No Append/Consume buffers.
 
 ---
 
@@ -60,21 +60,23 @@ Dispatch group stride: 64 threads/group. AppendStructuredBuffer for emission; Co
 [FRAME START]
 
     ├► [DISPATCH: Emission.compute]
-           Emit new particles into AppendBuffer
+           Acquire particle slot from explicit dead-list counter
+           Write new particle state into pool
            Read FlowFieldNative → cache local flow sample
 
     ├► [DISPATCH: Simulate.compute]       ← MAIN KERNEL
            Per-particle: integrate, drag, buoyancy, wobble, clamp
            Write PrevPos before integration (Verlet)
 
-    ├► [DISPATCH: Cull.compute]
-           Frustum cull + distance cull (>15m → clear draw flag)
+    ├► [DISPATCH: VisibleMask.compute]
+           Frustum cull + distance cull (>15m → clear visible bit)
            Near-camera cull (<0.4m → skip small debris only)
-           Write IndirectArgs buffer for DrawMeshInstancedIndirect
+           Append visible particle indices into `VisibleIndices`
 
-    ├► [INDIRECT DRAW: GPU-driven render]
+    ├► [RENDERGRAPH DRAW: GPU-resident render]
            Particle mesh = camera-facing quad (2 tris)
-           No CPU draw calls
+           Renderer consumes `VisibleIndices` directly
+           No CPU draw calls. No IndirectArgs bubble.
 
     ► [LPPV PROBE UPDATE]
             Per-cluster-anchor particle: sample LPPV, write SH to CB
@@ -394,7 +396,9 @@ if hash2(uint2(ThreadID, FrameCount)) < EmitProb:
     p.Size = lerp(0.005, 0.03, hash1(ThreadID))
     p.Flags = (1u << 0)   // isBubble
     p.Pad  = hash2(uint2(ThreadID, 7919)) * TWO_PI   // Phase seeds
-    AppendBuffer.Append(p)
+    uint slotIndex;
+    CounterBuffer.InterlockedAdd(0, -1, slotIndex);
+    ParticleBuffer[DeadListBuffer[slotIndex - 1]] = p
 
 // Snow: continuous injection at ceiling plane
 // Debris: event-driven (physics event writes to EmitRequest CB)
@@ -413,7 +417,7 @@ Particle Shader Inputs:
 
 StructuredBuffer<Particle>  _ParticleBuffer
 StructuredBuffer<float4x4>  _ClusterSH     // SH coefficients per cluster
-Buffer<uint>                _IndirectArgs
+StructuredBuffer<uint>      _VisibleIndices
 
 Billboard Construction (vertex shader):
 
@@ -445,9 +449,10 @@ ParticleBuffer_A   (StructuredBuffer, full pool)   ← simulation reads
 ParticleBuffer_B   (RWStructuredBuffer, ping-pong) ← simulation writes
 // Swap references each frame via CB constant (no copy)
 
-DeadListBuffer     (AppendConsumeBuffer, uint)     ← recycled slot indices
+DeadListBuffer     (RWStructuredBuffer<uint>)      ← recycled slot indices
+CounterBuffer      (RWByteAddressBuffer)           ← offset 0: dead count, offset 4: visible count
 EmitRequestBuffer  (StructuredBuffer<EmitRequest>) ← debris event queue, max 64/frame
-IndirectArgsBuffer (Buffer<uint4>)                 ← written by Cull, read by Draw
+VisibleIndexBuffer (StructuredBuffer<uint>)        ← written by visibility pass, read by RenderGraph
 ClusterSHBuffer    (StructuredBuffer<float4x4>)    ← 512 clusters × SH L1 = 32KB
 
 Initialization: Fill DeadList with [0..MaxParticles-1] at startup. Emission consumes indices; death appends.
@@ -466,7 +471,7 @@ Overflow Guard:
 
 // Emission.compute: before Append, check counter
 uint AliveCount;
-DeadListBuffer.GetDimensions(AliveCount)  // Use counter
+AliveCount = CounterBuffer.Load(0)
 if AliveCount == 0: discard emit   // Pool exhausted, silent skip
 
 NaN Propagation Guard:
@@ -531,7 +536,7 @@ SNOW_TERMINAL_MAX      = 0.035f
 [ ] NaN guards active in simulate kernel
 [ ] Velocity clamp verified: no particle exceeds type max
 [ ] Soft particle fade active on all types
-[ ] IndirectArgs reset to 0 before Cull.compute each frame
+[ ] Visible index counter reset to 0 before visibility pass each frame
 [ ] Tier flags propagate to compute CB before first dispatch
 [ ] Emergency LOD circuit breaker timestamp query active
 [ ] Boyle size clamp enforced: [0.005 .. 0.12]m

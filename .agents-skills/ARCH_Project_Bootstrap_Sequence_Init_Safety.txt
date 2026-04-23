@@ -26,7 +26,7 @@ PRIORITY_QUEUE (ordered, blocking):
   [P4] ShaderWarmupExecutor     → WarmUp() during splash window
   [P5] OceanBridge              → Crest/custom FFT ocean link
   [P6] MapMagicBridge           → Terrain chunk pipeline init
-  [P7] AudioMixer               → Spatializer init, HRTF load
+  [P7] AudioGraphBootstrap      → DSPGraph + native spatializer init
   [P8] MainMenuLoader           → Async scene load trigger
 
 RULE: P(n+1) CANNOT start if P(n).Status != COMPLETE
@@ -42,8 +42,8 @@ INTERFACE IBootstrapStep:
   bool    IsCritical        → true = failure halts boot
   float   TimeoutSeconds    → per-step watchdog limit
 
-  Execute() → IEnumerator   → coroutine-based async execution
-  Validate() → bool         → post-execute integrity check
+  ExecuteAsync() → Awaitable   → Unity 6 allocation-free async execution
+  Validate()    → bool         → post-execute integrity check
 
 REGISTRATION FLOW:
   BootstrapOrchestrator.Register(IBootstrapStep step)
@@ -53,7 +53,7 @@ REGISTRATION FLOW:
 EXECUTION LOOP (pseudo):
   FOREACH step IN sorted_queue:
     START watchdog_timer(step.TimeoutSeconds)
-    YIELD step.Execute()
+    await step.ExecuteAsync()
     CANCEL watchdog
     IF NOT step.Validate():
       IF step.IsCritical: INJECT_FATAL(0xB007_0002, step.StepID)
@@ -132,11 +132,13 @@ PRESET MATRIX (GPU_TIER × CPU_TIER → ConfigBundle):
   [ULTRA × CPU_HEAVY]: → DrawDistance=800m, FFT=1024, SolverQuality(12), RT_ON
 
 APPLY:
-  QualitySettings.shadowDistance       = preset.ShadowDistance
+  urpAsset = (UniversalRenderPipelineAsset)GraphicsSettings.currentRenderPipeline
+  urpAsset.shadowDistance              = preset.ShadowDistance
   QualitySettings.maximumLODLevel      = preset.MaxLODLevel
   Physics.defaultSolverIterations      = preset.PhysicsSolverIters
   Physics.defaultSolverVelocityIters   = preset.PhysicsSolverIters / 2
   QualitySettings.asyncUploadBufferSize = preset.AsyncUploadBufferMB
+  // Production path: swap pre-authored URP assets via QualitySettings.SetQualityLevel.
 
 ---
 
@@ -147,7 +149,7 @@ TIMING: Execute during SPLASH SCREEN (P4 window, min 2.5s guaranteed display)
 WARMUP SEQUENCE:
   1. Load ShaderVariantCollection asset (addressable, preloaded):
        handle = Addressables.LoadAssetAsync<ShaderVariantCollection>("SVC_Core")
-       YIELD UNTIL handle.IsDone
+       await handle.Task.AsAwaitable()
 
   2. Validate integrity:
        IF handle.Result == null: INJECT_FATAL(0xB007_0010, "SVC_NULL")
@@ -159,7 +161,9 @@ WARMUP SEQUENCE:
        svc.WarmUp()       → triggers GPU PSO compilation
 
   4. Post-warmup stall guard:
-       YIELD WaitForEndOfFrame × 3   → flush GPU command queue
+       await Awaitable.EndOfFrameAsync()
+       await Awaitable.EndOfFrameAsync()
+       await Awaitable.EndOfFrameAsync()
 
   5. Dispose handle reference; retain svc ref for runtime lookup
 
@@ -167,7 +171,7 @@ VRAM GUARD (MX350  1800MB):
   IF TIER == TIER_MX350:
     BEFORE WarmUp(): force Texture2D budget to 512MB
     AFTER  WarmUp(): restore TextureStreamingBudget = 768MB
-    CALL   Resources.UnloadUnusedAssets()
+    CALL   BootstrapEvictQueue.DrainSynchronously()
     GC.Collect(0, GCCollectionMode.Optimized)
 
 ---
@@ -218,8 +222,7 @@ TRANSITION_STATE_MACHINE:
 
 STEP SEQUENCE (blocking per step):
   1. FADING:
-       ScreenFader.FadeOut(duration: 0.35s, curve: EaseIn)
-       YIELD fade complete
+       await ScreenFader.FadeOutAsync(duration: 0.35s, curve: EaseIn)
 
   2. LOCKED:
        InputManager.LockAll()
@@ -227,27 +230,27 @@ STEP SEQUENCE (blocking per step):
 
   3. LOADING:
        op = SceneManager.LoadSceneAsync(target, LoadSceneMode.Single)
-       op.allowSceneActivation = false
-       YIELD UNTIL op.progress >= 0.9f
-       op.allowSceneActivation = true
-       YIELD UNTIL op.isDone
+       await op
+       // For local streamed content: use `UnityEngine.Object.InstantiateAsync(prefab)`.
+       // Let Unity timeslice Awake/OnEnable work instead of manual load gating.
 
   4. UNLOADING:
-       Resources.UnloadUnusedAssets()          → non-blocking yield
+       StreamLeaseRegistry.ReleaseSceneLeases(target)
+       EvictQueue.DrainSynchronously()
        GC.Collect(1, GCCollectionMode.Forced)
-       YIELD WaitForEndOfFrame × 2
+       await Awaitable.EndOfFrameAsync()
+       await Awaitable.EndOfFrameAsync()
 
   5. FINALIZING:
        InputManager.UnlockAll()
        EventSystem.enabled = true
-       ScreenFader.FadeIn(duration: 0.25s, curve: EaseOut)
-       YIELD fade complete
+       await ScreenFader.FadeInAsync(duration: 0.25s, curve: EaseOut)
        state = IDLE
 
 VRAM FLUSH (MX350 critical path, between steps 3→4):
   IF TIER == TIER_MX350 OR TIER_LOW:
     TextureStreamingManager.SetBudget(256MB)   → force eviction
-    YIELD WaitForEndOfFrame
+    await Awaitable.EndOfFrameAsync()
     TextureStreamingManager.SetBudget(preset.TextureStreamingBudget)
 
 ---
@@ -278,7 +281,7 @@ HALT SEQUENCE:
        Debug.LogError → write to Application.persistentDataPath/crash_{timestamp}.log
        Include: full step execution timeline, hardware profile, exception stack
   5. HALT:
-       WHILE true: YIELD WaitForEndOfFrame   → preserve UI, block all game logic
+       WHILE true: await Awaitable.EndOfFrameAsync()   → preserve UI, block all game logic
        ON_QUIT_BUTTON: Application.Quit(-1)
 
 RECOVERY_OPTION (non-critical subsystems only):

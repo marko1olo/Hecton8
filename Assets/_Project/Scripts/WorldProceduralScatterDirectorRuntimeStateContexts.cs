@@ -168,6 +168,65 @@ namespace Hecton8.World
             public float DebugSpawnBudgetScale;
             public HectonBiomeMatrixProfile DebugBiomeProfile;
             public HectonBiomeFamilyProfile DebugBiomeFamily;
+
+            public ScatterSamplingCompletionContext(bool initializeDefaults)
+            {
+                Center = Vector3.zero;
+                CellSize = 0f;
+                Now = 0f;
+                TotalCells = 0;
+                ClusterBudget = 0;
+                StructureStride = 0;
+                StructureBudget = 0;
+                SpawnStride = 0;
+                SpawnBudget = 0;
+                GroundBudget = 0;
+                RebuildStartTimestamp = 0L;
+                SamplingInputsEndTimestamp = 0L;
+                EvaluatedCells = 0;
+                TopCandidate = default;
+                HasTopCandidate = false;
+                LayerTopCandidates = null;
+                LayerTopValid = null;
+                LayerPlacementCounts = null;
+                ClusterAccentCounts = null;
+                StructureAccentCounts = null;
+                LayerFamilyCounts = null;
+                LayerBiomeCounts = null;
+                PlacementRegistrationContext = default;
+                RescueTrackingContext = default;
+                SampledMatrixProfileCounts = null;
+                SampledMatrixBiomeCounts = null;
+                SampledBiomeCounts = null;
+                SampledPatternCounts = null;
+                SampledZoneCounts = null;
+                PassiveSpawnCount = 0;
+                PredatorSpawnCount = 0;
+                MapMagicSamples = 0;
+                RaycastSamples = 0;
+                FallbackSamples = 0;
+                MatchedScatterRules = 0;
+                HeatPassedRules = 0;
+                GatePassedRules = 0;
+                ResidencyPassedCandidates = 0;
+                PostBuildGateRejectedCandidates = 0;
+                QueuedCandidates = 0;
+                RejectedResidencyFamily = null;
+                RejectedResidencyDistance = 0f;
+                RejectedResidencyRadius = 0f;
+                MaxCandidatesBeforePrunePerCell = 0;
+                MaxCandidatesAfterPrunePerCell = 0;
+                CollectDetailedDiagnostics = false;
+                DebugZone = null;
+                DebugResolvedZoneKind = default;
+                DebugPattern = default;
+                DebugGroundBudgetScale = 0f;
+                DebugClusterBudgetScale = 0f;
+                DebugStructureBudgetScale = 0f;
+                DebugSpawnBudgetScale = 0f;
+                DebugBiomeProfile = null;
+                DebugBiomeFamily = null;
+            }
         }
 
         private struct ScatterCellPlacementAcceptanceContext

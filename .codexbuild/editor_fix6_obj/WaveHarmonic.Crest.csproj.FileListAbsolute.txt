@@ -1,0 +1,10 @@
+C:\hades\Hecton8\Temp\bin\Debug\WaveHarmonic.Crest.deps.json
+C:\hades\Hecton8\Temp\bin\Debug\WaveHarmonic.Crest.dll
+C:\hades\Hecton8\Temp\bin\Debug\WaveHarmonic.Crest.pdb
+C:\hades\Hecton8\.codexbuild\editor_fix6_obj\WaveHarmonic.Crest.csproj.AssemblyReference.cache
+C:\hades\Hecton8\.codexbuild\editor_fix6_obj\WaveHarmonic.Crest.GeneratedMSBuildEditorConfig.editorconfig
+C:\hades\Hecton8\.codexbuild\editor_fix6_obj\WaveHarmonic.Crest.csproj.CoreCompileInputs.cache
+C:\hades\Hecton8\.codexbuild\editor_fix6_obj\WaveHarmonic.Crest.sourcelink.json
+C:\hades\Hecton8\.codexbuild\editor_fix6_obj\WaveHarm.FA4C58BD.Up2Date
+C:\hades\Hecton8\.codexbuild\editor_fix6_obj\WaveHarmonic.Crest.dll
+C:\hades\Hecton8\.codexbuild\editor_fix6_obj\WaveHarmonic.Crest.pdb

@@ -16,6 +16,7 @@
 // ============================================================================
 
 using Hecton8.Core;
+using Hecton8.Inventory;
 using Hecton8.Interaction;
 using Hecton8.Physics;
 using Hecton.Localization;
@@ -29,6 +30,9 @@ namespace Hecton8.Items
     [DisallowMultipleComponent]
     public class HectonItem : MonoBehaviour, IInteractable, ITickable
     {
+        private const float OverflowScatterImpulse = 2.5f;
+        private const float OverflowScatterLiftImpulse = 1.2f;
+        private const float OverflowScatterTorqueImpulse = 0.35f;
         // ─────────────────────── Data ────────────────────────────
         [Header("Item Configuration")]
         [SerializeField] private ItemData itemData;
@@ -252,18 +256,32 @@ namespace Hecton8.Items
 
         public void Interact(Transform interactor)
         {
-            if (itemData == null) return;
+            if (itemData == null || quantity <= 0)
+                return;
 
-            InteractionEvents.RaiseItemCollected(itemData, quantity, interactor);
+            PlayerInventory playerInventory = PlayerInventory.Instance;
+            if (playerInventory == null)
+            {
+                DropOverflow(interactor);
+                return;
+            }
 
-            if (ObjectPoolManager.Instance != null)
+            PlayerInventory.ScavengeAttemptResult attempt = playerInventory.ScavengeAttempt(itemData, quantity, interactor);
+            if (!attempt.AnyAdded)
             {
-                ObjectPoolManager.Instance.Despawn(gameObject);
+                DropOverflow(interactor);
+                return;
             }
-            else
+
+            quantity = attempt.RejectedQuantity;
+            if (quantity > 0)
             {
-                gameObject.SetActive(false);
+                RebuildInteractTextCache();
+                DropOverflow(interactor);
+                return;
             }
+
+            ConsumeWorldProxy();
         }
 
         public string GetInteractText()
@@ -292,6 +310,69 @@ namespace Hecton8.Items
         private void HandleLanguageChanged(GameLanguage language)
         {
             RebuildInteractTextCache();
+        }
+
+        private void ConsumeWorldProxy()
+        {
+            if (_highlighter != null)
+                _highlighter.SetHighlight(false);
+
+            if (ObjectPoolManager.Instance != null && TryGetComponent(out ObjectPoolManager.PoolItemMarker _))
+            {
+                ObjectPoolManager.Instance.Despawn(gameObject);
+                return;
+            }
+
+            gameObject.SetActive(false);
+        }
+
+        private void DropOverflow(Transform interactor)
+        {
+            if (_rb == null || _rb.isKinematic)
+                return;
+
+            Vector3 scatterDirection = ResolveScatterDirection(interactor);
+            Vector3 impulse = scatterDirection * OverflowScatterImpulse;
+            impulse.y += OverflowScatterLiftImpulse;
+
+            if (!IsFiniteVector(impulse))
+                return;
+
+            _rb.WakeUp();
+            PhysicsForceRouter.QueueForce(_rb, impulse, ForceMode.Impulse);
+
+            Vector3 torqueAxis = Vector3.Cross(Vector3.up, scatterDirection);
+            if (torqueAxis.sqrMagnitude <= 0.0001f)
+                torqueAxis = Vector3.right;
+
+            Vector3 torque = torqueAxis.normalized * OverflowScatterTorqueImpulse;
+            if (IsFiniteVector(torque))
+                PhysicsForceRouter.QueueTorque(_rb, torque, ForceMode.Impulse);
+        }
+
+        private Vector3 ResolveScatterDirection(Transform interactor)
+        {
+            if (interactor != null)
+            {
+                Vector3 scatterDirection = transform.position - interactor.position;
+                scatterDirection.y = 0f;
+                if (scatterDirection.sqrMagnitude > 0.0001f)
+                    return scatterDirection.normalized;
+
+                Vector3 fallbackForward = -interactor.forward;
+                fallbackForward.y = 0f;
+                if (fallbackForward.sqrMagnitude > 0.0001f)
+                    return fallbackForward.normalized;
+            }
+
+            return Vector3.forward;
+        }
+
+        private static bool IsFiniteVector(Vector3 value)
+        {
+            return !float.IsNaN(value.x) && !float.IsInfinity(value.x) &&
+                   !float.IsNaN(value.y) && !float.IsInfinity(value.y) &&
+                   !float.IsNaN(value.z) && !float.IsInfinity(value.z);
         }
 
         // ─────────────────────── Editor ──────────────────────────

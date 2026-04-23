@@ -7,7 +7,7 @@
 
 Darkness = Default State. All light is additive exception. Never subtractive.
 Voxel authority over light. Geometry wins. No light penetrates solid voxel without explicit permission flag.
-CPU drives logic. GPU draws result. All culling, sorting, budget decisions: CPU-side. GPU receives pre-filtered draw list only.
+CPU enforces budgets and proxy-light eligibility. URP Forward+ owns cluster light lists on GPU. No custom tile culler.
 
 ---
 
@@ -339,12 +339,11 @@ MAX_PIXEL_LIGHTS_PER_SURFACE = 2
 // Per surface fragment: sort contributing lights by (intensity * visibility)
 // Take top-2. Accumulate. Discard rest.
 
-// Implementation: light list per tile (Forward+ lite)
-// Tile size: 16×16 pixels
-// Per tile: store sorted light indices (max 8 candidates pre-sorted → draw top 2)
-// Compute pass: one 16×16 dispatch per frame
-//   → culls by tile AABB vs light sphere
-//   → writes light index list to RWBuffer
+// Implementation:
+//   - enable URP Rendering Path = Forward+
+//   - AbyssalLightManager limits which Light/ProxyLight pairs are active this frame
+//   - URP builds clustered light lists natively
+//   - no custom RWBuffer tile light list exists
 
 // FORBID: more than 2 shadow-casting lights influencing same tile simultaneously
 // Enforce: IF shadow lights in tile > 2 → demote lowest-priority to no-shadow
@@ -392,19 +391,19 @@ FOREACH surface S facing cave interior:
    → Scale if over budget
 
 7. UPLOAD
-   → Write final ProxyLight[] to ComputeBuffer (GPU)
+   → Write final ProxyLight[] to GraphicsBuffer (GPU)
    → Write shadow update list to command buffer
 
-[GPU — Compute + Render]
+[GPU — URP Forward+ + Render]
 
-8. TILE LIGHT LIST BUILD (§6.3)
-   → 16×16 tile dispatch
+8. CLUSTER LIGHT LIST BUILD
+   → handled by URP Forward+ internally
 
 9. SHADOW ATLAS UPDATE
    → Only flagged lights render shadow pass
 
 10. GBUFFER / FORWARD LIGHT ACCUMULATION
-    → Per tile: sample top-2 lights
+    → URP Forward+ samples clustered lights under manager-enforced caps
     → Apply attenuation (§2), occlusion (§3), fake-GI (§5)
 
 ### 7.2 MX350 Memory Budget Allocation
@@ -412,12 +411,11 @@ FOREACH surface S facing cave interior:
 Shadow Atlas (2048×2048 R16F):     8 MB
 Voxel Density 3D Texture:          4 MB  (128×64×128 R8)
 Biome LUT Pack:                    0.5 MB
-Light Pool ComputeBuffer:          0.06 MB (128 × ProxyLight ~480 bytes)
-Tile Light List RWBuffer:          0.25 MB (1920×1080/256 tiles × 8 indices × 4B)
+Light Pool GraphicsBuffer:         0.06 MB (128 × ProxyLight ~480 bytes)
 Matcap Texture:                    0.25 MB
 
-TOTAL LIGHTING SYSTEM VRAM:       ~ 1800MB
-VRAM REMAINING (of  1800MB):          ~2035 MB for framebuffer, meshes, main textures
+TOTAL LIGHTING SYSTEM VRAM:       ~ 12.81 MB
+VRAM REMAINING (of 1800MB):       ~1787 MB for framebuffer, meshes, main textures
 
 // Framebuffer budget reference:
 // 1080p GBuffer (4 RTs × RGBA16F):  ~33 MB

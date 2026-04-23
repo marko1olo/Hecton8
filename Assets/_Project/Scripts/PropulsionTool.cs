@@ -1,5 +1,6 @@
 using UnityEngine;
 using Hecton.Localization;
+using Hecton8.Physics;
 
 namespace Hecton8.Gameplay
 {
@@ -185,7 +186,7 @@ namespace Hecton8.Gameplay
             if (direction.sqrMagnitude < 0.0001f)
                 return;
 
-            body.AddForce(direction.normalized * force, ForceMode.Force);
+            PhysicsForceRouter.QueueForce(body, direction.normalized * force, ForceMode.Force);
             if (Time.time >= _nextFeedbackAt)
             {
                 string title = pushAway
@@ -305,7 +306,10 @@ namespace Hecton8.Gameplay
 
             Vector3 desiredVelocity = toHold * holdSpringForce * Mathf.Max(0.25f, GetEfficiency());
             Vector3 correctiveVelocity = desiredVelocity - _lockedBody.linearVelocity;
-            _lockedBody.AddForce(correctiveVelocity * holdDamping * deltaTime, ForceMode.VelocityChange);
+            PhysicsForceRouter.QueueForce(
+                _lockedBody,
+                correctiveVelocity * holdDamping * deltaTime,
+                ForceMode.VelocityChange);
 
             if (Time.time >= _nextFeedbackAt)
             {
@@ -330,7 +334,10 @@ namespace Hecton8.Gameplay
             string lockedNameUpper = _lockedNameUpper;
             if (string.IsNullOrWhiteSpace(lockedNameUpper))
                 lockedNameUpper = string.IsNullOrWhiteSpace(lockedName) ? ResolveLocalized(LocalizationKeys.PROPULSION_CARGO, "CARGO") : lockedName.ToUpperInvariant();
-            body.AddForce(_cachedTransform.forward * (launchImpulse * Mathf.Max(0.5f, GetEfficiency())), ForceMode.Impulse);
+            PhysicsForceRouter.QueueForce(
+                body,
+                _cachedTransform.forward * (launchImpulse * Mathf.Max(0.5f, GetEfficiency())),
+                ForceMode.Impulse);
             ForceReleaseWithoutFeedback();
 
             PublishAssessment(new PropulsionAssessment(

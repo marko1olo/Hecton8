@@ -1,37 +1,7 @@
 // ============================================================================
 // HECTON-8 — PowerGridManager.cs
-// Глобальный менеджер всех энергетических сетей.
-//
-// ОТВЕТСТВЕННОСТИ:
-//   1. Реестр всех PowerGrid в игре.
-//   2. Периодический пересчёт баланса (ISlowTickable).
-//   3. Фабрика: создание, уничтожение, объединение, разделение сетей.
-//   4. BFS для проверки связности при удалении модуля.
-//
-// АРХИТЕКТУРА:
-//   • Singleton MonoBehaviour (DontDestroyOnLoad).
-//   • ISlowTickable — UpdateBalance раз в ~0.5-1 секунду.
-//   • Статические методы для операций над сетями.
-//   • Вызывается из PowerNode при спавне/деспавне модулей.
-//
-// СЕТЕВАЯ ТОПОЛОГИЯ:
-//   • Каждый PowerNode принадлежит ровно одной PowerGrid.
-//   • При размещении соединительного модуля:
-//     - Если соседи из разных сетей → MergeGrids (объединение).
-//     - Если сосед в одной сети → AddNode (присоединение).
-//     - Если нет соседей → CreateGrid (новая сеть).
-//   • При удалении модуля:
-//     - RemoveNode из сети.
-//     - CheckAndSplitGrid: BFS проверяет связность.
-//     - Если сеть распалась → выделение в новые сети.
-//
-// ZERO GC:
-//   • List<PowerGrid> — pre-allocated.
-//   • BFS: кэшированные static Queue + HashSet.
-//   • Swap-remove для удаления пустых сетей.
-//   • SlowTick: for-цикл, no LINQ, no foreach (для List).
-//
-// ПОТОКОБЕЗОПАСНОСТЬ: нет. Вызывать только из Main Thread.
+// Global owner for all power grids. Uses LogisticsNetworkGraph-backed topology
+// snapshots for connectivity checks and brownout-aware distribution.
 // ============================================================================
 
 using System.Collections.Generic;
@@ -44,18 +14,14 @@ namespace Hecton8.Power
     [DefaultExecutionOrder(-5500)]
     public sealed class PowerGridManager : MonoBehaviour, ISlowTickable
     {
-        // ══════════════════════════════════════════════════════════
-        //  SINGLETON
-        // ══════════════════════════════════════════════════════════
-
         private static PowerGridManager _instance;
+        private static List<PowerGrid> _allGrids;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             _instance = null;
-            if (_allGrids != null)
-                _allGrids.Clear();
+            DisposeAllGrids();
         }
 
         public static PowerGridManager Instance
@@ -72,64 +38,21 @@ namespace Hecton8.Power
 
         internal static List<PowerGrid> RuntimeGrids => _allGrids;
 
-        // ══════════════════════════════════════════════════════════
-        //  INSPECTOR
-        // ══════════════════════════════════════════════════════════
-
-        [Header("── Settings ──────────────────────────────────")]
-        [Tooltip("Начальная ёмкость списка сетей.")]
+        [Header("â”€â”€ Settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Tooltip("ÐÐ°Ñ‡Ð°Ð»ÑŒÐ½Ð°Ñ Ñ‘Ð¼ÐºÐ¾ÑÑ‚ÑŒ ÑÐ¿Ð¸ÑÐºÐ° ÑÐµÑ‚ÐµÐ¹.")]
         [SerializeField] private int initialGridCapacity = 16;
 
-        [Header("── Diagnostics ───────────────────────────────")]
-        [SerializeField] private int   _debugGridCount;
-        [SerializeField] private int   _debugTotalNodes;
+        [Header("â”€â”€ Diagnostics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [SerializeField] private int _debugGridCount;
+        [SerializeField] private int _debugTotalNodes;
         [SerializeField] private float _debugTotalGeneration;
         [SerializeField] private float _debugTotalConsumption;
-        [SerializeField] private int   _debugDeficitGrids;
+        [SerializeField] private int _debugDeficitGrids;
+
         private bool _tickRegistered;
-
-        // ══════════════════════════════════════════════════════════
-        //  STORAGE
-        // ══════════════════════════════════════════════════════════
-
-        /// <summary>
-        /// Все энергетические сети в игре.
-        /// Pre-allocated List. Swap-remove для удаления.
-        /// </summary>
-        private static List<PowerGrid> _allGrids;
-
-        // ══════════════════════════════════════════════════════════
-        //  BFS CACHE — static, переиспользуется
-        // ══════════════════════════════════════════════════════════
-
-        /// <summary>
-        /// Кэшированная очередь для BFS проверки связности.
-        /// Static — один экземпляр на весь проект.
-        /// Clear() перед каждым использованием.
-        /// </summary>
-        private static readonly Queue<PowerNode> _bfsQueue =
-            new Queue<PowerNode>(64);
-
-        /// <summary>
-        /// Кэшированный HashSet посещённых узлов для BFS.
-        /// </summary>
-        private static readonly HashSet<PowerNode> _bfsVisited =
-            new HashSet<PowerNode>(64);
-
-        /// <summary>
-        /// Кэшированный список узлов для переноса при разделении сети.
-        /// Предотвращает аллокацию List при каждом split.
-        /// </summary>
-        private static readonly List<PowerNode> _splitBuffer =
-            new List<PowerNode>(32);
-
-        // ══════════════════════════════════════════════════════════
-        //  LIFECYCLE
-        // ══════════════════════════════════════════════════════════
 
         private void Awake()
         {
-            // ── Singleton ──
             if (_instance != null && _instance != this)
             {
                 Destroy(gameObject);
@@ -139,9 +62,8 @@ namespace Hecton8.Power
             _instance = this;
             DontDestroyOnLoad(gameObject);
 
-            // ── Initialize ──
             if (_allGrids == null)
-                _allGrids = new List<PowerGrid>(initialGridCapacity);
+                _allGrids = new List<PowerGrid>(Mathf.Max(1, initialGridCapacity));
         }
 
         private void OnEnable()
@@ -159,66 +81,44 @@ namespace Hecton8.Power
             TryUnregister();
 
             if (_instance == this)
+            {
                 _instance = null;
+                DisposeAllGrids();
+            }
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  ISlowTickable — PERIODIC BALANCE UPDATE
-        // ══════════════════════════════════════════════════════════
-
-        /// <summary>
-        /// Вызывается GameTickManager каждые ~0.5-1 секунду.
-        ///
-        /// Обновляет баланс каждой сети.
-        /// Удаляет пустые сети (модули были деспавнены).
-        ///
-        /// ZERO GC: for-цикл по List с индексом, swap-remove.
-        /// </summary>
         public void SlowTick()
         {
-            if (_allGrids == null) return;
+            if (_allGrids == null)
+                return;
 
-            int gridCount = _allGrids.Count;
-            float totalGen  = 0f;
-            float totalCon  = 0f;
-            int totalNodes  = 0;
+            int totalNodes = 0;
             int deficitCount = 0;
+            float totalGeneration = 0f;
+            float totalConsumption = 0f;
 
-            for (int i = gridCount - 1; i >= 0; i--)
+            for (int gridIndex = _allGrids.Count - 1; gridIndex >= 0; gridIndex--)
             {
-                PowerGrid grid = _allGrids[i];
-
-                // ── Удаление пустых сетей ──
+                PowerGrid grid = _allGrids[gridIndex];
                 if (grid == null || grid.NodeCount == 0)
                 {
-                    SwapRemoveAt(i);
+                    SwapRemoveAt(gridIndex);
                     continue;
                 }
 
-                // ── Пересчёт баланса ──
                 grid.UpdateBalance();
 
-                totalGen   += grid.TotalGeneration;
-                totalCon   += grid.TotalConsumption;
                 totalNodes += grid.NodeCount;
+                totalGeneration += grid.TotalGeneration;
+                totalConsumption += grid.TotalConsumption;
 
                 if (grid.HasPowerDeficit)
                     deficitCount++;
             }
 
-            UpdateDiagnostics(totalGen, totalCon, totalNodes, deficitCount);
+            UpdateDiagnostics(totalGeneration, totalConsumption, totalNodes, deficitCount);
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  STATIC API — GRID FACTORY
-        // ══════════════════════════════════════════════════════════
-
-        /// <summary>
-        /// Создаёт новую энергосеть с одним узлом.
-        /// Вызывается из PowerNode.OnSpawn когда нет соседних сетей.
-        /// </summary>
-        /// <param name="initialNode">Первый узел новой сети.</param>
-        /// <returns>Созданная PowerGrid.</returns>
         public static PowerGrid CreateGrid(PowerNode initialNode)
         {
             if (initialNode == null)
@@ -229,224 +129,139 @@ namespace Hecton8.Power
             PowerGrid grid = new PowerGrid();
             grid.AddNode(initialNode);
             _allGrids.Add(grid);
-
             return grid;
         }
 
-        /// <summary>
-        /// Удаляет пустую сеть из реестра.
-        /// Безопасно при отсутствии сети (no-op).
-        /// </summary>
         public static void DestroyGrid(PowerGrid grid)
         {
-            if (grid == null || _allGrids == null) return;
+            if (grid == null || _allGrids == null)
+                return;
 
-            int count = _allGrids.Count;
-            for (int i = 0; i < count; i++)
+            int gridCount = _allGrids.Count;
+            for (int gridIndex = 0; gridIndex < gridCount; gridIndex++)
             {
-                if (ReferenceEquals(_allGrids[i], grid))
-                {
-                    SwapRemoveAt(i);
-                    return;
-                }
+                if (!ReferenceEquals(_allGrids[gridIndex], grid))
+                    continue;
+
+                SwapRemoveAt(gridIndex);
+                return;
             }
         }
 
-        /// <summary>
-        /// Объединяет две сети в одну.
-        ///
-        /// Стратегия: бóльшая сеть поглощает меньшую.
-        /// Это минимизирует количество операций SetGrid
-        /// (меньше узлов перепривязываются).
-        ///
-        /// Поглощённая сеть удаляется из реестра.
-        ///
-        /// Вызывается из PowerNode.OnSpawn когда найдены соседи
-        /// из разных сетей (соединительный коридор).
-        /// </summary>
-        /// <param name="a">Первая сеть.</param>
-        /// <param name="b">Вторая сеть.</param>
-        /// <returns>Результирующая (объединённая) сеть.</returns>
         public static PowerGrid MergeGrids(PowerGrid a, PowerGrid b)
         {
-            if (a == null) return b;
-            if (b == null) return a;
-            if (ReferenceEquals(a, b)) return a;
+            if (a == null)
+                return b;
 
-            // Большая поглощает меньшую
-            PowerGrid larger, smaller;
+            if (b == null)
+                return a;
+
+            if (ReferenceEquals(a, b))
+                return a;
+
+            PowerGrid larger;
+            PowerGrid smaller;
             if (a.NodeCount >= b.NodeCount)
             {
-                larger  = a;
+                larger = a;
                 smaller = b;
             }
             else
             {
-                larger  = b;
+                larger = b;
                 smaller = a;
             }
 
             larger.AbsorbAll(smaller);
             DestroyGrid(smaller);
-
             return larger;
         }
 
-        /// <summary>
-        /// Проверяет связность сети после удаления узла.
-        /// Если сеть распалась на несвязные компоненты —
-        /// разделяет на отдельные сети.
-        ///
-        /// Алгоритм: BFS от произвольного узла.
-        /// Если не все узлы достигнуты → недостигнутые выделяются
-        /// в новую сеть. Рекурсивно проверяется новая сеть
-        /// (могла распасться на 3+ компонента).
-        ///
-        /// Вызывается из PowerNode.OnDespawn после RemoveNode.
-        ///
-        /// ZERO GC:
-        ///   • _bfsQueue, _bfsVisited, _splitBuffer — static кэши.
-        ///   • Clear() не аллоцирует.
-        ///   • Единственная аллокация: new PowerGrid (при реальном split).
-        /// </summary>
         public static void CheckAndSplitGrid(PowerGrid grid)
         {
-            if (grid == null) return;
-            if (grid.NodeCount <= 1) return; // 0 или 1 узел — всегда связная
-            if (grid.Nodes == null || grid.Nodes.Count == 0) return;
+            if (grid == null || grid.NodeCount <= 1)
+                return;
 
-            _bfsQueue.Clear();
-            _bfsVisited.Clear();
+            LogisticsNetworkGraph.TopologySummary topology = grid.AnalyzeTopology();
+            if (topology.NodeCount <= 1)
+                return;
 
-            // ── Берём стартовый узел ──
-            PowerNode startNode = null;
-            foreach (PowerNode n in grid.Nodes)
-            {
-                if (n != null)
-                {
-                    startNode = n;
-                    break;
-                }
-            }
+            if (topology.BfsVisitedCount == topology.NodeCount && topology.IslandCount <= 1)
+                return;
 
-            if (startNode == null) return;
-
-            // ── BFS ──
-            _bfsQueue.Enqueue(startNode);
-            _bfsVisited.Add(startNode);
-
-            while (_bfsQueue.Count > 0)
-            {
-                PowerNode current = _bfsQueue.Dequeue();
-                List<PowerNode> neighbors = current.Neighbors;
-
-                if (neighbors == null) continue;
-
-                int neighborCount = neighbors.Count;
-                for (int i = 0; i < neighborCount; i++)
-                {
-                    PowerNode neighbor = neighbors[i];
-
-                    if (neighbor == null) continue;
-
-                    // Сосед должен быть в ТОЙ ЖЕ сети
-                    if (!grid.Nodes.Contains(neighbor)) continue;
-
-                    // Уже посещён
-                    if (_bfsVisited.Contains(neighbor)) continue;
-
-                    _bfsVisited.Add(neighbor);
-                    _bfsQueue.Enqueue(neighbor);
-                }
-            }
-
-            // ── Все узлы достигнуты? ──
-            if (_bfsVisited.Count == grid.NodeCount)
-                return; // Сеть связна — ничего делать не надо
-
-            // ══════════════════════════════════════════════════════
-            //  СЕТЬ РАСПАЛАСЬ — выделяем недостигнутые в новую сеть
-            // ══════════════════════════════════════════════════════
-
-            _splitBuffer.Clear();
-
-            // Собираем узлы для переноса
-            // (нельзя модифицировать HashSet во время итерации)
-            foreach (PowerNode node in grid.Nodes)
-            {
-                if (node != null && !_bfsVisited.Contains(node))
-                    _splitBuffer.Add(node);
-            }
-
-            if (_splitBuffer.Count == 0) return;
-
-            // ── Создаём новую сеть ──
             EnsureStorage();
-            PowerGrid newGrid = new PowerGrid(_splitBuffer.Count);
-            _allGrids.Add(newGrid);
 
-            // ── Переносим узлы ──
-            int moveCount = _splitBuffer.Count;
-            for (int i = 0; i < moveCount; i++)
+            List<PowerNode> topologyNodes = grid.TopologyNodes;
+            if (topologyNodes == null || topologyNodes.Count <= 0)
+                return;
+
+            int primaryComponentId = grid.GetNodeComponentId(0);
+            if (primaryComponentId < 0)
+                primaryComponentId = 0;
+
+            for (int componentId = 0; componentId < topology.IslandCount; componentId++)
             {
-                PowerNode node = _splitBuffer[i];
-                grid.RemoveNode(node);
-                newGrid.AddNode(node);
+                if (componentId == primaryComponentId)
+                    continue;
+
+                int componentSize = grid.GetComponentSize(componentId);
+                if (componentSize <= 0)
+                    continue;
+
+                PowerGrid newGrid = new PowerGrid(componentSize);
+                _allGrids.Add(newGrid);
+
+                for (int nodeIndex = topologyNodes.Count - 1; nodeIndex >= 0; nodeIndex--)
+                {
+                    if (grid.GetNodeComponentId(nodeIndex) != componentId)
+                        continue;
+
+                    PowerNode node = topologyNodes[nodeIndex];
+                    if (node == null)
+                        continue;
+
+                    grid.RemoveNode(node);
+                    newGrid.AddNode(node);
+                }
+
+                newGrid.UpdateBalance();
             }
 
-            _splitBuffer.Clear();
-
-            // ── Рекурсивная проверка новой сети ──
-            // (могла распасться на 3+ компонента при удалении
-            // "перекрёстного" узла)
-            if (newGrid.NodeCount > 1)
-            {
-                CheckAndSplitGrid(newGrid);
-            }
+            grid.UpdateBalance();
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  PUBLIC API — QUERIES
-        // ══════════════════════════════════════════════════════════
-
-        /// <summary>Количество активных сетей.</summary>
         public int GridCount => _allGrids != null ? _allGrids.Count : 0;
-
-        /// <summary>Общая генерация по всем сетям (Вт).</summary>
         public float TotalGeneration => _debugTotalGeneration;
-
-        /// <summary>Общее потребление по всем сетям (Вт).</summary>
         public float TotalConsumption => _debugTotalConsumption;
 
-        // ══════════════════════════════════════════════════════════
-        //  PRIVATE — HELPERS
-        // ══════════════════════════════════════════════════════════
-
-        /// <summary>
-        /// Гарантирует инициализацию статического хранилища.
-        /// Вызывается из static методов (могут быть вызваны до Awake).
-        /// </summary>
         private static void EnsureStorage()
         {
             if (_allGrids == null)
                 _allGrids = new List<PowerGrid>(16);
         }
 
-        /// <summary>
-        /// Swap-remove из списка сетей. O(1).
-        /// Порядок сетей не важен.
-        /// </summary>
-        private static void SwapRemoveAt(int index)
+        private static void DisposeAllGrids()
         {
-            int last = _allGrids.Count - 1;
-            if (index < last)
-                _allGrids[index] = _allGrids[last];
-            _allGrids.RemoveAt(last);
+            if (_allGrids == null)
+                return;
+
+            int gridCount = _allGrids.Count;
+            for (int gridIndex = 0; gridIndex < gridCount; gridIndex++)
+                _allGrids[gridIndex]?.Dispose();
+
+            _allGrids.Clear();
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  DIAGNOSTICS
-        // ══════════════════════════════════════════════════════════
+        private static void SwapRemoveAt(int index)
+        {
+            PowerGrid removedGrid = _allGrids[index];
+            int lastIndex = _allGrids.Count - 1;
+            if (index < lastIndex)
+                _allGrids[index] = _allGrids[lastIndex];
+
+            _allGrids.RemoveAt(lastIndex);
+            removedGrid?.Dispose();
+        }
 
         private void TryRegister()
         {
@@ -474,13 +289,13 @@ namespace Hecton8.Power
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
-        private void UpdateDiagnostics(float gen, float con, int nodes, int deficits)
+        private void UpdateDiagnostics(float generation, float consumption, int totalNodes, int deficitGrids)
         {
-            _debugGridCount       = _allGrids != null ? _allGrids.Count : 0;
-            _debugTotalNodes      = nodes;
-            _debugTotalGeneration = gen;
-            _debugTotalConsumption = con;
-            _debugDeficitGrids    = deficits;
+            _debugGridCount = _allGrids != null ? _allGrids.Count : 0;
+            _debugTotalNodes = totalNodes;
+            _debugTotalGeneration = generation;
+            _debugTotalConsumption = consumption;
+            _debugDeficitGrids = deficitGrids;
         }
     }
 }

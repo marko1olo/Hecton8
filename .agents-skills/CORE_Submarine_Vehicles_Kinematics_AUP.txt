@@ -47,7 +47,7 @@ fn GetPlatformPointVelocity(worldPoint):
 ### Per-FixedTick Cache Struct (update at TOP of FixedUpdate, before any solver)
 
 PlatformCache {
-    Matrix4x4  worldToLocal       // PlatformTransform.worldToLocalMatrix
+    Matrix4x4  worldToLocal       // Burst-inverted from localToWorld
     Matrix4x4  localToWorld       // PlatformTransform.localToWorldMatrix
     Vector3    position_curr      // PlatformTransform.position
     Vector3    position_last      // Stored from prev tick
@@ -66,14 +66,14 @@ fn UpdatePlatformCache(cache, platform):
     cache.rotation_last   = cache.rotation_curr
     cache.position_curr   = platform.PlatformTransform.position
     cache.rotation_curr   = platform.PlatformTransform.rotation
-    cache.worldToLocal    = platform.PlatformTransform.worldToLocalMatrix   // Unity stores this: no Inverse() call
-    cache.localToWorld    = platform.PlatformTransform.localToWorldMatrix   // Complement: also stored, not computed
+    cache.localToWorld    = platform.PlatformTransform.localToWorldMatrix
+    cache.worldToLocal    = math.inverse(cache.localToWorld)
     cache.delta_position  = cache.position_curr - cache.position_last
     cache.delta_rotation  = cache.rotation_curr * Inverse(cache.rotation_last)
     cache.linearVelocity  = rb_platform.linearVelocity
     cache.angularVelocity = rb_platform.angularVelocity
 
-[RULE]: Unity's `Transform.worldToLocalMatrix` is a cached property — zero inverse cost. NEVER call `Matrix4x4.Inverse(localToWorld)` manually.
+[RULE]: Never query `Transform.worldToLocalMatrix` in multi-system fixed ticks. Fetch `localToWorld` once and invert in Burst math.
 
 ---
 
@@ -82,7 +82,7 @@ fn UpdatePlatformCache(cache, platform):
 ### Problem
 WASD input in world-space ignores vessel heading. Submarine pitches 30°: player walks into ceiling.
 
-### Solution — Project Input Through `worldToLocalMatrix`
+### Solution — Project Input Through Burst-Inverted Local Frame
 
 fn TransformInputToLocal(rawInput_world, cache):
     // rawInput_world: float3 from input axes, already camera-relative in WORLD space

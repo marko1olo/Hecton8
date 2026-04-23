@@ -278,7 +278,23 @@ namespace Hecton8.Bootstrap
             EnsureDontDestroyOnLoad(prefabRegistry.gameObject);
             Log("  PrefabRegistry initialized");
 
+            Log("[6/6] Initializing GameBootstrapper core...");
+            GameBootstrapper gameBootstrapper = EnsureGameBootstrapper();
+            if (gameBootstrapper == null)
+            {
+                LogError("GameBootstrapper could not be created.");
+                return;
+            }
+
+            gameBootstrapper.InitializeBootstrap();
+            Log("  GameBootstrapper core initialized");
+
             Log("All systems initialized successfully.");
+        }
+
+        private GameBootstrapper EnsureGameBootstrapper()
+        {
+            return GameBootstrapper.EnsureRuntimeInstance(gameObject);
         }
 
         /// <summary>
@@ -459,7 +475,9 @@ namespace Hecton8.Bootstrap
         /// </summary>
         public static bool AreAllSystemsReady()
         {
-            return _instance != null && _instance._initializationComplete;
+            return _instance != null &&
+                   _instance._initializationComplete &&
+                   GameBootstrapper.IsBootstrapComplete;
         }
     }
 }

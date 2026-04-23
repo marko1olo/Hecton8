@@ -3,6 +3,7 @@ namespace Hecton8.Gameplay
     using Hecton8.AI;
     using Hecton8.Core;
     using Hecton8.Interaction;
+    using Hecton8.Physics;
     using UnityEngine;
 
     /// <summary>
@@ -146,7 +147,10 @@ namespace Hecton8.Gameplay
             if (_rigidbody == null)
                 return;
 
-            _rigidbody.AddForce(Vector3.down * sinkVelocityChangePerSecond * fixedDeltaTime, ForceMode.VelocityChange);
+            PhysicsForceRouter.QueueForce(
+                _rigidbody,
+                Vector3.down * sinkVelocityChangePerSecond * fixedDeltaTime,
+                ForceMode.VelocityChange);
         }
 
         private void OnCollisionEnter(Collision collision)

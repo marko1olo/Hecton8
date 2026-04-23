@@ -95,8 +95,6 @@ namespace Hecton8.Visor
         [Tooltip("Интенсивность шумовой сигнатуры, публикуемой sonar pulse для окружающей фауны.")]
         [SerializeField, Range(0f, 1f)] private float sonarNoiseSignature01 = 1f;
 
-        [Tooltip("Радиус прямой provocation wave по bioforms вокруг игрока.")]
-        [SerializeField] private float sonarProvocationRadius = 85f;
 
         [Tooltip("How long the active sonar reveal stays valid for shader and VFX consumers after each pulse.")]
         [SerializeField] private float sonarRevealDuration = 2.4f;
@@ -217,8 +215,6 @@ namespace Hecton8.Visor
             Shader.PropertyToID("_LidarPersistence");
         private static readonly System.Collections.Generic.List<VisorHUDController> s_glitchControllers =
             new System.Collections.Generic.List<VisorHUDController>(4); // COLD ALLOC: shared glitch pulse controller buffer
-        // COLD ALLOC: SpatialQueryHit[16] — active-sonar fauna provocation buffer — owner: SpectrumSystem
-        private static readonly SpatialQueryHit[] s_sonarBioformBuffer = new SpatialQueryHit[16];
         // COLD ALLOC: SpatialQueryHit[24] — active-sonar reveal contact buffer — owner: SpectrumSystem
         private static readonly SpatialQueryHit[] s_sonarRevealBuffer = new SpatialQueryHit[SonarRevealMaxContacts];
         // COLD ALLOC: Vector4[24] — active-sonar reveal shader payload buffer — owner: SpectrumSystem
@@ -441,7 +437,8 @@ namespace Hecton8.Visor
             WorldSpatialHashGrid.BuildSonarSnapshot(playerPosition, pulseRadius, out _lastSonarSnapshot);
             _hasSonarSnapshot = true;
             NoiseSystem.ReportPlayerSignal(playerPosition, 0f, false, 0f, 0f, Mathf.Clamp01(sonarNoiseSignature01));
-            ProvokeNearbyFauna(playerPosition, pulseRadius);
+            if (isActivePing)
+                NoiseSystem.ReportActiveSonarPing(playerPosition, pulseIntensity);
             SpectrumEvents.RaiseSonarSnapshotUpdated(_lastSonarSnapshot);
             return true;
         }
@@ -641,25 +638,6 @@ namespace Hecton8.Visor
         private static float HashSigned(float seed)
         {
             return Hash01(seed) * 2f - 1f;
-        }
-
-        private void ProvokeNearbyFauna(Vector3 playerPosition, float pulseRadius)
-        {
-            float queryRadius = Mathf.Min(pulseRadius, Mathf.Max(0f, sonarProvocationRadius));
-            if (queryRadius <= 0f)
-                return;
-
-            int count = WorldSpatialHashGrid.CollectContactsNonAlloc(
-                playerPosition,
-                queryRadius,
-                SpatialTargetKind.Bioform,
-                s_sonarBioformBuffer);
-
-            for (int i = 0; i < count; i++)
-            {
-                if (s_sonarBioformBuffer[i].Owner is FaunaBrain brain)
-                    brain.Provoke(playerPosition);
-            }
         }
 
         private void TryPlayAbyssalAnchorReturn(float response01)

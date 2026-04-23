@@ -8,6 +8,9 @@ namespace Hecton8.Gameplay
     [CreateAssetMenu(fileName = "TransportPreset_", menuName = "Hecton8/Gameplay/Transport Preset")]
     public sealed class PlayerTransportPreset : ScriptableObject
     {
+        private const float MinimumSurvivalShieldingScale = 0.1f;
+        private const float MinimumPressureDamageTransferScale = 0.25f;
+
         [Header("-- Identity -------------------------")]
         [Tooltip("Display label used by transport HUD/prompts when no override text is provided.")]
         [SerializeField] private string transportName = "Transport";
@@ -103,16 +106,16 @@ namespace Hecton8.Gameplay
 
         [Header("-- Survival Shielding ---------------")]
         [Tooltip("Multiplier applied to underwater oxygen consumption while this transport protects the rider.")]
-        [SerializeField, Range(0f, 2f)] private float oxygenConsumptionScale = 1f;
+        [SerializeField, Range(MinimumSurvivalShieldingScale, 2f)] private float oxygenConsumptionScale = 1f;
 
-        [Tooltip("Multiplier applied to depth pressure damage while this transport protects the rider.")]
-        [SerializeField, Range(0f, 2f)] private float pressureDamageScale = 1f;
+        [Tooltip("Multiplier applied to depth pressure damage while this transport protects the rider. Hard-clamped above zero so no transport grants full pressure immunity.")]
+        [SerializeField, Range(MinimumPressureDamageTransferScale, 2f)] private float pressureDamageScale = 1f;
 
         [Tooltip("Multiplier applied to thermal exposure while this transport protects the rider.")]
-        [SerializeField, Range(0f, 2f)] private float thermalExposureScale = 1f;
+        [SerializeField, Range(MinimumSurvivalShieldingScale, 2f)] private float thermalExposureScale = 1f;
 
         [Tooltip("Multiplier applied to radiation exposure while this transport protects the rider.")]
-        [SerializeField, Range(0f, 2f)] private float radiationExposureScale = 1f;
+        [SerializeField, Range(MinimumSurvivalShieldingScale, 2f)] private float radiationExposureScale = 1f;
 
         [Header("-- Mounting -------------------------")]
         [Tooltip("Which player facing source drives the mounted transport hull orientation.")]
@@ -198,6 +201,14 @@ namespace Hecton8.Gameplay
 
         [Tooltip("Minimum swim-mode blend kept alive while transport is active.")]
         [SerializeField, Range(0f, 1f)] private float audioModeBlendFloor = 0.42f;
+
+        private void OnValidate()
+        {
+            oxygenConsumptionScale = ClampSurvivalShieldingScale(oxygenConsumptionScale);
+            pressureDamageScale = ClampPressureDamageScale(pressureDamageScale);
+            thermalExposureScale = ClampSurvivalShieldingScale(thermalExposureScale);
+            radiationExposureScale = ClampSurvivalShieldingScale(radiationExposureScale);
+        }
 
         /// <summary>Display label used by transport prompts when no override text is supplied.</summary>
         public string TransportName => transportName;
@@ -287,16 +298,16 @@ namespace Hecton8.Gameplay
         public float CollisionDamageAtMaxSpeed => collisionDamageAtMaxSpeed;
 
         /// <summary>Multiplier applied to underwater oxygen consumption while this transport protects the rider.</summary>
-        public float OxygenConsumptionScale => oxygenConsumptionScale;
+        public float OxygenConsumptionScale => ClampSurvivalShieldingScale(oxygenConsumptionScale);
 
         /// <summary>Multiplier applied to depth pressure damage while this transport protects the rider.</summary>
-        public float PressureDamageScale => pressureDamageScale;
+        public float PressureDamageScale => ClampPressureDamageScale(pressureDamageScale);
 
         /// <summary>Multiplier applied to thermal exposure while this transport protects the rider.</summary>
-        public float ThermalExposureScale => thermalExposureScale;
+        public float ThermalExposureScale => ClampSurvivalShieldingScale(thermalExposureScale);
 
         /// <summary>Multiplier applied to radiation exposure while this transport protects the rider.</summary>
-        public float RadiationExposureScale => radiationExposureScale;
+        public float RadiationExposureScale => ClampSurvivalShieldingScale(radiationExposureScale);
 
         /// <summary>Rider facing source used by the mounted hull.</summary>
         public PlayerTransportOrientationMode OrientationMode => orientationMode;
@@ -375,5 +386,15 @@ namespace Hecton8.Gameplay
 
         /// <summary>Minimum swim-mode blend kept alive while transport is active.</summary>
         public float AudioModeBlendFloor => audioModeBlendFloor;
+
+        private static float ClampSurvivalShieldingScale(float value)
+        {
+            return Mathf.Clamp(value, MinimumSurvivalShieldingScale, 2f);
+        }
+
+        private static float ClampPressureDamageScale(float value)
+        {
+            return Mathf.Clamp(value, MinimumPressureDamageTransferScale, 2f);
+        }
     }
 }

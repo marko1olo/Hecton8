@@ -1,5 +1,6 @@
 using Hecton8.AI;
 using Hecton.Localization;
+using Hecton8.Physics;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -229,7 +230,7 @@ namespace Hecton8.Gameplay
             }
 
             Vector3 direction = (_cachedTransform.position - body.worldCenterOfMass).normalized;
-            body.AddForce(direction * reelImpulse, ForceMode.Impulse);
+            PhysicsForceRouter.QueueForce(body, direction * reelImpulse, ForceMode.Impulse);
 
             if (Time.time >= _nextFeedbackAt)
             {
@@ -500,7 +501,7 @@ namespace Hecton8.Gameplay
 
             Vector3 direction = (_cachedTransform.position - _tetheredBody.worldCenterOfMass).normalized;
             float impulseAmount = reelImpulse * tetherPullBonus;
-            _tetheredBody.AddForce(direction * impulseAmount, ForceMode.Impulse);
+            PhysicsForceRouter.QueueForce(_tetheredBody, direction * impulseAmount, ForceMode.Impulse);
 
             if (Time.time >= _nextFeedbackAt)
             {

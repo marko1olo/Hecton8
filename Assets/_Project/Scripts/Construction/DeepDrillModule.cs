@@ -43,6 +43,13 @@ namespace Hecton8.Construction
 
             [Tooltip("Relative weight used for deterministic selection among authored outputs.")]
             [Min(0.01f)] public float weight;
+
+            public DrillYieldEntry(ItemData item, int amount, float weight)
+            {
+                this.item = item;
+                this.amount = amount;
+                this.weight = weight;
+            }
         }
 
         [Header("── Extraction ─────────────────────────────")]

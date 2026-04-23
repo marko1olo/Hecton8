@@ -1,0 +1,10 @@
+c:\hades\Hecton8\Temp\bin\Debug\Hecton8.Input.deps.json
+c:\hades\Hecton8\Temp\bin\Debug\Hecton8.Input.dll
+c:\hades\Hecton8\Temp\bin\Debug\Hecton8.Input.pdb
+c:\hades\Hecton8\.codexbuild\editor\obj\Hecton8.Input.csproj.AssemblyReference.cache
+c:\hades\Hecton8\.codexbuild\editor\obj\Hecton8.Input.GeneratedMSBuildEditorConfig.editorconfig
+c:\hades\Hecton8\.codexbuild\editor\obj\Hecton8.Input.csproj.CoreCompileInputs.cache
+c:\hades\Hecton8\.codexbuild\editor\obj\Hecton8.Input.sourcelink.json
+c:\hades\Hecton8\.codexbuild\editor\obj\Hecton8..2CE19C66.Up2Date
+c:\hades\Hecton8\.codexbuild\editor\obj\Hecton8.Input.dll
+c:\hades\Hecton8\.codexbuild\editor\obj\Hecton8.Input.pdb

@@ -14,14 +14,151 @@ Shader "Hidden/Hecton8/DryVolumeRestore"
             "Queue" = "Transparent"
         }
 
+        Cull Off
+        ZWrite Off
+        ZTest Always
+
+        HLSLINCLUDE
+        #pragma target 4.5
+
+        #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+        #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
+
+        CBUFFER_START(UnityPerMaterial)
+            float _StencilRef;
+        CBUFFER_END
+
+        TEXTURE2D_X(_Crest_CameraColorTexture);
+        TEXTURE2D_X(_BlitTexture);
+        TEXTURE2D(_BlueNoiseTex);
+        SAMPLER(sampler_BlueNoiseTex);
+        float4 _BlueNoiseTex_TexelSize;
+
+        float4 _HectonNoirResolveSettings;
+        float4 _HectonNoirAbyssFloor;
+        float4 _HectonNoirFogStratification;
+        float4 _HectonNoirDitherParams;
+        float4 _HectonFloatingOriginOffset;
+
+        struct Attributes
+        {
+            uint vertexID : SV_VertexID;
+        };
+
+        struct Varyings
+        {
+            float4 positionCS : SV_POSITION;
+            float2 screenUV : TEXCOORD0;
+        };
+
+        Varyings Vert(Attributes input)
+        {
+            Varyings output;
+            output.screenUV = float2((input.vertexID << 1) & 2, input.vertexID & 2);
+            output.positionCS = float4(output.screenUV * 2.0 - 1.0, 0.0, 1.0);
+        #if UNITY_UV_STARTS_AT_TOP
+            output.screenUV.y = 1.0 - output.screenUV.y;
+        #endif
+            return output;
+        }
+
+        float ResolveInterleavedNoise(float2 screenUV)
+        {
+            float2 pixel = floor(screenUV * _ScaledScreenParams.xy);
+            return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+        }
+
+        float ResolveBlueNoise(float2 screenUV)
+        {
+            float fallback = ResolveInterleavedNoise(screenUV);
+            if (_BlueNoiseTex_TexelSize.z < 0.0001)
+                return fallback;
+
+            float2 pixel = floor(screenUV * _ScaledScreenParams.xy);
+            float2 rotatedPixel = pixel + _HectonNoirDitherParams.xy;
+            float2 blueNoiseUV = frac(rotatedPixel / max(_HectonNoirDitherParams.z, 64.0));
+            float sampled = SAMPLE_TEXTURE2D(_BlueNoiseTex, sampler_BlueNoiseTex, blueNoiseUV).r;
+            return sampled;
+        }
+
+        half3 ApplyAcesHill2016(half3 color)
+        {
+            half3 x = color;
+            return saturate((x * (2.51h * x + 0.03h)) / (x * (2.43h * x + 0.59h) + 0.14h));
+        }
+
+        float ResolveFarRawDepth()
+        {
+        #if UNITY_REVERSED_Z
+            return 0.0;
+        #else
+            return 1.0;
+        #endif
+        }
+
+        float ResolveRawDepthValidity(float rawDepth)
+        {
+        #if UNITY_REVERSED_Z
+            return step(0.0001, rawDepth);
+        #else
+            return step(rawDepth, 0.9999);
+        #endif
+        }
+
+        float3 SampleSceneWorldPosition(float2 screenUV, out float rawDepth, out float depthValid, out float linearEyeDepth)
+        {
+            rawDepth = SampleSceneDepth(screenUV);
+            depthValid = ResolveRawDepthValidity(rawDepth);
+            float resolvedRawDepth = depthValid > 0.5 ? rawDepth : ResolveFarRawDepth();
+            float3 positionWS = ComputeWorldSpacePosition(screenUV, resolvedRawDepth, UNITY_MATRIX_I_VP);
+            linearEyeDepth = LinearEyeDepth(resolvedRawDepth, _ZBufferParams);
+            return positionWS;
+        }
+
+        half3 ApplyNoirFog(half3 sourceColor, float3 absolutePositionWS, float linearEyeDepth)
+        {
+            float inverseSpan = max(_HectonNoirFogStratification.y, 0.00001);
+            float abyssFloorY = _HectonNoirFogStratification.x - rcp(inverseSpan);
+            float worldYNorm = saturate((absolutePositionWS.y - abyssFloorY) * inverseSpan);
+            float densityLocal = _HectonNoirFogStratification.w * (1.0 + (1.0 - worldYNorm) * _HectonNoirFogStratification.z);
+            half fogFactor = saturate(1.0h - exp2(-linearEyeDepth * densityLocal));
+            fogFactor = pow(fogFactor, (half)max(_HectonNoirResolveSettings.x, 1.0));
+            half3 abyssFloor = _HectonNoirAbyssFloor.rgb;
+            return lerp(sourceColor, max(abyssFloor, sourceColor * 0.18h), fogFactor);
+        }
+
+        half4 FragRestore(Varyings input) : SV_Target
+        {
+            return SAMPLE_TEXTURE2D_X(_Crest_CameraColorTexture, sampler_LinearClamp, input.screenUV);
+        }
+
+        half4 FragResolve(Varyings input) : SV_Target
+        {
+            half4 sourceColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, input.screenUV);
+            if (_HectonNoirResolveSettings.z < 0.5)
+                return sourceColor;
+
+            float rawDepth;
+            float depthValid;
+            float linearEyeDepth;
+            float3 scenePositionWS = SampleSceneWorldPosition(input.screenUV, rawDepth, depthValid, linearEyeDepth);
+            half3 resolvedColor = sourceColor.rgb;
+            if (depthValid > 0.5)
+            {
+                float3 absolutePositionWS = scenePositionWS + _HectonFloatingOriginOffset.xyz;
+                resolvedColor = ApplyNoirFog(resolvedColor, absolutePositionWS, linearEyeDepth);
+            }
+
+            half3 tonemapped = ApplyAcesHill2016(max(resolvedColor, 0.0h));
+            half dither = (half)(ResolveBlueNoise(input.screenUV) - 0.5) * (half)(_HectonNoirResolveSettings.y / 255.0);
+            return half4(saturate(tonemapped + dither.xxx), sourceColor.a);
+        }
+        ENDHLSL
+
         Pass
         {
             Name "Restore"
             Tags { "LightMode" = "SRPDefaultUnlit" }
-
-            Cull Off
-            ZWrite Off
-            ZTest Always
 
             Stencil
             {
@@ -31,41 +168,26 @@ Shader "Hidden/Hecton8/DryVolumeRestore"
             }
 
             HLSLPROGRAM
-            #pragma target 4.5
             #pragma vertex Vert
-            #pragma fragment Frag
+            #pragma fragment FragRestore
+            ENDHLSL
+        }
 
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+        Pass
+        {
+            Name "Resolve"
+            Tags { "LightMode" = "SRPDefaultUnlit" }
 
-            TEXTURE2D_X(_Crest_CameraColorTexture);
-
-            struct Attributes
+            Stencil
             {
-                uint vertexID : SV_VertexID;
-            };
-
-            struct Varyings
-            {
-                float4 positionCS : SV_POSITION;
-                float2 screenUV : TEXCOORD0;
-            };
-
-            Varyings Vert(Attributes input)
-            {
-                Varyings output;
-                output.screenUV = float2((input.vertexID << 1) & 2, input.vertexID & 2);
-                output.positionCS = float4(output.screenUV * 2.0 - 1.0, 0.0, 1.0);
-            #if UNITY_UV_STARTS_AT_TOP
-                output.screenUV.y = 1.0 - output.screenUV.y;
-            #endif
-                return output;
+                Ref [_StencilRef]
+                Comp NotEqual
+                Pass Keep
             }
 
-            half4 Frag(Varyings input) : SV_Target
-            {
-                half4 dryColor = SAMPLE_TEXTURE2D_X(_Crest_CameraColorTexture, sampler_LinearClamp, input.screenUV);
-                return dryColor;
-            }
+            HLSLPROGRAM
+            #pragma vertex Vert
+            #pragma fragment FragResolve
             ENDHLSL
         }
     }

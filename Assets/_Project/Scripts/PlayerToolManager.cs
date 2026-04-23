@@ -825,6 +825,7 @@ namespace Hecton8.Gameplay
                     $"SpawnNewTool got instance={_currentInstance.name} tool={tool.GetType().Name} " +
                     $"toolData={(tool.ToolData != null ? tool.ToolData.name : "null")}");
                 _currentTool.OnEquip();
+                _currentTool.OnToolBroken += HandleEquippedToolBroken;
                 LogToolDebug(
                     $"SpawnNewTool after OnEquip instanceActive={_currentInstance.activeInHierarchy} " +
                     $"toolEquipped={_currentTool.IsEquipped}");
@@ -849,6 +850,7 @@ namespace Hecton8.Gameplay
                 $"currentInstance={(_currentInstance != null ? _currentInstance.name : "null")} currentSlot={_currentSlotIndex}");
             if (_currentTool != null)
             {
+                _currentTool.OnToolBroken -= HandleEquippedToolBroken;
                 _currentTool.OnUnequip();
                 _currentTool = null;
             }
@@ -920,6 +922,156 @@ namespace Hecton8.Gameplay
             }
 
             return false;
+        }
+
+        private void HandleEquippedToolBroken()
+        {
+            int replacementSlot = TryResolveReplacementSlotForBrokenCurrentTool();
+            if (replacementSlot >= 0)
+            {
+                if (replacementSlot == _currentSlotIndex)
+                {
+                    ForceEquipCurrentSlotReplacement();
+                    return;
+                }
+
+                SwitchToSlot(replacementSlot);
+                return;
+            }
+
+            Holster();
+        }
+
+        private int TryResolveReplacementSlotForBrokenCurrentTool()
+        {
+            if (_currentTool == null)
+                return -1;
+
+            ItemData brokenToolData = _currentTool.ToolData;
+            if (brokenToolData == null)
+                return -1;
+
+            for (int slotIndex = 0; slotIndex < SlotCount; slotIndex++)
+            {
+                if (slotIndex == _currentSlotIndex)
+                    continue;
+
+                GameObject assignedPrefab = GetAssignedToolPrefab(slotIndex);
+                if (!IsCompatibleReplacementPrefab(assignedPrefab, brokenToolData))
+                    continue;
+
+                if (!HasToolInInventory(assignedPrefab) || IsPrefabBroken(assignedPrefab))
+                    continue;
+
+                return slotIndex;
+            }
+
+            if (knownToolPrefabs == null)
+                return -1;
+
+            for (int prefabIndex = 0; prefabIndex < knownToolPrefabs.Length; prefabIndex++)
+            {
+                GameObject candidatePrefab = knownToolPrefabs[prefabIndex];
+                if (!IsCompatibleReplacementPrefab(candidatePrefab, brokenToolData))
+                    continue;
+
+                if (!HasToolInInventory(candidatePrefab) || IsPrefabBroken(candidatePrefab))
+                    continue;
+
+                int assignedSlot = FindAssignedSlotForPrefab(candidatePrefab);
+                if (assignedSlot >= 0)
+                    return assignedSlot;
+
+                if (_currentSlotIndex >= 0)
+                {
+                    SetAssignedToolPrefab(_currentSlotIndex, candidatePrefab, holsterIfCurrentInvalid: false);
+                    return _currentSlotIndex;
+                }
+
+                int emptySlot = FindFirstEmptyAssignedSlot();
+                if (emptySlot >= 0)
+                {
+                    SetAssignedToolPrefab(emptySlot, candidatePrefab, holsterIfCurrentInvalid: false);
+                    return emptySlot;
+                }
+            }
+
+            return -1;
+        }
+
+        private bool IsCompatibleReplacementPrefab(GameObject candidatePrefab, ItemData brokenToolData)
+        {
+            if (candidatePrefab == null || brokenToolData == null)
+                return false;
+
+            if (!candidatePrefab.TryGetComponent(out PlayerTool candidateTool))
+                return false;
+
+            return ReferenceEquals(candidateTool.ToolData, brokenToolData);
+        }
+
+        private static bool IsPrefabBroken(GameObject prefab)
+        {
+            if (prefab == null || !prefab.TryGetComponent(out PlayerTool tool) || tool.Metadata == null)
+                return false;
+
+            ToolDurabilitySystem durabilitySystem = ToolDurabilitySystem.Instance;
+            return durabilitySystem != null && durabilitySystem.IsBroken(tool.Metadata.toolID);
+        }
+
+        private int FindAssignedSlotForPrefab(GameObject prefab)
+        {
+            if (prefab == null || toolPrefabs == null)
+                return -1;
+
+            for (int slotIndex = 0; slotIndex < toolPrefabs.Length; slotIndex++)
+            {
+                if (ReferenceEquals(toolPrefabs[slotIndex], prefab))
+                    return slotIndex;
+            }
+
+            return -1;
+        }
+
+        private int FindFirstEmptyAssignedSlot()
+        {
+            if (toolPrefabs == null)
+                return -1;
+
+            for (int slotIndex = 0; slotIndex < toolPrefabs.Length; slotIndex++)
+            {
+                if (toolPrefabs[slotIndex] == null)
+                    return slotIndex;
+            }
+
+            return -1;
+        }
+
+        private void ForceEquipCurrentSlotReplacement()
+        {
+            int slotIndex = _currentSlotIndex;
+            if (slotIndex < 0 || slotIndex >= SlotCount)
+            {
+                Holster();
+                return;
+            }
+
+            GameObject replacementPrefab = GetAssignedToolPrefab(slotIndex);
+            if (replacementPrefab == null)
+            {
+                Holster();
+                return;
+            }
+
+            DespawnCurrentTool();
+            SpawnNewTool(replacementPrefab, slotIndex);
+            _currentSlotIndex = slotIndex;
+            _pendingSlotIndex = -1;
+            _swapState = SwapState.Idle;
+            if (handAnchor != null)
+                handAnchor.localPosition = _anchorRestPosition;
+
+            ActiveSlotChanged?.Invoke(_currentSlotIndex);
         }
 
         private void HandleInventoryChanged()

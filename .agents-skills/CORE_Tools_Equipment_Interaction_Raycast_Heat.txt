@@ -314,8 +314,9 @@ PIPELINE:
              Input:  dirty chunk density NativeArrays (read-only)
              Output: NativeArray<Vector3> verts, NativeArray<int> tris
   Frame N+K: Job.Complete() checked in LateUpdate (non-blocking poll)
-             On complete: Mesh.SetVertices / SetTriangles from NativeArrays
-             Mesh.RecalculateNormals() → async via Mesh.RecalculateNormals(MeshUpdateFlags.DontValidateIndices)
+             On complete: write positions + indices + normals through MeshDataArray
+             Normals computed analytically in Burst via SDF central differences
+             Apply via Mesh.ApplyAndDisposeWritableMeshData(..., MeshUpdateFlags.DontValidateIndices)
              Upload to GPU: Mesh.UploadMeshData(markNoLongerReadable: false)
 PRIORITY: Cut operations = high priority job. Drill = normal. Weld deposit = low.
 COALESCE: Accumulate dirty chunks for 3 frames before scheduling — batch merges adjacent chunks.
@@ -346,10 +347,8 @@ TIER_ULTRA: max 256  (sparks), 96 (bubbles), 72 (smoke)
 
 ### 6.3 Beam Visual LOD
 
-// Screen-space depth pre-cull (execute before ANY beam draw call):
-depthSample = SampleDepthBuffer(ProjectToUV(hitPoint))
-hitPointDepth = ComputeLinearDepth(hitPoint)
-if hitPointDepth > depthSample + 0.05f: skip all beam geometry → exit
+// CPU-side spatial pre-cull (execute before ANY beam draw call):
+if VoxelSDF.SampleDensity(hitPoint) > 0.0f: skip all beam geometry → exit
 
 // Beam geometry complexity by tier:
 TIER_LOW:   2D billboard sprite beam, no geometry shader

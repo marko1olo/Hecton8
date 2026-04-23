@@ -103,6 +103,11 @@ namespace Hecton8.Environment
         private const float UnderwaterBiomeFogInfluenceShallow = 0.18f;
         private const float UnderwaterBiomeFogInfluenceDeep = 0.34f;
         private const float UnderwaterBiomeFogInfluenceDepth = 90f;
+        private const float WeatherFlowResponseSeconds = 2.4f;
+        private const float CalmFlowVelocityMultiplier = 1f;
+        private const float StormFlowVelocityMultiplier = 3f;
+        private const float CalmTurbulenceFrequency = 0.26f;
+        private const float StormTurbulenceFrequency = 0.8f;
         private const float UnderwaterSunlitTintDepth = 32f;
         private const float UnderwaterSunlitTintStrength = 0.38f;
         private const float UnderwaterSunlitAmbientDepth = 42f;
@@ -143,6 +148,8 @@ namespace Hecton8.Environment
         [SerializeField] private VisorHUDController transitionVisorController;
         [Tooltip("Near-camera suspended particulate system parented under the runtime main camera.")]
         [SerializeField] private ParticleSystem underwaterSuspendedMotes;
+        [Tooltip("Optional GPU marine snow renderer. If operational, it supersedes the legacy particle-system motes path.")]
+        [SerializeField] private HectonMarineSnowRenderer underwaterMarineSnow;
         [Tooltip("Burst-only exhale bubble system parented under the runtime main camera.")]
         [SerializeField] private ParticleSystem underwaterExhaleBubbles;
         [Tooltip("Optional shallow-water god ray beam parented under the runtime main camera.")]
@@ -305,6 +312,44 @@ namespace Hecton8.Environment
         [SerializeField, UnityEngine.Range(0.05f, 2f)] private float causticsFadeInDepth = 0.3f;
         [SerializeField, UnityEngine.Range(1f, 40f)] private float causticsFadeOutDepth = 18f;
         [SerializeField, UnityEngine.Range(0f, 1f)] private float causticsMinLightFactor = 0.18f;
+        [Header("Noir Final Resolve")]
+        [Tooltip("Non-linear blackout exponent applied to underwater fog. Pure #000 is forbidden because it destroys silhouette and color separation.")]
+        [SerializeField, UnityEngine.Range(1f, 4f)] private float noirFogPower = 2.35f;
+        [Tooltip("Blue-noise dither strength applied in the final underwater resolve pass.")]
+        [SerializeField, UnityEngine.Range(0f, 2f)] private float underwaterFinalDitherStrength = 0.75f;
+        [Tooltip("Absolute abyssal luminance floor. Pure black is forbidden because the frame must keep readable separation in the deep.")]
+        [SerializeField] private Color abyssalBlackFloor = new Color(0.0015f, 0.0023f, 0.0031f, 1f);
+        [Tooltip("Meters between the water surface and the noir floor band used to normalize vertical fog density.")]
+        [SerializeField, UnityEngine.Range(8f, 600f)] private float noirVerticalFogSpan = 180f;
+        [Tooltip("Extra density injected at the abyssal floor. 1.5 = 2.5x denser than the surface layer.")]
+        [SerializeField, UnityEngine.Range(0f, 4f)] private float abyssalDensityBoost = 1.5f;
+        [Tooltip("How aggressively voxel-cave occlusion absorbs procedural caustics.")]
+        [SerializeField, UnityEngine.Range(0f, 1f)] private float biomeAbsorption = 0.9f;
+        [Header("Noir Value Caustics")]
+        [Tooltip("Absolute-universe scale of the primary procedural caustics layer.")]
+        [SerializeField, UnityEngine.Range(0.02f, 1f)] private float noirCausticsLayerAScale = 0.18f;
+        [Tooltip("Primary caustics world-scroll speed on X.")]
+        [SerializeField, UnityEngine.Range(-0.5f, 0.5f)] private float noirCausticsLayerAScrollX = 0.07f;
+        [Tooltip("Primary caustics world-scroll speed on Z.")]
+        [SerializeField, UnityEngine.Range(-0.5f, 0.5f)] private float noirCausticsLayerAScrollZ = 0.05f;
+        [Tooltip("Primary layer contribution before Crest shallow-depth gating.")]
+        [SerializeField, UnityEngine.Range(0f, 1f)] private float noirCausticsLayerAStrength = 0.55f;
+        [Tooltip("Absolute-universe scale of the secondary procedural caustics layer.")]
+        [SerializeField, UnityEngine.Range(0.02f, 1.5f)] private float noirCausticsLayerBScale = 0.41f;
+        [Tooltip("Secondary caustics world-scroll speed on X.")]
+        [SerializeField, UnityEngine.Range(-0.5f, 0.5f)] private float noirCausticsLayerBScrollX = -0.04f;
+        [Tooltip("Secondary caustics world-scroll speed on Z.")]
+        [SerializeField, UnityEngine.Range(-0.5f, 0.5f)] private float noirCausticsLayerBScrollZ = 0.08f;
+        [Tooltip("Secondary layer contribution before Crest shallow-depth gating.")]
+        [SerializeField, UnityEngine.Range(0f, 1f)] private float noirCausticsLayerBStrength = 0.35f;
+        [Tooltip("Higher values tighten the procedural caustics into thinner noir streaks.")]
+        [SerializeField, UnityEngine.Range(1f, 8f)] private float noirCausticsSharpness = 3.4f;
+        [Tooltip("Cross-layer distortion amount used to break up repeated noise lobes.")]
+        [SerializeField, UnityEngine.Range(0f, 2f)] private float noirCausticsDistortion = 0.38f;
+        [Tooltip("Depth at which the procedural caustics start fading out.")]
+        [SerializeField, UnityEngine.Range(0.5f, 32f)] private float noirCausticsDepthFadeStart = 12f;
+        [Tooltip("Fade span after the start depth. Larger values keep caustics alive deeper.")]
+        [SerializeField, UnityEngine.Range(0.5f, 32f)] private float noirCausticsDepthFadeRange = 8f;
 
         [Header("â”€â”€â”€ UNDERWATER MOTES â”€â”€â”€")]
         [Tooltip("Enables camera-local suspended particulate while underwater.")]
@@ -540,6 +585,24 @@ namespace Hecton8.Environment
             Shader.PropertyToID("_Caustics");
         private static readonly int _ID_CausticsStrength =
             Shader.PropertyToID("_CausticsStrength");
+        private static readonly int _HectonNoirResolveSettingsId =
+            Shader.PropertyToID("_HectonNoirResolveSettings");
+        private static readonly int _HectonNoirAbyssFloorId =
+            Shader.PropertyToID("_HectonNoirAbyssFloor");
+        private static readonly int _HectonNoirFogStratificationId =
+            Shader.PropertyToID("_HectonNoirFogStratification");
+        private static readonly int _HectonNoirDitherParamsId =
+            Shader.PropertyToID("_HectonNoirDitherParams");
+        private static readonly int _HectonNoirCausticsLayerAId =
+            Shader.PropertyToID("_HectonNoirCausticsLayerA");
+        private static readonly int _HectonNoirCausticsLayerBId =
+            Shader.PropertyToID("_HectonNoirCausticsLayerB");
+        private static readonly int _HectonNoirCausticsShapeId =
+            Shader.PropertyToID("_HectonNoirCausticsShape");
+        private static readonly int _HectonNoirCaveAttenuationId =
+            Shader.PropertyToID("_HectonNoirCaveAttenuation");
+        private static readonly int _HectonFlowSynchronyParamsId =
+            Shader.PropertyToID("_HectonFlowSynchronyParams");
         private static readonly int _ID_SunSize =
             Shader.PropertyToID("_SunSize");
         private static readonly int _ID_SunEdgeSoftness =
@@ -648,6 +711,8 @@ namespace Hecton8.Environment
         private float _cachedVisualDepth;
         private float _cachedLightFactor;
         private float _cachedCausticsStrength;
+        private float _weatherStormFlowBlend;
+        private float _sharedFlowSynchronyPhaseTime;
         private float _smoothedSunLightFactor = -1f;
         private float _smoothedSunIntensity = -1f;
         private float _cachedSuspendedMotesEmission = -1f;
@@ -726,6 +791,7 @@ namespace Hecton8.Environment
             ResolveMainCamera();
             ResolveTransitionVisorController();
             ResolveUnderwaterParticles();
+            ResolveUnderwaterMarineSnow();
             ResolveUnderwaterExhaleBubbles();
             ResolveShallowSunBeam();
             ResolveSpaceCamera();
@@ -737,6 +803,7 @@ namespace Hecton8.Environment
             InitializeCurrentValues();
             EnsureCrestUnderwaterPassOwnership();
             ApplyCrestMaterial();
+            ApplyNoirResolveGlobals();
 
             RenderPipelineManager.beginCameraRendering += EnforceFogState;
 
@@ -1018,6 +1085,7 @@ namespace Hecton8.Environment
             RestoreSkyMaterialDefaults();
             Shader.SetGlobalVector(_SargassumCanopyShadowParamsId, Vector4.zero);
             Shader.SetGlobalVector(_SargassumCanopyLightingParamsId, new Vector4(0f, 0f, 1f, 0f));
+            ResetNoirResolveGlobals();
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -1240,6 +1308,7 @@ namespace Hecton8.Environment
         {
             EnsureRuntimeVisualOwners();
             DecayExternalBottomSiltBurst(deltaTime);
+            UpdateFlowSynchronyState(deltaTime);
 
             if (playerCamera == null)
             {
@@ -1319,6 +1388,8 @@ namespace Hecton8.Environment
                     ApplySunColorFade(smoothedLightFactor);
                 }
 
+                ApplyNoirResolveGlobals();
+
                 return;
             }
 
@@ -1366,6 +1437,7 @@ namespace Hecton8.Environment
             ApplyUnderwaterCamera();
 
             UpdateLightDiagnostics(lightFactor, baseSunIntensity, horizonFade, appliedSunIntensity);
+            ApplyNoirResolveGlobals();
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -3708,6 +3780,26 @@ namespace Hecton8.Environment
                 motesTransform.TryGetComponent(out underwaterSuspendedMotes);
         }
 
+        private void ResolveUnderwaterMarineSnow()
+        {
+            if (underwaterMarineSnow != null)
+            {
+                if (mainCamera != null)
+                    underwaterMarineSnow.BindTargetCamera(mainCamera.transform);
+                return;
+            }
+
+            if (mainCamera == null)
+                ResolveMainCamera();
+
+            if (mainCamera == null)
+                return;
+
+            underwaterMarineSnow = mainCamera.GetComponentInChildren<HectonMarineSnowRenderer>(true);
+            if (underwaterMarineSnow != null)
+                underwaterMarineSnow.BindTargetCamera(mainCamera.transform);
+        }
+
         private void ResolveUnderwaterExhaleBubbles()
         {
             if (underwaterExhaleBubbles != null)
@@ -3839,8 +3931,8 @@ namespace Hecton8.Environment
             if (underwaterSuspendedMotes == null)
                 ResolveUnderwaterParticles();
 
-            if (underwaterSuspendedMotes == null)
-                return;
+            if (underwaterMarineSnow == null)
+                ResolveUnderwaterMarineSnow();
 
             float targetEmission = 0f;
             bool shouldPlay = false;
@@ -3877,6 +3969,34 @@ namespace Hecton8.Environment
                 ResolveBottomSiltEmissionBoost(false);
             }
 
+            if (underwaterMarineSnow != null)
+            {
+                float densityCeiling = math.max(
+                    0.01f,
+                    suspendedMotesMaxEmission +
+                    bottomSiltEmissionBoost +
+                    suspendedMotesSubmergeBoost);
+                float densityScale = math.saturate(targetEmission / densityCeiling);
+                underwaterMarineSnow.SetUnderwaterState(
+                    shouldPlay,
+                    densityScale,
+                    depth,
+                    lightFactor,
+                    submergeImpulse);
+
+                if (underwaterMarineSnow.IsOperational)
+                {
+                    DisableUnderwaterSuspendedMotes(true);
+#if UNITY_EDITOR
+                    _debugSuspendedMotesEmission = targetEmission;
+#endif
+                    return;
+                }
+            }
+
+            if (underwaterSuspendedMotes == null)
+                return;
+
             if (math.abs(targetEmission - _cachedSuspendedMotesEmission) > 0.05f)
             {
                 ParticleSystem.EmissionModule emission = underwaterSuspendedMotes.emission;
@@ -3900,6 +4020,123 @@ namespace Hecton8.Environment
 #if UNITY_EDITOR
             _debugSuspendedMotesEmission = targetEmission;
 #endif
+        }
+
+        private void ApplyNoirResolveGlobals()
+        {
+            float causticsGate = enableShallowCaustics && _cachedVisualIsUnderwater
+                ? _cachedCausticsStrength
+                : 0f;
+            Color abyssFloor = abyssalBlackFloor;
+            abyssFloor.a = 1f;
+            float waterLevel = ResolveWaterLevel();
+            float verticalFogSpan = math.max(8f, noirVerticalFogSpan);
+            int frameIndex = Application.isPlaying ? Time.frameCount : 0;
+            float velocityMultiplier = math.lerp(
+                CalmFlowVelocityMultiplier,
+                StormFlowVelocityMultiplier,
+                _weatherStormFlowBlend);
+            float turbulenceFrequency = math.lerp(
+                CalmTurbulenceFrequency,
+                StormTurbulenceFrequency,
+                _weatherStormFlowBlend);
+
+            Shader.SetGlobalVector(
+                _HectonNoirResolveSettingsId,
+                new Vector4(
+                    math.max(1f, noirFogPower),
+                    math.max(0f, underwaterFinalDitherStrength),
+                    _cachedVisualIsUnderwater ? 1f : 0f,
+                    0f));
+            Shader.SetGlobalColor(_HectonNoirAbyssFloorId, abyssFloor);
+            Shader.SetGlobalVector(
+                _HectonNoirFogStratificationId,
+                new Vector4(
+                    waterLevel,
+                    1f / verticalFogSpan,
+                    math.max(0f, abyssalDensityBoost),
+                    math.max(0.0001f, _cachedFogDensity)));
+            Shader.SetGlobalVector(
+                _HectonNoirDitherParamsId,
+                new Vector4(
+                    frameIndex * 0.75f,
+                    frameIndex * 0.33f,
+                    64f,
+                    0f));
+            Shader.SetGlobalVector(
+                _HectonNoirCausticsLayerAId,
+                new Vector4(
+                    math.max(0.02f, noirCausticsLayerAScale),
+                    noirCausticsLayerAScrollX,
+                    noirCausticsLayerAScrollZ,
+                    causticsGate * math.saturate(noirCausticsLayerAStrength)));
+            Shader.SetGlobalVector(
+                _HectonNoirCausticsLayerBId,
+                new Vector4(
+                    math.max(0.02f, noirCausticsLayerBScale),
+                    noirCausticsLayerBScrollX,
+                    noirCausticsLayerBScrollZ,
+                    causticsGate * math.saturate(noirCausticsLayerBStrength)));
+            Shader.SetGlobalVector(
+                _HectonNoirCausticsShapeId,
+                new Vector4(
+                    math.max(1f, noirCausticsSharpness),
+                    math.max(0f, noirCausticsDistortion),
+                    math.max(0.25f, noirCausticsDepthFadeStart),
+                    math.max(0.25f, noirCausticsDepthFadeRange)));
+            Shader.SetGlobalVector(
+                _HectonNoirCaveAttenuationId,
+                new Vector4(
+                    math.saturate(biomeAbsorption),
+                    0f,
+                    0f,
+                    0f));
+            Shader.SetGlobalVector(
+                _HectonFlowSynchronyParamsId,
+                new Vector4(
+                    velocityMultiplier,
+                    turbulenceFrequency,
+                    _sharedFlowSynchronyPhaseTime,
+                    _weatherStormFlowBlend));
+        }
+
+        private void ResetNoirResolveGlobals()
+        {
+            Shader.SetGlobalVector(_HectonNoirResolveSettingsId, new Vector4(2.35f, 0.75f, 0f, 0f));
+            Shader.SetGlobalColor(_HectonNoirAbyssFloorId, new Color(0.0015f, 0.0023f, 0.0031f, 1f));
+            Shader.SetGlobalVector(_HectonNoirFogStratificationId, new Vector4(4900f, 1f / 180f, 1.5f, 0.01f));
+            Shader.SetGlobalVector(_HectonNoirDitherParamsId, new Vector4(0f, 0f, 64f, 0f));
+            Shader.SetGlobalVector(_HectonNoirCausticsLayerAId, Vector4.zero);
+            Shader.SetGlobalVector(_HectonNoirCausticsLayerBId, Vector4.zero);
+            Shader.SetGlobalVector(_HectonNoirCausticsShapeId, new Vector4(3.4f, 0.38f, 12f, 8f));
+            Shader.SetGlobalVector(_HectonNoirCaveAttenuationId, new Vector4(0.9f, 0f, 0f, 0f));
+            Shader.SetGlobalVector(_HectonFlowSynchronyParamsId, new Vector4(1f, 0.26f, 0f, 0f));
+        }
+
+        private void UpdateFlowSynchronyState(float deltaTime)
+        {
+            float targetStormBlend = ResolveStormFlowBlend();
+            if (deltaTime > 0f)
+            {
+                float normalizedStep = deltaTime / WeatherFlowResponseSeconds;
+                _weatherStormFlowBlend = Mathf.MoveTowards(_weatherStormFlowBlend, targetStormBlend, normalizedStep);
+                _sharedFlowSynchronyPhaseTime += deltaTime;
+                if (_sharedFlowSynchronyPhaseTime >= 4096f)
+                    _sharedFlowSynchronyPhaseTime -= 4096f;
+            }
+            else
+            {
+                _weatherStormFlowBlend = targetStormBlend;
+            }
+        }
+
+        private static float ResolveStormFlowBlend()
+        {
+            HectonSurfaceWeatherDirector surfaceWeather = HectonSurfaceWeatherDirector.Instance;
+            if (surfaceWeather == null || surfaceWeather.IsSurfaceSuppressed)
+                return 0f;
+
+            return surfaceWeather.CurrentWeatherKind == SurfaceWeatherKind.ElectricalStorm ? 1f : 0f;
         }
 
         private void DisableUnderwaterSuspendedMotes(bool clearParticles)

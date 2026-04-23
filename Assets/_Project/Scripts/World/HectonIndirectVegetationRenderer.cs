@@ -15,7 +15,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-90)]
-    public sealed class HectonIndirectVegetationRenderer : MonoBehaviour, ITickable
+    public class HectonIndirectVegetationRenderer : MonoBehaviour, ITickable
     {
         /// <summary>Stride of one Matrix4x4 entry expected in the external instance matrix buffer.</summary>
         public const int InstanceMatrixStride = 64;
@@ -226,9 +226,9 @@ namespace Hecton8.World
         private ComputeBuffer _visibleIndexBufferLod0;
         private ComputeBuffer _visibleIndexBufferLod1;
         private ComputeBuffer _visibleIndexBufferShadow;
-        private ComputeBuffer _nearIndirectArgsBuffer;
-        private ComputeBuffer _farIndirectArgsBuffer;
-        private ComputeBuffer _shadowIndirectArgsBuffer;
+        private GraphicsBuffer _nearIndirectArgsBuffer;
+        private GraphicsBuffer _farIndirectArgsBuffer;
+        private GraphicsBuffer _shadowIndirectArgsBuffer;
         private MaterialPropertyBlock _nearPropertyBlock;
         private MaterialPropertyBlock _farPropertyBlock;
         private MaterialPropertyBlock _depthNearPropertyBlock;
@@ -302,9 +302,9 @@ namespace Hecton8.World
             totalBytes += EstimateComputeBufferBytes(_visibleIndexBufferLod0);
             totalBytes += EstimateComputeBufferBytes(_visibleIndexBufferLod1);
             totalBytes += EstimateComputeBufferBytes(_visibleIndexBufferShadow);
-            totalBytes += EstimateComputeBufferBytes(_nearIndirectArgsBuffer);
-            totalBytes += EstimateComputeBufferBytes(_farIndirectArgsBuffer);
-            totalBytes += EstimateComputeBufferBytes(_shadowIndirectArgsBuffer);
+            totalBytes += EstimateGraphicsBufferBytes(_nearIndirectArgsBuffer);
+            totalBytes += EstimateGraphicsBufferBytes(_farIndirectArgsBuffer);
+            totalBytes += EstimateGraphicsBufferBytes(_shadowIndirectArgsBuffer);
             return totalBytes;
         }
 
@@ -364,12 +364,12 @@ namespace Hecton8.World
             _scooterHeadlightColors = new Vector4[MaxScooterHeadlights];
             // COLD ALLOC: Vector4[2] - scooter headlight cone payload cache for compute darkness culling - owner: HectonIndirectVegetationRenderer
             _scooterHeadlightConeData = new Vector4[MaxScooterHeadlights];
-            // COLD ALLOC: ComputeBuffer[1] - near indirect arguments buffer - owner: HectonIndirectVegetationRenderer
-            _nearIndirectArgsBuffer = new ComputeBuffer(1, sizeof(uint) * IndirectArgsCount, ComputeBufferType.IndirectArguments);
-            // COLD ALLOC: ComputeBuffer[1] - far indirect arguments buffer - owner: HectonIndirectVegetationRenderer
-            _farIndirectArgsBuffer = new ComputeBuffer(1, sizeof(uint) * IndirectArgsCount, ComputeBufferType.IndirectArguments);
-            // COLD ALLOC: ComputeBuffer[1] - shadow indirect arguments buffer - owner: HectonIndirectVegetationRenderer
-            _shadowIndirectArgsBuffer = new ComputeBuffer(1, sizeof(uint) * IndirectArgsCount, ComputeBufferType.IndirectArguments);
+            // COLD ALLOC: GraphicsBuffer[1] - near indirect arguments buffer - owner: HectonIndirectVegetationRenderer
+            _nearIndirectArgsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, 1, sizeof(uint) * IndirectArgsCount);
+            // COLD ALLOC: GraphicsBuffer[1] - far indirect arguments buffer - owner: HectonIndirectVegetationRenderer
+            _farIndirectArgsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, 1, sizeof(uint) * IndirectArgsCount);
+            // COLD ALLOC: GraphicsBuffer[1] - shadow indirect arguments buffer - owner: HectonIndirectVegetationRenderer
+            _shadowIndirectArgsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, 1, sizeof(uint) * IndirectArgsCount);
             _cullingKernelIndex = _cullingCompute.FindKernel("CullFloraInstances");
             _shadowCullingKernelIndex = _cullingCompute.FindKernel("CullFloraShadowInstances");
             CreateAuxiliaryMaterials();
@@ -642,10 +642,10 @@ namespace Hecton8.World
             if (_argsDirty)
                 RefreshArgsBuffers();
 
-            ComputeBuffer.CopyCount(_visibleIndexBufferLod0, _nearIndirectArgsBuffer, sizeof(uint));
-            ComputeBuffer.CopyCount(_visibleIndexBufferLod1, _farIndirectArgsBuffer, sizeof(uint));
+            GraphicsBuffer.CopyCount(_visibleIndexBufferLod0, _nearIndirectArgsBuffer, sizeof(uint));
+            GraphicsBuffer.CopyCount(_visibleIndexBufferLod1, _farIndirectArgsBuffer, sizeof(uint));
             if (_enableShadowCasterDraw && _visibleIndexBufferShadow != null && _shadowIndirectArgsBuffer != null)
-                ComputeBuffer.CopyCount(_visibleIndexBufferShadow, _shadowIndirectArgsBuffer, sizeof(uint));
+                GraphicsBuffer.CopyCount(_visibleIndexBufferShadow, _shadowIndirectArgsBuffer, sizeof(uint));
 
             if (!TryBindPropertyBlocks())
                 return;
@@ -1232,7 +1232,7 @@ namespace Hecton8.World
             _argsDirty = false;
         }
 
-        private void RefreshArgsBuffer(Mesh renderMesh, uint[] args, ComputeBuffer argsBuffer)
+        private void RefreshArgsBuffer(Mesh renderMesh, uint[] args, GraphicsBuffer argsBuffer)
         {
             if (renderMesh == null || argsBuffer == null)
                 return;
@@ -1570,6 +1570,11 @@ namespace Hecton8.World
         }
 
         private static long EstimateComputeBufferBytes(ComputeBuffer buffer)
+        {
+            return buffer != null ? (long)buffer.count * buffer.stride : 0L;
+        }
+
+        private static long EstimateGraphicsBufferBytes(GraphicsBuffer buffer)
         {
             return buffer != null ? (long)buffer.count * buffer.stride : 0L;
         }

@@ -385,7 +385,7 @@ namespace Hecton8.AI
                 return;
 
             Vector3 velocityChange = Vector3.ClampMagnitude(sampledCurrent, AmbientCurrentMaxVelocity) * (AmbientCurrentInfluence * fdt);
-            _rb.AddForce(velocityChange, ForceMode.VelocityChange);
+            PhysicsForceRouter.QueueForce(_rb, velocityChange, ForceMode.VelocityChange);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -484,7 +484,10 @@ namespace Hecton8.AI
                     if (target.TryGetComponent(out Rigidbody playerRb))
                     {
                         Vector3 impactDir = (target.position - transform.position).normalized;
-                        playerRb.AddForce(impactDir * _speciesProfile.impactForceToPlayer, ForceMode.Impulse);
+                        PhysicsForceRouter.QueueForce(
+                            playerRb,
+                            impactDir * _speciesProfile.impactForceToPlayer,
+                            ForceMode.Impulse);
                     }
                 }
             }

@@ -1,6 +1,7 @@
 using Hecton8.AI;
 using Hecton8.Interaction;
 using Hecton8.Items;
+using Hecton8.Physics;
 using Hecton8.UI;
 using UnityEngine;
 
@@ -147,7 +148,7 @@ namespace Hecton8.Gameplay
             if (direction.sqrMagnitude < 0.0001f)
                 direction = Vector3.forward;
 
-            body.AddForce(direction.normalized * impulse, ForceMode.Impulse);
+            PhysicsForceRouter.QueueForce(body, direction.normalized * impulse, ForceMode.Impulse);
         }
 
         public static void ShowInfo(string message)

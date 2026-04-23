@@ -2,6 +2,9 @@ using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Input;
 using Hecton8.Interaction;
+using Hecton8.Physics;
+using System.Collections.Generic;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -17,7 +20,7 @@ namespace Hecton8.Gameplay
     [RequireComponent(typeof(Collider))]
     [RequireComponent(typeof(PlayerTransportFeelContract))]
     [AddComponentMenu("Hecton8/Gameplay/Transport/Mountable Player Transport")]
-    public sealed class MountablePlayerTransport : MonoBehaviour, IInteractable, ITickable, IFixedTickable, IPlayerTransportSource, IPlayerTransportLifecycleOwner, ITransportPlatform
+    public sealed class MountablePlayerTransport : MonoBehaviour, IInteractable, ITickable, IFixedTickable, IPlayerTransportSource, IPlayerTransportLifecycleOwner, ITransportPlatform, IDamageSignalEmitter
     {
         private const string DefaultMountText = "Board Transport";
         private const string DefaultDismountText = "Dismount";
@@ -98,6 +101,8 @@ namespace Hecton8.Gameplay
         private Vector3 _platformAngularVelocity;
         private Vector3 _previousPlatformPosition;
         private Quaternion _previousPlatformRotation = Quaternion.identity;
+        // COLD ALLOC: List<IDamageReceiver>[1] — mounted transport damage listeners (player trauma dispatcher) — owner: MountablePlayerTransport
+        private readonly List<IDamageReceiver> _damageReceivers = new List<IDamageReceiver>(1);
 
         /// <summary>True while this external transport is actively mounted by the rider.</summary>
         public bool IsMounted => _mounted;
@@ -155,6 +160,7 @@ namespace Hecton8.Gameplay
         {
             ForceReleaseMountedRider();
             TryUnregister();
+            _damageReceivers.Clear();
         }
 
         private void OnDestroy()
@@ -307,7 +313,10 @@ namespace Hecton8.Gameplay
 
             _transportBody.linearDamping = bailoutLinearDamping;
             _transportBody.angularDamping = bailoutAngularDamping;
-            _transportBody.AddForce(Vector3.down * bailoutSinkAcceleration * fixedDeltaTime, ForceMode.VelocityChange);
+            PhysicsForceRouter.QueueForce(
+                _transportBody,
+                Vector3.down * bailoutSinkAcceleration * fixedDeltaTime,
+                ForceMode.VelocityChange);
             UpdatePlatformMotionCache(fixedDeltaTime);
         }
 
@@ -373,6 +382,7 @@ namespace Hecton8.Gameplay
             if (preset == null || _isBroken)
                 return;
 
+            float previousIntegrityNormalized = ResolveIntegrityNormalized();
             float startSpeed = Mathf.Max(0f, preset.CollisionDamageStartSpeed);
             if (impactSpeed <= startSpeed)
                 return;
@@ -389,8 +399,54 @@ namespace Hecton8.Gameplay
 
             EnsureLifecycleInitialized();
             _currentIntegrity = Mathf.Max(0f, _currentIntegrity - damage);
+            float nextIntegrityNormalized = ResolveIntegrityNormalized();
+            DamageSignal damageSignal = BuildDamageSignal(impactSpeed, hitPoint, (uint)DamageTypeMask.Impact, previousIntegrityNormalized, nextIntegrityNormalized);
+            DispatchIntegrityChanged(previousIntegrityNormalized, nextIntegrityNormalized, damageSignal);
+
+            float previousPowerChannel = ResolvePowerChannel(previousIntegrityNormalized);
+            float nextPowerChannel = ResolvePowerChannel(nextIntegrityNormalized);
+            if (Mathf.Abs(nextPowerChannel - previousPowerChannel) > 0.0001f)
+                DispatchPowerChanged(previousPowerChannel, nextPowerChannel, damageSignal);
+
+            DispatchClarityChanged(0f, Mathf.Clamp01(Mathf.Max(damageT, 1f - nextIntegrityNormalized)), damageSignal);
+            DispatchTraumaThresholdCrossed(ResolveTraumaLevel(nextIntegrityNormalized, damageT));
             if (_currentIntegrity <= 0.0001f)
                 BreakTransport();
+        }
+
+        /// <summary>
+        /// Registers a damage receiver for transport damage signals.
+        /// </summary>
+        public void RegisterDamageReceiver(IDamageReceiver receiver)
+        {
+            if (receiver == null)
+                return;
+
+            for (int i = 0; i < _damageReceivers.Count; i++)
+            {
+                if (ReferenceEquals(_damageReceivers[i], receiver))
+                    return;
+            }
+
+            _damageReceivers.Add(receiver);
+        }
+
+        /// <summary>
+        /// Unregisters a previously registered transport damage receiver.
+        /// </summary>
+        public void UnregisterDamageReceiver(IDamageReceiver receiver)
+        {
+            if (receiver == null)
+                return;
+
+            for (int i = _damageReceivers.Count - 1; i >= 0; i--)
+            {
+                if (ReferenceEquals(_damageReceivers[i], receiver))
+                {
+                    _damageReceivers.RemoveAt(i);
+                    break;
+                }
+            }
         }
 
         private void MountRider(Transform interactor)
@@ -436,7 +492,7 @@ namespace Hecton8.Gameplay
 
         private void DismountRider(bool placeRiderAtExit)
         {
-            DismountRiderInternal(placeRiderAtExit, zeroRiderVelocity: true);
+            DismountRiderInternal(placeRiderAtExit, applyEvaHandoff: true);
         }
 
         internal void TriggerEmergencyBailoutDrift(Vector3 inheritedVelocity, float severity)
@@ -447,7 +503,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            DismountRiderInternal(placeRiderAtExit: false, zeroRiderVelocity: false);
+            DismountRiderInternal(placeRiderAtExit: false, applyEvaHandoff: true);
             BeginEmergencyBailoutDrift(inheritedVelocity, severity);
         }
 
@@ -590,11 +646,19 @@ namespace Hecton8.Gameplay
 
         private void MoveRiderToDismountPoint()
         {
-            if (_riderTransform == null)
-                return;
+            ResolveDismountPose(out Vector3 targetPosition, out Quaternion targetRotation);
+            MoveRiderToDismountPose(targetPosition, targetRotation);
+        }
 
-            Vector3 targetPosition;
-            Quaternion targetRotation;
+        private void ResolveDismountPose(out Vector3 targetPosition, out Quaternion targetRotation)
+        {
+            if (_riderTransform == null)
+            {
+                targetPosition = _cachedTransform.position;
+                targetRotation = _cachedTransform.rotation;
+                return;
+            }
+
             if (dismountAnchor != null)
             {
                 targetPosition = dismountAnchor.position;
@@ -606,7 +670,10 @@ namespace Hecton8.Gameplay
                 targetPosition = _cachedTransform.position + _cachedTransform.right * distance + Vector3.up * 0.1f;
                 targetRotation = _riderTransform.rotation;
             }
+        }
 
+        private void MoveRiderToDismountPose(Vector3 targetPosition, Quaternion targetRotation)
+        {
             if (_riderBody != null)
             {
                 _riderBody.position = targetPosition;
@@ -715,6 +782,78 @@ namespace Hecton8.Gameplay
             return baseDrain * drainScale;
         }
 
+        private void DispatchIntegrityChanged(float prev, float next, DamageSignal signal)
+        {
+            for (int i = 0; i < _damageReceivers.Count; i++)
+                _damageReceivers[i].OnIntegrityChanged(prev, next, signal);
+        }
+
+        private void DispatchPowerChanged(float prev, float next, DamageSignal signal)
+        {
+            for (int i = 0; i < _damageReceivers.Count; i++)
+                _damageReceivers[i].OnPowerChanged(prev, next, signal);
+        }
+
+        private void DispatchClarityChanged(float prev, float next, DamageSignal signal)
+        {
+            for (int i = 0; i < _damageReceivers.Count; i++)
+                _damageReceivers[i].OnClarityChanged(prev, next, signal);
+        }
+
+        private void DispatchTraumaThresholdCrossed(TraumaLevel level)
+        {
+            if (level == TraumaLevel.None)
+                return;
+
+            for (int i = 0; i < _damageReceivers.Count; i++)
+                _damageReceivers[i].OnTraumaThresholdCrossed(level);
+        }
+
+        private DamageSignal BuildDamageSignal(
+            float impactSpeed,
+            Vector3 hitPoint,
+            uint damageType,
+            float previousIntegrityNormalized,
+            float nextIntegrityNormalized)
+        {
+            DamageSignal signal = default;
+            signal.magnitude = Mathf.Max(0f, impactSpeed);
+            signal.localPoint = _cachedTransform != null
+                ? (float3)_cachedTransform.InverseTransformPoint(hitPoint)
+                : float3.zero;
+            signal.damageType = damageType;
+            signal.integrityDelta = (byte)Mathf.Clamp(
+                Mathf.RoundToInt(Mathf.Abs(nextIntegrityNormalized - previousIntegrityNormalized) * byte.MaxValue),
+                0,
+                byte.MaxValue);
+            signal.depth = _riderSurvival != null ? Mathf.Max(0f, _riderSurvival.Depth) : 0f;
+            signal.sourceID = DamageSourceIds.MountableTransport;
+            return signal;
+        }
+
+        private static float ResolvePowerChannel(float integrityNormalized)
+        {
+            return integrityNormalized >= 0.4f
+                ? 1f
+                : Mathf.Clamp01(integrityNormalized / 0.4f);
+        }
+
+        private static TraumaLevel ResolveTraumaLevel(float integrityNormalized, float damageT)
+        {
+            if (integrityNormalized <= 0.0001f || damageT >= 0.98f)
+                return TraumaLevel.Catastrophic;
+
+            if (integrityNormalized < 0.4f || damageT >= 0.72f)
+                return TraumaLevel.Critical;
+
+            if (integrityNormalized < 0.65f || damageT >= 0.42f)
+                return TraumaLevel.Significant;
+
+            return damageT > 0.05f
+                ? TraumaLevel.Minor
+                : TraumaLevel.None;
+        }
+
         private void BreakTransport()
         {
             if (_isBroken)
@@ -729,13 +868,22 @@ namespace Hecton8.Gameplay
                 DismountRider(true);
         }
 
-        private void DismountRiderInternal(bool placeRiderAtExit, bool zeroRiderVelocity)
+        private void DismountRiderInternal(bool placeRiderAtExit, bool applyEvaHandoff)
         {
             if (!_mounted)
                 return;
 
+            Vector3 exitPosition = _riderBody != null
+                ? _riderBody.position
+                : (_riderTransform != null ? _riderTransform.position : _cachedTransform.position);
+            Quaternion exitRotation = _riderTransform != null ? _riderTransform.rotation : _cachedTransform.rotation;
             if (placeRiderAtExit)
-                MoveRiderToDismountPoint();
+                ResolveDismountPose(out exitPosition, out exitRotation);
+
+            Vector3 exitVelocity = Vector3.zero;
+            bool hasExitVelocity = applyEvaHandoff && TryResolveRiderExitVelocity(exitPosition, out exitVelocity);
+            if (placeRiderAtExit)
+                MoveRiderToDismountPose(exitPosition, exitRotation);
 
             if (_riderTransportCoordinator != null)
                 _riderTransportCoordinator.ClearExternalTransportSource(this);
@@ -743,8 +891,8 @@ namespace Hecton8.Gameplay
             RestoreRiderInteraction();
             UnsubscribeMountedInput();
             RestoreInteractionCollider();
-            if (zeroRiderVelocity)
-                ZeroRiderVelocity();
+            if (hasExitVelocity)
+                ApplyRiderExitVelocity(exitVelocity);
 
             PlayTransportOneShot(dismountSound);
             ClearRiderReferences();
@@ -753,6 +901,32 @@ namespace Hecton8.Gameplay
             _transportActive = false;
             _currentThrottle = 0f;
             ResetPlatformMotionCache();
+        }
+
+        private bool TryResolveRiderExitVelocity(Vector3 exitPosition, out Vector3 exitVelocity)
+        {
+            exitVelocity = Vector3.zero;
+            if (_riderBody == null)
+                return false;
+
+            Vector3 riderPosition = _riderTransform != null ? _riderTransform.position : _riderBody.position;
+            Vector3 platformVelocityAtRider = GetPlatformPointVelocity(riderPosition);
+            Vector3 riderRelativeVelocity = _riderBody.linearVelocity - platformVelocityAtRider;
+            Vector3 platformVelocityAtExit = GetPlatformPointVelocity(exitPosition);
+            Vector3 candidateVelocity = platformVelocityAtExit + riderRelativeVelocity;
+            if (!IsFiniteVector(candidateVelocity))
+                return false;
+
+            exitVelocity = candidateVelocity;
+            return true;
+        }
+
+        private void ApplyRiderExitVelocity(Vector3 exitVelocity)
+        {
+            if (_riderBody == null || !IsFiniteVector(exitVelocity))
+                return;
+
+            _riderBody.linearVelocity = exitVelocity;
         }
 
         private void BeginEmergencyBailoutDrift(Vector3 inheritedVelocity, float severity)
@@ -939,6 +1113,12 @@ namespace Hecton8.Gameplay
 
             if (SpatialAudioManager.TryGetInstance(out SpatialAudioManager audio))
                 audio.PlayAtPoint(clip, _cachedTransform.position, transportAudioVolume);
+        }
+
+        private static bool IsFiniteVector(Vector3 value)
+        {
+            return !(float.IsNaN(value.x) || float.IsNaN(value.y) || float.IsNaN(value.z) ||
+                     float.IsInfinity(value.x) || float.IsInfinity(value.y) || float.IsInfinity(value.z));
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD

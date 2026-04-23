@@ -187,7 +187,8 @@ for i in [0, 1, 2]:
 
 ### 5.2 Chromatic Aberration (Edge-Weighted)
 
-edge_factor   = saturate(length(uv - 0.5) * 2.2)           // 0 at center, 1 at corners
+dist_sq       = dot(uv - 0.5, uv - 0.5)
+edge_factor   = saturate(dist_sq * 4.84)                   // 2.2 squared, zero SQRT cost
 ca_offset     = edge_factor * _CAStrength                   // _CAStrength: [0.001 .. 0.006]
 
 r_channel     = scene_tex.Sample(s, uv + float2(ca_offset,  0)).r
@@ -198,17 +199,15 @@ b_channel     = scene_tex.Sample(s, uv - float2(ca_offset,  0)).b
 `_CAStrength` scales with `_NoirIntensityGlobal` parameter → CA intensifies in horror zones.
 
 ### 5.3 Anamorphic Streak (Horizontal Only)
-Horizontal bokeh streak on bright pixels:
+Horizontal bokeh streak on bright pixels uses separable dual-pass filtering. No 16-sample brute-force loop.
+
+Pass A: downsample + horizontal stretch into half-res target
+Pass B: upsample + accumulate blue-tinted streak contribution
 
 streak_mask   = saturate((luminance(color) - _StreakThreshold) / (1.0 - _StreakThreshold))
-// _StreakThreshold ~0.85
-streak_color  = 0
-[unroll(8)] for (int s = 1; s <= 8; s++):
-    offset         = float2(s * _StreakWidth / _ScreenWidth, 0)  // horizontal only
-    streak_color  += scene_tex.Sample(bilinear, uv + offset) * (1.0 / s)  // 1/s falloff
-    streak_color  += scene_tex.Sample(bilinear, uv - offset) * (1.0 / s)
-streak_color  *= streak_mask * _StreakIntensity * float3(0.85, 0.9, 1.0)  // blue tint
-color_out     += streak_color
+streak_color  = DualKawaseHorizontal(scene_tex, uv, _StreakWidth)
+streak_color *= streak_mask * _StreakIntensity * float3(0.85, 0.9, 1.0)
+color_out    += streak_color
 
 ### 5.4 Film Grain (High Quality Tier Only)
 
@@ -325,7 +324,7 @@ x = (x*(2.51x+0.03)) / (x*(2.43x+0.59)+0.14)
 caustic = pow(layer_A * layer_B, contrast)
 
 // CA Edge Weight
-edge = saturate(length(uv - 0.5) * 2.2)
+edge = saturate(dot(uv - 0.5, uv - 0.5) * 4.84)
 uv_r = uv + float2(edge * ca_strength, 0)
 uv_b = uv - float2(edge * ca_strength, 0)
 
@@ -342,7 +341,7 @@ spec_wet = lerp(spec_base, spec_base * 2.5, moisture_mask)
 density_px = fog_density * (1.0 + (1.0 - world_y_norm) * abyssal_boost)
 
 // Streak falloff
-streak += sample(uv ± offset_s) * (1.0 / s)          // s in [1..8]
+streak = DualKawaseHorizontal(scene_tex, uv, streak_width)
 
 ---
 

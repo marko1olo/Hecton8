@@ -1,67 +1,61 @@
-// ============================================================================
-// HECTON-8 — HectonFloatingOrigin.cs
-// Centralized system to resolve floating-point precision issues in large worlds.
-//
-// DESIGN:
-//   - Monitors anchor (Camera/Player) distance from (0,0,0).
-//   - When threshold is exceeded, shifts ALL root GameObjects by -offset.
-//   - Notifies subscribers via OnWorldShift event.
-//
-// ZERO GC:
-//   - Distance check in Tick() is allocation-free.
-//   - Shift logic uses pre-allocated List for root objects.
-// ============================================================================
-
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Hecton8.Bootstrap;
+using Unity.Burst;
+using Unity.Jobs;
 using UnityEngine;
+using UnityEngine.Jobs;
 using UnityEngine.SceneManagement;
-using Hecton8.Core;
 
 namespace Hecton8.Core
 {
     /// <summary>
-    /// Manages the world origin shift to maintain 1:1 precision within a 1km radius.
+    /// Manages the world origin shift to maintain precision while preserving an
+    /// absolute-universe coordinate space for async systems.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-10000)]
     public sealed class HectonFloatingOrigin : MonoBehaviour, ITickable
     {
-        private static readonly int _HectonFloatingOriginOffsetId = Shader.PropertyToID("_HectonFloatingOriginOffset");
-        private static readonly int _TotalUniverseOffsetId = Shader.PropertyToID("_TotalUniverseOffset");
-
-        // ══════════════════════════════════════════════════════════
-        //  SINGLETON & EVENTS
-        // ══════════════════════════════════════════════════════════
-
-        private static HectonFloatingOrigin _instance;
-        public static HectonFloatingOrigin Instance => _instance;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
+        [BurstCompile]
+        private struct OriginShiftTranslateJob : IJobParallelForTransform
         {
-            _instance = null;
-            OnWorldShift = null;
-            Shader.SetGlobalVector(_HectonFloatingOriginOffsetId, Vector4.zero);
-            Shader.SetGlobalVector(_TotalUniverseOffsetId, Vector4.zero);
+            public Vector3 ShiftOffset;
+
+            public void Execute(int index, TransformAccess transform)
+            {
+                if (!transform.isValid)
+                    return;
+
+                transform.position -= ShiftOffset;
+            }
         }
 
-        /// <summary>
-        /// Fired immediately after the world has shifted.
-        /// Parameter: the world-space offset applied to all objects.
-        /// </summary>
-        public static event Action<Vector3> OnWorldShift;
+        private static readonly int _HectonFloatingOriginOffsetId = Shader.PropertyToID("_HectonFloatingOriginOffset");
+        private static readonly int _TotalUniverseOffsetId = Shader.PropertyToID("_TotalUniverseOffset");
+        private static readonly List<IOriginShiftListener> _originShiftListeners = new List<IOriginShiftListener>(16);
 
-        /// <summary>
-        /// Cumulative offset applied to the world origin since startup.
-        /// </summary>
-        public Vector3 TotalOffset { get; private set; }
-        public Vector3 TotalUniverseOffset => TotalOffset;
+        private static HectonFloatingOrigin _instance;
+        private static OriginShiftEventData _lastShiftEvent;
 
-        // ══════════════════════════════════════════════════════════
-        //  INSPECTOR
-        // ══════════════════════════════════════════════════════════
+        private readonly List<GameObject> _sceneRootObjects = new List<GameObject>(256);
+        private readonly List<Transform> _shiftTargetTransforms = new List<Transform>(256);
+
+        private TransformAccessArray _shiftTargetAccessArray;
+        private Transform[] _shiftTargetArray = Array.Empty<Transform>();
+        private bool _shiftTargetsDirty = true;
+        private bool _isRegistered;
+        private bool _sceneEventsSubscribed;
+        private bool _isShiftInProgress;
+        private bool _physicsPauseActive;
+        private bool _physicsAutoSimulationBeforeShift = true;
+        private SimulationMode _physicsSimulationModeBeforeShift = SimulationMode.FixedUpdate;
+        private float _thresholdSqr;
+        private float _anchorResolveTimer;
+        private uint _shiftSequence;
+
+        private const float AnchorResolveCooldown = 1f;
 
         [Header("── Settings ────────────────────────────────")]
         [Tooltip("Distance from (0,0,0) that triggers a shift.")]
@@ -70,19 +64,142 @@ namespace Hecton8.Core
         [Tooltip("Object to follow (normally Player). If null, resolves via SceneBootstrap.")]
         [SerializeField] private Transform _anchor;
 
-        // ══════════════════════════════════════════════════════════
-        //  PRIVATE STATE
-        // ══════════════════════════════════════════════════════════
+        /// <summary>Singleton instance.</summary>
+        public static HectonFloatingOrigin Instance => _instance;
 
-        private bool _isRegistered;
-        private readonly List<GameObject> _cachedRootObjects = new List<GameObject>(256);
-        private float _thresholdSqr;
-        private float _anchorResolveTimer;
-        private const float AnchorResolveCooldown = 1f;
+        /// <summary>Legacy shift event. Offset equals the world-space shift applied to roots.</summary>
+        public static event Action<Vector3> OnWorldShift;
 
-        // ══════════════════════════════════════════════════════════
-        //  LIFECYCLE
-        // ══════════════════════════════════════════════════════════
+        /// <summary>Cumulative absolute-universe offset committed since startup.</summary>
+        public Vector3 TotalOffset { get; private set; }
+
+        /// <summary>Cumulative absolute-universe offset committed since startup.</summary>
+        public Vector3 TotalUniverseOffset => TotalOffset;
+
+        /// <summary>Current absolute-universe offset committed since startup.</summary>
+        public static Vector3 CurrentTotalOffset => _instance != null ? _instance.TotalOffset : Vector3.zero;
+
+        /// <summary>Current committed shift sequence.</summary>
+        public static uint CurrentShiftSequence => _instance != null ? _instance._shiftSequence : 0u;
+
+        /// <summary>True while the floating-origin shift job is executing.</summary>
+        public static bool IsShiftInProgress => _instance != null && _instance._isShiftInProgress;
+
+        /// <summary>True while PhysX remains paused for the shift window.</summary>
+        public static bool IsPhysicsPausedForShift => _instance != null && _instance._physicsPauseActive;
+
+        /// <summary>Last committed shift event payload.</summary>
+        public static OriginShiftEventData LastShiftEvent => _lastShiftEvent;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _instance = null;
+            _lastShiftEvent = default;
+            _originShiftListeners.Clear();
+            OnWorldShift = null;
+            Shader.SetGlobalVector(_HectonFloatingOriginOffsetId, Vector4.zero);
+            Shader.SetGlobalVector(_TotalUniverseOffsetId, Vector4.zero);
+        }
+
+        /// <summary>
+        /// Converts the supplied runtime-space position into absolute-universe space
+        /// using the currently committed offset.
+        /// </summary>
+        /// <param name="runtimePosition">Runtime-space position.</param>
+        /// <returns>Absolute-universe position.</returns>
+        public static Vector3 ToAbsoluteUniversePosition(Vector3 runtimePosition)
+        {
+            return runtimePosition + CurrentTotalOffset;
+        }
+
+        /// <summary>
+        /// Converts the supplied absolute-universe position into runtime space
+        /// using the currently committed offset.
+        /// </summary>
+        /// <param name="absoluteUniversePosition">Absolute-universe position.</param>
+        /// <returns>Runtime-space position.</returns>
+        public static Vector3 ToRuntimePosition(Vector3 absoluteUniversePosition)
+        {
+            return absoluteUniversePosition - CurrentTotalOffset;
+        }
+
+        /// <summary>
+        /// Converts the supplied absolute-universe position into runtime space
+        /// using an explicit committed total offset.
+        /// </summary>
+        /// <param name="absoluteUniversePosition">Absolute-universe position.</param>
+        /// <param name="committedTotalOffset">Committed absolute-universe offset.</param>
+        /// <returns>Runtime-space position.</returns>
+        public static Vector3 ToRuntimePosition(Vector3 absoluteUniversePosition, Vector3 committedTotalOffset)
+        {
+            return absoluteUniversePosition - committedTotalOffset;
+        }
+
+        /// <summary>
+        /// Registers a listener for committed floating-origin shifts.
+        /// </summary>
+        /// <param name="listener">Listener to register.</param>
+        public static void RegisterListener(IOriginShiftListener listener)
+        {
+            if (listener == null)
+                return;
+
+            for (int i = 0; i < _originShiftListeners.Count; i++)
+            {
+                if (ReferenceEquals(_originShiftListeners[i], listener))
+                    return;
+            }
+
+            _originShiftListeners.Add(listener);
+        }
+
+        /// <summary>
+        /// Unregisters a listener from committed floating-origin shifts.
+        /// </summary>
+        /// <param name="listener">Listener to unregister.</param>
+        public static void UnregisterListener(IOriginShiftListener listener)
+        {
+            if (listener == null)
+                return;
+
+            for (int i = 0; i < _originShiftListeners.Count; i++)
+            {
+                if (!ReferenceEquals(_originShiftListeners[i], listener))
+                    continue;
+
+                _originShiftListeners.RemoveAt(i);
+                break;
+            }
+        }
+
+        /// <summary>
+        /// Marks the root-transform cache dirty so the next shift rebuilds it on the cold path.
+        /// </summary>
+        public static void MarkShiftTargetsDirty()
+        {
+            if (_instance == null)
+                return;
+
+            _instance._shiftTargetsDirty = true;
+        }
+
+        /// <summary>
+        /// Waits until no shift job is executing and the atomic physics pause gate has ended.
+        /// Async systems must call this before writing runtime transforms that depend on
+        /// the current floating-origin offset.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Stable committed shift payload for the current frame.</returns>
+        public static async Awaitable<OriginShiftEventData> WaitForShiftStabilityAsync(CancellationToken cancellationToken = default)
+        {
+            while (_instance != null && (_instance._isShiftInProgress || _instance._physicsPauseActive))
+                await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+
+            Vector3 currentOffset = CurrentTotalOffset;
+            uint currentSequence = CurrentShiftSequence;
+            return new OriginShiftEventData(Vector3.zero, currentOffset, currentOffset, currentSequence, Time.frameCount);
+        }
 
         private void Awake()
         {
@@ -91,15 +208,18 @@ namespace Hecton8.Core
                 Destroy(gameObject);
                 return;
             }
+
             _instance = this;
             RefreshThresholdCache();
             TryResolveAnchor(force: true);
             PublishGlobalOffsets();
+            SubscribeSceneEvents();
         }
 
         private void OnEnable()
         {
             TryRegister();
+            MarkShiftTargetsDirty();
         }
 
         private void OnDisable()
@@ -110,21 +230,34 @@ namespace Hecton8.Core
         private void OnDestroy()
         {
             TryUnregister();
+            UnsubscribeSceneEvents();
+            DisposeShiftTargetAccessArray();
 
             if (_instance == this)
             {
+                if (_physicsPauseActive)
+                {
+#pragma warning disable CS0618
+                    UnityEngine.Physics.autoSimulation = _physicsAutoSimulationBeforeShift;
+#pragma warning restore CS0618
+                    UnityEngine.Physics.simulationMode = _physicsSimulationModeBeforeShift;
+                }
+
+                _originShiftListeners.Clear();
+                OnWorldShift = null;
                 _instance = null;
-                OnWorldShift = null; // Clear static event on teardown
             }
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  ITickable — Distance Monitoring
-        // ══════════════════════════════════════════════════════════
-
+        /// <summary>
+        /// Monitors anchor distance and commits a synchronized floating-origin shift.
+        /// </summary>
+        /// <param name="deltaTime">Scaled tick delta supplied by the tick manager.</param>
         public void Tick(float deltaTime)
         {
-            // Fail-safe anchor acquisition
+            if (_isShiftInProgress || _physicsPauseActive)
+                return;
+
             if (_anchor == null)
             {
                 _anchorResolveTimer -= deltaTime;
@@ -136,57 +269,142 @@ namespace Hecton8.Core
                     return;
             }
 
-            // Check distance from origin (Zero-GC)
-            Vector3 pos = _anchor.position;
-            if (pos.sqrMagnitude > _thresholdSqr)
+            Vector3 anchorPosition = _anchor.position;
+            if (anchorPosition.sqrMagnitude > _thresholdSqr)
+                ShiftWorld(anchorPosition);
+        }
+
+        private void ShiftWorld(Vector3 shiftOffset)
+        {
+            if (shiftOffset.sqrMagnitude <= 0.0001f)
+                return;
+
+            _isShiftInProgress = true;
+            PausePhysicsForShift();
+            try
             {
-                ShiftWorld(pos);
+                if (_shiftTargetsDirty)
+                    RebuildShiftTargetCache();
+
+                if (_shiftTargetAccessArray.isCreated && _shiftTargetAccessArray.length > 0)
+                {
+                    OriginShiftTranslateJob shiftJob = new OriginShiftTranslateJob
+                    {
+                        ShiftOffset = shiftOffset
+                    };
+
+                    JobHandle handle = UnityEngine.Jobs.IJobParallelForTransformExtensions.ScheduleByRef(ref shiftJob, _shiftTargetAccessArray, default);
+                    handle.Complete();
+                }
+
+                Vector3 previousTotalOffset = TotalOffset;
+                TotalOffset += shiftOffset;
+                _shiftSequence++;
+                _lastShiftEvent = new OriginShiftEventData(shiftOffset, previousTotalOffset, TotalOffset, _shiftSequence, Time.frameCount);
+
+                PublishGlobalOffsets();
+                UnityEngine.Physics.SyncTransforms();
+                BroadcastOriginShift(_lastShiftEvent);
+                OnWorldShift?.Invoke(shiftOffset);
+            }
+            finally
+            {
+                ResumePhysicsAfterShift();
+                _isShiftInProgress = false;
+            }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log($"[FloatingOrigin] shift={shiftOffset} seq={_shiftSequence} total={TotalOffset}");
+#endif
+        }
+
+        private void PausePhysicsForShift()
+        {
+#pragma warning disable CS0618
+            _physicsAutoSimulationBeforeShift = UnityEngine.Physics.autoSimulation;
+            UnityEngine.Physics.autoSimulation = false;
+#pragma warning restore CS0618
+            _physicsSimulationModeBeforeShift = UnityEngine.Physics.simulationMode;
+            UnityEngine.Physics.simulationMode = SimulationMode.Script;
+            _physicsPauseActive = true;
+        }
+
+        private void ResumePhysicsAfterShift()
+        {
+            if (!_physicsPauseActive)
+                return;
+
+#pragma warning disable CS0618
+            UnityEngine.Physics.autoSimulation = _physicsAutoSimulationBeforeShift;
+#pragma warning restore CS0618
+            UnityEngine.Physics.simulationMode = _physicsSimulationModeBeforeShift;
+            _physicsPauseActive = false;
+        }
+
+        private void BroadcastOriginShift(in OriginShiftEventData shiftData)
+        {
+            for (int i = _originShiftListeners.Count - 1; i >= 0; i--)
+            {
+                IOriginShiftListener listener = _originShiftListeners[i];
+                UnityEngine.Object unityListener = listener as UnityEngine.Object;
+                if (listener == null || unityListener == null)
+                {
+                    _originShiftListeners.RemoveAt(i);
+                    continue;
+                }
+
+                listener.OnOriginShift(in shiftData);
             }
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  SHIFT LOGIC
-        // ══════════════════════════════════════════════════════════
-
-        /// <summary>
-        /// Moves all root objects in all loaded scenes by -offset.
-        /// </summary>
-        private void ShiftWorld(Vector3 offset)
+        private void RebuildShiftTargetCache()
         {
-            // 1. Iterate all active loaded scenes
+            _shiftTargetTransforms.Clear();
+
             int sceneCount = SceneManager.sceneCount;
             for (int i = 0; i < sceneCount; i++)
             {
                 Scene scene = SceneManager.GetSceneAt(i);
-                if (!scene.isLoaded) continue;
+                if (!scene.isLoaded)
+                    continue;
 
-                // 2. Get root objects (Zero-GC with cached list)
-                _cachedRootObjects.Clear();
-                scene.GetRootGameObjects(_cachedRootObjects);
-
-                // 3. Subtract offset from all root transforms
-                for (int j = 0; j < _cachedRootObjects.Count; j++)
+                _sceneRootObjects.Clear();
+                scene.GetRootGameObjects(_sceneRootObjects);
+                for (int j = 0; j < _sceneRootObjects.Count; j++)
                 {
-                    GameObject go = _cachedRootObjects[j];
-                    if (go == null) continue;
+                    GameObject rootObject = _sceneRootObjects[j];
+                    if (rootObject == null)
+                        continue;
 
-                    // Note: We shift everything. Components relying on world-space
-                    // coordinates must subscribe to OnWorldShift to compensate.
-                    go.transform.position -= offset;
+                    _shiftTargetTransforms.Add(rootObject.transform);
                 }
             }
 
-            // 4. Update internal Unity state
-            TotalOffset += offset;
-            PublishGlobalOffsets();
-            UnityEngine.Physics.SyncTransforms();
+            int transformCount = _shiftTargetTransforms.Count;
+            if (_shiftTargetArray.Length != transformCount)
+            {
+                _shiftTargetArray = transformCount == 0
+                    ? Array.Empty<Transform>()
+                    : new Transform[transformCount]; // COLD ALLOC: Transform[transformCount] — cached root transform snapshot for atomic origin shifts — owner: HectonFloatingOrigin
+            }
 
-            // 5. Notify specialized systems (Voxel, VFX, Sound emitters)
-            OnWorldShift?.Invoke(offset);
+            for (int i = 0; i < transformCount; i++)
+                _shiftTargetArray[i] = _shiftTargetTransforms[i];
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[FloatingOrigin] World shifted by {offset}. Anchor returned to approx (0,0,0).");
-#endif
+            DisposeShiftTargetAccessArray();
+            if (transformCount > 0)
+            {
+                TransformAccessArray.Allocate(transformCount, -1, out _shiftTargetAccessArray);
+                _shiftTargetAccessArray.SetTransforms(_shiftTargetArray);
+            }
+
+            _shiftTargetsDirty = false;
+        }
+
+        private void DisposeShiftTargetAccessArray()
+        {
+            if (_shiftTargetAccessArray.isCreated)
+                _shiftTargetAccessArray.Dispose();
         }
 
         private void TryResolveAnchor(bool force)
@@ -241,6 +459,43 @@ namespace Hecton8.Core
                 tickManager.Unregister(this);
 
             _isRegistered = false;
+        }
+
+        private void SubscribeSceneEvents()
+        {
+            if (_sceneEventsSubscribed)
+                return;
+
+            SceneManager.sceneLoaded += HandleSceneLoaded;
+            SceneManager.sceneUnloaded += HandleSceneUnloaded;
+            SceneManager.activeSceneChanged += HandleActiveSceneChanged;
+            _sceneEventsSubscribed = true;
+        }
+
+        private void UnsubscribeSceneEvents()
+        {
+            if (!_sceneEventsSubscribed)
+                return;
+
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
+            SceneManager.sceneUnloaded -= HandleSceneUnloaded;
+            SceneManager.activeSceneChanged -= HandleActiveSceneChanged;
+            _sceneEventsSubscribed = false;
+        }
+
+        private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            _shiftTargetsDirty = true;
+        }
+
+        private void HandleSceneUnloaded(Scene scene)
+        {
+            _shiftTargetsDirty = true;
+        }
+
+        private void HandleActiveSceneChanged(Scene previousScene, Scene newScene)
+        {
+            _shiftTargetsDirty = true;
         }
 
 #if UNITY_EDITOR

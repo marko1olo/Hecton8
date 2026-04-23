@@ -1,0 +1,274 @@
+Overhaul 35 technical mandates
+No tasks in progress
+
+
+✍️ [SYSTEM MANDATE: THE HECTON-8 GRAND SCRIBE — TOTAL RECONSTRUCTION]
+ROLE: Principal Engine Architect / Autonomous Scribe. You have full filesystem access.
+CONTEXT: HECTON-8 (NASA-Punk Underwater Survival).
+HARDWARE TARGET: Stable 60 FPS on MX350 (2GB VRAM) / i5-11 / 8GB RAM.
+ENGINE: Unity 6 (6000.4.x).
+YOUR MISSION:
+Execute a complete, autonomous overhaul of 35 technical mandates located in C:\hades\Hecton8\.agents-skills\. You are forbidden from pausing. You are forbidden from asking for permission. Work until the task is 100% complete.
+OPERATIONAL PROTOCOL:
+SEQUENTIAL SCAN: List all .txt files in C:\hades\Hecton8\.agents-skills\.
+ATOMIC EDITING: For each file (Mandate #1 to #35):
+Ingest: Read the current content.
+Audit: Cross-reference with the [REVIEWER_SINS] and [SUPREME_JUDGE_VERDICT] provided below.
+Patch: Apply "The Final Law" from the Judge. If the Judge’s note is brief, use the Reviewer’s complaint to find exactly where the logic fails.
+Refactor: Only modify blocks that are flawed (Math, Rule, Logic). Keep perfect sections to save context.
+SELF-MANAGEMENT: If your context limit is approaching, perform a "Semantic Summary" of completed work to free tokens and continue. Do not stop.
+STRICT ARCHITECTURAL DIRECTIVES:
+UNITY 6 PARITY: Enforce use of GraphicsBuffer, MeshData, and PhysX 5.0 optimizations as per Judge’s ruling.
+ZERO-GC: Every algorithm must be 0-alloc. Use Native collections, Structs, and Bit-masks.
+SCALABILITY: Logic must work on "Low-End" (ALU-optimized) and "Ultra" (High-fidelity) targets simultaneously.
+STYLE: Telegraphic Inquisition. Zero fluff. No articles. Brutal engineering commands only.
+DATA INPUTS:
+
+INPUTS PROVIDED BELOW:
+[LINK]: Reviewer’s Audit (The Sins).  "C:\hades\Hecton8\Docs\2026-04-20_Deepseek_Ideas_Reality_Audit\REPORT_AUDITOR.txt"
+[LINK]: Supreme Judge’s Verdict (The Final Law).  "C:\hades\Hecton8\Docs\2026-04-20_Deepseek_Ideas_Reality_Audit\FINAL AUDIT TODO.txt"
+[DIRECTORY DATA]: All 35 original mandates. - "C:\hades\Hecton8\.agents-skills"
+
+Report only upon final completion of the entire directory. MOVE OUT.
+
+Show more
+1:30 AM
+
+
+
+193 previous messages
+Task: overhaul mandate files in .agents-skills using reviewer audit and judge verdict, then patch only flawed sections. First step is inventory plus source intake: I’m listing mandate files, reading the project rules, and pulling the two audit documents so the edits are evidence-based.
+
+I’m collecting the registry contents and the audit sources now. After that I’ll map which mandates actually need changes, then patch those files directly without touching sections that already hold.
+
+
+Ran 3 commands
+Inventory confirms 35 mandate .txt files. Next pass is source extraction: root docs, doc governance, reviewer audit, and judge verdict so the patch set is tied to exact findings instead of broad rewrites.
+
+
+Ran 7 commands
+Audit files are large. I’m checking their structure first so I can map verdict lines to mandate filenames instead of brute-reading 2,400 lines blind.
+
+
+Ran 4 commands
+Reconnecting... 2/5
+Structure is inconsistent. I’m extracting filename coverage from both audit files now so I can separate needs patch from no explicit verdict, then inspect current mandate text only where evidence points to a flaw.
+
+
+Ran 4 commands
+I have coverage now. Two mandates are absent from both audit inputs, several others are audit-only, and the rest have direct verdicts. I’m sampling current file structure next so the patching pattern stays consistent with the registry instead of replacing it wholesale.
+
+
+Ran 4 commands
+The current mandates are long-form contracts. I’m extracting the exact flawed sections now so the patch set stays surgical: same file structure, corrected law blocks, no blanket rewrites.
+
+
+Ran 3 commands
+I’ve narrowed the risk to the files with multiple findings and cross-file verdict spillover. I’m reading those first so the first patch batch fixes the highest-probability bad law blocks instead of nibbling at low-value text.
+
+
+Ran 4 commands
+[ANALYSIS]
+Target: mandate registry overhaul in .agents-skills, starting with high-risk multi-finding files and then sweeping single-finding files.
+Affected systems: UI text formatting/canvas rebuild cadence, floating-origin GPU upload path, logistics graph traversal/storage, voxel mesh generation/index bandwidth.
+Zero GC proof: docs are being rewritten toward Span/TryFormat, NativeBitArray, CSR adjacency, GraphicsBuffer/constant-buffer upload, fixed-size native buffers, and job-safe patterns only. No new managed hot-path patterns introduced.
+State check: registry count confirmed 35; audit coverage confirmed 33 files with explicit reviewer findings and 2 files with no source finding (CORE_Abyss_Survival_Systems_O2_Pressure_Logic.txt, CORE_Damage_System_Hull_Integrity_VFX_Feedback.txt). Those two remain unchanged unless evidence appears.
+Relevant mandates loaded: OPT_Zero_GC_Policy_AllocFree_Mandate.txt, OPT_Native_Memory_Collections_JobSystem_Protocol.txt, GPU_Compute_Kernels_Kernels_Optimization_MX350.txt, PHYS_Physics_Integrity_Determinism_ForceMode.txt, REND_URP_Graphics_HotPath_Optimization_HLOD.txt.
+Rule quote: [RULE] You are FORBIDDEN from guessing logic if a mandate exists. Reading the mandate is the first step of the task.
+
+I’m patching the first document batch now: UI streaming, floating origin, logistics graph flow, and voxel SDF geometry. These are the densest conflicts between current text and the audit law.
+
+I’m applying the first edit batch now. These changes replace the audited bad law blocks directly: manual digit math, shader-global origin updates, hash-map graph traversal, and hash-map vertex welding / 32-bit voxel indices.
+
+
+Edited 4 files
+First batch landed. I’m moving to the engine-core laws now: native memory/jobs, bootstrap init, GPU buffer policy, URP RenderGraph telemetry, and HLOD submission. These are the biggest Unity 6 parity failures in the registry.
+
+
+Ran 5 commands
+This batch is Unity 6 compliance surgery. I’m stripping coroutine boot flow, ComputeBuffer-era language, RenderWithShader, and pending-disposal polling out of the mandates now.
+
+One patch hunk failed on the render mandate because the source block didn’t match cleanly. I’m re-reading the exact HLOD section and applying the engine-core batch in smaller verified chunks.
+
+
+Edited 5 files, ran 5 commands
+Core parity batch is in. Next pass is simulation and content laws: physics sweeps, addressables eviction, GPU particle pools, post-fx math, localization awaiters, and save hashing. Those are still carrying audited bad patterns.
+
+
+Ran 6 commands
+Physics has multiple findings in the audit, so I’m extracting those exact clauses before patching it. The rest of this batch is straightforward text surgery from the judge law.
+
+
+Ran 9 commands
+I’ve extracted the remaining physics verdicts. That file needs four corrections, not one: async sweep batch, native velocity caps, no OnCollisionEnter, no Physics.SyncTransforms, plus batched buoyancy queries. I’m folding those into one verified patch instead of piecemeal edits.
+
+
+Edited 4 files, ran 1 command
+I’m converting the physics and particle mandates from “manual main-thread control” to native batch/query paths now. Those two files are where most of the remaining hidden regressions sit.
+
+
+Edited 2 files
+The registry still has a long tail of single-finding files. I’m switching to a grep-driven pass now: locate the exact outlawed pattern, replace that block, move on. Fastest path without guessing.
+
+
+Ran 2 commands
+The remaining files are mostly one-pattern violations. I’m pulling only the local sections that match the outlawed token now and replacing those blocks directly.
+
+
+Ran 8 commands
+I’ve got exact source windows for the next single-finding cluster. Patching them together now: dispatcher null checks, voxel LoS, IK writeback, VFX flow binding, tool depth/mesh law, inventory sort, logistics ring slots, and submarine matrix inversion.
+
+One grouped patch failed because I crossed two files in one hunk set. Splitting the remaining single-finding files into verified per-file edits now.
+
+
+Edited 8 files, ran 10 commands
+I’m on the remaining architecture tails now: UI registry identity, boid readback, audio DSP threading, tether rendering, seam shifting, signed voxel keys, and chunk allocator policy. These are mostly local block replacements.
+
+
+Ran 3 commands
+Context automatically compacted
+Continuing remaining mandate passes. I’m closing judge-law gaps in uncovered registry files, then I’ll run a consistency sweep across all 35 and report only evidence-backed outcomes.
+
+
+Ran 2 commands
+Source sweep isolated remaining violations: bootstrap activation path, audio DSP threading law, several streaming/voxel keying rules, custom lighting path, and a few legacy readback patterns. I’m patching only those flawed blocks.
+
+
+Ran 15 commands
+Judge-law traceability matters. I’m pulling the exact verdict lines for remaining files before changing them, so every rewrite stays evidence-based instead of speculative.
+
+
+Ran 13 commands
+There’s a second layer now: some already-patched mandates still carry stray pre-law fragments. I’m removing those remnants where they directly contradict an existing verdict or another mandate’s final architecture.
+
+
+Ran 8 commands
+Judge evidence confirms remaining laws. Next pass is purely surgical: remove obsolete patterns, replace them with the exact native Unity 6 path, then do a final grep-driven contradiction sweep.
+
+
+Ran 22 commands
+Applying document-level rewrites now. First batch covers UI identity, bootstrap/runtime quality control, async sensory queries, and remaining legacy readback/render-path fragments.
+
+
+Edited 7 files
+Second batch hits structural mandate errors: page allocator over compaction, immutable VRAM seam handling, signed-safe voxel keys, GPU tether rendering, and URP Forward+ replacing custom light grids.
+
+
+Edited 5 files
+Audio mandate still carries the biggest legacy burden. I’m deleting the managed callback/HRTF path now and collapsing it to native DSPGraph output plus release/acquire-only param sync.
+
+
+Edited 1 file
+Contradiction sweep running now. I’m not trusting memory; I’m grepping the registry for every prohibited fragment that was supposed to die in this pass.
+
+
+Ran 2 commands
+Final cleanup pass. I’m removing leftover token-level contradictions, adding missing page metadata, and correcting broken budget math where the mandates still lied numerically.
+
+
+Edited 6 files
+Last validation pass. I’m checking for remaining forbidden runtime paths and counting which mandates changed versus audited-and-left-intact.
+
+Residual scan after cleanup. I’m checking for genuine contradictions now, not harmless “forbidden” references or explanatory notes.
+
+
+Ran 3 commands
+Registry pass is effectively closed. I’m verifying the two untouched mandates against both audit documents so the final report can state explicitly whether they were left unchanged by evidence or by omission.
+
+
+Ran 2 commands
+What Was Wrong
+
+Registry carried stale or false architecture in 33 mandates: runtime hierarchy-string hashing, coroutine/bootstrap drift, allowSceneActivation hitch path, Resources.UnloadUnusedAssets() nukes, full-boid AsyncGPUReadback, custom tile-light culler, scratch-pool defrag, managed audio spatialization, signed-unsafe Morton math, LineRenderer tether rendering, legacy ComputeBuffer wording, and several wrong VRAM/math claims.
+Two mandates had no reviewer or judge evidence in either audit source, so altering them would have been guesswork:
+CORE_Abyss_Survival_Systems_O2_Pressure_Logic.txt
+CORE_Damage_System_Hull_Integrity_VFX_Feedback.txt
+What I Did
+
+Processed all 35 .txt files in .agents-skills against:
+Docs\2026-04-20_Deepseek_Ideas_Reality_Audit\REPORT_AUDITOR.txt
+Docs\2026-04-20_Deepseek_Ideas_Reality_Audit\FINAL AUDIT TODO.txt
+Modified 33 mandates. Key law insertions:
+Unity 6 parity: GraphicsBuffer, MeshData/Burst normals, URP Forward+, InstantiateAsync, DSPGraph IAudioOutputJob, RaycastCommand.ScheduleBatch, CapsulecastCommand, native buffer clears.
+Zero-GC corrections: baked UI IDs, TryFormat/Span formatting, no runtime path strings, no UnloadUnusedAssets() in mandate paths, no manual HRTF C# path, no OnAudioFilterRead runtime architecture.
+Memory/scalability corrections: fixed-size page allocator instead of compaction, signed-safe Morton encoding, immutable seam VRAM on origin shift, GPU-driven tether rendering, 16-byte swarm metrics readback instead of full boid buffer.
+Mandates followed during reconstruction:
+OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+OPT_Native_Memory_Collections_JobSystem_Protocol.txt
+GPU_Compute_Kernels_Kernels_Optimization_MX350.txt
+PHYS_Physics_Integrity_Determinism_ForceMode.txt
+REND_URP_Graphics_HotPath_Optimization_HLOD.txt
+STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt
+MATH_Coordinate_Precision_AUP_FloatingOrigin.txt
+In-Game Result
+
+Documented target architecture now points at lower CPU stalls, lower PCIe traffic, lower GC risk, and fewer fake engine paths: URP-native clustered lighting, DSPGraph-native audio, async batched physics queries, page-based streaming memory, GPU-side tether/UI/boid optimizations.
+Status: PENDING VERIFICATION.
+What Was Verified
+
+Directory coverage: 35/35 reviewed. Files changed: 33. Files intentionally unchanged by evidence gap: 2.
+Grep sweep removed live contradiction patterns from mandate logic; remaining hits are only prohibition notes or explanatory comments.
+git diff --stat -- .agents-skills: 33 files changed, 579 insertions, 617 deletions.
+[GC VALIDATION] BEFORE: measured proof absent · AFTER: measured proof absent · STATUS: PENDING VERIFICATION
+[REGRESSION CHECK] BEFORE→AFTER: measured proof absent · STATUS: PENDING VERIFICATION
+REGRESSION MODEL: CPU expected down from native clears/readbacks/Forward+/DSPGraph/page allocation. GC expected down from baked IDs and zero-GC awaiters. Memory stability expected up from fixed pages and deterministic release. Cadence expected smoother from async instantiation and batched queries. Correctness improved in signed coordinate/key math.
+HOT PATH IMPACT: document-only pass. No Unity runtime, Profiler, MCP, or GCMonitor evidence collected.
+FAILURE MODES: if project code does not adopt these mandate changes, no runtime benefit exists. If URP/DSPGraph/page allocator support is absent in implementation, some rewritten mandates will remain architectural targets only.
+
+
+
+
+1:58 AM
+32 files changed
++1046
+-1084
+Undo
+
+Review
+.agents-skills/AI_Flocking_Boids_Swarm_SpatialHash_Logic.txt
+.agents-skills/AI_Navigation_AStar_Funnel_Smoothing_Pathfinding.txt
+.agents-skills/ANIM_IK_FABRIK_GroundSnapping_Procedural.txt
+.agents-skills/ARCH_Global_Registry_ServiceLocator_DI_Init.txt
+.agents-skills/ARCH_Project_Bootstrap_Sequence_Init_Safety.txt
+.agents-skills/AUD_Acoustic_Sonar_Occlusion_Sensory_Simulation.txt
+.agents-skills/AUD_DSP_Audio_Synthesis_ThreadSafe_SPSC.txt
+.agents-skills/CORE_Submarine_Vehicles_Kinematics_AUP.txt
+.agents-skills/CORE_Tools_Equipment_Interaction_Raycast_Heat.txt
+.agents-skills/CORE_Weather_Abyssal_FlowField_Currents.txt
+.agents-skills/DATA_Inventory_Resources_Items_SOA_Layout.txt
+.agents-skills/DATA_Save_Persistence_Binary_Delta_Checksum.txt
+.agents-skills/DBG_Telemetry_Crash_Reporting_PostMortem.txt
+.agents-skills/GPU_Compute_Kernels_Kernels_Optimization_MX350.txt
+.agents-skills/LOGI_Energy_Networks_Power_Grid_Graph_Flow.txt
+.agents-skills/MATH_Coordinate_Precision_AUP_FloatingOrigin.txt
+.agents-skills/NET_Logistics_Sync_BitPacking_Reconciliation.txt
+.agents-skills/OPT_Native_Memory_Collections_JobSystem_Protocol.txt
+.agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt
+.agents-skills/PHYS_Physics_Integrity_Determinism_ForceMode.txt
+.agents-skills/PHYS_Tether_Cable_Acceleration_Constraints.txt
+.agents-skills/REND_Abyssal_Lighting_Voxel_Occlusion_Shadows.txt
+.agents-skills/REND_Shader_Noir_Aesthetics_Dithering_Fog.txt
+.agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt
+.agents-skills/REND_VFX_Fluid_Aesthetics_Compute_Particles.txt
+.agents-skills/STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt
+.agents-skills/STRM_World_Streaming_Residency_Chunk_Management.txt
+.agents-skills/UI_Data_Streaming_ZeroGC_Optimization.txt
+.agents-skills/UI_Localization_Babel_RTL_FontSwap_ZeroAlloc.txt
+.agents-skills/VOX_MapMagic_Voxel_Seam_Alignment_Integration.txt
+.agents-skills/VOX_Voxel_SDF_Geometry_MarchingCubes_Pipeline.txt
+.agents-skills/VOX_Voxel_World_Logic_Carving_Persistence.txt
+
+
+
+
+
+Full access
+
+GPT-5.4
+
+Extra High
+
+IDE context
+
+
+Work locally

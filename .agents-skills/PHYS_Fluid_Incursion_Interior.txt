@@ -1,0 +1,412 @@
+```markdown
+# PHYS_Fluid_Incursion_Interior.md
+## Distilled Technical Mandate — HECTON-8 | Fluid Incursion & Buoyancy System
+
+---
+
+## [RULE] EXECUTION LAWS
+
+- ALL float math: `FixedUpdate` / `IFixedTickSystem` ONLY. Zero `MonoBehaviour` hierarchy traversal.
+- Zero GC per frame. No `new`, no LINQ, no boxing. NativeArrays persist across frames.
+- DOD-first. Structs in NativeArray<T>. Cache-line aligned. No class polymorphism in hot path.
+- Burst-compile all Job structs. `[BurstCompile(FloatMode=FloatMode.Fast, FloatPrecision=FloatPrecision.Low)]` on inner loops.
+- Interface communication ONLY between systems. Direct field access forbidden cross-system.
+- NaN/Inf: Guard every division. Clamp all forces before application to Rigidbody.
+
+---
+
+## [DATA] MEMORY ARCHITECTURE
+
+### CompartmentState Struct (Cache-Aligned, 64 bytes)
+```
+CompartmentState : IComponentData
+{
+  float  currentVolume;       // m³ currently flooded
+  float  maxVolume;           // m³ capacity
+  float  floodRate;           // m³/s ingress
+  float  breachArea;          // m² breach cross-section
+  float3 localCentroid;       // compartment geometric center in vessel-local space
+  uint   stateFlags;          // bitfield [see FLAGS]
+  float  _pad0;               // explicit pad → 64-byte alignment
+  float  _pad1;
+}
+```
+
+### NativeArray Layout: 8 Compartments
+```
+NativeArray<CompartmentState> compartments; // length = 8, fixed
+// Index map (bitmask correspondance):
+// [0]=ForePeak [1]=FwdBallast [2]=CrewFwd [3]=EngineRoom
+// [4]=AftBallast [5]=CrewAft [6]=CargoA [7]=CargoB
+// Spatial order = bow→stern: maintains locality for CoM sweep
+```
+
+### State Flags Bitmask (uint stateFlags)
+```
+FLAG_BREACHED       = 1 << 0   // active ingress
+FLAG_SEALED         = 1 << 1   // bulkhead closed: HALT transfer
+FLAG_CRITICAL       = 1 << 2   // fill > 80% capacity
+FLAG_PURGING        = 1 << 3   // pump active (egress)
+FLAG_FROZEN         = 1 << 4   // simulation LOD pause (background compartment)
+FLAG_TRANSFER_SRC   = 1 << 5   // currently donating water to neighbor
+FLAG_TRANSFER_DST   = 1 << 6   // currently receiving water from neighbor
+FLAG_OVERFLOW       = 1 << 7   // volume >= maxVolume, cap and spill
+```
+
+### Double-Buffer: CoM Accumulator
+```
+NativeArray<float3> comAccum[2];  // ping-pong buffers, length = 8
+int writeBuffer = 0;              // flip each FixedTick
+int readBuffer  = 1;
+// Writer populates comAccum[writeBuffer] → reader consumes comAccum[readBuffer]
+// Atomic flip: writeBuffer ^= 1; readBuffer ^= 1; (end of FixedTick)
+```
+
+### Ring Buffer: Slosh History
+```
+NativeArray<float3> angVelHistory;  // length = 8 frames (circular)
+int  ringHead = 0;                  // write head
+// Delay tap: index = (ringHead - SLOSH_DELAY_FRAMES) & 7
+// SLOSH_DELAY_FRAMES = 3 (≈50ms @ 60Hz physics) — tunable per compartment mass
+```
+
+---
+
+## [MATH] ALGORITHMIC KERNELS
+
+### KERNEL 1 — Dynamic Mass Injection
+
+**Physics truth: Torricelli-extended ingress rate**
+```
+v_ingress = sqrt(2 * g * depth_m)                         // m/s, water jet velocity
+            g = 9.80665, depth_m = hull pressure depth
+volumeRate = breachArea * v_ingress * Cd                  // m³/s
+            Cd = 0.62 (sharp-edge discharge coefficient)
+
+// dt-invariant mass accumulation:
+deltaVolume = volumeRate * dt                             // m³
+deltaVolume = clamp(deltaVolume, 0, maxVolume - currentVolume)
+currentVolume += deltaVolume
+
+// MX350 fast path (LOD_Base): skip sqrt, use linear approx below 200m depth
+// v_approx = 1.4 * depth_m^0.5  →  precompute LUT[256] indexed by depth>>3
+// LUT[i] = sqrt(2 * g * (i * 8))  — 256 entries × 4 bytes = 1KB, L1-resident
+
+deltaMass = deltaVolume * WATER_DENSITY                   // kg, WATER_DENSITY=1025.0
+rigidbody.mass += deltaMass
+
+// NaN guard:
+if (isnan(deltaMass) || isinf(deltaMass)) deltaMass = 0
+rigidbody.mass = clamp(rigidbody.mass, DRY_MASS, DRY_MASS + MAX_FLOOD_MASS)
+```
+
+### KERNEL 2 — Center of Mass Shifting (dt-Invariant, Explosion-Safe)
+
+**Weighted centroid sweep across 8 compartments:**
+```
+// Step 1: Accumulate weighted centroids
+float  totalFloodMass = 0
+float3 weightedSum    = float3.zero
+
+for i in [0..7]:
+  if (compartments[i].stateFlags & FLAG_FROZEN) continue
+  mass_i = compartments[i].currentVolume * WATER_DENSITY
+  weightedSum    += compartments[i].localCentroid * mass_i
+  totalFloodMass += mass_i
+
+// Step 2: Compute flood CoM in local space
+float3 floodCoM_local = (totalFloodMass > EPSILON)
+                        ? weightedSum / totalFloodMass
+                        : float3.zero
+
+// Step 3: Blend toward target (exponential decay, frame-rate independent)
+// τ = time constant (seconds). Recommended τ = 1.2s (viscous fluid response)
+float  alpha    = 1.0 - exp(-dt / TAU_COM)              // dt-invariant blend factor
+float3 currentCoM = rigidbody.centerOfMass               // local space
+float3 targetCoM  = lerp(DRY_COM_LOCAL, floodCoM_local,
+                         totalFloodMass / MAX_FLOOD_MASS)
+float3 newCoM     = lerp(currentCoM, targetCoM, alpha)
+
+// Step 4: Magnitude clamp — prevent physics explosion
+float3 delta = newCoM - currentCoM
+float  deltaMag = length(delta)
+if (deltaMag > MAX_COM_DELTA_PER_FRAME):                 // MAX_COM_DELTA = 0.05m
+  newCoM = currentCoM + (delta / deltaMag) * MAX_COM_DELTA_PER_FRAME
+
+// Step 5: Apply
+rigidbody.centerOfMass = newCoM
+
+// EPSILON = 0.001 (mass), MAX_FLOOD_MASS = hullVolume * WATER_DENSITY
+// DRY_COM_LOCAL = designer-set dry vessel CoM in local space (const float3)
+```
+
+### KERNEL 3 — Internal Sloshing Momentum (Cheap Fluid Dynamics)
+
+**Delayed angular counter-torque approximation:**
+```
+// Step 1: Write current angular velocity to ring buffer
+angVelHistory[ringHead] = rigidbody.angularVelocity   // world-space float3
+ringHead = (ringHead + 1) & 7                          // mod-8 via bitmask
+
+// Step 2: Sample delayed velocity (simulates fluid lag)
+int   delayIdx     = (ringHead - SLOSH_DELAY_FRAMES - 1) & 7
+float3 delayedAngVel = angVelHistory[delayIdx]
+
+// Step 3: Compute per-compartment slosh contribution
+float3 totalSloshTorque = float3.zero
+for i in [0..7]:
+  if (compartments[i].currentVolume < SLOSH_MIN_VOLUME) continue  // skip dry
+  float fillRatio  = compartments[i].currentVolume / compartments[i].maxVolume
+  float sloshMass  = compartments[i].currentVolume * WATER_DENSITY
+  
+  // Core formula (provided in brief, extended with mass-scaling):
+  float3 sloshTorque_i = -delayedAngVel * fillRatio * SLOSH_FACTOR * sloshMass
+  
+  // SENIOR_HACK: Scale by (1 - fillRatio)² — full compartments slosh less
+  // (solid water mass → reduced free-surface effect at 100% fill)
+  float freesurf = (1.0 - fillRatio) * (1.0 - fillRatio)
+  sloshTorque_i *= freesurf
+  
+  totalSloshTorque += sloshTorque_i
+
+// Step 4: Clamp torque magnitude before apply
+float torqueMag = length(totalSloshTorque)
+if (torqueMag > MAX_SLOSH_TORQUE):
+  totalSloshTorque = (totalSloshTorque / torqueMag) * MAX_SLOSH_TORQUE
+
+// Step 5: Apply
+rigidbody.AddTorque(totalSloshTorque, ForceMode.Force)
+
+// SLOSH_FACTOR         = 0.15  (tune: higher = more unstable feel)
+// SLOSH_MIN_VOLUME     = 0.05  m³ (skip near-empty compartments)
+// MAX_SLOSH_TORQUE     = 50000 N·m (vessel-scale dependent, scale with displacement)
+// SLOSH_DELAY_FRAMES   = 3     (increase for heavier/more viscous feel)
+```
+
+### KERNEL 4 — Inter-Compartment Water Transfer
+
+**Bulkhead-gated pressure-driven flow:**
+```
+// Adjacency map: static readonly int[8][2] NEIGHBORS
+// (linear array of pairs, bow→stern order, bilateral)
+// [0↔1][1↔2][2↔3][3↔4][4↔5][5↔6][6↔7]
+
+for each pair (A, B) in NEIGHBORS:
+  // Gate check: SEALED flag on EITHER compartment = halt
+  bool sealed = (compartments[A].stateFlags & FLAG_SEALED) != 0
+             || (compartments[B].stateFlags & FLAG_SEALED) != 0
+  if (sealed) continue
+
+  // Pressure differential → transfer rate
+  float headDiff   = (compartments[A].currentVolume / compartments[A].maxVolume)
+                   - (compartments[B].currentVolume / compartments[B].maxVolume)
+  // Positive headDiff: A is more full → transfer A→B
+  float transferRate = headDiff * BULKHEAD_FLOW_COEFF  // m³/s
+  float deltaVol     = transferRate * dt
+  deltaVol = clamp(deltaVol, -MAX_TRANSFER_PER_TICK, MAX_TRANSFER_PER_TICK)
+
+  // Prevent over-drain or over-fill
+  if (deltaVol > 0):
+    deltaVol = min(deltaVol, compartments[A].currentVolume,
+                             compartments[B].maxVolume - compartments[B].currentVolume)
+  else:
+    deltaVol = max(deltaVol, -compartments[B].currentVolume,
+                             -(compartments[A].maxVolume - compartments[A].currentVolume))
+
+  compartments[A].currentVolume -= deltaVol
+  compartments[B].currentVolume += deltaVol
+
+  // Flag updates
+  if (deltaVol > 0):
+    compartments[A].stateFlags |= FLAG_TRANSFER_SRC
+    compartments[B].stateFlags |= FLAG_TRANSFER_DST
+  else if (deltaVol < 0):
+    compartments[B].stateFlags |= FLAG_TRANSFER_SRC
+    compartments[A].stateFlags |= FLAG_TRANSFER_DST
+
+// BULKHEAD_FLOW_COEFF  = 0.4   m³/s per unit head differential
+// MAX_TRANSFER_PER_TICK = 0.1  m³ (stability cap per FixedUpdate)
+```
+
+### KERNEL 5 — Critical State + Overflow Guard
+```
+for i in [0..7]:
+  // Clamp volume
+  compartments[i].currentVolume = clamp(compartments[i].currentVolume,
+                                        0, compartments[i].maxVolume)
+
+  // Overflow flag
+  if (compartments[i].currentVolume >= compartments[i].maxVolume):
+    compartments[i].stateFlags |= FLAG_OVERFLOW
+    compartments[i].currentVolume = compartments[i].maxVolume  // hard clamp
+  else:
+    compartments[i].stateFlags &= ~FLAG_OVERFLOW
+
+  // Critical threshold
+  float fillRatio = compartments[i].currentVolume / compartments[i].maxVolume
+  if (fillRatio > 0.80):
+    compartments[i].stateFlags |= FLAG_CRITICAL
+  else:
+    compartments[i].stateFlags &= ~FLAG_CRITICAL
+```
+
+---
+
+## [SCALE] HARDWARE LOD TIERS
+
+### LOD_Base — i3-10gen / MX350
+```
+- Sloshing: 1 ring-buffer sample, SLOSH_DELAY_FRAMES=2, skip freesurf multiply
+- CoM: Update every 2 FixedTicks (alt-frame). TAU_COM = 2.0s
+- Transfer: Evaluate only 4 of 7 pairs per tick (round-robin, ring-indexed by tick counter)
+- Ingress: LUT-based v_ingress (no sqrt per tick)
+- FLAG_FROZEN: Auto-set on compartments with fillRatio < 0.01 (skip entirely)
+- Physics timestep: 0.02s (50Hz). No sub-stepping on base.
+```
+
+### LOD_High — i5 / GTX1060
+```
+- Sloshing: Full ring-buffer, SLOSH_DELAY_FRAMES=3, freesurf enabled
+- CoM: Every FixedTick. TAU_COM = 1.2s
+- Transfer: All 7 pairs per tick
+- Ingress: sqrt via Burst fast-math
+- Physics timestep: 0.016s (62.5Hz)
+```
+
+### LOD_Ultra — i7+ / RTX class
+```
+- Sloshing: SLOSH_DELAY_FRAMES=4, per-compartment SLOSH_FACTOR variation by geometry
+- CoM: Sub-step interpolation between FixedTick results
+- Transfer: Bidirectional + vertical head accounting (height delta from vessel pitch)
+- Ingress: Full Torricelli + depth + vessel-pitch correction (sin(pitch)*length_offset)
+- Physics timestep: 0.01s (100Hz) with maxAllowedTimestep = 0.033
+- Vertical transfer: headDiff += sin(vesselPitch) * compartmentSpan_m * 0.5
+```
+
+### CPU Time Budget (FixedTick ceiling)
+```
+LOD_Base:  0.35ms total fluid system budget
+LOD_High:  0.65ms
+LOD_Ultra: 1.10ms
+// Burst-compiled Job, main thread enqueue. IJobFor across 8 compartments = negligible.
+// CoM apply: main thread only (Rigidbody API). Post-job completion callback.
+```
+
+---
+
+## [SAFE] FAILURE MODES & GUARDS
+
+### Speed > 40 m/s (structural breach edge case)
+```
+- v_ingress from Torricelli → unrealistically large deltaVolume
+- Guard: deltaVolume = min(deltaVolume, maxVolume * 0.25)  // max 25% fill per second
+- Flag: FLAG_CRITICAL auto-set. Emit event via IFloodEvent interface. No exception thrown.
+```
+
+### Depth > 4000m (implosion zone)
+```
+- Pressure exceeds hull rating → clamp breachArea to MAX_BREACH_AREA
+- MAX_BREACH_AREA = hullSurfaceArea * 0.6 (60% hull compromise = catastrophic)
+- Above threshold: all compartments set FLAG_BREACHED, floodRate = maxRate, skip normal kernel
+- Rigidbody drag += IMPLOSION_DRAG_BONUS (= 50.0) to simulate crush deceleration
+```
+
+### rigidbody.mass NaN / Inf
+```
+- Pre-apply guard: if (!isfinite(rigidbody.mass)) rigidbody.mass = DRY_MASS
+- Post-apply: same check. Log via IDebugLogger interface (not Debug.Log — no allocation)
+```
+
+### CoM physics explosion (rapid CoM shift)
+```
+- MAX_COM_DELTA_PER_FRAME enforced (0.05m). See Kernel 2 Step 4.
+- If TAU_COM misconfigured to 0: clamp TAU_COM = max(TAU_COM, 0.1)
+- Physics explosion detection: if |rigidbody.velocity| > 200 m/s → zero velocity,
+  restore DRY_COM_LOCAL, log via IDebugLogger, reset compartments to last valid snapshot
+```
+
+### Bulkhead state desync (FLAG_SEALED not propagated)
+```
+- Sealed state: set on BOTH compartments sharing bulkhead (not just one side)
+- Verified each tick via: assert (A.sealed == B.sealed) for each NEIGHBOR pair
+- On mismatch: force-set both to sealed (fail-safe: containment over realism)
+```
+
+### totalFloodMass near zero (empty vessel)
+```
+- floodCoM_local defaults to DRY_COM_LOCAL (EPSILON guard in Kernel 2 Step 2)
+- rigidbody.centerOfMass = DRY_COM_LOCAL (stable fallback)
+```
+
+### Ring buffer uninitialized frames (startup)
+```
+- Initialize angVelHistory to float3.zero on system creation
+- SLOSH_DELAY_FRAMES reads zeros → zero torque applied → safe startup
+```
+
+---
+
+## [INTEGRATION] INTERFACE CONTRACTS
+
+```
+IFloodQueryProvider:
+  float  GetCompartmentFillRatio(int index)
+  float3 GetCompartmentCentroid(int index)
+  uint   GetCompartmentFlags(int index)
+
+IFloodCommandReceiver:
+  void   SetBulkhead(int compartmentA, int compartmentB, bool sealed)
+  void   TriggerBreach(int compartmentIndex, float breachAreaM2)
+  void   ActivatePump(int compartmentIndex, float pumpRateM3s)
+
+IFloodEvent:
+  void   OnCompartmentCritical(int index)
+  void   OnVesselFloodMassChanged(float totalFloodKg)
+  void   OnCoMDeltaExceeded()
+
+// All calls: zero-allocation. Struct-return only. No string params.
+// IFloodEvent: non-allocating callback registry. Pre-registered delegates, no Action<T> boxing.
+```
+
+---
+
+## [SENIOR_HACK] APPROXIMATION CATALOG (MX350 AAA Visuals)
+
+```
+HACK_01: sqrt LUT (256 entries, depth-indexed) → eliminates per-tick sqrt. Cost: 1KB L1.
+HACK_02: exp(-dt/TAU) precomputed per LOD tier at system init. Stored as float alphaCoM.
+         Recomputed only if TAU changes (designer event). Zero runtime exp() calls.
+HACK_03: freesurf = (1-f)² computed as tmp=(1-f); tmp*tmp. No pow() call.
+HACK_04: torque magnitude clamp: use dot-product fast magnitude estimate before normalize.
+         fastMag = abs(x)+abs(y)+abs(z) * 0.9 (L1-norm approx, 3 adds vs sqrt)
+         Only fallback to true length() if fastMag > 0.85*MAX_SLOSH_TORQUE.
+HACK_05: Transfer loop round-robin on LOD_Base: tick & 1 selects even/odd pairs.
+         7 pairs → 4 evaluated per tick → halved cost, imperceptible visual error.
+HACK_06: FLAG_FROZEN skip: ~50% compartments dry in early game → ~50% kernel reduction free.
+HACK_07: CoM alt-frame on LOD_Base: rigidbody.centerOfMass write every 2 ticks.
+         Interpolate externally for VFX/audio queries without touching Rigidbody.
+```
+
+---
+
+## [CONSTANTS] REFERENCE TABLE
+
+```
+WATER_DENSITY           = 1025.0    kg/m³  (seawater)
+GRAVITY                 = 9.80665   m/s²
+Cd                      = 0.62      (sharp-edge orifice)
+TAU_COM_BASE            = 1.2       s      (LOD_High)
+MAX_COM_DELTA_PER_FRAME = 0.05      m
+MAX_SLOSH_TORQUE        = 50000.0   N·m    (scale with vessel displacement)
+SLOSH_FACTOR            = 0.15      (dimensionless)
+SLOSH_DELAY_FRAMES      = 3         (ring buffer offset)
+SLOSH_MIN_VOLUME        = 0.05      m³
+BULKHEAD_FLOW_COEFF     = 0.4       m³/s/ΔfillRatio
+MAX_TRANSFER_PER_TICK   = 0.10      m³
+EPSILON_MASS            = 0.001     kg
+MAX_BREACH_AREA_RATIO   = 0.60      (fraction of hull surface)
+IMPLOSION_DRAG_BONUS    = 50.0      (Rigidbody.drag additive)
+RING_BUFFER_LENGTH      = 8         (must be power-of-2 for bitmask mod)
+COMPARTMENT_COUNT       = 8         (fixed, NativeArray static length)
+```
+```

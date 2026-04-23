@@ -1,5 +1,5 @@
 # WORLD_STREAMING_RESIDENCY.md
-# Hecton-8 — Chunk Management, Defragmentation, Caching
+# Hecton-8 — Chunk Management, Page Allocation, Caching
 
 ---
 
@@ -54,6 +54,8 @@ NativeArray<float>    chunk_Priority          [MAX_CHUNKS]  // scheduler weight
 NativeArray<int>      chunk_LODLevel          [MAX_CHUNKS]  // 0=full,1=proxy,2=culled
 NativeArray<double>   chunk_LastAccessTick    [MAX_CHUNKS]  // eviction age
 NativeArray<JobHandle>chunk_PendingJobs       [MAX_CHUNKS]  // in-flight handles
+NativeArray<int>      chunk_PageStart         [MAX_CHUNKS]  // first 256KB page
+NativeArray<ushort>   chunk_PageCount         [MAX_CHUNKS]  // contiguous page count
 
 // Heightmap tile cache (Zero-GC)
 NativeArray<ushort>   tile_HeightCache        [TILE_CACHE_SIZE * TILE_RES * TILE_RES]
@@ -61,20 +63,19 @@ NativeArray<byte>     tile_AlphaCache         [TILE_CACHE_SIZE * ALPHA_RES * ALP
 NativeArray<int>      tile_CacheKeys          [TILE_CACHE_SIZE]  // chunkID hash
 NativeArray<byte>     tile_CacheValid         [TILE_CACHE_SIZE]  // 0=invalid,1=valid
 
-### [DATA] Native Pool Architecture — Triple-Zone Layout
+### [DATA] Native Pool Architecture — Fixed-Size Page Layout
 
 MemoryDomain layout (pre-allocated at startup, NO runtime alloc):
 
  [STRUCT_START]
-   RESIDENT POOL       ~3.5 GB   (live chunk data)
-   STAGING AREA        ~512 MB   (incoming write dest)
-   SCRATCH POOL        ~256 MB   (defrag compaction)
+   RESIDENT PAGE POOL  ~3.75 GB  (fixed-size 256KB pages)
+   PAGE FREELIST       ~0.01 GB  (page indices only)
    TILE CACHE          ~128 MB   (heightmap/alpha)
    HLOD PROXY POOL     ~256 MB   (LOD1 geometry)
  [STRUCT_END]
 
-Total ceiling: 4.65 GB → leaves OS+Unity headroom within 6-8 GB target.
-Pools: Allocator.Persistent. Sub-allocate via bump/ring-pointer. Never Allocator.Temp on hot path.
+Total ceiling: ~4.14 GB → leaves OS+Unity headroom within 6-8 GB target.
+Pools: Allocator.Persistent. Allocate/freeze/free by whole page only. Never memcpy-compaction.
 
 ### [DATA] Ring Buffer — Load Request Queue
 
@@ -138,31 +139,27 @@ Scheduler per-frame budget:
   NORMAL         → max 2 concurrent load jobs
   LOW/THROTTLED  → max 1 concurrent load job, every 3rd frame only
 
-### [MATH] Double-Staging Defragmentation (Non-Blocking)
+### [MATH] Fixed-Size Page Allocation (Zero Defrag)
 
-PHASE 0 — Trigger condition (evaluate once per 60-tick window):
-  fragRatio = freeFragmentedBytes / totalPoolBytes
-  if fragRatio > 0.15f → schedule compaction pass
+PAGE_SIZE = 256KB
 
-PHASE 1 — Background Compaction (Scratch Pool):
-  Job: CompactionJob (IJob, Burst)
-  1. Walk RESIDENT POOL free-block list (stored as NativeList<MemBlock>)
-  2. For each live block: memcpy → SCRATCH POOL at compacted offset
-  3. Update chunk pointer table: chunk_PoolOffset[i] = newScratchOffset
-  4. Record CompactionJobHandle
+PageAllocator:
+  freePageIndices : NativeArray<int>
+  freeCount       : int
 
-  Main thread during Phase 1:
-  → ALL new incoming chunk writes directed to STAGING AREA
-  → STAGING AREA is contiguous bump-allocator, no fragmentation possible
+Allocate(chunkBytes):
+  requiredPages = ceil(chunkBytes / PAGE_SIZE)
+  reserve contiguous page range if available
+  write pageStart/pageCount into chunk metadata
 
-PHASE 2 — Swap (single-frame, < 0.1ms):
-  if CompactionJobHandle.IsCompleted:
-  1. Swap pool base pointers: RESIDENT ↔ SCRATCH  (pointer swap, ~4 bytes)
-  2. Flush STAGING AREA → new RESIDENT POOL tail (bulk memcpy, job-dispatched)
-  3. Reset SCRATCH POOL bump pointer to 0
-  4. Resume normal writes to RESIDENT POOL
+Free(chunkID):
+  return pages [pageStart .. pageStart+pageCount-1] to `freePageIndices`
 
-Guarantee: Main thread never stalls. Pointer swap is atomic write. No lock contention.
+Guarantee:
+  - no fragmentation metric exists
+  - no scratch pool exists
+  - no memcpy compaction job exists
+  - alloc/free cost remains O(1) per page
 
 ### [MATH] Non-Blocking Eviction — Deferred Disposal
 
@@ -171,9 +168,9 @@ Eviction request lifecycle:
              enqueue to EvictionQueue (ring buffer, capacity=64)
   Frame N+k: per-frame, check front of EvictionQueue:
              if chunk_PendingJobs[id].IsCompleted:
-               free PoolBlock(chunk_PoolOffset[id], chunk_PoolSize[id])
+               PageAllocator.Free(id)
                chunk_States[id]  = 0x00
-               chunk_PoolOffset[id] = -1
+               chunk_PageStart[id] = -1
              else:
                skip, retry next frame (no spin-wait, no block)
 
@@ -272,18 +269,17 @@ System                    Budget(ms)   Thread
 
 Residency evaluation job  0.8ms        Job Worker
 Load queue sort           0.2ms        Job Worker
-Defrag compaction job     2.0ms        Job Worker (background, amortized)
 Eviction check            0.3ms        Main (quick loop)
 Tile cache LRU            0.1ms        Main
 LOD blend update          0.2ms        Main
 MapMagic graph dispatch   1.0ms        Job Worker
-Total streaming overhead  < 4.6ms      (27% of frame budget)
+Total streaming overhead  < 2.6ms      (16% of frame budget)
 
 ### [SCALE] MX350 VRAM Constraints ( 1800MB)
 
 LOD0 terrain texture sets: max 4 chunks simultaneous in VRAM ( 1800MB each = 2GB)
 LOD1 proxy textures: shared atlas, 256MB max
-Evict GPU resource (RenderTexture, ComputeBuffer) SAME FRAME as chunk eviction trigger
+Evict GPU resource (RenderTexture, GraphicsBuffer) SAME FRAME as chunk eviction trigger
   → do not defer GPU resource release beyond 2 frames
 GPU memory eviction sequence:
   1. chunk flagged EVICTING on CPU
@@ -296,7 +292,6 @@ GPU memory eviction sequence:
 - maxConcurrentLoadJobs = 2 (vs 4 on High)
 - Tile cache reduced to 32 entries
 - LOD blend disabled (hard swap, acceptable on slow GPU where pop less visible due to lower res)
-- Defrag trigger threshold raised: fragRatio > 0.25f (less frequent, cheaper)
 - Throttled chunks: skip entirely (no LOW-priority loading on Base tier)
 
 ---
@@ -334,9 +329,9 @@ FAILURE: Pool allocation returns -1 (pool full)
   → Trigger emergency eviction: find lowest-priority RESIDENT chunk beyond 0.8*evictionRadius, evict immediately.
   → If still no space after emergency evict: skip frame loading entirely.
 
-FAILURE: CompactionJob exceeds 3ms (detected via Stopwatch in editor only)
-  → Reduce compaction batch size by 50% next pass.
-  → Split into 2-frame job sequence via dependency chain.
+FAILURE: Free page reserve drops below emergency threshold
+  → Halt non-critical chunk loads.
+  → Evict lowest-priority non-pinned chunks until reserve restored.
 
 FAILURE: Eviction queue full (>64 pending)
   → Halt new load requests until queue drains below 32.

@@ -1,0 +1,228 @@
+Add GPU flora flow coupling
+
+7
+7 tasks in progress
+
+
+GPU FLORA & FLUID INTERACTION ARCHITECT
+Домен: Массовый рендер водорослей, кораллов и их реакция на течения.
+code
+Markdown
+[CORE IDENTITY]: Principal Graphics Programmer (Ex-Crytek).
+[TASK]: GPU Instanced Flora & FlowField Coupling.
+
+[PHASE 0: DEEP READ MANDATE]:
+Read EVERY LINE of:
+1. REND_URP_Graphics_HotPath_Optimization_HLOD.txt
+2. CORE_Weather_Abyssal_FlowField_Currents.txt
+3. REND_VFX_Fluid_Aesthetics_Compute_Particles.txt
+
+[EXHAUSTIVE TASK LIST - EXPECT 2+ HOURS OF WORK]:
+1. [GPU INSTANCING KERNEL]: Implement InstancedFloraRenderer.cs. Use Graphics.DrawMeshInstancedIndirect (or RenderGraph equivalent in Unity 6) to render up to 100,000 kelp/coral instances per biome with zero CPU overhead.
+2. [FLOW FIELD COUPLING]: Read the _MarineSnowFlowField compute buffer. Modify the flora vertex shader to bend the plants based on the local flow vector.
+3.[PLAYER COLLISION BENDING]: Implement interactive bending. Pass the Player's AbsoluteUniversePosition to a global shader vector. The vertex shader must push flora away when the player swims through it.
+4. [CULLING & LOD]: Implement Frustum Culling and Distance Culling inside a Compute Shader (FloraCull.compute) that populates the IndirectArgs buffer.
+
+[STRICT CONSTRAINTS]:
+- The CPU must only dispatch the compute shader and issue the Draw call. Zero per-instance math on the CPU.
+- VRAM constraint: Geometry matrices must be packed tightly.
+
+[SYSTEM MANDATE v4.0: THE CRUCIBLE AUDIT REPORT]
+1. MANDATE INGESTION: List files.
+2. GPU CULLING: Show the Compute Shader logic for building the append buffer.
+3. SHADER MATH: Show the HLSL vertex bending logic based on FlowField and Player position.
+4. PERFORMANCE GAIN: Estimate the CPU ms saved vs traditional GameObject instantiation.
+
+Show more
+3:45 AM
+
+
+140 previous messages
+What Was Wrong
+
+The request overlapped an existing owner stack. This project already had HectonIndirectVegetationRenderer, FloraCulling.compute, FloraInteractionManager, and HectonMapMagicVegetationBridge. The missing pieces were direct ecosystem flow-field sampling, explicit player AUP bend data, a Unity 6 GraphicsBuffer indirect-args path, and an earlier GPU distance reject. A second runtime flora renderer would have been architecture drift.
+
+Mandates followed:
+
+REND_URP_Graphics_HotPath_Optimization_HLOD.txt
+CORE_Weather_Abyssal_FlowField_Currents.txt
+REND_VFX_Fluid_Aesthetics_Compute_Particles.txt
+MATH_Coordinate_Precision_AUP_FloatingOrigin.txt
+GPU_Compute_Kernels_Kernels_Optimization_MX350.txt
+What I Did
+
+Files:
+
+FloraInteractionManager.cs (line 921): uploads the authoritative bridge flow field into a persistent GraphicsBuffer, publishes _MarineSnowFlowField, _MarineSnowFlowFieldCenterCellSize, _HectonFloraFlowFieldResolution, and publishes player AUP via _HectonPlayerAbsoluteUniversePosition.
+HectonIndirectVegetationRenderer.cs (line 645): switched indirect args to Unity 6 GraphicsBuffer and uses GraphicsBuffer.CopyCount(...).
+InstancedFloraRenderer.cs (line 1): adapter type over the existing indirect renderer, not a parallel implementation.
+Hecton_IndirectVegetation.shader (line 247), DepthOnly (line 137), Shadow (line 137), MotionVectors (line 136): sample _MarineSnowFlowField and add player bend so visible/depth/shadow/motion stay coherent.
+FloraCulling.compute (line 343): added squared-distance early-out before depth occlusion and LOD append.
+GPU culling logic now is effectively:
+
+if (distanceSq > lod1MaxDistanceSq) return;
+if (distanceSq <= lod0MaxDistanceSq) Append(LOD0);
+if (distanceSq >= lod1MinDistanceSq && distanceSq <= lod1MaxDistanceSq) Append(LOD1);
+Vertex bend logic now is effectively:
+
+float2 flowXZ = SampleMarineSnowFlowFieldXZ(positionWS);
+float3 playerDelta = positionWS - _HectonPlayerAbsoluteUniversePosition.xyz;
+float proximity = saturate(1.0 - length(playerDelta.xz) / playerRadius);
+animatedPositionWS += flowDrivenOffset + playerDrivenOffset;
+In-Game Result
+
+The flora path now uses the existing indirect renderer, samples the live abyssal flow field per-vertex, and adds a direct player AUP displacement term. The draw path remains GPU-cull + indirect draw, with no new per-instance CPU math. If the flow payload is absent, the shaders fall back to the older global current vector.
+
+WARNING: Regression risk in coordinate-space alignment between legacy interaction-point publishing and the new AUP bend globals. Existing legacy interaction data was already authored through a different path.
+
+What Was Verified
+
+Unity compile/readback:
+
+No console errors were reported for the touched flora files after refresh/compile.
+Unrelated pre-existing compile errors remain in SaveBinaryStorage.cs and SaveManager.cs.
+Performance / GC:
+
+[GC VALIDATION] BEFORE: measured proof absent · AFTER: measured proof absent · STATUS: PENDING VERIFICATION
+[REGRESSION CHECK] BEFORE→AFTER: profiler proof absent · STATUS: PENDING VERIFICATION
+Code-review estimate only, not measured: versus naive GameObject flora at 100,000 instances, this indirect path is typically worth roughly 6-12 ms main-thread CPU savings plus major scene/object overhead reduction. Incremental savings from this patch alone are smaller and unmeasured.
+Next required proof:
+
+Run scene with GCMonitor / Profiler.
+Capture CPU frame time before/after in the flora-heavy biome.
+Confirm no coordinate-space bend mismatch during player swim-through and floating-origin shifts.
+
+
+
+
+4:07 AM
+8 files changed
++589
+-96
+Undo
+
+Review
+Assets/_Project/Scripts/World/FloraInteractionManager.cs
+Assets/_Project/Art/Shaders/Hecton_IndirectVegetation.shader
+Assets/_Project/Art/Shaders/Hecton_IndirectVegetationDepthOnly.shader
+Assets/_Project/Art/Shaders/Hecton_IndirectVegetationShadow.shader
+Assets/_Project/Art/Shaders/Hecton_IndirectVegetationMotionVectors.shader
+Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs
+Assets/_Project/Scripts/World/InstancedFloraRenderer.cs
+Assets/_Project/Art/Shaders/FloraCulling.compute
+Continue your work. Finish the Flora shader vertex bending and GPU culling implementation, then provide the final Crucible Audit Report.
+2:28 PM
+
+
+
+Worked for 10m 15s
+Crucible Audit Report
+
+STATUS: PENDING VERIFICATION
+
+1. Mandate Ingestion
+
+REND_URP_Graphics_HotPath_Optimization_HLOD.txt
+CORE_Weather_Abyssal_FlowField_Currents.txt
+REND_VFX_Fluid_Aesthetics_Compute_Particles.txt
+MATH_Coordinate_Precision_AUP_FloatingOrigin.txt
+GPU_Compute_Kernels_Kernels_Optimization_MX350.txt
+2. What Was Wrong
+
+The project already had an indirect flora owner stack. The missing work was coupling it to the live ecosystem flow field, feeding player AUP into the shader path, and tightening GPU culling.
+The shader passes were not coordinate-space coherent. Forward/depth/shadow/motion were mixing _ChunkWorldOffset, _GlobalFloatingOffset, and _HectonFloatingOriginOffset, which risks double offset under origin shifts.
+Player bend used an AUP input but compared it against runtime-space vegetation positions.
+GPU culling still did distance work with distance(...) and only rejected after more expensive tests.
+3. What I Did
+
+FloraInteractionManager.cs (line 921) now uploads the authoritative bridge flow field into a persistent GraphicsBuffer, publishes _MarineSnowFlowField, _MarineSnowFlowFieldCenterCellSize, _HectonFloraFlowFieldResolution, and publishes _HectonPlayerAbsoluteUniversePosition plus interaction params.
+Hecton_IndirectVegetation.shader (line 617) now samples the live flow field per vertex, converts player AUP back into runtime space inside the shader, and applies bend using published radius/speed/force.
+Hecton_IndirectVegetationDepthOnly.shader (line 307), Shadow (line 311), and MotionVectors (line 307) were brought onto the same runtime-space path so visible/depth/shadow/motion stay aligned.
+FloraCulling.compute (line 358) now does squared-distance early reject before occlusion and LOD append.
+HectonIndirectVegetationRenderer.cs (line 645) now uses Unity 6 GraphicsBuffer.CopyCount(...) for indirect args.
+InstancedFloraRenderer.cs (line 1) was added as an adapter type over the existing renderer, not a parallel subsystem.
+4. GPU Culling Logic
+
+if (!IsVisibleInFrustum(...))
+    return;
+
+float3 cameraDelta = originWS - _HectonCameraPosition;
+float distanceSq = dot(cameraDelta, cameraDelta);
+
+if (distanceSq > lod1MaxDistanceSq)
+    return;
+
+if (IsOccludedByDepth(...))
+    return;
+
+if (!IsVisibleInDarkness(centerWS))
+    return;
+
+if (distanceSq <= lod0MaxDistanceSq)
+    _HectonVisibleInstanceIndicesLOD0.Append(instanceIndex);
+
+if (distanceSq >= lod1MinDistanceSq && distanceSq <= lod1MaxDistanceSq)
+    _HectonVisibleInstanceIndicesLOD1.Append(instanceIndex);
+5. Shader Vertex Bending Logic
+
+float2 flowXZ = SampleMarineSnowFlowFieldXZ(basePositionWS);
+float3 sampledFlowVector = float3(flowXZ.x, 0.0, flowXZ.y);
+
+float3 playerRuntimePosition =
+    _HectonPlayerAbsoluteUniversePosition.xyz + _GlobalFloatingOffset.xyz;
+
+float3 delta = evaluationPositionWS - playerRuntimePosition;
+float proximity = saturate(1.0 - length(delta) / _HectonPlayerAbsoluteUniversePosition.w);
+proximity *= proximity;
+
+animatedPositionWS += flowSynchronyOffset;
+animatedPositionWS += currentOffset;
+animatedPositionWS += ResolvePlayerBendOffset(animatedPositionWS, baseNormalWS, bendMask, instanceType) * 1.1;
+6. In-Game Result
+
+Flora now bends from the same flow field driving marine snow, instead of only fallback current vectors.
+Player interaction uses AUP input but resolves it correctly in runtime space inside the shader.
+GPU culling rejects far instances earlier and still builds append buffers for indirect draws only.
+7. Performance Gain
+
+Estimate only, not measured: versus traditional GameObject flora at 100,000 instances, this indirect path is typically worth roughly 12-30 ms main-thread CPU savings and a major hierarchy/renderer management reduction.
+Incremental gain from this pass alone is smaller: earlier distance reject in compute, no new CPU per-instance work, and Unity 6 GraphicsBuffer indirect args path.
+VRAM constraint note: transform payload is still Matrix4x4-based in the authoritative producer. Tight packed transform data is not fully implemented in this pass.
+8. Verification
+
+Unity-verified: refresh/compile completed with 0 console errors and 0 warnings after the final shader pass.
+Code-review only: no play-mode profiler capture, no GCMonitor numbers, no Frame Debugger capture, no RenderDoc pass inspection.
+[GC VALIDATION] BEFORE: measured proof absent · AFTER: measured proof absent · STATUS: PENDING VERIFICATION
+[REGRESSION CHECK] BEFORE→AFTER: profiler proof absent · STATUS: PENDING VERIFICATION
+WARNING: Regression risk in floating-origin edge cases until a live scene pass confirms no residual bend drift during large world shifts.
+
+
+
+
+2:38 PM
+4 files changed
++86
+-29
+Undo
+
+Review
+Assets/_Project/Art/Shaders/Hecton_IndirectVegetation.shader
+Assets/_Project/Art/Shaders/Hecton_IndirectVegetationDepthOnly.shader
+Assets/_Project/Art/Shaders/Hecton_IndirectVegetationMotionVectors.shader
+Assets/_Project/Art/Shaders/Hecton_IndirectVegetationShadow.shader
+
+
+
+
+Full access
+
+GPT-5.4
+
+Extra High
+
+IDE context
+
+
+Work locally 0%
+
+

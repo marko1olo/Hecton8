@@ -1,0 +1,4470 @@
+# HECTON-8 VISUAL NOIR MASTER SPEC
+
+Status: PENDING VERIFICATION
+Date: 2026-04-23
+Target file owner: Internal technical specification only
+Runtime owners referenced: `HectonUnderwaterVisuals`, Crest underwater path, URP global/local volumes, player visor/HUD path
+Mandates followed:
+- `REND_Shader_Noir_Aesthetics_Dithering_Fog`
+- `REND_Abyssal_Lighting_Voxel_Occlusion_Shadows`
+- `REND_VFX_Fluid_Aesthetics_Compute_Particles`
+- `GPU_Compute_Kernels_Kernels_Optimization_MX350`
+- `OPT_Performance_Budgets_FrameTime_VRAM_Limits`
+
+Project truths absorbed into this spec:
+- Rendering path: Unity 6000.4 URP
+- Baseline target: NVIDIA MX350 2 GB VRAM, 8 GB RAM, i5-1135G7
+- Default quality target: Medium URP, HDR on, MSAA x2, render scale 1.0, additional lights 2, shadow distance 200
+- Low tier target: render scale 0.85, shadow distance 50
+- Existing underwater owner is `HectonUnderwaterVisuals`; do not invent a second underwater authority
+- Existing ocean owner is Crest; do not clone or wrap Crest runtime materials
+- Existing shallow beam / particulate / exhale / adaptive budget path already belongs to the current underwater owner stack
+- Existing project requirement: premium look via cheap realism, not by brute-force volume marching or uncontrolled transparent overdraw
+
+This document is implementation-oriented technical data. It is not a mood board. It is not a marketing brief. It is not a cinematic script. It is a render specification and authoring contract.
+
+======================================================================
+1. CHEAP REALISM DOCTRINE
+======================================================================
+
+1.1 Primary visual theorem
+
+- Darkness is the default state.
+- Light is scarce, directional, and locally expensive.
+- Water is the dominant medium, not an empty backdrop.
+- The image must read through extinction, scatter, wet specular breakup, low-luminance color separation, and selective emissive punctuation.
+- Premium perception comes from coherent light transport, scale cues, stratified medium density, and robust material hierarchy.
+- Premium perception does not come from stacking bloom, chromatic aberration, or global fog until the frame becomes milk.
+
+1.2 Cheap realism rules
+
+- Rule A: Always pay first for depth cueing.
+  Depth cueing order:
+  1. extinction
+  2. medium particulate parallax
+  3. local contrast shaping
+  4. wetness/specular breakup
+  5. emissive hierarchy
+
+- Rule B: Pay second for contact fidelity.
+  Contact fidelity order:
+  1. caustics where physically plausible
+  2. wet masks and occlusion
+  3. trim/specular edge breakup
+  4. silt accumulation and streak directionality
+
+- Rule C: Pay third for motion in the medium.
+  Medium motion order:
+  1. marine snow
+  2. shallow shafts
+  3. vent bubbles
+  4. exhale bubbles
+  5. refractive shimmer
+
+- Rule D: Never hide a weak material response under stronger post.
+- Rule E: Never use post-processing to fake geometry ownership failures.
+- Rule F: Any effect that destroys silhouette readability in the 5 m to 25 m band is rejected.
+
+1.3 Baseline visual promise by tier
+
+MX350 tier:
+- 1080p output via reduced internal scale if needed
+- strong biome separation
+- strong fog layering
+- readable shallow caustics
+- readable flashlight shaft
+- marine snow density near camera
+- wet hull/rock response
+- HUD trauma without full-screen sludge
+
+RTX 4090 tier:
+- retains same DNA
+- more stable shadow density
+- higher pattern variety
+- longer LOD residency
+- richer multi-layer shafts
+- denser mid-field particulate
+- higher-frequency wet breakup
+- additional secondary emissive and beam events
+
+1.4 Visual failures that invalidate the look
+
+- Pure black geometry with no low-end luminance floor outside absolute cave override
+- Uniform cyan fog across all depth bands
+- Constant-strength caustics at deep depth
+- Global godrays in dark abyss biome
+- Rock surfaces that read as dry chalk instead of pressure-wet stone
+- Metal that reads as clean sci-fi aluminum instead of salt-worn industrial hull
+- Bubbles that rise with identical phase and no compression or wobble suppression
+- Marine snow that moves like random snowflakes instead of current-driven suspended matter
+- HUD glitch that feels like a damage overlay instead of stressed instrumentation drift
+
+======================================================================
+2. RENDER PIPELINE CONTRACT
+======================================================================
+
+2.1 Color pipeline
+
+- Internal shading space: linear
+- Preferred HDR scene target: `R11G11B10_UFLOAT`
+- Tonemap: ACES fit
+- Output gamma: 2.2
+- Dither injection: after tonemap, before output encode
+- UI composite: after world dither, separate clean pass
+
+ACES fit:
+
+`ACES(x) = saturate((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14))`
+
+Per-channel apply:
+
+`color_aces.rgb = ACES(color_hdr.rgb)`
+
+2.2 Render target discipline
+
+- World color target: `R11G11B10_UFLOAT`
+- Water distortion optional target on Medium+: `R16G16_SFLOAT`
+- Depth target: standard URP depth
+- Blue noise texture: `R8_UNORM`, 64x64, repeat, point sample, no mips
+- LUT targets:
+  - color grading LUT: 32x32x32
+  - biome fog LUT: 256x32
+  - stress HUD LUT: 128x16
+
+2.3 Material policy
+
+- No runtime material clones for Crest
+- No uncontrolled per-instance material variants
+- First-party wetness and trauma response through `MaterialPropertyBlock` or global constant buffer only
+- Shared trim, grime, wetness, and wear atlases per material family
+
+2.4 Lighting policy
+
+- Darkness floor exists for open water and exterior seafloor
+- Cave absolute darkness override is allowed only inside authored cave/dark-volume logic
+- Additional lights remain capped by project quality settings
+- Point-light count is not the primary aesthetic tool
+- Emissive hierarchy is primary for hazard punctuation and fauna punctuation
+- Flashlight is privileged; environment lights are budgeted second
+
+2.5 Transparency policy
+
+- Transparent layers allowed only for:
+  - visor glass
+  - beam shells
+  - selected bubbles
+  - limited wet sheens
+  - selected particles
+- Transparent layers must obey near-camera density clamps
+- Transparent layers must obey depth fade and distance cull
+- Transparent layers must never become the main source of image structure
+
+2.6 Luminance anchors
+
+Scene linear luminance anchors:
+
+- Absolute floor, non-cave exterior: `float3(0.0015, 0.0023, 0.0031)`
+- Deep mid-water: `float3(0.0080, 0.0120, 0.0180)`
+- Surface silt green-blue anchor: `float3(0.0400, 0.0520, 0.0600)`
+- Biolum accent teal: `float3(0.0000, 0.3800, 0.5500)`
+- Decay amber emissive: `float3(0.5500, 0.2800, 0.0400)`
+
+2.7 Global constants
+
+Physical constants:
+
+- `g = 9.81`
+- `rho_water = 1025.0 kg/m^3`
+- `rho_air = 1.2 kg/m^3`
+- `eta_water = 1.333`
+- `eta_air = 1.000293`
+- `kPa_per_meter = 10.052`
+
+Visual constants:
+
+- `BlueNoiseTile = 64`
+- `DitherScale = 1.0 / 255.0`
+- `ExposureMinEV = -3.0`
+- `ExposureMaxEV = 2.0`
+- `FogDepthReference = 150.0`
+- `CausticMaxDepthShallow = 24.0`
+- `CausticMaxDepthStorm = 12.0`
+- `BeamNearFade = 0.5`
+- `BeamFarFade = 22.0`
+- `MarineSnowNear = 0.6`
+- `MarineSnowFar = 18.0`
+
+======================================================================
+3. BIOME OPTICAL MODEL
+======================================================================
+
+3.1 Optical variables
+
+Definitions:
+
+- `d` = traveled distance in meters
+- `z` = player/world depth below reference surface, meters
+- `beta_abs_rgb` = absorption coefficient per channel
+- `beta_sca_rgb` = scattering coefficient per channel
+- `beta_ext_rgb = beta_abs_rgb + beta_sca_rgb`
+- `T_rgb = exp(-beta_ext_rgb * d)` transmittance
+- `sigma_t = average(beta_ext_rgb)` scalar extinction used for low-cost fog gates
+- `sigma_s = average(beta_sca_rgb)` scalar scattering used for haze injection
+- `g_hg` = Henyey-Greenstein anisotropy
+
+Full channel transmittance:
+
+`T_rgb(d) = exp(-beta_ext_rgb * d)`
+
+Low-cost scalar transmittance:
+
+`T_scalar(d) = exp(-sigma_t * d)`
+
+Single-scatter approximation:
+
+`L_scatter = L_in * (1 - T_rgb(d)) * scatter_tint_rgb * phase_hg`
+
+Henyey-Greenstein phase:
+
+`phase_hg = (1 - g_hg * g_hg) / (4 * PI * pow(1 + g_hg * g_hg - 2 * g_hg * cosTheta, 1.5))`
+
+MX350 cheap phase approximation:
+
+`phase_cheap = lerp(0.0796, 0.45, saturate((cosTheta * 0.5 + 0.5) * ForwardScatterBias))`
+
+3.2 Biome depth bands
+
+- Shallow band: `0 m` to `40 m`
+- Midnight band: `40 m` to `250 m`
+- Abyss band: `250 m` to `1500 m`
+- Interior dark-volume override: independent of band, multiplies ambient and haze terms
+- Thermal vent local override: additive particulate and amber/green emissive response, not a full biome replacement
+
+3.3 Channel absorption coefficients
+
+Shallow coefficients:
+
+- `beta_abs_shallow = float3(0.170, 0.082, 0.036)`
+- `beta_sca_shallow = float3(0.055, 0.070, 0.095)`
+- `beta_ext_shallow = float3(0.225, 0.152, 0.131)`
+- `sigma_t_shallow = 0.169`
+- `sigma_s_shallow = 0.073`
+- `g_hg_shallow = 0.74`
+
+Midnight coefficients:
+
+- `beta_abs_midnight = float3(0.260, 0.118, 0.050)`
+- `beta_sca_midnight = float3(0.065, 0.060, 0.052)`
+- `beta_ext_midnight = float3(0.325, 0.178, 0.102)`
+- `sigma_t_midnight = 0.202`
+- `sigma_s_midnight = 0.059`
+- `g_hg_midnight = 0.67`
+
+Abyss coefficients:
+
+- `beta_abs_abyss = float3(0.410, 0.180, 0.062)`
+- `beta_sca_abyss = float3(0.040, 0.036, 0.032)`
+- `beta_ext_abyss = float3(0.450, 0.216, 0.094)`
+- `sigma_t_abyss = 0.253`
+- `sigma_s_abyss = 0.036`
+- `g_hg_abyss = 0.54`
+
+3.4 Derived visibility metrics
+
+Distance for 50 percent transmittance by channel:
+
+Formula:
+
+`d_50 = ln(2) / beta_ext`
+
+Shallow:
+- `d50_R = 3.08 m`
+- `d50_G = 4.56 m`
+- `d50_B = 5.29 m`
+
+Midnight:
+- `d50_R = 2.13 m`
+- `d50_G = 3.89 m`
+- `d50_B = 6.80 m`
+
+Abyss:
+- `d50_R = 1.54 m`
+- `d50_G = 3.21 m`
+- `d50_B = 7.37 m`
+
+Distance for 10 percent transmittance by channel:
+
+Formula:
+
+`d_10 = ln(10) / beta_ext`
+
+Shallow:
+- `d10_R = 10.23 m`
+- `d10_G = 15.15 m`
+- `d10_B = 17.58 m`
+
+Midnight:
+- `d10_R = 7.09 m`
+- `d10_G = 12.94 m`
+- `d10_B = 22.58 m`
+
+Abyss:
+- `d10_R = 5.12 m`
+- `d10_G = 10.66 m`
+- `d10_B = 24.50 m`
+
+Interpretation contract:
+
+- Red disappears first in every biome.
+- Blue must not remain neon-clean in abyss; low scatter and high ambient suppression keep it cold, not bright.
+- Green remains dominant in shallow and vent-adjacent bands.
+- Blue dominance in abyss is a transmittance result, not an excuse for saturated cyan fog.
+
+3.5 Depth interpolation
+
+Band interpolation must be continuous. Use weighted blend by normalized depth:
+
+`w_shallow = saturate(1 - smoothstep(25, 55, z))`
+`w_midnight = saturate(smoothstep(25, 55, z) * (1 - smoothstep(220, 320, z)))`
+`w_abyss = saturate(smoothstep(220, 320, z))`
+
+Blended coefficients:
+
+`beta_abs = beta_abs_shallow * w_shallow + beta_abs_midnight * w_midnight + beta_abs_abyss * w_abyss`
+`beta_sca = beta_sca_shallow * w_shallow + beta_sca_midnight * w_midnight + beta_sca_abyss * w_abyss`
+`beta_ext = beta_abs + beta_sca`
+`g_hg = g_hg_shallow * w_shallow + g_hg_midnight * w_midnight + g_hg_abyss * w_abyss`
+
+3.6 Weather and turbidity modulation
+
+Weather/turbidity factor `tau` in `[0..1]`, where:
+- `0.0` = clear
+- `1.0` = storm / disturbed silt / low visibility
+
+Scattering modulation:
+
+`beta_sca_mod = beta_sca * lerp(1.0, 1.75, tau)`
+
+Absorption modulation:
+
+`beta_abs_mod = beta_abs * lerp(1.0, 1.15, tau)`
+
+Anisotropy modulation:
+
+`g_hg_mod = lerp(g_hg, g_hg + 0.08, tau)`
+
+Result:
+- high turbidity increases forward haze
+- high turbidity reduces contrast
+- high turbidity shortens usable caustic depth
+
+======================================================================
+4. EXACT FOG AND SCATTERING FORMULAS BY BIOME
+======================================================================
+
+4.1 Shared fog foundation
+
+Depth values:
+
+- `depth_lin = LinearEyeDepth(raw_depth, _ZBufferParams)`
+- `world_y_norm = saturate((worldPos.y - FogFloorY) / FogDepthRange)`
+- `floor_boost = 1.0 + (1.0 - world_y_norm) * AbyssalDensityBoost`
+
+Base extinction scalar:
+
+`sigma_t = dot(beta_ext_mod, float3(0.3333, 0.3333, 0.3333))`
+
+Base exponential fog:
+
+`fog_base = 1.0 - exp(-depth_lin * sigma_t * floor_boost * FogDensityMul)`
+
+Noir contrast remap:
+
+`fog_noir = pow(saturate(fog_base), NoirPower)`
+
+Color-channel extinction:
+
+`fog_channel.rgb = 1.0 - exp(-depth_lin * beta_ext_mod.rgb * floor_boost * FogDensityMul)`
+
+Final fog blend:
+
+`scene_rgb = lerp(scene_rgb, fogColor_rgb, fog_noir)`
+
+4.2 Shallow biome fog
+
+Shallow usage:
+- player depth below `40 m`
+- sunlight contribution still available
+- caustics allowed
+- shallow beam allowed
+- marine snow density moderate
+
+Shallow constants:
+
+- `FogDensityMul = 0.90`
+- `NoirPower = 1.75`
+- `AbyssalDensityBoost = 1.40`
+- `HeightFogBias = 0.22`
+- `SunScatterGain = 0.85`
+- `CausticDepthGate = 24 m clear water, 12 m turbid water`
+
+Shallow fog formula:
+
+`depth_term = depth_lin * sigma_t * floor_boost * 0.90`
+`height_term = saturate((FogCeilY - worldPos.y) * 0.02) * 0.22`
+`fog_shallow = 1 - exp(-(depth_term + height_term))`
+`fog_shallow = pow(fog_shallow, 1.75)`
+
+Shallow fog color:
+
+`fogColor_shallow = lerp(float3(0.020, 0.032, 0.040), float3(0.036, 0.058, 0.070), SunVisibility)`
+
+Shallow in-scatter:
+
+`scatter_shallow = (1 - exp(-depth_lin * sigma_s_shallow * 1.2)) * phase_cheap * SunScatterGain`
+
+Shallow final:
+
+`scene_rgb = scene_rgb * exp(-beta_ext_shallow * depth_lin) + fogColor_shallow * fog_shallow + SunColor * scatter_shallow`
+
+Shallow use rules:
+- keep blue under control with fogColor cap
+- use green-cyan push only near upward-facing and lit paths
+- do not brighten underside cavities with shallow scatter
+
+4.3 Midnight biome fog
+
+Midnight usage:
+- player depth `40 m` to `250 m`
+- surface influence weak
+- directional shafts rare
+- caustics usually disabled
+- flashlight and emissive hierarchy dominate
+
+Midnight constants:
+
+- `FogDensityMul = 1.05`
+- `NoirPower = 2.35`
+- `AbyssalDensityBoost = 2.10`
+- `HeightFogBias = 0.30`
+- `SunScatterGain = 0.18`
+- `LocalLightScatterGain = 0.42`
+
+Midnight fog formula:
+
+`depth_term = depth_lin * sigma_t_midnight * floor_boost * 1.05`
+`height_term = saturate((FogCeilY - worldPos.y) * 0.015) * 0.30`
+`fog_midnight = 1 - exp(-(depth_term + height_term))`
+`fog_midnight = pow(fog_midnight, 2.35)`
+
+Midnight fog color:
+
+`fogColor_midnight = lerp(float3(0.008, 0.012, 0.020), float3(0.014, 0.022, 0.032), LocalLightFactor)`
+
+Midnight local scatter from flashlight or proxy lights:
+
+`scatter_midnight = (1 - exp(-depth_lin * sigma_s_midnight * 0.85)) * phase_cheap * LocalLightScatterGain * LightVisibility`
+
+Midnight final:
+
+`scene_rgb = scene_rgb * exp(-beta_ext_midnight * depth_lin) + fogColor_midnight * fog_midnight + LightColor * scatter_midnight`
+
+Midnight use rules:
+- increase contrast between lit cone and surrounding void
+- preserve cold-green gradients around metallic assets
+- do not let fog become flat navy wash
+
+4.4 Abyss biome fog
+
+Abyss usage:
+- player depth beyond `250 m`
+- sunlight effectively absent
+- local emissive and flashlight dominate
+- low scatter, high extinction, narrow highlight windows
+- ambient floor is minimal
+
+Abyss constants:
+
+- `FogDensityMul = 1.22`
+- `NoirPower = 3.10`
+- `AbyssalDensityBoost = 2.80`
+- `HeightFogBias = 0.38`
+- `SunScatterGain = 0.00`
+- `LocalLightScatterGain = 0.26`
+- `BiolumFogPulse = 0.08 max`
+
+Abyss fog formula:
+
+`depth_term = depth_lin * sigma_t_abyss * floor_boost * 1.22`
+`height_term = saturate((FogCeilY - worldPos.y) * 0.010) * 0.38`
+`fog_abyss = 1 - exp(-(depth_term + height_term))`
+`fog_abyss = pow(fog_abyss, 3.10)`
+
+Abyss fog color:
+
+`fogColor_abyss = float3(0.003, 0.006, 0.011) + BiolumPulseTint * BiolumFogPulse`
+
+Biolum pulse tint:
+
+`BiolumPulseTint = float3(0.000, 0.050, 0.085) * saturate(BiolumFieldEnergy)`
+
+Abyss local scatter:
+
+`scatter_abyss = (1 - exp(-depth_lin * sigma_s_abyss * 0.60)) * phase_cheap * 0.26 * LightVisibility`
+
+Abyss final:
+
+`scene_rgb = scene_rgb * exp(-beta_ext_abyss * depth_lin) + fogColor_abyss * fog_abyss + LightColor * scatter_abyss`
+
+Abyss use rules:
+- keep background compression aggressive
+- maintain low-end separation on silhouettes
+- use emissive only as punctuation, not world fill
+- abyss must feel pressure-heavy, not bright blue
+
+4.5 Interior dark-volume override
+
+Dark-volume scalar `dv` in `[0..1]`, where:
+- `0.0` = exterior
+- `1.0` = sealed cave / module void / occluded crack
+
+Override:
+
+`ambient_floor = lerp(ambient_floor, 0.0, dv)`
+`fogColor = lerp(fogColor, fogColor * 0.55, dv)`
+`scatter_gain = lerp(scatter_gain, scatter_gain * 0.35, dv)`
+`NoirPower = lerp(NoirPower, NoirPower + 0.75, dv)`
+
+Use rule:
+- do not zero fog entirely in interiors; keep some medium density
+- do zero sky/surface contribution in authored cave dark volumes
+
+4.6 Thermocline crossfade
+
+Thermocline window:
+- begin `32 m`
+- center `55 m`
+- end `90 m`
+
+Thermocline factor:
+
+`thermo = smoothstep(32, 55, z) * (1 - smoothstep(55, 90, z)) * 4`
+`thermo = saturate(thermo)`
+
+Thermocline additions:
+
+`fogColor += float3(0.004, 0.006, 0.008) * thermo`
+`roughness_bias += 0.06 * thermo`
+`scatter_gain += 0.10 * thermo`
+
+Purpose:
+- slight desaturation band
+- stronger softness across depth crossing
+- readable biome boundary without visible line
+
+======================================================================
+5. FOUR-SAMPLE GODRAY / LIGHT SHAFT MODEL
+======================================================================
+
+5.1 Target
+
+Simulate localized shafts using only four depth samples plus blue-noise dither. This is for shallow sun pockets, flashlight shaft thickening, rupture beams in ruins, and limited hazard spot shafts. This is not global volumetric fog marching.
+
+5.2 Ray setup
+
+Inputs:
+- `P0 = camera position`
+- `P1 = sample endpoint along light direction or beam cone`
+- `ray_dir = normalize(P1 - P0)`
+- `ray_len = length(P1 - P0)`
+- `step = ray_len * 0.25`
+
+Blue-noise dither:
+
+`bn = BlueNoise(screenUV + FrameJitter).r`
+`jitter = (bn - 0.5) * step * 0.75`
+
+Sample distances:
+
+- `s0 = 0.125 * ray_len + jitter`
+- `s1 = 0.375 * ray_len + jitter`
+- `s2 = 0.625 * ray_len + jitter`
+- `s3 = 0.875 * ray_len + jitter`
+
+Sample positions:
+
+`Xn = P0 + ray_dir * sn`
+
+5.3 Density evaluation
+
+At each sample:
+
+`depthFactor_n = saturate(1 - Linear01DepthAtWorld(Xn))`
+`biomeDensity_n = SampleBiomeDensity(Xn)`
+`shadow_n = SampleLightOcclusion(Xn)`
+`phase_n = phase_cheap(cosTheta_n)`
+`shaft_n = biomeDensity_n * shadow_n * phase_n`
+
+Weighting:
+
+- `w0 = 0.32`
+- `w1 = 0.28`
+- `w2 = 0.24`
+- `w3 = 0.16`
+
+Accumulation:
+
+`shaft_accum = shaft_0*w0 + shaft_1*w1 + shaft_2*w2 + shaft_3*w3`
+
+5.4 Depth rejection
+
+Reject samples inside geometry using depth compare:
+
+`sampleSceneDepth = SceneDepthAtScreen(Project(Xn))`
+`sampleRayDepth = EyeDepth(Xn)`
+`visible_n = step(sampleRayDepth, sampleSceneDepth + DepthBias)`
+
+Depth bias:
+
+`DepthBias = 0.04 + 0.02 * sn`
+
+Visibility apply:
+
+`shaft_n *= visible_n`
+
+5.5 Shaft color
+
+Shallow sun shaft color:
+
+`shaftColor_shallow = lerp(float3(0.120, 0.160, 0.180), float3(0.260, 0.330, 0.320), SunWarmth)`
+
+Flashlight shaft color:
+
+`shaftColor_flashlight = float3(0.125, 0.155, 0.180)`
+
+Ruin breach shaft color:
+
+`shaftColor_breach = float3(0.090, 0.120, 0.145)`
+
+Final shaft term:
+
+`shaft_rgb = shaftColor * shaft_accum * ShaftIntensity * saturate(1 - depth_lin / ShaftFadeDepth)`
+
+5.6 Dither stabilization
+
+Frame phase:
+
+`frame_phase = FrameIndex & 3`
+`FrameJitter = float2(frame_phase * 0.17, frame_phase * 0.31)`
+
+Temporal clamp:
+
+`shaft_rgb = clamp(shaft_rgb, prev_shaft * 0.7, prev_shaft * 1.4 + 0.05)`
+
+5.7 Tier rules
+
+MX350:
+- 4 samples only
+- no history buffer
+- no bilateral blur
+- only shallow local shafts and flashlight shaft
+
+GTX/RTX:
+- optional 4-sample base + 4-sample secondary on selected hero shots
+- optional light-space blur
+- optional secondary distributed scatter mask
+
+5.8 Reject conditions
+
+- reject if biome is abyss and sun shaft source
+- reject if `depth > CausticMaxDepth + 4`
+- reject if `SunVisibility < 0.15`
+- reject if local render scale drops below `0.80` on MX350 budget path
+
+======================================================================
+6. CAUSTICS AND FLOOR LIGHT BREAKUP
+======================================================================
+
+6.1 Authority
+
+- Crest owns underwater caustic asset path
+- Use assigned asset material only
+- No runtime cloned Crest materials
+- Depth gating and intensity gating can be driven by owner logic through approved property writes
+
+6.2 World-space UV
+
+`uv0 = worldPos.xz / CausticWorldScale + Time * FlowDirA * SpeedA`
+`uv1 = worldPos.xz / (CausticWorldScale * 0.73) + Time * FlowDirB * SpeedB + float2(0.37, 0.13)`
+
+Constants:
+
+- `CausticWorldScale = 6.0 clear shallow, 8.5 turbid shallow`
+- `SpeedA = 0.028`
+- `SpeedB = 0.041`
+- `FlowDirA = normalize(float2(0.84, 0.24))`
+- `FlowDirB = normalize(float2(-0.42, 0.91))`
+
+6.3 Pattern math
+
+`c0 = texCaustic(uv0).r`
+`c1 = texCaustic(uv1).r`
+`c = pow(saturate(c0 * c1), 3.1)`
+
+Shadow modulation:
+
+`c *= shadowTerm`
+
+Depth gate:
+
+`c *= saturate(1 - depthBelowSurface / CausticDepthGate)`
+
+Slope gate:
+
+`c *= saturate(dot(normalWS, float3(0,1,0)) * 0.8 + 0.2)`
+
+Final:
+
+`caustic_rgb = c * CausticStrength * CausticColor`
+
+6.4 Caustic color
+
+`CausticColor = lerp(float3(0.06, 0.10, 0.11), float3(0.16, 0.22, 0.20), SunWarmth)`
+
+6.5 Reject conditions
+
+- no caustics in midnight beyond isolated breach situations
+- no caustics in abyss
+- no caustics on cave ceilings
+- no caustics in heavy storm turbid factor above `0.75`
+
+======================================================================
+7. SHADER FOUNDATION
+======================================================================
+
+7.1 Shared PBR inputs
+
+Standard packed inputs:
+
+- BaseColor
+- NormalTS
+- Metallic
+- Roughness
+- Occlusion
+- Wear
+- Wetness
+- EmissiveMask
+- Height or cavity if available
+
+Shared conversions:
+
+`perceptualRoughness = saturate(roughness)`
+`alphaG = perceptualRoughness * perceptualRoughness`
+`N = normalize(normalWS)`
+`V = normalize(viewDirWS)`
+`L = normalize(lightDirWS)`
+`H = normalize(V + L)`
+
+7.2 Wetness modulation standard
+
+Wetness is not only roughness reduction. Wetness changes:
+- roughness
+- dark diffuse energy
+- fresnel strength
+- micro-normal flattening
+- drip streak orientation
+
+Wetness standard:
+
+`wet = saturate(wetMask * WetnessGlobal)`
+`roughness = lerp(roughness, max(0.02, roughness * 0.35), wet)`
+`diffuseDarken = lerp(1.0, 0.84, wet)`
+`fresnelBoost = lerp(1.0, 1.35, wet)`
+`normalBlend = lerp(1.0, 0.65, wet)`
+
+7.3 Noir cavity boost
+
+Micro-cavity reinforcement:
+
+`cavity = saturate(1 - ao)`
+`localNoir = pow(cavity, 1.8) * LocalNoirStrength`
+`albedo *= 1 - localNoir * 0.08`
+`roughness = saturate(roughness + localNoir * 0.06)`
+
+7.4 Distance simplification
+
+At distance:
+- reduce normal intensity
+- reduce wet normal secondary sample
+- reduce biofilm and wear contrast
+- preserve silhouette and broad roughness zones
+
+Formula:
+
+`distLerp = saturate((distanceWS - SimplifyNear) / (SimplifyFar - SimplifyNear))`
+`normalIntensity *= lerp(1.0, 0.45, distLerp)`
+`detailSampleWeight *= lerp(1.0, 0.25, distLerp)`
+`roughnessContrast *= lerp(1.0, 0.70, distLerp)`
+
+======================================================================
+8. SHADER MASTER RECIPE: VOXEL ROCK
+======================================================================
+
+8.1 Purpose
+
+Voxel rock must read as:
+- pressure-wet
+- sediment-layered
+- heavy and mineral
+- locally occluded
+- non-repetitive across large broken volumes
+
+It must not read as:
+- tiled cliff texture
+- dry desert stone
+- uniformly glossy
+- UV-stretched world debris
+
+8.2 Triplanar basis
+
+Absolute normals:
+
+`nAbs = abs(normalWS)`
+`triWeight = pow(nAbs, TriplanarSharpness)`
+`triWeight /= max(dot(triWeight, 1.0), 1e-4)`
+
+Constants:
+
+- `TriplanarSharpness = 4.0 shallow rock`
+- `TriplanarSharpness = 5.5 hard basalt`
+- `TriplanarSharpness = 3.0 sediment crust`
+
+UVs:
+
+`uvX = worldPos.zy * TileScale`
+`uvY = worldPos.xz * TileScale`
+`uvZ = worldPos.xy * TileScale`
+
+Tile scales:
+
+- `TileScaleMacro = 0.16`
+- `TileScaleMicro = 1.40`
+- `TileScaleWetStreak = 0.08`
+
+8.3 Sample stack
+
+Macro albedo:
+
+`albX = AlbedoMacro(uvX)`
+`albY = AlbedoMacro(uvY)`
+`albZ = AlbedoMacro(uvZ)`
+`albedoMacro = albX * triWeight.x + albY * triWeight.y + albZ * triWeight.z`
+
+Micro normal:
+
+`nrmX = NormalMicro(uvX * 1.40)`
+`nrmY = NormalMicro(uvY * 1.40)`
+`nrmZ = NormalMicro(uvZ * 1.40)`
+`normalMicro = BlendTriplanarNormals(nrmX, nrmY, nrmZ, normalWS, triWeight)`
+
+Wet streak mask:
+
+`wetX = WetMask(uvX * 0.08 + float2(Time * 0.01, 0))`
+`wetY = WetMask(uvY * 0.08 + float2(Time * 0.01, 0))`
+`wetZ = WetMask(uvZ * 0.08 + float2(Time * 0.01, 0))`
+`wetMask = wetX * triWeight.x + wetY * triWeight.y + wetZ * triWeight.z`
+
+8.4 Height-aware blending
+
+If macro layer supports height:
+
+`hMacro = HeightMacro(...)`
+`hSilt = HeightSilt(...)`
+`siltBlend = saturate((hSilt - hMacro + SiltBias) * SiltContrast)`
+
+Constants:
+
+- `SiltBias = 0.10`
+- `SiltContrast = 4.5`
+
+Purpose:
+- silt collects in low regions
+- rock protrusions remain exposed
+- no gradient-smear between stone and sediment
+
+8.5 Wetness modulation for rock
+
+Rock wetness sources:
+- depth-based constant wetness
+- upward seep zones
+- vent humidity
+- local current splash if applicable
+- authored wet mask on asset
+
+Rock wetness:
+
+`wetBase = saturate(DepthWetness + SeepWetness + wetMask * 0.7 + AuthoredWetness)`
+`wetCavityBoost = pow(1 - ao, 2.0) * 0.35`
+`wet = saturate(wetBase + wetCavityBoost)`
+
+Roughness apply:
+
+`roughness = lerp(roughnessDry, roughnessDry * 0.42, wet)`
+
+Specular tint for mineral wetness:
+
+`specTint = lerp(float3(1.0, 1.0, 1.0), float3(0.88, 0.96, 1.02), wet * 0.4)`
+
+Diffuse darkening:
+
+`albedo *= lerp(1.0, 0.87, wet)`
+
+8.6 Sediment edge darkening
+
+At rock-to-silt boundaries:
+
+`edge = saturate(abs(ddx(siltBlend)) + abs(ddy(siltBlend)) * 8.0)`
+`edgeDark = smoothstep(0.10, 0.45, edge)`
+`albedo *= 1 - edgeDark * 0.06`
+`roughness += edgeDark * 0.08`
+
+8.7 Color ranges
+
+Rock base palette:
+- basalt dark: `#141B21`
+- cold mineral: `#1D2830`
+- green-black algae tint: `#20312E`
+- wet cyan edge tint: `#29454C`
+- vent amber contamination: `#5A4032`
+
+8.8 LOD simplification for rock
+
+LOD0:
+- full triplanar macro + micro + wet streak + silt height blend
+
+LOD1:
+- macro triplanar + simplified normal + baked wetness mask
+
+LOD2:
+- macro triplanar only
+- prepacked roughness/ao
+- no wet streak sample
+
+8.9 Reject conditions
+
+- no UV-authority mismatch between object and world space
+- no glossy mirror-like rock
+- no dry chalk normals in abyss
+
+======================================================================
+9. SHADER MASTER RECIPE: HULL METAL
+======================================================================
+
+9.1 Purpose
+
+Hull metal must read as:
+- industrial
+- salt-worn
+- mechanically fabricated
+- pressure-wet
+- chipped and edge-broken
+- selectively emissive only where authoring demands
+
+9.2 Mandatory PBR packing
+
+Channel pack:
+
+- `R = Metallic`
+- `G = Occlusion`
+- `B = Roughness`
+- `A = Wear`
+
+Decode:
+
+`metallic = pack.r`
+`ao = pack.g`
+`roughness = pack.b`
+`wear = pack.a`
+
+Use rule:
+- no alternate swizzle
+- no per-material reinterpretation of this map
+- if a material lacks one channel, fill channel with neutral default and keep packing contract
+
+9.3 Base ranges
+
+Nominal metal values:
+
+- painted hull plate: `metallic 0.05`, `roughness 0.62`
+- exposed steel edge: `metallic 0.92`, `roughness 0.36`
+- corroded exposed patch: `metallic 0.80`, `roughness 0.48`
+- wet painted plate: `metallic 0.05`, `roughness 0.24`
+
+9.4 Wear response
+
+Wear drives:
+- paint removal
+- exposed metal reveal
+- roughness reduction on polished edges
+- grime accumulation around worn cavities
+
+Formulas:
+
+`paintMask = saturate(1 - wear * WearExposeGain)`
+`metalReveal = saturate(wear * WearExposeGain)`
+`albedo = lerp(basePaintColor, exposedMetalColor, metalReveal)`
+`metallic = lerp(baseMetallic, 0.92, metalReveal)`
+`roughness = lerp(baseRoughness, baseRoughness * 0.65, metalReveal)`
+
+Constants:
+
+- `WearExposeGain = 1.25`
+- `EdgePolishGain = 0.35`
+- `GrimeCavityGain = 0.22`
+
+9.5 Edge and cavity logic
+
+Geometry edge factor:
+
+`edgeGeom = saturate(pow(1 - dot(normalWS, geomNormalWS), 1.2) * 2.4)`
+
+Curvature/wear factor:
+
+`edgeWear = saturate(edgeGeom + wear * 0.75)`
+
+Apply:
+
+`roughness = lerp(roughness, roughness * 0.78, edgeWear * EdgePolishGain)`
+`albedo = lerp(albedo, albedo * 1.04, edgeWear * 0.08)`
+
+Cavity grime:
+
+`cavity = pow(1 - ao, 2.1)`
+`albedo *= lerp(1.0, 0.90, cavity * GrimeCavityGain)`
+`roughness = saturate(roughness + cavity * 0.05)`
+
+9.6 Wet hull response
+
+Hull wetness sources:
+- depth
+- runoff
+- leak adjacency
+- exterior spray / disturbance
+- authored seam wet masks
+
+Wetness formulas:
+
+`wet = saturate(GlobalWetness + LeakWetness + AuthoredWetMask)`
+`roughness = lerp(roughness, max(0.03, roughness * 0.30), wet)`
+`albedo *= lerp(1.0, 0.92, wet)`
+`normalSecondaryWeight = lerp(0.0, 0.35, wet)`
+`fresnel = lerp(fresnel, fresnel * 1.25, wet)`
+
+9.7 Clearcoat policy
+
+Use minimal faux clearcoat only on fresh functional surfaces:
+- instrument bezel
+- visor frame trim
+- sealed panel lacquer
+
+Never on:
+- rusted hull
+- vent grilles
+- external wreck
+- abyss salvage
+
+Formula:
+
+`clearcoat = functionalMask * 0.25`
+`clearcoatRoughness = lerp(0.22, 0.08, wet * functionalMask)`
+
+9.8 Emissive puncture rules
+
+Emissive not allowed as broad wash.
+
+Allowed emissive locations:
+- powered seam LEDs
+- safety indicators
+- warning strips
+- controlled panel text
+- fauna bio-response
+
+Forbidden emissive use:
+- filling dark corners
+- replacing bounced light
+- making midnight or abyss readable by brute force
+
+9.9 Color anchors
+
+Hull palette anchors:
+- NATO hull blue-black `#19232B`
+- oxidized panel blue `#2E4653`
+- hazard amber `#C97A22`
+- coolant cyan `#53B3C1`
+- dead steel `#5D6972`
+- rust-brown seam `#6C4D40`
+
+======================================================================
+10. SHADER MASTER RECIPE: DITHERED ALPHA AND BLUE NOISE
+======================================================================
+
+10.1 Use cases
+
+- LOD crossfade on flora and thin debris
+- soft cutout on suspended organic sheets
+- shadow-preserving transition on far silhouette cards
+- fog-transition gating for distant shafts
+
+10.2 Threshold formula
+
+Blue-noise sample:
+
+`bn = texBlueNoise(pointRepeat, screenUV * BlueNoiseScale + FrameOffset).r`
+
+Threshold:
+
+`threshold = bn`
+
+Alpha test:
+
+`pass = step(threshold, alphaCoverage)`
+
+For smoother mid-range transition:
+
+`alphaCoverage = saturate((alpha - CutoffLow) / max(CutoffHigh - CutoffLow, 1e-4))`
+
+Constants:
+
+- `CutoffLow = 0.32`
+- `CutoffHigh = 0.68`
+
+10.3 Shadow-band reduction
+
+When used in shadow caster or shadow receiver path:
+
+`shadowAlpha = saturate(alphaCoverage * ShadowCoverageGain + ShadowCoverageBias)`
+
+Defaults:
+
+- `ShadowCoverageGain = 0.92`
+- `ShadowCoverageBias = 0.04`
+
+10.4 Banding elimination in darks
+
+Final dark dither injection:
+
+`ditherOffset = (bn - 0.5) * (1.0 / 255.0) * DitherStrength`
+
+Recommended strengths:
+- `0.75` for world final pass
+- `0.40` for visor distortion chain
+- `0.00` for clean UI compositing
+
+10.5 Frame rotation
+
+`FrameOffset = float2((FrameIndex & 3) * 0.25, ((FrameIndex + 1) & 3) * 0.25)`
+
+10.6 Bayer fallback
+
+If blue noise unavailable on lowest path:
+
+`bayer4x4 = (Bayer[x & 3][y & 3] + 0.5) / 16.0`
+`pass = step(bayer4x4, alphaCoverage)`
+
+Use only as lowest fallback. Blue noise is preferred.
+
+======================================================================
+11. SHADER MASTER RECIPE: VISOR, BIOFILM, WET GLASS
+======================================================================
+
+11.1 Visor optical model
+
+Visor layers:
+- base transparent glass
+- micro scratch normal
+- runoff normal
+- droplet mask
+- smudge or grime fallback
+- stress distortion modulation
+
+Index of refraction:
+
+`ior = 1.46`
+
+Refraction offset:
+
+`refractOffset = normalTS.xy * RefractionStrength * (1 - saturate(dot(V, N)))`
+
+Recommended strengths:
+- calm: `0.004`
+- runoff active: `0.012`
+- stress peak: `0.018`
+
+11.2 Scratch visibility
+
+Scratch visibility increases with grazing angle and wet film.
+
+`grazing = pow(1 - saturate(dot(N, V)), 2.4)`
+`scratchVis = ScratchMask * saturate(grazing * 1.2 + Wetness * 0.35 + Runoff * 0.25)`
+
+Scratch modulation:
+
+`specular += scratchVis * 0.08`
+`roughness = lerp(roughness, roughness * 0.82, scratchVis * 0.4)`
+
+11.3 Runoff direction
+
+Runoff direction in visor UV:
+
+`runoffDir = normalize(float2(0.08, -1.0))`
+`runoffUV = visorUV + runoffDir * Time * RunoffSpeed + StressShakeOffset`
+
+Speed:
+- calm `0.02`
+- post-submerge `0.10`
+- surface break `0.16`
+
+11.4 Biofilm layer for glass or hull inserts
+
+Biofilm uses:
+- outer module windows
+- old helmet rims
+- ruin translucent inserts
+
+Biofilm logic:
+
+`bio = BiofilmMask * BiofilmGlobal`
+`albedo = lerp(albedo, albedo * float3(0.82, 0.93, 0.88), bio)`
+`roughness += bio * 0.10`
+`transmission *= 1 - bio * 0.18`
+
+11.5 Condensation pulse
+
+Used during stress or oxygen-pressure transitions:
+
+`condense = saturate(PlayerStress * 0.7 + O2LowFactor * 0.5)`
+`frostNoise = Noise(visorUV * 9.0 + Time * 0.03)`
+`condenseMask = smoothstep(0.48, 0.78, frostNoise) * condense`
+
+Apply:
+
+`transparency *= 1 - condenseMask * 0.10`
+`roughness += condenseMask * 0.18`
+
+======================================================================
+12. TEXTURE PACKING, ATLAS, AND AUTHORING CONTRACT
+======================================================================
+
+12.1 Global packing rules
+
+Material families:
+- voxel rock
+- hull metal
+- painted trim
+- algae / biofilm
+- decal / signage
+- visor / glass
+- particles
+
+Texture compression:
+- BC7: albedo, packed masks, grime atlases
+- BC5: normals
+- BC4 or R8: blue noise, emissive masks if isolated
+- uncompressed: only where RenderTexture or strict utility requires it
+
+12.2 Atlas classes
+
+Atlas class A: hard-surface trim
+- size `2048`
+- 4 quadrants
+- panel seams
+- grilles
+- hazard strips
+- bolts / fasteners
+
+Atlas class B: hull wear/grime
+- size `2048`
+- 8 tiles
+- rust drips
+- leak streaks
+- salt bloom
+- abrasion patches
+
+Atlas class C: geology macro
+- size `2048`
+- 4 tiles
+- basalt
+- sediment
+- shale fracture
+- mineral crust
+
+Atlas class D: particle sprites
+- size `1024`
+- 4x4 tiles
+- marine snow shapes 4
+- bubble shapes 3
+- vent foam 3
+- debris motes 4
+- reserve 2
+
+12.3 UV discipline
+
+- Avoid unique unwrap cost for modular hull plates if trim/atlas can solve it.
+- Use world-space triplanar for irregular voxel stone.
+- Use UV unwrap for fabricated hard-surface modules and visor elements.
+- Use consistent texel density targets:
+  - hero modules `512 px/m`
+  - medium exterior `256 px/m`
+  - small props `128 px/m`
+
+12.4 PBR packing standards
+
+Rock pack:
+- `R = cavity`
+- `G = ao`
+- `B = roughness`
+- `A = wetness bias`
+
+Hull pack:
+- `R = metallic`
+- `G = ao`
+- `B = roughness`
+- `A = wear`
+
+Visor pack:
+- `R = droplet mask`
+- `G = smudge mask`
+- `B = scratch intensity`
+- `A = runoff routing`
+
+Decal pack:
+- `R = opacity`
+- `G = roughness`
+- `B = grime mask`
+- `A = edge breakup`
+
+Particle pack:
+- `R = opacity`
+- `G = emissive mask`
+- `B = distortion strength`
+- `A = soft edge mask`
+
+12.5 Mip rules
+
+- World textures: mips on
+- UI textures: mips off
+- Blue noise: mips off
+- Particle sprites: mips on only if distant visible; bias by type
+
+Bias recommendations:
+- hull trim `-0.25`
+- geology macro `0.0`
+- particles `+0.5`
+- visor `0.0`
+
+12.6 Wetness atlas logic
+
+Wetness atlas stores:
+- streak direction
+- pooled moisture
+- seam accumulation
+- drip endpoint concentration
+
+Decode:
+
+`wetSeam = atlas.r`
+`wetPool = atlas.g`
+`wetFlow = atlas.b`
+`wetEdge = atlas.a`
+
+Combine:
+
+`wet = saturate(wetSeam * 0.45 + wetPool * 0.35 + wetFlow * 0.15 + wetEdge * 0.20)`
+
+12.7 Emissive atlases
+
+Emissive atlas must be sparse.
+- 70 percent of pixels near black
+- 20 percent low-level indicator
+- 10 percent strong hazard nodes
+
+Reason:
+- preserve HDR budget
+- preserve darkness structure
+- avoid emissive broad wash
+
+======================================================================
+13. VFX MASTER RECIPE: BUBBLES
+======================================================================
+
+13.1 Bubble classes
+
+- Class A: exhale bubbles
+- Class B: vent seep bubbles
+- Class C: pressure leak bubbles
+- Class D: ambient shallow disturbance bubbles
+
+13.2 Canonical particle state
+
+Per bubble:
+- position
+- velocity
+- radius
+- normalized life
+- wobble phase
+- refractive strength
+- atlas tile
+- class flags
+
+13.3 Buoyancy physics
+
+Volume:
+
+`V = (4/3) * PI * r^3`
+
+Buoyant force:
+
+`F_b = V * g * (rho_water - rho_air)`
+
+Bubble mass approximation:
+
+`m_b = max(rho_air * V, 1e-5)`
+
+Buoyant acceleration:
+
+`a_b = F_b / m_b`
+
+Simplified:
+
+`a_b = g * ((rho_water - rho_air) / max(rho_air, 1.0))`
+
+Because this explodes for pure physical bubble mass, clamp to authored scale:
+
+`a_b_clamped = lerp(1.8, 4.6, saturate((r - 0.004) / 0.030))`
+
+Velocity update:
+
+`vel.y += a_b_clamped * dt`
+
+Terminal rise speed:
+
+`v_term = 0.28 + r * 8.5`
+`vel.y = min(vel.y, v_term)`
+
+13.4 Pressure compression
+
+Pressure:
+
+`P = 101325 + rho_water * g * depth`
+
+Compressed radius:
+
+`r_compressed = r_surface * pow(101325 / P, 1.0 / 3.0)`
+
+Cheap form:
+
+`r_compressed = r_surface * sqrt(101325 / P)`
+
+Use:
+- exhale bubbles: full cheap compression
+- vent bubbles: partial compression
+- ambient shallow bubbles: compression ignored
+
+13.5 Wobble frequency
+
+Base:
+
+`freq = 1.6 + (0.03 - r) * 55.0`
+
+Clamped:
+
+`freq = clamp(freq, 1.8, 5.2)`
+
+Wobble magnitude:
+
+`amp = r * 0.22`
+
+Lateral perturbation:
+
+`offset.x = sin(t * freq + phase + pos.y * 1.4) * amp`
+`offset.z = cos(t * freq * 0.79 + phase + pos.y * 1.1) * amp`
+
+Velocity apply:
+
+`vel.xz += offset.xz * dt * 10.0`
+
+13.6 Current suppression
+
+`currentStrength = length(flowSample)`
+`wobbleSuppression = 1 - saturate(currentStrength / 2.5)`
+`vel.xz *= lerp(1.0, wobbleSuppression, 0.65)`
+
+13.7 Refraction math
+
+Bubble fragment normal:
+
+`N_bubble = normalize(float3(uv*2 - 1, sqrt(saturate(1 - dot(uv*2-1, uv*2-1)))))`
+
+Refraction offset:
+
+`eta = eta_air / eta_water`
+`R = refract(-V, N_bubble, eta)`
+`uvOffset = R.xy * BubbleRefractionStrength`
+
+Strength:
+- exhale `0.010`
+- vent `0.014`
+- leak `0.012`
+
+Rim light:
+
+`rim = pow(1 - saturate(dot(V, N_bubble)), 4.0)`
+`rimColor = LightColor * rim * RimGain`
+
+13.8 Bubble color
+
+Base transmission:
+
+`bubble_rgb = scene_rgb(uv + uvOffset)`
+
+Scattering tint:
+
+`bubble_rgb = lerp(bubble_rgb, bubble_rgb * float3(0.90, 0.98, 1.04), 0.18)`
+
+13.9 Spawn logic
+
+Exhale:
+- burst count `6..18`
+- radius `0.004..0.018`
+- lifetime `0.7..1.5 s`
+- initial vertical velocity `0.08..0.22`
+
+Vent:
+- continuous
+- radius `0.006..0.024`
+- lifetime `1.2..2.8 s`
+- spawn jitter radius `0.05`
+
+Leak:
+- pulses by damage severity
+- radius `0.003..0.015`
+- lifetime `0.5..1.4 s`
+
+13.10 Cull rules
+
+- cull beyond `18 m`
+- cull inside visor near plane under `0.08 m`
+- reduce count by 50 percent when render scale below `0.85`
+- cap overlapping bubble transparency layers to 2 in same pixel bucket on MX350
+
+======================================================================
+14. VFX MASTER RECIPE: MARINE SNOW COMPUTE SWARM
+======================================================================
+
+14.1 Target
+
+Simulate `50,000+` suspended particles with:
+- no CPU roundtrip
+- zero per-frame PCIe churn beyond uniform upload
+- current-driven movement
+- mild flock-like micro-clustering
+- depth-aware stratification
+- camera-centric density shell
+
+14.2 Zero-PCIe architecture
+
+GPU-resident only:
+- `ParticleBuffer_A`
+- `ParticleBuffer_B`
+- `CellCountBuffer`
+- `CellIndexBuffer`
+- `IndirectArgsBuffer`
+- `ClusterDebugBuffer`
+
+CPU uploads per frame:
+- one frame constant buffer
+- optional dirty flow-field buffer if changed
+
+CPU never reads:
+- individual particle state
+- per-particle positions
+- per-particle velocities
+
+CPU readback allowed only for diagnostics:
+- async count histograms
+- max velocity
+- timing debug
+
+14.3 Particle state
+
+Canonical state per snow particle:
+
+- `float3 Pos`
+- `float Life`
+- `float3 Vel`
+- `float Size`
+- `uint PackedFlags`
+- `float NoiseSeed`
+- `float ClusterBias`
+- `float DensityBias`
+
+Target counts:
+- MX350 `32768`
+- GTX `50000`
+- RTX `98304`
+
+14.4 Camera-centric shell
+
+Snow volume follows camera, not world.
+
+Spawn shell:
+- inner radius `0.8`
+- outer radius `18.0`
+- vertical span `-10..+8`
+
+Respawn when exiting shell:
+
+`if length(Pos - CameraPos) > SnowFarShell then RespawnToRing()`
+
+Respawn ring:
+
+`RespawnPos = CameraPos + normalize(hashSphere(id, frame)) * lerp(14, 18, hash1(id))`
+
+14.5 Base drift
+
+Downward drift:
+
+`vel.y = -lerp(0.015, 0.040, hash1(id * 17))`
+
+Horizontal wander:
+
+`wander.x = hashSin(float2(t * 0.13 + id * 0.001, pos.z * 0.31)) * 0.010`
+`wander.z = hashSin(float2(t * 0.11 + id * 0.002, pos.x * 0.27)) * 0.010`
+
+14.6 Flow-field coupling
+
+Flow sample:
+
+`flow = SampleCurrentField(pos)`
+
+Coupling:
+
+`vel += (flow - vel) * (0.18 + DensityBias * 0.08) * dt`
+
+14.7 Boid-like micro-clustering
+
+This is not full animal boids. It is micro-cluster suspended matter.
+
+Neighbor radius:
+
+- `r_align = 0.55`
+- `r_cohesion = 0.85`
+- `r_separation = 0.25`
+
+Weights:
+
+- `w_align = 0.22`
+- `w_cohesion = 0.14`
+- `w_separation = 0.34`
+- `w_flow = 0.30`
+
+Grid:
+- `cellSize = 0.75`
+- `maxPerCell = 32`
+- `groupSize = 64`
+
+Alignment:
+
+`alignForce = normalize(avgNeighborVel) * w_align`
+
+Cohesion:
+
+`cohesionForce = normalize(avgNeighborPos - pos) * w_cohesion`
+
+Separation:
+
+`separationForce += normalize(pos - nPos) * saturate(1 - dist / r_separation) * w_separation`
+
+Final acceleration:
+
+`accel = alignForce + cohesionForce + separationForce + normalize(flow) * w_flow * length(flow)`
+
+Purpose:
+- avoid visual randomness
+- create subtle streamers and clumps
+- make shaft intersections richer
+
+14.8 Density stratification
+
+Density by altitude above seafloor:
+
+`bottomProx = saturate(1 - distToFloor / 4.0)`
+`stratDensity = lerp(0.4, 1.0, bottomProx)`
+
+Density by depth band:
+
+`depthDensity = lerp(0.7, 1.3, saturate(depth / 250.0))`
+
+Final alpha:
+
+`alpha *= stratDensity * depthDensity`
+
+14.9 Collision / accumulation
+
+Screen-space collision on Medium+:
+
+`if SceneDepth < ParticleDepth + SizeBias then collided`
+
+On collision:
+
+`vel *= 0.35`
+`vel.y = max(vel.y, -0.004)`
+`life -= dt * 0.18`
+
+Reason:
+- slow slide and settle
+- avoid immediate death pop
+
+14.10 Draw path
+
+- draw indirect only
+- billboard quads
+- premultiplied alpha
+- soft particle fade
+- no CPU instance loops
+
+14.11 Lighting
+
+Marine snow lighting:
+
+`forwardScatter = pow(saturate(dot(V, L)), 6.0) * 0.55`
+`ambientScatter = 0.08`
+`alphaLit = alpha * (ambientScatter + forwardScatter * LocalLightVisibility)`
+
+Shallow shaft boost:
+
+`alphaLit *= 1 + ShaftMask * 0.35`
+
+14.12 Tier controls
+
+MX350:
+- count `32768`
+- boid neighbor query every 2 frames
+- no screen-space collision in far half
+- 16-bit velocity precision acceptable
+
+GTX:
+- count `50000`
+- boid query every frame
+- full collision
+
+RTX:
+- count `98304`
+- full collision
+- secondary density layer
+- optional dual-shell distribution
+
+======================================================================
+15. OTHER VFX LAYERS
+======================================================================
+
+15.1 Vent plumes
+
+Vent plume characteristics:
+- upward
+- warm tint
+- bubble + fine dust mixture
+- local shimmer
+
+Warm tint:
+
+`ventTint = lerp(float3(0.20, 0.18, 0.10), float3(0.36, 0.24, 0.14), heatFactor)`
+
+Density:
+
+`ventDensity = 0.6 + heatFactor * 0.8`
+
+15.2 Leak plumes
+
+Leak plume characteristics:
+- thinner
+- intermittent
+- colder than vent
+- attached to module seam or hull crack
+
+Pulse:
+
+`leakPulse = 0.65 + 0.35 * sin(Time * 2.4 + LeakPhase)`
+
+15.3 Bottom silt kick
+
+Bottom silt from player movement:
+
+`siltKick = saturate((PlayerSpeed - 1.0) / 2.5) * saturate(1 - DistToFloor / 2.0)`
+
+Effect:
+
+`moteEmission *= 1 + siltKick * 1.2`
+`moteAlpha *= 1 + siltKick * 0.4`
+
+15.4 Flashlight shaft dust
+
+Flashlight dust boost:
+
+`dustBoost = saturate(FlashlightOn * 0.5 + FlashlightIntensity * 0.5)`
+`dustAlpha *= 1 + dustBoost * 0.25`
+
+======================================================================
+16. BIOME LOOK-BOOKS AND COLOR PALETTES
+======================================================================
+
+16.1 Palette 01: Shallow Clear Noon
+
+- Surface sky refraction: `#93C6C8`
+- Surface foam glow: `#D4F0E8`
+- Water body high light: `#5DA3A5`
+- Water body mid: `#2E5F63`
+- Seafloor lit sand-silt: `#5E6B59`
+- Wet rock mid: `#2A3437`
+- Wet rock dark: `#172024`
+- Caustic hot edge: `#D8E3B8`
+- Equipment neutral hull: `#31424B`
+- Safety stripe muted: `#C58A2A`
+
+Use:
+- strongest sunlight band
+- tutorial / onboarding safe waters
+- low trauma / high readability
+
+16.2 Palette 02: Shallow Storm Silt
+
+- Surface grey-green: `#7D938B`
+- Murk highlight: `#607A73`
+- Murk mid: `#35504E`
+- Mud green: `#2A3F3D`
+- Seafloor churn: `#5C5A4C`
+- Rock wet shadow: `#1B2326`
+- Foam residue: `#A6B6A9`
+- Hazard amber: `#B77122`
+- Cable jacket faded red-brown: `#764744`
+- Floodlight bounce: `#8FA8A2`
+
+Use:
+- low visibility surface weather
+- disturbed sediment
+- shipwreck entry corridors
+
+16.3 Palette 03: Thermocline Fade
+
+- Upper water cyan-grey: `#5A7E89`
+- Lower water slate: `#324A57`
+- Boundary haze: `#76828A`
+- Boundary chill blue: `#476070`
+- Rock desat olive: `#434B43`
+- Metal cold seam: `#46565F`
+- Ambient floor: `#11171D`
+- Instrument aqua accent: `#4EA6AF`
+- Warning amber cool: `#B77C35`
+- Biological glow weak: `#2A7A7E`
+
+Use:
+- depth transition
+- first pressure cue
+- reduced warmth
+
+16.4 Palette 04: Midnight Open Water
+
+- Distant water body: `#0E1824`
+- Mid water cold teal: `#173140`
+- Light cone center: `#87A7B5`
+- Light cone falloff: `#4B6776`
+- Rock face wet: `#1C262C`
+- Silt line: `#333833`
+- Hull steel: `#46535C`
+- Cool emissive: `#4BB3C2`
+- Hazard amber: `#A96A28`
+- Biolum low pulse: `#0C667B`
+
+Use:
+- standard mid-depth traversal
+- low ambient
+- cone-centric reading
+
+16.5 Palette 05: Midnight Ruin Interior
+
+- Interior void: `#0A1017`
+- Damp module wall: `#1A232A`
+- Pressure glass edge: `#304957`
+- Rust seam: `#5B433A`
+- Leak sheen: `#567C82`
+- Panel dead grey: `#626D72`
+- Emergency amber: `#C06A1E`
+- Console cyan dim: `#2E8A97`
+- Moss green-black: `#1D322E`
+- Reflection streak: `#9AB7BA`
+
+Use:
+- interior ruins
+- narrow corridors
+- leak plume zones
+
+16.6 Palette 06: Abyss Exterior
+
+- Void floor: `#050A10`
+- Abyss mid: `#09131B`
+- Flashlight core: `#A3B9C5`
+- Flashlight edge: `#536975`
+- Wet monolith face: `#111D24`
+- Deep mineral green: `#16302B`
+- Decay amber rare: `#8D5524`
+- Biolum teal: `#11849A`
+- Biolum cyan flare: `#4FC3D5`
+- Oxygen warning red-amber: `#8A422B`
+
+Use:
+- large pressure spaces
+- silhouette dominance
+- very low ambient
+
+16.7 Palette 07: Abyss Thermal Vent
+
+- Vent core amber: `#D48634`
+- Vent smoke green: `#7C8E58`
+- Superheated silt: `#8D6A47`
+- Surrounding water black-green: `#0C1614`
+- Wet basalt: `#202420`
+- Oxidized crust: `#6A543E`
+- Sensor cyan: `#4AA8A8`
+- Warning strip burnt: `#A35A20`
+- Bubble highlight: `#CFD6CB`
+- Distant dark: `#05090D`
+
+Use:
+- thermal clusters
+- industrial hazard juxtaposition
+
+16.8 Palette 08: Biolum Garden
+
+- Ambient deep teal: `#0F2630`
+- Coral glow cyan: `#56C9D7`
+- Coral glow mint: `#78D6B8`
+- Substrate dark: `#1A2320`
+- Wet root green-black: `#21322C`
+- Pulse blue: `#2D7FA7`
+- Fauna eye amber: `#C77A39`
+- Cave edge dark: `#0A1012`
+- Secondary violet-black limited: `#30283E`
+- Condensed highlight: `#AEE5E3`
+
+Use:
+- rare wonder zones
+- must remain mostly dark
+- glow punctures only
+
+16.9 Palette 09: Derelict Industrial Shelf
+
+- Painted hull blue-black: `#1E2B35`
+- Exposed steel: `#69737B`
+- Rust drain: `#744C3E`
+- Leak wet sheen: `#597983`
+- Caution stripe dirty: `#C5852E`
+- Cold floodlight: `#8BA5B7`
+- Interior shadow: `#10161C`
+- Cable rubber: `#272D31`
+- Oxidized panel green: `#334943`
+- Diagnostic cyan: `#45A6BB`
+
+Use:
+- NASA-punk structures
+- shelf ruins
+- fabricated contrast against geology
+
+16.10 Palette 10: Panic HUD / Trauma Overlay
+
+- Base HUD cyan: `#6FD2E4`
+- Degraded HUD cyan: `#4AA8B8`
+- Sync shift magenta edge: `#A55F92`
+- Warning amber: `#D08A2F`
+- Critical amber-red: `#BB5A2A`
+- Error red-brown: `#7E3A34`
+- Ghost white-green: `#B4D7CE`
+- Noise dark: `#0B1116`
+- Scanline grey: `#5B6B74`
+- Hard failure black-blue: `#061017`
+
+Use:
+- only for HUD distortion
+- not for world light
+
+======================================================================
+17. UI GLITCH AND TRAUMA LOGIC
+======================================================================
+
+17.1 Input variable
+
+`PlayerStress` in `[0..1]`
+
+Sources feeding stress:
+- oxygen panic
+- hull pressure warning
+- near-threat proximity
+- impact or damage
+- electrical interference
+- blackout or low-power mode
+
+Weighted composition:
+
+`PlayerStress = saturate(0.28*O2Stress + 0.22*PressureStress + 0.20*ThreatStress + 0.16*DamageStress + 0.14*PowerStress)`
+
+17.2 Temporal smoothing
+
+Rise time:
+
+`StressFast = lerp(prevStress, PlayerStress, 1 - exp(-dt * 5.5))`
+
+Fall time:
+
+`StressSlow = lerp(prevStress, PlayerStress, 1 - exp(-dt * 1.4))`
+
+Selection:
+
+`StressSmoothed = PlayerStress > prevStress ? StressFast : StressSlow`
+
+17.3 Distortion stage order
+
+1. resolve stress scalar
+2. compute sync-shift lane offsets
+3. compute chromatic fringe
+4. compute scanline instability
+5. compute UV wobble
+6. compute dropout mask
+7. compute ghost image blend
+8. composite warning color drift
+9. apply final blue-noise dither
+
+17.4 Chromatic aberration
+
+Base strength:
+
+`CA = lerp(0.0000, 0.0038, StressSmoothed)`
+
+Damage boost:
+
+`CA += DamageStress * 0.0022`
+
+Directional bias:
+
+`CA_dir = normalize(float2(sin(Time*1.7), cos(Time*1.1)))`
+
+Sample offsets:
+
+`uvR = uv + CA_dir * CA`
+`uvG = uv`
+`uvB = uv - CA_dir * CA`
+
+17.5 Vertical sync-shift
+
+Goal:
+- emulate HUD scan transport instability
+- not VHS meme distortion
+
+Stripe frequency:
+
+`stripeFreq = lerp(6.0, 18.0, StressSmoothed)`
+
+Lane mask:
+
+`lane = floor(uv.y * stripeFreq)`
+
+Shift noise:
+
+`laneNoise = hashSin(float2(lane, floor(Time * 12.0)))`
+
+Shift amplitude:
+
+`shiftAmp = StressSmoothed * 0.012`
+
+Apply:
+
+`uv.x += (laneNoise - 0.5) * shiftAmp * step(0.65, laneNoise)`
+
+17.6 UV wobble
+
+Low-frequency wobble:
+
+`wobble.x = sin(Time * 1.9 + uv.y * 9.0) * 0.0015 * StressSmoothed`
+`wobble.y = cos(Time * 1.3 + uv.x * 11.0) * 0.0010 * StressSmoothed`
+
+Damage impulse:
+
+`wobble += ImpactImpulse * float2(hashSin(float2(Time, 1.2)), hashSin(float2(Time, 2.3))) * 0.006`
+
+17.7 Ghost image
+
+Ghost offset:
+
+`ghostOffset = float2(0.0025, -0.0015) * StressSmoothed`
+
+Ghost alpha:
+
+`ghostAlpha = saturate((StressSmoothed - 0.35) / 0.65) * 0.22`
+
+Apply:
+
+`hud_rgb = lerp(hud_rgb, hud_rgb_at(uv + ghostOffset), ghostAlpha)`
+
+17.8 Dropout logic
+
+Dropout noise:
+
+`drop = hashSin(float2(floor(uv.y * 128.0), floor(Time * 20.0)))`
+
+Dropout threshold:
+
+`dropT = lerp(1.0, 0.82, StressSmoothed)`
+
+Mask:
+
+`dropMask = step(dropT, drop)`
+
+Apply:
+
+`hud_rgb *= lerp(1.0, 0.25, dropMask * StressSmoothed)`
+
+17.9 Scanline instability
+
+Scanline phase:
+
+`scan = sin(uv.y * 720.0 + Time * lerp(2.0, 10.0, StressSmoothed))`
+
+Scanline strength:
+
+`scanAmp = lerp(0.00, 0.06, StressSmoothed)`
+
+Apply:
+
+`hud_rgb *= 1 - ((scan * 0.5 + 0.5) * scanAmp)`
+
+17.10 Warning palette drift
+
+When stress rises:
+
+`warnLerp = saturate((StressSmoothed - 0.45) / 0.55)`
+`hud_rgb = lerp(hud_rgb, lerp(float3_from_hex(6FD2E4), float3_from_hex(D08A2F), warnLerp), warnLerp * 0.45)`
+
+At critical:
+
+`crit = saturate((StressSmoothed - 0.82) / 0.18)`
+`hud_rgb = lerp(hud_rgb, float3_from_hex(BB5A2A), crit * 0.55)`
+
+17.11 Text jitter
+
+Text elements only:
+
+`textJitter = (hashSin(float2(ElementId, floor(Time * 24.0))) - 0.5) * 2.0`
+`textPos.x += textJitter * StressSmoothed * 0.8 px`
+`textPos.y += textJitter * StressSmoothed * 0.3 px`
+
+17.12 Opacity and legibility guard
+
+Legibility floor:
+
+`uiAlpha = max(uiAlpha, 0.65)`
+
+Critical indicators exempt:
+- oxygen meter
+- pressure warnings
+- interaction prompt
+- hard objective
+
+Exempt elements receive:
+
+`criticalUiAlpha = max(criticalUiAlpha, 0.82)`
+`criticalCA = CA * 0.30`
+`criticalDropMask = 0`
+
+17.13 Distortion budget tiers
+
+MX350:
+- one pass
+- 3 texture reads world UI base + 2 offset samples
+- no blur
+- no bloom on HUD
+
+RTX:
+- optional additional soft ghost or phosphor persistence pass
+
+======================================================================
+18. SCALABILITY MATRIX MX350 TO 4090
+======================================================================
+
+18.1 Tier names
+
+- Tier 0: MX350 Minimum Premium
+- Tier 1: GTX 1060 Practical Premium
+- Tier 2: RTX 2060 High Premium
+- Tier 3: RTX 4090 Cinematic Expansion
+
+18.2 Fog
+
+Tier 0:
+- scalar exp fog
+- color-channel extinction in main forward path
+- no full raymarch
+- four-sample shafts only
+
+Tier 1:
+- same base
+- improved local shaft stability
+- secondary depth stratification
+
+Tier 2:
+- optional 8-step hero volumetric pockets
+- extra beam shells near camera
+
+Tier 3:
+- selective cinematic distributed scatter
+- still bounded, not global sludge
+
+18.3 Particles
+
+Tier 0:
+- `32k` marine snow
+- `1k` visible near-field particles practical
+- reduced vent plume overlap
+
+Tier 1:
+- `50k` marine snow
+- fuller near-field vent activity
+
+Tier 2:
+- `64k+` marine snow
+- more leak particles
+- more bubble shape variety
+
+Tier 3:
+- `98k+` marine snow
+- dual-shell density
+- richer mid-field distributions
+
+18.4 Materials
+
+Tier 0:
+- one wet normal secondary sample max on hero materials
+- reduced detail normal on distance
+
+Tier 1:
+- full base material stack
+
+Tier 2:
+- extra micro detail
+- more decal coverage
+
+Tier 3:
+- same DNA plus longer LOD0 residency
+
+18.5 HUD trauma
+
+Tier 0:
+- single-pass distortion
+
+Tier 3:
+- optional subtle phosphor trail or persistence
+
+18.6 Hard rejects on all tiers
+
+- no more than two major translucent stacks in same near-camera region on Tier 0
+- no global volumetric fog fill in abyss
+- no chaotic CA in calm mode
+- no full-screen permanent noise overlay
+
+======================================================================
+19. IMPLEMENTATION ORDER
+======================================================================
+
+Order of value:
+
+1. enforce optical coefficients and fog separation by depth band
+2. enforce material packing and wetness rules
+3. enforce Crest shallow caustic gating
+4. enforce flashlight shaft density and marine snow interaction
+5. enforce bubble class behavior and compression
+6. enforce HUD trauma pass by stress
+7. expand look-book authoring against palettes
+
+======================================================================
+20. DEBUG VIEWS AND VALIDATION
+======================================================================
+
+Mandatory debug views:
+
+- biome band view
+- fog scalar and fog RGB extinction view
+- wetness view
+- wear view
+- marine snow density shell view
+- shaft sample positions view
+- bubble compression radius view
+- HUD stress view
+- palette ID view
+
+Expected outputs:
+
+- shallow: visible green-blue separation and caustic depth limit
+- midnight: stronger cone isolation, weaker ambient fill
+- abyss: high silhouette compression, very low ambient, controlled bio puncture
+- stress 0.0: no CA, no ghosting, no scanline instability
+- stress 1.0: strong but readable sync-shift, CA, dropout, warning drift
+
+======================================================================
+21. APPENDIX A: CONSTANT REGISTRY
+======================================================================
+
+Optics:
+- `beta_abs_shallow = (0.170, 0.082, 0.036)`
+- `beta_sca_shallow = (0.055, 0.070, 0.095)`
+- `beta_abs_midnight = (0.260, 0.118, 0.050)`
+- `beta_sca_midnight = (0.065, 0.060, 0.052)`
+- `beta_abs_abyss = (0.410, 0.180, 0.062)`
+- `beta_sca_abyss = (0.040, 0.036, 0.032)`
+- `g_hg_shallow = 0.74`
+- `g_hg_midnight = 0.67`
+- `g_hg_abyss = 0.54`
+
+Fog:
+- `NoirPowerShallow = 1.75`
+- `NoirPowerMidnight = 2.35`
+- `NoirPowerAbyss = 3.10`
+- `FogDensityMulShallow = 0.90`
+- `FogDensityMulMidnight = 1.05`
+- `FogDensityMulAbyss = 1.22`
+
+Caustics:
+- `CausticWorldScale = 6.0`
+- `CausticContrast = 3.1`
+- `CausticMaxDepthShallow = 24.0`
+- `CausticMaxDepthStorm = 12.0`
+
+Shafts:
+- `ShaftSampleCount = 4`
+- `ShaftWeights = (0.32, 0.28, 0.24, 0.16)`
+- `ShaftDepthBiasNear = 0.04`
+- `ShaftDepthBiasFar = 0.06`
+
+Marine snow:
+- `SnowMax_MX350 = 32768`
+- `SnowMax_GTX = 50000`
+- `SnowMax_RTX = 98304`
+- `SnowCellSize = 0.75`
+- `SnowNeighborAlign = 0.55`
+- `SnowNeighborCohesion = 0.85`
+- `SnowNeighborSeparation = 0.25`
+
+Bubbles:
+- `BubbleRefractionStrength_Exhale = 0.010`
+- `BubbleRefractionStrength_Vent = 0.014`
+- `BubbleRefractionStrength_Leak = 0.012`
+- `BubbleTerminalBase = 0.28`
+- `BubbleTerminalRadiusGain = 8.5`
+
+HUD:
+- `CA_Max = 0.0038`
+- `GhostAlpha_Max = 0.22`
+- `ScanAmp_Max = 0.06`
+- `SyncShift_Max = 0.012`
+
+======================================================================
+22. APPENDIX B: FORMULA SUMMARY
+======================================================================
+
+Transmittance:
+
+`T_rgb = exp(-beta_ext_rgb * d)`
+
+Fog base:
+
+`fog = 1 - exp(-depth_lin * sigma_t * floor_boost * FogDensityMul)`
+
+Noir remap:
+
+`fog_noir = pow(fog, NoirPower)`
+
+HG phase:
+
+`phase_hg = (1 - g^2) / (4*PI*pow(1 + g^2 - 2*g*cosTheta, 1.5))`
+
+Godray 4-sample:
+
+`shaft = sum(sample_n * weight_n), n=0..3`
+
+Triplanar weights:
+
+`w = pow(abs(N), Sharpness); w /= dot(w,1)`
+
+Wetness roughness:
+
+`roughness = lerp(roughnessDry, roughnessDry * WetGain, wet)`
+
+Bubble compression:
+
+`r = r_surface * sqrt(P_surface / P_depth)`
+
+Bubble wobble:
+
+`offset.x = sin(t*f + phase + y*k1) * amp`
+`offset.z = cos(t*f*0.79 + phase + y*k2) * amp`
+
+HUD CA:
+
+`uvR = uv + dir * CA`
+`uvB = uv - dir * CA`
+
+HUD sync shift:
+
+`uv.x += (laneNoise - 0.5) * shiftAmp * step(0.65, laneNoise)`
+
+======================================================================
+23. APPENDIX C: VISUAL DNA CHECKLIST
+======================================================================
+
+For every biome shot:
+
+- Is red sufficiently absorbed by depth?
+- Is green or cyan dominance physically tied to band, not globally constant?
+- Is blue controlled and cold, not cartoon neon?
+- Is the foreground wetter than the background?
+- Does the medium read as layered, not uniformly fogged?
+- Do shafts exist only where there is a convincing source?
+- Do bubbles show size variance and compression?
+- Does marine snow drift with structure, not pure noise?
+- Does the HUD degrade with stress without losing critical legibility?
+- Does emissive punctuate instead of filling?
+
+======================================================================
+24. APPENDIX D: DEPTH SAMPLE TABLES
+======================================================================
+
+24.1 Purpose
+
+This section provides ready numeric targets for look-dev review. The numbers are not intended for direct artist memorization. They are intended for shader debug overlays, LUT authoring, and shot-review sanity checks.
+
+24.2 Shallow transmittance samples
+
+Formula:
+
+`T_channel = exp(-beta_ext_channel * d)`
+
+Shallow red with `beta = 0.225`
+- `d = 1 m -> 0.7985`
+- `d = 2 m -> 0.6376`
+- `d = 3 m -> 0.5092`
+- `d = 5 m -> 0.3247`
+- `d = 8 m -> 0.1653`
+- `d = 10 m -> 0.1054`
+- `d = 12 m -> 0.0672`
+- `d = 15 m -> 0.0343`
+- `d = 20 m -> 0.0111`
+- `d = 24 m -> 0.0045`
+
+Shallow green with `beta = 0.152`
+- `d = 1 m -> 0.8590`
+- `d = 2 m -> 0.7378`
+- `d = 3 m -> 0.6337`
+- `d = 5 m -> 0.4677`
+- `d = 8 m -> 0.2962`
+- `d = 10 m -> 0.2187`
+- `d = 12 m -> 0.1615`
+- `d = 15 m -> 0.1022`
+- `d = 20 m -> 0.0478`
+- `d = 24 m -> 0.0261`
+
+Shallow blue with `beta = 0.131`
+- `d = 1 m -> 0.8772`
+- `d = 2 m -> 0.7694`
+- `d = 3 m -> 0.6748`
+- `d = 5 m -> 0.5196`
+- `d = 8 m -> 0.3504`
+- `d = 10 m -> 0.2694`
+- `d = 12 m -> 0.2070`
+- `d = 15 m -> 0.1401`
+- `d = 20 m -> 0.0728`
+- `d = 24 m -> 0.0431`
+
+Interpretation:
+- at `5 m` shallow distance, red is already heavily reduced
+- at `10 m` shallow distance, blue still carries shape but not full saturation
+- at `20 m`, shallow spaces must already compress hard in red and green
+
+24.3 Midnight transmittance samples
+
+Midnight red with `beta = 0.325`
+- `d = 1 m -> 0.7225`
+- `d = 2 m -> 0.5220`
+- `d = 3 m -> 0.3770`
+- `d = 5 m -> 0.1969`
+- `d = 8 m -> 0.0743`
+- `d = 10 m -> 0.0388`
+- `d = 12 m -> 0.0202`
+- `d = 15 m -> 0.0076`
+- `d = 20 m -> 0.0015`
+- `d = 25 m -> 0.0003`
+
+Midnight green with `beta = 0.178`
+- `d = 1 m -> 0.8370`
+- `d = 2 m -> 0.7005`
+- `d = 3 m -> 0.5863`
+- `d = 5 m -> 0.4107`
+- `d = 8 m -> 0.2409`
+- `d = 10 m -> 0.1686`
+- `d = 12 m -> 0.1180`
+- `d = 15 m -> 0.0692`
+- `d = 20 m -> 0.0285`
+- `d = 25 m -> 0.0118`
+
+Midnight blue with `beta = 0.102`
+- `d = 1 m -> 0.9030`
+- `d = 2 m -> 0.8155`
+- `d = 3 m -> 0.7365`
+- `d = 5 m -> 0.6005`
+- `d = 8 m -> 0.4420`
+- `d = 10 m -> 0.3606`
+- `d = 12 m -> 0.2940`
+- `d = 15 m -> 0.2166`
+- `d = 20 m -> 0.1300`
+- `d = 25 m -> 0.0780`
+
+Interpretation:
+- at `10 m` midnight distance, red is functionally gone
+- blue still transmits but the scene must remain dark because scatter is reduced and ambient is suppressed
+
+24.4 Abyss transmittance samples
+
+Abyss red with `beta = 0.450`
+- `d = 1 m -> 0.6376`
+- `d = 2 m -> 0.4066`
+- `d = 3 m -> 0.2592`
+- `d = 5 m -> 0.1054`
+- `d = 8 m -> 0.0273`
+- `d = 10 m -> 0.0111`
+- `d = 12 m -> 0.0045`
+- `d = 15 m -> 0.0012`
+- `d = 20 m -> 0.0001`
+- `d = 25 m -> 0.0000`
+
+Abyss green with `beta = 0.216`
+- `d = 1 m -> 0.8057`
+- `d = 2 m -> 0.6492`
+- `d = 3 m -> 0.5230`
+- `d = 5 m -> 0.3396`
+- `d = 8 m -> 0.1776`
+- `d = 10 m -> 0.1155`
+- `d = 12 m -> 0.0750`
+- `d = 15 m -> 0.0392`
+- `d = 20 m -> 0.0133`
+- `d = 25 m -> 0.0045`
+
+Abyss blue with `beta = 0.094`
+- `d = 1 m -> 0.9103`
+- `d = 2 m -> 0.8286`
+- `d = 3 m -> 0.7542`
+- `d = 5 m -> 0.6251`
+- `d = 8 m -> 0.4715`
+- `d = 10 m -> 0.3900`
+- `d = 12 m -> 0.3226`
+- `d = 15 m -> 0.2442`
+- `d = 20 m -> 0.1529`
+- `d = 25 m -> 0.0958`
+
+Interpretation:
+- abyss retains blue transmission but not bright blue fill
+- abyss darkness is maintained by low scatter, low ambient, and severe red extinction
+- any frame where abyss background reads medium-bright cyan is a violation
+
+24.5 Scatter fraction samples
+
+Approximate scatter fraction by scalar sigma values:
+
+Formula:
+
+`S = 1 - exp(-sigma_s * d)`
+
+Shallow `sigma_s = 0.073`
+- `1 m -> 0.0704`
+- `3 m -> 0.1964`
+- `5 m -> 0.3058`
+- `10 m -> 0.5180`
+- `20 m -> 0.7677`
+
+Midnight `sigma_s = 0.059`
+- `1 m -> 0.0573`
+- `3 m -> 0.1622`
+- `5 m -> 0.2558`
+- `10 m -> 0.4461`
+- `20 m -> 0.6927`
+
+Abyss `sigma_s = 0.036`
+- `1 m -> 0.0354`
+- `3 m -> 0.1027`
+- `5 m -> 0.1647`
+- `10 m -> 0.3023`
+- `20 m -> 0.5132`
+
+Interpretation:
+- shallow owns haze richness
+- midnight owns local beam readability
+- abyss owns contrast with low scatter and severe extinction
+
+24.6 Review thresholds by shot distance
+
+At 2 m:
+- object identity must remain strong in all biomes
+- wetness and micro detail dominate
+
+At 5 m:
+- shallow retains some color separation
+- midnight begins severe red loss
+- abyss is mostly flashlight/emissive readable only
+
+At 10 m:
+- shallow begins mass compression
+- midnight is cone-first
+- abyss must already feel near-void
+
+At 20 m:
+- shallow can still show major silhouette
+- midnight mostly silhouette and beam remnants
+- abyss is almost entirely shape and isolated emissive
+
+======================================================================
+25. POST STACK SPECIFICATION
+======================================================================
+
+25.1 Global post doctrine
+
+- Post must shape and finish an already-correct image.
+- Post must not invent biome identity that base shading failed to establish.
+- Post must not hide weak texture authoring.
+- Post must not replace medium density.
+
+25.2 Baseline pass order
+
+1. pre-exposure
+2. world color accumulation
+3. fog/extinction/scatter
+4. shaft injection
+5. caustic contribution already inside lighting
+6. ACES
+7. localized chromatic aberration if enabled
+8. bloom
+9. vignette
+10. film grain or dither
+11. HUD composite
+12. HUD trauma pass
+
+25.3 Shallow post values
+
+Bloom:
+- threshold `0.92`
+- intensity `0.22`
+- scatter `0.55`
+
+Vignette:
+- intensity `0.12`
+- smoothness `0.38`
+- rounded `0.15`
+
+Color Adjustments:
+- contrast `+8`
+- post exposure `0.00`
+- saturation `-4`
+
+White Balance:
+- temperature `-3`
+- tint `-2`
+
+Chromatic Aberration:
+- world path off in calm shallow
+- enabled only through submerge impulse or visor path
+
+Film grain:
+- disabled on MX350 shallow clear
+- enabled light at `0.06` only when needed
+
+25.4 Shallow storm values
+
+Bloom:
+- threshold `0.95`
+- intensity `0.14`
+
+Vignette:
+- intensity `0.17`
+- smoothness `0.48`
+
+Color Adjustments:
+- contrast `+5`
+- saturation `-10`
+
+White Balance:
+- temperature `-7`
+- tint `+1`
+
+Distortion:
+- local visor only
+
+25.5 Midnight post values
+
+Bloom:
+- threshold `0.88`
+- intensity `0.18`
+- scatter `0.42`
+
+Reason:
+- allow constrained beam and emissive softness
+- avoid bloom haze over entire frame
+
+Vignette:
+- intensity `0.22`
+- smoothness `0.46`
+- rounded `0.18`
+
+Color Adjustments:
+- contrast `+14`
+- saturation `-12`
+- post exposure `-0.08`
+
+Shadows Midtones Highlights:
+- shadows color `#0D1217`
+- midtones slight cool push `#91A6B3` at minimal weight
+- highlights neutral
+
+White Balance:
+- temperature `-10`
+- tint `-3`
+
+Chromatic Aberration:
+- world path `0.02` only during high stress or impact
+- otherwise visor/HUD only
+
+25.6 Abyss post values
+
+Bloom:
+- threshold `0.94`
+- intensity `0.10`
+- scatter `0.35`
+
+Reason:
+- abyss glow should sharpen isolation, not soften the frame
+
+Vignette:
+- intensity `0.28`
+- smoothness `0.54`
+- rounded `0.22`
+
+Color Adjustments:
+- contrast `+18`
+- saturation `-18`
+- post exposure `-0.12`
+
+White Balance:
+- temperature `-14`
+- tint `-4`
+
+Channel Mixer or SMH:
+- reduce red mids slightly
+- preserve blue-green in highlights only
+
+25.7 Emergency / low-power post
+
+When power or HUD stress high:
+- bloom intensity reduce by 40 percent
+- vignette increase by 15 percent
+- exposure drops by `-0.10`
+- CA moves to HUD/visor, not world
+
+Reason:
+- preserve readability of hazard cues
+- keep world stable while instrumentation destabilizes
+
+25.8 Forbidden post combinations
+
+- strong bloom + strong fog + strong CA at once
+- full-scene grain in clean shallow onboarding
+- lens distortion + CA + motion blur in same gameplay moment on MX350
+- bright lifted shadows in abyss
+- saturated teal shadows in all biomes
+
+25.9 Tone-curve target by biome
+
+Shallow:
+- moderate toe
+- mild shoulder
+- preserve highlight water energy
+
+Midnight:
+- deeper toe
+- more midtone compression
+- preserve narrow highlight cone
+
+Abyss:
+- strong toe
+- minimal shoulder lift
+- protect biolum hot pixels from bloom blowout
+
+======================================================================
+26. EMISSIVE, BIOLUM, AND ELECTRICAL LIGHT DNA
+======================================================================
+
+26.1 General rule
+
+Emissive exists to describe:
+- system status
+- power hierarchy
+- hazard intensity
+- biological response
+- spatial lure
+
+Emissive does not exist to:
+- brighten dead corners
+- replace bounce
+- make dark scenes easier by brute force
+
+26.2 Emissive brightness bands
+
+Band A: dormant indicator
+- `1.0` relative unit
+- tiny LEDs, passive console glow
+
+Band B: active function
+- `2.5` relative unit
+- powered seams, navigation marks
+
+Band C: alert or hazard
+- `5.0` relative unit
+- alarms, stressed power feeds, electrical arcs
+
+Band D: biolum focal point
+- `4.0` relative unit
+- fauna lure organs, pulse nodes
+
+Band E: rare critical burst
+- `8.0` relative unit
+- should be time-limited and sparse
+
+26.3 Electrical flicker logic
+
+Do not use random binary flicker. Use stateful degraded waveform.
+
+Wave:
+
+`flicker = 0.78 + 0.12*sin(t*11.0 + phase) + 0.06*sin(t*23.0 + phase*0.7)`
+
+Failure spike:
+
+`failure = step(0.985, hashSin(float2(floor(t*7.0), phase)))`
+
+Final:
+
+`emissiveGain = flicker * (1 - failure*0.65)`
+
+26.4 Biolum pulse families
+
+Family 1: soft inhalation pulse
+- `freqA = 0.42`
+- `freqB = 0.87`
+- `amp = 0.18`
+
+Family 2: alert stutter pulse
+- `freqA = 1.40`
+- `freqB = 2.20`
+- `amp = 0.28`
+
+Family 3: abyss lure pulse
+- `freqA = 0.16`
+- `freqB = 0.33`
+- `amp = 0.36`
+
+Formula:
+
+`pulse = base + ampA*sin(t*TAU*freqA + phase) + ampB*sin(t*TAU*freqB + phase*0.6)`
+
+Clamp:
+
+`pulse = saturate(pulse)`
+
+26.5 Biolum color behavior
+
+Biolum colors allowed:
+- teal-cyan
+- mint-cyan
+- cold blue
+- rare sick amber-green for hazard organisms
+
+Biolum colors forbidden as dominant fauna family:
+- neon purple as default
+- candy pink
+- clean white flood
+
+26.6 Emissive fog interaction
+
+Emissive should feed local fog scatter only within limited radius.
+
+Radius:
+
+`r_scatter = lerp(1.5, 4.5, emissiveGain / 8.0)`
+
+Scatter term:
+
+`emissiveScatter = emissiveColor * (1 - exp(-sigma_s * localDistance)) * 0.22`
+
+26.7 Electrical arc punctuation
+
+Arc lifetime:
+- `0.04..0.18 s`
+
+Arc color:
+- core `#BFE7F7`
+- fringe `#76BDD8`
+
+Arc bloom threshold handling:
+- allow threshold punch only during event
+- no persistent arc halo
+
+26.8 Signage emissive
+
+Signage luminance:
+- use Band A or Band B only
+- hazard red or amber only where gameplay supports it
+- signage never casts world-scale readability
+
+======================================================================
+27. FLORA AND ORGANIC SHADING SPEC
+======================================================================
+
+27.1 Goal
+
+Organic assets must read as living or once-living submerged matter with:
+- broad flow response
+- translucency only where justified
+- wet edge sheen
+- varied thickness
+- stratified silhouette quality
+
+27.2 Global flow first
+
+Per-flora motion order:
+
+1. global current sway
+2. low-frequency stem bend
+3. optional frond ripple near camera
+4. contact reaction only where noticeable
+
+Global sway formula:
+
+`sway = sin(dot(worldPos.xz, FlowDir) * FlowFrequency + Time*FlowSpeed + phase) * FlowAmp`
+
+Defaults:
+- `FlowFrequency = 0.18`
+- `FlowSpeed = 0.75`
+- `FlowAmp = 0.08 for kelp stems`
+- `FlowAmp = 0.03 for short flora`
+
+27.3 Thickness-based translucency
+
+Translucency mask from thickness or authored channel:
+
+`trans = ThicknessMask * TransStrength`
+
+Lighting:
+
+`transLight = saturate(dot(-L, N)) * trans * TransColor`
+
+Defaults:
+- kelp green `#6AA388`
+- pale algae `#8CB098`
+- toxic variant `#90A46A`
+
+27.4 Wet edge response
+
+Edges facing light and viewer receive subtle water sheen.
+
+`edge = pow(1 - saturate(dot(N, V)), 3.5)`
+`wetEdge = edge * Wetness * 0.22`
+`specular += wetEdge`
+
+27.5 Dithered alpha for flora
+
+Near:
+- full alpha clip with blue-noise threshold
+
+Mid:
+- stronger dither crossfade
+
+Far:
+- simplified card or clustered silhouette
+
+Coverage rule:
+
+`alphaCoverage = saturate(alphaMask * DensityFactor - Cutoff)`
+
+27.6 Color bands
+
+Shallow flora:
+- warmer green
+- occasional yellow-green tips
+
+Midnight flora:
+- cooler olive-black
+- lower saturation
+
+Abyss flora:
+- almost black with minor blue-green rim
+- occasional biolum tips only if species authored for it
+
+27.7 Avoided failures
+
+- plastic bright green
+- translucent glow in full darkness
+- uniform motion phase
+- identical frond width and color
+- low-poly silhouette collapse without dither
+
+27.8 LOD transition rules
+
+LOD0:
+- branch variation
+- full translucency
+- flow + local ripple
+
+LOD1:
+- keep silhouette
+- remove local ripple
+
+LOD2:
+- card cluster
+- dither transition
+
+Cull:
+- based on authored family size and biome density
+
+======================================================================
+28. DECAL, GRIME, AND SURFACE STORYTELLING SPEC
+======================================================================
+
+28.1 Decal classes
+
+- Class A: structural signage
+- Class B: grime streak
+- Class C: leak wetness
+- Class D: impact scorch or abrasion
+- Class E: industrial hazard stripe
+
+28.2 Placement logic
+
+Signage:
+- near fabricated structures
+- keep mostly dry or semi-wet
+- do not plaster every surface
+
+Grime streak:
+- under seams
+- under bolts
+- below vents
+- around leaking joints
+
+Leak wetness:
+- local only
+- strong roughness drop
+- modest normal or distortion
+
+Impact scorch:
+- use sparingly
+- do not cover submerged world with combat marks unless systemic
+
+28.3 Grime streak UV logic
+
+`streakUV = float2(localUV.x, localUV.y + Time*FlowFactor*0.0)`
+
+Static authored streak with wet overlay:
+
+`grime = GrimeMask.r`
+`streakDark = grime * 0.12`
+`albedo *= 1 - streakDark`
+`roughness += grime * 0.08`
+
+Wet overlay:
+
+`wetLeak = LeakMask.g * LeakActive`
+`roughness = lerp(roughness, roughness * 0.35, wetLeak)`
+
+28.4 Hazard stripe wear
+
+Hazard stripe must not read like fresh paint.
+
+`stripeWear = WearMask * 0.65 + EdgeNoise * 0.35`
+`stripeAlpha = saturate(1 - stripeWear)`
+
+28.5 Decal color limits
+
+Yellow/amber hazard saturation cap:
+- base saturation max `0.72`
+
+Red emergency saturation cap:
+- base saturation max `0.68`
+
+Reason:
+- under water and grime, clean traffic-paint saturation looks fake
+
+28.6 Wet sheen quads
+
+Use only in local leak zones or vent shimmer zones.
+
+Shader:
+- soft edge fade
+- minimal refraction
+- low-opacity
+- high roughness reduction
+
+Forbidden:
+- large screen-facing quad halos
+- bright additive wet cards
+
+======================================================================
+29. SHADOW, OCCLUSION, AND CONTRAST DENSITY
+======================================================================
+
+29.1 Contrast hierarchy
+
+Contrast must be allocated by shot band:
+
+Near field `0..3 m`:
+- highest local contrast
+- wetness and spec detail
+- strong normal readability
+
+Mid field `3..12 m`:
+- medium contrast
+- shaft and cone readability
+- silhouette dominance begins
+
+Far field `12 m+`:
+- low detail contrast
+- silhouette and sparse emissive only
+
+29.2 Shadow softness
+
+Shallow exterior:
+- softer penumbra
+- stronger moving light breakup
+
+Midnight:
+- medium hardness
+- readable cone core
+
+Abyss:
+- hard contrast pockets inside light cone
+- exterior remains flat-dark, not high-detail
+
+29.3 Voxel or cave occlusion response
+
+Inside occluded cavities:
+
+`ambient *= 0.0..0.2 based on openness`
+`scatter *= 0.25..0.55`
+`fogColor *= 0.65..0.85`
+
+29.4 Flashlight against wet rock
+
+Desired response:
+- high center highlight
+- rapid falloff
+- preserved mineral roughness
+
+Formula:
+
+`spec = D_GGX * V_Smith * F_Schlick`
+`spec *= saturate(1 - fog_noir * 0.65)`
+
+Reason:
+- fog must still eat highlight energy at distance
+
+29.5 Shadow color
+
+Shadows are not neutral black.
+
+Shallow shadow color:
+- `#10181D`
+
+Midnight shadow color:
+- `#0C1117`
+
+Abyss shadow color:
+- `#080C10`
+
+Use only as grading tendency, not as direct paint fill everywhere.
+
+======================================================================
+30. LUT AUTHORING AND COLOR MANAGEMENT
+======================================================================
+
+30.1 LUT classes
+
+- 3D color LUT
+- 2D fog LUT
+- 2D stress LUT
+- optional 1D biolum pulse LUT
+
+30.2 3D color LUT rules
+
+Size:
+- `32x32x32`
+
+Shallow LUT:
+- keep skin or neutral objects from turning alien green
+- preserve amber hazard cues
+- lift greens only modestly
+
+Midnight LUT:
+- tighten reds
+- push blue-green in highs only
+- do not tint neutrals too strongly
+
+Abyss LUT:
+- compress mids
+- preserve emissive separation
+- keep lows cold and restrained
+
+30.3 Fog LUT authoring
+
+Axes:
+- X = fog factor `0..1`
+- Y = depth band or biome index
+
+Rows suggestion:
+- rows `0..7`: shallow variants
+- rows `8..15`: midnight variants
+- rows `16..23`: abyss variants
+- rows `24..31`: stress/event overrides
+
+30.4 Stress LUT
+
+Stress LUT applies on HUD and visor, not world.
+
+Axes:
+- X = stress `0..1`
+- Y = mode
+
+Modes:
+- 0 calm
+- 1 oxygen panic
+- 2 pressure panic
+- 3 electrical damage
+- 4 threat spike
+- 5 blackout recovery
+
+30.5 LUT validation
+
+For each LUT:
+- verify neutral grey remains neutral where intended
+- verify hazard amber remains readable
+- verify cyan indicators do not turn white
+- verify biolum does not clip to same hue everywhere
+
+======================================================================
+31. COMPOSITION AND SHOT GRAMMAR
+======================================================================
+
+31.1 Near / mid / far design
+
+Every premium underwater shot needs three active bands:
+
+Near band:
+- visor edges
+- marine snow
+- bubbles or beam dust
+- close wet material
+
+Mid band:
+- hero silhouette
+- flashlight cone or shaft
+- dominant environmental story
+
+Far band:
+- large dark mass
+- isolated emissive
+- weak parallax medium
+
+31.2 Ratio targets
+
+Shallow safe shot:
+- 30 percent near readable detail
+- 45 percent mid structure
+- 25 percent far silhouette
+
+Midnight exploration shot:
+- 22 percent near
+- 50 percent mid
+- 28 percent far
+
+Abyss horror shot:
+- 15 percent near
+- 40 percent mid
+- 45 percent far darkness/silhouette
+
+31.3 Visual punctuation density
+
+Per shot, only one of these may be dominant:
+- strong shaft
+- strong emissive cluster
+- strong caustic breakup
+- strong HUD trauma
+
+If more than one is dominant, the shot loses hierarchy.
+
+31.4 Readability ladder
+
+Player must first read:
+1. path or threat direction
+2. nearest interactable silhouette
+3. major biome cue
+4. secondary motion in medium
+5. micro storytelling detail
+
+31.5 Camera move interaction
+
+Fast move:
+- reduce HUD distortion amplitude by 10 percent
+- reduce marine snow alpha by 15 percent
+- keep shaft and cone core stable
+
+Slow move:
+- allow higher particle visibility
+- allow more subtle shimmer
+- wet reflections become more noticeable
+
+======================================================================
+32. PALETTE APPLICATION MATRIX
+======================================================================
+
+32.1 Shallow clear applications
+
+Rock:
+- base `#2A3437`
+- wet highlight drift toward `#5DA3A5` at low weight
+
+Hull:
+- base `#31424B`
+- stripe `#C58A2A`
+
+Particles:
+- snow `#B6D7D0` low alpha
+- bubbles nearly neutral with cool rim
+
+HUD:
+- base `#6FD2E4`
+- no amber drift unless event
+
+32.2 Shallow storm applications
+
+Rock:
+- base `#1B2326`
+- silt `#5C5A4C`
+
+Hull:
+- base `#35504E`
+- leak sheen `#607A73`
+
+Particles:
+- marine snow more olive-grey
+- bubbles slightly dirtier edge
+
+HUD:
+- base remains cyan but lower value
+
+32.3 Thermocline applications
+
+Rock:
+- more slate and less green
+
+Hull:
+- stronger cold seam edges
+
+Particles:
+- desaturated and denser at band center
+
+32.4 Midnight open water applications
+
+Rock:
+- `#1C262C` with sparse teal spec hits
+
+Hull:
+- `#46535C`
+
+Emissive:
+- `#4BB3C2`
+
+HUD:
+- slight warning amber only under moderate stress
+
+32.5 Midnight ruin applications
+
+Rock absent or minimal.
+
+Hull/module:
+- `#1A232A`
+- leak sheen `#567C82`
+- rust `#5B433A`
+
+Particles:
+- leak plumes colder than vent plumes
+
+32.6 Abyss exterior applications
+
+Rock:
+- `#111D24` and `#16302B` low saturation
+
+Hull:
+- colder steel, low reflectance
+
+Biolum:
+- `#11849A` or `#4FC3D5`, never full broad fill
+
+32.7 Vent applications
+
+Rock:
+- warm mineral contamination only near source
+
+Particles:
+- warm vent tint and brighter bubble rim
+
+HUD:
+- amber warning drift if thermal or pressure risk
+
+32.8 Biolum garden applications
+
+Environment:
+- dark substrate
+- biolum puncture nodes
+
+Rule:
+- 80 percent of frame still dark or neutral
+- 20 percent may carry glow punctuation
+
+32.9 Derelict industrial shelf applications
+
+Hull dominates, geology frames it.
+
+Main colors:
+- `#1E2B35`
+- `#69737B`
+- `#744C3E`
+- `#45A6BB`
+
+32.10 Trauma overlay applications
+
+Only for HUD/visor.
+
+Transition:
+- calm cyan
+- amber warning
+- amber-red critical
+- maintain neutral white-green for some ghost edges
+
+======================================================================
+33. FAILURE MODE CATALOG
+======================================================================
+
+33.1 Failure: everything reads teal
+
+Cause:
+- single LUT bias across all bands
+- weak red absorption math
+- overused cyan emissive
+
+Correction:
+- verify beta coefficients
+- reduce blue/green fog color in abyss
+- separate shallow and abyss LUTs
+
+33.2 Failure: shallow looks dry
+
+Cause:
+- wetness roughness not reduced enough
+- caustic strength doing all the work
+
+Correction:
+- increase wet mask influence
+- add cavity wet boost
+- check specular edge response
+
+33.3 Failure: midnight looks like color grade only
+
+Cause:
+- no shaft/particle interaction
+- fog uniform
+- material response flat
+
+Correction:
+- increase marine snow visibility in cone
+- enforce stronger local scatter in flashlight path
+- sharpen cone core contrast
+
+33.4 Failure: abyss too readable
+
+Cause:
+- ambient too high
+- fog too bright
+- emissive too abundant
+
+Correction:
+- reduce ambient floor
+- darken abyss fog color
+- lower emissive scatter radius
+
+33.5 Failure: bubbles look fake and gamey
+
+Cause:
+- no size variance
+- no wobble
+- no compression
+- no current suppression
+
+Correction:
+- restore class-specific ranges
+- enforce pressure radius modulation
+- vary phase and rise speed
+
+33.6 Failure: HUD trauma unreadable
+
+Cause:
+- applying dropout to critical indicators
+- CA too high
+- too many simultaneous distortion modes
+
+Correction:
+- exempt critical widgets
+- clamp CA and sync shift
+- keep distortion order stable
+
+33.7 Failure: industrial scenes look clean
+
+Cause:
+- insufficient wear and grime layering
+- signage too fresh
+- wet sheen absent
+
+Correction:
+- raise wear detail
+- reduce stripe saturation
+- author more seam-local grime
+
+33.8 Failure: flora looks plastic
+
+Cause:
+- high saturation
+- too much translucency
+- synchronized motion
+
+Correction:
+- reduce albedo saturation
+- restrict translucency to thin zones
+- diversify phase
+
+33.9 Failure: shots have no hierarchy
+
+Cause:
+- bloom, shaft, emissive, HUD glitch all competing
+
+Correction:
+- choose one dominant punctuation
+- suppress secondary punctuation
+
+33.10 Failure: expensive look with no payoff
+
+Cause:
+- extra volumetric cost in abyss
+- too many transparent shells
+- over-detailed far field
+
+Correction:
+- return cost to near and mid field
+- reduce far-field transparency
+- preserve silhouette first
+
+======================================================================
+34. APPENDIX E: MATERIAL LIBRARY TARGETS
+======================================================================
+
+34.1 Voxel basalt
+
+- Albedo range `#141B21` to `#2A3437`
+- Roughness dry `0.72`
+- Roughness wet `0.30`
+- AO average `0.68`
+- Wet mask average `0.35`
+
+34.2 Sediment crust
+
+- Albedo range `#4B5147` to `#6A6E5F`
+- Roughness dry `0.82`
+- Roughness wet `0.48`
+- Silt edge darken `0.06`
+
+34.3 Painted hull
+
+- Albedo range `#1E2B35` to `#31424B`
+- Metallic `0.05`
+- Roughness dry `0.62`
+- Roughness wet `0.24`
+- Wear expose gain `1.25`
+
+34.4 Exposed steel
+
+- Albedo range `#5D6972` to `#7A858C`
+- Metallic `0.92`
+- Roughness `0.36`
+
+34.5 Oxidized seam
+
+- Albedo range `#6C4D40` to `#744C3E`
+- Metallic `0.28`
+- Roughness `0.58`
+
+34.6 Visor glass
+
+- Base tint `#A4D2D6` at very low opacity
+- Roughness calm `0.03`
+- Roughness stressed wet `0.12`
+- Refraction calm `0.004`
+- Refraction max `0.018`
+
+34.7 Leak sheen
+
+- Opacity `0.08..0.18`
+- Roughness target `0.10`
+- Distortion `0.003..0.006`
+
+34.8 Biofilm
+
+- Albedo modulation `0.82 green channel emphasis`
+- Roughness +`0.10`
+- Transmission -`0.18`
+
+======================================================================
+35. APPENDIX F: SHOT REVIEW FORMS
+======================================================================
+
+35.1 Shallow review form
+
+- Is caustic depth physically plausible?
+- Is sun shaft local instead of global?
+- Are particles richer near cone intersections?
+- Are rocks wet enough without turning mirror-like?
+- Do hazard stripes remain readable but dirty?
+
+35.2 Midnight review form
+
+- Does the flashlight cone define space?
+- Is marine snow visible but not snowstorm-thick?
+- Do hull surfaces preserve wear and wetness?
+- Do distant shapes compress into silhouette correctly?
+
+35.3 Abyss review form
+
+- Is the frame dark enough without crushing all shape?
+- Are biolum points sparse and meaningful?
+- Are nearby materials still high quality?
+- Is there any accidental cyan wash?
+
+35.4 HUD trauma review form
+
+- Are critical values readable at stress `1.0`?
+- Does distortion escalation feel state-driven?
+- Are ghosting and sync-shift physically instrument-like?
+
+======================================================================
+36. APPENDIX G: SHOT ARCHETYPES
+======================================================================
+
+36.1 Archetype A: Safe Shallow Traversal
+
+Use case:
+- onboarding
+- low-threat traversal
+- first impression of water quality
+
+Composition:
+- near field: visor edge faint, marine snow sparse, one readable interactable
+- mid field: terrain or reef structure with caustic breakup
+- far field: brighter surface loss and shape layering
+
+Key values:
+- `SunVisibility = 0.85`
+- `tau = 0.12`
+- `CausticStrength = 0.28`
+- `MarineSnowAlpha = 0.55`
+- `BloomIntensity = 0.22`
+
+Required reads:
+- player must instantly see path
+- player must feel water movement
+- player must not feel drowned in post
+
+36.2 Archetype B: Surface Storm Entry
+
+Use case:
+- weather transition
+- dramatic submerge
+- reduced control confidence
+
+Composition:
+- near field: runoff and trauma spike
+- mid field: disturbed silt and weak shallow shaft fragments
+- far field: compressed murk with low warm content
+
+Key values:
+- `SunVisibility = 0.32`
+- `tau = 0.78`
+- `CausticStrength = 0.08`
+- `VisorRunoff = 0.85`
+- `StressSmoothed = 0.40` transient
+
+Required reads:
+- the surface is no longer safe
+- optics are degraded physically, not by random blur
+
+36.3 Archetype C: Thermocline Descent
+
+Use case:
+- crossing into higher pressure band
+- first serious mood compression
+
+Composition:
+- near field: slightly denser particles, stronger visor chill
+- mid field: desat boundary zone
+- far field: increased silhouette compression
+
+Key values:
+- `thermo = 0.80`
+- `NoirPower = 2.05`
+- `Contrast = +10`
+- `ColorSat = -8`
+- `ShaftIntensity = 0.10`
+
+Required reads:
+- player feels the band change before systems fully explain it
+- scene remains readable with falling warmth
+
+36.4 Archetype D: Midnight Open Traverse
+
+Use case:
+- baseline mid-depth travel lane
+
+Composition:
+- near field: marine snow visible inside cone
+- mid field: one major silhouette, one secondary structure
+- far field: darkness with occasional emissive punctuation
+
+Key values:
+- `LocalLightFactor = 0.75`
+- `SunVisibility = 0.05`
+- `FogDensityMul = 1.05`
+- `MarineSnowAlpha = 0.78`
+- `BiolumFieldEnergy = 0.10`
+
+Required reads:
+- cone-centered space ownership
+- strong void outside cone
+- no fake ambient fill
+
+36.5 Archetype E: Ruin Corridor Flood
+
+Use case:
+- fabricated interior / semi-interior
+- leak storytelling
+- structural tension
+
+Composition:
+- near field: leak sheen or plume
+- mid field: corridor vanishing path and local lamps
+- far field: dead panel or emergency indicator
+
+Key values:
+- `dv = 0.85`
+- `LeakActive = 0.70`
+- `BloomIntensity = 0.12`
+- `EmergencyAmber = Band B or C only`
+- `MarineSnowAlpha = 0.35`
+
+Required reads:
+- fabricated geometry dominates
+- leaks and wetness sell age and pressure
+- darkness remains thick in recesses
+
+36.6 Archetype F: Flashlight Rock Wall Scan
+
+Use case:
+- geology close-up
+- mining or exploration
+
+Composition:
+- near field: high wet spec, rock detail, micro silt
+- mid field: cone fades into compressed darkness
+- far field: almost irrelevant, silhouette only
+
+Key values:
+- `FlashlightIntensity = 1.0`
+- `RockWetness = 0.75`
+- `RoughnessWet = 0.30`
+- `ScatterMidnight = 0.42 local`
+
+Required reads:
+- mineral richness
+- pressure-wet stone
+- not a dry cliff texture
+
+36.7 Archetype G: Abyss Exterior Threat
+
+Use case:
+- large predator zone
+- high tension
+
+Composition:
+- near field: very little distraction
+- mid field: threat silhouette or suggestion
+- far field: massive void or monolith
+
+Key values:
+- `NoirPower = 3.10`
+- `AmbientFloor = 0.02`
+- `BiolumFieldEnergy = 0.22`
+- `BloomIntensity = 0.08`
+- `MarineSnowAlpha = 0.44`
+
+Required reads:
+- threat scale
+- absence of comfort light
+- narrow beam trust only
+
+36.8 Archetype H: Thermal Vent Hazard
+
+Use case:
+- heat, chemistry, hazard
+- contrast to blue-cold world
+
+Composition:
+- near field: warm bubbles and disturbed silt
+- mid field: hot plume source
+- far field: cold dark water preserving contrast
+
+Key values:
+- `heatFactor = 0.85`
+- `ventDensity = 1.24`
+- `VentTint = warm amber-green`
+- `LocalFogWarmBlend = 0.20`
+
+Required reads:
+- vent feels chemically active
+- warm intrusion remains local
+- world stays cold around it
+
+36.9 Archetype I: Biolum Garden Wonder
+
+Use case:
+- rare beauty beat
+- player relief or awe
+
+Composition:
+- near field: soft particles and selective glow
+- mid field: clustered organic forms with pulse offset
+- far field: mostly dark substrate
+
+Key values:
+- `BiolumFieldEnergy = 0.65`
+- `BloomIntensity = 0.14`
+- `NoirPower = 2.70`
+- `PulseFamily = 1 or 3`
+
+Required reads:
+- wonder without losing noir
+- darkness still owns most of frame
+
+36.10 Archetype J: Full HUD Panic
+
+Use case:
+- critical O2 or crush risk
+- interface distress
+
+Composition:
+- world remains stable enough to navigate
+- visor and HUD carry distress
+- warning colors intensify
+
+Key values:
+- `StressSmoothed = 0.92`
+- `CA = 0.0038`
+- `GhostAlpha = 0.22`
+- `SyncShift = 0.012`
+- `CriticalWidgetAlphaFloor = 0.82`
+
+Required reads:
+- stress is immediate
+- critical data remains legible
+- effect feels like failing instrumentation
+
+======================================================================
+37. APPENDIX H: LIGHTING GRAMMAR
+======================================================================
+
+37.1 Light categories
+
+- Category A: solar contribution
+- Category B: player flashlight
+- Category C: fixed industrial practicals
+- Category D: hazard/emergency sources
+- Category E: biolum sources
+
+37.2 Solar contribution
+
+Only valid in shallow and select breach shafts.
+
+Properties:
+- broad
+- low-frequency
+- soft-edged
+- caustic-coupled
+
+Invalid solar behavior:
+- hard spotlight beams in open deep water
+- lighting far abyssal floor
+- filling interiors through solid mass
+
+37.3 Player flashlight
+
+Flashlight is the main authored readability tool below shallow safe water.
+
+Cone grammar:
+- center cone carries shape and surface truth
+- mid cone carries particles and local fog
+- outer cone dies quickly
+
+Center cone intensity target:
+- `1.00`
+
+Mid cone intensity target:
+- `0.35`
+
+Outer cone intensity target:
+- `0.08`
+
+37.4 Industrial practicals
+
+Practical lights must feel sparse and motivated.
+
+Valid positions:
+- corridor corners
+- door frames
+- maintenance panels
+- ruined mast heads
+- vent monitors
+
+Invalid positions:
+- evenly spaced ambient uplights
+- decorative fill lights
+- soft beauty lights with no source
+
+37.5 Hazard lights
+
+Hazard lights use amber or red-amber family, but must not saturate the scene.
+
+Rules:
+- keep radius local
+- allow light flicker or pulse only if narrative/systemic
+- do not allow multiple hazard lights to flatten into orange wash
+
+37.6 Biolum lighting
+
+Biolum sources:
+- pulse out of phase
+- illuminate only local medium
+- should barely influence hard-surface albedo except at close range
+
+Biolum radius guidance:
+- small fauna `0.5..1.5 m`
+- cluster node `1.5..3.0 m`
+- major abyss lure `3.0..5.0 m`
+
+37.7 Key / fill / rim logic by biome
+
+Shallow:
+- key = sun/flashlight
+- fill = water body scatter
+- rim = caustic or reflective wet edge
+
+Midnight:
+- key = flashlight or local practical
+- fill = local fog only
+- rim = occasional wet edge or emissive spill
+
+Abyss:
+- key = flashlight or rare biolum
+- fill = almost none
+- rim = highly selective
+
+37.8 Light-to-material pairing
+
+Rock under flashlight:
+- broad rough highlight
+- mineral variation
+- limited edge fresnel
+
+Hull under flashlight:
+- sharper functional spec
+- seam catchlights
+- readable wear breaks
+
+Flora under flashlight:
+- thin translucency
+- damp edge sheen
+- low-intensity subsurface response
+
+37.9 Light-to-particle pairing
+
+Marine snow:
+- strong forward scatter
+- weak side scatter
+- almost no back fill
+
+Bubbles:
+- rim first
+- transmission second
+
+Vent plume:
+- warm fog scatter local
+
+37.10 Light budget by shot
+
+Per shot dominant light sources:
+- one primary
+- one supporting
+- optional tertiary accent
+
+If more than three meaningful sources fight for dominance, the shot is structurally weak.
+
+======================================================================
+38. APPENDIX I: ATLAS SHEET BREAKDOWN
+======================================================================
+
+38.1 Hard-surface trim atlas
+
+Quadrant 1:
+- seams
+- narrow panel cuts
+- bolt strips
+- gasket lines
+
+Quadrant 2:
+- grilles
+- perforated vents
+- cable channels
+- rib plates
+
+Quadrant 3:
+- hazard stripe variants
+- warning text blocks
+- service labels
+- stenciled numerics
+
+Quadrant 4:
+- utility shapes
+- maintenance arrows
+- dead panel cover plates
+
+Authoring rule:
+- each element must support at least two lighting situations: dry industrial and wet degraded
+
+38.2 Hull wear atlas
+
+Tile 0:
+- vertical grime streak
+
+Tile 1:
+- seam rust bleed
+
+Tile 2:
+- abrasion patch
+
+Tile 3:
+- pressure crack grime
+
+Tile 4:
+- wet leak bloom
+
+Tile 5:
+- salt residue patch
+
+Tile 6:
+- scuff cluster
+
+Tile 7:
+- reserve
+
+Blend logic:
+- grime uses multiply/darken
+- wet leak uses roughness reduction plus slight refraction
+- rust uses albedo shift plus roughness rise
+
+38.3 Geology atlas
+
+Tile 0:
+- basalt broad pattern
+
+Tile 1:
+- sediment crust
+
+Tile 2:
+- mineral fracture
+
+Tile 3:
+- vent crust contamination
+
+Use rules:
+- tile transitions must happen through height or triplanar macro breakup, not UV seams
+
+38.4 Particle atlas
+
+Marine snow shapes:
+- 4 variants
+- asymmetrical
+- soft interior
+- no perfect circles
+
+Bubble shapes:
+- 3 variants
+- subtle highlight difference
+- not cartoon outlines
+
+Vent foam:
+- 3 variants
+- uneven edge
+- denser center
+
+Debris motes:
+- 4 variants
+- irregular flakes
+
+38.5 Visor atlas
+
+Droplet mask:
+- large drops
+- small trails
+- pooling at lower edge
+
+Scratch mask:
+- edge concentration
+- random arcs
+- no full-screen even noise
+
+Smudge mask:
+- broad low-frequency breakup
+
+Runoff route:
+- directionality and branch paths
+
+38.6 Atlas texel rules
+
+For every atlas:
+- avoid too many tiny unique details below useful texel resolution
+- ensure mip behavior stays coherent
+- test on Tier 0 and Tier 3
+
+38.7 Compression artifacts watch list
+
+BC7 can still produce:
+- halo around high-contrast signage
+- weak breakup in subtle wet masks
+
+Mitigation:
+- increase local contrast in source
+- avoid unnecessary near-black detail on same block as high-sat stripe
+
+======================================================================
+39. APPENDIX J: FEATURE BUDGET TABLES
+======================================================================
+
+39.1 Visual feature budgets on MX350
+
+Fog and extinction:
+- target GPU cost `0.45..0.80 ms`
+
+Shallow shafts:
+- target GPU cost `0.20..0.45 ms`
+
+Caustics:
+- target GPU cost `0.10..0.25 ms`
+
+Marine snow:
+- target GPU cost `0.50..1.10 ms`
+
+Bubbles local:
+- target GPU cost `0.10..0.25 ms`
+
+HUD trauma:
+- target GPU cost `0.08..0.18 ms`
+
+Bloom and vignette combined:
+- target GPU cost `0.25..0.50 ms`
+
+39.2 VRAM expectations by feature
+
+Blue noise + utility textures:
+- `< 2 MB`
+
+Particle atlas:
+- `< 8 MB`
+
+Trim/wear atlases in memory for current zone:
+- `< 64 MB`
+
+Geology atlas set:
+- `< 48 MB`
+
+Visor utility set:
+- `< 16 MB`
+
+39.3 Cost shedding order
+
+If pressure detected:
+1. reduce marine snow count
+2. reduce bubble overlap
+3. reduce shaft intensity or active shaft count
+4. reduce post extras
+5. reduce wet secondary detail
+
+Do not shed first:
+- biome fog separation
+- flashlight readability
+- critical HUD legibility
+
+39.4 Scalability fallback recipes
+
+Fallback A:
+- marine snow alpha x `0.8`
+- shaft intensity x `0.85`
+- bubble count x `0.75`
+
+Fallback B:
+- marine snow count x `0.6`
+- shaft count `1`
+- bloom intensity x `0.7`
+
+Fallback C:
+- keep only essential particles in cone
+- keep HUD trauma lightweight
+- keep fog math intact
+
+39.5 Validation capture set
+
+Capture these on each tier:
+- shallow clear
+- shallow storm
+- midnight traversal
+- midnight ruin interior
+- abyss exterior
+- vent hazard
+- biolum garden
+- HUD panic
+
+39.6 Shot acceptance criteria
+
+If a cheaper fallback retains:
+- biome separation
+- material hierarchy
+- cone readability
+- sparse emissive logic
+- medium motion
+
+Then the fallback is valid.
+
+If a cheaper fallback breaks:
+- darkness structure
+- readability ladder
+- key wetness reads
+
+Then the fallback is invalid even if cheaper.
+
+======================================================================
+40. APPENDIX K: VALIDATION SCENARIOS
+======================================================================
+
+40.1 Scenario 01: Static shallow noon
+
+Expected:
+- visible caustic motion
+- restrained bloom
+- readable rock wetness
+- light marine snow
+
+40.2 Scenario 02: Surface break during storm
+
+Expected:
+- strong runoff
+- brief stress distortion
+- shallow caustics mostly suppressed
+- murk increase
+
+40.3 Scenario 03: Controlled thermocline descent
+
+Expected:
+- visible desat boundary
+- lower warmth
+- stronger silhouette compression
+
+40.4 Scenario 04: Midnight scan on geology
+
+Expected:
+- strong cone readability
+- marine snow lights up in cone
+- rock material remains premium
+
+40.5 Scenario 05: Midnight ruin corridor
+
+Expected:
+- leak storytelling
+- fabricated trim readability
+- dark recess ownership
+
+40.6 Scenario 06: Abyss threat encounter
+
+Expected:
+- darkness dominance
+- threat silhouette read
+- sparse meaningful biolum
+
+40.7 Scenario 07: Thermal vent pass
+
+Expected:
+- warm local contamination
+- bubble and plume activity
+- cold environment preserved
+
+40.8 Scenario 08: Biolum wonder beat
+
+Expected:
+- glow punctures without flattening noir
+- dark substrate preserved
+- pulse offsets prevent sync
+
+40.9 Scenario 09: Full HUD panic
+
+Expected:
+- instrumentation distress obvious
+- critical widgets still readable
+- world remains navigable
+
+40.10 Scenario 10: Tier 0 pressure drop
+
+Expected:
+- reduced particle count
+- preserved biome identity
+- no catastrophic visual collapse
+
+======================================================================
+41. APPENDIX L: QUICK-REFERENCE MATRICES
+======================================================================
+
+41.1 Biome quick-reference matrix
+
+Shallow:
+- dominant read: moving light through medium
+- support read: wet geology and safe-path visibility
+- fog color bias: green-cyan restrained
+- emissive policy: minimal, functional only
+- particle density: moderate
+- shaft policy: local and justified
+- caustic policy: yes, depth-gated
+
+Midnight:
+- dominant read: flashlight cone and silhouette falloff
+- support read: fabricated wear or rock wetness
+- fog color bias: slate-blue with low green carry
+- emissive policy: sparse and status-driven
+- particle density: moderate-high in cone
+- shaft policy: flashlight or breach only
+- caustic policy: generally no
+
+Abyss:
+- dominant read: void pressure and narrow readability corridor
+- support read: sparse biolum or threat punctuation
+- fog color bias: blue-black and cold teal at very low value
+- emissive policy: highly sparse, localized, meaningful
+- particle density: moderate, lower alpha than midnight
+- shaft policy: no solar shafts, only rare local events
+- caustic policy: no
+
+41.2 Material quick-reference matrix
+
+Voxel rock:
+- wetness high
+- metallic low
+- roughness broad
+- macro breakup critical
+- triplanar mandatory on irregular world masses
+
+Hull metal:
+- wear readable
+- edge polish selective
+- leak sheen local
+- warning color muted by grime
+- PBR packing fixed as `R Metallic G AO B Roughness A Wear`
+
+Visor:
+- refraction subtle until event
+- scratches visible at grazing
+- runoff directional
+- stress distortion layered after world, before final UI widgets
+
+Flora:
+- global sway first
+- translucency limited to thin zones
+- silhouette quality more important than micro texture
+
+41.3 HUD quick-reference matrix
+
+Stress `0.0..0.2`
+- no dropout
+- no ghosting
+- CA negligible
+- warning palette off
+
+Stress `0.2..0.5`
+- light sync-shift
+- light CA
+- warning palette enters amber edge cases only
+
+Stress `0.5..0.8`
+- visible lane drift
+- ghost image appears
+- scanline instability active
+- critical widgets protected
+
+Stress `0.8..1.0`
+- strong but controlled trauma
+- dropout non-critical only
+- amber-red warning drift
+- readability floor enforced
+
+41.4 Sign-off gates
+
+The shot or biome implementation is not acceptable unless all items below are true:
+
+- The frame reads correctly with post reduced by 50 percent.
+- The material hierarchy survives in grayscale.
+- The frame still reads on Tier 0 without global volumetric cheats.
+- The player can distinguish shallow, midnight, and abyss from a still image.
+- Hazard amber and biolum cyan do not collapse into the same perceived role.
+- Wetness is readable on rock and hull without mirror gloss.
+- Marine snow enhances scale instead of becoming weather noise.
+- HUD trauma escalates by system state, not random timer noise.
+- Flashlight cone, particulate density, fog compression, and emissive punctuation remain ordered under motion, pause, stress, and fallback tiers.
+
+End of spec.

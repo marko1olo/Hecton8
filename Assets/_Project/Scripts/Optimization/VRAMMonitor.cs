@@ -41,7 +41,7 @@ namespace Hecton8.Optimization
         [Header("── VRAM Budget Thresholds ──────────────────")]
         [SerializeField] private VRAMBudgetThresholds _budgetThresholds = VRAMBudgetThresholds.Default;
         [Tooltip("Budget utilization at which VRAM pressure moves from stable to warning state.")]
-        [SerializeField, Range(0.5f, 1f)] private float _warningBudgetFraction = 0.82f;
+        [SerializeField, Range(0.5f, 1f)] private float _warningBudgetFraction = 0.85f;
         [Tooltip("Budget utilization at which VRAM pressure becomes critical even before the hard budget break.")]
         [SerializeField, Range(0.7f, 1.5f)] private float _criticalBudgetFraction = 0.95f;
         
@@ -101,7 +101,7 @@ namespace Hecton8.Optimization
         public bool IsRenderTextureMemoryOverBudget => RenderTextureMemoryBytes > _budgetThresholds.RenderTextureMemoryBudgetBytes;
         
         /// <summary>
-        /// Returns whether total VRAM exceeds 1.2 GB threshold.
+        /// Returns whether total VRAM exceeds the 1.8 GB MX350 ceiling.
         /// </summary>
         public bool IsTotalVRAMOverBudget => TotalVRAMBytes > _budgetThresholds.TotalVRAMBudgetBytes;
         

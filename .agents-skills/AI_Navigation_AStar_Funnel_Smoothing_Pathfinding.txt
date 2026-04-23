@@ -219,24 +219,28 @@ SampleHeightmapBilinear(xz):
 
 ## §5 — LINE-OF-SIGHT (GRID-BASED, NO RAYCASTS)
 
-### 5.1 Voxel LoS (Bresenham 3D)
+### 5.1 Voxel LoS (Branchless 3D DDA)
 
 VoxelLoS(a_world, b_world) → bool:
-    a_vox = WorldToVoxel(a_world)
-    b_vox = WorldToVoxel(b_world)
+    rayOrigin = a_world
+    rayDir    = normalize(b_world - a_world)
+    rayDirInv = 1.0 / max(abs(rayDir), 1e-6)
+    currentVoxel = WorldToVoxel(a_world)
+    targetVoxel  = WorldToVoxel(b_world)
+    step         = (int3)math.sign(rayDir)
+    voxelBoundary = VoxelBoundaryWorld(currentVoxel, step)
+    tMax   = (voxelBoundary - rayOrigin) * rayDirInv
+    tDelta = abs(rayDirInv) * VoxelSize
 
-    dx = abs(b_vox.x - a_vox.x)
-    dy = abs(b_vox.y - a_vox.y)
-    dz = abs(b_vox.z - a_vox.z)
-    sx = sign(b_vox.x - a_vox.x), sy = ..., sz = ...
-    dominant = max(dx, dy, dz)
-
-    FOR step = 0 TO dominant:
-        t = step / (float)dominant
-        sample_vox = round(lerp(a_vox, b_vox, t))
-        IF ThreatGrid[FlatIdx(sample_vox)] >= SOLID_THRESHOLD:
+    FOR i = 0 TO MAX_STEPS:
+        IF ThreatGrid[FlatIdx(currentVoxel)] >= SOLID_THRESHOLD:
             return false
-    return true
+        IF all(currentVoxel == targetVoxel):
+            return true
+
+        mask = (tMax <= tMax.yzx) & (tMax <= tMax.zxy)
+        tMax += math.select(float3.zero, tDelta, mask)
+        currentVoxel += math.select(int3.zero, step, mask)
 
 - `SOLID_THRESHOLD = 255` (impassable geometry). Threat byte 0–254 = open with cost.
 - Call only during waypoint post-validation, never inside A* inner loop.

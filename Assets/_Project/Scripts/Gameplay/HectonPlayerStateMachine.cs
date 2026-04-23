@@ -1,21 +1,30 @@
 using Unity.Mathematics;
 using UnityEngine;
-using Hecton8.Core;
 
 namespace Hecton8.Gameplay
 {
     /// <summary>
-    /// State owner for locomotion-mode mirrors and wipeout recovery timing.
+    /// State owner for locomotion context and wipeout recovery timing.
     /// </summary>
-    [DefaultExecutionOrder(30)] // Explicit helper registration ordering: owner -> environment -> motor -> state.
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Player/Hecton Player State Machine")]
-    public sealed class HectonPlayerStateMachine : MonoBehaviour, IHectonPlayerStateMachine, IFixedTickable
+    public sealed class HectonPlayerStateMachine : MonoBehaviour, IHectonPlayerStateMachine
     {
+        private PlayerEnvironmentState _currentEnvironmentState = PlayerEnvironmentState.DryExterior;
+        private PlayerSupportState _currentSupportState = PlayerSupportState.Grounded;
+        private PlayerOverrideState _currentOverrideState = PlayerOverrideState.None;
         private PlayerLocomotionMode _currentLocomotionMode = PlayerLocomotionMode.DryGroundWalk;
         private float _wipeoutTimer;
         private float _wipeoutSeverity;
-        private bool _registered;
+
+        /// <inheritdoc />
+        public PlayerEnvironmentState CurrentEnvironmentState => _currentEnvironmentState;
+
+        /// <inheritdoc />
+        public PlayerSupportState CurrentSupportState => _currentSupportState;
+
+        /// <inheritdoc />
+        public PlayerOverrideState CurrentOverrideState => _currentOverrideState;
 
         /// <inheritdoc />
         public PlayerLocomotionMode CurrentLocomotionMode => _currentLocomotionMode;
@@ -36,21 +45,25 @@ namespace Hecton8.Gameplay
         }
 
         /// <inheritdoc />
+        public void SyncContext(
+            PlayerEnvironmentState environmentState,
+            PlayerSupportState supportState,
+            PlayerOverrideState overrideState,
+            PlayerLocomotionMode mode)
+        {
+            _currentEnvironmentState = environmentState;
+            _currentSupportState = supportState;
+            _currentOverrideState = overrideState;
+            _currentLocomotionMode = mode;
+        }
+
+        /// <inheritdoc />
         public void BeginWipeout(float severity, float duration)
         {
             _wipeoutSeverity = math.max(_wipeoutSeverity, math.saturate(severity));
             _wipeoutTimer = math.max(_wipeoutTimer, math.max(0f, duration));
-        }
-
-        private void OnEnable()
-        {
-            TryRegister();
-        }
-
-        private void OnDisable()
-        {
-            TryUnregister();
-            ResetRuntimeState();
+            if (_wipeoutTimer > 0f)
+                _currentOverrideState = PlayerOverrideState.Wipeout;
         }
 
         /// <inheritdoc />
@@ -64,13 +77,9 @@ namespace Hecton8.Gameplay
             {
                 _wipeoutTimer = 0f;
                 _wipeoutSeverity = 0f;
+                if (_currentOverrideState == PlayerOverrideState.Wipeout)
+                    _currentOverrideState = PlayerOverrideState.None;
             }
-        }
-
-        /// <inheritdoc />
-        public void FixedTick(float fixedDeltaTime)
-        {
-            AdvanceFixed(fixedDeltaTime);
         }
 
         /// <inheritdoc />
@@ -78,25 +87,10 @@ namespace Hecton8.Gameplay
         {
             _wipeoutTimer = 0f;
             _wipeoutSeverity = 0f;
+            _currentEnvironmentState = PlayerEnvironmentState.DryExterior;
+            _currentSupportState = PlayerSupportState.Grounded;
+            _currentOverrideState = PlayerOverrideState.None;
             _currentLocomotionMode = PlayerLocomotionMode.DryGroundWalk;
-        }
-
-        private void TryRegister()
-        {
-            if (_registered || GameTickManager.Instance == null)
-                return;
-
-            GameTickManager.Instance.Register((IFixedTickable)this);
-            _registered = true;
-        }
-
-        private void TryUnregister()
-        {
-            if (!_registered || GameTickManager.Instance == null)
-                return;
-
-            GameTickManager.Instance.Unregister((IFixedTickable)this);
-            _registered = false;
         }
     }
 }

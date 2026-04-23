@@ -210,10 +210,10 @@ PressureFactor < 0.60 → NORMAL:   all tiers active, full preload enabled
 PressureFactor ≥ 0.60 → CAUTION:  disable TIER_6 speculative loads
 PressureFactor ≥ 0.75 → WARNING:  evict TIER_5 RefCount==0, disable TIER_5–6 new loads
 PressureFactor ≥ 0.85 → CRITICAL: evict TIER_4–5, reduce StreamOuter by 30%
-PressureFactor ≥ 0.90 → EXTREME:  Resources.UnloadUnusedAssets() scheduled, GC.Collect(2, GCCollectionMode.Forced)
+PressureFactor ≥ 0.90 → EXTREME:  EvictQueue.DrainSynchronously()
                                     StreamInner reduced by 40%, HLOD-only mode for dist > 40m
 
-### 6.3 UnloadUnusedAssets Gating
+### 6.3 Deterministic Eviction Gating
 
 Trigger conditions (ANY):
   PressureFactor > 0.90
@@ -221,8 +221,12 @@ Trigger conditions (ANY):
   Biome boundary crossed (group swap)
   Player death / respawn sequence
 
-Cooldown: minimum 30s between consecutive calls (prevent GC thrash)
-Execution: always async via coroutine, never blocking main thread
+Execution:
+  - drain Addressables release queue immediately
+  - process at most 4 registered eviction candidates per frame
+  - never invoke `Resources.UnloadUnusedAssets()`
+  - never rely on GC as pressure relief
+
 Post-execution: recalculate PressureFactor, log delta
 
 ### 6.4 Streaming Budget Allocator
@@ -284,11 +288,11 @@ Callers must never cache raw handle.Result directly. Always route through SafeGe
 ### 7.5 Async Scene Activation Gate
 
 Scene load progress reported as normalized float [0.0–1.0]
-Addressables scene activation: allowSceneActivation = false until progress ≥ 0.90
-At 0.90: display BIOS-sequence overlay (diegetic boot screen, Noir terminal aesthetic)
-At 1.00: allowSceneActivation = true → activate
+Chunk/content activation uses `Object.InstantiateAsync(chunkPrefab)` or async prefab spawning.
+Do not stall on `allowSceneActivation`.
+The engine timeslices `Awake`/`OnEnable` across frames during async instantiation.
 Overlay fade: 0.5s alpha lerp, driven by unscaled time (immune to timeScale=0 states)
-Forbid: any gameplay systems initializing before activation completes
+Forbid: any gameplay systems initializing before async instantiation completes
 
 ---
 

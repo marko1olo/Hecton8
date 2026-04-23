@@ -47,6 +47,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Hecton8.Core;
+using Hecton8.Optimization;
 using Hecton8.SaveSystem;
 using Hecton8.World;
 using Unity.Profiling;
@@ -301,6 +302,7 @@ namespace Hecton8.Bootstrap
         private async void Start()
         {
             BootstrapState.PublishGameReady(false);
+            SceneInstantiationGate.Instance?.BeginSceneLoad(gameObject.scene.name);
 
             // ── Деактивируем игрока на время загрузки ──
             DisablePlayer();
@@ -363,15 +365,21 @@ namespace Hecton8.Bootstrap
                 // ── STEP 7: Спавн игрока ─────────────────────
                 SetStep("Step 7: Player Spawn");
                 await SpawnPlayerAsync(ct);
+                SceneInstantiationGate.Instance?.MarkPlayerInstantiated(playerObject);
                 ct.ThrowIfCancellationRequested();
 
                 // ── STEP 8: Активация + Game Ready ───────────
                 SetStep("Step 8: Runtime World Prime");
                 await PrimeRuntimeWorldAsync(ct);
+                SceneInstantiationGate.Instance?.MarkWorldPrimed();
                 ct.ThrowIfCancellationRequested();
 
                 SetStep("Step 8.5: Cold Cleanup + Memory Snapshot");
                 await RunColdCleanupAndCaptureMemorySnapshotAsync(ct);
+                ct.ThrowIfCancellationRequested();
+
+                SetStep("Step 8.75: Scene Gate Verification");
+                await WaitForSceneInstantiationGateAsync(ct);
                 ct.ThrowIfCancellationRequested();
 
                 ActivatePlayer();
@@ -747,7 +755,7 @@ namespace Hecton8.Bootstrap
 
                 string sourceLabel = save.LastLoadUsedBackup ? "backup" : "primary";
                 string repairLabel = save.LastLoadSelfRepaired ? " with self-repair" : string.Empty;
-                string compressionLabel = save.LastLoadUsedLegacyCompression ? " using legacy compression" : string.Empty;
+                string compressionLabel = save.LastLoadUsedLegacyCompression ? " using legacy format" : string.Empty;
                 Log($"  Save loaded successfully from {sourceLabel}{repairLabel}{compressionLabel}.");
 
                 _isLoadingSave = true;
@@ -1028,17 +1036,43 @@ namespace Hecton8.Bootstrap
 
         private async Awaitable RunColdCleanupAndCaptureMemorySnapshotAsync(CancellationToken ct)
         {
-            Log("  Running cold unload cleanup before gameplay activation...");
+            Log("  Draining deferred asset releases before gameplay activation...");
 
-            AsyncOperation unloadOperation = Resources.UnloadUnusedAssets();
-            while (unloadOperation != null && !unloadOperation.isDone)
+            AssetLifecycleGovernor governor = AssetLifecycleGovernor.Instance;
+            if (governor != null)
+                governor.ForceDrainPendingReleaseQueue();
+
+            await Awaitable.NextFrameAsync(cancellationToken: ct);
+            ct.ThrowIfCancellationRequested();
+
+            VRAMPressureMonitor pressureMonitor = VRAMPressureMonitor.Instance;
+            if (pressureMonitor != null)
+                pressureMonitor.ForceImmediateSampleAndResponse();
+
+            CaptureStartupMemorySnapshot();
+
+            float totalVramMb = 0f;
+            VRAMMonitor vramMonitor = VRAMMonitor.Instance;
+            if (vramMonitor != null)
+                totalVramMb = vramMonitor.TotalVRAMBytes / BytesPerMegabyte;
+
+            SceneInstantiationGate.Instance?.CaptureMemorySnapshot(
+                _debugStartupTextureMemoryMb,
+                _debugStartupReservedMemoryMb,
+                totalVramMb);
+        }
+
+        private async Awaitable WaitForSceneInstantiationGateAsync(CancellationToken ct)
+        {
+            SceneInstantiationGate gate = SceneInstantiationGate.Instance;
+            if (gate == null)
             {
-                ct.ThrowIfCancellationRequested();
-                await Awaitable.NextFrameAsync(cancellationToken: ct);
+                Log("  Scene instantiation gate missing. Continuing with bootstrap-only verification.");
+                return;
             }
 
-            GC.Collect();
-            CaptureStartupMemorySnapshot();
+            await gate.WaitForOpenAsync(ct);
+            Log("  Scene instantiation gate verified.");
         }
 
         private void CaptureStartupMemorySnapshot()

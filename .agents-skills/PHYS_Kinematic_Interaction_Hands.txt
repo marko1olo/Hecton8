@@ -1,0 +1,578 @@
+```markdown
+# PHYS_Kinematic_Interaction_Hands.md
+## Mandate: Physical Hand Interaction — PD Controller Grabbing System
+
+---
+
+## I. EXECUTION POLICY
+
+[RULE] Zero-GC. All per-frame paths: zero heap allocation.
+[RULE] DOD-first. Hand state = blittable struct. No class hierarchies in hot paths.
+[RULE] Burst-compiled jobs for finger pose solve. Main thread: orchestration only.
+[RULE] ForceMode.VelocityChange exclusively. Never ForceMode.Force in grab loop.
+[FORBID] transform.parent = hand. Forever. Engine-level ban.
+[FORBID] GetComponent<> in Update/FixedUpdate. Cache at grab-init only.
+[FORBID] Physics.Raycast (allocating overload). Use RaycastCommand.ScheduleBatch.
+[FORBID] UnityEvent callbacks in physics tick. Direct interface dispatch only.
+[FORBID] Rigidbody.MovePosition / MoveRotation. PD controller owns all motion.
+
+---
+
+## II. DATA ARCHITECTURE
+
+### [DATA] Core Grab State Struct (Blittable, 128-byte aligned)
+
+```
+GrabState {
+    float3   targetPos          // world-space hand anchor this frame
+    float3   targetPosPrev      // hand anchor last frame (velocity derive)
+    float3   objectPos          // rb.worldCenterOfMass
+    float3   objectVel          // rb.velocity snapshot
+    float3   linearError        // targetPos - objectPos (cached, reused)
+    float3   angularError       // delta rotation as axis-angle (cached)
+    quaternion targetRot
+    quaternion objectRot
+    float    objectMass         // kg, cached at grab-init
+    float    virtualHandMass    // derived, see §III.C
+    float    separationDist     // magnitude(linearError), updated each tick
+    float    grabTimestamp      // Time.fixedTime at grab-init
+    uint32   stateFlags         // bitmask (see below)
+    uint8    _pad[12]           // align to 128 bytes
+}
+```
+
+### [DATA] State Flags Bitmask (uint32)
+
+```
+BIT 0  : IS_GRABBED
+BIT 1  : HEAVY_OBJECT (mass > 50kg, enables virtual hand lag)
+BIT 2  : COLLISION_DISCONNECT_ARMED (separation > 0.4m, warning zone)
+BIT 3  : GRIP_BROKEN (separation > 0.8m, disconnect triggered)
+BIT 4  : FINGER_POSE_DIRTY (object moved, re-solve fingers next job)
+BIT 5  : TWO_HAND_GRAB
+BIT 6  : UNDERWATER_DRAG_ACTIVE
+BIT 7  : PD_SATURATED (force clamp active this tick — telemetry)
+BIT 8–15: RESERVED
+BIT 16–31: OBJECT_TYPE_ID (lookup for mass/drag table, 16 bits)
+```
+
+### [DATA] NativeArray Layout — GrabStateBuffer
+
+```
+NativeArray<GrabState>[MAX_HANDS = 2]   // persistent, Allocator.Persistent
+NativeArray<RaycastHit>[FINGER_COUNT * MAX_HANDS * 2]  // double-buffered finger cast results
+NativeArray<SpherecastCommand>[FINGER_COUNT * MAX_HANDS]  // reused, no realloc
+
+Ring-buffer:  GrabEventQueue — NativeQueue<GrabEvent>(Allocator.TempJob) per physics step
+Double-buffer: FingerPoseBuffer[2] — ping-pong index (frame % 2)
+              Each buffer = NativeArray<float3>[10] (5 fingers × 2 hands)
+```
+
+### [DATA] Spatial Locality Mandate
+
+```
+Pack per-hand data contiguous in memory.
+GrabState[0] = LeftHand
+GrabState[1] = RightHand
+Access pattern: sequential. Never index by object. Hand is primary key.
+Object Rigidbody ref: stored as int (rigidbody instanceID) → NativeHashMap<int, RigidbodyAccessor>
+RigidbodyAccessor = blittable struct wrapping unsafe ptr to native Rigidbody data (UnsafeUtility)
+```
+
+---
+
+## III. ALGORITHMIC & MATH TRUTH
+
+### [MATH] A. PD Controller — Linear Force (dt-invariant, critically damped)
+
+**Goal:** Move object from `currentPos` → `targetPos` in minimum time without overshoot.
+
+**Critical Damping Condition:**
+```
+ω_n = natural frequency (tuning param, rad/s). Recommended: 12.0–20.0 for hand objects.
+ζ   = damping ratio = 1.0 (critical). Never ζ < 0.8 (underdamped = oscillation).
+
+Kp  = ω_n²                          // proportional gain
+Kd  = 2 * ζ * ω_n                   // derivative gain
+```
+
+**Per-FixedUpdate Force Solve:**
+```
+1. posError   = targetPos - objectPos
+2. velError   = targetVel - objectVel
+             where targetVel = (targetPos - targetPosPrev) / fixedDeltaTime
+3. accel      = (Kp * posError) + (Kd * velError)
+4. deltaVel   = accel * fixedDeltaTime
+5. CLAMP:     magnitude(deltaVel) ≤ MAX_DELTA_VEL (e.g., 15.0 m/s per tick)
+6. Apply:     rb.AddForce(deltaVel, ForceMode.VelocityChange)
+```
+
+**Numerical Stability Guards:**
+```
+if magnitude(posError) < 1e-4f  → skip force application (epsilon threshold)
+if isNaN(accel) || isInf(accel) → zero accel, set BIT 7 (PD_SATURATED), log telemetry
+MAX_DELTA_VEL clamp prevents Torque Kraken initiation on fast hand sweeps
+```
+
+**dt-invariance proof:**
+```
+accel is in m/s². Multiply by fixedDeltaTime → m/s (VelocityChange).
+System responds identically at 50Hz or 120Hz physics rate.
+Kp/Kd are frequency-domain params, not frame-count params. Invariant by construction.
+```
+
+---
+
+### [MATH] B. PD Controller — Angular Torque (dt-invariant, critically damped)
+
+**Delta Rotation Extraction (shortest path, NaN-safe):**
+```
+1. deltaRot    = targetRot * Inverse(objectRot)
+2. deltaRot.ToAngleAxis(out angle, out axis)
+3. GUARD:      if magnitude(axis) < 1e-6f → axis = float3.up, angle = 0
+4. GUARD:      if abs(angle) < 1e-4f → skip torque
+5. WRAP:       if angle > π → angle -= 2π   (always take shortest arc)
+6. axisAngle   = axis * angle               (angular position error, radians)
+```
+
+**Torque Solve (same PD structure as linear):**
+```
+ω_n_angular = 10.0–16.0 rad/s (tune per object moment of inertia)
+Kp_a = ω_n_angular²
+Kd_a = 2 * 1.0 * ω_n_angular
+
+angularVelError = targetAngularVel - rb.angularVelocity
+                  where targetAngularVel = (axisAngle_current - axisAngle_prev) / fixedDeltaTime
+
+angularAccel  = (Kp_a * axisAngle) + (Kd_a * angularVelError)
+deltaAngVel   = angularAccel * fixedDeltaTime
+CLAMP:        magnitude(deltaAngVel) ≤ MAX_DELTA_ANGVEL (e.g., 25 rad/s per tick)
+Apply:        rb.AddTorque(deltaAngVel, ForceMode.VelocityChange)
+```
+
+**Inertia Tensor Compensation (AAA pattern):**
+```
+// Scale torque input by inertia tensor to normalize response across object shapes
+inertiaTensorWorld = rotation * inertiaTensorLocal (precomputed at grab-init, cached)
+correctedAngVel    = inertiaTensorWorld * deltaAngVel  // element-wise, not matrix multiply
+Apply correctedAngVel instead of raw deltaAngVel
+```
+
+---
+
+### [MATH] C. Virtual Hand Mass — Heavy Object Lag (mass > 50kg)
+
+**Concept:** Hand anchor position lags behind controller input. Controller drives "virtual hand target"; virtual hand has simulated inertia.
+
+**Virtual Hand Mass Derivation:**
+```
+massRatio         = objectMass / HAND_MAX_CARRY_MASS     // HAND_MAX_CARRY_MASS = 50.0 kg
+massRatio         = clamp(massRatio, 0.0, 1.0)
+virtualHandMass   = lerp(0.0, VIRTUAL_HAND_MAX_MASS, massRatio)
+                    // VIRTUAL_HAND_MAX_MASS = 8.0 kg (tune: affects lag feel)
+```
+
+**Virtual Hand Position Integration (symplectic Euler, stable for stiff springs):**
+```
+State:  virtualHandPos, virtualHandVel
+
+Each FixedUpdate:
+1. springForce    = (controllerPos - virtualHandPos) * VIRTUAL_SPRING_K
+                    // VIRTUAL_SPRING_K = 300 N/m (tune)
+2. dampForce      = -virtualHandVel * VIRTUAL_DAMPER_C
+                    // VIRTUAL_DAMPER_C = 2 * sqrt(virtualHandMass * VIRTUAL_SPRING_K) * 0.9
+                    // (90% critical damping — slight lag feel intentional)
+3. netAccel       = (springForce + dampForce) / virtualHandMass
+4. virtualHandVel += netAccel * fixedDeltaTime           // velocity update first (symplectic)
+5. virtualHandPos += virtualHandVel * fixedDeltaTime     // then position
+
+6. targetPos for PD controller = virtualHandPos (NOT controllerPos)
+```
+
+**Lag Magnitude Clamp:**
+```
+maxLag = 0.4m   // virtual hand never falls more than 0.4m behind controller
+virtualHandPos = controllerPos + clamp(virtualHandPos - controllerPos, -maxLag, maxLag)
+Apply clamp per-axis independently (allows asymmetric resistance).
+```
+
+---
+
+### [MATH] D. Collision Disconnect — Anti-Torque-Kraken
+
+**Separation Monitor (every FixedUpdate):**
+```
+1. separation = magnitude(objectPos - virtualHandPos)
+2. if separation > 0.4m → set BIT 2 (COLLISION_DISCONNECT_ARMED)
+3. if separation > 0.8m → EXECUTE DISCONNECT
+```
+
+**Disconnect Sequence (zero-alloc, deterministic):**
+```
+1. SET BIT 3 (GRIP_BROKEN)
+2. CLEAR BIT 0 (IS_GRABBED)
+3. rb.velocity    = clamp(rb.velocity, -8.0, 8.0) per axis    // de-energize
+4. rb.angularVelocity = float3.zero                           // kill spin
+5. virtualHandPos = objectPos                                  // reset virtual hand
+6. virtualHandVel = float3.zero
+7. Enqueue GrabEvent{type=GRIP_BROKEN, objectID, timestamp} to GrabEventQueue
+8. Dispatch IGrabBreakListener.OnGripBroken(objectID) via cached interface ptr (no alloc)
+9. Finger pose: mark BIT 4 dirty → open-hand pose next frame
+```
+
+**Progressive Force Reduction (pre-disconnect, 0.4–0.8m zone):**
+```
+// Reduce PD gains linearly in warning zone — prevents violent snapping
+zoneFraction = (separation - 0.4f) / 0.4f       // 0 at 0.4m → 1 at 0.8m
+gainMultiplier = lerp(1.0f, 0.0f, zoneFraction)
+Kp_effective  = Kp * gainMultiplier
+Kd_effective  = Kd * gainMultiplier
+// Object feels like it's "slipping" — intentional UX signal before full break
+```
+
+---
+
+### [MATH] E. Underwater Drag Compensation for PD Controller
+
+**Problem:** Unity's Rigidbody.drag fights PD controller → oscillation or sluggishness.
+
+**Solution:** Zero rb.drag/rb.angularDrag during grab. Simulate fluid drag manually.
+
+```
+// Per FixedUpdate, AFTER PD force application:
+fluidDensity   = lerp(SEA_DENSITY_SURFACE, SEA_DENSITY_DEEP, depthFraction)
+                 // SEA_DENSITY_SURFACE = 1025 kg/m³, DEEP = 1065 kg/m³
+dragForce      = -0.5 * fluidDensity * DRAG_COEFFICIENT * frontalArea * velocity² * normalize(velocity)
+                 // frontalArea: precomputed at grab-init from object bounds
+                 // DRAG_COEFFICIENT: 0.47 (sphere approx), overridable per object
+rb.AddForce(dragForce, ForceMode.Force)
+
+// Apply drag to angular velocity:
+angularDrag    = -rb.angularVelocity * ANGULAR_DRAG_COEFF * fluidDensity * 0.001f
+rb.AddTorque(angularDrag, ForceMode.VelocityChange)
+```
+
+---
+
+## IV. FINGER POSE — BURST SPHERECAST BATCH SYSTEM
+
+### [DATA] Finger Pose Struct
+
+```
+FingerPoseData {
+    float3 tipPos           // world-space result
+    float3 tipNormal        // surface normal at contact
+    float  bendAngle        // 0=straight, 1=fully curled
+    uint8  fingerIndex      // 0–4
+    uint8  contactFlags     // BIT0=surface_hit, BIT1=at_max_curl
+    uint8  _pad[2]
+}
+// NativeArray<FingerPoseData>[10] per double-buffer slot
+```
+
+### [MATH] Finger Pose Solve — SpherecastCommand Batch
+
+**Finger ray origin derivation:**
+```
+For each finger i (0–4):
+  knuckleOffset[i] = precomputed local offsets on hand mesh (5 float3 values, const)
+  rayOrigin[i]     = handAnchorPos + rotate(knuckleOffset[i], handAnchorRot)
+  rayDir[i]        = rotate(fingerRestDir[i], handAnchorRot)
+                     // fingerRestDir: default pointing direction per finger in hand-local space
+  castRadius       = 0.012f   // ~fingertip radius
+  castLength       = 0.09f    // max finger reach before full curl
+```
+
+**Job Pipeline (Burst-compiled):**
+```
+Step 1 — PREPARE (Main Thread, zero-alloc):
+  WriteFingerCommandsJob {
+    Input:  NativeArray<float3> knuckleWorldPos (derived from hand transform, IJobFor)
+    Output: NativeArray<SpherecastCommand> commands
+    Logic:  commands[i] = new SpherecastCommand(rayOrigin[i], castRadius, rayDir[i], castLength, layerMask)
+  }
+  handle1 = WriteFingerCommandsJob.Schedule(FINGER_COUNT, 1)
+
+Step 2 — CAST (Physics Thread):
+  handle2 = SpherecastCommand.ScheduleBatch(commands, results, 1, handle1)
+
+Step 3 — CONSUME (Burst IJobFor):
+  ProcessFingerHitsJob {
+    Input:  NativeArray<RaycastHit> results
+    Output: NativeArray<FingerPoseData> poseBuffer[pingPong]
+    Per finger i:
+      if results[i].distance > 0:
+        bendAngle[i]       = 1.0f - (results[i].distance / castLength)
+        tipPos[i]          = results[i].point
+        tipNormal[i]       = results[i].normal
+        contactFlags[i]    |= BIT0
+      else:
+        bendAngle[i]       = 1.0f   // full curl, no surface
+        tipPos[i]          = rayOrigin[i] + rayDir[i] * castLength
+        tipNormal[i]       = -rayDir[i]
+  }
+  handle3 = ProcessFingerHitsJob.Schedule(FINGER_COUNT, 1, handle2)
+
+Step 4 — APPLY POSE (Main Thread, after handle3.Complete()):
+  Read poseBuffer[pingPong ^ 1]   // read completed buffer, write to other
+  Drive finger bone rotations via precomputed bend-to-angle LUT (NativeArray<float>[64])
+  LUT maps bendAngle[0–1] → euler.x rotation per finger segment (3 segments per finger)
+  Interpolate: boneRot = lerp(boneRot, targetRot, FINGER_INTERP_SPEED * fixedDeltaTime)
+               FINGER_INTERP_SPEED = 18.0f
+```
+
+**Numerical Guards (inside ProcessFingerHitsJob):**
+```
+if results[i].normal == float3.zero → normal = -rayDir[i]   (degenerate surface)
+bendAngle = clamp(bendAngle, 0.0f, 1.0f)
+if isNaN(results[i].point) → treat as no-hit
+```
+
+---
+
+## V. HARDWARE & SCALABILITY
+
+### [SCALE] LOD Tiers — Hand Physics Quality
+
+**BASE (MX350 / i3-10gen — locked 60fps priority):**
+```
+ω_n linear    = 12.0 rad/s
+ω_n angular   = 10.0 rad/s
+Finger jobs   = 5 rays per hand (one per finger, no intermediate joints)
+Virtual hand  = enabled (mass-lag active)
+Fluid drag    = approximate (constant density, no depth gradient)
+Inertia comp  = DISABLED (raw torque)
+Physics rate  = 50Hz FixedUpdate
+```
+
+**HIGH (RTX 3060 / i5-11gen):**
+```
+ω_n linear    = 16.0 rad/s
+ω_n angular   = 14.0 rad/s
+Finger jobs   = 15 rays per hand (3 per finger: base/mid/tip segments)
+Fluid drag    = depth-gradient density (full formula §III.E)
+Inertia comp  = ENABLED
+Physics rate  = 60Hz FixedUpdate
+```
+
+**ULTRA (RTX 4070+ / i7-12gen+):**
+```
+ω_n linear    = 20.0 rad/s
+ω_n angular   = 18.0 rad/s
+Finger jobs   = 25 rays per hand (include palm contact, thumb opposition)
+Two-hand grab = full dual-PD constraint solver (see §V.A)
+Inertia comp  = ENABLED + tensor world-space rotation per tick
+Fluid drag    = vortex shedding approximation (Strouhal number perturbation)
+Physics rate  = 120Hz FixedUpdate (split substep)
+```
+
+### [SCALE] CPU Budget Allocation (per physics tick)
+
+```
+Total physics budget target: 2.5ms (BASE), 4.0ms (HIGH), 6.0ms (ULTRA)
+
+PD force solve:         0.1ms  (trivial math, non-job, main thread)
+Separation check:       0.05ms
+Virtual hand integrate: 0.05ms
+SpherecastCommand prep: 0.1ms  (IJobFor, Burst)
+SpherecastBatch:        0.8ms  (physics thread, overlaps with main)
+Finger pose consume:    0.2ms  (IJobFor, Burst)
+Pose bone apply:        0.3ms  (main thread, unavoidable Unity API)
+GrabEvent dispatch:     0.05ms
+TOTAL (BASE):          ~1.65ms  (headroom for fluid, audio, AI)
+```
+
+### [SCALE] VRAM — Zero Direct VRAM Use in This System
+
+```
+Hand physics: CPU-only. No GPU buffers.
+Finger pose result → drives SkinnedMeshRenderer bone weights (CPU skinning on BASE).
+HIGH/ULTRA: GPU skinning via ComputeBuffer. BoneWeight upload: 10 bones × 2 hands = 80 floats. Negligible.
+```
+
+### [SCALE] Time-Slicing — Finger Pose on Low-End
+
+```
+BASE tier: Solve finger poses every 2 physics ticks (25Hz effective).
+           Interpolate bone rotations between solves (FINGER_INTERP_SPEED handles smoothness).
+           SpherecastBatch: schedule frame N, read frame N+1 (1-frame latency, invisible at 60fps).
+HIGH/ULTRA: Solve every physics tick. No latency.
+```
+
+---
+
+## VI. INTEGRATION & FAILURE MODES
+
+### [SAFE] Interface Contract
+
+```
+IGrabbable {
+    float GetMass()
+    float3 GetCenterOfMass()
+    bool CanBeGrabbed()
+    void OnGrabBegin(int handIndex)
+    void OnGrabEnd(int handIndex, GrabEndReason reason)
+}
+
+IGrabBreakListener {
+    void OnGripBroken(int objectInstanceID)
+}
+
+IHandPhysicsProvider {
+    float3 GetControllerPosition(int handIndex)
+    quaternion GetControllerRotation(int handIndex)
+    float3 GetControllerVelocity(int handIndex)
+}
+// All dispatch via cached interface ptr. Zero reflection. Zero string lookup.
+```
+
+### [SAFE] Failure Mode Table
+
+```
+CONDITION                              | RESPONSE                                        | FLAG SET
+---------------------------------------|--------------------------------------------------|-------------------
+separation > 0.8m                      | Grip break, de-energize rb, dispatch event       | BIT3, BIT7
+objectMass > 500kg                     | Grab denied. OnGrabEnd(OVERWEIGHT)               | —
+rb.velocity > 40m/s post-force         | Clamp velocity to 40m/s, SET BIT7               | BIT7
+accel = NaN/Inf                        | Zero accel, log telemetry, continue              | BIT7
+Spherecast returns NaN point           | Treat as no-hit, full finger curl                | —
+fixedDeltaTime spike > 0.05s           | Clamp dt to 0.02s in all formulas (lagged sim)  | —
+angularVelocity > 50 rad/s             | Clamp to 50 rad/s, kill excess energy            | BIT7
+Two hands grab same object (BASE tier) | Deny second grab. Queue for HIGH/ULTRA only      | —
+Object frozen/kinematic during grab    | Detect IsKinematic flag, break grip immediately  | BIT3
+Depth > 4000m (pressure crush event)   | Override grab system, force grip break + object deform trigger | BIT3
+```
+
+### [SAFE] Grab Init Checklist (one-time, not per-tick)
+
+```
+1. Validate IGrabbable interface exists → else deny
+2. Cache rb reference (instanceID → NativeHashMap lookup)
+3. Cache objectMass, frontalArea, inertiaTensorLocal
+4. Compute virtualHandMass (§III.C)
+5. Compute VIRTUAL_DAMPER_C = 2 * sqrt(virtualHandMass * VIRTUAL_SPRING_K) * 0.9
+6. Set rb.drag = 0, rb.angularDrag = 0
+7. Set rb.maxAngularVelocity = 50.0f
+8. Set rb.interpolation = RigidbodyInterpolation.Interpolate (visual smoothness)
+9. Set stateFlags = BIT0 | (mass > 50kg ? BIT1 : 0)
+10. Invalidate finger pose: SET BIT4
+11. Enqueue GrabEvent{GRAB_BEGIN}
+```
+
+### [SAFE] Grab Teardown Checklist
+
+```
+1. Restore rb.drag / rb.angularDrag to object's default (cached at init)
+2. Clear stateFlags BIT0
+3. Reset virtualHandPos/Vel
+4. Complete any pending JobHandles before releasing NativeArrays
+5. Enqueue GrabEvent{GRAB_END, reason}
+6. Trigger finger open-hand pose (bendAngle → 0 for all, interpolated)
+```
+
+---
+
+## VII. SENIOR INJECTED PATTERNS
+
+### [SENIOR_HACK] Cheap Realism — MX350 Optimizations
+
+**Fake Momentum Feel (no physics cost):**
+```
+// Add controller velocity to PD target offset → object feels "thrown" into position
+targetPos_effective = targetPos + controllerVelocity * VELOCITY_LEAD_FACTOR
+VELOCITY_LEAD_FACTOR = 0.04f   // tune: larger = more "sloshy" feel
+Apply only when BIT1 (HEAVY) is set.
+```
+
+**Frozen Orientation Fast-Path:**
+```
+// If angular error < 2° AND angular velocity < 0.1 rad/s: skip torque solve entirely
+// Saves ~0.05ms per hand per tick at steady state
+threshold_rad = 0.0349f  // 2 degrees
+if angle < threshold_rad && magnitude(rb.angularVelocity) < 0.1f → skip AddTorque
+```
+
+**Impulse Inheritance on Release:**
+```
+// On grip break / voluntary release:
+rb.velocity       = lerp(rb.velocity, controllerVelocity, 0.85f)
+rb.angularVelocity = controllerAngularVelocity * 0.6f
+// Multipliers tuned for underwater drag — objects don't fly away at surface speeds
+```
+
+### [SENIOR_HACK] Dual-Hand Constraint (ULTRA Tier Only)
+
+```
+// Two hands grabbing same object: blend two PD targets
+blendWeight_L = handStrength[LEFT]  / (handStrength[LEFT] + handStrength[RIGHT])
+blendWeight_R = 1.0f - blendWeight_L
+// handStrength: precomputed from mass ratio and hand distance to CoM
+
+combinedTargetPos = lerp(targetPos_L, targetPos_R, blendWeight_R)
+combinedTargetRot = slerp(targetRot_L, targetRot_R, blendWeight_R)
+// Feed combined targets into single PD controller. No dual-force summation (instability risk).
+```
+
+### [SENIOR_HACK] Predictive Separation Detection
+
+```
+// Predict separation 3 physics ticks ahead — pre-reduce gains before actual disconnect
+predictedSep = magnitude((objectPos + objectVel * 3 * fixedDeltaTime) - 
+                         (virtualHandPos + virtualHandVel * 3 * fixedDeltaTime))
+if predictedSep > 0.6f && currentSep < 0.4f:
+    primeDisconnect = true   // start gain reduction early (smoother break)
+    SET BIT2 early
+```
+
+### [SENIOR_HACK] PD Gain Auto-Tune Per Object Density
+
+```
+// Dense objects (metal tools, valves) need higher angular gains to feel "solid"
+// Light objects (bio-samples, foam) need lower gains to feel "floaty"
+density        = objectMass / objectVolume   // volume: from bounds.extents approx
+densityFactor  = clamp(density / 1000.0f, 0.3f, 3.0f)   // normalize to water density
+Kp_a_effective = Kp_a * densityFactor
+Kd_a_effective = Kd_a * sqrt(densityFactor)  // sqrt: prevents over-damping on dense objects
+```
+
+---
+
+## VIII. CONSTANTS REGISTRY
+
+```
+HAND_MAX_CARRY_MASS         = 50.0f   kg
+VIRTUAL_HAND_MAX_MASS       = 8.0f    kg
+VIRTUAL_SPRING_K            = 300.0f  N/m
+VIRTUAL_HAND_LAG_MAX        = 0.4f    m
+GRIP_BREAK_DISTANCE         = 0.8f    m
+GRIP_WARN_DISTANCE          = 0.4f    m
+MAX_DELTA_VEL               = 15.0f   m/s per tick
+MAX_DELTA_ANGVEL            = 25.0f   rad/s per tick
+MAX_OBJ_VELOCITY            = 40.0f   m/s (post-force clamp)
+MAX_ANGULAR_VELOCITY        = 50.0f   rad/s
+FINGER_INTERP_SPEED         = 18.0f   (lerp coefficient)
+FINGER_CAST_RADIUS          = 0.012f  m
+FINGER_CAST_LENGTH          = 0.09f   m
+VELOCITY_LEAD_FACTOR        = 0.04f   (heavy obj feel)
+ANGULAR_DRAG_COEFF          = 0.15f
+SEA_DENSITY_SURFACE         = 1025.0f kg/m³
+SEA_DENSITY_DEEP            = 1065.0f kg/m³
+DRAG_COEFFICIENT_SPHERE     = 0.47f
+ω_n_LINEAR_BASE             = 12.0f   rad/s
+ω_n_ANGULAR_BASE            = 10.0f   rad/s
+ω_n_LINEAR_HIGH             = 16.0f   rad/s
+ω_n_ANGULAR_HIGH            = 14.0f   rad/s
+ω_n_LINEAR_ULTRA            = 20.0f   rad/s
+ω_n_ANGULAR_ULTRA           = 18.0f   rad/s
+CRITICAL_DAMPING_RATIO      = 1.0f
+PHYSICS_HZ_BASE             = 50
+PHYSICS_HZ_HIGH             = 60
+PHYSICS_HZ_ULTRA            = 120
+MAX_HANDS                   = 2
+FINGER_COUNT                = 5
+FINGER_SEGMENTS             = 3
+BEND_ANGLE_LUT_SIZE         = 64
+MAX_GRAB_OBJECT_MASS        = 500.0f  kg (hard deny above)
+DEPTH_CRUSH_THRESHOLD       = 4000.0f m
+```
+```

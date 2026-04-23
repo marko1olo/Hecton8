@@ -4,8 +4,7 @@
 //
 // АРХИТЕКТУРА:
 //   • Реестр ISaveable вместо FindObjectsByType (zero GC при save/load).
-//   • CRC32 Checksums для проверки целостности (Master Grade).
-//   • ES3 для сериализации (binary + zero-GC async).
+//   • XXHash3 checksums for header/payload integrity.
 //   • Unity 6 Awaitable API: BackgroundThreadAsync / MainThreadAsync.
 // ============================================================================
 
@@ -14,6 +13,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using Hecton8.Modding;
+using Unity.Collections;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
@@ -24,41 +24,8 @@ namespace Hecton8.SaveSystem
     public sealed class SaveManager : MonoBehaviour
     {
         // ══════════════════════════════════════════════════════════
-        //  CRC32 LOGIC (Zero-GC)
+        //  SAVE STATE
         // ══════════════════════════════════════════════════════════
-
-        private const uint CrcPolynomial = 0xEDB88320;
-        private static readonly uint[] _crcTable = GenerateCrcTable();
-
-        private static uint[] GenerateCrcTable()
-        {
-            uint[] table = new uint[256];
-            for (uint i = 0; i < 256; i++)
-            {
-                uint entry = i;
-                for (int j = 0; j < 8; j++)
-                {
-                    if ((entry & 1) == 1)
-                        entry = (entry >> 1) ^ CrcPolynomial;
-                    else
-                        entry >>= 1;
-                }
-                table[i] = entry;
-            }
-            return table;
-        }
-
-        private static uint CalculateCRC32(byte[] data)
-        {
-            uint crc = 0xFFFFFFFF;
-            if (data == null) return 0;
-            for (int i = 0; i < data.Length; i++)
-            {
-                byte b = data[i];
-                crc = (crc >> 8) ^ _crcTable[(crc ^ b) & 0xFF];
-            }
-            return ~crc;
-        }
 
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
@@ -91,8 +58,6 @@ namespace Hecton8.SaveSystem
         // ══════════════════════════════════════════════════════════
 
         [Header("── Settings ──────────────────────────────────")]
-        [SerializeField] private string saveKeyPrefix = "save_";
-        [SerializeField] private bool useCompression = true;
 
         [Header("── Backup Policy ─────────────────────────────")]
         [SerializeField] private int manualBackupGenerations = DefaultManualBackupGenerations;
@@ -112,22 +77,19 @@ namespace Hecton8.SaveSystem
         private static readonly Comparison<ISaveable> SavePriorityCompare = (a, b) => a.SavePriority.CompareTo(b.SavePriority);
         private static readonly Comparison<ISaveable> LoadPriorityCompare = (a, b) => a.LoadPriority.CompareTo(b.LoadPriority);
 
-        private ES3Settings _cachedSettings;
+        private NativeArray<byte> _savePayloadBuffer;
+        private NativeArray<byte> _compressedSaveBuffer;
 
         private readonly struct SaveLoadCandidate
         {
             public readonly string SavePath;
-            public readonly string MetadataPath;
             public readonly bool IsBackup;
-            public readonly bool MetadataMatchesSave;
             public readonly int BackupGeneration;
 
-            public SaveLoadCandidate(string savePath, string metadataPath, bool isBackup, bool metadataMatchesSave, int backupGeneration)
+            public SaveLoadCandidate(string savePath, bool isBackup, int backupGeneration)
             {
                 SavePath = savePath;
-                MetadataPath = metadataPath;
                 IsBackup = isBackup;
-                MetadataMatchesSave = metadataMatchesSave;
                 BackupGeneration = backupGeneration;
             }
         }
@@ -137,29 +99,6 @@ namespace Hecton8.SaveSystem
             Manual = 0,
             Auto,
             Quick
-        }
-
-        private ES3Settings GetBaseSettings()
-        {
-            if (_cachedSettings == null)
-            {
-                _cachedSettings = new ES3Settings
-                {
-                    encryptionType = ES3.EncryptionType.None,
-                    compressionType = useCompression ? ES3.CompressionType.Gzip : ES3.CompressionType.None
-                };
-            }
-            return _cachedSettings;
-        }
-
-        private ES3Settings GetSlotSettings(string slotName)
-        {
-            return new ES3Settings(GetPrimarySaveFilePath(slotName), GetBaseSettings());
-        }
-
-        private ES3Settings GetPathSettings(string path)
-        {
-            return new ES3Settings(path, GetBaseSettings());
         }
 
         private int GetBackupRetentionCount(string slotName)
@@ -227,6 +166,35 @@ namespace Hecton8.SaveSystem
             _instance = this;
             DontDestroyOnLoad(gameObject);
             _sessionStartTime = Time.realtimeSinceStartup;
+            InitializeNativeBuffers();
+            SaveBinaryStorage.WarmRuntime();
+        }
+
+        private void OnDestroy()
+        {
+            if (_instance == this)
+                _instance = null;
+
+            if (_savePayloadBuffer.IsCreated)
+                _savePayloadBuffer.Dispose();
+
+            if (_compressedSaveBuffer.IsCreated)
+                _compressedSaveBuffer.Dispose();
+        }
+
+        private void InitializeNativeBuffers()
+        {
+            if (!_savePayloadBuffer.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<byte>[67108864] - raw binary save staging buffer for save payload assembly - owner: SaveManager
+                _savePayloadBuffer = new NativeArray<byte>(SaveBinaryStorage.RawPayloadCapacityBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            }
+
+            if (!_compressedSaveBuffer.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<byte>[67378176] - worst-case LZ4 block-compressed save payload buffer for 64MB raw save budget - owner: SaveManager
+                _compressedSaveBuffer = new NativeArray<byte>(SaveBinaryStorage.MaxCompressedPayloadBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            }
         }
 
         public void Register(ISaveable saveable)
@@ -316,33 +284,28 @@ namespace Hecton8.SaveSystem
                     PlayerPosition = data.playerStats.GetPosition()
                 };
 
-                string key = GetSaveKey(slotName);
-                string primaryPath = GetPrimarySaveFilePath(slotName);
                 string tempPath = GetTempSaveFilePath(slotName);
-                string primaryMetadataPath = SaveMetadata.GetPrimaryMetadataPath(slotName);
-                string tempMetadataPath = SaveMetadata.GetTempMetadataPath(slotName);
-                int backupRetention = GetBackupRetentionCount(slotName);
 
                 await Awaitable.BackgroundThreadAsync();
 
                 DeleteFileIfExists(tempPath);
-                DeleteFileIfExists(tempMetadataPath);
+                string absoluteTempPath = GetPersistentAbsolutePath(tempPath);
+                if (!SaveBinaryStorage.TryWriteSaveFile(
+                    absoluteTempPath,
+                    metadata,
+                    data,
+                    _savePayloadBuffer,
+                    _compressedSaveBuffer,
+                    out string writeError))
+                {
+                    throw new Exception(writeError);
+                }
 
-                ES3Settings tempSaveSettings = GetPathSettings(tempPath);
-                ES3.Save(key, data, tempSaveSettings);
-
-                byte[] bytes = ES3.Serialize(data, tempSaveSettings);
-                metadata.Checksum = CalculateCRC32(bytes).ToString("X8");
-
-                RotateBackupChain(primaryPath, generation => GetBackupSaveFilePath(slotName, generation), backupRetention);
-                PromoteFile(tempPath, primaryPath);
-
-                RotateBackupChain(primaryMetadataPath, generation => SaveMetadata.GetBackupMetadataPath(slotName, generation), backupRetention);
-                metadata.Save(tempMetadataPath);
-                PromoteFile(tempMetadataPath, primaryMetadataPath);
+                CommitTempSaveToPrimary(slotName, tempPath, GetPrimarySaveFilePath(slotName));
 
                 await Awaitable.MainThreadAsync();
                 SaveThumbnailSystem.CaptureThumbnail(slotName);
+                int backupRetention = GetBackupRetentionCount(slotName);
                 SaveSlotIntegrityState savedIntegrity = backupRetention > 0
                     ? SaveSlotIntegrityState.HealthyWithBackup
                     : SaveSlotIntegrityState.Healthy;
@@ -407,32 +370,32 @@ namespace Hecton8.SaveSystem
             {
                 await Awaitable.BackgroundThreadAsync();
                 SaveData data = null;
+                SaveMetadata loadedMetadata = null;
                 SaveLoadCandidate loadedCandidate = default;
                 Exception lastError = null;
-                string key = GetSaveKey(slotName);
                 List<SaveLoadCandidate> candidates = BuildLoadCandidates(slotName);
-                ES3.CompressionType resolvedCompression = GetPreferredCompressionType();
+                bool usedLegacyFormat = false;
 
                 for (int i = 0; i < candidates.Count; i++)
                 {
-                    SaveLoadCandidate candidate = candidates[i];
-                    if (TryLoadCandidateWithAnyCompression(
-                        key,
-                        candidate,
+                    if (TryLoadCandidate(
+                        slotName,
+                        candidates[i],
                         out SaveData candidateData,
                         out SaveMetadata candidateMetadata,
-                        out ES3.CompressionType candidateCompression,
+                        out bool candidateUsedLegacyFormat,
                         out string candidateError))
                     {
                         data = candidateData;
-                        loadedCandidate = candidate;
-                        resolvedCompression = candidateCompression;
+                        loadedCandidate = candidates[i];
+                        loadedMetadata = candidateMetadata;
+                        usedLegacyFormat = candidateUsedLegacyFormat;
                         break;
                     }
 
                     lastError = new Exception(candidateError);
-                    string candidateLabel = candidate.IsBackup
-                        ? $"backup g{candidate.BackupGeneration}"
+                    string candidateLabel = candidates[i].IsBackup
+                        ? $"backup g{candidates[i].BackupGeneration}"
                         : "primary";
                     Debug.LogWarning($"[SaveManager] Failed to load {candidateLabel} for '{slotName}': {candidateError}");
                 }
@@ -463,10 +426,19 @@ namespace Hecton8.SaveSystem
                 Vector3 playerPosition = data.playerStats.GetPosition();
                 bool repairedPrimaryArtifacts = false;
 
-                if (ShouldSelfRepairSlot(slotName, loadedCandidate))
+                if (ShouldSelfRepairSlot(loadedCandidate, usedLegacyFormat))
                 {
                     await Awaitable.BackgroundThreadAsync();
-                    repairedPrimaryArtifacts = SelfRepairPrimaryArtifacts(slotName, key, data, activeSceneName, playerPosition);
+                    SaveMetadata repairMetadata = loadedMetadata ?? new SaveMetadata
+                    {
+                        SlotName = slotName,
+                        GameVersion = Application.version,
+                        Timestamp = DateTime.UtcNow.Ticks,
+                        PlayTimeSeconds = data.totalPlayTime,
+                        SceneName = string.IsNullOrEmpty(activeSceneName) ? "Unknown" : activeSceneName,
+                        PlayerPosition = playerPosition
+                    };
+                    repairedPrimaryArtifacts = SelfRepairPrimaryArtifacts(slotName, data, repairMetadata);
                     await Awaitable.MainThreadAsync();
                 }
 
@@ -476,7 +448,7 @@ namespace Hecton8.SaveSystem
                 LastLoadUsedBackup = loadedCandidate.IsBackup;
                 LastLoadBackupGeneration = loadedCandidate.BackupGeneration;
                 LastLoadSelfRepaired = repairedPrimaryArtifacts;
-                LastLoadUsedLegacyCompression = resolvedCompression != GetPreferredCompressionType();
+                LastLoadUsedLegacyCompression = usedLegacyFormat;
                 SaveSlotInfo postLoadInfo = BuildSaveSlotInfoInternal(slotName);
                 SaveSlotIntegrityState postLoadIntegrity = postLoadInfo != null ? postLoadInfo.IntegrityState : SaveSlotIntegrityState.Empty;
                 RecordSuccessfulLoad(slotName, data.version, postLoadIntegrity, LastLoadUsedBackup, LastLoadBackupGeneration, LastLoadUsedLegacyCompression, LastLoadSelfRepaired);
@@ -658,7 +630,6 @@ namespace Hecton8.SaveSystem
             SaveThumbnailSystem.DeleteThumbnail(slotName);
         }
 
-        private string GetSaveKey(string slotName) => $"{saveKeyPrefix}{slotName}";
         public static string GetPrimarySaveFilePath(string slotName) => $"{slotName}.sav";
         public static string GetBackupSaveFilePath(string slotName) => GetBackupSaveFilePath(slotName, 1);
         public static string GetBackupSaveFilePath(string slotName, int generation)
@@ -669,26 +640,25 @@ namespace Hecton8.SaveSystem
             return $"{slotName}.sav.bak{generation}";
         }
         public static string GetTempSaveFilePath(string slotName) => $"{slotName}.sav.tmp";
+        private static string GetPersistentAbsolutePath(string relativePath) => Path.Combine(Application.persistentDataPath, relativePath);
 
         private static bool FileExists(string path)
         {
-            return !string.IsNullOrEmpty(path) && ES3.FileExists(path);
+            return !string.IsNullOrEmpty(path) && File.Exists(GetPersistentAbsolutePath(path));
         }
 
         private static void DeleteFileIfExists(string path)
         {
             if (FileExists(path))
-                ES3.DeleteFile(path);
+                File.Delete(GetPersistentAbsolutePath(path));
         }
 
         public static string[] GetAllKnownArtifactPaths(string slotName)
         {
-            List<string> paths = new List<string>(16)
+            List<string> paths = new List<string>(12)
             {
                 GetPrimarySaveFilePath(slotName),
                 GetTempSaveFilePath(slotName),
-                SaveMetadata.GetPrimaryMetadataPath(slotName),
-                SaveMetadata.GetTempMetadataPath(slotName),
                 SaveSlotMaintenanceRecord.GetPath(slotName)
             };
 
@@ -696,17 +666,9 @@ namespace Hecton8.SaveSystem
             for (int generation = 1; generation <= maxGeneration; generation++)
             {
                 paths.Add(GetBackupSaveFilePath(slotName, generation));
-                paths.Add(SaveMetadata.GetBackupMetadataPath(slotName, generation));
             }
 
             return paths.ToArray();
-        }
-
-        private static void RotateFile(string primaryPath, string backupPath)
-        {
-            DeleteFileIfExists(backupPath);
-            if (FileExists(primaryPath))
-                ES3.RenameFile(primaryPath, backupPath);
         }
 
         private static void RotateBackupChain(string primaryPath, Func<int, string> backupPathFactory, int retentionCount)
@@ -725,7 +687,7 @@ namespace Hecton8.SaveSystem
 
                 string sourcePath = generation == 1 ? primaryPath : backupPathFactory(generation - 1);
                 if (FileExists(sourcePath))
-                    ES3.RenameFile(sourcePath, targetPath);
+                    File.Move(GetPersistentAbsolutePath(sourcePath), GetPersistentAbsolutePath(targetPath));
             }
 
             int maxGeneration = GetMaxBackupGenerationCount();
@@ -735,11 +697,13 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        private static void PromoteFile(string tempPath, string finalPath)
+        private static void CommitTempSaveToPrimary(string slotName, string tempPath, string finalPath)
         {
-            DeleteFileIfExists(finalPath);
-            if (FileExists(tempPath))
-                ES3.RenameFile(tempPath, finalPath);
+            if (!FileExists(tempPath))
+                throw new FileNotFoundException("Verified temp save was not found during final rotation.", GetPersistentAbsolutePath(tempPath));
+
+            RotateBackupChain(finalPath, generation => GetBackupSaveFilePath(slotName, generation), GetBackupRetentionCountStatic(slotName));
+            File.Move(GetPersistentAbsolutePath(tempPath), GetPersistentAbsolutePath(finalPath));
         }
 
         private static bool TryExtractSlotName(string fileName, out string slotName)
@@ -754,12 +718,6 @@ namespace Hecton8.SaveSystem
                 return true;
             else if (fileName.EndsWith(".sav", StringComparison.OrdinalIgnoreCase))
                 slotName = fileName.Substring(0, fileName.Length - ".sav".Length);
-            else if (fileName.EndsWith(".meta.tmp", StringComparison.OrdinalIgnoreCase))
-                slotName = fileName.Substring(0, fileName.Length - ".meta.tmp".Length);
-            else if (TryStripBackupSuffix(fileName, ".meta.bak", out slotName))
-                return true;
-            else if (fileName.EndsWith(".meta", StringComparison.OrdinalIgnoreCase))
-                slotName = fileName.Substring(0, fileName.Length - ".meta".Length);
             else if (fileName.EndsWith(".diag", StringComparison.OrdinalIgnoreCase))
                 slotName = fileName.Substring(0, fileName.Length - ".diag".Length);
             else if (fileName.EndsWith(".jpg.tmp", StringComparison.OrdinalIgnoreCase))
@@ -797,14 +755,8 @@ namespace Hecton8.SaveSystem
             List<SaveLoadCandidate> candidates = new List<SaveLoadCandidate>(backupRetention + 1);
 
             string primarySavePath = GetPrimarySaveFilePath(slotName);
-            string primaryMetadataPath = SaveMetadata.GetPrimaryMetadataPath(slotName);
-
             if (FileExists(primarySavePath))
-            {
-                string metadataPath = ResolveMetadataPath(slotName, 0);
-                bool matches = string.Equals(metadataPath, primaryMetadataPath, StringComparison.OrdinalIgnoreCase);
-                candidates.Add(new SaveLoadCandidate(primarySavePath, metadataPath, false, matches, 0));
-            }
+                candidates.Add(new SaveLoadCandidate(primarySavePath, false, 0));
 
             for (int generation = 1; generation <= backupRetention; generation++)
             {
@@ -812,43 +764,10 @@ namespace Hecton8.SaveSystem
                 if (!FileExists(backupSavePath))
                     continue;
 
-                string expectedMetadataPath = SaveMetadata.GetBackupMetadataPath(slotName, generation);
-                string metadataPath = ResolveMetadataPath(slotName, generation);
-                bool matches = string.Equals(metadataPath, expectedMetadataPath, StringComparison.OrdinalIgnoreCase);
-                candidates.Add(new SaveLoadCandidate(backupSavePath, metadataPath, true, matches, generation));
+                candidates.Add(new SaveLoadCandidate(backupSavePath, true, generation));
             }
 
             return candidates;
-        }
-
-        private static string ResolveMetadataPath(string slotName, int preferredGeneration)
-        {
-            if (preferredGeneration <= 0)
-            {
-                string primaryMetadataPath = SaveMetadata.GetPrimaryMetadataPath(slotName);
-                if (SaveMetadata.Exists(primaryMetadataPath))
-                    return primaryMetadataPath;
-            }
-            else
-            {
-                string preferredBackupMetadata = SaveMetadata.GetBackupMetadataPath(slotName, preferredGeneration);
-                if (SaveMetadata.Exists(preferredBackupMetadata))
-                    return preferredBackupMetadata;
-            }
-
-            string primaryPath = SaveMetadata.GetPrimaryMetadataPath(slotName);
-            if (SaveMetadata.Exists(primaryPath))
-                return primaryPath;
-
-            int maxGeneration = GetMaxBackupGenerationCount();
-            for (int generation = 1; generation <= maxGeneration; generation++)
-            {
-                string metadataPath = SaveMetadata.GetBackupMetadataPath(slotName, generation);
-                if (SaveMetadata.Exists(metadataPath))
-                    return metadataPath;
-            }
-
-            return null;
         }
 
         private static bool TryRepairSaveSlotInternal(string slotName, out SaveSlotRepairResult result)
@@ -871,28 +790,27 @@ namespace Hecton8.SaveSystem
 
             result.IntegrityBefore = beforeInfo.IntegrityState;
 
-            string key = GetSaveKeyStatic(slotName);
             List<SaveLoadCandidate> candidates = BuildLoadCandidates(slotName);
             SaveData repairedData = null;
             SaveMetadata metadataSource = beforeInfo.Metadata;
             SaveLoadCandidate selectedCandidate = default;
-            ES3.CompressionType selectedCompression = GetPreferredCompressionType();
+            bool usedLegacyFormat = false;
             string errorMessage = string.Empty;
 
             for (int i = 0; i < candidates.Count; i++)
             {
-                if (TryLoadCandidateWithAnyCompression(
-                    key,
+                if (TryLoadCandidate(
+                    slotName,
                     candidates[i],
                     out SaveData candidateData,
                     out SaveMetadata candidateMetadata,
-                    out ES3.CompressionType candidateCompression,
+                    out bool candidateUsedLegacyFormat,
                     out string candidateError))
                 {
                     repairedData = candidateData;
                     metadataSource = candidateMetadata ?? beforeInfo.Metadata;
                     selectedCandidate = candidates[i];
-                    selectedCompression = candidateCompression;
+                    usedLegacyFormat = candidateUsedLegacyFormat;
                     break;
                 }
 
@@ -908,24 +826,18 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            ES3.CompressionType preferredCompression = GetPreferredCompressionType();
             bool shouldRewritePrimarySave = selectedCandidate.IsBackup
                 || !FileExists(GetPrimarySaveFilePath(slotName))
-                || selectedCompression != preferredCompression;
+                || usedLegacyFormat;
 
             bool shouldRewritePrimaryMetadata = shouldRewritePrimarySave
-                || !SaveMetadata.Exists(SaveMetadata.GetPrimaryMetadataPath(slotName))
-                || !selectedCandidate.MetadataMatchesSave
-                || metadataSource == null
-                || !string.Equals(selectedCandidate.MetadataPath, SaveMetadata.GetPrimaryMetadataPath(slotName), StringComparison.OrdinalIgnoreCase);
+                || metadataSource == null;
 
             bool changedAnything = RepairPrimaryArtifacts(
                 slotName,
-                key,
                 repairedData,
                 metadataSource,
-                shouldRewritePrimarySave,
-                shouldRewritePrimaryMetadata);
+                shouldRewritePrimarySave);
 
             SaveSlotInfo afterInfo = BuildSaveSlotInfoInternal(slotName);
 
@@ -933,7 +845,7 @@ namespace Hecton8.SaveSystem
             result.ChangedAnything = changedAnything;
             result.UsedBackupSource = selectedCandidate.IsBackup;
             result.SourceBackupGeneration = selectedCandidate.IsBackup ? selectedCandidate.BackupGeneration : 0;
-            result.UsedLegacyCompression = selectedCompression != preferredCompression;
+            result.UsedLegacyCompression = usedLegacyFormat;
             result.RewrotePrimarySave = shouldRewritePrimarySave;
             result.RewrotePrimaryMetadata = shouldRewritePrimaryMetadata;
             result.IntegrityAfter = afterInfo != null ? afterInfo.IntegrityState : beforeInfo.IntegrityState;
@@ -964,12 +876,10 @@ namespace Hecton8.SaveSystem
             result.Success = true;
             result.IntegrityState = info.IntegrityState;
 
-            string key = GetSaveKeyStatic(slotName);
             List<SaveLoadCandidate> candidates = BuildLoadCandidates(slotName);
-            ES3.CompressionType preferredCompression = GetPreferredCompressionType();
             SaveLoadCandidate selectedCandidate = default;
             SaveData selectedData = null;
-            ES3.CompressionType selectedCompression = preferredCompression;
+            bool selectedLegacyFormat = false;
             bool hasSelectedCandidate = false;
 
             for (int i = 0; i < candidates.Count; i++)
@@ -982,12 +892,12 @@ namespace Hecton8.SaveSystem
                 else
                     result.HasPrimaryCandidate = true;
 
-                if (TryLoadCandidateWithAnyCompression(
-                    key,
+                if (TryLoadCandidate(
+                    slotName,
                     candidate,
                     out SaveData candidateData,
                     out SaveMetadata _,
-                    out ES3.CompressionType candidateCompression,
+                    out bool candidateLegacyFormat,
                     out string candidateError))
                 {
                     if (isBackup)
@@ -1000,7 +910,7 @@ namespace Hecton8.SaveSystem
                         hasSelectedCandidate = true;
                         selectedCandidate = candidate;
                         selectedData = candidateData;
-                        selectedCompression = candidateCompression;
+                        selectedLegacyFormat = candidateLegacyFormat;
                     }
                 }
                 else
@@ -1021,7 +931,7 @@ namespace Hecton8.SaveSystem
 
             result.SelectedBackupSource = selectedCandidate.IsBackup;
             result.SelectedBackupGeneration = selectedCandidate.IsBackup ? selectedCandidate.BackupGeneration : 0;
-            result.SelectedLegacyCompression = selectedCompression != preferredCompression;
+            result.SelectedLegacyCompression = selectedLegacyFormat;
             result.DetectedVersion = selectedData != null ? Mathf.Max(selectedData.version, 0) : 0;
             result.RequiresMigration = selectedData != null && selectedData.version != SaveData.CurrentVersion;
             result.RecommendedSource = selectedCandidate.IsBackup
@@ -1029,9 +939,7 @@ namespace Hecton8.SaveSystem
                 : "Primary";
 
             bool recommendedRepair = selectedCandidate.IsBackup
-                || selectedCompression != preferredCompression
-                || !SaveMetadata.Exists(SaveMetadata.GetPrimaryMetadataPath(slotName))
-                || !selectedCandidate.MetadataMatchesSave
+                || selectedLegacyFormat
                 || info.IntegrityState == SaveSlotIntegrityState.MissingMetadata
                 || info.IntegrityState == SaveSlotIntegrityState.MetadataRecoveredFromBackup
                 || info.IntegrityState == SaveSlotIntegrityState.MetadataSynthesized
@@ -1057,103 +965,54 @@ namespace Hecton8.SaveSystem
             string migration = result.RequiresMigration
                 ? $"migration required from v{result.DetectedVersion}"
                 : $"version v{result.DetectedVersion}";
-            string compression = result.SelectedLegacyCompression ? ", legacy compression" : string.Empty;
+            string compression = result.SelectedLegacyCompression ? ", legacy format" : string.Empty;
             string repair = result.RecommendedRepair ? ", repair recommended" : ", no repair needed";
             return $"Readable from {source}, {migration}{compression}{repair}.";
         }
 
-        private static bool ShouldSelfRepairSlot(string slotName, SaveLoadCandidate loadedCandidate)
+        private static bool ShouldSelfRepairSlot(SaveLoadCandidate loadedCandidate, bool usedLegacyFormat)
         {
             if (loadedCandidate.IsBackup)
                 return true;
 
-            string primaryMetadataPath = SaveMetadata.GetPrimaryMetadataPath(slotName);
-            if (!SaveMetadata.Exists(primaryMetadataPath))
-                return true;
-
-            return !loadedCandidate.MetadataMatchesSave;
+            return usedLegacyFormat;
         }
 
-        private bool SelfRepairPrimaryArtifacts(string slotName, string key, SaveData data, string sceneName, Vector3 playerPosition)
+        private bool SelfRepairPrimaryArtifacts(string slotName, SaveData data, SaveMetadata metadata)
         {
-            SaveMetadata metadata = new SaveMetadata
-            {
-                SlotName = slotName,
-                GameVersion = Application.version,
-                Timestamp = DateTime.UtcNow.Ticks,
-                PlayTimeSeconds = data.totalPlayTime,
-                SceneName = string.IsNullOrEmpty(sceneName) ? "Unknown" : sceneName,
-                PlayerPosition = playerPosition
-            };
-
             return RepairPrimaryArtifacts(
                 slotName,
-                key,
                 data,
                 metadata,
-                overwritePrimarySave: true,
-                rewritePrimaryMetadata: true);
+                overwritePrimarySave: true);
         }
 
-        private void VerifyIntegrity(SaveData data, ES3Settings settings, string metadataPath, bool enforceChecksum)
-        {
-            if (data == null)
-                throw new Exception("Save data is null.");
-
-            if (!enforceChecksum || string.IsNullOrEmpty(metadataPath))
-                return;
-
-            SaveMetadata metadata = SaveMetadata.LoadFromPath(metadataPath);
-            if (metadata == null || string.IsNullOrEmpty(metadata.Checksum))
-                return;
-
-            byte[] rawData = ES3.Serialize(data, settings);
-            uint calculatedCrc = CalculateCRC32(rawData);
-            if (uint.TryParse(metadata.Checksum, System.Globalization.NumberStyles.HexNumber, null, out uint expectedCrc) &&
-                calculatedCrc != expectedCrc)
-            {
-                throw new Exception("CRC mismatch. Save data is corrupted.");
-            }
-        }
-
-        private static bool TryLoadCandidateWithAnyCompression(
-            string key,
+        private static bool TryLoadCandidate(
+            string slotName,
             SaveLoadCandidate candidate,
             out SaveData data,
             out SaveMetadata metadata,
-            out ES3.CompressionType resolvedCompression,
+            out bool usedLegacyFormat,
             out string errorMessage)
         {
             data = null;
             metadata = null;
-            resolvedCompression = GetPreferredCompressionType();
+            usedLegacyFormat = false;
             errorMessage = string.Empty;
 
-            ES3.CompressionType preferredCompression = GetPreferredCompressionType();
-            ES3.CompressionType fallbackCompression = preferredCompression == ES3.CompressionType.Gzip
-                ? ES3.CompressionType.None
-                : ES3.CompressionType.Gzip;
-
-            if (TryLoadCandidateWithCompression(key, candidate, preferredCompression, out data, out metadata, out errorMessage))
+            string absolutePath = GetPersistentAbsolutePath(candidate.SavePath);
+            if (SaveBinaryStorage.IsBinaryContainer(absolutePath))
             {
-                resolvedCompression = preferredCompression;
-                return true;
+                return TryLoadBinaryCandidate(slotName, candidate, out data, out metadata, out errorMessage);
             }
 
-            if (fallbackCompression != preferredCompression &&
-                TryLoadCandidateWithCompression(key, candidate, fallbackCompression, out data, out metadata, out errorMessage))
-            {
-                resolvedCompression = fallbackCompression;
-                return true;
-            }
-
+            errorMessage = $"Unsupported non-binary save artifact '{candidate.SavePath}'.";
             return false;
         }
 
-        private static bool TryLoadCandidateWithCompression(
-            string key,
+        private static bool TryLoadBinaryCandidate(
+            string slotName,
             SaveLoadCandidate candidate,
-            ES3.CompressionType compressionType,
             out SaveData data,
             out SaveMetadata metadata,
             out string errorMessage)
@@ -1162,117 +1021,168 @@ namespace Hecton8.SaveSystem
             metadata = null;
             errorMessage = string.Empty;
 
+            AcquireReadBuffer(out NativeArray<byte> readBuffer, out bool ownsReadBuffer);
             try
             {
-                ES3Settings settings = CreatePathSettings(candidate.SavePath, compressionType);
-                data = ES3.Load<SaveData>(key, settings);
-                metadata = !string.IsNullOrEmpty(candidate.MetadataPath)
-                    ? SaveMetadata.LoadFromPath(candidate.MetadataPath)
-                    : null;
-                VerifyIntegrityStatic(data, settings, metadata, candidate.MetadataMatchesSave);
+                if (!SaveBinaryStorage.TryLoadSaveData(
+                    GetPersistentAbsolutePath(candidate.SavePath),
+                    slotName,
+                    readBuffer,
+                    out data,
+                    out metadata,
+                    out _,
+                    out errorMessage))
+                {
+                    return false;
+                }
+
                 return true;
             }
-            catch (Exception ex)
+            finally
             {
-                errorMessage = ex.Message;
-                return false;
+                ReleaseBuffer(readBuffer, ownsReadBuffer);
             }
         }
 
-        private static void VerifyIntegrityStatic(SaveData data, ES3Settings settings, SaveMetadata metadata, bool enforceChecksum)
+        private static bool TryReadCandidateMetadata(
+            string slotName,
+            SaveLoadCandidate candidate,
+            out SaveMetadata metadata,
+            out int detectedVersion,
+            out bool usedLegacyFormat,
+            out string errorMessage)
         {
-            if (data == null)
-                throw new Exception("Save data is null.");
+            metadata = null;
+            detectedVersion = 0;
+            usedLegacyFormat = false;
+            errorMessage = string.Empty;
 
-            if (!enforceChecksum || metadata == null || string.IsNullOrEmpty(metadata.Checksum))
-                return;
-
-            byte[] rawData = ES3.Serialize(data, settings);
-            uint calculatedCrc = CalculateCRC32(rawData);
-            if (uint.TryParse(metadata.Checksum, System.Globalization.NumberStyles.HexNumber, null, out uint expectedCrc) &&
-                calculatedCrc != expectedCrc)
+            string absolutePath = GetPersistentAbsolutePath(candidate.SavePath);
+            if (SaveBinaryStorage.IsBinaryContainer(absolutePath))
             {
-                throw new Exception("CRC mismatch. Save data is corrupted.");
+                AcquireReadBuffer(out NativeArray<byte> readBuffer, out bool ownsReadBuffer);
+                try
+                {
+                    return SaveBinaryStorage.TryReadMetadata(absolutePath, slotName, readBuffer, out metadata, out detectedVersion, out errorMessage);
+                }
+                finally
+                {
+                    ReleaseBuffer(readBuffer, ownsReadBuffer);
+                }
             }
+
+            errorMessage = $"Unsupported non-binary save artifact '{candidate.SavePath}'.";
+            return false;
         }
 
         private static bool RepairPrimaryArtifacts(
             string slotName,
-            string key,
             SaveData data,
             SaveMetadata metadataSource,
-            bool overwritePrimarySave,
-            bool rewritePrimaryMetadata)
+            bool overwritePrimarySave)
         {
             string primarySavePath = GetPrimarySaveFilePath(slotName);
             string tempSavePath = GetTempSaveFilePath(slotName);
-            string primaryMetadataPath = SaveMetadata.GetPrimaryMetadataPath(slotName);
-            string tempMetadataPath = SaveMetadata.GetTempMetadataPath(slotName);
 
             bool changedAnything = false;
             DeleteFileIfExists(tempSavePath);
-            DeleteFileIfExists(tempMetadataPath);
-
-            ES3.CompressionType preferredCompression = GetPreferredCompressionType();
 
             if (overwritePrimarySave || !FileExists(primarySavePath))
             {
-                ES3Settings tempSaveSettings = CreatePathSettings(tempSavePath, preferredCompression);
-                ES3.Save(key, data, tempSaveSettings);
-                PromoteFile(tempSavePath, primarySavePath);
-                changedAnything = true;
-            }
-
-            if (rewritePrimaryMetadata || !SaveMetadata.Exists(primaryMetadataPath))
-            {
-                ES3Settings primarySettings = CreatePathSettings(primarySavePath, preferredCompression);
-                byte[] primaryBytes = ES3.Serialize(data, primarySettings);
-                string checksum = CalculateCRC32(primaryBytes).ToString("X8");
-
-                SaveMetadata repairedMetadata = new SaveMetadata
+                SaveMetadata writeMetadata = CreateMetadataFromData(slotName, data, metadataSource);
+                AcquireWriteBuffers(out NativeArray<byte> rawBuffer, out bool ownsRawBuffer, out NativeArray<byte> compressedBuffer, out bool ownsCompressedBuffer);
+                try
                 {
-                    SlotName = slotName,
-                    GameVersion = !string.IsNullOrEmpty(metadataSource?.GameVersion) ? metadataSource.GameVersion : Application.version,
-                    Timestamp = DateTime.UtcNow.Ticks,
-                    PlayTimeSeconds = data.totalPlayTime,
-                    SceneName = !string.IsNullOrEmpty(metadataSource?.SceneName) ? metadataSource.SceneName : "Unknown",
-                    PlayerPosition = data.playerStats.GetPosition(),
-                    Checksum = checksum
-                };
+                    if (!SaveBinaryStorage.TryWriteSaveFile(
+                        GetPersistentAbsolutePath(tempSavePath),
+                        writeMetadata,
+                        data,
+                        rawBuffer,
+                        compressedBuffer,
+                        out string error))
+                    {
+                        throw new Exception(error);
+                    }
+                }
+                finally
+                {
+                    ReleaseBuffer(rawBuffer, ownsRawBuffer);
+                    ReleaseBuffer(compressedBuffer, ownsCompressedBuffer);
+                }
 
-                repairedMetadata.Save(tempMetadataPath);
-                PromoteFile(tempMetadataPath, primaryMetadataPath);
+                CommitTempSaveToPrimary(slotName, tempSavePath, primarySavePath);
                 changedAnything = true;
             }
 
             return changedAnything;
         }
 
-        private static ES3.CompressionType GetPreferredCompressionType()
+        private static SaveMetadata CreateMetadataFromData(string slotName, SaveData data, SaveMetadata source)
         {
-            if (Instance != null)
-                return Instance.useCompression ? ES3.CompressionType.Gzip : ES3.CompressionType.None;
+            string sceneName = source != null && !string.IsNullOrEmpty(source.SceneName)
+                ? source.SceneName
+                : "Unknown";
+            string gameVersion = source != null && !string.IsNullOrEmpty(source.GameVersion)
+                ? source.GameVersion
+                : Application.version;
+            float playTimeSeconds = data != null ? data.totalPlayTime : 0f;
+            Vector3 playerPosition = data != null ? data.playerStats.GetPosition() : Vector3.zero;
 
-            return ES3.CompressionType.Gzip;
-        }
-
-        private static ES3Settings CreatePathSettings(string path, ES3.CompressionType compressionType)
-        {
-            ES3Settings settings = new ES3Settings
+            return new SaveMetadata
             {
-                encryptionType = ES3.EncryptionType.None,
-                compressionType = compressionType
+                SlotName = slotName,
+                GameVersion = gameVersion,
+                Timestamp = DateTime.UtcNow.Ticks,
+                PlayTimeSeconds = playTimeSeconds,
+                SceneName = sceneName,
+                PlayerPosition = playerPosition,
+                Checksum = source != null ? source.Checksum : string.Empty
             };
-
-            return new ES3Settings(path, settings);
         }
 
-        private static string GetSaveKeyStatic(string slotName)
+        private static void AcquireReadBuffer(out NativeArray<byte> buffer, out bool ownsBuffer)
         {
-            if (Instance != null)
-                return Instance.GetSaveKey(slotName);
+            SaveManager manager = Instance;
+            if (manager != null && manager._savePayloadBuffer.IsCreated)
+            {
+                buffer = manager._savePayloadBuffer;
+                ownsBuffer = false;
+                return;
+            }
 
-            return $"save_{slotName}";
+            // COLD ALLOC: NativeArray<byte>[67108864] - fallback raw save read buffer when SaveManager instance is unavailable - owner: SaveManager
+            buffer = new NativeArray<byte>(SaveBinaryStorage.RawPayloadCapacityBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            ownsBuffer = true;
+        }
+
+        private static void AcquireWriteBuffers(
+            out NativeArray<byte> rawBuffer,
+            out bool ownsRawBuffer,
+            out NativeArray<byte> compressedBuffer,
+            out bool ownsCompressedBuffer)
+        {
+            SaveManager manager = Instance;
+            if (manager != null && manager._savePayloadBuffer.IsCreated && manager._compressedSaveBuffer.IsCreated)
+            {
+                rawBuffer = manager._savePayloadBuffer;
+                compressedBuffer = manager._compressedSaveBuffer;
+                ownsRawBuffer = false;
+                ownsCompressedBuffer = false;
+                return;
+            }
+
+            // COLD ALLOC: NativeArray<byte>[67108864] - fallback raw save write buffer when SaveManager instance is unavailable - owner: SaveManager
+            rawBuffer = new NativeArray<byte>(SaveBinaryStorage.RawPayloadCapacityBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            // COLD ALLOC: NativeArray<byte>[67378176] - fallback compressed save write buffer when SaveManager instance is unavailable - owner: SaveManager
+            compressedBuffer = new NativeArray<byte>(SaveBinaryStorage.MaxCompressedPayloadBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            ownsRawBuffer = true;
+            ownsCompressedBuffer = true;
+        }
+
+        private static void ReleaseBuffer(NativeArray<byte> buffer, bool ownsBuffer)
+        {
+            if (ownsBuffer && buffer.IsCreated)
+                buffer.Dispose();
         }
 
         private static SaveSlotMaintenanceRecord GetOrCreateMaintenanceRecord(string slotName)
@@ -1384,10 +1294,9 @@ namespace Hecton8.SaveSystem
 
             int backupRetention = GetBackupRetentionCountStatic(slotName);
             string primarySavePath = GetPrimarySaveFilePath(slotName);
-            string primaryMetadataPath = SaveMetadata.GetPrimaryMetadataPath(slotName);
 
             bool hasPrimarySave = FileExists(primarySavePath);
-            bool hasPrimaryMetadata = SaveMetadata.Exists(primaryMetadataPath);
+            bool hasPrimaryMetadata = false;
             bool hasThumbnail = File.Exists(SaveThumbnailSystem.GetThumbnailPath(slotName));
             bool hasBackupSave = false;
             bool hasBackupMetadata = false;
@@ -1396,9 +1305,6 @@ namespace Hecton8.SaveSystem
             {
                 if (!hasBackupSave && FileExists(GetBackupSaveFilePath(slotName, generation)))
                     hasBackupSave = true;
-
-                if (!hasBackupMetadata && SaveMetadata.Exists(SaveMetadata.GetBackupMetadataPath(slotName, generation)))
-                    hasBackupMetadata = true;
             }
 
             if (!hasPrimarySave && !hasBackupSave)
@@ -1409,26 +1315,49 @@ namespace Hecton8.SaveSystem
             bool metadataSynthesized = false;
             bool metadataCorrupted = false;
 
-            if (hasPrimaryMetadata)
+            if (hasPrimarySave)
             {
-                metadata = SaveMetadata.LoadFromPath(primaryMetadataPath);
-                if (metadata == null)
+                if (TryReadCandidateMetadata(
+                    slotName,
+                    new SaveLoadCandidate(primarySavePath, false, 0),
+                    out SaveMetadata primaryMetadata,
+                    out _,
+                    out _,
+                    out _))
+                {
+                    metadata = primaryMetadata;
+                    hasPrimaryMetadata = primaryMetadata != null;
+                }
+                else
+                {
                     metadataCorrupted = true;
+                }
             }
 
-            if (metadata == null && hasBackupMetadata)
+            for (int generation = 1; generation <= backupRetention; generation++)
             {
-                for (int generation = 1; generation <= backupRetention; generation++)
-                {
-                    string backupMetadataPath = SaveMetadata.GetBackupMetadataPath(slotName, generation);
-                    if (!SaveMetadata.Exists(backupMetadataPath))
-                        continue;
+                string backupSavePath = GetBackupSaveFilePath(slotName, generation);
+                if (!FileExists(backupSavePath))
+                    continue;
 
-                    metadata = SaveMetadata.LoadFromPath(backupMetadataPath);
-                    metadataRecoveredFromBackup = metadata != null;
-                    metadataCorrupted |= metadata == null;
-                    if (metadata != null)
-                        break;
+                if (TryReadCandidateMetadata(
+                    slotName,
+                    new SaveLoadCandidate(backupSavePath, true, generation),
+                    out SaveMetadata backupMetadata,
+                    out _,
+                    out _,
+                    out _))
+                {
+                    hasBackupMetadata = backupMetadata != null;
+                    if (metadata == null && backupMetadata != null)
+                    {
+                        metadata = backupMetadata;
+                        metadataRecoveredFromBackup = hasPrimarySave && !hasPrimaryMetadata;
+                    }
+                }
+                else
+                {
+                    metadataCorrupted = true;
                 }
             }
 
@@ -1437,16 +1366,14 @@ namespace Hecton8.SaveSystem
             long backupBytes = 0L;
 
             UpdateLastWrite(primarySavePath, ref lastWriteTicksUtc);
-            UpdateLastWrite(primaryMetadataPath, ref lastWriteTicksUtc);
+            UpdateLastWrite(SaveSlotMaintenanceRecord.GetPath(slotName), ref lastWriteTicksUtc);
             UpdateLastWrite(Path.GetFileName(SaveThumbnailSystem.GetThumbnailPath(slotName)), ref lastWriteTicksUtc);
 
             for (int generation = 1; generation <= backupRetention; generation++)
             {
                 string backupSavePath = GetBackupSaveFilePath(slotName, generation);
-                string backupMetadataPath = SaveMetadata.GetBackupMetadataPath(slotName, generation);
                 backupBytes += GetPersistentFileSize(backupSavePath);
                 UpdateLastWrite(backupSavePath, ref lastWriteTicksUtc);
-                UpdateLastWrite(backupMetadataPath, ref lastWriteTicksUtc);
             }
 
             if (metadata == null)
@@ -1460,11 +1387,7 @@ namespace Hecton8.SaveSystem
             {
                 integrityState = SaveSlotIntegrityState.MetadataRecoveredFromBackup;
             }
-            else if (metadataCorrupted && !metadataSynthesized)
-            {
-                integrityState = SaveSlotIntegrityState.CorruptedMetadata;
-            }
-            else if (hasPrimarySave && hasBackupSave && hasPrimaryMetadata)
+            else if (hasPrimarySave && hasPrimaryMetadata && hasBackupSave && hasBackupMetadata)
             {
                 integrityState = SaveSlotIntegrityState.HealthyWithBackup;
             }
@@ -1472,11 +1395,13 @@ namespace Hecton8.SaveSystem
             {
                 integrityState = SaveSlotIntegrityState.Healthy;
             }
-            else if (!hasPrimarySave && hasBackupSave)
+            else if (!hasPrimarySave && hasBackupSave && hasBackupMetadata)
             {
-                integrityState = hasBackupMetadata
-                    ? SaveSlotIntegrityState.BackupOnly
-                    : SaveSlotIntegrityState.MetadataSynthesized;
+                integrityState = SaveSlotIntegrityState.BackupOnly;
+            }
+            else if (metadataCorrupted && !metadataSynthesized)
+            {
+                integrityState = SaveSlotIntegrityState.CorruptedMetadata;
             }
             else if (metadataRecoveredFromBackup)
             {

@@ -18,6 +18,7 @@
 using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Interaction;
+using Hecton8.Physics;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -280,11 +281,11 @@ namespace Hecton8.Gameplay
 
                 // Apply force
                 Vector3 force = Vector3.up * forceMagnitude;
-                _rb.AddForce(force, ForceMode.Force);
+                PhysicsForceRouter.QueueForce(_rb, force, ForceMode.Force);
 
                 // Apply damping
                 Vector3 dampingForce = -_rb.linearVelocity * damping;
-                _rb.AddForce(dampingForce, ForceMode.Force);
+                PhysicsForceRouter.QueueForce(_rb, dampingForce, ForceMode.Force);
             }
         }
 

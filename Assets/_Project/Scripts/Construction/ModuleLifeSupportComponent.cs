@@ -40,6 +40,7 @@ namespace Hecton8.Construction
         public float BreathableReserve => _breathableReserve;
         public float BreathableReserveCapacity => _breathableReserveCapacity;
         public float Co2Level => _co2Level;
+        public float Co2Capacity => _co2Capacity;
 
         public void Configure(
             float oxygenRefillRate,
@@ -219,6 +220,21 @@ namespace Hecton8.Construction
             _breathableReserve += amount;
             if (_breathableReserve > _breathableReserveCapacity)
                 _breathableReserve = _breathableReserveCapacity;
+        }
+
+        public void ApplyFloodExposure(float normalizedFloodDelta, float co2Amplifier)
+        {
+            if (normalizedFloodDelta <= 0f)
+                return;
+
+            float floodDelta = Mathf.Max(0f, normalizedFloodDelta);
+            _breathableReserve -= _breathableReserveCapacity * floodDelta;
+            if (_breathableReserve < 0f)
+                _breathableReserve = 0f;
+
+            _co2Level += _co2Capacity * floodDelta * Mathf.Max(0f, co2Amplifier);
+            if (_co2Level > _co2Capacity)
+                _co2Level = _co2Capacity;
         }
 
         public string BuildAirReserveSummary()

@@ -221,13 +221,10 @@ INVENTORY_SORT(NativeArray<ItemData> items, NativeArray<uint> sortKeys, int coun
     id     = items[i].hashID & 0xFFFF
     sortKeys[i] = (cat << 20) | (rar << 16) | id
 
-  // 3-pass 8-bit radix sort on sortKeys (in-place, stable):
-  RADIX_PASS(sortKeys, items, 0)    // bits 0-7
-  RADIX_PASS(sortKeys, items, 8)    // bits 8-15
-  RADIX_PASS(sortKeys, items, 16)   // bits 16-23
-  // 24-bit key sufficient — top 8 bits zero
+  // Native Burst sort on contiguous key/value buffers:
+  NativeSortExtension.Sort(sortKeys, items)
 
-Schedule as `IJobParallelFor` with `[BurstCompile]`. Off main-thread. No GC.
+Schedule as Burst job over contiguous key/value buffers. Off main-thread. No GC.
 
 ### 4.6 Scavenging Protocol (Full Flow)
 

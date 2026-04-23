@@ -21,6 +21,12 @@ namespace Hecton8.Gameplay
 
             [Tooltip("Local euler bias applied by this pose contract.")]
             public Vector3 localEulerOffset;
+
+            public PoseBiasData(Vector3 localPositionOffset, Vector3 localEulerOffset)
+            {
+                this.localPositionOffset = localPositionOffset;
+                this.localEulerOffset = localEulerOffset;
+            }
         }
 
         [Header("── Ownership ──────────────────────────")]

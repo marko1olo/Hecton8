@@ -61,7 +61,7 @@ namespace Hecton8.VFX
 
         // ═══ FOV STATE ═══
         public enum FOVState { Idle, SprintKick, DamageRecoil }
-        private FOVState _fovState;
+        private FOVState _fovState = FOVState.Idle;
         private float _baseFOV;
         private float _currentFOVOffset;
         private Tween _fovTween;

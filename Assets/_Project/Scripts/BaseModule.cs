@@ -240,10 +240,12 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         private bool _hasPower = true;
+        private bool _ambientLightsBrownedOut;
         private float _basePowerRating;
         private bool _tickRegistered;
 
         private ModuleMarker _moduleMarker;
+        private HabitatIntegrityManager _habitatIntegrityManager;
 
         /// <summary>
         /// Предыдущее состояние isFlooded, используемое для определения
@@ -345,6 +347,8 @@ namespace Hecton8.Gameplay
         public float Co2Normalized => _lifeSupportComponent.Co2Normalized;
         /// <summary>True when CO2 saturation has reached the life-support lockout threshold.</summary>
         public bool IsCo2Critical => _lifeSupportComponent.IsCo2Critical;
+        internal float BreathableReserve => _lifeSupportComponent.BreathableReserve;
+        internal float BreathableReserveCapacity => _lifeSupportComponent.BreathableReserveCapacity;
 
         // ══════════════════════════════════════════════════════════
         //  IPowerComponent
@@ -373,7 +377,7 @@ namespace Hecton8.Gameplay
             _hasPower = hasPower;
             _debugHasPower = hasPower;
 
-            SetLightsEnabled(HasOperationalPower);
+            SetLightsEnabled(ShouldLightsBeEnabled());
 
             if (!HasOperationalPower)
             {
@@ -400,6 +404,9 @@ namespace Hecton8.Gameplay
         public void ApplyCutDamage(float damage, Vector3 hitPoint)
         {
             ApplyDamage(damage);
+
+            if (_habitatIntegrityManager != null && _integrityComponent.CurrentIntegrity <= 0f)
+                _habitatIntegrityManager.NotifyHullBreach(transform.InverseTransformPoint(hitPoint));
         }
 
         // ══════════════════════════════════════════════════════════
@@ -412,6 +419,7 @@ namespace Hecton8.Gameplay
             ReadBuildablePower();
             ConfigureRuntimeComponentsFromSerializedState();
             _isDeconstructing = false;
+            _ambientLightsBrownedOut = false;
 
             RefreshVisualStateImmediate();
             ResyncInteriorOccupants(true);
@@ -426,6 +434,7 @@ namespace Hecton8.Gameplay
             StopDrain();
             SetLeakActive(false);
             SetFloodedVisual(false);
+            _ambientLightsBrownedOut = false;
             SetLightsEnabled(true);
 
             _isDeconstructing = false;
@@ -582,9 +591,16 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void ApplyDamage(float amount)
         {
+            float previousIntegrityNormalized = _integrityComponent.MaxIntegrity > 0.01f
+                ? Mathf.Clamp01(_integrityComponent.CurrentIntegrity / _integrityComponent.MaxIntegrity)
+                : 0f;
             ModuleDamageOutcome outcome = _integrityComponent.ApplyDamage(amount);
             if (outcome == ModuleDamageOutcome.None)
                 return;
+
+            float nextIntegrityNormalized = _integrityComponent.MaxIntegrity > 0.01f
+                ? Mathf.Clamp01(_integrityComponent.CurrentIntegrity / _integrityComponent.MaxIntegrity)
+                : 0f;
 
             if (outcome == ModuleDamageOutcome.Catastrophic)
             {
@@ -593,6 +609,37 @@ namespace Hecton8.Gameplay
             else
             {
                 SetLeakActive(ShouldLeakBeActive());
+            }
+
+            if (_habitatIntegrityManager != null)
+            {
+                uint damageType = _integrityComponent.FailureMode == BaseModuleFailureMode.Fire
+                    ? (uint)DamageTypeMask.Thermal
+                    : (uint)DamageTypeMask.Pressure;
+                DamageSignal signal = default;
+                signal.magnitude = Mathf.Max(0f, amount);
+                signal.localPoint = new Unity.Mathematics.float3(0f, 0f, 0f);
+                signal.damageType = damageType;
+                signal.integrityDelta = (byte)Mathf.Clamp(
+                    Mathf.RoundToInt(Mathf.Abs(nextIntegrityNormalized - previousIntegrityNormalized) * byte.MaxValue),
+                    0,
+                    byte.MaxValue);
+                signal.sourceID = DamageSourceIds.HabitatIntegrity;
+
+                _habitatIntegrityManager.DispatchIntegrityChanged(previousIntegrityNormalized, nextIntegrityNormalized, signal);
+                _habitatIntegrityManager.DispatchClarityChanged(
+                    0f,
+                    Mathf.Clamp01(Mathf.Max(Mathf.Abs(nextIntegrityNormalized - previousIntegrityNormalized), amount * 0.01f)),
+                    signal);
+
+                if (outcome == ModuleDamageOutcome.Catastrophic)
+                    _habitatIntegrityManager.DispatchTraumaThresholdCrossed(TraumaLevel.Catastrophic);
+                else if (nextIntegrityNormalized < 0.4f)
+                    _habitatIntegrityManager.DispatchTraumaThresholdCrossed(TraumaLevel.Critical);
+                else if (nextIntegrityNormalized < 0.65f)
+                    _habitatIntegrityManager.DispatchTraumaThresholdCrossed(TraumaLevel.Significant);
+                else
+                    _habitatIntegrityManager.DispatchTraumaThresholdCrossed(TraumaLevel.Minor);
             }
 
             _integrityComponent.StopDrain();
@@ -1010,7 +1057,17 @@ namespace Hecton8.Gameplay
             _integrityComponent.ApplyMaterialFatigue();
         }
 
+        internal void SetAmbientLightsBrownout(bool brownedOut)
+        {
+            if (_ambientLightsBrownedOut == brownedOut)
+                return;
+
+            _ambientLightsBrownedOut = brownedOut;
+            SetLightsEnabled(ShouldLightsBeEnabled());
+        }
+
         private bool HasOperationalPower => _integrityComponent.HasOperationalPower(_hasPower);
+        private bool ShouldLightsBeEnabled() => HasOperationalPower && !_ambientLightsBrownedOut;
 
         private void TriggerCascadeFailure()
         {
@@ -1039,7 +1096,7 @@ namespace Hecton8.Gameplay
             SetLeakActive(ShouldLeakBeActive());
             SetFloodedVisual(_integrityComponent.IsFlooded);
             SyncTrackedObjectsFloodState();
-            SetLightsEnabled(HasOperationalPower);
+            SetLightsEnabled(ShouldLightsBeEnabled());
             SyncSpatialRole();
         }
 
@@ -1060,7 +1117,7 @@ namespace Hecton8.Gameplay
             SetLeakActive(ShouldLeakBeActive());
 
             SetFloodedVisual(_integrityComponent.IsFlooded);
-            SetLightsEnabled(HasOperationalPower);
+            SetLightsEnabled(ShouldLightsBeEnabled());
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1333,6 +1390,12 @@ namespace Hecton8.Gameplay
 
             if (leakVfx == null)
                 ResolveLeakVfxReference();
+
+            if (_habitatIntegrityManager == null)
+            {
+                if (!TryGetComponent(out _habitatIntegrityManager))
+                    _habitatIntegrityManager = gameObject.AddComponent<HabitatIntegrityManager>();
+            }
         }
 
         private void ResolveLeakVfxReference()
@@ -1496,6 +1559,39 @@ namespace Hecton8.Gameplay
         public void ApplyBotanyScrub(float amount)
         {
             _lifeSupportComponent.ScrubCo2(amount);
+        }
+
+        internal void ApplyFloodExposure(float normalizedFloodDelta, float co2Amplifier)
+        {
+            _lifeSupportComponent.ApplyFloodExposure(normalizedFloodDelta, co2Amplifier);
+        }
+
+        internal void EmitHullBreachJet(Vector3 localPoint, float pressureDelta)
+        {
+            if (leakVfx == null)
+                return;
+
+            float burst01 = Mathf.Clamp01(pressureDelta * 0.25f);
+            ParticleSystem.EmitParams emitParams = default;
+            ParticleSystem.MainModule main = leakVfx.main;
+            bool worldSpace = main.simulationSpace == ParticleSystemSimulationSpace.World;
+            Vector3 worldPoint = transform.TransformPoint(localPoint);
+            Vector3 worldDirection = transform.position - worldPoint;
+            if (worldDirection.sqrMagnitude < 0.0001f)
+                worldDirection = -transform.forward;
+
+            worldDirection.Normalize();
+            Vector3 burstVelocity = worldDirection * Mathf.Lerp(4f, 18f, burst01);
+
+            emitParams.position = worldSpace ? worldPoint : localPoint;
+            emitParams.velocity = worldSpace ? burstVelocity : transform.InverseTransformDirection(burstVelocity);
+            emitParams.startSize = Mathf.Lerp(0.05f, 0.18f, burst01);
+            emitParams.startLifetime = Mathf.Lerp(0.35f, 1.15f, burst01);
+            emitParams.applyShapeToPosition = true;
+
+            leakVfx.Emit(emitParams, Mathf.RoundToInt(Mathf.Lerp(6f, 24f, burst01)));
+            if (!leakVfx.isPlaying)
+                leakVfx.Play();
         }
 
         private void ConfigureRuntimeComponentsFromSerializedState()

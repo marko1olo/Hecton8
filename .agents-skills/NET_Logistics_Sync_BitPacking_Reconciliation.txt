@@ -37,8 +37,8 @@ struct NodeSnapshot {
     uint8  StatusFlags;
     uint8  _pad[3];
 }
-// Allocate ring: NodeSnapshot[3] per node → 3 snapshots retained
-// Index: slot = TickID % 3
+// Allocate ring: NodeSnapshot[4] per node → power-of-two ring
+// Index: slot = TickID & 3
 
 ---
 
@@ -183,13 +183,13 @@ ReconcilePacket(DeltaPacket pkt, uint localCurrentTick):
             discard  // not owner — reject ghost write
 
     STEP 3 — SNAPSHOT STORE:
-        slot ← pkt.TickID % 3
+        slot ← pkt.TickID & 3
         ring[pkt.NodeID][slot] ← BuildSnapshot(pkt)
 
     STEP 4 — VISUAL PROXY LERP (Main Thread deferred):
-        s0 ← ring[nodeID][(currentTick - 2) % 3]   // oldest
-        s1 ← ring[nodeID][(currentTick - 1) % 3]   // middle
-        s2 ← ring[nodeID][(currentTick + 0) % 3]   // newest
+        s0 ← ring[nodeID][(currentTick - 2) & 3]   // oldest
+        s1 ← ring[nodeID][(currentTick - 1) & 3]   // middle
+        s2 ← ring[nodeID][(currentTick + 0) & 3]   // newest
         t  ← fractionalTickProgress                  // [0..1] within tick
         visual.Value ← Lerp(Lerp(s0.V, s1.V, t), Lerp(s1.V, s2.V, t), t)
         // Quadratic interp from 3 points: smooth, no extrapolation overshoot

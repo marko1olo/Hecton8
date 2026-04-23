@@ -1,0 +1,184 @@
+HECTON-8 QA RED TEAM STRESS TEST
+Status: PENDING VERIFICATION
+Date: 2026-04-23
+Author stance: adversarial analysis only. No remediation claim. No fix claim.
+
+Mandates followed:
+- MATH_Coordinate_Precision_AUP_FloatingOrigin.txt
+- VOX_MapMagic_Voxel_Seam_Alignment_Integration.txt
+- PHYS_Physics_Integrity_Determinism_ForceMode.txt
+- PHYS_Tether_Cable_Acceleration_Constraints.txt
+- OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt
+
+Evidence base reviewed:
+- AGENTS.md
+- Docs/README.md
+- Docs/ROOT_DOCS_REFERENCE.md
+- Docs/SYSTEMS_CONTRACTS.md
+- Docs/QUALITY_GATES.md
+- Assets/_Project/Scripts/HectonFloatingOrigin.cs
+- Assets/_Project/Scripts/HectonVoxelEngine.cs
+- Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs
+- Assets/_Project/Scripts/WorldGenerativeGeologySeamExecutionDirector.cs
+- Assets/_Project/Scripts/WorldGenerativeGeologyTerrainSeamApplier.cs
+- Assets/_Project/Scripts/Gameplay/HeavyTowWinch.cs
+- Assets/_Project/Scripts/HectonPlayerMovement.cs
+- Assets/_Project/Scripts/HectonSurvivalSystem.cs
+- Assets/_Project/Scripts/World/DepthZoneDirector.cs
+- Assets/_Project/Scripts/World/WorldReadabilityDirector.cs
+- Assets/_Project/Scripts/Items/PickupItem.cs
+- Assets/_Project/Scripts/PlayerInventory.cs
+- Assets/_Project/Scripts/PDAInventoryTab.cs
+- Assets/_Project/Scripts/HUDNotification.cs
+- Assets/_Project/Scripts/UI/SubtitleManager.cs
+- Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs
+- Assets/_Project/Scripts/Tools/PerformanceBudgetController.cs
+- Assets/_Project/Scripts/World/DynamicResolutionScaler.cs
+- Assets/_Project/Scripts/Optimization/VRAMMonitor.cs
+- Assets/_Project/Data/Transport/TransportPreset_MicroSub.asset
+
+[ANALYSIS]
+Target: red-team stress report for system collisions, physics abuse, UX friction, MX350 collapse paths, and progression exploits.
+Affected systems: floating origin, voxel bake, terrain-voxel seam runtime, towing/cable, player movement, inventory/drop flows, depth gating, boids, runtime load-shedding.
+Zero GC proof: analysis-only output. No runtime code or asset mutation performed.
+State check: reviewed stale-state risks at shift boundaries, async bake lifetime, warning queue saturation, drop/pickup rollback absence, and force stacking between tow, transport, fauna, and environmental systems.
+Rule quote: "NO OPTIMISM — status always PENDING VERIFICATION" and "Every technical report must include: REGRESSION MODEL (CPU/GC/memory/cadence/correctness) · HOT PATH IMPACT · FAILURE MODES · WHY KEPT/REJECTED."
+
+Executive verdict:
+1. Active exploit exists now: `TransportPreset_MicroSub.asset` sets `pressureDamageScale: 0`, and survival code treats `<= 0` as zero pressure damage. Depth gating is bypassable by shipped data, not by theory.
+2. Floating origin is not atomic. `HectonFloatingOrigin.ShiftWorld()` bulk-mutates scene root transforms, syncs physics, and only then informs listeners. Async voxel generation and geology seam systems are not visibly shift-aware.
+3. Inventory flows contain real item-loss paths. Pickup deactivates itself before inventory success is guaranteed. PDA drop removes inventory state before validating spawn prerequisites.
+4. The player-force stack is too wide. Tow, snap release, grapple, entanglement, currents, thermal flow, wipeout, and hull-stress modifiers all converge in the same movement owner with no single kinetic budget governor.
+5. MX350 protection is fragmented. Documentation defines an emergency ladder, but runtime ownership is split between separate monitors/controllers with no single authoritative sacrifice order.
+
+Exact-frame coordinate failure trace:
+T1. Player is mounted in a transport or micro-sub, towing or approaching cave geometry, while `HectonVoxelEngine.GenerateVolumeAsync()` has already captured `ShiftAtStart` (`HectonVoxelEngine.cs:2427-2457`).
+T2. `HectonFloatingOrigin.Tick()` crosses threshold and calls `ShiftWorld(offset)` (`HectonFloatingOrigin.cs:143-154`).
+T3. `ShiftWorld()` subtracts `offset` from every root transform in every loaded scene before any subsystem-specific reconciliation (`HectonFloatingOrigin.cs:154-180`).
+T4. `Physics.SyncTransforms()` runs immediately after the bulk rewrite, still before subscriber compensation (`HectonFloatingOrigin.cs:182`).
+T5. Vegetation bridge receives `OnWorldShift` and rebases its chunk data (`HectonMapMagicVegetationBridge.cs:10713-10733`, `4633-4646`), but no equivalent `OnWorldShift` handling was found in `HectonVoxelEngine`, `WorldGenerativeGeologySeamExecutionDirector`, or `WorldGenerativeGeologyTerrainSeamApplier`.
+T6. The voxel bake continues using `ShiftAtStart` for density and welded mesh assembly (`HectonVoxelEngine.cs:2993`, `3741-3749`), then only compensates the spawned root with `currentShift - shiftAtStart` (`HectonVoxelEngine.cs:2489-2494`).
+T7. Next physics step resolves player/transport/tow forces against a world where some systems are rebased, some are old-frame, and seam visuals are proxy geometry. Failure mode: ghost collision, wrong tunnel clearance, cable snap at false extension, or mesh spawn inside a rebased vehicle route.
+
+Failure inventory:
+
+System Collision Analysis
+1. [KRAKEN][ACTIVE] Floating-origin mid-bake split: voxel density uses `ShiftAtStart`, welded mesh build uses the same old offset, and only the spawned root is compensated with `currentShift`. Any origin shift during bake can produce geometry derived from one coordinate frame and placed in another (`HectonVoxelEngine.cs:2427-2494`, `2993`, `3741-3749`).
+2. [KRAKEN][ACTIVE] Floating origin is not atomic: `ShiftWorld()` mutates every root transform first, then calls `Physics.SyncTransforms()`, then emits `OnWorldShift`. Systems that rely on event-based compensation are already one phase late (`HectonFloatingOrigin.cs:154-185`).
+3. [RED][ACTIVE] Physics broadphase sees a rewritten world before all rebase listeners finish. This is the exact setup for one-frame false penetration, false clearance, or stale sweep outcomes during transport/tow movement (`HectonFloatingOrigin.cs:174-182`).
+4. [RED][ACTIVE] Vegetation is shift-aware; voxel and geology seam systems are not visibly shift-aware. That means surface dressing, voxel caves, and seam repair can disagree after the same origin shift (`HectonMapMagicVegetationBridge.cs:10713-10733`; no matching shift handler found in voxel/geology owners).
+5. [RED][ACTIVE] Terrain seam application resolves terrain by world XZ and falls back to `Terrain.activeTerrain` / `Terrain.activeTerrains`. If seam plans are stale across an origin shift or slow-tick boundary, the wrong terrain tile can be modified (`WorldGenerativeGeologyTerrainSeamApplier.cs:87`, `477-499`).
+6. [RED][ACTIVE] Seam runtime visuals are cubes and cylinders, not actual matched terrain-voxel topology. That makes seam collision/clearance a proxy, not truth, and proxy geometry is what cables and hulls will collide against in stress cases (`WorldGenerativeGeologySeamExecutionDirector.cs:335`, `372-403`).
+7. [RED][ACTIVE] `GetOrCreateSeamRuntime()` parents seam runtime under the host transform. If host transform rebases but seam plan data is old-frame, local and world seam coordinates diverge silently (`WorldGenerativeGeologySeamExecutionDirector.cs:319`, `447-473`).
+8. [RED][LATENT] `OnWorldShift` is a static event and is explicitly nulled on teardown. A shift coinciding with scene teardown/load can drop listeners and strand runtime owners in pre-shift coordinates (`HectonFloatingOrigin.cs:45`, `117`).
+9. [RED][ACTIVE] The geology seam system reconciles in `SlowTick` cadence, not at the same phase as origin shift or voxel bake completion. This increases stale-plan windows exactly where the mandates demand shift-safe seam data (`WorldGenerativeGeologyTerrainSeamApplier.cs:50`, `62`, `79`, `87`).
+10. [RED][LATENT] `PickupItem` persistence identity caches `transform.position` as the world-state anchor. Floating-origin rebases change world coordinates; if identity resolves before or after shift on different runs, pickup persistence can desync (`PickupItem.cs:264-279`).
+11. [RED][ACTIVE] Transport-local movement keeps buffered collision and environmental force queues, but no shift-specific queue flush was found. A world shift can rebase transforms while queued forces still describe the old frame (`HectonPlayerMovement.cs:1139-1141`, `1511-1537`, `1584-1609`, `3261-3295`).
+12. [RED][LATENT] `HectonVoxelVolume` has queued rebuild processing, but no visible shift invalidation or shift epoch. Runtime volume rebuilds can replay obsolete spatial assumptions after an origin move (`HectonVoxelVolume.cs:468-487`).
+13. [RED][LATENT] MapMagic detail tasks can be active or enqueued while world data is changing. Vegetation bridge rebases chunk data, but no evidence was found that all upstream terrain/seam producers are blocked during shift (`MapMagicBridge.cs:1246`; `World/HectonMapMagicVegetationBridge.cs:4633-4646`).
+14. [RED][ACTIVE] The exact scenario requested by QA is already structurally unsafe: moving transport plus async voxel bake plus origin shift relies on multiple subsystems sharing one coordinate truth, but only some of them rebase explicitly.
+
+Physics Abuse Scenarios
+15. [KRAKEN][ACTIVE] Tow pathing uses at most one bend point from a single line-of-sight test. In a winding cave or voxel tunnel, the solver underestimates real cable path length and can inject acceleration into the player/payload pair (`HeavyTowWinch.cs:530`, `557-615`).
+16. [KRAKEN][ACTIVE] The cable solver applies equivalent capped acceleration logic to both player and payload. If the payload arrests on geometry while the player still receives release energy, the system becomes a slingshot (`HeavyTowWinch.cs:456-505`, `675-705`).
+17. [RED][ACTIVE] External snare force is applied on top of the core tow solve instead of arbitrated through one constraint owner. Multi-source pull means the stress model is not the same as the force model (`HeavyTowWinch.cs:438`, `647-661`).
+18. [RED][ACTIVE] Catastrophic tow release injects an explicit velocity change and trauma impulse into player movement. This is a designed momentum spike, so any collision tolerance, seam gap, or tunnel wedge at that frame becomes a catapult opportunity (`HeavyTowWinch.cs:743-760`; `HectonPlayerMovement.cs:1359-1376`).
+19. [RED][ACTIVE] Player movement already stacks grapples, sargassum entanglement, abyssal cable entanglement, currents, turbulence, thermal updrafts, undertow, and tow snap responses. No single kinetic budget or priority arbiter was found (`HectonPlayerMovement.cs:2878-3181`, `4736-5143`, `6978-7211`).
+20. [RED][ACTIVE] Collision intake is capped to an 8-entry ring buffer. High-speed slingshot impact storms can overflow the queue and drop collision evidence, damage, or feedback ordering (`HectonPlayerMovement.cs:1139-1141`, `3276-3295`).
+21. [RED][ACTIVE] Massive wreck into 1-voxel tunnel has no swept-volume occupancy gate, no wedge detector, and no "abort tow" state when the payload width exceeds tunnel width. Expect jitter pumping, solver explosion, or hard lock.
+22. [RED][ACTIVE] Seam collars and skirts are primitive proxies, not true contact geometry. A cable can believe it has clearance where the real tunnel is blocked, or believe it is blocked by a proxy that has no matching physical corridor (`WorldGenerativeGeologySeamExecutionDirector.cs:372-403`).
+23. [RED][ACTIVE] Snap timing is hold-based, not energy-based. Oscillating around `tetherSnapExtensionThreshold` can repeatedly arm and clear the hold timer, creating "near break" states players can probe for momentum ratchets (`HeavyTowWinch.cs:732-748`).
+24. [RED][ACTIVE] `maxCableForce` is a scalar cap, not an energy budget. In narrow-space collisions, the system can keep shoving every fixed step until geometry, not design intent, decides the result (`HeavyTowWinch.cs:56`, `487-497`).
+25. [RED][ACTIVE] Player entanglement forces are transport-aware because propulsion reference scales the resistance model. That means transport states can amplify constraint behavior instead of safely containing it (`HectonPlayerMovement.cs:2691-2694`, `2896`, `2946`).
+26. [RED][ACTIVE] `ClampVelocity()` is late in the movement pipeline, after transport bailout and multiple environment/tow modifiers have already executed. That contains end-of-step speed, not intermediate collision severity (`HectonPlayerMovement.cs:4378-4440`, `7510`).
+27. [RED][ACTIVE] Transport bailout can trigger while fatal pressure sequence or wipeout timers are near activation. This creates stacked fail states rather than one readable fail state (`HectonPlayerMovement.cs:5051`, `5158-5182`).
+28. [RED][ACTIVE] Hull stress uses vertical speed and depth rate, so a tow-catapult downward or upward can spike pressure drama independent of actual depth-gate fairness (`HectonPlayerMovement.cs:5018-5025`).
+29. [AMBER][LATENT] Moving transport changes collision radius/height/center via preset. Cable path resolution does not appear to account for these live collision-shape changes before force solve (`HectonPlayerMovement.cs:2339-2388`).
+30. [RED][ACTIVE] The requested Mach-1 question resolves to "yes, under exploit conditions." The code contains force caps and a late velocity clamp, but no global kinetic-energy budget, no tunnel wedging detector, and a deliberate snap-release velocity injection.
+
+UX Friction Audit
+31. [KRAKEN][ACTIVE] Real item-loss path: `PickupItem.Interact()` registers collection and deactivates the world object immediately, before inventory success is guaranteed. `PlayerInventory` can reject the add when full and only emits a warning (`PickupItem.cs:251-258`; `PlayerInventory.cs:604-619`, `322-331`).
+32. [KRAKEN][ACTIVE] Real discard-loss path: `DropSelectedItem()` removes one item from inventory before validating drop origin or object pool availability. If either fails, the item is already gone (`PDAInventoryTab.cs:1405-1436`).
+33. [RED][ACTIVE] Inventory-to-world is materially slower than world-to-inventory. Pickup is one interact action (`PlayerInteraction.cs:441`; `PickupItem.cs:251-258`), while discard requires PDA, selection, and drop action (`PDAInventoryTab.cs:1179`, `1405-1436`).
+34. [RED][ACTIVE] Drop spawns at a fixed point `2.5m` forward and `0.3m` down with no visible occupancy probe. Tight interiors, lockers, ladders, cave lips, and submarine hatches become item-eat zones (`PDAInventoryTab.cs:1432-1436`).
+35. [RED][ACTIVE] Items without `worldPrefab` become one-way inventory residents. The drop path silently does nothing world-side if the prefab is null, but the player already spent the discard action context (`PDAInventoryTab.cs:1417-1436`, `2018`, `2084`, `2222`).
+36. [AMBER][ACTIVE] The drop affordance is hidden unless something is selected. Under threat, the player must stop and visually parse inventory state before the interface even reveals whether discarding is possible (`PDAInventoryTab.cs:729`, `1179`).
+37. [RED][ACTIVE] Inventory-full feedback happens after interaction input has already fired and the world pickup may already be deactivated. That teaches the player that the world is hostile to fast looting instead of tense by design (`PickupItem.cs:251-258`; `PlayerInventory.cs:331`, `604-619`).
+38. [RED][ACTIVE] Notification queue depth is only 6, and subtitle queue depth is also 6. Inventory warnings, depth warnings, route warnings, discard warnings, and audio-log subtitles are contending for the same user attention budget (`HUDNotification.cs:49`, `235-248`; `SubtitleManager.cs:50`, `291-294`).
+39. [RED][ACTIVE] `WorldReadabilityDirector` constantly pushes biome, zone, depth, route, and safe-pocket guidance. In a horror loop, this competes directly with critical warnings and conditions the player to ignore red text (`WorldReadabilityDirector.cs:275-325`, `332-380`).
+40. [RED][ACTIVE] Depth gating is framed as a warning, not a gate. Once players learn the warning is often non-fatal or even fake under MicroSub, the whole guidance layer loses authority (`DepthZoneDirector.cs:219-229`; `WorldReadabilityDirector.cs:492-529`).
+
+Hardware Bottlenecks And MX350 Failure Points
+41. [KRAKEN][ACTIVE] Runtime protection is fragmented: `DynamicResolutionScaler` owns render scale, `PerformanceBudgetController` bluntly scales registered systems, `VRAMMonitor` reports pressure. No single system owns ordered sacrifice on MX350 (`DynamicResolutionScaler.cs:145-150`, `573-600`; `PerformanceBudgetController.cs:21`, `38`, `287-313`; `VRAMMonitor.cs:23-27`, `267-283`).
+42. [RED][ACTIVE] GPU boids default to 768 and clamp up to 2048 per swarm. Multiple dense swarms plus cave/post effects are enough to saturate MX350 before exotic scenarios even begin (`SargassumMicroFaunaBoids.cs:366`, `1198`).
+43. [RED][ACTIVE] The boid system carries persistent compute buffers, spatial grid buffers, indirect args, and async latch readbacks. Parasite mode and headlight reaction will spike the exact hardware this project targets least (`SargassumMicroFaunaBoids.cs:885-886`, `1363-1435`, `2216-2445`).
+44. [RED][ACTIVE] Voxel seam runtime adds extra geometry at cave/terrain boundaries, which are already the zones with high overdraw, lighting complexity, and streaming churn (`WorldGenerativeGeologySeamExecutionDirector.cs:335-403`).
+45. [RED][ACTIVE] Dynamic resolution reacts to smoothed frame time. Sudden spikes from cave launch, seam reconcile, or boid dispatch still hitch before the scaler can buy back frame time (`DynamicResolutionScaler.cs:358-416`, `573-600`).
+46. [RED][ACTIVE] `PerformanceBudgetController` applies the same throttle multiplier to every registered system once the average crosses 25 ms. That is a blunt instrument, not a priority ladder (`PerformanceBudgetController.cs:21`, `38`, `287-313`).
+47. [RED][ACTIVE] `VRAMMonitor` exposes warning and critical states, but no evidence was found that those states directly force texture release, RT pool drain, boid kill, seam disable, or cave-launch suppression (`VRAMMonitor.cs:126`, `267-283`).
+48. [RED][ACTIVE] UI and warning systems are not in the emergency sacrifice chain. When the frame is already collapsing, subtitle waveform, notifications, PDA overlays, and route guidance can still spend CPU/fill rate.
+49. [RED][LATENT] Async world-generation queues remain present while the renderer is pressured. `HectonVoxelStreamingBridge` and geology voxel bridge both maintain queued launch work, but no frame-pressure backpressure was observed in this review (`HectonVoxelStreamingBridge.cs:58`, `109-137`, `281-304`; `WorldGenerativeGeologyVoxelBridgeDirector.cs:479-535`).
+50. [RED][ACTIVE] Documentation already knows the MX350 emergency ladder, but that ladder lives in text. If runtime does not bind it to counters, the shipped game will fail exactly where the document predicted (`Docs/SYSTEMS_CONTRACTS.md:113-117`).
+
+Exploit Prevention And Depth-Gating Loopholes
+51. [KRAKEN][ACTIVE] Hard exploit confirmed: `TransportPreset_MicroSub.asset` sets `pressureDamageScale: 0`. `HectonSurvivalSystem.ApplyPressureDamage()` exits immediately when `pressureDamageScale <= 0f` (`TransportPreset_MicroSub.asset:39`; `HectonSurvivalSystem.cs:446-452`).
+52. [KRAKEN][ACTIVE] The same zero scale also zeroes live pressure telemetry through `ResolveCurrentPressureDamagePerSecond()`. The player is not just protected; the danger meter itself is falsified (`HectonSurvivalSystem.cs:1328-1338`).
+53. [KRAKEN][ACTIVE] Depth-zone gating is warning-only. `DepthZoneDirector.CheckHullWarning()` compares hull tier and then only calls `NotificationEvents.PushWarning(...)` (`DepthZoneDirector.cs:219-229`).
+54. [RED][ACTIVE] `requiredHullTier` therefore has no hard enforcement path. A player can knowingly or unknowingly enter forbidden depth with only UI text as resistance (`DepthZoneDirector.cs:226-229`; `DepthZone_TheDropUpper.asset:37`; `DepthZone_DeepAbyss.asset:38`; `DepthZone_ThermalFields.asset:39`).
+55. [RED][ACTIVE] Hull-stress math and survival pressure math disagree. `UpdateHullStress()` floors transport protection to `0.1`, while survival damage honors raw zero. The player can see stress drama while taking no real pressure damage (`HectonPlayerMovement.cs:5001-5025`; `HectonSurvivalSystem.cs:451-452`).
+56. [RED][ACTIVE] Because transport safe-depth bonuses and pressure scaling are separate, a transport can simultaneously extend the safe envelope and nullify damage. That is a progression skip if the asset author is careless (`HectonSurvivalSystem.cs:704-723`).
+57. [RED][ACTIVE] External systems can request hull stress directly via `RequestExternalHullStress()`. Hull UI is therefore not a trustworthy indicator of depth rule violation, which makes exploit scouting easier (`HectonPlayerMovement.cs:1448-1457`, `1584-1609`; `SargassumMicroFaunaBoids.cs:2427-2431`).
+58. [RED][ACTIVE] One-time hull warning behavior is abusable. Once `_hullWarningShown` is set, the system stops escalating that specific warning and the player re-enters with less friction (`DepthZoneDirector.cs:219-229`).
+59. [RED][ACTIVE] `WorldReadabilityDirector` amplifies the problem by converting depth danger into more queueable advisory text. Once the player notices text does not equal enforcement, the whole readability layer becomes bluff (`WorldReadabilityDirector.cs:290-325`, `492-529`).
+60. [RED][LATENT] Any future transport preset with `pressureDamageScale <= 0` or an oversized safe-depth bonus will instantly become another bypass because no asset-validation guard was found in this review (`PlayerTransportPreset.cs:293`; `HectonSurvivalSystem.cs:719-723`).
+61. [AMBER][LATENT] Depth zones are discrete authored assets, while overpressure is continuous depth. Cave shortcuts, untagged shafts, or seam-created detours can move the player into deep space without crossing the intended narrative gate first.
+62. [RED][ACTIVE] Combined optimal exploit route: stay mounted in MicroSub, ignore warning-only hull tier messages, bypass pressure damage entirely, and use the slow/noisy inventory flow as justification to avoid dismounting. That collapses both progression and intended horror cadence.
+
+Emergency load-shedding triggers the runtime should enforce, not merely document:
+1. Trigger A: if smoothed frame time exceeds 20 ms for 8 consecutive frames, suspend non-critical readability spam, subtitle waveform animation, and far-field boid simulation cadence. Reason: buy CPU before the player feels a hard hitch.
+2. Trigger B: if frame time exceeds 25 ms for 3 consecutive frames, enforce the documented MX350 ladder immediately: disable flora vertex animation, cut GPU boids by 50 percent, activate `_QUALITY_MX350`, disable Bloom/DoF/Vignette, force volumetric fog half-res (`Docs/SYSTEMS_CONTRACTS.md:113-117`).
+3. Trigger C: at Trigger B, also stop launching new voxel caves and defer seam reconcile work until frame pressure recovers. Generation under pressure is optional; missed frame budget is not.
+4. Trigger D: if `VRAMMonitor.PressureState == Critical` for two samples, drain non-essential RT pools, cut boids to 25 percent, and disable seam proxy visuals outside the player threat radius. Texture/RT collapse on MX350 will not be fixed by render-scale alone.
+5. Trigger E: if cave/terrain async queues back up while frame pressure is non-stable, freeze queue growth and drop low-priority launches. Backlog plus pressure equals guaranteed hitch debt.
+
+Highest-risk Kraken triggers:
+1. Origin shift during `GenerateVolumeAsync()` while the player is in MicroSub near a cave mouth.
+2. Tow cable snap release in a seam zone built from proxy collars/skirt primitives.
+3. Pickup spam with a nearly full inventory during combat or chase.
+4. PDA discard when player camera/origin is invalid or pool is unavailable.
+5. Deep-zone entry while mounted in MicroSub with `pressureDamageScale: 0`.
+6. Multiple parasite/boid swarms entering latch mode while post-processing and seam visuals are active on MX350.
+
+Regression model:
+CPU: highest risk in async voxel launch, seam reconcile, boid compute/readback, and wide player-force arbitration.
+GC: this report does not claim GC regressions or improvements because no runtime changes were performed. Measured proof absent.
+Memory: highest risk in boid buffers, RT pressure, and seam/cave overlap zones where geometry and effects stack.
+Cadence: main failure pattern is cross-phase desync. Shift, slow-tick seam repair, async voxel bake, and fixed-step movement do not share one synchronization barrier.
+Correctness: current correctness risk is not isolated bugs; it is ownership overlap between world-shift, world-generation, transport physics, and UI warning systems.
+
+Hot path impact:
+1. Player movement is the highest-risk hot path because it aggregates transport, entanglement, currents, hull stress, bailout, and clamp logic in one owner.
+2. Tow solve is the second highest-risk hot path because it creates artificial acceleration and snap events under cave/tunnel constraints.
+3. Boid simulation is the highest GPU-side hot path because it scales with swarm count and mode complexity, not just camera visibility.
+
+Failure modes:
+1. False clearance: cable or transport fits through a proxy seam that the true geometry would block.
+2. False blockage: seam proxy or rebased collider blocks a corridor that should be traversable.
+3. Ghost collision: physics sees post-shift transforms while generation/seam systems are pre-shift.
+4. Silent progression bypass: player survives forbidden depth because data and gating disagree.
+5. Silent item loss: pickup/drop removes world or inventory state before success is guaranteed.
+6. Warning burial: critical alerts are pushed out by lower-value guidance traffic.
+7. Pressure camouflage: hull-stress feedback exists while actual pressure damage is zero.
+8. Hardware brownout: frame time collapse begins in generation/compute, but mitigation reacts too late or cuts the wrong systems first.
+
+Why kept / rejected:
+1. Kept: only evidence-backed issues with code or asset references made the final list.
+2. Rejected: pure speculation about subsystems not inspected directly.
+3. Rejected: any claim of "fixed" or "solved." No runtime verification was performed.
+4. Kept: latent issues when the architecture already exposes the failure path even if a user log has not yet captured it.
+
+Verification state:
+1. Unity-verified: no.
+2. Codebase-verified: yes, for the evidence paths cited above.
+3. Log-verified: no.
+4. Final status: PENDING VERIFICATION.

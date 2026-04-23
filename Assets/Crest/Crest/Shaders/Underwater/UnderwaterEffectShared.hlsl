@@ -6,6 +6,67 @@
 #define CREST_UNDERWATER_EFFECT_SHARED_INCLUDED
 
 float2 _HorizonNormal;
+float _HectonUnderwaterHasBlueNoiseTex;
+float _HectonUnderwaterApplyAcesDither;
+float _HectonUnderwaterDitherStrength;
+float _HectonUnderwaterFrameIndex;
+float _HectonUnderwaterNoirPower;
+float4 _BlueNoiseTex_TexelSize;
+
+TEXTURE2D(_BlueNoiseTex);
+SAMPLER(sampler_BlueNoiseTex);
+
+static const float k_HectonBayer4x4[16] =
+{
+	0.0, 8.0, 2.0, 10.0,
+	12.0, 4.0, 14.0, 6.0,
+	3.0, 11.0, 1.0, 9.0,
+	15.0, 7.0, 13.0, 5.0
+};
+
+half3 ApplyHectonAcesHillTonemap(half3 hdrColor)
+{
+	half3 x = max(hdrColor, 0.0h);
+	return saturate((x * (2.51h * x + 0.03h)) / (x * (2.43h * x + 0.59h) + 0.14h));
+}
+
+float ResolveHectonBayer4x4(int2 positionSS)
+{
+	int x = positionSS.x & 3;
+	int y = positionSS.y & 3;
+	return (k_HectonBayer4x4[y * 4 + x] + 0.5) * (1.0 / 16.0);
+}
+
+float ResolveHectonBlueNoise(int2 positionSS)
+{
+	float blueNoiseAvailable = step(0.5, _HectonUnderwaterHasBlueNoiseTex) * step(0.0001, _BlueNoiseTex_TexelSize.z);
+	float fallback = ResolveHectonBayer4x4(positionSS);
+	if (blueNoiseAvailable <= 0.0)
+	{
+		return fallback;
+	}
+
+	float2 screenUV = (positionSS + 0.5) * _ScaledScreenParams.zw;
+	float2 tileScale = max(_ScaledScreenParams.xy * _BlueNoiseTex_TexelSize.xy, float2(1.0, 1.0));
+	float frameBase = floor(_HectonUnderwaterFrameIndex);
+	float2 frameOffset = float2(fmod(frameBase, 4.0), fmod(frameBase + 1.0, 4.0)) * 0.25;
+	float2 blueNoiseUV = screenUV * tileScale + frameOffset;
+	return SAMPLE_TEXTURE2D_LOD(_BlueNoiseTex, sampler_BlueNoiseTex, blueNoiseUV, 0).r;
+}
+
+half ResolveHectonNoirFogFactor(float fogDistance)
+{
+	float densityScalar = max(dot(_DepthFogDensity.xyz, float3(0.33333334, 0.33333334, 0.33333334)), 0.0001);
+	float fogRaw = saturate(1.0 - exp(-max(fogDistance, 0.0) * densityScalar));
+	return pow((half)fogRaw, max((half)_HectonUnderwaterNoirPower, 1.0h));
+}
+
+half3 ApplyHectonUnderwaterDither(half3 color, int2 positionSS)
+{
+	float bn = ResolveHectonBlueNoise(positionSS);
+	float ditherOffset = (bn - 0.5) * (1.0 / 255.0) * _HectonUnderwaterDitherStrength;
+	return color + (half3)ditherOffset;
+}
 
 float4 DebugRenderOceanMask(const bool isOceanSurface, const bool isUnderwater, const float mask, const float3 sceneColour)
 {
@@ -245,7 +306,17 @@ half3 ApplyUnderwaterEffect
 	}
 #endif // _CAUSTICS_ON
 
-	return lerp(sceneColour, scatterCol, saturate(1.0 - exp(-_DepthFogDensity.xyz * fogDistance)));
+	half3 foggedScene = sceneColour * (half3)exp(-_DepthFogDensity.xyz * max(fogDistance, 0.0));
+	half fogNoir = ResolveHectonNoirFogFactor(fogDistance);
+	half3 underwaterColor = lerp(foggedScene, scatterCol, fogNoir);
+
+	if (_HectonUnderwaterApplyAcesDither > 0.5)
+	{
+		underwaterColor = ApplyHectonAcesHillTonemap(underwaterColor);
+		underwaterColor = ApplyHectonUnderwaterDither(underwaterColor, i_positionSS);
+	}
+
+	return underwaterColor;
 }
 #endif // CREST_OCEAN_EMISSION_INCLUDED
 

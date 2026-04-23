@@ -31,7 +31,8 @@ UPLOAD SCHEDULE (per frame):
 
 ### 1.2 Constant Buffer Layout
 
-[RULE]: Group ALL per-frame uniforms into single CBUFFER. Max 1 SetBuffer call per kernel.
+[RULE]: Group ALL per-frame uniforms into single CBUFFER. Upload via one `GraphicsBuffer.SetConstantBuffer` call per frame.
+[RULE]: C# buffer objects use `GraphicsBuffer`, never `ComputeBuffer`.
 
 CBUFFER _HectonFrame {
   float3 CameraPositionWS;    // 12b
@@ -56,6 +57,17 @@ High-freq scalar atom  → RWByteAddressBuffer (InterlockedAdd on byte offset)
 
 [FORBID]: Mixing RWStructuredBuffer and raw atomics on same resource without UAV barrier.
 [RULE]:   Indirect dispatch args → always RWByteAddressBuffer. Never StructuredBuffer.
+
+### 1.4 C# Resource Contract
+
+Canonical allocation:
+  frameConstants = new GraphicsBuffer(GraphicsBuffer.Target.Constant, 1, 64)
+  instanceBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, entityCapacity, stride)
+  indirectArgs   = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, 1, 12)
+
+Interop rule:
+  - RenderGraph and compute kernels share `GraphicsBuffer` handles directly
+  - No legacy `ComputeBuffer` declarations anywhere in new code
 
 ---
 

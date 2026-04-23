@@ -53,14 +53,19 @@ Bitmask State Flags (8-bit):
 
 ### [DATA] Memory Layout
 
-Global Offset Buffer (GPU Constant):
+Global Offset Buffer (GPU Constant Buffer):
 
-cbuffer FloatingOrigin : register(b7) {
+CBUFFER_START(Hecton8GlobalUniforms)
     float3 _GlobalFloatingOffset;       // Current world shift
-    float3 _TotalUniverseOffset;        // Accumulated all-time offset
+    float3 _UniverseNoiseOffset;        // Absolute-noise anchor
     float3 _PreviousFloatingOffset;     // For velocity correction
     uint _ShiftFrameID;                 // Detect stale cached values
-}
+CBUFFER_END
+
+C# upload contract:
+  - Pack all global origin data into one blittable struct
+  - Upload once per frame via `GraphicsBuffer.SetConstantBuffer`
+  - Forbidden: multiple `Shader.SetGlobalVector/Float` calls per frame
 
 Entity Transform Cache (DOD):
 
@@ -72,7 +77,7 @@ NativeArray<uint8> shiftStateMask;
 
 Matrix Pool (GPU Upload):
 
-ComputeBuffer matrixPool;  // float4x4[4096]
+GraphicsBuffer matrixPool;  // float4x4[4096]
 // Matrices stored in Universe Space
 // Shader applies _GlobalFloatingOffset during transform
 
@@ -105,9 +110,11 @@ Step-by-step (Single Frame):
 6. _GlobalFloatingOffset += shiftVec
 7. _TotalUniverseOffset += shiftVec  // Infinite accumulator
 8. Batch Transform Updates:
-   For each entity:
-       entity.worldPos += shiftVec
-       entity.transform.position = entity.worldPos  // Single write
+   Schedule `OriginShiftJob : IJobParallelForTransform`
+   - read cached worldPositions
+   - add `shiftVec`
+   - write transform positions in parallel during frozen shift window
+   - no serial foreach transform mutation on main thread
 9. Velocity Reapplication (Integrator Reset):
    For each Rigidbody:
        rb.velocity = cachedVelocity  // Prevent velocity corruption
@@ -128,7 +135,7 @@ Vertex Shader Pattern:
 
 // Input: localPos (object space), ObjectToWorld matrix
 float3 worldPos = mul(ObjectToWorld, float4(localPos, 1.0)).xyz;
-worldPos += _GlobalFloatingOffset;  // Apply shift
+worldPos += _GlobalFloatingOffset;  // Applied from constant buffer pack
 
 // For camera-relative rendering (MX350 depth precision boost):
 float3 cameraRelativePos = worldPos - _WorldSpaceCameraPos;
@@ -313,8 +320,8 @@ SetAUPition(AUP)
 
 IShaderOffsetReceiver:
 
-UpdateShaderOffset(float3 globalOffset, float3 totalOffset, uint frameID)
-ValidateOffsetState() → bool
+ValidateOffsetState(uint frameID) → bool
+Read from shared constant buffer only. No per-material push path.
 
 ### [SAFE] Failure Modes & Guards
 
@@ -329,10 +336,11 @@ Recovery:
 
 Mode 2: Shader Offset Desync
 
-Cause: Material not updated with new _GlobalFloatingOffset
-Detect: _ShiftFrameID mismatch in material property block
+Cause: Constant buffer upload skipped or stale frame data bound
+Detect: `_ShiftFrameID` mismatch against shared global uniform block
 Recovery:
-    Force material.SetVector("_GlobalFloatingOffset", current)
+    Re-upload `Hecton8GlobalUniforms` once
+    Rebind constant buffer handle
     Flag SHADER_OFFSET_DIRTY cleared
 
 Mode 3: Navigation Path Corruption
@@ -404,9 +412,9 @@ On asset load complete:
 
 Init Sequence:
 
-1. Set _GlobalFloatingOffset = (0,0,0)
-2. Set _TotalUniverseOffset = (0,0,0)
-3. Set _ShiftFrameID = 0
+1. Set `_GlobalFloatingOffset = (0,0,0)`
+2. Set `_UniverseNoiseOffset = (0,0,0)`
+3. Set `_ShiftFrameID = 0`
 4. Validate all meshes have UV3 channel
 5. Pre-cache physics velocities buffer (NativeArray<float3>)
 6. Register all IFloatingOriginEntity instances

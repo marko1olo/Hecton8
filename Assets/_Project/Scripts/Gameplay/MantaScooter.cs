@@ -24,6 +24,8 @@ namespace Hecton8.Gameplay
     using Hecton8.Items;
     using Hecton8.Tools;
     using Hecton8.UI;
+    using System.Collections.Generic;
+    using Unity.Mathematics;
     using UnityEngine;
 
     /// <summary>
@@ -32,7 +34,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Tools/Manta Scooter")]
-    public sealed class MantaScooter : PlayerTool, IBatteryTool, ITickable, IPlayerTransportSource, IPlayerTransportLifecycleOwner
+    public sealed class MantaScooter : PlayerTool, IBatteryTool, ITickable, IPlayerTransportSource, IPlayerTransportLifecycleOwner, IDamageSignalEmitter
     {
         private const float DefaultTransportPropulsionReference = 800f;
 
@@ -221,6 +223,8 @@ namespace Hecton8.Gameplay
         private float _headlightGlitchPhase;
         private Vector3 _lastPublishedVolumetricVelocity;
         private bool _hasLastPublishedVolumetricVelocity;
+        // COLD ALLOC: List<IDamageReceiver>[1] — handheld transport damage listeners (player trauma dispatcher) — owner: MantaScooter
+        private readonly List<IDamageReceiver> _damageReceivers = new List<IDamageReceiver>(1);
 
         private const int MaxHeadlights = 2;
         private static readonly int _HeadlightCountId = Shader.PropertyToID("_HectonScooterHeadlightCount");
@@ -415,6 +419,7 @@ namespace Hecton8.Gameplay
             ClearHeadlightGlobals();
             UnregisterFromTick();
             ResetHudStateCache();
+            _damageReceivers.Clear();
             base.OnDespawn();
         }
 
@@ -824,6 +829,7 @@ namespace Hecton8.Gameplay
             if (_isTransportBroken)
                 return;
 
+            float previousIntegrityNormalized = ResolveCurrentIntegrityNormalized();
             float startSpeed = ResolveCollisionDamageStartSpeed();
             if (impactSpeed <= startSpeed)
                 return;
@@ -837,8 +843,54 @@ namespace Hecton8.Gameplay
             float damageT = Mathf.InverseLerp(startSpeed, maxSpeed, impactSpeed);
             float damage = Mathf.Lerp(0f, maxDamage, damageT);
             _currentIntegrity = Mathf.Max(0f, _currentIntegrity - damage);
+            float nextIntegrityNormalized = ResolveCurrentIntegrityNormalized();
+            DamageSignal damageSignal = BuildDamageSignal(impactSpeed, hitPoint, (uint)DamageTypeMask.Impact, previousIntegrityNormalized, nextIntegrityNormalized);
+            DispatchIntegrityChanged(previousIntegrityNormalized, nextIntegrityNormalized, damageSignal);
+
+            float previousPowerChannel = ResolvePowerChannel(previousIntegrityNormalized);
+            float nextPowerChannel = ResolvePowerChannel(nextIntegrityNormalized);
+            if (Mathf.Abs(nextPowerChannel - previousPowerChannel) > 0.0001f)
+                DispatchPowerChanged(previousPowerChannel, nextPowerChannel, damageSignal);
+
+            DispatchClarityChanged(0f, Mathf.Clamp01(Mathf.Max(damageT, 1f - nextIntegrityNormalized)), damageSignal);
+            DispatchTraumaThresholdCrossed(ResolveTraumaLevel(nextIntegrityNormalized, damageT));
             if (_currentIntegrity <= 0.0001f)
                 BreakTransport();
+        }
+
+        /// <summary>
+        /// Registers a damage receiver for scooter collision and failure packets.
+        /// </summary>
+        public void RegisterDamageReceiver(IDamageReceiver receiver)
+        {
+            if (receiver == null)
+                return;
+
+            for (int i = 0; i < _damageReceivers.Count; i++)
+            {
+                if (ReferenceEquals(_damageReceivers[i], receiver))
+                    return;
+            }
+
+            _damageReceivers.Add(receiver);
+        }
+
+        /// <summary>
+        /// Unregisters a previously registered scooter damage receiver.
+        /// </summary>
+        public void UnregisterDamageReceiver(IDamageReceiver receiver)
+        {
+            if (receiver == null)
+                return;
+
+            for (int i = _damageReceivers.Count - 1; i >= 0; i--)
+            {
+                if (ReferenceEquals(_damageReceivers[i], receiver))
+                {
+                    _damageReceivers.RemoveAt(i);
+                    break;
+                }
+            }
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1118,6 +1170,78 @@ namespace Hecton8.Gameplay
             value *= 2654435769u;
             value ^= value >> 16;
             return (value & 0x00FFFFFFu) / 16777215f;
+        }
+
+        private void DispatchIntegrityChanged(float prev, float next, DamageSignal signal)
+        {
+            for (int i = 0; i < _damageReceivers.Count; i++)
+                _damageReceivers[i].OnIntegrityChanged(prev, next, signal);
+        }
+
+        private void DispatchPowerChanged(float prev, float next, DamageSignal signal)
+        {
+            for (int i = 0; i < _damageReceivers.Count; i++)
+                _damageReceivers[i].OnPowerChanged(prev, next, signal);
+        }
+
+        private void DispatchClarityChanged(float prev, float next, DamageSignal signal)
+        {
+            for (int i = 0; i < _damageReceivers.Count; i++)
+                _damageReceivers[i].OnClarityChanged(prev, next, signal);
+        }
+
+        private void DispatchTraumaThresholdCrossed(TraumaLevel level)
+        {
+            if (level == TraumaLevel.None)
+                return;
+
+            for (int i = 0; i < _damageReceivers.Count; i++)
+                _damageReceivers[i].OnTraumaThresholdCrossed(level);
+        }
+
+        private DamageSignal BuildDamageSignal(
+            float impactSpeed,
+            Vector3 hitPoint,
+            uint damageType,
+            float previousIntegrityNormalized,
+            float nextIntegrityNormalized)
+        {
+            DamageSignal signal = default;
+            signal.magnitude = Mathf.Max(0f, impactSpeed);
+            signal.localPoint = _cachedTransform != null
+                ? (float3)_cachedTransform.InverseTransformPoint(hitPoint)
+                : float3.zero;
+            signal.damageType = damageType;
+            signal.integrityDelta = (byte)Mathf.Clamp(
+                Mathf.RoundToInt(Mathf.Abs(nextIntegrityNormalized - previousIntegrityNormalized) * byte.MaxValue),
+                0,
+                byte.MaxValue);
+            signal.depth = _mantaSurvivalSystem != null ? Mathf.Max(0f, _mantaSurvivalSystem.Depth) : 0f;
+            signal.sourceID = DamageSourceIds.MantaScooter;
+            return signal;
+        }
+
+        private static float ResolvePowerChannel(float integrityNormalized)
+        {
+            return integrityNormalized >= 0.4f
+                ? 1f
+                : Mathf.Clamp01(integrityNormalized / 0.4f);
+        }
+
+        private static TraumaLevel ResolveTraumaLevel(float integrityNormalized, float damageT)
+        {
+            if (integrityNormalized <= 0.0001f || damageT >= 0.98f)
+                return TraumaLevel.Catastrophic;
+
+            if (integrityNormalized < 0.4f || damageT >= 0.72f)
+                return TraumaLevel.Critical;
+
+            if (integrityNormalized < 0.65f || damageT >= 0.42f)
+                return TraumaLevel.Significant;
+
+            return damageT > 0.05f
+                ? TraumaLevel.Minor
+                : TraumaLevel.None;
         }
 
         private void BreakTransport()

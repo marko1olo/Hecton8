@@ -82,12 +82,12 @@
 
 ## §5 — WORLD-SPACE FLOATING ORIGIN SYSTEM
 
-[DATA] Global shader registers (set once per frame via Shader.SetGlobalVector):
+[DATA] Global shader constant buffer (uploaded once per frame):
   _GlobalFloatingOffset  : float3 — accumulated world offset (rebase delta)
   _TotalUniverseOffset   : float3 — full simulation-space position for large-scale parallax
 [RULE] Every vertex shader: apply _GlobalFloatingOffset before any world-space calculation.
   float3 worldPos = TransformObjectToWorld(IN.positionOS) - _GlobalFloatingOffset;
-[RULE] Rebase trigger: when camera drifts >1000m from world origin, snap origin, broadcast new _GlobalFloatingOffset to all systems.
+[RULE] Rebase trigger: when camera drifts >1000m from world origin, snap origin, upload one shared constant-buffer update.
 [SAFE] Precision floor: store all runtime positions as float3 relative offset + int3 chunk coords. Reconstruct in HLSL:
   highPrecisionPos = float3(chunkOffset) * CHUNK_SIZE + localOffset - _GlobalFloatingOffset
   — eliminates float jitter at depth >5km.
@@ -96,7 +96,7 @@
 
 ## §6 — HLOD & GPU INSTANCING PIPELINE
 
-[DATA] HLOD instance record (per-object, uploaded to ComputeBuffer):
+[DATA] HLOD instance record (per-object, uploaded to GraphicsBuffer):
   struct HLODInstance {
     float4x4 TRS;       // 64B: Transform
     float    Fade01;    // 4B:  LOD cross-fade alpha
@@ -105,19 +105,15 @@
     float    DistSq;    // 4B:  squared camera distance (updated CPU-side)
   } // 80B per instance
 
-[RULE] Render via Graphics.DrawMeshInstancedIndirect. CPU builds draw args buffer once per cluster-dirty-frame.
-[FLOW] Per-frame HLOD cull pipeline (compute shader, 64-thread groups):
-  1. Load HLODInstance from StructuredBuffer
-  2. Frustum cull: dot(planes[i], float4(center,1)) > -radius for 6 planes
-  3. Distance sort bucket: <15m=LOD0 | 15-40m=LOD1 | 40-80m=LOD2 | >80m=Billboard
-  4. Occlusion: HiZ pyramid sample at projected bounds. Reject if occluded.
-  5. Append visible to DrawArgsBuffer via AppendStructuredBuffer
-  6. Issue DrawMeshInstancedIndirect per LOD bucket
+[RULE] Render through RenderGraph + BatchRendererGroup / GPU Resident Drawer. No raw `DrawMeshInstancedIndirect` path.
+[FLOW] Per-frame HLOD submission pipeline:
+  1. Upload instance state to `GraphicsBuffer`
+  2. Register instances with BatchRendererGroup
+  3. Let GPU Resident Drawer handle frustum/occlusion culling natively
+  4. Submit a RenderGraph raster pass that consumes the BRG renderer list
+  5. Draw via `context.cmd.DrawRendererList(data.rendererList)`
 
-[MATH] HiZ occlusion test:
-  mipLevel  = ceil(log2(max(screenBoundsW, screenBoundsH)))
-  hizSample = HiZPyramid.SampleLevel(sampler_point, screenCenter, mipLevel).r
-  occluded  = (projectedDepthMin > hizSample)  // reject if behind stored max-depth
+[RULE] HLOD occlusion is owned by Unity 6 GPU Resident Drawer. Hand-rolled HiZ append pipelines are forbidden.
 
 [RULE] LOD cross-fade: dither-based, not alpha blend. Fade01 drives per-instance dither threshold offset.
   crossFadeThreshold = BayerMatrix[pixelCoord] + (instance.Fade01 * 2.0 - 1.0)
@@ -314,10 +310,9 @@
   GPU Present      : 1.1ms  (driver overhead)
 
 [RULE] C# GC contract: ZERO allocations per frame on hot path. Pre-allocate all NativeArray / List via persistent allocator.
-[RULE] Command Buffer pooling: maintain ring buffer of 3 CommandBuffers. Recycle via index % 3.
 [DATA] NativeArray<HLODInstance> pre-allocated at scene load: capacity = 2048. Never reallocate in gameplay.
 [RULE] Physics: FixedUpdate budget = 3.0ms. Rigidbody count ceiling = 64 active simultaneous.
-[RULE] Jobs: IJobParallelFor for HLOD frustum cull. Min batch size = 32 instances per job chunk.
+[RULE] Jobs: CPU may precompute cluster metadata only. Frustum/occlusion cull ownership stays with BRG/GPU Resident Drawer.
 
 ---
 
@@ -402,7 +397,7 @@
 [SAFE] NaN propagation defense: in all fragment shaders computing lighting:
   finalColor = isnan(finalColor) || isinf(finalColor) ? float4(0,0,0,1) : finalColor
 [SAFE] Depth buffer feedback loop: ensure no shader samples _CameraDepthTexture in same pass writing depth. Use previous-frame depth for effects needing depth+write.
-[SAFE] DrawMeshInstancedIndirect arg buffer: validate args[1] (instance count) < 2048 before dispatch. Clamp CPU-side before write.
+[SAFE] RendererList population must clamp registered instance count to 2048 per HLOD batch.
 [SAFE] FloatingOrigin rebase: disable physics simulation for 1 FixedUpdate frame during rebase. Prevents impulse artifacts from repositioned rigidbodies.
 [SAFE] LOD hysteresis: LOD transitions require 3 consecutive frames in new bucket before switching. Prevents LOD flicker at distance boundary.
   lodHysteresis[instanceID]++ if sameBucket else reset to 0

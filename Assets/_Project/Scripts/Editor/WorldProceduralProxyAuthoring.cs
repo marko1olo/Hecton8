@@ -1786,7 +1786,7 @@ namespace Hecton8.EditorTools
             public float ruinBias;
             public float caveBias;
             public float landmarkBias;
-            public float creatureSpawnBias;
+            public float creatureSpawnBias = 0f;
             public float resourcePocketBias;
             public float hazardPocketBias;
             public float safePocketBias;

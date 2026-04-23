@@ -1515,9 +1515,9 @@ namespace Hecton8.EditorTools
         [Serializable]
         private sealed class AutomationRequest
         {
-            public string requestId;
-            public string[] capturePrefabPaths;
-            public string[] prefabPaths;
+            public string requestId = null;
+            public string[] capturePrefabPaths = null;
+            public string[] prefabPaths = null;
         }
 
         [Serializable]

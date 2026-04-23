@@ -165,8 +165,14 @@ Cross-fade dither window: 2m (avoids pop). Dither disabled MINIMAL tier.
 | PCF Quality   | Hard              | 2-tap            | 4-tap             | 16-tap PCSS      |
 | Dynamic Casts | 0                 | 3 emitters       | 8 emitters        | Unlimited        |
 
-VRAM consumed per shadow atlas: 512²= 1800MB, 1024²=4MB, 2048²=16MB, 4096²=64MB.
+VRAM consumed per R16 shadow atlas: 512²=0.5MB, 1024²=2MB, 2048²=8MB, 4096²=32MB.
 Cascade 0 always at 25% of shadow distance. Split lambda: 0.75 (favor near).
+
+Runtime authority law:
+  - URP owns shadow distance and render scale.
+  - `QualitySettings.shadowDistance` is not a runtime control path in Unity 6 URP.
+  - Apply tier swaps via `QualitySettings.SetQualityLevel(...)` bound to pre-authored URP assets,
+    or mutate the active `UniversalRenderPipelineAsset` deliberately in build-only runtime code.
 
 ### 3.5 Render Resolution & Upscaling
 
@@ -351,7 +357,7 @@ TRIGGER:  usedVRAM / totalVRAM > 0.90
 SEQUENCE (execute in order, stop when pressure relieved):
   Step 1: RequestAsyncMipDowngrade(allStreamingTextures, mipBias += 1)
           → Expected relief: 200–400MB
-  Step 2: UnloadUnusedAssets() async — do NOT block main thread
+  Step 2: EvictQueue.DrainSynchronously() on released Addressables only
           → Expected relief: 50–150MB
   Step 3: Reduce RenderTexture resolution × 0.75 for non-primary cameras
           → Expected relief: 80–200MB

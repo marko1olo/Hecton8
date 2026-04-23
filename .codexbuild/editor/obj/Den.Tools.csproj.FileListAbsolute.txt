@@ -1,0 +1,9 @@
+c:\hades\Hecton8\Temp\bin\Debug\Den.Tools.deps.json
+c:\hades\Hecton8\Temp\bin\Debug\Den.Tools.dll
+c:\hades\Hecton8\Temp\bin\Debug\Den.Tools.pdb
+c:\hades\Hecton8\.codexbuild\editor\obj\Den.Tools.csproj.AssemblyReference.cache
+c:\hades\Hecton8\.codexbuild\editor\obj\Den.Tools.GeneratedMSBuildEditorConfig.editorconfig
+c:\hades\Hecton8\.codexbuild\editor\obj\Den.Tools.csproj.CoreCompileInputs.cache
+c:\hades\Hecton8\.codexbuild\editor\obj\Den.Tools.sourcelink.json
+c:\hades\Hecton8\.codexbuild\editor\obj\Den.Tools.dll
+c:\hades\Hecton8\.codexbuild\editor\obj\Den.Tools.pdb

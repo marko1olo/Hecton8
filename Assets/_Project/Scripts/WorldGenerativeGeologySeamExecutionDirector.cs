@@ -356,7 +356,7 @@ namespace Hecton8.World
                 familyId = plan.familyId,
                 geologyProfileId = plan.geologyProfileId,
                 archetype = plan.archetype,
-                center = plan.voxelVolumeCenter,
+                absoluteUniverseCenter = plan.absoluteVoxelVolumeCenter,
                 size = plan.voxelVolumeSize,
                 rotation = plan.worldRotation,
                 weight = plan.caveBlendWeight,
@@ -392,7 +392,7 @@ namespace Hecton8.World
             int segments = Mathf.Clamp(voxelCollarSegments, 3, 10);
             float radius = Mathf.Max(1.4f, plan.seamBlendRadius * 0.48f);
             float height = Mathf.Max(1f, plan.voxelVolumeSize.y * 0.2f);
-            Vector3 center = root.InverseTransformPoint(plan.voxelVolumeCenter);
+            Vector3 center = root.InverseTransformPoint(plan.RuntimeVoxelVolumeCenter);
 
             for (int i = 0; i < segments; i++)
             {

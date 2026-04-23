@@ -1,0 +1,9 @@
+c:\hades\Hecton8\Temp\bin\Debug\Hecton8.Bootstrap.Contracts.deps.json
+c:\hades\Hecton8\Temp\bin\Debug\Hecton8.Bootstrap.Contracts.dll
+c:\hades\Hecton8\Temp\bin\Debug\Hecton8.Bootstrap.Contracts.pdb
+c:\hades\Hecton8\.codexbuild\core\obj\Hecton8.Bootstrap.Contracts.csproj.AssemblyReference.cache
+c:\hades\Hecton8\.codexbuild\core\obj\Hecton8.Bootstrap.Contracts.GeneratedMSBuildEditorConfig.editorconfig
+c:\hades\Hecton8\.codexbuild\core\obj\Hecton8.Bootstrap.Contracts.csproj.CoreCompileInputs.cache
+c:\hades\Hecton8\.codexbuild\core\obj\Hecton8.Bootstrap.Contracts.sourcelink.json
+c:\hades\Hecton8\.codexbuild\core\obj\Hecton8.Bootstrap.Contracts.dll
+c:\hades\Hecton8\.codexbuild\core\obj\Hecton8.Bootstrap.Contracts.pdb

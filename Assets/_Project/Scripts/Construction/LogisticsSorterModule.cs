@@ -28,6 +28,12 @@ namespace Hecton8.Construction
 
             [Tooltip("Destination storage crate for the routed item.")]
             public StorageCrate destination;
+
+            public SortRoute(ItemData item, StorageCrate destination)
+            {
+                this.item = item;
+                this.destination = destination;
+            }
         }
 
         [Header("── Routing ────────────────────────────────")]

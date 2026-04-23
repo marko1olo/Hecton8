@@ -32,11 +32,17 @@ STATE:
 ALGORITHM — OnSlowTick():
   axis      = axis_index % 6
   dir       = AXIS_TABLE[axis]     // see §1.2
-  hit       = NonAlloc_Raycast(origin, dir, MAX_PROBE_DIST, SENSORY_MASK)
-  dist      = hit.valid ? hit.distance : MAX_PROBE_DIST
+  if rayHandle.IsCompleted:
+    rayHandle.Complete()
+    hit  = rayResults[0]
+    dist = hit.collider ? hit.distance : MAX_PROBE_DIST
+    semantic_hits[axis] = hit
+  else:
+    dist = hit_buffer[axis]        // retain prior sample until async result lands
   dist      = max(dist, EPSILON_DIST)            // NaN guard
   hit_buffer[axis]    = dist
-  semantic_hits[axis] = hit
+  rayCommands[0] = new RaycastCommand(origin, dir, new QueryParameters(SENSORY_MASK), MAX_PROBE_DIST)
+  rayHandle = RaycastCommand.ScheduleBatch(rayCommands, rayResults, 1, default)
   axis_index++
   // Full 6-axis scan completes in 6 SlowTick cycles = 0.6s @ 10Hz
 
@@ -128,13 +134,13 @@ for each hit_i in occlusion_chain:
 ALGORITHM — ComputeOcclusion(source_pos, listener_pos):
   ray_dir   = normalize(listener_pos - source_pos)
   ray_dist  = length(listener_pos - source_pos)
-  // Non-alloc multi-hit into pre-allocated OcclusionHit[8] buffer
-  n_hits    = Physics.RaycastNonAlloc(source_pos, ray_dir,
-                                       occlusionHitBuffer, ray_dist,
-                                       SENSORY_MASK)
-  // Enforce:
-  [FORBID] Physics.Raycast() single-hit — misses layered geometry
-  [FORBID] OverlapSphere — use SpatialHash contact list §6.1
+  occlusionCommands[sourceIndex] =
+      new RaycastCommand(source_pos, ray_dir, new QueryParameters(SENSORY_MASK), ray_dist)
+  // Schedule all source rays together:
+  occlusionHandle = RaycastCommand.ScheduleBatch(occlusionCommands, occlusionResults, 1, default)
+  // Consume on next SlowTick / audio update after `occlusionHandle.Complete()`
+  // Main thread never blocks on synchronous Physics.RaycastNonAlloc.
+  // For layered geometry, chain follow-up segment commands only for sources whose first blocker is penetrable.
 
 ### 4.2 LPF Cutoff Derivation
 

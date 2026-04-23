@@ -14,9 +14,10 @@ cell_index(pos) = (
 
 ### GRID_CONSTRUCTION_PASS
 
-[numthreads(64,1,1)]
-KernelClearGrid:
-  grid_counter[id] = 0
+Grid reset law:
+  cmd.ClearBuffer(grid_counter)
+  cmd.ClearBuffer(overflow_count)
+  // Native driver clear. No dedicated clear kernel dispatch.
 
 [numthreads(256,1,1)]
 KernelPopulateGrid:
@@ -200,25 +201,25 @@ VS_Main(VertexInput):
 
 ## CPU_INTEGRATION
 
-### ASYNC_READBACK_PATTERN
+### GPU_METRICS_REDUCTION
+
+[numthreads(256,1,1)]
+KernelReduceCenter(id):
+  if (boid[id].state & 0x3) != 3:
+    InterlockedAdd(center_buffer[0].x, asuint(boid[id].pos.x))
+    InterlockedAdd(center_buffer[0].y, asuint(boid[id].pos.y))
+    InterlockedAdd(center_buffer[0].z, asuint(boid[id].pos.z))
+    InterlockedAdd(center_buffer[0].w, 1)
 
 frame_counter++
-readback_slot = frame_counter % 3
+readback_slot = frame_counter & 3
 
 if readback_slot == 0:
-  AsyncGPUReadback.Request(boid_buffer, OnReadbackComplete)
+  AsyncGPUReadback.Request(center_buffer, 16, 0, OnReadbackComplete)
 
 OnReadbackComplete(data):
-  cpu_boid_cache = data.GetData<BoidData>()
-
-  // Predict 3 frames ahead
-  predicted_center = float3(0,0,0)
-  alive_count = 0
-  for b in cpu_boid_cache:
-    if (b.state & 0x3) != 3:
-      predicted_center += b.pos + b.vel * (3 * fixed_dt)
-      alive_count++
-  predicted_center /= max(alive_count, 1)
+  metrics = data.GetData<SwarmMetrics>()[0]
+  predicted_center = metrics.center_sum / max(metrics.alive_count, 1)
 
   swarm_center_smooth = lerp(swarm_center_smooth, predicted_center, 0.1)
 

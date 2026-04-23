@@ -426,6 +426,8 @@ namespace Hecton8.Physics
         /// </summary>
         public void FixedTick(float fixedDeltaTime)
         {
+            using (ProfilerRegistry.PhysicsTick.Auto())
+            {
             int count = _objects.Count;
             if (count == 0)
             {
@@ -498,6 +500,7 @@ namespace Hecton8.Physics
 
             // ── 5. Apply forces ──
             ApplyForces();
+            }
         }
 
         // ══════════════════════════════════════════════════════════
@@ -648,14 +651,16 @@ namespace Hecton8.Physics
                 // Пропускаем нулевые силы (объект над водой или в сухой зоне)
                 if (math.lengthsq(force) > 0.0001f)
                 {
-                    rb.AddForce(
+                    PhysicsForceRouter.QueueForce(
+                        rb,
                         new Vector3(force.x, force.y, force.z),
                         ForceMode.Force);
                 }
 
                 if (math.lengthsq(torque) > 0.0001f)
                 {
-                    rb.AddTorque(
+                    PhysicsForceRouter.QueueTorque(
+                        rb,
                         new Vector3(torque.x, torque.y, torque.z),
                         ForceMode.Force);
                 }

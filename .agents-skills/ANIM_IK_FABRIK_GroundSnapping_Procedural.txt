@@ -24,7 +24,7 @@
 2. GroundDetectionJob (parallel raycasts for foot targets)
 3. IK_SolverJob (FABRIK/CCD calculation)
 4. ConstraintApplicationJob (angle limits, twist prevention)
-5. TransformWritebackJob (write to TransformAccessArray)
+5. AnimationGraphWritebackJob (write inside PlayableGraph via `IAnimationJob`)
 
 ### JOB_STRUCTS
 
@@ -212,23 +212,29 @@ Per-frame workflow:
   1. Read root.position + root.rotation ONCE
   2. All IK math in world-space using NativeArrays
   3. Convert final positions to local-space using cached parent inverse matrices
-  4. Write to TransformAccessArray in single job
+  4. Write local-space rotations inside `AnimationScriptPlayable`
 
 ### WRITEBACK_JOB
 
 [BurstCompile]
-struct ApplyIKTransformsJob : IJobParallelForTransform {
-  [ReadOnly] public NativeArray<quaternion> boneRotations;
-  [ReadOnly] public NativeArray<float3> bonePositions;
-  [ReadOnly] public NativeArray<quaternion> parentInverseRotations;
+public struct FABRIKAnimationJob : IAnimationJob {
+  public NativeArray<TransformStreamHandle> boneHandles;
+  [ReadOnly] public NativeArray<quaternion> localRotations;
 
-  public void Execute(int index, TransformAccess transform) {
-    // Convert world to local
-    quaternion localRot = math.mul(parentInverseRotations[index], boneRotations[index]);
-    transform.localRotation = localRot;
-    // Position usually not overridden (rotation propagates down chain)
+  public void ProcessRootMotion(AnimationStream stream) { }
+
+  public void ProcessAnimation(AnimationStream stream) {
+    for (int i = 0; i < boneHandles.Length; i++) {
+      boneHandles[i].SetLocalRotation(stream, localRotations[i]);
+    }
   }
 }
+
+Injection path:
+  - create `AnimationScriptPlayable`
+  - insert the job into the Animator PlayableGraph
+  - avoid `TransformAccessArray`
+  - avoid LateUpdate hierarchy dirtying
 
 ---
 
