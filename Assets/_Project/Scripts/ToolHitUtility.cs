@@ -1,3 +1,4 @@
+using Hecton8.Bootstrap;
 using Hecton8.AI;
 using Hecton8.Interaction;
 using Hecton8.Items;
@@ -10,11 +11,15 @@ namespace Hecton8.Gameplay
     internal static class ToolHitUtility
     {
         private static HUDNotification s_notification;
+        private static Transform s_playerTransform;
+        private static PlayerToolManager s_playerToolManager;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             s_notification = null;
+            s_playerTransform = null;
+            s_playerToolManager = null;
         }
 
         public static bool ApplyDamage(
@@ -148,7 +153,53 @@ namespace Hecton8.Gameplay
             if (direction.sqrMagnitude < 0.0001f)
                 direction = Vector3.forward;
 
-            PhysicsForceRouter.QueueForce(body, direction.normalized * impulse, ForceMode.Impulse);
+            Vector3 normalizedDirection = direction.normalized;
+            PhysicsForceRouter.QueueForce(body, normalizedDirection * impulse, ForceMode.Impulse);
+            TryApplyRelativeCarrierImpulse(normalizedDirection, impulse);
+        }
+
+        internal static bool TryApplyRelativeCarrierImpulse(Vector3 direction, float impulse)
+        {
+            if (impulse <= 0f || direction.sqrMagnitude < 0.0001f)
+                return false;
+
+            if (!TryResolvePlayerToolManager(out PlayerToolManager toolManager) ||
+                !toolManager.TryResolveInteriorCarrierBody(out Rigidbody carrierBody) ||
+                carrierBody == null)
+            {
+                return false;
+            }
+
+            PhysicsForceRouter.QueueForce(carrierBody, -direction.normalized * impulse, ForceMode.Impulse);
+            return true;
+        }
+
+        private static bool TryResolvePlayerToolManager(out PlayerToolManager toolManager)
+        {
+            if (s_playerToolManager != null)
+            {
+                toolManager = s_playerToolManager;
+                return true;
+            }
+
+            if (!SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) || playerTransform == null)
+            {
+                s_playerTransform = null;
+                toolManager = null;
+                return false;
+            }
+
+            if (!ReferenceEquals(s_playerTransform, playerTransform))
+            {
+                s_playerTransform = playerTransform;
+                s_playerToolManager = null;
+            }
+
+            if (s_playerToolManager == null)
+                playerTransform.TryGetComponent(out s_playerToolManager);
+
+            toolManager = s_playerToolManager;
+            return toolManager != null;
         }
 
         public static void ShowInfo(string message)

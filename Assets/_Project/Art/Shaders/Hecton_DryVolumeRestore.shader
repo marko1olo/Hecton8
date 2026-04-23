@@ -75,16 +75,10 @@ Shader "Hidden/Hecton8/DryVolumeRestore"
                 return fallback;
 
             float2 pixel = floor(screenUV * _ScaledScreenParams.xy);
-            float2 rotatedPixel = pixel + _HectonNoirDitherParams.xy;
-            float2 blueNoiseUV = frac(rotatedPixel / max(_HectonNoirDitherParams.z, 64.0));
+            float textureSize = max(_HectonNoirDitherParams.z, 64.0);
+            float2 blueNoiseUV = frac((pixel / textureSize) + _HectonNoirDitherParams.xy);
             float sampled = SAMPLE_TEXTURE2D(_BlueNoiseTex, sampler_BlueNoiseTex, blueNoiseUV).r;
             return sampled;
-        }
-
-        half3 ApplyAcesHill2016(half3 color)
-        {
-            half3 x = color;
-            return saturate((x * (2.51h * x + 0.03h)) / (x * (2.43h * x + 0.59h) + 0.14h));
         }
 
         float ResolveFarRawDepth()
@@ -149,9 +143,8 @@ Shader "Hidden/Hecton8/DryVolumeRestore"
                 resolvedColor = ApplyNoirFog(resolvedColor, absolutePositionWS, linearEyeDepth);
             }
 
-            half3 tonemapped = ApplyAcesHill2016(max(resolvedColor, 0.0h));
             half dither = (half)(ResolveBlueNoise(input.screenUV) - 0.5) * (half)(_HectonNoirResolveSettings.y / 255.0);
-            return half4(saturate(tonemapped + dither.xxx), sourceColor.a);
+            return half4(max(resolvedColor + dither.xxx, 0.0h), sourceColor.a);
         }
         ENDHLSL
 

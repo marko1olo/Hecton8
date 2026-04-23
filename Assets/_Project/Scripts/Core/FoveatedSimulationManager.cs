@@ -15,6 +15,7 @@ namespace Hecton8.Core
         Transform SimulationTransform { get; }
         Transform VisualTransform { get; }
         AudioSource DopplerAudioSource { get; }
+        void OnFoveatedCadenceResolved(FoveatedTickRate tickRate, float tickIntervalSeconds, float importanceScore, bool insideFrustum);
         bool TryBuildDeferredRaycastCommand(out RaycastCommand command);
         void ConsumeDeferredRaycastHit(in RaycastHit hit);
     }
@@ -66,9 +67,13 @@ namespace Hecton8.Core
         private const float FrustumWeight = 0.42f;
         private const float MinimumDirectionLength = 0.0001f;
         private const float MinimumVelocityDelta = 0.0001f;
+        private const float MinimumDeferredRaycastImportanceScore = 0.2f;
         private const float SoundSpeedWaterMetersPerSecond = 1480.0f;
         private const float MinimumPitch = 0.5f;
         private const float MaximumPitch = 2.0f;
+        private const float CenterVelocitySmoothingSharpness = 18.0f;
+        private const float PeripheryVelocitySmoothingSharpness = 10.0f;
+        private const float RearVelocitySmoothingSharpness = 5.0f;
 
         // COLD ALLOC: IFoveatedSimulationTarget[512] — dispatcher-owned opt-in simulation targets — owner: FoveatedSimulationManager
         private readonly IFoveatedSimulationTarget[] _targets = new IFoveatedSimulationTarget[MaxTargets];
@@ -163,6 +168,7 @@ namespace Hecton8.Core
             if (audioSource != null)
                 audioSource.dopplerLevel = 0.0f;
 
+            target.OnFoveatedCadenceResolved(FoveatedTickRate.Center60Hz, CenterTickIntervalSeconds, 1.0f, true);
             _visualTargetCacheDirty = true;
             EnsureNativeBuffersAllocated();
         }
@@ -263,10 +269,13 @@ namespace Hecton8.Core
             _visualToPositions[index] = currentPosition;
 
             float deltaTime = math.max(_lastTickDeltas[index], MinimumVelocityDelta);
-            _smoothedVelocities[index] = (currentPosition - previousPosition) / deltaTime;
+            Vector3 rawVelocity = (currentPosition - previousPosition) / deltaTime;
+            float velocityBlend = 1.0f - math.exp(-ResolveVelocitySmoothingSharpness(_tickRates[index]) * deltaTime);
+            _smoothedVelocities[index] = Vector3.Lerp(_smoothedVelocities[index], rawVelocity, velocityBlend);
 
             if (_deferredRaycastCommands.IsCreated &&
                 _deferredRaycastCommands.Length < MaxTargets &&
+                _importanceScores[index] >= MinimumDeferredRaycastImportanceScore &&
                 target.TryBuildDeferredRaycastCommand(out RaycastCommand raycastCommand))
             {
                 int commandIndex = _deferredRaycastCommands.Length;
@@ -372,8 +381,9 @@ namespace Hecton8.Core
 
             for (int i = 0; i < _targetCount; i++)
             {
+                IFoveatedSimulationTarget target = _targets[i];
                 Transform simulationTransform = _simulationTransforms[i];
-                if (simulationTransform == null)
+                if (simulationTransform == null || target == null)
                     continue;
 
                 float3 targetPosition = simulationTransform.position;
@@ -390,10 +400,12 @@ namespace Hecton8.Core
                 float distanceFactor = 1.0f - math.saturate(distanceMeters / MaximumScoreDistanceMeters);
                 float frustumFactor = math.saturate((dotToFrustum - BehindCameraDotThreshold) / (1.0f - BehindCameraDotThreshold));
                 float importanceScore = math.saturate((distanceFactor * DistanceWeight) + (frustumFactor * FrustumWeight));
+                bool insideFrustum = dotToFrustum > BehindCameraDotThreshold;
 
                 _importanceScores[i] = importanceScore;
                 _tickRates[i] = ResolveTickRate(importanceScore, dotToFrustum);
                 _tickIntervals[i] = ResolveTickInterval(_tickRates[i]);
+                target.OnFoveatedCadenceResolved(_tickRates[i], _tickIntervals[i], importanceScore, insideFrustum);
             }
         }
 
@@ -671,6 +683,19 @@ namespace Hecton8.Core
                     return PeripheryTickIntervalSeconds;
                 default:
                     return RearTickIntervalSeconds;
+            }
+        }
+
+        private static float ResolveVelocitySmoothingSharpness(FoveatedTickRate tickRate)
+        {
+            switch (tickRate)
+            {
+                case FoveatedTickRate.Center60Hz:
+                    return CenterVelocitySmoothingSharpness;
+                case FoveatedTickRate.Periphery20Hz:
+                    return PeripheryVelocitySmoothingSharpness;
+                default:
+                    return RearVelocitySmoothingSharpness;
             }
         }
 

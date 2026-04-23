@@ -2,6 +2,7 @@ using System;
 using GPUInstancer;
 using Hecton8.Environment;
 using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -10,6 +11,8 @@ namespace Hecton8.World
     {
         internal sealed class ScatterWorkingMemory : IDisposable
         {
+            private const int InitialGridPlacementNativeCapacity = 16384;
+
             public NativeArray<WorldProceduralFieldSampler.CellInputData> CellSamplingInputs;
             public NativeArray<WorldProceduralFieldSampler.CellOutputData> CellSamplingOutputs;
             public NativeArray<ScatterSimulationCellState> ScatterBackendCellStates;
@@ -36,6 +39,10 @@ namespace Hecton8.World
             public readonly System.Collections.Generic.HashSet<long> OccupiedCellBuffer = new System.Collections.Generic.HashSet<long>(1024);
             public readonly System.Collections.Generic.Dictionary<long, System.Collections.Generic.List<ScatterPlacement>> GridPlacements = new System.Collections.Generic.Dictionary<long, System.Collections.Generic.List<ScatterPlacement>>(512);
             public readonly System.Collections.Generic.List<System.Collections.Generic.List<ScatterPlacement>> GridPlacementBuckets = new System.Collections.Generic.List<System.Collections.Generic.List<ScatterPlacement>>(512);
+            public NativeList<ScatterPlacementSpatialMetadata> GridPlacementSpatialMetadata;
+            public NativeParallelMultiHashMap<int, float3> GridPlacementPositionBuckets;
+            public NativeParallelMultiHashMap<int, int> GridPlacementMetadataBuckets;
+            public NativeArray<int> CandidateAcceptanceResult;
             public readonly System.Collections.Generic.Dictionary<long, ScatterCandidate> StructureRescueCandidates = new System.Collections.Generic.Dictionary<long, ScatterCandidate>(64);
             public readonly System.Collections.Generic.Dictionary<long, ScatterCandidate> SpawnRescueCandidates = new System.Collections.Generic.Dictionary<long, ScatterCandidate>(64);
             public readonly System.Collections.Generic.Dictionary<int, int> PrefabWarmupCounts = new System.Collections.Generic.Dictionary<int, int>(32);
@@ -85,6 +92,7 @@ namespace Hecton8.World
             public readonly System.Collections.Generic.Dictionary<string, int> SampledZoneCounts = new System.Collections.Generic.Dictionary<string, int>(8);
             public bool FaunaSnapshotDirty = true;
             public int GridPlacementBucketCount;
+            public bool GridPlacementNativeOverflowed;
             public float MaxRegisteredPlacementSpacingMeters;
             public FastCandidateMap GroundRescueCandidates;
             public FastCandidateMap ClusterRescueCandidates;
@@ -102,6 +110,18 @@ namespace Hecton8.World
             public FastCandidateMap PassiveSpawnCandidates;
             public FastCandidateMap PredatorSpawnCandidates;
 
+            public ScatterWorkingMemory()
+            {
+                // COLD ALLOC: NativeList<ScatterPlacementSpatialMetadata>[16384] — native scatter spacing cache — owner: WorldProceduralScatterDirector.ScatterWorkingMemory
+                GridPlacementSpatialMetadata = new NativeList<ScatterPlacementSpatialMetadata>(InitialGridPlacementNativeCapacity, Allocator.Persistent);
+                // COLD ALLOC: NativeParallelMultiHashMap<int, float3>[16384] — native scatter cell position buckets — owner: WorldProceduralScatterDirector.ScatterWorkingMemory
+                GridPlacementPositionBuckets = new NativeParallelMultiHashMap<int, float3>(InitialGridPlacementNativeCapacity, Allocator.Persistent);
+                // COLD ALLOC: NativeParallelMultiHashMap<int, int>[16384] — native scatter cell metadata buckets — owner: WorldProceduralScatterDirector.ScatterWorkingMemory
+                GridPlacementMetadataBuckets = new NativeParallelMultiHashMap<int, int>(InitialGridPlacementNativeCapacity, Allocator.Persistent);
+                // COLD ALLOC: NativeArray<int>[1] — candidate acceptance result scratch — owner: WorldProceduralScatterDirector.ScatterWorkingMemory
+                CandidateAcceptanceResult = new NativeArray<int>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            }
+
             public void EnsureCellSamplingCapacity(int requiredCapacity)
             {
                 if (requiredCapacity <= 0)
@@ -110,6 +130,55 @@ namespace Hecton8.World
                 EnsureCapacity(ref CellSamplingInputs, requiredCapacity);
                 EnsureCapacity(ref CellSamplingOutputs, requiredCapacity);
                 EnsureCapacity(ref ScatterBackendCellStates, requiredCapacity);
+            }
+
+            public void ResetGridPlacementSpatialCache()
+            {
+                if (GridPlacementSpatialMetadata.IsCreated)
+                    GridPlacementSpatialMetadata.Clear();
+                if (GridPlacementPositionBuckets.IsCreated)
+                    GridPlacementPositionBuckets.Clear();
+                if (GridPlacementMetadataBuckets.IsCreated)
+                    GridPlacementMetadataBuckets.Clear();
+                if (CandidateAcceptanceResult.IsCreated)
+                    CandidateAcceptanceResult[0] = 1;
+
+                GridPlacementNativeOverflowed = false;
+            }
+
+            public bool TryRegisterGridPlacement(ScatterPlacement placement)
+            {
+                if (placement == null || GridPlacementNativeOverflowed)
+                    return false;
+
+                if (!GridPlacementSpatialMetadata.IsCreated ||
+                    !GridPlacementPositionBuckets.IsCreated ||
+                    !GridPlacementMetadataBuckets.IsCreated)
+                {
+                    GridPlacementNativeOverflowed = true;
+                    return false;
+                }
+
+                if (GridPlacementSpatialMetadata.Length >= GridPlacementSpatialMetadata.Capacity ||
+                    GridPlacementSpatialMetadata.Length >= GridPlacementPositionBuckets.Capacity ||
+                    GridPlacementSpatialMetadata.Length >= GridPlacementMetadataBuckets.Capacity)
+                {
+                    GridPlacementNativeOverflowed = true;
+                    return false;
+                }
+
+                int metadataIndex = GridPlacementSpatialMetadata.Length;
+                float3 position = new float3(placement.Position.x, placement.Position.y, placement.Position.z);
+                GridPlacementSpatialMetadata.AddNoResize(new ScatterPlacementSpatialMetadata(
+                    position,
+                    placement.EffectiveSpacing,
+                    placement.Family != null ? (int)placement.Family.scatterLayer : 0,
+                    placement.Family != null ? (int)placement.Family.proceduralDomain : 0));
+
+                int cellKey = ComposeScatterGridNativeKey(placement.CellX, placement.CellZ);
+                GridPlacementPositionBuckets.Add(cellKey, position);
+                GridPlacementMetadataBuckets.Add(cellKey, metadataIndex);
+                return true;
             }
 
             public void EnsureCandidateMapsInitialized()
@@ -140,6 +209,14 @@ namespace Hecton8.World
                     CellSamplingOutputs.Dispose();
                 if (ScatterBackendCellStates.IsCreated)
                     ScatterBackendCellStates.Dispose();
+                if (GridPlacementSpatialMetadata.IsCreated)
+                    GridPlacementSpatialMetadata.Dispose();
+                if (GridPlacementPositionBuckets.IsCreated)
+                    GridPlacementPositionBuckets.Dispose();
+                if (GridPlacementMetadataBuckets.IsCreated)
+                    GridPlacementMetadataBuckets.Dispose();
+                if (CandidateAcceptanceResult.IsCreated)
+                    CandidateAcceptanceResult.Dispose();
 
                 GroundRescueCandidates.Dispose();
                 ClusterRescueCandidates.Dispose();
@@ -207,6 +284,7 @@ namespace Hecton8.World
                 Array.Clear(LayerNearRadii, 0, LayerNearRadii.Length);
                 Array.Clear(LayerMidRadii, 0, LayerMidRadii.Length);
                 Array.Clear(LayerFarRadii, 0, LayerFarRadii.Length);
+                ReleaseFloraGpuiMatrices();
                 FloraGpuiKnownPrototypes.Clear();
                 FloraGpuiMatrices.Clear();
                 FloraGpuiCounts.Clear();
@@ -231,6 +309,7 @@ namespace Hecton8.World
                 SampledZoneCounts.Clear();
                 FaunaSnapshotDirty = true;
                 GridPlacementBucketCount = 0;
+                GridPlacementNativeOverflowed = false;
                 MaxRegisteredPlacementSpacingMeters = 0f;
             }
 
@@ -252,6 +331,17 @@ namespace Hecton8.World
                     return;
 
                 map.Init(capacity * 2, Allocator.Persistent);
+            }
+
+            private void ReleaseFloraGpuiMatrices()
+            {
+                System.Collections.Generic.Dictionary<GPUInstancerPrefabPrototype, Matrix4x4[]>.Enumerator enumerator = FloraGpuiMatrices.GetEnumerator();
+                while (enumerator.MoveNext())
+                {
+                    Matrix4x4[] matrices = enumerator.Current.Value;
+                    if (matrices != null)
+                        System.Buffers.ArrayPool<Matrix4x4>.Shared.Return(matrices, clearArray: false);
+                }
             }
         }
     }

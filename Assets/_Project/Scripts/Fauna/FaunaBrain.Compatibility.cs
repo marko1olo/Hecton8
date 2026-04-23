@@ -78,7 +78,7 @@ namespace Hecton8.AI
         public void ForceState(FaunaBrain.AIState state)
         {
             _stateMachine.currentState = state;
-            _utilityBrain.ApplyExternalState(state, Time.time);
+            _utilityBrain.ApplyExternalState(state, _cognitionTimeSeconds);
         }
     }
 

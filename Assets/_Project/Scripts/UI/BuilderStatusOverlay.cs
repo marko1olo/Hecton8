@@ -347,22 +347,25 @@ namespace Hecton8.UI
                     // ZERO-GC: Use StringBuilder to avoid string concatenation allocation
                     _sb.Clear();
                     _sb.Append(CachedToUpperInvariant(data.moduleName)).Append(" [").Append(data.FamilyShortCode).Append(']');
-                    _moduleName.text = _sb.ToString();
+                    _moduleName.SetText(_sb);
                 }
                 else
                 {
-                    _moduleName.text = "NO MODULE";
+                    _moduleName.SetText("NO MODULE");
                 }
 
                 _indexLine.SetText("MODULE {0}/{1}  //  BUILT {2}", activeIndex + 1, Mathf.Max(1, buildCount), builtModuleCount);
-                _queueLine.SetText(BuildQueueHint(activeIndex, buildCount));
+                BuildQueueHint(activeIndex, buildCount);
 
-                if (powerRating > 0f)
-                    _powerLine.text = $"ROLE // {playerBuilder.GetActiveBuildRoleLabel()}  //  +{powerRating:0}W NET";
-                else if (powerRating < 0f)
-                    _powerLine.text = $"ROLE // {playerBuilder.GetActiveBuildRoleLabel()}  //  {powerRating:0}W LOAD";
-                else
-                    _powerLine.text = $"ROLE // {playerBuilder.GetActiveBuildRoleLabel()}";
+                int roundedPowerRating = Mathf.RoundToInt(powerRating);
+                _sb.Clear();
+                _sb.Append("ROLE // ").Append(playerBuilder.GetActiveBuildRoleLabel());
+                if (roundedPowerRating > 0)
+                    _sb.Append("  //  +").Append(roundedPowerRating).Append("W NET");
+                else if (roundedPowerRating < 0)
+                    _sb.Append("  //  ").Append(roundedPowerRating).Append("W LOAD");
+
+                _powerLine.SetText(_sb);
 
                 BuildCostSummary(data, hasResources);
             }
@@ -394,7 +397,9 @@ namespace Hecton8.UI
                 _resourceLine.color = hasResources ? ReadyColor : WarnColor;
                 _resourceLine.SetText(hasResources ? "RESOURCES // READY" : "RESOURCES // INSUFFICIENT");
                 _costLine.color = hasResources ? DimColor : WarnColor;
-                _hintLine.SetText(CachedToUpperInvariant(playerBuilder.GetActiveBuildAdvice()));
+                _sb.Clear();
+                _sb.Append(CachedToUpperInvariant(playerBuilder.GetActiveBuildAdvice()));
+                _hintLine.SetText(_sb);
             }
         }
 
@@ -505,10 +510,16 @@ namespace Hecton8.UI
             }
         }
 
-        private string BuildQueueHint(int activeIndex, int buildCount)
+        private void BuildQueueHint(int activeIndex, int buildCount)
         {
-            if (_queueLine == null || playerBuilder == null || buildCount <= 0)
-                return "CATALOG // OFFLINE";
+            if (_queueLine == null)
+                return;
+
+            if (playerBuilder == null || buildCount <= 0)
+            {
+                _queueLine.SetText("CATALOG // OFFLINE");
+                return;
+            }
 
             BuildableData prev = playerBuilder.GetRelativeBuildable(-1);
             BuildableData next = playerBuilder.GetRelativeBuildable(1);
@@ -520,7 +531,7 @@ namespace Hecton8.UI
             _sb.Append(activeIndex + 1);
             _sb.Append("  >  ");
             _sb.Append(next != null ? CachedToUpperInvariant(next.moduleName) : "NONE");
-            return _sb.ToString();
+            _queueLine.SetText(_sb);
         }
 
         private void BuildCostSummary(BuildableData data, bool hasResources)
@@ -556,7 +567,7 @@ namespace Hecton8.UI
             }
 
             _costLine.color = hasResources ? DimColor : WarnColor;
-            _costLine.SetText(_sb.ToString());
+            _costLine.SetText(_sb);
         }
 
         private static RectTransform CreateRect(string name, RectTransform parent)

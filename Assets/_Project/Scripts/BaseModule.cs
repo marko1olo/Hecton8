@@ -1246,8 +1246,10 @@ namespace Hecton8.Gameplay
 
             _keysToRemove.Clear();
 
-            foreach (KeyValuePair<int, BuoyancyObject> kvp in _trackedObjects)
+            Dictionary<int, BuoyancyObject>.Enumerator enumerator = _trackedObjects.GetEnumerator();
+            while (enumerator.MoveNext())
             {
+                KeyValuePair<int, BuoyancyObject> kvp = enumerator.Current;
                 BuoyancyObject buoyancy = kvp.Value;
 
                 if (buoyancy == null)
@@ -1276,8 +1278,10 @@ namespace Hecton8.Gameplay
             if (_trackedObjects.Count == 0)
                 return;
 
-            foreach (KeyValuePair<int, BuoyancyObject> kvp in _trackedObjects)
+            Dictionary<int, BuoyancyObject>.Enumerator enumerator = _trackedObjects.GetEnumerator();
+            while (enumerator.MoveNext())
             {
+                KeyValuePair<int, BuoyancyObject> kvp = enumerator.Current;
                 BuoyancyObject buoyancy = kvp.Value;
 
                 if (buoyancy != null && !_integrityComponent.IsFlooded)

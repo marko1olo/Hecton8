@@ -10,7 +10,7 @@ namespace Hecton8.Core
     public static class GlobalRegistry
     {
         // COLD ALLOC: RegistryBucket<IUpdatable>[128] — global multi-instance update registry — owner: GlobalRegistry
-        private static readonly RegistryBucket<IUpdatable> _updatables = new RegistryBucket<IUpdatable>(128);
+        private static readonly RegistryBucket<IUpdatable> _updatables = new RegistryBucket<IUpdatable>(512);
         // COLD ALLOC: RegistryBucket<IRenderable>[64] — global multi-instance render registry — owner: GlobalRegistry
         private static readonly RegistryBucket<IRenderable> _renderables = new RegistryBucket<IRenderable>(64);
 

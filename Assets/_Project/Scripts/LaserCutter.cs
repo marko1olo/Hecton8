@@ -1339,6 +1339,9 @@ namespace Hecton8.Gameplay
             if (impulseMagnitude <= 0.0001f)
                 return;
 
+            if (ToolHitUtility.TryApplyRelativeCarrierImpulse(direction, impulseMagnitude))
+                return;
+
             PhysicsForceRouter.QueueForce(_cachedPlayerRigidbody, -direction * impulseMagnitude, ForceMode.Impulse);
         }
 

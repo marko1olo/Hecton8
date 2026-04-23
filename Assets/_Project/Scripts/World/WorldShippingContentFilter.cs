@@ -33,8 +33,10 @@ namespace Hecton8.World
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetState()
         {
-            foreach (KeyValuePair<ulong, HashSet<EntityId>> pair in _suppressedHierarchyIdsByScene)
+            Dictionary<ulong, HashSet<EntityId>>.Enumerator enumerator = _suppressedHierarchyIdsByScene.GetEnumerator();
+            while (enumerator.MoveNext())
             {
+                KeyValuePair<ulong, HashSet<EntityId>> pair = enumerator.Current;
                 if (pair.Value != null)
                     pair.Value.Clear();
             }
@@ -271,8 +273,10 @@ namespace Hecton8.World
                 return;
 
             _staleSceneHandles.Clear();
-            foreach (KeyValuePair<ulong, HashSet<EntityId>> pair in _suppressedHierarchyIdsByScene)
+            Dictionary<ulong, HashSet<EntityId>>.Enumerator enumerator = _suppressedHierarchyIdsByScene.GetEnumerator();
+            while (enumerator.MoveNext())
             {
+                KeyValuePair<ulong, HashSet<EntityId>> pair = enumerator.Current;
                 if (!IsSceneHandleLoaded(pair.Key))
                     _staleSceneHandles.Add(pair.Key);
             }

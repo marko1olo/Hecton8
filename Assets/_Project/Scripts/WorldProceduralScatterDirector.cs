@@ -1464,8 +1464,9 @@ namespace Hecton8.World
             if (candidates == null || candidates.Count == 0)
                 return;
 
-            foreach (KeyValuePair<long, ScatterCandidate> pair in candidates)
-                ReleasePlacement(pair.Value.Placement);
+            Dictionary<long, ScatterCandidate>.Enumerator enumerator = candidates.GetEnumerator();
+            while (enumerator.MoveNext())
+                ReleasePlacement(enumerator.Current.Value.Placement);
 
             candidates.Clear();
         }
@@ -1483,8 +1484,9 @@ namespace Hecton8.World
             if (placements == null || placements.Count == 0)
                 return;
 
-            foreach (KeyValuePair<long, ScatterPlacement> pair in placements)
-                ReleasePlacement(pair.Value);
+            Dictionary<long, ScatterPlacement>.Enumerator enumerator = placements.GetEnumerator();
+            while (enumerator.MoveNext())
+                ReleasePlacement(enumerator.Current.Value);
 
             placements.Clear();
         }
@@ -2172,8 +2174,10 @@ namespace Hecton8.World
 
         private void ReconcileDesiredPlacements(ref ScatterReconcileExecutionContext reconcileContext)
         {
-            foreach (KeyValuePair<long, ScatterPlacement> pair in _desiredPlacements)
+            Dictionary<long, ScatterPlacement>.Enumerator enumerator = _desiredPlacements.GetEnumerator();
+            while (enumerator.MoveNext())
             {
+                KeyValuePair<long, ScatterPlacement> pair = enumerator.Current;
                 ScatterPlacement placement = pair.Value;
                 ScatterPlacementReconcilePlan plan = ResolveReconcilePlan(
                     placement,
@@ -2205,8 +2209,9 @@ namespace Hecton8.World
         private void CollectAllActiveScatterInstanceKeys(List<long> removalBuffer)
         {
             removalBuffer.Clear();
-            foreach (KeyValuePair<long, WorldProceduralProxyInstance> pair in _activeInstances)
-                removalBuffer.Add(pair.Key);
+            Dictionary<long, WorldProceduralProxyInstance>.Enumerator enumerator = _activeInstances.GetEnumerator();
+            while (enumerator.MoveNext())
+                removalBuffer.Add(enumerator.Current.Key);
         }
 
         private static void CollectStaleActiveScatterInstanceKeys(
@@ -2215,8 +2220,10 @@ namespace Hecton8.World
             List<long> removalBuffer)
         {
             removalBuffer.Clear();
-            foreach (KeyValuePair<long, WorldProceduralProxyInstance> pair in activeInstances)
+            Dictionary<long, WorldProceduralProxyInstance>.Enumerator enumerator = activeInstances.GetEnumerator();
+            while (enumerator.MoveNext())
             {
+                KeyValuePair<long, WorldProceduralProxyInstance> pair = enumerator.Current;
                 if (desiredPlacements.ContainsKey(pair.Key))
                     continue;
 
@@ -2416,9 +2423,10 @@ namespace Hecton8.World
 
             int faunaAnchorCount = 0;
             int largeThreatZoneCount = 0;
-            foreach (KeyValuePair<long, ScatterPlacement> pair in _desiredPlacements)
+            Dictionary<long, ScatterPlacement>.Enumerator enumerator = _desiredPlacements.GetEnumerator();
+            while (enumerator.MoveNext())
             {
-                if (!TryBuildFaunaRegistryAnchor(pair.Value, out WorldFaunaSpawnRegistry.Anchor anchor, out bool largeThreatZone))
+                if (!TryBuildFaunaRegistryAnchor(enumerator.Current.Value, out WorldFaunaSpawnRegistry.Anchor anchor, out bool largeThreatZone))
                     continue;
 
                 _faunaAnchorBuffer.Add(anchor);
@@ -2547,9 +2555,10 @@ namespace Hecton8.World
 
         private void CollectScatterPoolWarmupDemand(ref ScatterPoolWarmupContext warmupContext)
         {
-            foreach (KeyValuePair<long, ScatterPlacement> pair in _desiredPlacements)
+            Dictionary<long, ScatterPlacement>.Enumerator enumerator = _desiredPlacements.GetEnumerator();
+            while (enumerator.MoveNext())
             {
-                ScatterPlacement placement = pair.Value;
+                ScatterPlacement placement = enumerator.Current.Value;
                 if (warmupContext.InitialWarmupPass &&
                     !ShouldCreateDuringInitialWarmup(
                         placement,
@@ -2586,8 +2595,10 @@ namespace Hecton8.World
 
         private void ApplyScatterPoolWarmupAllowances(ref ScatterPoolWarmupContext warmupContext)
         {
-            foreach (KeyValuePair<int, int> pair in warmupContext.PrefabWarmupCounts)
+            Dictionary<int, int>.Enumerator enumerator = warmupContext.PrefabWarmupCounts.GetEnumerator();
+            while (enumerator.MoveNext())
             {
+                KeyValuePair<int, int> pair = enumerator.Current;
                 if (warmupContext.RemainingWarmupBudget <= 0)
                     break;
 
@@ -2620,9 +2631,10 @@ namespace Hecton8.World
 
                         if (warmupContext.DiagnosticsTraceActive)
                         {
+                            int prefabInstanceId = unchecked((int)EntityId.ToULong(prefab.GetEntityId()));
                             RuntimeDiagnosticsTrace.WriteEvent(
                                 "pool",
-                                $"warmup family={familyId} prefab={prefab.name} count={warmupCount} availableBefore={availableBeforeWarmup} reserve={reserveCount} reserveTopUp={reserveTopUp} missing={missingCount} startup={warmupContext.UseExactStartupWarmup}");
+                                $"warmup family={familyId} prefabId={prefabInstanceId} count={warmupCount} availableBefore={availableBeforeWarmup} reserve={reserveCount} reserveTopUp={reserveTopUp} missing={missingCount} startup={warmupContext.UseExactStartupWarmup}");
                         }
                     }
                 }
@@ -2923,9 +2935,10 @@ namespace Hecton8.World
 
         private void InvalidateResolvedPlacementVariantCache()
         {
-            foreach (KeyValuePair<long, ScatterPlacement> pair in _desiredPlacements)
+            Dictionary<long, ScatterPlacement>.Enumerator enumerator = _desiredPlacements.GetEnumerator();
+            while (enumerator.MoveNext())
             {
-                ScatterPlacement placement = pair.Value;
+                ScatterPlacement placement = enumerator.Current.Value;
                 placement?.InvalidateResolvedVariantState();
             }
         }
@@ -2937,8 +2950,10 @@ namespace Hecton8.World
             Dictionary<long, ScatterPlacement> retainedPlacements = evictionContext.RetainedPlacements;
             removalBuffer.Clear();
 
-            foreach (KeyValuePair<long, float> pair in placementLastSeenTimes)
+            Dictionary<long, float>.Enumerator enumerator = placementLastSeenTimes.GetEnumerator();
+            while (enumerator.MoveNext())
             {
+                KeyValuePair<long, float> pair = enumerator.Current;
                 if (evictionContext.Now - pair.Value > evictionContext.RemovalThresholdSeconds)
                     removalBuffer.Add(pair.Key);
             }
@@ -2975,6 +2990,7 @@ namespace Hecton8.World
             _gridPlacementBucketCount = 0;
             _maxRegisteredPlacementSpacingMeters = 0f;
             _gridPlacements.Clear();
+            _memory.ResetGridPlacementSpatialCache();
         }
 
         private void RegisterPlacementInGrid(ScatterPlacement placement)
@@ -2997,6 +3013,7 @@ namespace Hecton8.World
             }
 
             bucket.Add(placement);
+            _memory.TryRegisterGridPlacement(placement);
             float spacing = placement.EffectiveSpacing;
             if (spacing > _maxRegisteredPlacementSpacingMeters)
                 _maxRegisteredPlacementSpacingMeters = spacing;
@@ -3010,8 +3027,10 @@ namespace Hecton8.World
             Dictionary<long, ScatterPlacement> desiredPlacements = restoreContext.DesiredPlacements;
             Dictionary<long, ScatterPlacement> retainedPlacements = restoreContext.RetainedPlacements;
             Dictionary<long, float> placementLastSeenTimes = restoreContext.PlacementLastSeenTimes;
-            foreach (KeyValuePair<long, WorldProceduralProxyInstance> pair in _activeInstances)
+            Dictionary<long, WorldProceduralProxyInstance>.Enumerator enumerator = _activeInstances.GetEnumerator();
+            while (enumerator.MoveNext())
             {
+                KeyValuePair<long, WorldProceduralProxyInstance> pair = enumerator.Current;
                 long runtimeKey = pair.Key;
                 if (desiredPlacements.ContainsKey(runtimeKey))
                     continue;
@@ -3392,8 +3411,8 @@ namespace Hecton8.World
             {
                 bool supportsFinalVariant = ResolvePlacementSupportsFinalVariant(placement);
                 int signature = ScatterPlacementSyncSignatureVersion;
-                signature = signature * 31 + placement.Key.GetHashCode();
-                signature = signature * 31 + placement.StreamingLayer.GetHashCode();
+                signature = signature * 31 + FoldLongHash(placement.Key);
+                signature = signature * 31 + (int)placement.StreamingLayer;
                 signature = signature * 31 + (supportsFinalVariant ? 1 : 0);
                 signature = signature * 31 + (finalVariantActive ? 1 : 0);
                 signature = signature * 31 + placement.CellX;
@@ -3421,11 +3440,24 @@ namespace Hecton8.World
                 signature = signature * 31 + BitConverter.SingleToInt32Bits(placement.CanyonSignal);
                 signature = signature * 31 + BitConverter.SingleToInt32Bits(placement.CompositionPotential);
                 signature = signature * 31 + BitConverter.SingleToInt32Bits(placement.Heat);
-                signature = signature * 31 + placement.FieldSource.GetHashCode();
+                signature = signature * 31 + (int)placement.FieldSource;
                 signature = signature * 31 + placement.StableHash;
-                signature = signature * 31 + (runtimeVariant != null && runtimeVariant.variantId != null ? runtimeVariant.variantId.GetHashCode() : 0);
+                signature = signature * 31 + ComputeStableStringHash(runtimeVariant != null ? runtimeVariant.variantId : null);
                 return signature;
             }
+        }
+
+        private static int FoldLongHash(long value)
+        {
+            unchecked
+            {
+                return (int)value ^ (int)(value >> 32);
+            }
+        }
+
+        private static int ComputeStableStringHash(string value)
+        {
+            return Hecton.Localization.LocHash.Compute(value);
         }
 
         private WorldGenerativeGeologyService ResolveGenerativeGeologyService(bool createIfMissing)
@@ -3666,37 +3698,7 @@ namespace Hecton8.World
 
         private bool CanAcceptCandidate(in ScatterCandidate candidate)
         {
-            if (_gridPlacements.Count == 0)
-                return true;
-
-            float candidateSpacing = candidate.Placement.EffectiveSpacing;
-            float maxRelevantDistance = Mathf.Max(candidateSpacing, _maxRegisteredPlacementSpacingMeters) * 1.35f;
-            int searchRadiusCells = Mathf.Max(1, Mathf.CeilToInt(maxRelevantDistance / Mathf.Max(1f, _runtimeStreamingState.CellSize)));
-            int cellX = candidate.Placement.CellX;
-            int cellZ = candidate.Placement.CellZ;
-
-            for (int ox = -searchRadiusCells; ox <= searchRadiusCells; ox++)
-            {
-                for (int oz = -searchRadiusCells; oz <= searchRadiusCells; oz++)
-                {
-                    long cellKey = ComposeScatterGridKey(cellX + ox, cellZ + oz);
-                    if (!_gridPlacements.TryGetValue(cellKey, out List<ScatterPlacement> localPlacements))
-                        continue;
-
-                    for (int i = 0; i < localPlacements.Count; i++)
-                    {
-                        ScatterPlacement existing = localPlacements[i];
-                        float minDistance = ResolveRequiredDistance(candidate.Placement, existing);
-                        if (minDistance <= 0f)
-                            continue;
-
-                        if ((candidate.Placement.Position - existing.Position).sqrMagnitude < minDistance * minDistance)
-                            return false;
-                    }
-                }
-            }
-
-            return true;
+            return CanAcceptCandidateNative(candidate);
         }
 
         private static long ComposeScatterGridKey(int cellX, int cellZ)
@@ -4127,13 +4129,16 @@ namespace Hecton8.World
         private static long ComposeWindowKey(int cellX, int cellZ, int stride, int heightLayerIndex)
         {
             int safeStride = Mathf.Max(1, stride);
-            int windowX = Mathf.FloorToInt(cellX / (float)safeStride);
-            int windowZ = Mathf.FloorToInt(cellZ / (float)safeStride);
-            int safeHeightLayer = Mathf.Max(0, heightLayerIndex);
-            return ((long)windowX << 32)
-                   ^ (uint)windowZ
-                   ^ ((long)safeStride << 24)
-                   ^ ((long)(safeHeightLayer & 0xFFFF) << 48);
+            uint windowX = (uint)Mathf.FloorToInt(cellX / (float)safeStride) & 0xFFFFF;
+            uint windowZ = (uint)Mathf.FloorToInt(cellZ / (float)safeStride) & 0xFFFFF;
+            uint strideBits = (uint)safeStride & 0xFF;
+            uint heightBits = (uint)Mathf.Max(0, heightLayerIndex) & 0xFF;
+
+            return (long)(
+                (ulong)windowX |
+                ((ulong)windowZ << 20) |
+                ((ulong)strideBits << 40) |
+                ((ulong)heightBits << 48));
         }
 
         private static void CountSeafloorSource(
@@ -4187,8 +4192,9 @@ namespace Hecton8.World
             if (source == null || source.Count == 0)
                 return;
 
-            foreach (KeyValuePair<long, ScatterCandidate> pair in source)
-                buffer.Add(pair.Value);
+            Dictionary<long, ScatterCandidate>.Enumerator enumerator = source.GetEnumerator();
+            while (enumerator.MoveNext())
+                buffer.Add(enumerator.Current.Value);
 
             buffer.Sort();
         }
@@ -4207,12 +4213,14 @@ namespace Hecton8.World
         private void RebuildOccupiedCellBuffer(WorldPrefabFamilyProfile.ScatterLayer layer)
         {
             _occupiedCellBuffer.Clear();
-            foreach (KeyValuePair<long, ScatterPlacement> pair in _desiredPlacements)
+            Dictionary<long, ScatterPlacement>.Enumerator enumerator = _desiredPlacements.GetEnumerator();
+            while (enumerator.MoveNext())
             {
-                if (pair.Value.Family == null || pair.Value.Family.scatterLayer != layer)
+                ScatterPlacement placement = enumerator.Current.Value;
+                if (placement.Family == null || placement.Family.scatterLayer != layer)
                     continue;
 
-                _occupiedCellBuffer.Add(ComposeWindowKey(pair.Value.CellX, pair.Value.CellZ, 1, pair.Value.HeightLayerIndex));
+                _occupiedCellBuffer.Add(ComposeWindowKey(placement.CellX, placement.CellZ, 1, placement.HeightLayerIndex));
             }
         }
 
@@ -4450,8 +4458,10 @@ namespace Hecton8.World
                 return "None";
 
             string bestFamily = "None";
-            foreach (KeyValuePair<string, int> pair in counters[index])
+            Dictionary<string, int>.Enumerator enumerator = counters[index].GetEnumerator();
+            while (enumerator.MoveNext())
             {
+                KeyValuePair<string, int> pair = enumerator.Current;
                 if (pair.Value <= count)
                     continue;
 
@@ -4471,8 +4481,10 @@ namespace Hecton8.World
                 return "None";
 
             string bestLabel = "None";
-            foreach (KeyValuePair<string, int> pair in counters)
+            Dictionary<string, int>.Enumerator enumerator = counters.GetEnumerator();
+            while (enumerator.MoveNext())
             {
+                KeyValuePair<string, int> pair = enumerator.Current;
                 if (pair.Value <= count)
                     continue;
 
@@ -4493,8 +4505,10 @@ namespace Hecton8.World
             HectonBiomeMatrixProfile bestProfile = fallbackProfile;
             int bestCount = -1;
             int bestTieBreaker = int.MinValue;
-            foreach (KeyValuePair<HectonBiomeMatrixProfile, int> pair in counters)
+            Dictionary<HectonBiomeMatrixProfile, int>.Enumerator enumerator = counters.GetEnumerator();
+            while (enumerator.MoveNext())
             {
+                KeyValuePair<HectonBiomeMatrixProfile, int> pair = enumerator.Current;
                 HectonBiomeMatrixProfile profile = pair.Key;
                 if (profile == null)
                     continue;
@@ -7238,7 +7252,7 @@ namespace Hecton8.World
                 {
                     instance = pool.Spawn(prefab, placement.Position, placement.Rotation, !Application.isPlaying);
                     if (instance != null)
-                        instance.transform.SetParent(parent, true);
+                        instance.transform.SetParent(parent, false);
                 }
 
                 if (instance == null)
@@ -7396,7 +7410,7 @@ namespace Hecton8.World
                 {
                     VariantFilterMode.FinalReady => variant.finalReady && !variant.proxyOnly,
                     VariantFilterMode.ProxyOnly => variant.proxyOnly || !variant.finalReady,
-                    VariantFilterMode.CheapProxy => variant.proxyOnly && !string.IsNullOrWhiteSpace(variant.variantId) && variant.variantId.EndsWith(".proxy.simple", StringComparison.Ordinal),
+                    VariantFilterMode.CheapProxy => variant.proxyOnly && variant.IsCheapProxy,
                     _ => true
                 };
 
@@ -7419,7 +7433,7 @@ namespace Hecton8.World
                 {
                     VariantFilterMode.FinalReady => variant.finalReady && !variant.proxyOnly,
                     VariantFilterMode.ProxyOnly => variant.proxyOnly || !variant.finalReady,
-                    VariantFilterMode.CheapProxy => variant.proxyOnly && !string.IsNullOrWhiteSpace(variant.variantId) && variant.variantId.EndsWith(".proxy.simple", StringComparison.Ordinal),
+                    VariantFilterMode.CheapProxy => variant.proxyOnly && variant.IsCheapProxy,
                     _ => true
                 };
 
@@ -8576,9 +8590,7 @@ namespace Hecton8.World
             if (a == null || b == null)
                 return false;
 
-            #pragma warning disable CS0618
-            return ReferenceEquals(a, b) || a.GetInstanceID() == b.GetInstanceID();
-            #pragma warning restore CS0618
+            return ReferenceEquals(a, b) || a.GetEntityId() == b.GetEntityId();
         }
 
         private int CountPlacedFamily(
@@ -8672,11 +8684,9 @@ namespace Hecton8.World
                 return 0;
 
             if (!string.IsNullOrWhiteSpace(family.familyId))
-                return family.familyId.GetHashCode();
+                return ComputeStableStringHash(family.familyId);
 
-#pragma warning disable CS0618
-            return family.GetInstanceID();
-#pragma warning restore CS0618
+            return unchecked((int)EntityId.ToULong(family.GetEntityId()));
         }
 
         private void CountPlacedServiceStructureDomains(
@@ -10502,19 +10512,22 @@ namespace Hecton8.World
         {
             unchecked
             {
-                return ((long)cellX << 32) ^ (uint)cellZ ^ ((long)ruleIdHash << 1);
+                ulong packedCellX = (uint)cellX & 0xFFFFFUL;
+                ulong packedCellZ = (uint)cellZ & 0xFFFFFUL;
+                ulong packedRule = (uint)ruleIdHash & 0xFFFFFUL;
+                return (long)(packedCellX | (packedCellZ << 20) | (packedRule << 40));
             }
         }
 
         private static long ComposePlacementKey(int cellX, int cellZ, int ruleIdHash, int heightLayerIndex)
         {
-            long baseKey = ComposeKey(cellX, cellZ, ruleIdHash);
+            ulong baseKey = (ulong)ComposeKey(cellX, cellZ, ruleIdHash);
             if (heightLayerIndex <= 0)
-                return baseKey;
+                return (long)baseKey;
 
             unchecked
             {
-                return baseKey ^ ((long)(heightLayerIndex & 0xFF) << 56);
+                return (long)(baseKey | ((ulong)(heightLayerIndex & 0xF) << 60));
             }
         }
 
@@ -10629,7 +10642,7 @@ namespace Hecton8.World
             {
                 GameObject child = root.GetChild(i).gameObject;
                 if (Application.isPlaying)
-                    Destroy(child);
+                    DestroyProxyInstance(child);
                 else
                     DestroyImmediate(child);
             }
@@ -10781,7 +10794,7 @@ namespace Hecton8.World
 
             if (!_floraGpuiMatrices.TryGetValue(prototype, out Matrix4x4[] matrices))
             {
-                matrices = new Matrix4x4[64]; // COLD ALLOC: first-time GPUI flora prototype buffer.
+                matrices = System.Buffers.ArrayPool<Matrix4x4>.Shared.Rent(64); // COLD ALLOC: Matrix4x4[64] — pooled GPUI flora prototype buffer — owner: WorldProceduralScatterDirector
                 _floraGpuiMatrices.Add(prototype, matrices);
                 _floraGpuiCounts.Add(prototype, 0);
                 _floraGpuiBufferCapacities.Add(prototype, 0);
@@ -10792,8 +10805,9 @@ namespace Hecton8.World
             if (count >= matrices.Length)
             {
                 int newCapacity = Mathf.NextPowerOfTwo(count + 1);
-                Matrix4x4[] expanded = new Matrix4x4[newCapacity]; // COLD ALLOC: growth only when a prototype exceeds current flora GPUI capacity.
-                Array.Copy(matrices, 0, expanded, 0, matrices.Length);
+                Matrix4x4[] expanded = System.Buffers.ArrayPool<Matrix4x4>.Shared.Rent(newCapacity);
+                Array.Copy(matrices, 0, expanded, 0, count);
+                System.Buffers.ArrayPool<Matrix4x4>.Shared.Return(matrices, clearArray: false);
                 matrices = expanded;
                 _floraGpuiMatrices[prototype] = matrices;
             }

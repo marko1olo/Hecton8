@@ -14,10 +14,10 @@ namespace Hecton8.Core
         // COLD ALLOC: RegistryBucket<IUpdatable>[4] — fixed dispatcher lanes ordered by bootstrap layer — owner: SystemDispatcher
         private static readonly RegistryBucket<IUpdatable>[] _priorityLanes =
         {
-            new RegistryBucket<IUpdatable>(16),
-            new RegistryBucket<IUpdatable>(32),
-            new RegistryBucket<IUpdatable>(32),
-            new RegistryBucket<IUpdatable>(16),
+            new RegistryBucket<IUpdatable>(256),
+            new RegistryBucket<IUpdatable>(256),
+            new RegistryBucket<IUpdatable>(128),
+            new RegistryBucket<IUpdatable>(64),
         };
 
         private static FoveatedSimulationManager _foveatedSimulationManager = new FoveatedSimulationManager();

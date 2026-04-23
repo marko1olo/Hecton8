@@ -431,7 +431,7 @@ namespace Hecton8.World
             }
 
             _instance = this;
-            _instanceId = GetHashCode();
+            _instanceId = unchecked((int)EntityId.ToULong(GetEntityId()));
             SanitizeSettings();
             ResolveDependencies();
             EnsureStorage();

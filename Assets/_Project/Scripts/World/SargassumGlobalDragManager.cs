@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Hecton8.Core;
+using Hecton8.Gameplay;
 using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -1359,8 +1360,7 @@ namespace Hecton8.World
                     {
                         chunkRigidbody.isKinematic = false;
                         chunkRigidbody.WakeUp();
-                        chunkRigidbody.linearVelocity = linearVelocity;
-                        chunkRigidbody.angularVelocity = angularVelocity;
+                        WriteSafeVelocities(chunkRigidbody, linearVelocity, angularVelocity);
                     }
 
                     poolManager.Despawn(chunkInstance, collapseChunkLifetime);
@@ -1445,8 +1445,7 @@ namespace Hecton8.World
                     {
                         chunkRigidbody.isKinematic = false;
                         chunkRigidbody.WakeUp();
-                        chunkRigidbody.linearVelocity = linearVelocity;
-                        chunkRigidbody.angularVelocity = angularVelocity;
+                        WriteSafeVelocities(chunkRigidbody, linearVelocity, angularVelocity);
                     }
 
                     poolManager.Despawn(chunkInstance, collapseChunkLifetime * 0.7f);
@@ -1815,7 +1814,7 @@ namespace Hecton8.World
                 AnchorWS = anchorWS,
                 RadiusWS = clampedRadius,
                 RemainingTime = clampedDuration,
-                Seed = (uint)targetIndex * 0x45D9F3Bu ^ (uint)Mathf.Abs(anchorWS.GetHashCode()) ^ NestingHashSeed
+                Seed = BuildDeterministicAnchorSeed(anchorWS, _globalDriftOffset, (uint)targetIndex * 0x45D9F3Bu)
             };
         }
 
@@ -2796,6 +2795,33 @@ namespace Hecton8.World
             mesh.triangles = triangles;
             mesh.bounds = new Bounds(Vector3.zero, Vector3.one);
             return mesh;
+        }
+
+        private static void WriteSafeVelocities(Rigidbody body, Vector3 linearVelocity, Vector3 angularVelocity)
+        {
+            if (body == null)
+                return;
+
+            body.linearVelocity = HectonPlayerMotor.SafeVelocity(linearVelocity, body.linearVelocity);
+            body.angularVelocity = HectonPlayerMotor.SafeVelocity(angularVelocity, body.angularVelocity);
+        }
+
+        private static uint BuildDeterministicAnchorSeed(Vector3 anchorWS, Vector3 driftOffset, uint salt)
+        {
+            Vector3 sampleSpaceAnchorWS = anchorWS - driftOffset;
+            int quantizedX = Mathf.RoundToInt(sampleSpaceAnchorWS.x * 100f);
+            int quantizedY = Mathf.RoundToInt(sampleSpaceAnchorWS.y * 100f);
+            int quantizedZ = Mathf.RoundToInt(sampleSpaceAnchorWS.z * 100f);
+            uint hash = salt ^ NestingHashSeed;
+            hash = MixSeed(hash, unchecked((uint)quantizedX));
+            hash = MixSeed(hash, unchecked((uint)quantizedY));
+            hash = MixSeed(hash, unchecked((uint)quantizedZ));
+            return hash != 0u ? hash : NestingHashSeed;
+        }
+
+        private static uint MixSeed(uint hash, uint value)
+        {
+            return hash ^ (value + 0x9E3779B9u + (hash << 6) + (hash >> 2));
         }
 
         private static float HashToFloat01(uint index, uint iteration, uint salt)

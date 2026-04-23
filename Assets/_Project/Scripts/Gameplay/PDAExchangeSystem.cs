@@ -283,8 +283,10 @@ namespace Hecton8.Gameplay
 
             data.barter.EnsureCapacity();
             int count = 0;
-            foreach (KeyValuePair<string, int> kvp in _executionCounts)
+            Dictionary<string, int>.Enumerator enumerator = _executionCounts.GetEnumerator();
+            while (enumerator.MoveNext())
             {
+                KeyValuePair<string, int> kvp = enumerator.Current;
                 if (count >= BarterDTO.MaxOffers)
                     break;
 

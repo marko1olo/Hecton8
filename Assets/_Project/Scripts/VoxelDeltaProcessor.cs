@@ -2,9 +2,8 @@ using System;
 using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.SaveSystem;
-using Unity.Burst;
 using Unity.Collections;
-using Unity.Jobs;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -18,13 +17,11 @@ namespace Hecton8.Caves
     public sealed class VoxelDeltaProcessor : MonoBehaviour, ISaveable, IUpdatable
     {
         private const int ChunkResolution = 32;
+        private const int ChunkCellCount = VoxelDeltaChunkDTO.CellCount;
+        private const int ChunkDirtyMaskWordCount = VoxelDeltaChunkDTO.DirtyMaskWordCount;
         private const int InitialChunkRegistryCapacity = 256;
         private const int InitialVolumeRegistryCapacity = 16;
         private const int InitialPendingCarveCapacity = 32;
-        private const int InitialChunkCellCapacity = 256;
-        private const int ChunkByteBudget = 32 * 1024 * 1024;
-        private const int ApproxDeltaBytesPerCell = 14;
-        private const int MaxCellsPerChunk = ChunkByteBudget / ApproxDeltaBytesPerCell;
         private const int MortonSignedOffset = 1 << 20;
         private const float MinRuntimeVoxelSize = 0.25f;
         private const float MinCarveRadiusMeters = 0.9f;
@@ -233,7 +230,7 @@ namespace Hecton8.Caves
                     {
                         ChunkAddress address = new ChunkAddress(new int3(x, y, z), volume.VoxelSize);
                         if (_chunkStates.TryGetValue(address, out ChunkDeltaState state))
-                            estimatedCount += state.ModifiedCells.Count();
+                            estimatedCount += CountDirtyCells(in state);
                     }
                 }
             }
@@ -253,15 +250,26 @@ namespace Hecton8.Caves
                         if (!_chunkStates.TryGetValue(address, out ChunkDeltaState state))
                             continue;
 
-                        NativeParallelHashMap<int3, half>.Enumerator enumerator = state.ModifiedCells.GetEnumerator();
-                        while (enumerator.MoveNext())
+                        for (int wordIndex = 0; wordIndex < ChunkDirtyMaskWordCount; wordIndex++)
                         {
-                            var current = enumerator.Current;
-                            int3 cell = current.Key;
-                            if (math.any(cell < minCell) || math.any(cell > maxCell))
+                            uint dirtyWord = state.DirtyMaskWords[wordIndex];
+                            if (dirtyWord == 0u)
                                 continue;
 
-                            modifiedCells.TryAdd(cell, current.Value);
+                            int baseIndex = wordIndex << 5;
+                            for (int bitIndex = 0; bitIndex < 32; bitIndex++)
+                            {
+                                uint bitMask = 1u << bitIndex;
+                                if ((dirtyWord & bitMask) == 0u)
+                                    continue;
+
+                                int flatIndex = baseIndex + bitIndex;
+                                int3 cell = AbsoluteCellFromLocalIndex(state.ChunkCoord, flatIndex);
+                                if (math.any(cell < minCell) || math.any(cell > maxCell))
+                                    continue;
+
+                                modifiedCells.TryAdd(cell, BitsToHalf(state.SdfValueBits[flatIndex]));
+                            }
                         }
                     }
                 }
@@ -295,62 +303,38 @@ namespace Hecton8.Caves
             {
                 KeyValuePair<ChunkAddress, ChunkDeltaState> pair = enumerator.Current;
                 ChunkDeltaState state = pair.Value;
-                int cellCount = state.ModifiedCells.Count();
+                int cellCount = CountDirtyCells(in state);
                 if (cellCount <= 0)
                     continue;
 
-                NativeArray<SaveBinaryStorage.DeltaCell> packedCells =
-                    new NativeArray<SaveBinaryStorage.DeltaCell>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                int chunkIndex = data.voxelDeltaPersistence.chunkCount;
+                VoxelDeltaChunkDTO chunkDto = data.voxelDeltaPersistence.chunks[chunkIndex];
+                chunkDto.chunkX = pair.Key.ChunkCoord.x;
+                chunkDto.chunkY = pair.Key.ChunkCoord.y;
+                chunkDto.chunkZ = pair.Key.ChunkCoord.z;
+                chunkDto.voxelSize = pair.Key.VoxelSize;
+                chunkDto.EnsureCapacity(cellCount);
+                chunkDto.cellCount = cellCount;
 
-                try
+                for (int i = 0; i < ChunkDirtyMaskWordCount; i++)
+                    chunkDto.dirtyMaskWords[i] = state.DirtyMaskWords[i];
+
+                for (int i = 0; i < ChunkCellCount; i++)
                 {
-                    JobHandle packHandle = new PackDeltaCellsJob
-                    {
-                        ModifiedCells = state.ModifiedCells,
-                        ModifiedMaterials = state.ModifiedMaterials,
-                        PackedCells = packedCells
-                    }.Schedule();
-
-                    packHandle.Complete();
-
-                    int chunkIndex = data.voxelDeltaPersistence.chunkCount;
-                    VoxelDeltaChunkDTO chunkDto = data.voxelDeltaPersistence.chunks[chunkIndex];
-                    chunkDto.chunkX = pair.Key.ChunkCoord.x;
-                    chunkDto.chunkY = pair.Key.ChunkCoord.y;
-                    chunkDto.chunkZ = pair.Key.ChunkCoord.z;
-                    chunkDto.voxelSize = pair.Key.VoxelSize;
-                    chunkDto.EnsureCapacity(cellCount);
-                    chunkDto.cellCount = cellCount;
-
-                    for (int i = 0; i < cellCount; i++)
-                    {
-                        SaveBinaryStorage.DeltaCell packedCell = packedCells[i];
-                        chunkDto.cells[i] = new VoxelDeltaCellDTO
-                        {
-                            universeKey = packedCell.UniverseKey,
-                            sdfValue = packedCell.SdfValue,
-                            materialId = packedCell.MaterialId,
-                            flags = packedCell.Flags,
-                            metadata = packedCell.Metadata,
-                            reserved = packedCell.Reserved
-                        };
-                    }
-
-                    data.voxelDeltaPersistence.chunks[chunkIndex] = chunkDto;
-                    data.voxelDeltaPersistence.chunkCount = chunkIndex + 1;
-                    data.voxelDeltaPersistence.totalCellCount += cellCount;
+                    chunkDto.sdfValueBits[i] = state.SdfValueBits[i];
+                    chunkDto.materialIds[i] = state.MaterialIds[i];
                 }
-                finally
-                {
-                    if (packedCells.IsCreated)
-                        packedCells.Dispose();
-                }
+
+                chunkDto.cells = Array.Empty<VoxelDeltaCellDTO>();
+                data.voxelDeltaPersistence.chunks[chunkIndex] = chunkDto;
+                data.voxelDeltaPersistence.chunkCount = chunkIndex + 1;
+                data.voxelDeltaPersistence.totalCellCount += cellCount;
             }
 
             for (int i = data.voxelDeltaPersistence.chunkCount; i < data.voxelDeltaPersistence.chunks.Length; i++)
             {
                 VoxelDeltaChunkDTO staleChunk = data.voxelDeltaPersistence.chunks[i];
-                staleChunk.cellCount = 0;
+                staleChunk.EnsureCapacity(0);
                 data.voxelDeltaPersistence.chunks[i] = staleChunk;
             }
         }
@@ -371,22 +355,41 @@ namespace Hecton8.Caves
             for (int chunkIndex = 0; chunkIndex < chunkCount; chunkIndex++)
             {
                 VoxelDeltaChunkDTO chunk = data.voxelDeltaPersistence.chunks[chunkIndex];
-                int cellCount = chunk.cells != null ? math.min(chunk.cellCount, chunk.cells.Length) : 0;
-                if (cellCount <= 0)
+                bool hasDenseStorage = HasDenseStorage(in chunk);
+                int denseCellCount = hasDenseStorage ? CountDirtyCells(chunk.dirtyMaskWords) : 0;
+                int legacyCellCount = chunk.cells != null
+                    ? math.min(chunk.cellCount, chunk.cells.Length)
+                    : 0;
+
+                if (denseCellCount <= 0 && legacyCellCount <= 0)
                     continue;
 
                 ChunkDeltaState state = GetOrCreateChunkState(
                     new int3((int)chunk.chunkX, (int)chunk.chunkY, (int)chunk.chunkZ),
                     chunk.voxelSize);
 
-                EnsureChunkCapacity(state, state.ModifiedCells.Count() + cellCount);
-
-                for (int cellIndex = 0; cellIndex < cellCount; cellIndex++)
+                if (hasDenseStorage && denseCellCount > 0)
                 {
-                    VoxelDeltaCellDTO cell = chunk.cells[cellIndex];
-                    int3 absoluteCell = MortonDecodeSigned(cell.universeKey);
-                    state.ModifiedCells[absoluteCell] = ClampToHalf(cell.sdfValue);
-                    state.ModifiedMaterials[absoluteCell] = cell.materialId;
+                    for (int i = 0; i < ChunkDirtyMaskWordCount; i++)
+                        state.DirtyMaskWords[i] = chunk.dirtyMaskWords[i];
+
+                    for (int i = 0; i < ChunkCellCount; i++)
+                    {
+                        state.SdfValueBits[i] = chunk.sdfValueBits[i];
+                        state.MaterialIds[i] = chunk.materialIds[i];
+                    }
+                }
+                else
+                {
+                    for (int cellIndex = 0; cellIndex < legacyCellCount; cellIndex++)
+                    {
+                        VoxelDeltaCellDTO cell = chunk.cells[cellIndex];
+                        int3 absoluteCell = MortonDecodeSigned(cell.universeKey);
+                        if (!TryComputeLocalCellIndex(absoluteCell, state.ChunkCoord, out uint localIndex))
+                            continue;
+
+                        SetCell(ref state, localIndex, ClampToHalf(cell.sdfValue), cell.materialId, true);
+                    }
                 }
             }
 
@@ -472,32 +475,12 @@ namespace Hecton8.Caves
 
                         int3 chunkCoord = FloorDiv(absoluteCell, ChunkResolution);
                         ChunkDeltaState state = GetOrCreateChunkState(chunkCoord, voxelSize);
-                        if (state.ModifiedCells.Count() >= MaxCellsPerChunk)
-                            continue;
-
                         float clampedValue = math.clamp(craterDistance, -8f, 8f);
                         half newValue = ClampToHalf(clampedValue);
+                        if (!TryComputeLocalCellIndex(absoluteCell, state.ChunkCoord, out uint localIndex))
+                            continue;
 
-                        if (state.ModifiedCells.TryGetValue(absoluteCell, out half existingValue))
-                        {
-                            if ((float)existingValue > clampedValue)
-                                state.ModifiedCells[absoluteCell] = newValue;
-                        }
-                        else
-                        {
-                            EnsureChunkCapacity(state, state.ModifiedCells.Count() + 1);
-                            state.ModifiedCells.TryAdd(absoluteCell, newValue);
-                        }
-
-                        if (state.ModifiedMaterials.TryGetValue(absoluteCell, out _))
-                        {
-                            state.ModifiedMaterials[absoluteCell] = materialId;
-                        }
-                        else
-                        {
-                            EnsureChunkCapacity(state, state.ModifiedMaterials.Count() + 1);
-                            state.ModifiedMaterials.TryAdd(absoluteCell, materialId);
-                        }
+                        SetCell(ref state, localIndex, newValue, materialId, true);
                     }
                 }
             }
@@ -515,7 +498,8 @@ namespace Hecton8.Caves
                 {
                     for (int x = minChunk.x; x <= maxChunk.x; x++)
                     {
-                        if (_chunkStates.ContainsKey(new ChunkAddress(new int3(x, y, z), volume.VoxelSize)))
+                        if (_chunkStates.TryGetValue(new ChunkAddress(new int3(x, y, z), volume.VoxelSize), out ChunkDeltaState state) &&
+                            CountDirtyCells(in state) > 0)
                             return true;
                     }
                 }
@@ -570,25 +554,108 @@ namespace Hecton8.Caves
                 return existing;
 
             _chunkStates.EnsureCapacity(_chunkStates.Count + 1);
-            ChunkDeltaState created = new ChunkDeltaState(chunkCoord, voxelSize, InitialChunkCellCapacity);
+            ChunkDeltaState created = new ChunkDeltaState(chunkCoord, voxelSize);
             _chunkStates.Add(address, created);
             return created;
         }
 
-        private static void EnsureChunkCapacity(ChunkDeltaState state, int requiredCount)
+        private static int CountDirtyCells(in ChunkDeltaState state)
         {
-            if (!state.ModifiedCells.IsCreated || !state.ModifiedMaterials.IsCreated)
-                return;
+            if (!state.DirtyMaskWords.IsCreated)
+                return 0;
 
-            int newCapacity = state.ModifiedCells.Capacity;
-            if (requiredCount <= newCapacity)
-                return;
+            int dirtyCount = 0;
+            for (int i = 0; i < state.DirtyMaskWords.Length; i++)
+                dirtyCount += math.countbits(state.DirtyMaskWords[i]);
 
-            while (newCapacity < requiredCount)
-                newCapacity <<= 1;
+            return dirtyCount;
+        }
 
-            state.ModifiedCells.Capacity = newCapacity;
-            state.ModifiedMaterials.Capacity = newCapacity;
+        private static int CountDirtyCells(uint[] dirtyMaskWords)
+        {
+            if (dirtyMaskWords == null)
+                return 0;
+
+            int dirtyCount = 0;
+            int wordCount = math.min(dirtyMaskWords.Length, ChunkDirtyMaskWordCount);
+            for (int i = 0; i < wordCount; i++)
+                dirtyCount += math.countbits(dirtyMaskWords[i]);
+
+            return dirtyCount;
+        }
+
+        private static bool HasDenseStorage(in VoxelDeltaChunkDTO chunk)
+        {
+            return chunk.dirtyMaskWords != null &&
+                   chunk.dirtyMaskWords.Length == ChunkDirtyMaskWordCount &&
+                   chunk.sdfValueBits != null &&
+                   chunk.sdfValueBits.Length == ChunkCellCount &&
+                   chunk.materialIds != null &&
+                   chunk.materialIds.Length == ChunkCellCount;
+        }
+
+        private static bool TryComputeLocalCellIndex(int3 absoluteCell, int3 chunkCoord, out uint localIndex)
+        {
+            int3 localCell = absoluteCell - (chunkCoord * ChunkResolution);
+            if (localCell.x < 0 || localCell.x >= ChunkResolution ||
+                localCell.y < 0 || localCell.y >= ChunkResolution ||
+                localCell.z < 0 || localCell.z >= ChunkResolution)
+            {
+                localIndex = 0u;
+                return false;
+            }
+
+            localIndex = (uint)(localCell.x | (localCell.y << 5) | (localCell.z << 10));
+            return true;
+        }
+
+        private static int3 AbsoluteCellFromLocalIndex(int3 chunkCoord, int flatIndex)
+        {
+            int localX = flatIndex & (ChunkResolution - 1);
+            int localY = (flatIndex >> 5) & (ChunkResolution - 1);
+            int localZ = flatIndex >> 10;
+            return (chunkCoord * ChunkResolution) + new int3(localX, localY, localZ);
+        }
+
+        private static bool IsDirty(in ChunkDeltaState state, uint localIndex)
+        {
+            int wordIndex = (int)(localIndex >> 5);
+            uint bitMask = 1u << ((int)localIndex & 31);
+            return (state.DirtyMaskWords[wordIndex] & bitMask) != 0u;
+        }
+
+        private static void SetDirtyBit(ref ChunkDeltaState state, uint localIndex)
+        {
+            int wordIndex = (int)(localIndex >> 5);
+            uint bitMask = 1u << ((int)localIndex & 31);
+            state.DirtyMaskWords[wordIndex] |= bitMask;
+        }
+
+        private static void SetCell(ref ChunkDeltaState state, uint localIndex, half value, byte materialId, bool preserveMinimum)
+        {
+            int flatIndex = (int)localIndex;
+            bool isDirty = IsDirty(in state, localIndex);
+            if (!isDirty)
+            {
+                SetDirtyBit(ref state, localIndex);
+                state.SdfValueBits[flatIndex] = HalfToBits(value);
+            }
+            else if (!preserveMinimum || (float)BitsToHalf(state.SdfValueBits[flatIndex]) > (float)value)
+            {
+                state.SdfValueBits[flatIndex] = HalfToBits(value);
+            }
+
+            state.MaterialIds[flatIndex] = materialId;
+        }
+
+        private static ushort HalfToBits(half value)
+        {
+            return UnsafeUtility.As<half, ushort>(ref value);
+        }
+
+        private static half BitsToHalf(ushort bits)
+        {
+            return UnsafeUtility.As<ushort, half>(ref bits);
         }
 
         private void DisposeChunkStates()
@@ -712,55 +779,29 @@ namespace Hecton8.Caves
         {
             public readonly int3 ChunkCoord;
             public readonly float VoxelSize;
-            public NativeParallelHashMap<int3, half> ModifiedCells;
-            public NativeParallelHashMap<int3, byte> ModifiedMaterials;
+            public NativeArray<uint> DirtyMaskWords;
+            public NativeArray<ushort> SdfValueBits;
+            public NativeArray<byte> MaterialIds;
 
-            public ChunkDeltaState(int3 chunkCoord, float voxelSize, int capacity)
+            public ChunkDeltaState(int3 chunkCoord, float voxelSize)
             {
                 ChunkCoord = chunkCoord;
                 VoxelSize = voxelSize;
-                ModifiedCells = new NativeParallelHashMap<int3, half>(capacity, Allocator.Persistent);
-                ModifiedMaterials = new NativeParallelHashMap<int3, byte>(capacity, Allocator.Persistent);
+                DirtyMaskWords = new NativeArray<uint>(ChunkDirtyMaskWordCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                SdfValueBits = new NativeArray<ushort>(ChunkCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                MaterialIds = new NativeArray<byte>(ChunkCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             }
 
             public void Dispose()
             {
-                if (ModifiedCells.IsCreated)
-                    ModifiedCells.Dispose();
+                if (DirtyMaskWords.IsCreated)
+                    DirtyMaskWords.Dispose();
 
-                if (ModifiedMaterials.IsCreated)
-                    ModifiedMaterials.Dispose();
-            }
-        }
+                if (SdfValueBits.IsCreated)
+                    SdfValueBits.Dispose();
 
-        [BurstCompile]
-        private struct PackDeltaCellsJob : IJob
-        {
-            [ReadOnly] public NativeParallelHashMap<int3, half> ModifiedCells;
-            [ReadOnly] public NativeParallelHashMap<int3, byte> ModifiedMaterials;
-            [WriteOnly] public NativeArray<SaveBinaryStorage.DeltaCell> PackedCells;
-
-            public void Execute()
-            {
-                int index = 0;
-                NativeParallelHashMap<int3, half>.Enumerator enumerator = ModifiedCells.GetEnumerator();
-                while (enumerator.MoveNext())
-                {
-                    var current = enumerator.Current;
-                    byte materialId = 0;
-                    if (ModifiedMaterials.IsCreated)
-                        ModifiedMaterials.TryGetValue(current.Key, out materialId);
-
-                    PackedCells[index++] = new SaveBinaryStorage.DeltaCell
-                    {
-                        UniverseKey = MortonEncodeSigned(current.Key.x, current.Key.y, current.Key.z),
-                        SdfValue = (float)current.Value,
-                        MaterialId = materialId,
-                        Flags = 0,
-                        Metadata = 0,
-                        Reserved = 0u
-                    };
-                }
+                if (MaterialIds.IsCreated)
+                    MaterialIds.Dispose();
             }
         }
     }

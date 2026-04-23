@@ -74,9 +74,7 @@ namespace Hecton8.AI
         
         // --- Animator Hashes (Prime Directive #18) ---
         private static readonly int _HashSwimSpeed = Animator.StringToHash("SwimSpeed");
-        private const float SteeringTickIntervalSeconds = 0.02f;
         private const float SlowTickIntervalSeconds = 0.5f;
-        private const int MaxSteeringTicksPerDispatcherTick = 4;
         private const int MaxSlowTicksPerDispatcherTick = 2;
         private const float AmbientCurrentInfluence = 0.22f;
         private const float AmbientCurrentMaxVelocity = 3.8f;
@@ -101,7 +99,6 @@ namespace Hecton8.AI
         [Tooltip("Triggered when a Panic Pulse occurs. Hook audio agents here for zero-GC sound dispatch.")]
         public UnityEngine.Events.UnityEvent OnPanicTriggered;
 
-        private float _steeringTickAccumulator;
         private float _slowTickAccumulator;
 
         // ══════════════════════════════════════════════════════════
@@ -170,6 +167,7 @@ namespace Hecton8.AI
             _sensorSuite.Init(transform, _speciesProfile);
             _stateMachine.Init(transform, _speciesProfile);
             _utilityBrain.Initialize(transform.position, _speciesProfile, _archetype);
+            _cognitionTimeSeconds = 0f;
             
             _stateMachine.OnAttackPerform += HandleAttackPerform;
         }
@@ -224,6 +222,7 @@ namespace Hecton8.AI
             _currentHealth = _maxHealth;
             _stateMachine.Init(transform, _speciesProfile);
             _utilityBrain.ResetRuntimeState(transform.position);
+            _cognitionTimeSeconds = 0f;
             RefreshRuntimeEcosystemState();
             RegisterSpatialHandle();
             ResetDispatcherCadence();
@@ -238,6 +237,7 @@ namespace Hecton8.AI
             _rb.linearVelocity = Vector3.zero;
             _rb.angularVelocity = Vector3.zero;
             _utilityBrain.ResetRuntimeState(transform.position);
+            _cognitionTimeSeconds = 0f;
             ClearInfectionHazardRegistration();
             UnregisterSpatialHandle();
             ResetDispatcherCadence();
@@ -251,12 +251,14 @@ namespace Hecton8.AI
             if (dt <= 0f)
                 return;
 
-            _sensorSuite.Tick(dt, _rb.linearVelocity);
+            _cognitionTimeSeconds += dt;
+            _sensorSuite.Tick(dt, _rb.linearVelocity, _cognitionTimeSeconds);
             _lodDisabled = _sensorSuite.lodDisabled;
 
             if (_lodDisabled || _sensorSuite.isSleeping)
             {
-                AdvanceDispatcherCadence(dt);
+                FixedTick(dt);
+                AdvanceSlowTickCadence(dt);
                 return;
             }
 
@@ -275,7 +277,7 @@ namespace Hecton8.AI
                 {
                     HandleAttackPerform(attackTarget);
                     float attackCooldown = _speciesProfile != null ? _speciesProfile.attackCooldown : 1f;
-                    _utilityBrain.NotifyAttackPerformed(Time.time, attackCooldown);
+                    _utilityBrain.NotifyAttackPerformed(_cognitionTimeSeconds, attackCooldown);
                 }
             }
             else
@@ -307,7 +309,8 @@ namespace Hecton8.AI
 
             // [REQ] Procedural Eye Tracking (The "Stare")
             UpdateEyeTracking(dt);
-            AdvanceDispatcherCadence(dt);
+            FixedTick(dt);
+            AdvanceSlowTickCadence(dt);
         }
 
         private void UpdateEyeTracking(float dt)
@@ -373,7 +376,7 @@ namespace Hecton8.AI
                 _sensorSuite.distSqrToPlayer,
                 _speciesProfile != null ? _speciesProfile.attackRadius : 3f,
                 Mathf.Clamp01(fearPressure01));
-            evaluation = _utilityBrain.Evaluate(dt, Time.time, in context);
+            evaluation = _utilityBrain.Evaluate(dt, _cognitionTimeSeconds, in context);
             attackTarget = hasDirectPlayerTransform ? directPlayerTransform : null;
             return true;
         }
@@ -408,12 +411,6 @@ namespace Hecton8.AI
             RefreshRuntimeEcosystemState();
         }
 
-        private void AdvanceDispatcherCadence(float dt)
-        {
-            AdvanceSlowTickCadence(dt);
-            AdvanceSteeringTickCadence(dt);
-        }
-
         private void AdvanceSlowTickCadence(float dt)
         {
             _slowTickAccumulator += dt;
@@ -431,26 +428,8 @@ namespace Hecton8.AI
                 _slowTickAccumulator = SlowTickIntervalSeconds;
         }
 
-        private void AdvanceSteeringTickCadence(float dt)
-        {
-            _steeringTickAccumulator += dt;
-
-            int iterationCount = 0;
-            while (_steeringTickAccumulator >= SteeringTickIntervalSeconds &&
-                   iterationCount < MaxSteeringTicksPerDispatcherTick)
-            {
-                _steeringTickAccumulator -= SteeringTickIntervalSeconds;
-                FixedTick(SteeringTickIntervalSeconds);
-                iterationCount++;
-            }
-
-            if (_steeringTickAccumulator > SteeringTickIntervalSeconds)
-                _steeringTickAccumulator = SteeringTickIntervalSeconds;
-        }
-
         private void ResetDispatcherCadence()
         {
-            _steeringTickAccumulator = 0f;
             _slowTickAccumulator = 0f;
         }
 
@@ -506,7 +485,7 @@ namespace Hecton8.AI
                 return;
 
             _sensorSuite.ReceivePlayerNoiseSignal(signal);
-            _utilityBrain.RecordAuditoryStimulus(signal.Position, Time.time);
+            _utilityBrain.RecordAuditoryStimulus(signal.Position, _cognitionTimeSeconds);
         }
 
         private void HandleAttackPerform(Transform target)
@@ -644,7 +623,7 @@ namespace Hecton8.AI
 
             if (_utilityBrain.IsActivePredator)
             {
-                _utilityBrain.ForceRetreat(threatPosition, Time.time, 8f);
+                _utilityBrain.ForceRetreat(threatPosition, _cognitionTimeSeconds, 8f);
                 _stateMachine.currentState = AIState.Retreat;
                 return;
             }

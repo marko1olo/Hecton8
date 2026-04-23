@@ -185,6 +185,20 @@ namespace Hecton8.UI
         private string _lastStressValue = string.Empty;
         private bool _runtimeSnapshotLogged;
         private string _runtimeSnapshotScene = string.Empty;
+        // COLD ALLOC: char[32] - tick-count diagnostic buffer - owner: SubnauticaSystemsDebugUI
+        private readonly char[] _tickCountsBuffer = new char[32];
+        // COLD ALLOC: char[16] - render-scale diagnostic buffer - owner: SubnauticaSystemsDebugUI
+        private readonly char[] _renderScaleBuffer = new char[16];
+        // COLD ALLOC: char[40] - fauna-limit diagnostic buffer - owner: SubnauticaSystemsDebugUI
+        private readonly char[] _faunaLimitsBuffer = new char[40];
+        // COLD ALLOC: char[16] - music-tension diagnostic buffer - owner: SubnauticaSystemsDebugUI
+        private readonly char[] _musicTensionBuffer = new char[16];
+        // COLD ALLOC: char[40] - underwater budget diagnostic buffer - owner: SubnauticaSystemsDebugUI
+        private readonly char[] _underwaterBudgetBuffer = new char[40];
+        // COLD ALLOC: char[40] - camera budget diagnostic buffer - owner: SubnauticaSystemsDebugUI
+        private readonly char[] _cameraBudgetBuffer = new char[40];
+        // COLD ALLOC: char[32] - stress harness diagnostic buffer - owner: SubnauticaSystemsDebugUI
+        private readonly char[] _stressBuffer = new char[32];
 
         private void Awake()
         {
@@ -489,7 +503,7 @@ namespace Hecton8.UI
             Scene activeScene = SceneManager.GetActiveScene();
             GameTickManager tickManager = GameTickManager.Instance;
 
-            _titleValue.text = enableStressTest ? "LIVE / FORCED PRESSURE" : "LIVE / PASSIVE";
+            _titleValue.SetText(enableStressTest ? "LIVE / FORCED PRESSURE" : "LIVE / PASSIVE");
 
             string sceneLabel = activeScene.IsValid() ? activeScene.name : MissingLabel;
             SetDynamicText(_sceneValue, sceneLabel, ref _lastSceneValue);
@@ -499,22 +513,32 @@ namespace Hecton8.UI
             SetDynamicText(_bootstrapValue, bootstrapLabel, ref _lastBootstrapValue);
             debugBootstrapState = bootstrapLabel;
 
-            string tickCountsLabel = tickManager != null
-                ? string.Concat(
-                    "T ", tickManager.TickableCount.ToString(),
-                    " | F ", tickManager.FixedTickableCount.ToString(),
-                    " | S ", tickManager.SlowTickableCount.ToString())
-                : MissingLabel;
-            SetDynamicText(_tickCountsValue, tickCountsLabel, ref _lastTickCountsValue);
-            debugTickCounts = tickCountsLabel;
-
-            if (scaler != null)
+            if (tickManager != null)
             {
-                _renderScaleValue.SetText("{0:0.00}", scaler.CurrentRenderScale);
+                SetTickCountsText(
+                    _tickCountsValue,
+                    tickManager.TickableCount,
+                    tickManager.FixedTickableCount,
+                    tickManager.SlowTickableCount);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                debugTickCounts = "LIVE HUD";
+#endif
             }
             else
             {
-                _renderScaleValue.text = MissingLabel;
+                SetDynamicText(_tickCountsValue, MissingLabel, ref _lastTickCountsValue);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                debugTickCounts = MissingLabel;
+#endif
+            }
+
+            if (scaler != null)
+            {
+                SetFloatText(_renderScaleValue, _renderScaleBuffer, scaler.CurrentRenderScale, "0.00");
+            }
+            else
+            {
+                _renderScaleValue.SetText(MissingLabel);
             }
 
             string pressureLabel = scaler != null ? scaler.DebugPressureStateLabel : MissingLabel;
@@ -531,27 +555,27 @@ namespace Hecton8.UI
 
             if (fauna != null)
             {
-                _faunaLimitValue.SetText(
-                    "Burst {0:0} | Biome {1:0} | Global {2:0}",
+                SetFaunaLimitsText(
+                    _faunaLimitValue,
                     fauna.DebugEffectiveSpawnsPerTick,
                     fauna.DebugEffectiveBiomeMaxCount,
                     fauna.DebugEffectiveGlobalMaxCount);
             }
             else
             {
-                _faunaLimitValue.text = MissingLabel;
+                _faunaLimitValue.SetText(MissingLabel);
             }
 
             if (music != null)
             {
-                _musicTensionValue.SetText("{0:0.00}", music.CurrentTension01);
+                SetFloatText(_musicTensionValue, _musicTensionBuffer, music.CurrentTension01, "0.00");
                 string profileLabel = music.ActiveResolvedProfile != null ? music.ActiveResolvedProfile.name : MissingLabel;
                 SetDynamicText(_musicProfileValue, profileLabel, ref _lastMusicProfileValue);
                 debugMusicProfile = profileLabel;
             }
             else
             {
-                _musicTensionValue.text = MissingLabel;
+                _musicTensionValue.SetText(MissingLabel);
                 SetDynamicText(_musicProfileValue, MissingLabel, ref _lastMusicProfileValue);
                 debugMusicProfile = MissingLabel;
             }
@@ -560,27 +584,63 @@ namespace Hecton8.UI
             SetDynamicText(_soundscapeTierValue, soundscapeLabel, ref _lastSoundscapeTierValue);
             debugSoundscapeTier = soundscapeLabel;
 
-            string underwaterBudgetLabel = underwaterVisuals != null
-                ? string.Concat(
-                    "M ", underwaterVisuals.DebugAdaptiveMotesScale.ToString("0.00"),
-                    " | B ", underwaterVisuals.DebugAdaptiveBubbleScale.ToString("0.00"),
-                    " | E ", underwaterVisuals.DebugSuspendedMotesEmission.ToString("0.0"))
-                : MissingLabel;
-            SetDynamicText(_underwaterBudgetValue, underwaterBudgetLabel, ref _lastUnderwaterBudgetValue);
-            debugUnderwaterBudget = underwaterBudgetLabel;
+            bool hasUnderwaterBudget = false;
+            if (underwaterVisuals != null)
+            {
+                hasUnderwaterBudget = SetBudgetTripletText(
+                    _underwaterBudgetValue,
+                    _underwaterBudgetBuffer,
+                    'M',
+                    underwaterVisuals.DebugAdaptiveMotesScale,
+                    "0.00",
+                    'B',
+                    underwaterVisuals.DebugAdaptiveBubbleScale,
+                    "0.00",
+                    'E',
+                    underwaterVisuals.DebugSuspendedMotesEmission,
+                    "0.0");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                debugUnderwaterBudget = hasUnderwaterBudget ? "LIVE HUD" : MissingLabel;
+#endif
+            }
+            else
+            {
+                SetDynamicText(_underwaterBudgetValue, MissingLabel, ref _lastUnderwaterBudgetValue);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                debugUnderwaterBudget = MissingLabel;
+#endif
+            }
 
-            string cameraBudgetLabel = cameraJuice != null
-                ? string.Concat(
-                    "S ", cameraJuice.DebugAdaptiveShakeScale.ToString("0.00"),
-                    " | F ", cameraJuice.DebugAdaptiveFOVScale.ToString("0.00"),
-                    " | P ", cameraJuice.DebugAdaptivePostFxScale.ToString("0.00"))
-                : MissingLabel;
-            SetDynamicText(_cameraBudgetValue, cameraBudgetLabel, ref _lastCameraBudgetValue);
-            debugCameraBudget = cameraBudgetLabel;
+            bool hasCameraBudget = false;
+            if (cameraJuice != null)
+            {
+                hasCameraBudget = SetBudgetTripletText(
+                    _cameraBudgetValue,
+                    _cameraBudgetBuffer,
+                    'S',
+                    cameraJuice.DebugAdaptiveShakeScale,
+                    "0.00",
+                    'F',
+                    cameraJuice.DebugAdaptiveFOVScale,
+                    "0.00",
+                    'P',
+                    cameraJuice.DebugAdaptivePostFxScale,
+                    "0.00");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                debugCameraBudget = hasCameraBudget ? "LIVE HUD" : MissingLabel;
+#endif
+            }
+            else
+            {
+                SetDynamicText(_cameraBudgetValue, MissingLabel, ref _lastCameraBudgetValue);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                debugCameraBudget = MissingLabel;
+#endif
+            }
 
             if (enableStressTest)
             {
-                _stressValue.SetText("ACTIVE / RS {0:0.00} / {1:0.0} MS", forcedRenderScale, forcedFrameTimeMs);
+                SetStressHarnessText(_stressValue, forcedRenderScale, forcedFrameTimeMs);
                 _lastStressValue = EnabledLabel;
             }
             else
@@ -594,8 +654,8 @@ namespace Hecton8.UI
                 fauna,
                 music,
                 soundscape,
-                underwaterBudgetLabel,
-                cameraBudgetLabel,
+                hasUnderwaterBudget,
+                hasCameraBudget,
                 pressureLabel,
                 faunaBiome,
                 faunaBias);
@@ -844,7 +904,138 @@ namespace Hecton8.UI
                 return;
 
             cache = safeValue;
-            label.text = safeValue;
+            label.SetText(safeValue);
+        }
+
+        private void SetTickCountsText(TMP_Text label, int tickables, int fixedTickables, int slowTickables)
+        {
+            if (label == null)
+                return;
+
+            int index = 0;
+            index = WriteLiteral(_tickCountsBuffer, index, "T ");
+            index = WriteInt(_tickCountsBuffer, index, tickables);
+            index = WriteLiteral(_tickCountsBuffer, index, " | F ");
+            index = WriteInt(_tickCountsBuffer, index, fixedTickables);
+            index = WriteLiteral(_tickCountsBuffer, index, " | S ");
+            index = WriteInt(_tickCountsBuffer, index, slowTickables);
+            ApplyDynamicBuffer(label, _tickCountsBuffer, index);
+        }
+
+        private static void SetFloatText(TMP_Text label, char[] buffer, float value, string format)
+        {
+            if (label == null || buffer == null)
+                return;
+
+            if (!value.TryFormat(buffer.AsSpan(), out int length, format))
+                return;
+
+            ApplyDynamicBuffer(label, buffer, length);
+        }
+
+        private void SetFaunaLimitsText(TMP_Text label, float burst, float biomeLimit, float globalLimit)
+        {
+            if (label == null)
+                return;
+
+            int index = 0;
+            index = WriteLiteral(_faunaLimitsBuffer, index, "Burst ");
+            index = WriteInt(_faunaLimitsBuffer, index, Mathf.RoundToInt(burst));
+            index = WriteLiteral(_faunaLimitsBuffer, index, " | Biome ");
+            index = WriteInt(_faunaLimitsBuffer, index, Mathf.RoundToInt(biomeLimit));
+            index = WriteLiteral(_faunaLimitsBuffer, index, " | Global ");
+            index = WriteInt(_faunaLimitsBuffer, index, Mathf.RoundToInt(globalLimit));
+            ApplyDynamicBuffer(label, _faunaLimitsBuffer, index);
+        }
+
+        private static bool SetBudgetTripletText(
+            TMP_Text label,
+            char[] buffer,
+            char prefix0,
+            float value0,
+            string format0,
+            char prefix1,
+            float value1,
+            string format1,
+            char prefix2,
+            float value2,
+            string format2)
+        {
+            if (label == null || buffer == null)
+                return false;
+
+            int index = 0;
+            index = WriteBudgetEntry(buffer, index, prefix0, value0, format0);
+            index = WriteLiteral(buffer, index, " | ");
+            index = WriteBudgetEntry(buffer, index, prefix1, value1, format1);
+            index = WriteLiteral(buffer, index, " | ");
+            index = WriteBudgetEntry(buffer, index, prefix2, value2, format2);
+            ApplyDynamicBuffer(label, buffer, index);
+            return true;
+        }
+
+        private void SetStressHarnessText(TMP_Text label, float renderScale, float frameTimeMs)
+        {
+            if (label == null)
+                return;
+
+            int index = 0;
+            index = WriteLiteral(_stressBuffer, index, "ACTIVE / RS ");
+            if (!renderScale.TryFormat(_stressBuffer.AsSpan(index), out int renderLength, "0.00"))
+                return;
+
+            index += renderLength;
+            index = WriteLiteral(_stressBuffer, index, " / ");
+            if (!frameTimeMs.TryFormat(_stressBuffer.AsSpan(index), out int frameLength, "0.0"))
+                return;
+
+            index += frameLength;
+            index = WriteLiteral(_stressBuffer, index, " MS");
+            ApplyDynamicBuffer(label, _stressBuffer, index);
+        }
+
+        private static void ApplyDynamicBuffer(TMP_Text label, char[] buffer, int length)
+        {
+            if (label == null || buffer == null)
+                return;
+
+            int safeLength = Mathf.Clamp(length, 0, buffer.Length);
+            label.SetCharArray(buffer, 0, safeLength);
+            label.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
+        }
+
+        private static int WriteBudgetEntry(char[] buffer, int index, char prefix, float value, string format)
+        {
+            if (buffer == null || index >= buffer.Length)
+                return index;
+
+            buffer[index++] = prefix;
+            buffer[index++] = ' ';
+            if (!value.TryFormat(buffer.AsSpan(index), out int length, format))
+                return index;
+
+            return index + length;
+        }
+
+        private static int WriteLiteral(char[] buffer, int index, string literal)
+        {
+            if (buffer == null || string.IsNullOrEmpty(literal))
+                return index;
+
+            int copyLength = Mathf.Min(literal.Length, buffer.Length - index);
+            literal.AsSpan(0, copyLength).CopyTo(buffer.AsSpan(index, copyLength));
+            return index + copyLength;
+        }
+
+        private static int WriteInt(char[] buffer, int index, int value)
+        {
+            if (buffer == null || index >= buffer.Length)
+                return index;
+
+            if (!value.TryFormat(buffer.AsSpan(index), out int length))
+                return index;
+
+            return index + length;
         }
 
         private static string ResolveSoundscapeLabel(SoundscapeTier tier)
@@ -892,8 +1083,8 @@ namespace Hecton8.UI
             FaunaDirector fauna,
             HectonMusicDirector music,
             SoundscapeSystem soundscape,
-            string underwaterBudgetLabel,
-            string cameraBudgetLabel,
+            bool hasUnderwaterBudget,
+            bool hasCameraBudget,
             string pressureLabel,
             string faunaBiome,
             string faunaBias)
@@ -905,7 +1096,7 @@ namespace Hecton8.UI
                 fauna == null ||
                 music == null ||
                 soundscape == null ||
-                !IsSnapshotRuntimeReady(scaler, fauna, music, pressureLabel, faunaBiome, underwaterBudgetLabel, cameraBudgetLabel))
+                !IsSnapshotRuntimeReady(scaler, fauna, music, pressureLabel, faunaBiome, hasUnderwaterBudget, hasCameraBudget))
             {
                 return;
             }
@@ -933,8 +1124,8 @@ namespace Hecton8.UI
                 " tension=" + music.CurrentTension01.ToString("0.00") +
                 " musicProfile=" + (music.ActiveResolvedProfile != null ? music.ActiveResolvedProfile.name : MissingLabel) +
                 " soundscape=" + ResolveSoundscapeLabel(soundscape.CurrentTier) +
-                " underwater=" + underwaterBudgetLabel +
-                " camera=" + cameraBudgetLabel +
+                " underwater=LIVE HUD" +
+                " camera=LIVE HUD" +
                 " stress=" + (enableStressTest ? EnabledLabel : DisabledLabel),
                 this);
         }
@@ -945,8 +1136,8 @@ namespace Hecton8.UI
             HectonMusicDirector music,
             string pressureLabel,
             string faunaBiome,
-            string underwaterBudgetLabel,
-            string cameraBudgetLabel)
+            bool hasUnderwaterBudget,
+            bool hasCameraBudget)
         {
             if (scaler == null || fauna == null || music == null)
                 return false;
@@ -956,10 +1147,8 @@ namespace Hecton8.UI
                 string.IsNullOrEmpty(faunaBiome) ||
                 string.Equals(faunaBiome, MissingLabel, System.StringComparison.Ordinal) ||
                 string.Equals(faunaBiome, "-1", System.StringComparison.Ordinal) ||
-                string.IsNullOrEmpty(underwaterBudgetLabel) ||
-                string.Equals(underwaterBudgetLabel, MissingLabel, System.StringComparison.Ordinal) ||
-                string.IsNullOrEmpty(cameraBudgetLabel) ||
-                string.Equals(cameraBudgetLabel, MissingLabel, System.StringComparison.Ordinal) ||
+                !hasUnderwaterBudget ||
+                !hasCameraBudget ||
                 music.ActiveResolvedProfile == null)
             {
                 return false;

@@ -925,6 +925,12 @@ namespace Hecton8.UI
             _oxygenGauge = CreateGauge("Gauge_O2", _gaugeClusterRoot, new Vector2(-resolvedGaugeColumnSpacing, 0f), GetOxygenIconSprite(), _HudOxygenKeyHash);
             _healthGauge = CreateGauge("Gauge_HLT", _gaugeClusterRoot, Vector2.zero, GetHealthIconSprite(), _HudHullKeyHash);
             _powerGauge = CreateGauge("Gauge_PWR", _gaugeClusterRoot, new Vector2(resolvedGaugeColumnSpacing, 0f), GetEnergyIconSprite(), _HudPowerKeyHash);
+            EnsureIsolatedDynamicCanvas(_depthLabel.rectTransform);
+            EnsureIsolatedDynamicCanvas(_telemetrySupplementRoot);
+            EnsureIsolatedDynamicCanvas(_statusLabel.rectTransform);
+            EnsureIsolatedDynamicCanvas(_oxygenGauge.Root);
+            EnsureIsolatedDynamicCanvas(_healthGauge.Root);
+            EnsureIsolatedDynamicCanvas(_powerGauge.Root);
 
             _ornamentCanvasGroup = EnsureCanvasGroup(_ornamentRoot);
             _headerCanvasGroup = EnsureCanvasGroup(_headerRoot);
@@ -963,6 +969,20 @@ namespace Hecton8.UI
                 canvasGroup = target.gameObject.AddComponent<CanvasGroup>();
 
             return canvasGroup;
+        }
+
+        private static Canvas EnsureIsolatedDynamicCanvas(RectTransform target)
+        {
+            if (target == null)
+                return null;
+
+            Canvas canvas = target.GetComponent<Canvas>();
+            if (canvas == null)
+                canvas = target.gameObject.AddComponent<Canvas>();
+
+            canvas.overrideSorting = false;
+            canvas.pixelPerfect = false;
+            return canvas;
         }
 
         private static void SetCanvasGroupVisible(CanvasGroup canvasGroup, bool visible)
@@ -1940,7 +1960,7 @@ namespace Hecton8.UI
             {
                 SetLocalizedRtlState(label, rtl);
                 LocNumericBuffer.Write(templateBuffer.AsSpan(0, templateLength), LocNumericArg.Int(value), out char[] buffer, out int length);
-                label.SetCharArray(buffer, 0, length);
+                ApplyHudCharArray(label, buffer, length);
                 cachedValue = value;
                 hasCachedValue = true;
             }
@@ -1971,7 +1991,7 @@ namespace Hecton8.UI
             {
                 SetLocalizedRtlState(label, rtl);
                 LocNumericBuffer.Write(templateBuffer.AsSpan(0, templateLength), LocNumericArg.Float(roundedTenths * 0.1f), out char[] buffer, out int length);
-                label.SetCharArray(buffer, 0, length);
+                ApplyHudCharArray(label, buffer, length);
                 cachedTenths = roundedTenths;
                 hasCachedTenths = true;
             }
@@ -2001,7 +2021,7 @@ namespace Hecton8.UI
                 if (!value.TryFormat(stagingBuffer, out int length))
                     length = 0;
 
-                label.SetCharArray(stagingBuffer, 0, length);
+                ApplyHudCharArray(label, stagingBuffer, length);
                 cachedValue = value;
                 hasCachedValue = true;
             }
@@ -2039,7 +2059,7 @@ namespace Hecton8.UI
                     LocRegistry.TryGetRawBuffer(keyHash, out buffer, out length);
                 }
 
-                label.SetCharArray(buffer, 0, length);
+                ApplyHudCharArray(label, buffer, length);
                 cachedKeyHash = keyHash;
                 hasCachedKeyHash = true;
             }
@@ -2067,7 +2087,7 @@ namespace Hecton8.UI
             if (cachedVersion != version)
             {
                 SetLocalizedRtlState(label, rtl);
-                label.SetCharArray(buffer, 0, length);
+                ApplyHudCharArray(label, buffer, length);
                 cachedVersion = version;
             }
 
@@ -2142,6 +2162,16 @@ namespace Hecton8.UI
         {
             if (label != null && label.isRightToLeftText != rtl)
                 label.isRightToLeftText = rtl;
+        }
+
+        private static void ApplyHudCharArray(TMP_Text label, char[] buffer, int length)
+        {
+            if (label == null || buffer == null)
+                return;
+
+            int safeLength = Mathf.Clamp(length, 0, buffer.Length);
+            label.SetCharArray(buffer, 0, safeLength);
+            label.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
         }
 
         private static int ResolveDistanceUnitKeyHash(GameLanguage language)
@@ -2930,7 +2960,9 @@ namespace Hecton8.UI
                 new Vector3(scale, scale, 1f));
 
             contentRoot.sizeDelta = referenceResolution;
-            contentRoot.localScale = new Vector3(_uiMatrix.m00, _uiMatrix.m11, 1f);
+            contentRoot.localScale = Vector3.one;
+            if (_targetCanvas != null && !Mathf.Approximately(_targetCanvas.scaleFactor, scale))
+                _targetCanvas.scaleFactor = scale;
 
             _lastScreenWidth = screenWidth;
             _lastScreenHeight = screenHeight;

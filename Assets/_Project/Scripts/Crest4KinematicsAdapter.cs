@@ -50,7 +50,7 @@ namespace Hecton8.Physics
 
         private void Awake()
         {
-            int ownerHash = GetHashCode();
+            int ownerHash = unchecked((int)EntityId.ToULong(GetEntityId()));
             _heightQueryOwnerHash = ownerHash;
             _waveQueryOwnerHash = ownerHash ^ 0x2F31;
             _displacementQueryOwnerHash = ownerHash ^ 0x53C9;

@@ -12,8 +12,10 @@ namespace Hecton8.Power
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-5500)]
-    public sealed class PowerGridManager : MonoBehaviour, ISlowTickable
+    public sealed class PowerGridManager : MonoBehaviour, IUpdatable, ISlowTickable
     {
+        private const float SlowTickIntervalSeconds = 0.1f;
+
         private static PowerGridManager _instance;
         private static List<PowerGrid> _allGrids;
 
@@ -49,7 +51,8 @@ namespace Hecton8.Power
         [SerializeField] private float _debugTotalConsumption;
         [SerializeField] private int _debugDeficitGrids;
 
-        private bool _tickRegistered;
+        private bool _dispatcherRegistered;
+        private float _slowTickAccumulator;
 
         private void Awake()
         {
@@ -69,11 +72,13 @@ namespace Hecton8.Power
         private void OnEnable()
         {
             TryRegister();
+            _slowTickAccumulator = 0f;
         }
 
         private void OnDisable()
         {
             TryUnregister();
+            _slowTickAccumulator = 0f;
         }
 
         private void OnDestroy()
@@ -85,6 +90,22 @@ namespace Hecton8.Power
                 _instance = null;
                 DisposeAllGrids();
             }
+        }
+
+        public void Tick(float deltaTime)
+        {
+            if (deltaTime <= 0f)
+                return;
+
+            _slowTickAccumulator += deltaTime;
+            if (_slowTickAccumulator < SlowTickIntervalSeconds)
+                return;
+
+            _slowTickAccumulator -= SlowTickIntervalSeconds;
+            if (_slowTickAccumulator > SlowTickIntervalSeconds)
+                _slowTickAccumulator = SlowTickIntervalSeconds;
+
+            SlowTick();
         }
 
         public void SlowTick()
@@ -265,27 +286,21 @@ namespace Hecton8.Power
 
         private void TryRegister()
         {
-            if (_tickRegistered)
+            if (_dispatcherRegistered || !Application.isPlaying)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register((ISlowTickable)this);
-            _tickRegistered = true;
+            SystemDispatcher.EnsureRuntimeInstance();
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+            _dispatcherRegistered = true;
         }
 
         private void TryUnregister()
         {
-            if (!_tickRegistered)
+            if (!_dispatcherRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister((ISlowTickable)this);
-
-            _tickRegistered = false;
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            _dispatcherRegistered = false;
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]

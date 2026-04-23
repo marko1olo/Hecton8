@@ -198,6 +198,7 @@ namespace Hecton8.Input
         public bool IsSecondaryActionHeld => _isSecondaryActionHeld;
         public float VerticalMovementInput => _verticalMovementInput;
         public InputActionAsset InputActionsAsset => _runtimeInputActionAsset;
+        internal InputAction UiSubmitAction => _submitAction;
 
         // ═══════════════════════════════════════════════════════════════════════════════════════════
         // INITIALIZATION

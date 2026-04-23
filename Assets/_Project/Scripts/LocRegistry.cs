@@ -289,16 +289,12 @@ namespace Hecton.Localization
         }
 
         /// <summary>
-        /// Resolve the visual-order localized entry as a span without heap allocation.
+        /// Resolve the localized entry as a span without heap allocation.
+        /// TMP consumes the logical string and applies RTL layout itself.
         /// </summary>
         public static ReadOnlySpan<char> ResolveVisual(int keyHash)
         {
-            if (!TryResolveEntry(keyHash, out LocEntry entry))
-                return _missingKeyChars.AsSpan();
-
-            return entry.HasVisualBuffer
-                ? entry.VisualBuffer.AsSpan(0, entry.VisualLength)
-                : entry.RawBuffer.AsSpan(0, entry.RawLength);
+            return ResolveRaw(keyHash);
         }
 
         /// <summary>
@@ -320,28 +316,12 @@ namespace Hecton.Localization
         }
 
         /// <summary>
-        /// Resolve a visual-order char buffer for TMP SetCharArray without heap allocation.
+        /// Resolve a localized char buffer for TMP SetCharArray without heap allocation.
+        /// TMP consumes the logical string and applies RTL layout itself.
         /// </summary>
         public static bool TryGetVisualBuffer(int keyHash, out char[] buffer, out int length)
         {
-            if (TryResolveEntry(keyHash, out LocEntry entry))
-            {
-                if (entry.HasVisualBuffer)
-                {
-                    buffer = entry.VisualBuffer;
-                    length = entry.VisualLength;
-                    return true;
-                }
-
-                buffer = entry.RawBuffer;
-                length = entry.RawLength;
-                return true;
-            }
-
-            LogMissingKeyOnce(keyHash);
-            buffer = _missingKeyChars;
-            length = _missingKeyChars.Length;
-            return false;
+            return TryGetRawBuffer(keyHash, out buffer, out length);
         }
 
         private static void LoadLanguage(
@@ -364,22 +344,16 @@ namespace Hecton.Localization
                     continue;
 
                 string rawValue = enumerator.Current.Value ?? string.Empty;
-                LocEntry entry = CreateEntry(language, rawValue);
+                LocEntry entry = CreateEntry(rawValue);
                 pool.Set(keyHash, entry);
             }
         }
 
-        private static LocEntry CreateEntry(GameLanguage language, string value)
+        private static LocEntry CreateEntry(string value)
         {
             string safeValue = value ?? string.Empty;
             char[] rawChars = safeValue.ToCharArray();
-            if (!RequiresVisualCache(language, safeValue.AsSpan()))
-                return new LocEntry(rawChars, rawChars.Length, null, 0);
-
-            RTLProcessor.ToVisualBuffer(safeValue.AsSpan(), out char[] stagingBuffer, out int visualLength);
-            char[] visualChars = new char[visualLength]; // COLD ALLOC: char[visualLength] — persisted RTL visual cache for localization entry — owner: LocRegistry
-            stagingBuffer.AsSpan(0, visualLength).CopyTo(visualChars);
-            return new LocEntry(rawChars, rawChars.Length, visualChars, visualLength);
+            return new LocEntry(rawChars, rawChars.Length, null, 0);
         }
 
         private static bool RequiresVisualCache(GameLanguage language, ReadOnlySpan<char> value)

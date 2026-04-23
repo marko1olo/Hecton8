@@ -162,11 +162,7 @@ namespace Hecton8.Gameplay
             if (_body == null)
                 return;
 
-            float3 velocity3 = new float3(velocity.x, velocity.y, velocity.z);
-            if (!math.all(math.isfinite(velocity3)))
-                return;
-
-            _body.linearVelocity = velocity;
+            _body.linearVelocity = SafeVelocity(velocity, _body.linearVelocity);
         }
 
         /// <summary>Projects the current linear velocity onto a collision plane.</summary>
@@ -278,11 +274,14 @@ namespace Hecton8.Gameplay
         {
             float3 velocity3 = new float3(velocity.x, velocity.y, velocity.z);
             float3 drag3 = new float3(dragCoefficient.x, dragCoefficient.y, dragCoefficient.z);
+            float speedMag = math.length(velocity3);
+            if (speedMag <= 0.0001f)
+                return velocity;
+
             float safeDt = math.max(dt, 0.0001f);
-            float3 speed = math.abs(velocity3);
-            float3 denominator = 1f + drag3 * speed * safeDt;
+            float3 denominator = 1f + math.max(drag3, 0f) * speedMag * safeDt;
             float3 result = velocity3 / math.max(denominator, new float3(0.001f));
-            return new Vector3(result.x, result.y, result.z);
+            return SafeVelocity(new Vector3(result.x, result.y, result.z), velocity);
         }
 
         /// <summary>
@@ -297,7 +296,7 @@ namespace Hecton8.Gameplay
 
             float safeDt = math.max(dt, 0.0001f);
             float denominator = 1f + math.max(0f, dragCoefficient) * speed * safeDt;
-            return velocity / math.max(denominator, 0.001f);
+            return SafeVelocity(velocity / math.max(denominator, 0.001f), velocity);
         }
 
         /// <summary>Clears transient runtime state.</summary>
@@ -310,6 +309,12 @@ namespace Hecton8.Gameplay
         {
             float3 value3 = new float3(value.x, value.y, value.z);
             return math.all(math.isfinite(value3)) && math.lengthsq(value3) > MinVectorMagnitudeSq;
+        }
+
+        internal static Vector3 SafeVelocity(Vector3 velocity, Vector3 fallback = default)
+        {
+            float3 velocity3 = new float3(velocity.x, velocity.y, velocity.z);
+            return math.all(math.isfinite(velocity3)) ? velocity : fallback;
         }
 
         private Vector3 ClampTorqueByAngularAcceleration(Vector3 worldTorque, float maxAngularAcceleration)

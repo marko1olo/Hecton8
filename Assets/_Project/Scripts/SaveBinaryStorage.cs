@@ -205,11 +205,11 @@ namespace Hecton8.SaveSystem
             UnsafeUtility.CopyStructureToPtr(ref prefix, rawPtr);
 
             int payloadCursor = PayloadPrefixSizeBytes;
-            CopyManagedBytesToUnmanaged(sceneBytes, rawPtr + payloadCursor);
+            CopyManagedBytesToUnmanaged(sceneBytes, AddByteOffset(rawPtr, payloadCursor));
             payloadCursor += sceneBytes.Length;
-            CopyManagedBytesToUnmanaged(versionBytes, rawPtr + payloadCursor);
+            CopyManagedBytesToUnmanaged(versionBytes, AddByteOffset(rawPtr, payloadCursor));
             payloadCursor += versionBytes.Length;
-            CopyManagedBytesToUnmanaged(saveBytes, rawPtr + payloadCursor);
+            CopyManagedBytesToUnmanaged(saveBytes, AddByteOffset(rawPtr, payloadCursor));
             payloadCursor += saveBytes.Length;
             int packedQuestOffsetInPayload = payloadCursor;
 
@@ -221,11 +221,11 @@ namespace Hecton8.SaveSystem
                     Checksum = ComputePackedQuestStateChecksum(packedQuestStateWords)
                 };
 
-                UnsafeUtility.CopyStructureToPtr(ref packedQuestHeader, rawPtr + payloadCursor);
+                UnsafeUtility.CopyStructureToPtr(ref packedQuestHeader, AddByteOffset(rawPtr, payloadCursor));
                 payloadCursor += PackedQuestStateSectionHeaderSize;
 
                 void* packedQuestSourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(packedQuestStateWords);
-                UnsafeUtility.MemCpy(rawPtr + payloadCursor, packedQuestSourcePtr, packedQuestWordCount * UnsafeUtility.SizeOf<uint>());
+                UnsafeUtility.MemCpy(AddByteOffset(rawPtr, payloadCursor), packedQuestSourcePtr, packedQuestWordCount * UnsafeUtility.SizeOf<uint>());
                 payloadCursor += packedQuestWordCount * UnsafeUtility.SizeOf<uint>();
             }
 
@@ -234,7 +234,7 @@ namespace Hecton8.SaveSystem
             if (entityBytesLength > 0)
             {
                 void* entitySourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(persistentWorldItems);
-                UnsafeUtility.MemCpy(rawPtr + payloadCursor, entitySourcePtr, entityBytesLength);
+                UnsafeUtility.MemCpy(AddByteOffset(rawPtr, payloadCursor), entitySourcePtr, entityBytesLength);
                 payloadCursor += entityBytesLength;
             }
 
@@ -374,7 +374,7 @@ namespace Hecton8.SaveSystem
             }
 
             byte[] saveBytes = new byte[saveDataLength];
-            CopyUnmanagedBytesToManaged(rawPtr + cursor, saveBytes);
+            CopyUnmanagedBytesToManaged(AddByteOffset(rawPtr, cursor), saveBytes);
 
             ES3Settings payloadSettings = CreatePayloadSettings();
             data = ES3.Deserialize<SaveData>(saveBytes, payloadSettings);
@@ -424,6 +424,12 @@ namespace Hecton8.SaveSystem
         internal static uint Hash32(void* ptr, long length)
         {
             return xxHash3.Hash64(ptr, length).x;
+        }
+
+        private static byte* AddByteOffset(void* source, int byteOffset)
+        {
+            // Byte-wise pointer math only. Never advance typed pointers by raw byte offsets.
+            return (byte*)source + byteOffset;
         }
 
         internal static int Lz4BlockCompress(byte* source, int sourceLength, byte* destination, int destinationCapacity)
@@ -520,7 +526,7 @@ namespace Hecton8.SaveSystem
                     return false;
                 }
 
-                rawPayloadLength = Lz4BlockDecompress(filePtr + HeaderSize, compressedPayloadLength, rawPtr, rawBuffer.Length);
+                rawPayloadLength = Lz4BlockDecompress(AddByteOffset(filePtr, HeaderSize), compressedPayloadLength, rawPtr, rawBuffer.Length);
                 if (rawPayloadLength <= 0)
                 {
                     error = "LZ4 block decompression failed.";
@@ -626,7 +632,7 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            PackedQuestStateSectionHeader sectionHeader = UnsafeUtility.ReadArrayElement<PackedQuestStateSectionHeader>(rawPtr + packedQuestSectionOffset, 0);
+            PackedQuestStateSectionHeader sectionHeader = UnsafeUtility.ReadArrayElement<PackedQuestStateSectionHeader>(AddByteOffset(rawPtr, packedQuestSectionOffset), 0);
             if (sectionHeader.WordCount != header.DeltaCount)
             {
                 error = "Packed quest-state word count header mismatch.";
@@ -646,9 +652,10 @@ namespace Hecton8.SaveSystem
 
             fixed (uint* destinationPtr = packedQuestStateWords)
             {
+                byte* packedQuestSourcePtr = AddByteOffset(rawPtr, packedQuestSectionOffset + PackedQuestStateSectionHeaderSize);
                 UnsafeUtility.MemCpy(
                     destinationPtr,
-                    rawPtr + packedQuestSectionOffset + PackedQuestStateSectionHeaderSize,
+                    packedQuestSourcePtr,
                     packedQuestWordCount * UnsafeUtility.SizeOf<uint>());
             }
 
@@ -699,7 +706,8 @@ namespace Hecton8.SaveSystem
 
             fixed (PersistentWorldItemRecord* destinationPtr = persistentWorldItems)
             {
-                UnsafeUtility.MemCpy(destinationPtr, rawPtr + entitySectionOffset, entityBytes);
+                byte* entitySourcePtr = AddByteOffset(rawPtr, entitySectionOffset);
+                UnsafeUtility.MemCpy(destinationPtr, entitySourcePtr, entityBytes);
             }
 
             return true;
@@ -845,7 +853,7 @@ namespace Hecton8.SaveSystem
                 return true;
 
             byte[] bytes = new byte[byteLength];
-            CopyUnmanagedBytesToManaged(source + cursor, bytes);
+            CopyUnmanagedBytesToManaged(AddByteOffset(source, cursor), bytes);
             value = Encoding.UTF8.GetString(bytes);
             cursor += byteLength;
             return true;

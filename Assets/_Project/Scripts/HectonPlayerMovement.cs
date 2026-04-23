@@ -40,7 +40,7 @@ namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
-    public sealed class HectonPlayerMovement : MonoBehaviour, ITickable, IFixedTickable
+    public sealed class HectonPlayerMovement : MonoBehaviour, ITickable, IFixedTickable, IOriginShiftListener
     {
         private const float GroundCheckSkin = 0.02f;
         private float _runtimeSwimSpeedMultiplier = 1f;
@@ -882,6 +882,9 @@ namespace Hecton8.Gameplay
         private Vector3 _currentTransportPlatformPosition = Vector3.zero;
         private Quaternion _currentTransportPlatformRotation = Quaternion.identity;
         private Quaternion _transportPlatformDeltaRotation = Quaternion.identity;
+        private Matrix4x4 _cachedTransportPlatformLocalToWorldMatrix = Matrix4x4.identity;
+        private Quaternion _cachedTransportPlatformBasisRotation = Quaternion.identity;
+        private bool _cachedTransportPlatformSpatialFrameValid;
         private PlayerSwimPresentationController _swimPresentationController;
         private PhysicalInteractionHandler _physicalInteractionHandler;
         private HeavyTowWinch _heavyTowWinch;
@@ -895,6 +898,7 @@ namespace Hecton8.Gameplay
         private bool _resolvedPhysicalInteractionHandler;
         private bool _resolvedHeavyTowWinch;
         private bool _resolvedUnderwaterVisuals;
+        private int _playerColliderInstanceId;
         private int _instanceId;
         private float _nextSargassumEntanglementAudioTime = float.NegativeInfinity;
         private float _basePlayerHeight;
@@ -1117,6 +1121,7 @@ namespace Hecton8.Gameplay
 
         private bool _registeredTick;
         private bool _registeredFixedTick;
+        private bool _registeredOriginShiftListener;
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  CACHED MATH
@@ -1126,6 +1131,17 @@ namespace Hecton8.Gameplay
         private Vector3 _forceVector;
         private Vector3 _velocity;
         private Quaternion _cameraWorldRotation;
+        private bool _useFixedFrameSpatialCache;
+        private Vector3 _fixedFrameBodyPosition;
+        private Vector3 _fixedFrameCapsuleCenterWS;
+        private Vector3 _fixedFrameLossyScale;
+        private Quaternion _fixedFrameBodyRotation;
+        private float _fixedFrameCapsuleRadius;
+        private float _fixedFrameCapsuleHalfHeight;
+        private float _fixedFrameBodyBottomY;
+        private float _fixedFrameBodyTopY;
+        private float _fixedFrameBodyEyeY;
+        private int _fixedGroundSweepHitCount;
 
         private RaycastHit _groundHit;
         private Vector3 _groundCheckOrigin;
@@ -1609,7 +1625,135 @@ namespace Hecton8.Gameplay
 
         private void MoveMotorPosition(Vector3 position)
         {
-            _playerMotor?.MovePosition(position);
+            if (_playerMotor == null)
+                return;
+
+            _playerMotor.MovePosition(position);
+            if (_useFixedFrameSpatialCache)
+                SyncFixedFrameMotorPosition(position);
+        }
+
+#pragma warning disable CS0618
+        private static int GetHitColliderInstanceId(in RaycastHit hit)
+        {
+            return hit.colliderInstanceID;
+        }
+#pragma warning restore CS0618
+
+        private static int ResolveStableEntitySeed32(GameObject owner)
+        {
+            if (owner == null)
+                return 1;
+
+            ulong entityId = EntityId.ToULong(owner.GetEntityId());
+            uint folded = unchecked((uint)(entityId ^ (entityId >> 32)));
+            int seed = unchecked((int)(folded & 0x7FFFFFFFu));
+            return seed != 0 ? seed : 1;
+        }
+
+        private static float ResolveLinearBlendT(float sharpness, float deltaTime)
+        {
+            return math.saturate(math.max(0f, sharpness) * math.max(deltaTime, 0f));
+        }
+
+        private void RefreshFixedFrameSpatialCache()
+        {
+            Vector3 bodyPosition = _rb != null
+                ? _rb.position
+                : (_cachedTransform != null ? _cachedTransform.position : Vector3.zero);
+            Quaternion bodyRotation = _cachedTransform != null ? _cachedTransform.rotation : Quaternion.identity;
+            Vector3 lossyScale = _cachedTransform != null ? _cachedTransform.lossyScale : Vector3.one;
+            RefreshFixedFrameSpatialCache(bodyPosition, bodyRotation, lossyScale);
+        }
+
+        private void RefreshFixedFrameSpatialCache(Vector3 bodyPosition)
+        {
+            RefreshFixedFrameSpatialCache(bodyPosition, _fixedFrameBodyRotation, _fixedFrameLossyScale);
+        }
+
+        private void RefreshFixedFrameSpatialCache(Vector3 bodyPosition, Quaternion bodyRotation, Vector3 lossyScale)
+        {
+            _fixedFrameBodyPosition = bodyPosition;
+            _fixedFrameBodyRotation = bodyRotation;
+            _fixedFrameLossyScale = lossyScale;
+
+            if (_capsuleCollider == null || _cachedTransform == null)
+            {
+                _fixedFrameCapsuleCenterWS = bodyPosition;
+                _fixedFrameCapsuleRadius = math.max(groundCheckRadius, 0.01f);
+                _fixedFrameCapsuleHalfHeight = math.max(playerHeight * 0.5f, _fixedFrameCapsuleRadius);
+            }
+            else
+            {
+                Vector3 localCenter = _capsuleCollider.center;
+                Vector3 scaledLocalCenter = new Vector3(
+                    localCenter.x * lossyScale.x,
+                    localCenter.y * lossyScale.y,
+                    localCenter.z * lossyScale.z);
+                float radialScale = math.max(math.abs(lossyScale.x), math.abs(lossyScale.z));
+                _fixedFrameCapsuleRadius = math.max(0.01f, _capsuleCollider.radius * radialScale);
+                _fixedFrameCapsuleHalfHeight = math.max(_fixedFrameCapsuleRadius, _capsuleCollider.height * 0.5f * math.abs(lossyScale.y));
+                _fixedFrameCapsuleCenterWS = bodyPosition + (bodyRotation * scaledLocalCenter);
+            }
+
+            _fixedFrameBodyBottomY = _fixedFrameCapsuleCenterWS.y - _fixedFrameCapsuleHalfHeight;
+            _fixedFrameBodyTopY = _fixedFrameCapsuleCenterWS.y + _fixedFrameCapsuleHalfHeight;
+            _fixedFrameBodyEyeY = math.lerp(_fixedFrameBodyBottomY, _fixedFrameBodyTopY, 0.85f);
+        }
+
+        private void RefreshSharedGroundSweepBuffer()
+        {
+            float maxSampleDistance = math.max(
+                groundCheckDistance,
+                math.max(shoreBuoyancyRecoveryClearance, underwaterTurbulenceBottomInfluenceDepth)) + playerHeight;
+            if (maxSampleDistance <= 0f)
+            {
+                _fixedGroundSweepHitCount = 0;
+                return;
+            }
+
+            _groundCheckOrigin.x = _fixedFrameBodyPosition.x;
+            _groundCheckOrigin.y = _fixedFrameBodyBottomY + groundCheckRadius + GroundCheckSkin;
+            _groundCheckOrigin.z = _fixedFrameBodyPosition.z;
+
+            _fixedGroundSweepHitCount = UnityEngine.Physics.SphereCastNonAlloc(
+                _groundCheckOrigin,
+                groundCheckRadius,
+                Vector3.down,
+                _groundProbeHitBuffer,
+                maxSampleDistance + GroundCheckSkin,
+                groundLayers,
+                QueryTriggerInteraction.Ignore);
+        }
+
+        private void SyncFixedFrameMotorPosition(Vector3 position)
+        {
+            RefreshFixedFrameSpatialCache(position);
+            RefreshSharedGroundSweepBuffer();
+        }
+
+        private void CacheTransportPlatformSpatialFrame(Transform platformTransform)
+        {
+            if (platformTransform == null)
+            {
+                _cachedTransportPlatformLocalToWorldMatrix = Matrix4x4.identity;
+                _cachedTransportPlatformBasisRotation = Quaternion.identity;
+                _cachedTransportPlatformSpatialFrameValid = false;
+                return;
+            }
+
+            _cachedTransportPlatformLocalToWorldMatrix = platformTransform.localToWorldMatrix;
+
+            Vector3 up = _cachedTransportPlatformLocalToWorldMatrix.MultiplyVector(Vector3.up);
+            Vector3 forward = Vector3.ProjectOnPlane(_cachedTransportPlatformLocalToWorldMatrix.MultiplyVector(Vector3.forward), up);
+            if (forward.sqrMagnitude <= 0.0001f)
+                forward = Vector3.ProjectOnPlane(up, Vector3.up);
+            if (forward.sqrMagnitude <= 0.0001f)
+                forward = _cachedTransform != null ? _cachedTransform.forward : Vector3.forward;
+
+            forward.Normalize();
+            _cachedTransportPlatformBasisRotation = Quaternion.LookRotation(forward, up);
+            _cachedTransportPlatformSpatialFrameValid = true;
         }
 
         private void QueueEnvironmentalHullStress(float normalizedStress)
@@ -1696,11 +1840,12 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
-            _instanceId = GetHashCode();
             _cachedTransform = transform;
 
             _rb = GetComponent<Rigidbody>();
             TryGetComponent(out _capsuleCollider);
+            _playerColliderInstanceId = _capsuleCollider != null ? unchecked((int)EntityId.ToULong(_capsuleCollider.GetEntityId())) : 0;
+            _instanceId = ResolveStableEntitySeed32(gameObject);
             TryGetComponent(out _buoyancy);
             TryGetComponent(out _swimPresentationController);
             TryGetComponent(out _physicalInteractionHandler);
@@ -1898,6 +2043,10 @@ namespace Hecton8.Gameplay
 
             _registeredTick = false;
             _registeredFixedTick = false;
+            _registeredOriginShiftListener = false;
+            _useFixedFrameSpatialCache = false;
+            _fixedGroundSweepHitCount = 0;
+            RefreshFixedFrameSpatialCache();
 
             ResolveInputManagerBinding();
             UpdateSuitDiagnostics();
@@ -1923,6 +2072,11 @@ namespace Hecton8.Gameplay
             if (_cameraRig != null)
                 _cameraRig.Bind(playerCamera, _cameraComponent);
             ToggleBuoyancy(true);
+            if (!_registeredOriginShiftListener)
+            {
+                HectonFloatingOrigin.RegisterListener(this);
+                _registeredOriginShiftListener = true;
+            }
             TryRegisterToTickManager(); 
         }
 
@@ -2042,11 +2196,52 @@ namespace Hecton8.Gameplay
             _lastTransportPlatformRotation = Quaternion.identity;
             _currentTransportPlatformRotation = Quaternion.identity;
             _transportPlatformDeltaRotation = Quaternion.identity;
+            _cachedTransportPlatformLocalToWorldMatrix = Matrix4x4.identity;
+            _cachedTransportPlatformBasisRotation = Quaternion.identity;
+            _cachedTransportPlatformSpatialFrameValid = false;
+            _useFixedFrameSpatialCache = false;
+            _fixedGroundSweepHitCount = 0;
             ToggleBuoyancy(true);
+
+            if (_registeredOriginShiftListener)
+            {
+                HectonFloatingOrigin.UnregisterListener(this);
+                _registeredOriginShiftListener = false;
+            }
 
             if (inst == null) return;
             if (_registeredTick) { inst.Unregister((ITickable)this); _registeredTick = false; }
             if (_registeredFixedTick) { inst.Unregister((IFixedTickable)this); _registeredFixedTick = false; }
+        }
+
+        /// <inheritdoc />
+        public void OnOriginShift(in OriginShiftEventData shiftData)
+        {
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            if (shiftOffset.sqrMagnitude <= 0.000001f)
+                return;
+
+            _lastTransportPlatformPosition -= shiftOffset;
+            _currentTransportPlatformPosition -= shiftOffset;
+            _cuttingTensionAnchorRequestedWS -= shiftOffset;
+            _cuttingTensionAnchorCurrentWS -= shiftOffset;
+            _exosuitGrappleAnchorRequestedWS -= shiftOffset;
+            _exosuitGrappleAnchorCurrentWS -= shiftOffset;
+            _surfaceLockTargetY -= shiftOffset.y;
+            _fallbackWaterSurfaceY -= shiftOffset.y;
+            _dynamicWaterSurfaceY -= shiftOffset.y;
+
+            if (_useFixedFrameSpatialCache)
+            {
+                _fixedFrameBodyPosition -= shiftOffset;
+                _fixedFrameCapsuleCenterWS -= shiftOffset;
+                _fixedFrameBodyBottomY -= shiftOffset.y;
+                _fixedFrameBodyTopY -= shiftOffset.y;
+                _fixedFrameBodyEyeY -= shiftOffset.y;
+                _groundCheckOrigin -= shiftOffset;
+            }
+
+            _sargassumMovementInfluence?.ApplyOriginShiftOffset(shiftOffset);
         }
 
         private void TryRegisterToTickManager()
@@ -2093,6 +2288,9 @@ namespace Hecton8.Gameplay
                 _lastTransportPlatformRotation = Quaternion.identity;
                 _currentTransportPlatformRotation = Quaternion.identity;
                 _transportPlatformDeltaRotation = Quaternion.identity;
+                _cachedTransportPlatformLocalToWorldMatrix = Matrix4x4.identity;
+                _cachedTransportPlatformBasisRotation = Quaternion.identity;
+                _cachedTransportPlatformSpatialFrameValid = false;
                 return;
             }
 
@@ -2109,6 +2307,9 @@ namespace Hecton8.Gameplay
                 _lastTransportPlatformRotation = Quaternion.identity;
                 _currentTransportPlatformRotation = Quaternion.identity;
                 _transportPlatformDeltaRotation = Quaternion.identity;
+                _cachedTransportPlatformLocalToWorldMatrix = Matrix4x4.identity;
+                _cachedTransportPlatformBasisRotation = Quaternion.identity;
+                _cachedTransportPlatformSpatialFrameValid = false;
                 return;
             }
 
@@ -2116,6 +2317,7 @@ namespace Hecton8.Gameplay
             {
                 _transportPlatformRotationInitialized = false;
                 _transportPlatformDeltaRotation = Quaternion.identity;
+                _cachedTransportPlatformSpatialFrameValid = false;
             }
 
             _activeTransportPlatform = platform;
@@ -2136,9 +2338,13 @@ namespace Hecton8.Gameplay
             {
                 _transportPlatformRotationInitialized = false;
                 _transportPlatformDeltaRotation = Quaternion.identity;
+                _cachedTransportPlatformLocalToWorldMatrix = Matrix4x4.identity;
+                _cachedTransportPlatformBasisRotation = Quaternion.identity;
+                _cachedTransportPlatformSpatialFrameValid = false;
                 return;
             }
 
+            CacheTransportPlatformSpatialFrame(platformTransform);
             Quaternion currentPlatformRotation = platformTransform.rotation;
             Vector3 currentPlatformPosition = platformTransform.position;
             if (!_transportPlatformRotationInitialized)
@@ -2205,7 +2411,10 @@ namespace Hecton8.Gameplay
             if (!TryGetActiveTransportPlatformTransform(out Transform platformTransform))
                 return localDirection;
 
-            return platformTransform.localToWorldMatrix.MultiplyVector(localDirection);
+            if (!_cachedTransportPlatformSpatialFrameValid)
+                CacheTransportPlatformSpatialFrame(platformTransform);
+
+            return _cachedTransportPlatformLocalToWorldMatrix.MultiplyVector(localDirection);
         }
 
         private Quaternion ResolveTransportPlatformBasisRotation()
@@ -2213,15 +2422,10 @@ namespace Hecton8.Gameplay
             if (!TryGetActiveTransportPlatformTransform(out Transform platformTransform))
                 return Quaternion.identity;
 
-            Vector3 up = platformTransform.up;
-            Vector3 forward = Vector3.ProjectOnPlane(platformTransform.forward, up);
-            if (forward.sqrMagnitude <= 0.0001f)
-                forward = Vector3.ProjectOnPlane(platformTransform.up, Vector3.up);
-            if (forward.sqrMagnitude <= 0.0001f)
-                forward = _cachedTransform.forward;
+            if (!_cachedTransportPlatformSpatialFrameValid)
+                CacheTransportPlatformSpatialFrame(platformTransform);
 
-            forward.Normalize();
-            return Quaternion.LookRotation(forward, up);
+            return _cachedTransportPlatformBasisRotation;
         }
 
         private void ApplyTransportPlatformCarrierMotion(float fixedDeltaTime)
@@ -2570,7 +2774,7 @@ namespace Hecton8.Gameplay
                 targetCenterOfMassOffset.z = -backwardPull * heavyTowCenterOfMassRearShift * response01;
             }
 
-            float blendT = 1f - math.exp(-math.max(heavyTowResponseBlendSharpness, 0.01f) * fixedDeltaTime);
+            float blendT = ResolveLinearBlendT(math.max(heavyTowResponseBlendSharpness, 0.01f), fixedDeltaTime);
             _heavyTowCameraPitchOffset = math.lerp(_heavyTowCameraPitchOffset, targetPitchOffset, blendT);
             _heavyTowCameraRollOffset = math.lerp(_heavyTowCameraRollOffset, targetRollOffset, blendT);
             _heavyTowCameraLocalOffset = Vector3.Lerp(_heavyTowCameraLocalOffset, targetCameraOffset, blendT);
@@ -2848,7 +3052,7 @@ namespace Hecton8.Gameplay
 
             if (_sargassumHighStrainTimer <= 0f)
             {
-                float fadeT = 1f - math.exp(-12f * fixedDeltaTime);
+                float fadeT = ResolveLinearBlendT(12f, fixedDeltaTime);
                 _sargassumHighStrainIntensity = math.lerp(_sargassumHighStrainIntensity, 0f, fadeT);
                 if (_sargassumHighStrainIntensity < 0.0001f)
                     _sargassumHighStrainIntensity = 0f;
@@ -2869,7 +3073,7 @@ namespace Hecton8.Gameplay
                 }
             }
 
-            float blendT = 1f - math.exp(-math.max(sargassumMatBuoyancyBlendSharpness, 0.01f) * fixedDeltaTime);
+            float blendT = ResolveLinearBlendT(math.max(sargassumMatBuoyancyBlendSharpness, 0.01f), fixedDeltaTime);
             _sargassumMatBuoyancyBlend = math.lerp(_sargassumMatBuoyancyBlend, targetBlend, blendT);
         }
 
@@ -3051,7 +3255,7 @@ namespace Hecton8.Gameplay
 
         private void TryPlaySargassumEntanglementAudio(SargassumGlobalDragManager.EntanglementStrainSignal signal)
         {
-            if (signal.Shake01 <= 0.0001f || Time.time < _nextSargassumEntanglementAudioTime)
+            if (signal.Shake01 <= 0.0001f || Time.fixedTime < _nextSargassumEntanglementAudioTime)
                 return;
 
             AudioClip clip = sargassumEntanglementStrainClip != null
@@ -3066,7 +3270,7 @@ namespace Hecton8.Gameplay
             float volume = math.lerp(0.12f, 0.42f, signal.Shake01);
             float pitch = math.lerp(0.72f, 0.94f, signal.EscapeIntent01);
             audioManager.PlayAtPoint(clip, signal.PositionWS, volume, pitch);
-            _nextSargassumEntanglementAudioTime = Time.time + sargassumEntanglementAudioCooldown;
+            _nextSargassumEntanglementAudioTime = Time.fixedTime + sargassumEntanglementAudioCooldown;
         }
 
         private void AdvanceExternalEnvironmentalDrag(float fixedDeltaTime)
@@ -3087,7 +3291,7 @@ namespace Hecton8.Gameplay
                 _externalEnvironmentalDragRequestedThisStep || _externalEnvironmentalDragHoldTimer > 0f
                     ? math.max(1f, _externalEnvironmentalDragRequestedMultiplier)
                     : 1f;
-            float blendT = 1f - math.exp(-math.max(externalEnvironmentalDragBlendSpeed, 0.01f) * fixedDeltaTime);
+            float blendT = ResolveLinearBlendT(math.max(externalEnvironmentalDragBlendSpeed, 0.01f), fixedDeltaTime);
             _externalEnvironmentalDragCurrentMultiplier = math.lerp(_externalEnvironmentalDragCurrentMultiplier, targetDragMultiplier, blendT);
 
             _externalEnvironmentalDragRequestedMultiplier = 1f;
@@ -3238,7 +3442,7 @@ namespace Hecton8.Gameplay
             float targetCount = keepInfluenceAlive ? _parasiteLatchedRequestedCount : 0f;
             Vector3 targetCenterOfMass = keepInfluenceAlive ? _parasiteCenterOfMassRequestedLS : Vector3.zero;
             Vector3 targetHarvesterPull = keepInfluenceAlive ? _parasiteHarvesterPullRequestedWS : Vector3.zero;
-            float blendT = 1f - math.exp(-math.max(parasiteLatchInfluenceBlendSpeed, 0.01f) * fixedDeltaTime);
+            float blendT = ResolveLinearBlendT(math.max(parasiteLatchInfluenceBlendSpeed, 0.01f), fixedDeltaTime);
 
             _parasiteLatchedCurrentCount = Mathf.RoundToInt(math.lerp(_parasiteLatchedCurrentCount, targetCount, blendT));
             _parasiteCenterOfMassCurrentLS = Vector3.Lerp(_parasiteCenterOfMassCurrentLS, targetCenterOfMass, blendT);
@@ -4134,11 +4338,14 @@ namespace Hecton8.Gameplay
 
             EnsureJuiceProcessor();
             _currentFixedDeltaTime = fixedDeltaTime;
+            _useFixedFrameSpatialCache = true;
             PlayerTransportPreset activeTransportPreset = ResolveActiveTransportPreset();
             ProcessQueuedCollisionEvents();
             _stateMachine?.AdvanceFixed(fixedDeltaTime);
             ResolveActiveTransportPlatform();
             SyncTransportPlatformRotation();
+            RefreshFixedFrameSpatialCache();
+            RefreshSharedGroundSweepBuffer();
             float previousWaterImmersionRatio = _waterImmersionRatio;
             bool wasGroundedLastFixedTick = _isGrounded;
             float currentVerticalVelocity = _rb.linearVelocity.y;
@@ -4179,12 +4386,12 @@ namespace Hecton8.Gameplay
 
             if (_waterImmersionRatio > _smoothedImmersionRatio)
             {
-                float enterT = 1f - math.exp(-12f * fixedDeltaTime);
+                float enterT = ResolveLinearBlendT(12f, fixedDeltaTime);
                 _smoothedImmersionRatio = math.lerp(_smoothedImmersionRatio, _waterImmersionRatio, enterT);
             }
             else
             {
-                float exitT = 1f - math.exp(-3f * fixedDeltaTime);
+                float exitT = ResolveLinearBlendT(3f, fixedDeltaTime);
                 _smoothedImmersionRatio = math.lerp(_smoothedImmersionRatio, _waterImmersionRatio, exitT);
             }
 
@@ -4471,6 +4678,7 @@ namespace Hecton8.Gameplay
             ApplyWipeoutRecoveryForces(fixedDeltaTime);
             ClampVelocity(suit);
             UpdateGroundDiagnostics();
+            _useFixedFrameSpatialCache = false;
         }
 
         private void AdvanceCurrentPhaseTimer(float fixedDeltaTime)
@@ -4682,14 +4890,14 @@ namespace Hecton8.Gameplay
             float blendSpeed = targetBlend > _surfaceLockBlend
                 ? surfaceSnapEngageSpeed
                 : surfaceSnapReleaseSpeed;
-            float blendT = 1f - math.exp(-math.max(blendSpeed, 0.01f) * fixedDeltaTime);
+            float blendT = ResolveLinearBlendT(math.max(blendSpeed, 0.01f), fixedDeltaTime);
             _surfaceLockBlend = math.lerp(_surfaceLockBlend, targetBlend, blendT);
 
             if (_isSurfaceSwimming)
             {
                 float targetRootY = EffectiveWaterSurfaceY + surfaceStickOffset;
                 float shorelineTargetRootY = math.lerp(_rb.position.y, targetRootY, _shoreBuoyancyBlend);
-                float followT = 1f - math.exp(-math.max(surfaceWaveFollowSharpness, 0.01f) * fixedDeltaTime);
+                float followT = ResolveLinearBlendT(math.max(surfaceWaveFollowSharpness, 0.01f), fixedDeltaTime);
                 _surfaceLockTargetY = math.lerp(_surfaceLockTargetY, shorelineTargetRootY, followT);
                 return;
             }
@@ -4723,7 +4931,7 @@ namespace Hecton8.Gameplay
                 targetSurfacePose = Quaternion.Euler(pitch, 0f, roll);
             }
 
-            float surfaceBlendT = 1f - math.exp(-math.max(surfaceWaveAlignmentSharpness, 0.01f) * fixedDeltaTime);
+            float surfaceBlendT = ResolveLinearBlendT(math.max(surfaceWaveAlignmentSharpness, 0.01f), fixedDeltaTime);
             _surfaceWavePoseRotation = Quaternion.Slerp(_surfaceWavePoseRotation, targetSurfacePose, surfaceBlendT);
         }
 
@@ -4746,11 +4954,11 @@ namespace Hecton8.Gameplay
                     _physicalTraumaCollisionHoldTimer = 0f;
             }
 
-            float blendT = 1f - math.exp(-math.max(dynamicCollisionDeformationBlendSharpness, 0.01f) * fixedDeltaTime);
+            float blendT = ResolveLinearBlendT(math.max(dynamicCollisionDeformationBlendSharpness, 0.01f), fixedDeltaTime);
             _dynamicCollisionTuck01 = math.lerp(_dynamicCollisionTuck01, targetTuck, blendT);
 
             float traumaCollisionTarget = _physicalTraumaCollisionHoldTimer > 0f ? _physicalTraumaCollisionWeight : 0f;
-            float traumaBlendT = 1f - math.exp(-math.max(physicalTraumaCollisionRecoverySharpness, 0.01f) * fixedDeltaTime);
+            float traumaBlendT = ResolveLinearBlendT(math.max(physicalTraumaCollisionRecoverySharpness, 0.01f), fixedDeltaTime);
             _physicalTraumaCollisionWeight = math.lerp(_physicalTraumaCollisionWeight, traumaCollisionTarget, traumaBlendT);
 
             float waveCollisionHeightScale = _requestedTransportCollisionHeightScale * math.lerp(1f, dynamicCollisionMinHeightScale, _dynamicCollisionTuck01);
@@ -4772,7 +4980,7 @@ namespace Hecton8.Gameplay
             if ((_isWalking && !exosuitActive) || _isSurfaceSwimming || IsInDryInterior() || !_crestSamplingSucceeded)
             {
                 UpdateUnderwaterStressSignal(0f, fixedDeltaTime);
-                float fadeT = 1f - math.exp(-math.max(underwaterTurbulencePoseSharpness, 0.01f) * fixedDeltaTime);
+                float fadeT = ResolveLinearBlendT(math.max(underwaterTurbulencePoseSharpness, 0.01f), fixedDeltaTime);
                 _underwaterTurbulencePoseRotation = Quaternion.Slerp(_underwaterTurbulencePoseRotation, targetTurbulencePose, fadeT);
                 return;
             }
@@ -4780,7 +4988,7 @@ namespace Hecton8.Gameplay
             if (_currentDepth <= 0f || _currentDepth > underwaterTurbulenceMaxDepth)
             {
                 UpdateUnderwaterStressSignal(0f, fixedDeltaTime);
-                float fadeT = 1f - math.exp(-math.max(underwaterTurbulencePoseSharpness, 0.01f) * fixedDeltaTime);
+                float fadeT = ResolveLinearBlendT(math.max(underwaterTurbulencePoseSharpness, 0.01f), fixedDeltaTime);
                 _underwaterTurbulencePoseRotation = Quaternion.Slerp(_underwaterTurbulencePoseRotation, targetTurbulencePose, fadeT);
                 return;
             }
@@ -4840,7 +5048,7 @@ namespace Hecton8.Gameplay
                 targetTurbulencePose = Quaternion.Euler(targetPitch, 0f, targetRoll);
             }
 
-            float turbulenceBlendT = 1f - math.exp(-math.max(underwaterTurbulencePoseSharpness, 0.01f) * fixedDeltaTime);
+            float turbulenceBlendT = ResolveLinearBlendT(math.max(underwaterTurbulencePoseSharpness, 0.01f), fixedDeltaTime);
             _underwaterTurbulencePoseRotation = Quaternion.Slerp(_underwaterTurbulencePoseRotation, targetTurbulencePose, turbulenceBlendT);
         }
 
@@ -5066,7 +5274,7 @@ namespace Hecton8.Gameplay
                 _externalHullStressRequestedThisStep = false;
             }
 
-            float blendT = 1f - math.exp(-math.max(crushDepthStressBlendSharpness, 0.01f) * fixedDeltaTime);
+            float blendT = ResolveLinearBlendT(math.max(crushDepthStressBlendSharpness, 0.01f), fixedDeltaTime);
             _hullStressIntensity = math.lerp(_hullStressIntensity, targetStress, blendT);
 
             if (_hullStressIntensity > crushDepthShakeThreshold && _juiceProcessor != null)
@@ -5120,7 +5328,7 @@ namespace Hecton8.Gameplay
 
         private void UpdateUnderwaterStressSignal(float targetIntensity, float fixedDeltaTime)
         {
-            float blendT = 1f - math.exp(-math.max(underwaterStressSignalBlendSharpness, 0.01f) * fixedDeltaTime);
+            float blendT = ResolveLinearBlendT(math.max(underwaterStressSignalBlendSharpness, 0.01f), fixedDeltaTime);
             _underwaterStressSignalIntensity = math.lerp(_underwaterStressSignalIntensity, math.saturate(targetIntensity), blendT);
         }
 
@@ -5384,7 +5592,7 @@ namespace Hecton8.Gameplay
         private void AdvanceAbyssalTransportTurbulenceSteering(float fixedDeltaTime)
         {
             float recoverySharpness = math.max(abyssalTransportTurbulenceRecoverySharpness, 0.01f);
-            float blendT = 1f - math.exp(-recoverySharpness * fixedDeltaTime);
+            float blendT = ResolveLinearBlendT(recoverySharpness, fixedDeltaTime);
             _abyssalTransportTurbulencePitchOffset = math.lerp(_abyssalTransportTurbulencePitchOffset, 0f, blendT);
             _abyssalTransportTurbulenceYawOffset = math.lerp(_abyssalTransportTurbulenceYawOffset, 0f, blendT);
         }
@@ -5612,7 +5820,7 @@ namespace Hecton8.Gameplay
                 }
             }
 
-            float blendT = 1f - math.exp(-math.max(vegetationDensityLinearDampingBlendSharpness, 0.01f) * fixedDeltaTime);
+            float blendT = ResolveLinearBlendT(math.max(vegetationDensityLinearDampingBlendSharpness, 0.01f), fixedDeltaTime);
             _vegetationDensityLinearDamping = math.lerp(_vegetationDensityLinearDamping, targetDamping, blendT);
         }
 
@@ -5696,7 +5904,7 @@ namespace Hecton8.Gameplay
                 targetEfficiency = math.lerp(1f, transportCavitationMinEfficiency, lossT);
             }
 
-            float blendT = 1f - math.exp(-math.max(transportCavitationBlendSharpness, 0.01f) * fixedDeltaTime);
+            float blendT = ResolveLinearBlendT(math.max(transportCavitationBlendSharpness, 0.01f), fixedDeltaTime);
             _transportCavitationEfficiency = math.lerp(_transportCavitationEfficiency, targetEfficiency, blendT);
             _previousTransportForwardVelocity = forwardVelocity;
             return _transportCavitationEfficiency;
@@ -5711,7 +5919,7 @@ namespace Hecton8.Gameplay
                     _wetLensPulseCooldownTimer = 0f;
             }
 
-            float recoveryT = 1f - math.exp(-math.max(wetLensSignalRecoverySpeed, 0.01f) * fixedDeltaTime);
+            float recoveryT = ResolveLinearBlendT(math.max(wetLensSignalRecoverySpeed, 0.01f), fixedDeltaTime);
             _wetLensSignalIntensity = math.lerp(_wetLensSignalIntensity, 0f, recoveryT);
 
             if (IsInDryInterior() || !_isSurfaceSwimming)
@@ -6045,7 +6253,7 @@ namespace Hecton8.Gameplay
 
             if (math.abs(_currentLinearDamping - targetDamping) > 0.01f)
             {
-                float t = 1f - math.exp(-dampingTransitionSpeed * fixedDeltaTime);
+                float t = ResolveLinearBlendT(dampingTransitionSpeed, fixedDeltaTime);
                 _currentLinearDamping = math.lerp(_currentLinearDamping, targetDamping, t);
                 _rb.linearDamping = _currentLinearDamping;
             }
@@ -6067,7 +6275,7 @@ namespace Hecton8.Gameplay
 
         private void GroundCheck(float fixedDeltaTime)
         {
-            Vector3 rbPos = _rb.position;
+            Vector3 rbPos = _useFixedFrameSpatialCache ? _fixedFrameBodyPosition : _rb.position;
             float bodyBottomY = GetBodyBottomY();
             bool exosuitActive = IsExosuitTransportActive();
             bool dryInteriorActive = IsInDryInterior();
@@ -6079,27 +6287,19 @@ namespace Hecton8.Gameplay
             _groundCheckOrigin.y = bodyBottomY + groundCheckRadius + GroundCheckSkin;
             _groundCheckOrigin.z = rbPos.z;
 
-            int hitCount = UnityEngine.Physics.SphereCastNonAlloc(
-                _groundCheckOrigin,
-                groundCheckRadius,
-                Vector3.down,
-                _groundProbeHitBuffer,
-                groundCheckDistance + GroundCheckSkin,
-                groundLayers,
-                QueryTriggerInteraction.Ignore);
-
             _isGrounded = false;
             float bestDistance = float.MaxValue;
             float bestNormalY = requiredGroundNormalY;
+            float maxGroundDistance = groundCheckDistance + GroundCheckSkin;
 
-            for (int i = 0; i < hitCount; i++)
+            for (int i = 0; i < _fixedGroundSweepHitCount; i++)
             {
                 RaycastHit hit = _groundProbeHitBuffer[i];
-                Collider hitCollider = hit.collider;
-                if (hitCollider == null)
+                int hitColliderInstanceId = GetHitColliderInstanceId(in hit);
+                if (hitColliderInstanceId == 0 || hitColliderInstanceId == _playerColliderInstanceId)
                     continue;
 
-                if (hitCollider.attachedRigidbody == _rb)
+                if (hit.distance > maxGroundDistance)
                     continue;
 
                 float normalY = hit.normal.y;
@@ -6153,7 +6353,7 @@ namespace Hecton8.Gameplay
             if (_isGrounded)
             {
                 float blendSharpness = exosuitActive && _exosuitFootingValid ? exosuitFootSlopeBlendSharpness : 15f;
-                float normalT = 1f - math.exp(-math.max(0.01f, blendSharpness) * fixedDeltaTime);
+                float normalT = ResolveLinearBlendT(math.max(0.01f, blendSharpness), fixedDeltaTime);
                 _smoothedGroundNormal = Vector3.Slerp(_smoothedGroundNormal, resolvedGroundNormal, normalT);
 
                 float sqrMag = _smoothedGroundNormal.sqrMagnitude;
@@ -6165,7 +6365,7 @@ namespace Hecton8.Gameplay
             else
             {
                 _groundHit = default;
-                float resetT = 1f - math.exp(-5f * fixedDeltaTime);
+                float resetT = ResolveLinearBlendT(5f, fixedDeltaTime);
                 _smoothedGroundNormal = Vector3.Slerp(_smoothedGroundNormal, Vector3.up, resetT);
             }
 
@@ -6264,6 +6464,14 @@ namespace Hecton8.Gameplay
 
         private void GetCapsuleWorldMetrics(out Vector3 center, out float radius, out float halfHeight)
         {
+            if (_useFixedFrameSpatialCache)
+            {
+                center = _fixedFrameCapsuleCenterWS;
+                radius = _fixedFrameCapsuleRadius;
+                halfHeight = _fixedFrameCapsuleHalfHeight;
+                return;
+            }
+
             if (_capsuleCollider == null)
             {
                 center = _rb.position;
@@ -6284,18 +6492,27 @@ namespace Hecton8.Gameplay
 
         private float GetBodyBottomY()
         {
+            if (_useFixedFrameSpatialCache)
+                return _fixedFrameBodyBottomY;
+
             GetCapsuleWorldMetrics(out Vector3 center, out _, out float halfHeight);
             return center.y - halfHeight;
         }
 
         private float GetBodyTopY()
         {
+            if (_useFixedFrameSpatialCache)
+                return _fixedFrameBodyTopY;
+
             GetCapsuleWorldMetrics(out Vector3 center, out _, out float halfHeight);
             return center.y + halfHeight;
         }
 
         private float GetBodyEyeY()
         {
+            if (_useFixedFrameSpatialCache)
+                return _fixedFrameBodyEyeY;
+
             return math.lerp(GetBodyBottomY(), GetBodyTopY(), 0.85f);
         }
 
@@ -6342,28 +6559,13 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            float radius = math.max(groundCheckRadius * 0.85f, 0.05f);
-            Vector3 origin = _rb.position;
-            origin.y = GetBodyBottomY() + radius + GroundCheckSkin;
-            int hitCount = UnityEngine.Physics.SphereCastNonAlloc(
-                origin,
-                radius,
-                Vector3.down,
-                _bottomClearanceHitBuffer,
-                maxSampleDistance + GroundCheckSkin,
-                groundLayers,
-                QueryTriggerInteraction.Ignore);
-
             float bestClearance = float.PositiveInfinity;
             Vector3 bestNormal = Vector3.up;
-            for (int i = 0; i < hitCount; i++)
+            for (int i = 0; i < _fixedGroundSweepHitCount; i++)
             {
-                RaycastHit hit = _bottomClearanceHitBuffer[i];
-                Collider hitCollider = hit.collider;
-                if (hitCollider == null)
-                    continue;
-
-                if (hitCollider.attachedRigidbody == _rb)
+                RaycastHit hit = _groundProbeHitBuffer[i];
+                int hitColliderInstanceId = GetHitColliderInstanceId(in hit);
+                if (hitColliderInstanceId == 0 || hitColliderInstanceId == _playerColliderInstanceId)
                     continue;
 
                 if (hit.normal.y < _minGroundNormalY)
@@ -6407,7 +6609,7 @@ namespace Hecton8.Gameplay
                 }
             }
 
-            float blendT = 1f - math.exp(-math.max(shoreBuoyancyBlendSharpness, 0.01f) * fixedDeltaTime);
+            float blendT = ResolveLinearBlendT(math.max(shoreBuoyancyBlendSharpness, 0.01f), fixedDeltaTime);
             _shoreBuoyancyBlend = math.lerp(_shoreBuoyancyBlend, targetBlend, blendT);
         }
 
@@ -6639,8 +6841,8 @@ namespace Hecton8.Gameplay
             for (int i = 0; i < hitCount; i++)
             {
                 RaycastHit hit = _footProbeHitBuffer[i];
-                Collider hitCollider = hit.collider;
-                if (hitCollider == null || hitCollider.attachedRigidbody == _rb)
+                int hitColliderInstanceId = GetHitColliderInstanceId(in hit);
+                if (hitColliderInstanceId == 0 || hitColliderInstanceId == _playerColliderInstanceId)
                     continue;
 
                 if (hit.normal.y < minimumNormalY)
@@ -6738,8 +6940,8 @@ namespace Hecton8.Gameplay
             for (int i = 0; i < hitCount; i++)
             {
                 RaycastHit hit = _footProbeHitBuffer[i];
-                Collider hitCollider = hit.collider;
-                if (hitCollider == null || hitCollider.attachedRigidbody == _rb)
+                int hitColliderInstanceId = GetHitColliderInstanceId(in hit);
+                if (hitColliderInstanceId == 0 || hitColliderInstanceId == _playerColliderInstanceId)
                     continue;
 
                 if (hit.normal.y < minimumNormalY)
@@ -6804,11 +7006,8 @@ namespace Hecton8.Gameplay
 
             for (int i = 0; i < hitCount; i++)
             {
-                Collider hitCollider = _overheadProbeHitBuffer[i].collider;
-                if (hitCollider == null)
-                    continue;
-
-                if (hitCollider.attachedRigidbody == _rb)
+                int hitColliderInstanceId = GetHitColliderInstanceId(in _overheadProbeHitBuffer[i]);
+                if (hitColliderInstanceId == 0 || hitColliderInstanceId == _playerColliderInstanceId)
                     continue;
 
                 return false;
@@ -6844,9 +7043,10 @@ namespace Hecton8.Gameplay
             float probeRadius = math.max(groundCheckRadius * 0.85f, 0.05f);
             float currentBottomY = GetBodyBottomY();
 
-            _groundCheckOrigin.x = _rb.position.x;
+            Vector3 currentBodyPosition = _useFixedFrameSpatialCache ? _fixedFrameBodyPosition : _rb.position;
+            _groundCheckOrigin.x = currentBodyPosition.x;
             _groundCheckOrigin.y = currentBottomY + probeRadius + GroundCheckSkin;
-            _groundCheckOrigin.z = _rb.position.z;
+            _groundCheckOrigin.z = currentBodyPosition.z;
 
             if (!TryFindStepObstacle(_groundCheckOrigin, probeRadius, dirX, dirZ, out RaycastHit obstacleHit))
                 return false;
@@ -6873,7 +7073,7 @@ namespace Hecton8.Gameplay
             if (stepDeltaY <= GroundCheckSkin || stepDeltaY > stepAssistHeight + GroundCheckSkin)
                 return false;
 
-            Vector3 newPosition = _rb.position;
+            Vector3 newPosition = currentBodyPosition;
             newPosition.x += dirX * forwardDistance;
             newPosition.y += stepDeltaY;
             newPosition.z += dirZ * forwardDistance;
@@ -6914,11 +7114,8 @@ namespace Hecton8.Gameplay
             for (int i = 0; i < hitCount; i++)
             {
                 RaycastHit hit = _stepProbeHitBuffer[i];
-                Collider hitCollider = hit.collider;
-                if (hitCollider == null)
-                    continue;
-
-                if (hitCollider.attachedRigidbody == _rb)
+                int hitColliderInstanceId = GetHitColliderInstanceId(in hit);
+                if (hitColliderInstanceId == 0 || hitColliderInstanceId == _playerColliderInstanceId)
                     continue;
 
                 if (hit.distance <= 0.001f)
@@ -6951,11 +7148,8 @@ namespace Hecton8.Gameplay
 
             for (int i = 0; i < hitCount; i++)
             {
-                Collider hitCollider = _stepProbeHitBuffer[i].collider;
-                if (hitCollider == null)
-                    continue;
-
-                if (hitCollider.attachedRigidbody == _rb)
+                int hitColliderInstanceId = GetHitColliderInstanceId(in _stepProbeHitBuffer[i]);
+                if (hitColliderInstanceId == 0 || hitColliderInstanceId == _playerColliderInstanceId)
                     continue;
 
                 return true;
@@ -6981,11 +7175,8 @@ namespace Hecton8.Gameplay
             for (int i = 0; i < hitCount; i++)
             {
                 RaycastHit hit = _stepProbeHitBuffer[i];
-                Collider hitCollider = hit.collider;
-                if (hitCollider == null)
-                    continue;
-
-                if (hitCollider.attachedRigidbody == _rb)
+                int hitColliderInstanceId = GetHitColliderInstanceId(in hit);
+                if (hitColliderInstanceId == 0 || hitColliderInstanceId == _playerColliderInstanceId)
                     continue;
 
                 float normalY = hit.normal.y;
@@ -7281,7 +7472,7 @@ namespace Hecton8.Gameplay
                 targetBlend = densityT * stillnessT * inputCalmT * breathingT * _sargassumMatBuoyancyBlend;
             }
 
-            float blendT = 1f - math.exp(-math.max(sargassumRestBlendSharpness, 0.01f) * fixedDeltaTime);
+            float blendT = ResolveLinearBlendT(math.max(sargassumRestBlendSharpness, 0.01f), fixedDeltaTime);
             _sargassumRestRecoveryBlend = math.lerp(_sargassumRestRecoveryBlend, targetBlend, blendT);
             if (_sargassumRestRecoveryBlend <= 0.001f)
             {
@@ -7530,7 +7721,7 @@ namespace Hecton8.Gameplay
                 }
             }
 
-            float blendT = 1f - math.exp(-crestFlowInputBlendSpeed * fixedDeltaTime);
+            float blendT = ResolveLinearBlendT(crestFlowInputBlendSpeed, fixedDeltaTime);
             _crestFlowInputAttenuation = math.lerp(_crestFlowInputAttenuation, desiredScale, blendT);
             return _crestFlowInputAttenuation;
         }

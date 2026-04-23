@@ -94,14 +94,10 @@ namespace Hecton8.UI
             if (!entry.IsUserInput && entry.HasLocalizationKey)
             {
                 bool rtl = LocalizedMeasurementFormatter.IsRightToLeft(LocRegistry.ActiveLanguage);
-                char[] buffer;
-                int length;
-                text.isRightToLeftText = false;
-                if (rtl)
-                    LocRegistry.TryGetVisualBuffer(entry.LocalizationKeyHash, out buffer, out length);
-                else
-                    LocRegistry.TryGetRawBuffer(entry.LocalizationKeyHash, out buffer, out length);
+                text.isRightToLeftText = rtl;
+                LocRegistry.TryGetRawBuffer(entry.LocalizationKeyHash, out char[] buffer, out int length);
                 text.SetCharArray(buffer, 0, length);
+                text.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
             }
 
             text.SetMaterialDirty();

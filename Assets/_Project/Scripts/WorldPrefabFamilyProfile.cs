@@ -1,11 +1,12 @@
+using System;
 using Hecton8.Environment;
 using UnityEngine;
 
 namespace Hecton8.World
 {
     [CreateAssetMenu(fileName = "WorldPrefabFamilyProfile", menuName = "Hecton8/World/Prefab Family Profile")]
-    public sealed class WorldPrefabFamilyProfile : ScriptableObject
-    {
+        public sealed class WorldPrefabFamilyProfile : ScriptableObject
+        {
         public enum ProceduralDomain
         {
             Generic,
@@ -85,6 +86,16 @@ namespace Hecton8.World
             public bool proxyOnly = true;
             public bool finalReady;
             public Vector2 uniformScaleRange = Vector2.one;
+
+            [NonSerialized] private bool _isCheapProxy;
+
+            internal bool IsCheapProxy => _isCheapProxy;
+
+            internal void RefreshRuntimeCache()
+            {
+                _isCheapProxy = !string.IsNullOrWhiteSpace(variantId)
+                    && variantId.EndsWith(".proxy.simple", StringComparison.Ordinal);
+            }
         }
 
         [Header("Identity")]
@@ -149,6 +160,11 @@ namespace Hecton8.World
                 _generatedVariantId = string.Concat(resolvedFamilyId, ".generated");
                 return _generatedVariantId;
             }
+        }
+
+        private void OnEnable()
+        {
+            RefreshVariantRuntimeCaches();
         }
 
         public bool UsesGenerativeGeology()
@@ -222,7 +238,17 @@ namespace Hecton8.World
         private void OnValidate()
         {
             _generatedVariantId = null;
+            RefreshVariantRuntimeCaches();
         }
 #endif
+
+        private void RefreshVariantRuntimeCaches()
+        {
+            if (variants == null)
+                return;
+
+            for (int i = 0; i < variants.Length; i++)
+                variants[i]?.RefreshRuntimeCache();
+        }
     }
 }

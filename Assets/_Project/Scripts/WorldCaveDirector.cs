@@ -1339,7 +1339,7 @@ namespace Hecton8.World
             _cachedBiomeRuntimeContext.Family = biomeFamily;
             _cachedBiomeRuntimeContext.FamilyId = familyId;
             _cachedBiomeRuntimeContext.FamilyLabel = string.IsNullOrEmpty(biomeFamily.familyLabel) ? "None" : biomeFamily.familyLabel;
-            _cachedBiomeRuntimeContext.FamilyHash = familyId.GetHashCode();
+            _cachedBiomeRuntimeContext.FamilyHash = Hecton.Localization.LocHash.Compute(familyId);
             _cachedBiomeRuntimeContext.SupportsCaves = EvaluateBiomeCaveSupport(familyId);
             _cachedBiomeRuntimeContext.PresetKind = ResolveBiomePresetKind(familyId);
         }

@@ -32,6 +32,7 @@ namespace Hecton8.Gameplay
     using Hecton8.Inventory;
     using Hecton8.Items;
     using Hecton8.Input;
+    using Hecton8.Physics;
     using Hecton8.Tools;
     using UnityEngine;
 #if UNITY_EDITOR
@@ -121,6 +122,8 @@ namespace Hecton8.Gameplay
         private bool _assignedPoolsWarmed;
         private bool _constructionGhostPoolsWarmed;
         private bool _handlingEquippedToolBreak;
+        private BaseModule _currentInteriorModule;
+        private Rigidbody _currentInteriorCarrierBody;
         private bool _suppressInventoryChangedHandling;
 
         public event Action<int> ActiveSlotChanged;
@@ -183,6 +186,8 @@ namespace Hecton8.Gameplay
         {
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
             RefreshInputSubscriptions();
+            SubscribeModuleStatusEvents();
+            RefreshInteriorCarrierCache(true);
             WarmRuntimePoolsIfNeeded();
 
             if (playerInventory != null)
@@ -193,6 +198,8 @@ namespace Hecton8.Gameplay
         {
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
             UnsubscribeFromInputManager();
+            UnsubscribeModuleStatusEvents();
+            ClearInteriorCarrierCache();
 
             if (playerInventory != null)
                 playerInventory.InventoryChanged -= HandleInventoryChanged;
@@ -402,6 +409,19 @@ namespace Hecton8.Gameplay
             return prefab != null && HasToolInInventory(prefab);
         }
 
+        internal bool TryResolveInteriorCarrierBody(out Rigidbody carrierBody)
+        {
+            if (_currentInteriorModule != null && _currentInteriorModule.IsPlayerInsideInterior)
+            {
+                carrierBody = _currentInteriorCarrierBody;
+                return carrierBody != null;
+            }
+
+            RefreshInteriorCarrierCache(true);
+            carrierBody = _currentInteriorCarrierBody;
+            return carrierBody != null;
+        }
+
         public GameObject GetKnownToolPrefabForItem(ItemData item)
         {
             if (item == null || knownToolPrefabs == null)
@@ -568,6 +588,97 @@ namespace Hecton8.Gameplay
         {
             if (playerTransportCoordinator == null)
                 TryGetComponent(out playerTransportCoordinator);
+        }
+
+        private void SubscribeModuleStatusEvents()
+        {
+            ModuleStatusEvents.OnModuleEnter -= HandleModuleEnter;
+            ModuleStatusEvents.OnModuleExit -= HandleModuleExit;
+            ModuleStatusEvents.OnModuleEnter += HandleModuleEnter;
+            ModuleStatusEvents.OnModuleExit += HandleModuleExit;
+        }
+
+        private void UnsubscribeModuleStatusEvents()
+        {
+            ModuleStatusEvents.OnModuleEnter -= HandleModuleEnter;
+            ModuleStatusEvents.OnModuleExit -= HandleModuleExit;
+        }
+
+        private void HandleModuleEnter(BaseModule module)
+        {
+            if (module == null)
+                return;
+
+            CacheInteriorCarrier(module);
+        }
+
+        private void HandleModuleExit(BaseModule module)
+        {
+            if (_currentInteriorModule == null || module == null)
+                return;
+
+            if (!ReferenceEquals(_currentInteriorModule, module))
+                return;
+
+            RefreshInteriorCarrierCache(true);
+        }
+
+        private void RefreshInteriorCarrierCache(bool allowSceneFallback)
+        {
+            if (_currentInteriorModule != null &&
+                _currentInteriorModule.IsPlayerInsideInterior &&
+                TryResolveInteriorCarrier(module: _currentInteriorModule, out Rigidbody carrierBody))
+            {
+                _currentInteriorCarrierBody = carrierBody;
+                return;
+            }
+
+            ClearInteriorCarrierCache();
+            if (!allowSceneFallback)
+                return;
+
+            // COLD SEARCH: recover current submarine interior ownership after enable/load or overlapping-module exit.
+            BaseModule[] modules = Object.FindObjectsByType<BaseModule>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            for (int i = 0; i < modules.Length; i++)
+            {
+                BaseModule module = modules[i];
+                if (module == null || !module.IsPlayerInsideInterior)
+                    continue;
+
+                CacheInteriorCarrier(module);
+                if (_currentInteriorCarrierBody != null)
+                    return;
+            }
+        }
+
+        private void CacheInteriorCarrier(BaseModule module)
+        {
+            _currentInteriorModule = module;
+            _currentInteriorCarrierBody = null;
+
+            if (module == null || !module.IsPlayerInsideInterior)
+                return;
+
+            TryResolveInteriorCarrier(module, out _currentInteriorCarrierBody);
+        }
+
+        private void ClearInteriorCarrierCache()
+        {
+            _currentInteriorModule = null;
+            _currentInteriorCarrierBody = null;
+        }
+
+        private static bool TryResolveInteriorCarrier(BaseModule module, out Rigidbody carrierBody)
+        {
+            carrierBody = null;
+            if (module == null || !module.IsPlayerInsideInterior)
+                return false;
+
+            SubmarineFluidDynamics fluidDynamics = module.GetComponentInParent<SubmarineFluidDynamics>();
+            if (fluidDynamics == null)
+                return false;
+
+            return fluidDynamics.TryGetComponent(out carrierBody) && carrierBody != null;
         }
 
         private bool IsHandheldToolUsageBlocked()

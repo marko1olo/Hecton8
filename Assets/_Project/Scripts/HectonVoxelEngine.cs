@@ -1921,7 +1921,7 @@ public struct VoxelSeamNormalBlendJob : IJobParallelFor
         float3 terrainNormal = SampleTerrainNormal(position.xz);
         float3 voxelNormal = math.normalizesafe(normals[idx], new float3(0f, 1f, 0f));
         float blendT = math.smoothstep(0f, seamTransitionBand, distanceToTerrain);
-        normals[idx] = SlerpNormals(terrainNormal, voxelNormal, blendT);
+        normals[idx] = BlendNormalsNlerp(terrainNormal, voxelNormal, blendT);
     }
 
     float SampleTerrainHeight(float2 worldXZ)
@@ -1947,37 +1947,49 @@ public struct VoxelSeamNormalBlendJob : IJobParallelFor
 
     float3 SampleTerrainNormal(float2 worldXZ)
     {
-        float sampleStep = math.max(voxelStep, 0.25f);
-        float heightLeft = SampleTerrainHeight(new float2(worldXZ.x - sampleStep, worldXZ.y));
-        float heightRight = SampleTerrainHeight(new float2(worldXZ.x + sampleStep, worldXZ.y));
-        float heightBack = SampleTerrainHeight(new float2(worldXZ.x, worldXZ.y - sampleStep));
-        float heightForward = SampleTerrainHeight(new float2(worldXZ.x, worldXZ.y + sampleStep));
+        float localX = (worldXZ.x - volumeOrigin.x) / voxelStep;
+        float localZ = (worldXZ.y - volumeOrigin.z) / voxelStep;
+        localX = math.clamp(localX, 0f, ptsX - 1f);
+        localZ = math.clamp(localZ, 0f, ptsZ - 1f);
 
-        float3 terrainNormal = new float3(
-            heightLeft - heightRight,
-            sampleStep * 2f,
-            heightBack - heightForward);
-        return math.normalizesafe(terrainNormal, new float3(0f, 1f, 0f));
+        int x0 = (int)localX;
+        int z0 = (int)localZ;
+        int x1 = math.min(x0 + 1, ptsX - 1);
+        int z1 = math.min(z0 + 1, ptsZ - 1);
+        float fx = localX - x0;
+        float fz = localZ - z0;
+
+        float3 normal00 = ResolveTerrainGridNormal(x0, z0);
+        float3 normal10 = ResolveTerrainGridNormal(x1, z0);
+        float3 normal01 = ResolveTerrainGridNormal(x0, z1);
+        float3 normal11 = ResolveTerrainGridNormal(x1, z1);
+        float3 normalX0 = math.lerp(normal00, normal10, fx);
+        float3 normalX1 = math.lerp(normal01, normal11, fx);
+        return math.normalizesafe(math.lerp(normalX0, normalX1, fz), new float3(0f, 1f, 0f));
     }
 
-    static float3 SlerpNormals(float3 terrainNormal, float3 voxelNormal, float t)
+    float3 ResolveTerrainGridNormal(int x, int z)
     {
-        float dotValue = math.clamp(math.dot(terrainNormal, voxelNormal), -1f, 1f);
-        if (dotValue > 0.9999f)
-            return terrainNormal;
+        int xPrev = math.max(x - 1, 0);
+        int xNext = math.min(x + 1, ptsX - 1);
+        int zPrev = math.max(z - 1, 0);
+        int zNext = math.min(z + 1, ptsZ - 1);
 
-        if (dotValue < -0.9999f)
-            return math.normalizesafe(math.lerp(terrainNormal, voxelNormal, t), terrainNormal);
+        float heightLeft = terrainHeights[xPrev + z * ptsX];
+        float heightRight = terrainHeights[xNext + z * ptsX];
+        float heightBack = terrainHeights[x + zPrev * ptsX];
+        float heightForward = terrainHeights[x + zNext * ptsX];
 
-        float theta = math.acos(dotValue);
-        float sinTheta = math.sin(theta);
-        if (sinTheta <= 0.0001f)
-            return terrainNormal;
+        float stepX = math.max((xNext - xPrev) * voxelStep, voxelStep);
+        float stepZ = math.max((zNext - zPrev) * voxelStep, voxelStep);
+        float3 tangentX = new float3(stepX, heightRight - heightLeft, 0f);
+        float3 tangentZ = new float3(0f, heightForward - heightBack, stepZ);
+        return math.normalizesafe(math.cross(tangentZ, tangentX), new float3(0f, 1f, 0f));
+    }
 
-        float invSinTheta = 1f / sinTheta;
-        float weightA = math.sin((1f - t) * theta) * invSinTheta;
-        float weightB = math.sin(t * theta) * invSinTheta;
-        return math.normalizesafe((terrainNormal * weightA) + (voxelNormal * weightB), terrainNormal);
+    static float3 BlendNormalsNlerp(float3 terrainNormal, float3 voxelNormal, float t)
+    {
+        return math.normalizesafe(math.lerp(terrainNormal, voxelNormal, t), terrainNormal);
     }
 }
 
@@ -3870,8 +3882,7 @@ public class HectonVoxelEngine : MonoBehaviour
             new VertexAttributeDescriptor(VertexAttribute.Color, VertexAttributeFormat.UNorm8, 4),
             new VertexAttributeDescriptor(VertexAttribute.TexCoord3, VertexAttributeFormat.Float32, 3));
 
-        bool useUInt32 = vertexCount > 65535;
-        meshData.SetIndexBufferParams(triangleIndexCount, useUInt32 ? IndexFormat.UInt32 : IndexFormat.UInt16);
+        meshData.SetIndexBufferParams(triangleIndexCount, IndexFormat.UInt32);
 
         NativeArray<VoxelSurfaceVertex> vertexData = meshData.GetVertexData<VoxelSurfaceVertex>();
         for (int i = 0; i < vertexCount; i++)
@@ -3885,18 +3896,9 @@ public class HectonVoxelEngine : MonoBehaviour
             };
         }
 
-        if (useUInt32)
-        {
-            NativeArray<uint> indexData = meshData.GetIndexData<uint>();
-            for (int i = 0; i < triangleIndexCount; i++)
-                indexData[i] = (uint)triangleIndices[i];
-        }
-        else
-        {
-            NativeArray<ushort> indexData = meshData.GetIndexData<ushort>();
-            for (int i = 0; i < triangleIndexCount; i++)
-                indexData[i] = (ushort)triangleIndices[i];
-        }
+        NativeArray<uint> indexData = meshData.GetIndexData<uint>();
+        for (int i = 0; i < triangleIndexCount; i++)
+            indexData[i] = (uint)triangleIndices[i];
 
         Bounds bounds = CalculatePositionBounds(positions, vertexCount);
         meshData.subMeshCount = 1;
@@ -3923,25 +3925,15 @@ public class HectonVoxelEngine : MonoBehaviour
             vertexCount,
             new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3));
 
-        bool useUInt32 = vertexCount > 65535;
-        meshData.SetIndexBufferParams(triangleIndexCount, useUInt32 ? IndexFormat.UInt32 : IndexFormat.UInt16);
+        meshData.SetIndexBufferParams(triangleIndexCount, IndexFormat.UInt32);
 
         NativeArray<VoxelColliderVertex> vertexData = meshData.GetVertexData<VoxelColliderVertex>();
         for (int i = 0; i < vertexCount; i++)
             vertexData[i] = new VoxelColliderVertex { Position = positions[i] };
 
-        if (useUInt32)
-        {
-            NativeArray<uint> indexData = meshData.GetIndexData<uint>();
-            for (int i = 0; i < triangleIndexCount; i++)
-                indexData[i] = (uint)triangleIndices[i];
-        }
-        else
-        {
-            NativeArray<ushort> indexData = meshData.GetIndexData<ushort>();
-            for (int i = 0; i < triangleIndexCount; i++)
-                indexData[i] = (ushort)triangleIndices[i];
-        }
+        NativeArray<uint> indexData = meshData.GetIndexData<uint>();
+        for (int i = 0; i < triangleIndexCount; i++)
+            indexData[i] = (uint)triangleIndices[i];
 
         Bounds bounds = CalculatePositionBounds(positions, vertexCount);
         meshData.subMeshCount = 1;

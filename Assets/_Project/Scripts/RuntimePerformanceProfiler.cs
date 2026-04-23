@@ -2112,8 +2112,10 @@ namespace Hecton8.Dev
             int topCount2 = 0;
             int topCount3 = 0;
 
-            foreach (KeyValuePair<string, int> pair in counts)
+            Dictionary<string, int>.Enumerator enumerator = counts.GetEnumerator();
+            while (enumerator.MoveNext())
             {
+                KeyValuePair<string, int> pair = enumerator.Current;
                 if (pair.Value > topCount1)
                 {
                     topKey3 = topKey2;

@@ -1,124 +1,136 @@
 using System;
 using System.Threading;
+using Unity.Collections;
 using Unity.Mathematics;
 
 namespace Hecton8.Audio
 {
     internal sealed class AudioFrameSpscRingBuffer : IDisposable
     {
-        private float[] _frames;
+        private NativeArray<float> _frames;
         private int _capacityFrames;
         private int _capacityMask;
-        private long _readFrameCursor;
-        private long _writeFrameCursor;
+        private int _readFrameIndex;
+        private int _writeFrameIndex;
 
-        public bool IsCreated => _frames != null;
+        public bool IsCreated => _frames.IsCreated;
         public int CapacityFrames => _capacityFrames;
-        public long ReadFrameCursor => Interlocked.Read(ref _readFrameCursor);
-        public long WriteFrameCursor => Volatile.Read(ref _writeFrameCursor);
 
         public int BufferedFrames
         {
             get
             {
-                if (_frames == null)
+                if (!_frames.IsCreated)
                     return 0;
 
-                long available = Volatile.Read(ref _writeFrameCursor) - Volatile.Read(ref _readFrameCursor);
-                if (available <= 0L)
-                    return 0;
-
-                if (available >= _capacityFrames)
-                    return _capacityFrames - 1;
-
-                return (int)available;
+                int writeIndex = Volatile.Read(ref _writeFrameIndex);
+                int readIndex = Volatile.Read(ref _readFrameIndex);
+                return (writeIndex - readIndex) & _capacityMask;
             }
         }
 
-        public int WritableFrames => math.max(0, _capacityFrames - BufferedFrames - 1);
+        public int WritableFrames => !_frames.IsCreated
+            ? 0
+            : math.max(0, _capacityFrames - BufferedFrames - 1);
+
+        public void GetState(out int bufferedFrames, out int writableFrames)
+        {
+            if (!_frames.IsCreated)
+            {
+                bufferedFrames = 0;
+                writableFrames = 0;
+                return;
+            }
+
+            int writeIndex = Volatile.Read(ref _writeFrameIndex);
+            int readIndex = Volatile.Read(ref _readFrameIndex);
+            bufferedFrames = (writeIndex - readIndex) & _capacityMask;
+            writableFrames = _capacityFrames - bufferedFrames - 1;
+        }
 
         public void Initialize(int capacityFrames)
         {
             int resolvedCapacity = math.max(256, NextPowerOfTwo(capacityFrames));
-            if (_frames != null && _frames.Length == resolvedCapacity)
+            if (_frames.IsCreated && _frames.Length == resolvedCapacity)
             {
                 Clear();
                 return;
             }
 
             Dispose();
-            _frames = new float[resolvedCapacity]; // COLD ALLOC: float[capacityFrames] - lock-free procedural audio frame ring buffer - owner: AudioFrameSpscRingBuffer
+            _frames = new NativeArray<float>(resolvedCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[capacityFrames] - lock-free procedural audio frame ring buffer - owner: AudioFrameSpscRingBuffer
             _capacityFrames = resolvedCapacity;
             _capacityMask = resolvedCapacity - 1;
-            _readFrameCursor = 0L;
-            _writeFrameCursor = 0L;
+            _readFrameIndex = 0;
+            _writeFrameIndex = 0;
         }
 
         public void Clear()
         {
-            Interlocked.Exchange(ref _readFrameCursor, 0L);
-            Interlocked.Exchange(ref _writeFrameCursor, 0L);
+            Volatile.Write(ref _readFrameIndex, 0);
+            Volatile.Write(ref _writeFrameIndex, 0);
         }
 
-        public bool TryWrite(float[] source, int frameCount)
+        public bool TryWrite(NativeArray<float> source, int frameCount)
         {
-            if (_frames == null || source == null || frameCount <= 0)
+            if (!_frames.IsCreated || !source.IsCreated || frameCount <= 0)
                 return false;
 
             int safeFrameCount = math.min(frameCount, source.Length);
             if (safeFrameCount <= 0)
                 return false;
 
-            long readCursor = Volatile.Read(ref _readFrameCursor);
-            long writeCursor = _writeFrameCursor;
-            long available = writeCursor - readCursor;
-            int freeFrames = math.max(0, _capacityFrames - (int)math.min(available, _capacityFrames) - 1);
+            int readIndex = Volatile.Read(ref _readFrameIndex);
+            int writeIndex = _writeFrameIndex;
+            int availableFrames = (writeIndex - readIndex) & _capacityMask;
+            int freeFrames = _capacityFrames - availableFrames - 1;
             if (safeFrameCount > freeFrames)
                 return false;
 
             for (int i = 0; i < safeFrameCount; i++)
-                _frames[(int)((writeCursor + i) & _capacityMask)] = source[i];
+                _frames[(writeIndex + i) & _capacityMask] = source[i];
 
-            Interlocked.MemoryBarrier();
-            Volatile.Write(ref _writeFrameCursor, writeCursor + safeFrameCount);
+            Volatile.Write(ref _writeFrameIndex, (writeIndex + safeFrameCount) & _capacityMask);
             return true;
         }
 
         public int AddToInterleaved(float[] destination, int channels, int frameCount)
         {
-            if (_frames == null || destination == null || channels <= 0 || frameCount <= 0)
+            if (!_frames.IsCreated || destination == null || channels <= 0 || frameCount <= 0)
                 return 0;
 
-            long readCursor = _readFrameCursor;
-            long writeCursor = Volatile.Read(ref _writeFrameCursor);
-            long availableFrames = writeCursor - readCursor;
-            if (availableFrames <= 0L)
+            int readIndex = _readFrameIndex;
+            int writeIndex = Volatile.Read(ref _writeFrameIndex);
+            int availableFrames = (writeIndex - readIndex) & _capacityMask;
+            if (availableFrames <= 0)
                 return 0;
 
-            int readableFrames = (int)math.min(availableFrames, frameCount);
+            int readableFrames = math.min(availableFrames, frameCount);
             if (readableFrames <= 0)
                 return 0;
 
             for (int frameIndex = 0; frameIndex < readableFrames; frameIndex++)
             {
-                float sample = _frames[(int)((readCursor + frameIndex) & _capacityMask)];
+                float sample = _frames[(readIndex + frameIndex) & _capacityMask];
                 int channelOffset = frameIndex * channels;
                 for (int channelIndex = 0; channelIndex < channels; channelIndex++)
                     destination[channelOffset + channelIndex] += sample;
             }
 
-            Interlocked.MemoryBarrier();
-            Volatile.Write(ref _readFrameCursor, readCursor + readableFrames);
+            Volatile.Write(ref _readFrameIndex, (readIndex + readableFrames) & _capacityMask);
             return readableFrames;
         }
 
         public void Dispose()
         {
-            _frames = null;
+            if (_frames.IsCreated)
+                _frames.Dispose();
+
+            _frames = default;
             _capacityFrames = 0;
             _capacityMask = 0;
-            _readFrameCursor = 0L;
-            _writeFrameCursor = 0L;
+            _readFrameIndex = 0;
+            _writeFrameIndex = 0;
         }
 
         private static int NextPowerOfTwo(int value)

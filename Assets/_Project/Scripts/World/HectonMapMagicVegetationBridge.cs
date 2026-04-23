@@ -1390,7 +1390,7 @@ namespace Hecton8.World
         private NativeArray<VegetationDensityChunkRecord> _threatSamplingChunksNative;
         private NativeArray<float2> _threatSamplingAttractorGridNative;
         private NativeArray<float3> _flowSamplingDensityGridNative;
-        private NativeArray<byte> _flowNavSupportGridNative;
+        private NativeArray<float> _flowNavSupportGridNative;
         private NativeArray<float> _ecosystemThreatGridCurrentNative;
         private NativeArray<float> _ecosystemThreatGridNextNative;
         private NativeArray<byte> _ecosystemThreatGridCompressedCurrentNative;
@@ -2764,9 +2764,11 @@ namespace Hecton8.World
                 endNode = _lastAbyssalPathEndNode;
             }
 
+            if (_abyssalPathRawResultNative.IsCreated)
+                _abyssalPathRawResultNative.Clear();
+            if (_abyssalPathResultNative.IsCreated)
+                _abyssalPathResultNative.Clear();
             EnsureAbyssalPathBuffers(_abyssalNavNodeCount);
-            _abyssalPathRawResultNative.Clear();
-            _abyssalPathResultNative.Clear();
             _abyssalPathCount = 0;
 
             var astarJob = new NativeAStarJob
@@ -3444,8 +3446,8 @@ namespace Hecton8.World
         {
             EnsureThreatGridBuffers();
             EnsureFloat3Capacity(ref _flowSamplingDensityGridNative, Mathf.Max(1, _threatSamplingChunkCount * DensityGridCellCount));
-            EnsureByteNativeCapacity(ref _flowNavSupportGridNative, Mathf.Max(1, _ecosystemThreatGridCellCount));
-            ClearByteGrid(_flowNavSupportGridNative, _ecosystemThreatGridCellCount);
+            EnsureFloatNativeCapacity(ref _flowNavSupportGridNative, Mathf.Max(1, _ecosystemThreatGridCellCount));
+            ClearFloatGrid(_flowNavSupportGridNative, _ecosystemThreatGridCellCount);
 
             if (_threatSamplingChunkCount <= 0 ||
                 !_densityQueryGridNative.IsCreated ||
@@ -5874,8 +5876,11 @@ namespace Hecton8.World
                 return;
             }
 
+            if (_abyssalNavNodes.IsCreated)
+                _abyssalNavNodes.Clear();
+            if (_abyssalNavGraphHashNative.IsCreated)
+                _abyssalNavGraphHashNative.Clear();
             EnsureAbyssalNavNodeListCapacity(nodeCount);
-            _abyssalNavNodes.Clear();
             EnsureVector3Capacity(ref _abyssalNavNodeSnapshot, nodeCount);
             EnsureVector3Capacity(ref _abyssalNavConduitVectorsSnapshot, nodeCount);
             EnsureFloatCapacity(ref _abyssalNavConduitStrengthSnapshot, nodeCount);
@@ -7987,7 +7992,7 @@ namespace Hecton8.World
             [ReadOnly] public NativeArray<float3> FlowDensityGrid;
             [ReadOnly] public NativeArray<float2> ThreatAttractorGrid;
             [ReadOnly] public NativeParallelMultiHashMap<int, int> ChunkHash;
-            [ReadOnly] public NativeArray<byte> NavSupportGrid;
+            [ReadOnly] public NativeArray<float> NavSupportGrid;
             [WriteOnly] public NativeArray<float2> Output;
             public int GridResolution;
             public int ChunkCount;
@@ -8114,12 +8119,7 @@ namespace Hecton8.World
                 if (!NavSupportGrid.IsCreated || cellX < 0 || cellZ < 0 || cellX >= GridResolution || cellZ >= GridResolution)
                     return 0f;
 
-                return DecodeThreat(NavSupportGrid[(cellZ * GridResolution) + cellX]);
-            }
-
-            private static float DecodeThreat(byte encoded)
-            {
-                return encoded * (1f / 255f);
+                return math.saturate(NavSupportGrid[(cellZ * GridResolution) + cellX]);
             }
         }
 
@@ -8604,59 +8604,67 @@ namespace Hecton8.World
                 int apexIndex = 0;
                 int leftIndex = 0;
                 int rightIndex = 0;
-                float2 apex = ToFloat2(InputPath[0]);
-                float2 left = apex;
-                float2 right = apex;
+                float3 apex = ToFloat3(InputPath[0]);
+                float3 left = apex;
+                float3 right = apex;
+                float3 funnelNormal = ResolveEndpointPortalNormal(0);
 
                 for (int portalIndex = 1; portalIndex < pathCount; portalIndex++)
                 {
-                    BuildPortal(portalIndex, out float2 portalLeft, out float2 portalRight);
-                    if (TriArea2(apex, portalLeft, portalRight) < 0f)
+                    BuildPortal(portalIndex, out float3 portalLeft, out float3 portalRight, out float3 portalNormal);
+                    float3 testNormal = ResolveFunnelNormal(apex, left, right, funnelNormal, portalNormal);
+                    if (SignedPortalVolume(apex, portalLeft, portalRight, testNormal) < 0f)
                     {
-                        float2 swap = portalLeft;
+                        float3 swap = portalLeft;
                         portalLeft = portalRight;
                         portalRight = swap;
                     }
 
-                    if (TriArea2(apex, right, portalRight) <= 0f)
+                    testNormal = ResolveFunnelNormal(apex, left, right, funnelNormal, portalNormal);
+                    if (SignedPortalVolume(apex, right, portalRight, testNormal) <= 0f)
                     {
-                        if (math.all(right == apex) || TriArea2(apex, left, portalRight) > 0f)
+                        if (math.all(right == apex) || SignedPortalVolume(apex, left, portalRight, testNormal) > 0f)
                         {
                             right = portalRight;
                             rightIndex = portalIndex;
+                            funnelNormal = ResolveFunnelNormal(apex, left, right, funnelNormal, portalNormal);
                         }
                         else
                         {
                             int emitIndex = math.max(apexIndex + 1, leftIndex);
                             OutputPath.AddNoResize(InputPath[emitIndex]);
                             apexIndex = emitIndex;
-                            apex = ToFloat2(InputPath[apexIndex]);
+                            apex = ToFloat3(InputPath[apexIndex]);
                             left = apex;
                             right = apex;
                             leftIndex = apexIndex;
                             rightIndex = apexIndex;
+                            funnelNormal = ResolveEndpointPortalNormal(apexIndex);
                             portalIndex = apexIndex;
                             continue;
                         }
                     }
 
-                    if (TriArea2(apex, left, portalLeft) >= 0f)
+                    testNormal = ResolveFunnelNormal(apex, left, right, funnelNormal, portalNormal);
+                    if (SignedPortalVolume(apex, left, portalLeft, testNormal) >= 0f)
                     {
-                        if (math.all(left == apex) || TriArea2(apex, right, portalLeft) < 0f)
+                        if (math.all(left == apex) || SignedPortalVolume(apex, right, portalLeft, testNormal) < 0f)
                         {
                             left = portalLeft;
                             leftIndex = portalIndex;
+                            funnelNormal = ResolveFunnelNormal(apex, left, right, funnelNormal, portalNormal);
                         }
                         else
                         {
                             int emitIndex = math.max(apexIndex + 1, rightIndex);
                             OutputPath.AddNoResize(InputPath[emitIndex]);
                             apexIndex = emitIndex;
-                            apex = ToFloat2(InputPath[apexIndex]);
+                            apex = ToFloat3(InputPath[apexIndex]);
                             left = apex;
                             right = apex;
                             leftIndex = apexIndex;
                             rightIndex = apexIndex;
+                            funnelNormal = ResolveEndpointPortalNormal(apexIndex);
                             portalIndex = apexIndex;
                             continue;
                         }
@@ -8671,31 +8679,33 @@ namespace Hecton8.World
                     OutputPath.AddNoResize(endPoint);
             }
 
-            private void BuildPortal(int index, out float2 leftPortal, out float2 rightPortal)
+            private void BuildPortal(int index, out float3 leftPortal, out float3 rightPortal, out float3 portalNormal)
             {
                 Vector3 centerValue = InputPath[index];
+                float3 center = ToFloat3(centerValue);
                 if (index <= 0 || index >= InputPath.Length - 1)
                 {
-                    float2 point = ToFloat2(centerValue);
-                    leftPortal = point;
-                    rightPortal = point;
+                    leftPortal = center;
+                    rightPortal = center;
+                    portalNormal = ResolveEndpointPortalNormal(index);
                     return;
                 }
 
-                float2 previous = ToFloat2(InputPath[index - 1]);
-                float2 center = ToFloat2(centerValue);
-                float2 next = ToFloat2(InputPath[index + 1]);
-                float2 prevDirection = math.normalizesafe(center - previous, new float2(1f, 0f));
-                float2 nextDirection = math.normalizesafe(next - center, prevDirection);
-                float2 axis = math.normalizesafe(prevDirection + nextDirection, nextDirection);
-                float2 perpendicular = new float2(-axis.y, axis.x);
+                float3 previous = ToFloat3(InputPath[index - 1]);
+                float3 next = ToFloat3(InputPath[index + 1]);
+                float3 prevDirection = math.normalizesafe(center - previous, new float3(0f, 0f, 1f));
+                float3 nextDirection = math.normalizesafe(next - center, prevDirection);
+                float3 axis = math.normalizesafe(prevDirection + nextDirection, nextDirection);
+                float3 initialNormal = math.normalizesafe(math.cross(prevDirection, nextDirection), ResolvePerpendicular(axis));
+                float3 side = math.normalizesafe(math.cross(initialNormal, axis), ResolvePerpendicular(axis));
+                portalNormal = math.normalizesafe(math.cross(axis, side), initialNormal);
                 float obstacle = SampleObstacle(centerValue);
                 float obstacleT = math.saturate(obstacle / math.max(0.01f, DensityObstacleThreshold));
                 float maxHalfWidth = math.max(0.9f, SampleSpacing * 1.6f);
                 float minHalfWidth = math.max(0.35f, SampleSpacing * 0.55f);
                 float halfWidth = math.lerp(maxHalfWidth, minHalfWidth, obstacleT);
-                leftPortal = center + (perpendicular * halfWidth);
-                rightPortal = center - (perpendicular * halfWidth);
+                leftPortal = center + (side * halfWidth);
+                rightPortal = center - (side * halfWidth);
             }
 
             private float SampleObstacle(Vector3 positionValue)
@@ -8772,21 +8782,40 @@ namespace Hecton8.World
                 return (cellZ * ThreatGridResolution) + cellX;
             }
 
+            private float3 ResolveEndpointPortalNormal(int index)
+            {
+                int clampedIndex = math.clamp(index, 0, InputPath.Length - 1);
+                int previousIndex = math.max(0, clampedIndex - 1);
+                int nextIndex = math.min(InputPath.Length - 1, clampedIndex + 1);
+                float3 previous = ToFloat3(InputPath[previousIndex]);
+                float3 next = ToFloat3(InputPath[nextIndex]);
+                float3 axis = math.normalizesafe(next - previous, new float3(0f, 0f, 1f));
+                float3 side = ResolvePerpendicular(axis);
+                return math.normalizesafe(math.cross(axis, side), new float3(0f, 1f, 0f));
+            }
+
             private static float3 ToFloat3(Vector3 value)
             {
                 return new float3(value.x, value.y, value.z);
             }
 
-            private static float2 ToFloat2(Vector3 value)
+            private static float3 ResolvePerpendicular(float3 axis)
             {
-                return new float2(value.x, value.z);
+                float3 reference = math.abs(axis.y) < 0.9f
+                    ? new float3(0f, 1f, 0f)
+                    : new float3(1f, 0f, 0f);
+                return math.normalizesafe(math.cross(reference, axis), new float3(0f, 0f, 1f));
             }
 
-            private static float TriArea2(float2 a, float2 b, float2 c)
+            private static float3 ResolveFunnelNormal(float3 apex, float3 left, float3 right, float3 currentNormal, float3 portalNormal)
             {
-                float2 ab = b - a;
-                float2 ac = c - a;
-                return (ab.x * ac.y) - (ab.y * ac.x);
+                float3 fallback = math.normalizesafe(portalNormal, math.normalizesafe(currentNormal, new float3(0f, 1f, 0f)));
+                return math.normalizesafe(math.cross(left - apex, right - apex), fallback);
+            }
+
+            private static float SignedPortalVolume(float3 apex, float3 a, float3 b, float3 normal)
+            {
+                return math.dot(math.cross(a - apex, b - apex), normal);
             }
 
             private static bool Approximately(Vector3 a, Vector3 b)
@@ -11669,6 +11698,8 @@ namespace Hecton8.World
 
             if (_abyssalNavGraphHashNative.Capacity < safeCapacity)
                 _abyssalNavGraphHashNative.Capacity = safeCapacity;
+            else if (_abyssalNavGraphHashNative.Capacity > safeCapacity * 4)
+                _abyssalNavGraphHashNative.Capacity = safeCapacity;
         }
 
         private void EnsureAbyssalPathBuffers(int nodeCount)
@@ -11692,6 +11723,10 @@ namespace Hecton8.World
             {
                 _abyssalPathRawResultNative.Capacity = requiredCount + 2;
             }
+            else if (_abyssalPathRawResultNative.Capacity > (requiredCount + 2) * 4)
+            {
+                _abyssalPathRawResultNative.Capacity = requiredCount + 2;
+            }
 
             if (!_abyssalPathResultNative.IsCreated)
             {
@@ -11699,6 +11734,10 @@ namespace Hecton8.World
                 _abyssalPathResultNative = new NativeList<Vector3>(requiredCount + 2, Allocator.Persistent);
             }
             else if (_abyssalPathResultNative.Capacity < requiredCount + 2)
+            {
+                _abyssalPathResultNative.Capacity = requiredCount + 2;
+            }
+            else if (_abyssalPathResultNative.Capacity > (requiredCount + 2) * 4)
             {
                 _abyssalPathResultNative.Capacity = requiredCount + 2;
             }
@@ -11802,6 +11841,8 @@ namespace Hecton8.World
             }
 
             if (_abyssalNavNodes.Capacity < nextCapacity)
+                _abyssalNavNodes.Capacity = nextCapacity;
+            else if (_abyssalNavNodes.Capacity > nextCapacity * 4)
                 _abyssalNavNodes.Capacity = nextCapacity;
         }
 
@@ -11975,9 +12016,9 @@ namespace Hecton8.World
                         float distance = Mathf.Sqrt((offsetX * offsetX) + (offsetZ * offsetZ));
                         float support01 = 1f - Mathf.Clamp01(distance / Mathf.Max(1f, stencilRadius + 0.25f));
                         int index = (cellZ * _ecosystemThreatGridResolution) + cellX;
-                        byte encodedSupport = EncodeThreatByte(support01);
-                        if (_flowNavSupportGridNative[index] < encodedSupport)
-                            _flowNavSupportGridNative[index] = encodedSupport;
+                        float clampedSupport = Mathf.Clamp01(support01);
+                        if (_flowNavSupportGridNative[index] < clampedSupport)
+                            _flowNavSupportGridNative[index] = clampedSupport;
                     }
                 }
             }
@@ -12440,11 +12481,11 @@ namespace Hecton8.World
         {
             unchecked
             {
-                int hash = 486187739;
-                hash = (hash * 16777619) ^ x;
-                hash = (hash * 16777619) ^ y;
-                hash = (hash * 16777619) ^ z;
-                return hash;
+                uint hash = 2166136261u;
+                hash = (hash ^ (uint)x) * 16777619u;
+                hash = (hash ^ (uint)y) * 16777619u;
+                hash = (hash ^ (uint)z) * 16777619u;
+                return (int)hash;
             }
         }
 
@@ -12491,6 +12532,16 @@ namespace Hecton8.World
             int end = Mathf.Min(count, destination.Length);
             for (int i = 0; i < end; i++)
                 destination[i] = 0;
+        }
+
+        private static void ClearFloatGrid(NativeArray<float> destination, int count)
+        {
+            if (!destination.IsCreated || count <= 0)
+                return;
+
+            int end = Mathf.Min(count, destination.Length);
+            for (int i = 0; i < end; i++)
+                destination[i] = 0f;
         }
 
         private static void EnsureChunkKeyCapacity(ref ChunkKey[] cache, int requiredCount)

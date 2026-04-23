@@ -194,8 +194,10 @@ namespace Hecton8.SaveSystem
         /// </summary>
         public static void ClearCache()
         {
-            foreach (KeyValuePair<string, Sprite> kvp in _spriteCache)
+            Dictionary<string, Sprite>.Enumerator enumerator = _spriteCache.GetEnumerator();
+            while (enumerator.MoveNext())
             {
+                KeyValuePair<string, Sprite> kvp = enumerator.Current;
                 if (kvp.Value != null)
                 {
                     if (kvp.Value.texture != null)

@@ -79,7 +79,7 @@ namespace Hecton.Localization
         /// </summary>
         public static void Write(ReadOnlySpan<char> template, LocNumericArg value0, out char[] buffer, out int length)
         {
-            WriteInternal(template, value0, default, default, default, 1, out buffer, out length);
+            WriteInternal(template, value0, default, default, default, default, 1, out buffer, out length);
         }
 
         /// <summary>
@@ -92,7 +92,7 @@ namespace Hecton.Localization
             out char[] buffer,
             out int length)
         {
-            WriteInternal(template, value0, value1, default, default, 2, out buffer, out length);
+            WriteInternal(template, value0, value1, default, default, default, 2, out buffer, out length);
         }
 
         /// <summary>
@@ -106,7 +106,7 @@ namespace Hecton.Localization
             out char[] buffer,
             out int length)
         {
-            WriteInternal(template, value0, value1, value2, default, 3, out buffer, out length);
+            WriteInternal(template, value0, value1, value2, default, default, 3, out buffer, out length);
         }
 
         /// <summary>
@@ -121,7 +121,23 @@ namespace Hecton.Localization
             out char[] buffer,
             out int length)
         {
-            WriteInternal(template, value0, value1, value2, value3, 4, out buffer, out length);
+            WriteInternal(template, value0, value1, value2, value3, default, 4, out buffer, out length);
+        }
+
+        /// <summary>
+        /// Write five numeric payloads into a localized template without heap allocation.
+        /// </summary>
+        public static void Write(
+            ReadOnlySpan<char> template,
+            LocNumericArg value0,
+            LocNumericArg value1,
+            LocNumericArg value2,
+            LocNumericArg value3,
+            LocNumericArg value4,
+            out char[] buffer,
+            out int length)
+        {
+            WriteInternal(template, value0, value1, value2, value3, value4, 5, out buffer, out length);
         }
 
         /// <summary>
@@ -169,12 +185,29 @@ namespace Hecton.Localization
             Write(LocRegistry.ResolveRaw(templateKeyHash), value0, value1, value2, value3, out buffer, out length);
         }
 
+        /// <summary>
+        /// Resolve a localized template by FNV-1a key hash and write five numeric payloads into it.
+        /// </summary>
+        public static void Write(
+            int templateKeyHash,
+            LocNumericArg value0,
+            LocNumericArg value1,
+            LocNumericArg value2,
+            LocNumericArg value3,
+            LocNumericArg value4,
+            out char[] buffer,
+            out int length)
+        {
+            Write(LocRegistry.ResolveRaw(templateKeyHash), value0, value1, value2, value3, value4, out buffer, out length);
+        }
+
         private static void WriteInternal(
             ReadOnlySpan<char> template,
             LocNumericArg value0,
             LocNumericArg value1,
             LocNumericArg value2,
             LocNumericArg value3,
+            LocNumericArg value4,
             int valueCount,
             out char[] buffer,
             out int length)
@@ -192,7 +225,7 @@ namespace Hecton.Localization
                     continue;
                 }
 
-                LocNumericArg value = ResolveValue(tokenIndex, value0, value1, value2, value3, valueCount);
+                LocNumericArg value = ResolveValue(tokenIndex, value0, value1, value2, value3, value4, valueCount);
                 int charsWritten;
                 while (!value.TryFormat(buffer.AsSpan(writeIndex), format, out charsWritten))
                 {
@@ -257,6 +290,7 @@ namespace Hecton.Localization
             LocNumericArg value1,
             LocNumericArg value2,
             LocNumericArg value3,
+            LocNumericArg value4,
             int valueCount)
         {
             if (tokenIndex < 0 || tokenIndex >= valueCount)
@@ -272,6 +306,9 @@ namespace Hecton.Localization
 
                 case 3:
                     return value3;
+
+                case 4:
+                    return value4;
 
                 default:
                     return value0;

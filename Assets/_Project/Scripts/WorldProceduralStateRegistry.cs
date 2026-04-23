@@ -216,8 +216,10 @@ namespace Hecton8.World
             int faunaIndex = 0;
             if (_faunaSpawnStates != null)
             {
-                foreach (KeyValuePair<long, FaunaSpawnState> pair in _faunaSpawnStates)
+                Dictionary<long, FaunaSpawnState>.Enumerator enumerator = _faunaSpawnStates.GetEnumerator();
+                while (enumerator.MoveNext())
                 {
+                    KeyValuePair<long, FaunaSpawnState> pair = enumerator.Current;
                     if (faunaIndex >= ProceduralWorldStateDTO.MaxFaunaStates)
                     {
                         Debug.LogWarning($"[WorldProceduralStateRegistry] Max fauna states ({ProceduralWorldStateDTO.MaxFaunaStates}) reached. Extra entries were not saved.");

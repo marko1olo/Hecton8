@@ -47,6 +47,7 @@ namespace Hecton8.Systems.AI
         public float RecoveryTimer;
         public float4 PlayerPosition;
         public float4 PlayerVelocity;
+        public uint SpawnSequence;
     }
 
     internal struct EncounterEnemyToken
@@ -248,7 +249,7 @@ namespace Hecton8.Systems.AI
             return (hash & 0x00FFFFFFu) / 16777215f;
         }
 
-        internal static uint BuildDeterministicSeed(Vector3 position, int frameIndex, int phase, int activeEnemyCount)
+        internal static uint BuildDeterministicSeed(Vector3 position, int sequenceSalt, int phase, int activeEnemyCount)
         {
             int3 grid = new int3(
                 (int)math.floor(position.x),
@@ -257,7 +258,7 @@ namespace Hecton8.Systems.AI
             uint hash = WangHash((uint)(grid.x * 73856093));
             hash ^= WangHash((uint)(grid.y * 19349663));
             hash ^= WangHash((uint)(grid.z * 83492791));
-            hash ^= WangHash((uint)(frameIndex * 1664525));
+            hash ^= WangHash((uint)(sequenceSalt * 1664525));
             hash ^= WangHash((uint)(phase * 1013904223));
             hash ^= WangHash((uint)(activeEnemyCount * 214013));
             return hash == 0u ? 1u : hash;
@@ -353,7 +354,6 @@ namespace Hecton8.Systems.AI
                 PlayerInternalStress = math.clamp(frameContext.PlayerInternalStress, 0f, 1f),
                 AvgFrameTimeMs = math.max(0f, frameContext.AvgFrameTimeMs),
                 SurfaceWorldY = frameContext.SurfaceWorldY,
-                FrameIndex = _frameIndex,
                 Output = _jobOutput
             };
 
@@ -598,7 +598,6 @@ namespace Hecton8.Systems.AI
         public float PlayerInternalStress;
         public float AvgFrameTimeMs;
         public float SurfaceWorldY;
-        public int FrameIndex;
         public NativeArray<EncounterJobOutput> Output;
 
         public void Execute()
@@ -631,7 +630,7 @@ namespace Hecton8.Systems.AI
                 if (distSq < nearestThreatDistanceSq)
                     nearestThreatDistanceSq = distSq;
 
-                bool visible = IsPointInsideFrustum(token.Position, FrustumRejectPadding);
+                bool visible = TestPlanesAABB(token.Position, new float3(FrustumRejectPadding));
                 float visibilityFactor = visible ? 0f : 1f;
                 float priority = distSq * visibilityFactor * math.rcp(math.max(1f, token.TokenCost));
 
@@ -763,10 +762,16 @@ namespace Hecton8.Systems.AI
                 EncounterThreatClass threatClass = ResolveDesiredThreatClass(state.IntensityLevel, state.TokenBudget);
                 if (TryResolveSpawnCandidate(playerPosition, playerForward, out float3 spawnPosition))
                 {
+                    uint spawnSequence = state.SpawnSequence + 1u;
                     output.SpawnRequestCount = 1;
                     output.SpawnThreatClass = (int)threatClass;
                     output.SpawnPosition = spawnPosition;
-                    output.SpawnVariantSeed = EncounterDirector.BuildDeterministicSeed(new Vector3(playerPosition.x, playerPosition.y, playerPosition.z), FrameIndex, state.ActivePhase, activeEnemyCount);
+                    output.SpawnVariantSeed = EncounterDirector.BuildDeterministicSeed(
+                        new Vector3(playerPosition.x, playerPosition.y, playerPosition.z),
+                        unchecked((int)spawnSequence),
+                        state.ActivePhase,
+                        activeEnemyCount);
+                    state.SpawnSequence = spawnSequence;
                     state.TokenBudget = math.clamp(state.TokenBudget - ResolveTokenCost(threatClass), 0f, MaxTokenBudget);
                     activeEnemyCount++;
                 }
@@ -795,7 +800,7 @@ namespace Hecton8.Systems.AI
                 if (candidate.y > SurfaceWorldY - 2f)
                     continue;
 
-                if (IsPointInsideFrustum(candidate, FrustumRejectPadding))
+                if (TestPlanesAABB(candidate, new float3(FrustumRejectPadding)))
                     continue;
 
                 if (!HasEnemyClearance(candidate))
@@ -830,13 +835,14 @@ namespace Hecton8.Systems.AI
             return true;
         }
 
-        private bool IsPointInsideFrustum(float3 point, float radius)
+        private bool TestPlanesAABB(float3 center, float3 extents)
         {
             for (int i = 0; i < FrustumPlanes.Length; i++)
             {
                 float4 plane = FrustumPlanes[i];
-                float distance = math.dot(plane.xyz, point) + plane.w;
-                if (distance < -radius)
+                float projectedRadius = math.dot(math.abs(plane.xyz), extents);
+                float distance = math.dot(plane.xyz, center) + plane.w;
+                if (distance + projectedRadius < 0f)
                     return false;
             }
 

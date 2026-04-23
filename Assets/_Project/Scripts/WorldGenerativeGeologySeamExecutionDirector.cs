@@ -546,8 +546,8 @@ namespace Hecton8.World
             unchecked
             {
                 int hash = (int)plan.runtimeKey;
-                hash = (hash * 397) ^ plan.terrainSeamMode.GetHashCode();
-                hash = (hash * 397) ^ plan.caveBlendMode.GetHashCode();
+                hash = (hash * 397) ^ (int)plan.terrainSeamMode;
+                hash = (hash * 397) ^ (int)plan.caveBlendMode;
                 hash = (hash * 397) ^ Mathf.RoundToInt(plan.seamBlendRadius * 100f);
                 hash = (hash * 397) ^ Mathf.RoundToInt(plan.suggestedTerrainRaise * 100f);
                 hash = (hash * 397) ^ Mathf.RoundToInt(plan.suggestedTerrainCut * 100f);

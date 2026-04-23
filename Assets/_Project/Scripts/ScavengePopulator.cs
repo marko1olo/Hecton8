@@ -892,8 +892,10 @@ namespace Hecton8.Core
             GameObject bestNodeGO   = null;
             string bestNodeId       = null;
 
-            foreach (KeyValuePair<Vector2Int, ChunkData> kvp in _chunks)
+            Dictionary<Vector2Int, ChunkData>.Enumerator enumerator = _chunks.GetEnumerator();
+            while (enumerator.MoveNext())
             {
+                KeyValuePair<Vector2Int, ChunkData> kvp = enumerator.Current;
                 ChunkData chunk = kvp.Value;
 
                 // Пропускаем выгруженные чанки

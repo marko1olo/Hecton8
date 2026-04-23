@@ -487,16 +487,21 @@ namespace Hecton8.World
 
         private static uint ComputeGenerationSeed(in AbsoluteUniversePosition aup, uint salt)
         {
-            double3 absolutePosition = aup.ToAbsoluteDouble3();
-            float3 absoluteHashVector = new float3(
-                (float)absolutePosition.x,
-                (float)absolutePosition.y,
-                (float)absolutePosition.z);
+            uint gridX = unchecked((uint)aup.GridX);
+            uint gridY = unchecked((uint)aup.GridY);
+            uint gridZ = unchecked((uint)aup.GridZ);
+            uint localX = math.asuint(aup.LocalX);
+            uint localY = math.asuint(aup.LocalY);
+            uint localZ = math.asuint(aup.LocalZ);
 
+            // AUP bit patterns only. Never hash reconstructed absolute floats here.
             uint hash =
-                (math.asuint(absoluteHashVector.x) * 73856093u) ^
-                (math.asuint(absoluteHashVector.y) * 19349663u) ^
-                (math.asuint(absoluteHashVector.z) * 83492791u);
+                (gridX * 73856093u) ^
+                (gridY * 19349663u) ^
+                (gridZ * 83492791u) ^
+                (localX * 2654435761u) ^
+                (localY * 2246822519u) ^
+                (localZ * 3266489917u);
 
             return (hash ^ (hash >> 16)) ^ salt;
         }

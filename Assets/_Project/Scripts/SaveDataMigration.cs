@@ -311,22 +311,52 @@ namespace Hecton8.SaveSystem
             for (int i = 0; i < dto.chunkCount; i++)
             {
                 VoxelDeltaChunkDTO chunk = dto.chunks[i];
+
+                bool hasDenseStorage =
+                    chunk.dirtyMaskWords != null &&
+                    chunk.dirtyMaskWords.Length == VoxelDeltaChunkDTO.DirtyMaskWordCount &&
+                    chunk.sdfValueBits != null &&
+                    chunk.sdfValueBits.Length == VoxelDeltaChunkDTO.CellCount &&
+                    chunk.materialIds != null &&
+                    chunk.materialIds.Length == VoxelDeltaChunkDTO.CellCount;
+
+                if (chunk.dirtyMaskWords == null)
+                {
+                    chunk.dirtyMaskWords = Array.Empty<uint>();
+                    changed = true;
+                }
+
+                if (chunk.sdfValueBits == null)
+                {
+                    chunk.sdfValueBits = Array.Empty<ushort>();
+                    changed = true;
+                }
+
+                if (chunk.materialIds == null)
+                {
+                    chunk.materialIds = Array.Empty<byte>();
+                    changed = true;
+                }
+
                 int cellCapacity = chunk.cells != null ? chunk.cells.Length : 0;
-                int clampedCellCount = Mathf.Clamp(chunk.cellCount, 0, cellCapacity);
+                int legacyCellCount = Mathf.Clamp(chunk.cellCount, 0, cellCapacity);
+                int denseCellCount = hasDenseStorage ? CountDirtyMaskBits(chunk.dirtyMaskWords) : 0;
+                int clampedCellCount = hasDenseStorage
+                    ? Mathf.Max(denseCellCount, legacyCellCount)
+                    : legacyCellCount;
                 if (clampedCellCount != chunk.cellCount)
                 {
                     chunk.cellCount = clampedCellCount;
-                    dto.chunks[i] = chunk;
                     changed = true;
                 }
 
                 if (chunk.cells == null)
                 {
                     chunk.cells = Array.Empty<VoxelDeltaCellDTO>();
-                    dto.chunks[i] = chunk;
                     changed = true;
                 }
 
+                dto.chunks[i] = chunk;
                 totalCellCount += chunk.cellCount;
             }
 
@@ -338,6 +368,26 @@ namespace Hecton8.SaveSystem
             }
 
             return changed;
+        }
+
+        private static int CountDirtyMaskBits(uint[] dirtyMaskWords)
+        {
+            if (dirtyMaskWords == null)
+                return 0;
+
+            int total = 0;
+            int wordCount = Mathf.Min(dirtyMaskWords.Length, VoxelDeltaChunkDTO.DirtyMaskWordCount);
+            for (int i = 0; i < wordCount; i++)
+            {
+                uint value = dirtyMaskWords[i];
+                while (value != 0u)
+                {
+                    value &= value - 1u;
+                    total++;
+                }
+            }
+
+            return total;
         }
 
         private static bool EnsureNarrative(ref SaveData data, List<string> steps)

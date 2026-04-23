@@ -461,7 +461,7 @@ namespace Hecton8.UI
 
             _inputManager = inputManager;
             _submitAction = _inputManager != null
-                ? _inputManager.GetAction("Submit", "UI")
+                ? _inputManager.UiSubmitAction
                 : null;
         }
 

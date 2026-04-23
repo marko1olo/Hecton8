@@ -17,17 +17,33 @@ namespace Hecton8.SaveSystem
     [Serializable]
     public struct VoxelDeltaChunkDTO
     {
+        public const int ChunkResolution = 32;
+        public const int CellCount = ChunkResolution * ChunkResolution * ChunkResolution;
+        public const int DirtyMaskWordCount = CellCount / 32;
+
         public long chunkX;
         public long chunkY;
         public long chunkZ;
         public float voxelSize;
         public int cellCount;
+        public uint[] dirtyMaskWords;
+        public ushort[] sdfValueBits;
+        public byte[] materialIds;
         public VoxelDeltaCellDTO[] cells;
 
         public void EnsureCapacity(int requiredCellCount)
         {
             if (requiredCellCount <= 0)
             {
+                if (dirtyMaskWords == null)
+                    dirtyMaskWords = Array.Empty<uint>();
+
+                if (sdfValueBits == null)
+                    sdfValueBits = Array.Empty<ushort>();
+
+                if (materialIds == null)
+                    materialIds = Array.Empty<byte>();
+
                 if (cells == null)
                     cells = Array.Empty<VoxelDeltaCellDTO>();
 
@@ -35,11 +51,17 @@ namespace Hecton8.SaveSystem
                 return;
             }
 
-            if (cells == null || cells.Length < requiredCellCount)
-            {
-                // COLD ALLOC: VoxelDeltaCellDTO[requiredCellCount] — voxel delta snapshot chunk payload — owner: VoxelDeltaChunkDTO
-                cells = new VoxelDeltaCellDTO[requiredCellCount];
-            }
+            if (dirtyMaskWords == null || dirtyMaskWords.Length != DirtyMaskWordCount)
+                dirtyMaskWords = new uint[DirtyMaskWordCount];
+
+            if (sdfValueBits == null || sdfValueBits.Length != CellCount)
+                sdfValueBits = new ushort[CellCount];
+
+            if (materialIds == null || materialIds.Length != CellCount)
+                materialIds = new byte[CellCount];
+
+            if (cells == null)
+                cells = Array.Empty<VoxelDeltaCellDTO>();
         }
     }
 
@@ -74,7 +96,7 @@ namespace Hecton8.SaveSystem
 
             if (chunks == null || chunks.Length < requiredChunkCount)
             {
-                // COLD ALLOC: VoxelDeltaChunkDTO[requiredChunkCount] — voxel delta persistence chunk registry — owner: VoxelDeltaPersistenceDTO
+                // COLD ALLOC: VoxelDeltaChunkDTO[requiredChunkCount] - voxel delta persistence chunk registry - owner: VoxelDeltaPersistenceDTO
                 chunks = new VoxelDeltaChunkDTO[requiredChunkCount];
             }
         }

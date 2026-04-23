@@ -284,6 +284,9 @@ namespace Hecton8.Quest
             for (int i = 0; i < prerequisiteBuilder.Count; i++)
                 _prerequisites[i] = prerequisiteBuilder[i];
 
+            if (_runtimeResults.Capacity < nodeBuilder.Count)
+                _runtimeResults.Capacity = nodeBuilder.Count;
+
             _activatedQuestIndices = new NativeList<int>(Math.Max(nodeBuilder.Count, 1), Allocator.Persistent);
             _completedQuestIndices = new NativeList<int>(Math.Max(nodeBuilder.Count, 1), Allocator.Persistent);
             _depthThresholdFlags = depthFlags.ToArray();

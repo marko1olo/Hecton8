@@ -23,12 +23,7 @@ static const float k_HectonBayer4x4[16] =
 	3.0, 11.0, 1.0, 9.0,
 	15.0, 7.0, 13.0, 5.0
 };
-
-half3 ApplyHectonAcesHillTonemap(half3 hdrColor)
-{
-	half3 x = max(hdrColor, 0.0h);
-	return saturate((x * (2.51h * x + 0.03h)) / (x * (2.43h * x + 0.59h) + 0.14h));
-}
+static const float2 k_HectonBlueNoiseR2Offset = float2(0.75487766, 0.56984029);
 
 float ResolveHectonBayer4x4(int2 positionSS)
 {
@@ -48,9 +43,8 @@ float ResolveHectonBlueNoise(int2 positionSS)
 
 	float2 screenUV = (positionSS + 0.5) * _ScaledScreenParams.zw;
 	float2 tileScale = max(_ScaledScreenParams.xy * _BlueNoiseTex_TexelSize.xy, float2(1.0, 1.0));
-	float frameBase = floor(_HectonUnderwaterFrameIndex);
-	float2 frameOffset = float2(fmod(frameBase, 4.0), fmod(frameBase + 1.0, 4.0)) * 0.25;
-	float2 blueNoiseUV = screenUV * tileScale + frameOffset;
+	float2 temporalOffset = frac(_HectonUnderwaterFrameIndex * k_HectonBlueNoiseR2Offset);
+	float2 blueNoiseUV = screenUV * tileScale + temporalOffset;
 	return SAMPLE_TEXTURE2D_LOD(_BlueNoiseTex, sampler_BlueNoiseTex, blueNoiseUV, 0).r;
 }
 
@@ -312,7 +306,6 @@ half3 ApplyUnderwaterEffect
 
 	if (_HectonUnderwaterApplyAcesDither > 0.5)
 	{
-		underwaterColor = ApplyHectonAcesHillTonemap(underwaterColor);
 		underwaterColor = ApplyHectonUnderwaterDither(underwaterColor, i_positionSS);
 	}
 

@@ -24,6 +24,7 @@ namespace Hecton8.Gameplay
     {
         private const string DefaultMountText = "Board Transport";
         private const string DefaultDismountText = "Dismount";
+        private const float InertialGhostBlend = 0.15f;
 
         [Header("-- Preset ---------------------------")]
         [Tooltip("Shared transport preset driving locomotion, prompts, and feel.")]
@@ -101,8 +102,13 @@ namespace Hecton8.Gameplay
         private Vector3 _platformAngularVelocity;
         private Vector3 _previousPlatformPosition;
         private Quaternion _previousPlatformRotation = Quaternion.identity;
+        private float _presentationTransportBoost01;
+        private int _platformVelocityGhostWriteIndex;
+        private int _platformVelocityGhostSampleCount;
         // COLD ALLOC: List<IDamageReceiver>[1] — mounted transport damage listeners (player trauma dispatcher) — owner: MountablePlayerTransport
         private readonly List<IDamageReceiver> _damageReceivers = new List<IDamageReceiver>(1);
+        // COLD ALLOC: Vector3[4] â€” inertial ghost history for presentation-only transport boost carry â€” owner: MountablePlayerTransport
+        private readonly Vector3[] _platformVelocityGhostHistory = new Vector3[4];
 
         /// <summary>True while this external transport is actively mounted by the rider.</summary>
         public bool IsMounted => _mounted;
@@ -361,7 +367,8 @@ namespace Hecton8.Gameplay
                 return 0f;
 
             float reference = Mathf.Max(0.01f, preset.PropulsionForceReference);
-            return Mathf.Clamp01(GetTransportPropulsionForce() / reference);
+            float throttleBoost = Mathf.Clamp01(GetTransportPropulsionForce() / reference);
+            return Mathf.Clamp01(Mathf.Max(_presentationTransportBoost01, throttleBoost));
         }
 
         /// <summary>
@@ -489,7 +496,7 @@ namespace Hecton8.Gameplay
             BindPresetToFeelContract();
             AlignTransportToRider(0f);
             ResetPlatformMotionCache();
-            ZeroRiderVelocity();
+            SyncMountedRiderVelocity();
             PlayTransportOneShot(mountSound);
         }
 
@@ -579,7 +586,7 @@ namespace Hecton8.Gameplay
             Quaternion targetRotation = desiredRiderRotation * Quaternion.Inverse(_riderAnchorLocalRotation);
             if (fixedDeltaTime > 0f && preset != null)
             {
-                float followT = 1f - Mathf.Exp(-preset.OrientationFollowSharpness * fixedDeltaTime);
+                float followT = ResolveBlendFactor(preset.OrientationFollowSharpness, fixedDeltaTime);
                 targetRotation = Quaternion.Slerp(_cachedTransform.rotation, targetRotation, followT);
             }
 
@@ -638,7 +645,7 @@ namespace Hecton8.Gameplay
             float sharpness = clampedTarget > clampedCurrent
                 ? Mathf.Max(0.5f, preset.ThrottleRiseSharpness)
                 : Mathf.Max(0.5f, preset.ThrottleFallSharpness);
-            float blend = 1f - Mathf.Exp(-sharpness * deltaTime);
+            float blend = ResolveBlendFactor(sharpness, deltaTime);
             return Mathf.Lerp(clampedCurrent, clampedTarget, blend);
         }
 
@@ -688,13 +695,15 @@ namespace Hecton8.Gameplay
             _riderTransform.SetPositionAndRotation(targetPosition, targetRotation);
         }
 
-        private void ZeroRiderVelocity()
+        private void SyncMountedRiderVelocity()
         {
             if (_riderBody == null)
                 return;
 
-            _riderBody.linearVelocity = Vector3.zero;
-            _riderBody.angularVelocity = Vector3.zero;
+            Vector3 riderPosition = _riderTransform != null ? _riderTransform.position : _riderBody.position;
+            Vector3 platformVelocity = GetPlatformPointVelocity(riderPosition);
+            _riderBody.linearVelocity = HectonPlayerMotor.SafeVelocity(platformVelocity);
+            _riderBody.angularVelocity = HectonPlayerMotor.SafeVelocity(Vector3.zero);
         }
 
         private void ResolveAnchorCache()
@@ -933,7 +942,7 @@ namespace Hecton8.Gameplay
             if (_riderBody == null || !IsFiniteVector(exitVelocity))
                 return;
 
-            _riderBody.linearVelocity = exitVelocity;
+            _riderBody.linearVelocity = HectonPlayerMotor.SafeVelocity(exitVelocity, _riderBody.linearVelocity);
         }
 
         private void BeginEmergencyBailoutDrift(Vector3 inheritedVelocity, float severity)
@@ -953,8 +962,12 @@ namespace Hecton8.Gameplay
                 _transportBody.isKinematic = false;
 
             _transportBody.WakeUp();
-            _transportBody.linearVelocity = inheritedVelocity * Mathf.Lerp(0.88f, 1.04f, Mathf.Clamp01(severity));
-            _transportBody.angularVelocity = new Vector3(0f, Mathf.Lerp(0.6f, 2.2f, Mathf.Clamp01(severity)), 0f);
+            _transportBody.linearVelocity = HectonPlayerMotor.SafeVelocity(
+                inheritedVelocity * Mathf.Lerp(0.88f, 1.04f, Mathf.Clamp01(severity)),
+                _transportBody.linearVelocity);
+            _transportBody.angularVelocity = HectonPlayerMotor.SafeVelocity(
+                new Vector3(0f, Mathf.Lerp(0.6f, 2.2f, Mathf.Clamp01(severity)), 0f),
+                _transportBody.angularVelocity);
             _transportBody.linearDamping = bailoutLinearDamping;
             _transportBody.angularDamping = bailoutAngularDamping;
             _bailoutDriftTimer = bailoutDriftDuration;
@@ -1015,6 +1028,7 @@ namespace Hecton8.Gameplay
                 _previousPlatformRotation = currentRotation;
                 _platformLinearVelocity = Vector3.zero;
                 _platformAngularVelocity = Vector3.zero;
+                UpdatePresentationTransportBoost();
                 return;
             }
 
@@ -1033,6 +1047,7 @@ namespace Hecton8.Gameplay
                 _platformAngularVelocity = axis.normalized * (angleDegrees * Mathf.Deg2Rad / fixedDeltaTime);
             }
 
+            UpdatePresentationTransportBoost();
             _previousPlatformPosition = currentPosition;
             _previousPlatformRotation = currentRotation;
         }
@@ -1045,6 +1060,7 @@ namespace Hecton8.Gameplay
             _previousPlatformRotation = platformTransform != null ? platformTransform.rotation : Quaternion.identity;
             _platformLinearVelocity = Vector3.zero;
             _platformAngularVelocity = Vector3.zero;
+            ResetInertialGhostHistory();
         }
 
         private void TryRestoreBodyFromBailoutDrift()
@@ -1154,6 +1170,53 @@ namespace Hecton8.Gameplay
 
             if (SpatialAudioManager.TryGetInstance(out SpatialAudioManager audio))
                 audio.PlayAtPoint(clip, _cachedTransform.position, transportAudioVolume);
+        }
+
+        private void UpdatePresentationTransportBoost()
+        {
+            if (!_mounted || preset == null)
+            {
+                _presentationTransportBoost01 = 0f;
+                return;
+            }
+
+            RecordInertialGhostVelocity(_platformLinearVelocity);
+            Vector3 ghostVelocity = ResolveGhostVelocity();
+            Vector3 perceivedVelocity = Vector3.Lerp(_platformLinearVelocity, ghostVelocity, InertialGhostBlend);
+            float speedReference = Mathf.Max(0.1f, preset.PropulsionForceReference * 0.01f);
+            float speedBoost = Mathf.Clamp01(perceivedVelocity.magnitude / speedReference);
+            float throttleBoost = Mathf.Clamp01(GetTransportPropulsionForce() / Mathf.Max(0.01f, preset.PropulsionForceReference));
+            _presentationTransportBoost01 = Mathf.Clamp01(Mathf.Max(throttleBoost, speedBoost));
+        }
+
+        private void RecordInertialGhostVelocity(Vector3 velocity)
+        {
+            _platformVelocityGhostHistory[_platformVelocityGhostWriteIndex] = HectonPlayerMotor.SafeVelocity(velocity);
+            _platformVelocityGhostWriteIndex = (_platformVelocityGhostWriteIndex + 1) % _platformVelocityGhostHistory.Length;
+            if (_platformVelocityGhostSampleCount < _platformVelocityGhostHistory.Length)
+                _platformVelocityGhostSampleCount++;
+        }
+
+        private Vector3 ResolveGhostVelocity()
+        {
+            if (_platformVelocityGhostSampleCount < _platformVelocityGhostHistory.Length)
+                return _platformLinearVelocity;
+
+            return _platformVelocityGhostHistory[_platformVelocityGhostWriteIndex];
+        }
+
+        private void ResetInertialGhostHistory()
+        {
+            _presentationTransportBoost01 = 0f;
+            _platformVelocityGhostWriteIndex = 0;
+            _platformVelocityGhostSampleCount = 0;
+            for (int i = 0; i < _platformVelocityGhostHistory.Length; i++)
+                _platformVelocityGhostHistory[i] = Vector3.zero;
+        }
+
+        private static float ResolveBlendFactor(float sharpness, float deltaTime)
+        {
+            return Mathf.Clamp01(Mathf.Max(0f, sharpness) * Mathf.Max(0f, deltaTime));
         }
 
         private static bool IsFiniteVector(Vector3 value)

@@ -405,8 +405,9 @@ namespace Hecton8.Gameplay
             data.missionActiveIds.Clear();
             data.missionCompletedIds.Clear();
 
-            foreach (string id in _activeMissions.Keys)
-                data.missionActiveIds.Add(id);
+            Dictionary<string, MissionInstance>.Enumerator enumerator = _activeMissions.GetEnumerator();
+            while (enumerator.MoveNext())
+                data.missionActiveIds.Add(enumerator.Current.Key);
 
             foreach (string id in _completedMissions)
                 data.missionCompletedIds.Add(id);

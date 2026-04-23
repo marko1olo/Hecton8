@@ -263,6 +263,16 @@ namespace Hecton8.Gameplay
             _exitGraceTimer = exitGraceTime;
         }
 
+        internal void ApplyOriginShiftOffset(Vector3 shiftOffset)
+        {
+            if (shiftOffset.sqrMagnitude <= 0.000001f)
+                return;
+
+            _fieldEntanglementAnchorWS -= shiftOffset;
+            _currentEntanglementAnchorWS -= shiftOffset;
+            _debugEntanglementAnchorWS = _currentEntanglementAnchorWS;
+        }
+
         private void SyncDebugState()
         {
             _debugActiveContacts = _activeContacts;

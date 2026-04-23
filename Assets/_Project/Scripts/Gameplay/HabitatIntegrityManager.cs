@@ -96,8 +96,8 @@ namespace Hecton8.Gameplay
 
     [DisallowMultipleComponent]
     [RequireComponent(typeof(BaseModule))]
-    [DefaultExecutionOrder(-5600)] // Registers before PowerGridManager so rupture flags land ahead of the balance pass.
-    public sealed class HabitatIntegrityManager : MonoBehaviour, ISlowTickable, IDamageReceiver, IDamageSignalEmitter
+    [DefaultExecutionOrder(-5600)] // Core-lane registration resolves rupture state before environment-lane power balance.
+    public sealed class HabitatIntegrityManager : MonoBehaviour, IUpdatable, ISlowTickable, IDamageReceiver, IDamageSignalEmitter
     {
         private const float HabitatStepInterval = 0.1f;
         private const float DefaultSlowTickInterval = 0.5f;
@@ -158,6 +158,7 @@ namespace Hecton8.Gameplay
         private float _floodLevel;
         private float _pressureDelta;
         private float _stepAccumulator;
+        private float _slowTickAccumulator;
         private float _moduleAmbientTemperatureCelsius = DefaultDryAmbientTemperatureCelsius;
         private float _fullyFloodedDurationSeconds;
         private float3 _breachLocalPoint;
@@ -216,6 +217,8 @@ namespace Hecton8.Gameplay
             ResolveReferences();
             ToolEffectEvents.OnEffectApplied += HandleToolEffectApplied;
             TryRegister();
+            _slowTickAccumulator = 0f;
+            _stepAccumulator = 0f;
             SyncOxygenContribution();
             UpdateDiagnostics();
         }
@@ -227,6 +230,8 @@ namespace Hecton8.Gameplay
             ClearToxicityHazard();
             RemoveOxygenContribution();
             TryUnregister();
+            _slowTickAccumulator = 0f;
+            _stepAccumulator = 0f;
             _damageReceivers.Clear();
             UpdateDiagnostics();
         }
@@ -238,11 +243,29 @@ namespace Hecton8.Gameplay
             ClearToxicityHazard();
             RemoveOxygenContribution();
             TryUnregister();
+            _slowTickAccumulator = 0f;
+            _stepAccumulator = 0f;
             _damageReceivers.Clear();
         }
 
+        public void Tick(float deltaTime)
+        {
+            if (deltaTime <= 0f)
+                return;
+
+            _slowTickAccumulator += deltaTime;
+            if (_slowTickAccumulator < DefaultSlowTickInterval)
+                return;
+
+            _slowTickAccumulator -= DefaultSlowTickInterval;
+            if (_slowTickAccumulator > DefaultSlowTickInterval)
+                _slowTickAccumulator = DefaultSlowTickInterval;
+
+            SlowTick();
+        }
+
         /// <summary>
-        /// Advances pressure-flood state on 10Hz substeps inside the existing GameTickManager slow tick.
+        /// Advances pressure-flood state on 10Hz substeps inside the dispatcher-driven slow cadence.
         /// </summary>
         public void SlowTick()
         {
@@ -521,11 +544,11 @@ namespace Hecton8.Gameplay
             if (_registered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
+            if (!Application.isPlaying)
                 return;
 
-            tickManager.Register((ISlowTickable)this);
+            SystemDispatcher.EnsureRuntimeInstance();
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
             _registered = true;
         }
 
@@ -534,10 +557,7 @@ namespace Hecton8.Gameplay
             if (!_registered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister((ISlowTickable)this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
             _registered = false;
         }
 
@@ -708,10 +728,7 @@ namespace Hecton8.Gameplay
 
         private float ResolveSlowTickInterval()
         {
-            GameTickManager tickManager = GameTickManager.Instance;
-            return tickManager != null
-                ? Mathf.Max(HabitatStepInterval, tickManager.SlowTickIntervalSeconds)
-                : DefaultSlowTickInterval;
+            return DefaultSlowTickInterval;
         }
 
         private float ResolveDepthMeters()

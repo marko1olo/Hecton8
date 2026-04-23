@@ -1,4 +1,6 @@
+using Hecton8.Core;
 using UnityEngine;
+using Unity.Jobs;
 using UnityEngine.Serialization;
 using Hecton8.Gameplay;
 using Hecton8.World;
@@ -13,7 +15,8 @@ namespace Hecton8.AI
     public class FaunaSensorSuite
     {
         private const float ToolNoiseRadiusMultiplier = 1.35f;
-        private const int PlayerAwarenessMemoryFrames = 45;
+        private const float PlayerAwarenessMemorySeconds = 0.75f;
+        private const float PlayerNoiseFreshSeconds = 0.5f;
 
         [Header("── Avoidance ──────────────────────────────────")]
         public float avoidanceRange = 8f;
@@ -76,7 +79,17 @@ namespace Hecton8.AI
         private bool _hasReportedPlayerNoise;
         private bool _hasLastKnownPlayerPosition;
         private Vector3 _lastKnownPlayerPosition;
-        private int _lastKnownPlayerFrame;
+        private float _lastReportedPlayerTimeSeconds;
+        private float _lastKnownPlayerTimeSeconds;
+        private float _authoredTimeSeconds;
+        private float _queuedObstacleRayLength;
+        private Vector3 _queuedObstacleRayDirection;
+        private RaycastHit _deferredObstacleHit;
+        private bool _hasDeferredObstacleHit;
+        private FoveatedTickRate _foveatedTickRate = FoveatedTickRate.Center60Hz;
+        private float _foveatedTickIntervalSeconds = 1.0f / 60.0f;
+        private float _foveatedImportanceScore = 1.0f;
+        private bool _foveatedInsideFrustum = true;
         
         /// <summary>
         /// True if the creature has been failing to move forward due to obstacles.
@@ -85,9 +98,6 @@ namespace Hecton8.AI
 
         // Buffers for Zero-GC
         // COLD ALLOC: Buffers for non-allocating physics queries
-        private static readonly Collider[] _distractorBuffer = new Collider[5];
-        private static readonly Collider[] _flockBuffer = new Collider[50];
-        private static readonly RaycastHit[] _hitBuffer = new RaycastHit[1];
         private static readonly Vector3[] _rayDirs = new Vector3[7];
         // COLD ALLOC: SpatialQueryHit[8] - fauna distractor lookup buffer over spatial grid - owner: FaunaSensorSuite
         private static readonly SpatialQueryHit[] _distractorSpatialBuffer = new SpatialQueryHit[8];
@@ -100,7 +110,17 @@ namespace Hecton8.AI
             _hasReportedPlayerNoise = false;
             _hasLastKnownPlayerPosition = false;
             _lastKnownPlayerPosition = default;
-            _lastKnownPlayerFrame = 0;
+            _lastReportedPlayerTimeSeconds = float.NegativeInfinity;
+            _lastKnownPlayerTimeSeconds = float.NegativeInfinity;
+            _authoredTimeSeconds = 0f;
+            _queuedObstacleRayLength = avoidanceRange;
+            _queuedObstacleRayDirection = self != null ? self.forward : Vector3.forward;
+            _deferredObstacleHit = default;
+            _hasDeferredObstacleHit = false;
+            _foveatedTickRate = FoveatedTickRate.Center60Hz;
+            _foveatedTickIntervalSeconds = 1.0f / 60.0f;
+            _foveatedImportanceScore = 1.0f;
+            _foveatedInsideFrustum = true;
             if (WorldStateManager.Instance != null)
                 _playerTransform = WorldStateManager.Instance.PlayerTransform;
 
@@ -111,29 +131,32 @@ namespace Hecton8.AI
             }
         }
 
-        public void Tick(float dt, Vector3 velocity)
+        public void Tick(float dt, Vector3 velocity, float currentTimeSeconds)
         {
-            // SENSORY STAGGERING (User REQ: Every 10 frames)
-            int frame = Time.frameCount;
-            bool majorUpdate = (frame % 10 == 0);
+            _authoredTimeSeconds = currentTimeSeconds;
 
-            if (majorUpdate && _playerTransform != null)
+            if (_playerTransform != null)
             {
                 distSqrToPlayer = (_playerTransform.position - _selfTransform.position).sqrMagnitude;
                 lodDisabled = distSqrToPlayer > 150f * 150f;
                 isSleeping = distSqrToPlayer > sleepDistance * sleepDistance;
             }
 
-            if (majorUpdate && !lodDisabled && !isSleeping)
+            if (lodDisabled || isSleeping)
             {
-                UpdateMajorSenses();
-                UpdateObstacleAvoidance(velocity);
-                UpdateDistractorDetection();
-                UpdatePreyDetection();
-                UpdateThreatDetection();
-                UpdateScavengeTarget();
-                if (IsStuck) UpdatePOISearch();
+                isAvoidingObstacle = false;
+                _avoidanceTimeAccumulator = 0f;
+                _hasDeferredObstacleHit = false;
+                return;
             }
+
+            UpdateMajorSenses();
+            UpdateObstacleAvoidance(dt, velocity);
+            UpdateDistractorDetection();
+            UpdatePreyDetection();
+            UpdateThreatDetection();
+            UpdateScavengeTarget();
+            if (IsStuck) UpdatePOISearch();
         }
 
         private void UpdateMajorSenses()
@@ -152,6 +175,7 @@ namespace Hecton8.AI
         {
             _lastReportedPlayerNoise = playerNoise;
             _hasReportedPlayerNoise = true;
+            _lastReportedPlayerTimeSeconds = _authoredTimeSeconds;
             hasNoisePlayerContact = true;
             RememberPlayerPosition(playerNoise.Position);
             distSqrToPlayer = (_lastKnownPlayerPosition - _selfTransform.position).sqrMagnitude;
@@ -162,7 +186,7 @@ namespace Hecton8.AI
             if (_playerTransform == null || !_hasReportedPlayerNoise)
                 return false;
 
-            if (Time.frameCount - _lastReportedPlayerNoise.ReportedFrame > 30)
+            if (_authoredTimeSeconds - _lastReportedPlayerTimeSeconds > PlayerNoiseFreshSeconds)
                 return false;
 
             if (reactToPlayerLight && _lastReportedPlayerNoise.FlashlightOn)
@@ -201,7 +225,7 @@ namespace Hecton8.AI
             }
 
             if (_hasLastKnownPlayerPosition &&
-                Time.frameCount - _lastKnownPlayerFrame <= PlayerAwarenessMemoryFrames)
+                _authoredTimeSeconds - _lastKnownPlayerTimeSeconds <= PlayerAwarenessMemorySeconds)
             {
                 playerPosition = _lastKnownPlayerPosition;
                 return true;
@@ -215,7 +239,7 @@ namespace Hecton8.AI
         {
             _hasLastKnownPlayerPosition = true;
             _lastKnownPlayerPosition = playerPosition;
-            _lastKnownPlayerFrame = Time.frameCount;
+            _lastKnownPlayerTimeSeconds = _authoredTimeSeconds;
         }
 
         private void UpdateThreatDetection()
@@ -240,22 +264,30 @@ namespace Hecton8.AI
             }
         }
 
-        private void UpdateObstacleAvoidance(Vector3 velocity)
+        private void UpdateObstacleAvoidance(float dt, Vector3 velocity)
         {
             float length = Mathf.Clamp(avoidanceRange + velocity.magnitude * lookAheadFactor, avoidanceRange, maxRayLength);
-            _rayDirs[0] = _selfTransform.forward;
-            // (Full 7-ray logic omitted for brevity in core update turn, following established pattern)
-            
-            isAvoidingObstacle = UnityEngine.Physics.SphereCastNonAlloc(_selfTransform.position, avoidanceSphereRadius, _rayDirs[0], _hitBuffer, length, obstacleMask) > 0;
+            Vector3 forwardDirection = velocity.sqrMagnitude > 0.0001f ? velocity.normalized : _selfTransform.forward;
+            _rayDirs[0] = forwardDirection;
+            _queuedObstacleRayDirection = forwardDirection;
+            _queuedObstacleRayLength = length;
+
+            isAvoidingObstacle = _hasDeferredObstacleHit &&
+                                 _deferredObstacleHit.collider != null &&
+                                 _deferredObstacleHit.distance > 0f &&
+                                 _deferredObstacleHit.distance <= length;
             if (isAvoidingObstacle)
             {
-                _avoidanceTimeAccumulator += 0.2f;
-                bestFreeDirection = Vector3.Reflect(_selfTransform.forward, _hitBuffer[0].normal).normalized;
+                _avoidanceTimeAccumulator += Mathf.Max(dt, _foveatedTickIntervalSeconds);
+                bestFreeDirection = Vector3.Reflect(forwardDirection, _deferredObstacleHit.normal).normalized;
             }
             else
             {
                 _avoidanceTimeAccumulator = 0f;
+                bestFreeDirection = forwardDirection;
             }
+
+            _hasDeferredObstacleHit = false;
         }
 
         private void UpdateDistractorDetection()
@@ -387,6 +419,53 @@ namespace Hecton8.AI
             }
 
             return nearestTransform;
+        }
+
+        internal void SetFoveatedCadence(FoveatedTickRate tickRate, float tickIntervalSeconds, float importanceScore, bool insideFrustum)
+        {
+            _foveatedTickRate = tickRate;
+            _foveatedTickIntervalSeconds = tickIntervalSeconds > 0f ? tickIntervalSeconds : (1.0f / 60.0f);
+            _foveatedImportanceScore = importanceScore;
+            _foveatedInsideFrustum = insideFrustum;
+        }
+
+        internal bool TryBuildDeferredRaycastCommand(out RaycastCommand command)
+        {
+            command = default;
+            if (_selfTransform == null || lodDisabled || isSleeping)
+                return false;
+
+            int obstacleLayerMask = obstacleMask.value;
+            if (obstacleLayerMask == 0)
+                return false;
+
+            if (_foveatedTickRate == FoveatedTickRate.Rear5Hz &&
+                !_foveatedInsideFrustum &&
+                _foveatedImportanceScore < 0.2f)
+            {
+                return false;
+            }
+
+            Vector3 direction = _queuedObstacleRayDirection.sqrMagnitude > 0.0001f
+                ? _queuedObstacleRayDirection.normalized
+                : _selfTransform.forward;
+            float distance = Mathf.Clamp(
+                _queuedObstacleRayLength > 0f ? _queuedObstacleRayLength : avoidanceRange,
+                avoidanceRange,
+                maxRayLength);
+
+            command = new RaycastCommand(
+                _selfTransform.position,
+                direction,
+                new QueryParameters(obstacleLayerMask, false, QueryTriggerInteraction.Ignore),
+                distance);
+            return true;
+        }
+
+        internal void ConsumeDeferredRaycastHit(in RaycastHit hit)
+        {
+            _deferredObstacleHit = hit;
+            _hasDeferredObstacleHit = hit.collider != null;
         }
 
         public Transform GetPlayerTransform() => _playerTransform;

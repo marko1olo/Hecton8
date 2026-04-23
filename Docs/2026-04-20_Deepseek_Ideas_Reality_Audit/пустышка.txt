@@ -1,625 +1,147 @@
-AGENT 'IMPLEMENT ZERO GC LOCALIZATION HUD'
+ОТЧЕТЫ АГЕНТОВ
 
-110 previous messages
-What Was Wrong
-Read exactly:
+НИЖЕ ПРЕДСТАВЛЕНЫ В ФОРМАТЕ НИК АГЕНТА (НАЗВАНИЕ ЧАТА) - ОТЧЁТ
+_______________________________
+Fix memory leaks and job violations — это Inquisitor 1 (Lead Sanitary Engineer). 
+-----------------------
 
-C:\hades\Hecton8\.agents-skills\UI_Diegetic_Physical_Interfaces.txt
-C:\hades\Hecton8\.agents-skills\OPT_Zero_GC_Policy_AllocFree_Mandate.txt
-C:\hades\Hecton8\.agents-skills\UI_Data_Streaming_ZeroGC_Optimization.txt
-localToWorld.c3.xyz is the correct path here because the translation is already cached in the matrix column and stays in the Burst/math lane. GetColumn(3) creates an extra Vector4 read path and is not what the mandate asked for.
 
-SuitHUDV4CanvasOverlay did not have the claimed compile break. EnsureCanvasGroup already exists at SuitHUDV4CanvasOverlay.cs (line 956), and the file still contains ScreenSpaceCamera / ScreenSpaceOverlay branches at 694 (line 694) and 702 (line 702) because it is visor HUD, not a diegetic world panel. Rewriting that file into world-space would have been architecture drift.
 
-The actual missing subsystem was a dedicated diegetic panel owner: no world-space enforcement, no cached ray-to-canvas math, no physical cursor clamp path, no MX350 RT allocation path, and no depth-fade panel shader.
 
-What I Did
-Added DiegeticPanelController.cs (line 1) and Hecton_DiegeticPanelDepthFade.shader (line 1).
 
-World-space strictness is enforced in DiegeticPanelController.cs (line 451). The controller disables any GraphicRaycaster, forces RenderMode.WorldSpace, sets the sorting layer to WorldGeometry, and caches the applied state so it does not rewrite canvas/layer data every tick.
 
-Ray-to-canvas math is in DiegeticPanelController.cs (line 715):
 
-localHit = math.transform(_panelData.WorldToLocal, worldHitPoint);
 
-float2 uv = new float2(
-    (localHit.x + _panelData.HalfSize.x) / safeCanvasSize.x,
-    (localHit.y + _panelData.HalfSize.y) / safeCanvasSize.y);
 
-canvasPos = new float2(
-    uv.x * _panelData.ReferenceWidth,
-    uv.y * _panelData.ReferenceHeight);
-Physical cursor clamp/update is in DiegeticPanelController.cs (line 737). It clamps local X/Y with math.clamp, lifts on local Z by cursorHoverOffset, converts back with math.transform(_panelData.LocalToWorld, cursorLocal), and rotates from cached panel axes.
 
-The RT path is in DiegeticPanelController.cs (line 548):
 
-RenderTextureDescriptor descriptor = new RenderTextureDescriptor(requiredResolution.x, requiredResolution.y)
-{
-    msaaSamples = 1,
-    volumeDepth = 1,
-    dimension = TextureDimension.Tex2D,
-    useMipMap = false,
-    autoGenerateMips = false,
-    sRGB = QualitySettings.activeColorSpace == ColorSpace.Linear,
-    graphicsFormat = _isMx350Tier
-        ? GraphicsFormat.B5G6R5_UNormPack16
-        : GraphicsFormat.R8G8B8A8_UNorm,
-    depthStencilFormat = GraphicsFormat.D16_UNorm
-};
-Depth fade is in Hecton_DiegeticPanelDepthFade.shader (line 95). It samples scene depth, converts with LinearEyeDepth, computes depthDelta, then dither-discards against a 4x4 Bayer threshold:
+________________________________
+Refactor procedural scatter system — это Inquisitor 4 (World Architect).
+------------------------
 
-float sceneDepthRaw = SampleSceneDepth(screenUV);
-float linearSceneDepth = LinearEyeDepth(sceneDepthRaw, _ZBufferParams);
-float linearFragmentDepth = -input.positionVS.z;
-float occlusionFactor = saturate(depthDelta / fadeRange);
 
-if (occlusionFactor < ditherThreshold)
-    discard;
-In-Game Result
-Diegetic panels now have a dedicated owner instead of abusing overlay UI assumptions. The controller resolves one bounded ray hit, projects that hit into panel-local coordinates with cached worldToLocal, emits zero-alloc input events to an optional IPanelInteractable, and drives a physical cursor transform over the panel surface.
 
-If a panel camera and output material are assigned, the panel can render into an MX350-safe RT and feed a physical screen mesh. If the depth-fade shader is assigned to that surface material, the panel dithers out against scene depth instead of painting through walls.
 
-What Was Verified
-Code changes were verified against the live file set:
 
-DiegeticPanelController.cs (line 451)
-Hecton_DiegeticPanelDepthFade.shader (line 16)
-SuitHUDV4CanvasOverlay.cs (line 956)
-I did get real compiler feedback on the new controller after importing it into Unity, and I fixed the two actual errors it surfaced:
 
-explicit Matrix4x4 -> float4x4 conversion at 928 (line 928)
-UnityEngine.Physics.RaycastNonAlloc qualification at 700 (line 700)
-Current project-wide purity is blocked by unrelated workspace instability outside this task:
 
-Hecton8.Core.csproj is trying to compile missing files Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs and Assets/_Project/Scripts/Fauna/FaunaBrain.Foveated.cs
-those files are not on disk anymore, while SystemDispatcher.cs and the generated project still reference them
-So the required purity statement cannot be given honestly. "0 ERRORS, 0 WARNINGS" is not confirmed. Status: PENDING VERIFICATION.
 
-[REGRESSION MODEL]
 
-CPU: one bounded raycast, one math.transform, two divides, clamp, and optional cursor smoothing per active panel tick; RT resize path is time-sliced by distanceRefreshInterval
-GC: hot path is allocation-free by construction; fixed arrays only, no GraphicRaycaster, no string work
-Memory: one optional RenderTexture per panel plus fixed RaycastHit[1] and DiegeticPanelInputEvent[16]
-Cadence: panel distance / RT tier refresh is decoupled from per-frame hit math
-Correctness: requires authored references for panelCollider, optional panelCamera, optional panelOutputMaterial, optional cursorTransform
-Failure modes: project-wide compile remains blocked by unrelated missing core/foveation sources; runtime hookup of the physical screen material is not proven in-scene without a real panel prefab and play-mode test
 
+______________________________
+Fix WFC serialization crashes — это Inquisitor 7 (Data & Save Architect).
+---------------------------------
 
 
 
-10:08 PM
-5 files changed
-+1091
--0
-Undo
 
-Review
-Assets/_Project/Scripts/UI/DiegeticPanelController.cs
-Assets/_Project/Scripts/UI/DiegeticPanelController.cs.meta
-Assets/_Project/Shaders/UI.meta
-Assets/_Project/Shaders/UI/Hecton_DiegeticPanelDepthFade.shader
-Assets/_Project/Shaders/UI/Hecton_DiegeticPanelDepthFade.shader.meta
 
 
 
 
 
-
-
-
-
---------------------------------------------------------
-AGENT 'ADD HABITAT FLOOD DYNAMICS'
-
-
-
-What Was Wrong
-Mandate ingestion completed. Exact files read:
-
-C:\hades\Hecton8\.agents-skills\PHYS_Fluid_Incursion_Interior.txt
-C:\hades\Hecton8\.agents-skills\PHYS_Physics_Integrity_Determinism_ForceMode.txt
-C:\hades\Hecton8\.agents-skills\OPT_Zero_GC_Policy_AllocFree_Mandate.txt
-rigidbody.mass = newMass every physics step is forbidden because PhysX 5 has to rebuild inverse-mass and inertia state continuously, which invalidates solver/contact caches and turns stable fixed-step motion into repeated main-thread reconfiguration.
-
-The in-domain compile issue was the obsolete runtime ID path in HabitatIntegrityManager.cs (line 203). ModuleLifeSupportComponent.cs had no current domain compile errors by inspection.
-
-What I Did
-I patched HabitatIntegrityManager.cs (line 203) to stop using the deprecated Unity instance-ID path:
-
-_toxicityHazardId = unchecked((int)(EntityId.ToULong(GetEntityId()) ^ (uint)ToxicHazardIdSalt));
-I added SubmarineFluidDynamics.cs (line 19) as the new fixed-step owner for interior flooding. It keeps compartment flood state in persistent NativeArray storage at lines 359-383 (line 359), registers through GameTickManager at lines 478-500 (line 478), and runs the full flood pipeline in FixedTick at lines 222-239 (line 222).
-
-Tensor math is implemented at lines 695-706 (line 695). It interpolates inertiaTensor and never rewrites mass or centerOfMass:
-
-Vector3 tensor = Vector3.Lerp(dryInertiaTensor, fullyFloodedInertiaTensor, _floodFillRatio);
-_rigidbody.inertiaTensor = tensor;
-Ingress and sectional isolation are implemented at lines 528-563 (line 528) and 566-615 (line 566). The ingress formula is the requested SIMD path:
-
-float deltaVolume = ingressVelocity * breachArea * cd * fixedDeltaTime;
-Transfer stops immediately when the bulkhead pair is sealed:
-
-if (_bulkheadSealed[i] != 0)
-    continue;
-The slosh kernel is implemented at lines 719-763 (line 719):
-
-_angularVelocityHistoryLocal[_ringHead] = currentLocalAngularVelocity;
-_ringHead = (_ringHead + 1) & RingBufferMask;
-int delayIndex = (_ringHead - SloshDelayFrames - 1) & RingBufferMask;
-_rigidbody.AddRelativeTorque(localTorque, ForceMode.Force);
-In-Game Result
-The submarine now has an 8-compartment interior flood model with native volume storage, bulkhead-gated transfer, delayed local-space slosh, and a reported flood centroid for telemetry. Partial flooding makes the hull feel heavier through inertia-tensor blending instead of destructive mass churn. Closed bulkheads halt transfer between compartment indices instantly.
-
-No runtime centerOfMass write was added. The flood centroid is computed and smoothed for reporting only, which stays inside the PhysX constraint from the mandate.
-
-What Was Verified
-Fresh Unity editor recompilation removed the old habitat warning. The stale warning for HabitatIntegrityManager.cs(202,43) is present only in earlier log entries; the later recompiles show the same unrelated blockers without that warning.
-
-Current console is still not clean. Remaining unrelated blockers in the live editor log include:
-
-HectonVoxelEngine.cs(2741,59): CS0103
-HectonVoxelEngine.cs(2947,33): CS0103
-LaserCutter.cs(650,44): CS1729
-LaserCutter.cs(659,44): CS1503
-GC proof is code-review only: the new hot path uses persistent NativeArray buffers, for loops, value types, and no string/LINQ/delegate allocation in FixedTick. Measured proof is absent.
-
-SubmarineFluidDynamics.cs exists on disk, but the live Unity session had not regenerated Hecton8.Core.csproj or emitted SubmarineFluidDynamics.cs into Editor.log before this response. Compile proof for that new file is therefore blocked by editor import state.
-
-I cannot honestly confirm 0 ERRORS, 0 WARNINGS. Status: PENDING VERIFICATION.
-
-
-
-
-
-9:56 PM
-3 files changed
-+873
--1
-Undo
-
-Review
-Assets/_Project/Scripts/Gameplay/HabitatIntegrityManager.cs
-Assets/_Project/Scripts/SubmarineFluidDynamics.cs
-Assets/_Project/Scripts/SubmarineFluidDynamics.cs.meta
-
-
-
-
-----------------------------------------------
-AGENT 'POST-MORTEM DATA'
-
-
-108 previous messages
-What Was Wrong
-Mesh.vertices inside a Burst job is invalid because it forces Unity to hand back a managed Vector3[] copy. Burst jobs and Mesh.MeshData paths only allow unmanaged/native memory, so that access path trips Unity’s safety layer and throws InvalidOperationException.
-
-The persistence files were not the active compiler blockers anymore. The missing compile truth after this pass is outside the domain: stale gameplay references still stop Hecton8.Core before a full clean build can be declared.
-
-What I Did
-I added ProceduralWreckGenerator.cs (line 320) as a bounded runtime generator/service. It exposes a deterministic AUP-seeded WFC kernel, a Generate(in MegaWreckStreamSection section) overload for the existing stream payload, and preallocated native buffers for the Morton-ordered grid, propagation queue, and placement lists. The seed path is in ProceduralWreckGenerator.cs (line 419) and ProceduralWreckGenerator.cs (line 487).
-
-The mesh merge path is in ProceduralWreckGenerator.cs (line 183) and ProceduralWreckGenerator.cs (line 786). It acquires Mesh.AcquireReadOnlyMeshData, schedules Burst jobs that read meshData.GetVertexData<Vector3>(), transforms positions with float4x4.TRS(...); math.transform(...), copies indices into one merged buffer, then disposes the MeshDataArray after completion. I also added the proxy-hull build and async NavMesh hook in ProceduralWreckGenerator.cs (line 894) and ProceduralWreckGenerator.cs (line 953), and that path passes only the lightweight proxy mesh into NavMeshBuilder.UpdateNavMeshDataAsync.
-
-No new code changes were required in SaveManager.cs (line 1), PersistentWorldRegistry.cs (line 1), or SaveBinaryStorage.cs (line 1) for this pass. The current compiler stop is outside those files.
-
-Crucible Audit Report
-MANDATE INGESTION exact files read:
-
-AGENTS.md (line 1)
-.agents-skills/TOOL_Procedural_Wreckage_Generator.txt (line 1)
-.agents-skills/MATH_Coordinate_Precision_AUP_FloatingOrigin.txt (line 1)
-.agents-skills/OPT_Zero_GC_Policy_AllocFree_Mandate.txt (line 1)
-DOCS_GAMEPLAY_API.md (line 1)
-BUILD_PLAYTEST_ISSUES.md (line 1)
-MASTER_RELEASE_WORK_PLAN.md (line 1)
-WFC SEEDING bit-safe AUP hash:
-
-uint hash =
-    (math.asuint(absoluteHashVector.x) * 73856093u) ^
-    (math.asuint(absoluteHashVector.y) * 19349663u) ^
-    (math.asuint(absoluteHashVector.z) * 83492791u);
-
-uint seed = (hash ^ (hash >> 16)) ^ salt;
-Implemented at ProceduralWreckGenerator.cs (line 495). This is valid because the XOR happens on uint bit patterns, not on floating-point values directly.
-
-MESH MERGING Burst read path:
-
-NativeArray<Vector3> sourcePositions = SourceMeshData.GetVertexData<Vector3>(PositionStream);
-float3 transformedPosition = math.transform(LocalToWreck, new float3(sourcePosition.x, sourcePosition.y, sourcePosition.z));
-Implemented at ProceduralWreckGenerator.cs (line 201). Read-only snapshots are acquired in ProceduralWreckGenerator.cs (line 835) and disposed after the job chain in ProceduralWreckGenerator.cs (line 871).
-
-GC / HOT-PATH proof: the collapse loop and merge jobs use preallocated NativeArray/NativeList state only. Measured profiler proof is absent. Status: PENDING VERIFICATION.
-
-THE PURITY LOG: I cannot honestly confirm 0 ERRORS, 0 WARNINGS. Objective local state from dotnet build Hecton8.Core.csproj /clp:ErrorsOnly is 9 ERRORS, 0 WARNINGS, all outside this domain:
-
-FirstHourDirector.cs (line 860) still references missing QuestManager
-HectonDirectorAI.cs (line 51) still references missing EncounterDirector / EncounterPhase / EncounterThreatClass
-What was verified:
-
-Official Unity docs confirm Mesh.MeshData / Mesh.MeshDataArray are intended for C# Job System access.
-The new generator file is present and wired for the existing MegaWreckStreamSection payload.
-Full project purity remains PENDING VERIFICATION because unrelated gameplay compile failures still block a clean console.
-WARNING: Regression risk in procedural module authoring. The current direct MeshData.GetVertexData<Vector3>() merge path validates for tightly packed position/normal/UV streams; arbitrary imported interleaved mesh layouts are rejected by the validator instead of being silently merged incorrectly.
-
-
-
-
-
-10:37 PM
-3 files changed
-+1300
--4
-Undo
-
-Review
-Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs
-Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs.meta
-Hecton8.Core.csproj
-------------------------------------------
-AGENT 'TETHER & TOWING'
-
-231 previous messages
-What Was Wrong
-PhysicalInteractionHandler was still dragging heavy cargo with Rigidbody.MovePosition and angularVelocity = 0, which is exactly the wrong ownership model for a physical hand. A free Rigidbody PD loop pushes world-space linear and angular correction into an unconstrained 6DOF body; contact resolution and lever arms feed that error back as spin. That is the Torque Kraken. ArticulationBody is different because PhysX solves the hand proxy in reduced joint coordinates before the grabbed body receives capped motion packets.
-
-What I Did
-Mandates ingested:
-
-C:\hades\Hecton8\.agents-skills\PHYS_Kinematic_Interaction_Hands.txt
-C:\hades\Hecton8\.agents-skills\PHYS_Physics_Integrity_Determinism_ForceMode.txt
-C:\hades\Hecton8\.agents-skills\OPT_Zero_GC_Policy_AllocFree_Mandate.txt
-Earlier continuation work also used PHYS_Physics_Integrity_Determinism_ForceMode.txt, MATH_Coordinate_Precision_AUP_FloatingOrigin.txt, CORE_Submarine_Vehicles_Kinematics_AUP.txt, ARCH_Global_Registry_ServiceLocator_DI_Init.txt.
-Heavy carry now routes through PhysicalHandController.cs (line 32) and PhysicalInteractionHandler.cs (line 337) instead of MovePosition. The handler still owns interaction state, but the heavy-object path now calls BeginGrab(), ticks the hand proxy in fixed-step, and releases through EndGrab().
-
-Articulation setup is here:
-
-_runtimeHandBody.jointType = ArticulationJointType.SphericalJoint;
-_runtimeHandBody.twistLock = ArticulationDofLock.LimitedMotion;
-_runtimeHandBody.swingYLock = ArticulationDofLock.LimitedMotion;
-_runtimeHandBody.swingZLock = ArticulationDofLock.LimitedMotion;
-
-ArticulationDrive baseDrive = default;
-baseDrive.lowerLimit = -180f;
-baseDrive.upperLimit = 180f;
-baseDrive.stiffness = 24000f;
-baseDrive.damping = 4200f;
-baseDrive.forceLimit = 15000f;
-_runtimeHandBody.xDrive = baseDrive;
-_runtimeHandBody.yDrive = baseDrive;
-_runtimeHandBody.zDrive = baseDrive;
-Drive targets are updated in PhysicalHandController.cs (line 519) via ArticulationDrive.target and targetVelocity:
-
-xDrive.target = targetEuler.x;
-xDrive.targetVelocity = angularVelocityDegrees.x;
-yDrive.target = targetEuler.y;
-yDrive.targetVelocity = angularVelocityDegrees.y;
-zDrive.target = targetEuler.z;
-zDrive.targetVelocity = angularVelocityDegrees.z;
-Virtual hand mass and lag are in PhysicalHandController.cs (line 479). For heavy objects the proxy integrates:
-
-virtualHandMass = lerp(0, 8, saturate(objectMass / 50))
-springForce = (controllerPos - virtualHandPos) * 300
-dampForce = -virtualHandVel * (2 * sqrt(m * k) * 0.9)
-lag clamp = 0.4m per axis
-The grabbed rigidbody is driven with capped ForceMode.VelocityChange, not parenting:
-
-linear at PhysicalHandController.cs (line 594)
-angular at PhysicalHandController.cs (line 620)
-Grip break is hard-gated at 0.8m in PhysicalHandController.cs (line 572). The warning band starts at 0.4m and gain fades down before full disconnect.
-
-Finger batching is Unity 6 compliant in PhysicalHandController.cs (line 638):
-
-QueryParameters queryParameters = new QueryParameters(
-    fingerCollisionMask.value,
-    false,
-    QueryTriggerInteraction.Ignore,
-    false);
-
-Commands[index] = new SpherecastCommand(origin, CastRadius, targetDirection, QueryParameters, CastLength);
-JobHandle buildHandle = buildJob.Schedule(FingerCount, 1);
-JobHandle castHandle = SpherecastCommand.ScheduleBatch(_fingerCommands, _fingerHits, 1, buildHandle);
-_fingerPoseHandle = processJob.Schedule(FingerCount, 1, castHandle);
-NaN handling is explicit at PhysicalHandController.cs (line 785):
-
-bool hasHit = hit.distance > 0f && !math.any(math.isnan(hitPoint));
-Continuation work from the previous physics-state task remains in place:
-
-authoritative registry in GlobalPhysicsStateManager.cs (line 108)
-mass-ratio guard at GlobalPhysicsStateManager.cs (line 586)
-origin-shift rebase job at GlobalPhysicsStateManager.cs (line 111) and GlobalPhysicsStateManager.cs (line 368)
-impact weight feedback log10(1 + force / 100) at GlobalPhysicsStateManager.cs (line 429)
-bootstrap now resolves the existing gameplay debris owner at GameBootstrapper.cs (line 122)
-I also restored two missing compile-stability files expected by the current source set:
-
-FaunaBrain.Foveated.cs (line 1)
-FoveatedSimulationManager.cs (line 1)
-In-Game Result
-Heavy cargo no longer uses transform-like dragging. The path is now: interaction owner → articulation hand proxy → capped velocity-change motion on the grabbed body. Heavy objects visibly lag through virtual hand mass, the grip auto-breaks if the proxy gets pinned behind world geometry, and finger contact pose data is produced through a persistent SpherecastCommand batch with no hot-path heap work.
-
-What Was Verified
-
-Fallback compile probing no longer reported errors in PhysicalHandController or PhysicalInteractionHandler after the job-interface fixes.
-The Unity MCP session dropped after domain reload and never reattached, so I do not have live Unity console proof for this pass.
-The generated-project fallback still reports unrelated stale/untracked-source issues around EncounterDirector and QuestManager. Those are outside this hand/tether work and are consistent with the current project file being out of sync with source additions.
-GC proof: measured proof absent. Hot-path intent is zero-GC: persistent NativeArray buffers, no transform.parent = hand, no MovePosition, no per-tick allocations, no allocating physics queries.
-Regression model: CPU cost increases only while actively dragging heavy cargo by one articulation proxy solve plus five spherecasts per fixed tick; GC should stay flat; correctness risk is highest if the scene has no assigned finger bones or if the MCP/Unity project state is stale.
-Purity Log
-I cannot honestly confirm 0 ERRORS, 0 WARNINGS. The live Unity console was not recoverable after domain reload, and the fallback generated-project build is still blocked by unrelated stale/untracked source sync issues outside this task. Status: PENDING VERIFICATION.
-
-
-
-
-
-10:41 PM
-11 files changed
-+2454
--29
-Undo
-
-Review
-Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs
-Assets/_Project/Scripts/Construction/VehicleDockingModule.cs
-Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs
-Assets/_Project/Scripts/Core/SceneRuntimeService.cs
-Assets/_Project/Scripts/Fauna/FaunaBrain.Foveated.cs
-Assets/_Project/Scripts/GlobalPhysicsStateManager.cs
-Assets/_Project/Scripts/Interaction/PhysicalHandController.cs
-Assets/_Project/Scripts/Interaction/PhysicalInteractionHandler.cs
-Assets/_Project/Scripts/PhysicsApplySystem.cs
-Assets/_Project/Scripts/TetherInstance.cs
-Hecton8.Core.csproj
-
-
-----------------------
-AGENT 'ADD CREATURE AGENTIC STATES'
-
-
-110 previous messages
-What Was Wrong
-The repo already had a legacy HectonDirectorAI doing pacing on GameTickManager with RNG-driven event selection. That conflicted with the mandate: dispatcher ownership, sine-phase pacing, token spawning, frustum-safe spawn rejection, and emergency shedding. There were no live compile errors in FaunaBrain.cs or HectonHazardManager.cs, but the old director architecture was the actual blocker.
-
-Mandates read exactly:
-C:\hades\Hecton8\.agents-skills\AI_Director_Encounter_Manager.txt
-C:\hades\Hecton8\.agents-skills\OPT_Zero_GC_Policy_AllocFree_Mandate.txt
-C:\hades\Hecton8\.agents-skills\ARCH_Global_Registry_ServiceLocator_DI_Init.txt
-
-Frustum rule, evidence-based: this Unity 6000.4 build does not expose a NativeArray<Plane> overload for GeometryUtility.CalculateFrustumPlanes. The zero-allocation path is the preallocated Plane[] / Span<Plane> overload, then mirror into native job data. I used that because it is the real API surface.
-
-What I Did
-I replaced the old director path with a dispatcher-driven encounter kernel and kept HectonDirectorAI as the compatibility owner for existing consumers.
-
-Core owner:
-HectonDirectorAI.cs (line 15) now implements IUpdatable, registers through GlobalRegistry, reads HectonSurvivalSystem, updates preallocated frustum planes, and feeds a 1 Hz cold-tick kernel.
-The zero-alloc frustum extraction is at HectonDirectorAI.cs (line 161).
-Internal stress amplitude input is resolved at HectonDirectorAI.cs (line 359).
-
-New kernel:
-EncounterDirector.cs (line 93) is the new encounter kernel.
-The Burst cold-tick job is EncounterDirector.cs (line 565).
-Phase timing and sine pacing are at EncounterDirector.cs (line 845) and EncounterDirector.cs (line 860).
-Token regen is locked to Relax at EncounterDirector.cs (line 721).
-Threat selection and token deduction are at EncounterDirector.cs (line 762) and EncounterDirector.cs (line 769).
-Load shedding triggers at EncounterDirector.cs (line 694) and despawn ranking is built from non-visible far enemies in the same job.
-
-Spawn safety:
-Spawn candidate search is EncounterDirector.cs (line 781).
-The zero-allocation frustum test is EncounterDirector.cs (line 832).
-
-Fauna integration:
-FaunaDirector.cs (line 2275) now has deterministic TrySpawnEncounterThreat(...).
-FaunaDirector.cs (line 2373) now has targeted TryRecallEncounterThreat(...).
-Deterministic entry selection is FaunaDirector.cs (line 2517), with class matching and bias at FaunaDirector.cs (line 2622) and FaunaDirector.cs (line 2647).
-
-Token math loop, exact logic shape:
-
-EncounterThreatClass threatClass = ResolveDesiredThreatClass(state.IntensityLevel, state.TokenBudget);
-if (TryResolveSpawnCandidate(playerPosition, playerForward, out float3 spawnPosition))
-{
-    output.SpawnRequestCount = 1;
-    output.SpawnThreatClass = (int)threatClass;
-    output.SpawnPosition = spawnPosition;
-    state.TokenBudget = math.clamp(state.TokenBudget - ResolveTokenCost(threatClass), 0f, MaxTokenBudget);
-}
-In-Game Result
-The director now runs BuildUp -> Peak -> Decay -> Relax on a sine-driven pacing model, scales intensity with player internal stress, spends a 100-token budget on deterministic threat classes, regenerates only in Relax, rejects front-of-camera spawn points, and recalls far non-visible encounter entities when average frame time exceeds 20 ms.
-
-What Was Verified
-Code-side:
-dotnet build Hecton8.Core.csproj -nologo -v minimal -maxcpucount:1 now fails only on unrelated repo errors. My changed files are no longer part of the error list.
-No new warnings were emitted from EncounterDirector.cs, HectonDirectorAI.cs, or FaunaDirector.cs in the local build output.
-
-Unity-side:
-MCP lost the Unity session during compile, so direct console readback was not available.
-Editor.log shows unrelated compile blockers outside this task, including missing source files Core/FoveatedSimulationManager.cs and Fauna/FaunaBrain.Foveated.cs, plus unrelated errors in FirstHourDirector, HarvestableOutcrop, and PhysicalInteractionHandler.
-I did not get a clean Unity console confirmation.
-
-Purity log:
-I cannot truthfully confirm 0 ERRORS, 0 WARNINGS.
-Current factual state is PENDING VERIFICATION. The encounter-director changes are isolated and locally compile-clean within the touched domain, but the repo and Unity editor are still blocked by unrelated errors outside this work.
-
-
-
-
-
-10:48 PM
-4 files changed
-+1687
--1175
-Undo
-
-Review
-Assets/_Project/Scripts/EncounterDirector.cs
-Assets/_Project/Scripts/FaunaDirector.cs
-Assets/_Project/Scripts/HectonDirectorAI.cs
-Hecton8.Core.csproj
-
-
--------------------
-
-
-AGENT 'ADD GPU FLORA COUPLING '
-
-Worked for 1h 54m 11s
-Crucible Audit Report
-STATUS: PENDING VERIFICATION
-
-What Was Wrong
-Mandate ingestion, exact files read:
-
-.agents-skills/REND_Foveated_Simulation_LOD.txt
-.agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt
-.agents-skills/OPT_Zero_GC_Policy_AllocFree_Mandate.txt
-AudioSource.velocity is hallucinated because Unity AudioSource has no runtime velocity API. Doppler has to be derived from relative motion and applied manually to pitch.
-
-The dispatcher had no central foveated cadence owner. Opt-in entities were not being scored by distance plus frustum bias, 5 Hz visuals had no transform-job interpolation path, and there was no manual audio Doppler protection for throttled simulation. Compile stabilization also exposed a non-domain blocker: QuestManager.cs was missing from disk while its .meta and generated project entry still existed.
-
-What I Did
-The foveated implementation is in FoveatedSimulationManager.cs (line 34), integrated into SystemDispatcher.cs (line 135), with fauna opting in through FaunaBrain.Foveated.cs (line 6) and binding setup in FaunaBrain.cs (line 165).
-
-Tick-rate assignment is central-screen 60 Hz, periphery 20 Hz, behind-camera 5 Hz. Importance uses distance plus frustum dot with thresholds at FoveatedSimulationManager.cs (line 61):
-
-float smoothAlpha = alpha * alpha * (3.0f - (2.0f * alpha));
-That runs inside VisualInterpolationJob : IJobParallelForTransform at line 37 (line 37). Deferred throttled physics uses:
-
-RaycastCommand.ScheduleBatch(
-    _deferredRaycastCommands.AsDeferredJobArray(),
-    _deferredRaycastResults,
-    MinimumCommandsPerJob,
-    default);
-at lines 288-289 (line 288).
-
-Manual Doppler protection is implemented at lines 426-427 (line 426):
-
-float approachSpeed = math.dot(relativeVelocity, toListenerDir);
-audioSource.pitch = math.clamp(
-    1.0f + (approachSpeed / 1480.0f),
-    0.5f,
-    2.0f);
-For compile stabilization, I forced clean shell rebuilds, isolated the remaining blockers away from flora/weather/foveated code, and restored QuestManager.cs (line 1) from HEAD. I also added temporary compatibility shims at lines 195 and 200 (line 195) because SaveManager.cs (line 289) expects packed quest-state APIs.
-
-In-Game Result
-Code-path intent is now correct: center-screen fauna can stay at full cadence, peripheral targets drop to 20 Hz, rear targets to 5 Hz, and 5 Hz transforms get smoothed instead of stepping. Audio Doppler no longer depends on an invented Unity API. The cadence decision is centralized in the dispatcher instead of being scattered across per-entity logic.
-
-HOT PATH IMPACT: one O(N) importance pass over registered foveated targets, one IJobParallelForTransform, and an optional deferred RaycastCommand batch. The manager uses fixed-capacity managed arrays plus persistent native buffers only. No per-frame new, no NativeQueue misuse, no AudioSource.velocity.
-
-What Was Verified
-Shell-verified:
-
-The compiler progressed past the flora/weather/foveated files without reporting errors in those files.
-Latest verified dotnet build Hecton8.Core.csproj -nologo ended at 12 errors, 12 warnings.
-Current hard blockers are unrelated to the foveated domain:
-ProceduralWreckGenerator.cs (line 279) has quaternion/AffineTransform and math.countbits API drift.
-SaveManager.cs (line 289) still has quest-save integration mismatch.
-Current warnings are also outside this task’s core path:
-EncounterDirector.cs (line 437), FaunaDirector.cs (line 2389), HarvestableOutcrop.cs (line 235) use obsolete GetInstanceID().
-SubmarineFluidDynamics.cs (line 55) has unassigned-field warnings.
-Unity-verified:
-
-None. refresh_unity timed out waiting for readiness, and read_console returned no active Unity session.
-THE PURITY LOG:
-
-I cannot confirm: "0 ERRORS, 0 WARNINGS".
-WARNING: Regression risk in quest/save flow. QuestManager.cs disappeared from disk more than once while its .meta and project entry remained. I restored it again, but I did not do a final rebuild after that last restore because the deletion appears to be caused by an external process.
-
-[GC VALIDATION] BEFORE: measured proof absent · AFTER: measured proof absent · STATUS: PENDING VERIFICATION
-[REGRESSION CHECK] BEFORE→AFTER: profiler proof absent · STATUS: PENDING VERIFICATION
-
-
-
-
-
-11:10 PM
-6 files changed
-+1013
--283
-Undo
-
-Review
-Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs
-Assets/_Project/Scripts/Core/SystemDispatcher.cs
-Assets/_Project/Scripts/Fauna/FaunaBrain.Foveated.cs
-Assets/_Project/Scripts/Fauna/FaunaBrain.cs
-Assets/_Project/Scripts/Quest/QuestManager.cs
-Hecton8.Core.csproj
------------------------------
-AGENT 'IMPLEMENT TOOL INTERACTION SUBSYSTEM'
-
-
-Worked for 1h 58m 27s
-What Was Wrong
-
-The domain was split between a working interaction queue and a broken destruction/render path. HarvestableOutcrop had a namespace collision on InteractionSignal, DebrisManager had an ambiguous Random usage plus an instancing API mismatch, and the compile graph had secondary drift in save/quest, wreck generation, encounter state, and obsolete GetInstanceID() calls. That left the editor console dirty even though the DDA/EventBus work itself was already bridged.
-
-What I Did
-
-I kept the destruction path event-routed and data-driven. EquipmentInteractionHandler now dispatches full deferred signals into IInteractionSignalConsumer targets in EquipmentInteractionHandler.cs (line 238), and HarvestableOutcrop consumes the authoritative tool signal in HarvestableOutcrop.cs (line 152), disables intact render/collider state, sends debris to the registry-owned service, and computes yield with Yield = DrillPower * RockDensity in HarvestableOutcrop.cs (line 255).
-
-The instanced debris subsystem is owned by DebrisManager.cs (line 17) and exposed through GlobalRegistryContracts.cs (line 46) and GlobalRegistry.cs (line 64). Bootstrap wires it in at GameBootstrapper.cs (line 126) and teardown clears active debris in SceneRuntimeService.cs (line 126). I also stabilized the compile graph by fixing the save-load callsite in SaveManager.cs (line 934), the packed quest bridge in QuestManager.cs (line 195), the quaternion/countbits issues in ProceduralWreckGenerator.cs (line 279), and the readonly/native-array plus obsolete entity-id issues in EncounterDirector.cs (line 108) and FaunaDirector.cs (line 2389).
-
-In-Game Result
-
-PENDING VERIFICATION. Code-path expectation is: beam/drill damage arrives through the queued interaction handler, the organic target collapses into GPU-instanced pre-baked chunks, Burst sim drives the debris, and loot yield routes to PlayerInventory first or PersistentWorldRegistry as fallback. I did not run a gameplay scene validation pass, only compile and console verification.
-
-What Was Verified
-
-Mandate ingestion, exact files read:
-
-C:\hades\Hecton8\.agents-skills\PHYS_Destructible_Organic_Entropy.txt
-C:\hades\Hecton8\.agents-skills\OPT_Zero_GC_Policy_AllocFree_Mandate.txt
-C:\hades\Hecton8\.agents-skills\OPT_Native_Memory_Collections_JobSystem_Protocol.txt
-C:\hades\Hecton8\.agents-skills\STRM_Persistent_Object_Registry.txt
-C:\hades\Hecton8\.agents-skills\DATA_Inventory_Resources_Items_SOA_Layout.txt
-Managed Rigidbody[] in Burst is fatal because Rigidbody is a managed Unity engine object, not a blittable unmanaged payload. Burst jobs require unmanaged memory only; a managed object array introduces GC-tracked references and illegal engine-object access across worker threads.
-
-Debris render in DebrisManager.cs (line 458):
-
-_matrixBuffer.SetData(_batchMatrices, 0, 0, instanceCount);
-
-Graphics.RenderMeshInstanced(
-    renderParams,
-    _batchMeshes[batchIndex],
-    0,
-    _batchInstanceData,
-    instanceCount,
-    0);
-Unity 6000.4 does not expose a GraphicsBuffer overload for RenderMeshInstanced, so the buffer is the upload store and the draw uses the preallocated instance payload.
-
-Burst RNG in DebrisManager.cs (line 715):
-
-BurstRandom rng = new BurstRandom(RandomSeed != 0u ? RandomSeed : 1u);
-
-for (int i = 0; i < ReadStates.Length; i++)
-{
-    float3 randomDrift = rng.NextFloat3Direction() * (NoiseStrength * dt * inverseMass);
-}
-Unity verification:
-
-Forced script refresh/compile completed.
-Post-compile console readback returned 0 errors.
-Console was cleared and re-read for error + warning; result was 0 entries.
-The purity log: 0 ERRORS, 0 WARNINGS
-
-
-
-
-
-11:13 PM
-10 files changed
-+1675
--489
-Undo
-
-Review
-Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs
-Assets/_Project/Scripts/Core/GlobalRegistry.cs
-Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs
-Assets/_Project/Scripts/Core/SceneRuntimeService.cs
-Assets/_Project/Scripts/EncounterDirector.cs
-Assets/_Project/Scripts/FaunaDirector.cs
-Assets/_Project/Scripts/Gameplay/DebrisManager.cs
-Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs
-Assets/_Project/Scripts/Interaction/EquipmentInteractionContracts.cs
-Assets/_Project/Scripts/Interaction/EquipmentInteractionHandler.cs
+___________________________________-
+Stabilize encounter director — это Inquisitor 8 (AI & Audio Lead). 
 ------------------------------
-AGENT 'IMPLEMENT GLOBAL REGISTRY CORE'
+
+
+
+
+
+
+
+
+
+
+
+_____________________________________
+Fix URP fog pipeline crashes — это Inquisitor 5 (Graphics & VFX Director).
+-----------------------------------
+
+
+
+
+
+
+
+
+
+
+________________________________________-
+Fix UI and audio allocations — это Inquisitor 2 (Memory & UI Executioner).
+---------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+__________________________________________-
+Fix fluid and energy stability — это Inquisitor 6 (Logistics & Systems Engineer). 
+-------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+___________________________________-
+Fix player kinematics stability — это Inquisitor 3 (Physics & Locomotion Lead).
+-----------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+______________________________
+КОНЕЦ ОТЧЁТА
+
+ВНИМАНИЕ! В ОТВЕТЕ УПОМИНАЙ НАЗВАНИЯ ЧАТОВ ЧТОБЫ МНЕ БЫЛО ПРОЩЕ ОРИЕНТИРОВАТЬСЯ. ВНИМАНИЕ! ПОМНИ ПРО ТО ЧТО НЕОБХОДИМО ПРОВЕРИТЬ И ПОЧИНИТЬ ВСЕ ФАЙЛЫ У КОТОРЫХ ЕСТЬ ПРОБЛЕМЫ. КРОМЕ ТОГО, НЕОБХОДИМО ВЫДЕЛЯТЬ 2-3 АГЕНТОВ НА ПРИВЕДЕНИЕ ВСЕЙ КОДОВОЙ БАЗЫ К НАШИМ МАНДАТАМ! КОРРЕКТНЫЙ АНАЛИЗ, ИСПАРВЛЕНИЕ, ПЕРЕПИСЫВАНИЕ. КОМАНДУЙ ИМИ!
+
+
+НЕ ПОЗВОЛЯЙ СВОЕМУ ПОЛЮ ЗРЕНИЯ СУЖАТЬСЯ! ДУМАЙ!
+ПИШИ БОЛЬШИЕ, ЧЕТКИЕ МАСТЕР ПРОМПТЫ! ДАВАЙ АГЕНТУ РЕКОМЕНДАЦИИ КАКИЕ МАНДАТЫ ЕМУ ПРОЧИТАТЬ, НО ДАВАЙ ЕМУ ПАРВО ВЫБРАТЬ ДОПОЛНИТЕЛЬНЫЕ ПО СВОЕМУ УСМОТРЕНИЮ.
+
+
+ЕСЛИ ОТВЕТ АГЕНТА БЫЛ ПРЕРВАН (НЕТ ВЫВОДА, ЗАВИС ПО ТОКЕНАМ) - РЕШИ - ДАТЬ ЕМУ ЗАКОНЧИТЬ ИЛИ НАПИСАТЬ "ПРОДОЛЖАЙ РАБОТУ По заданию потом иди к следующему::""
+
+
 

@@ -168,14 +168,14 @@ namespace Hecton8.Audio
         [Tooltip("High-frequency room attenuation under a close cave ceiling.")]
         [SerializeField, Range(-10000f, 0f)] private float caveRoomHighFrequency = -1400f;
 
-        // COLD ALLOC: float[frameCapacity] - hull-stress DSP scratch - owner: PlayerCriticalProceduralAudioRenderer
-        private float[] _hullScratch;
-        // COLD ALLOC: float[frameCapacity] - sonar DSP scratch - owner: PlayerCriticalProceduralAudioRenderer
-        private float[] _sonarScratch;
-        // COLD ALLOC: float[frameCapacity] - thruster DSP scratch - owner: PlayerCriticalProceduralAudioRenderer
-        private float[] _thrusterScratch;
-        // COLD ALLOC: float[frameCapacity] - mixed procedural audio worklet scratch - owner: PlayerCriticalProceduralAudioRenderer
-        private float[] _mixScratch;
+        // COLD ALLOC: NativeArray<float>[frameCapacity] - hull-stress DSP scratch - owner: PlayerCriticalProceduralAudioRenderer
+        private NativeArray<float> _hullScratch;
+        // COLD ALLOC: NativeArray<float>[frameCapacity] - sonar DSP scratch - owner: PlayerCriticalProceduralAudioRenderer
+        private NativeArray<float> _sonarScratch;
+        // COLD ALLOC: NativeArray<float>[frameCapacity] - thruster DSP scratch - owner: PlayerCriticalProceduralAudioRenderer
+        private NativeArray<float> _thrusterScratch;
+        // COLD ALLOC: NativeArray<float>[frameCapacity] - mixed procedural audio worklet scratch - owner: PlayerCriticalProceduralAudioRenderer
+        private NativeArray<float> _mixScratch;
         private AudioFrameSpscRingBuffer _sampleRingBuffer;
         private Thread _audioProducerThread;
         private int _frameCapacity;
@@ -236,6 +236,8 @@ namespace Hecton8.Audio
         private HullSynthesisState _hullSynthesisState;
         private SonarSynthesisState _sonarSynthesisState;
         private ThrusterSynthesisState _thrusterSynthesisState;
+        private long _producedSampleCount;
+        private long _consumedSampleCount;
 
         private volatile float _targetHullStressValue;
         private volatile float _targetThrusterBlendValue;
@@ -453,7 +455,9 @@ namespace Hecton8.Audio
 
             TryConsumeCompletedProbeSample(defaultDistance);
             ScheduleEnclosureProbe(defaultDistance);
-            _probeAxisIndex = (_probeAxisIndex + 1) % _orthogonalProbeDistances.Length;
+            _probeAxisIndex++;
+            if (_probeAxisIndex >= _orthogonalProbeDistances.Length)
+                _probeAxisIndex = 0;
             UpdateApproximateEnclosureVolume();
         }
 
@@ -471,7 +475,9 @@ namespace Hecton8.Audio
             if (frameCount <= 0)
                 return;
 
-            _sampleRingBuffer.AddToInterleaved(data, channels, frameCount);
+            int consumedFrames = _sampleRingBuffer.AddToInterleaved(data, channels, frameCount);
+            if (consumedFrames > 0)
+                Interlocked.Add(ref _consumedSampleCount, consumedFrames);
         }
 
         private void StartAudioProducerThread()
@@ -513,7 +519,8 @@ namespace Hecton8.Audio
 
                 int blockFrames = math.clamp(synthesisBlockFrames, 256, _frameCapacity);
                 int targetLeadFrames = math.clamp(workerTargetLeadFrames, blockFrames, math.max(blockFrames, _sampleRingBuffer.CapacityFrames - blockFrames));
-                if (_sampleRingBuffer.BufferedFrames >= targetLeadFrames || _sampleRingBuffer.WritableFrames < blockFrames)
+                _sampleRingBuffer.GetState(out int bufferedFrames, out int writableFrames);
+                if (bufferedFrames >= targetLeadFrames || writableFrames < blockFrames)
                 {
                     Thread.Sleep(1);
                     continue;
@@ -526,16 +533,16 @@ namespace Hecton8.Audio
         private void ProduceAudioBlock(int frameCount)
         {
             if (frameCount <= 0 ||
-                _hullScratch == null ||
-                _sonarScratch == null ||
-                _thrusterScratch == null ||
-                _mixScratch == null ||
+                !_hullScratch.IsCreated ||
+                !_sonarScratch.IsCreated ||
+                !_thrusterScratch.IsCreated ||
+                !_mixScratch.IsCreated ||
                 _sampleRingBuffer == null)
             {
                 return;
             }
 
-            long blockStartFrame = _sampleRingBuffer.WriteFrameCursor;
+            long blockStartFrame = Interlocked.Read(ref _producedSampleCount);
             TryConsumePendingSonarTrigger(blockStartFrame, frameCount);
 
             double invSampleRate = 1d / math.max(1, _sampleRate);
@@ -563,7 +570,8 @@ namespace Hecton8.Audio
                 thrusterDiveTarget);
             MixAndFilterBlock(frameCount);
 
-            _sampleRingBuffer.TryWrite(_mixScratch, frameCount);
+            if (_sampleRingBuffer.TryWrite(_mixScratch, frameCount))
+                Interlocked.Add(ref _producedSampleCount, frameCount);
         }
 
         private void TryConsumePendingSonarTrigger(long blockStartFrame, int frameCount)
@@ -820,11 +828,9 @@ namespace Hecton8.Audio
                 out float echoAttenuation,
                 out float echoLowPassCutoffHz);
 
-            long consumerFrame = _sampleRingBuffer != null ? _sampleRingBuffer.ReadFrameCursor : 0L;
-            long producerFrame = _sampleRingBuffer != null ? _sampleRingBuffer.WriteFrameCursor : consumerFrame;
+            long consumerFrame = Interlocked.Read(ref _consumedSampleCount);
+            long producerFrame = Interlocked.Read(ref _producedSampleCount);
             long scheduledStartFrame = math.max(producerFrame, consumerFrame);
-            long scheduledLeadFrames = math.max(0L, scheduledStartFrame - consumerFrame);
-            double scheduledDspTime = AudioSettings.dspTime + (scheduledLeadFrames / (double)math.max(_sampleRate, 1));
 
             SonarTriggerState pendingState = new SonarTriggerState
             {
@@ -847,7 +853,11 @@ namespace Hecton8.Audio
 
             Interlocked.Exchange(ref _pendingSonarStateReadIndex, inactiveIndex);
 
-            ProceduralAudioEvents.RaiseAudioPingTriggered(scheduledDspTime, math.saturate(intensity), SonarChirpDurationSeconds);
+            ProceduralAudioEvents.RaiseAudioPingTriggered(
+                scheduledStartFrame,
+                math.max(_sampleRate, 1),
+                math.saturate(intensity),
+                SonarChirpDurationSeconds);
         }
 
         private void HandleAudioConfigurationChanged(bool deviceWasChanged)
@@ -928,12 +938,14 @@ namespace Hecton8.Audio
             DisposeBuffers();
 
             _frameCapacity = frameCapacity;
-            _hullScratch = new float[_frameCapacity]; // COLD ALLOC: float[frameCapacity] - hull-stress DSP scratch - owner: PlayerCriticalProceduralAudioRenderer
-            _sonarScratch = new float[_frameCapacity]; // COLD ALLOC: float[frameCapacity] - sonar DSP scratch - owner: PlayerCriticalProceduralAudioRenderer
-            _thrusterScratch = new float[_frameCapacity]; // COLD ALLOC: float[frameCapacity] - thruster DSP scratch - owner: PlayerCriticalProceduralAudioRenderer
-            _mixScratch = new float[_frameCapacity]; // COLD ALLOC: float[frameCapacity] - mixed procedural audio worklet scratch - owner: PlayerCriticalProceduralAudioRenderer
+            _hullScratch = new NativeArray<float>(_frameCapacity, Allocator.AudioKernel, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float>[frameCapacity] - hull-stress DSP scratch - owner: PlayerCriticalProceduralAudioRenderer
+            _sonarScratch = new NativeArray<float>(_frameCapacity, Allocator.AudioKernel, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float>[frameCapacity] - sonar DSP scratch - owner: PlayerCriticalProceduralAudioRenderer
+            _thrusterScratch = new NativeArray<float>(_frameCapacity, Allocator.AudioKernel, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float>[frameCapacity] - thruster DSP scratch - owner: PlayerCriticalProceduralAudioRenderer
+            _mixScratch = new NativeArray<float>(_frameCapacity, Allocator.AudioKernel, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float>[frameCapacity] - mixed procedural audio worklet scratch - owner: PlayerCriticalProceduralAudioRenderer
             _sampleRingBuffer ??= new AudioFrameSpscRingBuffer();
             _sampleRingBuffer.Initialize(math.max(frameCapacity * 16, ringBufferCapacityFrames));
+            _producedSampleCount = 0L;
+            _consumedSampleCount = 0L;
             _workerActiveSonarState = default;
             _workerConsumedSonarSequence = 0;
             ResetSonarPhaseState(0);
@@ -944,13 +956,24 @@ namespace Hecton8.Audio
         {
             _sampleRingBuffer?.Dispose();
             _sampleRingBuffer = null;
-            _hullScratch = null;
-            _sonarScratch = null;
-            _thrusterScratch = null;
-            _mixScratch = null;
+            if (_hullScratch.IsCreated)
+                _hullScratch.Dispose();
+            if (_sonarScratch.IsCreated)
+                _sonarScratch.Dispose();
+            if (_thrusterScratch.IsCreated)
+                _thrusterScratch.Dispose();
+            if (_mixScratch.IsCreated)
+                _mixScratch.Dispose();
+
+            _hullScratch = default;
+            _sonarScratch = default;
+            _thrusterScratch = default;
+            _mixScratch = default;
 
             _buffersInitialized = false;
             _frameCapacity = 0;
+            _producedSampleCount = 0L;
+            _consumedSampleCount = 0L;
         }
 
         private void EnsureSlowProbeBuffersAllocated()
@@ -1379,12 +1402,22 @@ namespace Hecton8.Audio
             _audioHullStressValue = hullTarget;
         }
 
+        private static void ClearScratchBuffer(NativeArray<float> buffer, int frameCount)
+        {
+            if (!buffer.IsCreated || frameCount <= 0)
+                return;
+
+            int safeCount = math.min(frameCount, buffer.Length);
+            for (int i = 0; i < safeCount; i++)
+                buffer[i] = 0f;
+        }
+
         private void RenderSonarBlock(int frameCount, long blockStartFrame, double invSampleRate)
         {
             SonarTriggerState activeState = _workerActiveSonarState;
             if (activeState.Sequence == 0 || activeState.Intensity <= 0f)
             {
-                Array.Clear(_sonarScratch, 0, frameCount);
+                ClearScratchBuffer(_sonarScratch, frameCount);
                 return;
             }
 

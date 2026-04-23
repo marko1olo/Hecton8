@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using Hecton8.Atmosphere;
 using Hecton8.Core;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -16,7 +17,7 @@ namespace Hecton8.Physics
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
     [AddComponentMenu("Hecton/Physics/Submarine Fluid Dynamics")]
-    public sealed class SubmarineFluidDynamics : MonoBehaviour, IFixedTickable
+    public sealed class SubmarineFluidDynamics : MonoBehaviour, IUpdatable, IFixedTickable
     {
         private const int CompartmentCapacity = 8;
         private const int BulkheadCapacity = 7;
@@ -36,6 +37,7 @@ namespace Hecton8.Physics
         private const float DefaultMaximumIngressPerSecondNormalized = 0.25f;
         private const float CriticalFillThreshold = 0.8f;
         private const float Epsilon = 0.0001f;
+        private const int MaxFixedTicksPerDispatcherTick = 3;
 
         private const uint FlagBreached = 1u << 0;
         private const uint FlagSealed = 1u << 1;
@@ -147,18 +149,23 @@ namespace Hecton8.Physics
         private Rigidbody _rigidbody;
         private Transform _cachedTransform;
         private bool _registered;
+        private bool _fluidJobRunning;
         private int _configuredCompartmentCount;
         private int _configuredBulkheadCount;
         private int _ringHead;
         private float _externalDepthMeters;
+        private float _fixedStepAccumulator;
         private float _floodFillRatio;
         private float _totalFloodVolumeCubicMeters;
         private float _reportedCenterBlendAlpha;
         private float _reportedCenterBlendFixedStep = -1f;
         private Vector3 _reportedFloodCenterOfMassLocal;
+        private Vector3 _resolvedDryInertiaTensor;
+        private Vector3 _resolvedFloodedInertiaTensor;
         private Vector3 _lastAppliedInertiaTensor;
         private Vector3 _lastSloshTorqueLocal;
         private JobHandle _disposeHandle;
+        private JobHandle _fluidJobHandle;
 
         private NativeArray<float> _compartmentFloodVolumes;
         private NativeArray<float> _compartmentMaxVolumes;
@@ -170,6 +177,143 @@ namespace Hecton8.Physics
         private NativeArray<float3> _comAccumulatorFront;
         private NativeArray<float3> _comAccumulatorBack;
         private NativeArray<float3> _angularVelocityHistoryLocal;
+        private NativeArray<float> _jobFloodVolumes;
+        private NativeArray<uint> _jobCompartmentFlags;
+
+        [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        private struct FluidTransferJob : IJob
+        {
+            [ReadOnly] public NativeArray<float> InputFloodVolumes;
+            [ReadOnly] public NativeArray<float> MaxVolumes;
+            [ReadOnly] public NativeArray<float> BreachAreas;
+            [ReadOnly] public NativeArray<uint> InputFlags;
+            [ReadOnly] public NativeArray<int2> BulkheadPairs;
+            [ReadOnly] public NativeArray<byte> BulkheadSealed;
+
+            public NativeArray<float> OutputFloodVolumes;
+            public NativeArray<uint> OutputFlags;
+
+            public int CompartmentCount;
+            public int BulkheadCount;
+            public float DepthMeters;
+            public float FixedDeltaTime;
+            public float DischargeCoefficient;
+            public float MaximumIngressPerSecondNormalized;
+            public float BulkheadFlowCoefficient;
+            public float MaxTransferPerTick;
+
+            public void Execute()
+            {
+                float safeDepth = math.max(0f, DepthMeters);
+                float ingressVelocity = math.sqrt(2f * GravityMetersPerSecondSquared * safeDepth);
+                if (!math.isfinite(ingressVelocity))
+                    ingressVelocity = 0f;
+
+                float maxIngressScale = math.max(0.01f, MaximumIngressPerSecondNormalized) * FixedDeltaTime;
+                float cd = math.clamp(DischargeCoefficient, 0.05f, 1f);
+
+                for (int i = 0; i < CompartmentCapacity; i++)
+                {
+                    if (i >= CompartmentCount)
+                    {
+                        OutputFloodVolumes[i] = 0f;
+                        OutputFlags[i] = 0u;
+                        continue;
+                    }
+
+                    float maxVolume = MaxVolumes[i];
+                    float currentVolume = InputFloodVolumes[i];
+                    uint flags = InputFlags[i] & PersistentFlagsMask;
+                    if (maxVolume <= Epsilon)
+                    {
+                        OutputFloodVolumes[i] = 0f;
+                        OutputFlags[i] = 0u;
+                        continue;
+                    }
+
+                    float breachArea = BreachAreas[i];
+                    if (breachArea > Epsilon)
+                    {
+                        flags |= FlagBreached;
+
+                        float remainingCapacity = maxVolume - currentVolume;
+                        if (remainingCapacity > Epsilon)
+                        {
+                            float deltaVolume = ingressVelocity * breachArea * cd * FixedDeltaTime;
+                            if (!math.isfinite(deltaVolume))
+                                deltaVolume = 0f;
+
+                            float maxIngressThisStep = maxVolume * maxIngressScale;
+                            deltaVolume = math.clamp(deltaVolume, 0f, math.min(remainingCapacity, maxIngressThisStep));
+                            currentVolume += deltaVolume;
+                        }
+                    }
+                    else
+                    {
+                        flags &= ~FlagBreached;
+                    }
+
+                    OutputFloodVolumes[i] = currentVolume;
+                    OutputFlags[i] = flags;
+                }
+
+                float transferCoefficient = math.max(0f, BulkheadFlowCoefficient);
+                float perTickTransferCap = math.max(0.01f, MaxTransferPerTick);
+
+                for (int i = 0; i < BulkheadCount; i++)
+                {
+                    int2 pair = BulkheadPairs[i];
+                    int compartmentA = pair.x;
+                    int compartmentB = pair.y;
+                    if (compartmentA < 0 || compartmentA >= CompartmentCount || compartmentB < 0 || compartmentB >= CompartmentCount)
+                        continue;
+
+                    if (BulkheadSealed[i] != 0)
+                    {
+                        OutputFlags[compartmentA] |= FlagSealed;
+                        OutputFlags[compartmentB] |= FlagSealed;
+                        continue;
+                    }
+
+                    float maxVolumeA = MaxVolumes[compartmentA];
+                    float maxVolumeB = MaxVolumes[compartmentB];
+                    if (maxVolumeA <= Epsilon || maxVolumeB <= Epsilon)
+                        continue;
+
+                    float fillA = OutputFloodVolumes[compartmentA] / maxVolumeA;
+                    float fillB = OutputFloodVolumes[compartmentB] / maxVolumeB;
+                    float headDifference = fillA - fillB;
+                    float deltaVolume = math.clamp(headDifference * transferCoefficient * FixedDeltaTime, -perTickTransferCap, perTickTransferCap);
+
+                    if (deltaVolume > 0f)
+                    {
+                        deltaVolume = math.min(
+                            deltaVolume,
+                            math.min(OutputFloodVolumes[compartmentA], maxVolumeB - OutputFloodVolumes[compartmentB]));
+                        if (deltaVolume <= Epsilon)
+                            continue;
+
+                        OutputFloodVolumes[compartmentA] -= deltaVolume;
+                        OutputFloodVolumes[compartmentB] += deltaVolume;
+                        OutputFlags[compartmentA] |= FlagTransferSource;
+                        OutputFlags[compartmentB] |= FlagTransferDestination;
+                    }
+                    else if (deltaVolume < 0f)
+                    {
+                        float transferMagnitude = math.min(
+                            -deltaVolume,
+                            math.min(OutputFloodVolumes[compartmentB], maxVolumeA - OutputFloodVolumes[compartmentA]));
+                        if (transferMagnitude <= Epsilon)
+                            continue;
+
+                        OutputFloodVolumes[compartmentA] += transferMagnitude;
+                        OutputFloodVolumes[compartmentB] -= transferMagnitude;
+                        OutputFlags[compartmentB] |= FlagTransferSource;
+                        OutputFlags[compartmentA] |= FlagTransferDestination;
+                    }
+                }
+            }
+        }
 
         /// <summary>Configured compartment count authored for this submarine, clamped to the supported maximum.</summary>
         public int CompartmentCount => _configuredCompartmentCount;
@@ -190,9 +334,10 @@ namespace Hecton8.Physics
         {
             CacheReferences();
             EnsureNativeState();
-            SanitizeAuthoredTensors();
+            RefreshResolvedInertiaTensors();
             SeedNativeStateFromAuthoring();
             RefreshDerivedConstants(DefaultFixedStepSeconds);
+            ResetDispatcherCadence();
             RefreshDebugState();
         }
 
@@ -200,44 +345,64 @@ namespace Hecton8.Physics
         {
             CacheReferences();
             EnsureNativeState();
-            SanitizeAuthoredTensors();
+            RefreshResolvedInertiaTensors();
             SeedNativeStateFromAuthoring();
             TryRegister();
+            ResetDispatcherCadence();
             RefreshDebugState();
         }
 
         private void OnDisable()
         {
             TryUnregister();
+            ResetDispatcherCadence();
             DisposeNativeStateDeferred();
         }
 
         private void OnDestroy()
         {
             TryUnregister();
+            ResetDispatcherCadence();
             DisposeNativeStateDeferred();
+        }
+
+        public void Tick(float deltaTime)
+        {
+            if (deltaTime <= 0f)
+                return;
+
+            _fixedStepAccumulator += deltaTime;
+            float maxAccumulator = DefaultFixedStepSeconds * MaxFixedTicksPerDispatcherTick;
+            if (_fixedStepAccumulator > maxAccumulator)
+                _fixedStepAccumulator = maxAccumulator;
+
+            int iterations = 0;
+            while (_fixedStepAccumulator >= DefaultFixedStepSeconds &&
+                   iterations < MaxFixedTicksPerDispatcherTick)
+            {
+                FixedTick(DefaultFixedStepSeconds);
+                _fixedStepAccumulator -= DefaultFixedStepSeconds;
+                iterations++;
+            }
         }
 
         /// <summary>
         /// Fixed-step fluid ingress, inter-compartment transfer, inertia interpolation, and delayed slosh torque.
         /// </summary>
-        /// <param name="fixedDeltaTime">Discrete physics step provided by GameTickManager.</param>
+        /// <param name="fixedDeltaTime">Discrete physics step accumulated through the dispatcher cadence.</param>
         public void FixedTick(float fixedDeltaTime)
         {
             if (!_compartmentFloodVolumes.IsCreated || _rigidbody == null || fixedDeltaTime <= 0f)
                 return;
 
+            ConsumeCompletedFluidTransfer();
             RefreshDerivedConstants(fixedDeltaTime);
-            ClearTransientFlags();
             SyncBulkheadSealedFlags();
-
-            float resolvedDepthMeters = ResolveExternalDepthMeters();
-            SimulateIngress(resolvedDepthMeters, fixedDeltaTime);
-            SimulateBulkheadTransfer(fixedDeltaTime);
             FinalizeCompartmentState();
             UpdateReportedFloodCenter();
             ApplyInterpolatedInertiaTensor();
             ApplyDelayedSloshTorque();
+            ScheduleFluidTransferJob(ResolveExternalDepthMeters(), fixedDeltaTime);
             RefreshDebugState();
         }
 
@@ -260,6 +425,7 @@ namespace Hecton8.Physics
             if (!IsCompartmentIndexValid(compartmentIndex) || !_compartmentBreachAreas.IsCreated)
                 return;
 
+            CompletePendingFluidTransferForAuthoritativeWrite();
             float sanitizedArea = Mathf.Max(0f, breachAreaSquareMeters);
             _compartmentBreachAreas[compartmentIndex] = sanitizedArea;
 
@@ -288,6 +454,7 @@ namespace Hecton8.Physics
             if (!_bulkheadPairs.IsCreated || !_bulkheadSealed.IsCreated)
                 return;
 
+            CompletePendingFluidTransferForAuthoritativeWrite();
             int bulkheadIndex = FindBulkheadIndex(compartmentA, compartmentB);
             if (bulkheadIndex >= 0)
             {
@@ -305,6 +472,7 @@ namespace Hecton8.Physics
             if (!IsCompartmentIndexValid(compartmentIndex) || !_compartmentFloodVolumes.IsCreated)
                 return;
 
+            CompletePendingFluidTransferForAuthoritativeWrite();
             float maxVolume = _compartmentMaxVolumes[compartmentIndex];
             _compartmentFloodVolumes[compartmentIndex] = math.saturate(fillNormalized) * maxVolume;
             FinalizeCompartmentState();
@@ -384,6 +552,10 @@ namespace Hecton8.Physics
             _comAccumulatorBack = new NativeArray<float3>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<float3>[8] — local angular-velocity slosh history — owner: SubmarineFluidDynamics
             _angularVelocityHistoryLocal = new NativeArray<float3>(RingBufferLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<float>[8] â€” Burst fluid-transfer output volumes â€” owner: SubmarineFluidDynamics
+            _jobFloodVolumes = new NativeArray<float>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<uint>[8] â€” Burst fluid-transfer output flags â€” owner: SubmarineFluidDynamics
+            _jobCompartmentFlags = new NativeArray<uint>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
         }
 
         private void SeedNativeStateFromAuthoring()
@@ -454,9 +626,20 @@ namespace Hecton8.Physics
             for (int i = 0; i < RingBufferLength; i++)
                 _angularVelocityHistoryLocal[i] = float3.zero;
 
+            for (int i = 0; i < CompartmentCapacity; i++)
+            {
+                if (_jobFloodVolumes.IsCreated)
+                    _jobFloodVolumes[i] = _compartmentFloodVolumes[i];
+
+                if (_jobCompartmentFlags.IsCreated)
+                    _jobCompartmentFlags[i] = _compartmentFlags[i];
+            }
+
             _ringHead = 0;
+            _fluidJobHandle = default;
+            _fluidJobRunning = false;
             _reportedFloodCenterOfMassLocal = dryCenterOfMassLocal;
-            _lastAppliedInertiaTensor = SanitizeTensor(dryInertiaTensor);
+            _lastAppliedInertiaTensor = _resolvedDryInertiaTensor;
             if (_rigidbody != null)
                 _rigidbody.inertiaTensor = _lastAppliedInertiaTensor;
 
@@ -466,6 +649,13 @@ namespace Hecton8.Physics
 
         private void DisposeNativeStateDeferred()
         {
+            if (_fluidJobRunning)
+            {
+                _disposeHandle = JobHandle.CombineDependencies(_disposeHandle, _fluidJobHandle);
+                _fluidJobHandle = default;
+                _fluidJobRunning = false;
+            }
+
             DisposeDeferred(ref _compartmentFloodVolumes);
             DisposeDeferred(ref _compartmentMaxVolumes);
             DisposeDeferred(ref _compartmentBreachAreas);
@@ -476,18 +666,17 @@ namespace Hecton8.Physics
             DisposeDeferred(ref _comAccumulatorFront);
             DisposeDeferred(ref _comAccumulatorBack);
             DisposeDeferred(ref _angularVelocityHistoryLocal);
+            DisposeDeferred(ref _jobFloodVolumes);
+            DisposeDeferred(ref _jobCompartmentFlags);
         }
 
         private void TryRegister()
         {
-            if (_registered)
+            if (_registered || !Application.isPlaying)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register((IFixedTickable)this);
+            SystemDispatcher.EnsureRuntimeInstance();
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _registered = true;
         }
 
@@ -496,11 +685,68 @@ namespace Hecton8.Physics
             if (!_registered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister((IFixedTickable)this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _registered = false;
+        }
+
+        private void ResetDispatcherCadence()
+        {
+            _fixedStepAccumulator = 0f;
+        }
+
+        private void CompletePendingFluidTransferForAuthoritativeWrite()
+        {
+            if (!_fluidJobRunning)
+                return;
+
+            // COLD SYNC JOB: authoritative state writes must not race a pending fluid transfer.
+            _fluidJobHandle.Complete();
+            ConsumeCompletedFluidTransfer();
+        }
+
+        private void ConsumeCompletedFluidTransfer()
+        {
+            if (!_fluidJobRunning || !_fluidJobHandle.IsCompleted)
+                return;
+
+            _fluidJobHandle.Complete();
+            _fluidJobHandle = default;
+            _fluidJobRunning = false;
+
+            for (int i = 0; i < CompartmentCapacity; i++)
+            {
+                _compartmentFloodVolumes[i] = _jobFloodVolumes[i];
+                _compartmentFlags[i] = _jobCompartmentFlags[i];
+            }
+        }
+
+        private void ScheduleFluidTransferJob(float depthMeters, float fixedDeltaTime)
+        {
+            if (_fluidJobRunning || !_jobFloodVolumes.IsCreated || !_jobCompartmentFlags.IsCreated)
+                return;
+
+            FluidTransferJob job = new FluidTransferJob
+            {
+                InputFloodVolumes = _compartmentFloodVolumes,
+                MaxVolumes = _compartmentMaxVolumes,
+                BreachAreas = _compartmentBreachAreas,
+                InputFlags = _compartmentFlags,
+                BulkheadPairs = _bulkheadPairs,
+                BulkheadSealed = _bulkheadSealed,
+                OutputFloodVolumes = _jobFloodVolumes,
+                OutputFlags = _jobCompartmentFlags,
+                CompartmentCount = _configuredCompartmentCount,
+                BulkheadCount = _configuredBulkheadCount,
+                DepthMeters = depthMeters,
+                FixedDeltaTime = fixedDeltaTime,
+                DischargeCoefficient = dischargeCoefficient,
+                MaximumIngressPerSecondNormalized = maximumIngressPerSecondNormalized,
+                BulkheadFlowCoefficient = bulkheadFlowCoefficient,
+                MaxTransferPerTick = maxTransferPerTick
+            };
+
+            _fluidJobHandle = job.Schedule();
+            _fluidJobRunning = true;
         }
 
         private void ClearTransientFlags()
@@ -700,8 +946,7 @@ namespace Hecton8.Physics
             if (_rigidbody == null)
                 return;
 
-            Vector3 tensor = Vector3.Lerp(dryInertiaTensor, fullyFloodedInertiaTensor, _floodFillRatio);
-            tensor = SanitizeTensor(tensor);
+            Vector3 tensor = Vector3.Lerp(_resolvedDryInertiaTensor, _resolvedFloodedInertiaTensor, _floodFillRatio);
             if ((_lastAppliedInertiaTensor - tensor).sqrMagnitude <= 0.000001f)
                 return;
 
@@ -741,10 +986,10 @@ namespace Hecton8.Physics
                     continue;
 
                 float fillRatio = math.saturate(currentVolume / maxVolume);
-                float freeSurfaceFactor = 1f - fillRatio;
-                freeSurfaceFactor *= freeSurfaceFactor;
+                float freesurf = 1f - fillRatio;
+                freesurf *= freesurf;
                 float sloshMass = currentVolume * WaterDensityKgPerCubicMeter;
-                totalSloshTorque += -delayedAngularVelocity * (fillRatio * math.max(0f, sloshFactor) * sloshMass * freeSurfaceFactor);
+                totalSloshTorque += -delayedAngularVelocity * (fillRatio * math.max(0f, sloshFactor) * sloshMass * freesurf);
             }
 
             float maxTorqueMagnitude = math.max(0f, maxSloshTorque);
@@ -793,10 +1038,12 @@ namespace Hecton8.Physics
             _reportedCenterBlendFixedStep = safeFixedStep;
         }
 
-        private void SanitizeAuthoredTensors()
+        private void RefreshResolvedInertiaTensors()
         {
-            dryInertiaTensor = SanitizeTensor(dryInertiaTensor);
-            fullyFloodedInertiaTensor = SanitizeTensor(fullyFloodedInertiaTensor);
+            _resolvedDryInertiaTensor = SanitizeTensor(dryInertiaTensor);
+            _resolvedFloodedInertiaTensor = SanitizeTensor(fullyFloodedInertiaTensor);
+            dryInertiaTensor = _resolvedDryInertiaTensor;
+            fullyFloodedInertiaTensor = _resolvedFloodedInertiaTensor;
         }
 
         private void RefreshDebugState()

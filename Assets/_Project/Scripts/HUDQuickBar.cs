@@ -9,6 +9,7 @@ using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Items;
 using Hecton8.Tools;
+using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -80,6 +81,7 @@ namespace Hecton8.UI
         private bool _slotVisualsDirty;
         private bool _statusDirty;
         private ToolDurabilitySystem _subscribedDurabilitySystem;
+        private readonly StringBuilder _statusBuilder = new StringBuilder(160);
         [SerializeField] private float fieldAdviceRange = 18f;
         [SerializeField] private LayerMask fieldAdviceMask = ~0;
 
@@ -528,7 +530,11 @@ namespace Hecton8.UI
                 string summary = toolManager.GetCurrentToolOperationalSummary();
                 if (_lastSummaryText != summary)
                 {
-                    _toolSummary.text = summary;
+                    _statusBuilder.Clear();
+                    if (!string.IsNullOrEmpty(summary))
+                        _statusBuilder.Append(summary);
+
+                    _toolSummary.SetText(_statusBuilder);
                     _lastSummaryText = summary;
                 }
             }
@@ -543,9 +549,14 @@ namespace Hecton8.UI
                 _lastDirectiveHasAdvice != hasAdvice ||
                 _lastDirectiveAdvicePreset != advicePreset)
             {
-                _toolDirective.text = hasAdvice
-                    ? directive + "  KIT " + advicePreset
-                    : directive;
+                _statusBuilder.Clear();
+                if (!string.IsNullOrEmpty(directive))
+                    _statusBuilder.Append(directive);
+
+                if (hasAdvice && !string.IsNullOrEmpty(advicePreset))
+                    _statusBuilder.Append("  KIT ").Append(advicePreset);
+
+                _toolDirective.SetText(_statusBuilder);
                 _lastDirectiveBase = directive;
                 _lastDirectiveHasAdvice = hasAdvice;
                 _lastDirectiveAdvicePreset = advicePreset;

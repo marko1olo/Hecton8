@@ -947,8 +947,8 @@ namespace Hecton8.World
             unchecked
             {
                 int hash = (int)request.runtimeKey;
-                hash = (hash * 397) ^ request.caveBlendMode.GetHashCode();
-                hash = (hash * 397) ^ request.archetype.GetHashCode();
+                hash = (hash * 397) ^ (int)request.caveBlendMode;
+                hash = (hash * 397) ^ (int)request.archetype;
                 hash = (hash * 397) ^ resolvedResolution;
                 hash = (hash * 397) ^ (buildCollider ? 1 : 0);
                 return hash;

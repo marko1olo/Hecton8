@@ -740,9 +740,9 @@ namespace Hecton8.World
             {
                 int hash = (int)request.RuntimeKey;
                 hash = (hash * 397) ^ request.StableHash;
-                hash = (hash * 397) ^ (request.Family != null ? request.Family.familyId.GetHashCode() : 0);
-                hash = (hash * 397) ^ (request.Profile != null ? request.Profile.profileId.GetHashCode() : 0);
-                hash = (hash * 397) ^ (resolvedComposition != null ? resolvedComposition.GetHashCode() : 0);
+                hash = (hash * 397) ^ (request.Family != null ? Hecton.Localization.LocHash.Compute(request.Family.familyId) : 0);
+                hash = (hash * 397) ^ (request.Profile != null ? Hecton.Localization.LocHash.Compute(request.Profile.profileId) : 0);
+                hash = (hash * 397) ^ Hecton.Localization.LocHash.Compute(resolvedComposition);
                 hash = (hash * 397) ^ lodCount;
                 hash = (hash * 397) ^ Mathf.RoundToInt(request.WorldScale * 100f);
                 hash = (hash * 397) ^ Mathf.RoundToInt(blendRadius * 100f);

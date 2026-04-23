@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Unity.Jobs;
 using UnityEngine;
 
 namespace Hecton8.AI
@@ -8,6 +9,11 @@ namespace Hecton8.AI
         private int _foveatedTargetIndex = -1;
         private Transform _foveatedVisualTransform;
         private AudioSource _foveatedAudioSource;
+        private FoveatedTickRate _foveatedTickRate = FoveatedTickRate.Center60Hz;
+        private float _foveatedTickIntervalSeconds = 1.0f / 60.0f;
+        private float _foveatedImportanceScore = 1.0f;
+        private bool _foveatedInsideFrustum = true;
+        private float _cognitionTimeSeconds;
 
         int IFoveatedSimulationTarget.FoveatedTargetIndex
         {
@@ -21,14 +27,23 @@ namespace Hecton8.AI
 
         AudioSource IFoveatedSimulationTarget.DopplerAudioSource => _foveatedAudioSource;
 
+        void IFoveatedSimulationTarget.OnFoveatedCadenceResolved(FoveatedTickRate tickRate, float tickIntervalSeconds, float importanceScore, bool insideFrustum)
+        {
+            _foveatedTickRate = tickRate;
+            _foveatedTickIntervalSeconds = tickIntervalSeconds > 0f ? tickIntervalSeconds : (1.0f / 60.0f);
+            _foveatedImportanceScore = importanceScore;
+            _foveatedInsideFrustum = insideFrustum;
+            _sensorSuite.SetFoveatedCadence(_foveatedTickRate, _foveatedTickIntervalSeconds, _foveatedImportanceScore, _foveatedInsideFrustum);
+        }
+
         bool IFoveatedSimulationTarget.TryBuildDeferredRaycastCommand(out RaycastCommand command)
         {
-            command = default;
-            return false;
+            return _sensorSuite.TryBuildDeferredRaycastCommand(out command);
         }
 
         void IFoveatedSimulationTarget.ConsumeDeferredRaycastHit(in RaycastHit hit)
         {
+            _sensorSuite.ConsumeDeferredRaycastHit(hit);
         }
 
         private void ResolveFoveatedBindings()

@@ -134,6 +134,8 @@ namespace Hecton8.Gameplay
 
         [Tooltip("Text component for battery display.")]
         [SerializeField] private TMPro.TMP_Text batteryText;
+        private char[] _depthHudBuffer;
+        private char[] _batteryHudBuffer;
 
         // ══════════════════════════════════════════════════════════
         //  IBatteryTool STATE
@@ -176,6 +178,8 @@ namespace Hecton8.Gameplay
         private string _localizedSummaryNoBattery = "MANTA // NO BATTERY";
         private string _localizedSummaryActiveFormat = "MANTA // ACTIVE // BAT {0}%";
         private string _localizedSummaryStandbyFormat = "MANTA // STANDBY // BAT {0}%";
+        private string[] _localizedSummaryActiveCache;
+        private string[] _localizedSummaryStandbyCache;
         private string _localizedDirectiveInsertBattery = "Insert a battery to activate propulsion.";
         private string _localizedDirectiveSwapRecharge = "Battery depleted. Swap or recharge.";
         private string _localizedDirectiveHoldForward = "Hold forward to propel. Release to coast.";
@@ -361,6 +365,8 @@ namespace Hecton8.Gameplay
             _headlightBaseIntensities = new float[MaxHeadlights]; // COLD ALLOC: float[2] â€” authored headlight intensity cache for recovery after hull-stress glitches â€” owner: MantaScooter
             _headlightBaseRanges = new float[MaxHeadlights]; // COLD ALLOC: float[2] â€” authored headlight range cache for shaft falloff publishing â€” owner: MantaScooter
             _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — power indicator emission — owner: MantaScooter
+            _depthHudBuffer = new char[16]; // COLD ALLOC: char[16] - scooter depth HUD buffer - owner: MantaScooter
+            _batteryHudBuffer = new char[8]; // COLD ALLOC: char[8] - scooter battery HUD buffer - owner: MantaScooter
             RefreshMantaLocalizationCache();
             BindTransportPresetToFeelContract();
             EnsureTransportLifecycleInitialized();
@@ -595,8 +601,8 @@ namespace Hecton8.Gameplay
                 _cachedOperationalSummary = !_hasBattery
                     ? _localizedSummaryNoBattery
                     : _isActive
-                        ? string.Format(_localizedSummaryActiveFormat, batteryPercent)
-                        : string.Format(_localizedSummaryStandbyFormat, batteryPercent);
+                        ? ResolveSummaryVariant(_localizedSummaryActiveCache, _localizedSummaryActiveFormat, batteryPercent)
+                        : ResolveSummaryVariant(_localizedSummaryStandbyCache, _localizedSummaryStandbyFormat, batteryPercent);
 
                 _lastSummaryHasBattery = _hasBattery;
                 _lastSummaryActive = _isActive;
@@ -1558,7 +1564,7 @@ namespace Hecton8.Gameplay
                 int depthTenths = Mathf.RoundToInt(_playerMovement.CurrentDepth * 10f);
                 if (depthTenths != _lastDepthTenths)
                 {
-                    depthText.SetText("{0:0.0}m", depthTenths * 0.1f);
+                    SetDepthHudText(depthTenths);
                     _lastDepthTenths = depthTenths;
                 }
             }
@@ -1569,10 +1575,77 @@ namespace Hecton8.Gameplay
                 int batteryPercent = Mathf.RoundToInt(_currentCharge * 100f);
                 if (batteryPercent != _lastBatteryPercent)
                 {
-                    batteryText.SetText("{0:0}%", batteryPercent);
+                    SetBatteryHudText(batteryPercent);
                     _lastBatteryPercent = batteryPercent;
                 }
             }
+        }
+
+        private void SetDepthHudText(int depthTenths)
+        {
+            if (depthText == null || _depthHudBuffer == null)
+                return;
+
+            int length = WriteDepthHudBuffer(_depthHudBuffer, depthTenths);
+            depthText.SetCharArray(_depthHudBuffer, 0, length);
+            depthText.UpdateVertexData(TMPro.TMP_VertexDataUpdateFlags.All);
+        }
+
+        private void SetBatteryHudText(int batteryPercent)
+        {
+            if (batteryText == null || _batteryHudBuffer == null)
+                return;
+
+            int length = WritePercentHudBuffer(_batteryHudBuffer, batteryPercent);
+            batteryText.SetCharArray(_batteryHudBuffer, 0, length);
+            batteryText.UpdateVertexData(TMPro.TMP_VertexDataUpdateFlags.All);
+        }
+
+        private static int WriteDepthHudBuffer(char[] buffer, int depthTenths)
+        {
+            int clampedTenths = Mathf.Max(0, depthTenths);
+            int wholeMeters = clampedTenths / 10;
+            int tenths = clampedTenths % 10;
+            int length = WriteUnsignedInt(buffer, 0, wholeMeters);
+            buffer[length++] = '.';
+            buffer[length++] = (char)('0' + tenths);
+            buffer[length++] = 'm';
+            return length;
+        }
+
+        private static int WritePercentHudBuffer(char[] buffer, int percent)
+        {
+            int clampedPercent = Mathf.Clamp(percent, 0, 100);
+            int length = WriteUnsignedInt(buffer, 0, clampedPercent);
+            buffer[length++] = '%';
+            return length;
+        }
+
+        private static int WriteUnsignedInt(char[] buffer, int startIndex, int value)
+        {
+            if (value <= 0)
+            {
+                buffer[startIndex] = '0';
+                return 1;
+            }
+
+            int digitCount = 0;
+            int remaining = value;
+            while (remaining > 0)
+            {
+                digitCount++;
+                remaining /= 10;
+            }
+
+            int writeIndex = startIndex + digitCount - 1;
+            int currentValue = value;
+            while (currentValue > 0)
+            {
+                buffer[writeIndex--] = (char)('0' + (currentValue % 10));
+                currentValue /= 10;
+            }
+
+            return digitCount;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1655,11 +1728,31 @@ namespace Hecton8.Gameplay
             _localizedSummaryNoBattery = ResolveMantaLocalizedLabel(LocalizationKeys.MANTA_SUMMARY_NO_BATTERY, "MANTA // NO BATTERY");
             _localizedSummaryActiveFormat = ResolveMantaLocalizedLabel(LocalizationKeys.MANTA_SUMMARY_ACTIVE, "MANTA // ACTIVE // BAT {0}%");
             _localizedSummaryStandbyFormat = ResolveMantaLocalizedLabel(LocalizationKeys.MANTA_SUMMARY_STANDBY, "MANTA // STANDBY // BAT {0}%");
+            EnsureSummaryCache(ref _localizedSummaryActiveCache, _localizedSummaryActiveFormat);
+            EnsureSummaryCache(ref _localizedSummaryStandbyCache, _localizedSummaryStandbyFormat);
             _localizedDirectiveInsertBattery = ResolveMantaLocalizedLabel(LocalizationKeys.MANTA_DIRECTIVE_INSERT_BATTERY, "Insert a battery to activate propulsion.");
             _localizedDirectiveSwapRecharge = ResolveMantaLocalizedLabel(LocalizationKeys.MANTA_DIRECTIVE_SWAP_OR_RECHARGE, "Battery depleted. Swap or recharge.");
             _localizedDirectiveHoldForward = ResolveMantaLocalizedLabel(LocalizationKeys.MANTA_DIRECTIVE_HOLD_FORWARD, "Hold forward to propel. Release to coast.");
             _localizedDirectiveHoldPrimary = ResolveMantaLocalizedLabel(LocalizationKeys.MANTA_DIRECTIVE_HOLD_PRIMARY, "Hold primary to activate propulsion while swimming.");
             _localizedTransportBrokenWarning = ResolveMantaLocalizedLabel(LocalizationKeys.MANTA_HUD_BATTERY_DEPLETED, "MANTA - DRIVE FAILURE");
+        }
+
+        private static string ResolveSummaryVariant(string[] cache, string fallbackFormat, int batteryPercent)
+        {
+            int clampedPercent = Mathf.Clamp(batteryPercent, 0, 100);
+            if (cache == null || cache.Length <= clampedPercent || string.IsNullOrEmpty(cache[clampedPercent]))
+                return string.Format(fallbackFormat, clampedPercent);
+
+            return cache[clampedPercent];
+        }
+
+        private static void EnsureSummaryCache(ref string[] cache, string format)
+        {
+            if (cache == null || cache.Length != 101)
+                cache = new string[101]; // COLD ALLOC: string[101] - localized battery summary lookup table - owner: MantaScooter
+
+            for (int percent = 0; percent <= 100; percent++)
+                cache[percent] = string.Format(format, percent);
         }
 
         private static string ResolveMantaLocalizedLabel(string key, string fallback)

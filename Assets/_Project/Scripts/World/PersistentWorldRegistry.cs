@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Hecton8.Core;
 using Hecton8.Inventory;
 using Hecton8.Interaction;
@@ -23,6 +24,40 @@ namespace Hecton8.World
         public float LocalX;
         public float LocalY;
         public float LocalZ;
+
+        /// <summary>
+        /// Converts the compact save-layout position into a 16-byte-aligned transfer payload for memcpy/blit lanes.
+        /// </summary>
+        /// <returns>Aligned AUP transfer payload.</returns>
+        public AbsoluteUniversePositionBlit128 ToAlignedBlit()
+        {
+            return new AbsoluteUniversePositionBlit128
+            {
+                GridX = GridX,
+                GridY = GridY,
+                GridZ = GridZ,
+                Local = new float4(LocalX, LocalY, LocalZ, 0f),
+                Reserved = 0UL
+            };
+        }
+
+        /// <summary>
+        /// Reconstructs the compact save-layout AUP from an aligned transfer payload.
+        /// </summary>
+        /// <param name="aligned">Aligned transfer payload.</param>
+        /// <returns>Compact AUP.</returns>
+        public static AbsoluteUniversePosition FromAlignedBlit(in AbsoluteUniversePositionBlit128 aligned)
+        {
+            return new AbsoluteUniversePosition
+            {
+                GridX = aligned.GridX,
+                GridY = aligned.GridY,
+                GridZ = aligned.GridZ,
+                LocalX = aligned.Local.x,
+                LocalY = aligned.Local.y,
+                LocalZ = aligned.Local.z
+            };
+        }
 
         public static AbsoluteUniversePosition FromRuntimePosition(Vector3 runtimePosition)
         {
@@ -82,6 +117,19 @@ namespace Hecton8.World
         }
     }
 
+    /// <summary>
+    /// 16-byte-aligned AUP transfer payload for network or memcpy lanes that require float4-friendly packing.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 16, Size = 48)]
+    internal struct AbsoluteUniversePositionBlit128
+    {
+        public long GridX;
+        public long GridY;
+        public long GridZ;
+        public float4 Local;
+        public ulong Reserved;
+    }
+
     [Flags]
     internal enum PersistentWorldItemFlags : byte
     {
@@ -89,17 +137,36 @@ namespace Hecton8.World
         Collected = 1 << 0
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 192)]
     internal struct PersistentWorldItemRecord
     {
+        private const uint QuantityMask = 0x00FFFFFFu;
+        private const int FlagsShift = 24;
+
         public AbsoluteUniversePosition Position;
         public int3 ChunkId;
         public ulong ItemPersistentIdHash;
         public FixedString128Bytes ItemPersistentId;
-        public int Quantity;
-        public PersistentWorldItemFlags Flags;
-        private byte _reserved0;
-        private ushort _reserved1;
+        private uint _packedQuantityAndFlags;
+        public uint InstanceUid;
+
+        public int Quantity
+        {
+            get => (int)(_packedQuantityAndFlags & QuantityMask);
+            set
+            {
+                uint clampedQuantity = value <= 0
+                    ? 0u
+                    : (uint)math.min(value, (int)QuantityMask);
+                _packedQuantityAndFlags = (_packedQuantityAndFlags & ~QuantityMask) | clampedQuantity;
+            }
+        }
+
+        public PersistentWorldItemFlags Flags
+        {
+            get => (PersistentWorldItemFlags)((_packedQuantityAndFlags >> FlagsShift) & 0xFFu);
+            set => _packedQuantityAndFlags = (_packedQuantityAndFlags & QuantityMask) | ((uint)value << FlagsShift);
+        }
 
         public bool IsCollected => (Flags & PersistentWorldItemFlags.Collected) != 0;
 
@@ -118,8 +185,11 @@ namespace Hecton8.World
         private const int DefaultHydrationRadius = 1;
         private const ulong FnvOffsetBasis64 = 14695981039346656037UL;
         private const ulong FnvPrime64 = 1099511628211UL;
+        private const int InstanceUidTypeShift = 24;
+        private const uint InstanceUidCounterMask = 0x00FFFFFFu;
 
         private static PersistentWorldRegistry _instance;
+        private static int _nextInstanceUidCounter;
 
         [Header("Settings")]
         [SerializeField, Min(256)]
@@ -157,6 +227,7 @@ namespace Hecton8.World
         private static void ResetStaticState()
         {
             _instance = null;
+            _nextInstanceUidCounter = 0;
         }
 
         public static PersistentWorldRegistry Instance => _instance;
@@ -255,6 +326,9 @@ namespace Hecton8.World
             if (itemData.worldPrefab == null)
                 return false;
 
+            if (!TryGenerateInstanceUid(itemData, ComputePersistentIdHash(itemData.PersistentId), out uint instanceUid))
+                return false;
+
             AbsoluteUniversePosition position = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
             int3 chunkId = AbsoluteUniversePosition.ResolveChunkId(in position, chunkSizeMeters);
             PersistentWorldItemRecord record = new PersistentWorldItemRecord
@@ -264,7 +338,8 @@ namespace Hecton8.World
                 ItemPersistentIdHash = ComputePersistentIdHash(itemData.PersistentId),
                 ItemPersistentId = new FixedString128Bytes(itemData.PersistentId),
                 Quantity = quantity,
-                Flags = PersistentWorldItemFlags.None
+                Flags = PersistentWorldItemFlags.None,
+                InstanceUid = instanceUid
             };
 
             int recordIndex = _records.Length;
@@ -331,6 +406,7 @@ namespace Hecton8.World
 
             if (loadedRecords != null)
             {
+                uint maxObservedInstanceSequence = 0u;
                 int restoreCount = Mathf.Min(loadedRecords.Length, _records.Capacity);
                 for (int i = 0; i < restoreCount; i++)
                 {
@@ -338,9 +414,18 @@ namespace Hecton8.World
                     if (record.IsCollected)
                         continue;
 
+                    if (!TryEnsureInstanceUid(ref record))
+                        continue;
+
+                    uint observedSequence = record.InstanceUid & InstanceUidCounterMask;
+                    if (observedSequence > maxObservedInstanceSequence)
+                        maxObservedInstanceSequence = observedSequence;
+
                     _records.AddNoResize(record);
                     _recordsByChunk.Add(record.ChunkId, _records.Length - 1);
                 }
+
+                RebaseInstanceUidCounter(maxObservedInstanceSequence);
             }
 
             UpdateDiagnostics();
@@ -700,6 +785,56 @@ namespace Hecton8.World
             }
 
             return hash;
+        }
+
+        private bool TryEnsureInstanceUid(ref PersistentWorldItemRecord record)
+        {
+            if (record.InstanceUid != 0u)
+                return true;
+
+            ItemData itemData = null;
+            TryResolveItemData(in record, out itemData);
+            return TryGenerateInstanceUid(itemData, record.ItemPersistentIdHash, out record.InstanceUid);
+        }
+
+        private static bool TryGenerateInstanceUid(ItemData itemData, ulong persistentIdHash, out uint instanceUid)
+        {
+            instanceUid = 0u;
+
+            uint sequence = unchecked((uint)Interlocked.Increment(ref _nextInstanceUidCounter));
+            if (sequence == 0u || sequence > InstanceUidCounterMask)
+            {
+                Debug.LogError("[PersistentWorldRegistry] Exhausted 24-bit persistent item instance UID counter.");
+                return false;
+            }
+
+            uint typeId = ResolveInstanceUidTypeId(itemData, persistentIdHash);
+            instanceUid = (typeId << InstanceUidTypeShift) | sequence;
+            return true;
+        }
+
+        private static uint ResolveInstanceUidTypeId(ItemData itemData, ulong persistentIdHash)
+        {
+            if (itemData != null)
+                return ((uint)itemData.category) & 0xFFu;
+
+            return persistentIdHash != 0UL
+                ? (uint)((persistentIdHash >> 56) & 0xFFUL)
+                : 0u;
+        }
+
+        private static void RebaseInstanceUidCounter(uint maxObservedSequence)
+        {
+            int target = (int)math.min(maxObservedSequence, InstanceUidCounterMask);
+            int snapshot = Volatile.Read(ref _nextInstanceUidCounter);
+            while (snapshot < target)
+            {
+                int prior = Interlocked.CompareExchange(ref _nextInstanceUidCounter, target, snapshot);
+                if (prior == snapshot)
+                    return;
+
+                snapshot = prior;
+            }
         }
     }
 }
