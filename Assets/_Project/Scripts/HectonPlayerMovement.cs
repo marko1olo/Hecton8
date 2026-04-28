@@ -4754,12 +4754,13 @@ namespace Hecton8.Gameplay
         private Vector3 ResolveHydrodynamicReferenceVelocity(Vector3 actualVelocity)
         {
             Vector3 safeActualVelocity = HectonPlayerMotor.SafeVelocity(actualVelocity);
-            bool useGhost = _currentLocomotionMode == PlayerLocomotionMode.ExosuitLocomotion ||
-                            (!_isWalking && _waterImmersionRatio > 0.3f);
             if (_playerMotor == null)
                 return safeActualVelocity;
 
-            return _playerMotor.ResolveHydrodynamicAddedMassVelocity(safeActualVelocity, useGhost);
+            float submersionFactor = !_isWalking
+                ? math.saturate(math.max(_smoothedImmersionRatio, _waterImmersionRatio))
+                : 0f;
+            return _playerMotor.ResolveHydrodynamicAddedMassVelocity(safeActualVelocity, submersionFactor);
         }
 
         private void ResetHydrodynamicGhostVelocity()

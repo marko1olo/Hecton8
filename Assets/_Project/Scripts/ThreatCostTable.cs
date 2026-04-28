@@ -35,6 +35,10 @@ namespace Hecton8.Systems.AI
             new ThreatCostDefinition { threatClass = EncounterThreatClass.Leviathan, tokenCost = 80f, maxSimultaneous = 1, despawnPriorityBias = 0.15f }
         };
 
+        [Header("Family Integration")]
+        [Tooltip("Optional procedural fauna families that map species ids onto encounter threat classes for director authoring and audit paths.")]
+        [SerializeField] private ProceduralFamily_Fauna[] proceduralFamilies = Array.Empty<ProceduralFamily_Fauna>();
+
         internal bool TryResolveDefinition(EncounterThreatClass threatClass, out ThreatCostDefinition definition)
         {
             if (entries != null)
@@ -53,6 +57,36 @@ namespace Hecton8.Systems.AI
             return false;
         }
 
+        internal bool TryResolveDefinitionForSpecies(
+            int speciesId,
+            out ThreatCostDefinition definition,
+            out ProceduralFaunaSpeciesDefinition speciesDefinition)
+        {
+            if (proceduralFamilies != null)
+            {
+                for (int i = 0; i < proceduralFamilies.Length; i++)
+                {
+                    ProceduralFamily_Fauna family = proceduralFamilies[i];
+                    if (family == null || !family.TryResolveSpecies(speciesId, out speciesDefinition))
+                        continue;
+
+                    if (TryResolveDefinition(speciesDefinition.threatClass, out definition))
+                    {
+                        if (speciesDefinition.despawnPriorityBias > 0f)
+                            definition.despawnPriorityBias = speciesDefinition.despawnPriorityBias;
+                        return true;
+                    }
+
+                    definition = default;
+                    return false;
+                }
+            }
+
+            definition = default;
+            speciesDefinition = default;
+            return false;
+        }
+
         private void OnValidate()
         {
             if (entries == null)
@@ -66,6 +100,9 @@ namespace Hecton8.Systems.AI
                 definition.despawnPriorityBias = Mathf.Max(0f, definition.despawnPriorityBias);
                 entries[i] = definition;
             }
+
+            if (proceduralFamilies == null)
+                proceduralFamilies = Array.Empty<ProceduralFamily_Fauna>();
         }
     }
 }

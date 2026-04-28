@@ -49,6 +49,7 @@ namespace Hecton8.UI
         private bool _isApplyingConfiguration;
         private GameLanguage _lastAppliedLanguage = (GameLanguage)(-1);
         private Vector2 _lastAppliedRectSize = new Vector2(-1f, -1f);
+        private Vector3 _baselineLocalScale = Vector3.one;
 #if UNITY_EDITOR
         private bool _isEditorValidating;
 #endif
@@ -178,7 +179,7 @@ namespace Hecton8.UI
                 if (enableRightToLeft)
                     ApplyRuntimeLocalizationLayout(targetText);
                 targetText.ForceMeshUpdate(false, false);
-                LocOverflowHandler.ApplyScale(targetText, LocOverflowHandler.ResolveUniformScale(targetText));
+                LocOverflowHandler.ApplyScale(targetText, _baselineLocalScale, LocOverflowHandler.ResolveUniformScale(targetText));
                 _lastAppliedLanguage = language;
                 _lastAppliedRectSize = rectSize;
                 _configurationDirty = false;
@@ -199,6 +200,9 @@ namespace Hecton8.UI
         {
             if (_capturedDefaults || targetText == null)
                 return;
+
+            if (targetText.rectTransform != null)
+                _baselineLocalScale = targetText.rectTransform.localScale;
 
             _capturedDefaults = true;
         }

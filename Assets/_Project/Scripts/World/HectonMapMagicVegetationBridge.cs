@@ -9573,7 +9573,10 @@ namespace Hecton8.World
             private float HeuristicCost(int nodeIndex)
             {
                 float3 node = ToFloat3(Nodes[nodeIndex]);
-                return math.distance(node, ToFloat3(Nodes[EndNode]));
+                float3 goal = ToFloat3(Nodes[EndNode]);
+                float horizontalDistance = math.length(node.xz - goal.xz);
+                float verticalPenalty = math.abs(node.y - goal.y) * 1.85f;
+                return horizontalDistance + verticalPenalty;
             }
 
             private float ResolveConduitStrength(

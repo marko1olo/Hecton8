@@ -44,7 +44,7 @@ namespace Hecton8.SaveSystem
         public double totalPlayTime;
 
         /// <summary>Текущая версия формата. Используется для миграции.</summary>
-        public const int CurrentVersion = 42; // v42: player momentum + quantized external scavenger corpse sites
+        public const int CurrentVersion = 43; // v43: inventory biological quality + state flags + timestamps
 
         // ─────────────────────── DTO Sections ────────────────────
 
@@ -368,6 +368,9 @@ namespace Hecton8.SaveSystem
         public int[] itemHashIds;
         public uint[] packedCellCoordinates;
         public ushort[] stackCounts;
+        public ushort[] itemStateFlags;
+        public ushort[] qualityMilli;
+        public uint[] lastUpdateUnixSeconds;
         public float totalWeight;
         public int gridColumns;
         public int gridRows;
@@ -384,6 +387,15 @@ namespace Hecton8.SaveSystem
 
             if (stackCounts == null || stackCounts.Length < MaxCells)
                 stackCounts = new ushort[MaxCells];
+
+            if (itemStateFlags == null || itemStateFlags.Length < MaxCells)
+                itemStateFlags = new ushort[MaxCells];
+
+            if (qualityMilli == null || qualityMilli.Length < MaxCells)
+                qualityMilli = new ushort[MaxCells];
+
+            if (lastUpdateUnixSeconds == null || lastUpdateUnixSeconds.Length < MaxCells)
+                lastUpdateUnixSeconds = new uint[MaxCells];
         }
 
         public static uint PackCellCoordinate(int x, int y)

@@ -308,6 +308,8 @@ namespace Hecton8.AI
             ApplyCognitionEvaluation(in utilityEvaluation);
             ApplyVoxelPathGuidance(selfPosition, utilityEvaluation.LegacyState);
             UpdateProceduralStrikeIntent(utilityEvaluation.LegacyState, attackTarget);
+            UpdateProceduralHeadLookIntent();
+            EmitLeviathanThreatPulse(in utilityEvaluation);
             if (utilityEvaluation.ShouldAttack && attackTarget != null)
             {
                 HandleAttackPerform(attackTarget);
@@ -667,6 +669,42 @@ namespace Hecton8.AI
 
             float strikeRange = _speciesProfile != null ? _speciesProfile.attackRadius : math.max(1f, _stateMachine.attackRadius);
             _proceduralLeviathanSpineIk.SetStrikeIntent(null, strikeRange, false);
+            _proceduralLeviathanSpineIk.SetHeadLookTarget(default, false);
+        }
+
+        private void UpdateProceduralHeadLookIntent()
+        {
+            if (_proceduralLeviathanSpineIk == null)
+                return;
+
+            bool hasPlayerTarget = _sensorSuite.TryGetPerceivedPlayerPosition(out Vector3 playerPosition) && !_isDead;
+            _proceduralLeviathanSpineIk.SetHeadLookTarget(playerPosition, hasPlayerTarget);
+        }
+
+        private void EmitLeviathanThreatPulse(in CreatureUtilityEvaluation evaluation)
+        {
+            if (!evaluation.EmitThreatPulse ||
+                _isDead ||
+                !ShouldUseProceduralLeviathanPresentation())
+            {
+                return;
+            }
+
+            SargassumMicroFaunaBoids boidSystem = SargassumMicroFaunaBoids.ActiveRuntimeInstance;
+            if (boidSystem == null)
+                return;
+
+            Vector3 pulseDirection = _rb != null && _rb.linearVelocity.sqrMagnitude > 0.0001f
+                ? _rb.linearVelocity.normalized
+                : transform.forward;
+            if (pulseDirection.sqrMagnitude <= 0.0001f)
+                pulseDirection = Vector3.forward;
+
+            boidSystem.RegisterLeviathanThreatPulse(
+                transform.position,
+                pulseDirection,
+                40f,
+                0.4f);
         }
 
         private bool ShouldUseProceduralLeviathanPresentation()

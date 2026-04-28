@@ -28,12 +28,13 @@ namespace Hecton8.AI
             [WriteOnly] public NativeArray<quaternion> SolvedWorldRotations;
             [NativeDisableParallelForRestriction] public NativeArray<quaternion> SolvedHeadWorldRotations;
             [NativeDisableParallelForRestriction] public NativeArray<float> JawOpenRadians;
-            public float3 ControlTail;
-            public float3 ControlMidA;
-            public float3 ControlMidB;
-            public float3 ControlHead;
+            public float3 HistoryTail;
+            public float3 HistoryMidA;
+            public float3 HistoryMidB;
+            public float3 HistoryHead;
             public float3 HeadForward;
             public float3 WorldUp;
+            public float3 HeadLookTargetPosition;
             public float3 StrikeTargetPosition;
             public float PhaseTime;
             public float SpeedNormalized;
@@ -41,6 +42,8 @@ namespace Hecton8.AI
             public float AmplitudeRadians;
             public float VerticalAmplitudeScale;
             public float Frequency;
+            public float HeadLookBlend;
+            public float HeadLookClampRadians;
             public float StrikeBlend;
             public float StrikeDistanceNormalized;
             public float StrikeLeadWeight;
@@ -48,17 +51,37 @@ namespace Hecton8.AI
             public float JawOscillationFrequency;
             public int LastBoneIndex;
 
+            private static float3 ClampDirectionToCone(float3 baseDirection, float3 desiredDirection, float maxRadians, float3 fallbackAxis)
+            {
+                float3 safeBase = ContextualPhysicalIkMath.SafeNormalize(baseDirection, new float3(0f, 0f, 1f));
+                float3 safeDesired = ContextualPhysicalIkMath.SafeNormalize(desiredDirection, safeBase);
+                float clampedDot = math.clamp(math.dot(safeBase, safeDesired), -1f, 1f);
+                float angle = math.acos(clampedDot);
+                if (angle <= maxRadians || angle <= 0.0001f)
+                    return safeDesired;
+
+                float3 axis = ContextualPhysicalIkMath.SafeNormalize(math.cross(safeBase, safeDesired), fallbackAxis);
+                if (math.lengthsq(axis) <= 0.0001f)
+                    return safeBase;
+
+                quaternion clampRotation = quaternion.AxisAngle(axis, maxRadians);
+                return ContextualPhysicalIkMath.SafeNormalize(math.rotate(clampRotation, safeBase), safeBase);
+            }
+
             public void Execute(int index, TransformAccess transform)
             {
                 if (!transform.isValid)
                     return;
 
                 float normalizedT = math.saturate(NormalizedBoneT[index]);
-                float segmentT = normalizedT <= 0.5f ? normalizedT * 2f : (normalizedT - 0.5f) * 2f;
                 float3 fallbackForward = ContextualPhysicalIkMath.SafeNormalize(HeadForward, new float3(0f, 0f, 1f));
-                float3 curveTangent = normalizedT <= 0.5f
-                    ? ContextualPhysicalIkMath.CatmullRomTangent(ControlTail, ControlTail, ControlMidA, ControlMidB, segmentT, fallbackForward)
-                    : ContextualPhysicalIkMath.CatmullRomTangent(ControlTail, ControlMidA, ControlMidB, ControlHead, segmentT, fallbackForward);
+                float inverseLastBone = math.rcp((float)math.max(1, LastBoneIndex));
+                float nextT = math.saturate(normalizedT + inverseLastBone);
+                float3 currentSplinePosition = ContextualPhysicalIkMath.CatmullRom(HistoryTail, HistoryMidA, HistoryMidB, HistoryHead, normalizedT);
+                float3 nextSplinePosition = ContextualPhysicalIkMath.CatmullRom(HistoryTail, HistoryMidA, HistoryMidB, HistoryHead, nextT);
+                float3 curveTangent = ContextualPhysicalIkMath.SafeNormalize(
+                    nextSplinePosition - currentSplinePosition,
+                    ContextualPhysicalIkMath.CatmullRomTangent(HistoryTail, HistoryMidA, HistoryMidB, HistoryHead, normalizedT, fallbackForward));
 
                 float3 safeTangent = ContextualPhysicalIkMath.SafeNormalize(curveTangent, fallbackForward);
                 float3 side = ContextualPhysicalIkMath.SafeNormalize(math.cross(WorldUp, safeTangent), new float3(1f, 0f, 0f));
@@ -78,6 +101,21 @@ namespace Hecton8.AI
                 if (index == LastBoneIndex)
                 {
                     float strikeBlend = math.saturate(StrikeBlend);
+                    float headLookBlend = math.saturate(HeadLookBlend) * (1f - strikeBlend);
+                    if (headLookBlend > 0f)
+                    {
+                        float3 unclampedHeadLookDirection = ContextualPhysicalIkMath.SafeNormalize(
+                            HeadLookTargetPosition - (float3)transform.position,
+                            safeTangent);
+                        float3 clampedHeadLookDirection = ClampDirectionToCone(
+                            safeTangent,
+                            unclampedHeadLookDirection,
+                            math.max(0f, HeadLookClampRadians),
+                            up);
+                        quaternion headLookRotation = quaternion.LookRotationSafe(clampedHeadLookDirection, up);
+                        targetRotation = math.slerp(targetRotation, headLookRotation, headLookBlend);
+                    }
+
                     float3 strikeDirection = ContextualPhysicalIkMath.SafeNormalize(
                         StrikeTargetPosition - (float3)transform.position,
                         safeTangent);
@@ -127,7 +165,9 @@ namespace Hecton8.AI
         [SerializeField, Min(0f)] private float strikeLeadSeconds = 0.3f;
         [SerializeField, Min(0.1f)] private float strikeResponseSharpness = 11f;
         [SerializeField, Min(0.1f)] private float strikeRecoverySeconds = 1.5f;
+        [SerializeField, Min(0.1f)] private float headLookResponseSharpness = 8f;
         [SerializeField, Range(0f, 1f)] private float strikeHeadBlend = 0.85f;
+        [SerializeField, Range(0f, 89f)] private float headLookClampDegrees = 60f;
         [SerializeField] private Vector3 jawLocalOpenAxis = Vector3.right;
 
         private FaunaBrain _faunaBrain;
@@ -143,10 +183,12 @@ namespace Hecton8.AI
         private float3 _midPointB;
         private float3 _headPoint;
         private float3 _lastResolvedHeadPosition;
+        private float3 _headLookTargetWorldPosition;
         private float3 _strikeTargetWorldPosition;
         private float3 _strikeRecoveryTargetWorldPosition;
         private float3 _smoothedTravelDirection;
         private float _phaseTime;
+        private float _headLookBlend;
         private float _strikeBlend;
         private float _strikeRange = 1f;
         private float _strikeRecoveryTimeRemaining;
@@ -161,6 +203,7 @@ namespace Hecton8.AI
         private NativeArray<float> _jawOpenRadians;
         private quaternion _jawBindLocalRotation;
         private Transform _strikeTarget;
+        private bool _headLookTargetActive;
         private bool _wasStrikeActiveLastTick;
         // COLD ALLOC: List<SkinnedMeshRenderer>[8] â€“ skeletal root discovery scratch buffer for leviathan presentation binding â€“ owner: ProceduralLeviathanSpineIK
         private readonly List<SkinnedMeshRenderer> _rendererScratch = new List<SkinnedMeshRenderer>(8);
@@ -248,6 +291,12 @@ namespace Hecton8.AI
             }
         }
 
+        internal void SetHeadLookTarget(Vector3 worldPosition, bool active)
+        {
+            _headLookTargetWorldPosition = worldPosition;
+            _headLookTargetActive = active;
+        }
+
         public void Tick(float deltaTime)
         {
             if (deltaTime <= 0f || _faunaBrain == null || _vertebraAccessArray.length <= 0)
@@ -273,16 +322,20 @@ namespace Hecton8.AI
                 velocityDirection);
             float3 headLead = headPosition + _smoothedTravelDirection * (math.length(velocity) * safeLookAhead);
             float smoothAlpha = ContextualPhysicalIkMath.SmoothAlpha(splineResponseSharpness, deltaTime);
-            _headPoint = math.lerp(_headPoint, headLead, smoothAlpha);
-            _midPointB = math.lerp(_midPointB, headLead - _smoothedTravelDirection * safeSpacing, smoothAlpha);
-            _midPointA = math.lerp(_midPointA, headLead - _smoothedTravelDirection * safeSpacing * 2f, smoothAlpha);
-            _tailPoint = math.lerp(_tailPoint, headLead - _smoothedTravelDirection * safeSpacing * 3f, smoothAlpha);
+            _headPoint = math.lerp(_headPoint, headPosition, smoothAlpha);
+            _midPointB = math.lerp(_midPointB, _headPoint, smoothAlpha);
+            _midPointA = math.lerp(_midPointA, _midPointB, smoothAlpha);
+            _tailPoint = math.lerp(_tailPoint, _midPointA, smoothAlpha);
             _lastResolvedHeadPosition = headPosition;
             _phaseTime += deltaTime;
             float amplitudeDamping = math.lerp(1f, math.saturate(reverseTurnAmplitudeScale), reversal01);
+            float headLookBlendTarget = _headLookTargetActive ? 1f : 0f;
+            float headLookBlendAlpha = ContextualPhysicalIkMath.SmoothAlpha(headLookResponseSharpness, deltaTime);
+            _headLookBlend = math.lerp(_headLookBlend, headLookBlendTarget, headLookBlendAlpha);
             float strikeBlendTarget = _strikeTarget != null ? 1f : 0f;
             float strikeBlendAlpha = ContextualPhysicalIkMath.SmoothAlpha(strikeResponseSharpness, deltaTime);
             _strikeBlend = math.lerp(_strikeBlend, strikeBlendTarget, strikeBlendAlpha);
+            float3 resolvedHeadLookTarget = _headLookTargetActive ? _headLookTargetWorldPosition : headLead;
             float3 resolvedStrikeTargetPosition = headLead;
             float strikeDistanceNormalized = 0f;
             float effectiveStrikeBlend = _strikeBlend;
@@ -322,6 +375,7 @@ namespace Hecton8.AI
             }
 
             _strikeTargetWorldPosition = math.lerp(_strikeTargetWorldPosition, resolvedStrikeTargetPosition, strikeBlendAlpha);
+            _headLookTargetWorldPosition = math.lerp(_headLookTargetWorldPosition, resolvedHeadLookTarget, headLookBlendAlpha);
 
             SolveSpineJob job = new SolveSpineJob
             {
@@ -330,12 +384,13 @@ namespace Hecton8.AI
                 SolvedWorldRotations = _solvedWorldRotations,
                 SolvedHeadWorldRotations = _solvedHeadWorldRotations,
                 JawOpenRadians = _jawOpenRadians,
-                ControlTail = _tailPoint,
-                ControlMidA = _midPointA,
-                ControlMidB = _midPointB,
-                ControlHead = _headPoint,
+                HistoryTail = _tailPoint,
+                HistoryMidA = _midPointA,
+                HistoryMidB = _midPointB,
+                HistoryHead = _headPoint,
                 HeadForward = headForward,
                 WorldUp = ContextualPhysicalIkMath.SafeNormalize((float3)worldUpAxis, new float3(0f, 1f, 0f)),
+                HeadLookTargetPosition = _headLookTargetWorldPosition,
                 StrikeTargetPosition = _strikeTargetWorldPosition,
                 PhaseTime = _phaseTime,
                 SpeedNormalized = speedNormalized,
@@ -343,6 +398,8 @@ namespace Hecton8.AI
                 AmplitudeRadians = math.radians(math.max(0f, undulationAmplitudeDegrees)) * amplitudeDamping,
                 VerticalAmplitudeScale = math.saturate(verticalAmplitudeScale),
                 Frequency = math.max(0f, undulationFrequency),
+                HeadLookBlend = _headLookBlend,
+                HeadLookClampRadians = math.radians(math.clamp(headLookClampDegrees, 0f, 89f)),
                 StrikeBlend = effectiveStrikeBlend,
                 StrikeDistanceNormalized = strikeDistanceNormalized,
                 StrikeLeadWeight = math.saturate(strikeHeadBlend),
@@ -364,7 +421,9 @@ namespace Hecton8.AI
             _midPointB += shiftOffset;
             _headPoint += shiftOffset;
             _lastResolvedHeadPosition += shiftOffset;
+            _headLookTargetWorldPosition += shiftOffset;
             _strikeTargetWorldPosition += shiftOffset;
+            _strikeRecoveryTargetWorldPosition += shiftOffset;
         }
 
         private void TryRegister()
@@ -676,13 +735,16 @@ namespace Hecton8.AI
             _midPointA = headPosition - headForward * safeSpacing * 2f;
             _tailPoint = headPosition - headForward * safeSpacing * 3f;
             _lastResolvedHeadPosition = headPosition;
+            _headLookTargetWorldPosition = headPosition + (headForward * safeSpacing);
             _strikeTargetWorldPosition = headPosition + (headForward * safeSpacing);
             _strikeRecoveryTargetWorldPosition = _strikeTargetWorldPosition;
             _smoothedTravelDirection = ContextualPhysicalIkMath.SafeNormalize(headForward, new float3(0f, 0f, 1f));
             _phaseTime = 0f;
+            _headLookBlend = 0f;
             _strikeBlend = 0f;
             _strikeRecoveryTimeRemaining = 0f;
             _strikeRecoveryDistanceNormalized = 0f;
+            _headLookTargetActive = false;
             _wasStrikeActiveLastTick = false;
             if (_jawOpenRadians.IsCreated)
                 _jawOpenRadians[0] = 0f;

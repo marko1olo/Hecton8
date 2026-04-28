@@ -32,8 +32,7 @@ namespace Hecton8.Gameplay
         private const int MaxSlideSweepIterations = 2;
         private const int ScheduledSweepCommandCount = 1;
         private const int ScheduledSweepMaxHits = 8;
-        private const float HydrodynamicGhostBlendOld = 0.15f;
-        private const float HydrodynamicGhostBlendNew = 0.85f;
+        private const float MaxHydrodynamicGhostBlend = 0.15f;
 
         private static readonly ProfilerMarker _scheduledSweepProfilerMarker = new ProfilerMarker("H8.PlayerMotor.CapsuleSweep.Schedule");
         private static readonly ProfilerMarker _scheduledSweepConsumeProfilerMarker = new ProfilerMarker("H8.PlayerMotor.CapsuleSweep.Consume");
@@ -406,12 +405,14 @@ namespace Hecton8.Gameplay
 
         /// <summary>
         /// Returns a hydrodynamically weighted perceived velocity using a 3-frame inertial ghost.
-        /// 85% comes from the current velocity and 15% from the oldest retained snapshot.
+        /// Ghost contribution scales with the requested submersion factor so dry-space KCC sweeps stay immediate.
         /// </summary>
-        public Vector3 ResolveHydrodynamicAddedMassVelocity(Vector3 actualVelocity, bool enableGhost)
+        public Vector3 ResolveHydrodynamicAddedMassVelocity(Vector3 actualVelocity, float submersionFactor)
         {
             Vector3 safeActualVelocity = SafeVelocity(actualVelocity);
-            if (!enableGhost)
+            float clampedSubmersionFactor = math.saturate(submersionFactor);
+            float ghostBlend = MaxHydrodynamicGhostBlend * clampedSubmersionFactor;
+            if (ghostBlend <= 0.0001f)
             {
                 ResetHydrodynamicAddedMassState();
                 return safeActualVelocity;
@@ -424,9 +425,7 @@ namespace Hecton8.Gameplay
                     return safeActualVelocity;
 
                 Vector3 oldestVelocity = _hydrodynamicGhostVelocityHistory[_hydrodynamicGhostWriteIndex];
-                Vector3 perceivedVelocity =
-                    (safeActualVelocity * HydrodynamicGhostBlendNew) +
-                    (oldestVelocity * HydrodynamicGhostBlendOld);
+                Vector3 perceivedVelocity = Vector3.Lerp(safeActualVelocity, oldestVelocity, ghostBlend);
                 return SafeVelocity(perceivedVelocity, safeActualVelocity);
             }
         }

@@ -61,7 +61,7 @@ struct MassiveThreatData
     float Strength;
     float EndTime;
     float3 DirectionWS;
-    float Padding;
+    uint ThreatFlags;
 };
 
 StructuredBuffer<BoidData> _BoidsBufferRead;
@@ -238,6 +238,7 @@ StructuredBuffer<SargassumSimulationFrameData> _SargassumSimulationFrame;
 #define _FragmentationWeight (_SargassumSimulationFrame[0].Ecosystem0.x)
 #define _SonarScatterStrength (_SargassumSimulationFrame[0].Ecosystem0.y)
 #define _SonarScatterBandWidth (_SargassumSimulationFrame[0].Ecosystem0.z)
+#define MASSIVE_THREAT_FLAG_LEVIATHAN_HUNT_PULSE 1u
 #define _SonarScatterAcceleration (_SargassumSimulationFrame[0].Ecosystem0.w)
 #define _FragmentationCenterAWS (_SargassumSimulationFrame[0].Fragmentation0.xyz)
 #define _FragmentationStrength (_SargassumSimulationFrame[0].Fragmentation0.w)
@@ -1238,6 +1239,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     float threatGridPanic = SampleThreatGridAtWorldPosition(positionWS);
     float2 threatGridGradient = ComputeThreatGridGradientAtWorldPosition(positionWS);
     float panicFromMassive = 0.0;
+    float leviathanHuntPulse = 0.0;
     float panicFromSonar = 0.0;
     float3 bloomImpulse = float3(0.0, 0.0, 0.0);
     float3 collapseImpulse = float3(0.0, 0.0, 0.0);
@@ -1282,6 +1284,16 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         float threatPanic = threatGate * threat.Strength;
         panicFromMassive = max(panicFromMassive, threatPanic);
         fleeFromMassive += SafeNormalize(awayFromThreat) * threatPanic;
+        bool isLeviathanHuntPulse = (threat.ThreatFlags & MASSIVE_THREAT_FLAG_LEVIATHAN_HUNT_PULSE) != 0u;
+        if (isLeviathanHuntPulse)
+        {
+            float distanceSqToThreat = dot(positionWS - threat.Position, positionWS - threat.Position);
+            float fleeGate = saturate(1.0 - (distanceSqToThreat / 1600.0));
+            leviathanHuntPulse = max(leviathanHuntPulse, fleeGate * threat.Strength);
+            stateFlags = distanceSqToThreat < 1600.0 ? BuildFleeStateFlags() : stateFlags;
+            continue;
+        }
+
         float3 threatDirection = SafeNormalize(threat.DirectionWS);
         if (dot(threatDirection, threatDirection) > EPSILON)
         {
@@ -1313,9 +1325,9 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         }
     }
 
-    float sourcePanic = saturate(max(panic, max(max(max(max(panicFromCut, panicFromPlayer), panicFromMassive), panicFromSonar), threatGridPanic)));
+    float sourcePanic = saturate(max(panic, max(max(max(max(max(panicFromCut, panicFromPlayer), panicFromMassive), panicFromSonar), threatGridPanic), leviathanHuntPulse)));
     panic = saturate(sourcePanic + panicContagion);
-    stateFlags = panic >= 0.05 ? BuildFleeStateFlags() : BuildAliveStateFlags();
+    stateFlags = max(panic, leviathanHuntPulse) >= 0.05 ? BuildFleeStateFlags() : BuildAliveStateFlags();
 
     if (consumedByLeviathan)
     {
@@ -1344,10 +1356,13 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         acceleration += sonarScatterDirectionWS * (_SonarScatterAcceleration * panicFromSonar);
     }
 
+    bool fleeState = IsFleeState(stateFlags);
+    float separationWeight = _SeparationWeight * (fleeState ? 2.0 : 1.0);
+    float fleeMaxSpeedMultiplier = fleeState ? 2.0 : 1.0;
     if (separationCount > 0.0)
     {
         float3 separationForce = SafeNormalize(separationSum / separationCount);
-        acceleration += separationForce * _SeparationWeight;
+        acceleration += separationForce * separationWeight;
     }
 
     if (neighbourCount > 0.0)
@@ -1728,7 +1743,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     float targetMinSpeed = max(0.02, _CruiseSpeed * 0.55 * grazingRestSpeedScale);
     float calmSpeedScale = grazingWeightSum > 0.0 ? lerp(0.82, _GrazingRestSpeedScale, feedingHold) : 1.0;
     float targetCruiseSpeed = _CruiseSpeed * lerp(calmSpeedScale, 1.0, saturate(panic * 2.0));
-    float targetMaxSpeed = min(_MaxSpeed, targetCruiseSpeed + panic * _PanicSpeedBoost);
+    float targetMaxSpeed = min(_MaxSpeed * fleeMaxSpeedMultiplier, (targetCruiseSpeed + panic * _PanicSpeedBoost) * fleeMaxSpeedMultiplier);
     float speed = length(velocity);
     if (speed <= EPSILON)
     {
@@ -1741,7 +1756,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         velocity = velocity * (clampedSpeed / speed);
     }
 
-    float hardMaxBoidVelocity = max(_MaxBoidVelocity, targetMinSpeed);
+    float hardMaxBoidVelocity = max(_MaxBoidVelocity * fleeMaxSpeedMultiplier, targetMinSpeed);
     float hardClampedSpeed = length(velocity);
     if (hardClampedSpeed > hardMaxBoidVelocity)
     {

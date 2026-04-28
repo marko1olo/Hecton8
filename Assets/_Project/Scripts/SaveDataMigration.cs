@@ -141,7 +141,13 @@ namespace Hecton8.SaveSystem
                 dto.packedCellCoordinates == null ||
                 dto.packedCellCoordinates.Length < InventoryDTO.MaxCells ||
                 dto.stackCounts == null ||
-                dto.stackCounts.Length < InventoryDTO.MaxCells)
+                dto.stackCounts.Length < InventoryDTO.MaxCells ||
+                dto.itemStateFlags == null ||
+                dto.itemStateFlags.Length < InventoryDTO.MaxCells ||
+                dto.qualityMilli == null ||
+                dto.qualityMilli.Length < InventoryDTO.MaxCells ||
+                dto.lastUpdateUnixSeconds == null ||
+                dto.lastUpdateUnixSeconds.Length < InventoryDTO.MaxCells)
             {
                 dto.EnsureCapacity();
                 changed = true;
@@ -163,11 +169,17 @@ namespace Hecton8.SaveSystem
 
             for (int i = 0; i < dto.cellCount; i++)
             {
-                if (dto.stackCounts[i] > 0)
-                    continue;
+                if (dto.stackCounts[i] <= 0)
+                {
+                    dto.stackCounts[i] = 1;
+                    changed = true;
+                }
 
-                dto.stackCounts[i] = 1;
-                changed = true;
+                if (dto.qualityMilli[i] <= 0)
+                {
+                    dto.qualityMilli[i] = 1000;
+                    changed = true;
+                }
             }
 
             return changed;

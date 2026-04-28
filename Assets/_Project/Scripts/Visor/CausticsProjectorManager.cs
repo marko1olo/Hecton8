@@ -179,6 +179,9 @@ namespace Hecton8.Visor
 
             Shader.SetGlobalTexture(_CausticsTextureId, _causticsTexture);
             Shader.SetGlobalVector(_CausticsWorldRectId, _worldRect);
+            Shader.SetGlobalVector(_CausticsSimulationParamsAId, new Vector4(primaryCellDensity, secondaryCellDensity, primaryScrollSpeed, secondaryScrollSpeed));
+            Shader.SetGlobalVector(_CausticsSimulationParamsBId, new Vector4(ridgeSharpness, secondaryLayerWeight, timeValue, waterLevel));
+            Shader.SetGlobalVector(_CausticsSimulationParamsCId, waveCoupling);
             Shader.SetGlobalVector(
                 _CausticsParamsId,
                 new Vector4(

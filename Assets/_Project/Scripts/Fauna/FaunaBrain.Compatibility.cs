@@ -220,7 +220,8 @@ namespace Hecton8.AI
             float forceMultiplier,
             float speedMultiplier,
             float turnMultiplier,
-            bool shouldAttack)
+            bool shouldAttack,
+            bool emitThreatPulse)
         {
             DesiredDirection = desiredDirection;
             StateMask = stateMask;
@@ -232,6 +233,7 @@ namespace Hecton8.AI
             SpeedMultiplier = speedMultiplier;
             TurnMultiplier = turnMultiplier;
             ShouldAttack = shouldAttack;
+            EmitThreatPulse = emitThreatPulse;
         }
 
         public Vector3 DesiredDirection { get; }
@@ -244,6 +246,7 @@ namespace Hecton8.AI
         public float SpeedMultiplier { get; }
         public float TurnMultiplier { get; }
         public bool ShouldAttack { get; }
+        public bool EmitThreatPulse { get; }
     }
 
     /// <summary>
@@ -641,7 +644,8 @@ namespace Hecton8.AI
                 output.ForceMultiplier,
                 output.SpeedMultiplier,
                 output.TurnMultiplier,
-                output.ShouldAttack != 0);
+                output.ShouldAttack != 0,
+                output.EmitThreatPulse != 0);
         }
 
         public void Dispose()

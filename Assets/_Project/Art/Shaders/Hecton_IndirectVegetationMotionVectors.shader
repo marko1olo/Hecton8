@@ -39,6 +39,7 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
             #define HECTON_MAX_INTERACTION_POINTS 12
 
             CBUFFER_START(UnityPerMaterial)
+                float _Opacity;
                 float _HectonLodPassMode;
                 float _HectonImpostorWidth;
                 float _HectonImpostorHeight;
@@ -135,6 +136,28 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
             float Hash21(float2 value)
             {
                 return frac(sin(dot(value, float2(12.9898, 78.233))) * 43758.5453);
+            }
+
+            float ResolveBayer4x4(float2 pixel)
+            {
+                float2 cell = fmod(pixel, 4.0);
+                return (
+                    (cell.x < 0.5 && cell.y < 0.5) ? 0.0 :
+                    (cell.x < 1.5 && cell.y < 0.5) ? 8.0 :
+                    (cell.x < 2.5 && cell.y < 0.5) ? 2.0 :
+                    (cell.y < 0.5) ? 10.0 :
+                    (cell.x < 0.5 && cell.y < 1.5) ? 12.0 :
+                    (cell.x < 1.5 && cell.y < 1.5) ? 4.0 :
+                    (cell.x < 2.5 && cell.y < 1.5) ? 14.0 :
+                    (cell.y < 1.5) ? 6.0 :
+                    (cell.x < 0.5 && cell.y < 2.5) ? 3.0 :
+                    (cell.x < 1.5 && cell.y < 2.5) ? 11.0 :
+                    (cell.x < 2.5 && cell.y < 2.5) ? 1.0 :
+                    (cell.y < 2.5) ? 9.0 :
+                    (cell.x < 0.5) ? 15.0 :
+                    (cell.x < 1.5) ? 7.0 :
+                    (cell.x < 2.5) ? 13.0 :
+                    5.0) / 16.0;
             }
 
             float2 SampleMarineSnowFlowFieldXZ(float3 positionWS)
@@ -450,6 +473,9 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
                     half porousCoverage = ResolveSargassumMotionCoverage(input.positionWS, heightMask);
                     clip(porousCoverage - 0.16h);
                 }
+
+                half coverage = saturate(_Opacity);
+                clip(coverage - ResolveBayer4x4(floor(input.positionCS.xy)));
 
                 return float4(CalcNdcMotionVectorFromCsPositions(input.positionCSNoJitter, input.previousPositionCSNoJitter), 0, 0);
             }

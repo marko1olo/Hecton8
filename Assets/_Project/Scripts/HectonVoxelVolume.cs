@@ -52,6 +52,7 @@ namespace Hecton8.Caves
         private const int MaxPlasmaCutSteps = 24;
         private const int MaxQueuedRebuildPassesPerKick = 4;
         private const float MinPlasmaCutPower = 0.02f;
+        private const float PlasmaCutAttenuationPerMeter = 1f;
         private const byte DefaultDeltaMaterialId = 0;
 
         private HectonVoxelEngine _engine;
@@ -536,7 +537,7 @@ namespace Hecton8.Caves
             if (!CaveRuntimeBoundsUtility.TryResolveLocalVolumeBounds(this, preset, out Bounds localBounds))
                 return false;
 
-            float clampedPower = Mathf.Clamp01(normalizedPower);
+            float clampedPower = math.saturate(normalizedPower);
             if (clampedPower < MinPlasmaCutPower)
                 return false;
 
@@ -577,9 +578,9 @@ namespace Hecton8.Caves
                 ResolveDeltaDistance(dir.z, _voxelSize));
 
             float travel = 0f;
-            float maxTravel = Mathf.Max(_voxelSize, Mathf.Min(maxDistance, _voxelSize * MaxPlasmaCutSteps));
+            float maxTravel = math.max(_voxelSize, math.min(maxDistance, _voxelSize * MaxPlasmaCutSteps));
             float remainingPower = clampedPower;
-            float stampRadius = Mathf.Max(_voxelSize * 0.6f, _voxelSize * Mathf.Lerp(0.75f, 1.1f, clampedPower));
+            float stampRadius = math.max(_voxelSize * 0.6f, _voxelSize * math.lerp(0.75f, 1.1f, clampedPower));
             Vector3 committedOffset = HectonFloatingOrigin.CurrentTotalOffset;
             bool modified = false;
 
@@ -609,8 +610,8 @@ namespace Hecton8.Caves
 
                 float nextTravel;
                 int axis = ResolveMarchAxis(tMax, out nextTravel);
-                float segmentLength = Mathf.Max(_voxelSize * 0.25f, nextTravel - travel);
-                remainingPower *= Mathf.Exp(-segmentLength);
+                float segmentLength = math.max(_voxelSize * 0.25f, nextTravel - travel);
+                remainingPower *= math.exp(-segmentLength * PlasmaCutAttenuationPerMeter);
                 travel = nextTravel;
                 if (travel > maxTravel)
                     break;

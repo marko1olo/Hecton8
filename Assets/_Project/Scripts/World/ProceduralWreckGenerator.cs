@@ -313,7 +313,7 @@ namespace Hecton8.World
     }
 
     [BurstCompile(FloatMode = FloatMode.Fast)]
-    internal struct CopyModuleMeshJob : IJob
+    internal struct CombineMeshDataJob : IJob
     {
         [ReadOnly] public Mesh.MeshData SourceMeshData;
         [NativeDisableParallelForRestriction] public NativeArray<WreckMergedVertex> DestinationVertices;
@@ -910,6 +910,7 @@ namespace Hecton8.World
             BuildPlacements(cellCount, seed);
             BuildDamageDecalStamps(seed);
             Mesh damageDecalMesh = BuildDamageDecalMesh();
+            Mesh combinedMesh = BuildMergedMesh(_allPlacements);
             Mesh proxyMesh = BuildProxyMesh();
 
             Bounds localBounds = CalculateLocalBounds(_allPlacements);
@@ -934,7 +935,7 @@ namespace Hecton8.World
 
             return new WreckageData
             {
-                CombinedMesh = null,
+                CombinedMesh = combinedMesh,
                 EssentialMesh = null,
                 DetailMesh = null,
                 ClutterMesh = null,
@@ -969,6 +970,9 @@ namespace Hecton8.World
             Mesh damageDecalMesh = BuildDamageDecalMesh();
             await YieldAfterGenerationStageAsync();
 
+            Mesh combinedMesh = await BuildMergedMeshAsync(_allPlacements);
+            await YieldAfterGenerationStageAsync();
+
             Mesh proxyMesh = await BuildProxyMeshAsync();
             Bounds localBounds = CalculateLocalBounds(_allPlacements);
             Bounds worldBounds = TranslateBounds(localBounds, runtimeOrigin);
@@ -992,7 +996,7 @@ namespace Hecton8.World
 
             return new WreckageData
             {
-                CombinedMesh = null,
+                CombinedMesh = combinedMesh,
                 EssentialMesh = null,
                 DetailMesh = null,
                 ClutterMesh = null,
@@ -1494,7 +1498,7 @@ namespace Hecton8.World
                 Mesh.MeshData sourceData = _readOnlyMeshSnapshots[scheduledJobCount][0];
 
                 int subMeshCount = sourceData.subMeshCount;
-                CopyModuleMeshJob job = new CopyModuleMeshJob
+                CombineMeshDataJob job = new CombineMeshDataJob
                 {
                     SourceMeshData = sourceData,
                     DestinationVertices = destinationVertices,
@@ -1619,7 +1623,7 @@ namespace Hecton8.World
                     Mesh.MeshData sourceData = _readOnlyMeshSnapshots[acquiredSnapshotCount][0];
                     acquiredSnapshotCount++;
 
-                    CopyModuleMeshJob job = new CopyModuleMeshJob
+                    CombineMeshDataJob job = new CombineMeshDataJob
                     {
                         SourceMeshData = sourceData,
                         DestinationVertices = destinationVertices,

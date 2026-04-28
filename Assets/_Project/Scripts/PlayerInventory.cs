@@ -24,6 +24,8 @@ namespace Hecton8.Inventory
     public sealed class PlayerInventory : MonoBehaviour, ISaveable
     {
         private const ushort CraftingLockedMask = 1 << 10;
+        private const ushort BiologicalItemStateMask = 1 << 6;
+        private const ushort DefaultQualityMilli = 1000;
 
         private struct InventorySortEntry : IComparable<InventorySortEntry>
         {
@@ -86,6 +88,8 @@ namespace Hecton8.Inventory
             public ushort stackCount;
             public ushort lockedCount;
             public ushort stateFlags;
+            public ushort qualityMilli;
+            public uint lastUpdateUnixSeconds;
             public float weight;
             public byte categoryId;
             public byte rarity;
@@ -120,6 +124,9 @@ namespace Hecton8.Inventory
         private NativeArray<ushort> _stackCounts;
         private NativeArray<ushort> _craftLockedCounts;
         private NativeArray<ushort> _anchorStateFlags;
+        private NativeArray<ushort> _itemStateFlags;
+        private NativeArray<ushort> _qualityMilli;
+        private NativeArray<uint> _lastUpdateUnixSeconds;
         private NativeArray<ushort> _scavengeSimStackCounts;
         private NativeArray<byte> _simulationOccupiedCells;
         private ItemPlacement[] _sortBuffer;
@@ -151,6 +158,12 @@ namespace Hecton8.Inventory
             _craftLockedCounts = new NativeArray<ushort>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: ushort[columns * rows] — per-anchor state flags — owner: PlayerInventory
             _anchorStateFlags = new NativeArray<ushort>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: ushort[columns * rows] — persistent per-anchor item-state flags — owner: PlayerInventory
+            _itemStateFlags = new NativeArray<ushort>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: ushort[columns * rows] — persistent per-anchor quality values (0-1000) — owner: PlayerInventory
+            _qualityMilli = new NativeArray<ushort>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: uint[columns * rows] — persistent per-anchor last update timestamps — owner: PlayerInventory
+            _lastUpdateUnixSeconds = new NativeArray<uint>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: ushort[columns * rows] — stack simulation scratch — owner: PlayerInventory
             _scavengeSimStackCounts = new NativeArray<ushort>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: byte[columns * rows] — occupancy simulation scratch — owner: PlayerInventory
@@ -188,6 +201,15 @@ namespace Hecton8.Inventory
             if (_anchorStateFlags.IsCreated)
                 _anchorStateFlags.Dispose(default);
 
+            if (_itemStateFlags.IsCreated)
+                _itemStateFlags.Dispose(default);
+
+            if (_qualityMilli.IsCreated)
+                _qualityMilli.Dispose(default);
+
+            if (_lastUpdateUnixSeconds.IsCreated)
+                _lastUpdateUnixSeconds.Dispose(default);
+
             if (_scavengeSimStackCounts.IsCreated)
                 _scavengeSimStackCounts.Dispose(default);
 
@@ -212,6 +234,9 @@ namespace Hecton8.Inventory
             _stackCounts[anchorIndex] = 0;
             _craftLockedCounts[anchorIndex] = 0;
             _anchorStateFlags[anchorIndex] = 0;
+            _itemStateFlags[anchorIndex] = 0;
+            _qualityMilli[anchorIndex] = 0;
+            _lastUpdateUnixSeconds[anchorIndex] = 0;
 
             TotalWeight = Mathf.Max(0f, TotalWeight - descriptor.Weight * count);
             if (survival != null)
@@ -244,6 +269,9 @@ namespace Hecton8.Inventory
                 _stackCounts[anchorIndex] = 0;
                 _craftLockedCounts[anchorIndex] = 0;
                 _anchorStateFlags[anchorIndex] = 0;
+                _itemStateFlags[anchorIndex] = 0;
+                _qualityMilli[anchorIndex] = 0;
+                _lastUpdateUnixSeconds[anchorIndex] = 0;
             }
 
             TotalWeight = Mathf.Max(0f, TotalWeight - descriptor.Weight);
@@ -520,6 +548,9 @@ namespace Hecton8.Inventory
                     _stackCounts[anchorIndex] = 0;
                     _craftLockedCounts[anchorIndex] = 0;
                     _anchorStateFlags[anchorIndex] = 0;
+                    _itemStateFlags[anchorIndex] = 0;
+                    _qualityMilli[anchorIndex] = 0;
+                    _lastUpdateUnixSeconds[anchorIndex] = 0;
                 }
                 else
                 {
@@ -570,6 +601,9 @@ namespace Hecton8.Inventory
                 dto.itemHashIds[cellIndex] = _grid.GetAnchorHashId(anchorIndex);
                 dto.packedCellCoordinates[cellIndex] = InventoryDTO.PackCellCoordinate(x, y);
                 dto.stackCounts[cellIndex] = _stackCounts[anchorIndex];
+                dto.itemStateFlags[cellIndex] = _itemStateFlags[anchorIndex];
+                dto.qualityMilli[cellIndex] = _qualityMilli[anchorIndex] > 0 ? _qualityMilli[anchorIndex] : DefaultQualityMilli;
+                dto.lastUpdateUnixSeconds[cellIndex] = _lastUpdateUnixSeconds[anchorIndex];
                 cellIndex++;
             }
 
@@ -585,6 +619,9 @@ namespace Hecton8.Inventory
             _grid.Clear();
             ClearNativeArray(_stackCounts);
             ClearCraftReservationState();
+            ClearNativeArray(_itemStateFlags);
+            ClearNativeArray(_qualityMilli);
+            ClearNativeArray(_lastUpdateUnixSeconds);
             TotalWeight = 0f;
 
             if (dto.itemHashIds == null ||
@@ -602,7 +639,8 @@ namespace Hecton8.Inventory
                 if (itemHashId == 0)
                     continue;
 
-                if (!TryBuildDescriptor(itemHashId, out InventoryGrid.InventoryItemDescriptor descriptor))
+                if (!TryBuildDescriptor(itemHashId, out InventoryGrid.InventoryItemDescriptor descriptor) ||
+                    !TryGetRuntimeDescriptor(itemHashId, out ItemCatalog.ItemRuntimeDescriptor runtimeDescriptor))
                     continue;
 
                 int cellX = InventoryDTO.UnpackCellX(dto.packedCellCoordinates[i]);
@@ -612,14 +650,24 @@ namespace Hecton8.Inventory
                 if (_grid.CheckFit(cellX, cellY, descriptor.Width, descriptor.Height))
                 {
                     _grid.PlaceAt(in descriptor, cellX, cellY);
-                    _stackCounts[AnchorIndex(cellX, cellY)] = (ushort)Mathf.Clamp(loadedCount, 1, ushort.MaxValue);
+                    int anchorIndex = AnchorIndex(cellX, cellY);
+                    _stackCounts[anchorIndex] = (ushort)Mathf.Clamp(loadedCount, 1, ushort.MaxValue);
+                    _itemStateFlags[anchorIndex] = ResolveLoadedItemStateFlags(dto, i, runtimeDescriptor.StateFlags);
+                    _qualityMilli[anchorIndex] = ResolveLoadedQualityMilli(dto, i);
+                    _lastUpdateUnixSeconds[anchorIndex] = ResolveLoadedTimestamp(dto, i);
+                    ApplyLoadedBiologicalDecay(anchorIndex);
                     TotalWeight += descriptor.Weight * loadedCount;
                     continue;
                 }
 
                 if (_grid.TryAddItem(in descriptor, out int px, out int py))
                 {
-                    _stackCounts[AnchorIndex(px, py)] = (ushort)Mathf.Clamp(loadedCount, 1, ushort.MaxValue);
+                    int anchorIndex = AnchorIndex(px, py);
+                    _stackCounts[anchorIndex] = (ushort)Mathf.Clamp(loadedCount, 1, ushort.MaxValue);
+                    _itemStateFlags[anchorIndex] = ResolveLoadedItemStateFlags(dto, i, runtimeDescriptor.StateFlags);
+                    _qualityMilli[anchorIndex] = ResolveLoadedQualityMilli(dto, i);
+                    _lastUpdateUnixSeconds[anchorIndex] = ResolveLoadedTimestamp(dto, i);
+                    ApplyLoadedBiologicalDecay(anchorIndex);
                     TotalWeight += descriptor.Weight * loadedCount;
                 }
             }
@@ -655,6 +703,9 @@ namespace Hecton8.Inventory
                 _grid.Clear();
                 ClearNativeArray(_stackCounts);
                 ClearCraftReservationState();
+                ClearNativeArray(_itemStateFlags);
+                ClearNativeArray(_qualityMilli);
+                ClearNativeArray(_lastUpdateUnixSeconds);
                 TotalWeight = 0f;
 
                 for (int i = 0; i < count; i++)
@@ -663,7 +714,11 @@ namespace Hecton8.Inventory
                     InventoryGrid.InventoryItemDescriptor descriptor = placement.Descriptor;
                     if (_grid.TryAddItem(in descriptor, out int px, out int py))
                     {
-                        _stackCounts[AnchorIndex(px, py)] = placement.stackCount;
+                        int anchorIndex = AnchorIndex(px, py);
+                        _stackCounts[anchorIndex] = placement.stackCount;
+                        _itemStateFlags[anchorIndex] = placement.stateFlags;
+                        _qualityMilli[anchorIndex] = placement.qualityMilli;
+                        _lastUpdateUnixSeconds[anchorIndex] = placement.lastUpdateUnixSeconds;
                         TotalWeight += placement.weight * placement.stackCount;
                     }
                 }
@@ -728,12 +783,18 @@ namespace Hecton8.Inventory
                 SwapAnchorState(_stackCounts, sourceAnchorIndex, destinationAnchorIndex);
                 SwapAnchorState(_craftLockedCounts, sourceAnchorIndex, destinationAnchorIndex);
                 SwapAnchorState(_anchorStateFlags, sourceAnchorIndex, destinationAnchorIndex);
+                SwapAnchorState(_itemStateFlags, sourceAnchorIndex, destinationAnchorIndex);
+                SwapAnchorState(_qualityMilli, sourceAnchorIndex, destinationAnchorIndex);
+                SwapAnchorState(_lastUpdateUnixSeconds, sourceAnchorIndex, destinationAnchorIndex);
                 return;
             }
 
             MoveAnchorStateValue(_stackCounts, sourceAnchorIndex, destinationAnchorIndex);
             MoveAnchorStateValue(_craftLockedCounts, sourceAnchorIndex, destinationAnchorIndex);
             MoveAnchorStateValue(_anchorStateFlags, sourceAnchorIndex, destinationAnchorIndex);
+            MoveAnchorStateValue(_itemStateFlags, sourceAnchorIndex, destinationAnchorIndex);
+            MoveAnchorStateValue(_qualityMilli, sourceAnchorIndex, destinationAnchorIndex);
+            MoveAnchorStateValue(_lastUpdateUnixSeconds, sourceAnchorIndex, destinationAnchorIndex);
         }
 
         private static void SwapAnchorState<T>(NativeArray<T> values, int firstIndex, int secondIndex) where T : struct
@@ -776,7 +837,9 @@ namespace Hecton8.Inventory
                     maxStack = descriptor.MaxStack,
                     stackCount = (ushort)Mathf.Max(1, _stackCounts[anchorIndex]),
                     lockedCount = _craftLockedCounts[anchorIndex],
-                    stateFlags = _anchorStateFlags[anchorIndex],
+                    stateFlags = _itemStateFlags[anchorIndex],
+                    qualityMilli = _qualityMilli[anchorIndex] > 0 ? _qualityMilli[anchorIndex] : DefaultQualityMilli,
+                    lastUpdateUnixSeconds = _lastUpdateUnixSeconds[anchorIndex],
                     weight = descriptor.Weight,
                     categoryId = descriptor.CategoryId,
                     rarity = descriptor.Rarity,
@@ -805,13 +868,21 @@ namespace Hecton8.Inventory
         private bool TryAddItemInternal(int itemHashId, int quantity, out int addedQuantity)
         {
             addedQuantity = 0;
-            if (_grid == null || itemHashId == 0 || quantity <= 0 || !TryBuildDescriptor(itemHashId, out InventoryGrid.InventoryItemDescriptor descriptor))
+            if (_grid == null ||
+                itemHashId == 0 ||
+                quantity <= 0 ||
+                !TryBuildDescriptor(itemHashId, out InventoryGrid.InventoryItemDescriptor descriptor) ||
+                !TryGetRuntimeDescriptor(itemHashId, out ItemCatalog.ItemRuntimeDescriptor runtimeDescriptor))
+            {
                 return false;
+            }
+
+            uint timestampNow = ResolveCurrentUnixTimestamp();
 
             bool allAdded = true;
             for (int i = 0; i < quantity; i++)
             {
-                if (descriptor.Stackable && TryStackItem(descriptor.HashId, descriptor.MaxStack))
+                if (descriptor.Stackable && TryStackItem(descriptor.HashId, descriptor.MaxStack, runtimeDescriptor.StateFlags, timestampNow))
                 {
                     TotalWeight += descriptor.Weight;
                     addedQuantity++;
@@ -820,7 +891,11 @@ namespace Hecton8.Inventory
 
                 if (_grid.TryAddItem(in descriptor, out int placedX, out int placedY))
                 {
-                    _stackCounts[AnchorIndex(placedX, placedY)] = 1;
+                    int anchorIndex = AnchorIndex(placedX, placedY);
+                    _stackCounts[anchorIndex] = 1;
+                    _itemStateFlags[anchorIndex] = runtimeDescriptor.StateFlags;
+                    _qualityMilli[anchorIndex] = DefaultQualityMilli;
+                    _lastUpdateUnixSeconds[anchorIndex] = (runtimeDescriptor.StateFlags & BiologicalItemStateMask) != 0 ? timestampNow : 0u;
                     TotalWeight += descriptor.Weight;
                     addedQuantity++;
                 }
@@ -842,7 +917,7 @@ namespace Hecton8.Inventory
             return allAdded;
         }
 
-        private bool TryStackItem(int itemHashId, int maxStack)
+        private bool TryStackItem(int itemHashId, int maxStack, ushort itemStateFlags, uint timestampNow)
         {
             if (_grid == null || !_stackCounts.IsCreated || itemHashId == 0 || maxStack <= 1)
                 return false;
@@ -855,6 +930,11 @@ namespace Hecton8.Inventory
                 if (_stackCounts[anchorIndex] < maxStack)
                 {
                     _stackCounts[anchorIndex]++;
+                    _itemStateFlags[anchorIndex] = itemStateFlags;
+                    if (_qualityMilli[anchorIndex] == 0)
+                        _qualityMilli[anchorIndex] = DefaultQualityMilli;
+                    if ((itemStateFlags & BiologicalItemStateMask) != 0 && _lastUpdateUnixSeconds[anchorIndex] == 0u)
+                        _lastUpdateUnixSeconds[anchorIndex] = timestampNow;
                     return true;
                 }
             }
@@ -1052,6 +1132,9 @@ namespace Hecton8.Inventory
             ClearNativeArray(_stackCounts);
             ClearNativeArray(_craftLockedCounts);
             ClearNativeArray(_anchorStateFlags);
+            ClearNativeArray(_itemStateFlags);
+            ClearNativeArray(_qualityMilli);
+            ClearNativeArray(_lastUpdateUnixSeconds);
             TotalWeight = 0f;
 
             for (int placementIndex = 0; placementIndex < placementCount; placementIndex++)
@@ -1065,8 +1148,12 @@ namespace Hecton8.Inventory
                 _stackCounts[anchorIndex] = (ushort)Mathf.Max(1, placement.stackCount);
                 if (_craftLockedCounts.IsCreated)
                     _craftLockedCounts[anchorIndex] = placement.lockedCount;
-                if (_anchorStateFlags.IsCreated)
-                    _anchorStateFlags[anchorIndex] = placement.stateFlags;
+                if (_itemStateFlags.IsCreated)
+                    _itemStateFlags[anchorIndex] = placement.stateFlags;
+                if (_qualityMilli.IsCreated)
+                    _qualityMilli[anchorIndex] = placement.qualityMilli;
+                if (_lastUpdateUnixSeconds.IsCreated)
+                    _lastUpdateUnixSeconds[anchorIndex] = placement.lastUpdateUnixSeconds;
                 TotalWeight += placement.weight * Mathf.Max(1, placement.stackCount);
             }
 
@@ -1126,6 +1213,70 @@ namespace Hecton8.Inventory
             ClearNativeArray(_anchorStateFlags);
         }
 
+        private static uint ResolveCurrentUnixTimestamp()
+        {
+            long utcNowSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            if (utcNowSeconds <= 0L)
+                return 0u;
+
+            return utcNowSeconds >= uint.MaxValue ? uint.MaxValue : (uint)utcNowSeconds;
+        }
+
+        private static ushort ResolveLoadedQualityMilli(InventoryDTO dto, int index)
+        {
+            if (dto.qualityMilli == null || (uint)index >= (uint)dto.qualityMilli.Length)
+                return DefaultQualityMilli;
+
+            return dto.qualityMilli[index] > 0 ? dto.qualityMilli[index] : DefaultQualityMilli;
+        }
+
+        private static uint ResolveLoadedTimestamp(InventoryDTO dto, int index)
+        {
+            if (dto.lastUpdateUnixSeconds == null || (uint)index >= (uint)dto.lastUpdateUnixSeconds.Length)
+                return 0u;
+
+            return dto.lastUpdateUnixSeconds[index];
+        }
+
+        private static ushort ResolveLoadedItemStateFlags(InventoryDTO dto, int index, ushort fallbackFlags)
+        {
+            if (dto.itemStateFlags == null || (uint)index >= (uint)dto.itemStateFlags.Length)
+                return fallbackFlags;
+
+            ushort savedFlags = dto.itemStateFlags[index];
+            return savedFlags != 0 ? savedFlags : fallbackFlags;
+        }
+
+        private void ApplyLoadedBiologicalDecay(int anchorIndex)
+        {
+            if (!_itemStateFlags.IsCreated ||
+                !_qualityMilli.IsCreated ||
+                !_lastUpdateUnixSeconds.IsCreated ||
+                (uint)anchorIndex >= (uint)_itemStateFlags.Length ||
+                (_itemStateFlags[anchorIndex] & BiologicalItemStateMask) == 0)
+            {
+                return;
+            }
+
+            uint nowTimestamp = ResolveCurrentUnixTimestamp();
+            uint lastTimestamp = _lastUpdateUnixSeconds[anchorIndex];
+            if (lastTimestamp == 0u)
+            {
+                _lastUpdateUnixSeconds[anchorIndex] = nowTimestamp;
+                if (_qualityMilli[anchorIndex] == 0)
+                    _qualityMilli[anchorIndex] = DefaultQualityMilli;
+                return;
+            }
+
+            float ambientTemperature = survival != null ? survival.EnvironmentTemperature : 2f;
+            float tempFactor = math.exp((ambientTemperature - 4f) * 0.05f);
+            uint elapsedSeconds = nowTimestamp >= lastTimestamp ? nowTimestamp - lastTimestamp : 0u;
+            float currentQuality = math.clamp((_qualityMilli[anchorIndex] > 0 ? _qualityMilli[anchorIndex] : DefaultQualityMilli) / 1000f, 0f, 1f);
+            float decayedQuality = math.clamp(currentQuality - (elapsedSeconds * 0.001f * tempFactor), 0f, 1f);
+            _qualityMilli[anchorIndex] = (ushort)math.clamp((int)math.round(decayedQuality * 1000f), 0, 1000);
+            _lastUpdateUnixSeconds[anchorIndex] = nowTimestamp;
+        }
+
         private void ReleaseCraftReservationsRange(CraftReservation[] reservations, int startIndex, int endExclusive)
         {
             if (reservations == null || !_craftLockedCounts.IsCreated || !_anchorStateFlags.IsCreated)
@@ -1168,6 +1319,15 @@ namespace Hecton8.Inventory
 
             void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(array);
             UnsafeUtility.MemClear(destinationPtr, array.Length * UnsafeUtility.SizeOf<ushort>());
+        }
+
+        private static unsafe void ClearNativeArray(NativeArray<uint> array)
+        {
+            if (!array.IsCreated)
+                return;
+
+            void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(array);
+            UnsafeUtility.MemClear(destinationPtr, array.Length * UnsafeUtility.SizeOf<uint>());
         }
 
         private static unsafe void CopyNativeArray(NativeArray<ushort> source, NativeArray<ushort> destination)

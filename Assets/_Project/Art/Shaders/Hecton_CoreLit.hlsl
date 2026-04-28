@@ -28,6 +28,9 @@ float4 _HectonBiolumVolumeParams;
 float4 _HectonProjectedCausticsWorldRect;
 float4 _HectonProjectedCausticsParams;
 float4 _HectonProjectedCausticsColor;
+float4 _HectonCausticsSimulationParamsA;
+float4 _HectonCausticsSimulationParamsB;
+float4 _HectonCausticsSimulationParamsC;
 float _HectonContactShadowStrength;
 float _HectonContactShadowSteps;
 float _HectonContactShadowBias;
@@ -42,13 +45,84 @@ TEXTURE3D(_HectonCaveVoxelSdfTex);
 SAMPLER(sampler_HectonCaveVoxelSdfTex);
 TEXTURE3D(_HectonBiolumVolumeTex);
 SAMPLER(sampler_HectonBiolumVolumeTex);
-TEXTURE2D(_HectonProjectedCausticsTex);
-SAMPLER(sampler_HectonProjectedCausticsTex);
-
 float3 HectonCoreLitSafeNormalize(float3 value)
 {
     float lenSq = dot(value, value);
     return lenSq > 0.0001 ? value * rsqrt(lenSq) : float3(0.0, 1.0, 0.0);
+}
+
+float2 HectonCoreLitHash22(float2 p)
+{
+    float3 p3 = frac(float3(p.xyx) * float3(0.1031, 0.1030, 0.0973));
+    p3 += dot(p3, p3.yzx + 33.33);
+    return frac((p3.xx + p3.yz) * p3.zy);
+}
+
+float HectonCoreLitVoronoiRidge(float2 uv, float cellDensity, float timePhase)
+{
+    float2 domain = uv * cellDensity;
+    float2 baseCell = floor(domain);
+    float2 fracCell = frac(domain);
+    float nearest = 9999.0;
+    float secondNearest = 9999.0;
+
+    [unroll]
+    for (int y = -1; y <= 1; y++)
+    {
+        [unroll]
+        for (int x = -1; x <= 1; x++)
+        {
+            float2 offset = float2(x, y);
+            float2 cell = baseCell + offset;
+            float2 jitter = HectonCoreLitHash22(cell);
+            float2 animatedPoint = offset + jitter - fracCell;
+            animatedPoint += float2(
+                sin((jitter.x + timePhase) * 6.2831853),
+                cos((jitter.y + timePhase * 1.37) * 6.2831853)) * 0.12;
+
+            float distanceSq = dot(animatedPoint, animatedPoint);
+            if (distanceSq < nearest)
+            {
+                secondNearest = nearest;
+                nearest = distanceSq;
+            }
+            else if (distanceSq < secondNearest)
+            {
+                secondNearest = distanceSq;
+            }
+        }
+    }
+
+    return saturate(sqrt(secondNearest) - sqrt(nearest));
+}
+
+float HectonCoreLitEvaluateProceduralCaustics(float2 uv)
+{
+    float primaryDensity = max(_HectonCausticsSimulationParamsA.x, 0.5);
+    float secondaryDensity = max(_HectonCausticsSimulationParamsA.y, primaryDensity);
+    float primarySpeed = _HectonCausticsSimulationParamsA.z;
+    float secondarySpeed = _HectonCausticsSimulationParamsA.w;
+    float sharpness = max(_HectonCausticsSimulationParamsB.x, 0.1);
+    float secondaryWeight = saturate(_HectonCausticsSimulationParamsB.y);
+    float timeValue = _HectonCausticsSimulationParamsB.z;
+    float waveDisplacement = _HectonCausticsSimulationParamsC.x;
+    float2 waveFlow = _HectonCausticsSimulationParamsC.yz;
+    float wavePhase = _HectonCausticsSimulationParamsC.w;
+    float waveDisplacementAbs = abs(waveDisplacement);
+    float2 waveOffset = waveFlow * 0.0125 + float2(waveDisplacement * 0.018, -waveDisplacement * 0.013);
+    float2 animatedUv = uv + waveOffset;
+
+    primaryDensity *= lerp(0.94, 1.08, saturate(waveDisplacementAbs * 0.2));
+    secondaryDensity *= lerp(0.92, 1.12, saturate(length(waveFlow) * 0.08));
+
+    float primaryTime = timeValue * primarySpeed + wavePhase;
+    float secondaryTime = timeValue * secondarySpeed + wavePhase * 1.37 + 17.0;
+    float primaryLayer = HectonCoreLitVoronoiRidge(animatedUv + float2(primaryTime, -primaryTime * 0.61), primaryDensity, primaryTime);
+    float secondaryLayer = HectonCoreLitVoronoiRidge(animatedUv + float2(-secondaryTime * 0.73, secondaryTime), secondaryDensity, secondaryTime);
+    float combined = lerp(primaryLayer, max(primaryLayer, secondaryLayer), secondaryWeight);
+    combined = pow(saturate(combined * 2.3), sharpness);
+    combined *= lerp(0.92, 1.18, saturate(waveDisplacementAbs * 0.14 + length(waveFlow) * 0.035));
+    return saturate(combined * 1.35);
 }
 
 float HectonCoreLitResolveFlashlightShadowFloor()
@@ -57,6 +131,7 @@ float HectonCoreLitResolveFlashlightShadowFloor()
 }
 
 bool HectonCoreLitIsInsideCaveSolid(float3 positionWS, float surfaceEpsilon);
+float HectonCoreLitEvaluateCaveAmbientFactor(float3 positionWS, float3 normalWS);
 
 float HectonCoreLitEvaluateProjectedCausticsMask(float3 positionWS, float3 normalWS)
 {
@@ -78,8 +153,9 @@ float HectonCoreLitEvaluateProjectedCausticsMask(float3 positionWS, float3 norma
         return 0.0;
 
     float upFacing = saturate(normalWS.y * 1.25);
-    float caustics = SAMPLE_TEXTURE2D_LOD(_HectonProjectedCausticsTex, sampler_HectonProjectedCausticsTex, uv, 0).r;
-    return caustics * depthFade * upFacing * _HectonProjectedCausticsParams.x;
+    float caustics = HectonCoreLitEvaluateProceduralCaustics(uv);
+    float shadowTerm = HectonCoreLitEvaluateCaveAmbientFactor(positionWS, normalWS);
+    return caustics * depthFade * upFacing * shadowTerm * _HectonProjectedCausticsParams.x;
 }
 
 half3 HectonCoreLitEvaluateProjectedCausticsScattering(float3 positionWS, float3 normalWS)

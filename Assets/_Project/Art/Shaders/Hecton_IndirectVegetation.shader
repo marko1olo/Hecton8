@@ -987,7 +987,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                     clip(porousCoverageMask - 0.16h);
 
                 half coverage = saturate(_Opacity) * porousCoverageMask;
-                clip(coverage - InterleavedGradientNoise(input.positionCS.xy));
+                clip(coverage - ResolveBayer4x4(floor(input.positionCS.xy)));
 
                 half3 normalWS = normalize(input.normalWS);
                 half3 viewDirectionWS = SafeNormalize(GetWorldSpaceViewDir(input.positionWS));

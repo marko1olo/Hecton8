@@ -7,6 +7,10 @@ namespace Hecton8.SaveSystem
 {
     internal static unsafe class SaveBinaryPayloadCodec
     {
+        private const ushort BiologicalItemStateMask = 1 << 6;
+        private const ushort DefaultQualityMilli = 1000;
+        private const float BiologicalReferenceTemperatureCelsius = 4f;
+        private const float BiologicalDecayRatePerSecond = 0.001f;
         private const int NullCollectionCount = -1;
 
         internal static bool TryWrite(SaveData data, byte* destination, int capacity, out int bytesWritten, out string error)
@@ -192,6 +196,7 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
+            ApplyInventoryBiologicalDecay(ref data.inventory, data.playerStats.environmentTemperature);
             data.voxelDeltaPersistence = VoxelDeltaPersistenceDTO.CreateDefault();
             return true;
         }
@@ -202,6 +207,9 @@ namespace Hecton8.SaveSystem
                 && writer.WriteStructArray(value.itemHashIds)
                 && writer.WriteStructArray(value.packedCellCoordinates)
                 && writer.WriteStructArray(value.stackCounts)
+                && writer.WriteStructArray(value.itemStateFlags)
+                && writer.WriteStructArray(value.qualityMilli)
+                && writer.WriteStructArray(value.lastUpdateUnixSeconds)
                 && writer.WriteFloat(value.totalWeight)
                 && writer.WriteInt(value.gridColumns)
                 && writer.WriteInt(value.gridRows);
@@ -349,12 +357,19 @@ namespace Hecton8.SaveSystem
 
             if (version >= 40)
             {
-                return reader.ReadStructArray(out value.itemHashIds)
+                bool ok = reader.ReadStructArray(out value.itemHashIds)
                     && reader.ReadStructArray(out value.packedCellCoordinates)
                     && reader.ReadStructArray(out value.stackCounts)
+                    && ReadInventoryStateArrays(ref reader, version, ref value)
                     && reader.ReadFloat(out value.totalWeight)
                     && reader.ReadInt(out value.gridColumns)
                     && reader.ReadInt(out value.gridRows);
+
+                if (!ok)
+                    return false;
+
+                value.EnsureCapacity();
+                return true;
             }
 
             if (!ReadInventoryCellArray(ref reader, out InventoryCellDTO[] legacyCells)
@@ -376,9 +391,81 @@ namespace Hecton8.SaveSystem
                 value.itemHashIds[i] = LocHash.Compute(legacyCell.itemId);
                 value.packedCellCoordinates[i] = InventoryDTO.PackCellCoordinate(legacyCell.x, legacyCell.y);
                 value.stackCounts[i] = (ushort)Math.Clamp(legacyCell.stackCount > 0 ? legacyCell.stackCount : 1, 1, ushort.MaxValue);
+                value.qualityMilli[i] = DefaultQualityMilli;
             }
 
             return true;
+        }
+
+        private static bool ReadInventoryStateArrays(ref BufferReader reader, int version, ref InventoryDTO value)
+        {
+            if (version >= 43)
+            {
+                return reader.ReadStructArray(out value.itemStateFlags)
+                    && reader.ReadStructArray(out value.qualityMilli)
+                    && reader.ReadStructArray(out value.lastUpdateUnixSeconds);
+            }
+
+            value.EnsureCapacity();
+            int safeCount = Math.Min(
+                value.cellCount,
+                Math.Min(value.itemHashIds != null ? value.itemHashIds.Length : 0,
+                    Math.Min(value.packedCellCoordinates != null ? value.packedCellCoordinates.Length : 0, value.stackCounts != null ? value.stackCounts.Length : 0)));
+            value.cellCount = safeCount;
+            for (int i = 0; i < safeCount; i++)
+                value.qualityMilli[i] = DefaultQualityMilli;
+
+            return true;
+        }
+
+        private static void ApplyInventoryBiologicalDecay(ref InventoryDTO value, float ambientTemperature)
+        {
+            if (value.cellCount <= 0 ||
+                value.itemStateFlags == null ||
+                value.qualityMilli == null ||
+                value.lastUpdateUnixSeconds == null)
+            {
+                return;
+            }
+
+            int safeCount = Math.Min(value.cellCount, Math.Min(value.itemStateFlags.Length, Math.Min(value.qualityMilli.Length, value.lastUpdateUnixSeconds.Length)));
+            if (safeCount <= 0)
+                return;
+
+            long utcNowSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            uint now = utcNowSeconds <= 0L
+                ? 0u
+                : utcNowSeconds >= uint.MaxValue
+                    ? uint.MaxValue
+                    : (uint)utcNowSeconds;
+
+            float tempFactor = (float)Math.Exp((ambientTemperature - BiologicalReferenceTemperatureCelsius) * 0.05f);
+            for (int i = 0; i < safeCount; i++)
+            {
+                if ((value.itemStateFlags[i] & BiologicalItemStateMask) == 0)
+                {
+                    if (value.qualityMilli[i] == 0)
+                        value.qualityMilli[i] = DefaultQualityMilli;
+
+                    continue;
+                }
+
+                uint lastUpdate = value.lastUpdateUnixSeconds[i];
+                if (lastUpdate == 0u)
+                {
+                    value.lastUpdateUnixSeconds[i] = now;
+                    if (value.qualityMilli[i] == 0)
+                        value.qualityMilli[i] = DefaultQualityMilli;
+                    continue;
+                }
+
+                uint elapsedSeconds = now >= lastUpdate ? now - lastUpdate : 0u;
+                float currentQuality = Math.Clamp((value.qualityMilli[i] > 0 ? value.qualityMilli[i] : DefaultQualityMilli) / 1000f, 0f, 1f);
+                float qualityDelta = elapsedSeconds * BiologicalDecayRatePerSecond * tempFactor;
+                float decayedQuality = Math.Clamp(currentQuality - qualityDelta, 0f, 1f);
+                value.qualityMilli[i] = (ushort)Math.Clamp((int)Math.Round(decayedQuality * 1000f), 0, 1000);
+                value.lastUpdateUnixSeconds[i] = now;
+            }
         }
 
         private static bool ReadExternalScavengerSites(ref BufferReader reader, int version, out ExternalScavengerSiteDTO[] value)

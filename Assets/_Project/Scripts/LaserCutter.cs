@@ -38,10 +38,12 @@ namespace Hecton8.Gameplay
         private const string CutterCategory = "CUTTER";
         private const int RecoveryProgressMessageCount = 101;
         private const float MaxRecoilImpulse = 12f;
+        private const float MinEffectiveBeamPower = 0.02f;
         private const byte IdleState = (byte)ToolStateBits.Idle;
         private const byte ActiveState = (byte)ToolStateBits.Active;
         private const byte BusyState = (byte)ToolStateBits.Busy;
         private const byte OverheatedState = (byte)ToolStateBits.Overheated;
+        private const byte LowPowerState = (byte)ToolStateBits.LowPower;
         private const byte CooldownState = (byte)ToolStateBits.Cooldown;
 
         private struct CutterDiagnosis
@@ -572,6 +574,13 @@ namespace Hecton8.Gameplay
             Vector3 absoluteOrigin = ResolveAbsoluteUniversePoint(_cachedTransform.position);
             Vector3 absoluteHitPoint = ResolveAbsoluteUniversePoint(_hitInfo.point);
             float normalizedPower = ResolveNormalizedPower(powerScale, heatMultiplier);
+            if (normalizedPower < MinEffectiveBeamPower)
+            {
+                SetFlag(LowPowerState);
+                return;
+            }
+
+            ClearFlag(LowPowerState);
             EquipmentInteractionPacket packet = new EquipmentInteractionPacket(
                 _cachedToolId,
                 new float3(absoluteOrigin.x, absoluteOrigin.y, absoluteOrigin.z),

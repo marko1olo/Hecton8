@@ -13,7 +13,7 @@ namespace Hecton8.UI
         private const float MinUniformScale = 0.8f;
         private const float MaxUniformScale = 1f;
 
-        public static void ApplyScale(TMP_Text text, float uniformScale)
+        public static void ApplyScale(TMP_Text text, Vector3 baselineScale, float uniformScale)
         {
             if (text == null || text.rectTransform == null)
                 return;
@@ -29,7 +29,10 @@ namespace Hecton8.UI
                 return;
             }
 
-            rect.localScale = new Vector3(resolvedScale.x, resolvedScale.y, currentScale.z);
+            rect.localScale = new Vector3(
+                baselineScale.x * resolvedScale.x,
+                baselineScale.y * resolvedScale.y,
+                baselineScale.z);
         }
 
         public static float ResolveUniformScale(TMP_Text text)

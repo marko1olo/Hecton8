@@ -31,6 +31,7 @@ namespace Hecton8.Gameplay
         private const float VehicleGravityAcceleration = 9.81f;
         private const float SlopeDot45Degrees = 0.70710678f;
         private const float GroundAlignmentSharpness = 10f;
+        private const float MaxHydrodynamicGhostBlend = 0.15f;
 
         private static readonly ProfilerMarker _scheduleProfilerMarker = new ProfilerMarker("H8.VehicleMotor.CapsuleSweep.Schedule");
         private static readonly ProfilerMarker _consumeProfilerMarker = new ProfilerMarker("H8.VehicleMotor.CapsuleSweep.Consume");
@@ -38,6 +39,7 @@ namespace Hecton8.Gameplay
 
         private Rigidbody _body;
         private CapsuleCollider _capsule;
+        private readonly Vector3[] _hydrodynamicGhostVelocityHistory = new Vector3[4]; // COLD ALLOC: Vector3[4] — 3-frame added-mass inertial ghost history for vehicle KCC sweeps — owner: VehicleMotor
         private NativeArray<CapsulecastCommand> _scheduledSweepCommands;
         private NativeArray<RaycastHit> _scheduledSweepResults;
         private JobHandle _scheduledSweepHandle;
@@ -48,6 +50,9 @@ namespace Hecton8.Gameplay
         private float _groundSlopeLimitDegrees = DefaultGroundSlopeLimitDegrees;
         private Vector3 _groundNormal = Vector3.up;
         private float _groundContactTimer;
+        private int _hydrodynamicGhostWriteIndex;
+        private int _hydrodynamicGhostSampleCount;
+        private float _hydrodynamicSubmersionFactor;
 
         /// <summary>Current kinematic linear velocity in world space.</summary>
         public Vector3 LinearVelocity => _linearVelocity;
@@ -83,12 +88,20 @@ namespace Hecton8.Gameplay
             _localAngularVelocityDegrees = Vector3.zero;
             _groundNormal = Vector3.up;
             _groundContactTimer = 0f;
+            _hydrodynamicSubmersionFactor = 0f;
+            ResetHydrodynamicGhostState();
         }
 
         /// <summary>Configures the maximum climbable ground slope before vehicle drive is flattened against world up.</summary>
         public void ConfigureGroundSlopeLimit(float maxSlopeDegrees)
         {
             _groundSlopeLimitDegrees = math.clamp(maxSlopeDegrees, 5f, 89f);
+        }
+
+        /// <summary>Sets the current fluid-submersion factor used by the added-mass inertial ghost.</summary>
+        public void ConfigureHydrodynamicSubmersion(float submersionFactor)
+        {
+            _hydrodynamicSubmersionFactor = math.saturate(submersionFactor);
         }
 
         /// <summary>
@@ -141,7 +154,7 @@ namespace Hecton8.Gameplay
                 if (sqrMagnitude > (safeMaxSpeed * safeMaxSpeed))
                     candidateVelocity = candidateVelocity.normalized * safeMaxSpeed;
 
-                _linearVelocity = HectonPlayerMotor.SafeVelocity(candidateVelocity);
+                _linearVelocity = ResolveHydrodynamicAddedMassVelocity(candidateVelocity);
             }
         }
 
@@ -328,6 +341,41 @@ namespace Hecton8.Gameplay
                 return;
 
             _body.MovePosition(position);
+        }
+
+        private Vector3 ResolveHydrodynamicAddedMassVelocity(Vector3 actualVelocity)
+        {
+            Vector3 safeActualVelocity = HectonPlayerMotor.SafeVelocity(actualVelocity);
+            float ghostBlend = MaxHydrodynamicGhostBlend * _hydrodynamicSubmersionFactor;
+            if (ghostBlend <= 0.0001f)
+            {
+                ResetHydrodynamicGhostState();
+                return safeActualVelocity;
+            }
+
+            RecordHydrodynamicGhostVelocity(safeActualVelocity);
+            if (_hydrodynamicGhostSampleCount < _hydrodynamicGhostVelocityHistory.Length)
+                return safeActualVelocity;
+
+            Vector3 oldestVelocity = _hydrodynamicGhostVelocityHistory[_hydrodynamicGhostWriteIndex];
+            Vector3 perceivedVelocity = Vector3.Lerp(safeActualVelocity, oldestVelocity, ghostBlend);
+            return HectonPlayerMotor.SafeVelocity(perceivedVelocity, safeActualVelocity);
+        }
+
+        private void RecordHydrodynamicGhostVelocity(Vector3 velocity)
+        {
+            _hydrodynamicGhostVelocityHistory[_hydrodynamicGhostWriteIndex] = HectonPlayerMotor.SafeVelocity(velocity);
+            _hydrodynamicGhostWriteIndex = (_hydrodynamicGhostWriteIndex + 1) % _hydrodynamicGhostVelocityHistory.Length;
+            if (_hydrodynamicGhostSampleCount < _hydrodynamicGhostVelocityHistory.Length)
+                _hydrodynamicGhostSampleCount++;
+        }
+
+        private void ResetHydrodynamicGhostState()
+        {
+            _hydrodynamicGhostWriteIndex = 0;
+            _hydrodynamicGhostSampleCount = 0;
+            for (int i = 0; i < _hydrodynamicGhostVelocityHistory.Length; i++)
+                _hydrodynamicGhostVelocityHistory[i] = Vector3.zero;
         }
 
         private static void ResolveCapsulePoints(Rigidbody body, CapsuleCollider capsule, out Vector3 point1, out Vector3 point2, out float radius)

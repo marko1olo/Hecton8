@@ -95,6 +95,7 @@ namespace Hecton8.SaveSystem
             public readonly byte Width;
             public readonly byte Height;
             public readonly ushort MaxStack;
+            public readonly ushort StateFlags;
             public readonly float Weight;
             public readonly byte CategoryId;
             public readonly bool Stackable;
@@ -111,6 +112,7 @@ namespace Hecton8.SaveSystem
                 byte width,
                 byte height,
                 ushort maxStack,
+                ushort stateFlags,
                 float weight,
                 byte categoryId,
                 bool stackable,
@@ -126,6 +128,7 @@ namespace Hecton8.SaveSystem
                 Width = width;
                 Height = height;
                 MaxStack = maxStack;
+                StateFlags = stateFlags;
                 Weight = weight;
                 CategoryId = categoryId;
                 Stackable = stackable;
@@ -704,6 +707,7 @@ namespace Hecton8.SaveSystem
                 (byte)Mathf.Clamp(item.width, 1, byte.MaxValue),
                 (byte)Mathf.Clamp(item.height, 1, byte.MaxValue),
                 (ushort)Mathf.Clamp(item.maxStack, 1, ushort.MaxValue),
+                BuildStateFlags(item),
                 item.weight,
                 (byte)item.category,
                 item.stackable && item.maxStack > 1,
@@ -714,6 +718,31 @@ namespace Hecton8.SaveSystem
                 item.hungerRestore,
                 item.thirstRestore,
                 item.UseDuration);
+        }
+
+        private static ushort BuildStateFlags(ItemData item)
+        {
+            if (item == null)
+                return 0;
+
+            ushort flags = 0;
+            if (item.stackable && item.maxStack > 1)
+                flags |= 1 << 0;
+
+            if (item.isConsumable)
+                flags |= 1 << 2;
+
+            if (item.category == ItemCategory.Tool)
+                flags |= 1 << 7;
+
+            if (item.category == ItemCategory.Consumable ||
+                item.category == ItemCategory.Organic ||
+                item.resourceFamily == ResourceFamily.Organic)
+            {
+                flags |= 1 << 6;
+            }
+
+            return flags;
         }
 
         private void RecordHashAmbiguity(int hashId, ItemData existing, ItemData duplicate)

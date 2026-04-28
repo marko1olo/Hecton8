@@ -61,6 +61,13 @@ namespace Hecton8.World
             Consumed = 1u << 3
         }
 
+        [Flags]
+        private enum MassiveThreatFlags : uint
+        {
+            None = 0u,
+            LeviathanHuntPulse = 1u << 0
+        }
+
         private enum SimulationLodTier : int
         {
             Full = 0,
@@ -168,7 +175,7 @@ namespace Hecton8.World
             public float Strength;
             public float EndTime;
             public Vector3 DirectionWS;
-            public float Padding;
+            public uint ThreatFlags;
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
@@ -3161,7 +3168,7 @@ namespace Hecton8.World
                 Strength = 1f,
                 EndTime = absoluteSimulationTime + Mathf.Max(0.25f, signal.Duration),
                 DirectionWS = inferredDirectionWS,
-                Padding = 0f
+                ThreatFlags = (uint)MassiveThreatFlags.None
             };
 
             RecalculateMassiveThreatCount();
@@ -3178,6 +3185,72 @@ namespace Hecton8.World
                 ? _leviathanHeadVelocityWS
                 : (signal.PositionWS - _fieldCenter);
             TriggerFragmentation(signal.PositionWS, displacementDirection, signal.ExtremePanicRadiusWS, absoluteSimulationTime);
+        }
+
+        internal void RegisterLeviathanThreatPulse(
+            Vector3 positionWS,
+            Vector3 directionWS,
+            float panicRadiusWS,
+            float durationSeconds)
+        {
+            if (_massiveThreats == null || _massiveThreats.Length == 0)
+                return;
+
+            float absoluteSimulationTime = GetAbsoluteSimulationTime();
+            int targetIndex = -1;
+            float weakestEndTime = float.MaxValue;
+            for (int i = 0; i < _massiveThreats.Length; i++)
+            {
+                MassiveThreatData threat = _massiveThreats[i];
+                if (threat.EndTime <= absoluteSimulationTime)
+                {
+                    targetIndex = i;
+                    break;
+                }
+
+                if ((threat.ThreatFlags & (uint)MassiveThreatFlags.LeviathanHuntPulse) == 0u)
+                {
+                    if (threat.EndTime < weakestEndTime)
+                    {
+                        weakestEndTime = threat.EndTime;
+                        targetIndex = i;
+                    }
+
+                    continue;
+                }
+
+                float mergeDistance = Mathf.Max(threat.PanicRadius, panicRadiusWS) * 0.35f;
+                if ((threat.Position - positionWS).sqrMagnitude <= mergeDistance * mergeDistance)
+                {
+                    targetIndex = i;
+                    break;
+                }
+
+                if (threat.EndTime < weakestEndTime)
+                {
+                    weakestEndTime = threat.EndTime;
+                    targetIndex = i;
+                }
+            }
+
+            if (targetIndex < 0)
+                targetIndex = 0;
+
+            Vector3 resolvedDirection = directionWS.sqrMagnitude > 0.0001f ? directionWS.normalized : Vector3.forward;
+            _massiveThreats[targetIndex] = new MassiveThreatData
+            {
+                Position = positionWS,
+                InnerRadius = Mathf.Max(0.5f, boidBodyRadius * 2f),
+                PanicRadius = Mathf.Max(4f, panicRadiusWS),
+                Strength = 1f,
+                EndTime = absoluteSimulationTime + Mathf.Max(0.15f, durationSeconds),
+                DirectionWS = resolvedDirection,
+                ThreatFlags = (uint)MassiveThreatFlags.LeviathanHuntPulse
+            };
+
+            RecalculateMassiveThreatCount();
+            if (_massiveThreatBuffer != null)
+                GraphicsBufferUploadUtility.UploadArray(_massiveThreatBuffer, _massiveThreats, _activeMassiveThreatCount);
         }
 
         private void UpdateFragmentationState(

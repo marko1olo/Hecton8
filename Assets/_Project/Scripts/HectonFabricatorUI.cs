@@ -29,6 +29,7 @@ namespace Hecton8.UI
         private const float RecipePointerDistanceMeters = 6f;
         private const float HologramBaseDistanceMeters = 1f;
         private const float HologramSpinDegreesPerSecond = 36f;
+        private const float SelectedHologramScaleMultiplier = 2.8f;
 
         private struct RecipeListEntry
         {
@@ -59,6 +60,10 @@ namespace Hecton8.UI
         [SerializeField, Min(0f)] private float hologramBobFrequency = 1.4f;
         [SerializeField, Min(0f)] private float hologramYawBias = 14f;
         [SerializeField] private Color hologramColor = new Color(0.08f, 0.88f, 1f, 0.42f);
+        [SerializeField, Min(0f)] private float hologramPulseAmplitude = 0.16f;
+        [SerializeField, Min(0f)] private float hologramPulseFrequency = 1.1f;
+        [SerializeField, Min(0f)] private float hologramOrbitAmplitude = 0.035f;
+        [SerializeField, Min(0f)] private float hologramOrbitFrequency = 0.9f;
 
         [Header("Diegetic Recipe List")]
         [SerializeField, Min(0.1f)] private float recipeListHeight = 1.68f;
@@ -104,6 +109,7 @@ namespace Hecton8.UI
         private bool _tickRegistered;
         private bool _recipePointerScheduled;
         private bool _ownsGlobalUiSlot;
+        private float _hologramAnimationTime;
         private JobHandle _recipePointerHandle;
 
         public static bool IsMenuOpen { get; private set; }
@@ -238,6 +244,8 @@ namespace Hecton8.UI
 
         public void Tick(float deltaTime)
         {
+            _hologramAnimationTime += Mathf.Max(0f, deltaTime);
+
             if (_isOpen && _currentFabricator == null)
             {
                 CloseMenu();
@@ -597,9 +605,15 @@ namespace Hecton8.UI
             if (anchor == null)
                 return;
 
-            Vector3 anchorPosition = anchor.position + anchor.up * (hologramHeight + 0.28f) + anchor.forward * 0.16f;
-            Quaternion worldRotation = Quaternion.AngleAxis(Time.unscaledTime * HologramSpinDegreesPerSecond, Vector3.up);
-            Vector3 scale = Vector3.one * (hologramCellSize * 2.8f);
+            float animationTime = _hologramAnimationTime;
+            float bobOffset = Mathf.Sin(animationTime * hologramBobFrequency) * hologramBobAmplitude;
+            float orbitOffset = Mathf.Sin(animationTime * hologramOrbitFrequency) * hologramOrbitAmplitude;
+            float pulseScale = 1f + (Mathf.Sin(animationTime * hologramPulseFrequency) * hologramPulseAmplitude);
+            Vector3 anchorPosition = anchor.position +
+                                     anchor.up * (hologramHeight + 0.28f + bobOffset) +
+                                     anchor.forward * (0.16f + orbitOffset);
+            Quaternion worldRotation = Quaternion.Euler(0f, animationTime * HologramSpinDegreesPerSecond, 0f);
+            Vector3 scale = Vector3.one * (hologramCellSize * SelectedHologramScaleMultiplier * pulseScale);
             _selectedRecipeHologramBuffer[0] = Matrix4x4.TRS(anchorPosition, worldRotation, scale);
 
             Graphics.DrawMeshInstanced(
@@ -647,7 +661,8 @@ namespace Hecton8.UI
 
             Vector3 anchorPosition = anchor.position + anchor.up * hologramHeight;
             Quaternion anchorRotation = Quaternion.LookRotation(anchor.forward, Vector3.up);
-            float bobOffset = Mathf.Sin(Time.unscaledTime * hologramBobFrequency) * hologramBobAmplitude;
+            float animationTime = _hologramAnimationTime;
+            float bobOffset = Mathf.Sin(animationTime * hologramBobFrequency) * hologramBobAmplitude;
             int ingredientCount = recipe.ingredients.Count;
 
             for (int ingredientIndex = 0; ingredientIndex < ingredientCount && instanceCount < MaxVisibleHologramInstances; ingredientIndex++)
@@ -663,14 +678,18 @@ namespace Hecton8.UI
                     int gridRow = instanceCount / 4;
                     float lateral = (gridColumn - 1.5f) * hologramSpacing;
                     float vertical = gridRow * hologramSpacing * 0.72f;
-                    Vector3 localOffset = new Vector3(lateral, vertical + bobOffset, 0.24f + gridRow * 0.02f);
+                    float perInstanceBob = Mathf.Sin((animationTime + (instanceCount * 0.19f)) * hologramBobFrequency) * (hologramBobAmplitude * 0.5f);
+                    float orbit = Mathf.Sin((animationTime + ingredientIndex + unitIndex) * hologramOrbitFrequency) * hologramOrbitAmplitude;
+                    Vector3 localOffset = new Vector3(lateral, vertical + bobOffset + perInstanceBob, 0.24f + gridRow * 0.02f + orbit);
                     Vector3 worldPosition = anchorPosition +
                                             anchorRotation * localOffset +
-                                            anchor.right * Mathf.Sin((Time.unscaledTime + instanceCount) * 0.37f) * 0.01f;
-                    Quaternion worldRotation = Quaternion.AngleAxis(
-                        hologramYawBias + Time.unscaledTime * HologramSpinDegreesPerSecond + ingredientIndex * 11f + unitIndex * 7f,
-                        Vector3.up);
-                    Vector3 scale = Vector3.one * hologramCellSize;
+                                            anchor.right * Mathf.Sin((animationTime + instanceCount) * 0.37f) * 0.01f;
+                    Quaternion worldRotation = Quaternion.Euler(
+                        0f,
+                        hologramYawBias + animationTime * HologramSpinDegreesPerSecond + ingredientIndex * 11f + unitIndex * 7f,
+                        0f);
+                    float pulseScale = 1f + (Mathf.Sin((animationTime * hologramPulseFrequency) + (instanceCount * 0.41f)) * (hologramPulseAmplitude * 0.35f));
+                    Vector3 scale = Vector3.one * (hologramCellSize * pulseScale);
 
                     Matrix4x4 matrix = Matrix4x4.TRS(worldPosition, worldRotation, scale);
                     _hologramMatrices[instanceCount] = matrix;

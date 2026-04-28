@@ -669,11 +669,15 @@ namespace Hecton8.Gameplay
             float safeMass = math.max(1f, _transportBody.mass);
             float thrustAcceleration = (preset != null ? math.max(0f, preset.PropulsionForce) : 0f) / safeMass;
             float maxSpeed = math.max(1f, ResolveMountedDriveMaxSpeed(throttleOutput));
+            float hydrodynamicSubmersionFactor = _riderMovement != null
+                ? math.saturate(_riderMovement.WaterImmersionRatio)
+                : 0f;
 
             float forwardInput = math.clamp(_driveMoveInput.y, -1f, 1f) * throttleOutput;
             float yawInput = math.clamp(_driveMoveInput.x, -1f, 1f);
             float pitchInput = math.clamp(_driveVerticalInput, -1f, 1f);
 
+            _vehicleMotor.ConfigureHydrodynamicSubmersion(hydrodynamicSubmersionFactor);
             _vehicleMotor.IntegrateDrive(
                 forwardInput,
                 yawInput,

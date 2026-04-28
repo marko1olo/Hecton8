@@ -128,6 +128,15 @@ namespace Hecton8.VFX
         [SerializeField, Tooltip("Fallback near-field focus distance used when the diegetic visor HUD is the active focus plane.")]
         private float _hudFocusDistance = 0.06f;
 
+        [SerializeField, Tooltip("Hard near-field focus distance applied while the center-eye ray is locked onto the PDA plane.")]
+        private float _pdaFocusDistance = 0.1f;
+
+        [SerializeField, Tooltip("Far-field focus distance restored when the player is no longer center-looking at the PDA plane.")]
+        private float _worldFocusDistance = 20f;
+
+        [SerializeField, Tooltip("Maximum center-ray hit distance treated as a PDA focus lock.")]
+        private float _pdaFocusThreshold = 0.15f;
+
         [SerializeField, Tooltip("Response speed for center-eye focus-distance convergence.")]
         private float _focusResponseSpeed = 9f;
 
@@ -878,6 +887,20 @@ namespace Hecton8.VFX
 
         private float ResolveTargetFocusDistance()
         {
+            if (PlayerPDA.IsOpen || HectonFabricatorUI.IsMenuOpen)
+            {
+                float focusCandidate = _focusRaycastScheduled
+                    ? _resolvedFocusDistance
+                    : (_focusTargetTransform != null
+                        ? Vector3.Distance(_cameraTransform.position, _focusTargetTransform.position)
+                        : ResolveHudPlaneFocusDistance());
+
+                if (focusCandidate <= Mathf.Max(0.01f, _pdaFocusThreshold))
+                    return Mathf.Max(0.01f, _pdaFocusDistance);
+
+                return Mathf.Max(0.01f, _worldFocusDistance);
+            }
+
             if (_focusRaycastScheduled)
                 return Mathf.Max(0.01f, _resolvedFocusDistance);
 

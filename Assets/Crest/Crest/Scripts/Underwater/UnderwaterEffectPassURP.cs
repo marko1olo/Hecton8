@@ -34,8 +34,13 @@ namespace Crest
         RenderTargetIdentifier _depthStencilTarget = new RenderTargetIdentifier(UnderwaterRenderer.ShaderIDs.s_CrestWaterVolumeStencil, 0, CubemapFace.Unknown, -1);
         RenderTargetIdentifier _temporaryColorTarget = new RenderTargetIdentifier(sp_TemporaryColor, 0, CubemapFace.Unknown, -1);
         RenderTargetIdentifier _cameraDepthTarget = new RenderTargetIdentifier(BuiltinRenderTextureType.CameraTarget);
+#if UNITY_6000_0_OR_NEWER
+        RTHandle _depthStencilHandle;
+        RTHandle _temporaryColorHandle;
+#else
         RenderTexture _depthStencil;
         RenderTexture _temporaryColor;
+#endif
 
         bool _firstRender = true;
         Camera _camera;
@@ -81,6 +86,7 @@ namespace Crest
 
         internal void CleanUp()
         {
+            ReleaseTemporaryTargets();
             CoreUtils.Destroy(_underwaterEffectMaterial.material);
         }
 
@@ -104,6 +110,18 @@ namespace Crest
             {
                 RenderPipelineManager.beginCameraRendering -= EnqueuePass;
             }
+
+            ReleaseTemporaryTargets();
+        }
+
+        void ReleaseTemporaryTargets()
+        {
+#if UNITY_6000_0_OR_NEWER
+            _temporaryColorHandle?.Release();
+            _temporaryColorHandle = null;
+            _depthStencilHandle?.Release();
+            _depthStencilHandle = null;
+#endif
         }
 
         static void EnqueuePass(ScriptableRenderContext context, Camera camera)
@@ -184,9 +202,13 @@ namespace Crest
                 var size = renderingData.colorTargetHandle.RT.GetScaledSize();
                 descriptor.width = size.x;
                 descriptor.height = size.y;
-#endif
+                _temporaryColorHandle ??= RTHandles.Alloc(descriptor);
+                RenderingUtils.ReAllocateHandleIfNeeded(ref _temporaryColorHandle, descriptor);
+                _temporaryColorTarget = new RenderTargetIdentifier(_temporaryColorHandle, 0, CubemapFace.Unknown, -1);
+#else
                 _temporaryColor = RenderTexture.GetTemporary(descriptor);
                 _temporaryColorTarget = new RenderTargetIdentifier(_temporaryColor, 0, CubemapFace.Unknown, -1);
+#endif
             }
 
             if (_underwaterRenderer.UseStencilBufferOnEffect)
@@ -201,10 +223,13 @@ namespace Crest
                 var size = renderingData.depthTargetHandle.RT.GetScaledSize();
                 descriptor.width = size.x;
                 descriptor.height = size.y;
-#endif
-
+                _depthStencilHandle ??= RTHandles.Alloc(descriptor);
+                RenderingUtils.ReAllocateHandleIfNeeded(ref _depthStencilHandle, descriptor);
+                _depthStencilTarget = new RenderTargetIdentifier(_depthStencilHandle, 0, CubemapFace.Unknown, -1);
+#else
                 _depthStencil = RenderTexture.GetTemporary(descriptor);
                 _depthStencilTarget = new RenderTargetIdentifier(_depthStencil, 0, CubemapFace.Unknown, -1);
+#endif
             }
 
             UnderwaterRenderer.UpdatePostProcessMaterial(
@@ -299,12 +324,16 @@ namespace Crest
 
             _underwaterRenderer.ExecuteEffect(commandBuffer, _underwaterEffectMaterial.material);
 
+#if !UNITY_6000_0_OR_NEWER
             RenderTexture.ReleaseTemporary(_temporaryColor);
             RenderTexture.ReleaseTemporary(_depthStencil);
+#endif
 
             if (_underwaterRenderer.UseStencilBufferOnEffect)
             {
+#if !UNITY_6000_0_OR_NEWER
                 commandBuffer.ReleaseTemporaryRT(UnderwaterRenderer.ShaderIDs.s_CrestWaterVolumeStencil);
+#endif
             }
 
 #if UNITY_6000_0_OR_NEWER

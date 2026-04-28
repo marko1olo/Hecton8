@@ -65,6 +65,7 @@ namespace Hecton8.AI
         public float ScatterUntilTime;
         public float SatedUntilTime;
         public int WanderSequence;
+        public int LastPredatorStateCode;
         public uint OverrideStateFlags;
         public int Flags;
         public int Reserved;
@@ -122,6 +123,7 @@ namespace Hecton8.AI
         public int StateMask;
         public int LegacyState;
         public int ShouldAttack;
+        public int EmitThreatPulse;
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 48)]
@@ -144,6 +146,7 @@ namespace Hecton8.AI
     {
         None = 0u,
         ShouldAttack = 1u << 0,
+        EmitThreatPulse = 1u << 1,
     }
 
     [System.Flags]
@@ -401,6 +404,7 @@ namespace Hecton8.AI
             control.NextAttackAllowedTime = float.NegativeInfinity;
             control.ScatterUntilTime = float.NegativeInfinity;
             control.SatedUntilTime = float.NegativeInfinity;
+            control.LastPredatorStateCode = (int)PredatorUtilityState.Prowling;
             _controls[slot] = control;
 
             _inputs[slot] = default;
@@ -531,6 +535,7 @@ namespace Hecton8.AI
             output.StateMask = (int)packedOutput.StateMask;
             output.LegacyState = packedOutput.LegacyState;
             output.ShouldAttack = (packedOutput.OutputFlags & (uint)CognitionOutputFlags.ShouldAttack) != 0u ? 1 : 0;
+            output.EmitThreatPulse = (packedOutput.OutputFlags & (uint)CognitionOutputFlags.EmitThreatPulse) != 0u ? 1 : 0;
             if (math.lengthsq(output.DesiredDirection) <= 0.0001f)
                 output.DesiredDirection = math.normalizesafe(fallbackForward, new float3(0f, 0f, 1f));
             return output;
@@ -1496,6 +1501,8 @@ namespace Hecton8.AI
                 int stateCode = DecodePredatorStateCode(winningMask);
                 stateCode = math.select(stateCode, (int)PredatorUtilityState.Prowling, winningScore < MinimumScoreThreshold);
                 PredatorUtilityState stateMask = (PredatorUtilityState)stateCode;
+                bool wasHunting = control.LastPredatorStateCode == (int)PredatorUtilityState.Stalking ||
+                                  control.LastPredatorStateCode == (int)PredatorUtilityState.Attacking;
 
                 bool wantsBoidClaim =
                     stateMask == PredatorUtilityState.Attacking &&
@@ -1528,6 +1535,9 @@ namespace Hecton8.AI
                 output.SpeedMultiplier = 1f;
                 output.TurnMultiplier = 1f;
                 output.OutputFlags = 0u;
+                bool isHunting = stateMask == PredatorUtilityState.Stalking || stateMask == PredatorUtilityState.Attacking;
+                if (isHunting && !wasHunting)
+                    output.OutputFlags |= (uint)CognitionOutputFlags.EmitThreatPulse;
 
                 switch (stateMask)
                 {
@@ -1545,9 +1555,9 @@ namespace Hecton8.AI
                         output.ForceMultiplier = 2.15f;
                         output.SpeedMultiplier = math.max(1.15f, aggression);
                         output.TurnMultiplier = 1.2f;
-                        output.OutputFlags = ((playerVisible || resolvedPreyVisible || scavengeVisible) &&
-                                              targetDistanceSq <= math.max(1f, input.AttackRange * input.AttackRange) &&
-                                              input.CurrentTime >= control.NextAttackAllowedTime)
+                        output.OutputFlags |= ((playerVisible || resolvedPreyVisible || scavengeVisible) &&
+                                               targetDistanceSq <= math.max(1f, input.AttackRange * input.AttackRange) &&
+                                               input.CurrentTime >= control.NextAttackAllowedTime)
                             ? (uint)CognitionOutputFlags.ShouldAttack
                             : 0u;
                         break;
@@ -1558,6 +1568,7 @@ namespace Hecton8.AI
                         break;
                 }
 
+                control.LastPredatorStateCode = (int)stateMask;
                 return output;
             }
 
