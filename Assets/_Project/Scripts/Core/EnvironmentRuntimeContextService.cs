@@ -185,7 +185,6 @@ namespace Hecton8.Core
             if (_registeredUpdatable)
                 return;
 
-            SystemDispatcher.EnsureRuntimeInstance();
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
             _registeredUpdatable = true;
         }

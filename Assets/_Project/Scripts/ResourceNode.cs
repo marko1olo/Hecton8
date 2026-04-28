@@ -38,6 +38,15 @@ namespace Hecton8.Scavenging
     [DisallowMultipleComponent]
     public sealed class ResourceNode : MonoBehaviour, IPoolable, ICuttable
     {
+        // COLD ALLOC: RegistryBucket<ResourceNode>[4096] — authored/persistent resource node registry for world-state scans — owner: ResourceNode
+        private static readonly RegistryBucket<ResourceNode> _worldStateRegistry = new RegistryBucket<ResourceNode>(4096);
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _worldStateRegistry.Clear();
+        }
+
         // ══════════════════════════════════════════════════════════
         //  SHADER PROPERTY IDs — cached once, zero GC
         // ══════════════════════════════════════════════════════════
@@ -122,6 +131,7 @@ namespace Hecton8.Scavenging
         private bool  _despawnRequested;
         private bool  _lootSpawnBlockedLogged;
         private int _spatialHandle;
+        private bool _registeredToWorldStateRegistry;
 
         /// <summary>
         /// Кэшированный MaterialPropertyBlock. Создаётся один раз в Awake.
@@ -141,6 +151,12 @@ namespace Hecton8.Scavenging
         // ══════════════════════════════════════════════════════════
 
         public string UniqueId => uniqueId;
+        public static int WorldStateRegistryCount => _worldStateRegistry.Count;
+
+        public static ResourceNode GetWorldStateRegistryAt(int index)
+        {
+            return _worldStateRegistry.GetAt(index);
+        }
 
         public void SetUniqueId(string id)
         {
@@ -181,6 +197,8 @@ namespace Hecton8.Scavenging
 
         private void OnEnable()
         {
+            RegisterWorldStateRegistry();
+
             if (autoGenerateId && string.IsNullOrEmpty(uniqueId))
             {
                 GenerateDeterministicId();
@@ -203,6 +221,7 @@ namespace Hecton8.Scavenging
         private void OnDisable()
         {
             UnregisterSpatialHandle();
+            UnregisterWorldStateRegistry();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -212,6 +231,7 @@ namespace Hecton8.Scavenging
         public void OnSpawn()
         {
             ResetState();
+            RegisterWorldStateRegistry();
 
             if (autoGenerateId && string.IsNullOrEmpty(uniqueId))
             {
@@ -246,12 +266,31 @@ namespace Hecton8.Scavenging
         public void OnDespawn()
         {
             UnregisterSpatialHandle();
+            UnregisterWorldStateRegistry();
             ResetState();
 
             if (autoGenerateId)
             {
                 uniqueId = null;
             }
+        }
+
+        private void RegisterWorldStateRegistry()
+        {
+            if (_registeredToWorldStateRegistry)
+                return;
+
+            _worldStateRegistry.Register(this);
+            _registeredToWorldStateRegistry = true;
+        }
+
+        private void UnregisterWorldStateRegistry()
+        {
+            if (!_registeredToWorldStateRegistry)
+                return;
+
+            _worldStateRegistry.Unregister(this);
+            _registeredToWorldStateRegistry = false;
         }
 
         // ══════════════════════════════════════════════════════════

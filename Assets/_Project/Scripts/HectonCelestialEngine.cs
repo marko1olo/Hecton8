@@ -60,12 +60,12 @@ using System.Collections.Generic;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Environment;
+using Hecton8.Physics;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Unity.Mathematics;
 using Hecton8.Atmosphere;
 using Hecton8.World;
-using CrestOceanRenderer = global::Crest.OceanRenderer;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -369,7 +369,6 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable
 
         private float _cachedAegirRadius;
         private Material _aegirSharedMaterial;
-        private CrestOceanRenderer _crestOceanRenderer;
         private bool _deepTextureResidencyReduced;
         private float _currentDepthMeters;
         private float _currentAdaptiveRenderScale = 1f;
@@ -931,14 +930,15 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable
             if (!ReferenceEquals(RenderSettings.sun, sunLight))
                 RenderSettings.sun = sunLight;
 
-            if (_crestOceanRenderer == null)
-                _crestOceanRenderer = CrestOceanRenderer.Instance;
-
-            if (_crestOceanRenderer == null)
+            IHectonOceanKinematicsService oceanKinematicsService = GlobalRegistry.OceanKinematics;
+            if (oceanKinematicsService == null)
                 return;
 
-            if (!ReferenceEquals(_crestOceanRenderer._primaryLight, sunLight))
-                _crestOceanRenderer._primaryLight = sunLight;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService.ActiveProvider;
+            if (oceanKinematics == null)
+                return;
+
+            oceanKinematics.TryAssignPrimaryLight(sunLight);
         }
 
         private void EnsureCelestialAtmosphereLutReady()

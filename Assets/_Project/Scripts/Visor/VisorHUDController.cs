@@ -3,6 +3,7 @@ using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Optimization;
+using Hecton8.Physics;
 using Hecton8.World;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
@@ -100,6 +101,10 @@ namespace NASAPunk.Visor
         [SerializeField, Range(0f, 1f)] private float _structuralFatigueStaticNoiseMax = 0.22f;
         [SerializeField, Range(0.25f, 12f)] private float _structuralFatigueBlendSharpness = 4.8f;
 
+        [Header("Hypoxia HUD Failure")]
+        [SerializeField, Range(0.01f, 0.5f)] private float _hypoxiaStartThreshold = 0.15f;
+        [SerializeField, Range(0.25f, 12f)] private float _hypoxiaBlendSharpness = 5.6f;
+
         [Header("Pose Lock")]
         [SerializeField] private bool _syncToReferenceCamera = true;
         [SerializeField] private bool _syncPoseInEditMode = false;
@@ -163,6 +168,7 @@ namespace NASAPunk.Visor
         private float _lastPressureSample;
         private float _structuralFatigueChromaticAberration;
         private float _structuralFatigueStaticNoise;
+        private float _hudHypoxiaLevel;
 
         private uint _glitchRngState = 1u;
 
@@ -183,6 +189,7 @@ namespace NASAPunk.Visor
         private static readonly int ID_ScreenFrostStrength = Shader.PropertyToID("_ScreenFrostStrength");
         private static readonly int ID_ChromaticAberration = Shader.PropertyToID("_ChromaticAberration");
         private static readonly int ID_StaticNoise = Shader.PropertyToID("_StaticNoise");
+        private static readonly int ID_HypoxiaLevel = Shader.PropertyToID("_HypoxiaLevel");
 
         public Camera HudCamera => _hudCamera;
         public RenderTexture SharedRenderTexture => _sharedRenderTexture;
@@ -344,6 +351,7 @@ namespace NASAPunk.Visor
             UpdateFrostState(deltaTime);
             UpdateInterferenceState(deltaTime);
             UpdateStructuralFatigueState(deltaTime);
+            UpdateHypoxiaState(deltaTime);
             if (_materialPropertiesDirty)
                 ApplyMaterialProperties();
         }
@@ -364,7 +372,6 @@ namespace NASAPunk.Visor
             if (!Application.isPlaying || _runtimeTickRegistered)
                 return;
 
-            SystemDispatcher.EnsureRuntimeInstance();
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _runtimeTickRegistered = true;
         }
@@ -481,7 +488,7 @@ namespace NASAPunk.Visor
             if (_mpb != null)
                 return;
 
-            // COLD ALLOC: MaterialPropertyBlock[1] — visor surface state bridge — owner: VisorHUDController
+            // COLD ALLOC: MaterialPropertyBlock[1] â€” visor surface state bridge â€” owner: VisorHUDController
             _mpb = new MaterialPropertyBlock();
         }
 
@@ -519,6 +526,7 @@ namespace NASAPunk.Visor
             _mpb.SetFloat(ID_ScreenFrostStrength, _screenFrostStrength);
             _mpb.SetFloat(ID_ChromaticAberration, _structuralFatigueChromaticAberration);
             _mpb.SetFloat(ID_StaticNoise, _structuralFatigueStaticNoise);
+            _mpb.SetFloat(ID_HypoxiaLevel, _hudHypoxiaLevel);
             _visorRenderer.SetPropertyBlock(_mpb);
             _materialPropertiesDirty = false;
         }
@@ -798,6 +806,26 @@ namespace NASAPunk.Visor
             if (!Mathf.Approximately(nextStaticNoise, _structuralFatigueStaticNoise))
             {
                 _structuralFatigueStaticNoise = nextStaticNoise;
+                _materialPropertiesDirty = true;
+            }
+        }
+
+        private void UpdateHypoxiaState(float deltaTime)
+        {
+            float targetHypoxia = 0f;
+            if (_subscribedSurvivalSystem != null)
+            {
+                float oxygenNormalized = Mathf.Clamp01(_subscribedSurvivalSystem.OxygenNormalized);
+                float safeThreshold = Mathf.Clamp(_hypoxiaStartThreshold, 0.01f, 1f);
+                if (oxygenNormalized < safeThreshold)
+                    targetHypoxia = 1f - Mathf.Clamp01(oxygenNormalized / safeThreshold);
+            }
+
+            float blendT = 1f - Mathf.Exp(-Mathf.Max(0.1f, _hypoxiaBlendSharpness) * deltaTime);
+            float nextHypoxia = Mathf.Lerp(_hudHypoxiaLevel, targetHypoxia, blendT);
+            if (!Mathf.Approximately(nextHypoxia, _hudHypoxiaLevel))
+            {
+                _hudHypoxiaLevel = nextHypoxia;
                 _materialPropertiesDirty = true;
             }
         }

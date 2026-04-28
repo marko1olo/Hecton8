@@ -39,6 +39,13 @@ Shader "Hidden/Hecton8/DryVolumeRestore"
         float4 _HectonNoirFogStratification;
         float4 _HectonNoirDitherParams;
         float4 _HectonFloatingOriginOffset;
+        float4 _HectonBiolumVolumeHalfExtents;
+        float4 _HectonBiolumVolumeParams;
+        float _HectonBiolumVolumeActive;
+        float4x4 _HectonBiolumVolumeWorldToLocal;
+
+        TEXTURE3D(_HectonBiolumVolumeTex);
+        SAMPLER(sampler_HectonBiolumVolumeTex);
 
         struct Attributes
         {
@@ -121,6 +128,21 @@ Shader "Hidden/Hecton8/DryVolumeRestore"
             return lerp(sourceColor, max(abyssFloor, sourceColor * 0.18h), fogFactor);
         }
 
+        float3 SampleBiolumVolumeRadiance(float3 positionWS)
+        {
+            if (_HectonBiolumVolumeActive <= 0.5)
+                return 0.0;
+
+            float3 halfExtents = max(_HectonBiolumVolumeHalfExtents.xyz, float3(0.001, 0.001, 0.001));
+            float3 localPosition = mul(_HectonBiolumVolumeWorldToLocal, float4(positionWS, 1.0)).xyz;
+            float3 sampleUv = localPosition / (halfExtents * 2.0) + 0.5;
+            if (any(sampleUv < 0.0) || any(sampleUv > 1.0))
+                return 0.0;
+
+            float4 volumeSample = SAMPLE_TEXTURE3D_LOD(_HectonBiolumVolumeTex, sampler_HectonBiolumVolumeTex, sampleUv, 0);
+            return volumeSample.rgb * max(_HectonBiolumVolumeParams.x, 0.0);
+        }
+
         half4 FragRestore(Varyings input) : SV_Target
         {
             return SAMPLE_TEXTURE2D_X(_Crest_CameraColorTexture, sampler_LinearClamp, input.screenUV);
@@ -141,6 +163,8 @@ Shader "Hidden/Hecton8/DryVolumeRestore"
             {
                 float3 absolutePositionWS = scenePositionWS + _HectonFloatingOriginOffset.xyz;
                 resolvedColor = ApplyNoirFog(resolvedColor, absolutePositionWS, linearEyeDepth);
+                float depthBiolumScale = saturate(1.0 - (linearEyeDepth * 0.0125));
+                resolvedColor += (half3)(SampleBiolumVolumeRadiance(absolutePositionWS) * depthBiolumScale * 0.22);
             }
 
             half dither = (half)(ResolveBlueNoise(input.screenUV) - 0.5) * (half)(_HectonNoirResolveSettings.y / 255.0);

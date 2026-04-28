@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Hecton8.AI;
 using Hecton8.Core;
 using MapMagic.Products;
@@ -22,6 +23,25 @@ namespace Hecton8.World
     [DisallowMultipleComponent]
     public sealed class HectonMapMagicVegetationBridge : MonoBehaviour, ITickable, ISlowTickable, IOriginShiftListener
     {
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
+        private struct PredatorFearNodeSnapshot
+        {
+            public float3 Position;
+            public float Radius;
+            public float Weight;
+            public int SpeciesId;
+            public float Padding;
+        }
+
+        private struct PredatorFearNodeState
+        {
+            public float3 Position;
+            public float Radius;
+            public float Weight;
+            public float ExpireTime;
+            public int SpeciesId;
+        }
+
         private const string SandLayerName = "L_Sand";
         private const string GreenSandLayerName = "L_sandGreen";
         private const string RockLayerName = "L_Rocks";
@@ -49,6 +69,9 @@ namespace Hecton8.World
         private const int DensityTypeMaskAll = DensityTypeMaskGrass | DensityTypeMaskKelp | DensityTypeMaskSargassum;
         private const float DefaultThreatGridRadius = 1000f;
         private const float DefaultThreatGridCellSize = 10f;
+        private const int DefaultPredatorFearNodeCapacity = 32;
+        private const float DefaultPredatorFearSectorSizeMeters = 1000f;
+        private const float DefaultPredatorFearLifetimeSeconds = 900f;
         private const float DefaultAbyssalNavGraphCellSize = 64f;
         private const int InvalidTerrainHoleId = 0;
         private const float DefaultTerrainHoleEvictionDistance = 3000f;
@@ -489,6 +512,31 @@ namespace Hecton8.World
         [Tooltip("Extra dead-zone keep chance injected when a permanent echo overlaps a dead-zone structure candidate.")]
         private float permanentEchoDeadZoneKeepBoost = 0.18f;
 
+        [Header("Predator Fear Memory")]
+        [SerializeField, Range(4, 128)]
+        [Tooltip("Maximum active predator fear sectors retained in the bridge-owned navigation memory.")]
+        private int predatorFearNodeCapacity = DefaultPredatorFearNodeCapacity;
+
+        [SerializeField, Min(120f)]
+        [Tooltip("Lifetime in seconds for predator fear sectors before they decay out of the pathing memory.")]
+        private float predatorFearLifetimeSeconds = DefaultPredatorFearLifetimeSeconds;
+
+        [SerializeField, Min(100f)]
+        [Tooltip("Sector size in meters used when snapping fear writes onto the AUP ecosystem grid.")]
+        private float predatorFearSectorSizeMeters = DefaultPredatorFearSectorSizeMeters;
+
+        [SerializeField, Min(1f)]
+        [Tooltip("Horizontal radius in meters sampled around a snapped predator fear sector.")]
+        private float predatorFearNodeRadiusMeters = 500f;
+
+        [SerializeField, Range(0f, 4f)]
+        [Tooltip("Additional A* cost weight injected for predators traversing their remembered kill sectors.")]
+        private float predatorFearPathPenaltyWeight = 1.2f;
+
+        [SerializeField, Range(0f, 1f)]
+        [Tooltip("Immediate cognition pressure scale sampled from active predator fear sectors.")]
+        private float predatorFearCognitionPressureScale = 0.85f;
+
         [Header("Abyssal Thermal Grid")]
         [SerializeField, Min(100f)]
         [Tooltip("Horizontal radius in meters covered by the 3D abyssal thermal grid around the player.")]
@@ -829,6 +877,41 @@ namespace Hecton8.World
                     return hash;
                 }
             }
+        }
+
+        /// <summary>
+        /// Read-only active terrain height texture contract for GPU consumers that need the current player tile heightmap.
+        /// </summary>
+        public readonly struct TerrainHeightTexturePayload
+        {
+            public TerrainHeightTexturePayload(
+                Texture heightTexture,
+                Vector3 terrainPosition,
+                Vector3 terrainSize,
+                int heightmapResolution,
+                int cacheRevision)
+            {
+                HeightTexture = heightTexture;
+                TerrainPosition = terrainPosition;
+                TerrainSize = terrainSize;
+                HeightmapResolution = heightmapResolution;
+                CacheRevision = cacheRevision;
+            }
+
+            /// <summary>Current active terrain height texture for the resolved tile.</summary>
+            public Texture HeightTexture { get; }
+
+            /// <summary>World-space minimum corner of the terrain tile.</summary>
+            public Vector3 TerrainPosition { get; }
+
+            /// <summary>World-space size of the terrain tile.</summary>
+            public Vector3 TerrainSize { get; }
+
+            /// <summary>Heightmap resolution used by the active texture payload.</summary>
+            public int HeightmapResolution { get; }
+
+            /// <summary>Authoritative cache revision for the resolved tile.</summary>
+            public int CacheRevision { get; }
         }
 
         private struct TileNativeCacheBuffer
@@ -1477,6 +1560,7 @@ namespace Hecton8.World
         private NativeArray<byte> _abyssalPathClosedFlagsNative;
         private NativeArray<int> _abyssalPathHeapNodesNative;
         private NativeArray<int> _abyssalPathHeapPositionsNative;
+        private NativeArray<PredatorFearNodeSnapshot> _predatorFearNodesSnapshotNative;
         private HLODData[] _hlodRegistrySnapshot = Array.Empty<HLODData>();
         private HLODData[] _visibleHlodSnapshot = Array.Empty<HLODData>();
         private NativeArray<HLODData> _hlodRegistrySnapshotNative;
@@ -1501,6 +1585,7 @@ namespace Hecton8.World
         private int _artificialStructureCount;
         private int _hlodRegistryCount;
         private int _visibleHlodCount;
+        private int _predatorFearNodeCount;
         private int _ecosystemThreatGridResolution;
         private int _ecosystemThreatGridCellCount;
         private int _ecosystemThreatGridResolutionY;
@@ -1535,6 +1620,10 @@ namespace Hecton8.World
         private JobHandle _aggregateRebuildHandle;
         private Vector3 _ecosystemThreatGridCenter;
         private Vector3 _scheduledThreatGridCenter;
+        // COLD ALLOC: PredatorFearNodeState[DefaultPredatorFearNodeCapacity] - bounded predator fear-sector memory aligned to ecosystem threat routing - owner: HectonMapMagicVegetationBridge
+        private PredatorFearNodeState[] _predatorFearNodes = Array.Empty<PredatorFearNodeState>();
+        private float _predatorFearSimulationTime;
+        private float _predatorFearPruneTimer;
         private Vector3 _ecosystemThreatVoxelOrigin;
         private Vector3 _scheduledThreatVoxelOrigin;
         private Vector3 _ecosystemFlowFieldCenter;
@@ -1692,6 +1781,12 @@ namespace Hecton8.World
             permanentThreatEchoFloor = Mathf.Clamp01(permanentThreatEchoFloor);
             permanentThreatEchoThreshold = Mathf.Clamp(permanentThreatEchoThreshold, Mathf.Max(0.3f, permanentThreatEchoFloor), 1f);
             predatorSpawnThreatBonusMultiplier = Mathf.Clamp(predatorSpawnThreatBonusMultiplier, 0f, 3f);
+            predatorFearNodeCapacity = Mathf.Clamp(predatorFearNodeCapacity, 4, 128);
+            predatorFearLifetimeSeconds = Mathf.Max(120f, predatorFearLifetimeSeconds);
+            predatorFearSectorSizeMeters = Mathf.Max(100f, predatorFearSectorSizeMeters);
+            predatorFearNodeRadiusMeters = Mathf.Max(1f, predatorFearNodeRadiusMeters);
+            predatorFearPathPenaltyWeight = Mathf.Clamp(predatorFearPathPenaltyWeight, 0f, 4f);
+            predatorFearCognitionPressureScale = Mathf.Clamp01(predatorFearCognitionPressureScale);
             permanentEchoTechnoJungleThresholdBias = Mathf.Clamp01(permanentEchoTechnoJungleThresholdBias);
             permanentEchoDeadZoneKeepBoost = Mathf.Clamp01(permanentEchoDeadZoneKeepBoost);
             thermalGridRadius = Mathf.Max(100f, thermalGridRadius);
@@ -1882,6 +1977,16 @@ namespace Hecton8.World
         public void Tick(float dt)
         {
             TryDisposeDeferredTileCacheReadbacks();
+            float clampedDt = Mathf.Max(0f, dt);
+            _predatorFearSimulationTime += clampedDt;
+            _predatorFearPruneTimer += clampedDt;
+            if (_predatorFearPruneTimer >= 1f)
+            {
+                _predatorFearPruneTimer = 0f;
+                CompactPredatorFearNodes(_predatorFearSimulationTime);
+                if (!_abyssalPathScheduled)
+                    SyncPredatorFearNodeSnapshot(_predatorFearSimulationTime);
+            }
 
             if (_externalThreatPulseHoldTimer > 0f)
                 _externalThreatPulseHoldTimer = Mathf.Max(0f, _externalThreatPulseHoldTimer - dt);
@@ -2251,6 +2356,32 @@ namespace Hecton8.World
         }
 
         /// <summary>
+        /// Returns the current player-tile height texture payload for GPU consumers that need direct heightmap sampling.
+        /// </summary>
+        public bool TryGetActiveHeightTexturePayload(out TerrainHeightTexturePayload payload)
+        {
+            payload = default;
+            if (playerTransform == null || !TryFindPlayerTileState(playerTransform.position, out TileRuntimeState state) || state == null)
+                return false;
+
+            Texture heightTexture = state.HeightTextureCache;
+            if (heightTexture == null || state.HeightmapResolution <= 1)
+                return false;
+
+            if (!TryGetActiveTileCache(state, out _, out _, out NativeArray<ushort> heightSamples) || !heightSamples.IsCreated)
+                return false;
+
+            TouchTileCacheState(state);
+            payload = new TerrainHeightTexturePayload(
+                heightTexture,
+                state.TerrainPosition,
+                state.TerrainSize,
+                state.HeightmapResolution,
+                state.CacheRevision);
+            return true;
+        }
+
+        /// <summary>
         /// Returns the current surface semantic payload as native memory for AI and deep-biome consumers.
         /// </summary>
         public bool TryGetActiveSurfaceSemanticPayload(
@@ -2471,6 +2602,205 @@ namespace Hecton8.World
                    echoFlags.IsCreated &&
                    gridResolution > 0 &&
                    cellSize > 0f;
+        }
+
+        /// <summary>
+        /// Records a temporary species-scoped predator fear sector at the snapped AUP ecosystem cell center.
+        /// </summary>
+        public void RegisterPredatorFearNode(int speciesId, Vector3 worldPosition, float normalizedDamage)
+        {
+            if (speciesId == 0 || normalizedDamage < 0.3f)
+                return;
+
+            EnsurePredatorFearMemoryBuffers();
+            float currentTime = _predatorFearSimulationTime;
+            CompactPredatorFearNodes(currentTime);
+
+            float normalizedWeight = Mathf.Clamp01((normalizedDamage - 0.3f) / 0.7f);
+            if (normalizedWeight <= 0f)
+                return;
+
+            float3 sectorCenter = ResolvePredatorFearSectorCenter(worldPosition);
+            float sectorRadius = Mathf.Max(1f, predatorFearNodeRadiusMeters);
+            float expireTime = currentTime + Mathf.Max(120f, predatorFearLifetimeSeconds);
+
+            for (int i = 0; i < _predatorFearNodeCount; i++)
+            {
+                PredatorFearNodeState node = _predatorFearNodes[i];
+                if (node.SpeciesId != speciesId)
+                    continue;
+
+                float2 delta = new float2(node.Position.x - sectorCenter.x, node.Position.z - sectorCenter.z);
+                if (math.lengthsq(delta) > 1f)
+                    continue;
+
+                node.Position = sectorCenter;
+                node.Radius = Mathf.Max(node.Radius, sectorRadius);
+                node.Weight = Mathf.Max(node.Weight, normalizedWeight);
+                node.ExpireTime = Mathf.Max(node.ExpireTime, expireTime);
+                _predatorFearNodes[i] = node;
+                if (!_abyssalPathScheduled)
+                    SyncPredatorFearNodeSnapshot(currentTime);
+                return;
+            }
+
+            int writeIndex = _predatorFearNodeCount < _predatorFearNodes.Length
+                ? _predatorFearNodeCount
+                : FindWeakestPredatorFearNodeIndex(currentTime);
+
+            if (writeIndex < 0)
+                writeIndex = 0;
+
+            _predatorFearNodes[writeIndex] = new PredatorFearNodeState
+            {
+                Position = sectorCenter,
+                Radius = sectorRadius,
+                Weight = normalizedWeight,
+                ExpireTime = expireTime,
+                SpeciesId = speciesId
+            };
+
+            _predatorFearNodeCount = Mathf.Min(_predatorFearNodes.Length, Mathf.Max(_predatorFearNodeCount, writeIndex + 1));
+            if (!_abyssalPathScheduled)
+                SyncPredatorFearNodeSnapshot(currentTime);
+        }
+
+        /// <summary>
+        /// Samples the current species-scoped predator fear pressure at a world position.
+        /// </summary>
+        public float SamplePredatorFearPressure(Vector3 worldPosition, int speciesId)
+        {
+            if (speciesId == 0 || _predatorFearNodeCount <= 0)
+                return 0f;
+
+            float currentTime = _predatorFearSimulationTime;
+            float pressure = 0f;
+            float lifetime = Mathf.Max(120f, predatorFearLifetimeSeconds);
+            float3 position = new float3(worldPosition.x, worldPosition.y, worldPosition.z);
+            for (int i = 0; i < _predatorFearNodeCount; i++)
+            {
+                PredatorFearNodeState node = _predatorFearNodes[i];
+                if (node.SpeciesId != speciesId || node.ExpireTime <= currentTime)
+                    continue;
+
+                float2 delta = new float2(position.x - node.Position.x, position.z - node.Position.z);
+                float radius = math.max(node.Radius, 1f);
+                float gate = 1f - math.saturate(math.length(delta) / radius);
+                if (gate <= 0f)
+                    continue;
+
+                float freshness = math.saturate((node.ExpireTime - currentTime) / lifetime);
+                pressure = math.max(pressure, node.Weight * freshness * gate);
+            }
+
+            return Mathf.Clamp01(pressure * predatorFearCognitionPressureScale);
+        }
+
+        private void EnsurePredatorFearMemoryBuffers()
+        {
+            int safeCapacity = Mathf.Clamp(predatorFearNodeCapacity, 4, 128);
+            if (_predatorFearNodes == null || _predatorFearNodes.Length != safeCapacity)
+            {
+                // COLD ALLOC: PredatorFearNodeState[safeCapacity] - bounded predator fear-sector memory aligned to ecosystem threat routing - owner: HectonMapMagicVegetationBridge
+                PredatorFearNodeState[] resized = new PredatorFearNodeState[safeCapacity];
+                int copyCount = Mathf.Min(_predatorFearNodeCount, resized.Length);
+                if (_predatorFearNodes != null && copyCount > 0)
+                    Array.Copy(_predatorFearNodes, resized, copyCount);
+
+                _predatorFearNodes = resized;
+                _predatorFearNodeCount = copyCount;
+            }
+
+            if (!_predatorFearNodesSnapshotNative.IsCreated || _predatorFearNodesSnapshotNative.Length != safeCapacity)
+            {
+                DisposeNativeArray(ref _predatorFearNodesSnapshotNative);
+                // COLD ALLOC: NativeArray<PredatorFearNodeSnapshot>[safeCapacity] - path-job snapshot of predator fear memory - owner: HectonMapMagicVegetationBridge
+                _predatorFearNodesSnapshotNative = new NativeArray<PredatorFearNodeSnapshot>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            }
+        }
+
+        private void CompactPredatorFearNodes(float currentTime)
+        {
+            if (_predatorFearNodeCount <= 0 || _predatorFearNodes == null)
+            {
+                _predatorFearNodeCount = 0;
+                return;
+            }
+
+            int writeIndex = 0;
+            for (int i = 0; i < _predatorFearNodeCount; i++)
+            {
+                PredatorFearNodeState node = _predatorFearNodes[i];
+                if (node.SpeciesId == 0 || node.ExpireTime <= currentTime || node.Weight <= 0f)
+                    continue;
+
+                if (writeIndex != i)
+                    _predatorFearNodes[writeIndex] = node;
+
+                writeIndex++;
+            }
+
+            _predatorFearNodeCount = writeIndex;
+        }
+
+        private int FindWeakestPredatorFearNodeIndex(float currentTime)
+        {
+            if (_predatorFearNodes == null || _predatorFearNodes.Length == 0)
+                return -1;
+
+            int weakestIndex = 0;
+            float weakestScore = float.MaxValue;
+            float lifetime = Mathf.Max(120f, predatorFearLifetimeSeconds);
+            int count = Mathf.Min(_predatorFearNodes.Length, Mathf.Max(_predatorFearNodeCount, 1));
+            for (int i = 0; i < count; i++)
+            {
+                PredatorFearNodeState node = _predatorFearNodes[i];
+                float freshness = Mathf.Clamp01((node.ExpireTime - currentTime) / lifetime);
+                float score = node.SpeciesId == 0 ? -1f : node.Weight * freshness;
+                if (score < weakestScore)
+                {
+                    weakestScore = score;
+                    weakestIndex = i;
+                }
+            }
+
+            return weakestIndex;
+        }
+
+        private float3 ResolvePredatorFearSectorCenter(Vector3 worldPosition)
+        {
+            float sectorSize = Mathf.Max(100f, predatorFearSectorSizeMeters);
+            return new float3(
+                Mathf.Round(worldPosition.x / sectorSize) * sectorSize,
+                worldPosition.y,
+                Mathf.Round(worldPosition.z / sectorSize) * sectorSize);
+        }
+
+        private void SyncPredatorFearNodeSnapshot(float currentTime)
+        {
+            if (!_predatorFearNodesSnapshotNative.IsCreated)
+                return;
+
+            CompactPredatorFearNodes(currentTime);
+            float lifetime = Mathf.Max(120f, predatorFearLifetimeSeconds);
+            int safeLength = _predatorFearNodesSnapshotNative.Length;
+            int activeCount = Mathf.Min(_predatorFearNodeCount, safeLength);
+            for (int i = 0; i < safeLength; i++)
+            {
+                PredatorFearNodeSnapshot snapshot = default;
+                if (i < activeCount)
+                {
+                    PredatorFearNodeState node = _predatorFearNodes[i];
+                    float freshness = Mathf.Clamp01((node.ExpireTime - currentTime) / lifetime);
+                    snapshot.Position = node.Position;
+                    snapshot.Radius = node.Radius;
+                    snapshot.Weight = node.Weight * freshness;
+                    snapshot.SpeciesId = node.SpeciesId;
+                    snapshot.Padding = 0f;
+                }
+
+                _predatorFearNodesSnapshotNative[i] = snapshot;
+            }
         }
 
         /// <summary>
@@ -2908,9 +3238,41 @@ namespace Hecton8.World
         }
 
         /// <summary>
+        /// Builds an immediate non-allocating 3D voxel route through the active cave portal graph.
+        /// This is restricted to pure cave-voxel traversal and is intended for fauna steering guidance.
+        /// </summary>
+        public bool TryBuildImmediateAbyssalVoxelRoute(Vector3 startPosition, Vector3 endPosition, Vector3[] outputWaypoints, out int waypointCount)
+        {
+            waypointCount = 0;
+            if (outputWaypoints == null || outputWaypoints.Length < 2)
+                return false;
+
+            float3 startProbe = new float3(startPosition.x, startPosition.y, startPosition.z);
+            float3 endProbe = new float3(endPosition.x, endPosition.y, endPosition.z);
+            if (!VoxelDynamicNavGridRuntime.TrySampleHybridNavigation(startProbe, out VoxelDynamicNavGridRuntime.HybridNavigationSample startSample) ||
+                !VoxelDynamicNavGridRuntime.TrySampleHybridNavigation(endProbe, out VoxelDynamicNavGridRuntime.HybridNavigationSample endSample) ||
+                startSample.Mode != VoxelDynamicNavGridRuntime.HybridNavigationMode.CaveVoxel ||
+                endSample.Mode != VoxelDynamicNavGridRuntime.HybridNavigationMode.CaveVoxel)
+            {
+                return false;
+            }
+
+            return VoxelDynamicNavGridRuntime.TryBuildMacroPortalRouteNonAlloc(startProbe, endProbe, outputWaypoints, out waypointCount);
+        }
+
+        /// <summary>
         /// Schedules a bounded native abyssal A* solve between the nearest safe nav nodes to the provided world positions.
         /// </summary>
         public bool TryScheduleAbyssalPath(Vector3 startPosition, Vector3 endPosition, out JobHandle handle)
+        {
+            return TryScheduleAbyssalPath(startPosition, endPosition, 0, out handle);
+        }
+
+        /// <summary>
+        /// Schedules a bounded native abyssal A* solve between the nearest safe nav nodes to the provided world positions.
+        /// Species-aware predator fear penalties are applied when <paramref name="traversalSpeciesId"/> is non-zero.
+        /// </summary>
+        public bool TryScheduleAbyssalPath(Vector3 startPosition, Vector3 endPosition, int traversalSpeciesId, out JobHandle handle)
         {
             handle = default;
             CompleteAbyssalPathJob(forceComplete: false);
@@ -2920,6 +3282,9 @@ namespace Hecton8.World
             {
                 return false;
             }
+
+            EnsurePredatorFearMemoryBuffers();
+            SyncPredatorFearNodeSnapshot(_predatorFearSimulationTime);
 
             float3 startProbe = new float3(startPosition.x, startPosition.y, startPosition.z);
             float3 endProbe = new float3(endPosition.x, endPosition.y, endPosition.z);
@@ -2997,6 +3362,10 @@ namespace Hecton8.World
                     HeapNodes = _abyssalPathHeapNodesNative,
                     HeapPositions = _abyssalPathHeapPositionsNative,
                     Path = _abyssalPathRawResultNative,
+                    PredatorFearNodes = _predatorFearNodesSnapshotNative,
+                    PredatorFearNodeCount = _predatorFearNodeCount,
+                    TraversalSpeciesId = traversalSpeciesId,
+                    PredatorFearPenaltyWeight = predatorFearPathPenaltyWeight,
                     StartNode = startNode,
                     EndNode = endNode,
                     StartPosition = new float3(resolvedStartPosition.x, resolvedStartPosition.y, resolvedStartPosition.z),
@@ -9049,6 +9418,7 @@ namespace Hecton8.World
             [ReadOnly] public NativeArray<float> ConduitStrengths;
             [ReadOnly] public NativeArray<float> ThreatGrid;
             [ReadOnly] public NativeArray<byte> ThreatVoxelGrid;
+            [ReadOnly] public NativeArray<PredatorFearNodeSnapshot> PredatorFearNodes;
             public NativeArray<int> Parents;
             public NativeArray<float> GScore;
             public NativeArray<float> FScore;
@@ -9070,12 +9440,15 @@ namespace Hecton8.World
             public float NeighborRadius;
             public float VerticalTolerance;
             public float ThreatPenaltyWeight;
+            public float PredatorFearPenaltyWeight;
             public float ConduitStartDepth;
             public float ConduitVerticalToleranceBonus;
             public float ConduitMisalignmentPenalty;
             public float ConduitAlignmentReward;
             public float InteriorTraversalCostMultiplier;
             public int MaxExpandedNodes;
+            public int PredatorFearNodeCount;
+            public int TraversalSpeciesId;
 
             public void Execute()
             {
@@ -9248,9 +9621,10 @@ namespace Hecton8.World
             private float SampleThreatAtWorldPosition(float3 position)
             {
                 float voxelThreat = SampleThreatVoxelAtWorldPosition(position);
+                float predatorFearThreat = SamplePredatorFearAtWorldPosition(position);
 
                 if (!ThreatGrid.IsCreated || ThreatGridResolution <= 0 || ThreatGridCellSize <= 0f)
-                    return voxelThreat;
+                    return math.max(voxelThreat, predatorFearThreat);
 
                 float halfExtent = (ThreatGridResolution - 1) * 0.5f * ThreatGridCellSize;
                 float localX = position.x - (ThreatGridCenter.x - halfExtent);
@@ -9274,7 +9648,32 @@ namespace Hecton8.World
                 float hx0 = math.lerp(h00, h10, tx);
                 float hx1 = math.lerp(h01, h11, tx);
                 float surfaceThreat = math.lerp(hx0, hx1, tz);
-                return math.max(surfaceThreat, voxelThreat);
+                return math.max(math.max(surfaceThreat, voxelThreat), predatorFearThreat);
+            }
+
+            private float SamplePredatorFearAtWorldPosition(float3 position)
+            {
+                if (!PredatorFearNodes.IsCreated || PredatorFearNodeCount <= 0 || TraversalSpeciesId == 0 || PredatorFearPenaltyWeight <= 0f)
+                    return 0f;
+
+                float strongest = 0f;
+                int count = math.min(PredatorFearNodeCount, PredatorFearNodes.Length);
+                for (int i = 0; i < count; i++)
+                {
+                    PredatorFearNodeSnapshot node = PredatorFearNodes[i];
+                    if (node.SpeciesId != TraversalSpeciesId || node.Weight <= 0f)
+                        continue;
+
+                    float radius = math.max(node.Radius, 1f);
+                    float2 delta = new float2(position.x - node.Position.x, position.z - node.Position.z);
+                    float gate = 1f - math.saturate(math.length(delta) / radius);
+                    if (gate <= 0f)
+                        continue;
+
+                    strongest = math.max(strongest, node.Weight * gate);
+                }
+
+                return math.saturate(strongest * PredatorFearPenaltyWeight);
             }
 
             private float SampleThreatVoxelAtWorldPosition(float3 position)
@@ -9488,21 +9887,20 @@ namespace Hecton8.World
                 {
                     BuildPortal(portalIndex, out float3 portalLeft, out float3 portalRight, out float3 portalAxis);
                     float3 windingAxis = ResolveWindingAxis(apex, left, right, portalLeft, portalRight, portalAxis, fallbackAxis);
-                    if (ScalarTripleProduct(windingAxis, portalLeft - apex, portalRight - apex) < 0f)
-                    {
-                        float3 swap = portalLeft;
-                        portalLeft = portalRight;
-                        portalRight = swap;
-                    }
+                    bool swapPortalWinding = ScalarTripleProduct(windingAxis, portalLeft - apex, portalRight - apex) < 0f;
+                    float3 originalPortalLeft = portalLeft;
+                    portalLeft = math.select(portalLeft, portalRight, swapPortalWinding);
+                    portalRight = math.select(portalRight, originalPortalLeft, swapPortalWinding);
 
                     windingAxis = ResolveWindingAxis(apex, left, right, portalLeft, portalRight, portalAxis, fallbackAxis);
                     if (ScalarTripleProduct(windingAxis, right - apex, portalRight - apex) <= FunnelEpsilon)
                     {
-                        if (IsDegenerateRay(apex, right) || ScalarTripleProduct(windingAxis, left - apex, portalRight - apex) > FunnelEpsilon)
+                        bool tightenRight = IsDegenerateRay(apex, right) || ScalarTripleProduct(windingAxis, left - apex, portalRight - apex) > FunnelEpsilon;
+                        if (tightenRight)
                         {
-                            right = portalRight;
-                            rightIndex = portalIndex;
-                            fallbackAxis = portalAxis;
+                            right = math.select(right, portalRight, tightenRight);
+                            rightIndex = math.select(rightIndex, portalIndex, tightenRight);
+                            fallbackAxis = math.select(fallbackAxis, portalAxis, tightenRight);
                         }
                         else
                         {
@@ -9523,11 +9921,12 @@ namespace Hecton8.World
                     windingAxis = ResolveWindingAxis(apex, left, right, portalLeft, portalRight, portalAxis, fallbackAxis);
                     if (ScalarTripleProduct(windingAxis, left - apex, portalLeft - apex) >= -FunnelEpsilon)
                     {
-                        if (IsDegenerateRay(apex, left) || ScalarTripleProduct(windingAxis, right - apex, portalLeft - apex) < -FunnelEpsilon)
+                        bool tightenLeft = IsDegenerateRay(apex, left) || ScalarTripleProduct(windingAxis, right - apex, portalLeft - apex) < -FunnelEpsilon;
+                        if (tightenLeft)
                         {
-                            left = portalLeft;
-                            leftIndex = portalIndex;
-                            fallbackAxis = portalAxis;
+                            left = math.select(left, portalLeft, tightenLeft);
+                            leftIndex = math.select(leftIndex, portalIndex, tightenLeft);
+                            fallbackAxis = math.select(fallbackAxis, portalAxis, tightenLeft);
                         }
                         else
                         {
@@ -11967,6 +12366,19 @@ namespace Hecton8.World
                 return;
 
             ApplyWorldOffsetToAllChunks(shiftData.ShiftOffset);
+            if (_predatorFearNodeCount > 0)
+            {
+                float3 offset = shiftData.ShiftOffset;
+                for (int i = 0; i < _predatorFearNodeCount; i++)
+                {
+                    PredatorFearNodeState node = _predatorFearNodes[i];
+                    node.Position += offset;
+                    _predatorFearNodes[i] = node;
+                }
+
+                if (!_abyssalPathScheduled)
+                    SyncPredatorFearNodeSnapshot(_predatorFearSimulationTime);
+            }
         }
 
         private void ClearAllResidency()
@@ -13058,6 +13470,7 @@ namespace Hecton8.World
             DisposeNativeArray(ref _abyssalPathClosedFlagsNative, disposeHandle);
             DisposeNativeArray(ref _abyssalPathHeapNodesNative, disposeHandle);
             DisposeNativeArray(ref _abyssalPathHeapPositionsNative, disposeHandle);
+            DisposeNativeArray(ref _predatorFearNodesSnapshotNative, disposeHandle);
             DisposeNativeList(ref _abyssalPathRawResultNative, disposeHandle);
             DisposeNativeList(ref _abyssalPathResultNative, disposeHandle);
             _abyssalPathHandle = default;

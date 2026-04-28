@@ -1,13 +1,13 @@
 // ============================================================================
-// HECTON-8 — ItemHighlight.cs
+// HECTON-8 â€” ItemHighlight.cs
 // Sinica-style stencil visibility for resource items hidden in dense flora.
 //
 // FEATURES:
-//   • Zero-GC ITickable implementation
-//   • MaterialPropertyBlock for outline/glow effect
-//   • Distance-based activation (5-10m range)
-//   • "Always On Top" stencil effect when player is near
-//   • Smooth fade-in/out transitions
+//   â€¢ Zero-GC ITickable implementation
+//   â€¢ MaterialPropertyBlock for outline/glow effect
+//   â€¢ Distance-based activation (5-10m range)
+//   â€¢ "Always On Top" stencil effect when player is near
+//   â€¢ Smooth fade-in/out transitions
 //
 // USAGE:
 //   Attach to any resource prefab (Copper, Titanium, etc.)
@@ -15,10 +15,10 @@
 //   The effect activates when player enters detection range.
 //
 // ZERO GC:
-//   • MaterialPropertyBlock allocated once in Awake
-//   • Shader.PropertyToID cached as static readonly
-//   • sqrMagnitude comparison (no sqrt)
-//   • No string operations in Tick
+//   â€¢ MaterialPropertyBlock allocated once in Awake
+//   â€¢ Shader.PropertyToID cached as static readonly
+//   â€¢ sqrMagnitude comparison (no sqrt)
+//   â€¢ No string operations in Tick
 // ============================================================================
 
 using Hecton8.Bootstrap;
@@ -36,18 +36,18 @@ namespace Hecton8.Gameplay
     [RequireComponent(typeof(Renderer))]
     public sealed class ItemHighlight : MonoBehaviour, ITickable, IUpdatable
     {
-        // ═════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  INSPECTOR
-        // ═════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        [Header("── Detection ───────────────────────────────")]
+        [Header("â”€â”€ Detection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Distance at which highlight activates (meters).")]
         [SerializeField, Range(3f, 15f)] private float activationDistance = 8f;
 
         [Tooltip("Distance at which highlight reaches full intensity.")]
         [SerializeField, Range(1f, 10f)] private float fullIntensityDistance = 3f;
 
-        [Header("── Visual ──────────────────────────────────")]
+        [Header("â”€â”€ Visual â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Highlight color (typically cyan or gold for resources).")]
         [SerializeField] private Color highlightColor = new Color(0f, 0.9f, 1f, 1f);
 
@@ -60,16 +60,16 @@ namespace Hecton8.Gameplay
         [Tooltip("Pulse intensity amplitude (0 = no pulse).")]
         [SerializeField, Range(0f, 1f)] private float pulseAmplitude = 0.3f;
 
-        [Header("── Stencil ─────────────────────────────────")]
+        [Header("â”€â”€ Stencil â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Enable 'always on top' stencil rendering when highlighted.")]
         [SerializeField] private bool enableStencil = true;
 
         [Tooltip("Renderer to apply highlight to. If null, uses GetComponent<Renderer>().")]
         [SerializeField] private Renderer targetRenderer;
 
-        // ═════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  CACHED STATE
-        // ═════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private Transform _playerTransform;
         private MaterialPropertyBlock _mpb;
@@ -80,27 +80,27 @@ namespace Hecton8.Gameplay
         private float _fullIntensitySqrDist;
         private bool _tickRegistered;
 
-        // ── Shader property IDs (cached once) ──
+        // â”€â”€ Shader property IDs (cached once) â”€â”€
         private static readonly int HighlightColorId = Shader.PropertyToID("_HighlightColor");
         private static readonly int HighlightIntensityId = Shader.PropertyToID("_HighlightIntensity");
         private static readonly int OutlineThicknessId = Shader.PropertyToID("_OutlineThickness");
         private static readonly int StencilRefId = Shader.PropertyToID("_StencilRef");
 
-        // ── Stencil reference values ──
+        // â”€â”€ Stencil reference values â”€â”€
         private const int StencilRefNormal = 0;
         private const int StencilRefHighlight = 1;
 
-        // ── Animation constants ──
+        // â”€â”€ Animation constants â”€â”€
         private const float FadeSpeed = 4f;
         private const float Epsilon = 0.01f;
 
-        // ═════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  LIFECYCLE
-        // ═════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private void Awake()
         {
-            // COLD ALLOC: MaterialPropertyBlock[1] — per-object highlight props — owner: self
+            // COLD ALLOC: MaterialPropertyBlock[1] â€” per-object highlight props â€” owner: self
             _mpb = new MaterialPropertyBlock();
 
             if (targetRenderer == null)
@@ -136,25 +136,25 @@ namespace Hecton8.Gameplay
             }
         }
 
-        // ═════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  ITickable
-        // ═════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         public void Tick(float deltaTime)
         {
             if (targetRenderer == null) return;
 
-            // ── Find player if not cached ──
+            // â”€â”€ Find player if not cached â”€â”€
             if (_playerTransform == null)
             {
                 TryFindPlayer();
                 if (_playerTransform == null) return;
             }
 
-            // ── Calculate distance to player ──
+            // â”€â”€ Calculate distance to player â”€â”€
             float sqrDist = (transform.position - _playerTransform.position).sqrMagnitude;
 
-            // ── Determine target intensity ──
+            // â”€â”€ Determine target intensity â”€â”€
             if (sqrDist <= _fullIntensitySqrDist)
             {
                 _targetIntensity = 1f;
@@ -170,14 +170,14 @@ namespace Hecton8.Gameplay
                 _targetIntensity = 0f;
             }
 
-            // ── Apply pulse modulation ──
+            // â”€â”€ Apply pulse modulation â”€â”€
             if (_targetIntensity > 0f && pulseSpeed > 0f)
             {
                 float pulse = Mathf.Sin(Time.unscaledTime * pulseSpeed) * pulseAmplitude;
                 _targetIntensity = Mathf.Clamp01(_targetIntensity + pulse * _targetIntensity);
             }
 
-            // ── Smooth transition ──
+            // â”€â”€ Smooth transition â”€â”€
             if (Mathf.Abs(_currentIntensity - _targetIntensity) > Epsilon)
             {
                 _currentIntensity = Mathf.Lerp(_currentIntensity, _targetIntensity, deltaTime * FadeSpeed);
@@ -190,20 +190,20 @@ namespace Hecton8.Gameplay
             }
         }
 
-        // ═════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  PRIVATE METHODS
-        // ═════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private void ApplyHighlightProperties()
         {
             if (targetRenderer == null || _mpb == null) return;
 
-            // ── Set highlight properties ──
+            // â”€â”€ Set highlight properties â”€â”€
             _mpb.SetColor(HighlightColorId, highlightColor);
             _mpb.SetFloat(HighlightIntensityId, _currentIntensity);
             _mpb.SetFloat(OutlineThicknessId, outlineThickness * _currentIntensity);
 
-            // ── Set stencil reference for "always on top" effect ──
+            // â”€â”€ Set stencil reference for "always on top" effect â”€â”€
             if (enableStencil)
             {
                 int stencilRef = _currentIntensity > 0.1f ? StencilRefHighlight : StencilRefNormal;
@@ -227,7 +227,6 @@ namespace Hecton8.Gameplay
         {
             if (_tickRegistered) return;
 
-            SystemDispatcher.EnsureRuntimeInstance();
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _tickRegistered = true;
         }
@@ -240,9 +239,9 @@ namespace Hecton8.Gameplay
             _tickRegistered = false;
         }
 
-        // ═════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  PUBLIC API
-        // ═════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>
         /// Forces the highlight to a specific intensity (0-1).
@@ -271,9 +270,9 @@ namespace Hecton8.Gameplay
         /// </summary>
         public bool IsHighlighted => _currentIntensity > 0.1f;
 
-        // ═════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  EDITOR
-        // ═════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 #if UNITY_EDITOR
         private void OnValidate()

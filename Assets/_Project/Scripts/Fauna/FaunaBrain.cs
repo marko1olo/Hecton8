@@ -83,6 +83,10 @@ namespace Hecton8.AI
         private const float AmbientCurrentMaxVelocity = 3.8f;
         private const float AmbientCurrentCullDistance = 100f;
         private const float AmbientCurrentCullDistanceSqr = AmbientCurrentCullDistance * AmbientCurrentCullDistance;
+        private const int MaxVoxelRouteWaypointCount = 16;
+        private const float VoxelRouteRefreshIntervalSeconds = 0.25f;
+        private const float VoxelRouteRetargetDistanceSqr = 16f;
+        private const float VoxelRouteWaypointReachDistanceSqr = 4f;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static float _nextSlowTickWatchdogLogTime;
 #endif
@@ -90,6 +94,7 @@ namespace Hecton8.AI
         // --- LOD & Stagger ---
         private bool _lodDisabled;
         private Renderer _renderer;
+        private Unity.Mathematics.Random _runtimeRandom;
         private int _tickStaggerShift;
         private Vector3 _cachedDesiredDirection;
         private AIState _currentStateCache;
@@ -97,6 +102,8 @@ namespace Hecton8.AI
         
         // --- Buffers ---
         private static readonly SpatialQueryHit[] _panicBuffer = new SpatialQueryHit[10];
+        // COLD ALLOC: Vector3[16] - reusable 3D cave-voxel guidance route for predator steering - owner: FaunaBrain
+        private readonly Vector3[] _voxelRouteWaypoints = new Vector3[MaxVoxelRouteWaypointCount];
 
         // --- Event Hooks ---
         public Action<AIState> OnStateChanged;
@@ -106,6 +113,10 @@ namespace Hecton8.AI
         public UnityEngine.Events.UnityEvent OnPanicTriggered;
 
         private float _slowTickAccumulator;
+        private int _voxelRouteWaypointCount;
+        private float _nextVoxelRouteRefreshTime;
+        private Vector3 _voxelRouteTargetPosition;
+        private bool _hasVoxelRouteTarget;
 
         // ══════════════════════════════════════════════════════════
         //  SERIALIZATION MIGRATION (Option B Data Preservation)
@@ -167,7 +178,8 @@ namespace Hecton8.AI
             TryGetComponent(out _animator);
             TryGetComponent(out _proceduralLeviathanSpineIk);
             ResolveFoveatedBindings();
-            _tickStaggerShift = UnityEngine.Random.Range(0, 10);
+            _runtimeRandom = CreateDeterministicRandom();
+            _tickStaggerShift = _runtimeRandom.NextInt(0, 10);
 
             // Inject profile into subsystems
             _steeringEngine.Init(_rb, transform, _speciesProfile);
@@ -183,7 +195,6 @@ namespace Hecton8.AI
             if (!Application.isPlaying)
                 return;
 
-            SystemDispatcher.EnsureRuntimeInstance();
             if (!_dispatcherRegistered)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
@@ -210,12 +221,21 @@ namespace Hecton8.AI
             UnregisterSpatialHandle();
             _utilityBrain.SetRuntimeActive(false);
             ResetDispatcherCadence();
+            ClearVoxelPathGuidance();
         }
 
         private void OnDestroy()
         {
+            if (_dispatcherRegistered)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _dispatcherRegistered = false;
+            }
+
+            UnregisterSpatialHandle();
             ClearInfectionHazardRegistration();
             _utilityBrain.Dispose();
+            ClearVoxelPathGuidance();
         }
 
         public void OnSpawn()
@@ -232,6 +252,7 @@ namespace Hecton8.AI
             RefreshRuntimeEcosystemState();
             RegisterSpatialHandle();
             ResetDispatcherCadence();
+            ClearProceduralStrikeIntent();
         }
 
         public void OnDespawn()
@@ -249,6 +270,8 @@ namespace Hecton8.AI
             ClearInfectionHazardRegistration();
             UnregisterSpatialHandle();
             ResetDispatcherCadence();
+            ClearProceduralStrikeIntent();
+            ClearVoxelPathGuidance();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -260,13 +283,22 @@ namespace Hecton8.AI
                 return;
 
             _cognitionTimeSeconds += dt;
-            _sensorSuite.Tick(dt, _rb.linearVelocity, _cognitionTimeSeconds);
+            bool forceAggroTick = ShouldForceAggroCognitionTick();
+            if (_foveatedTickRate == FoveatedTickRate.CulledEcosystemOnly && !forceAggroTick)
+            {
+                AdvanceSlowTickCadence(dt);
+                ClearProceduralStrikeIntent();
+                return;
+            }
+
+            _sensorSuite.Tick(dt, _rb.linearVelocity, _cognitionTimeSeconds, forceAggroTick);
             _lodDisabled = _sensorSuite.lodDisabled;
 
             if (_lodDisabled || _sensorSuite.isSleeping)
             {
                 FixedTick(dt);
                 AdvanceSlowTickCadence(dt);
+                ClearProceduralStrikeIntent();
                 return;
             }
 
@@ -274,6 +306,8 @@ namespace Hecton8.AI
             float3 selfPosition = transform.position;
             CreatureUtilityEvaluation utilityEvaluation = EvaluateCognitionBrain(Time.frameCount, dt, selfPosition, out Transform attackTarget);
             ApplyCognitionEvaluation(in utilityEvaluation);
+            ApplyVoxelPathGuidance(selfPosition, utilityEvaluation.LegacyState);
+            UpdateProceduralStrikeIntent(utilityEvaluation.LegacyState, attackTarget);
             if (utilityEvaluation.ShouldAttack && attackTarget != null)
             {
                 HandleAttackPerform(attackTarget);
@@ -353,6 +387,7 @@ namespace Hecton8.AI
             out Transform attackTarget)
         {
             bool hasPlayerTarget = _sensorSuite.TryGetPerceivedPlayerPosition(out Vector3 playerPosition);
+            bool hasPlayerVelocity = _sensorSuite.TryGetPerceivedPlayerVelocity(out Vector3 playerVelocity);
             bool hasDirectPlayerTransform = _sensorSuite.TryGetDirectPlayerTransform(out Transform directPlayerTransform);
             bool hasThreatTarget = _sensorSuite.currentThreat != null;
             bool hasPreyTarget = _sensorSuite.currentPrey != null;
@@ -360,6 +395,15 @@ namespace Hecton8.AI
             float fearPressure01 = _sensorSuite.isThreatened ? 0.35f : 0f;
             if (hasThreatTarget)
                 fearPressure01 += 0.2f;
+            if (_utilityBrain.UsesPredatorRole)
+            {
+                HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+                if (vegetationBridge != null)
+                {
+                    int speciesId = _speciesProfile != null ? _speciesProfile.speciesID : 0;
+                    fearPressure01 += vegetationBridge.SamplePredatorFearPressure(selfPosition, speciesId);
+                }
+            }
 
             float3 selfVelocity = _rb != null ? _rb.linearVelocity : float3.zero;
             float3 selfForward = transform.forward;
@@ -372,6 +416,7 @@ namespace Hecton8.AI
                 (Vector3)selfVelocity,
                 (Vector3)selfForward,
                 hasPlayerTarget ? playerPosition : default,
+                hasPlayerVelocity ? playerVelocity : default,
                 hasThreatTarget ? _sensorSuite.currentThreat.position : default,
                 hasPreyTarget ? _sensorSuite.currentPrey.position : default,
                 hasScavengeTarget ? _sensorSuite.currentScavengeTarget.position : default,
@@ -406,6 +451,97 @@ namespace Hecton8.AI
                            directPlayerTransform ??
                            _sensorSuite.currentPrey;
             return evaluation;
+        }
+
+        private bool ShouldForceAggroCognitionTick()
+        {
+            if (_isDead || !_utilityBrain.IsActivePredator)
+                return false;
+
+            if (_sensorSuite.hasVisualPlayerContact || _sensorSuite.hasNoisePlayerContact)
+                return true;
+
+            PredatorUtilityState stateMask = _utilityBrain.CurrentStateMask;
+            return stateMask == PredatorUtilityState.Stalking ||
+                   stateMask == PredatorUtilityState.Attacking ||
+                   _currentStateCache == AIState.Stalk ||
+                   _currentStateCache == AIState.Aggressive;
+        }
+
+        private void ApplyVoxelPathGuidance(float3 selfPosition, AIState resolvedState)
+        {
+            if (!_utilityBrain.IsActivePredator ||
+                _isDead ||
+                (resolvedState != AIState.Stalk && resolvedState != AIState.Aggressive) ||
+                !_sensorSuite.TryGetPerceivedPlayerPosition(out Vector3 playerPosition))
+            {
+                ClearVoxelPathGuidance();
+                return;
+            }
+
+            HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            if (vegetationBridge == null)
+            {
+                ClearVoxelPathGuidance();
+                return;
+            }
+
+            Vector3 targetPosition = ResolvePredictedPlayerGuidanceTarget(selfPosition, playerPosition);
+            bool requiresRefresh = !_hasVoxelRouteTarget ||
+                                   (_voxelRouteTargetPosition - targetPosition).sqrMagnitude > VoxelRouteRetargetDistanceSqr ||
+                                   _cognitionTimeSeconds >= _nextVoxelRouteRefreshTime;
+            if (requiresRefresh)
+            {
+                if (vegetationBridge.TryBuildImmediateAbyssalVoxelRoute((Vector3)selfPosition, targetPosition, _voxelRouteWaypoints, out int waypointCount))
+                {
+                    _voxelRouteWaypointCount = waypointCount;
+                    _voxelRouteTargetPosition = targetPosition;
+                    _hasVoxelRouteTarget = waypointCount >= 2;
+                    _nextVoxelRouteRefreshTime = _cognitionTimeSeconds + VoxelRouteRefreshIntervalSeconds;
+                }
+                else
+                {
+                    ClearVoxelPathGuidance();
+                    return;
+                }
+            }
+
+            if (_voxelRouteWaypointCount < 2)
+                return;
+
+            int waypointIndex = 1;
+            while (waypointIndex < _voxelRouteWaypointCount - 1 &&
+                   (_voxelRouteWaypoints[waypointIndex] - (Vector3)selfPosition).sqrMagnitude <= VoxelRouteWaypointReachDistanceSqr)
+            {
+                waypointIndex++;
+            }
+
+            float3 toWaypoint = (float3)_voxelRouteWaypoints[waypointIndex] - selfPosition;
+            if (math.lengthsq(toWaypoint) <= 0.0001f)
+                return;
+
+            _cachedDesiredDirection = math.normalizesafe(toWaypoint, (float3)_cachedDesiredDirection);
+        }
+
+        private Vector3 ResolvePredictedPlayerGuidanceTarget(float3 selfPosition, Vector3 playerPosition)
+        {
+            if (!_sensorSuite.TryGetPerceivedPlayerVelocity(out Vector3 playerVelocity))
+                return playerPosition;
+
+            float predatorSpeed = math.max(
+                1f,
+                math.max(_steeringEngine.maxSpeed, _rb != null ? _rb.linearVelocity.magnitude : 0f));
+            float distance = math.distance(selfPosition, (float3)playerPosition);
+            float interceptTime = math.clamp(distance / predatorSpeed, 0f, 3f);
+            return playerPosition + (playerVelocity * interceptTime);
+        }
+
+        private void ClearVoxelPathGuidance()
+        {
+            _voxelRouteWaypointCount = 0;
+            _hasVoxelRouteTarget = false;
+            _nextVoxelRouteRefreshTime = 0f;
+            _voxelRouteTargetPosition = default;
         }
 
         public void FixedTick(float fdt)
@@ -512,6 +648,25 @@ namespace Hecton8.AI
                 _proceduralLeviathanSpineIk = gameObject.AddComponent<ProceduralLeviathanSpineIK>();
 
             _proceduralLeviathanSpineIk.BindFromFauna(this, _rb, _animator);
+        }
+
+        private void UpdateProceduralStrikeIntent(AIState resolvedState, Transform strikeTarget)
+        {
+            if (_proceduralLeviathanSpineIk == null)
+                return;
+
+            bool strikeActive = resolvedState == AIState.Aggressive && strikeTarget != null && !_isDead;
+            float strikeRange = _speciesProfile != null ? _speciesProfile.attackRadius : math.max(1f, _stateMachine.attackRadius);
+            _proceduralLeviathanSpineIk.SetStrikeIntent(strikeTarget, strikeRange, strikeActive);
+        }
+
+        private void ClearProceduralStrikeIntent()
+        {
+            if (_proceduralLeviathanSpineIk == null)
+                return;
+
+            float strikeRange = _speciesProfile != null ? _speciesProfile.attackRadius : math.max(1f, _stateMachine.attackRadius);
+            _proceduralLeviathanSpineIk.SetStrikeIntent(null, strikeRange, false);
         }
 
         private bool ShouldUseProceduralLeviathanPresentation()
@@ -673,7 +828,15 @@ namespace Hecton8.AI
         public void TakeDamage(float amount)
         {
             if (_isDead) return;
+            float normalizedDamage = _maxHealth > 0.001f ? Mathf.Max(0f, amount) / _maxHealth : 0f;
             _currentHealth = Mathf.Max(0f, _currentHealth - amount);
+            if (_utilityBrain.UsesPredatorRole && normalizedDamage >= 0.3f)
+            {
+                HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+                int speciesId = _speciesProfile != null ? _speciesProfile.speciesID : 0;
+                if (vegetationBridge != null && speciesId != 0)
+                    vegetationBridge.RegisterPredatorFearNode(speciesId, transform.position, normalizedDamage);
+            }
             if (_currentHealth <= 0.001f) Die();
         }
 
@@ -688,7 +851,11 @@ namespace Hecton8.AI
             _sensorSuite.isScattering = true;
             Vector3 baseDir = (transform.position - predatorPos).normalized;
             // [REQ] "randomly away from the predator" - add slight jitter
-            Vector3 randomOffset = UnityEngine.Random.onUnitSphere * 0.2f;
+            float3 randomDirection = new float3(
+                _runtimeRandom.NextFloat(-1f, 1f),
+                _runtimeRandom.NextFloat(-1f, 1f),
+                _runtimeRandom.NextFloat(-1f, 1f));
+            Vector3 randomOffset = (Vector3)(math.normalizesafe(randomDirection, new float3(0f, 1f, 0f)) * 0.2f);
             _sensorSuite.scatterDirection = (baseDir + randomOffset).normalized;
             
             // [REQ] Audio Linking (Sound of Panic)
@@ -742,6 +909,7 @@ namespace Hecton8.AI
             _stateMachine.ResetRuntime(initialState);
             _currentStateCache = initialState;
             _cachedDesiredDirection = transform != null ? transform.forward : Vector3.forward;
+            ClearVoxelPathGuidance();
         }
 
         private AIState ResolveInitialState()
@@ -750,6 +918,14 @@ namespace Hecton8.AI
                 return AIState.Idle;
 
             return _stateMachine.isFlockingFish ? AIState.Flocking : AIState.Wander;
+        }
+
+        private Unity.Mathematics.Random CreateDeterministicRandom()
+        {
+            int speciesId = _speciesProfile != null ? _speciesProfile.speciesID : 0;
+            uint ownerId = unchecked((uint)EntityId.ToULong(GetEntityId()));
+            uint seed = math.hash(new uint4(ownerId, unchecked((uint)speciesId), 0x7F4A7C15u, 0x3A9D2B71u));
+            return new Unity.Mathematics.Random(seed == 0u ? 1u : seed);
         }
     }
 }

@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using Crest;
+using Hecton8.Bootstrap;
 using Hecton8.Core;
+using System.Diagnostics;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -26,6 +28,7 @@ namespace Hecton8.World
             public float RuntimeWaterLevel;
             public float AbsoluteWaterLevel;
             public float CameraMaxTerrainHeight;
+            public float CameraFarPlane;
             public float CoverageSize;
             public Vector3 RuntimeCacheCenter;
             public Vector3 RuntimeCacheMin;
@@ -43,10 +46,12 @@ namespace Hecton8.World
         private const float MinimumCoverageMeters = 256f;
         private const int DefaultDepthCacheResolution = 512;
         private const int DefaultCaptureLayerMask = 1;
+        private const int RuntimeCameraBufferSize = 8;
+        private const string DepthDebugOutputPath = "C:/hades/Hecton8/Temp/depth_debug.png";
         private static int TerrainLayer = int.MinValue;
         private static int TerrainLayerWithTrailingSpace = int.MinValue;
-        private static int VoxelCaveLayer = int.MinValue;
-        private static int VoxelCaveLayerWithTrailingSpace = int.MinValue;
+        // COLD ALLOC: Camera[8] - reusable runtime-camera resolve scratch for Crest viewpoint ownership - owner: HectonCrestOceanDepthCacheBootstrap
+        private static readonly Camera[] RuntimeCameraBuffer = new Camera[RuntimeCameraBufferSize];
 
         [Header("-- References ----------------")]
         [Tooltip("Explicit Crest ocean owner. Auto-resolved from the prefab root when left empty.")]
@@ -63,6 +68,9 @@ namespace Hecton8.World
         [SerializeField, UnityEngine.Range(128, 1024)] private int depthCacheResolution = DefaultDepthCacheResolution;
         [Tooltip("When enabled, the cache repopulates after terrain streaming changes the captured footprint.")]
         [SerializeField] private bool repopulateOnTerrainChange = true;
+
+        [Tooltip("When enabled in editor/development, save one post-populate depth cache frame to Temp/depth_debug.png.")]
+        [SerializeField] private bool dumpDepthDebugFrame;
 
         [Header("-- Diagnostics ---------------")]
         [SerializeField] private bool _debugCacheReady;
@@ -82,6 +90,10 @@ namespace Hecton8.World
         [SerializeField] private Vector3 _debugCacheBoundsMinAUP;
         [SerializeField] private Vector3 _debugCacheBoundsMaxAUP;
         [SerializeField] private int _debugLastPopulateFrame = -1;
+        [SerializeField] private Vector3 _debugCaptureCameraPositionWS;
+        [SerializeField] private float _debugCaptureCameraNear;
+        [SerializeField] private float _debugCaptureCameraFar;
+        [SerializeField] private float _debugCaptureCameraOrthoSize;
 
         private bool _registeredToSlowTickManager;
         private bool _hasConfiguredBounds;
@@ -92,6 +104,12 @@ namespace Hecton8.World
         private Bounds _lastTerrainBoundsAUP;
         // COLD ALLOC: List<OceanDepthCache>[4] - duplicate Crest cache recovery scratch buffer - owner: HectonCrestOceanDepthCacheBootstrap
         private readonly List<OceanDepthCache> _depthCacheScratch = new List<OceanDepthCache>(4);
+        // COLD ALLOC: List<MonoBehaviour>[32] - Crest shifting-origin interface scratch buffer - owner: HectonCrestOceanDepthCacheBootstrap
+        private readonly List<MonoBehaviour> _shiftingOriginScratch = new List<MonoBehaviour>(32);
+        // COLD ALLOC: List<ShapeGerstnerBatched>[16] - Crest gerstner rebase scratch buffer - owner: HectonCrestOceanDepthCacheBootstrap
+        private readonly List<ShapeGerstnerBatched> _gerstnerScratch = new List<ShapeGerstnerBatched>(16);
+        // COLD ALLOC: List<GameObject>[16] - scene-root scratch used to sweep distributed Crest shapes during rare origin shifts - owner: HectonCrestOceanDepthCacheBootstrap
+        private readonly List<GameObject> _sceneRootScratch = new List<GameObject>(16);
 
         private void Awake()
         {
@@ -107,12 +125,6 @@ namespace Hecton8.World
 
             if (TerrainLayerWithTrailingSpace == int.MinValue)
                 TerrainLayerWithTrailingSpace = LayerMask.NameToLayer("Terrain ");
-
-            if (VoxelCaveLayer == int.MinValue)
-                VoxelCaveLayer = LayerMask.NameToLayer("VoxelCave");
-
-            if (VoxelCaveLayerWithTrailingSpace == int.MinValue)
-                VoxelCaveLayerWithTrailingSpace = LayerMask.NameToLayer("VoxelCave ");
         }
 
         private void OnEnable()
@@ -168,10 +180,48 @@ namespace Hecton8.World
             _hasConfiguredBounds = false;
             _debugCacheReady = false;
 
-            if (!isActiveAndEnabled || Crest.OceanRenderer.Instance == null)
+            if (!isActiveAndEnabled || shiftData.ShiftOffset.sqrMagnitude <= 0.0001f)
                 return;
 
+            ResetCrestSimulationForOriginShift(shiftData.ShiftOffset);
             TryConfigureAndPopulate(forcePopulate: true);
+        }
+
+        private void ResetCrestSimulationForOriginShift(Vector3 shiftOffset)
+        {
+            if (!TryResolveReferences())
+                return;
+
+            OceanRenderer activeOcean = oceanRenderer != null ? oceanRenderer : Crest.OceanRenderer.Instance;
+            if (activeOcean == null)
+                return;
+
+            activeOcean._lodTransform?.SetOrigin(shiftOffset);
+
+            _shiftingOriginScratch.Clear();
+            activeOcean.GetComponentsInChildren(includeInactive: true, _shiftingOriginScratch);
+            for (int i = 0; i < _shiftingOriginScratch.Count; i++)
+            {
+                if (_shiftingOriginScratch[i] is IShiftingOrigin shiftingOrigin)
+                    shiftingOrigin.SetOrigin(shiftOffset);
+            }
+
+            _sceneRootScratch.Clear();
+            activeOcean.gameObject.scene.GetRootGameObjects(_sceneRootScratch);
+            for (int rootIndex = 0; rootIndex < _sceneRootScratch.Count; rootIndex++)
+            {
+                GameObject rootObject = _sceneRootScratch[rootIndex];
+                if (rootObject == null)
+                    continue;
+
+                _gerstnerScratch.Clear();
+                rootObject.GetComponentsInChildren(includeInactive: true, _gerstnerScratch);
+                for (int gerstnerIndex = 0; gerstnerIndex < _gerstnerScratch.Count; gerstnerIndex++)
+                    _gerstnerScratch[gerstnerIndex].SetOrigin(shiftOffset);
+            }
+
+            // Clear persistent Crest simulation state so foam and dynamic waves do not integrate the 5000 m rebase as velocity.
+            activeOcean.ClearLodData();
         }
 
         private void BootstrapDepthCache()
@@ -212,6 +262,7 @@ namespace Hecton8.World
             }
 
             PurgeLegacyDepthCaches();
+            EnsureRuntimeOceanViewOwnership();
             OceanDepthCache depthCache = EnsureDepthCacheComponent();
             if (depthCache == null)
             {
@@ -250,7 +301,17 @@ namespace Hecton8.World
                 depthCacheResolution,
                 alignment.CameraMaxTerrainHeight,
                 relativeToSeaLevel: true);
-            depthCache.PopulateCache(updateComponents: true);
+            Camera captureCamera = depthCache.HectonEnsureCaptureCamera(updateComponents: true);
+            depthCache.HectonAlignCaptureCamera(
+                captureCamera,
+                alignment.RuntimeCacheCenter,
+                alignment.CameraMaxTerrainHeight,
+                alignment.CameraFarPlane,
+                alignment.CoverageSize,
+                _captureLayerMask);
+            depthCache.PopulateCache(updateComponents: false);
+            CacheCaptureCameraDiagnostics(captureCamera);
+            TryDumpDepthDebugFrame(depthCache);
 
             oceanDepthCache = depthCache;
             _hasConfiguredBounds = true;
@@ -276,6 +337,23 @@ namespace Hecton8.World
             oceanDepthCache = ResolvePreferredDepthCache();
 
             return oceanRenderer != null;
+        }
+
+        private void EnsureRuntimeOceanViewOwnership()
+        {
+            if (!Application.isPlaying || oceanRenderer == null)
+                return;
+
+            Camera runtimeCamera = ResolveRuntimeMainCamera();
+            if (runtimeCamera == null)
+                return;
+
+            Transform runtimeViewpoint = runtimeCamera.transform;
+            if (!ReferenceEquals(oceanRenderer.ViewCamera, runtimeCamera))
+                oceanRenderer.ViewCamera = runtimeCamera;
+
+            if (!ReferenceEquals(oceanRenderer.Viewpoint, runtimeViewpoint))
+                oceanRenderer.Viewpoint = runtimeViewpoint;
         }
 
         private OceanDepthCache EnsureDepthCacheComponent()
@@ -333,6 +411,39 @@ namespace Hecton8.World
 
             if (!depthCacheObject.activeSelf)
                 depthCacheObject.SetActive(true);
+        }
+
+        private static Camera ResolveRuntimeMainCamera()
+        {
+            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                playerTransform != null &&
+                playerTransform.TryGetComponent(out Camera playerOwnedCamera) &&
+                IsRuntimeMainCamera(playerOwnedCamera))
+            {
+                return playerOwnedCamera;
+            }
+
+            int totalFound = Camera.GetAllCameras(RuntimeCameraBuffer);
+            int safeCount = Mathf.Min(totalFound, RuntimeCameraBuffer.Length);
+            for (int i = 0; i < safeCount; i++)
+            {
+                Camera candidate = RuntimeCameraBuffer[i];
+                if (IsRuntimeMainCamera(candidate) &&
+                    candidate.enabled &&
+                    candidate.gameObject.activeInHierarchy)
+                {
+                    return candidate;
+                }
+            }
+
+            return null;
+        }
+
+        private static bool IsRuntimeMainCamera(Camera camera)
+        {
+            return camera != null &&
+                   camera.cameraType != CameraType.SceneView &&
+                   camera.CompareTag("MainCamera");
         }
 
         private bool TryResolveTerrainCoverage(out TerrainCoverage terrainCoverage)
@@ -491,6 +602,17 @@ namespace Hecton8.World
             return Mathf.Max(MinimumCameraHeightAboveSeaLevel, terrainTopY - waterLevel);
         }
 
+        private static float ResolveCameraFarPlane(float terrainBottomY, float terrainTopY, float waterLevel)
+        {
+            if (!IsFinite(terrainBottomY) || !IsFinite(terrainTopY) || !IsFinite(waterLevel))
+                return MinimumCameraHeightAboveSeaLevel + 64f;
+
+            float cameraHeight = ResolveCameraMaxTerrainHeight(terrainTopY, waterLevel);
+            float clearanceAboveWater = Mathf.Max(cameraHeight - 0.05f, MinimumCameraHeightAboveSeaLevel);
+            float waterToTerrainBottom = Mathf.Max(waterLevel - terrainBottomY, 0f);
+            return Mathf.Max(clearanceAboveWater + waterToTerrainBottom + 8f, 32f);
+        }
+
         private DepthCacheAlignment BuildDepthCacheAlignment(in TerrainCoverage terrainCoverage, float runtimeWaterLevel)
         {
             float paddedAbsoluteMinX = terrainCoverage.AbsoluteBounds.min.x - terrainBoundsPadding;
@@ -514,6 +636,7 @@ namespace Hecton8.World
                 RuntimeWaterLevel = runtimeWaterLevel,
                 AbsoluteWaterLevel = absoluteWaterLevel,
                 CameraMaxTerrainHeight = ResolveCameraMaxTerrainHeight(terrainCoverage.RuntimeTopY, runtimeWaterLevel),
+                CameraFarPlane = ResolveCameraFarPlane(terrainCoverage.RuntimeBounds.min.y, terrainCoverage.RuntimeTopY, runtimeWaterLevel),
                 CoverageSize = coverageSize,
                 RuntimeCacheCenter = runtimeCacheCenter,
                 RuntimeCacheMin = runtimeCacheCenter - absoluteHalfExtents,
@@ -567,6 +690,10 @@ namespace Hecton8.World
             _debugCacheBoundsMaxWS = Vector3.zero;
             _debugCacheBoundsMinAUP = Vector3.zero;
             _debugCacheBoundsMaxAUP = Vector3.zero;
+            _debugCaptureCameraPositionWS = Vector3.zero;
+            _debugCaptureCameraNear = 0f;
+            _debugCaptureCameraFar = 0f;
+            _debugCaptureCameraOrthoSize = 0f;
 
             if (oceanDepthCache == null)
             {
@@ -612,9 +739,36 @@ namespace Hecton8.World
             _debugCameraMaxTerrainHeight = alignment.CameraMaxTerrainHeight;
         }
 
+        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+        private void TryDumpDepthDebugFrame(OceanDepthCache depthCache)
+        {
+            if (!dumpDepthDebugFrame || depthCache == null)
+                return;
+
+            depthCache.HectonSaveDepthCacheTexturePng(DepthDebugOutputPath);
+            dumpDepthDebugFrame = false;
+        }
+
+        private void CacheCaptureCameraDiagnostics(Camera captureCamera)
+        {
+            if (captureCamera == null)
+            {
+                _debugCaptureCameraPositionWS = Vector3.zero;
+                _debugCaptureCameraNear = 0f;
+                _debugCaptureCameraFar = 0f;
+                _debugCaptureCameraOrthoSize = 0f;
+                return;
+            }
+
+            _debugCaptureCameraPositionWS = captureCamera.transform.position;
+            _debugCaptureCameraNear = captureCamera.nearClipPlane;
+            _debugCaptureCameraFar = captureCamera.farClipPlane;
+            _debugCaptureCameraOrthoSize = captureCamera.orthographicSize;
+        }
+
         private static int ResolveCaptureLayerMask()
         {
-            int resolvedMask = LayerMask.GetMask("Default", "Terrain", "Terrain ", "VoxelCave", "VoxelCave ");
+            int resolvedMask = LayerMask.GetMask("Default", "Terrain", "Terrain ");
             if (resolvedMask != 0)
                 return resolvedMask;
 
@@ -625,13 +779,6 @@ namespace Hecton8.World
 
             if (terrainLayer >= 0)
                 fallbackMask |= 1 << terrainLayer;
-
-            int voxelCaveLayer = VoxelCaveLayer;
-            if (voxelCaveLayer < 0)
-                voxelCaveLayer = VoxelCaveLayerWithTrailingSpace;
-
-            if (voxelCaveLayer >= 0)
-                fallbackMask |= 1 << voxelCaveLayer;
 
             return fallbackMask;
         }

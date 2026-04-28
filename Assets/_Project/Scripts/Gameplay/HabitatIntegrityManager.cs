@@ -1,5 +1,5 @@
 // ============================================================================
-// HECTON-8 — HabitatIntegrityManager.cs
+// HECTON-8 â€” HabitatIntegrityManager.cs
 // Per-module habitat flood controller. Adds normalized pressure-flood math,
 // logistics rupture coupling, and breathable-reserve aggregation on top of the
 // existing BaseModule binary flood/save owner.
@@ -54,9 +54,9 @@ namespace Hecton8.Gameplay
     }
 
     /// <summary>
-    /// Event-only damage receiver contract. Downstream systems consume damage via callbacks, not polling.
+    /// Event-only habitat damage callback contract. Downstream systems consume habitat damage via callbacks, not polling.
     /// </summary>
-    public interface IDamageReceiver
+    public interface IDamageSignalReceiver
     {
         /// <summary>Receives an integrity-channel change.</summary>
         void OnIntegrityChanged(float prev, float next, DamageSignal src);
@@ -80,10 +80,10 @@ namespace Hecton8.Gameplay
     public interface IDamageSignalEmitter
     {
         /// <summary>Registers a damage receiver for channel callbacks.</summary>
-        void RegisterDamageReceiver(IDamageReceiver receiver);
+        void RegisterDamageReceiver(IDamageSignalReceiver receiver);
 
         /// <summary>Unregisters a previously registered damage receiver.</summary>
-        void UnregisterDamageReceiver(IDamageReceiver receiver);
+        void UnregisterDamageReceiver(IDamageSignalReceiver receiver);
     }
 
     internal static class DamageSourceIds
@@ -97,7 +97,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(BaseModule))]
     [DefaultExecutionOrder(-5600)] // Core-lane registration resolves rupture state before environment-lane power balance.
-    public sealed class HabitatIntegrityManager : MonoBehaviour, IUpdatable, ISlowTickable, IDamageReceiver, IDamageSignalEmitter
+    public sealed class HabitatIntegrityManager : MonoBehaviour, IUpdatable, ISlowTickable, Hecton8.Core.IDamageReceiver, IDamageSignalReceiver, IDamageSignalEmitter
     {
         private const float HabitatStepInterval = 0.1f;
         private const float DefaultSlowTickInterval = 0.5f;
@@ -123,18 +123,18 @@ namespace Hecton8.Gameplay
         private static float s_globalBaseOxygenReserve;
         private static float s_globalBaseOxygenCapacity;
 
-        [Header("── Flood Settings ──────────────────")]
+        [Header("â”€â”€ Flood Settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Normalized pump authority used in drainRate = pumpPower * 0.015.")]
         [SerializeField, Range(0f, 1f)] private float pumpPowerNormalized = 1f;
 
         [Tooltip("Extra CO2 contamination multiplier applied when flood water enters the habitat volume.")]
         [SerializeField, Range(0f, 4f)] private float floodCo2Amplifier = 1f;
 
-        [Header("── VFX ─────────────────────────────")]
+        [Header("â”€â”€ VFX â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Registers abyssal rupture fluid decals when a breach is confirmed.")]
         [SerializeField] private bool emitFluidDecals = true;
 
-        [Header("── Diagnostics ─────────────────────")]
+        [Header("â”€â”€ Diagnostics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [SerializeField] private bool _debugBreachActive;
         [SerializeField, Range(0f, 1f)] private float _debugFloodLevel;
         [SerializeField] private float _debugPressureDelta;
@@ -164,8 +164,8 @@ namespace Hecton8.Gameplay
         private float3 _breachLocalPoint;
         private float _lastReserveContribution;
         private float _lastCapacityContribution;
-        // COLD ALLOC: List<IDamageReceiver>[2] — habitat damage listeners (player trauma + future HUD bridges) — owner: HabitatIntegrityManager
-        private readonly List<IDamageReceiver> _damageReceivers = new List<IDamageReceiver>(2);
+        // COLD ALLOC: List<IDamageSignalReceiver>[2] â€” habitat damage listeners (player trauma + future HUD bridges) â€” owner: HabitatIntegrityManager
+        private readonly List<IDamageSignalReceiver> _damageReceivers = new List<IDamageSignalReceiver>(2);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -381,9 +381,48 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
+        /// Routes the canonical packet-based damage contract into the habitat callback fanout.
+        /// </summary>
+        public void ReceiveDamage(in DamagePacket packet)
+        {
+            DamageSignal signal = new DamageSignal
+            {
+                magnitude = packet.Magnitude,
+                localPoint = packet.LocalPoint,
+                damageType = packet.DamageType,
+                integrityDelta = packet.IntegrityDelta,
+                depth = packet.Depth,
+                sourceID = packet.SourceId
+            };
+
+            switch (packet.Channel)
+            {
+                case DamageChannel.Integrity:
+                    DispatchIntegrityChanged(packet.PreviousValue, packet.NextValue, signal);
+                    break;
+
+                case DamageChannel.Power:
+                    DispatchPowerChanged(packet.PreviousValue, packet.NextValue, signal);
+                    break;
+
+                case DamageChannel.Clarity:
+                    DispatchClarityChanged(packet.PreviousValue, packet.NextValue, signal);
+                    break;
+
+                case DamageChannel.Trauma:
+                    DispatchTraumaThresholdCrossed((TraumaLevel)packet.TraumaLevel);
+                    break;
+
+                case DamageChannel.HullBreach:
+                    DispatchHullBreach(packet.LocalPoint, packet.Depth, packet.Magnitude);
+                    break;
+            }
+        }
+
+        /// <summary>
         /// Registers a listener for habitat damage events.
         /// </summary>
-        public void RegisterDamageReceiver(IDamageReceiver receiver)
+        public void RegisterDamageReceiver(IDamageSignalReceiver receiver)
         {
             if (receiver == null || ReferenceEquals(receiver, this))
                 return;
@@ -400,7 +439,7 @@ namespace Hecton8.Gameplay
         /// <summary>
         /// Removes a previously registered habitat damage listener.
         /// </summary>
-        public void UnregisterDamageReceiver(IDamageReceiver receiver)
+        public void UnregisterDamageReceiver(IDamageSignalReceiver receiver)
         {
             if (receiver == null)
                 return;
@@ -547,7 +586,6 @@ namespace Hecton8.Gameplay
             if (!Application.isPlaying)
                 return;
 
-            SystemDispatcher.EnsureRuntimeInstance();
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
             _registered = true;
         }

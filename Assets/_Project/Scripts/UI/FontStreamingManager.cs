@@ -27,13 +27,13 @@ namespace Hecton8.UI
         private static readonly System.Collections.Generic.List<SuitHUDV4CanvasOverlay> s_overlayResolveBuffer =
             new System.Collections.Generic.List<SuitHUDV4CanvasOverlay>(2);
 
-        // COLD ALLOC: LabelSwapScheduler[1] — staged font swap queue owner for active localized labels — owner: FontStreamingManager
+        // COLD ALLOC: LabelSwapScheduler[1] â€” staged font swap queue owner for active localized labels â€” owner: FontStreamingManager
         private readonly LabelSwapScheduler _swapScheduler = new LabelSwapScheduler();
-        // COLD ALLOC: char[96] — status label assembly for staged font streaming — owner: FontStreamingManager
+        // COLD ALLOC: char[96] â€” status label assembly for staged font streaming â€” owner: FontStreamingManager
         private char[] _statusBuffer = new char[96];
-        // COLD ALLOC: List[64] — active scene root cache for TMP registry bootstrap — owner: FontStreamingManager
+        // COLD ALLOC: List[64] â€” active scene root cache for TMP registry bootstrap â€” owner: FontStreamingManager
         private readonly System.Collections.Generic.List<GameObject> _sceneRootBuffer = new System.Collections.Generic.List<GameObject>(64);
-        // COLD ALLOC: List[512] — temporary TMP text scan buffer for registry bootstrap — owner: FontStreamingManager
+        // COLD ALLOC: List[512] â€” temporary TMP text scan buffer for registry bootstrap â€” owner: FontStreamingManager
         private readonly System.Collections.Generic.List<TMP_Text> _textScanBuffer = new System.Collections.Generic.List<TMP_Text>(512);
 
         private bool _registered;
@@ -290,7 +290,7 @@ namespace Hecton8.UI
                 labelRect.offsetMin = new Vector2(12f, 4f);
                 labelRect.offsetMax = new Vector2(-12f, -4f);
 
-                _statusLabel = labelObject.AddComponent<TextMeshProUGUI>(); // COLD ALLOC: TextMeshProUGUI[1] — localized font streaming status label — owner: FontStreamingManager
+                _statusLabel = labelObject.AddComponent<TextMeshProUGUI>(); // COLD ALLOC: TextMeshProUGUI[1] â€” localized font streaming status label â€” owner: FontStreamingManager
                 _statusLabel.font = LocalizedFontResolver.ResolveReadableFont(null);
                 _statusLabel.color = StatusTextColor;
                 _statusLabel.fontSize = 14f;
@@ -373,7 +373,6 @@ namespace Hecton8.UI
             if (_registered)
                 return;
 
-            SystemDispatcher.EnsureRuntimeInstance();
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _registered = true;
         }
@@ -511,7 +510,7 @@ namespace Hecton8.UI
             while (capacity < requiredLength)
                 capacity <<= 1;
 
-            _statusBuffer = new char[capacity]; // COLD ALLOC: char[capacity] — expanded font streaming status buffer — owner: FontStreamingManager
+            _statusBuffer = new char[capacity]; // COLD ALLOC: char[capacity] â€” expanded font streaming status buffer â€” owner: FontStreamingManager
         }
 
         private void ApplyStatusBuffer(int length)

@@ -4,6 +4,7 @@ using Hecton8.Core;
 using Hecton8.Physics;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
+using Hecton8.Optimization;
 using Hecton8.Visor;
 using Hecton8.Biolum;
 using Unity.Burst;
@@ -158,7 +159,7 @@ namespace Hecton8.World
             public Vector2 Padding;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 40)]
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 48)]
         private struct MassiveThreatData
         {
             public Vector3 Position;
@@ -166,7 +167,8 @@ namespace Hecton8.World
             public float PanicRadius;
             public float Strength;
             public float EndTime;
-            public Vector3 Padding;
+            public Vector3 DirectionWS;
+            public float Padding;
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
@@ -358,7 +360,7 @@ namespace Hecton8.World
 
         private const int BoidStride = 32;
         private const int GrazingAnchorStride = 32;
-        private const int MassiveThreatStride = 40;
+        private const int MassiveThreatStride = 48;
         private const int FormationBeaconStride = 32;
         private const int FormationObstacleStride = 32;
         private const int LeviathanNodeStride = 32;
@@ -472,7 +474,15 @@ namespace Hecton8.World
         private static readonly int _MassiveThreatsId = Shader.PropertyToID("_MassiveThreats");
         private static readonly int _MassiveThreatCountId = Shader.PropertyToID("_MassiveThreatCount");
         private static readonly int _MassiveThreatWeightId = Shader.PropertyToID("_MassiveThreatWeight");
+        private static readonly int _VatEnabledId = Shader.PropertyToID("_VatEnabled");
+        private static readonly int _VatPositionTexId = Shader.PropertyToID("_VatPositionTex");
+        private static readonly int _VatNormalTexId = Shader.PropertyToID("_VatNormalTex");
+        private static readonly int _VatFrameCountId = Shader.PropertyToID("_VatFrameCount");
         private static readonly int _VatVertexCountId = Shader.PropertyToID("_VatVertexCount");
+        private static readonly int _VatPlaybackSpeedId = Shader.PropertyToID("_VatPlaybackSpeed");
+        private static readonly int _VatInstancePhaseScaleId = Shader.PropertyToID("_VatInstancePhaseScale");
+        private static readonly int _VatPositionScaleId = Shader.PropertyToID("_VatPositionScale");
+        private static readonly int _VatNormalBlendId = Shader.PropertyToID("_VatNormalBlend");
         private static readonly int _DensityTexId = Shader.PropertyToID("_DensityTex");
         private static readonly int _DensityWorldRectId = Shader.PropertyToID("_DensityWorldRect");
         private static readonly int _CutMaskTexId = Shader.PropertyToID("_CutMaskTex");
@@ -532,6 +542,35 @@ namespace Hecton8.World
         [SerializeField]
         [Tooltip("Instanced material used by RenderMeshPrimitives.")]
         private Material boidMaterial;
+
+        [Header("── VAT Rendering ──────────────────")]
+        [SerializeField]
+        [Tooltip("Optional VAT position texture used to animate small-fish vertices entirely on the GPU.")]
+        private Texture2D boidVatPositionTexture;
+
+        [SerializeField]
+        [Tooltip("Optional VAT normal texture paired with the position VAT. Leave unset to fall back to procedural tail wag.")]
+        private Texture2D boidVatNormalTexture;
+
+        [SerializeField, Min(1)]
+        [Tooltip("Frame count stored in the VAT textures.")]
+        private int boidVatFrameCount = 1;
+
+        [SerializeField, Min(0f)]
+        [Tooltip("Playback speed multiplier applied to the VAT animation.")]
+        private float boidVatPlaybackSpeed = 1f;
+
+        [SerializeField, Min(0f)]
+        [Tooltip("Per-instance VAT phase offset scale. Multiplied by SV_InstanceID in the shader.")]
+        private float boidVatInstancePhaseScale = 0.0175f;
+
+        [SerializeField, Min(0.0001f)]
+        [Tooltip("World-scale multiplier applied to VAT position samples.")]
+        private float boidVatPositionScale = 1f;
+
+        [SerializeField, Range(0f, 1f)]
+        [Tooltip("Blend factor between authored mesh normals and VAT normal samples.")]
+        private float boidVatNormalBlend = 1f;
 
         [SerializeField]
         [Tooltip("Primary density owner. If null the controller resolves the active runtime singleton.")]
@@ -1031,10 +1070,6 @@ namespace Hecton8.World
         private float _debugEcosystemFitness;
 
         [SerializeField]
-        [Tooltip("Current prey speed multiplier sampled from the ecosystem sector containing the player.")]
-        private float _debugEcosystemSpeedMultiplier = 1f;
-
-        [SerializeField]
         [Tooltip("Current prey camouflage bias sampled from the ecosystem sector containing the player.")]
         private float _debugEcosystemCamouflageIndex;
 
@@ -1257,6 +1292,7 @@ namespace Hecton8.World
         private Vector3 _threatVoxelOriginWS = Vector3.zero;
         private Vector3 _threatVoxelCellSizeWS = Vector3.one;
         private int _threatVoxelCellCount;
+        private int _threatVoxelSolidThreshold = VoxelDynamicNavGridRuntime.SolidCell;
         private bool _threatVoxelDataValid;
         private int _staticObstacleCacheCount;
         private JobHandle _foveatedSimulationHandle;
@@ -1600,6 +1636,7 @@ namespace Hecton8.World
         private void SanitizeSettings()
         {
             boidCount = Mathf.Clamp(boidCount, 128, 2048);
+            boidCount = VRAMEnforcer.ApplyBoidPopulationBudget(boidCount, 128, 2048);
             maxSpawnAttempts = Mathf.Clamp(maxSpawnAttempts, 4, 32);
             densityThreshold = Mathf.Clamp01(densityThreshold);
             windowThreshold = Mathf.Clamp(windowThreshold, 0f, 0.75f);
@@ -1639,6 +1676,11 @@ namespace Hecton8.World
             deepClusterWeight = Mathf.Clamp(deepClusterWeight, 0f, 8f);
             deepHeadlightPanicDuration = Mathf.Clamp(deepHeadlightPanicDuration, 0.1f, 10f);
             deepHeadlightPanicRadiusScale = Mathf.Clamp(deepHeadlightPanicRadiusScale, 1f, 6f);
+            boidVatFrameCount = Mathf.Max(1, boidVatFrameCount);
+            boidVatPlaybackSpeed = Mathf.Max(0f, boidVatPlaybackSpeed);
+            boidVatInstancePhaseScale = Mathf.Max(0f, boidVatInstancePhaseScale);
+            boidVatPositionScale = Mathf.Max(0.0001f, boidVatPositionScale);
+            boidVatNormalBlend = Mathf.Clamp01(boidVatNormalBlend);
             parasiteDroneWorldYThreshold = Mathf.Clamp(parasiteDroneWorldYThreshold, -4000f, -1000f);
             parasiteAffinityWeight = Mathf.Clamp(parasiteAffinityWeight, 0f, 12f);
             parasiteHullStressIntensity = Mathf.Clamp01(parasiteHullStressIntensity);
@@ -1829,12 +1871,26 @@ namespace Hecton8.World
             ecosystemPopulationCount = 0;
             IEcosystemDirectorService ecosystemDirector = GlobalRegistry.EcosystemDirector;
             if (ecosystemDirector == null || !ecosystemDirector.IsInitialized || playerTransform == null)
+            {
+                _ecosystemFitness = 0f;
+                _ecosystemSpeedMultiplier = 1f;
+                _ecosystemCamouflageIndex = 0f;
                 return false;
+            }
 
             if (!ecosystemDirector.TryGetSectorPopulation(playerTransform.position, out EcosystemSectorPopulationSample sample))
+            {
+                _ecosystemFitness = 0f;
+                _ecosystemSpeedMultiplier = 1f;
+                _ecosystemCamouflageIndex = 0f;
                 return false;
+            }
 
             ecosystemPopulationCount = Mathf.Max(0, sample.PreyPopulation);
+            _ecosystemFitness = Mathf.Clamp01(sample.Fitness);
+            _ecosystemSpeedMultiplier = Mathf.Max(0.25f, sample.SpeedMultiplier);
+            _ecosystemCamouflageIndex = Mathf.Clamp01(sample.CamouflageIndex);
+            _debugEcosystemFitness = _ecosystemFitness;
             return true;
         }
 
@@ -1862,6 +1918,7 @@ namespace Hecton8.World
             _threatVoxelDimensions = Vector3Int.zero;
             _threatVoxelOriginWS = Vector3.zero;
             _threatVoxelCellSizeWS = Vector3.one;
+            _threatVoxelSolidThreshold = VoxelDynamicNavGridRuntime.SolidCell;
             _threatVoxelDataValid = false;
         }
 
@@ -1882,20 +1939,38 @@ namespace Hecton8.World
             Vector3Int gridDimensions = Vector3Int.zero;
             Vector3 gridOrigin = Vector3.zero;
             Vector3 voxelCellSize = Vector3.one;
+            int threatVoxelSolidThreshold = VoxelDynamicNavGridRuntime.SolidCell;
+            HectonCaveVoxelLightingVolume caveVoxelVolume = HectonCaveVoxelLightingVolume.ActiveRuntimeInstance;
+            if (caveVoxelVolume != null &&
+                caveVoxelVolume.TryGetPublishedSignedDistanceVoxelPayload(
+                    out NativeArray<byte> signedDistanceVoxels,
+                    out Vector3Int caveGridDimensions,
+                    out Vector3 caveGridOrigin,
+                    out Vector3 caveVoxelCellSize))
+            {
+                threatVoxels = signedDistanceVoxels;
+                gridDimensions = caveGridDimensions;
+                gridOrigin = caveGridOrigin;
+                voxelCellSize = caveVoxelCellSize;
+                threatVoxelSolidThreshold = 128;
+            }
+
             bool resolvedPassability = VoxelDynamicNavGridRuntime.TryGetNearestPassabilityPayload(
                 new float3(_fieldCenter.x, _fieldCenter.y, _fieldCenter.z),
                 out NativeArray<byte> navPassability,
                 out int3 navDimensions,
                 out float3 navOrigin,
                 out float navCellSize);
-            if (resolvedPassability)
+            if (!threatVoxels.IsCreated && resolvedPassability)
             {
                 threatVoxels = navPassability;
                 gridDimensions = new Vector3Int(navDimensions.x, navDimensions.y, navDimensions.z);
                 gridOrigin = new Vector3(navOrigin.x, navOrigin.y, navOrigin.z);
                 voxelCellSize = new Vector3(navCellSize, navCellSize, navCellSize);
+                threatVoxelSolidThreshold = VoxelDynamicNavGridRuntime.SolidCell;
             }
-            else if (_mapMagicVegetationBridge != null &&
+            else if (!threatVoxels.IsCreated &&
+                     _mapMagicVegetationBridge != null &&
                      _mapMagicVegetationBridge.TryGetEcosystemThreatVoxelPayload(
                          out NativeArray<byte> fallbackThreatVoxels,
                          out Vector3Int fallbackGridDimensions,
@@ -1906,6 +1981,7 @@ namespace Hecton8.World
                 gridDimensions = fallbackGridDimensions;
                 gridOrigin = fallbackGridOrigin;
                 voxelCellSize = fallbackVoxelCellSize;
+                threatVoxelSolidThreshold = VoxelDynamicNavGridRuntime.SolidCell;
             }
             else
             {
@@ -1942,6 +2018,7 @@ namespace Hecton8.World
                 Mathf.Max(voxelCellSize.x, ThreatVoxelCellEpsilon),
                 Mathf.Max(voxelCellSize.y, ThreatVoxelCellEpsilon),
                 Mathf.Max(voxelCellSize.z, ThreatVoxelCellEpsilon));
+            _threatVoxelSolidThreshold = Mathf.Clamp(threatVoxelSolidThreshold, 1, 255);
             _threatVoxelDataValid = true;
         }
 
@@ -2919,17 +2996,20 @@ namespace Hecton8.World
                 _threatVoxelDimensions.x,
                 _threatVoxelDimensions.y,
                 _threatVoxelDimensions.z,
-                _threatVoxelDataValid ? 1 : 0);
+                _threatVoxelSolidThreshold);
+            float ecosystemSpeedScale = Mathf.Max(0.25f, _ecosystemSpeedMultiplier);
+            float ecosystemCamouflageScale = Mathf.Lerp(1f, ecosystemCamouflageWeight, _ecosystemCamouflageIndex);
+            float ecosystemFitnessScale = Mathf.Lerp(1f, 1.15f, _ecosystemFitness);
             frameConstants.ThreatVoxelOrigin = new float4(
                 _threatVoxelOriginWS.x,
                 _threatVoxelOriginWS.y,
                 _threatVoxelOriginWS.z,
-                voxelAvoidanceLookAheadDistance);
+                voxelAvoidanceLookAheadDistance * Mathf.Lerp(1f, ecosystemSpeedScale, 0.5f));
             frameConstants.ThreatVoxelCellSize = new float4(
                 _threatVoxelCellSizeWS.x,
                 _threatVoxelCellSizeWS.y,
                 _threatVoxelCellSizeWS.z,
-                voxelAvoidanceWeight);
+                voxelAvoidanceWeight * ecosystemCamouflageScale);
             frameConstants.TransportCapsule0 = new float4(
                 playerPosition.x,
                 playerPosition.y,
@@ -2941,7 +3021,7 @@ namespace Hecton8.World
                 playerVelocity.z,
                 transportCapsuleHalfLength);
             frameConstants.Ecosystem0 = new float4(
-                fragmentationWeight,
+                fragmentationWeight * ecosystemFitnessScale,
                 sonarScatterStrength01,
                 activeSonarWaveBandWidth,
                 activeSonarScatterImpulse + activeSonarScatterWeight);
@@ -3026,6 +3106,7 @@ namespace Hecton8.World
             float panicRadius = Mathf.Max(massiveThreatPanicRadius, Mathf.Max(signal.ExtremePanicRadiusWS, signal.RadiusWS * 3f));
             int targetIndex = -1;
             float weakestEndTime = float.MaxValue;
+            Vector3 inferredDirectionWS = Vector3.zero;
 
             for (int i = 0; i < _massiveThreats.Length; i++)
             {
@@ -3041,6 +3122,11 @@ namespace Hecton8.World
                 if (planarDistanceSq <= mergeDistance * mergeDistance)
                 {
                     targetIndex = i;
+                    Vector3 delta = signal.PositionWS - threat.Position;
+                    if (delta.sqrMagnitude > 0.0001f)
+                        inferredDirectionWS = delta.normalized;
+                    else if (threat.DirectionWS.sqrMagnitude > 0.0001f)
+                        inferredDirectionWS = threat.DirectionWS.normalized;
                     break;
                 }
 
@@ -3054,6 +3140,19 @@ namespace Hecton8.World
             if (targetIndex < 0)
                 targetIndex = 0;
 
+            if (inferredDirectionWS.sqrMagnitude <= 0.0001f &&
+                playerTransform != null &&
+                playerTransform.gameObject.activeInHierarchy)
+            {
+                Vector3 playerDelta = signal.PositionWS - playerTransform.position;
+                if (playerDelta.sqrMagnitude <= panicRadius * panicRadius &&
+                    playerTransform.TryGetComponent(out Rigidbody playerRigidbody) &&
+                    playerRigidbody.linearVelocity.sqrMagnitude > 0.0001f)
+                {
+                    inferredDirectionWS = playerRigidbody.linearVelocity.normalized;
+                }
+            }
+
             _massiveThreats[targetIndex] = new MassiveThreatData
             {
                 Position = signal.PositionWS,
@@ -3061,7 +3160,8 @@ namespace Hecton8.World
                 PanicRadius = panicRadius,
                 Strength = 1f,
                 EndTime = absoluteSimulationTime + Mathf.Max(0.25f, signal.Duration),
-                Padding = Vector3.zero
+                DirectionWS = inferredDirectionWS,
+                Padding = 0f
             };
 
             RecalculateMassiveThreatCount();
@@ -3691,12 +3791,26 @@ namespace Hecton8.World
         private void RenderCurrentBuffer()
         {
             GraphicsBuffer currentBuffer = _frameParity == 0 ? _boidsBufferA : _boidsBufferB;
+            bool vatEnabled = boidVatPositionTexture != null &&
+                              boidVatNormalTexture != null &&
+                              boidVatFrameCount > 1;
             _materialPropertyBlock.Clear();
             _materialPropertyBlock.SetBuffer(_BoidsBufferId, currentBuffer);
             _materialPropertyBlock.SetFloat(_ParasiteModeId, _parasiteModeActive ? 1f : 0f);
             _materialPropertyBlock.SetFloat(_ParasiteAggressionId, _debugParasiteAggression01);
             _materialPropertyBlock.SetFloat(_VelocitySleepScaleId, _debugHibernation01 >= 0.999f ? 0f : 1f);
+            _materialPropertyBlock.SetFloat(_VatEnabledId, vatEnabled ? 1f : 0f);
+            _materialPropertyBlock.SetFloat(_VatFrameCountId, vatEnabled ? boidVatFrameCount : 1f);
             _materialPropertyBlock.SetFloat(_VatVertexCountId, boidMesh != null ? boidMesh.vertexCount : 0f);
+            _materialPropertyBlock.SetFloat(_VatPlaybackSpeedId, boidVatPlaybackSpeed);
+            _materialPropertyBlock.SetFloat(_VatInstancePhaseScaleId, boidVatInstancePhaseScale);
+            _materialPropertyBlock.SetFloat(_VatPositionScaleId, boidVatPositionScale);
+            _materialPropertyBlock.SetFloat(_VatNormalBlendId, boidVatNormalBlend);
+            if (vatEnabled)
+            {
+                _materialPropertyBlock.SetTexture(_VatPositionTexId, boidVatPositionTexture);
+                _materialPropertyBlock.SetTexture(_VatNormalTexId, boidVatNormalTexture);
+            }
 
             int targetLayer = useGameObjectLayer ? gameObject.layer : 0;
             RenderParams renderParams = new RenderParams(boidMaterial)

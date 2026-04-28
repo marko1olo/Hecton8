@@ -9,7 +9,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(HectonSurvivalSystem))]
     [RequireComponent(typeof(HectonPlayerMovement))]
-    public sealed class TraumaDispatcher : MonoBehaviour, ITickable, IUpdatable, IDamageReceiver
+    public sealed class TraumaDispatcher : MonoBehaviour, ITickable, IUpdatable, IDamageSignalReceiver
     {
         private const float IntegrityChannelDecayPerSecond = 0.35f;
         private const float PowerChannelDecayPerSecond = 0.28f;

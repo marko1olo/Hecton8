@@ -1,4 +1,4 @@
-﻿using Hecton8.Core;
+using Hecton8.Core;
 using System;
 using Unity.Collections;
 using Unity.Jobs;
@@ -324,7 +324,6 @@ namespace Hecton8.World
             if (_isRegistered)
                 return;
 
-            SystemDispatcher.EnsureRuntimeInstance();
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _isRegistered = true;
         }

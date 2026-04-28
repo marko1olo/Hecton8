@@ -1,5 +1,6 @@
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+using Unity.Jobs;
 using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -19,9 +20,13 @@ namespace Hecton8.Core
         private const int LaneCount = 4;
         private const float DefaultSlowTickIntervalSeconds = 0.5f;
         private const double SlowDispatcherPhaseWarningMilliseconds = 100.0;
+        private const int MaxQueuedDispatcherRaycasts = 256;
+        private const int DispatcherRaycastMinCommandsPerJob = 1;
         private static readonly ProfilerMarker _updateProfilerMarker = new ProfilerMarker("H8.Dispatcher.Update");
         private static readonly ProfilerMarker _fixedUpdateProfilerMarker = new ProfilerMarker("H8.Dispatcher.FixedUpdate");
         private static readonly ProfilerMarker _slowTickProfilerMarker = new ProfilerMarker("H8.Dispatcher.SlowTick");
+        private static readonly ProfilerMarker _dispatcherRaycastScheduleProfilerMarker = new ProfilerMarker("H8.Dispatcher.Raycast.Schedule");
+        private static readonly ProfilerMarker _dispatcherRaycastCompleteProfilerMarker = new ProfilerMarker("H8.Dispatcher.Raycast.Complete");
         private static readonly ProfilerMarker[] _updateLaneProfilerMarkers =
         {
             new ProfilerMarker("H8.Dispatcher.Update.Core"),
@@ -68,21 +73,50 @@ namespace Hecton8.Core
         };
 
         private static IFoveatedDispatcher _foveatedSimulationManager = new FoveatedSimulationManager();
-        private static SystemDispatcher _instance;
+        // COLD ALLOC: IDispatcherRaycastReceiver[256] — dispatcher-owned pending raycast receivers — owner: SystemDispatcher
+        private static readonly IDispatcherRaycastReceiver[] _pendingDispatcherRaycastReceivers = new IDispatcherRaycastReceiver[MaxQueuedDispatcherRaycasts];
+        // COLD ALLOC: int[256] — dispatcher-owned pending raycast request ids — owner: SystemDispatcher
+        private static readonly int[] _pendingDispatcherRaycastRequestIds = new int[MaxQueuedDispatcherRaycasts];
+        // COLD ALLOC: IDispatcherRaycastReceiver[256] — dispatcher-owned scheduled raycast receivers — owner: SystemDispatcher
+        private static readonly IDispatcherRaycastReceiver[] _scheduledDispatcherRaycastReceivers = new IDispatcherRaycastReceiver[MaxQueuedDispatcherRaycasts];
+        // COLD ALLOC: int[256] — dispatcher-owned scheduled raycast request ids — owner: SystemDispatcher
+        private static readonly int[] _scheduledDispatcherRaycastRequestIds = new int[MaxQueuedDispatcherRaycasts];
         private float _slowTickAccumulator;
-
-        /// <summary>
-        /// Live dispatcher instance.
-        /// </summary>
-        public static SystemDispatcher Instance => _instance;
+        private static NativeQueue<RaycastCommand> _pendingDispatcherRaycastCommands;
+        private static NativeList<RaycastCommand> _scheduledDispatcherRaycastCommands;
+        private static NativeArray<RaycastHit> _scheduledDispatcherRaycastHits;
+        private static JobHandle _scheduledDispatcherRaycastHandle;
+        private static bool _dispatcherRaycastsScheduled;
+        private static int _pendingDispatcherRaycastCount;
+        private static int _scheduledDispatcherRaycastCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             _foveatedSimulationManager.Dispose();
             _foveatedSimulationManager = new FoveatedSimulationManager();
-            _instance = null;
+            DisposeDispatcherRaycastBuffers();
             ClearAllLanes();
+        }
+
+        internal static bool QueueDispatcherRaycast(IDispatcherRaycastReceiver receiver, int requestId, in RaycastCommand command)
+        {
+            if (receiver == null)
+                return false;
+
+            SystemDispatcher dispatcher = GlobalRegistry.Dispatcher;
+            if (dispatcher == null)
+                return false;
+
+            EnsureDispatcherRaycastBuffers();
+            if (!_pendingDispatcherRaycastCommands.IsCreated || _pendingDispatcherRaycastCount >= MaxQueuedDispatcherRaycasts)
+                return false;
+
+            int writeIndex = _pendingDispatcherRaycastCount++;
+            _pendingDispatcherRaycastReceivers[writeIndex] = receiver;
+            _pendingDispatcherRaycastRequestIds[writeIndex] = requestId;
+            _pendingDispatcherRaycastCommands.Enqueue(command);
+            return true;
         }
 
         /// <summary>
@@ -113,23 +147,6 @@ namespace Hecton8.Core
         public static RegistryBucket<ISlowTickable> GetSlowLane(PriorityLayer layer)
         {
             return _slowPriorityLanes[GetLaneIndex(layer)];
-        }
-
-        /// <summary>
-        /// Ensures a live runtime dispatcher exists.
-        /// </summary>
-        /// <returns>Live dispatcher instance.</returns>
-        public static SystemDispatcher EnsureRuntimeInstance()
-        {
-            if (_instance != null)
-                return _instance;
-
-            if (!Application.isPlaying)
-                return null;
-
-            GameObject runtimeRoot = new GameObject("[SystemDispatcher]");
-            SystemDispatcher dispatcher = runtimeRoot.AddComponent<SystemDispatcher>();
-            return dispatcher;
         }
 
         /// <summary>
@@ -233,13 +250,14 @@ namespace Hecton8.Core
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            SystemDispatcher registeredDispatcher = GlobalRegistry.Dispatcher;
+            if (registeredDispatcher != null && !ReferenceEquals(registeredDispatcher, this))
             {
                 Destroy(gameObject);
                 return;
             }
 
-            _instance = this;
+            GlobalRegistry.RegisterSystemDispatcher(this);
             _slowTickAccumulator = 0f;
 
             if (Application.isPlaying)
@@ -253,8 +271,11 @@ namespace Hecton8.Core
 
         private void OnDestroy()
         {
-            if (_instance == this)
-                _instance = null;
+            if (ReferenceEquals(GlobalRegistry.Dispatcher, this))
+            {
+                DisposeDispatcherRaycastBuffers();
+                GlobalRegistry.UnregisterSystemDispatcher(this);
+            }
         }
 
         private void Update()
@@ -305,11 +326,13 @@ namespace Hecton8.Core
                 PredatorCognitionDomain.ScheduleFrameEvaluation(Time.frameCount);
                 _foveatedSimulationManager.ScheduleFrameJobs();
                 RunSlowTick(deltaTime, blockGameplayLanes);
+                ScheduleDispatcherRaycasts();
             }
         }
 
         private void LateUpdate()
         {
+            CompleteDispatcherRaycasts();
             long completeDispatcherTimestamp = BeginDispatcherPhaseTiming();
             _foveatedSimulationManager.CompleteFrameJobs();
             WorldSpatialHashGrid.LateFrameMaintenance(Time.frameCount);
@@ -379,6 +402,123 @@ namespace Hecton8.Core
                     }
                 }
             }
+        }
+
+        private static void EnsureDispatcherRaycastBuffers()
+        {
+            if (!_pendingDispatcherRaycastCommands.IsCreated)
+            {
+                _pendingDispatcherRaycastCommands = new NativeQueue<RaycastCommand>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RaycastCommand>[256] — dispatcher-owned global deferred physics request lane — owner: SystemDispatcher
+            }
+
+            if (!_scheduledDispatcherRaycastCommands.IsCreated)
+            {
+                _scheduledDispatcherRaycastCommands = new NativeList<RaycastCommand>(MaxQueuedDispatcherRaycasts, Allocator.Persistent); // COLD ALLOC: NativeList<RaycastCommand>[256] — dispatcher-owned scheduled deferred raycast commands — owner: SystemDispatcher
+            }
+
+            if (!_scheduledDispatcherRaycastHits.IsCreated)
+            {
+                _scheduledDispatcherRaycastHits = new NativeArray<RaycastHit>(MaxQueuedDispatcherRaycasts, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[256] — dispatcher-owned deferred raycast hit lane — owner: SystemDispatcher
+            }
+        }
+
+        private static void ScheduleDispatcherRaycasts()
+        {
+            if (_dispatcherRaycastsScheduled || _pendingDispatcherRaycastCount <= 0)
+                return;
+
+            EnsureDispatcherRaycastBuffers();
+            if (!_pendingDispatcherRaycastCommands.IsCreated || !_scheduledDispatcherRaycastCommands.IsCreated)
+                return;
+
+            using (_dispatcherRaycastScheduleProfilerMarker.Auto())
+            {
+                _scheduledDispatcherRaycastCommands.Clear();
+                int scheduledCount = 0;
+                while (scheduledCount < _pendingDispatcherRaycastCount &&
+                       _pendingDispatcherRaycastCommands.TryDequeue(out RaycastCommand command))
+                {
+                    _scheduledDispatcherRaycastCommands.Add(command);
+                    _scheduledDispatcherRaycastReceivers[scheduledCount] = _pendingDispatcherRaycastReceivers[scheduledCount];
+                    _scheduledDispatcherRaycastRequestIds[scheduledCount] = _pendingDispatcherRaycastRequestIds[scheduledCount];
+                    _pendingDispatcherRaycastReceivers[scheduledCount] = null;
+                    _pendingDispatcherRaycastRequestIds[scheduledCount] = 0;
+                    scheduledCount++;
+                }
+
+                _pendingDispatcherRaycastCount = 0;
+                if (scheduledCount <= 0)
+                    return;
+
+                _scheduledDispatcherRaycastCount = scheduledCount;
+                _scheduledDispatcherRaycastHandle = RaycastCommand.ScheduleBatch(
+                    _scheduledDispatcherRaycastCommands.AsDeferredJobArray(),
+                    _scheduledDispatcherRaycastHits,
+                    DispatcherRaycastMinCommandsPerJob,
+                    default);
+                _dispatcherRaycastsScheduled = true;
+            }
+        }
+
+        private static void CompleteDispatcherRaycasts()
+        {
+            if (!_dispatcherRaycastsScheduled)
+                return;
+
+            using (_dispatcherRaycastCompleteProfilerMarker.Auto())
+            {
+                _scheduledDispatcherRaycastHandle.Complete();
+                _scheduledDispatcherRaycastHandle = default;
+                _dispatcherRaycastsScheduled = false;
+
+                for (int i = 0; i < _scheduledDispatcherRaycastCount; i++)
+                {
+                    IDispatcherRaycastReceiver receiver = _scheduledDispatcherRaycastReceivers[i];
+                    if (receiver == null)
+                        continue;
+
+                    receiver.ConsumeDispatcherRaycastHit(_scheduledDispatcherRaycastRequestIds[i], _scheduledDispatcherRaycastHits[i]);
+                    _scheduledDispatcherRaycastReceivers[i] = null;
+                    _scheduledDispatcherRaycastRequestIds[i] = 0;
+                }
+
+                _scheduledDispatcherRaycastCount = 0;
+            }
+        }
+
+        private static void DisposeDispatcherRaycastBuffers()
+        {
+            if (_dispatcherRaycastsScheduled)
+            {
+                _scheduledDispatcherRaycastHandle.Complete();
+                _scheduledDispatcherRaycastHandle = default;
+                _dispatcherRaycastsScheduled = false;
+            }
+
+            if (_pendingDispatcherRaycastCommands.IsCreated)
+            {
+                _pendingDispatcherRaycastCommands.Dispose();
+                _pendingDispatcherRaycastCommands = default;
+            }
+
+            if (_scheduledDispatcherRaycastCommands.IsCreated)
+            {
+                _scheduledDispatcherRaycastCommands.Dispose();
+                _scheduledDispatcherRaycastCommands = default;
+            }
+
+            if (_scheduledDispatcherRaycastHits.IsCreated)
+            {
+                _scheduledDispatcherRaycastHits.Dispose();
+                _scheduledDispatcherRaycastHits = default;
+            }
+
+            _pendingDispatcherRaycastCount = 0;
+            _scheduledDispatcherRaycastCount = 0;
+            System.Array.Clear(_pendingDispatcherRaycastReceivers, 0, _pendingDispatcherRaycastReceivers.Length);
+            System.Array.Clear(_pendingDispatcherRaycastRequestIds, 0, _pendingDispatcherRaycastRequestIds.Length);
+            System.Array.Clear(_scheduledDispatcherRaycastReceivers, 0, _scheduledDispatcherRaycastReceivers.Length);
+            System.Array.Clear(_scheduledDispatcherRaycastRequestIds, 0, _scheduledDispatcherRaycastRequestIds.Length);
         }
 
         private static bool ShouldSkipLaneDuringBootstrap(int laneIndex, bool blockGameplayLanes)
@@ -527,44 +667,20 @@ namespace Hecton8.Core
             }
         }
 
-        private static RenderDispatcher _instance;
         private bool _hasPendingRenderSettingsRestore;
         private Camera _pendingRenderSettingsCamera;
         private RenderSettingsSnapshot _pendingRenderSettingsSnapshot;
 
-        /// <summary>
-        /// Live dispatcher instance.
-        /// </summary>
-        public static RenderDispatcher Instance => _instance;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            _instance = null;
-        }
-
-        /// <summary>
-        /// Ensures a live runtime dispatcher exists.
-        /// </summary>
-        /// <returns>Live dispatcher instance.</returns>
-        public static RenderDispatcher EnsureRuntimeInstance()
-        {
-            if (_instance != null)
-                return _instance;
-
-            GameObject runtimeRoot = new GameObject("[RenderDispatcher]"); // COLD ALLOC: GameObject[1] - bootstrap-owned SRP render callback dispatcher - owner: RenderDispatcher
-            return runtimeRoot.AddComponent<RenderDispatcher>();
-        }
-
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            RenderDispatcher registeredDispatcher = GlobalRegistry.RenderDispatcher;
+            if (registeredDispatcher != null && !ReferenceEquals(registeredDispatcher, this))
             {
                 Destroy(gameObject);
                 return;
             }
 
-            _instance = this;
+            GlobalRegistry.RegisterRenderDispatcher(this);
 
             if (Application.isPlaying)
             {
@@ -592,8 +708,7 @@ namespace Hecton8.Core
 
         private void OnDestroy()
         {
-            if (_instance == this)
-                _instance = null;
+            GlobalRegistry.UnregisterRenderDispatcher(this);
         }
 
         private void HandleBeginCameraRendering(ScriptableRenderContext context, Camera camera)

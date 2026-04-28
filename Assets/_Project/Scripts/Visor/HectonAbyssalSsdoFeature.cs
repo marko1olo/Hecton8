@@ -70,17 +70,21 @@ namespace Hecton8.Visor
 
         private sealed class AbyssalSsdoPass : ScriptableRenderPass
         {
-            private sealed class PassData
+            private sealed class OcclusionPassData
             {
                 internal TextureHandle source;
-                internal TextureHandle depth;
-                internal TextureHandle normals;
                 internal TextureHandle occlusion;
                 internal TextureHandle blur;
-                internal TextureHandle destination;
                 internal Material occlusionMaterial;
                 internal Material blurHorizontalMaterial;
                 internal Material blurVerticalMaterial;
+            }
+
+            private sealed class CompositePassData
+            {
+                internal TextureHandle source;
+                internal TextureHandle occlusion;
+                internal TextureHandle destination;
                 internal Material compositeMaterial;
             }
 
@@ -185,40 +189,53 @@ namespace Hecton8.Visor
                 UpdateMaterialParameters(_blurVerticalMaterial, _settings, 2f, sourceDesc, ssdoWidth, ssdoHeight, projectionScale, ambientDirection);
                 UpdateMaterialParameters(_compositeMaterial, _settings, 3f, sourceDesc, ssdoWidth, ssdoHeight, projectionScale, ambientDirection);
 
-                using (var builder = renderGraph.AddUnsafePass<PassData>("Hecton Abyssal SSDO", out var passData, _profilingSampler))
+                using (var builder = renderGraph.AddUnsafePass<OcclusionPassData>("Hecton Abyssal SSDO", out var passData, _profilingSampler))
                 {
                     passData.source = sourceTexture;
-                    passData.depth = depthTexture;
-                    passData.normals = normalsTexture;
                     passData.occlusion = occlusionTexture;
                     passData.blur = blurTexture;
-                    passData.destination = compositeTexture;
                     passData.occlusionMaterial = _occlusionMaterial;
                     passData.blurHorizontalMaterial = _blurHorizontalMaterial;
                     passData.blurVerticalMaterial = _blurVerticalMaterial;
-                    passData.compositeMaterial = _compositeMaterial;
 
                     builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(depthTexture, AccessFlags.Read);
                     builder.UseTexture(normalsTexture, AccessFlags.Read);
                     builder.UseTexture(occlusionTexture, AccessFlags.ReadWrite);
                     builder.UseTexture(blurTexture, AccessFlags.ReadWrite);
-                    builder.UseTexture(compositeTexture, AccessFlags.Write);
                     builder.AllowGlobalStateModification(true);
+                    builder.SetGlobalTextureAfterPass(occlusionTexture, ShaderConstants.SsdoTextureId);
 
-                    builder.SetRenderFunc(static (PassData data, UnsafeGraphContext context) =>
+                    builder.SetRenderFunc(static (OcclusionPassData data, UnsafeGraphContext context) =>
                     {
                         CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
                         const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
                         const RenderBufferStoreAction StoreAction = RenderBufferStoreAction.Store;
 
-                        cmd.SetGlobalTexture(ShaderConstants.DepthTextureId, data.depth);
-                        cmd.SetGlobalTexture(ShaderConstants.NormalsTextureId, data.normals);
-
                         Blitter.BlitCameraTexture(cmd, data.source, data.occlusion, LoadAction, StoreAction, data.occlusionMaterial, 0);
                         Blitter.BlitCameraTexture(cmd, data.occlusion, data.blur, LoadAction, StoreAction, data.blurHorizontalMaterial, 1);
                         Blitter.BlitCameraTexture(cmd, data.blur, data.occlusion, LoadAction, StoreAction, data.blurVerticalMaterial, 2);
-                        cmd.SetGlobalTexture(ShaderConstants.SsdoTextureId, data.occlusion);
+                    });
+                }
+
+                using (var builder = renderGraph.AddUnsafePass<CompositePassData>("Hecton Abyssal SSDO Composite", out var passData, _profilingSampler))
+                {
+                    passData.source = sourceTexture;
+                    passData.occlusion = occlusionTexture;
+                    passData.destination = compositeTexture;
+                    passData.compositeMaterial = _compositeMaterial;
+
+                    builder.UseTexture(sourceTexture, AccessFlags.Read);
+                    builder.UseTexture(occlusionTexture, AccessFlags.Read);
+                    builder.UseTexture(compositeTexture, AccessFlags.Write);
+                    builder.AllowGlobalStateModification(true);
+
+                    builder.SetRenderFunc(static (CompositePassData data, UnsafeGraphContext context) =>
+                    {
+                        CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
+                        const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
+                        const RenderBufferStoreAction StoreAction = RenderBufferStoreAction.Store;
+
                         cmd.SetGlobalFloat(ShaderConstants.ActiveId, 1f);
                         Blitter.BlitCameraTexture(cmd, data.source, data.destination, LoadAction, StoreAction, data.compositeMaterial, 3);
                     });

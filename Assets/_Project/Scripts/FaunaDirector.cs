@@ -1,48 +1,48 @@
 // ============================================================================
-// HECTON-8 — FaunaDirector.cs
-// Директор фауны — управляет спавном и деспавном подводных существ.
+// HECTON-8 â€” FaunaDirector.cs
+// Ð”Ð¸Ñ€ÐµÐºÑ‚Ð¾Ñ€ Ñ„Ð°ÑƒÐ½Ñ‹ â€” ÑƒÐ¿Ñ€Ð°Ð²Ð»ÑÐµÑ‚ ÑÐ¿Ð°Ð²Ð½Ð¾Ð¼ Ð¸ Ð´ÐµÑÐ¿Ð°Ð²Ð½Ð¾Ð¼ Ð¿Ð¾Ð´Ð²Ð¾Ð´Ð½Ñ‹Ñ… ÑÑƒÑ‰ÐµÑÑ‚Ð².
 //
-// ОТВЕТСТВЕННОСТИ:
-//   1. Периодическая проверка позиции игрока (ISlowTickable).
-//   2. Определение текущего биома через MapMagicBridge (с троттлингом).
-//   3. Спавн существ в кольце вокруг игрока через ObjectPoolManager.
-//   4. Culling: деспавн существ, уплывших за пределы killDistance.
-//   5. Управление лимитами (глобальный max + per-type max).
-//   6. Внешнее управление: ForceSpawnHorde, SetPredatorPressure
-//      (оркестровка от HectonDirectorAI).
+// ÐžÐ¢Ð’Ð•Ð¢Ð¡Ð¢Ð’Ð•ÐÐÐžÐ¡Ð¢Ð˜:
+//   1. ÐŸÐµÑ€Ð¸Ð¾Ð´Ð¸Ñ‡ÐµÑÐºÐ°Ñ Ð¿Ñ€Ð¾Ð²ÐµÑ€ÐºÐ° Ð¿Ð¾Ð·Ð¸Ñ†Ð¸Ð¸ Ð¸Ð³Ñ€Ð¾ÐºÐ° (ISlowTickable).
+//   2. ÐžÐ¿Ñ€ÐµÐ´ÐµÐ»ÐµÐ½Ð¸Ðµ Ñ‚ÐµÐºÑƒÑ‰ÐµÐ³Ð¾ Ð±Ð¸Ð¾Ð¼Ð° Ñ‡ÐµÑ€ÐµÐ· MapMagicBridge (Ñ Ñ‚Ñ€Ð¾Ñ‚Ñ‚Ð»Ð¸Ð½Ð³Ð¾Ð¼).
+//   3. Ð¡Ð¿Ð°Ð²Ð½ ÑÑƒÑ‰ÐµÑÑ‚Ð² Ð² ÐºÐ¾Ð»ÑŒÑ†Ðµ Ð²Ð¾ÐºÑ€ÑƒÐ³ Ð¸Ð³Ñ€Ð¾ÐºÐ° Ñ‡ÐµÑ€ÐµÐ· ObjectPoolManager.
+//   4. Culling: Ð´ÐµÑÐ¿Ð°Ð²Ð½ ÑÑƒÑ‰ÐµÑÑ‚Ð², ÑƒÐ¿Ð»Ñ‹Ð²ÑˆÐ¸Ñ… Ð·Ð° Ð¿Ñ€ÐµÐ´ÐµÐ»Ñ‹ killDistance.
+//   5. Ð£Ð¿Ñ€Ð°Ð²Ð»ÐµÐ½Ð¸Ðµ Ð»Ð¸Ð¼Ð¸Ñ‚Ð°Ð¼Ð¸ (Ð³Ð»Ð¾Ð±Ð°Ð»ÑŒÐ½Ñ‹Ð¹ max + per-type max).
+//   6. Ð’Ð½ÐµÑˆÐ½ÐµÐµ ÑƒÐ¿Ñ€Ð°Ð²Ð»ÐµÐ½Ð¸Ðµ: ForceSpawnHorde, SetPredatorPressure
+//      (Ð¾Ñ€ÐºÐµÑÑ‚Ñ€Ð¾Ð²ÐºÐ° Ð¾Ñ‚ HectonDirectorAI).
 //
-// АРХИТЕКТУРА:
-//   • ISlowTickable — вызывается GameTickManager каждые ~0.5-1 сек.
-//   • Pre-allocated List<ActiveCreature> — zero GC при итерации.
-//   • Swap-remove при деспавне — O(1) без сдвига массива.
-//   • Все distance-проверки через sqrMagnitude — без sqrt.
-//   • Stateful counters — инкрементальный подсчёт O(1) вместо O(n).
-//   • Biome throttling — TryGetBiomeIndex вызывается раз в 2 сек.
+// ÐÐ Ð¥Ð˜Ð¢Ð•ÐšÐ¢Ð£Ð Ð:
+//   â€¢ ISlowTickable â€” Ð²Ñ‹Ð·Ñ‹Ð²Ð°ÐµÑ‚ÑÑ GameTickManager ÐºÐ°Ð¶Ð´Ñ‹Ðµ ~0.5-1 ÑÐµÐº.
+//   â€¢ Pre-allocated List<ActiveCreature> â€” zero GC Ð¿Ñ€Ð¸ Ð¸Ñ‚ÐµÑ€Ð°Ñ†Ð¸Ð¸.
+//   â€¢ Swap-remove Ð¿Ñ€Ð¸ Ð´ÐµÑÐ¿Ð°Ð²Ð½Ðµ â€” O(1) Ð±ÐµÐ· ÑÐ´Ð²Ð¸Ð³Ð° Ð¼Ð°ÑÑÐ¸Ð²Ð°.
+//   â€¢ Ð’ÑÐµ distance-Ð¿Ñ€Ð¾Ð²ÐµÑ€ÐºÐ¸ Ñ‡ÐµÑ€ÐµÐ· sqrMagnitude â€” Ð±ÐµÐ· sqrt.
+//   â€¢ Stateful counters â€” Ð¸Ð½ÐºÑ€ÐµÐ¼ÐµÐ½Ñ‚Ð°Ð»ÑŒÐ½Ñ‹Ð¹ Ð¿Ð¾Ð´ÑÑ‡Ñ‘Ñ‚ O(1) Ð²Ð¼ÐµÑÑ‚Ð¾ O(n).
+//   â€¢ Biome throttling â€” TryGetBiomeIndex Ð²Ñ‹Ð·Ñ‹Ð²Ð°ÐµÑ‚ÑÑ Ñ€Ð°Ð· Ð² 2 ÑÐµÐº.
 //
-// СПАВН КОЛЬЦО:
-//   • Внутренний радиус: 50м (не спавнить слишком близко).
-//   • Внешний радиус: 150м (не спавнить слишком далеко).
-//   • Высота: между дном + offset и поверхностью воды.
+// Ð¡ÐŸÐÐ’Ð ÐšÐžÐ›Ð¬Ð¦Ðž:
+//   â€¢ Ð’Ð½ÑƒÑ‚Ñ€ÐµÐ½Ð½Ð¸Ð¹ Ñ€Ð°Ð´Ð¸ÑƒÑ: 50Ð¼ (Ð½Ðµ ÑÐ¿Ð°Ð²Ð½Ð¸Ñ‚ÑŒ ÑÐ»Ð¸ÑˆÐºÐ¾Ð¼ Ð±Ð»Ð¸Ð·ÐºÐ¾).
+//   â€¢ Ð’Ð½ÐµÑˆÐ½Ð¸Ð¹ Ñ€Ð°Ð´Ð¸ÑƒÑ: 150Ð¼ (Ð½Ðµ ÑÐ¿Ð°Ð²Ð½Ð¸Ñ‚ÑŒ ÑÐ»Ð¸ÑˆÐºÐ¾Ð¼ Ð´Ð°Ð»ÐµÐºÐ¾).
+//   â€¢ Ð’Ñ‹ÑÐ¾Ñ‚Ð°: Ð¼ÐµÐ¶Ð´Ñƒ Ð´Ð½Ð¾Ð¼ + offset Ð¸ Ð¿Ð¾Ð²ÐµÑ€Ñ…Ð½Ð¾ÑÑ‚ÑŒÑŽ Ð²Ð¾Ð´Ñ‹.
 //
 // HORDE SPAWN (ForceSpawnHorde):
-//   • Вызывается HectonDirectorAI при Peak-событии.
-//   • Спавнит 3-5 агрессивных существ в радиусе 10-15м от worldCenter.
-//   • Игнорирует внутренние кулдауны — это приказ Директора.
-//   • Немедленно устанавливает ForceState(Aggressive) на всех спавнов.
-//   • Уважает _pressureEnabled флаг (Relax-фаза блокирует орды).
+//   â€¢ Ð’Ñ‹Ð·Ñ‹Ð²Ð°ÐµÑ‚ÑÑ HectonDirectorAI Ð¿Ñ€Ð¸ Peak-ÑÐ¾Ð±Ñ‹Ñ‚Ð¸Ð¸.
+//   â€¢ Ð¡Ð¿Ð°Ð²Ð½Ð¸Ñ‚ 3-5 Ð°Ð³Ñ€ÐµÑÑÐ¸Ð²Ð½Ñ‹Ñ… ÑÑƒÑ‰ÐµÑÑ‚Ð² Ð² Ñ€Ð°Ð´Ð¸ÑƒÑÐµ 10-15Ð¼ Ð¾Ñ‚ worldCenter.
+//   â€¢ Ð˜Ð³Ð½Ð¾Ñ€Ð¸Ñ€ÑƒÐµÑ‚ Ð²Ð½ÑƒÑ‚Ñ€ÐµÐ½Ð½Ð¸Ðµ ÐºÑƒÐ»Ð´Ð°ÑƒÐ½Ñ‹ â€” ÑÑ‚Ð¾ Ð¿Ñ€Ð¸ÐºÐ°Ð· Ð”Ð¸Ñ€ÐµÐºÑ‚Ð¾Ñ€Ð°.
+//   â€¢ ÐÐµÐ¼ÐµÐ´Ð»ÐµÐ½Ð½Ð¾ ÑƒÑÑ‚Ð°Ð½Ð°Ð²Ð»Ð¸Ð²Ð°ÐµÑ‚ ForceState(Aggressive) Ð½Ð° Ð²ÑÐµÑ… ÑÐ¿Ð°Ð²Ð½Ð¾Ð².
+//   â€¢ Ð£Ð²Ð°Ð¶Ð°ÐµÑ‚ _pressureEnabled Ñ„Ð»Ð°Ð³ (Relax-Ñ„Ð°Ð·Ð° Ð±Ð»Ð¾ÐºÐ¸Ñ€ÑƒÐµÑ‚ Ð¾Ñ€Ð´Ñ‹).
 //
 // PREDATOR PRESSURE (SetPredatorPressure):
-//   • false: все активные существа переводятся в Wander (отступление).
-//   • true: восстановление штатного AI behaviour.
-//   • Управляется HectonDirectorAI при смене фаз.
+//   â€¢ false: Ð²ÑÐµ Ð°ÐºÑ‚Ð¸Ð²Ð½Ñ‹Ðµ ÑÑƒÑ‰ÐµÑÑ‚Ð²Ð° Ð¿ÐµÑ€ÐµÐ²Ð¾Ð´ÑÑ‚ÑÑ Ð² Wander (Ð¾Ñ‚ÑÑ‚ÑƒÐ¿Ð»ÐµÐ½Ð¸Ðµ).
+//   â€¢ true: Ð²Ð¾ÑÑÑ‚Ð°Ð½Ð¾Ð²Ð»ÐµÐ½Ð¸Ðµ ÑˆÑ‚Ð°Ñ‚Ð½Ð¾Ð³Ð¾ AI behaviour.
+//   â€¢ Ð£Ð¿Ñ€Ð°Ð²Ð»ÑÐµÑ‚ÑÑ HectonDirectorAI Ð¿Ñ€Ð¸ ÑÐ¼ÐµÐ½Ðµ Ñ„Ð°Ð·.
 //
 // ZERO GC:
-//   • ActiveCreature — struct (44 байта на стеке).
-//   • List<ActiveCreature> — pre-allocated, без boxing.
-//   • Mathf.Sin/Cos — returns float (struct).
-//   • Random.Range — returns float/int (struct).
-//   • Никаких foreach, никаких LINQ.
-//   • Biome check throttled — GetAlphamaps аллокация раз в 2 сек.
+//   â€¢ ActiveCreature â€” struct (44 Ð±Ð°Ð¹Ñ‚Ð° Ð½Ð° ÑÑ‚ÐµÐºÐµ).
+//   â€¢ List<ActiveCreature> â€” pre-allocated, Ð±ÐµÐ· boxing.
+//   â€¢ Mathf.Sin/Cos â€” returns float (struct).
+//   â€¢ Random.Range â€” returns float/int (struct).
+//   â€¢ ÐÐ¸ÐºÐ°ÐºÐ¸Ñ… foreach, Ð½Ð¸ÐºÐ°ÐºÐ¸Ñ… LINQ.
+//   â€¢ Biome check throttled â€” GetAlphamaps Ð°Ð»Ð»Ð¾ÐºÐ°Ñ†Ð¸Ñ Ñ€Ð°Ð· Ð² 2 ÑÐµÐº.
 // ============================================================================
 
 using System.Collections.Generic;
@@ -78,45 +78,46 @@ namespace Hecton8.AI
         private const float RuntimeSettingsRefreshInterval = 5f;
         private static readonly string[] ThermalHabitatTokens = { "thermal", "brine", "heat", "furnace", "volcanic", "chemical" };
         private static readonly string[] CaveHabitatTokens = { "cave", "nest", "ambush", "rift", "pocket", "burrow", "crevice" };
+        private Unity.Mathematics.Random _biomeSpawnRandom;
 
-        // ══════════════════════════════════════════════════════════
-        //  ACTIVE CREATURE — struct tracker
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  ACTIVE CREATURE â€” struct tracker
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>
-        /// Запись об активном существе. Struct — zero GC при хранении в List.
-        /// Хранит минимум данных для culling и accounting.
+        /// Ð—Ð°Ð¿Ð¸ÑÑŒ Ð¾Ð± Ð°ÐºÑ‚Ð¸Ð²Ð½Ð¾Ð¼ ÑÑƒÑ‰ÐµÑÑ‚Ð²Ðµ. Struct â€” zero GC Ð¿Ñ€Ð¸ Ñ…Ñ€Ð°Ð½ÐµÐ½Ð¸Ð¸ Ð² List.
+        /// Ð¥Ñ€Ð°Ð½Ð¸Ñ‚ Ð¼Ð¸Ð½Ð¸Ð¼ÑƒÐ¼ Ð´Ð°Ð½Ð½Ñ‹Ñ… Ð´Ð»Ñ culling Ð¸ accounting.
         /// </summary>
         private struct ActiveCreature
         {
-            /// <summary>Ссылка на GameObject (из пула).</summary>
+            /// <summary>Ð¡ÑÑ‹Ð»ÐºÐ° Ð½Ð° GameObject (Ð¸Ð· Ð¿ÑƒÐ»Ð°).</summary>
             public GameObject gameObject;
 
-            /// <summary>Кэшированный Transform (avoid GetComponent per frame).</summary>
+            /// <summary>ÐšÑÑˆÐ¸Ñ€Ð¾Ð²Ð°Ð½Ð½Ñ‹Ð¹ Transform (avoid GetComponent per frame).</summary>
             public Transform transform;
 
-            /// <summary>Индекс в FaunaBiomeData.possibleCreatures (для counting).</summary>
+            /// <summary>Ð˜Ð½Ð´ÐµÐºÑ Ð² FaunaBiomeData.possibleCreatures (Ð´Ð»Ñ counting).</summary>
             public int creatureTypeIndex;
 
-            /// <summary>Индекс биома, в котором был заспавнен.</summary>
+            /// <summary>Ð˜Ð½Ð´ÐµÐºÑ Ð±Ð¸Ð¾Ð¼Ð°, Ð² ÐºÐ¾Ñ‚Ð¾Ñ€Ð¾Ð¼ Ð±Ñ‹Ð» Ð·Ð°ÑÐ¿Ð°Ð²Ð½ÐµÐ½.</summary>
             public int biomeIndex;
 
-            /// <summary>Префаб-источник (для пула, если понадобится идентификация).</summary>
+            /// <summary>ÐŸÑ€ÐµÑ„Ð°Ð±-Ð¸ÑÑ‚Ð¾Ñ‡Ð½Ð¸Ðº (Ð´Ð»Ñ Ð¿ÑƒÐ»Ð°, ÐµÑÐ»Ð¸ Ð¿Ð¾Ð½Ð°Ð´Ð¾Ð±Ð¸Ñ‚ÑÑ Ð¸Ð´ÐµÐ½Ñ‚Ð¸Ñ„Ð¸ÐºÐ°Ñ†Ð¸Ñ).</summary>
             public GameObject prefabSource;
 
-            /// <summary>Архетип существа для регидратации после off-screen деактивации.</summary>
+            /// <summary>ÐÑ€Ñ…ÐµÑ‚Ð¸Ð¿ ÑÑƒÑ‰ÐµÑÑ‚Ð²Ð° Ð´Ð»Ñ Ñ€ÐµÐ³Ð¸Ð´Ñ€Ð°Ñ‚Ð°Ñ†Ð¸Ð¸ Ð¿Ð¾ÑÐ»Ðµ off-screen Ð´ÐµÐ°ÐºÑ‚Ð¸Ð²Ð°Ñ†Ð¸Ð¸.</summary>
             public CreatureArchetypeData archetype;
 
-            /// <summary>Чанк, в котором существо было заспавнено.</summary>
+            /// <summary>Ð§Ð°Ð½Ðº, Ð² ÐºÐ¾Ñ‚Ð¾Ñ€Ð¾Ð¼ ÑÑƒÑ‰ÐµÑÑ‚Ð²Ð¾ Ð±Ñ‹Ð»Ð¾ Ð·Ð°ÑÐ¿Ð°Ð²Ð½ÐµÐ½Ð¾.</summary>
             public WorldChunkCoordinate chunkCoord;
 
-            /// <summary>Большой участок воды, к которому привязана крупная угроза.</summary>
+            /// <summary>Ð‘Ð¾Ð»ÑŒÑˆÐ¾Ð¹ ÑƒÑ‡Ð°ÑÑ‚Ð¾Ðº Ð²Ð¾Ð´Ñ‹, Ðº ÐºÐ¾Ñ‚Ð¾Ñ€Ð¾Ð¼Ñƒ Ð¿Ñ€Ð¸Ð²ÑÐ·Ð°Ð½Ð° ÐºÑ€ÑƒÐ¿Ð½Ð°Ñ ÑƒÐ³Ñ€Ð¾Ð·Ð°.</summary>
             public WorldMacroZoneCoordinate macroZoneCoord;
 
-            /// <summary>Является ли это существо крупной угрозой большого участка воды.</summary>
+            /// <summary>Ð¯Ð²Ð»ÑÐµÑ‚ÑÑ Ð»Ð¸ ÑÑ‚Ð¾ ÑÑƒÑ‰ÐµÑÑ‚Ð²Ð¾ ÐºÑ€ÑƒÐ¿Ð½Ð¾Ð¹ ÑƒÐ³Ñ€Ð¾Ð·Ð¾Ð¹ Ð±Ð¾Ð»ÑŒÑˆÐ¾Ð³Ð¾ ÑƒÑ‡Ð°ÑÑ‚ÐºÐ° Ð²Ð¾Ð´Ñ‹.</summary>
             public bool isLargeThreat;
 
-            /// <summary>Индекс резидентного слота дегидратации.</summary>
+            /// <summary>Ð˜Ð½Ð´ÐµÐºÑ Ñ€ÐµÐ·Ð¸Ð´ÐµÐ½Ñ‚Ð½Ð¾Ð³Ð¾ ÑÐ»Ð¾Ñ‚Ð° Ð´ÐµÐ³Ð¸Ð´Ñ€Ð°Ñ‚Ð°Ñ†Ð¸Ð¸.</summary>
             public int dehydrationSlotIndex;
         }
 
@@ -152,17 +153,17 @@ namespace Hecton8.AI
             public bool isDehydrated;
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  INSPECTOR — DATASETS
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  INSPECTOR â€” DATASETS
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        [Header("── Biome Datasets ────────────────────────────")]
-        [Tooltip("Данные фауны для каждого биома. " +
-                 "Индексы biomeIndex должны соответствовать MapMagic Biomes Set.")]
+        [Header("â”€â”€ Biome Datasets â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Tooltip("Ð”Ð°Ð½Ð½Ñ‹Ðµ Ñ„Ð°ÑƒÐ½Ñ‹ Ð´Ð»Ñ ÐºÐ°Ð¶Ð´Ð¾Ð³Ð¾ Ð±Ð¸Ð¾Ð¼Ð°. " +
+                 "Ð˜Ð½Ð´ÐµÐºÑÑ‹ biomeIndex Ð´Ð¾Ð»Ð¶Ð½Ñ‹ ÑÐ¾Ð¾Ñ‚Ð²ÐµÑ‚ÑÑ‚Ð²Ð¾Ð²Ð°Ñ‚ÑŒ MapMagic Biomes Set.")]
         [SerializeField] private FaunaBiomeData[] biomeDatasets;
 
-        [Header("── Chunk Streaming ───────────────────────────")]
-        [Tooltip("Общий профиль чанкового мира. Если задан, фауна берёт из него размеры чанка, радиусы жизни и вместимость.")]
+        [Header("â”€â”€ Chunk Streaming â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Tooltip("ÐžÐ±Ñ‰Ð¸Ð¹ Ð¿Ñ€Ð¾Ñ„Ð¸Ð»ÑŒ Ñ‡Ð°Ð½ÐºÐ¾Ð²Ð¾Ð³Ð¾ Ð¼Ð¸Ñ€Ð°. Ð•ÑÐ»Ð¸ Ð·Ð°Ð´Ð°Ð½, Ñ„Ð°ÑƒÐ½Ð° Ð±ÐµÑ€Ñ‘Ñ‚ Ð¸Ð· Ð½ÐµÐ³Ð¾ Ñ€Ð°Ð·Ð¼ÐµÑ€Ñ‹ Ñ‡Ð°Ð½ÐºÐ°, Ñ€Ð°Ð´Ð¸ÑƒÑÑ‹ Ð¶Ð¸Ð·Ð½Ð¸ Ð¸ Ð²Ð¼ÐµÑÑ‚Ð¸Ð¼Ð¾ÑÑ‚ÑŒ.")]
         [SerializeField] private WorldChunkStreamingProfile chunkStreamingProfile;
         [SerializeField] private WorldFaunaSpawnRegistry spawnRegistry;
         [SerializeField] private WorldProceduralStateRegistry proceduralStateRegistry;
@@ -172,7 +173,7 @@ namespace Hecton8.AI
         [SerializeField] private WorldZoneDirector worldZoneDirector;
         [SerializeField] private DepthZoneDirector depthZoneDirector;
 
-        [Header("── Ecology Cadence ─────────────────────")]
+        [Header("â”€â”€ Ecology Cadence â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Global fauna budget scale when the active matrix biome reads as calm.")]
         [SerializeField, Range(0.5f, 1.5f)] private float calmFaunaBudgetScale = 0.9f;
         [Tooltip("Global fauna budget scale when the active matrix biome reads as lively.")]
@@ -190,7 +191,7 @@ namespace Hecton8.AI
         [Tooltip("Per-biome fauna cap scale when the active matrix biome reads as hostile.")]
         [SerializeField, Range(0.5f, 1.5f)] private float hostileBiomeCapScale = 0.82f;
 
-        [Header("── Ecology Composition ────────────────────")]
+        [Header("â”€â”€ Ecology Composition â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Passive fauna weight multiplier when the active matrix biome reads as calm.")]
         [SerializeField, Range(0.25f, 2f)] private float calmPassiveSelectionScale = 1.25f;
         [Tooltip("Aggressive fauna weight multiplier when the active matrix biome reads as calm.")]
@@ -222,7 +223,7 @@ namespace Hecton8.AI
         [Tooltip("Large-threat weight multiplier while the player is on a route-critical lane. Keeps navigation legible.")]
         [SerializeField, Range(0f, 2f)] private float routeCriticalLargeThreatSelectionScale = 0.72f;
 
-        [Header("── Depth-Zone Ecology ──────────────────")]
+        [Header("â”€â”€ Depth-Zone Ecology â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Overall fauna-budget scale inside cave-tagged depth zones. Reduces live density so cramped water reads clearer.")]
         [SerializeField, Range(0.25f, 1.5f)] private float caveDepthZoneBudgetScale = 0.84f;
         [Tooltip("Overall fauna-budget scale inside thermal depth zones. Keeps hot water dense enough to feel alive without flooding weak hardware.")]
@@ -248,7 +249,7 @@ namespace Hecton8.AI
         [Tooltip("Bonus weight for entries whose authored traits read as high-pressure hunters when the current depth zone is dangerous.")]
         [SerializeField, Range(0.5f, 2f)] private float highPressureHunterSelectionScale = 1.22f;
 
-        [Header("── Adaptive Perf Budget ───────────────────")]
+        [Header("â”€â”€ Adaptive Perf Budget â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Scales fauna density from DynamicResolutionScaler render scale so weak devices shed live-world pressure before frame time collapses.")]
         [SerializeField] private bool enableAdaptivePerfBudget = true;
         [Tooltip("Render scale floor where fauna density reaches its lowest adaptive budget.")]
@@ -260,59 +261,59 @@ namespace Hecton8.AI
         [Tooltip("Minimum spawn-burst scale when adaptive perf response is fully engaged.")]
         [SerializeField, Range(0.2f, 1f)] private float adaptiveSpawnBurstBudgetFloor = 0.4f;
 
-        // ══════════════════════════════════════════════════════════
-        //  INSPECTOR — LIMITS
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  INSPECTOR â€” LIMITS
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        [Header("── Global Limits ─────────────────────────────")]
-        [Tooltip("Максимальное общее количество существ в мире.")]
+        [Header("â”€â”€ Global Limits â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Tooltip("ÐœÐ°ÐºÑÐ¸Ð¼Ð°Ð»ÑŒÐ½Ð¾Ðµ Ð¾Ð±Ñ‰ÐµÐµ ÐºÐ¾Ð»Ð¸Ñ‡ÐµÑÑ‚Ð²Ð¾ ÑÑƒÑ‰ÐµÑÑ‚Ð² Ð² Ð¼Ð¸Ñ€Ðµ.")]
         [SerializeField] private int globalMaxCount = 30;
 
-        [Tooltip("Максимальное количество спавнов за один SlowTick. " +
-                 "Предотвращает spike при входе в новый биом.")]
+        [Tooltip("ÐœÐ°ÐºÑÐ¸Ð¼Ð°Ð»ÑŒÐ½Ð¾Ðµ ÐºÐ¾Ð»Ð¸Ñ‡ÐµÑÑ‚Ð²Ð¾ ÑÐ¿Ð°Ð²Ð½Ð¾Ð² Ð·Ð° Ð¾Ð´Ð¸Ð½ SlowTick. " +
+                 "ÐŸÑ€ÐµÐ´Ð¾Ñ‚Ð²Ñ€Ð°Ñ‰Ð°ÐµÑ‚ spike Ð¿Ñ€Ð¸ Ð²Ñ…Ð¾Ð´Ðµ Ð² Ð½Ð¾Ð²Ñ‹Ð¹ Ð±Ð¸Ð¾Ð¼.")]
         [SerializeField] private int maxSpawnsPerTick = 3;
 
-        // ══════════════════════════════════════════════════════════
-        //  INSPECTOR — SPAWN RING
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  INSPECTOR â€” SPAWN RING
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        [Header("── Spawn Ring ────────────────────────────────")]
-        [Tooltip("Минимальная дистанция спавна от игрока (метры).")]
+        [Header("â”€â”€ Spawn Ring â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Tooltip("ÐœÐ¸Ð½Ð¸Ð¼Ð°Ð»ÑŒÐ½Ð°Ñ Ð´Ð¸ÑÑ‚Ð°Ð½Ñ†Ð¸Ñ ÑÐ¿Ð°Ð²Ð½Ð° Ð¾Ñ‚ Ð¸Ð³Ñ€Ð¾ÐºÐ° (Ð¼ÐµÑ‚Ñ€Ñ‹).")]
         [SerializeField] private float spawnRingInner = 50f;
 
-        [Tooltip("Максимальная дистанция спавна от игрока (метры).")]
+        [Tooltip("ÐœÐ°ÐºÑÐ¸Ð¼Ð°Ð»ÑŒÐ½Ð°Ñ Ð´Ð¸ÑÑ‚Ð°Ð½Ñ†Ð¸Ñ ÑÐ¿Ð°Ð²Ð½Ð° Ð¾Ñ‚ Ð¸Ð³Ñ€Ð¾ÐºÐ° (Ð¼ÐµÑ‚Ñ€Ñ‹).")]
         [SerializeField] private float spawnRingOuter = 150f;
 
-        // ══════════════════════════════════════════════════════════
-        //  INSPECTOR — CULLING
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  INSPECTOR â€” CULLING
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        [Header("── Culling ───────────────────────────────────")]
-        [Tooltip("Дистанция от игрока, после которой существо деспавнится.")]
+        [Header("â”€â”€ Culling â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Tooltip("Ð”Ð¸ÑÑ‚Ð°Ð½Ñ†Ð¸Ñ Ð¾Ñ‚ Ð¸Ð³Ñ€Ð¾ÐºÐ°, Ð¿Ð¾ÑÐ»Ðµ ÐºÐ¾Ñ‚Ð¾Ñ€Ð¾Ð¹ ÑÑƒÑ‰ÐµÑÑ‚Ð²Ð¾ Ð´ÐµÑÐ¿Ð°Ð²Ð½Ð¸Ñ‚ÑÑ.")]
         [SerializeField] private float killDistance = 200f;
 
-        // ══════════════════════════════════════════════════════════
-        //  INSPECTOR — HORDE SETTINGS
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  INSPECTOR â€” HORDE SETTINGS
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        [Header("── Horde Spawn (Director Command) ────────────")]
-        [Tooltip("Минимальное количество существ в орде.")]
+        [Header("â”€â”€ Horde Spawn (Director Command) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Tooltip("ÐœÐ¸Ð½Ð¸Ð¼Ð°Ð»ÑŒÐ½Ð¾Ðµ ÐºÐ¾Ð»Ð¸Ñ‡ÐµÑÑ‚Ð²Ð¾ ÑÑƒÑ‰ÐµÑÑ‚Ð² Ð² Ð¾Ñ€Ð´Ðµ.")]
         [SerializeField] private int hordeCountMin = 3;
 
-        [Tooltip("Максимальное количество существ в орде.")]
+        [Tooltip("ÐœÐ°ÐºÑÐ¸Ð¼Ð°Ð»ÑŒÐ½Ð¾Ðµ ÐºÐ¾Ð»Ð¸Ñ‡ÐµÑÑ‚Ð²Ð¾ ÑÑƒÑ‰ÐµÑÑ‚Ð² Ð² Ð¾Ñ€Ð´Ðµ.")]
         [SerializeField] private int hordeCountMax = 5;
 
-        [Tooltip("Минимальный радиус спавна орды от центра (метры).")]
+        [Tooltip("ÐœÐ¸Ð½Ð¸Ð¼Ð°Ð»ÑŒÐ½Ñ‹Ð¹ Ñ€Ð°Ð´Ð¸ÑƒÑ ÑÐ¿Ð°Ð²Ð½Ð° Ð¾Ñ€Ð´Ñ‹ Ð¾Ñ‚ Ñ†ÐµÐ½Ñ‚Ñ€Ð° (Ð¼ÐµÑ‚Ñ€Ñ‹).")]
         [SerializeField] private float hordeRadiusInner = 10f;
 
-        [Tooltip("Максимальный радиус спавна орды от центра (метры).")]
+        [Tooltip("ÐœÐ°ÐºÑÐ¸Ð¼Ð°Ð»ÑŒÐ½Ñ‹Ð¹ Ñ€Ð°Ð´Ð¸ÑƒÑ ÑÐ¿Ð°Ð²Ð½Ð° Ð¾Ñ€Ð´Ñ‹ Ð¾Ñ‚ Ñ†ÐµÐ½Ñ‚Ñ€Ð° (Ð¼ÐµÑ‚Ñ€Ñ‹).")]
         [SerializeField] private float hordeRadiusOuter = 15f;
 
-        // ══════════════════════════════════════════════════════════
-        //  INSPECTOR — DIAGNOSTICS
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  INSPECTOR â€” DIAGNOSTICS
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        [Header("── Diagnostics ───────────────────────────────")]
+        [Header("â”€â”€ Diagnostics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [SerializeField] private int _debugActiveCount;
         [SerializeField] private int _debugCurrentBiome = -1;
         [SerializeField] private int _debugSpawnAttempts;
@@ -359,31 +360,31 @@ namespace Hecton8.AI
         [SerializeField] private float _debugDepthZoneBudgetScale = 1f;
         [SerializeField] private float _debugDepthZoneSpecialistScale = 1f;
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  CACHED STATE
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>
-        /// Pre-allocated список активных существ.
-        /// Capacity = globalMaxCount. Никогда не превышает.
-        /// Swap-remove при деспавне — порядок не важен.
+        /// Pre-allocated ÑÐ¿Ð¸ÑÐ¾Ðº Ð°ÐºÑ‚Ð¸Ð²Ð½Ñ‹Ñ… ÑÑƒÑ‰ÐµÑÑ‚Ð².
+        /// Capacity = globalMaxCount. ÐÐ¸ÐºÐ¾Ð³Ð´Ð° Ð½Ðµ Ð¿Ñ€ÐµÐ²Ñ‹ÑˆÐ°ÐµÑ‚.
+        /// Swap-remove Ð¿Ñ€Ð¸ Ð´ÐµÑÐ¿Ð°Ð²Ð½Ðµ â€” Ð¿Ð¾Ñ€ÑÐ´Ð¾Ðº Ð½Ðµ Ð²Ð°Ð¶ÐµÐ½.
         /// </summary>
         private List<ActiveCreature> _activeCreatures;
 
-        /// <summary>Кэшированный Transform игрока.</summary>
+        /// <summary>ÐšÑÑˆÐ¸Ñ€Ð¾Ð²Ð°Ð½Ð½Ñ‹Ð¹ Transform Ð¸Ð³Ñ€Ð¾ÐºÐ°.</summary>
         private Transform _playerTransform;
         private Transform _playerViewTransform;
         private HectonMapMagicVegetationBridge _vegetationThreatBridge;
         private bool _dispatcherRegistered;
         private float _slowTickAccumulator;
 
-        /// <summary>Квадрат killDistance для sqrMagnitude.</summary>
+        /// <summary>ÐšÐ²Ð°Ð´Ñ€Ð°Ñ‚ killDistance Ð´Ð»Ñ sqrMagnitude.</summary>
         private float _killDistanceSqr;
 
         /// <summary>
-        /// Lookup: biomeIndex → FaunaBiomeData.
-        /// Pre-built в Awake. Dictionary&lt;int, FaunaBiomeData&gt;.
-        /// Одна аллокация при старте.
+        /// Lookup: biomeIndex â†’ FaunaBiomeData.
+        /// Pre-built Ð² Awake. Dictionary&lt;int, FaunaBiomeData&gt;.
+        /// ÐžÐ´Ð½Ð° Ð°Ð»Ð»Ð¾ÐºÐ°Ñ†Ð¸Ñ Ð¿Ñ€Ð¸ ÑÑ‚Ð°Ñ€Ñ‚Ðµ.
         /// </summary>
         private Dictionary<int, FaunaBiomeData> _biomeLookup;
         private Dictionary<long, int> _countsPerChunk;
@@ -405,34 +406,34 @@ namespace Hecton8.AI
         private int _runtimeFaunaAnchorChunkDistance = 2;
         private int _runtimeLargeThreatMacroZoneDistance = 1;
 
-        // ══════════════════════════════════════════════════════════
-        //  BIOME THROTTLING — снижение частоты GetAlphamaps
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  BIOME THROTTLING â€” ÑÐ½Ð¸Ð¶ÐµÐ½Ð¸Ðµ Ñ‡Ð°ÑÑ‚Ð¾Ñ‚Ñ‹ GetAlphamaps
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>Absolute time gate for the next biome probe.</summary>
         private float _nextBiomeCheckTime = float.NegativeInfinity;
 
-        /// <summary>Интервал проверки биома (секунды). Снижает GC от GetAlphamaps.</summary>
+        /// <summary>Ð˜Ð½Ñ‚ÐµÑ€Ð²Ð°Ð» Ð¿Ñ€Ð¾Ð²ÐµÑ€ÐºÐ¸ Ð±Ð¸Ð¾Ð¼Ð° (ÑÐµÐºÑƒÐ½Ð´Ñ‹). Ð¡Ð½Ð¸Ð¶Ð°ÐµÑ‚ GC Ð¾Ñ‚ GetAlphamaps.</summary>
         private const float BiomeCheckInterval = 2.0f;
 
-        /// <summary>Кэшированный результат последней проверки биома. -1 = не определён.</summary>
+        /// <summary>ÐšÑÑˆÐ¸Ñ€Ð¾Ð²Ð°Ð½Ð½Ñ‹Ð¹ Ñ€ÐµÐ·ÑƒÐ»ÑŒÑ‚Ð°Ñ‚ Ð¿Ð¾ÑÐ»ÐµÐ´Ð½ÐµÐ¹ Ð¿Ñ€Ð¾Ð²ÐµÑ€ÐºÐ¸ Ð±Ð¸Ð¾Ð¼Ð°. -1 = Ð½Ðµ Ð¾Ð¿Ñ€ÐµÐ´ÐµÐ»Ñ‘Ð½.</summary>
         private int _cachedBiomeIndex = -1;
 
-        // ══════════════════════════════════════════════════════════
-        //  STATEFUL COUNTERS — инкрементальный подсчёт O(1)
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  STATEFUL COUNTERS â€” Ð¸Ð½ÐºÑ€ÐµÐ¼ÐµÐ½Ñ‚Ð°Ð»ÑŒÐ½Ñ‹Ð¹ Ð¿Ð¾Ð´ÑÑ‡Ñ‘Ñ‚ O(1)
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>
-        /// Счётчик существ по индексу биома.
-        /// Размер = maxBiomeIndex + 1. Инкремент/декремент при спавне/деспавне.
-        /// Заменяет O(n) CountBiomeCreatures.
+        /// Ð¡Ñ‡Ñ‘Ñ‚Ñ‡Ð¸Ðº ÑÑƒÑ‰ÐµÑÑ‚Ð² Ð¿Ð¾ Ð¸Ð½Ð´ÐµÐºÑÑƒ Ð±Ð¸Ð¾Ð¼Ð°.
+        /// Ð Ð°Ð·Ð¼ÐµÑ€ = maxBiomeIndex + 1. Ð˜Ð½ÐºÑ€ÐµÐ¼ÐµÐ½Ñ‚/Ð´ÐµÐºÑ€ÐµÐ¼ÐµÐ½Ñ‚ Ð¿Ñ€Ð¸ ÑÐ¿Ð°Ð²Ð½Ðµ/Ð´ÐµÑÐ¿Ð°Ð²Ð½Ðµ.
+        /// Ð—Ð°Ð¼ÐµÐ½ÑÐµÑ‚ O(n) CountBiomeCreatures.
         /// </summary>
         private int[] _countsPerBiome;
 
         /// <summary>
-        /// Счётчик существ по типам для каждого биома.
-        /// Ключ = FaunaBiomeData, Значение = int[possibleCreatures.Count].
-        /// Заменяет O(n) CountCreatureTypes.
+        /// Ð¡Ñ‡Ñ‘Ñ‚Ñ‡Ð¸Ðº ÑÑƒÑ‰ÐµÑÑ‚Ð² Ð¿Ð¾ Ñ‚Ð¸Ð¿Ð°Ð¼ Ð´Ð»Ñ ÐºÐ°Ð¶Ð´Ð¾Ð³Ð¾ Ð±Ð¸Ð¾Ð¼Ð°.
+        /// ÐšÐ»ÑŽÑ‡ = FaunaBiomeData, Ð—Ð½Ð°Ñ‡ÐµÐ½Ð¸Ðµ = int[possibleCreatures.Count].
+        /// Ð—Ð°Ð¼ÐµÐ½ÑÐµÑ‚ O(n) CountCreatureTypes.
         /// </summary>
         private Dictionary<FaunaBiomeData, int[]> _countsPerTypePerBiome;
         private Dictionary<FaunaBiomeData, ResolvedFaunaEntry[]> _resolvedEntriesPerBiome;
@@ -465,16 +466,16 @@ namespace Hecton8.AI
         private float _currentDepthZoneBudgetScale = 1f;
         private float _currentDepthZoneSpecialistScale = 1f;
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  PREDATOR PRESSURE STATE
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>
-        /// Флаг разрешения хищного давления.
-        /// false = Relax-фаза: существа переведены в Wander, орды запрещены.
-        /// true  = штатный режим: нормальный AI behaviour, орды разрешены.
-        /// Управляется через SetPredatorPressure() из HectonDirectorAI.
-        /// Default = true (давление разрешено при старте).
+        /// Ð¤Ð»Ð°Ð³ Ñ€Ð°Ð·Ñ€ÐµÑˆÐµÐ½Ð¸Ñ Ñ…Ð¸Ñ‰Ð½Ð¾Ð³Ð¾ Ð´Ð°Ð²Ð»ÐµÐ½Ð¸Ñ.
+        /// false = Relax-Ñ„Ð°Ð·Ð°: ÑÑƒÑ‰ÐµÑÑ‚Ð²Ð° Ð¿ÐµÑ€ÐµÐ²ÐµÐ´ÐµÐ½Ñ‹ Ð² Wander, Ð¾Ñ€Ð´Ñ‹ Ð·Ð°Ð¿Ñ€ÐµÑ‰ÐµÐ½Ñ‹.
+        /// true  = ÑˆÑ‚Ð°Ñ‚Ð½Ñ‹Ð¹ Ñ€ÐµÐ¶Ð¸Ð¼: Ð½Ð¾Ñ€Ð¼Ð°Ð»ÑŒÐ½Ñ‹Ð¹ AI behaviour, Ð¾Ñ€Ð´Ñ‹ Ñ€Ð°Ð·Ñ€ÐµÑˆÐµÐ½Ñ‹.
+        /// Ð£Ð¿Ñ€Ð°Ð²Ð»ÑÐµÑ‚ÑÑ Ñ‡ÐµÑ€ÐµÐ· SetPredatorPressure() Ð¸Ð· HectonDirectorAI.
+        /// Default = true (Ð´Ð°Ð²Ð»ÐµÐ½Ð¸Ðµ Ñ€Ð°Ð·Ñ€ÐµÑˆÐµÐ½Ð¾ Ð¿Ñ€Ð¸ ÑÑ‚Ð°Ñ€Ñ‚Ðµ).
         /// </summary>
         private bool _pressureEnabled = true;
         private bool _creaturePoolsWarmed;
@@ -490,15 +491,16 @@ namespace Hecton8.AI
             : _debugCurrentBiome.ToString();
         internal string DebugEcologyBiasLabel => ResolveDebugEcologyBiasLabel();
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  LIFECYCLE
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private void Awake()
         {
             ActiveRuntimeInstance = this;
             EnsureRuntimeStateInitialized();
             InitializeDehydrationResidencyState();
+            _biomeSpawnRandom = CreateBiomeSpawnRandom();
             ResolveSpawnRegistry();
             ResolveBiomeMatrixDirector();
             ResolveWorldZoneDirector();
@@ -515,7 +517,6 @@ namespace Hecton8.AI
             if (!Application.isPlaying)
                 return;
 
-            SystemDispatcher.EnsureRuntimeInstance();
             if (!_dispatcherRegistered)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
@@ -563,24 +564,30 @@ namespace Hecton8.AI
 
         private void OnDestroy()
         {
+            if (_dispatcherRegistered)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _dispatcherRegistered = false;
+            }
+
             DisposeDehydrationResidencyState();
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  ISlowTickable — MAIN LOOP (~раз в 0.5-1 секунду)
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  ISlowTickable â€” MAIN LOOP (~Ñ€Ð°Ð· Ð² 0.5-1 ÑÐµÐºÑƒÐ½Ð´Ñƒ)
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>
-        /// Главный цикл Директора. Порядок:
-        ///   1. Проверка наличия игрока.
-        ///   2. Culling (деспавн далёких существ).
-        ///   3. Определение биома (с троттлингом).
-        ///   4. Спавн новых существ (если есть слоты).
+        /// Ð“Ð»Ð°Ð²Ð½Ñ‹Ð¹ Ñ†Ð¸ÐºÐ» Ð”Ð¸Ñ€ÐµÐºÑ‚Ð¾Ñ€Ð°. ÐŸÐ¾Ñ€ÑÐ´Ð¾Ðº:
+        ///   1. ÐŸÑ€Ð¾Ð²ÐµÑ€ÐºÐ° Ð½Ð°Ð»Ð¸Ñ‡Ð¸Ñ Ð¸Ð³Ñ€Ð¾ÐºÐ°.
+        ///   2. Culling (Ð´ÐµÑÐ¿Ð°Ð²Ð½ Ð´Ð°Ð»Ñ‘ÐºÐ¸Ñ… ÑÑƒÑ‰ÐµÑÑ‚Ð²).
+        ///   3. ÐžÐ¿Ñ€ÐµÐ´ÐµÐ»ÐµÐ½Ð¸Ðµ Ð±Ð¸Ð¾Ð¼Ð° (Ñ Ñ‚Ñ€Ð¾Ñ‚Ñ‚Ð»Ð¸Ð½Ð³Ð¾Ð¼).
+        ///   4. Ð¡Ð¿Ð°Ð²Ð½ Ð½Ð¾Ð²Ñ‹Ñ… ÑÑƒÑ‰ÐµÑÑ‚Ð² (ÐµÑÐ»Ð¸ ÐµÑÑ‚ÑŒ ÑÐ»Ð¾Ñ‚Ñ‹).
         ///
         /// ZERO GC: struct math, pre-allocated collections, no LINQ.
-        /// Biome check throttled — GetAlphamaps вызывается раз в BiomeCheckInterval.
+        /// Biome check throttled â€” GetAlphamaps Ð²Ñ‹Ð·Ñ‹Ð²Ð°ÐµÑ‚ÑÑ Ñ€Ð°Ð· Ð² BiomeCheckInterval.
         /// </summary>
         /// <summary>
         /// Advances the director cadence on the registry dispatcher lane.
@@ -621,9 +628,9 @@ namespace Hecton8.AI
                 _runtimeSettingsDirty = false;
                 _nextRuntimeSettingsRefreshTime = Time.time + RuntimeSettingsRefreshInterval;
             }
-            // ══════════════════════════════════════════════════════
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             //  1. PLAYER CHECK
-            // ══════════════════════════════════════════════════════
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
             if (_playerTransform == null)
             {
@@ -649,18 +656,18 @@ namespace Hecton8.AI
             int anchorBasedSpawns = 0;
             int fallbackRingSpawns = 0;
 
-            // ══════════════════════════════════════════════════════
-            //  2. CULLING — деспавн далёких существ
-            // ══════════════════════════════════════════════════════
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+            //  2. CULLING â€” Ð´ÐµÑÐ¿Ð°Ð²Ð½ Ð´Ð°Ð»Ñ‘ÐºÐ¸Ñ… ÑÑƒÑ‰ÐµÑÑ‚Ð²
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
             int cullCount = CullOrDehydrateDistantCreatures(playerPos);
             HydrateResidentCreatures(playerPos);
 
-            // ══════════════════════════════════════════════════════
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             //  3. BIOME DETECTION (THROTTLED)
-            //     GetAlphamaps вызывает GC-аллокацию, поэтому
-            //     проверяем биом раз в BiomeCheckInterval секунд.
-            // ══════════════════════════════════════════════════════
+            //     GetAlphamaps Ð²Ñ‹Ð·Ñ‹Ð²Ð°ÐµÑ‚ GC-Ð°Ð»Ð»Ð¾ÐºÐ°Ñ†Ð¸ÑŽ, Ð¿Ð¾ÑÑ‚Ð¾Ð¼Ñƒ
+            //     Ð¿Ñ€Ð¾Ð²ÐµÑ€ÑÐµÐ¼ Ð±Ð¸Ð¾Ð¼ Ñ€Ð°Ð· Ð² BiomeCheckInterval ÑÐµÐºÑƒÐ½Ð´.
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
             MapMagicBridge bridge = MapMagicBridge.Instance;
             if (bridge == null)
@@ -681,14 +688,14 @@ namespace Hecton8.AI
             int currentBiome = _cachedBiomeIndex;
             if (currentBiome == -1)
             {
-                // Биом ещё не определён — пропускаем спавн
+                // Ð‘Ð¸Ð¾Ð¼ ÐµÑ‰Ñ‘ Ð½Ðµ Ð¾Ð¿Ñ€ÐµÐ´ÐµÐ»Ñ‘Ð½ â€” Ð¿Ñ€Ð¾Ð¿ÑƒÑÐºÐ°ÐµÐ¼ ÑÐ¿Ð°Ð²Ð½
                 UpdateDiagnostics(cullCount, 0, spawnValidationAttempts, spawnValidationSuccesses, anchorBasedSpawns, fallbackRingSpawns);
                 return;
             }
 
-            // ══════════════════════════════════════════════════════
-            //  4. SPAWN — если есть свободные слоты
-            // ══════════════════════════════════════════════════════
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+            //  4. SPAWN â€” ÐµÑÐ»Ð¸ ÐµÑÑ‚ÑŒ ÑÐ²Ð¾Ð±Ð¾Ð´Ð½Ñ‹Ðµ ÑÐ»Ð¾Ñ‚Ñ‹
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
             int spawnAttempts = 0;
             _currentMatrixFaunaMood = biomeMatrixDirector != null && biomeMatrixDirector.CurrentProfile != null
@@ -706,7 +713,7 @@ namespace Hecton8.AI
 
             if (GetTrackedCreaturePopulationCount() < _currentEffectiveGlobalMaxCount)
             {
-                // Ищем данные биома
+                // Ð˜Ñ‰ÐµÐ¼ Ð´Ð°Ð½Ð½Ñ‹Ðµ Ð±Ð¸Ð¾Ð¼Ð°
                 if (_biomeLookup.TryGetValue(currentBiome, out FaunaBiomeData biomeData))
                 {
                     _currentEffectiveBiomeMaxCount = ResolveEffectiveBiomeMaxCount(biomeData, _currentMatrixFaunaMood, _currentDepthZone);
@@ -724,25 +731,25 @@ namespace Hecton8.AI
             UpdateDiagnostics(cullCount, spawnAttempts, spawnValidationAttempts, spawnValidationSuccesses, anchorBasedSpawns, fallbackRingSpawns);
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  CULLING
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>
-        /// Проходит по всем активным существам. Если расстояние
-        /// до игрока > killDistance — деспавнит через пул.
+        /// ÐŸÑ€Ð¾Ñ…Ð¾Ð´Ð¸Ñ‚ Ð¿Ð¾ Ð²ÑÐµÐ¼ Ð°ÐºÑ‚Ð¸Ð²Ð½Ñ‹Ð¼ ÑÑƒÑ‰ÐµÑÑ‚Ð²Ð°Ð¼. Ð•ÑÐ»Ð¸ Ñ€Ð°ÑÑÑ‚Ð¾ÑÐ½Ð¸Ðµ
+        /// Ð´Ð¾ Ð¸Ð³Ñ€Ð¾ÐºÐ° > killDistance â€” Ð´ÐµÑÐ¿Ð°Ð²Ð½Ð¸Ñ‚ Ñ‡ÐµÑ€ÐµÐ· Ð¿ÑƒÐ».
         ///
-        /// Обратный for-цикл + swap-remove: O(n), zero GC,
-        /// не пропускает элементы, не сдвигает массив.
+        /// ÐžÐ±Ñ€Ð°Ñ‚Ð½Ñ‹Ð¹ for-Ñ†Ð¸ÐºÐ» + swap-remove: O(n), zero GC,
+        /// Ð½Ðµ Ð¿Ñ€Ð¾Ð¿ÑƒÑÐºÐ°ÐµÑ‚ ÑÐ»ÐµÐ¼ÐµÐ½Ñ‚Ñ‹, Ð½Ðµ ÑÐ´Ð²Ð¸Ð³Ð°ÐµÑ‚ Ð¼Ð°ÑÑÐ¸Ð².
         ///
-        /// При удалении декрементирует stateful-счётчики
+        /// ÐŸÑ€Ð¸ ÑƒÐ´Ð°Ð»ÐµÐ½Ð¸Ð¸ Ð´ÐµÐºÑ€ÐµÐ¼ÐµÐ½Ñ‚Ð¸Ñ€ÑƒÐµÑ‚ stateful-ÑÑ‡Ñ‘Ñ‚Ñ‡Ð¸ÐºÐ¸
         /// (_countsPerBiome, _countsPerTypePerBiome).
         ///
-        /// Дополнительно проверяет null (объект мог быть уничтожен
-        /// внешней системой).
+        /// Ð”Ð¾Ð¿Ð¾Ð»Ð½Ð¸Ñ‚ÐµÐ»ÑŒÐ½Ð¾ Ð¿Ñ€Ð¾Ð²ÐµÑ€ÑÐµÑ‚ null (Ð¾Ð±ÑŠÐµÐºÑ‚ Ð¼Ð¾Ð³ Ð±Ñ‹Ñ‚ÑŒ ÑƒÐ½Ð¸Ñ‡Ñ‚Ð¾Ð¶ÐµÐ½
+        /// Ð²Ð½ÐµÑˆÐ½ÐµÐ¹ ÑÐ¸ÑÑ‚ÐµÐ¼Ð¾Ð¹).
         /// </summary>
-        /// <param name="playerPos">Текущая позиция игрока.</param>
-        /// <returns>Количество деспавненных существ.</returns>
+        /// <param name="playerPos">Ð¢ÐµÐºÑƒÑ‰Ð°Ñ Ð¿Ð¾Ð·Ð¸Ñ†Ð¸Ñ Ð¸Ð³Ñ€Ð¾ÐºÐ°.</param>
+        /// <returns>ÐšÐ¾Ð»Ð¸Ñ‡ÐµÑÑ‚Ð²Ð¾ Ð´ÐµÑÐ¿Ð°Ð²Ð½ÐµÐ½Ð½Ñ‹Ñ… ÑÑƒÑ‰ÐµÑÑ‚Ð².</returns>
         private int CullDistantCreatures(Vector3 playerPos)
         {
             if (_activeCreatures == null || _activeCreatures.Count == 0)
@@ -756,7 +763,7 @@ namespace Hecton8.AI
             {
                 ActiveCreature creature = _activeCreatures[i];
 
-                // ── Null check (destroyed externally) ──
+                // â”€â”€ Null check (destroyed externally) â”€â”€
                 if (creature.gameObject == null || creature.transform == null)
                 {
                     DecrementCreatureCounters(in creature);
@@ -766,7 +773,7 @@ namespace Hecton8.AI
                     continue;
                 }
 
-                // ── Deactivated externally (e.g. by AI self-despawn) ──
+                // â”€â”€ Deactivated externally (e.g. by AI self-despawn) â”€â”€
                 if (!creature.gameObject.activeInHierarchy)
                 {
                     DecrementCreatureCounters(in creature);
@@ -776,7 +783,7 @@ namespace Hecton8.AI
                     continue;
                 }
 
-                // ── Distance check ──
+                // â”€â”€ Distance check â”€â”€
                 Vector3 diff = creature.transform.position - playerPos;
                 float cullDistanceSqr = creature.isLargeThreat
                     ? _runtimeLargeThreatKillDistanceSqr
@@ -784,7 +791,7 @@ namespace Hecton8.AI
 
                 if (diff.sqrMagnitude > cullDistanceSqr)
                 {
-                    // Деспавн через пул
+                    // Ð”ÐµÑÐ¿Ð°Ð²Ð½ Ñ‡ÐµÑ€ÐµÐ· Ð¿ÑƒÐ»
                     if (pool != null)
                     {
                         pool.Despawn(creature.gameObject);
@@ -799,7 +806,7 @@ namespace Hecton8.AI
             return culled;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         private int CullOrDehydrateDistantCreatures(Vector3 playerPos)
         {
             if (_activeCreatures == null || _activeCreatures.Count == 0)
@@ -849,22 +856,22 @@ namespace Hecton8.AI
         }
 
         //  SPAWN
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>
-        /// Пытается заспавнить существ в текущем биоме.
+        /// ÐŸÑ‹Ñ‚Ð°ÐµÑ‚ÑÑ Ð·Ð°ÑÐ¿Ð°Ð²Ð½Ð¸Ñ‚ÑŒ ÑÑƒÑ‰ÐµÑÑ‚Ð² Ð² Ñ‚ÐµÐºÑƒÑ‰ÐµÐ¼ Ð±Ð¸Ð¾Ð¼Ðµ.
         ///
-        /// Алгоритм:
-        ///   1. Получить текущие счётчики из stateful-структур (O(1)).
-        ///   2. Цикл до maxSpawnsPerTick (или пока не заполнен globalMaxCount).
-        ///   3. Выбрать случайную точку в кольце вокруг игрока.
-        ///   4. Проверить высоту дна через MapMagicBridge.
-        ///   5. Проверить что точка под водой.
-        ///   6. Выбрать тип существа через weighted random.
-        ///   7. Спавн через ObjectPoolManager.
-        ///   8. Инкрементировать stateful-счётчики.
+        /// ÐÐ»Ð³Ð¾Ñ€Ð¸Ñ‚Ð¼:
+        ///   1. ÐŸÐ¾Ð»ÑƒÑ‡Ð¸Ñ‚ÑŒ Ñ‚ÐµÐºÑƒÑ‰Ð¸Ðµ ÑÑ‡Ñ‘Ñ‚Ñ‡Ð¸ÐºÐ¸ Ð¸Ð· stateful-ÑÑ‚Ñ€ÑƒÐºÑ‚ÑƒÑ€ (O(1)).
+        ///   2. Ð¦Ð¸ÐºÐ» Ð´Ð¾ maxSpawnsPerTick (Ð¸Ð»Ð¸ Ð¿Ð¾ÐºÐ° Ð½Ðµ Ð·Ð°Ð¿Ð¾Ð»Ð½ÐµÐ½ globalMaxCount).
+        ///   3. Ð’Ñ‹Ð±Ñ€Ð°Ñ‚ÑŒ ÑÐ»ÑƒÑ‡Ð°Ð¹Ð½ÑƒÑŽ Ñ‚Ð¾Ñ‡ÐºÑƒ Ð² ÐºÐ¾Ð»ÑŒÑ†Ðµ Ð²Ð¾ÐºÑ€ÑƒÐ³ Ð¸Ð³Ñ€Ð¾ÐºÐ°.
+        ///   4. ÐŸÑ€Ð¾Ð²ÐµÑ€Ð¸Ñ‚ÑŒ Ð²Ñ‹ÑÐ¾Ñ‚Ñƒ Ð´Ð½Ð° Ñ‡ÐµÑ€ÐµÐ· MapMagicBridge.
+        ///   5. ÐŸÑ€Ð¾Ð²ÐµÑ€Ð¸Ñ‚ÑŒ Ñ‡Ñ‚Ð¾ Ñ‚Ð¾Ñ‡ÐºÐ° Ð¿Ð¾Ð´ Ð²Ð¾Ð´Ð¾Ð¹.
+        ///   6. Ð’Ñ‹Ð±Ñ€Ð°Ñ‚ÑŒ Ñ‚Ð¸Ð¿ ÑÑƒÑ‰ÐµÑÑ‚Ð²Ð° Ñ‡ÐµÑ€ÐµÐ· weighted random.
+        ///   7. Ð¡Ð¿Ð°Ð²Ð½ Ñ‡ÐµÑ€ÐµÐ· ObjectPoolManager.
+        ///   8. Ð˜Ð½ÐºÑ€ÐµÐ¼ÐµÐ½Ñ‚Ð¸Ñ€Ð¾Ð²Ð°Ñ‚ÑŒ stateful-ÑÑ‡Ñ‘Ñ‚Ñ‡Ð¸ÐºÐ¸.
         ///
-        /// ZERO GC: Mathf.Sin/Cos → float, Random.Range → float,
+        /// ZERO GC: Mathf.Sin/Cos â†’ float, Random.Range â†’ float,
         /// stateful counters (no per-tick O(n) scan), struct ActiveCreature.
         /// </summary>
         private int TrySpawnCreatures(
@@ -881,7 +888,7 @@ namespace Hecton8.AI
 
             int biomeIdx = biomeData.biomeIndex;
 
-            // ── Получение счётчиков из stateful-структур (O(1)) ──
+            // â”€â”€ ÐŸÐ¾Ð»ÑƒÑ‡ÐµÐ½Ð¸Ðµ ÑÑ‡Ñ‘Ñ‚Ñ‡Ð¸ÐºÐ¾Ð² Ð¸Ð· stateful-ÑÑ‚Ñ€ÑƒÐºÑ‚ÑƒÑ€ (O(1)) â”€â”€
             int biomeAlive = (biomeIdx >= 0 && biomeIdx < _countsPerBiome.Length)
                 ? _countsPerBiome[biomeIdx]
                 : 0;
@@ -889,7 +896,7 @@ namespace Hecton8.AI
             if (biomeAlive >= _currentEffectiveBiomeMaxCount)
                 return 0;
 
-            // Массив per-type counts для этого биома (ссылка, не копия)
+            // ÐœÐ°ÑÑÐ¸Ð² per-type counts Ð´Ð»Ñ ÑÑ‚Ð¾Ð³Ð¾ Ð±Ð¸Ð¾Ð¼Ð° (ÑÑÑ‹Ð»ÐºÐ°, Ð½Ðµ ÐºÐ¾Ð¿Ð¸Ñ)
             if (!_countsPerTypePerBiome.TryGetValue(biomeData, out int[] creatureTypeCounts))
                 return 0;
             if (_resolvedEntriesPerBiome == null ||
@@ -938,7 +945,7 @@ namespace Hecton8.AI
                     _currentDepthZoneSpecialistScale,
                     out ResolvedFaunaEntry selectedEntry))
                 {
-                    // Все типы на лимите — прекращаем
+                    // Ð’ÑÐµ Ñ‚Ð¸Ð¿Ñ‹ Ð½Ð° Ð»Ð¸Ð¼Ð¸Ñ‚Ðµ â€” Ð¿Ñ€ÐµÐºÑ€Ð°Ñ‰Ð°ÐµÐ¼
                     break;
                 }
 
@@ -995,7 +1002,7 @@ namespace Hecton8.AI
                     continue;
                 }
 
-                Quaternion spawnRot = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
+                Quaternion spawnRot = Quaternion.Euler(0f, _biomeSpawnRandom.NextFloat(0f, 360f), 0f);
                 WorldChunkCoordinate spawnChunk = WorldChunkCoordinate.FromWorldPosition(spawnPos, _runtimeChunkSize);
 
                 if (GetChunkCreatureCount(spawnChunk) >= _runtimePerChunkMaxCount)
@@ -1027,7 +1034,7 @@ namespace Hecton8.AI
                 }
 
 
-                // ── Настройка спавн-поинта для AI ──
+                // â”€â”€ ÐÐ°ÑÑ‚Ñ€Ð¾Ð¹ÐºÐ° ÑÐ¿Ð°Ð²Ð½-Ð¿Ð¾Ð¸Ð½Ñ‚Ð° Ð´Ð»Ñ AI â”€â”€
                 if (instance.TryGetComponent(out FaunaBrain ai))
                 {
                     ai.ApplyArchetype(selectedEntry.archetype);
@@ -1038,7 +1045,7 @@ namespace Hecton8.AI
 
                 int typeIndex = selectedEntry.creatureTypeIndex;
 
-                // ── Регистрация в трекере ──
+                // â”€â”€ Ð ÐµÐ³Ð¸ÑÑ‚Ñ€Ð°Ñ†Ð¸Ñ Ð² Ñ‚Ñ€ÐµÐºÐµÑ€Ðµ â”€â”€
                 if (!TryBuildActiveCreatureRecord(
                         instance,
                         resolvedPrefab,
@@ -1060,7 +1067,7 @@ namespace Hecton8.AI
 
                 _activeCreatures.Add(record);
 
-                // ── Инкремент stateful-счётчиков ──
+                // â”€â”€ Ð˜Ð½ÐºÑ€ÐµÐ¼ÐµÐ½Ñ‚ stateful-ÑÑ‡Ñ‘Ñ‚Ñ‡Ð¸ÐºÐ¾Ð² â”€â”€
                 if (biomeIdx >= 0 && biomeIdx < _countsPerBiome.Length)
                     _countsPerBiome[biomeIdx]++;
 
@@ -1080,13 +1087,13 @@ namespace Hecton8.AI
             return spawned;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  STATEFUL COUNTER HELPERS
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>
-        /// Декрементирует stateful-счётчики при удалении существа.
-        /// Вызывается из CullDistantCreatures перед SwapRemoveAt.
+        /// Ð”ÐµÐºÑ€ÐµÐ¼ÐµÐ½Ñ‚Ð¸Ñ€ÑƒÐµÑ‚ stateful-ÑÑ‡Ñ‘Ñ‚Ñ‡Ð¸ÐºÐ¸ Ð¿Ñ€Ð¸ ÑƒÐ´Ð°Ð»ÐµÐ½Ð¸Ð¸ ÑÑƒÑ‰ÐµÑÑ‚Ð²Ð°.
+        /// Ð’Ñ‹Ð·Ñ‹Ð²Ð°ÐµÑ‚ÑÑ Ð¸Ð· CullDistantCreatures Ð¿ÐµÑ€ÐµÐ´ SwapRemoveAt.
         /// O(1). Zero GC.
         /// </summary>
         private bool TryResolveOrdinarySpawnLocation(
@@ -1191,7 +1198,7 @@ namespace Hecton8.AI
             return false;
         }
 
-        private static bool TryBuildSpawnPointInRing(
+        private bool TryBuildSpawnPointInRing(
             Vector3 center,
             float innerRadius,
             float outerRadius,
@@ -1204,8 +1211,8 @@ namespace Hecton8.AI
         {
             for (int attempt = 0; attempt < 4; attempt++)
             {
-                float angle = Random.Range(0f, Mathf.PI * 2f);
-                float distance = Random.Range(innerRadius, outerRadius);
+                float angle = _biomeSpawnRandom.NextFloat(0f, Mathf.PI * 2f);
+                float distance = _biomeSpawnRandom.NextFloat(innerRadius, outerRadius);
                 Vector3 candidateCenter = new Vector3(
                     center.x + Mathf.Cos(angle) * distance,
                     center.y,
@@ -1219,7 +1226,7 @@ namespace Hecton8.AI
             return false;
         }
 
-        private static bool TryBuildSpawnPointAroundAnchor(
+        private bool TryBuildSpawnPointAroundAnchor(
             Vector3 anchorPosition,
             float anchorRadius,
             Transform playerViewTransform,
@@ -1232,8 +1239,8 @@ namespace Hecton8.AI
             float safeRadius = Mathf.Max(6f, anchorRadius);
             for (int attempt = 0; attempt < 4; attempt++)
             {
-                float angle = Random.Range(0f, Mathf.PI * 2f);
-                float distance = Random.Range(0f, safeRadius);
+                float angle = _biomeSpawnRandom.NextFloat(0f, Mathf.PI * 2f);
+                float distance = _biomeSpawnRandom.NextFloat(0f, safeRadius);
                 Vector3 candidateCenter = new Vector3(
                     anchorPosition.x + Mathf.Cos(angle) * distance,
                     anchorPosition.y,
@@ -1247,7 +1254,7 @@ namespace Hecton8.AI
             return false;
         }
 
-        private static bool TryBuildValidatedSpawnPoint(
+        private bool TryBuildValidatedSpawnPoint(
             Vector3 candidateCenter,
             Transform playerViewTransform,
             FaunaBiomeData biomeData,
@@ -1263,7 +1270,7 @@ namespace Hecton8.AI
                 return false;
             }
 
-            float spawnY = biomeData.GetRandomSpawnHeight(bottomHeight);
+            float spawnY = biomeData.GetRandomSpawnHeight(ref _biomeSpawnRandom, bottomHeight);
             if (spawnY >= bridge.WaterSurfaceLevel || spawnY <= bottomHeight)
             {
                 spawnPos = default;
@@ -1281,6 +1288,14 @@ namespace Hecton8.AI
             return true;
         }
 
+        private Unity.Mathematics.Random CreateBiomeSpawnRandom()
+        {
+            uint datasetCount = unchecked((uint)(biomeDatasets != null ? biomeDatasets.Length : 0));
+            uint ownerId = unchecked((uint)EntityId.ToULong(GetEntityId()));
+            uint seed = Unity.Mathematics.math.hash(new Unity.Mathematics.uint4(ownerId, datasetCount, 0x51A3C4D7u, 0x2C9277B5u));
+            return new Unity.Mathematics.Random(seed == 0u ? 1u : seed);
+        }
+
         private static bool IsSpawnPointValid(Transform viewTransform, Vector3 spawnPoint)
         {
             if (viewTransform == null)
@@ -1296,7 +1311,7 @@ namespace Hecton8.AI
             return dot <= SpawnVisibilityDotThreshold;
         }
 
-        private static bool TrySelectResolvedEntry(
+        private bool TrySelectResolvedEntry(
             ResolvedFaunaEntry[] resolvedEntries,
             int[] currentCounts,
             int[] availablePoolCounts,
@@ -1353,7 +1368,7 @@ namespace Hecton8.AI
             if (availableWeight <= 0f)
                 return false;
 
-            float roll = Random.Range(0f, availableWeight);
+            float roll = _biomeSpawnRandom.NextFloat(0f, availableWeight);
             for (int i = 0; i < resolvedEntries.Length; i++)
             {
                 ResolvedFaunaEntry entry = resolvedEntries[i];
@@ -1402,7 +1417,7 @@ namespace Hecton8.AI
             return false;
         }
 
-        private static bool TrySelectResolvedEntryForSpawnPoint(
+        private bool TrySelectResolvedEntryForSpawnPoint(
             ResolvedFaunaEntry[] resolvedEntries,
             int[] currentCounts,
             int[] availablePoolCounts,
@@ -1465,7 +1480,7 @@ namespace Hecton8.AI
             if (availableWeight <= 0f)
                 return false;
 
-            float roll = Random.Range(0f, availableWeight);
+            float roll = _biomeSpawnRandom.NextFloat(0f, availableWeight);
             for (int i = 0; i < resolvedEntries.Length; i++)
             {
                 ResolvedFaunaEntry entry = resolvedEntries[i];
@@ -1517,7 +1532,7 @@ namespace Hecton8.AI
             return false;
         }
 
-        private static bool TrySelectResolvedHordeEntry(
+        private bool TrySelectResolvedHordeEntry(
             ResolvedFaunaEntry[] resolvedEntries,
             int[] currentCounts,
             int[] availablePoolCounts,
@@ -1527,7 +1542,7 @@ namespace Hecton8.AI
             if (resolvedEntries == null || resolvedEntries.Length == 0 || availablePoolCounts == null || availablePoolCounts.Length < resolvedEntries.Length)
                 return false;
 
-            int startIndex = Random.Range(0, resolvedEntries.Length);
+            int startIndex = _biomeSpawnRandom.NextInt(0, resolvedEntries.Length);
             for (int search = 0; search < resolvedEntries.Length; search++)
             {
                 int index = startIndex + search;
@@ -1734,8 +1749,8 @@ namespace Hecton8.AI
         }
 
         /// <summary>
-        /// Инкрементирует stateful-счётчики при добавлении существа.
-        /// Используется ForceSpawnHorde для корректного accounting.
+        /// Ð˜Ð½ÐºÑ€ÐµÐ¼ÐµÐ½Ñ‚Ð¸Ñ€ÑƒÐµÑ‚ stateful-ÑÑ‡Ñ‘Ñ‚Ñ‡Ð¸ÐºÐ¸ Ð¿Ñ€Ð¸ Ð´Ð¾Ð±Ð°Ð²Ð»ÐµÐ½Ð¸Ð¸ ÑÑƒÑ‰ÐµÑÑ‚Ð²Ð°.
+        /// Ð˜ÑÐ¿Ð¾Ð»ÑŒÐ·ÑƒÐµÑ‚ÑÑ ForceSpawnHorde Ð´Ð»Ñ ÐºÐ¾Ñ€Ñ€ÐµÐºÑ‚Ð½Ð¾Ð³Ð¾ accounting.
         /// O(1). Zero GC.
         /// </summary>
         private void IncrementCreatureCounters(int biomeIdx, int typeIndex,
@@ -1753,8 +1768,8 @@ namespace Hecton8.AI
         }
 
         /// <summary>
-        /// Находит индекс существа в possibleCreatures по префабу.
-        /// ReferenceEquals — zero GC. O(n) по типам (обычно 3-5).
+        /// ÐÐ°Ñ…Ð¾Ð´Ð¸Ñ‚ Ð¸Ð½Ð´ÐµÐºÑ ÑÑƒÑ‰ÐµÑÑ‚Ð²Ð° Ð² possibleCreatures Ð¿Ð¾ Ð¿Ñ€ÐµÑ„Ð°Ð±Ñƒ.
+        /// ReferenceEquals â€” zero GC. O(n) Ð¿Ð¾ Ñ‚Ð¸Ð¿Ð°Ð¼ (Ð¾Ð±Ñ‹Ñ‡Ð½Ð¾ 3-5).
         /// </summary>
         private int FindCreatureTypeIndex(FaunaBiomeData biomeData, GameObject prefab)
         {
@@ -1772,14 +1787,14 @@ namespace Hecton8.AI
             return -1;
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  SWAP REMOVE — O(1) удаление из List
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  SWAP REMOVE â€” O(1) ÑƒÐ´Ð°Ð»ÐµÐ½Ð¸Ðµ Ð¸Ð· List
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>
-        /// Swap-Remove: меняет элемент с последним, удаляет последний.
-        /// O(1) вместо O(n). Порядок не сохраняется (не важно для нас).
-        /// Zero GC: List.RemoveAt(last) не сдвигает массив.
+        /// Swap-Remove: Ð¼ÐµÐ½ÑÐµÑ‚ ÑÐ»ÐµÐ¼ÐµÐ½Ñ‚ Ñ Ð¿Ð¾ÑÐ»ÐµÐ´Ð½Ð¸Ð¼, ÑƒÐ´Ð°Ð»ÑÐµÑ‚ Ð¿Ð¾ÑÐ»ÐµÐ´Ð½Ð¸Ð¹.
+        /// O(1) Ð²Ð¼ÐµÑÑ‚Ð¾ O(n). ÐŸÐ¾Ñ€ÑÐ´Ð¾Ðº Ð½Ðµ ÑÐ¾Ñ…Ñ€Ð°Ð½ÑÐµÑ‚ÑÑ (Ð½Ðµ Ð²Ð°Ð¶Ð½Ð¾ Ð´Ð»Ñ Ð½Ð°Ñ).
+        /// Zero GC: List.RemoveAt(last) Ð½Ðµ ÑÐ´Ð²Ð¸Ð³Ð°ÐµÑ‚ Ð¼Ð°ÑÑÐ¸Ð².
         /// </summary>
         private void SwapRemoveAt(int index)
         {
@@ -2084,13 +2099,13 @@ namespace Hecton8.AI
             return hydrated;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  PLAYER LOOKUP
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>
-        /// Ленивый поиск игрока по тегу "Player".
-        /// Вызывается один раз при OnEnable или если ссылка потеряна.
+        /// Ð›ÐµÐ½Ð¸Ð²Ñ‹Ð¹ Ð¿Ð¾Ð¸ÑÐº Ð¸Ð³Ñ€Ð¾ÐºÐ° Ð¿Ð¾ Ñ‚ÐµÐ³Ñƒ "Player".
+        /// Ð’Ñ‹Ð·Ñ‹Ð²Ð°ÐµÑ‚ÑÑ Ð¾Ð´Ð¸Ð½ Ñ€Ð°Ð· Ð¿Ñ€Ð¸ OnEnable Ð¸Ð»Ð¸ ÐµÑÐ»Ð¸ ÑÑÑ‹Ð»ÐºÐ° Ð¿Ð¾Ñ‚ÐµÑ€ÑÐ½Ð°.
         /// </summary>
         private void FindPlayer(bool force = false)
         {
@@ -2720,11 +2735,11 @@ namespace Hecton8.AI
             _creaturePoolsWarmed = false;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  PUBLIC API
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        /// <summary>Количество активных существ в мире.</summary>
+        /// <summary>ÐšÐ¾Ð»Ð¸Ñ‡ÐµÑÑ‚Ð²Ð¾ Ð°ÐºÑ‚Ð¸Ð²Ð½Ñ‹Ñ… ÑÑƒÑ‰ÐµÑÑ‚Ð² Ð² Ð¼Ð¸Ñ€Ðµ.</summary>
         public int ActiveCreatureCount => _activeCreatures != null ? _activeCreatures.Count : 0;
 
         internal bool TrySpawnEncounterThreat(
@@ -2867,9 +2882,9 @@ namespace Hecton8.AI
         }
 
         /// <summary>
-        /// Принудительный деспавн ВСЕХ существ.
-        /// Используется при смене зоны, загрузке сейва, телепорте.
-        /// Очищает stateful-счётчики.
+        /// ÐŸÑ€Ð¸Ð½ÑƒÐ´Ð¸Ñ‚ÐµÐ»ÑŒÐ½Ñ‹Ð¹ Ð´ÐµÑÐ¿Ð°Ð²Ð½ Ð’Ð¡Ð•Ð¥ ÑÑƒÑ‰ÐµÑÑ‚Ð².
+        /// Ð˜ÑÐ¿Ð¾Ð»ÑŒÐ·ÑƒÐµÑ‚ÑÑ Ð¿Ñ€Ð¸ ÑÐ¼ÐµÐ½Ðµ Ð·Ð¾Ð½Ñ‹, Ð·Ð°Ð³Ñ€ÑƒÐ·ÐºÐµ ÑÐµÐ¹Ð²Ð°, Ñ‚ÐµÐ»ÐµÐ¿Ð¾Ñ€Ñ‚Ðµ.
+        /// ÐžÑ‡Ð¸Ñ‰Ð°ÐµÑ‚ stateful-ÑÑ‡Ñ‘Ñ‚Ñ‡Ð¸ÐºÐ¸.
         /// </summary>
         public void DespawnAll()
         {
@@ -2890,10 +2905,10 @@ namespace Hecton8.AI
             _countsPerChunk.Clear();
             _largeThreatCountsPerMacroZone.Clear();
 
-            // ── Очистка stateful-счётчиков ──
+            // â”€â”€ ÐžÑ‡Ð¸ÑÑ‚ÐºÐ° stateful-ÑÑ‡Ñ‘Ñ‚Ñ‡Ð¸ÐºÐ¾Ð² â”€â”€
             System.Array.Clear(_countsPerBiome, 0, _countsPerBiome.Length);
 
-            // Очистка per-type counts без foreach (избегаем GC от Dictionary enumerator)
+            // ÐžÑ‡Ð¸ÑÑ‚ÐºÐ° per-type counts Ð±ÐµÐ· foreach (Ð¸Ð·Ð±ÐµÐ³Ð°ÐµÐ¼ GC Ð¾Ñ‚ Dictionary enumerator)
             if (biomeDatasets != null)
             {
                 for (int i = 0; i < biomeDatasets.Length; i++)
@@ -2908,27 +2923,27 @@ namespace Hecton8.AI
             }
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  PUBLIC API — DIRECTOR ORCHESTRATION
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  PUBLIC API â€” DIRECTOR ORCHESTRATION
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>
-        /// Управление хищным давлением. Вызывается HectonDirectorAI
-        /// при смене фаз (BuildUp/Peak → true, Relax → false).
+        /// Ð£Ð¿Ñ€Ð°Ð²Ð»ÐµÐ½Ð¸Ðµ Ñ…Ð¸Ñ‰Ð½Ñ‹Ð¼ Ð´Ð°Ð²Ð»ÐµÐ½Ð¸ÐµÐ¼. Ð’Ñ‹Ð·Ñ‹Ð²Ð°ÐµÑ‚ÑÑ HectonDirectorAI
+        /// Ð¿Ñ€Ð¸ ÑÐ¼ÐµÐ½Ðµ Ñ„Ð°Ð· (BuildUp/Peak â†’ true, Relax â†’ false).
         ///
-        /// При enabled == false:
-        ///   • Все активные существа с FaunaBrain переводятся
-        ///     в состояние Wander (отступление от игрока).
-        ///   • ForceSpawnHorde блокируется до повторного включения.
+        /// ÐŸÑ€Ð¸ enabled == false:
+        ///   â€¢ Ð’ÑÐµ Ð°ÐºÑ‚Ð¸Ð²Ð½Ñ‹Ðµ ÑÑƒÑ‰ÐµÑÑ‚Ð²Ð° Ñ FaunaBrain Ð¿ÐµÑ€ÐµÐ²Ð¾Ð´ÑÑ‚ÑÑ
+        ///     Ð² ÑÐ¾ÑÑ‚Ð¾ÑÐ½Ð¸Ðµ Wander (Ð¾Ñ‚ÑÑ‚ÑƒÐ¿Ð»ÐµÐ½Ð¸Ðµ Ð¾Ñ‚ Ð¸Ð³Ñ€Ð¾ÐºÐ°).
+        ///   â€¢ ForceSpawnHorde Ð±Ð»Ð¾ÐºÐ¸Ñ€ÑƒÐµÑ‚ÑÑ Ð´Ð¾ Ð¿Ð¾Ð²Ñ‚Ð¾Ñ€Ð½Ð¾Ð³Ð¾ Ð²ÐºÐ»ÑŽÑ‡ÐµÐ½Ð¸Ñ.
         ///
-        /// При enabled == true:
-        ///   • Восстанавливается штатный AI behaviour.
-        ///   • ForceSpawnHorde разрешается.
+        /// ÐŸÑ€Ð¸ enabled == true:
+        ///   â€¢ Ð’Ð¾ÑÑÑ‚Ð°Ð½Ð°Ð²Ð»Ð¸Ð²Ð°ÐµÑ‚ÑÑ ÑˆÑ‚Ð°Ñ‚Ð½Ñ‹Ð¹ AI behaviour.
+        ///   â€¢ ForceSpawnHorde Ñ€Ð°Ð·Ñ€ÐµÑˆÐ°ÐµÑ‚ÑÑ.
         ///
-        /// ZERO GC: for-цикл по pre-allocated List, TryGetComponent
-        /// не аллоцирует (generic constrained). Никаких LINQ/foreach.
+        /// ZERO GC: for-Ñ†Ð¸ÐºÐ» Ð¿Ð¾ pre-allocated List, TryGetComponent
+        /// Ð½Ðµ Ð°Ð»Ð»Ð¾Ñ†Ð¸Ñ€ÑƒÐµÑ‚ (generic constrained). ÐÐ¸ÐºÐ°ÐºÐ¸Ñ… LINQ/foreach.
         /// </summary>
-        /// <param name="enabled">true = давление разрешено, false = отступление.</param>
+        /// <param name="enabled">true = Ð´Ð°Ð²Ð»ÐµÐ½Ð¸Ðµ Ñ€Ð°Ð·Ñ€ÐµÑˆÐµÐ½Ð¾, false = Ð¾Ñ‚ÑÑ‚ÑƒÐ¿Ð»ÐµÐ½Ð¸Ðµ.</param>
         private bool TryResolveEncounterBiomeData(
             ObjectPoolManager pool,
             out FaunaBiomeData biomeData,
@@ -3149,7 +3164,7 @@ namespace Hecton8.AI
         {
             _pressureEnabled = enabled;
 
-            // ── При отключении давления — заставляем всех отступить ──
+            // â”€â”€ ÐŸÑ€Ð¸ Ð¾Ñ‚ÐºÐ»ÑŽÑ‡ÐµÐ½Ð¸Ð¸ Ð´Ð°Ð²Ð»ÐµÐ½Ð¸Ñ â€” Ð·Ð°ÑÑ‚Ð°Ð²Ð»ÑÐµÐ¼ Ð²ÑÐµÑ… Ð¾Ñ‚ÑÑ‚ÑƒÐ¿Ð¸Ñ‚ÑŒ â”€â”€
             if (!enabled)
             {
                 int count = _activeCreatures.Count;
@@ -3157,7 +3172,7 @@ namespace Hecton8.AI
                 {
                     ActiveCreature creature = _activeCreatures[i];
 
-                    // Пропускаем уничтоженные/деактивированные объекты
+                    // ÐŸÑ€Ð¾Ð¿ÑƒÑÐºÐ°ÐµÐ¼ ÑƒÐ½Ð¸Ñ‡Ñ‚Ð¾Ð¶ÐµÐ½Ð½Ñ‹Ðµ/Ð´ÐµÐ°ÐºÑ‚Ð¸Ð²Ð¸Ñ€Ð¾Ð²Ð°Ð½Ð½Ñ‹Ðµ Ð¾Ð±ÑŠÐµÐºÑ‚Ñ‹
                     if (creature.gameObject == null)
                         continue;
                     if (!creature.gameObject.activeInHierarchy)
@@ -3176,27 +3191,27 @@ namespace Hecton8.AI
         }
 
         /// <summary>
-        /// Принудительный спавн орды существ по команде Директора.
-        /// Игнорирует внутренние кулдауны FaunaDirector — это приказ.
+        /// ÐŸÑ€Ð¸Ð½ÑƒÐ´Ð¸Ñ‚ÐµÐ»ÑŒÐ½Ñ‹Ð¹ ÑÐ¿Ð°Ð²Ð½ Ð¾Ñ€Ð´Ñ‹ ÑÑƒÑ‰ÐµÑÑ‚Ð² Ð¿Ð¾ ÐºÐ¾Ð¼Ð°Ð½Ð´Ðµ Ð”Ð¸Ñ€ÐµÐºÑ‚Ð¾Ñ€Ð°.
+        /// Ð˜Ð³Ð½Ð¾Ñ€Ð¸Ñ€ÑƒÐµÑ‚ Ð²Ð½ÑƒÑ‚Ñ€ÐµÐ½Ð½Ð¸Ðµ ÐºÑƒÐ»Ð´Ð°ÑƒÐ½Ñ‹ FaunaDirector â€” ÑÑ‚Ð¾ Ð¿Ñ€Ð¸ÐºÐ°Ð·.
         ///
-        /// Алгоритм:
-        ///   1. Если _pressureEnabled == false — выход (Relax блокирует орды).
-        ///   2. Выбрать FaunaBiomeData: используем _cachedBiomeIndex
-        ///      (текущий биом игрока), fallback на первый доступный dataset.
-        ///   3. В цикле (hordeCountMin..hordeCountMax итераций):
-        ///      • Генерация позиции в радиусе hordeRadiusInner..hordeRadiusOuter
-        ///        от worldCenter.
-        ///      • Спавн через ObjectPoolManager.Spawn.
-        ///      • Регистрация в _activeCreatures + инкремент счётчиков.
-        ///      • Немедленный ForceState(Aggressive) для атаки.
-        ///   4. Global limit уважается — если слоты кончились, спавн прерывается.
+        /// ÐÐ»Ð³Ð¾Ñ€Ð¸Ñ‚Ð¼:
+        ///   1. Ð•ÑÐ»Ð¸ _pressureEnabled == false â€” Ð²Ñ‹Ñ…Ð¾Ð´ (Relax Ð±Ð»Ð¾ÐºÐ¸Ñ€ÑƒÐµÑ‚ Ð¾Ñ€Ð´Ñ‹).
+        ///   2. Ð’Ñ‹Ð±Ñ€Ð°Ñ‚ÑŒ FaunaBiomeData: Ð¸ÑÐ¿Ð¾Ð»ÑŒÐ·ÑƒÐµÐ¼ _cachedBiomeIndex
+        ///      (Ñ‚ÐµÐºÑƒÑ‰Ð¸Ð¹ Ð±Ð¸Ð¾Ð¼ Ð¸Ð³Ñ€Ð¾ÐºÐ°), fallback Ð½Ð° Ð¿ÐµÑ€Ð²Ñ‹Ð¹ Ð´Ð¾ÑÑ‚ÑƒÐ¿Ð½Ñ‹Ð¹ dataset.
+        ///   3. Ð’ Ñ†Ð¸ÐºÐ»Ðµ (hordeCountMin..hordeCountMax Ð¸Ñ‚ÐµÑ€Ð°Ñ†Ð¸Ð¹):
+        ///      â€¢ Ð“ÐµÐ½ÐµÑ€Ð°Ñ†Ð¸Ñ Ð¿Ð¾Ð·Ð¸Ñ†Ð¸Ð¸ Ð² Ñ€Ð°Ð´Ð¸ÑƒÑÐµ hordeRadiusInner..hordeRadiusOuter
+        ///        Ð¾Ñ‚ worldCenter.
+        ///      â€¢ Ð¡Ð¿Ð°Ð²Ð½ Ñ‡ÐµÑ€ÐµÐ· ObjectPoolManager.Spawn.
+        ///      â€¢ Ð ÐµÐ³Ð¸ÑÑ‚Ñ€Ð°Ñ†Ð¸Ñ Ð² _activeCreatures + Ð¸Ð½ÐºÑ€ÐµÐ¼ÐµÐ½Ñ‚ ÑÑ‡Ñ‘Ñ‚Ñ‡Ð¸ÐºÐ¾Ð².
+        ///      â€¢ ÐÐµÐ¼ÐµÐ´Ð»ÐµÐ½Ð½Ñ‹Ð¹ ForceState(Aggressive) Ð´Ð»Ñ Ð°Ñ‚Ð°ÐºÐ¸.
+        ///   4. Global limit ÑƒÐ²Ð°Ð¶Ð°ÐµÑ‚ÑÑ â€” ÐµÑÐ»Ð¸ ÑÐ»Ð¾Ñ‚Ñ‹ ÐºÐ¾Ð½Ñ‡Ð¸Ð»Ð¸ÑÑŒ, ÑÐ¿Ð°Ð²Ð½ Ð¿Ñ€ÐµÑ€Ñ‹Ð²Ð°ÐµÑ‚ÑÑ.
         ///
         /// ZERO GC: struct math, pre-allocated List, TryGetComponent.
         /// </summary>
-        /// <param name="worldCenter">Центр спавна орды (мировые координаты).</param>
+        /// <param name="worldCenter">Ð¦ÐµÐ½Ñ‚Ñ€ ÑÐ¿Ð°Ð²Ð½Ð° Ð¾Ñ€Ð´Ñ‹ (Ð¼Ð¸Ñ€Ð¾Ð²Ñ‹Ðµ ÐºÐ¾Ð¾Ñ€Ð´Ð¸Ð½Ð°Ñ‚Ñ‹).</param>
         public void ForceSpawnHorde(Vector3 worldCenter)
         {
-            // ── Relax-фаза блокирует орды ──
+            // â”€â”€ Relax-Ñ„Ð°Ð·Ð° Ð±Ð»Ð¾ÐºÐ¸Ñ€ÑƒÐµÑ‚ Ð¾Ñ€Ð´Ñ‹ â”€â”€
             if (!_pressureEnabled)
                 return;
 
@@ -3206,21 +3221,21 @@ namespace Hecton8.AI
             if (pool == null)
                 return;
 
-            // ══════════════════════════════════════════════════════
-            //  Выбор FaunaBiomeData
-            // ══════════════════════════════════════════════════════
-            //  Приоритет: текущий биом игрока (_cachedBiomeIndex).
-            //  Fallback: первый доступный dataset из biomeDatasets.
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+            //  Ð’Ñ‹Ð±Ð¾Ñ€ FaunaBiomeData
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+            //  ÐŸÑ€Ð¸Ð¾Ñ€Ð¸Ñ‚ÐµÑ‚: Ñ‚ÐµÐºÑƒÑ‰Ð¸Ð¹ Ð±Ð¸Ð¾Ð¼ Ð¸Ð³Ñ€Ð¾ÐºÐ° (_cachedBiomeIndex).
+            //  Fallback: Ð¿ÐµÑ€Ð²Ñ‹Ð¹ Ð´Ð¾ÑÑ‚ÑƒÐ¿Ð½Ñ‹Ð¹ dataset Ð¸Ð· biomeDatasets.
 
             FaunaBiomeData biomeData = null;
 
-            // Попробовать текущий биом игрока
+            // ÐŸÐ¾Ð¿Ñ€Ð¾Ð±Ð¾Ð²Ð°Ñ‚ÑŒ Ñ‚ÐµÐºÑƒÑ‰Ð¸Ð¹ Ð±Ð¸Ð¾Ð¼ Ð¸Ð³Ñ€Ð¾ÐºÐ°
             if (_cachedBiomeIndex >= 0)
             {
                 _biomeLookup.TryGetValue(_cachedBiomeIndex, out biomeData);
             }
 
-            // Fallback: первый доступный dataset
+            // Fallback: Ð¿ÐµÑ€Ð²Ñ‹Ð¹ Ð´Ð¾ÑÑ‚ÑƒÐ¿Ð½Ñ‹Ð¹ dataset
             if (biomeData == null && biomeDatasets != null)
             {
                 for (int i = 0; i < biomeDatasets.Length; i++)
@@ -3236,7 +3251,7 @@ namespace Hecton8.AI
             if (biomeData == null)
                 return;
 
-            // Проверяем наличие существ в биоме
+            // ÐŸÑ€Ð¾Ð²ÐµÑ€ÑÐµÐ¼ Ð½Ð°Ð»Ð¸Ñ‡Ð¸Ðµ ÑÑƒÑ‰ÐµÑÑ‚Ð² Ð² Ð±Ð¸Ð¾Ð¼Ðµ
             if (_resolvedEntriesPerBiome == null ||
                 !_resolvedEntriesPerBiome.TryGetValue(biomeData, out ResolvedFaunaEntry[] resolvedEntries) ||
                 resolvedEntries == null ||
@@ -3264,23 +3279,23 @@ namespace Hecton8.AI
 
             int biomeIdx = biomeData.biomeIndex;
 
-            // ══════════════════════════════════════════════════════
-            //  Спавн орды
-            // ══════════════════════════════════════════════════════
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+            //  Ð¡Ð¿Ð°Ð²Ð½ Ð¾Ñ€Ð´Ñ‹
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-            int hordeSize = Random.Range(hordeCountMin, hordeCountMax + 1);
+            int hordeSize = _biomeSpawnRandom.NextInt(hordeCountMin, hordeCountMax + 1);
             int spawned = 0;
 
             for (int h = 0; h < hordeSize; h++)
             {
-                // ── Global limit check ──
+                // â”€â”€ Global limit check â”€â”€
                 if (GetTrackedCreaturePopulationCount() >= _runtimeGlobalMaxCount)
                     break;
 
-                // ── Выбор случайного типа существа из биома ──
-                // Для орды используем равномерный выбор из possibleCreatures
-                // (weighted random через TrySelectCreature не обязателен —
-                //  Директор хочет любую угрозу, а не balanced population).
+                // â”€â”€ Ð’Ñ‹Ð±Ð¾Ñ€ ÑÐ»ÑƒÑ‡Ð°Ð¹Ð½Ð¾Ð³Ð¾ Ñ‚Ð¸Ð¿Ð° ÑÑƒÑ‰ÐµÑÑ‚Ð²Ð° Ð¸Ð· Ð±Ð¸Ð¾Ð¼Ð° â”€â”€
+                // Ð”Ð»Ñ Ð¾Ñ€Ð´Ñ‹ Ð¸ÑÐ¿Ð¾Ð»ÑŒÐ·ÑƒÐµÐ¼ Ñ€Ð°Ð²Ð½Ð¾Ð¼ÐµÑ€Ð½Ñ‹Ð¹ Ð²Ñ‹Ð±Ð¾Ñ€ Ð¸Ð· possibleCreatures
+                // (weighted random Ñ‡ÐµÑ€ÐµÐ· TrySelectCreature Ð½Ðµ Ð¾Ð±ÑÐ·Ð°Ñ‚ÐµÐ»ÐµÐ½ â€”
+                //  Ð”Ð¸Ñ€ÐµÐºÑ‚Ð¾Ñ€ Ñ…Ð¾Ñ‡ÐµÑ‚ Ð»ÑŽÐ±ÑƒÑŽ ÑƒÐ³Ñ€Ð¾Ð·Ñƒ, Ð° Ð½Ðµ balanced population).
                 if (!TrySelectResolvedHordeEntry(resolvedEntries, creatureTypeCounts, availablePoolCounts, out ResolvedFaunaEntry selectedEntry))
                     break;
 
@@ -3288,16 +3303,16 @@ namespace Hecton8.AI
                 if (resolvedPrefab == null)
                     continue;
 
-                // ── Позиция в кольце вокруг worldCenter ──
-                float angle    = Random.Range(0f, Mathf.PI * 2f);
-                float distance = Random.Range(hordeRadiusInner, hordeRadiusOuter);
+                // â”€â”€ ÐŸÐ¾Ð·Ð¸Ñ†Ð¸Ñ Ð² ÐºÐ¾Ð»ÑŒÑ†Ðµ Ð²Ð¾ÐºÑ€ÑƒÐ³ worldCenter â”€â”€
+                float angle    = _biomeSpawnRandom.NextFloat(0f, Mathf.PI * 2f);
+                float distance = _biomeSpawnRandom.NextFloat(hordeRadiusInner, hordeRadiusOuter);
 
                 float spawnX = worldCenter.x + Mathf.Cos(angle) * distance;
                 float spawnZ = worldCenter.z + Mathf.Sin(angle) * distance;
-                float spawnY = worldCenter.y; // Используем высоту центра события
+                float spawnY = worldCenter.y; // Ð˜ÑÐ¿Ð¾Ð»ÑŒÐ·ÑƒÐµÐ¼ Ð²Ñ‹ÑÐ¾Ñ‚Ñƒ Ñ†ÐµÐ½Ñ‚Ñ€Ð° ÑÐ¾Ð±Ñ‹Ñ‚Ð¸Ñ
 
                 Vector3    spawnPos = new Vector3(spawnX, spawnY, spawnZ);
-                Quaternion spawnRot = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
+                Quaternion spawnRot = Quaternion.Euler(0f, _biomeSpawnRandom.NextFloat(0f, 360f), 0f);
                 WorldChunkCoordinate spawnChunk = WorldChunkCoordinate.FromWorldPosition(spawnPos, _runtimeChunkSize);
 
                 if (!IsSpawnPointValid(_playerViewTransform, spawnPos))
@@ -3306,20 +3321,20 @@ namespace Hecton8.AI
                 if (GetChunkCreatureCount(spawnChunk) >= _runtimePerChunkMaxCount)
                     continue;
 
-                // ── Спавн через пул ──
+                // â”€â”€ Ð¡Ð¿Ð°Ð²Ð½ Ñ‡ÐµÑ€ÐµÐ· Ð¿ÑƒÐ» â”€â”€
                 GameObject instance = pool.Spawn(resolvedPrefab, spawnPos, spawnRot, false);
                 if (instance == null)
                     continue;
 
-                // ── Определяем typeIndex ──
+                // â”€â”€ ÐžÐ¿Ñ€ÐµÐ´ÐµÐ»ÑÐµÐ¼ typeIndex â”€â”€
                 int typeIndex = selectedEntry.creatureTypeIndex;
 
-                // ── Регистрация в трекере ──
+                // â”€â”€ Ð ÐµÐ³Ð¸ÑÑ‚Ñ€Ð°Ñ†Ð¸Ñ Ð² Ñ‚Ñ€ÐµÐºÐµÑ€Ðµ â”€â”€
                 ActiveCreature record = default;
 
-                // ── Инкремент stateful-счётчиков ──
+                // â”€â”€ Ð˜Ð½ÐºÑ€ÐµÐ¼ÐµÐ½Ñ‚ stateful-ÑÑ‡Ñ‘Ñ‚Ñ‡Ð¸ÐºÐ¾Ð² â”€â”€
 
-                // ── Настройка AI: спавн-поинт + принудительное Aggressive ──
+                // â”€â”€ ÐÐ°ÑÑ‚Ñ€Ð¾Ð¹ÐºÐ° AI: ÑÐ¿Ð°Ð²Ð½-Ð¿Ð¾Ð¸Ð½Ñ‚ + Ð¿Ñ€Ð¸Ð½ÑƒÐ´Ð¸Ñ‚ÐµÐ»ÑŒÐ½Ð¾Ðµ Aggressive â”€â”€
                 if (instance.TryGetComponent(out FaunaBrain ai))
                 {
                     ai.ApplyArchetype(selectedEntry.archetype);
@@ -3363,9 +3378,9 @@ namespace Hecton8.AI
 #endif
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  DIAGNOSTICS
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         private void UpdateDiagnostics(
@@ -3426,9 +3441,9 @@ namespace Hecton8.AI
             }
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  EDITOR — GIZMOS
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  EDITOR â€” GIZMOS
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 #if UNITY_EDITOR
         private void OnDrawGizmosSelected()
@@ -3442,11 +3457,11 @@ namespace Hecton8.AI
             float largeThreatOuter = Application.isPlaying ? _runtimeLargeThreatSpawnOuter : spawnRingOuter;
             float largeThreatCull = Application.isPlaying ? _runtimeLargeThreatKillDistance : killDistance;
 
-            // Spawn ring — inner
+            // Spawn ring â€” inner
             Gizmos.color = new Color(0f, 1f, 0.5f, 0.1f);
             DrawWireCircle(center, innerRadius, 32);
 
-            // Spawn ring — outer
+            // Spawn ring â€” outer
             Gizmos.color = new Color(0f, 1f, 0.5f, 0.2f);
             DrawWireCircle(center, outerRadius, 48);
 
@@ -3461,7 +3476,7 @@ namespace Hecton8.AI
             Gizmos.color = new Color(1f, 0.4f, 0f, 0.08f);
             DrawWireCircle(center, largeThreatCull, 80);
 
-            // Active creatures (в Play Mode)
+            // Active creatures (Ð² Play Mode)
             if (Application.isPlaying && _activeCreatures != null)
             {
                 Gizmos.color = Color.cyan;
@@ -3478,7 +3493,7 @@ namespace Hecton8.AI
         }
 
         /// <summary>
-        /// Рисует горизонтальный wireframe-круг (XZ плоскость).
+        /// Ð Ð¸ÑÑƒÐµÑ‚ Ð³Ð¾Ñ€Ð¸Ð·Ð¾Ð½Ñ‚Ð°Ð»ÑŒÐ½Ñ‹Ð¹ wireframe-ÐºÑ€ÑƒÐ³ (XZ Ð¿Ð»Ð¾ÑÐºÐ¾ÑÑ‚ÑŒ).
         /// </summary>
         private static void DrawWireCircle(Vector3 center, float radius, int segments)
         {
@@ -3665,7 +3680,7 @@ namespace Hecton8.AI
                 return 0;
 
             int total = 0;
-            // ZERO GC: Dictionary<long,int>.Enumerator is a struct — GetEnumerator() returns by value, no heap alloc.
+            // ZERO GC: Dictionary<long,int>.Enumerator is a struct â€” GetEnumerator() returns by value, no heap alloc.
             // foreach on Dictionary<K,V> is FORBIDDEN (boxes to IEnumerator). Explicit struct enumerator is ALLOWED.
             Dictionary<long, int>.Enumerator enumerator = _largeThreatCountsPerMacroZone.GetEnumerator();
             while (enumerator.MoveNext())

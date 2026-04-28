@@ -7,7 +7,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Editor-only leak overlay bridge driven by dispatcher heartbeats.
     /// </summary>
-    internal static class NativeAllocationTrackerRuntimeBridge
+    public static class NativeAllocationTrackerRuntimeBridge
     {
         private const float OverlayWidth = 960f;
         private const float OverlayHeight = 88f;
@@ -18,14 +18,14 @@ namespace Hecton8.Core
         private static string _activeMessage;
         private static GUIStyle _labelStyle;
 
-        internal static void NotifyDispatcherHeartbeat()
+        public static void NotifyDispatcherHeartbeat()
         {
             EnsureInitialized();
             if (_hasActiveLeak)
                 SceneView.RepaintAll();
         }
 
-        internal static void ReportLeak(string message)
+        public static void ReportLeak(string message)
         {
             EnsureInitialized();
             _hasActiveLeak = true;
@@ -33,7 +33,7 @@ namespace Hecton8.Core
             SceneView.RepaintAll();
         }
 
-        internal static void ClearLeak()
+        public static void ClearLeak()
         {
             _hasActiveLeak = false;
             _activeMessage = null;

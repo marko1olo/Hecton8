@@ -74,6 +74,40 @@ namespace Hecton8.Atmosphere
     }
 
     /// <summary>
+    /// Fatal overload-driven implosion payload emitted when a superheated powered room catastrophically fails.
+    /// </summary>
+    public readonly struct FatalPressureImplosionEvent
+    {
+        public FatalPressureImplosionEvent(uint nodeId, int roomIndex, float temperatureCelsius, Vector3 runtimePosition)
+        {
+            NodeId = nodeId;
+            RoomIndex = roomIndex;
+            TemperatureCelsius = temperatureCelsius;
+            RuntimePosition = runtimePosition;
+        }
+
+        public uint NodeId { get; }
+        public int RoomIndex { get; }
+        public float TemperatureCelsius { get; }
+        public Vector3 RuntimePosition { get; }
+    }
+
+    /// <summary>
+    /// Static fatal-implosion bus for catastrophic overload failures.
+    /// </summary>
+    public static class FatalPressureImplosionEvents
+    {
+        public delegate void FatalPressureImplosionEventHandler(in FatalPressureImplosionEvent implosionEvent);
+
+        public static event FatalPressureImplosionEventHandler OnFatalPressureImplosion;
+
+        public static void Notify(in FatalPressureImplosionEvent implosionEvent)
+        {
+            OnFatalPressureImplosion?.Invoke(implosionEvent);
+        }
+    }
+
+    /// <summary>
     /// Fixed-step pressurized interior simulation for submarines.
     /// Tracks O2 / CO2 / inert-gas redistribution across the compartment graph and couples pressure to flood displacement.
     /// </summary>
@@ -108,6 +142,10 @@ namespace Hecton8.Atmosphere
         private const float DefaultWaterDensityKilogramsPerCubicMeter = 1027f;
         private const float DefaultWaterSpecificHeatJoulesPerKilogramKelvin = 3990f;
         private const float DefaultMinimumThermalCapacityJoulesPerKelvin = 400f;
+        private const float DefaultBulkheadThermalConductivityWattsPerKelvin = 185f;
+        private const float DefaultSealedBulkheadThermalCoupling = 0.35f;
+        private const float DefaultOpenBulkheadThermalCoupling = 1f;
+        private const float ThermalConductionCadenceSeconds = 0.5f;
         private const float DefaultFabricatorHeatWattsScale = 0.92f;
         private const float DefaultDrillHeatWattsScale = 0.97f;
         private const float DefaultReactorHeatWattsScale = 1.15f;
@@ -123,8 +161,17 @@ namespace Hecton8.Atmosphere
         private const float DefaultReactorMeltdownMaximumImpulseNewtonSeconds = 28000f;
         private const float DefaultReactorMeltdownUpwardBias = 0.55f;
         private const float DefaultReactorMeltdownFloodAmplification = 1.35f;
+        private const float DefaultThermalFatigueThresholdCelsius = 120f;
+        private const float DefaultGlassThermalFatigueMultiplier = 5f;
+        private const float DefaultTitaniumThermalFatigueMultiplier = 0.1f;
         private const int BoilingFaunaContactCapacity = 16;
         private const float Epsilon = 0.0001f;
+
+        private enum RoomStructuralMaterial : byte
+        {
+            Titanium = 0,
+            Glass = 1
+        }
 
         [System.Serializable]
         private struct RoomDefinition
@@ -155,6 +202,9 @@ namespace Hecton8.Atmosphere
 
             [Tooltip("Initial dry-room temperature in Celsius.")]
             public float initialTemperatureCelsius;
+
+            [Tooltip("Primary structural material used to scale thermal fatigue once the room overheats.")]
+            public RoomStructuralMaterial primaryStructuralMaterial;
         }
 
         private struct FabricatorHeatEmitter
@@ -217,6 +267,10 @@ namespace Hecton8.Atmosphere
             public float WaterDensityKilogramsPerCubicMeter;
             public float WaterSpecificHeatJoulesPerKilogramKelvin;
             public float MinimumThermalCapacityJoulesPerKelvin;
+            public float ThermalConductionDeltaTime;
+            public float BulkheadThermalConductivityWattsPerKelvin;
+            public float SealedBulkheadThermalCoupling;
+            public float OpenBulkheadThermalCoupling;
 
             public void Execute()
             {
@@ -343,6 +397,8 @@ namespace Hecton8.Atmosphere
                         O2Back[targetIndex] + CO2Back[targetIndex] + InertBack[targetIndex],
                         GasVolumeBack[targetIndex]);
                 }
+
+                ApplyBulkheadThermalConduction();
             }
 
             private float ResolveFloodCompressedPressure(
@@ -375,6 +431,76 @@ namespace Hecton8.Atmosphere
                     return ReferencePressureKPa;
 
                 return math.clamp(pressure, 0f, MaximumPressureKPa);
+            }
+
+            private void ApplyBulkheadThermalConduction()
+            {
+                float conductionDeltaTime = math.max(0f, ThermalConductionDeltaTime);
+                if (conductionDeltaTime <= Epsilon)
+                    return;
+
+                float conductivity = math.max(0f, BulkheadThermalConductivityWattsPerKelvin);
+                if (conductivity <= Epsilon)
+                    return;
+
+                float sealedCoupling = math.saturate(SealedBulkheadThermalCoupling);
+                float openCoupling = math.max(sealedCoupling, OpenBulkheadThermalCoupling);
+                for (int doorIndex = 0; doorIndex < DoorCount; doorIndex++)
+                {
+                    int2 pair = DoorPairs[doorIndex];
+                    int roomA = pair.x;
+                    int roomB = pair.y;
+                    if (roomA < 0 || roomA >= RoomCount || roomB < 0 || roomB >= RoomCount)
+                        continue;
+
+                    float temperatureA = TemperatureBack[roomA];
+                    float temperatureB = TemperatureBack[roomB];
+                    float temperatureDelta = temperatureA - temperatureB;
+                    if (math.abs(temperatureDelta) <= Epsilon)
+                        continue;
+
+                    float capacityA = ResolveRoomThermalCapacity(roomA);
+                    float capacityB = ResolveRoomThermalCapacity(roomB);
+                    float totalCapacity = capacityA + capacityB;
+                    if (totalCapacity <= Epsilon)
+                        continue;
+
+                    float equilibriumTemperature = ((temperatureA * capacityA) + (temperatureB * capacityB)) / totalCapacity;
+                    float maxTransferEnergy = math.abs(temperatureA - equilibriumTemperature) * capacityA;
+                    if (maxTransferEnergy <= Epsilon)
+                        continue;
+
+                    float coupling = DoorSealed[doorIndex] != 0 ? sealedCoupling : openCoupling;
+                    if (coupling <= Epsilon)
+                        continue;
+
+                    float transferEnergy = conductivity * coupling * temperatureDelta * conductionDeltaTime;
+                    float transferMagnitude = math.min(math.abs(transferEnergy), maxTransferEnergy);
+                    if (transferMagnitude <= Epsilon)
+                        continue;
+
+                    float signedEnergy = math.sign(transferEnergy) * transferMagnitude;
+                    TemperatureBack[roomA] = math.clamp(
+                        temperatureA - (signedEnergy / capacityA),
+                        MinimumTemperatureCelsius,
+                        MaximumTemperatureCelsius);
+                    TemperatureBack[roomB] = math.clamp(
+                        temperatureB + (signedEnergy / capacityB),
+                        MinimumTemperatureCelsius,
+                        MaximumTemperatureCelsius);
+                }
+            }
+
+            private float ResolveRoomThermalCapacity(int roomIndex)
+            {
+                float roomVolume = math.max(RoomVolumes[roomIndex], MinimumGasVolumeCubicMeters);
+                float floodVolume = math.clamp(FloodVolumes[roomIndex], 0f, roomVolume - Epsilon);
+                float gasVolume = math.max(MinimumGasVolumeCubicMeters, roomVolume - floodVolume);
+                float airMassKilograms = math.max(0f, gasVolume * math.max(0.1f, AirDensityKilogramsPerCubicMeter));
+                float waterMassKilograms = math.max(0f, floodVolume * math.max(1f, WaterDensityKilogramsPerCubicMeter));
+                float airCapacity = airMassKilograms * math.max(1f, AirSpecificHeatJoulesPerKilogramKelvin);
+                float waterCapacity = waterMassKilograms * math.max(1f, WaterSpecificHeatJoulesPerKilogramKelvin);
+                return math.max(MinimumThermalCapacityJoulesPerKelvin, airCapacity + waterCapacity);
             }
         }
 
@@ -433,6 +559,15 @@ namespace Hecton8.Atmosphere
         [Tooltip("Thermal-capacity floor used to stabilize nearly empty rooms.")]
         [SerializeField, Min(1f)] private float minimumThermalCapacityJoulesPerKelvin = DefaultMinimumThermalCapacityJoulesPerKelvin;
 
+        [Tooltip("Bulkhead thermal conductivity used by the room-to-room Fourier conduction pass in W/K.")]
+        [SerializeField, Min(0f)] private float bulkheadThermalConductivityWattsPerKelvin = DefaultBulkheadThermalConductivityWattsPerKelvin;
+
+        [Tooltip("Fraction of bulkhead conductivity applied while the connecting door is sealed.")]
+        [SerializeField, Range(0f, 1f)] private float sealedBulkheadThermalCoupling = DefaultSealedBulkheadThermalCoupling;
+
+        [Tooltip("Multiplier applied to bulkhead conductivity while the connecting door is open.")]
+        [SerializeField, Min(0f)] private float openBulkheadThermalCoupling = DefaultOpenBulkheadThermalCoupling;
+
         [Tooltip("Waste-heat multiplier applied to fabricator electrical draw.")]
         [SerializeField, Min(0f)] private float fabricatorHeatWattsScale = DefaultFabricatorHeatWattsScale;
 
@@ -479,6 +614,13 @@ namespace Hecton8.Atmosphere
 
         [Tooltip("Extra impulse multiplier applied when the reactor room is flooded.")]
         [SerializeField, Min(1f)] private float reactorMeltdownFloodAmplification = DefaultReactorMeltdownFloodAmplification;
+        [Header("â”€â”€ Thermal Material Stress â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Tooltip("Room temperature threshold in Celsius where material-specific structural-fatigue scaling begins.")]
+        [SerializeField] private float thermalFatigueThresholdCelsius = DefaultThermalFatigueThresholdCelsius;
+        [Tooltip("Structural fatigue multiplier applied to glass rooms above the thermal threshold.")]
+        [SerializeField, Min(0f)] private float glassThermalFatigueMultiplier = DefaultGlassThermalFatigueMultiplier;
+        [Tooltip("Structural fatigue multiplier applied to titanium rooms above the thermal threshold.")]
+        [SerializeField, Min(0f)] private float titaniumThermalFatigueMultiplier = DefaultTitaniumThermalFatigueMultiplier;
 
         [Header("── Pressure Blowout ──────────────────")]
         [Tooltip("Radius around an opened bulkhead that receives the pressure blowout impulse.")]
@@ -560,6 +702,7 @@ namespace Hecton8.Atmosphere
         private int _fabricatorHeatEmitterCount;
         private int _drillHeatEmitterCount;
         private int _reactorHeatEmitterCount;
+        private float _thermalConductionAccumulator;
 
         public int RoomCount => fluidDynamics != null ? fluidDynamics.CompartmentCount : 0;
 
@@ -609,6 +752,61 @@ namespace Hecton8.Atmosphere
                 _gasVolumeFront[roomIndex]);
         }
 
+        public void InjectRoomTemperatureDeltaCelsius(int roomIndex, float deltaCelsius)
+        {
+            if (deltaCelsius == 0f || !_temperatureFront.IsCreated || roomIndex < 0 || roomIndex >= RoomCount)
+                return;
+
+            CompleteAtmosphereJobForAuthoritativeWrite();
+            _temperatureFront[roomIndex] = math.clamp(
+                _temperatureFront[roomIndex] + deltaCelsius,
+                minimumTemperatureCelsius,
+                maximumTemperatureCelsius);
+        }
+
+        public void InjectRoomHeatEnergyJoules(int roomIndex, float heatEnergyJoules)
+        {
+            if (heatEnergyJoules <= 0f || !_temperatureFront.IsCreated || roomIndex < 0 || roomIndex >= RoomCount)
+                return;
+
+            CompleteAtmosphereJobForAuthoritativeWrite();
+            float thermalCapacity = ResolveInstantThermalCapacity(roomIndex);
+            if (thermalCapacity <= Epsilon)
+                return;
+
+            float deltaCelsius = heatEnergyJoules / thermalCapacity;
+            if (!math.isfinite(deltaCelsius) || deltaCelsius <= 0f)
+                return;
+
+            _temperatureFront[roomIndex] = math.clamp(
+                _temperatureFront[roomIndex] + deltaCelsius,
+                minimumTemperatureCelsius,
+                maximumTemperatureCelsius);
+        }
+
+        internal float ResolveThermalFatigueMultiplier(int roomIndex)
+        {
+            if (roomIndex < 0 || roomIndex >= RoomCount || !_temperatureFront.IsCreated)
+                return 1f;
+
+            float thresholdTemperature = math.max(referenceTemperatureCelsius, thermalFatigueThresholdCelsius);
+            if (_temperatureFront[roomIndex] < thresholdTemperature)
+                return 1f;
+
+            RoomStructuralMaterial structuralMaterial = roomIndex < rooms.Length
+                ? rooms[roomIndex].primaryStructuralMaterial
+                : RoomStructuralMaterial.Titanium;
+
+            return structuralMaterial == RoomStructuralMaterial.Glass
+                ? math.max(0f, glassThermalFatigueMultiplier)
+                : math.max(0f, titaniumThermalFatigueMultiplier);
+        }
+
+        internal int ResolveNearestRoomIndexForWorldPosition(Vector3 worldPosition)
+        {
+            return ResolveNearestRoomIndex(worldPosition);
+        }
+
         private void Awake()
         {
             CacheReferences();
@@ -654,7 +852,15 @@ namespace Hecton8.Atmosphere
             EvaluateReactorMeltdowns();
             UpdateBoilingFloodHazards(fixedDeltaTime);
             PublishDoorOpeningPressureEvents();
-            ScheduleAtmosphereJob(fixedDeltaTime);
+            _thermalConductionAccumulator += fixedDeltaTime;
+            float thermalConductionDeltaTime = 0f;
+            if (_thermalConductionAccumulator + Epsilon >= ThermalConductionCadenceSeconds)
+            {
+                thermalConductionDeltaTime = _thermalConductionAccumulator;
+                _thermalConductionAccumulator = 0f;
+            }
+
+            ScheduleAtmosphereJob(fixedDeltaTime, thermalConductionDeltaTime);
             RefreshDebugState();
         }
 
@@ -672,7 +878,7 @@ namespace Hecton8.Atmosphere
 
         private void SeedBoilingHazardIds()
         {
-            int instanceId = GetInstanceID();
+            int instanceId = unchecked((int)EntityId.ToULong(GetEntityId()));
             for (int roomIndex = 0; roomIndex < RoomCapacity; roomIndex++)
                 _boilingHazardIds[roomIndex] = (instanceId * 97) ^ (0x61A0 + roomIndex);
         }
@@ -1185,7 +1391,7 @@ namespace Hecton8.Atmosphere
             return value / math.sqrt(lengthSq);
         }
 
-        private void ScheduleAtmosphereJob(float fixedDeltaTime)
+        private void ScheduleAtmosphereJob(float fixedDeltaTime, float thermalConductionDeltaTime)
         {
             if (_atmosphereJobRunning || fluidDynamics == null || !_o2Front.IsCreated)
                 return;
@@ -1227,7 +1433,11 @@ namespace Hecton8.Atmosphere
                 AirSpecificHeatJoulesPerKilogramKelvin = math.max(1f, airSpecificHeatJoulesPerKilogramKelvin),
                 WaterDensityKilogramsPerCubicMeter = math.max(1f, waterDensityKilogramsPerCubicMeter),
                 WaterSpecificHeatJoulesPerKilogramKelvin = math.max(1f, waterSpecificHeatJoulesPerKilogramKelvin),
-                MinimumThermalCapacityJoulesPerKelvin = math.max(1f, minimumThermalCapacityJoulesPerKelvin)
+                MinimumThermalCapacityJoulesPerKelvin = math.max(1f, minimumThermalCapacityJoulesPerKelvin),
+                ThermalConductionDeltaTime = math.max(0f, thermalConductionDeltaTime),
+                BulkheadThermalConductivityWattsPerKelvin = math.max(0f, bulkheadThermalConductivityWattsPerKelvin),
+                SealedBulkheadThermalCoupling = math.saturate(sealedBulkheadThermalCoupling),
+                OpenBulkheadThermalCoupling = math.max(0f, openBulkheadThermalCoupling)
             };
 
             _atmosphereJobHandle = job.Schedule();
@@ -1413,6 +1623,20 @@ namespace Hecton8.Atmosphere
         {
             for (int roomIndex = 0; roomIndex < RoomCapacity; roomIndex++)
                 HectonHazardManager.Unregister(_boilingHazardIds[roomIndex]);
+        }
+
+        private float ResolveInstantThermalCapacity(int roomIndex)
+        {
+            if (roomIndex < 0 || roomIndex >= RoomCount || !_roomVolumes.IsCreated || !_floodVolumes.IsCreated || !_gasVolumeFront.IsCreated)
+                return math.max(Epsilon, minimumThermalCapacityJoulesPerKelvin);
+
+            float gasVolume = math.max(minimumGasVolumeCubicMeters, _gasVolumeFront[roomIndex]);
+            float floodVolume = math.max(0f, _floodVolumes[roomIndex]);
+            float airMass = gasVolume * math.max(Epsilon, airDensityKilogramsPerCubicMeter);
+            float waterMass = floodVolume * math.max(Epsilon, waterDensityKilogramsPerCubicMeter);
+            float airCapacity = airMass * math.max(Epsilon, airSpecificHeatJoulesPerKilogramKelvin);
+            float waterCapacity = waterMass * math.max(Epsilon, waterSpecificHeatJoulesPerKilogramKelvin);
+            return math.max(minimumThermalCapacityJoulesPerKelvin, airCapacity + waterCapacity);
         }
 
         private bool TryResolveBoilingHazardBounds(int roomIndex, float roomVolume, out Vector3 worldCenter, out float radius)

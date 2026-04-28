@@ -66,6 +66,8 @@ namespace Hecton8.Audio
     [DefaultExecutionOrder(-4000)] // После FluidEngine (-5000), до большинства систем
     public sealed class AcousticZoneController : MonoBehaviour, ITickable, IUpdatable
     {
+        private static readonly string[] SoundscapeTierLabels = System.Enum.GetNames(typeof(SoundscapeTier));
+
 #if UNITY_EDITOR
         private const string DefaultWaterDrainSoundPath = "Assets/_Project/Audio/Movement/swimming -onwater.wav";
         private const string DefaultWaterFillSoundPath = "Assets/_Project/Audio/Movement/swimming - underwater.ogg";
@@ -1183,7 +1185,7 @@ namespace Hecton8.Audio
             _debugMixerCoverage = BuildMixerCoverageSummary();
             _debugAmbientVolume = _ambientSourceBaseVolume * _currentAmbientVolumeScale * _currentSoundscapeVolumeScale;
             _debugAmbientPitch = _ambientSourceBasePitch * _currentAmbientPitchScale * _currentSoundscapePitchScale;
-            _debugSoundscapeTier = _currentSoundscapeTier.ToString();
+            _debugSoundscapeTier = ResolveSoundscapeTierLabel(_currentSoundscapeTier);
             _debugSoundscapeVolumeScale = _currentSoundscapeVolumeScale;
             _debugSoundscapePitchScale = _currentSoundscapePitchScale;
             _debugAcousticLowPassCutoff = _currentAcousticLowPassCutoffHz;
@@ -2049,6 +2051,18 @@ namespace Hecton8.Audio
                 return;
             }
 
+            if (PlayerCriticalProceduralAudioRenderer.IsRuntimeInstalled)
+            {
+                if (ambientSource.isPlaying)
+                    ambientSource.Stop();
+
+                if (!ambientSource.mute)
+                    ambientSource.mute = true;
+
+                ApplySourceLevelAcousticFallback(zone);
+                return;
+            }
+
             bool shouldBeAudible = zone == AcousticZoneState.Underwater;
             bool shouldMute = !shouldBeAudible;
 
@@ -2165,8 +2179,9 @@ namespace Hecton8.Audio
             if (emitterCount <= 0)
                 return;
 
-            Vector3 listenerPosition = listener.transform.position;
-            Transform listenerRoot = listener.transform.root;
+            Transform listenerTransform = listener.transform;
+            Vector3 listenerPosition = listenerTransform.position;
+            Transform listenerRoot = listenerTransform.root;
             float maxDistanceSqr = AcousticEmitterOcclusionMaxDistanceMeters * AcousticEmitterOcclusionMaxDistanceMeters;
             float weightedTransmission = 0f;
             float weightedCutoff = 0f;
@@ -2777,6 +2792,12 @@ namespace Hecton8.Audio
                 " named=", _validatedMixerHasNamedCoverage ? "yes" : "no",
                 " fx=", _validatedMixerHasEffectGraph ? "yes" : "no",
                 " acousticParams=", _acousticMixerBindingsValid ? "yes" : "no");
+        }
+
+        private static string ResolveSoundscapeTierLabel(SoundscapeTier tier)
+        {
+            int index = (int)tier;
+            return (uint)index < (uint)SoundscapeTierLabels.Length ? SoundscapeTierLabels[index] : SoundscapeTierLabels[0];
         }
 
 #if UNITY_EDITOR

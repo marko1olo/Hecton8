@@ -94,6 +94,7 @@ Shader "Hecton8/Flora/KelpMaster"
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+            #include "Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/LODCrossFade.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
@@ -336,6 +337,7 @@ Shader "Hecton8/Flora/KelpMaster"
                 half zoneBiolumStrength = saturate(oceanZoneInfluence + floorZoneInfluence);
                 half3 zoneBiolumColor = lerp(_BiolumColor.rgb, _HectonOceanBiolumColor.rgb, oceanZoneInfluence);
                 zoneBiolumColor = lerp(zoneBiolumColor, _HectonFloorBiolumColor.rgb, floorZoneInfluence);
+                half3 volumeBiolum = (half3)HectonCoreLitSampleBiolumVolumeRadiance(samplePositionWS);
 
                 half3 gradient = lerp(_BaseColor.rgb, _TipColor.rgb, heightMask);
                 half3 moistureTint = lerp(half3(1.0h, 1.0h, 1.0h), _TipColor.rgb, wetness * 0.5h);
@@ -359,6 +361,7 @@ Shader "Hecton8/Flora/KelpMaster"
                 half3 rimLighting = _RimColor.rgb * (rim * _RimStrength);
                 half specular = pow(saturate(dot(normalize(lightDir + viewDirWS), normalWS)), lerp(12.0h, 48.0h, 1.0h - roughness)) * (1.0h - roughness) * 0.18h * glossMask;
                 half3 biolum = zoneBiolumColor * (_BiolumStrength * (1.0h + zoneBiolumStrength * 0.72h) * biolumMask * pulse * biolumField);
+                biolum += volumeBiolum * (0.45h + thicknessMask * 0.55h);
                 half fresnel = pow(1.0h - saturate(dot(normalWS, viewDirWS)), _FresnelPower) * _FresnelStrength;
 
                 half3 color = diffuse + transmission + rimLighting + specular + biolum + sssLighting;

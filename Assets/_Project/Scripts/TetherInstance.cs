@@ -1,7 +1,9 @@
 using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Unity.Burst;
 using Unity.Collections;
+using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -20,6 +22,69 @@ namespace Hecton8.Physics
     [DisallowMultipleComponent]
     public sealed class TetherInstance : MonoBehaviour
     {
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        private struct BuildVisualCatenaryJob : IJobParallelFor
+        {
+            [ReadOnly] public NativeArray<float3> AnchorPositions;
+            [ReadOnly] public NativeArray<float> SegmentLengths;
+            public NativeArray<float3> VisualSegmentPositions;
+
+            public int AnchorCount;
+            public float CurrentLength;
+            public float BlendT;
+            public float SagScale;
+
+            public void Execute(int index)
+            {
+                int pointCount = VisualSegmentPositions.Length;
+                if (AnchorCount < 2 || pointCount <= 0)
+                    return;
+
+                float pathLength = math.max(CurrentLength, MinDistance);
+                float step = pointCount > 1 ? pathLength / (pointCount - 1) : pathLength;
+                float travelDistance = step * index;
+                float3 targetPoint = SamplePathPoint(AnchorCount, travelDistance, AnchorPositions, SegmentLengths, SagScale);
+                if (index == 0 || index == pointCount - 1)
+                {
+                    VisualSegmentPositions[index] = targetPoint;
+                    return;
+                }
+
+                float3 currentPoint = VisualSegmentPositions[index];
+                VisualSegmentPositions[index] = math.lerp(currentPoint, targetPoint, BlendT);
+            }
+
+            private static float3 SamplePathPoint(
+                int anchorCount,
+                float travelDistance,
+                NativeArray<float3> anchorPositions,
+                NativeArray<float> segmentLengths,
+                float sagScale)
+            {
+                int segmentCount = anchorCount - 1;
+                float remaining = math.max(0f, travelDistance);
+                for (int segmentIndex = 0; segmentIndex < segmentCount; segmentIndex++)
+                {
+                    float segmentLength = math.max(segmentLengths[segmentIndex], MinDistance);
+                    if (remaining > segmentLength && segmentIndex < segmentCount - 1)
+                    {
+                        remaining -= segmentLength;
+                        continue;
+                    }
+
+                    float segmentT = math.saturate(remaining / segmentLength);
+                    float3 start = anchorPositions[segmentIndex];
+                    float3 end = anchorPositions[segmentIndex + 1];
+                    float3 basePoint = math.lerp(start, end, segmentT);
+                    float sag = segmentLength * sagScale;
+                    float sagWeight = 4f * segmentT * (1f - segmentT);
+                    return basePoint + new float3(0f, -(sag * sagWeight), 0f);
+                }
+
+                return anchorPositions[anchorCount - 1];
+            }
+        }
+
         private const int MaxSupportedBendPoints = 4;
         private const int MaxSegments = MaxSupportedBendPoints + 1;
         private const int MaxAnchors = MaxSegments + 1;
@@ -56,6 +121,7 @@ namespace Hecton8.Physics
         // COLD ALLOC: int[4] — cached runtime stamps for bend-volume invalidation — owner: TetherInstance
         private readonly int[] _bendVolumeRuntimeStamps = new int[MaxSupportedBendPoints];
 
+        private TetherManager _manager;
         private HeavyTowWinch _owner;
         private HectonPlayerMotor _playerMotor;
         private Rigidbody _playerRigidbody;
@@ -145,6 +211,8 @@ namespace Hecton8.Physics
         public float CurrentBackwardPull01 => _backwardPull01;
 
         private NativeArray<float3> _visualSegmentPositions;
+        private NativeArray<float3> _visualAnchorPositions;
+        private NativeArray<float> _visualSegmentLengths;
 
         /// <summary>GPU source buffer consumed by the procedural line-strip draw.</summary>
         public GraphicsBuffer VisualSegmentBuffer { get; private set; }
@@ -160,6 +228,14 @@ namespace Hecton8.Physics
 
         /// <summary>Active payload rigidbody resolved by this tether.</summary>
         internal Rigidbody PayloadBody => _payloadBody;
+
+        /// <summary>
+        /// Assigns the owning tether manager for pooled runtime instances.
+        /// </summary>
+        internal void InitializeManager(TetherManager manager)
+        {
+            _manager = manager;
+        }
 
         /// <summary>
         /// Configures the tether against a player/payload pair.
@@ -178,7 +254,7 @@ namespace Hecton8.Physics
             _payloadBody = payloadBody;
             _payloadCollider = payloadCollider;
             _tetherClass = TetherClass.TowCable;
-            _springStiffness = owner != null ? owner.ResolveTowSpringStiffness() : 0f;
+            _springStiffness = ResolveTowSpringStiffness();
             _maxTowBreakDistance = owner != null ? owner.ResolveMaxTowBreakDistance() : 0f;
             _maxCableAcceleration = owner != null ? owner.ResolveMaxCableAcceleration() : 0f;
             _fullTensionExtension = owner != null ? owner.ResolveFullTensionExtension() : 1f;
@@ -368,27 +444,27 @@ namespace Hecton8.Physics
 
             float safeDeltaTime = math.max(deltaTime, 0f);
             float blendT = ResolveBlendFactor(_visualSegmentSmoothSpeed, safeDeltaTime);
-            float pathLength = math.max(_currentLength, MinDistance);
-            float step = _visualSegmentPositions.Length > 1
-                ? pathLength / (_visualSegmentPositions.Length - 1)
-                : pathLength;
+            CopyVisualSolverState(anchorCount);
+            BuildVisualCatenaryJob catenaryJob = new BuildVisualCatenaryJob
+            {
+                AnchorPositions = _visualAnchorPositions,
+                SegmentLengths = _visualSegmentLengths,
+                VisualSegmentPositions = _visualSegmentPositions,
+                AnchorCount = anchorCount,
+                CurrentLength = _currentLength,
+                BlendT = blendT,
+                SagScale = VisualSagScale
+            };
+            catenaryJob.Run(_visualSegmentPositions.Length);
 
             Vector3 minBounds = anchorPosition;
             Vector3 maxBounds = anchorPosition;
             for (int i = 0; i < _visualSegmentPositions.Length; i++)
             {
-                float travel = step * i;
-                Vector3 targetPoint = SamplePathPoint(anchorCount, travel);
-                Vector3 currentPoint = new Vector3(
-                    _visualSegmentPositions[i].x,
-                    _visualSegmentPositions[i].y,
-                    _visualSegmentPositions[i].z);
-                Vector3 blendedPoint = i == 0 || i == _visualSegmentPositions.Length - 1
-                    ? targetPoint
-                    : Vector3.Lerp(currentPoint, targetPoint, blendT);
-                _visualSegmentPositions[i] = new float3(blendedPoint.x, blendedPoint.y, blendedPoint.z);
-                minBounds = Vector3.Min(minBounds, blendedPoint);
-                maxBounds = Vector3.Max(maxBounds, blendedPoint);
+                float3 blendedPoint = _visualSegmentPositions[i];
+                Vector3 blendedPointV3 = new Vector3(blendedPoint.x, blendedPoint.y, blendedPoint.z);
+                minBounds = Vector3.Min(minBounds, blendedPointV3);
+                maxBounds = Vector3.Max(maxBounds, blendedPointV3);
             }
 
             _visualBounds.SetMinMax(minBounds, maxBounds);
@@ -493,6 +569,12 @@ namespace Hecton8.Physics
 
             if (_visualSegmentPositions.IsCreated)
                 _visualSegmentPositions.Dispose();
+
+            if (_visualAnchorPositions.IsCreated)
+                _visualAnchorPositions.Dispose();
+
+            if (_visualSegmentLengths.IsCreated)
+                _visualSegmentLengths.Dispose();
         }
 
         private void OnDestroy()
@@ -516,6 +598,18 @@ namespace Hecton8.Physics
             {
                 // COLD ALLOC: NativeArray<float3>[pointCount] — persistent visual staging path for tether line rendering — owner: TetherInstance
                 _visualSegmentPositions = new NativeArray<float3>(pointCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            }
+
+            if (!_visualAnchorPositions.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<float3>[6] — burst visual-anchor staging path for tether catenary generation — owner: TetherInstance
+                _visualAnchorPositions = new NativeArray<float3>(MaxAnchors, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            }
+
+            if (!_visualSegmentLengths.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<float>[5] — burst visual segment-length staging path for tether catenary generation — owner: TetherInstance
+                _visualSegmentLengths = new NativeArray<float>(MaxSegments, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             }
 
             if (VisualSegmentBuffer != null && VisualSegmentBuffer.count != pointCount)
@@ -547,7 +641,7 @@ namespace Hecton8.Physics
                 _reducedMass = (playerMass * payloadMass) / math.max(playerMass + payloadMass, 0.0001f);
             }
 
-            float requestedMultiplier = _owner != null ? _owner.ResolveTowOverDampingMultiplier() : 1f;
+            float requestedMultiplier = ResolveTowOverDampingMultiplier();
             float overDampingMultiplier = _tetherClass == TetherClass.TowCable
                 ? math.max(TowCableOverDampingMinimum, requestedMultiplier)
                 : math.max(1f, requestedMultiplier);
@@ -950,7 +1044,7 @@ namespace Hecton8.Physics
 
         private bool UpdateStressAndSnap(float peakTension, float fixedDeltaTime)
         {
-            float snapThreshold = math.max(1f, _owner != null ? _owner.ResolveSnapTensionThreshold() : 1f);
+            float snapThreshold = ResolveSnapTensionThreshold();
             float snapDuration = math.max(0.1f, _owner != null ? _owner.ResolveSnapStressDuration() : 0.1f);
 
             if (peakTension > snapThreshold)
@@ -973,8 +1067,7 @@ namespace Hecton8.Physics
                 ? (_bendPoints[_bendPointCount - 1] - _payloadBody.worldCenterOfMass).normalized
                 : (_owner.ResolveTowAnchorPosition() - _payloadBody.worldCenterOfMass).normalized;
             float snapSeverity = math.saturate(peakTension / snapThreshold);
-            ReleasePrimaryConstraint();
-            _owner.HandleTetherSnap(playerSegmentDirection, payloadSegmentDirection, snapSeverity, false, _payloadBody, _payloadCollider);
+            InvokeSnapProtocol(playerSegmentDirection, payloadSegmentDirection, snapSeverity, false);
             return true;
         }
 
@@ -1028,6 +1121,9 @@ namespace Hecton8.Physics
                     if (attachedBody == _payloadBody || attachedBody == _playerRigidbody)
                         continue;
 
+                    if (HasSupportingBendPointForSegment(i, candidate.point))
+                        continue;
+
                     foundBlockingHit = true;
                     break;
                 }
@@ -1055,7 +1151,7 @@ namespace Hecton8.Physics
                 Vector3 payloadSegmentDirection = _bendPointCount > 0
                     ? (_bendPoints[_bendPointCount - 1] - _payloadBody.worldCenterOfMass).normalized
                     : (_owner.ResolveTowAnchorPosition() - _payloadBody.worldCenterOfMass).normalized;
-                _owner.HandleTetherSnap(playerSegmentDirection, payloadSegmentDirection, 0f, true, _payloadBody, _payloadCollider);
+                InvokeSnapProtocol(playerSegmentDirection, payloadSegmentDirection, 0f, true);
                 return true;
             }
 
@@ -1064,33 +1160,83 @@ namespace Hecton8.Physics
             return false;
         }
 
-        private Vector3 SamplePathPoint(int anchorCount, float travelDistance)
+        private void CopyVisualSolverState(int anchorCount)
         {
-            int segmentCount = anchorCount - 1;
-            if (segmentCount <= 0)
-                return _owner != null ? _owner.ResolveTowAnchorPosition() : Vector3.zero;
-
-            float remaining = math.clamp(travelDistance, 0f, _currentLength);
-            for (int i = 0; i < segmentCount; i++)
+            int safeAnchorCount = math.clamp(anchorCount, 0, MaxAnchors);
+            for (int anchorIndex = 0; anchorIndex < safeAnchorCount; anchorIndex++)
             {
-                float segmentLength = math.max(_segmentLengths[i], MinDistance);
-                if (remaining > segmentLength && i < segmentCount - 1)
-                {
-                    remaining -= segmentLength;
-                    continue;
-                }
-
-                float segmentT = math.saturate(remaining / segmentLength);
-                Vector3 start = _anchorPositions[i];
-                Vector3 end = _anchorPositions[i + 1];
-                Vector3 basePoint = Vector3.Lerp(start, end, segmentT);
-                float sag = segmentLength * VisualSagScale;
-                float sagWeight = 4f * segmentT * (1f - segmentT);
-                Vector3 sagOffset = Vector3.down * (sag * sagWeight);
-                return basePoint + sagOffset;
+                Vector3 anchorPosition = _anchorPositions[anchorIndex];
+                _visualAnchorPositions[anchorIndex] = new float3(anchorPosition.x, anchorPosition.y, anchorPosition.z);
             }
 
-            return _anchorPositions[anchorCount - 1];
+            int segmentCount = math.max(0, safeAnchorCount - 1);
+            for (int segmentIndex = 0; segmentIndex < segmentCount; segmentIndex++)
+                _visualSegmentLengths[segmentIndex] = _segmentLengths[segmentIndex];
+        }
+
+        private bool HasSupportingBendPointForSegment(int segmentIndex, Vector3 hitPoint)
+        {
+            if (_bendPointCount <= 0)
+                return false;
+
+            float supportingRadius = math.max(_bendPointClearanceRadius, _bendSurfaceOffset) * 1.5f;
+            float supportingRadiusSq = supportingRadius * supportingRadius;
+            if (segmentIndex > 0)
+            {
+                Vector3 previousAnchor = _anchorPositions[segmentIndex];
+                if ((previousAnchor - hitPoint).sqrMagnitude <= supportingRadiusSq)
+                    return true;
+            }
+
+            int finalSegmentIndex = _bendPointCount;
+            if (segmentIndex < finalSegmentIndex)
+            {
+                Vector3 nextAnchor = _anchorPositions[segmentIndex + 1];
+                if ((nextAnchor - hitPoint).sqrMagnitude <= supportingRadiusSq)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private void InvokeSnapProtocol(
+            Vector3 playerSegmentDirection,
+            Vector3 payloadSegmentDirection,
+            float snapSeverity,
+            bool suppressPlayerFeedback)
+        {
+            ReleasePrimaryConstraint();
+            _owner.HandleTetherSnap(
+                playerSegmentDirection,
+                payloadSegmentDirection,
+                snapSeverity,
+                suppressPlayerFeedback,
+                _payloadBody,
+                _payloadCollider);
+        }
+
+        private float ResolveTowSpringStiffness()
+        {
+            if (_manager != null)
+                return _manager.ResolveTowSpringStiffness(_owner);
+
+            return _owner != null ? _owner.ResolveTowSpringStiffness() : 0f;
+        }
+
+        private float ResolveTowOverDampingMultiplier()
+        {
+            if (_manager != null)
+                return _manager.ResolveTowOverDampingMultiplier(_owner);
+
+            return _owner != null ? _owner.ResolveTowOverDampingMultiplier() : 1f;
+        }
+
+        private float ResolveSnapTensionThreshold()
+        {
+            if (_manager != null)
+                return math.max(1f, _manager.ResolveTowSnapTensionThreshold(_owner));
+
+            return math.max(1f, _owner != null ? _owner.ResolveSnapTensionThreshold() : 1f);
         }
 
         private void ResetRuntimeLoads()

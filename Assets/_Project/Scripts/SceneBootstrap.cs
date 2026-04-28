@@ -476,7 +476,7 @@ namespace Hecton8.Bootstrap
             // ── Критические (блокируют запуск) ──
 
             // SystemDispatcher — ПЕРВЫМ: все тиковые системы зависят от него
-            if (SystemDispatcher.EnsureRuntimeInstance() == null)
+            if (GlobalRegistry.Dispatcher == null)
             {
                 Debug.LogError("[SceneBootstrap] SystemDispatcher NOT FOUND! " +
                     "Ensure bootstrap creates the runtime dispatcher.");

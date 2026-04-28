@@ -40,6 +40,8 @@ namespace Hecton8.Core
         Periphery20Hz = 2,
         Far10Hz = 3,
         Rear5Hz = 4,
+        Rear1Hz = 5,
+        CulledEcosystemOnly = 6,
     }
 
     /// <summary>
@@ -80,11 +82,16 @@ namespace Hecton8.Core
                 importanceScore *= verticalPenalty;
                 importanceScore = math.select(importanceScore, MinimumImportanceScore, behindCamera);
 
+                bool rearOneHertz = behindCamera && distanceMeters > RearOneHertzDistanceMeters;
+                bool ecosystemOnlyCull = behindCamera && distanceMeters > EcosystemOnlyCullDistanceMeters;
                 int tickRateCode = (int)FoveatedTickRate.Rear5Hz;
                 tickRateCode = math.select(tickRateCode, (int)FoveatedTickRate.Far10Hz, importanceScore >= LowImportanceThreshold);
                 tickRateCode = math.select(tickRateCode, (int)FoveatedTickRate.Periphery20Hz, importanceScore >= MidImportanceThreshold);
                 tickRateCode = math.select(tickRateCode, (int)FoveatedTickRate.Focus30Hz, importanceScore >= FocusImportanceThreshold);
                 tickRateCode = math.select(tickRateCode, (int)FoveatedTickRate.Center60Hz, importanceScore >= HighImportanceThreshold);
+                tickRateCode = math.select(tickRateCode, (int)FoveatedTickRate.Rear1Hz, rearOneHertz);
+                tickRateCode = math.select(tickRateCode, (int)FoveatedTickRate.CulledEcosystemOnly, ecosystemOnlyCull);
+                importanceScore = math.select(importanceScore, 0.0f, ecosystemOnlyCull);
 
                 ImportanceScores[index] = importanceScore;
                 TickRateCodes[index] = (byte)tickRateCode;
@@ -118,6 +125,8 @@ namespace Hecton8.Core
         private const float PeripheryTickIntervalSeconds = 1.0f / 20.0f;
         private const float FarTickIntervalSeconds = 1.0f / 10.0f;
         private const float RearTickIntervalSeconds = 1.0f / 5.0f;
+        private const float RearOneHertzTickIntervalSeconds = 1.0f;
+        private const float CulledEcosystemTickIntervalSeconds = 0.5f;
         private const float CameraResolveRetryInterval = 1.0f;
         private const float ListenerResolveRetryInterval = 1.0f;
         private const int CadenceHysteresisFrames = 30;
@@ -132,6 +141,8 @@ namespace Hecton8.Core
         private const float MinimumDirectionLength = 0.0001f;
         private const float MinimumVelocityDelta = 0.0001f;
         private const float MinimumDeferredRaycastImportanceScore = 0.2f;
+        private const float RearOneHertzDistanceMeters = 100.0f;
+        private const float EcosystemOnlyCullDistanceMeters = 300.0f;
         private const float SoundSpeedWaterMetersPerSecond = 1480.0f;
         private const float MinimumPitch = 0.5f;
         private const float MaximumPitch = 2.0f;
@@ -140,6 +151,8 @@ namespace Hecton8.Core
         private const float PeripheryVelocitySmoothingSharpness = 10.0f;
         private const float FarVelocitySmoothingSharpness = 7.0f;
         private const float RearVelocitySmoothingSharpness = 5.0f;
+        private const float RearOneHertzVelocitySmoothingSharpness = 2.0f;
+        private const float CulledEcosystemVelocitySmoothingSharpness = 1.0f;
         private const long PersistentNativeBudgetBytes = 262144L;
         private const string MemoryBudgetOwnerName = "FoveatedSimulationManager";
 
@@ -559,7 +572,8 @@ namespace Hecton8.Core
                 float importanceScore = _jobImportanceScores[i];
                 FoveatedTickRate resolvedTickRate = (FoveatedTickRate)_jobTickRateCodes[i];
                 FoveatedTickRate currentTickRate = _tickRates[i];
-                bool immediateRearDemotion = resolvedTickRate == FoveatedTickRate.Rear5Hz && _jobInsideFrustumFlags[i] == 0;
+                bool immediateRearDemotion = _jobInsideFrustumFlags[i] == 0 &&
+                                             (int)resolvedTickRate >= (int)FoveatedTickRate.Rear5Hz;
                 if (!immediateRearDemotion &&
                     math.abs((int)resolvedTickRate - (int)currentTickRate) == 1 &&
                     _framesSinceTickRateChange[i] < CadenceHysteresisFrames)
@@ -971,8 +985,12 @@ namespace Hecton8.Core
                     return PeripheryTickIntervalSeconds;
                 case FoveatedTickRate.Far10Hz:
                     return FarTickIntervalSeconds;
-                default:
+                case FoveatedTickRate.Rear5Hz:
                     return RearTickIntervalSeconds;
+                case FoveatedTickRate.Rear1Hz:
+                    return RearOneHertzTickIntervalSeconds;
+                default:
+                    return CulledEcosystemTickIntervalSeconds;
             }
         }
 
@@ -988,8 +1006,12 @@ namespace Hecton8.Core
                     return PeripheryVelocitySmoothingSharpness;
                 case FoveatedTickRate.Far10Hz:
                     return FarVelocitySmoothingSharpness;
-                default:
+                case FoveatedTickRate.Rear5Hz:
                     return RearVelocitySmoothingSharpness;
+                case FoveatedTickRate.Rear1Hz:
+                    return RearOneHertzVelocitySmoothingSharpness;
+                default:
+                    return CulledEcosystemVelocitySmoothingSharpness;
             }
         }
 

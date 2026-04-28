@@ -50,14 +50,12 @@ namespace Hecton8.Core
         //  SINGLETON
         // ══════════════════════════════════════════════════════════
 
-        private static GameTickManager _instance;
         private static bool _isShuttingDown;
         private static bool _isEditorExitingPlayMode;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            _instance = null;
             _isShuttingDown = false;
             _isEditorExitingPlayMode = false;
         }
@@ -88,23 +86,6 @@ namespace Hecton8.Core
             }
         }
 #endif
-
-        /// <summary>
-        /// Глобальный доступ к менеджеру тиков.
-        /// Гарантированно не-null после Awake менеджера.
-        /// </summary>
-        public static GameTickManager Instance
-        {
-            get
-            {
-#if UNITY_EDITOR
-                // В Editor вне Play Mode — безопасный null
-                if (_instance == null && !Application.isPlaying)
-                    return null;
-#endif
-                return _instance;
-            }
-        }
 
         internal float SlowTickIntervalSeconds => slowTickInterval;
 
@@ -161,13 +142,14 @@ namespace Hecton8.Core
         private void Awake()
         {
             // ── Singleton enforcement ──
-            if (_instance != null && _instance != this)
+            GameTickManager registeredTickManager = GlobalRegistry.TickManager;
+            if (registeredTickManager != null && !ReferenceEquals(registeredTickManager, this))
             {
                 Destroy(gameObject);
                 return;
             }
 
-            _instance = this;
+            GlobalRegistry.RegisterTickManager(this);
 
             if (Application.isPlaying)
             {
@@ -221,7 +203,7 @@ namespace Hecton8.Core
             if (enableSlowTickProfiling && ShouldLogUnexpectedDisable())
             {
                 UnityEngine.Debug.Log(
-                    $"[GameTickManager] destroyed isInstance={(_instance == this)} tickables={_tickables?.Count ?? -1} slowTickables={_slowTickables?.Count ?? -1}",
+                    $"[GameTickManager] destroyed isInstance={ReferenceEquals(GlobalRegistry.TickManager, this)} tickables={_tickables?.Count ?? -1} slowTickables={_slowTickables?.Count ?? -1}",
                     this);
             }
 #endif
@@ -231,8 +213,7 @@ namespace Hecton8.Core
                 GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Core);
                 _registeredToDispatcher = false;
             }
-            if (_instance == this)
-                _instance = null;
+            GlobalRegistry.UnregisterTickManager(this);
         }
 
         private void OnApplicationQuit()
@@ -714,9 +695,6 @@ namespace Hecton8.Core
         /// </summary>
         private void EnsureInitialized()
         {
-            if (_instance == null)
-                _instance = this;
-
             if (_tickables == null)
                 _tickables = new TickList<ITickable>(128);
 

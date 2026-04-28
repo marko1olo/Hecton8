@@ -8,6 +8,7 @@ namespace Hecton8.Inventory
 {
     using Unity.Collections;
     using Unity.Jobs;
+    using UnityEngine;
 
     public sealed class InventoryGrid
     {
@@ -353,6 +354,52 @@ namespace Hecton8.Inventory
             ClearAnchorMetadata(anchorIndex);
         }
 
+        public bool TryMoveOrSwapAnchor(int sourceAnchorIndex, int targetAnchorIndex, int targetAnchorX, int targetAnchorY)
+        {
+            if (!TryGetAnchorDescriptor(sourceAnchorIndex, out InventoryItemDescriptor sourceDescriptor))
+                return false;
+
+            int sourceAnchorX = sourceAnchorIndex % _columns;
+            int sourceAnchorY = sourceAnchorIndex / _columns;
+            bool hasTargetAnchor = targetAnchorIndex >= 0;
+            InventoryItemDescriptor targetDescriptor = default;
+            if (hasTargetAnchor && !TryGetAnchorDescriptor(targetAnchorIndex, out targetDescriptor))
+                return false;
+
+            targetAnchorX = targetAnchorX < 0 ? 0 : (targetAnchorX >= _columns ? _columns - 1 : targetAnchorX);
+            targetAnchorY = targetAnchorY < 0 ? 0 : (targetAnchorY >= _rows ? _rows - 1 : targetAnchorY);
+
+            if (!CheckFitExcludingAnchors(targetAnchorX, targetAnchorY, sourceDescriptor.Width, sourceDescriptor.Height, sourceAnchorIndex, targetAnchorIndex))
+                return false;
+
+            if (hasTargetAnchor &&
+                !CheckFitExcludingAnchors(sourceAnchorX, sourceAnchorY, targetDescriptor.Width, targetDescriptor.Height, sourceAnchorIndex, targetAnchorIndex))
+            {
+                return false;
+            }
+
+            ClearAnchorCells(sourceAnchorIndex, sourceDescriptor.Width, sourceDescriptor.Height);
+            if (hasTargetAnchor)
+                ClearAnchorCells(targetAnchorIndex, targetDescriptor.Width, targetDescriptor.Height);
+
+            if (hasTargetAnchor)
+            {
+                CopyAnchorMetadata(targetAnchorIndex, in sourceDescriptor);
+                CopyAnchorMetadata(sourceAnchorIndex, in targetDescriptor);
+                FillAnchorCells(targetAnchorIndex, targetAnchorX, targetAnchorY, sourceDescriptor.Width, sourceDescriptor.Height);
+                FillAnchorCells(sourceAnchorIndex, sourceAnchorX, sourceAnchorY, targetDescriptor.Width, targetDescriptor.Height);
+            }
+            else
+            {
+                int destinationAnchorIndex = CellIndex(targetAnchorX, targetAnchorY);
+                CopyAnchorMetadata(destinationAnchorIndex, in sourceDescriptor);
+                ClearAnchorMetadata(sourceAnchorIndex);
+                FillAnchorCells(destinationAnchorIndex, targetAnchorX, targetAnchorY, sourceDescriptor.Width, sourceDescriptor.Height);
+            }
+
+            return true;
+        }
+
         public void Clear()
         {
             if (!_cellAnchorIndices.IsCreated)
@@ -398,9 +445,44 @@ namespace Hecton8.Inventory
             return true;
         }
 
+        private bool CheckFitExcludingAnchors(int startX, int startY, int width, int height, int ignoredAnchorA, int ignoredAnchorB)
+        {
+            if (startX < 0 || startY < 0 || width <= 0 || height <= 0)
+                return false;
+
+            int endX = startX + width;
+            int endY = startY + height;
+            if (endX > _columns || endY > _rows)
+                return false;
+
+            for (int y = startY; y < endY; y++)
+            {
+                for (int x = startX; x < endX; x++)
+                {
+                    int encodedAnchorIndex = _cellAnchorIndices[CellIndex(x, y)];
+                    if (encodedAnchorIndex == 0)
+                        continue;
+
+                    int anchorIndex = encodedAnchorIndex - 1;
+                    if (anchorIndex == ignoredAnchorA || anchorIndex == ignoredAnchorB)
+                        continue;
+
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         private void PlaceDescriptor(in InventoryItemDescriptor descriptor, int x, int y)
         {
             int anchorIndex = CellIndex(x, y);
+            CopyAnchorMetadata(anchorIndex, in descriptor);
+            FillAnchorCells(anchorIndex, x, y, descriptor.Width, descriptor.Height);
+        }
+
+        private void CopyAnchorMetadata(int anchorIndex, in InventoryItemDescriptor descriptor)
+        {
             _anchorHashIds[anchorIndex] = descriptor.HashId;
             _anchorWidths[anchorIndex] = descriptor.Width;
             _anchorHeights[anchorIndex] = descriptor.Height;
@@ -409,19 +491,42 @@ namespace Hecton8.Inventory
             _anchorCategoryIds[anchorIndex] = descriptor.CategoryId;
             _anchorRarityIds[anchorIndex] = descriptor.Rarity;
             _anchorFlags[anchorIndex] = descriptor.Stackable ? (byte)0x01 : (byte)0x00;
+        }
 
+        private void FillAnchorCells(int anchorIndex, int startX, int startY, int width, int height)
+        {
             int encodedAnchorIndex = anchorIndex + 1;
-            int endX = x + descriptor.Width;
-            int endY = y + descriptor.Height;
-            for (int cellY = y; cellY < endY; cellY++)
+            int endX = startX + width;
+            int endY = startY + height;
+            for (int cellY = startY; cellY < endY; cellY++)
             {
-                for (int cellX = x; cellX < endX; cellX++)
+                for (int cellX = startX; cellX < endX; cellX++)
                 {
                     _cellAnchorIndices[CellIndex(cellX, cellY)] = encodedAnchorIndex;
                 }
             }
 
-            _occupiedCells += descriptor.Width * descriptor.Height;
+            _occupiedCells += width * height;
+        }
+
+        private void ClearAnchorCells(int anchorIndex, int width, int height)
+        {
+            int anchorX = anchorIndex % _columns;
+            int anchorY = anchorIndex / _columns;
+            int endX = anchorX + width;
+            int endY = anchorY + height;
+            for (int y = anchorY; y < endY; y++)
+            {
+                for (int x = anchorX; x < endX; x++)
+                {
+                    int cellIndex = CellIndex(x, y);
+                    if (_cellAnchorIndices[cellIndex] != 0)
+                    {
+                        _cellAnchorIndices[cellIndex] = 0;
+                        _occupiedCells--;
+                    }
+                }
+            }
         }
 
         private void ClearAnchorMetadata(int anchorIndex)

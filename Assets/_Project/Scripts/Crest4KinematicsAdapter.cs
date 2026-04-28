@@ -136,6 +136,19 @@ namespace Hecton8.Physics
             return true;
         }
 
+        /// <inheritdoc />
+        public override bool TryAssignPrimaryLight(Light primaryLight)
+        {
+            Crest.OceanRenderer oceanRenderer = ResolveOceanRenderer(forceSceneSearch: true);
+            if (oceanRenderer == null || primaryLight == null)
+                return false;
+
+            if (!ReferenceEquals(oceanRenderer._primaryLight, primaryLight))
+                oceanRenderer._primaryLight = primaryLight;
+
+            return true;
+        }
+
         private void Awake()
         {
             int ownerHash = unchecked((int)EntityId.ToULong(GetEntityId()));

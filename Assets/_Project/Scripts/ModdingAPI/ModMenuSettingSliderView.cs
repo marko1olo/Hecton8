@@ -1,3 +1,5 @@
+using System;
+using System.Globalization;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -18,6 +20,8 @@ namespace Hecton8.Modding
 
         private string _modId;
         private string _settingName;
+        // COLD ALLOC: char[16] — cached slider value formatting buffer — owner: ModMenuSettingSliderView
+        private readonly char[] _valueLabelBuffer = new char[16];
 
         private void Awake()
         {
@@ -56,15 +60,26 @@ namespace Hecton8.Modding
             }
 
             if (valueLabel != null)
-                valueLabel.SetText(view.FloatValue.ToString("0.##"));
+                SetValueLabel(view.FloatValue);
         }
 
         private void HandleValueChanged(float value)
         {
             if (valueLabel != null)
-                valueLabel.SetText(value.ToString("0.##"));
+                SetValueLabel(value);
 
             ModSettingsRegistry.TryApplySlider(_modId, _settingName, value);
+        }
+
+        private void SetValueLabel(float value)
+        {
+            if (!value.TryFormat(_valueLabelBuffer.AsSpan(), out int charsWritten, "0.##", CultureInfo.InvariantCulture))
+            {
+                valueLabel.SetText("0");
+                return;
+            }
+
+            valueLabel.SetCharArray(_valueLabelBuffer, 0, charsWritten);
         }
     }
 }

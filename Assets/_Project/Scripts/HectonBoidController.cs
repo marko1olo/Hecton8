@@ -59,7 +59,9 @@
 //   â€¢ Ping-Pong swap â€” integer increment, zero allocation.
 // ============================================================================
 
+using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Optimization;
 using Hecton8.World;
 using Unity.Collections;
 using UnityEngine;
@@ -74,12 +76,16 @@ namespace Hecton8.AI.GPU
         //  BOID DATA â€” must match compute shader struct exactly
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
+        /// <summary>Stride of BoidData in bytes. Must match GPU struct.</summary>
+        private const int BoidStride = 32; // 8 Ã— sizeof(float)
+
         /// <summary>
         /// GPU-compatible boid data structure.
         /// 32 bytes total (8 floats Ã— 4 bytes).
         /// Matches HLSL struct BoidData layout exactly.
         /// Blittable â€” no GC, direct GPU upload.
         /// </summary>
+        [StructLayout(LayoutKind.Sequential, Size = BoidStride)]
         private struct BoidData
         {
             public Vector3 position;  // 12 bytes
@@ -88,9 +94,6 @@ namespace Hecton8.AI.GPU
             public float   pad1;      // 4 bytes  (alignment)
             // TOTAL: 32 bytes
         }
-
-        /// <summary>Stride of BoidData in bytes. Must match GPU struct.</summary>
-        private const int BoidStride = 32; // 8 Ã— sizeof(float)
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  INSPECTOR â€” CORE
@@ -347,6 +350,7 @@ namespace Hecton8.AI.GPU
         private void Awake()
         {
             EnsureMaterialPropertyBlock();
+            boidCount = VRAMEnforcer.ApplyBoidPopulationBudget(boidCount, 64, 8192);
 
             // â”€â”€ Ð—Ð°Ñ‰Ð¸Ñ‚Ð° Ð¾Ñ‚ Ð¿Ð¾Ð²Ñ‚Ð¾Ñ€Ð½Ð¾Ð¹ Ð¸Ð½Ð¸Ñ†Ð¸Ð°Ð»Ð¸Ð·Ð°Ñ†Ð¸Ð¸ (v2.2) â”€â”€
             // Ð•ÑÐ»Ð¸ ÑƒÐ¶Ðµ Ð¸Ð½Ð¸Ñ†Ð¸Ð°Ð»Ð¸Ð·Ð¸Ñ€Ð¾Ð²Ð°Ð½ â€” ÑÐ½Ð°Ñ‡Ð°Ð»Ð° Ð¾ÑÐ²Ð¾Ð±Ð¾Ð¶Ð´Ð°ÐµÐ¼ ÑÑ‚Ð°Ñ€Ñ‹Ðµ Ñ€ÐµÑÑƒÑ€ÑÑ‹.
@@ -1055,7 +1059,7 @@ namespace Hecton8.AI.GPU
                 UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
                 return;
 
-            if (boidCount < 64) boidCount = 64;
+            boidCount = Mathf.Clamp(boidCount, 64, 8192);
             if (separationRadius > perceptionRadius)
                 separationRadius = perceptionRadius * 0.5f;
             if (minSpeed > maxSpeed) minSpeed = maxSpeed * 0.5f;

@@ -19,12 +19,15 @@ namespace Hecton8.Interaction
     [RequireComponent(typeof(Collider))]
     public class PickupItem : MonoBehaviour, IInteractable, ISlowTickable, IFixedTickable
     {
+        // COLD ALLOC: RegistryBucket<PickupItem>[4096] — authored/persistent pickup registry for world-state scans — owner: PickupItem
+        private static readonly RegistryBucket<PickupItem> _worldStateRegistry = new RegistryBucket<PickupItem>(4096);
         internal static PickupItem ActiveRuntimeInstance { get; private set; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             ActiveRuntimeInstance = null;
+            _worldStateRegistry.Clear();
         }
 
         private const float LooseCurrentVelocityInfluence = 0.45f;
@@ -60,9 +63,16 @@ namespace Hecton8.Interaction
         private Transform _playerTransform;
         private PersistentWorldRegistry _persistentWorldRegistry;
         private int _persistentWorldRecordIndex = -1;
+        private bool _registeredToWorldStateRegistry;
 
         public ItemData ItemData => itemData;
         public int Quantity => quantity;
+        public static int WorldStateRegistryCount => _worldStateRegistry.Count;
+
+        public static PickupItem GetWorldStateRegistryAt(int index)
+        {
+            return _worldStateRegistry.GetAt(index);
+        }
 
         public void Configure(ItemData data, int itemQuantity)
         {
@@ -93,6 +103,8 @@ namespace Hecton8.Interaction
 
         private void OnEnable()
         {
+            RegisterWorldStateRegistry();
+
             if (ActiveRuntimeInstance == null)
                 ActiveRuntimeInstance = this;
 
@@ -123,6 +135,7 @@ namespace Hecton8.Interaction
             TryUnregisterSlowTick();
             TryUnregisterFixedTick();
             UnregisterSpatialHandle();
+            UnregisterWorldStateRegistry();
             ClearPersistentWorldRecord();
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
@@ -134,6 +147,7 @@ namespace Hecton8.Interaction
             TryUnregisterSlowTick();
             TryUnregisterFixedTick();
             UnregisterSpatialHandle();
+            UnregisterWorldStateRegistry();
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
@@ -344,6 +358,24 @@ namespace Hecton8.Interaction
             }
 
             _cachedInteractText = baseText;
+        }
+
+        private void RegisterWorldStateRegistry()
+        {
+            if (_registeredToWorldStateRegistry)
+                return;
+
+            _worldStateRegistry.Register(this);
+            _registeredToWorldStateRegistry = true;
+        }
+
+        private void UnregisterWorldStateRegistry()
+        {
+            if (!_registeredToWorldStateRegistry)
+                return;
+
+            _worldStateRegistry.Unregister(this);
+            _registeredToWorldStateRegistry = false;
         }
 
         private void ConsumeWorldProxy()

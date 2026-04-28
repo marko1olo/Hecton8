@@ -9,7 +9,7 @@ namespace Hecton8.Atmosphere
     /// Driven exclusively by <see cref="HectonSurfaceWeatherDirector"/>.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class SurfaceWeatherVfxRig : MonoBehaviour
+    public sealed class SurfaceWeatherVfxRig : MonoBehaviour, IOriginShiftListener
     {
         private const int BoltPointCount = 6;
         private const float RainEmitterHeight = 10f;
@@ -69,15 +69,31 @@ namespace Hecton8.Atmosphere
 
         // COLD ALLOC: Vector3[6] - reusable bolt polyline points for world lightning - owner: SurfaceWeatherVfxRig
         private readonly Vector3[] _boltPoints = new Vector3[BoltPointCount];
+        // COLD ALLOC: ParticleSystem.Particle[maxRainParticles] - reusable world-space rain shift buffer - owner: SurfaceWeatherVfxRig
+        private ParticleSystem.Particle[] _rainShiftParticles;
+        // COLD ALLOC: ParticleSystem.Particle[maxSurfaceImpactParticles] - reusable world-space surface-impact shift buffer - owner: SurfaceWeatherVfxRig
+        private ParticleSystem.Particle[] _surfaceImpactShiftParticles;
 
         private void Awake()
         {
             EnsureRigBuilt();
+            EnsureShiftBuffers();
             ClearState();
+        }
+
+        private void OnEnable()
+        {
+            HectonFloatingOrigin.RegisterListener(this);
+        }
+
+        private void OnDisable()
+        {
+            HectonFloatingOrigin.UnregisterListener(this);
         }
 
         private void OnDestroy()
         {
+            HectonFloatingOrigin.UnregisterListener(this);
             if (_boltMaterial != null)
             {
                 Destroy(_boltMaterial);
@@ -110,6 +126,18 @@ namespace Hecton8.Atmosphere
             UpdateRainState(followPosition, surfaceY, windDirection, precipitationIntensity, localRainAreaScale, localRainDensityMultiplier, active);
             UpdateSurfaceImpactState(followPosition, surfaceY, windDirection, precipitationIntensity, surfaceImpactRadiusScale, surfaceImpactDensityMultiplier, active);
             UpdateLightningState(deltaTime);
+        }
+
+        public void OnOriginShift(in OriginShiftEventData shiftData)
+        {
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            if (!isActiveAndEnabled || shiftOffset.sqrMagnitude <= 0.000001f)
+                return;
+
+            EnsureShiftBuffers();
+            RebaseWorldSpaceParticles(_rainParticleSystem, _rainShiftParticles, shiftOffset);
+            RebaseWorldSpaceParticles(_surfaceImpactParticleSystem, _surfaceImpactShiftParticles, shiftOffset);
+            RebaseBoltPositions(shiftOffset);
         }
 
         /// <summary>
@@ -338,6 +366,49 @@ namespace Hecton8.Atmosphere
             renderer.shadowCastingMode = ShadowCastingMode.Off;
             renderer.receiveShadows = false;
             renderer.motionVectorGenerationMode = MotionVectorGenerationMode.ForceNoMotion;
+        }
+
+        private void EnsureShiftBuffers()
+        {
+            int rainCapacity = Mathf.Max(1, maxRainParticles);
+            if (_rainShiftParticles == null || _rainShiftParticles.Length < rainCapacity)
+                _rainShiftParticles = new ParticleSystem.Particle[rainCapacity];
+
+            int surfaceImpactCapacity = Mathf.Max(1, maxSurfaceImpactParticles);
+            if (_surfaceImpactShiftParticles == null || _surfaceImpactShiftParticles.Length < surfaceImpactCapacity)
+                _surfaceImpactShiftParticles = new ParticleSystem.Particle[surfaceImpactCapacity];
+        }
+
+        private void RebaseBoltPositions(Vector3 shiftOffset)
+        {
+            if (_boltRenderer == null || !_boltRenderer.enabled || _boltRenderer.positionCount <= 0)
+                return;
+
+            int positionCount = Mathf.Min(_boltRenderer.positionCount, _boltPoints.Length);
+            if (positionCount <= 0)
+                return;
+
+            _boltRenderer.GetPositions(_boltPoints);
+            for (int i = 0; i < positionCount; i++)
+                _boltPoints[i] -= shiftOffset;
+
+            _boltRenderer.SetPositions(_boltPoints);
+        }
+
+        private static void RebaseWorldSpaceParticles(ParticleSystem particleSystem, ParticleSystem.Particle[] buffer, Vector3 shiftOffset)
+        {
+            if (particleSystem == null || buffer == null)
+                return;
+
+            ParticleSystem.MainModule main = particleSystem.main;
+            if (main.simulationSpace != ParticleSystemSimulationSpace.World)
+                return;
+
+            int particleCount = particleSystem.GetParticles(buffer);
+            for (int i = 0; i < particleCount; i++)
+                buffer[i].position -= shiftOffset;
+
+            particleSystem.SetParticles(buffer, particleCount);
         }
 
         private void BuildSurfaceImpactParticleSystem()

@@ -17,6 +17,10 @@ namespace Hecton8.Environment
     public sealed class BiomeMatrixDirector : MonoBehaviour, ISlowTickable
     {
         private const string MissingProfileLabel = "No biome profile";
+        private static readonly string[] CardinalRegionLabels = Enum.GetNames(typeof(HectonBiomeMatrixProfile.CardinalRegion));
+        private static readonly string[] ClusterFocusLabels = Enum.GetNames(typeof(WorldProceduralClusterFocus));
+        private static readonly string[] StructureFocusLabels = Enum.GetNames(typeof(WorldProceduralStructureFocus));
+        private static readonly string[] FaunaMoodLabels = Enum.GetNames(typeof(WorldProceduralFaunaMood));
 
         public static event Action<HectonBiomeMatrixProfile> OnMatrixBiomeChanged;
         public static event Action<int, float> OnDepthTierChanged;
@@ -443,7 +447,7 @@ namespace Hecton8.Environment
             HectonBiomeMatrixProfile.CardinalRegion region)
         {
             _debugTier = tier;
-            _debugRegion = region.ToString();
+            _debugRegion = ResolveCardinalRegionLabel(region);
             _debugBiomeName = profile != null ? profile.biomeName : "None";
             _debugMatrixIndex = profile != null ? profile.matrixIndex : -1;
             _debugPlaceholder = profile != null && profile.isPlaceholder;
@@ -506,11 +510,11 @@ namespace Hecton8.Environment
             _debugLandmarkStrengthValue = profile != null ? profile.landmarkStrength : 0;
             _debugRewardPullValue = profile != null ? profile.rewardPull : 0;
             _debugSurvivalPressure = profile != null ? profile.survivalPressure : 0;
-            _debugPrimaryClusterFocus = profile != null ? profile.primaryClusterFocus.ToString() : "None";
-            _debugSecondaryClusterFocus = profile != null ? profile.secondaryClusterFocus.ToString() : "None";
-            _debugPrimaryStructureFocus = profile != null ? profile.primaryStructureFocus.ToString() : "None";
-            _debugSecondaryStructureFocus = profile != null ? profile.secondaryStructureFocus.ToString() : "None";
-            _debugFaunaMoodValue = profile != null ? profile.faunaMood.ToString() : "None";
+            _debugPrimaryClusterFocus = profile != null ? ResolveClusterFocusLabel(profile.primaryClusterFocus) : "None";
+            _debugSecondaryClusterFocus = profile != null ? ResolveClusterFocusLabel(profile.secondaryClusterFocus) : "None";
+            _debugPrimaryStructureFocus = profile != null ? ResolveStructureFocusLabel(profile.primaryStructureFocus) : "None";
+            _debugSecondaryStructureFocus = profile != null ? ResolveStructureFocusLabel(profile.secondaryStructureFocus) : "None";
+            _debugFaunaMoodValue = profile != null ? ResolveFaunaMoodLabel(profile.faunaMood) : "None";
         }
 
         private static string GetItemLabel(Hecton8.Items.ItemData item)
@@ -519,6 +523,30 @@ namespace Hecton8.Environment
                 return "None";
 
             return string.IsNullOrWhiteSpace(item.itemName) ? item.name : item.itemName;
+        }
+
+        private static string ResolveCardinalRegionLabel(HectonBiomeMatrixProfile.CardinalRegion region)
+        {
+            int index = (int)region;
+            return (uint)index < (uint)CardinalRegionLabels.Length ? CardinalRegionLabels[index] : CardinalRegionLabels[0];
+        }
+
+        private static string ResolveClusterFocusLabel(WorldProceduralClusterFocus focus)
+        {
+            int index = (int)focus;
+            return (uint)index < (uint)ClusterFocusLabels.Length ? ClusterFocusLabels[index] : ClusterFocusLabels[0];
+        }
+
+        private static string ResolveStructureFocusLabel(WorldProceduralStructureFocus focus)
+        {
+            int index = (int)focus;
+            return (uint)index < (uint)StructureFocusLabels.Length ? StructureFocusLabels[index] : StructureFocusLabels[0];
+        }
+
+        private static string ResolveFaunaMoodLabel(WorldProceduralFaunaMood mood)
+        {
+            int index = (int)mood;
+            return (uint)index < (uint)FaunaMoodLabels.Length ? FaunaMoodLabels[index] : FaunaMoodLabels[0];
         }
     }
 }

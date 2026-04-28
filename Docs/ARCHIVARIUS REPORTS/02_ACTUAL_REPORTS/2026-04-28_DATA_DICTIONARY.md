@@ -368,6 +368,44 @@ public struct PlayerSurvivalRuntimeState {
 
 ---
 
+## 📋 QUANTIZATION STRUCTS
+
+### SByte3
+
+**Файл:** `World/ChunkLocalOffsetQuantization.cs`
+
+```csharp
+internal struct SByte3
+{
+    public sbyte X;   // 1 byte
+    public sbyte Y;   // 1 byte
+    public sbyte Z;   // 1 byte
+}
+```
+
+**Размер:** 3 bytes ✅ Pack = 1 (sbyte alignment = 1)  
+**Назначение:** Мёртвый мусор (трупы рыб, осколки) хранится как offset от центра чанка вместо float3.  
+**Экономия:** 12 bytes → 3 bytes (−75%).
+
+---
+
+### QuantizedLocalOffset
+
+**Файл:** `World/ChunkLocalOffsetQuantization.cs`
+
+```csharp
+internal struct QuantizedLocalOffset
+{
+    public SByte3 Packed;   // 3 bytes
+}
+```
+
+**Размер:** 3 bytes ✅ Pack = 1  
+**Назначение:** Wrapper для типизированного массива квантованных смещений в Job-системе сброса мусора.  
+**Alignment:** 1 byte (no padding).
+
+---
+
 ## 📋 BURST JOB STRUCTS
 
 ### BuoyancyJob

@@ -46,6 +46,12 @@ namespace Hecton8.Physics
         }
 
         /// <inheritdoc />
+        public virtual bool TryAssignPrimaryLight(Light primaryLight)
+        {
+            return false;
+        }
+
+        /// <inheritdoc />
         public abstract bool GetWaterHeight(NativeArray<Vector3> samplePositions, int sampleCount, float minSpatialLength, NativeArray<float> waterHeights);
 
         /// <inheritdoc />

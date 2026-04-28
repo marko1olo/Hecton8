@@ -36,6 +36,8 @@
 | `SHADER_VARIANT_BLOAT.md` | Shader optimization | ✅ COMPLETE |
 | `ETA2_VRAM_EXECUTION_LIST.md` | Top 20 VRAM offenders | ✅ COMPLETE |
 | `ETA2_CYRILLIC_SWEEP.md` | Cyrillic in shaders/code | ✅ COMPLETE |
+| `RENDERGRAPH_AUDIT.md` | URP RenderFeature/Pass leak audit | ✅ COMPLETE |
+| `COMPUTE_BUFFER_AUDIT.md` | GraphicsBuffer/ComputeBuffer lifecycle | ✅ COMPLETE |
 
 ### [LOGI] — Logistics, Atmosphere, Power
 
@@ -77,6 +79,8 @@
 | `INTERFACE_CONTRACT_TABLE.md` | Interface → Implementation mapping | ✅ COMPLETE |
 | `PROFILING_PREPAREDNESS_AUDIT.md` | ProfilerMarker coverage | ✅ COMPLETE |
 | `ASSET_DEPENDENCY_MAP.md` | Prefab/SO hardcoded refs | ✅ COMPLETE |
+| `AUP_SURGERY_MAP.md` | Byte-level AUP layout migration map | ✅ COMPLETE |
+| `BUILD_DEPENDENCY_GRAPH.md` | Bootstrapper bloat & forced RAM audit | ✅ COMPLETE |
 | `ETA2_LIAR_DETECTION.md` | Agent mandate compliance audit | ✅ COMPLETE |
 
 ### [NARRATIVE] — Frame Flow & Architecture
@@ -120,12 +124,13 @@
 
 | Категория | Файлов |
 |-----------|--------|
-| Total .md | 38 |
+| Total .md | 42 |
 | Agent Logs | 6 |
 | Inventory Audits | 10 |
 | Root Docs | 8 |
 | CODEX Documents | 8 |
 | ETA-2 Deep Audits | 6 |
+| Leak Tracking Audits | 3 |
 
 ## 📋 TOP 5 DOD STRUCTS
 
@@ -187,3 +192,8 @@
 | HP-02 | Trailing space string | HectonCrestOceanDepthCacheBootstrap.cs | ❌ |
 
 **Все нарушения задокументированы в:** `SUPREME_AUDITOR_CONTINUOUS_REPORT.md`, `ETA2_EVENT_LEAK_REPORT.md`, `ETA2_HOT_PATH_VIOLATIONS.md`
+
+**Новые аудиты (Mission 2 — Leak Tracking):**
+- `RENDERGRAPH_AUDIT.md` — URP RenderFeature/Pass lifecycle (0 first-party leaks)
+- `COMPUTE_BUFFER_AUDIT.md` — GraphicsBuffer/ComputeBuffer disposal (0 first-party leaks)
+- `BUILD_DEPENDENCY_GRAPH.md` — Bootstrapper forced-RAM analysis (0 heavy assets at boot)

@@ -24,9 +24,8 @@ C:\hades\Hecton8\
 ├── Assets/                  # Основной контент Unity
 │   ├── _Project/            # Первая сторона (HECTON-8)
 │   ├── _ThirdParty/         # Вторая сторона (ассеты из магазина)
-│   ├── DOCS/                # Логи агентов (AGENT_01_*.md, INVENTORY_AUDIT/)
-│   └── Docs/                # Документация проекта (Narrative_AI_Integration.md)
 ├── Packages/                # Unity PackageManager (Crest, ShaderGraph, etc.)
+├──Docs/                     # Вся документация
 ├── ProjectSettings/         # Настройки проекта (Quality, URP, Physics)
 ├── UserSettings/            # Локальные настройки Unity
 ├── VERIFICATION_REPORT_*.md # Отчёты верификации (требуют архивации)

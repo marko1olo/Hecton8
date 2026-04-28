@@ -144,9 +144,13 @@ namespace Hecton8.Gameplay
         /// </summary>
         public float ResolveTransportPropulsionForce()
         {
-            return TryResolveTransportSource(out IPlayerTransportSource source)
-                ? Mathf.Max(0f, source.GetTransportPropulsionForce())
-                : 0f;
+            if (!TryResolveTransportSource(out IPlayerTransportSource source))
+                return 0f;
+
+            if (source is IKinematicVehicleTransportSource kinematicVehicleSource && kinematicVehicleSource.IsVehicleMotionAuthoritative)
+                return 0f;
+
+            return Mathf.Max(0f, source.GetTransportPropulsionForce());
         }
 
         /// <summary>
@@ -154,9 +158,13 @@ namespace Hecton8.Gameplay
         /// </summary>
         public float ResolveTransportSpeedMultiplier()
         {
-            return TryResolveTransportSource(out IPlayerTransportSource source)
-                ? Mathf.Max(0.01f, source.GetTransportSpeedMultiplier())
-                : 1f;
+            if (!TryResolveTransportSource(out IPlayerTransportSource source))
+                return 1f;
+
+            if (source is IKinematicVehicleTransportSource kinematicVehicleSource && kinematicVehicleSource.IsVehicleMotionAuthoritative)
+                return 1f;
+
+            return Mathf.Max(0.01f, source.GetTransportSpeedMultiplier());
         }
 
         /// <summary>
@@ -215,7 +223,7 @@ namespace Hecton8.Gameplay
                 : 1f;
         }
 
-        private bool TryResolveTransportSource(out IPlayerTransportSource source)
+        internal bool TryResolveTransportSource(out IPlayerTransportSource source)
         {
             if (TryResolveExternalTransportSource(out source))
                 return true;

@@ -51,6 +51,88 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// Canonical damage-channel discriminator used by the global packet-based damage receiver contract.
+    /// </summary>
+    public enum DamageChannel : byte
+    {
+        Integrity = 0,
+        Power = 1,
+        Clarity = 2,
+        Trauma = 3,
+        HullBreach = 4
+    }
+
+    /// <summary>
+    /// Canonical damage packet routed through the global packet-based damage receiver contract.
+    /// </summary>
+    public struct DamagePacket
+    {
+        /// <summary>
+        /// Packet channel resolved by the emitting owner.
+        /// </summary>
+        public DamageChannel Channel;
+
+        /// <summary>
+        /// Previous normalized channel value when the packet represents a continuous channel delta.
+        /// </summary>
+        public float PreviousValue;
+
+        /// <summary>
+        /// Next normalized channel value when the packet represents a continuous channel delta.
+        /// </summary>
+        public float NextValue;
+
+        /// <summary>
+        /// Primary physical magnitude associated with the event.
+        /// Integrity and clarity send normalized magnitudes, hull breaches send pressure delta.
+        /// </summary>
+        public float Magnitude;
+
+        /// <summary>
+        /// Local-space point relative to the emitting owner.
+        /// </summary>
+        public float3 LocalPoint;
+
+        /// <summary>
+        /// Damage-type bitmask authored by the emitter.
+        /// </summary>
+        public uint DamageType;
+
+        /// <summary>
+        /// Quantized integrity delta used by structural diffusion consumers.
+        /// </summary>
+        public byte IntegrityDelta;
+
+        /// <summary>
+        /// Depth in meters associated with the damage event when relevant.
+        /// </summary>
+        public float Depth;
+
+        /// <summary>
+        /// Stable emitter-local source identifier.
+        /// </summary>
+        public ushort SourceId;
+
+        /// <summary>
+        /// Encoded trauma threshold when <see cref="Channel"/> is <see cref="DamageChannel.Trauma"/>.
+        /// </summary>
+        public byte TraumaLevel;
+    }
+
+    /// <summary>
+    /// Canonical packet-based damage receiver contract.
+    /// All first-party damage ingress must terminate here before subsystem-specific fanout.
+    /// </summary>
+    public interface IDamageReceiver
+    {
+        /// <summary>
+        /// Receives one authoritative damage packet.
+        /// </summary>
+        /// <param name="packet">Immutable damage payload copied by the caller.</param>
+        void ReceiveDamage(in DamagePacket packet);
+    }
+
+    /// <summary>
     /// Immutable authored debris definition consumed by the runtime debris manager.
     /// </summary>
     public interface IDebrisDefinition
@@ -461,6 +543,7 @@ namespace Hecton8.Core
 
     /// <summary>
     /// Minimal UI service contract exposed through <see cref="GlobalRegistry"/>.
+    /// Exactly one authoritative UI root may occupy the registry slot at runtime.
     /// </summary>
     public interface IUIService
     {

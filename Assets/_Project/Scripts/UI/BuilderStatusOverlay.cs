@@ -459,7 +459,6 @@ namespace Hecton8.UI
             if (_tickRegistered)
                 return;
 
-            SystemDispatcher.EnsureRuntimeInstance();
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _tickRegistered = true;
         }

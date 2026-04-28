@@ -26,7 +26,7 @@ namespace Hecton8.UI
             Visible_ClampedToEdge = 5
         }
 
-        [Header("── References ──────────────────")]
+        [Header("â”€â”€ References â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Icon used for the relay route marker.")]
         [SerializeField] private Image markerIcon;
 
@@ -36,7 +36,7 @@ namespace Hecton8.UI
         [Tooltip("Label for the current relay target.")]
         [SerializeField] private TMP_Text labelText;
 
-        [Header("── Routing ──────────────────────")]
+        [Header("â”€â”€ Routing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Hide the marker when the route target is farther away than this distance.")]
         [SerializeField, Min(10f)] private float maxDisplayDistance = 450f;
 
@@ -46,7 +46,7 @@ namespace Hecton8.UI
         [Tooltip("Margin in pixels used when clamping the marker to the screen edge.")]
         [SerializeField, Min(0f)] private float screenMargin = 64f;
 
-        [Header("── Visual ───────────────────────")]
+        [Header("â”€â”€ Visual â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Marker color while the relay target is on-screen and inside comfortable range.")]
         [SerializeField] private Color onScreenColor = new Color(0.26f, 0.86f, 1f, 0.95f);
 
@@ -85,7 +85,6 @@ namespace Hecton8.UI
 
             if (!_registered)
             {
-                SystemDispatcher.EnsureRuntimeInstance();
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
                 _registered = true;
             }

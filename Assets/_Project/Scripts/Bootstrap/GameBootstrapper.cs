@@ -5,6 +5,7 @@ using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Input;
+using Hecton8.Optimization;
 using Hecton8.Physics;
 using Hecton8.SaveSystem;
 using Unity.Collections;
@@ -149,8 +150,9 @@ namespace Hecton8.Bootstrap
 
         private void InitializeCoreLayer()
         {
-            SystemDispatcher.EnsureRuntimeInstance();
-            RenderDispatcher.EnsureRuntimeInstance();
+            VRAMEnforcer.InitializeRuntimeBudget();
+            EnsureSystemDispatcherRegistered();
+            EnsureRenderDispatcherRegistered();
             SceneInstantiationGate.EnsureRuntimeInstance();
             SceneRuntimeService sceneRuntimeService = SceneRuntimeService.EnsureRuntimeInstance();
             EquipmentInteractionHandler interactionHandler = EquipmentInteractionHandler.EnsureRuntimeInstance();
@@ -160,7 +162,7 @@ namespace Hecton8.Bootstrap
 
         private void InitializeEnvironmentLayer()
         {
-            GlobalPhysicsStateManager.EnsureRuntimeInstance();
+            EnsureGlobalPhysicsStateManagerRegistered();
             PhysicsApplySystem physicsApplySystem = PhysicsApplySystem.EnsureRuntimeInstance();
             DebrisManager debrisManager = DebrisManager.EnsureRuntimeInstance();
             EnvironmentRuntimeContextService environmentContextService = EnvironmentRuntimeContextService.EnsureRuntimeInstance();
@@ -212,6 +214,33 @@ namespace Hecton8.Bootstrap
         {
             // No UI-layer GlobalRegistry adapter exists yet.
             // Existing menu/HUD ownership remains on scene-authored controllers.
+        }
+
+        private static SystemDispatcher EnsureSystemDispatcherRegistered()
+        {
+            if (GlobalRegistry.Dispatcher != null)
+                return GlobalRegistry.Dispatcher;
+
+            GameObject runtimeRoot = new GameObject("[SystemDispatcher]"); // COLD ALLOC: GameObject[1] - bootstrap-owned gameplay dispatcher root - owner: GameBootstrapper
+            return runtimeRoot.AddComponent<SystemDispatcher>();
+        }
+
+        private static RenderDispatcher EnsureRenderDispatcherRegistered()
+        {
+            if (GlobalRegistry.RenderDispatcher != null)
+                return GlobalRegistry.RenderDispatcher;
+
+            GameObject runtimeRoot = new GameObject("[RenderDispatcher]"); // COLD ALLOC: GameObject[1] - bootstrap-owned SRP render dispatcher root - owner: GameBootstrapper
+            return runtimeRoot.AddComponent<RenderDispatcher>();
+        }
+
+        private static GlobalPhysicsStateManager EnsureGlobalPhysicsStateManagerRegistered()
+        {
+            if (GlobalRegistry.PhysicsStateManager != null)
+                return GlobalRegistry.PhysicsStateManager;
+
+            GameObject runtimeRoot = new GameObject("[GlobalPhysicsStateManager]"); // COLD ALLOC: GameObject[1] - bootstrap-owned global physics-state manager root - owner: GameBootstrapper
+            return runtimeRoot.AddComponent<GlobalPhysicsStateManager>();
         }
 
         private static bool TryRunBootstrapStep(BootstrapStepToken stepToken, string phaseName, Action initializeAction)

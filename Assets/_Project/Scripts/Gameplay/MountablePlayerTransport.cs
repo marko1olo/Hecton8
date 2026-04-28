@@ -19,12 +19,14 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
     [RequireComponent(typeof(PlayerTransportFeelContract))]
+    [RequireComponent(typeof(VehicleMotor))]
     [AddComponentMenu("Hecton8/Gameplay/Transport/Mountable Player Transport")]
-    public sealed class MountablePlayerTransport : MonoBehaviour, IInteractable, ITickable, IUpdatable, IFixedTickable, IPlayerTransportSource, IPlayerTransportLifecycleOwner, ITransportPlatform, IDamageSignalEmitter, IOriginShiftListener
+    public sealed class MountablePlayerTransport : MonoBehaviour, IInteractable, ITickable, IUpdatable, IFixedTickable, IPlayerTransportSource, IKinematicVehicleTransportSource, IPlayerTransportLifecycleOwner, ITransportPlatform, IDamageSignalEmitter, IOriginShiftListener
     {
         private const string DefaultMountText = "Board Transport";
         private const string DefaultDismountText = "Dismount";
         private const float InertialGhostBlend = 0.15f;
+        private const float MountedDriveSkinWidth = 0.08f;
 
         [Header("-- Preset ---------------------------")]
         [Tooltip("Shared transport preset driving locomotion, prompts, and feel.")]
@@ -36,6 +38,28 @@ namespace Hecton8.Gameplay
 
         [Tooltip("Optional explicit dismount target. If omitted, a right-side offset is used.")]
         [SerializeField] private Transform dismountAnchor;
+
+        [Header("-- Kinematic Drive -----------------")]
+        [Tooltip("Optional explicit sweep capsule used by the vehicle motor. Falls back to a local CapsuleCollider when omitted.")]
+        [SerializeField] private CapsuleCollider driveCapsule;
+
+        [Tooltip("Pitch angular acceleration in degrees per second squared while the mounted vehicle is actively steering.")]
+        [SerializeField, Range(10f, 360f)] private float mountedPitchAngularAcceleration = 90f;
+
+        [Tooltip("Yaw angular acceleration in degrees per second squared while the mounted vehicle is actively steering.")]
+        [SerializeField, Range(10f, 480f)] private float mountedYawAngularAcceleration = 140f;
+
+        [Tooltip("Angular damping used to settle pitch and yaw accumulation when the rider releases steering input.")]
+        [SerializeField, Range(0.1f, 24f)] private float mountedAngularDamping = 7f;
+
+        [Tooltip("Linear damping used by the mounted vehicle motor instead of Rigidbody.drag.")]
+        [SerializeField, Range(0.1f, 8f)] private float mountedLinearDamping = 1.15f;
+
+        [Tooltip("Layer mask used by the mounted vehicle capsule sweep. Defaults to the project physics layers when omitted.")]
+        [SerializeField] private LayerMask mountedSweepMask = ~0;
+
+        [Tooltip("Maximum world-up slope angle the mounted kinematic drive may climb before the sweep result is treated like a wall and flattened.")]
+        [SerializeField, Range(5f, 89f)] private float mountedGroundSlopeLimitDegrees = 48f;
 
         [Header("-- Audio ----------------------------")]
         [Tooltip("One-shot played when the player mounts this transport.")]
@@ -66,8 +90,10 @@ namespace Hecton8.Gameplay
         private Transform _cachedTransform;
         private Collider _interactionCollider;
         private Rigidbody _transportBody;
+        private VehicleMotor _vehicleMotor;
         private PlayerTransportFeelContract _transportFeelContract;
         private VehicleUpgradeModule _vehicleUpgradeModule;
+        private CapsuleCollider _driveCapsule;
         private bool _registered;
         private bool _registeredOriginShiftListener;
         private bool _interactionColliderWasEnabled;
@@ -93,6 +119,8 @@ namespace Hecton8.Gameplay
         private float _currentIntegrity = -1f;
         private string _cachedMountText = DefaultMountText;
         private string _cachedDismountText = DefaultDismountText;
+        private Vector2 _driveMoveInput;
+        private float _driveVerticalInput;
         private float _bailoutDriftTimer;
         private bool _hasCachedBodyDamping;
         private bool _cachedBodyWasKinematic = true;
@@ -104,9 +132,9 @@ namespace Hecton8.Gameplay
         private float _presentationTransportBoost01;
         private int _platformVelocityGhostWriteIndex;
         private int _platformVelocityGhostSampleCount;
-        // COLD ALLOC: List<IDamageReceiver>[1] — mounted transport damage listeners (player trauma dispatcher) — owner: MountablePlayerTransport
-        private readonly List<IDamageReceiver> _damageReceivers = new List<IDamageReceiver>(1);
-        // COLD ALLOC: Vector3[4] â€” inertial ghost history for presentation-only transport boost carry â€” owner: MountablePlayerTransport
+        // COLD ALLOC: List<IDamageSignalReceiver>[1] â€” mounted transport damage listeners (player trauma dispatcher) â€” owner: MountablePlayerTransport
+        private readonly List<IDamageSignalReceiver> _damageReceivers = new List<IDamageSignalReceiver>(1);
+        // COLD ALLOC: Vector3[4] Ã¢â‚¬â€ inertial ghost history for presentation-only transport boost carry Ã¢â‚¬â€ owner: MountablePlayerTransport
         private readonly Vector3[] _platformVelocityGhostHistory = new Vector3[4];
 
         /// <summary>True while this external transport is actively mounted by the rider.</summary>
@@ -128,6 +156,9 @@ namespace Hecton8.Gameplay
         public float TransportIntegrityNormalized => ResolveIntegrityNormalized();
 
         /// <inheritdoc />
+        public bool IsVehicleMotionAuthoritative => _mounted && _transportBody != null && _vehicleMotor != null && _driveCapsule != null;
+
+        /// <inheritdoc />
         public bool IsTransportPlatformActive => _mounted && PlatformTransform != null;
 
         /// <inheritdoc />
@@ -141,9 +172,11 @@ namespace Hecton8.Gameplay
             _cachedTransform = transform;
             _interactionCollider = GetComponent<Collider>();
             TryGetComponent(out _transportBody);
+            TryGetComponent(out _vehicleMotor);
             TryGetComponent(out _transportFeelContract);
             TryGetComponent(out _vehicleUpgradeModule);
             ResolveAnchorCache();
+            ResolveVehicleDriveReferences();
             BindPresetToFeelContract();
             RebuildPromptCache();
             EnsureLifecycleInitialized();
@@ -155,6 +188,7 @@ namespace Hecton8.Gameplay
             TryRegister();
             TryRegisterOriginShiftListener();
             ResolveAnchorCache();
+            ResolveVehicleDriveReferences();
             BindPresetToFeelContract();
             ResolveVehicleUpgradeModule();
             RebuildPromptCache();
@@ -250,6 +284,8 @@ namespace Hecton8.Gameplay
                 : default;
             Vector2 moveInput = inputState.MoveDelta;
             float verticalInput = inputState.VerticalDelta;
+            _driveMoveInput = moveInput;
+            _driveVerticalInput = verticalInput;
             float throttle = ResolveThrottle(moveInput, verticalInput);
             float configuredSuitEnergyDrain = ResolveConfiguredSuitEnergyDrainPerSecond();
             if (throttle > 0f && _riderSurvival != null && configuredSuitEnergyDrain > 0f)
@@ -306,7 +342,7 @@ namespace Hecton8.Gameplay
         {
             if (_mounted && _riderTransform != null)
             {
-                AlignTransportToRider(fixedDeltaTime);
+                ApplyMountedVehicleKinematics(fixedDeltaTime);
                 UpdatePlatformMotionCache(fixedDeltaTime);
                 return;
             }
@@ -438,7 +474,7 @@ namespace Hecton8.Gameplay
         /// <summary>
         /// Registers a damage receiver for transport damage signals.
         /// </summary>
-        public void RegisterDamageReceiver(IDamageReceiver receiver)
+        public void RegisterDamageReceiver(IDamageSignalReceiver receiver)
         {
             if (receiver == null)
                 return;
@@ -455,7 +491,7 @@ namespace Hecton8.Gameplay
         /// <summary>
         /// Unregisters a previously registered transport damage receiver.
         /// </summary>
-        public void UnregisterDamageReceiver(IDamageReceiver receiver)
+        public void UnregisterDamageReceiver(IDamageSignalReceiver receiver)
         {
             if (receiver == null)
                 return;
@@ -505,6 +541,8 @@ namespace Hecton8.Gameplay
 
             RefreshMountedInputSubscription();
             BindPresetToFeelContract();
+            ResolveVehicleDriveReferences();
+            PrepareMountedKinematicBody();
             AlignTransportToRider(0f);
             ResetPlatformMotionCache();
             SyncMountedRiderVelocity();
@@ -613,6 +651,50 @@ namespace Hecton8.Gameplay
             {
                 _cachedTransform.SetPositionAndRotation(targetPosition, targetRotation);
             }
+        }
+
+        private void ApplyMountedVehicleKinematics(float fixedDeltaTime)
+        {
+            if (_transportBody == null || _vehicleMotor == null || _driveCapsule == null)
+            {
+                AlignTransportToRider(fixedDeltaTime);
+                return;
+            }
+
+            _vehicleMotor.TryConsumeScheduledCapsuleSweep(out _, out _, out _);
+            if (_vehicleMotor.HasPendingSweep)
+                return;
+
+            float throttleOutput = ResolveThrottleOutput(_currentThrottle);
+            float safeMass = math.max(1f, _transportBody.mass);
+            float thrustAcceleration = (preset != null ? math.max(0f, preset.PropulsionForce) : 0f) / safeMass;
+            float maxSpeed = math.max(1f, ResolveMountedDriveMaxSpeed(throttleOutput));
+
+            float forwardInput = math.clamp(_driveMoveInput.y, -1f, 1f) * throttleOutput;
+            float yawInput = math.clamp(_driveMoveInput.x, -1f, 1f);
+            float pitchInput = math.clamp(_driveVerticalInput, -1f, 1f);
+
+            _vehicleMotor.IntegrateDrive(
+                forwardInput,
+                yawInput,
+                pitchInput,
+                thrustAcceleration,
+                maxSpeed,
+                mountedLinearDamping,
+                mountedYawAngularAcceleration,
+                mountedPitchAngularAcceleration,
+                mountedAngularDamping,
+                fixedDeltaTime);
+
+            int selfColliderInstanceId = _interactionCollider != null
+                ? unchecked((int)EntityId.ToULong(_interactionCollider.GetEntityId()))
+                : 0;
+            int sweepLayerMask = mountedSweepMask.value != 0 ? mountedSweepMask.value : UnityEngine.Physics.DefaultRaycastLayers;
+            _vehicleMotor.ScheduleCapsuleSweepBatch(
+                sweepLayerMask,
+                MountedDriveSkinWidth,
+                selfColliderInstanceId,
+                fixedDeltaTime);
         }
 
         private Quaternion ResolveDesiredRiderRotation()
@@ -732,6 +814,22 @@ namespace Hecton8.Gameplay
             _riderAnchorLocalRotation = anchor.localRotation;
         }
 
+        private void ResolveVehicleDriveReferences()
+        {
+            if (_vehicleMotor == null)
+                TryGetComponent(out _vehicleMotor);
+
+            _driveCapsule = driveCapsule;
+            if (_driveCapsule == null)
+                TryGetComponent(out _driveCapsule);
+
+            if (_vehicleMotor != null)
+            {
+                _vehicleMotor.Bind(_transportBody, _driveCapsule);
+                _vehicleMotor.ConfigureGroundSlopeLimit(mountedGroundSlopeLimitDegrees);
+            }
+        }
+
         private void BindPresetToFeelContract()
         {
             if (_transportFeelContract == null)
@@ -781,6 +879,24 @@ namespace Hecton8.Gameplay
         {
             if (_vehicleUpgradeModule == null)
                 TryGetComponent(out _vehicleUpgradeModule);
+        }
+
+        private void PrepareMountedKinematicBody()
+        {
+            if (_transportBody == null)
+                return;
+
+            if (!_hasCachedBodyDamping)
+            {
+                _cachedBodyWasKinematic = _transportBody.isKinematic;
+                _hasCachedBodyDamping = true;
+            }
+
+            _transportBody.isKinematic = true;
+            _transportBody.linearVelocity = Vector3.zero;
+            _transportBody.angularVelocity = Vector3.zero;
+            if (_vehicleMotor != null)
+                _vehicleMotor.ResetRuntimeState();
         }
 
         private float ResolveConfiguredSuitEnergyDrainPerSecond()
@@ -924,6 +1040,7 @@ namespace Hecton8.Gameplay
 
             PlayTransportOneShot(dismountSound);
             ClearRiderReferences();
+            TryRestoreBodyFromMountedDrive();
 
             _mounted = false;
             _transportActive = false;
@@ -1079,6 +1196,14 @@ namespace Hecton8.Gameplay
                 _transportBody.isKinematic = _cachedBodyWasKinematic;
         }
 
+        private void TryRestoreBodyFromMountedDrive()
+        {
+            if (_transportBody == null || !_hasCachedBodyDamping || _isBroken || _bailoutDriftTimer > 0f)
+                return;
+
+            _transportBody.isKinematic = _cachedBodyWasKinematic;
+        }
+
         private void ApplyBailoutDriftDamping(float fixedDeltaTime)
         {
             if (_transportBody == null || fixedDeltaTime <= 0f)
@@ -1109,12 +1234,18 @@ namespace Hecton8.Gameplay
             _cachedDismountText = DefaultDismountText;
         }
 
+        private float ResolveMountedDriveMaxSpeed(float throttleOutput)
+        {
+            float speedMultiplier = preset != null ? math.max(1f, preset.SpeedMultiplier) : 1f;
+            float throttleSpeed = math.lerp(1.5f, speedMultiplier * 6f, math.saturate(throttleOutput));
+            return math.max(1.5f, throttleSpeed);
+        }
+
         private void TryRegister()
         {
             if (_registered)
                 return;
 
-            SystemDispatcher.EnsureRuntimeInstance();
             GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Player);
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
             _registered = true;

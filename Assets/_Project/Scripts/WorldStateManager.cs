@@ -296,12 +296,12 @@ namespace Hecton8.World
             if (_depletedNodeIds.Count == 0 && (_depletedPickupKeys == null || _depletedPickupKeys.Count == 0))
                 return;
 
-            ResourceNode[] allNodes = FindObjectsByType<ResourceNode>(FindObjectsInactive.Include);
             int deactivatedNodes = 0;
 
-            for (int i = 0; i < allNodes.Length; i++)
+            int nodeCount = ResourceNode.WorldStateRegistryCount;
+            for (int i = 0; i < nodeCount; i++)
             {
-                ResourceNode node = allNodes[i];
+                ResourceNode node = ResourceNode.GetWorldStateRegistryAt(i);
                 if (node == null)
                     continue;
 
@@ -486,12 +486,12 @@ namespace Hecton8.World
             if (_depletedPickupKeys == null || _depletedPickupKeys.Count == 0)
                 return;
 
-            PickupItem[] allPickups = FindObjectsByType<PickupItem>(FindObjectsInactive.Include);
             int deactivatedPickups = 0;
 
-            for (int i = 0; i < allPickups.Length; i++)
+            int pickupCount = PickupItem.WorldStateRegistryCount;
+            for (int i = 0; i < pickupCount; i++)
             {
-                PickupItem pickup = allPickups[i];
+                PickupItem pickup = PickupItem.GetWorldStateRegistryAt(i);
                 if (pickup == null)
                     continue;
 

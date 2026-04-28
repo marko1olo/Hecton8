@@ -161,11 +161,13 @@ namespace Hecton.Localization
 
         /// <summary>
         /// Resolve the localized entry as a span without heap allocation.
-        /// TMP consumes the logical string and applies RTL layout itself.
         /// </summary>
         public static ReadOnlySpan<char> ResolveVisual(int keyHash)
         {
-            return ResolveRaw(keyHash);
+            ReadOnlySpan<char> raw = ResolveRaw(keyHash);
+            return LocalizationManager.IsRightToLeftLanguage(_activeLanguage)
+                ? RTLProcessor.ToVisualOrder(raw)
+                : raw;
         }
 
         /// <summary>
@@ -188,11 +190,24 @@ namespace Hecton.Localization
 
         /// <summary>
         /// Resolve a localized char buffer for TMP SetCharArray without heap allocation.
-        /// TMP consumes the logical string and applies RTL layout itself.
         /// </summary>
         public static bool TryGetVisualBuffer(int keyHash, out char[] buffer, out int length)
         {
-            return TryGetRawBuffer(keyHash, out buffer, out length);
+            if (!TryResolveEntry(keyHash, out LocEntry entry))
+            {
+                buffer = _missingKeyChars;
+                length = _missingKeyChars.Length;
+                return false;
+            }
+
+            if (!LocalizationManager.IsRightToLeftLanguage(_activeLanguage))
+            {
+                buffer = entry.RawBuffer;
+                length = entry.RawLength;
+                return true;
+            }
+
+            return RTLProcessor.TryGetVisualBuffer(entry.RawBuffer.AsSpan(0, entry.RawLength), out buffer, out length);
         }
 
         private static void LoadLanguage(

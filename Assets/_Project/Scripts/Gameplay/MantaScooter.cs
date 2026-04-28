@@ -227,8 +227,8 @@ namespace Hecton8.Gameplay
         private float _headlightGlitchPhase;
         private Vector3 _lastPublishedVolumetricVelocity;
         private bool _hasLastPublishedVolumetricVelocity;
-        // COLD ALLOC: List<IDamageReceiver>[1] — handheld transport damage listeners (player trauma dispatcher) — owner: MantaScooter
-        private readonly List<IDamageReceiver> _damageReceivers = new List<IDamageReceiver>(1);
+        // COLD ALLOC: List<IDamageSignalReceiver>[1] — handheld transport damage listeners (player trauma dispatcher) — owner: MantaScooter
+        private readonly List<IDamageSignalReceiver> _damageReceivers = new List<IDamageSignalReceiver>(1);
 
         private const int MaxHeadlights = 2;
         private static readonly int _HeadlightCountId = Shader.PropertyToID("_HectonScooterHeadlightCount");
@@ -862,7 +862,7 @@ namespace Hecton8.Gameplay
         /// <summary>
         /// Registers a damage receiver for scooter collision and failure packets.
         /// </summary>
-        public void RegisterDamageReceiver(IDamageReceiver receiver)
+        public void RegisterDamageReceiver(IDamageSignalReceiver receiver)
         {
             if (receiver == null)
                 return;
@@ -879,7 +879,7 @@ namespace Hecton8.Gameplay
         /// <summary>
         /// Unregisters a previously registered scooter damage receiver.
         /// </summary>
-        public void UnregisterDamageReceiver(IDamageReceiver receiver)
+        public void UnregisterDamageReceiver(IDamageSignalReceiver receiver)
         {
             if (receiver == null)
                 return;

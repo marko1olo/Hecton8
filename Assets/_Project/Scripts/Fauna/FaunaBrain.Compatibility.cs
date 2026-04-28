@@ -108,6 +108,7 @@ namespace Hecton8.AI
             Vector3 selfVelocity,
             Vector3 selfForward,
             Vector3 playerPosition,
+            Vector3 playerVelocity,
             Vector3 threatPosition,
             Vector3 preyPosition,
             Vector3 scavengePosition,
@@ -140,6 +141,7 @@ namespace Hecton8.AI
             SelfVelocity = selfVelocity;
             SelfForward = selfForward;
             PlayerPosition = playerPosition;
+            PlayerVelocity = playerVelocity;
             ThreatPosition = threatPosition;
             PreyPosition = preyPosition;
             ScavengePosition = scavengePosition;
@@ -173,6 +175,7 @@ namespace Hecton8.AI
         public Vector3 SelfVelocity { get; }
         public Vector3 SelfForward { get; }
         public Vector3 PlayerPosition { get; }
+        public Vector3 PlayerVelocity { get; }
         public Vector3 ThreatPosition { get; }
         public Vector3 PreyPosition { get; }
         public Vector3 ScavengePosition { get; }

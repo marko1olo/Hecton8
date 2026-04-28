@@ -143,7 +143,6 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
-            SystemDispatcher.EnsureRuntimeInstance();
 
             if (!_dispatcherRegistered)
             {

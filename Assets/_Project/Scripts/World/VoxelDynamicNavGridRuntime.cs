@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Hecton8.Caves;
+using Hecton8.Core;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -18,6 +19,7 @@ namespace Hecton8.World
         private const int FaceCount = 6;
         private const int ChunkIdAxisBias = 512;
         private const float BoundsMatchEpsilon = 0.05f;
+        private const float DefaultPredatorClearanceRadiusMeters = 2f;
         private const int InvalidPortalIndex = -1;
 
         // COLD ALLOC: Dictionary<int, VolumeRecord>(16) - voxel navgrid snapshots keyed by runtime volume instance ID - owner: VoxelDynamicNavGridRuntime
@@ -53,6 +55,91 @@ namespace Hecton8.World
             public void Execute(int index)
             {
                 Output[index] = DensityField[index] < SolidThreshold ? OpenCell : SolidCell;
+            }
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast)]
+        internal struct ClearanceDilationJob : Unity.Jobs.IJob
+        {
+            public NativeArray<byte> Passability;
+            public NativeArray<ushort> DistanceMap;
+            public int3 Dimensions;
+            public int AgentRadiusCells;
+
+            public void Execute()
+            {
+                int width = Dimensions.x;
+                int height = Dimensions.y;
+                int depth = Dimensions.z;
+                if (!Passability.IsCreated ||
+                    !DistanceMap.IsCreated ||
+                    width <= 0 ||
+                    height <= 0 ||
+                    depth <= 0 ||
+                    AgentRadiusCells <= 0)
+                {
+                    return;
+                }
+
+                int slice = width * height;
+                int pointCount = slice * depth;
+                if (Passability.Length != pointCount || DistanceMap.Length != pointCount)
+                    return;
+
+                const int MaxDistance = ushort.MaxValue;
+                for (int z = 0; z < depth; z++)
+                {
+                    int zOffset = z * slice;
+                    for (int y = 0; y < height; y++)
+                    {
+                        int yOffset = zOffset + (y * width);
+                        for (int x = 0; x < width; x++)
+                        {
+                            int flatIndex = yOffset + x;
+                            if (Passability[flatIndex] == SolidCell)
+                            {
+                                DistanceMap[flatIndex] = 0;
+                                continue;
+                            }
+
+                            int distance = MaxDistance;
+                            if (x > 0)
+                                distance = math.min(distance, DistanceMap[flatIndex - 1] + 1);
+                            if (y > 0)
+                                distance = math.min(distance, DistanceMap[flatIndex - width] + 1);
+                            if (z > 0)
+                                distance = math.min(distance, DistanceMap[flatIndex - slice] + 1);
+
+                            DistanceMap[flatIndex] = (ushort)math.min(distance, MaxDistance);
+                        }
+                    }
+                }
+
+                for (int z = depth - 1; z >= 0; z--)
+                {
+                    int zOffset = z * slice;
+                    for (int y = height - 1; y >= 0; y--)
+                    {
+                        int yOffset = zOffset + (y * width);
+                        for (int x = width - 1; x >= 0; x--)
+                        {
+                            int flatIndex = yOffset + x;
+                            int distance = DistanceMap[flatIndex];
+                            if (x + 1 < width)
+                                distance = math.min(distance, DistanceMap[flatIndex + 1] + 1);
+                            if (y + 1 < height)
+                                distance = math.min(distance, DistanceMap[flatIndex + width] + 1);
+                            if (z + 1 < depth)
+                                distance = math.min(distance, DistanceMap[flatIndex + slice] + 1);
+
+                            ushort resolvedDistance = (ushort)math.min(distance, MaxDistance);
+                            DistanceMap[flatIndex] = resolvedDistance;
+                            Passability[flatIndex] = resolvedDistance <= AgentRadiusCells
+                                ? SolidCell
+                                : OpenCell;
+                        }
+                    }
+                }
             }
         }
 
@@ -140,7 +227,7 @@ namespace Hecton8.World
                 return;
 
             EnsureInitialized();
-            int volumeInstanceId = volume.GetInstanceID();
+            int volumeInstanceId = GetStableVolumeEntityId(volume);
             VolumeRecord record = GetOrCreateRecord(volumeInstanceId);
             record.IsDirty = true;
             record.RuntimeStamp = volume.RuntimeStamp;
@@ -171,7 +258,7 @@ namespace Hecton8.World
             }
 
             EnsureInitialized();
-            int volumeInstanceId = volume.GetInstanceID();
+            int volumeInstanceId = GetStableVolumeEntityId(volume);
             VolumeRecord record = GetOrCreateRecord(volumeInstanceId);
             bool consumedDirtyMarker = ConsumeDirtyMarker(volumeInstanceId, runtimeStamp);
             bool dimensionsChanged = !math.all(record.Dimensions == dimensions);
@@ -212,7 +299,7 @@ namespace Hecton8.World
             if (volume == null)
                 return;
 
-            int volumeInstanceId = volume.GetInstanceID();
+            int volumeInstanceId = GetStableVolumeEntityId(volume);
             if (!_records.TryGetValue(volumeInstanceId, out VolumeRecord record) ||
                 record.RuntimeStamp != runtimeStamp)
             {
@@ -240,7 +327,7 @@ namespace Hecton8.World
             if (volume == null)
                 return false;
 
-            int volumeInstanceId = volume.GetInstanceID();
+            int volumeInstanceId = GetStableVolumeEntityId(volume);
             if (!_records.TryGetValue(volumeInstanceId, out VolumeRecord record) ||
                 !record.Current.IsCreated)
             {
@@ -252,6 +339,49 @@ namespace Hecton8.World
             origin = record.Origin;
             cellSize = record.CellSize;
             return true;
+        }
+
+        internal static bool TryBuildMacroPortalRouteNonAlloc(
+            float3 startWorldPosition,
+            float3 endWorldPosition,
+            Vector3[] outputWaypoints,
+            out int waypointCount)
+        {
+            waypointCount = 0;
+            if (outputWaypoints == null || outputWaypoints.Length < 2)
+                return false;
+
+            if (!TryResolveRecord(startWorldPosition, out VolumeRecord startRecord) ||
+                !TryResolveRecord(endWorldPosition, out VolumeRecord endRecord) ||
+                startRecord == null ||
+                endRecord == null ||
+                startRecord == endRecord)
+            {
+                return false;
+            }
+
+            EnsurePortalGraphBuilt();
+            if (_portalGraphNodes.Count <= 0 ||
+                startRecord.PortalCount <= 0 ||
+                endRecord.PortalCount <= 0 ||
+                !TrySolvePortalRoute(startRecord, endRecord, startWorldPosition, endWorldPosition))
+            {
+                return false;
+            }
+
+            int requiredWaypointCount = _routePathScratch.Count + 2;
+            if (requiredWaypointCount > outputWaypoints.Length)
+                return false;
+
+            outputWaypoints[waypointCount++] = new Vector3(startWorldPosition.x, startWorldPosition.y, startWorldPosition.z);
+            for (int i = _routePathScratch.Count - 1; i >= 0; i--)
+            {
+                PortalNode node = _portalGraphNodes[_routePathScratch[i]];
+                outputWaypoints[waypointCount++] = new Vector3(node.Centroid.x, node.Centroid.y, node.Centroid.z);
+            }
+
+            outputWaypoints[waypointCount++] = new Vector3(endWorldPosition.x, endWorldPosition.y, endWorldPosition.z);
+            return waypointCount >= 2;
         }
 
         internal static bool TryGetContainingPassabilityPayload(
@@ -420,7 +550,7 @@ namespace Hecton8.World
             if (volume == null)
                 return;
 
-            int volumeInstanceId = volume.GetInstanceID();
+            int volumeInstanceId = GetStableVolumeEntityId(volume);
             if (_records.TryGetValue(volumeInstanceId, out VolumeRecord record))
             {
                 record.Dispose();
@@ -456,6 +586,18 @@ namespace Hecton8.World
                 return;
 
             _dirtyVolumes = new NativeQueue<DirtyVolumeRequest>(Allocator.Persistent); // COLD ALLOC: NativeQueue<DirtyVolumeRequest>[32] - dirty voxel volume rebuild requests - owner: VoxelDynamicNavGridRuntime
+        }
+
+        internal static int ResolveClearanceRadiusCells(float cellSize)
+        {
+            return math.max(1, (int)math.ceil(DefaultPredatorClearanceRadiusMeters / math.max(cellSize, 0.0001f)));
+        }
+
+        private static int GetStableVolumeEntityId(HectonVoxelVolume volume)
+        {
+            return volume != null
+                ? unchecked((int)EntityId.ToULong(volume.GetEntityId()))
+                : 0;
         }
 
         private static VolumeRecord GetOrCreateRecord(int volumeInstanceId)

@@ -381,7 +381,7 @@ namespace Hecton8.Bootstrap
 
         private static SystemDispatcher EnsureSystemDispatcher()
         {
-            return SystemDispatcher.EnsureRuntimeInstance();
+            return GlobalRegistry.Dispatcher;
         }
 
         private static SaveManager EnsureSaveManager()

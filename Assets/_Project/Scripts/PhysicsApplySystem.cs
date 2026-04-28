@@ -184,7 +184,8 @@ namespace Hecton8.Physics
 
         private static bool IsFinite(Vector3 value)
         {
-            return math.all(math.isfinite(new float3(value.x, value.y, value.z)));
+            float3 vector = new float3(value.x, value.y, value.z);
+            return !math.any(math.isnan(vector)) && !math.any(math.isinf(vector)) && math.all(math.isfinite(vector));
         }
     }
 
@@ -201,6 +202,7 @@ namespace Hecton8.Physics
         private const string NonFiniteForceLog = "[PhysicsApplySystem] Non-finite force packet detected. Zeroing vector.";
         private const string NonFiniteTorqueLog = "[PhysicsApplySystem] Non-finite torque packet detected. Zeroing vector.";
         private const string NonFinitePointOffsetLog = "[PhysicsApplySystem] Non-finite point-offset packet detected. Zeroing offset.";
+        private const string InvalidForcePacketLog = "[PhysicsApplySystem] Burst packet validation rejected a non-finite or out-of-range packet.";
         private static readonly ProfilerMarker _fixedTickProfilerMarker = new ProfilerMarker("H8.PhysicsApplySystem.FixedTick");
         private static readonly ProfilerMarker _packetValidationProfilerMarker = new ProfilerMarker("H8.PhysicsApplySystem.ValidatePackets");
         private static readonly ProfilerMarker _flushFrontBufferProfilerMarker = new ProfilerMarker("H8.PhysicsApplySystem.FlushFrontBuffer");
@@ -479,7 +481,10 @@ namespace Hecton8.Physics
                 for (int i = 0; i < _frontCount; i++)
                 {
                     if (_validationMask.IsCreated && _validationMask[i] == 0)
+                    {
+                        ReportNonFinitePacket(InvalidForcePacketLog);
                         continue;
+                    }
 
                     ForcePacket packet = _frontPackets[i];
                     Rigidbody body = ResolveBody(packet.RigidbodyIndex);
@@ -619,17 +624,22 @@ namespace Hecton8.Physics
         private static bool TrySanitizeVector(Vector3 value, string errorMessage, out Vector3 sanitized)
         {
             float3 value3 = new float3(value.x, value.y, value.z);
-            if (math.any(math.isnan(value3)) || !math.all(math.isfinite(value3)))
+            if (math.any(math.isnan(value3)) || math.any(math.isinf(value3)) || !math.all(math.isfinite(value3)))
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError(errorMessage);
-#endif
+                ReportNonFinitePacket(errorMessage);
                 sanitized = Vector3.zero;
                 return false;
             }
 
             sanitized = value;
             return true;
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        private static void ReportNonFinitePacket(string message)
+        {
+            NativeAllocationTrackerRuntimeBridge.ReportLeak(message);
+            Debug.LogError(message);
         }
 
         private void DisposeValidationBuffers()
@@ -709,14 +719,42 @@ namespace Hecton8.Physics
 
         private static bool TryRouteToPlayerMotor(Rigidbody body, Vector3 force, ForceMode mode)
         {
-            if (body == null || !body.TryGetComponent(out HectonPlayerMotor playerMotor))
+            if (body == null)
                 return false;
 
-            float mass = math.max(body.mass, 0.0001f);
+            if (body.TryGetComponent(out HectonPlayerMovement playerMovement))
+            {
+                float bodyMass = math.max(body.mass, 0.0001f);
+                switch (mode)
+                {
+                    case ForceMode.Force:
+                        playerMovement.QueueSubsystemExternalAcceleration(force / bodyMass);
+                        return true;
+
+                    case ForceMode.Acceleration:
+                        playerMovement.QueueSubsystemExternalAcceleration(force);
+                        return true;
+
+                    case ForceMode.Impulse:
+                        playerMovement.QueueSubsystemExternalVelocityChange(force / bodyMass);
+                        return true;
+
+                    case ForceMode.VelocityChange:
+                        playerMovement.QueueSubsystemExternalVelocityChange(force);
+                        return true;
+                }
+
+                return false;
+            }
+
+            if (!body.TryGetComponent(out HectonPlayerMotor playerMotor))
+                return false;
+
+            float playerMotorMass = math.max(body.mass, 0.0001f);
             switch (mode)
             {
                 case ForceMode.Force:
-                    playerMotor.AddExternalAcceleration(force / mass);
+                    playerMotor.AddExternalAcceleration(force / playerMotorMass);
                     return true;
 
                 case ForceMode.Acceleration:
@@ -724,7 +762,7 @@ namespace Hecton8.Physics
                     return true;
 
                 case ForceMode.Impulse:
-                    playerMotor.AddExternalVelocityChange(force / mass);
+                    playerMotor.AddExternalVelocityChange(force / playerMotorMass);
                     return true;
 
                 case ForceMode.VelocityChange:
@@ -740,11 +778,17 @@ namespace Hecton8.Physics
             if (body == null || !body.TryGetComponent(out HectonPlayerMotor playerMotor))
                 return false;
 
-            if (!IsFiniteNonZero(force))
+            if (!IsFiniteNonZeroForce(force))
                 return false;
 
             playerMotor.ApplyForceAtPositionSplit(force, worldPosition, 1.25f, 45f);
             return true;
+        }
+
+        private static bool IsFiniteNonZeroForce(Vector3 value)
+        {
+            float3 value3 = new float3(value.x, value.y, value.z);
+            return math.all(math.isfinite(value3)) && math.lengthsq(value3) > 0.000001f;
         }
     }
 }

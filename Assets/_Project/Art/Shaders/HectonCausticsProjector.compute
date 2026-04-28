@@ -6,6 +6,19 @@ float4 _HectonCausticsSimulationParamsA;
 float4 _HectonCausticsSimulationParamsB;
 float4 _HectonCausticsSimulationParamsC;
 float4 _HectonCausticsTexelSize;
+float4 _HectonProjectedCausticsWorldRect;
+float4 _HectonCaveVoxelHalfExtents;
+float4x4 _HectonCaveVoxelWorldToLocal;
+float _HectonCaveVoxelActive;
+
+Texture3D<float> _HectonCaveVoxelSdfTex;
+SamplerState sampler_HectonCaveVoxelSdfTex;
+Texture2D<float> _HectonCausticsHeightTexture;
+
+int _HectonCausticsHeightResolution;
+float3 _HectonCausticsTerrainPosition;
+float3 _HectonCausticsTerrainSize;
+float _HectonCausticsHeightTextureAvailable;
 
 float2 Hash22(float2 p)
 {
@@ -54,6 +67,71 @@ float VoronoiRidge(float2 uv, float cellDensity, float timePhase)
     return saturate(secondNearestDistance - nearestDistance);
 }
 
+float SampleCaveSignedDistance(float3 positionWS)
+{
+    if (_HectonCaveVoxelActive <= 0.5)
+        return _HectonCaveVoxelHalfExtents.w;
+
+    float3 halfExtents = max(_HectonCaveVoxelHalfExtents.xyz, float3(0.001, 0.001, 0.001));
+    float3 localPosition = mul(_HectonCaveVoxelWorldToLocal, float4(positionWS, 1.0)).xyz;
+    float3 sampleUv = localPosition / (halfExtents * 2.0) + 0.5;
+    if (any(sampleUv < 0.0) || any(sampleUv > 1.0))
+        return _HectonCaveVoxelHalfExtents.w;
+
+    float encoded = _HectonCaveVoxelSdfTex.SampleLevel(sampler_HectonCaveVoxelSdfTex, sampleUv, 0).r;
+    return lerp(-_HectonCaveVoxelHalfExtents.w, _HectonCaveVoxelHalfExtents.w, encoded);
+}
+
+float SampleHeight01(float2 uv)
+{
+    uv = saturate(uv);
+    float resolutionMinusOne = max((float)_HectonCausticsHeightResolution - 1.0, 1.0);
+    float2 sampleCoord = uv * resolutionMinusOne;
+    int2 pixelMin = (int2)floor(sampleCoord);
+    int2 pixelMax = min(pixelMin + 1, int2(_HectonCausticsHeightResolution - 1, _HectonCausticsHeightResolution - 1));
+    float2 fracPart = frac(sampleCoord);
+
+    float h00 = _HectonCausticsHeightTexture.Load(int3(pixelMin, 0));
+    float h10 = _HectonCausticsHeightTexture.Load(int3(int2(pixelMax.x, pixelMin.y), 0));
+    float h01 = _HectonCausticsHeightTexture.Load(int3(int2(pixelMin.x, pixelMax.y), 0));
+    float h11 = _HectonCausticsHeightTexture.Load(int3(pixelMax, 0));
+
+    float hx0 = lerp(h00, h10, fracPart.x);
+    float hx1 = lerp(h01, h11, fracPart.x);
+    return lerp(hx0, hx1, fracPart.y);
+}
+
+float3 SampleTerrainNormal(float2 uv)
+{
+    float texel = rcp(max((float)_HectonCausticsHeightResolution - 1.0, 1.0));
+    float2 offsetX = float2(texel, 0.0);
+    float2 offsetZ = float2(0.0, texel);
+
+    float left = SampleHeight01(uv - offsetX);
+    float right = SampleHeight01(uv + offsetX);
+    float back = SampleHeight01(uv - offsetZ);
+    float front = SampleHeight01(uv + offsetZ);
+
+    float3 tangentX = float3(_HectonCausticsTerrainSize.x * texel * 2.0, (right - left) * _HectonCausticsTerrainSize.y, 0.0);
+    float3 tangentZ = float3(0.0, (front - back) * _HectonCausticsTerrainSize.y, _HectonCausticsTerrainSize.z * texel * 2.0);
+    return normalize(cross(tangentZ, tangentX));
+}
+
+float SampleProjectedFloorMask(float2 worldXZ)
+{
+    if (_HectonCausticsHeightTextureAvailable <= 0.5 || _HectonCausticsHeightResolution <= 1)
+        return 1.0;
+
+    float2 terrainUv = float2(
+        (worldXZ.x - _HectonCausticsTerrainPosition.x) / max(_HectonCausticsTerrainSize.x, 0.001),
+        (worldXZ.y - _HectonCausticsTerrainPosition.z) / max(_HectonCausticsTerrainSize.z, 0.001));
+    if (any(terrainUv < 0.0) || any(terrainUv > 1.0))
+        return 1.0;
+
+    float3 normalWS = SampleTerrainNormal(terrainUv);
+    return saturate(dot(normalWS, float3(0.0, 1.0, 0.0)));
+}
+
 [numthreads(8, 8, 1)]
 void ProjectCaustics(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
@@ -64,7 +142,8 @@ void ProjectCaustics(uint3 dispatchThreadId : SV_DispatchThreadID)
         return;
 
     float2 texelSize = _HectonCausticsTexelSize.xy;
-    float2 uv = (float2(dispatchThreadId.xy) + 0.5) * texelSize;
+    float2 surfaceUv = (float2(dispatchThreadId.xy) + 0.5) * texelSize;
+    float2 uv = surfaceUv;
 
     float primaryDensity = max(_HectonCausticsSimulationParamsA.x, 0.5);
     float secondaryDensity = max(_HectonCausticsSimulationParamsA.y, primaryDensity);
@@ -90,6 +169,15 @@ void ProjectCaustics(uint3 dispatchThreadId : SV_DispatchThreadID)
     combined = pow(saturate(combined * 2.3), sharpness);
     combined *= lerp(0.92, 1.18, saturate(waveDisplacementAbs * 0.14 + length(waveFlow) * 0.035));
     combined = saturate(combined * 1.35);
+
+    float2 worldXZ = float2(
+        lerp(_HectonProjectedCausticsWorldRect.x, _HectonProjectedCausticsWorldRect.x + rcp(max(_HectonProjectedCausticsWorldRect.z, 0.0001)), surfaceUv.x),
+        lerp(_HectonProjectedCausticsWorldRect.y, _HectonProjectedCausticsWorldRect.y + rcp(max(_HectonProjectedCausticsWorldRect.w, 0.0001)), surfaceUv.y));
+    float3 projectedWorldPosition = float3(worldXZ.x, _HectonCausticsSimulationParamsB.w, worldXZ.y);
+    if (SampleCaveSignedDistance(projectedWorldPosition) <= 0.0)
+        combined = 0.0;
+
+    combined *= SampleProjectedFloorMask(worldXZ);
 
     _HectonCausticsOutput[dispatchThreadId.xy] = combined;
 }

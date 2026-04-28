@@ -30,11 +30,17 @@ namespace Hecton8.Core
         private static IEnvironmentRuntimeContext _environment;
         private static IWeatherService _weather;
         private static IHectonOceanKinematicsService _oceanKinematics;
+        private static IPowerGridService _powerGrid;
         private static ISubmarineRuntimeContext _submarine;
         private static ISubmarineHullBreachReadModel _submarineHullBreach;
         private static IInteractionSignalService _interactionSignals;
         private static IDebrisService _debris;
         private static IEcosystemDirectorService _ecosystemDirector;
+        private static GameTickManager _tickManager;
+        private static SystemDispatcher _dispatcher;
+        private static RenderDispatcher _renderDispatcher;
+        private static GlobalPhysicsStateManager _physicsStateManager;
+        private static bool _dispatcherRegistrationErrorLogged;
 
         /// <summary>
         /// Registered input service slot.
@@ -97,6 +103,11 @@ namespace Hecton8.Core
         public static IHectonOceanKinematicsService OceanKinematics => _oceanKinematics;
 
         /// <summary>
+        /// Registered power-grid runtime service slot.
+        /// </summary>
+        public static IPowerGridService PowerGrid => _powerGrid;
+
+        /// <summary>
         /// Registered authoritative submarine runtime root slot.
         /// </summary>
         public static ISubmarineRuntimeContext Submarine => _submarine;
@@ -121,6 +132,26 @@ namespace Hecton8.Core
         /// Registered ecosystem sector simulation service slot.
         /// </summary>
         public static IEcosystemDirectorService EcosystemDirector => _ecosystemDirector;
+
+        /// <summary>
+        /// Registered tick-manager owner.
+        /// </summary>
+        public static GameTickManager TickManager => _tickManager;
+
+        /// <summary>
+        /// Registered gameplay dispatcher owner.
+        /// </summary>
+        public static SystemDispatcher Dispatcher => _dispatcher;
+
+        /// <summary>
+        /// Registered SRP render dispatcher owner.
+        /// </summary>
+        public static RenderDispatcher RenderDispatcher => _renderDispatcher;
+
+        /// <summary>
+        /// Registered global physics-state manager owner.
+        /// </summary>
+        public static GlobalPhysicsStateManager PhysicsStateManager => _physicsStateManager;
 
         /// <summary>
         /// Dense multi-instance update registry.
@@ -157,16 +188,58 @@ namespace Hecton8.Core
             _environment = null;
             _weather = null;
             _oceanKinematics = null;
+            _powerGrid = null;
             _submarine = null;
             _submarineHullBreach = null;
             _interactionSignals = null;
             _debris = null;
             _ecosystemDirector = null;
+            _tickManager = null;
+            _dispatcher = null;
+            _renderDispatcher = null;
+            _physicsStateManager = null;
+            _dispatcherRegistrationErrorLogged = false;
             _updatables.Clear();
             _fixedTickables.Clear();
             _slowTickables.Clear();
             _renderables.Clear();
             SystemDispatcher.ClearAllLanes();
+        }
+
+        /// <summary>
+        /// Registers the authoritative tick-manager owner.
+        /// </summary>
+        /// <param name="instance">Tick-manager instance.</param>
+        public static void RegisterTickManager(GameTickManager instance)
+        {
+            RegisterService(ref _tickManager, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative gameplay dispatcher owner.
+        /// </summary>
+        /// <param name="instance">Dispatcher instance.</param>
+        public static void RegisterSystemDispatcher(SystemDispatcher instance)
+        {
+            RegisterService(ref _dispatcher, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative SRP render dispatcher owner.
+        /// </summary>
+        /// <param name="instance">Render dispatcher instance.</param>
+        public static void RegisterRenderDispatcher(RenderDispatcher instance)
+        {
+            RegisterService(ref _renderDispatcher, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative global physics-state manager owner.
+        /// </summary>
+        /// <param name="instance">Physics-state manager instance.</param>
+        public static void RegisterPhysicsStateManager(GlobalPhysicsStateManager instance)
+        {
+            RegisterService(ref _physicsStateManager, instance);
         }
 
         /// <summary>
@@ -275,6 +348,15 @@ namespace Hecton8.Core
         public static void RegisterOceanKinematicsService(IHectonOceanKinematicsService instance)
         {
             RegisterService(ref _oceanKinematics, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative power-grid runtime service.
+        /// </summary>
+        /// <param name="instance">Power-grid runtime service instance.</param>
+        public static void RegisterPowerGridService(IPowerGridService instance)
+        {
+            RegisterService(ref _powerGrid, instance);
         }
 
         /// <summary>
@@ -431,6 +513,15 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Unregisters the current power-grid runtime service if the owner matches.
+        /// </summary>
+        /// <param name="instance">Service owner requesting unregistration.</param>
+        public static void UnregisterPowerGridService(IPowerGridService instance)
+        {
+            UnregisterService(ref _powerGrid, instance);
+        }
+
+        /// <summary>
         /// Unregisters the current submarine runtime root if the owner matches.
         /// </summary>
         /// <param name="instance">Submarine runtime root requesting unregistration.</param>
@@ -476,6 +567,42 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Unregisters the current tick-manager owner if the owner matches.
+        /// </summary>
+        /// <param name="instance">Tick-manager owner requesting unregistration.</param>
+        public static void UnregisterTickManager(GameTickManager instance)
+        {
+            UnregisterService(ref _tickManager, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current gameplay dispatcher owner if the owner matches.
+        /// </summary>
+        /// <param name="instance">Dispatcher owner requesting unregistration.</param>
+        public static void UnregisterSystemDispatcher(SystemDispatcher instance)
+        {
+            UnregisterService(ref _dispatcher, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current SRP render dispatcher owner if the owner matches.
+        /// </summary>
+        /// <param name="instance">Render dispatcher owner requesting unregistration.</param>
+        public static void UnregisterRenderDispatcher(RenderDispatcher instance)
+        {
+            UnregisterService(ref _renderDispatcher, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current global physics-state manager owner if the owner matches.
+        /// </summary>
+        /// <param name="instance">Physics-state manager owner requesting unregistration.</param>
+        public static void UnregisterPhysicsStateManager(GlobalPhysicsStateManager instance)
+        {
+            UnregisterService(ref _physicsStateManager, instance);
+        }
+
+        /// <summary>
         /// Registers an update owner into both the global bucket and its fixed dispatcher lane.
         /// </summary>
         /// <param name="item">Update owner.</param>
@@ -488,7 +615,8 @@ namespace Hecton8.Core
             if (!Application.isPlaying)
                 return;
 
-            SystemDispatcher.EnsureRuntimeInstance();
+            if (!TryEnsureDispatcherRegistration())
+                return;
             _updatables.Register(item);
             SystemDispatcher.Register(item, layer);
         }
@@ -506,7 +634,8 @@ namespace Hecton8.Core
             if (!Application.isPlaying)
                 return;
 
-            SystemDispatcher.EnsureRuntimeInstance();
+            if (!TryEnsureDispatcherRegistration())
+                return;
             _fixedTickables.Register(item);
             SystemDispatcher.Register(item, layer);
         }
@@ -524,7 +653,8 @@ namespace Hecton8.Core
             if (!Application.isPlaying)
                 return;
 
-            SystemDispatcher.EnsureRuntimeInstance();
+            if (!TryEnsureDispatcherRegistration())
+                return;
             _slowTickables.Register(item);
             SystemDispatcher.Register(item, layer);
         }
@@ -581,6 +711,21 @@ namespace Hecton8.Core
             _slowTickables.Clear();
             _renderables.Clear();
             SystemDispatcher.ClearAllLanes();
+        }
+
+        private static bool TryEnsureDispatcherRegistration()
+        {
+            if (_dispatcher != null)
+                return true;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (!_dispatcherRegistrationErrorLogged)
+            {
+                _dispatcherRegistrationErrorLogged = true;
+                Debug.LogError("[GlobalRegistry] SystemDispatcher is not registered. Bootstrap must create and register it before runtime tick registration.");
+            }
+#endif
+            return false;
         }
 
         private static void RegisterService<T>(ref T slot, T instance) where T : class

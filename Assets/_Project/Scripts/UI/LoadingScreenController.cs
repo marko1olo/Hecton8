@@ -330,7 +330,6 @@ namespace Hecton8.UI
             if (_registeredToTickManager)
                 return;
 
-            SystemDispatcher.EnsureRuntimeInstance();
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _registeredToTickManager = true;
         }

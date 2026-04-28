@@ -25,6 +25,7 @@
 //   • UniversalRenderPipeline.asset — render scale application
 // ============================================================================
 
+using System;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 using Hecton8.Core;
@@ -50,6 +51,8 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-130)] // Run after CullingManager
     public sealed class DynamicResolutionScaler : MonoBehaviour, ITickable, ISaveable
     {
+        private static readonly string[] RenderPressureStateLabels = Enum.GetNames(typeof(RenderPressureState));
+
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
         // ══════════════════════════════════════════════════════════
@@ -586,8 +589,14 @@ namespace Hecton8.World
         {
             _debugSmoothedFrameTimeMs = _smoothedFrameTimeMs;
             _debugPeakFrameTimeMs = _peakFrameTimeMs;
-            _debugPressureState = _pressureState.ToString();
+            _debugPressureState = ResolvePressureStateLabel(_pressureState);
             _debugRecoveryHoldFramesRemaining = _recoveryHoldFramesRemaining;
+        }
+
+        private static string ResolvePressureStateLabel(RenderPressureState state)
+        {
+            int index = (int)state;
+            return (uint)index < (uint)RenderPressureStateLabels.Length ? RenderPressureStateLabels[index] : RenderPressureStateLabels[0];
         }
 
         private float GetMinimumRenderScaleForPreset(LODQualityPreset preset)

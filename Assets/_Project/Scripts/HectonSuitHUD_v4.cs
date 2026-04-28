@@ -6,7 +6,7 @@ using UnityEngine;
 [DisallowMultipleComponent]
 [ExecuteAlways]
 [AddComponentMenu("Hecton8/HUD/Suit HUD v4")]
-public sealed class HectonSuitHUD_v4 : MonoBehaviour, ITickable, IUpdatable
+public sealed class HectonSuitHUD_v4 : MonoBehaviour, ITickable, IUpdatable, IUIService
 {
     // COLD ALLOC: List<HectonSuitHUD_v4>[4] — active legacy HUD compatibility registry — owner: HectonSuitHUD_v4
     private static readonly List<HectonSuitHUD_v4> s_activeHuds = new List<HectonSuitHUD_v4>(4);
@@ -14,8 +14,10 @@ public sealed class HectonSuitHUD_v4 : MonoBehaviour, ITickable, IUpdatable
     [Header("Legacy Compatibility")]
     [SerializeField] private Camera hudCamera;
     [SerializeField] private SuitHUDProfile fallbackProfile;
+    private bool _ownsGlobalUiSlot;
 
     public Camera HudCamera => hudCamera;
+    public bool IsInitialized => isActiveAndEnabled && hudCamera != null;
 
     public static void CopyActiveHudsTo(List<HectonSuitHUD_v4> results)
     {
@@ -34,10 +36,12 @@ public sealed class HectonSuitHUD_v4 : MonoBehaviour, ITickable, IUpdatable
     private void OnEnable()
     {
         RegisterActiveHud();
+        TryRegisterUiService();
     }
 
     private void OnDisable()
     {
+        UnregisterUiService();
         UnregisterActiveHud();
     }
 
@@ -73,5 +77,27 @@ public sealed class HectonSuitHUD_v4 : MonoBehaviour, ITickable, IUpdatable
             if (ReferenceEquals(s_activeHuds[i], this))
                 s_activeHuds.RemoveAt(i);
         }
+    }
+
+    private void TryRegisterUiService()
+    {
+        if (!Application.isPlaying || _ownsGlobalUiSlot)
+            return;
+
+        IUIService current = GlobalRegistry.UI;
+        if (current != null && !ReferenceEquals(current, this))
+            return;
+
+        GlobalRegistry.RegisterUIService(this);
+        _ownsGlobalUiSlot = true;
+    }
+
+    private void UnregisterUiService()
+    {
+        if (!_ownsGlobalUiSlot)
+            return;
+
+        GlobalRegistry.UnregisterUIService(this);
+        _ownsGlobalUiSlot = false;
     }
 }

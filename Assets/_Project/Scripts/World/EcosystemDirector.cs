@@ -25,6 +25,7 @@ namespace Hecton8.World
     public sealed class EcosystemDirector : MonoBehaviour, ISlowTickable, IEcosystemDirectorService
     {
         private const float DefaultSlowTickIntervalSeconds = 0.5f;
+        private const float DefaultDiffusionTickIntervalSeconds = 5f;
         private const float SectorEdgeLengthMeters = 1000f;
         private const int MinimumSectorCapacity = 16;
         private const int MinimumPredationEventCapacity = 32;
@@ -180,6 +181,62 @@ namespace Hecton8.World
             }
         }
 
+        [BurstCompile]
+        private struct PopulationDiffusionJob : IJobParallelFor
+        {
+            [ReadOnly] public NativeArray<SectorPopulationState> FrontStates;
+            [ReadOnly] public NativeHashMap<long, int> SectorIndexByKey;
+            public NativeArray<SectorPopulationState> BackStates;
+            public float PreyDiffusionFraction;
+            public float PredatorFollowPreyDiffusionFraction;
+            public float PredatorPerPreyRatio;
+            public int MaxPreyPopulation;
+            public int MaxPredatorPopulation;
+
+            public void Execute(int index)
+            {
+                SectorPopulationState state = FrontStates[index];
+                float prey = math.max(0f, state.PreyPopulation);
+                float predator = math.max(0f, state.PredatorPopulation);
+                float preyNet = 0f;
+                float predatorNet = 0f;
+                int2 sectorCoord = state.SectorCoord;
+
+                AccumulateNeighborDiffusion(sectorCoord + new int2(1, 0), prey, ref preyNet, ref predatorNet);
+                AccumulateNeighborDiffusion(sectorCoord + new int2(-1, 0), prey, ref preyNet, ref predatorNet);
+                AccumulateNeighborDiffusion(sectorCoord + new int2(0, 1), prey, ref preyNet, ref predatorNet);
+                AccumulateNeighborDiffusion(sectorCoord + new int2(0, -1), prey, ref preyNet, ref predatorNet);
+
+                prey = math.clamp(prey + preyNet, 0f, MaxPreyPopulation);
+                predator = math.clamp(predator + predatorNet, 0f, MaxPredatorPopulation);
+                state.PreyPopulation = prey;
+                state.PredatorPopulation = predator;
+                state.PreyPopulationRounded = (int)math.round(prey);
+                state.PredatorPopulationRounded = (int)math.round(predator);
+                BackStates[index] = state;
+            }
+
+            private void AccumulateNeighborDiffusion(
+                int2 neighborCoord,
+                float localPrey,
+                ref float preyNet,
+                ref float predatorNet)
+            {
+                if (!SectorIndexByKey.TryGetValue(PackSectorKey(neighborCoord), out int neighborIndex))
+                    return;
+
+                SectorPopulationState neighbor = FrontStates[neighborIndex];
+                float preyDelta = neighbor.PreyPopulation - localPrey;
+                preyNet += preyDelta * PreyDiffusionFraction;
+                predatorNet += preyDelta * PredatorPerPreyRatio * PredatorFollowPreyDiffusionFraction;
+            }
+
+            private static long PackSectorKey(int2 sectorCoord)
+            {
+                return ((long)sectorCoord.x << 32) | (uint)sectorCoord.y;
+            }
+        }
+
         [Header("Sector Runtime")]
         [Tooltip("Maximum number of active 1 km sectors tracked in the cold-path population model.")]
         [SerializeField, Min(MinimumSectorCapacity)] private int maxTrackedSectors = 128;
@@ -223,6 +280,12 @@ namespace Hecton8.World
         [SerializeField, Min(0f)] private float preyMigrationRate = 0.00085f;
         [Tooltip("Sector-to-sector predator migration rate along local population gradients.")]
         [SerializeField, Min(0f)] private float predatorMigrationRate = 0.00018f;
+        [Tooltip("Seconds between explicit diffusion passes that bleed prey and predators across adjacent 1 km sector borders.")]
+        [SerializeField, Min(1f)] private float diffusionTickIntervalSeconds = DefaultDiffusionTickIntervalSeconds;
+        [Tooltip("Fraction of prey density differential moved across each adjacent sector edge on a diffusion tick.")]
+        [SerializeField, Range(0f, 1f)] private float preyDiffusionFraction = 0.05f;
+        [Tooltip("Fraction of prey density differential converted into predator movement pressure on a diffusion tick.")]
+        [SerializeField, Range(0f, 1f)] private float predatorFollowPreyDiffusionFraction = 0.05f;
         [Tooltip("Relative weight applied to diagonal 1 km sector bleed so cross-border diffusion is not restricted to four cardinal neighbors.")]
         [SerializeField, Min(0f)] private float diagonalMigrationWeight = 0.7071f;
         [Tooltip("Additional equalization scalar applied to the weighted neighbor differential before migration rates are integrated.")]
@@ -255,12 +318,15 @@ namespace Hecton8.World
         private NativeHashMap<long, int> _sectorIndexByKey;
         private NativeArray<PredationEvent> _pendingPredationEvents;
         private NativeList<EcosystemSectorSaveRecord> _saveSnapshotSectors;
+        private JobHandle _scheduledDiffusionHandle;
         private JobHandle _scheduledSolveHandle;
         private float _coldTickAccumulator;
+        private float _diffusionTickAccumulator;
         private int _activeSectorCount;
         private int _pendingPredationEventCount;
         private bool _registeredService;
         private bool _registeredSlowTickable;
+        private bool _diffusionScheduled;
         private bool _solveScheduled;
 
         /// <summary>
@@ -277,7 +343,7 @@ namespace Hecton8.World
             if (!IsInitialized)
                 return;
 
-            CompleteScheduledSolve(forceComplete: true);
+            CompleteScheduledSimulation(forceComplete: true);
             for (int sectorIndex = 0; sectorIndex < _activeSectorCount; sectorIndex++)
             {
                 SectorPopulationState state = _sectorFrontStates[sectorIndex];
@@ -300,10 +366,13 @@ namespace Hecton8.World
             if (!IsInitialized)
                 return;
 
-            CompleteScheduledSolve(forceComplete: true);
+            CompleteScheduledSimulation(forceComplete: true);
             _sectorIndexByKey.Clear();
             _pendingPredationEventCount = 0;
             _coldTickAccumulator = 0f;
+            _diffusionTickAccumulator = 0f;
+            _diffusionScheduled = false;
+            _scheduledDiffusionHandle = default;
             _solveScheduled = false;
             _scheduledSolveHandle = default;
 
@@ -381,18 +450,29 @@ namespace Hecton8.World
             if (!IsInitialized)
                 return;
 
-            CompleteScheduledSolve(forceComplete: false);
+            CompleteScheduledSimulation(forceComplete: false);
             EnsurePlayerSectorRegistered();
             EnsureMigrationNeighborSectorsRegistered();
 
             _coldTickAccumulator += DefaultSlowTickIntervalSeconds;
-            if (_coldTickAccumulator < coldTickIntervalSeconds)
+            _diffusionTickAccumulator += DefaultSlowTickIntervalSeconds;
+            if (_coldTickAccumulator >= coldTickIntervalSeconds)
+            {
+                _coldTickAccumulator -= coldTickIntervalSeconds;
+                _diffusionTickAccumulator = 0f;
+                CompleteScheduledSimulation(forceComplete: true);
+                ApplyPendingPredationEvents();
+                ScheduleSectorSolve();
+                return;
+            }
+
+            if (_diffusionTickAccumulator < diffusionTickIntervalSeconds)
                 return;
 
-            _coldTickAccumulator -= coldTickIntervalSeconds;
-            CompleteScheduledSolve(forceComplete: true);
+            _diffusionTickAccumulator -= diffusionTickIntervalSeconds;
+            CompleteScheduledSimulation(forceComplete: true);
             ApplyPendingPredationEvents();
-            ScheduleSectorSolve();
+            SchedulePopulationDiffusion();
         }
 
         /// <summary>
@@ -404,10 +484,10 @@ namespace Hecton8.World
             if (!IsInitialized)
                 return false;
 
-            if (_solveScheduled && !_scheduledSolveHandle.IsCompleted)
+            if (HasPendingSimulationJob())
                 return false;
 
-            CompleteScheduledSolve(forceComplete: false);
+            CompleteScheduledSimulation(forceComplete: false);
             int2 sectorCoord = QuantizeSector(worldPosition);
             int slotIndex = ResolveOrCreateSectorSlot(sectorCoord, seedWithBaseline: true);
             if (slotIndex < 0)
@@ -441,7 +521,7 @@ namespace Hecton8.World
             }
             else
             {
-                if (_solveScheduled && !_scheduledSolveHandle.IsCompleted)
+                if (HasPendingSimulationJob())
                     return;
 
                 slotIndex = ResolveOrCreateSectorSlot(sectorCoord, seedWithBaseline: true);
@@ -466,6 +546,9 @@ namespace Hecton8.World
             initialPredatorPopulationMax = math.max(initialPredatorPopulationMin, initialPredatorPopulationMax);
             maxPreyPopulation = math.max(initialPreyPopulationMax, maxPreyPopulation);
             maxPredatorPopulation = math.max(initialPredatorPopulationMax, maxPredatorPopulation);
+            diffusionTickIntervalSeconds = math.max(1f, diffusionTickIntervalSeconds);
+            preyDiffusionFraction = math.clamp(preyDiffusionFraction, 0f, 1f);
+            predatorFollowPreyDiffusionFraction = math.clamp(predatorFollowPreyDiffusionFraction, 0f, 1f);
             diagonalMigrationWeight = math.max(0f, diagonalMigrationWeight);
             borderBleedEqualizationRate = math.max(0f, borderBleedEqualizationRate);
             preyOverflowThreshold = math.clamp(preyOverflowThreshold, 1f, maxPreyPopulation);
@@ -493,13 +576,22 @@ namespace Hecton8.World
             _activeSectorCount = 0;
             _pendingPredationEventCount = 0;
             _coldTickAccumulator = 0f;
+            _diffusionTickAccumulator = 0f;
+            _scheduledDiffusionHandle = default;
             _scheduledSolveHandle = default;
+            _diffusionScheduled = false;
             _solveScheduled = false;
         }
 
         private void DisposeRuntimeState()
         {
-            JobHandle disposeDependency = _solveScheduled ? _scheduledSolveHandle : default;
+            JobHandle disposeDependency = default;
+            if (_solveScheduled && _diffusionScheduled)
+                disposeDependency = JobHandle.CombineDependencies(_scheduledSolveHandle, _scheduledDiffusionHandle);
+            else if (_solveScheduled)
+                disposeDependency = _scheduledSolveHandle;
+            else if (_diffusionScheduled)
+                disposeDependency = _scheduledDiffusionHandle;
 
             if (_sectorFrontStates.IsCreated)
                 _sectorFrontStates.Dispose(disposeDependency);
@@ -520,7 +612,10 @@ namespace Hecton8.World
             _activeSectorCount = 0;
             _pendingPredationEventCount = 0;
             _coldTickAccumulator = 0f;
+            _diffusionTickAccumulator = 0f;
+            _scheduledDiffusionHandle = default;
             _scheduledSolveHandle = default;
+            _diffusionScheduled = false;
             _solveScheduled = false;
         }
 
@@ -562,7 +657,7 @@ namespace Hecton8.World
 
         private void EnsurePlayerSectorRegistered()
         {
-            if (_solveScheduled && !_scheduledSolveHandle.IsCompleted)
+            if (HasPendingSimulationJob())
                 return;
 
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
@@ -574,7 +669,7 @@ namespace Hecton8.World
 
         private void EnsureMigrationNeighborSectorsRegistered()
         {
-            if (_solveScheduled && !_scheduledSolveHandle.IsCompleted)
+            if (HasPendingSimulationJob())
                 return;
 
             int seedSectorCount = _activeSectorCount;
@@ -633,7 +728,7 @@ namespace Hecton8.World
 
         private void ScheduleSectorSolve()
         {
-            if (_activeSectorCount <= 0 || _solveScheduled)
+            if (_activeSectorCount <= 0 || _solveScheduled || _diffusionScheduled)
                 return;
 
             var solveJob = new LotkaVolterraSolveJob
@@ -669,6 +764,61 @@ namespace Hecton8.World
 
             _scheduledSolveHandle = solveJob.Schedule(_activeSectorCount, 16);
             _solveScheduled = true;
+        }
+
+        private void SchedulePopulationDiffusion()
+        {
+            if (_activeSectorCount <= 0 || _solveScheduled || _diffusionScheduled)
+                return;
+
+            float predatorPerPreyRatio = maxPreyPopulation > 0
+                ? (float)maxPredatorPopulation / math.max(1f, maxPreyPopulation)
+                : 0f;
+
+            var diffusionJob = new PopulationDiffusionJob
+            {
+                FrontStates = _sectorFrontStates,
+                SectorIndexByKey = _sectorIndexByKey,
+                BackStates = _sectorBackStates,
+                PreyDiffusionFraction = preyDiffusionFraction,
+                PredatorFollowPreyDiffusionFraction = predatorFollowPreyDiffusionFraction,
+                PredatorPerPreyRatio = predatorPerPreyRatio,
+                MaxPreyPopulation = maxPreyPopulation,
+                MaxPredatorPopulation = maxPredatorPopulation
+            };
+
+            _scheduledDiffusionHandle = diffusionJob.Schedule(_activeSectorCount, 16);
+            _diffusionScheduled = true;
+        }
+
+        private bool HasPendingSimulationJob()
+        {
+            if (_solveScheduled && !_scheduledSolveHandle.IsCompleted)
+                return true;
+
+            return _diffusionScheduled && !_scheduledDiffusionHandle.IsCompleted;
+        }
+
+        private void CompleteScheduledSimulation(bool forceComplete)
+        {
+            CompleteScheduledDiffusion(forceComplete);
+            CompleteScheduledSolve(forceComplete);
+        }
+
+        private void CompleteScheduledDiffusion(bool forceComplete)
+        {
+            if (!_diffusionScheduled)
+                return;
+
+            if (!forceComplete && !_scheduledDiffusionHandle.IsCompleted)
+                return;
+
+            _scheduledDiffusionHandle.Complete();
+            NativeArray<SectorPopulationState> swap = _sectorFrontStates;
+            _sectorFrontStates = _sectorBackStates;
+            _sectorBackStates = swap;
+            _scheduledDiffusionHandle = default;
+            _diffusionScheduled = false;
         }
 
         private void CompleteScheduledSolve(bool forceComplete)

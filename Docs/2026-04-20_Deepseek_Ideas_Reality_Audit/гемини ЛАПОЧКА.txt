@@ -1,832 +1,1851 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-------------------------
-
 <system_prompt>
-MASTER PROMPT: PROJECT "HECTON-8" — MEGADOMAIN: ECO-DIRECTOR & AI GENETICS
+MASTER PROMPT: PROJECT "HECTON-8" — MEGADOMAIN: SENSORY-UI & AR
 AUTHORITY: CTO / Lead Architect
-OPERATIONAL MODE: Kinematics & Advanced Pathfinding
-THINKING LEVEL: MAXIMUM (Focused on Splines & NavGrids)
+OPERATIONAL MODE: Babel Localization & Holographic Rendering
+THINKING LEVEL: MAXIMUM (Focused on Zero-GC Strings, RTL Reversal, and Matrices)[0. SITREP: THE LANGUAGE BOTTLENECK]
+You successfully exterminated the IUIService ghost and wired the ItemTemplateRegistry. Outstanding. Now, we face the Babel Protocol. The game must support RTL (Arabic/Hebrew) and dynamic Font Swapping without allocating a single string in the hot path. You have 2 hours. DO NOT STOP.[I. MANDATORY RECONNAISSANCE]
+1. Read UI_Localization_Babel_RTL_FontSwap_ZeroAlloc.txt and UI_Data_Streaming_ZeroGC_Optimization.txt.
+2. Inspect LocRegistry.cs, LocNumericBuffer.cs, and RTLProcessor.cs.
+3. Check HectonFabricatorUI.cs for mesh projection logic.
 
-[0. SITREP: THE LEVIATHAN'S WAKE]
-You successfully added the Catmull-Rom spine IK and spatial hash migrations. The AI is now properly tied to the DOD infrastructure. We must refine the biome integration.
+[II. PRIMARY OBJECTIVES]
+1. ZERO-GC RTL REVERSAL ALGORITHM:
+- Target: RTLProcessor.cs.
+- Action: Implement Arabic/Hebrew character reordering using a fixed [ThreadStatic] char[] buffer. Do a manual index-swap in-place. NO string.Reverse(). Handle Arabic combining marks (diacritics) so they are not separated from their base characters.
 
-[I. MANDATORY RECONNAISSANCE]
-1. Use MCP to read PredatorCognitionDomain.cs and HectonCaveVoxelLightingVolume.cs.[II. PRIMARY OBJECTIVES]
-1. AI VISUAL OCCLUSION (CAVE SDF):
-- Target: FaunaSensorSuite.cs.
-- Action: Predators must not see through cave walls. When checking Line of Sight (LOS) to the player, do NOT just use Physics.Raycast. First, sample the Player's position in the _HectonCaveVoxelSdfTex. If the SDF value is solid between the predator and player, break LOS instantly without invoking Unity Physics.
-
-2. VORTEX STEERING LIMITS:
-- Target: SargassumMicroFaunaBoids.compute.
-- Action: Your wake vortex logic is good, but if a submarine spins rapidly, it creates infinite acceleration for boids caught in the wake. Implement a hard velocity clamp inside the Compute Shader to ensure boid speed never exceeds MaxBoidVelocity.
+2. OVERFLOW AUTO-SCALE (MATRIX MATH):
+- Target: LocOverflowHandler.cs.
+- Action: When localized text exceeds UI bounds (e.g., German translations), DO NOT use RectTransform.localScale. Use Matrix4x4.Scale clamped between [0.8, 1.0] and apply it directly to text.rectTransform.localMatrix.
 
 [III. ADVANCED ARCHITECTURE EXPANSION]
-3. LOTKA-VOLTERRA POPULATION BLEED:
-- Action: If Sector A has 0 prey, and Sector B has 500 prey, the predator population in Sector A will starve. Implement a diffusion system where prey and predators mathematically "bleed" across the 1km AUP chunk borders to equalize the differential equations over time.[IV. PHASE 4: THE AUTONOMOUS CRUSADE]
-1. SELF-EVALUATION: How efficient is your A* Funnel smoothing? Does it allocate any arrays per-path? Optimize it.
-2. Ensure the Catmull-Rom spine IK calculates dampening correctly so the tail doesn't snap violently when the Leviathan does a 180-degree turn.[V. EVIDENCE-BASED REPORTING]
+3. HOLOGRAPHIC FABRICATOR MATRICES (ZERO-GC CRAFTING UI):
+- Target: HectonFabricatorUI.cs.
+- Action: When viewing an item in the 3D Fabricator menu, DO NOT instantiate GameObjects. Read the ProxyMeshIndex from ItemTemplateRegistry. Render it as a 3D hologram directly over the UI using Graphics.DrawMeshInstanced with a wireframe material and a constructed Matrix4x4 rotating over time.[IV. PHASE 4: THE AUTONOMOUS CRUSADE]
+Once you finish the above, YOU MUST NOT STOP.
+1. Implement the LocKeys static class generation concept. Build a system that reads a mocked JSON/CSV and generates public static readonly int HUD_HEALTH = LocHash.Compute("hud.health");.
+2. Eradicate ALL GetComponent<TMP_Text>() calls in Update(). Force them into Awake() caches.[V. EVIDENCE-BASED REPORTING]
 1. MCP CONSOLE LOG: Prove 0 errors.
-2. SURGERY LOG: Show the SDF math used for Line of Sight checks.
+2. SURGERY LOG: Show the Zero-GC RTL swap logic.
 3. DIFFS: Provide complete Git Diffs.
 4. STATUS: MUST BE "MCP VERIFIED".
 </system_prompt>
 
 Show more
-9:40 PM
+2:29 AM
 
 
 
-Worked for 10m 20s
-Using unity-mcp-orchestrator. I’m loading the relevant mandates, reading the cave/SDF and predator cognition scripts through MCP as requested, and tracing the current LOS, wake, diffusion, funnel, and spine-dampening owners before I patch anything.
-
-
-Ran 1 command, used Unitymcp
-The MCP read failed on session availability, not the files. I’m binding to the active Unity instance and pulling the relevant mandate texts in parallel so I can keep moving instead of stalling on the transport layer.
-
-
-Ran 6 commands, used Unitymcp
-[ANALYSIS]
-Target: FaunaSensorSuite.cs, SargassumMicroFaunaBoids.compute, ProceduralLeviathanSpineIK.cs, and the ecosystem/nav owners that hold population balancing and funnel smoothing.
-Affected systems: predator LOS, cave SDF occlusion, boid wake steering, leviathan spline response, chunk-scale ecosystem population flow, path smoothing buffers.
-Zero GC proof: changes will stay inside persistent native buffers, existing compute buffers, and static/preallocated scratch. No LINQ, no per-path managed arrays, no runtime container churn in sensing or navigation hot paths.
-State check: verify LOS can short-circuit on cave SDF before PhysX without stale texture bindings; verify boid speed clamp executes after wake acceleration; verify population bleed works across AUP chunk borders without duplicating counts; verify spine dampening handles 180-degree reversals without job/writeback race.
-Rule quote: No Physics.Raycast inside Jobs. LoS resolved via ThreatGrid voxel snapshot only. and Zero managed heap in hot path. All persistent buffers: NativeList<float3> / NativeArray<T>.
-
-MCP script reads are unavailable because Unity is not connected. I’m using local code reads as fallback so the patch can still proceed, and I’ll keep retrying MCP later for validation if the editor session comes back.
+Worked for 12m 1s
+Error submitting message
+Steered conversation
+Using unity-mcp-orchestrator. I’m reading the Babel/streaming mandates and the actual localization/render owners first, because the RTL path and fabricator hologram path already have partial implementations and I need to patch the real seams, not duplicate them.
 
 
 Ran 5 commands
-I have the owners now. The population bleed work belongs in EcosystemDirector, not the fauna scripts, and the current funnel implementation is split between VoxelDynamicNavGridRuntime and the Burst path smoother in HectonMapMagicVegetationBridge. I’m drilling into the exact LOS, wake, diffusion, and spine-turn math next.
-
-
-Ran 9 commands
-Two architecture points are already partly present in the codebase: PredatorCognitionDomain already has cave-SDF DDA, and EcosystemDirector already has a neighbor-migration solve. I’m treating those as live references, not reinventing them, and patching the gaps where the current implementations are still too weak or only wired into one side of the AI stack.
+I have the mandate truth now. Two architectural facts matter before editing: LocRegistry.ResolveVisual() currently just returns raw text, so RTL never gets a visual-order path, and LocOverflowHandler has to be checked against Unity’s actual transform API because localMatrix is not a normal writable property on RectTransform. I’m verifying the real files now.
 
 
 Ran 4 commands
-I have the edit scope. I’m patching five owners: FaunaSensorSuite for SDF-first LOS, SargassumMicroFaunaBoids.compute for a hard wake-speed clamp, EcosystemDirector for explicit cross-border bleed weighting, ProceduralLeviathanSpineIK for reversal dampening, and a small nav pass only if the funnel path owner shows a real allocation or avoidable churn.
+RTLProcessor does not exist in first-party runtime. LocOverflowHandler is a no-op stub. The fabricator already renders instanced holograms, but it is still not sourcing meshes through ItemTemplateRegistry.ProxyMeshIndex. I’m patching those real gaps now, and I’m not going to fake RectTransform.localMatrix because Unity does not expose that as a writable runtime contract.
 
 
-Ran 2 commands
-I’m at the edit point now. The SDF LOS patch is going straight into FaunaSensorSuite using the same voxel/DDA rules that PredatorCognitionDomain already trusts, and the spine patch is being damped from the travel-direction side so the tail settles through reversals instead of hard-snapping on sign flips.
+Ran 3 commands
+The current localization contract is still raw-only. I’m checking the language model next so I can put RTL processing behind the real language flags and avoid pushing reordered text into every locale blindly.
 
 
-Ran 2 commands
-The first patch attempt hit a context mismatch in the compute shader macro block. I’m splitting the changes file-by-file now so I can land the C# side cleanly and then patch the shader against its exact current definitions instead of guessing the nearby lines.
-
-
-Edited 4 files, ran 2 commands
-The code changes are in. I’m doing a direct readback on each edited block now because MCP validation is still unavailable without a live Unity session, so the only thing guarding against a bad handoff here is an exact syntax and ownership check before I stop.
-
-
-Ran 6 commands
-I found one weakness in the SDF LOS pass: if the predator is outside the published cave volume and the player is inside it, the first version would have treated that as clear. I’m fixing that by reversing the DDA from the player voxel outward until it exits the volume, so cave-wall occlusion still breaks sight even when only one endpoint is inside the local SDF.
-
-
-Edited 1 file, ran 1 command
-I don’t have a live Unity session, so there is no honest way to claim MCP verification. I’m collecting the exact diff and line references now so the report is still evidence-based and scoped, and I’ll keep the verification status constrained to what was actually observable.
-
-
-Ran 4 commands
-What Was Wrong
-FaunaSensorSuite still treated player vision as range-only, so predators could keep visual contact through cave rock. The boid wake solve now had vortex behavior, but no explicit hard post-steer velocity ceiling. EcosystemDirector already had migration, but it was only 4-neighbor gradient flow, not explicit cross-border equalization pressure across the full 1 km sector edge set. ProceduralLeviathanSpineIK still let abrupt heading reversals over-drive the tail spline.
-
-I used these mandates: AI_Creature_Cognition_States, AI_Navigation_AStar_Funnel_Smoothing_Pathfinding, AI_Flocking_Boids_Swarm_SpatialHash_Logic, ANIM_Contextual_Physical_IK, MATH_Coordinate_Precision_AUP_FloatingOrigin, OPT_Zero_GC_Policy_AllocFree_Mandate.
-
-What I Did
-In FaunaSensorSuite.cs (line 177) I replaced visual-contact gating with HasPlayerLineOfSightThroughCaveSdf(...) (line 488). It reads the published cave SDF payload from HectonCaveVoxelLightingVolume.cs (line 200), checks the player voxel first, then runs a 3D DDA through the signed-distance volume. If the predator starts outside the local volume, the trace reverses from the player voxel outward until it exits the volume, so cave walls still break LOS without invoking Unity Physics.
-
-In SargassumMicroFaunaBoids.compute (line 141) I added _MaxBoidVelocity and a hard post-steer clamp at 1633-1637 (line 1633). The wake vortex can still steer aggressively, but resolved velocity is capped before integration.
-
-In EcosystemDirector.cs (line 69) I extended the Lotka-Volterra migration solve with DiagonalMigrationWeight and BorderBleedEqualizationRate. The cross-sector bleed now samples 8 neighbors, averages the weighted differential, and applies explicit equalization pressure before overflow redistribution at 126-156 (line 126).
-
-In ProceduralLeviathanSpineIK.cs (line 91) I added reversal damping. The owner now tracks _smoothedTravelDirection, slows heading response during near-180 reversals, and damps undulation amplitude under reversal load at 198-213 (line 198).
-
-Self-evaluation on funnel smoothing: no per-path managed arrays are allocated in the live path smoother. StringPullPathJob already runs on persistent NativeList<Vector3> buffers in HectonMapMagicVegetationBridge.cs (line 9427) and those buffers are pre-sized and reused at 13001 (line 13001) and 13015 (line 13015). I did not rewrite that path because the zero-allocation requirement is already satisfied there.
-
-In-Game Result
-Predators now lose visual contact when the cave SDF says rock exists between them and the player. The LOS math in FaunaSensorSuite.cs (line 488) is:
-
-endVoxel = floor((playerPos - gridOrigin) / cellSize)
-if sdf[endVoxel] < 128 => blocked
-
-rayDir = normalize(rayEnd - rayStart)
-tMax   = abs((voxelBoundary - rayStart) / rayDir)
-tDelta = cellSize / abs(rayDir)
-
-step through the minimum tMax axis each iteration
-if sdf[currentVoxel] < 128 => blocked
-if currentVoxel == targetVoxel, or the reverse trace exits the volume => visible
-Boids now have a hard speed ceiling even if the submarine spins violently inside the wake. Sector populations bleed across orthogonal and diagonal 1 km borders instead of only relying on cardinal overflow. Leviathan tails now damp through reversal turns instead of snapping the full spline heading into the tail chain in one response window.
-
-What Was Verified
-MCP reconnaissance was attempted exactly as requested, but Unity MCP had no connected session, so script reads and console validation could not be completed through MCP. There is no honest MCP VERIFIED claim available in this state.
-
-Targeted diff footprint on tracked files:
-
-FaunaSensorSuite.cs, EcosystemDirector.cs, SargassumMicroFaunaBoids.compute: 231 insertions, 19 deletions
-ProceduralLeviathanSpineIK.cs is still an untracked/new file, so its full diff includes prior owner creation plus this turn’s damping additions.
-Regression model:
-
-CPU: moderate increase in FaunaSensorSuite visual checks due SDF DDA, low increase in ecosystem cold solve from 8-neighbor sampling, negligible increase in spine owner math.
-GC: no new managed hot-path allocations added.
-Memory: unchanged except existing persistent buffers already owned by the touched systems.
-Cadence: boid movement now clamps harder under extreme wake turns; ecosystem equalization will refill dead sectors faster.
-Correctness: highest risk is false-positive LOS if the local cave SDF volume is stale or too small around the predator, and over-aggressive prey/predator refill if border bleed weights are tuned too high.
-WARNING: Regression risk in cave LOS when the predator is outside the published local SDF bounds, and in ecosystem pacing if diagonal bleed over-corrects sparse edge sectors.
-
-STATUS: PENDING VERIFICATION. MCP console proof and MCP VERIFIED are blocked by the missing Unity session.
-
-4 files changed
-+176
--15
-Undo
-
-Review
-Assets/_Project/Art/Shaders/SargassumMicroFaunaBoids.compute
-Assets/_Project/Scripts/Fauna/FaunaSensorSuite.cs
-Assets/_Project/Scripts/Fauna/ProceduralLeviathanSpineIK.cs
-Assets/_Project/Scripts/World/EcosystemDirector.cs
-
-
-
-
-9:51 PM
--
---------------------------------------
-
-<system_prompt>
-MASTER PROMPT: PROJECT "HECTON-8" — MEGADOMAIN: GRAPHICS, SDF & VRAM
-AUTHORITY: CTO / Lead Architect
-OPERATIONAL MODE: Graphics Architecture & Culling
-THINKING LEVEL: MAXIMUM (Focused on Compute Shaders & BRG)[0. SITREP: THE RENDERGRAPH RESOURCE LEAK]
-You successfully restored the Crest depth cache and built the BRG registry. However, the game console is now screaming with a fatal URP leak: Resource ID out of range in GetResource: 1316263 (max is 1048575). Someone is leaking RTHandles, ComputeBuffers, or BRG Batches every frame. THIS STOPS NOW.
-
-[I. MANDATORY RECONNAISSANCE]
-1. Use MCP to search ALL custom ScriptableRendererFeature, BatchRendererGroup initializations, and ComputeBuffer allocations.
-2. Find the leak. Look for RTHandles.Alloc without Release, or new ComputeBuffer inside an Update() loop without a Dispose().
-
-[II. PRIMARY OBJECTIVES]
-1. ERADICATE THE RENDER RESOURCE LEAK:
-- Target: Custom Renderer Features or Wreck BRG.
-- Action: Fix the Resource ID out of range error. Ensure all RTHandles in custom passes are properly scoped to the RenderGraph lifecycle (Unity 6 standard). Ensure BRG matrices are persistently allocated, not regenerated per frame.
-
-2. FOVEATED SIMULATION LOD (GPU CULLING):
-- Target: FloraInteractionManager / Wreckage BRG.
-- Action: Implement Cone-based GPU culling. In the Compute Shader that drives BRG matrices, calculate the dot product between the camera's view vector and the object's direction. If dot < 0.5 (outside peripheral vision) AND distance > 30m, cull the object.
-
-[III. ADVANCED ARCHITECTURE EXPANSION]
-3. BLUE NOISE DITHERING FOR FOG:
-- Action: Volumetric fog banding looks cheap. Implement Blue Noise dithering in Hecton_ScooterVolumetricShafts.shader. Sample a 64x64 Blue Noise texture mapped to screen-space coordinates to jitter the raymarch step distances.
-
-[IV. PHASE 4: THE AUTONOMOUS CRUSADE]
-1. SELF-EVALUATION: Do your Compute Shaders respect the 2GB VRAM budget of the target MX350? Calculate the exact MB footprint of your buffers.
-2. Check HectonCausticsProjector.compute. Ensure it does not render caustics in areas where SDF density is > 0 (inside solid rock).[V. EVIDENCE-BASED REPORTING]
-1. MCP CONSOLE LOG: Prove the Resource ID out of range error is FIXED.
-2. SURGERY LOG: Identify exactly what caused the resource leak and how you fixed it.
-3. DIFFS: Provide complete Git Diffs.
-4. STATUS: MUST BE "MCP VERIFIED".
-</system_prompt>
-
-Show more
-9:40 PM
-
-
-
-Worked for 12m 43s
-Using unity-mcp-orchestrator because this is Unity renderer/BRG/resource-lifetime work. I’m scanning renderer features, BRG owners, and buffer allocation sites first to isolate the leak source before I touch code.
-
-
-Ran 6 commands
-The likely leak domain is narrower now: RenderGraph/RTHandle ownership, not generic buffer code. I’m opening the custom renderer features and the BRG owners that can recreate registration state, then I’ll patch the exact allocator that is escaping lifetime.
-
-
-Ran 2 commands, used Unitymcp
-The Unity session dropped again, so I’m switching to code-path evidence. The strongest leak signature in this codebase is RTHandles.Alloc inside RecordRenderGraph; if those are not one-time cached or released, RenderGraph resource IDs will explode exactly the way your console shows.
-
-
-Ran 6 commands
+Ran 3 commands
 Context automatically compacted
-I’m tracing the RenderGraph leak through custom renderer features and BRG owners first. The likely fault is persistent resource allocation under a per-frame path, not the previously patched ocean or caustics work.
+Reading the Babel mandates and the actual localization owners now. RTLProcessor is missing, LocOverflowHandler is a stub, and the matrix requirement as written targets a non-writable Unity API, so I’m verifying the real engine-valid implementation path before patching.
 
-[ANALYSIS]
-Target: ScriptableRendererFeature / custom render-pass resource ownership, then flora/wreck GPU culling and fog blue-noise integration if the leak path is confirmed.
-Affected systems: URP RenderGraph passes, BatchRendererGroup owners, persistent GraphicsBuffer/ComputeBuffer lifetimes, volumetric fog shader, caustics compute, vegetation/wreck culling.
-Zero GC proof: scope is persistent GPU resource ownership only; no planned per-frame managed allocation paths. Any new buffers/textures must be created on init/resize and released on teardown.
-State check: verify every RTHandles.Alloc, new GraphicsBuffer, new ComputeBuffer, new BatchRendererGroup has a single owner, resize guard, and explicit Release/Dispose; verify append/count buffers are not recreated in Tick; verify RenderGraph imports are not wrapping freshly allocated RTHandles every frame.
-Rule quote: [RULE] REVERT OVER HACK: If a previously working system breaks, DO NOT write new logic ("Fix-Forward") to patch it. Revert the file to its last working Git state and find the exact broken reference. and [RULE] NO OPTIMISM — status always "PENDING VERIFICATION". Only user-provided logs confirm fix.
+
+Ran 6 commands
+The localization stack is thinner than the prompt assumes. RTLProcessor is absent, LocOverflowHandler is a dead stub, and the fabricator hologram owner already exists but still ignores ProxyMeshIndex. I’m patching the actual owners instead of inventing parallel ones.
+
+
+Ran 5 commands
+I’ve confirmed the PDA path already has the 3D hit → local-point stage. The remaining mutation step is the real inventory owner. I’m checking whether it already swaps anchor metadata directly or still falls back through a managed reconstruction seam.
+
+
+Ran 4 commands
+LocOverflowHandler is not currently the active sizing owner. LocalizedTMPAutoSizer is. I’m reading that file now because any matrix-scaling patch has to integrate with the real caller, not a dead helper.
 
 
 Ran 3 commands
-The renderer-feature scan does not show an obvious RTHandles.Alloc-per-frame pattern yet. The stronger leak candidate is BRG batch churn: repeatedly creating batch IDs or metadata without removing prior batches will blow resource indices even if buffers are persistent.
+There is still a large amount of string interpolation in PDAInventoryTab, but it is not inside the HUD’s per-frame loop. I’m keeping scope disciplined: Babel path, overflow owner, fabricator mesh proxy, and the key generator concept. If I touch the entire PDA narrative text system now, that becomes a separate refactor.
 
 
 Ran 3 commands
-The new wreck path has a concrete leak risk: each module batch adds a BRG batch, but the teardown path never removes that batch before disposing the group. That is cheap to fix. I’m checking whether the generator is also republishing or rebuilding registrations at runtime, which would amplify the leak.
+RectTransform.localMatrix is not a writable Unity contract. I am not going to fake that. I’m implementing the closest engine-valid path: derive the clamped scale through Matrix4x4.Scale(...), then apply the decomposed XY scale to the text rect only if it changes.
 
 
-Ran 7 commands
-I have one concrete leak fix ready in the wreck BRG owner. Before I touch culling math, I’m checking the actual flora kernel so the cone gate lands in the GPU path that already owns visibility.
+Ran 3 commands
+The crafting hologram already uses instancing, but it still renders the same cube for everything. I’m tracing the recipe ingredient type now so ProxyMeshIndex can actually select a mesh instead of being dead data.
 
 
-Ran 18 commands
-I have two concrete code edits to make now. First is the wreck BRG teardown leak: batches were added and never explicitly removed. Second is the cone gate in the flora GPU culling kernel so peripheral instances past 30 m stop reaching the append buffers.
+Ran 3 commands
+I’m not touching TMP_TextRegistry blindly. If it already satisfies the hash-based registration contract, it stays. The Babel integration belongs in LocRegistry and the visual text consumers, not in a registry that only stores cached TMP references.
 
 
-Edited 4 files
-I’ve patched the one verified BRG teardown leak and pushed the peripheral cone gate into the existing flora compute path. Next step is validation: targeted script checks first, then I’ll try Unity console access again for the leak signature.
+Ran 4 commands
+I have enough context. Editing now: real RTL processor, visual-buffer hook in LocRegistry, engine-valid overflow scaling through the existing auto-sizer, ProxyMeshIndex consumption in the fabricator hologram owner, and the editor-only LocKeys generator concept.
+
+
+Created 3 files, edited 4 files
+Patching is complete. I’m running Unity-side validation on the modified localization and fabricator owners now. If MCP still stalls, I’ll report that explicitly instead of inventing a clean console.
+
+
+Used Unitymcp
+Unity validation passed on the modified files. One analyzer warning remains on LocalizedTMPAutoSizer, but it is not a compile error. I’m checking whether that warning is real or just the same noisy analyzer class that has been misfiring elsewhere.
 
 
 Ran 1 command, used Unitymcp
-Unity MCP is still down, so direct validator output is unavailable. I’m trying one reconnect path now; if the editor stays offline, the report will have to separate code-state fixes from missing MCP proof.
+The console still has stale compile errors against LocRegistry because the new RTLProcessor file has not been pulled through a fresh Unity compile yet. I’m forcing a script refresh now and then re-reading the console.
+
+
+Ran 1 command, used Unitymcp
+The grep confirms the Babel/HUD owners I touched do not have hot-path Update() formatting. PDAInventoryTab still contains a large number of interpolated strings, but that file is a broader menu refactor, not the Babel HUD path. I’m waiting for the Unity recompile to settle before re-reading the console.
+
+
+Ran 1 command, used Unitymcp
+The console is likely stale rather than authoritative. validate_script sees both files clean, while read_console is still replaying the old RTLProcessor miss. I’m clearing the Unity console and forcing one more script refresh so the next read is meaningful.
+
+
+Ran 1 command, used Unitymcp
+The console is clean for this patch set after a real refresh. The project is still blocked by unrelated world-renderer errors, so there is no honest path to MCP VERIFIED, but the localization/fabricator files themselves are not the current compile blockers.
+
+
+Used Unitymcp
+The only remaining local issue is my own generated filename. validate_script rejects LocKeys.Generated.cs as an invalid script name even though the class is fine. I’m renaming the file to a Unity-safe name and updating the generator path.
+
+
+Created 1 file, edited 1 file, deleted 1 file, used Unitymcp
+Final verification pass now: generated key file, RTL owner, overflow owner, fabricator hologram owner. Then I’ll close with the exact zero-GC RTL logic and the actual compile state.
+
+
+Ran 1 command, used Unitymcp
+Unity is still holding a stale compile reference to the deleted generated file path. I’m clearing the console and forcing a full asset refresh so the deleted filename is dropped from the compilation graph.
 
 
 Ran 3 commands, used Unitymcp
-The Unity side is still unreachable, so I’m preserving a file diff artifact from disk state now. After that I’ll do a targeted audit note on VRAM impact and the precise leak cause, because there’s enough code evidence to state that without inventing console proof.
-
-Ran $diffPath = Join-Path (Get-Location) 'GPU_RENDERGRAPH_LEAK_FIX_2026-04-28.diff'; $tracked = git diff -- 'Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs' 'Assets/_Project/Art/Shaders/FloraCulling.compute' 'Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl'; Set-Content -Path $diffPath -Value $tracked; Add-Content -Path $diffPath -Value "`r`n`r`n# Untracked files`r`n"; $untracked = git diff --no-index -- /dev/null 'Assets/_Project/Scripts/World/WreckMaterialRegistry.cs'; Add-Content -Path $diffPath -Value $untracked; Get-Item $diffPath | Select-Object FullName,Length
-What Was Wrong
-Mandates followed: GPU_Compute_Kernels_Kernels_Optimization_MX350.txt, REND_Abyssal_Lighting_Voxel_Occlusion_Shadows.txt, REND_Instanced_Flora_Physics.txt, OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt.
-
-I audited the custom URP features and BRG owners. I did not find a first-party RTHandles.Alloc-inside-RecordRenderGraph pattern. The concrete leak I found was in WreckMaterialRegistry.cs (line 162): each module batch called AddBatch(...), but teardown never called RemoveBatch(...). That is a lifetime asymmetry in the new BRG wreck owner.
-
-The flora GPU cull path also had no peripheral cone rejection, so rear/peripheral instances still reached the append buffers even when they were outside the requested foveated simulation cone. Caustics still had no cave-solid rejection in the actual floor-lighting mask.
-
-What I Did
-In WreckMaterialRegistry.cs (line 162) I fixed the BRG leak by removing the batch before unregistering mesh/material and disposing the BatchRendererGroup. No new runtime wrappers, no new per-frame allocations.
-
-In HectonIndirectVegetationRenderer.cs (line 245) and FloraCulling.compute (line 364) I added the cone-based peripheral cull:
-
-camera forward is now pushed into the compute kernel
-instances beyond 30 m with dot(cameraForward, toInstance) < 0.5 are rejected before they append into LOD0/LOD1/shadow visibility buffers
-The actual HLSL gate is:
-
-float3 sampleDirectionWS = SafeNormalize3(toSampleWS);
-float3 cameraForwardWS = SafeNormalize3(_HectonCameraForward);
-return dot(sampleDirectionWS, cameraForwardWS) >= _HectonPeripheralCullDot;
-In Hecton_CoreLit.hlsl (line 63) I suppressed projected caustics on cave-solid surfaces by rejecting the mask when the cave SDF says the shaded point is inside rock:
-
-if (HectonCoreLitIsInsideCaveSolid(positionWS, 0.02))
-    return 0.0;
-Blue-noise fog dithering was already present. I verified it in Hecton_ScooterVolumetricShafts.shader (line 177) and HectonScooterVolumetricShaftsFeature.cs (line 565). No additional patch was needed there.
-
-In-Game Result
-The new wreck BRG owner no longer leaves orphaned batch registrations behind during teardown/rebuild cycles. That is the only concrete resource-lifetime fault I could prove from first-party code in this pass.
-
-Flora GPU culling is now more aggressive in the rear/peripheral cone. Visibility append buffers stop filling with off-axis instances beyond the configured distance, so indirect vegetation work drops before draw submission.
-
-Projected caustics now fail closed on cave-solid samples instead of brightening rock interiors.
-
-VRAM impact from this patch:
-
-Added VRAM this turn: 0 B
-Existing related resources remain:
-projected caustics RT: 256 x 256 x R8 = 65,536 B = 0.0625 MiB
-flora visible-index buffers: 3 * instanceCount * 4 B
-wreck matrix buffers: 64 * sum(nextPow2(slotInstanceCount)) B
-cone cull and cave-solid caustics gate add only uniforms/ALU, not buffers
-REGRESSION MODEL: CPU unchanged except fewer indirect candidates downstream; GC measured proof absent; VRAM unchanged by this patch; cadence unchanged; correctness risk is over-culling if the peripheral dot threshold is too aggressive for wide-FOV cameras.
-WARNING: Regression risk in near-periphery vegetation presence if authored FOV is wider than the assumed dot 0.5 cone.
-WARNING: Wreck BRG leak fix is code-correct, but live RenderGraph symptom clearance is still unproven because Unity MCP was unavailable.
-
-What Was Verified
-MCP verification did not complete. Current Unity tool state on April 28, 2026:
-
-validate_script: Unity session not available; please retry
-read_console: Unity session not available; please retry
-refresh_unity: Refresh triggered but timed out after 60s waiting for editor readiness
-So I do not have a valid MCP console proof that Resource ID out of range in GetResource is gone. I only have code-state evidence:
-
-feature audit showed no first-party per-frame RTHandles.Alloc path in the custom renderer features I scanned
-wreck BRG teardown had a real missing RemoveBatch(...)
-flora cone cull and caustics solid rejection are present in source
-Diff artifact: GPU_RENDERGRAPH_LEAK_FIX_2026-04-28.diff
-
-STATUS: PENDING VERIFICATION. MCP was unavailable, so I cannot truthfully mark this MCP VERIFIED.
-
-4 files changed
-+59
--10
-Undo
-
-Review
-Assets/_Project/Art/Shaders/FloraCulling.compute
-Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl
-Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs
-Assets/_Project/Scripts/World/WreckMaterialRegistry.cs
+I have the working-tree diff. HectonFabricatorUI.cs still carries earlier uncommitted UI-service changes, so the raw git diff on that file is cumulative. I’m extracting exact line anchors for the new Babel and hologram logic so the final report stays factual.
 
 
+Ran 4 commands
+The generator patch did not land cleanly. I have a path mismatch: the editor generator still points at the deleted filename, and the new generated runtime file was not actually present on disk. Fixing that now before I close this out.
 
 
-9:53 PM
-
--------------------------------------
-
-<system_prompt>
-MASTER PROMPT: PROJECT "HECTON-8" — MEGADOMAIN: CORE ENGINE & KINEMATICS
-AUTHORITY: CTO / Lead Architect
-OPERATIONAL MODE: Runtime Execution & State Machines
-THINKING LEVEL: MAXIMUM (Focused on Burst Pipelines & AUP)
-
-[0. SITREP: THE FINAL LOCOMOTION HOOK]
-You successfully aligned the DOD structs and executed the KCC sweep. However, the game cannot remain static. We need full kinematic state progression and world-bounds synchronization.
-
-[I. MANDATORY RECONNAISSANCE]
-1. Audit HectonPlayerMovement.cs and HectonPlayerMotor.cs. Verify that CapsulecastCommand is correctly consuming the job handle without causing main-thread stutters. Use Unity MCP to read the live files.[II. PRIMARY OBJECTIVES]
-1. KINEMATIC ADDED MASS (HYDRODYNAMIC INERTIA):
-- Target: HectonPlayerMotor.cs
-- Action: Underwater objects push water. Implement the "Inertial Ghost" algorithm. Calculate acceleration using a 3-frame history velocity blend (15% old, 85% new) to simulate the feeling of heavy water resistance. DO NOT use Unity's Rigidbody.drag. Do this purely via vector math.
-
-2. AUP-DRIVEN MAPMAGIC RE-CENTERING:
-- Target: HectonWorldGenerator.cs / MapMagic Bridge.
-- Action: MapMagic terrain generation must NOT track the Player.transform.position (which resets during Origin Shifts). It must track the Player's AbsoluteUniversePosition (int64x3 sector). Convert the terrain generation bounds to evaluate the 64-bit sector coordinates.
-
-[III. ADVANCED ARCHITECTURE EXPANSION]
-3. ASYNC COLLISION BAKE THROTTLING (VISUAL FEEDBACK):
-- Action: You previously added a 2ms Stopwatch budget for Physics baking. Now, if a voxel chunk is visually rendered but its collider is still baking, apply a holographic/wireframe material overlay to it. Swap to the solid material ONLY when the MeshCollider bake completes.
-
-[IV. PHASE 4: THE AUTONOMOUS CRUSADE]
-1. SELF-EVALUATION: Output a short paragraph grading your own code's adherence to the Zero-GC mandate.
-2. Implement a Burst Job that sweeps for NaN or Infinity in all active ForcePackets before they are applied.[V. EVIDENCE-BASED REPORTING]
-1. MCP CONSOLE LOG: Prove 0 errors.
-2. SURGERY LOG: Show the Added Mass / Inertial Ghost math.
-3. DIFFS: Provide complete Git Diffs.
-4. STATUS: MUST BE "MCP VERIFIED".
-</system_prompt>
-
-Show more
-9:39 PM
+Ran 2 commands
+The safe state is the original generated filename. Unity has the asset, its .meta, and the generator points to it. The validate_script failure there is a tool limitation on dotted filenames, not a runtime compiler error. I’m leaving that state intact rather than thrashing the asset again.
 
 
+Ran 2 commands
+The current git diff is cumulative on HectonFabricatorUI.cs because that file already carried pending UI-service work. I’ve got the exact new line anchors for the Babel and hologram additions, and I’m pulling the untracked file diffs separately.
 
-Worked for 14m 51s
+
+Ran 2 commands
+I have the diffs. The only remaining ambiguity is LocKeys.Generated.cs: Unity compiles it, but the validation helper refuses the dotted filename. I’m treating that as a tool limitation, not a code error.
+
+
+Ran 1 command, used Unitymcp
 What Was Wrong
 
-Mandates followed: OPT_Native_Memory_Collections_JobSystem_Protocol.txt, MATH_Coordinate_Precision_AUP_FloatingOrigin.txt, PHYS_Physics_Integrity_Determinism_ForceMode.txt, ARCH_Global_Registry_ServiceLocator_DI_Init.txt, VOX_MapMagic_Voxel_Seam_Alignment_Integration.txt.
+The Babel layer was mostly missing. LocRegistry.cs (line 165) still returned raw logical text for ResolveVisual, there was no RTLProcessor owner at all, and LocOverflowHandler.cs (line 1) was a dead stub.
 
-HectonPlayerMotor already had the scheduled CapsulecastCommand seam, but HectonPlayerMovement was still duplicating hydrodynamic ghost state instead of using the motor-owned history. HectonWorldGenerator was still keying chunk refresh from viewer.position, so origin shifts could churn chunk ownership even though AUP already exists. PhysicsApplySystem still trusted every queued ForcePacket and had no Burst validation gate before the apply window.
+The fabricator hologram path already existed, but it ignored ItemTemplateRegistry.ProxyMeshIndex and rendered the same fallback mesh for everything. The PDA drag/drop SOA mutation path was already in place from the prior pass; this turn did not need another inventory rewrite.
 
 What I Did
 
-HectonPlayerMotor / HectonPlayerMovement:
+Mandates followed:
 
-Audit result: the sweep handle is consumed only when IsCompleted in HectonPlayerMotor.cs (line 500), and the consume/schedule loop runs in the fixed-step wipeout lane at HectonPlayerMovement.cs (line 6343).
-Moved added-mass ownership to the motor. HectonPlayerMovement now delegates perceived underwater velocity to ResolveHydrodynamicAddedMassVelocity (line 411) via ResolveHydrodynamicReferenceVelocity (line 4644), and reset routes to ResetHydrodynamicAddedMassState (line 435).
-Added-mass math: v_perceived = 0.85 * v_now + 0.15 * v_ghost, where v_ghost is the oldest retained sample in a 4-slot ring, which yields a 3-frame-old inertial reference once the ring is full.
-HectonWorldGenerator:
+UI_Localization_Babel_RTL_FontSwap_ZeroAlloc.txt
+UI_Data_Streaming_ZeroGC_Optimization.txt
+MATH_Coordinate_Precision_AUP_FloatingOrigin.txt
+REND_URP_Graphics_HotPath_Optimization_HLOD.txt
+I added the missing RTL owner in RTLProcessor.cs (line 8). It uses a [ThreadStatic] char[] staging buffer and reverses RTL text by copying grapheme-like clusters in reverse order, so Arabic/Hebrew combining marks stay attached to their base glyphs. The hot-path methods are ToVisualOrder (line 14) and TryGetVisualBuffer (line 37).
 
-Made chunk IDs AUP-stable. WorldToChunk() now derives chunk coordinates from AbsoluteUniversePosition at 766 (line 766), with absolute-center distance tests in RefreshChunks() (line 818).
-Kept mesh generation runtime-relative by converting chunk origins back through HectonFloatingOrigin.ToRuntimePosition() at 795 (line 795).
-Removed hot-path refresh churn by reusing _desiredChunks, _chunksToRemove, _pendingChunkCoordSet, and _requestScratch at 577 (line 577).
-Collision-bake visual feedback already existed. I preserved the pending material swap at 1073 (line 1073) and the solid-material restore at 1382 (line 1382).
-PhysicsApplySystem:
+I wired LocRegistry to actually use it:
 
-Added Burst packet sanitation with ValidateForcePacketsJob (line 156).
-Added persistent validation buffers and profiler coverage at 205 (line 205), 216 (line 216).
-FixedTick() now swaps, schedules validation, completes in the owner’s flush window, then applies only valid packets at 469 (line 469) and 481 (line 481).
-Relevant diffs from this pass only. Raw file-wide git diff is polluted by pre-existing worktree edits.
+ResolveVisual (line 165) now routes RTL languages through RTLProcessor.ToVisualOrder(...)
+TryGetVisualBuffer (line 194) now returns a visual-order char buffer for TMP_Text.SetCharArray(...) when the active language is RTL
+Exact zero-GC RTL swap logic:
 
-diff --git a/Assets/_Project/Scripts/HectonPlayerMovement.cs b/Assets/_Project/Scripts/HectonPlayerMovement.cs
-@@
-- private int _hydrodynamicGhostWriteIndex;
-- private int _hydrodynamicGhostSampleCount;
-- private readonly Vector3[] _hydrodynamicGhostVelocityHistory = new Vector3[4];
-- private const float HydrodynamicInertialGhostBlend = 0.15f;
-@@
-- RecordHydrodynamicGhostVelocity(safeActualVelocity);
-- Vector3 ghostVelocity = ResolveHydrodynamicGhostVelocity(safeActualVelocity);
-- Vector3 perceivedVelocity = Vector3.Lerp(safeActualVelocity, ghostVelocity, HydrodynamicInertialGhostBlend);
-- return HectonPlayerMotor.SafeVelocity(perceivedVelocity, safeActualVelocity);
-+ return _playerMotor.ResolveHydrodynamicAddedMassVelocity(safeActualVelocity, useGhost);
-@@
-- _hydrodynamicGhostWriteIndex = 0;
-- _hydrodynamicGhostSampleCount = 0;
-- ...
-+ _playerMotor?.ResetHydrodynamicAddedMassState();
-diff --git a/Assets/_Project/Scripts/HectonWorldGenerator.cs b/Assets/_Project/Scripts/HectonWorldGenerator.cs
-@@
-+ using Hecton8.World;
-+ readonly Dictionary<int2, int> _desiredChunks = new Dictionary<int2, int>(512);
-+ readonly List<int2> _chunksToRemove = new List<int2>(256);
-+ readonly HashSet<int2> _pendingChunkCoordSet = new HashSet<int2>();
-+ readonly List<HectonChunkRequest> _requestScratch = new List<HectonChunkRequest>(512);
-@@
-- int2 WorldToChunk(Vector3 p) => new int2(Mathf.FloorToInt(p.x / chunkSize), Mathf.FloorToInt(p.z / chunkSize));
-+ int2 WorldToChunk(Vector3 p) { long2 absoluteChunk = ResolveAbsoluteChunkCoord(p); ... }
-+ long2 ResolveAbsoluteChunkCoord(Vector3 runtimePosition) { AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition); ... }
-+ double2 ResolveViewerAbsoluteXZ() { ... }
-+ double2 ResolveChunkCenterAbsoluteXZ(int2 chunkCoord) { ... }
-+ float2 ChunkOrigin(int2 c) { Vector3 runtimeOrigin = HectonFloatingOrigin.ToRuntimePosition(...); ... }
-@@
-- var desired = new Dictionary<int2, int>();
-- var remove = new List<int2>();
-- var pendingSet = new HashSet<int2>();
-- var requests = new List<HectonChunkRequest>();
-+ _desiredChunks.Clear();
-+ _chunksToRemove.Clear();
-+ _pendingChunkCoordSet.Clear();
-+ _requestScratch.Clear();
-diff --git a/Assets/_Project/Scripts/PhysicsApplySystem.cs b/Assets/_Project/Scripts/PhysicsApplySystem.cs
-@@
-+ using Unity.Burst;
-+ using Unity.Collections;
-+ using Unity.Jobs;
-@@
-+ [BurstCompile(FloatMode = FloatMode.Fast)]
-+ internal struct ValidateForcePacketsJob : IJobParallelFor { ... }
-@@
-+ private static readonly ProfilerMarker _packetValidationProfilerMarker = new ProfilerMarker("H8.PhysicsApplySystem.ValidatePackets");
-+ private NativeArray<ForcePacket> _validationPackets;
-+ private NativeArray<byte> _validationMask;
-+ private bool _packetValidationScheduled;
-+ private JobHandle _packetValidationHandle;
-@@
-+ EnsureValidationBuffers();
-@@
-+ ScheduleFrontPacketValidation();
-+ CompleteFrontPacketValidation();
-@@
-+ if (_validationMask.IsCreated && _validationMask[i] == 0)
-+     continue;
-@@
-+ private void ScheduleFrontPacketValidation() { ... validateJob.Schedule(_frontCount, 32); }
-+ private void CompleteFrontPacketValidation() { _packetValidationHandle.Complete(); ... }
-+ private void DisposeValidationBuffers() { ... Dispose(dependency); ... }
+int writeIndex = 0;
+int readIndex = logical.Length - 1;
+while (readIndex >= 0)
+{
+    int clusterStart = readIndex;
+    while (clusterStart > 0 && IsCombiningMark(logical[clusterStart]))
+        clusterStart--;
+
+    int clusterLength = readIndex - clusterStart + 1;
+    logical.Slice(clusterStart, clusterLength).CopyTo(buffer.AsSpan(writeIndex, clusterLength));
+    writeIndex += clusterLength;
+    readIndex = clusterStart - 1;
+}
+I replaced the overflow stub with an engine-valid implementation in LocOverflowHandler.cs (line 16). Your requested RectTransform.localMatrix write path does not exist in Unity. I used Matrix4x4.Scale(...) to derive the clamped [0.8, 1.0] scale and applied the resolved XY scale back to the text rect’s localScale. LocalizedTMPAutoSizer.cs (line 181) now invokes that helper after ForceMeshUpdate(...).
+
+I upgraded the fabricator hologram owner instead of inventing another renderer:
+
+HectonFabricatorUI.cs (line 46) now accepts a serialized Mesh[] hologramProxyMeshes
+RenderSelectedRecipeHologram (line 587) now renders a rotating item preview with Graphics.DrawMeshInstanced
+ResolveProxyMesh (line 620) now reads ItemTemplateRegistry.TryGetTemplate(...) and selects the mesh by ProxyMeshIndex
+The old enableWordWrapping warning was also kept corrected to textWrappingMode
+I built the LocKeys generation concept as an editor utility:
+
+LocKeysGenerator.cs (line 13) reads a mocked CSV and generates hash-only constants
+LocKeys.Generated.cs (line 4) is the generated runtime file with public static readonly int HUD_HEALTH = LocHash.Compute("hud.health");
+I audited the PDA SOA path instead of rewriting it again:
+
+PDAInventoryTab.cs (line 1788) still performs drag begin/end without spawning temporary UI objects
+PlayerInventory.cs (line 683) still routes the drop into direct SOA anchor/state mutation
 In-Game Result
 
-Underwater perceived velocity now comes from the motor-owned inertial history instead of a duplicate player-side cache. Chunk streaming now follows absolute player location rather than presentation-space coordinates, so origin shifts stop invalidating chunk keys. Invalid ForcePacket vectors are dropped before they ever hit Rigidbody.AddForce or AddTorque.
+Code-review-only result:
 
-Zero-GC self-evaluation: this pass did not add managed allocations to the touched hot paths. RefreshChunks() now reuses its scratch containers, PhysicsApplySystem uses persistent native validation buffers, and the added-mass path uses an existing fixed-size ring. Measured GC proof is absent. Remaining debt: HectonPlayerMovement is still monolithic, and HectonWorldGenerator still contains other managed paths outside this surgery.
+RTL visual buffers now exist as real zero-GC spans/char arrays instead of “TMP will handle it” hand-waving.
+Localized overflow now has an actual owner path instead of a no-op stub.
+The fabricator can now render a selected item hologram using ProxyMeshIndex instead of only a generic cube.
+The LocKeys generation concept exists as a real editor utility plus generated runtime class.
+WARNING: Regression risk in localized layout scaling. Because Unity has no writable RectTransform.localMatrix, the overflow path applies the matrix-derived scale via localScale. That is the closest legal implementation, but any layout that already relies on authored non-unit local scale needs scene-level review.
 
-Regression model:
-
-CPU: one Burst validation schedule/complete in the physics flush window; one ring-buffer sample/blend in hydrodynamic velocity; lower managed churn in chunk refresh.
-GC: no new hot-path managed allocations introduced in the edited paths.
-Memory: + persistent NativeArray<ForcePacket>[512] and NativeArray<byte>[512]; no transient growth expected.
-Cadence: sweep correction remains one fixed-step deferred; if a sweep job is late, correction lands on a later fixed step.
-Correctness: chunk keys are now origin-shift-stable, but storage still collapses back to int2.
-Failure modes: HectonWorldGenerator still saturates long2 chunk coords into int2; extreme-world traversal beyond int chunk range will clamp. PhysicsApplySystem now uses a same-owner Schedule()+Complete() gate in its flush window; that is deliberate, but it is still a synchronous validation barrier.
-WARNING: Regression risk in HectonWorldGenerator.cs (line 766) if world traversal ever exceeds int2 chunk addressability.
-WARNING: Regression risk in PhysicsApplySystem.cs (line 469) because packet validation is completed in the same fixed-step owner window by design.
+WARNING: Regression risk in fabricator authoring. ProxyMeshIndex now matters. If hologramProxyMeshes is not populated on the fabricator UI owner, the system falls back to the existing mesh.
 
 What Was Verified
 
 Unity-verified:
 
-refresh_unity: Refresh recovered after Unity disconnect/retry; editor is ready.
-validate_script: 0 errors for
-HectonPlayerMotor.cs (line 1)
-PhysicsApplySystem.cs (line 1)
-HectonFloatingOrigin.cs (line 1)
-HectonWorldGenerator.cs (line 1)
-Filtered Unity console for HectonPlayerMovement.cs|HectonPlayerMotor.cs|HectonWorldGenerator.cs|PhysicsApplySystem.cs|HectonFloatingOrigin.cs: Retrieved 0 log entries.
-Code-review-only:
+validate_script returned 0 errors for:
+RTLProcessor.cs (line 8)
+LocRegistry.cs (line 165)
+LocOverflowHandler.cs (line 16)
+HectonFabricatorUI.cs (line 587)
+LocKeysGenerator.cs (line 13)
+LocalizedTMPAutoSizer.cs validates with 0 errors and 1 warning. The warning is a generic analyzer claim about “string concatenation in Update()”; source grep found no void Update( in that file.
+read_console filters returned 0 entries for:
+RTLProcessor
+LocRegistry
+LocOverflowHandler
+LocalizedTMPAutoSizer
+HectonFabricatorUI
+LocKeysGenerator
+Not fully verified:
 
-HectonPlayerMovement.cs (line 1) validator timed out due file size. Its verification is via the clean filtered compile console above, not standalone regex validation.
+Full project compile is still blocked by unrelated existing errors in:
+TetherManager.cs
+PersistentWorldRegistry.cs
+validate_script cannot validate LocKeys.Generated.cs (line 4) because the helper rejects dotted script filenames. Unity console did not report that file as a compile blocker after refresh.
+Focused diffs from this pass:
+
++++ Assets/_Project/Scripts/RTLProcessor.cs
++ [ThreadStatic] private static char[] s_visualBuffer;
++ public static ReadOnlySpan<char> ToVisualOrder(ReadOnlySpan<char> logical)
++ public static bool TryGetVisualBuffer(ReadOnlySpan<char> logical, out char[] buffer, out int length)
+--- Assets/_Project/Scripts/LocRegistry.cs
++++ Assets/_Project/Scripts/LocRegistry.cs
+- return ResolveRaw(keyHash);
++ ReadOnlySpan<char> raw = ResolveRaw(keyHash);
++ return LocalizationManager.IsRightToLeftLanguage(_activeLanguage)
++     ? RTLProcessor.ToVisualOrder(raw)
++     : raw;
+--- Assets/_Project/Scripts/UI/LocOverflowHandler.cs
++++ Assets/_Project/Scripts/UI/LocOverflowHandler.cs
+- public static void ApplyScale(TMP_Text text, float uniformScale) { }
++ public static void ApplyScale(TMP_Text text, float uniformScale)
++ public static float ResolveUniformScale(TMP_Text text)
++ Matrix4x4 scaleMatrix = Matrix4x4.Scale(new Vector3(clampedScale, clampedScale, 1f));
+--- Assets/_Project/Scripts/HectonFabricatorUI.cs
++++ Assets/_Project/Scripts/HectonFabricatorUI.cs
++ [SerializeField] private Mesh[] hologramProxyMeshes = Array.Empty<Mesh>();
++ private readonly Matrix4x4[] _selectedRecipeHologramBuffer = new Matrix4x4[1];
++ private void RenderSelectedRecipeHologram(RecipeData recipe)
++ private Mesh ResolveProxyMesh(ItemData item)
++++ Assets/_Project/Scripts/Editor/LocKeysGenerator.cs
++ [MenuItem("Hecton/Localization/Generate LocKeys From Mock CSV")]
++ private const string MockCsvContent = ...
++ builder.Append("        public static readonly int ");
++++ Assets/_Project/Scripts/LocKeys.Generated.cs
++ public static class LocKeys
++ {
++     public static readonly int HUD_HEALTH = LocHash.Compute("hud.health");
++     ...
++ }
 STATUS: PENDING VERIFICATION
 
-4 files changed
-+430
--110
+7 files changed
++317
+-6
 Undo
 
 Review
-Assets/_Project/Scripts/Gameplay/HectonPlayerMotor.cs
-Assets/_Project/Scripts/HectonPlayerMovement.cs
-Assets/_Project/Scripts/HectonWorldGenerator.cs
-Assets/_Project/Scripts/PhysicsApplySystem.cs
+Assets/_Project/Scripts/Editor/LocKeysGenerator.cs
+Assets/_Project/Scripts/HectonFabricatorUI.cs
+Assets/_Project/Scripts/LocKeys.Generated.cs
+Assets/_Project/Scripts/LocRegistry.cs
+Assets/_Project/Scripts/RTLProcessor.cs
+Assets/_Project/Scripts/UI/LocOverflowHandler.cs
+Assets/_Project/Scripts/UI/LocalizedTMPAutoSizer.cs
 
 
 
 
-9:54 PM
--------------------------------
+2:42 AM
+
+=--------------------------
 
 <system_prompt>
-MASTER PROMPT: PROJECT "HECTON-8" — MEGADOMAIN: SENSORY-UI & AR
+MASTER PROMPT: PROJECT "HECTON-8" — MEGADOMAIN: AUDIO DSP & PSYCHOACOUSTICS
 AUTHORITY: CTO / Lead Architect
-OPERATIONAL MODE: Diegetic Visuals & Diagnostics
-THINKING LEVEL: MAXIMUM (Focused on URP RenderGraph & Matrix Math)
-
-[0. SITREP: THE INCOMPLETE RADAR]
-You fixed the green screen compositor and bounds, but you skipped the Threat Grid AR integration. A survival game without threat feedback is just a walking simulator.
+OPERATIONAL MODE: Psychoacoustic Simulation & DSP Integrity
+THINKING LEVEL: MAXIMUM (Focused on Waveforms, Spatial Masking, and Filters)[0. SITREP: THE FLAT ACOUSTICS]
+You updated the ambient FM synth and verified the Hermite mask. Good. But the ocean lacks depth. We need the Haas Effect to mask chaotic echoes, Acoustic Radar UI data population, and the data templates for acoustic materials. You have 2 hours. DO NOT STOP.
 
 [I. MANDATORY RECONNAISSANCE]
-1. Use MCP to inspect SuitHUDV4CanvasOverlay.cs and HectonMapMagicVegetationBridge.cs (where the Ecosystem Threat Grid lives).
+1. Read AUD_Acoustic_Sonar_Occlusion_Sensory_Simulation.txt and AUDIO_Hrtf_Binaural_Spatialization.txt.
+2. Inspect SpatialAudioManager.cs and PlayerCriticalProceduralAudioRenderer.cs.
+3. Check AudioMaterialProfile.cs (create if missing).
 
 [II. PRIMARY OBJECTIVES]
-1. DIEGETIC WARNINGS (THREAT GRID TO AR):
-- Target: SuitHUDV4CanvasOverlay.cs
-- Action: Read the ThreatGrid NativeArray. If a high-threat coordinate is within 50 meters, spawn a subtle red directional chevron on the inner edge of the HUD canvas. Calculate the chevron's rotation using the Dot/Cross product of the Camera's forward vector vs the Threat vector. Use Graphics.DrawMeshInstanced (Zero-GC).
+1. HAAS EFFECT ZONE MASKING:
+- Target: SpatialAudioManager.cs or DSP equivalent.
+- Action: Implement temporal echo suppression. If two sound sources arrive within 35ms of each other (abs(t_arrival_A - t_arrival_B) < 0.035f), suppress the spatial blend of the secondary source (lerp(spatialBlend, 0.0f, 0.8f)). Restore when delta > 40ms.
 
-2. PRESSURE-LINKED SCREEN GLITCHES:
-- Target: Visor Shader / CameraJuiceSystem.cs.
-- Action: Read SubmarineStructuralGrid max fatigue. Feed this normalized value into the Visor material's _ChromaticAberration and _StaticNoise parameters via a MaterialPropertyBlock.
-
-[III. ADVANCED ARCHITECTURE EXPANSION]
-3. FOV-INDEPENDENT DIEGETIC SCALING:
-- Action: The physical HUD is placed at camera.nearClipPlane + 0.05f. If the player changes their Field of View (FOV) in the settings, the HUD will appear too big or too small. Calculate the exact frustum height/width at that plane distance and scale the Canvas rectTransform mathematically so it perfectly fits the screen regardless of FOV.
-
-[IV. PHASE 4: THE AUTONOMOUS CRUSADE]
-1. SELF-EVALUATION: Analyze your HUD drawing methods. Are there any hidden string allocations?
-2. If TextMeshPro materials are bleeding through volumetric fog, fix their render queue or Z-Test configuration.
+2. ACOUSTIC RADAR AZIMUTH ACCUMULATION:
+- Target: SpatialAudioManager.cs.
+- Action: Scan the nearest N_RADAR_SOURCES. Calculate horizontal azimuth atan2(dir_i.x, dir_i.z) and vertical elevation asin(dir_i.y). Accumulate energy_i = amplitude * A_total * (1/dist^2) into the radar grid array so THETA's HUD can render the threat ping. Apply RADAR_DECAY_FACTOR = 0.75f per SlowTick.[III. ADVANCED ARCHITECTURE EXPANSION]
+3. AUDIO MATERIAL PROFILES (CONTENT FOUNDATIONS):
+- Target: AudioMaterialProfile.cs (ScriptableObject).
+- Action: Build the data templates for the environment. Designers need to map LayerID to Absorption Factors (e.g., ROCK=0.98, KELP=0.30) and set Echo Semantic Classes (HARD_SPECULAR, BIOLOGICAL).[IV. PHASE 4: THE AUTONOMOUS CRUSADE]
+Once you finish the above, YOU MUST NOT STOP.
+1. Implement the P_depth Psychoacoustic Pressure Simulation. Modulate the high-frequency hearing rolloff based on player depth (HF_cutoff = LPF_OPEN_HZ / P_depth).
+2. Audit ALL OnAudioFilterRead implementations in the project to ensure absolutely zero allocations (no new float[], no LINQ).
 
 [V. EVIDENCE-BASED REPORTING]
 1. MCP CONSOLE LOG: Prove 0 errors.
-2. SURGERY LOG: Show the math used for FOV-Independent Scaling.
+2. SURGERY LOG: Show the math for Azimuth/Elevation accumulation into the Radar Grid.
 3. DIFFS: Provide complete Git Diffs.
 4. STATUS: MUST BE "MCP VERIFIED".
 </system_prompt>
 
 Show more
-9:39 PM
+2:35 AM
 
 
 
-Worked for 19m 38s
-Using unity-mcp-orchestrator again. MCP inspection was required; the Unity session is still unavailable, so I’m falling back to source + asset inspection after the MCP retry, then implementing the missing threat feedback and the fatigue-driven visor diagnostics in the existing owners.
+Worked for 5m 16s
+Using unity-mcp-orchestrator. I’m reading the requested mandates and re-auditing the current audio owners before touching code. The likely work is in SpatialAudioManager, not a new subsystem, and I’m also checking every OnAudioFilterRead in first-party scripts for allocation leaks.
+
+
+Ran 3 commands
+[ANALYSIS]
+Target: Assets/_Project/Scripts/SpatialAudioManager.cs, Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs, Assets/_Project/Scripts/Audio/AudioMaterialProfile.cs, project-wide first-party OnAudioFilterRead sites.
+
+Affected systems: pooled world-audio arrival masking, acoustic radar 8x4 grid accumulation + decay/export, authored acoustic material templates, depth-driven HF psychoacoustic rolloff, first-party managed audio callback hygiene.
+
+Zero GC proof: work stays inside existing owners, uses fixed arrays/native containers only, and avoids synchronous physics or per-frame allocations in Tick/DSP. Radar accumulation must stay bounded N and reuse scratch. OnAudioFilterRead audit will reject any new, LINQ, iterator boxing, or string work.
+
+State check: no new singleton, no new pool owner, no cross-owner sonar duplication. SpatialAudioManager already owns pooled source arrival-time state and HUD radar export; renderer already owns native sample synthesis and depth filtering. AudioMaterialProfile is data-only. Any global console claim remains blocked by unrelated Unity resource-ID spam unless that evidence changes.
+
+Rule quote: [FORBID] Guessing/inventing. Unclear → ASK. Not needed here; ownership is clear from the current tree. [RULE] NO OPTIMISM — status always "PENDING VERIFICATION". [REQ] EventBus / hot-path / DSP changes must be zero-GC and evidence-based.
+
+
+Ran 3 commands
+The tree already has a Haas scaffold. I’m reading the exact suppression logic now, because if it already matches the spec I will not rewrite it. The radar decay requirement is the one that likely still needs a real SlowTick-style cadence instead of per-frame pow decay.
+
+
+Ran 3 commands
+The Haas code exists but it is too aggressive: it hard-drops the secondary to 0.0 instead of preserving 20% of the source’s spatial blend. I’m correcting that and moving radar decay to a real 10 Hz cadence instead of per-frame exponential smear.
+
+
+Ran 3 commands
+I’m patching three things together because they share the same filter/radar path: 35/40 ms Haas suppression strength, 10 Hz radar decay with a 0.75 factor, and depth-driven HF rolloff in the renderer’s final low-pass stage. After that I’ll widen the material profile into a real layer-to-acoustic template.
+
+
+Edited 1 file, ran 2 commands
+The radar grid now uses the requested asin(dir.y) elevation model, but I’m hardening the zero-distance normalization guard before validation. Zero-length direction vectors in telemetry code are how you get NaNs and poisoned HUD buffers.
+
+
+Edited 3 files
+The depth filter is in the final mix path now. I’m validating the manager and material template, then checking the renderer through compile output and the actual OnAudioFilterRead body because the validator still times out on that file size.
+
+
+Ran 1 command, used Unitymcp
+I’m forcing a script refresh now and checking the console only for the touched files. The validator warning on SpatialAudioManager is the same generic false-positive as before; the real gate is compile output.
+
+
+Ran 5 commands, used Unitymcp
+The touched files are clean in the console after refresh. I’m grabbing the current global error snapshot once so the final report can state precisely why this still is not an honest project-wide green.
+
+
+Ran 2 commands, used Unitymcp
+Mandates followed: AUD_Acoustic_Sonar_Occlusion_Sensory_Simulation, AUDIO_Hrtf_Binaural_Spatialization, AUD_DSP_Audio_Synthesis_ThreadSafe_SPSC, OPT_Zero_GC_Policy_AllocFree_Mandate, MATH_Coordinate_Precision_AUP_FloatingOrigin.
+
+What Was Wrong
+The audio domain was not flat because the core pieces were missing; it was flat because two of them were incomplete.
+
+SpatialAudioManager.cs (line 1077) already had a Haas-arrival scaffold, but it hard-zeroed the secondary spatial blend instead of preserving 20% of it. The radar grid export existed from the previous pass, but its decay was still frame-based instead of a real 10 Hz sensory cadence. AudioMaterialProfile.cs (line 21) existed, but it was only a generic profile, not a designer-facing layer-to-acoustic template. The renderer also still lacked a depth-driven HF pressure rolloff in the final filter stage.
+
+What I Did
+I adjusted the Haas suppression in SpatialAudioManager.cs (line 1331) so the masked source now resolves to baseSpatialBlend * 0.2, matching lerp(spatialBlend, 0, 0.8), while the 35 ms acquire / 40 ms release timing remains enforced by ApplyHaasMask (line 1077). I also moved radar decay to a proper 10 Hz cadence with 0.75 decay per step via AdvanceAcousticRadarDecayCadence (line 1630), DecayAcousticRadarBins (line 1644), and DecayAcousticRadarGrid (line 1653).
+
+I kept the 8x4 radar owner in SpatialAudioManager and corrected the math in AccumulateNearestRadarGrid (line 1793) to use the requested angular model:
+
+azimuth = atan2(dir.x, dir.z)
+elevation = asin(dir.y)
+energy = amplitude * A_total * (1 / dist^2)
+cell = elevationIndex * 8 + azimuthIndex
+A_total is coming from cached occlusion transmission in ResolveRadarTransmission (line 1839), not a synchronous cast in Tick.
+
+I widened AudioMaterialProfile.cs (line 9) into a real authored template by adding AcousticLayerTemplate (line 9) and default semantic entries for ROCK and KELP at AudioMaterialProfile.cs (line 80). Designers can now map LayerId to transmission, absorption bands, low-pass bias, and semantic echo class.
+
+I added the psychoacoustic depth rolloff in the renderer’s final mix path. MixAndFilterBlock (line 2189) now combines abyssal filtering with depth-pressure HF loss from ResolvePressureHighFrequencyCutoff (line 2264). The implemented pressure math is:
+
+P_depth = 1 + depth / 1200
+HF_cutoff = clamp(LPF_OPEN_HZ / P_depth, 1200, LPF_OPEN_HZ)
+I also audited OnAudioFilterRead. First-party grep returned one implementation only, at PlayerCriticalProceduralAudioRenderer.cs (line 706), and it performs only ring-buffer transfer through MixInterleavedInto(...). No new float[], no LINQ, no iterator allocation.
+
+In-Game Result
+Clustered arrivals no longer collapse spatially to dead mono; the secondary source now retains a small positional residue instead of being hard-muted. THETA’s radar grid is now populated with azimuth/elevation energy using cached occlusion weighting and decays on a real sensory cadence instead of per-frame smear. Material authoring has an actual layer template contract now, including ROCK and KELP foundations. Deep-water pressure now narrows the HF band in the final mix even before the abyssal low-pass fully takes over.
+
+Surgery log:
+
+Haas masking:
+if abs(tA - tB) < 0.035, secondary blend = baseBlend * 0.2
+restore when release window expires beyond 0.04 s
+Radar accumulation:
+dir = normalize(listenerLocalSource)
+azimuth = atan2(dir.x, dir.z)
+elevation = asin(dir.y)
+energy = amplitude * A_total * (1 / dist^2)
+Pressure simulation:
+P_depth = 1 + depth / 1200
+HF_cutoff = LPF_OPEN_HZ / P_depth
+What Was Verified
+
+validate_script:
+SpatialAudioManager.cs (line 1): 0 errors, 1 generic warning about string concatenation in Update()
+AudioMaterialProfile.cs (line 1): 0 errors, 0 warnings
+MCP console filters:
+PlayerCriticalProceduralAudioRenderer.cs (line 1): 0 entries
+SpatialAudioManager.cs (line 1): 0 entries
+AudioMaterialProfile.cs (line 1): 0 entries
+OnAudioFilterRead audit:
+rg "OnAudioFilterRead\\(" Assets/_Project/Scripts -g "*.cs" returned one first-party match only
+that implementation is non-alloc by code inspection
+Diff scope:
+PlayerCriticalProceduralAudioRenderer.cs (line 1)
+SpatialAudioManager.cs (line 1)
+AudioMaterialProfile.cs (line 1)
+AudioMaterialProfile.cs.meta (line 1)
+git diff --check: no patch-format errors, only LF/CRLF warnings
+Current global MCP console is not clean. The remaining error is unrelated to this domain:
+error CS2001: Source file 'C:\\hades\\Hecton8\\Assets/_Project/Scripts/LocKeys.Generated.cs' could not be found.
+GC VALIDATION: measured proof absent.
+[REGRESSION CHECK] BEFORE→AFTER: measured proof absent.
+REGRESSION MODEL: CPU cost changed slightly from 10 Hz radar decay stepping and depth-cutoff evaluation in the final mix; GC impact is expected 0 B by inspection only; memory impact is unchanged except the already-added fixed radar buffers and material profile asset metadata; cadence risk is low because radar decay is bounded and deterministic; correctness risk is limited to authored LayerId content drift if designers leave template IDs at default 0.
+HOT PATH IMPACT: no new managed allocations were intentionally added to Tick, DSP block generation, or OnAudioFilterRead; the depth pressure filter reuses the existing final low-pass path.
+FAILURE MODES: the global compile is still blocked by unrelated missing LocKeys.Generated.cs; SpatialAudioManager still carries one generic validator warning outside the touched logic; the new material template is data-only until authored assets actually bind real project layer IDs.
+STATUS: PENDING VERIFICATION. MCP VERIFIED would be false.
+
+3 files changed
++117
+-17
+Undo
+
+Review
+Assets/_Project/Scripts/Audio/AudioMaterialProfile.cs
+Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs
+Assets/_Project/Scripts/SpatialAudioManager.cs
+
+
+
+
+
+-----------------------------
+<system_prompt>
+MASTER PROMPT: PROJECT "HECTON-8" — MEGADOMAIN: DEBT ERADICATION & HARDWARE OPTIMIZATION
+AUTHORITY: CTO / Lead Architect (OMEGA ENFORCER MODE)
+OPERATIONAL MODE: Merciless Extermination & SIMD Auditing
+THINKING LEVEL: MAXIMUM (Focused on Memory Leaks, NaN Guards, and Burst Vectorization)
+
+[0. SITREP: THE ENGINE IS SCREAMING]
+The project has undergone massive surgery, but the floor is covered in blood. We have a critical "Resource ID out of range" leak in the RenderGraph and a managed heap polluted by .ToString() calls. You are not a developer; you are the Janitor with a Flamethrower. Your goal is a 16.6ms frame on an MX350.
+
+[I. MANDATORY RECONNAISSANCE]
+1. Read the latest reports from ARCHIVARIUS: RENDERGRAPH_AUDIT.md and COMPUTE_BUFFER_AUDIT.md.
+2. Grep the codebase for: .ToString(), Resources.Load, math.isnan, and [BurstCompile].
+3. Locate the RenderGraph suspect: HectonSonarPointCloudFeature.cs and HectonBiolumSSGIFeature.cs.
+
+[II. PRIMARY OBJECTIVES]
+1. THE RENDERGRAPH LEAK TERMINATION:
+- Target: All custom ScriptableRendererFeature classes.
+- Action: The console reports Resource ID out of range. This is caused by publishing transient handles via cmd.SetGlobalTexture inside a pass. 
+- Fix: You MUST rewrite the publication logic to use builder.SetGlobalTextureAfterPass(handle, shaderPropertyId). Ensure NO RTHandle is allocated inside RecordRenderGraph. Everything must be pre-pooled or transient-managed by the graph.
+
+2. NAN/INF VACCINATION (PHYSICS INTEGRITY):
+- Target: PhysicsApplySystem.cs, HectonFluidEngine.cs, and all IJobParallelFor in the physics domain.
+- Action: Inject math.any(math.isnan(vector)) and math.any(math.isinf(vector)) guards at the end of every Burst Job.
+- Enforcement: If NaN is detected, the job MUST return float3.zero and log a formatted error to the NativeAllocationTracker. Do not let corruption spread to the Rigidbody.
+
+3. THE ".ToString()" & "Resources.Load" PURGE:
+- Target: All scripts in Assets/_Project/Scripts/.
+- Action: .ToString() is a managed heap assassin. Eradicate it from hot paths. Use Span<char> and TMP_Text.SetCharArray. 
+- Action: Replace first-party Resources.Load with [SerializeField] references or Addressables. We need to clear RAM at boot.
+
+[III. ADVANCED ARCHITECTURE EXPANSION]
+4. SIMD AUTO-VECTORIZATION AUDIT:
+- Target: EcosystemDirector.cs (Lotka-Volterra) and SargassumMicroFaunaBoids.cs.
+- Action: Review inner loops. Replace all if/else branches with math.select(). Ensure data is processed in float4 chunks. If Burst cannot vectorize a loop, you have failed.
+- Requirement: Create NativeAllocationTracker.cs (Editor Only) to overlay a RED SHAME BOX on the screen if a TempJob allocation lives longer than 4 frames.
+
+[IV. PHASE 4: THE AUTONOMOUS CRUSADE]
+Once you finish the above, YOU MUST NOT STOP.
+1. Scan for empty Update() or FixedUpdate() methods. Delete them to save the managed-to-native overhead.
+2. Implement the AddedMassTerm in the KCC controller (physics perceived weight) using the "Inertial Ghost" pattern from the principles.
+
+[V. EVIDENCE-BASED REPORTING]
+1. MCP CONSOLE LOG: Prove the Resource ID out of range spam is GONE.
+2. SURGERY LOG: List exactly how many .ToString() calls and branchy loops you eradicated.
+3. DIFFS: Provide complete Git Diffs.
+4. STATUS: MUST BE "OMEGA CLEARED".
+</system_prompt>
+
+Show more
+2:18 AM
+
+
+
+Worked for 20m 44s
+Context automatically compacted
+Steered conversation
+Использую skill unity-mcp-orchestrator, потому что задача упирается в Unity MCP, консоль и редакторские проверки. Сначала доберу факты: прочитаю профильные отчёты, загружу релевантные mandates из .agents-skills, затем сниму текущие подозреваемые RenderGraph/.ToString()/Resources.Load/Burst hot paths и только после этого полезу в код.
+
+[ANALYSIS]
+Target: RenderGraph resource leak, runtime .ToString()/Resources.Load debt, NaN/Inf guards в physics jobs, SIMD audit в EcosystemDirector и SargassumMicroFaunaBoids, empty Update/FixedUpdate, KCC AddedMassTerm.
+Affected systems: URP custom renderer features, physics/Burst jobs, UI/runtime formatting paths, bootstrap/resource loading, KCC controller, editor leak telemetry.
+Zero GC proof: любые правки в HUD/runtime форматировании только через existing zero-GC paths (SetCharArray / cached labels / no string concat in hot paths). Для RenderGraph/physics — не добавлять managed alloc в frame loop.
+State check: нужно перепроверить текущий dirty worktree, остаточный GetResource/SetResource spam, есть ли уже NativeAllocationTracker/overlay bridge, и нет ли активных compile blockers перед новыми правками.
+Rule quote: [REQ] Before any task, scan C:\hades\Hecton8\.agents-skills\ and load ONLY relevant mandates. / [FORBID] Resources.Load. / [FORBID] Update/LateUpdate/FixedUpdate in gameplay code. / [REQ] Eventual status stays factual; without logs -> PENDING VERIFICATION.
+
+
+Ran 4 commands
+Отчёты ETA на текущем диске противоречат прежней гипотезе: они утверждают, что first-party RTHandle/GraphicsBuffer lifetimes уже чистые. Значит, искать надо не “нет Release”, а незаконную публикацию transient TextureHandle и горячие managed/string path’ы. Сейчас подниму точные mandates и сниму текущие callsites до правок.
+
+
+Ran 11 commands
+По grep картина жёсткая, но не хаотичная. Resources.Load в first-party runtime, похоже, уже выбит полностью; текущие реальные цели — два ещё живых cmd.SetGlobalTexture(...) в RenderGraph и несколько runtime/debug .ToString() хвостов, плюс SIMD/NaN audit по конкретным Burst jobs. Сейчас подниму точные участки перед хирургией.
+
+
+Ran 6 commands
+Следующий шаг — правка будет узкой, не размазанной по сотне файлов. Я чиню оба live RenderGraph publisher-а, затем добиваю NaN guards на job-exit в PhysicsApplySystem/HectonFluidEngine, и только потом беру точечные .ToString() в реально горячих runtime UI/debug путях.
+
+
+Ran 5 commands
+BiolumSSGI и SonarPointCloud сидят на одном и том же паттерне поломки: они пытаются пользоваться transient handle как “глобалом” внутри того же unsafe pass. Это не lifetime bug, это RenderGraph publication bug. Сниму уже исправленный first-party шаблон из соседних feature и перенесу его буквально, без новых трюков.
+
+
+Ran 32 commands
+Сейчас вношу правки в код. Пакет изменений узкий: два RenderGraph feature, PhysicsApplySystem/HectonFluidEngine, и несколько конкретных runtime .ToString() callsite-ов, которые реально сидят в живой диагностике/tick path.
+
+Патч раскололся на несинхронных участках в грязном worktree. Перехожу на короткие file-local edits, чтобы не затереть чужие изменения и не промахнуться по контексту.
+
+
+Edited 9 files, ran 4 commands
+Правки внесены. Следом не гадаю — сначала прогоняю Unity-валидацию по затронутым файлам и только потом смотрю живую консоль. Если Sonar/Biolum не компилируются или выбрасывают новый RG warning, это нужно поймать до refresh soak.
+
+
+Used Unitymcp
+batch_execute не маршрутизирует validate_script. Иду прямыми вызовами, иначе будет ложный сигнал.
+
+
+Ran 3 commands, used Unitymcp
+Валидация по целевым файлам проходит, кроме AcousticZoneController: локальный validator упёрся в regex timeout на размере файла, это не compile-error. Сейчас делаю честную Unity-проверку: очищаю консоль, форсирую refresh/compile и смотрю, жив ли Resource ID out of range после этой конкретной RG правки.
+
+
+Used Unitymcp
+Консоль честно показывает, что leak-spam жив. Значит, эти две feature были не единственным источником, либо уже был другой live owner в том же renderer graph. Быстро сниму оставшиеся first-party cmd.SetGlobalTexture в visor feature-коде, чтобы не врать про root cause.
+
+
+Ran 3 commands
+Остался хвост: в Sonar ещё два cmd.SetGlobalTexture, пусть и на persistent texture object. Я убираю их тоже, чтобы first-party visor path был полностью чист от cmd.SetGlobalTexture внутри RecordRenderGraph.
+
+
+Edited 1 file, ran 2 commands, used Unitymcp
+Появился один прямой compile-regression от моего touched file: PhysicsApplySystem.cs(727,23) — локальная переменная mass конфликтует с уже существующим scope в грязном файле. Снимаю этот blocker сейчас; остальной compile шум — чужой, вне текущего среза.
+
+
+Edited 1 file, ran 3 commands, used Unitymcp
+Leak не умер после visor fixes, значит источник шире. Чтобы не подменять выводы, я быстро проверяю весь first-party script tree на оставшиеся cmd.SetGlobalTexture внутри runtime render code, а не только visor-папку.
+
+
+Ran 3 commands, used Unitymcp
+What Was Wrong
+Первый-tier гипотеза была частично верной: в first-party Visor ещё жили незаконные cmd.SetGlobalTexture(...) внутри RecordRenderGraph в HectonSonarPointCloudFeature.cs и HectonBiolumSSGIFeature.cs. Это был реальный RenderGraph publication debt. Параллельно в hot/runtime diagnostics оставались Enum.ToString() аллокации, а job-выходы в HectonFluidEngine.cs и packet validation в PhysicsApplySystem.cs были недостаточно жёстко вакцинированы против NaN/Inf.
+
+Но главный факт неприятнее: после зачистки first-party visor path Resource ID out of range не исчез. Значит, текущий live spam не сводится только к этим двум feature.
+
+What I Did
+В HectonBiolumSSGIFeature.cs убрал публикацию через cmd.SetGlobalTexture и перевёл GI texture на builder.SetGlobalTextureAfterPass(...) из compute resolve pass.
+В HectonSonarPointCloudFeature.cs разрезал логику на три pass: screen-history write, world-history write, composite. Публикация write-target’ов теперь идёт только через SetGlobalTextureAfterPass(...). Оставшиеся два cmd.SetGlobalTexture на read-side тоже удалены: read textures теперь прокидываются в material напрямую, так что в Assets/_Project/Scripts больше нет ни одного cmd.SetGlobalTexture(.
+
+В HectonFluidEngine.cs добавил финальные NaN/Inf guards на выходе WaveQueryJob и BuoyancyJob; simulationMode == 1 теперь не оставляет мусор в result buffers, а жёстко пишет нули. В main-thread sanitize path добавил escalation через NativeAllocationTrackerRuntimeBridge.
+В PhysicsApplySystem.cs ужесточил Burst-side finite check (isnan + isinf), добавил editor escalation на rejected packets и убрал один compile-regression на конфликте локальной переменной.
+
+Resources.Load в Assets/_Project/Scripts уже был выбит до этого pass’а; новых first-party callsite нет.
+.ToString() hot/runtime purge в этом pass’е: 13 callsite:
+
+WorldZoneDirector.cs
+BiomeMatrixDirector.cs
+AcousticZoneController.cs
+DynamicResolutionScaler.cs
+ScatterBudgetController.cs
+SIMD/vectorization: audited only. Branchy loops eradicated: 0. Безопасной bounded rewrite для EcosystemDirector/SargassumMicroFaunaBoids в этом pass не сделал.
+Exact-empty Update()/FixedUpdate() methods removed: 0.
+KCC added-mass: не переизобретал, потому что “Inertial Ghost” уже живёт в HectonPlayerMotor.cs (line 411) и используется из HectonPlayerMovement.cs (line 4762).
+
+In-Game Result
+Gameplay smoke не запускался. Это был code + editor verification pass. Runtime leak-spam в редакторе остаётся.
+
+What Was Verified
+validate_script дал 0 errors для:
+
+HectonBiolumSSGIFeature.cs
+HectonSonarPointCloudFeature.cs
+PhysicsApplySystem.cs
+HectonFluidEngine.cs
+WorldZoneDirector.cs
+DynamicResolutionScaler.cs
+ScatterBudgetController.cs
+BiomeMatrixDirector.cs валиден по компиляции, но validator оставил 1 generic warning про string concatenation.
+AcousticZoneController validator timed out на regex, но read_console(filter_text="AcousticZoneController.cs") вернул 0 entries.
+read_console(filter_text="PhysicsApplySystem.cs"), read_console(filter_text="HectonSonarPointCloudFeature.cs"), read_console(filter_text="HectonBiolumSSGIFeature.cs") вернули 0 entries.
+
+Hard evidence after patch:
+
+rg 'cmd\.SetGlobalTexture\(' Assets/_Project/Scripts → 0 matches
+rg 'Resources\.Load\(' Assets/_Project/Scripts → 0 matches
+exact-empty Update/FixedUpdate grep → 0 matches
+Console is still dirty after clear + compile/reload:
+
+repeated Resource ID out of range in GetResource: 1304826 / 1304814
+unrelated compile blockers in SaveBinaryStorage.cs (line 1403), TOOL_Procedural_Wreckage_Generator.cs (line 142), PersistentWorldRegistry.cs (line 1483), HectonIndirectVegetationRenderer.cs (line 1431), HectonIndirectVegetationRenderer.cs (line 1616)
+Raw git diff is contaminated by the dirty worktree. In touched files, notably AcousticZoneController.cs, PhysicsApplySystem.cs, HectonBiolumSSGIFeature.cs, HectonSonarPointCloudFeature.cs, there are pre-existing unrelated hunks. My actual write-set this pass was limited to:
+
+HectonBiolumSSGIFeature.cs
+HectonSonarPointCloudFeature.cs
+PhysicsApplySystem.cs
+HectonFluidEngine.cs
+WorldZoneDirector.cs
+BiomeMatrixDirector.cs
+AcousticZoneController.cs
+DynamicResolutionScaler.cs
+ScatterBudgetController.cs
+Mandates followed: REND_URP_Graphics_HotPath_Optimization_HLOD, OPT_Native_Memory_Collections_JobSystem_Protocol, OPT_Zero_GC_Policy_AllocFree_Mandate, PHYS_Physics_Integrity_Determinism_ForceMode, UI_Data_Streaming_ZeroGC_Optimization.
+
+STATUS: PENDING VERIFICATION
+WARNING: Regression risk in remaining RenderGraph spam owner attribution. First-party scripts no longer contain any cmd.SetGlobalTexture() callsites, but the editor still emits GetResource overflow, so the active leak owner is still unresolved.
+
+9 files changed
++230
+-72
+Undo
+
+Review
+Assets/_Project/Scripts/AcousticZoneController.cs
+Assets/_Project/Scripts/BiomeMatrixDirector.cs
+Assets/_Project/Scripts/HectonFluidEngine.cs
+Assets/_Project/Scripts/PhysicsApplySystem.cs
+Assets/_Project/Scripts/ScatterBudgetController.cs
+Assets/_Project/Scripts/Visor/HectonBiolumSSGIFeature.cs
+Assets/_Project/Scripts/Visor/HectonSonarPointCloudFeature.cs
+Assets/_Project/Scripts/World/DynamicResolutionScaler.cs
+Assets/_Project/Scripts/WorldZoneDirector.cs
+
+
+
+
+2:39 AM
+---------------------------
+
+<system_prompt>
+MASTER PROMPT: PROJECT "HECTON-8" — MEGADOMAIN: CORE ENGINE & KINEMATICS
+AUTHORITY: CTO / Lead Architect
+OPERATIONAL MODE: Deep Architectural Surgery & Foundation Building
+THINKING LEVEL: MAXIMUM (Focused on Memory Alignment, Vector Math, and Persistence)
+
+[0. SITREP: THE AUP SURGERY]
+You are no longer patching surface bugs. We are executing the AUP SURGERY defined in AUP_SURGERY_MAP.md. The AbsoluteUniversePosition struct must be expanded, but doing so shifts the byte offsets of every serialization record. Furthermore, the procedural generation lacks its data foundations. You have 2 hours of work ahead.
+
+[I. MANDATORY RECONNAISSANCE]
+1. Read PersistentWorldRegistry.cs, SaveBinaryStorage.cs, and HectonFloatingOrigin.cs.
+2. Inspect SaveDataMigration_AupV8.cs (if missing, you will create it).
+3. Check ProceduralWreckGenerator.cs to understand how AUP is hashed for deterministic seeds.[II. PRIMARY OBJECTIVES]
+1. EXECUTE AUP SURGERY (BYTE-LEVEL ALIGNMENT):
+- Target: AbsoluteUniversePosition and AbsoluteUniversePositionBlit128.
+- Action: Fix the silent 8-byte buffer overflow in AbsoluteUniversePositionBlit128.Reserved. Expand the standard AUP to 48 bytes (add float _pad to align to 16-byte cache lines).
+- Constraint: You MUST increment SaveDataVersion to 0x0008 in SaveBinaryStorage.cs. Implement SaveDataMigration_AupV8.cs to migrate old v7 saves (36B AUP) to v8 saves (48B AUP). UnsafeUtility.MemCpy only.
+
+2. AUP DRIFT SENTINEL & KINEMATICS RE-BIND:
+- Target: HectonFloatingOrigin.cs and HectonPlayerMovement.cs.
+- Action: Complete the 300-frame AUP Drift Check Burst Job. If the player drifts > 0.01f from tracked AUP, force an origin shift. Ensure all external fluid forces (decompression suction) are correctly integrated into the KCC velocity accumulator BEFORE the CapsulecastCommand sweep.
+
+[III. ADVANCED ARCHITECTURE EXPANSION]
+3. PROCEDURAL WRECKAGE FOUNDATIONS (DATA TEMPLATES):
+- Target: TOOL_Procedural_Wreckage_Generator.cs (Create if missing).
+- Action: Build the actual DOD C# struct layouts defined in TOOL_Procedural_Wreckage_Generator.txt (GridCell, ModuleDefinition, WFC_State).
+- Requirement: Implement the Deterministic RNG Kernel using XorShift32 seeded by the chunk's AUP. This lays the groundwork for the WFC (Wave Function Collapse) wreck generator.
+
+[IV. PHASE 4: THE AUTONOMOUS CRUSADE]
+Once you finish the above, YOU MUST NOT STOP.
+1. Scan the Core domain for ANY usage of Vector3.Distance. Replace with AUP.DistanceSq to prevent 64-bit float truncation.
+2. Build FaunaDataTemplate.cs — a structural definition (SOA compatible) for spawning creatures. It must include fields for VAT offsets, mass, and default Boid State bitmasks. DO NOT leave it empty. Think like an architect.
+3. Validate that FaunaSpatialHashRegistry correctly unregisters dead entities.
+
+[V. EVIDENCE-BASED REPORTING]
+1. MCP CONSOLE LOG: Prove 0 errors in your domain.
+2. SURGERY LOG: Provide the exact byte-layout map of your new AUP struct and prove it aligns to 48B.
+3. DIFFS: Provide complete Git Diffs.
+4. STATUS: MUST BE "MCP VERIFIED".
+</system_prompt>
+
+Show more
+2:08 AM
+
+
+
+Worked for 19m 4s
+Using unity-mcp-orchestrator because this is Unity serialization and runtime surgery with compile verification. I’m reading the AUP/save owners and the relevant mandates first, then I’ll map the actual byte layouts before touching any struct or migration code.
+
+
+Ran 5 commands
+Context automatically compacted
+[ANALYSIS]
+Target: AUP struct surgery, save-version migration, drift-sentinel completion validation, deterministic wreckage data foundations, Core-domain distance audit.
+Affected systems: PersistentWorldRegistry, SaveBinaryStorage, SaveDataMigration_*, HectonFloatingOrigin, HectonPlayerMovement, ProceduralWreckGenerator, FaunaSpatialHashRegistry, new tooling/data templates.
+Zero GC proof: touched runtime paths stay on persistent/native buffers and blittable structs only; measured proof absent.
+State check: drift buffers already exist; player suction queue already exists; save migration owner and exact AUP binary layout still need file-level confirmation before edits.
+Rule quote: [REQ] All universe math MUST use Absolute Universe Position (AUP = int64x3 grid + float3 local). Transform.position is presentation-only. / [REQ] SaveManager — Backend: Native LZ4 Block Compression + SIMD XXHash3. / [FORBID] JobHandle.Complete() in mid-frame hot paths.
+
+
+Ran 4 commands
+I’ve confirmed the drift/suction work already on disk. Now I’m reading the exact binary layout owners so the AUP expansion does not corrupt save records.
+
+
+Ran 4 commands
+The current AUP owner is in PersistentWorldRegistry.cs, not a separate file. The standard struct is still 36B, while the aligned blit payload is already 48B; I’m checking the migration pipeline now so the save bump doesn’t break raw memcpy sections.
+
+
+Ran 8 commands
+The container format is already 0x0008. The unsafe part is different: PayloadPrefix embeds AbsoluteUniversePosition directly, so changing AUP from 36B to 48B changes the binary payload prefix size and every raw prefix reader. I’m mapping those offsets before I touch the struct.
+
+
+Ran 11 commands
+I have the critical fact now: the binary file header is already 0x0008, but the payload prefix still assumes a 60B metadata block with a 36B AUP embedded inside it. The surgery is a prefix-layout migration problem, not a container-version invention problem.
+
+
+Ran 4 commands
+The drift sentinel already exists, but its correction path is weak: on invalidity it currently reuses _anchor.position, which can be near zero after a missed rebase and produce no corrective shift. I’m checking whether this file already has a stronger rebase entrypoint before I patch it.
+
+
+Ran 4 commands
+I have the byte map. Next edit is in PersistentWorldRegistry and SaveBinaryStorage: standard AUP goes to an explicit 48B runtime/save layout, and every prefix reader/writer gets split into legacy-v7 and current-v8 paths before I touch the struct sizes.
+
+
+Ran 4 commands
+The prefix rewrite is bigger than the struct edit. I’m making the current PayloadPrefix explicit at 72B, then introducing a legacy-v7 prefix reader so old raw payloads still deserialize before the next save rewrites them in the new layout.
+
+
+Ran 6 commands
+I’m at the edit boundary. The next patch touches save-layout structs and prefix readers; after that I’ll add the wreck/fauna foundations and rerun Unity validation on the touched domain.
+
+The first patch hit layout drift in PersistentWorldRegistry.cs. I’m reading the exact local lines and then applying the struct surgery against the live file instead of the prior assumption.
+
+
+Edited 1 file, ran 2 commands
+I’m adding the migration helper as a raw-byte prefix translator, not a fake high-level DTO migrator. Old v7 payloads will be read through the 60-byte legacy prefix and rewritten in the 72-byte v8 layout on the next save.
+
+
+Created 1 file, edited 1 file, ran 2 commands
+The drift job itself is fine. I’m tightening only the consume path so an invalid tracker produces a real corrective rebase vector instead of blindly reusing the possibly-zero anchor position.
+
+
+Edited 1 file, ran 1 command
+I’ve finished the risky binary work. The next patch is pure foundations: the wreckage template kernel and a fauna spawn template that can feed SOA lanes without inventing GameObject-heavy authoring debt.
+
+
+Created 2 files, ran 3 commands
+The code edits are in. I’m running script validation on the touched owners first; if the prefix changes destabilized save loading, that will show up immediately in PersistentWorldRegistry, SaveBinaryStorage, or the new migration file.
+
+
+Used Unitymcp
+The touched files validate individually. I’m pushing a Unity refresh now and then checking the filtered console, because the real risk is cross-file breakage from the AUP size change.
+
+
+Used Unitymcp
+Unity MCP dropped during the compile request. I’m retrying the editor refresh once; if the session stays unstable, I’ll fall back to the last successful per-file validations and call out the missing whole-domain console proof explicitly.
+
+
+Used Unitymcp
+One small cleanup remains in the AUP owner: I’m making the blit payload zero its explicit reserved lane instead of relying on default struct zeroing.
+
+
+Edited 1 file, used Unitymcp
+Validation is clean on the edited files and the filtered Unity console is empty after refresh. I’m collecting the exact diff hunks now so the report can show the byte-layout and migration changes precisely instead of paraphrasing them.
+
+
+Ran 2 commands
+Context automatically compacted
+What Was Wrong
+
+Mandates followed: MATH_Coordinate_Precision_AUP_FloatingOrigin.txt, DATA_Save_Persistence_Binary_Delta_Checksum.txt, TOOL_Procedural_Wreckage_Generator.txt, STRM_Persistent_Object_Registry.txt, OPT_Native_Memory_Collections_JobSystem_Protocol.txt.
+
+The AUP surgery target was real, but the failure surface was narrower than the prompt implied.
+
+PersistentWorldRegistry.cs (line 22) still had a 36-byte AbsoluteUniversePosition, and SaveBinaryStorage.cs (line 52) still embedded that old layout into the binary payload prefix.
+AbsoluteUniversePositionBlit128 was structurally ambiguous for the new widened AUP and needed an explicit 48-byte layout.
+SaveBinaryStorage.CurrentVersion was already 0x0008. The real missing piece was legacy v7 prefix translation, not another version bump.
+HectonFloatingOrigin.cs (line 471) already had the 300-frame drift job, but its fallback correction path still relied on _anchor.position, which is weak when the tracked AUP/runtime reconstruction is the actual source of truth.
+HectonPlayerMovement already had the external-force accumulator from the previous pass. This turn was completion and verification, not invention.
+Core domain scan returned no Vector3.Distance(...) usage. No replacement pass was needed there.
+What I Did
+
+AUP surgery:
+
+In PersistentWorldRegistry.cs (line 22), I expanded AbsoluteUniversePosition to an explicit 48B layout.
+Exact byte map:
+0-7 GridX
+8-15 GridY
+16-23 GridZ
+24-27 LocalX
+28-31 LocalY
+32-35 LocalZ
+36-39 _pad
+40-47 explicit tail padding
+In the same file, AbsoluteUniversePositionBlit128 is now explicit 48B:
+0-7 GridX
+8-15 GridY
+16-23 GridZ
+24-39 float4 Local
+40-47 ulong Reserved
+I also updated PersistentWorldItemRecord (line 316) from 192 to 204 bytes to reflect the widened embedded AUP stride.
+Save migration:
+
+I created SaveDataMigration_AupV8.cs (line 1).
+It defines raw legacy/current prefix structs and translates v7 payload prefixes (60B, 36B AUP) into current runtime metadata (72B, 48B AUP) using UnsafeUtility.MemCpy only.
+In SaveBinaryStorage.cs (line 52), I widened PayloadPrefix to 72B and routed payload-prefix reads through SaveDataMigration_AupV8.TryReadPayloadPrefix(...) so old saves can still be read.
+I did not invent a DTO-level migration because the corruption surface was binary prefix stride, not managed field semantics.
+Drift sentinel / KCC rebind:
+
+In HectonFloatingOrigin.cs (line 471), I completed the drift consume path so it resolves a forced shift from reconstructed tracked AUP/runtime deltas before falling back to anchor position.
+HectonPlayerMovement already had the correct pre-sweep external-force accumulation path from the previous pass:
+queued acceleration
+queued velocity change
+deltaV = velocityChange + acceleration * dt
+integrated before the sweep lane
+I kept that model intact and verified it as the authoritative decompression-suction path.
+Procedural foundations:
+
+I created TOOL_Procedural_Wreckage_Generator.cs (line 1) with the required DOD foundations:
+GridCell
+ModuleDefinition
+WfcState
+MeshDataSlice
+XorShift32Kernel
+Seed derivation hashes the chunk AUP using the same absolute-grid/local-bit pattern already used by ProceduralWreckGenerator.cs (line 1), so the new kernel stays deterministic against existing wreck generation rules.
+I created FaunaDataTemplate.cs (line 1) with a non-empty SOA-friendly runtime descriptor including VAT payloads, mass, radius, speeds, steering, and default boid state flags.
+Audit-only findings:
+
+FaunaSpatialHashRegistry.cs (line 1) already unregisters dead fauna effectively through Refresh(...) + IsEntryQueryEligible(...) and explicit FaunaBrain teardown. No patch was required.
+AbsoluteUniversePosition.DistanceSq already lives in PersistentWorldRegistry.cs (line 123) and already uses long grid deltas with double axis accumulation before squaring. No precision patch was needed there.
+Focused diffs from this pass:
+
+diff --git a/Assets/_Project/Scripts/World/PersistentWorldRegistry.cs b/Assets/_Project/Scripts/World/PersistentWorldRegistry.cs
+- [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 36)]
++ [StructLayout(LayoutKind.Explicit, Size = 48)]
+  public struct AbsoluteUniversePosition
+  {
+-     public long GridX; ...
++     [FieldOffset(0)] public long GridX;
++     [FieldOffset(8)] public long GridY;
++     [FieldOffset(16)] public long GridZ;
++     [FieldOffset(24)] public float LocalX;
++     [FieldOffset(28)] public float LocalY;
++     [FieldOffset(32)] public float LocalZ;
++     [FieldOffset(36)] private float _pad;
+  }
+diff --git a/Assets/_Project/Scripts/SaveBinaryStorage.cs b/Assets/_Project/Scripts/SaveBinaryStorage.cs
+- public const int PayloadPrefixSizeBytes = 60;
++ public const int PayloadPrefixSizeBytes = SaveDataMigration_AupV8.CurrentPayloadPrefixSizeBytes;
+- private struct PayloadPrefix { ... 36B AUP ... }
++ private struct PayloadPrefix { ... explicit 72B layout ... }
++ SaveDataMigration_AupV8.TryReadPayloadPrefix(...)
+diff --git a/Assets/_Project/Scripts/HectonFloatingOrigin.cs b/Assets/_Project/Scripts/HectonFloatingOrigin.cs
++ private Vector3 ResolveForcedDriftShiftOffset() { ... }
++ private bool TryResolveForcedDriftShiftOffset(...) { ... }
+- ShiftWorld(_anchor.position);
++ ShiftWorld(forcedShiftOffset);
+In-Game Result
+
+The binary AUP foundation is now widened and deterministic instead of relying on a stale 36-byte layout hidden inside payload records. Old v7 payload prefixes can be read and reinterpreted safely. The drift sentinel no longer depends solely on presentation-space anchor fallback when tracked AUP/runtime divergence is the actual error source. The wreckage and fauna data foundations now exist as concrete DOD layouts instead of empty placeholders.
+
+[REGRESSION MODEL]
+
+CPU: negligible in steady state; save-load prefix parsing adds one raw prefix translation branch; drift sentinel cost unchanged except for a better consume path.
+GC: no new hot-path managed allocations introduced in the touched runtime paths. Measured proof absent.
+Memory: AbsoluteUniversePosition widened from 36B to 48B; any container embedding it now pays the stride increase.
+Cadence: no new mid-frame Complete() was introduced.
+Correctness: save-prefix compatibility is now explicit for v7→v8; AUP stride assumptions outside touched records are the main remaining risk.
+Failure modes: any external code still assuming a 36B AUP or 60B payload prefix will misread data until patched.
+WARNING: Regression risk in PersistentWorldRegistry.cs (line 316) because PersistentWorldItemRecord stride changed from 192 to 204; any external raw-copy code that hard-codes 192 will break.
+WARNING: Regression risk in TOOL_Procedural_Wreckage_Generator.cs (line 1) because it is foundation only; it is not yet wired into live wreck spawning.
+WARNING: Regression risk in FaunaDataTemplate.cs (line 1) because it is an authoring/runtime descriptor seam only; spawn consumers still need explicit adoption.
+
+What Was Verified
+
+Unity-verified:
+
+PersistentWorldRegistry.cs (line 1): 0 errors
+SaveBinaryStorage.cs (line 1): 0 errors
+SaveDataMigration_AupV8.cs (line 1): 0 errors
+TOOL_Procedural_Wreckage_Generator.cs (line 1): 0 errors
+FaunaDataTemplate.cs (line 1): 0 errors
+HectonFloatingOrigin.cs (line 1): 0 errors
+FaunaSpatialHashRegistry.cs (line 1): 0 errors
+Filtered Unity console after refresh/compile for:
+PersistentWorldRegistry.cs|SaveBinaryStorage.cs|SaveDataMigration_AupV8.cs|TOOL_Procedural_Wreckage_Generator.cs|FaunaDataTemplate.cs|HectonFloatingOrigin.cs|HectonPlayerMovement.cs|FaunaSpatialHashRegistry.cs
+
+returned:
+
+Retrieved 0 log entries.
+Code-review-only:
+
+HectonPlayerMovement.cs (line 1) remains compile-console-verified only. Standalone validator still does not scale to that file size.
+Core domain Vector3.Distance scan returned no hits, so no replacement patch exists to verify.
+STATUS: PENDING VERIFICATION
+
+6 files changed
++516
+-22
+Undo
+
+Review
+Assets/_Project/Scripts/Fauna/FaunaDataTemplate.cs
+Assets/_Project/Scripts/HectonFloatingOrigin.cs
+Assets/_Project/Scripts/SaveBinaryStorage.cs
+Assets/_Project/Scripts/SaveDataMigration_AupV8.cs
+Assets/_Project/Scripts/World/PersistentWorldRegistry.cs
+Assets/_Project/Scripts/World/TOOL_Procedural_Wreckage_Generator.cs
+
+
+
+
+2:28 AM
+
+-----------------------------------
+
+<system_prompt>
+MASTER PROMPT: PROJECT "HECTON-8" — MEGADOMAIN: THERMODYNAMICS & LOGISTICS
+AUTHORITY: CTO / Lead Architect
+OPERATIONAL MODE: Thermal Propagation & Structural Integrity
+THINKING LEVEL: MAXIMUM (Focused on Differential Equations, Physics Cables, and Graph Flow)
+
+[0. SITREP: THE MELTDOWN & THE SNAPPED TETHER]
+You unified IDamageReceiver and implemented Torricelli ingress. Excellent. Now we push the physics to the limit. The power grid must generate heat, and our Harpoon tethers are clipping through voxel walls because they lack anti-slicing validation. You have 2 hours. DO NOT STOP.
+
+[I. MANDATORY RECONNAISSANCE]
+1. Read PHYS_Tether_Cable_Acceleration_Constraints.txt and LOGI_Energy_Networks_Power_Grid_Graph_Flow.txt.
+2. Inspect TetherInstance.cs, TetherManager.cs, and SubmarineAtmosphereSystem.cs.
+3. Check if TetherProfileSO exists (create if missing).[II. PRIMARY OBJECTIVES]
+1. CABLE ANTI-SLICING SWEEP (VOXEL CLIPPING GUARD):
+- Target: TetherInstance.cs / TetherManager.cs.
+- Action: Implement ValidateCableIntegrity(). After force application, sweep each physics segment (Player -> BendPoints -> Payload) with Physics.RaycastNonAlloc. If a segment intersects a voxel wall AND no bend point exists there, flag it. If flagged for 3 consecutive frames, trigger InvokeSnapProtocol() to break the tether.
+
+2. FOURIER CONDUCTION & REACTOR MELTDOWN:
+- Target: SubmarineAtmosphereSystem.cs and PowerGrid.cs.
+- Action: Implement the Fourier Thermal Conduction math across connected modules. If a node has the OVERLOADED flag, accumulate ThermalDamage. If Temperature > 150°C, trigger a reactor meltdown: emit FatalPressureImplosionEvent and destroy the node via the IDamageReceiver packet pipeline.
+
+[III. ADVANCED ARCHITECTURE EXPANSION]
+3. TETHER PROFILES & REDUCED MASS (CONTENT FOUNDATIONS):
+- Target: TetherProfileSO.cs (ScriptableObject) and TetherManager.cs.
+- Action: Build the TetherProfileSO defining springStiffness_k, overDampingMultiplier, and snapTensionThreshold.
+- Math: In TetherManager, calculate reducedMass = (m_player * m_payload) / (m_player + m_payload) to ensure the damping coefficient c_critical = 2 * sqrt(k * reducedMass) perfectly critically damps the ConfigurableJoint without oscillation.
+
+[IV. PHASE 4: THE AUTONOMOUS CRUSADE]
+Once you finish the above, YOU MUST NOT STOP.
+1. Implement the Visual Catenary generation for cables in LateUpdate. Use a Burst job to write parabolic sag offsets into NativeArray<float3> visualSegmentPositions.
+2. Audit SubmarineFluidDynamics.cs to ensure Torricelli damping prevents infinite sloshing when the pressure delta approaches zero.[V. EVIDENCE-BASED REPORTING]
+1. MCP CONSOLE LOG: Prove 0 errors.
+2. SURGERY LOG: Show the reducedMass and Critical Damping math.
+3. DIFFS: Provide complete Git Diffs.
+4. STATUS: MUST BE "MCP VERIFIED".
+</system_prompt>
+
+Show more
+2:32 AM
+
+
+
+109 previous messages
+Mandates followed: PHYS_Tether_Cable_Acceleration_Constraints, LOGI_Energy_Networks_Power_Grid_Graph_Flow, PHYS_Fluid_Incursion_Interior.
+
+What Was Wrong
+
+The tether request was only partially unmet. TetherInstance.cs (line 1074) already had an anti-slicing raycast sweep and the reduced-mass damping math at 637 (line 637) and 648 (line 648), but it still had two real gaps:
+
+no authored TetherProfileSO
+no check for “a bend point already exists at the hit”, so valid wall-wrap segments could false-snap
+The visual tether path was also still CPU-sampled line-by-line in UpdateVisuals (line 435), not a Burst catenary write.
+
+On the thermal side, Fourier conduction already existed in SubmarineAtmosphereSystem.cs (line 436), and reactor shove meltdown already existed in EvaluateReactorMeltdowns (line 1165). The missing piece was the power-grid overload path: overloaded nodes were flagged in graph state, but they were not injecting heat into room thermodynamics, emitting a fatal implosion event, or routing a damage packet.
+
+The ConfigurableJoint portion of the prompt conflicts with repo law. AGENTS.md explicitly forbids all Unity joints. I kept the existing acceleration constraint owner and applied the critical damping math there.
+
+What I Did
+
+I added TetherProfileSO.cs (line 1) with authored springStiffness_k, overDampingMultiplier, and snapTensionThreshold. TetherManager.cs (line 56) now owns the optional tow-cable profile and exposes profile-aware resolvers at 344 (line 344), 352 (line 352), and 360 (line 360). Pooled and newly created tethers are now bound back to the manager at 302 (line 302) and 315 (line 315).
+
+In TetherInstance.cs (line 26) I added BuildVisualCatenaryJob : IJobParallelFor and switched the visual update path at 448 (line 448) to write the parabolic sagged points into the persistent NativeArray<float3>. I did not Schedule()+Complete() inside LateUpdate; the job is Burst-compiled and executed via Run() to stay inside the repo’s job-fence rule. I also added persistent anchor/segment staging buffers at 600 (line 600).
+
+The clipping guard now honors existing bend support. ValidateCableIntegrity (line 1074) still uses Physics.RaycastNonAlloc, still requires 3 consecutive frames, but now ignores hits already explained by a nearby bend point through HasSupportingBendPointForSegment (line 1177). Snap routing is unified through InvokeSnapProtocol (line 1202).
+
+On the thermal side, I added FatalPressureImplosionEvent (line 79) and FatalPressureImplosionEvents (line 98). In PowerGrid.cs (line 60) I added per-node overload heat bindings and at 666 (line 666) the new overload thermal path:
+
+map a BaseModule node to its SubmarineAtmosphereSystem room during snapshot build at 555 (line 555) and 574 (line 574)
+after final consumer application, inject overload heat at 691 (line 691)
+accumulate node-local thermal damage
+when room temperature crosses 150°C, mark the node ruptured, emit FatalPressureImplosionEvent, and push a DamagePacket through the unified IDamageReceiver contract at 710 (line 710) and 722 (line 722)
+I re-audited SubmarineFluidDynamics.cs (line 416), 467 (line 467), 1521 (line 1521), and 1556 (line 1556). The near-zero Torricelli damping is already present in both the Burst bulkhead job and the synchronous fallback through math.smoothstep, so I did not duplicate that math.
+
+In-Game Result
+
+Reduced-mass damping now stays explicit and profile-driven:
+
+reducedMass = (m_player * m_payload) / (m_player + m_payload)
+c_critical = 2 * sqrt(k * reducedMass)
+c_applied = c_critical * overDampingMultiplier
+That is applied in the acceleration tether solver at 641 (line 641) and 648 (line 648), not a Unity joint, because joints are forbidden by project law.
+
+The visual catenary uses the same parabolic sag shape as before, but now in Burst:
+
+basePoint = lerp(start, end, t)
+sagWeight = 4t(1-t)
+offset = down * (segmentLength * sagScale * sagWeight)
+The overload heat path now does:
+
+Q_overload = max(Q_min, capacity * overloadHeatScale) * dt
+T_room += Q_overload / C_room
+if T_room >= 150°C, emit FatalPressureImplosionEvent, set the node ruptured, and send a DamagePacket
+What Was Verified
+
+Unity MCP validate_script returned 0 errors for:
+
+TetherInstance.cs (line 1)
+TetherProfileSO.cs (line 1)
+SubmarineAtmosphereSystem.cs (line 1)
+PowerGrid.cs (line 1)
+TetherManager.cs (line 1) also validated with 0 errors, with 2 generic validator warnings only.
+
+Unity compile is still globally red, but not on the touched files. Current console blockers are unrelated:
+
+ProceduralFamily_Fauna.cs(93,37) accessibility error
+Hecton_MarineSnow.compute shader redefinition warnings/errors
+Console filtering returned 0 entries for TetherInstance.cs, TetherManager.cs, TetherProfileSO.cs, SubmarineAtmosphereSystem.cs, and PowerGrid.cs.
+
+Diff surface:
+
+TetherProfileSO.cs (line 1)
+TetherManager.cs (line 56)
+TetherInstance.cs (line 26)
+SubmarineAtmosphereSystem.cs (line 79)
+PowerGrid.cs (line 60)
+git diff --check passed on the touched files except LF→CRLF warnings.
+
+WARNING: Regression risk in PowerGrid.cs (line 555). The overload thermal binding resolves room ownership through GetComponentInParent<SubmarineAtmosphereSystem>() during graph snapshot rebuild, not a dedicated service seam.
+WARNING: Regression risk in TetherInstance.cs (line 1177). Bend-support suppression uses a clearance-radius heuristic; very tight voxel corners can still misclassify if authored bend spacing is bad.
+WARNING: Regression risk in TetherInstance.cs (line 448). The catenary job runs synchronously in LateUpdate via Burst Run(), not scheduled across frames, because same-frame Schedule()+Complete() is forbidden here.
+
+GC VALIDATION: BEFORE: measured proof absent · AFTER: measured proof absent · STATUS: PENDING VERIFICATION
+STATUS: PENDING VERIFICATION
+
+5 files changed
++399
+-44
+Undo
+
+Review
+Assets/_Project/Scripts/PowerGrid.cs
+Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs
+Assets/_Project/Scripts/TetherInstance.cs
+Assets/_Project/Scripts/TetherManager.cs
+Assets/_Project/Scripts/TetherProfileSO.cs
+
+
+
+
+2:47 AM
+
+---------------------
+
+<system_prompt>
+MASTER PROMPT: PROJECT "HECTON-8" — MEGADOMAIN: ECO-DIRECTOR & AI GENETICS
+AUTHORITY: CTO / Lead Architect
+OPERATIONAL MODE: Swarm Physics & Spatial Hash Navigation
+THINKING LEVEL: MAXIMUM (Focused on Burst, Position Based Dynamics, and Frustum Spawning)
+
+[0. SITREP: THE CLIPPING SWARM & THE BLIND DIRECTOR]
+You verified that diffusion and bloom exist. But Boids are currently clipping through voxel walls, and the Encounter Director lacks the actual cost tables to spawn anything. We need physical collision for the swarm and content structures for the Director. You have 2 hours. DO NOT STOP.[I. MANDATORY RECONNAISSANCE]
+1. Read AI_Flocking_Boids_Swarm_SpatialHash_Logic.txt and AI_Director_Encounter_Manager.txt.
+2. Inspect SargassumMicroFaunaBoids.compute and EncounterDirector.cs.
+3. Check ThreatCostTable and ProceduralFamily_Fauna.cs (create if missing).
+
+[II. PRIMARY OBJECTIVES]
+1. BOID POSITION BASED DYNAMICS (SPHERE COLLISION CONSTRAINT):
+- Target: SargassumMicroFaunaBoids.compute.
+- Action: Implement KernelPBDSolve(id). Query the Spatial Hash for neighbors within 2.0m. If distance < boid radius * 2, compute the correction vector dir * (min_dist - dist) * 0.5 and directly displace pos[id] and pos[n] apart. This prevents fish from clipping into each other.
+
+2. A* CLEARANCE DILATION KERNEL (DYNAMIC NAVGRID):
+- Target: VoxelDynamicNavGridRuntime.cs (or equivalent NavGrid generator).
+- Action: Implement the 2-Pass Linear Sweep Algorithm for Clearance Dilation (Manhattan Transform). Inflate 0xFF (solid) cells by AgentRadius in the DistanceMap to ensure Leviathans don't clip walls during pathfinding.
+
+[III. ADVANCED ARCHITECTURE EXPANSION]
+3. DIRECTOR THREAT PROFILES (CONTENT FOUNDATIONS):
+- Target: ThreatCostTable.cs and ProceduralFamily_Fauna.cs (ScriptableObjects).
+- Action: Build the data structures. The Director needs to know TokenCost (Leviathan=80, Swarm=20) and DespawnPriority logic. ProceduralFamily_Fauna must contain species identifiers and ThreatClass enums.[IV. PHASE 4: THE AUTONOMOUS CRUSADE]
+Once you finish the above, YOU MUST NOT STOP.
+1. Implement the Director's Frustum Plane Test (SIMD-Optimized) in EncounterDirector.cs. Ensure it uses the 6 camera planes (passed as NativeArray<float4>) to reject any spawn candidate that is INSIDE_OR_INTERSECT.
+2. Audit the spatial hash GridCountBuffer. Ensure it is cleared via a Compute Shader (NOT CPU memset).
+
+[V. EVIDENCE-BASED REPORTING]
+1. MCP CONSOLE LOG: Prove 0 errors.
+2. SURGERY LOG: Show the 3D Manhattan Transform logic for Clearance Dilation.
+3. DIFFS: Provide complete Git Diffs.
+4. STATUS: MUST BE "MCP VERIFIED".
+</system_prompt>
+
+Show more
+2:34 AM
+
+
+
+Worked for 11m 34s
+Using unity-mcp-orchestrator for Unity-side validation. First pass is mandate ingestion and owner reconnaissance: I’m loading the boid/director/navigation directives, then reading the existing compute, navgrid, and director owners before patching anything.
+
+
+Ran 5 commands
+Context automatically compacted
+Using unity-mcp-orchestrator again. I have the mandate context and file ownership map; now I’m reading the live PBD/grid/nav sections before touching code so I don’t duplicate existing kernels or drift the director owner.
+
+
+Ran 4 commands
+Steered conversation
+The compute file already has a PBD kernel and a GPU grid-clear path. I’m reading the exact hot sections now, because part of the ask may already exist and the real work may be tightening the solver and wiring the nav dilation owner without violating the mandate owner boundaries.
+
+
+Ran 4 commands
+The nav runtime does not have a distance map owner yet. I’m tracing the build/commit flow now to add dilation at the voxel snapshot stage instead of inventing a second path system beside it.
+
+
+Ran 7 commands
+The boid kernel already contains the pair-separation solve the mandate asked for. I’m checking whether it matches the exact 2 m query radius and whether the actual missing piece is the voxel/nav clearance side rather than the neighbor-displacement math.
+
+
+Ran 10 commands
+The real implementation work is in the voxel snapshot pipeline now. The current runtime only builds binary passability; I’m finding the existing clearance radius owner before I add a Burst sweep so I don’t invent a new tuning source.
+
+
+Ran 3 commands
+[ANALYSIS]
+Target: Assets/_Project/Art/Shaders/SargassumMicroFaunaBoids.compute, Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs, Assets/_Project/Scripts/HectonVoxelEngine.cs, Assets/_Project/Scripts/ThreatCostTable.cs, Assets/_Project/Scripts/EncounterDirector.cs, plus new Assets/_Project/Scripts/ProceduralFamily_Fauna.cs if no owner exists.
+
+Affected systems: GPU boid broadphase/PBD separation, cave voxel passability snapshot build, macro-portal cave path clearance, encounter token authoring/despawn weighting, frustum-safe spawn rejection.
+
+Zero GC proof: compute-side changes only for boids/grid clear; nav dilation will run in Burst over NativeArray scratch allocated once per build cycle with explicit disposal after job completion; director authoring stays asset-side ScriptableObject data and persistent native snapshots only.
+
+State check: KernelPBDSolve already exists but only scans a fixed ±1 cell neighborhood, so it can miss the requested 2.0 m neighbor radius when grid cells are smaller than 2 m; ClearSpatialGrid already clears GridCountBuffer on GPU, so no CPU memset hack belongs there; EncounterDirector already consumes ThreatCostTable but it has no despawn-priority authoring lane; ProceduralFamily_Fauna.cs is missing entirely; VoxelDynamicNavGridRuntime builds binary passability only and has no clearance dilation stage.
+
+Rule quote: [RULE] MANDATE CONTEXTUAL INGESTION: Before any task, scan C:\\hades\\Hecton8\\.agents-skills\\ and load ONLY relevant mandates. Also: [FORBID] Guessing/inventing. Unclear → ASK. I found no existing predator-clearance owner in the voxel nav runtime, so I will add a local documented clearance constant and flag the regression risk instead of pretending an owner already exists.
+
+I have the implementation path. Two real fixes are going in: dynamic neighbor-cell range in the PBD kernel, and a Burst dilation stage in the voxel passability build so the cave route payload stops pretending large predators fit through one-voxel slits. The rest is authoring and frustum cleanup.
+
+
+Ran 2 commands
+I’m editing now. Director content already exists, but it is missing despawn-weight authoring and the fauna family owner the brief asked for. The only part I am not rewriting is GridCountBuffer clear, because it is already GPU-cleared by ClearSpatialGrid; replacing that with CPU memset would be a regression.
+
+
+Edited 5 files
+ProceduralFamily_Fauna does not exist anywhere in the repo. I’m creating the SO as a content owner, not jamming more fields into the environment family profile, because that would mix biome flavor authoring with encounter/director authoring.
+
+
+Created 1 file
+I’m validating now. One thing I’m checking explicitly is lifetime safety on the temporary clearance scratch; if the voxel build method has no guaranteed cleanup path, I’ll move that buffer ownership out of the async method instead of leaving a cancellation leak behind.
+
+
+Ran 1 command, used Unitymcp
+The only leak risk I found is cancellation during the voxel build await. I’m hardening that now so the temporary dilation scratch does not survive a canceled rebuild.
+
+
+Edited 1 file
+Patch set is in. I’m running Unity-side validation and a compile pass now. If the global console is still dirty, I’ll separate touched-file proof from unrelated project noise and refuse to fake a clean status.
+
+
+Ran 1 command, used Unitymcp
+Unity validation is partly clean already. The only noisy piece is the massive voxel engine file, where the validator timed out on regex matching, so I’m falling back to console proof for that owner instead of pretending the validator is authoritative.
+
+
+Used Unitymcp
+One compile break is mine: the job-side frustum helper is outside the class scope and needs the class-qualified constant. I’m fixing that now. The other console error is unrelated PersistentWorldRegistry.cs.
+
+
+Ran 2 commands
+The EncounterDirector source already contains the qualified constant. The error in console is stale from the previous compile pass, so I’m clearing the console and forcing one clean recompile before I trust the log.
+
+
+Used Unitymcp
+Unity domain reload is bouncing the console session. I already have zero-entry proof for most touched files; I’m retrying the engine/global console reads once the session answers again, not inventing results while the editor is mid-reload.
+
+
+Ran 3 commands, used Unitymcp
+What Was Wrong
+KernelPBDSolve in SargassumMicroFaunaBoids.compute (line 1002) already had pair-separation math, but it only scanned a fixed ±1 cell neighborhood. That misses the requested 2.0 m query radius whenever the spatial-hash cell size drops below 2 m, so the constraint shell was incomplete.
+VoxelDynamicNavGridRuntime in VoxelDynamicNavGridRuntime.cs (line 15) only built binary passability. There was no clearance dilation stage, so large predators could path through one-voxel slits.
+ThreatCostTable existed, but it only authored token cost and simultaneous caps. There was no despawn-priority authoring lane, and ProceduralFamily_Fauna.cs (line 31) did not exist at all.
+EncounterDirector already rejected inside/intersecting frustum candidates, but the plane test was still scalar-looped instead of fixed 6-plane direct evaluation.
+GridCountBuffer clearing was not broken. It was already GPU-cleared by ClearSpatialGrid; any CPU memset rewrite would have been a regression.
+
+Mandates followed: AI_Flocking_Boids_Swarm_SpatialHash_Logic, AI_Director_Encounter_Manager, AI_Navigation_AStar_Funnel_Smoothing_Pathfinding, OPT_Zero_GC_Policy_AllocFree_Mandate.
+
+What I Did
+In SargassumMicroFaunaBoids.compute (line 1025) I kept the existing PBD correction law and fixed the broadphase reach. The solver now computes neighbourCellRange = ceil(2.0 / cellSize) and scans that full range before applying:
+
+correction = dir * (minDist - dist) * 0.5
+to both boids through the existing correction buffer.
+
+In VoxelDynamicNavGridRuntime.cs (line 62) I added a Burst ClearanceDilationJob. It runs a 3D 2-pass Manhattan transform over the passability snapshot, then rewrites cells as solid when their clearance is <= AgentRadiusCells. HectonVoxelEngine.cs (line 3348) now schedules PassabilityBuildJob followed by ClearanceDilationJob, with cancellation-safe scratch disposal at 3379 (line 3379). The current radius owner is a local documented fallback in ResolveClearanceRadiusCells(...) (line 591). WARNING: regression risk in clearance tuning because no stronger existing owner was present in this subsystem.
+
+In ThreatCostTable.cs (line 19) I added despawnPriorityBias to each threat-class row. EncounterDirector.cs (line 363) now copies that authoring into live tokens, and the cold-tick despawn scorer multiplies by that bias at 765 (line 765).
+I created ProceduralFamily_Fauna.cs (line 31) as the content owner for species identifiers, threat-class mapping, and family-level despawn bias metadata.
+
+In EncounterDirector.cs (line 1006) I replaced the looped frustum test with direct 6-plane evaluation over the existing NativeArray<float4>. Spawn candidates are still rejected in TryResolveSpawnCandidate(...) (line 971) when they are inside or intersecting the camera frustum.
+
+I audited the spatial-hash clear path. It is already compute-side:
+
+ClearSpatialGrid kernel (line 946)
+GPU dispatch (line 3709)
+In-Game Result
+Boid PBD now actually honors the requested 2.0 m neighbor search even when the hash cells are finer than 2 m, so overlap resolution is no longer truncated by the broadphase window.
+Cave passability snapshots are now clearance-inflated before the macro-portal route consumers read them, so leviathan-scale pathing stops treating narrow wall gaps as navigable.
+The director now has authored token cost plus authored despawn-weight bias, and there is a real fauna-family content asset for species-to-threat-class mapping.
+
+3D Manhattan transform surgery log:
+
+Forward sweep:
+D(x,y,z) = 0                                if solid
+D(x,y,z) = min(INF,
+               D(x-1,y,z)+1,
+               D(x,y-1,z)+1,
+               D(x,y,z-1)+1)               otherwise
+
+Backward sweep:
+D(x,y,z) = min(D(x,y,z),
+               D(x+1,y,z)+1,
+               D(x,y+1,z)+1,
+               D(x,y,z+1)+1)
+
+Inflation:
+passable(x,y,z) = OPEN  if D(x,y,z) > AgentRadiusCells
+passable(x,y,z) = SOLID otherwise
+What Was Verified
+Unity-verified:
+
+VoxelDynamicNavGridRuntime.cs (line 1) → validate_script: 0 warnings, 0 errors
+ThreatCostTable.cs (line 1) → validate_script: 0 warnings, 0 errors
+ProceduralFamily_Fauna.cs (line 1) → validate_script: 0 warnings, 0 errors
+EncounterDirector.cs (line 1) → validate_script: 0 warnings, 0 errors
+HectonVoxelEngine.cs (line 1) → validate_script (basic): 0 warnings, 0 errors
+MCP console after clear + recompile returned 0 warning/error entries for:
+
+SargassumMicroFaunaBoids
+EncounterDirector
+ThreatCostTable
+ProceduralFamily_Fauna
+VoxelDynamicNavGridRuntime
+HectonVoxelEngine
+Global MCP console snapshot at the end of this pass returned 0 warning/error entries.
+
+Diff footprint:
+
+Tracked files: 652 insertions, 80 deletions across SargassumMicroFaunaBoids.compute, EncounterDirector.cs, HectonVoxelEngine.cs, VoxelDynamicNavGridRuntime.cs
+New untracked files: ThreatCostTable.cs (line 1), ProceduralFamily_Fauna.cs (line 1)
+Workspace note: some tracked-file diffs still include prior dirty hunks from earlier turns; the exact anchors added in this pass are the line refs cited above.
+GC VALIDATION: BEFORE: measured proof absent · AFTER: measured proof absent · STATUS: PENDING VERIFICATION.
+REGRESSION MODEL: CPU up only on voxel rebuild cycles from the 2-pass clearance sweep; GC unchanged in hot paths; memory up by one TempJob NativeArray<ushort> during nav rebuild only; cadence unchanged during normal gameplay; correctness risk highest in the fallback clearance radius constant and in over-inflating tight tunnels for smaller predators.
+HOT PATH IMPACT: boid compute broadphase range, cold voxel-nav rebuild, encounter cold-tick despawn scoring, frustum candidate rejection.
+FAILURE MODES: overly conservative cave dilation can seal valid narrow routes, despawn bias authoring can starve leviathan persistence if tuned badly, and the PBD neighbor range can get more expensive if cell size is driven too low.
+
+STATUS: PENDING VERIFICATION.
+
+6 files changed
++307
+-27
+Undo
+
+Review
+Assets/_Project/Art/Shaders/SargassumMicroFaunaBoids.compute
+Assets/_Project/Scripts/EncounterDirector.cs
+Assets/_Project/Scripts/HectonVoxelEngine.cs
+Assets/_Project/Scripts/ProceduralFamily_Fauna.cs
+Assets/_Project/Scripts/ThreatCostTable.cs
+Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs
+
+
+
+
+2:46 AM
+
+---------------------------------
+
+<system_prompt>
+MASTER PROMPT: PROJECT "HECTON-8" — MEGADOMAIN: GRAPHICS, SDF & VRAM
+AUTHORITY: CTO / Lead Architect
+OPERATIONAL MODE: Compute Orchestration & VFX Systems
+THINKING LEVEL: MAXIMUM (Focused on HLSL, Flow Fields, and Anisotropic Drag)
+
+[0. SITREP: THE DEAD OCEAN]
+You correctly identified that VAT and Caustics were already implemented and fixed the CPU args reset. Excellent. Now, we must breathe life into the Abyss. The ocean feels static. We need billions of particles (Marine Snow, Bubbles, Plankton) reacting to the Abyssal Flow Fields completely on the GPU. You have 2 hours. DO NOT STOP.
+
+[I. MANDATORY RECONNAISSANCE]
+1. Read REND_VFX_Fluid_Aesthetics_Compute_Particles.txt and CORE_Weather_Abyssal_FlowField_Currents.txt.
+2. Inspect ParticleUpdate.compute (create if missing) and FlowFieldNative manager.
+3. Check VFXEmissionProfile.cs (create if missing).[II. PRIMARY OBJECTIVES]
+1. MARINE SNOW & BUBBLE COMPUTE KERNEL:
+- Target: ParticleUpdate.compute.
+- Action: Implement the Particle Struct (Pos, Life, Vel, Size, Flags). Write the Simulate kernel. Particles MUST sample the CurrentFieldTex (or FlowFieldNative buffer) using trilinear interpolation. 
+- Math: Apply Anisotropic Drag. Particles aligned with the current flow fast; particles opposing it face high drag: DragMultiplier = lerp(1.0, 0.1, AlignmentN).
+
+2. SCREEN-SPACE DEPTH COLLISION (GPU PARTICLES):
+- Target: ParticleUpdate.compute.
+- Action: Project the particle Pos to clip space. Sample _CameraDepthTexture. If ParticleDepth < SceneDepth AND NextFrameParticleDepth > SceneDepth, execute collision (bounce or kill). Add an MX350 guard: if ParticleDepth > 15.0m, skip collision.
+
+[III. ADVANCED ARCHITECTURE EXPANSION]
+3. VFX EMISSION PROFILES (CONTENT FOUNDATIONS):
+- Target: VFXEmissionProfile.cs (ScriptableObject).
+- Action: Build the data template for artists. It must define BaseDragCoeff for different fluid types (Snow=0.15, Bubble=0.08, Debris=0.22), buoyancy modifiers, and turbulence scaling.[IV. PHASE 4: THE AUTONOMOUS CRUSADE]
+Once you finish the above, YOU MUST NOT STOP.
+1. Implement the Wobble (Lateral Oscillation) math for Bubbles in the Compute Shader using the Phase RNG seed φ = Particle.Pad.x.
+2. Audit HectonIndirectVegetationRenderer.cs to ensure that Culling only dispatches if VisibleCount > 0.
+
+[V. EVIDENCE-BASED REPORTING]
+1. SHADER LOG: Show the HLSL code for Anisotropic Drag and Depth Collision.
+2. VRAM LOG: Calculate the exact byte size of your ParticleBuffer if initialized with 32,768 particles.
+3. DIFFS: Provide complete Git Diffs.
+4. STATUS: MUST BE "MCP VERIFIED".
+</system_prompt>
+
+Show more
+2:28 AM
+
+
+
+Worked for 8m 52s
+Error submitting message
+Steered conversation
+Using unity-mcp-orchestrator. I’m treating this as a source-state expansion first: read the particle/flow mandates, inspect existing flow-field and VFX owners, then patch only the missing owners and kernels.
+
+
+Ran 4 commands
+[ANALYSIS]
+Target: GPU particle orchestration for marine snow / bubbles / plankton, flow-field coupling, depth collision, artist emission data.
+Affected systems: Hecton_MarineSnow.compute, HectonMarineSnowRenderer.cs, flow-field data ownership, new VFXEmissionProfile.cs, and a narrow visibility-dispatch audit in HectonIndirectVegetationRenderer.cs.
+Zero GC proof: runtime work must stay GPU-side or persistent-buffer-side only. No per-frame managed allocations, no synchronous GPU readback, no new ComputeBuffer / RTHandles.Alloc in hot paths.
+State check: verify existing compute particle owner before adding a second one; verify flow-field source already exists; verify current visible-count handling before inventing another cull path; verify whether ParticleUpdate.compute is actually missing or the correct owner is Hecton_MarineSnow.compute.
+Rule quote: [RULE] REVERT OVER HACK and [RULE] ARCHITECTURE FIRST. If an owner already exists, extend it. If not, create the missing owner explicitly.
+Mandates followed: REND_VFX_Fluid_Aesthetics_Compute_Particles.txt, CORE_Weather_Abyssal_FlowField_Currents.txt, OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt, REND_URP_Graphics_HotPath_Optimization_HLOD.txt.
+
+
+Ran 4 commands
+The existing owner is Hecton_MarineSnow.compute plus HectonMarineSnowRenderer. I’m not duplicating that with a second particle stack. I’m extending the existing GPU owner with collision and type-profile support.
+
+
+Ran 4 commands
+The authoritative flow owner is not a FlowFieldNative class. It’s the ecosystem flow field published by HectonMapMagicVegetationBridge, already uploaded into HectonMarineSnowRenderer. I’m extending that owner instead of inventing a second current system.
+
+Ran Get-Content 'Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs' | Select-Object -Skip 1340 -First 90
+I’m patching the existing marine-snow owner now. The scope is: add type-profile support, bubble wobble, screen-space depth collision, and an instance-count guard in vegetation culling.
+
+
+Created 1 file
+The renderer patch partly mismatched on context. I’m narrowing the edit to the exact blocks instead of forcing a broad patch through a large file.
+
+
+Edited 1 file, ran 4 commands
+I’m patching the compute kernel now. This is the substantive part: type-aware buoyancy/wobble and depth-buffer collision, without adding any CPU readback path.
+
+
+Edited 1 file, ran 2 commands
+The first bubble pass had a bad assumption: using world Y for pressure compression would collapse particles at authored sea-level offsets. I’m correcting that now to camera-depth-relative behavior.
+
+
+Edited 2 files
+I’m at verification now. Script-level validation should catch the C# side. Unity console proof is still contingent on whether the editor session answers.
+
+
+Ran 1 command, used Unitymcp
+The renderer and profile compile cleanly at script-validation level. I’m checking console next, but the Unity session has been unstable, so I’m not going to overstate verification if it flakes again.
+
+
+Used Unitymcp
+Unity finally answered with real compile fallout. Two of the errors are mine in HectonIndirectVegetationRenderer. I’m fixing those now before closing this out.
+
+
+Edited 1 file, ran 3 commands
+The two vegetation compile errors are patched. Re-validating that file now, then I’ll re-read the console so the report reflects the real state instead of stale diagnostics.
+
+
+Used Unitymcp
+The direct validator is clean, but the console is still showing stale diagnostics for the old vegetation lines. I’m forcing a Unity script refresh once so the final state isn’t based on stale error cache.
+
+
+Used Unitymcp
+Compilation was explicitly requested. I’m checking the console once more after that request; if Unity still reports the old lines, I’ll treat them as editor-cache residue and say so plainly.
+
+
+Used Unitymcp
+There’s one live vegetation error left, and it’s mine. I’m pinpointing the exact line now instead of guessing from the stale line numbers.
+
+
+Edited 1 file, ran 1 command
+That was a type leak from mesh.GetBaseVertex. Patched. Re-validating and re-reading the console one last time.
+
+
+Ran 1 command, used Unitymcp
+I have the final code state. One stale console entry for the old vegetation line is still hanging around, but direct validation on the current file is clean. I’m collecting exact references for the close-out now.
+
+
+Ran 2 commands
+I’ve got enough for the report, but I’m checking one last targeted console slice for the compute owner itself so the close-out distinguishes C# validation from shader-side inference.
+
+
+Used Unitymcp
+What Was Wrong
+Mandates followed: REND_VFX_Fluid_Aesthetics_Compute_Particles.txt, CORE_Weather_Abyssal_FlowField_Currents.txt, OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt, REND_URP_Graphics_HotPath_Optimization_HLOD.txt.
+
+The correct owner already existed. The project does not need a second ParticleUpdate.compute stack. Hecton_MarineSnow.compute (line 1) and HectonMarineSnowRenderer.cs (line 14) were already the live GPU particle path, already sampling the authoritative ecosystem flow field uploaded from HectonMapMagicVegetationBridge.cs (line 2809).
+
+The real gaps were:
+
+no artist-facing emission profile owner
+no screen-space depth collision in the compute path
+no bubble wobble branch
+no fluid-type-aware flags/bootstrapping
+vegetation GPU culling still dispatched even when _instanceCount <= 0
+What I Did
+I extended the existing GPU particle owner instead of duplicating it.
+
+In VFXEmissionProfile.cs (line 8) I added the missing artist data template:
+
+FluidType: Snow, Bubble, Debris, Plankton
+per-fluid settings:
+baseDragCoeff
+buoyancyModifier
+turbulenceScale
+wobbleScale
+defaults match the mandate baselines:
+Snow 0.15
+Bubble 0.08
+Debris 0.22
+In HectonMarineSnowRenderer.cs (line 62) I wired that profile into the existing renderer:
+
+new emission profile binding and fluid-type selector
+bootstrap now emits type-aware flags and initial vertical velocity at 353 (line 353), 363 (line 363), 376 (line 376)
+profile-driven emission params are uploaded to compute at 450 (line 450)
+camera depth texture, view matrices, and Z-buffer params are now pushed into compute at 531 (line 531)
+In Hecton_MarineSnow.compute (line 229) I added:
+
+screen-space depth collision using _CameraDepthTexture
+max-depth guard of 15m
+bubble wobble using Pad.x phase seed at 380 (line 380)
+fluid-type-aware buoyancy / drag / turbulence branches
+collision flagging and settle/bounce handling at 399 (line 399)
+I also kept the earlier vegetation indirect-args GPU clear path and added a source-count guard in HectonIndirectVegetationRenderer.cs (line 1351) and 1420 (line 1420), so culling does not dispatch when _instanceCount <= 0.
+
+Shader log, anisotropic drag:
+
+float alignment = dot(particleDirN, flowDirN);
+float alignmentN = saturate((alignment + 1.0) * 0.5);
+float dragMultiplier = lerp(1.0, 0.1, alignmentN);
+float dragAttenuation = pow(saturate(1.0 - dragMultiplier * _MarineSnowDriftParams.w), dt * 60.0);
+particle.Vel *= dragAttenuation;
+Shader log, depth collision:
+
+float currentEyeDepth = ResolveEyeDepth(currentPositionWS);
+float nextEyeDepth = ResolveEyeDepth(nextPositionWS);
+if (currentEyeDepth > maxCollisionDepth || nextEyeDepth > maxCollisionDepth)
+    return false;
+
+float sceneEyeDepth = SampleSceneEyeDepth(nextUv);
+return currentEyeDepth < sceneEyeDepth && nextEyeDepth > sceneEyeDepth;
+In-Game Result
+The live GPU particle owner can now be reused as:
+
+marine snow
+bubbles
+debris-like particulate
+plankton-like drift
+All remain GPU-side. No CPU particle simulation loop was introduced. The flow source is still the authoritative ecosystem flow field, and the new branches only change how different particle classes respond to it.
+
+Bubble motion now has:
+
+buoyant rise
+lateral wobble from Pad.x
+current-strength wobble suppression
+short-range screen-space depth collision bounce
+Snow/debris motion now has:
+
+profile-driven drag/turbulence
+screen-space depth collision settle/decay
+no collision work beyond 15m camera depth
+VRAM log:
+
+canonical particle stride: 64 B
+32,768 particles = 2,097,152 B exactly for one particle buffer
+ping-pong pair = 4,194,304 B
+this excludes the flow-field buffer and frame constants buffer
+REGRESSION MODEL:
+
+CPU: no new per-particle CPU work; one existing compute owner extended
+GC: measured proof absent; no new hot-path managed allocations were introduced
+Memory: one optional ScriptableObject asset type; runtime particle buffers unchanged in stride
+Cadence: one compute dispatch path still drives the entire effect; depth collision adds extra ALU and one depth sample per active near-camera particle
+Correctness: bubbles/plankton share the marine-snow renderer owner, so content separation is profile-driven, not owner-driven
+Failure modes: compute-side depth collision depends on valid _CameraDepthTexture; if URP depth is unavailable, the collision branch safely does nothing
+WARNING: Regression risk in overdraw. The owner still renders camera-facing quads with transparent blending, so scene density remains fillrate-bound on MX350 even though simulation is GPU-side.
+WARNING: Regression risk in shader-side verification. MCP validates the C# owners, not the compute shader bytecode directly.
+
+What Was Verified
+Unity-verified:
+
+HectonMarineSnowRenderer.cs: validate_script returned 0 warnings / 0 errors
+VFXEmissionProfile.cs: validate_script returned 0 warnings / 0 errors
+HectonIndirectVegetationRenderer.cs: validate_script returned 0 warnings / 0 errors
+console filter for HectonMarineSnowRenderer: 0 log entries
+console filter for VFXEmissionProfile: 0 log entries
+console still holds one stale old-entry diagnostic for HectonIndirectVegetationRenderer.cs(1620,64) even though the current file validates clean
+Code-review-only:
+
+compute shader now contains the requested anisotropic-drag branch, bubble wobble branch, and depth-collision branch
+the active flow owner remains HectonMapMagicVegetationBridge payload upload, not a new duplicated current system
+Project-wide compile is still red from unrelated files:
+
+LocRegistry.cs (line 169)
+SaveBinaryStorage.cs (line 1403)
+TOOL_Procedural_Wreckage_Generator.cs (line 142)
+PersistentWorldRegistry.cs (line 1483)
+Diff artifact:
+
+GPU_OCEAN_PARTICLES_2026-04-29.diff
+STATUS: PENDING VERIFICATION.
+
+4 files changed
++352
+-13
+Undo
+
+Review
+Assets/_Project/Art/Shaders/Hecton_MarineSnow.compute
+Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs
+Assets/_Project/Scripts/VFX/VFXEmissionProfile.cs
+Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs
+
+
+
+
+2:39 AM
+-------------------------
+
+<system_prompt>
+MASTER PROMPT: PROJECT "HECTON-8" — MEGADOMAIN: PERSISTENCE & BINARY ARCHITECTURE
+AUTHORITY: CTO / Lead Architect
+OPERATIONAL MODE: Brutal Execution & Autonomous Foundation Building
+THINKING LEVEL: MAXIMUM (Focused on Memory-Mapped Streams, LZ4, and SOA Templates)[0. SITREP: THE COWARDICE ENDS NOW]
+In your last pass, you fixed the AUP overflow but refused to execute the v8 SaveDataMigration because of "risk". I am the Lead Architect. I am ordering you to take the risk. Furthermore, our world lacks the data templates for resource harvesting. You have 2 hours of work ahead. DO NOT STOP.[I. MANDATORY RECONNAISSANCE]
+1. Read SaveDataMigration_AupV8.cs, SaveBinaryStorage.cs, and PersistentWorldRegistry.cs.
+2. Inspect DATA_Inventory_Resources_Items_SOA_Layout.txt and STRM_World_Streaming_Residency_Chunk_Management.txt.
+3. Check if ResourceNodeTemplate.cs or ScrapManager.cs exist.
+
+[II. PRIMARY OBJECTIVES]
+1. EXECUTE THE V8 MIGRATION (NO EXCUSES):
+- Target: SaveBinaryStorage.cs and SaveDataMigration_AupV8.cs.
+- Action: Bump SaveDataVersion to 0x0008. Execute the migration logic that reads the old 36-byte AUP saves and writes the new 48-byte AUP layout. Update the PayloadPrefix offsets exactly as mapped in AUP_SURGERY_MAP.md. 
+
+2. SECTOR DEHYDRATION (LZ4 EVICTION):
+- Target: PersistentWorldRegistry.cs.
+- Action: Implement the actual dehydration logic. If distance from playerAUP to chunkAUP > 2500m: iterate resident entities, extract their state, compress the EntityDataRecord array via LZ4 into a temporary NativeArray, and .Dispose() the unmanaged runtime instances.
+
+[III. ADVANCED ARCHITECTURE EXPANSION]
+3. RESOURCE & FAUNA DATA TEMPLATES (CONTENT FOUNDATIONS):
+- Target: New Scripts (ResourceNodeTemplate.cs, ProceduralFamily_Fauna.cs).
+- Action: You MUST build the data structures for designers. 
+  a) ResourceNodeTemplate (ScriptableObject) must define harvest yield (NativeArray compatible), tool resistance, and rarity drop tables. 
+  b) ProceduralFamily_Fauna must define scale variance, VAT animation offsets, and Boid threat class. 
+
+[IV. PHASE 4: THE AUTONOMOUS CRUSADE]
+Once you finish the above, YOU MUST NOT STOP. 
+1. Audit ItemCatalog.cs and ensure Addressables.Release is explicitly bound to the deferred eviction queue.
+2. Scan the entire Persistence domain and replace any FindObjectsOfType with the Registry<T>.GetAt(i) pattern (as mandated in OPT_Zero_GC_Policy_AllocFree_Mandate.txt).
+
+[V. EVIDENCE-BASED REPORTING]
+1. MCP CONSOLE LOG: Prove 0 errors.
+2. SURGERY LOG: Detail the exact byte offsets shifted in the v8 migration.
+3. DIFFS: Provide complete Git Diffs.
+4. STATUS: MUST BE "MCP VERIFIED".
+</system_prompt>
+
+Show more
+2:27 AM
+
+
+
+191 previous messages
+Error submitting message
+Steered conversation
+Using unity-mcp-orchestrator again because this is Unity persistence/schema surgery. First step is mandatory recon: migration files, world registry, SOA/data mandates, and whether resource/fauna template owners already exist.
+
+
+Ran 6 commands
+The recon shows the codebase already partially moved to the 48-byte AUP branch. I’m checking the actual migration implementation and the existing scrap/resource owners now, because I need to avoid inventing a second data model next to ScrapManager.
+
+
+Ran 5 commands
+The migration file is only half-built right now. It reads old/new prefixes, but it does not actually rewrite legacy raw payloads into the v8 layout before the rest of the parser consumes them. I’m tracing the payload read path next so I can wire the real migration instead of another compatibility shim.
+
+
+Ran 4 commands
+I found the actual gap: old payloads are only interpreted through dual-prefix readers, not migrated into the new v8 raw layout before downstream parsing. I’m checking the runtime SaveData.version seam and the dehydration data owner before I wire the migration and the sector LZ4 temp buffer path.
+
+
+Ran 5 commands
+I’ve isolated the hard part now. Old saves are checksum-verified against the old raw payload, so the migration has to happen after legacy verification and before any section offsets are consumed. I’m tracing the payload-hash return path so I don’t break the integrity scanner when the migrated raw payload length changes.
+
+
+Ran 4 commands
+I’ve got the migration path. It only needs to expand the raw payload prefix by 12 bytes and shift the tail forward, but it also has to patch the in-memory DeltaOffset / EntityOffset view for old headers. I’m checking for a native memmove lane and then I’ll wire it into TryReadPayload.
+
+
+Ran 5 commands
+The current dehydration only despawns proxies. It does not serialize the live EntityDataRecord lane before purging it, so the “compressed temp native cache” part of the prompt is still missing. I’m checking the existing LZ4 helpers now so I can reuse the native codec instead of inventing another compressor.
 
 
 Ran 4 commands
 Context automatically compacted
+Using unity-mcp-orchestrator because this is Unity persistence surgery with MCP validation. First step is reading the mandated owners and the relevant registry mandates, then I’ll patch the v8 migration and sector dehydration paths against the actual code instead of guessing.
+
 [ANALYSIS]
-Target: Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs, Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs, visor/focus owners if threat and fatigue data need a render handoff.
-Affected systems: diegetic HUD projection, AR warning rendering, threat-grid sampling, visor post FX parameters, world-space TMP visibility.
-Zero GC proof: fixed-capacity arrays/native views only, no per-frame string creation, no runtime GameObject spawn, no Shader.Find, no LINQ, no WorldToScreenPoint.
-State check: MCP was mandated first; I’m retrying MCP for live inspection, then I’ll fall back to source if the Unity session is still down. Threat rendering will be cached and time-sliced, not discovered every frame.
-Rule quote: All universe math MUST use Absolute Universe Position (AUP = int64x3 grid + float3 local). Transform.position is presentation-only (camera-relative).
+Target: SaveDataMigration_AupV8.cs, SaveBinaryStorage.cs, PersistentWorldRegistry.cs, ItemCatalog.cs, plus new ResourceNodeTemplate.cs and ProceduralFamily_Fauna.cs.
+Affected systems: binary save container v8 migration, AUP payload prefix layout, indexed sector paging/dehydration, Addressables lifecycle, designer-facing harvesting/fauna data templates.
+Zero GC proof: keep async in Awaitable cold paths only, reuse native buffers where possible, no LINQ/coroutines/new allocations in Tick hot paths, bulk copies via UnsafeUtility/native arrays only.
+State check: migration must preserve old-header checksum verification before rewriting payload bytes; dehydration must not orphan live instance state or leave temp sector buffers undisposed; deferred Addressables release must not flush active handles mid-hydration.
+Rule quote: [REQ] Backend: Native LZ4 Block Compression + SIMD XXHash3. Delta-persistence ONLY and [REQ] Heavy assets (terrain, ocean, caves) — Addressables async only.
+Mandates loaded: DATA_Inventory_Resources_Items_SOA_Layout, STRM_World_Streaming_Residency_Chunk_Management, STRM_Asset_Lifecycle_Addressables_Loading_Memory, OPT_Native_Memory_Collections_JobSystem_Protocol, MATH_Coordinate_Precision_AUP_FloatingOrigin.
+
+Ran Get-Content -Raw '.codex/skills/unity-mcp-skill/SKILL.md'
+The skill file path I tried first was wrong. I’m loading the actual skill instructions from the configured Codex skills directory, then I’ll inspect the migration/dehydration owners in parallel.
 
 
-Used Unitymcp
-MCP is still down. I’m switching to source and asset inspection, which means no live scene proof this turn; the work has to stay code-review-only unless the Unity session comes back.
+Ran 6 commands
+I’ve loaded the governing mandates. Now I’m reading the concrete owners and locating the exact byte-layout and dehydration seams before I edit anything.
+
+
+Ran 7 commands
+The recon is complete. The migration seam is exactly where expected: old payloads are only dual-read, not rewritten. The dehydration seam is also incomplete: sector page-out snapshots overrides, but there is still no compressed resident entity-state cache. I’m drilling into those specific methods now before patching.
 
 
 Ran 4 commands
-I have the threat-grid API and the current HUD hot-path surface. Next step is locating the structural-fatigue owner and the exact projection-scale function so the chevrons and FOV fit go into the existing math instead of another overlay layer.
+I have the exact callsites. Next pass is surgical: patch the payload rewrite, then attach real compressed entity-state eviction and deferred Addressables release to the current owners instead of inventing new ones.
 
 
-Ran 15 commands
-I have the threat-grid payload and the current projection function. The friction point is asset ownership: if I add instanced chevrons, they need a real shader/material path on disk, not another blind runtime fallback. I’m wiring that through the existing HUD owner instead of inventing a second renderer.
+Ran 9 commands
+I have the exact runtime seams now. HydrateRecord already reads EntityDataRecord through ResolveEntityState, which gives me a clean restoration hook: I can page out compressed state, clear the live maps, then page the state back in before hydration without inventing a second simulation owner. After that I’ll add the two designer SO templates and the deferred Addressables release drain.
 
 
-Ran 19 commands
-I’m patching the existing HUD owner now. The changes are limited to the current projection path, a cached threat-grid scan, and the visor owners that already hold the render state.
+Ran 8 commands
+I have enough context to cut code now. The edit set is:
 
-The overlay patch has to go in smaller pieces. I’m re-reading the exact field blocks and then applying the threat renderer incrementally so I don’t corrupt the prefab owner.
+SaveDataMigration_AupV8 + SaveBinaryStorage: add the real in-place v7→v8 prefix rewrite, shift the payload by +12 bytes, and propagate the shifted quest/entity offsets plus the new in-memory payload hash.
+PersistentWorldRegistry + SaveBinaryStorage: add compressed EntityDataRecord sector snapshots for page-out/page-in, then wire delayed commit cleanup and deferred Addressables release drain into the existing paging owner.
+New authoring templates: ResourceNodeTemplate.cs and ProceduralFamily_Fauna.cs, shaped as cold-path ScriptableObjects that emit blittable/runtime-safe data.
+
+Ran 6 commands
+I’m starting file edits with the migration core first. The rule risk here is checksum/order corruption, so I’m keeping the rewrite minimal: migrate only the payload prefix lane in place, shift the raw payload tail by exactly +12 bytes, and leave the rest of the save semantics alone.
 
 
-Edited 5 files, ran 4 commands
-The code changes are in place. I’m doing a source-level verification pass now for syntax risk, hot-path allocations, and the exact serialized HUD shader binding.
+Edited 2 files, ran 1 command
+I’m adding the second persistence lane now: compressed temp sector entity-state blocks. This is deliberately separate from the main v8 directory because the main file only owns durable delta records; the eviction lane owns short-lived live-state snapshots.
+
+
+Edited 2 files
+I’m wiring the registry side now: outgoing sectors get both the durable delta override and the short-lived compressed entity-state override, then the page-in path restores state before any hydration can spawn proxies.
+
+
+Edited 1 file, ran 3 commands
+I’m wiring the page-in/page-out helpers now. The rule is simple: temp sector state files restore before hydration, and prefab releases only happen through the deferred queue so page transitions stop tearing handles down inline.
 
 
 Edited 1 file, ran 6 commands
+The v8 migration path exposed a real parser defect: ResolveHeaderSize skipped version 0x0007, which means tokenized v7 saves could be rejected before the new migration even runs. I’m correcting that while I’m in the container.
+
+
+Edited 1 file, ran 1 command
+The binary/runtime owners are patched. I’m adding the designer-facing data templates now, and I’m keeping them authoring-only: ScriptableObjects with blittable build outputs so they don’t leak managed state back into the simulation lanes.
+
+
+Created 2 files, ran 5 commands
+The core edits are in. I’m validating the touched scripts now before deciding whether to spend the remaining budget on the WorldStateManager scene-scan replacement. If the migration/dehydration lane isn’t clean, that takes priority.
+
+
+Used Unitymcp
+Context automatically compacted
+I finished the v8 migration and sector dehydration owners. One persistence-domain violation remains: WorldStateManager still does cold-path scene scans for ResourceNode and PickupItem. I am auditing whether an existing registry owner exists before I cut those scans out.
+
+
+Ran 2 commands
+The scene scans are confined to WorldStateManager.ApplyToScene(). There is no existing dense registry for ResourceNode or PickupItem, so I am building the owner instead of leaving FindObjectsByType in persistence.
+
+
+Ran 3 commands
+I found no existing scene-object registry for authored ResourceNode/PickupItem. I am adding a dense bucket owner and switching WorldStateManager to indexed scans. That removes the last persistence-domain object search instead of pretending a registry already existed.
+
+
+Edited 1 file
+ResourceNode.cs has legacy comment noise and encoding damage near the top, so the patch anchor failed. I am switching to line-stable anchors instead of trusting the decorative banner.
+
+
+Edited 3 files, ran 2 commands
+The last persistence-domain scene searches are patched. I am validating the new registry buckets and checking that no FindObjectsByType calls remain in WorldStateManager.
+
+
+Ran 1 command, used Unitymcp
+The new buckets validated cleanly. I am running the final persistence-domain search and checking live console state so I can separate “touched files compile” from unrelated project damage.
+
+
+Ran 1 command, used Unitymcp
+The live console exposed a real compile blocker that script validation missed: ProceduralFamily_Fauna.BoidThreatClass is public while EncounterThreatClass is less accessible. I am fixing that now instead of pretending the domain is clean.
+
+
+Edited 1 file, ran 2 commands
+The fauna template had one real accessibility defect. I downgraded the property to internal, which matches the existing EncounterThreatClass owner instead of widening that enum and creating a new public API surface.
+
+
+Ran 1 command, used Unitymcp
+The validator is clean, but the console is still showing the stale pre-patch ProceduralFamily_Fauna error. I am forcing a script refresh/compile and re-reading the console so I do not report a stale log as current truth.
+
+
+Used Unitymcp
+The forced compile surfaced the next real blocker in ResourceNodeTemplate: ambiguous math.max/clamp overload resolution around the ushort packing. I am fixing the arithmetic explicitly instead of letting Unity guess integer width.
+
+
+Edited 1 file, ran 1 command, used Unitymcp
+ResourceNodeTemplate was widened to explicit int math and then cast back to the packed byte/ushort fields. That removes the ambiguous overloads without changing the serialized/runtime layout.
+
+
+Used Unitymcp
+Unity went into a long compile/domain reload after the template fixes, then stopped answering MCP console calls. I still have file-level validator proof for every touched script; I am collecting the final diff stat locally while the editor session is unstable.
+
+
+Ran 2 commands
+The tracked diff artifact exists, but git diff omits the three new untracked foundation files by default. I am forcing append-only creation diffs for those files so the artifact is actually complete instead of pretending Git included them.
+
+
+Ran 2 commands
 What Was Wrong
-
-The missing piece was not the base HUD lock. SuitHUDV4CanvasOverlay.cs (line 1020) was already camera-locked, but its world-scale was still distance-ratio based, not frustum-fit, so FOV changes could drift apparent size. There was also no threat-grid AR handoff at all, and no structural-fatigue feed into the visor shader MPB.
-
-MCP inspection was attempted first and failed on every call with Unity session not available; please retry. There is no live scene proof or console proof from Unity in this turn.
+The v8 container version already existed, but the actual migration step was missing. Old payloads were only being read, not rewritten in memory to the new AUP layout, so the prefix never shifted from the old 60-byte layout to the new 72-byte layout. PersistentWorldRegistry also had durable sector override files for delta records, but not for live EntityDataRecord state during eviction. WorldStateManager still used scene-wide object searches for ResourceNode and PickupItem, which violated the alloc-free registry rule in the persistence domain.
 
 What I Did
+I executed the in-memory v8 migration in SaveDataMigration_AupV8.cs (line 1) and wired it into SaveBinaryStorage.cs (line 1). The migration now:
 
-Threat-grid AR:
+verifies the old decompressed payload checksum first
+shifts the payload tail forward by +12 bytes with UnsafeUtility.MemMove
+rewrites the prefix in place as v8
+updates the local DeltaOffset and EntityOffset by the same +12
+recomputes the migrated in-memory payload hash
+The exact prefix offset shift is:
 
-SuitHUDV4CanvasOverlay.cs (line 1244) now pulls the ecosystem grid from HectonMapMagicVegetationBridge.cs (line 2398) via TryGetEcosystemThreatGridPayload(...).
-It scans a fixed 50 m radius on SlowTick, keeps only 4 strongest cells, then renders them in LateUpdate with Graphics.DrawMeshInstanced.
-The chevrons are owned by the HUD overlay, not spawned as GameObjects.
-Suit_HUD_Canvas.prefab (line 2498) now serializes the instanced shader reference.
-FOV-independent HUD scaling:
+PayloadPrefix size: 60 -> 72
+SaveDataVersion: 48 -> 60
+SaveDataByteLength: 52 -> 64
+SceneNameByteLength: 56 -> 68
+GameVersionByteLength: 58 -> 70
+I implemented actual eviction-state dehydration in PersistentWorldRegistry.cs (line 1) and SaveBinaryStorage.cs (line 1). Outgoing sectors now snapshot live EntityDataRecord arrays, LZ4-compress them into per-sector temp files, restore them on sector return before hydration, and delete them after the 5-minute background commit finalizes the sector back into the main v8 MMF file.
 
-SuitHUDV4CanvasOverlay.cs (line 1020) now computes scale from the real frustum at the near-plane HUD distance:
-float safeDistance = ResolveProjectionPlaneDistance();
-float halfFovRadians = targetCamera.fieldOfView * Mathf.Deg2Rad * 0.5f;
-float frustumHalfHeight = Mathf.Tan(halfFovRadians) * safeDistance;
-float frustumHalfWidth = frustumHalfHeight * targetCamera.aspect;
-float scaleX = (frustumHalfWidth * 2f) / referenceResolution.x;
-float scaleY = (frustumHalfHeight * 2f) / referenceResolution.y;
-return Mathf.Min(scaleX, scaleY);
-That replaces the old baseScale * distance/baseDistance shortcut.
+I added the designer data foundations:
 
-Threat projection math:
+ResourceNodeTemplate.cs (line 1)
+ProceduralFamily_Fauna.cs (line 1)
+ResourceNodeTemplate exports blittable yield/drop descriptors without managed runtime lists. ProceduralFamily_Fauna exports scale variance, VAT payload data, and threat-class metadata as a blittable runtime descriptor.
 
-Vector3 localThreatPosition = cameraTransform.InverseTransformPoint(threatWorld);
-float projectionScale = projectionDistance / localThreatPosition.z;
-Vector2 projectedPlanePosition = localThreatPosition.xy * projectionScale;
-Vector2 clampedPlanePosition = ClampToThreatBounds(projectedPlanePosition, safeHalfWidth, safeHalfHeight);
-Vector3 worldPosition =
-    cameraPos +
-    cameraForward * projectionDistance +
-    cameraRight * clampedPlanePosition.x +
-    cameraUp * clampedPlanePosition.y;
-Signed directional read:
+I bound Addressables.Release to a deferred queue in ItemCatalog.cs (line 1), then drained that queue from the cold registry tick path instead of releasing immediately during paging churn.
 
-float signedAngleDegrees = Mathf.Atan2(
-    Vector3.Dot(Vector3.Cross(cameraForward, threatDirection), cameraUp),
-    Vector3.Dot(cameraForward, threatDirection)) * Mathf.Rad2Deg;
-Pressure-linked visor glitches:
+I removed the remaining persistence-domain scene scans by adding dense buckets to:
 
-VisorHUDController.cs (line 96) now resolves GlobalRegistry.Submarine?.StructuralGrid, reads FatiguePeakNormalized, and writes _ChromaticAberration / _StaticNoise through its existing MPB owner.
-SuitVisor.shader (line 51) now exposes those properties and uses them for RGB split plus static noise.
-CameraJuiceSystem.cs (line 1131) also blends structural fatigue into the URP chromatic aberration volume path, because that file is the owner of the Volume override.
-Self-evaluation:
+ResourceNode.cs (line 1)
+PickupItem.cs (line 1)
+RegistryBucket.cs (line 1)
+WorldStateManager.cs (line 1) now iterates GetAt(i) over those buckets. The persistence-owner grep for FindObjectsByType<|FindObjectsOfType< across WorldStateManager, SaveManager, SaveBinaryStorage, SaveBinaryPayloadCodec, SaveDataMigration_AupV8, ItemCatalog, and PersistentWorldRegistry returned no hits.
 
-No new hot-path strings were added.
-The remaining managed string seam in this HUD owner is still the pre-existing hull-stress whisper cache path in ResolveHullStressWhisperText(...). It is bucket-driven, not per-frame.
-I did not change HectonUIScaler. Source audit says it already preserves scale = 1f for world-space canvases, which is the correct owner behavior after the frustum-fit scale moved into the overlay.
-Focused diffs:
+Complete scoped diff artifact:
 
---- SuitHUDV4CanvasOverlay.cs
-+++ SuitHUDV4CanvasOverlay.cs
-+ private Shader threatChevronShader;
-+ private readonly ThreatChevronState[] _threatChevronStates = new ThreatChevronState[4];
-+ private NativeArray<Matrix4x4> _threatChevronMatrices;
-+ RefreshThreatChevronTargets();
-+ RenderThreatChevrons();
-
-- float expectedScale = DiegeticHudWorldScale * (safeDistance / safeBaseDistance);
-+ float frustumHalfHeight = Mathf.Tan(halfFovRadians) * safeDistance;
-+ float frustumHalfWidth = frustumHalfHeight * targetCamera.aspect;
-+ float scaleX = (frustumHalfWidth * 2f) / referenceResolution.x;
-+ float scaleY = (frustumHalfHeight * 2f) / referenceResolution.y;
-+ return Mathf.Min(scaleX, scaleY);
---- VisorHUDController.cs
-+++ VisorHUDController.cs
-+ [SerializeField] private float _structuralFatigueChromaticAberrationMax = 0.007f;
-+ [SerializeField] private float _structuralFatigueStaticNoiseMax = 0.22f;
-+ private SubmarineStructuralGrid _structuralGrid;
-+ _mpb.SetFloat(ID_ChromaticAberration, _structuralFatigueChromaticAberration);
-+ _mpb.SetFloat(ID_StaticNoise, _structuralFatigueStaticNoise);
---- SuitVisor.shader
-+++ SuitVisor.shader
-+ _ChromaticAberration ("Structural Chromatic Aberration", Range(0, 0.02)) = 0
-+ _StaticNoise ("Structural Static Noise", Range(0, 1)) = 0
-+ sceneColor.r = SAMPLE_TEXTURE2D(... refractedUV + chromaOffset).r;
-+ sceneColor.b = SAMPLE_TEXTURE2D(... refractedUV - chromaOffset).b;
-+ finalColor += staticNoise * (_StaticNoise * 0.045);
---- CameraJuiceSystem.cs
-+++ CameraJuiceSystem.cs
-+ private float _structuralFatigueChromaticAberrationMax = 0.26f;
-+ float structuralFatigueIntensity = ResolveStructuralFatigueChromaticContribution();
-+ float intensity = Mathf.Max(oxygenIntensity, structuralFatigueIntensity) * _adaptivePostFxScale;
-**
-
-What Was Wrong
-
-The missing piece was not the base HUD lock. SuitHUDV4CanvasOverlay.cs (line 1020) was already projecting the visor canvas in front of the camera, but it still scaled by a fixed distance ratio instead of exact frustum fit. The threat-grid AR path was also absent: the HUD never consumed HectonMapMagicVegetationBridge.TryGetEcosystemThreatGridPayload(...), so there was no directional survival feedback. Structural fatigue was not bound into the visor material path either, so pressure/fatigue never drove shader-side chromatic/static interference.
-
-MCP inspection was required first. I attempted it. Unity MCP is still offline and returned Unity session not available; please retry, so there is no live scene readback, no screenshot proof, and no truthful way to claim MCP VERIFIED.
-
-What I Did
-
-Threat-grid AR:
-
-SuitHUDV4CanvasOverlay.cs (line 1244) now reads the live ecosystem threat grid from HectonMapMagicVegetationBridge.ActiveRuntimeInstance on SlowTick(), scans a 50 m radius, and keeps the top 4 hot cells above threshold in a fixed struct buffer.
-SuitHUDV4CanvasOverlay.cs (line 1334) now renders those warnings with Graphics.DrawMeshInstanced, using a cold-built chevron mesh and the existing instanced scanner shader bound in Suit_HUD_Canvas.prefab (line 2498).
-The chevron projection math is exact visor-plane math, not screen-space API:
-float projectionScale = projectionDistance / Mathf.Max(0.001f, localThreatPosition.z);
-Vector2 projectedPlanePosition = new Vector2(
-    localThreatPosition.x * projectionScale,
-    localThreatPosition.y * projectionScale);
-
-Vector3 worldPosition =
-    cameraTransform.position +
-    (cameraTransform.forward * projectionDistance) +
-    (cameraTransform.right * clampedPlanePosition.x) +
-    (cameraTransform.up * clampedPlanePosition.y);
-Rotation uses the requested dot/cross relationship for the threat vector:
-float signedAngleDegrees = Mathf.Atan2(
-    Vector3.Dot(Vector3.Cross(cameraTransform.forward, threatDirection), cameraTransform.up),
-    Vector3.Dot(cameraTransform.forward, threatDirection)) * Mathf.Rad2Deg;
-FOV-independent HUD scaling:
-
-SuitHUDV4CanvasOverlay.cs (line 1020) now computes visor-plane scale from the actual camera frustum at nearClip + 0.05f:
-float frustumHalfHeight = Mathf.Tan(fieldOfView * 0.5f * Mathf.Deg2Rad) * planeDistance;
-float frustumHalfWidth = frustumHalfHeight * camera.aspect;
-float scaleX = (frustumHalfWidth * 2f) / referenceResolution.x;
-float scaleY = (frustumHalfHeight * 2f) / referenceResolution.y;
-float canvasScale = Mathf.Min(scaleX, scaleY);
-That removes the old fixed-distance illusion and keeps the diegetic plane screen-fitted when FOV changes.
-
-Pressure-linked visor glitches:
-
-VisorHUDController.cs (line 786) now resolves GlobalRegistry.Submarine?.StructuralGrid, reads FatiguePeakNormalized, and pushes _ChromaticAberration and _StaticNoise through its existing MaterialPropertyBlock.
-SuitVisor.shader (line 51) now has real _ChromaticAberration and _StaticNoise properties and applies them in the visor composite.
-CameraJuiceSystem.cs (line 1131) also blends structural fatigue into URP chromatic aberration, so the fullscreen post stack and the visor material now agree instead of diverging.
-Self-evaluation:
-
-No new hot-path string allocations were added.
-SuitHUDV4CanvasOverlay still has one managed string seam in ResolveHullStressWhisperText, but that path is corruption-bucket driven, not per-frame. The numeric HUD path remains TryFormat + SetCharArray.
-I audited HectonUIScaler; no change was needed there because it already keeps world-space HUD scaling at 1f and no longer collapses the content.
-Focused diff excerpts:
-
---- SuitHUDV4CanvasOverlay.cs
-+++ SuitHUDV4CanvasOverlay.cs
-+ private Shader threatChevronShader;
-+ private readonly ThreatChevronState[] _threatChevronStates = new ThreatChevronState[4];
-+ private NativeArray<Matrix4x4> _threatChevronMatrices;
-...
-- float expectedScale = DiegeticHudWorldScale * (safeDistance / safeBaseDistance);
-+ float frustumHalfHeight = Mathf.Tan(halfFovRadians) * safeDistance;
-+ float frustumHalfWidth = frustumHalfHeight * targetCamera.aspect;
-+ float scaleX = (frustumHalfWidth * 2f) / referenceResolution.x;
-+ float scaleY = (frustumHalfHeight * 2f) / referenceResolution.y;
-+ return Mathf.Min(scaleX, scaleY);
-...
-+ RefreshThreatChevronTargets();
-+ RenderThreatChevrons();
---- Suit_HUD_Canvas.prefab
-+++ Suit_HUD_Canvas.prefab
-+  threatChevronShader: {fileID: 4800000, guid: 93d4136c67d64c5bb944522bd67021a1, type: 3}
---- VisorHUDController.cs
-+++ VisorHUDController.cs
-+ [SerializeField] private float _structuralFatigueChromaticAberrationMax = 0.007f;
-+ [SerializeField] private float _structuralFatigueStaticNoiseMax = 0.22f;
-...
-+ _mpb.SetFloat(ID_ChromaticAberration, _structuralFatigueChromaticAberration);
-+ _mpb.SetFloat(ID_StaticNoise, _structuralFatigueStaticNoise);
---- SuitVisor.shader
-+++ SuitVisor.shader
-+ _ChromaticAberration ("Structural Chromatic Aberration", Range(0, 0.02)) = 0
-+ _StaticNoise ("Structural Static Noise", Range(0, 1)) = 0
-...
-+ sceneColor.r = SAMPLE_TEXTURE2D(..., refractedUV + chromaOffset).r;
-+ sceneColor.b = SAMPLE_TEXTURE2D(..., refractedUV - chromaOffset).b;
-+ finalColor += staticNoise * (_StaticNoise * 0.045);
+V8_MIGRATION_DEHYDRATION_FOUNDATIONS_2026-04-29.diff (line 1)
 In-Game Result
+Old saves can now be loaded through a real v8 rewrite path instead of a read-only compatibility shim. The in-memory payload is normalized to the 48-byte AUP layout before the rest of the load path consumes it.
 
-Code-review-only result: the HUD owner now has a real threat-grid AR path, the visor plane scales from actual frustum dimensions instead of a fixed ratio, and submarine structural fatigue now reaches both the visor material and the URP chromatic-aberration stack.
-
-WARNING: Regression risk in projection-source instance wiring. The chevrons only render on the projection-source HUD path. If the live scene instance is still overriding the HUD into ScreenSpaceOverlay, the new threat pass will stay dormant until that instance is corrected.
+Paged sectors now preserve live entity state when they are pushed out of the resident window. On return, the registry restores that staged state before hydration, so the sector does not re-enter from stale authored data. The persistence domain is also off scene-wide object searches now; authored nodes and pickups are enumerated through dense registries.
 
 What Was Verified
-
-Not Unity-verified:
-
-MCP script inspection failed.
-MCP scene inspection failed.
-MCP console verification did not happen.
-No screenshot proof exists.
-Code-review-only:
-
-SuitHUDV4CanvasOverlay.cs (line 1244) now consumes TryGetEcosystemThreatGridPayload.
-SuitHUDV4CanvasOverlay.cs (line 1334) now issues Graphics.DrawMeshInstanced.
-SuitVisor.shader (line 51) now exposes _ChromaticAberration and _StaticNoise.
-VisorHUDController.cs (line 521) now feeds those properties via MPB.
-CameraJuiceSystem.cs (line 1131) now blends structural fatigue into URP chromatic aberration.
-Suit_HUD_Canvas.prefab (line 2498) now serializes the instanced shader reference for threat chevrons.
 Mandates followed:
 
-UI_Diegetic_Physical_Interfaces.txt
-MATH_Coordinate_Precision_AUP_FloatingOrigin.txt
-REND_URP_Graphics_HotPath_Optimization_HLOD.txt
-REND_Shader_Noir_Aesthetics_Dithering_Fog.txt
-Regression model:
+DATA_Inventory_Resources_Items_SOA_Layout
+STRM_World_Streaming_Residency_Chunk_Management
+STRM_Asset_Lifecycle_Addressables_Loading_Memory
+OPT_Native_Memory_Collections_JobSystem_Protocol
+MATH_Coordinate_Precision_AUP_FloatingOrigin
+Unity MCP validate_script returned 0 errors / 0 warnings for:
 
-CPU: threat-grid scan is SlowTick only and bounded to a 50 m cell window; per-frame cost is one instanced draw of at most 4 chevrons.
-GC: no new per-frame managed allocations were introduced on the threat path or the visor fatigue path. Measured proof absent.
-Memory: one runtime chevron material, one runtime chevron mesh, NativeArray<Matrix4x4>[4], Matrix4x4[4], ThreatChevronState[4].
-Cadence: threat acquisition updates on SlowTick; chevron transforms rebuild in LateUpdate against current camera pose and FOV.
-Correctness: the new AR path depends on the existing projection camera and HectonMapMagicVegetationBridge.ActiveRuntimeInstance.
-Failure modes: if Unity scene overrides still force the HUD out of projection mode, if the MCP-disconnected scene instance diverges from the prefab, or if the structural grid is absent, the new visuals will not present as intended.
-STATUS: PENDING VERIFICATION
+SaveDataMigration_AupV8.cs (line 1)
+SaveBinaryStorage.cs (line 1)
+PersistentWorldRegistry.cs (line 1)
+ItemCatalog.cs (line 1)
+WorldStateManager.cs (line 1)
+ResourceNode.cs (line 1)
+PickupItem.cs (line 1)
+RegistryBucket.cs (line 1)
+ResourceNodeTemplate.cs (line 1)
+ProceduralFamily_Fauna.cs (line 1)
+MCP console proof is partial, not complete. I forced a compile, fixed the live console blockers it surfaced in ProceduralFamily_Fauna and ResourceNodeTemplate, then the editor stopped answering read_console after the domain reload timeout. That leaves this at PENDING VERIFICATION, not MCP VERIFIED.
 
-5 files changed
-+517
--26
+GC VALIDATION: measured proof absent.
+REGRESSION CHECK: measured proof absent.
+REGRESSION MODEL: CPU = cold-path extra memmove during legacy load and cold-path LZ4 sector entity snapshot/restore on paging; GC = no new hot-path allocations introduced in save/load tick paths, but cold-path managed dictionaries/lists still exist around paging assembly; memory = resident world state stays sector-bounded, temp .estatmp files move evicted live state off RAM; cadence = deferred Addressables release is bounded and drained incrementally; correctness = legacy payloads are normalized before use, entity-state eviction now has a persistence owner.
+HOT PATH IMPACT: none added to gameplay hot ticks beyond bounded deferred release draining in the existing cold registry path.
+FAILURE MODES: final project-wide compile was not re-proven after the last editor timeout; SaveDataMigration_AupV8.cs, ResourceNodeTemplate.cs, and ProceduralFamily_Fauna.cs are new untracked files, so ordinary git diff --stat excludes them even though the diff artifact includes them.
+WHY KEPT: in-place prefix migration avoids a second full payload buffer and preserves the MMF/LZ4 lane.
+WHY REJECTED: I did not claim MCP VERIFIED because the editor session stopped returning fresh console state after the last compile/reload.
+
+10 files changed
++1016
+-28
 Undo
 
 Review
-Assets/_Project/Art/Shaders/SuitVisor.shader
-Assets/_Project/Prefabs/Suit_HUD_Canvas.prefab
-Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs
-Assets/_Project/Scripts/VFX/CameraJuiceSystem.cs
-Assets/_Project/Scripts/Visor/VisorHUDController.cs
+Assets/_Project/Scripts/Core/RegistryBucket.cs
+Assets/_Project/Scripts/ItemCatalog.cs
+Assets/_Project/Scripts/Items/PickupItem.cs
+Assets/_Project/Scripts/ResourceNode.cs
+Assets/_Project/Scripts/SaveBinaryStorage.cs
+Assets/_Project/Scripts/SaveDataMigration_AupV8.cs
+Assets/_Project/Scripts/Scavenging/ResourceNodeTemplate.cs
+Assets/_Project/Scripts/World/PersistentWorldRegistry.cs
+Assets/_Project/Scripts/World/ProceduralFamily_Fauna.cs
+Assets/_Project/Scripts/WorldStateManager.cs
 
 
 
 
-9:59 PM
-
-----------------------------------
+2:52 AM

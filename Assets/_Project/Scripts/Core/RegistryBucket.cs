@@ -23,6 +23,20 @@ namespace Hecton8.Core
         public T[] RawArray => _items;
 
         /// <summary>
+        /// Returns the live item at the given dense-array index.
+        /// </summary>
+        /// <param name="index">Dense registry index.</param>
+        /// <returns>Registered item at the requested index.</returns>
+        public T GetAt(int index)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if ((uint)index >= (uint)_count)
+                throw new ArgumentOutOfRangeException(nameof(index));
+#endif
+            return _items[index];
+        }
+
+        /// <summary>
         /// Creates a fixed-capacity registry bucket.
         /// </summary>
         /// <param name="capacity">Maximum number of live entries allowed in the bucket.</param>

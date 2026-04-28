@@ -22,7 +22,7 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     public sealed class SubnauticaSystemsDebugUI : MonoBehaviour, ITickable, IUpdatable, ISlowTickable
     {
-        // COLD ALLOC: List<SuitHUDV4CanvasOverlay>(4) — overlay canvas resolution buffer — owner: SubnauticaSystemsDebugUI
+        // COLD ALLOC: List<SuitHUDV4CanvasOverlay>(4) â€” overlay canvas resolution buffer â€” owner: SubnauticaSystemsDebugUI
         private static readonly List<SuitHUDV4CanvasOverlay> s_overlayResolveBuffer = new List<SuitHUDV4CanvasOverlay>(4);
         private static SubnauticaSystemsDebugUI s_activeRuntimeInstance;
         private static bool s_isBootstrappingRuntimeOverlay;
@@ -41,7 +41,7 @@ namespace Hecton8.UI
             if (!Application.isPlaying)
                 return;
 
-            // COLD ALLOC: SubnauticaSystemsDebugUI[] — runtime overlay recovery after scene load — owner: SubnauticaSystemsDebugUI
+            // COLD ALLOC: SubnauticaSystemsDebugUI[] â€” runtime overlay recovery after scene load â€” owner: SubnauticaSystemsDebugUI
             if (s_activeRuntimeInstance != null)
             {
                 if (!s_activeRuntimeInstance.enabled)
@@ -52,7 +52,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            // COLD ALLOC: GameObject[1] — runtime debug overlay fallback when the scene instance is missing — owner: SubnauticaSystemsDebugUI
+            // COLD ALLOC: GameObject[1] â€” runtime debug overlay fallback when the scene instance is missing â€” owner: SubnauticaSystemsDebugUI
             GameObject runtimeRoot = new GameObject("SubnauticaSystemsDebugUI_Auto");
             SubnauticaSystemsDebugUI runtimeOverlay = runtimeRoot.AddComponent<SubnauticaSystemsDebugUI>();
             runtimeOverlay.QueueRuntimeBootstrap(forceManagerResolve: true);
@@ -66,14 +66,14 @@ namespace Hecton8.UI
         private const string ReadyLabel = "READY";
         private const string PendingLabel = "PENDING";
 
-        [Header("── References ─────────────────────────────")]
+        [Header("â”€â”€ References â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [SerializeField, Tooltip("Optional explicit HUD canvas. If null, the overlay resolves the active suit HUD canvas at runtime.")]
         private Canvas targetCanvas;
 
         [SerializeField, Tooltip("Optional TMP font asset. If null, TMP default font is used.")]
         private TMP_FontAsset fontAsset;
 
-        [Header("── Layout ─────────────────────────────────")]
+        [Header("â”€â”€ Layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [SerializeField, Tooltip("Top-left anchored position for the debug panel.")]
         private Vector2 anchoredPosition = new Vector2(26f, -28f);
 
@@ -91,7 +91,7 @@ namespace Hecton8.UI
         [SerializeField, Tooltip("Keeps the temporary debug owner alive through bootstrap scene transitions.")]
         private bool persistAcrossSceneLoads = false;
 
-        [Header("── Stress Harness ─────────────────────────")]
+        [Header("â”€â”€ Stress Harness â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [SerializeField, Tooltip("Development-only override that forces DynamicResolutionScaler into a pressured state.")]
         private bool enableStressTest = false;
 
@@ -103,7 +103,7 @@ namespace Hecton8.UI
         [Range(0.1f, 1f)]
         private float forcedRenderScale = 0.5f;
 
-        [Header("── Diagnostics ────────────────────────────")]
+        [Header("â”€â”€ Diagnostics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [SerializeField] private bool debugCanvasResolved;
         [SerializeField] private string debugSceneName = "None";
         [SerializeField] private string debugBootstrapState = "PENDING";
@@ -241,7 +241,6 @@ namespace Hecton8.UI
             if (!Application.isPlaying)
                 return;
 
-            SystemDispatcher.EnsureRuntimeInstance();
             if (!_registered)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);

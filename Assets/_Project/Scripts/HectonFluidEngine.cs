@@ -887,17 +887,22 @@ namespace Hecton8.Physics
 
         private static bool TrySanitizePhysicsVector(float3 value, string errorMessage, out Vector3 sanitized)
         {
-            if (math.any(math.isnan(value)) || !math.all(math.isfinite(value)))
+            if (math.any(math.isnan(value)) || math.any(math.isinf(value)) || !math.all(math.isfinite(value)))
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError(errorMessage);
-#endif
+                ReportNonFinitePhysicsVector(errorMessage);
                 sanitized = Vector3.zero;
                 return false;
             }
 
             sanitized = new Vector3(value.x, value.y, value.z);
             return true;
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        private static void ReportNonFinitePhysicsVector(string message)
+        {
+            NativeAllocationTrackerRuntimeBridge.ReportLeak(message);
+            Debug.LogError(message);
         }
 
         private void ReleaseIdleNativeBuffersIfNeeded()
@@ -1259,7 +1264,7 @@ namespace Hecton8.Physics
             correctedXZ = worldXZ - displacement.xz;
             displacement = ComputeTotalDisplacement(correctedXZ);
 
-            VerticalOffsets[index] = displacement.y;
+            VerticalOffsets[index] = ResolveFiniteFloatOrZero(displacement.y);
         }
 
         private float3 ComputeTotalDisplacement(float2 worldXZ)
@@ -1288,7 +1293,19 @@ namespace Hecton8.Physics
             displacement.x = -direction.x * horizontalDisplacement * sinPhase;
             displacement.y = wave.Amplitude * cosPhase;
             displacement.z = -direction.y * horizontalDisplacement * sinPhase;
-            return displacement;
+            return ResolveFiniteFloat3OrZero(displacement);
+        }
+
+        private static float ResolveFiniteFloatOrZero(float value)
+        {
+            return (math.isnan(value) || math.isinf(value) || !math.isfinite(value)) ? 0f : value;
+        }
+
+        private static float3 ResolveFiniteFloat3OrZero(float3 value)
+        {
+            return (math.any(math.isnan(value)) || math.any(math.isinf(value)) || !math.all(math.isfinite(value)))
+                ? float3.zero
+                : value;
         }
     }
 
@@ -1328,7 +1345,11 @@ namespace Hecton8.Physics
             BuoyancyParams p = objParams[i];
 
             if (p.simulationMode == 1)
+            {
+                resultForces[i] = float3.zero;
+                resultTorques[i] = float3.zero;
                 return;
+            }
 
             if (p.simulationMode == 2)
             {
@@ -1424,8 +1445,15 @@ namespace Hecton8.Physics
             float3 stabilityTorque = tiltAxis * (p.surfaceStability * buoyancyMagnitude * surfaceBand * 0.12f);
             float3 angularDragTorque = -angularVel * (angularDragCoeff * subRatio * math.max(1f, p.mass * 0.35f));
 
-            resultForces[i] = buoyancyForce + dragForce + currentF + dampingVec;
-            resultTorques[i] = angularDragTorque + stabilityTorque;
+            resultForces[i] = ResolveFiniteFloat3OrZero(buoyancyForce + dragForce + currentF + dampingVec);
+            resultTorques[i] = ResolveFiniteFloat3OrZero(angularDragTorque + stabilityTorque);
+        }
+
+        private static float3 ResolveFiniteFloat3OrZero(float3 value)
+        {
+            return (math.any(math.isnan(value)) || math.any(math.isinf(value)) || !math.all(math.isfinite(value)))
+                ? float3.zero
+                : value;
         }
     }
 }

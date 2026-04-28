@@ -58,6 +58,11 @@ namespace Hecton8.Physics
         bool ApplySurfaceWeatherState(in HectonOceanSurfaceWeatherState state);
 
         /// <summary>
+        /// Applies the runtime primary light into the ocean backend when that backend owns sun-light binding.
+        /// </summary>
+        bool TryAssignPrimaryLight(Light primaryLight);
+
+        /// <summary>
         /// Samples water height at one runtime position without exposing backend query ownership to gameplay.
         /// </summary>
         bool TrySampleWaveHeight(float3 position, float minSpatialLength, out float waterHeight);

@@ -207,6 +207,11 @@ namespace Hecton8.SaveSystem
                 && writer.WriteInt(value.gridRows);
         }
 
+        private static bool WriteExternalScavengerSites(ref BufferWriter writer, ExternalScavengerSiteDTO[] value)
+        {
+            return writer.WriteStructArray(value);
+        }
+
         private static bool WritePlayerStats(ref BufferWriter writer, PlayerStatsDTO value)
         {
             return writer.WriteFloat(value.oxygen)
@@ -374,6 +379,15 @@ namespace Hecton8.SaveSystem
             }
 
             return true;
+        }
+
+        private static bool ReadExternalScavengerSites(ref BufferReader reader, int version, out ExternalScavengerSiteDTO[] value)
+        {
+            value = null;
+            if (version < 42)
+                return true;
+
+            return reader.ReadStructArray(out value);
         }
 
         private static bool WriteWorldState(ref BufferWriter writer, WorldStateDTO value)

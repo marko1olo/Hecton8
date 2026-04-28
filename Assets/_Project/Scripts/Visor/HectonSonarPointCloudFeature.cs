@@ -52,15 +52,28 @@ namespace Hecton8.Visor
 
         private sealed class SonarPointCloudPass : ScriptableRenderPass, IDisposable
         {
+            private const int RenderTextureBucketSize = 64;
+
             private sealed class PassData
             {
                 internal TextureHandle source;
-                internal TextureHandle depth;
-                internal TextureHandle historyWrite;
                 internal TextureHandle destination;
-                internal TextureHandle historyReadTexture;
-                internal TextureHandle worldHistoryReadTexture;
-                internal TextureHandle worldHistoryWriteTexture;
+                internal Material material;
+            }
+
+            private sealed class HistoryWritePassData
+            {
+                internal TextureHandle source;
+                internal TextureHandle historyWrite;
+                internal Texture historyReadTexture;
+                internal Material material;
+            }
+
+            private sealed class WorldHistoryWritePassData
+            {
+                internal TextureHandle source;
+                internal TextureHandle worldHistoryWrite;
+                internal Texture worldHistoryReadTexture;
                 internal Material material;
             }
 
@@ -138,8 +151,8 @@ namespace Hecton8.Visor
                     return;
 
                 TextureDesc sourceDesc = renderGraph.GetTextureDesc(sourceTexture);
-                int historyWidth = Mathf.Max(1, Mathf.RoundToInt(sourceDesc.width * Mathf.Clamp(_settings.renderScale, 0.25f, 1f)));
-                int historyHeight = Mathf.Max(1, Mathf.RoundToInt(sourceDesc.height * Mathf.Clamp(_settings.renderScale, 0.25f, 1f)));
+                int historyWidth = QuantizeDimension(Mathf.Max(1, Mathf.RoundToInt(sourceDesc.width * Mathf.Clamp(_settings.renderScale, 0.25f, 1f))));
+                int historyHeight = QuantizeDimension(Mathf.Max(1, Mathf.RoundToInt(sourceDesc.height * Mathf.Clamp(_settings.renderScale, 0.25f, 1f))));
                 EnsureHistoryTextures(historyWidth, historyHeight);
                 EnsureWorldMemoryTextures(Mathf.Clamp(_settings.worldMemoryResolution, 256, 2048));
 
@@ -171,23 +184,69 @@ namespace Hecton8.Visor
 
                 UpdateMaterialParameters(_material, _settings, screenHistoryAlive, worldHistoryAlive, _worldMemoryRect, _worldScrollUvOffset, floatingOriginOffset);
 
-                using (var builder = renderGraph.AddUnsafePass<PassData>("Hecton Sonar Point Cloud", out PassData passData, _profilingSampler))
+                using (var builder = renderGraph.AddUnsafePass<HistoryWritePassData>("Hecton Sonar History Write", out HistoryWritePassData passData, _profilingSampler))
                 {
                     passData.source = sourceTexture;
-                    passData.depth = depthTexture;
                     passData.historyWrite = historyWriteTexture;
-                    passData.destination = compositeTexture;
-                    passData.historyReadTexture = historyReadTexture;
-                    passData.worldHistoryReadTexture = worldHistoryReadTexture;
-                    passData.worldHistoryWriteTexture = worldHistoryWriteTexture;
+                    passData.historyReadTexture = _historyRead != null ? _historyRead.rt : null;
                     passData.material = _material;
 
                     builder.UseTexture(sourceTexture, AccessFlags.Read);
-                    builder.UseTexture(depthTexture, AccessFlags.Read);
                     builder.UseTexture(historyReadTexture, AccessFlags.Read);
                     builder.UseTexture(historyWriteTexture, AccessFlags.Write);
+                    builder.AllowGlobalStateModification(true);
+                    builder.SetGlobalTextureAfterPass(historyWriteTexture, ShaderConstants.HistoryTextureId);
+                    builder.SetGlobalTextureAfterPass(historyWriteTexture, ShaderConstants.PointCloudTextureId);
+
+                    builder.SetRenderFunc(static (HistoryWritePassData data, UnsafeGraphContext context) =>
+                    {
+                        CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
+                        const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
+                        const RenderBufferStoreAction StoreAction = RenderBufferStoreAction.Store;
+
+                        if (data.historyReadTexture != null)
+                            data.material.SetTexture(ShaderConstants.HistoryTextureId, data.historyReadTexture);
+
+                        Blitter.BlitCameraTexture(cmd, data.source, data.historyWrite, LoadAction, StoreAction, data.material, 0);
+                    });
+                }
+
+                using (var builder = renderGraph.AddUnsafePass<WorldHistoryWritePassData>("Hecton Sonar World History Write", out WorldHistoryWritePassData passData, _profilingSampler))
+                {
+                    passData.source = sourceTexture;
+                    passData.worldHistoryWrite = worldHistoryWriteTexture;
+                    passData.worldHistoryReadTexture = _worldHistoryRead != null ? _worldHistoryRead.rt : null;
+                    passData.material = _material;
+
+                    builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(worldHistoryReadTexture, AccessFlags.Read);
                     builder.UseTexture(worldHistoryWriteTexture, AccessFlags.Write);
+                    builder.AllowGlobalStateModification(true);
+                    builder.SetGlobalTextureAfterPass(worldHistoryWriteTexture, ShaderConstants.WorldHistoryTextureId);
+                    builder.SetGlobalTextureAfterPass(worldHistoryWriteTexture, ShaderConstants.WorldPointCloudTextureId);
+
+                    builder.SetRenderFunc(static (WorldHistoryWritePassData data, UnsafeGraphContext context) =>
+                    {
+                        CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
+                        const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
+                        const RenderBufferStoreAction StoreAction = RenderBufferStoreAction.Store;
+
+                        if (data.worldHistoryReadTexture != null)
+                            data.material.SetTexture(ShaderConstants.WorldHistoryTextureId, data.worldHistoryReadTexture);
+
+                        Blitter.BlitCameraTexture(cmd, data.source, data.worldHistoryWrite, LoadAction, StoreAction, data.material, 1);
+                    });
+                }
+
+                using (var builder = renderGraph.AddUnsafePass<PassData>("Hecton Sonar Point Cloud Composite", out PassData passData, _profilingSampler))
+                {
+                    passData.source = sourceTexture;
+                    passData.destination = compositeTexture;
+                    passData.material = _material;
+
+                    builder.UseTexture(sourceTexture, AccessFlags.Read);
+                    builder.UseTexture(historyWriteTexture, AccessFlags.Read);
+                    builder.UseTexture(worldHistoryWriteTexture, AccessFlags.Read);
                     builder.UseTexture(compositeTexture, AccessFlags.Write);
                     builder.AllowGlobalStateModification(true);
 
@@ -197,14 +256,6 @@ namespace Hecton8.Visor
                         const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
                         const RenderBufferStoreAction StoreAction = RenderBufferStoreAction.Store;
 
-                        cmd.SetGlobalTexture(ShaderConstants.HistoryTextureId, data.historyReadTexture);
-                        Blitter.BlitCameraTexture(cmd, data.source, data.historyWrite, LoadAction, StoreAction, data.material, 0);
-                        cmd.SetGlobalTexture(ShaderConstants.WorldHistoryTextureId, data.worldHistoryReadTexture);
-                        Blitter.BlitCameraTexture(cmd, data.source, data.worldHistoryWriteTexture, LoadAction, StoreAction, data.material, 1);
-                        cmd.SetGlobalTexture(ShaderConstants.PointCloudTextureId, data.historyWrite);
-                        cmd.SetGlobalTexture(ShaderConstants.WorldPointCloudTextureId, data.worldHistoryWriteTexture);
-                        cmd.SetGlobalTexture(ShaderConstants.HistoryTextureId, data.historyWrite);
-                        cmd.SetGlobalTexture(ShaderConstants.WorldHistoryTextureId, data.worldHistoryWriteTexture);
                         Blitter.BlitCameraTexture(cmd, data.source, data.destination, LoadAction, StoreAction, data.material, 2);
                     });
                 }
@@ -251,6 +302,12 @@ namespace Hecton8.Visor
                     name: "_HectonSonarPointCloudHistoryWrite");
                 _historyValid = false;
                 _screenHistoryRetainUntilTime = 0f;
+            }
+
+            private static int QuantizeDimension(int dimension)
+            {
+                int safeDimension = Mathf.Max(1, dimension);
+                return ((safeDimension + RenderTextureBucketSize - 1) / RenderTextureBucketSize) * RenderTextureBucketSize;
             }
 
             private void EnsureWorldMemoryTextures(int resolution)

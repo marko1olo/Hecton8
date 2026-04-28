@@ -12,6 +12,7 @@ using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Optimization;
+using Hecton8.Physics;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
 using Hecton8.World;

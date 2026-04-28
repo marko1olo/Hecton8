@@ -213,7 +213,6 @@ namespace Hecton8.World
             if (_isRegistered)
                 return;
 
-            SystemDispatcher.EnsureRuntimeInstance();
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _isRegistered = true;
         }

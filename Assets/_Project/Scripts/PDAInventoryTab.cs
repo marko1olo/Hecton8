@@ -57,6 +57,8 @@ namespace Hecton8.UI
         private static readonly char[] FilterLabelMaterialsChars = "MATS".ToCharArray();
         private static readonly char[] FilterLabelComponentsChars = "PARTS".ToCharArray();
         private static readonly char[] PageDigestPrefixChars = "PAGE ".ToCharArray();
+        // COLD ALLOC: string[4] — cached PDA tool-slot key labels — owner: PDAInventoryTab
+        private static readonly string[] ToolSlotKeyLabels = { "1", "2", "3", "4" };
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -142,6 +144,8 @@ namespace Hecton8.UI
 
         // Pointer overlay
         private RectTransform _pointerOverlay;
+        private RectTransform _dragPreviewRect;
+        private Image _dragPreviewImage;
 
         // Details panel
         private RectTransform _detailsRoot;
@@ -212,6 +216,10 @@ namespace Hecton8.UI
         private int _selectedItemHashId;
         private int _hoverX = -1;
         private int _hoverY = -1;
+        private bool _dragActive;
+        private int _dragSourceX = -1;
+        private int _dragSourceY = -1;
+        private int _dragSourceHashId;
         private InventoryViewFilter _currentFilter = InventoryViewFilter.All;
         private int _visiblePlacementCount;
         private int _currentPageIndex;
@@ -616,6 +624,20 @@ namespace Hecton8.UI
             _pointerOverlay.anchorMax = new Vector2(0f, 1f);
             _pointerOverlay.anchoredPosition = Vector2.zero;
             _pointerOverlay.sizeDelta = GridAreaSize;
+
+            _dragPreviewRect = CreateRect("DragPreview", _gridArea);
+            _dragPreviewRect.pivot = new Vector2(0f, 1f);
+            _dragPreviewRect.anchorMin = new Vector2(0f, 1f);
+            _dragPreviewRect.anchorMax = new Vector2(0f, 1f);
+            _dragPreviewRect.anchoredPosition = Vector2.zero;
+            _dragPreviewRect.sizeDelta = Vector2.zero;
+            _dragPreviewImage = _dragPreviewRect.gameObject.AddComponent<Image>();
+            _dragPreviewImage.color = new Color(0.46f, 0.98f, 0.94f, 0.18f);
+            _dragPreviewImage.preserveAspect = true;
+            _dragPreviewImage.raycastTarget = false;
+            _dragPreviewImage.enabled = false;
+            _dragPreviewRect.SetAsLastSibling();
+
             _pointerOverlay.SetAsLastSibling();
 
             Image overlayImg = _pointerOverlay.gameObject.AddComponent<Image>();
@@ -926,7 +948,7 @@ namespace Hecton8.UI
                     FontStyles.Bold, TextAlignmentOptions.TopLeft);
                 Anchor(keyLbl.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f),
                        new Vector2(4f, -3f), new Vector2(16f, 14f));
-                keyLbl.text = (i + 1).ToString();
+                keyLbl.text = ToolSlotKeyLabels[i];
                 keyLbl.color = A(DimLow, 0.5f);
                 _toolSlotKeys[i] = keyLbl;
             }
@@ -1339,7 +1361,7 @@ namespace Hecton8.UI
                     ? ResolveLocalized(LocalizationKeys.ITEM_DESCRIPTION_FALLBACK, "No description available.")
                     : _selectedItem.description;
                 desc = ResolveStressReactiveItemDescription(_selectedItem, desc);
-                string cat = CachedToUpperInvariant(_selectedItem.category.ToString());
+                string cat = ResolveItemCategoryLabel(_selectedItem.category);
                 _detailDesc.text = $"<color=#7FBFBA>[{cat}]</color>\n{desc}";
             }
 
@@ -1720,10 +1742,7 @@ namespace Hecton8.UI
         }
         internal void HandlePointerMove(Vector2 localPoint)
         {
-            int gx = Mathf.FloorToInt(localPoint.x / CellStep);
-            int gy = Mathf.FloorToInt(-localPoint.y / CellStep);
-
-            if (gx < 0 || gx >= GridCols || gy < 0 || gy >= GridRows)
+            if (!TryResolveGridCoordinates(localPoint, out int gx, out int gy))
             {
                 ClearHover();
                 return;
@@ -1757,41 +1776,84 @@ namespace Hecton8.UI
 
         internal void HandlePointerClick(Vector2 localPoint)
         {
-            int gx = Mathf.FloorToInt(localPoint.x / CellStep);
-            int gy = Mathf.FloorToInt(-localPoint.y / CellStep);
-
-            if (gx < 0 || gx >= GridCols || gy < 0 || gy >= GridRows)
+            if (!TryResolveGridCoordinates(localPoint, out int gx, out int gy))
             {
                 ClearSelection();
                 return;
             }
 
-            int cellHashId = playerInventory != null
-                ? playerInventory.GetItemHashAt(gx, gy)
-                : 0;
+            TrySelectGridCell(gx, gy, playAudio: true);
+        }
+
+        internal void HandlePointerBeginDrag(Vector2 localPoint)
+        {
+            if (!TryResolveGridCoordinates(localPoint, out int gx, out int gy) || playerInventory == null)
+                return;
+
+            int cellHashId = playerInventory.GetItemHashAt(gx, gy);
             ItemData cell = ResolveInventoryItem(cellHashId);
+            if (cell == null)
+                return;
 
-            if (cell != null)
+            FindAnchor(cell, gx, gy, out int anchorX, out int anchorY);
+            TrySelectGridCell(anchorX, anchorY, playAudio: false);
+
+            _dragActive = true;
+            _dragSourceX = anchorX;
+            _dragSourceY = anchorY;
+            _dragSourceHashId = cellHashId;
+            _dragPreviewImage.sprite = cell.icon;
+            _dragPreviewImage.color = cell.icon != null
+                ? new Color(1f, 1f, 1f, 0.92f)
+                : new Color(0.46f, 0.98f, 0.94f, 0.18f);
+            UpdateDragPreview(localPoint, cell.width, cell.height);
+            if (_dragPreviewImage != null)
+                _dragPreviewImage.enabled = true;
+        }
+
+        internal void HandlePointerDrag(Vector2 localPoint)
+        {
+            if (!_dragActive)
             {
-                FindAnchor(cell, gx, gy, out int ax, out int ay);
-
-                // Звук только при смене выбора
-                if (cellHashId != _selectedItemHashId || ax != _selectedX || ay != _selectedY)
-                    PlayUISound(selectSound);
-
-                _selectedX = ax;
-                _selectedY = ay;
-                _selectedItem = cell;
-                _selectedItemHashId = cellHashId;
-                PositionHighlight(_selectRect, ax, ay, cell.width, cell.height);
-                _selectImage.enabled = true;
+                HandlePointerMove(localPoint);
+                return;
             }
-            else
+
+            HandlePointerMove(localPoint);
+
+            ItemData sourceItem = ResolveInventoryItem(_dragSourceHashId);
+            if (sourceItem != null)
+                UpdateDragPreview(localPoint, sourceItem.width, sourceItem.height);
+        }
+
+        internal void HandlePointerEndDrag(Vector2 localPoint)
+        {
+            if (_dragPreviewImage != null)
             {
-                ClearSelection();
+                _dragPreviewImage.enabled = false;
+                _dragPreviewImage.sprite = null;
+                _dragPreviewImage.color = new Color(0.46f, 0.98f, 0.94f, 0.18f);
             }
 
-            RefreshDetails();
+            if (!_dragActive)
+                return;
+
+            int sourceX = _dragSourceX;
+            int sourceY = _dragSourceY;
+            int sourceHashId = _dragSourceHashId;
+            _dragActive = false;
+            _dragSourceX = -1;
+            _dragSourceY = -1;
+            _dragSourceHashId = 0;
+
+            if (playerInventory == null || !TryResolveGridCoordinates(localPoint, out int targetX, out int targetY))
+                return;
+
+            if (!playerInventory.TryMoveOrSwapAnchor(sourceX, sourceY, targetX, targetY))
+                return;
+
+            FlushPendingRefresh(forceAll: true);
+            SelectDraggedAnchor(sourceHashId, targetX, targetY, sourceX, sourceY);
         }
 
         /// <summary>
@@ -1923,6 +1985,68 @@ namespace Hecton8.UI
             if (_selectRect != null)
                 _selectImage.enabled = false;
             RefreshDetails();
+        }
+
+        private bool TryResolveGridCoordinates(Vector2 localPoint, out int gx, out int gy)
+        {
+            gx = Mathf.FloorToInt(localPoint.x / CellStep);
+            gy = Mathf.FloorToInt(-localPoint.y / CellStep);
+            return gx >= 0 && gx < GridCols && gy >= 0 && gy < GridRows;
+        }
+
+        private void TrySelectGridCell(int gx, int gy, bool playAudio)
+        {
+            int cellHashId = playerInventory != null
+                ? playerInventory.GetItemHashAt(gx, gy)
+                : 0;
+            ItemData cell = ResolveInventoryItem(cellHashId);
+
+            if (cell == null)
+            {
+                ClearSelection();
+                return;
+            }
+
+            FindAnchor(cell, gx, gy, out int anchorX, out int anchorY);
+            if (playAudio && (cellHashId != _selectedItemHashId || anchorX != _selectedX || anchorY != _selectedY))
+                PlayUISound(selectSound);
+
+            _selectedX = anchorX;
+            _selectedY = anchorY;
+            _selectedItem = cell;
+            _selectedItemHashId = cellHashId;
+            PositionHighlight(_selectRect, anchorX, anchorY, cell.width, cell.height);
+            _selectImage.enabled = true;
+            RefreshDetails();
+        }
+
+        private void UpdateDragPreview(Vector2 localPoint, int width, int height)
+        {
+            if (_dragPreviewRect == null)
+                return;
+
+            float pixelWidth = (width * CellStep) - CellGap;
+            float pixelHeight = (height * CellStep) - CellGap;
+            _dragPreviewRect.sizeDelta = new Vector2(pixelWidth, pixelHeight);
+            _dragPreviewRect.anchoredPosition = new Vector2(
+                localPoint.x - (pixelWidth * 0.5f),
+                localPoint.y + (pixelHeight * 0.5f));
+            _dragPreviewRect.SetAsLastSibling();
+        }
+
+        private void SelectDraggedAnchor(int sourceHashId, int targetX, int targetY, int fallbackX, int fallbackY)
+        {
+            if (playerInventory == null)
+                return;
+
+            if (playerInventory.GetItemHashAt(targetX, targetY) == sourceHashId)
+            {
+                TrySelectGridCell(targetX, targetY, playAudio: false);
+                return;
+            }
+
+            if (playerInventory.GetItemHashAt(fallbackX, fallbackY) == sourceHashId)
+                TrySelectGridCell(fallbackX, fallbackY, playAudio: false);
         }
 
         private void PositionHighlight(RectTransform rect, int gx, int gy, int w, int h)
@@ -2630,6 +2754,20 @@ namespace Hecton8.UI
             return c;
         }
 
+        private static string ResolveItemCategoryLabel(ItemCategory category)
+        {
+            switch (category)
+            {
+                case ItemCategory.Material: return "MATERIAL";
+                case ItemCategory.Tool: return "TOOL";
+                case ItemCategory.Equipment: return "EQUIPMENT";
+                case ItemCategory.Consumable: return "CONSUMABLE";
+                case ItemCategory.Component: return "COMPONENT";
+                case ItemCategory.Organic: return "ORGANIC";
+                default: return "MISCELLANEOUS";
+            }
+        }
+
         private Color GetSelectedDetailStatusColor()
         {
             if (_selectedItem == null)
@@ -2963,36 +3101,80 @@ namespace Hecton8.UI
 
     [DisallowMultipleComponent]
     internal sealed class GridPointerHandler : MonoBehaviour,
-        IPointerMoveHandler, IPointerClickHandler, IPointerExitHandler
+        IPointerMoveHandler, IPointerClickHandler, IPointerExitHandler,
+        IPointerDownHandler, IPointerUpHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
     {
         private PDAInventoryTab _tab;
+        private bool _suppressClick;
 
         public void Init(PDAInventoryTab tab)
         {
             _tab = tab;
         }
 
+        public void OnPointerDown(PointerEventData eventData)
+        {
+            _suppressClick = false;
+        }
+
         public void OnPointerMove(PointerEventData eventData)
         {
-            if (_tab == null) return;
-            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                transform as RectTransform, eventData.position, eventData.pressEventCamera, out Vector2 localPoint))
+            if (_tab == null || !TryResolveLocalPoint(eventData, out Vector2 localPoint))
                 return;
             _tab.HandlePointerMove(localPoint);
         }
 
         public void OnPointerClick(PointerEventData eventData)
         {
-            if (_tab == null) return;
-            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                transform as RectTransform, eventData.position, eventData.pressEventCamera, out Vector2 localPoint))
+            if (_suppressClick)
+            {
+                _suppressClick = false;
+                return;
+            }
+
+            if (_tab == null || !TryResolveLocalPoint(eventData, out Vector2 localPoint))
                 return;
             _tab.HandlePointerClick(localPoint);
+        }
+
+        public void OnPointerUp(PointerEventData eventData)
+        {
+        }
+
+        public void OnBeginDrag(PointerEventData eventData)
+        {
+            _suppressClick = true;
+            if (_tab == null || !TryResolveLocalPoint(eventData, out Vector2 localPoint))
+                return;
+            _tab.HandlePointerBeginDrag(localPoint);
+        }
+
+        public void OnDrag(PointerEventData eventData)
+        {
+            if (_tab == null || !TryResolveLocalPoint(eventData, out Vector2 localPoint))
+                return;
+            _tab.HandlePointerDrag(localPoint);
+        }
+
+        public void OnEndDrag(PointerEventData eventData)
+        {
+            if (_tab == null || !TryResolveLocalPoint(eventData, out Vector2 localPoint))
+                return;
+            _tab.HandlePointerEndDrag(localPoint);
         }
 
         public void OnPointerExit(PointerEventData eventData)
         {
             _tab?.HandlePointerExit();
+        }
+
+        private bool TryResolveLocalPoint(PointerEventData eventData, out Vector2 localPoint)
+        {
+            return RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                transform as RectTransform,
+                eventData.position,
+                eventData.pressEventCamera,
+                out localPoint);
         }
     }
 

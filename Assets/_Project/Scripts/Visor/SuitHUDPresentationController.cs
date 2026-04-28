@@ -259,7 +259,7 @@ namespace NASAPunk.Visor
                 ? presentationMode + " -> FallbackOverlay"
                 : presentationMode == PresentationMode.LegacyOverlay
                     ? "ModernOverlay (legacy retired)"
-                    : presentationMode.ToString();
+                    : ResolvePresentationModeLabel(presentationMode);
             debugModernEnabled =
                 (overlayModernHud != null && overlayModernHud.enabled) ||
                 (projectedModernHud != null && projectedModernHud.enabled);
@@ -523,6 +523,18 @@ namespace NASAPunk.Visor
             }
         }
 
+        private static string ResolvePresentationModeLabel(PresentationMode mode)
+        {
+            switch (mode)
+            {
+                case PresentationMode.LegacyOverlay: return "LegacyOverlay";
+                case PresentationMode.ModernOverlay: return "ModernOverlay";
+                case PresentationMode.ModernProjectedSharedRT: return "ModernProjectedSharedRT";
+                case PresentationMode.ModernProjectedRuntimeRT: return "ModernProjectedRuntimeRT";
+                default: return "UnknownPresentationMode";
+            }
+        }
+
         private Camera ResolveOverlayHostCamera()
         {
             if (overlayPresentationCamera != null)
@@ -651,7 +663,6 @@ namespace NASAPunk.Visor
             if (_tickRegistered)
                 return;
 
-            SystemDispatcher.EnsureRuntimeInstance();
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _tickRegistered = true;
         }

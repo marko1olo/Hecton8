@@ -60,7 +60,8 @@ struct MassiveThreatData
     float PanicRadius;
     float Strength;
     float EndTime;
-    float3 Padding;
+    float3 DirectionWS;
+    float Padding;
 };
 
 StructuredBuffer<BoidData> _BoidsBufferRead;
@@ -225,7 +226,7 @@ StructuredBuffer<SargassumSimulationFrameData> _SargassumSimulationFrame;
 #define _ThreatGridCenterWS (_SargassumSimulationFrame[0].ThreatGridCenter.xyz)
 #define _ThreatGridCellSizeWS (_SargassumSimulationFrame[0].ThreatGridCenter.w)
 #define _ThreatVoxelDimensions (_SargassumSimulationFrame[0].ThreatVoxelMeta.xyz)
-#define _ThreatVoxelActive (_SargassumSimulationFrame[0].ThreatVoxelMeta.w)
+#define _ThreatVoxelSolidThreshold (_SargassumSimulationFrame[0].ThreatVoxelMeta.w)
 #define _ThreatVoxelOriginWS (_SargassumSimulationFrame[0].ThreatVoxelOrigin.xyz)
 #define _ThreatVoxelLookAheadDistance (_SargassumSimulationFrame[0].ThreatVoxelOrigin.w)
 #define _ThreatVoxelCellSizeWS (_SargassumSimulationFrame[0].ThreatVoxelCellSize.xyz)
@@ -272,7 +273,6 @@ StructuredBuffer<SargassumSimulationFrameData> _SargassumSimulationFrame;
 #define SIM_LOD_TIER_FULL 0
 #define SIM_LOD_TIER_SIMPLIFIED 1
 #define SIM_LOD_TIER_SLEEP 2
-#define SOLID_THREAT_VOXEL 255u
 #define THREAT_VOXEL_DDA_MAX_STEPS 128
 
 float Hash11(float inputValue);
@@ -465,7 +465,7 @@ bool TryResolveGridCell(float3 positionWS, int3 resolution, out int3 cell)
 
 bool HasThreatVoxelData()
 {
-    return _ThreatVoxelActive > 0 &&
+    return _ThreatVoxelSolidThreshold > 0 &&
            _ThreatVoxelDimensions.x > 0 &&
            _ThreatVoxelDimensions.y > 0 &&
            _ThreatVoxelDimensions.z > 0 &&
@@ -592,6 +592,11 @@ uint SampleThreatVoxel(int3 voxel)
     return _ThreatVoxelGrid[flatIndex];
 }
 
+bool IsThreatVoxelSolid(uint voxelValue)
+{
+    return voxelValue >= (uint)max(_ThreatVoxelSolidThreshold, 1);
+}
+
 bool TryResolveThreatVoxelAvoidance(float3 positionWS, float3 velocityWS, out float3 avoidanceNormalWS, out float avoidanceGate)
 {
     avoidanceNormalWS = float3(0.0, 0.0, 0.0);
@@ -622,7 +627,7 @@ bool TryResolveThreatVoxelAvoidance(float3 positionWS, float3 velocityWS, out fl
             return false;
     }
 
-    if (SampleThreatVoxel(currentVoxel) >= SOLID_THREAT_VOXEL)
+    if (IsThreatVoxelSolid(SampleThreatVoxel(currentVoxel)))
     {
         avoidanceNormalWS = -rayDirection;
         avoidanceGate = 1.0;
@@ -672,7 +677,7 @@ bool TryResolveThreatVoxelAvoidance(float3 positionWS, float3 velocityWS, out fl
         if (!IsThreatVoxelInside(currentVoxel))
             break;
 
-        if (SampleThreatVoxel(currentVoxel) >= SOLID_THREAT_VOXEL)
+        if (IsThreatVoxelSolid(SampleThreatVoxel(currentVoxel)))
         {
             float3 rawNormal = float3(-axisStep.x, -axisStep.y, -axisStep.z);
             avoidanceNormalWS = SafeNormalize(rawNormal);
@@ -691,6 +696,67 @@ bool TryResolveThreatVoxelAvoidance(float3 positionWS, float3 velocityWS, out fl
     }
 
     return false;
+}
+
+bool TryResolveThreatVoxelSurfaceRepulsion(float3 positionWS, out float3 surfaceNormalWS, out float surfaceGate)
+{
+    surfaceNormalWS = float3(0.0, 0.0, 0.0);
+    surfaceGate = 0.0;
+    if (!HasThreatVoxelData())
+        return false;
+
+    int3 centerVoxel = int3(0, 0, 0);
+    if (!TryWorldToThreatVoxel(positionWS, centerVoxel))
+        return false;
+
+    float3 safeCellSize = max(_ThreatVoxelCellSizeWS, float3(EPSILON, EPSILON, EPSILON));
+    float repulsionDistanceWS = 2.0;
+    int3 axisStepBudget = max((int3)1, (int3)ceil(repulsionDistanceWS / safeCellSize));
+    const int3 axisDirections[6] =
+    {
+        int3(1, 0, 0),
+        int3(-1, 0, 0),
+        int3(0, 1, 0),
+        int3(0, -1, 0),
+        int3(0, 0, 1),
+        int3(0, 0, -1)
+    };
+
+    float3 accumulation = float3(0.0, 0.0, 0.0);
+    float maxGate = 0.0;
+    [unroll]
+    for (int axisIndex = 0; axisIndex < 6; axisIndex++)
+    {
+        int3 axisDirection = axisDirections[axisIndex];
+        int maxAxisSteps = axisDirection.x != 0
+            ? axisStepBudget.x
+            : (axisDirection.y != 0 ? axisStepBudget.y : axisStepBudget.z);
+        [loop]
+        for (int stepIndex = 0; stepIndex < maxAxisSteps; stepIndex++)
+        {
+            int3 sampleVoxel = centerVoxel + (axisDirection * stepIndex);
+            if (!IsThreatVoxelInside(sampleVoxel))
+                break;
+
+            if (!IsThreatVoxelSolid(SampleThreatVoxel(sampleVoxel)))
+                continue;
+
+            float axisDistance = (stepIndex + 0.5) * (axisDirection.x != 0
+                ? safeCellSize.x
+                : (axisDirection.y != 0 ? safeCellSize.y : safeCellSize.z));
+            float closeness = 1.0 - saturate(axisDistance / max(repulsionDistanceWS, 0.001));
+            if (closeness <= 0.0)
+                break;
+
+            accumulation += float3(-axisDirection.x, -axisDirection.y, -axisDirection.z) * closeness;
+            maxGate = max(maxGate, closeness);
+            break;
+        }
+    }
+
+    surfaceNormalWS = SafeNormalize(accumulation);
+    surfaceGate = maxGate;
+    return maxGate > 0.0 && dot(surfaceNormalWS, surfaceNormalWS) > EPSILON;
 }
 
 bool TryResolveTransportCapsuleAvoidance(float3 positionWS, float3 velocityWS, out float3 avoidanceNormalWS, out float3 vortexRepulsionWS, out float avoidanceGate)
@@ -955,14 +1021,17 @@ void KernelPBDSolve(uint3 dispatchThreadID : SV_DispatchThreadID)
     float minDistance = max(_BoidBodyRadius * 2.0, 0.001);
     float minDistanceSq = minDistance * minDistance;
 
+    float safeGridCellSize = max(ResolveGridCellSize(), 0.001);
+    int neighbourCellRange = max(1, (int)ceil(2.0 / safeGridCellSize));
+
     [loop]
-    for (int offsetZ = -1; offsetZ <= 1; offsetZ++)
+    for (int offsetZ = -neighbourCellRange; offsetZ <= neighbourCellRange; offsetZ++)
     {
         [loop]
-        for (int offsetY = -1; offsetY <= 1; offsetY++)
+        for (int offsetY = -neighbourCellRange; offsetY <= neighbourCellRange; offsetY++)
         {
             [loop]
-            for (int offsetX = -1; offsetX <= 1; offsetX++)
+            for (int offsetX = -neighbourCellRange; offsetX <= neighbourCellRange; offsetX++)
             {
                 int3 neighbourCell = homeCell + int3(offsetX, offsetY, offsetZ);
                 if (any(neighbourCell < 0) || neighbourCell.x >= gridResolution.x || neighbourCell.y >= gridResolution.y || neighbourCell.z >= gridResolution.z)
@@ -1170,6 +1239,8 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     float2 threatGridGradient = ComputeThreatGridGradientAtWorldPosition(positionWS);
     float panicFromMassive = 0.0;
     float panicFromSonar = 0.0;
+    float3 bloomImpulse = float3(0.0, 0.0, 0.0);
+    float3 collapseImpulse = float3(0.0, 0.0, 0.0);
     float3 fleeFromMassive = float3(0.0, 0.0, 0.0);
     float3 sonarScatterDirectionWS = float3(0.0, 0.0, 0.0);
     if (_SonarScatterStrength > 0.001)
@@ -1211,6 +1282,26 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         float threatPanic = threatGate * threat.Strength;
         panicFromMassive = max(panicFromMassive, threatPanic);
         fleeFromMassive += SafeNormalize(awayFromThreat) * threatPanic;
+        float3 threatDirection = SafeNormalize(threat.DirectionWS);
+        if (dot(threatDirection, threatDirection) > EPSILON)
+        {
+            float axialOffset = dot(positionWS - threat.Position, threatDirection);
+            float frontGate = threatGate * saturate(axialOffset / max(panicRadius, 0.001));
+            float rearGate = threatGate * saturate(-axialOffset / max(panicRadius, 0.001));
+            float3 radialOffset = (positionWS - threat.Position) - (threatDirection * axialOffset);
+            float3 lateralFallback = SafeNormalize(cross(threatDirection, float3(0.0, 1.0, 0.0)));
+            if (dot(lateralFallback, lateralFallback) <= EPSILON)
+                lateralFallback = float3(1.0, 0.0, 0.0);
+            if (frontGate > 0.0)
+            {
+                float3 lateralBloomDirection = SafeNormalize(radialOffset);
+                if (dot(lateralBloomDirection, lateralBloomDirection) <= EPSILON)
+                    lateralBloomDirection = lateralFallback;
+                bloomImpulse += lateralBloomDirection * (frontGate * threat.Strength);
+            }
+            if (rearGate > 0.0)
+                collapseImpulse += SafeNormalize(fieldCenterCR - position) * (rearGate * threat.Strength);
+        }
         if (_LeviathanModeBlend < 0.001)
             stateFlags = BuildFleeStateFlags();
 
@@ -1286,6 +1377,14 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         {
             float3 voxelSteerForce = (voxelAvoidanceNormalWS * _MaxSpeed) - velocity;
             acceleration += voxelSteerForce * (voxelAvoidanceGate * _ThreatVoxelAvoidanceWeight);
+        }
+
+        float3 voxelSurfaceNormalWS;
+        float voxelSurfaceGate;
+        if (TryResolveThreatVoxelSurfaceRepulsion(positionWS, voxelSurfaceNormalWS, voxelSurfaceGate))
+        {
+            float3 voxelSurfaceSteerForce = (voxelSurfaceNormalWS * _MaxSpeed) - velocity;
+            acceleration += voxelSurfaceSteerForce * (voxelSurfaceGate * _ThreatVoxelAvoidanceWeight * 0.85);
         }
     }
 
@@ -1594,6 +1693,18 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         acceleration.z -= (position.z - maxZ) * _ContainmentWeight;
 
     velocity += acceleration * _DeltaTime;
+
+    if (dot(bloomImpulse, bloomImpulse) > EPSILON)
+    {
+        float bloomImpulseMagnitude = _MaxBoidVelocity * _DeltaTime * max(1.35, panicFromMassive * 2.25);
+        velocity += SafeNormalize(bloomImpulse) * bloomImpulseMagnitude;
+    }
+
+    if (dot(collapseImpulse, collapseImpulse) > EPSILON)
+    {
+        float collapseImpulseMagnitude = _CruiseSpeed * _DeltaTime * max(0.75, 1.0 - saturate(panic * 0.65));
+        velocity += SafeNormalize(collapseImpulse) * collapseImpulseMagnitude;
+    }
 
     float3 flowField = ResolveFlowField(positionWS, phaseTime);
     float3 flowDirection = SafeNormalize(flowField);

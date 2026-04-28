@@ -50,6 +50,8 @@ namespace Hecton8.Visor
 
         private sealed class BiolumSsgiPass : ScriptableRenderPass, IDisposable
         {
+            private const int RenderTextureBucketSize = 64;
+
             private sealed class ComputePassData
             {
                 internal ComputeShader computeShader;
@@ -143,8 +145,8 @@ namespace Hecton8.Visor
                     return;
 
                 TextureDesc sourceDesc = renderGraph.GetTextureDesc(sourceTexture);
-                int giWidth = Mathf.Max(1, Mathf.RoundToInt(sourceDesc.width * Mathf.Clamp(_settings.renderScale, 0.25f, 1f)));
-                int giHeight = Mathf.Max(1, Mathf.RoundToInt(sourceDesc.height * Mathf.Clamp(_settings.renderScale, 0.25f, 1f)));
+                int giWidth = QuantizeDimension(Mathf.Max(1, Mathf.RoundToInt(sourceDesc.width * Mathf.Clamp(_settings.renderScale, 0.25f, 1f))));
+                int giHeight = QuantizeDimension(Mathf.Max(1, Mathf.RoundToInt(sourceDesc.height * Mathf.Clamp(_settings.renderScale, 0.25f, 1f))));
                 EnsureGiTexture(giWidth, giHeight);
 
                 TextureHandle gatherTexture = renderGraph.ImportTexture(_gatherTexture);
@@ -213,6 +215,8 @@ namespace Hecton8.Visor
                     builder.UseTexture(depthTexture, AccessFlags.Read);
                     builder.UseTexture(gatherTexture, AccessFlags.Read);
                     builder.UseTexture(giTexture, AccessFlags.Write);
+                    builder.AllowGlobalStateModification(true);
+                    builder.SetGlobalTextureAfterPass(giTexture, ShaderConstants.GlobalGiTextureId);
 
                     builder.SetRenderFunc(static (ComputePassData data, ComputeGraphContext context) =>
                     {
@@ -258,7 +262,6 @@ namespace Hecton8.Visor
                         CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
                         const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
                         const RenderBufferStoreAction StoreAction = RenderBufferStoreAction.Store;
-                        cmd.SetGlobalTexture(ShaderConstants.GlobalGiTextureId, data.giTexture);
                         Blitter.BlitCameraTexture(cmd, data.source, data.destination, LoadAction, StoreAction, data.compositeMaterial, 0);
                     });
                 }
@@ -304,6 +307,12 @@ namespace Hecton8.Visor
                     TextureDimension.Tex2D,
                     true,
                     name: "_HectonBiolumSSGITexture");
+            }
+
+            private static int QuantizeDimension(int dimension)
+            {
+                int safeDimension = Mathf.Max(1, dimension);
+                return ((safeDimension + RenderTextureBucketSize - 1) / RenderTextureBucketSize) * RenderTextureBucketSize;
             }
         }
 

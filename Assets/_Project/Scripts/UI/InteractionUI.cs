@@ -1,16 +1,16 @@
 // ============================================================================
-// HECTON-8 — InteractionUI.cs
+// HECTON-8 â€” InteractionUI.cs
 // Context-sensitive interaction prompts for the player.
 //
 // ARCHITECTURE:
-//   • ITickable for updates (no Update)
-//   • Zero GC: cached refs, pre-cached strings
-//   • UnityEvent hooks for designers
+//   â€¢ ITickable for updates (no Update)
+//   â€¢ Zero GC: cached refs, pre-cached strings
+//   â€¢ UnityEvent hooks for designers
 //
 // FEATURES:
-//   • Shows interaction prompts based on looked-at object
-//   • Context-sensitive: "Press [E] to Swap Battery" vs "No Battery to Swap"
-//   • Tool-aware: different prompts based on held tool
+//   â€¢ Shows interaction prompts based on looked-at object
+//   â€¢ Context-sensitive: "Press [E] to Swap Battery" vs "No Battery to Swap"
+//   â€¢ Tool-aware: different prompts based on held tool
 // ============================================================================
 
 namespace Hecton8.UI
@@ -34,25 +34,25 @@ namespace Hecton8.UI
     /// </summary>
     public class InteractionUI : MonoBehaviour, ITickable, IUpdatable
     {
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  INSPECTOR
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        [Header("── References ────────────────────────────────")]
+        [Header("â”€â”€ References â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Text component for the interaction prompt.")]
         [SerializeField] private TMPro.TMP_Text promptText;
 
         [Tooltip("Canvas group for fading.")]
         [SerializeField] private CanvasGroup canvasGroup;
 
-        [Header("── Raycast Settings ──────────────────────────")]
+        [Header("â”€â”€ Raycast Settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Maximum interaction distance.")]
         [SerializeField] private float interactionRange = 4f;
 
         [Tooltip("Layers to check for interactables.")]
         [SerializeField] private LayerMask interactionMask = ~0;
 
-        [Header("── Prompt Templates ──────────────────────────")]
+        [Header("â”€â”€ Prompt Templates â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Default interaction prompt format. {0}=verb, {1}=name")]
         [SerializeField] private string defaultPromptFormat = "<button:interact> {0} {1}";
 
@@ -74,16 +74,16 @@ namespace Hecton8.UI
         [Tooltip("Prompt for action in progress.")]
         [SerializeField] private string actionInProgressPrompt = "Consuming...";
 
-        [Header("── Events ──────────────────────────────────────")]
+        [Header("â”€â”€ Events â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Fired when the prompt changes.")]
         public UnityEvent<string> OnPromptChanged;
 
         [Tooltip("Fired when prompt visibility changes.")]
         public UnityEvent<bool> OnVisibilityChanged;
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  PRIVATE STATE
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private Camera _mainCamera;
         private Transform _cachedTransform;
@@ -113,11 +113,11 @@ namespace Hecton8.UI
         private string _localizedVerbTake;
 
         // Pre-allocated raycast buffer
-        private readonly RaycastHit[] _hitBuffer = new RaycastHit[1]; // COLD ALLOC: single-hit interaction probe — owner: InteractionUI
+        private readonly RaycastHit[] _hitBuffer = new RaycastHit[1]; // COLD ALLOC: single-hit interaction probe â€” owner: InteractionUI
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  PUBLIC PROPERTIES
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>Current interaction prompt text.</summary>
         public string CurrentPrompt => _currentPrompt;
@@ -125,9 +125,9 @@ namespace Hecton8.UI
         /// <summary>Whether the prompt is currently visible.</summary>
         public bool IsVisible => _isVisible;
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  LIFECYCLE
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private void Awake()
         {
@@ -158,13 +158,13 @@ namespace Hecton8.UI
             SetVisible(false);
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  ITickable
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         public void Tick(float deltaTime)
         {
-            // ── Check if action is in progress ──
+            // â”€â”€ Check if action is in progress â”€â”€
             PlayerActionController actionController = PlayerActionController.Instance;
             if (actionController != null && actionController.IsActionInProgress)
             {
@@ -239,9 +239,9 @@ namespace Hecton8.UI
             SetVisible(true);
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  PRIVATE — PROMPT BUILDING
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  PRIVATE â€” PROMPT BUILDING
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private string BuildPrompt(Collider collider, float distance)
         {
@@ -413,9 +413,9 @@ namespace Hecton8.UI
             return _localizedOpenCratePrompt;
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  PRIVATE — UI UPDATE
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  PRIVATE â€” UI UPDATE
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private void UpdatePrompt(string prompt)
         {
@@ -448,9 +448,9 @@ namespace Hecton8.UI
             OnVisibilityChanged?.Invoke(visible);
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  PRIVATE — REFERENCES
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  PRIVATE â€” REFERENCES
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private void ResolvePlayerReferences()
         {
@@ -540,7 +540,6 @@ namespace Hecton8.UI
             if (_registered)
                 return;
 
-            SystemDispatcher.EnsureRuntimeInstance();
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _registered = true;
         }

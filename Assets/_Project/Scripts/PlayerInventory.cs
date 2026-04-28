@@ -680,6 +680,81 @@ namespace Hecton8.Inventory
             NotifyInventoryChanged();
         }
 
+        internal bool TryMoveOrSwapAnchor(int sourceAnchorX, int sourceAnchorY, int targetCellX, int targetCellY)
+        {
+            if (_grid == null ||
+                !_stackCounts.IsCreated ||
+                HasCraftReservations() ||
+                (uint)sourceAnchorX >= (uint)_grid.Columns ||
+                (uint)sourceAnchorY >= (uint)_grid.Rows ||
+                (uint)targetCellX >= (uint)_grid.Columns ||
+                (uint)targetCellY >= (uint)_grid.Rows)
+            {
+                return false;
+            }
+
+            int sourceAnchorIndex = _grid.GetCellAnchorIndex(sourceAnchorX, sourceAnchorY);
+            if (sourceAnchorIndex < 0)
+                return false;
+
+            sourceAnchorX = sourceAnchorIndex % _grid.Columns;
+            sourceAnchorY = sourceAnchorIndex / _grid.Columns;
+
+            int targetAnchorIndex = _grid.GetCellAnchorIndex(targetCellX, targetCellY);
+            int targetAnchorX = targetAnchorIndex >= 0 ? targetAnchorIndex % _grid.Columns : targetCellX;
+            int targetAnchorY = targetAnchorIndex >= 0 ? targetAnchorIndex / _grid.Columns : targetCellY;
+            if (sourceAnchorX == targetAnchorX && sourceAnchorY == targetAnchorY)
+                return false;
+
+            int destinationAnchorIndex = targetAnchorIndex >= 0
+                ? targetAnchorIndex
+                : (targetAnchorY * _grid.Columns) + targetAnchorX;
+            if (!_grid.TryMoveOrSwapAnchor(sourceAnchorIndex, targetAnchorIndex, targetAnchorX, targetAnchorY))
+                return false;
+
+            MoveAnchorState(sourceAnchorIndex, destinationAnchorIndex, targetAnchorIndex >= 0);
+
+            if (survival != null)
+                survival.SetWeight(TotalWeight);
+
+            NotifyInventoryChanged();
+            return true;
+        }
+
+        private void MoveAnchorState(int sourceAnchorIndex, int destinationAnchorIndex, bool swappedWithExistingAnchor)
+        {
+            if (swappedWithExistingAnchor)
+            {
+                SwapAnchorState(_stackCounts, sourceAnchorIndex, destinationAnchorIndex);
+                SwapAnchorState(_craftLockedCounts, sourceAnchorIndex, destinationAnchorIndex);
+                SwapAnchorState(_anchorStateFlags, sourceAnchorIndex, destinationAnchorIndex);
+                return;
+            }
+
+            MoveAnchorStateValue(_stackCounts, sourceAnchorIndex, destinationAnchorIndex);
+            MoveAnchorStateValue(_craftLockedCounts, sourceAnchorIndex, destinationAnchorIndex);
+            MoveAnchorStateValue(_anchorStateFlags, sourceAnchorIndex, destinationAnchorIndex);
+        }
+
+        private static void SwapAnchorState<T>(NativeArray<T> values, int firstIndex, int secondIndex) where T : struct
+        {
+            if (!values.IsCreated || firstIndex == secondIndex)
+                return;
+
+            T temp = values[firstIndex];
+            values[firstIndex] = values[secondIndex];
+            values[secondIndex] = temp;
+        }
+
+        private static void MoveAnchorStateValue<T>(NativeArray<T> values, int sourceIndex, int destinationIndex) where T : struct
+        {
+            if (!values.IsCreated || sourceIndex == destinationIndex)
+                return;
+
+            values[destinationIndex] = values[sourceIndex];
+            values[sourceIndex] = default;
+        }
+
         public int GetPlacements(ItemPlacement[] buffer)
         {
             if (buffer == null || _grid == null || !_stackCounts.IsCreated)
@@ -966,6 +1041,51 @@ namespace Hecton8.Inventory
                 0,
                 runtimeDescriptor.Stackable);
             return descriptor.IsValid;
+        }
+
+        private bool TryApplyPlacements(ItemPlacement[] placements, int placementCount)
+        {
+            if (_grid == null || placements == null || !_stackCounts.IsCreated)
+                return false;
+
+            _grid.Clear();
+            ClearNativeArray(_stackCounts);
+            ClearNativeArray(_craftLockedCounts);
+            ClearNativeArray(_anchorStateFlags);
+            TotalWeight = 0f;
+
+            for (int placementIndex = 0; placementIndex < placementCount; placementIndex++)
+            {
+                ItemPlacement placement = placements[placementIndex];
+                InventoryGrid.InventoryItemDescriptor descriptor = placement.Descriptor;
+                if (!descriptor.IsValid || !_grid.PlaceAt(in descriptor, placement.x, placement.y))
+                    return false;
+
+                int anchorIndex = AnchorIndex(placement.x, placement.y);
+                _stackCounts[anchorIndex] = (ushort)Mathf.Max(1, placement.stackCount);
+                if (_craftLockedCounts.IsCreated)
+                    _craftLockedCounts[anchorIndex] = placement.lockedCount;
+                if (_anchorStateFlags.IsCreated)
+                    _anchorStateFlags[anchorIndex] = placement.stateFlags;
+                TotalWeight += placement.weight * Mathf.Max(1, placement.stackCount);
+            }
+
+            return true;
+        }
+
+        private static bool TryFindPlacementIndex(ItemPlacement[] placements, int placementCount, int anchorX, int anchorY, out int placementIndex)
+        {
+            for (int i = 0; i < placementCount; i++)
+            {
+                if (placements[i].x == anchorX && placements[i].y == anchorY)
+                {
+                    placementIndex = i;
+                    return true;
+                }
+            }
+
+            placementIndex = -1;
+            return false;
         }
 
         private static InventorySortEntry BuildInventorySortEntry(in ItemPlacement placement, int originalIndex)

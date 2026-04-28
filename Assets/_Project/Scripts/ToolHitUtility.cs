@@ -1,5 +1,6 @@
 using Hecton8.Bootstrap;
 using Hecton8.AI;
+using Hecton8.Core;
 using Hecton8.Interaction;
 using Hecton8.Items;
 using Hecton8.Physics;
@@ -216,6 +217,14 @@ namespace Hecton8.Gameplay
                 Debug.Log($"[ToolInfo] {message}");
         }
 
+        public static void ShowInfo(in FixedCharBuffer messageBuffer)
+        {
+            if (messageBuffer.Length <= 0)
+                return;
+
+            ShowInfo(messageBuffer.ToString());
+        }
+
         public static void ShowWarning(string message)
         {
             if (string.IsNullOrEmpty(message))
@@ -228,6 +237,14 @@ namespace Hecton8.Gameplay
                 s_notification.ShowWarning(message);
             else
                 Debug.LogWarning($"[ToolWarning] {message}");
+        }
+
+        public static void ShowWarning(in FixedCharBuffer messageBuffer)
+        {
+            if (messageBuffer.Length <= 0)
+                return;
+
+            ShowWarning(messageBuffer.ToString());
         }
     }
 }

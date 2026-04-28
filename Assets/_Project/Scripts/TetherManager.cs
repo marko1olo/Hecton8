@@ -51,6 +51,10 @@ namespace Hecton8.Physics
         [Tooltip("Maximum tether count allowed to use virtual bend detection and catenary rendering simultaneously.")]
         [SerializeField, Range(1, 8)] private int maxVisualizedTethers = 4;
 
+        [Header("Tether Profiles")]
+        [Tooltip("Optional authored tow-cable profile. When omitted the runtime falls back to HeavyTowWinch tuning.")]
+        [SerializeField] private TetherProfileSO towCableProfile;
+
         [Header("Diagnostics")]
 #pragma warning disable CS0414
         [SerializeField] private int _debugActiveTetherCount;
@@ -295,6 +299,7 @@ namespace Hecton8.Physics
                 _pooledInstances.RemoveAt(lastIndex);
                 if (pooled != null)
                 {
+                    pooled.InitializeManager(this);
                     pooled.gameObject.SetActive(true);
                     return pooled;
                 }
@@ -306,7 +311,9 @@ namespace Hecton8.Physics
             tetherObject.transform.localRotation = Quaternion.identity;
             tetherObject.transform.localScale = Vector3.one;
             // COLD ALLOC: TetherInstance[1] — pooled tether runtime child created on first demand — owner: TetherManager
-            return tetherObject.AddComponent<TetherInstance>();
+            TetherInstance instance = tetherObject.AddComponent<TetherInstance>();
+            instance.InitializeManager(this);
+            return instance;
         }
 
         private Material ResolveRenderMaterial()
@@ -332,6 +339,30 @@ namespace Hecton8.Physics
             };
             _ownsRuntimeMaterial = true;
             return _runtimeRenderMaterial;
+        }
+
+        internal float ResolveTowSpringStiffness(HeavyTowWinch owner)
+        {
+            if (towCableProfile != null)
+                return math.max(0f, towCableProfile.SpringStiffness);
+
+            return owner != null ? owner.ResolveTowSpringStiffness() : 0f;
+        }
+
+        internal float ResolveTowOverDampingMultiplier(HeavyTowWinch owner)
+        {
+            if (towCableProfile != null)
+                return math.max(1f, towCableProfile.OverDampingMultiplier);
+
+            return owner != null ? owner.ResolveTowOverDampingMultiplier() : 1f;
+        }
+
+        internal float ResolveTowSnapTensionThreshold(HeavyTowWinch owner)
+        {
+            if (towCableProfile != null)
+                return math.max(1f, towCableProfile.SnapTensionThreshold);
+
+            return owner != null ? owner.ResolveSnapTensionThreshold() : 1f;
         }
     }
 }

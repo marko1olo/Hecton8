@@ -1,6 +1,8 @@
 #ifndef HECTON_CORE_LIT_INCLUDED
 #define HECTON_CORE_LIT_INCLUDED
 
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
+
 #ifndef HECTON_FLASHLIGHT_SDF_SHADOW_MAX_STEPS
 #define HECTON_FLASHLIGHT_SDF_SHADOW_MAX_STEPS 24
 #endif
@@ -21,15 +23,25 @@ float _HectonFlashlightShadowFloor;
 float4 _HectonCaveVoxelHalfExtents;
 float4x4 _HectonCaveVoxelWorldToLocal;
 float4 _HectonCaveVoxelAoParams;
+float4 _HectonBiolumVolumeHalfExtents;
+float4 _HectonBiolumVolumeParams;
 float4 _HectonProjectedCausticsWorldRect;
 float4 _HectonProjectedCausticsParams;
 float4 _HectonProjectedCausticsColor;
+float _HectonContactShadowStrength;
+float _HectonContactShadowSteps;
+float _HectonContactShadowBias;
+float _HectonContactShadowMaxDistance;
 float _HectonCaveVoxelActive;
+float _HectonBiolumVolumeActive;
+float4x4 _HectonBiolumVolumeWorldToLocal;
 
 TEXTURE3D(_VoxelDensityTex);
 SAMPLER(sampler_VoxelDensityTex);
 TEXTURE3D(_HectonCaveVoxelSdfTex);
 SAMPLER(sampler_HectonCaveVoxelSdfTex);
+TEXTURE3D(_HectonBiolumVolumeTex);
+SAMPLER(sampler_HectonBiolumVolumeTex);
 TEXTURE2D(_HectonProjectedCausticsTex);
 SAMPLER(sampler_HectonProjectedCausticsTex);
 
@@ -43,6 +55,8 @@ float HectonCoreLitResolveFlashlightShadowFloor()
 {
     return max(_HectonFlashlightShadowFloor, 0.02);
 }
+
+bool HectonCoreLitIsInsideCaveSolid(float3 positionWS, float surfaceEpsilon);
 
 float HectonCoreLitEvaluateProjectedCausticsMask(float3 positionWS, float3 normalWS)
 {
@@ -102,6 +116,72 @@ float HectonCoreLitEvaluateCaveAmbientFactor(float3 positionWS, float3 normalWS)
     float wallProximity = 1.0 - smoothstep(fadeStart, fadeEnd, signedDistance);
     float attenuation = saturate(wallProximity * intensity);
     return lerp(1.0, floorValue, attenuation);
+}
+
+float HectonCoreLitEvaluateMainLightContactShadow(float3 surfacePositionWS, float3 normalWS)
+{
+    if (_HectonContactShadowStrength <= 0.0001 || _HectonContactShadowMaxDistance <= 0.0001)
+        return 1.0;
+
+    Light mainLight = GetMainLight();
+    float3 lightDirectionWS = HectonCoreLitSafeNormalize(mainLight.direction);
+    float noL = saturate(dot(normalWS, lightDirectionWS));
+    if (noL <= 0.0001)
+        return 1.0;
+
+    float3 biasedSurfacePositionWS = surfacePositionWS + normalWS * max(_HectonContactShadowBias, 0.001);
+    int stepCount = clamp((int)round(_HectonContactShadowSteps), 1, 8);
+    float shadowOcclusion = 0.0;
+
+    [loop]
+    for (int stepIndex = 0; stepIndex < 8; stepIndex++)
+    {
+        if (stepIndex >= stepCount)
+            break;
+
+        float stepT = (stepIndex + 1.0) * rcp((float)stepCount + 1.0);
+        float3 raySampleWS = biasedSurfacePositionWS + lightDirectionWS * (_HectonContactShadowMaxDistance * stepT);
+        float4 raySampleCS = TransformWorldToHClip(raySampleWS);
+        if (raySampleCS.w <= 0.0)
+            continue;
+
+        float2 raySampleUV = raySampleCS.xy * rcp(raySampleCS.w) * 0.5 + 0.5;
+        if (raySampleUV.x <= 0.0 || raySampleUV.x >= 1.0 || raySampleUV.y <= 0.0 || raySampleUV.y >= 1.0)
+            continue;
+
+        float sampledRawDepth = SampleSceneDepth(raySampleUV);
+    #if UNITY_REVERSED_Z
+        float sampledDepthValid = step(0.0001, sampledRawDepth);
+    #else
+        float sampledDepthValid = step(sampledRawDepth, 0.9999);
+    #endif
+        if (sampledDepthValid <= 0.5)
+            continue;
+
+        float3 sampledScenePositionWS = ComputeWorldSpacePosition(raySampleUV, sampledRawDepth, UNITY_MATRIX_I_VP);
+        float sceneEyeDistance = distance(_WorldSpaceCameraPos, sampledScenePositionWS);
+        float rayEyeDistance = distance(_WorldSpaceCameraPos, raySampleWS);
+        float depthDiscontinuity = rayEyeDistance - sceneEyeDistance;
+        float occluded = step(max(_HectonContactShadowBias * 0.5, 0.001), depthDiscontinuity);
+        shadowOcclusion = max(shadowOcclusion, occluded * noL);
+    }
+
+    return lerp(1.0, 0.2, saturate(shadowOcclusion * _HectonContactShadowStrength));
+}
+
+float3 HectonCoreLitSampleBiolumVolumeRadiance(float3 positionWS)
+{
+    if (_HectonBiolumVolumeActive <= 0.5)
+        return 0.0;
+
+    float3 halfExtents = max(_HectonBiolumVolumeHalfExtents.xyz, float3(0.001, 0.001, 0.001));
+    float3 localPosition = mul(_HectonBiolumVolumeWorldToLocal, float4(positionWS, 1.0)).xyz;
+    float3 sampleUv = localPosition / (halfExtents * 2.0) + 0.5;
+    if (any(sampleUv < 0.0) || any(sampleUv > 1.0))
+        return 0.0;
+
+    float4 volumeSample = SAMPLE_TEXTURE3D_LOD(_HectonBiolumVolumeTex, sampler_HectonBiolumVolumeTex, sampleUv, 0);
+    return volumeSample.rgb * max(_HectonBiolumVolumeParams.x, 0.0);
 }
 
 bool HectonCoreLitIsInsideCaveSolid(float3 positionWS, float surfaceEpsilon)

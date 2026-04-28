@@ -184,7 +184,7 @@ namespace Hecton8.Building
         /// </summary>
         public string PersistentId => string.IsNullOrWhiteSpace(stableId) ? name : stableId;
 
-        public string FamilyLabel => CachedToUpperInvariant(family.ToString());
+        public string FamilyLabel => ResolveFamilyLabel(family);
 
         /// <summary>
         /// Returns true when the supplied ID matches the authored stable ID or the legacy asset name.
@@ -216,6 +216,20 @@ namespace Hecton8.Building
                     case BuildableFamily.Defense: return "DEF";
                     default: return "UNK";
                 }
+            }
+        }
+
+        private static string ResolveFamilyLabel(BuildableFamily value)
+        {
+            switch (value)
+            {
+                case BuildableFamily.Structure: return "STRUCTURE";
+                case BuildableFamily.Habitat: return "HABITAT";
+                case BuildableFamily.Utility: return "UTILITY";
+                case BuildableFamily.Fabrication: return "FABRICATION";
+                case BuildableFamily.Logistics: return "LOGISTICS";
+                case BuildableFamily.Defense: return "DEFENSE";
+                default: return "UNKNOWN";
             }
         }
 

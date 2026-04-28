@@ -5,6 +5,7 @@ using Hecton8.Bootstrap;
 using Hecton8.Physics;
 using Hecton8.World;
 using Unity.Burst;
+using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -35,6 +36,31 @@ namespace Hecton8.Core
             }
         }
 
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        private struct AupDriftCheckJob : IJobParallelFor
+        {
+            [ReadOnly] public NativeArray<float3> RuntimePositions;
+            [ReadOnly] public NativeArray<double3> TrackedAbsolutePositions;
+            public double3 CurrentTotalOffset;
+            public double MaxDeltaSq;
+            [WriteOnly] public NativeArray<byte> InvalidMask;
+
+            public void Execute(int index)
+            {
+                double3 expectedRuntime = TrackedAbsolutePositions[index] - CurrentTotalOffset;
+                double3 delta = expectedRuntime - RuntimePositions[index];
+                InvalidMask[index] = math.lengthsq(delta) > MaxDeltaSq ? (byte)1 : (byte)0;
+            }
+        }
+
+        private struct CriticalAupTracker
+        {
+            public Transform Transform;
+            public double3 AbsolutePosition;
+            public Vector3 LastRuntimePosition;
+            public bool Initialized;
+        }
+
         private static readonly int _HectonFloatingOriginOffsetId = Shader.PropertyToID("_HectonFloatingOriginOffset");
         private static readonly int _TotalUniverseOffsetId = Shader.PropertyToID("_TotalUniverseOffset");
         private static readonly List<IOriginShiftListener> _originShiftListeners = new List<IOriginShiftListener>(16);
@@ -45,6 +71,8 @@ namespace Hecton8.Core
         private const float MinimumShiftThresholdMeters = 5000f;
         private const float ShiftDeadzoneReleaseMeters = 4500f;
         private const float OutwardMotionSpeedEpsilon = 0.05f;
+        private const int DriftCheckEntityCapacity = 2;
+        private const double DriftCheckThresholdSq = 0.0001d;
 
         private static HectonFloatingOrigin _instance;
         private static OriginShiftEventData _lastShiftEvent;
@@ -63,11 +91,19 @@ namespace Hecton8.Core
         private bool _hasPreviousAnchorPosition;
         private bool _physicsAutoSimulationBeforeShift = true;
         private SimulationMode _physicsSimulationModeBeforeShift = SimulationMode.FixedUpdate;
+        private bool _driftCheckScheduled;
         private float _thresholdSqr;
         private float _anchorResolveTimer;
         private uint _shiftSequence;
+        private int _driftCheckCount;
         private Vector3 _previousAnchorPosition;
         private Rigidbody _anchorRigidbody;
+        private CriticalAupTracker _playerDriftTracker;
+        private CriticalAupTracker _submarineDriftTracker;
+        private NativeArray<float3> _driftCheckRuntimePositions;
+        private NativeArray<double3> _driftCheckAbsolutePositions;
+        private NativeArray<byte> _driftCheckInvalidMask;
+        private JobHandle _driftCheckHandle;
 
         private const float AnchorResolveCooldown = 1f;
 
@@ -239,6 +275,7 @@ namespace Hecton8.Core
             _instance = this;
             RefreshThresholdCache();
             TryResolveAnchor(force: true);
+            EnsureDriftCheckBuffers();
             PublishGlobalOffsets();
             SubscribeSceneEvents();
         }
@@ -260,6 +297,7 @@ namespace Hecton8.Core
             TryUnregister();
             UnsubscribeSceneEvents();
             DisposeShiftTargetAccessArray();
+            DisposeDriftCheckState();
 
             if (_instance == this)
             {
@@ -285,6 +323,13 @@ namespace Hecton8.Core
         {
             if (_isShiftInProgress || _physicsPauseActive)
                 return;
+
+            if (_driftCheckScheduled && _driftCheckHandle.IsCompleted && ConsumeCompletedDriftCheck())
+                return;
+
+            UpdateCriticalEntityTrackers();
+            if (!_driftCheckScheduled && (Time.frameCount % PrecisionWatchdogIntervalFrames) == 0)
+                ScheduleAupDriftCheck();
 
             if (_anchor == null)
             {
@@ -359,6 +404,7 @@ namespace Hecton8.Core
                 _lastShiftEvent = new OriginShiftEventData(shiftOffset, previousTotalOffset, TotalOffset, _shiftSequence, Time.frameCount);
 
                 PublishGlobalOffsets();
+                ResyncCriticalEntityTrackersAfterShift();
                 UnityEngine.Physics.SyncTransforms();
                 physicsTransformsSynced = true;
                 PhysicsApplySystem.FinalizeTrackedBodiesAfterOriginShift();
@@ -424,6 +470,193 @@ namespace Hecton8.Core
 
                 listener.OnOriginShift(in shiftData);
             }
+        }
+
+        private void UpdateCriticalEntityTrackers()
+        {
+            if (_anchor == null)
+                TryResolveAnchor(force: false);
+
+            UpdateCriticalEntityTracker(ref _playerDriftTracker, _anchor);
+
+            Transform submarineTransform = GlobalRegistry.Submarine != null ? GlobalRegistry.Submarine.PlatformTransform : null;
+            UpdateCriticalEntityTracker(ref _submarineDriftTracker, submarineTransform);
+        }
+
+        private static void UpdateCriticalEntityTracker(ref CriticalAupTracker tracker, Transform target)
+        {
+            tracker.Transform = target;
+            if (target == null)
+            {
+                tracker.Initialized = false;
+                tracker.LastRuntimePosition = Vector3.zero;
+                return;
+            }
+
+            Vector3 runtimePosition = target.position;
+            float3 runtimePosition3 = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(runtimePosition3)))
+                return;
+
+            if (!tracker.Initialized)
+            {
+                tracker.AbsolutePosition = new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z) + new double3(CurrentTotalOffset.x, CurrentTotalOffset.y, CurrentTotalOffset.z);
+                tracker.LastRuntimePosition = runtimePosition;
+                tracker.Initialized = true;
+                return;
+            }
+
+            Vector3 runtimeDelta = runtimePosition - tracker.LastRuntimePosition;
+            float3 runtimeDelta3 = new float3(runtimeDelta.x, runtimeDelta.y, runtimeDelta.z);
+            if (math.all(math.isfinite(runtimeDelta3)))
+                tracker.AbsolutePosition += new double3(runtimeDelta.x, runtimeDelta.y, runtimeDelta.z);
+
+            tracker.LastRuntimePosition = runtimePosition;
+        }
+
+        private void ScheduleAupDriftCheck()
+        {
+            EnsureDriftCheckBuffers();
+            int writeIndex = 0;
+            writeIndex = StageCriticalEntityForDriftCheck(_playerDriftTracker, writeIndex);
+            writeIndex = StageCriticalEntityForDriftCheck(_submarineDriftTracker, writeIndex);
+            if (writeIndex <= 0)
+                return;
+
+            _driftCheckCount = writeIndex;
+            _driftCheckHandle = new AupDriftCheckJob
+            {
+                RuntimePositions = _driftCheckRuntimePositions,
+                TrackedAbsolutePositions = _driftCheckAbsolutePositions,
+                CurrentTotalOffset = new double3(TotalOffset.x, TotalOffset.y, TotalOffset.z),
+                MaxDeltaSq = DriftCheckThresholdSq,
+                InvalidMask = _driftCheckInvalidMask
+            }.Schedule(writeIndex, 1);
+            _driftCheckScheduled = true;
+        }
+
+        private int StageCriticalEntityForDriftCheck(in CriticalAupTracker tracker, int writeIndex)
+        {
+            if (!tracker.Initialized || tracker.Transform == null || writeIndex >= DriftCheckEntityCapacity)
+                return writeIndex;
+
+            Vector3 runtimePosition = tracker.Transform.position;
+            _driftCheckRuntimePositions[writeIndex] = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            _driftCheckAbsolutePositions[writeIndex] = tracker.AbsolutePosition;
+            return writeIndex + 1;
+        }
+
+        private bool ConsumeCompletedDriftCheck()
+        {
+            _driftCheckHandle.Complete();
+            _driftCheckHandle = default;
+            _driftCheckScheduled = false;
+
+            bool hasInvalidEntity = false;
+            for (int i = 0; i < _driftCheckCount; i++)
+            {
+                if (_driftCheckInvalidMask[i] != 0)
+                {
+                    hasInvalidEntity = true;
+                    break;
+                }
+            }
+
+            _driftCheckCount = 0;
+            if (!hasInvalidEntity || _anchor == null)
+                return false;
+
+            Vector3 forcedShiftOffset = ResolveForcedDriftShiftOffset();
+            if (forcedShiftOffset.sqrMagnitude <= 0.0001f)
+                forcedShiftOffset = _anchor.position;
+
+            _shiftDeadzoneArmed = false;
+            ShiftWorld(forcedShiftOffset);
+            return true;
+        }
+
+        private Vector3 ResolveForcedDriftShiftOffset()
+        {
+            if (TryResolveForcedDriftShiftOffset(in _playerDriftTracker, 0, out Vector3 shiftOffset))
+                return shiftOffset;
+
+            if (TryResolveForcedDriftShiftOffset(in _submarineDriftTracker, 1, out shiftOffset))
+                return shiftOffset;
+
+            return Vector3.zero;
+        }
+
+        private bool TryResolveForcedDriftShiftOffset(in CriticalAupTracker tracker, int maskIndex, out Vector3 shiftOffset)
+        {
+            shiftOffset = Vector3.zero;
+            if (maskIndex < 0 ||
+                maskIndex >= DriftCheckEntityCapacity ||
+                maskIndex >= _driftCheckInvalidMask.Length ||
+                _driftCheckInvalidMask[maskIndex] == 0 ||
+                !tracker.Initialized ||
+                tracker.Transform == null)
+            {
+                return false;
+            }
+
+            double3 expectedRuntime = tracker.AbsolutePosition - new double3(TotalOffset.x, TotalOffset.y, TotalOffset.z);
+            float3 expectedRuntime3 = new float3((float)expectedRuntime.x, (float)expectedRuntime.y, (float)expectedRuntime.z);
+            if (!math.all(math.isfinite(expectedRuntime3)) || math.lengthsq(expectedRuntime3) <= 0.0001f)
+                return false;
+
+            shiftOffset = new Vector3(expectedRuntime3.x, expectedRuntime3.y, expectedRuntime3.z);
+            return true;
+        }
+
+        private void ResyncCriticalEntityTrackersAfterShift()
+        {
+            ResyncCriticalEntityTrackerAfterShift(ref _playerDriftTracker);
+            ResyncCriticalEntityTrackerAfterShift(ref _submarineDriftTracker);
+        }
+
+        private static void ResyncCriticalEntityTrackerAfterShift(ref CriticalAupTracker tracker)
+        {
+            if (!tracker.Initialized || tracker.Transform == null)
+                return;
+
+            tracker.LastRuntimePosition = tracker.Transform.position;
+        }
+
+        private void EnsureDriftCheckBuffers()
+        {
+            if (_driftCheckRuntimePositions.IsCreated && _driftCheckRuntimePositions.Length == DriftCheckEntityCapacity)
+                return;
+
+            DisposeDriftCheckState();
+            _driftCheckRuntimePositions = new NativeArray<float3>(DriftCheckEntityCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _driftCheckAbsolutePositions = new NativeArray<double3>(DriftCheckEntityCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _driftCheckInvalidMask = new NativeArray<byte>(DriftCheckEntityCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+        }
+
+        private void DisposeDriftCheckState()
+        {
+            JobHandle dependency = _driftCheckScheduled ? _driftCheckHandle : default;
+            if (_driftCheckRuntimePositions.IsCreated)
+            {
+                _driftCheckRuntimePositions.Dispose(dependency);
+                _driftCheckRuntimePositions = default;
+            }
+
+            if (_driftCheckAbsolutePositions.IsCreated)
+            {
+                _driftCheckAbsolutePositions.Dispose(dependency);
+                _driftCheckAbsolutePositions = default;
+            }
+
+            if (_driftCheckInvalidMask.IsCreated)
+            {
+                _driftCheckInvalidMask.Dispose(dependency);
+                _driftCheckInvalidMask = default;
+            }
+
+            _driftCheckHandle = default;
+            _driftCheckScheduled = false;
+            _driftCheckCount = 0;
         }
 
         private void RebuildShiftTargetCache()

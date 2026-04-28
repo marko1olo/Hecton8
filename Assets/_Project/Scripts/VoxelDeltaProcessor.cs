@@ -2,10 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Items;
+using Hecton8.Physics;
 using Hecton8.SaveSystem;
+using Hecton8.World;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+using Unity.Jobs;
 using Unity.Mathematics;
+using Unity.Profiling;
 using UnityEngine;
 
 namespace Hecton8.Caves
@@ -27,21 +33,39 @@ namespace Hecton8.Caves
         private const float MinRuntimeVoxelSize = 0.25f;
         private const float MinCarveRadiusMeters = 0.9f;
         private const float MaxCarveRadiusMeters = 4f;
+        private const float SphereVolumeFactor = 4f / 3f * math.PI;
         private const byte DefaultMaterialId = 0;
+        private static readonly ProfilerMarker _carveScheduleProfilerMarker = new ProfilerMarker("H8.VoxelDelta.ScheduleCarve");
+        private static readonly ProfilerMarker _carveCommitProfilerMarker = new ProfilerMarker("H8.VoxelDelta.CommitCarve");
+
+        [Header("Debris Aftermath")]
+        [Tooltip("Optional dropped-item payload spawned from carved voxel mass. Leave empty to disable persistent debris aftermath.")]
+        [SerializeField] private ItemData carveDebrisItem;
+        [Tooltip("Debris entities spawned per cubic meter of removed sphere volume.")]
+        [SerializeField, Min(0f)] private float carveDebrisPerCubicMeter = 0.3f;
+        [Tooltip("Upper bound on debris entities emitted from a single carve commit.")]
+        [SerializeField, Range(0, 16)] private int carveDebrisMaxCount = 8;
+        [Tooltip("Impulse magnitude applied to each debris entity when the carve aftermath hydrates nearby.")]
+        [SerializeField, Min(0f)] private float carveDebrisImpulse = 2.5f;
 
         private HectonVoxelEngine _engine;
         private bool _saveRegistered;
         private bool _dispatcherRegistered;
 
-        // COLD ALLOC: Dictionary<ChunkAddress, ChunkDeltaState>[InitialChunkRegistryCapacity] — persistent voxel delta chunk registry — owner: VoxelDeltaProcessor
+        // COLD ALLOC: Dictionary<ChunkAddress, ChunkDeltaState>[InitialChunkRegistryCapacity] â€” persistent voxel delta chunk registry â€” owner: VoxelDeltaProcessor
         private readonly Dictionary<ChunkAddress, ChunkDeltaState> _chunkStates = new Dictionary<ChunkAddress, ChunkDeltaState>(InitialChunkRegistryCapacity);
-        // COLD ALLOC: List<HectonVoxelVolume>[InitialVolumeRegistryCapacity] — live voxel volume registry for load-time rebuild dispatch — owner: VoxelDeltaProcessor
+        // COLD ALLOC: List<HectonVoxelVolume>[InitialVolumeRegistryCapacity] â€” live voxel volume registry for load-time rebuild dispatch â€” owner: VoxelDeltaProcessor
         private readonly List<HectonVoxelVolume> _registeredVolumes = new List<HectonVoxelVolume>(InitialVolumeRegistryCapacity);
-        // COLD ALLOC: List<HectonVoxelVolume>[InitialVolumeRegistryCapacity] — pending volume rebuild queue after loaded delta application — owner: VoxelDeltaProcessor
+        // COLD ALLOC: List<HectonVoxelVolume>[InitialVolumeRegistryCapacity] â€” pending volume rebuild queue after loaded delta application â€” owner: VoxelDeltaProcessor
         private readonly List<HectonVoxelVolume> _pendingRebuildVolumes = new List<HectonVoxelVolume>(InitialVolumeRegistryCapacity);
-        // COLD ALLOC: PendingCarveRequest[InitialPendingCarveCapacity] — deferred plasma-cut carve staging buffer — owner: VoxelDeltaProcessor
+        // COLD ALLOC: PendingCarveRequest[InitialPendingCarveCapacity] â€” deferred plasma-cut carve staging buffer â€” owner: VoxelDeltaProcessor
         private readonly PendingCarveRequest[] _pendingCarves = new PendingCarveRequest[InitialPendingCarveCapacity];
         private int _pendingCarveCount;
+        private JobHandle _scheduledCarveHandle;
+        private bool _scheduledCarveRunning;
+        private PendingCarveRequest _scheduledCarveRequest;
+        // COLD ALLOC: NativeArray<CarveCellWrite>[capacity] â€” staged Burst carve results before managed delta-chunk commit â€” owner: VoxelDeltaProcessor
+        private NativeArray<CarveCellWrite> _scheduledCarveWrites;
 
         public int SavePriority => 40;
 
@@ -50,7 +74,6 @@ namespace Hecton8.Caves
         private void OnEnable()
         {
             _engine = GetComponent<HectonVoxelEngine>();
-            SystemDispatcher.EnsureRuntimeInstance();
 
             if (!_dispatcherRegistered)
             {
@@ -63,6 +86,7 @@ namespace Hecton8.Caves
 
         private void OnDisable()
         {
+            DisposeScheduledCarveBuffers();
             if (_dispatcherRegistered)
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
@@ -88,7 +112,8 @@ namespace Hecton8.Caves
         public void Tick(float deltaTime)
         {
             TryRegisterSaveService();
-            FlushPendingCarves();
+            TryCommitScheduledCarve();
+            TrySchedulePendingCarve();
             FlushPendingRebuilds();
         }
 
@@ -159,7 +184,9 @@ namespace Hecton8.Caves
 
             if (_pendingCarveCount >= _pendingCarves.Length)
             {
-                ApplyPendingCarve(_pendingCarves[0]);
+                if (!_scheduledCarveRunning)
+                    TrySchedulePendingCarve();
+
                 for (int i = 1; i < _pendingCarveCount; i++)
                     _pendingCarves[i - 1] = _pendingCarves[i];
 
@@ -203,8 +230,27 @@ namespace Hecton8.Caves
             if (volume == null || radius <= 0f || !volume.HasRuntimeData)
                 return;
 
-            ApplyCarve(volume, absoluteHitPoint, radius, materialId);
-            EnqueueVolumeRebuild(volume);
+            if (_pendingCarveCount >= _pendingCarves.Length)
+            {
+                if (!_scheduledCarveRunning)
+                    TrySchedulePendingCarve();
+
+                if (_pendingCarveCount >= _pendingCarves.Length)
+                {
+                    for (int i = 1; i < _pendingCarveCount; i++)
+                        _pendingCarves[i - 1] = _pendingCarves[i];
+
+                    _pendingCarveCount = _pendingCarves.Length - 1;
+                }
+            }
+
+            _pendingCarves[_pendingCarveCount++] = new PendingCarveRequest
+            {
+                Volume = volume,
+                AbsoluteHitPoint = absoluteHitPoint,
+                ExplicitRadiusMeters = radius,
+                MaterialId = materialId
+            };
         }
 
         /// <summary>
@@ -584,14 +630,6 @@ namespace Hecton8.Caves
             _saveRegistered = true;
         }
 
-        private void FlushPendingCarves()
-        {
-            for (int i = 0; i < _pendingCarveCount; i++)
-                ApplyPendingCarve(_pendingCarves[i]);
-
-            _pendingCarveCount = 0;
-        }
-
         private void FlushPendingRebuilds()
         {
             for (int i = _pendingRebuildVolumes.Count - 1; i >= 0; i--)
@@ -608,55 +646,95 @@ namespace Hecton8.Caves
             }
         }
 
-        private void ApplyPendingCarve(PendingCarveRequest request)
+        private void TrySchedulePendingCarve()
         {
+            if (_scheduledCarveRunning || _pendingCarveCount <= 0)
+                return;
+
+            PendingCarveRequest request = _pendingCarves[0];
+            for (int i = 1; i < _pendingCarveCount; i++)
+                _pendingCarves[i - 1] = _pendingCarves[i];
+
+            _pendingCarveCount--;
             HectonVoxelVolume volume = request.Volume;
             if (volume == null || !volume.HasRuntimeData)
                 return;
 
-            float baseRadius = math.max(volume.VoxelSize * 2f, MinCarveRadiusMeters);
-            float radius = math.clamp(baseRadius + request.AccumulatedDamage * 0.08f, baseRadius, math.max(baseRadius, MaxCarveRadiusMeters));
-            ApplyCarve(volume, request.AbsoluteHitPoint, radius, request.MaterialId);
-            EnqueueVolumeRebuild(volume);
-        }
+            float radius = ResolveCarveRadius(in request, volume);
+            if (radius <= 0f)
+                return;
 
-        private void ApplyCarve(HectonVoxelVolume volume, Vector3 absoluteHitPoint, float radius, byte materialId)
-        {
             float voxelSize = math.max(volume.VoxelSize, MinRuntimeVoxelSize);
             float blendRadius = math.max(voxelSize, radius * 0.35f);
             float outerRadius = radius + blendRadius;
-
             int3 minCell = new int3(
-                Mathf.FloorToInt((absoluteHitPoint.x - outerRadius) / voxelSize),
-                Mathf.FloorToInt((absoluteHitPoint.y - outerRadius) / voxelSize),
-                Mathf.FloorToInt((absoluteHitPoint.z - outerRadius) / voxelSize));
+                Mathf.FloorToInt((request.AbsoluteHitPoint.x - outerRadius) / voxelSize),
+                Mathf.FloorToInt((request.AbsoluteHitPoint.y - outerRadius) / voxelSize),
+                Mathf.FloorToInt((request.AbsoluteHitPoint.z - outerRadius) / voxelSize));
             int3 maxCell = new int3(
-                Mathf.FloorToInt((absoluteHitPoint.x + outerRadius) / voxelSize),
-                Mathf.FloorToInt((absoluteHitPoint.y + outerRadius) / voxelSize),
-                Mathf.FloorToInt((absoluteHitPoint.z + outerRadius) / voxelSize));
+                Mathf.FloorToInt((request.AbsoluteHitPoint.x + outerRadius) / voxelSize),
+                Mathf.FloorToInt((request.AbsoluteHitPoint.y + outerRadius) / voxelSize),
+                Mathf.FloorToInt((request.AbsoluteHitPoint.z + outerRadius) / voxelSize));
 
-            for (int z = minCell.z; z <= maxCell.z; z++)
+            int3 span = (maxCell - minCell) + 1;
+            int candidateCount = math.max(0, span.x) * math.max(0, span.y) * math.max(0, span.z);
+            if (candidateCount <= 0)
+                return;
+
+            EnsureScheduledCarveWriteCapacity(candidateCount);
+            _scheduledCarveRequest = request;
+
+            CarveSdfJob carveJob = new CarveSdfJob
             {
-                for (int y = minCell.y; y <= maxCell.y; y++)
+                MinCell = minCell,
+                Span = span,
+                VoxelSize = voxelSize,
+                Radius = radius,
+                BlendRadius = blendRadius,
+                Center = new float3(request.AbsoluteHitPoint.x, request.AbsoluteHitPoint.y, request.AbsoluteHitPoint.z),
+                MaterialId = request.MaterialId,
+                Writes = _scheduledCarveWrites
+            };
+
+            using (_carveScheduleProfilerMarker.Auto())
+            {
+                _scheduledCarveHandle = carveJob.Schedule(candidateCount, 64);
+                _scheduledCarveRunning = true;
+            }
+        }
+
+        private void TryCommitScheduledCarve()
+        {
+            if (!_scheduledCarveRunning || !_scheduledCarveHandle.IsCompleted)
+                return;
+
+            using (_carveCommitProfilerMarker.Auto())
+            {
+                _scheduledCarveHandle.Complete();
+                _scheduledCarveHandle = default;
+                _scheduledCarveRunning = false;
+
+                HectonVoxelVolume volume = _scheduledCarveRequest.Volume;
+                if (volume == null || !volume.HasRuntimeData)
+                    return;
+
+                float voxelSize = math.max(volume.VoxelSize, MinRuntimeVoxelSize);
+                for (int i = 0; i < _scheduledCarveWrites.Length; i++)
                 {
-                    for (int x = minCell.x; x <= maxCell.x; x++)
-                    {
-                        int3 absoluteCell = new int3(x, y, z);
-                        float3 cellCenter = (new float3(x, y, z) + 0.5f) * voxelSize;
-                        float craterDistance = math.distance(cellCenter, (float3)absoluteHitPoint) - radius;
-                        if (craterDistance >= blendRadius)
-                            continue;
+                    CarveCellWrite write = _scheduledCarveWrites[i];
+                    if (write.IsActive == 0)
+                        continue;
 
-                        int3 chunkCoord = FloorDiv(absoluteCell, ChunkResolution);
-                        ChunkDeltaState state = GetOrCreateChunkState(chunkCoord, voxelSize);
-                        float clampedValue = math.clamp(craterDistance, -8f, 8f);
-                        half newValue = ClampToHalf(clampedValue);
-                        if (!TryComputeLocalCellIndex(absoluteCell, state.ChunkCoord, out uint localIndex))
-                            continue;
+                    int3 chunkCoord = FloorDiv(write.AbsoluteCell, ChunkResolution);
+                    ChunkDeltaState state = GetOrCreateChunkState(chunkCoord, voxelSize);
+                    if (!TryComputeLocalCellIndex(write.AbsoluteCell, state.ChunkCoord, out uint localIndex))
+                        continue;
 
-                        SetCell(ref state, localIndex, newValue, materialId, true);
-                    }
+                    SetCell(ref state, localIndex, BitsToHalf(write.SdfValueBits), write.MaterialId, true);
                 }
+
+                EnqueueVolumeRebuild(volume);
+                EmitCarveDebris(in _scheduledCarveRequest, ResolveCarveRadius(in _scheduledCarveRequest, volume));
             }
         }
 
@@ -842,6 +920,102 @@ namespace Hecton8.Caves
             return UnsafeUtility.As<ushort, half>(ref bits);
         }
 
+        private float ResolveCarveRadius(in PendingCarveRequest request, HectonVoxelVolume volume)
+        {
+            if (request.ExplicitRadiusMeters > 0f)
+                return math.max(math.max(volume.VoxelSize * 1.25f, MinCarveRadiusMeters), request.ExplicitRadiusMeters);
+
+            float baseRadius = math.max(volume.VoxelSize * 2f, MinCarveRadiusMeters);
+            return math.clamp(baseRadius + request.AccumulatedDamage * 0.08f, baseRadius, math.max(baseRadius, MaxCarveRadiusMeters));
+        }
+
+        private void EmitCarveDebris(in PendingCarveRequest request, float radius)
+        {
+            if (carveDebrisItem == null || carveDebrisPerCubicMeter <= 0f || carveDebrisMaxCount <= 0 || radius <= 0f)
+                return;
+
+            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            if (registry == null)
+                return;
+
+            float removedVolume = SphereVolumeFactor * radius * radius * radius;
+            int spawnCount = math.clamp((int)math.round(removedVolume * carveDebrisPerCubicMeter), 0, carveDebrisMaxCount);
+            if (spawnCount <= 0)
+                return;
+
+            uint state = (uint)math.hash(new int4(
+                (int)math.round(request.AbsoluteHitPoint.x * 10f),
+                (int)math.round(request.AbsoluteHitPoint.y * 10f),
+                (int)math.round(request.AbsoluteHitPoint.z * 10f),
+                math.max(1, (int)math.round(radius * 100f))));
+
+            float spawnRadius = math.max(radius * 0.35f, MinRuntimeVoxelSize);
+            for (int i = 0; i < spawnCount; i++)
+            {
+                float3 direction = NextBurstDirection(ref state);
+                float distance01 = NextBurst01(ref state);
+                float impulse01 = NextBurst01(ref state);
+                Vector3 absoluteSpawnPosition = request.AbsoluteHitPoint + new Vector3(direction.x, direction.y, direction.z) * (spawnRadius * distance01);
+                Vector3 runtimeSpawnPosition = HectonFloatingOrigin.ToRuntimePosition(absoluteSpawnPosition);
+                Vector3 burstImpulse = new Vector3(direction.x, direction.y, direction.z) * math.lerp(carveDebrisImpulse * 0.55f, carveDebrisImpulse, impulse01);
+                Vector3 sampledCurrent = CurrentVolume.SampleCombinedCurrent(runtimeSpawnPosition);
+                float3 currentImpulse3 = new float3(sampledCurrent.x, sampledCurrent.y, sampledCurrent.z) * math.max(0.25f, carveDebrisImpulse * 0.35f);
+                Vector3 currentImpulse = math.all(math.isfinite(currentImpulse3))
+                    ? new Vector3(currentImpulse3.x, currentImpulse3.y, currentImpulse3.z)
+                    : Vector3.zero;
+                Vector3 initialImpulse = burstImpulse + currentImpulse;
+                registry.TryRegisterDroppedItem(carveDebrisItem, 1, runtimeSpawnPosition, initialImpulse);
+            }
+        }
+
+        private static float NextBurst01(ref uint state)
+        {
+            state ^= state << 13;
+            state ^= state >> 17;
+            state ^= state << 5;
+            return (state & 0x00FFFFFFu) * (1f / 16777215f);
+        }
+
+        private static float3 NextBurstDirection(ref uint state)
+        {
+            float z = math.lerp(-1f, 1f, NextBurst01(ref state));
+            float angle = NextBurst01(ref state) * (math.PI * 2f);
+            float radial = math.sqrt(math.max(0f, 1f - (z * z)));
+            return new float3(radial * math.cos(angle), z, radial * math.sin(angle));
+        }
+
+        private void EnsureScheduledCarveWriteCapacity(int requiredCount)
+        {
+            if (_scheduledCarveWrites.IsCreated && _scheduledCarveWrites.Length >= requiredCount)
+                return;
+
+            if (_scheduledCarveWrites.IsCreated)
+            {
+                _scheduledCarveWrites.Dispose();
+                _scheduledCarveWrites = default;
+            }
+
+            // COLD ALLOC: NativeArray<CarveCellWrite>[requiredCount] â€” staged carve-write buffer for deferred voxel SDF mutation commits â€” owner: VoxelDeltaProcessor
+            _scheduledCarveWrites = new NativeArray<CarveCellWrite>(requiredCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+        }
+
+        private void DisposeScheduledCarveBuffers()
+        {
+            JobHandle dependency = _scheduledCarveRunning ? _scheduledCarveHandle : default;
+            if (_scheduledCarveWrites.IsCreated)
+            {
+                if (_scheduledCarveRunning)
+                    _scheduledCarveWrites.Dispose(dependency);
+                else
+                    _scheduledCarveWrites.Dispose();
+
+                _scheduledCarveWrites = default;
+            }
+
+            _scheduledCarveHandle = default;
+            _scheduledCarveRunning = false;
+        }
+
         private void DisposeChunkStates()
         {
             Dictionary<ChunkAddress, ChunkDeltaState>.Enumerator enumerator = _chunkStates.GetEnumerator();
@@ -927,7 +1101,55 @@ namespace Hecton8.Caves
             public HectonVoxelVolume Volume;
             public Vector3 AbsoluteHitPoint;
             public float AccumulatedDamage;
+            public float ExplicitRadiusMeters;
             public byte MaterialId;
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        private struct CarveSdfJob : IJobParallelFor
+        {
+            public int3 MinCell;
+            public int3 Span;
+            public float VoxelSize;
+            public float Radius;
+            public float BlendRadius;
+            public float3 Center;
+            public byte MaterialId;
+            public NativeArray<CarveCellWrite> Writes;
+
+            public void Execute(int index)
+            {
+                int spanXY = Span.x * Span.y;
+                int localZ = index / spanXY;
+                int remainder = index - (localZ * spanXY);
+                int localY = remainder / Span.x;
+                int localX = remainder - (localY * Span.x);
+                int3 absoluteCell = MinCell + new int3(localX, localY, localZ);
+                float3 cellCenter = (new float3(absoluteCell.x, absoluteCell.y, absoluteCell.z) + 0.5f) * VoxelSize;
+                float craterDistance = math.distance(cellCenter, Center) - Radius;
+                if (craterDistance >= BlendRadius)
+                {
+                    Writes[index] = default;
+                    return;
+                }
+
+                Writes[index] = new CarveCellWrite
+                {
+                    AbsoluteCell = absoluteCell,
+                    SdfValueBits = (ushort)math.f32tof16(math.clamp(craterDistance, -8f, 8f)),
+                    MaterialId = MaterialId,
+                    IsActive = 1
+                };
+            }
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct CarveCellWrite
+        {
+            public int3 AbsoluteCell;
+            public ushort SdfValueBits;
+            public byte MaterialId;
+            public byte IsActive;
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]

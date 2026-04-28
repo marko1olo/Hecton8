@@ -183,17 +183,24 @@ namespace Hecton8.Visor
                 internal float maxDeltaPerFrame;
             }
 
-            private sealed class PassData
+            private sealed class ShaftsPassData
             {
                 internal TextureHandle source;
                 internal TextureHandle depth;
                 internal TextureHandle shafts;
                 internal TextureHandle blur;
-                internal TextureHandle destination;
                 internal BufferHandle exposureState;
                 internal Material raymarchMaterial;
                 internal Material blurHorizontalMaterial;
                 internal Material blurVerticalMaterial;
+            }
+
+            private sealed class CompositePassData
+            {
+                internal TextureHandle source;
+                internal TextureHandle shafts;
+                internal TextureHandle destination;
+                internal BufferHandle exposureState;
                 internal Material compositeMaterial;
             }
 
@@ -404,29 +411,28 @@ namespace Hecton8.Visor
                 UpdateMaterialParameters(_blurVerticalMaterial, _settings, 2f, exposureAvailable);
                 UpdateMaterialParameters(_compositeMaterial, _settings, 3f, exposureAvailable);
 
-                using (var builder = renderGraph.AddUnsafePass<PassData>("Hecton Underwater Noir Composite", out var passData, _profilingSampler))
+                using (var builder = renderGraph.AddUnsafePass<ShaftsPassData>("Hecton Underwater Noir Shafts", out var passData, _profilingSampler))
                 {
                     passData.source = sourceTexture;
                     passData.depth = depthTexture;
                     passData.shafts = shaftsTexture;
                     passData.blur = blurTexture;
-                    passData.destination = compositeTexture;
                     passData.exposureState = exposureStateHandle;
                     passData.raymarchMaterial = _raymarchMaterial;
                     passData.blurHorizontalMaterial = _blurHorizontalMaterial;
                     passData.blurVerticalMaterial = _blurVerticalMaterial;
-                    passData.compositeMaterial = _compositeMaterial;
 
                     builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(depthTexture, AccessFlags.Read);
                     builder.UseTexture(shaftsTexture, AccessFlags.ReadWrite);
                     builder.UseTexture(blurTexture, AccessFlags.ReadWrite);
-                    builder.UseTexture(compositeTexture, AccessFlags.Write);
                     if (exposureAvailable)
                         builder.UseBuffer(exposureStateHandle, AccessFlags.Read);
                     builder.AllowGlobalStateModification(true);
+                    builder.SetGlobalTextureAfterPass(shaftsTexture, ShaderConstants.ShaftTextureId);
+                    builder.SetGlobalTextureAfterPass(shaftsTexture, ShaderConstants.HeadlightVolumetricsTextureId);
 
-                    builder.SetRenderFunc(static (PassData data, UnsafeGraphContext context) =>
+                    builder.SetRenderFunc(static (ShaftsPassData data, UnsafeGraphContext context) =>
                     {
                         CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
                         const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
@@ -435,8 +441,30 @@ namespace Hecton8.Visor
                         Blitter.BlitCameraTexture(cmd, data.source, data.shafts, LoadAction, StoreAction, data.raymarchMaterial, 0);
                         Blitter.BlitCameraTexture(cmd, data.shafts, data.blur, LoadAction, StoreAction, data.blurHorizontalMaterial, 1);
                         Blitter.BlitCameraTexture(cmd, data.blur, data.shafts, LoadAction, StoreAction, data.blurVerticalMaterial, 2);
-                        cmd.SetGlobalTexture(ShaderConstants.ShaftTextureId, data.shafts);
-                        cmd.SetGlobalTexture(ShaderConstants.HeadlightVolumetricsTextureId, data.shafts);
+                    });
+                }
+
+                using (var builder = renderGraph.AddUnsafePass<CompositePassData>("Hecton Underwater Noir Composite", out var passData, _profilingSampler))
+                {
+                    passData.source = sourceTexture;
+                    passData.shafts = shaftsTexture;
+                    passData.destination = compositeTexture;
+                    passData.exposureState = exposureStateHandle;
+                    passData.compositeMaterial = _compositeMaterial;
+
+                    builder.UseTexture(sourceTexture, AccessFlags.Read);
+                    builder.UseTexture(shaftsTexture, AccessFlags.Read);
+                    builder.UseTexture(compositeTexture, AccessFlags.Write);
+                    if (exposureAvailable)
+                        builder.UseBuffer(exposureStateHandle, AccessFlags.Read);
+                    builder.AllowGlobalStateModification(true);
+
+                    builder.SetRenderFunc(static (CompositePassData data, UnsafeGraphContext context) =>
+                    {
+                        CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
+                        const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
+                        const RenderBufferStoreAction StoreAction = RenderBufferStoreAction.Store;
+
                         Blitter.BlitCameraTexture(cmd, data.source, data.destination, LoadAction, StoreAction, data.compositeMaterial, 3);
                     });
                 }
@@ -550,6 +578,10 @@ namespace Hecton8.Visor
                 material.SetFloat(ShaderConstants.ContactShadowStepsId, Mathf.Clamp(settings.contactShadowSteps, 4, 8));
                 material.SetFloat(ShaderConstants.ContactShadowBiasId, Mathf.Max(0.001f, settings.contactShadowBias));
                 material.SetFloat(ShaderConstants.ContactShadowMaxDistanceId, Mathf.Max(0.1f, settings.contactShadowMaxDistance));
+                Shader.SetGlobalFloat(ShaderConstants.ContactShadowStrengthId, Mathf.Clamp01(settings.contactShadowStrength));
+                Shader.SetGlobalFloat(ShaderConstants.ContactShadowStepsId, Mathf.Clamp(settings.contactShadowSteps, 4, 8));
+                Shader.SetGlobalFloat(ShaderConstants.ContactShadowBiasId, Mathf.Max(0.001f, settings.contactShadowBias));
+                Shader.SetGlobalFloat(ShaderConstants.ContactShadowMaxDistanceId, Mathf.Max(0.1f, settings.contactShadowMaxDistance));
                 material.SetFloat(
                     ShaderConstants.FlashlightShadowStepsId,
                     SystemInfo.graphicsMemorySize > 0 && SystemInfo.graphicsMemorySize <= 2048 ? 16f : 24f);
@@ -663,8 +695,6 @@ namespace Hecton8.Visor
         /// <inheritdoc />
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
-            return;
-
             if (settings == null ||
                 _pass == null ||
                 _raymarchMaterial == null ||

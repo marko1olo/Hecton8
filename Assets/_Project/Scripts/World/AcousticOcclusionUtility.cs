@@ -58,6 +58,22 @@ namespace Hecton8.World
         }
     }
 
+    internal struct AcousticForwardEchoResult
+    {
+        public float HitDistanceMeters;
+        public float Transmission01;
+        public float LowPassCutoffHz;
+        public bool HasHit;
+
+        public AcousticForwardEchoResult(float hitDistanceMeters, float transmission01, float lowPassCutoffHz, bool hasHit)
+        {
+            HitDistanceMeters = hitDistanceMeters;
+            Transmission01 = transmission01;
+            LowPassCutoffHz = lowPassCutoffHz;
+            HasHit = hasHit;
+        }
+    }
+
     /// <summary>
     /// Shared zero-GC acoustic occlusion evaluation for sonar, hearing, and world-geometry filtering.
     /// </summary>
@@ -86,6 +102,15 @@ namespace Hecton8.World
         private const float SabineConstant = 0.161f;
         private const float MinimumRt60Seconds = 0.12f;
         private const float MaximumRt60Seconds = 10f;
+        private const float ForwardEchoReuseDistanceMeters = 2f;
+        private const float ForwardEchoReuseDistanceSqr = ForwardEchoReuseDistanceMeters * ForwardEchoReuseDistanceMeters;
+        private const float ForwardEchoDirectionReuseDot = 0.9961947f;
+        private const int KelpDensityTypeMask = 1 << 1;
+        private const int FloraScatteringSampleCount = 5;
+        private const float FloraScatteringMinimumSegmentMeters = 3f;
+        private const float FloraScatteringDensityThreshold = 0.08f;
+        private const float FloraScatteringTransmissionFloor = 0.18f;
+        private const float FloraScatteringLowPassFloorHertz = 220f;
 
         private static readonly int PlayerLayer;
         private static readonly int TriggerZoneLayer;
@@ -152,6 +177,24 @@ namespace Hecton8.World
             public int CompletedAxisMask;
         }
 
+        [StructLayout(LayoutKind.Sequential, Size = 48)]
+        private struct ForwardEchoKey
+        {
+            public Vector3 OriginPosition;
+            public float ProbeDistance;
+            public Vector3 ForwardDirection;
+            public int LayerMask;
+            public ulong IgnoreRootEntityId;
+            public ulong IgnoreBodyEntityId;
+        }
+
+        private struct CachedForwardEchoEntry
+        {
+            public ForwardEchoKey Key;
+            public AcousticForwardEchoResult Result;
+            public bool Valid;
+        }
+
         private static int _runtimeOwnerCount;
         private static bool _queryBatchScheduled;
         private static bool _enclosureBatchScheduled;
@@ -160,12 +203,18 @@ namespace Hecton8.World
         private static int _scheduledCount;
         private static int _nextCacheWriteIndex;
         private static int _queuedEnclosureCount;
-        private static int _scheduledEnclosureCount;
         private static int _nextEnclosureCacheWriteIndex;
         private static JobHandle _pendingQueryHandle;
         private static JobHandle _pendingEnclosureHandle;
+        private static JobHandle _pendingForwardEchoHandle;
         private static int _scheduledEnclosureRayCount;
         private static ActiveEnclosureQuery _activeEnclosureQuery;
+        private static bool _forwardEchoQueryScheduled;
+        private static bool _queuedForwardEchoValid;
+        private static bool _scheduledForwardEchoValid;
+        private static ForwardEchoKey _queuedForwardEchoKey;
+        private static ForwardEchoKey _scheduledForwardEchoKey;
+        private static CachedForwardEchoEntry _cachedForwardEchoEntry;
         // COLD ALLOC: QueryFrameEntry[48] - queued cross-frame acoustic occlusion requests - owner: AcousticOcclusionUtility
         private static readonly QueryFrameEntry[] _queuedEntries = new QueryFrameEntry[MaxQueuedRequests];
         // COLD ALLOC: QueryFrameEntry[48] - scheduled acoustic occlusion request snapshot - owner: AcousticOcclusionUtility
@@ -194,6 +243,10 @@ namespace Hecton8.World
         private static NativeList<RaycastCommand> _enclosureCommands;
         // COLD ALLOC: NativeArray<RaycastHit>[48] - deferred enclosure probe result buffer - owner: AcousticOcclusionUtility
         private static NativeArray<RaycastHit> _enclosureResults;
+        // COLD ALLOC: NativeArray<RaycastCommand>[1] - transient forward-echo acoustic probe command buffer - owner: AcousticOcclusionUtility
+        private static NativeArray<RaycastCommand> _forwardEchoCommands;
+        // COLD ALLOC: NativeArray<RaycastHit>[1] - transient forward-echo acoustic probe result buffer - owner: AcousticOcclusionUtility
+        private static NativeArray<RaycastHit> _forwardEchoResults;
 
         static AcousticOcclusionUtility()
         {
@@ -216,6 +269,9 @@ namespace Hecton8.World
             if (_enclosureBatchScheduled && _pendingEnclosureHandle.IsCompleted)
                 _pendingEnclosureHandle.Complete();
 
+            if (_forwardEchoQueryScheduled && _pendingForwardEchoHandle.IsCompleted)
+                _pendingForwardEchoHandle.Complete();
+
             if (_queryCommands.IsCreated)
                 _queryCommands.Dispose();
 
@@ -228,6 +284,12 @@ namespace Hecton8.World
             if (_enclosureResults.IsCreated)
                 _enclosureResults.Dispose();
 
+            if (_forwardEchoCommands.IsCreated)
+                _forwardEchoCommands.Dispose();
+
+            if (_forwardEchoResults.IsCreated)
+                _forwardEchoResults.Dispose();
+
             _runtimeOwnerCount = 0;
             _queryBatchScheduled = false;
             _enclosureBatchScheduled = false;
@@ -236,16 +298,22 @@ namespace Hecton8.World
             _scheduledCount = 0;
             _nextCacheWriteIndex = 0;
             _queuedEnclosureCount = 0;
-            _scheduledEnclosureCount = 0;
             _nextEnclosureCacheWriteIndex = 0;
             _pendingQueryHandle = default;
             _pendingEnclosureHandle = default;
+            _pendingForwardEchoHandle = default;
             _scheduledEnclosureRayCount = 0;
             ResetActiveEnclosureQuery();
             _queryCommands = default;
             _queryResults = default;
             _enclosureCommands = default;
             _enclosureResults = default;
+            _forwardEchoCommands = default;
+            _forwardEchoResults = default;
+            _forwardEchoQueryScheduled = false;
+            _queuedForwardEchoValid = false;
+            _scheduledForwardEchoValid = false;
+            _cachedForwardEchoEntry.Valid = false;
 
             for (int i = 0; i < MaxQueuedRequests; i++)
                 _cachedEntries[i].Valid = false;
@@ -276,7 +344,6 @@ namespace Hecton8.World
             _scheduledCount = 0;
             _nextCacheWriteIndex = 0;
             _queuedEnclosureCount = 0;
-            _scheduledEnclosureCount = 0;
             _nextEnclosureCacheWriteIndex = 0;
             ResetActiveEnclosureQuery();
 
@@ -438,6 +505,39 @@ namespace Hecton8.World
             _queuedEnclosureCount++;
         }
 
+        public static void PrimeForwardEchoSample(
+            Vector3 originPosition,
+            Vector3 forwardDirection,
+            float probeDistance,
+            int layerMask,
+            Transform ignoreRoot)
+        {
+            EnsureRuntimeBuffers();
+            AdvanceFrameFence();
+            if (!_forwardEchoCommands.IsCreated || !_forwardEchoResults.IsCreated)
+                return;
+
+            float directionLengthSq = forwardDirection.sqrMagnitude;
+            if (directionLengthSq <= MinimumProbeDistanceMeters * MinimumProbeDistanceMeters)
+                return;
+
+            ForwardEchoKey queryKey = new ForwardEchoKey
+            {
+                OriginPosition = originPosition,
+                ProbeDistance = math.max(1f, probeDistance),
+                ForwardDirection = forwardDirection / math.sqrt(directionLengthSq),
+                LayerMask = layerMask,
+                IgnoreRootEntityId = ResolveEntityId(ignoreRoot),
+                IgnoreBodyEntityId = ResolveAttachedBodyEntityId(ignoreRoot)
+            };
+
+            if (TryFindCachedForwardEchoResult(queryKey, out _))
+                return;
+
+            _queuedForwardEchoKey = queryKey;
+            _queuedForwardEchoValid = true;
+        }
+
         public static bool TryGetCachedOcclusionPath(
             Vector3 sourcePosition,
             Vector3 listenerPosition,
@@ -492,6 +592,35 @@ namespace Hecton8.World
             return false;
         }
 
+        public static bool TryGetCachedForwardEchoSample(
+            Vector3 originPosition,
+            Vector3 forwardDirection,
+            float probeDistance,
+            int layerMask,
+            Transform ignoreRoot,
+            out AcousticForwardEchoResult result)
+        {
+            AdvanceFrameFence();
+            float directionLengthSq = forwardDirection.sqrMagnitude;
+            if (directionLengthSq <= MinimumProbeDistanceMeters * MinimumProbeDistanceMeters)
+            {
+                result = default;
+                return false;
+            }
+
+            ForwardEchoKey queryKey = new ForwardEchoKey
+            {
+                OriginPosition = originPosition,
+                ProbeDistance = math.max(1f, probeDistance),
+                ForwardDirection = forwardDirection / math.sqrt(directionLengthSq),
+                LayerMask = layerMask,
+                IgnoreRootEntityId = ResolveEntityId(ignoreRoot),
+                IgnoreBodyEntityId = ResolveAttachedBodyEntityId(ignoreRoot)
+            };
+
+            return TryFindCachedForwardEchoResult(queryKey, out result);
+        }
+
         public static AcousticOcclusionResult EvaluateOcclusionPath(
             Vector3 sourcePosition,
             Vector3 listenerPosition,
@@ -538,6 +667,12 @@ namespace Hecton8.World
                     Allocator.Persistent,
                     NativeArrayOptions.ClearMemory);
             }
+
+            if (!_forwardEchoCommands.IsCreated)
+                _forwardEchoCommands = new NativeArray<RaycastCommand>(1, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+
+            if (!_forwardEchoResults.IsCreated)
+                _forwardEchoResults = new NativeArray<RaycastHit>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
         }
 
         private static void AdvanceFrameFence()
@@ -552,11 +687,15 @@ namespace Hecton8.World
 
             TryConsumeCompletedQuery();
             TryConsumeCompletedEnclosureQuery();
+            TryConsumeCompletedForwardEchoQuery();
             if (!_queryBatchScheduled && _queuedCount > 0)
                 ScheduleQueuedBatch();
 
             if (!_enclosureBatchScheduled && (_activeEnclosureQuery.Valid || _queuedEnclosureCount > 0))
                 ScheduleQueuedEnclosureBatch();
+
+            if (!_forwardEchoQueryScheduled && _queuedForwardEchoValid)
+                ScheduleQueuedForwardEchoBatch();
 
             _queuedFrame = currentFrame;
             _queuedCount = 0;
@@ -574,6 +713,8 @@ namespace Hecton8.World
                 QueryKey queryKey = _scheduledEntries[queryIndex].Key;
                 AcousticOcclusionResult result = ResolveOcclusionResult(
                     queryIndex * MaxOcclusionHits,
+                    queryKey.SourcePosition,
+                    queryKey.ListenerPosition,
                     queryKey.IgnoreOriginRootEntityId,
                     queryKey.IgnoreTargetRootEntityId,
                     queryKey.IgnoreOriginBodyEntityId,
@@ -618,9 +759,54 @@ namespace Hecton8.World
             }
 
             _enclosureBatchScheduled = false;
-            _scheduledEnclosureCount = 0;
             _scheduledEnclosureRayCount = 0;
             _pendingEnclosureHandle = default;
+        }
+
+        private static void TryConsumeCompletedForwardEchoQuery()
+        {
+            if (!_forwardEchoQueryScheduled || !_pendingForwardEchoHandle.IsCompleted || !_scheduledForwardEchoValid)
+                return;
+
+            _pendingForwardEchoHandle.Complete();
+            RaycastHit hit = _forwardEchoResults[0];
+            Collider collider = hit.collider;
+            AcousticForwardEchoResult result;
+            if (collider == null ||
+                ShouldIgnoreCollider(
+                    collider,
+                    _scheduledForwardEchoKey.IgnoreRootEntityId,
+                    0ul,
+                    _scheduledForwardEchoKey.IgnoreBodyEntityId,
+                    0ul))
+            {
+                result = new AcousticForwardEchoResult(
+                    _scheduledForwardEchoKey.ProbeDistance,
+                    1f,
+                    OpenLowPassCutoffHertz,
+                    false);
+            }
+            else
+            {
+                float absorption01 = ResolveAbsorption01(collider);
+                float transmission01 = math.clamp(1f - absorption01, 0f, 1f);
+                float lowPassCutoffHz = math.lerp(
+                    MinimumLowPassCutoffHertz,
+                    OpenLowPassCutoffHertz,
+                    transmission01);
+                result = new AcousticForwardEchoResult(
+                    math.max(MinimumProbeDistanceMeters, hit.distance),
+                    transmission01,
+                    lowPassCutoffHz,
+                    true);
+            }
+
+            _cachedForwardEchoEntry.Key = _scheduledForwardEchoKey;
+            _cachedForwardEchoEntry.Result = result;
+            _cachedForwardEchoEntry.Valid = true;
+            _scheduledForwardEchoValid = false;
+            _forwardEchoQueryScheduled = false;
+            _pendingForwardEchoHandle = default;
         }
 
         private static void ScheduleQueuedBatch()
@@ -672,8 +858,8 @@ namespace Hecton8.World
                     return;
 
                 _activeEnclosureQuery.Key = _queuedEnclosureEntries[0].Key;
-                _activeEnclosureQuery.Valid = true;
-                _activeEnclosureQuery.CompletedAxisMask = 0;
+            _activeEnclosureQuery.Valid = true;
+            _activeEnclosureQuery.CompletedAxisMask = 0;
                 for (int axisIndex = 0; axisIndex < EnclosureProbeCount; axisIndex++)
                 {
                     _activeEnclosureDistances[axisIndex] = _activeEnclosureQuery.Key.ProbeDistance;
@@ -686,7 +872,6 @@ namespace Hecton8.World
                 return;
 
             _enclosureCommands.Clear();
-            _scheduledEnclosureCount = 0;
             _scheduledEnclosureRayCount = 0;
             QueryParameters parameters = new QueryParameters(_activeEnclosureQuery.Key.LayerMask, false, QueryTriggerInteraction.Ignore);
             for (int axisIndex = 0; axisIndex < EnclosureProbeCount && _scheduledEnclosureRayCount < EnclosureProbeSliceCount; axisIndex++)
@@ -707,7 +892,6 @@ namespace Hecton8.World
                 return;
 
             _scheduledEnclosureEntries[0].Key = _activeEnclosureQuery.Key;
-            _scheduledEnclosureCount = 1;
             int resultLength = math.min(_scheduledEnclosureRayCount, _enclosureResults.Length);
             for (int i = 0; i < resultLength; i++)
                 _enclosureResults[i] = default;
@@ -720,8 +904,29 @@ namespace Hecton8.World
             _enclosureBatchScheduled = true;
         }
 
+        private static void ScheduleQueuedForwardEchoBatch()
+        {
+            if (!_queuedForwardEchoValid || !_forwardEchoCommands.IsCreated || !_forwardEchoResults.IsCreated)
+                return;
+
+            QueryParameters parameters = new QueryParameters(_queuedForwardEchoKey.LayerMask, false, QueryTriggerInteraction.Ignore);
+            _forwardEchoCommands[0] = new RaycastCommand(
+                _queuedForwardEchoKey.OriginPosition,
+                _queuedForwardEchoKey.ForwardDirection,
+                parameters,
+                _queuedForwardEchoKey.ProbeDistance);
+            _forwardEchoResults[0] = default;
+            _scheduledForwardEchoKey = _queuedForwardEchoKey;
+            _scheduledForwardEchoValid = true;
+            _queuedForwardEchoValid = false;
+            _pendingForwardEchoHandle = RaycastCommand.ScheduleBatch(_forwardEchoCommands, _forwardEchoResults, 1, default);
+            _forwardEchoQueryScheduled = true;
+        }
+
         private static AcousticOcclusionResult ResolveOcclusionResult(
             int resultStartIndex,
+            Vector3 sourcePosition,
+            Vector3 listenerPosition,
             ulong ignoreOriginRootEntityId,
             ulong ignoreTargetRootEntityId,
             ulong ignoreOriginBodyEntityId,
@@ -749,17 +954,65 @@ namespace Hecton8.World
                 occludingHitCount++;
             }
 
+            float lowPassCutoffHz = occludingHitCount > 0
+                ? math.max(
+                    MinimumLowPassCutoffHertz,
+                    OpenLowPassCutoffHertz / math.pow(2f, occludingHitCount))
+                : OpenLowPassCutoffHertz;
+
+            ApplyFloraScattering(
+                sourcePosition,
+                listenerPosition,
+                ref transmission01,
+                ref lowPassCutoffHz,
+                ref occludingHitCount);
+
             if (occludingHitCount <= 0)
                 return new AcousticOcclusionResult(1f, OpenLowPassCutoffHertz, 0);
-
-            float lowPassCutoffHz = math.max(
-                MinimumLowPassCutoffHertz,
-                OpenLowPassCutoffHertz / math.pow(2f, occludingHitCount));
 
             return new AcousticOcclusionResult(
                 math.clamp(transmission01, 0f, 1f),
                 math.clamp(lowPassCutoffHz, MinimumLowPassCutoffHertz, OpenLowPassCutoffHertz),
                 occludingHitCount);
+        }
+
+        private static void ApplyFloraScattering(
+            Vector3 sourcePosition,
+            Vector3 listenerPosition,
+            ref float transmission01,
+            ref float lowPassCutoffHz,
+            ref int occludingHitCount)
+        {
+            Vector3 segment = listenerPosition - sourcePosition;
+            float segmentLength = segment.magnitude;
+            if (segmentLength < FloraScatteringMinimumSegmentMeters)
+                return;
+
+            HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            if (vegetationBridge == null)
+                return;
+
+            Vector3 direction = segment / segmentLength;
+            int floraIntersections = 0;
+            for (int sampleIndex = 1; sampleIndex <= FloraScatteringSampleCount; sampleIndex++)
+            {
+                float sampleT = sampleIndex / (float)(FloraScatteringSampleCount + 1);
+                Vector3 samplePosition = sourcePosition + direction * (segmentLength * sampleT);
+                float density = math.saturate(vegetationBridge.SampleBiomassDensityImmediate(samplePosition, KelpDensityTypeMask));
+                if (density <= FloraScatteringDensityThreshold)
+                    continue;
+
+                float scattering01 = math.saturate((density - FloraScatteringDensityThreshold) / math.max(0.0001f, 1f - FloraScatteringDensityThreshold));
+                transmission01 *= math.lerp(0.9f, 0.6f, scattering01);
+                lowPassCutoffHz = math.lerp(lowPassCutoffHz, FloraScatteringLowPassFloorHertz, scattering01 * 0.72f);
+                floraIntersections++;
+            }
+
+            if (floraIntersections <= 0)
+                return;
+
+            transmission01 = math.max(FloraScatteringTransmissionFloor, transmission01);
+            occludingHitCount += floraIntersections;
         }
 
         private static void ConsumeActiveEnclosureRayResult(
@@ -905,6 +1158,18 @@ namespace Hecton8.World
             return false;
         }
 
+        private static bool TryFindCachedForwardEchoResult(ForwardEchoKey queryKey, out AcousticForwardEchoResult result)
+        {
+            if (_cachedForwardEchoEntry.Valid && ForwardEchoKeysMatch(_cachedForwardEchoEntry.Key, queryKey))
+            {
+                result = _cachedForwardEchoEntry.Result;
+                return true;
+            }
+
+            result = default;
+            return false;
+        }
+
         private static void StoreCachedResult(QueryKey queryKey, AcousticOcclusionResult result)
         {
             for (int i = 0; i < MaxQueuedRequests; i++)
@@ -959,6 +1224,16 @@ namespace Hecton8.World
                    cached.IgnoreBodyEntityId == current.IgnoreBodyEntityId &&
                    math.abs(cached.ProbeDistance - current.ProbeDistance) <= 0.01f &&
                    math.lengthsq((float3)(cached.OriginPosition - current.OriginPosition)) <= EnclosureReuseDistanceSqr;
+        }
+
+        private static bool ForwardEchoKeysMatch(ForwardEchoKey cached, ForwardEchoKey current)
+        {
+            return cached.LayerMask == current.LayerMask &&
+                   cached.IgnoreRootEntityId == current.IgnoreRootEntityId &&
+                   cached.IgnoreBodyEntityId == current.IgnoreBodyEntityId &&
+                   math.abs(cached.ProbeDistance - current.ProbeDistance) <= 0.01f &&
+                   math.lengthsq((float3)(cached.OriginPosition - current.OriginPosition)) <= ForwardEchoReuseDistanceSqr &&
+                   math.dot((float3)cached.ForwardDirection, (float3)current.ForwardDirection) >= ForwardEchoDirectionReuseDot;
         }
 
         private static bool ShouldIgnoreCollider(

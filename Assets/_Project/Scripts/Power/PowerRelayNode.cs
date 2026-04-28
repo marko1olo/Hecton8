@@ -273,11 +273,11 @@ namespace Hecton8.Power
             if (sourceNode == null || destinationNode == null)
                 return 0L;
 
-            int sourceId = sourceNode.GetInstanceID();
-            int destinationId = destinationNode.GetInstanceID();
-            int minId = sourceId < destinationId ? sourceId : destinationId;
-            int maxId = sourceId < destinationId ? destinationId : sourceId;
-            return ((long)(uint)minId << 32) | (uint)maxId;
+            uint sourceId = unchecked((uint)EntityId.ToULong(sourceNode.GetEntityId()));
+            uint destinationId = unchecked((uint)EntityId.ToULong(destinationNode.GetEntityId()));
+            uint minId = sourceId < destinationId ? sourceId : destinationId;
+            uint maxId = sourceId < destinationId ? destinationId : sourceId;
+            return ((long)minId << 32) | maxId;
         }
 
         private static bool ContainsLinkId(List<long> linkIds, long linkId)

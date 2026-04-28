@@ -87,6 +87,7 @@ Shader "GPUInstancer/Hecton8/Flora/CoralMaster"
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+            #include "Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/LODCrossFade.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
@@ -277,6 +278,7 @@ Shader "GPUInstancer/Hecton8/Flora/CoralMaster"
                 half zoneBiolumStrength = saturate(floorZoneInfluence + oceanZoneInfluence);
                 half3 zoneBiolumColor = lerp(_BiolumColor.rgb, _HectonFloorBiolumColor.rgb, floorZoneInfluence);
                 zoneBiolumColor = lerp(zoneBiolumColor, _HectonOceanBiolumColor.rgb, oceanZoneInfluence);
+                half3 volumeBiolum = (half3)HectonCoreLitSampleBiolumVolumeRadiance(samplePositionWS);
 
                 half curvatureWetness = ComputeCurvatureWetness(normalWS);
                 half cavity = saturate(1.0h - maskSample.r * _CavityStrength);
@@ -314,6 +316,7 @@ Shader "GPUInstancer/Hecton8/Flora/CoralMaster"
                 half3 slimeSpecular = slimeNdotH * wetness * 0.45h * mainLight.color;
 
                 half3 biolum = zoneBiolumColor * (_BiolumStrength * (1.0h + zoneBiolumStrength * 0.76h) * biolumMask * pulse);
+                biolum += volumeBiolum * (0.5h + thickness * 0.5h);
                 half fresnel = pow(1.0h - saturate(dot(normalWS, viewDirWS)), _FresnelPower) * _FresnelStrength;
 
                 half3 color = diffuse + subsurface + rimLighting + specular + slimeSpecular + biolum;

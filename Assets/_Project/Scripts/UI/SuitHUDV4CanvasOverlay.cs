@@ -2,9 +2,14 @@ using System;
 using System.Collections.Generic;
 using Hecton.Localization;
 using Hecton8.Bootstrap;
+using Hecton8.Audio;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Core;
+using Hecton8.Inventory;
+using Hecton8.Items;
+using Hecton8.SaveSystem;
+using Hecton8.Tools;
 using Hecton8.World;
 using TMPro;
 using Unity.Collections;
@@ -23,7 +28,7 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Suit HUD V4 Canvas Overlay")]
     [RequireComponent(typeof(Canvas))]
-    public sealed class SuitHUDV4CanvasOverlay : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IOriginShiftListener
+    public sealed class SuitHUDV4CanvasOverlay : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IOriginShiftListener, IUIService
     {
         private static readonly List<SuitHUDV4CanvasOverlay> s_activeOverlays = new List<SuitHUDV4CanvasOverlay>(4);
         private static readonly List<VisorHUDController> s_controllerResolveBuffer = new List<VisorHUDController>(2);
@@ -41,6 +46,7 @@ namespace Hecton8.UI
         private const string DefaultGaugeO2Label = "O2";
         private const string DefaultGaugePowerLabel = "PWR";
         private const string DefaultGaugeHullLabel = "HULL";
+        private const int QuickbarSlotCount = 4;
         private const string DefaultStatusPressureLimitExceeded = "PRESSURE LIMIT EXCEEDED";
         private const string DefaultStatusApproachingSafeDepth = "APPROACHING SAFE DEPTH LIMIT";
         private const string DefaultStatusSuitDamageCritical = "SUIT DAMAGE CRITICAL";
@@ -68,6 +74,7 @@ namespace Hecton8.UI
         private const float ProjectionNearClipSafetyPaddingMeters = 0.05f;
         private const float ProjectionPosePositionTolerance = 0.0001f;
         private const float ProjectionPoseScaleTolerance = 0.000001f;
+        private const string AcousticRadarShaderPath = "Assets/_Project/Art/Shaders/Hecton_HUD_AcousticRadarOverlay.shader";
         private const string ThreatChevronShaderPath = "Assets/_Project/Art/Shaders/Hecton_ScannerMarkerInstanced.shader";
         private const string WorldGeometrySortingLayer = "WorldGeometry";
         private const int MaxThreatChevronCount = 4;
@@ -80,6 +87,23 @@ namespace Hecton8.UI
         private static readonly int _ThreatChevronFlickerFrequencyId = Shader.PropertyToID("_FlickerFrequency");
         private static readonly int _ThreatChevronFlickerIntensityId = Shader.PropertyToID("_FlickerIntensity");
         private static readonly int _ThreatChevronFillAlphaId = Shader.PropertyToID("_FillAlpha");
+        private static readonly int _AcousticRadarTexId = Shader.PropertyToID("_AcousticRadarTex");
+        private static readonly int _AcousticRadarPrimaryColorId = Shader.PropertyToID("_PrimaryColor");
+        private static readonly int _AcousticRadarWarningColorId = Shader.PropertyToID("_WarningColor");
+        private static readonly int _AcousticRadarOpacityId = Shader.PropertyToID("_OverlayOpacity");
+        private static readonly int _AcousticRadarGlitchId = Shader.PropertyToID("_GlitchAmount");
+        private static readonly int _AcousticRadarInnerEdgeId = Shader.PropertyToID("_InnerEdge");
+        private static readonly int _AcousticRadarWaveAmplitudeId = Shader.PropertyToID("_WaveAmplitude");
+        private static readonly int _AcousticRadarBandThicknessId = Shader.PropertyToID("_BandThickness");
+        private static readonly int _AcousticRadarPulseFrequencyId = Shader.PropertyToID("_PulseFrequency");
+        private static readonly int _AcousticRadarRadarIntensityId = Shader.PropertyToID("_RadarIntensity");
+#if UNITY_EDITOR
+        private static readonly Color s_gizmoCanvasBoundsColor = new Color(0.12f, 0.68f, 0.92f, 0.65f);
+        private static readonly Color s_gizmoElementFillColor = new Color(0.12f, 0.68f, 0.92f, 0.08f);
+        private static readonly Color s_gizmoTextColor = new Color(0.92f, 0.92f, 0.92f, 0.72f);
+        private static readonly Color s_gizmoProjectionPlaneColor = new Color(1f, 0.5f, 0f, 0.5f);
+        private static GUIStyle s_gizmoLabelStyle;
+#endif
         private static readonly char[] s_atmLabelChars = DefaultAtmLabel.ToCharArray();
         private static readonly char[] s_depthLabelChars = "DEPTH".ToCharArray();
         private static readonly char[] s_temperatureLabelChars = DefaultTemperatureLabel.ToCharArray();
@@ -91,6 +115,10 @@ namespace Hecton8.UI
         private static readonly char[] s_gaugeO2LabelChars = DefaultGaugeO2Label.ToCharArray();
         private static readonly char[] s_gaugePowerLabelChars = DefaultGaugePowerLabel.ToCharArray();
         private static readonly char[] s_gaugeHullLabelChars = DefaultGaugeHullLabel.ToCharArray();
+        private static readonly char[] s_quickbarSlotOneChars = "1".ToCharArray();
+        private static readonly char[] s_quickbarSlotTwoChars = "2".ToCharArray();
+        private static readonly char[] s_quickbarSlotThreeChars = "3".ToCharArray();
+        private static readonly char[] s_quickbarSlotFourChars = "4".ToCharArray();
         private static readonly char[] s_statusPressureLimitExceededChars = DefaultStatusPressureLimitExceeded.ToCharArray();
         private static readonly char[] s_statusApproachingSafeDepthChars = DefaultStatusApproachingSafeDepth.ToCharArray();
         private static readonly char[] s_statusSuitDamageCriticalChars = DefaultStatusSuitDamageCritical.ToCharArray();
@@ -248,6 +276,35 @@ namespace Hecton8.UI
         [SerializeField] private float gaugeValueOffsetY = 0f;
         [SerializeField] private float gaugeLabelOffsetY = -34f;
 
+        [Header("Quickbar Layout")]
+        [SerializeField] private Vector2 quickbarOffset = new Vector2(0f, 94f);
+        [SerializeField] private Vector2 quickbarSize = new Vector2(244f, 64f);
+        [SerializeField] private float quickbarSlotSize = 44f;
+        [SerializeField] private float quickbarSlotGap = 8f;
+
+        [Header("Acoustic Radar")]
+        [SerializeField]
+        [Tooltip("UI shader used to visualize the 360-bin passive acoustic ring on the visor edges.")]
+        private Shader acousticRadarShader;
+        [SerializeField, Range(0f, 1f)]
+        [Tooltip("Base opacity of the acoustic radar overlay when the audio ring contains valid energy.")]
+        private float acousticRadarOpacity = 0.18f;
+        [SerializeField, Range(0.01f, 0.5f)]
+        [Tooltip("Normalized inner edge radius where the acoustic radar begins to appear.")]
+        private float acousticRadarInnerEdge = 0.74f;
+        [SerializeField, Range(0.01f, 0.35f)]
+        [Tooltip("Normalized edge band thickness occupied by the acoustic radar.")]
+        private float acousticRadarBandThickness = 0.18f;
+        [SerializeField, Range(0f, 8f)]
+        [Tooltip("World-agnostic sine-wave amplitude used to make the passive radar feel unstable and alive.")]
+        private float acousticRadarWaveAmplitude = 2.4f;
+        [SerializeField, Range(0f, 16f)]
+        [Tooltip("Low-amplitude pulse frequency applied to acoustic edge highlights.")]
+        private float acousticRadarPulseFrequency = 3.2f;
+        [SerializeField, Range(0f, 1f)]
+        [Tooltip("Additional glitch strength blended into the acoustic overlay during corruption or trauma spikes.")]
+        private float acousticRadarGlitchStrength = 0.2f;
+
         [Header("Threat AR")]
         [SerializeField]
         [Tooltip("Instanced shader used by diegetic threat chevrons on the visor plane.")]
@@ -288,11 +345,14 @@ namespace Hecton8.UI
         private RectTransform _telemetrySupplementRoot;
         private RectTransform _telemetryRoot;
         private RectTransform _gaugeClusterRoot;
+        private RectTransform _quickbarRoot;
         private CanvasGroup _headerCanvasGroup;
         private CanvasGroup _telemetryChromeCanvasGroup;
         private CanvasGroup _telemetrySupplementCanvasGroup;
         private CanvasGroup _statusCanvasGroup;
+        private CanvasGroup _quickbarCanvasGroup;
         private Image _biosBackdrop;
+        private Image _acousticRadarOverlay;
         private Image _topVeil;
         private Image _bottomVeil;
         private Image _leftVeil;
@@ -321,6 +381,7 @@ namespace Hecton8.UI
         private GaugeRefs _oxygenGauge;
         private GaugeRefs _powerGauge;
         private GaugeRefs _healthGauge;
+        private readonly QuickbarSlotRefs[] _quickbarSlots = new QuickbarSlotRefs[QuickbarSlotCount];
         private static Sprite s_ringFillSprite;
         private static Sprite s_ringFrameSprite;
         private static Sprite s_oxygenIconSprite;
@@ -411,6 +472,7 @@ namespace Hecton8.UI
         private float _traumaTransportPower01 = 1f;
         private float _traumaHullIntegrity01 = 1f;
         private float _toolDepletedWarningTimer;
+        private float _threatChevronPulseTime;
         private float _jitterTime;
         private int _toolDepletedVersion;
         private int _toolDepletedHashId;
@@ -421,16 +483,16 @@ namespace Hecton8.UI
         private bool _rootBaseAnchoredPositionCaptured;
         private Vector2 _rootBaseAnchoredPosition;
         private GameLanguage _localizedMeasurementLanguage = GameLanguage.English;
-        // COLD ALLOC: char[64] — cached suit label staging buffer — owner: SuitHUDV4CanvasOverlay
+        // COLD ALLOC: char[64] â€” cached suit label staging buffer â€” owner: SuitHUDV4CanvasOverlay
         private char[] _cachedSuitLabelBuffer = new char[64];
         private int _cachedSuitLabelLength;
-        // COLD ALLOC: char[64] — localized depth metric template buffer — owner: SuitHUDV4CanvasOverlay
+        // COLD ALLOC: char[64] â€” localized depth metric template buffer â€” owner: SuitHUDV4CanvasOverlay
         private char[] _depthTemplateBuffer = new char[64];
         private int _depthTemplateLength;
-        // COLD ALLOC: char[64] — localized temperature metric template buffer — owner: SuitHUDV4CanvasOverlay
+        // COLD ALLOC: char[64] â€” localized temperature metric template buffer â€” owner: SuitHUDV4CanvasOverlay
         private char[] _temperatureTemplateBuffer = new char[64];
         private int _temperatureTemplateLength;
-        // COLD ALLOC: char[64] — localized pressure metric template buffer — owner: SuitHUDV4CanvasOverlay
+        // COLD ALLOC: char[64] â€” localized pressure metric template buffer â€” owner: SuitHUDV4CanvasOverlay
         private char[] _pressureTemplateBuffer = new char[64];
         private int _pressureTemplateLength;
         private char[] _depthDisplayBuffer = new char[64];
@@ -450,19 +512,36 @@ namespace Hecton8.UI
         private GraphicRaycaster _cachedGraphicRaycaster;
         private HectonUIScaler _cachedUiScaler;
         private HectonSurvivalSystem _depthSignalSource;
+        private IPlayerInventoryService _inventoryService;
+        private PlayerInventory _playerInventory;
+        private ItemCatalog _itemCatalog;
+        private PlayerToolManager _toolManager;
+        private SpatialAudioManager _spatialAudioManager;
+        private int _lastInventoryVersion = -1;
+        private readonly int[] _quickbarSlotHashCache = new int[QuickbarSlotCount];
+        private readonly bool[] _quickbarSlotHashResolved = new bool[QuickbarSlotCount];
+        private readonly GameObject[] _quickbarSlotPrefabCache = new GameObject[QuickbarSlotCount];
         private int _cachedHullStressWhisperBucket = int.MinValue;
         private string _cachedHullStressWhisperText;
         private bool _cachedHullStressWhisperRtl;
-        // COLD ALLOC: char[96] — cached hull-stress whisper text buffer — owner: SuitHUDV4CanvasOverlay
+        // COLD ALLOC: char[96] â€” cached hull-stress whisper text buffer â€” owner: SuitHUDV4CanvasOverlay
         private char[] _cachedHullStressWhisperBuffer = new char[96];
         private int _cachedHullStressWhisperLength;
         private HectonMapMagicVegetationBridge _vegetationBridge;
+        private Material _acousticRadarMaterial;
+        private Texture2D _acousticRadarTexture;
+        private int _acousticRadarResolution;
+        private float _acousticRadarPeakIntensity;
         private Mesh _threatChevronMesh;
         private Material _threatChevronMaterial;
         private NativeArray<Matrix4x4> _threatChevronMatrices;
-        // COLD ALLOC: Matrix4x4[4] — instanced threat-chevron draw mirror — owner: SuitHUDV4CanvasOverlay
+        // COLD ALLOC: Matrix4x4[4] â€” instanced threat-chevron draw mirror â€” owner: SuitHUDV4CanvasOverlay
         private readonly Matrix4x4[] _threatChevronMatrixMirror = new Matrix4x4[MaxThreatChevronCount];
-        // COLD ALLOC: ThreatChevronState[4] — cached top threat-grid chevron slots — owner: SuitHUDV4CanvasOverlay
+        // COLD ALLOC: Matrix4x4[1] â€” single-chevron instanced draw bridge for per-chevron alpha fades â€” owner: SuitHUDV4CanvasOverlay
+        private readonly Matrix4x4[] _threatChevronSingleDrawMirror = new Matrix4x4[1];
+        // COLD ALLOC: float[4] â€” per-chevron alpha cache for alpha-faded threat warnings â€” owner: SuitHUDV4CanvasOverlay
+        private readonly float[] _threatChevronAlphaMirror = new float[MaxThreatChevronCount];
+        // COLD ALLOC: ThreatChevronState[4] â€” cached top threat-grid chevron slots â€” owner: SuitHUDV4CanvasOverlay
         private readonly ThreatChevronState[] _threatChevronStates = new ThreatChevronState[MaxThreatChevronCount];
         private int _threatChevronVisibleCount;
 
@@ -513,12 +592,33 @@ namespace Hecton8.UI
             public Color CachedValueColor;
         }
 
+        private struct QuickbarSlotRefs
+        {
+            public RectTransform Root;
+            public Image Backdrop;
+            public Image Icon;
+            public Image Accent;
+            public TextMeshProUGUI Key;
+            public Sprite CachedIconSprite;
+            public bool CachedIconVisible;
+            public bool CachedAvailable;
+            public bool CachedActive;
+            public Color CachedBackdropColor;
+            public Color CachedAccentColor;
+            public Color CachedKeyColor;
+            public Color CachedIconColor;
+        }
+
         private struct ThreatChevronState
         {
             public Vector3 WorldPosition;
             public float Threat01;
             public bool Active;
         }
+
+        public bool IsInitialized => isActiveAndEnabled && targetCanvas != null && _root != null && _layoutBuilt;
+
+        private bool _ownsGlobalUiSlot;
 
         private void OnEnable()
         {
@@ -545,8 +645,10 @@ namespace Hecton8.UI
             }
 
             HectonFloatingOrigin.RegisterListener(this);
+            TryRegisterUiService();
             QueueRuntimeCanvasRefresh(forceResolve: true, refreshDepthSignal: true);
             TryRegisterRuntimeTick();
+            EnsureAcousticRadarRuntimeResources();
             EnsureThreatChevronRuntimeResources();
         }
 
@@ -563,6 +665,7 @@ namespace Hecton8.UI
             PlayerSignalEvents.OnTraumaHudSignal -= HandleTraumaHudSignal;
             PlayerSignalEvents.OnToolDepletedSignal -= HandleToolDepletedSignal;
             HectonFloatingOrigin.UnregisterListener(this);
+            UnregisterUiService();
             UnregisterActiveOverlay();
             UnregisterRuntimeTick();
             ClearDepthSignalSubscription();
@@ -574,11 +677,13 @@ namespace Hecton8.UI
             _traumaRecoilScalar = 0f;
             _traumaTransportPower01 = 1f;
             _traumaHullIntegrity01 = 1f;
+            _threatChevronPulseTime = 0f;
             _biosRecoveryMode = false;
             if (_root != null && _rootBaseAnchoredPositionCaptured)
                 _root.anchoredPosition = _rootBaseAnchoredPosition;
             _rootBaseAnchoredPositionCaptured = false;
             _threatChevronVisibleCount = 0;
+            DisposeAcousticRadarRuntimeResources();
             DisposeThreatChevronRuntimeResources();
 
             SetRootVisible(false);
@@ -586,7 +691,31 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
+            UnregisterUiService();
+            DisposeAcousticRadarRuntimeResources();
             DisposeThreatChevronRuntimeResources();
+        }
+
+        private void TryRegisterUiService()
+        {
+            if (!Application.isPlaying || _ownsGlobalUiSlot)
+                return;
+
+            IUIService current = GlobalRegistry.UI;
+            if (current != null && !ReferenceEquals(current, this))
+                return;
+
+            GlobalRegistry.RegisterUIService(this);
+            _ownsGlobalUiSlot = true;
+        }
+
+        private void UnregisterUiService()
+        {
+            if (!_ownsGlobalUiSlot)
+                return;
+
+            GlobalRegistry.UnregisterUIService(this);
+            _ownsGlobalUiSlot = false;
         }
 
 #if UNITY_EDITOR
@@ -595,6 +724,121 @@ namespace Hecton8.UI
             _layoutBuilt = false;
             InvalidateVisualCaches();
             RebuildLocalizationCache();
+
+            if (!Application.isPlaying && isActiveAndEnabled && keepVisibleInEditMode)
+            {
+                EditorApplication.delayCall -= HandleDelayedEditModeRefresh;
+                EditorApplication.delayCall += HandleDelayedEditModeRefresh;
+            }
+        }
+
+        private void HandleDelayedEditModeRefresh()
+        {
+            EditorApplication.delayCall -= HandleDelayedEditModeRefresh;
+            if (this == null || Application.isPlaying || !isActiveAndEnabled || !keepVisibleInEditMode)
+                return;
+
+            NormalizeCanvas();
+        }
+
+        private void OnDrawGizmos()
+        {
+            if (!enabled)
+                return;
+
+            Camera previewCamera = projectionCamera;
+            if (previewCamera == null)
+                previewCamera = SceneView.lastActiveSceneView != null ? SceneView.lastActiveSceneView.camera : null;
+
+            if (previewCamera == null)
+                return;
+
+            Vector2 referenceResolution = ResolveUiReferenceResolution();
+            if (referenceResolution.x <= 0f || referenceResolution.y <= 0f)
+                return;
+
+            float planeDistance = projectionCamera != null
+                ? ResolveProjectionPlaneDistance()
+                : Mathf.Max(previewCamera.nearClipPlane + ProjectionNearClipSafetyPaddingMeters, ProjectionNearClipSafetyPaddingMeters);
+            float halfFovRadians = Mathf.Max(0.001f, previewCamera.fieldOfView * Mathf.Deg2Rad * 0.5f);
+            float frustumHalfHeight = Mathf.Tan(halfFovRadians) * planeDistance;
+            float frustumHalfWidth = frustumHalfHeight * Mathf.Max(0.0001f, previewCamera.aspect);
+            float worldScale = Mathf.Max(0.000001f, (frustumHalfHeight * 2f) / referenceResolution.y);
+
+            Transform cameraTransform = previewCamera.transform;
+            Vector3 planeCenter = cameraTransform.position + cameraTransform.forward * planeDistance;
+            Vector3 frustumRight = cameraTransform.right * frustumHalfWidth;
+            Vector3 frustumUp = cameraTransform.up * frustumHalfHeight;
+            DrawGizmoQuad(planeCenter, frustumRight, frustumUp, s_gizmoProjectionPlaneColor, false);
+
+            float canvasHalfWidth = referenceResolution.x * worldScale * 0.5f;
+            float canvasHalfHeight = referenceResolution.y * worldScale * 0.5f;
+            Vector3 canvasRight = cameraTransform.right * canvasHalfWidth;
+            Vector3 canvasUp = cameraTransform.up * canvasHalfHeight;
+            DrawGizmoQuad(planeCenter, canvasRight, canvasUp, s_gizmoCanvasBoundsColor, false);
+
+            DrawGizmoHudElement(planeCenter, cameraTransform.right, cameraTransform.up, worldScale, headerOffset, new Vector2(620f, 84f), "HEADER");
+            DrawGizmoHudElement(planeCenter, cameraTransform.right, cameraTransform.up, worldScale, telemetryOffset, telemetrySize, "TELEMETRY");
+            DrawGizmoHudElement(planeCenter, cameraTransform.right, cameraTransform.up, worldScale, gaugeClusterOffset, gaugeClusterSize, "GAUGES");
+            DrawGizmoHudElement(planeCenter, cameraTransform.right, cameraTransform.up, worldScale, statusOffset, new Vector2(420f, 24f), "STATUS");
+            DrawGizmoHudElement(planeCenter, cameraTransform.right, cameraTransform.up, worldScale, quickbarOffset, quickbarSize, "QUICKBAR");
+            DrawGizmoHudElement(planeCenter, cameraTransform.right, cameraTransform.up, worldScale, reticleOffset, new Vector2(22f, 22f), "RETICLE");
+        }
+
+        private static void DrawGizmoHudElement(
+            Vector3 planeCenter,
+            Vector3 localRight,
+            Vector3 localUp,
+            float worldScale,
+            Vector2 pixelOffset,
+            Vector2 pixelSize,
+            string label)
+        {
+            Vector3 centerWorld =
+                planeCenter +
+                (localRight * (pixelOffset.x * worldScale)) +
+                (localUp * (pixelOffset.y * worldScale));
+            Vector3 halfRight = localRight * (pixelSize.x * worldScale * 0.5f);
+            Vector3 halfUp = localUp * (pixelSize.y * worldScale * 0.5f);
+
+            DrawGizmoQuad(centerWorld, halfRight, halfUp, s_gizmoCanvasBoundsColor, true);
+            Handles.color = s_gizmoTextColor;
+            Handles.Label(centerWorld, label, ResolveGizmoLabelStyle());
+        }
+
+        private static void DrawGizmoQuad(Vector3 center, Vector3 halfRight, Vector3 halfUp, Color lineColor, bool drawFillCross)
+        {
+            Vector3 bottomLeft = center - halfRight - halfUp;
+            Vector3 bottomRight = center + halfRight - halfUp;
+            Vector3 topRight = center + halfRight + halfUp;
+            Vector3 topLeft = center - halfRight + halfUp;
+
+            Gizmos.color = lineColor;
+            Gizmos.DrawLine(bottomLeft, bottomRight);
+            Gizmos.DrawLine(bottomRight, topRight);
+            Gizmos.DrawLine(topRight, topLeft);
+            Gizmos.DrawLine(topLeft, bottomLeft);
+
+            if (!drawFillCross)
+                return;
+
+            Gizmos.color = s_gizmoElementFillColor;
+            Gizmos.DrawLine(bottomLeft, topRight);
+            Gizmos.DrawLine(bottomRight, topLeft);
+        }
+
+        private static GUIStyle ResolveGizmoLabelStyle()
+        {
+            if (s_gizmoLabelStyle != null)
+                return s_gizmoLabelStyle;
+
+            s_gizmoLabelStyle = new GUIStyle(EditorStyles.miniLabel)
+            {
+                alignment = TextAnchor.MiddleCenter,
+                fontSize = 10
+            };
+            s_gizmoLabelStyle.normal.textColor = s_gizmoTextColor;
+            return s_gizmoLabelStyle;
         }
 
         [ContextMenu("Rebuild UI")]
@@ -621,6 +865,8 @@ namespace Hecton8.UI
             if (!_layoutBuilt || _root == null || targetCanvas == null)
                 return;
 
+            RefreshAcousticRadarPayload();
+            _threatChevronPulseTime += Mathf.Max(0f, Time.unscaledDeltaTime);
             RefreshVisuals(deltaTime);
         }
 
@@ -792,9 +1038,27 @@ namespace Hecton8.UI
             if (targetCanvas == null)
                 targetCanvas = ResolveTargetCanvas();
 
+            IPlayerInventoryService inventoryService = GlobalRegistry.PlayerInventory;
+            if (!ReferenceEquals(_inventoryService, inventoryService))
+            {
+                _inventoryService = inventoryService;
+                _playerInventory = null;
+                _itemCatalog = null;
+                _lastInventoryVersion = -1;
+                InvalidateQuickbarSlotHashCache();
+            }
+
+            if (_inventoryService != null)
+            {
+                _playerInventory = _inventoryService.Inventory;
+                _itemCatalog = _playerInventory != null ? _playerInventory.ItemCatalog : null;
+                if (_toolManager == null)
+                    _toolManager = _inventoryService.ToolManager;
+            }
+
             Transform playerRoot = null;
             bool hasPlayerRoot = false;
-            if (survival == null || playerMovement == null || flashlight == null || underwaterVisuals == null)
+            if (survival == null || playerMovement == null || flashlight == null || underwaterVisuals == null || _toolManager == null)
                 hasPlayerRoot = SceneBootstrap.TryGetCurrentPlayerTransform(out playerRoot);
 
             if (projectionCamera == null)
@@ -868,6 +1132,13 @@ namespace Hecton8.UI
                 if (playerContext != null)
                     underwaterVisuals = playerContext.UnderwaterVisuals;
             }
+
+            if (_toolManager == null)
+            {
+                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                if (playerContext != null)
+                    _toolManager = playerContext.ToolManager;
+            }
         }
 
         private bool NeedsAutoResolve()
@@ -878,7 +1149,10 @@ namespace Hecton8.UI
                 || survival == null
                 || playerMovement == null
                 || flashlight == null
-                || underwaterVisuals == null;
+                || underwaterVisuals == null
+                || _toolManager == null
+                || _playerInventory == null
+                || _itemCatalog == null;
         }
 
         private static float GetAutoResolveNow()
@@ -1213,11 +1487,119 @@ namespace Hecton8.UI
                 _threatChevronMaterial = new Material(threatChevronShader)
                 {
                     name = "HUD_ThreatChevron_Runtime"
-                }; // COLD ALLOC: Material[1] — instanced HUD threat-chevron material — owner: SuitHUDV4CanvasOverlay
+                }; // COLD ALLOC: Material[1] â€” instanced HUD threat-chevron material â€” owner: SuitHUDV4CanvasOverlay
             }
 
             if (!_threatChevronMatrices.IsCreated)
                 _threatChevronMatrices = new NativeArray<Matrix4x4>(MaxThreatChevronCount, Allocator.Persistent);
+        }
+
+        private void EnsureAcousticRadarRuntimeResources()
+        {
+            if (!Application.isPlaying)
+                return;
+
+#if UNITY_EDITOR
+            if (acousticRadarShader == null)
+                acousticRadarShader = AssetDatabase.LoadAssetAtPath<Shader>(AcousticRadarShaderPath);
+#endif
+
+            if (_acousticRadarMaterial == null && acousticRadarShader != null)
+            {
+                _acousticRadarMaterial = new Material(acousticRadarShader)
+                {
+                    name = "HUD_AcousticRadar_Runtime"
+                }; // COLD ALLOC: Material[1] â€” passive acoustic visor overlay material â€” owner: SuitHUDV4CanvasOverlay
+            }
+
+            if (_acousticRadarOverlay != null && _acousticRadarMaterial != null && _acousticRadarOverlay.material != _acousticRadarMaterial)
+                _acousticRadarOverlay.material = _acousticRadarMaterial;
+        }
+
+        private void DisposeAcousticRadarRuntimeResources()
+        {
+            if (_acousticRadarOverlay != null && _acousticRadarOverlay.material == _acousticRadarMaterial)
+                _acousticRadarOverlay.material = null;
+
+            if (_acousticRadarMaterial != null)
+            {
+                Destroy(_acousticRadarMaterial);
+                _acousticRadarMaterial = null;
+            }
+
+            if (_acousticRadarTexture != null)
+            {
+                Destroy(_acousticRadarTexture);
+                _acousticRadarTexture = null;
+            }
+
+            _acousticRadarResolution = 0;
+            _acousticRadarPeakIntensity = 0f;
+        }
+
+        private void RefreshAcousticRadarPayload()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            EnsureAcousticRadarRuntimeResources();
+            if (_acousticRadarMaterial == null)
+                return;
+
+            if (_spatialAudioManager == null && !SpatialAudioManager.TryGetInstance(out _spatialAudioManager))
+                return;
+
+            if (_spatialAudioManager == null ||
+                !_spatialAudioManager.TryGetAcousticRadarPayload(out NativeArray<float> radialIntensityBins, out int radialResolution) ||
+                !radialIntensityBins.IsCreated ||
+                radialResolution <= 0)
+            {
+                _acousticRadarPeakIntensity = 0f;
+                return;
+            }
+
+            if (!EnsureAcousticRadarTexture(radialResolution))
+                return;
+
+            _acousticRadarTexture.SetPixelData(radialIntensityBins, 0);
+            _acousticRadarTexture.Apply(false, false);
+            _acousticRadarMaterial.SetTexture(_AcousticRadarTexId, _acousticRadarTexture);
+
+            float peakIntensity = 0f;
+            int sampleCount = math.min(radialIntensityBins.Length, radialResolution);
+            for (int i = 0; i < sampleCount; i++)
+            {
+                float sample = radialIntensityBins[i];
+                if (sample > peakIntensity)
+                    peakIntensity = sample;
+            }
+
+            _acousticRadarPeakIntensity = Mathf.Clamp01(peakIntensity);
+        }
+
+        private bool EnsureAcousticRadarTexture(int radialResolution)
+        {
+            if (radialResolution <= 0)
+                return false;
+
+            if (_acousticRadarTexture != null && _acousticRadarResolution == radialResolution)
+                return true;
+
+            if (_acousticRadarTexture != null)
+            {
+                Destroy(_acousticRadarTexture);
+                _acousticRadarTexture = null;
+            }
+
+            _acousticRadarTexture = new Texture2D(radialResolution, 1, TextureFormat.RFloat, false, true)
+            {
+                name = "HUD_AcousticRadar_Runtime",
+                wrapMode = TextureWrapMode.Clamp,
+                filterMode = FilterMode.Bilinear
+            }; // COLD ALLOC: Texture2D[radialResolution x 1] â€” passive acoustic visor ring upload target â€” owner: SuitHUDV4CanvasOverlay
+            _acousticRadarTexture.Apply(false, false);
+            _acousticRadarResolution = radialResolution;
+            return true;
         }
 
         private void DisposeThreatChevronRuntimeResources()
@@ -1349,24 +1731,34 @@ namespace Hecton8.UI
             if (visibleCount <= 0)
                 return;
 
-            _threatChevronMaterial.SetColor(_ThreatChevronBaseColorId, threatChevronColor);
             _threatChevronMaterial.SetFloat(_ThreatChevronFlickerFrequencyId, Mathf.Max(0f, threatChevronFlickerFrequency));
             _threatChevronMaterial.SetFloat(_ThreatChevronFlickerIntensityId, Mathf.Clamp01(threatChevronFlickerIntensity));
-            _threatChevronMaterial.SetFloat(_ThreatChevronFillAlphaId, Mathf.Clamp01(threatChevronFillAlpha));
 
-            Graphics.DrawMeshInstanced(
-                _threatChevronMesh,
-                0,
-                _threatChevronMaterial,
-                _threatChevronMatrixMirror,
-                visibleCount,
-                null,
-                ShadowCastingMode.Off,
-                false,
-                HudInternalLayerIndex,
-                projectionCamera,
-                LightProbeUsage.Off,
-                null);
+            for (int visibleIndex = 0; visibleIndex < visibleCount; visibleIndex++)
+            {
+                _threatChevronSingleDrawMirror[0] = _threatChevronMatrixMirror[visibleIndex];
+                float alpha01 = Mathf.Clamp01(_threatChevronAlphaMirror[visibleIndex]);
+                float pulse01 = 0.74f + (0.26f * (0.5f + (0.5f * Mathf.Sin((_threatChevronPulseTime * threatChevronFlickerFrequency * 0.75f) + (visibleIndex * 0.91f)))));
+                alpha01 *= pulse01;
+                Color chevronColor = threatChevronColor;
+                chevronColor.a *= alpha01;
+                _threatChevronMaterial.SetColor(_ThreatChevronBaseColorId, chevronColor);
+                _threatChevronMaterial.SetFloat(_ThreatChevronFillAlphaId, Mathf.Clamp01(threatChevronFillAlpha) * alpha01);
+
+                Graphics.DrawMeshInstanced(
+                    _threatChevronMesh,
+                    0,
+                    _threatChevronMaterial,
+                    _threatChevronSingleDrawMirror,
+                    1,
+                    null,
+                    ShadowCastingMode.Off,
+                    false,
+                    HudInternalLayerIndex,
+                    projectionCamera,
+                    LightProbeUsage.Off,
+                    null);
+            }
         }
 
         private int BuildThreatChevronMatrices()
@@ -1398,13 +1790,15 @@ namespace Hecton8.UI
                     safeHalfHeight,
                     chevronScaleWorld,
                     _threatChevronStates[i],
-                    out Matrix4x4 matrix))
+                    out Matrix4x4 matrix,
+                    out float alpha01))
                 {
                     continue;
                 }
 
                 _threatChevronMatrices[visibleCount] = matrix;
                 _threatChevronMatrixMirror[visibleCount] = matrix;
+                _threatChevronAlphaMirror[visibleCount] = alpha01;
                 visibleCount++;
             }
 
@@ -1418,9 +1812,11 @@ namespace Hecton8.UI
             float safeHalfHeight,
             float chevronScaleWorld,
             ThreatChevronState threatState,
-            out Matrix4x4 matrix)
+            out Matrix4x4 matrix,
+            out float alpha01)
         {
             matrix = default;
+            alpha01 = 0f;
             Vector3 localThreatPosition = cameraTransform.InverseTransformPoint(threatState.WorldPosition);
             bool behind = localThreatPosition.z <= 0.001f;
             if (behind)
@@ -1453,14 +1849,52 @@ namespace Hecton8.UI
             float rollDegrees = Mathf.Atan2(direction2D.y, direction2D.x) * Mathf.Rad2Deg;
             Quaternion worldRotation = cameraTransform.rotation * Quaternion.Euler(0f, 0f, rollDegrees);
             float behindFade = behind ? 0.35f : 1f;
+            float threatFade = Mathf.Clamp01(Mathf.InverseLerp(threatChevronThreshold, 1f, threatState.Threat01));
+            float edgeDistance01 = Mathf.Clamp01(Mathf.Max(
+                Mathf.Abs(clampedPlanePosition.x) / Mathf.Max(0.0001f, safeHalfWidth),
+                Mathf.Abs(clampedPlanePosition.y) / Mathf.Max(0.0001f, safeHalfHeight)));
+            float edgeFade = Mathf.Lerp(0.72f, 1f, edgeDistance01);
             float threatScale = Mathf.Lerp(0.72f, 1.15f, Mathf.Clamp01(threatState.Threat01)) * behindFade;
             float rotationScaleBias = 1f + (Mathf.Abs(signedAngleDegrees) / 180f) * 0.04f;
             Vector3 worldScale = new Vector3(
                 chevronScaleWorld * threatScale * rotationScaleBias,
                 chevronScaleWorld * threatScale,
                 chevronScaleWorld * threatScale);
+            alpha01 = Mathf.Clamp01(Mathf.Max(0.16f, threatFade * edgeFade * behindFade));
             matrix = Matrix4x4.TRS(worldPosition, worldRotation, worldScale);
             return true;
+        }
+
+        private void ApplyAcousticRadarVisuals(Color primary, Color warning, float corruptionIntensity)
+        {
+            if (_acousticRadarOverlay == null)
+                return;
+
+            EnsureAcousticRadarRuntimeResources();
+            if (_acousticRadarMaterial == null)
+            {
+                _acousticRadarOverlay.enabled = false;
+                return;
+            }
+
+            if (_acousticRadarOverlay.material != _acousticRadarMaterial)
+                _acousticRadarOverlay.material = _acousticRadarMaterial;
+
+            float overlayOpacity = Mathf.Clamp01(acousticRadarOpacity * Mathf.Lerp(0.2f, 1f, _acousticRadarPeakIntensity));
+            bool visible = overlayOpacity > 0.001f && _acousticRadarPeakIntensity > 0.001f;
+            _acousticRadarOverlay.enabled = visible;
+            if (!visible)
+                return;
+
+            _acousticRadarMaterial.SetColor(_AcousticRadarPrimaryColorId, Alpha(primary, 0.92f));
+            _acousticRadarMaterial.SetColor(_AcousticRadarWarningColorId, Alpha(warning, 0.98f));
+            _acousticRadarMaterial.SetFloat(_AcousticRadarOpacityId, overlayOpacity);
+            _acousticRadarMaterial.SetFloat(_AcousticRadarGlitchId, Mathf.Clamp01(acousticRadarGlitchStrength + corruptionIntensity * 0.42f));
+            _acousticRadarMaterial.SetFloat(_AcousticRadarInnerEdgeId, Mathf.Clamp(acousticRadarInnerEdge, 0.05f, 0.95f));
+            _acousticRadarMaterial.SetFloat(_AcousticRadarWaveAmplitudeId, Mathf.Max(0f, acousticRadarWaveAmplitude));
+            _acousticRadarMaterial.SetFloat(_AcousticRadarBandThicknessId, Mathf.Clamp(acousticRadarBandThickness, 0.01f, 0.49f));
+            _acousticRadarMaterial.SetFloat(_AcousticRadarPulseFrequencyId, Mathf.Max(0f, acousticRadarPulseFrequency));
+            _acousticRadarMaterial.SetFloat(_AcousticRadarRadarIntensityId, _acousticRadarPeakIntensity);
         }
 
         private static Vector2 ClampToThreatBounds(Vector2 projectedPlanePosition, float safeHalfWidth, float safeHalfHeight)
@@ -1577,6 +2011,10 @@ namespace Hecton8.UI
             _biosBackdrop.raycastTarget = false;
             _biosBackdrop.color = new Color(0f, 0f, 0f, 0f);
 
+            _acousticRadarOverlay = CreateImage("AcousticRadarOverlay", _root, Color.white);
+            Stretch(_acousticRadarOverlay.rectTransform, 0f, 0f, 0f, 0f);
+            _acousticRadarOverlay.raycastTarget = false;
+
             _ornamentRoot = CreateRect("OrnamentRoot", _root);
             Stretch(_ornamentRoot, 0f, 0f, 0f, 0f);
 
@@ -1690,18 +2128,26 @@ namespace Hecton8.UI
             _oxygenGauge = CreateGauge("Gauge_O2", _gaugeClusterRoot, new Vector2(-resolvedGaugeColumnSpacing, 0f), GetOxygenIconSprite(), _HudOxygenKeyHash);
             _healthGauge = CreateGauge("Gauge_HLT", _gaugeClusterRoot, Vector2.zero, GetHealthIconSprite(), _HudHullKeyHash);
             _powerGauge = CreateGauge("Gauge_PWR", _gaugeClusterRoot, new Vector2(resolvedGaugeColumnSpacing, 0f), GetEnergyIconSprite(), _HudPowerKeyHash);
+
+            _quickbarRoot = CreateRect("QuickbarRoot", _root);
+            Anchor(_quickbarRoot, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), quickbarOffset, quickbarSize);
+            _quickbarCanvasGroup = EnsureCanvasGroup(_quickbarRoot);
+            BuildQuickbarHierarchy(_quickbarRoot);
+
             EnsureIsolatedDynamicCanvas(_depthLabel.rectTransform);
             EnsureIsolatedDynamicCanvas(_telemetrySupplementRoot);
             EnsureIsolatedDynamicCanvas(_statusLabel.rectTransform);
             EnsureIsolatedDynamicCanvas(_oxygenGauge.Root);
             EnsureIsolatedDynamicCanvas(_healthGauge.Root);
             EnsureIsolatedDynamicCanvas(_powerGauge.Root);
+            EnsureIsolatedDynamicCanvas(_quickbarRoot);
 
             _ornamentCanvasGroup = EnsureCanvasGroup(_ornamentRoot);
             _headerCanvasGroup = EnsureCanvasGroup(_headerRoot);
             _telemetryChromeCanvasGroup = EnsureCanvasGroup(_telemetryChromeRoot);
             _telemetrySupplementCanvasGroup = EnsureCanvasGroup(_telemetrySupplementRoot);
             _statusCanvasGroup = EnsureCanvasGroup(_statusLabel.rectTransform);
+            _quickbarCanvasGroup = EnsureCanvasGroup(_quickbarRoot);
 
             _layoutBuilt = true;
         }
@@ -1832,6 +2278,7 @@ namespace Hecton8.UI
             SetCanvasGroupVisible(_telemetryChromeCanvasGroup, !biosRecoveryMode);
             SetCanvasGroupVisible(_telemetrySupplementCanvasGroup, !biosRecoveryMode);
             SetCanvasGroupVisible(_statusCanvasGroup, true);
+            SetCanvasGroupVisible(_quickbarCanvasGroup, true);
 
             if (_oxygenGauge.CanvasGroup != null)
                 SetCanvasGroupVisible(_oxygenGauge.CanvasGroup, true);
@@ -1908,6 +2355,7 @@ namespace Hecton8.UI
             _lastDepth = depth;
             ApplySectionVisibility(_biosRecoveryMode);
             ApplyBiosBackdrop(_biosRecoveryMode);
+            ApplyAcousticRadarVisuals(pulsedPrimary, pulsedWarning, displayCorruptionIntensity);
             ApplyStaticStyleIfNeeded(primary, secondary, dim, warning);
             ApplyStressPulseStyle(primary, warning, _biosRecoveryMode ? 0f : stressPulse);
 
@@ -2022,6 +2470,7 @@ namespace Hecton8.UI
             UpdateGauge(ref _oxygenGauge, oxygen, oxygenCurrent, oxygenAccent, pulsedDim, pulsedWarning, localizedRtl, hullStressWhisperBuffer, hullStressWhisperLength, hullStressWhisperVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 401);
             UpdateGauge(ref _healthGauge, health, healthCurrent, healthAccent, pulsedDim, pulsedWarning, localizedRtl, hullStressWhisperBuffer, hullStressWhisperLength, hullStressWhisperVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 503);
             UpdateGauge(ref _powerGauge, power, energyCurrent, energyAccent, pulsedDim, pulsedWarning, localizedRtl, hullStressWhisperBuffer, hullStressWhisperLength, hullStressWhisperVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 607);
+            RefreshQuickbarVisuals(pulsedPrimary, pulsedDim, pulsedWarning);
         }
 
         private void RefreshDepthSignalSubscription()
@@ -2495,6 +2944,234 @@ namespace Hecton8.UI
             return refs;
         }
 
+        private void BuildQuickbarHierarchy(RectTransform parent)
+        {
+            if (parent == null)
+                return;
+
+            float resolvedSlotSize = Mathf.Max(36f, quickbarSlotSize);
+            float resolvedSlotGap = Mathf.Max(2f, quickbarSlotGap);
+            float totalWidth = (QuickbarSlotCount * resolvedSlotSize) + ((QuickbarSlotCount - 1) * resolvedSlotGap);
+            float startX = (-totalWidth * 0.5f) + (resolvedSlotSize * 0.5f);
+
+            for (int slotIndex = 0; slotIndex < QuickbarSlotCount; slotIndex++)
+            {
+                QuickbarSlotRefs refs = new QuickbarSlotRefs();
+                refs.Root = CreateRect("QuickbarSlot_" + slotIndex, parent);
+                Anchor(
+                    refs.Root,
+                    new Vector2(0.5f, 0.5f),
+                    new Vector2(0.5f, 0.5f),
+                    new Vector2(startX + (slotIndex * (resolvedSlotSize + resolvedSlotGap)), 0f),
+                    new Vector2(resolvedSlotSize, resolvedSlotSize));
+
+                refs.Backdrop = CreateImage("Backdrop", refs.Root, new Color(0.04f, 0.1f, 0.12f, 0.55f));
+                Stretch(refs.Backdrop.rectTransform, 0f, 0f, 0f, 0f);
+                refs.Backdrop.raycastTarget = false;
+
+                refs.Accent = CreateImage("Accent", refs.Root, new Color(0.46f, 0.98f, 0.94f, 0f));
+                Anchor(refs.Accent.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 2f), new Vector2(resolvedSlotSize - 8f, 2f));
+                refs.Accent.raycastTarget = false;
+
+                RectTransform iconRect = CreateRect("Icon", refs.Root);
+                Stretch(iconRect, 7f, 7f, 7f, 7f);
+                refs.Icon = iconRect.gameObject.AddComponent<Image>();
+                refs.Icon.preserveAspect = true;
+                refs.Icon.raycastTarget = false;
+                refs.Icon.material = null;
+                refs.Icon.maskable = false;
+                refs.Icon.color = new Color(1f, 1f, 1f, 0f);
+
+                refs.Key = CreateText("Key", refs.Root, 10f, FontStyles.Bold, TextAlignmentOptions.TopLeft, 0.45f, ResolveLabelFontAsset());
+                Anchor(refs.Key.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(9f, -7f), new Vector2(14f, 12f));
+                ApplyHudCharArray(refs.Key, ResolveQuickbarKeyBuffer(slotIndex), 1);
+
+                _quickbarSlots[slotIndex] = refs;
+            }
+        }
+
+        private static char[] ResolveQuickbarKeyBuffer(int slotIndex)
+        {
+            switch (slotIndex)
+            {
+                case 0:
+                    return s_quickbarSlotOneChars;
+                case 1:
+                    return s_quickbarSlotTwoChars;
+                case 2:
+                    return s_quickbarSlotThreeChars;
+                case 3:
+                    return s_quickbarSlotFourChars;
+                default:
+                    return s_emptyHudChars;
+            }
+        }
+
+        private void RefreshQuickbarVisuals(Color primary, Color dim, Color warning)
+        {
+            if (_toolManager == null || _quickbarSlots == null)
+                return;
+
+            if (_playerInventory != null && _lastInventoryVersion != _playerInventory.InventoryVersion)
+            {
+                _lastInventoryVersion = _playerInventory.InventoryVersion;
+                InvalidateQuickbarSlotHashCache();
+            }
+
+            int activeSlot = _toolManager.CurrentSlotIndex;
+            for (int slotIndex = 0; slotIndex < QuickbarSlotCount; slotIndex++)
+                RefreshQuickbarSlotVisual(slotIndex, activeSlot, primary, dim, warning);
+        }
+
+        private void RefreshQuickbarSlotVisual(int slotIndex, int activeSlot, Color primary, Color dim, Color warning)
+        {
+            if ((uint)slotIndex >= (uint)_quickbarSlots.Length)
+                return;
+
+            QuickbarSlotRefs refs = _quickbarSlots[slotIndex];
+            if (refs.Root == null)
+                return;
+
+            GameObject prefab = _toolManager.GetAssignedToolPrefab(slotIndex);
+            int itemHashId = ResolveQuickbarSlotHash(slotIndex, prefab);
+            bool hasRuntimeDescriptor = TryResolveQuickbarRuntimeDescriptor(itemHashId, out _);
+            bool available = itemHashId != 0 && IsInventoryHashAvailable(itemHashId);
+            if (!available)
+                available = _toolManager.IsToolAvailableInSlot(slotIndex);
+
+            Sprite desiredSprite = ResolveQuickbarSlotSprite(itemHashId, hasRuntimeDescriptor);
+            bool active = slotIndex == activeSlot;
+            Color backdropColor = active
+                ? new Color(primary.r, primary.g, primary.b, 0.24f)
+                : new Color(0.04f, 0.1f, 0.12f, 0.55f);
+            Color accentColor = active
+                ? new Color(primary.r, primary.g, primary.b, 0.95f)
+                : new Color(primary.r, primary.g, primary.b, 0.18f);
+            Color keyColor = active ? Alpha(primary, 0.9f) : Alpha(dim, 0.48f);
+            Color iconColor = desiredSprite == null
+                ? new Color(1f, 1f, 1f, 0f)
+                : (available ? Color.white : new Color(1f, 1f, 1f, 0.22f));
+            if (!available && active)
+                accentColor = Alpha(warning, 0.68f);
+
+            if (refs.CachedBackdropColor != backdropColor && refs.Backdrop != null)
+            {
+                refs.Backdrop.color = backdropColor;
+                refs.CachedBackdropColor = backdropColor;
+            }
+
+            if (refs.CachedAccentColor != accentColor && refs.Accent != null)
+            {
+                refs.Accent.color = accentColor;
+                refs.CachedAccentColor = accentColor;
+            }
+
+            if (refs.CachedKeyColor != keyColor && refs.Key != null)
+            {
+                refs.Key.color = keyColor;
+                refs.CachedKeyColor = keyColor;
+            }
+
+            if (!ReferenceEquals(refs.CachedIconSprite, desiredSprite) && refs.Icon != null)
+            {
+                refs.Icon.sprite = desiredSprite;
+                refs.CachedIconSprite = desiredSprite;
+            }
+
+            bool iconVisible = desiredSprite != null;
+            if (refs.CachedIconVisible != iconVisible || refs.CachedIconColor != iconColor)
+            {
+                refs.Icon.color = iconColor;
+                refs.CachedIconVisible = iconVisible;
+                refs.CachedIconColor = iconColor;
+            }
+
+            refs.CachedAvailable = available;
+            refs.CachedActive = active;
+            _quickbarSlots[slotIndex] = refs;
+        }
+
+        private void InvalidateQuickbarSlotHashCache()
+        {
+            for (int slotIndex = 0; slotIndex < QuickbarSlotCount; slotIndex++)
+            {
+                _quickbarSlotHashCache[slotIndex] = 0;
+                _quickbarSlotHashResolved[slotIndex] = false;
+                _quickbarSlotPrefabCache[slotIndex] = null;
+            }
+        }
+
+        private int ResolveQuickbarSlotHash(int slotIndex, GameObject prefab)
+        {
+            if ((uint)slotIndex >= (uint)QuickbarSlotCount)
+                return 0;
+
+            if (!ReferenceEquals(_quickbarSlotPrefabCache[slotIndex], prefab))
+            {
+                _quickbarSlotHashResolved[slotIndex] = false;
+                _quickbarSlotHashCache[slotIndex] = 0;
+                _quickbarSlotPrefabCache[slotIndex] = prefab;
+            }
+
+            if (_quickbarSlotHashResolved[slotIndex])
+                return _quickbarSlotHashCache[slotIndex];
+
+            int itemHashId = 0;
+            if (prefab != null &&
+                prefab.TryGetComponent(out PlayerTool tool) &&
+                tool.ToolData != null)
+            {
+                string persistentId = tool.ToolData.PersistentId;
+                if (!string.IsNullOrWhiteSpace(persistentId))
+                    itemHashId = LocHash.Compute(persistentId);
+            }
+
+            _quickbarSlotHashCache[slotIndex] = itemHashId;
+            _quickbarSlotHashResolved[slotIndex] = true;
+            return itemHashId;
+        }
+
+        private bool TryResolveQuickbarRuntimeDescriptor(int itemHashId, out ItemCatalog.ItemRuntimeDescriptor descriptor)
+        {
+            descriptor = default;
+            return itemHashId != 0 &&
+                   _itemCatalog != null &&
+                   _itemCatalog.TryGetRuntimeDescriptor(itemHashId, out descriptor);
+        }
+
+        private Sprite ResolveQuickbarSlotSprite(int itemHashId, bool hasRuntimeDescriptor)
+        {
+            if (!hasRuntimeDescriptor || _itemCatalog == null)
+                return null;
+
+            ItemData item = _itemCatalog.FindByHash(itemHashId);
+            return item != null ? item.icon : null;
+        }
+
+        private bool IsInventoryHashAvailable(int itemHashId)
+        {
+            if (itemHashId == 0 || _playerInventory == null)
+                return false;
+
+            InventoryGrid grid = _playerInventory.Grid;
+            if (grid == null)
+                return false;
+
+            NativeArray<int>.ReadOnly anchorHashIds = grid.AnchorHashIds;
+            NativeArray<ushort>.ReadOnly stackCounts = _playerInventory.GetStackCountsReadOnly();
+            if (!anchorHashIds.IsCreated || !stackCounts.IsCreated)
+                return false;
+
+            int anchorCount = Mathf.Min(anchorHashIds.Length, stackCounts.Length);
+            for (int anchorIndex = 0; anchorIndex < anchorCount; anchorIndex++)
+            {
+                if (anchorHashIds[anchorIndex] == itemHashId && stackCounts[anchorIndex] > 0)
+                    return true;
+            }
+
+            return false;
+        }
+
         private static Sprite GetRingFillSprite()
         {
             if (s_ringFillSprite != null)
@@ -2674,7 +3351,7 @@ namespace Hecton8.UI
                 return false;
 
             string fontName = fontAsset.name;
-            return fontName.Contains("Digit") || fontName.Contains("циф");
+            return fontName.Contains("Digit") || fontName.Contains("Ñ†Ð¸Ñ„");
         }
 
         private static Color Alpha(Color color, float alpha)
@@ -3510,7 +4187,7 @@ namespace Hecton8.UI
         public void SetRenderPathProjectionSource(bool projectionSource)
         {
             RenderPath nextPath = projectionSource ? RenderPath.ProjectionSource : RenderPath.ScreenOverlay;
-            if (renderPath == nextPath)
+            if (renderPath == nextPath && CanvasStateMatchesRequestedRenderPath(nextPath, projectionCamera))
                 return;
 
             renderPath = nextPath;
@@ -3521,13 +4198,29 @@ namespace Hecton8.UI
 
         public void SetProjectionCamera(Camera camera)
         {
-            if (projectionCamera == camera)
+            if (projectionCamera == camera && CanvasStateMatchesRequestedRenderPath(renderPath, camera))
                 return;
 
             projectionCamera = camera;
             _layoutBuilt = false;
             InvalidateVisualCaches();
             RequestRefresh();
+        }
+
+        private bool CanvasStateMatchesRequestedRenderPath(RenderPath requestedRenderPath, Camera requestedProjectionCamera)
+        {
+            Canvas canvas = ResolveTargetCanvas();
+            if (canvas == null)
+                return false;
+
+            if (requestedRenderPath == RenderPath.ProjectionSource)
+            {
+                return canvas.renderMode == RenderMode.WorldSpace &&
+                       ReferenceEquals(canvas.worldCamera, requestedProjectionCamera);
+            }
+
+            return canvas.renderMode == RenderMode.ScreenSpaceOverlay &&
+                   canvas.worldCamera == null;
         }
 
         public void CopyConfigurationFrom(SuitHUDV4CanvasOverlay source)
@@ -3569,7 +4262,13 @@ namespace Hecton8.UI
             {
                 QueueRuntimeCanvasRefresh(forceResolve: false, refreshDepthSignal: false);
                 TryRegisterRuntimeTick();
+                return;
             }
+
+            if (!isActiveAndEnabled || !keepVisibleInEditMode)
+                return;
+
+            NormalizeCanvas();
         }
 
         private void TryRegisterRuntimeTick()
@@ -3577,7 +4276,6 @@ namespace Hecton8.UI
             if (!Application.isPlaying)
                 return;
 
-            SystemDispatcher.EnsureRuntimeInstance();
             if (!_tickRegistered)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
@@ -3660,7 +4358,7 @@ namespace Hecton8.UI
     {
         private const string ContentRootName = "HectonUI_ScaledRoot";
 
-        [Header("── Scale Policy ──────────────────")]
+        [Header("â”€â”€ Scale Policy â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Reference UI resolution used by the root transform matrix.")]
         [SerializeField] private Vector2 referenceResolution = new Vector2(1600f, 900f);
         [Tooltip("CanvasScaler-compatible logarithmic width/height blend. 0 = width, 1 = height.")]
@@ -3872,7 +4570,7 @@ namespace Hecton8.UI
 
             if (_contentRoot == null)
             {
-                // COLD ALLOC: GameObject[1] — matrix-scaled HUD content root — owner: HectonUIScaler
+                // COLD ALLOC: GameObject[1] â€” matrix-scaled HUD content root â€” owner: HectonUIScaler
                 GameObject rootObject = new GameObject(ContentRootName, typeof(RectTransform));
                 rootObject.layer = canvasRoot.gameObject.layer;
                 _contentRoot = rootObject.GetComponent<RectTransform>();
@@ -3975,7 +4673,6 @@ namespace Hecton8.UI
             if (!Application.isPlaying)
                 return;
 
-            SystemDispatcher.EnsureRuntimeInstance();
             if (!_registeredToTickManager)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);

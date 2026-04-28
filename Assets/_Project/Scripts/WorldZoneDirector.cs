@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.Environment;
@@ -9,6 +10,9 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-4060)]
     public sealed class WorldZoneDirector : MonoBehaviour, ISlowTickable
     {
+        private static readonly string[] ZoneKindLabels = Enum.GetNames(typeof(WorldZoneAnchor.ZoneKind));
+        private static readonly string[] ZoneTierLabels = Enum.GetNames(typeof(WorldZoneAnchor.ZoneTier));
+
         internal static WorldZoneDirector ActiveRuntimeInstance { get; private set; }
 
         [Header("References")]
@@ -448,6 +452,18 @@ namespace Hecton8.World
             return Mathf.Clamp01(closeness * Mathf.InverseLerp(0.15f, 0.75f, secondaryWeight));
         }
 
+        private static string ResolveZoneKindLabel(WorldZoneAnchor.ZoneKind kind)
+        {
+            int index = (int)kind;
+            return (uint)index < (uint)ZoneKindLabels.Length ? ZoneKindLabels[index] : ZoneKindLabels[0];
+        }
+
+        private static string ResolveZoneTierLabel(WorldZoneAnchor.ZoneTier tier)
+        {
+            int index = (int)tier;
+            return (uint)index < (uint)ZoneTierLabels.Length ? ZoneTierLabels[index] : ZoneTierLabels[0];
+        }
+
         private void UpdateDiagnostics()
         {
             _debugZoneCount = _anchors.Count;
@@ -456,8 +472,8 @@ namespace Hecton8.World
             {
                 _debugCurrentZoneId = "zone.none";
                 _debugCurrentZoneLabel = "None";
-                _debugCurrentZoneKind = WorldZoneAnchor.ZoneKind.Generic.ToString();
-                _debugCurrentZoneTier = WorldZoneAnchor.ZoneTier.Starter.ToString();
+                _debugCurrentZoneKind = ResolveZoneKindLabel(WorldZoneAnchor.ZoneKind.Generic);
+                _debugCurrentZoneTier = ResolveZoneTierLabel(WorldZoneAnchor.ZoneTier.Starter);
                 _debugZonePlan = "None";
                 _debugExpeditionLoop = "None";
                 _debugSandboxAttraction = "None";
@@ -559,8 +575,8 @@ namespace Hecton8.World
             WorldMotivationProfile motivation = _currentZone.Profile != null ? _currentZone.Profile.motivationProfile : null;
             _debugCurrentZoneId = _currentZone.ZoneId;
             _debugCurrentZoneLabel = _currentZone.ZoneLabel;
-            _debugCurrentZoneKind = _currentZone.Kind.ToString();
-            _debugCurrentZoneTier = _currentZone.Tier.ToString();
+            _debugCurrentZoneKind = ResolveZoneKindLabel(_currentZone.Kind);
+            _debugCurrentZoneTier = ResolveZoneTierLabel(_currentZone.Tier);
             _debugZonePlan = zonePlan != null
                 ? zonePlan.planLabel
                 : "None";

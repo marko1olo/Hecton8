@@ -3296,6 +3296,7 @@ public class HectonVoxelEngine : MonoBehaviour
 
         ct.ThrowIfCancellationRequested();
         NativeArray<byte> navGridBackBuffer = default;
+        NativeArray<ushort> navGridDistanceMap = default; // COLD ALLOC: NativeArray<ushort>[TotalPts] - temporary Manhattan clearance scratch for cave-nav dilation - owner: HectonVoxelEngine build cycle
         bool navGridScheduled = false;
         JobHandle navGridHandle = default;
 
@@ -3344,12 +3345,20 @@ public class HectonVoxelEngine : MonoBehaviour
                 data.TotalPts,
                 out navGridBackBuffer))
         {
-            navGridHandle = new VoxelDynamicNavGridRuntime.PassabilityBuildJob
+            JobHandle navPassabilityHandle = new VoxelDynamicNavGridRuntime.PassabilityBuildJob
             {
                 DensityField = densityField,
                 Output = navGridBackBuffer,
                 SolidThreshold = 0f
             }.Schedule(data.TotalPts, JOB_BATCH, densityHandle);
+            navGridDistanceMap = new NativeArray<ushort>(data.TotalPts, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<ushort>[TotalPts] - temporary Manhattan clearance scratch for cave-nav dilation - owner: HectonVoxelEngine build cycle
+            navGridHandle = new VoxelDynamicNavGridRuntime.ClearanceDilationJob
+            {
+                Passability = navGridBackBuffer,
+                DistanceMap = navGridDistanceMap,
+                Dimensions = new int3(data.PtsX, data.PtsY, data.PtsZ),
+                AgentRadiusCells = VoxelDynamicNavGridRuntime.ResolveClearanceRadiusCells(data.VoxelStep)
+            }.Schedule(navPassabilityHandle);
             navGridScheduled = true;
         }
 
@@ -3370,7 +3379,28 @@ public class HectonVoxelEngine : MonoBehaviour
         JobHandle firstPhaseHandle = navGridScheduled
             ? JobHandle.CombineDependencies(mcCountHandle, navGridHandle)
             : mcCountHandle;
-        await AwaitForJobCompletionAsync(firstPhaseHandle, ct);
+        try
+        {
+            await AwaitForJobCompletionAsync(firstPhaseHandle, ct);
+        }
+        catch
+        {
+            if (navGridDistanceMap.IsCreated)
+            {
+                // COLD SYNC JOB: canceled voxel rebuild still owns TempJob scratch that must be completed before disposal.
+                firstPhaseHandle.Complete();
+                navGridDistanceMap.Dispose();
+                navGridDistanceMap = default;
+            }
+
+            throw;
+        }
+
+        if (navGridDistanceMap.IsCreated)
+        {
+            navGridDistanceMap.Dispose();
+            navGridDistanceMap = default;
+        }
         if (navGridScheduled)
             VoxelDynamicNavGridRuntime.CommitBuild(data.SourceVolume, data.SourceRuntimeStamp);
 

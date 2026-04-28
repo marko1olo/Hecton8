@@ -33,7 +33,8 @@ namespace Hecton8.SaveSystem
     {
         private const long MainThreadSnapshotBudgetMs = 50L;
         private static readonly long PreCompressionYieldBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 500L);
-        private const float IntegrityScanIntervalSeconds = 5f;
+        private const float IntegrityScanIntervalSeconds = 10f;
+        private const string EmergencyIntegrityBackupSuffix = "_integrity_emergency";
 
         // ══════════════════════════════════════════════════════════
         //  SAVE STATE
@@ -100,7 +101,13 @@ namespace Hecton8.SaveSystem
         private int _integrityPayloadLength;
         private bool _integrityScanScheduled;
         private bool _updatableRegistered;
+        private bool _emergencyBackupScheduled;
         private string _integritySlotName;
+
+        private sealed class MemoryCorruptionException : Exception
+        {
+            public MemoryCorruptionException(string message) : base(message) { }
+        }
 
         private readonly struct SaveLoadCandidate
         {
@@ -303,7 +310,7 @@ namespace Hecton8.SaveSystem
             _nextIntegrityScanTime = Time.unscaledTime + IntegrityScanIntervalSeconds;
         }
 
-        private void StageIntegrityPayload(NativeArray<byte> payloadBytes, int payloadLength, ulong expectedHash64, string slotName)
+        private unsafe void StageIntegrityPayload(NativeArray<byte> payloadBytes, int payloadLength, ulong expectedHash64, string slotName)
         {
             if (!payloadBytes.IsCreated || payloadLength <= 0 || payloadLength > payloadBytes.Length)
                 return;
@@ -347,10 +354,38 @@ namespace Hecton8.SaveSystem
 
             string slotName = string.IsNullOrEmpty(_integritySlotName) ? "active" : _integritySlotName;
             string reason = $"Active save integrity drift detected for '{slotName}'. Expected XXH3-64 {_expectedIntegrityPayloadHash64:X16}, got {computedHash64:X16}.";
-            Debug.LogError($"[SaveManager] {reason}");
+            MemoryCorruptionException exception = new MemoryCorruptionException(reason);
+            Debug.LogError($"[SaveManager] {exception.Message}");
             SaveEvents.RaiseEmergencyBackupRestoreRequested(slotName);
             SaveEvents.RaiseSaveFailed(slotName, reason);
+            ScheduleEmergencyBackup(slotName);
             _nextIntegrityScanTime = Time.unscaledTime + IntegrityScanIntervalSeconds;
+        }
+
+        private void ScheduleEmergencyBackup(string slotName)
+        {
+            if (_emergencyBackupScheduled || string.IsNullOrEmpty(slotName))
+                return;
+
+            _emergencyBackupScheduled = true;
+            _ = RunEmergencyIntegrityBackupAsync(slotName);
+        }
+
+        private async Awaitable RunEmergencyIntegrityBackupAsync(string slotName)
+        {
+            string emergencySlotName = $"{slotName}{EmergencyIntegrityBackupSuffix}";
+            try
+            {
+                await SaveGameAsync(emergencySlotName);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[SaveManager] Emergency integrity backup failed for '{emergencySlotName}': {ex.Message}");
+            }
+            finally
+            {
+                _emergencyBackupScheduled = false;
+            }
         }
 
         private void DisposeIntegrityResources()
@@ -636,6 +671,8 @@ namespace Hecton8.SaveSystem
                 Exception lastError = null;
                 List<SaveLoadCandidate> candidates = BuildLoadCandidates(slotName);
                 bool usedLegacyFormat = false;
+                ulong loadedPayloadHash64 = 0UL;
+                int loadedPayloadLength = 0;
 
                 for (int i = 0; i < candidates.Count; i++)
                 {
@@ -648,6 +685,8 @@ namespace Hecton8.SaveSystem
                         out EcosystemSectorSaveRecord[] candidateEcosystemSectors,
                         out NativeArray<byte> candidateVoxelDeltaSnapshot,
                         out SaveMetadata candidateMetadata,
+                        out ulong candidatePayloadHash64,
+                        out int candidatePayloadLength,
                         out bool candidateUsedLegacyFormat,
                         out string candidateError))
                     {
@@ -658,6 +697,8 @@ namespace Hecton8.SaveSystem
                         loadedVoxelDeltaSnapshot = candidateVoxelDeltaSnapshot;
                         loadedCandidate = candidates[i];
                         loadedMetadata = candidateMetadata;
+                        loadedPayloadHash64 = candidatePayloadHash64;
+                        loadedPayloadLength = candidatePayloadLength;
                         usedLegacyFormat = candidateUsedLegacyFormat;
                         break;
                     }
@@ -673,6 +714,7 @@ namespace Hecton8.SaveSystem
                     throw lastError ?? new Exception("No load candidate could be restored.");
 
                 await Awaitable.MainThreadAsync();
+                StageIntegrityPayload(_savePayloadBuffer, loadedPayloadLength, loadedPayloadHash64, slotName);
 
                 if (SaveDataMigration.MigrateInPlace(data, out int originalVersion, out string summary))
                 {
@@ -705,7 +747,20 @@ namespace Hecton8.SaveSystem
                 if (voxelDeltaProcessor != null && !voxelDeltaProcessor.TryLoadNativeSnapshot(loadedVoxelDeltaSnapshot, out string voxelLoadError))
                     throw new Exception(voxelLoadError);
 
-                PersistentWorldRegistry.Instance?.RestoreFromLoadedRecords(loadedWorldDeltas);
+                PersistentWorldRegistry persistentWorldRegistryForLoad = PersistentWorldRegistry.Instance;
+                if (persistentWorldRegistryForLoad != null)
+                {
+                    string loadedAbsolutePath = GetPersistentAbsolutePath(loadedCandidate.SavePath);
+                    List<SaveBinaryStorage.IndexedSectorEntryInfo> indexedSectorDirectory = new List<SaveBinaryStorage.IndexedSectorEntryInfo>(128);
+                    if (SaveBinaryStorage.TryReadIndexedPersistentWorldDirectory(loadedAbsolutePath, indexedSectorDirectory, out _, out _))
+                        persistentWorldRegistryForLoad.RestoreFromIndexedSave(loadedAbsolutePath);
+                    else
+                    {
+                        persistentWorldRegistryForLoad.DisableIndexedSavePaging();
+                        persistentWorldRegistryForLoad.RestoreFromLoadedRecords(loadedWorldDeltas);
+                    }
+                }
+
                 (GlobalRegistry.EcosystemDirector as EcosystemDirector)?.RestoreFromLoadedRecords(loadedEcosystemSectors);
 
                 string activeSceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
@@ -1163,6 +1218,8 @@ namespace Hecton8.SaveSystem
                     out EcosystemSectorSaveRecord[] candidateEcosystemSectorStates,
                     out NativeArray<byte> candidateVoxelDeltaSnapshot,
                     out SaveMetadata candidateMetadata,
+                    out _,
+                    out _,
                     out bool candidateUsedLegacyFormat,
                     out string candidateError))
                 {
@@ -1275,6 +1332,8 @@ namespace Hecton8.SaveSystem
                     out _,
                     out NativeArray<byte> candidateVoxelDeltaSnapshot,
                     out SaveMetadata _,
+                    out _,
+                    out _,
                     out bool candidateLegacyFormat,
                     out string candidateError))
                 {
@@ -1388,6 +1447,8 @@ namespace Hecton8.SaveSystem
             out EcosystemSectorSaveRecord[] ecosystemSectorStates,
             out NativeArray<byte> voxelDeltaSnapshot,
             out SaveMetadata metadata,
+            out ulong payloadHash64,
+            out int rawPayloadLength,
             out bool usedLegacyFormat,
             out string errorMessage)
         {
@@ -1397,13 +1458,15 @@ namespace Hecton8.SaveSystem
             ecosystemSectorStates = null;
             voxelDeltaSnapshot = default;
             metadata = null;
+            payloadHash64 = 0UL;
+            rawPayloadLength = 0;
             usedLegacyFormat = false;
             errorMessage = string.Empty;
 
             string absolutePath = GetPersistentAbsolutePath(candidate.SavePath);
             if (SaveBinaryStorage.IsBinaryContainer(absolutePath))
             {
-                return TryLoadBinaryCandidate(slotName, candidate, out data, out packedQuestStateWords, out persistentWorldItems, out ecosystemSectorStates, out voxelDeltaSnapshot, out metadata, out errorMessage);
+                return TryLoadBinaryCandidate(slotName, candidate, out data, out packedQuestStateWords, out persistentWorldItems, out ecosystemSectorStates, out voxelDeltaSnapshot, out metadata, out payloadHash64, out rawPayloadLength, out errorMessage);
             }
 
             errorMessage = $"Unsupported non-binary save artifact '{candidate.SavePath}'.";
@@ -1419,6 +1482,8 @@ namespace Hecton8.SaveSystem
             out EcosystemSectorSaveRecord[] ecosystemSectorStates,
             out NativeArray<byte> voxelDeltaSnapshot,
             out SaveMetadata metadata,
+            out ulong payloadHash64,
+            out int rawPayloadLength,
             out string errorMessage)
         {
             data = null;
@@ -1427,6 +1492,8 @@ namespace Hecton8.SaveSystem
             ecosystemSectorStates = null;
             voxelDeltaSnapshot = default;
             metadata = null;
+            payloadHash64 = 0UL;
+            rawPayloadLength = 0;
             errorMessage = string.Empty;
 
             AcquireReadBuffer(out NativeArray<byte> readBuffer, out bool ownsReadBuffer);
@@ -1442,8 +1509,8 @@ namespace Hecton8.SaveSystem
                     out ecosystemSectorStates,
                     out voxelDeltaSnapshot,
                     out metadata,
-                    out _,
-                    out _,
+                    out payloadHash64,
+                    out rawPayloadLength,
                     out _,
                     out errorMessage))
                 {

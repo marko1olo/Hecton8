@@ -10,6 +10,8 @@
         "Unity.Mathematics",
         "Unity.Burst",
         "Unity.Collections",
+        "Unity.Addressables",
+        "Unity.ResourceManager",
         "Unity.Profiling.Core",
         "Unity.TextMeshPro",
         "UnityEngine.UI",
@@ -30,6 +32,12 @@
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.addressables",
+            "expression": "2.7.6",
+            "define": "UNITY_ADDRESSABLES_EXIST"
+        }
+    ],
     "noEngineReferences": false
 }

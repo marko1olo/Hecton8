@@ -1,0 +1,182 @@
+#pragma kernel GenerateScatterInstances
+
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+#define HECTON_SCATTER_THREADS 64
+#define HECTON_SCATTER_FRUSTUM_PLANES 6
+
+struct ScatterInstanceGpuData
+{
+    float4 PositionScale;
+    float4 NormalRotation;
+};
+
+RWStructuredBuffer<ScatterInstanceGpuData> _HectonScatterInstances;
+AppendStructuredBuffer<uint> _HectonVisibleScatterIndices;
+Texture2D<float> _HectonScatterHeightTexture;
+Texture3D<float> _HectonCaveVoxelSdfTex;
+SamplerState sampler_HectonCaveVoxelSdfTex;
+
+int _HectonScatterHeightResolution;
+float3 _HectonScatterTerrainPosition;
+float3 _HectonScatterTerrainSize;
+float4 _HectonScatterFieldRect;
+int _HectonScatterGridResolution;
+float _HectonScatterCellSize;
+int _HectonScatterSeed;
+float4 _HectonScatterScaleRange;
+float _HectonScatterMinNormalY;
+float3 _HectonScatterCameraPosition;
+float3 _HectonScatterCameraForward;
+float _HectonScatterMaxDistance;
+float _HectonScatterPeripheralDistance;
+float _HectonScatterPeripheralDot;
+float4 _HectonScatterFrustumPlanes[HECTON_SCATTER_FRUSTUM_PLANES];
+float4 _HectonCaveVoxelHalfExtents;
+float4x4 _HectonCaveVoxelWorldToLocal;
+float _HectonCaveVoxelActive;
+
+uint HashUint(uint value)
+{
+    value ^= 2747636419u;
+    value *= 2654435769u;
+    value ^= value >> 16;
+    value *= 2654435769u;
+    value ^= value >> 16;
+    value *= 2654435769u;
+    return value;
+}
+
+float Hash01(uint value)
+{
+    return (HashUint(value) & 0x00FFFFFFu) * rcp(16777215.0);
+}
+
+float2 Hash02(uint value)
+{
+    return float2(Hash01(value), Hash01(value ^ 0x68bc21ebu));
+}
+
+float SampleHeight01(float2 uv)
+{
+    uv = saturate(uv);
+    float resolutionMinusOne = max((float)_HectonScatterHeightResolution - 1.0, 1.0);
+    float2 sampleCoord = uv * resolutionMinusOne;
+    int2 pixelMin = (int2)floor(sampleCoord);
+    int2 pixelMax = min(pixelMin + 1, int2(_HectonScatterHeightResolution - 1, _HectonScatterHeightResolution - 1));
+    float2 fracPart = frac(sampleCoord);
+
+    float h00 = _HectonScatterHeightTexture.Load(int3(pixelMin, 0));
+    float h10 = _HectonScatterHeightTexture.Load(int3(int2(pixelMax.x, pixelMin.y), 0));
+    float h01 = _HectonScatterHeightTexture.Load(int3(int2(pixelMin.x, pixelMax.y), 0));
+    float h11 = _HectonScatterHeightTexture.Load(int3(pixelMax, 0));
+
+    float hx0 = lerp(h00, h10, fracPart.x);
+    float hx1 = lerp(h01, h11, fracPart.x);
+    return lerp(hx0, hx1, fracPart.y);
+}
+
+float3 SampleTerrainNormal(float2 uv)
+{
+    float texel = rcp(max((float)_HectonScatterHeightResolution - 1.0, 1.0));
+    float2 offsetX = float2(texel, 0.0);
+    float2 offsetZ = float2(0.0, texel);
+
+    float left = SampleHeight01(uv - offsetX);
+    float right = SampleHeight01(uv + offsetX);
+    float back = SampleHeight01(uv - offsetZ);
+    float front = SampleHeight01(uv + offsetZ);
+
+    float3 tangentX = float3(_HectonScatterTerrainSize.x * texel * 2.0, (right - left) * _HectonScatterTerrainSize.y, 0.0);
+    float3 tangentZ = float3(0.0, (front - back) * _HectonScatterTerrainSize.y, _HectonScatterTerrainSize.z * texel * 2.0);
+    return normalize(cross(tangentZ, tangentX));
+}
+
+bool IsSphereVisibleInFrustum(float3 centerWS, float radius)
+{
+    [unroll]
+    for (int planeIndex = 0; planeIndex < HECTON_SCATTER_FRUSTUM_PLANES; planeIndex++)
+    {
+        float4 plane = _HectonScatterFrustumPlanes[planeIndex];
+        if (dot(plane.xyz, centerWS) + plane.w < -radius)
+            return false;
+    }
+
+    return true;
+}
+
+float SampleCaveSignedDistance(float3 positionWS)
+{
+    if (_HectonCaveVoxelActive <= 0.5)
+        return _HectonCaveVoxelHalfExtents.w;
+
+    float3 halfExtents = max(_HectonCaveVoxelHalfExtents.xyz, float3(0.001, 0.001, 0.001));
+    float3 localPosition = mul(_HectonCaveVoxelWorldToLocal, float4(positionWS, 1.0)).xyz;
+    float3 sampleUv = localPosition / (halfExtents * 2.0) + 0.5;
+    if (any(sampleUv < 0.0) || any(sampleUv > 1.0))
+        return _HectonCaveVoxelHalfExtents.w;
+
+    float encoded = _HectonCaveVoxelSdfTex.SampleLevel(sampler_HectonCaveVoxelSdfTex, sampleUv, 0).r;
+    return lerp(-_HectonCaveVoxelHalfExtents.w, _HectonCaveVoxelHalfExtents.w, encoded);
+}
+
+[numthreads(HECTON_SCATTER_THREADS, 1, 1)]
+void GenerateScatterInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint instanceIndex = dispatchThreadId.x;
+    uint gridResolution = (uint)max(_HectonScatterGridResolution, 1);
+    uint totalCount = gridResolution * gridResolution;
+    if (instanceIndex >= totalCount)
+        return;
+
+    uint cellX = instanceIndex % gridResolution;
+    uint cellZ = instanceIndex / gridResolution;
+
+    uint baseHash = instanceIndex ^ (uint)_HectonScatterSeed;
+    float2 jitter = Hash02(baseHash);
+    float2 worldXZ = _HectonScatterFieldRect.xy + (float2(cellX, cellZ) + jitter) * _HectonScatterCellSize;
+    float2 terrainUv = float2(
+        (worldXZ.x - _HectonScatterTerrainPosition.x) / max(_HectonScatterTerrainSize.x, 0.001),
+        (worldXZ.y - _HectonScatterTerrainPosition.z) / max(_HectonScatterTerrainSize.z, 0.001));
+
+    if (any(terrainUv < 0.0) || any(terrainUv > 1.0))
+        return;
+
+    float height01 = SampleHeight01(terrainUv);
+    float3 normalWS = SampleTerrainNormal(terrainUv);
+    if (normalWS.y < _HectonScatterMinNormalY)
+        return;
+
+    float scale = lerp(_HectonScatterScaleRange.x, _HectonScatterScaleRange.y, Hash01(baseHash ^ 0x9f6abc1du));
+    float rotation = Hash01(baseHash ^ 0x42bead31u) * TWO_PI;
+    float3 positionWS = float3(
+        worldXZ.x,
+        _HectonScatterTerrainPosition.y + height01 * _HectonScatterTerrainSize.y,
+        worldXZ.y);
+
+    ScatterInstanceGpuData instanceData;
+    instanceData.PositionScale = float4(positionWS, scale);
+    instanceData.NormalRotation = float4(normalize(normalWS), rotation);
+    _HectonScatterInstances[instanceIndex] = instanceData;
+
+    float3 toCamera = positionWS - _HectonScatterCameraPosition;
+    float distanceToCamera = length(toCamera);
+    if (distanceToCamera > _HectonScatterMaxDistance || distanceToCamera <= 0.0001)
+        return;
+
+    float3 directionToSample = toCamera / distanceToCamera;
+    if (distanceToCamera > _HectonScatterPeripheralDistance &&
+        dot(directionToSample, normalize(_HectonScatterCameraForward)) < _HectonScatterPeripheralDot)
+    {
+        return;
+    }
+
+    float radius = max(scale, 0.15);
+    if (!IsSphereVisibleInFrustum(positionWS, radius))
+        return;
+
+    if (SampleCaveSignedDistance(positionWS) <= 0.0)
+        return;
+
+    _HectonVisibleScatterIndices.Append(instanceIndex);
+}

@@ -178,6 +178,7 @@ namespace Hecton8.UI
                 if (enableRightToLeft)
                     ApplyRuntimeLocalizationLayout(targetText);
                 targetText.ForceMeshUpdate(false, false);
+                LocOverflowHandler.ApplyScale(targetText, LocOverflowHandler.ResolveUniformScale(targetText));
                 _lastAppliedLanguage = language;
                 _lastAppliedRectSize = rectSize;
                 _configurationDirty = false;

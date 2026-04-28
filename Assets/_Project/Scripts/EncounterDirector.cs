@@ -92,6 +92,30 @@ namespace Hecton8.Systems.AI
         public int NewPhase;
     }
 
+    internal struct EncounterThreatAuthoringSnapshot
+    {
+        public float DroneMinIntensity;
+        public float SwarmMinIntensity;
+        public float StalkerMinIntensity;
+        public float LeviathanMinIntensity;
+        public float DroneTokenCost;
+        public float SwarmTokenCost;
+        public float StalkerTokenCost;
+        public float LeviathanTokenCost;
+        public float DroneDespawnPriorityBias;
+        public float SwarmDespawnPriorityBias;
+        public float StalkerDespawnPriorityBias;
+        public float LeviathanDespawnPriorityBias;
+        public int DroneMaxSimultaneous;
+        public int SwarmMaxSimultaneous;
+        public int StalkerMaxSimultaneous;
+        public int LeviathanMaxSimultaneous;
+        public int DroneAllowCriticalHealth;
+        public int SwarmAllowCriticalHealth;
+        public int StalkerAllowCriticalHealth;
+        public int LeviathanAllowCriticalHealth;
+    }
+
     internal sealed class EncounterDirector : IDisposable
     {
         internal const int FrustumPlaneCount = 6;
@@ -122,6 +146,7 @@ namespace Hecton8.Systems.AI
         private readonly EncounterThreatClass[] _trackedThreatClasses;
         // COLD ALLOC: float[32] — tracked encounter token costs — owner: EncounterDirector
         private readonly float[] _trackedTokenCosts;
+        private EncounterThreatAuthoringSnapshot _threatAuthoring;
 
         private JobHandle _activeJobHandle;
         private bool _jobScheduled;
@@ -144,9 +169,15 @@ namespace Hecton8.Systems.AI
             _trackedThreatClasses = new EncounterThreatClass[MaxActiveEnemies];
             _trackedTokenCosts = new float[MaxActiveEnemies];
             _candidateCount = ResolveCandidateCount();
+            _threatAuthoring = BuildDefaultThreatAuthoringSnapshot();
 
             PrecomputeCandidateDirections();
             Reset();
+        }
+
+        internal void ApplyAuthoring(EncounterProfile encounterProfile, ThreatCostTable threatCostTable)
+        {
+            _threatAuthoring = BuildThreatAuthoringSnapshot(encounterProfile, threatCostTable);
         }
 
         internal float StressLevel => _frontState[0].StressLevel;
@@ -329,7 +360,7 @@ namespace Hecton8.Systems.AI
                 token.TokenCost = _trackedTokenCosts[i];
                 token.DistSqToPlayer = math.lengthsq(position - playerPosition);
                 token.VisibilityFlags = 0;
-                token.DespawnPriority = 0f;
+                token.DespawnPriority = ResolveDespawnPriorityBias(_trackedThreatClasses[i], _threatAuthoring);
                 _enemyTokens[i] = token;
             }
         }
@@ -357,6 +388,7 @@ namespace Hecton8.Systems.AI
                 AcousticThreatLevel = math.clamp(frameContext.AcousticThreatLevel, 0f, 1f),
                 AvgFrameTimeMs = math.max(0f, frameContext.AvgFrameTimeMs),
                 SurfaceWorldY = frameContext.SurfaceWorldY,
+                ThreatAuthoring = _threatAuthoring,
                 Output = _jobOutput
             };
 
@@ -447,7 +479,7 @@ namespace Hecton8.Systems.AI
             _trackedEntityIds[slot] = entityId;
             _trackedTransforms[slot] = spawnedInstance.transform;
             _trackedThreatClasses[slot] = threatClass;
-            _trackedTokenCosts[slot] = ResolveTokenCost(threatClass);
+            _trackedTokenCosts[slot] = ResolveTokenCost(threatClass, _threatAuthoring);
         }
 
         private void UntrackEntity(int entityId)
@@ -497,7 +529,7 @@ namespace Hecton8.Systems.AI
         private void RefundFailedSpawn(EncounterThreatClass threatClass)
         {
             EncounterDirectorState state = _frontState[0];
-            state.TokenBudget = math.clamp(state.TokenBudget + ResolveTokenCost(threatClass), 0f, MaxTokenBudget);
+            state.TokenBudget = math.clamp(state.TokenBudget + ResolveTokenCost(threatClass, _threatAuthoring), 0f, MaxTokenBudget);
             _frontState[0] = state;
             _backState[0] = state;
         }
@@ -521,18 +553,106 @@ namespace Hecton8.Systems.AI
             return highTier ? HighCandidateCount : BaseCandidateCount;
         }
 
-        private static float ResolveTokenCost(EncounterThreatClass threatClass)
+        private static float ResolveTokenCost(EncounterThreatClass threatClass, EncounterThreatAuthoringSnapshot authoring)
         {
             switch (threatClass)
             {
                 case EncounterThreatClass.Leviathan:
-                    return 80f;
+                    return math.max(0f, authoring.LeviathanTokenCost);
                 case EncounterThreatClass.Stalker:
-                    return 35f;
+                    return math.max(0f, authoring.StalkerTokenCost);
                 case EncounterThreatClass.Swarm:
-                    return 20f;
+                    return math.max(0f, authoring.SwarmTokenCost);
                 default:
-                    return 10f;
+                    return math.max(0f, authoring.DroneTokenCost);
+            }
+        }
+
+        private static EncounterThreatAuthoringSnapshot BuildThreatAuthoringSnapshot(EncounterProfile encounterProfile, ThreatCostTable explicitThreatCostTable)
+        {
+            EncounterThreatAuthoringSnapshot snapshot = BuildDefaultThreatAuthoringSnapshot();
+            ThreatCostTable threatCostTable = explicitThreatCostTable != null
+                ? explicitThreatCostTable
+                : encounterProfile != null
+                    ? encounterProfile.ThreatCostTable
+                    : null;
+
+            if (encounterProfile != null)
+            {
+                snapshot.DroneMinIntensity = encounterProfile.ResolveMinimumIntensity(EncounterThreatClass.Drone, snapshot.DroneMinIntensity);
+                snapshot.SwarmMinIntensity = encounterProfile.ResolveMinimumIntensity(EncounterThreatClass.Swarm, snapshot.SwarmMinIntensity);
+                snapshot.StalkerMinIntensity = encounterProfile.ResolveMinimumIntensity(EncounterThreatClass.Stalker, snapshot.StalkerMinIntensity);
+                snapshot.LeviathanMinIntensity = encounterProfile.ResolveMinimumIntensity(EncounterThreatClass.Leviathan, snapshot.LeviathanMinIntensity);
+                snapshot.DroneAllowCriticalHealth = encounterProfile.ResolveAllowDuringCriticalHealth(EncounterThreatClass.Drone, true) ? 1 : 0;
+                snapshot.SwarmAllowCriticalHealth = encounterProfile.ResolveAllowDuringCriticalHealth(EncounterThreatClass.Swarm, true) ? 1 : 0;
+                snapshot.StalkerAllowCriticalHealth = encounterProfile.ResolveAllowDuringCriticalHealth(EncounterThreatClass.Stalker, false) ? 1 : 0;
+                snapshot.LeviathanAllowCriticalHealth = encounterProfile.ResolveAllowDuringCriticalHealth(EncounterThreatClass.Leviathan, false) ? 1 : 0;
+            }
+
+            if (threatCostTable != null)
+            {
+                ApplyThreatCostDefinition(threatCostTable, EncounterThreatClass.Drone, ref snapshot.DroneTokenCost, ref snapshot.DroneMaxSimultaneous, ref snapshot.DroneDespawnPriorityBias);
+                ApplyThreatCostDefinition(threatCostTable, EncounterThreatClass.Swarm, ref snapshot.SwarmTokenCost, ref snapshot.SwarmMaxSimultaneous, ref snapshot.SwarmDespawnPriorityBias);
+                ApplyThreatCostDefinition(threatCostTable, EncounterThreatClass.Stalker, ref snapshot.StalkerTokenCost, ref snapshot.StalkerMaxSimultaneous, ref snapshot.StalkerDespawnPriorityBias);
+                ApplyThreatCostDefinition(threatCostTable, EncounterThreatClass.Leviathan, ref snapshot.LeviathanTokenCost, ref snapshot.LeviathanMaxSimultaneous, ref snapshot.LeviathanDespawnPriorityBias);
+            }
+
+            return snapshot;
+        }
+
+        private static EncounterThreatAuthoringSnapshot BuildDefaultThreatAuthoringSnapshot()
+        {
+            EncounterThreatAuthoringSnapshot snapshot = default;
+            snapshot.DroneMinIntensity = 0f;
+            snapshot.SwarmMinIntensity = 0.25f;
+            snapshot.StalkerMinIntensity = 0.55f;
+            snapshot.LeviathanMinIntensity = 0.85f;
+            snapshot.DroneTokenCost = 10f;
+            snapshot.SwarmTokenCost = 20f;
+            snapshot.StalkerTokenCost = 35f;
+            snapshot.LeviathanTokenCost = 80f;
+            snapshot.DroneDespawnPriorityBias = 1.25f;
+            snapshot.SwarmDespawnPriorityBias = 1f;
+            snapshot.StalkerDespawnPriorityBias = 0.55f;
+            snapshot.LeviathanDespawnPriorityBias = 0.15f;
+            snapshot.DroneMaxSimultaneous = 8;
+            snapshot.SwarmMaxSimultaneous = 4;
+            snapshot.StalkerMaxSimultaneous = 2;
+            snapshot.LeviathanMaxSimultaneous = 1;
+            snapshot.DroneAllowCriticalHealth = 1;
+            snapshot.SwarmAllowCriticalHealth = 1;
+            snapshot.StalkerAllowCriticalHealth = 0;
+            snapshot.LeviathanAllowCriticalHealth = 0;
+            return snapshot;
+        }
+
+        private static void ApplyThreatCostDefinition(
+            ThreatCostTable threatCostTable,
+            EncounterThreatClass threatClass,
+            ref float tokenCost,
+            ref int maxSimultaneous,
+            ref float despawnPriorityBias)
+        {
+            if (!threatCostTable.TryResolveDefinition(threatClass, out ThreatCostDefinition definition))
+                return;
+
+            tokenCost = math.max(0f, definition.tokenCost);
+            maxSimultaneous = math.max(0, definition.maxSimultaneous);
+            despawnPriorityBias = math.max(0f, definition.despawnPriorityBias);
+        }
+
+        private static float ResolveDespawnPriorityBias(EncounterThreatClass threatClass, EncounterThreatAuthoringSnapshot authoring)
+        {
+            switch (threatClass)
+            {
+                case EncounterThreatClass.Leviathan:
+                    return math.max(0f, authoring.LeviathanDespawnPriorityBias);
+                case EncounterThreatClass.Stalker:
+                    return math.max(0f, authoring.StalkerDespawnPriorityBias);
+                case EncounterThreatClass.Swarm:
+                    return math.max(0f, authoring.SwarmDespawnPriorityBias);
+                default:
+                    return math.max(0f, authoring.DroneDespawnPriorityBias);
             }
         }
 
@@ -588,6 +708,7 @@ namespace Hecton8.Systems.AI
         private const float MaxSpawnRadius = 150f;
         private const float DespawnKeepDistanceSq = 25f * 25f;
         private const float SafeIdleStressDecayPerTick = 0.06f;
+        private const float SelectionEpsilon = 0.0001f;
 
         public EncounterDirectorState CurrentState;
         public NativeArray<EncounterDirectorState> WriteState;
@@ -604,6 +725,7 @@ namespace Hecton8.Systems.AI
         public float AcousticThreatLevel;
         public float AvgFrameTimeMs;
         public float SurfaceWorldY;
+        public EncounterThreatAuthoringSnapshot ThreatAuthoring;
         public NativeArray<EncounterJobOutput> Output;
 
         public void Execute(int index)
@@ -617,6 +739,7 @@ namespace Hecton8.Systems.AI
             float3 playerPosition = PlayerPosition.xyz;
             float3 playerForward = math.normalizesafe(PlayerForward.xyz, new float3(0f, 0f, 1f));
             int activeEnemyCount = 0;
+            int4 threatClassCounts = int4.zero;
             float nearestThreatDistanceSq = float.MaxValue;
             float bestPriority0 = float.MinValue;
             float bestPriority1 = float.MinValue;
@@ -639,11 +762,26 @@ namespace Hecton8.Systems.AI
                 if (distSq < nearestThreatDistanceSq)
                     nearestThreatDistanceSq = distSq;
 
-                bool visible = TestPlanesAABB(token.Position, new float3(FrustumRejectPadding));
-                float visibilityFactor = visible ? 0f : 1f;
-                float priority = distSq * visibilityFactor * math.rcp(math.max(1f, token.TokenCost));
+                bool insideOrIntersectingFrustum = TestPlanesAABB(token.Position, new float3(FrustumRejectPadding));
+                float visibilityFactor = insideOrIntersectingFrustum ? 0f : 1f;
+                float priority = distSq * visibilityFactor * math.rcp(math.max(1f, token.TokenCost)) * math.max(token.DespawnPriority, 0f);
 
                 activeEnemyCount++;
+                switch ((EncounterThreatClass)token.ThreatClass)
+                {
+                    case EncounterThreatClass.Leviathan:
+                        threatClassCounts.w++;
+                        break;
+                    case EncounterThreatClass.Stalker:
+                        threatClassCounts.y++;
+                        break;
+                    case EncounterThreatClass.Swarm:
+                        threatClassCounts.z++;
+                        break;
+                    default:
+                        threatClassCounts.x++;
+                        break;
+                }
 
                 if (AvgFrameTimeMs <= LoadShedThresholdMs)
                     continue;
@@ -759,6 +897,7 @@ namespace Hecton8.Systems.AI
                     output.DespawnEntityId0 = bestEntity0;
                     state.TokenBudget = math.clamp(state.TokenBudget + bestCost0 * 0.5f, 0f, MaxTokenBudget);
                     activeEnemyCount--;
+                    DecrementThreatClassCount(ref threatClassCounts, bestEntity0, ActiveEnemies);
                 }
 
                 if (bestEntity1 != 0 && shedCount > 1)
@@ -767,6 +906,7 @@ namespace Hecton8.Systems.AI
                     output.DespawnEntityId1 = bestEntity1;
                     state.TokenBudget = math.clamp(state.TokenBudget + bestCost1 * 0.5f, 0f, MaxTokenBudget);
                     activeEnemyCount--;
+                    DecrementThreatClassCount(ref threatClassCounts, bestEntity1, ActiveEnemies);
                 }
 
                 if (bestEntity2 != 0 && shedCount > 2)
@@ -775,6 +915,7 @@ namespace Hecton8.Systems.AI
                     output.DespawnEntityId2 = bestEntity2;
                     state.TokenBudget = math.clamp(state.TokenBudget + bestCost2 * 0.5f, 0f, MaxTokenBudget);
                     activeEnemyCount--;
+                    DecrementThreatClassCount(ref threatClassCounts, bestEntity2, ActiveEnemies);
                 }
             }
 
@@ -784,14 +925,10 @@ namespace Hecton8.Systems.AI
                 activeEnemyCount < 32 &&
                 spawnCadenceOpen)
             {
-                EncounterThreatClass threatClass = ResolveDesiredThreatClass(state.IntensityLevel, state.TokenBudget);
-                if (criticalHealthSuppressed && threatClass > EncounterThreatClass.Swarm)
-                    threatClass = EncounterThreatClass.Swarm;
-
-                float spawnCost = ResolveTokenCost(threatClass);
-                if (state.TokenBudget >= spawnCost &&
+                if (TryResolveDesiredThreatClass(state.IntensityLevel, state.TokenBudget, criticalHealthSuppressed, threatClassCounts, ThreatAuthoring, out EncounterThreatClass threatClass) &&
                     TryResolveSpawnCandidate(playerPosition, playerForward, out float3 spawnPosition))
                 {
+                    float spawnCost = ResolveTokenCost(threatClass, ThreatAuthoring);
                     uint spawnSequence = state.SpawnSequence + 1u;
                     output.SpawnRequestCount = 1;
                     output.SpawnThreatClass = (int)threatClass;
@@ -804,6 +941,7 @@ namespace Hecton8.Systems.AI
                     state.SpawnSequence = spawnSequence;
                     state.TokenBudget = math.clamp(state.TokenBudget - spawnCost, 0f, MaxTokenBudget);
                     activeEnemyCount++;
+                    IncrementThreatClassCount(ref threatClassCounts, threatClass);
                 }
             }
 
@@ -867,16 +1005,207 @@ namespace Hecton8.Systems.AI
 
         private bool TestPlanesAABB(float3 center, float3 extents)
         {
-            for (int i = 0; i < FrustumPlanes.Length; i++)
+            if (FrustumPlanes.Length < 6)
+                return false;
+
+            float4 plane0 = FrustumPlanes[0];
+            float4 plane1 = FrustumPlanes[1];
+            float4 plane2 = FrustumPlanes[2];
+            float4 plane3 = FrustumPlanes[3];
+            float4 plane4 = FrustumPlanes[4];
+            float4 plane5 = FrustumPlanes[5];
+
+            float distance0 = math.dot(plane0.xyz, center) + plane0.w + math.dot(math.abs(plane0.xyz), extents);
+            float distance1 = math.dot(plane1.xyz, center) + plane1.w + math.dot(math.abs(plane1.xyz), extents);
+            float distance2 = math.dot(plane2.xyz, center) + plane2.w + math.dot(math.abs(plane2.xyz), extents);
+            float distance3 = math.dot(plane3.xyz, center) + plane3.w + math.dot(math.abs(plane3.xyz), extents);
+            float distance4 = math.dot(plane4.xyz, center) + plane4.w + math.dot(math.abs(plane4.xyz), extents);
+            float distance5 = math.dot(plane5.xyz, center) + plane5.w + math.dot(math.abs(plane5.xyz), extents);
+
+            return distance0 >= 0f &&
+                   distance1 >= 0f &&
+                   distance2 >= 0f &&
+                   distance3 >= 0f &&
+                   distance4 >= 0f &&
+                   distance5 >= 0f;
+        }
+
+        private static bool TryResolveDesiredThreatClass(
+            float intensityLevel,
+            float tokenBudget,
+            bool criticalHealthSuppressed,
+            int4 threatClassCounts,
+            EncounterThreatAuthoringSnapshot authoring,
+            out EncounterThreatClass threatClass)
+        {
+            if (CanSpawnThreatClass(EncounterThreatClass.Leviathan, intensityLevel, tokenBudget, criticalHealthSuppressed, threatClassCounts, authoring))
             {
-                float4 plane = FrustumPlanes[i];
-                float projectedRadius = math.dot(math.abs(plane.xyz), extents);
-                float distance = math.dot(plane.xyz, center) + plane.w;
-                if (distance + projectedRadius < 0f)
-                    return false;
+                threatClass = EncounterThreatClass.Leviathan;
+                return true;
             }
 
-            return true;
+            if (CanSpawnThreatClass(EncounterThreatClass.Stalker, intensityLevel, tokenBudget, criticalHealthSuppressed, threatClassCounts, authoring))
+            {
+                threatClass = EncounterThreatClass.Stalker;
+                return true;
+            }
+
+            if (CanSpawnThreatClass(EncounterThreatClass.Swarm, intensityLevel, tokenBudget, criticalHealthSuppressed, threatClassCounts, authoring))
+            {
+                threatClass = EncounterThreatClass.Swarm;
+                return true;
+            }
+
+            if (CanSpawnThreatClass(EncounterThreatClass.Drone, intensityLevel, tokenBudget, criticalHealthSuppressed, threatClassCounts, authoring))
+            {
+                threatClass = EncounterThreatClass.Drone;
+                return true;
+            }
+
+            threatClass = EncounterThreatClass.Drone;
+            return false;
+        }
+
+        private static bool CanSpawnThreatClass(
+            EncounterThreatClass threatClass,
+            float intensityLevel,
+            float tokenBudget,
+            bool criticalHealthSuppressed,
+            int4 threatClassCounts,
+            EncounterThreatAuthoringSnapshot authoring)
+        {
+            if (criticalHealthSuppressed && !AllowsCriticalHealthSpawn(threatClass, authoring))
+                return false;
+
+            if (intensityLevel + SelectionEpsilon < ResolveMinimumIntensity(threatClass, authoring))
+                return false;
+
+            if (tokenBudget + SelectionEpsilon < ResolveTokenCost(threatClass, authoring))
+                return false;
+
+            return ResolveThreatClassCount(threatClass, threatClassCounts) < ResolveMaxSimultaneous(threatClass, authoring);
+        }
+
+        private static float ResolveMinimumIntensity(EncounterThreatClass threatClass, EncounterThreatAuthoringSnapshot authoring)
+        {
+            switch (threatClass)
+            {
+                case EncounterThreatClass.Leviathan:
+                    return authoring.LeviathanMinIntensity;
+                case EncounterThreatClass.Stalker:
+                    return authoring.StalkerMinIntensity;
+                case EncounterThreatClass.Swarm:
+                    return authoring.SwarmMinIntensity;
+                default:
+                    return authoring.DroneMinIntensity;
+            }
+        }
+
+        private static float ResolveTokenCost(EncounterThreatClass threatClass, EncounterThreatAuthoringSnapshot authoring)
+        {
+            switch (threatClass)
+            {
+                case EncounterThreatClass.Leviathan:
+                    return authoring.LeviathanTokenCost;
+                case EncounterThreatClass.Stalker:
+                    return authoring.StalkerTokenCost;
+                case EncounterThreatClass.Swarm:
+                    return authoring.SwarmTokenCost;
+                default:
+                    return authoring.DroneTokenCost;
+            }
+        }
+
+        private static int ResolveMaxSimultaneous(EncounterThreatClass threatClass, EncounterThreatAuthoringSnapshot authoring)
+        {
+            switch (threatClass)
+            {
+                case EncounterThreatClass.Leviathan:
+                    return authoring.LeviathanMaxSimultaneous;
+                case EncounterThreatClass.Stalker:
+                    return authoring.StalkerMaxSimultaneous;
+                case EncounterThreatClass.Swarm:
+                    return authoring.SwarmMaxSimultaneous;
+                default:
+                    return authoring.DroneMaxSimultaneous;
+            }
+        }
+
+        private static bool AllowsCriticalHealthSpawn(EncounterThreatClass threatClass, EncounterThreatAuthoringSnapshot authoring)
+        {
+            switch (threatClass)
+            {
+                case EncounterThreatClass.Leviathan:
+                    return authoring.LeviathanAllowCriticalHealth != 0;
+                case EncounterThreatClass.Stalker:
+                    return authoring.StalkerAllowCriticalHealth != 0;
+                case EncounterThreatClass.Swarm:
+                    return authoring.SwarmAllowCriticalHealth != 0;
+                default:
+                    return authoring.DroneAllowCriticalHealth != 0;
+            }
+        }
+
+        private static int ResolveThreatClassCount(EncounterThreatClass threatClass, int4 threatClassCounts)
+        {
+            switch (threatClass)
+            {
+                case EncounterThreatClass.Leviathan:
+                    return threatClassCounts.w;
+                case EncounterThreatClass.Stalker:
+                    return threatClassCounts.y;
+                case EncounterThreatClass.Swarm:
+                    return threatClassCounts.z;
+                default:
+                    return threatClassCounts.x;
+            }
+        }
+
+        private static void IncrementThreatClassCount(ref int4 threatClassCounts, EncounterThreatClass threatClass)
+        {
+            switch (threatClass)
+            {
+                case EncounterThreatClass.Leviathan:
+                    threatClassCounts.w++;
+                    break;
+                case EncounterThreatClass.Stalker:
+                    threatClassCounts.y++;
+                    break;
+                case EncounterThreatClass.Swarm:
+                    threatClassCounts.z++;
+                    break;
+                default:
+                    threatClassCounts.x++;
+                    break;
+            }
+        }
+
+        private static void DecrementThreatClassCount(ref int4 threatClassCounts, int entityId, NativeArray<EncounterEnemyToken> activeEnemies)
+        {
+            for (int i = 0; i < activeEnemies.Length; i++)
+            {
+                EncounterEnemyToken token = activeEnemies[i];
+                if (token.EntityId != entityId)
+                    continue;
+
+                switch ((EncounterThreatClass)token.ThreatClass)
+                {
+                    case EncounterThreatClass.Leviathan:
+                        threatClassCounts.w = math.max(0, threatClassCounts.w - 1);
+                        break;
+                    case EncounterThreatClass.Stalker:
+                        threatClassCounts.y = math.max(0, threatClassCounts.y - 1);
+                        break;
+                    case EncounterThreatClass.Swarm:
+                        threatClassCounts.z = math.max(0, threatClassCounts.z - 1);
+                        break;
+                    default:
+                        threatClassCounts.x = math.max(0, threatClassCounts.x - 1);
+                        break;
+                }
+
+                return;
+            }
         }
 
         private static float ResolvePhaseDuration(EncounterPhase phase, float stressLevel)
@@ -907,46 +1236,6 @@ namespace Hecton8.Systems.AI
                     return math.pow(math.cos((math.PI * 0.5f) * normalizedTime), 0.7f);
                 default:
                     return 0.05f + 0.05f * math.sin(math.PI * normalizedTime);
-            }
-        }
-
-        private static EncounterThreatClass ResolveDesiredThreatClass(float intensityLevel, float tokenBudget)
-        {
-            EncounterThreatClass desired;
-            if (intensityLevel > 0.85f)
-                desired = EncounterThreatClass.Leviathan;
-            else if (intensityLevel > 0.55f)
-                desired = EncounterThreatClass.Stalker;
-            else if (intensityLevel > 0.25f)
-                desired = EncounterThreatClass.Swarm;
-            else
-                desired = EncounterThreatClass.Drone;
-
-            if (tokenBudget >= ResolveTokenCost(desired))
-                return desired;
-
-            if (tokenBudget >= ResolveTokenCost(EncounterThreatClass.Stalker))
-                return EncounterThreatClass.Stalker;
-            if (tokenBudget >= ResolveTokenCost(EncounterThreatClass.Swarm))
-                return EncounterThreatClass.Swarm;
-            if (tokenBudget >= ResolveTokenCost(EncounterThreatClass.Drone))
-                return EncounterThreatClass.Drone;
-
-            return EncounterThreatClass.Drone;
-        }
-
-        private static float ResolveTokenCost(EncounterThreatClass threatClass)
-        {
-            switch (threatClass)
-            {
-                case EncounterThreatClass.Leviathan:
-                    return 80f;
-                case EncounterThreatClass.Stalker:
-                    return 35f;
-                case EncounterThreatClass.Swarm:
-                    return 20f;
-                default:
-                    return 10f;
             }
         }
 

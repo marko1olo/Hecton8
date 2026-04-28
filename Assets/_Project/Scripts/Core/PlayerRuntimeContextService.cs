@@ -44,7 +44,7 @@ namespace Hecton8.Core
         private Collider _playerCollider;
         private HUDNotification _hudNotification;
         private readonly PlayerRuntimeContext _runtimeContext = new PlayerRuntimeContext();
-        private readonly List<VisorHUDController> _visorResolveBuffer = new List<VisorHUDController>(2); // COLD ALLOC: List<VisorHUDController>[2] — one-shot player visor child resolution buffer used during root rebinds — owner: PlayerRuntimeContextService
+        private readonly List<VisorHUDController> _visorResolveBuffer = new List<VisorHUDController>(2); // COLD ALLOC: List<VisorHUDController>[2] â€” one-shot player visor child resolution buffer used during root rebinds â€” owner: PlayerRuntimeContextService
 
         /// <inheritdoc />
         public bool IsInitialized => _isInitialized;
@@ -574,7 +574,6 @@ namespace Hecton8.Core
             if (_registeredUpdatable)
                 return;
 
-            SystemDispatcher.EnsureRuntimeInstance();
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
             _registeredUpdatable = true;
         }

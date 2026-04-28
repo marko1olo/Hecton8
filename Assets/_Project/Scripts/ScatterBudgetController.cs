@@ -1,3 +1,4 @@
+using System;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using UnityEngine;
@@ -8,6 +9,8 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-4200)]
     public sealed class ScatterBudgetController : MonoBehaviour, ISlowTickable
     {
+        private static readonly string[] BudgetBandLabels = Enum.GetNames(typeof(BudgetBand));
+
         internal static ScatterBudgetController ActiveRuntimeInstance { get; private set; }
 
         private enum BudgetBand
@@ -300,7 +303,7 @@ namespace Hecton8.World
             BudgetBand band = GetBandForDepth(depth);
 
             _debugCurrentDepth = depth;
-            _debugCurrentBand = band.ToString();
+            _debugCurrentBand = ResolveBudgetBandLabel(band);
 
             if (!force && band == _lastAppliedBand)
             {
@@ -356,6 +359,12 @@ namespace Hecton8.World
                 return midDepthProfile;
 
             return surfaceProfile;
+        }
+
+        private static string ResolveBudgetBandLabel(BudgetBand band)
+        {
+            int index = (int)band;
+            return (uint)index < (uint)BudgetBandLabels.Length ? BudgetBandLabels[index] : BudgetBandLabels[0];
         }
 
         private void ResolveReferences()

@@ -110,7 +110,6 @@ namespace Hecton8.Gameplay
             if (_registered)
                 return;
 
-            SystemDispatcher.EnsureRuntimeInstance();
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
             _registered = true;
         }

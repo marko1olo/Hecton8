@@ -44,14 +44,14 @@ namespace Hecton8.Gameplay
 
         private static readonly ProfilerMarker _fixedTickProfilerMarker = new ProfilerMarker("H8.Submarine.CoreDirector.FixedTick");
 
-        [Header("── Frame ──────────────────")]
+        [Header("â”€â”€ Frame â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Optional explicit transform used as the rider-space reference frame. Defaults to this root transform.")]
         [SerializeField] private Transform platformFrame;
 
         [Tooltip("When true, player yaw inherits submarine hull rotation through the shared transport pipeline.")]
         [SerializeField] private bool inheritPlatformRotation = true;
 
-        [Header("── References ──────────────────")]
+        [Header("â”€â”€ References â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Optional explicit rigidbody driving hull motion. Defaults to the owned Rigidbody on this root.")]
         [SerializeField] private Rigidbody hullRigidbody;
 
@@ -67,11 +67,11 @@ namespace Hecton8.Gameplay
         private Transform _cachedTransform;
         private bool _registeredFixedTick;
 
-        // COLD ALLOC: NativeArray<float>[4] — submarine root hull summary buffer for registry-facing readback without crawling child systems — owner: SubmarineCoreDirector
+        // COLD ALLOC: NativeArray<float>[4] â€” submarine root hull summary buffer for registry-facing readback without crawling child systems â€” owner: SubmarineCoreDirector
         private NativeArray<float> _hullIntegritySummaryNative;
-        // COLD ALLOC: NativeArray<SubmarinePhysicsBindingState>[1] — authoritative rigidbody motion snapshot for submarine consumers — owner: SubmarineCoreDirector
+        // COLD ALLOC: NativeArray<SubmarinePhysicsBindingState>[1] â€” authoritative rigidbody motion snapshot for submarine consumers â€” owner: SubmarineCoreDirector
         private NativeArray<SubmarinePhysicsBindingState> _physicsBindingsNative;
-        // COLD ALLOC: NativeArray<SubmarineGridState>[1] — subsystem readiness flags packed at the submarine root — owner: SubmarineCoreDirector
+        // COLD ALLOC: NativeArray<SubmarineGridState>[1] â€” subsystem readiness flags packed at the submarine root â€” owner: SubmarineCoreDirector
         private NativeArray<SubmarineGridState> _gridStatesNative;
 
         /// <inheritdoc />
@@ -263,7 +263,6 @@ namespace Hecton8.Gameplay
             if (_registeredFixedTick || !Application.isPlaying)
                 return;
 
-            SystemDispatcher.EnsureRuntimeInstance();
             GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
             _registeredFixedTick = true;
         }

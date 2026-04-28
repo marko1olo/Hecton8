@@ -253,6 +253,8 @@ namespace Hecton8.UI
         private IInputService _input;
         private RenderTexture _panelRenderTexture;
         private int2 _activeRenderResolution;
+        private int2 _fixedRenderResolution;
+        private bool _retainRenderTextureOnDisable;
         private float _refreshTimer;
         private float _cameraRetryTimer;
         private float _appliedDepthFadeRange = -1f;
@@ -314,7 +316,8 @@ namespace Hecton8.UI
             _cursorStateInitialized = false;
             _canvasSettingsApplied = false;
             SetCursorVisible(false);
-            ReleaseRenderTexture();
+            if (!_retainRenderTextureOnDisable)
+                ReleaseRenderTexture();
         }
 
         private void OnDestroy()
@@ -379,6 +382,55 @@ namespace Hecton8.UI
         public void ForceRefreshRenderTexture()
         {
             EnsureRenderTexture(forceRefresh: true);
+        }
+
+        internal void OverrideFixedRenderTextureResolution(Vector2Int resolution, bool retainOnDisable)
+        {
+            int2 sanitizedResolution = new int2(math.max(1, resolution.x), math.max(1, resolution.y));
+            bool resolutionChanged = sanitizedResolution.x != _fixedRenderResolution.x || sanitizedResolution.y != _fixedRenderResolution.y;
+            bool retentionChanged = _retainRenderTextureOnDisable != retainOnDisable;
+            _fixedRenderResolution = sanitizedResolution;
+            _retainRenderTextureOnDisable = retainOnDisable;
+
+            if (resolutionChanged || retentionChanged)
+                EnsureRenderTexture(forceRefresh: true);
+        }
+
+        internal void ClearFixedRenderTextureResolutionOverride()
+        {
+            bool hadOverride = _fixedRenderResolution.x > 0 && _fixedRenderResolution.y > 0;
+            _fixedRenderResolution = int2.zero;
+            _retainRenderTextureOnDisable = false;
+
+            if (hadOverride)
+                EnsureRenderTexture(forceRefresh: true);
+        }
+
+        internal void ReleasePresentationRenderTexture()
+        {
+            _retainRenderTextureOnDisable = false;
+            ReleaseRenderTexture();
+        }
+
+        internal Canvas TargetCanvas => targetCanvas;
+
+        internal Camera PanelCamera => panelCamera;
+
+        internal void OverridePanelPresentation(Material outputMaterial, Renderer surfaceRenderer)
+        {
+            if (outputMaterial != null)
+                panelOutputMaterial = outputMaterial;
+
+            if (surfaceRenderer != null)
+                panelSurfaceRenderer = surfaceRenderer;
+
+            ApplyRendererBindings();
+        }
+
+        internal void OverridePanelInteractable(MonoBehaviour interactable)
+        {
+            panelInteractable = interactable;
+            ResolveInterfaces();
         }
 
 #if UNITY_EDITOR
@@ -597,6 +649,9 @@ namespace Hecton8.UI
 
         private int2 DetermineRenderResolution(float distanceToCamera)
         {
+            if (_fixedRenderResolution.x > 0 && _fixedRenderResolution.y > 0)
+                return _fixedRenderResolution;
+
             if (_isMx350Tier)
             {
                 if (distanceToCamera > 5f)

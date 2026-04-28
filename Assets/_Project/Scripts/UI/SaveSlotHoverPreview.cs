@@ -10,7 +10,7 @@ using System.Collections.Generic;
 namespace Hecton8.UI
 {
     /// <summary>
-    /// Hover preview for save slots — shows enlarged thumbnail + metadata on hover.
+    /// Hover preview for save slots â€” shows enlarged thumbnail + metadata on hover.
     /// EXCEEDS SUBNAUTICA: Subnautica has no hover preview, only click-to-load.
     /// Zero-GC: ITickable state machine, cached delegates, CanvasGroup alpha.
     /// </summary>
@@ -18,9 +18,9 @@ namespace Hecton8.UI
     [AddComponentMenu("Hecton8/UI/Save Slot Hover Preview")]
     public sealed class SaveSlotHoverPreview : MonoBehaviour, ITickable, IUpdatable, IPointerEnterHandler, IPointerExitHandler
     {
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         // INSPECTOR
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         [Header("=== PREVIEW PANEL ===")]
         [SerializeField] private CanvasGroup previewPanel;
@@ -36,9 +36,9 @@ namespace Hecton8.UI
         [SerializeField] private float fadeOutDuration = 0.1f;
         [SerializeField] private Vector2 previewOffset = new Vector2(20f, 0f);
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         // FIELDS
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private enum State { Idle, WaitingForDelay, FadingIn, Visible, FadingOut }
 
@@ -53,12 +53,12 @@ namespace Hecton8.UI
         private RectTransform _previewPanelRect;
         private Canvas _rootCanvas;
         private Camera _uiCamera;
-        // COLD ALLOC: List<TMP_Text>(8) — preview text auto-wire buffer — owner: SaveSlotHoverPreview
+        // COLD ALLOC: List<TMP_Text>(8) â€” preview text auto-wire buffer â€” owner: SaveSlotHoverPreview
         private readonly List<TMP_Text> _previewTextResolveBuffer = new List<TMP_Text>(8);
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         // LIFECYCLE
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private void Awake()
         {
@@ -99,9 +99,9 @@ namespace Hecton8.UI
             LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         // ITICKABLE
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         public void Tick(float dt)
         {
@@ -140,9 +140,9 @@ namespace Hecton8.UI
             }
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         // POINTER EVENTS
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         public void OnPointerEnter(PointerEventData eventData)
         {
@@ -177,9 +177,9 @@ namespace Hecton8.UI
             _fadeStartAlpha = previewPanel != null ? previewPanel.alpha : 0f;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         // PRIVATE
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private void ShowPreview()
         {
@@ -458,7 +458,6 @@ namespace Hecton8.UI
             if (_registered)
                 return;
 
-            SystemDispatcher.EnsureRuntimeInstance();
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _registered = true;
         }

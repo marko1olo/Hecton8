@@ -280,6 +280,8 @@ namespace Hecton8.Gameplay
         private float _oxygenGraceVisionBlur01;
         private bool _oxygenGraceActive;
         private PlayerRuntimeContext _runtimeContext;
+        private Unity.Mathematics.Random _traumaRandom;
+        private readonly FixedCharBuffer _telemetryBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] — telemetry construction — owner: HectonSurvivalSystem
         private const float HazardGraceDuration = 3f;
         private const float PressureIncidentLogDurationThreshold = 4f;
         private const float PressureIncidentLogExcessThreshold = 6f;
@@ -439,6 +441,9 @@ namespace Hecton8.Gameplay
 
             ResolveRuntimeContextDependencies();
             WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _vegetationBridge);
+            int ownerId = unchecked((int)EntityId.ToULong(GetEntityId()));
+            int statsId = stats != null ? unchecked((int)EntityId.ToULong(stats.GetEntityId())) : 0;
+            _traumaRandom = CreateDeterministicRandom(ownerId, statsId);
             TryBootstrapInjectedSurvivalDatabase();
             ResetToMax();
             PublishRuntimeContextState();
@@ -466,6 +471,13 @@ namespace Hecton8.Gameplay
 
         private void OnDestroy()
         {
+            if (Application.isPlaying)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
+                GlobalRegistry.Save?.Unregister(this);
+            }
+
             DisposeInjectedSurvivalDatabase();
         }
 
@@ -1761,10 +1773,13 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            _telemetryBuffer.Clear();
+            BuildPressureExposureSummary(_telemetryBuffer);
+
             FieldOperationLogSystem.RecordOperation(
                 "SUIT",
                 "PRESSURE WINDOW BREACHED",
-                BuildPressureExposureSummary(),
+                _telemetryBuffer,
                 "WARN");
         }
 
@@ -1773,22 +1788,30 @@ namespace Hecton8.Gameplay
             if (!_hasLastDeathRecord)
                 return;
 
-            string summary = string.Format(
-                "Cause {0} // Life {1:0}s // Peak {2:0}m // O2 low {3:0}% // PWR low {4:0}% // Marker {5:0},{6:0},{7:0}. Advice: {8}",
-                ResolveDeathCauseLabel(_lastDeathRecord.Cause),
-                _lastDeathRecord.LifeDurationSeconds,
-                _lastDeathRecord.PeakDepthMeters,
-                _lastDeathRecord.LowestOxygenNormalized * 100f,
-                _lastDeathRecord.LowestEnergyNormalized * 100f,
-                _lastDeathRecord.Position.x,
-                _lastDeathRecord.Position.y,
-                _lastDeathRecord.Position.z,
-                ResolveDeathAdvice(_lastDeathRecord.Cause));
+            _telemetryBuffer.Clear();
+            _telemetryBuffer.Append("Cause ");
+            _telemetryBuffer.Append(ResolveDeathCauseLabel(_lastDeathRecord.Cause));
+            _telemetryBuffer.Append(" // Life ");
+            _telemetryBuffer.AppendInt((int)_lastDeathRecord.LifeDurationSeconds);
+            _telemetryBuffer.Append("s // Peak ");
+            _telemetryBuffer.AppendInt((int)_lastDeathRecord.PeakDepthMeters);
+            _telemetryBuffer.Append("m // O2 low ");
+            _telemetryBuffer.AppendInt((int)(_lastDeathRecord.LowestOxygenNormalized * 100f));
+            _telemetryBuffer.Append("% // PWR low ");
+            _telemetryBuffer.AppendInt((int)(_lastDeathRecord.LowestEnergyNormalized * 100f));
+            _telemetryBuffer.Append("% // Marker ");
+            _telemetryBuffer.AppendInt((int)_lastDeathRecord.Position.x);
+            _telemetryBuffer.Append(",");
+            _telemetryBuffer.AppendInt((int)_lastDeathRecord.Position.y);
+            _telemetryBuffer.Append(",");
+            _telemetryBuffer.AppendInt((int)_lastDeathRecord.Position.z);
+            _telemetryBuffer.Append(". Advice: ");
+            _telemetryBuffer.Append(ResolveDeathAdvice(_lastDeathRecord.Cause));
 
             FieldOperationLogSystem.RecordOperation(
                 "SUIT",
                 "LAST LOSS MARKER UPDATED",
-                summary,
+                _telemetryBuffer,
                 "CRITICAL");
         }
 
@@ -1842,14 +1865,17 @@ namespace Hecton8.Gameplay
             return Mathf.Clamp01(overpressureSeverity * 0.65f + damageSeverity * 0.35f);
         }
 
-        private string BuildPressureExposureSummary()
+        private void BuildPressureExposureSummary(FixedCharBuffer buffer)
         {
-            return string.Format(
-                "Exceeded safe depth by {0:0}m for {1:0}s // Peak hull attrition {2:0.0}/s // Suit rating {3:0}m",
-                _currentPressurePeakExcessMeters,
-                _currentPressureExposureSeconds,
-                _currentPressurePeakDamagePerSecond,
-                ResolveEffectiveSafeDepthMeters());
+            buffer.Append("Exceeded safe depth by ");
+            buffer.AppendInt((int)_currentPressurePeakExcessMeters);
+            buffer.Append("m for ");
+            buffer.AppendInt((int)_currentPressureExposureSeconds);
+            buffer.Append("s // Peak hull attrition ");
+            buffer.AppendFloat((float)_currentPressurePeakDamagePerSecond, 1);
+            buffer.Append("/s // Suit rating ");
+            buffer.AppendInt((int)ResolveEffectiveSafeDepthMeters());
+            buffer.Append("m");
         }
 
         private void ResetPressureExposureTracking()
@@ -2515,16 +2541,16 @@ namespace Hecton8.Gameplay
                 ApplyFracture(clampedSeverity, damageMagnitude);
         }
 
-        private static bool ShouldApplyBleeding(float severity01)
+        private bool ShouldApplyBleeding(float severity01)
         {
             float bleedChance = Mathf.Lerp(0.22f, 0.82f, severity01);
-            return UnityEngine.Random.value <= bleedChance;
+            return _traumaRandom.NextFloat() <= bleedChance;
         }
 
-        private static bool ShouldApplyFracture(float severity01)
+        private bool ShouldApplyFracture(float severity01)
         {
             float fractureChance = Mathf.Lerp(0.08f, 0.54f, severity01);
-            return UnityEngine.Random.value <= fractureChance;
+            return _traumaRandom.NextFloat() <= fractureChance;
         }
 
         private void ApplyBleeding(float severity01, float damageMagnitude)
@@ -2565,6 +2591,12 @@ namespace Hecton8.Gameplay
                 return 0f;
 
             return Mathf.Clamp01(excess / ThermalSeverityReferenceRange);
+        }
+
+        private static Unity.Mathematics.Random CreateDeterministicRandom(int ownerId, int salt)
+        {
+            uint seed = math.hash(new uint4(unchecked((uint)ownerId), unchecked((uint)salt), 0xD1F34F5Bu, 0x8A61C8D1u));
+            return new Unity.Mathematics.Random(seed == 0u ? 1u : seed);
         }
 
         private ThermalStressMode ResolveThermalStressModeFromState()

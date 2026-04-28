@@ -1,19 +1,19 @@
 // ============================================================================
-// HECTON-8 — SpatialAudioManager.cs
-// Высокопроизводительная система пространственного звука с пулингом.
+// HECTON-8 â€” SpatialAudioManager.cs
+// Ð’Ñ‹ÑÐ¾ÐºÐ¾Ð¿Ñ€Ð¾Ð¸Ð·Ð²Ð¾Ð´Ð¸Ñ‚ÐµÐ»ÑŒÐ½Ð°Ñ ÑÐ¸ÑÑ‚ÐµÐ¼Ð° Ð¿Ñ€Ð¾ÑÑ‚Ñ€Ð°Ð½ÑÑ‚Ð²ÐµÐ½Ð½Ð¾Ð³Ð¾ Ð·Ð²ÑƒÐºÐ° Ñ Ð¿ÑƒÐ»Ð¸Ð½Ð³Ð¾Ð¼.
 //
-// АРХИТЕКТУРА:
-//   • Синглтон: пул 3D AudioSource + отдельный пул 2D (шлем/UI).
-//   • Zero-GC в hot path: массивы фиксированного размера, no LINQ, no allocations.
-//   • Поддержка 3D-пула (PlayAtPoint) и 2D-пула (PlayStatic2D).
-//   • Вытеснение самого старого звука при исчерпании пула.
-//   • AudioMixerGroup маршрутизация (SFX, Interface, Ambient).
+// ÐÐ Ð¥Ð˜Ð¢Ð•ÐšÐ¢Ð£Ð Ð:
+//   â€¢ Ð¡Ð¸Ð½Ð³Ð»Ñ‚Ð¾Ð½: Ð¿ÑƒÐ» 3D AudioSource + Ð¾Ñ‚Ð´ÐµÐ»ÑŒÐ½Ñ‹Ð¹ Ð¿ÑƒÐ» 2D (ÑˆÐ»ÐµÐ¼/UI).
+//   â€¢ Zero-GC Ð² hot path: Ð¼Ð°ÑÑÐ¸Ð²Ñ‹ Ñ„Ð¸ÐºÑÐ¸Ñ€Ð¾Ð²Ð°Ð½Ð½Ð¾Ð³Ð¾ Ñ€Ð°Ð·Ð¼ÐµÑ€Ð°, no LINQ, no allocations.
+//   â€¢ ÐŸÐ¾Ð´Ð´ÐµÑ€Ð¶ÐºÐ° 3D-Ð¿ÑƒÐ»Ð° (PlayAtPoint) Ð¸ 2D-Ð¿ÑƒÐ»Ð° (PlayStatic2D).
+//   â€¢ Ð’Ñ‹Ñ‚ÐµÑÐ½ÐµÐ½Ð¸Ðµ ÑÐ°Ð¼Ð¾Ð³Ð¾ ÑÑ‚Ð°Ñ€Ð¾Ð³Ð¾ Ð·Ð²ÑƒÐºÐ° Ð¿Ñ€Ð¸ Ð¸ÑÑ‡ÐµÑ€Ð¿Ð°Ð½Ð¸Ð¸ Ð¿ÑƒÐ»Ð°.
+//   â€¢ AudioMixerGroup Ð¼Ð°Ñ€ÑˆÑ€ÑƒÑ‚Ð¸Ð·Ð°Ñ†Ð¸Ñ (SFX, Interface, Ambient).
 //
-// ОПТИМИЗАЦИЯ (MX350 / CPU):
-//   • Жёсткий лимит одновременных AudioSource (default 16, max 32).
-//   • Linear Rolloff для предсказуемого затухания без лишних вычислений.
-//   • Нет Update() — вся логика в моменте вызова Play.
-//   • Пул создаётся один раз в Awake, дальше — только переиспользование.
+// ÐžÐŸÐ¢Ð˜ÐœÐ˜Ð—ÐÐ¦Ð˜Ð¯ (MX350 / CPU):
+//   â€¢ Ð–Ñ‘ÑÑ‚ÐºÐ¸Ð¹ Ð»Ð¸Ð¼Ð¸Ñ‚ Ð¾Ð´Ð½Ð¾Ð²Ñ€ÐµÐ¼ÐµÐ½Ð½Ñ‹Ñ… AudioSource (default 16, max 32).
+//   â€¢ Linear Rolloff Ð´Ð»Ñ Ð¿Ñ€ÐµÐ´ÑÐºÐ°Ð·ÑƒÐµÐ¼Ð¾Ð³Ð¾ Ð·Ð°Ñ‚ÑƒÑ…Ð°Ð½Ð¸Ñ Ð±ÐµÐ· Ð»Ð¸ÑˆÐ½Ð¸Ñ… Ð²Ñ‹Ñ‡Ð¸ÑÐ»ÐµÐ½Ð¸Ð¹.
+//   â€¢ ÐÐµÑ‚ Update() â€” Ð²ÑÑ Ð»Ð¾Ð³Ð¸ÐºÐ° Ð² Ð¼Ð¾Ð¼ÐµÐ½Ñ‚Ðµ Ð²Ñ‹Ð·Ð¾Ð²Ð° Play.
+//   â€¢ ÐŸÑƒÐ» ÑÐ¾Ð·Ð´Ð°Ñ‘Ñ‚ÑÑ Ð¾Ð´Ð¸Ð½ Ñ€Ð°Ð· Ð² Awake, Ð´Ð°Ð»ÑŒÑˆÐµ â€” Ñ‚Ð¾Ð»ÑŒÐºÐ¾ Ð¿ÐµÑ€ÐµÐ¸ÑÐ¿Ð¾Ð»ÑŒÐ·Ð¾Ð²Ð°Ð½Ð¸Ðµ.
 //
 // API:
 //   SpatialAudioManager.Instance.PlayAtPoint(clip, position, volume, pitch)
@@ -23,24 +23,24 @@
 //   SpatialAudioManager.Instance.StopAll()
 //
 // MIXER GROUPS:
-//   Назначаются в инспекторе: SfxGroup, InterfaceGroup, AmbientGroup.
-//   Позволяют централизованно применять фильтры (LPF для подводности,
-//   distortion для повреждений шлема, etc.)
+//   ÐÐ°Ð·Ð½Ð°Ñ‡Ð°ÑŽÑ‚ÑÑ Ð² Ð¸Ð½ÑÐ¿ÐµÐºÑ‚Ð¾Ñ€Ðµ: SfxGroup, InterfaceGroup, AmbientGroup.
+//   ÐŸÐ¾Ð·Ð²Ð¾Ð»ÑÑŽÑ‚ Ñ†ÐµÐ½Ñ‚Ñ€Ð°Ð»Ð¸Ð·Ð¾Ð²Ð°Ð½Ð½Ð¾ Ð¿Ñ€Ð¸Ð¼ÐµÐ½ÑÑ‚ÑŒ Ñ„Ð¸Ð»ÑŒÑ‚Ñ€Ñ‹ (LPF Ð´Ð»Ñ Ð¿Ð¾Ð´Ð²Ð¾Ð´Ð½Ð¾ÑÑ‚Ð¸,
+//   distortion Ð´Ð»Ñ Ð¿Ð¾Ð²Ñ€ÐµÐ¶Ð´ÐµÐ½Ð¸Ð¹ ÑˆÐ»ÐµÐ¼Ð°, etc.)
 //
-// NASA-PUNK КОНТЕКСТ:
-//   PlayStatic2D — для звуков внутри шлема космонавта:
-//     • HUD beeps, suit warnings, radio static, breath sounds.
-//     • Spatial Blend = 0.0 (полностью 2D, "в голове").
-//   PlayAtPoint — для внешних звуков среды:
-//     • Bioluminescent creature clicks, hull groans, pressure vents.
-//     • Spatial Blend = 1.0 (полностью 3D).
+// NASA-PUNK ÐšÐžÐÐ¢Ð•ÐšÐ¡Ð¢:
+//   PlayStatic2D â€” Ð´Ð»Ñ Ð·Ð²ÑƒÐºÐ¾Ð² Ð²Ð½ÑƒÑ‚Ñ€Ð¸ ÑˆÐ»ÐµÐ¼Ð° ÐºÐ¾ÑÐ¼Ð¾Ð½Ð°Ð²Ñ‚Ð°:
+//     â€¢ HUD beeps, suit warnings, radio static, breath sounds.
+//     â€¢ Spatial Blend = 0.0 (Ð¿Ð¾Ð»Ð½Ð¾ÑÑ‚ÑŒÑŽ 2D, "Ð² Ð³Ð¾Ð»Ð¾Ð²Ðµ").
+//   PlayAtPoint â€” Ð´Ð»Ñ Ð²Ð½ÐµÑˆÐ½Ð¸Ñ… Ð·Ð²ÑƒÐºÐ¾Ð² ÑÑ€ÐµÐ´Ñ‹:
+//     â€¢ Bioluminescent creature clicks, hull groans, pressure vents.
+//     â€¢ Spatial Blend = 1.0 (Ð¿Ð¾Ð»Ð½Ð¾ÑÑ‚ÑŒÑŽ 3D).
 //
-// ═══════════════════════════════════════════════════════════════
-//  МАРШРУТИЗАЦИЯ (кастомный код в Assets/_Project):
-//    • Мир / объекты у позиции → PlayAtPoint
-//    • Шлем / HUD → PlayStatic2D (пул 2D, не разбрасывать PlayOneShot по MonoBehaviour)
-//  Плагины трогаем только при необходимости.
-// ═══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+//  ÐœÐÐ Ð¨Ð Ð£Ð¢Ð˜Ð—ÐÐ¦Ð˜Ð¯ (ÐºÐ°ÑÑ‚Ð¾Ð¼Ð½Ñ‹Ð¹ ÐºÐ¾Ð´ Ð² Assets/_Project):
+//    â€¢ ÐœÐ¸Ñ€ / Ð¾Ð±ÑŠÐµÐºÑ‚Ñ‹ Ñƒ Ð¿Ð¾Ð·Ð¸Ñ†Ð¸Ð¸ â†’ PlayAtPoint
+//    â€¢ Ð¨Ð»ÐµÐ¼ / HUD â†’ PlayStatic2D (Ð¿ÑƒÐ» 2D, Ð½Ðµ Ñ€Ð°Ð·Ð±Ñ€Ð°ÑÑ‹Ð²Ð°Ñ‚ÑŒ PlayOneShot Ð¿Ð¾ MonoBehaviour)
+//  ÐŸÐ»Ð°Ð³Ð¸Ð½Ñ‹ Ñ‚Ñ€Ð¾Ð³Ð°ÐµÐ¼ Ñ‚Ð¾Ð»ÑŒÐºÐ¾ Ð¿Ñ€Ð¸ Ð½ÐµÐ¾Ð±Ñ…Ð¾Ð´Ð¸Ð¼Ð¾ÑÑ‚Ð¸.
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //
 // ESTIMATED COST:
 //   Memory: ~16 + pool2D AudioSource + manager overhead
@@ -48,6 +48,7 @@
 //   CPU idle: 0ms (no Update)
 // ============================================================================
 
+using System;
 using System.Collections.Generic;
 using Hecton8.Caves;
 using Hecton8.Core;
@@ -61,16 +62,16 @@ using UnityEngine.Audio;
 namespace Hecton8.Audio
 {
     /// <summary>
-    /// Центральный менеджер пространственного звука с пулингом.
-    /// Singleton — доступ через SpatialAudioManager.Instance.
-    /// Zero-GC в hot path. Жёсткий лимит одновременных источников.
+    /// Ð¦ÐµÐ½Ñ‚Ñ€Ð°Ð»ÑŒÐ½Ñ‹Ð¹ Ð¼ÐµÐ½ÐµÐ´Ð¶ÐµÑ€ Ð¿Ñ€Ð¾ÑÑ‚Ñ€Ð°Ð½ÑÑ‚Ð²ÐµÐ½Ð½Ð¾Ð³Ð¾ Ð·Ð²ÑƒÐºÐ° Ñ Ð¿ÑƒÐ»Ð¸Ð½Ð³Ð¾Ð¼.
+    /// Singleton â€” Ð´Ð¾ÑÑ‚ÑƒÐ¿ Ñ‡ÐµÑ€ÐµÐ· SpatialAudioManager.Instance.
+    /// Zero-GC Ð² hot path. Ð–Ñ‘ÑÑ‚ÐºÐ¸Ð¹ Ð»Ð¸Ð¼Ð¸Ñ‚ Ð¾Ð´Ð½Ð¾Ð²Ñ€ÐµÐ¼ÐµÐ½Ð½Ñ‹Ñ… Ð¸ÑÑ‚Ð¾Ñ‡Ð½Ð¸ÐºÐ¾Ð².
     /// </summary>
     public sealed class SpatialAudioManager : MonoBehaviour, IUpdatable
     {
         private const float SoundSpeedWaterMetersPerSecond = 1480f;
         private const float HaasArrivalWindowSeconds = 0.035f;
         private const float HaasReleaseThresholdSeconds = 0.04f;
-        private const float HaasSecondarySpatialBlend = 0f;
+        private const float HaasSecondarySpatialBlendFactor = 0.2f;
         private const float HaasBlendSharpness = 14f;
         private const float Tier0FullDspDistanceMeters = 15f;
         private const float Tier1ReducedDspDistanceMeters = 40f;
@@ -84,16 +85,30 @@ namespace Hecton8.Audio
         private const float ImpactEmitterMinimumAmplitude = 0.02f;
         private const float BinauralHeadRadiusMeters = 0.0875f;
         private const int AcousticRadarBinCount = 360;
-        private const float AcousticRadarDecayPerSecond = 1.35f;
+        private const float AcousticRadarDecayFactorPerSlowTick = 0.75f;
+        private const float AcousticRadarDecayIntervalSeconds = 0.1f;
         private const float AcousticRadarDistanceRangeMeters = 180f;
+        private const int AcousticRadarGridAzimuthBins = 8;
+        private const int AcousticRadarGridElevationBins = 4;
+        private const int AcousticRadarGridCellCount = AcousticRadarGridAzimuthBins * AcousticRadarGridElevationBins;
+        private const int AcousticRadarNearestEmitterLimit = 12;
+        private const float AcousticRadarElevationMinDegrees = -90f;
+        private const float AcousticRadarElevationMaxDegrees = 90f;
         private const int MaxListenerContainingCaveVolumes = 8;
         private const float CaveExternalLowPassBoundaryCutoffHertz = 2600f;
         private const float CaveExternalLowPassDeepInteriorCutoffHertz = 1100f;
         private const float CaveInteriorReferenceDistanceMeters = 6f;
+        private const float ManualDopplerFollowSharpness = 10f;
+        private const float ManualDopplerMaximumRatio = 1.2f;
+        private const float ManualDopplerMinimumDenominatorMetersPerSecond = 32f;
+        private const float ManualDopplerTanhSoftness = 1.85f;
         private const float RearHemisphereLowPassStartDot = -0.12f;
         private const float RearHemisphereLowPassFullDot = -0.92f;
         private const float RearHemisphereLowPassMaximumCutoffHertz = 18000f;
         private const float RearHemisphereLowPassMinimumCutoffHertz = 3200f;
+        private const float ThreatBusDuckMaximumDb = -10f;
+        private const float ThreatBusDuckAttackSharpness = 18f;
+        private const float ThreatBusDuckReleaseSharpness = 5f;
 
         private enum AudioLodTier : byte
         {
@@ -128,9 +143,9 @@ namespace Hecton8.Audio
             public float ExpireAt;
         }
 
-        // ═══════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  SINGLETON
-        // ═══════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private static SpatialAudioManager s_Instance;
 
@@ -141,8 +156,8 @@ namespace Hecton8.Audio
         }
 
         /// <summary>
-        /// Глобальный доступ к менеджеру. Не создаёт объект автоматически —
-        /// менеджер должен быть размещён на сцене вручную или через bootstrap.
+        /// Ð“Ð»Ð¾Ð±Ð°Ð»ÑŒÐ½Ñ‹Ð¹ Ð´Ð¾ÑÑ‚ÑƒÐ¿ Ðº Ð¼ÐµÐ½ÐµÐ´Ð¶ÐµÑ€Ñƒ. ÐÐµ ÑÐ¾Ð·Ð´Ð°Ñ‘Ñ‚ Ð¾Ð±ÑŠÐµÐºÑ‚ Ð°Ð²Ñ‚Ð¾Ð¼Ð°Ñ‚Ð¸Ñ‡ÐµÑÐºÐ¸ â€”
+        /// Ð¼ÐµÐ½ÐµÐ´Ð¶ÐµÑ€ Ð´Ð¾Ð»Ð¶ÐµÐ½ Ð±Ñ‹Ñ‚ÑŒ Ñ€Ð°Ð·Ð¼ÐµÑ‰Ñ‘Ð½ Ð½Ð° ÑÑ†ÐµÐ½Ðµ Ð²Ñ€ÑƒÑ‡Ð½ÑƒÑŽ Ð¸Ð»Ð¸ Ñ‡ÐµÑ€ÐµÐ· bootstrap.
         /// </summary>
         public static SpatialAudioManager Instance
         {
@@ -166,36 +181,48 @@ namespace Hecton8.Audio
             return instance != null;
         }
 
-        // ═══════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  INSPECTOR CONFIGURATION
-        // ═══════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        [Header("Pool Configuration — 3D World")]
-        [Tooltip("Количество AudioSource в пуле. 16 оптимально для MX350. Max 32.")]
+        [Header("Pool Configuration â€” 3D World")]
+        [Tooltip("ÐšÐ¾Ð»Ð¸Ñ‡ÐµÑÑ‚Ð²Ð¾ AudioSource Ð² Ð¿ÑƒÐ»Ðµ. 16 Ð¾Ð¿Ñ‚Ð¸Ð¼Ð°Ð»ÑŒÐ½Ð¾ Ð´Ð»Ñ MX350. Max 32.")]
         [Range(4, 32)]
         [SerializeField] private int _poolSize = 16;
 
-        [Header("Pool Configuration — 2D Helmet / UI")]
-        [Tooltip("Голоса для коротких UI/шлемных звуков; перекрытие через вытеснение.")]
+        [Header("Pool Configuration â€” 2D Helmet / UI")]
+        [Tooltip("Ð“Ð¾Ð»Ð¾ÑÐ° Ð´Ð»Ñ ÐºÐ¾Ñ€Ð¾Ñ‚ÐºÐ¸Ñ… UI/ÑˆÐ»ÐµÐ¼Ð½Ñ‹Ñ… Ð·Ð²ÑƒÐºÐ¾Ð²; Ð¿ÐµÑ€ÐµÐºÑ€Ñ‹Ñ‚Ð¸Ðµ Ñ‡ÐµÑ€ÐµÐ· Ð²Ñ‹Ñ‚ÐµÑÐ½ÐµÐ½Ð¸Ðµ.")]
         [Range(2, 16)]
         [SerializeField] private int _pool2DSize = 8;
 
         [Header("3D Audio Defaults")]
-        [Tooltip("Минимальная дистанция 3D звука (метры).")]
+        [Tooltip("ÐœÐ¸Ð½Ð¸Ð¼Ð°Ð»ÑŒÐ½Ð°Ñ Ð´Ð¸ÑÑ‚Ð°Ð½Ñ†Ð¸Ñ 3D Ð·Ð²ÑƒÐºÐ° (Ð¼ÐµÑ‚Ñ€Ñ‹).")]
         [SerializeField] private float _minDistance = 1f;
 
-        [Tooltip("Максимальная дистанция 3D звука (метры). За ней звук не слышен.")]
+        [Tooltip("ÐœÐ°ÐºÑÐ¸Ð¼Ð°Ð»ÑŒÐ½Ð°Ñ Ð´Ð¸ÑÑ‚Ð°Ð½Ñ†Ð¸Ñ 3D Ð·Ð²ÑƒÐºÐ° (Ð¼ÐµÑ‚Ñ€Ñ‹). Ð—Ð° Ð½ÐµÐ¹ Ð·Ð²ÑƒÐº Ð½Ðµ ÑÐ»Ñ‹ÑˆÐµÐ½.")]
         [SerializeField] private float _maxDistance = 50f;
 
-        [Header("Mixer Groups (назначить из AudioMixer)")]
-        [Tooltip("Группа для SFX (существа, механизмы, окружение).")]
+        [Header("Mixer Groups (Ð½Ð°Ð·Ð½Ð°Ñ‡Ð¸Ñ‚ÑŒ Ð¸Ð· AudioMixer)")]
+        [Tooltip("Ð“Ñ€ÑƒÐ¿Ð¿Ð° Ð´Ð»Ñ SFX (ÑÑƒÑ‰ÐµÑÑ‚Ð²Ð°, Ð¼ÐµÑ…Ð°Ð½Ð¸Ð·Ð¼Ñ‹, Ð¾ÐºÑ€ÑƒÐ¶ÐµÐ½Ð¸Ðµ).")]
         [SerializeField] private AudioMixerGroup _sfxGroup;
 
-        [Tooltip("Группа для интерфейса и звуков внутри шлема.")]
+        [Tooltip("Ð“Ñ€ÑƒÐ¿Ð¿Ð° Ð´Ð»Ñ Ð¸Ð½Ñ‚ÐµÑ€Ñ„ÐµÐ¹ÑÐ° Ð¸ Ð·Ð²ÑƒÐºÐ¾Ð² Ð²Ð½ÑƒÑ‚Ñ€Ð¸ ÑˆÐ»ÐµÐ¼Ð°.")]
         [SerializeField] private AudioMixerGroup _interfaceGroup;
 
-        [Tooltip("Группа для эмбиента (подводный гул, давление, etc).")]
+        [Tooltip("Ð“Ñ€ÑƒÐ¿Ð¿Ð° Ð´Ð»Ñ ÑÐ¼Ð±Ð¸ÐµÐ½Ñ‚Ð° (Ð¿Ð¾Ð´Ð²Ð¾Ð´Ð½Ñ‹Ð¹ Ð³ÑƒÐ», Ð´Ð°Ð²Ð»ÐµÐ½Ð¸Ðµ, etc).")]
         [SerializeField] private AudioMixerGroup _ambientGroup;
+
+        [Tooltip("Threat bus for dominant hostile cues such as leviathan roars. Falls back to SFX when unassigned.")]
+        [SerializeField] private AudioMixerGroup _threatGroup;
+
+        [Tooltip("Bed bus for ambient world layers that should duck under threat activity. Falls back to Ambient when unassigned.")]
+        [SerializeField] private AudioMixerGroup _bedGroup;
+
+        [Tooltip("Optional mixer override for threat-driven bed ducking. If null, the bed or ambient mixer is used.")]
+        [SerializeField] private AudioMixer _routingMixer;
+
+        [Tooltip("Exposed mixer parameter that attenuates the Bed bus in dB while Threat is active.")]
+        [SerializeField] private string _bedDuckDbParameter = "BedDuckDb";
 
         [Header("Authored Pool Roots")]
         [Tooltip("Pre-authored root containing world-space AudioSource + AudioLowPassFilter pool nodes. Runtime AddComponent is forbidden.")]
@@ -204,52 +231,73 @@ namespace Hecton8.Audio
         [Tooltip("Pre-authored root containing 2D helmet/UI AudioSource pool nodes. Runtime AddComponent is forbidden.")]
         [SerializeField] private Transform _helmetPoolRoot;
 
-        // ═══════════════════════════════════════════════════════
-        //  POOL DATA — Fixed arrays, zero allocation
-        // ═══════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  POOL DATA â€” Fixed arrays, zero allocation
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        /// <summary>Пул AudioSource компонентов. Размер фиксирован после Awake.</summary>
+        /// <summary>ÐŸÑƒÐ» AudioSource ÐºÐ¾Ð¼Ð¿Ð¾Ð½ÐµÐ½Ñ‚Ð¾Ð². Ð Ð°Ð·Ð¼ÐµÑ€ Ñ„Ð¸ÐºÑÐ¸Ñ€Ð¾Ð²Ð°Ð½ Ð¿Ð¾ÑÐ»Ðµ Awake.</summary>
         private AudioSource[] _pool;
 
-        /// <summary>Время начала воспроизведения каждого источника (Time.unscaledTime).
-        /// Используется для вытеснения самого старого звука.</summary>
+        /// <summary>Ð’Ñ€ÐµÐ¼Ñ Ð½Ð°Ñ‡Ð°Ð»Ð° Ð²Ð¾ÑÐ¿Ñ€Ð¾Ð¸Ð·Ð²ÐµÐ´ÐµÐ½Ð¸Ñ ÐºÐ°Ð¶Ð´Ð¾Ð³Ð¾ Ð¸ÑÑ‚Ð¾Ñ‡Ð½Ð¸ÐºÐ° (Time.unscaledTime).
+        /// Ð˜ÑÐ¿Ð¾Ð»ÑŒÐ·ÑƒÐµÑ‚ÑÑ Ð´Ð»Ñ Ð²Ñ‹Ñ‚ÐµÑÐ½ÐµÐ½Ð¸Ñ ÑÐ°Ð¼Ð¾Ð³Ð¾ ÑÑ‚Ð°Ñ€Ð¾Ð³Ð¾ Ð·Ð²ÑƒÐºÐ°.</summary>
         private float[] _startTimes;
 
-        /// <summary>Пул 2D AudioSource (spatialBlend = 0).</summary>
+        /// <summary>ÐŸÑƒÐ» 2D AudioSource (spatialBlend = 0).</summary>
         private AudioSource[] _pool2D;
 
-        /// <summary>Время старта для вытеснения в 2D-пуле.</summary>
+        /// <summary>Ð’Ñ€ÐµÐ¼Ñ ÑÑ‚Ð°Ñ€Ñ‚Ð° Ð´Ð»Ñ Ð²Ñ‹Ñ‚ÐµÑÐ½ÐµÐ½Ð¸Ñ Ð² 2D-Ð¿ÑƒÐ»Ðµ.</summary>
         private float[] _startTimes2D;
         private float[] _baseVolumes;
+        private float[] _basePitches;
+        private float[] _smoothedDopplerRatios;
         private float[] _arrivalTimes;
         private float[] _haasReleaseTimes;
         private float[] _nextTierUpdateTimes;
         private AudioLodTier[] _audioLodTiers;
         private AudioLowPassFilter[] _lowPassFilters;
+        private Vector3[] _previousAbsolutePositions;
+        private Vector3[] _currentAbsoluteVelocities;
         private int[] _activeWorldIndices;
         private int[] _activeWorldSlots;
         private int _activeWorldCount;
         private bool _registeredUpdatable;
         private Transform _listenerTransform;
+        private Vector3 _previousListenerAbsolutePosition;
+        private bool _hasPreviousListenerAbsolutePosition;
         private BinauralEmitterTelemetry _dominantBinauralEmitter;
         private NativeArray<float> _acousticRadarIntensityBins;
+        private NativeArray<float> _acousticRadarGrid;
         private WorldCaveDirector _worldCaveDirector;
+        private ComputeBuffer _acousticRadarGridBuffer;
+        // COLD ALLOC: float[32] - CPU mirror for acoustic radar grid ComputeBuffer uploads - owner: SpatialAudioManager
+        private float[] _acousticRadarGridUploadScratch;
+        // COLD ALLOC: Vector3[12] - nearest-emitter radar accumulation positions - owner: SpatialAudioManager
+        private Vector3[] _radarNearestEmitterPositions;
+        // COLD ALLOC: float[12] - nearest-emitter radar accumulation amplitudes - owner: SpatialAudioManager
+        private float[] _radarNearestEmitterAmplitudes;
+        // COLD ALLOC: float[12] - nearest-emitter radar accumulation distance cache - owner: SpatialAudioManager
+        private float[] _radarNearestEmitterDistanceSq;
+        // COLD ALLOC: Transform[12] - nearest-emitter radar accumulation source roots for cached occlusion lookups - owner: SpatialAudioManager
+        private Transform[] _radarNearestEmitterRoots;
+        private int _resolvedAcousticOcclusionLayerMask;
         // COLD ALLOC: List<HectonVoxelVolume>[32] - active cave-volume cache reused for cave-aware audio filtering - owner: SpatialAudioManager
         private readonly List<HectonVoxelVolume> _caveVolumeBuffer = new List<HectonVoxelVolume>(32);
         // COLD ALLOC: HectonVoxelVolume[8] - listener-containing cave volumes for external ambient filtering - owner: SpatialAudioManager
         private readonly HectonVoxelVolume[] _listenerContainingCaveVolumes = new HectonVoxelVolume[MaxListenerContainingCaveVolumes];
         private int _listenerContainingCaveCount;
         private float _listenerCaveInterior01;
+        private float _threatBusDuck01;
+        private float _radarDecayAccumulator;
         // COLD ALLOC: ImpactEmitterSample[16] - deferred physics-impact telemetry for passive radar/UI only; audible impact stress is owned by PlayerCriticalProceduralAudioRenderer's SPSC queue - owner: SpatialAudioManager
         private readonly ImpactEmitterSample[] _impactEmitters = new ImpactEmitterSample[MaxImpactRadarEmitters];
 
-        // ═══════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  LIFECYCLE
-        // ═══════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private void Awake()
         {
-            // ── Singleton enforcement ──
+            // â”€â”€ Singleton enforcement â”€â”€
             if (s_Instance != null && s_Instance != this)
             {
                 Debug.LogWarningFormat(this, "[SpatialAudioManager] Duplicate instance on '{0}'. Destroying.", gameObject.name);
@@ -259,6 +307,7 @@ namespace Hecton8.Audio
 
             s_Instance = this;
             DontDestroyOnLoad(gameObject);
+            _resolvedAcousticOcclusionLayerMask = AcousticOcclusionUtility.BuildSensoryMask();
 
             InitializePool();
             InitializePool2D();
@@ -278,10 +327,15 @@ namespace Hecton8.Audio
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
 
             _registeredUpdatable = false;
+            _hasPreviousListenerAbsolutePosition = false;
+            _previousListenerAbsolutePosition = default;
             ResetAllWorldSourceState();
             ResetImpactEmitters();
             ResetAcousticRadarBins();
+            ResetAcousticRadarGrid();
             ResetListenerCaveState();
+            ApplyThreatBusDucking(0f, 0f);
+            _radarDecayAccumulator = 0f;
         }
 
         private void OnDestroy()
@@ -306,9 +360,15 @@ namespace Hecton8.Audio
             float blendT = 1f - math.exp(-math.max(HaasBlendSharpness, 0.01f) * safeDeltaTime);
             float now = Time.unscaledTime;
             Transform listener = ResolveListenerTransform();
+            Vector3 listenerAbsolutePosition = listener != null
+                ? HectonFloatingOrigin.ToAbsoluteUniversePosition(listener.position)
+                : default;
+            Vector3 listenerVelocity = ResolveListenerAbsoluteVelocity(listenerAbsolutePosition, safeDeltaTime);
+            float threatActivity = 0f;
             DecayImpactEmitters(now);
-            DecayAcousticRadarBins(safeDeltaTime);
+            AdvanceAcousticRadarDecayCadence(safeDeltaTime);
             RefreshListenerCaveState(listener);
+            ResetNearestRadarEmitterScratch();
             int activeSlot = 0;
             while (activeSlot < _activeWorldCount)
             {
@@ -321,6 +381,8 @@ namespace Hecton8.Audio
                 }
 
                 UpdateWorldSourceAudioLod(sourceIndex, source, now, false);
+                if (listener != null)
+                    UpdateManualDopplerPitch(sourceIndex, source, listenerAbsolutePosition, listenerVelocity, safeDeltaTime);
                 if (!source.isPlaying)
                 {
                     ResetWorldSourceState(sourceIndex, false);
@@ -332,21 +394,33 @@ namespace Hecton8.Audio
                 if (_haasReleaseTimes[sourceIndex] <= now && source.spatialBlend >= targetBlend - 0.001f)
                     _haasReleaseTimes[sourceIndex] = 0f;
 
-                DepositAcousticRadarSample(listener, source.transform.position, math.max(0f, source.volume));
+                if (IsThreatWorldSource(source))
+                    threatActivity = math.max(threatActivity, math.saturate(source.volume));
+                float sourceAmplitude = math.max(0f, source.volume);
+                DepositAcousticRadarSample(listener, source.transform.position, sourceAmplitude);
+                if (listener != null)
+                    QueueNearestRadarEmitter(listenerAbsolutePosition, listener.position, source.transform.position, sourceAmplitude, source.transform.root);
                 activeSlot++;
             }
 
             DepositImpactRadarSamples(listener, now);
+            if (listener != null)
+            {
+                QueueImpactRadarEmitters(listenerAbsolutePosition, listener.position, now);
+                AccumulateNearestRadarGrid(listener);
+            }
+            UploadAcousticRadarGridBuffer();
             UpdateDominantBinauralEmitterTelemetry(now, listener);
+            ApplyThreatBusDucking(threatActivity, safeDeltaTime);
         }
 
-        // ═══════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  POOL INITIALIZATION
-        // ═══════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>
-        /// Создаёт пул AudioSource как дочерние объекты.
-        /// Вызывается один раз в Awake. Никаких аллокаций после этого.
+        /// Ð¡Ð¾Ð·Ð´Ð°Ñ‘Ñ‚ Ð¿ÑƒÐ» AudioSource ÐºÐ°Ðº Ð´Ð¾Ñ‡ÐµÑ€Ð½Ð¸Ðµ Ð¾Ð±ÑŠÐµÐºÑ‚Ñ‹.
+        /// Ð’Ñ‹Ð·Ñ‹Ð²Ð°ÐµÑ‚ÑÑ Ð¾Ð´Ð¸Ð½ Ñ€Ð°Ð· Ð² Awake. ÐÐ¸ÐºÐ°ÐºÐ¸Ñ… Ð°Ð»Ð»Ð¾ÐºÐ°Ñ†Ð¸Ð¹ Ð¿Ð¾ÑÐ»Ðµ ÑÑ‚Ð¾Ð³Ð¾.
         /// </summary>
         private void InitializePool()
         {
@@ -366,11 +440,15 @@ namespace Hecton8.Audio
             _pool = new AudioSource[_poolSize];
             _startTimes = new float[_poolSize];
             _baseVolumes = new float[_poolSize];
+            _basePitches = new float[_poolSize];
+            _smoothedDopplerRatios = new float[_poolSize];
             _arrivalTimes = new float[_poolSize];
             _haasReleaseTimes = new float[_poolSize];
             _nextTierUpdateTimes = new float[_poolSize];
             _audioLodTiers = new AudioLodTier[_poolSize];
             _lowPassFilters = new AudioLowPassFilter[_poolSize];
+            _previousAbsolutePositions = new Vector3[_poolSize];
+            _currentAbsoluteVelocities = new Vector3[_poolSize];
             _activeWorldIndices = new int[_poolSize]; // COLD ALLOC: int[_poolSize] - sparse active world-source set - owner: SpatialAudioManager
             _activeWorldSlots = new int[_poolSize]; // COLD ALLOC: int[_poolSize] - sparse world-source slot lookup - owner: SpatialAudioManager
             _activeWorldCount = 0;
@@ -378,6 +456,8 @@ namespace Hecton8.Audio
             {
                 _activeWorldIndices[i] = -1;
                 _activeWorldSlots[i] = -1;
+                _basePitches[i] = 1f;
+                _smoothedDopplerRatios[i] = 1f;
             }
 
             if (_poolSize > 0)
@@ -400,7 +480,7 @@ namespace Hecton8.Audio
 
             for (int i = 0; i < _poolSize; i++)
             {
-                // Дочерний GameObject для каждого источника
+                // Ð”Ð¾Ñ‡ÐµÑ€Ð½Ð¸Ð¹ GameObject Ð´Ð»Ñ ÐºÐ°Ð¶Ð´Ð¾Ð³Ð¾ Ð¸ÑÑ‚Ð¾Ñ‡Ð½Ð¸ÐºÐ°
                 GameObject child = null;
                 child.transform.SetParent(transform, false);
 
@@ -425,7 +505,7 @@ namespace Hecton8.Audio
 #endif
         }
 
-        /// <summary>Создаёт пул 2D источников (аналогично 3D, без PlayOneShot).</summary>
+        /// <summary>Ð¡Ð¾Ð·Ð´Ð°Ñ‘Ñ‚ Ð¿ÑƒÐ» 2D Ð¸ÑÑ‚Ð¾Ñ‡Ð½Ð¸ÐºÐ¾Ð² (Ð°Ð½Ð°Ð»Ð¾Ð³Ð¸Ñ‡Ð½Ð¾ 3D, Ð±ÐµÐ· PlayOneShot).</summary>
         private void InitializePool2D()
         {
             int effectivePool2DSize = math.min(_pool2DSize, CountAuthoredHelmetPoolNodes(ResolveHelmetPoolRoot()));
@@ -487,52 +567,64 @@ namespace Hecton8.Audio
         }
 
         /// <summary>
-        /// Настраивает AudioSource как 3D источник с Linear Rolloff.
-        /// Linear Rolloff дешевле Logarithmic и предсказуемее для геймдизайна.
+        /// ÐÐ°ÑÑ‚Ñ€Ð°Ð¸Ð²Ð°ÐµÑ‚ AudioSource ÐºÐ°Ðº 3D Ð¸ÑÑ‚Ð¾Ñ‡Ð½Ð¸Ðº Ñ Linear Rolloff.
+        /// Linear Rolloff Ð´ÐµÑˆÐµÐ²Ð»Ðµ Logarithmic Ð¸ Ð¿Ñ€ÐµÐ´ÑÐºÐ°Ð·ÑƒÐµÐ¼ÐµÐµ Ð´Ð»Ñ Ð³ÐµÐ¹Ð¼Ð´Ð¸Ð·Ð°Ð¹Ð½Ð°.
         /// </summary>
         private void ConfigureAs3D(AudioSource source)
         {
-            source.spatialBlend = 1f;          // Полностью 3D
-            source.spread = 0f;                // Точечный источник
+            source.spatialBlend = 1f;          // ÐŸÐ¾Ð»Ð½Ð¾ÑÑ‚ÑŒÑŽ 3D
+            source.spread = 0f;                // Ð¢Ð¾Ñ‡ÐµÑ‡Ð½Ñ‹Ð¹ Ð¸ÑÑ‚Ð¾Ñ‡Ð½Ð¸Ðº
             source.rolloffMode = AudioRolloffMode.Linear;
             source.minDistance = _minDistance;
             source.maxDistance = _maxDistance;
-            source.dopplerLevel = 0f;          // Отключаем Doppler — дешевле и нет артефактов
+            source.dopplerLevel = 0f;          // ÐžÑ‚ÐºÐ»ÑŽÑ‡Ð°ÐµÐ¼ Doppler â€” Ð´ÐµÑˆÐµÐ²Ð»Ðµ Ð¸ Ð½ÐµÑ‚ Ð°Ñ€Ñ‚ÐµÑ„Ð°ÐºÑ‚Ð¾Ð²
 
-            // Default mixer group
-            if (_sfxGroup != null)
-            {
-                source.outputAudioMixerGroup = _sfxGroup;
-            }
+            source.outputAudioMixerGroup = ResolvedDefaultWorldMixerGroup;
         }
 
-        // ═══════════════════════════════════════════════════════
-        //  PUBLIC API — 3D SPATIAL AUDIO
-        // ═══════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  PUBLIC API â€” 3D SPATIAL AUDIO
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>
-        /// Проигрывает 3D звук в указанной мировой позиции.
-        /// Использует SFX mixer group по умолчанию.
+        /// ÐŸÑ€Ð¾Ð¸Ð³Ñ€Ñ‹Ð²Ð°ÐµÑ‚ 3D Ð·Ð²ÑƒÐº Ð² ÑƒÐºÐ°Ð·Ð°Ð½Ð½Ð¾Ð¹ Ð¼Ð¸Ñ€Ð¾Ð²Ð¾Ð¹ Ð¿Ð¾Ð·Ð¸Ñ†Ð¸Ð¸.
+        /// Ð˜ÑÐ¿Ð¾Ð»ÑŒÐ·ÑƒÐµÑ‚ SFX mixer group Ð¿Ð¾ ÑƒÐ¼Ð¾Ð»Ñ‡Ð°Ð½Ð¸ÑŽ.
         ///
-        /// Логика пула:
-        ///   1. Ищет первый свободный (!isPlaying) источник — O(n), n ≤ 32.
-        ///   2. Если все заняты — вытесняет самый старый (lowest startTime).
-        ///   3. Zero-GC: только array traversal, никаких аллокаций.
+        /// Ð›Ð¾Ð³Ð¸ÐºÐ° Ð¿ÑƒÐ»Ð°:
+        ///   1. Ð˜Ñ‰ÐµÑ‚ Ð¿ÐµÑ€Ð²Ñ‹Ð¹ ÑÐ²Ð¾Ð±Ð¾Ð´Ð½Ñ‹Ð¹ (!isPlaying) Ð¸ÑÑ‚Ð¾Ñ‡Ð½Ð¸Ðº â€” O(n), n â‰¤ 32.
+        ///   2. Ð•ÑÐ»Ð¸ Ð²ÑÐµ Ð·Ð°Ð½ÑÑ‚Ñ‹ â€” Ð²Ñ‹Ñ‚ÐµÑÐ½ÑÐµÑ‚ ÑÐ°Ð¼Ñ‹Ð¹ ÑÑ‚Ð°Ñ€Ñ‹Ð¹ (lowest startTime).
+        ///   3. Zero-GC: Ñ‚Ð¾Ð»ÑŒÐºÐ¾ array traversal, Ð½Ð¸ÐºÐ°ÐºÐ¸Ñ… Ð°Ð»Ð»Ð¾ÐºÐ°Ñ†Ð¸Ð¹.
         ///
-        /// Вызов: SpatialAudioManager.Instance.PlayAtPoint(clip, transform.position);
+        /// Ð’Ñ‹Ð·Ð¾Ð²: SpatialAudioManager.Instance.PlayAtPoint(clip, transform.position);
         /// </summary>
-        /// <param name="clip">AudioClip для воспроизведения. Null-safe.</param>
-        /// <param name="position">Мировая позиция источника звука.</param>
-        /// <param name="volume">Громкость [0..1]. Default = 1.</param>
-        /// <param name="pitch">Pitch [0.1..3]. Default = 1. Рандомизировать для вариативности.</param>
+        /// <param name="clip">AudioClip Ð´Ð»Ñ Ð²Ð¾ÑÐ¿Ñ€Ð¾Ð¸Ð·Ð²ÐµÐ´ÐµÐ½Ð¸Ñ. Null-safe.</param>
+        /// <param name="position">ÐœÐ¸Ñ€Ð¾Ð²Ð°Ñ Ð¿Ð¾Ð·Ð¸Ñ†Ð¸Ñ Ð¸ÑÑ‚Ð¾Ñ‡Ð½Ð¸ÐºÐ° Ð·Ð²ÑƒÐºÐ°.</param>
+        /// <param name="volume">Ð“Ñ€Ð¾Ð¼ÐºÐ¾ÑÑ‚ÑŒ [0..1]. Default = 1.</param>
+        /// <param name="pitch">Pitch [0.1..3]. Default = 1. Ð Ð°Ð½Ð´Ð¾Ð¼Ð¸Ð·Ð¸Ñ€Ð¾Ð²Ð°Ñ‚ÑŒ Ð´Ð»Ñ Ð²Ð°Ñ€Ð¸Ð°Ñ‚Ð¸Ð²Ð½Ð¾ÑÑ‚Ð¸.</param>
         public void PlayAtPoint(AudioClip clip, Vector3 position, float volume = 1f, float pitch = 1f)
         {
-            PlayAtPoint(clip, position, volume, pitch, _sfxGroup);
+            PlayAtPoint(clip, position, volume, pitch, ResolvedDefaultWorldMixerGroup);
         }
 
         /// <summary>
-        /// Проигрывает 3D звук с явным указанием AudioMixerGroup.
-        /// Используйте для ambient звуков: PlayAtPoint(clip, pos, 1f, 1f, ambientGroup).
+        /// Routes a dominant hostile cue through the threat bus so ambient bed content ducks under it.
+        /// </summary>
+        public void PlayThreatAtPoint(AudioClip clip, Vector3 position, float volume = 1f, float pitch = 1f)
+        {
+            PlayAtPoint(clip, position, volume, pitch, ResolvedThreatBusGroup);
+        }
+
+        /// <summary>
+        /// Routes ambient world-bed content through the bed bus.
+        /// </summary>
+        public void PlayBedAtPoint(AudioClip clip, Vector3 position, float volume = 1f, float pitch = 1f)
+        {
+            PlayAtPoint(clip, position, volume, pitch, ResolvedBedBusGroup);
+        }
+
+        /// <summary>
+        /// ÐŸÑ€Ð¾Ð¸Ð³Ñ€Ñ‹Ð²Ð°ÐµÑ‚ 3D Ð·Ð²ÑƒÐº Ñ ÑÐ²Ð½Ñ‹Ð¼ ÑƒÐºÐ°Ð·Ð°Ð½Ð¸ÐµÐ¼ AudioMixerGroup.
+        /// Ð˜ÑÐ¿Ð¾Ð»ÑŒÐ·ÑƒÐ¹Ñ‚Ðµ Ð´Ð»Ñ ambient Ð·Ð²ÑƒÐºÐ¾Ð²: PlayAtPoint(clip, pos, 1f, 1f, ambientGroup).
         /// </summary>
         public void PlayAtPoint(
             AudioClip clip, Vector3 position, float volume, float pitch, AudioMixerGroup mixerGroup)
@@ -560,49 +652,51 @@ namespace Hecton8.Audio
             ResetWorldSourceState(index, true);
             source.enabled = true;
 
-            // ── Позиционирование ──
+            // â”€â”€ ÐŸÐ¾Ð·Ð¸Ñ†Ð¸Ð¾Ð½Ð¸Ñ€Ð¾Ð²Ð°Ð½Ð¸Ðµ â”€â”€
             source.transform.position = position;
 
-            // ── Настройка ──
+            // â”€â”€ ÐÐ°ÑÑ‚Ñ€Ð¾Ð¹ÐºÐ° â”€â”€
             source.clip = clip;
             source.volume = volume;
-            source.pitch = pitch;
+            float clampedPitch = math.clamp(pitch, 0.1f, 3f);
+            source.pitch = clampedPitch;
             _baseVolumes[index] = volume;
-            source.outputAudioMixerGroup = mixerGroup;
+            _basePitches[index] = clampedPitch;
+            source.outputAudioMixerGroup = ResolveWorldMixerGroup(clip, mixerGroup);
             _audioLodTiers[index] = lodTier;
             UpdateWorldSourceAudioLod(index, source, Time.unscaledTime, true);
             ApplyHaasMask(index, position);
             source.spatialBlend = ResolveTargetSpatialBlend(index, Time.unscaledTime);
 
-            // ── Запуск ──
+            // â”€â”€ Ð—Ð°Ð¿ÑƒÑÐº â”€â”€
             source.Play();
             _startTimes[index] = Time.unscaledTime;
             MarkWorldSourceActive(index);
         }
 
-        // ═══════════════════════════════════════════════════════
-        //  PUBLIC API — 2D STATIC AUDIO (SUIT / HELMET / HUD)
-        // ═══════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  PUBLIC API â€” 2D STATIC AUDIO (SUIT / HELMET / HUD)
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>
-        /// Проигрывает 2D звук без пространственного позиционирования.
-        /// Для звуков внутри шлема: HUD beeps, suit warnings, radio static,
+        /// ÐŸÑ€Ð¾Ð¸Ð³Ñ€Ñ‹Ð²Ð°ÐµÑ‚ 2D Ð·Ð²ÑƒÐº Ð±ÐµÐ· Ð¿Ñ€Ð¾ÑÑ‚Ñ€Ð°Ð½ÑÑ‚Ð²ÐµÐ½Ð½Ð¾Ð³Ð¾ Ð¿Ð¾Ð·Ð¸Ñ†Ð¸Ð¾Ð½Ð¸Ñ€Ð¾Ð²Ð°Ð½Ð¸Ñ.
+        /// Ð”Ð»Ñ Ð·Ð²ÑƒÐºÐ¾Ð² Ð²Ð½ÑƒÑ‚Ñ€Ð¸ ÑˆÐ»ÐµÐ¼Ð°: HUD beeps, suit warnings, radio static,
         /// breath sounds, system alerts.
         ///
-        /// Использует пул 2D-источников — несколько коротких сигналов могут играть
-        /// параллельно до исчерпания пула; дальше — вытеснение по времени.
+        /// Ð˜ÑÐ¿Ð¾Ð»ÑŒÐ·ÑƒÐµÑ‚ Ð¿ÑƒÐ» 2D-Ð¸ÑÑ‚Ð¾Ñ‡Ð½Ð¸ÐºÐ¾Ð² â€” Ð½ÐµÑÐºÐ¾Ð»ÑŒÐºÐ¾ ÐºÐ¾Ñ€Ð¾Ñ‚ÐºÐ¸Ñ… ÑÐ¸Ð³Ð½Ð°Ð»Ð¾Ð² Ð¼Ð¾Ð³ÑƒÑ‚ Ð¸Ð³Ñ€Ð°Ñ‚ÑŒ
+        /// Ð¿Ð°Ñ€Ð°Ð»Ð»ÐµÐ»ÑŒÐ½Ð¾ Ð´Ð¾ Ð¸ÑÑ‡ÐµÑ€Ð¿Ð°Ð½Ð¸Ñ Ð¿ÑƒÐ»Ð°; Ð´Ð°Ð»ÑŒÑˆÐµ â€” Ð²Ñ‹Ñ‚ÐµÑÐ½ÐµÐ½Ð¸Ðµ Ð¿Ð¾ Ð²Ñ€ÐµÐ¼ÐµÐ½Ð¸.
         ///
-        /// Вызов: SpatialAudioManager.Instance.PlayStatic2D(beepClip, 0.5f);
+        /// Ð’Ñ‹Ð·Ð¾Ð²: SpatialAudioManager.Instance.PlayStatic2D(beepClip, 0.5f);
         /// </summary>
         /// <param name="clip">AudioClip. Null-safe.</param>
-        /// <param name="volume">Громкость [0..1]. Default = 1.</param>
+        /// <param name="volume">Ð“Ñ€Ð¾Ð¼ÐºÐ¾ÑÑ‚ÑŒ [0..1]. Default = 1.</param>
         public void PlayStatic2D(AudioClip clip, float volume = 1f)
         {
             PlayStatic2D(clip, volume, _interfaceGroup);
         }
 
         /// <summary>
-        /// Проигрывает 2D звук с явной AudioMixerGroup.
+        /// ÐŸÑ€Ð¾Ð¸Ð³Ñ€Ñ‹Ð²Ð°ÐµÑ‚ 2D Ð·Ð²ÑƒÐº Ñ ÑÐ²Ð½Ð¾Ð¹ AudioMixerGroup.
         /// </summary>
         public void PlayStatic2D(AudioClip clip, float volume, AudioMixerGroup mixerGroup)
         {
@@ -627,24 +721,30 @@ namespace Hecton8.Audio
             source.volume = volume;
             source.pitch = 1f;
             source.spatialBlend = 0f;
-            source.outputAudioMixerGroup = mixerGroup != null ? mixerGroup : _interfaceGroup;
+            source.outputAudioMixerGroup = ResolveUiMixerGroup(clip, mixerGroup);
 
             source.Play();
             _startTimes2D[index] = Time.unscaledTime;
         }
 
-        // ═══════════════════════════════════════════════════════
-        //  PUBLIC API — MIXER GROUP ACCESSORS
-        // ═══════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  PUBLIC API â€” MIXER GROUP ACCESSORS
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        /// <summary>Mixer group для SFX (существа, механизмы, окружение).</summary>
+        /// <summary>Mixer group Ð´Ð»Ñ SFX (ÑÑƒÑ‰ÐµÑÑ‚Ð²Ð°, Ð¼ÐµÑ…Ð°Ð½Ð¸Ð·Ð¼Ñ‹, Ð¾ÐºÑ€ÑƒÐ¶ÐµÐ½Ð¸Ðµ).</summary>
         public AudioMixerGroup SfxGroup => _sfxGroup;
 
-        /// <summary>Mixer group для интерфейса и звуков шлема.</summary>
+        /// <summary>Mixer group Ð´Ð»Ñ Ð¸Ð½Ñ‚ÐµÑ€Ñ„ÐµÐ¹ÑÐ° Ð¸ Ð·Ð²ÑƒÐºÐ¾Ð² ÑˆÐ»ÐµÐ¼Ð°.</summary>
         public AudioMixerGroup InterfaceGroup => _interfaceGroup;
 
-        /// <summary>Mixer group для эмбиента (подводный гул, давление).</summary>
-        public AudioMixerGroup AmbientGroup => _ambientGroup;
+        /// <summary>Mixer group for resolved ambient-bed playback.</summary>
+        public AudioMixerGroup AmbientGroup => ResolvedBedBusGroup;
+
+        /// <summary>Mixer group for dominant hostile cues.</summary>
+        public AudioMixerGroup ThreatGroup => ResolvedThreatBusGroup;
+
+        /// <summary>Mixer group for ambient bed layers.</summary>
+        public AudioMixerGroup BedGroup => ResolvedBedBusGroup;
 
         /// <summary>Current 360-bin acoustic radar intensity ring for HUD consumers. Treat as read-only and reacquire each tick.</summary>
         public NativeArray<float> AcousticRadarIntensityBins => _acousticRadarIntensityBins;
@@ -652,12 +752,32 @@ namespace Hecton8.Audio
         /// <summary>Current acoustic radar angular resolution in bins.</summary>
         public int AcousticRadarResolution => AcousticRadarBinCount;
 
+        /// <summary>Persistent 8x4 acoustic radar energy grid for HUD sonar distortion overlays.</summary>
+        public NativeArray<float> AcousticRadarEnergyGrid => _acousticRadarGrid;
+
+        /// <summary>GPU upload buffer for the 8x4 acoustic radar energy grid.</summary>
+        public ComputeBuffer AcousticRadarEnergyGridBuffer => _acousticRadarGridBuffer;
+
         /// <summary>Returns the persistent 360-degree acoustic radar ring for HUD/visor consumers.</summary>
         public bool TryGetAcousticRadarPayload(out NativeArray<float> radialIntensityBins, out int radialResolution)
         {
             radialIntensityBins = _acousticRadarIntensityBins;
             radialResolution = AcousticRadarBinCount;
             return radialIntensityBins.IsCreated && radialResolution > 0;
+        }
+
+        /// <summary>Returns the persistent 8x4 acoustic radar grid and its GPU upload buffer.</summary>
+        public bool TryGetAcousticRadarGridPayload(
+            out NativeArray<float> gridEnergy,
+            out int azimuthBins,
+            out int elevationBins,
+            out ComputeBuffer gridBuffer)
+        {
+            gridEnergy = _acousticRadarGrid;
+            azimuthBins = AcousticRadarGridAzimuthBins;
+            elevationBins = AcousticRadarGridElevationBins;
+            gridBuffer = _acousticRadarGridBuffer;
+            return gridEnergy.IsCreated && gridBuffer != null;
         }
 
         internal bool TryGetDominantBinauralEmitter(out BinauralEmitterTelemetry telemetry)
@@ -804,13 +924,13 @@ namespace Hecton8.Audio
             bestScore = energy;
         }
 
-        // ═══════════════════════════════════════════════════════
-        //  PUBLIC API — UTILITY
-        // ═══════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  PUBLIC API â€” UTILITY
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>
-        /// Останавливает все звуки в пуле. Аварийный метод.
-        /// Полезен при смене сцены, паузе, или фатальном событии.
+        /// ÐžÑÑ‚Ð°Ð½Ð°Ð²Ð»Ð¸Ð²Ð°ÐµÑ‚ Ð²ÑÐµ Ð·Ð²ÑƒÐºÐ¸ Ð² Ð¿ÑƒÐ»Ðµ. ÐÐ²Ð°Ñ€Ð¸Ð¹Ð½Ñ‹Ð¹ Ð¼ÐµÑ‚Ð¾Ð´.
+        /// ÐŸÐ¾Ð»ÐµÐ·ÐµÐ½ Ð¿Ñ€Ð¸ ÑÐ¼ÐµÐ½Ðµ ÑÑ†ÐµÐ½Ñ‹, Ð¿Ð°ÑƒÐ·Ðµ, Ð¸Ð»Ð¸ Ñ„Ð°Ñ‚Ð°Ð»ÑŒÐ½Ð¾Ð¼ ÑÐ¾Ð±Ñ‹Ñ‚Ð¸Ð¸.
         /// </summary>
         public void StopAll()
         {
@@ -829,8 +949,8 @@ namespace Hecton8.Audio
         }
 
         /// <summary>
-        /// Возвращает количество активно играющих источников в пуле.
-        /// Только для debug / profiling. Не вызывать в hot path.
+        /// Ð’Ð¾Ð·Ð²Ñ€Ð°Ñ‰Ð°ÐµÑ‚ ÐºÐ¾Ð»Ð¸Ñ‡ÐµÑÑ‚Ð²Ð¾ Ð°ÐºÑ‚Ð¸Ð²Ð½Ð¾ Ð¸Ð³Ñ€Ð°ÑŽÑ‰Ð¸Ñ… Ð¸ÑÑ‚Ð¾Ñ‡Ð½Ð¸ÐºÐ¾Ð² Ð² Ð¿ÑƒÐ»Ðµ.
+        /// Ð¢Ð¾Ð»ÑŒÐºÐ¾ Ð´Ð»Ñ debug / profiling. ÐÐµ Ð²Ñ‹Ð·Ñ‹Ð²Ð°Ñ‚ÑŒ Ð² hot path.
         /// </summary>
         public int ActiveSourceCount
         {
@@ -840,22 +960,22 @@ namespace Hecton8.Audio
             }
         }
 
-        // ═══════════════════════════════════════════════════════
-        //  POOL MANAGEMENT — PRIVATE
-        // ═══════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  POOL MANAGEMENT â€” PRIVATE
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>
-        /// Находит индекс свободного AudioSource в пуле.
-        /// Если все заняты — возвращает индекс самого старого (вытеснение).
+        /// ÐÐ°Ñ…Ð¾Ð´Ð¸Ñ‚ Ð¸Ð½Ð´ÐµÐºÑ ÑÐ²Ð¾Ð±Ð¾Ð´Ð½Ð¾Ð³Ð¾ AudioSource Ð² Ð¿ÑƒÐ»Ðµ.
+        /// Ð•ÑÐ»Ð¸ Ð²ÑÐµ Ð·Ð°Ð½ÑÑ‚Ñ‹ â€” Ð²Ð¾Ð·Ð²Ñ€Ð°Ñ‰Ð°ÐµÑ‚ Ð¸Ð½Ð´ÐµÐºÑ ÑÐ°Ð¼Ð¾Ð³Ð¾ ÑÑ‚Ð°Ñ€Ð¾Ð³Ð¾ (Ð²Ñ‹Ñ‚ÐµÑÐ½ÐµÐ½Ð¸Ðµ).
         ///
-        /// Алгоритм:
-        ///   1. Линейный проход по массиву — ищем первый !isPlaying.
-        ///   2. Параллельно отслеживаем oldest (минимальный startTime среди playing).
-        ///   3. Один проход — O(n), n ≤ 32. Zero-GC.
+        /// ÐÐ»Ð³Ð¾Ñ€Ð¸Ñ‚Ð¼:
+        ///   1. Ð›Ð¸Ð½ÐµÐ¹Ð½Ñ‹Ð¹ Ð¿Ñ€Ð¾Ñ…Ð¾Ð´ Ð¿Ð¾ Ð¼Ð°ÑÑÐ¸Ð²Ñƒ â€” Ð¸Ñ‰ÐµÐ¼ Ð¿ÐµÑ€Ð²Ñ‹Ð¹ !isPlaying.
+        ///   2. ÐŸÐ°Ñ€Ð°Ð»Ð»ÐµÐ»ÑŒÐ½Ð¾ Ð¾Ñ‚ÑÐ»ÐµÐ¶Ð¸Ð²Ð°ÐµÐ¼ oldest (Ð¼Ð¸Ð½Ð¸Ð¼Ð°Ð»ÑŒÐ½Ñ‹Ð¹ startTime ÑÑ€ÐµÐ´Ð¸ playing).
+        ///   3. ÐžÐ´Ð¸Ð½ Ð¿Ñ€Ð¾Ñ…Ð¾Ð´ â€” O(n), n â‰¤ 32. Zero-GC.
         ///
-        /// Cost: ~0.001ms для пула из 16 элементов.
+        /// Cost: ~0.001ms Ð´Ð»Ñ Ð¿ÑƒÐ»Ð° Ð¸Ð· 16 ÑÐ»ÐµÐ¼ÐµÐ½Ñ‚Ð¾Ð².
         /// </summary>
-        /// <returns>Индекс источника для использования.</returns>
+        /// <returns>Ð˜Ð½Ð´ÐµÐºÑ Ð¸ÑÑ‚Ð¾Ñ‡Ð½Ð¸ÐºÐ° Ð´Ð»Ñ Ð¸ÑÐ¿Ð¾Ð»ÑŒÐ·Ð¾Ð²Ð°Ð½Ð¸Ñ.</returns>
 private int AcquireSourceIndex()
         {
             if (_pool == null || _poolSize <= 0)
@@ -905,7 +1025,6 @@ private int AcquireSourceIndex()
             if (_registeredUpdatable)
                 return;
 
-            SystemDispatcher.EnsureRuntimeInstance();
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _registeredUpdatable = true;
         }
@@ -1118,6 +1237,18 @@ private int AcquireSourceIndex()
             if (_baseVolumes != null && sourceIndex < _baseVolumes.Length)
                 _baseVolumes[sourceIndex] = 0f;
 
+            if (_basePitches != null && sourceIndex < _basePitches.Length)
+                _basePitches[sourceIndex] = 1f;
+
+            if (_smoothedDopplerRatios != null && sourceIndex < _smoothedDopplerRatios.Length)
+                _smoothedDopplerRatios[sourceIndex] = 1f;
+
+            if (_previousAbsolutePositions != null && sourceIndex < _previousAbsolutePositions.Length)
+                _previousAbsolutePositions[sourceIndex] = default;
+
+            if (_currentAbsoluteVelocities != null && sourceIndex < _currentAbsoluteVelocities.Length)
+                _currentAbsoluteVelocities[sourceIndex] = default;
+
             if (_nextTierUpdateTimes != null && sourceIndex < _nextTierUpdateTimes.Length)
                 _nextTierUpdateTimes[sourceIndex] = 0f;
 
@@ -1201,7 +1332,7 @@ private int AcquireSourceIndex()
         {
             float baseBlend = ResolveBaseSpatialBlend(_audioLodTiers[sourceIndex]);
             if (_haasReleaseTimes[sourceIndex] > now)
-                return math.min(baseBlend, HaasSecondarySpatialBlend);
+                return baseBlend * HaasSecondarySpatialBlendFactor;
 
             return baseBlend;
         }
@@ -1279,6 +1410,32 @@ private int AcquireSourceIndex()
                     Allocator.Persistent,
                     NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[360] - HUD acoustic radar ring - owner: SpatialAudioManager
             }
+
+            if (!_acousticRadarGrid.IsCreated)
+            {
+                _acousticRadarGrid = new NativeArray<float>(
+                    AcousticRadarGridCellCount,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[32] - 8x4 acoustic radar energy grid - owner: SpatialAudioManager
+            }
+
+            if (_acousticRadarGridUploadScratch == null || _acousticRadarGridUploadScratch.Length != AcousticRadarGridCellCount)
+                _acousticRadarGridUploadScratch = new float[AcousticRadarGridCellCount]; // COLD ALLOC: float[32] - CPU mirror for acoustic radar grid ComputeBuffer uploads - owner: SpatialAudioManager
+
+            if (_radarNearestEmitterPositions == null || _radarNearestEmitterPositions.Length != AcousticRadarNearestEmitterLimit)
+                _radarNearestEmitterPositions = new Vector3[AcousticRadarNearestEmitterLimit]; // COLD ALLOC: Vector3[12] - nearest-emitter radar accumulation positions - owner: SpatialAudioManager
+
+            if (_radarNearestEmitterAmplitudes == null || _radarNearestEmitterAmplitudes.Length != AcousticRadarNearestEmitterLimit)
+                _radarNearestEmitterAmplitudes = new float[AcousticRadarNearestEmitterLimit]; // COLD ALLOC: float[12] - nearest-emitter radar accumulation amplitudes - owner: SpatialAudioManager
+
+            if (_radarNearestEmitterDistanceSq == null || _radarNearestEmitterDistanceSq.Length != AcousticRadarNearestEmitterLimit)
+                _radarNearestEmitterDistanceSq = new float[AcousticRadarNearestEmitterLimit]; // COLD ALLOC: float[12] - nearest-emitter radar accumulation distance cache - owner: SpatialAudioManager
+
+            if (_radarNearestEmitterRoots == null || _radarNearestEmitterRoots.Length != AcousticRadarNearestEmitterLimit)
+                _radarNearestEmitterRoots = new Transform[AcousticRadarNearestEmitterLimit]; // COLD ALLOC: Transform[12] - nearest-emitter radar accumulation source roots for cached occlusion lookups - owner: SpatialAudioManager
+
+            if (_acousticRadarGridBuffer == null)
+                _acousticRadarGridBuffer = new ComputeBuffer(AcousticRadarGridCellCount, sizeof(float));
         }
 
         private void ReleaseTelemetryCaches()
@@ -1288,6 +1445,150 @@ private int AcquireSourceIndex()
                 _acousticRadarIntensityBins.Dispose();
                 _acousticRadarIntensityBins = default;
             }
+
+            if (_acousticRadarGrid.IsCreated)
+            {
+                _acousticRadarGrid.Dispose();
+                _acousticRadarGrid = default;
+            }
+
+            if (_acousticRadarGridBuffer != null)
+            {
+                _acousticRadarGridBuffer.Release();
+                _acousticRadarGridBuffer = null;
+            }
+        }
+
+        private AudioMixerGroup ResolvedDefaultWorldMixerGroup => _sfxGroup != null ? _sfxGroup : ResolvedBedBusGroup;
+
+        private AudioMixerGroup ResolvedThreatBusGroup
+        {
+            get
+            {
+                if (_threatGroup != null)
+                    return _threatGroup;
+
+                if (_sfxGroup != null)
+                    return _sfxGroup;
+
+                return ResolvedBedBusGroup;
+            }
+        }
+
+        private AudioMixerGroup ResolvedBedBusGroup
+        {
+            get
+            {
+                if (_bedGroup != null)
+                    return _bedGroup;
+
+                if (_ambientGroup != null)
+                    return _ambientGroup;
+
+                return _sfxGroup;
+            }
+        }
+
+        private AudioMixerGroup ResolveUiMixerGroup(AudioClip clip, AudioMixerGroup requestedGroup)
+        {
+            if (requestedGroup == _ambientGroup || requestedGroup == _bedGroup || IsBedClip(clip))
+                return ResolvedBedBusGroup;
+
+            if (requestedGroup == _threatGroup || IsThreatClip(clip))
+                return ResolvedThreatBusGroup;
+
+            return requestedGroup != null ? requestedGroup : _interfaceGroup;
+        }
+
+        private AudioMixerGroup ResolveWorldMixerGroup(AudioClip clip, AudioMixerGroup requestedGroup)
+        {
+            if (requestedGroup == _ambientGroup || requestedGroup == _bedGroup)
+                return ResolvedBedBusGroup;
+
+            if (requestedGroup == _threatGroup || IsThreatClip(clip))
+                return ResolvedThreatBusGroup;
+
+            if ((requestedGroup == null || requestedGroup == _sfxGroup) && IsBedClip(clip))
+                return ResolvedBedBusGroup;
+
+            return requestedGroup != null ? requestedGroup : ResolvedDefaultWorldMixerGroup;
+        }
+
+        private bool IsThreatWorldSource(AudioSource source)
+        {
+            AudioMixerGroup threatGroup = ResolvedThreatBusGroup;
+            return source != null && threatGroup != null && source.outputAudioMixerGroup == threatGroup;
+        }
+
+        private void ApplyThreatBusDucking(float threatActivity, float deltaTime)
+        {
+            AudioMixer mixer = ResolveThreatDuckingMixer();
+            if (mixer == null || string.IsNullOrWhiteSpace(_bedDuckDbParameter))
+            {
+                _threatBusDuck01 = 0f;
+                return;
+            }
+
+            float targetDuck01 = math.saturate(threatActivity);
+            if (deltaTime <= 0f)
+            {
+                _threatBusDuck01 = targetDuck01;
+            }
+            else
+            {
+                float duckSharpness = targetDuck01 > _threatBusDuck01
+                    ? ThreatBusDuckAttackSharpness
+                    : ThreatBusDuckReleaseSharpness;
+                float duckBlend = 1f - math.exp(-duckSharpness * deltaTime);
+                _threatBusDuck01 = math.lerp(_threatBusDuck01, targetDuck01, duckBlend);
+            }
+
+            mixer.SetFloat(_bedDuckDbParameter, math.lerp(0f, ThreatBusDuckMaximumDb, _threatBusDuck01));
+        }
+
+        private AudioMixer ResolveThreatDuckingMixer()
+        {
+            if (_routingMixer != null)
+                return _routingMixer;
+
+            AudioMixerGroup bedGroup = ResolvedBedBusGroup;
+            if (bedGroup != null && bedGroup.audioMixer != null)
+                return bedGroup.audioMixer;
+
+            return _ambientGroup != null ? _ambientGroup.audioMixer : null;
+        }
+
+        private static bool IsThreatClip(AudioClip clip)
+        {
+            if (clip == null)
+                return false;
+
+            string clipName = clip.name;
+            return ContainsTokenInsensitive(clipName, "leviathan") ||
+                   ContainsTokenInsensitive(clipName, "roar") ||
+                   ContainsTokenInsensitive(clipName, "threat") ||
+                   ContainsTokenInsensitive(clipName, "predator") ||
+                   ContainsTokenInsensitive(clipName, "shriek");
+        }
+
+        private static bool IsBedClip(AudioClip clip)
+        {
+            if (clip == null)
+                return false;
+
+            string clipName = clip.name;
+            return ContainsTokenInsensitive(clipName, "ambient") ||
+                   ContainsTokenInsensitive(clipName, "ocean") ||
+                   ContainsTokenInsensitive(clipName, "water") ||
+                   ContainsTokenInsensitive(clipName, "current") ||
+                   ContainsTokenInsensitive(clipName, "bed") ||
+                   ContainsTokenInsensitive(clipName, "drone");
+        }
+
+        private static bool ContainsTokenInsensitive(string value, string token)
+        {
+            return !string.IsNullOrEmpty(value) &&
+                   value.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private void MarkWorldSourceActive(int sourceIndex)
@@ -1326,14 +1627,36 @@ private int AcquireSourceIndex()
             _activeWorldCount = lastSlot;
         }
 
-        private void DecayAcousticRadarBins(float deltaTime)
+        private void AdvanceAcousticRadarDecayCadence(float deltaTime)
+        {
+            if (deltaTime <= 0f)
+                return;
+
+            _radarDecayAccumulator += deltaTime;
+            while (_radarDecayAccumulator >= AcousticRadarDecayIntervalSeconds)
+            {
+                _radarDecayAccumulator -= AcousticRadarDecayIntervalSeconds;
+                DecayAcousticRadarBins();
+                DecayAcousticRadarGrid();
+            }
+        }
+
+        private void DecayAcousticRadarBins()
         {
             if (!_acousticRadarIntensityBins.IsCreated)
                 return;
 
-            float decay = AcousticRadarDecayPerSecond * math.max(0f, deltaTime);
             for (int i = 0; i < _acousticRadarIntensityBins.Length; i++)
-                _acousticRadarIntensityBins[i] = math.max(0f, _acousticRadarIntensityBins[i] - decay);
+                _acousticRadarIntensityBins[i] *= AcousticRadarDecayFactorPerSlowTick;
+        }
+
+        private void DecayAcousticRadarGrid()
+        {
+            if (!_acousticRadarGrid.IsCreated)
+                return;
+
+            for (int i = 0; i < _acousticRadarGrid.Length; i++)
+                _acousticRadarGrid[i] *= AcousticRadarDecayFactorPerSlowTick;
         }
 
         private void ResetAcousticRadarBins()
@@ -1343,6 +1666,29 @@ private int AcquireSourceIndex()
 
             for (int i = 0; i < _acousticRadarIntensityBins.Length; i++)
                 _acousticRadarIntensityBins[i] = 0f;
+        }
+
+        private void ResetAcousticRadarGrid()
+        {
+            if (!_acousticRadarGrid.IsCreated)
+                return;
+
+            for (int i = 0; i < _acousticRadarGrid.Length; i++)
+                _acousticRadarGrid[i] = 0f;
+        }
+
+        private void ResetNearestRadarEmitterScratch()
+        {
+            if (_radarNearestEmitterDistanceSq == null || _radarNearestEmitterAmplitudes == null || _radarNearestEmitterRoots == null)
+                return;
+
+            int limit = _radarNearestEmitterDistanceSq.Length;
+            for (int i = 0; i < limit; i++)
+            {
+                _radarNearestEmitterDistanceSq[i] = float.MaxValue;
+                _radarNearestEmitterAmplitudes[i] = 0f;
+                _radarNearestEmitterRoots[i] = null;
+            }
         }
 
         private void DepositImpactRadarSamples(Transform listener, float now)
@@ -1361,6 +1707,19 @@ private int AcquireSourceIndex()
             }
         }
 
+        private void QueueImpactRadarEmitters(Vector3 listenerAbsolutePosition, Vector3 listenerWorldPosition, float now)
+        {
+            for (int i = 0; i < _impactEmitters.Length; i++)
+            {
+                ImpactEmitterSample emitter = _impactEmitters[i];
+                float amplitude = ResolveImpactEmitterAmplitude(emitter, now);
+                if (!(amplitude > ImpactEmitterMinimumAmplitude))
+                    continue;
+
+                QueueNearestRadarEmitter(listenerAbsolutePosition, listenerWorldPosition, emitter.Position, amplitude, null);
+            }
+        }
+
         private void DepositAcousticRadarSample(Transform listener, Vector3 sourcePosition, float amplitude)
         {
             if (listener == null || !_acousticRadarIntensityBins.IsCreated || !(amplitude > 0f))
@@ -1376,6 +1735,136 @@ private int AcquireSourceIndex()
             float falloff = 1f - math.saturate(distance / AcousticRadarDistanceRangeMeters);
             float intensity = math.saturate(amplitude * falloff);
             _acousticRadarIntensityBins[radialIndex] = math.max(_acousticRadarIntensityBins[radialIndex], intensity);
+        }
+
+        private void QueueNearestRadarEmitter(
+            Vector3 listenerAbsolutePosition,
+            Vector3 listenerWorldPosition,
+            Vector3 sourcePosition,
+            float amplitude,
+            Transform sourceRoot)
+        {
+            if (_radarNearestEmitterDistanceSq == null || _radarNearestEmitterPositions == null || _radarNearestEmitterRoots == null || !(amplitude > 0f))
+                return;
+
+            float distanceSq = ResolveAbsoluteDistanceSqr(listenerAbsolutePosition, sourcePosition);
+            int replaceIndex = -1;
+            float farthestDistanceSq = -1f;
+            int limit = math.min(
+                AcousticRadarNearestEmitterLimit,
+                math.min(_radarNearestEmitterDistanceSq.Length, math.min(_radarNearestEmitterPositions.Length, _radarNearestEmitterAmplitudes.Length)));
+            for (int i = 0; i < limit; i++)
+            {
+                if (_radarNearestEmitterDistanceSq[i] == float.MaxValue)
+                {
+                    replaceIndex = i;
+                    break;
+                }
+
+                if (_radarNearestEmitterDistanceSq[i] > farthestDistanceSq)
+                {
+                    farthestDistanceSq = _radarNearestEmitterDistanceSq[i];
+                    replaceIndex = i;
+                }
+            }
+
+            if (replaceIndex < 0)
+                return;
+
+            if (_radarNearestEmitterDistanceSq[replaceIndex] != float.MaxValue && distanceSq >= _radarNearestEmitterDistanceSq[replaceIndex])
+                return;
+
+            _radarNearestEmitterPositions[replaceIndex] = sourcePosition;
+            _radarNearestEmitterAmplitudes[replaceIndex] = amplitude;
+            _radarNearestEmitterDistanceSq[replaceIndex] = distanceSq;
+            _radarNearestEmitterRoots[replaceIndex] = sourceRoot;
+
+            if (_resolvedAcousticOcclusionLayerMask != 0)
+            {
+                AcousticOcclusionUtility.PrimeOcclusionPath(
+                    sourcePosition,
+                    listenerWorldPosition,
+                    _resolvedAcousticOcclusionLayerMask,
+                    sourceRoot,
+                    _listenerTransform != null ? _listenerTransform.root : null);
+            }
+        }
+
+        private void AccumulateNearestRadarGrid(Transform listener)
+        {
+            if (listener == null || !_acousticRadarGrid.IsCreated || _radarNearestEmitterDistanceSq == null)
+                return;
+
+            Vector3 listenerWorldPosition = listener.position;
+            int limit = math.min(
+                AcousticRadarNearestEmitterLimit,
+                math.min(_radarNearestEmitterDistanceSq.Length, math.min(_radarNearestEmitterPositions.Length, _radarNearestEmitterAmplitudes.Length)));
+            for (int i = 0; i < limit; i++)
+            {
+                float distanceSq = _radarNearestEmitterDistanceSq[i];
+                if (distanceSq == float.MaxValue)
+                    continue;
+
+                Vector3 sourcePosition = _radarNearestEmitterPositions[i];
+                float amplitude = _radarNearestEmitterAmplitudes[i];
+                if (!(amplitude > 0f))
+                    continue;
+
+                Vector3 listenerLocalPosition = listener.InverseTransformPoint(sourcePosition);
+                float azimuthDegrees = math.degrees(math.atan2(listenerLocalPosition.x, listenerLocalPosition.z));
+                if (azimuthDegrees < 0f)
+                    azimuthDegrees += 360f;
+
+                float3 listenerLocalDirection = new float3(listenerLocalPosition.x, listenerLocalPosition.y, listenerLocalPosition.z);
+                float inverseDirectionLength = math.rsqrt(math.max(math.lengthsq(listenerLocalDirection), 0.000001f));
+                float3 direction = listenerLocalDirection * inverseDirectionLength;
+                float elevationDegrees = math.degrees(math.asin(math.clamp(direction.y, -1f, 1f)));
+                int azimuthIndex = math.clamp(
+                    (int)math.floor((azimuthDegrees / 360f) * AcousticRadarGridAzimuthBins),
+                    0,
+                    AcousticRadarGridAzimuthBins - 1);
+                float elevation01 = math.saturate((elevationDegrees - AcousticRadarElevationMinDegrees) /
+                                                  math.max(AcousticRadarElevationMaxDegrees - AcousticRadarElevationMinDegrees, 0.0001f));
+                int elevationIndex = math.clamp(
+                    (int)math.floor(elevation01 * AcousticRadarGridElevationBins),
+                    0,
+                    AcousticRadarGridElevationBins - 1);
+                float transmission = ResolveRadarTransmission(sourcePosition, listenerWorldPosition, _radarNearestEmitterRoots[i]);
+                float energy = amplitude * transmission * math.rcp(math.max(distanceSq, 1f));
+                int cellIndex = elevationIndex * AcousticRadarGridAzimuthBins + azimuthIndex;
+                _acousticRadarGrid[cellIndex] += energy;
+            }
+        }
+
+        private float ResolveRadarTransmission(Vector3 sourcePosition, Vector3 listenerWorldPosition, Transform sourceRoot)
+        {
+            if (_resolvedAcousticOcclusionLayerMask == 0)
+                return 1f;
+
+            if (AcousticOcclusionUtility.TryGetCachedOcclusionPath(
+                    sourcePosition,
+                    listenerWorldPosition,
+                    _resolvedAcousticOcclusionLayerMask,
+                    sourceRoot,
+                    _listenerTransform != null ? _listenerTransform.root : null,
+                    out AcousticOcclusionResult result))
+            {
+                return math.saturate(result.Transmission01);
+            }
+
+            return 1f;
+        }
+
+        private void UploadAcousticRadarGridBuffer()
+        {
+            if (!_acousticRadarGrid.IsCreated || _acousticRadarGridBuffer == null || _acousticRadarGridUploadScratch == null)
+                return;
+
+            int count = math.min(_acousticRadarGrid.Length, _acousticRadarGridUploadScratch.Length);
+            for (int i = 0; i < count; i++)
+                _acousticRadarGridUploadScratch[i] = _acousticRadarGrid[i];
+
+            _acousticRadarGridBuffer.SetData(_acousticRadarGridUploadScratch, 0, 0, count);
         }
 
         private void RefreshListenerCaveState(Transform listener)
@@ -1415,10 +1904,83 @@ private int AcquireSourceIndex()
             _listenerContainingCaveCount = 0;
         }
 
+        private Vector3 ResolveListenerAbsoluteVelocity(Vector3 listenerAbsolutePosition, float deltaTime)
+        {
+            if (!_hasPreviousListenerAbsolutePosition || deltaTime <= 0.0001f)
+            {
+                _previousListenerAbsolutePosition = listenerAbsolutePosition;
+                _hasPreviousListenerAbsolutePosition = true;
+                return Vector3.zero;
+            }
+
+            Vector3 velocity = (listenerAbsolutePosition - _previousListenerAbsolutePosition) / deltaTime;
+            _previousListenerAbsolutePosition = listenerAbsolutePosition;
+            return velocity;
+        }
+
+        private void UpdateManualDopplerPitch(
+            int sourceIndex,
+            AudioSource source,
+            Vector3 listenerAbsolutePosition,
+            Vector3 listenerVelocity,
+            float deltaTime)
+        {
+            if (source == null ||
+                _basePitches == null ||
+                _smoothedDopplerRatios == null ||
+                _previousAbsolutePositions == null ||
+                sourceIndex < 0 ||
+                sourceIndex >= _basePitches.Length)
+            {
+                return;
+            }
+
+            Vector3 sourceAbsolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(source.transform.position);
+            Vector3 sourceVelocity = Vector3.zero;
+            if (deltaTime > 0.0001f)
+                sourceVelocity = (sourceAbsolutePosition - _previousAbsolutePositions[sourceIndex]) / deltaTime;
+
+            _currentAbsoluteVelocities[sourceIndex] = sourceVelocity;
+            _previousAbsolutePositions[sourceIndex] = sourceAbsolutePosition;
+
+            Vector3 listenerToSource = sourceAbsolutePosition - listenerAbsolutePosition;
+            float targetRatio = 1f;
+            float distanceSq = listenerToSource.sqrMagnitude;
+            if (distanceSq > 0.0001f)
+            {
+                Vector3 direction = listenerToSource / math.sqrt(distanceSq);
+                float relativeVelocity = Vector3.Dot(listenerVelocity - sourceVelocity, direction);
+                float clampedRelativeVelocity = math.clamp(
+                    relativeVelocity,
+                    -SoundSpeedWaterMetersPerSecond * 0.9f,
+                    SoundSpeedWaterMetersPerSecond * 0.9f);
+                float normalizedVelocity = clampedRelativeVelocity / math.max(SoundSpeedWaterMetersPerSecond, 1f);
+                float smoothedRelativeVelocity =
+                    math.tanh(normalizedVelocity * ManualDopplerTanhSoftness) *
+                    (SoundSpeedWaterMetersPerSecond * 0.92f);
+                float numerator = math.max(
+                    SoundSpeedWaterMetersPerSecond + smoothedRelativeVelocity,
+                    ManualDopplerMinimumDenominatorMetersPerSecond);
+                float denominator = math.max(
+                    SoundSpeedWaterMetersPerSecond - smoothedRelativeVelocity,
+                    ManualDopplerMinimumDenominatorMetersPerSecond);
+                targetRatio = math.clamp(
+                    numerator / denominator,
+                    1f / ManualDopplerMaximumRatio,
+                    ManualDopplerMaximumRatio);
+            }
+
+            float followT = 1f - math.exp(-ManualDopplerFollowSharpness * math.max(deltaTime, 0f));
+            float smoothedRatio = math.lerp(_smoothedDopplerRatios[sourceIndex], targetRatio, followT);
+            _smoothedDopplerRatios[sourceIndex] = smoothedRatio;
+            source.pitch = math.clamp(_basePitches[sourceIndex] * smoothedRatio, 0.1f, 3f);
+        }
+
         private bool TryResolveCaveExternalLowPassCutoff(AudioSource source, Vector3 sourcePosition, out float cutoffFrequency)
         {
             cutoffFrequency = 22000f;
-            if (source == null || _ambientGroup == null || source.outputAudioMixerGroup != _ambientGroup || _listenerContainingCaveCount <= 0)
+            AudioMixerGroup bedGroup = ResolvedBedBusGroup;
+            if (source == null || bedGroup == null || source.outputAudioMixerGroup != bedGroup || _listenerContainingCaveCount <= 0)
                 return false;
 
             if (IsInsideListenerContainingCave(sourcePosition))
@@ -1488,6 +2050,12 @@ private int AcquireSourceIndex()
             return (listenerAbsolutePosition - sourceAbsolutePosition).sqrMagnitude;
         }
 
+        private static float ResolveAbsoluteDistanceSqr(Vector3 listenerAbsolutePosition, Vector3 sourcePosition)
+        {
+            Vector3 sourceAbsolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(sourcePosition);
+            return (listenerAbsolutePosition - sourceAbsolutePosition).sqrMagnitude;
+        }
+
         private int Acquire2DSourceIndex()
         {
             if (_pool2D == null || _pool2DSize <= 0)
@@ -1519,9 +2087,9 @@ private int AcquireSourceIndex()
             return oldestIndex;
         }
 
-        // ═══════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  EDITOR VALIDATION
-        // ═══════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private Transform ResolveWorldPoolRoot()
         {
@@ -1669,8 +2237,8 @@ private int AcquireSourceIndex()
         }
 
         /// <summary>
-        /// Визуализация пула в Scene View для отладки.
-        /// Показывает позиции активных источников.
+        /// Ð’Ð¸Ð·ÑƒÐ°Ð»Ð¸Ð·Ð°Ñ†Ð¸Ñ Ð¿ÑƒÐ»Ð° Ð² Scene View Ð´Ð»Ñ Ð¾Ñ‚Ð»Ð°Ð´ÐºÐ¸.
+        /// ÐŸÐ¾ÐºÐ°Ð·Ñ‹Ð²Ð°ÐµÑ‚ Ð¿Ð¾Ð·Ð¸Ñ†Ð¸Ð¸ Ð°ÐºÑ‚Ð¸Ð²Ð½Ñ‹Ñ… Ð¸ÑÑ‚Ð¾Ñ‡Ð½Ð¸ÐºÐ¾Ð².
         /// </summary>
         private void OnDrawGizmosSelected()
         {

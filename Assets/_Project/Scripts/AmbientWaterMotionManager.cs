@@ -1,14 +1,14 @@
 // ============================================================================
-// HECTON-8 — AmbientWaterMotionManager.cs
+// HECTON-8 â€” AmbientWaterMotionManager.cs
 // Centralized visual bob/sway updater. One tick for many decorative props.
 //
 // v1.1 OPTIMIZATIONS:
-//   [FIX] TryResolveObserver: добавлен _observerResolveCooldown — не дёргаем
-//         SceneBootstrap/player resolve каждый кадр если observer ещё не готов.
-//   [FIX] Register: замена Contains (O(n)) на HashSet для O(1) дедупликации.
-//   [FIX] ApplyMotion: кэшируем worldPos из CachedTransform.position один раз,
-//         передаём в ShouldUpdate чтобы не читать position дважды через bridge.
-//   [FIX] ShouldUpdate: принимает worldPos как параметр, убран повторный .position.
+//   [FIX] TryResolveObserver: Ð´Ð¾Ð±Ð°Ð²Ð»ÐµÐ½ _observerResolveCooldown â€” Ð½Ðµ Ð´Ñ‘Ñ€Ð³Ð°ÐµÐ¼
+//         SceneBootstrap/player resolve ÐºÐ°Ð¶Ð´Ñ‹Ð¹ ÐºÐ°Ð´Ñ€ ÐµÑÐ»Ð¸ observer ÐµÑ‰Ñ‘ Ð½Ðµ Ð³Ð¾Ñ‚Ð¾Ð².
+//   [FIX] Register: Ð·Ð°Ð¼ÐµÐ½Ð° Contains (O(n)) Ð½Ð° HashSet Ð´Ð»Ñ O(1) Ð´ÐµÐ´ÑƒÐ¿Ð»Ð¸ÐºÐ°Ñ†Ð¸Ð¸.
+//   [FIX] ApplyMotion: ÐºÑÑˆÐ¸Ñ€ÑƒÐµÐ¼ worldPos Ð¸Ð· CachedTransform.position Ð¾Ð´Ð¸Ð½ Ñ€Ð°Ð·,
+//         Ð¿ÐµÑ€ÐµÐ´Ð°Ñ‘Ð¼ Ð² ShouldUpdate Ñ‡Ñ‚Ð¾Ð±Ñ‹ Ð½Ðµ Ñ‡Ð¸Ñ‚Ð°Ñ‚ÑŒ position Ð´Ð²Ð°Ð¶Ð´Ñ‹ Ñ‡ÐµÑ€ÐµÐ· bridge.
+//   [FIX] ShouldUpdate: Ð¿Ñ€Ð¸Ð½Ð¸Ð¼Ð°ÐµÑ‚ worldPos ÐºÐ°Ðº Ð¿Ð°Ñ€Ð°Ð¼ÐµÑ‚Ñ€, ÑƒÐ±Ñ€Ð°Ð½ Ð¿Ð¾Ð²Ñ‚Ð¾Ñ€Ð½Ñ‹Ð¹ .position.
 // ============================================================================
 
 using System.Collections.Generic;
@@ -53,8 +53,8 @@ namespace Hecton8.Physics
         [SerializeField] private int _debugFarCount;
         [SerializeField] private int _debugCulledCount;
 
-        // ── Registered objects ───────────────────────────────────────────────
-        // List для итерации (cache-friendly), HashSet для O(1) дедупликации в Register.
+        // â”€â”€ Registered objects â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // List Ð´Ð»Ñ Ð¸Ñ‚ÐµÑ€Ð°Ñ†Ð¸Ð¸ (cache-friendly), HashSet Ð´Ð»Ñ O(1) Ð´ÐµÐ´ÑƒÐ¿Ð»Ð¸ÐºÐ°Ñ†Ð¸Ð¸ Ð² Register.
         private readonly List<AmbientWaterMotion>     _objects    = new List<AmbientWaterMotion>(128);
         private readonly HashSet<AmbientWaterMotion>  _objectsSet = new HashSet<AmbientWaterMotion>();
 
@@ -66,16 +66,16 @@ namespace Hecton8.Physics
         private float _cullDistanceSqr;
         private bool _tickRegistered;
 
-        // ── Observer resolve cooldown ────────────────────────────────────────
-        // Если observer не назначен и не найден — не дёргаем bootstrap каждый кадр.
+        // â”€â”€ Observer resolve cooldown â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // Ð•ÑÐ»Ð¸ observer Ð½Ðµ Ð½Ð°Ð·Ð½Ð°Ñ‡ÐµÐ½ Ð¸ Ð½Ðµ Ð½Ð°Ð¹Ð´ÐµÐ½ â€” Ð½Ðµ Ð´Ñ‘Ñ€Ð³Ð°ÐµÐ¼ bootstrap ÐºÐ°Ð¶Ð´Ñ‹Ð¹ ÐºÐ°Ð´Ñ€.
         private float _observerResolveTimer;
         private const float ObserverResolveCooldown = 2f;
 
         public static AmbientWaterMotionManager Instance => _instance;
 
-        // ════════════════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  LIFECYCLE
-        // ════════════════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private void Awake()
         {
@@ -87,7 +87,7 @@ namespace Hecton8.Physics
 
             _instance = this;
             RefreshDistanceThresholds();
-            // Пробуем сразу при старте
+            // ÐŸÑ€Ð¾Ð±ÑƒÐµÐ¼ ÑÑ€Ð°Ð·Ñƒ Ð¿Ñ€Ð¸ ÑÑ‚Ð°Ñ€Ñ‚Ðµ
             TryResolveObserver(force: true);
         }
 
@@ -109,15 +109,15 @@ namespace Hecton8.Physics
                 _instance = null;
         }
 
-        // ════════════════════════════════════════════════════════════════════
-        //  REGISTRATION — O(1) дедупликация через HashSet
-        // ════════════════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  REGISTRATION â€” O(1) Ð´ÐµÐ´ÑƒÐ¿Ð»Ð¸ÐºÐ°Ñ†Ð¸Ñ Ñ‡ÐµÑ€ÐµÐ· HashSet
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         public void Register(AmbientWaterMotion motion)
         {
             if (motion == null) return;
 
-            // HashSet.Add возвращает false если уже есть — O(1) vs O(n) Contains
+            // HashSet.Add Ð²Ð¾Ð·Ð²Ñ€Ð°Ñ‰Ð°ÐµÑ‚ false ÐµÑÐ»Ð¸ ÑƒÐ¶Ðµ ÐµÑÑ‚ÑŒ â€” O(1) vs O(n) Contains
             if (_objectsSet.Add(motion))
                 _objects.Add(motion);
 
@@ -134,9 +134,9 @@ namespace Hecton8.Physics
             _debugActiveObjects = _objects.Count;
         }
 
-        // ════════════════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  TICK
-        // ════════════════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         public void Tick(float deltaTime)
         {
@@ -146,7 +146,7 @@ namespace Hecton8.Physics
             _time += deltaTime;
             if (_time > 100000f) _time -= 100000f;
 
-            // Cooldown на поиск observer — не каждый кадр
+            // Cooldown Ð½Ð° Ð¿Ð¾Ð¸ÑÐº observer â€” Ð½Ðµ ÐºÐ°Ð¶Ð´Ñ‹Ð¹ ÐºÐ°Ð´Ñ€
             _observerResolveTimer -= deltaTime;
             if (_observerResolveTimer <= 0f)
             {
@@ -158,21 +158,21 @@ namespace Hecton8.Physics
             _debugFarCount    = 0;
             _debugCulledCount = 0;
 
-            // Кэшируем позицию наблюдателя один раз за тик
-            // Избегаем повторных bridge calls в ShouldUpdate для каждого объекта
+            // ÐšÑÑˆÐ¸Ñ€ÑƒÐµÐ¼ Ð¿Ð¾Ð·Ð¸Ñ†Ð¸ÑŽ Ð½Ð°Ð±Ð»ÑŽÐ´Ð°Ñ‚ÐµÐ»Ñ Ð¾Ð´Ð¸Ð½ Ñ€Ð°Ð· Ð·Ð° Ñ‚Ð¸Ðº
+            // Ð˜Ð·Ð±ÐµÐ³Ð°ÐµÐ¼ Ð¿Ð¾Ð²Ñ‚Ð¾Ñ€Ð½Ñ‹Ñ… bridge calls Ð² ShouldUpdate Ð´Ð»Ñ ÐºÐ°Ð¶Ð´Ð¾Ð³Ð¾ Ð¾Ð±ÑŠÐµÐºÑ‚Ð°
             Vector3 observerPos = lodObserver != null
                 ? lodObserver.position
                 : Vector3.zero;
 
-            // Квадраты дистанций — считаем один раз за тик
+            // ÐšÐ²Ð°Ð´Ñ€Ð°Ñ‚Ñ‹ Ð´Ð¸ÑÑ‚Ð°Ð½Ñ†Ð¸Ð¹ â€” ÑÑ‡Ð¸Ñ‚Ð°ÐµÐ¼ Ð¾Ð´Ð¸Ð½ Ñ€Ð°Ð· Ð·Ð° Ñ‚Ð¸Ðº
             for (int i = _objects.Count - 1; i >= 0; i--)
             {
                 AmbientWaterMotion motion = _objects[i];
 
-                // Null-check: объект мог быть уничтожен без OnDisable
+                // Null-check: Ð¾Ð±ÑŠÐµÐºÑ‚ Ð¼Ð¾Ð³ Ð±Ñ‹Ñ‚ÑŒ ÑƒÐ½Ð¸Ñ‡Ñ‚Ð¾Ð¶ÐµÐ½ Ð±ÐµÐ· OnDisable
                 if (motion == null || motion.CachedTransform == null)
                 {
-                    // Swap-and-pop: O(1) удаление из середины списка
+                    // Swap-and-pop: O(1) ÑƒÐ´Ð°Ð»ÐµÐ½Ð¸Ðµ Ð¸Ð· ÑÐµÑ€ÐµÐ´Ð¸Ð½Ñ‹ ÑÐ¿Ð¸ÑÐºÐ°
                     _objectsSet.Remove(motion);
                     int last = _objects.Count - 1;
                     _objects[i] = _objects[last];
@@ -180,8 +180,8 @@ namespace Hecton8.Physics
                     continue;
                 }
 
-                // Читаем position ОДИН РАЗ — кэшируем для ShouldUpdate и ApplyMotion
-                // Было: position читался дважды (в ShouldUpdate и в ApplyMotion)
+                // Ð§Ð¸Ñ‚Ð°ÐµÐ¼ position ÐžÐ”Ð˜Ð Ð ÐÐ— â€” ÐºÑÑˆÐ¸Ñ€ÑƒÐµÐ¼ Ð´Ð»Ñ ShouldUpdate Ð¸ ApplyMotion
+                // Ð‘Ñ‹Ð»Ð¾: position Ñ‡Ð¸Ñ‚Ð°Ð»ÑÑ Ð´Ð²Ð°Ð¶Ð´Ñ‹ (Ð² ShouldUpdate Ð¸ Ð² ApplyMotion)
                 Vector3 worldPos = motion.CachedTransform.position;
 
                 if (!ShouldUpdate(motion, i, worldPos, observerPos,
@@ -194,15 +194,15 @@ namespace Hecton8.Physics
             _debugActiveObjects = _objects.Count;
         }
 
-        // ════════════════════════════════════════════════════════════════════
-        //  SHOULD UPDATE — принимает предвычисленные данные, нет bridge calls
-        // ════════════════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  SHOULD UPDATE â€” Ð¿Ñ€Ð¸Ð½Ð¸Ð¼Ð°ÐµÑ‚ Ð¿Ñ€ÐµÐ´Ð²Ñ‹Ñ‡Ð¸ÑÐ»ÐµÐ½Ð½Ñ‹Ðµ Ð´Ð°Ð½Ð½Ñ‹Ðµ, Ð½ÐµÑ‚ bridge calls
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private bool ShouldUpdate(
             AmbientWaterMotion motion,
             int index,
-            Vector3 worldPos,      // предвычислен в Tick
-            Vector3 observerPos,   // предвычислен в Tick
+            Vector3 worldPos,      // Ð¿Ñ€ÐµÐ´Ð²Ñ‹Ñ‡Ð¸ÑÐ»ÐµÐ½ Ð² Tick
+            Vector3 observerPos,   // Ð¿Ñ€ÐµÐ´Ð²Ñ‹Ñ‡Ð¸ÑÐ»ÐµÐ½ Ð² Tick
             float nearSq, float mediumSq, float farSq, float cullSq)
         {
             if (!motion.AllowDistanceLod || lodObserver == null)
@@ -217,8 +217,8 @@ namespace Hecton8.Physics
             float dz = worldPos.z - observerPos.z;
             float distanceSq = dx * dx + dy * dy + dz * dz;
 
-            // Применяем bias как множитель к порогам (не к distanceSq —
-            // так bias работает интуитивно: bias>1 = объект "дальше" чем есть)
+            // ÐŸÑ€Ð¸Ð¼ÐµÐ½ÑÐµÐ¼ bias ÐºÐ°Ðº Ð¼Ð½Ð¾Ð¶Ð¸Ñ‚ÐµÐ»ÑŒ Ðº Ð¿Ð¾Ñ€Ð¾Ð³Ð°Ð¼ (Ð½Ðµ Ðº distanceSq â€”
+            // Ñ‚Ð°Ðº bias Ñ€Ð°Ð±Ð¾Ñ‚Ð°ÐµÑ‚ Ð¸Ð½Ñ‚ÑƒÐ¸Ñ‚Ð¸Ð²Ð½Ð¾: bias>1 = Ð¾Ð±ÑŠÐµÐºÑ‚ "Ð´Ð°Ð»ÑŒÑˆÐµ" Ñ‡ÐµÐ¼ ÐµÑÑ‚ÑŒ)
             float biasSq = bias * bias;
             if (distanceSq <= nearSq * biasSq)
             {
@@ -243,15 +243,15 @@ namespace Hecton8.Physics
                 && ((_frameCounter + index) % Mathf.Max(1, cullDivisor)) == 0;
         }
 
-        // ════════════════════════════════════════════════════════════════════
-        //  APPLY MOTION — worldPos передаётся извне, не читается повторно
-        // ════════════════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  APPLY MOTION â€” worldPos Ð¿ÐµÑ€ÐµÐ´Ð°Ñ‘Ñ‚ÑÑ Ð¸Ð·Ð²Ð½Ðµ, Ð½Ðµ Ñ‡Ð¸Ñ‚Ð°ÐµÑ‚ÑÑ Ð¿Ð¾Ð²Ñ‚Ð¾Ñ€Ð½Ð¾
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private void ApplyMotion(AmbientWaterMotion motion, Vector3 worldPos)
         {
             Transform tr = motion.CachedTransform;
 
-            // CurrentVolume: managed, main thread only. Нормально.
+            // CurrentVolume: managed, main thread only. ÐÐ¾Ñ€Ð¼Ð°Ð»ÑŒÐ½Ð¾.
             Vector3 volumeCurrent = CurrentVolume.SampleAt(worldPos);
 
             // CurrentManager: static, pure math, no allocations.
@@ -294,21 +294,21 @@ namespace Hecton8.Physics
             tr.localRotation = motion.RestLocalRotation * Quaternion.Euler(pitch, yaw, roll);
         }
 
-        // ════════════════════════════════════════════════════════════════════
-        //  OBSERVER RESOLVE — с cooldown, не каждый кадр
-        // ════════════════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  OBSERVER RESOLVE â€” Ñ cooldown, Ð½Ðµ ÐºÐ°Ð¶Ð´Ñ‹Ð¹ ÐºÐ°Ð´Ñ€
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        /// <param name="force">true = игнорировать cooldown (Awake, OnEnable).</param>
+        /// <param name="force">true = Ð¸Ð³Ð½Ð¾Ñ€Ð¸Ñ€Ð¾Ð²Ð°Ñ‚ÑŒ cooldown (Awake, OnEnable).</param>
         private void TryResolveObserver(bool force = false)
         {
-            // Если уже есть — не ищем
+            // Ð•ÑÐ»Ð¸ ÑƒÐ¶Ðµ ÐµÑÑ‚ÑŒ â€” Ð½Ðµ Ð¸Ñ‰ÐµÐ¼
             if (lodObserver != null) return;
 
-            // Если cooldown не истёк и не форсим — пропускаем
+            // Ð•ÑÐ»Ð¸ cooldown Ð½Ðµ Ð¸ÑÑ‚Ñ‘Ðº Ð¸ Ð½Ðµ Ñ„Ð¾Ñ€ÑÐ¸Ð¼ â€” Ð¿Ñ€Ð¾Ð¿ÑƒÑÐºÐ°ÐµÐ¼
             if (!force && _observerResolveTimer > 0f) return;
 
-            // Сбрасываем таймер независимо от результата поиска
-            // Не нашли сейчас — подождём ещё ObserverResolveCooldown секунд
+            // Ð¡Ð±Ñ€Ð°ÑÑ‹Ð²Ð°ÐµÐ¼ Ñ‚Ð°Ð¹Ð¼ÐµÑ€ Ð½ÐµÐ·Ð°Ð²Ð¸ÑÐ¸Ð¼Ð¾ Ð¾Ñ‚ Ñ€ÐµÐ·ÑƒÐ»ÑŒÑ‚Ð°Ñ‚Ð° Ð¿Ð¾Ð¸ÑÐºÐ°
+            // ÐÐµ Ð½Ð°ÑˆÐ»Ð¸ ÑÐµÐ¹Ñ‡Ð°Ñ â€” Ð¿Ð¾Ð´Ð¾Ð¶Ð´Ñ‘Ð¼ ÐµÑ‰Ñ‘ ObserverResolveCooldown ÑÐµÐºÑƒÐ½Ð´
             _observerResolveTimer = ObserverResolveCooldown;
 
             if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
@@ -328,7 +328,6 @@ namespace Hecton8.Physics
             if (_tickRegistered)
                 return;
 
-            SystemDispatcher.EnsureRuntimeInstance();
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _tickRegistered = true;
         }

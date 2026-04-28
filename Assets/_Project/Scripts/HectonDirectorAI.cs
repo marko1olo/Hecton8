@@ -24,7 +24,7 @@ namespace Hecton8.Systems.AI
 
         internal static HectonDirectorAI ActiveRuntimeInstance { get; private set; }
 
-        [Header("── References ─────────────────────────────")]
+        [Header("â”€â”€ References â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Authoritative player transform. Resolved from bootstrap when left null.")]
         [SerializeField] private Transform playerTransform;
         [Tooltip("Optional explicit gameplay camera. Resolved from the player hierarchy when left null.")]
@@ -33,13 +33,17 @@ namespace Hecton8.Systems.AI
         [SerializeField] private HectonSurvivalSystem survivalSystem;
         [Tooltip("Fauna spawn owner. Resolved from the runtime reference utility when left null.")]
         [SerializeField] private FaunaDirector faunaDirector;
+        [Tooltip("Optional authored encounter pacing profile. When assigned, spawn thresholds and critical-health suppression become data-driven.")]
+        [SerializeField] private EncounterProfile encounterProfile;
+        [Tooltip("Optional authored threat token cost table. When assigned, encounter token costs and simultaneous caps become data-driven.")]
+        [SerializeField] private ThreatCostTable threatCostTable;
 
-        [Header("── Event Output ───────────────────────────")]
+        [Header("â”€â”€ Event Output â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Deterministic offset radius used for non-spawn director event hints.")]
         [SerializeField, Range(8f, 48f)] private float eventOffsetRadius = 25f;
 
 #if UNITY_EDITOR
-        [Header("── Diagnostics ────────────────────────────")]
+        [Header("â”€â”€ Diagnostics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [SerializeField] private float _debugStressLevel;
         [SerializeField] private float _debugIntensityLevel;
         [SerializeField] private float _debugTokenBudget;
@@ -48,13 +52,13 @@ namespace Hecton8.Systems.AI
         [SerializeField] private string _debugPhaseName;
 #endif
 
-        // COLD ALLOC: EncounterDirector[1] — dispatcher-driven encounter kernel — owner: HectonDirectorAI
+        // COLD ALLOC: EncounterDirector[1] â€” dispatcher-driven encounter kernel â€” owner: HectonDirectorAI
         private readonly EncounterDirector _encounterDirector = new EncounterDirector();
-        // COLD ALLOC: Plane[6] — reusable frustum plane scratch for zero-allocation camera extraction — owner: HectonDirectorAI
+        // COLD ALLOC: Plane[6] â€” reusable frustum plane scratch for zero-allocation camera extraction â€” owner: HectonDirectorAI
         private readonly Plane[] _frustumPlaneScratch = new Plane[EncounterDirector.FrustumPlaneCount];
-        // COLD ALLOC: FrameTiming[1] — reusable frame-timing sample buffer — owner: HectonDirectorAI
+        // COLD ALLOC: FrameTiming[1] â€” reusable frame-timing sample buffer â€” owner: HectonDirectorAI
         private readonly FrameTiming[] _frameTimingScratch = new FrameTiming[1];
-        // COLD ALLOC: float[8] — rolling frame-time history for shed hysteresis — owner: HectonDirectorAI
+        // COLD ALLOC: float[8] â€” rolling frame-time history for shed hysteresis â€” owner: HectonDirectorAI
         private readonly float[] _frameTimeHistory = new float[8];
         private const float SonarStressDecayPerSecond = 0.18f;
 
@@ -100,6 +104,7 @@ namespace Hecton8.Systems.AI
         private void Awake()
         {
             ActiveRuntimeInstance = this;
+            _encounterDirector.ApplyAuthoring(encounterProfile, threatCostTable);
             ResolveDependencies(force: true);
         }
 
@@ -108,7 +113,6 @@ namespace Hecton8.Systems.AI
             if (!Application.isPlaying)
                 return;
 
-            SystemDispatcher.EnsureRuntimeInstance();
             if (!_dispatcherRegistered)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
@@ -136,6 +140,13 @@ namespace Hecton8.Systems.AI
             SpectrumEvents.OnSonarPingSent -= HandleSonarPingSent;
             _recentSonarStress = 0f;
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            _encounterDirector.ApplyAuthoring(encounterProfile, threatCostTable);
+        }
+#endif
 
         private void OnDestroy()
         {

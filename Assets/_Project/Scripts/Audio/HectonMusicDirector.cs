@@ -422,6 +422,7 @@ namespace Hecton8.Audio
 
         private void OnDisable()
         {
+            StopMusicInternal(0f);
             SceneManager.activeSceneChanged -= HandleActiveSceneChanged;
             HectonDirectorAI.OnPredatorPressureChanged -= HandlePredatorPressureChanged;
             HectonDirectorAI.OnRequestSpawnHorde -= HandleSpawnHordeRequested;
@@ -436,6 +437,7 @@ namespace Hecton8.Audio
 
         private void OnDestroy()
         {
+            StopMusicInternal(0f);
             TryUnregisterTickHandlers();
 
             if (_instance == this)
@@ -734,6 +736,8 @@ namespace Hecton8.Audio
             ResolveVoicePool();
             if (_voicePool == null)
                 return;
+
+            _voicePool.ResetRuntimeAvailability();
 
             for (int i = 0; i < MusicVoiceCount; i++)
             {
@@ -1267,6 +1271,8 @@ namespace Hecton8.Audio
             _voiceEndingFadeTriggered[voiceIndex] = false;
             _voiceActive[voiceIndex] = true;
             _voiceIsOverride[voiceIndex] = isOverride;
+            if (_voicePool != null)
+                _voicePool.MarkVoiceInUse(voiceIndex);
         }
 
         private void UpdateVoices(float deltaTime)
@@ -1288,7 +1294,21 @@ namespace Hecton8.Audio
                     if (t > 1f)
                         t = 1f;
 
-                    _voiceBaseVolumes[i] = math.lerp(_voiceFadeStartVolumes[i], _voiceFadeTargetVolumes[i], t);
+                    float startVolume = _voiceFadeStartVolumes[i];
+                    float targetVolume = _voiceFadeTargetVolumes[i];
+                    float fadeAngle = t * (math.PI * 0.5f);
+                    if (targetVolume <= 0.0001f)
+                    {
+                        _voiceBaseVolumes[i] = startVolume * math.cos(fadeAngle);
+                    }
+                    else if (startVolume <= 0.0001f)
+                    {
+                        _voiceBaseVolumes[i] = targetVolume * math.sin(fadeAngle);
+                    }
+                    else
+                    {
+                        _voiceBaseVolumes[i] = math.sqrt(math.lerp(startVolume * startVolume, targetVolume * targetVolume, t));
+                    }
                     if (t >= 1f)
                     {
                         _voiceFading[i] = false;
@@ -1327,7 +1347,11 @@ namespace Hecton8.Audio
                 return;
 
             AudioSource source = _musicSources[voiceIndex];
-            if (source != null)
+            if (_voicePool != null)
+            {
+                _voicePool.ReleaseMusicVoice(voiceIndex);
+            }
+            else if (source != null)
             {
                 source.Stop();
                 source.clip = null;
@@ -1737,12 +1761,21 @@ namespace Hecton8.Audio
                     return false;
             }
 
-            _stingerSource.Stop();
+            if (_voicePool != null)
+                _voicePool.ReleaseStingerVoice();
+            else
+            {
+                _stingerSource.Stop();
+                _stingerSource.clip = null;
+            }
+
             _stingerSource.clip = selectedCue.Clip;
             _stingerSource.loop = false;
             _stingerSource.volume = math.saturate(selectedCue.Volume);
             _stingerSource.outputAudioMixerGroup = ResolveStingerMixerGroup();
             _stingerSource.Play();
+            if (_voicePool != null)
+                _voicePool.MarkStingerInUse();
 
             _lastStingerClip = selectedCue.Clip;
             if (HasAnyActiveVoice())
@@ -1982,8 +2015,13 @@ namespace Hecton8.Audio
 
             if (_stingerSource != null)
             {
-                _stingerSource.Stop();
-                _stingerSource.clip = null;
+                if (_voicePool != null)
+                    _voicePool.ReleaseStingerVoice();
+                else
+                {
+                    _stingerSource.Stop();
+                    _stingerSource.clip = null;
+                }
             }
 
             _stingerDuckActive = false;

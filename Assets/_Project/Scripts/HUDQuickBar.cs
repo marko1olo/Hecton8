@@ -52,6 +52,8 @@ namespace Hecton8.UI
         private static readonly Color DurHidden = new Color(0.3f, 0.9f, 0.85f, 0f);
         private static readonly Color SummaryColor = new Color(0.9f, 0.98f, 1f, 0.94f);
         private static readonly Color DirectiveColor = new Color(0.64f, 0.83f, 0.88f, 0.92f);
+        // COLD ALLOC: string[4] — cached slot key labels — owner: HUDQuickBar
+        private static readonly string[] SlotKeyLabels = { "1", "2", "3", "4" };
         // ══════════════════════════════════════════════════════════
         //  CONSTANTS
         // ══════════════════════════════════════════════════════════
@@ -359,7 +361,7 @@ namespace Hecton8.UI
                 keyTxt.alignment = TextAlignmentOptions.TopLeft;
                 keyTxt.textWrappingMode = TextWrappingModes.NoWrap;
                 keyTxt.raycastTarget = false;
-                keyTxt.text = (i + 1).ToString();
+                keyTxt.text = SlotKeyLabels[i];
                 keyTxt.color = KeyDim;
                 _slotKeys[i] = keyTxt;
                 // Durability bar

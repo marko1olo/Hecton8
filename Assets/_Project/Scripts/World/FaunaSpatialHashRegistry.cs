@@ -84,6 +84,12 @@ namespace Hecton8.World
             if (handle <= 0 || !_entries.TryGetValue(handle, out Entry entry) || entry == null)
                 return;
 
+            if (!IsEntryQueryEligible(entry))
+            {
+                Unregister(handle);
+                return;
+            }
+
             UpdateNativeEntry(handle, entry);
         }
 
@@ -113,11 +119,15 @@ namespace Hecton8.World
 
             for (int i = 0; i < handleCount; i++)
             {
-                if (!_entries.TryGetValue(_queryHandles[i], out Entry entry) || entry == null)
+                int handle = _queryHandles[i];
+                if (!_entries.TryGetValue(handle, out Entry entry) || entry == null)
                     continue;
 
                 if (!IsEntryQueryEligible(entry))
+                {
+                    Unregister(handle);
                     continue;
+                }
 
                 Transform candidateTransform = entry.Transform;
                 if (candidateTransform == ignoreTransform)
@@ -168,11 +178,15 @@ namespace Hecton8.World
 
             for (int i = 0; i < handleCount && count < results.Length; i++)
             {
-                if (!_entries.TryGetValue(_queryHandles[i], out Entry entry) || entry == null)
+                int handle = _queryHandles[i];
+                if (!_entries.TryGetValue(handle, out Entry entry) || entry == null)
                     continue;
 
                 if (!IsEntryQueryEligible(entry))
+                {
+                    Unregister(handle);
                     continue;
+                }
 
                 Transform targetTransform = entry.Transform;
                 Vector3 position = targetTransform.position;

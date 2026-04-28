@@ -90,6 +90,8 @@ namespace Hecton8.World
             TryUnregister();
             CancelAllPendingRequests();
             CancelLifetimeCancellation();
+            _launchQueue.Clear();
+            _desiredRequests.Clear();
             DespawnAllVolumes();
         }
 
@@ -98,6 +100,8 @@ namespace Hecton8.World
             TryUnregister();
             CancelAllPendingRequests();
             CancelLifetimeCancellation();
+            _launchQueue.Clear();
+            _desiredRequests.Clear();
             DespawnAllVolumes();
         }
 
@@ -381,7 +385,7 @@ namespace Hecton8.World
         private CancellationTokenSource EnsureLifetimeCancellation()
         {
             if (_lifetimeCancellation == null)
-                _lifetimeCancellation = new CancellationTokenSource();
+                _lifetimeCancellation = CancellationTokenSource.CreateLinkedTokenSource(destroyCancellationToken);
 
             return _lifetimeCancellation;
         }

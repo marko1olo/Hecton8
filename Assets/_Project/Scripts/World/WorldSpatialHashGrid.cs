@@ -4,6 +4,7 @@ using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
+using Hecton8.Modding;
 using Hecton8.Scavenging;
 using Unity.Burst;
 using Unity.Collections;
@@ -58,6 +59,32 @@ namespace Hecton8.World
         public int Layer { get; }
     }
 
+    internal sealed class SpatialHashEntryUnloadedEvent : HectonEvent
+    {
+        public SpatialHashEntryUnloadedEvent(
+            int handle,
+            SpatialTargetKind kind,
+            Component owner,
+            Vector3 runtimePosition,
+            double3 absolutePosition,
+            int layer)
+        {
+            Handle = handle;
+            Kind = kind;
+            Owner = owner;
+            RuntimePosition = runtimePosition;
+            AbsolutePosition = absolutePosition;
+            Layer = layer;
+        }
+
+        public int Handle { get; }
+        public SpatialTargetKind Kind { get; }
+        public Component Owner { get; }
+        public Vector3 RuntimePosition { get; }
+        public double3 AbsolutePosition { get; }
+        public int Layer { get; }
+    }
+
     /// <summary>
     /// Compatibility facade over the native AUP-aware broadphase.
     /// Existing callers keep the old API while all candidate enumeration routes through HectonSpatialHash.
@@ -68,10 +95,14 @@ namespace Hecton8.World
         {
             public Transform Transform;
             public Component Owner;
+            public Vector3 RuntimePosition;
             public SpatialTargetKind Kind;
             public FieldTargetRole SignalRole;
             public int SpeciesId;
             public int Layer;
+            public float3 HalfExtents;
+            public int PayloadId;
+            public bool IsResidentInNativeHash;
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
@@ -90,17 +121,59 @@ namespace Hecton8.World
             }
         }
 
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        private struct RebuildAbsolutePositionsJob : IJobParallelFor
+        {
+            [ReadOnly] public NativeArray<float3> RuntimePositions;
+            public float3 CurrentTotalOffset;
+            [WriteOnly] public NativeArray<float3> AbsolutePositions;
+
+            public void Execute(int index)
+            {
+                AbsolutePositions[index] = RuntimePositions[index] + CurrentTotalOffset;
+            }
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        private struct FarUnloadCandidatesJob : IJobParallelFor
+        {
+            [ReadOnly] public NativeArray<double3> AbsolutePositions;
+            [ReadOnly] public NativeArray<byte> EligibilityMask;
+            public double3 PlayerAbsolutePosition;
+            public double MaxDistanceSq;
+            [WriteOnly] public NativeArray<byte> UnloadMask;
+
+            public void Execute(int index)
+            {
+                if (EligibilityMask[index] == 0)
+                {
+                    UnloadMask[index] = 0;
+                    return;
+                }
+
+                double3 delta = AbsolutePositions[index] - PlayerAbsolutePosition;
+                UnloadMask[index] = math.lengthsq(delta) > MaxDistanceSq ? (byte)1 : (byte)0;
+            }
+        }
+
         private const double CellSizeMeters = 20d;
         private const int DefaultEntryCapacity = 256;
         private const int DefaultQueryCapacity = 256;
         private const int ValidationCadenceFrames = 300;
+        private const float FarUnloadPlayerTravelThresholdMeters = 2000f;
+        private const double FarUnloadPlayerTravelThresholdSq = FarUnloadPlayerTravelThresholdMeters * FarUnloadPlayerTravelThresholdMeters;
+        private const float FarUnloadDistanceMeters = 2500f;
+        private const double FarUnloadDistanceSq = FarUnloadDistanceMeters * FarUnloadDistanceMeters;
 
         private static readonly ProfilerMarker _queryProfilerMarker = new ProfilerMarker("H8.World.SpatialHashFacade.Query");
         private static readonly ProfilerMarker _maintenanceProfilerMarker = new ProfilerMarker("H8.World.SpatialHashFacade.Maintenance");
         private static readonly ProfilerMarker _validationProfilerMarker = new ProfilerMarker("H8.World.SpatialHashFacade.Validation");
+        private static readonly ProfilerMarker _farUnloadProfilerMarker = new ProfilerMarker("H8.World.SpatialHashFacade.FarUnload");
 
         // COLD ALLOC: Dictionary<int,Entry>(256) — runtime metadata registry layered over the native AUP spatial hash — owner: WorldSpatialHashGrid
         private static readonly Dictionary<int, Entry> _entries = new Dictionary<int, Entry>(DefaultEntryCapacity);
+        // COLD ALLOC: List<int>[128] â€” deferred far-unload handle scratch for dynamic native-hash eviction â€” owner: WorldSpatialHashGrid
+        private static readonly List<int> _farUnloadHandleScratch = new List<int>(128);
 
         private static HectonSpatialHash _nativeHash;
         private static NativeList<int> _queryHandles;
@@ -110,6 +183,21 @@ namespace Hecton8.World
         private static JobHandle _validationHandle;
         private static bool _validationScheduled;
         private static int _validationCount;
+        private static NativeArray<int> _originShiftHandles;
+        private static NativeArray<float3> _originShiftRuntimePositions;
+        private static NativeArray<float3> _originShiftAbsolutePositions;
+        private static JobHandle _originShiftRefreshHandle;
+        private static bool _originShiftRefreshScheduled;
+        private static int _originShiftRefreshCount;
+        private static NativeArray<int> _farUnloadHandles;
+        private static NativeArray<double3> _farUnloadAbsolutePositions;
+        private static NativeArray<byte> _farUnloadEligibilityMask;
+        private static NativeArray<byte> _farUnloadResultMask;
+        private static JobHandle _farUnloadHandle;
+        private static bool _farUnloadScheduled;
+        private static int _farUnloadCount;
+        private static AbsoluteUniversePosition _lastFarUnloadPlayerAup;
+        private static bool _hasLastFarUnloadPlayerAup;
         private static int _lastValidationFrame = -ValidationCadenceFrames;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -117,6 +205,9 @@ namespace Hecton8.World
         {
             _entries.Clear();
             DisposeValidationBuffers();
+            DisposeOriginShiftBuffers();
+            DisposeFarUnloadBuffers();
+            _farUnloadHandleScratch.Clear();
             if (_queryHandles.IsCreated)
             {
                 _queryHandles.Dispose();
@@ -128,6 +219,10 @@ namespace Hecton8.World
             _validationHandle = default;
             _validationScheduled = false;
             _validationCount = 0;
+            _farUnloadHandle = default;
+            _farUnloadScheduled = false;
+            _farUnloadCount = 0;
+            _hasLastFarUnloadPlayerAup = false;
             _lastValidationFrame = -ValidationCadenceFrames;
         }
 
@@ -229,7 +324,8 @@ namespace Hecton8.World
                 return;
 
             EnsureInitialized();
-            _nativeHash.Unregister(handle);
+            if (_entries.TryGetValue(handle, out Entry entry) && entry != null && entry.IsResidentInNativeHash)
+                _nativeHash.Unregister(handle);
             _entries.Remove(handle);
         }
 
@@ -420,27 +516,58 @@ namespace Hecton8.World
             EnsureInitialized();
             using (_maintenanceProfilerMarker.Auto())
             {
+                if (_originShiftRefreshScheduled && _originShiftRefreshHandle.IsCompleted)
+                    ConsumeCompletedOriginShiftRefresh();
+
                 if (_validationScheduled && _validationHandle.IsCompleted)
                     ConsumeCompletedValidation();
 
+                if (_farUnloadScheduled && _farUnloadHandle.IsCompleted)
+                    ConsumeCompletedFarUnload();
+
                 if (!_validationScheduled && frameCount - _lastValidationFrame >= ValidationCadenceFrames)
                     ScheduleValidation(frameCount);
+
+                if (!_farUnloadScheduled)
+                    TryScheduleFarUnload();
             }
         }
 
         internal static void HandleOriginShift(in OriginShiftEventData shiftData)
         {
             EnsureInitialized();
+            int count = _entries.Count;
+            if (count <= 0)
+                return;
+
+            EnsureOriginShiftCapacity(count);
+            int writeIndex = 0;
             Dictionary<int, Entry>.Enumerator enumerator = _entries.GetEnumerator();
             while (enumerator.MoveNext())
             {
                 KeyValuePair<int, Entry> pair = enumerator.Current;
                 Entry entry = pair.Value;
-                if (entry == null || entry.Transform == null)
+                if (entry == null || entry.Transform == null || !entry.IsResidentInNativeHash)
                     continue;
 
-                UpdateNativeEntry(pair.Key, entry);
+                Vector3 runtimePosition = entry.Transform.position;
+                entry.RuntimePosition = runtimePosition;
+                _originShiftHandles[writeIndex] = pair.Key;
+                _originShiftRuntimePositions[writeIndex] = runtimePosition;
+                writeIndex++;
             }
+
+            if (writeIndex <= 0)
+                return;
+
+            _originShiftRefreshHandle = new RebuildAbsolutePositionsJob
+            {
+                RuntimePositions = _originShiftRuntimePositions,
+                CurrentTotalOffset = HectonFloatingOrigin.CurrentTotalOffset,
+                AbsolutePositions = _originShiftAbsolutePositions
+            }.Schedule(writeIndex, 64);
+            _originShiftRefreshScheduled = true;
+            _originShiftRefreshCount = writeIndex;
         }
 
         private static void EnsureInitialized()
@@ -469,10 +596,14 @@ namespace Hecton8.World
             {
                 Transform = targetTransform,
                 Owner = owner,
+                RuntimePosition = targetTransform.position,
                 Kind = kind,
                 SignalRole = signalRole,
                 SpeciesId = speciesId,
-                Layer = targetTransform.gameObject.layer
+                Layer = targetTransform.gameObject.layer,
+                HalfExtents = float3.zero,
+                PayloadId = 0,
+                IsResidentInNativeHash = true
             };
             return handle;
         }
@@ -487,8 +618,10 @@ namespace Hecton8.World
             }
 
             entry.Layer = targetTransform.gameObject.layer;
-            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(targetTransform.position);
-            _nativeHash.UpdateEntry(handle, positionAup, float3.zero, (int)entry.Kind, 0);
+            entry.RuntimePosition = targetTransform.position;
+            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(entry.RuntimePosition);
+            _nativeHash.UpdateEntry(handle, positionAup, entry.HalfExtents, (int)entry.Kind, entry.PayloadId);
+            entry.IsResidentInNativeHash = true;
         }
 
         private static int FindHandle(Transform targetTransform)
@@ -633,6 +766,128 @@ namespace Hecton8.World
             _validationCount = 0;
         }
 
+        private static void TryScheduleFarUnload()
+        {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
+            if (playerTransform == null)
+                return;
+
+            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerTransform.position);
+            if (_hasLastFarUnloadPlayerAup &&
+                AbsoluteUniversePosition.DistanceSq(in playerAup, in _lastFarUnloadPlayerAup) < FarUnloadPlayerTravelThresholdSq)
+            {
+                return;
+            }
+
+            EnsureInitialized();
+            int count = _entries.Count;
+            if (count <= 0)
+            {
+                _lastFarUnloadPlayerAup = playerAup;
+                _hasLastFarUnloadPlayerAup = true;
+                return;
+            }
+
+            EnsureFarUnloadCapacity(count);
+            int writeIndex = 0;
+            Dictionary<int, Entry>.Enumerator enumerator = _entries.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                KeyValuePair<int, Entry> pair = enumerator.Current;
+                Entry entry = pair.Value;
+                if (entry == null || entry.Transform == null)
+                    continue;
+
+                Vector3 runtimePosition = entry.Transform.position;
+                entry.RuntimePosition = runtimePosition;
+                AbsoluteUniversePosition entryAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+                _farUnloadHandles[writeIndex] = pair.Key;
+                _farUnloadAbsolutePositions[writeIndex] = entryAup.ToAbsoluteDouble3();
+                _farUnloadEligibilityMask[writeIndex] = IsFarUnloadEligible(entry) ? (byte)1 : (byte)0;
+                writeIndex++;
+            }
+
+            _lastFarUnloadPlayerAup = playerAup;
+            _hasLastFarUnloadPlayerAup = true;
+            if (writeIndex <= 0)
+                return;
+
+            using (_farUnloadProfilerMarker.Auto())
+            {
+                _farUnloadCount = writeIndex;
+                _farUnloadHandle = new FarUnloadCandidatesJob
+                {
+                    AbsolutePositions = _farUnloadAbsolutePositions,
+                    EligibilityMask = _farUnloadEligibilityMask,
+                    PlayerAbsolutePosition = playerAup.ToAbsoluteDouble3(),
+                    MaxDistanceSq = FarUnloadDistanceSq,
+                    UnloadMask = _farUnloadResultMask
+                }.Schedule(writeIndex, 64);
+                _farUnloadScheduled = true;
+            }
+        }
+
+        private static void ConsumeCompletedFarUnload()
+        {
+            _farUnloadHandle.Complete();
+            _farUnloadHandle = default;
+            _farUnloadScheduled = false;
+            _farUnloadHandleScratch.Clear();
+
+            for (int i = 0; i < _farUnloadCount; i++)
+            {
+                if (_farUnloadResultMask[i] == 0)
+                    continue;
+
+                _farUnloadHandleScratch.Add(_farUnloadHandles[i]);
+            }
+
+            for (int i = 0; i < _farUnloadHandleScratch.Count; i++)
+            {
+                int handle = _farUnloadHandleScratch[i];
+                if (!_entries.TryGetValue(handle, out Entry entry) || entry == null || !entry.IsResidentInNativeHash)
+                    continue;
+
+                if (entry.Transform != null)
+                    entry.RuntimePosition = entry.Transform.position;
+
+                _nativeHash.Unregister(handle);
+                entry.IsResidentInNativeHash = false;
+                AbsoluteUniversePosition entryAup = AbsoluteUniversePosition.FromRuntimePosition(entry.RuntimePosition);
+                HectonEventBus.Publish(new SpatialHashEntryUnloadedEvent(
+                    handle,
+                    entry.Kind,
+                    entry.Owner,
+                    entry.RuntimePosition,
+                    entryAup.ToAbsoluteDouble3(),
+                    entry.Layer));
+            }
+
+            _farUnloadCount = 0;
+            _farUnloadHandleScratch.Clear();
+        }
+
+        private static void ConsumeCompletedOriginShiftRefresh()
+        {
+            _originShiftRefreshHandle.Complete();
+            _originShiftRefreshHandle = default;
+            _originShiftRefreshScheduled = false;
+
+            for (int i = 0; i < _originShiftRefreshCount; i++)
+            {
+                int handle = _originShiftHandles[i];
+                if (!_entries.TryGetValue(handle, out Entry entry) || entry == null)
+                    continue;
+
+                entry.RuntimePosition = _originShiftRuntimePositions[i];
+                AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromAbsolutePosition(_originShiftAbsolutePositions[i]);
+                _nativeHash.UpdateEntry(handle, positionAup, entry.HalfExtents, (int)entry.Kind, entry.PayloadId);
+            }
+
+            _originShiftRefreshCount = 0;
+        }
+
         private static void EnsureValidationCapacity(int requiredCapacity)
         {
             int safeCapacity = math.max(1, requiredCapacity);
@@ -643,6 +898,18 @@ namespace Hecton8.World
             _validationAbsolutePositions = new NativeArray<float3>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _validationRuntimePositions = new NativeArray<float3>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _validationInvalidMask = new NativeArray<byte>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+        }
+
+        private static void EnsureOriginShiftCapacity(int requiredCapacity)
+        {
+            int safeCapacity = math.max(1, requiredCapacity);
+            if (_originShiftHandles.IsCreated && _originShiftHandles.Length >= safeCapacity)
+                return;
+
+            DisposeOriginShiftBuffers();
+            _originShiftHandles = new NativeArray<int>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _originShiftRuntimePositions = new NativeArray<float3>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _originShiftAbsolutePositions = new NativeArray<float3>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
         }
 
         private static void DisposeValidationBuffers()
@@ -672,6 +939,92 @@ namespace Hecton8.World
             }
 
             _validationCount = 0;
+        }
+
+        private static void DisposeOriginShiftBuffers()
+        {
+            if (_originShiftRefreshScheduled)
+            {
+                _originShiftRefreshHandle.Complete();
+                _originShiftRefreshScheduled = false;
+            }
+
+            if (_originShiftHandles.IsCreated)
+            {
+                _originShiftHandles.Dispose();
+                _originShiftHandles = default;
+            }
+
+            if (_originShiftRuntimePositions.IsCreated)
+            {
+                _originShiftRuntimePositions.Dispose();
+                _originShiftRuntimePositions = default;
+            }
+
+            if (_originShiftAbsolutePositions.IsCreated)
+            {
+                _originShiftAbsolutePositions.Dispose();
+                _originShiftAbsolutePositions = default;
+            }
+
+            _originShiftRefreshCount = 0;
+        }
+
+        private static void EnsureFarUnloadCapacity(int requiredCapacity)
+        {
+            int safeCapacity = math.max(1, requiredCapacity);
+            if (_farUnloadHandles.IsCreated && _farUnloadHandles.Length >= safeCapacity)
+                return;
+
+            DisposeFarUnloadBuffers();
+            _farUnloadHandles = new NativeArray<int>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _farUnloadAbsolutePositions = new NativeArray<double3>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _farUnloadEligibilityMask = new NativeArray<byte>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _farUnloadResultMask = new NativeArray<byte>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+        }
+
+        private static void DisposeFarUnloadBuffers()
+        {
+            if (_farUnloadScheduled)
+            {
+                _farUnloadHandle.Complete();
+                _farUnloadScheduled = false;
+            }
+
+            if (_farUnloadHandles.IsCreated)
+            {
+                _farUnloadHandles.Dispose();
+                _farUnloadHandles = default;
+            }
+
+            if (_farUnloadAbsolutePositions.IsCreated)
+            {
+                _farUnloadAbsolutePositions.Dispose();
+                _farUnloadAbsolutePositions = default;
+            }
+
+            if (_farUnloadEligibilityMask.IsCreated)
+            {
+                _farUnloadEligibilityMask.Dispose();
+                _farUnloadEligibilityMask = default;
+            }
+
+            if (_farUnloadResultMask.IsCreated)
+            {
+                _farUnloadResultMask.Dispose();
+                _farUnloadResultMask = default;
+            }
+
+            _farUnloadCount = 0;
+        }
+
+        private static bool IsFarUnloadEligible(Entry entry)
+        {
+            if (entry == null || !entry.IsResidentInNativeHash)
+                return false;
+
+            SpatialTargetKind dynamicKinds = SpatialTargetKind.Pickup | SpatialTargetKind.Bioform | SpatialTargetKind.Signal;
+            return (entry.Kind & dynamicKinds) != 0;
         }
 
         private static bool MatchesLayer(int layer, int layerMask)

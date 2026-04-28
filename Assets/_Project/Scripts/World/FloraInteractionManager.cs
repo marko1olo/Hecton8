@@ -175,10 +175,6 @@ namespace Hecton8.World
         private LayerMask _dynamicInteractionMask = ~0;
 
         [Header("Wake Trail")]
-        [SerializeField, Range(256, 256)]
-        [Tooltip("Resolution of the shallow-water interaction field around the player. MX350 mandate fixes this at 256x256.")]
-        private int _wakeTrailResolution = 256;
-
         [SerializeField, Range(64f, 192f)]
         [Tooltip("World-space coverage of the shallow-water field centered around the player.")]
         private float _wakeTrailWorldSize = 128f;
@@ -357,7 +353,6 @@ namespace Hecton8.World
         private void Awake()
         {
             _maxInteractionPoints = Mathf.Clamp(_maxInteractionPoints, 1, MaxPublishedInteractionPoints);
-            _wakeTrailResolution = 256;
             _wakeTrailWorldSize = Mathf.Max(32f, _wakeTrailWorldSize);
             _wakeTrailFadeSeconds = Mathf.Max(0.1f, _wakeTrailFadeSeconds);
             _wakeTrailDiffusion = Mathf.Clamp01(_wakeTrailDiffusion);
@@ -1527,16 +1522,14 @@ namespace Hecton8.World
         {
             TryAutoAssignWakeTrailSimulationCompute();
         }
+#endif
 
         private void TryAutoAssignWakeTrailSimulationCompute()
         {
+#if UNITY_EDITOR
             if (_wakeTrailSimulationCompute == null)
                 _wakeTrailSimulationCompute = AssetDatabase.LoadAssetAtPath<ComputeShader>(WakeTrailSimulationComputeAssetPath);
-        }
-#else
-        private void TryAutoAssignWakeTrailSimulationCompute()
-        {
-        }
 #endif
+        }
     }
 }

@@ -13,6 +13,15 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-102)]
     public sealed class SargassumCrestDampingController : MonoBehaviour, ITickable, ISlowTickable, IOriginShiftListener
     {
+        private struct LegacyInputState
+        {
+            public Renderer Renderer;
+            public Transform Transform;
+            public Vector3 OriginalLocalScale;
+            public bool OriginalRendererEnabled;
+            public bool IsCaptured;
+        }
+
         private const string WavesInputName = "SargassumWaveDampingInput";
         private const string FoamInputName = "SargassumFoamDampingInput";
         private const string OilFilmInputName = "SargassumOilFilmInput";
@@ -103,9 +112,13 @@ namespace Hecton8.World
         private Vector3 _activeDriftOffset;
         private int _activeFieldRevision = -1;
         private bool _legacyInputsResolved;
+        private bool _usesCrest4LegacyInputs;
         private bool _registeredTick;
         private bool _registeredSlowTick;
         private bool _hasPublishedFacadeData;
+        private LegacyInputState _wavesInputState;
+        private LegacyInputState _foamInputState;
+        private LegacyInputState _oilFilmInputState;
 
         /// <summary>
         /// Public damping facade texture intended for future Crest 5 wave or water-depth inputs.
@@ -146,6 +159,7 @@ namespace Hecton8.World
         {
             HectonFloatingOrigin.UnregisterListener(this);
             TryUnregister();
+            RestoreLegacyInputs();
             ReleaseFacadeResources();
             PublishGlobals(active: false, forceClear: true);
         }
@@ -154,6 +168,7 @@ namespace Hecton8.World
         {
             HectonFloatingOrigin.UnregisterListener(this);
             TryUnregister();
+            RestoreLegacyInputs();
             ReleaseFacadeResources();
             PublishGlobals(active: false, forceClear: true);
         }
@@ -428,9 +443,10 @@ namespace Hecton8.World
         private void DisableLegacyInputs()
         {
             ResolveLegacyInputs();
-            DisableLegacyInputRenderer(_wavesInputRenderer);
-            DisableLegacyInputRenderer(_foamInputRenderer);
-            DisableLegacyInputRenderer(_oilFilmInputRenderer);
+            bool suppressLegacyInputs = !_usesCrest4LegacyInputs;
+            ApplyLegacyInputState(ref _wavesInputState, suppressLegacyInputs);
+            ApplyLegacyInputState(ref _foamInputState, suppressLegacyInputs);
+            ApplyLegacyInputState(ref _oilFilmInputState, suppressLegacyInputs);
         }
 
         private void ResolveLegacyInputs()
@@ -439,28 +455,47 @@ namespace Hecton8.World
                 return;
 
             _legacyInputsResolved = true;
-            _wavesInputRenderer = ResolveLegacyInputRenderer(WavesInputName);
-            _foamInputRenderer = ResolveLegacyInputRenderer(FoamInputName);
-            _oilFilmInputRenderer = ResolveLegacyInputRenderer(OilFilmInputName);
+            _usesCrest4LegacyInputs = TryGetComponent(out Crest.OceanRenderer _);
+            _wavesInputRenderer = ResolveLegacyInputRenderer(WavesInputName, ref _wavesInputState);
+            _foamInputRenderer = ResolveLegacyInputRenderer(FoamInputName, ref _foamInputState);
+            _oilFilmInputRenderer = ResolveLegacyInputRenderer(OilFilmInputName, ref _oilFilmInputState);
         }
 
-        private Renderer ResolveLegacyInputRenderer(string childName)
+        private Renderer ResolveLegacyInputRenderer(string childName, ref LegacyInputState state)
         {
             Transform child = transform.Find(childName);
             if (child == null || !child.TryGetComponent(out Renderer renderer))
                 return null;
 
-            child.localScale = Vector3.zero;
+            state.Renderer = renderer;
+            state.Transform = child;
+            state.OriginalLocalScale = child.localScale;
+            state.OriginalRendererEnabled = renderer.enabled;
+            state.IsCaptured = true;
             return renderer;
         }
 
-        private static void DisableLegacyInputRenderer(Renderer renderer)
+        private static void ApplyLegacyInputState(ref LegacyInputState state, bool suppress)
         {
-            if (renderer == null)
+            if (!state.IsCaptured || state.Renderer == null || state.Transform == null)
                 return;
 
-            renderer.transform.localScale = Vector3.zero;
-            renderer.enabled = false;
+            if (suppress)
+            {
+                state.Transform.localScale = Vector3.zero;
+                state.Renderer.enabled = false;
+                return;
+            }
+
+            state.Transform.localScale = state.OriginalLocalScale;
+            state.Renderer.enabled = state.OriginalRendererEnabled;
+        }
+
+        private void RestoreLegacyInputs()
+        {
+            ApplyLegacyInputState(ref _wavesInputState, suppress: false);
+            ApplyLegacyInputState(ref _foamInputState, suppress: false);
+            ApplyLegacyInputState(ref _oilFilmInputState, suppress: false);
         }
 
         private void TryRegister()

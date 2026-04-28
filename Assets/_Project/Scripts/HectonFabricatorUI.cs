@@ -20,7 +20,7 @@ using UnityEditor;
 namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
-    public sealed class HectonFabricatorUI : MonoBehaviour, ITickable, IUpdatable
+    public sealed class HectonFabricatorUI : MonoBehaviour, ITickable, IUpdatable, IUIService
     {
         private const string HologramShaderPath = "Assets/_Project/Art/Shaders/Hecton_FabricatorHologram.shader";
         private const int MaxVisibleHologramInstances = 16;
@@ -46,6 +46,7 @@ namespace Hecton8.UI
         [SerializeField] private Camera hudCamera;
         [SerializeField] private PlayerInventory playerInventory;
         [SerializeField] private Shader hologramShader;
+        [SerializeField] private Mesh[] hologramProxyMeshes = Array.Empty<Mesh>();
 
         [Header("Runtime Compatibility")]
         [SerializeField] private bool useCullingMasks;
@@ -79,6 +80,8 @@ namespace Hecton8.UI
         private readonly List<RecipeData> _filteredRecipes = new List<RecipeData>(32);
         // COLD ALLOC: Matrix4x4[16] — instanced hologram draw buffer mirror — owner: HectonFabricatorUI
         private readonly Matrix4x4[] _hologramMatrixBuffer = new Matrix4x4[MaxVisibleHologramInstances];
+        // COLD ALLOC: Matrix4x4[1] — selected recipe hologram draw buffer — owner: HectonFabricatorUI
+        private readonly Matrix4x4[] _selectedRecipeHologramBuffer = new Matrix4x4[1];
         private readonly RecipeListEntry[] _recipeEntries = new RecipeListEntry[MaxVisibleRecipeEntries];
         private readonly char[] _recipeLabelBuffer = new char[RecipeLabelBufferCapacity];
 
@@ -100,9 +103,11 @@ namespace Hecton8.UI
         private float _craftProgress;
         private bool _tickRegistered;
         private bool _recipePointerScheduled;
+        private bool _ownsGlobalUiSlot;
         private JobHandle _recipePointerHandle;
 
         public static bool IsMenuOpen { get; private set; }
+        public bool IsInitialized => isActiveAndEnabled && _hologramMatrices.IsCreated && _recipeListRoot != null;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -122,6 +127,7 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            TryRegisterUiService();
             InputManager inputManager = InputManager.Instance;
             if (inputManager != null)
             {
@@ -140,6 +146,7 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
+            UnregisterUiService();
             InputManager inputManager = InputManager.Instance;
             if (inputManager != null)
             {
@@ -163,6 +170,7 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
+            UnregisterUiService();
             if (_hologramMatrices.IsCreated)
             {
                 _hologramMatrices.Dispose();
@@ -204,6 +212,28 @@ namespace Hecton8.UI
                 Destroy(_recipeListRoot.gameObject);
                 _recipeListRoot = null;
             }
+        }
+
+        private void TryRegisterUiService()
+        {
+            if (!Application.isPlaying || _ownsGlobalUiSlot)
+                return;
+
+            IUIService current = GlobalRegistry.UI;
+            if (current != null && !ReferenceEquals(current, this))
+                return;
+
+            GlobalRegistry.RegisterUIService(this);
+            _ownsGlobalUiSlot = true;
+        }
+
+        private void UnregisterUiService()
+        {
+            if (!_ownsGlobalUiSlot)
+                return;
+
+            GlobalRegistry.UnregisterUIService(this);
+            _ownsGlobalUiSlot = false;
         }
 
         public void Tick(float deltaTime)
@@ -532,7 +562,12 @@ namespace Hecton8.UI
             int visibleCount = BuildHologramMatrices(recipe, deltaTime);
             _debugVisibleInstanceCount = visibleCount;
             if (visibleCount <= 0)
+            {
+                RenderSelectedRecipeHologram(recipe);
                 return;
+            }
+
+            RenderSelectedRecipeHologram(recipe);
 
             Graphics.DrawMeshInstanced(
                 _runtimeHologramMesh,
@@ -547,6 +582,60 @@ namespace Hecton8.UI
                 null,
                 LightProbeUsage.Off,
                 null);
+        }
+
+        private void RenderSelectedRecipeHologram(RecipeData recipe)
+        {
+            if (_currentFabricator == null || recipe == null)
+                return;
+
+            Mesh proxyMesh = ResolveProxyMesh(recipe.resultItem);
+            if (proxyMesh == null || _runtimeHologramMaterial == null)
+                return;
+
+            Transform anchor = _currentFabricator.transform;
+            if (anchor == null)
+                return;
+
+            Vector3 anchorPosition = anchor.position + anchor.up * (hologramHeight + 0.28f) + anchor.forward * 0.16f;
+            Quaternion worldRotation = Quaternion.AngleAxis(Time.unscaledTime * HologramSpinDegreesPerSecond, Vector3.up);
+            Vector3 scale = Vector3.one * (hologramCellSize * 2.8f);
+            _selectedRecipeHologramBuffer[0] = Matrix4x4.TRS(anchorPosition, worldRotation, scale);
+
+            Graphics.DrawMeshInstanced(
+                proxyMesh,
+                0,
+                _runtimeHologramMaterial,
+                _selectedRecipeHologramBuffer,
+                1,
+                null,
+                ShadowCastingMode.Off,
+                false,
+                0,
+                null,
+                LightProbeUsage.Off,
+                null);
+        }
+
+        private Mesh ResolveProxyMesh(ItemData item)
+        {
+            if (item != null)
+            {
+                int itemHashId = ComputeItemHash(item);
+                if (itemHashId != 0 &&
+                    ItemTemplateRegistry.TryGetTemplate(itemHashId, out ItemTemplate template))
+                {
+                    int proxyMeshIndex = template.ProxyMeshIndex;
+                    if ((uint)proxyMeshIndex < (uint)hologramProxyMeshes.Length)
+                    {
+                        Mesh mesh = hologramProxyMeshes[proxyMeshIndex];
+                        if (mesh != null)
+                            return mesh;
+                    }
+                }
+            }
+
+            return _runtimeHologramMesh;
         }
 
         private int BuildHologramMatrices(RecipeData recipe, float deltaTime)
@@ -678,7 +767,7 @@ namespace Hecton8.UI
                 label.fontSize = 4.2f;
                 label.alignment = TextAlignmentOptions.Center;
                 label.color = recipeIdleColor;
-                label.enableWordWrapping = false;
+                label.textWrappingMode = TextWrappingModes.NoWrap;
                 label.text = string.Empty;
 
                 BoxCollider collider = entryObject.AddComponent<BoxCollider>();

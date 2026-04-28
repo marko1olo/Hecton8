@@ -82,7 +82,6 @@ namespace Hecton8.Interaction
             if (_isInitialized)
                 return;
 
-            SystemDispatcher.EnsureRuntimeInstance();
             GlobalRegistry.RegisterInteractionSignalService(this);
             if (!_dispatcherRegistered)
             {

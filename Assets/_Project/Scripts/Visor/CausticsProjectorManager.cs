@@ -36,6 +36,11 @@ namespace Hecton8.Visor
         private static readonly int _CausticsSimulationParamsAId = Shader.PropertyToID("_HectonCausticsSimulationParamsA");
         private static readonly int _CausticsSimulationParamsBId = Shader.PropertyToID("_HectonCausticsSimulationParamsB");
         private static readonly int _CausticsSimulationParamsCId = Shader.PropertyToID("_HectonCausticsSimulationParamsC");
+        private static readonly int _CausticsHeightTextureId = Shader.PropertyToID("_HectonCausticsHeightTexture");
+        private static readonly int _CausticsHeightResolutionId = Shader.PropertyToID("_HectonCausticsHeightResolution");
+        private static readonly int _CausticsTerrainPositionId = Shader.PropertyToID("_HectonCausticsTerrainPosition");
+        private static readonly int _CausticsTerrainSizeId = Shader.PropertyToID("_HectonCausticsTerrainSize");
+        private static readonly int _CausticsHeightAvailableId = Shader.PropertyToID("_HectonCausticsHeightTextureAvailable");
 
         [Header("Compute")]
         [SerializeField]
@@ -104,6 +109,7 @@ namespace Hecton8.Visor
         private float _fade01;
         private IHectonOceanKinematics _oceanKinematics;
         private HectonSurvivalSystem _survivalSystem;
+        private HectonMapMagicVegetationBridge _vegetationBridge;
         private Transform _playerTransform;
         private Camera _gameplayCamera;
         private RenderTexture _causticsTexture;
@@ -162,9 +168,11 @@ namespace Hecton8.Visor
             Vector4 waveCoupling = ResolveWaveCoupling(waterLevel);
             causticsCompute.SetTexture(_kernelIndex, _CausticsOutputId, _causticsTexture);
             causticsCompute.SetVector(_CausticsSimulationParamsAId, new Vector4(primaryCellDensity, secondaryCellDensity, primaryScrollSpeed, secondaryScrollSpeed));
-            causticsCompute.SetVector(_CausticsSimulationParamsBId, new Vector4(ridgeSharpness, secondaryLayerWeight, timeValue, 0f));
+            causticsCompute.SetVector(_CausticsSimulationParamsBId, new Vector4(ridgeSharpness, secondaryLayerWeight, timeValue, waterLevel));
             causticsCompute.SetVector(_CausticsSimulationParamsCId, waveCoupling);
             causticsCompute.SetVector(_CausticsTexelSizeId, new Vector4(1f / FieldResolution, 1f / FieldResolution, FieldResolution, FieldResolution));
+            causticsCompute.SetVector(_CausticsWorldRectId, _worldRect);
+            BindTerrainHeightPayload();
 
             int dispatchCount = (int)math.ceil(FieldResolution / (float)ThreadGroupSize);
             causticsCompute.Dispatch(_kernelIndex, dispatchCount, dispatchCount, 1);
@@ -229,6 +237,27 @@ namespace Hecton8.Visor
 
             if (_oceanKinematics == null || !_oceanKinematics.IsAvailable)
                 _oceanKinematics = HectonOceanRegistry.ActiveProvider;
+
+            if (_vegetationBridge == null)
+                WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _vegetationBridge);
+        }
+
+        private void BindTerrainHeightPayload()
+        {
+            if (_vegetationBridge != null && _vegetationBridge.TryGetActiveHeightTexturePayload(out HectonMapMagicVegetationBridge.TerrainHeightTexturePayload heightPayload))
+            {
+                causticsCompute.SetTexture(_kernelIndex, _CausticsHeightTextureId, heightPayload.HeightTexture);
+                causticsCompute.SetInt(_CausticsHeightResolutionId, heightPayload.HeightmapResolution);
+                causticsCompute.SetVector(_CausticsTerrainPositionId, heightPayload.TerrainPosition);
+                causticsCompute.SetVector(_CausticsTerrainSizeId, heightPayload.TerrainSize);
+                causticsCompute.SetFloat(_CausticsHeightAvailableId, 1f);
+                return;
+            }
+
+            causticsCompute.SetInt(_CausticsHeightResolutionId, 0);
+            causticsCompute.SetVector(_CausticsTerrainPositionId, Vector3.zero);
+            causticsCompute.SetVector(_CausticsTerrainSizeId, Vector3.zero);
+            causticsCompute.SetFloat(_CausticsHeightAvailableId, 0f);
         }
 
         private void EnsureResources()

@@ -50,6 +50,7 @@ Shader "NASAPunk/SuitVisor"
         _LensEdgeRefraction ("Lens Edge Refraction", Range(0, 0.08)) = 0.028
         _ChromaticAberration ("Structural Chromatic Aberration", Range(0, 0.02)) = 0
         _StaticNoise ("Structural Static Noise", Range(0, 1)) = 0
+        _HypoxiaLevel ("HUD Hypoxia Failure", Range(0, 1)) = 0
 
         [Header(Fresnel)]
         _FresnelColor ("Fresnel Rim Color", Color) = (0.4, 0.6, 0.8, 1.0)
@@ -133,6 +134,7 @@ Shader "NASAPunk/SuitVisor"
                 float  _LensEdgeRefraction;
                 float  _ChromaticAberration;
                 float  _StaticNoise;
+                float  _HypoxiaLevel;
 
                 float4 _FresnelColor;
                 float  _FresnelPower;
@@ -520,12 +522,25 @@ Shader "NASAPunk/SuitVisor"
                 hudUV = TRANSFORM_TEX(hudUV, _HUD_RenderTexture);
                 float2 hudDistortedUV = hudUV + distortionOffset * 0.3;
 
+                float hypoxiaLevel = saturate(_HypoxiaLevel);
+                float2 hudHypoxiaOffset = float2(hypoxiaLevel * 0.0045, 0.0);
                 float4 hudSample = SAMPLE_TEXTURE2D(_HUD_RenderTexture, sampler_HUD_RenderTexture, hudDistortedUV);
+                float4 hudSampleR = SAMPLE_TEXTURE2D(_HUD_RenderTexture, sampler_HUD_RenderTexture, hudDistortedUV + hudHypoxiaOffset);
+                float4 hudSampleB = SAMPLE_TEXTURE2D(_HUD_RenderTexture, sampler_HUD_RenderTexture, hudDistortedUV - hudHypoxiaOffset);
+                hudSample.rgb = float3(hudSampleR.r, hudSample.g, hudSampleB.b);
                 float2 insideRT = step(0.0, hudDistortedUV) * step(hudDistortedUV, 1.0);
                 float rtMask = insideRT.x * insideRT.y;
                 float hudAlpha = hudSample.a * hudEdgeFade * rtMask;
                 float hudTintStrength = saturate(_HUD_Color.a);
                 float3 hudColor = lerp(hudSample.rgb, hudSample.rgb * _HUD_Color.rgb, hudTintStrength) * _HUD_Intensity;
+                float hudLuminance = dot(hudColor, float3(0.2126, 0.7152, 0.0722));
+                hudColor = lerp(hudColor, hudLuminance.xxx, hypoxiaLevel * 0.78);
+                float hypoxiaStaticStrength = saturate((hypoxiaLevel - 0.33333334) * 1.5);
+                float hypoxiaStatic = (Hash21(floor(hudDistortedUV * _ScreenParams.xy * 0.85) + floor(_Time.y * 24.0)) - 0.5) * hypoxiaStaticStrength;
+                hudColor += hypoxiaStatic.xxx * 0.22;
+                float hypoxiaAlphaNoise = frac(sin(dot(hudDistortedUV * _ScreenParams.xy, float2(12.9898, 78.233)) + (_Time.y * 43.0)) * 43758.5453);
+                float hypoxiaAlphaDissolve = saturate((hypoxiaAlphaNoise - 0.45) * 1.9) * hypoxiaStaticStrength;
+                hudAlpha *= 1.0 - (hypoxiaAlphaDissolve * 0.68);
 
                 float wetImperfectionBoost = 1.0 + runoffMask * 0.9;
                 float boostedFingerprint = saturate(fingerprint * wetImperfectionBoost);

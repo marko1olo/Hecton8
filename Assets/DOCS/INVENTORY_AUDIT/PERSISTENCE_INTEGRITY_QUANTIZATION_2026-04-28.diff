@@ -1,0 +1,240 @@
+diff --git a/Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs b/Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs
+index 1ae66b34..4a0336a7 100644
+--- a/Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs
++++ b/Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs
+@@ -207,6 +207,11 @@ namespace Hecton8.SaveSystem
+                 && writer.WriteInt(value.gridRows);
+         }
+ 
++        private static bool WriteExternalScavengerSites(ref BufferWriter writer, ExternalScavengerSiteDTO[] value)
++        {
++            return writer.WriteStructArray(value);
++        }
++
+         private static bool WritePlayerStats(ref BufferWriter writer, PlayerStatsDTO value)
+         {
+             return writer.WriteFloat(value.oxygen)
+@@ -376,6 +381,15 @@ namespace Hecton8.SaveSystem
+             return true;
+         }
+ 
++        private static bool ReadExternalScavengerSites(ref BufferReader reader, int version, out ExternalScavengerSiteDTO[] value)
++        {
++            value = null;
++            if (version < 42)
++                return true;
++
++            return reader.ReadStructArray(out value);
++        }
++
+         private static bool WriteWorldState(ref BufferWriter writer, WorldStateDTO value)
+         {
+             return writer.WriteInt(value.depletedCount)
+diff --git a/Assets/_Project/Scripts/SaveManager.cs b/Assets/_Project/Scripts/SaveManager.cs
+index 32e1abe1..6c75e8eb 100644
+--- a/Assets/_Project/Scripts/SaveManager.cs
++++ b/Assets/_Project/Scripts/SaveManager.cs
+@@ -303,7 +303,7 @@ namespace Hecton8.SaveSystem
+             _nextIntegrityScanTime = Time.unscaledTime + IntegrityScanIntervalSeconds;
+         }
+ 
+-        private void StageIntegrityPayload(NativeArray<byte> payloadBytes, int payloadLength, ulong expectedHash64, string slotName)
++        private unsafe void StageIntegrityPayload(NativeArray<byte> payloadBytes, int payloadLength, ulong expectedHash64, string slotName)
+         {
+             if (!payloadBytes.IsCreated || payloadLength <= 0 || payloadLength > payloadBytes.Length)
+                 return;
+diff --git a/Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs b/Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs
+index ba0e5c46..676bd028 100644
+--- a/Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs
++++ b/Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs
+@@ -2,6 +2,7 @@ using System;
+ using System.Collections.Generic;
+ using Hecton8.Core;
+ using Hecton8.Gameplay;
++using Hecton8.SaveSystem;
+ using Unity.Burst;
+ using Unity.Collections;
+ using Unity.Jobs;
+@@ -17,7 +18,7 @@ namespace Hecton8.World
+     /// </summary>
+     [DisallowMultipleComponent]
+     [DefaultExecutionOrder(-104)]
+-    public sealed class SargassumGlobalDragManager : MonoBehaviour, ITickable, ISlowTickable, ISargassumMassiveDisplacementReceiver, IOriginShiftListener
++    public sealed class SargassumGlobalDragManager : MonoBehaviour, ITickable, ISlowTickable, ISargassumMassiveDisplacementReceiver, IOriginShiftListener, ISaveable
+     {
+         private static readonly int _GlobalDriftOffsetId = Shader.PropertyToID("_SargassumGlobalDriftOffset");
+         private static readonly int _SinkTextureId = Shader.PropertyToID("_SargassumBuoyancySinkRT");
+@@ -31,6 +32,8 @@ namespace Hecton8.World
+         private const int MaxDisruptionZoneCapacity = 16;
+         private const int MaxEditorValidateDepth = 2;
+         private const float MinDensityThreshold = 0.025f;
++        private const int ExternalSiteChunkSizeMeters = 64;
++        private const float ExternalSiteQuantizationMeters = 0.5f;
+         private const byte CollapseChunkBurstSpawnedFlag = 1 << 0;
+ 
+         internal struct SargassumFieldSample
+@@ -646,6 +649,8 @@ namespace Hecton8.World
+         /// Active singleton instance.
+         /// </summary>
+         public static SargassumGlobalDragManager Instance => _instance;
++        public int SavePriority => 45;
++        public int LoadPriority => 45;
+ 
+         /// <summary>
+         /// Raised when an entangled actor is actively fighting the canopy snare strongly enough to generate tension cues.
+@@ -2140,6 +2145,124 @@ namespace Hecton8.World
+             };
+         }
+ 
++        public void PopulateSaveData(SaveData data)
++        {
++            if (data == null)
++                return;
++
++            if (_externalScavengerSites == null || _externalScavengerSites.Length == 0)
++            {
++                data.externalScavengerSites = null;
++                return;
++            }
++
++            int activeCount = 0;
++            for (int i = 0; i < _externalScavengerSites.Length; i++)
++            {
++                if (_externalScavengerSites[i].RemainingTime > 0f)
++                    activeCount++;
++            }
++
++            if (activeCount <= 0)
++            {
++                data.externalScavengerSites = null;
++                return;
++            }
++
++            // COLD ALLOC: ExternalScavengerSiteDTO[activeCount] - quantized corpse/carcass site persistence payload - owner: SargassumGlobalDragManager
++            ExternalScavengerSiteDTO[] snapshot = new ExternalScavengerSiteDTO[activeCount];
++            int writeIndex = 0;
++            for (int i = 0; i < _externalScavengerSites.Length; i++)
++            {
++                ExternalScavengerSiteState site = _externalScavengerSites[i];
++                if (site.RemainingTime <= 0f)
++                    continue;
++
++                snapshot[writeIndex++] = QuantizeExternalSite(site);
++            }
++
++            data.externalScavengerSites = snapshot;
++        }
++
++        public void LoadFromSaveData(SaveData data)
++        {
++            EnsureScavengerStorage();
++            if (_externalScavengerSites == null)
++                return;
++
++            Array.Clear(_externalScavengerSites, 0, _externalScavengerSites.Length);
++            _activeExternalScavengerSiteCount = 0;
++
++            ExternalScavengerSiteDTO[] snapshot = data != null ? data.externalScavengerSites : null;
++            if (snapshot == null || snapshot.Length == 0)
++                return;
++
++            int writeIndex = 0;
++            int restoreCount = Math.Min(snapshot.Length, _externalScavengerSites.Length);
++            for (int i = 0; i < restoreCount; i++)
++            {
++                ExternalScavengerSiteDTO dto = snapshot[i];
++                if (!dto.IsValid)
++                    continue;
++
++                _externalScavengerSites[writeIndex++] = DequantizeExternalSite(dto);
++            }
++
++            _activeExternalScavengerSiteCount = writeIndex;
++        }
++
++        private static ExternalScavengerSiteDTO QuantizeExternalSite(ExternalScavengerSiteState site)
++        {
++            AbsoluteUniversePosition anchorAup = AbsoluteUniversePosition.FromRuntimePosition(site.AnchorWS);
++            int3 chunkId = AbsoluteUniversePosition.ResolveChunkId(in anchorAup, ExternalSiteChunkSizeMeters);
++            double3 absolutePosition = anchorAup.ToAbsoluteDouble3();
++            double3 chunkCenter = new double3(
++                (chunkId.x * (double)ExternalSiteChunkSizeMeters) + (ExternalSiteChunkSizeMeters * 0.5d),
++                (chunkId.y * (double)ExternalSiteChunkSizeMeters) + (ExternalSiteChunkSizeMeters * 0.5d),
++                (chunkId.z * (double)ExternalSiteChunkSizeMeters) + (ExternalSiteChunkSizeMeters * 0.5d));
++
++            return new ExternalScavengerSiteDTO
++            {
++                chunkX = chunkId.x,
++                chunkY = chunkId.y,
++                chunkZ = chunkId.z,
++                offsetX = QuantizeChunkOffset(absolutePosition.x - chunkCenter.x),
++                offsetY = QuantizeChunkOffset(absolutePosition.y - chunkCenter.y),
++                offsetZ = QuantizeChunkOffset(absolutePosition.z - chunkCenter.z),
++                quantizedRadius = (byte)math.clamp(math.round(site.RadiusWS / ExternalSiteQuantizationMeters), 1f, byte.MaxValue),
++                remainingTime = math.max(0f, site.RemainingTime),
++                seed = site.Seed
++            };
++        }
++
++        private static ExternalScavengerSiteState DequantizeExternalSite(ExternalScavengerSiteDTO dto)
++        {
++            double3 chunkCenter = new double3(
++                (dto.chunkX * (double)ExternalSiteChunkSizeMeters) + (ExternalSiteChunkSizeMeters * 0.5d),
++                (dto.chunkY * (double)ExternalSiteChunkSizeMeters) + (ExternalSiteChunkSizeMeters * 0.5d),
++                (dto.chunkZ * (double)ExternalSiteChunkSizeMeters) + (ExternalSiteChunkSizeMeters * 0.5d));
++
++            double3 absolutePosition = new double3(
++                chunkCenter.x + (dto.offsetX * ExternalSiteQuantizationMeters),
++                chunkCenter.y + (dto.offsetY * ExternalSiteQuantizationMeters),
++                chunkCenter.z + (dto.offsetZ * ExternalSiteQuantizationMeters));
++            float3 runtimePosition = AbsoluteUniversePosition.FromAbsolutePosition(absolutePosition).ToRuntimeFloat3();
++
++            return new ExternalScavengerSiteState
++            {
++                AnchorWS = new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z),
++                RadiusWS = math.max(ExternalSiteQuantizationMeters, dto.quantizedRadius * ExternalSiteQuantizationMeters),
++                RemainingTime = math.max(0f, dto.remainingTime),
++                Seed = dto.seed
++            };
++        }
++
++        private static sbyte QuantizeChunkOffset(double offsetMeters)
++        {
++            float quantized = math.round((float)(offsetMeters / ExternalSiteQuantizationMeters));
++            return (sbyte)math.clamp(quantized, -127f, 127f);
++        }
++
+         private void EnsureScavengerStorage()
+         {
+             int hostCapacity = Mathf.Clamp(maxScavengerHostCount, 2, 24);
+@@ -2848,7 +2971,6 @@ namespace Hecton8.World
+ 
+         private void TryRegister()
+         {
+-
+             if (!_registeredTick)
+             {
+                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+@@ -2860,11 +2982,12 @@ namespace Hecton8.World
+                 GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
+                 _registeredSlowTick = true;
+             }
++
++            SaveManager.Instance?.Register(this);
+         }
+ 
+         private void TryUnregister()
+         {
+-
+             if (_registeredTick)
+             {
+                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+@@ -2876,6 +2999,8 @@ namespace Hecton8.World
+                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                 _registeredSlowTick = false;
+             }
++
++            SaveManager.Instance?.Unregister(this);
+         }
+ 
+         private static float ExtractUniformScale(Matrix4x4 matrix)

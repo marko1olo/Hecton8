@@ -13,7 +13,7 @@ namespace Hecton8.UI
     {
         private const string ContentRootName = "HectonUI_ScaledRoot";
 
-        [Header("── Scale Policy ──────────────────")]
+        [Header("â”€â”€ Scale Policy â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Reference UI resolution used by the root transform matrix.")]
         [SerializeField] private Vector2 referenceResolution = new Vector2(1600f, 900f);
         [Tooltip("CanvasScaler-compatible logarithmic width/height blend. 0 = width, 1 = height.")]
@@ -225,7 +225,7 @@ namespace Hecton8.UI
 
             if (_contentRoot == null)
             {
-                // COLD ALLOC: GameObject[1] — matrix-scaled HUD content root — owner: HectonUIScaler
+                // COLD ALLOC: GameObject[1] â€” matrix-scaled HUD content root â€” owner: HectonUIScaler
                 GameObject rootObject = new GameObject(ContentRootName, typeof(RectTransform));
                 rootObject.layer = canvasRoot.gameObject.layer;
                 _contentRoot = rootObject.GetComponent<RectTransform>();
@@ -331,7 +331,6 @@ namespace Hecton8.UI
             if (!Application.isPlaying)
                 return;
 
-            SystemDispatcher.EnsureRuntimeInstance();
             if (!_registeredToTickManager)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);

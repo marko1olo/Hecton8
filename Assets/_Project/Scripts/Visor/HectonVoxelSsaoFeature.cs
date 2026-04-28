@@ -48,6 +48,8 @@ namespace Hecton8.Visor
 
         private sealed class VoxelSsaoPass : ScriptableRenderPass, IDisposable
         {
+            private const int RenderTextureBucketSize = 64;
+
             private sealed class ComputePassData
             {
                 internal ComputeShader computeShader;
@@ -56,7 +58,7 @@ namespace Hecton8.Visor
                 internal uint threadGroupSizeY;
                 internal TextureHandle depth;
                 internal TextureHandle result;
-                internal Texture blueNoiseTexture;
+                internal TextureHandle blueNoiseTexture;
                 internal Vector4 inputSize;
                 internal Vector4 outputSize;
                 internal Matrix4x4 inverseViewProjection;
@@ -130,11 +132,14 @@ namespace Hecton8.Visor
                     return;
 
                 TextureDesc depthDesc = renderGraph.GetTextureDesc(depthTexture);
-                int aoWidth = Mathf.Max(1, Mathf.RoundToInt(depthDesc.width * Mathf.Clamp(_settings.renderScale, 0.25f, 1f)));
-                int aoHeight = Mathf.Max(1, Mathf.RoundToInt(depthDesc.height * Mathf.Clamp(_settings.renderScale, 0.25f, 1f)));
+                int aoWidth = QuantizeDimension(Mathf.Max(1, Mathf.RoundToInt(depthDesc.width * Mathf.Clamp(_settings.renderScale, 0.25f, 1f))));
+                int aoHeight = QuantizeDimension(Mathf.Max(1, Mathf.RoundToInt(depthDesc.height * Mathf.Clamp(_settings.renderScale, 0.25f, 1f))));
                 EnsureAoTexture(aoWidth, aoHeight);
 
                 TextureHandle aoTexture = renderGraph.ImportTexture(_aoTexture);
+                TextureHandle blueNoiseTexture = _blueNoiseTextureHandle != null
+                    ? renderGraph.ImportTexture(_blueNoiseTextureHandle)
+                    : default;
                 Camera camera = cameraData.camera;
                 Matrix4x4 projectionMatrix = GL.GetGPUProjectionMatrix(camera.projectionMatrix, false);
                 Matrix4x4 inverseViewProjection = (projectionMatrix * camera.worldToCameraMatrix).inverse;
@@ -148,7 +153,7 @@ namespace Hecton8.Visor
                     passData.threadGroupSizeY = _threadGroupSizeY;
                     passData.depth = depthTexture;
                     passData.result = aoTexture;
-                    passData.blueNoiseTexture = _settings.blueNoiseTexture;
+                    passData.blueNoiseTexture = blueNoiseTexture;
                     passData.inputSize = new Vector4(depthDesc.width, depthDesc.height, 1f / Mathf.Max(1, depthDesc.width), 1f / Mathf.Max(1, depthDesc.height));
                     passData.outputSize = new Vector4(aoWidth, aoHeight, 1f / Mathf.Max(1, aoWidth), 1f / Mathf.Max(1, aoHeight));
                     passData.inverseViewProjection = inverseViewProjection;
@@ -161,7 +166,10 @@ namespace Hecton8.Visor
 
                     builder.UseTexture(depthTexture, AccessFlags.Read);
                     builder.UseTexture(aoTexture, AccessFlags.Write);
+                    if (blueNoiseTexture.IsValid())
+                        builder.UseTexture(blueNoiseTexture, AccessFlags.Read);
                     builder.AllowGlobalStateModification(true);
+                    builder.SetGlobalTextureAfterPass(aoTexture, ShaderConstants.GlobalTextureId);
 
                     builder.SetRenderFunc(static (ComputePassData data, ComputeGraphContext context) =>
                     {
@@ -182,7 +190,6 @@ namespace Hecton8.Visor
                         cmd.SetComputeFloatParam(data.computeShader, ShaderConstants.HasBlueNoiseId, data.hasBlueNoise);
                         cmd.SetComputeIntParam(data.computeShader, ShaderConstants.SampleCountId, data.sampleCount);
                         cmd.DispatchCompute(data.computeShader, data.kernelIndex, dispatchX, dispatchY, 1);
-                        cmd.SetGlobalTexture(ShaderConstants.GlobalTextureId, data.result);
                         cmd.SetGlobalFloat(ShaderConstants.ActiveId, 1f);
                     });
                 }
@@ -210,6 +217,12 @@ namespace Hecton8.Visor
                     TextureDimension.Tex2D,
                     true,
                     name: "_HectonVoxelSSAOTexture");
+            }
+
+            private static int QuantizeDimension(int dimension)
+            {
+                int safeDimension = Mathf.Max(1, dimension);
+                return ((safeDimension + RenderTextureBucketSize - 1) / RenderTextureBucketSize) * RenderTextureBucketSize;
             }
 
             private void EnsureBlueNoiseTextureHandle(Texture2D blueNoiseTexture)

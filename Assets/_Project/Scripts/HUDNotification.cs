@@ -1,7 +1,7 @@
 // ============================================================================
-// HECTON-8 — HUDNotification.cs
-// Кратковременные уведомления на HUD (инвентарь полон, и т.д.)
-// Sibling к HUD_V4_CanvasRoot на Suit_HUD_Canvas.
+// HECTON-8 â€” HUDNotification.cs
+// ÐšÑ€Ð°Ñ‚ÐºÐ¾Ð²Ñ€ÐµÐ¼ÐµÐ½Ð½Ñ‹Ðµ ÑƒÐ²ÐµÐ´Ð¾Ð¼Ð»ÐµÐ½Ð¸Ñ Ð½Ð° HUD (Ð¸Ð½Ð²ÐµÐ½Ñ‚Ð°Ñ€ÑŒ Ð¿Ð¾Ð»Ð¾Ð½, Ð¸ Ñ‚.Ð´.)
+// Sibling Ðº HUD_V4_CanvasRoot Ð½Ð° Suit_HUD_Canvas.
 // ============================================================================
 
 using Hecton8.Core;
@@ -43,7 +43,7 @@ namespace Hecton8.UI
             public NotificationSeverity Severity;
         }
 
-        [Header("── Settings ──────────────────────────────────")]
+        [Header("â”€â”€ Settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [SerializeField] private float displayDuration = 3f;
         [SerializeField] private float fadeSpeed = 4f;
         [SerializeField] private int maxQueuedNotifications = 6;
@@ -163,7 +163,6 @@ namespace Hecton8.UI
             if (_registeredToTickManager)
                 return;
 
-            SystemDispatcher.EnsureRuntimeInstance();
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _registeredToTickManager = true;
         }

@@ -1,5 +1,6 @@
 #pragma kernel CullFloraInstances
 #pragma kernel CullFloraShadowInstances
+#pragma kernel ClearIndirectArgs
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -13,6 +14,7 @@ AppendStructuredBuffer<uint> _HectonVisibleInstanceIndicesLOD0;
 AppendStructuredBuffer<uint> _HectonVisibleInstanceIndicesLOD1;
 AppendStructuredBuffer<uint> _HectonVisibleInstanceIndicesShadow;
 Texture2D<float> _HectonDepthPyramid;
+RWByteAddressBuffer _HectonIndirectArgsBuffer;
 
 uint _HectonSourceInstanceCount;
 float4x4 _HectonViewProjection;
@@ -41,6 +43,9 @@ float _HectonDarknessBiolumThreshold;
 float4 _HectonFrustumPlanes[HECTON_FRUSTUM_PLANES];
 int _HectonDepthPyramidMipCount;
 float4 _HectonDepthPyramidTexelSize;
+uint _HectonIndirectIndexCountPerInstance;
+uint _HectonIndirectStartIndex;
+uint _HectonIndirectBaseVertexIndex;
 
 float4x4 _MainLightWorldToShadow[5];
 float4 _CascadeShadowSplitSpheres0;
@@ -375,6 +380,16 @@ bool IsVisibleInPeripheralCone(float3 samplePositionWS)
     float3 sampleDirectionWS = SafeNormalize3(toSampleWS);
     float3 cameraForwardWS = SafeNormalize3(_HectonCameraForward);
     return dot(sampleDirectionWS, cameraForwardWS) >= _HectonPeripheralCullDot;
+}
+
+[numthreads(1, 1, 1)]
+void ClearIndirectArgs(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    _HectonIndirectArgsBuffer.Store(0, _HectonIndirectIndexCountPerInstance);
+    _HectonIndirectArgsBuffer.Store(4, 0u);
+    _HectonIndirectArgsBuffer.Store(8, _HectonIndirectStartIndex);
+    _HectonIndirectArgsBuffer.Store(12, _HectonIndirectBaseVertexIndex);
+    _HectonIndirectArgsBuffer.Store(16, 0u);
 }
 
 [numthreads(HECTON_THREADS_PER_GROUP, 1, 1)]

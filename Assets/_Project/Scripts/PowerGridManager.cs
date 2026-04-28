@@ -1,5 +1,5 @@
 // ============================================================================
-// HECTON-8 — PowerGridManager.cs
+// HECTON-8 â€” PowerGridManager.cs
 // Global owner for all power grids. Uses LogisticsNetworkGraph-backed topology
 // snapshots for connectivity checks and brownout-aware distribution.
 // ============================================================================
@@ -13,7 +13,7 @@ namespace Hecton8.Power
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-5500)]
-    public sealed class PowerGridManager : MonoBehaviour, ISlowTickable
+    public sealed class PowerGridManager : MonoBehaviour, ISlowTickable, IPowerGridService
     {
         private static PowerGridManager _instance;
         private static List<PowerGrid> _allGrids;
@@ -39,18 +39,31 @@ namespace Hecton8.Power
 
         internal static List<PowerGrid> RuntimeGrids => _allGrids;
 
-        [Header("â”€â”€ Settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
-        [Tooltip("ÐÐ°Ñ‡Ð°Ð»ÑŒÐ½Ð°Ñ Ñ‘Ð¼ÐºÐ¾ÑÑ‚ÑŒ ÑÐ¿Ð¸ÑÐºÐ° ÑÐµÑ‚ÐµÐ¹.")]
+        [Header("Ã¢â€â‚¬Ã¢â€â‚¬ Settings Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬")]
+        [Tooltip("ÃÂÃÂ°Ã‘â€¡ÃÂ°ÃÂ»Ã‘Å’ÃÂ½ÃÂ°Ã‘Â Ã‘â€˜ÃÂ¼ÃÂºÃÂ¾Ã‘ÂÃ‘â€šÃ‘Å’ Ã‘ÂÃÂ¿ÃÂ¸Ã‘ÂÃÂºÃÂ° Ã‘ÂÃÂµÃ‘â€šÃÂµÃÂ¹.")]
         [SerializeField] private int initialGridCapacity = 16;
 
-        [Header("â”€â”€ Diagnostics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Header("Ã¢â€â‚¬Ã¢â€â‚¬ Diagnostics Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬")]
         [SerializeField] private int _debugGridCount;
         [SerializeField] private int _debugTotalNodes;
         [SerializeField] private float _debugTotalGeneration;
         [SerializeField] private float _debugTotalConsumption;
         [SerializeField] private int _debugDeficitGrids;
+        [SerializeField] private float _debugBatteryStoredEnergyWattSeconds;
+        [SerializeField] private float _debugBatteryCapacityWattSeconds;
+        [SerializeField] private float _debugBatteryChargeNormalized;
+        [SerializeField] private int _debugEmergencyReserveGridCount;
 
         private bool _dispatcherRegistered;
+        private bool _serviceRegistered;
+
+        public BatteryRuntimeSnapshot BatterySnapshot => new BatteryRuntimeSnapshot
+        {
+            TotalStoredEnergyWattSeconds = _debugBatteryStoredEnergyWattSeconds,
+            TotalCapacityWattSeconds = _debugBatteryCapacityWattSeconds,
+            ChargeNormalized = _debugBatteryChargeNormalized,
+            EmergencyReserveActive = _debugEmergencyReserveGridCount > 0
+        };
 
         private void Awake()
         {
@@ -70,11 +83,13 @@ namespace Hecton8.Power
         private void OnEnable()
         {
             TryRegister();
+            TryRegisterService();
         }
 
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterService();
         }
 
         public void SlowTick()
@@ -86,6 +101,9 @@ namespace Hecton8.Power
             int deficitCount = 0;
             float totalGeneration = 0f;
             float totalConsumption = 0f;
+            float totalBatteryStoredEnergy = 0f;
+            float totalBatteryCapacity = 0f;
+            int emergencyReserveGridCount = 0;
 
             for (int gridIndex = _allGrids.Count - 1; gridIndex >= 0; gridIndex--)
             {
@@ -110,17 +128,28 @@ namespace Hecton8.Power
                 totalNodes += grid.NodeCount;
                 totalGeneration += grid.TotalGeneration;
                 totalConsumption += grid.TotalConsumption;
+                totalBatteryStoredEnergy += grid.TotalBatteryStoredEnergyWattSeconds;
+                totalBatteryCapacity += grid.TotalBatteryCapacityWattSeconds;
 
                 if (grid.HasPowerDeficit)
                     deficitCount++;
+                if (grid.IsBatteryEmergencyReserveActive)
+                    emergencyReserveGridCount++;
             }
 
             UpdateDiagnostics(totalGeneration, totalConsumption, totalNodes, deficitCount);
+            _debugBatteryStoredEnergyWattSeconds = totalBatteryStoredEnergy;
+            _debugBatteryCapacityWattSeconds = totalBatteryCapacity;
+            _debugBatteryChargeNormalized = totalBatteryCapacity > 0.0001f
+                ? math.saturate(totalBatteryStoredEnergy / totalBatteryCapacity)
+                : 0f;
+            _debugEmergencyReserveGridCount = emergencyReserveGridCount;
         }
 
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterService();
 
             if (_instance == this)
             {
@@ -278,9 +307,17 @@ namespace Hecton8.Power
             if (_dispatcherRegistered || !Application.isPlaying)
                 return;
 
-            SystemDispatcher.EnsureRuntimeInstance();
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
             _dispatcherRegistered = true;
+        }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterPowerGridService(this);
+            _serviceRegistered = true;
         }
 
         private void TryUnregister()
@@ -290,6 +327,15 @@ namespace Hecton8.Power
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _dispatcherRegistered = false;
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterPowerGridService(this);
+            _serviceRegistered = false;
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]

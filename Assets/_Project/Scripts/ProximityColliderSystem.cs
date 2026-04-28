@@ -134,19 +134,10 @@ namespace Hecton8.Core
                 float3 diff = positions[index] - playerPos;
                 float distSq = math.lengthsq(diff);
 
-                byte wasActive = prevStatus[index];
-
-                // ── Гистерезис ──
-                // wasActive=0: активируем только если < activateRadiusSq
-                // wasActive=1: деактивируем только если > deactivateRadiusSq
-                if (wasActive == 0)
-                {
-                    results[index] = distSq <= activateRadiusSq ? (byte)1 : (byte)0;
-                }
-                else
-                {
-                    results[index] = distSq > deactivateRadiusSq ? (byte)0 : (byte)1;
-                }
+                // Branchless hysteresis keeps Burst on a compare/select path instead of a divergent branch.
+                bool wasActive = prevStatus[index] != 0;
+                float radiusSq = math.select(activateRadiusSq, deactivateRadiusSq, wasActive);
+                results[index] = (byte)math.select(0, 1, distSq <= radiusSq);
             }
         }
 

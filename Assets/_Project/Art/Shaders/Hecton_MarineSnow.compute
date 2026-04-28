@@ -1,5 +1,7 @@
 #pragma kernel CSMain
 
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
 struct Particle
 {
     float3 Pos;
@@ -17,6 +19,8 @@ RWStructuredBuffer<Particle> _MarineSnowParticlesWrite;
 StructuredBuffer<float2> _MarineSnowFlowField;
 Texture2D<float4> _HectonShallowWaterFieldRT;
 SamplerState sampler_HectonShallowWaterFieldRT;
+Texture2D<float> _CameraDepthTexture;
+SamplerState sampler_CameraDepthTexture;
 
 struct MarineSnowFrameData
 {
@@ -39,16 +43,27 @@ StructuredBuffer<MarineSnowFrameData> _HectonMarineSnowFrame;
 
 float4 _MarineSnowDriftParams;
 float4 _MarineSnowFlowParams;
+float4 _MarineSnowEmissionParams;
 float4 _HectonFlowSynchronyParams;
 float4 _HectonFloatingOriginOffset;
 float4 _HectonShallowWaterFieldWorldRect;
 float4 _HectonShallowWaterFieldTexelSize;
 float _HectonShallowWaterFieldActive;
+float4x4 _MarineSnowViewProjection;
+float4x4 _MarineSnowViewMatrix;
+float4 _MarineSnowZBufferParams;
+float4 _MarineSnowDepthTextureTexelSize;
+float4 _MarineSnowDepthCollisionParams;
 
 #define THREAD_GROUP_SIZE 64
 #define PI 3.14159265
 #define TAU 6.2831853
 #define EPSILON 0.0001
+
+bool HasFlag(uint flags, uint mask)
+{
+    return (flags & mask) != 0u;
+}
 
 float Hash11(float value)
 {
@@ -178,6 +193,60 @@ float3 ResolveFlowField(float3 positionWS)
     return float3(flowXZ.x, 0.0, flowXZ.y);
 }
 
+float ResolveEyeDepth(float3 positionWS)
+{
+    float3 positionVS = mul(_MarineSnowViewMatrix, float4(positionWS, 1.0)).xyz;
+    return max(0.0, -positionVS.z);
+}
+
+bool TryResolveScreenUv(float3 positionWS, out float2 uv)
+{
+    float4 clipPosition = mul(_MarineSnowViewProjection, float4(positionWS, 1.0));
+    if (!isfinite(clipPosition.w) || clipPosition.w <= EPSILON)
+    {
+        uv = 0.0.xx;
+        return false;
+    }
+
+    uv = clipPosition.xy / clipPosition.w;
+    uv = uv * 0.5 + 0.5;
+    return all(uv >= 0.0.xx) && all(uv <= 1.0.xx);
+}
+
+float SampleSceneEyeDepth(float2 uv)
+{
+    float rawDepth = _CameraDepthTexture.SampleLevel(sampler_CameraDepthTexture, uv, 0.0);
+#if defined(UNITY_REVERSED_Z)
+    if (rawDepth <= EPSILON)
+        return -1.0;
+#else
+    if (rawDepth >= 1.0 - EPSILON)
+        return -1.0;
+#endif
+    return LinearEyeDepth(rawDepth, _MarineSnowZBufferParams);
+}
+
+bool ResolveDepthCollision(float3 currentPositionWS, float3 nextPositionWS, out float sceneEyeDepth)
+{
+    sceneEyeDepth = -1.0;
+    float maxCollisionDepth = max(_MarineSnowDepthCollisionParams.x, 0.0);
+    float currentEyeDepth = ResolveEyeDepth(currentPositionWS);
+    float nextEyeDepth = ResolveEyeDepth(nextPositionWS);
+    if (currentEyeDepth <= EPSILON || nextEyeDepth <= EPSILON || currentEyeDepth > maxCollisionDepth || nextEyeDepth > maxCollisionDepth)
+        return false;
+
+    float2 currentUv;
+    float2 nextUv;
+    if (!TryResolveScreenUv(currentPositionWS, currentUv) || !TryResolveScreenUv(nextPositionWS, nextUv))
+        return false;
+
+    sceneEyeDepth = SampleSceneEyeDepth(nextUv);
+    if (sceneEyeDepth <= EPSILON)
+        return false;
+
+    return currentEyeDepth < sceneEyeDepth && nextEyeDepth > sceneEyeDepth;
+}
+
 float2 DecodeShallowWaterVelocity(float2 encodedVelocity)
 {
     return encodedVelocity * 2.0 - 1.0;
@@ -198,6 +267,22 @@ float4 EvaluateShallowWaterFieldData(float3 positionWS)
     return _HectonShallowWaterFieldRT.SampleLevel(sampler_HectonShallowWaterFieldRT, uv, 0.0);
 }
 
+uint ResolveEmissionFlags()
+{
+    uint fluidType = (uint)round(_MarineSnowEmissionParams.w);
+    if (fluidType == 1u)
+        return 1u << 0;
+    if (fluidType == 2u)
+        return 1u << 2;
+    return 1u << 3;
+}
+
+float ResolveBootstrapVerticalVelocity(float baseSpeed)
+{
+    uint flags = ResolveEmissionFlags();
+    return HasFlag(flags, 1u << 0) ? max(0.02, baseSpeed) : -baseSpeed;
+}
+
 Particle BuildRespawnParticle(uint particleIndex)
 {
     Particle particle = (Particle)0;
@@ -215,8 +300,8 @@ Particle BuildRespawnParticle(uint particleIndex)
     particle.PrevPos = particle.Pos;
     particle.Life = 1.0;
     particle.Size = lerp(0.0035, 0.0090, Hash11(particleIndex * 0.913 + frameSeed * 0.123));
-    particle.Vel = float3(0.0, -ResolveBaseDescent(particleIndex), 0.0);
-    particle.Flags = 1u << 3;
+    particle.Vel = float3(0.0, ResolveBootstrapVerticalVelocity(ResolveBaseDescent(particleIndex)), 0.0);
+    particle.Flags = ResolveEmissionFlags();
     particle.UV = float2(Hash11(particleIndex * 0.33), Hash11(particleIndex * 0.77));
     particle.Pad = float2(Hash11(particleIndex * 1.11), Hash11(particleIndex * 1.37));
     return particle;
@@ -240,6 +325,11 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     float simulationTime = _MarineSnowCameraPosition_Time.w;
     float densityScale = saturate(_MarineSnowCameraUp_Density.w);
     float3 cameraPosition = _MarineSnowCameraPosition_Time.xyz;
+    bool isBubble = HasFlag(particle.Flags, 1u << 0);
+    bool isDebris = HasFlag(particle.Flags, 1u << 2);
+    float buoyancyModifier = _MarineSnowEmissionParams.x;
+    float turbulenceModifier = max(_MarineSnowEmissionParams.y, 0.0);
+    float wobbleScale = max(_MarineSnowEmissionParams.z, 0.0);
 
     particle.PrevPos = particle.Pos;
 
@@ -249,7 +339,8 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         HashSin(float2(timeBase, particle.Pos.z * 0.4)),
         HashSin(float2(timeBase + 31.7, particle.Pos.x * 0.4))) * _MarineSnowDriftParams.z;
 
-    particle.Vel.y = lerp(particle.Vel.y, -baseDescent, saturate(dt * 4.0));
+    float targetVerticalVelocity = isBubble ? max(0.02, baseDescent) : -baseDescent;
+    particle.Vel.y = lerp(particle.Vel.y, targetVerticalVelocity, saturate(dt * 4.0));
     particle.Vel.xz += wander;
 
     float3 flowSample = ResolveFlowField(particle.Pos);
@@ -276,11 +367,57 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         if (dragMultiplier > 0.7)
         {
             float turbulenceScale = saturate((dragMultiplier - 0.7) / 0.3);
-            particle.Vel += ResolveTurbulence(particle.Pos, simulationTime) * (turbulenceScale * _MarineSnowFlowParams.z);
+            particle.Vel += ResolveTurbulence(particle.Pos, simulationTime) * (turbulenceScale * _MarineSnowFlowParams.z * max(turbulenceModifier, 0.001));
         }
     }
 
-    particle.Pos += particle.Vel * dt;
+    if (isBubble)
+    {
+        float phase = particle.Pad.x * TAU;
+        float wobbleFrequency = 2.1 + particle.Size * 8.0;
+        float wobbleMagnitude = 0.12 * particle.Size * wobbleScale;
+        float wobbleAttenuation = 1.0 - saturate(length(synchronizedFlow) / 2.5);
+        float2 lateralOscillation = float2(
+            sin(simulationTime * wobbleFrequency + particle.Pos.y * 1.7 + phase),
+            cos(simulationTime * wobbleFrequency * 0.83 + particle.Pos.y * 1.3 + phase + 1.1)) * wobbleMagnitude;
+        particle.Vel.xz += lateralOscillation * (dt * 12.0 * wobbleAttenuation);
+        particle.Vel.y += max(0.0, buoyancyModifier) * 9.81 * dt;
+        particle.Size = clamp(particle.Size * (1.0 - saturate(ResolveEyeDepth(particle.Pos) / 400.0) * 0.015 * dt), 0.005, 0.12);
+        particle.Vel.y = min(particle.Vel.y, 0.35 + particle.Size * 1.2);
+    }
+    else if (isDebris)
+    {
+        particle.Vel.y += min(0.0, buoyancyModifier) * 2.25 * dt;
+    }
+    else
+    {
+        particle.Vel.y += min(0.0, buoyancyModifier) * dt;
+    }
+
+    float3 nextPosition = particle.Pos + particle.Vel * dt;
+    float sceneEyeDepth;
+    bool depthCollision = ResolveDepthCollision(particle.Pos, nextPosition, sceneEyeDepth);
+    if (depthCollision)
+    {
+        particle.Flags |= 1u << 4;
+        particle.Pos = particle.PrevPos;
+        if (isBubble)
+        {
+            particle.Vel *= -_MarineSnowDepthCollisionParams.y;
+            particle.Vel.y = abs(particle.Vel.y);
+        }
+        else
+        {
+            particle.Vel *= _MarineSnowDepthCollisionParams.z;
+            particle.Life = max(0.0, particle.Life - dt * 0.5);
+        }
+    }
+    else
+    {
+        particle.Flags &= ~(1u << 4);
+        particle.Pos = nextPosition;
+    }
+
     float3 relativeToCamera = particle.Pos - cameraPosition;
     float planarDistance = length(relativeToCamera.xz);
     bool outOfShell =

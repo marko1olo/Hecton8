@@ -345,7 +345,7 @@ Shader "Hecton8/BoidFishInstanced"
                 if (useVat)
                 {
                     float safeFrameCount = max(_VatFrameCount, 1.0);
-                    float vatPhase = frac(_Time.y * max(_VatPlaybackSpeed, 0.0) + instRand * max(_VatInstancePhaseScale, 0.0));
+                    float vatPhase = frac((_Time.y * max(_VatPlaybackSpeed, 0.0)) + (float(instanceID) * max(_VatInstancePhaseScale, 0.0)));
                     float vatFrame = vatPhase * safeFrameCount;
                     float vatFrameFloor = floor(vatFrame);
                     float vatFrameCeil = fmod(vatFrameFloor + 1.0, safeFrameCount);

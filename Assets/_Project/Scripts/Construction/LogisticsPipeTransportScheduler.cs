@@ -3,6 +3,7 @@ using Hecton8.Gameplay;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Construction
@@ -14,10 +15,15 @@ namespace Hecton8.Construction
     internal static class LogisticsPipeTransportScheduler
     {
         private const int InitialNodeCapacity = 32;
+        private const float CycleWarningCadenceSeconds = 5f;
         // COLD ALLOC: List<LogisticsPipeNode>[32] — active pipe-node registry for shared DAG transport scheduling — owner: LogisticsPipeTransportScheduler
         private static readonly List<LogisticsPipeNode> _activeNodes = new List<LogisticsPipeNode>(InitialNodeCapacity);
         // COLD ALLOC: int[32] — visited-mark scratch for ordered fallback replay without heap churn — owner: LogisticsPipeTransportScheduler
         private static int[] _visitMarks = new int[InitialNodeCapacity];
+        // COLD ALLOC: int[32] — cycle-repair suppressed edge source scratch for deterministic Kahn recovery — owner: LogisticsPipeTransportScheduler
+        private static int[] _suppressedEdgeSources = new int[InitialNodeCapacity];
+        // COLD ALLOC: int[32] — cycle-repair suppressed edge destination scratch for deterministic Kahn recovery — owner: LogisticsPipeTransportScheduler
+        private static int[] _suppressedEdgeDestinations = new int[InitialNodeCapacity];
 
         private static NativeArray<int> _edgeOffsets;
         private static NativeArray<int> _edgeDestinations;
@@ -30,8 +36,10 @@ namespace Hecton8.Construction
         private static JobHandle _pendingSortHandle;
         private static bool _pendingSort;
         private static int _scheduledSortedCount;
+        private static int _scheduledNodeCount;
         private static int _lastProcessedFrame = -1;
         private static int _visitStamp = 1;
+        private static float _nextCycleWarningTime;
 
         [BurstCompile]
         private struct BuildPipeTopologicalOrderJob : IJob
@@ -96,9 +104,11 @@ namespace Hecton8.Construction
             DisposeNativeArray(ref _sortedCount);
             _activeNodes.Clear();
             _scheduledSortedCount = 0;
+            _scheduledNodeCount = 0;
             _lastProcessedFrame = -1;
             _visitStamp = 1;
             EnsureVisitCapacity(InitialNodeCapacity);
+            EnsureSuppressionCapacity(InitialNodeCapacity);
         }
 
         internal static void Register(LogisticsPipeNode node)
@@ -217,6 +227,9 @@ namespace Hecton8.Construction
 
             for (int sourceIndex = 0; sourceIndex < activeCount; sourceIndex++)
             {
+                if (!_activeNodes[sourceIndex].ParticipatesInSchedulerDag)
+                    continue;
+
                 StorageCrate destinationCrate = _activeNodes[sourceIndex].DestinationCrate;
                 if (destinationCrate == null)
                     continue;
@@ -225,6 +238,9 @@ namespace Hecton8.Construction
                 for (int destinationIndex = 0; destinationIndex < activeCount; destinationIndex++)
                 {
                     if (sourceIndex == destinationIndex)
+                        continue;
+
+                    if (!_activeNodes[destinationIndex].ParticipatesInSchedulerDag)
                         continue;
 
                     if (!ReferenceEquals(destinationCrate, _activeNodes[destinationIndex].SourceCrate))
@@ -245,6 +261,9 @@ namespace Hecton8.Construction
 
             for (int sourceIndex = 0; sourceIndex < activeCount; sourceIndex++)
             {
+                if (!_activeNodes[sourceIndex].ParticipatesInSchedulerDag)
+                    continue;
+
                 StorageCrate destinationCrate = _activeNodes[sourceIndex].DestinationCrate;
                 if (destinationCrate == null)
                     continue;
@@ -252,6 +271,9 @@ namespace Hecton8.Construction
                 for (int destinationIndex = 0; destinationIndex < activeCount; destinationIndex++)
                 {
                     if (sourceIndex == destinationIndex)
+                        continue;
+
+                    if (!_activeNodes[destinationIndex].ParticipatesInSchedulerDag)
                         continue;
 
                     if (!ReferenceEquals(destinationCrate, _activeNodes[destinationIndex].SourceCrate))
@@ -278,6 +300,7 @@ namespace Hecton8.Construction
             _pendingSortHandle = job.Schedule();
             _pendingSort = true;
             _scheduledSortedCount = 0;
+            _scheduledNodeCount = activeCount;
         }
 
         private static int CountEdges(int activeCount)
@@ -285,6 +308,9 @@ namespace Hecton8.Construction
             int edgeCount = 0;
             for (int sourceIndex = 0; sourceIndex < activeCount; sourceIndex++)
             {
+                if (!_activeNodes[sourceIndex].ParticipatesInSchedulerDag)
+                    continue;
+
                 StorageCrate destinationCrate = _activeNodes[sourceIndex].DestinationCrate;
                 if (destinationCrate == null)
                     continue;
@@ -292,6 +318,9 @@ namespace Hecton8.Construction
                 for (int destinationIndex = 0; destinationIndex < activeCount; destinationIndex++)
                 {
                     if (sourceIndex == destinationIndex)
+                        continue;
+
+                    if (!_activeNodes[destinationIndex].ParticipatesInSchedulerDag)
                         continue;
 
                     if (ReferenceEquals(destinationCrate, _activeNodes[destinationIndex].SourceCrate))
@@ -311,6 +340,8 @@ namespace Hecton8.Construction
             _pendingSortHandle = default;
             _pendingSort = false;
             _scheduledSortedCount = _sortedCount.IsCreated ? _sortedCount[0] : 0;
+            if (_scheduledSortedCount < _scheduledNodeCount)
+                RepairCycleOrder(_scheduledNodeCount);
         }
 
         private static void EnsureVisitCapacity(int requiredCount)
@@ -323,6 +354,19 @@ namespace Hecton8.Construction
                 nextCapacity <<= 1;
 
             _visitMarks = new int[nextCapacity];
+        }
+
+        private static void EnsureSuppressionCapacity(int requiredCount)
+        {
+            if (_suppressedEdgeSources != null && _suppressedEdgeSources.Length >= requiredCount)
+                return;
+
+            int nextCapacity = _suppressedEdgeSources != null ? _suppressedEdgeSources.Length : InitialNodeCapacity;
+            while (nextCapacity < requiredCount)
+                nextCapacity <<= 1;
+
+            _suppressedEdgeSources = new int[nextCapacity];
+            _suppressedEdgeDestinations = new int[nextCapacity];
         }
 
         private static void EnsureNativeCapacity(int nodeCount, int edgeCount)
@@ -338,12 +382,163 @@ namespace Hecton8.Construction
 
         private static void EnsureNativeArray(ref NativeArray<int> array, int requiredLength)
         {
-            int safeLength = Mathf.Max(1, requiredLength);
+            int safeLength = math.max(1, requiredLength);
             if (array.IsCreated && array.Length >= safeLength)
                 return;
 
             DisposeNativeArray(ref array);
             array = new NativeArray<int>(safeLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+        }
+
+        private static void RepairCycleOrder(int activeCount)
+        {
+            if (activeCount <= 0 || !_sortedOrder.IsCreated || !_inputIndegrees.IsCreated || !_workIndegrees.IsCreated || !_queue.IsCreated)
+                return;
+
+            EnsureVisitCapacity(activeCount);
+            EnsureSuppressionCapacity(activeCount);
+
+            int suppressedEdgeCount = 0;
+            int repairedCount = _scheduledSortedCount;
+            while (repairedCount < activeCount && suppressedEdgeCount < activeCount)
+            {
+                StampVisitedNodes(repairedCount);
+                if (!TrySelectCycleEdge(activeCount, suppressedEdgeCount, out int suppressedSourceIndex, out int suppressedDestinationIndex))
+                    break;
+
+                _suppressedEdgeSources[suppressedEdgeCount] = suppressedSourceIndex;
+                _suppressedEdgeDestinations[suppressedEdgeCount] = suppressedDestinationIndex;
+                suppressedEdgeCount++;
+                LogCycleRepairWarning(suppressedSourceIndex, suppressedDestinationIndex);
+
+                // COLD SYNC REPAIR: cyclic player-authored pipe loops are exceptional invalid topology.
+                repairedCount = BuildSynchronousOrder(activeCount, suppressedEdgeCount);
+            }
+
+            _scheduledSortedCount = repairedCount;
+            if (_sortedCount.IsCreated)
+                _sortedCount[0] = repairedCount;
+        }
+
+        private static void StampVisitedNodes(int sortedCount)
+        {
+            _visitStamp++;
+            if (_visitStamp == int.MaxValue)
+            {
+                System.Array.Clear(_visitMarks, 0, _visitMarks.Length);
+                _visitStamp = 1;
+            }
+
+            int safeSortedCount = math.min(sortedCount, _scheduledNodeCount);
+            for (int sortedIndex = 0; sortedIndex < safeSortedCount; sortedIndex++)
+            {
+                int nodeIndex = _sortedOrder[sortedIndex];
+                if (nodeIndex < 0 || nodeIndex >= _scheduledNodeCount)
+                    continue;
+
+                _visitMarks[nodeIndex] = _visitStamp;
+            }
+        }
+
+        private static bool TrySelectCycleEdge(int activeCount, int suppressedEdgeCount, out int suppressedSourceIndex, out int suppressedDestinationIndex)
+        {
+            suppressedSourceIndex = -1;
+            suppressedDestinationIndex = -1;
+
+            for (int sourceIndex = activeCount - 1; sourceIndex >= 0; sourceIndex--)
+            {
+                if (_visitMarks[sourceIndex] == _visitStamp)
+                    continue;
+
+                int edgeStart = _edgeOffsets[sourceIndex];
+                int edgeEnd = _edgeOffsets[sourceIndex + 1];
+                for (int edgeIndex = edgeEnd - 1; edgeIndex >= edgeStart; edgeIndex--)
+                {
+                    int destinationIndex = _edgeDestinations[edgeIndex];
+                    if (destinationIndex < 0 || destinationIndex >= activeCount)
+                        continue;
+
+                    if (_visitMarks[destinationIndex] == _visitStamp)
+                        continue;
+
+                    if (IsSuppressedEdge(sourceIndex, destinationIndex, suppressedEdgeCount))
+                        continue;
+
+                    suppressedSourceIndex = sourceIndex;
+                    suppressedDestinationIndex = destinationIndex;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static int BuildSynchronousOrder(int activeCount, int suppressedEdgeCount)
+        {
+            int queueCount = 0;
+            for (int nodeIndex = 0; nodeIndex < activeCount; nodeIndex++)
+            {
+                int indegree = _inputIndegrees[nodeIndex];
+                for (int suppressedIndex = 0; suppressedIndex < suppressedEdgeCount; suppressedIndex++)
+                {
+                    if (_suppressedEdgeDestinations[suppressedIndex] == nodeIndex && indegree > 0)
+                        indegree--;
+                }
+
+                _workIndegrees[nodeIndex] = indegree;
+                if (indegree == 0)
+                    _queue[queueCount++] = nodeIndex;
+            }
+
+            int queueReadIndex = 0;
+            int sortedCount = 0;
+            while (queueReadIndex < queueCount)
+            {
+                int nodeIndex = _queue[queueReadIndex++];
+                _sortedOrder[sortedCount++] = nodeIndex;
+
+                int edgeStart = _edgeOffsets[nodeIndex];
+                int edgeEnd = _edgeOffsets[nodeIndex + 1];
+                for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
+                {
+                    int destinationIndex = _edgeDestinations[edgeIndex];
+                    if (IsSuppressedEdge(nodeIndex, destinationIndex, suppressedEdgeCount))
+                        continue;
+
+                    int nextIndegree = _workIndegrees[destinationIndex] - 1;
+                    _workIndegrees[destinationIndex] = nextIndegree;
+                    if (nextIndegree == 0)
+                        _queue[queueCount++] = destinationIndex;
+                }
+            }
+
+            return sortedCount;
+        }
+
+        private static bool IsSuppressedEdge(int sourceIndex, int destinationIndex, int suppressedEdgeCount)
+        {
+            for (int suppressedIndex = 0; suppressedIndex < suppressedEdgeCount; suppressedIndex++)
+            {
+                if (_suppressedEdgeSources[suppressedIndex] != sourceIndex)
+                    continue;
+
+                if (_suppressedEdgeDestinations[suppressedIndex] == destinationIndex)
+                    return true;
+            }
+
+            return false;
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogCycleRepairWarning(int sourceIndex, int destinationIndex)
+        {
+            float currentTime = Time.unscaledTime;
+            if (currentTime < _nextCycleWarningTime)
+                return;
+
+            _nextCycleWarningTime = currentTime + CycleWarningCadenceSeconds;
+            Debug.LogWarning($"LogisticsPipeTransportScheduler dropped cyclic edge {sourceIndex}->{destinationIndex} to keep pipe DAG valid.");
         }
 
         private static void DisposeNativeArray(ref NativeArray<int> array)

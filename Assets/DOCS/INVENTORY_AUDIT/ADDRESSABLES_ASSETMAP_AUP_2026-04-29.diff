@@ -1,0 +1,1227 @@
+diff --git a/Assets/_Project/Scripts/ItemCatalog.cs b/Assets/_Project/Scripts/ItemCatalog.cs
+index b48df5a4..1e0efd62 100644
+--- a/Assets/_Project/Scripts/ItemCatalog.cs
++++ b/Assets/_Project/Scripts/ItemCatalog.cs
+@@ -11,7 +11,18 @@ using System;
+ using System.Collections.Generic;
+ using Hecton.Localization;
+ using Hecton8.Items;
++#if UNITY_ADDRESSABLES_EXIST
++using UnityEngine.AddressableAssets;
++using UnityEngine.ResourceManagement.AsyncOperations;
++#endif
+ using UnityEngine;
++#if UNITY_EDITOR
++using UnityEditor;
++#endif
++#if UNITY_EDITOR && UNITY_ADDRESSABLES_EDITOR_EXIST
++using UnityEditor.AddressableAssets;
++using UnityEditor.AddressableAssets.Settings;
++#endif
+ 
+ namespace Hecton8.SaveSystem
+ {
+@@ -21,6 +32,63 @@ namespace Hecton8.SaveSystem
+         order    = 100)]
+     public sealed class ItemCatalog : ScriptableObject
+     {
++#if UNITY_ADDRESSABLES_EXIST
++        private enum WorldPrefabLoadState : byte
++        {
++            Unloaded = 0,
++            Loading = 1,
++            Loaded = 2,
++            Failed = 3
++        }
++
++        [Serializable]
++        private struct WorldPrefabAddressableEntry
++        {
++            public int hashId;
++            public string persistentId;
++            public AssetReferenceGameObject prefabReference;
++        }
++
++        private struct WorldPrefabRuntimeRecord
++        {
++            public AssetReferenceGameObject PrefabReference;
++            public AsyncOperationHandle<GameObject> Handle;
++            public WorldPrefabLoadState LoadState;
++        }
++
++        private readonly struct WorldPrefabGuidFallbackEntry
++        {
++            public readonly int HashId;
++            public readonly string PersistentId;
++            public readonly string Guid;
++
++            public WorldPrefabGuidFallbackEntry(string persistentId, string guid)
++            {
++                PersistentId = persistentId;
++                Guid = guid;
++                HashId = string.IsNullOrWhiteSpace(persistentId) ? 0 : LocHash.Compute(persistentId);
++            }
++        }
++
++        private const string WorldHeroPropsGroupName = "World_HeroProps";
++
++        private static readonly WorldPrefabGuidFallbackEntry[] _worldPrefabGuidFallbacks =
++        {
++            new WorldPrefabGuidFallbackEntry("Item_Tool_BeaconDeployer", "d174d546f879a4742bc018eb043e67b7"),
++            new WorldPrefabGuidFallbackEntry("Item_Tool_Builder", "a9d920f69f572794da38a80172350742"),
++            new WorldPrefabGuidFallbackEntry("Item_Tool_EnvAnalyzer", "f31fbadc22133c74a9c4e0dafbec547e"),
++            new WorldPrefabGuidFallbackEntry("Item_Tool_Flashlight", "40a67b632626b2b4ca1b22462448c725"),
++            new WorldPrefabGuidFallbackEntry("Item_Tool_HarpoonLauncher", "2f2aaf08a7039d74ab54a9f41530b73c"),
++            new WorldPrefabGuidFallbackEntry("Item_Tool_Knife", "774f5752cc67c7f49916466b60350a64"),
++            new WorldPrefabGuidFallbackEntry("Item_Tool_LaserCutter", "5d6d90d471f7ea44291faf2907d11145"),
++            new WorldPrefabGuidFallbackEntry("Item_Tool_Propulsion", "f9ee01257418ed74696850470ef62d20"),
++            new WorldPrefabGuidFallbackEntry("Item_Tool_Repair", "fd6fc0a78e6568b4e972561e8b888d34"),
++            new WorldPrefabGuidFallbackEntry("Item_Tool_SalvageSampler", "fa20e563eef211a4daf00fe5b0ca6412"),
++            new WorldPrefabGuidFallbackEntry("Item_Tool_Scanner", "48435f04343913447adc3ca4573951fc"),
++            new WorldPrefabGuidFallbackEntry("Item_Tool_StunPistol", "1cedfa8d3d2816f48afce0afcdbdc9c0")
++        };
++#endif
++
+         public readonly struct ItemRuntimeDescriptor
+         {
+             public readonly int HashId;
+@@ -75,6 +143,10 @@ namespace Hecton8.SaveSystem
+ 
+         [Header("All item assets in the project")]
+         [SerializeField] private List<ItemData> allItems = new List<ItemData>();
++#if UNITY_ADDRESSABLES_EXIST
++        [Header("Addressable world prefabs keyed by item hash")]
++        [SerializeField] private List<WorldPrefabAddressableEntry> worldPrefabAddressables = new List<WorldPrefabAddressableEntry>();
++#endif
+ 
+         /// <summary>
+         /// ???????: stable ID / legacy asset name ? ItemData. ???????? ???? ??? ? OnEnable.
+@@ -83,6 +155,10 @@ namespace Hecton8.SaveSystem
+         private Dictionary<string, ItemData> _lookup;
+         private Dictionary<int, ItemData> _hashLookup;
+         private Dictionary<int, ItemRuntimeDescriptor> _runtimeDescriptorLookup;
++#if UNITY_ADDRESSABLES_EXIST
++        private Dictionary<int, AssetReferenceGameObject> _worldPrefabReferenceLookup;
++        private Dictionary<int, WorldPrefabRuntimeRecord> _worldPrefabRuntimeLookup;
++#endif
+         private bool _hasLookupAmbiguity;
+         private string _lookupAmbiguitySummary;
+         private List<ItemData> _runtimeItems;
+@@ -101,6 +177,7 @@ namespace Hecton8.SaveSystem
+         private void OnEnable()
+         {
+             RebuildLookup();
++            RebuildWorldPrefabLookup();
+         }
+ 
+         /// <summary>
+@@ -146,6 +223,141 @@ namespace Hecton8.SaveSystem
+                    descriptor.IsValid;
+         }
+ 
++        public bool QueueWorldPrefabPrewarm(int hashId)
++        {
++#if !UNITY_ADDRESSABLES_EXIST
++            return FindByHash(hashId)?.worldPrefab != null;
++#else
++            if (hashId == 0)
++                return false;
++
++            if (_worldPrefabReferenceLookup == null || _worldPrefabRuntimeLookup == null)
++                RebuildWorldPrefabLookup();
++
++            if (_worldPrefabRuntimeLookup.TryGetValue(hashId, out WorldPrefabRuntimeRecord runtimeRecord))
++            {
++                if (runtimeRecord.LoadState == WorldPrefabLoadState.Loaded)
++                    return runtimeRecord.Handle.IsValid() && runtimeRecord.Handle.Result != null;
++
++                if (runtimeRecord.LoadState == WorldPrefabLoadState.Loading)
++                    return true;
++
++                if (runtimeRecord.LoadState == WorldPrefabLoadState.Failed)
++                    return false;
++            }
++
++            if (_worldPrefabReferenceLookup == null ||
++                !_worldPrefabReferenceLookup.TryGetValue(hashId, out AssetReferenceGameObject prefabReference) ||
++                prefabReference == null ||
++                !prefabReference.RuntimeKeyIsValid())
++            {
++                return false;
++            }
++
++            AsyncOperationHandle<GameObject> handle = prefabReference.LoadAssetAsync<GameObject>();
++            _worldPrefabRuntimeLookup[hashId] = new WorldPrefabRuntimeRecord
++            {
++                PrefabReference = prefabReference,
++                Handle = handle,
++                LoadState = WorldPrefabLoadState.Loading
++            };
++
++            return true;
++#endif
++        }
++
++        public void QueueWorldPrefabPrewarmNonAlloc(List<int> hashIds)
++        {
++            if (hashIds == null)
++                return;
++
++            for (int i = 0; i < hashIds.Count; i++)
++                QueueWorldPrefabPrewarm(hashIds[i]);
++        }
++
++        public bool TryGetLoadedWorldPrefab(int hashId, out GameObject prefab)
++        {
++#if !UNITY_ADDRESSABLES_EXIST
++            ItemData item = FindByHash(hashId);
++            prefab = item != null ? item.worldPrefab : null;
++            return prefab != null;
++#else
++            prefab = null;
++            if (hashId == 0)
++                return false;
++
++            if (_worldPrefabRuntimeLookup == null)
++                RebuildWorldPrefabLookup();
++
++            if (_worldPrefabRuntimeLookup == null || !_worldPrefabRuntimeLookup.TryGetValue(hashId, out WorldPrefabRuntimeRecord runtimeRecord))
++                return false;
++
++            if (!runtimeRecord.Handle.IsValid())
++            {
++                runtimeRecord.LoadState = WorldPrefabLoadState.Failed;
++                _worldPrefabRuntimeLookup[hashId] = runtimeRecord;
++                return false;
++            }
++
++            if (runtimeRecord.LoadState == WorldPrefabLoadState.Loading)
++            {
++                if (!runtimeRecord.Handle.IsDone)
++                    return false;
++
++                if (runtimeRecord.Handle.Status != AsyncOperationStatus.Succeeded || runtimeRecord.Handle.Result == null)
++                {
++                    runtimeRecord.LoadState = WorldPrefabLoadState.Failed;
++                    _worldPrefabRuntimeLookup[hashId] = runtimeRecord;
++                    return false;
++                }
++
++                runtimeRecord.LoadState = WorldPrefabLoadState.Loaded;
++                _worldPrefabRuntimeLookup[hashId] = runtimeRecord;
++            }
++
++            if (runtimeRecord.LoadState != WorldPrefabLoadState.Loaded || runtimeRecord.Handle.Result == null)
++                return false;
++
++            prefab = runtimeRecord.Handle.Result;
++            return prefab != null;
++#endif
++        }
++
++        public bool AreWorldPrefabsReadyNonAlloc(List<int> hashIds)
++        {
++            if (hashIds == null || hashIds.Count <= 0)
++                return true;
++
++            for (int i = 0; i < hashIds.Count; i++)
++            {
++                if (!TryGetLoadedWorldPrefab(hashIds[i], out _))
++                    return false;
++            }
++
++            return true;
++        }
++
++        public void ReleaseAllWorldPrefabHandles()
++        {
++#if !UNITY_ADDRESSABLES_EXIST
++            return;
++#else
++            if (_worldPrefabRuntimeLookup == null || _worldPrefabRuntimeLookup.Count == 0)
++                return;
++
++            Dictionary<int, WorldPrefabRuntimeRecord>.Enumerator enumerator = _worldPrefabRuntimeLookup.GetEnumerator();
++            while (enumerator.MoveNext())
++            {
++                WorldPrefabRuntimeRecord runtimeRecord = enumerator.Current.Value;
++                if (runtimeRecord.Handle.IsValid())
++                    Addressables.Release(runtimeRecord.Handle);
++            }
++
++            enumerator.Dispose();
++            _worldPrefabRuntimeLookup.Clear();
++#endif
++        }
++
+         /// <summary>
+         /// Registers a runtime-only item overlay without mutating the authored ScriptableObject asset list.
+         /// This is intended for mod content injection and validates stable-ID collisions before extending the live lookup.
+@@ -273,6 +485,45 @@ namespace Hecton8.SaveSystem
+             }
+         }
+ 
++        private void RebuildWorldPrefabLookup()
++        {
++#if !UNITY_ADDRESSABLES_EXIST
++            return;
++#else
++            int entryCount = worldPrefabAddressables != null ? worldPrefabAddressables.Count : 0;
++            _worldPrefabReferenceLookup = new Dictionary<int, AssetReferenceGameObject>(Math.Max(16, entryCount));
++
++            if (_worldPrefabRuntimeLookup == null)
++                _worldPrefabRuntimeLookup = new Dictionary<int, WorldPrefabRuntimeRecord>(Math.Max(16, entryCount));
++            else
++                _worldPrefabRuntimeLookup.Clear();
++
++            for (int i = 0; i < entryCount; i++)
++            {
++                WorldPrefabAddressableEntry entry = worldPrefabAddressables[i];
++                if (entry.hashId == 0 || entry.prefabReference == null || !entry.prefabReference.RuntimeKeyIsValid())
++                    continue;
++
++                _worldPrefabReferenceLookup[entry.hashId] = entry.prefabReference;
++            }
++
++            for (int i = 0; i < _worldPrefabGuidFallbacks.Length; i++)
++            {
++                WorldPrefabGuidFallbackEntry fallback = _worldPrefabGuidFallbacks[i];
++                if (fallback.HashId == 0 ||
++                    string.IsNullOrWhiteSpace(fallback.Guid) ||
++                    _worldPrefabReferenceLookup.ContainsKey(fallback.HashId))
++                {
++                    continue;
++                }
++
++                AssetReferenceGameObject fallbackReference = new AssetReferenceGameObject(fallback.Guid);
++                if (fallbackReference.RuntimeKeyIsValid())
++                    _worldPrefabReferenceLookup.Add(fallback.HashId, fallbackReference);
++            }
++#endif
++        }
++
+         private void AddLookupAlias(string id, ItemData item)
+         {
+             if (string.IsNullOrEmpty(id) || item == null)
+@@ -427,7 +678,134 @@ namespace Hecton8.SaveSystem
+                 return;
+ 
+             RebuildLookup();
++#if UNITY_ADDRESSABLES_EDITOR_EXIST
++            SyncAddressableWorldPrefabEntries();
++#endif
++            RebuildWorldPrefabLookup();
++        }
++
++#if UNITY_ADDRESSABLES_EDITOR_EXIST
++        private void SyncAddressableWorldPrefabEntries()
++        {
++            if (allItems == null)
++                return;
++
++            AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
++            bool mutated = false;
++
++            if (worldPrefabAddressables == null)
++                worldPrefabAddressables = new List<WorldPrefabAddressableEntry>(allItems.Count);
++
++            for (int i = 0; i < allItems.Count; i++)
++            {
++                ItemData item = allItems[i];
++                if (item == null || item.worldPrefab == null || string.IsNullOrWhiteSpace(item.PersistentId))
++                    continue;
++
++                int hashId = LocHash.Compute(item.PersistentId);
++                if (hashId == 0)
++                    continue;
++
++                string assetPath = AssetDatabase.GetAssetPath(item.worldPrefab);
++                string guid = AssetDatabase.AssetPathToGUID(assetPath);
++                if (string.IsNullOrEmpty(guid) && !TryResolveWorldPrefabGuidFallback(hashId, out guid))
++                    continue;
++
++                if (settings != null)
++                {
++                    AddressableAssetGroup targetGroup = ResolveOrCreateWorldPrefabGroup(settings, item.PersistentId);
++                    if (targetGroup != null)
++                    {
++                        settings.CreateOrMoveEntry(guid, targetGroup);
++                        mutated = true;
++                    }
++                }
++
++                AssetReferenceGameObject prefabReference = new AssetReferenceGameObject(guid);
++                int existingIndex = FindWorldPrefabEntryIndex(hashId);
++                WorldPrefabAddressableEntry nextEntry = new WorldPrefabAddressableEntry
++                {
++                    hashId = hashId,
++                    persistentId = item.PersistentId,
++                    prefabReference = prefabReference
++                };
++
++                if (existingIndex >= 0)
++                {
++                    worldPrefabAddressables[existingIndex] = nextEntry;
++                }
++                else
++                {
++                    worldPrefabAddressables.Add(nextEntry);
++                }
++
++                mutated = true;
++            }
++
++            if (mutated)
++                EditorUtility.SetDirty(this);
++        }
++
++        private int FindWorldPrefabEntryIndex(int hashId)
++        {
++            if (worldPrefabAddressables == null)
++                return -1;
++
++            for (int i = 0; i < worldPrefabAddressables.Count; i++)
++            {
++                if (worldPrefabAddressables[i].hashId == hashId)
++                    return i;
++            }
++
++            return -1;
++        }
++
++        private static bool TryResolveWorldPrefabGuidFallback(int hashId, out string guid)
++        {
++            guid = null;
++            if (hashId == 0)
++                return false;
++
++            for (int i = 0; i < _worldPrefabGuidFallbacks.Length; i++)
++            {
++                WorldPrefabGuidFallbackEntry fallback = _worldPrefabGuidFallbacks[i];
++                if (fallback.HashId != hashId || string.IsNullOrWhiteSpace(fallback.Guid))
++                    continue;
++
++                guid = fallback.Guid;
++                return true;
++            }
++
++            return false;
+         }
++
++        private static AddressableAssetGroup ResolveOrCreateWorldPrefabGroup(AddressableAssetSettings settings, string persistentId)
++        {
++            if (settings == null)
++                return null;
++
++            string groupName = ResolveWorldPrefabGroupName(persistentId);
++            if (string.IsNullOrWhiteSpace(groupName))
++                return settings.DefaultGroup;
++
++            AddressableAssetGroup group = settings.FindGroup(groupName);
++            if (group != null)
++                return group;
++
++            return settings.CreateGroup(groupName, false, false, false, null, typeof(UnityEditor.AddressableAssets.Settings.GroupSchemas.BundledAssetGroupSchema));
++        }
++
++        private static string ResolveWorldPrefabGroupName(string persistentId)
++        {
++            if (string.IsNullOrWhiteSpace(persistentId))
++                return WorldHeroPropsGroupName;
++
++            if (persistentId.StartsWith("Item_Tool_", StringComparison.Ordinal))
++                return WorldHeroPropsGroupName;
++
++            return WorldHeroPropsGroupName;
++        }
++#endif
+ #endif
+     }
+ }
+diff --git a/Assets/_Project/Scripts/World/PersistentWorldRegistry.cs b/Assets/_Project/Scripts/World/PersistentWorldRegistry.cs
+index fa8d2fff..6d4a8206 100644
+--- a/Assets/_Project/Scripts/World/PersistentWorldRegistry.cs
++++ b/Assets/_Project/Scripts/World/PersistentWorldRegistry.cs
+@@ -1,5 +1,6 @@
+ using System;
+ using System.Collections.Generic;
++using System.IO;
+ using System.Runtime.InteropServices;
+ using Stopwatch = System.Diagnostics.Stopwatch;
+ using System.Threading;
+@@ -7,6 +8,7 @@ using Hecton8.Core;
+ using Hecton8.Inventory;
+ using Hecton8.Interaction;
+ using Hecton8.Items;
++using Hecton8.Physics;
+ using Hecton8.SaveSystem;
+ using Unity.Collections;
+ using Unity.Collections.LowLevel.Unsafe;
+@@ -15,17 +17,25 @@ using UnityEngine;
+ 
+ namespace Hecton8.World
+ {
+-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 36)]
++    [StructLayout(LayoutKind.Explicit, Size = 48)]
+     internal struct AbsoluteUniversePosition
+     {
+         internal const int CellSizeMeters = 5000;
+ 
++        [FieldOffset(0)]
+         public long GridX;
++        [FieldOffset(8)]
+         public long GridY;
++        [FieldOffset(16)]
+         public long GridZ;
++        [FieldOffset(24)]
+         public float LocalX;
++        [FieldOffset(28)]
+         public float LocalY;
++        [FieldOffset(32)]
+         public float LocalZ;
++        [FieldOffset(36)]
++        private float _pad;
+ 
+         /// <summary>
+         /// Converts the compact save-layout position into a 16-byte-aligned transfer payload for memcpy/blit lanes.
+@@ -38,8 +48,7 @@ namespace Hecton8.World
+                 GridX = GridX,
+                 GridY = GridY,
+                 GridZ = GridZ,
+-                Local = new float4(LocalX, LocalY, LocalZ, 0f),
+-                Reserved = 0UL
++                Local = new float4(LocalX, LocalY, LocalZ, 0f)
+             };
+         }
+ 
+@@ -120,21 +129,32 @@ namespace Hecton8.World
+ 
+         public static double DistanceSq(in AbsoluteUniversePosition a, in AbsoluteUniversePosition b)
+         {
+-            double3 delta = a.ToAbsoluteDouble3() - b.ToAbsoluteDouble3();
+-            return math.lengthsq(delta);
++            const double cellSize = CellSizeMeters;
++            long gridDeltaX = a.GridX - b.GridX;
++            long gridDeltaY = a.GridY - b.GridY;
++            long gridDeltaZ = a.GridZ - b.GridZ;
++            double deltaX = (gridDeltaX * cellSize) + ((double)a.LocalX - b.LocalX);
++            double deltaY = (gridDeltaY * cellSize) + ((double)a.LocalY - b.LocalY);
++            double deltaZ = (gridDeltaZ * cellSize) + ((double)a.LocalZ - b.LocalZ);
++            return (deltaX * deltaX) + (deltaY * deltaY) + (deltaZ * deltaZ);
+         }
+     }
+ 
+     /// <summary>
+     /// 16-byte-aligned AUP transfer payload for network or memcpy lanes that require float4-friendly packing.
+     /// </summary>
+-    [StructLayout(LayoutKind.Sequential, Pack = 16, Size = 48)]
++    [StructLayout(LayoutKind.Explicit, Size = 48)]
+     internal struct AbsoluteUniversePositionBlit128
+     {
++        [FieldOffset(0)]
+         public long GridX;
++        [FieldOffset(8)]
+         public long GridY;
++        [FieldOffset(16)]
+         public long GridZ;
++        [FieldOffset(24)]
+         public float4 Local;
++        [FieldOffset(40)]
+         public ulong Reserved;
+     }
+ 
+@@ -180,7 +200,7 @@ namespace Hecton8.World
+         public uint InstanceUid;
+     }
+ 
+-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 192)]
++    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 204)]
+     internal struct PersistentWorldItemRecord
+     {
+         private const uint QuantityMask = 0x00FFFFFFu;
+@@ -322,6 +342,13 @@ namespace Hecton8.World
+     [DefaultExecutionOrder(-5850)]
+     public sealed class PersistentWorldRegistry : MonoBehaviour, ITickable, ISlowTickable
+     {
++        private sealed class SectorOverrideState
++        {
++            public string TempPath;
++            public float LastUnloadedTime;
++            public bool IsResident;
++        }
++
+         private const int DefaultMaxTrackedItems = 16384;
+         private const int DefaultChunkSizeMeters = 64;
+         private const int DefaultHydrationRadius = 1;
+@@ -340,10 +367,17 @@ namespace Hecton8.World
+         private const double HydrationRescanDistanceSq = HydrationRescanDistanceMeters * HydrationRescanDistanceMeters;
+         private const int MaxHydrationsPerFrame = 30;
+         private const int MaxDehydrationsPerTick = 8;
++        private const int PagedSectorWindowWidth = 3;
++        private const int PagedSectorHashCount = PagedSectorWindowWidth * PagedSectorWindowWidth;
++        private const int PagedSectorEdgeLengthMeters = 1000;
++        private const float SectorEvictionDistanceMeters = 2500f;
++        private const float SectorOverrideCommitIntervalSeconds = 10f;
++        private const float SectorOverrideCommitDelaySeconds = 300f;
+         private const ulong PoolGuidMixSalt = 11400714819323198485UL;
+         private const long PersistentMemoryBudgetBytes = 10485760L;
+         private const string MemoryBudgetOwnerName = "PersistentWorldRegistry";
+         private static readonly long HydrationFrameBudgetTicks = Math.Max(1L, (long)(Stopwatch.Frequency * 0.0015d));
++        private static readonly double SectorEvictionDistanceSq = SectorEvictionDistanceMeters * SectorEvictionDistanceMeters;
+ 
+         private static PersistentWorldRegistry _instance;
+         private static int _nextInstanceUidCounter;
+@@ -380,6 +414,7 @@ namespace Hecton8.World
+         private NativeArray<PoolSlotData> _poolSlotData;
+         private NativeHashMap<ulong, int> _guidToPoolIndex;
+         private NativeHashMap<uint, EntityDataRecord> _entityStateByInstanceUid;
++        private NativeHashMap<uint, float3> _spawnImpulseByInstanceUid;
+         private NativeQueue<int> _dehydrateQueue;
+         private NativeList<int> _pendingHydrationRecords;
+         private GameObject[] _hydratedInstancesBySlot;
+@@ -388,6 +423,7 @@ namespace Hecton8.World
+         private Dictionary<int, GameObject> _hydratedInstancesByRecordIndex;
+         private Dictionary<ulong, ItemData> _itemLookupByHash;
+         private List<ItemData> _itemCatalogScratch;
++        private List<int> _worldPrefabPrewarmHashScratch;
+         private List<int> _recordIndexScratch;
+         private Transform _playerTransform;
+         private ItemCatalog _resolvedItemCatalog;
+@@ -400,7 +436,17 @@ namespace Hecton8.World
+         private int _pendingHydrationReadIndex;
+         private int _hydrationSessionVersion;
+         private int3 _currentPlayerChunk;
++        private int2 _currentPlayerSector;
+         private AbsoluteUniversePosition _lastHydrationScanAup;
++        private bool _indexedSectorPagingEnabled;
++        private bool _indexedSectorPagingInFlight;
++        private bool _playerSectorValid;
++        private bool _sectorOverrideCommitInFlight;
++        private float _nextSectorOverrideCommitTime;
++        private string _indexedSectorSavePath;
++        private string _indexedSectorOverrideDirectory;
++        private List<SaveBinaryStorage.IndexedSectorEntryInfo> _indexedSectorDirectory;
++        private Dictionary<long, SectorOverrideState> _sectorOverrideStates;
+ 
+         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+         private static void ResetStaticState()
+@@ -452,6 +498,8 @@ namespace Hecton8.World
+             _guidToPoolIndex = new NativeHashMap<ulong, int>(maxTrackedItems, Allocator.Persistent);
+             // COLD ALLOC: NativeHashMap<uint,EntityDataRecord>[maxTrackedItems] � authoritative dehydration payload store keyed by InstanceUid � owner: PersistentWorldRegistry
+             _entityStateByInstanceUid = new NativeHashMap<uint, EntityDataRecord>(maxTrackedItems, Allocator.Persistent);
++            // COLD ALLOC: NativeHashMap<uint,float3>[maxTrackedItems] — deferred spawn impulse staging keyed by InstanceUid for persistent debris hydration — owner: PersistentWorldRegistry
++            _spawnImpulseByInstanceUid = new NativeHashMap<uint, float3>(maxTrackedItems, Allocator.Persistent);
+             // COLD ALLOC: NativeQueue<int>(Persistent) � deferred dehydration queue � owner: PersistentWorldRegistry
+             _dehydrateQueue = new NativeQueue<int>(Allocator.Persistent);
+             // COLD ALLOC: NativeList<int>[maxTrackedItems] � time-sliced hydration backlog keyed by persistent record index � owner: PersistentWorldRegistry
+@@ -468,8 +516,14 @@ namespace Hecton8.World
+             _itemLookupByHash = new Dictionary<ulong, ItemData>(1024);
+             // COLD ALLOC: List<ItemData>[1024] � item catalog scratch buffer for hash cache rebuilds � owner: PersistentWorldRegistry
+             _itemCatalogScratch = new List<ItemData>(1024);
++            // COLD ALLOC: List<int>[256] — unique addressable prefab prewarm hash buffer for paged sector hydration — owner: PersistentWorldRegistry
++            _worldPrefabPrewarmHashScratch = new List<int>(256);
+             // COLD ALLOC: List<int>[128] � hydrated record scratch buffer for sync/dehydrate passes � owner: PersistentWorldRegistry
+             _recordIndexScratch = new List<int>(128);
++            // COLD ALLOC: List<IndexedSectorEntryInfo>[256] — cached v8 sector directory entries for paged restore — owner: PersistentWorldRegistry
++            _indexedSectorDirectory = new List<SaveBinaryStorage.IndexedSectorEntryInfo>(256);
++            // COLD ALLOC: Dictionary<long,SectorOverrideState>[32] — paged sector temp-override residency map — owner: PersistentWorldRegistry
++            _sectorOverrideStates = new Dictionary<long, SectorOverrideState>(32);
+             RegisterPersistentMemoryBudget();
+ 
+             UpdateDiagnostics();
+@@ -537,6 +591,9 @@ namespace Hecton8.World
+             if (_entityStateByInstanceUid.IsCreated)
+                 _entityStateByInstanceUid.Dispose();
+ 
++            if (_spawnImpulseByInstanceUid.IsCreated)
++                _spawnImpulseByInstanceUid.Dispose();
++
+             if (_dehydrateQueue.IsCreated)
+                 _dehydrateQueue.Dispose();
+ 
+@@ -559,6 +616,16 @@ namespace Hecton8.World
+                 return;
+ 
+             AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(_playerTransform.position);
++            int2 nextSector = QuantizeSector(in playerAup);
++            if (_indexedSectorPagingEnabled && (!_playerSectorValid || !math.all(nextSector == _currentPlayerSector)))
++            {
++                _currentPlayerSector = nextSector;
++                _playerSectorValid = true;
++                EnsureIndexedSectorPagingScheduled(nextSector);
++            }
++
++            TryScheduleSectorOverrideCommit();
++
+             int3 nextChunk = AbsoluteUniversePosition.ResolveChunkId(in playerAup, chunkSizeMeters);
+             bool requiresRescan = !_playerChunkValid || !math.all(nextChunk == _currentPlayerChunk);
+             if (!requiresRescan && _hasLastHydrationScanAup)
+@@ -579,6 +646,11 @@ namespace Hecton8.World
+         }
+ 
+         internal bool TryRegisterDroppedItem(ItemData itemData, int quantity, Vector3 runtimePosition)
++        {
++            return TryRegisterDroppedItem(itemData, quantity, runtimePosition, Vector3.zero);
++        }
++
++        internal bool TryRegisterDroppedItem(ItemData itemData, int quantity, Vector3 runtimePosition, Vector3 initialImpulse)
+         {
+             if (itemData == null || quantity <= 0 || !_records.IsCreated || _records.Length >= _records.Capacity)
+                 return false;
+@@ -611,6 +683,7 @@ namespace Hecton8.World
+             _recordsByChunk.Add(chunkId, recordIndex);
+             RegisterOrUpdatePoolSlot(recordIndex, in record);
+             RegisterOrUpdateEntityState(in record);
++            RegisterSpawnImpulse(record.InstanceUid, initialImpulse);
+             UpsertDeltaRecord(in record);
+ 
+             if (_hasLastHydrationScanAup && ShouldHydrateDehydratedRecord(in record, in _lastHydrationScanAup))
+@@ -699,6 +772,8 @@ namespace Hecton8.World
+         {
+             CancelHydrationSession(clearQueue: true);
+             DehydrateAll(syncTransformsBackToRecords: false);
++            if (!_indexedSectorPagingEnabled)
++                _resolvedItemCatalog?.ReleaseAllWorldPrefabHandles();
+             _records.Clear();
+             _recordsByChunk.Clear();
+             _deltaRecords.Clear();
+@@ -768,6 +843,152 @@ namespace Hecton8.World
+             UpdateDiagnostics();
+         }
+ 
++        internal void RestoreFromIndexedSave(string absolutePath)
++        {
++            if (string.IsNullOrEmpty(absolutePath))
++                return;
++
++            if (_indexedSectorDirectory == null)
++                _indexedSectorDirectory = new List<SaveBinaryStorage.IndexedSectorEntryInfo>(256);
++
++            if (!SaveBinaryStorage.TryReadIndexedPersistentWorldDirectory(absolutePath, _indexedSectorDirectory, out _, out _))
++            {
++                _indexedSectorPagingEnabled = false;
++                _indexedSectorSavePath = string.Empty;
++                return;
++            }
++
++            _indexedSectorSavePath = absolutePath;
++            _indexedSectorOverrideDirectory = Path.Combine(
++                Path.GetDirectoryName(absolutePath) ?? string.Empty,
++                $"{Path.GetFileNameWithoutExtension(absolutePath)}_sector_overrides");
++            _indexedSectorPagingEnabled = _indexedSectorDirectory.Count > 0;
++            _indexedSectorPagingInFlight = false;
++            _playerSectorValid = false;
++            _sectorOverrideCommitInFlight = false;
++            _nextSectorOverrideCommitTime = 0f;
++            _sectorOverrideStates?.Clear();
++
++            if (!string.IsNullOrEmpty(_indexedSectorOverrideDirectory))
++                Directory.CreateDirectory(_indexedSectorOverrideDirectory);
++
++            if (WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _playerTransform) && _playerTransform != null)
++            {
++                AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(_playerTransform.position);
++                int2 playerSector = QuantizeSector(in playerAup);
++                _currentPlayerSector = playerSector;
++                _playerSectorValid = true;
++                EnsureIndexedSectorPagingScheduled(playerSector);
++            }
++        }
++
++        internal void DisableIndexedSavePaging()
++        {
++            _indexedSectorPagingEnabled = false;
++            _indexedSectorPagingInFlight = false;
++            _playerSectorValid = false;
++            _indexedSectorSavePath = string.Empty;
++            _indexedSectorOverrideDirectory = string.Empty;
++            _nextSectorOverrideCommitTime = 0f;
++            _indexedSectorDirectory?.Clear();
++            _sectorOverrideStates?.Clear();
++        }
++
++        private void EnsureIndexedSectorPagingScheduled(int2 centerSector)
++        {
++            if (!_indexedSectorPagingEnabled || _indexedSectorPagingInFlight || string.IsNullOrEmpty(_indexedSectorSavePath))
++                return;
++
++            _indexedSectorPagingInFlight = true;
++            _ = RunIndexedSectorPagingAsync(centerSector);
++        }
++
++        private async Awaitable RunIndexedSectorPagingAsync(int2 centerSector)
++        {
++            NativeArray<long> desiredSectorHashes = default;
++            NativeList<PersistentWorldDeltaRecord> loadedSectorRecords = default;
++            PersistentWorldDeltaRecord[] stagedRecords = null;
++
++            try
++            {
++                desiredSectorHashes = new NativeArray<long>(PagedSectorHashCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
++                int hashCursor = 0;
++                for (int z = -1; z <= 1; z++)
++                {
++                    for (int x = -1; x <= 1; x++)
++                    {
++                        desiredSectorHashes[hashCursor++] = PackSectorHash(centerSector + new int2(x, z));
++                    }
++                }
++
++                SnapshotResidentSectorOverrides(desiredSectorHashes);
++                loadedSectorRecords = new NativeList<PersistentWorldDeltaRecord>(math.max(16, maxTrackedItems), Allocator.Persistent);
++
++                await Awaitable.BackgroundThreadAsync();
++                if (!SaveBinaryStorage.TryLoadIndexedPersistentWorldSectors(_indexedSectorSavePath, desiredSectorHashes, loadedSectorRecords, out string error))
++                {
++                    Debug.LogError($"[PersistentWorldRegistry] Indexed sector paging failed: {error}");
++                    return;
++                }
++
++                if (!ApplySectorOverrides(desiredSectorHashes, loadedSectorRecords, out string overrideError))
++                {
++                    Debug.LogError($"[PersistentWorldRegistry] Sector override merge failed: {overrideError}");
++                    return;
++                }
++
++                int loadedCount = loadedSectorRecords.Length;
++                stagedRecords = loadedCount > 0 ? new PersistentWorldDeltaRecord[loadedCount] : Array.Empty<PersistentWorldDeltaRecord>();
++                for (int i = 0; i < loadedCount; i++)
++                    stagedRecords[i] = loadedSectorRecords[i];
++
++                await Awaitable.MainThreadAsync();
++                await AwaitSectorPrefabPrewarmAsync(stagedRecords);
++                RestoreFromLoadedRecords(stagedRecords);
++                MarkResidentSectorOverrides(desiredSectorHashes);
++            }
++            finally
++            {
++                if (loadedSectorRecords.IsCreated)
++                    loadedSectorRecords.Dispose();
++                if (desiredSectorHashes.IsCreated)
++                    desiredSectorHashes.Dispose();
++
++                _indexedSectorPagingInFlight = false;
++            }
++        }
++
++        private async Awaitable AwaitSectorPrefabPrewarmAsync(PersistentWorldDeltaRecord[] stagedRecords)
++        {
++            if (stagedRecords == null || stagedRecords.Length <= 0 || !TryEnsureItemLookup() || _resolvedItemCatalog == null)
++                return;
++
++            _worldPrefabPrewarmHashScratch.Clear();
++            for (int i = 0; i < stagedRecords.Length; i++)
++            {
++                PersistentWorldDeltaRecord deltaRecord = stagedRecords[i];
++                if (!deltaRecord.IsValid || !TryResolveItemData(deltaRecord.ItemPersistentIdHash, out ItemData itemData) || itemData == null)
++                    continue;
++
++                int itemHashId = ComputeCatalogItemHash(itemData);
++                if (itemHashId == 0 || _worldPrefabPrewarmHashScratch.Contains(itemHashId))
++                    continue;
++
++                _worldPrefabPrewarmHashScratch.Add(itemHashId);
++            }
++
++            if (_worldPrefabPrewarmHashScratch.Count <= 0)
++                return;
++
++            _resolvedItemCatalog.QueueWorldPrefabPrewarmNonAlloc(_worldPrefabPrewarmHashScratch);
++            while (Application.isPlaying &&
++                   ReferenceEquals(_instance, this) &&
++                   !_resolvedItemCatalog.AreWorldPrefabsReadyNonAlloc(_worldPrefabPrewarmHashScratch))
++            {
++                await Awaitable.NextFrameAsync(cancellationToken: destroyCancellationToken);
++            }
++        }
++
+         private void TryRegisterRuntimeLoops()
+         {
+             if (_tickRegistered && _slowTickRegistered)
+@@ -899,10 +1120,19 @@ namespace Hecton8.World
+             if (!TryResolveItemData(in record, out ItemData itemData) || itemData == null)
+                 return false;
+ 
+-            GameObject prefab = itemData.worldPrefab;
+-            if (prefab == null)
++            if (_resolvedItemCatalog == null)
++                return false;
++
++            int itemHashId = ComputeCatalogItemHash(itemData);
++            if (itemHashId == 0)
+                 return false;
+ 
++            if (!_resolvedItemCatalog.TryGetLoadedWorldPrefab(itemHashId, out GameObject prefab) || prefab == null)
++            {
++                _resolvedItemCatalog.QueueWorldPrefabPrewarm(itemHashId);
++                return false;
++            }
++
+             ObjectPoolManager pool = ObjectPoolManager.Instance;
+             if (pool == null)
+                 return false;
+@@ -944,6 +1174,8 @@ namespace Hecton8.World
+                 pooledRigidbody.linearVelocity = Vector3.zero;
+                 pooledRigidbody.angularVelocity = Vector3.zero;
+                 _poolSlotRigidbodies[poolIndex] = pooledRigidbody;
++                if (TryConsumeSpawnImpulse(record.InstanceUid, out float3 spawnImpulse))
++                    PhysicsForceRouter.QueueForce(pooledRigidbody, new Vector3(spawnImpulse.x, spawnImpulse.y, spawnImpulse.z), ForceMode.Impulse);
+             }
+             else
+             {
+@@ -1129,6 +1361,15 @@ namespace Hecton8.World
+             return true;
+         }
+ 
++        private bool TryResolveItemData(ulong itemPersistentIdHash, out ItemData itemData)
++        {
++            itemData = null;
++            if (itemPersistentIdHash == 0UL || !TryEnsureItemLookup())
++                return false;
++
++            return _itemLookupByHash.TryGetValue(itemPersistentIdHash, out itemData) && itemData != null;
++        }
++
+         private bool TryEnsureItemLookup()
+         {
+             ItemCatalog currentCatalog = PlayerInventory.Instance != null
+@@ -1185,6 +1426,258 @@ namespace Hecton8.World
+             return math.max(hydrationRadiusInChunks, distanceRadius);
+         }
+ 
++        private static int2 QuantizeSector(in AbsoluteUniversePosition position)
++        {
++            double3 absolute = position.ToAbsoluteDouble3();
++            return new int2(
++                (int)math.floor(absolute.x / PagedSectorEdgeLengthMeters),
++                (int)math.floor(absolute.z / PagedSectorEdgeLengthMeters));
++        }
++
++        private static long PackSectorHash(int2 sectorCoord)
++        {
++            return ((long)sectorCoord.x << 32) | (uint)sectorCoord.y;
++        }
++
++        private void SnapshotResidentSectorOverrides(NativeArray<long> desiredSectorHashes)
++        {
++            if (!_indexedSectorPagingEnabled ||
++                string.IsNullOrEmpty(_indexedSectorOverrideDirectory) ||
++                !_records.IsCreated)
++            {
++                return;
++            }
++
++            SyncAllHydratedRecords();
++
++            // COLD ALLOC: Dictionary<long,List<PersistentWorldDeltaRecord>>[16] — resident sector snapshot buckets during page-out — owner: PersistentWorldRegistry
++            Dictionary<long, List<PersistentWorldDeltaRecord>> sectors = new Dictionary<long, List<PersistentWorldDeltaRecord>>(16);
++            for (int i = 0; i < _records.Length; i++)
++            {
++                PersistentWorldItemRecord record = _records[i];
++                if (record.IsCollected)
++                    continue;
++
++                long sectorHash = ComputeSectorHash(in record.Position);
++                if (!sectors.TryGetValue(sectorHash, out List<PersistentWorldDeltaRecord> bucket))
++                {
++                    // COLD ALLOC: List<PersistentWorldDeltaRecord>[16] — one resident sector override record bucket — owner: PersistentWorldRegistry
++                    bucket = new List<PersistentWorldDeltaRecord>(16);
++                    sectors.Add(sectorHash, bucket);
++                }
++
++                bucket.Add(PersistentWorldDeltaRecord.FromRecord(in record, chunkSizeMeters));
++            }
++
++            if (sectors.Count <= 0)
++                return;
++
++            float now = Time.unscaledTime;
++            // COLD ALLOC: NativeArray<PersistentWorldDeltaRecord>[sectorRecordCount] — resident sector override staging buffer — owner: PersistentWorldRegistry
++            foreach (KeyValuePair<long, List<PersistentWorldDeltaRecord>> pair in sectors)
++            {
++                List<PersistentWorldDeltaRecord> bucket = pair.Value;
++                using NativeArray<PersistentWorldDeltaRecord> sectorRecords = new NativeArray<PersistentWorldDeltaRecord>(bucket.Count, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
++                for (int i = 0; i < bucket.Count; i++)
++                    sectorRecords[i] = bucket[i];
++
++                string tempPath = ResolveSectorOverrideTempPath(pair.Key);
++                if (!SaveBinaryStorage.TryWriteIndexedPersistentWorldSectorOverride(tempPath, pair.Key, sectorRecords, chunkSizeMeters, out string error))
++                {
++                    Debug.LogError($"[PersistentWorldRegistry] Sector override snapshot failed for 0x{pair.Key:X16}: {error}");
++                    continue;
++                }
++
++                if (!_sectorOverrideStates.TryGetValue(pair.Key, out SectorOverrideState state))
++                {
++                    state = new SectorOverrideState();
++                    _sectorOverrideStates.Add(pair.Key, state);
++                }
++
++                state.TempPath = tempPath;
++                state.LastUnloadedTime = now;
++                state.IsResident = false;
++            }
++        }
++
++        private bool ApplySectorOverrides(
++            NativeArray<long> desiredSectorHashes,
++            NativeList<PersistentWorldDeltaRecord> loadedSectorRecords,
++            out string error)
++        {
++            error = string.Empty;
++            if (!_indexedSectorPagingEnabled || _sectorOverrideStates == null || _sectorOverrideStates.Count <= 0)
++                return true;
++
++            // COLD ALLOC: Dictionary<long,List<PersistentWorldDeltaRecord>>[16] — paged sector merge map during override resolution — owner: PersistentWorldRegistry
++            Dictionary<long, List<PersistentWorldDeltaRecord>> sectorBuckets = new Dictionary<long, List<PersistentWorldDeltaRecord>>(16);
++            for (int i = 0; i < loadedSectorRecords.Length; i++)
++            {
++                PersistentWorldDeltaRecord record = loadedSectorRecords[i];
++                if (!record.IsValid)
++                    continue;
++
++                AbsoluteUniversePosition unpackedPosition = record.UnpackPosition(chunkSizeMeters);
++                long sectorHash = ComputeSectorHash(in unpackedPosition);
++                if (!sectorBuckets.TryGetValue(sectorHash, out List<PersistentWorldDeltaRecord> bucket))
++                {
++                    // COLD ALLOC: List<PersistentWorldDeltaRecord>[16] — one paged sector merge bucket — owner: PersistentWorldRegistry
++                    bucket = new List<PersistentWorldDeltaRecord>(16);
++                    sectorBuckets.Add(sectorHash, bucket);
++                }
++
++                bucket.Add(record);
++            }
++
++            for (int i = 0; i < desiredSectorHashes.Length; i++)
++            {
++                long sectorHash = desiredSectorHashes[i];
++                if (!_sectorOverrideStates.TryGetValue(sectorHash, out SectorOverrideState state) ||
++                    string.IsNullOrEmpty(state.TempPath) ||
++                    !File.Exists(state.TempPath))
++                {
++                    continue;
++                }
++
++                if (!SaveBinaryStorage.TryReadIndexedPersistentWorldSectorOverride(state.TempPath, out long loadedSectorHash, out PersistentWorldDeltaRecord[] overrideRecords, out error))
++                    return false;
++
++                if (loadedSectorHash != sectorHash)
++                {
++                    error = $"Sector override hash mismatch for temp block 0x{sectorHash:X16}.";
++                    return false;
++                }
++
++                // COLD ALLOC: List<PersistentWorldDeltaRecord>[N] — override-resolved sector records loaded from temp block — owner: PersistentWorldRegistry
++                List<PersistentWorldDeltaRecord> replacement = new List<PersistentWorldDeltaRecord>(overrideRecords.Length);
++                for (int recordIndex = 0; recordIndex < overrideRecords.Length; recordIndex++)
++                {
++                    if (overrideRecords[recordIndex].IsValid)
++                        replacement.Add(overrideRecords[recordIndex]);
++                }
++
++                sectorBuckets[sectorHash] = replacement;
++            }
++
++            loadedSectorRecords.Clear();
++            Dictionary<long, List<PersistentWorldDeltaRecord>>.Enumerator enumerator = sectorBuckets.GetEnumerator();
++            while (enumerator.MoveNext())
++            {
++                List<PersistentWorldDeltaRecord> bucket = enumerator.Current.Value;
++                for (int i = 0; i < bucket.Count; i++)
++                    loadedSectorRecords.Add(bucket[i]);
++            }
++
++            enumerator.Dispose();
++            return true;
++        }
++
++        private void MarkResidentSectorOverrides(NativeArray<long> desiredSectorHashes)
++        {
++            if (_sectorOverrideStates == null || _sectorOverrideStates.Count <= 0)
++                return;
++
++            Dictionary<long, SectorOverrideState>.Enumerator enumerator = _sectorOverrideStates.GetEnumerator();
++            while (enumerator.MoveNext())
++                enumerator.Current.Value.IsResident = false;
++            enumerator.Dispose();
++
++            for (int i = 0; i < desiredSectorHashes.Length; i++)
++            {
++                if (_sectorOverrideStates.TryGetValue(desiredSectorHashes[i], out SectorOverrideState state))
++                    state.IsResident = true;
++            }
++        }
++
++        private void TryScheduleSectorOverrideCommit()
++        {
++            if (!_indexedSectorPagingEnabled ||
++                _sectorOverrideCommitInFlight ||
++                _sectorOverrideStates == null ||
++                _sectorOverrideStates.Count <= 0 ||
++                Time.unscaledTime < _nextSectorOverrideCommitTime)
++            {
++                return;
++            }
++
++            _nextSectorOverrideCommitTime = Time.unscaledTime + SectorOverrideCommitIntervalSeconds;
++            _sectorOverrideCommitInFlight = true;
++            _ = RunSectorOverrideCommitAsync();
++        }
++
++        private async Awaitable RunSectorOverrideCommitAsync()
++        {
++            // COLD ALLOC: List<long>[16] — due sector override commit queue — owner: PersistentWorldRegistry
++            List<long> dueSectorHashes = new List<long>(16);
++            try
++            {
++                float now = Time.unscaledTime;
++
++                Dictionary<long, SectorOverrideState>.Enumerator enumerator = _sectorOverrideStates.GetEnumerator();
++                while (enumerator.MoveNext())
++                {
++                    KeyValuePair<long, SectorOverrideState> pair = enumerator.Current;
++                    SectorOverrideState state = pair.Value;
++                    if (state == null || state.IsResident || string.IsNullOrEmpty(state.TempPath) || !File.Exists(state.TempPath))
++                        continue;
++
++                    if (now - state.LastUnloadedTime >= SectorOverrideCommitDelaySeconds)
++                        dueSectorHashes.Add(pair.Key);
++                }
++                enumerator.Dispose();
++
++                if (dueSectorHashes.Count <= 0)
++                    return;
++
++                await Awaitable.BackgroundThreadAsync();
++                for (int i = 0; i < dueSectorHashes.Count; i++)
++                {
++                    long sectorHash = dueSectorHashes[i];
++                    if (!_sectorOverrideStates.TryGetValue(sectorHash, out SectorOverrideState state) ||
++                        state == null ||
++                        string.IsNullOrEmpty(state.TempPath) ||
++                        !File.Exists(state.TempPath))
++                    {
++                        continue;
++                    }
++
++                    if (!SaveBinaryStorage.TryCommitIndexedPersistentWorldSectorOverride(_indexedSectorSavePath, state.TempPath, out string error))
++                        Debug.LogError($"[PersistentWorldRegistry] Sector override commit failed for 0x{sectorHash:X16}: {error}");
++                }
++
++                await Awaitable.MainThreadAsync();
++                for (int i = 0; i < dueSectorHashes.Count; i++)
++                {
++                    long sectorHash = dueSectorHashes[i];
++                    if (_sectorOverrideStates.TryGetValue(sectorHash, out SectorOverrideState state) &&
++                        state != null &&
++                        !state.IsResident &&
++                        !string.IsNullOrEmpty(state.TempPath) &&
++                        !File.Exists(state.TempPath))
++                    {
++                        _sectorOverrideStates.Remove(sectorHash);
++                    }
++                }
++            }
++            finally
++            {
++                _sectorOverrideCommitInFlight = false;
++            }
++        }
++
++        private string ResolveSectorOverrideTempPath(long sectorHash)
++        {
++            if (string.IsNullOrEmpty(_indexedSectorOverrideDirectory))
++                return string.Empty;
++
++            return Path.Combine(_indexedSectorOverrideDirectory, $"{sectorHash:X16}.sectmp");
++        }
++
++        private static long ComputeSectorHash(in AbsoluteUniversePosition position)
++        {
++            return PackSectorHash(QuantizeSector(in position));
++        }
++
+         private void RegisterOrUpdatePoolSlot(int recordIndex, in PersistentWorldItemRecord record)
+         {
+             if (!IsValidPoolIndex(recordIndex) || !_guidToPoolIndex.IsCreated)
+@@ -1230,6 +1723,8 @@ namespace Hecton8.World
+                 return;
+ 
+             _entityStateByInstanceUid.Remove(record.InstanceUid);
++            if (_spawnImpulseByInstanceUid.IsCreated)
++                _spawnImpulseByInstanceUid.Remove(record.InstanceUid);
+         }
+ 
+         private EntityDataRecord ResolveEntityState(in PersistentWorldItemRecord record)
+@@ -1256,6 +1751,32 @@ namespace Hecton8.World
+             };
+         }
+ 
++        private void RegisterSpawnImpulse(uint instanceUid, Vector3 initialImpulse)
++        {
++            if (!_spawnImpulseByInstanceUid.IsCreated || instanceUid == 0u)
++                return;
++
++            float3 impulse = new float3(initialImpulse.x, initialImpulse.y, initialImpulse.z);
++            if (!math.all(math.isfinite(impulse)) || math.lengthsq(impulse) <= 0.000001f)
++                return;
++
++            _spawnImpulseByInstanceUid.Remove(instanceUid);
++            _spawnImpulseByInstanceUid.TryAdd(instanceUid, impulse);
++        }
++
++        private bool TryConsumeSpawnImpulse(uint instanceUid, out float3 impulse)
++        {
++            impulse = default;
++            if (!_spawnImpulseByInstanceUid.IsCreated || instanceUid == 0u)
++                return false;
++
++            if (!_spawnImpulseByInstanceUid.TryGetValue(instanceUid, out impulse))
++                return false;
++
++            _spawnImpulseByInstanceUid.Remove(instanceUid);
++            return true;
++        }
++
+         private EntityDataRecord CaptureEntityStateFromLiveInstance(
+             in PersistentWorldItemRecord record,
+             GameObject instance,
+@@ -1371,10 +1892,23 @@ namespace Hecton8.World
+ 
+             slotData.StateFlags |= hydrationQueuedMask;
+             _poolSlotData[poolIndex] = slotData;
++            QueueWorldPrefabPrewarmForRecord(in record);
+             _pendingHydrationRecords.AddNoResize(recordIndex);
+             EnsureHydrationSessionScheduled();
+         }
+ 
++        private void QueueWorldPrefabPrewarmForRecord(in PersistentWorldItemRecord record)
++        {
++            if (!TryResolveItemData(in record, out ItemData itemData) || itemData == null || _resolvedItemCatalog == null)
++                return;
++
++            int itemHashId = ComputeCatalogItemHash(itemData);
++            if (itemHashId == 0)
++                return;
++
++            _resolvedItemCatalog.QueueWorldPrefabPrewarm(itemHashId);
++        }
++
+         private void EnsureHydrationSessionScheduled()
+         {
+             if (_hydrationSessionRunning ||
+@@ -1739,6 +2273,14 @@ namespace Hecton8.World
+             return math.hash(chunkId);
+         }
+ 
++        private static int ComputeCatalogItemHash(ItemData itemData)
++        {
++            if (itemData == null || string.IsNullOrWhiteSpace(itemData.PersistentId))
++                return 0;
++
++            return Hecton.Localization.LocHash.Compute(itemData.PersistentId);
++        }
++
+         internal int CopyChunkDeltas(int3 chunkId, NativeList<PersistentWorldDeltaRecord> destination)
+         {
+             if (!destination.IsCreated || !_deltaRecordsByChunk.IsCreated)

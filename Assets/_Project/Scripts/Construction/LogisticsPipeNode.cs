@@ -1,3 +1,4 @@
+using Hecton8.Atmosphere;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Items;
@@ -21,6 +22,8 @@ namespace Hecton8.Construction
     {
         private const float SlowTickDeltaTime = 0.5f;
         private const float PositionRefreshEpsilonSqr = 0.0004f;
+        private const float ThermalDamageThresholdCelsius = 100f;
+        private const byte MaxPayloadIntegrity = byte.MaxValue;
         private static readonly Color PipeSplineColor = new Color(0.30f, 0.82f, 0.95f, 0.88f);
 
         private static int s_NextReservationId = 1;
@@ -63,6 +66,13 @@ namespace Hecton8.Construction
         [Tooltip("Pipe ruptures once accumulated overpressure stress crosses this threshold.")]
         [SerializeField, Range(0.1f, 16f)] private float ruptureStressThreshold = 3f;
 
+        [Header("── Thermal Transit ─────────────────────")]
+        [Tooltip("Ambient temperature above which in-flight cargo starts cooking inside the pipe.")]
+        [SerializeField, Min(ThermalDamageThresholdCelsius)] private float thermalDamageStartCelsius = ThermalDamageThresholdCelsius;
+
+        [Tooltip("Integrity removed from the in-flight payload per SlowTick for each Celsius above the thermal threshold.")]
+        [SerializeField, Range(0.01f, 4f)] private float thermalDamagePerDegreePerTick = 0.5f;
+
         [Header("── Power ──────────────────────────────────")]
         [Tooltip("Continuous draw while the pipe is actively moving or staging a cargo packet.")]
         [SerializeField, Range(0f, 100f)] private float activePowerDraw = 8f;
@@ -78,12 +88,15 @@ namespace Hecton8.Construction
         [SerializeField] private int _debugReservationId;
         [SerializeField] private float _debugOverpressureStress;
         [SerializeField] private bool _debugRuptured;
+        [SerializeField] private byte _debugPayloadIntegrity = MaxPayloadIntegrity;
 
         private PowerNode _powerNode;
+        private SubmarineAtmosphereSystem _atmosphereSystem;
         private Transform _cachedTransform;
         private Transform _cachedSourceTransform;
         private Transform _cachedDestinationTransform;
         private bool _registered;
+        private bool _despawning;
         private bool _hasPower = true;
         private float _exportTimer;
         private int _activeReservationId;
@@ -97,23 +110,33 @@ namespace Hecton8.Construction
         private Vector3 _cachedDestinationPosition;
         private Vector3 _lastSourcePosition;
         private Vector3 _lastDestinationPosition;
+        private int _cachedRoomIndex = -1;
+        private byte _payloadIntegrity = MaxPayloadIntegrity;
 
         public float PowerRating => _inFlightItem != null ? -activePowerDraw : 0f;
         public int PowerPriority => powerPriority;
         public bool HasPower => _hasPower;
         internal StorageCrate SourceCrate => sourceCrate;
         internal StorageCrate DestinationCrate => destinationCrate;
+        internal bool ParticipatesInSchedulerDag => !IsRuptured() &&
+                                                    sourceCrate != null &&
+                                                    destinationCrate != null &&
+                                                    !ReferenceEquals(sourceCrate, destinationCrate);
 
         private void Awake()
         {
             _cachedTransform = transform;
             _powerNode = GetComponent<PowerNode>();
-            _pipeLinkId = GetInstanceID();
+            _atmosphereSystem = GetComponentInParent<SubmarineAtmosphereSystem>();
+            _pipeLinkId = unchecked((int)EntityId.ToULong(GetEntityId()));
             RefreshEndpointCache(true);
         }
 
         private void OnEnable()
         {
+            if (_atmosphereSystem == null)
+                _atmosphereSystem = GetComponentInParent<SubmarineAtmosphereSystem>();
+
             TryRegister();
             RefreshEndpointCache(true);
             RefreshCableVisuals(true);
@@ -121,20 +144,24 @@ namespace Hecton8.Construction
 
         private void OnDisable()
         {
-            RollbackInFlightTransfer();
+            if (!_despawning)
+                ResolveInFlightLossToWorldOrRollback(_cachedTransform != null ? _cachedTransform.position : Vector3.zero);
+
+            _despawning = false;
             TryUnregister();
             ClearCableVisuals();
         }
 
         private void OnDestroy()
         {
-            RollbackInFlightTransfer();
+            ResolveInFlightLossToWorldOrRollback(_cachedTransform != null ? _cachedTransform.position : Vector3.zero);
             TryUnregister();
             ClearCableVisuals();
         }
 
         public void OnSpawn()
         {
+            _despawning = false;
             _hasPower = true;
             _debugHasPower = true;
             _exportTimer = 0f;
@@ -143,6 +170,8 @@ namespace Hecton8.Construction
             _debugRuptured = false;
             _inFlightItemHashId = 0;
             _debugInFlightItemHashId = 0;
+            _payloadIntegrity = MaxPayloadIntegrity;
+            _debugPayloadIntegrity = MaxPayloadIntegrity;
             if (_powerNode != null)
             {
                 _powerNode.SetRuptured(false);
@@ -155,6 +184,7 @@ namespace Hecton8.Construction
 
         public void OnDespawn()
         {
+            _despawning = true;
             RollbackInFlightTransfer();
             _hasPower = true;
             _debugHasPower = true;
@@ -164,6 +194,8 @@ namespace Hecton8.Construction
             _debugRuptured = false;
             _inFlightItemHashId = 0;
             _debugInFlightItemHashId = 0;
+            _payloadIntegrity = MaxPayloadIntegrity;
+            _debugPayloadIntegrity = MaxPayloadIntegrity;
             if (_powerNode != null)
             {
                 _powerNode.SetRuptured(false);
@@ -221,9 +253,11 @@ namespace Hecton8.Construction
             _inFlightItem = item;
             _inFlightItemHashId = Hecton.Localization.LocHash.Compute(item.PersistentId);
             _transitRemaining = math.max(0f, ResolveTransitDuration() * (1f - math.saturate(dto.pipeTransitProgress)));
+            _payloadIntegrity = MaxPayloadIntegrity;
             _debugInFlightItemId = item.PersistentId;
             _debugInFlightItemHashId = _inFlightItemHashId;
             _debugTransitRemaining = _transitRemaining;
+            _debugPayloadIntegrity = _payloadIntegrity;
         }
 
         internal bool TryExtractInFlightCargoHashForDeconstruct(out int itemHashId, out int amount)
@@ -279,10 +313,12 @@ namespace Hecton8.Construction
             _inFlightItem = item;
             _inFlightItemHashId = Hecton.Localization.LocHash.Compute(item.PersistentId);
             _transitRemaining = ResolveTransitDuration();
+            _payloadIntegrity = MaxPayloadIntegrity;
             _debugInFlightItemId = item.PersistentId;
             _debugInFlightItemHashId = _inFlightItemHashId;
             _debugTransitRemaining = _transitRemaining;
             _debugReservationId = reservationId;
+            _debugPayloadIntegrity = _payloadIntegrity;
             NotifyGridBalanceChanged();
         }
 
@@ -331,16 +367,19 @@ namespace Hecton8.Construction
             _inFlightItem = null;
             _inFlightItemHashId = 0;
             _transitRemaining = 0f;
+            _payloadIntegrity = MaxPayloadIntegrity;
             _debugInFlightItemId = string.Empty;
             _debugInFlightItemHashId = 0;
             _debugTransitRemaining = 0f;
             _debugReservationId = 0;
+            _debugPayloadIntegrity = MaxPayloadIntegrity;
         }
 
         internal void SchedulerRefresh()
         {
             RefreshEndpointCache(false);
             RefreshCableVisuals(false);
+            RefreshAmbientRoomIndex();
         }
 
         internal void ExecuteCoordinatedSlowTick()
@@ -352,6 +391,10 @@ namespace Hecton8.Construction
 
             if (_inFlightItem != null)
             {
+                ApplyInFlightThermalDamage();
+                if (_inFlightItem == null)
+                    return;
+
                 AdvanceInFlightTransfer();
                 return;
             }
@@ -412,6 +455,44 @@ namespace Hecton8.Construction
             _cachedSourcePosition = _cachedSourceTransform != null ? _cachedSourceTransform.position : Vector3.zero;
             _cachedDestinationPosition = _cachedDestinationTransform != null ? _cachedDestinationTransform.position : _cachedSourcePosition;
             _cachedPathDistanceMeters = math.distance(_cachedSourcePosition, _cachedDestinationPosition);
+        }
+
+        private void RefreshAmbientRoomIndex()
+        {
+            if (_atmosphereSystem == null)
+                return;
+
+            Vector3 midpoint = (_cachedSourcePosition + _cachedDestinationPosition) * 0.5f;
+            _cachedRoomIndex = _atmosphereSystem.ResolveNearestRoomIndexForWorldPosition(midpoint);
+        }
+
+        private void ApplyInFlightThermalDamage()
+        {
+            if (_inFlightItem == null || _payloadIntegrity == 0 || _atmosphereSystem == null || _cachedRoomIndex < 0)
+                return;
+
+            float thresholdTemperature = math.max(ThermalDamageThresholdCelsius, thermalDamageStartCelsius);
+            float roomTemperature = _atmosphereSystem.GetRoomTemperatureCelsius(_cachedRoomIndex);
+            if (roomTemperature <= thresholdTemperature)
+                return;
+
+            float overshootCelsius = roomTemperature - thresholdTemperature;
+            int thermalDamage = (int)math.ceil(math.max(1f, overshootCelsius * math.max(0.01f, thermalDamagePerDegreePerTick)));
+            _payloadIntegrity = (byte)math.max(0, _payloadIntegrity - thermalDamage);
+            _debugPayloadIntegrity = _payloadIntegrity;
+            if (_payloadIntegrity > 0)
+                return;
+
+            DestroyInFlightPayloadByHeat();
+        }
+
+        private void DestroyInFlightPayloadByHeat()
+        {
+            if (_activeReservationId > 0)
+                sourceCrate?.CommitReservation(_activeReservationId);
+
+            ClearInFlightState();
+            NotifyGridBalanceChanged();
         }
 
         private void ClearCableVisuals()
@@ -494,8 +575,35 @@ namespace Hecton8.Construction
                 AbyssalFluidDecalManager.Instance.RegisterRuptureFluid(rupturePosition, radiusScale);
             }
 
-            RollbackInFlightTransfer();
+            ResolveInFlightLossToWorldOrRollback(rupturePosition);
             NotifyGridBalanceChanged();
+        }
+
+        private void ResolveInFlightLossToWorldOrRollback(Vector3 spillPosition)
+        {
+            if (TrySpillInFlightItemToWorld(spillPosition))
+                return;
+
+            RollbackInFlightTransfer();
+        }
+
+        private bool TrySpillInFlightItemToWorld(Vector3 spillPosition)
+        {
+            if (_inFlightItem == null)
+                return false;
+
+            PersistentWorldRegistry persistentWorldRegistry = PersistentWorldRegistry.Instance;
+            if (persistentWorldRegistry == null)
+                return false;
+
+            if (!persistentWorldRegistry.TryRegisterDroppedItem(_inFlightItem, 1, spillPosition))
+                return false;
+
+            if (_activeReservationId > 0)
+                sourceCrate?.CommitReservation(_activeReservationId);
+
+            ClearInFlightState();
+            return true;
         }
 
         private static int GetNextReservationId()

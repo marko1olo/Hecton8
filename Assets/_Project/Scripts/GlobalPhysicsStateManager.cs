@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using Hecton8.Core;
+using Hecton8.Gameplay;
+using Hecton8.World;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
@@ -110,10 +112,14 @@ namespace Hecton8.Physics
         {
             public ulong EntityId;
             public int CompensationRefCount;
+            public bool AllowDistanceKinematicSleep;
+            public bool DistanceKinematicSleepActive;
             public bool HasLastValidPosition;
             public bool HasOriginShiftSnapshot;
             public bool WasSleepingBeforeOriginShift;
             public bool InterpolationSuspendedForOriginShift;
+            public bool KinematicModeBeforeDistanceSleep;
+            public bool DetectCollisionsBeforeDistanceSleep;
             public RigidbodyInterpolation InterpolationModeBeforeOriginShift;
             public Vector3 SnapshotPositionBeforeOriginShift;
             public Quaternion SnapshotRotationBeforeOriginShift;
@@ -151,16 +157,16 @@ namespace Hecton8.Physics
         private const float MinImpactForce = 0.01f;
         private const float HeavyImpactIntensity = 0.95f;
         private const float MediumImpactIntensity = 0.45f;
+        private const float FarKinematicSleepDistanceMeters = 500f;
+        private const double FarKinematicSleepDistanceSq = FarKinematicSleepDistanceMeters * FarKinematicSleepDistanceMeters;
 
-        private static GlobalPhysicsStateManager _instance;
-
-        // COLD ALLOC: Rigidbody[512 initial] — authoritative tracked rigidbody registry — owner: GlobalPhysicsStateManager
+        // COLD ALLOC: Rigidbody[512 initial] â€” authoritative tracked rigidbody registry â€” owner: GlobalPhysicsStateManager
         private Rigidbody[] _trackedBodies = new Rigidbody[MaxTrackedBodies];
-        // COLD ALLOC: RigidbodyState[512 initial] — per-body runtime state and compensation flags — owner: GlobalPhysicsStateManager
+        // COLD ALLOC: RigidbodyState[512 initial] â€” per-body runtime state and compensation flags â€” owner: GlobalPhysicsStateManager
         private RigidbodyState[] _bodyStates = new RigidbodyState[MaxTrackedBodies];
-        // COLD ALLOC: PhysicsConnection[128] — tracked tether/dock connection registry — owner: GlobalPhysicsStateManager
+        // COLD ALLOC: PhysicsConnection[128] â€” tracked tether/dock connection registry â€” owner: GlobalPhysicsStateManager
         private readonly PhysicsConnection[] _connections = new PhysicsConnection[MaxTrackedConnections];
-        // COLD ALLOC: Dictionary<ulong,int>[512 initial] — rigidbody entity-id to tracked-index map for O(1) lookups during origin shifts — owner: GlobalPhysicsStateManager
+        // COLD ALLOC: Dictionary<ulong,int>[512 initial] â€” rigidbody entity-id to tracked-index map for O(1) lookups during origin shifts â€” owner: GlobalPhysicsStateManager
         private readonly Dictionary<ulong, int> _trackedBodyIndexByEntityId = new Dictionary<ulong, int>(MaxTrackedBodies);
 
         private NativeArray<float3> _lastValidPositions;
@@ -171,107 +177,98 @@ namespace Hecton8.Physics
         private bool _registeredFixedTick;
         private bool _registeredOriginShift;
         private bool _sceneEventsSubscribed;
-
-        /// <summary>Current live runtime instance when one exists.</summary>
-        public static GlobalPhysicsStateManager Instance => _instance;
-
-        /// <summary>
-        /// Ensures a runtime physics-state manager exists.
-        /// </summary>
-        /// <returns>Live runtime manager.</returns>
-        public static GlobalPhysicsStateManager EnsureRuntimeInstance()
-        {
-            if (_instance != null)
-                return _instance;
-
-            GameObject runtimeRoot = new GameObject("[GlobalPhysicsStateManager]");
-            return runtimeRoot.AddComponent<GlobalPhysicsStateManager>();
-        }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            _instance = null;
-        }
+        private Transform _playerTransform;
 
         internal static void RegisterTrackedBody(Rigidbody body)
         {
-            EnsureRuntimeInstance().RegisterTrackedBodyInternal(body);
+            if (!TryGetRuntimeManager(out GlobalPhysicsStateManager manager))
+                return;
+
+            manager.RegisterTrackedBodyInternal(body);
         }
 
         internal static void PrepareTrackedBodiesForOriginShift()
         {
-            EnsureRuntimeInstance().PrepareTrackedBodiesForOriginShiftInternal();
+            if (!TryGetRuntimeManager(out GlobalPhysicsStateManager manager))
+                return;
+
+            manager.PrepareTrackedBodiesForOriginShiftInternal();
         }
 
         internal static void CommitTrackedBodiesForOriginShift(Vector3 shiftOffset)
         {
-            if (_instance == null)
+            if (!TryGetRuntimeManager(out GlobalPhysicsStateManager manager))
                 return;
 
-            _instance.CommitTrackedBodiesForOriginShiftInternal(shiftOffset);
+            manager.CommitTrackedBodiesForOriginShiftInternal(shiftOffset);
         }
 
         internal static void FinalizeTrackedBodiesAfterOriginShift()
         {
-            if (_instance == null)
+            if (!TryGetRuntimeManager(out GlobalPhysicsStateManager manager))
                 return;
 
-            _instance.FinalizeTrackedBodiesAfterOriginShiftInternal();
+            manager.FinalizeTrackedBodiesAfterOriginShiftInternal();
         }
 
         internal static void UnregisterTrackedBody(Rigidbody body)
         {
-            if (_instance == null || body == null)
+            if (body == null || !TryGetRuntimeManager(out GlobalPhysicsStateManager manager))
                 return;
 
-            _instance.UnregisterTrackedBodyInternal(body);
+            manager.UnregisterTrackedBodyInternal(body);
         }
 
         internal static void QueueImpact(Rigidbody primaryBody, Rigidbody secondaryBody, Collision collision)
         {
-            if (_instance == null || primaryBody == null || collision == null)
+            if (primaryBody == null || collision == null || !TryGetRuntimeManager(out GlobalPhysicsStateManager manager))
                 return;
 
-            _instance.QueueImpactInternal(primaryBody, secondaryBody, collision);
+            manager.QueueImpactInternal(primaryBody, secondaryBody, collision);
         }
 
         internal static void RegisterTetherConnection(UnityEngine.Object owner, Rigidbody anchorBody, Rigidbody payloadBody)
         {
-            EnsureRuntimeInstance().RegisterOrUpdateConnection(owner, anchorBody, payloadBody, PhysicsConnectionKind.Tether);
+            if (!TryGetRuntimeManager(out GlobalPhysicsStateManager manager))
+                return;
+
+            manager.RegisterOrUpdateConnection(owner, anchorBody, payloadBody, PhysicsConnectionKind.Tether);
         }
 
         internal static void UnregisterTetherConnection(UnityEngine.Object owner)
         {
-            if (_instance == null || owner == null)
+            if (owner == null || !TryGetRuntimeManager(out GlobalPhysicsStateManager manager))
                 return;
 
-            _instance.UnregisterConnection(owner, PhysicsConnectionKind.Tether);
+            manager.UnregisterConnection(owner, PhysicsConnectionKind.Tether);
         }
 
         internal static void RegisterDockConnection(UnityEngine.Object owner, Rigidbody dockedBody)
         {
-            EnsureRuntimeInstance().RegisterOrUpdateConnection(owner, dockedBody, null, PhysicsConnectionKind.Dock);
+            if (!TryGetRuntimeManager(out GlobalPhysicsStateManager manager))
+                return;
+
+            manager.RegisterOrUpdateConnection(owner, dockedBody, null, PhysicsConnectionKind.Dock);
         }
 
         internal static void UnregisterDockConnection(UnityEngine.Object owner)
         {
-            if (_instance == null || owner == null)
+            if (owner == null || !TryGetRuntimeManager(out GlobalPhysicsStateManager manager))
                 return;
 
-            _instance.UnregisterConnection(owner, PhysicsConnectionKind.Dock);
+            manager.UnregisterConnection(owner, PhysicsConnectionKind.Dock);
         }
 
         internal static bool IsKinematicAnchorCompensationEnabled(UnityEngine.Object owner, PhysicsConnectionKind kind)
         {
-            if (_instance == null || owner == null)
+            if (owner == null || !TryGetRuntimeManager(out GlobalPhysicsStateManager manager))
                 return false;
 
-            int connectionIndex = _instance.FindConnectionIndex(owner, kind);
+            int connectionIndex = manager.FindConnectionIndex(owner, kind);
             if (connectionIndex < 0)
                 return false;
 
-            return _instance._connections[connectionIndex].CompensationActive;
+            return manager._connections[connectionIndex].CompensationActive;
         }
 
         /// <summary>
@@ -279,29 +276,30 @@ namespace Hecton8.Physics
         /// </summary>
         public static void ClearRuntimeStateStatic()
         {
-            if (_instance != null)
-                _instance.ClearRuntimeState();
+            if (TryGetRuntimeManager(out GlobalPhysicsStateManager manager))
+                manager.ClearRuntimeState();
         }
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            GlobalPhysicsStateManager registeredManager = GlobalRegistry.PhysicsStateManager;
+            if (registeredManager != null && !ReferenceEquals(registeredManager, this))
             {
                 Destroy(gameObject);
                 return;
             }
 
-            _instance = this;
+            GlobalRegistry.RegisterPhysicsStateManager(this);
 
             if (!_lastValidPositions.IsCreated)
             {
-                // COLD ALLOC: NativeArray<float3>[512 initial] — authoritative last-valid runtime-space body positions for origin-shift-safe recovery — owner: GlobalPhysicsStateManager
+                // COLD ALLOC: NativeArray<float3>[512 initial] â€” authoritative last-valid runtime-space body positions for origin-shift-safe recovery â€” owner: GlobalPhysicsStateManager
                 _lastValidPositions = new NativeArray<float3>(_trackedBodies.Length, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             }
 
             if (!_impactQueue.IsCreated)
             {
-                // COLD ALLOC: NativeQueue<PhysicsImpactEventData>(Persistent) — deferred gameplay physics impact bus — owner: GlobalPhysicsStateManager
+                // COLD ALLOC: NativeQueue<PhysicsImpactEventData>(Persistent) â€” deferred gameplay physics impact bus â€” owner: GlobalPhysicsStateManager
                 _impactQueue = new NativeQueue<PhysicsImpactEventData>(Allocator.Persistent);
             }
 
@@ -321,7 +319,6 @@ namespace Hecton8.Physics
         {
             if (!_registeredFixedTick)
             {
-                SystemDispatcher.EnsureRuntimeInstance();
                 GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Core);
                 _registeredFixedTick = true;
             }
@@ -365,8 +362,7 @@ namespace Hecton8.Physics
             if (_lastValidPositions.IsCreated)
                 _lastValidPositions.Dispose();
 
-            if (_instance == this)
-                _instance = null;
+            GlobalRegistry.UnregisterPhysicsStateManager(this);
         }
 
         /// <inheritdoc />
@@ -375,6 +371,13 @@ namespace Hecton8.Physics
             RefreshTrackedBodies();
             SweepNaNPhysicsState();
             EvaluateConnections();
+            ApplyDistanceKinematicSleepInternal();
+        }
+
+        private static bool TryGetRuntimeManager(out GlobalPhysicsStateManager manager)
+        {
+            manager = GlobalRegistry.PhysicsStateManager;
+            return manager != null;
         }
 
         /// <inheritdoc />
@@ -531,7 +534,11 @@ namespace Hecton8.Physics
             {
                 EntityId = bodyEntityId,
                 CompensationRefCount = 0,
+                AllowDistanceKinematicSleep = ShouldAllowDistanceKinematicSleep(body),
+                DistanceKinematicSleepActive = false,
                 HasLastValidPosition = IsFinite(body.position),
+                KinematicModeBeforeDistanceSleep = body.isKinematic,
+                DetectCollisionsBeforeDistanceSleep = body.detectCollisions,
                 LastValidLinearVelocity = IsFinite(body.linearVelocity) ? body.linearVelocity : Vector3.zero,
                 LastValidAngularVelocity = IsFinite(body.angularVelocity) ? body.angularVelocity : Vector3.zero
             };
@@ -795,6 +802,69 @@ namespace Hecton8.Physics
             }
         }
 
+        private void ApplyDistanceKinematicSleepInternal()
+        {
+            ResolvePlayerTransform();
+            if (_playerTransform == null)
+                return;
+
+            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(_playerTransform.position);
+            for (int i = _trackedBodyCount - 1; i >= 0; i--)
+            {
+                Rigidbody body = _trackedBodies[i];
+                if (body == null)
+                {
+                    RemoveTrackedBodyAt(i);
+                    continue;
+                }
+
+                RigidbodyState bodyState = _bodyStates[i];
+                if (!bodyState.AllowDistanceKinematicSleep || bodyState.CompensationRefCount > 0)
+                {
+                    if (bodyState.DistanceKinematicSleepActive)
+                        RestoreDistanceKinematicSleep(body, ref bodyState);
+
+                    _bodyStates[i] = bodyState;
+                    continue;
+                }
+
+                AbsoluteUniversePosition bodyAup = AbsoluteUniversePosition.FromRuntimePosition(body.position);
+                bool shouldSleep = AbsoluteUniversePosition.DistanceSq(in bodyAup, in playerAup) > FarKinematicSleepDistanceSq;
+                if (shouldSleep)
+                    ApplyDistanceKinematicSleep(body, ref bodyState);
+                else if (bodyState.DistanceKinematicSleepActive)
+                    RestoreDistanceKinematicSleep(body, ref bodyState);
+
+                _bodyStates[i] = bodyState;
+            }
+        }
+
+        private void ApplyDistanceKinematicSleep(Rigidbody body, ref RigidbodyState bodyState)
+        {
+            if (bodyState.DistanceKinematicSleepActive)
+                return;
+
+            bodyState.KinematicModeBeforeDistanceSleep = body.isKinematic;
+            bodyState.DetectCollisionsBeforeDistanceSleep = body.detectCollisions;
+            body.isKinematic = true;
+            body.detectCollisions = false;
+            body.Sleep();
+            bodyState.DistanceKinematicSleepActive = true;
+        }
+
+        private void RestoreDistanceKinematicSleep(Rigidbody body, ref RigidbodyState bodyState)
+        {
+            if (!bodyState.DistanceKinematicSleepActive)
+                return;
+
+            body.isKinematic = bodyState.KinematicModeBeforeDistanceSleep;
+            body.detectCollisions = bodyState.DetectCollisionsBeforeDistanceSleep;
+            if (!body.isKinematic)
+                body.WakeUp();
+
+            bodyState.DistanceKinematicSleepActive = false;
+        }
+
         private void RemoveTrackedBodyAt(int bodyIndex)
         {
             int lastIndex = _trackedBodyCount - 1;
@@ -829,6 +899,30 @@ namespace Hecton8.Physics
                     _trackedBodyIndexByEntityId[EntityId.ToULong(movedBody.GetEntityId())] = bodyIndex;
             }
             _trackedBodyCount--;
+        }
+
+        private void ResolvePlayerTransform()
+        {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            _playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
+        }
+
+        private static bool ShouldAllowDistanceKinematicSleep(Rigidbody body)
+        {
+            if (body == null)
+                return false;
+
+            if (body.CompareTag("Player"))
+                return false;
+
+            if (body.TryGetComponent(out HectonPlayerMotor _) ||
+                body.TryGetComponent(out MountablePlayerTransport _) ||
+                body.TryGetComponent(out SubmarineCoreDirector _))
+            {
+                return false;
+            }
+
+            return true;
         }
 
         private void RemoveConnectionAt(int connectionIndex)
@@ -880,7 +974,7 @@ namespace Hecton8.Physics
             if (body.TryGetComponent(out PhysicsStateReporter reporter))
                 return;
 
-            body.gameObject.AddComponent<PhysicsStateReporter>(); // COLD ALLOC: PhysicsStateReporter[1] — runtime collision relay added to tracked rigidbodies — owner: GlobalPhysicsStateManager
+            body.gameObject.AddComponent<PhysicsStateReporter>(); // COLD ALLOC: PhysicsStateReporter[1] â€” runtime collision relay added to tracked rigidbodies â€” owner: GlobalPhysicsStateManager
         }
 
         private void EnsureTrackedBodyCapacity(int requiredCount)
@@ -916,7 +1010,7 @@ namespace Hecton8.Physics
 
         private void RegisterActiveRigidbodiesForOriginShift()
         {
-            // COLD ALLOC: Rigidbody[][active scene body count] — one-shot pre-shift sweep so every live dynamic body gets interpolation suspension before AUP teleport — owner: GlobalPhysicsStateManager
+            // COLD ALLOC: Rigidbody[][active scene body count] â€” one-shot pre-shift sweep so every live dynamic body gets interpolation suspension before AUP teleport â€” owner: GlobalPhysicsStateManager
             Rigidbody[] bodies = FindObjectsByType<Rigidbody>(FindObjectsInactive.Exclude);
             EnsureTrackedBodyCapacity(_trackedBodyCount + bodies.Length);
             for (int i = 0; i < bodies.Length; i++)

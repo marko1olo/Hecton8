@@ -5,7 +5,7 @@ using Hecton8.Core;
 namespace Hecton8.UI
 {
     /// <summary>
-    /// Settings comparison view — shows before/after performance estimates.
+    /// Settings comparison view â€” shows before/after performance estimates.
     /// EXCEEDS SUBNAUTICA: Subnautica has no performance comparison, only apply/revert.
     /// Estimates FPS impact based on quality preset changes.
     /// Zero-GC: ITickable, cached strings, dirty flags.
@@ -14,9 +14,9 @@ namespace Hecton8.UI
     [AddComponentMenu("Hecton8/UI/Settings Comparison View")]
     public sealed class SettingsComparisonView : MonoBehaviour, ITickable, IUpdatable
     {
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         // INSPECTOR
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         [Header("=== COMPARISON PANEL ===")]
         [SerializeField] private CanvasGroup comparisonPanel;
@@ -27,9 +27,9 @@ namespace Hecton8.UI
         [Header("=== SETTINGS ===")]
         [SerializeField] private float updateInterval = 0.5f;
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         // FIELDS
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private SettingsManager _settings;
         private bool _registered;
@@ -41,7 +41,7 @@ namespace Hecton8.UI
         private float _cachedEstimatedFPS;
         private string _cachedImpactText = string.Empty;
 
-        // COLD ALLOC: StringBuilder[128] — FPS text assembly — owner: SettingsComparisonView
+        // COLD ALLOC: StringBuilder[128] â€” FPS text assembly â€” owner: SettingsComparisonView
         private readonly System.Text.StringBuilder _fpsBuilder = new System.Text.StringBuilder(128);
 
         // FPS estimates per quality level (Low/Medium/High/Ultra)
@@ -51,9 +51,9 @@ namespace Hecton8.UI
         private const string BetterSuffix = " FPS (Better)";
         private const string WorseSuffix = " FPS (Worse)";
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         // LIFECYCLE
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private void OnEnable()
         {
@@ -72,9 +72,9 @@ namespace Hecton8.UI
             Unregister();
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         // ITICKABLE
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         public void Tick(float dt)
         {
@@ -86,9 +86,9 @@ namespace Hecton8.UI
             }
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         // PUBLIC API
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>
         /// Update comparison with pending graphics preset.
@@ -128,9 +128,9 @@ namespace Hecton8.UI
             comparisonPanel.blocksRaycasts = false;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         // PRIVATE
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private void RefreshComparison()
         {
@@ -221,7 +221,6 @@ namespace Hecton8.UI
             if (_registered)
                 return;
 
-            SystemDispatcher.EnsureRuntimeInstance();
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _registered = true;
         }

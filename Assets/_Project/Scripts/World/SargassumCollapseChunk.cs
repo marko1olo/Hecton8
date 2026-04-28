@@ -14,7 +14,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
-    public sealed class SargassumCollapseChunk : MonoBehaviour, ITickable, IFixedTickable, IPoolable
+    public sealed class SargassumCollapseChunk : MonoBehaviour, ITickable, IFixedTickable, IPoolable, IOriginShiftListener
     {
         private const string ScrapPickupPrefabAssetPath = "Assets/_Project/Prefabs/Resources/Pickups/PFB_Resource_TitaniumScrap.prefab";
         private static readonly Vector3[] ScrapEjectDirections =
@@ -134,11 +134,14 @@ namespace Hecton8.World
         private bool _disintegrating;
         private bool _registeredFixedTick;
         private readonly Collider[] _snagColliders = new Collider[8]; // COLD ALLOC: Collider[8] - bounded snag-target probe buffer for collapse chunks - owner: SargassumCollapseChunk
+        // COLD ALLOC: ParticleSystem.Particle[192] - reusable world-space silt particle shift buffer - owner: SargassumCollapseChunk
+        private ParticleSystem.Particle[] _siltTrailShiftParticles;
 
         private void Awake()
         {
             ResolveRuntimeWiring(createFallbackTrail: true);
             EnsureSnagJoints();
+            EnsureShiftBuffers();
 
             _defaultLocalScale = transform.localScale;
             if (chunkRigidbody != null)
@@ -348,12 +351,14 @@ namespace Hecton8.World
         {
             TryUnregisterScavengerHost();
             TryUnregister();
+            HectonFloatingOrigin.UnregisterListener(this);
         }
 
         private void OnDestroy()
         {
             TryUnregisterScavengerHost();
             TryUnregister();
+            HectonFloatingOrigin.UnregisterListener(this);
         }
 
         private void TryRegister()
@@ -361,7 +366,10 @@ namespace Hecton8.World
             if (_registeredTick)
             {
                 if (_registeredFixedTick)
+                {
+                    HectonFloatingOrigin.RegisterListener(this);
                     return;
+                }
             }
             else
             {
@@ -370,10 +378,14 @@ namespace Hecton8.World
             }
 
             if (_registeredFixedTick)
+            {
+                HectonFloatingOrigin.RegisterListener(this);
                 return;
+            }
 
             GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
             _registeredFixedTick = true;
+            HectonFloatingOrigin.RegisterListener(this);
         }
 
         private void TryUnregister()
@@ -385,10 +397,25 @@ namespace Hecton8.World
             }
 
             if (!_registeredFixedTick)
+            {
+                HectonFloatingOrigin.UnregisterListener(this);
                 return;
+            }
 
             GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
             _registeredFixedTick = false;
+            HectonFloatingOrigin.UnregisterListener(this);
+        }
+
+        public void OnOriginShift(in OriginShiftEventData shiftData)
+        {
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            if (!isActiveAndEnabled || shiftOffset.sqrMagnitude <= 0.000001f)
+                return;
+
+            _snagConnectedAnchor -= shiftOffset;
+            EnsureShiftBuffers();
+            RebaseWorldSpaceParticles(siltTrail, _siltTrailShiftParticles, shiftOffset);
         }
 
         internal bool CanHostScavengers => gameObject.activeInHierarchy && _hasSnag && !_disintegrating;
@@ -683,6 +710,32 @@ namespace Hecton8.World
             }
 
             return particleSystem;
+        }
+
+        private void EnsureShiftBuffers()
+        {
+            int particleCapacity = 192;
+            if (siltTrail != null)
+                particleCapacity = Mathf.Max(1, siltTrail.main.maxParticles);
+
+            if (_siltTrailShiftParticles == null || _siltTrailShiftParticles.Length < particleCapacity)
+                _siltTrailShiftParticles = new ParticleSystem.Particle[particleCapacity];
+        }
+
+        private static void RebaseWorldSpaceParticles(ParticleSystem particleSystem, ParticleSystem.Particle[] buffer, Vector3 shiftOffset)
+        {
+            if (particleSystem == null || buffer == null)
+                return;
+
+            ParticleSystem.MainModule main = particleSystem.main;
+            if (main.simulationSpace != ParticleSystemSimulationSpace.World)
+                return;
+
+            int particleCount = particleSystem.GetParticles(buffer);
+            for (int i = 0; i < particleCount; i++)
+                buffer[i].position -= shiftOffset;
+
+            particleSystem.SetParticles(buffer, particleCount);
         }
 
         private void UpdateConsumedScale()

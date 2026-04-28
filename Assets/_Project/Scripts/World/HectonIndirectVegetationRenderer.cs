@@ -90,6 +90,10 @@ namespace Hecton8.World
         private static readonly int _VisibleIndicesLod0Id = Shader.PropertyToID("_HectonVisibleInstanceIndicesLOD0");
         private static readonly int _VisibleIndicesLod1Id = Shader.PropertyToID("_HectonVisibleInstanceIndicesLOD1");
         private static readonly int _VisibleIndicesShadowId = Shader.PropertyToID("_HectonVisibleInstanceIndicesShadow");
+        private static readonly int _IndirectArgsBufferId = Shader.PropertyToID("_HectonIndirectArgsBuffer");
+        private static readonly int _IndirectIndexCountPerInstanceId = Shader.PropertyToID("_HectonIndirectIndexCountPerInstance");
+        private static readonly int _IndirectStartIndexId = Shader.PropertyToID("_HectonIndirectStartIndex");
+        private static readonly int _IndirectBaseVertexIndexId = Shader.PropertyToID("_HectonIndirectBaseVertexIndex");
         private static readonly int _PreviousCameraPositionId = Shader.PropertyToID("_HectonPreviousCameraPosition");
         private static readonly int _DepthPyramidSourceDepthId = Shader.PropertyToID("_HectonDepthPyramidSourceDepth");
         private static readonly int _DepthPyramidSourceId = Shader.PropertyToID("_HectonDepthPyramidSource");
@@ -338,9 +342,6 @@ namespace Hecton8.World
         private GraphicsBuffer _indirectArgsLod0Buffer;
         private GraphicsBuffer _indirectArgsLod1Buffer;
         private GraphicsBuffer _indirectArgsShadowBuffer;
-        private GraphicsBuffer.IndirectDrawIndexedArgs[] _lod0ArgsUpload;
-        private GraphicsBuffer.IndirectDrawIndexedArgs[] _lod1ArgsUpload;
-        private GraphicsBuffer.IndirectDrawIndexedArgs[] _shadowArgsUpload;
         private int _gpuVisibleIndexCapacity;
         private RenderTexture _depthPyramidTexture;
         private int _depthPyramidWidth;
@@ -348,6 +349,7 @@ namespace Hecton8.World
         private int _depthPyramidMipCount;
         private int _cullFloraKernel = -1;
         private int _cullFloraShadowKernel = -1;
+        private int _clearIndirectArgsKernel = -1;
         private int _depthPyramidCopyKernel = -1;
         private int _depthPyramidDownsampleKernel = -1;
 
@@ -772,6 +774,7 @@ namespace Hecton8.World
             {
                 _cullFloraKernel = _cullingCompute.FindKernel("CullFloraInstances");
                 _cullFloraShadowKernel = _cullingCompute.FindKernel("CullFloraShadowInstances");
+                _clearIndirectArgsKernel = _cullingCompute.FindKernel("ClearIndirectArgs");
             }
             if (_depthPyramidCompute != null)
             {
@@ -816,9 +819,6 @@ namespace Hecton8.World
             _scooterHeadlightConeData = new Vector4[MaxScooterHeadlights];
             _frustumPlaneCache = new Plane[FrustumPlaneCount]; // COLD ALLOC: Plane[6] - cached frustum planes for GPU vegetation culling upload - owner: HectonIndirectVegetationRenderer
             _frustumPlaneVectors = new Vector4[FrustumPlaneCount]; // COLD ALLOC: Vector4[6] - packed frustum planes for compute upload - owner: HectonIndirectVegetationRenderer
-            _lod0ArgsUpload = new GraphicsBuffer.IndirectDrawIndexedArgs[1]; // COLD ALLOC: IndirectDrawIndexedArgs[1] - near-pass indirect args upload cache - owner: HectonIndirectVegetationRenderer
-            _lod1ArgsUpload = new GraphicsBuffer.IndirectDrawIndexedArgs[1]; // COLD ALLOC: IndirectDrawIndexedArgs[1] - far-pass indirect args upload cache - owner: HectonIndirectVegetationRenderer
-            _shadowArgsUpload = new GraphicsBuffer.IndirectDrawIndexedArgs[1]; // COLD ALLOC: IndirectDrawIndexedArgs[1] - shadow-pass indirect args upload cache - owner: HectonIndirectVegetationRenderer
             CreateAuxiliaryMaterials();
         }
 
@@ -1348,6 +1348,9 @@ namespace Hecton8.World
             if (!GeometryUtility.TestPlanesAABB(_frustumPlaneCache, drawBounds))
                 return true;
 
+            if (_instanceCount <= 0)
+                return true;
+
             EnsureGpuIndirectResources(_instanceCount, nearMesh, farMesh);
             if (_visibleIndicesLod0Buffer == null || _indirectArgsLod0Buffer == null)
                 return false;
@@ -1413,7 +1416,8 @@ namespace Hecton8.World
             if (_cullingCompute == null ||
                 _cullFloraKernel < 0 ||
                 _visibleIndicesLod0Buffer == null ||
-                _indirectArgsLod0Buffer == null)
+                _indirectArgsLod0Buffer == null ||
+                _instanceCount <= 0)
             return;
 
             PopulateFrustumPlaneUpload(cullCamera);
@@ -1426,6 +1430,12 @@ namespace Hecton8.World
             _visibleIndicesLod0Buffer.SetCounterValue(0u);
             _visibleIndicesLod1Buffer?.SetCounterValue(0u);
             _visibleIndicesShadowBuffer?.SetCounterValue(0u);
+
+            Mesh nearMesh = ResolveNearRenderMesh();
+            Mesh farMesh = _farLodDistance > _nearLodDistance ? ResolveImpostorRenderMesh() : null;
+            ClearIndirectArgsBuffer(_indirectArgsLod0Buffer, nearMesh);
+            ClearIndirectArgsBuffer(_indirectArgsLod1Buffer, farMesh != null ? farMesh : nearMesh);
+            ClearIndirectArgsBuffer(_indirectArgsShadowBuffer, nearMesh);
 
             _cullingCompute.SetBuffer(_cullFloraKernel, _SourceMatricesId, _instanceMatrixBuffer);
             _cullingCompute.SetBuffer(_cullFloraKernel, _SourceDataId, activeInstanceDataBuffer);
@@ -1583,28 +1593,35 @@ namespace Hecton8.World
                 _gpuVisibleIndexCapacity = requiredCapacity;
             }
 
-            EnsureIndirectArgsBuffer(ref _indirectArgsLod0Buffer, nearMesh, _lod0ArgsUpload);
-            EnsureIndirectArgsBuffer(ref _indirectArgsLod1Buffer, farMesh != null ? farMesh : nearMesh, _lod1ArgsUpload);
-            EnsureIndirectArgsBuffer(ref _indirectArgsShadowBuffer, nearMesh, _shadowArgsUpload);
+            EnsureIndirectArgsBuffer(ref _indirectArgsLod0Buffer);
+            EnsureIndirectArgsBuffer(ref _indirectArgsLod1Buffer);
+            EnsureIndirectArgsBuffer(ref _indirectArgsShadowBuffer);
         }
 
-        private void EnsureIndirectArgsBuffer(
-            ref GraphicsBuffer argsBuffer,
-            Mesh mesh,
-            GraphicsBuffer.IndirectDrawIndexedArgs[] uploadCache)
+        private void EnsureIndirectArgsBuffer(ref GraphicsBuffer argsBuffer)
         {
-            if (mesh == null || uploadCache == null || uploadCache.Length == 0)
-                return;
-
             if (argsBuffer == null)
-                argsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, 1, GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - indirect indexed draw arguments for vegetation pass - owner: HectonIndirectVegetationRenderer
+                argsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw, 1, GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - GPU-cleared indirect indexed draw arguments for vegetation pass - owner: HectonIndirectVegetationRenderer
+        }
 
-            uploadCache[0].indexCountPerInstance = mesh.GetIndexCount(_subMeshIndex);
-            uploadCache[0].instanceCount = 0u;
-            uploadCache[0].startIndex = mesh.GetIndexStart(_subMeshIndex);
-            uploadCache[0].baseVertexIndex = (uint)Mathf.Max(0, mesh.GetBaseVertex(_subMeshIndex));
-            uploadCache[0].startInstance = 0u;
-            argsBuffer.SetData(uploadCache);
+        private void ClearIndirectArgsBuffer(GraphicsBuffer argsBuffer, Mesh mesh)
+        {
+            if (_cullingCompute == null ||
+                _clearIndirectArgsKernel < 0 ||
+                argsBuffer == null ||
+                mesh == null)
+            {
+                return;
+            }
+
+            _cullingCompute.SetBuffer(_clearIndirectArgsKernel, _IndirectArgsBufferId, argsBuffer);
+            uint indexCount = mesh.GetIndexCount(_subMeshIndex);
+            uint startIndex = mesh.GetIndexStart(_subMeshIndex);
+            _cullingCompute.SetInt(_IndirectIndexCountPerInstanceId, indexCount > int.MaxValue ? int.MaxValue : (int)indexCount);
+            _cullingCompute.SetInt(_IndirectStartIndexId, startIndex > int.MaxValue ? int.MaxValue : (int)startIndex);
+            uint baseVertexIndex = (uint)mesh.GetBaseVertex(_subMeshIndex);
+            _cullingCompute.SetInt(_IndirectBaseVertexIndexId, baseVertexIndex > int.MaxValue ? int.MaxValue : (int)baseVertexIndex);
+            _cullingCompute.Dispatch(_clearIndirectArgsKernel, 1, 1, 1);
         }
 
         private void PopulateFrustumPlaneUpload(Camera cullCamera)
@@ -2588,6 +2605,7 @@ namespace Hecton8.World
 
             _cullFloraKernel = _cullingCompute != null ? _cullingCompute.FindKernel("CullFloraInstances") : -1;
             _cullFloraShadowKernel = _cullingCompute != null ? _cullingCompute.FindKernel("CullFloraShadowInstances") : -1;
+            _clearIndirectArgsKernel = _cullingCompute != null ? _cullingCompute.FindKernel("ClearIndirectArgs") : -1;
             _depthPyramidCopyKernel = _depthPyramidCompute != null ? _depthPyramidCompute.FindKernel("CopyDepthPyramidMip0") : -1;
             _depthPyramidDownsampleKernel = _depthPyramidCompute != null ? _depthPyramidCompute.FindKernel("DownsampleDepthPyramidMip") : -1;
         }

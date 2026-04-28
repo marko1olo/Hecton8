@@ -1,5 +1,6 @@
 using Hecton8.Atmosphere;
 using Hecton8.Core;
+using Hecton8.Physics;
 using Hecton8.Power;
 using Hecton8.World;
 using Unity.Mathematics;
@@ -8,7 +9,7 @@ using UnityEngine;
 namespace Hecton8.Gameplay
 {
     /// <summary>
-    /// Acoustic payload emitted when electrolysis dumps excess grid power into surrounding water.
+    /// Acoustic payload emitted when electrolysis boils surrounding water.
     /// </summary>
     public readonly struct ElectrolysisAcousticEvent
     {
@@ -41,49 +42,78 @@ namespace Hecton8.Gameplay
     }
 
     /// <summary>
-    /// Dumps excess electrical power into seawater to generate oxygen for one submarine room.
+    /// Grid-powered electrolysis stack that converts local seawater into breathable oxygen.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(PowerNode))]
     [AddComponentMenu("Hecton/Gameplay/Submarine Electrolysis Module")]
-    public sealed class SubmarineElectrolysisModule : MonoBehaviour, ISlowTickable
+    public sealed class SubmarineElectrolysisModule : MonoBehaviour, ISlowTickable, IPowerComponent
     {
         private const float SlowTickDeltaTime = 0.5f;
 
-        [Header("── References ──────────────────")]
+        [Header("References")]
         [SerializeField] private SubmarineAtmosphereSystem atmosphereSystem;
+        [SerializeField] private SubmarineFluidDynamics fluidDynamics;
+        [SerializeField] private BaseModule hostModule;
         [SerializeField] private PowerNode powerNode;
 
-        [Header("── Output ──────────────────")]
+        [Header("Process")]
         [Tooltip("Target room index that receives generated oxygen.")]
         [SerializeField, Min(0)] private int targetRoomIndex;
 
-        [Tooltip("Upper bound on excess power converted into electrolysis heat and oxygen.")]
-        [SerializeField, Min(0f)] private float maxDumpPowerWatts = 1800f;
+        [Tooltip("Continuous electrical draw while the electrolysis stack is active.")]
+        [SerializeField, Min(0f)] private float powerDrawWatts = 500000f;
 
-        [Tooltip("Reference-gas-volume oxygen units produced per kilowatt-second of dumped power.")]
+        [Tooltip("Priority used when industrial loads start getting shed by the grid.")]
+        [SerializeField, Range(0, 100)] private int powerPriority = 12;
+
+        [Tooltip("Minimum local flood volume required before the stack can source internal water.")]
+        [SerializeField, Min(0f)] private float minimumFloodWaterVolumeCubicMeters = 0.05f;
+
+        [Tooltip("If true, the module may run while dry as long as the external ocean runtime is available.")]
+        [SerializeField] private bool allowOceanWaterFallback = true;
+
+        [Tooltip("Reference-gas-volume oxygen units produced per kilowatt-second of electrical input.")]
         [SerializeField, Min(0f)] private float oxygenUnitsPerKilowattSecond = 0.02f;
 
-        [Header("── Consequence ──────────────────")]
+        [Tooltip("Direct room-temperature rise applied each SlowTick while electrolysis is active.")]
+        [SerializeField, Min(0f)] private float temperatureRisePerSlowTickCelsius = 10f;
+
+        [Header("Consequence")]
         [Tooltip("Threat radius applied to the local ocean threat grid when electrolysis boils hard.")]
         [SerializeField, Min(1f)] private float threatRadiusMeters = 55f;
 
-        [Tooltip("Threat-grid strength injected when the module is at full dump power.")]
-        [SerializeField, Min(0f)] private float threatStrengthAtFullDump = 90f;
+        [Tooltip("Threat-grid strength injected each SlowTick while electrolysis is active.")]
+        [SerializeField, Min(0f)] private float threatStrength = 90f;
 
-        [Tooltip("How long the threat pulse persists after each dump step.")]
+        [Tooltip("How long the threat pulse persists after each electrolysis step.")]
         [SerializeField, Min(0.1f)] private float threatHoldSeconds = 2.5f;
 
         [Tooltip("Upward convection speed injected into the abyssal flow field.")]
         [SerializeField, Min(0f)] private float thermalUpdraftMetersPerSecond = 4f;
 
-        [Header("── Diagnostics ──────────────────")]
+        [Header("Diagnostics")]
+        [SerializeField] private bool _debugHasPower = true;
+        [SerializeField] private bool _debugHasWaterSource;
+        [SerializeField] private bool _debugIsOperating;
         [SerializeField] private float _debugLastDumpedPowerWatts;
         [SerializeField] private float _debugLastOxygenUnits;
         [SerializeField] private float _debugLastThreatStrength;
 
         private Transform _cachedTransform;
+        private bool _hasPower = true;
+        private bool _hasWaterSource;
+        private bool _isOperating;
         private bool _registered;
+
+        /// <inheritdoc />
+        public float PowerRating => _isOperating ? -math.max(0f, powerDrawWatts) : 0f;
+
+        /// <inheritdoc />
+        public int PowerPriority => powerPriority;
+
+        /// <inheritdoc />
+        public bool HasPower => _hasPower;
 
         private void Awake()
         {
@@ -94,6 +124,10 @@ namespace Hecton8.Gameplay
         {
             CacheReferences();
             TryRegister();
+            _hasWaterSource = ResolveWaterSourceAvailability();
+            _debugHasWaterSource = _hasWaterSource;
+            _debugHasPower = _hasPower;
+            _debugIsOperating = _isOperating;
         }
 
         private void OnDisable()
@@ -106,44 +140,68 @@ namespace Hecton8.Gameplay
             TryUnregister();
         }
 
+        /// <inheritdoc />
         public void SlowTick()
         {
-            CacheReferences();
-            PowerGrid grid = powerNode != null ? powerNode.Grid : null;
-            if (grid == null || atmosphereSystem == null)
+            if (atmosphereSystem == null || powerNode == null)
                 return;
 
-            float dumpedPowerWatts = math.min(math.max(0f, grid.Balance), math.max(0f, maxDumpPowerWatts));
-            if (dumpedPowerWatts <= 0f)
+            bool nextWaterSource = ResolveWaterSourceAvailability();
+            _hasWaterSource = nextWaterSource;
+            _debugHasWaterSource = nextWaterSource;
+
+            bool nextOperating = _hasPower && nextWaterSource;
+            if (_isOperating != nextOperating)
+            {
+                _isOperating = nextOperating;
+                _debugIsOperating = nextOperating;
+                NotifyGridBalanceChanged();
+            }
+
+            if (!_isOperating)
                 return;
 
-            float oxygenUnits = (dumpedPowerWatts * SlowTickDeltaTime * 0.001f) * math.max(0f, oxygenUnitsPerKilowattSecond);
+            float consumedPowerWatts = math.max(0f, powerDrawWatts);
+            float oxygenUnits = (consumedPowerWatts * SlowTickDeltaTime * 0.001f) * math.max(0f, oxygenUnitsPerKilowattSecond);
             if (oxygenUnits <= 0f)
                 return;
 
             atmosphereSystem.InjectOxygenUnits(targetRoomIndex, oxygenUnits);
+            atmosphereSystem.InjectRoomTemperatureDeltaCelsius(targetRoomIndex, math.max(0f, temperatureRisePerSlowTickCelsius));
 
-            float dumpRatio = dumpedPowerWatts / math.max(1f, maxDumpPowerWatts);
-            float threatStrength = math.max(0f, threatStrengthAtFullDump) * dumpRatio;
             Vector3 position = _cachedTransform != null ? _cachedTransform.position : Vector3.zero;
             HectonMapMagicVegetationBridge bridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
             if (bridge != null)
             {
                 bridge.ApplyExternalThreatPulse(position, threatRadiusMeters, threatStrength, threatHoldSeconds);
-                bridge.RegisterSwarmWakeImpulse(position, Vector3.up * (thermalUpdraftMetersPerSecond * dumpRatio), threatRadiusMeters, threatHoldSeconds);
+                bridge.RegisterSwarmWakeImpulse(position, Vector3.up * math.max(0f, thermalUpdraftMetersPerSecond), threatRadiusMeters, threatHoldSeconds);
             }
 
             ElectrolysisAcousticEvent acousticEvent = new ElectrolysisAcousticEvent(
                 position,
-                dumpedPowerWatts,
+                consumedPowerWatts,
                 oxygenUnits,
                 threatStrength,
                 threatRadiusMeters);
             ElectrolysisAcousticEvents.Notify(in acousticEvent);
 
-            _debugLastDumpedPowerWatts = dumpedPowerWatts;
+            _debugLastDumpedPowerWatts = consumedPowerWatts;
             _debugLastOxygenUnits = oxygenUnits;
             _debugLastThreatStrength = threatStrength;
+        }
+
+        /// <inheritdoc />
+        public void OnPowerStatusChanged(bool hasPower)
+        {
+            _hasPower = hasPower;
+            _debugHasPower = hasPower;
+
+            if (hasPower || !_isOperating)
+                return;
+
+            _isOperating = false;
+            _debugIsOperating = false;
+            NotifyGridBalanceChanged();
         }
 
         private void CacheReferences()
@@ -154,8 +212,41 @@ namespace Hecton8.Gameplay
             if (powerNode == null)
                 TryGetComponent(out powerNode);
 
+            if (hostModule == null)
+                hostModule = GetComponent<BaseModule>() ?? GetComponentInParent<BaseModule>();
+
             if (atmosphereSystem == null)
                 atmosphereSystem = GetComponentInParent<SubmarineAtmosphereSystem>();
+
+            if (fluidDynamics == null && atmosphereSystem != null)
+                fluidDynamics = atmosphereSystem.GetComponent<SubmarineFluidDynamics>();
+        }
+
+        private bool ResolveWaterSourceAvailability()
+        {
+            if (fluidDynamics != null &&
+                targetRoomIndex >= 0 &&
+                targetRoomIndex < fluidDynamics.CompartmentCount &&
+                fluidDynamics.GetCompartmentFloodVolumeCubicMeters(targetRoomIndex) >= math.max(0f, minimumFloodWaterVolumeCubicMeters))
+            {
+                return true;
+            }
+
+            if (hostModule != null && hostModule.IsFlooded)
+                return true;
+
+            if (!allowOceanWaterFallback)
+                return false;
+
+            IHectonOceanKinematicsService oceanService = GlobalRegistry.OceanKinematics;
+            return oceanService != null && oceanService.ActiveProvider != null;
+        }
+
+        private void NotifyGridBalanceChanged()
+        {
+            PowerGrid grid = powerNode != null ? powerNode.Grid : null;
+            if (grid != null)
+                grid.MarkDirty();
         }
 
         private void TryRegister()

@@ -34,7 +34,7 @@ namespace Hecton8.Physics
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Physics/Submarine Structural Grid")]
-    public sealed class SubmarineStructuralGrid : MonoBehaviour, IFixedTickable, IDamageReceiver, ISubmarineHullBreachReadModel
+    public sealed class SubmarineStructuralGrid : MonoBehaviour, IFixedTickable, IDamageSignalReceiver, ISubmarineHullBreachReadModel
     {
         private static readonly ProfilerMarker _fixedTickProfilerMarker = new ProfilerMarker("H8.Submarine.StructuralGrid.FixedTick");
         private static readonly ProfilerMarker _damageScheduleProfilerMarker = new ProfilerMarker("H8.Submarine.StructuralGrid.Damage.Schedule");
@@ -52,6 +52,7 @@ namespace Hecton8.Physics
         private const float DefaultIntegrityByteToCellDamageScale = 1.15f;
         private const float DefaultFatiguePressureThresholdKPa = 150f;
         private const byte DefaultFatigueIntegrityLossPerCycle = 4;
+        private const float RecentImpactSeverityDecayPerSecond = 2.8f;
         private const float Epsilon = 0.0001f;
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
@@ -164,7 +165,7 @@ namespace Hecton8.Physics
             public int DamageBytes;
         }
 
-        [Header("── Grid Authoring ──────────────────")]
+        [Header("â”€â”€ Grid Authoring â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Voxel columns along the submarine local X axis.")]
         [SerializeField, Min(1)] private int gridWidth = 16;
         [Tooltip("Voxel rows along the submarine local Y axis.")]
@@ -178,7 +179,7 @@ namespace Hecton8.Physics
         [Tooltip("When enabled, the grid bounds derive from the cached hull collider at startup.")]
         [SerializeField] private bool deriveGridBoundsFromHullCollider = true;
 
-        [Header("── Damage Diffusion ─────────────────")]
+        [Header("â”€â”€ Damage Diffusion â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Minimum spherical damage radius in meters for any structural impact.")]
         [SerializeField, Min(0.05f)] private float minimumImpactRadiusMeters = DefaultMinimumImpactRadiusMeters;
         [Tooltip("Additional damage radius in meters added per impact speed unit.")]
@@ -192,7 +193,7 @@ namespace Hecton8.Physics
         [Tooltip("Cell-integrity damage contributed by one integrity byte from the incoming damage signal.")]
         [SerializeField, Min(0f)] private float integrityByteToCellDamageScale = DefaultIntegrityByteToCellDamageScale;
 
-        [Header("── References ─────────────────────")]
+        [Header("â”€â”€ References â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Optional authored hull collider used for automatic local bounds fitting.")]
         [SerializeField] private Collider hullCollider;
         [Tooltip("Optional authored submarine fluid owner consuming published breach areas.")]
@@ -200,7 +201,7 @@ namespace Hecton8.Physics
         [Tooltip("Optional authored atmosphere owner used for pressure-cycle fatigue.")]
         [SerializeField] private SubmarineAtmosphereSystem atmosphereSystem;
 
-        [Header("â”€â”€ Fatigue â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Header("Ã¢â€â‚¬Ã¢â€â‚¬ Fatigue Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬")]
         [Tooltip("Pressure threshold in kPa that counts as one full pressurization cycle.")]
         [SerializeField, Min(0f)] private float fatiguePressureThresholdKPa = DefaultFatiguePressureThresholdKPa;
         [Tooltip("Permanent integrity bytes lost each time a compartment crosses into the high-pressure band.")]
@@ -216,9 +217,10 @@ namespace Hecton8.Physics
 
         private float _cellBreachAreaSquareMeters;
         private float _fatiguePeakNormalized;
+        private float _recentImpactSeverityNormalized;
         private JobHandle _damageJobHandle;
         private IDamageSignalEmitter _damageEmitter;
-        private readonly List<MonoBehaviour> _componentSearchBuffer = new List<MonoBehaviour>(4); // COLD ALLOC: List<MonoBehaviour>(4) — local component search scratch for interface-only wiring — owner: SubmarineStructuralGrid
+        private readonly List<MonoBehaviour> _componentSearchBuffer = new List<MonoBehaviour>(4); // COLD ALLOC: List<MonoBehaviour>(4) â€” local component search scratch for interface-only wiring â€” owner: SubmarineStructuralGrid
 
         private NativeArray<byte> _cellIntegrityFront;
         private NativeArray<byte> _cellIntegrityBack;
@@ -230,7 +232,7 @@ namespace Hecton8.Physics
         private NativeArray<float> _compartmentBreachAreasBack;
         private NativeArray<ImpactCommand> _queuedImpacts;
         private NativeArray<ImpactCommand> _scheduledImpacts;
-        // COLD ALLOC: float[8] â€” previous compartment pressures used to detect fatigue cycles â€” owner: SubmarineStructuralGrid
+        // COLD ALLOC: float[8] Ã¢â‚¬â€ previous compartment pressures used to detect fatigue cycles Ã¢â‚¬â€ owner: SubmarineStructuralGrid
         private readonly float[] _previousCompartmentPressuresKPa = new float[CompartmentCapacity];
 
         /// <inheritdoc />
@@ -240,6 +242,7 @@ namespace Hecton8.Physics
         public int BreachMaskWordCount => _hullBreachMaskFront.IsCreated ? _hullBreachMaskFront.Length : 0;
 
         internal float FatiguePeakNormalized => _fatiguePeakNormalized;
+        internal float RecentImpactSeverityNormalized => _recentImpactSeverityNormalized;
 
         private void Awake()
         {
@@ -286,6 +289,9 @@ namespace Hecton8.Physics
                 if (!_nativeStateReady || !_cellIntegrityFront.IsCreated)
                     return;
 
+                _recentImpactSeverityNormalized = math.max(
+                    0f,
+                    _recentImpactSeverityNormalized - math.max(0f, fixedDeltaTime) * RecentImpactSeverityDecayPerSecond);
                 ConsumeCompletedDamageJob();
                 RefreshCompartmentMapping();
                 ApplyPressureCycleFatigue();
@@ -310,6 +316,9 @@ namespace Hecton8.Physics
             float damageFromImpact = math.max(0f, impactSpeed) * impactSpeedToCellDamageScale;
             float damageFromSignal = integrityDelta * integrityByteToCellDamageScale;
             int damageBytes = (int)math.round(math.clamp(damageFromImpact + damageFromSignal, 1f, FullIntegrity));
+            _recentImpactSeverityNormalized = math.max(
+                _recentImpactSeverityNormalized,
+                math.saturate(damageBytes / (float)FullIntegrity));
 
             _queuedImpacts[_queuedImpactCount++] = new ImpactCommand
             {
@@ -411,24 +420,24 @@ namespace Hecton8.Physics
             int cellCount = ResolveCellCount();
             int breachWordCount = (cellCount + 63) >> 6;
 
-            // COLD ALLOC: NativeArray<byte>[cellCount] — published hull integrity front buffer — owner: SubmarineStructuralGrid
+            // COLD ALLOC: NativeArray<byte>[cellCount] â€” published hull integrity front buffer â€” owner: SubmarineStructuralGrid
             _cellIntegrityFront = new NativeArray<byte>(cellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<byte>[cellCount] — write-side hull integrity back buffer — owner: SubmarineStructuralGrid
+            // COLD ALLOC: NativeArray<byte>[cellCount] â€” write-side hull integrity back buffer â€” owner: SubmarineStructuralGrid
             _cellIntegrityBack = new NativeArray<byte>(cellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _cellFatigue = new NativeArray<byte>(cellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<byte>[cellCount] — immutable cell-to-compartment lookup — owner: SubmarineStructuralGrid
+            // COLD ALLOC: NativeArray<byte>[cellCount] â€” immutable cell-to-compartment lookup â€” owner: SubmarineStructuralGrid
             _cellCompartmentIndices = new NativeArray<byte>(cellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<ulong>[breachWordCount] — published hull breach bitmask front buffer — owner: SubmarineStructuralGrid
+            // COLD ALLOC: NativeArray<ulong>[breachWordCount] â€” published hull breach bitmask front buffer â€” owner: SubmarineStructuralGrid
             _hullBreachMaskFront = new NativeArray<ulong>(breachWordCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<ulong>[breachWordCount] — write-side hull breach bitmask back buffer — owner: SubmarineStructuralGrid
+            // COLD ALLOC: NativeArray<ulong>[breachWordCount] â€” write-side hull breach bitmask back buffer â€” owner: SubmarineStructuralGrid
             _hullBreachMaskBack = new NativeArray<ulong>(breachWordCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[8] — published per-compartment breach areas — owner: SubmarineStructuralGrid
+            // COLD ALLOC: NativeArray<float>[8] â€” published per-compartment breach areas â€” owner: SubmarineStructuralGrid
             _compartmentBreachAreasFront = new NativeArray<float>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[8] — write-side per-compartment breach areas — owner: SubmarineStructuralGrid
+            // COLD ALLOC: NativeArray<float>[8] â€” write-side per-compartment breach areas â€” owner: SubmarineStructuralGrid
             _compartmentBreachAreasBack = new NativeArray<float>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<ImpactCommand>[16] — queued impact staging buffer — owner: SubmarineStructuralGrid
+            // COLD ALLOC: NativeArray<ImpactCommand>[16] â€” queued impact staging buffer â€” owner: SubmarineStructuralGrid
             _queuedImpacts = new NativeArray<ImpactCommand>(MaxQueuedImpacts, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<ImpactCommand>[16] — scheduled impact snapshot buffer — owner: SubmarineStructuralGrid
+            // COLD ALLOC: NativeArray<ImpactCommand>[16] â€” scheduled impact snapshot buffer â€” owner: SubmarineStructuralGrid
             _scheduledImpacts = new NativeArray<ImpactCommand>(MaxQueuedImpacts, Allocator.Persistent, NativeArrayOptions.ClearMemory);
 
             _nativeStateReady = true;
@@ -465,6 +474,7 @@ namespace Hecton8.Physics
 
             _cellBreachAreaSquareMeters = ResolveCellBreachAreaSquareMeters();
             _fatiguePeakNormalized = 0f;
+            _recentImpactSeverityNormalized = 0f;
             RefreshCompartmentMapping();
             for (int i = 0; i < CompartmentCapacity; i++)
                 _previousCompartmentPressuresKPa[i] = 0f;
@@ -543,7 +553,10 @@ namespace Hecton8.Physics
             if (!_cellIntegrityFront.IsCreated || !_cellFatigue.IsCreated || !_cellCompartmentIndices.IsCreated)
                 return;
 
-            byte integrityLoss = fatigueIntegrityLossPerCycle;
+            float thermalMultiplier = atmosphereSystem != null
+                ? atmosphereSystem.ResolveThermalFatigueMultiplier(compartmentIndex)
+                : 1f;
+            float scaledIntegrityLossPerCycle = math.max(0f, fatigueIntegrityLossPerCycle * thermalMultiplier);
             int cellCount = _cellIntegrityFront.Length;
             for (int cellIndex = 0; cellIndex < cellCount; cellIndex++)
             {
@@ -556,7 +569,7 @@ namespace Hecton8.Physics
 
                 _cellFatigue[cellIndex] = fatigue;
                 _fatiguePeakNormalized = math.max(_fatiguePeakNormalized, fatigue / (float)byte.MaxValue);
-                int integrityCap = math.max(0, FullIntegrity - (fatigue * integrityLoss));
+                int integrityCap = math.max(0, (int)math.floor(FullIntegrity - (fatigue * scaledIntegrityLossPerCycle)));
                 byte cappedIntegrity = (byte)integrityCap;
                 if (_cellIntegrityFront[cellIndex] > cappedIntegrity)
                     _cellIntegrityFront[cellIndex] = cappedIntegrity;
@@ -630,7 +643,6 @@ namespace Hecton8.Physics
             if (_registered || !Application.isPlaying)
                 return;
 
-            SystemDispatcher.EnsureRuntimeInstance();
             GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
             _registered = true;
         }
@@ -678,6 +690,7 @@ namespace Hecton8.Physics
             _damageJobHandle = default;
             _damageJobRunning = false;
             _nativeStateReady = false;
+            _recentImpactSeverityNormalized = 0f;
             _queuedImpactCount = 0;
             _scheduledImpactCount = 0;
             _mappedCompartmentCount = 0;

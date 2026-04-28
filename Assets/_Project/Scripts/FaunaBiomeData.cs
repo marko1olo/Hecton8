@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Unity.Mathematics;
 
 namespace Hecton8.AI
 {
@@ -121,6 +122,12 @@ namespace Hecton8.AI
         /// <returns>true если удалось выбрать (есть свободные слоты).</returns>
         public bool TrySelectCreature(int[] currentCounts, out FaunaEntry entry)
         {
+            Unity.Mathematics.Random random = CreateFallbackRandom(currentCounts);
+            return TrySelectCreature(ref random, currentCounts, out entry);
+        }
+
+        public bool TrySelectCreature(ref Unity.Mathematics.Random random, int[] currentCounts, out FaunaEntry entry)
+        {
             entry = default;
 
             int count = possibleCreatures.Count;
@@ -148,7 +155,7 @@ namespace Hecton8.AI
             if (availableWeight <= 0f) return false;
 
             // ── Weighted random ──
-            float roll = UnityEngine.Random.Range(0f, availableWeight);
+            float roll = random.NextFloat(0f, availableWeight);
 
             for (int i = 0; i < count; i++)
             {
@@ -199,10 +206,16 @@ namespace Hecton8.AI
         /// <returns>Мировая Y-координата для спавна.</returns>
         public float GetRandomSpawnHeight(float bottomHeight)
         {
+            Unity.Mathematics.Random random = CreateFallbackRandom(bottomHeight);
+            return GetRandomSpawnHeight(ref random, bottomHeight);
+        }
+
+        public float GetRandomSpawnHeight(ref Unity.Mathematics.Random random, float bottomHeight)
+        {
             float minY = bottomHeight + spawnHeightAboveBottom;
             float maxY = bottomHeight + spawnHeightMax;
 
-            return UnityEngine.Random.Range(minY, maxY);
+            return random.NextFloat(minY, maxY);
         }
 
         public bool HasLargeThreatZone()
@@ -234,6 +247,20 @@ namespace Hecton8.AI
         private void OnEnable()
         {
             _totalWeight = -1f; // Пересчёт при следующем запросе
+        }
+
+        private Unity.Mathematics.Random CreateFallbackRandom(int[] currentCounts)
+        {
+            uint countHash = (uint)(currentCounts != null ? currentCounts.Length : 0);
+            uint firstValue = currentCounts != null && currentCounts.Length > 0 ? unchecked((uint)currentCounts[0]) : 0u;
+            uint seed = math.hash(new uint4(unchecked((uint)biomeIndex), countHash, firstValue, 0x9E3779B9u));
+            return new Unity.Mathematics.Random(seed == 0u ? 1u : seed);
+        }
+
+        private Unity.Mathematics.Random CreateFallbackRandom(float bottomHeight)
+        {
+            uint seed = math.hash(new uint4(unchecked((uint)biomeIndex), math.asuint(bottomHeight), 0xB5297A4Du, 0x68E31DA4u));
+            return new Unity.Mathematics.Random(seed == 0u ? 1u : seed);
         }
 
 #if UNITY_EDITOR

@@ -152,6 +152,22 @@ public class PlayerMovement : MonoBehaviour {
 
 ## 2. МАТЕМАТИКА И КООРДИНАТЫ
 
+### Bishop Frame
+**Определение:** Подвижный репер в дифференциальной геометрии, описывающий ориентацию кривой без неоднозначности вектора нормали Френе в точках перегиба.
+
+**Использование в HECTON-8:**
+- Физика тросов/кабелей (Verlet constraints) — twist-free ориентация
+- Процедурная флора (kelp, sargassum) — плавное распространение ориентации по длине стебля
+
+**Преимущества перед Frenet frame:**
+- Нет разворота нормали при нулевой кривизне
+- Стабильная ориентация для констрейнтов
+- Совместим с Burst-векторизацией
+
+**См. также:** `PHYS_Tether_Cable_Acceleration_Constraints.txt`
+
+---
+
 ### Burst
 **Определение:** Unity Burst Compiler — высокопроизводительный компилятор для C# Job System.
 
@@ -317,6 +333,66 @@ private readonly MaterialPropertyBlock _mpb = new MaterialPropertyBlock();
 - С комментарием о причине и владельце
 
 **См. также:** `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`
+
+---
+
+### Kahn's Topological Sort
+**Определение:** Алгоритм топологической сортировки ориентированного ациклического графа (DAG) через удаление вершин с нулевой входящей степенью.
+
+**Использование в HECTON-8:**
+- `SaveManager` — определение порядка загрузки `ISaveable` по `LoadPriority` с разрешением циклических зависимостей.
+- `CraftingSystem` — упорядочивание рецептов крафта по зависимостям ингредиентов.
+- `PowerGrid` — валидация отсутствия циклов в энергосети перед расчётом потока.
+
+**Сложность:** O(V + E) — линейная от числа вершин и рёбер.
+
+**Псевдокод:**
+```csharp
+Queue<int> zeroInDegree = new Queue<int>();
+foreach (var node in graph)
+    if (node.InDegree == 0) zeroInDegree.Enqueue(node.Id);
+
+while (zeroInDegree.Count > 0)
+{
+    int current = zeroInDegree.Dequeue();
+    sorted.Add(current);
+    foreach (int neighbor in graph.Adjacent(current))
+    {
+        neighbor.InDegree--;
+        if (neighbor.InDegree == 0)
+            zeroInDegree.Enqueue(neighbor.Id);
+    }
+}
+// Если sorted.Count < graph.Count → цикл detected → LogError + disable.
+```
+
+**См. также:** `SaveManager.cs`, `CraftingSystem.cs`, `PowerGrid.cs`
+
+---
+
+### Torricelli Damping
+**Определение:** Физическая модель затухания, основанная на законе Торричелли для истечения жидкости через отверстие, адаптированная для демпфирования скорости в водной среде.
+
+**Формула:**
+```
+v_new = v_old * (1 - k * sqrt(|v_old|) * dt)
+
+gде:
+k = коэффициент демпфирования среды (воды / вязкости)
+|v_old| = модуль скорости
+```
+
+**Использование в HECTON-8:**
+- `PlayerMovement` — плавное торможение игрока в воде без резких рывков (альтернатива линейному drag).
+- `FaunaBrain` — демпфирование скорости морских существ при маневрировании.
+- `PhysicsApplySystem` — применение силы сопротивления среды к `ForcePacket` в подводной физике.
+
+**Преимущества перед линейным drag:**
+- Более реалистичное поведение при высоких скоростях (квадратичное сопротивление).
+- Стабильная сходимость к нулю без микро-колебаний.
+- Совместим с `FixedTick` и Burst-векторизацией.
+
+**См. также:** `PHYS_Fluid_Incursion_Interior.txt`, `PlayerMovement.cs`, `FaunaBrain.cs`
 
 ---
 
@@ -714,6 +790,21 @@ public interface IAudioOutputJob {
 - Complex geometry simplification
 
 **См. также:** `ImpostorSystem.cs`, `AmplifyImpostors/`
+
+---
+
+### Diegetic Editor Preview
+**Определение:** Wireframe / gizmo-based visualization of a diegetic UI element in the Unity Scene view during Edit Mode, without entering Play Mode.
+
+**Назначение:** Allows the Lead Architect and environment artists to see the spatial layout, scale, and FOV alignment of projected HUD canvases (e.g., `SuitHUDV4CanvasOverlay` in `ProjectionSource` mode) without relying on runtime camera pose updates.
+
+**Требования реализации:**
+- `#if UNITY_EDITOR` only — stripped from builds.
+- No `GetComponent`, `FindObjectOfType`, or physics queries inside gizmo path.
+- Must read only cached serialized fields and `SceneView.lastActiveSceneView.camera`.
+- Color-coded wireframes: orange = projection frustum, cyan = element bounds, white = text labels.
+
+**См. также:** `HUD_EDITOR_SPEC.md`, `SuitHUDV4CanvasOverlay.cs`
 
 ---
 

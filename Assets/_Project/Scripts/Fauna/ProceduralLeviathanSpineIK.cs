@@ -4,6 +4,7 @@ using Hecton8.Core;
 using Hecton8.Gameplay;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -25,18 +26,27 @@ namespace Hecton8.AI
             [ReadOnly] public NativeArray<float> NormalizedBoneT;
             [ReadOnly] public NativeArray<quaternion> BindWorldRotations;
             [WriteOnly] public NativeArray<quaternion> SolvedWorldRotations;
+            [NativeDisableParallelForRestriction] public NativeArray<quaternion> SolvedHeadWorldRotations;
+            [NativeDisableParallelForRestriction] public NativeArray<float> JawOpenRadians;
             public float3 ControlTail;
             public float3 ControlMidA;
             public float3 ControlMidB;
             public float3 ControlHead;
             public float3 HeadForward;
             public float3 WorldUp;
+            public float3 StrikeTargetPosition;
             public float PhaseTime;
             public float SpeedNormalized;
             public float BlendWeight;
             public float AmplitudeRadians;
             public float VerticalAmplitudeScale;
             public float Frequency;
+            public float StrikeBlend;
+            public float StrikeDistanceNormalized;
+            public float StrikeLeadWeight;
+            public float JawOpenRadiansMax;
+            public float JawOscillationFrequency;
+            public int LastBoneIndex;
 
             public void Execute(int index, TransformAccess transform)
             {
@@ -65,6 +75,23 @@ namespace Hecton8.AI
                     ContextualPhysicalIkMath.SafeNormalize(deformedForward, safeTangent),
                     up);
 
+                if (index == LastBoneIndex)
+                {
+                    float strikeBlend = math.saturate(StrikeBlend);
+                    float3 strikeDirection = ContextualPhysicalIkMath.SafeNormalize(
+                        StrikeTargetPosition - (float3)transform.position,
+                        safeTangent);
+                    float3 headAimDirection = ContextualPhysicalIkMath.SafeNormalize(
+                        math.lerp(safeTangent, strikeDirection, math.saturate(StrikeLeadWeight) * strikeBlend),
+                        safeTangent);
+                    quaternion strikeRotation = quaternion.LookRotationSafe(headAimDirection, up);
+                    targetRotation = math.slerp(targetRotation, strikeRotation, strikeBlend);
+
+                    float jawWave = math.saturate((math.sin((PhaseTime * math.max(0f, JawOscillationFrequency)) + (StrikeDistanceNormalized * math.PI)) * 0.5f) + 0.5f);
+                    JawOpenRadians[0] = jawWave * JawOpenRadiansMax * StrikeDistanceNormalized * strikeBlend;
+                    SolvedHeadWorldRotations[0] = targetRotation;
+                }
+
                 quaternion bindRotation = BindWorldRotations[index];
                 SolvedWorldRotations[index] = math.slerp(bindRotation, targetRotation, math.saturate(BlendWeight));
             }
@@ -77,6 +104,8 @@ namespace Hecton8.AI
         [SerializeField] private Transform skeletalRoot;
         [Tooltip("Optional explicit head bone. If omitted, the deepest descendant containing 'head' is preferred.")]
         [SerializeField] private Transform headBone;
+        [Tooltip("Optional explicit jaw bone. Auto-resolved from jaw naming when omitted.")]
+        [SerializeField] private Transform jawBone;
         [Tooltip("Optional authored vertebra chain from tail/root toward head. Auto-resolved when empty.")]
         [SerializeField] private Transform[] vertebrae = Array.Empty<Transform>();
 
@@ -92,30 +121,52 @@ namespace Hecton8.AI
         [SerializeField, Range(0.1f, 1f)] private float reverseTurnAmplitudeScale = 0.42f;
         [SerializeField] private Vector3 worldUpAxis = Vector3.up;
 
+        [Header("Strike Kinematics")]
+        [SerializeField, Min(0f)] private float jawOpenDegrees = 52f;
+        [SerializeField, Min(0f)] private float jawOscillationFrequency = 6.5f;
+        [SerializeField, Min(0f)] private float strikeLeadSeconds = 0.3f;
+        [SerializeField, Min(0.1f)] private float strikeResponseSharpness = 11f;
+        [SerializeField, Min(0.1f)] private float strikeRecoverySeconds = 1.5f;
+        [SerializeField, Range(0f, 1f)] private float strikeHeadBlend = 0.85f;
+        [SerializeField] private Vector3 jawLocalOpenAxis = Vector3.right;
+
         private FaunaBrain _faunaBrain;
         private Rigidbody _rigidbody;
+        private Rigidbody _strikeTargetRigidbody;
         private bool _registered;
         private bool _registeredOriginShiftListener;
         private bool _jobScheduled;
         private bool _animatorSuppressed;
+        private bool _jawBindLocalRotationResolved;
         private float3 _tailPoint;
         private float3 _midPointA;
         private float3 _midPointB;
         private float3 _headPoint;
         private float3 _lastResolvedHeadPosition;
+        private float3 _strikeTargetWorldPosition;
+        private float3 _strikeRecoveryTargetWorldPosition;
         private float3 _smoothedTravelDirection;
         private float _phaseTime;
+        private float _strikeBlend;
+        private float _strikeRange = 1f;
+        private float _strikeRecoveryTimeRemaining;
+        private float _strikeRecoveryDistanceNormalized;
         private JobHandle _pendingSpineHandle;
         private TransformAccessArray _vertebraAccessArray;
         private Transform[] _runtimeChain = Array.Empty<Transform>();
         private NativeArray<float> _normalizedBoneT;
         private NativeArray<quaternion> _bindWorldRotations;
         private NativeArray<quaternion> _solvedWorldRotations;
-        // COLD ALLOC: List<SkinnedMeshRenderer>[8] – skeletal root discovery scratch buffer for leviathan presentation binding – owner: ProceduralLeviathanSpineIK
+        private NativeArray<quaternion> _solvedHeadWorldRotations;
+        private NativeArray<float> _jawOpenRadians;
+        private quaternion _jawBindLocalRotation;
+        private Transform _strikeTarget;
+        private bool _wasStrikeActiveLastTick;
+        // COLD ALLOC: List<SkinnedMeshRenderer>[8] â€“ skeletal root discovery scratch buffer for leviathan presentation binding â€“ owner: ProceduralLeviathanSpineIK
         private readonly List<SkinnedMeshRenderer> _rendererScratch = new List<SkinnedMeshRenderer>(8);
-        // COLD ALLOC: List<Transform>[64] — temporary transform scan buffer for leviathan vertebra auto-resolution — owner: ProceduralLeviathanSpineIK
+        // COLD ALLOC: List<Transform>[64] â€” temporary transform scan buffer for leviathan vertebra auto-resolution â€” owner: ProceduralLeviathanSpineIK
         private readonly List<Transform> _transformScratch = new List<Transform>(64);
-        // COLD ALLOC: List<Transform>[64] — parent-chain assembly buffer used to build the runtime vertebra array — owner: ProceduralLeviathanSpineIK
+        // COLD ALLOC: List<Transform>[64] â€” parent-chain assembly buffer used to build the runtime vertebra array â€” owner: ProceduralLeviathanSpineIK
         private readonly List<Transform> _chainScratch = new List<Transform>(64);
 
         private void Awake()
@@ -179,6 +230,24 @@ namespace Hecton8.AI
             SuppressAnimatorPlayback(isActiveAndEnabled);
         }
 
+        internal void SetStrikeIntent(Transform target, float strikeRange, bool strikeActive)
+        {
+            _strikeRange = math.max(1f, strikeRange);
+            if (!strikeActive || target == null)
+            {
+                _strikeTarget = null;
+                _strikeTargetRigidbody = null;
+                return;
+            }
+
+            if (_strikeTarget != target)
+            {
+                _strikeTarget = target;
+                _strikeTargetRigidbody = null;
+                target.TryGetComponent(out _strikeTargetRigidbody);
+            }
+        }
+
         public void Tick(float deltaTime)
         {
             if (deltaTime <= 0f || _faunaBrain == null || _vertebraAccessArray.length <= 0)
@@ -211,24 +280,75 @@ namespace Hecton8.AI
             _lastResolvedHeadPosition = headPosition;
             _phaseTime += deltaTime;
             float amplitudeDamping = math.lerp(1f, math.saturate(reverseTurnAmplitudeScale), reversal01);
+            float strikeBlendTarget = _strikeTarget != null ? 1f : 0f;
+            float strikeBlendAlpha = ContextualPhysicalIkMath.SmoothAlpha(strikeResponseSharpness, deltaTime);
+            _strikeBlend = math.lerp(_strikeBlend, strikeBlendTarget, strikeBlendAlpha);
+            float3 resolvedStrikeTargetPosition = headLead;
+            float strikeDistanceNormalized = 0f;
+            float effectiveStrikeBlend = _strikeBlend;
+            float safeRecoverySeconds = math.max(0.1f, strikeRecoverySeconds);
+            bool strikeHasLiveTarget = _strikeTarget != null;
+            if (strikeHasLiveTarget)
+            {
+                float3 strikeTargetVelocity = _strikeTargetRigidbody != null ? (float3)_strikeTargetRigidbody.linearVelocity : float3.zero;
+                resolvedStrikeTargetPosition = (float3)_strikeTarget.position + (strikeTargetVelocity * math.max(0f, strikeLeadSeconds));
+                float strikeDistance = math.distance(headPosition, resolvedStrikeTargetPosition);
+                strikeDistanceNormalized = math.saturate(1f - (strikeDistance / math.max(1f, _strikeRange)));
+                _strikeRecoveryTimeRemaining = safeRecoverySeconds;
+                _strikeRecoveryDistanceNormalized = strikeDistanceNormalized;
+                _strikeRecoveryTargetWorldPosition = resolvedStrikeTargetPosition;
+                _wasStrikeActiveLastTick = true;
+            }
+            else
+            {
+                if (_wasStrikeActiveLastTick)
+                {
+                    _strikeRecoveryTimeRemaining = safeRecoverySeconds;
+                    _wasStrikeActiveLastTick = false;
+                }
+
+                if (_strikeRecoveryTimeRemaining > 0f)
+                {
+                    _strikeRecoveryTimeRemaining = math.max(0f, _strikeRecoveryTimeRemaining - deltaTime);
+                    float recoveryBlend = math.saturate(_strikeRecoveryTimeRemaining / safeRecoverySeconds);
+                    resolvedStrikeTargetPosition = math.lerp(headLead, _strikeRecoveryTargetWorldPosition, recoveryBlend);
+                    strikeDistanceNormalized = math.lerp(0f, _strikeRecoveryDistanceNormalized, recoveryBlend);
+                    effectiveStrikeBlend = recoveryBlend;
+                }
+                else
+                {
+                    effectiveStrikeBlend = 0f;
+                }
+            }
+
+            _strikeTargetWorldPosition = math.lerp(_strikeTargetWorldPosition, resolvedStrikeTargetPosition, strikeBlendAlpha);
 
             SolveSpineJob job = new SolveSpineJob
             {
                 NormalizedBoneT = _normalizedBoneT,
                 BindWorldRotations = _bindWorldRotations,
                 SolvedWorldRotations = _solvedWorldRotations,
+                SolvedHeadWorldRotations = _solvedHeadWorldRotations,
+                JawOpenRadians = _jawOpenRadians,
                 ControlTail = _tailPoint,
                 ControlMidA = _midPointA,
                 ControlMidB = _midPointB,
                 ControlHead = _headPoint,
                 HeadForward = headForward,
                 WorldUp = ContextualPhysicalIkMath.SafeNormalize((float3)worldUpAxis, new float3(0f, 1f, 0f)),
+                StrikeTargetPosition = _strikeTargetWorldPosition,
                 PhaseTime = _phaseTime,
                 SpeedNormalized = speedNormalized,
                 BlendWeight = math.lerp(idleBlendWeight, 1f, speedNormalized),
                 AmplitudeRadians = math.radians(math.max(0f, undulationAmplitudeDegrees)) * amplitudeDamping,
                 VerticalAmplitudeScale = math.saturate(verticalAmplitudeScale),
-                Frequency = math.max(0f, undulationFrequency)
+                Frequency = math.max(0f, undulationFrequency),
+                StrikeBlend = effectiveStrikeBlend,
+                StrikeDistanceNormalized = strikeDistanceNormalized,
+                StrikeLeadWeight = math.saturate(strikeHeadBlend),
+                JawOpenRadiansMax = math.radians(math.max(0f, jawOpenDegrees)),
+                JawOscillationFrequency = math.max(0f, jawOscillationFrequency),
+                LastBoneIndex = _normalizedBoneT.Length - 1
             };
 
             _pendingSpineHandle = IJobParallelForTransformExtensions.ScheduleByRef(ref job, _vertebraAccessArray, default);
@@ -244,6 +364,7 @@ namespace Hecton8.AI
             _midPointB += shiftOffset;
             _headPoint += shiftOffset;
             _lastResolvedHeadPosition += shiftOffset;
+            _strikeTargetWorldPosition += shiftOffset;
         }
 
         private void TryRegister()
@@ -251,7 +372,6 @@ namespace Hecton8.AI
             if (_registered)
                 return;
 
-            SystemDispatcher.EnsureRuntimeInstance();
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _registered = true;
         }
@@ -332,7 +452,37 @@ namespace Hecton8.AI
         private bool TryResolveVertebraChain()
         {
             if (vertebrae != null && vertebrae.Length >= 2)
+            {
+                if (headBone == null)
+                    headBone = vertebrae[vertebrae.Length - 1];
+
+                if (jawBone == null)
+                {
+                    _transformScratch.Clear();
+                    GetComponentsInChildren(true, _transformScratch);
+                    float3 jawAnchor = headBone != null ? (float3)headBone.position : (float3)transform.position;
+                    float bestJawDistanceSq = float.MaxValue;
+                    for (int i = 0; i < _transformScratch.Count; i++)
+                    {
+                        Transform candidate = _transformScratch[i];
+                        if (candidate == null || candidate == transform)
+                            continue;
+
+                        string lowerName = candidate.name.ToLowerInvariant();
+                        if (!lowerName.Contains("jaw") && !lowerName.Contains("mandible") && !lowerName.Contains("mouth"))
+                            continue;
+
+                        float distanceSq = math.lengthsq((float3)candidate.position - jawAnchor);
+                        if (distanceSq >= bestJawDistanceSq)
+                            continue;
+
+                        bestJawDistanceSq = distanceSq;
+                        jawBone = candidate;
+                    }
+                }
+
                 return true;
+            }
 
             if (animator == null)
                 TryGetComponent(out animator);
@@ -378,6 +528,30 @@ namespace Hecton8.AI
                 }
             }
 
+            Transform resolvedJaw = jawBone;
+            if (resolvedJaw == null)
+            {
+                float3 jawAnchor = resolvedHead != null ? (float3)resolvedHead.position : (float3)transform.position;
+                float bestJawDistanceSq = float.MaxValue;
+                for (int i = 0; i < _transformScratch.Count; i++)
+                {
+                    Transform candidate = _transformScratch[i];
+                    if (candidate == null || candidate == transform)
+                        continue;
+
+                    string lowerName = candidate.name.ToLowerInvariant();
+                    if (!lowerName.Contains("jaw") && !lowerName.Contains("mandible") && !lowerName.Contains("mouth"))
+                        continue;
+
+                    float distanceSq = math.lengthsq((float3)candidate.position - jawAnchor);
+                    if (distanceSq >= bestJawDistanceSq)
+                        continue;
+
+                    bestJawDistanceSq = distanceSq;
+                    resolvedJaw = candidate;
+                }
+            }
+
             if (resolvedRoot == null || resolvedHead == null)
                 return false;
 
@@ -406,6 +580,7 @@ namespace Hecton8.AI
 
             skeletalRoot = resolvedRoot;
             headBone = resolvedHead;
+            jawBone = resolvedJaw;
             return true;
         }
 
@@ -427,7 +602,7 @@ namespace Hecton8.AI
             if (validCount <= 0)
                 return;
 
-            // COLD ALLOC: Transform[validCount] – cached vertebra chain used for post-job writeback – owner: ProceduralLeviathanSpineIK
+            // COLD ALLOC: Transform[validCount] â€“ cached vertebra chain used for post-job writeback â€“ owner: ProceduralLeviathanSpineIK
             _runtimeChain = new Transform[validCount];
             int writeIndex = 0;
             for (int i = 0; i < vertebrae.Length; i++)
@@ -441,12 +616,16 @@ namespace Hecton8.AI
 
             TransformAccessArray.Allocate(validCount, -1, out _vertebraAccessArray);
             _vertebraAccessArray.SetTransforms(_runtimeChain);
-            // COLD ALLOC: NativeArray<float>[validCount] – normalized vertebra spline coordinates for leviathan presentation job – owner: ProceduralLeviathanSpineIK
+            // COLD ALLOC: NativeArray<float>[validCount] â€“ normalized vertebra spline coordinates for leviathan presentation job â€“ owner: ProceduralLeviathanSpineIK
             _normalizedBoneT = new NativeArray<float>(validCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-            // COLD ALLOC: NativeArray<quaternion>[validCount] – bind-space world rotations used as the procedural leviathan presentation baseline – owner: ProceduralLeviathanSpineIK
+            // COLD ALLOC: NativeArray<quaternion>[validCount] â€“ bind-space world rotations used as the procedural leviathan presentation baseline â€“ owner: ProceduralLeviathanSpineIK
             _bindWorldRotations = new NativeArray<quaternion>(validCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-            // COLD ALLOC: NativeArray<quaternion>[validCount] – solved Catmull-Rom world rotations produced by the Burst spine job – owner: ProceduralLeviathanSpineIK
+            // COLD ALLOC: NativeArray<quaternion>[validCount] â€“ solved Catmull-Rom world rotations produced by the Burst spine job â€“ owner: ProceduralLeviathanSpineIK
             _solvedWorldRotations = new NativeArray<quaternion>(validCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            // COLD ALLOC: NativeArray<quaternion>[1] â€” strike head world rotation written by the procedural leviathan Burst solve â€” owner: ProceduralLeviathanSpineIK
+            _solvedHeadWorldRotations = new NativeArray<quaternion>(1, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            // COLD ALLOC: NativeArray<float>[1] â€” jaw-open radians written by the procedural leviathan Burst solve â€” owner: ProceduralLeviathanSpineIK
+            _jawOpenRadians = new NativeArray<float>(1, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
 
             float denominator = math.max(1, validCount - 1);
             for (int i = 0; i < validCount; i++)
@@ -457,6 +636,10 @@ namespace Hecton8.AI
                     : quaternion.identity;
                 _solvedWorldRotations[i] = _bindWorldRotations[i];
             }
+
+            _solvedHeadWorldRotations[0] = headBone != null ? (quaternion)headBone.rotation : quaternion.identity;
+            _jawOpenRadians[0] = 0f;
+            CaptureJawBindPose();
         }
 
         private void DisposeRuntimeBuffers()
@@ -473,6 +656,12 @@ namespace Hecton8.AI
             if (_solvedWorldRotations.IsCreated)
                 _solvedWorldRotations.Dispose();
 
+            if (_solvedHeadWorldRotations.IsCreated)
+                _solvedHeadWorldRotations.Dispose();
+
+            if (_jawOpenRadians.IsCreated)
+                _jawOpenRadians.Dispose();
+
             _runtimeChain = Array.Empty<Transform>();
         }
 
@@ -487,8 +676,19 @@ namespace Hecton8.AI
             _midPointA = headPosition - headForward * safeSpacing * 2f;
             _tailPoint = headPosition - headForward * safeSpacing * 3f;
             _lastResolvedHeadPosition = headPosition;
+            _strikeTargetWorldPosition = headPosition + (headForward * safeSpacing);
+            _strikeRecoveryTargetWorldPosition = _strikeTargetWorldPosition;
             _smoothedTravelDirection = ContextualPhysicalIkMath.SafeNormalize(headForward, new float3(0f, 0f, 1f));
             _phaseTime = 0f;
+            _strikeBlend = 0f;
+            _strikeRecoveryTimeRemaining = 0f;
+            _strikeRecoveryDistanceNormalized = 0f;
+            _wasStrikeActiveLastTick = false;
+            if (_jawOpenRadians.IsCreated)
+                _jawOpenRadians[0] = 0f;
+
+            CaptureJawBindPose();
+            ApplyJawRotation(0f);
         }
 
         private void ApplySolvedRotations()
@@ -505,6 +705,34 @@ namespace Hecton8.AI
 
                 vertebra.rotation = _solvedWorldRotations[i];
             }
+
+            if (headBone != null && _solvedHeadWorldRotations.IsCreated && _solvedHeadWorldRotations.Length > 0)
+                headBone.rotation = _solvedHeadWorldRotations[0];
+
+            if (_jawOpenRadians.IsCreated && _jawOpenRadians.Length > 0)
+                ApplyJawRotation(_jawOpenRadians[0]);
+        }
+
+        private void CaptureJawBindPose()
+        {
+            if (jawBone == null)
+                return;
+
+            _jawBindLocalRotation = jawBone.localRotation;
+            _jawBindLocalRotationResolved = true;
+        }
+
+        private void ApplyJawRotation(float jawOpenRadians)
+        {
+            if (jawBone == null)
+                return;
+
+            if (!_jawBindLocalRotationResolved)
+                CaptureJawBindPose();
+
+            float3 localAxis = ContextualPhysicalIkMath.SafeNormalize((float3)jawLocalOpenAxis, new float3(1f, 0f, 0f));
+            quaternion jawOffset = quaternion.AxisAngle(localAxis, jawOpenRadians);
+            jawBone.localRotation = math.mul(_jawBindLocalRotation, jawOffset);
         }
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.InteropServices;
 using Stopwatch = System.Diagnostics.Stopwatch;
 using System.Threading;
@@ -7,6 +8,7 @@ using Hecton8.Core;
 using Hecton8.Inventory;
 using Hecton8.Interaction;
 using Hecton8.Items;
+using Hecton8.Physics;
 using Hecton8.SaveSystem;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -15,17 +17,25 @@ using UnityEngine;
 
 namespace Hecton8.World
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 36)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     internal struct AbsoluteUniversePosition
     {
         internal const int CellSizeMeters = 5000;
 
+        [FieldOffset(0)]
         public long GridX;
+        [FieldOffset(8)]
         public long GridY;
+        [FieldOffset(16)]
         public long GridZ;
+        [FieldOffset(24)]
         public float LocalX;
+        [FieldOffset(28)]
         public float LocalY;
+        [FieldOffset(32)]
         public float LocalZ;
+        [FieldOffset(36)]
+        private float _pad;
 
         /// <summary>
         /// Converts the compact save-layout position into a 16-byte-aligned transfer payload for memcpy/blit lanes.
@@ -120,21 +130,32 @@ namespace Hecton8.World
 
         public static double DistanceSq(in AbsoluteUniversePosition a, in AbsoluteUniversePosition b)
         {
-            double3 delta = a.ToAbsoluteDouble3() - b.ToAbsoluteDouble3();
-            return math.lengthsq(delta);
+            const double cellSize = CellSizeMeters;
+            long gridDeltaX = a.GridX - b.GridX;
+            long gridDeltaY = a.GridY - b.GridY;
+            long gridDeltaZ = a.GridZ - b.GridZ;
+            double deltaX = (gridDeltaX * cellSize) + ((double)a.LocalX - b.LocalX);
+            double deltaY = (gridDeltaY * cellSize) + ((double)a.LocalY - b.LocalY);
+            double deltaZ = (gridDeltaZ * cellSize) + ((double)a.LocalZ - b.LocalZ);
+            return (deltaX * deltaX) + (deltaY * deltaY) + (deltaZ * deltaZ);
         }
     }
 
     /// <summary>
     /// 16-byte-aligned AUP transfer payload for network or memcpy lanes that require float4-friendly packing.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 16, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     internal struct AbsoluteUniversePositionBlit128
     {
+        [FieldOffset(0)]
         public long GridX;
+        [FieldOffset(8)]
         public long GridY;
+        [FieldOffset(16)]
         public long GridZ;
+        [FieldOffset(24)]
         public float4 Local;
+        [FieldOffset(40)]
         public ulong Reserved;
     }
 
@@ -180,7 +201,7 @@ namespace Hecton8.World
         public uint InstanceUid;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 192)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 204)]
     internal struct PersistentWorldItemRecord
     {
         private const uint QuantityMask = 0x00FFFFFFu;
@@ -322,6 +343,14 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-5850)]
     public sealed class PersistentWorldRegistry : MonoBehaviour, ITickable, ISlowTickable
     {
+        private sealed class SectorOverrideState
+        {
+            public string TempPath;
+            public string EntityStateTempPath;
+            public float LastUnloadedTime;
+            public bool IsResident;
+        }
+
         private const int DefaultMaxTrackedItems = 16384;
         private const int DefaultChunkSizeMeters = 64;
         private const int DefaultHydrationRadius = 1;
@@ -340,10 +369,17 @@ namespace Hecton8.World
         private const double HydrationRescanDistanceSq = HydrationRescanDistanceMeters * HydrationRescanDistanceMeters;
         private const int MaxHydrationsPerFrame = 30;
         private const int MaxDehydrationsPerTick = 8;
+        private const int PagedSectorWindowWidth = 3;
+        private const int PagedSectorHashCount = PagedSectorWindowWidth * PagedSectorWindowWidth;
+        private const int PagedSectorEdgeLengthMeters = 1000;
+        private const float SectorEvictionDistanceMeters = 2500f;
+        private const float SectorOverrideCommitIntervalSeconds = 10f;
+        private const float SectorOverrideCommitDelaySeconds = 300f;
         private const ulong PoolGuidMixSalt = 11400714819323198485UL;
         private const long PersistentMemoryBudgetBytes = 10485760L;
         private const string MemoryBudgetOwnerName = "PersistentWorldRegistry";
         private static readonly long HydrationFrameBudgetTicks = Math.Max(1L, (long)(Stopwatch.Frequency * 0.0015d));
+        private static readonly double SectorEvictionDistanceSq = SectorEvictionDistanceMeters * SectorEvictionDistanceMeters;
 
         private static PersistentWorldRegistry _instance;
         private static int _nextInstanceUidCounter;
@@ -380,6 +416,7 @@ namespace Hecton8.World
         private NativeArray<PoolSlotData> _poolSlotData;
         private NativeHashMap<ulong, int> _guidToPoolIndex;
         private NativeHashMap<uint, EntityDataRecord> _entityStateByInstanceUid;
+        private NativeHashMap<uint, float3> _spawnImpulseByInstanceUid;
         private NativeQueue<int> _dehydrateQueue;
         private NativeList<int> _pendingHydrationRecords;
         private GameObject[] _hydratedInstancesBySlot;
@@ -388,6 +425,8 @@ namespace Hecton8.World
         private Dictionary<int, GameObject> _hydratedInstancesByRecordIndex;
         private Dictionary<ulong, ItemData> _itemLookupByHash;
         private List<ItemData> _itemCatalogScratch;
+        private List<int> _worldPrefabPrewarmHashScratch;
+        private List<int> _worldPrefabReleaseScratch;
         private List<int> _recordIndexScratch;
         private Transform _playerTransform;
         private ItemCatalog _resolvedItemCatalog;
@@ -400,7 +439,18 @@ namespace Hecton8.World
         private int _pendingHydrationReadIndex;
         private int _hydrationSessionVersion;
         private int3 _currentPlayerChunk;
+        private int2 _currentPlayerSector;
         private AbsoluteUniversePosition _lastHydrationScanAup;
+        private bool _indexedSectorPagingEnabled;
+        private bool _indexedSectorPagingInFlight;
+        private bool _playerSectorValid;
+        private bool _sectorOverrideCommitInFlight;
+        private float _nextSectorOverrideCommitTime;
+        private string _indexedSectorSavePath;
+        private string _indexedSectorOverrideDirectory;
+        private List<SaveBinaryStorage.IndexedSectorEntryInfo> _indexedSectorDirectory;
+        private Dictionary<long, SectorOverrideState> _sectorOverrideStates;
+        private HashSet<int> _residentWorldPrefabHashes;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -452,6 +502,8 @@ namespace Hecton8.World
             _guidToPoolIndex = new NativeHashMap<ulong, int>(maxTrackedItems, Allocator.Persistent);
             // COLD ALLOC: NativeHashMap<uint,EntityDataRecord>[maxTrackedItems] — authoritative dehydration payload store keyed by InstanceUid — owner: PersistentWorldRegistry
             _entityStateByInstanceUid = new NativeHashMap<uint, EntityDataRecord>(maxTrackedItems, Allocator.Persistent);
+            // COLD ALLOC: NativeHashMap<uint,float3>[maxTrackedItems] â€” deferred spawn impulse staging keyed by InstanceUid for persistent debris hydration â€” owner: PersistentWorldRegistry
+            _spawnImpulseByInstanceUid = new NativeHashMap<uint, float3>(maxTrackedItems, Allocator.Persistent);
             // COLD ALLOC: NativeQueue<int>(Persistent) — deferred dehydration queue — owner: PersistentWorldRegistry
             _dehydrateQueue = new NativeQueue<int>(Allocator.Persistent);
             // COLD ALLOC: NativeList<int>[maxTrackedItems] — time-sliced hydration backlog keyed by persistent record index — owner: PersistentWorldRegistry
@@ -468,8 +520,18 @@ namespace Hecton8.World
             _itemLookupByHash = new Dictionary<ulong, ItemData>(1024);
             // COLD ALLOC: List<ItemData>[1024] — item catalog scratch buffer for hash cache rebuilds — owner: PersistentWorldRegistry
             _itemCatalogScratch = new List<ItemData>(1024);
+            // COLD ALLOC: List<int>[256] â€” unique addressable prefab prewarm hash buffer for paged sector hydration â€” owner: PersistentWorldRegistry
+            _worldPrefabPrewarmHashScratch = new List<int>(256);
+            // COLD ALLOC: List<int>[256] â€” deferred addressable prefab release scratch buffer for paged sector eviction â€” owner: PersistentWorldRegistry
+            _worldPrefabReleaseScratch = new List<int>(256);
             // COLD ALLOC: List<int>[128] — hydrated record scratch buffer for sync/dehydrate passes — owner: PersistentWorldRegistry
             _recordIndexScratch = new List<int>(128);
+            // COLD ALLOC: List<IndexedSectorEntryInfo>[256] â€” cached v8 sector directory entries for paged restore â€” owner: PersistentWorldRegistry
+            _indexedSectorDirectory = new List<SaveBinaryStorage.IndexedSectorEntryInfo>(256);
+            // COLD ALLOC: Dictionary<long,SectorOverrideState>[32] â€” paged sector temp-override residency map â€” owner: PersistentWorldRegistry
+            _sectorOverrideStates = new Dictionary<long, SectorOverrideState>(32);
+            // COLD ALLOC: HashSet<int>[256] â€” resident addressable world-prefab hash residency set â€” owner: PersistentWorldRegistry
+            _residentWorldPrefabHashes = new HashSet<int>();
             RegisterPersistentMemoryBudget();
 
             UpdateDiagnostics();
@@ -537,6 +599,9 @@ namespace Hecton8.World
             if (_entityStateByInstanceUid.IsCreated)
                 _entityStateByInstanceUid.Dispose();
 
+            if (_spawnImpulseByInstanceUid.IsCreated)
+                _spawnImpulseByInstanceUid.Dispose();
+
             if (_dehydrateQueue.IsCreated)
                 _dehydrateQueue.Dispose();
 
@@ -550,6 +615,7 @@ namespace Hecton8.World
 
         public void Tick(float dt)
         {
+            _resolvedItemCatalog?.DrainDeferredWorldPrefabReleases(4);
             DrainDehydrateQueue(MaxDehydrationsPerTick);
         }
 
@@ -559,6 +625,16 @@ namespace Hecton8.World
                 return;
 
             AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(_playerTransform.position);
+            int2 nextSector = QuantizeSector(in playerAup);
+            if (_indexedSectorPagingEnabled && (!_playerSectorValid || !math.all(nextSector == _currentPlayerSector)))
+            {
+                _currentPlayerSector = nextSector;
+                _playerSectorValid = true;
+                EnsureIndexedSectorPagingScheduled(nextSector);
+            }
+
+            TryScheduleSectorOverrideCommit();
+
             int3 nextChunk = AbsoluteUniversePosition.ResolveChunkId(in playerAup, chunkSizeMeters);
             bool requiresRescan = !_playerChunkValid || !math.all(nextChunk == _currentPlayerChunk);
             if (!requiresRescan && _hasLastHydrationScanAup)
@@ -579,6 +655,11 @@ namespace Hecton8.World
         }
 
         internal bool TryRegisterDroppedItem(ItemData itemData, int quantity, Vector3 runtimePosition)
+        {
+            return TryRegisterDroppedItem(itemData, quantity, runtimePosition, Vector3.zero);
+        }
+
+        internal bool TryRegisterDroppedItem(ItemData itemData, int quantity, Vector3 runtimePosition, Vector3 initialImpulse)
         {
             if (itemData == null || quantity <= 0 || !_records.IsCreated || _records.Length >= _records.Capacity)
                 return false;
@@ -611,6 +692,7 @@ namespace Hecton8.World
             _recordsByChunk.Add(chunkId, recordIndex);
             RegisterOrUpdatePoolSlot(recordIndex, in record);
             RegisterOrUpdateEntityState(in record);
+            RegisterSpawnImpulse(record.InstanceUid, initialImpulse);
             UpsertDeltaRecord(in record);
 
             if (_hasLastHydrationScanAup && ShouldHydrateDehydratedRecord(in record, in _lastHydrationScanAup))
@@ -695,10 +777,12 @@ namespace Hecton8.World
                 : default;
         }
 
-        internal void RestoreFromLoadedRecords(PersistentWorldDeltaRecord[] loadedRecords)
+        internal void RestoreFromLoadedRecords(PersistentWorldDeltaRecord[] loadedRecords, bool scheduleHydration = true)
         {
             CancelHydrationSession(clearQueue: true);
             DehydrateAll(syncTransformsBackToRecords: false);
+            if (!_indexedSectorPagingEnabled)
+                _resolvedItemCatalog?.ReleaseAllWorldPrefabHandles();
             _records.Clear();
             _recordsByChunk.Clear();
             _deltaRecords.Clear();
@@ -753,7 +837,8 @@ namespace Hecton8.World
                 RebaseInstanceUidCounter(maxObservedInstanceSequence);
             }
 
-            if (WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _playerTransform) && _playerTransform != null)
+            if (scheduleHydration &&
+                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _playerTransform) && _playerTransform != null)
             {
                 AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(_playerTransform.position);
                 _currentPlayerChunk = AbsoluteUniversePosition.ResolveChunkId(in playerAup, chunkSizeMeters);
@@ -766,6 +851,184 @@ namespace Hecton8.World
             }
 
             UpdateDiagnostics();
+        }
+
+        internal void RestoreFromIndexedSave(string absolutePath)
+        {
+            if (string.IsNullOrEmpty(absolutePath))
+                return;
+
+            if (_indexedSectorDirectory == null)
+                _indexedSectorDirectory = new List<SaveBinaryStorage.IndexedSectorEntryInfo>(256);
+
+            if (!SaveBinaryStorage.TryReadIndexedPersistentWorldDirectory(absolutePath, _indexedSectorDirectory, out _, out _))
+            {
+                _indexedSectorPagingEnabled = false;
+                _indexedSectorSavePath = string.Empty;
+                return;
+            }
+
+            _indexedSectorSavePath = absolutePath;
+            _indexedSectorOverrideDirectory = Path.Combine(
+                Path.GetDirectoryName(absolutePath) ?? string.Empty,
+                $"{Path.GetFileNameWithoutExtension(absolutePath)}_sector_overrides");
+            _indexedSectorPagingEnabled = _indexedSectorDirectory.Count > 0;
+            _indexedSectorPagingInFlight = false;
+            _playerSectorValid = false;
+            _sectorOverrideCommitInFlight = false;
+            _nextSectorOverrideCommitTime = 0f;
+            _sectorOverrideStates?.Clear();
+
+            if (!string.IsNullOrEmpty(_indexedSectorOverrideDirectory))
+                Directory.CreateDirectory(_indexedSectorOverrideDirectory);
+
+            if (WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _playerTransform) && _playerTransform != null)
+            {
+                AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(_playerTransform.position);
+                int2 playerSector = QuantizeSector(in playerAup);
+                _currentPlayerSector = playerSector;
+                _playerSectorValid = true;
+                EnsureIndexedSectorPagingScheduled(playerSector);
+            }
+        }
+
+        internal void DisableIndexedSavePaging()
+        {
+            if (_residentWorldPrefabHashes != null && _residentWorldPrefabHashes.Count > 0 && _resolvedItemCatalog != null)
+            {
+                _worldPrefabReleaseScratch.Clear();
+                HashSet<int>.Enumerator releaseEnumerator = _residentWorldPrefabHashes.GetEnumerator();
+                while (releaseEnumerator.MoveNext())
+                    _worldPrefabReleaseScratch.Add(releaseEnumerator.Current);
+                releaseEnumerator.Dispose();
+                _resolvedItemCatalog.QueueWorldPrefabReleaseNonAlloc(_worldPrefabReleaseScratch);
+                _residentWorldPrefabHashes.Clear();
+            }
+
+            _indexedSectorPagingEnabled = false;
+            _indexedSectorPagingInFlight = false;
+            _playerSectorValid = false;
+            _indexedSectorSavePath = string.Empty;
+            _indexedSectorOverrideDirectory = string.Empty;
+            _nextSectorOverrideCommitTime = 0f;
+            _indexedSectorDirectory?.Clear();
+            _sectorOverrideStates?.Clear();
+        }
+
+        private void EnsureIndexedSectorPagingScheduled(int2 centerSector)
+        {
+            if (!_indexedSectorPagingEnabled || _indexedSectorPagingInFlight || string.IsNullOrEmpty(_indexedSectorSavePath))
+                return;
+
+            _indexedSectorPagingInFlight = true;
+            _ = RunIndexedSectorPagingAsync(centerSector);
+        }
+
+        private async Awaitable RunIndexedSectorPagingAsync(int2 centerSector)
+        {
+            NativeArray<long> desiredSectorHashes = default;
+            NativeList<PersistentWorldDeltaRecord> loadedSectorRecords = default;
+            PersistentWorldDeltaRecord[] stagedRecords = null;
+            Dictionary<uint, EntityDataRecord> stagedEntityStates = null;
+
+            try
+            {
+                desiredSectorHashes = new NativeArray<long>(PagedSectorHashCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                int hashCursor = 0;
+                for (int z = -1; z <= 1; z++)
+                {
+                    for (int x = -1; x <= 1; x++)
+                    {
+                        desiredSectorHashes[hashCursor++] = PackSectorHash(centerSector + new int2(x, z));
+                    }
+                }
+
+                SnapshotResidentSectorOverrides(desiredSectorHashes);
+                loadedSectorRecords = new NativeList<PersistentWorldDeltaRecord>(math.max(16, maxTrackedItems), Allocator.Persistent);
+
+                await Awaitable.BackgroundThreadAsync();
+                if (!SaveBinaryStorage.TryLoadIndexedPersistentWorldSectors(_indexedSectorSavePath, desiredSectorHashes, loadedSectorRecords, out string error))
+                {
+                    Debug.LogError($"[PersistentWorldRegistry] Indexed sector paging failed: {error}");
+                    return;
+                }
+
+                if (!ApplySectorOverrides(desiredSectorHashes, loadedSectorRecords, out string overrideError))
+                {
+                    Debug.LogError($"[PersistentWorldRegistry] Sector override merge failed: {overrideError}");
+                    return;
+                }
+
+                if (!TryLoadSectorEntityStateOverrides(desiredSectorHashes, out stagedEntityStates, out string entityStateError))
+                {
+                    Debug.LogError($"[PersistentWorldRegistry] Sector entity-state restore failed: {entityStateError}");
+                    return;
+                }
+
+                int loadedCount = loadedSectorRecords.Length;
+                stagedRecords = loadedCount > 0 ? new PersistentWorldDeltaRecord[loadedCount] : Array.Empty<PersistentWorldDeltaRecord>();
+                for (int i = 0; i < loadedCount; i++)
+                    stagedRecords[i] = loadedSectorRecords[i];
+
+                await Awaitable.MainThreadAsync();
+                await AwaitSectorPrefabPrewarmAsync(stagedRecords);
+                RestoreFromLoadedRecords(stagedRecords, scheduleHydration: false);
+                ApplyStagedEntityStates(stagedEntityStates);
+                if (WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _playerTransform) && _playerTransform != null)
+                {
+                    AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(_playerTransform.position);
+                    _currentPlayerChunk = AbsoluteUniversePosition.ResolveChunkId(in playerAup, chunkSizeMeters);
+                    _playerChunkValid = true;
+                    _lastHydrationScanAup = playerAup;
+                    _hasLastHydrationScanAup = true;
+                    _hydrationFrameCounter++;
+                    RefreshHydrationWindow(in playerAup);
+                    EnsureHydrationSessionScheduled();
+                }
+
+                UpdateResidentWorldPrefabResidency(_worldPrefabPrewarmHashScratch);
+                MarkResidentSectorOverrides(desiredSectorHashes);
+            }
+            finally
+            {
+                if (loadedSectorRecords.IsCreated)
+                    loadedSectorRecords.Dispose();
+                if (desiredSectorHashes.IsCreated)
+                    desiredSectorHashes.Dispose();
+
+                _indexedSectorPagingInFlight = false;
+            }
+        }
+
+        private async Awaitable AwaitSectorPrefabPrewarmAsync(PersistentWorldDeltaRecord[] stagedRecords)
+        {
+            if (stagedRecords == null || stagedRecords.Length <= 0 || !TryEnsureItemLookup() || _resolvedItemCatalog == null)
+                return;
+
+            _worldPrefabPrewarmHashScratch.Clear();
+            for (int i = 0; i < stagedRecords.Length; i++)
+            {
+                PersistentWorldDeltaRecord deltaRecord = stagedRecords[i];
+                if (!deltaRecord.IsValid || !TryResolveItemData(deltaRecord.ItemPersistentIdHash, out ItemData itemData) || itemData == null)
+                    continue;
+
+                int itemHashId = ComputeCatalogItemHash(itemData);
+                if (itemHashId == 0 || _worldPrefabPrewarmHashScratch.Contains(itemHashId))
+                    continue;
+
+                _worldPrefabPrewarmHashScratch.Add(itemHashId);
+            }
+
+            if (_worldPrefabPrewarmHashScratch.Count <= 0)
+                return;
+
+            _resolvedItemCatalog.QueueWorldPrefabPrewarmNonAlloc(_worldPrefabPrewarmHashScratch);
+            while (Application.isPlaying &&
+                   ReferenceEquals(_instance, this) &&
+                   !_resolvedItemCatalog.AreWorldPrefabsReadyNonAlloc(_worldPrefabPrewarmHashScratch))
+            {
+                await Awaitable.NextFrameAsync(cancellationToken: destroyCancellationToken);
+            }
         }
 
         private void TryRegisterRuntimeLoops()
@@ -899,9 +1162,18 @@ namespace Hecton8.World
             if (!TryResolveItemData(in record, out ItemData itemData) || itemData == null)
                 return false;
 
-            GameObject prefab = itemData.worldPrefab;
-            if (prefab == null)
+            if (_resolvedItemCatalog == null)
                 return false;
+
+            int itemHashId = ComputeCatalogItemHash(itemData);
+            if (itemHashId == 0)
+                return false;
+
+            if (!_resolvedItemCatalog.TryGetLoadedWorldPrefab(itemHashId, out GameObject prefab) || prefab == null)
+            {
+                _resolvedItemCatalog.QueueWorldPrefabPrewarm(itemHashId);
+                return false;
+            }
 
             ObjectPoolManager pool = ObjectPoolManager.Instance;
             if (pool == null)
@@ -944,6 +1216,8 @@ namespace Hecton8.World
                 pooledRigidbody.linearVelocity = Vector3.zero;
                 pooledRigidbody.angularVelocity = Vector3.zero;
                 _poolSlotRigidbodies[poolIndex] = pooledRigidbody;
+                if (TryConsumeSpawnImpulse(record.InstanceUid, out float3 spawnImpulse))
+                    PhysicsForceRouter.QueueForce(pooledRigidbody, new Vector3(spawnImpulse.x, spawnImpulse.y, spawnImpulse.z), ForceMode.Impulse);
             }
             else
             {
@@ -1129,6 +1403,15 @@ namespace Hecton8.World
             return true;
         }
 
+        private bool TryResolveItemData(ulong itemPersistentIdHash, out ItemData itemData)
+        {
+            itemData = null;
+            if (itemPersistentIdHash == 0UL || !TryEnsureItemLookup())
+                return false;
+
+            return _itemLookupByHash.TryGetValue(itemPersistentIdHash, out itemData) && itemData != null;
+        }
+
         private bool TryEnsureItemLookup()
         {
             ItemCatalog currentCatalog = PlayerInventory.Instance != null
@@ -1185,6 +1468,425 @@ namespace Hecton8.World
             return math.max(hydrationRadiusInChunks, distanceRadius);
         }
 
+        private static int2 QuantizeSector(in AbsoluteUniversePosition position)
+        {
+            double3 absolute = position.ToAbsoluteDouble3();
+            return new int2(
+                (int)math.floor(absolute.x / PagedSectorEdgeLengthMeters),
+                (int)math.floor(absolute.z / PagedSectorEdgeLengthMeters));
+        }
+
+        private static long PackSectorHash(int2 sectorCoord)
+        {
+            return ((long)sectorCoord.x << 32) | (uint)sectorCoord.y;
+        }
+
+        private void SnapshotResidentSectorOverrides(NativeArray<long> desiredSectorHashes)
+        {
+            if (!_indexedSectorPagingEnabled ||
+                string.IsNullOrEmpty(_indexedSectorOverrideDirectory) ||
+                !_records.IsCreated)
+            {
+                return;
+            }
+
+            SyncAllHydratedRecords();
+
+            // COLD ALLOC: Dictionary<long,List<PersistentWorldDeltaRecord>>[16] â€” resident sector snapshot buckets during page-out â€” owner: PersistentWorldRegistry
+            Dictionary<long, List<PersistentWorldDeltaRecord>> sectors = new Dictionary<long, List<PersistentWorldDeltaRecord>>(16);
+            Dictionary<long, List<EntityDataRecord>> sectorEntityStates = new Dictionary<long, List<EntityDataRecord>>(16);
+            for (int i = 0; i < _records.Length; i++)
+            {
+                PersistentWorldItemRecord record = _records[i];
+                if (record.IsCollected)
+                    continue;
+
+                long sectorHash = ComputeSectorHash(in record.Position);
+                if (!sectors.TryGetValue(sectorHash, out List<PersistentWorldDeltaRecord> bucket))
+                {
+                    // COLD ALLOC: List<PersistentWorldDeltaRecord>[16] â€” one resident sector override record bucket â€” owner: PersistentWorldRegistry
+                    bucket = new List<PersistentWorldDeltaRecord>(16);
+                    sectors.Add(sectorHash, bucket);
+                }
+
+                bucket.Add(PersistentWorldDeltaRecord.FromRecord(in record, chunkSizeMeters));
+
+                if (!sectorEntityStates.TryGetValue(sectorHash, out List<EntityDataRecord> entityStateBucket))
+                {
+                    entityStateBucket = new List<EntityDataRecord>(16);
+                    sectorEntityStates.Add(sectorHash, entityStateBucket);
+                }
+
+                entityStateBucket.Add(ResolveEntityState(in record));
+            }
+
+            if (sectors.Count <= 0)
+                return;
+
+            float now = Time.unscaledTime;
+            // COLD ALLOC: NativeArray<PersistentWorldDeltaRecord>[sectorRecordCount] â€” resident sector override staging buffer â€” owner: PersistentWorldRegistry
+            foreach (KeyValuePair<long, List<PersistentWorldDeltaRecord>> pair in sectors)
+            {
+                List<PersistentWorldDeltaRecord> bucket = pair.Value;
+                NativeArray<PersistentWorldDeltaRecord> sectorRecords = new NativeArray<PersistentWorldDeltaRecord>(bucket.Count, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                try
+                {
+                    for (int i = 0; i < bucket.Count; i++)
+                        sectorRecords[i] = bucket[i];
+
+                    string tempPath = ResolveSectorOverrideTempPath(pair.Key);
+                    if (!SaveBinaryStorage.TryWriteIndexedPersistentWorldSectorOverride(tempPath, pair.Key, sectorRecords, chunkSizeMeters, out string error))
+                    {
+                        Debug.LogError($"[PersistentWorldRegistry] Sector override snapshot failed for 0x{pair.Key:X16}: {error}");
+                        continue;
+                    }
+
+                    if (!_sectorOverrideStates.TryGetValue(pair.Key, out SectorOverrideState state))
+                    {
+                        state = new SectorOverrideState();
+                        _sectorOverrideStates.Add(pair.Key, state);
+                    }
+
+                    state.TempPath = tempPath;
+                    if (sectorEntityStates.TryGetValue(pair.Key, out List<EntityDataRecord> entityStateBucket) &&
+                        entityStateBucket != null &&
+                        entityStateBucket.Count > 0)
+                    {
+                        // COLD ALLOC: EntityDataRecord[entityStateBucket.Count] — sector entity-state staging snapshot for indexed paging write — owner: PersistentWorldRegistry
+                        EntityDataRecord[] sectorStateArray = entityStateBucket.ToArray();
+                        NativeArray<EntityDataRecord> sectorStates = new NativeArray<EntityDataRecord>(sectorStateArray, Allocator.Temp);
+                        try
+                        {
+                            string entityStateTempPath = ResolveSectorEntityStateTempPath(pair.Key);
+                            if (!SaveBinaryStorage.TryWriteIndexedSectorEntityStateOverride(entityStateTempPath, pair.Key, sectorStates, out string entityStateError))
+                            {
+                                Debug.LogError($"[PersistentWorldRegistry] Sector entity-state snapshot failed for 0x{pair.Key:X16}: {entityStateError}");
+                            }
+                            else
+                            {
+                                state.EntityStateTempPath = entityStateTempPath;
+                            }
+                        }
+                        finally
+                        {
+                            sectorStates.Dispose();
+                        }
+                    }
+                    state.LastUnloadedTime = now;
+                    state.IsResident = false;
+                }
+                finally
+                {
+                    sectorRecords.Dispose();
+                }
+            }
+        }
+
+        private bool ApplySectorOverrides(
+            NativeArray<long> desiredSectorHashes,
+            NativeList<PersistentWorldDeltaRecord> loadedSectorRecords,
+            out string error)
+        {
+            error = string.Empty;
+            if (!_indexedSectorPagingEnabled || _sectorOverrideStates == null || _sectorOverrideStates.Count <= 0)
+                return true;
+
+            // COLD ALLOC: Dictionary<long,List<PersistentWorldDeltaRecord>>[16] â€” paged sector merge map during override resolution â€” owner: PersistentWorldRegistry
+            Dictionary<long, List<PersistentWorldDeltaRecord>> sectorBuckets = new Dictionary<long, List<PersistentWorldDeltaRecord>>(16);
+            for (int i = 0; i < loadedSectorRecords.Length; i++)
+            {
+                PersistentWorldDeltaRecord record = loadedSectorRecords[i];
+                if (!record.IsValid)
+                    continue;
+
+                AbsoluteUniversePosition unpackedPosition = record.UnpackPosition(chunkSizeMeters);
+                long sectorHash = ComputeSectorHash(in unpackedPosition);
+                if (!sectorBuckets.TryGetValue(sectorHash, out List<PersistentWorldDeltaRecord> bucket))
+                {
+                    // COLD ALLOC: List<PersistentWorldDeltaRecord>[16] â€” one paged sector merge bucket â€” owner: PersistentWorldRegistry
+                    bucket = new List<PersistentWorldDeltaRecord>(16);
+                    sectorBuckets.Add(sectorHash, bucket);
+                }
+
+                bucket.Add(record);
+            }
+
+            for (int i = 0; i < desiredSectorHashes.Length; i++)
+            {
+                long sectorHash = desiredSectorHashes[i];
+                if (!_sectorOverrideStates.TryGetValue(sectorHash, out SectorOverrideState state) ||
+                    string.IsNullOrEmpty(state.TempPath) ||
+                    !File.Exists(state.TempPath))
+                {
+                    continue;
+                }
+
+                if (!SaveBinaryStorage.TryReadIndexedPersistentWorldSectorOverride(state.TempPath, out long loadedSectorHash, out PersistentWorldDeltaRecord[] overrideRecords, out error))
+                    return false;
+
+                if (loadedSectorHash != sectorHash)
+                {
+                    error = $"Sector override hash mismatch for temp block 0x{sectorHash:X16}.";
+                    return false;
+                }
+
+                // COLD ALLOC: List<PersistentWorldDeltaRecord>[N] â€” override-resolved sector records loaded from temp block â€” owner: PersistentWorldRegistry
+                List<PersistentWorldDeltaRecord> replacement = new List<PersistentWorldDeltaRecord>(overrideRecords.Length);
+                for (int recordIndex = 0; recordIndex < overrideRecords.Length; recordIndex++)
+                {
+                    if (overrideRecords[recordIndex].IsValid)
+                        replacement.Add(overrideRecords[recordIndex]);
+                }
+
+                sectorBuckets[sectorHash] = replacement;
+            }
+
+            loadedSectorRecords.Clear();
+            Dictionary<long, List<PersistentWorldDeltaRecord>>.Enumerator enumerator = sectorBuckets.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                List<PersistentWorldDeltaRecord> bucket = enumerator.Current.Value;
+                for (int i = 0; i < bucket.Count; i++)
+                    loadedSectorRecords.Add(bucket[i]);
+            }
+
+            enumerator.Dispose();
+            return true;
+        }
+
+        private bool TryLoadSectorEntityStateOverrides(
+            NativeArray<long> desiredSectorHashes,
+            out Dictionary<uint, EntityDataRecord> stagedEntityStates,
+            out string error)
+        {
+            stagedEntityStates = null;
+            error = string.Empty;
+
+            if (!_indexedSectorPagingEnabled ||
+                _sectorOverrideStates == null ||
+                _sectorOverrideStates.Count <= 0)
+            {
+                return true;
+            }
+
+            // COLD ALLOC: Dictionary<uint,EntityDataRecord>[64] â€” staged sector entity-state restore map during indexed paging â€” owner: PersistentWorldRegistry
+            stagedEntityStates = new Dictionary<uint, EntityDataRecord>(64);
+            for (int i = 0; i < desiredSectorHashes.Length; i++)
+            {
+                long sectorHash = desiredSectorHashes[i];
+                if (!_sectorOverrideStates.TryGetValue(sectorHash, out SectorOverrideState state) ||
+                    state == null ||
+                    string.IsNullOrEmpty(state.EntityStateTempPath) ||
+                    !File.Exists(state.EntityStateTempPath))
+                {
+                    continue;
+                }
+
+                if (!SaveBinaryStorage.TryReadIndexedSectorEntityStateOverride(
+                        state.EntityStateTempPath,
+                        out long loadedSectorHash,
+                        out EntityDataRecord[] entityStates,
+                        out error))
+                {
+                    return false;
+                }
+
+                if (loadedSectorHash != sectorHash)
+                {
+                    error = $"Sector entity-state override hash mismatch for temp block 0x{sectorHash:X16}.";
+                    return false;
+                }
+
+                for (int stateIndex = 0; stateIndex < entityStates.Length; stateIndex++)
+                {
+                    EntityDataRecord entityState = entityStates[stateIndex];
+                    if (entityState.InstanceUid == 0u)
+                        continue;
+
+                    stagedEntityStates[entityState.InstanceUid] = entityState;
+                }
+            }
+
+            return true;
+        }
+
+        private void ApplyStagedEntityStates(Dictionary<uint, EntityDataRecord> stagedEntityStates)
+        {
+            if (stagedEntityStates == null || stagedEntityStates.Count <= 0 || !_entityStateByInstanceUid.IsCreated)
+                return;
+
+            Dictionary<uint, EntityDataRecord>.Enumerator enumerator = stagedEntityStates.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                KeyValuePair<uint, EntityDataRecord> pair = enumerator.Current;
+                _entityStateByInstanceUid.Remove(pair.Key);
+                _entityStateByInstanceUid.TryAdd(pair.Key, pair.Value);
+            }
+
+            enumerator.Dispose();
+        }
+
+        private void UpdateResidentWorldPrefabResidency(List<int> nextResidentHashes)
+        {
+            if (_residentWorldPrefabHashes == null || _resolvedItemCatalog == null)
+                return;
+
+            _worldPrefabReleaseScratch.Clear();
+            HashSet<int>.Enumerator residentEnumerator = _residentWorldPrefabHashes.GetEnumerator();
+            while (residentEnumerator.MoveNext())
+            {
+                int residentHash = residentEnumerator.Current;
+                bool stillResident = false;
+                if (nextResidentHashes != null)
+                {
+                    for (int i = 0; i < nextResidentHashes.Count; i++)
+                    {
+                        if (nextResidentHashes[i] != residentHash)
+                            continue;
+
+                        stillResident = true;
+                        break;
+                    }
+                }
+
+                if (!stillResident)
+                    _worldPrefabReleaseScratch.Add(residentHash);
+            }
+
+            residentEnumerator.Dispose();
+
+            if (_worldPrefabReleaseScratch.Count > 0)
+                _resolvedItemCatalog.QueueWorldPrefabReleaseNonAlloc(_worldPrefabReleaseScratch);
+
+            _residentWorldPrefabHashes.Clear();
+            if (nextResidentHashes == null)
+                return;
+
+            for (int i = 0; i < nextResidentHashes.Count; i++)
+                _residentWorldPrefabHashes.Add(nextResidentHashes[i]);
+        }
+
+        private void MarkResidentSectorOverrides(NativeArray<long> desiredSectorHashes)
+        {
+            if (_sectorOverrideStates == null || _sectorOverrideStates.Count <= 0)
+                return;
+
+            Dictionary<long, SectorOverrideState>.Enumerator enumerator = _sectorOverrideStates.GetEnumerator();
+            while (enumerator.MoveNext())
+                enumerator.Current.Value.IsResident = false;
+            enumerator.Dispose();
+
+            for (int i = 0; i < desiredSectorHashes.Length; i++)
+            {
+                if (_sectorOverrideStates.TryGetValue(desiredSectorHashes[i], out SectorOverrideState state))
+                    state.IsResident = true;
+            }
+        }
+
+        private void TryScheduleSectorOverrideCommit()
+        {
+            if (!_indexedSectorPagingEnabled ||
+                _sectorOverrideCommitInFlight ||
+                _sectorOverrideStates == null ||
+                _sectorOverrideStates.Count <= 0 ||
+                Time.unscaledTime < _nextSectorOverrideCommitTime)
+            {
+                return;
+            }
+
+            _nextSectorOverrideCommitTime = Time.unscaledTime + SectorOverrideCommitIntervalSeconds;
+            _sectorOverrideCommitInFlight = true;
+            _ = RunSectorOverrideCommitAsync();
+        }
+
+        private async Awaitable RunSectorOverrideCommitAsync()
+        {
+            // COLD ALLOC: List<long>[16] â€” due sector override commit queue â€” owner: PersistentWorldRegistry
+            List<long> dueSectorHashes = new List<long>(16);
+            try
+            {
+                float now = Time.unscaledTime;
+
+                Dictionary<long, SectorOverrideState>.Enumerator enumerator = _sectorOverrideStates.GetEnumerator();
+                while (enumerator.MoveNext())
+                {
+                    KeyValuePair<long, SectorOverrideState> pair = enumerator.Current;
+                    SectorOverrideState state = pair.Value;
+                    if (state == null || state.IsResident || string.IsNullOrEmpty(state.TempPath) || !File.Exists(state.TempPath))
+                        continue;
+
+                    if (now - state.LastUnloadedTime >= SectorOverrideCommitDelaySeconds)
+                        dueSectorHashes.Add(pair.Key);
+                }
+                enumerator.Dispose();
+
+                if (dueSectorHashes.Count <= 0)
+                    return;
+
+                await Awaitable.BackgroundThreadAsync();
+                for (int i = 0; i < dueSectorHashes.Count; i++)
+                {
+                    long sectorHash = dueSectorHashes[i];
+                    if (!_sectorOverrideStates.TryGetValue(sectorHash, out SectorOverrideState state) ||
+                        state == null ||
+                        string.IsNullOrEmpty(state.TempPath) ||
+                        !File.Exists(state.TempPath))
+                    {
+                        continue;
+                    }
+
+                    if (!SaveBinaryStorage.TryCommitIndexedPersistentWorldSectorOverride(_indexedSectorSavePath, state.TempPath, out string error))
+                    {
+                        Debug.LogError($"[PersistentWorldRegistry] Sector override commit failed for 0x{sectorHash:X16}: {error}");
+                    }
+                    else if (!string.IsNullOrEmpty(state.EntityStateTempPath) && File.Exists(state.EntityStateTempPath))
+                    {
+                        File.Delete(state.EntityStateTempPath);
+                        state.EntityStateTempPath = string.Empty;
+                    }
+                }
+
+                await Awaitable.MainThreadAsync();
+                for (int i = 0; i < dueSectorHashes.Count; i++)
+                {
+                    long sectorHash = dueSectorHashes[i];
+                    if (_sectorOverrideStates.TryGetValue(sectorHash, out SectorOverrideState state) &&
+                        state != null &&
+                        !state.IsResident &&
+                        !string.IsNullOrEmpty(state.TempPath) &&
+                        !File.Exists(state.TempPath))
+                    {
+                        _sectorOverrideStates.Remove(sectorHash);
+                    }
+                }
+            }
+            finally
+            {
+                _sectorOverrideCommitInFlight = false;
+            }
+        }
+
+        private string ResolveSectorOverrideTempPath(long sectorHash)
+        {
+            if (string.IsNullOrEmpty(_indexedSectorOverrideDirectory))
+                return string.Empty;
+
+            return Path.Combine(_indexedSectorOverrideDirectory, $"{sectorHash:X16}.sectmp");
+        }
+
+        private string ResolveSectorEntityStateTempPath(long sectorHash)
+        {
+            if (string.IsNullOrEmpty(_indexedSectorOverrideDirectory))
+                return string.Empty;
+
+            return Path.Combine(_indexedSectorOverrideDirectory, $"{sectorHash:X16}.estatmp");
+        }
+
+        private static long ComputeSectorHash(in AbsoluteUniversePosition position)
+        {
+            return PackSectorHash(QuantizeSector(in position));
+        }
+
         private void RegisterOrUpdatePoolSlot(int recordIndex, in PersistentWorldItemRecord record)
         {
             if (!IsValidPoolIndex(recordIndex) || !_guidToPoolIndex.IsCreated)
@@ -1230,6 +1932,8 @@ namespace Hecton8.World
                 return;
 
             _entityStateByInstanceUid.Remove(record.InstanceUid);
+            if (_spawnImpulseByInstanceUid.IsCreated)
+                _spawnImpulseByInstanceUid.Remove(record.InstanceUid);
         }
 
         private EntityDataRecord ResolveEntityState(in PersistentWorldItemRecord record)
@@ -1254,6 +1958,32 @@ namespace Hecton8.World
                 InventoryHash = 0,
                 InstanceUid = record.InstanceUid
             };
+        }
+
+        private void RegisterSpawnImpulse(uint instanceUid, Vector3 initialImpulse)
+        {
+            if (!_spawnImpulseByInstanceUid.IsCreated || instanceUid == 0u)
+                return;
+
+            float3 impulse = new float3(initialImpulse.x, initialImpulse.y, initialImpulse.z);
+            if (!math.all(math.isfinite(impulse)) || math.lengthsq(impulse) <= 0.000001f)
+                return;
+
+            _spawnImpulseByInstanceUid.Remove(instanceUid);
+            _spawnImpulseByInstanceUid.TryAdd(instanceUid, impulse);
+        }
+
+        private bool TryConsumeSpawnImpulse(uint instanceUid, out float3 impulse)
+        {
+            impulse = default;
+            if (!_spawnImpulseByInstanceUid.IsCreated || instanceUid == 0u)
+                return false;
+
+            if (!_spawnImpulseByInstanceUid.TryGetValue(instanceUid, out impulse))
+                return false;
+
+            _spawnImpulseByInstanceUid.Remove(instanceUid);
+            return true;
         }
 
         private EntityDataRecord CaptureEntityStateFromLiveInstance(
@@ -1371,8 +2101,21 @@ namespace Hecton8.World
 
             slotData.StateFlags |= hydrationQueuedMask;
             _poolSlotData[poolIndex] = slotData;
+            QueueWorldPrefabPrewarmForRecord(in record);
             _pendingHydrationRecords.AddNoResize(recordIndex);
             EnsureHydrationSessionScheduled();
+        }
+
+        private void QueueWorldPrefabPrewarmForRecord(in PersistentWorldItemRecord record)
+        {
+            if (!TryResolveItemData(in record, out ItemData itemData) || itemData == null || _resolvedItemCatalog == null)
+                return;
+
+            int itemHashId = ComputeCatalogItemHash(itemData);
+            if (itemHashId == 0)
+                return;
+
+            _resolvedItemCatalog.QueueWorldPrefabPrewarm(itemHashId);
         }
 
         private void EnsureHydrationSessionScheduled()
@@ -1737,6 +2480,14 @@ namespace Hecton8.World
         private static uint ComputeChunkDeltaKey(int3 chunkId)
         {
             return math.hash(chunkId);
+        }
+
+        private static int ComputeCatalogItemHash(ItemData itemData)
+        {
+            if (itemData == null || string.IsNullOrWhiteSpace(itemData.PersistentId))
+                return 0;
+
+            return Hecton.Localization.LocHash.Compute(itemData.PersistentId);
         }
 
         internal int CopyChunkDeltas(int3 chunkId, NativeList<PersistentWorldDeltaRecord> destination)

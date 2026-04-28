@@ -16,6 +16,10 @@ namespace Hecton8.Audio
         [Tooltip("Authored one-shot stinger voice used by HectonMusicDirector.")]
         [SerializeField] private AudioSource _stingerSource;
 
+        // COLD ALLOC: bool[voiceCount] - runtime availability flags for authored music voices - owner: MusicVoicePool
+        private bool[] _voiceAvailable;
+        private bool _stingerAvailable = true;
+
         /// <summary>
         /// Number of authored bed voices available for runtime binding.
         /// </summary>
@@ -25,6 +29,11 @@ namespace Hecton8.Audio
         /// Authored stinger voice.
         /// </summary>
         internal AudioSource StingerSource => _stingerSource;
+
+        private void Awake()
+        {
+            ResetRuntimeAvailability();
+        }
 
         /// <summary>
         /// Tries to resolve one authored bed voice by stable slot index.
@@ -37,6 +46,77 @@ namespace Hecton8.Audio
 
             source = _musicVoices[index];
             return source != null;
+        }
+
+        /// <summary>
+        /// Resets runtime availability bookkeeping for authored voices.
+        /// </summary>
+        internal void ResetRuntimeAvailability()
+        {
+            int voiceCount = _musicVoices != null ? _musicVoices.Length : 0;
+            if (_voiceAvailable == null || _voiceAvailable.Length != voiceCount)
+                _voiceAvailable = new bool[voiceCount]; // COLD ALLOC: bool[voiceCount] - runtime availability flags for authored music voices - owner: MusicVoicePool
+
+            for (int i = 0; i < voiceCount; i++)
+                _voiceAvailable[i] = _musicVoices[i] != null;
+
+            _stingerAvailable = _stingerSource != null;
+        }
+
+        /// <summary>
+        /// Marks one authored voice as currently in use by the music director.
+        /// </summary>
+        internal void MarkVoiceInUse(int index)
+        {
+            if (_voiceAvailable == null || index < 0 || index >= _voiceAvailable.Length)
+                return;
+
+            _voiceAvailable[index] = false;
+        }
+
+        /// <summary>
+        /// Stops, clears, and returns one authored voice to the available pool.
+        /// </summary>
+        internal void ReleaseMusicVoice(int index)
+        {
+            if (_musicVoices == null || index < 0 || index >= _musicVoices.Length)
+                return;
+
+            AudioSource source = _musicVoices[index];
+            if (source != null)
+            {
+                source.Stop();
+                source.clip = null;
+                source.volume = 0f;
+                source.loop = false;
+            }
+
+            if (_voiceAvailable != null && index < _voiceAvailable.Length)
+                _voiceAvailable[index] = source != null;
+        }
+
+        /// <summary>
+        /// Stops, clears, and returns the stinger voice to the available state.
+        /// </summary>
+        internal void ReleaseStingerVoice()
+        {
+            if (_stingerSource != null)
+            {
+                _stingerSource.Stop();
+                _stingerSource.clip = null;
+                _stingerSource.volume = 0f;
+                _stingerSource.loop = false;
+            }
+
+            _stingerAvailable = _stingerSource != null;
+        }
+
+        /// <summary>
+        /// Marks the authored stinger voice as currently in use.
+        /// </summary>
+        internal void MarkStingerInUse()
+        {
+            _stingerAvailable = false;
         }
 
         /// <summary>
@@ -58,6 +138,8 @@ namespace Hecton8.Audio
 
             if (_stingerSource != null)
                 ConfigureVoiceSource(_stingerSource, stingerMixerGroup, 32);
+
+            ResetRuntimeAvailability();
         }
 
         private static void ConfigureVoiceSource(AudioSource source, AudioMixerGroup mixerGroup, int priority)

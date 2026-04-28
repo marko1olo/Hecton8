@@ -1,10 +1,11 @@
+Add-Type -AssemblyName System.Drawing
 $texDir = 'Assets/_Project/Art/TEXTURES'
 $extensions = @('*.png','*.jpg','*.jpeg','*.tga','*.psd','*.exr','*.bmp')
-$files = New-Object System.Collections.Generic.List[System.IO.FileInfo]
+$files = New-Object System.Collections.ArrayList
 foreach ($ext in $extensions) {
     $found = Get-ChildItem -Path $texDir -Recurse -Filter $ext -File -ErrorAction SilentlyContinue
     if ($found) {
-        if ($found -is [array]) { $files.AddRange($found) } else { $files.Add($found) }
+        if ($found -is [array]) { $files.AddRange($found) | Out-Null } else { $files.Add($found) | Out-Null }
     }
 }
 

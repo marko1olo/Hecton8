@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Hecton8.Core;
 using Hecton8.SaveSystem;
 using UnityEngine;
 
@@ -90,6 +91,16 @@ namespace Hecton8.Gameplay
         public static void RecordOperation(string source, string title, string summary, string severity = "INFO")
         {
             Instance?.Push(source, title, summary, severity);
+        }
+
+        public static void RecordOperation(string source, string title, FixedCharBuffer summaryBuffer, string severity = "INFO")
+        {
+            Instance?.Push(source, title, summaryBuffer.ToString(), severity);
+        }
+
+        public static void RecordOperation(string source, FixedCharBuffer titleBuffer, FixedCharBuffer summaryBuffer, string severity = "INFO")
+        {
+            Instance?.Push(source, titleBuffer.ToString(), summaryBuffer.ToString(), severity);
         }
 
         public int CopyRecentEntries(FieldOperationSnapshot[] buffer)

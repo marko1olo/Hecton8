@@ -256,6 +256,42 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             return lerp(nxy0, nxy1, smoothFrac.z);
         }
 
+        float3 ResolveShaftCurlNoise(float3 samplePosition)
+        {
+            const float epsilon = 0.37;
+            float3 xOffset = float3(epsilon, 0.0, 0.0);
+            float3 yOffset = float3(0.0, epsilon, 0.0);
+            float3 zOffset = float3(0.0, 0.0, epsilon);
+
+            float fxY1 = ValueNoise3(samplePosition + yOffset + float3(17.1, 9.3, 31.7));
+            float fxY0 = ValueNoise3(samplePosition - yOffset + float3(17.1, 9.3, 31.7));
+            float fxZ1 = ValueNoise3(samplePosition + zOffset + float3(17.1, 9.3, 31.7));
+            float fxZ0 = ValueNoise3(samplePosition - zOffset + float3(17.1, 9.3, 31.7));
+
+            float fyX1 = ValueNoise3(samplePosition + xOffset + float3(43.7, 13.9, 7.1));
+            float fyX0 = ValueNoise3(samplePosition - xOffset + float3(43.7, 13.9, 7.1));
+            float fyZ1 = ValueNoise3(samplePosition + zOffset + float3(43.7, 13.9, 7.1));
+            float fyZ0 = ValueNoise3(samplePosition - zOffset + float3(43.7, 13.9, 7.1));
+
+            float fzX1 = ValueNoise3(samplePosition + xOffset + float3(5.9, 27.4, 49.3));
+            float fzX0 = ValueNoise3(samplePosition - xOffset + float3(5.9, 27.4, 49.3));
+            float fzY1 = ValueNoise3(samplePosition + yOffset + float3(5.9, 27.4, 49.3));
+            float fzY0 = ValueNoise3(samplePosition - yOffset + float3(5.9, 27.4, 49.3));
+
+            float dFxDy = fxY1 - fxY0;
+            float dFxDz = fxZ1 - fxZ0;
+            float dFyDx = fyX1 - fyX0;
+            float dFyDz = fyZ1 - fyZ0;
+            float dFzDx = fzX1 - fzX0;
+            float dFzDy = fzY1 - fzY0;
+
+            float3 curl = float3(
+                dFzDy - dFyDz,
+                dFxDz - dFzDx,
+                dFyDx - dFxDy);
+            return SafeNormalize3(curl);
+        }
+
         float ResolveSiltField(float3 samplePositionWS, float3 rayDirectionWS, float surfaceProximity)
         {
             float timePhase = _Time.y * _HectonSiltDriftSpeed;
@@ -265,9 +301,12 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
 
             float coarse = ValueNoise3(driftedPosition);
             float fine = ValueNoise3(driftedPosition * 1.97 + 11.0);
+            float3 curlNoise = ResolveShaftCurlNoise(driftedPosition * 0.73 + float3(0.0, timePhase * 0.45, -timePhase * 0.31));
+            float curlDensity = saturate(length(curlNoise.xz) * 0.68 + abs(curlNoise.y) * 0.32);
+            float curlAlignment = saturate(dot(curlNoise, SafeNormalize3(rayDirectionWS + float3(0.0, 0.2, 0.0))) * 0.5 + 0.5);
             float streakBias = saturate(dot(abs(rayDirectionWS), float3(0.22, 0.14, 0.64)));
             float floorBoost = lerp(1.0, 1.0 + _HectonSiltFloorBoost, surfaceProximity * surfaceProximity);
-            float density = saturate(coarse * 0.66 + fine * 0.34 + streakBias * 0.08 - 0.22);
+            float density = saturate(coarse * 0.52 + fine * 0.24 + curlDensity * 0.16 + curlAlignment * 0.12 + streakBias * 0.08 - 0.22);
             return density * floorBoost * _HectonSiltStrength;
         }
 

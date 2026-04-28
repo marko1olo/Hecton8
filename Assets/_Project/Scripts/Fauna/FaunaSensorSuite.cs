@@ -76,6 +76,7 @@ namespace Hecton8.AI
 
         private Transform _selfTransform;
         private Transform _playerTransform;
+        private Rigidbody _playerRigidbody;
         private PlayerToolManager _playerToolManager;
         private FaunaSpeciesProfile _profile;
         private float _avoidanceTimeAccumulator;
@@ -134,6 +135,7 @@ namespace Hecton8.AI
 
             if (_playerTransform != null)
             {
+                _playerTransform.TryGetComponent(out _playerRigidbody);
                 _playerToolManager = Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.ToolManager != null
                     ? Hecton8.Core.GlobalRegistry.Player.ToolManager
                     : Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<PlayerToolManager>(_playerTransform);
@@ -141,7 +143,7 @@ namespace Hecton8.AI
             }
         }
 
-        public void Tick(float dt, Vector3 velocity, float currentTimeSeconds)
+        public void Tick(float dt, Vector3 velocity, float currentTimeSeconds, bool forceLongRangeCognition)
         {
             _authoredTimeSeconds = currentTimeSeconds;
             if (_selfTransform != null)
@@ -153,8 +155,8 @@ namespace Hecton8.AI
             if (_playerTransform != null)
             {
                 distSqrToPlayer = (_playerTransform.position - _cachedSelfPosition).sqrMagnitude;
-                lodDisabled = distSqrToPlayer > 150f * 150f;
-                isSleeping = distSqrToPlayer > sleepDistance * sleepDistance;
+                lodDisabled = !forceLongRangeCognition && distSqrToPlayer > 150f * 150f;
+                isSleeping = !forceLongRangeCognition && distSqrToPlayer > sleepDistance * sleepDistance;
             }
 
             if (lodDisabled || isSleeping)
@@ -249,6 +251,18 @@ namespace Hecton8.AI
             }
 
             playerPosition = default;
+            return false;
+        }
+
+        public bool TryGetPerceivedPlayerVelocity(out Vector3 playerVelocity)
+        {
+            if (hasVisualPlayerContact && _playerRigidbody != null)
+            {
+                playerVelocity = _playerRigidbody.linearVelocity;
+                return true;
+            }
+
+            playerVelocity = default;
             return false;
         }
 

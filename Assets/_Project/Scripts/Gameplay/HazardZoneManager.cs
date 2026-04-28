@@ -171,11 +171,11 @@ namespace Hecton8.Gameplay
 
         public static HazardZoneManager Instance { get; private set; }
 
-        [Header("── Capacity ──────────────────────")]
+        [Header("â”€â”€ Capacity â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Maximum simultaneous hazard volumes stored in the runtime registry.")]
         [SerializeField, Min(MinZoneCapacity)] private int maxZoneCount = DefaultMaxZoneCount;
 
-        [Header("── Diagnostics ──────────────────────")]
+        [Header("â”€â”€ Diagnostics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [SerializeField] private int _debugActiveZoneCount;
         [SerializeField] private float _debugToxicityDose;
         [SerializeField] private float _debugPlayerToxicityIntensity;
@@ -206,9 +206,9 @@ namespace Hecton8.Gameplay
         private MonoBehaviour _activeTransportBehaviour;
         private Collider _activeTransportCollider;
 
-        // COLD ALLOC: float[4] — cached player hazard intensities by HazardType — owner: HazardZoneManager
+        // COLD ALLOC: float[4] â€” cached player hazard intensities by HazardType â€” owner: HazardZoneManager
         private readonly float[] _playerHazardIntensity = new float[HazardTypeCount];
-        // COLD ALLOC: float[4] — cached vehicle hazard intensities by HazardType — owner: HazardZoneManager
+        // COLD ALLOC: float[4] â€” cached vehicle hazard intensities by HazardType â€” owner: HazardZoneManager
         private readonly float[] _vehicleHazardIntensity = new float[HazardTypeCount];
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -741,7 +741,6 @@ namespace Hecton8.Gameplay
             if (_registered)
                 return;
 
-            SystemDispatcher.EnsureRuntimeInstance();
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _registered = true;
         }
