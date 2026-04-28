@@ -47,10 +47,9 @@ namespace Hecton8.Physics
     {
         private const int CompartmentCapacity = 8;
         private const int BulkheadCapacity = 7;
-        private const int RingBufferLength = 16;
+        private const int RingBufferLength = 8;
         private const int RingBufferMask = RingBufferLength - 1;
-        private const float MinimumSloshDelaySeconds = 0.05f;
-        private const float MaximumSloshDelaySeconds = 0.15f;
+        private const int SloshDelayFrames = 3;
         private const float WaterDensityKgPerCubicMeter = 1025f;
         private const float GravityMetersPerSecondSquared = 9.81f;
         private const float DefaultFixedStepSeconds = 0.02f;
@@ -78,8 +77,6 @@ namespace Hecton8.Physics
         private const float DefaultRigidbodyMassUpdateThresholdKg = 5f;
         private const float CriticalFloodAddedMassLinearBoost = 2f;
         private const float CriticalFloodAddedMassAngularBoost = 8f;
-        private const float CriticalFloodSloshResistanceBoost = 6f;
-        private const float FloodedHullRotationalResistanceScale = 0.08f;
         private const float DefaultExteriorBuoyancyForceClampScale = 1.15f;
         private const float DefaultExteriorBuoyancyTorqueClampScale = 1.25f;
         private const int ExteriorBuoyancySampleCount = 8;
@@ -2109,22 +2106,7 @@ namespace Hecton8.Physics
             _angularVelocityHistoryLocal[_ringHead] = currentLocalAngularVelocity;
             _ringHead = (_ringHead + 1) & RingBufferMask;
 
-            float delaySeconds = ResolveSloshDelaySeconds(internalFloodRatio);
-            float safeFixedStep = math.max(_currentFixedDeltaTime, DefaultFixedStepSeconds);
-            int delayFrames = 1;
-            if (!TryResolveSafeQuotient(delaySeconds, safeFixedStep, out float delayFrameFloat))
-            {
-                EmergencyResetHydrodynamics("RecordAndSampleDelayedSloshAngularVelocityLocal.DelayFrames");
-            }
-            else
-            {
-                delayFrames = math.clamp(
-                    (int)math.round(delayFrameFloat),
-                    1,
-                    RingBufferLength - 1);
-            }
-
-            int delayIndex = (_ringHead - delayFrames - 1) & RingBufferMask;
+            int delayIndex = (_ringHead - SloshDelayFrames) & RingBufferMask;
             float3 delayedAngularVelocity = _angularVelocityHistoryLocal[delayIndex];
             if (math.any(math.isnan(delayedAngularVelocity)) || !math.all(math.isfinite(delayedAngularVelocity)))
             {
@@ -2440,10 +2422,7 @@ namespace Hecton8.Physics
                 delayedAngularVelocity.y,
                 delayedAngularVelocity.z);
             float3 totalSloshTorque = float3.zero;
-            float criticalFloodRatio = math.smoothstep(CriticalFillThreshold, 1f, internalFloodRatio);
-            float delayedResistanceScale = math.max(0f, sloshFactor) *
-                internalFloodRatio *
-                (1f + (criticalFloodRatio * CriticalFloodSloshResistanceBoost));
+            float torqueScale = math.max(0f, sloshFactor);
 
             for (int i = 0; i < _configuredCompartmentCount; i++)
             {
@@ -2464,7 +2443,7 @@ namespace Hecton8.Physics
 
                 float freesurf = 1f - fillRatio;
                 freesurf *= freesurf;
-                float sloshMass = currentVolume * WaterDensityKgPerCubicMeter * math.lerp(1f, 3f, criticalFloodRatio);
+                float sloshMass = currentVolume * WaterDensityKgPerCubicMeter;
                 if (!float.IsFinite(sloshMass))
                 {
                     EmergencyResetHydrodynamics("ApplyDelayedSloshTorque.SloshMass");
@@ -2472,7 +2451,7 @@ namespace Hecton8.Physics
                     return;
                 }
 
-                totalSloshTorque += -delayedAngularVelocity * (fillRatio * sloshMass * freesurf);
+                totalSloshTorque += -delayedAngularVelocity * (fillRatio * torqueScale * sloshMass * freesurf);
                 if (math.any(math.isnan(totalSloshTorque)) || !math.all(math.isfinite(totalSloshTorque)))
                 {
                     EmergencyResetHydrodynamics("ApplyDelayedSloshTorque.Accumulate");
@@ -2480,20 +2459,6 @@ namespace Hecton8.Physics
                     return;
                 }
             }
-
-            float floodedHullMass = math.max(0f, _totalFloodVolumeCubicMeters) * WaterDensityKgPerCubicMeter;
-            float resistanceLeverArm = math.max(0.1f, _exteriorBuoyancyMaxLeverArm);
-            float3 rotationalResistanceTorque = -delayedAngularVelocity *
-                (floodedHullMass * resistanceLeverArm * FloodedHullRotationalResistanceScale * criticalFloodRatio);
-            if (math.any(math.isnan(rotationalResistanceTorque)) || !math.all(math.isfinite(rotationalResistanceTorque)))
-            {
-                EmergencyResetHydrodynamics("ApplyDelayedSloshTorque.RotationalResistance");
-                _lastSloshTorqueLocal = Vector3.zero;
-                return;
-            }
-
-            totalSloshTorque += rotationalResistanceTorque;
-            totalSloshTorque *= delayedResistanceScale;
 
             float maxTorqueMagnitude = math.max(0f, maxSloshTorque);
             if (maxTorqueMagnitude > Epsilon)
@@ -2758,13 +2723,6 @@ namespace Hecton8.Physics
         private static float ResolveSurfaceSubmersionFactor(float signedDistanceToSurface)
         {
             return math.saturate(math.smoothstep(0.5f, -0.5f, signedDistanceToSurface));
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float ResolveSloshDelaySeconds(float internalFloodRatio)
-        {
-            float safeFloodRatio = math.saturate(math.select(0f, internalFloodRatio, math.isfinite(internalFloodRatio)));
-            return math.lerp(MinimumSloshDelaySeconds, MaximumSloshDelaySeconds, safeFloodRatio);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

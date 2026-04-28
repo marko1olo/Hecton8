@@ -62,9 +62,21 @@ namespace Hecton8.UI
         private const string DepthNumberToken = "{N0:F0}";
         private const string FixedTenthsNumberToken = "{N0:F1}";
         private const string HeadingNumberTemplate = "HEADING {N0:D3} / ";
+        private const int SlowCadenceFrameModulo = 30;
+        private const int MediumCadenceFrameModulo = 6;
+        private const int StaticCanvasSortingOrder = 10;
+        private const int LowCadenceCanvasSortingOrder = 20;
+        private const int HighCadenceCanvasSortingOrder = 30;
         private const float OxygenGaugeDamping = 12f;
+        private const float HealthGaugeDamping = 8f;
         private const float BatteryGaugeDamping = 6f;
         private const float GaugeSmoothingEpsilon = 0.01f;
+        private const float FillWriteEpsilon = 0.0005f;
+        private const float OxygenStreamThreshold01 = 0.005f;
+        private const float DepthStreamThresholdMeters = 0.5f;
+        private const float TemperatureStreamThreshold = 0.1f;
+        private const float PressureStreamThreshold = 0.1f;
+        private const float HeadingStreamThresholdDegrees = 1f;
         private const float ToolDepletedWarningDurationSeconds = 2.25f;
         private const float CorruptedModeThreshold = 0.75f;
         private const float JitterAmplitudePixels = 7f;
@@ -341,6 +353,7 @@ namespace Hecton8.UI
         private CanvasGroup _rootCanvasGroup;
         private CanvasGroup _ornamentCanvasGroup;
         private RectTransform _headerRoot;
+        private RectTransform _reticleRoot;
         private RectTransform _telemetryChromeRoot;
         private RectTransform _telemetrySupplementRoot;
         private RectTransform _telemetryRoot;
@@ -426,8 +439,20 @@ namespace Hecton8.UI
         private Color _cachedPaletteDim;
         private Color _cachedPaletteWarning;
         private float _displayTemperature = 8f;
+        private float _displayOxygen01 = 1f;
+        private float _displayHealth01 = 1f;
+        private float _displayPower01 = 1f;
         private float _lastDepth;
         private float _depthMeters;
+        private int _uiCadenceFrame;
+        private float _lastStreamedOxygen01 = float.NaN;
+        private float _lastStreamedPower01 = float.NaN;
+        private float _lastStreamedHealth01 = float.NaN;
+        private float _lastStreamedDepthMeters = float.NaN;
+        private float _lastStreamedTemperature = float.NaN;
+        private float _lastStreamedPressure = float.NaN;
+        private float _lastStreamedHeadingDegrees = float.NaN;
+        private bool _quickbarVisualsInitialized;
         private bool _layoutBuilt;
         [SerializeField, HideInInspector] private int _appliedLayoutRevision;
         private float _nextAutoResolveAt;
@@ -584,6 +609,8 @@ namespace Hecton8.UI
             public int CachedValueWhisperVersion;
             public float CachedFillAmount;
             public bool HasCachedFillAmount;
+            public float LastTargetFillAmount;
+            public bool HasLastTargetFillAmount;
             public Color CachedIconColor;
             public Color CachedRingBackColor;
             public Color CachedRingFillColor;
@@ -614,6 +641,13 @@ namespace Hecton8.UI
             public Vector3 WorldPosition;
             public float Threat01;
             public bool Active;
+        }
+
+        private enum DynamicCanvasCadenceBucket : byte
+        {
+            Static = 0,
+            LowCadence = 1,
+            HighCadence = 2
         }
 
         public bool IsInitialized => isActiveAndEnabled && targetCanvas != null && _root != null && _layoutBuilt;
@@ -865,9 +899,12 @@ namespace Hecton8.UI
             if (!_layoutBuilt || _root == null || targetCanvas == null)
                 return;
 
+            int cadenceFrame = unchecked(++_uiCadenceFrame);
+            bool refreshMediumCadence = cadenceFrame % MediumCadenceFrameModulo == 0;
+            bool refreshSlowCadence = cadenceFrame % SlowCadenceFrameModulo == 0;
             RefreshAcousticRadarPayload();
             _threatChevronPulseTime += Mathf.Max(0f, Time.unscaledDeltaTime);
-            RefreshVisuals(deltaTime);
+            RefreshVisuals(deltaTime, refreshMediumCadence, refreshSlowCadence);
         }
 
         public void SlowTick()
@@ -2069,17 +2106,20 @@ namespace Hecton8.UI
             Anchor(_statusRuleRight.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(148f, 76f), new Vector2(104f, 2f));
             _statusRuleRight.rectTransform.localEulerAngles = Vector3.zero;
 
-            _reticleH = CreateImage("ReticleH", _ornamentRoot, Color.white);
-            Anchor(_reticleH.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), reticleOffset, new Vector2(22f, 2f));
+            _reticleRoot = CreateRect("ReticleRoot", _root);
+            Anchor(_reticleRoot, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), reticleOffset, new Vector2(64f, 64f));
 
-            _reticleV = CreateImage("ReticleV", _ornamentRoot, Color.white);
-            Anchor(_reticleV.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), reticleOffset, new Vector2(2f, 22f));
+            _reticleH = CreateImage("ReticleH", _reticleRoot, Color.white);
+            Anchor(_reticleH.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(22f, 2f));
 
-            _reticleBracketLeft = CreateImage("ReticleBracketLeft", _ornamentRoot, Color.white);
-            Anchor(_reticleBracketLeft.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), reticleOffset + new Vector2(-26f, 0f), new Vector2(10f, 2f));
+            _reticleV = CreateImage("ReticleV", _reticleRoot, Color.white);
+            Anchor(_reticleV.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(2f, 22f));
 
-            _reticleBracketRight = CreateImage("ReticleBracketRight", _ornamentRoot, Color.white);
-            Anchor(_reticleBracketRight.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), reticleOffset + new Vector2(26f, 0f), new Vector2(10f, 2f));
+            _reticleBracketLeft = CreateImage("ReticleBracketLeft", _reticleRoot, Color.white);
+            Anchor(_reticleBracketLeft.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-26f, 0f), new Vector2(10f, 2f));
+
+            _reticleBracketRight = CreateImage("ReticleBracketRight", _reticleRoot, Color.white);
+            Anchor(_reticleBracketRight.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(26f, 0f), new Vector2(10f, 2f));
 
             Vector2 resolvedTelemetryOffset = ResolveTelemetryOffset();
             Vector2 resolvedTelemetrySize = ResolveTelemetrySize();
@@ -2134,13 +2174,14 @@ namespace Hecton8.UI
             _quickbarCanvasGroup = EnsureCanvasGroup(_quickbarRoot);
             BuildQuickbarHierarchy(_quickbarRoot);
 
-            EnsureIsolatedDynamicCanvas(_depthLabel.rectTransform);
-            EnsureIsolatedDynamicCanvas(_telemetrySupplementRoot);
-            EnsureIsolatedDynamicCanvas(_statusLabel.rectTransform);
-            EnsureIsolatedDynamicCanvas(_oxygenGauge.Root);
-            EnsureIsolatedDynamicCanvas(_healthGauge.Root);
-            EnsureIsolatedDynamicCanvas(_powerGauge.Root);
-            EnsureIsolatedDynamicCanvas(_quickbarRoot);
+            EnsureIsolatedDynamicCanvas(_reticleRoot, DynamicCanvasCadenceBucket.HighCadence);
+            EnsureIsolatedDynamicCanvas(_depthLabel.rectTransform, DynamicCanvasCadenceBucket.HighCadence);
+            EnsureIsolatedDynamicCanvas(_telemetrySupplementRoot, DynamicCanvasCadenceBucket.LowCadence);
+            EnsureIsolatedDynamicCanvas(_statusLabel.rectTransform, DynamicCanvasCadenceBucket.HighCadence);
+            EnsureIsolatedDynamicCanvas(_oxygenGauge.Root, DynamicCanvasCadenceBucket.HighCadence);
+            EnsureIsolatedDynamicCanvas(_healthGauge.Root, DynamicCanvasCadenceBucket.HighCadence);
+            EnsureIsolatedDynamicCanvas(_powerGauge.Root, DynamicCanvasCadenceBucket.HighCadence);
+            EnsureIsolatedDynamicCanvas(_quickbarRoot, DynamicCanvasCadenceBucket.LowCadence);
 
             _ornamentCanvasGroup = EnsureCanvasGroup(_ornamentRoot);
             _headerCanvasGroup = EnsureCanvasGroup(_headerRoot);
@@ -2182,7 +2223,7 @@ namespace Hecton8.UI
             return canvasGroup;
         }
 
-        private static Canvas EnsureIsolatedDynamicCanvas(RectTransform target)
+        private static Canvas EnsureIsolatedDynamicCanvas(RectTransform target, DynamicCanvasCadenceBucket cadenceBucket)
         {
             if (target == null)
                 return null;
@@ -2191,9 +2232,27 @@ namespace Hecton8.UI
             if (canvas == null)
                 canvas = target.gameObject.AddComponent<Canvas>();
 
-            canvas.overrideSorting = false;
+            canvas.overrideSorting = true;
             canvas.pixelPerfect = false;
+            canvas.sortingOrder = ResolveCanvasSortingOrder(cadenceBucket);
+
+            if (target.TryGetComponent(out GraphicRaycaster raycaster) && raycaster.enabled)
+                raycaster.enabled = false;
+
             return canvas;
+        }
+
+        private static int ResolveCanvasSortingOrder(DynamicCanvasCadenceBucket cadenceBucket)
+        {
+            switch (cadenceBucket)
+            {
+                case DynamicCanvasCadenceBucket.Static:
+                    return StaticCanvasSortingOrder;
+                case DynamicCanvasCadenceBucket.LowCadence:
+                    return LowCadenceCanvasSortingOrder;
+                default:
+                    return HighCadenceCanvasSortingOrder;
+            }
         }
 
         private static void SetCanvasGroupVisible(CanvasGroup canvasGroup, bool visible)
@@ -2303,7 +2362,7 @@ namespace Hecton8.UI
             return Mathf.Sin(elapsedTime * frequency) >= 0f;
         }
 
-        private void RefreshVisuals(float dt)
+        private void RefreshVisuals(float dt, bool refreshMediumCadence, bool refreshSlowCadence)
         {
             if (_root == null)
                 return;
@@ -2351,6 +2410,9 @@ namespace Hecton8.UI
 
             float targetTemp = EstimateTemperature(depth);
             _displayTemperature = Mathf.Lerp(_displayTemperature, targetTemp, 1f - Mathf.Exp(-4f * dt));
+            _displayOxygen01 = DampHudValue(_displayOxygen01, oxygen, OxygenGaugeDamping, dt);
+            _displayHealth01 = DampHudValue(_displayHealth01, health, HealthGaugeDamping, dt);
+            _displayPower01 = DampHudValue(_displayPower01, power, BatteryGaugeDamping, dt);
             float depthDelta = depth - _lastDepth;
             _lastDepth = depth;
             ApplySectionVisibility(_biosRecoveryMode);
@@ -2362,69 +2424,98 @@ namespace Hecton8.UI
             float localizedDepth = LocalizedMeasurementFormatter.ConvertDistanceMeters(depth, _localizedMeasurementLanguage);
             float localizedTemperature = LocalizedMeasurementFormatter.ConvertTemperatureCelsius(_displayTemperature, _localizedMeasurementLanguage);
             bool localizedRtl = LocalizedMeasurementFormatter.IsRightToLeft(_localizedMeasurementLanguage);
+            bool specialCadenceBypass = _biosRecoveryMode || hullStressWhisperMode || corruptedMode;
+            bool shouldRefreshSuitLabel = specialCadenceBypass || refreshSlowCadence || _appliedSuitLabelVersion == int.MinValue;
+            bool shouldRefreshHeadingLabel = specialCadenceBypass || NeedsHeadingCadenceRefresh(refreshMediumCadence, heading);
+            bool shouldRefreshTelemetryText = specialCadenceBypass || NeedsTelemetryCadenceRefresh(refreshMediumCadence, oxygen, depth, localizedTemperature, pressure);
+            bool shouldRefreshGaugeText = specialCadenceBypass || NeedsGaugeCadenceRefresh(refreshMediumCadence, oxygen, power, health);
+            bool shouldRefreshQuickbar = !_quickbarVisualsInitialized || specialCadenceBypass || refreshMediumCadence;
             char[] hullStressWhisperBuffer = null;
             int hullStressWhisperLength = 0;
             int hullStressWhisperVersion = int.MinValue;
             if (hullStressWhisperMode)
                 GetHullStressWhisperBuffer(manager, out hullStressWhisperBuffer, out hullStressWhisperLength, out hullStressWhisperVersion);
 
-            if (hullStressWhisperMode)
+            if (shouldRefreshSuitLabel || shouldRefreshHeadingLabel)
             {
-                SetDisplayBufferIfChanged(_suitLabel, hullStressWhisperBuffer, hullStressWhisperLength, _cachedHullStressWhisperRtl, Alpha(primary, 0.95f), hullStressWhisperVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 101, ref _appliedSuitLabelVersion, ref _appliedSuitLabelColor);
-                SetDisplayBufferIfChanged(_headingLabel, hullStressWhisperBuffer, hullStressWhisperLength, _cachedHullStressWhisperRtl, Alpha(dim, 0.58f), hullStressWhisperVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 107, ref _appliedHeadingLabelVersion, ref _appliedHeadingLabelColor);
-            }
-            else
-            {
-                ResolveSuitLabelBuffer(out char[] suitLabelBuffer, out int suitLabelLength, out int suitLabelVersion, out bool suitLabelRtl);
-                SetDisplayBufferIfChanged(_suitLabel, suitLabelBuffer, suitLabelLength, suitLabelRtl, Alpha(primary, 0.95f), suitLabelVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 101, ref _appliedSuitLabelVersion, ref _appliedSuitLabelColor);
-                HeadingLabelCacheEntry headingEntry = ResolveHeadingLabelEntry(Mathf.RoundToInt(heading));
-                int headingVersion = Mathf.RoundToInt(heading) % 360;
-                if (headingVersion < 0)
-                    headingVersion += 360;
-                SetDisplayBufferIfChanged(_headingLabel, headingEntry.Buffer, headingEntry.Length, false, Alpha(dim, 0.58f), headingVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 107, ref _appliedHeadingLabelVersion, ref _appliedHeadingLabelColor);
+                if (hullStressWhisperMode)
+                {
+                    if (shouldRefreshSuitLabel)
+                        SetDisplayBufferIfChanged(_suitLabel, hullStressWhisperBuffer, hullStressWhisperLength, _cachedHullStressWhisperRtl, Alpha(primary, 0.95f), hullStressWhisperVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 101, ref _appliedSuitLabelVersion, ref _appliedSuitLabelColor);
+
+                    if (shouldRefreshHeadingLabel)
+                        SetDisplayBufferIfChanged(_headingLabel, hullStressWhisperBuffer, hullStressWhisperLength, _cachedHullStressWhisperRtl, Alpha(dim, 0.58f), hullStressWhisperVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 107, ref _appliedHeadingLabelVersion, ref _appliedHeadingLabelColor);
+                }
+                else
+                {
+                    if (shouldRefreshSuitLabel)
+                    {
+                        ResolveSuitLabelBuffer(out char[] suitLabelBuffer, out int suitLabelLength, out int suitLabelVersion, out bool suitLabelRtl);
+                        SetDisplayBufferIfChanged(_suitLabel, suitLabelBuffer, suitLabelLength, suitLabelRtl, Alpha(primary, 0.95f), suitLabelVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 101, ref _appliedSuitLabelVersion, ref _appliedSuitLabelColor);
+                    }
+
+                    if (shouldRefreshHeadingLabel)
+                    {
+                        HeadingLabelCacheEntry headingEntry = ResolveHeadingLabelEntry(Mathf.RoundToInt(heading));
+                        int headingVersion = Mathf.RoundToInt(heading) % 360;
+                        if (headingVersion < 0)
+                            headingVersion += 360;
+
+                        SetDisplayBufferIfChanged(_headingLabel, headingEntry.Buffer, headingEntry.Length, false, Alpha(dim, 0.58f), headingVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 107, ref _appliedHeadingLabelVersion, ref _appliedHeadingLabelColor);
+                        _lastStreamedHeadingDegrees = heading;
+                    }
+                }
             }
 
-            if (_biosRecoveryMode)
+            if (shouldRefreshTelemetryText)
             {
-                _appliedDepthWhisperVersion = int.MinValue;
-                _appliedTemperatureWhisperVersion = int.MinValue;
-                _appliedPressureWhisperVersion = int.MinValue;
-                ResolveMetricIntBuffer(_depthTemplateBuffer, _depthTemplateLength, ref _depthDisplayBuffer, Mathf.RoundToInt(localizedDepth), out char[] depthBuffer, out int depthLength);
-                SetDisplayBufferIfChanged(_depthLabel, depthBuffer, depthLength, localizedRtl, Alpha(primary, 0.98f), Mathf.RoundToInt(localizedDepth), false, 0f, 0, 0, ref _appliedDepthWhisperVersion, ref _appliedDepthColor);
-                SetCanvasGroupVisible(_telemetrySupplementCanvasGroup, false);
-            }
-            else if (hullStressWhisperMode)
-            {
-                SetDisplayBufferIfChanged(_depthLabel, hullStressWhisperBuffer, hullStressWhisperLength, localizedRtl, Alpha(pulsedPrimary, 0.96f), hullStressWhisperVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 211, ref _appliedDepthWhisperVersion, ref _appliedDepthColor);
-                SetDisplayBufferIfChanged(_temperatureLabel, hullStressWhisperBuffer, hullStressWhisperLength, localizedRtl, Alpha(pulsedDim, 0.84f), hullStressWhisperVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 223, ref _appliedTemperatureWhisperVersion, ref _appliedTemperatureColor);
-                SetDisplayBufferIfChanged(_pressureLabel, hullStressWhisperBuffer, hullStressWhisperLength, localizedRtl, Alpha(pulsedDim, 0.64f), hullStressWhisperVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 227, ref _appliedPressureWhisperVersion, ref _appliedPressureColor);
-                _hasAppliedDepthValue = false;
-                _hasAppliedTemperatureTenths = false;
-                _hasAppliedPressureTenths = false;
-            }
-            else if (corruptedMode)
-            {
-                _appliedDepthWhisperVersion = int.MinValue;
-                _appliedTemperatureWhisperVersion = int.MinValue;
-                _appliedPressureWhisperVersion = int.MinValue;
-                ResolveMetricIntBuffer(_depthTemplateBuffer, _depthTemplateLength, ref _depthDisplayBuffer, Mathf.RoundToInt(localizedDepth), out char[] depthBuffer, out int depthLength);
-                ResolveMetricFloatTenthsBuffer(_temperatureTemplateBuffer, _temperatureTemplateLength, ref _temperatureDisplayBuffer, localizedTemperature, out char[] temperatureBuffer, out int temperatureLength);
-                ResolveMetricFloatTenthsBuffer(_pressureTemplateBuffer, _pressureTemplateLength, ref _pressureDisplayBuffer, pressure, out char[] pressureBuffer, out int pressureLength);
-                SetDisplayBufferIfChanged(_depthLabel, depthBuffer, depthLength, localizedRtl, Alpha(pulsedPrimary, 0.96f), Mathf.RoundToInt(localizedDepth), true, displayCorruptionIntensity, _corruptionFrameVersion, 211, ref _appliedDepthWhisperVersion, ref _appliedDepthColor);
-                SetDisplayBufferIfChanged(_temperatureLabel, temperatureBuffer, temperatureLength, localizedRtl, Alpha(pulsedDim, 0.84f), Mathf.RoundToInt(localizedTemperature * 10f), true, displayCorruptionIntensity, _corruptionFrameVersion, 223, ref _appliedTemperatureWhisperVersion, ref _appliedTemperatureColor);
-                SetDisplayBufferIfChanged(_pressureLabel, pressureBuffer, pressureLength, localizedRtl, Alpha(pulsedDim, 0.64f), Mathf.RoundToInt(pressure * 10f), true, displayCorruptionIntensity, _corruptionFrameVersion, 227, ref _appliedPressureWhisperVersion, ref _appliedPressureColor);
-                _hasAppliedDepthValue = false;
-                _hasAppliedTemperatureTenths = false;
-                _hasAppliedPressureTenths = false;
-            }
-            else
-            {
-                _appliedDepthWhisperVersion = int.MinValue;
-                _appliedTemperatureWhisperVersion = int.MinValue;
-                _appliedPressureWhisperVersion = int.MinValue;
-                SetMetricIntTemplateIfChanged(_depthLabel, _depthTemplateBuffer, _depthTemplateLength, ref _depthDisplayBuffer, Mathf.RoundToInt(localizedDepth), localizedRtl, Alpha(pulsedPrimary, 0.96f), ref _appliedDepthValue, ref _hasAppliedDepthValue, ref _appliedDepthColor);
-                SetMetricFloatTenthsTemplateIfChanged(_temperatureLabel, _temperatureTemplateBuffer, _temperatureTemplateLength, ref _temperatureDisplayBuffer, localizedTemperature, localizedRtl, Alpha(pulsedDim, 0.84f), ref _appliedTemperatureTenths, ref _hasAppliedTemperatureTenths, ref _appliedTemperatureColor);
-                SetMetricFloatTenthsTemplateIfChanged(_pressureLabel, _pressureTemplateBuffer, _pressureTemplateLength, ref _pressureDisplayBuffer, pressure, localizedRtl, Alpha(pulsedDim, 0.64f), ref _appliedPressureTenths, ref _hasAppliedPressureTenths, ref _appliedPressureColor);
+                if (_biosRecoveryMode)
+                {
+                    _appliedDepthWhisperVersion = int.MinValue;
+                    _appliedTemperatureWhisperVersion = int.MinValue;
+                    _appliedPressureWhisperVersion = int.MinValue;
+                    ResolveMetricIntBuffer(_depthTemplateBuffer, _depthTemplateLength, ref _depthDisplayBuffer, Mathf.RoundToInt(localizedDepth), out char[] depthBuffer, out int depthLength);
+                    SetDisplayBufferIfChanged(_depthLabel, depthBuffer, depthLength, localizedRtl, Alpha(primary, 0.98f), Mathf.RoundToInt(localizedDepth), false, 0f, 0, 0, ref _appliedDepthWhisperVersion, ref _appliedDepthColor);
+                    SetCanvasGroupVisible(_telemetrySupplementCanvasGroup, false);
+                }
+                else if (hullStressWhisperMode)
+                {
+                    SetDisplayBufferIfChanged(_depthLabel, hullStressWhisperBuffer, hullStressWhisperLength, localizedRtl, Alpha(pulsedPrimary, 0.96f), hullStressWhisperVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 211, ref _appliedDepthWhisperVersion, ref _appliedDepthColor);
+                    SetDisplayBufferIfChanged(_temperatureLabel, hullStressWhisperBuffer, hullStressWhisperLength, localizedRtl, Alpha(pulsedDim, 0.84f), hullStressWhisperVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 223, ref _appliedTemperatureWhisperVersion, ref _appliedTemperatureColor);
+                    SetDisplayBufferIfChanged(_pressureLabel, hullStressWhisperBuffer, hullStressWhisperLength, localizedRtl, Alpha(pulsedDim, 0.64f), hullStressWhisperVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 227, ref _appliedPressureWhisperVersion, ref _appliedPressureColor);
+                    _hasAppliedDepthValue = false;
+                    _hasAppliedTemperatureTenths = false;
+                    _hasAppliedPressureTenths = false;
+                }
+                else if (corruptedMode)
+                {
+                    _appliedDepthWhisperVersion = int.MinValue;
+                    _appliedTemperatureWhisperVersion = int.MinValue;
+                    _appliedPressureWhisperVersion = int.MinValue;
+                    ResolveMetricIntBuffer(_depthTemplateBuffer, _depthTemplateLength, ref _depthDisplayBuffer, Mathf.RoundToInt(localizedDepth), out char[] depthBuffer, out int depthLength);
+                    ResolveMetricFloatTenthsBuffer(_temperatureTemplateBuffer, _temperatureTemplateLength, ref _temperatureDisplayBuffer, localizedTemperature, out char[] temperatureBuffer, out int temperatureLength);
+                    ResolveMetricFloatTenthsBuffer(_pressureTemplateBuffer, _pressureTemplateLength, ref _pressureDisplayBuffer, pressure, out char[] pressureBuffer, out int pressureLength);
+                    SetDisplayBufferIfChanged(_depthLabel, depthBuffer, depthLength, localizedRtl, Alpha(pulsedPrimary, 0.96f), Mathf.RoundToInt(localizedDepth), true, displayCorruptionIntensity, _corruptionFrameVersion, 211, ref _appliedDepthWhisperVersion, ref _appliedDepthColor);
+                    SetDisplayBufferIfChanged(_temperatureLabel, temperatureBuffer, temperatureLength, localizedRtl, Alpha(pulsedDim, 0.84f), Mathf.RoundToInt(localizedTemperature * 10f), true, displayCorruptionIntensity, _corruptionFrameVersion, 223, ref _appliedTemperatureWhisperVersion, ref _appliedTemperatureColor);
+                    SetDisplayBufferIfChanged(_pressureLabel, pressureBuffer, pressureLength, localizedRtl, Alpha(pulsedDim, 0.64f), Mathf.RoundToInt(pressure * 10f), true, displayCorruptionIntensity, _corruptionFrameVersion, 227, ref _appliedPressureWhisperVersion, ref _appliedPressureColor);
+                    _hasAppliedDepthValue = false;
+                    _hasAppliedTemperatureTenths = false;
+                    _hasAppliedPressureTenths = false;
+                }
+                else
+                {
+                    _appliedDepthWhisperVersion = int.MinValue;
+                    _appliedTemperatureWhisperVersion = int.MinValue;
+                    _appliedPressureWhisperVersion = int.MinValue;
+                    SetMetricIntTemplateIfChanged(_depthLabel, _depthTemplateBuffer, _depthTemplateLength, ref _depthDisplayBuffer, Mathf.RoundToInt(localizedDepth), localizedRtl, Alpha(pulsedPrimary, 0.96f), ref _appliedDepthValue, ref _hasAppliedDepthValue, ref _appliedDepthColor);
+                    SetMetricFloatTenthsTemplateIfChanged(_temperatureLabel, _temperatureTemplateBuffer, _temperatureTemplateLength, ref _temperatureDisplayBuffer, localizedTemperature, localizedRtl, Alpha(pulsedDim, 0.84f), ref _appliedTemperatureTenths, ref _hasAppliedTemperatureTenths, ref _appliedTemperatureColor);
+                    SetMetricFloatTenthsTemplateIfChanged(_pressureLabel, _pressureTemplateBuffer, _pressureTemplateLength, ref _pressureDisplayBuffer, pressure, localizedRtl, Alpha(pulsedDim, 0.64f), ref _appliedPressureTenths, ref _hasAppliedPressureTenths, ref _appliedPressureColor);
+                }
+
+                _lastStreamedOxygen01 = oxygen;
+                _lastStreamedDepthMeters = depth;
+                _lastStreamedTemperature = localizedTemperature;
+                _lastStreamedPressure = pressure;
             }
 
             Color statusColor = PickAccent(oxygen, power, health, safeDepthNormalized, pulsedPrimary, pulsedWarning);
@@ -2467,10 +2558,20 @@ namespace Hecton8.UI
             Color healthAccent = Color.Lerp(pulsedPrimary, pulsedDim, 0.24f);
             Color energyAccent = Color.Lerp(pulsedPrimary, pulsedWarning, 0.28f);
 
-            UpdateGauge(ref _oxygenGauge, oxygen, oxygenCurrent, oxygenAccent, pulsedDim, pulsedWarning, localizedRtl, hullStressWhisperBuffer, hullStressWhisperLength, hullStressWhisperVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 401);
-            UpdateGauge(ref _healthGauge, health, healthCurrent, healthAccent, pulsedDim, pulsedWarning, localizedRtl, hullStressWhisperBuffer, hullStressWhisperLength, hullStressWhisperVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 503);
-            UpdateGauge(ref _powerGauge, power, energyCurrent, energyAccent, pulsedDim, pulsedWarning, localizedRtl, hullStressWhisperBuffer, hullStressWhisperLength, hullStressWhisperVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 607);
-            RefreshQuickbarVisuals(pulsedPrimary, pulsedDim, pulsedWarning);
+            UpdateGauge(ref _oxygenGauge, _displayOxygen01, oxygenCurrent, oxygenAccent, pulsedDim, pulsedWarning, localizedRtl, hullStressWhisperBuffer, hullStressWhisperLength, hullStressWhisperVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 401, dt, OxygenGaugeDamping, shouldRefreshGaugeText);
+            UpdateGauge(ref _healthGauge, _displayHealth01, healthCurrent, healthAccent, pulsedDim, pulsedWarning, localizedRtl, hullStressWhisperBuffer, hullStressWhisperLength, hullStressWhisperVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 503, dt, HealthGaugeDamping, shouldRefreshGaugeText);
+            UpdateGauge(ref _powerGauge, _displayPower01, energyCurrent, energyAccent, pulsedDim, pulsedWarning, localizedRtl, hullStressWhisperBuffer, hullStressWhisperLength, hullStressWhisperVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 607, dt, BatteryGaugeDamping, shouldRefreshGaugeText);
+            if (shouldRefreshGaugeText)
+            {
+                _lastStreamedPower01 = power;
+                _lastStreamedHealth01 = health;
+            }
+
+            if (shouldRefreshQuickbar)
+            {
+                RefreshQuickbarVisuals(pulsedPrimary, pulsedDim, pulsedWarning);
+                _quickbarVisualsInitialized = true;
+            }
         }
 
         private void RefreshDepthSignalSubscription()
@@ -2509,6 +2610,52 @@ namespace Hecton8.UI
         private void HandleDepthChanged(float depth)
         {
             _depthMeters = Mathf.Max(0f, depth);
+        }
+
+        private bool NeedsHeadingCadenceRefresh(bool cadenceGateOpen, float headingDegrees)
+        {
+            if (!cadenceGateOpen)
+                return false;
+
+            return !float.IsFinite(_lastStreamedHeadingDegrees) ||
+                   Mathf.Abs(Mathf.DeltaAngle(_lastStreamedHeadingDegrees, headingDegrees)) >= HeadingStreamThresholdDegrees;
+        }
+
+        private bool NeedsTelemetryCadenceRefresh(bool cadenceGateOpen, float oxygen01, float depthMeters, float localizedTemperature, float pressureAtm)
+        {
+            if (!cadenceGateOpen)
+                return false;
+
+            return !float.IsFinite(_lastStreamedOxygen01) ||
+                   Mathf.Abs(oxygen01 - _lastStreamedOxygen01) >= OxygenStreamThreshold01 ||
+                   !float.IsFinite(_lastStreamedDepthMeters) ||
+                   Mathf.Abs(depthMeters - _lastStreamedDepthMeters) >= DepthStreamThresholdMeters ||
+                   !float.IsFinite(_lastStreamedTemperature) ||
+                   Mathf.Abs(localizedTemperature - _lastStreamedTemperature) >= TemperatureStreamThreshold ||
+                   !float.IsFinite(_lastStreamedPressure) ||
+                   Mathf.Abs(pressureAtm - _lastStreamedPressure) >= PressureStreamThreshold;
+        }
+
+        private bool NeedsGaugeCadenceRefresh(bool cadenceGateOpen, float oxygen01, float power01, float health01)
+        {
+            if (!cadenceGateOpen)
+                return false;
+
+            return !float.IsFinite(_lastStreamedOxygen01) ||
+                   Mathf.Abs(oxygen01 - _lastStreamedOxygen01) >= OxygenStreamThreshold01 ||
+                   !float.IsFinite(_lastStreamedPower01) ||
+                   Mathf.Abs(power01 - _lastStreamedPower01) >= OxygenStreamThreshold01 ||
+                   !float.IsFinite(_lastStreamedHealth01) ||
+                   Mathf.Abs(health01 - _lastStreamedHealth01) >= OxygenStreamThreshold01;
+        }
+
+        private static float DampHudValue(float displayValue, float targetValue, float dampFactor, float dt)
+        {
+            if (Mathf.Abs(displayValue - targetValue) <= GaugeSmoothingEpsilon)
+                return targetValue;
+
+            float interpolation = 1f - Mathf.Exp(-Mathf.Max(0f, dampFactor) * Mathf.Max(0f, dt));
+            return Mathf.Lerp(displayValue, targetValue, interpolation);
         }
 
         private void HandleCorruptionVisualStateChanged()
@@ -2721,7 +2868,10 @@ namespace Hecton8.UI
             bool corruptedMode,
             float corruptionIntensity,
             int corruptionVersion,
-            int corruptionSalt)
+            int corruptionSalt,
+            float dt,
+            float dampFactor,
+            bool updateValueText)
         {
             float clamped = Mathf.Clamp01(normalized);
             Color accent = clamped <= 0.2f ? warning : primary;
@@ -2755,12 +2905,21 @@ namespace Hecton8.UI
                     gauge.CachedRingFillColor = ringFillColor;
                 }
 
-                if (!gauge.HasCachedFillAmount || !Mathf.Approximately(gauge.CachedFillAmount, clamped))
+                float displayFill = gauge.HasCachedFillAmount
+                    ? DampHudValue(gauge.CachedFillAmount, clamped, dampFactor, dt)
+                    : clamped;
+                if (Mathf.Abs(displayFill - clamped) <= GaugeSmoothingEpsilon)
+                    displayFill = clamped;
+
+                if (!gauge.HasCachedFillAmount || Mathf.Abs(gauge.CachedFillAmount - displayFill) > FillWriteEpsilon)
                 {
-                    gauge.RingFill.fillAmount = clamped;
-                    gauge.CachedFillAmount = clamped;
+                    gauge.RingFill.fillAmount = displayFill;
+                    gauge.CachedFillAmount = displayFill;
                     gauge.HasCachedFillAmount = true;
                 }
+
+                gauge.LastTargetFillAmount = clamped;
+                gauge.HasLastTargetFillAmount = true;
             }
 
             if (gauge.RingFrame != null)
@@ -2823,7 +2982,7 @@ namespace Hecton8.UI
 
             Color valueColor = Alpha(accent, 0.98f);
             int roundedValue = Mathf.RoundToInt(currentValue);
-            if (gauge.Value != null)
+            if (gauge.Value != null && updateValueText)
             {
                 if (hullStressWhisperMode)
                 {

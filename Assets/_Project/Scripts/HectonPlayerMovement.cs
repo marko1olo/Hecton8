@@ -33,6 +33,7 @@ using Hecton.Localization;
 using NASAPunk.Visor;
 using System.Collections.Generic;
 using Unity.Mathematics;
+using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -43,6 +44,8 @@ namespace Hecton8.Gameplay
     public sealed class HectonPlayerMovement : MonoBehaviour, IUpdatable, IFixedTickable, IOriginShiftListener
     {
         private const float GroundCheckSkin = 0.02f;
+        private static readonly ProfilerMarker _tickProfilerMarker = new ProfilerMarker("H8.PlayerMovement.Tick");
+        private static readonly ProfilerMarker _fixedTickProfilerMarker = new ProfilerMarker("H8.PlayerMovement.FixedTick");
         private float _runtimeSwimSpeedMultiplier = 1f;
         private float _runtimeInjurySwimSpeedMultiplier = 1f;
         private float _runtimeEmergencyMovementMultiplier = 1f;
@@ -892,6 +895,7 @@ namespace Hecton8.Gameplay
         private Quaternion _currentTransportPlatformRotation = Quaternion.identity;
         private Quaternion _transportPlatformDeltaRotation = Quaternion.identity;
         private Matrix4x4 _cachedTransportPlatformLocalToWorldMatrix = Matrix4x4.identity;
+        private Matrix4x4 _cachedTransportPlatformWorldToLocalMatrix = Matrix4x4.identity;
         private Quaternion _cachedTransportPlatformBasisRotation = Quaternion.identity;
         private bool _cachedTransportPlatformSpatialFrameValid;
         private PlayerSwimPresentationController _swimPresentationController;
@@ -1083,6 +1087,7 @@ namespace Hecton8.Gameplay
         private float _wipeoutSeverity;
         private float _impulseBypassTimer;
         private float _transportBailoutCooldownTimer;
+        private int _transportEvaLockTicks;
         private float _recentBreachExitTimer;
         private float _abyssalDowndraftCooldownTimer;
         private float _abyssalDowndraftActiveTimer;
@@ -1750,6 +1755,14 @@ namespace Hecton8.Gameplay
                 SyncFixedFrameMotorPosition(position);
         }
 
+        private void MoveMotorRotation(Quaternion rotation)
+        {
+            if (_rb == null)
+                return;
+
+            _rb.MoveRotation(rotation);
+        }
+
         private bool TrySweepGatedMotorDisplacement(Vector3 displacement, float skinWidth, out RaycastHit blockingHit)
         {
             blockingHit = default;
@@ -2007,7 +2020,10 @@ namespace Hecton8.Gameplay
             stepDirection.z = cosYaw * inputZ - sinYaw * inputX;
 
             if (_activeTransportPlatformTransform != null)
-                stepDirection = TransformTransportPlatformDirectionToWorld(stepDirection);
+            {
+                Vector3 rawInputWorld = TransformTransportPlatformDirectionToWorld(stepDirection);
+                stepDirection = ResolveTransportPlatformRelativeWorldDirection(rawInputWorld);
+            }
 
             float directionSqr = stepDirection.x * stepDirection.x + stepDirection.z * stepDirection.z;
             if (directionSqr <= 0.0001f)
@@ -2123,12 +2139,14 @@ namespace Hecton8.Gameplay
             if (platformTransform == null)
             {
                 _cachedTransportPlatformLocalToWorldMatrix = Matrix4x4.identity;
+                _cachedTransportPlatformWorldToLocalMatrix = Matrix4x4.identity;
                 _cachedTransportPlatformBasisRotation = Quaternion.identity;
                 _cachedTransportPlatformSpatialFrameValid = false;
                 return;
             }
 
             _cachedTransportPlatformLocalToWorldMatrix = platformTransform.localToWorldMatrix;
+            _cachedTransportPlatformWorldToLocalMatrix = _cachedTransportPlatformLocalToWorldMatrix.inverse;
 
             Vector3 up = _cachedTransportPlatformLocalToWorldMatrix.MultiplyVector(Vector3.up);
             Vector3 forward = Vector3.ProjectOnPlane(_cachedTransportPlatformLocalToWorldMatrix.MultiplyVector(Vector3.forward), up);
@@ -2360,6 +2378,7 @@ namespace Hecton8.Gameplay
             _stateMachine?.ResetRuntimeState();
             _impulseBypassTimer = 0f;
             _transportBailoutCooldownTimer = 0f;
+            _transportEvaLockTicks = 0;
             _recentBreachExitTimer = 0f;
             _surfaceGaspUnderwaterTimer = 0f;
             _surfaceGaspCooldownTimer = 0f;
@@ -2543,6 +2562,7 @@ namespace Hecton8.Gameplay
             _wipeoutSeverity = 0f;
             _stateMachine?.ResetRuntimeState();
             _transportBailoutCooldownTimer = 0f;
+            _transportEvaLockTicks = 0;
             _recentBreachExitTimer = 0f;
             _surfaceGaspUnderwaterTimer = 0f;
             _surfaceGaspCooldownTimer = 0f;
@@ -2603,6 +2623,7 @@ namespace Hecton8.Gameplay
             _currentTransportPlatformRotation = Quaternion.identity;
             _transportPlatformDeltaRotation = Quaternion.identity;
             _cachedTransportPlatformLocalToWorldMatrix = Matrix4x4.identity;
+            _cachedTransportPlatformWorldToLocalMatrix = Matrix4x4.identity;
             _cachedTransportPlatformBasisRotation = Quaternion.identity;
             _cachedTransportPlatformSpatialFrameValid = false;
             _useFixedFrameSpatialCache = false;
@@ -2715,9 +2736,7 @@ namespace Hecton8.Gameplay
 
         private void ResolveActiveTransportPlatform()
         {
-            ResolvePlayerTransportCoordinator();
-            if (_playerTransportCoordinator == null ||
-                !_playerTransportCoordinator.TryResolveTransportLifecycleOwner(out IPlayerTransportLifecycleOwner lifecycleOwner))
+            if (_transportEvaLockTicks > 0)
             {
                 _activeTransportPlatform = null;
                 _activeTransportPlatformBehaviour = null;
@@ -2729,13 +2748,38 @@ namespace Hecton8.Gameplay
                 _currentTransportPlatformRotation = Quaternion.identity;
                 _transportPlatformDeltaRotation = Quaternion.identity;
                 _cachedTransportPlatformLocalToWorldMatrix = Matrix4x4.identity;
+                _cachedTransportPlatformWorldToLocalMatrix = Matrix4x4.identity;
                 _cachedTransportPlatformBasisRotation = Quaternion.identity;
                 _cachedTransportPlatformSpatialFrameValid = false;
                 return;
             }
 
-            ITransportPlatform platform = lifecycleOwner as ITransportPlatform;
-            MonoBehaviour platformBehaviour = platform as MonoBehaviour;
+            ResolvePlayerTransportCoordinator();
+            IPlayerTransportLifecycleOwner lifecycleOwner = null;
+            ITransportPlatform ambientPlatform = null;
+            MonoBehaviour ambientPlatformBehaviour = null;
+            bool hasLifecycleOwner = _playerTransportCoordinator != null &&
+                                     _playerTransportCoordinator.TryResolveTransportLifecycleOwner(out lifecycleOwner);
+            if (!hasLifecycleOwner && !TryResolveAmbientTransportPlatform(out ambientPlatform, out ambientPlatformBehaviour))
+            {
+                _activeTransportPlatform = null;
+                _activeTransportPlatformBehaviour = null;
+                _activeTransportPlatformTransform = null;
+                _transportPlatformRotationInitialized = false;
+                _lastTransportPlatformPosition = Vector3.zero;
+                _currentTransportPlatformPosition = Vector3.zero;
+                _lastTransportPlatformRotation = Quaternion.identity;
+                _currentTransportPlatformRotation = Quaternion.identity;
+                _transportPlatformDeltaRotation = Quaternion.identity;
+                _cachedTransportPlatformLocalToWorldMatrix = Matrix4x4.identity;
+                _cachedTransportPlatformWorldToLocalMatrix = Matrix4x4.identity;
+                _cachedTransportPlatformBasisRotation = Quaternion.identity;
+                _cachedTransportPlatformSpatialFrameValid = false;
+                return;
+            }
+
+            ITransportPlatform platform = hasLifecycleOwner ? lifecycleOwner as ITransportPlatform : ambientPlatform;
+            MonoBehaviour platformBehaviour = hasLifecycleOwner ? platform as MonoBehaviour : ambientPlatformBehaviour;
             if (platform == null || platformBehaviour == null || !platform.IsTransportPlatformActive)
             {
                 _activeTransportPlatform = null;
@@ -2748,6 +2792,7 @@ namespace Hecton8.Gameplay
                 _currentTransportPlatformRotation = Quaternion.identity;
                 _transportPlatformDeltaRotation = Quaternion.identity;
                 _cachedTransportPlatformLocalToWorldMatrix = Matrix4x4.identity;
+                _cachedTransportPlatformWorldToLocalMatrix = Matrix4x4.identity;
                 _cachedTransportPlatformBasisRotation = Quaternion.identity;
                 _cachedTransportPlatformSpatialFrameValid = false;
                 return;
@@ -2765,6 +2810,20 @@ namespace Hecton8.Gameplay
             _activeTransportPlatformTransform = platform.PlatformTransform;
         }
 
+        private bool TryResolveAmbientTransportPlatform(out ITransportPlatform platform, out MonoBehaviour platformBehaviour)
+        {
+            platform = null;
+            platformBehaviour = null;
+
+            ISubmarineRuntimeContext submarineRuntimeContext = GlobalRegistry.Submarine;
+            if (submarineRuntimeContext == null || !submarineRuntimeContext.IsTransportPlatformActive || !IsInDryInterior())
+                return false;
+
+            platform = submarineRuntimeContext;
+            platformBehaviour = submarineRuntimeContext as MonoBehaviour;
+            return platformBehaviour != null;
+        }
+
         private bool TryGetActiveTransportPlatformTransform(out Transform platformTransform)
         {
             ResolveActiveTransportPlatform();
@@ -2779,6 +2838,7 @@ namespace Hecton8.Gameplay
                 _transportPlatformRotationInitialized = false;
                 _transportPlatformDeltaRotation = Quaternion.identity;
                 _cachedTransportPlatformLocalToWorldMatrix = Matrix4x4.identity;
+                _cachedTransportPlatformWorldToLocalMatrix = Matrix4x4.identity;
                 _cachedTransportPlatformBasisRotation = Quaternion.identity;
                 _cachedTransportPlatformSpatialFrameValid = false;
                 return;
@@ -2872,6 +2932,31 @@ namespace Hecton8.Gameplay
             return _cachedTransportPlatformLocalToWorldMatrix.MultiplyVector(localDirection);
         }
 
+        private Vector3 TransformTransportPlatformDirectionToLocal(Vector3 worldDirection)
+        {
+            if (!TryGetActiveTransportPlatformTransform(out Transform platformTransform))
+                return worldDirection;
+
+            if (!_cachedTransportPlatformSpatialFrameValid)
+                CacheTransportPlatformSpatialFrame(platformTransform);
+
+            return _cachedTransportPlatformWorldToLocalMatrix.MultiplyVector(worldDirection);
+        }
+
+        private Vector3 ResolveTransportPlatformRelativeWorldDirection(Vector3 rawInputWorld)
+        {
+            if (_activeTransportPlatform == null)
+                return rawInputWorld;
+
+            Vector3 inputLocal = TransformTransportPlatformDirectionToLocal(rawInputWorld);
+            float magnitude = rawInputWorld.magnitude;
+            if (inputLocal.sqrMagnitude > 0.0001f)
+                inputLocal = inputLocal.normalized * magnitude;
+
+            Vector3 worldDirection = TransformTransportPlatformDirectionToWorld(inputLocal);
+            return HectonPlayerMotor.SafeVelocity(worldDirection, rawInputWorld);
+        }
+
         private Quaternion ResolveTransportPlatformBasisRotation()
         {
             if (!TryGetActiveTransportPlatformTransform(out Transform platformTransform))
@@ -2909,10 +2994,29 @@ namespace Hecton8.Gameplay
                 platformVelocityAtTarget + (_transportPlatformDeltaRotation * localVelocity),
                 bodyVelocity);
             ApplyMotorLinearVelocity(targetVelocity);
+            if (_activeTransportPlatform.InheritPlatformRotation)
+                MoveMotorRotation(_transportPlatformDeltaRotation * _rb.rotation);
 
             _lastTransportPlatformPosition = _currentTransportPlatformPosition;
             _lastTransportPlatformRotation = _currentTransportPlatformRotation;
             _transportPlatformDeltaRotation = Quaternion.identity;
+        }
+
+        private void ExecuteTransportEvaHandoff(ITransportPlatform previousPlatform, Transform previousPlatformTransform)
+        {
+            if (_rb == null || previousPlatform == null)
+                return;
+
+            Vector3 exitPosition = _rb.position;
+            if (previousPlatformTransform != null)
+                exitPosition = previousPlatformTransform.TransformPoint(previousPlatformTransform.InverseTransformPoint(exitPosition));
+
+            Vector3 platformVelocity = HectonPlayerMotor.SafeVelocity(previousPlatform.GetPlatformPointVelocity(exitPosition));
+            Vector3 playerWorldVelocity = HectonPlayerMotor.SafeVelocity(_rb.linearVelocity);
+            Vector3 playerRelativeVelocity = HectonPlayerMotor.SafeVelocity(playerWorldVelocity - platformVelocity, playerWorldVelocity);
+            Vector3 finalVelocity = HectonPlayerMotor.SafeVelocity(platformVelocity + playerRelativeVelocity, playerWorldVelocity);
+            ApplyMotorLinearVelocity(finalVelocity);
+            _transportEvaLockTicks = 3;
         }
 
         private void ResolveSwimPresentationController()
@@ -4563,137 +4667,139 @@ namespace Hecton8.Gameplay
             SuitData suit = currentSuitData;
             if (suit == null) return;
 
-            PrepareRenderTickDependencies();
-            if (_activeSonarPingCooldownTimer > 0f)
+            using (_tickProfilerMarker.Auto())
             {
-                _activeSonarPingCooldownTimer -= deltaTime;
-                if (_activeSonarPingCooldownTimer < 0f)
-                    _activeSonarPingCooldownTimer = 0f;
-            }
-
-            if (IsGameplayInputBlockedByMenu())
-            {
-                _currentInputState = default;
-                _pendingLookInput = Vector2.zero;
-                _inputH = 0f; _inputV = 0f; _inputVertical = 0f; _mouseXDelta = 0f;
-                SetSprintingState(false);
-                _inputCleared = true;
-                Cursor.lockState = CursorLockMode.None;
-                Cursor.visible = true;
-                UpdateRenderInterpolationState();
-                BuildJuiceInput(deltaTime, suit);
-                _juiceOutput = _juiceProcessor.Process(in _juiceInput, suit);
-                ApplyCameraState();
-                return;
-            }
-
-            if (_inputCleared || Cursor.lockState != CursorLockMode.Locked)
-            {
-                Cursor.lockState = CursorLockMode.Locked;
-                Cursor.visible = false;
-                _inputCleared = false;
-            }
-
-            if (_inputManager != null && _inputManager.IsPlayerInputEnabled)
-            {
-                _currentInputState = _inputManager.GetState();
-                _cachedMoveInput = _currentInputState.MoveDelta;
-                _cachedVerticalInput = math.clamp(_currentInputState.VerticalDelta, -1f, 1f);
-                _pendingLookInput = _currentInputState.LookDelta;
-                if (_inputManager.TryConsumeBufferedAction(PlayerBufferedAction.Jump, jumpBufferTime))
+                PrepareRenderTickDependencies();
+                if (_activeSonarPingCooldownTimer > 0f)
                 {
-                    _jumpRequested = true;
-                    _jumpBufferTimer = jumpBufferTime;
+                    _activeSonarPingCooldownTimer -= deltaTime;
+                    if (_activeSonarPingCooldownTimer < 0f)
+                        _activeSonarPingCooldownTimer = 0f;
                 }
 
-                Vector2 lookDelta = _pendingLookInput;
-                _pendingLookInput = Vector2.zero;
-                ApplyLookInput(lookDelta);
-
-                _inputH = _cachedMoveInput.x;
-                _inputV = _cachedMoveInput.y;
-                _inputVertical = _isWalking ? 0f : ResolveVerticalInput();
-                if (IsAuthoritativeVehicleTransportActive())
+                if (IsGameplayInputBlockedByMenu())
                 {
+                    _currentInputState = default;
+                    _pendingLookInput = Vector2.zero;
+                    _inputH = 0f; _inputV = 0f; _inputVertical = 0f; _mouseXDelta = 0f;
+                    SetSprintingState(false);
+                    _inputCleared = true;
+                    Cursor.lockState = CursorLockMode.None;
+                    Cursor.visible = true;
+                    UpdateRenderInterpolationState();
+                    BuildJuiceInput(deltaTime, suit);
+                    _juiceOutput = _juiceProcessor.Process(in _juiceInput, suit);
+                    ApplyCameraState();
+                    return;
+                }
+
+                if (_inputCleared || Cursor.lockState != CursorLockMode.Locked)
+                {
+                    Cursor.lockState = CursorLockMode.Locked;
+                    Cursor.visible = false;
+                    _inputCleared = false;
+                }
+
+                if (_inputManager != null && _inputManager.IsPlayerInputEnabled)
+                {
+                    _currentInputState = _inputManager.GetState();
+                    _cachedMoveInput = _currentInputState.MoveDelta;
+                    _cachedVerticalInput = math.clamp(_currentInputState.VerticalDelta, -1f, 1f);
+                    _pendingLookInput = _currentInputState.LookDelta;
+                    if (_inputManager.TryConsumeBufferedAction(PlayerBufferedAction.Jump, jumpBufferTime))
+                    {
+                        _jumpRequested = true;
+                        _jumpBufferTimer = jumpBufferTime;
+                    }
+
+                    Vector2 lookDelta = _pendingLookInput;
+                    _pendingLookInput = Vector2.zero;
+                    ApplyLookInput(lookDelta);
+
+                    _inputH = _cachedMoveInput.x;
+                    _inputV = _cachedMoveInput.y;
+                    _inputVertical = _isWalking ? 0f : ResolveVerticalInput();
+                    if (IsAuthoritativeVehicleTransportActive())
+                    {
+                        _inputH = 0f;
+                        _inputV = 0f;
+                        _inputVertical = 0f;
+                    }
+                    SetSprintingState(_currentInputState.HasAction(PlayerInputAction.Sprint));
+                }
+                else
+                {
+                    _currentInputState = default;
+                    _pendingLookInput = Vector2.zero;
                     _inputH = 0f;
                     _inputV = 0f;
                     _inputVertical = 0f;
+                    SetSprintingState(false);
+                    _mouseXDelta = 0f;
                 }
-                SetSprintingState(_currentInputState.HasAction(PlayerInputAction.Sprint));
+
+                if (_wipeoutTimer > 0f || _fatalPressureSequenceTimer > 0f)
+                {
+                    _currentInputState = default;
+                    _pendingLookInput = Vector2.zero;
+                    _mouseXDelta = 0f;
+                    _inputH = 0f;
+                    _inputV = 0f;
+                    _inputVertical = 0f;
+                    SetSprintingState(false);
+                    _jumpRequested = false;
+                    _jumpBufferTimer = 0f;
+                }
+
+                UpdateRenderInterpolationState();
+                _feedbackVelocity = ResolveFeedbackVelocity(_renderInterpolatedLinearVelocity);
+                _velocity = _feedbackVelocity;
+                float currentSpeed = math.sqrt(
+                    _velocity.x * _velocity.x +
+                    _velocity.y * _velocity.y +
+                    _velocity.z * _velocity.z);
+                float renderCameraYaw = CameraYaw;
+                float yawDelta = Mathf.DeltaAngle(_prevYawForMomentum, renderCameraYaw);
+
+                if (_swimPresentationController != null)
+                {
+                    _swimPresentationController.SyncFromLocomotion(deltaTime, true);
+                    _debugLastSwimPresentationDriveFrame = Time.frameCount;
+                }
+
+                BuildJuiceInput(deltaTime, suit);
+                _juiceInput.speedDelta = currentSpeed - _prevSpeed;
+                _juiceInput.yawDelta = yawDelta;
+                _juiceOutput = _juiceProcessor.Process(in _juiceInput, suit);
+
+                _prevSpeed = currentSpeed;
+                _prevYawForMomentum = renderCameraYaw;
+
+                if (_juiceOutput.stepEvent)
+                {
+                    OnFootstep?.Invoke();
+                    EmitExosuitFootstepSeismicPing();
+                    UpdateStepDiagnostics();
+                }
+
+                if (_juiceProcessor.SplashThisFrame)
+                {
+                    OnWaterSplash?.Invoke(_juiceProcessor.SplashIntensity);
+                }
+
+                if (_juiceProcessor.SubmergeChangedThisFrame)
+                {
+                    OnSubmergeChange?.Invoke(_juiceProcessor.IsSubmerged);
+                }
+
+                if (_juiceProcessor.ExhaleThisFrame)
+                {
+                    OnExhale?.Invoke();
+                }
+
+                ApplyCameraState();
+                UpdateDiagnostics(currentSpeed);
             }
-            else
-            {
-                _currentInputState = default;
-                _pendingLookInput = Vector2.zero;
-                _inputH = 0f;
-                _inputV = 0f;
-                _inputVertical = 0f;
-                SetSprintingState(false);
-                _mouseXDelta = 0f;
-            }
-
-            if (_wipeoutTimer > 0f || _fatalPressureSequenceTimer > 0f)
-            {
-                _currentInputState = default;
-                _pendingLookInput = Vector2.zero;
-                _mouseXDelta = 0f;
-                _inputH = 0f;
-                _inputV = 0f;
-                _inputVertical = 0f;
-                SetSprintingState(false);
-                _jumpRequested = false;
-                _jumpBufferTimer = 0f;
-            }
-
-            UpdateRenderInterpolationState();
-            _feedbackVelocity = ResolveFeedbackVelocity(_renderInterpolatedLinearVelocity);
-            _velocity = _feedbackVelocity;
-            float currentSpeed = math.sqrt(
-                _velocity.x * _velocity.x +
-                _velocity.y * _velocity.y +
-                _velocity.z * _velocity.z);
-            float renderCameraYaw = CameraYaw;
-            float yawDelta = Mathf.DeltaAngle(_prevYawForMomentum, renderCameraYaw);
-
-            if (_swimPresentationController != null)
-            {
-                _swimPresentationController.SyncFromLocomotion(deltaTime, true);
-                _debugLastSwimPresentationDriveFrame = Time.frameCount;
-            }
-
-            BuildJuiceInput(deltaTime, suit);
-            _juiceInput.speedDelta = currentSpeed - _prevSpeed;
-            _juiceInput.yawDelta = yawDelta;
-            _juiceOutput = _juiceProcessor.Process(in _juiceInput, suit);
-
-            _prevSpeed = currentSpeed;
-            _prevYawForMomentum = renderCameraYaw;
-
-            if (_juiceOutput.stepEvent)
-            {
-                OnFootstep?.Invoke();
-                EmitExosuitFootstepSeismicPing();
-                UpdateStepDiagnostics();
-            }
-
-            if (_juiceProcessor.SplashThisFrame)
-            {
-                OnWaterSplash?.Invoke(_juiceProcessor.SplashIntensity);
-            }
-
-            if (_juiceProcessor.SubmergeChangedThisFrame)
-            {
-                OnSubmergeChange?.Invoke(_juiceProcessor.IsSubmerged);
-            }
-
-            if (_juiceProcessor.ExhaleThisFrame)
-            {
-                OnExhale?.Invoke();
-            }
-
-            ApplyCameraState();
-            UpdateDiagnostics(currentSpeed);
-
         }
 
         private Vector3 ResolveFeedbackVelocity(Vector3 actualVelocity)
@@ -4931,41 +5037,55 @@ namespace Hecton8.Gameplay
             SuitData suit = currentSuitData;
             if (suit == null) return;
 
-            if (_transportBailoutCooldownTimer > 0f)
+            using (_fixedTickProfilerMarker.Auto())
             {
-                _transportBailoutCooldownTimer -= fixedDeltaTime;
-                if (_transportBailoutCooldownTimer < 0f)
-                    _transportBailoutCooldownTimer = 0f;
-            }
+                if (_transportEvaLockTicks > 0)
+                    _transportEvaLockTicks--;
 
-            _currentFixedDeltaTime = fixedDeltaTime;
-            _useFixedFrameSpatialCache = true;
-            PlayerTransportPreset activeTransportPreset = PrepareFixedTickDependencies();
-            ProcessQueuedCollisionEvents();
-            _stateMachine?.AdvanceFixed(fixedDeltaTime);
-            ResolveActiveTransportPlatform();
-            SyncTransportPlatformRotation();
-            RefreshFixedFrameSpatialCache();
-            RefreshSharedGroundSweepBuffer();
-            float previousWaterImmersionRatio = _waterImmersionRatio;
-            bool wasGroundedLastFixedTick = _isGrounded;
-            float currentVerticalVelocity = _rb.linearVelocity.y;
+                if (_transportBailoutCooldownTimer > 0f)
+                {
+                    _transportBailoutCooldownTimer -= fixedDeltaTime;
+                    if (_transportBailoutCooldownTimer < 0f)
+                        _transportBailoutCooldownTimer = 0f;
+                }
 
-            _rb.useGravity = false;
+                _currentFixedDeltaTime = fixedDeltaTime;
+                _useFixedFrameSpatialCache = true;
+                PlayerTransportPreset activeTransportPreset = PrepareFixedTickDependencies();
+                ProcessQueuedCollisionEvents();
+                _stateMachine?.AdvanceFixed(fixedDeltaTime);
+                ITransportPlatform previousTransportPlatform = _activeTransportPlatform;
+                Transform previousTransportPlatformTransform = _activeTransportPlatformTransform;
+                ResolveActiveTransportPlatform();
+                if (_transportEvaLockTicks <= 0 &&
+                    previousTransportPlatform != null &&
+                    _activeTransportPlatform == null)
+                {
+                    ExecuteTransportEvaHandoff(previousTransportPlatform, previousTransportPlatformTransform);
+                }
 
-            if (_isWalking)
-            {
-                _bodyYaw = _cameraYaw;
-                _bodyYawVelocity = 0f;
-            }
-            else
-            {
-                float bodyYawOmega = suit.bodyYawSpringOmega *
-                    ResolveHeavyCarryBodyYawSpringMultiplier() *
-                    ResolveTransportBodyYawResponsivenessScale(activeTransportPreset) *
-                    ResolveHullStressTurnResponsivenessScale(activeTransportPreset);
-                _bodyYaw = SpringDampAngle(_bodyYaw, _cameraYaw, ref _bodyYawVelocity, bodyYawOmega, fixedDeltaTime);
-            }
+                SyncTransportPlatformRotation();
+                RefreshFixedFrameSpatialCache();
+                RefreshSharedGroundSweepBuffer();
+                float previousWaterImmersionRatio = _waterImmersionRatio;
+                bool wasGroundedLastFixedTick = _isGrounded;
+                float currentVerticalVelocity = _rb.linearVelocity.y;
+
+                _rb.useGravity = false;
+
+                if (_isWalking)
+                {
+                    _bodyYaw = _cameraYaw;
+                    _bodyYawVelocity = 0f;
+                }
+                else
+                {
+                    float bodyYawOmega = suit.bodyYawSpringOmega *
+                        ResolveHeavyCarryBodyYawSpringMultiplier() *
+                        ResolveTransportBodyYawResponsivenessScale(activeTransportPreset) *
+                        ResolveHullStressTurnResponsivenessScale(activeTransportPreset);
+                    _bodyYaw = SpringDampAngle(_bodyYaw, _cameraYaw, ref _bodyYawVelocity, bodyYawOmega, fixedDeltaTime);
+                }
 
             _juiceProcessor.TrackVerticalVelocity(currentVerticalVelocity);
             _wasGroundedLastFrame = _isGrounded;
@@ -5283,6 +5403,7 @@ namespace Hecton8.Gameplay
             CaptureFixedInterpolationState();
             UpdateGroundDiagnostics();
             _useFixedFrameSpatialCache = false;
+            }
         }
 
         private void AdvanceCurrentPhaseTimer(float fixedDeltaTime)
@@ -7870,6 +7991,19 @@ namespace Hecton8.Gameplay
             }
             verticalInput *= transportVerticalInputScale;
 
+            if (_activeTransportPlatform != null)
+            {
+                Vector3 platformUp = TransformTransportPlatformDirectionToWorld(Vector3.up);
+                Vector3 rawInputWorld =
+                    new Vector3(dirX, dirY, dirZ) +
+                    (platformUp * verticalInput);
+                Vector3 transformedInputWorld = ResolveTransportPlatformRelativeWorldDirection(rawInputWorld);
+                dirX = transformedInputWorld.x;
+                dirY = transformedInputWorld.y;
+                dirZ = transformedInputWorld.z;
+                verticalInput = 0f;
+            }
+
             _forceVector.x = dirX * effectiveSwimForce;
             _forceVector.y = dirY * effectiveSwimForce;
             _forceVector.z = dirZ * effectiveSwimForce;
@@ -7997,9 +8131,11 @@ namespace Hecton8.Gameplay
             _moveDirection.x = sinYaw * _inputV + cosYaw * _inputH;
             _moveDirection.y = 0f;
             _moveDirection.z = cosYaw * _inputV - sinYaw * _inputH;
-
             if (_activeTransportPlatformTransform != null)
-                _moveDirection = TransformTransportPlatformDirectionToWorld(_moveDirection);
+            {
+                Vector3 rawInputWorld = TransformTransportPlatformDirectionToWorld(_moveDirection);
+                _moveDirection = ResolveTransportPlatformRelativeWorldDirection(rawInputWorld);
+            }
 
             float sqrMag = _moveDirection.x * _moveDirection.x + _moveDirection.z * _moveDirection.z;
             if (sqrMag > 1.0001f)

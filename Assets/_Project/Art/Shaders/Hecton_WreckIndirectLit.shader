@@ -10,6 +10,7 @@ Shader "Hecton8/World/WreckIndirectLit"
         _Smoothness("Smoothness Scale", Range(0, 1)) = 0.42
         _OcclusionStrength("Occlusion Strength", Range(0, 1)) = 1.0
         _Cutoff("Alpha Cutoff", Range(0, 1)) = 0.5
+        _DepthBias("Depth Bias", Range(0, 0.01)) = 0.0
     }
 
     SubShader
@@ -48,6 +49,7 @@ Shader "Hecton8/World/WreckIndirectLit"
             float _Smoothness;
             float _OcclusionStrength;
             float _Cutoff;
+            float _DepthBias;
         CBUFFER_END
 
         struct Attributes
@@ -92,6 +94,7 @@ Shader "Hecton8/World/WreckIndirectLit"
             output.positionWS = positionWS.xyz;
             output.normalWS = TransformWreckNormal(instanceMatrix, input.normalOS);
             output.positionCS = TransformWorldToHClip(positionWS.xyz);
+            output.positionCS = HectonCoreLitApplyClipSpaceDepthBias(output.positionCS, _DepthBias, 1.0);
             output.viewDirWS = SafeNormalize3(GetWorldSpaceViewDir(positionWS.xyz));
             output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
             output.fogFactor = ComputeFogFactor(output.positionCS.z);
@@ -159,7 +162,7 @@ Shader "Hecton8/World/WreckIndirectLit"
                 smoothness,
                 ambientOcclusion);
             half3 emission = _EmissionColor.rgb * emissionMask;
-            half3 finalColor = MixFog(litColor + emission, input.fogFactor);
+            half3 finalColor = HectonCoreLitApplyNoirFog(litColor + emission, input.fogFactor);
             return half4(finalColor, 1.0h);
         }
 

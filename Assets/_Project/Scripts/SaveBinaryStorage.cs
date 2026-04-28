@@ -238,6 +238,7 @@ namespace Hecton8.SaveSystem
         internal const byte FlagLz4Blocks = 0x01;
         internal const byte FlagTokenSubstitution = 0x02;
         internal const byte FlagIndexedSectorBlocks = 0x04;
+        internal const byte FlagStaticDictionary = 0x08;
         internal const int CurrentHeaderSize = 52;
         internal const int LegacyHeaderSize = 44;
         internal const int BlockSizeBytes = 256 * 1024;
@@ -326,7 +327,12 @@ namespace Hecton8.SaveSystem
             {
                 byte* compressedPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(CompressedPayload);
                 byte* decompressedPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(DecompressedPayload);
-                int decompressedLength = Lz4BlockDecompress(compressedPtr, CompressedPayload.Length, decompressedPtr, DecompressedPayload.Length);
+                int decompressedLength = Lz4BlockDecompress(
+                    compressedPtr,
+                    CompressedPayload.Length,
+                    decompressedPtr,
+                    DecompressedPayload.Length,
+                    (BlockFlags & FlagStaticDictionary) != 0);
                 if (decompressedLength > 0 && (BlockFlags & FlagTokenSubstitution) != 0)
                 {
                     if (!TryExpandTokenizedPayloadInPlace(decompressedPtr, decompressedLength, DecompressedPayload.Length, out decompressedLength, out _))

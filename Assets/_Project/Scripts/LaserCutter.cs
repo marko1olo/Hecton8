@@ -39,6 +39,8 @@ namespace Hecton8.Gameplay
         private const int RecoveryProgressMessageCount = 101;
         private const float MaxRecoilImpulse = 12f;
         private const float MinEffectiveBeamPower = 0.02f;
+        private const float LowPowerThresholdNormalized = 0.12f;
+        private const float LowPowerOutputScale = 0.35f;
         private const byte IdleState = (byte)ToolStateBits.Idle;
         private const byte ActiveState = (byte)ToolStateBits.Active;
         private const byte BusyState = (byte)ToolStateBits.Busy;
@@ -210,6 +212,7 @@ namespace Hecton8.Gameplay
         private Transform _cachedPlayerTransform;
         private HectonPlayerMovement _cachedPlayerMovement;
         private Rigidbody _cachedPlayerRigidbody;
+        private HectonSurvivalSystem _cachedSurvivalSystem;
 
         // COLD ALLOC: persistent buffers for diagnosis and telemetry
         private readonly FixedCharBuffer _diagnosisHeadline = new FixedCharBuffer(64);
@@ -322,6 +325,12 @@ namespace Hecton8.Gameplay
 
         public override void UsePrimary(float deltaTime)
         {
+            if (IsBroken)
+            {
+                OnToolBrokenWhileUsing();
+                return;
+            }
+
             if (_isLockedOut)
             {
                 SetOverheatedState();
@@ -336,6 +345,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            base.UsePrimary(deltaTime);
             Activate();
             _isFiring = true;
             PublishBeamState(true);
@@ -381,9 +391,15 @@ namespace Hecton8.Gameplay
 
         public override void UseSecondary(float deltaTime)
         {
+            if (IsBroken)
+            {
+                OnToolBrokenWhileUsing();
+                return;
+            }
             if (_secondaryLatched)
                 return;
 
+            base.UseSecondary(deltaTime);
             _secondaryLatched = true;
 
             RaycastHit diagHit;
@@ -560,6 +576,17 @@ namespace Hecton8.Gameplay
                 return;
 
             float powerScale = GetEfficiency() * GetConditionPerformanceScale();
+            float energyNormalized = ResolveSuitEnergyNormalized();
+            if (energyNormalized < LowPowerThresholdNormalized)
+            {
+                powerScale *= LowPowerOutputScale;
+                SetFlag(LowPowerState);
+            }
+            else
+            {
+                ClearFlag(LowPowerState);
+            }
+
             float heatMultiplier = 1f + _heatLevel * heatDamageBonus;
             float damage = damagePerSecond * deltaTime * powerScale * heatMultiplier;
             if (damage <= 0f)
@@ -773,7 +800,11 @@ namespace Hecton8.Gameplay
 
         private void EnsurePlayerBindings()
         {
-            if (_cachedInventory != null && _cachedPlayerMovement != null && _cachedPlayerRigidbody != null && _cachedPlayerTransform != null)
+            if (_cachedInventory != null &&
+                _cachedPlayerMovement != null &&
+                _cachedPlayerRigidbody != null &&
+                _cachedSurvivalSystem != null &&
+                _cachedPlayerTransform != null)
                 return;
 
             if (!gameObject.scene.isLoaded)
@@ -788,7 +819,15 @@ namespace Hecton8.Gameplay
                     playerTransform.TryGetComponent(out _cachedPlayerMovement);
                 if (_cachedPlayerRigidbody == null)
                     playerTransform.TryGetComponent(out _cachedPlayerRigidbody);
+                if (_cachedSurvivalSystem == null)
+                    playerTransform.TryGetComponent(out _cachedSurvivalSystem);
             }
+        }
+
+        private float ResolveSuitEnergyNormalized()
+        {
+            EnsurePlayerBindings();
+            return _cachedSurvivalSystem != null ? math.saturate(_cachedSurvivalSystem.EnergyNormalized) : 1f;
         }
 
         private float ResolveCuttingTension01()

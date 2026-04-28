@@ -2733,9 +2733,9 @@ namespace Hecton8.Environment
                 HectonBiomeProfile surfProfile = biomePalette.SurfaceProfile;
                 if (surfProfile != null)
                 {
-                    _currentScatterBase     = surfProfile.scatterColorBase;
-                    _currentScatterShallow  = surfProfile.scatterColorShallow;
-                    _currentDepthFogDensity = surfProfile.depthFogDensity;
+                    _currentScatterBase     = ResolveProfileScatterBase(surfProfile);
+                    _currentScatterShallow  = ResolveProfileScatterShallow(surfProfile);
+                    _currentDepthFogDensity = ResolveProfileDepthFogDensity(surfProfile);
                     _cachedVisualDepth = 0f;
                     _cachedVisualIsUnderwater = false;
                     _cachedCausticsStrength = 0f;
@@ -2758,11 +2758,11 @@ namespace Hecton8.Environment
             HectonBiomeProfile matrixOverride = ResolveActiveMatrixRuntimeVisualProfile();
             if (matrixOverride != null)
             {
-                _targetScatterBase     = matrixOverride.scatterColorBase;
-                _targetScatterShallow  = matrixOverride.scatterColorShallow;
-                _targetDepthFogDensity = matrixOverride.depthFogDensity;
-                _targetFogColor        = matrixOverride.fogColor;
-                _targetTurbidity       = matrixOverride.turbidityMultiplier;
+                _targetScatterBase     = ResolveProfileScatterBase(matrixOverride);
+                _targetScatterShallow  = ResolveProfileScatterShallow(matrixOverride);
+                _targetDepthFogDensity = ResolveProfileDepthFogDensity(matrixOverride);
+                _targetFogColor        = ResolveProfileFogColor(matrixOverride);
+                _targetTurbidity       = ResolveProfileTurbidity(matrixOverride);
                 _targetAmbientColor    = underwaterAmbientColor;
                 return;
             }
@@ -2776,11 +2776,11 @@ namespace Hecton8.Environment
                 if (currentProf == null) return;
             }
 
-            _targetScatterBase     = currentProf.scatterColorBase;
-            _targetScatterShallow  = currentProf.scatterColorShallow;
-            _targetDepthFogDensity = currentProf.depthFogDensity;
-            _targetFogColor        = currentProf.fogColor;
-            _targetTurbidity       = currentProf.turbidityMultiplier;
+            _targetScatterBase     = ResolveProfileScatterBase(currentProf);
+            _targetScatterShallow  = ResolveProfileScatterShallow(currentProf);
+            _targetDepthFogDensity = ResolveProfileDepthFogDensity(currentProf);
+            _targetFogColor        = ResolveProfileFogColor(currentProf);
+            _targetTurbidity       = ResolveProfileTurbidity(currentProf);
             _targetAmbientColor    = underwaterAmbientColor;
         }
 
@@ -5418,23 +5418,70 @@ namespace Hecton8.Environment
 
         private void SetCurrentFromProfile(HectonBiomeProfile p)
         {
-            _currentScatterBase     = p.scatterColorBase;
-            _currentScatterShallow  = p.scatterColorShallow;
-            _currentDepthFogDensity = p.depthFogDensity;
-            _currentFogColor        = p.fogColor;
-            _currentTurbidity       = p.turbidityMultiplier;
+            _currentScatterBase     = ResolveProfileScatterBase(p);
+            _currentScatterShallow  = ResolveProfileScatterShallow(p);
+            _currentDepthFogDensity = ResolveProfileDepthFogDensity(p);
+            _currentFogColor        = ResolveProfileFogColor(p);
+            _currentTurbidity       = ResolveProfileTurbidity(p);
             _currentAmbientColor    = underwaterAmbientColor;
         }
 
         private void SetTargetFromProfile(HectonBiomeProfile p)
         {
-            _targetScatterBase     = p.scatterColorBase;
-            _targetScatterShallow  = p.scatterColorShallow;
-            _targetDepthFogDensity = p.depthFogDensity;
-            _targetFogColor        = p.fogColor;
-            _targetTurbidity       = p.turbidityMultiplier;
+            _targetScatterBase     = ResolveProfileScatterBase(p);
+            _targetScatterShallow  = ResolveProfileScatterShallow(p);
+            _targetDepthFogDensity = ResolveProfileDepthFogDensity(p);
+            _targetFogColor        = ResolveProfileFogColor(p);
+            _targetTurbidity       = ResolveProfileTurbidity(p);
             _targetAmbientColor    = underwaterAmbientColor;
             _transitionProgress    = 0f;
+        }
+
+        private Color ResolveProfileScatterBase(HectonBiomeProfile profile)
+        {
+            Color fallback = ReadMaterialColorOrDefault(
+                oceanUnderwaterMaterial,
+                _ID_Diffuse,
+                new Color(0f, 0.03f, 0.07f, 1f));
+            return ResolveSafeCrestColor(
+                profile != null ? profile.scatterColorBase : fallback,
+                fallback);
+        }
+
+        private Color ResolveProfileScatterShallow(HectonBiomeProfile profile)
+        {
+            Color fallback = ReadMaterialColorOrDefault(
+                oceanUnderwaterMaterial,
+                _ID_SubSurfaceShallowCol,
+                new Color(0f, 0.15f, 0.12f, 1f));
+            return ResolveSafeCrestColor(
+                profile != null ? profile.scatterColorShallow : fallback,
+                fallback);
+        }
+
+        private Vector3 ResolveProfileDepthFogDensity(HectonBiomeProfile profile)
+        {
+            Vector3 fallback = ResolveFallbackDepthFogDensity(oceanUnderwaterMaterial);
+            Vector3 source = profile != null ? profile.depthFogDensity : fallback;
+            return new Vector3(
+                Mathf.Clamp(source.x > 0f ? source.x : fallback.x, minFogDensity, maxFogDensity),
+                Mathf.Clamp(source.y > 0f ? source.y : fallback.y, minFogDensity, maxFogDensity),
+                Mathf.Clamp(source.z > 0f ? source.z : fallback.z, minFogDensity, maxFogDensity));
+        }
+
+        private Color ResolveProfileFogColor(HectonBiomeProfile profile)
+        {
+            Color fallback = ResolveFallbackFogColor();
+            return ResolveSafeCrestColor(
+                profile != null ? profile.fogColor : fallback,
+                fallback);
+        }
+
+        private static float ResolveProfileTurbidity(HectonBiomeProfile profile)
+        {
+            return profile != null && profile.turbidityMultiplier > 0f
+                ? profile.turbidityMultiplier
+                : 1f;
         }
 
         private void TryRegisterTickManagers()

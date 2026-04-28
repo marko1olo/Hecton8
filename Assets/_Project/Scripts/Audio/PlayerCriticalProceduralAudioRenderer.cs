@@ -53,6 +53,15 @@ namespace Hecton8.Audio
         private const float ImpactClangEnvelopeDecayPerSecond = 4.8f;
         private const float ImpactClangLowPassBlend = 0.48f;
         private const float ImpactClangNoiseSeedDecay = 0.988f;
+        private const float HullStressFmBaseCarrierHertz = 80f;
+        private const float HullStressFmModulationMinimumHertz = 5f;
+        private const float HullStressFmModulationMaximumHertz = 80f;
+        private const float HullStressFmModulationIndexMinimum = 0.1f;
+        private const float HullStressFmModulationIndexMaximum = 12f;
+        private const float HullStressFmOversampleIndexThreshold = 8f;
+        private const float HullStressFmOversampleLowPassQ = 0.70710677f;
+        private const float HullStressFmDcBlockPole = 0.9975f;
+        private const float HullStressFmMasterGain = 0.24f;
         private const float AbyssalLowPassStartDepthMeters = 4000f;
         private const float AbyssalLowPassFadeDepthMeters = 800f;
         private const float AbyssalLowPassCutoffHertz = 2000f;
@@ -521,6 +530,8 @@ namespace Hecton8.Audio
             public double CarrierAPhase;
             public double CarrierBPhase;
             public double CarrierCPhase;
+            public double StressFmModulatorPhase;
+            public double StressFmCarrierPhase;
             public int GrainElapsedSamples;
             public int GrainTotalSamples;
             public int GrainAttackSamples;
@@ -556,6 +567,12 @@ namespace Hecton8.Audio
             public float ImpactClangLowPassState;
             public int ImpactClangDelaySamples;
             public int ImpactClangWriteIndex;
+            public float StressFmDcBlockInput;
+            public float StressFmDcBlockOutput;
+            public float StressFmOversampleInput1;
+            public float StressFmOversampleInput2;
+            public float StressFmOversampleOutput1;
+            public float StressFmOversampleOutput2;
         }
 
         private struct SonarSynthesisState
@@ -2319,9 +2336,11 @@ namespace Hecton8.Audio
                 0.99f,
                 2f * math.sin(math.PI * lowPassCutoff / math.max(sampleRate, 1f)));
             float resonance = math.lerp(1.38f, 0.42f, math.saturate(cascade * 0.7f + depthDrive * 0.3f));
-            state.LowPassState += filterCoefficient * state.BandPassState;
-            float highPass = whiteNoise - state.LowPassState - resonance * state.BandPassState;
-            state.BandPassState += filterCoefficient * highPass;
+            float lowPassState = state.LowPassState + BiquadDenormalBias;
+            float bandPassState = state.BandPassState + BiquadDenormalBias;
+            state.LowPassState = lowPassState + filterCoefficient * bandPassState;
+            float highPass = whiteNoise - state.LowPassState - resonance * bandPassState;
+            state.BandPassState = bandPassState + filterCoefficient * highPass;
             float filteredNoise = state.LowPassState;
             float slowLfo = 0.55f + 0.45f * AdvanceSine(
                 ref state.SlowPhase,
@@ -2719,6 +2738,15 @@ namespace Hecton8.Audio
             float absoluteDepthStart = _audioAbsoluteDepthMeters;
             float impactMetallicImpulse = math.saturate(impactMetallicTarget);
             float previousStructuralSnap = structuralSnapStart;
+            ComputeBandPassCoefficients(
+                math.max(32f, _sampleRate * 0.25f),
+                HullStressFmOversampleLowPassQ,
+                math.max(1, _sampleRate << 1),
+                out float stressFmOversampleB0,
+                out float stressFmOversampleB1,
+                out float stressFmOversampleB2,
+                out float stressFmOversampleA1,
+                out float stressFmOversampleA2);
 
             for (int frameIndex = 0; frameIndex < frameCount; frameIndex++)
             {
@@ -2776,6 +2804,16 @@ namespace Hecton8.Audio
                     _metallicGrainBank,
                     sampleIndex);
                 float fatigueRing = RenderStructuralFatigueRingSample(ref state, sampleIndex, structuralFatigue, structuralStress, invSampleRate);
+                float stressFm = RenderHullStressFmSample(
+                    ref state,
+                    sampleIndex,
+                    stress,
+                    invSampleRate,
+                    stressFmOversampleB0,
+                    stressFmOversampleB1,
+                    stressFmOversampleB2,
+                    stressFmOversampleA1,
+                    stressFmOversampleA2);
                 float structuralSnapTransient = RenderStructuralSnapTransientSample(
                     ref state,
                     sampleIndex,
@@ -2786,7 +2824,7 @@ namespace Hecton8.Audio
                 float impactClang = RenderImpactClangSampleInternal(ref state, sampleIndex, invSampleRate);
                 float subBass = RenderHullSubBassSample(ref state, structuralStress, depthParam, absoluteDepthMeters, invSampleRate);
                 float rivetBurst = BuildRivetBurst(sampleIndex, math.max(stress, metallicImpulse), rivetAmount);
-                float combined = pressureBed + metal + pressureCreak + granularMetal + fatigueRing + structuralSnapTransient + impactClang + rivetBurst + subBass;
+                float combined = pressureBed + metal + pressureCreak + granularMetal + fatigueRing + stressFm + structuralSnapTransient + impactClang + rivetBurst + subBass;
                 combined = ApplyDepthHullDistortion(combined, depthParam, structuralStress);
                 _hullScratch[frameIndex] = math.max(stress, structuralSnap) <= HullNoiseFloor
                     ? 0f
@@ -3073,7 +3111,7 @@ namespace Hecton8.Audio
                     AdvanceSine(ref state.CarrierPhaseB, ImpactEchoCarrierSecondaryHertz, invSampleRate) * 0.38f;
                 float noise = LayeredPinkLike(sampleIndex) * ImpactEchoNoiseBlend;
                 float raw = (tonal + noise) * envelope * state.Excitation * state.Attenuation;
-                float filtered = raw + lowPassAlpha * (state.LowPassState - raw);
+                float filtered = raw + lowPassAlpha * ((state.LowPassState + BiquadDenormalBias) - raw);
                 state.LowPassState = filtered;
                 _impactEchoScratch[frameIndex] = math.tanh(filtered * 2.2f) * 0.35f;
                 state.ElapsedSeconds += (float)invSampleRate;
@@ -3130,7 +3168,7 @@ namespace Hecton8.Audio
             float averaged = (delayedA + delayedB) * 0.5f;
             float filtered = math.lerp(delayedA, averaged, ImpactClangLowPassBlend);
             float noiseEdge = HashSigned(sampleIndex ^ 0x61F0B1C3u) * 0.018f * state.ImpactClangEnvelope;
-            state.ImpactClangLowPassState = math.lerp(state.ImpactClangLowPassState, filtered + noiseEdge, 0.5f);
+            state.ImpactClangLowPassState = math.lerp(state.ImpactClangLowPassState + BiquadDenormalBias, filtered + noiseEdge, 0.5f);
             _impactClangDelay[writeIndex] = state.ImpactClangLowPassState * state.ImpactClangFeedback;
             state.ImpactClangWriteIndex = (writeIndex + 1) & ImpactClangDelayMask;
 
@@ -3440,6 +3478,74 @@ namespace Hecton8.Audio
                 ref state.GrainBandPassOutput1,
                 ref state.GrainBandPassOutput2);
             return math.tanh(filtered * envelope * state.GrainGain * math.lerp(1.6f, 3.1f, math.saturate(state.GrainDerivative)));
+        }
+
+        private static float RenderHullStressFmSample(
+            ref HullSynthesisState state,
+            uint sampleIndex,
+            float stressParam,
+            double invSampleRate,
+            float oversampleB0,
+            float oversampleB1,
+            float oversampleB2,
+            float oversampleA1,
+            float oversampleA2)
+        {
+            if (stressParam <= HullNoiseFloor)
+                return 0f;
+
+            float stressSquared = stressParam * stressParam;
+            float modulationFrequency = math.lerp(
+                HullStressFmModulationMinimumHertz,
+                HullStressFmModulationMaximumHertz,
+                stressSquared);
+            float modulationIndex = math.lerp(
+                HullStressFmModulationIndexMinimum,
+                HullStressFmModulationIndexMaximum,
+                stressParam);
+            int oversampleFactor = modulationIndex > HullStressFmOversampleIndexThreshold ? 2 : 1;
+            double oversampleInvSampleRate = invSampleRate / oversampleFactor;
+            float accumulated = 0f;
+
+            for (int oversampleIndex = 0; oversampleIndex < oversampleFactor; oversampleIndex++)
+            {
+                uint oversampleSampleIndex = sampleIndex * (uint)oversampleFactor + (uint)oversampleIndex;
+                float filteredNoise = HighBandNoise(oversampleSampleIndex ^ 0x1F27C4B3u);
+                float modulator =
+                    AdvanceSine(ref state.StressFmModulatorPhase, modulationFrequency, oversampleInvSampleRate) *
+                    modulationIndex *
+                    filteredNoise;
+                float carrierFrequency = HullStressFmBaseCarrierHertz + modulator;
+                AdvancePhase(ref state.StressFmCarrierPhase, carrierFrequency, oversampleInvSampleRate);
+                float raw = math.sin((float)(TwoPi * state.StressFmCarrierPhase));
+                float shaped = math.tanh(raw * (1f + stressParam * 3f));
+
+                if (oversampleFactor > 1)
+                {
+                    shaped = ProcessBiquad(
+                        shaped,
+                        oversampleB0,
+                        oversampleB1,
+                        oversampleB2,
+                        oversampleA1,
+                        oversampleA2,
+                        ref state.StressFmOversampleInput1,
+                        ref state.StressFmOversampleInput2,
+                        ref state.StressFmOversampleOutput1,
+                        ref state.StressFmOversampleOutput2);
+                }
+
+                accumulated += shaped;
+            }
+
+            float averaged = accumulated / oversampleFactor;
+            float dcBlocked =
+                averaged -
+                state.StressFmDcBlockInput +
+                HullStressFmDcBlockPole * (state.StressFmDcBlockOutput + BiquadDenormalBias);
+            state.StressFmDcBlockInput = averaged;
+            state.StressFmDcBlockOutput = dcBlocked;
+            return dcBlocked * math.lerp(0.08f, HullStressFmMasterGain, stressParam);
         }
 
         private static void StartStructuralGranularLoop(

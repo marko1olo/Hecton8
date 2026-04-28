@@ -51,6 +51,21 @@ float3 HectonCoreLitSafeNormalize(float3 value)
     return lenSq > 0.0001 ? value * rsqrt(lenSq) : float3(0.0, 1.0, 0.0);
 }
 
+float4 HectonCoreLitApplyClipSpaceDepthBias(float4 positionCS, float depthBias, float depthBiasMask)
+{
+    float maskedBias = max(depthBias, 0.0) * saturate(depthBiasMask);
+    if (maskedBias <= 0.0)
+        return positionCS;
+
+    float clipBias = maskedBias * max(positionCS.w, 0.0001);
+#if UNITY_REVERSED_Z
+    positionCS.z += clipBias;
+#else
+    positionCS.z -= clipBias;
+#endif
+    return positionCS;
+}
+
 float2 HectonCoreLitHash22(float2 p)
 {
     float3 p3 = frac(float3(p.xyx) * float3(0.1031, 0.1030, 0.0973));
@@ -162,6 +177,16 @@ half3 HectonCoreLitEvaluateProjectedCausticsScattering(float3 positionWS, float3
 {
     float mask = HectonCoreLitEvaluateProjectedCausticsMask(positionWS, normalWS);
     return (half3)(_HectonProjectedCausticsColor.rgb * mask);
+}
+
+half HectonCoreLitEvaluateNoirFog(half fogRaw)
+{
+    return pow(saturate(fogRaw), 2.2h);
+}
+
+half3 HectonCoreLitApplyNoirFog(half3 color, half fogRaw)
+{
+    return MixFog(color, HectonCoreLitEvaluateNoirFog(fogRaw));
 }
 
 float HectonCoreLitSampleCaveVoxelSignedDistance(float3 positionWS)

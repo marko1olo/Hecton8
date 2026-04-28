@@ -92,6 +92,14 @@ namespace Hecton8.Systems.AI
         public int NewPhase;
     }
 
+    internal struct EncounterDebugEvent
+    {
+        public float Timestamp;
+        public int Code;
+        public float Context;
+        public float Auxiliary;
+    }
+
     internal struct EncounterThreatAuthoringSnapshot
     {
         public float DroneMinIntensity;
@@ -119,6 +127,8 @@ namespace Hecton8.Systems.AI
     internal sealed class EncounterDirector : IDisposable
     {
         internal const int FrustumPlaneCount = 6;
+        private const int DebugEventRingCapacity = 256;
+        private const int DebugEventCodePhaseChange = 0x04;
 
         private const int MaxActiveEnemies = 32;
         private const int BaseCandidateCount = 16;
@@ -138,6 +148,8 @@ namespace Hecton8.Systems.AI
         private NativeArray<float4> _frustumPlanes;
         private NativeArray<float3> _candidateDirections;
         private NativeArray<EncounterJobOutput> _jobOutput;
+        private NativeArray<EncounterDebugEvent> _debugEventRing;
+        private NativeArray<int> _debugEventHead;
         // COLD ALLOC: Transform[32] — tracked live encounter proxies for token refresh — owner: EncounterDirector
         private readonly Transform[] _trackedTransforms;
         // COLD ALLOC: int[32] — tracked live encounter entity ids — owner: EncounterDirector
@@ -164,6 +176,8 @@ namespace Hecton8.Systems.AI
             _frustumPlanes = new NativeArray<float4>(FrustumPlaneCount, Allocator.Persistent);
             _candidateDirections = new NativeArray<float3>(HighCandidateCount, Allocator.Persistent);
             _jobOutput = new NativeArray<EncounterJobOutput>(1, Allocator.Persistent);
+            _debugEventRing = new NativeArray<EncounterDebugEvent>(DebugEventRingCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _debugEventHead = new NativeArray<int>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _trackedTransforms = new Transform[MaxActiveEnemies];
             _trackedEntityIds = new int[MaxActiveEnemies];
             _trackedThreatClasses = new EncounterThreatClass[MaxActiveEnemies];
@@ -217,6 +231,8 @@ namespace Hecton8.Systems.AI
             _frameIndex = 0;
             _pendingPhaseOverride = -1;
             _pendingReset = false;
+            if (_debugEventHead.IsCreated && _debugEventHead.Length > 0)
+                _debugEventHead[0] = 0;
 
             for (int i = 0; i < MaxActiveEnemies; i++)
                 ClearTrackedSlot(i);
@@ -331,6 +347,8 @@ namespace Hecton8.Systems.AI
             DisposeNativeArray(ref _frustumPlanes, ref disposeHandle, ref hasDependency);
             DisposeNativeArray(ref _candidateDirections, ref disposeHandle, ref hasDependency);
             DisposeNativeArray(ref _jobOutput, ref disposeHandle, ref hasDependency);
+            DisposeNativeArray(ref _debugEventRing, ref disposeHandle, ref hasDependency);
+            DisposeNativeArray(ref _debugEventHead, ref disposeHandle, ref hasDependency);
         }
 
         private void RefreshTrackedEnemies(float3 playerPosition)
@@ -403,7 +421,10 @@ namespace Hecton8.Systems.AI
             EncounterJobOutput output = _jobOutput[0];
 
             if (output.PhaseChanged != 0)
+            {
+                WriteDebugEvent(DebugEventCodePhaseChange, output.NewPhase, _frontState[0].IntensityLevel);
                 bridge.HandleEncounterPhaseChanged((EncounterPhase)output.PreviousPhase, (EncounterPhase)output.NewPhase);
+            }
 
             if (output.DespawnRequestCount > 0 && faunaDirector != null)
                 ApplyDespawnRequests(output, faunaDirector);
@@ -427,27 +448,13 @@ namespace Hecton8.Systems.AI
 
         private void ApplyDespawnRequests(EncounterJobOutput output, FaunaDirector faunaDirector)
         {
-            int[] ids = { output.DespawnEntityId0, output.DespawnEntityId1, output.DespawnEntityId2 };
-            int requestCount = math.min(output.DespawnRequestCount, ids.Length);
-
-            for (int i = 0; i < requestCount; i++)
-            {
-                int entityId = ids[i];
-                if (entityId == 0)
-                    continue;
-
-                float refund = ResolveTrackedTokenCost(entityId) * 0.5f;
-                if (faunaDirector.TryRecallEncounterThreat(entityId))
-                {
-                    UntrackEntity(entityId);
-                    continue;
-                }
-
-                EncounterDirectorState state = _frontState[0];
-                state.TokenBudget = math.clamp(state.TokenBudget - refund, 0f, MaxTokenBudget);
-                _frontState[0] = state;
-                _backState[0] = state;
-            }
+            int requestCount = math.min(output.DespawnRequestCount, 3);
+            if (requestCount > 0)
+                ApplyDespawnRequestEntity(output.DespawnEntityId0, faunaDirector);
+            if (requestCount > 1)
+                ApplyDespawnRequestEntity(output.DespawnEntityId1, faunaDirector);
+            if (requestCount > 2)
+                ApplyDespawnRequestEntity(output.DespawnEntityId2, faunaDirector);
         }
 
         private void ApplyPhaseOverride(EncounterPhase phase, HectonDirectorAI bridge)
@@ -461,7 +468,45 @@ namespace Hecton8.Systems.AI
             _backState[0] = state;
 
             if (previousPhase != phase)
+            {
+                WriteDebugEvent(DebugEventCodePhaseChange, (int)phase, _frontState[0].IntensityLevel);
                 bridge.HandleEncounterPhaseChanged(previousPhase, phase);
+            }
+        }
+
+        private void ApplyDespawnRequestEntity(int entityId, FaunaDirector faunaDirector)
+        {
+            if (entityId == 0)
+                return;
+
+            float refund = ResolveTrackedTokenCost(entityId) * 0.5f;
+            if (faunaDirector.TryRecallEncounterThreat(entityId))
+            {
+                UntrackEntity(entityId);
+                return;
+            }
+
+            EncounterDirectorState state = _frontState[0];
+            state.TokenBudget = math.clamp(state.TokenBudget - refund, 0f, MaxTokenBudget);
+            _frontState[0] = state;
+            _backState[0] = state;
+        }
+
+        private void WriteDebugEvent(int code, float context, float auxiliary)
+        {
+            if (!_debugEventRing.IsCreated || !_debugEventHead.IsCreated || _debugEventHead.Length <= 0)
+                return;
+
+            int head = _debugEventHead[0];
+            int slot = head & (DebugEventRingCapacity - 1);
+            _debugEventRing[slot] = new EncounterDebugEvent
+            {
+                Timestamp = _frameIndex * ColdTickIntervalSeconds,
+                Code = code,
+                Context = context,
+                Auxiliary = auxiliary
+            };
+            _debugEventHead[0] = head + 1;
         }
 
         private void RegisterTrackedEntity(GameObject spawnedInstance, EncounterThreatClass threatClass)
@@ -764,7 +809,7 @@ namespace Hecton8.Systems.AI
 
                 bool insideOrIntersectingFrustum = TestPlanesAABB(token.Position, new float3(FrustumRejectPadding));
                 float visibilityFactor = insideOrIntersectingFrustum ? 0f : 1f;
-                float priority = distSq * visibilityFactor * math.rcp(math.max(1f, token.TokenCost)) * math.max(token.DespawnPriority, 0f);
+                float priority = distSq * visibilityFactor * math.max(token.DespawnPriority, 0f);
 
                 activeEnemyCount++;
                 switch ((EncounterThreatClass)token.ThreatClass)
@@ -838,8 +883,7 @@ namespace Hecton8.Systems.AI
             }
 
             float phaseIntensity = ResolvePhaseIntensity((EncounterPhase)state.ActivePhase, state.PacingPhaseTimer, phaseDuration);
-            float amplitudeScale = math.lerp(0.35f, 1f, math.max(state.StressLevel, PlayerInternalStress));
-            state.IntensityLevel = math.clamp(phaseIntensity * amplitudeScale, 0f, 1f);
+            state.IntensityLevel = math.clamp(phaseIntensity, 0f, 1f);
             if (!math.isfinite(state.IntensityLevel))
                 state.IntensityLevel = 0f;
 
@@ -871,19 +915,13 @@ namespace Hecton8.Systems.AI
             state.BudgetFlags = (int)budgetFlags;
 
             bool criticalHealthSuppressed = PlayerHealthNormalized <= CriticalHealthSpawnSuppressionThreshold;
-            float pressureLevel = math.saturate(math.max(state.StressLevel, math.max(PlayerInternalStress, acousticStress)));
             if (((EncounterBudgetFlags)state.BudgetFlags & EncounterBudgetFlags.RegenBlocked) != 0)
             {
                 state.TokenRegenRate = 0f;
             }
             else
             {
-                float baseRegen = math.lerp(10f, 1.25f, pressureLevel);
-                float cadenceScale = math.lerp(0.35f, 1.15f, 1f - state.IntensityLevel);
-                float relaxBonus = (EncounterPhase)state.ActivePhase == EncounterPhase.Relax ? 1.15f : 1f;
-                float criticalHealthScale = criticalHealthSuppressed ? 0.45f : 1f;
-                float safeIdleRegenBonus = math.lerp(1f, 1.35f, safeIdleRecovery);
-                state.TokenRegenRate = baseRegen * cadenceScale * relaxBonus * criticalHealthScale * safeIdleRegenBonus;
+                state.TokenRegenRate = (EncounterPhase)state.ActivePhase == EncounterPhase.Relax ? 8f : 0f;
             }
 
             state.TokenBudget = math.clamp(state.TokenBudget + state.TokenRegenRate, 0f, MaxTokenBudget);

@@ -101,7 +101,9 @@ namespace Hecton8.Audio
         private const float ManualDopplerFollowSharpness = 10f;
         private const float ManualDopplerMaximumRatio = 1.2f;
         private const float ManualDopplerMinimumDenominatorMetersPerSecond = 32f;
-        private const float ManualDopplerTanhSoftness = 1.85f;
+        private const float ManualDopplerVelocityJumpThresholdMetersPerSecond = 10f;
+        private const float ManualDopplerSmoothingSamples = 128f;
+        private const float ManualDopplerSampleRateHertz = 48000f;
         private const float RearHemisphereLowPassStartDot = -0.12f;
         private const float RearHemisphereLowPassFullDot = -0.92f;
         private const float RearHemisphereLowPassMaximumCutoffHertz = 18000f;
@@ -250,6 +252,7 @@ namespace Hecton8.Audio
         private float[] _baseVolumes;
         private float[] _basePitches;
         private float[] _smoothedDopplerRatios;
+        private float[] _previousRelativeVelocities;
         private float[] _arrivalTimes;
         private float[] _haasReleaseTimes;
         private float[] _nextTierUpdateTimes;
@@ -442,6 +445,7 @@ namespace Hecton8.Audio
             _baseVolumes = new float[_poolSize];
             _basePitches = new float[_poolSize];
             _smoothedDopplerRatios = new float[_poolSize];
+            _previousRelativeVelocities = new float[_poolSize];
             _arrivalTimes = new float[_poolSize];
             _haasReleaseTimes = new float[_poolSize];
             _nextTierUpdateTimes = new float[_poolSize];
@@ -458,6 +462,7 @@ namespace Hecton8.Audio
                 _activeWorldSlots[i] = -1;
                 _basePitches[i] = 1f;
                 _smoothedDopplerRatios[i] = 1f;
+                _previousRelativeVelocities[i] = 0f;
             }
 
             if (_poolSize > 0)
@@ -1243,6 +1248,9 @@ private int AcquireSourceIndex()
             if (_smoothedDopplerRatios != null && sourceIndex < _smoothedDopplerRatios.Length)
                 _smoothedDopplerRatios[sourceIndex] = 1f;
 
+            if (_previousRelativeVelocities != null && sourceIndex < _previousRelativeVelocities.Length)
+                _previousRelativeVelocities[sourceIndex] = 0f;
+
             if (_previousAbsolutePositions != null && sourceIndex < _previousAbsolutePositions.Length)
                 _previousAbsolutePositions[sourceIndex] = default;
 
@@ -1954,26 +1962,38 @@ private int AcquireSourceIndex()
                     relativeVelocity,
                     -SoundSpeedWaterMetersPerSecond * 0.9f,
                     SoundSpeedWaterMetersPerSecond * 0.9f);
-                float normalizedVelocity = clampedRelativeVelocity / math.max(SoundSpeedWaterMetersPerSecond, 1f);
-                float smoothedRelativeVelocity =
-                    math.tanh(normalizedVelocity * ManualDopplerTanhSoftness) *
-                    (SoundSpeedWaterMetersPerSecond * 0.92f);
                 float numerator = math.max(
-                    SoundSpeedWaterMetersPerSecond + smoothedRelativeVelocity,
+                    SoundSpeedWaterMetersPerSecond + clampedRelativeVelocity,
                     ManualDopplerMinimumDenominatorMetersPerSecond);
                 float denominator = math.max(
-                    SoundSpeedWaterMetersPerSecond - smoothedRelativeVelocity,
+                    SoundSpeedWaterMetersPerSecond - clampedRelativeVelocity,
                     ManualDopplerMinimumDenominatorMetersPerSecond);
                 targetRatio = math.clamp(
                     numerator / denominator,
                     1f / ManualDopplerMaximumRatio,
                     ManualDopplerMaximumRatio);
+
+                float previousRelativeVelocity = _previousRelativeVelocities != null && sourceIndex < _previousRelativeVelocities.Length
+                    ? _previousRelativeVelocities[sourceIndex]
+                    : 0f;
+                float velocityDelta = math.abs(clampedRelativeVelocity - previousRelativeVelocity);
+                if (_previousRelativeVelocities != null && sourceIndex < _previousRelativeVelocities.Length)
+                    _previousRelativeVelocities[sourceIndex] = clampedRelativeVelocity;
+
+                float smoothingDurationSeconds = ManualDopplerSmoothingSamples / ManualDopplerSampleRateHertz;
+                float followT = velocityDelta > ManualDopplerVelocityJumpThresholdMetersPerSecond
+                    ? math.saturate(math.max(deltaTime, 0f) / math.max(smoothingDurationSeconds, 0.0001f))
+                    : 1f - math.exp(-ManualDopplerFollowSharpness * math.max(deltaTime, 0f));
+                float smoothedRatio = math.lerp(_smoothedDopplerRatios[sourceIndex], targetRatio, followT);
+                _smoothedDopplerRatios[sourceIndex] = smoothedRatio;
+                source.pitch = math.clamp(_basePitches[sourceIndex] * smoothedRatio, 0.1f, 3f);
+                return;
             }
 
-            float followT = 1f - math.exp(-ManualDopplerFollowSharpness * math.max(deltaTime, 0f));
-            float smoothedRatio = math.lerp(_smoothedDopplerRatios[sourceIndex], targetRatio, followT);
-            _smoothedDopplerRatios[sourceIndex] = smoothedRatio;
-            source.pitch = math.clamp(_basePitches[sourceIndex] * smoothedRatio, 0.1f, 3f);
+            _smoothedDopplerRatios[sourceIndex] = 1f;
+            if (_previousRelativeVelocities != null && sourceIndex < _previousRelativeVelocities.Length)
+                _previousRelativeVelocities[sourceIndex] = 0f;
+            source.pitch = math.clamp(_basePitches[sourceIndex], 0.1f, 3f);
         }
 
         private bool TryResolveCaveExternalLowPassCutoff(AudioSource source, Vector3 sourcePosition, out float cutoffFrequency)

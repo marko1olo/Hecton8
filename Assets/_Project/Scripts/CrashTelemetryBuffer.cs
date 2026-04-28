@@ -27,7 +27,7 @@ namespace Hecton8.Core
     [DefaultExecutionOrder(-9500)] // Runs after GameTickManager singleton bootstrap and before most gameplay systems.
     public sealed class CrashTelemetryBuffer : MonoBehaviour, ITickable, IUpdatable, IFixedTickable
     {
-        private const int RingCapacity = 3600;
+        private const int RingCapacity = 300;
         private const int ExportSnapshotEntries = RingCapacity;
         private const int ExportCooldownFrames = 30;
         private const int DebugLogEntrySizeBytes = 64;
@@ -413,10 +413,10 @@ namespace Hecton8.Core
             // COLD ALLOC: NativeArray<DebugLogEntry>[300] - lockless telemetry ring buffer - owner: CrashTelemetryBuffer
             _ringBuffer = new NativeArray<DebugLogEntry>(RingCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
 
-            // COLD ALLOC: NativeArray<DebugLogEntry>[50] - pre-crash binary export snapshot staging buffer - owner: CrashTelemetryBuffer
+            // COLD ALLOC: NativeArray<DebugLogEntry>[300] - pre-crash binary export snapshot staging buffer - owner: CrashTelemetryBuffer
             _exportSnapshot = new NativeArray<DebugLogEntry>(ExportSnapshotEntries, Allocator.Persistent, NativeArrayOptions.ClearMemory);
 
-            // COLD ALLOC: NativeArray<byte>[3216] - binary export scratch for 16B header + 50 x 64B entries - owner: CrashTelemetryBuffer
+            // COLD ALLOC: NativeArray<byte>[19216] - binary export scratch for 16B header + 300 x 64B entries - owner: CrashTelemetryBuffer
             _exportScratch = new NativeArray<byte>(ExportScratchSizeBytes, Allocator.Persistent, NativeArrayOptions.ClearMemory);
 
             // COLD ALLOC: NativeArray<byte>[32] - fixed-size live MMF telemetry payload staging - owner: CrashTelemetryBuffer

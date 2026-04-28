@@ -9,6 +9,7 @@ Shader "Hecton8/World/ScatterIndirectLit"
         _Metallic("Metallic Scale", Range(0, 1)) = 0.0
         _Smoothness("Smoothness Scale", Range(0, 1)) = 0.35
         _OcclusionStrength("Occlusion Strength", Range(0, 1)) = 1.0
+        _DepthBias("Depth Bias", Range(0, 0.01)) = 0.0
     }
 
     SubShader
@@ -52,6 +53,7 @@ Shader "Hecton8/World/ScatterIndirectLit"
             float _Metallic;
             float _Smoothness;
             float _OcclusionStrength;
+            float _DepthBias;
         CBUFFER_END
 
         struct Attributes
@@ -114,6 +116,7 @@ Shader "Hecton8/World/ScatterIndirectLit"
             output.positionWS = resolvedPositionWS;
             output.normalWS = resolvedNormalWS;
             output.positionCS = TransformWorldToHClip(resolvedPositionWS);
+            output.positionCS = HectonCoreLitApplyClipSpaceDepthBias(output.positionCS, _DepthBias, 1.0);
             output.viewDirWS = HectonCoreLitSafeNormalize(GetWorldSpaceViewDir(resolvedPositionWS));
             output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
             output.fogFactor = ComputeFogFactor(output.positionCS.z);
@@ -177,7 +180,7 @@ Shader "Hecton8/World/ScatterIndirectLit"
                 ambientOcclusion);
             half3 biolum = (half3)HectonCoreLitSampleBiolumVolumeRadiance(input.positionWS) * emissionMask * 0.2h;
             half3 emission = _EmissionColor.rgb * emissionMask + biolum;
-            half3 finalColor = MixFog(litColor + emission, input.fogFactor);
+            half3 finalColor = HectonCoreLitApplyNoirFog(litColor + emission, input.fogFactor);
             return half4(finalColor, 1.0h);
         }
 

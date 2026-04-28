@@ -1,5 +1,5 @@
 # PROJECT ATLAS — HECTON-8 MASTER DIRECTORY
-**Версия:** 1.0.0 | **Дата:** 2026-04-28 | **Автор:** Supreme Compliance Auditor
+**Версия:** 1.1.0 | **Дата:** 2026-04-29 | **Автор:** Supreme Compliance Auditor / ARCHIVARIUS MODE
 
 ---
 
@@ -13,6 +13,7 @@
 6. [Third-Party — Зависимости](#6-third-party—зависимости)
 7. [Точки входа для новых агентов](#7-точки-входа-для-новых-агентов)
 8. [Статистика проекта](#8-статистика-проекта)
+9. [Архивариус Аудит 2026-04-29](#9-архивариус-аудит-2026-04-29)
 
 ---
 
@@ -548,6 +549,103 @@ _Recovery/*.unity → Assets/Docs/Archive/RecoveryScenes/ (проверить п
 
 ---
 
+## 9. АРХИВАРИУС АУДИТ 2026-04-29
+
+**Authority:** CTO / Lead Architect (ARCHIVARIUS MODE)  
+**Reports:** `INTERFACE_HEALTH_DASHBOARD.md` | `EVENT_FLOW_MAP.md`
+
+### 9.1 Ghost Interfaces (👻 0 implementors)
+
+| Interface | Location | Action Required |
+|-----------|----------|-----------------|
+| `IRenderable` | `GlobalRegistryContracts.cs` | Delete or assign owner |
+| `IAudioService` | `GlobalRegistryContracts.cs` | Implement by `SpatialAudioManager` or delete |
+
+### 9.2 Conflicting Interfaces (⚔️ 2+ definitions)
+
+| Interface | Issue | Action Required |
+|-----------|-------|-----------------|
+| `IDamageReceiver` | Canonical in `GlobalRegistryContracts.cs` + shadow in `HabitatIntegrityManager.cs` | Remove nested definition, use canonical `DamagePacket` |
+| `IUIService` | 3 fragmented implementations, no unified root | Create `HectonUIRoot` delegate |
+
+### 9.3 Data Template Audit (SOA Foundations)
+
+| Template | Type | SOA Mandate | Verdict |
+|----------|------|-------------|---------|
+| `FaunaDataTemplate` | `ScriptableObject` wrapping struct | ❌ Must be struct | **FAIL** |
+| `ItemTemplate` | `[StructLayout(Pack=4)] struct` | ✅ | **PASS** |
+| `EncounterProfile` | `ScriptableObject` wrapping struct | ❌ Must be struct | **FAIL** |
+| `PowerGridModuleData` | `[Serializable] struct` | ✅ | **PASS** |
+
+### 9.4 AUP Surgery Byte-Check
+
+| Check | Result |
+|-------|--------|
+| `AbsoluteUniversePosition` Size | **PASS** — 48 bytes exact |
+| `PersistentWorldItemRecord` offsets | **PASS** — sequential after 48B AUP |
+| Save format `CurrentVersion` | **PASS** — `0x0008` |
+| `SaveDataVersion` offset | **PASS** — shifted to 60 (was 48) |
+| Migration path | **PASS** — `SaveDataMigration_AupV8.cs` exists |
+
+### 9.5 Event Bus Nervous System
+
+| Bus | Signals | Status |
+|-----|---------|--------|
+| `InteractionEvents` | 3 signals | 🔴 Verified |
+| `CraftingEvents` | 3 signals | 🔴 Verified |
+| `SaveEvents` | 6 signals | 🔴 Verified |
+| `FlashlightEvents` | 3 signals | 🔴 Verified |
+| `PDAEvents` | 3 signals | 🔴 Verified |
+| `ModuleStatusEvents` | 2 signals | 🔴 Verified |
+| `ScanEvents` | 3 signals | 🔴 Verified |
+| `AudioLogEvents` | 4 signals | 🔴 Verified |
+| `NarrativeEvents` | 3 signals | 🟡 Partial |
+| `RandomEventEvents` | 5 signals | 🔴 Verified |
+| `CelestialEvents` | 3 signals | 🔴 Verified |
+| **Total** | **38 signals mapped** | **11 buses** |
+
+**⚠️ Architecture drift:** Event buses use static `Action<T>` instead of `NativeQueue<T>` backing per AGENTS.md mandate. Migration required.
+
+### 9.6 Cyrillic Sweep (First-Party `.cs`)
+
+| File | Severity |
+|------|----------|
+| `Gameplay/EclipseGameplaySystem.cs` | 🔴 CI/CD BREAKER |
+| `Gameplay/EndingSystem.cs` | 🔴 CI/CD BREAKER |
+| `Gameplay/RandomEventSystem.cs` | 🔴 CI/CD BREAKER |
+| `ITickable.cs` | 🔴 CI/CD BREAKER |
+| `AudioLog/AudioLogEvents.cs` | 🔴 CI/CD BREAKER |
+
+**Action:** All XML docs and file headers MUST be translated to English before next CI/CD run.
+
+### 9.7 Shader Index (BETA)
+
+| Shader | Purpose |
+|--------|---------|
+| `Hecton_BiolumSSGIComposite.shader` | Bioluminescence + SSGI |
+| `Hecton_AbyssalVoxelRock.shader` | Voxel cave rock |
+| `Hecton_FabricatorHologram.shader` | Fabricator hologram |
+| `SuitVisor.shader` | Visor glass refraction |
+| `SG_GasGiant_Master.shader` | Gas giant clouds |
+| `Hecton_AlienSky_Master.shader` | Atmospheric dome |
+| `CoralLit.shader` | Procedural coral (URP 14+) |
+| `Hecton_Ocean_Master.shader` | Crest ocean integration |
+
+**Total:** 8 first-party custom shaders + 37 variants = **45 shader assets**.
+
+### 9.8 Debt Tally
+
+| Category | Count |
+|----------|-------|
+| Ghost Interfaces | 2 |
+| Conflicting Interfaces | 2 |
+| Failed Data Templates | 2 |
+| Cyrillic `.cs` violations | 5 |
+| Event buses without NativeQueue backing | 11 |
+| Direct coupling bypassing event bus | 3 |
+
+---
+
 **STATUS:** ✅ PROJECT_ATLAS.md создан и готов к использованию  
-**LAST UPDATED:** 2026-04-28  
+**LAST UPDATED:** 2026-04-29  
 **NEXT REVIEW:** При добавлении новых систем или переструктурировании проекта
