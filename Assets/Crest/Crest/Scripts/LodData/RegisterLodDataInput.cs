@@ -39,7 +39,10 @@ namespace Crest
     /// Base class for scripts that register input to the various LOD data types.
     /// </summary>
     [ExecuteDuringEditMode]
-    public abstract partial class RegisterLodDataInputBase : CustomMonoBehaviour, ILodDataInput
+    public abstract class RegisterLodDataInputBase : CustomMonoBehaviour, ILodDataInput
+#if UNITY_EDITOR
+        , IValidated
+#endif
     {
 #pragma warning disable 414
         [SerializeField, Tooltip("Check that the shader applied to this object matches the input type (so e.g. an Animated Waves input object has an Animated Waves input shader.")]
@@ -181,23 +184,93 @@ namespace Crest
         /// <summary>
         /// Quad geometry
         /// </summary>
-        public static Mesh QuadMesh
+    public static Mesh QuadMesh
+    {
+        get
         {
-            get
-            {
-                if (s_Quad) return s_Quad;
+            if (s_Quad) return s_Quad;
 
                 return s_Quad = Resources.GetBuiltinResource<Mesh>("Quad.fbx");
             }
         }
 
         public bool IgnoreTransitionWeight => false;
+
+#if UNITY_EDITOR
+        // Whether there is an alternative methods than a renderer (like splines).
+        protected virtual bool RendererOptional => false;
+
+        protected virtual string FeatureToggleLabel => null;
+        protected virtual string FeatureToggleName => null;
+        protected virtual bool FeatureEnabled(OceanRenderer ocean) => true;
+
+        protected virtual string RequiredShaderKeyword => null;
+        // NOTE: Temporary until shader keywords are the same across pipelines.
+        protected virtual string RequiredShaderKeywordProperty => null;
+
+        protected virtual string MaterialFeatureDisabledError => null;
+        protected virtual string MaterialFeatureDisabledFix => null;
+
+        public virtual bool Validate(OceanRenderer ocean, ValidatedHelper.ShowMessage showMessage)
+        {
+            var isValid = ValidatedHelper.ValidateRenderer<Renderer>(gameObject, showMessage, RendererRequired, RendererOptional, _checkShaderName ? ShaderPrefix : String.Empty);
+
+            if (_checkShaderPasses && _material != null && _material.passCount > 1 && !SupportsMultiPassShaders)
+            {
+                showMessage
+                (
+                    $"The shader <i>{_material.shader.name}</i> for material <i>{_material.name}</i> has multiple passes which might not work as expected as only the first pass is executed. " +
+                    "See documentation for more information on what multi-pass shaders work or",
+                    "use a shader with a single pass.",
+                    ValidatedHelper.MessageType.Warning, this
+                );
+            }
+
+            if (_renderer != null)
+            {
+                _renderer.GetSharedMaterials(_sharedMaterials);
+                for (var i = 0; i < _sharedMaterials.Count; i++)
+                {
+                    // Empty material slots is a user error. Unity complains about it so we should too.
+                    if (_sharedMaterials[i] == null)
+                    {
+                        showMessage
+                        (
+                            $"<i>{_renderer.GetType().Name}</i> used by this input (<i>{GetType().Name}</i>) has empty material slots.",
+                            "Remove these slots or fill them with a material.",
+                            ValidatedHelper.MessageType.Error, _renderer
+                        );
+                    }
+                }
+            }
+
+            if (ocean != null && !FeatureEnabled(ocean))
+            {
+                showMessage($"<i>{FeatureToggleLabel}</i> must be enabled on the <i>OceanRenderer</i> component.",
+                    $"Enable the <i>{FeatureToggleLabel}</i> option on the <i>OceanRenderer</i> component.",
+                    ValidatedHelper.MessageType.Error, ocean,
+                    (so) => OceanRenderer.FixSetFeatureEnabled(so, FeatureToggleName, true)
+                    );
+                isValid = false;
+            }
+
+            if (ocean != null && !string.IsNullOrEmpty(RequiredShaderKeyword) && ocean.OceanMaterial.HasProperty(RequiredShaderKeywordProperty) && !ocean.OceanMaterial.IsKeywordEnabled(RequiredShaderKeyword))
+            {
+                showMessage(MaterialFeatureDisabledError, MaterialFeatureDisabledFix,
+                    ValidatedHelper.MessageType.Error, ocean.OceanMaterial,
+                    (material) => ValidatedHelper.FixSetMaterialOptionEnabled(material, RequiredShaderKeyword, RequiredShaderKeywordProperty, true));
+                isValid = false;
+            }
+
+            return isValid;
+        }
+#endif
     }
 
     /// <summary>
     /// Registers input to a particular LOD data.
     /// </summary>
-    public abstract partial class RegisterLodDataInput<LodDataType> : RegisterLodDataInputBase
+    public abstract class RegisterLodDataInput<LodDataType> : RegisterLodDataInputBase
         where LodDataType : LodDataMgr
     {
         protected const string k_displacementCorrectionTooltip = "Whether this input data should displace horizontally with waves. If false, data will not move from side to side with the waves. Adds a small performance overhead when disabled.";
@@ -295,6 +368,21 @@ namespace Crest
                 Gizmos.DrawWireMesh(mf.sharedMesh, transform.position, transform.rotation, transform.lossyScale);
             }
         }
+
+#if UNITY_EDITOR
+        public override bool Validate(OceanRenderer ocean, ValidatedHelper.ShowMessage showMessage)
+        {
+            var isValid = base.Validate(ocean, showMessage);
+
+            // If we have a renderer then validate the layer.
+            if (RendererRequired && TryGetComponent<Renderer>(out _) && !_disableRenderer)
+            {
+                ValidatedHelper.ValidateRendererLayer(gameObject, showMessage, ocean);
+            }
+
+            return isValid;
+        }
+#endif
     }
 
     public abstract class RegisterLodDataInputWithSplineSupport<LodDataType>
@@ -303,7 +391,7 @@ namespace Crest
     {
     }
 
-    public abstract partial class RegisterLodDataInputWithSplineSupport<LodDataType, SplinePointCustomData>
+    public abstract class RegisterLodDataInputWithSplineSupport<LodDataType, SplinePointCustomData>
         : RegisterLodDataInput<LodDataType>
         , ISplinePointCustomDataSetup
 #if UNITY_EDITOR
@@ -439,119 +527,8 @@ namespace Crest
             OnDrawGizmosSelected();
         }
 #endif // UNITY_EDITOR
-    }
 
 #if UNITY_EDITOR
-    public abstract partial class RegisterLodDataInputBase : IValidated
-    {
-        // Whether there is an alternative methods than a renderer (like splines).
-        protected virtual bool RendererOptional => false;
-
-        protected virtual string FeatureToggleLabel => null;
-        protected virtual string FeatureToggleName => null;
-        protected virtual bool FeatureEnabled(OceanRenderer ocean) => true;
-
-        protected virtual string RequiredShaderKeyword => null;
-        // NOTE: Temporary until shader keywords are the same across pipelines.
-        protected virtual string RequiredShaderKeywordProperty => null;
-
-        protected virtual string MaterialFeatureDisabledError => null;
-        protected virtual string MaterialFeatureDisabledFix => null;
-
-        public virtual bool Validate(OceanRenderer ocean, ValidatedHelper.ShowMessage showMessage)
-        {
-            var isValid = ValidatedHelper.ValidateRenderer<Renderer>(gameObject, showMessage, RendererRequired, RendererOptional, _checkShaderName ? ShaderPrefix : String.Empty);
-
-            if (_checkShaderPasses && _material != null && _material.passCount > 1 && !SupportsMultiPassShaders)
-            {
-                showMessage
-                (
-                    $"The shader <i>{_material.shader.name}</i> for material <i>{_material.name}</i> has multiple passes which might not work as expected as only the first pass is executed. " +
-                    "See documentation for more information on what multi-pass shaders work or",
-                    "use a shader with a single pass.",
-                    ValidatedHelper.MessageType.Warning, this
-                );
-            }
-
-            if (_renderer != null)
-            {
-                _renderer.GetSharedMaterials(_sharedMaterials);
-                for (var i = 0; i < _sharedMaterials.Count; i++)
-                {
-                    // Empty material slots is a user error. Unity complains about it so we should too.
-                    if (_sharedMaterials[i] == null)
-                    {
-                        showMessage
-                        (
-                            $"<i>{_renderer.GetType().Name}</i> used by this input (<i>{GetType().Name}</i>) has empty material slots.",
-                            "Remove these slots or fill them with a material.",
-                            ValidatedHelper.MessageType.Error, _renderer
-                        );
-                    }
-                }
-            }
-
-            if (ocean != null && !FeatureEnabled(ocean))
-            {
-                showMessage($"<i>{FeatureToggleLabel}</i> must be enabled on the <i>OceanRenderer</i> component.",
-                    $"Enable the <i>{FeatureToggleLabel}</i> option on the <i>OceanRenderer</i> component.",
-                    ValidatedHelper.MessageType.Error, ocean,
-                    (so) => OceanRenderer.FixSetFeatureEnabled(so, FeatureToggleName, true)
-                    );
-                isValid = false;
-            }
-
-            if (ocean != null && !string.IsNullOrEmpty(RequiredShaderKeyword) && ocean.OceanMaterial.HasProperty(RequiredShaderKeywordProperty) && !ocean.OceanMaterial.IsKeywordEnabled(RequiredShaderKeyword))
-            {
-                showMessage(MaterialFeatureDisabledError, MaterialFeatureDisabledFix,
-                    ValidatedHelper.MessageType.Error, ocean.OceanMaterial,
-                    (material) => ValidatedHelper.FixSetMaterialOptionEnabled(material, RequiredShaderKeyword, RequiredShaderKeywordProperty, true));
-                isValid = false;
-            }
-
-            return isValid;
-        }
-    }
-
-    [CustomEditor(typeof(RegisterLodDataInputBase), true), CanEditMultipleObjects]
-    class RegisterLodDataInputBaseEditor : CustomBaseEditor
-    {
-        public override void OnInspectorGUI()
-        {
-            // Show a note of what renderer we are currently using.
-            var target = this.target as RegisterLodDataInputBase;
-            if (target._renderer != null)
-            {
-                // Enable rich text in help boxes. Store original so we can revert since this might be a "hack".
-                var styleRichText = GUI.skin.GetStyle("HelpBox").richText;
-                GUI.skin.GetStyle("HelpBox").richText = true;
-                EditorGUILayout.HelpBox($"Using renderer of type <i>{target._renderer.GetType()}</i>", MessageType.Info);
-                // Revert skin since it persists.
-                GUI.skin.GetStyle("HelpBox").richText = styleRichText;
-            }
-
-            base.OnInspectorGUI();
-        }
-    }
-
-    public abstract partial class RegisterLodDataInput<LodDataType>
-    {
-        public override bool Validate(OceanRenderer ocean, ValidatedHelper.ShowMessage showMessage)
-        {
-            var isValid = base.Validate(ocean, showMessage);
-
-            // If we have a renderer then validate the layer.
-            if (RendererRequired && TryGetComponent<Renderer>(out _) && !_disableRenderer)
-            {
-                ValidatedHelper.ValidateRendererLayer(gameObject, showMessage, ocean);
-            }
-
-            return isValid;
-        }
-    }
-
-    public abstract partial class RegisterLodDataInputWithSplineSupport<LodDataType, SplinePointCustomData>
-    {
         protected override bool RendererOptional => true;
 
         public override bool Validate(OceanRenderer ocean, ValidatedHelper.ShowMessage showMessage)
@@ -570,6 +547,29 @@ namespace Crest
             }
 
             return isValid;
+        }
+#endif
+    }
+
+#if UNITY_EDITOR
+    [CustomEditor(typeof(RegisterLodDataInputBase), true), CanEditMultipleObjects]
+    class RegisterLodDataInputBaseEditor : CustomBaseEditor
+    {
+        public override void OnInspectorGUI()
+        {
+            // Show a note of what renderer we are currently using.
+            var target = this.target as RegisterLodDataInputBase;
+            if (target._renderer != null)
+            {
+                // Enable rich text in help boxes. Store original so we can revert since this might be a "hack".
+                var styleRichText = GUI.skin.GetStyle("HelpBox").richText;
+                GUI.skin.GetStyle("HelpBox").richText = true;
+                EditorGUILayout.HelpBox($"Using renderer of type <i>{target._renderer.GetType()}</i>", MessageType.Info);
+                // Revert skin since it persists.
+                GUI.skin.GetStyle("HelpBox").richText = styleRichText;
+            }
+
+            base.OnInspectorGUI();
         }
     }
 #endif

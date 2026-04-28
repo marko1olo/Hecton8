@@ -485,6 +485,11 @@ namespace Crest
 
             foreach (var feature in renderers[rendererIndex].rendererFeatures)
             {
+                if (feature == null)
+                {
+                    continue;
+                }
+
                 if (feature.GetType().Name == "ScreenSpaceAmbientOcclusion")
                 {
                     return feature.isActive;
@@ -500,8 +505,15 @@ namespace Crest
             var renderers = (ScriptableRendererData[])s_RenderDataListField.GetValue(UniversalRenderPipeline.asset);
             var rendererIndex = GetRendererIndex(camera);
 
+            s_RenderFeatureActiveStates.Clear();
             foreach (var feature in renderers[rendererIndex].rendererFeatures)
             {
+                if (feature == null)
+                {
+                    s_RenderFeatureActiveStates.Add(false);
+                    continue;
+                }
+
                 s_RenderFeatureActiveStates.Add(feature.isActive);
                 feature.SetActive(false);
             }
@@ -511,7 +523,13 @@ namespace Crest
             var index = 0;
             foreach (var feature in renderers[rendererIndex].rendererFeatures)
             {
-                feature.SetActive(s_RenderFeatureActiveStates[index++]);
+                var activeState = s_RenderFeatureActiveStates[index++];
+                if (feature == null)
+                {
+                    continue;
+                }
+
+                feature.SetActive(activeState);
             }
 
             s_RenderFeatureActiveStates.Clear();

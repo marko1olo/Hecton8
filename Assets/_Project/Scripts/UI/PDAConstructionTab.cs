@@ -20,7 +20,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Construction Tab")]
-    public sealed class PDAConstructionTab : MonoBehaviour, ITickable
+    public sealed class PDAConstructionTab : MonoBehaviour, ITickable, IUpdatable
     {
         private static readonly Color PanelBg = new Color(0.03f, 0.08f, 0.1f, 0.84f);
         private static readonly Color BoxBg = new Color(0.05f, 0.12f, 0.14f, 0.72f);
@@ -162,21 +162,31 @@ namespace Hecton8.UI
 
         private void AutoResolve()
         {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerBuilder == null && playerContext != null)
+                playerBuilder = playerContext.PlayerBuilder;
+            if (playerInventory == null && playerContext != null)
+                playerInventory = playerContext.Inventory;
+            if (toolManager == null && playerContext != null)
+                toolManager = playerContext.ToolManager;
+            if (playerPDA == null && playerContext != null)
+                playerPDA = playerContext.PlayerPDA;
+
             if ((!playerBuilder || !playerInventory || !toolManager || !playerPDA) &&
                 SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform != null)
             {
                 if (playerBuilder == null)
-                    playerBuilder = playerTransform.GetComponentInChildren<PlayerBuilder>(true);
+                    playerTransform.TryGetComponent(out playerBuilder);
 
                 if (playerInventory == null)
-                    playerInventory = playerTransform.GetComponent<PlayerInventory>();
+                    playerTransform.TryGetComponent(out playerInventory);
 
                 if (toolManager == null)
-                    toolManager = playerTransform.GetComponentInChildren<Hecton8.Gameplay.PlayerToolManager>(true);
+                    playerTransform.TryGetComponent(out toolManager);
 
                 if (playerPDA == null)
-                    playerPDA = playerTransform.GetComponentInChildren<PlayerPDA>(true);
+                    playerTransform.TryGetComponent(out playerPDA);
             }
 
             if (constructionManager == null)
@@ -627,11 +637,7 @@ namespace Hecton8.UI
             if (_tickRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register((ITickable)this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _tickRegistered = true;
         }
 
@@ -640,10 +646,7 @@ namespace Hecton8.UI
             if (!_tickRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister((ITickable)this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _tickRegistered = false;
         }
 

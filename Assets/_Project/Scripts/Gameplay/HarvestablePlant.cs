@@ -53,7 +53,7 @@ namespace Hecton8.Gameplay
     /// Implements ICuttable for knife/laser cutter integration.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class HarvestablePlant : MonoBehaviour, ICuttable, ITickable
+    public sealed class HarvestablePlant : MonoBehaviour, ICuttable, ITickable, IUpdatable
     {
         // ══════════════════════════════════════════════════════════
         //  SHADER PROPERTY IDs — cached once, zero GC
@@ -132,6 +132,7 @@ namespace Hecton8.Gameplay
         private Transform _transform;
         private float[] _regrowTimers;
         private bool _isRegistered;
+        private bool _poolMissingLogged;
 
         /// <summary>
         /// Cached MaterialPropertyBlock for harvest VFX.
@@ -323,18 +324,21 @@ namespace Hecton8.Gameplay
             Vector2 offset2D = Random.insideUnitCircle * lootScatterRadius;
             Vector3 spawnPos = hitPoint + new Vector3(offset2D.x, 0.1f, offset2D.y);
 
-            // Spawn via ObjectPoolManager if available
-            GameObject loot;
             ObjectPoolManager pool = ObjectPoolManager.Instance;
-            if (pool != null)
+            if (pool == null)
             {
-                loot = pool.Spawn(segment.lootPrefab, spawnPos, Random.rotation);
-            }
-            else
-            {
-                loot = Instantiate(segment.lootPrefab, spawnPos, Random.rotation);
+                if (!_poolMissingLogged)
+                {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    Debug.LogWarning("[HarvestablePlant] ObjectPoolManager unavailable. Loot spawn skipped to avoid runtime Instantiate.", this);
+#endif
+                    _poolMissingLogged = true;
+                }
+
+                return;
             }
 
+            GameObject loot = pool.Spawn(segment.lootPrefab, spawnPos, Random.rotation);
             if (loot == null) return;
 
             // Apply upward force
@@ -420,24 +424,16 @@ namespace Hecton8.Gameplay
         {
             if (_isRegistered) return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-            {
-                tickManager.Register(this);
-                _isRegistered = true;
-            }
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+            _isRegistered = true;
         }
 
         private void UnregisterFromTick()
         {
             if (!_isRegistered) return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-            {
-                tickManager.Unregister(this);
-                _isRegistered = false;
-            }
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            _isRegistered = false;
         }
 
         // ══════════════════════════════════════════════════════════

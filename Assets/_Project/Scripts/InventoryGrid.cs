@@ -1,109 +1,276 @@
 // ============================================================================
-// HECTON-8 — InventoryGrid.cs
-// Ядро математики тетрис-инвентаря.
-//
-// Чистый C#. Не MonoBehaviour. Zero GC после конструктора.
-// Двумерный массив ItemData[columns, rows] — пространственная карта.
-// Ячейка == null → свободна. Ячейка != null → занята данным предметом.
-// Многоклеточный предмет (w×h) заполняет все покрытые ячейки одной ссылкой.
-//
-// Соглашение о координатах:
-//   x — колонка (0 = левая),  растёт вправо
-//   y — строка  (0 = верхняя), растёт вниз
-//   Сканирование: сверху-вниз, слева-направо (как чтение текста)
+// HECTON-8 - InventoryGrid.cs
+// Native SOA inventory occupancy + item metadata store.
+// Runtime truth is numeric and contiguous. Managed ItemData resolution is UI-only.
 // ============================================================================
 
 namespace Hecton8.Inventory
 {
-    using Hecton8.Items;
+    using Unity.Collections;
+    using Unity.Jobs;
 
     public sealed class InventoryGrid
     {
-        // ══════════════════════════════════════════════════════════
-        //  STATE
-        // ══════════════════════════════════════════════════════════
+        public readonly struct InventoryItemDescriptor
+        {
+            public readonly int HashId;
+            public readonly byte Width;
+            public readonly byte Height;
+            public readonly ushort MaxStack;
+            public readonly float Weight;
+            public readonly byte CategoryId;
+            public readonly byte Rarity;
+            public readonly bool Stackable;
+
+            public InventoryItemDescriptor(
+                int hashId,
+                byte width,
+                byte height,
+                ushort maxStack,
+                float weight,
+                byte categoryId,
+                byte rarity,
+                bool stackable)
+            {
+                HashId = hashId;
+                Width = width;
+                Height = height;
+                MaxStack = maxStack;
+                Weight = weight;
+                CategoryId = categoryId;
+                Rarity = rarity;
+                Stackable = stackable;
+            }
+
+            public bool IsValid => HashId != 0 && Width > 0 && Height > 0;
+        }
 
         private readonly int _columns;
         private readonly int _rows;
-        private readonly ItemData[,] _grid;   // [x, y]
+        private NativeArray<int> _cellAnchorIndices;
+        private NativeArray<int> _anchorHashIds;
+        private NativeArray<byte> _anchorWidths;
+        private NativeArray<byte> _anchorHeights;
+        private NativeArray<ushort> _anchorMaxStacks;
+        private NativeArray<float> _anchorWeights;
+        private NativeArray<byte> _anchorCategoryIds;
+        private NativeArray<byte> _anchorRarityIds;
+        private NativeArray<byte> _anchorFlags;
+        private int _occupiedCells;
 
-        private int _occupiedCells;           // быстрая проверка «полон ли»
+        public int Columns => _columns;
+        public int Rows => _rows;
+        public int TotalCells => _columns * _rows;
+        public int OccupiedCells => _occupiedCells;
+        public int FreeCells => TotalCells - _occupiedCells;
+        public bool IsFull => _occupiedCells >= TotalCells;
 
-        // ══════════════════════════════════════════════════════════
-        //  READ-ONLY ACCESSORS
-        // ══════════════════════════════════════════════════════════
+        public NativeArray<int>.ReadOnly AnchorHashIds => _anchorHashIds.IsCreated ? _anchorHashIds.AsReadOnly() : default;
+        public NativeArray<byte>.ReadOnly AnchorWidths => _anchorWidths.IsCreated ? _anchorWidths.AsReadOnly() : default;
+        public NativeArray<byte>.ReadOnly AnchorHeights => _anchorHeights.IsCreated ? _anchorHeights.AsReadOnly() : default;
+        public NativeArray<ushort>.ReadOnly AnchorMaxStacks => _anchorMaxStacks.IsCreated ? _anchorMaxStacks.AsReadOnly() : default;
+        public NativeArray<float>.ReadOnly AnchorWeights => _anchorWeights.IsCreated ? _anchorWeights.AsReadOnly() : default;
+        public NativeArray<byte>.ReadOnly AnchorCategoryIds => _anchorCategoryIds.IsCreated ? _anchorCategoryIds.AsReadOnly() : default;
+        public NativeArray<byte>.ReadOnly AnchorRarityIds => _anchorRarityIds.IsCreated ? _anchorRarityIds.AsReadOnly() : default;
+        public NativeArray<byte>.ReadOnly AnchorFlags => _anchorFlags.IsCreated ? _anchorFlags.AsReadOnly() : default;
 
-        public int  Columns       => _columns;
-        public int  Rows          => _rows;
-        public int  TotalCells    => _columns * _rows;
-        public int  OccupiedCells => _occupiedCells;
-        public int  FreeCells     => TotalCells - _occupiedCells;
-        public bool IsFull        => _occupiedCells >= TotalCells;
-
-        // ══════════════════════════════════════════════════════════
-        //  CONSTRUCTOR — единственная аллокация за жизнь объекта
-        // ══════════════════════════════════════════════════════════
-
-        /// <summary>
-        /// Создаёт пустую сетку заданного размера.
-        /// Вся память выделяется здесь и больше никогда.
-        /// </summary>
-        /// <param name="columns">Количество колонок (ширина сетки).</param>
-        /// <param name="rows">Количество строк (высота сетки).</param>
         public InventoryGrid(int columns, int rows)
         {
-            _columns       = columns;
-            _rows          = rows;
-            _grid          = new ItemData[columns, rows];
+            _columns = columns;
+            _rows = rows;
+
+            int totalCells = columns * rows;
+            _cellAnchorIndices = new NativeArray<int>(totalCells, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _anchorHashIds = new NativeArray<int>(totalCells, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _anchorWidths = new NativeArray<byte>(totalCells, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _anchorHeights = new NativeArray<byte>(totalCells, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _anchorMaxStacks = new NativeArray<ushort>(totalCells, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _anchorWeights = new NativeArray<float>(totalCells, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _anchorCategoryIds = new NativeArray<byte>(totalCells, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _anchorRarityIds = new NativeArray<byte>(totalCells, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _anchorFlags = new NativeArray<byte>(totalCells, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _occupiedCells = 0;
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  TryAddItem — автоматический поиск свободного места
-        // ══════════════════════════════════════════════════════════
-
-        /// <summary>
-        /// Ищет первое свободное место для предмета (скан: сверху-вниз,
-        /// слева-направо). Если нашлось — размещает и возвращает true.
-        ///
-        /// Zero GC: никаких аллокаций. Только вложенные for-циклы.
-        /// </summary>
-        /// <param name="item">Данные предмета (обязательно width ≥ 1, height ≥ 1).</param>
-        /// <param name="placedX">Колонка, в которую был помещён предмет (-1 при неудаче).</param>
-        /// <param name="placedY">Строка, в которую был помещён предмет (-1 при неудаче).</param>
-        /// <returns>true — предмет размещён; false — нет свободного места.</returns>
-        public bool TryAddItem(ItemData item, out int placedX, out int placedY)
+        public void Dispose(JobHandle dependency)
         {
-            int iw = item.width;
-            int ih = item.height;
+            if (_cellAnchorIndices.IsCreated)
+            {
+                _cellAnchorIndices.Dispose(dependency);
+                _cellAnchorIndices = default;
+            }
 
-            // Быстрый отказ: предмет больше сетки или нет свободных ячеек
-            if (iw > _columns || ih > _rows || _occupiedCells >= TotalCells)
+            if (_anchorHashIds.IsCreated)
+            {
+                _anchorHashIds.Dispose(dependency);
+                _anchorHashIds = default;
+            }
+
+            if (_anchorWidths.IsCreated)
+            {
+                _anchorWidths.Dispose(dependency);
+                _anchorWidths = default;
+            }
+
+            if (_anchorHeights.IsCreated)
+            {
+                _anchorHeights.Dispose(dependency);
+                _anchorHeights = default;
+            }
+
+            if (_anchorMaxStacks.IsCreated)
+            {
+                _anchorMaxStacks.Dispose(dependency);
+                _anchorMaxStacks = default;
+            }
+
+            if (_anchorWeights.IsCreated)
+            {
+                _anchorWeights.Dispose(dependency);
+                _anchorWeights = default;
+            }
+
+            if (_anchorCategoryIds.IsCreated)
+            {
+                _anchorCategoryIds.Dispose(dependency);
+                _anchorCategoryIds = default;
+            }
+
+            if (_anchorRarityIds.IsCreated)
+            {
+                _anchorRarityIds.Dispose(dependency);
+                _anchorRarityIds = default;
+            }
+
+            if (_anchorFlags.IsCreated)
+            {
+                _anchorFlags.Dispose(dependency);
+                _anchorFlags = default;
+            }
+            _occupiedCells = 0;
+        }
+
+        public bool HasAnchor(int anchorIndex)
+        {
+            return _anchorHashIds.IsCreated &&
+                   (uint)anchorIndex < (uint)_anchorHashIds.Length &&
+                   _anchorHashIds[anchorIndex] != 0;
+        }
+
+        public int GetAnchorHashId(int anchorIndex)
+        {
+            return HasAnchor(anchorIndex) ? _anchorHashIds[anchorIndex] : 0;
+        }
+
+        public int GetAnchorWidth(int anchorIndex)
+        {
+            return HasAnchor(anchorIndex) ? _anchorWidths[anchorIndex] : 0;
+        }
+
+        public int GetAnchorHeight(int anchorIndex)
+        {
+            return HasAnchor(anchorIndex) ? _anchorHeights[anchorIndex] : 0;
+        }
+
+        public int GetAnchorMaxStack(int anchorIndex)
+        {
+            return HasAnchor(anchorIndex) ? _anchorMaxStacks[anchorIndex] : 0;
+        }
+
+        public float GetAnchorWeight(int anchorIndex)
+        {
+            return HasAnchor(anchorIndex) ? _anchorWeights[anchorIndex] : 0f;
+        }
+
+        public bool TryGetAnchorDescriptor(int anchorIndex, out InventoryItemDescriptor descriptor)
+        {
+            if (!HasAnchor(anchorIndex))
+            {
+                descriptor = default;
+                return false;
+            }
+
+            descriptor = new InventoryItemDescriptor(
+                _anchorHashIds[anchorIndex],
+                _anchorWidths[anchorIndex],
+                _anchorHeights[anchorIndex],
+                _anchorMaxStacks[anchorIndex],
+                _anchorWeights[anchorIndex],
+                _anchorCategoryIds[anchorIndex],
+                _anchorRarityIds[anchorIndex],
+                (_anchorFlags[anchorIndex] & 0x01) != 0);
+            return true;
+        }
+
+        public int GetCellAnchorIndex(int x, int y)
+        {
+            if ((uint)x >= (uint)_columns || (uint)y >= (uint)_rows || !_cellAnchorIndices.IsCreated)
+                return -1;
+
+            int encodedIndex = _cellAnchorIndices[CellIndex(x, y)];
+            return encodedIndex > 0 ? encodedIndex - 1 : -1;
+        }
+
+        public bool IsCellOccupied(int x, int y)
+        {
+            return GetCellAnchorIndex(x, y) >= 0;
+        }
+
+        public int GetCellHashId(int x, int y)
+        {
+            int anchorIndex = GetCellAnchorIndex(x, y);
+            return anchorIndex >= 0 ? _anchorHashIds[anchorIndex] : 0;
+        }
+
+        public bool TryGetCellDescriptor(int x, int y, out InventoryItemDescriptor descriptor)
+        {
+            int anchorIndex = GetCellAnchorIndex(x, y);
+            return TryGetAnchorDescriptor(anchorIndex, out descriptor);
+        }
+
+        public void CopyOccupiedMask(NativeArray<byte> destination)
+        {
+            if (!destination.IsCreated || destination.Length < TotalCells || !_cellAnchorIndices.IsCreated)
+                return;
+
+            for (int i = 0; i < TotalCells; i++)
+                destination[i] = _cellAnchorIndices[i] != 0 ? (byte)1 : (byte)0;
+        }
+
+        public bool TryAddItem(in InventoryItemDescriptor descriptor, out int placedX, out int placedY)
+        {
+            if (!descriptor.IsValid || !_cellAnchorIndices.IsCreated)
             {
                 placedX = -1;
                 placedY = -1;
                 return false;
             }
 
-            // Пределы сканирования: нет смысла проверять позиции,
-            // где предмет гарантированно выходит за границу
-            int maxX = _columns - iw;
-            int maxY = _rows    - ih;
+            int width = descriptor.Width;
+            int height = descriptor.Height;
+            if (width > _columns || height > _rows || _occupiedCells >= TotalCells)
+            {
+                placedX = -1;
+                placedY = -1;
+                return false;
+            }
 
+            int maxX = _columns - width;
+            int maxY = _rows - height;
             for (int y = 0; y <= maxY; y++)
             {
                 for (int x = 0; x <= maxX; x++)
                 {
-                    // Ранний выход: если якорная ячейка занята — следующая колонка
-                    if (_grid[x, y] != null) continue;
+                    if (_cellAnchorIndices[CellIndex(x, y)] != 0)
+                        continue;
 
-                    if (CheckFitInternal(x, y, iw, ih))
-                    {
-                        PlaceItem(item, x, y, iw, ih);
-                        placedX = x;
-                        placedY = y;
-                        return true;
-                    }
+                    if (!CheckFitInternal(x, y, width, height))
+                        continue;
+
+                    PlaceDescriptor(in descriptor, x, y);
+                    placedX = x;
+                    placedY = y;
+                    return true;
                 }
             }
 
@@ -112,151 +279,161 @@ namespace Hecton8.Inventory
             return false;
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  CheckFit — проверка вместимости (публичная)
-        // ══════════════════════════════════════════════════════════
-
-        /// <summary>
-        /// Проверяет, помещается ли предмет размером width×height
-        /// в позицию (startX, startY) без выхода за границы и коллизий.
-        ///
-        /// Вызывается из TryAddItem, а также может использоваться
-        /// будущей UI-системой для drag-and-drop превью.
-        /// </summary>
         public bool CheckFit(int startX, int startY, int width, int height)
         {
-            // Bounds check (включая отрицательные координаты)
-            if (startX < 0 || startY < 0) return false;
-            if (startX + width > _columns) return false;
-            if (startY + height > _rows)   return false;
+            if (startX < 0 || startY < 0)
+                return false;
+
+            if (startX + width > _columns || startY + height > _rows)
+                return false;
 
             return CheckFitInternal(startX, startY, width, height);
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  RemoveItem — очистка ячеек
-        // ══════════════════════════════════════════════════════════
+        public bool PlaceAt(in InventoryItemDescriptor descriptor, int x, int y)
+        {
+            if (!descriptor.IsValid || !CheckFit(x, y, descriptor.Width, descriptor.Height))
+                return false;
 
-        /// <summary>
-        /// Очищает прямоугольник ячеек (x, y, width, height).
-        /// Безопасно кламписует к границам сетки.
-        /// Уменьшает счётчик занятых ячеек корректно (только реально занятые).
-        /// </summary>
-        /// <param name="x">Левая колонка.</param>
-        /// <param name="y">Верхняя строка.</param>
-        /// <param name="width">Ширина очищаемой области.</param>
-        /// <param name="height">Высота очищаемой области.</param>
+            PlaceDescriptor(in descriptor, x, y);
+            return true;
+        }
+
         public void RemoveItem(int x, int y, int width, int height)
         {
-            // Clamping для защиты от невалидных вызовов
+            int anchorIndex = GetCellAnchorIndex(x, y);
+            if (anchorIndex >= 0)
+            {
+                RemoveAnchorAt(anchorIndex);
+                return;
+            }
+
             int x0 = x < 0 ? 0 : x;
             int y0 = y < 0 ? 0 : y;
             int x1 = x + width;
             int y1 = y + height;
-            if (x1 > _columns) x1 = _columns;
-            if (y1 > _rows)    y1 = _rows;
+            if (x1 > _columns)
+                x1 = _columns;
+            if (y1 > _rows)
+                y1 = _rows;
 
-            for (int ix = x0; ix < x1; ix++)
+            for (int iy = y0; iy < y1; iy++)
             {
-                for (int iy = y0; iy < y1; iy++)
+                for (int ix = x0; ix < x1; ix++)
                 {
-                    if (_grid[ix, iy] != null)
-                    {
-                        _grid[ix, iy] = null;
-                        _occupiedCells--;
-                    }
+                    int cellAnchorIndex = GetCellAnchorIndex(ix, iy);
+                    if (cellAnchorIndex >= 0)
+                        RemoveAnchorAt(cellAnchorIndex);
                 }
             }
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  GetCell — чтение одной ячейки
-        // ══════════════════════════════════════════════════════════
-
-        /// <summary>
-        /// Возвращает ItemData в ячейке (x, y) или null,
-        /// если ячейка пуста или координаты за пределами сетки.
-        /// Безопасен для вызова с любыми координатами.
-        /// </summary>
-        public ItemData GetCell(int x, int y)
+        public void RemoveAnchorAt(int anchorIndex)
         {
-            if ((uint)x >= (uint)_columns || (uint)y >= (uint)_rows)
-                return null;
+            if (!TryGetAnchorDescriptor(anchorIndex, out InventoryItemDescriptor descriptor))
+                return;
 
-            return _grid[x, y];
+            int anchorX = anchorIndex % _columns;
+            int anchorY = anchorIndex / _columns;
+            int endX = anchorX + descriptor.Width;
+            int endY = anchorY + descriptor.Height;
+            for (int y = anchorY; y < endY; y++)
+            {
+                for (int x = anchorX; x < endX; x++)
+                {
+                    int cellIndex = CellIndex(x, y);
+                    if (_cellAnchorIndices[cellIndex] != 0)
+                    {
+                        _cellAnchorIndices[cellIndex] = 0;
+                        _occupiedCells--;
+                    }
+                }
+            }
+
+            ClearAnchorMetadata(anchorIndex);
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  PlaceAt — ручное размещение (для drag-and-drop UI)
-        // ══════════════════════════════════════════════════════════
-
-        /// <summary>
-        /// Размещает предмет в заданную позицию БЕЗ автопоиска.
-        /// Предварительно вызовите CheckFit() для валидации.
-        /// Если CheckFit вернул false, вызов PlaceAt повредит данные.
-        /// </summary>
-        /// <returns>true если размещение выполнено.</returns>
-        public bool PlaceAt(ItemData item, int x, int y)
-        {
-            int iw = item.width;
-            int ih = item.height;
-
-            if (!CheckFit(x, y, iw, ih))
-                return false;
-
-            PlaceItem(item, x, y, iw, ih);
-            return true;
-        }
-
-        // ══════════════════════════════════════════════════════════
-        //  Clear — полный сброс
-        // ══════════════════════════════════════════════════════════
-
-        /// <summary>
-        /// Очищает всю сетку. Zero GC — обнуляет существующий массив.
-        /// </summary>
         public void Clear()
         {
-            System.Array.Clear(_grid, 0, _grid.Length);
+            if (!_cellAnchorIndices.IsCreated)
+            {
+                _occupiedCells = 0;
+                return;
+            }
+
+            for (int i = 0; i < TotalCells; i++)
+            {
+                _cellAnchorIndices[i] = 0;
+                _anchorHashIds[i] = 0;
+                _anchorWidths[i] = 0;
+                _anchorHeights[i] = 0;
+                _anchorMaxStacks[i] = 0;
+                _anchorWeights[i] = 0f;
+                _anchorCategoryIds[i] = 0;
+                _anchorRarityIds[i] = 0;
+                _anchorFlags[i] = 0;
+            }
+
             _occupiedCells = 0;
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  PRIVATE — внутренние хелперы
-        // ══════════════════════════════════════════════════════════
-
-        /// <summary>
-        /// Быстрая проверка коллизий БЕЗ проверки границ (bounds
-        /// уже проверены вызывающим кодом или гарантированы математикой
-        /// цикла в TryAddItem).
-        /// </summary>
-        private bool CheckFitInternal(int startX, int startY, int w, int h)
+        private int CellIndex(int x, int y)
         {
-            int endX = startX + w;
-            int endY = startY + h;
+            return y * _columns + x;
+        }
 
-            for (int ix = startX; ix < endX; ix++)
-                for (int iy = startY; iy < endY; iy++)
-                    if (_grid[ix, iy] != null)
+        private bool CheckFitInternal(int startX, int startY, int width, int height)
+        {
+            int endX = startX + width;
+            int endY = startY + height;
+            for (int y = startY; y < endY; y++)
+            {
+                for (int x = startX; x < endX; x++)
+                {
+                    if (_cellAnchorIndices[CellIndex(x, y)] != 0)
                         return false;
+                }
+            }
 
             return true;
         }
 
-        /// <summary>
-        /// Записывает ссылку на ItemData во все ячейки прямоугольника.
-        /// Обновляет счётчик занятых ячеек.
-        /// </summary>
-        private void PlaceItem(ItemData item, int x, int y, int w, int h)
+        private void PlaceDescriptor(in InventoryItemDescriptor descriptor, int x, int y)
         {
-            int endX = x + w;
-            int endY = y + h;
+            int anchorIndex = CellIndex(x, y);
+            _anchorHashIds[anchorIndex] = descriptor.HashId;
+            _anchorWidths[anchorIndex] = descriptor.Width;
+            _anchorHeights[anchorIndex] = descriptor.Height;
+            _anchorMaxStacks[anchorIndex] = descriptor.MaxStack;
+            _anchorWeights[anchorIndex] = descriptor.Weight;
+            _anchorCategoryIds[anchorIndex] = descriptor.CategoryId;
+            _anchorRarityIds[anchorIndex] = descriptor.Rarity;
+            _anchorFlags[anchorIndex] = descriptor.Stackable ? (byte)0x01 : (byte)0x00;
 
-            for (int ix = x; ix < endX; ix++)
-                for (int iy = y; iy < endY; iy++)
-                    _grid[ix, iy] = item;
+            int encodedAnchorIndex = anchorIndex + 1;
+            int endX = x + descriptor.Width;
+            int endY = y + descriptor.Height;
+            for (int cellY = y; cellY < endY; cellY++)
+            {
+                for (int cellX = x; cellX < endX; cellX++)
+                {
+                    _cellAnchorIndices[CellIndex(cellX, cellY)] = encodedAnchorIndex;
+                }
+            }
 
-            _occupiedCells += w * h;
+            _occupiedCells += descriptor.Width * descriptor.Height;
+        }
+
+        private void ClearAnchorMetadata(int anchorIndex)
+        {
+            _anchorHashIds[anchorIndex] = 0;
+            _anchorWidths[anchorIndex] = 0;
+            _anchorHeights[anchorIndex] = 0;
+            _anchorMaxStacks[anchorIndex] = 0;
+            _anchorWeights[anchorIndex] = 0f;
+            _anchorCategoryIds[anchorIndex] = 0;
+            _anchorRarityIds[anchorIndex] = 0;
+            _anchorFlags[anchorIndex] = 0;
         }
     }
 }

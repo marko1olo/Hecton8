@@ -1,0 +1,75 @@
+[StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+internal struct PersistentWorldDehydratedState
+{
+    public AbsoluteUniversePositionBlit128 Position;
+    public int Quantity;
+    public float Integrity01;
+    public int InventoryHash;
+    public uint InstanceUid;
+}
+
+private NativeHashMap<ulong, PersistentWorldDehydratedState> _dehydratedStateByGuid;
+
+_dehydratedStateByGuid = new NativeHashMap<ulong, PersistentWorldDehydratedState>(maxTrackedItems, Allocator.Persistent);
+
+RegisterOrUpdateDehydratedState(recordIndex, in record);
+
+PersistentWorldDehydratedState state = ResolveDehydratedState(in record);
+AbsoluteUniversePosition hydratedPosition = AbsoluteUniversePosition.FromAlignedBlit(in state.Position);
+int hydratedQuantity = math.max(1, state.Quantity);
+
+record.Position = position;
+if (TryGetLiveQuantity(instance, out int liveQuantity))
+    record.Quantity = liveQuantity;
+_records[recordIndex] = record;
+RegisterOrUpdatePoolSlot(recordIndex, in record);
+RegisterOrUpdateDehydratedState(recordIndex, in record);
+
+private void RegisterOrUpdateDehydratedState(int recordIndex, in PersistentWorldItemRecord record)
+{
+    if (!IsValidPoolIndex(recordIndex) || !_dehydratedStateByGuid.IsCreated)
+        return;
+
+    PersistentWorldDehydratedState state = ResolveDehydratedState(in record);
+    state.Position = record.Position.ToAlignedBlit();
+    state.InstanceUid = record.InstanceUid;
+    state.Quantity = math.max(1, record.Quantity);
+    if (state.Integrity01 <= 0f)
+        state.Integrity01 = 1f;
+
+    ulong guid = ComputePoolGuid(in record);
+    _dehydratedStateByGuid.Remove(guid);
+    _dehydratedStateByGuid.TryAdd(guid, state);
+}
+
+private void RemoveDehydratedState(in PersistentWorldItemRecord record)
+{
+    if (!_dehydratedStateByGuid.IsCreated)
+        return;
+
+    _dehydratedStateByGuid.Remove(ComputePoolGuid(in record));
+}
+
+private PersistentWorldDehydratedState ResolveDehydratedState(in PersistentWorldItemRecord record)
+{
+    if (_dehydratedStateByGuid.IsCreated &&
+        _dehydratedStateByGuid.TryGetValue(ComputePoolGuid(in record), out PersistentWorldDehydratedState state))
+    {
+        return state;
+    }
+
+    return new PersistentWorldDehydratedState
+    {
+        Position = record.Position.ToAlignedBlit(),
+        Quantity = math.max(1, record.Quantity),
+        Integrity01 = 1f,
+        InventoryHash = 0,
+        InstanceUid = record.InstanceUid
+    };
+}
+
+private AbsoluteUniversePosition ResolveResidencyPosition(in PersistentWorldItemRecord record)
+{
+    PersistentWorldDehydratedState state = ResolveDehydratedState(in record);
+    return AbsoluteUniversePosition.FromAlignedBlit(in state.Position);
+}

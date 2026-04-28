@@ -93,8 +93,16 @@ namespace Hecton8.World
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4028)]
-    public sealed class WorldGenerativeGeologyVoxelBridgeDirector : MonoBehaviour, ISlowTickable, ITickable
+    public sealed class WorldGenerativeGeologyVoxelBridgeDirector : MonoBehaviour, ISlowTickable, ITickable, IUpdatable
     {
+        internal static WorldGenerativeGeologyVoxelBridgeDirector ActiveRuntimeInstance { get; private set; }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            ActiveRuntimeInstance = null;
+        }
+
         private sealed class PendingRequestState : System.IDisposable
         {
             public int Signature;
@@ -173,84 +181,90 @@ namespace Hecton8.World
         private readonly List<WorldGenerativeGeologyVoxelBlendRequest> _sortedRequests = new List<WorldGenerativeGeologyVoxelBlendRequest>(64);
         private bool _registeredToFrameTickManager;
         private bool _registeredToSlowTickManager;
+        private bool _startupReconcilePending = true;
         private int _estimatedWarmedPoolCount;
         private CancellationTokenSource _lifetimeCancellation;
 
         private void Awake()
         {
+            ActiveRuntimeInstance = this;
             ResolveReferences();
-            ReconcileVoxelRequests();
+            QueueStartupReconcile();
         }
 
         private void OnEnable()
         {
+            ActiveRuntimeInstance = this;
             ResolveReferences();
             EnsureLifetimeCancellation();
-            if (GameTickManager.Instance != null)
+            QueueStartupReconcile();
+            if (!_registeredToFrameTickManager)
             {
-                if (!_registeredToFrameTickManager)
-                {
-                    GameTickManager.Instance.Register((ITickable)this);
-                    _registeredToFrameTickManager = true;
-                }
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+                _registeredToFrameTickManager = true;
+            }
 
-                if (!_registeredToSlowTickManager)
-                {
-                    GameTickManager.Instance.Register((ISlowTickable)this);
-                    _registeredToSlowTickManager = true;
-                }
+            if (!_registeredToSlowTickManager)
+            {
+                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredToSlowTickManager = true;
             }
         }
 
         private void Start()
         {
-            if (GameTickManager.Instance != null)
+            if (!_registeredToFrameTickManager)
             {
-                if (!_registeredToFrameTickManager)
-                {
-                    GameTickManager.Instance.Register((ITickable)this);
-                    _registeredToFrameTickManager = true;
-                }
-
-                if (!_registeredToSlowTickManager)
-                {
-                    GameTickManager.Instance.Register((ISlowTickable)this);
-                    _registeredToSlowTickManager = true;
-                }
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+                _registeredToFrameTickManager = true;
             }
 
-            ReconcileVoxelRequests();
+            if (!_registeredToSlowTickManager)
+            {
+                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredToSlowTickManager = true;
+            }
         }
 
         private void OnDisable()
         {
-            if (GameTickManager.Instance != null)
+            if (_registeredToFrameTickManager)
             {
-                if (_registeredToFrameTickManager)
-                {
-                    GameTickManager.Instance.Unregister((ITickable)this);
-                    _registeredToFrameTickManager = false;
-                }
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _registeredToFrameTickManager = false;
+            }
 
-                if (_registeredToSlowTickManager)
-                {
-                    GameTickManager.Instance.Unregister((ISlowTickable)this);
-                    _registeredToSlowTickManager = false;
-                }
+            if (_registeredToSlowTickManager)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredToSlowTickManager = false;
             }
 
             CancelLifetimeCancellation();
             CancelAllPendingRequests();
             ClearAllVolumes();
+
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
+        }
+
+        private void OnDestroy()
+        {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
         }
 
         public void Tick(float deltaTime)
         {
+            TryRunStartupReconcile();
             FlushQueuedLaunches();
         }
 
         public void SlowTick()
         {
+            if (TryRunStartupReconcile())
+                return;
+
             ReconcileVoxelRequests();
         }
 
@@ -262,6 +276,21 @@ namespace Hecton8.World
         public void SetVoxelEngine(HectonVoxelEngine engine)
         {
             voxelEngine = engine;
+        }
+
+        private void QueueStartupReconcile()
+        {
+            _startupReconcilePending = true;
+        }
+
+        private bool TryRunStartupReconcile()
+        {
+            if (!_startupReconcilePending)
+                return false;
+
+            _startupReconcilePending = false;
+            ReconcileVoxelRequests();
+            return true;
         }
 
         public void ReconcileVoxelRequests()
@@ -568,6 +597,7 @@ namespace Hecton8.World
                     request,
                     out int gridDimension,
                     out float voxelStep,
+                    out int voxelLodLevel,
                     out bool buildCollider,
                     out int resolvedResolution,
                     out int detailBand,
@@ -583,6 +613,7 @@ namespace Hecton8.World
                     request.geologyProfileId,
                     gridDimension,
                     voxelStep,
+                    voxelLodLevel,
                     buildCollider,
                     buildDataMs);
 
@@ -598,7 +629,7 @@ namespace Hecton8.World
                         entrances,
                         structureArray,
                         generationParams,
-                        lodLevel: 0,
+                        lodLevel: voxelLodLevel,
                         buildCollider: buildCollider,
                         ct: token);
 
@@ -647,6 +678,7 @@ namespace Hecton8.World
                         request.geologyProfileId,
                         gridDimension,
                         voxelStep,
+                        voxelLodLevel,
                         buildCollider,
                         elapsedMs,
                         _activeVolumes.Count,
@@ -716,6 +748,7 @@ namespace Hecton8.World
             in WorldGenerativeGeologyVoxelBlendRequest request,
             out int gridDimension,
             out float voxelStep,
+            out int voxelLodLevel,
             out bool buildCollider,
             out int resolvedResolution,
             out int detailBand,
@@ -723,7 +756,7 @@ namespace Hecton8.World
             out NativeArray<CaveStructure> structures)
         {
             float dominantSize = Mathf.Clamp(math.cmax((float3)request.size), minVoxelSize, maxVoxelSize) + voxelPadding;
-            ResolveRequestBuildSettings(request, out resolvedResolution, out buildCollider, out detailBand);
+            ResolveRequestBuildSettings(request, out resolvedResolution, out voxelLodLevel, out buildCollider, out detailBand);
             float stabilizedWeight = Quantize01(request.weight, 0.05f);
             voxelStep = Mathf.Clamp(dominantSize / Mathf.Max(24f, resolvedResolution), minVoxelStep, maxVoxelStep);
             gridDimension = Mathf.Clamp(
@@ -943,13 +976,14 @@ namespace Hecton8.World
 
         private int ComputeRequestSignature(in WorldGenerativeGeologyVoxelBlendRequest request)
         {
-            ResolveRequestBuildSettings(request, out int resolvedResolution, out bool buildCollider, out _);
+            ResolveRequestBuildSettings(request, out int resolvedResolution, out int voxelLodLevel, out bool buildCollider, out _);
             unchecked
             {
                 int hash = (int)request.runtimeKey;
                 hash = (hash * 397) ^ (int)request.caveBlendMode;
                 hash = (hash * 397) ^ (int)request.archetype;
                 hash = (hash * 397) ^ resolvedResolution;
+                hash = (hash * 397) ^ voxelLodLevel;
                 hash = (hash * 397) ^ (buildCollider ? 1 : 0);
                 return hash;
             }
@@ -958,6 +992,7 @@ namespace Hecton8.World
         private void ResolveRequestBuildSettings(
             in WorldGenerativeGeologyVoxelBlendRequest request,
             out int resolvedResolution,
+            out int voxelLodLevel,
             out bool buildCollider,
             out int detailBand)
         {
@@ -975,7 +1010,18 @@ namespace Hecton8.World
 
             detailBand = ResolveDetailBand(request.playerDistance, previousBand);
             resolvedResolution = ResolveTargetResolution(request, detailBand, previousResolution);
+            voxelLodLevel = ResolveVoxelLodLevel(detailBand);
             buildCollider = ShouldBuildCollider(request.playerDistance, currentColliderEnabled);
+        }
+
+        private static int ResolveVoxelLodLevel(int detailBand)
+        {
+            return detailBand switch
+            {
+                2 => 2,
+                1 => 1,
+                _ => 0
+            };
         }
 
         private int ResolveTargetResolution(
@@ -1381,6 +1427,7 @@ namespace Hecton8.World
             string profileId,
             int gridDimension,
             float voxelStep,
+            int voxelLodLevel,
             bool buildCollider,
             float buildDataMs)
         {
@@ -1389,7 +1436,7 @@ namespace Hecton8.World
 
             RuntimeDiagnosticsTrace.WriteEvent(
                 "voxel.request",
-                $"prepared key={runtimeKey} family={familyId} profile={profileId} grid={gridDimension} voxel={voxelStep:0.00} collider={buildCollider} buildData={buildDataMs:0.00}ms");
+                $"prepared key={runtimeKey} family={familyId} profile={profileId} grid={gridDimension} voxel={voxelStep:0.00} lod={voxelLodLevel} collider={buildCollider} buildData={buildDataMs:0.00}ms");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
@@ -1400,6 +1447,7 @@ namespace Hecton8.World
             string profileId,
             int gridDimension,
             float voxelStep,
+            int voxelLodLevel,
             bool buildCollider,
             float elapsedMs,
             int activeCount,
@@ -1410,7 +1458,7 @@ namespace Hecton8.World
 
             RuntimeDiagnosticsTrace.WriteEvent(
                 "voxel.request",
-                $"complete key={runtimeKey} family={familyId} profile={profileId} grid={gridDimension} voxel={voxelStep:0.00} collider={buildCollider} took={elapsedMs:0.00}ms active={activeCount} pending={pendingCount}");
+                $"complete key={runtimeKey} family={familyId} profile={profileId} grid={gridDimension} voxel={voxelStep:0.00} lod={voxelLodLevel} collider={buildCollider} took={elapsedMs:0.00}ms active={activeCount} pending={pendingCount}");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]

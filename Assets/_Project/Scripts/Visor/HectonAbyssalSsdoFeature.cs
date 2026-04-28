@@ -21,6 +21,13 @@ namespace Hecton8.Visor
         private const string ShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_AbyssalSSDO.shader";
 #endif
 
+        private static bool IsUnsupportedCameraType(CameraType cameraType)
+        {
+            return cameraType == CameraType.Preview ||
+                   cameraType == CameraType.Reflection ||
+                   cameraType == CameraType.SceneView;
+        }
+
         [Serializable]
         private sealed class FeatureSettings
         {
@@ -103,7 +110,7 @@ namespace Hecton8.Visor
                 _blurVerticalMaterial = blurVerticalMaterial;
                 _compositeMaterial = compositeMaterial;
                 renderPassEvent = settings != null ? settings.injectionPoint : RenderPassEvent.BeforeRenderingTransparents;
-                ConfigureInput(ScriptableRenderPassInput.Depth | ScriptableRenderPassInput.Normal);
+                ConfigureInput(ScriptableRenderPassInput.Depth | ScriptableRenderPassInput.Normal | ScriptableRenderPassInput.Color);
                 requiresIntermediateTexture = true;
             }
 
@@ -126,7 +133,7 @@ namespace Hecton8.Visor
 
                 UniversalCameraData cameraData = frameData.Get<UniversalCameraData>();
                 CameraType cameraType = cameraData.cameraType;
-                if (cameraType == CameraType.Preview || cameraType == CameraType.Reflection)
+                if (IsUnsupportedCameraType(cameraType))
                     return;
 
                 TextureHandle sourceTexture = resourceData.activeColorTexture;
@@ -145,7 +152,7 @@ namespace Hecton8.Visor
                 occlusionDesc.height = ssdoHeight;
                 occlusionDesc.depthBufferBits = DepthBits.None;
                 occlusionDesc.msaaSamples = MSAASamples.None;
-                occlusionDesc.colorFormat = GraphicsFormat.R8_UNorm;
+                occlusionDesc.colorFormat = GraphicsFormat.B10G11R11_UFloatPack32;
                 occlusionDesc.clearBuffer = true;
                 occlusionDesc.clearColor = Color.white;
                 occlusionDesc.filterMode = FilterMode.Bilinear;
@@ -160,6 +167,7 @@ namespace Hecton8.Visor
                 compositeDesc.clearBuffer = false;
                 compositeDesc.depthBufferBits = DepthBits.None;
                 compositeDesc.msaaSamples = MSAASamples.None;
+                compositeDesc.colorFormat = GraphicsFormat.B10G11R11_UFloatPack32;
 
                 TextureHandle occlusionTexture = renderGraph.CreateTexture(occlusionDesc);
                 TextureHandle blurTexture = renderGraph.CreateTexture(blurDesc);
@@ -292,7 +300,9 @@ namespace Hecton8.Visor
                 settings.shader = AssetDatabase.LoadAssetAtPath<Shader>(ShaderAssetPath);
 #endif
 
-            Shader shader = settings != null ? settings.shader : null;
+            Shader shader = settings != null && settings.shader != null
+                ? settings.shader
+                : Shader.Find("Hidden/Hecton8/AbyssalSSDO");
             _pass ??= new AbyssalSsdoPass();
             RecreateMaterial(ref _occlusionMaterial, shader);
             RecreateMaterial(ref _blurHorizontalMaterial, shader);
@@ -315,7 +325,7 @@ namespace Hecton8.Visor
             }
 
             CameraType cameraType = renderingData.cameraData.cameraType;
-            if (cameraType == CameraType.Preview || cameraType == CameraType.Reflection)
+            if (IsUnsupportedCameraType(cameraType))
             {
                 Shader.SetGlobalFloat(ShaderConstants.ActiveId, 0f);
                 return;

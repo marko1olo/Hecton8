@@ -18,7 +18,7 @@ namespace Hecton8.Physics
     [AddComponentMenu("Hecton8/Physics/Tether Manager")]
     public sealed class TetherManager : MonoBehaviour, IFixedTickable, IOriginShiftListener
     {
-        [BurstCompile]
+        [BurstCompile(FloatMode = FloatMode.Fast)]
         private struct TranslateVisualPointsJob : IJobParallelFor
         {
             public float3 ShiftOffset;
@@ -70,7 +70,7 @@ namespace Hecton8.Physics
         {
             if (renderCamera == null)
             {
-                Camera childCamera = GetComponentInChildren<Camera>(true);
+                Camera childCamera = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Camera>(transform);
                 if (childCamera != null)
                     renderCamera = childCamera;
             }
@@ -80,9 +80,9 @@ namespace Hecton8.Physics
 
         private void OnEnable()
         {
-            if (!_registeredFixedTick && GameTickManager.Instance != null)
+            if (!_registeredFixedTick)
             {
-                GameTickManager.Instance.Register((IFixedTickable)this);
+                GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Player);
                 _registeredFixedTick = true;
             }
 
@@ -95,9 +95,9 @@ namespace Hecton8.Physics
 
         private void OnDisable()
         {
-            if (_registeredFixedTick && GameTickManager.Instance != null)
+            if (_registeredFixedTick)
             {
-                GameTickManager.Instance.Unregister((IFixedTickable)this);
+                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
                 _registeredFixedTick = false;
             }
 

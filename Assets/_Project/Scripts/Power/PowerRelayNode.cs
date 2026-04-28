@@ -52,6 +52,8 @@ namespace Hecton8.Power
         private Vector3 _lastPosition;
         private int _lastVisualPointCount = -1;
         private int _lastTopologyRevision = -1;
+        private readonly List<long> _submittedLinkIds = new List<long>(8);
+        private readonly List<long> _scratchLinkIds = new List<long>(8);
 
         /// <summary>Dynamic passive drain authored by this relay.</summary>
         public float PowerRating => -_currentPassiveLoss;
@@ -66,7 +68,7 @@ namespace Hecton8.Power
         {
             _hasPower = hasPower;
             _debugHasPower = hasPower;
-            UpdateCableColor();
+            RefreshRelayLinks(true);
         }
 
         private void Awake()
@@ -129,19 +131,19 @@ namespace Hecton8.Power
 
         private void TryRegister()
         {
-            if (_registered || GameTickManager.Instance == null)
+            if (_registered)
                 return;
 
-            GameTickManager.Instance.Register((ISlowTickable)this);
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
             _registered = true;
         }
 
         private void TryUnregister()
         {
-            if (!_registered || GameTickManager.Instance == null)
+            if (!_registered)
                 return;
 
-            GameTickManager.Instance.Unregister((ISlowTickable)this);
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _registered = false;
         }
 
@@ -190,14 +192,13 @@ namespace Hecton8.Power
             _debugCableLengthMeters = totalHalfCableLength * 2f;
             _debugPassiveLoss = _currentPassiveLoss;
 
-            if (forceVisualRefresh || moved || neighborCount != _lastVisualPointCount / 2)
+            if (forceVisualRefresh || moved || neighborCount != _submittedLinkIds.Count)
                 RefreshCableVisuals(relayPosition, neighbors, neighborCount);
         }
 
         private void RefreshCableVisuals(Vector3 relayPosition, List<PowerNode> neighbors, int neighborCount)
         {
-            if (cableRenderer == null)
-                return;
+            DisableLegacyCableRenderer();
 
             if (neighborCount <= 0)
             {
@@ -205,53 +206,90 @@ namespace Hecton8.Power
                 return;
             }
 
-            int pointCount = neighborCount * 2;
-            if (_lastVisualPointCount != pointCount)
-            {
-                cableRenderer.positionCount = pointCount;
-                _lastVisualPointCount = pointCount;
-            }
+            _scratchLinkIds.Clear();
 
-            int pointIndex = 0;
             for (int i = 0; i < neighborCount; i++)
             {
                 PowerNode neighbor = neighbors[i];
                 if (neighbor == null)
                     continue;
 
-                cableRenderer.SetPosition(pointIndex++, relayPosition);
-                cableRenderer.SetPosition(pointIndex++, neighbor.transform.position);
+                long linkId = ComposeRelayLinkId(_powerNode, neighbor);
+                _scratchLinkIds.Add(linkId);
+                ConnectionSplineBatchRenderer.SubmitRelayLink(
+                    linkId,
+                    relayPosition,
+                    neighbor.transform.position,
+                    _hasPower,
+                    poweredCableColor,
+                    unpoweredCableColor);
             }
 
-            if (pointIndex != pointCount)
+            for (int submittedIndex = _submittedLinkIds.Count - 1; submittedIndex >= 0; submittedIndex--)
             {
-                cableRenderer.positionCount = pointIndex;
-                _lastVisualPointCount = pointIndex;
+                long submittedLinkId = _submittedLinkIds[submittedIndex];
+                if (ContainsLinkId(_scratchLinkIds, submittedLinkId))
+                    continue;
+
+                ConnectionSplineBatchRenderer.RemoveRelayLink(submittedLinkId);
+                _submittedLinkIds.RemoveAt(submittedIndex);
             }
 
-            cableRenderer.enabled = pointIndex > 1;
-            UpdateCableColor();
+            _submittedLinkIds.Clear();
+            int submittedCount = _scratchLinkIds.Count;
+            for (int linkIndex = 0; linkIndex < submittedCount; linkIndex++)
+                _submittedLinkIds.Add(_scratchLinkIds[linkIndex]);
+
+            _lastVisualPointCount = submittedCount;
         }
 
         private void UpdateCableColor()
         {
-            if (cableRenderer == null)
-                return;
-
-            Color activeColor = _hasPower ? poweredCableColor : unpoweredCableColor;
-            cableRenderer.startColor = activeColor;
-            cableRenderer.endColor = activeColor;
+            DisableLegacyCableRenderer();
         }
 
         private void ClearCableVisuals()
         {
-            if (cableRenderer != null)
-            {
-                cableRenderer.positionCount = 0;
-                cableRenderer.enabled = false;
-            }
+            for (int linkIndex = _submittedLinkIds.Count - 1; linkIndex >= 0; linkIndex--)
+                ConnectionSplineBatchRenderer.RemoveRelayLink(_submittedLinkIds[linkIndex]);
+
+            _submittedLinkIds.Clear();
+            DisableLegacyCableRenderer();
 
             _lastVisualPointCount = -1;
+        }
+
+        private void DisableLegacyCableRenderer()
+        {
+            if (cableRenderer == null)
+                return;
+
+            cableRenderer.positionCount = 0;
+            cableRenderer.enabled = false;
+        }
+
+        private static long ComposeRelayLinkId(PowerNode sourceNode, PowerNode destinationNode)
+        {
+            if (sourceNode == null || destinationNode == null)
+                return 0L;
+
+            int sourceId = sourceNode.GetInstanceID();
+            int destinationId = destinationNode.GetInstanceID();
+            int minId = sourceId < destinationId ? sourceId : destinationId;
+            int maxId = sourceId < destinationId ? destinationId : sourceId;
+            return ((long)(uint)minId << 32) | (uint)maxId;
+        }
+
+        private static bool ContainsLinkId(List<long> linkIds, long linkId)
+        {
+            int count = linkIds.Count;
+            for (int index = 0; index < count; index++)
+            {
+                if (linkIds[index] == linkId)
+                    return true;
+            }
+
+            return false;
         }
     }
 }

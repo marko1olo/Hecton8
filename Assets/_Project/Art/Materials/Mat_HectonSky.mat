@@ -211,7 +211,7 @@ Material:
     - _CloudTiling: {r: 0.1, g: 0.15, b: 0, a: 0}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _HazeColor: {r: 0.6413432, g: 0.6711431, b: 0.72370523, a: 1}
+    - _HazeColor: {r: 0.5402711, g: 0.53269815, b: 0.65191215, a: 1}
     - _HighCloudColor: {r: 0.76, g: 0.78, b: 0.9, a: 1}
     - _HighCloudTiling: {r: 6, g: 3, b: 0, a: 0}
     - _NightCloudColor: {r: 0.0256, g: 0.018000001, b: 0.0528, a: 1}
@@ -222,8 +222,8 @@ Material:
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
     - _StarColor: {r: 1, g: 1, b: 1, a: 1}
     - _StarTiling: {r: 1, g: 1, b: 0, a: 0}
-    - _SunDiscColor: {r: 19.428722, g: 17.485851, b: 11.657234, a: 1}
-    - _SunScatterColor: {r: 0.97143614, g: 0.6800053, b: 0.29143086, a: 1}
+    - _SunDiscColor: {r: 16.306889, g: 14.676201, b: 9.784134, a: 1}
+    - _SunScatterColor: {r: 0.81534445, g: 0.5707411, b: 0.24460335, a: 1}
     - _SunsetCloudColor: {r: 1.3216, g: 0.56839997, b: 0.2576, a: 1}
     - _SunsetHorizonColor: {r: 1.3216, g: 0.56839997, b: 0.2576, a: 1}
     - _WindDirection: {r: 0.8, g: 0.6, b: 0, a: 0}

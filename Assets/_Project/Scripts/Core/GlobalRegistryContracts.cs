@@ -1,4 +1,14 @@
 using Hecton8.Interaction;
+using Hecton8.SaveSystem;
+using Hecton8.Construction;
+using Hecton8.Building;
+using Hecton8.Audio;
+using Hecton8.Environment;
+using Hecton8.Gameplay;
+using Hecton8.Inventory;
+using Hecton8.Physics;
+using Hecton8.UI;
+using NASAPunk.Visor;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -289,6 +299,26 @@ namespace Hecton8.Core
         event System.Action OnToolSlot4;
 
         /// <summary>
+        /// Discrete primary-action input event forwarded from the native input backend.
+        /// </summary>
+        event System.Action OnPrimaryAction;
+
+        /// <summary>
+        /// Discrete secondary-action input event forwarded from the native input backend.
+        /// </summary>
+        event System.Action OnSecondaryAction;
+
+        /// <summary>
+        /// Discrete next-tab input event forwarded from the native input backend.
+        /// </summary>
+        event System.Action OnTabNext;
+
+        /// <summary>
+        /// Discrete previous-tab input event forwarded from the native input backend.
+        /// </summary>
+        event System.Action OnTabPrevious;
+
+        /// <summary>
         /// Returns the cached input snapshot captured once at the start of the current frame.
         /// </summary>
         /// <returns>Zero-GC input snapshot for the current frame.</returns>
@@ -374,6 +404,51 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// Authoritative save-system contract exposed through <see cref="GlobalRegistry"/>.
+    /// </summary>
+    public interface ISaveService
+    {
+        /// <summary>
+        /// True once the save owner has completed runtime initialization and registration.
+        /// </summary>
+        bool IsInitialized { get; }
+
+        /// <summary>
+        /// True while a save or load transaction is in flight.
+        /// </summary>
+        bool IsBusy { get; }
+
+        /// <summary>
+        /// Current accumulated play time in seconds.
+        /// </summary>
+        float CurrentPlayTimeSeconds { get; }
+
+        /// <summary>
+        /// Registers one saveable owner into the ordered persistence registry.
+        /// </summary>
+        /// <param name="saveable">Persistence owner to register.</param>
+        void Register(ISaveable saveable);
+
+        /// <summary>
+        /// Removes one saveable owner from the ordered persistence registry.
+        /// </summary>
+        /// <param name="saveable">Persistence owner to unregister.</param>
+        void Unregister(ISaveable saveable);
+
+        /// <summary>
+        /// Starts an asynchronous save transaction for the requested slot.
+        /// </summary>
+        /// <param name="slotName">Persistent slot identifier.</param>
+        Awaitable SaveGameAsync(string slotName);
+
+        /// <summary>
+        /// Starts an asynchronous load transaction for the requested slot.
+        /// </summary>
+        /// <param name="slotName">Persistent slot identifier.</param>
+        Awaitable LoadGameAsync(string slotName);
+    }
+
+    /// <summary>
     /// Minimal UI service contract exposed through <see cref="GlobalRegistry"/>.
     /// </summary>
     public interface IUIService
@@ -382,6 +457,197 @@ namespace Hecton8.Core
         /// True once the service has completed explicit bootstrap registration.
         /// </summary>
         bool IsInitialized { get; }
+    }
+
+    /// <summary>
+    /// Authoritative player runtime-context contract exposed through <see cref="GlobalRegistry"/>.
+    /// </summary>
+    public interface IPlayerRuntimeContext
+    {
+        /// <summary>
+        /// True once the context owner completed bootstrap registration.
+        /// </summary>
+        bool IsInitialized { get; }
+
+        /// <summary>
+        /// Current bootstrap-published player object.
+        /// </summary>
+        GameObject PlayerObject { get; }
+
+        /// <summary>
+        /// Current bootstrap-published player transform.
+        /// </summary>
+        Transform PlayerTransform { get; }
+
+        /// <summary>
+        /// Player locomotion owner resolved from the current player root.
+        /// </summary>
+        HectonPlayerMovement PlayerMovement { get; }
+
+        /// <summary>
+        /// Player rigidbody resolved from the current player root.
+        /// </summary>
+        Rigidbody PlayerRigidbody { get; }
+
+        /// <summary>
+        /// Authoritative handheld-tool owner on the current player root.
+        /// </summary>
+        PlayerToolManager ToolManager { get; }
+
+        /// <summary>
+        /// Authoritative player inventory on the current player root.
+        /// </summary>
+        PlayerInventory Inventory { get; }
+
+        /// <summary>
+        /// Authoritative player camera resolved from player-owned movement state.
+        /// </summary>
+        Camera PlayerCamera { get; }
+
+        /// <summary>
+        /// Cached PDA owner bound to the active player when available.
+        /// </summary>
+        PlayerPDA PlayerPDA { get; }
+
+        /// <summary>
+        /// Cached builder backend bound to the active player when available.
+        /// </summary>
+        PlayerBuilder PlayerBuilder { get; }
+
+        /// <summary>
+        /// Cached visor controller bound to the active player when available.
+        /// </summary>
+        VisorHUDController VisorController { get; }
+
+        /// <summary>
+        /// Cached player flashlight owner when available.
+        /// </summary>
+        PlayerFlashlight Flashlight { get; }
+
+        /// <summary>
+        /// Cached player thruster-audio owner when available.
+        /// </summary>
+        PlayerThrusterAudio ThrusterAudio { get; }
+
+        /// <summary>
+        /// Cached underwater-visual owner bound to the active player when available.
+        /// </summary>
+        HectonUnderwaterVisuals UnderwaterVisuals { get; }
+
+        /// <summary>
+        /// Hand-anchor transform used by held tools.
+        /// </summary>
+        Transform HandAnchor { get; }
+
+        /// <summary>
+        /// Root collider used by player-centric environment systems.
+        /// </summary>
+        Collider PlayerCollider { get; }
+
+        /// <summary>
+        /// Active HUD notification sink when one is available.
+        /// </summary>
+        HUDNotification HudNotification { get; }
+    }
+
+    /// <summary>
+    /// Focused player inventory/tooling context extracted from the player god object.
+    /// Consumers should prefer this service over root-player component scraping.
+    /// </summary>
+    public interface IPlayerInventoryService
+    {
+        /// <summary>
+        /// True once the service has completed bootstrap registration.
+        /// </summary>
+        bool IsInitialized { get; }
+
+        /// <summary>
+        /// Current authoritative handheld-tool owner.
+        /// </summary>
+        PlayerToolManager ToolManager { get; }
+
+        /// <summary>
+        /// Current authoritative player inventory.
+        /// </summary>
+        PlayerInventory Inventory { get; }
+
+        /// <summary>
+        /// Current builder backend bound to the active player when available.
+        /// </summary>
+        PlayerBuilder PlayerBuilder { get; }
+
+        /// <summary>
+        /// Hand-anchor transform used by held tools.
+        /// </summary>
+        Transform HandAnchor { get; }
+    }
+
+    /// <summary>
+    /// Focused player sensory/presentation context extracted from the player god object.
+    /// Consumers should prefer this service over root-player component scraping.
+    /// </summary>
+    public interface IPlayerSensoryService
+    {
+        /// <summary>
+        /// True once the service has completed bootstrap registration.
+        /// </summary>
+        bool IsInitialized { get; }
+
+        /// <summary>
+        /// Authoritative player camera.
+        /// </summary>
+        Camera PlayerCamera { get; }
+
+        /// <summary>
+        /// Cached player flashlight owner when available.
+        /// </summary>
+        PlayerFlashlight Flashlight { get; }
+
+        /// <summary>
+        /// Cached player thruster-audio owner when available.
+        /// </summary>
+        PlayerThrusterAudio ThrusterAudio { get; }
+
+        /// <summary>
+        /// Cached underwater-visual owner when available.
+        /// </summary>
+        HectonUnderwaterVisuals UnderwaterVisuals { get; }
+
+        /// <summary>
+        /// Cached visor controller when available.
+        /// </summary>
+        VisorHUDController VisorController { get; }
+
+        /// <summary>
+        /// Active HUD notification sink when available.
+        /// </summary>
+        HUDNotification HudNotification { get; }
+    }
+
+    /// <summary>
+    /// Authoritative environment runtime-context contract exposed through <see cref="GlobalRegistry"/>.
+    /// </summary>
+    public interface IEnvironmentRuntimeContext
+    {
+        /// <summary>
+        /// True once the context owner completed bootstrap registration.
+        /// </summary>
+        bool IsInitialized { get; }
+
+        /// <summary>
+        /// Authoritative construction manager for module placement and integrity checks.
+        /// </summary>
+        ConstructionManager ConstructionManager { get; }
+
+        /// <summary>
+        /// Authoritative buildable catalog resolved from the construction manager.
+        /// </summary>
+        ModuleCatalog ModuleCatalog { get; }
+
+        /// <summary>
+        /// Authoritative runtime hazard registry.
+        /// </summary>
+        HazardZoneManager HazardZones { get; }
     }
 
     /// <summary>
@@ -421,6 +687,23 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// Registry-backed ocean provider selector published through <see cref="GlobalRegistry"/>.
+    /// Gameplay systems must query this service instead of talking to Crest-adapter singletons directly.
+    /// </summary>
+    public interface IHectonOceanKinematicsService
+    {
+        /// <summary>
+        /// True once the selector service has completed bootstrap registration.
+        /// </summary>
+        bool IsInitialized { get; }
+
+        /// <summary>
+        /// Highest-priority currently available ocean kinematics provider.
+        /// </summary>
+        IHectonOceanKinematics ActiveProvider { get; }
+    }
+
+    /// <summary>
     /// Authoritative queued interaction-signal service exposed through <see cref="GlobalRegistry"/>.
     /// </summary>
     public interface IInteractionSignalService
@@ -436,18 +719,20 @@ namespace Hecton8.Core
         /// <param name="signal">Signal payload copied into the queue.</param>
         /// <param name="targetCollider">Resolved collider reference associated with the signal target.</param>
         /// <returns>True when the signal was accepted.</returns>
-        bool Publish(in InteractionSignal signal, Collider targetCollider);
+        bool Publish(in Hecton8.Interaction.InteractionSignal signal, Collider targetCollider);
 
         /// <summary>
         /// Performs the shared zero-allocation tool hit query using the service-owned buffers.
         /// </summary>
+        /// <param name="requesterId">Stable per-requester identifier used to map frame-latent results.</param>
         /// <param name="origin">Runtime-space ray origin.</param>
         /// <param name="direction">Runtime-space ray direction.</param>
         /// <param name="range">Maximum query range.</param>
         /// <param name="layerMask">Physics layer mask.</param>
+        /// <param name="queryTriggerInteraction">Whether trigger colliders participate in the batched query.</param>
         /// <param name="hit">Nearest valid hit when one is found.</param>
         /// <returns>True when a valid hit was resolved.</returns>
-        bool TryRaycastPrimary(Vector3 origin, Vector3 direction, float range, int layerMask, out RaycastHit hit);
+        bool TryRaycastPrimary(ulong requesterId, Vector3 origin, Vector3 direction, float range, int layerMask, QueryTriggerInteraction queryTriggerInteraction, out RaycastHit hit);
 
         /// <summary>
         /// Clears all queued interaction signals and associated transient target references.
@@ -489,5 +774,107 @@ namespace Hecton8.Core
         /// Clears all active chunk bursts immediately.
         /// </summary>
         void ClearActiveDebris();
+    }
+
+    /// <summary>
+    /// Immutable ecosystem population sample returned by <see cref="IEcosystemDirectorService"/>.
+    /// </summary>
+    public struct EcosystemSectorPopulationSample
+    {
+        /// <summary>
+        /// Quantized 1 km sector coordinate on the X axis.
+        /// </summary>
+        public int SectorX;
+
+        /// <summary>
+        /// Quantized 1 km sector coordinate on the Z axis.
+        /// </summary>
+        public int SectorZ;
+
+        /// <summary>
+        /// Current prey population carried by the sector simulation.
+        /// </summary>
+        public int PreyPopulation;
+
+        /// <summary>
+        /// Current predator population carried by the sector simulation.
+        /// </summary>
+        public int PredatorPopulation;
+
+        /// <summary>
+        /// Normalized prey fitness derived from sustained sector stress and survivor adaptation.
+        /// </summary>
+        public float Fitness;
+
+        /// <summary>
+        /// Sector-authored prey speed multiplier applied to spawned swarm agents.
+        /// </summary>
+        public float SpeedMultiplier;
+
+        /// <summary>
+        /// Sector-authored prey camouflage bias applied to spawned swarm agents.
+        /// </summary>
+        public float CamouflageIndex;
+    }
+
+    /// <summary>
+    /// Sector-level ecosystem population service exposed through <see cref="GlobalRegistry"/>.
+    /// </summary>
+    public interface IEcosystemDirectorService
+    {
+        /// <summary>
+        /// True once the director initialized its runtime buffers and is ready to answer population queries.
+        /// </summary>
+        bool IsInitialized { get; }
+
+        /// <summary>
+        /// Resolves the sector population sample for the supplied world position.
+        /// </summary>
+        /// <param name="worldPosition">Runtime-space world position to classify into a 1 km sector.</param>
+        /// <param name="sample">Resolved predator/prey population sample for the containing sector.</param>
+        /// <returns>True when the sector sample is available.</returns>
+        bool TryGetSectorPopulation(Vector3 worldPosition, out EcosystemSectorPopulationSample sample);
+
+        /// <summary>
+        /// Registers prey consumption inside the containing sector so the next cold-tick solve includes the loss.
+        /// </summary>
+        /// <param name="worldPosition">Runtime-space world position where predation occurred.</param>
+        /// <param name="preyConsumed">Number of prey removed from the sector population.</param>
+        void ReportPredation(Vector3 worldPosition, int preyConsumed);
+    }
+
+    /// <summary>
+    /// Deterministic owner-local component resolution helper used to remove runtime hierarchy search APIs.
+    /// </summary>
+    public static class ComponentReferenceUtility
+    {
+        /// <summary>
+        /// Resolves the first matching component on the supplied owner or its children.
+        /// </summary>
+        public static T ResolveOwnedComponent<T>(Component owner) where T : Component
+        {
+            return owner != null ? ResolveOwnedComponent<T>(owner.transform) : null;
+        }
+
+        /// <summary>
+        /// Resolves the first matching component on the supplied transform or its children.
+        /// </summary>
+        public static T ResolveOwnedComponent<T>(Transform root) where T : Component
+        {
+            if (root == null)
+                return null;
+
+            if (root.TryGetComponent(out T component))
+                return component;
+
+            for (int i = 0; i < root.childCount; i++)
+            {
+                component = ResolveOwnedComponent<T>(root.GetChild(i));
+                if (component != null)
+                    return component;
+            }
+
+            return null;
+        }
     }
 }

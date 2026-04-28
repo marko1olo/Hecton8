@@ -38,6 +38,7 @@
 using System;
 using Hecton8.Core;
 using Hecton8.World;
+using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 using MapMagic.Core;
@@ -167,6 +168,9 @@ namespace Hecton8.Core
         /// spatially, so this avoids full tile scans on repeated queries.
         /// </summary>
         private TerrainTile _lastResolvedTerrainTile;
+        private TerrainData _cachedBiomeTerrainData;
+        private Texture2D[] _cachedBiomeAlphaTextures = Array.Empty<Texture2D>();
+        private int _cachedBiomeAlphaTextureCount = -1;
 
         /// <summary>
         /// Retry gate for recovering lost scene bindings after reload.
@@ -256,11 +260,9 @@ namespace Hecton8.Core
 
         private void OnEnable()
         {
-            if (GameTickManager.Instance == null) return;
-
             if (!_registeredToTickManager)
             {
-                GameTickManager.Instance.Register((ISlowTickable)this);
+                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredToTickManager = true;
             }
         }
@@ -269,18 +271,8 @@ namespace Hecton8.Core
         {
             if (!_registeredToTickManager)
             {
-                if (GameTickManager.Instance != null)
-                {
-                    GameTickManager.Instance.Register((ISlowTickable)this);
-                    _registeredToTickManager = true;
-                }
-                else
-                {
-                    Debug.LogError(
-                        "[MapMagicBridge] GameTickManager.Instance is null " +
-                        "even at Start(). Biome detection will NOT work.",
-                        this);
-                }
+                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredToTickManager = true;
             }
 
             // ── Initial biome detection ──
@@ -290,11 +282,9 @@ namespace Hecton8.Core
 
         private void OnDisable()
         {
-            if (GameTickManager.Instance == null) return;
-
             if (_registeredToTickManager)
             {
-                GameTickManager.Instance.Unregister((ISlowTickable)this);
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredToTickManager = false;
             }
         }
@@ -406,6 +396,10 @@ namespace Hecton8.Core
         {
             height = 0f;
 
+            HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            if (vegetationBridge != null && vegetationBridge.TryGetCachedTerrainHeight(x, z, out height))
+                return true;
+
             if (mapMagicObject == null)
                 return false;
 
@@ -434,6 +428,27 @@ namespace Hecton8.Core
             height = interpolatedHeight + terrainPosition.y;
 
             return true;
+        }
+
+        /// <summary>
+        /// Resolves terrain height from an absolute-universe position so long-running async voxel pipelines
+        /// do not sample stale runtime coordinates after floating-origin shifts.
+        /// </summary>
+        public bool TryGetHeightAUP(Vector3 absoluteUniversePosition, out float height)
+        {
+            Vector3 runtimePosition = HectonFloatingOrigin.ToRuntimePosition(absoluteUniversePosition);
+            return TryGetHeight(runtimePosition.x, runtimePosition.z, out height);
+        }
+
+        /// <summary>
+        /// Returns MapMagic terrain height for an absolute-universe position.
+        /// Fallback is returned when no terrain tile can be resolved.
+        /// </summary>
+        public float SampleHeightAUP(Vector3 absoluteUniversePosition, float fallbackHeight = 0f)
+        {
+            return TryGetHeightAUP(absoluteUniversePosition, out float height)
+                ? height
+                : fallbackHeight;
         }
 
         /// <summary>
@@ -528,8 +543,7 @@ namespace Hecton8.Core
             if (textureCount <= 0)
                 return false;
 
-            Texture2D[] alphaTextures = td.alphamapTextures;
-            if (alphaTextures == null || alphaTextures.Length == 0)
+            if (!TryGetCachedBiomeAlphaTextures(td, textureCount, out Texture2D[] alphaTextures))
                 return false;
 
             // ── World → normalized UV coordinates [0..1] ──
@@ -555,16 +569,16 @@ namespace Hecton8.Core
 
                 anyValidTexture = true;
 
-                Color pixel = tex.GetPixelBilinear(u, v);
+                float4 pixel = SampleAlphaTextureBilinear01(tex, u, v);
 
                 int baseLayerIdx = texIdx * 4;
 
                 // Channel R → layer baseLayerIdx + 0
                 if (baseLayerIdx < searchLimit)
                 {
-                    if (pixel.r > maxWeight)
+                    if (pixel.x > maxWeight)
                     {
-                        maxWeight = pixel.r;
+                        maxWeight = pixel.x;
                         maxIndex  = baseLayerIdx;
                     }
                 }
@@ -573,9 +587,9 @@ namespace Hecton8.Core
                 int layer1 = baseLayerIdx + 1;
                 if (layer1 < searchLimit)
                 {
-                    if (pixel.g > maxWeight)
+                    if (pixel.y > maxWeight)
                     {
-                        maxWeight = pixel.g;
+                        maxWeight = pixel.y;
                         maxIndex  = layer1;
                     }
                 }
@@ -584,9 +598,9 @@ namespace Hecton8.Core
                 int layer2 = baseLayerIdx + 2;
                 if (layer2 < searchLimit)
                 {
-                    if (pixel.b > maxWeight)
+                    if (pixel.z > maxWeight)
                     {
-                        maxWeight = pixel.b;
+                        maxWeight = pixel.z;
                         maxIndex  = layer2;
                     }
                 }
@@ -595,9 +609,9 @@ namespace Hecton8.Core
                 int layer3 = baseLayerIdx + 3;
                 if (layer3 < searchLimit)
                 {
-                    if (pixel.a > maxWeight)
+                    if (pixel.w > maxWeight)
                     {
-                        maxWeight = pixel.a;
+                        maxWeight = pixel.w;
                         maxIndex  = layer3;
                     }
                 }
@@ -613,6 +627,92 @@ namespace Hecton8.Core
 
             biomeIndex = maxIndex;
             return true;
+        }
+
+        private bool TryGetCachedBiomeAlphaTextures(
+            TerrainData terrainData,
+            int expectedTextureCount,
+            out Texture2D[] alphaTextures)
+        {
+            if (terrainData == null || expectedTextureCount <= 0)
+            {
+                alphaTextures = null;
+                return false;
+            }
+
+            if (_cachedBiomeTerrainData != terrainData ||
+                _cachedBiomeAlphaTextures == null ||
+                _cachedBiomeAlphaTextureCount != expectedTextureCount)
+            {
+                _cachedBiomeTerrainData = terrainData;
+                EnsureBiomeAlphaTextureCacheCapacity(expectedTextureCount);
+                _cachedBiomeAlphaTextureCount = 0;
+
+                for (int i = 0; i < expectedTextureCount; i++)
+                {
+                    Texture2D alphaTexture = terrainData.GetAlphamapTexture(i);
+                    _cachedBiomeAlphaTextures[i] = alphaTexture;
+                    if (alphaTexture != null)
+                        _cachedBiomeAlphaTextureCount = i + 1;
+                }
+
+                for (int i = _cachedBiomeAlphaTextureCount; i < _cachedBiomeAlphaTextures.Length; i++)
+                    _cachedBiomeAlphaTextures[i] = null;
+            }
+
+            alphaTextures = _cachedBiomeAlphaTextures;
+            return alphaTextures != null && _cachedBiomeAlphaTextureCount > 0;
+        }
+
+        private void EnsureBiomeAlphaTextureCacheCapacity(int requiredCount)
+        {
+            int safeCount = Mathf.Max(1, requiredCount);
+            if (_cachedBiomeAlphaTextures != null && _cachedBiomeAlphaTextures.Length == safeCount)
+                return;
+
+            // COLD ALLOC: Texture2D[safeCount] - cached terrain alpha texture handles for biome sampling - owner: MapMagicBridge
+            _cachedBiomeAlphaTextures = new Texture2D[safeCount];
+        }
+
+        private static float4 SampleAlphaTextureBilinear01(Texture2D texture, float u, float v)
+        {
+            if (texture == null || !texture.isReadable)
+                return float4.zero;
+
+            int width = texture.width;
+            int height = texture.height;
+            if (width <= 0 || height <= 0)
+                return float4.zero;
+
+            NativeArray<Color32> pixels = texture.GetPixelData<Color32>(0);
+            int pixelCount = width * height;
+            if (!pixels.IsCreated || pixels.Length < pixelCount)
+                return float4.zero;
+
+            float sampleX = math.saturate(u) * (width - 1);
+            float sampleY = math.saturate(v) * (height - 1);
+            int x0 = (int)math.floor(sampleX);
+            int y0 = (int)math.floor(sampleY);
+            int x1 = math.min(x0 + 1, width - 1);
+            int y1 = math.min(y0 + 1, height - 1);
+            float tx = sampleX - x0;
+            float ty = sampleY - y0;
+
+            int row0 = y0 * width;
+            int row1 = y1 * width;
+            float4 c00 = UnpackColor32(pixels[row0 + x0]);
+            float4 c10 = UnpackColor32(pixels[row0 + x1]);
+            float4 c01 = UnpackColor32(pixels[row1 + x0]);
+            float4 c11 = UnpackColor32(pixels[row1 + x1]);
+            float4 top = math.lerp(c00, c10, tx);
+            float4 bottom = math.lerp(c01, c11, tx);
+            return math.lerp(top, bottom, ty);
+        }
+
+        private static float4 UnpackColor32(Color32 color)
+        {
+            const float ByteToFloat = 1f / 255f;
+            return new float4(color.r, color.g, color.b, color.a) * ByteToFloat;
         }
 
         /// <summary>
@@ -657,6 +757,7 @@ namespace Hecton8.Core
             mapMagicObject = target;
             _cachedTerrainTileRootCount = -1;
             _lastResolvedTerrainTile = null;
+            InvalidateBiomeTextureCache();
             EnsureRuntimeTerrainConnectivityCompatibility(forceApplyToCachedTerrains: false);
             RefreshTerrainTileCache(force: true);
             _nextSceneBindingRefreshTime = float.NegativeInfinity;
@@ -698,6 +799,19 @@ namespace Hecton8.Core
         /// <param name="draftRange">Draft-terrain ring radius around the observer.</param>
         /// <param name="draftResolution">Draft terrain height resolution.</param>
         /// <returns>True when topology-affecting settings changed.</returns>
+        public bool ConfigureRuntimeTerrainStreaming(
+            bool draftsInPlaymode,
+            int mainRange,
+            int draftRange,
+            int draftResolutionValue)
+        {
+            return ConfigureRuntimeTerrainStreaming(
+                draftsInPlaymode,
+                mainRange,
+                draftRange,
+                ResolveRuntimeTerrainResolution(draftResolutionValue));
+        }
+
         public bool ConfigureRuntimeTerrainStreaming(
             bool draftsInPlaymode,
             int mainRange,
@@ -768,6 +882,29 @@ namespace Hecton8.Core
 
             RefreshTerrainTilesForStreaming(clampedDraftRange, rebuildInRange: topologyChanged || resolutionChanged);
             return topologyChanged || resolutionChanged;
+        }
+
+        private static MapMagicObject.Resolution ResolveRuntimeTerrainResolution(int draftResolutionValue)
+        {
+            switch (draftResolutionValue)
+            {
+                case 33:
+                    return MapMagicObject.Resolution._33;
+                case 65:
+                    return MapMagicObject.Resolution._65;
+                case 129:
+                    return MapMagicObject.Resolution._129;
+                case 257:
+                    return MapMagicObject.Resolution._257;
+                case 513:
+                    return MapMagicObject.Resolution._513;
+                case 1025:
+                    return MapMagicObject.Resolution._1025;
+                case 2049:
+                    return MapMagicObject.Resolution._2049;
+                default:
+                    return MapMagicObject.Resolution._65;
+            }
         }
 
         /// <summary>
@@ -1008,6 +1145,7 @@ namespace Hecton8.Core
                 mapMagicObject = FindMapMagicObjectIncludingInactive(); // COLD ALLOC: recovery search only when MapMagic binding is missing
                 _cachedTerrainTileRootCount = -1;
                 _lastResolvedTerrainTile = null;
+                InvalidateBiomeTextureCache();
                 _runtimeTerrainResolutionRepairPending = mapMagicObject != null;
 
                 if (mapMagicObject != null)
@@ -1032,6 +1170,7 @@ namespace Hecton8.Core
                 _cachedTerrainTiles = Array.Empty<TerrainTile>();
                 _cachedTerrainTileRootCount = -1;
                 _lastResolvedTerrainTile = null;
+                InvalidateBiomeTextureCache();
                 return;
             }
 
@@ -1046,6 +1185,14 @@ namespace Hecton8.Core
             _cachedTerrainTiles = mapMagicObject.GetComponentsInChildren<TerrainTile>(true); // COLD ALLOC: refresh only on MapMagic hierarchy change
             _cachedTerrainTileRootCount = rootChildCount;
             _lastResolvedTerrainTile = null;
+            InvalidateBiomeTextureCache();
+        }
+
+        private void InvalidateBiomeTextureCache()
+        {
+            _cachedBiomeTerrainData = null;
+            _cachedBiomeAlphaTextures = Array.Empty<Texture2D>();
+            _cachedBiomeAlphaTextureCount = -1;
         }
 
         /// <summary>

@@ -1,4 +1,5 @@
 using TMPro;
+using Hecton8.Bootstrap;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -46,33 +47,22 @@ namespace Hecton8.UI
 
         private static SuitHUDV4CanvasOverlay ResolvePreferredOverlay()
         {
-            GameObject namedActiveOverlay = GameObject.Find(ActiveHudOverlayName);
-            if (namedActiveOverlay != null &&
-                namedActiveOverlay.TryGetComponent(out SuitHUDV4CanvasOverlay namedOverlay))
-            {
-                return namedOverlay;
-            }
-
-            SuitHUDV4CanvasOverlay[] overlays = Resources.FindObjectsOfTypeAll<SuitHUDV4CanvasOverlay>();
-            SuitHUDV4CanvasOverlay fallback = null;
-
-            for (int i = 0; i < overlays.Length; i++)
-            {
-                SuitHUDV4CanvasOverlay overlay = overlays[i];
-                if (overlay == null || overlay.gameObject == null || !overlay.gameObject.scene.IsValid())
-                    continue;
-
-                fallback ??= overlay;
-                if (!overlay.gameObject.activeInHierarchy)
-                    continue;
-
-                if (overlay.name.IndexOf("Projection", System.StringComparison.OrdinalIgnoreCase) >= 0)
-                    continue;
-
+            SuitHUDV4CanvasOverlay overlay = SuitHUDV4CanvasOverlay.ActiveRuntimeInstance;
+            if (overlay != null)
                 return overlay;
+
+            if (Hecton8.Bootstrap.SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                playerTransform != null)
+            {
+                Transform overlayTransform = playerTransform.root.Find(ActiveHudOverlayName);
+                if (overlayTransform != null &&
+                    overlayTransform.TryGetComponent(out SuitHUDV4CanvasOverlay namedOverlay))
+                {
+                    return namedOverlay;
+                }
             }
 
-            return fallback;
+            return null;
         }
 
         private static RelayHUDElement ResolveOverlayMarker(SuitHUDV4CanvasOverlay overlay)
@@ -83,23 +73,18 @@ namespace Hecton8.UI
             Transform markerLayer = overlay.transform.Find(MarkerLayerName);
             if (markerLayer != null)
             {
-                RelayHUDElement layeredMarker = markerLayer.GetComponentInChildren<RelayHUDElement>(true);
+                RelayHUDElement layeredMarker;
+                if (!markerLayer.TryGetComponent(out layeredMarker))
+                    TryResolveDescendantComponent(markerLayer, out layeredMarker);
+
                 if (layeredMarker != null)
                     return layeredMarker;
             }
 
-            RelayHUDElement[] markers = overlay.GetComponentsInChildren<RelayHUDElement>(true);
-            for (int i = 0; i < markers.Length; i++)
-            {
-                RelayHUDElement marker = markers[i];
-                if (marker == null)
-                    continue;
-
-                if (marker.gameObject.activeInHierarchy)
-                    return marker;
-            }
-
-            return markers.Length > 0 ? markers[0] : null;
+            RelayHUDElement fallbackMarker;
+            return TryResolveDescendantComponent(overlay.transform, out fallbackMarker)
+                ? fallbackMarker
+                : null;
         }
 
         private static RectTransform ResolveMarkerParent(Transform overlayTransform)
@@ -120,7 +105,8 @@ namespace Hecton8.UI
             RectTransform legacyRoot = overlayTransform.Find(HudRootName) as RectTransform;
             if (legacyRoot != null)
             {
-                RelayHUDElement legacyMarker = legacyRoot.GetComponentInChildren<RelayHUDElement>(true);
+                RelayHUDElement legacyMarker;
+                TryResolveDescendantComponent(legacyRoot, out legacyMarker);
                 if (legacyMarker != null)
                     legacyMarker.transform.SetParent(markerLayer, false);
             }
@@ -230,8 +216,27 @@ namespace Hecton8.UI
             if (font != null)
                 return font;
 
-            TextMeshProUGUI existingText = parent.GetComponentInChildren<TextMeshProUGUI>(true);
+            TextMeshProUGUI existingText;
+            TryResolveDescendantComponent(parent, out existingText);
             return existingText != null ? existingText.font : null;
+        }
+
+        private static bool TryResolveDescendantComponent<T>(Transform root, out T component) where T : Component
+        {
+            component = null;
+            if (root == null)
+                return false;
+
+            if (root.TryGetComponent(out component))
+                return true;
+
+            for (int i = 0; i < root.childCount; i++)
+            {
+                if (TryResolveDescendantComponent(root.GetChild(i), out component))
+                    return true;
+            }
+
+            return false;
         }
     }
 }

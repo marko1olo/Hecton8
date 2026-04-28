@@ -21,7 +21,7 @@ namespace Hecton8.Biolum
     /// - Floor zones (FloorBiolumZone)
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class HectonBiolumManager : MonoBehaviour, ITickable
+    public sealed class HectonBiolumManager : MonoBehaviour, ITickable, IUpdatable
     {
         private static readonly int _FloraOceanBiolumColorId = Shader.PropertyToID("_HectonOceanBiolumColor");
         private static readonly int _FloraOceanBiolumStrengthId = Shader.PropertyToID("_HectonOceanBiolumStrength");
@@ -379,7 +379,7 @@ namespace Hecton8.Biolum
 
             if (BootstrapState.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
             {
-                Camera playerCamera = playerTransform.GetComponentInChildren<Camera>();
+                Camera playerCamera = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera : playerTransform.GetComponent<Camera>());
                 if (playerCamera != null)
                 {
                     _cachedCamera = playerCamera;
@@ -542,11 +542,8 @@ namespace Hecton8.Biolum
             if (_tickRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register(this);
+            SystemDispatcher.EnsureRuntimeInstance();
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _tickRegistered = true;
         }
 
@@ -555,10 +552,7 @@ namespace Hecton8.Biolum
             if (!_tickRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister(this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _tickRegistered = false;
         }
 

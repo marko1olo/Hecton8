@@ -16,7 +16,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Intrusion Manager")]
-    public sealed class PDAIntrusionManager : MonoBehaviour, ITickable
+    public sealed class PDAIntrusionManager : MonoBehaviour, ITickable, IUpdatable
     {
         private enum IntrusionVisualPhase : byte
         {
@@ -446,7 +446,7 @@ namespace Hecton8.UI
             if (_playerPda == null)
             {
                 if (!TryGetComponent(out _playerPda))
-                    _playerPda = GetComponentInChildren<PlayerPDA>(true);
+                    _playerPda = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<PlayerPDA>(transform);
             }
 
             if (_playerMovement == null)
@@ -456,12 +456,13 @@ namespace Hecton8.UI
                 _vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
 
             InputManager inputManager = InputManager.Instance;
-            if (ReferenceEquals(_inputManager, inputManager))
+            if (ReferenceEquals(_inputManager, inputManager) &&
+                (_inputManager == null || _submitAction != null))
                 return;
 
             _inputManager = inputManager;
             _submitAction = _inputManager != null
-                ? _inputManager.UiSubmitAction
+                ? _inputManager.GetAction("Submit", "UI")
                 : null;
         }
 
@@ -470,11 +471,7 @@ namespace Hecton8.UI
             if (_registeredToTick)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register(this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _registeredToTick = true;
         }
 
@@ -483,10 +480,7 @@ namespace Hecton8.UI
             if (!_registeredToTick)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister(this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _registeredToTick = false;
         }
 

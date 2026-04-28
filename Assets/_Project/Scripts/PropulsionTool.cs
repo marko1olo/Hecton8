@@ -48,7 +48,6 @@ namespace Hecton8.Gameplay
 
         private Transform _cachedTransform;
         private float _nextFeedbackAt;
-        private readonly RaycastHit[] _targetHits = new RaycastHit[1]; // COLD ALLOC: propulsion resolves only the nearest target per command.
         private Rigidbody _lockedBody;
         private string _lockedName;
         private string _lockedNameUpper;
@@ -334,10 +333,12 @@ namespace Hecton8.Gameplay
             string lockedNameUpper = _lockedNameUpper;
             if (string.IsNullOrWhiteSpace(lockedNameUpper))
                 lockedNameUpper = string.IsNullOrWhiteSpace(lockedName) ? ResolveLocalized(LocalizationKeys.PROPULSION_CARGO, "CARGO") : lockedName.ToUpperInvariant();
+            float appliedImpulse = launchImpulse * Mathf.Max(0.5f, GetEfficiency());
             PhysicsForceRouter.QueueForce(
                 body,
-                _cachedTransform.forward * (launchImpulse * Mathf.Max(0.5f, GetEfficiency())),
+                _cachedTransform.forward * appliedImpulse,
                 ForceMode.Impulse);
+            ToolHitUtility.TryApplyRelativeCarrierImpulse(_cachedTransform.forward, appliedImpulse);
             ForceReleaseWithoutFeedback();
 
             PublishAssessment(new PropulsionAssessment(
@@ -449,22 +450,7 @@ namespace Hecton8.Gameplay
 
         private bool TryGetTargetHit(out RaycastHit hit)
         {
-            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
-                _cachedTransform.position,
-                _cachedTransform.forward,
-                _targetHits,
-                range,
-                targetMask,
-                QueryTriggerInteraction.Ignore);
-
-            if (hitCount > 0)
-            {
-                hit = _targetHits[0];
-                return true;
-            }
-
-            hit = default;
-            return false;
+            return TryResolveQueuedRaycast(_cachedTransform.position, _cachedTransform.forward, range, targetMask.value, QueryTriggerInteraction.Ignore, out hit);
         }
 
         private PropulsionAssessment BuildAssessment(Rigidbody body, float distance, bool tractorIntent)

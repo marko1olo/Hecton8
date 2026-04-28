@@ -8,7 +8,7 @@ namespace Hecton8.Caves
     /// Anchors are resolved with NonAlloc raycasts and refined later if the cave mesh was not ready yet.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class CaveBioRootsGenerator : MonoBehaviour, ITickable
+    public sealed class CaveBioRootsGenerator : MonoBehaviour, ITickable, IUpdatable
     {
         private const string RootNamePrefix = "_BioRoot_";
 
@@ -385,11 +385,7 @@ namespace Hecton8.Caves
             if (_registeredTick)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register((ITickable)this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _registeredTick = true;
         }
 
@@ -398,10 +394,7 @@ namespace Hecton8.Caves
             if (!_registeredTick)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister((ITickable)this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _registeredTick = false;
         }
 

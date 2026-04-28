@@ -1,0 +1,48 @@
+#pragma kernel StampDamageVolume
+
+struct DamageVolumeStampCommand
+{
+    float4 PositionRadius;
+    float4 StrengthPadding;
+};
+
+Texture3D<float4> _HectonDamageVolumeSource;
+RWTexture3D<float4> _HectonDamageVolumeResult;
+StructuredBuffer<DamageVolumeStampCommand> _HectonDamageVolumeStampCommands;
+
+int _HectonDamageVolumeStampCount;
+float _HectonDamageVolumeRecovery;
+float4 _HectonDamageVolumeWorldMinParam;
+float4 _HectonDamageVolumeInvSizeParam;
+int3 _HectonDamageVolumeResolution;
+
+[numthreads(4, 4, 4)]
+void StampDamageVolume(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    if (dispatchThreadId.x >= _HectonDamageVolumeResolution.x ||
+        dispatchThreadId.y >= _HectonDamageVolumeResolution.y ||
+        dispatchThreadId.z >= _HectonDamageVolumeResolution.z)
+    {
+        return;
+    }
+
+    float3 uvw = (float3(dispatchThreadId) + 0.5) * float3(
+        1.0 / max(_HectonDamageVolumeResolution.x, 1),
+        1.0 / max(_HectonDamageVolumeResolution.y, 1),
+        1.0 / max(_HectonDamageVolumeResolution.z, 1));
+    float3 worldPosition = _HectonDamageVolumeWorldMinParam.xyz + uvw / max(_HectonDamageVolumeInvSizeParam.xyz, 0.0001.xxx);
+    float current = max(0.0, _HectonDamageVolumeSource.Load(int4(dispatchThreadId, 0)).r - _HectonDamageVolumeRecovery);
+
+    [loop]
+    for (int stampIndex = 0; stampIndex < _HectonDamageVolumeStampCount; stampIndex++)
+    {
+        DamageVolumeStampCommand stamp = _HectonDamageVolumeStampCommands[stampIndex];
+        float3 delta = worldPosition - stamp.PositionRadius.xyz;
+        float radius = max(stamp.PositionRadius.w, 0.0001);
+        float normalized = saturate(1.0 - length(delta) / radius);
+        float stampValue = normalized * normalized * stamp.StrengthPadding.x;
+        current = max(current, stampValue);
+    }
+
+    _HectonDamageVolumeResult[dispatchThreadId] = float4(current, current, current, 1.0);
+}

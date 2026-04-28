@@ -150,7 +150,7 @@ namespace Hecton8.Gameplay
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-5695)]
-    public sealed class HazardZoneManager : MonoBehaviour, ITickable
+    public sealed class HazardZoneManager : MonoBehaviour, ITickable, IUpdatable
     {
         private const int HazardTypeCount = 4;
         private const int DefaultMaxZoneCount = 512;
@@ -225,10 +225,9 @@ namespace Hecton8.Gameplay
             if (Instance != null)
                 return Instance;
 
-            HectonHazardManager managerHost = HectonHazardManager.EnsureRuntimeInstance();
-            return managerHost != null
-                ? managerHost.ResolveOrAddZoneManager()
-                : null;
+            EnvironmentRuntimeContextService environmentService = EnvironmentRuntimeContextService.EnsureRuntimeInstance();
+            environmentService.InitializeService();
+            return environmentService.HazardZones;
         }
 
         /// <summary>
@@ -424,6 +423,16 @@ namespace Hecton8.Gameplay
 
         private void ResolvePlayerContext()
         {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null)
+            {
+                if (playerContext.PlayerTransform != null)
+                    _playerTransform = playerContext.PlayerTransform;
+
+                if (playerContext.PlayerCollider != null)
+                    _playerCollider = playerContext.PlayerCollider;
+            }
+
             if (_playerTransform == null)
                 WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _playerTransform);
 
@@ -633,9 +642,8 @@ namespace Hecton8.Gameplay
             if (root == null)
                 return null;
 
-            return root.TryGetComponent(out Collider directCollider)
-                ? directCollider
-                : root.GetComponentInChildren<Collider>(true);
+            root.TryGetComponent(out Collider directCollider);
+            return directCollider;
         }
 
         private static float EvaluatePointContribution(HazardVolumeData volume, float3 absolutePoint)
@@ -733,11 +741,8 @@ namespace Hecton8.Gameplay
             if (_registered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register((ITickable)this);
+            SystemDispatcher.EnsureRuntimeInstance();
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _registered = true;
         }
 
@@ -746,10 +751,7 @@ namespace Hecton8.Gameplay
             if (!_registered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister((ITickable)this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _registered = false;
         }
 

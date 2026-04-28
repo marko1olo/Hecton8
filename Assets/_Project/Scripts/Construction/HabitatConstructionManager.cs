@@ -176,13 +176,12 @@ namespace Hecton8.Construction
             for (int placementIndex = 0; placementIndex < placementCount; placementIndex++)
             {
                 PlayerInventory.ItemPlacement placement = _inventoryPlacementBuffer[placementIndex];
-                if (placement.item == null || placement.stackCount <= 0)
+                if (placement.itemHashId == 0 || placement.stackCount <= 0)
                     continue;
 
-                int placementHash = LocHash.Compute(placement.item.PersistentId);
                 for (int costIndex = 0; costIndex < costCount; costIndex++)
                 {
-                    if (_costRemainingBuffer[costIndex] <= 0 || _costHashBuffer[costIndex] != placementHash)
+                    if (_costRemainingBuffer[costIndex] <= 0 || _costHashBuffer[costIndex] != placement.itemHashId)
                         continue;
 
                     _costRemainingBuffer[costIndex] -= placement.stackCount;
@@ -371,7 +370,7 @@ namespace Hecton8.Construction
             _connectionBuffer.Clear();
             _socketLookup.Clear();
 
-            int validationGridSize = Mathf.Max(1, Mathf.RoundToInt(math.max(DefaultGridSize, gridSize) / DefaultSocketQuantization));
+            int validationGridSize = math.max(1, (int)math.round(math.max(DefaultGridSize, gridSize) / DefaultSocketQuantization));
             if (constructionManager != null && constructionManager.SpawnedModules != null)
             {
                 IReadOnlyList<GameObject> modules = constructionManager.SpawnedModules;
@@ -462,7 +461,7 @@ namespace Hecton8.Construction
         {
             _nodeBuffer[index] = new IntegrityNodeRecord
             {
-                Mass = Mathf.Max(1f, data != null ? data.TotalResourceCount : 1f),
+                Mass = math.max(1f, data != null ? data.TotalResourceCount : 1f),
                 IsSupportRoot = (byte)((data == null || data.family == BuildableFamily.Structure) ? 1 : 0),
                 IsCandidate = (byte)(isCandidate ? 1 : 0)
             };
@@ -486,10 +485,10 @@ namespace Hecton8.Construction
 
         private static int QuantizeAxis(Vector3 direction)
         {
-            Vector3 normalized = direction.sqrMagnitude > 0f ? direction.normalized : Vector3.forward;
-            float absX = Mathf.Abs(normalized.x);
-            float absY = Mathf.Abs(normalized.y);
-            float absZ = Mathf.Abs(normalized.z);
+            float3 normalized = math.normalizesafe((float3)direction, new float3(0f, 0f, 1f));
+            float absX = math.abs(normalized.x);
+            float absY = math.abs(normalized.y);
+            float absZ = math.abs(normalized.z);
 
             if (absX >= absY && absX >= absZ)
                 return normalized.x >= 0f ? 0 : 1;
@@ -518,7 +517,7 @@ namespace Hecton8.Construction
             if (_inventoryPlacementBuffer != null && _inventoryPlacementBuffer.Length >= required)
                 return;
 
-            int newCapacity = Mathf.NextPowerOfTwo(Mathf.Max(required, InitialInventoryPlacementCapacity));
+            int newCapacity = NextPowerOfTwo(math.max(required, InitialInventoryPlacementCapacity));
             _inventoryPlacementBuffer = new PlayerInventory.ItemPlacement[newCapacity];
         }
 
@@ -527,7 +526,7 @@ namespace Hecton8.Construction
             if (_costHashBuffer.Length >= required)
                 return;
 
-            int newCapacity = Mathf.NextPowerOfTwo(Mathf.Max(required, InitialCostCapacity));
+            int newCapacity = NextPowerOfTwo(math.max(required, InitialCostCapacity));
             _costHashBuffer = new int[newCapacity];
             _costRemainingBuffer = new int[newCapacity];
             _costRemovedBuffer = new int[newCapacity];
@@ -560,8 +559,8 @@ namespace Hecton8.Construction
 
             DisposeNativeBuffers();
 
-            int newNodeCapacity = Mathf.NextPowerOfTwo(Mathf.Max(required, InitialNodeCapacity));
-            int newAdjacencyCapacity = Mathf.NextPowerOfTwo(Mathf.Max(newNodeCapacity * 4, InitialAdjacencyCapacity));
+            int newNodeCapacity = NextPowerOfTwo(math.max(required, InitialNodeCapacity));
+            int newAdjacencyCapacity = NextPowerOfTwo(math.max(newNodeCapacity * 4, InitialAdjacencyCapacity));
             _adjacencyCountBuffer = new int[newNodeCapacity];
             _adjacencyWriteBuffer = new int[newNodeCapacity];
             AllocateNativeBuffers(newNodeCapacity, newAdjacencyCapacity);
@@ -576,7 +575,7 @@ namespace Hecton8.Construction
                 CompletePendingValidation();
 
             NativeArray<int> previousAdjacency = _adjacency;
-            int newCapacity = Mathf.NextPowerOfTwo(Mathf.Max(required, InitialAdjacencyCapacity));
+            int newCapacity = NextPowerOfTwo(math.max(required, InitialAdjacencyCapacity));
             _adjacency = new NativeArray<int>(newCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
 
             if (previousAdjacency.IsCreated)
@@ -613,6 +612,18 @@ namespace Hecton8.Construction
             _validationPending = false;
         }
 
+        private static int NextPowerOfTwo(int value)
+        {
+            if (value <= 1)
+                return 1;
+
+            int power = 1;
+            while (power < value && power > 0)
+                power <<= 1;
+
+            return power > 0 ? power : int.MaxValue;
+        }
+
         private readonly struct SocketKey : IEquatable<SocketKey>
         {
             private readonly int _x;
@@ -631,10 +642,12 @@ namespace Hecton8.Construction
             public static SocketKey Create(Vector3 position, int axis, int validationGridSize)
             {
                 float scale = validationGridSize > 0 ? validationGridSize : 1;
+                float3 scaledPosition = (float3)position * scale;
+                int3 quantizedPosition = (int3)math.round(scaledPosition);
                 return new SocketKey(
-                    Mathf.RoundToInt(position.x * scale),
-                    Mathf.RoundToInt(position.y * scale),
-                    Mathf.RoundToInt(position.z * scale),
+                    quantizedPosition.x,
+                    quantizedPosition.y,
+                    quantizedPosition.z,
                     axis);
             }
 
@@ -700,7 +713,7 @@ namespace Hecton8.Construction
             IntegrityExceeded = 2
         }
 
-        [BurstCompile]
+        [BurstCompile(FloatMode = FloatMode.Fast)]
         private struct IntegrityValidationJob : IJob
         {
             [ReadOnly] public NativeArray<IntegrityNodeRecord> Nodes;

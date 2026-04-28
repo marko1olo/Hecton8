@@ -196,11 +196,8 @@ namespace Hecton8.Celestial
             if (_registeredToTickManager)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager == null)
-                return;
 
-            gameTickManager.Register((ITickable)this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _registeredToTickManager = true;
         }
 
@@ -209,9 +206,7 @@ namespace Hecton8.Celestial
             if (!_registeredToTickManager)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager != null)
-                gameTickManager.Unregister((ITickable)this);
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
 
             _registeredToTickManager = false;
         }
@@ -521,7 +516,7 @@ namespace Hecton8.Celestial
             {
                 if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
                 {
-                    Camera playerCamera = playerTransform.GetComponentInChildren<Camera>(true);
+                    Camera playerCamera = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera : playerTransform.GetComponent<Camera>());
                     if (playerCamera != null)
                         observerTransform = playerCamera.transform;
                 }

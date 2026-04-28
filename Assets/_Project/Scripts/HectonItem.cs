@@ -29,7 +29,7 @@ namespace Hecton8.Items
     [RequireComponent(typeof(Collider))]
     [RequireComponent(typeof(InteractionHighlighter))]
     [DisallowMultipleComponent]
-    public class HectonItem : MonoBehaviour, IInteractable, ITickable
+    public class HectonItem : MonoBehaviour, IInteractable, ITickable, IUpdatable
     {
         private const float OverflowScatterImpulse = 2.5f;
         private const float OverflowScatterLiftImpulse = 1.2f;
@@ -190,24 +190,15 @@ namespace Hecton8.Items
         {
             if (_isTickRegistered) return;
 
-            GameTickManager gtm = GameTickManager.Instance;
-            if (gtm != null)
-            {
-                gtm.Register(this);
-                _isTickRegistered = true;
-            }
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+            _isTickRegistered = true;
         }
 
         private void StopTicking()
         {
             if (!_isTickRegistered) return;
 
-            GameTickManager gtm = GameTickManager.Instance;
-            if (gtm != null)
-            {
-                gtm.Unregister(this);
-            }
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _isTickRegistered = false;
         }
 

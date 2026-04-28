@@ -204,10 +204,10 @@ namespace Hecton8.Dev
         private void AutoResolveReferences()
         {
             if (toolManager == null)
-                toolManager = GetComponent<PlayerToolManager>() ?? FindAnyObjectByType<PlayerToolManager>();
+                toolManager = GetComponent<PlayerToolManager>() ?? (Hecton8.Core.GlobalRegistry.Player != null ? Hecton8.Core.GlobalRegistry.Player.ToolManager : null);
 
             if (playerInventory == null)
-                playerInventory = GetComponent<PlayerInventory>() ?? FindAnyObjectByType<PlayerInventory>();
+                playerInventory = GetComponent<PlayerInventory>() ?? (Hecton8.Core.GlobalRegistry.Player != null ? Hecton8.Core.GlobalRegistry.Player.Inventory : null);
 
             if (playerMovement == null)
                 playerMovement = GetComponent<HectonPlayerMovement>();
@@ -226,7 +226,7 @@ namespace Hecton8.Dev
                 playerRigidbody = GetComponent<Rigidbody>();
 
             if (acousticZoneController == null)
-                acousticZoneController = FindAnyObjectByType<AcousticZoneController>();
+                acousticZoneController = AcousticZoneController.Instance;
         }
 
         private bool ValidateSetup()

@@ -14,6 +14,8 @@ using Hecton8.Interaction;
 using Hecton8.Optimization;
 using Hecton8.SaveSystem;
 using Hecton8.World;
+using Unity.Collections;
+using Unity.Jobs;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -25,7 +27,7 @@ namespace Hecton8.VFX
     /// Integrates with HectonSurvivalSystem, PlayerMovement, InteractionEvents, GameTickManager, SaveManager.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class CameraJuiceSystem : MonoBehaviour, ITickable, ISlowTickable, ISaveable
+    public sealed class CameraJuiceSystem : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ISaveable
     {
         // ═══ SINGLETON ═══
         private static CameraJuiceSystem _instance;
@@ -84,6 +86,11 @@ namespace Hecton8.VFX
         private IInteractable _focusTarget;
         private Transform _focusTargetTransform;
         private float _focusDistance;
+        private NativeArray<RaycastCommand> _focusRaycastCommands;
+        private NativeArray<RaycastHit> _focusRaycastHits;
+        private JobHandle _focusRaycastHandle;
+        private bool _focusRaycastScheduled;
+        private float _resolvedFocusDistance = 0.06f;
 
         // ═══ SETTINGS ═══
         [Header("── Settings ──────────────────")]
@@ -101,6 +108,18 @@ namespace Hecton8.VFX
 
         [SerializeField, Tooltip("Enable depth-of-field post-processing effect")]
         private bool _depthOfFieldEnabled = true;
+
+        [SerializeField, Tooltip("Physics layers sampled by the center-eye focus ray.")]
+        private LayerMask _interactionFocusMask = ~0;
+
+        [SerializeField, Tooltip("Maximum range used by the center-eye focus ray.")]
+        private float _interactionFocusRayDistance = 120f;
+
+        [SerializeField, Tooltip("Fallback near-field focus distance used when the diegetic visor HUD is the active focus plane.")]
+        private float _hudFocusDistance = 0.06f;
+
+        [SerializeField, Tooltip("Response speed for center-eye focus-distance convergence.")]
+        private float _focusResponseSpeed = 9f;
 
         [Header("Adaptive Budget Response")]
         [SerializeField, Tooltip("Allow camera juice to degrade under render-scale and VRAM pressure instead of paying full effect cost on weak hardware.")]
@@ -274,6 +293,7 @@ namespace Hecton8.VFX
 
             TryResolveGameplayDependencies();
             SyncDependencyFlags();
+            EnsureFocusRaycastBuffers();
 
             // Performance mode degradation
             if (QualitySettings.GetQualityLevel() == 0)
@@ -285,17 +305,10 @@ namespace Hecton8.VFX
 
         private void OnEnable()
         {
-            // Register with GameTickManager
-            if (GameTickManager.Instance == null)
-            {
-                Debug.LogError("[CameraJuiceSystem] GameTickManager not found. Cannot register tick.");
-                return;
-            }
-
             if (!_registered)
             {
-                GameTickManager.Instance.Register(this as ITickable);
-                GameTickManager.Instance.Register(this as ISlowTickable);
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
+                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Player);
                 _registered = true;
             }
 
@@ -321,6 +334,7 @@ namespace Hecton8.VFX
             _focusTarget = null;
             _focusTargetTransform = null;
             _shakeOffset = Vector3.zero;
+            ReleaseFocusRaycastBuffers();
 
             if (_cameraTransform != null)
             {
@@ -338,13 +352,8 @@ namespace Hecton8.VFX
             if (!_registered)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager != null)
-            {
-                gameTickManager.Unregister(this as ISlowTickable);
-                gameTickManager.Unregister(this as ITickable);
-            }
-
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
             _registered = false;
         }
 
@@ -356,6 +365,8 @@ namespace Hecton8.VFX
             {
                 _instance = null;
             }
+
+            ReleaseFocusRaycastBuffers();
 
             // Kill all tweens targeting this instance
             DOTween.Kill(this);
@@ -750,20 +761,148 @@ namespace Hecton8.VFX
                 return;
             }
 
-            if (_focusTargetTransform != null)
-            {
-                // Calculate focus distance
-                _focusDistance = Vector3.Distance(_cameraTransform.position, _focusTargetTransform.position);
+            EnsureFocusRaycastBuffers();
+            ResolveScheduledFocusRaycast();
 
-                // Apply to DepthOfField
-                _interactionDoF.focusDistance.value = _focusDistance;
-                _interactionDoF.active = true;
-            }
-            else
+            float targetFocusDistance = ResolveTargetFocusDistance();
+            float lerpT = 1f - Mathf.Exp(-Mathf.Max(0.01f, _focusResponseSpeed) * dt);
+            _focusDistance = Mathf.Lerp(
+                _focusDistance > 0f ? _focusDistance : targetFocusDistance,
+                targetFocusDistance,
+                lerpT);
+
+            _interactionDoF.focusDistance.value = _focusDistance;
+            _interactionDoF.active = true;
+            ScheduleFocusRaycast();
+        }
+
+        private void EnsureFocusRaycastBuffers()
+        {
+            if (_focusRaycastCommands.IsCreated && _focusRaycastHits.IsCreated)
+                return;
+
+            if (!_focusRaycastCommands.IsCreated)
             {
-                // Disable DoF
-                _interactionDoF.active = false;
+                _focusRaycastCommands = new NativeArray<RaycastCommand>(
+                    1,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastCommand>[1] — center-eye DoF focus ray lane — owner: CameraJuiceSystem
             }
+
+            if (!_focusRaycastHits.IsCreated)
+            {
+                _focusRaycastHits = new NativeArray<RaycastHit>(
+                    1,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[1] — center-eye DoF focus hit lane — owner: CameraJuiceSystem
+            }
+        }
+
+        private void ReleaseFocusRaycastBuffers()
+        {
+            if (_focusRaycastCommands.IsCreated)
+            {
+                if (_focusRaycastScheduled)
+                    _focusRaycastCommands.Dispose(_focusRaycastHandle);
+                else
+                    _focusRaycastCommands.Dispose();
+
+                _focusRaycastCommands = default;
+            }
+
+            if (_focusRaycastHits.IsCreated)
+            {
+                if (_focusRaycastScheduled)
+                    _focusRaycastHits.Dispose(_focusRaycastHandle);
+                else
+                    _focusRaycastHits.Dispose();
+
+                _focusRaycastHits = default;
+            }
+
+            _focusRaycastScheduled = false;
+            _focusRaycastHandle = default;
+        }
+
+        private void ResolveScheduledFocusRaycast()
+        {
+            if (!_focusRaycastScheduled || !_focusRaycastHandle.IsCompleted)
+                return;
+
+            _focusRaycastHandle.Complete();
+            _focusRaycastScheduled = false;
+
+            RaycastHit hit = _focusRaycastHits[0];
+            if (hit.collider != null && hit.distance > 0f)
+            {
+                _resolvedFocusDistance = hit.distance;
+                return;
+            }
+
+            _resolvedFocusDistance = ResolveHudPlaneFocusDistance();
+        }
+
+        private float ResolveTargetFocusDistance()
+        {
+            if (_focusRaycastScheduled)
+                return Mathf.Max(0.01f, _resolvedFocusDistance);
+
+            if (_focusTargetTransform != null)
+                return Mathf.Max(0.01f, Vector3.Distance(_cameraTransform.position, _focusTargetTransform.position));
+
+            return Mathf.Max(0.01f, ResolveHudPlaneFocusDistance());
+        }
+
+        private float ResolveHudPlaneFocusDistance()
+        {
+            if (_cameraTransform == null)
+                return Mathf.Max(0.01f, _hudFocusDistance);
+
+            SuitHUDV4CanvasOverlay overlay = SuitHUDV4CanvasOverlay.ActiveRuntimeInstance;
+            if (overlay == null || overlay.TargetCanvas == null)
+                return Mathf.Max(0.01f, _hudFocusDistance);
+
+            RectTransform canvasRect = overlay.TargetCanvas.transform as RectTransform;
+            if (canvasRect == null)
+                return Mathf.Max(0.01f, _hudFocusDistance);
+
+            float planeDistance = Vector3.Dot(_cameraTransform.forward, canvasRect.position - _cameraTransform.position);
+            return Mathf.Max(0.01f, planeDistance > 0f ? planeDistance : _hudFocusDistance);
+        }
+
+        private void ScheduleFocusRaycast()
+        {
+            if (_focusRaycastScheduled || _cameraTransform == null || !_focusRaycastCommands.IsCreated || !_focusRaycastHits.IsCreated)
+                return;
+
+            _focusRaycastCommands[0] = CreateFocusRaycastCommand(
+                _cameraTransform.position,
+                _cameraTransform.forward,
+                Mathf.Max(0.1f, _interactionFocusRayDistance),
+                _interactionFocusMask);
+            _focusRaycastHandle = RaycastCommand.ScheduleBatch(_focusRaycastCommands, _focusRaycastHits, 1, default);
+            _focusRaycastScheduled = true;
+        }
+
+        private static RaycastCommand CreateFocusRaycastCommand(
+            Vector3 origin,
+            Vector3 direction,
+            float range,
+            int layerMask)
+        {
+            return new RaycastCommand
+            {
+                from = origin,
+                direction = direction,
+                distance = range,
+                queryParameters = new QueryParameters
+                {
+                    layerMask = layerMask,
+                    hitTriggers = QueryTriggerInteraction.Ignore,
+                    hitBackfaces = false,
+                    hitMultipleFaces = false
+                }
+            };
         }
 
         private bool TryResolveCamera()
@@ -772,23 +911,19 @@ namespace Hecton8.VFX
 
             if (_mainCamera == null)
             {
-                if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                if (playerContext != null)
+                    _mainCamera = playerContext.PlayerCamera;
+
+                if (_mainCamera == null &&
+                    SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                     playerTransform != null)
                 {
-                    if (playerTransform.TryGetComponent(out Camera playerOwnedCamera))
-                    {
-                        _mainCamera = playerOwnedCamera;
-                    }
-                    else
-                    {
-                        _mainCamera = playerTransform.GetComponentInChildren<Camera>(true);
-                    }
+                    playerTransform.TryGetComponent(out _mainCamera);
                 }
 
-                if (!TryGetComponent(out _mainCamera))
-                {
-                    _mainCamera = GetComponentInChildren<Camera>();
-                }
+                if (_mainCamera == null && !TryGetComponent(out _mainCamera))
+                    _mainCamera = null;
 
                 if (_mainCamera == null)
                 {

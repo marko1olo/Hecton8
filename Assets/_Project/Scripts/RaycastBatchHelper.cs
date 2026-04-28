@@ -49,6 +49,8 @@ namespace Hecton8.Physics
         private NativeArray<RaycastHit> _hits;
         
         // ── Managed Mirror for API ──
+        // COLD ALLOC: RaycastHit[8] - synchronous single-query fallback buffer - owner: RaycastBatchHelper
+        private readonly RaycastHit[] _singleHitBuffer = new RaycastHit[8];
         private QueryResult[] _results;
         private Collider[] _excludeColliders;
         
@@ -155,8 +157,15 @@ namespace Hecton8.Physics
             }
             TotalRaycastsProcessed += _queryCount;
 
+            if (_queryCount == 1)
+            {
+                ResolveSingleQuery();
+                _batchExecuted = true;
+                return;
+            }
+
             // Schedule asynchronous batch on Unity's job threads
-            _lastJobHandle = RaycastCommand.ScheduleBatch(_commands, _hits, 1, default);
+            _lastJobHandle = RaycastCommand.ScheduleBatch(_commands, _hits, 16, default);
             
             // Ensure results are ready for immediate use this frame.
             // In AA systems, we synchronize here to simplify API, but work was parallelized.
@@ -183,6 +192,53 @@ namespace Hecton8.Physics
             }
 
             _batchExecuted = true;
+        }
+
+        private void ResolveSingleQuery()
+        {
+            RaycastCommand command = _commands[0];
+            bool hasHit = TryResolveNearestSingleHit(command, out RaycastHit hit);
+
+            if (hasHit && _excludeColliders[0] != null && hit.collider == _excludeColliders[0])
+            {
+                hasHit = false;
+                hit = default;
+            }
+
+            _results[0] = new QueryResult
+            {
+                hasHit = hasHit,
+                hit = hasHit ? hit : default
+            };
+        }
+
+        private bool TryResolveNearestSingleHit(RaycastCommand command, out RaycastHit nearestHit)
+        {
+            QueryParameters parameters = command.queryParameters;
+            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
+                command.from,
+                command.direction,
+                _singleHitBuffer,
+                command.distance,
+                parameters.layerMask,
+                parameters.hitTriggers);
+
+            nearestHit = default;
+            float nearestDistance = float.MaxValue;
+            for (int i = 0; i < hitCount; i++)
+            {
+                RaycastHit candidate = _singleHitBuffer[i];
+                if (candidate.collider == null || float.IsNaN(candidate.distance) || float.IsInfinity(candidate.distance))
+                    continue;
+
+                if (candidate.distance >= nearestDistance)
+                    continue;
+
+                nearestDistance = candidate.distance;
+                nearestHit = candidate;
+            }
+
+            return nearestHit.collider != null;
         }
 
         public QueryResult GetResult(int index)

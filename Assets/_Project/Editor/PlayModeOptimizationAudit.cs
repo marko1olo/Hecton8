@@ -17,7 +17,6 @@ namespace Hecton8.Editor
     /// <summary>
     /// Tracks play-mode optimization regressions by listening to Unity logs and profiler output.
     /// </summary>
-    [InitializeOnLoad]
     internal static class PlayModeOptimizationAudit
     {
         private static readonly Regex _RuntimeProfilerRegex = new Regex(
@@ -74,15 +73,10 @@ namespace Hecton8.Editor
         private const float ScatterSpikeThresholdMs = 40f;
         private const float SlowTickSpikeThresholdMs = 20f;
 
-        static PlayModeOptimizationAudit()
-        {
-            RegisterCallbacks();
-        }
-
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            EditorApplication.playModeStateChanged -= HandlePlayModeStateChanged;
+            UnregisterCallbacks();
             Application.logMessageReceived -= HandleLogMessage;
 
             _active = false;
@@ -91,7 +85,6 @@ namespace Hecton8.Editor
             ResetSession();
             _summaryBuilder.Clear();
 
-            RegisterCallbacks();
         }
 
         public static bool IsActive => _active;
@@ -100,6 +93,11 @@ namespace Hecton8.Editor
         {
             EditorApplication.playModeStateChanged -= HandlePlayModeStateChanged;
             EditorApplication.playModeStateChanged += HandlePlayModeStateChanged;
+        }
+
+        private static void UnregisterCallbacks()
+        {
+            EditorApplication.playModeStateChanged -= HandlePlayModeStateChanged;
         }
 
         public static void Start(
@@ -118,6 +116,7 @@ namespace Hecton8.Editor
 
             _active = true;
             _startedAtEditorTime = EditorApplication.timeSinceStartup;
+            RegisterCallbacks();
 
             Application.logMessageReceived -= HandleLogMessage;
             Application.logMessageReceived += HandleLogMessage;
@@ -139,6 +138,7 @@ namespace Hecton8.Editor
             if (!_active && !_startedProfiler)
                 return;
 
+            UnregisterCallbacks();
             Application.logMessageReceived -= HandleLogMessage;
 
             if (_startedProfiler && PlayModePerformanceMonitor.IsActive)

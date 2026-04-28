@@ -1,5 +1,7 @@
 using System;
+using Hecton8.Gameplay;
 using Hecton8.Interaction;
+using Hecton8.Physics;
 using UnityEngine;
 
 namespace Hecton8.Core
@@ -13,15 +15,26 @@ namespace Hecton8.Core
         private static readonly RegistryBucket<IUpdatable> _updatables = new RegistryBucket<IUpdatable>(512);
         // COLD ALLOC: RegistryBucket<IRenderable>[64] — global multi-instance render registry — owner: GlobalRegistry
         private static readonly RegistryBucket<IRenderable> _renderables = new RegistryBucket<IRenderable>(64);
+        private static readonly RegistryBucket<IFixedTickable> _fixedTickables = new RegistryBucket<IFixedTickable>(256);
+        private static readonly RegistryBucket<ISlowTickable> _slowTickables = new RegistryBucket<ISlowTickable>(256);
 
         private static IInputService _input;
         private static IPhysicsService _physics;
         private static IAudioService _audio;
         private static ISceneService _scene;
+        private static ISaveService _save;
         private static IUIService _ui;
+        private static IPlayerRuntimeContext _player;
+        private static IPlayerInventoryService _playerInventory;
+        private static IPlayerSensoryService _playerSensory;
+        private static IEnvironmentRuntimeContext _environment;
         private static IWeatherService _weather;
+        private static IHectonOceanKinematicsService _oceanKinematics;
+        private static ISubmarineRuntimeContext _submarine;
+        private static ISubmarineHullBreachReadModel _submarineHullBreach;
         private static IInteractionSignalService _interactionSignals;
         private static IDebrisService _debris;
+        private static IEcosystemDirectorService _ecosystemDirector;
 
         /// <summary>
         /// Registered input service slot.
@@ -44,14 +57,55 @@ namespace Hecton8.Core
         public static ISceneService Scene => _scene;
 
         /// <summary>
+        /// Registered save service slot.
+        /// </summary>
+        public static ISaveService Save => _save;
+
+        /// <summary>
         /// Registered UI service slot.
         /// </summary>
         public static IUIService UI => _ui;
 
         /// <summary>
+        /// Registered player runtime context slot.
+        /// </summary>
+        public static IPlayerRuntimeContext Player => _player;
+
+        /// <summary>
+        /// Registered player inventory/tooling service slot.
+        /// </summary>
+        public static IPlayerInventoryService PlayerInventory => _playerInventory;
+
+        /// <summary>
+        /// Registered player sensory/presentation service slot.
+        /// </summary>
+        public static IPlayerSensoryService PlayerSensory => _playerSensory;
+
+        /// <summary>
+        /// Registered environment runtime context slot.
+        /// </summary>
+        public static IEnvironmentRuntimeContext Environment => _environment;
+
+        /// <summary>
         /// Registered weather service slot.
         /// </summary>
         public static IWeatherService Weather => _weather;
+
+        /// <summary>
+        /// Registered ocean-kinematics selector service slot.
+        /// </summary>
+        public static IHectonOceanKinematicsService OceanKinematics => _oceanKinematics;
+
+        /// <summary>
+        /// Registered authoritative submarine runtime root slot.
+        /// </summary>
+        public static ISubmarineRuntimeContext Submarine => _submarine;
+
+        /// <summary>
+        /// Registered submarine hull-breach read model slot.
+        /// Front-buffer only. Writers must keep back-buffer private.
+        /// </summary>
+        public static ISubmarineHullBreachReadModel SubmarineHullBreach => _submarineHullBreach;
 
         /// <summary>
         /// Registered interaction signal service slot.
@@ -64,6 +118,11 @@ namespace Hecton8.Core
         public static IDebrisService Debris => _debris;
 
         /// <summary>
+        /// Registered ecosystem sector simulation service slot.
+        /// </summary>
+        public static IEcosystemDirectorService EcosystemDirector => _ecosystemDirector;
+
+        /// <summary>
         /// Dense multi-instance update registry.
         /// </summary>
         public static RegistryBucket<IUpdatable> Updatables => _updatables;
@@ -73,6 +132,16 @@ namespace Hecton8.Core
         /// </summary>
         public static RegistryBucket<IRenderable> Renderables => _renderables;
 
+        /// <summary>
+        /// Dense multi-instance fixed-update registry.
+        /// </summary>
+        public static RegistryBucket<IFixedTickable> FixedTickables => _fixedTickables;
+
+        /// <summary>
+        /// Dense multi-instance slow-tick registry.
+        /// </summary>
+        public static RegistryBucket<ISlowTickable> SlowTickables => _slowTickables;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
@@ -80,11 +149,22 @@ namespace Hecton8.Core
             _physics = null;
             _audio = null;
             _scene = null;
+            _save = null;
             _ui = null;
+            _player = null;
+            _playerInventory = null;
+            _playerSensory = null;
+            _environment = null;
             _weather = null;
+            _oceanKinematics = null;
+            _submarine = null;
+            _submarineHullBreach = null;
             _interactionSignals = null;
             _debris = null;
+            _ecosystemDirector = null;
             _updatables.Clear();
+            _fixedTickables.Clear();
+            _slowTickables.Clear();
             _renderables.Clear();
             SystemDispatcher.ClearAllLanes();
         }
@@ -126,6 +206,15 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Registers the authoritative save service.
+        /// </summary>
+        /// <param name="instance">Save service instance.</param>
+        public static void RegisterSaveService(ISaveService instance)
+        {
+            RegisterService(ref _save, instance);
+        }
+
+        /// <summary>
         /// Registers the authoritative UI service.
         /// </summary>
         /// <param name="instance">UI service instance.</param>
@@ -135,12 +224,75 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Registers the authoritative player runtime context.
+        /// </summary>
+        /// <param name="instance">Player runtime context instance.</param>
+        public static void RegisterPlayerRuntimeContext(IPlayerRuntimeContext instance)
+        {
+            RegisterService(ref _player, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative player inventory/tooling service.
+        /// </summary>
+        /// <param name="instance">Player inventory/tooling service instance.</param>
+        public static void RegisterPlayerInventoryService(IPlayerInventoryService instance)
+        {
+            RegisterService(ref _playerInventory, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative player sensory/presentation service.
+        /// </summary>
+        /// <param name="instance">Player sensory service instance.</param>
+        public static void RegisterPlayerSensoryService(IPlayerSensoryService instance)
+        {
+            RegisterService(ref _playerSensory, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative environment runtime context.
+        /// </summary>
+        /// <param name="instance">Environment runtime context instance.</param>
+        public static void RegisterEnvironmentRuntimeContext(IEnvironmentRuntimeContext instance)
+        {
+            RegisterService(ref _environment, instance);
+        }
+
+        /// <summary>
         /// Registers the authoritative weather service.
         /// </summary>
         /// <param name="instance">Weather service instance.</param>
         public static void RegisterWeatherService(IWeatherService instance)
         {
             RegisterService(ref _weather, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative ocean-kinematics selector service.
+        /// </summary>
+        /// <param name="instance">Ocean-kinematics service instance.</param>
+        public static void RegisterOceanKinematicsService(IHectonOceanKinematicsService instance)
+        {
+            RegisterService(ref _oceanKinematics, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative submarine runtime root.
+        /// </summary>
+        /// <param name="instance">Submarine runtime root instance.</param>
+        public static void RegisterSubmarine(ISubmarineRuntimeContext instance)
+        {
+            RegisterService(ref _submarine, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative submarine hull-breach read model.
+        /// </summary>
+        /// <param name="instance">Submarine hull-breach read model instance.</param>
+        public static void RegisterSubmarineHullBreach(ISubmarineHullBreachReadModel instance)
+        {
+            RegisterService(ref _submarineHullBreach, instance);
         }
 
         /// <summary>
@@ -159,6 +311,15 @@ namespace Hecton8.Core
         public static void RegisterDebrisService(IDebrisService instance)
         {
             RegisterService(ref _debris, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative ecosystem sector simulation service.
+        /// </summary>
+        /// <param name="instance">Ecosystem director service instance.</param>
+        public static void RegisterEcosystemDirectorService(IEcosystemDirectorService instance)
+        {
+            RegisterService(ref _ecosystemDirector, instance);
         }
 
         /// <summary>
@@ -198,6 +359,15 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Unregisters the current save service if the owner matches.
+        /// </summary>
+        /// <param name="instance">Service owner requesting unregistration.</param>
+        public static void UnregisterSaveService(ISaveService instance)
+        {
+            UnregisterService(ref _save, instance);
+        }
+
+        /// <summary>
         /// Unregisters the current UI service if the owner matches.
         /// </summary>
         /// <param name="instance">Service owner requesting unregistration.</param>
@@ -207,12 +377,75 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Unregisters the current player runtime context if the owner matches.
+        /// </summary>
+        /// <param name="instance">Context owner requesting unregistration.</param>
+        public static void UnregisterPlayerRuntimeContext(IPlayerRuntimeContext instance)
+        {
+            UnregisterService(ref _player, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current player inventory/tooling service if the owner matches.
+        /// </summary>
+        /// <param name="instance">Service owner requesting unregistration.</param>
+        public static void UnregisterPlayerInventoryService(IPlayerInventoryService instance)
+        {
+            UnregisterService(ref _playerInventory, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current player sensory/presentation service if the owner matches.
+        /// </summary>
+        /// <param name="instance">Service owner requesting unregistration.</param>
+        public static void UnregisterPlayerSensoryService(IPlayerSensoryService instance)
+        {
+            UnregisterService(ref _playerSensory, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current environment runtime context if the owner matches.
+        /// </summary>
+        /// <param name="instance">Context owner requesting unregistration.</param>
+        public static void UnregisterEnvironmentRuntimeContext(IEnvironmentRuntimeContext instance)
+        {
+            UnregisterService(ref _environment, instance);
+        }
+
+        /// <summary>
         /// Unregisters the current weather service if the owner matches.
         /// </summary>
         /// <param name="instance">Service owner requesting unregistration.</param>
         public static void UnregisterWeatherService(IWeatherService instance)
         {
             UnregisterService(ref _weather, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current ocean-kinematics selector service if the owner matches.
+        /// </summary>
+        /// <param name="instance">Service owner requesting unregistration.</param>
+        public static void UnregisterOceanKinematicsService(IHectonOceanKinematicsService instance)
+        {
+            UnregisterService(ref _oceanKinematics, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current submarine runtime root if the owner matches.
+        /// </summary>
+        /// <param name="instance">Submarine runtime root requesting unregistration.</param>
+        public static void UnregisterSubmarine(ISubmarineRuntimeContext instance)
+        {
+            UnregisterService(ref _submarine, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current submarine hull-breach read model if the owner matches.
+        /// </summary>
+        /// <param name="instance">Read-model owner requesting unregistration.</param>
+        public static void UnregisterSubmarineHullBreach(ISubmarineHullBreachReadModel instance)
+        {
+            UnregisterService(ref _submarineHullBreach, instance);
         }
 
         /// <summary>
@@ -234,6 +467,15 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Unregisters the current ecosystem sector simulation service if the owner matches.
+        /// </summary>
+        /// <param name="instance">Service owner requesting unregistration.</param>
+        public static void UnregisterEcosystemDirectorService(IEcosystemDirectorService instance)
+        {
+            UnregisterService(ref _ecosystemDirector, instance);
+        }
+
+        /// <summary>
         /// Registers an update owner into both the global bucket and its fixed dispatcher lane.
         /// </summary>
         /// <param name="item">Update owner.</param>
@@ -243,7 +485,47 @@ namespace Hecton8.Core
             if (item == null)
                 return;
 
+            if (!Application.isPlaying)
+                return;
+
+            SystemDispatcher.EnsureRuntimeInstance();
             _updatables.Register(item);
+            SystemDispatcher.Register(item, layer);
+        }
+
+        /// <summary>
+        /// Registers a fixed-update owner into both the global bucket and its fixed dispatcher lane.
+        /// </summary>
+        /// <param name="item">Fixed-update owner.</param>
+        /// <param name="layer">Dispatcher priority lane.</param>
+        public static void RegisterFixedTickable(IFixedTickable item, PriorityLayer layer)
+        {
+            if (item == null)
+                return;
+
+            if (!Application.isPlaying)
+                return;
+
+            SystemDispatcher.EnsureRuntimeInstance();
+            _fixedTickables.Register(item);
+            SystemDispatcher.Register(item, layer);
+        }
+
+        /// <summary>
+        /// Registers a slow-tick owner into both the global bucket and its dispatcher lane.
+        /// </summary>
+        /// <param name="item">Slow-tick owner.</param>
+        /// <param name="layer">Dispatcher priority lane.</param>
+        public static void RegisterSlowTickable(ISlowTickable item, PriorityLayer layer)
+        {
+            if (item == null)
+                return;
+
+            if (!Application.isPlaying)
+                return;
+
+            SystemDispatcher.EnsureRuntimeInstance();
+            _slowTickables.Register(item);
             SystemDispatcher.Register(item, layer);
         }
 
@@ -262,11 +544,41 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Unregisters a fixed-update owner from both the global bucket and its dispatcher lane.
+        /// </summary>
+        /// <param name="item">Fixed-update owner.</param>
+        /// <param name="layer">Dispatcher priority lane.</param>
+        public static void UnregisterFixedTickable(IFixedTickable item, PriorityLayer layer)
+        {
+            if (item == null)
+                return;
+
+            _fixedTickables.Unregister(item);
+            SystemDispatcher.Unregister(item, layer);
+        }
+
+        /// <summary>
+        /// Unregisters a slow-tick owner from both the global bucket and its dispatcher lane.
+        /// </summary>
+        /// <param name="item">Slow-tick owner.</param>
+        /// <param name="layer">Dispatcher priority lane.</param>
+        public static void UnregisterSlowTickable(ISlowTickable item, PriorityLayer layer)
+        {
+            if (item == null)
+                return;
+
+            _slowTickables.Unregister(item);
+            SystemDispatcher.Unregister(item, layer);
+        }
+
+        /// <summary>
         /// Clears all global multi-instance registries.
         /// </summary>
         public static void ClearRuntimeBuckets()
         {
             _updatables.Clear();
+            _fixedTickables.Clear();
+            _slowTickables.Clear();
             _renderables.Clear();
             SystemDispatcher.ClearAllLanes();
         }

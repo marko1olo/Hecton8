@@ -11,7 +11,7 @@ namespace Hecton8.Caves
         private static readonly int _BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int _ColorId = Shader.PropertyToID("_Color");
         private static readonly int _EmissionColorId = Shader.PropertyToID("_EmissionColor");
-        private static readonly MaterialPropertyBlock _RemnantPropertyBlock = new MaterialPropertyBlock(); // COLD ALLOC: shared service-remnant block.
+        private static MaterialPropertyBlock _RemnantPropertyBlock;
 
         public static void Build(
             Transform parent,
@@ -114,14 +114,26 @@ namespace Hecton8.Caves
             float accent = Mathf.Lerp(0.18f, 0.82f, Hash01(runtimeSeed, index, 127));
             Color baseColor = Color.Lerp(config.baseColor, config.accentColor, accent * 0.25f);
             Color emission = config.accentColor * (config.accentEmission * accent);
-            _RemnantPropertyBlock.Clear();
-            renderer.GetPropertyBlock(_RemnantPropertyBlock);
-            _RemnantPropertyBlock.SetColor(_BaseColorId, baseColor);
-            _RemnantPropertyBlock.SetColor(_ColorId, baseColor);
-            _RemnantPropertyBlock.SetColor(_EmissionColorId, emission);
-            renderer.SetPropertyBlock(_RemnantPropertyBlock);
-            renderer.shadowCastingMode = ShadowCastingMode.On;
-            renderer.receiveShadows = true;
+            MaterialPropertyBlock propertyBlock = GetRemnantPropertyBlock();
+            propertyBlock.Clear();
+            renderer.GetPropertyBlock(propertyBlock);
+            propertyBlock.SetColor(_BaseColorId, baseColor);
+            propertyBlock.SetColor(_ColorId, baseColor);
+            propertyBlock.SetColor(_EmissionColorId, emission);
+            renderer.SetPropertyBlock(propertyBlock);
+            bool castShadows = ResolveShadowCasting(renderer);
+            renderer.shadowCastingMode = castShadows ? ShadowCastingMode.On : ShadowCastingMode.Off;
+            renderer.receiveShadows = castShadows;
+        }
+
+        private static MaterialPropertyBlock GetRemnantPropertyBlock()
+        {
+            if (_RemnantPropertyBlock != null)
+                return _RemnantPropertyBlock;
+
+            // COLD ALLOC: MaterialPropertyBlock[1] — shared service-remnant block — owner: CaveServiceRemnantRuntimeBuilder
+            _RemnantPropertyBlock = new MaterialPropertyBlock();
+            return _RemnantPropertyBlock;
         }
 
         private static int ResolveRemnantCount(
@@ -141,6 +153,16 @@ namespace Hecton8.Caves
                 Mathf.RoundToInt(maxCount * Mathf.Max(complexity, footprint) * intensity),
                 1,
                 maxCount);
+        }
+
+        private static bool ResolveShadowCasting(Renderer renderer)
+        {
+            if (renderer == null)
+                return false;
+
+            Vector3 boundsSize = renderer.bounds.size;
+            float maxDimension = Mathf.Max(boundsSize.x, Mathf.Max(boundsSize.y, boundsSize.z));
+            return maxDimension >= 0.5f;
         }
 
         private static Material ResolveRemnantMaterial(HectonVoxelVolume volume)

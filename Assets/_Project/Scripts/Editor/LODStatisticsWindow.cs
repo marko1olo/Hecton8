@@ -90,7 +90,7 @@ namespace Hecton8.Editor
             _lastRefreshTime = EditorApplication.timeSinceStartup;
         }
 
-        private void Update()
+        private void OnInspectorUpdate()
         {
             if (!_autoRefresh) return;
 

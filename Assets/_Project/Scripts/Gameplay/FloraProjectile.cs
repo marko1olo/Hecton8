@@ -13,7 +13,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
     [RequireComponent(typeof(Collider))]
-    public sealed class FloraProjectile : MonoBehaviour, ITickable, IPoolable
+    public sealed class FloraProjectile : MonoBehaviour, ITickable, IUpdatable, IPoolable
     {
         private const string PlayerTag = "Player";
 
@@ -80,18 +80,18 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
-            if (GameTickManager.Instance != null && !_registered)
+            if (!_registered)
             {
-                GameTickManager.Instance.Register(this);
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
                 _registered = true;
             }
         }
 
         private void OnDisable()
         {
-            if (GameTickManager.Instance != null && _registered)
+            if (_registered)
             {
-                GameTickManager.Instance.Unregister(this);
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
                 _registered = false;
             }
         }
@@ -130,9 +130,9 @@ namespace Hecton8.Gameplay
                 _rigidbody.angularVelocity = Vector3.zero;
             }
 
-            if (GameTickManager.Instance != null && !_registered)
+            if (!_registered)
             {
-                GameTickManager.Instance.Register(this);
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
                 _registered = true;
             }
         }
@@ -142,9 +142,9 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void OnDespawn()
         {
-            if (GameTickManager.Instance != null && _registered)
+            if (_registered)
             {
-                GameTickManager.Instance.Unregister(this);
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
                 _registered = false;
             }
 

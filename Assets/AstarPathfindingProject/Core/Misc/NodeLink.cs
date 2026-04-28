@@ -94,7 +94,7 @@ namespace Pathfinding {
 		}
 
 #if UNITY_EDITOR
-		[UnityEditor.MenuItem("Edit/Pathfinding/Link Pair %&l")]
+		[UnityEditor.MenuItem("Edit/Pathfinding/Link Pair")]
 		public static void LinkObjects () {
 			Transform[] tfs = Selection.transforms;
 			if (tfs.Length == 2) {
@@ -103,7 +103,7 @@ namespace Pathfinding {
 			SceneView.RepaintAll();
 		}
 
-		[UnityEditor.MenuItem("Edit/Pathfinding/Unlink Pair %&u")]
+		[UnityEditor.MenuItem("Edit/Pathfinding/Unlink Pair")]
 		public static void UnlinkObjects () {
 			Transform[] tfs = Selection.transforms;
 			if (tfs.Length == 2) {
@@ -112,7 +112,7 @@ namespace Pathfinding {
 			SceneView.RepaintAll();
 		}
 
-		[UnityEditor.MenuItem("Edit/Pathfinding/Delete Links on Selected %&b")]
+		[UnityEditor.MenuItem("Edit/Pathfinding/Delete Links on Selected")]
 		public static void DeleteLinks () {
 			Transform[] tfs = Selection.transforms;
 			for (int i = 0; i < tfs.Length; i++) {

@@ -153,6 +153,7 @@ namespace Hecton8.Gameplay
         private CrateState _state;
         private PowerNode _logisticsPowerNode;
         private int[] _reservedSlotIds;
+        private int[] _containedItemHashIds;
 
         /// <summary>
         /// Cached animator hash for open trigger.
@@ -202,7 +203,7 @@ namespace Hecton8.Gameplay
             // Auto-find animator if not assigned
             if (animator == null)
             {
-                animator = GetComponentInChildren<Animator>();
+                animator = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Animator>(transform);
             }
 
             RebuildLocalizedTextCache();
@@ -506,6 +507,33 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
+        /// Counts unreserved items by deterministic runtime hash for alloc-free logistics queries.
+        /// </summary>
+        public int CountItemByHash(int itemHashId)
+        {
+            if (containedItems == null || itemHashId == 0)
+                return 0;
+
+            EnsureReservationCapacity();
+
+            int count = 0;
+            for (int i = 0; i < containedItems.Length; i++)
+            {
+                if (containedItems[i] == null || IsReservedSlot(i))
+                    continue;
+
+                if (_containedItemHashIds != null &&
+                    i < _containedItemHashIds.Length &&
+                    _containedItemHashIds[i] == itemHashId)
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        /// <summary>
         /// Removes a single matching item for logistics consumption.
         /// This bypasses the open/closed interaction state because internal base routing is not a player action.
         /// </summary>
@@ -521,6 +549,7 @@ namespace Hecton8.Gameplay
 
                 containedItems[i] = null;
                 _reservedSlotIds[i] = 0;
+                SetContainedItemHash(i, null);
                 if (IsEmpty())
                     OnEmpty?.Invoke();
 
@@ -551,6 +580,7 @@ namespace Hecton8.Gameplay
             if (removeItemsOnTake)
             {
                 containedItems[itemIndex] = null;
+                SetContainedItemHash(itemIndex, null);
             }
 
             // Check if crate is now empty
@@ -579,6 +609,7 @@ namespace Hecton8.Gameplay
                 {
                     containedItems[i] = item;
                     _reservedSlotIds[i] = 0;
+                    SetContainedItemHash(i, item);
                     return;
                 }
             }
@@ -586,8 +617,10 @@ namespace Hecton8.Gameplay
             // Expand array if no empty slot
             System.Array.Resize(ref containedItems, containedItems.Length + 1);
             System.Array.Resize(ref _reservedSlotIds, containedItems.Length);
+            System.Array.Resize(ref _containedItemHashIds, containedItems.Length);
             containedItems[containedItems.Length - 1] = item;
             _reservedSlotIds[containedItems.Length - 1] = 0;
+            SetContainedItemHash(containedItems.Length - 1, item);
         }
 
         /// <summary>
@@ -607,6 +640,7 @@ namespace Hecton8.Gameplay
 
                 containedItems[i] = item;
                 _reservedSlotIds[i] = 0;
+                SetContainedItemHash(i, item);
                 return true;
             }
 
@@ -644,6 +678,35 @@ namespace Hecton8.Gameplay
             {
                 if (!ReferenceEquals(containedItems[i], item) || IsReservedSlot(i))
                     continue;
+
+                _reservedSlotIds[i] = reservationId;
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Reserve one matching unreserved item slot by deterministic runtime hash.
+        /// </summary>
+        public bool TryReserveItemByHash(int itemHashId, int reservationId)
+        {
+            if (containedItems == null || itemHashId == 0 || reservationId <= 0)
+                return false;
+
+            EnsureReservationCapacity();
+
+            for (int i = 0; i < containedItems.Length; i++)
+            {
+                if (containedItems[i] == null || IsReservedSlot(i))
+                    continue;
+
+                if (_containedItemHashIds == null ||
+                    i >= _containedItemHashIds.Length ||
+                    _containedItemHashIds[i] != itemHashId)
+                {
+                    continue;
+                }
 
                 _reservedSlotIds[i] = reservationId;
                 return true;
@@ -708,6 +771,7 @@ namespace Hecton8.Gameplay
 
                 containedItems[i] = null;
                 _reservedSlotIds[i] = 0;
+                SetContainedItemHash(i, null);
                 anyRemoved = true;
             }
 
@@ -736,6 +800,15 @@ namespace Hecton8.Gameplay
 
             if (_reservedSlotIds == null || _reservedSlotIds.Length != itemCount)
                 System.Array.Resize(ref _reservedSlotIds, itemCount);
+
+            if (_containedItemHashIds == null || _containedItemHashIds.Length != itemCount)
+                System.Array.Resize(ref _containedItemHashIds, itemCount);
+
+            for (int i = 0; i < itemCount; i++)
+            {
+                ItemData item = containedItems[i];
+                _containedItemHashIds[i] = item != null ? ComputeContainedItemHash(item) : 0;
+            }
         }
 
         private bool IsReservedSlot(int index)
@@ -744,6 +817,19 @@ namespace Hecton8.Gameplay
                    index >= 0 &&
                    index < _reservedSlotIds.Length &&
                    _reservedSlotIds[index] != 0;
+        }
+
+        private void SetContainedItemHash(int index, ItemData item)
+        {
+            if (_containedItemHashIds == null || index < 0 || index >= _containedItemHashIds.Length)
+                return;
+
+            _containedItemHashIds[index] = item != null ? ComputeContainedItemHash(item) : 0;
+        }
+
+        private static int ComputeContainedItemHash(ItemData item)
+        {
+            return item != null ? LocHash.Compute(item.PersistentId) : 0;
         }
 
         /// <summary>

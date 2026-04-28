@@ -109,6 +109,47 @@ namespace Hecton8.UI
         }
 
         /// <summary>
+        /// Clears dynamic TMP atlas data for the cached localization font assets before domain teardown.
+        /// </summary>
+        public static void ReleaseCachedRuntimeFonts()
+        {
+            TryClearDynamicFontData(_cachedReadableFont);
+            TryClearDynamicFontData(_cachedReadableFontCjkSc);
+            TryClearDynamicFontData(_cachedReadableFontCjkJp);
+            TryClearDynamicFontData(_cachedReadableFontArabic);
+            TryClearDynamicFontData(_cachedBiosFallbackFont);
+
+            _cachedReadableFont = null;
+            _cachedReadableFontCjkSc = null;
+            _cachedReadableFontCjkJp = null;
+            _cachedReadableFontArabic = null;
+            _cachedBiosFallbackFont = null;
+        }
+
+        /// <summary>
+        /// Best-effort dynamic font cleanup used during manager shutdown.
+        /// </summary>
+        public static void TryClearDynamicFontData(TMP_FontAsset font)
+        {
+            if (font == null || font.atlasPopulationMode != AtlasPopulationMode.Dynamic)
+                return;
+
+            if (!HasResolvableAtlas(font))
+                return;
+
+            try
+            {
+                font.ClearFontAssetData(false);
+            }
+            catch (MissingReferenceException)
+            {
+            }
+            catch (UnassignedReferenceException)
+            {
+            }
+        }
+
+        /// <summary>
         /// True when the font asset exposes both a material and an atlas texture ready for staged swap.
         /// </summary>
         public static bool IsFontReady(TMP_FontAsset font)
@@ -116,13 +157,7 @@ namespace Hecton8.UI
             if (font == null || font.material == null)
                 return false;
 
-            if (font.material.GetTexture(ShaderUtilities.ID_MainTex) != null)
-                return true;
-
-            Texture[] atlasTextures = font.atlasTextures;
-            return atlasTextures != null &&
-                   atlasTextures.Length > 0 &&
-                   atlasTextures[0] != null;
+            return HasResolvableAtlas(font);
         }
 
         /// <summary>
@@ -273,6 +308,31 @@ namespace Hecton8.UI
 
                 default:
                     return true;
+            }
+        }
+
+        private static bool HasResolvableAtlas(TMP_FontAsset font)
+        {
+            if (font == null)
+                return false;
+
+            try
+            {
+                if (font.material != null && font.material.GetTexture(ShaderUtilities.ID_MainTex) != null)
+                    return true;
+
+                Texture[] atlasTextures = font.atlasTextures;
+                return atlasTextures != null &&
+                       atlasTextures.Length > 0 &&
+                       atlasTextures[0] != null;
+            }
+            catch (MissingReferenceException)
+            {
+                return false;
+            }
+            catch (UnassignedReferenceException)
+            {
+                return false;
             }
         }
     }

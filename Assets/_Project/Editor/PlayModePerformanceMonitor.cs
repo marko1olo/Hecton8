@@ -17,7 +17,6 @@ namespace Hecton8.Editor
     /// <summary>
     /// Runs a lightweight play-mode performance monitor from the Unity Editor.
     /// </summary>
-    [InitializeOnLoad]
     internal static class PlayModePerformanceMonitor
     {
         private const int RecorderCapacity = 1;
@@ -77,15 +76,10 @@ namespace Hecton8.Editor
         private static string _batchesStat = "Unresolved";
         private static string _lastReport = "None";
 
-        static PlayModePerformanceMonitor()
-        {
-            RegisterCallbacks();
-        }
-
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            EditorApplication.playModeStateChanged -= HandlePlayModeStateChanged;
+            UnregisterCallbacks();
             Stop();
 
             _logBudgetViolations = false;
@@ -125,7 +119,6 @@ namespace Hecton8.Editor
             _availableHandles.Clear();
             _reportBuilder.Clear();
 
-            RegisterCallbacks();
         }
 
         public static bool IsActive => _active;
@@ -134,6 +127,11 @@ namespace Hecton8.Editor
         {
             EditorApplication.playModeStateChanged -= HandlePlayModeStateChanged;
             EditorApplication.playModeStateChanged += HandlePlayModeStateChanged;
+        }
+
+        private static void UnregisterCallbacks()
+        {
+            EditorApplication.playModeStateChanged -= HandlePlayModeStateChanged;
         }
 
         public static void Start(
@@ -153,6 +151,7 @@ namespace Hecton8.Editor
             _logBudgetViolations = logBudgetViolations;
             _logEveryWindow = logEveryWindow;
             ResolveRecorders();
+            RegisterCallbacks();
 
             _active =
                 _frameTimeRecorder.Valid ||
@@ -181,6 +180,7 @@ namespace Hecton8.Editor
         public static void Stop()
         {
             EditorApplication.update -= Update;
+            UnregisterCallbacks();
             DisposeRecorder(ref _frameTimeRecorder);
             DisposeRecorder(ref _mainThreadRecorder);
             DisposeRecorder(ref _gcAllocRecorder);

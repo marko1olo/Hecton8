@@ -1,0 +1,1345 @@
+﻿# AGENT 06 TechArt Log
+
+Generated: `2026-04-27 19:48:12`
+Status: `PENDING VERIFICATION`
+
+Mandates followed:
+- `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`
+- `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`
+- `REND_URP_Graphics_HotPath_Optimization_HLOD.txt`
+- `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`
+- `PROJECT_LTS_Compatibility_Layer.txt`
+
+## Summary
+
+- FBX reimported under enforced policy: `298`
+- Prefab assets scanned: `751`
+- Scenes scanned: `37`
+- Broken variant assets replaced: `0`
+- Missing prefab instances unpacked: `0`
+- Missing prefab instances replaced: `0`
+- Channel-pack violations: `25`
+- Bakery UV auto-fixes: `0`
+- Bakery UV manual review items: `497`
+
+## FBX Reimported
+
+- Assets/ScifiFacility/Models/decals/decal_01.fbx
+- Assets/ScifiFacility/Models/decals/decal_02.fbx
+- Assets/ScifiFacility/Models/decals/decal_03.fbx
+- Assets/ScifiFacility/Models/decals/decal_04.fbx
+- Assets/ScifiFacility/Models/decals/decal_05.fbx
+- Assets/ScifiFacility/Models/decals/decal_06.fbx
+- Assets/ScifiFacility/Models/decals/decal_07.fbx
+- Assets/ScifiFacility/Models/decals/decal_a2.fbx
+- Assets/ScifiFacility/Models/decals/decal_a3.fbx
+- Assets/ScifiFacility/Models/decals/decal_b2.fbx
+- Assets/ScifiFacility/Models/decals/decal_b3.fbx
+- Assets/ScifiFacility/Models/decals/decal_x2.fbx
+- Assets/ScifiFacility/Models/decals/decal_x3.fbx
+- Assets/ScifiFacility/Models/decals/label_01.fbx
+- Assets/ScifiFacility/Models/decals/label_02.fbx
+- Assets/ScifiFacility/Models/decals/label_03.fbx
+- Assets/ScifiFacility/Models/decals/label_04.fbx
+- Assets/ScifiFacility/Models/decals/label_05.fbx
+- Assets/ScifiFacility/Models/decals/label_06.fbx
+- Assets/ScifiFacility/Models/decals/label_07.fbx
+- Assets/ScifiFacility/Models/decals/label_08.fbx
+- Assets/ScifiFacility/Models/decals/label_09.fbx
+- Assets/ScifiFacility/Models/decals/label_10.fbx
+- Assets/ScifiFacility/Models/decals/label_11.fbx
+- Assets/ScifiFacility/Models/decals/stripes_01.fbx
+- Assets/ScifiFacility/Models/decals/stripes_02.fbx
+- Assets/ScifiFacility/Models/decals/stripes_03.fbx
+- Assets/ScifiFacility/Models/decals/stripes_04.fbx
+- Assets/ScifiFacility/Models/decals/stripes_05.fbx
+- Assets/ScifiFacility/Models/decals/stripes_06.fbx
+- Assets/ScifiFacility/Models/decals/stripes_07.fbx
+- Assets/ScifiFacility/Models/decals/stripes_08.fbx
+- Assets/ScifiFacility/Models/decals/stripes_icon_01.fbx
+- Assets/ScifiFacility/Models/decals/stripes_icon_02.fbx
+- Assets/ScifiFacility/Models/decals/stripes_icon_03.fbx
+- Assets/ScifiFacility/Models/decals/stripes_icon_04.fbx
+- Assets/ScifiFacility/Models/decals/stripes_icon_05.fbx
+- Assets/ScifiFacility/Models/decals/stripes_icon_06.fbx
+- Assets/ScifiFacility/Models/furniture/bed.fbx
+- Assets/ScifiFacility/Models/furniture/bed_02.fbx
+- Assets/ScifiFacility/Models/furniture/bed_02_base.fbx
+- Assets/ScifiFacility/Models/furniture/bed_ladder.fbx
+- Assets/ScifiFacility/Models/furniture/chair_01.fbx
+- Assets/ScifiFacility/Models/furniture/chair_02.fbx
+- Assets/ScifiFacility/Models/furniture/chair_03.fbx
+- Assets/ScifiFacility/Models/furniture/couch_01.fbx
+- Assets/ScifiFacility/Models/furniture/couch_02.fbx
+- Assets/ScifiFacility/Models/furniture/couch_03.fbx
+- Assets/ScifiFacility/Models/furniture/couch_connector.fbx
+- Assets/ScifiFacility/Models/furniture/locker_01.fbx
+- Assets/ScifiFacility/Models/furniture/locker_02.fbx
+- Assets/ScifiFacility/Models/furniture/locker_03.fbx
+- Assets/ScifiFacility/Models/furniture/locker_04.fbx
+- Assets/ScifiFacility/Models/furniture/table_01.fbx
+- Assets/ScifiFacility/Models/furniture/table_02.fbx
+- Assets/ScifiFacility/Models/furniture/table_03.fbx
+- Assets/ScifiFacility/Models/furniture/table_03_connector.fbx
+- Assets/ScifiFacility/Models/furniture/table_03_corner.fbx
+- Assets/ScifiFacility/Models/furniture/table_03_prop_01.fbx
+- Assets/ScifiFacility/Models/furniture/table_base.fbx
+- Assets/ScifiFacility/Models/props/box_01.fbx
+- Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_01.fbx
+- Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_02.fbx
+- Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_03.fbx
+- Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_04.fbx
+- Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_05.fbx
+- Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_06.fbx
+- Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_07.fbx
+- Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_08.fbx
+- Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_09.fbx
+- Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_10.fbx
+- Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_11.fbx
+- Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_12.fbx
+- Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_13.fbx
+- Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_14.fbx
+- Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_15.fbx
+- Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_16.fbx
+- Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_17.fbx
+- Assets/ScifiFacility/Models/props/details/pipes/detail_05_e01.fbx
+- Assets/ScifiFacility/Models/props/details/pipes/detail_05_e02.fbx
+- Assets/ScifiFacility/Models/props/details/pipes/detail_05_e03.fbx
+- Assets/ScifiFacility/Models/props/details/pipes/detail_05_e04.fbx
+- Assets/ScifiFacility/Models/props/details/technical/detail_01.fbx
+- Assets/ScifiFacility/Models/props/details/technical/detail_02.fbx
+- Assets/ScifiFacility/Models/props/details/technical/detail_03.fbx
+- Assets/ScifiFacility/Models/props/details/technical/detail_03_a.fbx
+- Assets/ScifiFacility/Models/props/details/technical/detail_03_b.fbx
+- Assets/ScifiFacility/Models/props/details/technical/detail_04.fbx
+- Assets/ScifiFacility/Models/props/details/technical/detail_04_a.fbx
+- Assets/ScifiFacility/Models/props/details/technical/detail_04_b.fbx
+- Assets/ScifiFacility/Models/props/details/technical/detail_04_c.fbx
+- Assets/ScifiFacility/Models/props/details/technical/detail_04_d.fbx
+- Assets/ScifiFacility/Models/props/details/technical/detail_04_e.fbx
+- Assets/ScifiFacility/Models/props/details/technical/detail_04_f.fbx
+- Assets/ScifiFacility/Models/props/details/technical/detail_04_g.fbx
+- Assets/ScifiFacility/Models/props/details/technical/detail_05_a.fbx
+- Assets/ScifiFacility/Models/props/details/technical/detail_05_b.fbx
+- Assets/ScifiFacility/Models/props/details/technical/detail_05_c.fbx
+- Assets/ScifiFacility/Models/props/details/technical/detail_05_d.fbx
+- Assets/ScifiFacility/Models/props/keyboard.fbx
+- Assets/ScifiFacility/Models/props/keyboard_b.fbx
+- Assets/ScifiFacility/Models/props/lights/light_01.fbx
+- Assets/ScifiFacility/Models/props/lights/light_02.fbx
+- Assets/ScifiFacility/Models/props/lights/light_03.fbx
+- Assets/ScifiFacility/Models/props/lights/light_04.fbx
+- Assets/ScifiFacility/Models/props/lights/light_05.fbx
+- Assets/ScifiFacility/Models/props/lights/light_06.fbx
+- Assets/ScifiFacility/Models/props/lights/light_07.fbx
+- Assets/ScifiFacility/Models/props/lights/light_08.fbx
+- Assets/ScifiFacility/Models/props/lights/light_09.fbx
+- Assets/ScifiFacility/Models/props/lights/warningLight.fbx
+- Assets/ScifiFacility/Models/props/monitor.fbx
+- Assets/ScifiFacility/Models/props/prop_01.fbx
+- Assets/ScifiFacility/Models/props/prop_02.fbx
+- Assets/ScifiFacility/Models/props/prop_03.fbx
+- Assets/ScifiFacility/Models/props/prop_04.fbx
+- Assets/ScifiFacility/Models/props/prop_04_b.fbx
+- Assets/ScifiFacility/Models/props/prop_04_c.fbx
+- Assets/ScifiFacility/Models/props/prop_05.fbx
+- Assets/ScifiFacility/Models/props/prop_06.fbx
+- Assets/ScifiFacility/Models/props/prop_07.fbx
+- Assets/ScifiFacility/Models/props/prop_08.fbx
+- Assets/ScifiFacility/Models/props/prop_09.fbx
+- Assets/ScifiFacility/Models/props/prop_10.fbx
+- Assets/ScifiFacility/Models/props/prop_10_base.fbx
+- Assets/ScifiFacility/Models/props/prop_11.fbx
+- Assets/ScifiFacility/Models/props/prop_11_base.fbx
+- Assets/ScifiFacility/Models/props/prop_12_a.fbx
+- Assets/ScifiFacility/Models/props/prop_12_b.fbx
+- Assets/ScifiFacility/Models/props/prop_13.fbx
+- Assets/ScifiFacility/Models/props/prop_14.fbx
+- Assets/ScifiFacility/Models/props/prop_15.fbx
+- Assets/ScifiFacility/Models/props/server_racks/server_rack_01.fbx
+- Assets/ScifiFacility/Models/props/server_racks/server_rack_02.fbx
+- Assets/ScifiFacility/Models/props/server_racks/server_rack_03.fbx
+- Assets/ScifiFacility/Models/props/tubes/tube_01.fbx
+- Assets/ScifiFacility/Models/props/tubes/tube_02.fbx
+- Assets/ScifiFacility/Models/props/tubes/tube_03.fbx
+- Assets/ScifiFacility/Models/props/tubes/tube_cap_01.fbx
+- Assets/ScifiFacility/Models/props/tubes/tube_cap_02.fbx
+- Assets/ScifiFacility/Models/structural/ceiling/ceiling_01.fbx
+- Assets/ScifiFacility/Models/structural/ceiling/ceiling_02.fbx
+- Assets/ScifiFacility/Models/structural/ceiling/ceiling_03.fbx
+- Assets/ScifiFacility/Models/structural/ceiling/ceiling_04.fbx
+- Assets/ScifiFacility/Models/structural/ceiling/ceiling_05.fbx
+- Assets/ScifiFacility/Models/structural/ceiling/ceiling_06.fbx
+- Assets/ScifiFacility/Models/structural/ceiling/ceiling_07.fbx
+- Assets/ScifiFacility/Models/structural/ceiling/ceiling_08.fbx
+- Assets/ScifiFacility/Models/structural/ceiling/ceiling_09.fbx
+- Assets/ScifiFacility/Models/structural/ceiling/ceiling_09_connector.fbx
+- Assets/ScifiFacility/Models/structural/ceiling/ceiling_11.fbx
+- Assets/ScifiFacility/Models/structural/ceiling/ceiling_12.fbx
+- Assets/ScifiFacility/Models/structural/floor/duct_01 1.fbx
+- Assets/ScifiFacility/Models/structural/floor/duct_01.fbx
+- Assets/ScifiFacility/Models/structural/floor/duct_02.fbx
+- Assets/ScifiFacility/Models/structural/floor/duct_03.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor/duct_01.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor/duct_02.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor/duct_03.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_01.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_01_4x4.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_02.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_02a.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_03.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_04.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_05.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_06.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_border_01.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_border_02.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_border_03.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_border_04.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_border_05.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_border_06.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_border_corner_01.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_border_corner_02.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_crosssection_01.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_large_8x8.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_part_01.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_part_02.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_part_03.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_small_4x4.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor_01.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor_01_4x4.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor_02.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor_02a.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor_03.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor_04.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor_06.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor_border_01.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor_border_02.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor_border_03.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor_border_04.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor_border_05.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor_border_06.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor_border_corner_01.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor_border_corner_02.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor_crosssection_01.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor_part_01.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor_part_02.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor_part_03.fbx
+- Assets/ScifiFacility/Models/structural/floor/floor_small_4x4.fbx
+- Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/rail_01.fbx
+- Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/rail_02.fbx
+- Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/scaffold_01.fbx
+- Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/scaffold_02.fbx
+- Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/scaffold_03.fbx
+- Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/scaffold_04.fbx
+- Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/scaffold_connector.fbx
+- Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/stairs_01.fbx
+- Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/walk_01.fbx
+- Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/walk_02.fbx
+- Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/walk_03.fbx
+- Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/walk_04.fbx
+- Assets/ScifiFacility/Models/structural/sphere.fbx
+- Assets/ScifiFacility/Models/structural/trims/trim_01.fbx
+- Assets/ScifiFacility/Models/structural/trims/trim_02.fbx
+- Assets/ScifiFacility/Models/structural/trims/trim_03.fbx
+- Assets/ScifiFacility/Models/structural/trims/trim_04.fbx
+- Assets/ScifiFacility/Models/structural/trims/trim_05.fbx
+- Assets/ScifiFacility/Models/structural/trims/trim_05_cap.fbx
+- Assets/ScifiFacility/Models/structural/trims/trim_06_a.fbx
+- Assets/ScifiFacility/Models/structural/trims/trim_06_b.fbx
+- Assets/ScifiFacility/Models/structural/trims/trim_07.fbx
+- Assets/ScifiFacility/Models/structural/walls/column_01.fbx
+- Assets/ScifiFacility/Models/structural/walls/column_01_base.fbx
+- Assets/ScifiFacility/Models/structural/walls/column_03.fbx
+- Assets/ScifiFacility/Models/structural/walls/column_04.fbx
+- Assets/ScifiFacility/Models/structural/walls/column_04_connector.fbx
+- Assets/ScifiFacility/Models/structural/walls/column_04_connector_b.fbx
+- Assets/ScifiFacility/Models/structural/walls/column_05.fbx
+- Assets/ScifiFacility/Models/structural/walls/column_05_prop_01.fbx
+- Assets/ScifiFacility/Models/structural/walls/hull.fbx
+- Assets/ScifiFacility/Models/structural/walls/viewing_deck.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_01_2x3_b.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_01_2x3_top_trim.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_a.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_b.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_d.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_door.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_door_02.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_door_b.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_door_wing_left.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_door_wing_right.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_door_wings.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_e.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_f.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_g.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_h.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_h_door.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_i.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_top_trim.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_top_trim_corner.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_window.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_01_6x3_door.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_01_6x3_door_b.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_01_connector_01.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_01_connector_02.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_01_connector_03.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_01_connector_04.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_01_connector_ceiling_07.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_01_connector_corner.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_01_corner_a.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_01_corner_a_ceiling.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_01_corner_b.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_01_corner_b_ceiling.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_02_1x1_a.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_02_1x1_b.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_02_1x1_corner.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_02_1x2_d.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_02_1x3_c.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_03_4x3_a.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_03_8x3_b.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_04_10x1_f.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_04_2x4_b.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_04_4x1_f.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_04_6x4_e.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_04_8x10_c.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_04_8x10_c_connector_a.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_04_8x10_c_connector_b.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_04_8x10_c_connector_c.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_04_8x10_c_connector_d.fbx
+- Assets/ScifiFacility/Models/structural/walls/wall_04_8x10_c_door.fbx
+- Assets/_Project/Art/Materials/Meshy_AI_Alien_barnacles_clust_0301230506_texture.fbx
+- Assets/_Project/Art/Models/Rocks/Rock 4 - УНИВЕРСАЛЬНЫЙ ВЫБОР/УНИВЕРСАЛЬНЫЙ ВЫБОР (ТЕКСТУРЫ)/Forest_Rock_Shelf_wgpqfjl_Mid.fbx
+- Assets/_Project/Art/Models/Rocks/Rock 4 - УНИВЕРСАЛЬНЫЙ ВЫБОР/УНИВЕРСАЛЬНЫЙ ВЫБОР (ТЕКСТУРЫ)/Mossy_Forest_Rock_vimrfjsaw_Mid.fbx
+- Assets/_Project/Art/Models/Rocks/Rock 4 - УНИВЕРСАЛЬНЫЙ ВЫБОР/УНИВЕРСАЛЬНЫЙ ВЫБОР (ТЕКСТУРЫ)/Nordic_Beach_Rock_Formation_vd4iecjva_Low.fbx
+- Assets/_Project/Art/Models/Rocks/Rock 4 - УНИВЕРСАЛЬНЫЙ ВЫБОР/УНИВЕРСАЛЬНЫЙ ВЫБОР (ТЕКСТУРЫ)/Nordic_Beach_Rock_uknoehp_Mid.fbx
+- Assets/_Project/Art/Models/Rocks/Rock 4 - УНИВЕРСАЛЬНЫЙ ВЫБОР/УНИВЕРСАЛЬНЫЙ ВЫБОР (ТЕКСТУРЫ)/Rock_4.fbx
+- Assets/_Project/Art/Models/Rocks/Rock 5/orig/River_Rock_FBX.fbx
+- Assets/_Project/Art/Models/Rocks/Rock 6/rock6/Mossy_Forest_Rock_vimrfjsaw_Mid.fbx
+- Assets/_Project/Art/Models/Rocks/Rock 7/SAMMPLE.fbx
+- Assets/_Project/_PROLOGUE_CONTENT/Models/ceiling_10.fbx
+- Assets/_Project/_PROLOGUE_CONTENT/Models/floor_05.fbx
+- Assets/_Project/_PROLOGUE_CONTENT/Models/floor_large_8x8.fbx
+- Assets/_Project/_PROLOGUE_CONTENT/Models/wall_01_2x3_a.fbx
+- Assets/_Project/_PROLOGUE_CONTENT/Models/wall_01_4x3_c.fbx
+- Assets/_Project/_PROLOGUE_CONTENT/Models/wall_01_4x3_door_02_wing.fbx
+- Assets/_Project/_PROLOGUE_CONTENT/Models/wall_04_3x6_d.fbx
+
+## Broken Prefabs
+
+- No broken variant assets detected.
+
+## Prefab Repairs
+
+- No prefab assets required replacement.
+- No missing prefab instances were unpacked.
+- No missing prefab instances were replaced with the error cube.
+- Assets/_Recovery/0 (1).unity: scan-skipped non-production scene.
+- Assets/_Recovery/0 (2).unity: scan-skipped non-production scene.
+- Assets/_Recovery/0 (3).unity: scan-skipped non-production scene.
+- Assets/_Recovery/0 (4).unity: scan-skipped non-production scene.
+- Assets/_Recovery/0 (5).unity: scan-skipped non-production scene.
+- Assets/_Recovery/0 (6).unity: scan-skipped non-production scene.
+- Assets/_Recovery/0 (7).unity: scan-skipped non-production scene.
+- Assets/_Recovery/0 (8).unity: scan-skipped non-production scene.
+- Assets/_Recovery/0 (9).unity: scan-skipped non-production scene.
+- Assets/_Recovery/0 (10).unity: scan-skipped non-production scene.
+- Assets/_Recovery/0 (11).unity: scan-skipped non-production scene.
+- Assets/_Recovery/0 (12).unity: scan-skipped non-production scene.
+- Assets/_Recovery/0 (13).unity: scan-skipped non-production scene.
+- Assets/_Recovery/0 (14).unity: scan-skipped non-production scene.
+- Assets/_Recovery/0 (15).unity: scan-skipped non-production scene.
+- Assets/_Recovery/0 (16).unity: scan-skipped non-production scene.
+- Assets/_Recovery/0 (17).unity: scan-skipped non-production scene.
+- Assets/_Recovery/0 (18).unity: scan-skipped non-production scene.
+- Assets/_Recovery/0 (19).unity: scan-skipped non-production scene.
+- Assets/_Recovery/0 (20).unity: scan-skipped non-production scene.
+- Assets/_Recovery/0 (21).unity: scan-skipped non-production scene.
+- Assets/_Recovery/0 (22).unity: scan-skipped non-production scene.
+- Assets/_Recovery/0 (23).unity: scan-skipped non-production scene.
+- Assets/_Recovery/0.unity: scan-skipped non-production scene.
+- Assets/_Recovery/1 (1).unity: scan-skipped non-production scene.
+- Assets/_Recovery/1 (2).unity: scan-skipped non-production scene.
+- Assets/_Recovery/1.unity: scan-skipped non-production scene.
+- Assets/_Recovery/2.unity: scan-skipped non-production scene.
+
+## Broken References
+
+- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ Арка 1 стонхенж.prefab: ENV_ Арка 1 стонхенж/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ Болдер 2.prefab: ENV_ Болдер 2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ Кам с кучк 3-3-1.5 .prefab: ENV_ Кам с кучк 3-3-1.5 /PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ Камень баз 4-4-2 м.prefab: ENV_ Камень баз 4-4-2 м/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ Камень баз 6-4-4м.prefab: ENV_ Камень баз 6-4-4м/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ Кучка 3 5-5-2.prefab: ENV_ Кучка 3 5-5-2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ Кучка 4  5-5.prefab: ENV_ Кучка 4  5-5/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ Кучка 5   5-5-2.prefab: ENV_ Кучка 5   5-5-2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ Огром скала.prefab: ENV_ Огром скала/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ Огроменная скала.prefab: ENV_ Огроменная скала/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ Скала2.prefab: ENV_ Скала2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ арка1.prefab: ENV_ арка1/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ арка2.prefab: ENV_ арка2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ болдер 1.prefab: ENV_ болдер 1/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ большая горизонтальная.prefab: ENV_ большая горизонтальная/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ донная куча.prefab: ENV_ донная куча/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ круговая.prefab: ENV_ круговая/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ куча 3 болд.prefab: ENV_ куча 3 болд/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ куча1.prefab: ENV_ куча1/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ куча2.prefab: ENV_ куча2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ кучка мелка 1.prefab: ENV_ кучка мелка 1/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ пиллар2.prefab: ENV_ пиллар2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ скала большая.prefab: ENV_ скала большая/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_ПИЛЛАР1.prefab: ENV_ПИЛЛАР1/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Nature/ГОТОВЫЕ ПРЕФАБЫ КАМНЕЙ/ENV_блин плоск 5 на 5 .prefab: ENV_блин плоск 5 на 5 /PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Prefabs/Suit_HUD_Canvas.prefab: Suit_HUD_Canvas: missing script components=1.
+- Assets/_Project/Prefabs/VoxelChunk.prefab: VoxelChunk: MeshFilter missing sharedMesh.
+- Assets/_Project/Prefabs/VoxelChunk.prefab: VoxelChunk: Renderer 'VoxelChunk' has null shared material slot 0.
+- Assets/_Project/Prefabs/WorldGenerator.prefab: WorldGenerator/_WorldPreview: MeshFilter missing sharedMesh.
+- Assets/Feel/MMFeedbacks/MMFeedbacks/MMFloatingText/Prefabs/MMFloatingText.prefab: MMFloatingText/MovingContainer/Billboard/TextMesh: Renderer 'TextMesh' has null shared material slot 0.
+- Assets/Feel/MMFeedbacks/MMFeedbacksForThirdParty/TextMeshPro/MMFloatingText/Prefabs/MMFloatingTextMeshPro.prefab: MMFloatingTextMeshPro/MovingContainer/Billboard/Text (TMP)/TMP SubMesh [Lato SDF Material + Lato-Bold SDF Atlas]: MeshFilter missing sharedMesh.
+- Assets/Feel/MMFeedbacks/MMFeedbacksForThirdParty/TextMeshPro/MMFloatingText/Prefabs/MMFloatingTextMeshPro.prefab: MMFloatingTextMeshPro/MovingContainer/Billboard/Text (TMP)/TMP SubMesh [Lato SDF Material + Lato-Bold SDF Atlas]: Renderer 'TMP SubMesh [Lato SDF Material + Lato-Bold SDF Atlas]' has null shared material slot 0.
+- Assets/Feel/MMTools/Tools/MMVFX/MMRipple/MMRipple.prefab: MMRipple: Renderer 'MMRipple' has null shared material slot 1.
+- Assets/Particle Attractor by Moonflower Carnivore/Prefabs/Particle attractor 000 basic.prefab: Particle attractor 000 basic: Renderer 'Particle attractor 000 basic' has null shared material slot 0.
+- Assets/Particle Attractor by Moonflower Carnivore/Prefabs/Particle attractor 000 basic.prefab: Particle attractor 000 basic: Renderer 'Particle attractor 000 basic' has null shared material slot 1.
+- Assets/Particle Attractor by Moonflower Carnivore/Prefabs/Particle attractor 000 basic.prefab: Particle attractor 000 basic/Particle attractor: Renderer 'Particle attractor' has null shared material slot 0.
+- Assets/Particle Attractor by Moonflower Carnivore/Prefabs/Particle attractor 001 local revolving spherical only work at world origin.prefab: Particle attractor 001 local revolving spherical only work at world origin: Renderer 'Particle attractor 001 local revolving spherical only work at world origin' has null shared material slot 0.
+- Assets/Particle Attractor by Moonflower Carnivore/Prefabs/Particle attractor 001 local revolving spherical only work at world origin.prefab: Particle attractor 001 local revolving spherical only work at world origin: Renderer 'Particle attractor 001 local revolving spherical only work at world origin' has null shared material slot 1.
+- Assets/Particle Attractor by Moonflower Carnivore/Prefabs/Particle attractor 001 local revolving spherical only work at world origin.prefab: Particle attractor 001 local revolving spherical only work at world origin/Particle attractor: Renderer 'Particle attractor' has null shared material slot 0.
+- Assets/Particle Attractor by Moonflower Carnivore/Prefabs/Particle attractor 002 local revolving move.prefab: Particle attractor 002 local revolving move: Renderer 'Particle attractor 002 local revolving move' has null shared material slot 0.
+- Assets/Particle Attractor by Moonflower Carnivore/Prefabs/Particle attractor 002 local revolving move.prefab: Particle attractor 002 local revolving move: Renderer 'Particle attractor 002 local revolving move' has null shared material slot 1.
+- Assets/Particle Attractor by Moonflower Carnivore/Prefabs/Particle attractor 002 local revolving move.prefab: Particle attractor 002 local revolving move/Particle attractor: Renderer 'Particle attractor' has null shared material slot 0.
+- Assets/Particle Attractor by Moonflower Carnivore/Prefabs/Particle attractor 003 lightning.prefab: Particle attractor 003 lightning: Renderer 'Particle attractor 003 lightning' has null shared material slot 0.
+- Assets/Particle Attractor by Moonflower Carnivore/Prefabs/Particle attractor 003 lightning.prefab: Particle attractor 003 lightning: Renderer 'Particle attractor 003 lightning' has null shared material slot 1.
+- Assets/Particle Attractor by Moonflower Carnivore/Prefabs/Particle attractor 003 lightning.prefab: Particle attractor 003 lightning/Particle attractor: Renderer 'Particle attractor' has null shared material slot 0.
+- Assets/Particle Attractor by Moonflower Carnivore/Prefabs/Particle attractor 003 lightning.prefab: Particle attractor 003 lightning/Particle attractor/SubEmitter death spark: Renderer 'SubEmitter death spark' has null shared material slot 1.
+- Assets/Particle Attractor by Moonflower Carnivore/Prefabs/Particle attractor 003 lightning.prefab: Particle attractor 003 lightning/Particle attractor/SubEmitter death spark/SubEmitter death spark cross: Renderer 'SubEmitter death spark cross' has null shared material slot 1.
+- Assets/Particle Attractor by Moonflower Carnivore/Prefabs/Particle attractor 004 soft noise.prefab: Particle attractor 004 soft noise: Renderer 'Particle attractor 004 soft noise' has null shared material slot 0.
+- Assets/Particle Attractor by Moonflower Carnivore/Prefabs/Particle attractor 004 soft noise.prefab: Particle attractor 004 soft noise: Renderer 'Particle attractor 004 soft noise' has null shared material slot 1.
+- Assets/Particle Attractor by Moonflower Carnivore/Prefabs/Particle attractor 004 soft noise.prefab: Particle attractor 004 soft noise/Particle attractor: Renderer 'Particle attractor' has null shared material slot 0.
+- Assets/Particle Attractor by Moonflower Carnivore/Prefabs/Particle attractor 005 only work at world origin.prefab: Particle attractor 005 only work at world origin: Renderer 'Particle attractor 005 only work at world origin' has null shared material slot 0.
+- Assets/Particle Attractor by Moonflower Carnivore/Prefabs/Particle attractor 005 only work at world origin.prefab: Particle attractor 005 only work at world origin: Renderer 'Particle attractor 005 only work at world origin' has null shared material slot 1.
+- Assets/Particle Attractor by Moonflower Carnivore/Prefabs/Particle attractor 005 only work at world origin.prefab: Particle attractor 005 only work at world origin/Particle attractor: Renderer 'Particle attractor' has null shared material slot 0.
+- Assets/Particle Attractor by Moonflower Carnivore/Prefabs/Particle repeller 000.prefab: Particle repeller 000: Renderer 'Particle repeller 000' has null shared material slot 0.
+- Assets/Particle Attractor by Moonflower Carnivore/Prefabs/Particle repeller 000.prefab: Particle repeller 000: Renderer 'Particle repeller 000' has null shared material slot 1.
+- Assets/Particle Attractor by Moonflower Carnivore/Prefabs/Particle repeller 000.prefab: Particle repeller 000/Particle attractor: Renderer 'Particle attractor' has null shared material slot 0.
+- Assets/Particle Attractor by Moonflower Carnivore/Prefabs/Particle revolver 000 yz.prefab: Particle revolver 000 yz: Renderer 'Particle revolver 000 yz' has null shared material slot 0.
+- Assets/Particle Attractor by Moonflower Carnivore/Prefabs/Particle revolver 000 yz.prefab: Particle revolver 000 yz: Renderer 'Particle revolver 000 yz' has null shared material slot 1.
+- Assets/Particle Attractor by Moonflower Carnivore/Prefabs/Particle revolver 000 yz.prefab: Particle revolver 000 yz/Particle revolver: Renderer 'Particle revolver' has null shared material slot 0.
+- Assets/Particle Attractor by Moonflower Carnivore/Prefabs/Particle revolver 001 Megido.prefab: Particle revolver 001 Megido: Renderer 'Particle revolver 001 Megido' has null shared material slot 0.
+- Assets/Particle Attractor by Moonflower Carnivore/Prefabs/Particle revolver 001 Megido.prefab: Particle revolver 001 Megido: Renderer 'Particle revolver 001 Megido' has null shared material slot 1.
+- Assets/Particle Attractor by Moonflower Carnivore/Prefabs/Particle revolver 002 Eternal charge.prefab: Particle revolver 002 Eternal charge: Renderer 'Particle revolver 002 Eternal charge' has null shared material slot 0.
+- Assets/Particle Attractor by Moonflower Carnivore/Prefabs/Particle revolver 002 Eternal charge.prefab: Particle revolver 002 Eternal charge: Renderer 'Particle revolver 002 Eternal charge' has null shared material slot 1.
+- Assets/Particle Attractor by Moonflower Carnivore/Prefabs/Particle selfish 000 basic.prefab: Particle selfish 000 basic: Renderer 'Particle selfish 000 basic' has null shared material slot 0.
+- Assets/Particle Attractor by Moonflower Carnivore/Prefabs/Particle selfish 000 basic.prefab: Particle selfish 000 basic: Renderer 'Particle selfish 000 basic' has null shared material slot 1.
+- Assets/Particle Attractor by Moonflower Carnivore/Prefabs/Particle selfish 000 basic.prefab: Particle selfish 000 basic/Particle attractor: Renderer 'Particle attractor' has null shared material slot 0.
+- Assets/ScifiFacility/Prefabs/props/details/controlpanels/controlpanel_15.prefab: controlpanel_15/wall_04_4x1_f/Plane.521: MeshFilter missing sharedMesh.
+- Assets/ScifiFacility/Prefabs/structural/walls/wall_01_4x3_window.prefab: wall_01_4x3_window/Plane.452: MeshFilter missing sharedMesh.
+- Assets/ScifiFacility/Prefabs/structural/walls/wall_04_4x1_f.prefab: wall_04_4x1_f/Plane.521: MeshFilter missing sharedMesh.
+- Assets/_Project/Scenes/01_MAIN_MENU.unity: wall_01_4x3_window/Plane.452: MeshFilter missing sharedMesh.
+- Assets/_Project/Scenes/02_HECTON_WORLD.unity: --- UI ---/Suit_HUD_Canvas: missing script components=1.
+- Assets/_Project/Scenes/02_HECTON_WORLD.unity: VoxelChunk: MeshFilter missing sharedMesh.
+- Assets/_Project/Scenes/02_HECTON_WORLD.unity: VoxelChunk: Renderer 'VoxelChunk' has null shared material slot 0.
+- Assets/_Project/Scenes/03_HECTON_WORLD_CREST5.unity: --- UI ---/Suit_HUD_Canvas: missing script components=1.
+- Assets/_Project/Scenes/03_HECTON_WORLD_CREST5.unity: VoxelChunk: MeshFilter missing sharedMesh.
+- Assets/_Project/Scenes/03_HECTON_WORLD_CREST5.unity: VoxelChunk: Renderer 'VoxelChunk' has null shared material slot 0.
+- Assets/_Project/Scenes/03_HECTON_WORLD_CREST5.unity: SiltTrail: Renderer 'SiltTrail' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ПИЛЛАР1/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ кучка мелка 1/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ скала большая/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ пиллар2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ куча2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ куча1/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ арка1/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ донная куча/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ куча 3 болд/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_блин плоск 5 на 5 /PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ арка2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ Болдер 1/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ Болдер 2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ Скала2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ круговая/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ большая горизонтальная/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ Огром скала/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ Огроменная скала/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ Кучка 3 5-5-2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ Кучка 4  5-5/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ Арка 1 стонхенж/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ Кучка 5   5-5-2/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ Камень баз 6-4-4м/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ Кам с кучк 3-3-1.5 /PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/_Project/Scenes/XXX_SANDBOX.unity: ENV_ Камень баз 4-4-2 м/PHYSICS_SKIN: Renderer 'PHYSICS_SKIN' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMDebugMenu/MMDebugMenu.unity: Cameras ---------------------------------------/Main Camera: missing script components=2.
+- Assets/Feel/MMTools/Demos/MMDebugMenu/MMDebugMenu.unity: Cameras ---------------------------------------/CM vcam1: missing script components=2.
+- Assets/Feel/MMTools/Demos/MMDebugMenu/MMDebugMenu.unity: Cameras ---------------------------------------/CM vcam1/cm: missing script components=3.
+- Assets/Feel/MMTools/Demos/MMDebugMenu/MMDebugMenu.unity: Cameras ---------------------------------------/GlobalPostProcessingProfile: missing script components=1.
+- Assets/Feel/MMTools/Demos/MMDebugMenu/MMDebugMenu.unity: Cameras ---------------------------------------/MovingFilter: missing script components=1.
+- Assets/Feel/MMTools/Demos/MMDebugMenu/MMDebugMenu.unity: Scene ------------------------------------------/CylinderContainer/CylinderEmitter/Cylinder: Renderer 'Cylinder' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMDebugMenu/MMDebugMenu.unity: Scene ------------------------------------------/SphereContainer/PositionTweaker/Sphere: Renderer 'Sphere' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMDebugMenu/MMDebugMenu.unity: Scene ------------------------------------------/Cube1/Cube1Model: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMDebugMenu/MMDebugMenu.unity: Scene ------------------------------------------/Cube1/Cube1Model: Renderer 'Cube1Model' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMDebugMenu/MMDebugMenu.unity: Scene ------------------------------------------/Cube2/Cube2Model: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMDebugMenu/MMDebugMenu.unity: Scene ------------------------------------------/Cube2/Cube2Model: Renderer 'Cube2Model' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMDebugMenu/MMDebugMenu.unity: Scene ------------------------------------------/Cube3/Cube3Model: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMDebugMenu/MMDebugMenu.unity: Scene ------------------------------------------/Cube3/Cube3Model: Renderer 'Cube3Model' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMGhostCamera/MMGhostCameraDemo.unity: Managers/PostProcessing: missing script components=1.
+- Assets/Feel/MMTools/Demos/MMGhostCamera/MMGhostCameraDemo.unity: Main Camera: missing script components=1.
+- Assets/Feel/MMTools/Demos/MMObservable/MMObservableDemo.unity: Subject - MOVE ME ON THE X AND Z AXIS IN PLAY MODE/Cube: Renderer 'Cube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMObservable/MMObservableDemo.unity: Observer/Sphere: Renderer 'Sphere' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMObservable/MMObservableDemo.unity: ObserverAutoSleep/Sphere: Renderer 'Sphere' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMPrototypeTextures/MMPrototypeTexturesDemo.unity: Main Camera: missing script components=1.
+- Assets/Feel/MMTools/Demos/MMPrototypeTextures/MMPrototypeTexturesDemo.unity: Main Camera/PostProcessVolume: missing script components=1.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Cameras ---------------------------------------/Main Camera: missing script components=2.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Cameras ---------------------------------------/CM vcam1: missing script components=2.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Cameras ---------------------------------------/CM vcam1/cm: missing script components=3.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Cameras ---------------------------------------/GlobalPostProcessingProfile: missing script components=1.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Cameras ---------------------------------------/MovingFilter: missing script components=1.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cube1/SquashAndStretch/Crate: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cube1/SquashAndStretch/Crate: Renderer 'Crate' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cube2/SquashAndStretch/Crate: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cube2/SquashAndStretch/Crate: Renderer 'Crate' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cube3/SquashAndStretch/Crate: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cube3/SquashAndStretch/Crate: Renderer 'Crate' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/Cube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/Cube: Renderer 'Cube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/Cube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/Cube: Renderer 'Cube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: MeshFilter missing sharedMesh.
+- Assets/Feel/MMTools/Demos/MMRadio/MMRadioDemo.unity: Scene ------------------------------------------/Cubes/FlyingCube: Renderer 'FlyingCube' has null shared material slot 0.
+- Assets/Feel/MMTools/Demos/MMTween/MMTweenPlotter.unity: Main Camera: missing script components=2.
+- Assets/Feel/NiceVibrations/Demo/NiceVibrationsDemo.unity: Canvas/Ball/Contents/ContentsBg/Ball/HitParticles: Renderer 'HitParticles' has null shared material slot 1.
+- Assets/Feel/NiceVibrations/Demo/NiceVibrationsDemo.unity: Canvas/Ball/Contents/ContentsBg/Ball/HitPusherParticles: Renderer 'HitPusherParticles' has null shared material slot 1.
+- Assets/Feel/NiceVibrations/Demo/NiceVibrationsDemo.unity: Canvas/Ball/Contents/ContentsBg/Ball/HitPusherParticles/HitPusherParticles (1): Renderer 'HitPusherParticles (1)' has null shared material slot 1.
+- Assets/Plugins/DarkTonic/MasterAudio/ExampleScenes/_AfterBootstrapperScene.unity: Enemy Spawner: Renderer 'Enemy Spawner' has null shared material slot 0.
+- Assets/Plugins/DarkTonic/MasterAudio/ExampleScenes/_AfterBootstrapperScene.unity: Player Spawner: Renderer 'Player Spawner' has null shared material slot 0.
+- Assets/Plugins/DarkTonic/MasterAudio/ExampleScenes/_StandaloneScene.unity: Enemy Spawner: Renderer 'Enemy Spawner' has null shared material slot 0.
+- Assets/Plugins/DarkTonic/MasterAudio/ExampleScenes/_StandaloneScene.unity: Player Spawner: Renderer 'Player Spawner' has null shared material slot 0.
+
+## Bakery UV Audit
+
+- No importer-side Bakery UV fixes were applied.
+- Assets/ScifiFacility/Models/decals/decal_01.fbx: Plane.569: Plane.569: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/decals/decal_02.fbx: Plane.570: Plane.570: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/decals/decal_03.fbx: Plane.572: Plane.572: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/decals/decal_04.fbx: Plane.574: Plane.574: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/decals/decal_05.fbx: Plane.576: Plane.576: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/decals/decal_06.fbx: Plane.577: Plane.577: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/decals/decal_07.fbx: Plane.578: Plane.578: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/furniture/bed.fbx: Cube.178: Cube.178: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/furniture/bed.fbx: Cube.179: Cube.179: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/furniture/bed.fbx: Cube.180: Cube.180: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/furniture/bed.fbx: Cube.181: Cube.181: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/furniture/bed.fbx: Cube.182: Cube.182: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/furniture/bed.fbx: Cube.183: Cube.183: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/furniture/bed.fbx: Cube.184: Cube.184: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/furniture/bed_02.fbx: Cube.349: Cube.349: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/furniture/bed_02.fbx: Cube.352: Cube.352: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/furniture/bed_02.fbx: Cube.353: Cube.353: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/furniture/bed_02.fbx: Cube.354: Cube.354: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/furniture/bed_02_base.fbx: Cube.496: Cube.496: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/furniture/bed_02_base.fbx: Cube.501: Cube.501: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/furniture/bed_02_base.fbx: Cube.502: Cube.502: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/furniture/bed_ladder.fbx: Torus.017: Torus.017: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/furniture/chair_01.fbx: Plane.369: Plane.369: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/furniture/chair_01.fbx: Plane.370: Plane.370: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/furniture/chair_02.fbx: Plane.367: Plane.367: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/furniture/chair_02.fbx: Plane.368: Plane.368: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/furniture/chair_03.fbx: Cube.274: Cube.274: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/furniture/couch_01.fbx: Cube.205: Cube.205: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/furniture/couch_01.fbx: Cube.209: Cube.209: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/furniture/couch_02.fbx: Cube.206: Cube.206: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/furniture/couch_02.fbx: Cube.208: Cube.208: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/furniture/couch_03.fbx: Cube.204: Cube.204: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/furniture/couch_03.fbx: Cube.207: Cube.207: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/furniture/couch_connector.fbx: Cube.236: Cube.236: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/furniture/locker_01.fbx: Cube.217: Cube.217: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/furniture/locker_01.fbx: Cube.218: Cube.218: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/furniture/locker_01.fbx: Cube.220: Cube.220: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/furniture/locker_02.fbx: Cube.211: Cube.211: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/furniture/locker_02.fbx: Cube.212: Cube.212: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/furniture/locker_03.fbx: Cube.219: Cube.219: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/furniture/locker_03.fbx: Cube.222: Cube.222: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/furniture/locker_04.fbx: Cube.219: Cube.219: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/furniture/locker_04.fbx: Cube.222: Cube.222: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/furniture/table_01.fbx: Cube.166: Cube.166: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/furniture/table_01.fbx: Cube.167: Cube.167: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/furniture/table_01.fbx: Cube.168: Cube.168: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/furniture/table_02.fbx: Cube.313: Cube.313: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/furniture/table_02.fbx: Cube.314: Cube.314: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/furniture/table_02.fbx: Cube.315: Cube.315: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/furniture/table_03.fbx: Cube.362: Cube.362: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/furniture/table_03.fbx: Cube.363: Cube.363: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/furniture/table_03_connector.fbx: Cube.365: Cube.365: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/furniture/table_03_corner.fbx: Cube.372: Cube.372: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/furniture/table_03_corner.fbx: Cube.373: Cube.373: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/furniture/table_03_prop_01.fbx: Cube.366: Cube.366: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/furniture/table_base.fbx: Plane.044: Plane.044: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/box_01.fbx: Cube.111: Cube.111: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_02.fbx: Plane.316: Plane.316: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_03.fbx: Plane.317: Plane.317: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_04.fbx: Plane.318: Plane.318: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_05.fbx: Plane.319: Plane.319: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_07.fbx: Plane.321: Plane.321: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_09.fbx: Plane.323: Plane.323: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_10.fbx: Plane.324: Plane.324: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_11.fbx: Plane.325: Plane.325: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_12.fbx: Plane.266: Plane.266: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_13.fbx: Cube.191: Cube.191: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_13.fbx: Plane.350: Plane.350: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_14.fbx: Cube.192: Cube.192: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_14.fbx: Plane.360: Plane.360: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_15.fbx: Cube.193: Cube.193: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_15.fbx: Plane.363: Plane.363: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_16.fbx: Cube.194: Cube.194: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_16.fbx: Plane.364: Plane.364: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_17.fbx: Cube.195: Cube.195: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_17.fbx: Plane.366: Plane.366: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/pipes/detail_05_e01.fbx: Cube.047: Cube.047: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/pipes/detail_05_e02.fbx: Cube.075: Cube.075: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/pipes/detail_05_e03.fbx: Cube.074: Cube.074: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/pipes/detail_05_e04.fbx: Cube.076: Cube.076: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/technical/detail_01.fbx: detail_01: detail_01: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/technical/detail_01.fbx: detail_01_lod_1: detail_01_lod_1: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/technical/detail_01.fbx: detail_01_lod_2: detail_01_lod_2: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/technical/detail_02.fbx: Cube.024: Cube.024: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/technical/detail_02.fbx: Cube.025: Cube.025: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/technical/detail_02.fbx: Cube.027: Cube.027: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/technical/detail_03.fbx: Cube.026: Cube.026: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/technical/detail_03_a.fbx: Detail_03_0_low.001: Detail_03_0_low.001: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/technical/detail_03_b.fbx: Detail_03_b_low.001: Detail_03_b_low.001: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/technical/detail_04_a.fbx: Torus.002: Torus.002: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/technical/detail_04_a.fbx: Torus.003: Torus.003: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/technical/detail_04_a.fbx: Torus.004: Torus.004: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/technical/detail_04_b.fbx: Torus.005: Torus.005: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/technical/detail_04_b.fbx: Torus.006: Torus.006: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/technical/detail_04_b.fbx: Torus.007: Torus.007: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/technical/detail_04_c.fbx: Torus.008: Torus.008: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/technical/detail_04_c.fbx: Torus.009: Torus.009: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/technical/detail_04_c.fbx: Torus.010: Torus.010: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/technical/detail_04_d.fbx: Torus.011: Torus.011: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/technical/detail_04_d.fbx: Torus.012: Torus.012: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/technical/detail_04_d.fbx: Torus.013: Torus.013: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/technical/detail_04_e.fbx: Torus.014: Torus.014: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/technical/detail_04_f.fbx: Torus: Torus: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/technical/detail_04_f.fbx: Torus.017: Torus.017: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/technical/detail_04_f.fbx: Torus.018: Torus.018: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/technical/detail_04_g.fbx: Torus.016: Torus.016: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/technical/detail_04_g.fbx: Torus.019: Torus.019: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/technical/detail_04_g.fbx: Torus.020: Torus.020: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/technical/detail_05_a.fbx: Cube.068: Cube.068: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/technical/detail_05_b.fbx: Cube.069: Cube.069: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/technical/detail_05_c.fbx: Cube.077: Cube.077: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/details/technical/detail_05_d.fbx: Cube.071: Cube.071: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/keyboard.fbx: Keyboard.000: Keyboard.000: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/keyboard.fbx: Keyboard.001: Keyboard.001: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/keyboard_b.fbx: Keyboard.002: Keyboard.002: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/keyboard_b.fbx: Keyboard.003: Keyboard.003: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/lights/light_01.fbx: Cube.106: Cube.106: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/lights/light_04.fbx: Cube.109: Cube.109: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/lights/light_07.fbx: Cube.436: Cube.436: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/props/lights/light_07.fbx: Cube.438: Cube.438: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/lights/light_08.fbx: Cube.439: Cube.439: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/lights/light_08.fbx: Cube.440: Cube.440: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/lights/light_09.fbx: Cube.439: Cube.439: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/lights/light_09.fbx: Cube.440: Cube.440: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/lights/warningLight.fbx: Cylinder.102: Cylinder.102: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/lights/warningLight.fbx: Cylinder.104: Cylinder.104: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/monitor.fbx: Cube.467: Cube.467: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/monitor.fbx: Cube.468: Cube.468: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/props/monitor.fbx: Cube.469: Cube.469: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/monitor.fbx: Cube.470: Cube.470: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/props/monitor.fbx: Cube.471: Cube.471: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/props/monitor.fbx: Cube.472: Cube.472: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/props/prop_01.fbx: Cube.148: Cube.148: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_01.fbx: Cube.149: Cube.149: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_02.fbx: Cube.156: Cube.156: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_02.fbx: Cube.157: Cube.157: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_03.fbx: Cube.152: Cube.152: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_03.fbx: Cube.153: Cube.153: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_04.fbx: Plane.200: Plane.200: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_04.fbx: Plane.201: Plane.201: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_04.fbx: Plane.202: Plane.202: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_04_b.fbx: Plane.581: Plane.581: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_04_c.fbx: Plane.621: Plane.621: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_05.fbx: Cube.159: Cube.159: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_05.fbx: Cube.160: Cube.160: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_06.fbx: Cube.230: Cube.230: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_06.fbx: Cube.231: Cube.231: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_07.fbx: Cube.318: Cube.318: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/props/prop_07.fbx: Cube.319: Cube.319: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/props/prop_08.fbx: Cube.326: Cube.326: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/props/prop_08.fbx: Cube.327: Cube.327: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/props/prop_09.fbx: Cube.331: Cube.331: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/props/prop_09.fbx: Cube.332: Cube.332: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/props/prop_10.fbx: Cylinder.056: Cylinder.056: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_10.fbx: Cylinder.057: Cylinder.057: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/props/prop_10.fbx: Cylinder.058: Cylinder.058: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_10_base.fbx: Cylinder.076: Cylinder.076: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_10_base.fbx: Cylinder.089: Cylinder.089: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_10_base.fbx: Cylinder.090: Cylinder.090: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_10_base.fbx: Cylinder.091: Cylinder.091: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_11.fbx: Cube.357: Cube.357: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/props/prop_11.fbx: Cube.358: Cube.358: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_11.fbx: Cube.359: Cube.359: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/props/prop_11.fbx: Cube.360: Cube.360: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_11_base.fbx: Cube.464: Cube.464: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_11_base.fbx: Cube.465: Cube.465: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_11_base.fbx: Cube.466: Cube.466: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_12_a.fbx: Cube.367: Cube.367: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_12_b.fbx: Cube.368: Cube.368: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/props/prop_12_b.fbx: Cube.369: Cube.369: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/props/prop_12_b.fbx: Cube.375: Cube.375: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/props/prop_13.fbx: Cylinder.095: Cylinder.095: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_13.fbx: Cylinder.096: Cylinder.096: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_14.fbx: Cube.475: Cube.475: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_14.fbx: Cube.479: Cube.479: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_14.fbx: Cube.481: Cube.481: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_14.fbx: Cube.483: Cube.483: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_14.fbx: Cube.484: Cube.484: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_14.fbx: Cube.485: Cube.485: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_14.fbx: Cube.486: Cube.486: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_14.fbx: Cube.487: Cube.487: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_14.fbx: Cube.488: Cube.488: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_14.fbx: Cylinder.098: Cylinder.098: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_15.fbx: Cube.504: Cube.504: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_15.fbx: Cube.505: Cube.505: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_15.fbx: Cube.509: Cube.509: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_15.fbx: Cube.511: Cube.511: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_15.fbx: Cube.512: Cube.512: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_15.fbx: Cube.513: Cube.513: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_15.fbx: Cube.514: Cube.514: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_15.fbx: Cube.515: Cube.515: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_15.fbx: Cylinder.099: Cylinder.099: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_15.fbx: Plane.590: Plane.590: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/prop_15.fbx: Plane.591: Plane.591: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/server_racks/server_rack_01.fbx: Cube.198: Cube.198: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/server_racks/server_rack_02.fbx: Cube.198: Cube.198: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/server_racks/server_rack_03.fbx: Cube.200: Cube.200: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/tubes/tube_01.fbx: Cylinder.013: Cylinder.013: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/tubes/tube_03.fbx: Cylinder.008: Cylinder.008: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/tubes/tube_03.fbx: Cylinder.017: Cylinder.017: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/tubes/tube_03.fbx: Cylinder.018: Cylinder.018: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/props/tubes/tube_cap_02.fbx: Cylinder.016: Cylinder.016: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/ceiling/ceiling_01.fbx: Plane.093: Plane.093: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/ceiling/ceiling_02.fbx: Plane.199: Plane.199: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/ceiling/ceiling_03.fbx: Plane.199: Plane.199: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/ceiling/ceiling_04.fbx: Cube.161: Cube.161: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/ceiling/ceiling_06.fbx: Plane.252: Plane.252: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/ceiling/ceiling_07.fbx: Plane.372: Plane.372: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/ceiling/ceiling_07.fbx: Plane.373: Plane.373: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/ceiling/ceiling_08.fbx: Plane.374: Plane.374: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/ceiling/ceiling_09.fbx: Plane.532: Plane.532: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/ceiling/ceiling_09.fbx: Plane.534: Plane.534: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/ceiling/ceiling_09_connector.fbx: Cube.448: Cube.448: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/ceiling/ceiling_11.fbx: Plane.586: Plane.586: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/ceiling/ceiling_11.fbx: Plane.587: Plane.587: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/ceiling/ceiling_11.fbx: Plane.588: Plane.588: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/ceiling/ceiling_12.fbx: Plane.589: Plane.589: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_01.fbx: Plane.179: Plane.179: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_01.fbx: Plane.180: Plane.180: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_02.fbx: Plane.169: Plane.169: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_02.fbx: Plane.176: Plane.176: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_02.fbx: Plane.186: Plane.186: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_02a.fbx: Plane.188: Plane.188: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_02a.fbx: Plane.189: Plane.189: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_03.fbx: Plane.188: Plane.188: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_03.fbx: Plane.189: Plane.189: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_04.fbx: Plane.182: Plane.182: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_04.fbx: Plane.183: Plane.183: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_04.fbx: Plane.185: Plane.185: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_05.fbx: Plane.191: Plane.191: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_05.fbx: Plane.192: Plane.192: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_05.fbx: Plane.195: Plane.195: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_border_01.fbx: Plane.098: Plane.098: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_border_02.fbx: Plane.100: Plane.100: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_border_02.fbx: Plane.103: Plane.103: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_border_03.fbx: Plane.204: Plane.204: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_border_04.fbx: Plane.204: Plane.204: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_border_05.fbx: Plane.209: Plane.209: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_border_06.fbx: Plane.250: Plane.250: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_border_corner_01.fbx: Cylinder.046: Cylinder.046: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_border_corner_01.fbx: Plane.197: Plane.197: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_border_corner_02.fbx: Cylinder.037: Cylinder.037: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_border_corner_02.fbx: Cylinder.038: Cylinder.038: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_crosssection_01.fbx: Plane.198: Plane.198: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_part_01.fbx: Plane.167_a: Plane.167_a: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_part_01.fbx: Plane.168_a: Plane.168_a: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_part_02.fbx: Plane.165: Plane.165: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor/floor_part_03.fbx: Plane.181: Plane.181: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor_01.fbx: Plane.179: Plane.179: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor_01.fbx: Plane.180: Plane.180: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor_02.fbx: Plane.169: Plane.169: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor_02.fbx: Plane.176: Plane.176: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor_02.fbx: Plane.186: Plane.186: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor_02a.fbx: Plane.188: Plane.188: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor_02a.fbx: Plane.189: Plane.189: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/floor/floor_03.fbx: Plane.188: Plane.188: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor_03.fbx: Plane.189: Plane.189: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/floor/floor_04.fbx: Plane.182: Plane.182: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor_04.fbx: Plane.183: Plane.183: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor_04.fbx: Plane.185: Plane.185: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor_border_01.fbx: Plane.098: Plane.098: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/floor/floor_border_02.fbx: Plane.100: Plane.100: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor_border_02.fbx: Plane.103: Plane.103: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor_border_03.fbx: Plane.204: Plane.204: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor_border_04.fbx: Plane.204: Plane.204: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor_border_05.fbx: Plane.209: Plane.209: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor_border_06.fbx: Plane.250: Plane.250: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor_border_corner_01.fbx: Cylinder.046: Cylinder.046: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor_border_corner_01.fbx: Plane.197: Plane.197: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor_border_corner_02.fbx: Cylinder.037: Cylinder.037: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor_border_corner_02.fbx: Cylinder.038: Cylinder.038: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/floor/floor_crosssection_01.fbx: Plane.198: Plane.198: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor_part_01.fbx: Plane.167_a: Plane.167_a: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor_part_01.fbx: Plane.168_a: Plane.168_a: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor_part_02.fbx: Plane.165: Plane.165: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/floor/floor_part_03.fbx: Plane.181: Plane.181: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/rail_01.fbx: Cube.305: Cube.305: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/rail_01.fbx: Cube.306: Cube.306: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/rail_01.fbx: Cube.307: Cube.307: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/rail_02.fbx: Cube.309: Cube.309: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/rail_02.fbx: Cube.312: Cube.312: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/scaffold_01.fbx: Plane.154: Plane.154: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/scaffold_02.fbx: Plane.156: Plane.156: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/scaffold_03.fbx: Plane.157: Plane.157: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/scaffold_connector.fbx: Cube.434: Cube.434: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/scaffold_connector.fbx: Cube.435: Cube.435: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/stairs_01.fbx: Cube.279: Cube.279: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/stairs_01.fbx: Cube.280: Cube.280: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/stairs_01.fbx: Cube.281: Cube.281: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/stairs_01.fbx: Cube.286: Cube.286: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/stairs_01.fbx: Cube.287: Cube.287: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/walk_01.fbx: Cube.247: Cube.247: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/walk_01.fbx: Cube.248: Cube.248: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/walk_01.fbx: Cube.267: Cube.267: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/walk_02.fbx: Cube.251: Cube.251: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/walk_02.fbx: Cube.254: Cube.254: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/walk_02.fbx: Cube.255: Cube.255: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/walk_02.fbx: Cube.268: Cube.268: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/walk_03.fbx: Cube.259: Cube.259: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/walk_03.fbx: Cube.262: Cube.262: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/walk_03.fbx: Cube.263: Cube.263: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/walk_03.fbx: Cube.266: Cube.266: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/walk_04.fbx: Cube.271: Cube.271: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/sphere.fbx: Sphere: Sphere: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/trims/trim_01.fbx: Plane.196: Plane.196: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/trims/trim_02.fbx: Cube.295: Cube.295: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/trims/trim_03.fbx: Cube.297: Cube.297: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/trims/trim_04.fbx: Cube.297: Cube.297: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/trims/trim_04.fbx: Cube.300: Cube.300: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/trims/trim_05.fbx: Cube.301: Cube.301: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/trims/trim_05_cap.fbx: Cube.303: Cube.303: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/trims/trim_06_a.fbx: Cube.449: Cube.449: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/trims/trim_06_b.fbx: Cube.457: Cube.457: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/trims/trim_06_b.fbx: Cube.458: Cube.458: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/walls/column_01.fbx: Cube.115: Cube.115: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/column_01.fbx: Cube.116: Cube.116: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/column_01.fbx: Cube.117: Cube.117: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/column_01_base.fbx: Plane.104: Plane.104: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/column_01_base.fbx: Plane.106: Plane.106: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/column_01_base.fbx: Plane.107: Plane.107: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/column_03.fbx: Cube.339: Cube.339: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/column_03.fbx: Cube.340: Cube.340: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/walls/column_03.fbx: Cube.341: Cube.341: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/walls/column_03.fbx: Cube.345: Cube.345: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/walls/column_03.fbx: Cube.347: Cube.347: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/column_04.fbx: Cube.379: Cube.379: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/walls/column_04.fbx: Cube.380: Cube.380: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/column_04.fbx: Cube.381: Cube.381: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/column_05.fbx: Plane.505: Plane.505: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/walls/column_05.fbx: Plane.506: Plane.506: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/walls/column_05.fbx: Plane.507: Plane.507: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/column_05.fbx: Plane.540: Plane.540: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/column_05_prop_01.fbx: Cube.425: Cube.425: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/walls/hull.fbx: Plane.614: Plane.614: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/viewing_deck.fbx: Cube.384: Cube.384: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/viewing_deck.fbx: Cube.385: Cube.385: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/viewing_deck.fbx: Cube.387: Cube.387: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/walls/viewing_deck.fbx: Cube.393: Cube.393: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/viewing_deck.fbx: Cube.395: Cube.395: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/walls/viewing_deck.fbx: Cube.396: Cube.396: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/viewing_deck.fbx: Cube.400: Cube.400: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/viewing_deck.fbx: Cube.402: Cube.402: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/viewing_deck.fbx: Cube.403: Cube.403: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/viewing_deck.fbx: Cube.406: Cube.406: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/viewing_deck.fbx: Cube.408: Cube.408: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/viewing_deck.fbx: Cube.409: Cube.409: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/viewing_deck.fbx: Cube.411: Cube.411: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/walls/viewing_deck.fbx: Cube.412: Cube.412: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_2x3_b.fbx: Plane.253: Plane.253: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_2x3_b.fbx: Plane.259: Plane.259: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_2x3_b.fbx: Plane.261: Plane.261: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_2x3_top_trim.fbx: Cylinder.101: Cylinder.101: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_a.fbx: Plane.086: Plane.086: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_a.fbx: Plane.089: Plane.089: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_b.fbx: Plane.116: Plane.116: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_b.fbx: Plane.117: Plane.117: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_d.fbx: Plane.238: Plane.238: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_d.fbx: Plane.239: Plane.239: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_door.fbx: Cube.126: Cube.126: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_door.fbx: Plane.137: Plane.137: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_door.fbx: Plane.140: Plane.140: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_door.fbx: Plane.142: Plane.142: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_door.fbx: Plane.144: Plane.144: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_door_02.fbx: Cube.169: Cube.169: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_door_02.fbx: Plane.244: Plane.244: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_door_02.fbx: Plane.245: Plane.245: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_door_02.fbx: Plane.246: Plane.246: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_door_02.fbx: Plane.249: Plane.249: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_door_b.fbx: Cube.430: Cube.430: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_door_b.fbx: Plane.541: Plane.541: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_door_b.fbx: Plane.543: Plane.543: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_door_wing_left.fbx: Cube.130: Cube.130: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_door_wing_left.fbx: Cube.131: Cube.131: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_door_wing_right.fbx: Cube.127: Cube.127: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_door_wing_right.fbx: Cube.128: Cube.128: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_door_wings.fbx: Cube.126: Cube.126: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_door_wings.fbx: Cube.127: Cube.127: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_door_wings.fbx: Cube.128: Cube.128: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_door_wings.fbx: Cube.130: Cube.130: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_door_wings.fbx: Cube.131: Cube.131: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_e.fbx: Plane.254: Plane.254: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_e.fbx: Plane.263: Plane.263: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_f.fbx: Plane.326: Plane.326: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_f.fbx: Plane.329: Plane.329: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_f.fbx: Plane.345: Plane.345: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_g.fbx: Plane.347: Plane.347: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_g.fbx: Plane.349: Plane.349: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_h.fbx: Cube.233: Cube.233: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_h.fbx: Plane.394: Plane.394: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_h.fbx: Plane.395: Plane.395: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_h.fbx: Plane.396: Plane.396: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_h.fbx: Plane.403: Plane.403: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_h.fbx: Plane.404: Plane.404: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_h.fbx: Plane.406: Plane.406: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_h.fbx: Plane.408: Plane.408: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_h.fbx: Plane.409: Plane.409: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_h.fbx: Plane.410: Plane.410: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_h.fbx: Plane.411: Plane.411: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_h_door.fbx: Cylinder.054: Cylinder.054: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_h_door.fbx: Plane.398: Plane.398: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_i.fbx: Plane.563: Plane.563: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_i.fbx: Plane.564: Plane.564: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_top_trim.fbx: Cylinder.059: Cylinder.059: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_top_trim_corner.fbx: Cylinder.065: Cylinder.065: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_window.fbx: Plane.446: Plane.446: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_window.fbx: Plane.447: Plane.447: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_window.fbx: Plane.453: Plane.453: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_window.fbx: Plane.585: Plane.585: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_6x3_door.fbx: Plane.474: Plane.474: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_6x3_door.fbx: Plane.476: Plane.476: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_6x3_door.fbx: Plane.477: Plane.477: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_6x3_door.fbx: Plane.483: Plane.483: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_6x3_door.fbx: Plane.485: Plane.485: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_6x3_door.fbx: Plane.486: Plane.486: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_6x3_door.fbx: Plane.487: Plane.487: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_6x3_door.fbx: Plane.488: Plane.488: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_6x3_door.fbx: Plane.489: Plane.489: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_6x3_door_b.fbx: Plane.493: Plane.493: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_6x3_door_b.fbx: Plane.494: Plane.494: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_6x3_door_b.fbx: Plane.495: Plane.495: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_6x3_door_b.fbx: Plane.496: Plane.496: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_6x3_door_b.fbx: Plane.497: Plane.497: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_6x3_door_b.fbx: Plane.500: Plane.500: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_6x3_door_b.fbx: Plane.501: Plane.501: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_6x3_door_b.fbx: Plane.502: Plane.502: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_connector_01.fbx: Cube.124: Cube.124: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_connector_02.fbx: Plane.218: Plane.218: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_connector_03.fbx: Cube.228: Cube.228: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_connector_04.fbx: Cube.521: Cube.521: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_connector_corner.fbx: Cube.229: Cube.229: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_corner_a.fbx: Cylinder.024: Cylinder.024: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_corner_a.fbx: Cylinder.025: Cylinder.025: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_corner_a.fbx: Cylinder.027: Cylinder.027: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_corner_a_ceiling.fbx: Cube.121: Cube.121: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_corner_a_ceiling.fbx: Plane.095: Plane.095: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_corner_b.fbx: Cylinder.032: Cylinder.032: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_corner_b.fbx: Cylinder.034: Cylinder.034: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_corner_b.fbx: Cylinder.035: Cylinder.035: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_corner_b_ceiling.fbx: Cube.123: Cube.123: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_01_corner_b_ceiling.fbx: Plane.110: Plane.110: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_02_1x1_a.fbx: Plane.429: Plane.429: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_02_1x1_b.fbx: Plane.432: Plane.432: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_02_1x1_corner.fbx: Plane.426: Plane.426: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/walls/wall_02_1x1_corner.fbx: Plane.427: Plane.427: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/walls/wall_02_1x2_d.fbx: Plane.441: Plane.441: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_02_1x3_c.fbx: Plane.435: Plane.435: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_02_1x3_c.fbx: Plane.439: Plane.439: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_02_1x3_c.fbx: Plane.440: Plane.440: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_03_4x3_a.fbx: Plane.469: Plane.469: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/walls/wall_03_4x3_a.fbx: Plane.472: Plane.472: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/walls/wall_03_4x3_a.fbx: Plane.473: Plane.473: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/walls/wall_03_8x3_b.fbx: Plane.458: Plane.458: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/walls/wall_03_8x3_b.fbx: Plane.463: Plane.463: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/walls/wall_03_8x3_b.fbx: Plane.464: Plane.464: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_03_8x3_b.fbx: Plane.466: Plane.466: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/walls/wall_04_10x1_f.fbx: Plane.528: Plane.528: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_04_10x1_f.fbx: Plane.529: Plane.529: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_04_2x4_b.fbx: Plane.508: Plane.508: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_04_4x1_f.fbx: Plane.528: Plane.528: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_04_6x4_e.fbx: Plane.508: Plane.508: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/walls/wall_04_6x4_e.fbx: Plane.520: Plane.520: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_04_8x10_c.fbx: Cube.415: Cube.415: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_04_8x10_c.fbx: Plane.511: Plane.511: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_04_8x10_c_connector_b.fbx: Cube.422: Cube.422: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_04_8x10_c_connector_c.fbx: Cube.419: Cube.419: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_04_8x10_c_connector_d.fbx: Cube.420: Cube.420: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/walls/wall_04_8x10_c_door.fbx: Cube.433: Cube.433: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/ScifiFacility/Models/structural/walls/wall_04_8x10_c_door.fbx: Plane.547: Plane.547: UV2 triangle is degenerate/self-intersecting.
+- Assets/ScifiFacility/Models/structural/walls/wall_04_8x10_c_door.fbx: Plane.549: Plane.549: UV2 triangle is degenerate/self-intersecting.
+- Assets/_Project/Art/Materials/Meshy_AI_Alien_barnacles_clust_0301230506_texture.fbx: Mesh_0: Mesh_0: UV2 triangle is degenerate/self-intersecting.
+- Assets/_Project/Art/Models/Rocks/Rock 4 - УНИВЕРСАЛЬНЫЙ ВЫБОР/УНИВЕРСАЛЬНЫЙ ВЫБОР (ТЕКСТУРЫ)/Forest_Rock_Shelf_wgpqfjl_Mid.fbx: wgpqfjl_LOD0_TIER2_000: wgpqfjl_LOD0_TIER2_000: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/_Project/Art/Models/Rocks/Rock 4 - УНИВЕРСАЛЬНЫЙ ВЫБОР/УНИВЕРСАЛЬНЫЙ ВЫБОР (ТЕКСТУРЫ)/Mossy_Forest_Rock_vimrfjsaw_Mid.fbx: vimrfjsaw_LOD0_TIER2_000: vimrfjsaw_LOD0_TIER2_000: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/_Project/Art/Models/Rocks/Rock 4 - УНИВЕРСАЛЬНЫЙ ВЫБОР/УНИВЕРСАЛЬНЫЙ ВЫБОР (ТЕКСТУРЫ)/Nordic_Beach_Rock_Formation_vd4iecjva_Low.fbx: vd4iecjva_LOD0_TIER3_000: vd4iecjva_LOD0_TIER3_000: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/_Project/Art/Models/Rocks/Rock 4 - УНИВЕРСАЛЬНЫЙ ВЫБОР/УНИВЕРСАЛЬНЫЙ ВЫБОР (ТЕКСТУРЫ)/Nordic_Beach_Rock_uknoehp_Mid.fbx: uknoehp_LOD0_TIER2_000: uknoehp_LOD0_TIER2_000: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/_Project/Art/Models/Rocks/Rock 4 - УНИВЕРСАЛЬНЫЙ ВЫБОР/УНИВЕРСАЛЬНЫЙ ВЫБОР (ТЕКСТУРЫ)/Rock_4.fbx: Rock_4: Rock_4: UV2 triangle is degenerate/self-intersecting.
+- Assets/_Project/Art/Models/Rocks/Rock 5/orig/River_Rock_FBX.fbx: RiverRock: RiverRock: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/_Project/Art/Models/Rocks/Rock 5/orig/River_Rock_FBX.fbx: RiverRock1: RiverRock1: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/_Project/Art/Models/Rocks/Rock 5/orig/River_Rock_FBX.fbx: RiverRock2: RiverRock2: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/_Project/Art/Models/Rocks/Rock 6/rock6/Mossy_Forest_Rock_vimrfjsaw_Mid.fbx: vimrfjsaw_LOD0_TIER2_000: vimrfjsaw_LOD0_TIER2_000: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/_Project/Art/Models/Rocks/Rock 7/SAMMPLE.fbx: ROCK__POLY_REDUSED_: ROCK__POLY_REDUSED_: UV2 triangle is degenerate/self-intersecting.
+- Assets/_Project/_PROLOGUE_CONTENT/Models/ceiling_10.fbx: Cube.427: Cube.427: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/_Project/_PROLOGUE_CONTENT/Models/ceiling_10.fbx: Plane.539: Plane.539: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/_Project/_PROLOGUE_CONTENT/Models/floor_05.fbx: Plane.191: Plane.191: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/_Project/_PROLOGUE_CONTENT/Models/floor_05.fbx: Plane.192: Plane.192: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/_Project/_PROLOGUE_CONTENT/Models/floor_05.fbx: Plane.195: Plane.195: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/_Project/_PROLOGUE_CONTENT/Models/wall_01_2x3_a.fbx: Plane.223: Plane.223: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/_Project/_PROLOGUE_CONTENT/Models/wall_01_2x3_a.fbx: Plane.228: Plane.228: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/_Project/_PROLOGUE_CONTENT/Models/wall_01_4x3_c.fbx: Cube.125: Cube.125: UV2 triangle is degenerate/self-intersecting.
+- Assets/_Project/_PROLOGUE_CONTENT/Models/wall_01_4x3_c.fbx: Plane.123: Plane.123: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/_Project/_PROLOGUE_CONTENT/Models/wall_01_4x3_c.fbx: Plane.124: Plane.124: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/_Project/_PROLOGUE_CONTENT/Models/wall_01_4x3_c.fbx: Plane.125: Plane.125: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/_Project/_PROLOGUE_CONTENT/Models/wall_01_4x3_door_02_wing.fbx: Cube.170: Cube.170: UV2 triangle is degenerate/self-intersecting.
+- Assets/_Project/_PROLOGUE_CONTENT/Models/wall_01_4x3_door_02_wing.fbx: Cube.171: Cube.171: UV2 triangle is degenerate/self-intersecting.
+- Assets/_Project/_PROLOGUE_CONTENT/Models/wall_01_4x3_door_02_wing.fbx: Cube.172: Cube.172: UV2 overlap detected between non-adjacent lightmap triangles.
+- Assets/_Project/_PROLOGUE_CONTENT/Models/wall_01_4x3_door_02_wing.fbx: Cube.491: Cube.491: UV2 triangle is degenerate/self-intersecting.
+- Assets/_Project/_PROLOGUE_CONTENT/Models/wall_01_4x3_door_02_wing.fbx: Cube.492: Cube.492: UV2 triangle is degenerate/self-intersecting.
+- Assets/_Project/_PROLOGUE_CONTENT/Models/wall_04_3x6_d.fbx: Plane.516: Plane.516: UV2 triangle is degenerate/self-intersecting.
+
+## Channel Pack Violations
+
+- Assets/_Project/Art/Materials/Construction/Mat_Module_Corridor.mat: legacy Hecton_DryZoneLit shader still depends on split _MetallicGlossMap/_OcclusionMap/_EmissionMap instead of a single packed RGBA mask.
+- Assets/_Project/Art/Materials/Construction/Mat_Module_CurrentTurbine.mat: legacy Hecton_DryZoneLit shader still depends on split _MetallicGlossMap/_OcclusionMap/_EmissionMap instead of a single packed RGBA mask.
+- Assets/_Project/Art/Materials/Construction/Mat_Module_Foundation.mat: legacy Hecton_DryZoneLit shader still depends on split _MetallicGlossMap/_OcclusionMap/_EmissionMap instead of a single packed RGBA mask.
+- Assets/_Project/Art/Materials/Construction/Mat_Module_Pylon.mat: legacy Hecton_DryZoneLit shader still depends on split _MetallicGlossMap/_OcclusionMap/_EmissionMap instead of a single packed RGBA mask.
+- Assets/_Project/Art/Materials/Construction/Mat_Module_ServicePump.mat: legacy Hecton_DryZoneLit shader still depends on split _MetallicGlossMap/_OcclusionMap/_EmissionMap instead of a single packed RGBA mask.
+- Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_rock_arch_large.mat: uses loose texture stack: metallic=0, ao=1, emission=0.
+- Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_rock_cluster_medium.mat: uses loose texture stack: metallic=0, ao=1, emission=0.
+- Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_rock_small_floor.mat: uses loose texture stack: metallic=0, ao=1, emission=0.
+- Assets/_Project/Art/Models/Rocks/Rock 6/rock6/rock_6.mat: uses loose texture stack: metallic=0, ao=1, emission=0.
+- Assets/_Project/Materials/WorldRuntime/ProceduralPlaceholders/TerrainLod/MAT_family_rock_arch_large_Placeholder.mat: uses loose texture stack: metallic=0, ao=1, emission=0.
+- Assets/ScifiFacility/Materials/Controlpanel.mat: uses loose texture stack: metallic=1, ao=0, emission=1.
+- Assets/ScifiFacility/Materials/Detail_01.mat: uses loose texture stack: metallic=1, ao=1, emission=0.
+- Assets/ScifiFacility/Materials/Detail_03.mat: uses loose texture stack: metallic=1, ao=1, emission=0.
+- Assets/ScifiFacility/Materials/Detail_04.mat: uses loose texture stack: metallic=1, ao=1, emission=0.
+- Assets/ScifiFacility/Materials/Detail_05.mat: uses loose texture stack: metallic=1, ao=1, emission=0.
+- Assets/ScifiFacility/Materials/FabricCoated_01.mat: uses loose texture stack: metallic=1, ao=0, emission=0.
+- Assets/ScifiFacility/Materials/FabricCoated_02.mat: uses loose texture stack: metallic=1, ao=0, emission=0.
+- Assets/ScifiFacility/Materials/FabricCoated_03.mat: uses loose texture stack: metallic=1, ao=0, emission=0.
+- Assets/ScifiFacility/Materials/Hull.mat: uses loose texture stack: metallic=0, ao=0, emission=1.
+- Assets/ScifiFacility/Materials/Lights.mat: uses loose texture stack: metallic=1, ao=0, emission=1.
+- Assets/ScifiFacility/Materials/Lights_green.mat: uses loose texture stack: metallic=1, ao=0, emission=1.
+- Assets/ScifiFacility/Materials/Lights_off.mat: uses loose texture stack: metallic=1, ao=0, emission=1.
+- Assets/ScifiFacility/Materials/Machinery.mat: uses loose texture stack: metallic=1, ao=0, emission=0.
+- Assets/ScifiFacility/Materials/screens.mat: uses loose texture stack: metallic=0, ao=0, emission=1.
+- Assets/ScifiFacility/Materials/Tubes.mat: uses loose texture stack: metallic=1, ao=1, emission=0.
+
+## Notes
+
+- Import spam verification still requires a fresh Unity log/console pass after the enforced FBX reimport.
+- `Hecton8/Environment/Hecton_DryZoneLit` remains a legacy split-texture shader and is reported as non-compliant until its shader contract is migrated to packed masks.
+- Bakery items listed under manual review still require 3D-modeling follow-up if Unity auto-unwrap could not resolve them.

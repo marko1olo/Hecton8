@@ -24,7 +24,7 @@ namespace Hecton8.Editor
     {
         private const string MenuRoot = "Tools/Hecton/Dev/";
 
-        [MenuItem(MenuRoot + "Reveal Persistent Data Path %#&p", false, 10)]
+        [MenuItem(MenuRoot + "Reveal Persistent Data Path", false, 10)]
         public static void RevealPersistentDataPath()
         {
             string path = Application.persistentDataPath;
@@ -182,45 +182,33 @@ namespace Hecton8.Editor
             return EditorApplication.isPlaying;
         }
 
-        private const string ScreenshotsFolder = "Assets/Screenshots";
+        private const string ScreenshotsFolderName = "Screenshots";
 
-        [MenuItem(MenuRoot + "Capture Screenshot → Assets/Screenshots (Play Mode)", false, 70)]
+        [MenuItem(MenuRoot + "Capture Screenshot → ProjectRoot/Screenshots (Play Mode)", false, 70)]
         public static void CaptureScreenshotToProject()
         {
-            if (!AssetDatabase.IsValidFolder(ScreenshotsFolder))
-            {
-                if (!AssetDatabase.IsValidFolder("Assets"))
-                {
-                    Debug.LogError("[Hecton Dev] Assets folder missing.");
-                    return;
-                }
-
-                AssetDatabase.CreateFolder("Assets", "Screenshots");
-            }
+            string screenshotsFolder = ResolveScreenshotsFolderPath();
+            Directory.CreateDirectory(screenshotsFolder);
 
             string fileName = $"screenshot-{DateTime.Now:yyyyMMdd-HHmmss}.png";
-            string relativePath = Path.Combine(ScreenshotsFolder, fileName).Replace('\\', '/');
-            ScreenCapture.CaptureScreenshot(relativePath);
-            Debug.Log("[Hecton Dev] Capturing screenshot to: " + relativePath);
-            EditorApplication.delayCall += () =>
-            {
-                AssetDatabase.Refresh();
-                EditorApplication.delayCall += () =>
-                {
-                    Texture2D tex = AssetDatabase.LoadAssetAtPath<Texture2D>(relativePath);
-                    if (tex != null)
-                    {
-                        Selection.activeObject = tex;
-                        EditorGUIUtility.PingObject(tex);
-                    }
-                };
-            };
+            string absolutePath = Path.Combine(screenshotsFolder, fileName);
+            ScreenCapture.CaptureScreenshot(absolutePath);
+            Debug.Log("[Hecton Dev] Capturing screenshot to: " + absolutePath.Replace('\\', '/'));
         }
 
-        [MenuItem(MenuRoot + "Capture Screenshot → Assets/Screenshots (Play Mode)", true)]
+        [MenuItem(MenuRoot + "Capture Screenshot → ProjectRoot/Screenshots (Play Mode)", true)]
         public static bool CaptureScreenshotValidate()
         {
             return EditorApplication.isPlaying;
+        }
+
+        private static string ResolveScreenshotsFolderPath()
+        {
+            string projectRoot = Path.GetDirectoryName(Application.dataPath);
+            if (string.IsNullOrEmpty(projectRoot))
+                return ScreenshotsFolderName;
+
+            return Path.Combine(projectRoot, ScreenshotsFolderName);
         }
 
         // ── Project Settings (Unity 6 SettingsService paths) ──────────────
@@ -601,6 +589,13 @@ namespace Hecton8.Editor
                 logBudgetViolations: true,
                 logEveryWindow: true);
             Debug.Log("[Hecton Dev] Started runtime performance profiler.");
+        }
+
+        [MenuItem(MenuRoot + "Scene/Arm Runtime Profiler Auto-Bootstrap (Next Play Mode)", false, 127)]
+        public static void ArmRuntimePerformanceProfilerAutoBootstrap()
+        {
+            RuntimePerformanceProfiler.ArmAutoBootstrapForNextPlayMode();
+            Debug.Log("[Hecton Dev] Armed runtime profiler auto-bootstrap for the next play mode entry.");
         }
 
         [MenuItem(MenuRoot + "Scene/Run Runtime Performance Profiler (Play Mode)", true)]

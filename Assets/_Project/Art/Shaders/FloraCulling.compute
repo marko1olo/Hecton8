@@ -5,13 +5,14 @@
 
 #define HECTON_THREADS_PER_GROUP 64
 #define HECTON_MAX_SCOOTER_HEADLIGHTS 2
+#define HECTON_FRUSTUM_PLANES 6
 
 StructuredBuffer<float4x4> _HectonSourceInstanceMatrices;
 StructuredBuffer<float4> _HectonSourceVegetationInstanceData;
 AppendStructuredBuffer<uint> _HectonVisibleInstanceIndicesLOD0;
 AppendStructuredBuffer<uint> _HectonVisibleInstanceIndicesLOD1;
 AppendStructuredBuffer<uint> _HectonVisibleInstanceIndicesShadow;
-Texture2D<float> _HectonCameraDepthTexture;
+Texture2D<float> _HectonDepthPyramid;
 
 uint _HectonSourceInstanceCount;
 float4x4 _HectonViewProjection;
@@ -34,6 +35,9 @@ float _HectonFloorBiolumStrength;
 float _HectonOceanBiolumStrength;
 float _BiolumIntensity;
 float _HectonDarknessBiolumThreshold;
+float4 _HectonFrustumPlanes[HECTON_FRUSTUM_PLANES];
+int _HectonDepthPyramidMipCount;
+float4 _HectonDepthPyramidTexelSize;
 
 float4x4 _MainLightWorldToShadow[5];
 float4 _CascadeShadowSplitSpheres0;
@@ -42,9 +46,25 @@ float4 _CascadeShadowSplitSpheres2;
 float4 _CascadeShadowSplitSpheres3;
 float4 _CascadeShadowSplitSphereRadii;
 
+bool IsFiniteScalar(float value)
+{
+    return isfinite(value);
+}
+
+bool IsFiniteFloat3(float3 value)
+{
+    return all(isfinite(value));
+}
+
+bool IsFiniteFloat4(float4 value)
+{
+    return all(isfinite(value));
+}
+
 float3 TransformPoint(float4x4 matrixValue, float3 localPosition)
 {
-    return mul(matrixValue, float4(localPosition, 1.0)).xyz;
+    float4 transformed = mul(matrixValue, float4(localPosition, 1.0));
+    return IsFiniteFloat4(transformed) ? transformed.xyz : 0.0.xxx;
 }
 
 float3 ResolveShiftedWorldPosition(float3 positionWS)
@@ -72,8 +92,30 @@ void ResolveInstanceShape(float instanceType, float heightScale, float widthScal
     instanceWidth = lerp(0.75, 1.35, saturate(widthScale));
 }
 
+bool IsSphereVisibleInFrustum(float3 centerWS, float radius)
+{
+    [unroll]
+    for (int planeIndex = 0; planeIndex < HECTON_FRUSTUM_PLANES; planeIndex++)
+    {
+        float4 plane = _HectonFrustumPlanes[planeIndex];
+        if (dot(plane.xyz, centerWS) + plane.w < -radius)
+            return false;
+    }
+
+    return true;
+}
+
 bool IsVisibleInFrustum(float4 clipRoot, float4 clipCenter, float4 clipTop, float4 clipSideA, float4 clipSideB)
 {
+    if (!IsFiniteFloat4(clipRoot) ||
+        !IsFiniteFloat4(clipCenter) ||
+        !IsFiniteFloat4(clipTop) ||
+        !IsFiniteFloat4(clipSideA) ||
+        !IsFiniteFloat4(clipSideB))
+    {
+        return false;
+    }
+
     if (clipRoot.w <= 0.0001 &&
         clipCenter.w <= 0.0001 &&
         clipTop.w <= 0.0001 &&
@@ -130,31 +172,20 @@ float ResolveEyeDepth(float3 positionWS)
     return max(0.0, -positionVS.z);
 }
 
-bool IsPointOccluded(float4 clipPosition, float eyeDepth, uint2 depthTextureSize)
+float2 ResolveClipUv(float4 clipPosition)
 {
-    if (clipPosition.w <= 0.0001 || eyeDepth <= 0.0001)
-        return false;
-
     float2 uv = clipPosition.xy / clipPosition.w;
-    uv = uv * 0.5 + 0.5;
-    if (uv.x <= 0.0 || uv.x >= 1.0 || uv.y <= 0.0 || uv.y >= 1.0)
-        return false;
+    return uv * 0.5 + 0.5;
+}
 
-    uint2 pixel = (uint2)(uv * (depthTextureSize - 1));
-    float rawDepth = _HectonCameraDepthTexture.Load(int3(pixel, 0));
-#if defined(UNITY_REVERSED_Z)
-    if (rawDepth <= 0.0001)
-        return false;
-#else
-    if (rawDepth >= 0.9999)
-        return false;
-#endif
+float SampleDepthPyramid(float2 uv, int mipLevel)
+{
+    if (_HectonDepthPyramidMipCount <= 0)
+        return 0.0;
 
-    float sceneEyeDepth = LinearEyeDepth(rawDepth, _HectonZBufferParams);
-    if (sceneEyeDepth <= 0.0001)
-        return false;
-
-    return eyeDepth - sceneEyeDepth > _HectonOcclusionDepthBias;
+    int2 mipSize = max(int2(1, 1), int2(_HectonDepthPyramidTexelSize.zw) >> mipLevel);
+    int2 pixel = clamp(int2(uv * mipSize), int2(0, 0), mipSize - 1);
+    return _HectonDepthPyramid.Load(int3(pixel, mipLevel));
 }
 
 bool IsOccludedByDepth(
@@ -169,33 +200,43 @@ bool IsOccludedByDepth(
     float4 clipSideA,
     float4 clipSideB)
 {
-    if (_HectonOcclusionEnabled == 0)
+    if (_HectonOcclusionEnabled == 0 || _HectonDepthPyramidMipCount <= 0)
         return false;
 
-    uint depthWidth;
-    uint depthHeight;
-    _HectonCameraDepthTexture.GetDimensions(depthWidth, depthHeight);
-    if (depthWidth == 0 || depthHeight == 0)
+    float2 uvRoot = ResolveClipUv(clipRoot);
+    float2 uvCenter = ResolveClipUv(clipCenter);
+    float2 uvTop = ResolveClipUv(clipTop);
+    float2 uvSideA = ResolveClipUv(clipSideA);
+    float2 uvSideB = ResolveClipUv(clipSideB);
+    float2 minUv = max(0.0.xx, min(uvRoot, min(uvCenter, min(uvTop, min(uvSideA, uvSideB)))));
+    float2 maxUv = min(1.0.xx, max(uvRoot, max(uvCenter, max(uvTop, max(uvSideA, uvSideB)))));
+    if (minUv.x >= maxUv.x || minUv.y >= maxUv.y)
         return false;
 
-    uint2 depthTextureSize = uint2(depthWidth, depthHeight);
-    bool rootOccluded = IsPointOccluded(clipRoot, ResolveEyeDepth(originWS), depthTextureSize);
-    if (!rootOccluded)
+    float2 rectPixels = (maxUv - minUv) * _HectonDepthPyramidTexelSize.zw;
+    float rectExtent = max(rectPixels.x, rectPixels.y);
+    int mipLevel = (int)clamp(floor(log2(max(rectExtent, 1.0))), 0.0, (float)(_HectonDepthPyramidMipCount - 1));
+    float rawDepth = SampleDepthPyramid((minUv + maxUv) * 0.5, mipLevel);
+#if defined(UNITY_REVERSED_Z)
+    if (rawDepth <= 0.0001)
+        return false;
+#else
+    if (rawDepth >= 0.9999)
+        return false;
+#endif
+
+    float sceneEyeDepth = LinearEyeDepth(rawDepth, _HectonZBufferParams);
+    if (sceneEyeDepth <= 0.0001)
         return false;
 
-    bool centerOccluded = IsPointOccluded(clipCenter, ResolveEyeDepth(centerWS), depthTextureSize);
-    if (!centerOccluded)
-        return false;
-
-    bool topOccluded = IsPointOccluded(clipTop, ResolveEyeDepth(topWS), depthTextureSize);
-    if (!topOccluded)
-        return false;
-
-    bool sideAOccluded = IsPointOccluded(clipSideA, ResolveEyeDepth(sideAWS), depthTextureSize);
-    if (!sideAOccluded)
-        return false;
-
-    return IsPointOccluded(clipSideB, ResolveEyeDepth(sideBWS), depthTextureSize);
+    float nearestObjectDepth = min(
+        ResolveEyeDepth(originWS),
+        min(
+            ResolveEyeDepth(centerWS),
+            min(
+                ResolveEyeDepth(topWS),
+                min(ResolveEyeDepth(sideAWS), ResolveEyeDepth(sideBWS)))));
+    return nearestObjectDepth - sceneEyeDepth > _HectonOcclusionDepthBias;
 }
 
 float4 GetCascadeSphere(int cascadeIndex)
@@ -257,13 +298,13 @@ bool IsVisibleInAnyShadowCascade(float3 rootWS, float3 centerWS, float3 topWS, f
 
 float SafeRcp(float value)
 {
-    return value > 0.00001 ? rcp(value) : 0.0;
+    return IsFiniteScalar(value) && value > 0.00001 ? rcp(value) : 0.0;
 }
 
 float3 SafeNormalize3(float3 value)
 {
     float lenSq = dot(value, value);
-    return lenSq > 0.00001 ? value * rsqrt(lenSq) : float3(0.0, 1.0, 0.0);
+    return IsFiniteScalar(lenSq) && lenSq > 0.00001 ? value * rsqrt(lenSq) : float3(0.0, 1.0, 0.0);
 }
 
 float ResolveSpotConeAttenuation(float cosAngle, float innerCos, float outerCos)
@@ -278,6 +319,7 @@ bool IsVisibleInDarkness(float3 samplePositionWS)
         return true;
 
     float globalBiolum = max(_BiolumIntensity, max(_HectonFloorBiolumStrength, _HectonOceanBiolumStrength));
+    globalBiolum = IsFiniteScalar(globalBiolum) ? globalBiolum : 0.0;
     if (globalBiolum >= _HectonDarknessBiolumThreshold)
         return true;
 
@@ -289,9 +331,12 @@ bool IsVisibleInDarkness(float3 samplePositionWS)
 
         float3 lightPositionWS = _HectonScooterHeadlightPositionsWS[headlightIndex].xyz;
         float lightRange = max(0.1, _HectonScooterHeadlightPositionsWS[headlightIndex].w);
+        if (!IsFiniteFloat3(lightPositionWS) || !IsFiniteScalar(lightRange))
+            continue;
+
         float3 toSampleWS = samplePositionWS - lightPositionWS;
         float sampleDistance = length(toSampleWS);
-        if (sampleDistance >= lightRange)
+        if (!IsFiniteScalar(sampleDistance) || sampleDistance <= 0.0001 || sampleDistance >= lightRange)
             continue;
 
         float3 sampleDirectionWS = toSampleWS * SafeRcp(sampleDistance);
@@ -300,7 +345,7 @@ bool IsVisibleInDarkness(float3 samplePositionWS)
             dot(lightDirectionWS, sampleDirectionWS),
             _HectonScooterHeadlightDirectionsWS[headlightIndex].w,
             _HectonScooterHeadlightConeData[headlightIndex].x);
-        if (coneAttenuation <= 0.0001)
+        if (!IsFiniteScalar(coneAttenuation) || coneAttenuation <= 0.0001)
             continue;
 
         float rangeAttenuation = saturate(1.0 - sampleDistance * _HectonScooterHeadlightConeData[headlightIndex].z);
@@ -333,6 +378,22 @@ void CullFloraInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
     float3 topWS = ResolveShiftedWorldPosition(TransformPoint(instanceMatrix, float3(0.0, instanceHeight, 0.0)));
     float3 sideAWS = ResolveShiftedWorldPosition(TransformPoint(instanceMatrix, float3(instanceWidth, instanceHeight * 0.5, 0.0)));
     float3 sideBWS = ResolveShiftedWorldPosition(TransformPoint(instanceMatrix, float3(-instanceWidth, instanceHeight * 0.5, 0.0)));
+    if (!IsFiniteFloat3(originWS) ||
+        !IsFiniteFloat3(centerWS) ||
+        !IsFiniteFloat3(topWS) ||
+        !IsFiniteFloat3(sideAWS) ||
+        !IsFiniteFloat3(sideBWS))
+    {
+        return;
+    }
+
+    float radius = max(
+        distance(centerWS, originWS),
+        max(
+            distance(centerWS, topWS),
+            max(distance(centerWS, sideAWS), distance(centerWS, sideBWS))));
+    if (!IsSphereVisibleInFrustum(centerWS, max(0.25, radius)))
+        return;
 
     float4 clipRoot = mul(_HectonViewProjection, float4(originWS, 1.0));
     float4 clipCenter = mul(_HectonViewProjection, float4(centerWS, 1.0));
@@ -345,6 +406,9 @@ void CullFloraInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
 
     float3 cameraDelta = originWS - _HectonCameraPosition;
     float distanceSq = dot(cameraDelta, cameraDelta);
+    if (!IsFiniteScalar(distanceSq))
+        return;
+
     float lod0Distance = max(_HectonLodNearDistance, 0.01);
     float lod1Distance = max(_HectonLodFarDistance, lod0Distance);
     float lodTransition = max(_HectonLodTransitionRange, 0.01);
@@ -391,6 +455,22 @@ void CullFloraShadowInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
     float3 topWS = ResolveShiftedWorldPosition(TransformPoint(instanceMatrix, float3(0.0, instanceHeight, 0.0)));
     float3 sideAWS = ResolveShiftedWorldPosition(TransformPoint(instanceMatrix, float3(instanceWidth, instanceHeight * 0.5, 0.0)));
     float3 sideBWS = ResolveShiftedWorldPosition(TransformPoint(instanceMatrix, float3(-instanceWidth, instanceHeight * 0.5, 0.0)));
+    if (!IsFiniteFloat3(rootWS) ||
+        !IsFiniteFloat3(centerWS) ||
+        !IsFiniteFloat3(topWS) ||
+        !IsFiniteFloat3(sideAWS) ||
+        !IsFiniteFloat3(sideBWS))
+    {
+        return;
+    }
+
+    float radius = max(
+        distance(centerWS, rootWS),
+        max(
+            distance(centerWS, topWS),
+            max(distance(centerWS, sideAWS), distance(centerWS, sideBWS))));
+    if (!IsSphereVisibleInFrustum(centerWS, max(0.25, radius)))
+        return;
 
     if (!IsVisibleInAnyShadowCascade(rootWS, centerWS, topWS, sideAWS, sideBWS))
         return;

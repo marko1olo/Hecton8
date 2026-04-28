@@ -9,7 +9,7 @@ namespace Hecton8.Gameplay
     /// Centralized player-noise emitter that reports locomotion, transport, light, and tool-use state.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class PlayerNoiseEmitter : MonoBehaviour, ITickable
+    public sealed class PlayerNoiseEmitter : MonoBehaviour, ITickable, IUpdatable
     {
         private const float ToolUsePulseDuration = 0.6f;
         private const float PrimaryToolNoisePulse = 1f;
@@ -63,8 +63,8 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
-            if (GameTickManager.Instance != null && _registered)
-                GameTickManager.Instance.Unregister((ITickable)this);
+            if (_registered)
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
 
             _registered = false;
             ClearObservedToolSubscription();
@@ -107,10 +107,11 @@ namespace Hecton8.Gameplay
 
         private void TryRegister()
         {
-            if (_registered || GameTickManager.Instance == null)
+            if (_registered)
                 return;
 
-            GameTickManager.Instance.Register((ITickable)this);
+            SystemDispatcher.EnsureRuntimeInstance();
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
             _registered = true;
         }
 
@@ -129,7 +130,11 @@ namespace Hecton8.Gameplay
                 _cachedTransform.TryGetComponent(out _playerTransportCoordinator);
 
             if (_playerToolManager == null)
-                _playerToolManager = _cachedTransform.GetComponentInChildren<PlayerToolManager>(true);
+            {
+                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                if (playerContext != null)
+                    _playerToolManager = playerContext.ToolManager;
+            }
         }
 
         private void RefreshObservedToolSubscription()

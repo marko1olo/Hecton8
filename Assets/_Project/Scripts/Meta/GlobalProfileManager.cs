@@ -339,14 +339,14 @@ namespace Hecton8.Meta
             SurvivalDeathRecord deathRecord = playerDiedEvent.DeathRecord;
             if (deathRecord.LifeDurationSeconds > _profile.longestLifeWithoutDeathSeconds)
             {
-                _profile.longestLifeWithoutDeathSeconds = deathRecord.LifeDurationSeconds;
-                _nextLongestLifeRecordThreshold = deathRecord.LifeDurationSeconds + LongestLifeRecordStepSeconds;
+                _profile.longestLifeWithoutDeathSeconds = (float)deathRecord.LifeDurationSeconds;
+                _nextLongestLifeRecordThreshold = (float)(deathRecord.LifeDurationSeconds + LongestLifeRecordStepSeconds);
                 MarkDirty();
             }
 
             if (deathRecord.PeakDepthMeters > _profile.maxDepthMeters)
             {
-                _profile.maxDepthMeters = deathRecord.PeakDepthMeters;
+                _profile.maxDepthMeters = (float)deathRecord.PeakDepthMeters;
                 MarkDirty();
             }
         }
@@ -458,11 +458,11 @@ namespace Hecton8.Meta
                 MarkDirty();
             }
 
-            float currentLifeDuration = _survivalSystem.CurrentLifeDurationSeconds;
+            double currentLifeDuration = _survivalSystem.CurrentLifeDurationSeconds;
             if (currentLifeDuration > _profile.longestLifeWithoutDeathSeconds && currentLifeDuration >= _nextLongestLifeRecordThreshold)
             {
-                _profile.longestLifeWithoutDeathSeconds = currentLifeDuration;
-                _nextLongestLifeRecordThreshold = currentLifeDuration + LongestLifeRecordStepSeconds;
+                _profile.longestLifeWithoutDeathSeconds = (float)currentLifeDuration;
+                _nextLongestLifeRecordThreshold = (float)(currentLifeDuration + LongestLifeRecordStepSeconds);
                 MarkDirty();
             }
         }
@@ -480,10 +480,10 @@ namespace Hecton8.Meta
                     changed = true;
                 }
 
-                float currentLifeDuration = _survivalSystem.CurrentLifeDurationSeconds;
+                double currentLifeDuration = _survivalSystem.CurrentLifeDurationSeconds;
                 if (currentLifeDuration > _profile.longestLifeWithoutDeathSeconds)
                 {
-                    _profile.longestLifeWithoutDeathSeconds = currentLifeDuration;
+                    _profile.longestLifeWithoutDeathSeconds = (float)currentLifeDuration;
                     changed = true;
                 }
             }
@@ -874,11 +874,8 @@ namespace Hecton8.Meta
             if (_registeredToTick)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
 
-            tickManager.Register(this);
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);
             _registeredToTick = true;
         }
 
@@ -887,9 +884,7 @@ namespace Hecton8.Meta
             if (!_registeredToTick)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister(this);
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
 
             _registeredToTick = false;
         }

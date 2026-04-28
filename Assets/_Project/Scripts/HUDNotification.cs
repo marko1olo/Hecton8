@@ -16,7 +16,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/HUD Notification")]
-    public sealed class HUDNotification : MonoBehaviour, ITickable
+    public sealed class HUDNotification : MonoBehaviour, ITickable, IUpdatable
     {
         private static HUDNotification _ActiveInstance;
 
@@ -105,6 +105,7 @@ namespace Hecton8.UI
             NotificationEvents.OnPushNotification += OnPushNotification;
 
             EnsureBuilt();
+            RegisterToTickManager();
         }
 
         private void OnDisable()
@@ -162,11 +163,8 @@ namespace Hecton8.UI
             if (_registeredToTickManager)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register(this);
+            SystemDispatcher.EnsureRuntimeInstance();
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _registeredToTickManager = true;
         }
 
@@ -175,10 +173,7 @@ namespace Hecton8.UI
             if (!_registeredToTickManager)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister(this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _registeredToTickManager = false;
         }
 

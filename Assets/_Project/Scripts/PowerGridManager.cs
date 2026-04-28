@@ -6,16 +6,15 @@
 
 using System.Collections.Generic;
 using Hecton8.Core;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Power
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-5500)]
-    public sealed class PowerGridManager : MonoBehaviour, IUpdatable, ISlowTickable
+    public sealed class PowerGridManager : MonoBehaviour, ISlowTickable
     {
-        private const float SlowTickIntervalSeconds = 0.1f;
-
         private static PowerGridManager _instance;
         private static List<PowerGrid> _allGrids;
 
@@ -52,7 +51,6 @@ namespace Hecton8.Power
         [SerializeField] private int _debugDeficitGrids;
 
         private bool _dispatcherRegistered;
-        private float _slowTickAccumulator;
 
         private void Awake()
         {
@@ -66,46 +64,17 @@ namespace Hecton8.Power
             DontDestroyOnLoad(gameObject);
 
             if (_allGrids == null)
-                _allGrids = new List<PowerGrid>(Mathf.Max(1, initialGridCapacity));
+                _allGrids = new List<PowerGrid>(math.max(1, initialGridCapacity));
         }
 
         private void OnEnable()
         {
             TryRegister();
-            _slowTickAccumulator = 0f;
         }
 
         private void OnDisable()
         {
             TryUnregister();
-            _slowTickAccumulator = 0f;
-        }
-
-        private void OnDestroy()
-        {
-            TryUnregister();
-
-            if (_instance == this)
-            {
-                _instance = null;
-                DisposeAllGrids();
-            }
-        }
-
-        public void Tick(float deltaTime)
-        {
-            if (deltaTime <= 0f)
-                return;
-
-            _slowTickAccumulator += deltaTime;
-            if (_slowTickAccumulator < SlowTickIntervalSeconds)
-                return;
-
-            _slowTickAccumulator -= SlowTickIntervalSeconds;
-            if (_slowTickAccumulator > SlowTickIntervalSeconds)
-                _slowTickAccumulator = SlowTickIntervalSeconds;
-
-            SlowTick();
         }
 
         public void SlowTick()
@@ -127,8 +96,17 @@ namespace Hecton8.Power
                     continue;
                 }
 
-                grid.UpdateBalance();
+                grid.BeginSlowTickEvaluation();
+            }
 
+            int finalizedGridCount = _allGrids.Count;
+            for (int gridIndex = 0; gridIndex < finalizedGridCount; gridIndex++)
+            {
+                PowerGrid grid = _allGrids[gridIndex];
+                if (grid == null)
+                    continue;
+
+                grid.EndSlowTickEvaluation();
                 totalNodes += grid.NodeCount;
                 totalGeneration += grid.TotalGeneration;
                 totalConsumption += grid.TotalConsumption;
@@ -138,6 +116,17 @@ namespace Hecton8.Power
             }
 
             UpdateDiagnostics(totalGeneration, totalConsumption, totalNodes, deficitCount);
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregister();
+
+            if (_instance == this)
+            {
+                _instance = null;
+                DisposeAllGrids();
+            }
         }
 
         public static PowerGrid CreateGrid(PowerNode initialNode)
@@ -290,7 +279,7 @@ namespace Hecton8.Power
                 return;
 
             SystemDispatcher.EnsureRuntimeInstance();
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
             _dispatcherRegistered = true;
         }
 
@@ -299,7 +288,7 @@ namespace Hecton8.Power
             if (!_dispatcherRegistered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _dispatcherRegistered = false;
         }
 

@@ -1,14 +1,16 @@
 using Hecton8.Input;
+using Hecton8.Core;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace ScifiOffice
 {
-    public class DemoFirstPersonController : MonoBehaviour
+    public class DemoFirstPersonController : MonoBehaviour, ITickable
     {
         Rigidbody rb;
         CapsuleCollider col;
         bool isCrouching;
+        bool _registeredTick;
 
         public Transform playerBody;
 
@@ -39,10 +41,31 @@ namespace ScifiOffice
                 Cursor.lockState = CursorLockMode.Locked;
         }
 
-        void Update()
+        private void OnEnable()
         {
-            Walk();
-            Look();
+            if (_registeredTick)
+                return;
+
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
+            _registeredTick = true;
+        }
+
+        private void OnDisable()
+        {
+            if (!_registeredTick)
+                return;
+
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+            _registeredTick = false;
+        }
+
+        public void Tick(float deltaTime)
+        {
+            if (playerBody == null || rb == null || col == null)
+                return;
+
+            Walk(deltaTime);
+            Look(deltaTime);
 
             // E to switch keyboard control type between keyboardMouse and keyboard.
             if (Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
@@ -70,7 +93,7 @@ namespace ScifiOffice
             }
         }
 
-        public void Look()
+        public void Look(float deltaTime)
         {
             float mouseX = 0f;
             float mouseY = 0f;
@@ -78,12 +101,12 @@ namespace ScifiOffice
             switch (controlType)
             {
                 case ControlType.android:
-                    mouseX = horizontalMovement * Time.deltaTime * mouseSensitivity;
+                    mouseX = horizontalMovement * deltaTime * mouseSensitivity;
                     break;
 
                 case ControlType.keyboard:
                     // Get changes to look left and right only. Player cannot look up and down.
-                    mouseX = (_inputManager != null ? _inputManager.MoveInput.x : 0f) * mouseSensitivity * Time.deltaTime;
+                    mouseX = (_inputManager != null ? _inputManager.MoveInput.x : 0f) * mouseSensitivity * deltaTime;
                     mouseY = 0f;
                     break;
 
@@ -93,8 +116,8 @@ namespace ScifiOffice
                     if (_inputManager != null)
                     {
                         Vector2 look = _inputManager.LookInput;
-                        mouseX = look.x * mouseSensitivity * Time.deltaTime;
-                        mouseY = look.y * mouseSensitivity * Time.deltaTime;
+                        mouseX = look.x * mouseSensitivity * deltaTime;
+                        mouseY = look.y * mouseSensitivity * deltaTime;
                     }
                     break;
             }
@@ -107,7 +130,7 @@ namespace ScifiOffice
             playerBody.Rotate(Vector3.up * mouseX);
         }
 
-        void Walk()
+        void Walk(float deltaTime)
         {
             Vector3 displacement;
             float maxSpeed = speed, maxAcc = accelerationRate;
@@ -144,7 +167,7 @@ namespace ScifiOffice
             float len = displacement.magnitude;
             if (len > 0f)
             {
-                rb.linearVelocity += displacement / len * Time.deltaTime * maxAcc;
+                rb.linearVelocity += displacement / len * deltaTime * maxAcc;
 
                 // Clamp velocity to the maximum speed.
                 if (rb.linearVelocity.magnitude > maxSpeed)
@@ -154,7 +177,7 @@ namespace ScifiOffice
             {
                 // If no buttons are pressed, decelerate.
                 len = rb.linearVelocity.magnitude;
-                float decelRate = accelerationRate * decelerationFactor * Time.deltaTime;
+                float decelRate = accelerationRate * decelerationFactor * deltaTime;
                 if (len < decelRate)
                     rb.linearVelocity = Vector3.zero;
                 else

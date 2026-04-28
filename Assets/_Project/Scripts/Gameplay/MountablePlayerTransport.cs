@@ -20,7 +20,7 @@ namespace Hecton8.Gameplay
     [RequireComponent(typeof(Collider))]
     [RequireComponent(typeof(PlayerTransportFeelContract))]
     [AddComponentMenu("Hecton8/Gameplay/Transport/Mountable Player Transport")]
-    public sealed class MountablePlayerTransport : MonoBehaviour, IInteractable, ITickable, IUpdatable, IFixedTickable, IPlayerTransportSource, IPlayerTransportLifecycleOwner, ITransportPlatform, IDamageSignalEmitter
+    public sealed class MountablePlayerTransport : MonoBehaviour, IInteractable, ITickable, IUpdatable, IFixedTickable, IPlayerTransportSource, IPlayerTransportLifecycleOwner, ITransportPlatform, IDamageSignalEmitter, IOriginShiftListener
     {
         private const string DefaultMountText = "Board Transport";
         private const string DefaultDismountText = "Dismount";
@@ -69,6 +69,7 @@ namespace Hecton8.Gameplay
         private PlayerTransportFeelContract _transportFeelContract;
         private VehicleUpgradeModule _vehicleUpgradeModule;
         private bool _registered;
+        private bool _registeredOriginShiftListener;
         private bool _interactionColliderWasEnabled;
         private Vector3 _riderAnchorLocalPosition;
         private Quaternion _riderAnchorLocalRotation = Quaternion.identity;
@@ -93,8 +94,6 @@ namespace Hecton8.Gameplay
         private string _cachedMountText = DefaultMountText;
         private string _cachedDismountText = DefaultDismountText;
         private float _bailoutDriftTimer;
-        private float _cachedLinearDamping;
-        private float _cachedAngularDamping;
         private bool _hasCachedBodyDamping;
         private bool _cachedBodyWasKinematic = true;
         private bool _platformMotionInitialized;
@@ -154,6 +153,7 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             TryRegister();
+            TryRegisterOriginShiftListener();
             ResolveAnchorCache();
             BindPresetToFeelContract();
             ResolveVehicleUpgradeModule();
@@ -165,6 +165,7 @@ namespace Hecton8.Gameplay
         private void OnDisable()
         {
             ForceReleaseMountedRider();
+            TryUnregisterOriginShiftListener();
             TryUnregister();
             _damageReceivers.Clear();
         }
@@ -172,6 +173,7 @@ namespace Hecton8.Gameplay
         private void OnDestroy()
         {
             ForceReleaseMountedRider();
+            TryUnregisterOriginShiftListener();
             TryUnregister();
         }
 
@@ -320,8 +322,7 @@ namespace Hecton8.Gameplay
             if (_bailoutDriftTimer < 0f)
                 _bailoutDriftTimer = 0f;
 
-            _transportBody.linearDamping = bailoutLinearDamping;
-            _transportBody.angularDamping = bailoutAngularDamping;
+            ApplyBailoutDriftDamping(fixedDeltaTime);
             PhysicsForceRouter.QueueForce(
                 _transportBody,
                 Vector3.down * bailoutSinkAcceleration * fixedDeltaTime,
@@ -341,6 +342,16 @@ namespace Hecton8.Gameplay
 
             Vector3 relativePoint = worldPoint - platformTransform.position;
             return _platformLinearVelocity + Vector3.Cross(_platformAngularVelocity, relativePoint);
+        }
+
+        /// <inheritdoc />
+        public void OnOriginShift(in OriginShiftEventData shiftData)
+        {
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            if (shiftOffset.sqrMagnitude <= 0.000001f)
+                return;
+
+            _previousPlatformPosition -= shiftOffset;
         }
 
         /// <summary>Current propulsion force contributed by this transport.</summary>
@@ -593,7 +604,7 @@ namespace Hecton8.Gameplay
             Vector3 riderPosition = _riderTransform.position;
             Vector3 targetPosition = riderPosition - targetRotation * _riderAnchorLocalPosition;
 
-            if (_transportBody != null && _transportBody.isKinematic)
+            if (_transportBody != null)
             {
                 _transportBody.MoveRotation(targetRotation);
                 _transportBody.MovePosition(targetPosition);
@@ -688,8 +699,9 @@ namespace Hecton8.Gameplay
         {
             if (_riderBody != null)
             {
-                _riderBody.position = targetPosition;
-                _riderBody.rotation = targetRotation;
+                _riderBody.MovePosition(targetPosition);
+                _riderBody.MoveRotation(targetRotation);
+                return;
             }
 
             _riderTransform.SetPositionAndRotation(targetPosition, targetRotation);
@@ -952,8 +964,6 @@ namespace Hecton8.Gameplay
 
             if (!_hasCachedBodyDamping)
             {
-                _cachedLinearDamping = _transportBody.linearDamping;
-                _cachedAngularDamping = _transportBody.angularDamping;
                 _cachedBodyWasKinematic = _transportBody.isKinematic;
                 _hasCachedBodyDamping = true;
             }
@@ -968,8 +978,6 @@ namespace Hecton8.Gameplay
             _transportBody.angularVelocity = HectonPlayerMotor.SafeVelocity(
                 new Vector3(0f, Mathf.Lerp(0.6f, 2.2f, Mathf.Clamp01(severity)), 0f),
                 _transportBody.angularVelocity);
-            _transportBody.linearDamping = bailoutLinearDamping;
-            _transportBody.angularDamping = bailoutAngularDamping;
             _bailoutDriftTimer = bailoutDriftDuration;
             ResetPlatformMotionCache();
         }
@@ -994,8 +1002,6 @@ namespace Hecton8.Gameplay
 
             if (!_hasCachedBodyDamping)
             {
-                _cachedLinearDamping = _transportBody.linearDamping;
-                _cachedAngularDamping = _transportBody.angularDamping;
                 _cachedBodyWasKinematic = _transportBody.isKinematic;
                 _hasCachedBodyDamping = true;
             }
@@ -1004,8 +1010,6 @@ namespace Hecton8.Gameplay
                 _transportBody.isKinematic = false;
 
             _transportBody.WakeUp();
-            _transportBody.linearDamping = bailoutLinearDamping;
-            _transportBody.angularDamping = bailoutAngularDamping;
             _bailoutDriftTimer = math.max(_bailoutDriftTimer, bailoutDriftDuration);
             ResetPlatformMotionCache();
         }
@@ -1013,7 +1017,7 @@ namespace Hecton8.Gameplay
         private void UpdatePlatformMotionCache(float fixedDeltaTime)
         {
             Transform platformTransform = PlatformTransform;
-            if (platformTransform == null || fixedDeltaTime <= 0f)
+            if (platformTransform == null || !TryResolveSafeReciprocal(fixedDeltaTime, out float inverseFixedDeltaTime))
             {
                 ResetPlatformMotionCache();
                 return;
@@ -1032,7 +1036,8 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            _platformLinearVelocity = (currentPosition - _previousPlatformPosition) / fixedDeltaTime;
+            Vector3 candidateLinearVelocity = (currentPosition - _previousPlatformPosition) * inverseFixedDeltaTime;
+            _platformLinearVelocity = HectonPlayerMotor.SafeVelocity(candidateLinearVelocity, _platformLinearVelocity);
             Quaternion deltaRotation = currentRotation * Quaternion.Inverse(_previousPlatformRotation);
             deltaRotation.ToAngleAxis(out float angleDegrees, out Vector3 axis);
             if (float.IsNaN(axis.x) || axis.sqrMagnitude <= 0.000001f || angleDegrees <= 0.0001f)
@@ -1044,7 +1049,9 @@ namespace Hecton8.Gameplay
                 if (angleDegrees > 180f)
                     angleDegrees -= 360f;
 
-                _platformAngularVelocity = axis.normalized * (angleDegrees * Mathf.Deg2Rad / fixedDeltaTime);
+                float angularSpeed = angleDegrees * Mathf.Deg2Rad * inverseFixedDeltaTime;
+                Vector3 candidateAngularVelocity = axis.normalized * angularSpeed;
+                _platformAngularVelocity = HectonPlayerMotor.SafeVelocity(candidateAngularVelocity, _platformAngularVelocity);
             }
 
             UpdatePresentationTransportBoost();
@@ -1068,10 +1075,21 @@ namespace Hecton8.Gameplay
             if (_transportBody == null || !_hasCachedBodyDamping || _bailoutDriftTimer > 0f)
                 return;
 
-            _transportBody.linearDamping = _cachedLinearDamping;
-            _transportBody.angularDamping = _cachedAngularDamping;
             if (!_isBroken)
                 _transportBody.isKinematic = _cachedBodyWasKinematic;
+        }
+
+        private void ApplyBailoutDriftDamping(float fixedDeltaTime)
+        {
+            if (_transportBody == null || fixedDeltaTime <= 0f)
+                return;
+
+            float linearDenominator = ResolvePositiveFiniteDenominator(1f + bailoutLinearDamping * fixedDeltaTime);
+            float angularDenominator = ResolvePositiveFiniteDenominator(1f + bailoutAngularDamping * fixedDeltaTime);
+            Vector3 dampedLinearVelocity = _transportBody.linearVelocity / linearDenominator;
+            Vector3 dampedAngularVelocity = _transportBody.angularVelocity / angularDenominator;
+            _transportBody.linearVelocity = HectonPlayerMotor.SafeVelocity(dampedLinearVelocity, _transportBody.linearVelocity);
+            _transportBody.angularVelocity = HectonPlayerMotor.SafeVelocity(dampedAngularVelocity, _transportBody.angularVelocity);
         }
 
         private void RebuildPromptCache()
@@ -1096,11 +1114,8 @@ namespace Hecton8.Gameplay
             if (_registered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register((IFixedTickable)this);
+            SystemDispatcher.EnsureRuntimeInstance();
+            GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Player);
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
             _registered = true;
         }
@@ -1110,12 +1125,27 @@ namespace Hecton8.Gameplay
             if (!_registered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister((IFixedTickable)this);
-
+            GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
             _registered = false;
+        }
+
+        private void TryRegisterOriginShiftListener()
+        {
+            if (_registeredOriginShiftListener)
+                return;
+
+            HectonFloatingOrigin.RegisterListener(this);
+            _registeredOriginShiftListener = true;
+        }
+
+        private void TryUnregisterOriginShiftListener()
+        {
+            if (!_registeredOriginShiftListener)
+                return;
+
+            HectonFloatingOrigin.UnregisterListener(this);
+            _registeredOriginShiftListener = false;
         }
 
         private void RefreshMountedInputSubscription()
@@ -1217,6 +1247,23 @@ namespace Hecton8.Gameplay
         private static float ResolveBlendFactor(float sharpness, float deltaTime)
         {
             return Mathf.Clamp01(Mathf.Max(0f, sharpness) * Mathf.Max(0f, deltaTime));
+        }
+
+        private static bool TryResolveSafeReciprocal(float value, out float reciprocal)
+        {
+            if (!float.IsFinite(value) || math.abs(value) <= 0.0001f)
+            {
+                reciprocal = 0f;
+                return false;
+            }
+
+            reciprocal = 1f / value;
+            return float.IsFinite(reciprocal);
+        }
+
+        private static float ResolvePositiveFiniteDenominator(float value)
+        {
+            return float.IsFinite(value) ? math.max(value, 0.001f) : 0.001f;
         }
 
         private static bool IsFiniteVector(Vector3 value)

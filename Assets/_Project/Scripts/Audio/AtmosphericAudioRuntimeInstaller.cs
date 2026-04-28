@@ -1,4 +1,5 @@
 using Hecton8.Visor;
+using Hecton8.Core;
 using UnityEngine;
 
 namespace Hecton8.Audio
@@ -31,7 +32,16 @@ namespace Hecton8.Audio
 
         private static void EnsureProceduralAudioRenderer(GameObject playerObject)
         {
-            AudioListener listener = playerObject.GetComponentInChildren<AudioListener>(true);
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            Camera playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
+
+            AudioListener listener = null;
+            if (playerCamera != null)
+                playerCamera.TryGetComponent(out listener);
+
+            if (listener == null)
+                playerObject.TryGetComponent(out listener);
+
             if (listener == null)
                 return;
 
@@ -42,7 +52,7 @@ namespace Hecton8.Audio
 
             renderer.BindToPlayer(playerObject);
 
-            PlayerThrusterAudio legacyThrusterAudio = playerObject.GetComponentInChildren<PlayerThrusterAudio>(true);
+            PlayerThrusterAudio legacyThrusterAudio = playerContext != null ? playerContext.ThrusterAudio : null;
             if (legacyThrusterAudio != null)
             {
                 AudioSource legacySource = legacyThrusterAudio.GetComponent<AudioSource>();

@@ -12,6 +12,10 @@ namespace Hecton8.UI
     [AddComponentMenu("Hecton/UI/Localized TMP Auto Sizer")]
     public sealed class LocalizedTMPAutoSizer : MonoBehaviour
     {
+        private const float CollapsedRectThreshold = 0.5f;
+        private const int MaxRectRepairPasses = 4;
+        private const int MaxRectRepairDepth = 4;
+
         [Header("References")]
         [Tooltip("Target TMP text. Defaults to TMP_Text on the same GameObject.")]
         [SerializeField] private TMP_Text targetText;
@@ -40,18 +44,27 @@ namespace Hecton8.UI
         [SerializeField, Range(0.7f, 1f)] private float cjkFontScaleMultiplier = 0.94f;
 
         private bool _capturedDefaults;
+        private bool _configurationDirty = true;
+        private bool _configurationApplyPending = true;
+        private bool _isApplyingConfiguration;
+        private GameLanguage _lastAppliedLanguage = (GameLanguage)(-1);
+        private Vector2 _lastAppliedRectSize = new Vector2(-1f, -1f);
+#if UNITY_EDITOR
+        private bool _isEditorValidating;
+#endif
 
         private void Awake()
         {
             ResolveTargetText();
             CaptureDefaults();
-            ApplyConfiguration();
+            QueueConfigurationApply();
         }
 
         private void OnEnable()
         {
             LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
-            ApplyConfiguration();
+            InvalidateConfiguration();
+            QueueConfigurationApply();
         }
 
         private void OnDisable()
@@ -61,19 +74,33 @@ namespace Hecton8.UI
 
         private void OnRectTransformDimensionsChange()
         {
-            ApplyConfiguration();
+            InvalidateConfiguration();
+            QueueConfigurationApply();
         }
 
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            if (minFontSize > maxFontSize)
-                minFontSize = maxFontSize;
+            if (Application.isPlaying || _isEditorValidating)
+                return;
 
-            ResolveTargetText();
-            _capturedDefaults = false;
-            CaptureDefaults();
-            ApplyConfiguration();
+            _isEditorValidating = true;
+            try
+            {
+                if (minFontSize > maxFontSize)
+                    minFontSize = maxFontSize;
+
+                ResolveTargetText();
+                _capturedDefaults = false;
+                CaptureDefaults();
+                InvalidateConfiguration();
+                RepairCollapsedRectHierarchy();
+                ApplyConfiguration();
+            }
+            finally
+            {
+                _isEditorValidating = false;
+            }
         }
 #endif
 
@@ -99,35 +126,66 @@ namespace Hecton8.UI
             autoSizer.overflowMode = overflow;
             autoSizer.wrappingMode = wrapping;
             autoSizer.CaptureDefaults();
+            autoSizer.InvalidateConfiguration();
             autoSizer.ApplyConfiguration();
         }
 
         private void HandleLanguageChanged(GameLanguage language)
         {
+            InvalidateConfiguration();
+            QueueConfigurationApply();
+        }
+
+        private void LateUpdate()
+        {
+            if (!_configurationApplyPending)
+                return;
+
+            _configurationApplyPending = false;
+            RepairCollapsedRectHierarchy();
             ApplyConfiguration();
         }
 
         private void ApplyConfiguration()
         {
             ResolveTargetText();
-            if (targetText == null)
+            if (targetText == null || _isApplyingConfiguration)
                 return;
 
             CaptureDefaults();
+            RepairCollapsedRectHierarchy();
 
             GameLanguage language = LocalizationManager.Instance != null
                 ? LocalizationManager.Instance.CurrentLanguage
                 : GameLanguage.English;
-            float localeScale = ResolveLocaleFontScale(language);
+            Vector2 rectSize = targetText.rectTransform != null ? targetText.rectTransform.rect.size : Vector2.zero;
+            if (!_configurationDirty &&
+                _lastAppliedLanguage == language &&
+                Approximately(rectSize, _lastAppliedRectSize))
+            {
+                return;
+            }
 
-            targetText.enableAutoSizing = true;
-            targetText.fontSizeMin = Mathf.Max(1f, minFontSize * localeScale);
-            targetText.fontSizeMax = Mathf.Max(targetText.fontSizeMin, maxFontSize * localeScale);
-            targetText.overflowMode = overflowMode;
-            targetText.textWrappingMode = wrappingMode;
-            if (enableRightToLeft)
-                ApplyRuntimeLocalizationLayout(targetText);
-            targetText.ForceMeshUpdate(false, false);
+            float localeScale = ResolveLocaleFontScale(language);
+            _isApplyingConfiguration = true;
+            try
+            {
+                targetText.enableAutoSizing = true;
+                targetText.fontSizeMin = Mathf.Max(1f, minFontSize * localeScale);
+                targetText.fontSizeMax = Mathf.Max(targetText.fontSizeMin, maxFontSize * localeScale);
+                targetText.overflowMode = overflowMode;
+                targetText.textWrappingMode = wrappingMode;
+                if (enableRightToLeft)
+                    ApplyRuntimeLocalizationLayout(targetText);
+                targetText.ForceMeshUpdate(false, false);
+                _lastAppliedLanguage = language;
+                _lastAppliedRectSize = rectSize;
+                _configurationDirty = false;
+            }
+            finally
+            {
+                _isApplyingConfiguration = false;
+            }
         }
 
         private void ResolveTargetText()
@@ -142,6 +200,76 @@ namespace Hecton8.UI
                 return;
 
             _capturedDefaults = true;
+        }
+
+        private void InvalidateConfiguration()
+        {
+            _configurationDirty = true;
+        }
+
+        private void QueueConfigurationApply()
+        {
+            _configurationApplyPending = true;
+        }
+
+        private void RepairCollapsedRectHierarchy()
+        {
+            RectTransform textRect = targetText != null ? targetText.rectTransform : null;
+            if (textRect == null)
+                return;
+
+            for (int pass = 0; pass < MaxRectRepairPasses; pass++)
+            {
+                bool repairedAny = false;
+                RectTransform current = textRect;
+                int depth = 0;
+                while (current != null && depth++ < MaxRectRepairDepth)
+                {
+                    RectTransform parent = current.parent as RectTransform;
+                    if (parent == null)
+                        break;
+
+                    if (IsCollapsedRect(current) && !IsCollapsedRect(parent))
+                    {
+                        StretchToParent(current);
+                        repairedAny = true;
+                    }
+
+                    current = parent;
+                }
+
+                if (!repairedAny)
+                    break;
+            }
+        }
+
+        private static bool Approximately(Vector2 left, Vector2 right)
+        {
+            return Mathf.Approximately(left.x, right.x) &&
+                   Mathf.Approximately(left.y, right.y);
+        }
+
+        private static bool IsCollapsedRect(RectTransform rect)
+        {
+            if (rect == null)
+                return false;
+
+            Rect bounds = rect.rect;
+            return bounds.width <= CollapsedRectThreshold || bounds.height <= CollapsedRectThreshold;
+        }
+
+        private static void StretchToParent(RectTransform rect)
+        {
+            if (rect == null || rect.parent == null)
+                return;
+
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = Vector2.zero;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+            rect.localScale = Vector3.one;
         }
 
         private float ResolveLocaleFontScale(GameLanguage language)

@@ -1,20 +1,36 @@
 {
-    "name": "Hecton8.World.Dots",
-    "rootNamespace": "Hecton8.World.Dots",
-    "references": [
-        "Hecton8.World.Contracts",
-        "Unity.Entities",
-        "Unity.Collections",
-        "Unity.Mathematics",
-        "Unity.Burst"
-    ],
-    "includePlatforms": [],
-    "excludePlatforms": [],
-    "allowUnsafeCode": false,
-    "overrideReferences": false,
-    "precompiledReferences": [],
-    "autoReferenced": true,
-    "defineConstraints": [],
-    "versionDefines": [],
-    "noEngineReferences": false
+    "name":  "Hecton8.World.Dots",
+    "rootNamespace":  "Hecton8.World.Dots",
+    "references":  [
+                       "Hecton8.World.Contracts",
+                       "Unity.Entities",
+                       "Unity.Collections",
+                       "Unity.Mathematics",
+                       "Unity.Burst"
+                   ],
+    "includePlatforms":  [
+
+                         ],
+    "excludePlatforms":  [
+
+                         ],
+    "allowUnsafeCode":  false,
+    "overrideReferences":  false,
+    "precompiledReferences":  [
+
+                              ],
+    "autoReferenced":  false,
+    "defineConstraints":  [
+                              "HECTON8_ENABLE_ENTITIES_DOTS",
+                              "HECTON8_HAS_ENTITIES_PACKAGE",
+                              "HECTON8_ENABLE_OPTIONAL_ASSEMBLIES"
+                          ],
+    "versionDefines":  [
+                           {
+                               "name":  "com.unity.entities",
+                               "expression":  "1.0.0",
+                               "define":  "HECTON8_HAS_ENTITIES_PACKAGE"
+                           }
+                       ],
+    "noEngineReferences":  false
 }

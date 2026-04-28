@@ -1,4 +1,4 @@
-﻿%YAML 1.1
+%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!114 &11400000
 MonoBehaviour:
@@ -15,13 +15,13 @@ MonoBehaviour:
   recipeName: Relay Matrix
   localizedRecipeName:
     tableKey: ITEM_RELAY_MATRIX_NAME
-    fallbackText: ''
+    fallbackText: 
     variants: []
   overrideIcon: {fileID: 0}
   description: Build a high-load relay cluster for power routing and long-range systems.
   localizedRecipeDescription:
     tableKey: ITEM_RELAY_MATRIX_DESCRIPTION
-    fallbackText: ''
+    fallbackText: 
     variants: []
   resultItem: {fileID: 11400000, guid: 2ca36e41c0fad80438b5045fe075de77, type: 2}
   resultQuantity: 1
@@ -33,5 +33,6 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: 59a14819e2557ec4a9c83015dc8dabca, type: 2}
     amount: 1
   craftTime: 1.5
+  powerCost: 5
   requiredScanEntryId: 
   fabricationGroup: 6

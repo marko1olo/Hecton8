@@ -58,7 +58,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
 
             Cull [_Cull]
             ZWrite Off
-            ZTest LEqual
+            ZTest Equal
             AlphaToMask On
 
             HLSLPROGRAM
@@ -68,10 +68,14 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             #pragma multi_compile_instancing
             #pragma multi_compile_fog
             #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
+            #pragma multi_compile _ HECTON_GPU_INDIRECT
             #pragma shader_feature_local _QUALITY_MX350 _QUALITY_HIGH
 
+            #define UNITY_INDIRECT_DRAW_ARGS IndirectDrawIndexedArgs
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+            #include "UnityIndirect.cginc"
+            #include "Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl"
 
             #define HECTON_MAX_INTERACTION_POINTS 12
             #define HECTON_MAX_IMPACT_SPHERES 8
@@ -151,8 +155,8 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             float4 _HectonFloatingOriginOffset;
             float4 _SargassumGlobalDriftOffset;
             float4 _SargassumCutMaskWorldRect;
-            float4 _HectonVegetationWakeTrailWorldRect;
-            float4 _HectonPlayerAbsoluteUniversePosition;
+            float4 _HectonShallowWaterFieldWorldRect;
+            float4 _HectonPlayerRuntimePosition;
             float4 _HectonPlayerFloraInteractionParams;
             float4 _HectonFlowSynchronyParams;
             float _HectonVegetationDepth;
@@ -164,15 +168,15 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             float _HectonVegetationCurrentTimeScale;
             float _HectonVegetationCurrentVerticalFactor;
             float _SargassumCutMaskActive;
-            float _HectonVegetationWakeTrailActive;
+            float _HectonShallowWaterFieldActive;
             int _HectonFloraFlowFieldResolution;
             int _HectonFloraInteractionCount;
             int _HectonImpactSphereCount;
 
             TEXTURE2D(_SargassumCutMaskRT);
             SAMPLER(sampler_SargassumCutMaskRT);
-            TEXTURE2D(_HectonVegetationWakeTrailRT);
-            SAMPLER(sampler_HectonVegetationWakeTrailRT);
+            TEXTURE2D(_HectonShallowWaterFieldRT);
+            SAMPLER(sampler_HectonShallowWaterFieldRT);
 
             struct Attributes
             {
@@ -517,24 +521,23 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 return EvaluateGlobalSargassumCutMask(positionWS);
             }
 
-            float3 DecodeWakeTrailDirection(float2 encodedDirection)
+            float2 DecodeShallowWaterVelocity(float2 encodedVelocity)
             {
-                float2 directionXZ = encodedDirection * 2.0 - 1.0;
-                return SafeNormalize3(float3(directionXZ.x, 0.0, directionXZ.y));
+                return encodedVelocity * 2.0 - 1.0;
             }
 
-            float4 EvaluateWakeTrailData(float3 positionWS)
+            float4 EvaluateShallowWaterFieldData(float3 positionWS)
             {
-                if (_HectonVegetationWakeTrailActive < 0.5)
+                if (_HectonShallowWaterFieldActive < 0.5)
                     return float4(0.5, 0.5, 0.0, 0.0);
 
                 float2 uv = float2(
-                    (positionWS.x - _HectonVegetationWakeTrailWorldRect.x) * _HectonVegetationWakeTrailWorldRect.z,
-                    (positionWS.z - _HectonVegetationWakeTrailWorldRect.y) * _HectonVegetationWakeTrailWorldRect.w);
+                    (positionWS.x - _HectonShallowWaterFieldWorldRect.x) * _HectonShallowWaterFieldWorldRect.z,
+                    (positionWS.z - _HectonShallowWaterFieldWorldRect.y) * _HectonShallowWaterFieldWorldRect.w);
                 if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0)
                     return float4(0.5, 0.5, 0.0, 0.0);
 
-                return SAMPLE_TEXTURE2D_LOD(_HectonVegetationWakeTrailRT, sampler_HectonVegetationWakeTrailRT, uv, 0);
+                return SAMPLE_TEXTURE2D_LOD(_HectonShallowWaterFieldRT, sampler_HectonShallowWaterFieldRT, uv, 0);
             }
 
             float3 ResolveWakeTrailOffset(float3 evaluationPositionWS, float3 baseNormalWS, float bendMask, float heightMask, float instanceType)
@@ -542,16 +545,18 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 if (bendMask <= 0.0001)
                     return float3(0.0, 0.0, 0.0);
 
-                float4 wakeTrailData = EvaluateWakeTrailData(evaluationPositionWS);
-                float wakeIntensity = saturate(wakeTrailData.b);
-                if (wakeIntensity <= 0.0001)
+                float4 shallowWaterData = EvaluateShallowWaterFieldData(evaluationPositionWS);
+                float displacement = saturate(shallowWaterData.b);
+                float2 planarVelocity = DecodeShallowWaterVelocity(shallowWaterData.rg);
+                float velocityMagnitude = saturate(length(planarVelocity));
+                if (displacement <= 0.0001 && velocityMagnitude <= 0.0001)
                     return float3(0.0, 0.0, 0.0);
 
-                float3 wakeDirection = DecodeWakeTrailDirection(wakeTrailData.rg);
+                float3 wakeDirection = SafeNormalize3(float3(planarVelocity.x, 0.0, planarVelocity.y));
                 float3 planarWakeDirection = wakeDirection - baseNormalWS * dot(wakeDirection, baseNormalWS);
                 planarWakeDirection = SafeNormalize3(planarWakeDirection);
                 float typeScale = instanceType < 0.5 ? 0.72 : (instanceType < 1.5 ? 1.05 : 0.38);
-                float flattening = wakeIntensity * bendMask * typeScale;
+                float flattening = (displacement + velocityMagnitude * 0.5) * bendMask * typeScale;
                 float downwardBias = lerp(0.04, 0.18, heightMask) * flattening;
                 return (planarWakeDirection + baseNormalWS * 0.02) * flattening + float3(0.0, -downwardBias, 0.0);
             }
@@ -616,7 +621,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
 
             float3 ResolvePlayerBendOffset(float3 evaluationPositionWS, float3 baseNormalWS, float bendMask, float instanceType)
             {
-                float playerRadius = _HectonPlayerAbsoluteUniversePosition.w;
+                float playerRadius = _HectonPlayerRuntimePosition.w;
                 if (bendMask <= 0.0001 ||
                     _HectonPlayerFloraInteractionParams.w < 0.5 ||
                     playerRadius <= 0.0001)
@@ -624,7 +629,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                     return float3(0.0, 0.0, 0.0);
                 }
 
-                float3 playerRuntimePosition = _HectonPlayerAbsoluteUniversePosition.xyz + _GlobalFloatingOffset.xyz;
+                float3 playerRuntimePosition = _HectonPlayerRuntimePosition.xyz;
                 float playerSpeed = _HectonPlayerFloraInteractionParams.x;
                 float playerPush = _HectonPlayerFloraInteractionParams.y;
                 if (playerSpeed <= 0.0001 || playerPush <= 0.0001)
@@ -752,7 +757,11 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             {
                 Varyings output;
 
-                uint sourceInstanceIndex = _HectonVisibleInstanceIndices[instanceID];
+                uint sourceInstanceIndex = instanceID;
+                #if defined(HECTON_GPU_INDIRECT)
+                    InitIndirectDrawArgs(0);
+                    sourceInstanceIndex = _HectonVisibleInstanceIndices[GetIndirectInstanceID(instanceID)];
+                #endif
                 float4x4 instanceMatrix = _HectonInstanceMatrices[sourceInstanceIndex];
                 float4 instanceData = _HectonVegetationInstanceData[sourceInstanceIndex];
                 float3 floatingOriginOffsetWS = _GlobalFloatingOffset.xyz;
@@ -1047,7 +1056,8 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 for (uint lightIndex = 0u; lightIndex < addLightCount; lightIndex++)
                 {
                     Light addLight = GetAdditionalLight(lightIndex, input.positionWS, half4(1, 1, 1, 1));
-                    half attenuation = addLight.distanceAttenuation * addLight.shadowAttenuation;
+                    float additionalShadowAttenuation = HectonCoreLitResolveFlashlightAdditionalShadow(lightIndex, input.positionWS, normalWS, addLight.shadowAttenuation);
+                    half attenuation = addLight.distanceAttenuation * additionalShadowAttenuation;
                     if (attenuation <= 0.0001h)
                         continue;
 
@@ -1069,22 +1079,6 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 finalColor += additionalDiffuse;
                 finalColor += localVolumetric;
                 #endif
-                half cutMask = ResolveVegetationCutMask(input.instanceType, input.positionWS);
-
-                half kelpOpacityScale = input.instanceType > 0.5h && input.instanceType < 1.5h
-                    ? lerp(1.0h, 0.25h, input.kelpDepthFade)
-                    : 1.0h;
-                half alpha = saturate(_Opacity * input.lodAlpha * kelpOpacityScale);
-                clip(0.08h - cutMask);
-
-                if (input.instanceType > 1.5h)
-                {
-                    clip(porousCoverageMask - 0.16h);
-                }
-
-                float dither = TemporalDitherNoise(input.positionCS.xy / max(input.positionCS.w, 0.0001), input.lodAlpha);
-                clip(alpha - max(_AlphaClip, dither));
-
                 half3 abyssFogColor = lerp(_HectonVegetationFogColor.rgb, half3(0.01h, 0.03h, 0.045h), abyssFactor);
                 half fogBlend = saturate(input.fogFactor * lerp(1.0h, 1.25h, abyssFactor));
                 finalColor = lerp(finalColor, abyssFogColor, fogBlend);

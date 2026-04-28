@@ -138,6 +138,8 @@ namespace Hecton8.Gameplay
         private Transform _attachedTransform;
         private Vector3 _localAttachPosition;
         private bool _isRegistered;
+        // COLD ALLOC: RaycastHit[4] - synchronous attach probe buffer - owner: Floater
+        private readonly RaycastHit[] _attachHitBuffer = new RaycastHit[4];
 
         // Pre-cached player tag
         private const string PlayerTag = "Player";
@@ -175,7 +177,7 @@ namespace Hecton8.Gameplay
             // Auto-find renderer if not assigned
             if (visualRenderer == null)
             {
-                visualRenderer = GetComponentInChildren<Renderer>();
+                visualRenderer = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Renderer>(transform);
             }
 
             // Set default layer mask if not assigned
@@ -302,8 +304,9 @@ namespace Hecton8.Gameplay
 
             if (applyInFixedUpdate)
             {
-                Vector3 force = Vector3.up * buoyancyForce;
-                PhysicsForceRouter.QueueForce(_attachedBody, force, ForceMode.Force);
+                float safeMass = Mathf.Max(_attachedBody.mass, 0.0001f);
+                Vector3 buoyancyAcceleration = Vector3.up * (buoyancyForce / safeMass);
+                PhysicsForceRouter.QueueForce(_attachedBody, buoyancyAcceleration, ForceMode.Acceleration);
             }
 
             // Update position to follow attached object
@@ -352,10 +355,32 @@ namespace Hecton8.Gameplay
             Vector3 origin = player.position;
             Vector3 direction = player.forward;
 
-            if (UnityEngine.Physics.Raycast(origin, direction, out RaycastHit hit, attachDistance, attachableLayers))
+            if (TryResolveNearestAttachHit(origin, direction, attachDistance, out RaycastHit hit))
             {
                 AttachTo(hit.collider, hit.point);
             }
+        }
+
+        private bool TryResolveNearestAttachHit(Vector3 origin, Vector3 direction, float maxDistance, out RaycastHit nearestHit)
+        {
+            int hitCount = UnityEngine.Physics.RaycastNonAlloc(origin, direction, _attachHitBuffer, maxDistance, attachableLayers);
+            nearestHit = default;
+            float nearestDistance = float.MaxValue;
+
+            for (int i = 0; i < hitCount; i++)
+            {
+                RaycastHit candidate = _attachHitBuffer[i];
+                if (candidate.collider == null || float.IsNaN(candidate.distance) || float.IsInfinity(candidate.distance))
+                    continue;
+
+                if (candidate.distance >= nearestDistance)
+                    continue;
+
+                nearestDistance = candidate.distance;
+                nearestHit = candidate;
+            }
+
+            return nearestHit.collider != null;
         }
 
         /// <summary>
@@ -475,12 +500,8 @@ namespace Hecton8.Gameplay
         {
             if (_isRegistered) return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-            {
-                tickManager.Register(this);
-                _isRegistered = true;
-            }
+            GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
+            _isRegistered = true;
         }
 
 #if UNITY_EDITOR
@@ -501,10 +522,7 @@ namespace Hecton8.Gameplay
         {
             if (!_isRegistered) return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister(this);
-
+            GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
             _isRegistered = false;
         }
 

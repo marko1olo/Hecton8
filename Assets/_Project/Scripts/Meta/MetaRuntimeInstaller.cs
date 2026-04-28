@@ -1,3 +1,4 @@
+using Hecton8.World;
 using UnityEngine;
 
 namespace Hecton8.Meta
@@ -14,7 +15,8 @@ namespace Hecton8.Meta
         /// </summary>
         public static void EnsureRuntimeSystems()
         {
-            GameObject runtimeRoot = GameObject.Find(RuntimeRootName);
+            GameObject runtimeRoot = null;
+            WorldRuntimeReferenceUtility.TryResolveScenePath(ref runtimeRoot, RuntimeRootName);
             if (runtimeRoot == null)
                 runtimeRoot = new GameObject(RuntimeRootName); // COLD ALLOC: one runtime root for meta systems per gameplay scene - owner: MetaRuntimeInstaller
 

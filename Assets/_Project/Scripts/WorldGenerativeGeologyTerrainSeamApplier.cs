@@ -8,6 +8,14 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-4029)]
     public sealed class WorldGenerativeGeologyTerrainSeamApplier : MonoBehaviour, ISlowTickable
     {
+        internal static WorldGenerativeGeologyTerrainSeamApplier ActiveRuntimeInstance { get; private set; }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            ActiveRuntimeInstance = null;
+        }
+
         private sealed class TerrainApplyState
         {
             public Terrain terrain;
@@ -46,12 +54,14 @@ namespace Hecton8.World
 
         private void Awake()
         {
+            ActiveRuntimeInstance = this;
             ResolveReferences();
             ReconcileTerrainSeams();
         }
 
         private void OnEnable()
         {
+            ActiveRuntimeInstance = this;
             ResolveReferences();
             TryRegisterToTickManager();
         }
@@ -66,12 +76,18 @@ namespace Hecton8.World
         {
             TryUnregisterFromTickManager();
             RestoreAllTerrains();
+
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
         }
 
         private void OnDestroy()
         {
             TryUnregisterFromTickManager();
             RestoreAllTerrains();
+
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
         }
 
         public void SlowTick()
@@ -118,9 +134,7 @@ namespace Hecton8.World
                 if (terrain == null || terrain.terrainData == null)
                     continue;
 
-                #pragma warning disable CS0618
-                int terrainId = terrain.GetInstanceID();
-                #pragma warning restore CS0618
+                int terrainId = unchecked((int)EntityId.ToULong(terrain.GetEntityId()));
                 EnsureTerrainState(terrain, terrainId);
                 List<WorldGenerativeGeologySeamPlan> terrainPlans = _plansByTerrain[terrainId];
 
@@ -158,11 +172,8 @@ namespace Hecton8.World
             if (_registeredToTickManager)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
 
-            tickManager.Register((ISlowTickable)this);
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
             _registeredToTickManager = true;
         }
 
@@ -171,9 +182,7 @@ namespace Hecton8.World
             if (!_registeredToTickManager)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister((ISlowTickable)this);
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
 
             _registeredToTickManager = false;
         }

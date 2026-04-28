@@ -1,3 +1,4 @@
+using System;
 using Hecton.Localization;
 using Hecton8.Audio;
 using Hecton8.AI;
@@ -14,12 +15,58 @@ using UnityEngine.UI;
 
 namespace Hecton8.UI
 {
+    internal static class UiChildSpanUtility
+    {
+        private static readonly Transform[] s_childSnapshotBuffer = new Transform[128]; // COLD ALLOC: Transform[128] — shared UI child snapshot buffer — owner: UiChildSpanUtility
+
+        public static RectTransform FindExistingChild(Transform parent, string childName)
+        {
+            ReadOnlySpan<Transform> children = SnapshotChildren(parent);
+            for (int i = 0; i < children.Length; i++)
+            {
+                Transform child = children[i];
+                if (child != null && child.name == childName)
+                    return child as RectTransform;
+            }
+
+            return null;
+        }
+
+        public static void DestroyChildren(Transform parent)
+        {
+            ReadOnlySpan<Transform> children = SnapshotChildren(parent);
+            for (int i = children.Length - 1; i >= 0; i--)
+            {
+                Transform child = children[i];
+                if (child == null)
+                    continue;
+
+                if (Application.isPlaying)
+                    UnityEngine.Object.Destroy(child.gameObject);
+                else
+                    UnityEngine.Object.DestroyImmediate(child.gameObject);
+            }
+        }
+
+        private static ReadOnlySpan<Transform> SnapshotChildren(Transform parent)
+        {
+            if (parent == null)
+                return ReadOnlySpan<Transform>.Empty;
+
+            int childCount = Mathf.Min(parent.childCount, s_childSnapshotBuffer.Length);
+            for (int i = 0; i < childCount; i++)
+                s_childSnapshotBuffer[i] = parent.GetChild(i);
+
+            return new ReadOnlySpan<Transform>(s_childSnapshotBuffer, 0, childCount);
+        }
+    }
+
     /// <summary>
     /// Player-owned diegetic sonar translator that converts active sonar contacts into terse PDA classification overlays.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Acoustic Echolocation Translator")]
-    public sealed class AcousticEcholocationTranslator : MonoBehaviour, ITickable
+    public sealed class AcousticEcholocationTranslator : MonoBehaviour, ITickable, IUpdatable
     {
         private enum ContactClassification : byte
         {
@@ -379,11 +426,7 @@ namespace Hecton8.UI
             if (_tickRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register(this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _tickRegistered = true;
         }
 
@@ -392,10 +435,7 @@ namespace Hecton8.UI
             if (!_tickRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister(this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _tickRegistered = false;
         }
 
@@ -407,11 +447,11 @@ namespace Hecton8.UI
 
         private static Canvas ResolveTargetCanvas()
         {
-            SuitHUDV4CanvasOverlay overlay = Object.FindAnyObjectByType<SuitHUDV4CanvasOverlay>();
+            SuitHUDV4CanvasOverlay overlay = SuitHUDV4CanvasOverlay.ActiveRuntimeInstance;
             if (overlay != null && overlay.TargetCanvas != null)
                 return overlay.TargetCanvas;
 
-            return Object.FindAnyObjectByType<Canvas>();
+            return (SuitHUDV4CanvasOverlay.ActiveRuntimeInstance != null ? SuitHUDV4CanvasOverlay.ActiveRuntimeInstance.GetComponent<Canvas>() : null);
         }
 
         private static string ResolveLocalized(string key, string fallback)
@@ -462,29 +502,12 @@ namespace Hecton8.UI
 
         private static RectTransform FindExistingChild(Transform parent, string childName)
         {
-            if (parent == null)
-                return null;
-
-            for (int i = 0; i < parent.childCount; i++)
-            {
-                Transform child = parent.GetChild(i);
-                if (child.name == childName)
-                    return child as RectTransform;
-            }
-
-            return null;
+            return UiChildSpanUtility.FindExistingChild(parent, childName);
         }
 
         private static void ClearChildren(Transform parent)
         {
-            for (int i = parent.childCount - 1; i >= 0; i--)
-            {
-                Transform child = parent.GetChild(i);
-                if (Application.isPlaying)
-                    Object.Destroy(child.gameObject);
-                else
-                    Object.DestroyImmediate(child.gameObject);
-            }
+            UiChildSpanUtility.DestroyChildren(parent);
         }
 
         private static RectTransform CreateRect(Transform parent, string name)
@@ -511,7 +534,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Terminal Boot Sequence")]
-    public sealed class TerminalBootSequence : MonoBehaviour, ITickable
+    public sealed class TerminalBootSequence : MonoBehaviour, ITickable, IUpdatable
     {
         private enum SequenceState : byte
         {
@@ -753,11 +776,7 @@ namespace Hecton8.UI
             if (_tickRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register(this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _tickRegistered = true;
         }
 
@@ -766,10 +785,7 @@ namespace Hecton8.UI
             if (!_tickRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister(this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _tickRegistered = false;
         }
 
@@ -793,38 +809,21 @@ namespace Hecton8.UI
 
         private static Canvas ResolveTargetCanvas()
         {
-            SuitHUDV4CanvasOverlay overlay = Object.FindAnyObjectByType<SuitHUDV4CanvasOverlay>();
+            SuitHUDV4CanvasOverlay overlay = SuitHUDV4CanvasOverlay.ActiveRuntimeInstance;
             if (overlay != null && overlay.TargetCanvas != null)
                 return overlay.TargetCanvas;
 
-            return Object.FindAnyObjectByType<Canvas>();
+            return (SuitHUDV4CanvasOverlay.ActiveRuntimeInstance != null ? SuitHUDV4CanvasOverlay.ActiveRuntimeInstance.GetComponent<Canvas>() : null);
         }
 
         private static RectTransform FindExistingChild(Transform parent, string childName)
         {
-            if (parent == null)
-                return null;
-
-            for (int i = 0; i < parent.childCount; i++)
-            {
-                Transform child = parent.GetChild(i);
-                if (child.name == childName)
-                    return child as RectTransform;
-            }
-
-            return null;
+            return UiChildSpanUtility.FindExistingChild(parent, childName);
         }
 
         private static void ClearChildren(Transform parent)
         {
-            for (int i = parent.childCount - 1; i >= 0; i--)
-            {
-                Transform child = parent.GetChild(i);
-                if (Application.isPlaying)
-                    Object.Destroy(child.gameObject);
-                else
-                    Object.DestroyImmediate(child.gameObject);
-            }
+            UiChildSpanUtility.DestroyChildren(parent);
         }
     }
 
@@ -833,7 +832,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Audio Caption Overlay")]
-    public sealed class AudioCaptionOverlay : MonoBehaviour, ITickable
+    public sealed class AudioCaptionOverlay : MonoBehaviour, ITickable, IUpdatable
     {
         private const int SlotCount = 8;
         private const float DefaultDuration = 1.65f;
@@ -1050,7 +1049,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            SuitHUDV4CanvasOverlay overlay = Object.FindAnyObjectByType<SuitHUDV4CanvasOverlay>();
+            SuitHUDV4CanvasOverlay overlay = SuitHUDV4CanvasOverlay.ActiveRuntimeInstance;
             if (overlay != null && overlay.TargetCanvas != null && overlay.TargetCanvas.worldCamera != null)
             {
                 _viewCamera = overlay.TargetCanvas.worldCamera;
@@ -1058,7 +1057,7 @@ namespace Hecton8.UI
             }
 
             if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
-                _viewCamera = playerTransform.GetComponentInChildren<Camera>(true);
+                _viewCamera = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera : playerTransform.GetComponent<Camera>());
         }
 
         private int AcquireSlotIndex()
@@ -1144,11 +1143,7 @@ namespace Hecton8.UI
             if (_tickRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register(this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _tickRegistered = true;
         }
 
@@ -1157,47 +1152,27 @@ namespace Hecton8.UI
             if (!_tickRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister(this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _tickRegistered = false;
         }
 
         private static Canvas ResolveTargetCanvas()
         {
-            SuitHUDV4CanvasOverlay overlay = Object.FindAnyObjectByType<SuitHUDV4CanvasOverlay>();
+            SuitHUDV4CanvasOverlay overlay = SuitHUDV4CanvasOverlay.ActiveRuntimeInstance;
             if (overlay != null && overlay.TargetCanvas != null)
                 return overlay.TargetCanvas;
 
-            return Object.FindAnyObjectByType<Canvas>();
+            return (SuitHUDV4CanvasOverlay.ActiveRuntimeInstance != null ? SuitHUDV4CanvasOverlay.ActiveRuntimeInstance.GetComponent<Canvas>() : null);
         }
 
         private static RectTransform FindExistingChild(Transform parent, string childName)
         {
-            if (parent == null)
-                return null;
-
-            for (int i = 0; i < parent.childCount; i++)
-            {
-                Transform child = parent.GetChild(i);
-                if (child.name == childName)
-                    return child as RectTransform;
-            }
-
-            return null;
+            return UiChildSpanUtility.FindExistingChild(parent, childName);
         }
 
         private static void ClearChildren(Transform parent)
         {
-            for (int i = parent.childCount - 1; i >= 0; i--)
-            {
-                Transform child = parent.GetChild(i);
-                if (Application.isPlaying)
-                    Object.Destroy(child.gameObject);
-                else
-                    Object.DestroyImmediate(child.gameObject);
-            }
+            UiChildSpanUtility.DestroyChildren(parent);
         }
     }
 }

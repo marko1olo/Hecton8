@@ -177,6 +177,19 @@ namespace Hecton8.World
         /// </summary>
         public int OcclusionCulledObjectCount => 0;
 
+        private static void EnsureLayerCache()
+        {
+            if (_layerCacheInitialized)
+                return;
+
+            _debrisLayer = LayerMask.NameToLayer("Debris");
+            _particlesLayer = LayerMask.NameToLayer("Particles");
+            _propsLayer = LayerMask.NameToLayer("Props");
+            _floraLayer = LayerMask.NameToLayer("Flora");
+            _terrainLayer = LayerMask.NameToLayer("Terrain");
+            _layerCacheInitialized = true;
+        }
+
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
         // ══════════════════════════════════════════════════════════
@@ -190,7 +203,6 @@ namespace Hecton8.World
         private void Awake()
         {
             EnsureLayerCache();
-
             // Singleton setup
             if (_instance != null && _instance != this)
             {
@@ -240,11 +252,8 @@ namespace Hecton8.World
             if (_registered)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager == null)
-                return;
 
-            gameTickManager.Register(this);
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
             _registered = true;
         }
 
@@ -253,9 +262,7 @@ namespace Hecton8.World
             if (!_registered)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager != null)
-                gameTickManager.Unregister(this);
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
 
             _registered = false;
         }
@@ -472,8 +479,6 @@ namespace Hecton8.World
 
         private void ApplyLayerCullDistances()
         {
-            EnsureLayerCache();
-
             if (_mainCamera == null)
             {
                 _mainCamera = ResolveMainCamera();
@@ -513,13 +518,19 @@ namespace Hecton8.World
             if (_cameraReference != null)
                 return _cameraReference;
 
+            if (Hecton8.Core.GlobalRegistry.PlayerSensory != null &&
+                Hecton8.Core.GlobalRegistry.PlayerSensory.PlayerCamera != null)
+            {
+                return Hecton8.Core.GlobalRegistry.PlayerSensory.PlayerCamera;
+            }
+
             if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform != null)
             {
                 if (playerTransform.TryGetComponent(out Camera playerOwnedCamera))
                     return playerOwnedCamera;
 
-                return playerTransform.GetComponentInChildren<Camera>(true);
+                return ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera : playerTransform.GetComponent<Camera>());
             }
 
             return null;
@@ -655,17 +666,5 @@ namespace Hecton8.World
             }
         }
 
-        private static void EnsureLayerCache()
-        {
-            if (_layerCacheInitialized)
-                return;
-
-            _debrisLayer = LayerMask.NameToLayer("Debris");
-            _particlesLayer = LayerMask.NameToLayer("Particles");
-            _propsLayer = LayerMask.NameToLayer("Props");
-            _floraLayer = LayerMask.NameToLayer("Flora");
-            _terrainLayer = LayerMask.NameToLayer("Terrain");
-            _layerCacheInitialized = true;
-        }
     }
 }

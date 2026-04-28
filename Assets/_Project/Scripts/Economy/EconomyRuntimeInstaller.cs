@@ -1,3 +1,4 @@
+using Hecton8.World;
 using UnityEngine;
 
 namespace Hecton8.Economy
@@ -14,7 +15,8 @@ namespace Hecton8.Economy
         /// </summary>
         public static void EnsureRuntimeSystems()
         {
-            GameObject runtimeRoot = GameObject.Find(RuntimeRootName);
+            GameObject runtimeRoot = null;
+            WorldRuntimeReferenceUtility.TryResolveScenePath(ref runtimeRoot, RuntimeRootName);
             if (runtimeRoot == null)
                 runtimeRoot = new GameObject(RuntimeRootName); // COLD ALLOC: one runtime root for economy systems per gameplay scene - owner: EconomyRuntimeInstaller
 

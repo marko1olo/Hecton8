@@ -15,7 +15,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
     [AddComponentMenu("Hecton8/Gameplay/Transport/Transport Charging Station")]
-    public sealed class TransportChargingStation : MonoBehaviour, ITickable, IPowerComponent
+    public sealed class TransportChargingStation : MonoBehaviour, ITickable, IUpdatable, IPowerComponent
     {
         [Header("-- Docking -------------------------")]
         [Tooltip("Maximum number of simultaneously tracked transports inside this trigger.")]
@@ -174,11 +174,7 @@ namespace Hecton8.Gameplay
             if (_registered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register((ITickable)this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _registered = true;
         }
 
@@ -187,10 +183,7 @@ namespace Hecton8.Gameplay
             if (!_registered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister((ITickable)this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _registered = false;
         }
 

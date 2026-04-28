@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Hecton8;
 using Hecton8.AI;
@@ -19,11 +20,12 @@ namespace Hecton8.UI
     /// Temporary runtime overlay that surfaces the core Subnautica-gap systems during play mode.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class SubnauticaSystemsDebugUI : MonoBehaviour, ITickable
+    public sealed class SubnauticaSystemsDebugUI : MonoBehaviour, ITickable, IUpdatable, ISlowTickable
     {
         // COLD ALLOC: List<SuitHUDV4CanvasOverlay>(4) — overlay canvas resolution buffer — owner: SubnauticaSystemsDebugUI
         private static readonly List<SuitHUDV4CanvasOverlay> s_overlayResolveBuffer = new List<SuitHUDV4CanvasOverlay>(4);
         private static SubnauticaSystemsDebugUI s_activeRuntimeInstance;
+        private static bool s_isBootstrappingRuntimeOverlay;
 
         internal static SubnauticaSystemsDebugUI ActiveRuntimeInstance => s_activeRuntimeInstance;
 
@@ -40,42 +42,12 @@ namespace Hecton8.UI
                 return;
 
             // COLD ALLOC: SubnauticaSystemsDebugUI[] — runtime overlay recovery after scene load — owner: SubnauticaSystemsDebugUI
-            SubnauticaSystemsDebugUI[] overlays =
-                FindObjectsByType<SubnauticaSystemsDebugUI>(FindObjectsInactive.Include);
-
-            if (overlays != null && overlays.Length > 0)
+            if (s_activeRuntimeInstance != null)
             {
-                SubnauticaSystemsDebugUI primaryOverlay = s_activeRuntimeInstance;
-                if (primaryOverlay == null)
-                {
-                    for (int i = 0; i < overlays.Length; i++)
-                    {
-                        if (overlays[i] == null)
-                            continue;
+                if (!s_activeRuntimeInstance.enabled)
+                    s_activeRuntimeInstance.enabled = true;
 
-                        primaryOverlay = overlays[i];
-                        break;
-                    }
-                }
-
-                for (int i = 0; i < overlays.Length; i++)
-                {
-                    SubnauticaSystemsDebugUI overlay = overlays[i];
-                    if (overlay == null)
-                        continue;
-
-                    if (primaryOverlay != null && overlay != primaryOverlay)
-                    {
-                        Destroy(overlay.gameObject);
-                        continue;
-                    }
-
-                    if (!overlay.enabled)
-                        overlay.enabled = true;
-
-                    s_activeRuntimeInstance = overlay;
-                    overlay.BootstrapRuntimeOverlay();
-                }
+                s_activeRuntimeInstance.QueueRuntimeBootstrap(forceManagerResolve: true);
 
                 return;
             }
@@ -83,7 +55,7 @@ namespace Hecton8.UI
             // COLD ALLOC: GameObject[1] — runtime debug overlay fallback when the scene instance is missing — owner: SubnauticaSystemsDebugUI
             GameObject runtimeRoot = new GameObject("SubnauticaSystemsDebugUI_Auto");
             SubnauticaSystemsDebugUI runtimeOverlay = runtimeRoot.AddComponent<SubnauticaSystemsDebugUI>();
-            runtimeOverlay.BootstrapRuntimeOverlay();
+            runtimeOverlay.QueueRuntimeBootstrap(forceManagerResolve: true);
         }
 
         private const string RootObjectName = "SubnauticaSystemsDebugUI_Panel";
@@ -163,6 +135,7 @@ namespace Hecton8.UI
         private TextMeshProUGUI _cameraBudgetValue;
         private TextMeshProUGUI _stressValue;
         private bool _registered;
+        private bool _slowTickRegistered;
         private bool _stressApplied;
         private float _refreshTimer;
         private float _nextManagerResolveAttemptTime = float.NegativeInfinity;
@@ -185,6 +158,9 @@ namespace Hecton8.UI
         private string _lastStressValue = string.Empty;
         private bool _runtimeSnapshotLogged;
         private string _runtimeSnapshotScene = string.Empty;
+        private bool _bootstrapPending = true;
+        private bool _forceManagerResolveOnBootstrap = true;
+        private float _nextBootstrapAttemptTime = float.NegativeInfinity;
         // COLD ALLOC: char[32] - tick-count diagnostic buffer - owner: SubnauticaSystemsDebugUI
         private readonly char[] _tickCountsBuffer = new char[32];
         // COLD ALLOC: char[16] - render-scale diagnostic buffer - owner: SubnauticaSystemsDebugUI
@@ -225,7 +201,7 @@ namespace Hecton8.UI
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log($"[SubnauticaSystemsDebugUI] Awake '{name}' id={EntityId.ToULong(GetEntityId())} persist={persistAcrossSceneLoads}.", this);
 #endif
-            BootstrapRuntimeOverlay();
+            QueueRuntimeBootstrap(forceManagerResolve: true);
         }
 
         private void OnEnable()
@@ -236,11 +212,7 @@ namespace Hecton8.UI
 #endif
             SceneManager.activeSceneChanged += HandleActiveSceneChanged;
             TryRegister();
-            EnsureCanvasResolved();
-            EnsureVisualTree();
-            ResolveManagers(force: true);
-            ApplyStressHarness();
-            RefreshDiagnostics();
+            QueueRuntimeBootstrap(forceManagerResolve: true);
         }
 
         private void OnDisable()
@@ -264,39 +236,38 @@ namespace Hecton8.UI
                 s_activeRuntimeInstance = null;
         }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        private void Update()
+        private void TryRegister()
         {
             if (!Application.isPlaying)
                 return;
 
-            Tick(Time.unscaledDeltaTime);
-        }
-#endif
+            SystemDispatcher.EnsureRuntimeInstance();
+            if (!_registered)
+            {
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
+                _registered = true;
+            }
 
-        private void TryRegister()
-        {
-            if (_registered || !Application.isPlaying)
+            if (_slowTickRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register(this);
-            _registered = true;
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.UI);
+            _slowTickRegistered = true;
         }
 
         private void TryUnregister()
         {
-            if (!_registered)
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+                _registered = false;
+            }
+
+            if (!_slowTickRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister(this);
-
-            _registered = false;
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+            _slowTickRegistered = false;
         }
 
         public void Tick(float dt)
@@ -305,10 +276,6 @@ namespace Hecton8.UI
                 return;
 
             TryRegister();
-            EnsureCanvasResolved();
-            EnsureVisualTree();
-            ResolveManagers(force: false);
-            ApplyStressHarness();
 
             _refreshTimer += dt;
             if (_refreshTimer < refreshInterval)
@@ -318,22 +285,67 @@ namespace Hecton8.UI
             RefreshDiagnostics();
         }
 
+        public void SlowTick()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            TryRegister();
+            ProcessPendingBootstrap();
+            ResolveManagers(force: false);
+            ApplyStressHarness();
+        }
+
         private void HandleActiveSceneChanged(Scene previousScene, Scene nextScene)
         {
             debugSceneName = nextScene.IsValid() ? nextScene.name : MissingLabel;
             _runtimeSnapshotLogged = false;
             _runtimeSnapshotScene = string.Empty;
             InvalidateResolvedManagers();
+            QueueRuntimeBootstrap(forceManagerResolve: true);
+        }
+
+        private void QueueRuntimeBootstrap(bool forceManagerResolve)
+        {
+            _bootstrapPending = true;
+            _nextBootstrapAttemptTime = float.NegativeInfinity;
+            if (forceManagerResolve)
+                _forceManagerResolveOnBootstrap = true;
+        }
+
+        private void ProcessPendingBootstrap()
+        {
+            if (!_bootstrapPending)
+                return;
+
+            float now = Time.unscaledTime;
+            if (now < _nextBootstrapAttemptTime)
+                return;
+
+            _nextBootstrapAttemptTime = now + 0.25f;
             BootstrapRuntimeOverlay();
         }
 
         private void BootstrapRuntimeOverlay()
         {
-            EnsureCanvasResolved();
-            EnsureVisualTree();
-            ResolveManagers(force: true);
-            ApplyStressHarness();
-            RefreshDiagnostics();
+            if (s_isBootstrappingRuntimeOverlay)
+                return;
+
+            s_isBootstrappingRuntimeOverlay = true;
+            try
+            {
+                EnsureCanvasResolved();
+                EnsureVisualTree();
+                ResolveManagers(force: _forceManagerResolveOnBootstrap);
+                ApplyStressHarness();
+                RefreshDiagnostics();
+                _bootstrapPending = ResolveCanvas() == null || _root == null;
+                _forceManagerResolveOnBootstrap = false;
+            }
+            finally
+            {
+                s_isBootstrappingRuntimeOverlay = false;
+            }
         }
 
         private void EnsureCanvasResolved()
@@ -501,7 +513,6 @@ namespace Hecton8.UI
             HectonUnderwaterVisuals underwaterVisuals = _resolvedUnderwaterVisuals;
             CameraJuiceSystem cameraJuice = _resolvedCameraJuiceSystem;
             Scene activeScene = SceneManager.GetActiveScene();
-            GameTickManager tickManager = GameTickManager.Instance;
 
             _titleValue.SetText(enableStressTest ? "LIVE / FORCED PRESSURE" : "LIVE / PASSIVE");
 
@@ -513,24 +524,14 @@ namespace Hecton8.UI
             SetDynamicText(_bootstrapValue, bootstrapLabel, ref _lastBootstrapValue);
             debugBootstrapState = bootstrapLabel;
 
-            if (tickManager != null)
-            {
-                SetTickCountsText(
-                    _tickCountsValue,
-                    tickManager.TickableCount,
-                    tickManager.FixedTickableCount,
-                    tickManager.SlowTickableCount);
+            SetTickCountsText(
+                _tickCountsValue,
+                GlobalRegistry.Updatables.Count,
+                GlobalRegistry.FixedTickables.Count,
+                GlobalRegistry.SlowTickables.Count);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                debugTickCounts = "LIVE HUD";
+            debugTickCounts = "LIVE HUD";
 #endif
-            }
-            else
-            {
-                SetDynamicText(_tickCountsValue, MissingLabel, ref _lastTickCountsValue);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                debugTickCounts = MissingLabel;
-#endif
-            }
 
             if (scaler != null)
             {
@@ -798,41 +799,41 @@ namespace Hecton8.UI
             {
                 _resolvedScaler = DynamicResolutionScaler.Instance;
                 if (_resolvedScaler == null)
-                    _resolvedScaler = FindAnyObjectByType<DynamicResolutionScaler>(FindObjectsInactive.Include);
+                    _resolvedScaler = DynamicResolutionScaler.Instance;
             }
 
             if (_resolvedFaunaDirector == null)
             {
                 WorldRuntimeReferenceUtility.TryResolveFaunaDirector(ref _resolvedFaunaDirector);
                 if (_resolvedFaunaDirector == null)
-                    _resolvedFaunaDirector = FindAnyObjectByType<FaunaDirector>(FindObjectsInactive.Include);
+                    _resolvedFaunaDirector = FaunaDirector.ActiveRuntimeInstance;
             }
 
             if (_resolvedMusicDirector == null)
             {
                 if (!HectonMusicDirector.TryGetInstance(out _resolvedMusicDirector))
-                    _resolvedMusicDirector = FindAnyObjectByType<HectonMusicDirector>(FindObjectsInactive.Include);
+                    _resolvedMusicDirector = HectonMusicDirector.Instance;
             }
 
             if (_resolvedSoundscapeSystem == null)
             {
                 _resolvedSoundscapeSystem = SoundscapeSystem.Instance;
                 if (_resolvedSoundscapeSystem == null)
-                    _resolvedSoundscapeSystem = FindAnyObjectByType<SoundscapeSystem>(FindObjectsInactive.Include);
+                    _resolvedSoundscapeSystem = SoundscapeSystem.Instance;
             }
 
             if (_resolvedUnderwaterVisuals == null)
             {
                 _resolvedUnderwaterVisuals = HectonUnderwaterVisuals.ActiveRuntimeInstance;
                 if (_resolvedUnderwaterVisuals == null)
-                    _resolvedUnderwaterVisuals = FindAnyObjectByType<HectonUnderwaterVisuals>(FindObjectsInactive.Include);
+                    _resolvedUnderwaterVisuals = HectonUnderwaterVisuals.ActiveRuntimeInstance;
             }
 
             if (_resolvedCameraJuiceSystem == null)
             {
                 _resolvedCameraJuiceSystem = CameraJuiceSystem.Instance;
                 if (_resolvedCameraJuiceSystem == null)
-                    _resolvedCameraJuiceSystem = FindAnyObjectByType<CameraJuiceSystem>(FindObjectsInactive.Include);
+                    _resolvedCameraJuiceSystem = CameraJuiceSystem.Instance;
             }
         }
 
@@ -1113,6 +1114,7 @@ namespace Hecton8.UI
             Debug.Log(
                 "[SubnauticaSystemsDebugUI] runtime-snapshot " +
                 "scene=" + activeScene.name +
+                " ticks=" + debugTickCounts +
                 " renderScale=" + scaler.CurrentRenderScale.ToString("0.00") +
                 " pressure=" + pressureLabel +
                 " faunaBiome=" + faunaBiome +

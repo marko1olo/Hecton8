@@ -10,7 +10,7 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     [RequireComponent(typeof(CanvasGroup))]
     [AddComponentMenu("Hecton8/UI/UI Fade Transition")]
-    public sealed class UIFadeTransition : MonoBehaviour, ITickable
+    public sealed class UIFadeTransition : MonoBehaviour, ITickable, IUpdatable
     {
         // ══════════════════════════════════════════════════════════
         // INSPECTOR
@@ -151,10 +151,11 @@ namespace Hecton8.UI
 
         private void TryRegister()
         {
-            if (_registered || GameTickManager.Instance == null)
+            if (_registered)
                 return;
 
-            GameTickManager.Instance.Register(this);
+            SystemDispatcher.EnsureRuntimeInstance();
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _registered = true;
         }
 
@@ -163,12 +164,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-            {
-                tickManager.Unregister(this);
-            }
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _registered = false;
         }
     }

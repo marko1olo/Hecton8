@@ -9,13 +9,12 @@ using UnityEditorInternal;
 
 namespace NASAPunk.Visor
 {
-    [InitializeOnLoad]
     public static class VisorOpaqueTextureEnsurer
     {
-        static VisorOpaqueTextureEnsurer()
+        [MenuItem("Tools/Hecton/Dev/Scene/Validate Visor Opaque Texture", priority = 232)]
+        private static void ValidateOpaqueTextureSupport()
         {
-            EditorApplication.delayCall -= CheckOpaqueTextureSupport;
-            EditorApplication.delayCall += CheckOpaqueTextureSupport;
+            CheckOpaqueTextureSupport();
         }
 
         private static void CheckOpaqueTextureSupport()

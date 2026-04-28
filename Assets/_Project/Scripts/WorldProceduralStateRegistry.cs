@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Hecton8.Core;
 using Hecton8.SaveSystem;
 using UnityEngine;
 
@@ -59,12 +60,12 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
-            SaveManager.Instance?.Register(this);
+            GlobalRegistry.Save?.Register(this);
         }
 
         private void OnDisable()
         {
-            SaveManager.Instance?.Unregister(this);
+            GlobalRegistry.Save?.Unregister(this);
         }
 
         private void OnDestroy()
@@ -339,8 +340,8 @@ namespace Hecton8.World
 
         private float GetCurrentPlayTimeSeconds()
         {
-            return SaveManager.Instance != null
-                ? SaveManager.Instance.CurrentPlayTimeSeconds
+            return GlobalRegistry.Save != null
+                ? GlobalRegistry.Save.CurrentPlayTimeSeconds
                 : Time.realtimeSinceStartup;
         }
 

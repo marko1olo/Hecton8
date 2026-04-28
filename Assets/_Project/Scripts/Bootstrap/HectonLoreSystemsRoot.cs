@@ -21,94 +21,6 @@ namespace Hecton8.Bootstrap
     {
         public const int ExpectedSystemCount = 17;
 
-        private enum RecoveryLoreKind
-        {
-            NarrativeDiscovery,
-            AudioLogPickup
-        }
-
-        private readonly struct RecoveryLorePlacement
-        {
-            public readonly RecoveryLoreKind Kind;
-            public readonly string HostPath;
-            public readonly string MarkerName;
-            public readonly string LogId;
-            public readonly string FallbackDisplayName;
-            public readonly Vector3 LocalPosition;
-            public readonly Vector3 ColliderSize;
-
-            public RecoveryLorePlacement(
-                RecoveryLoreKind kind,
-                string hostPath,
-                string markerName,
-                string logId,
-                string fallbackDisplayName,
-                Vector3 localPosition,
-                Vector3 colliderSize)
-            {
-                Kind = kind;
-                HostPath = hostPath;
-                MarkerName = markerName;
-                LogId = logId;
-                FallbackDisplayName = fallbackDisplayName;
-                LocalPosition = localPosition;
-                ColliderSize = colliderSize;
-            }
-        }
-
-        // COLD ALLOC: RecoveryLorePlacement[5] — runtime lore fail-safe descriptors for zero-placement world state — owner: HectonLoreSystemsRoot
-        private static readonly RecoveryLorePlacement[] _runtimeRecoveryPlacements =
-        {
-            new RecoveryLorePlacement(
-                RecoveryLoreKind.NarrativeDiscovery,
-                "--- WORLD ---/Resource_FieldSources",
-                "Lore_ChenDatapad01",
-                "chen_m_datapad_01",
-                "Chen Datapad",
-                new Vector3(0.55f, 0.35f, 0.60f),
-                new Vector3(0.45f, 0.25f, 0.45f)),
-            new RecoveryLorePlacement(
-                RecoveryLoreKind.NarrativeDiscovery,
-                "--- WORLD ---/Resource_FieldSources",
-                "Lore_BiologistSamples",
-                "biologist_samples",
-                "Biologist Samples",
-                new Vector3(-6.60f, 0.35f, 7.40f),
-                new Vector3(0.55f, 0.35f, 0.55f)),
-            new RecoveryLorePlacement(
-                RecoveryLoreKind.NarrativeDiscovery,
-                "--- WORLD ---/Resource_FieldSources",
-                "Lore_MedicDiary",
-                "medic_diary",
-                "Medic Diary",
-                new Vector3(9.40f, 0.35f, 9.10f),
-                new Vector3(0.55f, 0.35f, 0.55f)),
-            new RecoveryLorePlacement(
-                RecoveryLoreKind.AudioLogPickup,
-                "--- WORLD ---/Fabrication_Outpost",
-                "Lore_CaptainBroadcastTerminal",
-                "captain_last_broadcast",
-                "Captain Broadcast",
-                new Vector3(1794.03943f, 4901.20f, 798.74396f),
-                new Vector3(0.35f, 0.45f, 0.35f)),
-            new RecoveryLorePlacement(
-                RecoveryLoreKind.AudioLogPickup,
-                "--- WORLD ---/Fabrication_Outpost",
-                "Lore_Atlas6Terminal",
-                "atlas6_terminal_sector3",
-                "Atlas-6 Terminal",
-                new Vector3(1795.95935f, 4901.20f, 798.74396f),
-                new Vector3(0.35f, 0.45f, 0.35f))
-        };
-
-        [Header("Auto Setup")]
-        [Tooltip("Create missing child systems automatically during startup.")]
-        [SerializeField] private bool autoSetupOnAwake = true;
-
-        [Header("Runtime Recovery")]
-        [Tooltip("Registry used by runtime lore fail-safe when the production scene has zero placed lore POIs.")]
-        [SerializeField] private Hecton8.Narrative.ColonistLoreRegistry runtimeRecoveryRegistry;
-
         [Header("Status")]
         [SerializeField] private bool _audioLogSystemFound;
         [SerializeField] private bool _loreDatabaseManagerFound;
@@ -129,33 +41,17 @@ namespace Hecton8.Bootstrap
         [SerializeField] private bool _endingSystemFound;
         [SerializeField] private int _narrativeDiscoveryCount;
         [SerializeField] private int _audioLogPickupCount;
-        private bool _startupLoreAuditReported;
-        private bool _runtimeLoreRecoveryAttempted;
 
         private void Awake()
         {
-            if (autoSetupOnAwake)
-            {
-                SetupAllSystems();
-            }
-            else
-            {
-                RefreshSystemStatus(false);
-            }
-
-            RefreshLoreContentStatus();
-            TryApplyRuntimeLoreRecovery();
-            RefreshLoreContentStatus();
-            ReportMissingLoreContentAtStartup();
+            // Runtime bootstrap must stay self-owned. Manual setup and validation remain
+            // available through inspector actions, but play-mode startup does not mutate scene state.
+            RefreshSystemStatus(false);
         }
 
         private void OnEnable()
         {
             RefreshSystemStatus(false);
-            RefreshLoreContentStatus();
-            TryApplyRuntimeLoreRecovery();
-            RefreshLoreContentStatus();
-            ReportMissingLoreContentAtStartup();
         }
 
         private void OnValidate()
@@ -238,11 +134,16 @@ namespace Hecton8.Bootstrap
         public string GetMissingSystemsSummary()
         {
             RefreshSystemStatus(false);
+            return BuildMissingSystemsSummary();
+        }
 
+        private string BuildMissingSystemsSummary()
+        {
             string[] missing = new string[ExpectedSystemCount];
             int index = 0;
 
             if (!_audioLogSystemFound) missing[index++] = "AudioLogSystem";
+            if (!_loreDatabaseManagerFound) missing[index++] = "LoreDatabaseManager";
             if (!_questManagerFound) missing[index++] = "QuestManager";
             if (!_atlasSignalSystemFound) missing[index++] = "AtlasSignalSystem";
             if (!_suitUpgradeManagerFound) missing[index++] = "SuitUpgradeManager";
@@ -271,27 +172,28 @@ namespace Hecton8.Bootstrap
 
         public void RefreshSystemStatus(bool logMissingSystems)
         {
-            _audioLogSystemFound = GetComponentInChildren<Hecton8.Narrative.AudioLogSystem>(true) != null;
-            _questManagerFound = GetComponentInChildren<Hecton8.Quest.QuestManager>(true) != null;
-            _atlasSignalSystemFound = GetComponentInChildren<Hecton8.AtlasSignal.AtlasSignalSystem>(true) != null;
-            _suitUpgradeManagerFound = GetComponentInChildren<Hecton8.Gameplay.SuitUpgradeManager>(true) != null;
-            _depthZoneDirectorFound = GetComponentInChildren<Hecton8.World.DepthZoneDirector>(true) != null;
-            _eclipseGameplaySystemFound = GetComponentInChildren<Hecton8.Gameplay.EclipseGameplaySystem>(true) != null;
-            _spectrumSystemFound = GetComponentInChildren<Hecton8.Visor.SpectrumSystem>(true) != null;
-            _atlasSignalDecoderFound = GetComponentInChildren<Hecton8.AtlasSignal.AtlasSignalDecoder>(true) != null;
-            _biolumControllerFound = GetComponentInChildren<Hecton8.World.HectonBiolumController>(true) != null;
-            _atlas6DirectiveSystemFound = GetComponentInChildren<Hecton8.AtlasSignal.Atlas6DirectiveSystem>(true) != null;
-            _corporateOrderSystemFound = GetComponentInChildren<Hecton8.Narrative.CorporateOrderSystem>(true) != null;
-            _randomEventSystemFound = GetComponentInChildren<Hecton8.Gameplay.RandomEventSystem>(true) != null;
-            _firstHourDirectorFound = GetComponentInChildren<Hecton8.Gameplay.FirstHourDirector>(true) != null;
-            _soundscapeSystemFound = GetComponentInChildren<Hecton8.World.SoundscapeSystem>(true) != null;
-            _baseIntegrityHUDFound = GetComponentInChildren<Hecton8.UI.BaseIntegrityHUD>(true) != null;
-            _endingSystemFound = GetComponentInChildren<Hecton8.Gameplay.EndingSystem>(true) != null;
+            _audioLogSystemFound = HasNamedSystem<Hecton8.Narrative.AudioLogSystem>("AudioLogSystem");
+            _loreDatabaseManagerFound = HasNamedSystem<Hecton8.Narrative.LoreDatabaseManager>("LoreDatabaseManager");
+            _questManagerFound = HasNamedSystem<Hecton8.Quest.QuestManager>("QuestManager");
+            _atlasSignalSystemFound = HasNamedSystem<Hecton8.AtlasSignal.AtlasSignalSystem>("AtlasSignalSystem");
+            _suitUpgradeManagerFound = HasNamedSystem<Hecton8.Gameplay.SuitUpgradeManager>("SuitUpgradeManager");
+            _depthZoneDirectorFound = HasNamedSystem<Hecton8.World.DepthZoneDirector>("DepthZoneDirector");
+            _eclipseGameplaySystemFound = HasNamedSystem<Hecton8.Gameplay.EclipseGameplaySystem>("EclipseGameplaySystem");
+            _spectrumSystemFound = HasNamedSystem<Hecton8.Visor.SpectrumSystem>("SpectrumSystem");
+            _atlasSignalDecoderFound = HasNamedSystem<Hecton8.AtlasSignal.AtlasSignalDecoder>("AtlasSignalDecoder");
+            _biolumControllerFound = HasNamedSystem<Hecton8.World.HectonBiolumController>("HectonBiolumController");
+            _atlas6DirectiveSystemFound = HasNamedSystem<Hecton8.AtlasSignal.Atlas6DirectiveSystem>("Atlas6DirectiveSystem");
+            _corporateOrderSystemFound = HasNamedSystem<Hecton8.Narrative.CorporateOrderSystem>("CorporateOrderSystem");
+            _randomEventSystemFound = HasNamedSystem<Hecton8.Gameplay.RandomEventSystem>("RandomEventSystem");
+            _firstHourDirectorFound = HasNamedSystem<Hecton8.Gameplay.FirstHourDirector>("FirstHourDirector");
+            _soundscapeSystemFound = HasNamedSystem<Hecton8.World.SoundscapeSystem>("SoundscapeSystem");
+            _baseIntegrityHUDFound = HasNamedSystem<Hecton8.UI.BaseIntegrityHUD>("BaseIntegrityHUD");
+            _endingSystemFound = HasNamedSystem<Hecton8.Gameplay.EndingSystem>("EndingSystem");
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (logMissingSystems && CountFoundSystems() < ExpectedSystemCount)
             {
-                Debug.LogWarning($"[LoreSystemsRoot] Missing systems: {GetMissingSystemsSummary()}");
+                Debug.LogWarning($"[LoreSystemsRoot] Missing systems: {BuildMissingSystemsSummary()}");
             }
 #endif
         }
@@ -312,186 +214,11 @@ namespace Hecton8.Bootstrap
             _audioLogPickupCount = audioPickups != null ? audioPickups.Length : 0;
         }
 
-        private void TryApplyRuntimeLoreRecovery()
-        {
-            if (!Application.isPlaying || _runtimeLoreRecoveryAttempted)
-                return;
-
-            if (_narrativeDiscoveryCount > 0 && _audioLogPickupCount > 0)
-                return;
-
-            if (runtimeRecoveryRegistry == null)
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning(
-                    "[LoreSystemsRoot] Runtime lore recovery skipped. ColonistLoreRegistry is not assigned on LoreSystems.",
-                    this);
-#endif
-                return;
-            }
-
-            _runtimeLoreRecoveryAttempted = true;
-
-            int createdOrUpdatedCount = 0;
-            for (int i = 0; i < _runtimeRecoveryPlacements.Length; i++)
-            {
-                if (TryEnsureRuntimeRecoveryPlacement(_runtimeRecoveryPlacements[i]))
-                    createdOrUpdatedCount++;
-            }
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (createdOrUpdatedCount > 0)
-            {
-                Debug.LogWarning(
-                    "[LoreSystemsRoot] Applied runtime lore recovery because the production scene had no placed player-facing lore. " +
-                    "This is a fail-safe, not a substitute for authored placement.",
-                    this);
-            }
-            else
-            {
-                Debug.LogWarning(
-                    "[LoreSystemsRoot] Runtime lore recovery attempted, but no fallback markers could be resolved. " +
-                    "Scene still lacks player-facing lore entry points.",
-                    this);
-            }
-#endif
-        }
-
-        [System.Diagnostics.Conditional("UNITY_EDITOR")]
-        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
-        private void ReportMissingLoreContentAtStartup()
-        {
-            if (_startupLoreAuditReported)
-                return;
-
-            _startupLoreAuditReported = true;
-
-            if (_narrativeDiscoveryCount > 0 && _audioLogPickupCount > 0)
-                return;
-
-            Debug.LogWarning(
-                $"[LoreSystemsRoot] Startup lore audit failed. " +
-                $"NarrativeDiscovery placed: {_narrativeDiscoveryCount}. " +
-                $"AudioLogPickup placed: {_audioLogPickupCount}. " +
-                $"Lore systems exist, but player-facing lore placement is incomplete.",
-                this);
-        }
-
-        private bool TryEnsureRuntimeRecoveryPlacement(RecoveryLorePlacement placement)
-        {
-            if (runtimeRecoveryRegistry == null || string.IsNullOrWhiteSpace(placement.HostPath))
-                return false;
-
-            GameObject hostObject = GameObject.Find(placement.HostPath);
-            if (hostObject == null)
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning(
-                    $"[LoreSystemsRoot] Runtime lore recovery host not found: {placement.HostPath}",
-                    this);
-#endif
-                return false;
-            }
-
-            if (!TryResolveRecoveryEntry(placement, out Hecton8.Narrative.AudioLogData logData, out string displayName))
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning(
-                    $"[LoreSystemsRoot] Runtime lore recovery entry not resolved from ColonistLoreRegistry: {placement.LogId}",
-                    this);
-#endif
-                return false;
-            }
-
-            Transform hostTransform = hostObject.transform;
-            Transform markerTransform = hostTransform.Find(placement.MarkerName);
-            bool createdMarker = markerTransform == null;
-
-            if (createdMarker)
-            {
-                // COLD ALLOC: GameObject[1] — runtime lore recovery marker for zero-placement world state — owner: HectonLoreSystemsRoot
-                GameObject markerObject = new GameObject(placement.MarkerName);
-                markerTransform = markerObject.transform;
-                markerTransform.SetParent(hostTransform, false);
-            }
-
-            GameObject marker = markerTransform.gameObject;
-            bool restoreActive = createdMarker || marker.activeSelf;
-            if (marker.activeSelf)
-                marker.SetActive(false);
-
-            markerTransform.localPosition = placement.LocalPosition;
-            markerTransform.localRotation = Quaternion.identity;
-            markerTransform.localScale = Vector3.one;
-
-            BoxCollider collider = marker.GetComponent<BoxCollider>();
-            if (collider == null)
-                collider = marker.AddComponent<BoxCollider>();
-
-            collider.isTrigger = false;
-            collider.center = Vector3.zero;
-            collider.size = placement.ColliderSize;
-
-            switch (placement.Kind)
-            {
-                case RecoveryLoreKind.NarrativeDiscovery:
-                {
-                    Hecton8.Interaction.NarrativeDiscovery discovery =
-                        marker.GetComponent<Hecton8.Interaction.NarrativeDiscovery>();
-                    if (discovery == null)
-                        discovery = marker.AddComponent<Hecton8.Interaction.NarrativeDiscovery>();
-
-                    discovery.ConfigureRecoveryPlacement(
-                        placement.LogId,
-                        displayName,
-                        logData,
-                        true);
-                    break;
-                }
-
-                case RecoveryLoreKind.AudioLogPickup:
-                {
-                    Hecton8.Narrative.AudioLogPickup pickup =
-                        marker.GetComponent<Hecton8.Narrative.AudioLogPickup>();
-                    if (pickup == null)
-                        pickup = marker.AddComponent<Hecton8.Narrative.AudioLogPickup>();
-
-                    pickup.ConfigureRecoveryPickup(logData, true);
-                    break;
-                }
-            }
-
-            if (restoreActive)
-                marker.SetActive(true);
-
-            return true;
-        }
-
-        private bool TryResolveRecoveryEntry(
-            RecoveryLorePlacement placement,
-            out Hecton8.Narrative.AudioLogData logData,
-            out string displayName)
-        {
-            if (runtimeRecoveryRegistry != null &&
-                runtimeRecoveryRegistry.TryGetEntry(placement.LogId, out Hecton8.Narrative.LoreEntry entry) &&
-                entry.linkedAudioLog != null)
-            {
-                logData = entry.linkedAudioLog;
-                displayName = string.IsNullOrWhiteSpace(entry.DisplayNameOrFallback)
-                    ? placement.FallbackDisplayName
-                    : entry.DisplayNameOrFallback;
-                return true;
-            }
-
-            logData = null;
-            displayName = placement.FallbackDisplayName;
-            return false;
-        }
-
         private int CountFoundSystems()
         {
             int found = 0;
             if (_audioLogSystemFound) found++;
+            if (_loreDatabaseManagerFound) found++;
             if (_questManagerFound) found++;
             if (_atlasSignalSystemFound) found++;
             if (_suitUpgradeManagerFound) found++;
@@ -513,8 +240,7 @@ namespace Hecton8.Bootstrap
         private void EnsureSystem<T>(string goName, ref bool foundFlag)
             where T : MonoBehaviour
         {
-            T existingComponent = GetComponentInChildren<T>(true);
-            if (existingComponent != null)
+            if (TryResolveNamedSystem(goName, out T existingComponent) && existingComponent != null)
             {
                 foundFlag = true;
                 return;
@@ -548,8 +274,7 @@ namespace Hecton8.Bootstrap
         private void EnsureAuthoringBoundSystem<T>(string goName, ref bool foundFlag)
             where T : MonoBehaviour
         {
-            T existingComponent = GetComponentInChildren<T>(true);
-            if (existingComponent != null)
+            if (TryResolveNamedSystem(goName, out T existingComponent) && existingComponent != null)
             {
                 foundFlag = true;
                 return;
@@ -567,6 +292,26 @@ namespace Hecton8.Bootstrap
             }
 
             EnsureSystem<T>(goName, ref foundFlag);
+        }
+
+        private bool HasNamedSystem<T>(string goName)
+            where T : Component
+        {
+            return TryResolveNamedSystem(goName, out T _);
+        }
+
+        private bool TryResolveNamedSystem<T>(string goName, out T component)
+            where T : Component
+        {
+            component = null;
+            if (string.IsNullOrWhiteSpace(goName))
+                return false;
+
+            Transform child = transform.Find(goName);
+            if (child == null)
+                return false;
+
+            return child.TryGetComponent(out component);
         }
     }
 }

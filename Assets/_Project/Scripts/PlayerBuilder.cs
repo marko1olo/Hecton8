@@ -205,6 +205,7 @@ namespace Hecton8.Building
         private ValidationSnapshot _completedValidationSnapshot;
         private bool _hasScheduledValidationSnapshot;
         private bool _hasCompletedValidationSnapshot;
+        private IInputService _subscribedInputService;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC API
@@ -451,6 +452,7 @@ namespace Hecton8.Building
 
         public override void OnDespawn()
         {
+            UnsubscribeFromInputService();
             DespawnGhost();
             ResetBuilderState();
             base.OnDespawn();
@@ -475,15 +477,7 @@ namespace Hecton8.Building
             ResolveRuntimeReferences();
             EnsureCatalogSelection();
             ResetBuilderState();
-            
-            if (InputManager.Instance != null)
-            {
-                InputManager.Instance.OnPrimaryAction   += HandlePrimaryAction;
-                InputManager.Instance.OnSecondaryAction += HandleSecondaryAction;
-                InputManager.Instance.OnInteract        += HandleInteract;
-                InputManager.Instance.OnTabNext         += HandleTabNext;
-                InputManager.Instance.OnTabPrevious     += HandleTabPrevious;
-            }
+            RefreshInputSubscriptions();
 
             SpawnGhost();
             NotifyBuildableSelection();
@@ -491,14 +485,7 @@ namespace Hecton8.Building
 
         public override void OnUnequip()
         {
-            if (InputManager.Instance != null)
-            {
-                InputManager.Instance.OnPrimaryAction   -= HandlePrimaryAction;
-                InputManager.Instance.OnSecondaryAction -= HandleSecondaryAction;
-                InputManager.Instance.OnInteract        -= HandleInteract;
-                InputManager.Instance.OnTabNext         -= HandleTabNext;
-                InputManager.Instance.OnTabPrevious     -= HandleTabPrevious;
-            }
+            UnsubscribeFromInputService();
 
             DespawnGhost();
             ResetBuilderState();
@@ -1006,7 +993,7 @@ namespace Hecton8.Building
 
             if (!ConsumeResources(activeBuildable))
             {
-                ConstructionManager constructionManager = ConstructionManager.Instance;
+                ConstructionManager constructionManager = ResolveConstructionManager();
                 if (constructionManager != null)
                     constructionManager.DestroyModule(placedModule);
                 else
@@ -1055,40 +1042,25 @@ namespace Hecton8.Building
             if (_habitatConstructionManager == null)
                 _habitatConstructionManager = new HabitatConstructionManager();
 
-            if (inventory == null)
-                inventory = GetComponent<PlayerInventory>() ?? GetComponentInParent<PlayerInventory>();
+            IPlayerRuntimeContext playerContext = ResolvePlayerContext();
+            if (inventory == null && playerContext != null)
+                inventory = playerContext.Inventory;
             LogBuilderDebug($"ResolveRuntimeReferences inventory={(inventory != null ? "Y" : "N")}");
 
-            if (playerCamera == null)
-                playerCamera = GetComponentInChildren<Camera>(true);
+            if (playerCamera == null && playerContext != null)
+                playerCamera = playerContext.PlayerCamera;
             LogBuilderDebug($"ResolveRuntimeReferences camera={(playerCamera != null ? playerCamera.name : "null")}");
 
-            if (buildAnchor == null)
-            {
-                Transform[] children = GetComponentsInChildren<Transform>(true);
-                LogBuilderDebug($"ResolveRuntimeReferences childCount={children.Length}");
-                for (int i = 0; i < children.Length; i++)
-                {
-                    Transform child = children[i];
-                    if (child != null && child.name == "HandAnchor")
-                    {
-                        buildAnchor = child;
-                        break;
-                    }
-                }
-            }
+            if (buildAnchor == null && playerContext != null)
+                buildAnchor = playerContext.HandAnchor;
             LogBuilderDebug($"ResolveRuntimeReferences buildAnchor={(buildAnchor != null ? buildAnchor.name : "null")}");
 
-            if (hudNotification == null)
-                HUDNotification.TryGetActive(out hudNotification);
+            if (hudNotification == null && playerContext != null)
+                hudNotification = playerContext.HudNotification;
             LogBuilderDebug($"ResolveRuntimeReferences hud={(hudNotification != null ? "Y" : "N")}");
 
             if (_buildCatalog == null)
-            {
-                ConstructionManager manager = ConstructionManager.Instance;
-                if (manager != null)
-                    _buildCatalog = manager.Catalog;
-            }
+                _buildCatalog = ResolveModuleCatalog();
             LogBuilderDebug($"ResolveRuntimeReferences catalogCount={(_buildCatalog != null ? _buildCatalog.Count : -1)}");
 
             if (activeBuildable == null)
@@ -1229,7 +1201,7 @@ namespace Hecton8.Building
 
             if (placedModule != null)
             {
-                ConstructionManager manager = ConstructionManager.Instance;
+                ConstructionManager manager = ResolveConstructionManager();
                 if (manager != null)
                 {
                     manager.RegisterModule(placedModule, data);
@@ -1394,8 +1366,9 @@ namespace Hecton8.Building
 
             if (!_habitatConstructionManager.IsValidationPending && needsValidation)
             {
+                ConstructionManager constructionManager = ResolveConstructionManager();
                 if (_habitatConstructionManager.ScheduleIntegrityValidation(
-                        ConstructionManager.Instance,
+                        constructionManager,
                         _currentGhostObj,
                         activeBuildable,
                         constructionGridSize,
@@ -1426,9 +1399,10 @@ namespace Hecton8.Building
                 return false;
 
             Transform ghostTransform = _currentGhostObj.transform;
+            ConstructionManager constructionManager = ResolveConstructionManager();
             snapshot.Buildable = activeBuildable;
             snapshot.TargetSocket = _snappedSocket;
-            snapshot.ModuleCount = ConstructionManager.Instance != null ? ConstructionManager.Instance.ModuleCount : 0;
+            snapshot.ModuleCount = constructionManager != null ? constructionManager.ModuleCount : 0;
             snapshot.Position = ghostTransform.position;
             snapshot.Rotation = ghostTransform.rotation;
             return true;
@@ -1613,6 +1587,71 @@ namespace Hecton8.Building
         // ══════════════════════════════════════════════════════════
         //  AUDIO
         // ══════════════════════════════════════════════════════════
+
+        private void RefreshInputSubscriptions()
+        {
+            IInputService inputService = GlobalRegistry.Input;
+            if (ReferenceEquals(_subscribedInputService, inputService))
+                return;
+
+            UnsubscribeFromInputService();
+            if (inputService == null)
+                return;
+
+            inputService.OnPrimaryAction += HandlePrimaryAction;
+            inputService.OnSecondaryAction += HandleSecondaryAction;
+            inputService.OnInteract += HandleInteract;
+            inputService.OnTabNext += HandleTabNext;
+            inputService.OnTabPrevious += HandleTabPrevious;
+            _subscribedInputService = inputService;
+        }
+
+        private void UnsubscribeFromInputService()
+        {
+            if (_subscribedInputService == null)
+                return;
+
+            _subscribedInputService.OnPrimaryAction -= HandlePrimaryAction;
+            _subscribedInputService.OnSecondaryAction -= HandleSecondaryAction;
+            _subscribedInputService.OnInteract -= HandleInteract;
+            _subscribedInputService.OnTabNext -= HandleTabNext;
+            _subscribedInputService.OnTabPrevious -= HandleTabPrevious;
+            _subscribedInputService = null;
+        }
+
+        private static IPlayerRuntimeContext ResolvePlayerContext()
+        {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null)
+                return playerContext;
+
+            PlayerRuntimeContextService playerService = PlayerRuntimeContextService.EnsureRuntimeInstance();
+            playerService.InitializeService();
+            return GlobalRegistry.Player;
+        }
+
+        private static IEnvironmentRuntimeContext ResolveEnvironmentContext()
+        {
+            IEnvironmentRuntimeContext environmentContext = GlobalRegistry.Environment;
+            if (environmentContext != null)
+                return environmentContext;
+
+            EnvironmentRuntimeContextService environmentService = EnvironmentRuntimeContextService.EnsureRuntimeInstance();
+            environmentService.InitializeService();
+            return GlobalRegistry.Environment;
+        }
+
+        private static ConstructionManager ResolveConstructionManager()
+        {
+            IEnvironmentRuntimeContext environmentContext = ResolveEnvironmentContext();
+            return environmentContext != null ? environmentContext.ConstructionManager : null;
+        }
+
+        private static ModuleCatalog ResolveModuleCatalog()
+        {
+            IEnvironmentRuntimeContext environmentContext = ResolveEnvironmentContext();
+            return environmentContext != null ? environmentContext.ModuleCatalog : null;
+        }
 
         private void PlaySound(AudioClip clip)
         {

@@ -13,43 +13,16 @@ namespace Hecton8.Editor
     /// <summary>
     /// Clears stale editor selection targets that can leave the Inspector bound to null objects after reload.
     /// </summary>
-    [InitializeOnLoad]
     internal static class EditorInspectorRecoveryGuard
     {
         private const int MaxRecoveryPasses = 8;
 
         private static int _remainingRecoveryPasses;
 
-        static EditorInspectorRecoveryGuard()
+        [MenuItem("Tools/Hecton/Dev/Editor/Recover Inspector State", priority = 234)]
+        private static void RecoverInspectorState()
         {
-            RegisterCallbacks();
             RequestRecovery();
-        }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            EditorApplication.update -= TryRecoverInspectorState;
-            AssemblyReloadEvents.afterAssemblyReload -= RequestRecovery;
-            EditorApplication.playModeStateChanged -= HandlePlayModeStateChanged;
-            _remainingRecoveryPasses = 0;
-            RegisterCallbacks();
-            RequestRecovery();
-        }
-
-        private static void HandlePlayModeStateChanged(PlayModeStateChange state)
-        {
-            if (state == PlayModeStateChange.EnteredEditMode)
-                RequestRecovery();
-        }
-
-        private static void RegisterCallbacks()
-        {
-            AssemblyReloadEvents.afterAssemblyReload -= RequestRecovery;
-            AssemblyReloadEvents.afterAssemblyReload += RequestRecovery;
-
-            EditorApplication.playModeStateChanged -= HandlePlayModeStateChanged;
-            EditorApplication.playModeStateChanged += HandlePlayModeStateChanged;
         }
 
         private static void RequestRecovery()

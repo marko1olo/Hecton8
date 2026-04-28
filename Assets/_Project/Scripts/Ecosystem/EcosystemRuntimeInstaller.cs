@@ -1,3 +1,4 @@
+using Hecton8.World;
 using UnityEngine;
 
 namespace Hecton8.Ecosystem
@@ -14,7 +15,8 @@ namespace Hecton8.Ecosystem
         /// </summary>
         public static void EnsureRuntimeSystems()
         {
-            GameObject runtimeRoot = GameObject.Find(RuntimeRootName);
+            GameObject runtimeRoot = null;
+            WorldRuntimeReferenceUtility.TryResolveScenePath(ref runtimeRoot, RuntimeRootName);
             if (runtimeRoot == null)
                 runtimeRoot = new GameObject(RuntimeRootName); // COLD ALLOC: one runtime root for ecosystem systems per gameplay scene - owner: EcosystemRuntimeInstaller
 

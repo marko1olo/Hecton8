@@ -1,5 +1,8 @@
-using Hecton8.Core;
+﻿using Hecton8.Core;
+using System;
 using Unity.Collections;
+using Unity.Jobs;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 #if UNITY_EDITOR
@@ -9,13 +12,12 @@ using UnityEditor;
 namespace Hecton8.World
 {
     /// <summary>
-    /// Draws distant landmark silhouettes through one indirect call using an externally owned matrix buffer.
+    /// Draws distant landmark silhouettes through BRG draw commands using an externally owned matrix buffer.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-90)]
-    public sealed class HectonDistantLandmarkRenderer : MonoBehaviour, ITickable
+    public sealed class HectonDistantLandmarkRenderer : MonoBehaviour, ITickable, IUpdatable, IOriginShiftListener
     {
-        private const int IndirectArgsCount = 5;
 #if UNITY_EDITOR
         private const string SilhouetteShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_DistantLandmarkSilhouette.shader";
 #endif
@@ -29,7 +31,7 @@ namespace Hecton8.World
         private Mesh _mesh;
 
         [SerializeField]
-        [Tooltip("Material used for the silhouette-only indirect draw. If empty, the hidden shader fallback is used.")]
+        [Tooltip("Material used for the silhouette-only BRG draw. If empty, the hidden shader fallback is used.")]
         private Material _material;
 
         [SerializeField]
@@ -37,7 +39,7 @@ namespace Hecton8.World
         private Shader _silhouetteShader;
 
         [SerializeField]
-        [Tooltip("Submesh index rendered through DrawMeshInstancedIndirect.")]
+        [Tooltip("Submesh index rendered through RenderMeshPrimitives.")]
         private int _subMeshIndex;
 
         [SerializeField]
@@ -53,26 +55,35 @@ namespace Hecton8.World
         [Tooltip("Fallback local bounds size used when no explicit world bounds are published with the landmark buffer.")]
         private Vector3 _boundsSize = new Vector3(1200f, 600f, 1200f);
 
-        private ComputeBuffer _matrixBuffer;
-        private ComputeBuffer _argsBuffer;
+        private GraphicsBuffer _externalMatrixBuffer;
         private MaterialPropertyBlock _propertyBlock;
         private Material _runtimeMaterial;
-        private uint[] _indirectArgs;
         private NativeArray<Matrix4x4> _uploadedLandmarkMatrices;
         private NativeArray<Vector4> _uploadedLandmarkFade;
-        private ComputeBuffer _uploadedMatrixBuffer;
-        private ComputeBuffer _uploadedFadeBuffer;
+        private GraphicsBuffer _uploadedMatrixBuffer;
+        private GraphicsBuffer _uploadedFadeBuffer;
         private Bounds _drawBounds;
         private int _instanceCount;
         private bool _hasBoundsOverride;
         private bool _isRegistered;
         private bool _ownsRuntimeMaterial;
-        private bool _argsDirty = true;
+        private bool _usingOwnedUploadBuffers;
+        private BatchRendererGroup _batchRendererGroup;
+        private NativeArray<MetadataValue> _batchMetadata;
+        private GraphicsBuffer _batchHandleBuffer;
+        private BatchID _batchId;
+        private BatchMeshID _batchMeshId;
+        private BatchMaterialID _batchMaterialId;
+        private Mesh _registeredMesh;
+        private Material _registeredMaterial;
+        private Material _brgMaterial;
+        private Material _brgMaterialSource;
+        private bool _ownsBrgMaterial;
 
         /// <summary>
         /// Gets whether an external landmark matrix buffer is currently bound.
         /// </summary>
-        public bool HasMatrixBuffer => _matrixBuffer != null;
+        public bool HasMatrixBuffer => _externalMatrixBuffer != null || (_usingOwnedUploadBuffers && _uploadedMatrixBuffer != null);
 
         /// <summary>
         /// Gets the currently bound landmark instance count.
@@ -81,59 +92,65 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            _propertyBlock = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - distant landmark indirect properties - owner: HectonDistantLandmarkRenderer
-            _indirectArgs = new uint[IndirectArgsCount]; // COLD ALLOC: uint[5] - indirect draw args payload - owner: HectonDistantLandmarkRenderer
+            _propertyBlock = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - distant landmark draw properties - owner: HectonDistantLandmarkRenderer
             _drawBounds = new Bounds(transform.position + _boundsCenterOffset, _boundsSize);
             EnsureResources();
         }
 
         private void OnEnable()
         {
+            HectonFloatingOrigin.RegisterListener(this);
             RegisterTick();
         }
 
         private void OnDisable()
         {
+            HectonFloatingOrigin.UnregisterListener(this);
             UnregisterTick();
         }
 
         private void OnDestroy()
         {
+            HectonFloatingOrigin.UnregisterListener(this);
             ReleaseResources();
         }
 
         /// <inheritdoc />
         public void Tick(float dt)
         {
-            if (_instanceCount <= 0 || _matrixBuffer == null)
+            if (_instanceCount <= 0)
                 return;
 
             EnsureResources();
-            if (_argsBuffer == null)
+            if (_batchRendererGroup == null || _batchId.Equals(default))
                 return;
 
-            UpdateArgsBuffer();
-            Material activeMaterial = ResolveMaterial();
-            if (_mesh == null || activeMaterial == null)
+            Mesh activeMesh = _mesh;
+            Material activeMaterial = EnsureBrgMaterial();
+            if (activeMesh == null || activeMaterial == null)
                 return;
 
-            _propertyBlock.SetBuffer(LandmarkMatricesId, _matrixBuffer);
-            if (_uploadedFadeBuffer != null && _uploadedFadeBuffer.count >= _instanceCount)
-                _propertyBlock.SetBuffer(LandmarkFadeId, _uploadedFadeBuffer);
-            Graphics.DrawMeshInstancedIndirect(
-                _mesh,
-                Mathf.Max(0, _subMeshIndex),
-                activeMaterial,
-                ResolveDrawBounds(),
-                _argsBuffer,
-                0,
-                _propertyBlock,
-                ShadowCastingMode.Off,
-                false,
-                gameObject.layer,
-                _cameraOverride,
-                LightProbeUsage.Off,
-                null);
+            if (_usingOwnedUploadBuffers)
+            {
+                if (_uploadedMatrixBuffer == null)
+                    return;
+
+                activeMaterial.SetBuffer(LandmarkMatricesId, _uploadedMatrixBuffer);
+                if (_uploadedFadeBuffer != null)
+                    activeMaterial.SetBuffer(LandmarkFadeId, _uploadedFadeBuffer);
+                _batchRendererGroup.SetBatchBuffer(_batchId, _uploadedMatrixBuffer.bufferHandle);
+            }
+            else
+            {
+                if (_externalMatrixBuffer == null)
+                    return;
+
+                activeMaterial.SetBuffer(LandmarkMatricesId, _externalMatrixBuffer);
+                _batchRendererGroup.SetBatchBuffer(_batchId, _externalMatrixBuffer.bufferHandle);
+            }
+
+            SyncBatchRegistration(activeMesh, activeMaterial);
+            _batchRendererGroup.SetGlobalBounds(ResolveDrawBounds());
         }
 
         /// <summary>
@@ -142,17 +159,17 @@ namespace Hecton8.World
         /// <param name="matrixBuffer">World matrix buffer with one <see cref="Matrix4x4"/> per landmark instance.</param>
         /// <param name="instanceCount">Visible landmark count stored in <paramref name="matrixBuffer"/>.</param>
         /// <param name="drawBounds">World-space bounds that conservatively cover the published landmarks.</param>
-        public void BindInstanceBuffer(ComputeBuffer matrixBuffer, int instanceCount, Bounds drawBounds)
+        public void BindInstanceBuffer(GraphicsBuffer matrixBuffer, int instanceCount, Bounds drawBounds)
         {
-            _matrixBuffer = matrixBuffer;
+            _externalMatrixBuffer = matrixBuffer;
+            _usingOwnedUploadBuffers = false;
             _instanceCount = Mathf.Max(0, instanceCount);
             _drawBounds = drawBounds;
             _hasBoundsOverride = true;
-            _argsDirty = true;
         }
 
         /// <summary>
-        /// Uploads cartographer-owned landmark bounds into renderer-owned indirect matrix storage.
+        /// Uploads cartographer-owned landmark bounds into renderer-owned BRG matrix storage.
         /// Accepts <see cref="NativeList{T}.AsArray"/> without managed allocations.
         /// </summary>
         /// <param name="landmarkBounds">Native bounds list published by the cartographer.</param>
@@ -193,19 +210,19 @@ namespace Hecton8.World
                 }
             }
 
-            _uploadedMatrixBuffer.SetData(_uploadedLandmarkMatrices, 0, 0, landmarkCount);
-            _uploadedFadeBuffer.SetData(_uploadedLandmarkFade, 0, 0, landmarkCount);
-            _matrixBuffer = _uploadedMatrixBuffer;
+            GraphicsBufferUploadUtility.UploadNativeArray(_uploadedMatrixBuffer, _uploadedLandmarkMatrices, landmarkCount);
+            GraphicsBufferUploadUtility.UploadNativeArray(_uploadedFadeBuffer, _uploadedLandmarkFade, landmarkCount);
+            _externalMatrixBuffer = null;
+            _usingOwnedUploadBuffers = true;
             _instanceCount = landmarkCount;
             _drawBounds = hasCombinedBounds
                 ? combinedBounds
                 : new Bounds(transform.position + _boundsCenterOffset, _boundsSize);
             _hasBoundsOverride = hasCombinedBounds;
-            _argsDirty = true;
         }
 
         /// <summary>
-        /// Uploads bridge-owned HLOD payload into renderer-owned indirect matrix storage without managed allocations.
+        /// Uploads bridge-owned HLOD payload into renderer-owned BRG matrix storage without managed allocations.
         /// </summary>
         /// <param name="hlodEntries">Native HLOD registry payload published by the world bridge.</param>
         /// <param name="hlodCount">Valid HLOD entry count.</param>
@@ -245,15 +262,50 @@ namespace Hecton8.World
                 }
             }
 
-            _uploadedMatrixBuffer.SetData(_uploadedLandmarkMatrices, 0, 0, hlodCount);
-            _uploadedFadeBuffer.SetData(_uploadedLandmarkFade, 0, 0, hlodCount);
-            _matrixBuffer = _uploadedMatrixBuffer;
+            GraphicsBufferUploadUtility.UploadNativeArray(_uploadedMatrixBuffer, _uploadedLandmarkMatrices, hlodCount);
+            GraphicsBufferUploadUtility.UploadNativeArray(_uploadedFadeBuffer, _uploadedLandmarkFade, hlodCount);
+            _externalMatrixBuffer = null;
+            _usingOwnedUploadBuffers = true;
             _instanceCount = hlodCount;
             _drawBounds = hasCombinedBounds
                 ? combinedBounds
                 : new Bounds(transform.position + _boundsCenterOffset, _boundsSize);
             _hasBoundsOverride = hasCombinedBounds;
-            _argsDirty = true;
+        }
+
+        public void OnOriginShift(in OriginShiftEventData shiftData)
+        {
+            if (!isActiveAndEnabled || shiftData.ShiftOffset.sqrMagnitude <= 0.0001f)
+                return;
+
+            Vector3 runtimeOffset = -shiftData.ShiftOffset;
+            if (_hasBoundsOverride)
+            {
+                Bounds drawBounds = _drawBounds;
+                drawBounds.center += runtimeOffset;
+                _drawBounds = drawBounds;
+            }
+
+            if (_usingOwnedUploadBuffers &&
+                _instanceCount > 0 &&
+                _uploadedLandmarkMatrices.IsCreated &&
+                _uploadedMatrixBuffer != null)
+            {
+                int safeCount = Mathf.Min(_instanceCount, _uploadedLandmarkMatrices.Length);
+                for (int i = 0; i < safeCount; i++)
+                {
+                    Matrix4x4 matrix = _uploadedLandmarkMatrices[i];
+                    matrix.m03 += runtimeOffset.x;
+                    matrix.m13 += runtimeOffset.y;
+                    matrix.m23 += runtimeOffset.z;
+                    _uploadedLandmarkMatrices[i] = matrix;
+                }
+
+                GraphicsBufferUploadUtility.UploadNativeArray(_uploadedMatrixBuffer, _uploadedLandmarkMatrices, safeCount);
+            }
+
+            if (_batchRendererGroup != null)
+                _batchRendererGroup.SetGlobalBounds(ResolveDrawBounds());
         }
 
         /// <summary>
@@ -261,10 +313,10 @@ namespace Hecton8.World
         /// </summary>
         public void ClearBinding()
         {
-            _matrixBuffer = null;
+            _externalMatrixBuffer = null;
+            _usingOwnedUploadBuffers = false;
             _instanceCount = 0;
             _hasBoundsOverride = false;
-            _argsDirty = true;
         }
 
         private void RegisterTick()
@@ -272,11 +324,8 @@ namespace Hecton8.World
             if (_isRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register(this);
+            SystemDispatcher.EnsureRuntimeInstance();
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _isRegistered = true;
         }
 
@@ -285,21 +334,12 @@ namespace Hecton8.World
             if (!_isRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister(this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _isRegistered = false;
         }
 
         private void EnsureResources()
         {
-            if (_argsBuffer == null)
-            {
-                _argsBuffer = new ComputeBuffer(1, sizeof(uint) * IndirectArgsCount, ComputeBufferType.IndirectArguments); // COLD ALLOC: ComputeBuffer[1] - indirect landmark args buffer - owner: HectonDistantLandmarkRenderer
-                _argsDirty = true;
-            }
-
 #if UNITY_EDITOR
             if (_silhouetteShader == null)
                 _silhouetteShader = AssetDatabase.LoadAssetAtPath<Shader>(SilhouetteShaderAssetPath);
@@ -314,6 +354,65 @@ namespace Hecton8.World
                     enableInstancing = true
                 }; // COLD ALLOC: Material[1] - first-party hidden silhouette material - owner: HectonDistantLandmarkRenderer
                 _ownsRuntimeMaterial = true;
+            }
+
+            if (_batchRendererGroup == null)
+            {
+                _batchRendererGroup = new BatchRendererGroup(new BatchRendererGroupCreateInfo
+                {
+                    cullingCallback = OnPerformCulling,
+                    userContext = IntPtr.Zero
+                });
+
+                _batchMetadata = new NativeArray<MetadataValue>(0, Allocator.Persistent); // COLD ALLOC: NativeArray<MetadataValue>[0] - BRG metadata placeholder for distant landmark renderer - owner: HectonDistantLandmarkRenderer
+                _batchHandleBuffer = HectonBatchRendererGroupUtility.CreateBatchHandleBuffer(); // COLD ALLOC: GraphicsBuffer[1] - BRG registration handle buffer for distant landmark renderer - owner: HectonDistantLandmarkRenderer
+                _batchId = _batchRendererGroup.AddBatch(_batchMetadata, _batchHandleBuffer.bufferHandle);
+                _batchRendererGroup.SetGlobalBounds(ResolveDrawBounds());
+            }
+        }
+
+        private Material EnsureBrgMaterial()
+        {
+            Material sourceMaterial = ResolveMaterial();
+            if (sourceMaterial == null)
+                return null;
+
+            if (_brgMaterial != null && _brgMaterialSource == sourceMaterial)
+                return _brgMaterial;
+
+            ReleaseBrgMaterial();
+            _brgMaterial = new Material(sourceMaterial)
+            {
+                hideFlags = HideFlags.HideAndDontSave,
+                name = "__HectonDistantLandmarkBrgMaterial",
+                enableInstancing = true
+            }; // COLD ALLOC: Material[1] - BRG-local distant landmark material clone for per-renderer buffer binding - owner: HectonDistantLandmarkRenderer
+            _brgMaterialSource = sourceMaterial;
+            _ownsBrgMaterial = true;
+            return _brgMaterial;
+        }
+
+        private void SyncBatchRegistration(Mesh activeMesh, Material activeMaterial)
+        {
+            if (_batchRendererGroup == null)
+                return;
+
+            if (_registeredMesh != activeMesh)
+            {
+                if (!_batchMeshId.Equals(default))
+                    _batchRendererGroup.UnregisterMesh(_batchMeshId);
+
+                _batchMeshId = activeMesh != null ? _batchRendererGroup.RegisterMesh(activeMesh) : default;
+                _registeredMesh = activeMesh;
+            }
+
+            if (_registeredMaterial != activeMaterial)
+            {
+                if (!_batchMaterialId.Equals(default))
+                    _batchRendererGroup.UnregisterMaterial(_batchMaterialId);
+
+                _batchMaterialId = activeMaterial != null ? _batchRendererGroup.RegisterMaterial(activeMaterial) : default;
+                _registeredMaterial = activeMaterial;
             }
         }
 
@@ -349,27 +448,28 @@ namespace Hecton8.World
 
             _uploadedLandmarkMatrices = new NativeArray<Matrix4x4>(nextCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Matrix4x4>[NextPowerOfTwo(requiredCount)] - distant landmark native upload cache - owner: HectonDistantLandmarkRenderer
             _uploadedLandmarkFade = new NativeArray<Vector4>(nextCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Vector4>[NextPowerOfTwo(requiredCount)] - distant landmark fade upload cache - owner: HectonDistantLandmarkRenderer
-            _uploadedMatrixBuffer = new ComputeBuffer(nextCapacity, sizeof(float) * 16, ComputeBufferType.Structured); // COLD ALLOC: ComputeBuffer[NextPowerOfTwo(requiredCount)] - distant landmark indirect matrix upload buffer - owner: HectonDistantLandmarkRenderer
-            _uploadedFadeBuffer = new ComputeBuffer(nextCapacity, sizeof(float) * 4, ComputeBufferType.Structured); // COLD ALLOC: ComputeBuffer[NextPowerOfTwo(requiredCount)] - distant landmark indirect fade upload buffer - owner: HectonDistantLandmarkRenderer
+            _uploadedMatrixBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Matrix4x4>(nextCapacity); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(requiredCount)] - distant landmark matrix upload buffer - owner: HectonDistantLandmarkRenderer
+            _uploadedFadeBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector4>(nextCapacity); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(requiredCount)] - distant landmark fade upload buffer - owner: HectonDistantLandmarkRenderer
         }
 
-        private void UpdateArgsBuffer()
+        private bool TryBindPropertyBuffers()
         {
-            if (!_argsDirty || _argsBuffer == null)
-                return;
+            if (_usingOwnedUploadBuffers)
+            {
+                if (_uploadedMatrixBuffer == null)
+                    return false;
 
-            bool validSubMesh = _mesh != null && _subMeshIndex >= 0 && _subMeshIndex < _mesh.subMeshCount;
-            uint indexCount = validSubMesh ? _mesh.GetIndexCount(_subMeshIndex) : 0u;
-            uint indexStart = validSubMesh ? _mesh.GetIndexStart(_subMeshIndex) : 0u;
-            uint baseVertex = validSubMesh ? _mesh.GetBaseVertex(_subMeshIndex) : 0u;
+                _propertyBlock.SetBuffer(LandmarkMatricesId, _uploadedMatrixBuffer);
+                if (_uploadedFadeBuffer != null && _uploadedFadeBuffer.count >= _instanceCount)
+                    _propertyBlock.SetBuffer(LandmarkFadeId, _uploadedFadeBuffer);
+                return true;
+            }
 
-            _indirectArgs[0] = indexCount;
-            _indirectArgs[1] = (uint)Mathf.Max(0, _instanceCount);
-            _indirectArgs[2] = indexStart;
-            _indirectArgs[3] = baseVertex;
-            _indirectArgs[4] = 0u;
-            _argsBuffer.SetData(_indirectArgs);
-            _argsDirty = false;
+            if (_externalMatrixBuffer == null)
+                return false;
+
+            _propertyBlock.SetBuffer(LandmarkMatricesId, _externalMatrixBuffer);
+            return true;
         }
 
         private Material ResolveMaterial()
@@ -387,11 +487,34 @@ namespace Hecton8.World
 
         private void ReleaseResources()
         {
-            if (_argsBuffer != null)
+            _externalMatrixBuffer = null;
+            _usingOwnedUploadBuffers = false;
+
+            if (_batchRendererGroup != null)
             {
-                _argsBuffer.Release();
-                _argsBuffer = null;
+                if (!_batchId.Equals(default))
+                    _batchRendererGroup.RemoveBatch(_batchId);
+                if (!_batchMeshId.Equals(default))
+                    _batchRendererGroup.UnregisterMesh(_batchMeshId);
+                if (!_batchMaterialId.Equals(default))
+                    _batchRendererGroup.UnregisterMaterial(_batchMaterialId);
+                _batchRendererGroup.Dispose();
+                _batchRendererGroup = null;
+                _batchId = default;
+                _batchMeshId = default;
+                _batchMaterialId = default;
+                _registeredMesh = null;
+                _registeredMaterial = null;
             }
+
+            if (_batchHandleBuffer != null)
+            {
+                _batchHandleBuffer.Release();
+                _batchHandleBuffer = null;
+            }
+
+            if (_batchMetadata.IsCreated)
+                _batchMetadata.Dispose();
 
             if (_uploadedMatrixBuffer != null)
             {
@@ -420,6 +543,114 @@ namespace Hecton8.World
 
             _runtimeMaterial = null;
             _ownsRuntimeMaterial = false;
+            ReleaseBrgMaterial();
+        }
+
+        private void ReleaseBrgMaterial()
+        {
+            if (!_ownsBrgMaterial || _brgMaterial == null)
+            {
+                _brgMaterial = null;
+                _brgMaterialSource = null;
+                _ownsBrgMaterial = false;
+                return;
+            }
+
+            if (Application.isPlaying)
+                Destroy(_brgMaterial);
+            else
+                DestroyImmediate(_brgMaterial);
+
+            _brgMaterial = null;
+            _brgMaterialSource = null;
+            _ownsBrgMaterial = false;
+        }
+
+        private JobHandle OnPerformCulling(
+            BatchRendererGroup rendererGroup,
+            BatchCullingContext cullingContext,
+            BatchCullingOutput cullingOutput,
+            IntPtr userContext)
+        {
+            if (_instanceCount <= 0 ||
+                _batchId.Equals(default) ||
+                _batchMeshId.Equals(default) ||
+                _batchMaterialId.Equals(default))
+            {
+                HectonBatchRendererGroupUtility.WriteDirectDrawOutput(
+                    cullingOutput,
+                    HectonBatchRendererGroupUtility.AllocateDirectDrawOutput(0, 0, 0));
+                return default;
+            }
+
+            Bounds drawBounds = ResolveDrawBounds();
+            if (!HectonBatchRendererGroupUtility.IsBoundsVisible(cullingContext.cullingPlanes, drawBounds))
+            {
+                HectonBatchRendererGroupUtility.WriteDirectDrawOutput(
+                    cullingOutput,
+                    HectonBatchRendererGroupUtility.AllocateDirectDrawOutput(0, 0, 0));
+                return default;
+            }
+
+            bool canCullPerInstance = _usingOwnedUploadBuffers && _uploadedLandmarkMatrices.IsCreated;
+            NativeArray<byte> visibilityMask = new NativeArray<byte>(_instanceCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            NativeArray<float4> cullingPlanes = default;
+            int planeCount = 0;
+            if (canCullPerInstance)
+            {
+                planeCount = cullingContext.cullingPlanes.IsCreated ? cullingContext.cullingPlanes.Length : 0;
+                if (planeCount > 0)
+                {
+                    cullingPlanes = new NativeArray<float4>(planeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                    for (int planeIndex = 0; planeIndex < planeCount; planeIndex++)
+                    {
+                        Plane plane = cullingContext.cullingPlanes[planeIndex];
+                        cullingPlanes[planeIndex] = new float4(plane.normal.x, plane.normal.y, plane.normal.z, plane.distance);
+                    }
+                }
+            }
+
+            unsafe
+            {
+                BatchCullingOutputDrawCommands output = HectonBatchRendererGroupUtility.AllocateDirectDrawOutput(_instanceCount, 1, 1);
+                JobHandle visibilityHandle = new HectonBatchRendererGroupUtility.BuildMatrixVisibilityMaskJob
+                {
+                    Matrices = _uploadedLandmarkMatrices,
+                    CullingPlanes = cullingPlanes,
+                    VisibilityMask = visibilityMask,
+                    InstanceCount = _instanceCount,
+                    PlaneCount = planeCount,
+                    EnableCpuCulling = canCullPerInstance,
+                    GlobalOffset = float3.zero,
+                    RadiusScale = 1.7321f,
+                    MinRadius = 0.5f
+                }.Schedule(_instanceCount, 64);
+
+                JobHandle finalizeHandle = new HectonBatchRendererGroupUtility.FinalizeSingleDrawCommandOutputJob
+                {
+                    VisibilityMask = visibilityMask,
+                    InstanceCount = _instanceCount,
+                    BatchId = _batchId,
+                    MeshId = _batchMeshId,
+                    MaterialId = _batchMaterialId,
+                    Layer = gameObject.layer,
+                    SubMeshIndex = _subMeshIndex,
+                    ShadowCastingMode = ShadowCastingMode.Off,
+                    ReceiveShadows = false,
+                    MotionMode = MotionVectorGenerationMode.Camera,
+                    VisibleInstances = output.visibleInstances,
+                    DrawCommands = output.drawCommands,
+                    DrawRanges = output.drawRanges,
+                    OutputCommands = HectonBatchRendererGroupUtility.GetDirectDrawOutputPointer(cullingOutput)
+                }.Schedule(visibilityHandle);
+
+                JobHandle disposeHandle = visibilityMask.Dispose(finalizeHandle);
+                if (cullingPlanes.IsCreated)
+                    disposeHandle = cullingPlanes.Dispose(disposeHandle);
+
+                return disposeHandle;
+            }
         }
     }
 }
+

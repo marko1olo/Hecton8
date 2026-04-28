@@ -1,4 +1,4 @@
-﻿//////////////////////////////////////////////////////
+//////////////////////////////////////////////////////
 // MicroSplat
 // Copyright (c) Jason Booth
 //////////////////////////////////////////////////////
@@ -14,7 +14,6 @@ using System.Text;
 namespace JBooth.MicroSplat 
 {
 #if __MICROSPLAT__ && (VEGETATION_STUDIO || VEGETATION_STUDIO_PRO)
-   [InitializeOnLoad]
    public class MicroSplatVegetationStudio : FeatureDescriptor
    {
       public override string ModuleName()

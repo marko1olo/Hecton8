@@ -1337,7 +1337,7 @@ namespace Pathfinding {
 			}
 		}
 
-		[MenuItem("Edit/Pathfinding/Scan All Graphs %&s")]
+		[MenuItem("Edit/Pathfinding/Scan All Graphs")]
 		public static void MenuScan () {
 			if (AstarPath.active == null) {
 				AstarPath.active = FindAnyObjectByType<AstarPath>();

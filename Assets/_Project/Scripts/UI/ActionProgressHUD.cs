@@ -27,7 +27,7 @@ namespace Hecton8.UI
     /// Subscribes to PlayerActionController events.
     /// </summary>
     [RequireComponent(typeof(CanvasGroup))]
-    public sealed class ActionProgressHUD : MonoBehaviour, ITickable
+    public sealed class ActionProgressHUD : MonoBehaviour, ITickable, IUpdatable
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -79,12 +79,12 @@ namespace Hecton8.UI
         private float _targetAlpha;
         private bool _registered;
         private bool _eventSubscribed;
+        private int _cachedActionTextVersion = -1;
 
-        // Pre-cached strings for action text (zero GC)
-        private static readonly string _eatingText = "Eating...";
-        private static readonly string _healingText = "Applying...";
-        private static readonly string _oxygenText = "Inhaling...";
-        private static readonly string _defaultText = "Using...";
+        private static readonly char[] s_EatingTextChars = { 'E', 'a', 't', 'i', 'n', 'g', '.', '.', '.' };
+        private static readonly char[] s_HealingTextChars = { 'A', 'p', 'p', 'l', 'y', 'i', 'n', 'g', '.', '.', '.' };
+        private static readonly char[] s_OxygenTextChars = { 'I', 'n', 'h', 'a', 'l', 'i', 'n', 'g', '.', '.', '.' };
+        private static readonly char[] s_DefaultTextChars = { 'U', 's', 'i', 'n', 'g', '.', '.', '.' };
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -246,32 +246,41 @@ namespace Hecton8.UI
             ItemData item = controller.ActiveItem;
             if (item == null) return;
 
-            // Determine color and text based on item type
             Color color = defaultColor;
-            string text = _defaultText;
+            char[] textBuffer = s_DefaultTextChars;
+            int textLength = s_DefaultTextChars.Length;
+            int textVersion = 0;
 
             if (item.integrityRestore > 0f)
             {
                 color = medicalColor;
-                text = _healingText;
+                textBuffer = s_HealingTextChars;
+                textLength = s_HealingTextChars.Length;
+                textVersion = 1;
             }
             else if (item.oxygenRestore > 0f)
             {
                 color = oxygenColor;
-                text = _oxygenText;
+                textBuffer = s_OxygenTextChars;
+                textLength = s_OxygenTextChars.Length;
+                textVersion = 2;
             }
             else if (item.hungerRestore > 0f || item.thirstRestore > 0f)
             {
                 color = foodColor;
-                text = _eatingText;
+                textBuffer = s_EatingTextChars;
+                textLength = s_EatingTextChars.Length;
+                textVersion = 3;
             }
 
             if (progressImage != null)
-            {
                 progressImage.color = color;
-            }
 
-            actionText.text = text;
+            if (_cachedActionTextVersion != textVersion)
+            {
+                actionText.SetCharArray(textBuffer, 0, textLength);
+                _cachedActionTextVersion = textVersion;
+            }
         }
 
         // ══════════════════════════════════════════════════════════
@@ -282,10 +291,7 @@ namespace Hecton8.UI
         {
             if (_registered) return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null) return;
-
-            tickManager.Register((ITickable)this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _registered = true;
         }
 
@@ -293,10 +299,7 @@ namespace Hecton8.UI
         {
             if (!_registered) return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister((ITickable)this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _registered = false;
         }
     }

@@ -1,4 +1,4 @@
-using System.Text;
+using System;
 using Hecton.Localization;
 using Hecton8.Core;
 using TMPro;
@@ -14,7 +14,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Font Streaming Manager")]
-    public sealed class FontStreamingManager : MonoBehaviour, ITickable
+    public sealed class FontStreamingManager : MonoBehaviour, ITickable, IUpdatable
     {
         private const string RootName = "FontStreamingStatus";
         private const string DefaultStatusText = "[REBOOTING LANG_MODULE...]";
@@ -29,8 +29,8 @@ namespace Hecton8.UI
 
         // COLD ALLOC: LabelSwapScheduler[1] — staged font swap queue owner for active localized labels — owner: FontStreamingManager
         private readonly LabelSwapScheduler _swapScheduler = new LabelSwapScheduler();
-        // COLD ALLOC: StringBuilder[64] — status label assembly for staged font streaming — owner: FontStreamingManager
-        private readonly StringBuilder _statusBuilder = new StringBuilder(64);
+        // COLD ALLOC: char[96] — status label assembly for staged font streaming — owner: FontStreamingManager
+        private char[] _statusBuffer = new char[96];
         // COLD ALLOC: List[64] — active scene root cache for TMP registry bootstrap — owner: FontStreamingManager
         private readonly System.Collections.Generic.List<GameObject> _sceneRootBuffer = new System.Collections.Generic.List<GameObject>(64);
         // COLD ALLOC: List[512] — temporary TMP text scan buffer for registry bootstrap — owner: FontStreamingManager
@@ -72,6 +72,7 @@ namespace Hecton8.UI
             SceneManager.sceneLoaded -= HandleSceneLoaded;
             UnregisterFromTickManager();
             ResetSwapState();
+            ReleaseTrackedFontData();
         }
 
         private void OnDestroy()
@@ -79,6 +80,7 @@ namespace Hecton8.UI
             LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
             SceneManager.sceneLoaded -= HandleSceneLoaded;
             UnregisterFromTickManager();
+            ReleaseTrackedFontData();
         }
 
         /// <inheritdoc />
@@ -298,7 +300,7 @@ namespace Hecton8.UI
                 TMP_TextRegistry.EnsureRegistered(_statusLabel);
             }
 
-            _statusLabel.text = string.Empty;
+            ApplyStatusBuffer(0);
             _uiBuilt = true;
         }
 
@@ -320,7 +322,7 @@ namespace Hecton8.UI
                         return;
 
                     _lastStatusPercent = 1000;
-                    _statusLabel.SetText(BiosFallbackStatusText);
+                    WriteStatusLiteral(BiosFallbackStatusText.AsSpan());
                     return;
                 }
 
@@ -328,7 +330,7 @@ namespace Hecton8.UI
                     return;
 
                 _lastStatusPercent = -1000;
-                _statusLabel.SetText(DefaultStatusText);
+                WriteStatusLiteral(DefaultStatusText.AsSpan());
                 return;
             }
 
@@ -339,12 +341,7 @@ namespace Hecton8.UI
                 return;
 
             _lastStatusPercent = percent;
-            _statusBuilder.Clear();
-            _statusBuilder.Append(DefaultStatusText);
-            _statusBuilder.Append(' ');
-            _statusBuilder.Append(percent);
-            _statusBuilder.Append('%');
-            _statusLabel.SetText(_statusBuilder);
+            WriteStatusWithPercent(percent);
         }
 
         private void ResetSwapState()
@@ -376,11 +373,8 @@ namespace Hecton8.UI
             if (_registered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register(this);
+            SystemDispatcher.EnsureRuntimeInstance();
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _registered = true;
         }
 
@@ -389,10 +383,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister(this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _registered = false;
         }
 
@@ -451,7 +442,7 @@ namespace Hecton8.UI
             }
 
             s_overlayResolveBuffer.Clear();
-            return Object.FindAnyObjectByType<Canvas>();
+            return (SuitHUDV4CanvasOverlay.ActiveRuntimeInstance != null ? SuitHUDV4CanvasOverlay.ActiveRuntimeInstance.GetComponent<Canvas>() : null);
         }
 
         private static RectTransform FindExistingChild(Transform parent, string childName)
@@ -482,6 +473,67 @@ namespace Hecton8.UI
             }
 
             return null;
+        }
+
+        private void WriteStatusLiteral(ReadOnlySpan<char> source)
+        {
+            EnsureStatusCapacity(source.Length);
+            source.CopyTo(_statusBuffer);
+            ApplyStatusBuffer(source.Length);
+        }
+
+        private void WriteStatusWithPercent(int percent)
+        {
+            ReadOnlySpan<char> prefix = DefaultStatusText.AsSpan();
+            int requiredLength = prefix.Length + 5;
+            EnsureStatusCapacity(requiredLength);
+            prefix.CopyTo(_statusBuffer);
+
+            int writeIndex = prefix.Length;
+            _statusBuffer[writeIndex++] = ' ';
+            if (!percent.TryFormat(_statusBuffer.AsSpan(writeIndex), out int charsWritten))
+            {
+                ApplyStatusBuffer(0);
+                return;
+            }
+
+            writeIndex += charsWritten;
+            _statusBuffer[writeIndex++] = '%';
+            ApplyStatusBuffer(writeIndex);
+        }
+
+        private void EnsureStatusCapacity(int requiredLength)
+        {
+            if (_statusBuffer != null && _statusBuffer.Length >= requiredLength)
+                return;
+
+            int capacity = _statusBuffer == null ? 32 : _statusBuffer.Length;
+            while (capacity < requiredLength)
+                capacity <<= 1;
+
+            _statusBuffer = new char[capacity]; // COLD ALLOC: char[capacity] — expanded font streaming status buffer — owner: FontStreamingManager
+        }
+
+        private void ApplyStatusBuffer(int length)
+        {
+            if (_statusLabel == null || _statusBuffer == null)
+                return;
+
+            int safeLength = Mathf.Clamp(length, 0, _statusBuffer.Length);
+            _statusLabel.SetCharArray(_statusBuffer, 0, safeLength);
+        }
+
+        private void ReleaseTrackedFontData()
+        {
+            LocalizedFontResolver.TryClearDynamicFontData(_primaryFont);
+
+            if (!ReferenceEquals(_targetFont, _primaryFont))
+                LocalizedFontResolver.TryClearDynamicFontData(_targetFont);
+
+            if (_statusLabel != null)
+                LocalizedFontResolver.TryClearDynamicFontData(_statusLabel.font);
+
+            LocalizedFontResolver.ReleaseCachedRuntimeFonts();
         }
     }
 }

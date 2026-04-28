@@ -232,7 +232,7 @@ namespace RealtimeCSG
 			return brush;
 		}
 
-		[UnityEditor.MenuItem("GameObject/Group selection %G", false, 32)]
+		[UnityEditor.MenuItem("GameObject/Group selection", false, 32)]
 		public static void GroupSelectionInOperation()
 		{
 			if (Selection.activeObject == null)

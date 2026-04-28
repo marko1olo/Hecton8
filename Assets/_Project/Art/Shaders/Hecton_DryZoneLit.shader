@@ -68,6 +68,7 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
             Blend[_SrcBlend][_DstBlend], [_SrcBlendAlpha][_DstBlendAlpha]
             ZWrite[_ZWrite]
             Cull[_Cull]
+            AlphaToMask On
 
             Stencil
             {
@@ -87,6 +88,7 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+            #include "Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseColor;
@@ -144,7 +146,8 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
 
             half3 EvaluateLighting(float3 positionWS, half3 normalWS, half3 viewDirWS, half3 albedo, half metallic, half smoothness, half occlusion)
             {
-                half3 color = SampleSH(normalWS) * albedo * occlusion;
+                half caveAmbientFactor = (half)HectonCoreLitEvaluateCaveAmbientFactor(positionWS, normalWS);
+                half3 color = SampleSH(normalWS) * albedo * occlusion * caveAmbientFactor;
                 half specularStrength = lerp(0.04h, 0.22h, metallic);
                 half specularPower = lerp(16.0h, 96.0h, smoothness);
 
@@ -164,9 +167,12 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                     half additionalNdotL = saturate(dot(normalWS, additionalDir));
                     half3 additionalHalfDir = SafeNormalize3(additionalDir + viewDirWS);
                     half additionalSpecular = pow(saturate(dot(normalWS, additionalHalfDir)), specularPower) * smoothness * specularStrength;
-                    color += (albedo * additionalNdotL + additionalSpecular) * light.color * (light.distanceAttenuation * light.shadowAttenuation);
+                    float additionalShadowAttenuation = HectonCoreLitResolveFlashlightAdditionalShadow(lightIndex, positionWS, normalWS, light.shadowAttenuation);
+                    color += (albedo * additionalNdotL + additionalSpecular) * light.color * (light.distanceAttenuation * additionalShadowAttenuation);
                 LIGHT_LOOP_END
                 #endif
+
+                color += HectonCoreLitEvaluateProjectedCausticsScattering(positionWS, normalWS) * albedo;
 
                 return color;
             }
@@ -174,8 +180,9 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
             half4 Frag(Varyings input) : SV_Target
             {
                 half4 albedoSample = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv) * _BaseColor;
+                half coverage = 1.0h;
                 #if defined(_ALPHATEST_ON)
-                clip(albedoSample.a - _Cutoff);
+                coverage = saturate((albedoSample.a - _Cutoff) * 14.0h + 0.5h);
                 #endif
 
                 half occlusion = lerp(1.0h, SAMPLE_TEXTURE2D(_OcclusionMap, sampler_OcclusionMap, input.uv).g, _OcclusionStrength);
@@ -189,7 +196,7 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                     saturate(occlusion));
                 half3 emission = SAMPLE_TEXTURE2D(_EmissionMap, sampler_EmissionMap, input.uv).rgb * _EmissionColor.rgb;
                 half3 finalColor = MixFog(litColor + emission, input.fogFactor);
-                return half4(finalColor, albedoSample.a);
+                return half4(finalColor, coverage);
             }
             ENDHLSL
         }

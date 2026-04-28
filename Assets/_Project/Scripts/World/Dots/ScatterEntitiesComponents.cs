@@ -1,53 +1,10 @@
-using Unity.Entities;
-using Unity.Mathematics;
-
 namespace Hecton8.World.Dots
 {
-    internal struct ScatterEntitiesSimulationRequest : IComponentData
+    /// <summary>
+    /// Placeholder payload kept so the DOTS assembly remains valid while Unity Entities is absent.
+    /// </summary>
+    internal struct ScatterEntitiesComponentPlaceholder
     {
-        public ScatterSimulationConfig Config;
-        public int HeightSampleCount;
-    }
-
-    internal struct ScatterEntitiesScopeState : IComponentData
-    {
-        public ScatterSimulationEligibilityFlags EligibilityMask;
-        public ScatterSimulationSuppressionState DefaultSuppressionState;
-        public ScatterSimulationDirtyFlags DirtyFlags;
-    }
-
-    internal struct ScatterEntitiesQuotaState : IComponentData
-    {
-        public ScatterSimulationQuotaState Value;
-    }
-
-    internal struct ScatterEntitiesSimulationStatus : IComponentData
-    {
-        public int CandidateCount;
-        public int ScheduledCellCount;
-        public byte Completed;
-    }
-
-    internal struct ScatterEntitiesHeightSampleElement : IBufferElementData
-    {
-        public float Value;
-    }
-
-    internal struct ScatterEntitiesCellStateElement : IBufferElementData
-    {
-        public ScatterSimulationCellState Value;
-    }
-
-    internal struct ScatterEntitiesCandidateElement : IBufferElementData
-    {
-        public float3 Position;
-        public float Rotation;
-        public float Scale;
-        public long CellKey;
-        public int FamilyIndex;
-        public int LayerIndex;
-        public float Score;
-        public int HeightSource;
-        public byte IsValid;
+        public byte Value;
     }
 }

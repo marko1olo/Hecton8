@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using Hecton8.Core;
+using UnityEngine;
 
 namespace Hecton8.World
 {
@@ -51,9 +53,7 @@ namespace Hecton8.World
                             hash = (hash * 31) + familyId[i];
                     }
 
-#pragma warning disable CS0618
-                    hash = (hash * 31) + family.GetInstanceID();
-#pragma warning restore CS0618
+                    hash = (hash * 31) + unchecked((int)EntityId.ToULong(family.GetEntityId()));
                     return hash;
                 }
             }

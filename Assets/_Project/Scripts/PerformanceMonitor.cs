@@ -126,7 +126,7 @@ namespace Hecton8.Core
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9000)]
-    public sealed class PerformanceMonitor : MonoBehaviour, ITickable
+    public sealed class PerformanceMonitor : MonoBehaviour, ITickable, IUpdatable
     {
         private const float MillisecondsPerSecond = 1000f;
         // ════════════════════════════════════════════════════════════
@@ -255,20 +255,20 @@ namespace Hecton8.Core
 
         private void OnEnable()
         {
-            if (GameTickManager.Instance != null && !_isRegisteredToTickManager)
-            {
-                GameTickManager.Instance.Register(this);
-                _isRegisteredToTickManager = true;
-            }
+            if (_isRegisteredToTickManager)
+                return;
+
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
+            _isRegisteredToTickManager = true;
         }
 
         private void OnDisable()
         {
-            if (GameTickManager.Instance != null && _isRegisteredToTickManager)
-            {
-                GameTickManager.Instance.Unregister(this);
-                _isRegisteredToTickManager = false;
-            }
+            if (!_isRegisteredToTickManager)
+                return;
+
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
+            _isRegisteredToTickManager = false;
         }
 
         private void OnDestroy()

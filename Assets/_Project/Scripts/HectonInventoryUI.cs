@@ -40,7 +40,7 @@ using TMPro;
 using UnityEngine;
 
 [DisallowMultipleComponent]
-public sealed class HectonInventoryUI : ImmediateModeShapeDrawer, ITickable
+public sealed class HectonInventoryUI : ImmediateModeShapeDrawer, ITickable, IUpdatable
 {
     // ══════════════════════════════════════════════════════════════════
     //  INSPECTOR — REFERENCES
@@ -275,11 +275,7 @@ private void HandleInventoryToggle()
         if (_tickRegistered)
             return;
 
-        GameTickManager tickManager = GameTickManager.Instance;
-        if (tickManager == null)
-            return;
-
-        tickManager.Register((ITickable)this);
+        GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
         _tickRegistered = true;
     }
 
@@ -288,9 +284,7 @@ private void HandleInventoryToggle()
         if (!_tickRegistered)
             return;
 
-        GameTickManager tickManager = GameTickManager.Instance;
-        if (tickManager != null)
-            tickManager.Unregister((ITickable)this);
+        GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
 
         _tickRegistered = false;
     }
@@ -535,7 +529,7 @@ private void HandleInventoryToggle()
                     if (_drawnFallback[flatIndex]) continue;
                 }
 
-                ItemData item = grid.GetCell(col, row);
+                ItemData item = inventory.GetItemAt(col, row);
                 if (item == null) continue;
 
                 int iw = item.width;
@@ -545,8 +539,7 @@ private void HandleInventoryToggle()
                 // Текущая (col, row) является якорной, только если это
                 // верхний-левый угол предмета. Проверяем: ячейка (col-1, row)
                 // и (col, row-1) не содержат тот же предмет.
-                if (col > 0 && grid.GetCell(col - 1, row) == item) continue;
-                if (row > 0 && grid.GetCell(col, row - 1) == item) continue;
+                if (grid.GetCellAnchorIndex(col, row) != flatIndex) continue;
 
                 // ── Помечаем все ячейки предмета как отрисованные ──
                 int endX = Mathf.Min(col + iw, cols);

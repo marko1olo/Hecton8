@@ -9,13 +9,17 @@ namespace Hecton8.AI
     {
         private const float InfectionHazardRadiusBase = 3f;
         private const float InfectionHazardIntensityBase = 0.9f;
+        private const float PredatorThreatPulseHoldSeconds = 0.65f;
+        private const float PredatorThreatPulseRadiusPadding = 4f;
+        private const float PredatorThreatPulseStrengthBase = 0.28f;
+        private const float PredatorThreatPulseStrengthAggressiveBonus = 0.16f;
 
         private static readonly int _ColorId = Shader.PropertyToID("_Color");
         private static readonly int _BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int _EmissionColorId = Shader.PropertyToID("_EmissionColor");
 
         // COLD ALLOC: MaterialPropertyBlock[1] - per-fauna infection tint overlay without material clones - owner: FaunaBrain
-        private readonly MaterialPropertyBlock _ecosystemPropertyBlock = new MaterialPropertyBlock();
+        private MaterialPropertyBlock _ecosystemPropertyBlock;
         private Vector3 _baseLocalScale = Vector3.one;
         private bool _baseLocalScaleCaptured;
         private float _baseAggroDistance;
@@ -89,6 +93,7 @@ namespace Hecton8.AI
             }
 
             UpdateInfectionHazardRegistration();
+            UpdatePredatorThreatPulse();
         }
 
         private void ApplyRuntimeEcosystemOverlays()
@@ -167,6 +172,7 @@ namespace Hecton8.AI
             if (_renderer == null)
                 return;
 
+            EnsureEcosystemPropertyBlock();
             _renderer.GetPropertyBlock(_ecosystemPropertyBlock);
 
             if (!_isInfected)
@@ -182,6 +188,15 @@ namespace Hecton8.AI
             _ecosystemPropertyBlock.SetColor(_BaseColorId, infectedColor);
             _ecosystemPropertyBlock.SetColor(_EmissionColorId, infectedEmission);
             _renderer.SetPropertyBlock(_ecosystemPropertyBlock);
+        }
+
+        private void EnsureEcosystemPropertyBlock()
+        {
+            if (_ecosystemPropertyBlock != null)
+                return;
+
+            // COLD ALLOC: MaterialPropertyBlock[1] — per-fauna infection tint overlay without material clones — owner: FaunaBrain
+            _ecosystemPropertyBlock = new MaterialPropertyBlock();
         }
 
         private void UpdateInfectionHazardRegistration()
@@ -207,6 +222,59 @@ namespace Hecton8.AI
                 return;
 
             HectonHazardManager.Unregister(_infectionHazardSourceId);
+        }
+
+        private void UpdatePredatorThreatPulse()
+        {
+            if (_isDead || !isActiveAndEnabled || !isAggressive)
+                return;
+
+            if (!ShouldEmitPredatorThreatPulse(_stateMachine.currentState))
+                return;
+
+            Hecton8.World.HectonMapMagicVegetationBridge bridge = Hecton8.World.HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            if (bridge == null)
+                return;
+
+            float aggressionScale = Mathf.Clamp(_runtimeAggressionScale, 0.85f, 2f);
+            float attackRadius = Mathf.Max(0f, _speciesProfile != null ? _speciesProfile.attackRadius : _stateMachine.attackRadius);
+            float aggroRadius = Mathf.Max(0f, _sensorSuite.aggroDistance);
+            float threatRadius = Mathf.Max(attackRadius * 2f, aggroRadius * 0.55f) + PredatorThreatPulseRadiusPadding;
+            if (threatRadius <= 0f)
+                return;
+
+            float threatStrength = PredatorThreatPulseStrengthBase + (aggressionScale * 0.18f);
+            if (_stateMachine.currentState == AIState.Aggressive || _stateMachine.currentState == AIState.Threaten)
+                threatStrength += PredatorThreatPulseStrengthAggressiveBonus;
+
+            if (_isInfected)
+                threatStrength *= Mathf.Lerp(1f, 1.12f, _infectionSeverity);
+
+            bridge.ApplyExternalThreatPulse(
+                transform.position,
+                threatRadius,
+                Mathf.Clamp01(threatStrength),
+                PredatorThreatPulseHoldSeconds);
+        }
+
+        private static bool ShouldEmitPredatorThreatPulse(AIState state)
+        {
+            switch (state)
+            {
+                case AIState.Investigate:
+                case AIState.Threaten:
+                case AIState.Stalk:
+                case AIState.Loom:
+                case AIState.Feint:
+                case AIState.Escape:
+                case AIState.Aggressive:
+                case AIState.Retreat:
+                case AIState.ThreatDisplay:
+                    return true;
+
+                default:
+                    return false;
+            }
         }
 
         private void EnsureBaseLocalScaleCaptured()

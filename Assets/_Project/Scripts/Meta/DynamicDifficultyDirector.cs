@@ -334,11 +334,8 @@ namespace Hecton8.Meta
             if (_registeredToTick)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
 
-            tickManager.Register(this);
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);
             _registeredToTick = true;
         }
 
@@ -347,9 +344,7 @@ namespace Hecton8.Meta
             if (!_registeredToTick)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister(this);
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
 
             _registeredToTick = false;
         }

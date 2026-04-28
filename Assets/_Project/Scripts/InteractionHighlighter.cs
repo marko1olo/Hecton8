@@ -60,7 +60,7 @@ using UnityEngine;
 namespace Hecton8.Interaction
 {
     [DisallowMultipleComponent]
-    public sealed class InteractionHighlighter : MonoBehaviour, ITickable
+    public sealed class InteractionHighlighter : MonoBehaviour, ITickable, IUpdatable
     {
         // ══════════════════════════════════════════════════════════
         //  SETTINGS
@@ -101,7 +101,7 @@ namespace Hecton8.Interaction
         //  RUNTIME STATE
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>Reusable MaterialPropertyBlock. Created once in Awake.</summary>
+        /// <summary>Reusable MaterialPropertyBlock. Created once at owner initialization.</summary>
         private MaterialPropertyBlock _block;
 
         /// <summary>Логическое состояние: подсветка включена.</summary>
@@ -144,7 +144,7 @@ namespace Hecton8.Interaction
 
         private void Awake()
         {
-            _block = new MaterialPropertyBlock();
+            EnsurePropertyBlock();
 
             // ── Авто-заполнение рендереров ──
             if (targetRenderers == null || targetRenderers.Length == 0)
@@ -177,9 +177,6 @@ namespace Hecton8.Interaction
         {
             // ── Отписка от GameTickManager ──
             StopTicking();
-
-            if (_block == null)
-                _block = new MaterialPropertyBlock();
 
             if (targetRenderers == null || targetRenderers.Length == 0)
                 return;
@@ -317,12 +314,8 @@ namespace Hecton8.Interaction
         {
             if (_isTicking) return;
 
-            GameTickManager gtm = GameTickManager.Instance;
-            if (gtm != null)
-            {
-                gtm.Register((ITickable)this);
-                _isTicking = true;
-            }
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
+            _isTicking = true;
         }
 
         /// <summary>
@@ -334,12 +327,7 @@ namespace Hecton8.Interaction
         {
             if (!_isTicking) return;
 
-            GameTickManager gtm = GameTickManager.Instance;
-            if (gtm != null)
-            {
-                gtm.Unregister((ITickable)this);
-            }
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _isTicking = false;
         }
 
@@ -396,12 +384,10 @@ namespace Hecton8.Interaction
         /// </summary>
         private void ApplyImmediate(Color value)
         {
-            if (_block == null)
-                _block = new MaterialPropertyBlock();
-
             if (targetRenderers == null || targetRenderers.Length == 0)
                 return;
 
+            EnsurePropertyBlock();
             _currentValue = value;
 
             for (int i = 0; i < targetRenderers.Length; i++)
@@ -429,6 +415,15 @@ namespace Hecton8.Interaction
 
                 rend.SetPropertyBlock(_block);
             }
+        }
+
+        private void EnsurePropertyBlock()
+        {
+            if (_block != null)
+                return;
+
+            // COLD ALLOC: MaterialPropertyBlock[1] — interaction highlight state — owner: InteractionHighlighter
+            _block = new MaterialPropertyBlock();
         }
 
         // ══════════════════════════════════════════════════════════

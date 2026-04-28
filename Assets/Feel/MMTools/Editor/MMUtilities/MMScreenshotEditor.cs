@@ -9,7 +9,7 @@ namespace MoreMountains.Tools
 	[CustomEditor(typeof(MMAspectRatioSafeZones), true)]
 	public class MMScreenshotEditor : Editor
 	{
-		static string FolderName = "Screenshots";
+		private const string FolderName = "Screenshots";
 
 		[MenuItem("Tools/More Mountains/Screenshot/Take Screenshot Real Size", false, 801)]
 		public static void MenuScreenshotSize1()
@@ -21,7 +21,7 @@ namespace MoreMountains.Tools
 		{
 			string savePath = TakeScreenCaptureScreenshot(2);
 		}
-		[MenuItem("Tools/More Mountains/Screenshot/Take Screenshot Size x3 %k", false, 803)]
+		[MenuItem("Tools/More Mountains/Screenshot/Take Screenshot Size x3", false, 803)]
 		public static void MenuScreenshotSize3()
 		{
 			string savePath = TakeScreenCaptureScreenshot(3);
@@ -29,18 +29,31 @@ namespace MoreMountains.Tools
 
 		protected static string TakeScreenCaptureScreenshot(int gameViewSizeMultiplier)
 		{
-			if (!Directory.Exists(FolderName))
+			string folderPath = ResolveScreenshotsFolderPath();
+			if (!Directory.Exists(folderPath))
 			{
-				Directory.CreateDirectory(FolderName);
+				Directory.CreateDirectory(folderPath);
 			}
 
 			float width = Screen.width * gameViewSizeMultiplier;
 			float height = Screen.height * gameViewSizeMultiplier;
-			string savePath = FolderName + "/screenshot_" + width + "x" + height + "_" + System.DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss") + ".png";
+			string fileName = "screenshot_" + width + "x" + height + "_" + System.DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss") + ".png";
+			string savePath = Path.Combine(folderPath, fileName);
 
 			ScreenCapture.CaptureScreenshot(savePath, gameViewSizeMultiplier);
 			Debug.Log("[MMScreenshot] Screenshot taken with size multiplier of " + gameViewSizeMultiplier + " and saved at " + savePath);
 			return savePath;
+		}
+
+		private static string ResolveScreenshotsFolderPath()
+		{
+			string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
+			if (string.IsNullOrEmpty(projectRoot))
+			{
+				return FolderName;
+			}
+
+			return Path.Combine(projectRoot, FolderName);
 		}
 	}
 }

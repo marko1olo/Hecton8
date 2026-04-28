@@ -4,7 +4,6 @@ using UnityEngine;
 
 namespace DarkTonic.MasterAudio.EditorScripts
 {
-    [InitializeOnLoad]
     // ReSharper disable once CheckNamespace
     public class MasterAudioHierIcon : MonoBehaviour
     {

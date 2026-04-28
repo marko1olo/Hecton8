@@ -48,6 +48,8 @@
 //   CPU idle: 0ms (no Update)
 // ============================================================================
 
+using Hecton8.Core;
+using Hecton8.Physics;
 using UnityEngine;
 using UnityEngine.Audio;
 
@@ -58,8 +60,45 @@ namespace Hecton8.Audio
     /// Singleton — доступ через SpatialAudioManager.Instance.
     /// Zero-GC в hot path. Жёсткий лимит одновременных источников.
     /// </summary>
-    public sealed class SpatialAudioManager : MonoBehaviour
+    public sealed class SpatialAudioManager : MonoBehaviour, IUpdatable
     {
+        private const float SoundSpeedWaterMetersPerSecond = 1480f;
+        private const float HaasArrivalWindowSeconds = 0.035f;
+        private const float HaasReleaseThresholdSeconds = 0.04f;
+        private const float HaasSecondarySpatialBlend = 0f;
+        private const float HaasBlendSharpness = 14f;
+        private const float Tier0FullDspDistanceMeters = 15f;
+        private const float Tier1ReducedDspDistanceMeters = 40f;
+        private const float Tier1UpdateIntervalSeconds = 1f / 30f;
+        private const float Tier1LowPassCutoffHertz = 1800f;
+        private const float StereoPanDistanceNormalizationMeters = 15f;
+        private const int MaxImpactRadarEmitters = 16;
+        private const float ImpactEmitterLifetimeMinSeconds = 0.18f;
+        private const float ImpactEmitterLifetimeMaxSeconds = 0.42f;
+        private const float ImpactEmitterAmplitudeScale = 0.75f;
+        private const float ImpactEmitterMinimumAmplitude = 0.02f;
+
+        private enum AudioLodTier : byte
+        {
+            Tier0Full = 0,
+            Tier1Reduced = 1,
+            Tier2Culled = 2
+        }
+
+        internal struct ActiveEmitterSample
+        {
+            public Vector3 Position;
+            public float Amplitude;
+        }
+
+        private struct ImpactEmitterSample
+        {
+            public Vector3 Position;
+            public float Amplitude;
+            public float SpawnAt;
+            public float ExpireAt;
+        }
+
         // ═══════════════════════════════════════════════════════
         //  SINGLETON
         // ═══════════════════════════════════════════════════════
@@ -133,6 +172,13 @@ namespace Hecton8.Audio
         [Tooltip("Группа для эмбиента (подводный гул, давление, etc).")]
         [SerializeField] private AudioMixerGroup _ambientGroup;
 
+        [Header("Authored Pool Roots")]
+        [Tooltip("Pre-authored root containing world-space AudioSource + AudioLowPassFilter pool nodes. Runtime AddComponent is forbidden.")]
+        [SerializeField] private Transform _worldPoolRoot;
+
+        [Tooltip("Pre-authored root containing 2D helmet/UI AudioSource pool nodes. Runtime AddComponent is forbidden.")]
+        [SerializeField] private Transform _helmetPoolRoot;
+
         // ═══════════════════════════════════════════════════════
         //  POOL DATA — Fixed arrays, zero allocation
         // ═══════════════════════════════════════════════════════
@@ -149,6 +195,16 @@ namespace Hecton8.Audio
 
         /// <summary>Время старта для вытеснения в 2D-пуле.</summary>
         private float[] _startTimes2D;
+        private float[] _baseVolumes;
+        private float[] _arrivalTimes;
+        private float[] _haasReleaseTimes;
+        private float[] _nextTierUpdateTimes;
+        private AudioLodTier[] _audioLodTiers;
+        private AudioLowPassFilter[] _lowPassFilters;
+        private bool _registeredUpdatable;
+        private Transform _listenerTransform;
+        // COLD ALLOC: ImpactEmitterSample[16] - deferred physics-impact telemetry for passive radar/UI only; audible impact stress is owned by PlayerCriticalProceduralAudioRenderer's SPSC queue - owner: SpatialAudioManager
+        private readonly ImpactEmitterSample[] _impactEmitters = new ImpactEmitterSample[MaxImpactRadarEmitters];
 
         // ═══════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -172,11 +228,64 @@ namespace Hecton8.Audio
             InitializePool2D();
         }
 
+        private void OnEnable()
+        {
+            PhysicsEvents.OnImpact += HandlePhysicsImpact;
+            TryRegisterUpdatable();
+        }
+
+        private void OnDisable()
+        {
+            PhysicsEvents.OnImpact -= HandlePhysicsImpact;
+            if (_registeredUpdatable)
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+
+            _registeredUpdatable = false;
+            ResetAllWorldSourceState();
+            ResetImpactEmitters();
+        }
+
         private void OnDestroy()
         {
             if (s_Instance == this)
             {
                 s_Instance = null;
+            }
+        }
+
+        /// <summary>
+        /// Restores temporary Haas masking on clustered arrivals.
+        /// </summary>
+        /// <param name="deltaTime">Dispatcher delta time.</param>
+        public void Tick(float deltaTime)
+        {
+            if (_pool == null || _arrivalTimes == null || _haasReleaseTimes == null)
+                return;
+
+            float safeDeltaTime = Mathf.Max(0f, deltaTime);
+            float blendT = 1f - Mathf.Exp(-Mathf.Max(HaasBlendSharpness, 0.01f) * safeDeltaTime);
+            float now = Time.unscaledTime;
+            DecayImpactEmitters(now);
+            for (int i = 0; i < _poolSize; i++)
+            {
+                AudioSource source = _pool[i];
+                if (source == null || !source.isPlaying)
+                {
+                    ResetWorldSourceState(i, false);
+                    continue;
+                }
+
+                UpdateWorldSourceAudioLod(i, source, now, false);
+                if (!source.isPlaying)
+                {
+                    ResetWorldSourceState(i, false);
+                    continue;
+                }
+
+                float targetBlend = ResolveTargetSpatialBlend(i, now);
+                source.spatialBlend = Mathf.Lerp(source.spatialBlend, targetBlend, blendT);
+                if (_haasReleaseTimes[i] <= now && source.spatialBlend >= targetBlend - 0.001f)
+                    _haasReleaseTimes[i] = 0f;
             }
         }
 
@@ -190,38 +299,106 @@ namespace Hecton8.Audio
         /// </summary>
         private void InitializePool()
         {
+            int effectivePoolSize = Mathf.Min(_poolSize, CountAuthoredWorldPoolNodes(ResolveWorldPoolRoot()));
+            if (effectivePoolSize < _poolSize)
+            {
+#if UNITY_EDITOR
+                Debug.LogError(
+                    $"[SpatialAudioManager] World pool requested {_poolSize} authored nodes, found {effectivePoolSize}. " +
+                    "Assign pre-authored AudioSource + AudioLowPassFilter children before play.");
+#endif
+            }
+
+            _poolSize = effectivePoolSize;
             _pool = new AudioSource[_poolSize];
             _startTimes = new float[_poolSize];
+            _baseVolumes = new float[_poolSize];
+            _arrivalTimes = new float[_poolSize];
+            _haasReleaseTimes = new float[_poolSize];
+            _nextTierUpdateTimes = new float[_poolSize];
+            _audioLodTiers = new AudioLodTier[_poolSize];
+            _lowPassFilters = new AudioLowPassFilter[_poolSize];
+
+            if (_poolSize > 0)
+            {
+                int boundCount = 0;
+                BindAuthoredWorldPoolRecursive(ResolveWorldPoolRoot(), ref boundCount);
+            }
+
+            return;
+#if false
+
+            _pool = new AudioSource[_poolSize];
+            _startTimes = new float[_poolSize];
+            _baseVolumes = new float[_poolSize];
+            _arrivalTimes = new float[_poolSize];
+            _haasReleaseTimes = new float[_poolSize];
+            _nextTierUpdateTimes = new float[_poolSize];
+            _audioLodTiers = new AudioLodTier[_poolSize];
+            _lowPassFilters = new AudioLowPassFilter[_poolSize];
 
             for (int i = 0; i < _poolSize; i++)
             {
                 // Дочерний GameObject для каждого источника
-                var child = new GameObject($"PooledAudio_{i:D2}");
+                GameObject child = null;
                 child.transform.SetParent(transform, false);
 
-                var source = child.AddComponent<AudioSource>();
+                AudioSource source = null;
+                AudioLowPassFilter lowPassFilter = null;
                 ConfigureAs3D(source);
+                lowPassFilter.enabled = false;
+                lowPassFilter.cutoffFrequency = 22000f;
 
                 source.playOnAwake = false;
                 source.loop = false;
 
                 _pool[i] = source;
+                _lowPassFilters[i] = lowPassFilter;
                 _startTimes[i] = -1f; // Not playing
+                _baseVolumes[i] = 0f;
+                _arrivalTimes[i] = -1f;
+                _haasReleaseTimes[i] = 0f;
+                _nextTierUpdateTimes[i] = 0f;
+                _audioLodTiers[i] = AudioLodTier.Tier0Full;
             }
+#endif
         }
 
         /// <summary>Создаёт пул 2D источников (аналогично 3D, без PlayOneShot).</summary>
         private void InitializePool2D()
         {
+            int effectivePool2DSize = Mathf.Min(_pool2DSize, CountAuthoredHelmetPoolNodes(ResolveHelmetPoolRoot()));
+            if (effectivePool2DSize < _pool2DSize)
+            {
+#if UNITY_EDITOR
+                Debug.LogError(
+                    $"[SpatialAudioManager] Helmet/UI pool requested {_pool2DSize} authored nodes, found {effectivePool2DSize}. " +
+                    "Assign pre-authored 2D AudioSource children before play.");
+#endif
+            }
+
+            _pool2DSize = effectivePool2DSize;
+            _pool2D = new AudioSource[_pool2DSize];
+            _startTimes2D = new float[_pool2DSize];
+
+            if (_pool2DSize > 0)
+            {
+                int boundCount = 0;
+                BindAuthoredHelmetPoolRecursive(ResolveHelmetPoolRoot(), ref boundCount);
+            }
+
+            return;
+#if false
+
             _pool2D = new AudioSource[_pool2DSize];
             _startTimes2D = new float[_pool2DSize];
 
             for (int i = 0; i < _pool2DSize; i++)
             {
-                var child = new GameObject($"PooledAudio2D_{i:D2}");
+                GameObject child = null;
                 child.transform.SetParent(transform, false);
 
-                var source = child.AddComponent<AudioSource>();
+                AudioSource source = null;
                 ConfigureAs2D(source);
 
                 source.playOnAwake = false;
@@ -230,6 +407,7 @@ namespace Hecton8.Audio
                 _pool2D[i] = source;
                 _startTimes2D[i] = -1f;
             }
+#endif
         }
 
         private void ConfigureAs2D(AudioSource source)
@@ -304,8 +482,20 @@ namespace Hecton8.Audio
                 return;
             }
 
+            if (_pool == null || _poolSize <= 0)
+                return;
+
+            AudioLodTier lodTier = ResolveAudioLodTier(position);
+            if (lodTier == AudioLodTier.Tier2Culled)
+                return;
+
             int index = AcquireSourceIndex();
+            if (index < 0)
+                return;
+
             AudioSource source = _pool[index];
+            ResetWorldSourceState(index, true);
+            source.enabled = true;
 
             // ── Позиционирование ──
             source.transform.position = position;
@@ -314,8 +504,12 @@ namespace Hecton8.Audio
             source.clip = clip;
             source.volume = volume;
             source.pitch = pitch;
-            source.spatialBlend = 1f; // Гарантируем 3D
+            _baseVolumes[index] = volume;
             source.outputAudioMixerGroup = mixerGroup;
+            _audioLodTiers[index] = lodTier;
+            UpdateWorldSourceAudioLod(index, source, Time.unscaledTime, true);
+            ApplyHaasMask(index, position);
+            source.spatialBlend = ResolveTargetSpatialBlend(index, Time.unscaledTime);
 
             // ── Запуск ──
             source.Play();
@@ -356,7 +550,13 @@ namespace Hecton8.Audio
                 return;
             }
 
+            if (_pool2D == null || _pool2DSize <= 0)
+                return;
+
             int index = Acquire2DSourceIndex();
+            if (index < 0)
+                return;
+
             AudioSource source = _pool2D[index];
 
             source.clip = clip;
@@ -382,6 +582,72 @@ namespace Hecton8.Audio
         /// <summary>Mixer group для эмбиента (подводный гул, давление).</summary>
         public AudioMixerGroup AmbientGroup => _ambientGroup;
 
+        internal int CopyActiveWorldEmitterSamples(ActiveEmitterSample[] destination)
+        {
+            if (destination == null || destination.Length == 0 || _pool == null)
+                return 0;
+
+            int count = 0;
+            int limit = destination.Length;
+            float now = Time.unscaledTime;
+            for (int i = 0; i < _poolSize && count < limit; i++)
+            {
+                AudioSource source = _pool[i];
+                if (source == null || !source.isPlaying || source.clip == null)
+                    continue;
+
+                destination[count] = new ActiveEmitterSample
+                {
+                    Position = source.transform.position,
+                    Amplitude = Mathf.Max(0f, source.volume)
+                };
+                count++;
+            }
+
+            for (int i = 0; i < _impactEmitters.Length && count < limit; i++)
+            {
+                ImpactEmitterSample emitter = _impactEmitters[i];
+                float amplitude = ResolveImpactEmitterAmplitude(emitter, now);
+                if (!(amplitude > ImpactEmitterMinimumAmplitude))
+                    continue;
+
+                destination[count] = new ActiveEmitterSample
+                {
+                    Position = emitter.Position,
+                    Amplitude = amplitude
+                };
+                count++;
+            }
+
+            return count;
+        }
+
+        internal int CopyActiveImpactEmitterSamples(ActiveEmitterSample[] destination)
+        {
+            if (destination == null || destination.Length == 0)
+                return 0;
+
+            int count = 0;
+            int limit = destination.Length;
+            float now = Time.unscaledTime;
+            for (int i = 0; i < _impactEmitters.Length && count < limit; i++)
+            {
+                ImpactEmitterSample emitter = _impactEmitters[i];
+                float amplitude = ResolveImpactEmitterAmplitude(emitter, now);
+                if (!(amplitude > ImpactEmitterMinimumAmplitude))
+                    continue;
+
+                destination[count] = new ActiveEmitterSample
+                {
+                    Position = emitter.Position,
+                    Amplitude = amplitude
+                };
+                count++;
+            }
+
+            return count;
+        }
+
         // ═══════════════════════════════════════════════════════
         //  PUBLIC API — UTILITY
         // ═══════════════════════════════════════════════════════
@@ -395,8 +661,7 @@ namespace Hecton8.Audio
             for (int i = 0; i < _poolSize; i++)
             {
                 _pool[i].Stop();
-                _pool[i].clip = null; // Освобождаем ссылку на clip
-                _startTimes[i] = -1f;
+                ResetWorldSourceState(i, true);
             }
 
             for (int i = 0; i < _pool2DSize; i++)
@@ -442,6 +707,9 @@ namespace Hecton8.Audio
         /// <returns>Индекс источника для использования.</returns>
         private int AcquireSourceIndex()
         {
+            if (_pool == null || _poolSize <= 0)
+                return -1;
+
             int oldestIndex = 0;
             float oldestTime = float.MaxValue;
 
@@ -463,6 +731,7 @@ namespace Hecton8.Audio
 
             // ── Все заняты — вытесняем самый старый ──
             _pool[oldestIndex].Stop();
+            ResetWorldSourceState(oldestIndex, true);
 
 #if UNITY_EDITOR
             Debug.Log(
@@ -473,8 +742,366 @@ namespace Hecton8.Audio
             return oldestIndex;
         }
 
+        private void TryRegisterUpdatable()
+        {
+            if (_registeredUpdatable)
+                return;
+
+            SystemDispatcher.EnsureRuntimeInstance();
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+            _registeredUpdatable = true;
+        }
+
+        private void HandlePhysicsImpact(PhysicsImpactSignal impactSignal)
+        {
+            // Mirrors impact positions for passive radar/UI consumers only.
+            // Audible impact energy is synthesized through PlayerCriticalProceduralAudioRenderer.
+            float amplitude = Mathf.Clamp01(impactSignal.Intensity * ImpactEmitterAmplitudeScale);
+            if (impactSignal.IsHeavy)
+                amplitude = Mathf.Max(amplitude, 0.45f);
+
+            if (!(amplitude > ImpactEmitterMinimumAmplitude))
+                return;
+
+            float now = Time.unscaledTime;
+            float lifetime = Mathf.Lerp(
+                ImpactEmitterLifetimeMinSeconds,
+                ImpactEmitterLifetimeMaxSeconds,
+                Mathf.Clamp01(impactSignal.Intensity));
+            int selectedIndex = -1;
+            float weakestAmplitude = float.MaxValue;
+            for (int i = 0; i < _impactEmitters.Length; i++)
+            {
+                if (!(_impactEmitters[i].ExpireAt > now))
+                {
+                    selectedIndex = i;
+                    break;
+                }
+
+                if (_impactEmitters[i].Amplitude < weakestAmplitude)
+                {
+                    weakestAmplitude = _impactEmitters[i].Amplitude;
+                    selectedIndex = i;
+                }
+            }
+
+            if (selectedIndex < 0)
+                return;
+
+            _impactEmitters[selectedIndex] = new ImpactEmitterSample
+            {
+                Position = impactSignal.Point,
+                Amplitude = amplitude,
+                SpawnAt = now,
+                ExpireAt = now + lifetime
+            };
+        }
+
+        private void ApplyHaasMask(int sourceIndex, Vector3 sourcePosition)
+        {
+            float predictedArrivalTime = ResolvePredictedArrivalTime(sourcePosition);
+            float closestDelta = float.MaxValue;
+            int earliestCompetingIndex = -1;
+            float earliestCompetingArrival = float.MaxValue;
+
+            for (int i = 0; i < _poolSize; i++)
+            {
+                if (i == sourceIndex || _pool[i] == null || !_pool[i].isPlaying || _arrivalTimes[i] < 0f)
+                    continue;
+
+                float arrivalDelta = Mathf.Abs(predictedArrivalTime - _arrivalTimes[i]);
+                if (arrivalDelta < closestDelta)
+                {
+                    closestDelta = arrivalDelta;
+                    earliestCompetingIndex = i;
+                    earliestCompetingArrival = _arrivalTimes[i];
+                }
+            }
+
+            _arrivalTimes[sourceIndex] = predictedArrivalTime;
+            if (closestDelta < HaasArrivalWindowSeconds && earliestCompetingIndex >= 0)
+            {
+                float releaseTime = Time.unscaledTime + HaasReleaseThresholdSeconds;
+                if (predictedArrivalTime < earliestCompetingArrival)
+                {
+                    _haasReleaseTimes[earliestCompetingIndex] = releaseTime;
+                    _haasReleaseTimes[sourceIndex] = 0f;
+                }
+                else
+                {
+                    _haasReleaseTimes[sourceIndex] = releaseTime;
+                }
+
+                return;
+            }
+
+            _haasReleaseTimes[sourceIndex] = 0f;
+        }
+
+        private float ResolvePredictedArrivalTime(Vector3 sourcePosition)
+        {
+            Transform listener = ResolveListenerTransform();
+            if (listener == null)
+                return Time.unscaledTime;
+
+            return Time.unscaledTime +
+                   (Mathf.Sqrt(ResolveAbsoluteDistanceSqr(listener, sourcePosition)) / SoundSpeedWaterMetersPerSecond);
+        }
+
+        private Transform ResolveListenerTransform()
+        {
+            if (_listenerTransform != null && _listenerTransform.gameObject.activeInHierarchy)
+                return _listenerTransform;
+
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null)
+            {
+                Camera playerCamera = playerContext.PlayerCamera;
+                if (playerCamera != null)
+                {
+                    if (playerCamera.TryGetComponent(out AudioListener cameraListener))
+                    {
+                        _listenerTransform = cameraListener.transform;
+                        return _listenerTransform;
+                    }
+
+                    AudioListener ownedCameraListener =
+                        ComponentReferenceUtility.ResolveOwnedComponent<AudioListener>(playerCamera.transform);
+                    if (ownedCameraListener != null)
+                    {
+                        _listenerTransform = ownedCameraListener.transform;
+                        return _listenerTransform;
+                    }
+                }
+
+                GameObject playerObject = playerContext.PlayerObject;
+                if (playerObject != null)
+                {
+                    if (playerObject.TryGetComponent(out AudioListener playerListener))
+                    {
+                        _listenerTransform = playerListener.transform;
+                        return _listenerTransform;
+                    }
+
+                    AudioListener ownedPlayerListener =
+                        ComponentReferenceUtility.ResolveOwnedComponent<AudioListener>(playerObject.transform);
+                    if (ownedPlayerListener != null)
+                    {
+                        _listenerTransform = ownedPlayerListener.transform;
+                        return _listenerTransform;
+                    }
+                }
+            }
+
+            _listenerTransform = null;
+            return _listenerTransform;
+        }
+
+        private void ResetAllHaasState()
+        {
+            if (_arrivalTimes == null || _haasReleaseTimes == null)
+                return;
+
+            for (int i = 0; i < _poolSize; i++)
+                ResetHaasState(i);
+        }
+
+        private void ResetAllWorldSourceState()
+        {
+            if (_pool == null)
+                return;
+
+            for (int i = 0; i < _poolSize; i++)
+                ResetWorldSourceState(i, false);
+        }
+
+        private void ResetImpactEmitters()
+        {
+            for (int i = 0; i < _impactEmitters.Length; i++)
+                _impactEmitters[i] = default;
+        }
+
+        private void DecayImpactEmitters(float now)
+        {
+            for (int i = 0; i < _impactEmitters.Length; i++)
+            {
+                if (_impactEmitters[i].ExpireAt > now)
+                    continue;
+
+                _impactEmitters[i] = default;
+            }
+        }
+
+        private void ResetHaasState(int sourceIndex)
+        {
+            if (_arrivalTimes == null || _haasReleaseTimes == null || sourceIndex < 0 || sourceIndex >= _poolSize)
+                return;
+
+            _arrivalTimes[sourceIndex] = -1f;
+            _haasReleaseTimes[sourceIndex] = 0f;
+        }
+
+        private void ResetWorldSourceState(int sourceIndex, bool clearClip)
+        {
+            if (_pool == null || sourceIndex < 0 || sourceIndex >= _poolSize)
+                return;
+
+            AudioSource source = _pool[sourceIndex];
+            if (source != null)
+            {
+                if (clearClip)
+                    source.enabled = false;
+                source.panStereo = 0f;
+                source.spatialBlend = 1f;
+                if (clearClip)
+                    source.clip = null;
+            }
+
+            AudioLowPassFilter lowPassFilter = _lowPassFilters != null && sourceIndex < _lowPassFilters.Length
+                ? _lowPassFilters[sourceIndex]
+                : null;
+            if (lowPassFilter != null)
+            {
+                lowPassFilter.enabled = false;
+                lowPassFilter.cutoffFrequency = 22000f;
+            }
+
+            if (_baseVolumes != null && sourceIndex < _baseVolumes.Length)
+                _baseVolumes[sourceIndex] = 0f;
+
+            if (_nextTierUpdateTimes != null && sourceIndex < _nextTierUpdateTimes.Length)
+                _nextTierUpdateTimes[sourceIndex] = 0f;
+
+            if (_audioLodTiers != null && sourceIndex < _audioLodTiers.Length)
+                _audioLodTiers[sourceIndex] = AudioLodTier.Tier0Full;
+
+            if (_startTimes != null && sourceIndex < _startTimes.Length)
+                _startTimes[sourceIndex] = -1f;
+
+            ResetHaasState(sourceIndex);
+        }
+
+        private void UpdateWorldSourceAudioLod(int sourceIndex, AudioSource source, float now, bool forceImmediate)
+        {
+            if (source == null)
+                return;
+
+            AudioLodTier resolvedTier = ResolveAudioLodTier(source.transform.position);
+            if (!forceImmediate &&
+                resolvedTier == AudioLodTier.Tier1Reduced &&
+                _audioLodTiers[sourceIndex] == AudioLodTier.Tier1Reduced &&
+                now < _nextTierUpdateTimes[sourceIndex])
+            {
+                return;
+            }
+
+            _audioLodTiers[sourceIndex] = resolvedTier;
+            switch (resolvedTier)
+            {
+                case AudioLodTier.Tier0Full:
+                    source.enabled = true;
+                    source.panStereo = 0f;
+                    ApplyLowPassFilter(sourceIndex, false, 22000f);
+                    _nextTierUpdateTimes[sourceIndex] = 0f;
+                    return;
+
+                case AudioLodTier.Tier1Reduced:
+                    source.enabled = true;
+                    source.panStereo = ResolveStereoPan(source.transform.position);
+                    ApplyLowPassFilter(sourceIndex, true, Tier1LowPassCutoffHertz);
+                    _nextTierUpdateTimes[sourceIndex] = now + Tier1UpdateIntervalSeconds;
+                    return;
+
+                default:
+                    source.Stop();
+                    source.enabled = false;
+                    ResetWorldSourceState(sourceIndex, true);
+                    return;
+            }
+        }
+
+        private void ApplyLowPassFilter(int sourceIndex, bool enabled, float cutoffFrequency)
+        {
+            if (_lowPassFilters == null || sourceIndex < 0 || sourceIndex >= _lowPassFilters.Length)
+                return;
+
+            AudioLowPassFilter lowPassFilter = _lowPassFilters[sourceIndex];
+            if (lowPassFilter == null)
+                return;
+
+            lowPassFilter.enabled = enabled;
+            lowPassFilter.cutoffFrequency = cutoffFrequency;
+        }
+
+        private float ResolveTargetSpatialBlend(int sourceIndex, float now)
+        {
+            float baseBlend = ResolveBaseSpatialBlend(_audioLodTiers[sourceIndex]);
+            if (_haasReleaseTimes[sourceIndex] > now)
+                return Mathf.Min(baseBlend, HaasSecondarySpatialBlend);
+
+            return baseBlend;
+        }
+
+        private static float ResolveBaseSpatialBlend(AudioLodTier tier)
+        {
+            switch (tier)
+            {
+                case AudioLodTier.Tier1Reduced:
+                case AudioLodTier.Tier2Culled:
+                    return 0f;
+                default:
+                    return 1f;
+            }
+        }
+
+        private AudioLodTier ResolveAudioLodTier(Vector3 sourcePosition)
+        {
+            Transform listener = ResolveListenerTransform();
+            if (listener == null)
+                return AudioLodTier.Tier0Full;
+
+            float distanceSq = ResolveAbsoluteDistanceSqr(listener, sourcePosition);
+            if (distanceSq > (Tier1ReducedDspDistanceMeters * Tier1ReducedDspDistanceMeters))
+                return AudioLodTier.Tier2Culled;
+
+            return distanceSq > (Tier0FullDspDistanceMeters * Tier0FullDspDistanceMeters)
+                ? AudioLodTier.Tier1Reduced
+                : AudioLodTier.Tier0Full;
+        }
+
+        private float ResolveStereoPan(Vector3 sourcePosition)
+        {
+            Transform listener = ResolveListenerTransform();
+            if (listener == null)
+                return 0f;
+
+            Vector3 listenerLocalPosition = listener.InverseTransformPoint(sourcePosition);
+            float lateralPan = listenerLocalPosition.x / Mathf.Max(0.01f, StereoPanDistanceNormalizationMeters);
+            return Mathf.Clamp(lateralPan, -1f, 1f);
+        }
+
+        private static float ResolveImpactEmitterAmplitude(ImpactEmitterSample emitter, float now)
+        {
+            if (!(emitter.ExpireAt > now) || !(emitter.Amplitude > ImpactEmitterMinimumAmplitude))
+                return 0f;
+
+            float lifetime = Mathf.Max(0.001f, emitter.ExpireAt - emitter.SpawnAt);
+            float fade = Mathf.Clamp01((emitter.ExpireAt - now) / lifetime);
+            return emitter.Amplitude * fade;
+        }
+
+        private static float ResolveAbsoluteDistanceSqr(Transform listener, Vector3 sourcePosition)
+        {
+            Vector3 listenerAbsolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(listener.position);
+            Vector3 sourceAbsolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(sourcePosition);
+            return (listenerAbsolutePosition - sourceAbsolutePosition).sqrMagnitude;
+        }
+
         private int Acquire2DSourceIndex()
         {
+            if (_pool2D == null || _pool2DSize <= 0)
+                return -1;
+
             int oldestIndex = 0;
             float oldestTime = float.MaxValue;
 
@@ -507,6 +1134,129 @@ namespace Hecton8.Audio
         //  EDITOR VALIDATION
         // ═══════════════════════════════════════════════════════
 
+        private Transform ResolveWorldPoolRoot()
+        {
+            return _worldPoolRoot != null ? _worldPoolRoot : transform;
+        }
+
+        private Transform ResolveHelmetPoolRoot()
+        {
+            return _helmetPoolRoot != null ? _helmetPoolRoot : transform;
+        }
+
+        private bool ShouldPartitionAuthoredPoolsBySpatialBlend()
+        {
+            return _worldPoolRoot == null || _helmetPoolRoot == null || _worldPoolRoot == _helmetPoolRoot;
+        }
+
+        private int CountAuthoredWorldPoolNodes(Transform root)
+        {
+            if (root == null)
+                return 0;
+
+            int count = 0;
+            CountAuthoredWorldPoolNodesRecursive(root, ShouldPartitionAuthoredPoolsBySpatialBlend(), ref count);
+            return count;
+        }
+
+        private int CountAuthoredHelmetPoolNodes(Transform root)
+        {
+            if (root == null)
+                return 0;
+
+            int count = 0;
+            CountAuthoredHelmetPoolNodesRecursive(root, ShouldPartitionAuthoredPoolsBySpatialBlend(), ref count);
+            return count;
+        }
+
+        private static void CountAuthoredWorldPoolNodesRecursive(Transform current, bool partitionBySpatialBlend, ref int count)
+        {
+            if (current == null)
+                return;
+
+            if (current.TryGetComponent(out AudioSource source) &&
+                current.TryGetComponent(out AudioLowPassFilter _) &&
+                (!partitionBySpatialBlend || source.spatialBlend > 0.5f))
+            {
+                count++;
+            }
+
+            int childCount = current.childCount;
+            for (int i = 0; i < childCount; i++)
+                CountAuthoredWorldPoolNodesRecursive(current.GetChild(i), partitionBySpatialBlend, ref count);
+        }
+
+        private static void CountAuthoredHelmetPoolNodesRecursive(Transform current, bool partitionBySpatialBlend, ref int count)
+        {
+            if (current == null)
+                return;
+
+            if (current.TryGetComponent(out AudioSource source) &&
+                (!partitionBySpatialBlend || source.spatialBlend <= 0.5f))
+            {
+                count++;
+            }
+
+            int childCount = current.childCount;
+            for (int i = 0; i < childCount; i++)
+                CountAuthoredHelmetPoolNodesRecursive(current.GetChild(i), partitionBySpatialBlend, ref count);
+        }
+
+        private void BindAuthoredWorldPoolRecursive(Transform current, ref int index)
+        {
+            if (current == null || index >= _poolSize)
+                return;
+
+            bool partitionBySpatialBlend = ShouldPartitionAuthoredPoolsBySpatialBlend();
+            if (current.TryGetComponent(out AudioSource source) &&
+                current.TryGetComponent(out AudioLowPassFilter lowPassFilter) &&
+                (!partitionBySpatialBlend || source.spatialBlend > 0.5f))
+            {
+                ConfigureAs3D(source);
+                lowPassFilter.enabled = false;
+                lowPassFilter.cutoffFrequency = 22000f;
+                source.playOnAwake = false;
+                source.loop = false;
+
+                _pool[index] = source;
+                _lowPassFilters[index] = lowPassFilter;
+                _startTimes[index] = -1f;
+                _baseVolumes[index] = 0f;
+                _arrivalTimes[index] = -1f;
+                _haasReleaseTimes[index] = 0f;
+                _nextTierUpdateTimes[index] = 0f;
+                _audioLodTiers[index] = AudioLodTier.Tier0Full;
+                index++;
+            }
+
+            int childCount = current.childCount;
+            for (int i = 0; i < childCount && index < _poolSize; i++)
+                BindAuthoredWorldPoolRecursive(current.GetChild(i), ref index);
+        }
+
+        private void BindAuthoredHelmetPoolRecursive(Transform current, ref int index)
+        {
+            if (current == null || index >= _pool2DSize)
+                return;
+
+            bool partitionBySpatialBlend = ShouldPartitionAuthoredPoolsBySpatialBlend();
+            if (current.TryGetComponent(out AudioSource source) &&
+                (!partitionBySpatialBlend || source.spatialBlend <= 0.5f))
+            {
+                ConfigureAs2D(source);
+                source.playOnAwake = false;
+                source.loop = false;
+
+                _pool2D[index] = source;
+                _startTimes2D[index] = -1f;
+                index++;
+            }
+
+            int childCount = current.childCount;
+            for (int i = 0; i < childCount && index < _pool2DSize; i++)
+                BindAuthoredHelmetPoolRecursive(current.GetChild(i), ref index);
+        }
+
 #if UNITY_EDITOR
         private void OnValidate()
         {
@@ -521,6 +1271,12 @@ namespace Hecton8.Audio
 
             if (_minDistance < 0.1f) _minDistance = 0.1f;
             if (_maxDistance < _minDistance) _maxDistance = _minDistance + 1f;
+
+            if (_worldPoolRoot == null)
+                _worldPoolRoot = transform;
+
+            if (_helmetPoolRoot == null)
+                _helmetPoolRoot = transform;
         }
 
         /// <summary>

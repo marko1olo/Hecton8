@@ -143,10 +143,10 @@ namespace Hecton8.Dev
         private void AutoResolveSceneReferences()
         {
             if (toolManager == null)
-                toolManager = Object.FindAnyObjectByType<PlayerToolManager>(FindObjectsInactive.Include);
+                toolManager = (Hecton8.Core.GlobalRegistry.Player != null ? Hecton8.Core.GlobalRegistry.Player.ToolManager : null);
 
             if (playerInventory == null)
-                playerInventory = Object.FindAnyObjectByType<PlayerInventory>(FindObjectsInactive.Include);
+                playerInventory = (Hecton8.Core.GlobalRegistry.Player != null ? Hecton8.Core.GlobalRegistry.Player.Inventory : null);
         }
 
         /// <summary>Runs the complete smoke test pass for all weak tools.</summary>

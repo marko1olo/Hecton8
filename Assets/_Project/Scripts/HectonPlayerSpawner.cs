@@ -42,6 +42,8 @@
 using System;
 using System.Threading;
 using Hecton8.Bootstrap;
+using Hecton8.Core;
+using Hecton8.Gameplay;
 using UnityEngine;
 
 /// <summary>
@@ -158,6 +160,10 @@ public class HectonPlayerSpawner : MonoBehaviour
     /// Используется для проверки глобального таймаута.
     /// </summary>
     private float _operationStartTime;
+    private HectonPlayerMovement _playerMovement;
+    private Vector3 _teleportPreservedLocalVelocity;
+    private Vector3 _teleportPreservedAngularVelocity;
+    private Vector3 _teleportPreservedPlatformVelocity;
 
     // ══════════════════════════════════════════════════════════════
     //  ENUMS
@@ -190,6 +196,11 @@ public class HectonPlayerSpawner : MonoBehaviour
     /// </summary>
     private void Awake()
     {
+        IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+        if (playerRigidbody == null && playerContext != null)
+            playerRigidbody = playerContext.PlayerRigidbody;
+        if (_playerMovement == null && playerContext != null)
+            _playerMovement = playerContext.PlayerMovement;
         // ── Попытка автоматического поиска, если Inspector-ссылка не задана ──
         if (playerRigidbody == null)
         {
@@ -200,9 +211,11 @@ public class HectonPlayerSpawner : MonoBehaviour
             if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransformRoot) &&
                 playerTransformRoot != null)
             {
-                playerRigidbody = playerTransformRoot.GetComponent<Rigidbody>();
-                if (playerRigidbody == null)
-                    playerRigidbody = playerTransformRoot.GetComponentInChildren<Rigidbody>(true);
+                playerTransformRoot.TryGetComponent(out playerRigidbody);
+                if (_playerMovement == null)
+                {
+                    playerTransformRoot.TryGetComponent(out _playerMovement);
+                }
 
                 if (playerRigidbody != null)
                 {
@@ -222,6 +235,10 @@ public class HectonPlayerSpawner : MonoBehaviour
                 Debug.LogWarning(
                     "[HectonPlayerSpawner] SceneBootstrap не предоставил current player.");
             }
+        }
+        else if (_playerMovement == null)
+        {
+            playerRigidbody.TryGetComponent(out _playerMovement);
         }
 
         // ── Финальная проверка после всех попыток поиска ──
@@ -661,10 +678,15 @@ public class HectonPlayerSpawner : MonoBehaviour
     /// </summary>
     private void PrepareRigidbodyForTeleport()
     {
+        _teleportPreservedAngularVelocity = HectonPlayerMotor.SafeVelocity(playerRigidbody.angularVelocity);
+        if (!TryResolveTeleportVelocityFrame(playerRigidbody.position, playerRigidbody.linearVelocity, out _teleportPreservedLocalVelocity, out _teleportPreservedPlatformVelocity))
+        {
+            _teleportPreservedLocalVelocity = HectonPlayerMotor.SafeVelocity(playerRigidbody.linearVelocity);
+            _teleportPreservedPlatformVelocity = Vector3.zero;
+        }
+
         playerRigidbody.isKinematic = true;
         playerRigidbody.interpolation = RigidbodyInterpolation.None;
-        playerRigidbody.linearVelocity = Vector3.zero;
-        playerRigidbody.angularVelocity = Vector3.zero;
     }
 
     /// <summary>
@@ -673,17 +695,28 @@ public class HectonPlayerSpawner : MonoBehaviour
     /// </summary>
     private void TeleportPlayer(Vector3 position)
     {
-        playerRigidbody.isKinematic = true;
-        playerRigidbody.interpolation = RigidbodyInterpolation.None;
+        Vector3 platformVelocityAtTarget = _teleportPreservedPlatformVelocity;
+        if (_playerMovement != null &&
+            _playerMovement.TryGetActiveTransportPlatform(out ITransportPlatform transportPlatform) &&
+            transportPlatform != null &&
+            transportPlatform.IsTransportPlatformActive)
+        {
+            platformVelocityAtTarget = transportPlatform.GetPlatformPointVelocity(position);
+        }
 
-        playerRigidbody.position = position;
-        playerRigidbody.transform.position = position;
+        Vector3 targetLinearVelocity = HectonPlayerMotor.SafeVelocity(
+            platformVelocityAtTarget + _teleportPreservedLocalVelocity,
+            playerRigidbody.linearVelocity);
+        Vector3 targetAngularVelocity = HectonPlayerMotor.SafeVelocity(
+            _teleportPreservedAngularVelocity,
+            playerRigidbody.angularVelocity);
 
-        playerRigidbody.linearVelocity = Vector3.zero;
-        playerRigidbody.angularVelocity = Vector3.zero;
-
-        playerRigidbody.interpolation = RigidbodyInterpolation.Interpolate;
+        playerRigidbody.MovePosition(position);
         playerRigidbody.isKinematic = false;
+        playerRigidbody.linearVelocity = targetLinearVelocity;
+        playerRigidbody.angularVelocity = targetAngularVelocity;
+        playerRigidbody.WakeUp();
+        playerRigidbody.interpolation = RigidbodyInterpolation.Interpolate;
 
         float elapsed = Time.realtimeSinceStartup - _operationStartTime;
 
@@ -704,6 +737,35 @@ public class HectonPlayerSpawner : MonoBehaviour
     /// Аварийный спавн на уровне воды в центре карты.
     /// Гарантированно завершает операцию без дедлока.
     /// </summary>
+    private bool TryResolveTeleportVelocityFrame(
+        Vector3 currentPosition,
+        Vector3 currentVelocity,
+        out Vector3 localVelocity,
+        out Vector3 platformVelocity)
+    {
+        localVelocity = HectonPlayerMotor.SafeVelocity(currentVelocity);
+        platformVelocity = Vector3.zero;
+        if (_playerMovement == null ||
+            !_playerMovement.TryGetActiveTransportPlatform(out ITransportPlatform transportPlatform) ||
+            transportPlatform == null ||
+            !transportPlatform.IsTransportPlatformActive)
+        {
+            return false;
+        }
+
+        Vector3 activePlatformVelocity = transportPlatform.GetPlatformPointVelocity(currentPosition);
+        platformVelocity = HectonPlayerMotor.SafeVelocity(activePlatformVelocity);
+        localVelocity = HectonPlayerMotor.SafeVelocity(currentVelocity - platformVelocity, currentVelocity);
+        return IsFiniteVector(localVelocity) && IsFiniteVector(platformVelocity);
+    }
+
+    private static bool IsFiniteVector(Vector3 value)
+    {
+        return float.IsFinite(value.x) &&
+               float.IsFinite(value.y) &&
+               float.IsFinite(value.z);
+    }
+
     private void ForceFallbackSpawn()
     {
         _spawnPosition.Set(

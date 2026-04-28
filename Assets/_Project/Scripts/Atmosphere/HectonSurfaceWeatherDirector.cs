@@ -1,13 +1,17 @@
 using System;
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Jobs;
+using Unity.Mathematics;
 using Hecton8.Audio;
 using Hecton8.Bootstrap;
 using Hecton8.Celestial;
 using Hecton8.Core;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
+using Hecton8.Physics;
 using NASAPunk.Visor;
 using UnityEngine;
-using Crest;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -17,7 +21,7 @@ namespace Hecton8.Atmosphere
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Atmosphere/Surface Weather Director")]
     [DefaultExecutionOrder(-4500)]
-    public sealed class HectonSurfaceWeatherDirector : MonoBehaviour, ITickable, ISlowTickable
+    public sealed class HectonSurfaceWeatherDirector : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IOriginShiftListener
     {
         private const float ResolveRetryInterval = 2f;
         private const int ShelterSampleCount = 5;
@@ -81,51 +85,51 @@ namespace Hecton8.Atmosphere
             {
                 return new WeatherFrameState
                 {
-                    cloudDensityThreshold = Mathf.Lerp(from.cloudDensityThreshold, to.cloudDensityThreshold, t),
-                    cloudSoftness = Mathf.Lerp(from.cloudSoftness, to.cloudSoftness, t),
-                    cloudSpeedMultiplier = Mathf.Lerp(from.cloudSpeedMultiplier, to.cloudSpeedMultiplier, t),
-                    windDirection = Vector2.Lerp(from.windDirection, to.windDirection, t),
-                    skyLuminanceMultiplier = Mathf.Lerp(from.skyLuminanceMultiplier, to.skyLuminanceMultiplier, t),
-                    starVisibilityMultiplier = Mathf.Lerp(from.starVisibilityMultiplier, to.starVisibilityMultiplier, t),
-                    stormEmissionMultiplier = Mathf.Lerp(from.stormEmissionMultiplier, to.stormEmissionMultiplier, t),
-                    cloudLitColor = Color.Lerp(from.cloudLitColor, to.cloudLitColor, t),
-                    cloudShadowColor = Color.Lerp(from.cloudShadowColor, to.cloudShadowColor, t),
-                    sunsetCloudColor = Color.Lerp(from.sunsetCloudColor, to.sunsetCloudColor, t),
-                    nightCloudColor = Color.Lerp(from.nightCloudColor, to.nightCloudColor, t),
-                    surfaceFogColor = Color.Lerp(from.surfaceFogColor, to.surfaceFogColor, t),
-                    surfaceFogDensity = Mathf.Lerp(from.surfaceFogDensity, to.surfaceFogDensity, t),
-                    surfaceAmbientColor = Color.Lerp(from.surfaceAmbientColor, to.surfaceAmbientColor, t),
-                    surfaceSunMultiplier = Mathf.Lerp(from.surfaceSunMultiplier, to.surfaceSunMultiplier, t),
-                    sunDiscMultiplier = Mathf.Lerp(from.sunDiscMultiplier, to.sunDiscMultiplier, t),
-                    sunScatterMultiplier = Mathf.Lerp(from.sunScatterMultiplier, to.sunScatterMultiplier, t),
-                    oceanWindSpeedKmh = Mathf.Lerp(from.oceanWindSpeedKmh, to.oceanWindSpeedKmh, t),
-                    oceanFoamStrength = Mathf.Lerp(from.oceanFoamStrength, to.oceanFoamStrength, t),
-                    oceanFoamCoverage = Mathf.Lerp(from.oceanFoamCoverage, to.oceanFoamCoverage, t),
-                    oceanFoamScale = Mathf.Lerp(from.oceanFoamScale, to.oceanFoamScale, t),
-                    precipitationIntensity = Mathf.Lerp(from.precipitationIntensity, to.precipitationIntensity, t),
-                    electricalActivity = Mathf.Lerp(from.electricalActivity, to.electricalActivity, t),
-                    lightningFlashIntensity = Mathf.Lerp(from.lightningFlashIntensity, to.lightningFlashIntensity, t),
-                    lightningFlashDuration = Mathf.Lerp(from.lightningFlashDuration, to.lightningFlashDuration, t),
-                    thunderDelayMin = Mathf.Lerp(from.thunderDelayMin, to.thunderDelayMin, t),
-                    thunderDelayMax = Mathf.Lerp(from.thunderDelayMax, to.thunderDelayMax, t),
-                    lightningStrikeDistanceMin = Mathf.Lerp(from.lightningStrikeDistanceMin, to.lightningStrikeDistanceMin, t),
-                    lightningStrikeDistanceMax = Mathf.Lerp(from.lightningStrikeDistanceMax, to.lightningStrikeDistanceMax, t),
-                    lightningWindBias = Mathf.Lerp(from.lightningWindBias, to.lightningWindBias, t),
-                    thunderPropagationDistanceScale = Mathf.Lerp(from.thunderPropagationDistanceScale, to.thunderPropagationDistanceScale, t),
-                    thunderVolumeNear = Mathf.Lerp(from.thunderVolumeNear, to.thunderVolumeNear, t),
-                    thunderVolumeFar = Mathf.Lerp(from.thunderVolumeFar, to.thunderVolumeFar, t),
-                    thunderPitchMin = Mathf.Lerp(from.thunderPitchMin, to.thunderPitchMin, t),
-                    thunderPitchMax = Mathf.Lerp(from.thunderPitchMax, to.thunderPitchMax, t),
-                    localRainAreaScale = Mathf.Lerp(from.localRainAreaScale, to.localRainAreaScale, t),
-                    localRainDensityMultiplier = Mathf.Lerp(from.localRainDensityMultiplier, to.localRainDensityMultiplier, t),
-                    surfaceImpactRadiusScale = Mathf.Lerp(from.surfaceImpactRadiusScale, to.surfaceImpactRadiusScale, t),
-                    surfaceImpactDensityMultiplier = Mathf.Lerp(from.surfaceImpactDensityMultiplier, to.surfaceImpactDensityMultiplier, t),
-                    lightningBoltWidthMultiplier = Mathf.Lerp(from.lightningBoltWidthMultiplier, to.lightningBoltWidthMultiplier, t),
-                    lightningLightRangeMultiplier = Mathf.Lerp(from.lightningLightRangeMultiplier, to.lightningLightRangeMultiplier, t),
-                    gustStrength = Mathf.Lerp(from.gustStrength, to.gustStrength, t),
-                    gustFrequency = Mathf.Lerp(from.gustFrequency, to.gustFrequency, t),
-                    squallStrength = Mathf.Lerp(from.squallStrength, to.squallStrength, t),
-                    squallFrequency = Mathf.Lerp(from.squallFrequency, to.squallFrequency, t)
+                    cloudDensityThreshold = math.lerp(from.cloudDensityThreshold, to.cloudDensityThreshold, t),
+                    cloudSoftness = math.lerp(from.cloudSoftness, to.cloudSoftness, t),
+                    cloudSpeedMultiplier = math.lerp(from.cloudSpeedMultiplier, to.cloudSpeedMultiplier, t),
+                    windDirection = ToVector2(math.lerp(ToFloat2(from.windDirection), ToFloat2(to.windDirection), t)),
+                    skyLuminanceMultiplier = math.lerp(from.skyLuminanceMultiplier, to.skyLuminanceMultiplier, t),
+                    starVisibilityMultiplier = math.lerp(from.starVisibilityMultiplier, to.starVisibilityMultiplier, t),
+                    stormEmissionMultiplier = math.lerp(from.stormEmissionMultiplier, to.stormEmissionMultiplier, t),
+                    cloudLitColor = ToColor(math.lerp(ToFloat4(from.cloudLitColor), ToFloat4(to.cloudLitColor), t)),
+                    cloudShadowColor = ToColor(math.lerp(ToFloat4(from.cloudShadowColor), ToFloat4(to.cloudShadowColor), t)),
+                    sunsetCloudColor = ToColor(math.lerp(ToFloat4(from.sunsetCloudColor), ToFloat4(to.sunsetCloudColor), t)),
+                    nightCloudColor = ToColor(math.lerp(ToFloat4(from.nightCloudColor), ToFloat4(to.nightCloudColor), t)),
+                    surfaceFogColor = ToColor(math.lerp(ToFloat4(from.surfaceFogColor), ToFloat4(to.surfaceFogColor), t)),
+                    surfaceFogDensity = math.lerp(from.surfaceFogDensity, to.surfaceFogDensity, t),
+                    surfaceAmbientColor = ToColor(math.lerp(ToFloat4(from.surfaceAmbientColor), ToFloat4(to.surfaceAmbientColor), t)),
+                    surfaceSunMultiplier = math.lerp(from.surfaceSunMultiplier, to.surfaceSunMultiplier, t),
+                    sunDiscMultiplier = math.lerp(from.sunDiscMultiplier, to.sunDiscMultiplier, t),
+                    sunScatterMultiplier = math.lerp(from.sunScatterMultiplier, to.sunScatterMultiplier, t),
+                    oceanWindSpeedKmh = math.lerp(from.oceanWindSpeedKmh, to.oceanWindSpeedKmh, t),
+                    oceanFoamStrength = math.lerp(from.oceanFoamStrength, to.oceanFoamStrength, t),
+                    oceanFoamCoverage = math.lerp(from.oceanFoamCoverage, to.oceanFoamCoverage, t),
+                    oceanFoamScale = math.lerp(from.oceanFoamScale, to.oceanFoamScale, t),
+                    precipitationIntensity = math.lerp(from.precipitationIntensity, to.precipitationIntensity, t),
+                    electricalActivity = math.lerp(from.electricalActivity, to.electricalActivity, t),
+                    lightningFlashIntensity = math.lerp(from.lightningFlashIntensity, to.lightningFlashIntensity, t),
+                    lightningFlashDuration = math.lerp(from.lightningFlashDuration, to.lightningFlashDuration, t),
+                    thunderDelayMin = math.lerp(from.thunderDelayMin, to.thunderDelayMin, t),
+                    thunderDelayMax = math.lerp(from.thunderDelayMax, to.thunderDelayMax, t),
+                    lightningStrikeDistanceMin = math.lerp(from.lightningStrikeDistanceMin, to.lightningStrikeDistanceMin, t),
+                    lightningStrikeDistanceMax = math.lerp(from.lightningStrikeDistanceMax, to.lightningStrikeDistanceMax, t),
+                    lightningWindBias = math.lerp(from.lightningWindBias, to.lightningWindBias, t),
+                    thunderPropagationDistanceScale = math.lerp(from.thunderPropagationDistanceScale, to.thunderPropagationDistanceScale, t),
+                    thunderVolumeNear = math.lerp(from.thunderVolumeNear, to.thunderVolumeNear, t),
+                    thunderVolumeFar = math.lerp(from.thunderVolumeFar, to.thunderVolumeFar, t),
+                    thunderPitchMin = math.lerp(from.thunderPitchMin, to.thunderPitchMin, t),
+                    thunderPitchMax = math.lerp(from.thunderPitchMax, to.thunderPitchMax, t),
+                    localRainAreaScale = math.lerp(from.localRainAreaScale, to.localRainAreaScale, t),
+                    localRainDensityMultiplier = math.lerp(from.localRainDensityMultiplier, to.localRainDensityMultiplier, t),
+                    surfaceImpactRadiusScale = math.lerp(from.surfaceImpactRadiusScale, to.surfaceImpactRadiusScale, t),
+                    surfaceImpactDensityMultiplier = math.lerp(from.surfaceImpactDensityMultiplier, to.surfaceImpactDensityMultiplier, t),
+                    lightningBoltWidthMultiplier = math.lerp(from.lightningBoltWidthMultiplier, to.lightningBoltWidthMultiplier, t),
+                    lightningLightRangeMultiplier = math.lerp(from.lightningLightRangeMultiplier, to.lightningLightRangeMultiplier, t),
+                    gustStrength = math.lerp(from.gustStrength, to.gustStrength, t),
+                    gustFrequency = math.lerp(from.gustFrequency, to.gustFrequency, t),
+                    squallStrength = math.lerp(from.squallStrength, to.squallStrength, t),
+                    squallFrequency = math.lerp(from.squallFrequency, to.squallFrequency, t)
                 };
             }
         }
@@ -146,9 +150,6 @@ namespace Hecton8.Atmosphere
             public float phaseB;
         }
 
-        private static readonly int _idWaveFoamStrength = Shader.PropertyToID("_WaveFoamStrength");
-        private static readonly int _idWaveFoamCoverage = Shader.PropertyToID("_WaveFoamCoverage");
-        private static readonly int _idFoamScale = Shader.PropertyToID("_FoamScale");
         // COLD ALLOC: Vector2[5] - local shelter probe offsets around player for fractional rain exposure - owner: HectonSurfaceWeatherDirector
         private static readonly Vector2[] _shelterProbeOffsets =
         {
@@ -213,6 +214,9 @@ namespace Hecton8.Atmosphere
 
         [Tooltip("Optional explicit celestial engine reference. If null, runtime resolve is used.")]
         [SerializeField] private HectonCelestialEngine celestialEngine;
+
+        [Tooltip("Optional explicit ocean-kinematics provider. If null, runtime resolve is used through GlobalRegistry.")]
+        [SerializeField] private MonoBehaviour oceanKinematicsProvider;
 
         [Tooltip("Optional explicit acoustic zone controller reference. If null, runtime resolve is used.")]
         [SerializeField] private AcousticZoneController acousticZoneController;
@@ -286,27 +290,33 @@ namespace Hecton8.Atmosphere
         private HectonPlayerMovement _subscribedPlayerMovement;
         private Transform _playerTransform;
 
-        private OceanRenderer _oceanRenderer;
-        private Material _oceanMaterial;
-        private float _defaultOceanWindSpeed;
-        private float _defaultFoamStrength = 1f;
-        private float _defaultFoamCoverage = 1f;
-        private float _defaultFoamScale = 1f;
+        private IHectonOceanKinematics _oceanKinematics;
+        private HectonOceanSurfaceWeatherState _oceanSurfaceDefaults = new HectonOceanSurfaceWeatherState
+        {
+            FoamStrength = 1f,
+            FoamCoverage = 1f,
+            FoamScale = 1f
+        };
+        private HectonOceanSurfaceWeatherState _appliedOceanSurfaceState = new HectonOceanSurfaceWeatherState
+        {
+            WindSpeed = float.MinValue,
+            FoamStrength = float.MinValue,
+            FoamCoverage = float.MinValue,
+            FoamScale = float.MinValue
+        };
         private bool _cachedOceanDefaults;
-        private bool _hasFoamStrengthProperty;
-        private bool _hasFoamCoverageProperty;
-        private bool _hasFoamScaleProperty;
         private Vector3 _pendingThunderPosition;
         private float _pendingThunderPitch = 1f;
-        private float _appliedOceanWindSpeed = float.MinValue;
-        private float _appliedFoamStrength = float.MinValue;
-        private float _appliedFoamCoverage = float.MinValue;
-        private float _appliedFoamScale = float.MinValue;
         private float _gustTimeOffset;
         private float _currentLocalRainExposure = 1f;
         private float _targetLocalRainExposure = 1f;
         private bool _isLocallySheltered;
         private float _stormEquipmentPulseTimer;
+        private SurfaceWeatherBindingSnapshot _computedBindings;
+        private NativeArray<SurfaceWeatherJobOutput> _weatherJobOutput;
+        private JobHandle _weatherJobHandle;
+        private bool _weatherJobScheduled;
+        private bool _weatherJobPrimed;
 
         /// <summary>
         /// Active surface weather director instance for the loaded world scene.
@@ -353,6 +363,7 @@ namespace Hecton8.Atmosphere
 
         private void OnEnable()
         {
+            HectonFloatingOrigin.RegisterListener(this);
             TryRegisterTickManagers();
             TryResolveDependencies(true);
             RefreshPlayerMovementSubscription();
@@ -363,6 +374,7 @@ namespace Hecton8.Atmosphere
 
         private void OnDisable()
         {
+            HectonFloatingOrigin.UnregisterListener(this);
             TryUnregisterTickManagers();
 
             RefreshPlayerMovementSubscription(null);
@@ -372,9 +384,11 @@ namespace Hecton8.Atmosphere
 
         private void OnDestroy()
         {
+            HectonFloatingOrigin.UnregisterListener(this);
             TryUnregisterTickManagers();
             RefreshPlayerMovementSubscription(null);
             _stormEquipmentPulseTimer = 0f;
+            DisposeWeatherMathBuffers();
 
             if (_instance == this)
                 _instance = null;
@@ -389,14 +403,12 @@ namespace Hecton8.Atmosphere
             if (!_runtimeStateInitialized)
                 return;
 
+            TryCompleteWeatherMathJob();
             UpdateExecutionMode(deltaTime);
-            UpdateLocalRainExposure(deltaTime);
             UpdateWeatherSelection(deltaTime);
-            UpdateLightningState(deltaTime);
-            BlendWeather(deltaTime);
             ApplyWeatherBindings(deltaTime);
-            UpdateStormEquipmentInterference(deltaTime);
             UpdateDiagnostics();
+            ScheduleWeatherMathJob(deltaTime);
         }
 
         public void SlowTick()
@@ -406,45 +418,44 @@ namespace Hecton8.Atmosphere
             CacheOceanDefaults();
             InitializeRuntimeStateIfNeeded();
             SampleLocalRainExposure();
+            TryCompleteWeatherMathJob();
             UpdateDiagnostics();
+        }
+
+        public void OnOriginShift(in OriginShiftEventData shiftData)
+        {
+            if (!isActiveAndEnabled || shiftData.ShiftOffset.sqrMagnitude <= 0.0001f)
+                return;
+
+            _pendingThunderPosition += -shiftData.ShiftOffset;
         }
 
         private void TryRegisterTickManagers()
         {
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
             if (!_registeredTick)
             {
-                tickManager.Register((ITickable)this);
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
                 _registeredTick = true;
             }
 
             if (!_registeredSlowTick)
             {
-                tickManager.Register((ISlowTickable)this);
+                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredSlowTick = true;
             }
         }
 
         private void TryUnregisterTickManagers()
         {
-            GameTickManager tickManager = GameTickManager.Instance;
-
             if (_registeredTick)
             {
-                if (tickManager != null)
-                    tickManager.Unregister((ITickable)this);
-
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
                 _registeredTick = false;
             }
 
             if (_registeredSlowTick)
             {
-                if (tickManager != null)
-                    tickManager.Unregister((ISlowTickable)this);
-
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredSlowTick = false;
             }
         }
@@ -461,12 +472,10 @@ namespace Hecton8.Atmosphere
 
             ResolvePlayerMovementReference();
             ResolveSceneOwnedReferences();
-
-            if (_oceanRenderer == null)
-                _oceanRenderer = OceanRenderer.Instance;
+            ResolveOceanKinematics();
 
             if (weatherVfxRig == null)
-                weatherVfxRig = GetComponentInChildren<SurfaceWeatherVfxRig>(true);
+                ResolveOwnedWeatherVfxRig();
 
             if (weatherVfxRig == null)
                 weatherVfxRig = CreateRuntimeVfxRig();
@@ -477,6 +486,14 @@ namespace Hecton8.Atmosphere
 
         private void ResolvePlayerMovementReference()
         {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null && playerContext.PlayerMovement != null)
+            {
+                playerMovement = playerContext.PlayerMovement;
+                _playerTransform = playerContext.PlayerTransform;
+                return;
+            }
+
             if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform currentPlayerTransform) &&
                 currentPlayerTransform != null)
             {
@@ -491,6 +508,21 @@ namespace Hecton8.Atmosphere
             }
         }
 
+        private IHectonOceanKinematics ResolveOceanKinematics()
+        {
+            if (oceanKinematicsProvider is IHectonOceanKinematics assignedProvider)
+            {
+                _oceanKinematics = assignedProvider;
+                return _oceanKinematics;
+            }
+
+            IHectonOceanKinematicsService oceanKinematicsService = GlobalRegistry.OceanKinematics;
+            _oceanKinematics = oceanKinematicsService != null
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+            return _oceanKinematics;
+        }
+
         private void ResolveSceneOwnedReferences()
         {
             if (underwaterVisuals == null)
@@ -503,36 +535,29 @@ namespace Hecton8.Atmosphere
                 TryGetComponent(out acousticZoneController);
 
             if (weatherVfxRig == null)
-                weatherVfxRig = GetComponentInChildren<SurfaceWeatherVfxRig>(true);
+                ResolveOwnedWeatherVfxRig();
 
             if (_playerTransform != null)
             {
+                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
                 if (stormVisorController == null || !stormVisorController.transform.IsChildOf(_playerTransform))
-                    stormVisorController = _playerTransform.GetComponentInChildren<VisorHUDController>(true);
+                    stormVisorController = playerContext != null ? playerContext.VisorController : null;
 
                 if (stormFlashlight == null || !stormFlashlight.transform.IsChildOf(_playerTransform))
-                    stormFlashlight = _playerTransform.GetComponentInChildren<PlayerFlashlight>(true);
+                    stormFlashlight = playerContext != null ? playerContext.Flashlight : null;
             }
 
             if (celestialEngine != null)
                 return;
 
-            _sceneRootBuffer.Clear();
-            gameObject.scene.GetRootGameObjects(_sceneRootBuffer);
-            int rootCount = _sceneRootBuffer.Count;
-            for (int i = 0; i < rootCount; i++)
-            {
-                GameObject rootObject = _sceneRootBuffer[i];
-                if (rootObject == null)
-                    continue;
+            celestialEngine = HectonCelestialEngine.ActiveRuntimeInstance;
+        }
 
-                HectonCelestialEngine candidate = rootObject.GetComponentInChildren<HectonCelestialEngine>(true);
-                if (candidate == null)
-                    continue;
-
-                celestialEngine = candidate;
-                break;
-            }
+        private void ResolveOwnedWeatherVfxRig()
+        {
+            Transform rigTransform = transform.Find("SurfaceWeatherVfxRig");
+            if (rigTransform != null)
+                rigTransform.TryGetComponent(out weatherVfxRig);
         }
 
         private SurfaceWeatherVfxRig CreateRuntimeVfxRig()
@@ -571,31 +596,11 @@ namespace Hecton8.Atmosphere
             if (_cachedOceanDefaults)
                 return;
 
-            if (_oceanRenderer == null)
-                _oceanRenderer = OceanRenderer.Instance;
-
-            if (_oceanRenderer == null)
+            IHectonOceanKinematics oceanKinematics = ResolveOceanKinematics();
+            if (oceanKinematics == null || !oceanKinematics.TryGetSurfaceWeatherState(out _oceanSurfaceDefaults))
                 return;
 
-            _oceanMaterial = _oceanRenderer.OceanMaterial;
-            _defaultOceanWindSpeed = Mathf.Max(0f, _oceanRenderer._globalWindSpeed);
-
-            if (_oceanMaterial != null)
-            {
-                _hasFoamStrengthProperty = _oceanMaterial.HasProperty(_idWaveFoamStrength);
-                _hasFoamCoverageProperty = _oceanMaterial.HasProperty(_idWaveFoamCoverage);
-                _hasFoamScaleProperty = _oceanMaterial.HasProperty(_idFoamScale);
-
-                if (_hasFoamStrengthProperty)
-                    _defaultFoamStrength = _oceanMaterial.GetFloat(_idWaveFoamStrength);
-
-                if (_hasFoamCoverageProperty)
-                    _defaultFoamCoverage = _oceanMaterial.GetFloat(_idWaveFoamCoverage);
-
-                if (_hasFoamScaleProperty)
-                    _defaultFoamScale = _oceanMaterial.GetFloat(_idFoamScale);
-            }
-
+            _appliedOceanSurfaceState = _oceanSurfaceDefaults;
             _cachedOceanDefaults = true;
         }
 
@@ -604,6 +609,7 @@ namespace Hecton8.Atmosphere
             if (_runtimeStateInitialized)
                 return;
 
+            EnsureWeatherMathBuffers();
             RuntimeWeatherProfile initialProfile;
             if (!TrySelectInitialProfile(out initialProfile))
                 return;
@@ -616,7 +622,275 @@ namespace Hecton8.Atmosphere
             _debugCurrentWeatherKind = initialProfile.kind;
             SampleLocalRainExposure();
             _currentLocalRainExposure = _targetLocalRainExposure;
+            RunWeatherMathJobCold();
         }
+
+        private void EnsureWeatherMathBuffers()
+        {
+            if (_weatherJobOutput.IsCreated)
+                return;
+
+            _weatherJobOutput = new NativeArray<SurfaceWeatherJobOutput>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<SurfaceWeatherJobOutput>[1] - persistent Burst weather output buffer - owner: HectonSurfaceWeatherDirector
+        }
+
+        private void DisposeWeatherMathBuffers()
+        {
+            if (!_weatherJobOutput.IsCreated)
+                return;
+
+            if (_weatherJobScheduled)
+                _weatherJobOutput.Dispose(_weatherJobHandle);
+            else
+                _weatherJobOutput.Dispose();
+
+            _weatherJobOutput = default;
+            _weatherJobScheduled = false;
+            _weatherJobPrimed = false;
+        }
+
+        private void RunWeatherMathJobCold()
+        {
+            if (!_runtimeStateInitialized)
+                return;
+
+            EnsureWeatherMathBuffers();
+            SurfaceWeatherMathJob job = new SurfaceWeatherMathJob
+            {
+                input = BuildWeatherJobInput(0f),
+                output = _weatherJobOutput
+            };
+
+            job.Run(); // COLD SYNC JOB: one-time weather math priming to seed derived bindings before the first runtime tick.
+            CommitWeatherMathOutput(_weatherJobOutput[0]);
+            _weatherJobPrimed = true;
+        }
+
+        private void TryCompleteWeatherMathJob()
+        {
+            if (!_weatherJobScheduled)
+                return;
+
+            _weatherJobHandle.Complete();
+            _weatherJobScheduled = false;
+            CommitWeatherMathOutput(_weatherJobOutput[0]);
+            _weatherJobPrimed = true;
+        }
+
+        private void ScheduleWeatherMathJob(float deltaTime)
+        {
+            if (!_runtimeStateInitialized)
+                return;
+
+            EnsureWeatherMathBuffers();
+            SurfaceWeatherMathJob job = new SurfaceWeatherMathJob
+            {
+                input = BuildWeatherJobInput(deltaTime),
+                output = _weatherJobOutput
+            };
+
+            _weatherJobHandle = job.Schedule();
+            _weatherJobScheduled = true;
+        }
+
+        private SurfaceWeatherJobInput BuildWeatherJobInput(float deltaTime)
+        {
+            Vector3 followPosition = ResolveFollowPosition();
+            return new SurfaceWeatherJobInput
+            {
+                currentState = ToMathState(_currentState),
+                targetState = ToMathState(_targetProfile.state),
+                deltaTime = math.max(0f, deltaTime),
+                weatherBlendDuration = math.max(1f, weatherBlendDuration),
+                executionMode = (byte)_executionMode,
+                currentLocalRainExposure = _currentLocalRainExposure,
+                targetLocalRainExposure = _targetLocalRainExposure,
+                shelterExposureBlendTime = math.max(0.05f, shelterExposureBlendTime),
+                lightningCooldown = _lightningCooldown,
+                lightningFlashRemaining = _lightningFlashRemaining,
+                lightningFlashStrength = _lightningFlashStrength,
+                pendingThunderDelay = _pendingThunderDelay,
+                pendingThunderVolume = _pendingThunderVolume,
+                pendingThunderPitch = _pendingThunderPitch,
+                pendingThunderPosition = ToFloat3(_pendingThunderPosition),
+                gustTimeOffset = _gustTimeOffset,
+                unscaledTime = Time.unscaledTime,
+                stormEquipmentPulseTimer = _stormEquipmentPulseTimer,
+                stormInterferenceElectricalThreshold = stormInterferenceElectricalThreshold,
+                stormInterferencePulseIntervalMin = stormInterferencePulseIntervalMin,
+                stormInterferencePulseIntervalMax = stormInterferencePulseIntervalMax,
+                followPosition = ToFloat3(followPosition),
+                surfaceY = ResolveSurfaceY(followPosition),
+                randomState = _rngState,
+                defaultFoamStrength = _oceanSurfaceDefaults.FoamStrength,
+                defaultFoamCoverage = _oceanSurfaceDefaults.FoamCoverage,
+                defaultFoamScale = _oceanSurfaceDefaults.FoamScale
+            };
+        }
+
+        private void CommitWeatherMathOutput(in SurfaceWeatherJobOutput output)
+        {
+            _currentState = FromMathState(output.currentState);
+            _computedBindings = output.bindings;
+            _currentLocalRainExposure = output.currentLocalRainExposure;
+            _lightningCooldown = output.lightningCooldown;
+            _lightningFlashRemaining = output.lightningFlashRemaining;
+            _lightningFlashStrength = output.lightningFlashStrength;
+            _pendingThunderDelay = output.pendingThunderDelay;
+            _pendingThunderVolume = output.pendingThunderVolume;
+            _pendingThunderPitch = output.pendingThunderPitch;
+            _pendingThunderPosition = ToVector3(output.pendingThunderPosition);
+            _stormEquipmentPulseTimer = output.stormEquipmentPulseTimer;
+            _rngState = output.randomState;
+
+            if (output.shouldTriggerLightningStormPulse != 0)
+            {
+                TriggerStormEquipmentPulse(
+                    output.stormPulseIntensity,
+                    lightningHudGlitchDuration,
+                    stormVisorInterferenceHoldDuration * 1.5f,
+                    stormVisorInterferenceRecoverySpeed * 0.85f,
+                    stormFlashlightInterferenceHoldDuration * 1.4f,
+                    stormFlashlightInterferenceRecoverySpeed * 0.8f);
+            }
+            else if (output.shouldTriggerPassiveStormPulse != 0)
+            {
+                TriggerStormEquipmentPulse(
+                    output.stormPulseIntensity,
+                    stormHudGlitchDuration,
+                    stormVisorInterferenceHoldDuration,
+                    stormVisorInterferenceRecoverySpeed,
+                    stormFlashlightInterferenceHoldDuration,
+                    stormFlashlightInterferenceRecoverySpeed);
+            }
+
+            if (output.shouldTriggerLightning != 0 &&
+                weatherVfxRig != null &&
+                _executionMode == SurfaceExecutionMode.SurfaceActive)
+            {
+                weatherVfxRig.TriggerLightningStrike(
+                    ToVector3(output.lightningImpactPosition),
+                    _currentState.windDirection,
+                    _lightningFlashStrength,
+                    output.lightningPhaseA,
+                    output.lightningPhaseB,
+                    output.lightningBoltWidth,
+                    output.lightningLightRange);
+            }
+
+            if (output.shouldPlayThunder != 0)
+                PlayThunder();
+        }
+
+        private static SurfaceWeatherMathState ToMathState(in WeatherFrameState state)
+        {
+            return new SurfaceWeatherMathState
+            {
+                cloudDensityThreshold = state.cloudDensityThreshold,
+                cloudSoftness = state.cloudSoftness,
+                cloudSpeedMultiplier = state.cloudSpeedMultiplier,
+                windDirection = ToFloat2(state.windDirection),
+                skyLuminanceMultiplier = state.skyLuminanceMultiplier,
+                starVisibilityMultiplier = state.starVisibilityMultiplier,
+                stormEmissionMultiplier = state.stormEmissionMultiplier,
+                cloudLitColor = ToFloat4(state.cloudLitColor),
+                cloudShadowColor = ToFloat4(state.cloudShadowColor),
+                sunsetCloudColor = ToFloat4(state.sunsetCloudColor),
+                nightCloudColor = ToFloat4(state.nightCloudColor),
+                surfaceFogColor = ToFloat4(state.surfaceFogColor),
+                surfaceFogDensity = state.surfaceFogDensity,
+                surfaceAmbientColor = ToFloat4(state.surfaceAmbientColor),
+                surfaceSunMultiplier = state.surfaceSunMultiplier,
+                sunDiscMultiplier = state.sunDiscMultiplier,
+                sunScatterMultiplier = state.sunScatterMultiplier,
+                oceanWindSpeedKmh = state.oceanWindSpeedKmh,
+                oceanFoamStrength = state.oceanFoamStrength,
+                oceanFoamCoverage = state.oceanFoamCoverage,
+                oceanFoamScale = state.oceanFoamScale,
+                precipitationIntensity = state.precipitationIntensity,
+                electricalActivity = state.electricalActivity,
+                lightningFlashIntensity = state.lightningFlashIntensity,
+                lightningFlashDuration = state.lightningFlashDuration,
+                thunderDelayMin = state.thunderDelayMin,
+                thunderDelayMax = state.thunderDelayMax,
+                lightningStrikeDistanceMin = state.lightningStrikeDistanceMin,
+                lightningStrikeDistanceMax = state.lightningStrikeDistanceMax,
+                lightningWindBias = state.lightningWindBias,
+                thunderPropagationDistanceScale = state.thunderPropagationDistanceScale,
+                thunderVolumeNear = state.thunderVolumeNear,
+                thunderVolumeFar = state.thunderVolumeFar,
+                thunderPitchMin = state.thunderPitchMin,
+                thunderPitchMax = state.thunderPitchMax,
+                localRainAreaScale = state.localRainAreaScale,
+                localRainDensityMultiplier = state.localRainDensityMultiplier,
+                surfaceImpactRadiusScale = state.surfaceImpactRadiusScale,
+                surfaceImpactDensityMultiplier = state.surfaceImpactDensityMultiplier,
+                lightningBoltWidthMultiplier = state.lightningBoltWidthMultiplier,
+                lightningLightRangeMultiplier = state.lightningLightRangeMultiplier,
+                gustStrength = state.gustStrength,
+                gustFrequency = state.gustFrequency,
+                squallStrength = state.squallStrength,
+                squallFrequency = state.squallFrequency
+            };
+        }
+
+        private static WeatherFrameState FromMathState(in SurfaceWeatherMathState state)
+        {
+            return new WeatherFrameState
+            {
+                cloudDensityThreshold = state.cloudDensityThreshold,
+                cloudSoftness = state.cloudSoftness,
+                cloudSpeedMultiplier = state.cloudSpeedMultiplier,
+                windDirection = ToVector2(state.windDirection),
+                skyLuminanceMultiplier = state.skyLuminanceMultiplier,
+                starVisibilityMultiplier = state.starVisibilityMultiplier,
+                stormEmissionMultiplier = state.stormEmissionMultiplier,
+                cloudLitColor = ToColor(state.cloudLitColor),
+                cloudShadowColor = ToColor(state.cloudShadowColor),
+                sunsetCloudColor = ToColor(state.sunsetCloudColor),
+                nightCloudColor = ToColor(state.nightCloudColor),
+                surfaceFogColor = ToColor(state.surfaceFogColor),
+                surfaceFogDensity = state.surfaceFogDensity,
+                surfaceAmbientColor = ToColor(state.surfaceAmbientColor),
+                surfaceSunMultiplier = state.surfaceSunMultiplier,
+                sunDiscMultiplier = state.sunDiscMultiplier,
+                sunScatterMultiplier = state.sunScatterMultiplier,
+                oceanWindSpeedKmh = state.oceanWindSpeedKmh,
+                oceanFoamStrength = state.oceanFoamStrength,
+                oceanFoamCoverage = state.oceanFoamCoverage,
+                oceanFoamScale = state.oceanFoamScale,
+                precipitationIntensity = state.precipitationIntensity,
+                electricalActivity = state.electricalActivity,
+                lightningFlashIntensity = state.lightningFlashIntensity,
+                lightningFlashDuration = state.lightningFlashDuration,
+                thunderDelayMin = state.thunderDelayMin,
+                thunderDelayMax = state.thunderDelayMax,
+                lightningStrikeDistanceMin = state.lightningStrikeDistanceMin,
+                lightningStrikeDistanceMax = state.lightningStrikeDistanceMax,
+                lightningWindBias = state.lightningWindBias,
+                thunderPropagationDistanceScale = state.thunderPropagationDistanceScale,
+                thunderVolumeNear = state.thunderVolumeNear,
+                thunderVolumeFar = state.thunderVolumeFar,
+                thunderPitchMin = state.thunderPitchMin,
+                thunderPitchMax = state.thunderPitchMax,
+                localRainAreaScale = state.localRainAreaScale,
+                localRainDensityMultiplier = state.localRainDensityMultiplier,
+                surfaceImpactRadiusScale = state.surfaceImpactRadiusScale,
+                surfaceImpactDensityMultiplier = state.surfaceImpactDensityMultiplier,
+                lightningBoltWidthMultiplier = state.lightningBoltWidthMultiplier,
+                lightningLightRangeMultiplier = state.lightningLightRangeMultiplier,
+                gustStrength = state.gustStrength,
+                gustFrequency = state.gustFrequency,
+                squallStrength = state.squallStrength,
+                squallFrequency = state.squallFrequency
+            };
+        }
+
+        private static float2 ToFloat2(Vector2 value) => new float2(value.x, value.y);
+        private static float3 ToFloat3(Vector3 value) => new float3(value.x, value.y, value.z);
+        private static float4 ToFloat4(Color value) => new float4(value.r, value.g, value.b, value.a);
+        private static Vector2 ToVector2(float2 value) => new Vector2(value.x, value.y);
+        private static Vector3 ToVector3(float3 value) => new Vector3(value.x, value.y, value.z);
+        private static Color ToColor(float4 value) => new Color(value.x, value.y, value.z, value.w);
 
         private void UpdateExecutionMode(float deltaTime)
         {
@@ -652,7 +926,7 @@ namespace Hecton8.Atmosphere
             if (playerMovement == null)
                 return 0f;
 
-            return Mathf.Max(0f, playerMovement.CurrentDepth);
+            return math.max(0f, playerMovement.CurrentDepth);
         }
 
         private void HandlePlayerWaterSplash(float intensity)
@@ -660,7 +934,7 @@ namespace Hecton8.Atmosphere
             if (weatherVfxRig == null || _executionMode != SurfaceExecutionMode.SurfaceActive)
                 return;
 
-            float clampedIntensity = Mathf.Clamp01(intensity * Mathf.Lerp(0.85f, 1.2f, _currentState.precipitationIntensity));
+            float clampedIntensity = math.saturate(intensity * math.lerp(0.85f, 1.2f, _currentState.precipitationIntensity));
             if (clampedIntensity <= 0.01f)
                 return;
 
@@ -723,7 +997,7 @@ namespace Hecton8.Atmosphere
                 }
             }
 
-            float electricalActivity = Mathf.Clamp01(_currentState.electricalActivity);
+            float electricalActivity = math.saturate(_currentState.electricalActivity);
             if (electricalActivity <= 0.2f)
                 return;
 
@@ -736,9 +1010,9 @@ namespace Hecton8.Atmosphere
 
         private void TriggerLightning(float electricalActivity)
         {
-            float flashDuration = Mathf.Max(0.02f, _currentState.lightningFlashDuration);
-            float flashBase = Mathf.Max(0f, _currentState.lightningFlashIntensity);
-            float flashVariance = Mathf.Lerp(0.7f, 1f, NextRandom01());
+            float flashDuration = math.max(0.02f, _currentState.lightningFlashDuration);
+            float flashBase = math.max(0f, _currentState.lightningFlashIntensity);
+            float flashVariance = math.lerp(0.7f, 1f, NextRandom01());
             float gustMultiplier = ResolveGustMultiplier(_currentState);
             float strikeRandomA = NextRandom01();
             float strikeRandomB = NextRandom01();
@@ -755,7 +1029,7 @@ namespace Hecton8.Atmosphere
             _lightningFlashStrength = flashBase * flashVariance;
             _lightningCooldown = ResolveNextLightningCooldown(electricalActivity);
             TriggerStormEquipmentPulse(
-                Mathf.Lerp(0.58f, 1f, electricalActivity),
+                math.lerp(0.58f, 1f, electricalActivity),
                 lightningHudGlitchDuration,
                 stormVisorInterferenceHoldDuration * 1.5f,
                 stormVisorInterferenceRecoverySpeed * 0.85f,
@@ -772,7 +1046,7 @@ namespace Hecton8.Atmosphere
                     strikePlan.phaseA,
                     strikePlan.phaseB,
                     _currentState.lightningBoltWidthMultiplier,
-                    _currentState.lightningLightRangeMultiplier * Mathf.Lerp(1f, gustMultiplier, 0.08f));
+                    _currentState.lightningLightRangeMultiplier * math.lerp(1f, gustMultiplier, 0.08f));
             }
 
             if (thunderClips != null && thunderClips.Length > 0)
@@ -812,20 +1086,20 @@ namespace Hecton8.Atmosphere
                 stormFlashlightInterferenceHoldDuration,
                 stormFlashlightInterferenceRecoverySpeed);
 
-            _stormEquipmentPulseTimer = Mathf.Lerp(
-                Mathf.Max(0.05f, stormInterferencePulseIntervalMax),
-                Mathf.Max(0.05f, stormInterferencePulseIntervalMin),
+            _stormEquipmentPulseTimer = math.lerp(
+                math.max(0.05f, stormInterferencePulseIntervalMax),
+                math.max(0.05f, stormInterferencePulseIntervalMin),
                 stormInterference);
         }
 
         private float ResolveStormInterference01()
         {
-            float electricalActivity = Mathf.Clamp01(_currentState.electricalActivity);
+            float electricalActivity = math.saturate(_currentState.electricalActivity);
             if (electricalActivity <= stormInterferenceElectricalThreshold)
                 return 0f;
 
-            float electricalT = Mathf.InverseLerp(stormInterferenceElectricalThreshold, 1f, electricalActivity);
-            float precipitationT = Mathf.Lerp(0.7f, 1f, Mathf.Clamp01(_currentState.precipitationIntensity));
+            float electricalT = math.saturate((electricalActivity - stormInterferenceElectricalThreshold) / math.max(1f - stormInterferenceElectricalThreshold, 0.0001f));
+            float precipitationT = math.lerp(0.7f, 1f, math.saturate(_currentState.precipitationIntensity));
             return electricalT * precipitationT;
         }
 
@@ -837,7 +1111,7 @@ namespace Hecton8.Atmosphere
             float flashlightHoldDuration,
             float flashlightRecoverySpeed)
         {
-            float clampedIntensity = Mathf.Clamp01(normalizedIntensity);
+            float clampedIntensity = math.saturate(normalizedIntensity);
             if (clampedIntensity <= 0f)
                 return;
 
@@ -872,20 +1146,20 @@ namespace Hecton8.Atmosphere
             else
                 preferredDirection.Normalize();
 
-            float randomAngle = randomA * Mathf.PI * 2f;
-            Vector2 randomDirection = new Vector2(Mathf.Cos(randomAngle), Mathf.Sin(randomAngle));
-            float clampedWindBias = Mathf.Clamp01(_currentState.lightningWindBias);
-            float angularOffset = ((randomB * 2f) - 1f) * Mathf.Lerp(1.4f, 0.35f, clampedWindBias);
+            float randomAngle = randomA * math.PI * 2f;
+            Vector2 randomDirection = new Vector2(math.cos(randomAngle), math.sin(randomAngle));
+            float clampedWindBias = math.saturate(_currentState.lightningWindBias);
+            float angularOffset = ((randomB * 2f) - 1f) * math.lerp(1.4f, 0.35f, clampedWindBias);
             Vector2 windBiasedDirection = RotateDirection(preferredDirection, angularOffset);
-            Vector2 resolvedDirection = Vector2.Lerp(randomDirection, windBiasedDirection, clampedWindBias);
+            Vector2 resolvedDirection = ToVector2(math.lerp(ToFloat2(randomDirection), ToFloat2(windBiasedDirection), clampedWindBias));
             if (resolvedDirection.sqrMagnitude < 0.0001f)
                 resolvedDirection = randomDirection;
 
             resolvedDirection.Normalize();
 
-            float minDistance = Mathf.Max(10f, _currentState.lightningStrikeDistanceMin);
-            float maxDistance = Mathf.Max(minDistance, _currentState.lightningStrikeDistanceMax);
-            float distance = Mathf.Lerp(minDistance, maxDistance, randomA);
+            float minDistance = math.max(10f, _currentState.lightningStrikeDistanceMin);
+            float maxDistance = math.max(minDistance, _currentState.lightningStrikeDistanceMax);
+            float distance = math.lerp(minDistance, maxDistance, randomA);
 
             LightningStrikePlan plan;
             plan.impactPosition = followPosition + new Vector3(resolvedDirection.x, 0f, resolvedDirection.y) * distance;
@@ -898,30 +1172,30 @@ namespace Hecton8.Atmosphere
         private void ConfigurePendingThunder(Vector3 strikePosition, Vector3 listenerPosition, float electricalActivity)
         {
             float thunderDistance = Vector3.Distance(listenerPosition, strikePosition);
-            float minDistance = Mathf.Max(10f, _currentState.lightningStrikeDistanceMin);
-            float maxDistance = Mathf.Max(minDistance, _currentState.lightningStrikeDistanceMax);
-            float distanceT = Mathf.InverseLerp(minDistance, maxDistance, thunderDistance);
-            float loudness = Mathf.Lerp(_currentState.thunderVolumeNear, _currentState.thunderVolumeFar, distanceT);
-            float stormBoost = Mathf.Lerp(0.65f, 1f, electricalActivity);
-            float effectiveDistance = thunderDistance * Mathf.Max(0.25f, _currentState.thunderPropagationDistanceScale);
+            float minDistance = math.max(10f, _currentState.lightningStrikeDistanceMin);
+            float maxDistance = math.max(minDistance, _currentState.lightningStrikeDistanceMax);
+            float distanceT = math.saturate((thunderDistance - minDistance) / math.max(maxDistance - minDistance, 0.0001f));
+            float loudness = math.lerp(_currentState.thunderVolumeNear, _currentState.thunderVolumeFar, distanceT);
+            float stormBoost = math.lerp(0.65f, 1f, electricalActivity);
+            float effectiveDistance = thunderDistance * math.max(0.25f, _currentState.thunderPropagationDistanceScale);
             float thunderDelay = effectiveDistance / 343f;
 
             _pendingThunderPosition = strikePosition;
-            _pendingThunderDelay = Mathf.Clamp(
+            _pendingThunderDelay = math.clamp(
                 thunderDelay,
                 _currentState.thunderDelayMin,
                 _currentState.thunderDelayMax);
             _pendingThunderVolume = loudness * stormBoost;
-            _pendingThunderPitch = Mathf.Lerp(
+            _pendingThunderPitch = math.lerp(
                 _currentState.thunderPitchMin,
                 _currentState.thunderPitchMax,
-                NextRandom01()) * Mathf.Lerp(0.94f, 1.02f, 1f - distanceT);
+                NextRandom01()) * math.lerp(0.94f, 1.02f, 1f - distanceT);
         }
 
         private static Vector2 RotateDirection(Vector2 direction, float angleRadians)
         {
-            float sin = Mathf.Sin(angleRadians);
-            float cos = Mathf.Cos(angleRadians);
+            float sin = math.sin(angleRadians);
+            float cos = math.cos(angleRadians);
             return new Vector2(
                 direction.x * cos - direction.y * sin,
                 direction.x * sin + direction.y * cos);
@@ -929,15 +1203,15 @@ namespace Hecton8.Atmosphere
 
         private float ResolveNextLightningCooldown(float electricalActivity)
         {
-            float clampedElectrical = Mathf.Clamp01(electricalActivity);
-            float baseInterval = Mathf.Lerp(18f, 4.5f, clampedElectrical);
-            float jitter = Mathf.Lerp(8f, 1.5f, clampedElectrical);
-            return Mathf.Max(0.5f, baseInterval + ((NextRandom01() * 2f) - 1f) * jitter);
+            float clampedElectrical = math.saturate(electricalActivity);
+            float baseInterval = math.lerp(18f, 4.5f, clampedElectrical);
+            float jitter = math.lerp(8f, 1.5f, clampedElectrical);
+            return math.max(0.5f, baseInterval + ((NextRandom01() * 2f) - 1f) * jitter);
         }
 
         private void BlendWeather(float deltaTime)
         {
-            float blendT = Mathf.Clamp01(deltaTime / weatherBlendDuration);
+            float blendT = math.saturate(deltaTime / math.max(weatherBlendDuration, 0.0001f));
             _currentState = WeatherFrameState.Lerp(_currentState, _targetProfile.state, blendT);
         }
 
@@ -949,17 +1223,17 @@ namespace Hecton8.Atmosphere
             _debugLightningFlash = _lightningFlashStrength;
             _debugPrecipitation = _currentState.precipitationIntensity;
             _debugElectricalActivity = _currentState.electricalActivity;
-            _debugGustMultiplier = ResolveGustMultiplier(_currentState);
-            _debugSquallMultiplier = ResolveSquallMultiplier(_currentState);
+            _debugGustMultiplier = _computedBindings.gustMultiplier;
+            _debugSquallMultiplier = _computedBindings.squallMultiplier;
             _debugLocalRainExposure = _currentLocalRainExposure;
             _debugIsSheltered = _isLocallySheltered;
         }
 
         private void UpdateLocalRainExposure(float deltaTime)
         {
-            float blendTime = Mathf.Max(0.05f, shelterExposureBlendTime);
-            float blendT = Mathf.Clamp01(deltaTime / blendTime);
-            _currentLocalRainExposure = Mathf.Lerp(_currentLocalRainExposure, _targetLocalRainExposure, blendT);
+            float blendTime = math.max(0.05f, shelterExposureBlendTime);
+            float blendT = math.saturate(deltaTime / blendTime);
+            _currentLocalRainExposure = math.lerp(_currentLocalRainExposure, _targetLocalRainExposure, blendT);
         }
 
         private void SampleLocalRainExposure()
@@ -996,7 +1270,7 @@ namespace Hecton8.Atmosphere
             }
 
             Vector3 followPosition = ResolveFollowPosition();
-            float probeRadius = Mathf.Max(0.25f, shelterProbeRadius);
+            float probeRadius = math.max(0.25f, shelterProbeRadius);
             int openProbeCount = 0;
 
             for (int i = 0; i < ShelterSampleCount; i++)
@@ -1043,70 +1317,57 @@ namespace Hecton8.Atmosphere
 
         private float ResolveGustMultiplier(in WeatherFrameState state)
         {
-            float gustStrength = Mathf.Clamp01(state.gustStrength);
+            float gustStrength = math.saturate(state.gustStrength);
             if (gustStrength <= 0.001f)
                 return 1f;
 
-            float frequency = Mathf.Clamp(state.gustFrequency, 0.005f, 0.2f);
-            float phase = (Time.unscaledTime + _gustTimeOffset) * frequency * Mathf.PI * 2f;
+            float frequency = math.clamp(state.gustFrequency, 0.005f, 0.2f);
+            float phase = (Time.unscaledTime + _gustTimeOffset) * frequency * math.PI * 2f;
             float composite =
-                Mathf.Sin(phase) * 0.58f +
-                Mathf.Sin(phase * 0.43f + 1.17f) * 0.29f +
-                Mathf.Sin(phase * 1.73f + 0.41f) * 0.13f;
+                math.sin(phase) * 0.58f +
+                math.sin(phase * 0.43f + 1.17f) * 0.29f +
+                math.sin(phase * 1.73f + 0.41f) * 0.13f;
 
-            float normalized = Mathf.Clamp01((composite + 1f) * 0.5f);
+            float normalized = math.saturate((composite + 1f) * 0.5f);
             float envelope = normalized * normalized;
             float calmFloor = 1f - gustStrength * 0.12f;
             float gustPeak = 1f + gustStrength * 0.42f;
-            return Mathf.Lerp(calmFloor, gustPeak, envelope);
+            return math.lerp(calmFloor, gustPeak, envelope);
         }
 
         private float ResolveSquallMultiplier(in WeatherFrameState state)
         {
-            float squallStrength = Mathf.Clamp01(state.squallStrength);
+            float squallStrength = math.saturate(state.squallStrength);
             if (squallStrength <= 0.001f)
                 return 1f;
 
-            float frequency = Mathf.Clamp(state.squallFrequency, 0.005f, 0.08f);
-            float phase = (Time.unscaledTime + _gustTimeOffset * 0.37f) * frequency * Mathf.PI * 2f;
+            float frequency = math.clamp(state.squallFrequency, 0.005f, 0.08f);
+            float phase = (Time.unscaledTime + _gustTimeOffset * 0.37f) * frequency * math.PI * 2f;
             float composite =
-                Mathf.Sin(phase) * 0.61f +
-                Mathf.Sin(phase * 0.31f + 2.14f) * 0.27f +
-                Mathf.Sin(phase * 1.09f + 0.63f) * 0.12f;
+                math.sin(phase) * 0.61f +
+                math.sin(phase * 0.31f + 2.14f) * 0.27f +
+                math.sin(phase * 1.09f + 0.63f) * 0.12f;
 
-            float normalized = Mathf.Clamp01((composite + 1f) * 0.5f);
+            float normalized = math.saturate((composite + 1f) * 0.5f);
             float bandEnvelope = normalized * normalized * normalized;
             float calmFloor = 1f - squallStrength * 0.26f;
             float squallPeak = 1f + squallStrength * 0.72f;
-            return Mathf.Lerp(calmFloor, squallPeak, bandEnvelope);
+            return math.lerp(calmFloor, squallPeak, bandEnvelope);
         }
 
         private void ApplyWeatherBindings(float deltaTime)
         {
+            if (!_weatherJobPrimed)
+                return;
+
             if (_executionMode == SurfaceExecutionMode.SurfaceSuppressed)
             {
                 ClearWeatherBindings();
                 return;
             }
 
-            float flashStrength = Mathf.Max(0f, _lightningFlashStrength);
-            float gustMultiplier = ResolveGustMultiplier(_currentState);
-            float squallMultiplier = ResolveSquallMultiplier(_currentState);
             bool surfaceVfxActive = _executionMode == SurfaceExecutionMode.SurfaceActive;
-            float localRainExposure = surfaceVfxActive ? Mathf.Clamp01(_currentLocalRainExposure) : 0f;
-            float skyLuminance = Mathf.Max(0f, _currentState.skyLuminanceMultiplier + flashStrength * 0.22f);
-            float sunDisc = Mathf.Max(0f, _currentState.sunDiscMultiplier + flashStrength);
-            float sunScatter = Mathf.Max(0f, _currentState.sunScatterMultiplier + flashStrength * 0.35f);
-            float sunMultiplier = Mathf.Max(0f, _currentState.surfaceSunMultiplier + flashStrength * 0.45f);
-            float cloudSpeedMultiplier = _currentState.cloudSpeedMultiplier * Mathf.Lerp(1f, gustMultiplier, 0.35f);
-            float vfxPrecipitation = surfaceVfxActive
-                ? Mathf.Clamp01(_currentState.precipitationIntensity * Mathf.Lerp(1f, gustMultiplier, 0.4f) * squallMultiplier * localRainExposure)
-                : 0f;
-            float acousticPrecipitation = Mathf.Clamp01(_currentState.precipitationIntensity * squallMultiplier);
-            float localRainAreaScale = _currentState.localRainAreaScale * Mathf.Lerp(1f, gustMultiplier, 0.18f) * Mathf.Lerp(1f, squallMultiplier, 0.08f);
-            float localRainDensityMultiplier = _currentState.localRainDensityMultiplier * Mathf.Lerp(1f, gustMultiplier, 0.35f) * squallMultiplier * Mathf.Lerp(0.4f, 1f, localRainExposure);
-            float surfaceImpactRadiusScale = _currentState.surfaceImpactRadiusScale * Mathf.Lerp(1f, gustMultiplier, 0.12f) * Mathf.Lerp(1f, squallMultiplier, 0.15f);
-            float surfaceImpactDensityMultiplier = _currentState.surfaceImpactDensityMultiplier * Mathf.Lerp(1f, gustMultiplier, 0.42f) * squallMultiplier * localRainExposure;
+            SurfaceWeatherBindingSnapshot bindings = _computedBindings;
 
             if (underwaterVisuals != null)
             {
@@ -1114,7 +1375,7 @@ namespace Hecton8.Atmosphere
                     _currentState.surfaceFogColor,
                     _currentState.surfaceFogDensity,
                     _currentState.surfaceAmbientColor,
-                    sunMultiplier);
+                    bindings.sunMultiplier);
             }
 
             if (celestialEngine != null)
@@ -1122,17 +1383,17 @@ namespace Hecton8.Atmosphere
                 celestialEngine.SetSurfaceWeatherOverride(
                     _currentState.cloudDensityThreshold,
                     _currentState.cloudSoftness,
-                    cloudSpeedMultiplier,
+                    bindings.cloudSpeedMultiplier,
                     _currentState.windDirection,
                     _currentState.surfaceFogColor,
                     _currentState.surfaceFogDensity,
                     _currentState.surfaceAmbientColor,
-                    sunMultiplier,
+                    bindings.sunMultiplier,
                     _currentState.starVisibilityMultiplier,
                     _currentState.stormEmissionMultiplier,
-                    skyLuminance,
-                    sunDisc,
-                    sunScatter,
+                    bindings.skyLuminance,
+                    bindings.sunDisc,
+                    bindings.sunScatter,
                     _currentState.cloudLitColor,
                     _currentState.cloudShadowColor,
                     _currentState.sunsetCloudColor,
@@ -1142,7 +1403,7 @@ namespace Hecton8.Atmosphere
             if (acousticZoneController != null)
             {
                 acousticZoneController.SetSurfaceWeatherMix(
-                    acousticPrecipitation,
+                    bindings.acousticPrecipitation,
                     _currentState.electricalActivity);
             }
 
@@ -1155,17 +1416,17 @@ namespace Hecton8.Atmosphere
                     followPosition,
                     surfaceY,
                     _currentState.windDirection,
-                    vfxPrecipitation,
-                    localRainAreaScale,
-                    localRainDensityMultiplier,
-                    surfaceImpactRadiusScale,
-                    surfaceImpactDensityMultiplier,
+                    bindings.vfxPrecipitation,
+                    bindings.localRainAreaScale,
+                    bindings.localRainDensityMultiplier,
+                    bindings.surfaceImpactRadiusScale,
+                    bindings.surfaceImpactDensityMultiplier,
                     surfaceVfxActive);
             }
 
-            _debugGustMultiplier = gustMultiplier;
-            _debugSquallMultiplier = squallMultiplier;
-            ApplyOceanState(_currentState, gustMultiplier);
+            _debugGustMultiplier = bindings.gustMultiplier;
+            _debugSquallMultiplier = bindings.squallMultiplier;
+            ApplyOceanState(bindings);
             _bindingsApplied = true;
         }
 
@@ -1193,58 +1454,29 @@ namespace Hecton8.Atmosphere
             _bindingsApplied = false;
         }
 
-        private void ApplyOceanState(in WeatherFrameState state, float gustMultiplier)
+        private void ApplyOceanState(in SurfaceWeatherBindingSnapshot bindings)
         {
             const float OceanPropertyEpsilon = 0.01f;
 
-            if (_oceanRenderer == null)
-                _oceanRenderer = OceanRenderer.Instance;
-
-            if (_oceanRenderer == null)
-                return;
-
             CacheOceanDefaults();
-            float targetWindSpeed = Mathf.Max(0f, state.oceanWindSpeedKmh * Mathf.Lerp(1f, gustMultiplier, 0.42f));
-            if (Mathf.Abs(_appliedOceanWindSpeed - targetWindSpeed) > OceanPropertyEpsilon)
-            {
-                _oceanRenderer._globalWindSpeed = targetWindSpeed;
-                _appliedOceanWindSpeed = targetWindSpeed;
-            }
-
-            Material oceanMaterial = _oceanRenderer.OceanMaterial;
-            if (oceanMaterial == null)
+            if (!_cachedOceanDefaults)
                 return;
 
-            float targetFoamStrength = _defaultFoamStrength * Mathf.Max(0f, state.oceanFoamStrength * Mathf.Lerp(1f, gustMultiplier, 0.24f));
-            float targetFoamCoverage = _defaultFoamCoverage * Mathf.Max(0f, state.oceanFoamCoverage * Mathf.Lerp(1f, gustMultiplier, 0.18f));
-            float targetFoamScale = _defaultFoamScale * Mathf.Max(0.1f, state.oceanFoamScale * Mathf.Lerp(1f, gustMultiplier, 0.08f));
+            IHectonOceanKinematics oceanKinematics = ResolveOceanKinematics();
+            if (oceanKinematics == null)
+                return;
 
-            if (_hasFoamStrengthProperty)
-            {
-                if (Mathf.Abs(_appliedFoamStrength - targetFoamStrength) > OceanPropertyEpsilon)
-                {
-                    oceanMaterial.SetFloat(_idWaveFoamStrength, targetFoamStrength);
-                    _appliedFoamStrength = targetFoamStrength;
-                }
-            }
+            HectonOceanSurfaceWeatherState targetState = _oceanSurfaceDefaults;
+            targetState.WindSpeed = bindings.targetWindSpeed;
+            targetState.FoamStrength = bindings.targetFoamStrength;
+            targetState.FoamCoverage = bindings.targetFoamCoverage;
+            targetState.FoamScale = bindings.targetFoamScale;
 
-            if (_hasFoamCoverageProperty)
-            {
-                if (Mathf.Abs(_appliedFoamCoverage - targetFoamCoverage) > OceanPropertyEpsilon)
-                {
-                    oceanMaterial.SetFloat(_idWaveFoamCoverage, targetFoamCoverage);
-                    _appliedFoamCoverage = targetFoamCoverage;
-                }
-            }
+            if (!NeedsOceanSurfaceStateUpdate(in targetState, OceanPropertyEpsilon))
+                return;
 
-            if (_hasFoamScaleProperty)
-            {
-                if (Mathf.Abs(_appliedFoamScale - targetFoamScale) > OceanPropertyEpsilon)
-                {
-                    oceanMaterial.SetFloat(_idFoamScale, targetFoamScale);
-                    _appliedFoamScale = targetFoamScale;
-                }
-            }
+            if (oceanKinematics.ApplySurfaceWeatherState(in targetState))
+                _appliedOceanSurfaceState = targetState;
         }
 
         private void RestoreOceanDefaults()
@@ -1252,31 +1484,42 @@ namespace Hecton8.Atmosphere
             if (!_cachedOceanDefaults)
                 return;
 
-            if (_oceanRenderer == null)
-                _oceanRenderer = OceanRenderer.Instance;
-
-            if (_oceanRenderer == null)
+            IHectonOceanKinematics oceanKinematics = ResolveOceanKinematics();
+            if (oceanKinematics == null)
                 return;
 
-            _oceanRenderer._globalWindSpeed = _defaultOceanWindSpeed;
+            if (oceanKinematics.ApplySurfaceWeatherState(in _oceanSurfaceDefaults))
+                _appliedOceanSurfaceState = _oceanSurfaceDefaults;
+        }
 
-            Material oceanMaterial = _oceanRenderer.OceanMaterial;
-            if (oceanMaterial == null)
-                return;
+        private bool NeedsOceanSurfaceStateUpdate(in HectonOceanSurfaceWeatherState targetState, float epsilon)
+        {
+            uint flags = targetState.Flags;
+            if ((flags & (uint)HectonOceanSurfaceWeatherStateFlags.SupportsWindSpeed) != 0u &&
+                math.abs(_appliedOceanSurfaceState.WindSpeed - targetState.WindSpeed) > epsilon)
+            {
+                return true;
+            }
 
-            if (_hasFoamStrengthProperty)
-                oceanMaterial.SetFloat(_idWaveFoamStrength, _defaultFoamStrength);
+            if ((flags & (uint)HectonOceanSurfaceWeatherStateFlags.SupportsFoamStrength) != 0u &&
+                math.abs(_appliedOceanSurfaceState.FoamStrength - targetState.FoamStrength) > epsilon)
+            {
+                return true;
+            }
 
-            if (_hasFoamCoverageProperty)
-                oceanMaterial.SetFloat(_idWaveFoamCoverage, _defaultFoamCoverage);
+            if ((flags & (uint)HectonOceanSurfaceWeatherStateFlags.SupportsFoamCoverage) != 0u &&
+                math.abs(_appliedOceanSurfaceState.FoamCoverage - targetState.FoamCoverage) > epsilon)
+            {
+                return true;
+            }
 
-            if (_hasFoamScaleProperty)
-                oceanMaterial.SetFloat(_idFoamScale, _defaultFoamScale);
+            if ((flags & (uint)HectonOceanSurfaceWeatherStateFlags.SupportsFoamScale) != 0u &&
+                math.abs(_appliedOceanSurfaceState.FoamScale - targetState.FoamScale) > epsilon)
+            {
+                return true;
+            }
 
-            _appliedOceanWindSpeed = _defaultOceanWindSpeed;
-            _appliedFoamStrength = _defaultFoamStrength;
-            _appliedFoamCoverage = _defaultFoamCoverage;
-            _appliedFoamScale = _defaultFoamScale;
+            return false;
         }
 
         private void PlayThunder()
@@ -1287,7 +1530,7 @@ namespace Hecton8.Atmosphere
             if (!SpatialAudioManager.TryGetInstance(out SpatialAudioManager audioManager) || audioManager == null)
                 return;
 
-            int clipIndex = Mathf.Clamp((int)(NextRandom01() * thunderClips.Length), 0, thunderClips.Length - 1);
+            int clipIndex = math.clamp((int)(NextRandom01() * thunderClips.Length), 0, thunderClips.Length - 1);
             AudioClip clip = thunderClips[clipIndex];
             if (clip == null)
                 return;
@@ -1328,7 +1571,7 @@ namespace Hecton8.Atmosphere
                 if (excludeCurrentKind && candidate.kind == excludedKind && profileCount > 1)
                     continue;
 
-                totalWeight += Mathf.Max(0.001f, candidate.selectionWeight);
+                totalWeight += math.max(0.001f, candidate.selectionWeight);
             }
 
             if (totalWeight <= 0f)
@@ -1345,7 +1588,7 @@ namespace Hecton8.Atmosphere
                 if (excludeCurrentKind && candidate.kind == excludedKind && profileCount > 1)
                     continue;
 
-                accumulator += Mathf.Max(0.001f, candidate.selectionWeight);
+                accumulator += math.max(0.001f, candidate.selectionWeight);
                 if (selection <= accumulator)
                 {
                     profile = candidate;
@@ -1361,7 +1604,7 @@ namespace Hecton8.Atmosphere
             if (profile.maxDurationSeconds <= profile.minDurationSeconds)
                 return profile.minDurationSeconds;
 
-            return Mathf.Lerp(profile.minDurationSeconds, profile.maxDurationSeconds, NextRandom01());
+            return math.lerp(profile.minDurationSeconds, profile.maxDurationSeconds, NextRandom01());
         }
 
         private int GetProfileCount()
@@ -1920,10 +2163,10 @@ namespace Hecton8.Atmosphere
                 acousticZoneController = GetComponent<AcousticZoneController>();
 
             if (weatherVfxRig == null)
-                weatherVfxRig = GetComponentInChildren<SurfaceWeatherVfxRig>(true);
+                ResolveOwnedWeatherVfxRig();
 
             if (celestialEngine == null)
-                celestialEngine = FindAnyObjectByType<HectonCelestialEngine>();
+                celestialEngine = HectonCelestialEngine.ActiveRuntimeInstance;
         }
 
         private void Reset()

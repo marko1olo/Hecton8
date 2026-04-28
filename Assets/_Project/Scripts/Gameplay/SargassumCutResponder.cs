@@ -13,7 +13,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Sargassum Cut Responder")]
-    public sealed class SargassumCutResponder : MonoBehaviour, ITickable
+    public sealed class SargassumCutResponder : MonoBehaviour, ITickable, IUpdatable
     {
         private static readonly int InteractionPositionId = Shader.PropertyToID("_InteractionPosition");
         private static readonly int InteractionRadiusId = Shader.PropertyToID("_InteractionRadius");
@@ -87,11 +87,11 @@ namespace Hecton8.Gameplay
             _cutStrength = Mathf.Max(_cutStrength, Mathf.Lerp(0.5f, 1f, normalizedSpeed));
             ApplyCutState();
 
-            if (!_registered && GameTickManager.Instance != null)
-            {
-                GameTickManager.Instance.Register(this);
-                _registered = true;
-            }
+            if (_registered)
+                return;
+
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+            _registered = true;
 
             if (leafDebrisParticles != null && _particleCooldownRemaining <= 0f)
             {
@@ -189,10 +189,10 @@ namespace Hecton8.Gameplay
 
         private void UnregisterIfNeeded()
         {
-            if (!_registered || GameTickManager.Instance == null)
+            if (!_registered)
                 return;
 
-            GameTickManager.Instance.Unregister(this);
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _registered = false;
         }
     }

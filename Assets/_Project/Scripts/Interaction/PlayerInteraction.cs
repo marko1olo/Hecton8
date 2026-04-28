@@ -53,7 +53,7 @@ namespace Hecton8.Interaction
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Player/Player Interaction")]
-    public sealed class PlayerInteraction : MonoBehaviour, ITickable
+    public sealed class PlayerInteraction : MonoBehaviour, ITickable, IUpdatable
     {
         // ====================================================================
         // SERIALIZED CONFIGURATION
@@ -159,7 +159,7 @@ namespace Hecton8.Interaction
             // ────────────────────────────────────────────────────
             if (playerCamera == null)
             {
-                playerCamera = GetComponentInChildren<Camera>(true);
+                playerCamera = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Camera>(transform);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 if (playerCamera == null)
@@ -216,10 +216,9 @@ namespace Hecton8.Interaction
 
         private void OnEnable()
         {
-            // Guard: GameTickManager may not exist yet (execution order).
-            if (GameTickManager.Instance != null && !_registeredToTickManager)
+            if (!_registeredToTickManager)
             {
-                GameTickManager.Instance.Register(this);
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
                 _registeredToTickManager = true;
             }
 
@@ -232,31 +231,18 @@ namespace Hecton8.Interaction
 
         private void Start()
         {
-            // Phase 2: deferred fallback. All Awake() calls completed.
             if (_registeredToTickManager)
                 return;
 
-            if (GameTickManager.Instance != null)
-            {
-                GameTickManager.Instance.Register(this);
-                _registeredToTickManager = true;
-            }
-            else
-            {
-                Debug.LogError(
-                    "[PlayerInteraction] GameTickManager.Instance is " +
-                    "null even at Start(). Tick-based interaction will " +
-                    "NOT work. Ensure GameTickManager exists in the " +
-                    "scene and is active.", this);
-            }
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
+            _registeredToTickManager = true;
         }
 
         private void OnDisable()
         {
-            // Guard: singleton may be destroyed before this component.
-            if (GameTickManager.Instance != null && _registeredToTickManager)
+            if (_registeredToTickManager)
             {
-                GameTickManager.Instance.Unregister(this);
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
                 _registeredToTickManager = false;
             }
 

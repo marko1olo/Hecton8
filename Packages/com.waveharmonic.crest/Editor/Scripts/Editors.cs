@@ -362,12 +362,24 @@ namespace WaveHarmonic.Crest.Editor
     [CustomEditor(typeof(DepthProbe))]
     sealed class DepthProbeEditor : Inspector
     {
-        [InitializeOnLoadMethod]
-        static void OnLoad()
+        static bool s_BakeHookRegistered;
+
+        void OnEnable()
         {
+            EnsureBakeHook();
+        }
+
+        static void EnsureBakeHook()
+        {
+            if (s_BakeHookRegistered)
+            {
+                return;
+            }
+
             // Allows DepthProbe to trigger a bake without referencing assembly.
             DepthProbe.OnBakeRequest -= Bake;
             DepthProbe.OnBakeRequest += Bake;
+            s_BakeHookRegistered = true;
         }
 
         protected override void RenderBottomButtons()

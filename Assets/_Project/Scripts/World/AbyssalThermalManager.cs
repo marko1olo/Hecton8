@@ -3,6 +3,7 @@ using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -14,7 +15,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-102)]
-    public sealed class AbyssalThermalManager : MonoBehaviour, ITickable, ISlowTickable
+    public sealed class AbyssalThermalManager : MonoBehaviour, ITickable, ISlowTickable, IOriginShiftListener
     {
         public struct ThermalFlowSample
         {
@@ -97,9 +98,8 @@ namespace Hecton8.World
         private const int MaxAnchorScanCapacity = 32;
         private const int MaxSmokeParticleCapacity = 8192;
         private const int MaxEmpNestCapacity = 8;
-        private const int ParticleStride = 40;
-        private const int VentStride = 32;
-        private const int IndirectArgsCount = 4;
+        private const int VentBufferRingSize = 3;
+        private const float VentStateCompareEpsilon = 0.01f;
         private const uint ThermalHashSeed = 0xC6BC2796u;
 
         private static AbyssalThermalManager _instance;
@@ -116,7 +116,7 @@ namespace Hecton8.World
         private ComputeShader blackSmokeCompute;
 
         [SerializeField]
-        [Tooltip("Transparent billboard material used by DrawProceduralIndirect for thermal ash.")]
+        [Tooltip("Transparent billboard material used by the direct thermal ash primitive draw.")]
         private Material blackSmokeMaterial;
 
         [SerializeField]
@@ -384,12 +384,14 @@ namespace Hecton8.World
 
         private ThermalVentState[] _ventStates;
         private ThermalVentGpuData[] _ventGpuData;
+        private ThermalVentGpuData[] _lastUploadedVentGpuData;
+        private ThermalVentState[] _lastSeededVentStates;
         private AshParticleData[] _initialParticles;
         private EmpNestState[] _empNests;
-        private ComputeBuffer _particleBufferA;
-        private ComputeBuffer _particleBufferB;
-        private ComputeBuffer _ventBuffer;
-        private ComputeBuffer _argsBuffer;
+        private GraphicsBuffer _particleBufferA;
+        private GraphicsBuffer _particleBufferB;
+        private GraphicsBuffer[] _ventBuffers;
+        private GraphicsFence[] _ventBufferFences;
         private MaterialPropertyBlock _materialPropertyBlock;
         private BioCableIK[] _bioCableVisuals;
         private Bounds _smokeBounds;
@@ -401,6 +403,8 @@ namespace Hecton8.World
         private int _threadGroupSizeX = 64;
         private int _dispatchGroupCount = 1;
         private int _frameParity;
+        private int _activeVentBufferIndex;
+        private int _nextVentBufferUploadIndex = 1;
         private int _activeVentCount;
         private int _activeCableZoneCount;
         private int _instanceId;
@@ -418,6 +422,12 @@ namespace Hecton8.World
         private float[] _cableElasticReleaseTimers;
         private float[] _cableEmpChainDelayTimers;
         private float[] _cableEmpChainGlowTimers;
+        private bool[] _ventBufferFenceArmed;
+        private bool _forceVentBufferUpload = true;
+        private bool _forceParticleReset = true;
+        private bool _supportsGraphicsFence;
+        private bool _smokeDispatchFenceArmed;
+        private GraphicsFence _smokeDispatchFence;
 
         public static AbyssalThermalManager Instance => _instance;
 
@@ -432,12 +442,12 @@ namespace Hecton8.World
 
             _instance = this;
             _instanceId = unchecked((int)EntityId.ToULong(GetEntityId()));
+            _supportsGraphicsFence = SystemInfo.supportsGraphicsFence;
             SanitizeSettings();
             ResolveDependencies();
             EnsureStorage();
             EnsureCableVisuals();
             EnsureBuffers();
-            ConfigureIndirectArgs();
             ClearHazardSources();
             RebuildVentField();
         }
@@ -445,11 +455,11 @@ namespace Hecton8.World
         private void OnEnable()
         {
             LaserCutter.OnBeamStateChanged += HandleCutterBeamStateChanged;
+            HectonFloatingOrigin.RegisterListener(this);
             ResolveDependencies();
             EnsureStorage();
             EnsureCableVisuals();
             EnsureBuffers();
-            ConfigureIndirectArgs();
             RebuildVentField();
             TryRegister();
         }
@@ -457,21 +467,109 @@ namespace Hecton8.World
         private void OnDisable()
         {
             LaserCutter.OnBeamStateChanged -= HandleCutterBeamStateChanged;
+            HectonFloatingOrigin.UnregisterListener(this);
             _cutterBeamActive = false;
             _activeCutterTransform = null;
             _debugCutterSeveringCable = false;
+            _hasSmokeData = false;
+            _frameParity = 0;
             ClearHazardSources();
+            ReleaseBuffers();
             TryUnregister();
         }
 
         private void OnDestroy()
         {
             LaserCutter.OnBeamStateChanged -= HandleCutterBeamStateChanged;
+            HectonFloatingOrigin.UnregisterListener(this);
             ClearHazardSources();
             ReleaseBuffers();
 
             if (_instance == this)
                 _instance = null;
+        }
+
+        public void OnOriginShift(in OriginShiftEventData shiftData)
+        {
+            if (!isActiveAndEnabled || shiftData.ShiftOffset.sqrMagnitude <= 0.0001f)
+                return;
+
+            ApplyRuntimeOffsetToCachedState(-shiftData.ShiftOffset);
+        }
+
+        private void ApplyRuntimeOffsetToCachedState(Vector3 runtimeOffset)
+        {
+            if (_ventStates != null)
+            {
+                for (int i = 0; i < _ventStates.Length; i++)
+                {
+                    ThermalVentState vent = _ventStates[i];
+                    vent.PositionWS += runtimeOffset;
+                    vent.CableAnchorWS += runtimeOffset;
+                    _ventStates[i] = vent;
+                }
+            }
+
+            if (_lastSeededVentStates != null)
+            {
+                for (int i = 0; i < _lastSeededVentStates.Length; i++)
+                {
+                    ThermalVentState vent = _lastSeededVentStates[i];
+                    vent.PositionWS += runtimeOffset;
+                    vent.CableAnchorWS += runtimeOffset;
+                    _lastSeededVentStates[i] = vent;
+                }
+            }
+
+            if (_ventGpuData != null)
+            {
+                for (int i = 0; i < _ventGpuData.Length; i++)
+                {
+                    ThermalVentGpuData ventGpu = _ventGpuData[i];
+                    ventGpu.PositionWS += runtimeOffset;
+                    _ventGpuData[i] = ventGpu;
+                }
+            }
+
+            if (_lastUploadedVentGpuData != null)
+            {
+                for (int i = 0; i < _lastUploadedVentGpuData.Length; i++)
+                {
+                    ThermalVentGpuData ventGpu = _lastUploadedVentGpuData[i];
+                    ventGpu.PositionWS += runtimeOffset;
+                    _lastUploadedVentGpuData[i] = ventGpu;
+                }
+            }
+
+            if (_empNests != null)
+            {
+                for (int i = 0; i < _empNests.Length; i++)
+                {
+                    EmpNestState nest = _empNests[i];
+                    nest.PositionWS += runtimeOffset;
+                    _empNests[i] = nest;
+                }
+            }
+
+            if (_initialParticles != null)
+            {
+                for (int i = 0; i < _initialParticles.Length; i++)
+                {
+                    AshParticleData particle = _initialParticles[i];
+                    particle.PositionWS += runtimeOffset;
+                    _initialParticles[i] = particle;
+                }
+            }
+
+            Bounds smokeBounds = _smokeBounds;
+            smokeBounds.center += runtimeOffset;
+            _smokeBounds = smokeBounds;
+            _debugSmokeBounds = smokeBounds;
+
+            _forceVentBufferUpload = true;
+            _forceParticleReset = true;
+            UpdateHazardSources();
+            UpdateSmokeBounds();
         }
 
         /// <summary>
@@ -498,6 +596,12 @@ namespace Hecton8.World
             if (!_hasSmokeData || blackSmokeCompute == null || blackSmokeMaterial == null || _activeVentCount <= 0)
                 return;
 
+            if (_forceVentBufferUpload)
+                UploadVentBuffer();
+
+            if (_forceParticleReset)
+                ResetParticles();
+
             _simulationTime += deltaTime;
             BindSmokeUniforms(deltaTime);
             blackSmokeCompute.Dispatch(_kernelIndex, _dispatchGroupCount, 1, 1);
@@ -505,6 +609,8 @@ namespace Hecton8.World
 
             if (IsSmokeVisible())
                 RenderSmoke();
+
+            CaptureInFlightFences(_activeVentBufferIndex);
         }
 
         /// <summary>
@@ -613,7 +719,7 @@ namespace Hecton8.World
                 playerTransform.TryGetComponent(out _playerMovement);
 
             if (viewCamera == null && playerTransform != null)
-                viewCamera = playerTransform.GetComponentInChildren<Camera>(true);
+                viewCamera = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera : playerTransform.GetComponent<Camera>());
 
             if (_fluidDecalManager == null)
             {
@@ -689,6 +795,20 @@ namespace Hecton8.World
                 _ventGpuData = new ThermalVentGpuData[MaxVentCapacity];
             }
 
+            if (_lastUploadedVentGpuData == null || _lastUploadedVentGpuData.Length != MaxVentCapacity)
+            {
+                // COLD ALLOC: ThermalVentGpuData[16] - previous uploaded vent snapshot used to avoid redundant GPU uploads - owner: AbyssalThermalManager
+                _lastUploadedVentGpuData = new ThermalVentGpuData[MaxVentCapacity];
+                _forceVentBufferUpload = true;
+            }
+
+            if (_lastSeededVentStates == null || _lastSeededVentStates.Length != MaxVentCapacity)
+            {
+                // COLD ALLOC: ThermalVentState[16] - previous vent topology snapshot used to avoid redundant smoke reseeds - owner: AbyssalThermalManager
+                _lastSeededVentStates = new ThermalVentState[MaxVentCapacity];
+                _forceParticleReset = true;
+            }
+
             if (_initialParticles == null || _initialParticles.Length != smokeParticleCount)
             {
                 // COLD ALLOC: AshParticleData[smokeParticleCount] - deterministic initial plume state for abyssal smoke ping-pong buffers - owner: AbyssalThermalManager
@@ -742,10 +862,16 @@ namespace Hecton8.World
 
         private void EnsureBuffers()
         {
-            EnsureBuffer(ref _particleBufferA, smokeParticleCount, ParticleStride, ComputeBufferType.Structured);
-            EnsureBuffer(ref _particleBufferB, smokeParticleCount, ParticleStride, ComputeBufferType.Structured);
-            EnsureBuffer(ref _ventBuffer, MaxVentCapacity, VentStride, ComputeBufferType.Structured);
-            EnsureBuffer(ref _argsBuffer, 1, sizeof(uint) * IndirectArgsCount, ComputeBufferType.IndirectArguments);
+            bool particleBufferARecreated = EnsureBuffer<AshParticleData>(ref _particleBufferA, smokeParticleCount);
+            bool particleBufferBRecreated = EnsureBuffer<AshParticleData>(ref _particleBufferB, smokeParticleCount);
+            bool ventBufferRingRecreated = EnsureVentBufferRing();
+            if (particleBufferARecreated || particleBufferBRecreated)
+            {
+                _smokeDispatchFenceArmed = false;
+                _forceParticleReset = true;
+            }
+            if (ventBufferRingRecreated)
+                _forceVentBufferUpload = true;
 
             if (blackSmokeCompute == null)
                 return;
@@ -758,6 +884,48 @@ namespace Hecton8.World
             }
 
             _dispatchGroupCount = Mathf.Max(1, Mathf.CeilToInt(smokeParticleCount / (float)_threadGroupSizeX));
+        }
+
+        private bool EnsureVentBufferRing()
+        {
+            bool recreated = false;
+            if (_ventBuffers == null || _ventBuffers.Length != VentBufferRingSize)
+            {
+                ReleaseBufferRing(ref _ventBuffers);
+                // COLD ALLOC: GraphicsBuffer[3] - triple-buffered hydrothermal vent upload ring preventing CPU writes to in-flight GPU read buffers - owner: AbyssalThermalManager
+                _ventBuffers = new GraphicsBuffer[VentBufferRingSize];
+                _activeVentBufferIndex = 0;
+                _nextVentBufferUploadIndex = 1;
+                recreated = true;
+            }
+
+            if (_ventBufferFences == null || _ventBufferFences.Length != VentBufferRingSize)
+            {
+                // COLD ALLOC: GraphicsFence[3] - per-slot GPU completion fences guarding vent ring reuse - owner: AbyssalThermalManager
+                _ventBufferFences = new GraphicsFence[VentBufferRingSize];
+                recreated = true;
+            }
+
+            if (_ventBufferFenceArmed == null || _ventBufferFenceArmed.Length != VentBufferRingSize)
+            {
+                // COLD ALLOC: bool[3] - per-slot fence armed bits preventing default-fence reads - owner: AbyssalThermalManager
+                _ventBufferFenceArmed = new bool[VentBufferRingSize];
+                recreated = true;
+            }
+
+            for (int i = 0; i < VentBufferRingSize; i++)
+            {
+                if (EnsureBuffer<ThermalVentGpuData>(ref _ventBuffers[i], MaxVentCapacity))
+                {
+                    if (_ventBufferFences != null && i < _ventBufferFences.Length)
+                        _ventBufferFences[i] = default;
+                    if (_ventBufferFenceArmed != null && i < _ventBufferFenceArmed.Length)
+                        _ventBufferFenceArmed[i] = false;
+                    recreated = true;
+                }
+            }
+
+            return recreated;
         }
 
         private void EnsureCableVisuals()
@@ -788,51 +956,47 @@ namespace Hecton8.World
             }
         }
 
-        private static void EnsureBuffer(ref ComputeBuffer buffer, int count, int stride, ComputeBufferType type)
+        private static bool EnsureBuffer<T>(ref GraphicsBuffer buffer, int count) where T : struct
         {
-            if (buffer != null && buffer.count == count && buffer.stride == stride)
-                return;
+            int safeCount = Mathf.Max(1, count);
+            int stride = UnsafeUtility.SizeOf<T>();
+            if (buffer != null && buffer.count == safeCount && buffer.stride == stride)
+                return false;
 
-            if (buffer != null)
-            {
-                buffer.Release();
-                buffer = null;
-            }
+            ReleaseBuffer(ref buffer);
 
-            // COLD ALLOC: ComputeBuffer[count] - persistent abyssal smoke or vent GPU storage - owner: AbyssalThermalManager
-            buffer = new ComputeBuffer(count, stride, type);
-        }
-
-        private void ConfigureIndirectArgs()
-        {
-            if (_argsBuffer == null)
-                return;
-
-            uint[] args =
-            {
-                6u,
-                (uint)smokeParticleCount,
-                0u,
-                0u
-            };
-            _argsBuffer.SetData(args);
+            // COLD ALLOC: GraphicsBuffer[count] - persistent abyssal smoke or vent GPU storage sized from the owning blittable struct - owner: AbyssalThermalManager
+            buffer = GraphicsBufferUploadUtility.CreateStructuredBuffer<T>(safeCount);
+            return true;
         }
 
         private void ReleaseBuffers()
         {
             ReleaseBuffer(ref _particleBufferA);
             ReleaseBuffer(ref _particleBufferB);
-            ReleaseBuffer(ref _ventBuffer);
-            ReleaseBuffer(ref _argsBuffer);
+            ReleaseBufferRing(ref _ventBuffers);
+            ClearThermalFenceState();
+            MarkThermalGpuStateDirty();
         }
 
-        private static void ReleaseBuffer(ref ComputeBuffer buffer)
+        private static void ReleaseBuffer(ref GraphicsBuffer buffer)
         {
             if (buffer == null)
                 return;
 
             buffer.Release();
             buffer = null;
+        }
+
+        private static void ReleaseBufferRing(ref GraphicsBuffer[] buffers)
+        {
+            if (buffers == null)
+                return;
+
+            for (int i = 0; i < buffers.Length; i++)
+                ReleaseBuffer(ref buffers[i]);
+
+            buffers = null;
         }
 
         private void RebuildVentField()
@@ -846,6 +1010,7 @@ namespace Hecton8.World
             if (!_debugAbyssalContext)
             {
                 _hasSmokeData = false;
+                MarkThermalGpuStateDirty();
                 _debugEmpNestCount = 0;
                 _debugEmpCharge01 = 0f;
                 if (_empNests != null)
@@ -864,7 +1029,6 @@ namespace Hecton8.World
                 if (_cableEmpChainGlowTimers != null)
                     System.Array.Clear(_cableEmpChainGlowTimers, 0, _cableEmpChainGlowTimers.Length);
                 ClearHazardSources();
-                UploadVentBuffer();
                 return;
             }
 
@@ -897,7 +1061,8 @@ namespace Hecton8.World
             UpdateSmokeBounds();
             UpdateHazardSources();
             UploadVentBuffer();
-            ResetParticles();
+            if (RequiresParticleReset())
+                ResetParticles();
         }
 
         private void RegisterVent(WorldZoneAnchor anchor, int ventIndex, float anchorWeight)
@@ -1011,11 +1176,8 @@ namespace Hecton8.World
                 HectonHazardManager.Unregister(BuildHazardSourceId(i));
         }
 
-        private void UploadVentBuffer()
+        private void BuildVentGpuUploadData()
         {
-            if (_ventBuffer == null)
-                return;
-
             for (int i = 0; i < MaxVentCapacity; i++)
             {
                 if (i < _activeVentCount)
@@ -1037,20 +1199,231 @@ namespace Hecton8.World
                     _ventGpuData[i] = default;
                 }
             }
+        }
 
-            _ventBuffer.SetData(_ventGpuData);
+        private bool RequiresVentBufferUpload()
+        {
+            if (_forceVentBufferUpload || _lastUploadedVentGpuData == null)
+                return true;
+
+            for (int i = 0; i < MaxVentCapacity; i++)
+            {
+                if (!Matches(_ventGpuData[i], _lastUploadedVentGpuData[i]))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private bool RequiresParticleReset()
+        {
+            if (_forceParticleReset || _lastSeededVentStates == null)
+                return true;
+
+            for (int i = 0; i < MaxVentCapacity; i++)
+            {
+                if (!MatchesSeedTopology(_ventStates[i], _lastSeededVentStates[i]))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private void CacheUploadedVentData()
+        {
+            if (_lastUploadedVentGpuData == null)
+                return;
+
+            for (int i = 0; i < MaxVentCapacity; i++)
+                _lastUploadedVentGpuData[i] = _ventGpuData[i];
+        }
+
+        private void CacheSeededVentTopology()
+        {
+            if (_lastSeededVentStates == null)
+                return;
+
+            for (int i = 0; i < MaxVentCapacity; i++)
+                _lastSeededVentStates[i] = _ventStates[i];
+        }
+
+        private void MarkThermalGpuStateDirty()
+        {
+            _forceVentBufferUpload = true;
+            _forceParticleReset = true;
+            _activeVentBufferIndex = 0;
+            _nextVentBufferUploadIndex = 1;
+        }
+
+        private void ClearThermalFenceState()
+        {
+            _smokeDispatchFenceArmed = false;
+            _smokeDispatchFence = default;
+            if (_ventBufferFences != null)
+            {
+                for (int i = 0; i < _ventBufferFences.Length; i++)
+                    _ventBufferFences[i] = default;
+            }
+
+            if (_ventBufferFenceArmed == null)
+                return;
+
+            for (int i = 0; i < _ventBufferFenceArmed.Length; i++)
+                _ventBufferFenceArmed[i] = false;
+        }
+
+        private GraphicsBuffer ResolveActiveVentBuffer()
+        {
+            if (_ventBuffers == null || _ventBuffers.Length == 0)
+                return null;
+
+            return _ventBuffers[_activeVentBufferIndex];
+        }
+
+        private void CaptureInFlightFences(int ventBufferIndex)
+        {
+            if (!_supportsGraphicsFence)
+                return;
+
+            _smokeDispatchFence = Graphics.CreateAsyncGraphicsFence();
+            _smokeDispatchFenceArmed = true;
+
+            if (_ventBufferFences == null ||
+                _ventBufferFenceArmed == null ||
+                ventBufferIndex < 0 ||
+                ventBufferIndex >= _ventBufferFences.Length ||
+                ventBufferIndex >= _ventBufferFenceArmed.Length)
+            {
+                return;
+            }
+
+            _ventBufferFences[ventBufferIndex] = _smokeDispatchFence;
+            _ventBufferFenceArmed[ventBufferIndex] = true;
+        }
+
+        private bool CanRewriteParticleBuffers()
+        {
+            if (!_supportsGraphicsFence || !_smokeDispatchFenceArmed)
+                return true;
+
+            if (!_smokeDispatchFence.passed)
+                return false;
+
+            _smokeDispatchFenceArmed = false;
+            return true;
+        }
+
+        private bool TryResolveReusableVentUploadBuffer(out GraphicsBuffer uploadBuffer, out int uploadBufferIndex)
+        {
+            uploadBuffer = null;
+            uploadBufferIndex = -1;
+            if (_ventBuffers == null || _ventBuffers.Length == 0)
+                return false;
+
+            int startIndex = Mathf.Clamp(_nextVentBufferUploadIndex, 0, _ventBuffers.Length - 1);
+            for (int offset = 0; offset < _ventBuffers.Length; offset++)
+            {
+                int candidateIndex = (startIndex + offset) % _ventBuffers.Length;
+                if (candidateIndex == _activeVentBufferIndex)
+                    continue;
+
+                if (!IsVentBufferSlotReusable(candidateIndex))
+                    continue;
+
+                uploadBuffer = _ventBuffers[candidateIndex];
+                uploadBufferIndex = candidateIndex;
+                return uploadBuffer != null;
+            }
+
+            return false;
+        }
+
+        private bool IsVentBufferSlotReusable(int slotIndex)
+        {
+            if (_ventBuffers == null || slotIndex < 0 || slotIndex >= _ventBuffers.Length)
+                return false;
+
+            if (!_supportsGraphicsFence ||
+                _ventBufferFences == null ||
+                _ventBufferFenceArmed == null ||
+                slotIndex >= _ventBufferFences.Length ||
+                slotIndex >= _ventBufferFenceArmed.Length ||
+                !_ventBufferFenceArmed[slotIndex])
+            {
+                return true;
+            }
+
+            if (!_ventBufferFences[slotIndex].passed)
+                return false;
+
+            _ventBufferFenceArmed[slotIndex] = false;
+            return true;
+        }
+
+        private static bool Matches(ThermalVentGpuData left, ThermalVentGpuData right)
+        {
+            return Approximately(left.PositionWS, right.PositionWS) &&
+                   Approximately(left.RadiusWS, right.RadiusWS) &&
+                   Approximately(left.HeightWS, right.HeightWS) &&
+                   Approximately(left.UpdraftVelocity, right.UpdraftVelocity) &&
+                   Approximately(left.HeatIntensity, right.HeatIntensity) &&
+                   Approximately(left.SmokeDensity, right.SmokeDensity);
+        }
+
+        private static bool MatchesSeedTopology(ThermalVentState left, ThermalVentState right)
+        {
+            return Approximately(left.PositionWS, right.PositionWS) &&
+                   Approximately(left.RadiusWS, right.RadiusWS) &&
+                   Approximately(left.UpdraftVelocity, right.UpdraftVelocity) &&
+                   Approximately(left.CableAnchorWS, right.CableAnchorWS);
+        }
+
+        private static bool Approximately(Vector3 left, Vector3 right)
+        {
+            return (left - right).sqrMagnitude <= VentStateCompareEpsilon * VentStateCompareEpsilon;
+        }
+
+        private static bool Approximately(float left, float right)
+        {
+            return Mathf.Abs(left - right) <= VentStateCompareEpsilon;
+        }
+
+        private void UploadVentBuffer()
+        {
+            EnsureStorage();
+            EnsureVentBufferRing();
+            BuildVentGpuUploadData();
+            if (!_hasSmokeData || _activeVentCount <= 0 || !RequiresVentBufferUpload())
+                return;
+
+            if (!TryResolveReusableVentUploadBuffer(out GraphicsBuffer uploadBuffer, out int uploadBufferIndex))
+                return;
+
+            GraphicsBufferUploadUtility.UploadArraySetData(uploadBuffer, _ventGpuData, MaxVentCapacity);
+            CacheUploadedVentData();
+            _activeVentBufferIndex = uploadBufferIndex;
+            _nextVentBufferUploadIndex = (_activeVentBufferIndex + 1) % VentBufferRingSize;
+            _forceVentBufferUpload = false;
         }
 
         private void ResetParticles()
         {
+            EnsureStorage();
+            EnsureBuffer<AshParticleData>(ref _particleBufferA, smokeParticleCount);
+            EnsureBuffer<AshParticleData>(ref _particleBufferB, smokeParticleCount);
             if (_initialParticles == null || _particleBufferA == null || _particleBufferB == null)
+                return;
+
+            if (!CanRewriteParticleBuffers())
                 return;
 
             if (_activeVentCount <= 0)
             {
                 System.Array.Clear(_initialParticles, 0, _initialParticles.Length);
-                _particleBufferA.SetData(_initialParticles);
-                _particleBufferB.SetData(_initialParticles);
+                GraphicsBufferUploadUtility.UploadArraySetData(_particleBufferA, _initialParticles, smokeParticleCount);
+                GraphicsBufferUploadUtility.UploadArraySetData(_particleBufferB, _initialParticles, smokeParticleCount);
+                CacheSeededVentTopology();
+                _forceParticleReset = false;
                 return;
             }
 
@@ -1081,15 +1454,21 @@ namespace Hecton8.World
                 };
             }
 
-            _particleBufferA.SetData(_initialParticles);
-            _particleBufferB.SetData(_initialParticles);
+            GraphicsBufferUploadUtility.UploadArraySetData(_particleBufferA, _initialParticles, smokeParticleCount);
+            GraphicsBufferUploadUtility.UploadArraySetData(_particleBufferB, _initialParticles, smokeParticleCount);
+            CacheSeededVentTopology();
+            _forceParticleReset = false;
             _frameParity = 0;
         }
 
         private void BindSmokeUniforms(float dt)
         {
-            ComputeBuffer readBuffer = _frameParity == 0 ? _particleBufferA : _particleBufferB;
-            ComputeBuffer writeBuffer = _frameParity == 0 ? _particleBufferB : _particleBufferA;
+            GraphicsBuffer readBuffer = _frameParity == 0 ? _particleBufferA : _particleBufferB;
+            GraphicsBuffer writeBuffer = _frameParity == 0 ? _particleBufferB : _particleBufferA;
+            GraphicsBuffer activeVentBuffer = ResolveActiveVentBuffer();
+            if (readBuffer == null || writeBuffer == null || activeVentBuffer == null)
+                return;
+
             Camera activeCamera = viewCamera;
             Vector3 cameraPosition = activeCamera != null ? activeCamera.transform.position : Vector3.zero;
             Vector3 cameraRight = activeCamera != null ? activeCamera.transform.right : Vector3.right;
@@ -1097,7 +1476,7 @@ namespace Hecton8.World
 
             blackSmokeCompute.SetBuffer(_kernelIndex, _ParticlesReadId, readBuffer);
             blackSmokeCompute.SetBuffer(_kernelIndex, _ParticlesWriteId, writeBuffer);
-            blackSmokeCompute.SetBuffer(_kernelIndex, _ThermalVentsId, _ventBuffer);
+            blackSmokeCompute.SetBuffer(_kernelIndex, _ThermalVentsId, activeVentBuffer);
             blackSmokeCompute.SetInt(_ParticleCountId, smokeParticleCount);
             blackSmokeCompute.SetInt(_ActiveVentCountId, _activeVentCount);
             blackSmokeCompute.SetFloat(_DeltaTimeId, dt);
@@ -1129,17 +1508,16 @@ namespace Hecton8.World
 
         private void RenderSmoke()
         {
-            Graphics.DrawProceduralIndirect(
-                blackSmokeMaterial,
-                _smokeBounds,
-                MeshTopology.Triangles,
-                _argsBuffer,
-                0,
-                null,
-                _materialPropertyBlock,
-                smokeShadowCastingMode,
-                false,
-                gameObject.layer);
+            RenderParams renderParams = new RenderParams(blackSmokeMaterial)
+            {
+                worldBounds = _smokeBounds,
+                matProps = _materialPropertyBlock,
+                shadowCastingMode = smokeShadowCastingMode,
+                receiveShadows = false,
+                layer = gameObject.layer,
+                lightProbeUsage = LightProbeUsage.Off
+            };
+            Graphics.RenderPrimitives(renderParams, MeshTopology.Triangles, 6, smokeParticleCount);
         }
 
         private void UpdateSmokeBounds()
@@ -1662,38 +2040,32 @@ namespace Hecton8.World
 
         private void TryRegister()
         {
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
 
             if (!_registeredTick)
             {
-                tickManager.Register((ITickable)this);
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
                 _registeredTick = true;
             }
 
             if (!_registeredSlowTick)
             {
-                tickManager.Register((ISlowTickable)this);
+                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredSlowTick = true;
             }
         }
 
         private void TryUnregister()
         {
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
 
             if (_registeredTick)
             {
-                tickManager.Unregister((ITickable)this);
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
                 _registeredTick = false;
             }
 
             if (_registeredSlowTick)
             {
-                tickManager.Unregister((ISlowTickable)this);
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredSlowTick = false;
             }
         }

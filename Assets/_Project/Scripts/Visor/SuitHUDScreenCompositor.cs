@@ -10,7 +10,6 @@ using UnityEditor;
 namespace NASAPunk.Visor
 {
     [DisallowMultipleComponent]
-    [ExecuteAlways]
     [AddComponentMenu("Hecton8/HUD/Suit HUD Screen Compositor")]
     public sealed class SuitHUDScreenCompositor : MonoBehaviour, ITickable
     {
@@ -70,14 +69,13 @@ namespace NASAPunk.Visor
         private void OnEnable()
         {
             RegisterActiveCompositor();
-            AutoResolveReferences(true);
             _pendingRefresh = true;
+            if (!Application.isPlaying)
+                return;
+
+            AutoResolveReferences(true);
             RefreshCompositor();
             TryRegisterRuntimeTick();
-#if UNITY_EDITOR
-            if (!Application.isPlaying)
-                EvaluateEditorTickRegistration();
-#endif
         }
 
         private void Start()
@@ -92,6 +90,9 @@ namespace NASAPunk.Visor
 #if UNITY_EDITOR
             EditorApplication.update -= EditorTick;
 #endif
+
+            if (!Application.isPlaying)
+                return;
 
             if (_overlayImage != null)
                 _overlayImage.enabled = false;
@@ -119,10 +120,6 @@ namespace NASAPunk.Visor
         private void OnValidate()
         {
             _pendingRefresh = true;
-#if UNITY_EDITOR
-            if (!Application.isPlaying)
-                EvaluateEditorTickRegistration();
-#endif
         }
 
         public void Tick(float deltaTime)
@@ -339,11 +336,8 @@ namespace NASAPunk.Visor
             if (!Application.isPlaying || _tickRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
 
-            tickManager.Register((ITickable)this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _tickRegistered = true;
         }
 
@@ -352,9 +346,7 @@ namespace NASAPunk.Visor
             if (!_tickRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister((ITickable)this);
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
 
             _tickRegistered = false;
         }
@@ -382,16 +374,18 @@ namespace NASAPunk.Visor
         {
             _pendingRefresh = true;
             if (Application.isPlaying)
-            {
                 TryRegisterRuntimeTick();
-            }
-#if UNITY_EDITOR
-            else
-            {
-                EvaluateEditorTickRegistration();
-            }
-#endif
         }
+
+#if UNITY_EDITOR
+        [ContextMenu("Rebuild Screen Compositor")]
+        private void RebuildScreenCompositor()
+        {
+            AutoResolveReferences(true);
+            RefreshCompositor();
+            _pendingRefresh = false;
+        }
+#endif
 
         private bool ShouldTickInEditMode()
         {

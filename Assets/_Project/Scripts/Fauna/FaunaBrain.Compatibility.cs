@@ -57,9 +57,11 @@ namespace Hecton8.AI
             _stateMachine.escapeSafeDistance = Mathf.Max(_stateMachine.escapeDistance, archetype.baseEscapeSafeDistance);
             _stateMachine.stalkDuration = Mathf.Max(0f, archetype.stalkDuration);
             _stateMachine.stalkRadius = Mathf.Max(1f, archetype.stalkDistance);
+            _stateMachine.useTerritory = archetype.useHomeTerritory;
+            _stateMachine.patrolRadius = Mathf.Max(1f, archetype.homeReturnDistance);
             _stateMachine.wanderRadius = archetype.useHomeTerritory
                 ? Mathf.Max(1f, archetype.homeWanderRadius)
-                : _stateMachine.wanderRadius;
+                : Mathf.Max(1f, _stateMachine.wanderRadius);
 
             _steeringEngine.moveSpeed = _baseCruiseSpeed;
             _steeringEngine.maxSpeed = _baseCruiseSpeed;
@@ -96,44 +98,108 @@ namespace Hecton8.AI
     }
 
     /// <summary>
-    /// Immutable input snapshot consumed by <see cref="CreatureUtilityBrain"/>.
+    /// Immutable sensory snapshot consumed by <see cref="CreatureUtilityBrain"/>.
+    /// This is the managed-to-native bridge payload for all fauna roles.
     /// </summary>
     public readonly struct CreatureUtilityContext
     {
         public CreatureUtilityContext(
             Vector3 selfPosition,
+            Vector3 selfVelocity,
             Vector3 selfForward,
+            Vector3 playerPosition,
+            Vector3 threatPosition,
+            Vector3 preyPosition,
+            Vector3 scavengePosition,
+            Vector3 flockCenter,
+            Vector3 flockDirection,
+            Vector3 flockAvoidance,
+            Vector3 scatterDirection,
             float healthNormalized,
-            bool canFlee,
-            bool hasVisualContact,
-            bool hasPerceivedPlayerPosition,
-            Vector3 perceivedPlayerPosition,
             float distanceToPlayerSqr,
             float attackRange,
-            float fearPressure01)
+            float fearPressure01,
+            float escapeDistance,
+            float escapeSafeDistance,
+            float wanderRadius,
+            float patrolRadius,
+            float foveatedImportanceScore,
+            int flockCount,
+            bool canFlee,
+            bool hasVisualContact,
+            bool hasPlayerTarget,
+            bool hasThreatTarget,
+            bool hasPreyTarget,
+            bool hasScavengeTarget,
+            bool useHomeTerritory,
+            bool isFlocking,
+            bool hasScatterDirection,
+            bool isAggressive)
         {
             SelfPosition = selfPosition;
+            SelfVelocity = selfVelocity;
             SelfForward = selfForward;
+            PlayerPosition = playerPosition;
+            ThreatPosition = threatPosition;
+            PreyPosition = preyPosition;
+            ScavengePosition = scavengePosition;
+            FlockCenter = flockCenter;
+            FlockDirection = flockDirection;
+            FlockAvoidance = flockAvoidance;
+            ScatterDirection = scatterDirection;
             HealthNormalized = healthNormalized;
-            CanFlee = canFlee;
-            HasVisualContact = hasVisualContact;
-            HasPerceivedPlayerPosition = hasPerceivedPlayerPosition;
-            PerceivedPlayerPosition = perceivedPlayerPosition;
             DistanceToPlayerSqr = distanceToPlayerSqr;
             AttackRange = attackRange;
             FearPressure01 = fearPressure01;
+            EscapeDistance = escapeDistance;
+            EscapeSafeDistance = escapeSafeDistance;
+            WanderRadius = wanderRadius;
+            PatrolRadius = patrolRadius;
+            FoveatedImportanceScore = foveatedImportanceScore;
+            FlockCount = flockCount;
+            CanFlee = canFlee;
+            HasVisualContact = hasVisualContact;
+            HasPlayerTarget = hasPlayerTarget;
+            HasThreatTarget = hasThreatTarget;
+            HasPreyTarget = hasPreyTarget;
+            HasScavengeTarget = hasScavengeTarget;
+            UseHomeTerritory = useHomeTerritory;
+            IsFlocking = isFlocking;
+            HasScatterDirection = hasScatterDirection;
+            IsAggressive = isAggressive;
         }
 
         public Vector3 SelfPosition { get; }
+        public Vector3 SelfVelocity { get; }
         public Vector3 SelfForward { get; }
+        public Vector3 PlayerPosition { get; }
+        public Vector3 ThreatPosition { get; }
+        public Vector3 PreyPosition { get; }
+        public Vector3 ScavengePosition { get; }
+        public Vector3 FlockCenter { get; }
+        public Vector3 FlockDirection { get; }
+        public Vector3 FlockAvoidance { get; }
+        public Vector3 ScatterDirection { get; }
         public float HealthNormalized { get; }
-        public bool CanFlee { get; }
-        public bool HasVisualContact { get; }
-        public bool HasPerceivedPlayerPosition { get; }
-        public Vector3 PerceivedPlayerPosition { get; }
         public float DistanceToPlayerSqr { get; }
         public float AttackRange { get; }
         public float FearPressure01 { get; }
+        public float EscapeDistance { get; }
+        public float EscapeSafeDistance { get; }
+        public float WanderRadius { get; }
+        public float PatrolRadius { get; }
+        public float FoveatedImportanceScore { get; }
+        public int FlockCount { get; }
+        public bool CanFlee { get; }
+        public bool HasVisualContact { get; }
+        public bool HasPlayerTarget { get; }
+        public bool HasThreatTarget { get; }
+        public bool HasPreyTarget { get; }
+        public bool HasScavengeTarget { get; }
+        public bool UseHomeTerritory { get; }
+        public bool IsFlocking { get; }
+        public bool HasScatterDirection { get; }
+        public bool IsAggressive { get; }
     }
 
     /// <summary>
@@ -324,371 +390,265 @@ namespace Hecton8.AI
     }
 
     /// <summary>
-    /// Large-predator utility kernel with native spatial memory.
+    /// Shared fauna cognition bridge. Authoring stays on the managed side; runtime decision state lives in PredatorCognitionDomain.
     /// </summary>
-    public sealed class CreatureUtilityBrain
+    public struct CreatureUtilityBrain
     {
-        private const int MemoryCapacity = 16;
-        private const float MemoryLifetimeSeconds = 45f;
-        private const float LostVisualMemoryDelaySeconds = 10f;
-        private const float MinimumDistanceMeters = 1.25f;
-        private const float ProwlTargetRefreshSeconds = 4.5f;
-        private const float AttackStateBias = 1.25f;
-        private const float OverrideScoreBias = 1000f;
-        private const float MinimumAttackCooldown = 0.35f;
-        private const float MinimumProwlRadius = 10f;
-        private const float MaximumProwlRadius = 24f;
-        private const float MaximumProwlVerticalOffset = 6f;
-
-        private PredatorMemory _memory;
         private CreatureArchetypeData _archetype;
         private FaunaSpeciesProfile _speciesProfile;
-        private float3 _spawnAnchor;
-        private float3 _prowlTarget;
-        private float3 _overrideThreatPosition;
-        private float _lastVisualContactTime = float.NegativeInfinity;
-        private float _overrideUntilTime = float.NegativeInfinity;
-        private float _nextProwlTargetRefreshTime = float.NegativeInfinity;
-        private float _nextAttackAllowedTime = float.NegativeInfinity;
-        private int _prowlSequence;
+        private int _slot;
         private bool _initialized;
-        private bool _hasProwlTarget;
-        private bool _hasOverrideThreatPosition;
-        private PredatorUtilityState _overrideStateMask;
 
-        /// <summary>
-        /// Current active predator-state bitmask.
-        /// </summary>
         public PredatorUtilityState CurrentStateMask { get; private set; }
-
-        /// <summary>
-        /// True when the currently bound archetype should use this utility kernel.
-        /// </summary>
-        public bool IsActivePredator => IsPredatorArchetype(_archetype, _speciesProfile);
-
-        /// <summary>
-        /// Current hunger utility score.
-        /// </summary>
+        public bool UsesPredatorRole => IsPredatorArchetype(_archetype, _speciesProfile);
+        public bool IsActivePredator => UsesPredatorRole;
         public float HungerScore { get; private set; }
-
-        /// <summary>
-        /// Current aggression utility score.
-        /// </summary>
         public float AggressionScore { get; private set; }
-
-        /// <summary>
-        /// Current fear utility score.
-        /// </summary>
         public float FearScore { get; private set; }
+        public bool IsRegistered => _initialized && _slot >= 0;
 
-        /// <summary>
-        /// Initializes the native memory store and binds the initial world anchor.
-        /// </summary>
-        /// <param name="spawnAnchor">Initial patrol anchor.</param>
-        /// <param name="speciesProfile">Current species profile.</param>
-        /// <param name="archetype">Current archetype.</param>
         public void Initialize(Vector3 spawnAnchor, FaunaSpeciesProfile speciesProfile, CreatureArchetypeData archetype)
         {
-            if (!_initialized)
-            {
-                _memory.Initialize(MemoryCapacity);
-                _initialized = true;
-            }
-
             _speciesProfile = speciesProfile;
             _archetype = archetype;
-            _spawnAnchor = spawnAnchor;
-            _prowlTarget = spawnAnchor;
+            if (!_initialized)
+                _slot = PredatorCognitionDomain.Register();
+
+            _initialized = _slot >= 0;
+            if (_initialized)
+                PredatorCognitionDomain.ResetSlot(_slot, spawnAnchor, ResolveSpeciesId());
         }
 
-        /// <summary>
-        /// Rebinds authored predator data after archetype changes.
-        /// </summary>
-        /// <param name="speciesProfile">Current species profile.</param>
-        /// <param name="archetype">Current archetype.</param>
         public void BindProfile(FaunaSpeciesProfile speciesProfile, CreatureArchetypeData archetype)
         {
             _speciesProfile = speciesProfile;
             _archetype = archetype;
         }
 
-        /// <summary>
-        /// Updates the authored spawn anchor used for prowling when no memory target is active.
-        /// </summary>
-        /// <param name="spawnAnchor">World-space spawn anchor.</param>
         public void SetSpawnAnchor(Vector3 spawnAnchor)
         {
-            _spawnAnchor = spawnAnchor;
+            if (_initialized)
+                PredatorCognitionDomain.SetSpawnAnchor(_slot, spawnAnchor);
         }
 
-        /// <summary>
-        /// Clears transient utility state while preserving the allocated native memory buffer.
-        /// </summary>
-        /// <param name="spawnAnchor">Fresh runtime spawn anchor.</param>
+        public void SetRuntimeActive(bool active)
+        {
+            if (_initialized)
+                PredatorCognitionDomain.SetSlotActive(_slot, active);
+        }
+
         public void ResetRuntimeState(Vector3 spawnAnchor)
         {
-            _spawnAnchor = spawnAnchor;
-            _prowlTarget = spawnAnchor;
-            _memory.Clear();
-            _prowlSequence = 0;
-            _hasProwlTarget = false;
-            _hasOverrideThreatPosition = false;
-            _lastVisualContactTime = float.NegativeInfinity;
-            _overrideUntilTime = float.NegativeInfinity;
-            _nextProwlTargetRefreshTime = float.NegativeInfinity;
-            _nextAttackAllowedTime = float.NegativeInfinity;
-            _overrideStateMask = PredatorUtilityState.None;
             CurrentStateMask = PredatorUtilityState.None;
             HungerScore = 0f;
             AggressionScore = 0f;
             FearScore = 0f;
+            if (_initialized)
+                PredatorCognitionDomain.ResetSlot(_slot, spawnAnchor, ResolveSpeciesId());
         }
 
-        /// <summary>
-        /// Records an auditory player stimulus into predator memory.
-        /// </summary>
-        /// <param name="worldPosition">Stimulus position.</param>
-        /// <param name="timeStamp">Authored timestamp in seconds.</param>
         public void RecordAuditoryStimulus(Vector3 worldPosition, float timeStamp)
         {
-            if (!_initialized || !IsActivePredator)
-                return;
-
-            _memory.Record(worldPosition, timeStamp);
+            if (_initialized)
+                PredatorCognitionDomain.RecordStimulus(_slot, worldPosition, timeStamp, 1f, CognitionStimulusType.Acoustic);
         }
 
-        /// <summary>
-        /// Applies a legacy external state override from older fauna orchestration.
-        /// </summary>
-        /// <param name="state">Legacy fauna state.</param>
-        /// <param name="currentTime">Current authored time in seconds.</param>
         public void ApplyExternalState(FaunaBrain.AIState state, float currentTime)
         {
-            if (!IsActivePredator)
+            if (!_initialized)
                 return;
 
             switch (state)
             {
                 case FaunaBrain.AIState.Aggressive:
-                    _overrideStateMask = PredatorUtilityState.Attacking;
-                    _overrideUntilTime = currentTime + 4f;
+                    PredatorCognitionDomain.ApplyExternalState(_slot, PredatorUtilityState.Attacking, currentTime);
                     break;
                 case FaunaBrain.AIState.Retreat:
                 case FaunaBrain.AIState.Escape:
-                    _overrideStateMask = PredatorUtilityState.Fleeing;
-                    _overrideUntilTime = currentTime + 4f;
+                    PredatorCognitionDomain.ApplyExternalState(_slot, PredatorUtilityState.Fleeing, currentTime);
+                    break;
+                case FaunaBrain.AIState.Sated:
+                    PredatorCognitionDomain.ForceSated(_slot, currentTime, 4f);
                     break;
                 default:
-                    _overrideStateMask = PredatorUtilityState.Prowling;
-                    _overrideUntilTime = currentTime + 4f;
+                    PredatorCognitionDomain.ApplyExternalState(_slot, PredatorUtilityState.Prowling, currentTime);
                     break;
             }
         }
 
-        /// <summary>
-        /// Applies a forced flee order from gameplay pressure systems.
-        /// </summary>
-        /// <param name="threatPosition">World-space threat position.</param>
-        /// <param name="currentTime">Current authored time in seconds.</param>
-        /// <param name="duration">Override duration in seconds.</param>
         public void ForceRetreat(Vector3 threatPosition, float currentTime, float duration)
         {
-            if (!IsActivePredator)
-                return;
-
-            _overrideStateMask = PredatorUtilityState.Fleeing;
-            _overrideThreatPosition = threatPosition;
-            _hasOverrideThreatPosition = true;
-            _overrideUntilTime = currentTime + math.max(0.1f, duration);
+            if (_initialized)
+                PredatorCognitionDomain.ForceRetreat(_slot, threatPosition, currentTime, duration);
         }
 
-        /// <summary>
-        /// Starts the attack cooldown after an attack is executed.
-        /// </summary>
-        /// <param name="currentTime">Current authored time in seconds.</param>
-        /// <param name="cooldownSeconds">Attack cooldown duration.</param>
+        public void ForceSated(float currentTime, float duration)
+        {
+            if (_initialized)
+                PredatorCognitionDomain.ForceSated(_slot, currentTime, duration);
+        }
+
         public void NotifyAttackPerformed(float currentTime, float cooldownSeconds)
         {
-            _nextAttackAllowedTime = currentTime + math.max(MinimumAttackCooldown, cooldownSeconds);
+            if (_initialized)
+                PredatorCognitionDomain.NotifyAttackPerformed(_slot, currentTime, cooldownSeconds);
         }
 
-        /// <summary>
-        /// Evaluates the current utility scores and resolves the winning state bit.
-        /// </summary>
-        /// <param name="dt">Dispatcher delta time.</param>
-        /// <param name="currentTime">Current authored time in seconds.</param>
-        /// <param name="context">Current sensory context.</param>
-        /// <returns>Resolved evaluation result.</returns>
-        public CreatureUtilityEvaluation Evaluate(float dt, float currentTime, in CreatureUtilityContext context)
+        public CreatureUtilityEvaluation Evaluate(int frameId, float dt, float currentTime, in CreatureUtilityContext context)
         {
-            if (!IsActivePredator)
+            if (!_initialized)
+                Initialize(context.SelfPosition, _speciesProfile, _archetype);
+
+            float3 fallbackForward = (float3)context.SelfForward;
+            float acousticPingStrength01 = 0f;
+            float acousticTransmission01 = 0f;
+            bool hasNoisePlayerTarget = false;
+            Vector3 noisePlayerPosition = default;
+            if (NoiseSystem.TryGetPlayerSignal(out NoiseSystem.PlayerNoiseSignal playerNoise))
             {
-                return new CreatureUtilityEvaluation(
-                    context.SelfForward,
-                    PredatorUtilityState.None,
-                    FaunaBrain.AIState.Wander,
-                    0f,
-                    0f,
-                    0f,
+                hasNoisePlayerTarget = true;
+                noisePlayerPosition = playerNoise.Position;
+                float movementSpeed = math.sqrt(math.max(0f, playerNoise.MovementSpeedSqr));
+                float movement01 = math.saturate(movementSpeed / 8.5f);
+                float tool01 = math.saturate(playerNoise.ToolUseNoise01);
+                float transport01 = math.saturate(playerNoise.TransportBoost01 * math.max(1f, playerNoise.TransportSignature));
+                float flashlight01 = playerNoise.FlashlightOn ? 0.2f : 0f;
+                acousticPingStrength01 = math.saturate(math.max(movement01, math.max(tool01, transport01)) + flashlight01);
+                acousticTransmission01 = math.saturate(playerNoise.AcousticTransmission01);
+            }
+
+            Vector3 resolvedPlayerPosition = context.HasPlayerTarget ? context.PlayerPosition : noisePlayerPosition;
+            bool hasAnyPlayerTarget = context.HasPlayerTarget || hasNoisePlayerTarget;
+
+            float chemicalSignal01 = 0f;
+            if (context.HasScavengeTarget)
+            {
+                float scavengeDistanceSq = math.lengthsq((float3)(context.ScavengePosition - context.SelfPosition));
+                chemicalSignal01 = math.saturate(1f / (1f + (scavengeDistanceSq / (28f * 28f))));
+            }
+
+            Hecton8.World.HectonMapMagicVegetationBridge vegetationBridge = Hecton8.World.HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            if (vegetationBridge != null && vegetationBridge.HasPermanentThreatEcho(context.SelfPosition))
+                chemicalSignal01 = math.max(chemicalSignal01, 0.35f);
+
+            // Frame N consumes outputs produced from the fully submitted inputs of frame N-1.
+            CognitionOutput output = PredatorCognitionDomain.GetOutput(_slot, fallbackForward);
+            CurrentStateMask = (PredatorUtilityState)output.StateMask;
+            HungerScore = output.HungerScore;
+            AggressionScore = output.AggressionScore;
+            FearScore = output.FearScore;
+
+            CognitionInput input = default;
+            input.Position = context.SelfPosition;
+            input.Velocity = context.SelfVelocity;
+            input.Forward = context.SelfForward;
+            input.PlayerPosition = resolvedPlayerPosition;
+            input.ThreatPosition = context.ThreatPosition;
+            input.PreyPosition = context.PreyPosition;
+            input.ScavengePosition = context.ScavengePosition;
+            input.FlockCenter = context.FlockCenter;
+            input.FlockDirection = context.FlockDirection;
+            input.FlockAvoidance = context.FlockAvoidance;
+            input.ScatterDirection = context.ScatterDirection;
+            input.DistanceToPlayerSqr = math.max(0f, context.DistanceToPlayerSqr);
+            input.AttackRange = math.max(1f, context.AttackRange);
+            input.HealthNormalized = math.saturate(context.HealthNormalized);
+            input.FearPressure01 = math.saturate(context.FearPressure01);
+            input.DeltaTime = math.max(0f, dt);
+            input.CurrentTime = currentTime;
+            input.AcousticPingStrength01 = acousticPingStrength01;
+            input.AcousticTransmission01 = acousticTransmission01;
+            input.ChemicalSignal01 = chemicalSignal01;
+            input.HungerWeight = 1f;
+            input.ThreatWeight = 1f + (ResolveAggressionWeight() * 0.45f);
+            input.FearWeight = ResolveFearWeight();
+            input.AggressionWeight = ResolveAttackSpeedWeight();
+            input.EscapeDistance = math.max(0f, context.EscapeDistance);
+            input.EscapeSafeDistance = math.max(input.EscapeDistance, context.EscapeSafeDistance);
+            input.WanderRadius = math.max(1f, context.WanderRadius);
+            input.PatrolRadius = math.max(1f, context.PatrolRadius);
+            input.ImportanceScore = math.saturate(context.FoveatedImportanceScore);
+            input.SpeciesId = ResolveSpeciesId();
+            input.ClaimedBoidIndex = -1;
+            input.FlockCount = math.max(0, context.FlockCount);
+            input.Flags = (int)CognitionInputFlags.Active;
+            if (UsesPredatorRole)
+                input.Flags |= (int)CognitionInputFlags.PredatorRole;
+            if (context.CanFlee)
+                input.Flags |= (int)CognitionInputFlags.CanFlee;
+            if (hasAnyPlayerTarget)
+                input.Flags |= (int)CognitionInputFlags.HasPlayerTarget;
+            if (context.HasThreatTarget)
+                input.Flags |= (int)CognitionInputFlags.HasThreatTarget;
+            if (context.HasPreyTarget)
+                input.Flags |= (int)CognitionInputFlags.HasPreyTarget;
+            if (context.HasScavengeTarget)
+                input.Flags |= (int)CognitionInputFlags.HasScavengeTarget;
+            if (context.UseHomeTerritory)
+                input.Flags |= (int)CognitionInputFlags.UseHomeTerritory;
+            if (context.IsFlocking)
+                input.Flags |= (int)CognitionInputFlags.IsFlocking;
+            if (context.HasScatterDirection)
+                input.Flags |= (int)CognitionInputFlags.HasScatterDirection;
+            if (context.IsAggressive)
+                input.Flags |= (int)CognitionInputFlags.IsAggressive;
+            if (context.HasVisualContact)
+                input.Flags |= (int)CognitionInputFlags.HasVisualPlayerHint;
+
+            if (hasAnyPlayerTarget && context.HasVisualContact)
+            {
+                PredatorCognitionDomain.RecordStimulus(
+                    _slot,
+                    resolvedPlayerPosition,
+                    currentTime,
                     1f,
-                    1f,
-                    1f,
-                    false);
+                    CognitionStimulusType.Visual);
             }
 
-            if (context.HasVisualContact && context.HasPerceivedPlayerPosition)
+            if (hasAnyPlayerTarget && acousticPingStrength01 > 0.01f)
             {
-                _lastVisualContactTime = currentTime;
-                _memory.Record(context.PerceivedPlayerPosition, currentTime);
+                PredatorCognitionDomain.RecordStimulus(
+                    _slot,
+                    resolvedPlayerPosition,
+                    currentTime,
+                    acousticPingStrength01 * math.max(0.25f, acousticTransmission01),
+                    CognitionStimulusType.Acoustic);
             }
 
-            float3 selfPosition = context.SelfPosition;
-            float3 targetPosition = selfPosition + ((float3)context.SelfForward * 4f);
-            bool hasTarget = false;
-
-            if (context.HasPerceivedPlayerPosition)
+            if (context.HasScavengeTarget && chemicalSignal01 > 0.01f)
             {
-                targetPosition = context.PerceivedPlayerPosition;
-                hasTarget = true;
-            }
-            else if (currentTime - _lastVisualContactTime >= LostVisualMemoryDelaySeconds &&
-                     _memory.TryGetHighestWeightedPosition(currentTime, selfPosition, MemoryLifetimeSeconds, out float3 memoryPosition, out float memoryWeight) &&
-                     memoryWeight > 0f)
-            {
-                targetPosition = memoryPosition;
-                hasTarget = true;
-            }
-            else
-            {
-                RefreshProwlTarget(currentTime, selfPosition);
-                if (_hasProwlTarget)
-                {
-                    targetPosition = _prowlTarget;
-                    hasTarget = true;
-                }
+                PredatorCognitionDomain.RecordStimulus(
+                    _slot,
+                    context.ScavengePosition,
+                    currentTime,
+                    chemicalSignal01,
+                    CognitionStimulusType.Chemical);
             }
 
-            float targetDistanceSqr = math.lengthsq(targetPosition - selfPosition);
-            float referenceDistance = context.HasPerceivedPlayerPosition
-                ? math.sqrt(math.max(context.DistanceToPlayerSqr, MinimumDistanceMeters * MinimumDistanceMeters))
-                : math.sqrt(math.max(targetDistanceSqr, MinimumDistanceMeters * MinimumDistanceMeters));
+            PredatorCognitionDomain.SubmitInput(_slot, in input);
 
-            float aggressionFactor = ResolveAggressionFactor();
-            AggressionScore = math.pow(referenceDistance, -2.0f) * aggressionFactor;
-
-            float hungerInput = math.saturate(0.45f + aggressionFactor * 0.35f + (hasTarget ? 0.15f : 0f));
-            HungerScore = math.pow(hungerInput, 2f);
-            if (currentTime - _lastVisualContactTime >= LostVisualMemoryDelaySeconds && hasTarget)
-                HungerScore *= 1.2f;
-
-            float fearThreshold = _speciesProfile != null ? math.max(0.05f, _speciesProfile.fearThreshold) : 0.2f;
-            float injury01 = 1f - math.saturate(context.HealthNormalized);
-            float fearInput = math.saturate((injury01 / fearThreshold) + context.FearPressure01);
-            FearScore = context.CanFlee ? math.pow(fearInput, 2f) : 0f;
-
-            float attackCommit01 = hasTarget
-                ? math.pow(math.saturate(1f - (math.sqrt(math.max(targetDistanceSqr, 0f)) / math.max(context.AttackRange, 1f))), 2f)
-                : 0f;
-
-            float prowlingScore = HungerScore;
-            float stalkingScore = AggressionScore;
-            float attackingScore = AggressionScore * attackCommit01 * AttackStateBias;
-            float fleeingScore = FearScore;
-
-            if (_overrideUntilTime > currentTime)
-            {
-                switch (_overrideStateMask)
-                {
-                    case PredatorUtilityState.Prowling:
-                        prowlingScore += OverrideScoreBias;
-                        break;
-                    case PredatorUtilityState.Stalking:
-                        stalkingScore += OverrideScoreBias;
-                        break;
-                    case PredatorUtilityState.Attacking:
-                        attackingScore += OverrideScoreBias;
-                        break;
-                    case PredatorUtilityState.Fleeing:
-                        fleeingScore += OverrideScoreBias;
-                        break;
-                }
-            }
-
-            PredatorUtilityState stateMask = PredatorUtilityState.Prowling;
-            float winningScore = prowlingScore;
-            if (stalkingScore > winningScore)
-            {
-                stateMask = PredatorUtilityState.Stalking;
-                winningScore = stalkingScore;
-            }
-
-            if (attackingScore > winningScore)
-            {
-                stateMask = PredatorUtilityState.Attacking;
-                winningScore = attackingScore;
-            }
-
-            if (fleeingScore > winningScore)
-                stateMask = PredatorUtilityState.Fleeing;
-
-            CurrentStateMask = stateMask;
-
-            float3 desiredDirection = ResolveDesiredDirection(stateMask, selfPosition, targetPosition, context.SelfForward, hasTarget, currentTime);
-            FaunaBrain.AIState legacyState = MapLegacyState(stateMask);
-            float forceMultiplier = 1f;
-            float speedMultiplier = 1f;
-            float turnMultiplier = 1f;
-            bool shouldAttack = false;
-
-            switch (stateMask)
-            {
-                case PredatorUtilityState.Prowling:
-                    forceMultiplier = 1.05f;
-                    speedMultiplier = 0.95f;
-                    turnMultiplier = 0.9f;
-                    break;
-                case PredatorUtilityState.Stalking:
-                    forceMultiplier = 1.35f;
-                    speedMultiplier = 1.15f;
-                    turnMultiplier = 1.1f;
-                    break;
-                case PredatorUtilityState.Attacking:
-                    forceMultiplier = 2.15f;
-                    speedMultiplier = _speciesProfile != null ? math.max(1.15f, _speciesProfile.aggressiveSpeedMultiplier) : 1.35f;
-                    turnMultiplier = 1.2f;
-                    shouldAttack = context.HasVisualContact &&
-                                   hasTarget &&
-                                   targetDistanceSqr <= math.max(1f, context.AttackRange * context.AttackRange) &&
-                                   currentTime >= _nextAttackAllowedTime;
-                    break;
-                case PredatorUtilityState.Fleeing:
-                    forceMultiplier = 2.4f;
-                    speedMultiplier = _speciesProfile != null
-                        ? math.max(_speciesProfile.retreatSpeedMultiplier, _speciesProfile.escapeSpeedMultiplier)
-                        : 1.75f;
-                    turnMultiplier = 1.15f;
-                    break;
-            }
-
+            Vector3 desiredDirection = new Vector3(output.DesiredDirection.x, output.DesiredDirection.y, output.DesiredDirection.z);
             return new CreatureUtilityEvaluation(
                 desiredDirection,
-                stateMask,
-                legacyState,
+                CurrentStateMask,
+                (FaunaBrain.AIState)output.LegacyState,
                 HungerScore,
                 AggressionScore,
                 FearScore,
-                forceMultiplier,
-                speedMultiplier,
-                turnMultiplier,
-                shouldAttack);
+                output.ForceMultiplier,
+                output.SpeedMultiplier,
+                output.TurnMultiplier,
+                output.ShouldAttack != 0);
         }
 
-        /// <summary>
-        /// Releases the native memory ring buffer.
-        /// </summary>
         public void Dispose()
         {
-            _memory.Dispose();
+            if (_initialized)
+            {
+                PredatorCognitionDomain.Unregister(_slot);
+                _slot = -1;
+            }
+
             _initialized = false;
         }
 
@@ -704,10 +664,9 @@ namespace Hecton8.AI
             return speciesProfile != null && speciesProfile.isLeviathan;
         }
 
-        private float ResolveAggressionFactor()
+        private float ResolveAggressionWeight()
         {
             float aggression = _speciesProfile != null ? math.max(0.1f, _speciesProfile.baseAggro) : 0.55f;
-
             if (_archetype == null)
                 return aggression;
 
@@ -727,67 +686,31 @@ namespace Hecton8.AI
             return aggression;
         }
 
-        private void RefreshProwlTarget(float currentTime, float3 selfPosition)
+        private float ResolveFearWeight()
         {
-            if (_hasProwlTarget &&
-                currentTime < _nextProwlTargetRefreshTime &&
-                math.lengthsq(_prowlTarget - selfPosition) > 9f)
-            {
-                return;
-            }
+            if (_speciesProfile == null)
+                return 1.5f;
 
-            float phase = currentTime * 0.73f + (_prowlSequence * 2.39996323f);
-            float radiusT = math.frac(_prowlSequence * 0.61803398875f);
-            float radius = math.lerp(MinimumProwlRadius, MaximumProwlRadius, radiusT);
-            float verticalT = math.frac(_prowlSequence * 0.41421356f) - 0.5f;
-            float verticalOffset = verticalT * MaximumProwlVerticalOffset;
-
-            _prowlTarget = _spawnAnchor + new float3(
-                math.cos(phase) * radius,
-                verticalOffset,
-                math.sin(phase) * radius);
-            _prowlSequence++;
-            _hasProwlTarget = true;
-            _nextProwlTargetRefreshTime = currentTime + ProwlTargetRefreshSeconds;
+            return math.max(_speciesProfile.retreatSpeedMultiplier, _speciesProfile.escapeSpeedMultiplier);
         }
 
-        private float3 ResolveDesiredDirection(
-            PredatorUtilityState stateMask,
-            float3 selfPosition,
-            float3 targetPosition,
-            Vector3 fallbackForward,
-            bool hasTarget,
-            float currentTime)
+        private float ResolveAttackSpeedWeight()
         {
-            float3 fallbackDirection = math.normalizesafe((float3)fallbackForward, new float3(0f, 0f, 1f));
-            if (!hasTarget)
-                return fallbackDirection;
+            if (_speciesProfile == null)
+                return 1.35f;
 
-            float3 toTarget = math.normalizesafe(targetPosition - selfPosition, fallbackDirection);
-            if (stateMask == PredatorUtilityState.Fleeing)
-            {
-                float3 fleeFrom = _hasOverrideThreatPosition && _overrideUntilTime > currentTime
-                    ? _overrideThreatPosition
-                    : targetPosition;
-                return math.normalizesafe(selfPosition - fleeFrom, -fallbackDirection);
-            }
-
-            return toTarget;
+            return math.max(1.15f, _speciesProfile.aggressiveSpeedMultiplier);
         }
 
-        private static FaunaBrain.AIState MapLegacyState(PredatorUtilityState stateMask)
+        private int ResolveSpeciesId()
         {
-            switch (stateMask)
-            {
-                case PredatorUtilityState.Stalking:
-                    return FaunaBrain.AIState.Stalk;
-                case PredatorUtilityState.Attacking:
-                    return FaunaBrain.AIState.Aggressive;
-                case PredatorUtilityState.Fleeing:
-                    return FaunaBrain.AIState.Retreat;
-                default:
-                    return FaunaBrain.AIState.Wander;
-            }
+            if (_speciesProfile != null && _speciesProfile.speciesID != 0)
+                return _speciesProfile.speciesID;
+
+            if (_archetype != null)
+                return ((int)_archetype.roleType << 8) | (_archetype.isAggressive ? 1 : 0);
+
+            return 0;
         }
     }
 }

@@ -51,6 +51,17 @@ Shader "Hecton8/BoidFishInstanced"
         _TailPower ("Tail Falloff Power (higher = sharper)", Float) = 2.0
         _TailPhaseVariance ("Phase Variance (per instance)", Float) = 3.7
         _TailSpeedInfluence ("Speed Influence on Frequency", Float) = 0.5
+
+        [Header(VAT Animation)]
+        _VatEnabled ("VAT Enabled", Float) = 0
+        _VatPositionTex ("VAT Position Texture", 2D) = "black" {}
+        _VatNormalTex ("VAT Normal Texture", 2D) = "bump" {}
+        _VatFrameCount ("VAT Frame Count", Float) = 1
+        _VatVertexCount ("VAT Vertex Count", Float) = 1
+        _VatPlaybackSpeed ("VAT Playback Speed", Float) = 1
+        _VatInstancePhaseScale ("VAT Instance Phase Scale", Float) = 0.25
+        _VatPositionScale ("VAT Position Scale", Float) = 1
+        _VatNormalBlend ("VAT Normal Blend", Range(0, 1)) = 1
         
         [Header(Color Variation)]
         _ColorVariance ("Color Hue Variance", Float) = 0.05
@@ -116,7 +127,7 @@ Shader "Hecton8/BoidFishInstanced"
                 float3 position;    // 12 bytes
                 float3 velocity;    // 12 bytes
                 float  panic;       // 4 bytes
-                float  state;       // 4 bytes
+                uint   stateFlags;  // 4 bytes
                 // TOTAL: 32 bytes
             };
 
@@ -137,6 +148,15 @@ Shader "Hecton8/BoidFishInstanced"
                 float  _TailPower;
                 float  _TailPhaseVariance;
                 float  _TailSpeedInfluence;
+
+                // VAT animation
+                float  _VatEnabled;
+                float  _VatFrameCount;
+                float  _VatVertexCount;
+                float  _VatPlaybackSpeed;
+                float  _VatInstancePhaseScale;
+                float  _VatPositionScale;
+                float  _VatNormalBlend;
                 
                 // Color variation
                 float  _ColorVariance;
@@ -157,9 +177,14 @@ Shader "Hecton8/BoidFishInstanced"
             float _HectonOceanBiolumStrength;
             float _ParasiteMode;
             float _ParasiteAggression;
+            float _VelocitySleepScale;
 
             TEXTURE2D(_BaseMap);
             SAMPLER(sampler_BaseMap);
+            TEXTURE2D(_VatPositionTex);
+            SAMPLER(sampler_VatPositionTex);
+            TEXTURE2D(_VatNormalTex);
+            SAMPLER(sampler_VatNormalTex);
 
             // ══════════════════════════════════════════════════════
             //  VERTEX / FRAGMENT STRUCTURES
@@ -241,11 +266,38 @@ Shader "Hecton8/BoidFishInstanced"
                 return frac(sin(float(id) * 127.1 + 311.7) * 43758.5453);
             }
 
+            float2 ResolveVatFrameUv(uint vertexID, float frameIndex)
+            {
+                float safeVertexCount = max(_VatVertexCount, 1.0);
+                float safeFrameCount = max(_VatFrameCount, 1.0);
+                return float2(
+                    (vertexID + 0.5) / safeVertexCount,
+                    (frameIndex + 0.5) / safeFrameCount);
+            }
+
+            float3 SampleVatPosition(uint vertexID, float frameIndex)
+            {
+                float2 uv = ResolveVatFrameUv(vertexID, frameIndex);
+                return SAMPLE_TEXTURE2D_LOD(_VatPositionTex, sampler_VatPositionTex, uv, 0).xyz * _VatPositionScale;
+            }
+
+            float3 SampleVatNormal(uint vertexID, float frameIndex, float3 fallbackNormalOS)
+            {
+                float2 uv = ResolveVatFrameUv(vertexID, frameIndex);
+                float3 encodedNormal = SAMPLE_TEXTURE2D_LOD(_VatNormalTex, sampler_VatNormalTex, uv, 0).xyz * 2.0 - 1.0;
+                float encodedLengthSq = dot(encodedNormal, encodedNormal);
+                if (encodedLengthSq <= 0.0001)
+                    return fallbackNormalOS;
+
+                float3 vatNormal = encodedNormal * rsqrt(encodedLengthSq);
+                return normalize(lerp(fallbackNormalOS, vatNormal, saturate(_VatNormalBlend)));
+            }
+
             // ══════════════════════════════════════════════════════
             //  VERTEX SHADER
             // ══════════════════════════════════════════════════════
 
-            Varyings vert(Attributes input, uint instanceID : SV_InstanceID)
+            Varyings vert(Attributes input, uint instanceID : SV_InstanceID, uint vertexID : SV_VertexID)
             {
                 Varyings output;
 
@@ -255,9 +307,10 @@ Shader "Hecton8/BoidFishInstanced"
 
                 BoidData boid = _BoidsBuffer[instanceID];
                 float3 boidPos = boid.position;
-                float3 boidVel = boid.velocity;
+                float3 boidVel = boid.velocity * saturate(_VelocitySleepScale);
                 float  speed   = length(boidVel);
-                float  consumed01 = boid.state < 1.5 ? 0.0 : saturate(boid.panic);
+                bool   isConsumed = (boid.stateFlags & 8u) != 0u;
+                float  consumed01 = isConsumed ? saturate(boid.panic) : 0.0;
                 float  aliveMask = consumed01 < 0.999 ? 1.0 : 0.0;
                 float  consumedScale = 1.0 - consumed01;
 
@@ -287,31 +340,50 @@ Shader "Hecton8/BoidFishInstanced"
                 // (phase varies along Z = travelling wave).
 
                 float3 localPos = input.positionOS.xyz;
+                float3 localNormal = input.normalOS;
+                bool useVat = _VatEnabled > 0.5 && _VatFrameCount > 1.0 && _VatVertexCount > 1.0;
+                if (useVat)
+                {
+                    float safeFrameCount = max(_VatFrameCount, 1.0);
+                    float vatPhase = frac(_Time.y * max(_VatPlaybackSpeed, 0.0) + instRand * max(_VatInstancePhaseScale, 0.0));
+                    float vatFrame = vatPhase * safeFrameCount;
+                    float vatFrameFloor = floor(vatFrame);
+                    float vatFrameCeil = fmod(vatFrameFloor + 1.0, safeFrameCount);
+                    float vatBlend = frac(vatFrame);
+                    float3 vatPositionA = SampleVatPosition(vertexID, vatFrameFloor);
+                    float3 vatPositionB = SampleVatPosition(vertexID, vatFrameCeil);
+                    float3 vatNormalA = SampleVatNormal(vertexID, vatFrameFloor, localNormal);
+                    float3 vatNormalB = SampleVatNormal(vertexID, vatFrameCeil, localNormal);
+                    localPos = lerp(vatPositionA, vatPositionB, vatBlend);
+                    localNormal = normalize(lerp(vatNormalA, vatNormalB, vatBlend));
+                }
+                else
+                {
+                    // Tail factor: 0 at head (+Z), 1 at tail tip (-Z)
+                    // Using -Z so that negative Z (tail) gives positive factor
+                    float tailFactor = saturate(-localPos.z);
+                    tailFactor = pow(tailFactor, _TailPower);
 
-                // Tail factor: 0 at head (+Z), 1 at tail tip (-Z)
-                // Using -Z so that negative Z (tail) gives positive factor
-                float tailFactor = saturate(-localPos.z);
-                tailFactor = pow(tailFactor, _TailPower);
+                    // Phase with body wave component
+                    float freqAdjusted = _TailFrequency + speed * _TailSpeedInfluence;
+                    float phase = _Time.y * freqAdjusted 
+                                + float(instanceID) * _TailPhaseVariance;
+                    
+                    // Body wave: phase varies along Z for S-curve
+                    // bodyWaveK = 2.0 creates ~1 full wave along body
+                    float bodyWaveK = 2.0;
+                    float wavePhase = phase + localPos.z * bodyWaveK;
 
-                // Phase with body wave component
-                float freqAdjusted = _TailFrequency + speed * _TailSpeedInfluence;
-                float phase = _Time.y * freqAdjusted 
-                            + float(instanceID) * _TailPhaseVariance;
-                
-                // Body wave: phase varies along Z for S-curve
-                // bodyWaveK = 2.0 creates ~1 full wave along body
-                float bodyWaveK = 2.0;
-                float wavePhase = phase + localPos.z * bodyWaveK;
+                    // Amplitude scales with speed (faster = smaller wag)
+                    float parasiteMode = saturate(_ParasiteMode);
+                    float ampAdjusted = _TailAmplitude * (1.0 + 0.3 * instRand) * lerp(1.0, 0.28, parasiteMode);
+                    
+                    // Apply displacement to local X (horizontal wag)
+                    localPos.x += sin(wavePhase) * ampAdjusted * tailFactor;
 
-                // Amplitude scales with speed (faster = smaller wag)
-                float parasiteMode = saturate(_ParasiteMode);
-                float ampAdjusted = _TailAmplitude * (1.0 + 0.3 * instRand) * lerp(1.0, 0.28, parasiteMode);
-                
-                // Apply displacement to local X (horizontal wag)
-                localPos.x += sin(wavePhase) * ampAdjusted * tailFactor;
-
-                // Subtle Y displacement (vertical undulation, half amplitude)
-                localPos.y += cos(wavePhase * 0.7) * ampAdjusted * 0.3 * tailFactor;
+                    // Subtle Y displacement (vertical undulation, half amplitude)
+                    localPos.y += cos(wavePhase * 0.7) * ampAdjusted * 0.3 * tailFactor;
+                }
 
                 // ══════════════════════════════════════════════════
                 //  4. SCALE
@@ -328,7 +400,7 @@ Shader "Hecton8/BoidFishInstanced"
                 float3x3 rotMatrix = BuildLookRotation(boidVel);
                 
                 float3 worldPos = mul(rotMatrix, localPos) + boidPos;
-                float3 worldNrm = mul(rotMatrix, input.normalOS);
+                float3 worldNrm = mul(rotMatrix, localNormal);
 
                 // ══════════════════════════════════════════════════
                 //  6. OUTPUT

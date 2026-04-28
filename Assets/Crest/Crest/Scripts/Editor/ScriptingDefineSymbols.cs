@@ -1,4 +1,4 @@
-﻿// Crest Ocean System
+// Crest Ocean System
 
 // Copyright 2022 Wave Harmonic Ltd
 
@@ -39,7 +39,6 @@ namespace Crest
 
         // NOTE: All of the above symbols must be checked here like so: !SYMBOL_1 || !SYMBOL_2
 #if !CREST_OCEAN
-        [InitializeOnLoadMethod]
         static void OnProjectLoadedInEditor()
         {
             AddDefineSymbols();

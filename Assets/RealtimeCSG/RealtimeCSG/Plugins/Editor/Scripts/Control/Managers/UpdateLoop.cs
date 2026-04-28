@@ -1,5 +1,6 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEditor;
+using UnityEditorInternal;
 using InternalRealtimeCSG;
 using System;
 using System.Collections.Generic;
@@ -11,10 +12,9 @@ using RealtimeCSG.Components;
 
 namespace RealtimeCSG
 {
-	[InitializeOnLoad]
 	internal sealed class UpdateLoop
 	{
-		[MenuItem("Edit/Realtime-CSG/Turn Realtime-CSG on or off %F3", false, 30)]
+		[MenuItem("Edit/Realtime-CSG/Turn Realtime-CSG on or off", false, 30)]
 		static void ToggleRealtimeCSG()
 		{
 			RealtimeCSG.CSGSettings.SetRealtimeCSGEnabled(!RealtimeCSG.CSGSettings.EnableRealtimeCSG);
@@ -24,13 +24,45 @@ namespace RealtimeCSG
 
 
 		static UpdateLoop editor = null;
+		static bool initializeQueued = false;
 		static UpdateLoop()
 		{
+			if (InternalEditorUtility.inBatchMode)
+				return;
+
+			QueueInitialize();
+		}
+
+		static void QueueInitialize()
+		{
+			if (initializeQueued)
+				return;
+
+			initializeQueued = true;
+			EditorApplication.delayCall -= InitializeWhenEditorReady;
+			EditorApplication.delayCall += InitializeWhenEditorReady;
+		}
+
+		static void InitializeWhenEditorReady()
+		{
+			EditorApplication.delayCall -= InitializeWhenEditorReady;
+			initializeQueued = false;
+
+			if (InternalEditorUtility.inBatchMode ||
+				EditorApplication.isCompiling ||
+				EditorApplication.isUpdating ||
+				EditorApplication.isPlayingOrWillChangePlaymode)
+			{
+				QueueInitialize();
+				return;
+			}
+
 			if (editor != null)
 			{
 				editor.Shutdown();
 				editor = null;
 			}
+
 			editor = new UpdateLoop();
 			editor.Initialize();
 		}
@@ -75,7 +107,7 @@ namespace RealtimeCSG
             EditorApplication.hierarchyWindowItemOnGUI	-= HierarchyWindowItemGUI.OnHierarchyWindowItemOnGUI;
 			EditorApplication.hierarchyWindowItemOnGUI	+= HierarchyWindowItemGUI.OnHierarchyWindowItemOnGUI;
 			
-			UnityCompilerDefineManager.UpdateUnityDefines();
+			// HECTON-8: do not mutate scripting defines during domain reload.
 		}
 
 #if UNITY_2018_3_OR_NEWER

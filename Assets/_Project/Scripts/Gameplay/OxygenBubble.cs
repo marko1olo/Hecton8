@@ -43,7 +43,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
-    public sealed class OxygenBubble : MonoBehaviour, ITickable
+    public sealed class OxygenBubble : MonoBehaviour, ITickable, IUpdatable
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — MOVEMENT
@@ -315,30 +315,16 @@ namespace Hecton8.Gameplay
         {
             if (_isRegistered) return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-            {
-                tickManager.Register(this);
-                _isRegistered = true;
-            }
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            else
-            {
-                Debug.LogError("[OxygenBubble] GameTickManager.Instance is null. Cannot register for tick.", this);
-            }
-#endif
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+            _isRegistered = true;
         }
 
         private void UnregisterFromTick()
         {
             if (!_isRegistered) return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-            {
-                tickManager.Unregister(this);
-                _isRegistered = false;
-            }
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            _isRegistered = false;
         }
 
         // ══════════════════════════════════════════════════════════

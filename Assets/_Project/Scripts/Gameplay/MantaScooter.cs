@@ -375,15 +375,6 @@ namespace Hecton8.Gameplay
 
             // Setup motor audio
             TryGetComponent(out _motorAudioSource);
-            if (!PlayerCriticalProceduralAudioRenderer.IsRuntimeInstalled &&
-                _motorAudioSource == null &&
-                motorLoopClip != null)
-            {
-                _motorAudioSource = gameObject.AddComponent<AudioSource>();
-                _motorAudioSource.playOnAwake = false;
-                _motorAudioSource.loop = true;
-                _motorAudioSource.spatialBlend = 1f;
-            }
         }
 
         private void OnEnable()
@@ -811,6 +802,7 @@ namespace Hecton8.Gameplay
             if (!wreckInstance.TryGetComponent(out MantaEmergencyWreck wreck))
                 wreck = wreckInstance.AddComponent<MantaEmergencyWreck>();
 
+            wreck.BindResidencyPrefabSource(wreckPrefab);
             wreck.ActivateEmergencyDrift(inheritedVelocity, bailoutImpulse, severity);
             BreakTransport();
             spawnTransform.gameObject.SetActive(false);
@@ -1400,9 +1392,9 @@ namespace Hecton8.Gameplay
             float speed = velocity.magnitude;
             float previousSpeed = _lastPublishedVolumetricVelocity.magnitude;
             float brakeStrength = 0f;
-            if (_hasLastPublishedVolumetricVelocity && deltaTime > 0.0001f && previousSpeed > 0.1f)
+            if (_hasLastPublishedVolumetricVelocity && previousSpeed > 0.1f && TryResolveSafeReciprocal(deltaTime, out float inverseDeltaTime))
             {
-                Vector3 acceleration = (velocity - _lastPublishedVolumetricVelocity) / deltaTime;
+                Vector3 acceleration = SanitizeFiniteVector((velocity - _lastPublishedVolumetricVelocity) * inverseDeltaTime);
                 float brakingDeceleration = Mathf.Max(0f, Vector3.Dot(-acceleration, _lastPublishedVolumetricVelocity.normalized));
                 float speedDrop = Mathf.Max(0f, previousSpeed - speed);
                 brakeStrength = Mathf.Clamp01(brakingDeceleration * 0.035f + speedDrop * 0.18f);
@@ -1412,6 +1404,25 @@ namespace Hecton8.Gameplay
             Shader.SetGlobalFloat(_ScooterBrakeCloudId, brakeStrength);
             _lastPublishedVolumetricVelocity = velocity;
             _hasLastPublishedVolumetricVelocity = allowHeadlights;
+        }
+
+        private static bool TryResolveSafeReciprocal(float value, out float reciprocal)
+        {
+            if (!float.IsFinite(value) || math.abs(value) <= 0.0001f)
+            {
+                reciprocal = 0f;
+                return false;
+            }
+
+            reciprocal = 1f / value;
+            return float.IsFinite(reciprocal);
+        }
+
+        private static Vector3 SanitizeFiniteVector(Vector3 value)
+        {
+            return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z)
+                ? value
+                : Vector3.zero;
         }
 
         private void ApplyHeadlightMalfunction(int slotIndex, Light headlight, float stress01)

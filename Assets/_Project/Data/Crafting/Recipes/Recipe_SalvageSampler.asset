@@ -1,4 +1,4 @@
-﻿%YAML 1.1
+%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!114 &11400000
 MonoBehaviour:
@@ -15,14 +15,14 @@ MonoBehaviour:
   recipeName: Salvage Sampler
   localizedRecipeName:
     tableKey: ITEM_TOOL_SALVAGE_SAMPLER_NAME
-    fallbackText: ''
+    fallbackText: 
     variants: []
   overrideIcon: {fileID: 0}
   description: Field recovery sampler for breaking down caches and weakened resource
     targets.
   localizedRecipeDescription:
     tableKey: ITEM_TOOL_SALVAGE_SAMPLER_DESCRIPTION
-    fallbackText: ''
+    fallbackText: 
     variants: []
   resultItem: {fileID: 11400000, guid: 0b4ba642bbd13cc4e909b28a175a8e1b, type: 2}
   resultQuantity: 1
@@ -32,5 +32,6 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: f2fa85eafcf50c745b3f7cc3e0da0dc0, type: 2}
     amount: 1
   craftTime: 2.5
+  powerCost: 5
   requiredScanEntryId: scan.resource_cache
   fabricationGroup: 3

@@ -16,6 +16,21 @@ float _HectonVoxelSSAODepthSigma;
 float _HectonVoxelSSAOHasBlueNoise;
 int _HectonVoxelSSAOSampleCount;
 
+bool IsFiniteScalar(float value)
+{
+    return isfinite(value);
+}
+
+float ResolveFiniteOrDefault(float value, float fallback)
+{
+    return IsFiniteScalar(value) ? value : fallback;
+}
+
+bool IsFiniteFloat3(float3 value)
+{
+    return all(isfinite(value));
+}
+
 static const float2 kKernelDirections[6] =
 {
     float2(1.0, 0.0),
@@ -48,6 +63,9 @@ float ResolveBlueNoise(float2 pixelCoord)
 
 bool IsDepthValid(float rawDepth)
 {
+    if (!IsFiniteScalar(rawDepth))
+        return false;
+
 #if defined(UNITY_REVERSED_Z)
     return rawDepth > 0.0001;
 #else
@@ -79,7 +97,10 @@ float3 ReconstructWorldPosition(float2 screenUV, float rawDepth)
     clipPosition.y *= -1.0;
 #endif
     float4 worldPosition = mul(_HectonVoxelSSAOInverseViewProjection, clipPosition);
-    return worldPosition.xyz / max(worldPosition.w, 0.0001);
+    if (!all(isfinite(worldPosition)))
+        return 0.0.xxx;
+
+    return worldPosition.xyz / max(ResolveFiniteOrDefault(worldPosition.w, 0.0001), 0.0001);
 }
 
 [numthreads(8, 8, 1)]
@@ -99,10 +120,16 @@ void ResolveVoxelSSAO(uint3 dispatchThreadId : SV_DispatchThreadID)
     }
 
     float2 centerUv = (float2(centerPixel) + 0.5) * _HectonVoxelSSAOInputSize.zw;
-    float centerLinearDepth = LinearEyeDepth(centerDepthRaw, _ZBufferParams);
+    float centerLinearDepth = ResolveFiniteOrDefault(LinearEyeDepth(centerDepthRaw, _ZBufferParams), 0.0);
     float3 centerPositionWS = ReconstructWorldPosition(centerUv, centerDepthRaw);
+    if (!IsFiniteFloat3(centerPositionWS))
+    {
+        _HectonVoxelSSAOResult[dispatchThreadId.xy] = 1.0;
+        return;
+    }
+
     float radiusPixels = clamp(_HectonVoxelSSAOProjectionScale / max(centerLinearDepth, 0.5), 1.0, 24.0);
-    float rotationAngle = ResolveBlueNoise(dispatchThreadId.xy) * 6.2831853;
+    float rotationAngle = ResolveFiniteOrDefault(ResolveBlueNoise(dispatchThreadId.xy), 0.0) * 6.2831853;
     float2 rotation = float2(cos(rotationAngle), sin(rotationAngle));
 
     float occlusion = 0.0;
@@ -126,15 +153,18 @@ void ResolveVoxelSSAO(uint3 dispatchThreadId : SV_DispatchThreadID)
         if (!IsDepthValid(sampleDepthRaw))
             continue;
 
-        float sampleLinearDepth = LinearEyeDepth(sampleDepthRaw, _ZBufferParams);
+        float sampleLinearDepth = ResolveFiniteOrDefault(LinearEyeDepth(sampleDepthRaw, _ZBufferParams), centerLinearDepth);
         float depthDelta = centerLinearDepth - sampleLinearDepth;
         if (depthDelta <= 0.0)
             continue;
 
         float2 sampleUv = (float2(samplePixel) + 0.5) * _HectonVoxelSSAOInputSize.zw;
         float3 samplePositionWS = ReconstructWorldPosition(sampleUv, sampleDepthRaw);
+        if (!IsFiniteFloat3(samplePositionWS))
+            continue;
+
         float worldDistance = distance(centerPositionWS, samplePositionWS);
-        if (worldDistance > _HectonVoxelSSAORadiusMeters || worldDistance <= 0.0001)
+        if (!IsFiniteScalar(worldDistance) || worldDistance > _HectonVoxelSSAORadiusMeters || worldDistance <= 0.0001)
             continue;
 
         float rangeWeight = 1.0 - saturate(worldDistance / max(_HectonVoxelSSAORadiusMeters, 0.001));
@@ -144,6 +174,6 @@ void ResolveVoxelSSAO(uint3 dispatchThreadId : SV_DispatchThreadID)
         weightSum += sampleWeight;
     }
 
-    float normalizedOcclusion = weightSum > 0.0001 ? saturate(occlusion / weightSum) : 0.0;
-    _HectonVoxelSSAOResult[dispatchThreadId.xy] = saturate(1.0 - normalizedOcclusion);
+    float normalizedOcclusion = weightSum > 0.0001 ? saturate(ResolveFiniteOrDefault(occlusion / weightSum, 0.0)) : 0.0;
+    _HectonVoxelSSAOResult[dispatchThreadId.xy] = saturate(ResolveFiniteOrDefault(1.0 - normalizedOcclusion, 1.0));
 }

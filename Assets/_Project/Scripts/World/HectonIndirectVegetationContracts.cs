@@ -67,10 +67,10 @@ namespace Hecton8.World
     public interface IHectonIndirectVegetationBufferSource
     {
         /// <summary>Structured buffer of per-instance matrices.</summary>
-        ComputeBuffer InstanceMatrixBuffer { get; }
+        GraphicsBuffer InstanceMatrixBuffer { get; }
 
         /// <summary>Structured buffer of <see cref="HectonVegetationInstanceData"/> payloads.</summary>
-        ComputeBuffer InstanceDataBuffer { get; }
+        GraphicsBuffer InstanceDataBuffer { get; }
 
         /// <summary>Active instance count available in both buffers.</summary>
         int InstanceCount { get; }

@@ -3,6 +3,8 @@
     "rootNamespace": "Hecton8.Editor",
     "references": [
         "Hecton8.Core",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
         "Unity.InputSystem",
         "Unity.TextMeshPro",
         "UnityEngine.UI",

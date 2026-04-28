@@ -1,0 +1,23 @@
+private void RemoveTileState(int tileX, int tileZ)
+{
+    long tileKey = PackTileCoord(tileX, tileZ);
+    if (_tileStates.TryGetValue(tileKey, out TileRuntimeState state) && state != null)
+    {
+        InvalidateTileChunks(tileX, tileZ, state.ChunkCountX, state.ChunkCountZ);
+        ClearCorruptionStateForTile(tileX, tileZ);
+        state.PendingRemoval = true;
+
+        if (state.HeightReadbackPending && !TryFinalizeTileHeightReadback(state, forceComplete: false))
+        {
+            _activeSetDirty = true;
+            return;
+        }
+
+        FinalizeDeferredTileRemoval(tileKey);
+        return;
+    }
+
+    ClearCorruptionStateForTile(tileX, tileZ);
+    _tileStates.Remove(tileKey);
+    _activeSetDirty = true;
+}

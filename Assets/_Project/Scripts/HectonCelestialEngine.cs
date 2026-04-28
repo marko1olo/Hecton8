@@ -99,11 +99,12 @@ namespace Hecton8.Celestial
         }
     }
 
-    [ExecuteAlways]
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-3000)]  // v5.1: MUST tick AFTER UnderwaterVisuals(-4000)
-    public class HectonCelestialEngine : MonoBehaviour, ITickable
+public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable
     {
+        private const string MandatedSkyMaterialName = "Mat_HectonSky";
+        public static HectonCelestialEngine ActiveRuntimeInstance { get; private set; }
         private static AtmosphericLightingState _currentAtmosphericLightingState = AtmosphericLightingState.Default;
         private static bool _hasAtmosphericLightingState;
 
@@ -419,6 +420,7 @@ namespace Hecton8.Celestial
         private float _surfaceWeatherFogDensity;
         private Color _surfaceWeatherAmbientColor = Color.white;
         private float _surfaceWeatherSunMultiplier = 1f;
+        private bool _renderSettingsGuardAcquired;
         private AtmosphericLightingState _surfaceAtmosphericLightingState = AtmosphericLightingState.Default;
         private const int CelestialBodyCacheCapacity = 8;
         private const float AtmosphereWeightBlendThreshold = 0.01f;
@@ -584,15 +586,25 @@ namespace Hecton8.Celestial
 
         private void Awake()
         {
+            ForceMandatedSkyMaterialReference();
             EnsureCelestialAtmosphereLutReady();
         }
 
         private void OnEnable()
         {
+            if (!_renderSettingsGuardAcquired)
+            {
+                RenderSettingsLifecycleGuard.Acquire(this);
+                _renderSettingsGuardAcquired = true;
+            }
+
+            if (Application.isPlaying)
+                ActiveRuntimeInstance = this;
+
+            ForceMandatedSkyMaterialReference();
             ValidateReferences();
             EnsureCelestialAtmosphereLutReady();
             InitializeMaterialPropertyBlocks();
-            _moonMPB ??= new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - moon shader state bridge - owner: HectonCelestialEngine
             InitializePlanetShineLight();
             CacheCelestialTextureDefaults();
             CacheMoonRenderers();
@@ -628,16 +640,13 @@ namespace Hecton8.Celestial
             CaptureBaseFlareValues();
             SyncCrestPrimaryLight();
 
-            if (blendedSkyboxMaterial != null)
-                RenderSettings.skybox = blendedSkyboxMaterial;
+            ApplySkyboxMaterialOwnership(forceAssignment: true);
 
             if (Application.isPlaying)
             {
                 BiomeMatrixDirector.OnDepthTierChanged -= HandleDepthTierChanged;
                 BiomeMatrixDirector.OnDepthTierChanged += HandleDepthTierChanged;
-                GameTickManager tickManager = GameTickManager.Instance;
-                if (tickManager != null)
-                    tickManager.Register((ITickable)this);
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
 
                 BiomeMatrixDirector director = BiomeMatrixDirector.ActiveRuntimeInstance;
                 if (director != null)
@@ -662,6 +671,9 @@ namespace Hecton8.Celestial
 
         private void OnDisable()
         {
+            if (ActiveRuntimeInstance == this)
+                ActiveRuntimeInstance = null;
+
             _editorPreviewDirty = false;
             _surfaceAtmosphericLightingState = AtmosphericLightingState.Default;
             _currentAtmosphericLightingState = AtmosphericLightingState.Default;
@@ -677,9 +689,7 @@ namespace Hecton8.Celestial
 
             if (Application.isPlaying)
             {
-                GameTickManager tickManager = GameTickManager.Instance;
-                if (tickManager != null)
-                    tickManager.Unregister((ITickable)this);
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             }
 #if UNITY_EDITOR
             else
@@ -687,10 +697,25 @@ namespace Hecton8.Celestial
                 EditorApplication.update -= EditorTick;
             }
 #endif
+
+            if (_renderSettingsGuardAcquired)
+            {
+                RenderSettingsLifecycleGuard.Release(this);
+                _renderSettingsGuardAcquired = false;
+            }
         }
 
         private void OnDestroy()
         {
+            if (ActiveRuntimeInstance == this)
+                ActiveRuntimeInstance = null;
+
+            if (_renderSettingsGuardAcquired)
+            {
+                RenderSettingsLifecycleGuard.Release(this);
+                _renderSettingsGuardAcquired = false;
+            }
+
             ReleaseCelestialAtmosphereLut();
             OnEclipseStart = null;
             OnEclipseEnd = null;
@@ -890,6 +915,9 @@ namespace Hecton8.Celestial
                     Debug.LogWarning("[HectonCelestialEngine] Player not assigned, using SceneBootstrap player transform.");
                 }
             }
+
+            if (blendedSkyboxMaterial == null && IsBlendSkyboxMaterial(RenderSettings.skybox))
+                blendedSkyboxMaterial = RenderSettings.skybox;
 
             if (_skyMaterial == null)
                 Debug.LogWarning("[HectonCelestialEngine] Sky Material is not assigned!", this);
@@ -1717,8 +1745,9 @@ namespace Hecton8.Celestial
 
         private void InitializeMaterialPropertyBlocks()
         {
-            _aegirMPB = new MaterialPropertyBlock();   // COLD ALLOC: MaterialPropertyBlock[1] — gas giant shader state bridge — owner: HectonCelestialEngine
-            _sunDiscMPB = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — sun-disc shader state bridge — owner: HectonCelestialEngine
+            _aegirMPB ??= new MaterialPropertyBlock();   // COLD ALLOC: MaterialPropertyBlock[1] — gas giant shader state bridge — owner: HectonCelestialEngine
+            _moonMPB ??= new MaterialPropertyBlock();    // COLD ALLOC: MaterialPropertyBlock[1] — moon shader state bridge — owner: HectonCelestialEngine
+            _sunDiscMPB ??= new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — sun-disc shader state bridge — owner: HectonCelestialEngine
         }
 
         private void CacheMoonRenderers()
@@ -1847,6 +1876,7 @@ namespace Hecton8.Celestial
             _baseFlareIntensity = _sunLensFlare.intensity;
             _baseFlareScale = _sunLensFlare.scale;
             _baseFlareValuesCaptured = true;
+            DisableLegacySunFlare();
         }
 
         private void CalculateEclipseAngularRadius()
@@ -2074,10 +2104,10 @@ namespace Hecton8.Celestial
 
         private void DetachDeepCelestialTextures()
         {
-            SetMaterialTexture(_skyMaterial, _ID_HighCloudTex, null);
-            SetMaterialTexture(_skyMaterial, _ID_MainCloudAtlas, null);
-            SetMaterialTexture(_skyMaterial, _ID_MainCloudTex, null);
-            SetMaterialTexture(_skyMaterial, _ID_StarTex, null);
+            SetSkyTextureAllTargets(_ID_HighCloudTex, null);
+            SetSkyTextureAllTargets(_ID_MainCloudAtlas, null);
+            SetSkyTextureAllTargets(_ID_MainCloudTex, null);
+            SetSkyTextureAllTargets(_ID_StarTex, null);
 
             SetMaterialTexture(daySkybox, _ID_MainTex, null);
             SetMaterialTexture(daySkybox, _ID_EmissionMap, null);
@@ -2097,10 +2127,10 @@ namespace Hecton8.Celestial
 
         private void RestoreCelestialTextureDefaults()
         {
-            SetMaterialTexture(_skyMaterial, _ID_HighCloudTex, _skyHighCloudTexDefault);
-            SetMaterialTexture(_skyMaterial, _ID_MainCloudAtlas, _skyMainCloudAtlasDefault);
-            SetMaterialTexture(_skyMaterial, _ID_MainCloudTex, _skyMainCloudTexDefault);
-            SetMaterialTexture(_skyMaterial, _ID_StarTex, _skyStarTexDefault);
+            SetSkyTextureAllTargets(_ID_HighCloudTex, _skyHighCloudTexDefault);
+            SetSkyTextureAllTargets(_ID_MainCloudAtlas, _skyMainCloudAtlasDefault);
+            SetSkyTextureAllTargets(_ID_MainCloudTex, _skyMainCloudTexDefault);
+            SetSkyTextureAllTargets(_ID_StarTex, _skyStarTexDefault);
 
             SetMaterialTexture(daySkybox, _ID_MainTex, _daySkyboxMainTexDefault);
             SetMaterialTexture(daySkybox, _ID_EmissionMap, _daySkyboxEmissionTexDefault);
@@ -2292,6 +2322,65 @@ namespace Hecton8.Celestial
             _lastAppliedSkyZenith = _resolvedSkyZenith;
             _lastAppliedSkyHorizon = _resolvedSkyHorizon;
             _lastAppliedSkyNadir = _resolvedSkyNadir;
+        }
+
+        private void ApplySkyboxMaterialOwnership(bool forceAssignment)
+        {
+            ForceMandatedSkyMaterialReference();
+            Material targetSkyboxMaterial = ResolvePreferredSkyboxMaterial();
+            if (targetSkyboxMaterial == null)
+                return;
+
+            if (forceAssignment ||
+                !ReferenceEquals(RenderSettings.skybox, targetSkyboxMaterial) ||
+                ReferenceEquals(RenderSettings.skybox, _skyMaterial))
+            {
+                RenderSettings.skybox = targetSkyboxMaterial;
+            }
+        }
+
+        private void ForceMandatedSkyMaterialReference()
+        {
+            if (!IsMandatedSkyMaterial(_skyMaterial))
+            {
+                if (HectonUnderwaterVisuals.TryGetRuntimeSkyMaterialReference(out Material underwaterSkyMaterial) &&
+                    IsMandatedSkyMaterial(underwaterSkyMaterial))
+                {
+                    _skyMaterial = underwaterSkyMaterial;
+                }
+                else if (IsMandatedSkyMaterial(RenderSettings.skybox))
+                {
+                    _skyMaterial = RenderSettings.skybox;
+                }
+            }
+
+            if (_skyMaterial != null && !ReferenceEquals(RenderSettings.skybox, _skyMaterial))
+                RenderSettings.skybox = _skyMaterial;
+        }
+
+        private Material ResolvePreferredSkyboxMaterial()
+        {
+            ForceMandatedSkyMaterialReference();
+            return _skyMaterial;
+        }
+
+        private static bool IsBlendSkyboxMaterial(Material material)
+        {
+            return material != null &&
+                   material.HasProperty(_ID_Blend) &&
+                   material.HasProperty(_ID_DayCubemap) &&
+                   material.HasProperty(_ID_NightCubemap);
+        }
+
+        private static bool IsMandatedSkyMaterial(Material material)
+        {
+            return material != null &&
+                   material.name.StartsWith(MandatedSkyMaterialName, StringComparison.Ordinal);
+        }
+
+        private void SetSkyTextureAllTargets(int propertyId, Texture texture)
+        {
+            SetMaterialTexture(_skyMaterial, propertyId, texture);
         }
 
         private void ApplySkyMaterialProperties(
@@ -2578,15 +2667,7 @@ namespace Hecton8.Celestial
             }
 
             // ── Lens Flare ──
-            if (_sunLensFlare != null && _baseFlareValuesCaptured)
-            {
-                _sunLensFlare.intensity = _baseFlareIntensity * visibility;
-                _sunLensFlare.scale = _baseFlareScale * visibility;
-
-                bool shouldBeEnabled = visibility > 0.001f;
-                if (_sunLensFlare.enabled != shouldBeEnabled)
-                    _sunLensFlare.enabled = shouldBeEnabled;
-            }
+            DisableLegacySunFlare();
 
             // ── Sun Visual Disc ──
             if (sunVisualTransform != null)
@@ -2637,13 +2718,7 @@ namespace Hecton8.Celestial
             if (sunLight != null && _baseSunColorCaptured)
                 sunLight.color = _baseSunColor;
 
-            if (_sunLensFlare != null && _baseFlareValuesCaptured)
-            {
-                _sunLensFlare.intensity = _baseFlareIntensity;
-                _sunLensFlare.scale = _baseFlareScale;
-                if (!_sunLensFlare.enabled)
-                    _sunLensFlare.enabled = true;
-            }
+            DisableLegacySunFlare();
 
             if (_atmosphereManager != null)
             {
@@ -2669,6 +2744,7 @@ namespace Hecton8.Celestial
 
             // v5.1: Eclipse also triggers night sky.
             _currentBlend = math.max(timeBlend, _smoothedOcclusionFactor);
+            ApplySkyboxMaterialOwnership(forceAssignment: false);
 
             if (blendedSkyboxMaterial != null)
                 blendedSkyboxMaterial.SetFloat(_ID_Blend, _currentBlend);
@@ -2721,6 +2797,17 @@ namespace Hecton8.Celestial
             Shader.SetGlobalFloat(_ID_CelestialAtmosphereBlendPower, atmosphereBlendPower);
             Shader.SetGlobalFloat(_ID_GameTime, _gameTime);
             PublishCelestialAtmosphereLut();
+        }
+
+        private void DisableLegacySunFlare()
+        {
+            if (_sunLensFlare == null)
+                return;
+
+            _sunLensFlare.intensity = 0f;
+            _sunLensFlare.scale = 0f;
+            if (_sunLensFlare.enabled)
+                _sunLensFlare.enabled = false;
         }
 
         // ─────────────────────────────────────────────

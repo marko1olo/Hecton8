@@ -13,7 +13,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Settings Live Preview")]
-    public sealed class SettingsLivePreview : MonoBehaviour, ITickable
+    public sealed class SettingsLivePreview : MonoBehaviour, ITickable, IUpdatable
     {
         private const float MainCameraResolveRetryInterval = 1f;
 
@@ -178,7 +178,7 @@ namespace Hecton8.UI
                     return true;
                 }
 
-                Camera playerChildCamera = playerTransform.GetComponentInChildren<Camera>(true);
+                Camera playerChildCamera = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera : playerTransform.GetComponent<Camera>());
                 if (playerChildCamera != null)
                 {
                     mainCamera = playerChildCamera;
@@ -192,7 +192,7 @@ namespace Hecton8.UI
                 return true;
             }
 
-            Camera childCamera = GetComponentInChildren<Camera>(true);
+            Camera childCamera = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Camera>(transform);
             if (childCamera != null)
             {
                 mainCamera = childCamera;
@@ -240,11 +240,7 @@ namespace Hecton8.UI
             if (_registered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register(this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _registered = true;
         }
 
@@ -253,10 +249,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister(this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _registered = false;
         }
     }

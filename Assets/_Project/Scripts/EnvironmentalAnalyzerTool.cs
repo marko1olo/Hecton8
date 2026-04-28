@@ -52,7 +52,6 @@ namespace Hecton8.Gameplay
         private HUDNotification _notification;
         private float _cooldown;
         private float _nextFeedbackAt;
-        private readonly RaycastHit[] _analysisHits = new RaycastHit[1]; // COLD ALLOC: analyzer samples only the nearest target per sweep.
         private int _cachedTargetAssessmentFrame = -1;
         private bool _cachedTargetAssessmentValid;
         private AnalyzerAssessment _cachedTargetAssessment;
@@ -410,22 +409,7 @@ namespace Hecton8.Gameplay
 
         private bool TryGetAnalysisHit(out RaycastHit hit)
         {
-            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
-                _cachedTransform.position,
-                _cachedTransform.forward,
-                _analysisHits,
-                range,
-                analysisMask,
-                QueryTriggerInteraction.Collide);
-
-            if (hitCount > 0)
-            {
-                hit = _analysisHits[0];
-                return true;
-            }
-
-            hit = default;
-            return false;
+            return TryResolveQueuedRaycast(_cachedTransform.position, _cachedTransform.forward, range, analysisMask.value, QueryTriggerInteraction.Collide, out hit);
         }
 
         private void ArchiveTargetIntel(RaycastHit hit, AnalyzerAssessment assessment)

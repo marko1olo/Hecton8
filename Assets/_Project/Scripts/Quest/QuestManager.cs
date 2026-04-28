@@ -72,16 +72,14 @@ namespace Hecton8.Quest
 
         private void OnEnable()
         {
-            if (SaveManager.Instance != null)
-                SaveManager.Instance.Register(this);
+            GlobalRegistry.Save?.Register(this);
 
             SubscribeToEvents();
         }
 
         private void OnDisable()
         {
-            if (SaveManager.Instance != null)
-                SaveManager.Instance.Unregister(this);
+            GlobalRegistry.Save?.Unregister(this);
 
             UnsubscribeFromEvents();
         }

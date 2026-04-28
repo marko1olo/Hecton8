@@ -77,7 +77,7 @@ namespace MoreMountains.Feedbacks
 		/// <summary>
 		/// Outputs a list of all MMFeedbacks to the console (there's only one target user for this and it's me hello!)
 		/// </summary>
-		[MenuItem("Tools/More Mountains/MMFeedbacks/Output MMF_Feedbacks list", false, 705)]
+		[MenuItem("Tools/More Mountains/MMFeedbacks/Output MMF Feedbacks list", false, 705)]
 		public static void OutputIFeedbacksList()
 		{
 			// Retrieve available feedbacks

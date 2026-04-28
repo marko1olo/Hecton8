@@ -9,7 +9,7 @@ namespace Hecton8.Optimization
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8011)]
-    public sealed class AssetLoadDispatcher : MonoBehaviour, ITickable
+    public sealed class AssetLoadDispatcher : MonoBehaviour, ITickable, IUpdatable
     {
         private const int Tier01Slots = 8;
         private const int Tier2Slots = 6;
@@ -191,11 +191,7 @@ namespace Hecton8.Optimization
             if (_registeredTick)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register((ITickable)this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
             _registeredTick = true;
         }
 
@@ -204,10 +200,7 @@ namespace Hecton8.Optimization
             if (!_registeredTick)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister((ITickable)this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
             _registeredTick = false;
         }
 

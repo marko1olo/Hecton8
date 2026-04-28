@@ -31,7 +31,7 @@ namespace Hecton8.Dev
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Dev/Runtime Performance Profiler")]
-    public sealed class RuntimePerformanceProfiler : MonoBehaviour, ITickable, ISlowTickable
+    public sealed class RuntimePerformanceProfiler : MonoBehaviour, ITickable, IUpdatable, ISlowTickable
     {
         private const int RecorderCapacity = 1;
         private const float BytesPerMegabyte = 1024f * 1024f;
@@ -43,6 +43,7 @@ namespace Hecton8.Dev
         private const double DirtyPlayRetryBudgetSeconds = 20d;
         private const int MaxDirtyPlayRetryAttempts = 3;
         private const int FrozenFallbackStallWarningWindowThreshold = 5;
+        private const string AutoBootstrapSessionKey = "Hecton8.RuntimeProfiler.AutoBootstrapArmed";
         private const string DirtyPlayRetryPendingKey = "Hecton8.RuntimeProfiler.DirtyPlayRetryPending";
         private const string DirtyPlayRetryCountKey = "Hecton8.RuntimeProfiler.DirtyPlayRetryCount";
         private const string DirtyPlayRetryReasonKey = "Hecton8.RuntimeProfiler.DirtyPlayRetryReason";
@@ -278,29 +279,39 @@ namespace Hecton8.Dev
 #endif
         }
 
-#if UNITY_EDITOR
-        [InitializeOnLoadMethod]
-        private static void RestoreEditorRetryStateAfterReload()
-        {
-            RegisterEditorDiagnosticsHooks();
-
-            if (!SessionState.GetBool(DirtyPlayRetryPendingKey, false))
-                return;
-
-            _dirtyPlayRetryPending = true;
-            _dirtyPlayRetryCount = SessionState.GetInt(DirtyPlayRetryCountKey, 0);
-            _dirtyPlayLastReason = SessionState.GetString(DirtyPlayRetryReasonKey, "Reload");
-            _dirtyPlayRetryRequestedAt = EditorApplication.timeSinceStartup;
-            _dirtyPlayStableSince = 0d;
-        }
-#endif
-
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void EnsureDevelopmentRuntimeProfiler()
         {
+#if UNITY_EDITOR
+            if (!TryConsumeAutoBootstrapArm())
+            {
+                LogAutoBootstrapDecision("skip-unarmed");
+                return;
+            }
+#endif
             EnsureDevelopmentRuntimeProfilerInstance();
         }
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// Arms the development runtime profiler to auto-bootstrap on the next play mode entry.
+        /// </summary>
+        public static void ArmAutoBootstrapForNextPlayMode()
+        {
+            SessionState.SetBool(AutoBootstrapSessionKey, true);
+            _developmentProfilerEnsureCompleted = false;
+        }
+
+        private static bool TryConsumeAutoBootstrapArm()
+        {
+            if (!SessionState.GetBool(AutoBootstrapSessionKey, false))
+                return false;
+
+            SessionState.EraseBool(AutoBootstrapSessionKey);
+            return true;
+        }
+#endif
 
         private static void EnsureDevelopmentRuntimeProfilerInstance()
         {
@@ -327,7 +338,7 @@ namespace Hecton8.Dev
                 return;
             }
 
-            RuntimePerformanceProfiler existing = UnityEngine.Object.FindAnyObjectByType<RuntimePerformanceProfiler>(FindObjectsInactive.Include);
+            RuntimePerformanceProfiler existing = RuntimePerformanceProfiler.Instance;
             if (existing != null)
             {
                 _instance = existing;
@@ -356,7 +367,7 @@ namespace Hecton8.Dev
                 return true;
 
             BootstrapController bootstrapController =
-                UnityEngine.Object.FindAnyObjectByType<BootstrapController>(FindObjectsInactive.Include);
+                BootstrapController.Instance;
             return bootstrapController != null;
         }
 
@@ -368,7 +379,7 @@ namespace Hecton8.Dev
             bool hasBootstrapInstance = BootstrapController.Instance != null;
             bool hasProfilerInstance = _instance != null;
             bool hasExistingProfiler =
-                UnityEngine.Object.FindAnyObjectByType<RuntimePerformanceProfiler>(FindObjectsInactive.Include) != null;
+                RuntimePerformanceProfiler.Instance != null;
 
             string message =
                 $"[RuntimeProfilerBootstrap] action={action} scene={sceneName} frame={Time.frameCount} " +
@@ -466,24 +477,6 @@ namespace Hecton8.Dev
 
             if ((!_registeredTick || !_registeredSlowTick) && _debugProfilingActive)
                 Debug.LogError("[RuntimeProfiler] GameTickManager registration failed.", this);
-        }
-
-        private void Update()
-        {
-            if (!Application.isPlaying)
-                return;
-
-            float deltaTime = Time.unscaledDeltaTime;
-            if (!_debugProfilingActive)
-            {
-                PumpPendingRuntimeRoutes(deltaTime);
-                return;
-            }
-
-            if (_lastDrivenFrame == Time.frameCount)
-                return;
-
-            DriveSampling(deltaTime, true);
         }
 
         private void OnDisable()
@@ -750,36 +743,30 @@ namespace Hecton8.Dev
 
         private void RegisterWithTickManager()
         {
-            if (GameTickManager.Instance == null)
-                return;
-
             if (!_registeredTick)
             {
-                GameTickManager.Instance.Register((ITickable)this);
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
                 _registeredTick = true;
             }
 
             if (!_registeredSlowTick)
             {
-                GameTickManager.Instance.Register((ISlowTickable)this);
+                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);
                 _registeredSlowTick = true;
             }
         }
 
         private void UnregisterFromTickManager()
         {
-            if (GameTickManager.Instance == null)
-                return;
-
             if (_registeredTick)
             {
-                GameTickManager.Instance.Unregister((ITickable)this);
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
                 _registeredTick = false;
             }
 
             if (_registeredSlowTick)
             {
-                GameTickManager.Instance.Unregister((ISlowTickable)this);
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
                 _registeredSlowTick = false;
             }
         }
@@ -1348,7 +1335,7 @@ namespace Hecton8.Dev
             sampleWindowSeconds = 2f;
             budgetViolationLogCooldownSeconds = 30f;
             traceSessionLabel = "scatter_baseline";
-            autoStartNewGameFromMainMenu = true;
+            autoStartNewGameFromMainMenu = false;
             ClampSettings();
         }
 
@@ -1515,7 +1502,7 @@ namespace Hecton8.Dev
         private static bool ShouldYieldMenuRouteToShellSmoke()
         {
             ShellVerificationRuntimeSmokeTester shellSmoke =
-                UnityEngine.Object.FindAnyObjectByType<ShellVerificationRuntimeSmokeTester>(FindObjectsInactive.Include);
+                ShellVerificationRuntimeSmokeTester.ActiveRuntimeInstance;
             if (shellSmoke == null)
                 return false;
 

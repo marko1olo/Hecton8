@@ -1,4 +1,4 @@
-﻿%YAML 1.1
+%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!114 &11400000
 MonoBehaviour:
@@ -23,11 +23,11 @@ MonoBehaviour:
   _shortTrackCooldownSeconds: 0
   _localCalmWeight: 100
   _localTenseWeight: 100
-  _allowCrossTensionMix: false
+  _allowCrossTensionMix: 0
   _crossTensionMixChance: 0
   _longRepeatHorizon: 1
   _shortRepeatHorizon: 1
-  _calmLongTracks: 
+  _calmLongTracks:
   - _cueId: music.main_menu_1_sun_under_water
     _clip: {fileID: 8300000, guid: 507c59559ae41eb46b475787e8d1b100, type: 3}
     _volume: 0.917

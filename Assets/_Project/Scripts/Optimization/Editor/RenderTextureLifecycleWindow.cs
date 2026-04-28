@@ -36,7 +36,7 @@ namespace Hecton8.Optimization.Editor
             _lastRefreshTime = EditorApplication.timeSinceStartup;
         }
         
-        private void Update()
+        private void OnInspectorUpdate()
         {
             // Auto-refresh in Play Mode
             if (EditorApplication.isPlaying)

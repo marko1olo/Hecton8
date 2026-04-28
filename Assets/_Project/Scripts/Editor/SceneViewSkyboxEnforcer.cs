@@ -2,9 +2,10 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-[InitializeOnLoad]
 public static class SceneViewSkyboxEnforcer
 {
+    private const string EnableMenuPath = "Tools/Hecton/Dev/Scene/Enable SceneView Skybox Enforcer";
+    private const string DisableMenuPath = "Tools/Hecton/Dev/Scene/Disable SceneView Skybox Enforcer";
     private const string SkyRootName = "Sky_System";
     private const string SkySphereName = "Sphere";
     private const string PreviewName = "__SceneViewSkyPreview";
@@ -19,42 +20,83 @@ public static class SceneViewSkyboxEnforcer
     private static bool _sourceDirty = true;
     private static double _nextDefaultsApplyAt;
     private static double _nextSourceResolveAt;
+    private static bool _callbacksRegistered;
 
-    static SceneViewSkyboxEnforcer()
+    [MenuItem(EnableMenuPath, priority = 230)]
+    private static void Enable()
     {
         RegisterCallbacks();
+        MarkSourceDirty();
+        ApplySceneViewDefaults();
     }
 
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-    private static void ResetStaticState()
+    [MenuItem(DisableMenuPath, priority = 231)]
+    private static void Disable()
     {
+        UnregisterCallbacks();
+        ResetState();
+        CleanupPreview();
+    }
+
+    [MenuItem(EnableMenuPath, true)]
+    private static bool EnableValidate()
+    {
+        return !_callbacksRegistered;
+    }
+
+    [MenuItem(DisableMenuPath, true)]
+    private static bool DisableValidate()
+    {
+        return _callbacksRegistered;
+    }
+
+    private static void RegisterCallbacks()
+    {
+        if (_callbacksRegistered)
+            return;
+
+        EditorApplication.update += ApplySceneViewDefaults;
+        EditorApplication.hierarchyChanged += MarkSourceDirty;
+        RenderPipelineManager.beginCameraRendering += OnBeginCameraRendering;
+        AssemblyReloadEvents.beforeAssemblyReload += HandleBeforeAssemblyReload;
+        EditorApplication.quitting += HandleEditorQuitting;
+        _callbacksRegistered = true;
+    }
+
+    private static void UnregisterCallbacks()
+    {
+        if (!_callbacksRegistered)
+            return;
+
         EditorApplication.update -= ApplySceneViewDefaults;
         EditorApplication.hierarchyChanged -= MarkSourceDirty;
         RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
-        AssemblyReloadEvents.beforeAssemblyReload -= CleanupPreview;
-        EditorApplication.quitting -= CleanupPreview;
+        AssemblyReloadEvents.beforeAssemblyReload -= HandleBeforeAssemblyReload;
+        EditorApplication.quitting -= HandleEditorQuitting;
+        _callbacksRegistered = false;
+    }
+
+    private static void HandleBeforeAssemblyReload()
+    {
+        UnregisterCallbacks();
+        ResetState();
+        CleanupPreview();
+    }
+
+    private static void HandleEditorQuitting()
+    {
+        UnregisterCallbacks();
+        ResetState();
+        CleanupPreview();
+    }
+
+    private static void ResetState()
+    {
         _sourceFilter = null;
         _sourceRenderer = null;
         _sourceDirty = true;
         _nextDefaultsApplyAt = 0d;
         _nextSourceResolveAt = 0d;
-        CleanupPreview();
-        RegisterCallbacks();
-    }
-
-    private static void RegisterCallbacks()
-    {
-        EditorApplication.update -= ApplySceneViewDefaults;
-        EditorApplication.hierarchyChanged -= MarkSourceDirty;
-        RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
-        AssemblyReloadEvents.beforeAssemblyReload -= CleanupPreview;
-        EditorApplication.quitting -= CleanupPreview;
-
-        EditorApplication.update += ApplySceneViewDefaults;
-        EditorApplication.hierarchyChanged += MarkSourceDirty;
-        RenderPipelineManager.beginCameraRendering += OnBeginCameraRendering;
-        AssemblyReloadEvents.beforeAssemblyReload += CleanupPreview;
-        EditorApplication.quitting += CleanupPreview;
     }
 
     private static void ApplySceneViewDefaults()
@@ -150,10 +192,10 @@ public static class SceneViewSkyboxEnforcer
 
         _previewFilter.sharedMesh = sourceFilter.sharedMesh;
         _previewRenderer.sharedMaterials = sourceRenderer.sharedMaterials;
-        _previewRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        _previewRenderer.shadowCastingMode = ShadowCastingMode.Off;
         _previewRenderer.receiveShadows = false;
-        _previewRenderer.lightProbeUsage = UnityEngine.Rendering.LightProbeUsage.Off;
-        _previewRenderer.reflectionProbeUsage = UnityEngine.Rendering.ReflectionProbeUsage.Off;
+        _previewRenderer.lightProbeUsage = LightProbeUsage.Off;
+        _previewRenderer.reflectionProbeUsage = ReflectionProbeUsage.Off;
         _previewRenderer.enabled = true;
     }
 
@@ -240,12 +282,12 @@ public static class SceneViewSkyboxEnforcer
 
     private static void CleanupPreview()
     {
-        if (_previewObject != null)
-        {
-            Object.DestroyImmediate(_previewObject);
-            _previewObject = null;
-            _previewFilter = null;
-            _previewRenderer = null;
-        }
+        if (_previewObject == null)
+            return;
+
+        Object.DestroyImmediate(_previewObject);
+        _previewObject = null;
+        _previewFilter = null;
+        _previewRenderer = null;
     }
 }

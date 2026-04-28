@@ -463,12 +463,16 @@ namespace AmplifyImpostors
 			LastUpdate = lastUpdate;
 		}
 	}
-
-	[InitializeOnLoad]
 	public static class ShowStartScreen
 	{
+		private const string SessionHandledKey = "AmplifyImpostors.StartScreenHandled";
+
 		static ShowStartScreen()
 		{
+			if ( SessionState.GetBool( SessionHandledKey, false ) )
+				return;
+
+			SessionState.SetBool( SessionHandledKey, true );
 			EditorApplication.delayCall += DeferredUpdate;
 		}
 
@@ -505,8 +509,8 @@ namespace AmplifyImpostors
 				Preferences.ShowOption show = Preferences.ShowOption.Never;
 				if ( !EditorPrefs.HasKey( Preferences.PrefGlobalStartUp ) )
 				{
-					show = Preferences.ShowOption.Always;
-					EditorPrefs.SetInt( Preferences.PrefGlobalStartUp, 0 );
+					show = Preferences.ShowOption.Never;
+					EditorPrefs.SetInt( Preferences.PrefGlobalStartUp, ( int )Preferences.ShowOption.Never );
 				}
 				else
 				{

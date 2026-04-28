@@ -113,13 +113,14 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Diegetic Panel Controller")]
     [RequireComponent(typeof(Canvas))]
-    public sealed class DiegeticPanelController : MonoBehaviour, ITickable, ICursorHost, IDepthOcclusionReceiver
+    public sealed class DiegeticPanelController : MonoBehaviour, ITickable, IUpdatable, ICursorHost, IDepthOcclusionReceiver
     {
         private const string WorldGeometrySortingLayer = "WorldGeometry";
         private const float MinCanvasExtent = 0.0001f;
         private const float MatrixRefreshInterval = 0.25f;
         private const int MaxInputEventsPerTick = 4;
         private const int InputEventCapacity = 16;
+        private const int InputEventMask = InputEventCapacity - 1;
 
         private static readonly int _MainTexId = Shader.PropertyToID("_MainTex");
         private static readonly int _BaseMapId = Shader.PropertyToID("_BaseMap");
@@ -236,9 +237,10 @@ namespace Hecton8.UI
         private int panelCanvasLayer = 5;
 
         // COLD ALLOC: RaycastHit[1] — bounded panel hit buffer — owner: DiegeticPanelController
-        private readonly RaycastHit[] _raycastHits = new RaycastHit[1];
         // COLD ALLOC: DiegeticPanelInputEvent[16] — fixed panel input ring buffer — owner: DiegeticPanelController
         private readonly DiegeticPanelInputEvent[] _inputEvents = new DiegeticPanelInputEvent[InputEventCapacity];
+        // COLD ALLOC: List[4] - cached panel collider set for zero-GC hit validation - owner: DiegeticPanelController
+        private readonly System.Collections.Generic.List<Collider> _panelColliderCache = new System.Collections.Generic.List<Collider>(4);
 
         private PanelData _panelData;
         private RectTransform _resolvedPanelRect;
@@ -266,8 +268,10 @@ namespace Hecton8.UI
         private int _inputEventTail;
         private int _inputEventCount;
         private int _appliedCanvasLayer = int.MinValue;
+        private ulong _raycastRequesterId;
         private float2 _clampedCanvasPosition;
         private float3 _smoothedCursorWorld;
+        private Collider _cachedPanelColliderRoot;
 
         /// <summary>
         /// Returns the current RT assigned to the panel camera, if any.
@@ -281,6 +285,7 @@ namespace Hecton8.UI
 
         private void Awake()
         {
+            _raycastRequesterId = EntityId.ToULong(gameObject.GetEntityId());
             ResolveSerializedReferences();
             ResolveInterfaces();
             DetermineTargetHardwareTier();
@@ -407,6 +412,9 @@ namespace Hecton8.UI
 
             if (panelCollider == null)
                 panelCollider = GetComponent<Collider>();
+
+            if (!ReferenceEquals(_cachedPanelColliderRoot, panelCollider))
+                RebuildPanelColliderCache();
 
             _resolvedPanelRect = panelRect;
             _resolvedPanelTransform = _resolvedPanelRect != null ? _resolvedPanelRect.transform : transform;
@@ -577,7 +585,7 @@ namespace Hecton8.UI
 
             _panelRenderTexture = new RenderTexture(descriptor)
             {
-                name = $"DiegeticPanel_{panelId}_{requiredResolution.x}x{requiredResolution.y}",
+                name = "DiegeticPanel_RT",
                 filterMode = renderTextureFilterMode
             };
             _panelRenderTexture.Create();
@@ -687,29 +695,20 @@ namespace Hecton8.UI
         {
             hit = default;
 
-            if (_interactionSignals != null && _interactionSignals.IsInitialized)
-            {
-                return _interactionSignals.TryRaycastPrimary(
-                    rayOriginWs,
-                    rayDirectionWs,
-                    maxInteractionDistance,
-                    interactionMask.value,
-                    out hit);
-            }
+            if (_interactionSignals == null || !_interactionSignals.IsInitialized)
+                RefreshServices();
 
-            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
-                rayOriginWs,
-                rayDirectionWs,
-                _raycastHits,
-                maxInteractionDistance,
-                interactionMask,
-                QueryTriggerInteraction.Collide);
-
-            if (hitCount <= 0)
+            if (_interactionSignals == null || !_interactionSignals.IsInitialized)
                 return false;
 
-            hit = _raycastHits[0];
-            return hit.collider != null;
+            return _interactionSignals.TryRaycastPrimary(
+                _raycastRequesterId,
+                rayOriginWs,
+                rayDirectionWs,
+                maxInteractionDistance,
+                interactionMask.value,
+                QueryTriggerInteraction.Collide,
+                out hit);
         }
 
         private bool TryProjectHitToCanvas(Vector3 worldHitPoint, out float2 canvasPos, out float3 localHit)
@@ -806,7 +805,7 @@ namespace Hecton8.UI
                 return;
 
             _inputEvents[_inputEventTail] = inputEvent;
-            _inputEventTail = (_inputEventTail + 1) % InputEventCapacity;
+            _inputEventTail = (_inputEventTail + 1) & InputEventMask;
             _inputEventCount++;
         }
 
@@ -824,7 +823,7 @@ namespace Hecton8.UI
             for (int i = 0; i < dispatchCount; i++)
             {
                 DiegeticPanelInputEvent inputEvent = _inputEvents[_inputEventHead];
-                _inputEventHead = (_inputEventHead + 1) % InputEventCapacity;
+                _inputEventHead = (_inputEventHead + 1) & InputEventMask;
                 _inputEventCount--;
                 _panelInteractable.ReceiveCanvasInput(in inputEvent);
             }
@@ -846,7 +845,24 @@ namespace Hecton8.UI
             if (collider == null || panelCollider == null)
                 return false;
 
-            return collider == panelCollider || collider.transform.IsChildOf(panelCollider.transform);
+            for (int i = 0; i < _panelColliderCache.Count; i++)
+            {
+                if (ReferenceEquals(_panelColliderCache[i], collider))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private void RebuildPanelColliderCache()
+        {
+            _cachedPanelColliderRoot = panelCollider;
+            _panelColliderCache.Clear();
+
+            if (panelCollider == null)
+                return;
+
+            panelCollider.GetComponentsInChildren(true, _panelColliderCache);
         }
 
         private Camera ResolveInteractionCamera()
@@ -875,7 +891,7 @@ namespace Hecton8.UI
             }
 
             if (SceneBootstrap.TryGetCurrentPlayerTransform(out playerTransform) && playerTransform != null)
-                _resolvedInteractionCamera = playerTransform.GetComponentInChildren<Camera>(true);
+                _resolvedInteractionCamera = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera : playerTransform.GetComponent<Camera>());
 
             return _resolvedInteractionCamera;
         }
@@ -894,11 +910,7 @@ namespace Hecton8.UI
             if (_tickRegistered || !Application.isPlaying)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register(this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _tickRegistered = true;
         }
 
@@ -907,10 +919,7 @@ namespace Hecton8.UI
             if (!_tickRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister(this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _tickRegistered = false;
         }
 

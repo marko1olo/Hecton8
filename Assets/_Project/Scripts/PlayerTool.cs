@@ -27,6 +27,7 @@ namespace Hecton8.Gameplay
 {
     using Hecton8.Bootstrap;
     using Hecton8.Core;
+    using Hecton8.Interaction;
     using Hecton8.Items;
     using Hecton8.Tools;
     using System;
@@ -179,6 +180,7 @@ namespace Hecton8.Gameplay
         private bool _transportFeelContractResolved;
         private string _cachedOperationalToolName;
         private float _lastUseTime = float.NegativeInfinity;
+        private ulong _queuedRaycastRequesterId;
 
         // ══════════════════════════════════════════════════════════
         //  IPoolable — POOL LIFECYCLE
@@ -198,6 +200,7 @@ namespace Hecton8.Gameplay
             IsEquipped = false;
             _lowDurabilityWarningFired = false;
             _lastUseTime = float.NegativeInfinity;
+            RefreshQueuedRaycastRequesterId();
             RefreshOperationalToolNameCache();
             ResolveSwimContract();
             ResolveTransportFeelContract();
@@ -229,6 +232,33 @@ namespace Hecton8.Gameplay
             _lowDurabilityWarningFired = false;
             _lastUseTime = float.NegativeInfinity;
             _cachedOperationalToolName = null;
+            _queuedRaycastRequesterId = 0UL;
+        }
+
+        /// <summary>
+        /// Refreshes the stable requester identifier used by the shared batched tool-ray lane.
+        /// </summary>
+        protected void RefreshQueuedRaycastRequesterId()
+        {
+            _queuedRaycastRequesterId = EntityId.ToULong(gameObject.GetEntityId());
+        }
+
+        /// <summary>
+        /// Resolves a frame-latent shared batched raycast result for this tool instance.
+        /// </summary>
+        protected bool TryResolveQueuedRaycast(Vector3 origin, Vector3 direction, float range, int layerMask, QueryTriggerInteraction queryTriggerInteraction, out RaycastHit hit)
+        {
+            IInteractionSignalService interactionService = GlobalRegistry.InteractionSignals;
+            if (interactionService != null && interactionService.IsInitialized)
+            {
+                if (_queuedRaycastRequesterId == 0UL)
+                    RefreshQueuedRaycastRequesterId();
+
+                return interactionService.TryRaycastPrimary(_queuedRaycastRequesterId, origin, direction, range, layerMask, queryTriggerInteraction, out hit);
+            }
+
+            hit = default;
+            return false;
         }
 
         private void ResolveSwimContract()

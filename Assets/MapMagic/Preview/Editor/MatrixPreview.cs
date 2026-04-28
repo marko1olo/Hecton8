@@ -119,21 +119,12 @@ namespace MapMagic.Previews
 
 				if (terrainMat == null) 
 				{
-					Shader shader;
+					Shader shader = null;
 					#if UNITY_2019_2_OR_NEWER
-					Material defaultTerrainMat = UnityEngine.Rendering.GraphicsSettings.defaultRenderPipeline?.defaultTerrainMaterial;
-					string pipelineName = UnityEngine.Rendering.GraphicsSettings.defaultRenderPipeline?.name;
-
-					if ( (defaultTerrainMat != null  &&  defaultTerrainMat.shader.name.Contains("Universal Render Pipeline")) ||  //"Universal Render Pipeline/Terrain/Lit"
-						 (pipelineName != null && pipelineName.Contains("URP")) ) //"URP-HighFidelity"
-							shader = Shader.Find("MapMagic/TerrainPreviewURP");
-
-					else if ( (defaultTerrainMat != null  &&  defaultTerrainMat.shader.name.Contains("HDRP")) ||  //"HDRP/TerrainLit (UnityEngine.Shader)"
-						 (pipelineName != null && pipelineName.Contains("HDR")) )  //"HDRenderPipelineAsset"
-						shader = Shader.Find("MapMagic/TerrainPreviewHDRP"); 
-
-					else
+					if (UnityEngine.Rendering.GraphicsSettings.defaultRenderPipeline != null)
+						shader = Shader.Find("MapMagic/TerrainPreviewURP");
 					#endif
+					if (shader == null)
 						shader = Shader.Find("MapMagic/TerrainPreview");
 
 					terrainMat = new Material(shader);

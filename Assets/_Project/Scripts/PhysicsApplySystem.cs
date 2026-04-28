@@ -53,6 +53,87 @@ namespace Hecton8.Physics
         public int RigidbodyIndex;
     }
 
+    /// <summary>
+    /// Pressure blowout payload emitted when a bulkhead opens across a large pressure differential.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public readonly struct PressureImpulseEvent
+    {
+        /// <summary>
+        /// Creates a pressure blowout payload.
+        /// </summary>
+        public PressureImpulseEvent(
+            int doorIndex,
+            Vector3 runtimePosition,
+            Vector3 direction,
+            float doorAreaSquareMeters,
+            float highPressureKPa,
+            float lowPressureKPa,
+            Vector3 forceVectorNewtons,
+            Vector3 impulseVectorNewtonSeconds,
+            float influenceRadiusMeters)
+        {
+            DoorIndex = doorIndex;
+            RuntimePosition = runtimePosition;
+            Direction = direction;
+            DoorAreaSquareMeters = doorAreaSquareMeters;
+            HighPressureKPa = highPressureKPa;
+            LowPressureKPa = lowPressureKPa;
+            PressureDeltaKPa = math.abs(highPressureKPa - lowPressureKPa);
+            ForceVectorNewtons = forceVectorNewtons;
+            ImpulseVectorNewtonSeconds = impulseVectorNewtonSeconds;
+            InfluenceRadiusMeters = influenceRadiusMeters;
+        }
+
+        /// <summary>Bulkhead edge index inside the submarine compartment graph.</summary>
+        public int DoorIndex { get; }
+
+        /// <summary>Runtime-space midpoint of the opened bulkhead.</summary>
+        public Vector3 RuntimePosition { get; }
+
+        /// <summary>Normalized airflow direction from the high-pressure room toward the low-pressure room.</summary>
+        public Vector3 Direction { get; }
+
+        /// <summary>Cross-sectional doorway area used by the blowout force calculation.</summary>
+        public float DoorAreaSquareMeters { get; }
+
+        /// <summary>Pressure of the source room at the moment of opening.</summary>
+        public float HighPressureKPa { get; }
+
+        /// <summary>Pressure of the destination room at the moment of opening.</summary>
+        public float LowPressureKPa { get; }
+
+        /// <summary>Absolute pressure delta across the opened bulkhead.</summary>
+        public float PressureDeltaKPa { get; }
+
+        /// <summary>Raw force vector in newtons derived from the pressure differential.</summary>
+        public Vector3 ForceVectorNewtons { get; }
+
+        /// <summary>One-shot impulse vector in newton-seconds routed into the deferred physics system.</summary>
+        public Vector3 ImpulseVectorNewtonSeconds { get; }
+
+        /// <summary>World-space influence radius used by the local overlap dispatch.</summary>
+        public float InfluenceRadiusMeters { get; }
+    }
+
+    /// <summary>
+    /// Static physics-domain event surface for transient pressure impulses.
+    /// </summary>
+    public static class PhysicsEventBus
+    {
+        /// <summary>Delegate used by pressure-impulse subscribers.</summary>
+        public delegate void PressureImpulseEventHandler(in PressureImpulseEvent pressureEvent);
+
+        /// <summary>Fired when a bulkhead blowout impulse is emitted.</summary>
+        public static event PressureImpulseEventHandler OnPressureImpulse;
+
+        /// <summary>Broadcasts one pressure-impulse payload.</summary>
+        public static void NotifyPressureImpulse(in PressureImpulseEvent pressureEvent)
+        {
+            OnPressureImpulse?.Invoke(pressureEvent);
+        }
+    }
+
     [System.Flags]
     internal enum ForcePacketFlags : byte
     {
@@ -67,7 +148,7 @@ namespace Hecton8.Physics
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9000)]
-    public sealed class PhysicsApplySystem : MonoBehaviour, IPhysicsService
+    public sealed class PhysicsApplySystem : MonoBehaviour, IPhysicsService, IFixedTickable
     {
         private const int MaxTrackedBodies = 64;
         private const int MaxQueuedPackets = 512;
@@ -75,7 +156,7 @@ namespace Hecton8.Physics
 
         private static PhysicsApplySystem _instance;
 
-        // COLD ALLOC: ForcePacket[512] — previous-step flush buffer — owner: PhysicsApplySystem
+        // COLD ALLOC: ForcePacket[512] — end-of-step flush buffer — owner: PhysicsApplySystem
         private ForcePacket[] _frontPackets = new ForcePacket[MaxQueuedPackets];
         // COLD ALLOC: ForcePacket[512] — current-step gather buffer — owner: PhysicsApplySystem
         private ForcePacket[] _backPackets = new ForcePacket[MaxQueuedPackets];
@@ -85,6 +166,7 @@ namespace Hecton8.Physics
         private int _frontCount;
         private int _backCount;
         private bool _isInitialized;
+        private bool _fixedTickRegistered;
 
         /// <summary>
         /// True once the service is registered into <see cref="GlobalRegistry"/>.
@@ -130,6 +212,21 @@ namespace Hecton8.Physics
         {
             if (_instance != null)
                 _instance.ClearQueuedPackets();
+        }
+
+        internal static void PrepareTrackedBodiesForOriginShift()
+        {
+            GlobalPhysicsStateManager.PrepareTrackedBodiesForOriginShift();
+        }
+
+        internal static void CommitTrackedBodiesForOriginShift(Vector3 shiftOffset)
+        {
+            GlobalPhysicsStateManager.CommitTrackedBodiesForOriginShift(shiftOffset);
+        }
+
+        internal static void FinalizeTrackedBodiesAfterOriginShift()
+        {
+            GlobalPhysicsStateManager.FinalizeTrackedBodiesAfterOriginShift();
         }
 
         /// <inheritdoc />
@@ -217,8 +314,33 @@ namespace Hecton8.Physics
             }
         }
 
+        private void OnEnable()
+        {
+            if (Application.isPlaying && !_fixedTickRegistered)
+            {
+                // Flush after world/player fixed lanes so deferred packets apply in the same simulation step.
+                GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.UI);
+                _fixedTickRegistered = true;
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (_fixedTickRegistered)
+            {
+                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.UI);
+                _fixedTickRegistered = false;
+            }
+        }
+
         private void OnDestroy()
         {
+            if (_fixedTickRegistered)
+            {
+                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.UI);
+                _fixedTickRegistered = false;
+            }
+
             if (_isInitialized)
             {
                 GlobalRegistry.UnregisterPhysicsService(this);
@@ -229,11 +351,11 @@ namespace Hecton8.Physics
                 _instance = null;
         }
 
-        private void FixedUpdate()
+        public void FixedTick(float fixedDeltaTime)
         {
             PhysicsFrame.Tick();
-            FlushFrontBuffer();
             SwapBuffers();
+            FlushFrontBuffer();
         }
 
         private void FlushFrontBuffer()

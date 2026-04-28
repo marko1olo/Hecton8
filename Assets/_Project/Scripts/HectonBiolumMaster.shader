@@ -56,22 +56,18 @@ Shader "Hecton8/BiolumMaster"
         //  EMISSION — BIOLUMINESCENCE
         // ═══════════════════════════════════════════════════════
 
-        [Header(Bioluminescence)]
         [HDR] _EmissionColor ("Emission Color (HDR)", Color) = (0, 2, 1.5, 1)
         _EmissionIntensity ("Emission Base Intensity", Range(0, 10)) = 1.0
 
-        [Header(Pulsation)]
         _PulseSpeed ("Pulse Speed", Range(0.1, 10)) = 1.5
         _PulseAmplitude ("Pulse Amplitude", Range(0, 1)) = 0.4
         _PulseOffset ("Pulse Center Offset", Range(0, 1)) = 0.6
         _DesyncScale ("World Desync Scale", Range(0, 5)) = 1.0
 
-        [Header(NASA Punk Flicker)]
         _FlickerSpeed ("Flicker Speed", Range(0, 100)) = 25.0
         _FlickerThreshold ("Flicker Threshold (higher = less flicker)", Range(0, 1)) = 0.85
         _FlickerIntensity ("Flicker Dip Intensity", Range(0, 1)) = 0.15
 
-        [Header(Proximity Reaction)]
         _ReactionDistance ("Reaction Distance (m)", Range(1, 50)) = 10.0
         _ReactionFalloff ("Reaction Falloff (0=sharp, 1=smooth)", Range(0, 1)) = 0.3
         _ReactionIntensity ("Reaction Intensity", Range(0, 3)) = 1.5
@@ -83,15 +79,12 @@ Shader "Hecton8/BiolumMaster"
         //  LOD
         // ═══════════════════════════════════════════════════════
 
-        [Header(LOD)]
-        [Tooltip("0 = High (full effects), 1 = Med (no flicker), 2 = Low (static emission)")]
         _LODLevel ("LOD Level", Range(0, 2)) = 0
 
         // ═══════════════════════════════════════════════════════
         //  RENDERING
         // ═══════════════════════════════════════════════════════
 
-        [Header(Rendering)]
         [Enum(UnityEngine.Rendering.CullMode)]
         _Cull ("Cull Mode", Float) = 2
 

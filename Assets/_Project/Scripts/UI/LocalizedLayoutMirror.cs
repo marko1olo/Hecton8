@@ -12,6 +12,8 @@ namespace Hecton8.UI
     [AddComponentMenu("Hecton/UI/Localized Layout Mirror")]
     public sealed class LocalizedLayoutMirror : MonoBehaviour
     {
+        private static bool s_isRebuildingLayout;
+
         [Header("References")]
         [Tooltip("Target layout group to mirror. Defaults to the component on the same GameObject.")]
         [SerializeField] private HorizontalOrVerticalLayoutGroup targetLayoutGroup;
@@ -50,6 +52,8 @@ namespace Hecton8.UI
         private Vector2 _basePivot;
         private Vector2 _baseAnchoredPosition;
         private bool _isAppliedRtl;
+        private bool _isApplyingMirroring;
+        private bool _applyMirroringPending = true;
         private readonly List<RectTransform> _resolvedIconRoots = new List<RectTransform>(8); // COLD ALLOC: List[8] — cached mirrored icon roots — owner: LocalizedLayoutMirror
         private readonly List<Vector3> _baseIconScales = new List<Vector3>(8); // COLD ALLOC: List[8] — cached icon base scales — owner: LocalizedLayoutMirror
 
@@ -62,7 +66,7 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
-            ApplyMirroring();
+            QueueApplyMirroring();
         }
 
         private void OnDisable()
@@ -77,17 +81,29 @@ namespace Hecton8.UI
             _capturedDefaults = false;
             CaptureDefaults();
             if (!Application.isPlaying)
-                ApplyMirroring();
+                QueueApplyMirroring();
         }
 #endif
 
         private void HandleLanguageChanged(GameLanguage language)
         {
+            QueueApplyMirroring();
+        }
+
+        private void LateUpdate()
+        {
+            if (!_applyMirroringPending)
+                return;
+
+            _applyMirroringPending = false;
             ApplyMirroring();
         }
 
         private void ApplyMirroring()
         {
+            if (_isApplyingMirroring)
+                return;
+
             CaptureDefaults();
 
             GameLanguage language = LocalizationManager.Instance != null
@@ -97,36 +113,65 @@ namespace Hecton8.UI
             if (_isAppliedRtl == rtl && Application.isPlaying)
                 return;
 
-            if (targetLayoutGroup != null)
+            _isApplyingMirroring = true;
+            try
             {
-                if (mirrorChildOrder && !(targetLayoutGroup is VerticalLayoutGroup))
-                    targetLayoutGroup.reverseArrangement = rtl ? !_baseReverseArrangement : _baseReverseArrangement;
+                if (targetLayoutGroup != null)
+                {
+                    if (mirrorChildOrder && !(targetLayoutGroup is VerticalLayoutGroup))
+                        targetLayoutGroup.reverseArrangement = rtl ? !_baseReverseArrangement : _baseReverseArrangement;
 
-                if (mirrorChildAlignment)
-                    targetLayoutGroup.childAlignment = rtl
-                        ? MirrorAlignment(_baseChildAlignment)
-                        : _baseChildAlignment;
+                    if (mirrorChildAlignment)
+                        targetLayoutGroup.childAlignment = rtl
+                            ? MirrorAlignment(_baseChildAlignment)
+                            : _baseChildAlignment;
 
-                LayoutRebuilder.MarkLayoutForRebuild(targetLayoutGroup.transform as RectTransform);
+                    MarkLayoutForRebuildSafe(targetLayoutGroup.transform as RectTransform);
+                }
+
+                if (mirrorRectTransform && targetRect != null)
+                {
+                    if (rtl)
+                    {
+                        targetRect.pivot = new Vector2(1f - _basePivot.x, _basePivot.y);
+                        targetRect.anchoredPosition = new Vector2(-_baseAnchoredPosition.x, _baseAnchoredPosition.y);
+                    }
+                    else
+                    {
+                        targetRect.pivot = _basePivot;
+                        targetRect.anchoredPosition = _baseAnchoredPosition;
+                    }
+                }
+
+                ApplyIconMirroring(rtl);
+
+                _isAppliedRtl = rtl;
             }
-
-            if (mirrorRectTransform && targetRect != null)
+            finally
             {
-                if (rtl)
-                {
-                    targetRect.pivot = new Vector2(1f - _basePivot.x, _basePivot.y);
-                    targetRect.anchoredPosition = new Vector2(-_baseAnchoredPosition.x, _baseAnchoredPosition.y);
-                }
-                else
-                {
-                    targetRect.pivot = _basePivot;
-                    targetRect.anchoredPosition = _baseAnchoredPosition;
-                }
+                _isApplyingMirroring = false;
             }
+        }
 
-            ApplyIconMirroring(rtl);
+        private void QueueApplyMirroring()
+        {
+            _applyMirroringPending = true;
+        }
 
-            _isAppliedRtl = rtl;
+        private static void MarkLayoutForRebuildSafe(RectTransform rectTransform)
+        {
+            if (rectTransform == null || s_isRebuildingLayout)
+                return;
+
+            s_isRebuildingLayout = true;
+            try
+            {
+                LayoutRebuilder.MarkLayoutForRebuild(rectTransform);
+            }
+            finally
+            {
+                s_isRebuildingLayout = false;
+            }
         }
 
         private void ResolveTargets()

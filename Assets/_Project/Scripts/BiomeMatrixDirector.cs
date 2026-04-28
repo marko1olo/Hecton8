@@ -181,14 +181,10 @@ namespace Hecton8.Environment
 
         private void TryRegister()
         {
-            if (_registeredToTickManager)
+            if (!Application.isPlaying || _registeredToTickManager)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager == null)
-                return;
-
-            gameTickManager.Register((ISlowTickable)this);
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
             _registeredToTickManager = true;
         }
 
@@ -197,10 +193,7 @@ namespace Hecton8.Environment
             if (!_registeredToTickManager)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager != null)
-                gameTickManager.Unregister((ISlowTickable)this);
-
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _registeredToTickManager = false;
         }
 
@@ -361,7 +354,7 @@ namespace Hecton8.Environment
             {
                 _resolvedFluidEngine = Application.isPlaying
                     ? HectonFluidEngine.Instance
-                    : FindAnyObjectByType<HectonFluidEngine>(FindObjectsInactive.Include);
+                    : HectonFluidEngine.Instance;
             }
 
             if (_resolvedFluidEngine != null)
@@ -374,7 +367,7 @@ namespace Hecton8.Environment
             {
                 _resolvedMapMagicBridge = Application.isPlaying
                     ? MapMagicBridge.Instance
-                    : FindAnyObjectByType<MapMagicBridge>(FindObjectsInactive.Include);
+                    : MapMagicBridge.Instance;
             }
 
             if (_resolvedMapMagicBridge != null)
@@ -387,7 +380,7 @@ namespace Hecton8.Environment
             {
                 _resolvedAtmosphereManager = Application.isPlaying
                     ? HectonAtmosphereManager.Instance
-                    : FindAnyObjectByType<HectonAtmosphereManager>(FindObjectsInactive.Include);
+                    : HectonAtmosphereManager.Instance;
             }
 
             if (_resolvedAtmosphereManager != null)

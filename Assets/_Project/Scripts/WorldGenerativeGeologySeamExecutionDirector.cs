@@ -179,11 +179,8 @@ namespace Hecton8.World
             if (_registeredToTickManager)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
 
-            tickManager.Register((ISlowTickable)this);
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
             _registeredToTickManager = true;
         }
 
@@ -192,9 +189,7 @@ namespace Hecton8.World
             if (!_registeredToTickManager)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister((ISlowTickable)this);
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
 
             _registeredToTickManager = false;
         }

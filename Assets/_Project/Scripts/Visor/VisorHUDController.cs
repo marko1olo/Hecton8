@@ -19,7 +19,7 @@ namespace NASAPunk.Visor
     /// </summary>
     [DisallowMultipleComponent]
     [ExecuteAlways]
-    public class VisorHUDController : MonoBehaviour, ITickable
+    public class VisorHUDController : MonoBehaviour, ITickable, IUpdatable
     {
         private static readonly List<VisorHUDController> s_activeControllers = new List<VisorHUDController>(2);
 
@@ -198,6 +198,11 @@ namespace NASAPunk.Visor
             }
         }
 
+        private void Awake()
+        {
+            EnsurePropertyBlock();
+        }
+
         private void OnEnable()
         {
             RegisterActiveController();
@@ -347,11 +352,8 @@ namespace NASAPunk.Visor
             if (!Application.isPlaying || _runtimeTickRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register(this);
+            SystemDispatcher.EnsureRuntimeInstance();
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _runtimeTickRegistered = true;
         }
 
@@ -360,10 +362,7 @@ namespace NASAPunk.Visor
             if (!_runtimeTickRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister(this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _runtimeTickRegistered = false;
         }
 
@@ -464,8 +463,11 @@ namespace NASAPunk.Visor
 
         private void EnsurePropertyBlock()
         {
-            if (_mpb == null)
-                _mpb = new MaterialPropertyBlock();
+            if (_mpb != null)
+                return;
+
+            // COLD ALLOC: MaterialPropertyBlock[1] — visor surface state bridge — owner: VisorHUDController
+            _mpb = new MaterialPropertyBlock();
         }
 
         private void RefreshRuntimeState(bool forceResolve)

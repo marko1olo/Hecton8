@@ -18,7 +18,7 @@ namespace Hecton8.Economy
     [RequireComponent(typeof(Collider))]
     [RequireComponent(typeof(PowerNode))]
     [AddComponentMenu("Hecton8/Economy/Resource Recycler Module")]
-    public sealed class ResourceRecyclerModule : MonoBehaviour, ITickable, IPowerComponent, IInteractable
+    public sealed class ResourceRecyclerModule : MonoBehaviour, ITickable, IUpdatable, IPowerComponent, IInteractable
     {
         private const string DefaultReadyText = "Start Recycler Batch";
         private const string DefaultEmptyText = "Recycler Buffer Empty";
@@ -234,19 +234,19 @@ namespace Hecton8.Economy
 
         private void TryRegister()
         {
-            if (_registered || GameTickManager.Instance == null)
+            if (_registered)
                 return;
 
-            GameTickManager.Instance.Register((ITickable)this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _registered = true;
         }
 
         private void TryUnregister()
         {
-            if (!_registered || GameTickManager.Instance == null)
+            if (!_registered)
                 return;
 
-            GameTickManager.Instance.Unregister((ITickable)this);
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _registered = false;
         }
 
@@ -472,7 +472,7 @@ namespace Hecton8.Economy
         {
             PowerGrid grid = _powerNode != null ? _powerNode.Grid : null;
             if (grid != null)
-                grid.UpdateBalance();
+                grid.MarkDirty();
         }
 
         private void ClearPendingOutput()

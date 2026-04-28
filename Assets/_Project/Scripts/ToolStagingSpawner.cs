@@ -17,6 +17,7 @@ namespace Hecton8.Dev
     [AddComponentMenu("Hecton8/Dev/Tool Staging Spawner")]
     public sealed class ToolStagingSpawner : MonoBehaviour
     {
+        internal static ToolStagingSpawner ActiveAuthoringInstance { get; private set; }
         [SerializeField] private Vector3 startLocalOffset = Vector3.zero;
         [SerializeField] private Vector3 cellSpacing = new Vector3(1.35f, 0f, 1.35f);
         [SerializeField] private int columns = 4;
@@ -43,6 +44,7 @@ namespace Hecton8.Dev
 
         private void Reset()
         {
+            ActiveAuthoringInstance = this;
             if (!rebuildOnReset)
                 return;
 
@@ -51,6 +53,7 @@ namespace Hecton8.Dev
 
         private void OnValidate()
         {
+            ActiveAuthoringInstance = this;
             if (!rebuildOnReset || Application.isPlaying)
                 return;
 
@@ -60,6 +63,8 @@ namespace Hecton8.Dev
 
         private void OnDisable()
         {
+            if (ReferenceEquals(ActiveAuthoringInstance, this))
+                ActiveAuthoringInstance = null;
             EditorApplication.delayCall -= TryRebuildAfterReset;
             _rebuildQueued = false;
         }
@@ -76,7 +81,7 @@ namespace Hecton8.Dev
         [MenuItem("Hecton8/Dev/Rebuild Tool Staging")]
         private static void RebuildToolStagingFromMenu()
         {
-            ToolStagingSpawner spawner = FindAnyObjectByType<ToolStagingSpawner>();
+            ToolStagingSpawner spawner = ActiveAuthoringInstance;
             if (spawner == null || Application.isPlaying)
                 return;
 

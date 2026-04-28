@@ -11,9 +11,8 @@ using UnityEditor;
 namespace NASAPunk.Visor
 {
     [DisallowMultipleComponent]
-    [ExecuteAlways]
     [AddComponentMenu("Hecton8/HUD/Suit HUD Presentation Controller")]
-    public sealed class SuitHUDPresentationController : MonoBehaviour, ITickable
+    public sealed class SuitHUDPresentationController : MonoBehaviour, ITickable, IUpdatable
     {
         private const float AutoResolveRetryInterval = 1f;
         private static readonly List<SuitHUDV4CanvasOverlay> s_overlayResolveBuffer = new List<SuitHUDV4CanvasOverlay>(4);
@@ -63,20 +62,20 @@ namespace NASAPunk.Visor
         private Transform _cachedHudCanvasTransform;
         private Transform _cachedHudRtCompositorTransform;
         private bool _fallbackToOverlayActive;
+        private SuitHUDV4CanvasOverlay _normalizedProjectionSourceOverlay;
         private const string ProjectionSourceCanvasName = "Suit_HUD_ProjectionSource";
         private const int ProjectionSourceLayer = 17;
 
         private void OnEnable()
         {
-            AutoResolveReferences(true);
             _pendingApply = true;
+            if (!Application.isPlaying)
+                return;
+
+            AutoResolveReferences(true);
             ApplyPresentation(force: true);
             _pendingApply = false;
             EvaluateTickRegistration();
-#if UNITY_EDITOR
-            if (!Application.isPlaying)
-                EvaluateEditorTickRegistration();
-#endif
         }
 
         private void Start()
@@ -94,12 +93,7 @@ namespace NASAPunk.Visor
 
         private void OnValidate()
         {
-            AutoResolveReferences(true);
             _pendingApply = true;
-#if UNITY_EDITOR
-            if (!Application.isPlaying)
-                EvaluateEditorTickRegistration();
-#endif
         }
 
 #if UNITY_EDITOR
@@ -121,17 +115,6 @@ namespace NASAPunk.Visor
 
         public void Tick(float deltaTime)
         {
-            AutoResolveReferences();
-            ApplyPresentation(force: _pendingApply);
-            _pendingApply = false;
-            EvaluateTickRegistration();
-        }
-
-        private void Update()
-        {
-            if (!Application.isPlaying || _tickRegistered)
-                return;
-
             AutoResolveReferences();
             ApplyPresentation(force: _pendingApply);
             _pendingApply = false;
@@ -203,6 +186,8 @@ namespace NASAPunk.Visor
 
             if (sharedProjectionTexture == null && visorController != null)
                 sharedProjectionTexture = visorController.SharedRenderTexture;
+
+            AutoRecoverInvisibleHybridOverlay();
         }
 
         private bool NeedsAutoResolve()
@@ -286,6 +271,36 @@ namespace NASAPunk.Visor
             _appliedSharedTexture = sharedProjectionTexture;
         }
 
+        private void AutoRecoverInvisibleHybridOverlay()
+        {
+            if (!Application.isPlaying ||
+                presentationMode != PresentationMode.ModernOverlay ||
+                !preferCanvasProjectionSource ||
+                visorProjectionCamera == null ||
+                visorController == null ||
+                sharedProjectionTexture == null)
+            {
+                return;
+            }
+
+            if (canvasOverlay == null)
+            {
+                presentationMode = PresentationMode.ModernProjectedSharedRT;
+                _pendingApply = true;
+                return;
+            }
+
+            Canvas overlayCanvas = canvasOverlay.TargetCanvas;
+            if (overlayCanvas == null ||
+                overlayCanvas.renderMode == RenderMode.WorldSpace ||
+                overlayCanvas.renderMode == RenderMode.ScreenSpaceOverlay)
+            {
+                presentationMode = PresentationMode.ModernProjectedSharedRT;
+                _pendingApply = true;
+                return;
+            }
+        }
+
         private void SuppressOverlayPaths(bool projectedMode)
         {
             bool suppress = projectedMode && suppressOverlaysInProjectedMode;
@@ -309,7 +324,7 @@ namespace NASAPunk.Visor
 
         private bool IsProjectedPresentationAvailable()
         {
-            if (visorProjectionCamera == null || !visorProjectionCamera.isActiveAndEnabled)
+            if (visorProjectionCamera == null || !visorProjectionCamera.gameObject.activeInHierarchy)
                 return false;
 
             if (visorController == null || !visorController.isActiveAndEnabled)
@@ -332,7 +347,17 @@ namespace NASAPunk.Visor
 
         private bool HasProjectedOutputSurface()
         {
-            return visorController != null && visorController.CanPresentProjection;
+            if (visorController == null || !visorController.isActiveAndEnabled)
+                return false;
+
+            Renderer visorRenderer = visorController.GetComponent<Renderer>();
+            Camera hudCamera = visorProjectionCamera != null ? visorProjectionCamera : visorController.HudCamera;
+            return hudCamera != null &&
+                   hudCamera.gameObject.activeInHierarchy &&
+                   visorRenderer != null &&
+                   visorRenderer.enabled &&
+                   !visorRenderer.forceRenderingOff &&
+                   visorRenderer.gameObject.activeInHierarchy;
         }
 
         private void EnsureProjectionSource(bool projectedMode)
@@ -361,6 +386,12 @@ namespace NASAPunk.Visor
             if (!projectionSourceOverlay.gameObject.activeSelf)
                 projectionSourceOverlay.gameObject.SetActive(true);
 
+            if (!ReferenceEquals(_normalizedProjectionSourceOverlay, projectionSourceOverlay))
+            {
+                NormalizeProjectionSourceOverlay(projectionSourceOverlay);
+                _normalizedProjectionSourceOverlay = projectionSourceOverlay;
+            }
+
             if (syncProjectionLayoutFromOverlay || createdThisPass)
                 projectionSourceOverlay.CopyConfigurationFrom(canvasOverlay);
             projectionSourceOverlay.SetProjectionCamera(visorProjectionCamera);
@@ -374,9 +405,9 @@ namespace NASAPunk.Visor
                 ProjectionSourceCanvasName,
                 typeof(RectTransform),
                 typeof(Canvas),
-                typeof(CanvasScaler),
                 typeof(GraphicRaycaster),
-                typeof(SuitHUDV4CanvasOverlay));
+                typeof(SuitHUDV4CanvasOverlay),
+                typeof(HectonUIScaler));
 
             if (parent != null)
             {
@@ -390,6 +421,25 @@ namespace NASAPunk.Visor
                 raycaster.enabled = false;
 
             return go.GetComponent<SuitHUDV4CanvasOverlay>();
+        }
+
+        private static void NormalizeProjectionSourceOverlay(SuitHUDV4CanvasOverlay overlay)
+        {
+            if (overlay == null)
+                return;
+
+            GameObject overlayObject = overlay.gameObject;
+            if (overlayObject.layer != ProjectionSourceLayer)
+                overlayObject.layer = ProjectionSourceLayer;
+
+            if (overlay.TryGetComponent(out CanvasScaler canvasScaler) && canvasScaler.enabled)
+                canvasScaler.enabled = false;
+
+            if (overlay.TryGetComponent(out GraphicRaycaster raycaster) && raycaster.enabled)
+                raycaster.enabled = false;
+
+            if (!overlay.TryGetComponent(out HectonUIScaler _))
+                overlayObject.AddComponent<HectonUIScaler>();
         }
 
         private static SuitHUDV4CanvasOverlay FindOverlayByName(
@@ -526,16 +576,18 @@ namespace NASAPunk.Visor
         {
             _pendingApply = true;
             if (Application.isPlaying)
-            {
                 EvaluateTickRegistration();
-            }
-#if UNITY_EDITOR
-            else
-            {
-                EvaluateEditorTickRegistration();
-            }
-#endif
         }
+
+#if UNITY_EDITOR
+        [ContextMenu("Rebuild HUD Presentation")]
+        private void RebuildHudPresentation()
+        {
+            AutoResolveReferences(true);
+            ApplyPresentation(force: true);
+            _pendingApply = false;
+        }
+#endif
 
         private bool ShouldTickInPlay()
         {
@@ -599,11 +651,8 @@ namespace NASAPunk.Visor
             if (_tickRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register(this);
+            SystemDispatcher.EnsureRuntimeInstance();
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _tickRegistered = true;
         }
 
@@ -612,10 +661,7 @@ namespace NASAPunk.Visor
             if (!_tickRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister(this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _tickRegistered = false;
         }
 

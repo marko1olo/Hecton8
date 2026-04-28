@@ -17,7 +17,7 @@ namespace Hecton8.Construction
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(PowerNode))]
-    public sealed class MaintenanceStationModule : MonoBehaviour, ITickable, IPoolable, IPowerComponent, IInteractable
+    public sealed class MaintenanceStationModule : MonoBehaviour, ITickable, IUpdatable, IPoolable, IPowerComponent, IInteractable
     {
         private const string DefaultTitaniumRepairItemId = "Data_TitaniumScrap";
         private const string DefaultLubricantItemId = "Comp_LubricantResin";
@@ -351,26 +351,26 @@ namespace Hecton8.Construction
 
         private void TryRegister()
         {
-            if (_registered || GameTickManager.Instance == null)
+            if (_registered)
                 return;
 
-            GameTickManager.Instance.Register((ITickable)this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _registered = true;
         }
 
         private void TryUnregister()
         {
-            if (!_registered || GameTickManager.Instance == null)
+            if (!_registered)
                 return;
 
-            GameTickManager.Instance.Unregister((ITickable)this);
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _registered = false;
         }
 
         private void ResolveRuntimeReferences()
         {
             if (playerToolManager == null)
-                playerToolManager = Object.FindAnyObjectByType<PlayerToolManager>();
+                playerToolManager = Hecton8.Core.GlobalRegistry.Player != null ? Hecton8.Core.GlobalRegistry.Player.ToolManager : null;
         }
 
         private void ResolveFallbackItems()
@@ -399,13 +399,12 @@ namespace Hecton8.Construction
             {
                 for (int x = 0; x < cols; x++)
                 {
-                    ItemData item = grid.GetCell(x, y);
-                    if (item == null)
+                    int anchorIndex = grid.GetCellAnchorIndex(x, y);
+                    if (anchorIndex < 0 || anchorIndex != y * cols + x)
                         continue;
 
-                    if (x > 0 && ReferenceEquals(grid.GetCell(x - 1, y), item))
-                        continue;
-                    if (y > 0 && ReferenceEquals(grid.GetCell(x, y - 1), item))
+                    ItemData item = inventory.GetItemAt(x, y);
+                    if (item == null)
                         continue;
 
                     if (TryInsertFromInventory(inventory, item))

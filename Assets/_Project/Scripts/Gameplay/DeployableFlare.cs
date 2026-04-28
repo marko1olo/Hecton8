@@ -45,7 +45,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
     [RequireComponent(typeof(Light))]
-    public sealed class DeployableFlare : MonoBehaviour, ITickable
+    public sealed class DeployableFlare : MonoBehaviour, ITickable, IUpdatable
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — FUEL / LIFETIME
@@ -452,30 +452,16 @@ namespace Hecton8.Gameplay
         {
             if (_isRegistered) return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-            {
-                tickManager.Register(this);
-                _isRegistered = true;
-            }
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            else
-            {
-                Debug.LogError("[DeployableFlare] GameTickManager.Instance is null. Cannot register for tick.", this);
-            }
-#endif
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+            _isRegistered = true;
         }
 
         private void UnregisterFromTick()
         {
             if (!_isRegistered) return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-            {
-                tickManager.Unregister(this);
-                _isRegistered = false;
-            }
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            _isRegistered = false;
         }
 
         private void RegisterSpatialHandle()
@@ -522,7 +508,7 @@ namespace Hecton8.Gameplay
             // Ensure particles are configured
             if (flareParticles == null)
             {
-                flareParticles = GetComponentInChildren<ParticleSystem>();
+                flareParticles = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<ParticleSystem>(transform);
             }
         }
 

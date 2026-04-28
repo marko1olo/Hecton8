@@ -1,4 +1,4 @@
-﻿// Crest Water System
+// Crest Water System
 // Copyright © 2024 Wave Harmonic. All rights reserved.
 
 // Adapted from:
@@ -52,8 +52,6 @@ namespace WaveHarmonic.Crest.Editor
             .GetMethodsWithAttribute<OnChange>()
             .Select(x => (x, x.GetCustomAttribute<OnChange>()))
             .ToList();
-
-        [InitializeOnLoadMethod]
         static void OnDomainReload()
         {
             s_OnChangeHandlers = null;

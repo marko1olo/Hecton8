@@ -396,17 +396,17 @@ namespace Hecton8.Dev
         private void AutoResolve()
         {
             if (scatterDirector == null)
-                scatterDirector = FindAnyObjectByType<WorldProceduralScatterDirector>();
+                scatterDirector = WorldProceduralScatterDirector.ActiveRuntimeInstance;
             if (integrationDirector == null)
-                integrationDirector = FindAnyObjectByType<WorldGenerativeGeologyIntegrationDirector>();
+                integrationDirector = WorldGenerativeGeologyIntegrationDirector.ActiveRuntimeInstance;
             if (seamExecutionDirector == null)
-                seamExecutionDirector = FindAnyObjectByType<WorldGenerativeGeologySeamExecutionDirector>();
+                seamExecutionDirector = WorldGenerativeGeologySeamExecutionDirector.ActiveRuntimeInstance;
             if (terrainSeamApplier == null)
-                terrainSeamApplier = FindAnyObjectByType<WorldGenerativeGeologyTerrainSeamApplier>();
+                terrainSeamApplier = WorldGenerativeGeologyTerrainSeamApplier.ActiveRuntimeInstance;
             if (voxelBridgeDirector == null)
-                voxelBridgeDirector = FindAnyObjectByType<WorldGenerativeGeologyVoxelBridgeDirector>();
+                voxelBridgeDirector = WorldGenerativeGeologyVoxelBridgeDirector.ActiveRuntimeInstance;
             if (proceduralStateRegistry == null)
-                proceduralStateRegistry = FindAnyObjectByType<WorldProceduralStateRegistry>();
+                proceduralStateRegistry = WorldProceduralStateRegistry.ActiveRuntimeInstance;
         }
 
         private string DescribeRefs()

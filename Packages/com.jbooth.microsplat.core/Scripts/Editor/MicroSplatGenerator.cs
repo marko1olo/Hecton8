@@ -1,4 +1,4 @@
-﻿//////////////////////////////////////////////////////
+//////////////////////////////////////////////////////
 // MicroSplat
 // Copyright (c) Jason Booth
 //////////////////////////////////////////////////////
@@ -52,8 +52,6 @@ namespace JBooth.MicroSplat
       public string properties;
       public string options;
    }
-
-   [InitializeOnLoad]
    public class MicroSplatGenerator
    {
       

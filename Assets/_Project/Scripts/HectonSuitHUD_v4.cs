@@ -11,7 +11,7 @@ using UnityEngine;
 [DisallowMultipleComponent]
 [ExecuteAlways]
 [AddComponentMenu("Hecton8/HUD/Suit HUD v4")]
-public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer, ITickable
+public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer, ITickable, IUpdatable
 {
     private static readonly List<HectonSuitHUD_v4> s_activeHuds = new List<HectonSuitHUD_v4>(4);
     private const int MaxPercent = 100;
@@ -197,13 +197,15 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer, ITickable
         }
         if (flashlight == null)
         {
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransformRoot))
-                flashlight = playerTransformRoot.GetComponentInChildren<PlayerFlashlight>(true);
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null)
+                flashlight = playerContext.Flashlight;
         }
         if (underwaterVisuals == null)
         {
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransformRoot))
-                underwaterVisuals = playerTransformRoot.GetComponentInChildren<HectonUnderwaterVisuals>(true);
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null)
+                underwaterVisuals = playerContext.UnderwaterVisuals;
         }
 
         Subscribe();
@@ -243,9 +245,7 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer, ITickable
 
     public override void DrawShapes(Camera cam)
     {
-        #pragma warning disable CS0618
-        _debugLastRenderCameraId = cam != null ? cam.GetInstanceID() : 0;
-        #pragma warning restore CS0618
+        _debugLastRenderCameraId = cam != null ? unchecked((int)EntityId.ToULong(cam.GetEntityId())) : 0;
         _debugCameraMatched = hudCamera != null && cam == hudCamera;
 
         _debugDrawCallCount++;
@@ -319,14 +319,10 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer, ITickable
 
     private void RegisterToTickManager()
     {
-        if (_registeredToTickManager)
+        if (!Application.isPlaying || _registeredToTickManager)
             return;
 
-        GameTickManager tickManager = GameTickManager.Instance;
-        if (tickManager == null)
-            return;
-
-        tickManager.Register(this);
+        GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
         _registeredToTickManager = true;
     }
 
@@ -335,10 +331,7 @@ public sealed class HectonSuitHUD_v4 : ImmediateModeShapeDrawer, ITickable
         if (!_registeredToTickManager)
             return;
 
-        GameTickManager tickManager = GameTickManager.Instance;
-        if (tickManager != null)
-            tickManager.Unregister(this);
-
+        GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
         _registeredToTickManager = false;
     }
 

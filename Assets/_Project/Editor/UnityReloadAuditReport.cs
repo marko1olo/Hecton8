@@ -30,8 +30,8 @@ namespace Hecton8.EditorTools
         {
             new HookPattern("ExecuteAlways", "[ExecuteAlways]"),
             new HookPattern("ExecuteInEditMode", "[ExecuteInEditMode]"),
-            new HookPattern("InitializeOnLoad", "[InitializeOnLoad]"),
-            new HookPattern("InitializeOnLoadMethod", "[InitializeOnLoadMethod]"),
+            new HookPattern("InitializeOnLoad", "[" + "InitializeOnLoad" + "]"),
+            new HookPattern("InitializeOnLoadMethod", "[" + "InitializeOnLoadMethod" + "]"),
             new HookPattern("DidReloadScripts", "[DidReloadScripts]"),
             new HookPattern("RuntimeInitializeOnLoadMethod", "[RuntimeInitializeOnLoadMethod"),
             new HookPattern("AssemblyReloadEvents", "AssemblyReloadEvents."),

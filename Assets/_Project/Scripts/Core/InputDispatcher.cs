@@ -8,7 +8,7 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9990)]
-    public sealed class InputDispatcher : MonoBehaviour, IInputService, ITickable
+    public sealed class InputDispatcher : MonoBehaviour, IInputService, IUpdatable, ITickable
     {
         private const int BufferedActionCapacity = 15;
         private const float DefaultBufferedActionMaxAgeSeconds = 0.25f;
@@ -23,7 +23,7 @@ namespace Hecton8.Core
         private static InputDispatcher _instance;
 
         private InputManager _nativeInputManager;
-        private bool _registeredTick;
+        private bool _registeredUpdatable;
         private bool _isInitialized;
         private bool _subscribedToNativeInput;
         private int _lastCapturedFrame = -1;
@@ -47,6 +47,18 @@ namespace Hecton8.Core
 
         /// <inheritdoc />
         public event System.Action OnInteract;
+
+        /// <inheritdoc />
+        public event System.Action OnPrimaryAction;
+
+        /// <inheritdoc />
+        public event System.Action OnSecondaryAction;
+
+        /// <inheritdoc />
+        public event System.Action OnTabNext;
+
+        /// <inheritdoc />
+        public event System.Action OnTabPrevious;
 
         /// <inheritdoc />
         public event System.Action OnToolSlot1;
@@ -104,7 +116,7 @@ namespace Hecton8.Core
             }
 
             EnsureInputBinding();
-            TryRegisterToTickManager();
+            TryRegisterToDispatcher();
             GlobalRegistry.RegisterInputService(this);
             _isInitialized = true;
             CaptureState();
@@ -121,7 +133,7 @@ namespace Hecton8.Core
 
             if (_isInitialized)
             {
-                TryRegisterToTickManager();
+                TryRegisterToDispatcher();
                 GlobalRegistry.RegisterInputService(this);
                 CaptureState();
             }
@@ -130,7 +142,7 @@ namespace Hecton8.Core
         private void OnDisable()
         {
             UnsubscribeFromNativeInput();
-            TryUnregisterFromTickManager();
+            TryUnregisterFromDispatcher();
 
             if (_isInitialized)
                 GlobalRegistry.UnregisterInputService(this);
@@ -141,7 +153,7 @@ namespace Hecton8.Core
         private void OnDestroy()
         {
             UnsubscribeFromNativeInput();
-            TryUnregisterFromTickManager();
+            TryUnregisterFromDispatcher();
 
             if (_isInitialized)
                 GlobalRegistry.UnregisterInputService(this);
@@ -259,6 +271,8 @@ namespace Hecton8.Core
             _nativeInputManager.OnToolSlot4 += HandleToolSlot4Pressed;
             _nativeInputManager.OnPrimaryAction += HandlePrimaryActionPressed;
             _nativeInputManager.OnSecondaryAction += HandleSecondaryActionPressed;
+            _nativeInputManager.OnTabNext += HandleTabNextPressed;
+            _nativeInputManager.OnTabPrevious += HandleTabPreviousPressed;
             _nativeInputManager.OnSprint += HandleSprintPressed;
             _subscribedToNativeInput = true;
         }
@@ -277,33 +291,29 @@ namespace Hecton8.Core
             _nativeInputManager.OnToolSlot4 -= HandleToolSlot4Pressed;
             _nativeInputManager.OnPrimaryAction -= HandlePrimaryActionPressed;
             _nativeInputManager.OnSecondaryAction -= HandleSecondaryActionPressed;
+            _nativeInputManager.OnTabNext -= HandleTabNextPressed;
+            _nativeInputManager.OnTabPrevious -= HandleTabPreviousPressed;
             _nativeInputManager.OnSprint -= HandleSprintPressed;
             _subscribedToNativeInput = false;
         }
 
-        private void TryRegisterToTickManager()
+        private void TryRegisterToDispatcher()
         {
-            if (_registeredTick)
+            if (_registeredUpdatable)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register((ITickable)this);
-            _registeredTick = true;
+            SystemDispatcher.EnsureRuntimeInstance();
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
+            _registeredUpdatable = true;
         }
 
-        private void TryUnregisterFromTickManager()
+        private void TryUnregisterFromDispatcher()
         {
-            if (!_registeredTick)
+            if (!_registeredUpdatable)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister((ITickable)this);
-
-            _registeredTick = false;
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
+            _registeredUpdatable = false;
         }
 
         private void CaptureState()
@@ -381,11 +391,23 @@ namespace Hecton8.Core
         private void HandlePrimaryActionPressed()
         {
             _latchedActionBits |= (uint)PlayerInputAction.PrimaryFire;
+            OnPrimaryAction?.Invoke();
         }
 
         private void HandleSecondaryActionPressed()
         {
             _latchedActionBits |= (uint)PlayerInputAction.SecondaryFire;
+            OnSecondaryAction?.Invoke();
+        }
+
+        private void HandleTabNextPressed()
+        {
+            OnTabNext?.Invoke();
+        }
+
+        private void HandleTabPreviousPressed()
+        {
+            OnTabPrevious?.Invoke();
         }
 
         private void HandleSprintPressed()

@@ -100,10 +100,14 @@ namespace Hecton8.UI
                 exchangeSystem = PDAExchangeSystem.Instance;
             if (playerPDA == null)
             {
+                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                if (playerContext != null)
+                    playerPDA = playerContext.PlayerPDA;
+
                 if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                     playerTransform != null)
                 {
-                    playerPDA = playerTransform.GetComponentInChildren<PlayerPDA>(true);
+                    playerTransform.TryGetComponent(out playerPDA);
                 }
 
                 if (playerPDA == null)

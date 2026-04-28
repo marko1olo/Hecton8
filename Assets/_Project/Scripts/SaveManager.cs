@@ -12,10 +12,13 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using Hecton8.Caves;
+using Hecton8.Core;
 using Hecton8.Modding;
 using Hecton8.Quest;
 using Hecton8.World;
 using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
@@ -23,8 +26,11 @@ namespace Hecton8.SaveSystem
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8000)]
-    public sealed class SaveManager : MonoBehaviour
+    public sealed class SaveManager : MonoBehaviour, ISaveService
     {
+        private const long MainThreadSnapshotBudgetMs = 50L;
+        private static readonly long PreCompressionYieldBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 500L);
+
         // ══════════════════════════════════════════════════════════
         //  SAVE STATE
         // ══════════════════════════════════════════════════════════
@@ -41,8 +47,9 @@ namespace Hecton8.SaveSystem
             _instance = null;
         }
         public static SaveManager Instance => _instance;
+        public bool IsInitialized => ReferenceEquals(_instance, this) && ReferenceEquals(GlobalRegistry.Save, this);
         public bool IsBusy => _isBusy;
-        public float CurrentPlayTimeSeconds => _totalPlayTime + (Time.realtimeSinceStartup - _sessionStartTime);
+        public float CurrentPlayTimeSeconds => (float)ResolveCurrentPlayTimeSeconds();
         public bool LastOperationSucceeded { get; private set; }
         public string LastOperationError { get; private set; }
         public string LastOperationSlot { get; private set; }
@@ -72,8 +79,8 @@ namespace Hecton8.SaveSystem
 
         private readonly List<ISaveable> _saveables = new List<ISaveable>(16);
         private bool _registryDirty;
-        private float _sessionStartTime;
-        private float _totalPlayTime;
+        private double _sessionStartTime;
+        private double _totalPlayTime;
         private bool _isBusy;
 
         private static readonly Comparison<ISaveable> SavePriorityCompare = (a, b) => a.SavePriority.CompareTo(b.SavePriority);
@@ -116,11 +123,11 @@ namespace Hecton8.SaveSystem
                 switch (category)
                 {
                     case SaveSlotCategory.Auto:
-                        return Mathf.Clamp(Instance.autoBackupGenerations, 1, 8);
+                        return math.clamp(Instance.autoBackupGenerations, 1, 8);
                     case SaveSlotCategory.Quick:
-                        return Mathf.Clamp(Instance.quickBackupGenerations, 1, 8);
+                        return math.clamp(Instance.quickBackupGenerations, 1, 8);
                     default:
-                        return Mathf.Clamp(Instance.manualBackupGenerations, 1, 8);
+                        return math.clamp(Instance.manualBackupGenerations, 1, 8);
                 }
             }
 
@@ -139,13 +146,13 @@ namespace Hecton8.SaveSystem
         {
             if (Instance != null)
             {
-                return Mathf.Clamp(
-                    Mathf.Max(Instance.manualBackupGenerations, Mathf.Max(Instance.autoBackupGenerations, Instance.quickBackupGenerations)),
+                return math.clamp(
+                    math.max(Instance.manualBackupGenerations, math.max(Instance.autoBackupGenerations, Instance.quickBackupGenerations)),
                     1,
                     8);
             }
 
-            return Mathf.Max(DefaultManualBackupGenerations, Mathf.Max(DefaultAutoBackupGenerations, DefaultQuickBackupGenerations));
+            return math.max(DefaultManualBackupGenerations, math.max(DefaultAutoBackupGenerations, DefaultQuickBackupGenerations));
         }
 
         private static SaveSlotCategory ClassifySlot(string slotName)
@@ -167,13 +174,17 @@ namespace Hecton8.SaveSystem
             if (_instance != null && _instance != this) { Destroy(gameObject); return; }
             _instance = this;
             DontDestroyOnLoad(gameObject);
-            _sessionStartTime = Time.realtimeSinceStartup;
+            _sessionStartTime = Time.realtimeSinceStartupAsDouble;
             InitializeNativeBuffers();
             SaveBinaryStorage.WarmRuntime();
+            GlobalRegistry.RegisterSaveService(this);
         }
 
         private void OnDestroy()
         {
+            if (ReferenceEquals(GlobalRegistry.Save, this))
+                GlobalRegistry.UnregisterSaveService(this);
+
             if (_instance == this)
                 _instance = null;
 
@@ -263,27 +274,51 @@ namespace Hecton8.SaveSystem
             SaveEvents.RaiseSaveStarted(slotName);
 
             var totalTimer = Stopwatch.StartNew();
-            float playTime = _totalPlayTime + (Time.realtimeSinceStartup - _sessionStartTime);
+            var snapshotTimer = Stopwatch.StartNew();
+            double playTime = ResolveCurrentPlayTimeSeconds();
             SaveData data = SaveData.CreateNew(playTime);
             PersistentWorldRegistry persistentWorldRegistry = PersistentWorldRegistry.Instance;
-            NativeArray<PersistentWorldItemRecord> persistentWorldSnapshot = default;
+            NativeArray<PersistentWorldDeltaRecord> persistentWorldDeltaSnapshot = default;
+            NativeArray<EcosystemSectorSaveRecord> ecosystemSectorSnapshot = default;
             NativeArray<uint> packedQuestStateSnapshot = default;
+            NativeArray<byte> voxelDeltaSnapshot = default;
 
             try
             {
                 SortRegistryIfDirty(SavePriorityCompare);
                 for (int i = 0; i < _saveables.Count; i++)
                 {
-                    if (IsAlive(_saveables[i])) _saveables[i].PopulateSaveData(data);
+                    if (!IsAlive(_saveables[i]))
+                        continue;
+
+                    if (_saveables[i] is VoxelDeltaProcessor voxelDeltaProcessor)
+                    {
+                        if (voxelDeltaSnapshot.IsCreated)
+                            voxelDeltaSnapshot.Dispose();
+
+                        voxelDeltaSnapshot = voxelDeltaProcessor.CaptureNativeSnapshot(Allocator.Persistent);
+                        continue;
+                    }
+
+                    _saveables[i].PopulateSaveData(data);
                 }
 
                 ModSaveStateStore.PopulateSaveData(data);
+                Stopwatch divergenceSnapshotTimer = Stopwatch.StartNew();
                 if (persistentWorldRegistry != null)
                 {
                     persistentWorldRegistry.CaptureSaveSnapshot();
-                    persistentWorldSnapshot = persistentWorldRegistry.GetSaveSnapshotArray();
+                    persistentWorldDeltaSnapshot = persistentWorldRegistry.GetSaveSnapshotArray();
                 }
 
+                EcosystemDirector ecosystemDirector = GlobalRegistry.EcosystemDirector as EcosystemDirector;
+                if (ecosystemDirector != null)
+                {
+                    ecosystemDirector.CaptureSaveSnapshot();
+                    ecosystemSectorSnapshot = ecosystemDirector.GetSaveSnapshotArray();
+                }
+
+                divergenceSnapshotTimer.Stop();
                 QuestManager questManager = QuestManager.Instance;
                 if (questManager != null)
                     packedQuestStateSnapshot = questManager.CapturePackedStateSnapshot(Allocator.Persistent);
@@ -293,31 +328,32 @@ namespace Hecton8.SaveSystem
                     SlotName = slotName,
                     GameVersion = Application.version,
                     Timestamp = DateTime.UtcNow.Ticks,
-                    PlayTimeSeconds = playTime,
+                    PlayTimeSeconds = (float)playTime,
                     SceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name,
                     PlayerPosition = data.playerStats.GetPosition()
                 };
 
+                snapshotTimer.Stop();
+                WarnIfSnapshotBudgetExceeded(slotName, snapshotTimer.ElapsedMilliseconds);
+
                 string tempPath = GetTempSaveFilePath(slotName);
+                if (divergenceSnapshotTimer.ElapsedTicks > PreCompressionYieldBudgetTicks)
+                    await Awaitable.NextFrameAsync();
 
                 await Awaitable.BackgroundThreadAsync();
 
-                DeleteFileIfExists(tempPath);
-                string absoluteTempPath = GetPersistentAbsolutePath(tempPath);
-                if (!SaveBinaryStorage.TryWriteSaveFile(
-                    absoluteTempPath,
+                ExecuteVerifiedSavePipeline(
+                    slotName,
+                    tempPath,
+                    GetPrimarySaveFilePath(slotName),
                     metadata,
                     data,
-                    persistentWorldSnapshot,
+                    persistentWorldDeltaSnapshot,
+                    ecosystemSectorSnapshot,
                     packedQuestStateSnapshot,
+                    voxelDeltaSnapshot,
                     _savePayloadBuffer,
-                    _compressedSaveBuffer,
-                    out string writeError))
-                {
-                    throw new Exception(writeError);
-                }
-
-                CommitTempSaveToPrimary(slotName, tempPath, GetPrimarySaveFilePath(slotName));
+                    _compressedSaveBuffer);
 
                 await Awaitable.MainThreadAsync();
                 SaveThumbnailSystem.CaptureThumbnail(slotName);
@@ -328,7 +364,7 @@ namespace Hecton8.SaveSystem
                 RecordSuccessfulSave(slotName, data.version, savedIntegrity);
 
                 LastOperationSucceeded = true;
-                Debug.Log($"[SaveManager] Saved '{slotName}' (CRC: {metadata.Checksum}) in {totalTimer.ElapsedMilliseconds}ms");
+                Debug.Log($"[SaveManager] Saved '{slotName}' (XXH3-64: {metadata.Checksum}) in {totalTimer.ElapsedMilliseconds}ms");
                 SaveEvents.RaiseSaveCompleted(slotName);
             }
             catch (Exception ex)
@@ -343,8 +379,22 @@ namespace Hecton8.SaveSystem
                 if (packedQuestStateSnapshot.IsCreated)
                     packedQuestStateSnapshot.Dispose();
 
+                if (voxelDeltaSnapshot.IsCreated)
+                    voxelDeltaSnapshot.Dispose();
+
                 _isBusy = false;
             }
+        }
+
+        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+        private static void WarnIfSnapshotBudgetExceeded(string slotName, long snapshotElapsedMs)
+        {
+            if (snapshotElapsedMs <= MainThreadSnapshotBudgetMs)
+                return;
+
+            Debug.LogWarning(
+                $"[SaveManager] Main-thread snapshot for '{slotName}' took {snapshotElapsedMs}ms. " +
+                $"Budget is {MainThreadSnapshotBudgetMs}ms. Snapshot purity is pending verification.");
         }
 
         public async Awaitable LoadGameAsync(string slotName)
@@ -387,13 +437,15 @@ namespace Hecton8.SaveSystem
             _isBusy = true;
             SaveEvents.RaiseLoadStarted(slotName);
             var totalTimer = Stopwatch.StartNew();
+            NativeArray<byte> loadedVoxelDeltaSnapshot = default;
 
             try
             {
                 await Awaitable.BackgroundThreadAsync();
                 SaveData data = null;
                 uint[] loadedQuestStateWords = null;
-                PersistentWorldItemRecord[] loadedWorldItems = null;
+                PersistentWorldDeltaRecord[] loadedWorldDeltas = null;
+                EcosystemSectorSaveRecord[] loadedEcosystemSectors = null;
                 SaveMetadata loadedMetadata = null;
                 SaveLoadCandidate loadedCandidate = default;
                 Exception lastError = null;
@@ -407,14 +459,18 @@ namespace Hecton8.SaveSystem
                         candidates[i],
                         out SaveData candidateData,
                         out uint[] candidateQuestStateWords,
-                        out PersistentWorldItemRecord[] candidateWorldItems,
+                        out PersistentWorldDeltaRecord[] candidateWorldDeltas,
+                        out EcosystemSectorSaveRecord[] candidateEcosystemSectors,
+                        out NativeArray<byte> candidateVoxelDeltaSnapshot,
                         out SaveMetadata candidateMetadata,
                         out bool candidateUsedLegacyFormat,
                         out string candidateError))
                     {
                         data = candidateData;
                         loadedQuestStateWords = candidateQuestStateWords;
-                        loadedWorldItems = candidateWorldItems;
+                        loadedWorldDeltas = candidateWorldDeltas;
+                        loadedEcosystemSectors = candidateEcosystemSectors;
+                        loadedVoxelDeltaSnapshot = candidateVoxelDeltaSnapshot;
                         loadedCandidate = candidates[i];
                         loadedMetadata = candidateMetadata;
                         usedLegacyFormat = candidateUsedLegacyFormat;
@@ -439,19 +495,33 @@ namespace Hecton8.SaveSystem
                 }
 
                 _totalPlayTime = data.totalPlayTime;
-                _sessionStartTime = Time.realtimeSinceStartup;
+                _sessionStartTime = Time.realtimeSinceStartupAsDouble;
                 ModSaveStateStore.LoadFromSaveData(data);
                 QuestManager.StageLoadedPackedState(loadedQuestStateWords);
                 
                 _registryDirty = true;
                 SortRegistryIfDirty(LoadPriorityCompare);
 
+                VoxelDeltaProcessor voxelDeltaProcessor = null;
                 for (int i = 0; i < _saveables.Count; i++)
                 {
-                    if (IsAlive(_saveables[i])) _saveables[i].LoadFromSaveData(data);
+                    if (!IsAlive(_saveables[i]))
+                        continue;
+
+                    if (_saveables[i] is VoxelDeltaProcessor loadedVoxelDeltaProcessor)
+                    {
+                        voxelDeltaProcessor = loadedVoxelDeltaProcessor;
+                        continue;
+                    }
+
+                    _saveables[i].LoadFromSaveData(data);
                 }
 
-                PersistentWorldRegistry.Instance?.RestoreFromLoadedRecords(loadedWorldItems);
+                if (voxelDeltaProcessor != null && !voxelDeltaProcessor.TryLoadNativeSnapshot(loadedVoxelDeltaSnapshot, out string voxelLoadError))
+                    throw new Exception(voxelLoadError);
+
+                PersistentWorldRegistry.Instance?.RestoreFromLoadedRecords(loadedWorldDeltas);
+                (GlobalRegistry.EcosystemDirector as EcosystemDirector)?.RestoreFromLoadedRecords(loadedEcosystemSectors);
 
                 string activeSceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
                 Vector3 playerPosition = data.playerStats.GetPosition();
@@ -465,11 +535,11 @@ namespace Hecton8.SaveSystem
                         SlotName = slotName,
                         GameVersion = Application.version,
                         Timestamp = DateTime.UtcNow.Ticks,
-                        PlayTimeSeconds = data.totalPlayTime,
+                        PlayTimeSeconds = (float)data.totalPlayTime,
                         SceneName = string.IsNullOrEmpty(activeSceneName) ? "Unknown" : activeSceneName,
                         PlayerPosition = playerPosition
                     };
-                    repairedPrimaryArtifacts = SelfRepairPrimaryArtifacts(slotName, data, repairMetadata, loadedQuestStateWords, loadedWorldItems);
+                    repairedPrimaryArtifacts = SelfRepairPrimaryArtifacts(slotName, data, repairMetadata, loadedQuestStateWords, loadedWorldDeltas, loadedEcosystemSectors, loadedVoxelDeltaSnapshot);
                     await Awaitable.MainThreadAsync();
                 }
 
@@ -495,7 +565,13 @@ namespace Hecton8.SaveSystem
                 Debug.LogError($"[SaveManager] Load failed: {ex.Message}");
                 SaveEvents.RaiseLoadFailed(slotName, ex.Message);
             }
-            finally { _isBusy = false; }
+            finally
+            {
+                if (loadedVoxelDeltaSnapshot.IsCreated)
+                    loadedVoxelDeltaSnapshot.Dispose();
+
+                _isBusy = false;
+            }
         }
 
         public bool SaveExists(string slotName)
@@ -733,8 +809,61 @@ namespace Hecton8.SaveSystem
             if (!FileExists(tempPath))
                 throw new FileNotFoundException("Verified temp save was not found during final rotation.", GetPersistentAbsolutePath(tempPath));
 
+            // Step 5: rotate the previously committed primary into the backup chain before overwrite.
             RotateBackupChain(finalPath, generation => GetBackupSaveFilePath(slotName, generation), GetBackupRetentionCountStatic(slotName));
+
+            // Step 6: promote the verified temp artifact to the authoritative primary slot.
             File.Move(GetPersistentAbsolutePath(tempPath), GetPersistentAbsolutePath(finalPath));
+
+            // Step 7: primary must exist after promotion.
+            if (!FileExists(finalPath))
+                throw new IOException($"Primary save promotion failed for '{slotName}'.");
+
+            // Step 8: temp must be fully consumed after promotion.
+            if (FileExists(tempPath))
+                throw new IOException($"Temp save cleanup failed for '{slotName}'.");
+        }
+
+        private static void ExecuteVerifiedSavePipeline(
+            string slotName,
+            string tempPath,
+            string finalPath,
+            SaveMetadata metadata,
+            SaveData data,
+            NativeArray<PersistentWorldDeltaRecord> persistentWorldItems,
+            NativeArray<EcosystemSectorSaveRecord> ecosystemSectorStates,
+            NativeArray<uint> packedQuestStateWords,
+            NativeArray<byte> voxelDeltaSnapshot,
+            NativeArray<byte> rawBuffer,
+            NativeArray<byte> compressedBuffer)
+        {
+            // Step 1: clear any stale temp artifact from a previous interrupted transaction.
+            DeleteFileIfExists(tempPath);
+
+            // Step 2: resolve the absolute temp path used by the binary writer.
+            string absoluteTempPath = GetPersistentAbsolutePath(tempPath);
+
+            // Step 3: write the snapshot into .tmp using the binary container writer.
+            if (!SaveBinaryStorage.TryWriteSaveFile(
+                absoluteTempPath,
+                    metadata,
+                    data,
+                    persistentWorldItems,
+                    ecosystemSectorStates,
+                    packedQuestStateWords,
+                    voxelDeltaSnapshot,
+                    rawBuffer,
+                    compressedBuffer,
+                    out string writeError))
+            {
+                throw new Exception(writeError);
+            }
+
+            // Step 4: the writer already re-reads metadata internally, but the pipeline still requires the temp artifact to exist here.
+            if (!FileExists(tempPath))
+                throw new FileNotFoundException("Verified temp save was not created by the binary writer.", absoluteTempPath);
+
+            CommitTempSaveToPrimary(slotName, tempPath, finalPath);
         }
 
         private static bool TryExtractSlotName(string fileName, out string slotName)
@@ -824,7 +953,9 @@ namespace Hecton8.SaveSystem
             List<SaveLoadCandidate> candidates = BuildLoadCandidates(slotName);
             SaveData repairedData = null;
             uint[] packedQuestStateWords = null;
-            PersistentWorldItemRecord[] persistentWorldItems = null;
+            PersistentWorldDeltaRecord[] persistentWorldItems = null;
+            EcosystemSectorSaveRecord[] ecosystemSectorStates = null;
+            NativeArray<byte> voxelDeltaSnapshot = default;
             SaveMetadata metadataSource = beforeInfo.Metadata;
             SaveLoadCandidate selectedCandidate = default;
             bool usedLegacyFormat = false;
@@ -837,7 +968,9 @@ namespace Hecton8.SaveSystem
                     candidates[i],
                     out SaveData candidateData,
                     out uint[] candidatePackedQuestStateWords,
-                    out PersistentWorldItemRecord[] candidateWorldItems,
+                    out PersistentWorldDeltaRecord[] candidateWorldItems,
+                    out EcosystemSectorSaveRecord[] candidateEcosystemSectorStates,
+                    out NativeArray<byte> candidateVoxelDeltaSnapshot,
                     out SaveMetadata candidateMetadata,
                     out bool candidateUsedLegacyFormat,
                     out string candidateError))
@@ -845,6 +978,8 @@ namespace Hecton8.SaveSystem
                     repairedData = candidateData;
                     packedQuestStateWords = candidatePackedQuestStateWords;
                     persistentWorldItems = candidateWorldItems;
+                    ecosystemSectorStates = candidateEcosystemSectorStates;
+                    voxelDeltaSnapshot = candidateVoxelDeltaSnapshot;
                     metadataSource = candidateMetadata ?? beforeInfo.Metadata;
                     selectedCandidate = candidates[i];
                     usedLegacyFormat = candidateUsedLegacyFormat;
@@ -856,6 +991,9 @@ namespace Hecton8.SaveSystem
 
             if (repairedData == null)
             {
+                if (voxelDeltaSnapshot.IsCreated)
+                    voxelDeltaSnapshot.Dispose();
+
                 result.Message = string.IsNullOrEmpty(errorMessage)
                     ? "No valid save candidate could be repaired."
                     : errorMessage;
@@ -876,6 +1014,8 @@ namespace Hecton8.SaveSystem
                 metadataSource,
                 packedQuestStateWords,
                 persistentWorldItems,
+                ecosystemSectorStates,
+                voxelDeltaSnapshot,
                 shouldRewritePrimarySave);
 
             SaveSlotInfo afterInfo = BuildSaveSlotInfoInternal(slotName);
@@ -892,6 +1032,10 @@ namespace Hecton8.SaveSystem
                 ? "Slot repaired and normalized."
                 : "Slot already healthy.";
             RecordRepairResult(result, repairedData != null ? repairedData.version : 0);
+
+            if (voxelDeltaSnapshot.IsCreated)
+                voxelDeltaSnapshot.Dispose();
+
             return true;
         }
 
@@ -937,6 +1081,8 @@ namespace Hecton8.SaveSystem
                     out SaveData candidateData,
                     out _,
                     out _,
+                    out _,
+                    out NativeArray<byte> candidateVoxelDeltaSnapshot,
                     out SaveMetadata _,
                     out bool candidateLegacyFormat,
                     out string candidateError))
@@ -953,6 +1099,9 @@ namespace Hecton8.SaveSystem
                         selectedData = candidateData;
                         selectedLegacyFormat = candidateLegacyFormat;
                     }
+
+                    if (candidateVoxelDeltaSnapshot.IsCreated)
+                        candidateVoxelDeltaSnapshot.Dispose();
                 }
                 else
                 {
@@ -973,7 +1122,7 @@ namespace Hecton8.SaveSystem
             result.SelectedBackupSource = selectedCandidate.IsBackup;
             result.SelectedBackupGeneration = selectedCandidate.IsBackup ? selectedCandidate.BackupGeneration : 0;
             result.SelectedLegacyCompression = selectedLegacyFormat;
-            result.DetectedVersion = selectedData != null ? Mathf.Max(selectedData.version, 0) : 0;
+            result.DetectedVersion = selectedData != null ? math.max(selectedData.version, 0) : 0;
             result.RequiresMigration = selectedData != null && selectedData.version != SaveData.CurrentVersion;
             result.RecommendedSource = selectedCandidate.IsBackup
                 ? $"Backup g{selectedCandidate.BackupGeneration}"
@@ -1024,7 +1173,9 @@ namespace Hecton8.SaveSystem
             SaveData data,
             SaveMetadata metadata,
             uint[] packedQuestStateWords,
-            PersistentWorldItemRecord[] persistentWorldItems)
+            PersistentWorldDeltaRecord[] persistentWorldItems,
+            EcosystemSectorSaveRecord[] ecosystemSectorStates,
+            NativeArray<byte> voxelDeltaSnapshot)
         {
             return RepairPrimaryArtifacts(
                 slotName,
@@ -1032,6 +1183,8 @@ namespace Hecton8.SaveSystem
                 metadata,
                 packedQuestStateWords,
                 persistentWorldItems,
+                ecosystemSectorStates,
+                voxelDeltaSnapshot,
                 overwritePrimarySave: true);
         }
 
@@ -1040,7 +1193,9 @@ namespace Hecton8.SaveSystem
             SaveLoadCandidate candidate,
             out SaveData data,
             out uint[] packedQuestStateWords,
-            out PersistentWorldItemRecord[] persistentWorldItems,
+            out PersistentWorldDeltaRecord[] persistentWorldItems,
+            out EcosystemSectorSaveRecord[] ecosystemSectorStates,
+            out NativeArray<byte> voxelDeltaSnapshot,
             out SaveMetadata metadata,
             out bool usedLegacyFormat,
             out string errorMessage)
@@ -1048,6 +1203,8 @@ namespace Hecton8.SaveSystem
             data = null;
             packedQuestStateWords = null;
             persistentWorldItems = null;
+            ecosystemSectorStates = null;
+            voxelDeltaSnapshot = default;
             metadata = null;
             usedLegacyFormat = false;
             errorMessage = string.Empty;
@@ -1055,7 +1212,7 @@ namespace Hecton8.SaveSystem
             string absolutePath = GetPersistentAbsolutePath(candidate.SavePath);
             if (SaveBinaryStorage.IsBinaryContainer(absolutePath))
             {
-                return TryLoadBinaryCandidate(slotName, candidate, out data, out packedQuestStateWords, out persistentWorldItems, out metadata, out errorMessage);
+                return TryLoadBinaryCandidate(slotName, candidate, out data, out packedQuestStateWords, out persistentWorldItems, out ecosystemSectorStates, out voxelDeltaSnapshot, out metadata, out errorMessage);
             }
 
             errorMessage = $"Unsupported non-binary save artifact '{candidate.SavePath}'.";
@@ -1067,13 +1224,17 @@ namespace Hecton8.SaveSystem
             SaveLoadCandidate candidate,
             out SaveData data,
             out uint[] packedQuestStateWords,
-            out PersistentWorldItemRecord[] persistentWorldItems,
+            out PersistentWorldDeltaRecord[] persistentWorldItems,
+            out EcosystemSectorSaveRecord[] ecosystemSectorStates,
+            out NativeArray<byte> voxelDeltaSnapshot,
             out SaveMetadata metadata,
             out string errorMessage)
         {
             data = null;
             packedQuestStateWords = null;
             persistentWorldItems = null;
+            ecosystemSectorStates = null;
+            voxelDeltaSnapshot = default;
             metadata = null;
             errorMessage = string.Empty;
 
@@ -1087,10 +1248,15 @@ namespace Hecton8.SaveSystem
                     out data,
                     out packedQuestStateWords,
                     out persistentWorldItems,
+                    out ecosystemSectorStates,
+                    out voxelDeltaSnapshot,
                     out metadata,
                     out _,
                     out errorMessage))
                 {
+                    if (voxelDeltaSnapshot.IsCreated)
+                        voxelDeltaSnapshot.Dispose();
+
                     return false;
                 }
 
@@ -1138,30 +1304,40 @@ namespace Hecton8.SaveSystem
             SaveData data,
             SaveMetadata metadataSource,
             uint[] packedQuestStateWords,
-            PersistentWorldItemRecord[] persistentWorldItems,
+            PersistentWorldDeltaRecord[] persistentWorldItems,
+            EcosystemSectorSaveRecord[] ecosystemSectorStates,
+            NativeArray<byte> voxelDeltaSnapshot,
             bool overwritePrimarySave)
         {
             string primarySavePath = GetPrimarySaveFilePath(slotName);
             string tempSavePath = GetTempSaveFilePath(slotName);
 
             bool changedAnything = false;
-            DeleteFileIfExists(tempSavePath);
-
             if (overwritePrimarySave || !FileExists(primarySavePath))
             {
                 SaveMetadata writeMetadata = CreateMetadataFromData(slotName, data, metadataSource);
                 AcquireWriteBuffers(out NativeArray<byte> rawBuffer, out bool ownsRawBuffer, out NativeArray<byte> compressedBuffer, out bool ownsCompressedBuffer);
-                NativeArray<PersistentWorldItemRecord> persistentWorldItemBuffer = default;
+                NativeArray<PersistentWorldDeltaRecord> persistentWorldItemBuffer = default;
+                NativeArray<EcosystemSectorSaveRecord> ecosystemSectorBuffer = default;
                 NativeArray<uint> packedQuestStateBuffer = default;
                 try
                 {
                     if (persistentWorldItems != null && persistentWorldItems.Length > 0)
                     {
-                        persistentWorldItemBuffer = new NativeArray<PersistentWorldItemRecord>(
+                        persistentWorldItemBuffer = new NativeArray<PersistentWorldDeltaRecord>(
                             persistentWorldItems.Length,
                             Allocator.Temp,
                             NativeArrayOptions.UninitializedMemory);
                         persistentWorldItemBuffer.CopyFrom(persistentWorldItems);
+                    }
+
+                    if (ecosystemSectorStates != null && ecosystemSectorStates.Length > 0)
+                    {
+                        ecosystemSectorBuffer = new NativeArray<EcosystemSectorSaveRecord>(
+                            ecosystemSectorStates.Length,
+                            Allocator.Temp,
+                            NativeArrayOptions.UninitializedMemory);
+                        ecosystemSectorBuffer.CopyFrom(ecosystemSectorStates);
                     }
 
                     if (packedQuestStateWords != null && packedQuestStateWords.Length > 0)
@@ -1173,23 +1349,26 @@ namespace Hecton8.SaveSystem
                         packedQuestStateBuffer.CopyFrom(packedQuestStateWords);
                     }
 
-                    if (!SaveBinaryStorage.TryWriteSaveFile(
-                        GetPersistentAbsolutePath(tempSavePath),
+                    ExecuteVerifiedSavePipeline(
+                        slotName,
+                        tempSavePath,
+                        primarySavePath,
                         writeMetadata,
                         data,
                         persistentWorldItemBuffer,
+                        ecosystemSectorBuffer,
                         packedQuestStateBuffer,
+                        voxelDeltaSnapshot,
                         rawBuffer,
-                        compressedBuffer,
-                        out string error))
-                    {
-                        throw new Exception(error);
-                    }
+                        compressedBuffer);
                 }
                 finally
                 {
                     if (persistentWorldItemBuffer.IsCreated)
                         persistentWorldItemBuffer.Dispose();
+
+                    if (ecosystemSectorBuffer.IsCreated)
+                        ecosystemSectorBuffer.Dispose();
 
                     if (packedQuestStateBuffer.IsCreated)
                         packedQuestStateBuffer.Dispose();
@@ -1198,7 +1377,6 @@ namespace Hecton8.SaveSystem
                     ReleaseBuffer(compressedBuffer, ownsCompressedBuffer);
                 }
 
-                CommitTempSaveToPrimary(slotName, tempSavePath, primarySavePath);
                 changedAnything = true;
             }
 
@@ -1213,7 +1391,7 @@ namespace Hecton8.SaveSystem
             string gameVersion = source != null && !string.IsNullOrEmpty(source.GameVersion)
                 ? source.GameVersion
                 : Application.version;
-            float playTimeSeconds = data != null ? data.totalPlayTime : 0f;
+            float playTimeSeconds = data != null ? (float)data.totalPlayTime : 0f;
             Vector3 playerPosition = data != null ? data.playerStats.GetPosition() : Vector3.zero;
 
             return new SaveMetadata
@@ -1241,6 +1419,11 @@ namespace Hecton8.SaveSystem
             // COLD ALLOC: NativeArray<byte>[67108864] - fallback raw save read buffer when SaveManager instance is unavailable - owner: SaveManager
             buffer = new NativeArray<byte>(SaveBinaryStorage.RawPayloadCapacityBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             ownsBuffer = true;
+        }
+
+        private double ResolveCurrentPlayTimeSeconds()
+        {
+            return _totalPlayTime + (Time.realtimeSinceStartupAsDouble - _sessionStartTime);
         }
 
         private static void AcquireWriteBuffers(
@@ -1342,7 +1525,7 @@ namespace Hecton8.SaveSystem
             record.LastKnownSaveVersion = result.DetectedVersion;
             record.LastKnownIntegrityState = result.IntegrityState.ToString();
             record.LastLoadUsedBackup = result.SelectedBackupSource;
-            record.LastLoadBackupGeneration = result.SelectedBackupSource ? Mathf.Max(1, result.SelectedBackupGeneration) : 0;
+            record.LastLoadBackupGeneration = result.SelectedBackupSource ? math.max(1, result.SelectedBackupGeneration) : 0;
             record.LastLoadUsedLegacyCompression = result.SelectedLegacyCompression;
             record.LastAuditMessage = result.Message ?? string.Empty;
             record.Save();
@@ -1359,7 +1542,7 @@ namespace Hecton8.SaveSystem
             record.LastKnownSaveVersion = dataVersion;
             record.LastKnownIntegrityState = result.IntegrityAfter.ToString();
             record.LastLoadUsedBackup = result.UsedBackupSource;
-            record.LastLoadBackupGeneration = result.UsedBackupSource ? Mathf.Max(1, result.SourceBackupGeneration) : 0;
+            record.LastLoadBackupGeneration = result.UsedBackupSource ? math.max(1, result.SourceBackupGeneration) : 0;
             record.LastLoadUsedLegacyCompression = result.UsedLegacyCompression;
             record.LastRepairMessage = result.Message ?? string.Empty;
             record.Save();

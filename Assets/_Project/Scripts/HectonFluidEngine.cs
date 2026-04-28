@@ -36,6 +36,7 @@
 // ============================================================================
 
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Bootstrap;
 using Unity.Burst;
@@ -43,6 +44,7 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Rendering;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -53,6 +55,31 @@ namespace Hecton8.Physics
     [DefaultExecutionOrder(-5000)]
     public sealed class HectonFluidEngine : MonoBehaviour, IFixedTickable
     {
+#if UNITY_EDITOR
+        private const string GpuBuoyancyComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_GpuBuoyancy.compute";
+#endif
+        private const int GpuReadbackRingSize = 3;
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct GpuBuoyancyObjectData
+        {
+            public float Volume;
+            public float Height;
+            public float IsInAir;
+            public float SimplifiedSubmersion;
+        }
+
+        private static readonly int _GpuBuoyancyPositionsId = Shader.PropertyToID("_GpuBuoyancyPositions");
+        private static readonly int _GpuBuoyancyObjectDataId = Shader.PropertyToID("_GpuBuoyancyObjectData");
+        private static readonly int _GpuBuoyancyResultsId = Shader.PropertyToID("_GpuBuoyancyResults");
+        private static readonly int _GpuBuoyancyObjectCountId = Shader.PropertyToID("_GpuBuoyancyObjectCount");
+        private static readonly int _GpuBuoyancyWaterParamsId = Shader.PropertyToID("_GpuBuoyancyWaterParams");
+        private static readonly int _GpuBuoyancyWave0AId = Shader.PropertyToID("_GpuBuoyancyWave0A");
+        private static readonly int _GpuBuoyancyWave0BId = Shader.PropertyToID("_GpuBuoyancyWave0B");
+        private static readonly int _GpuBuoyancyWave1AId = Shader.PropertyToID("_GpuBuoyancyWave1A");
+        private static readonly int _GpuBuoyancyWave1BId = Shader.PropertyToID("_GpuBuoyancyWave1B");
+        private static readonly int _GpuBuoyancyWave2AId = Shader.PropertyToID("_GpuBuoyancyWave2A");
+        private static readonly int _GpuBuoyancyWave2BId = Shader.PropertyToID("_GpuBuoyancyWave2B");
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
         // ══════════════════════════════════════════════════════════
@@ -141,6 +168,11 @@ namespace Hecton8.Physics
         [SerializeField] private bool drawLodGizmos = true;
         [SerializeField] private bool drawCurrentVectors = true;
         [SerializeField] private float gizmoCurrentVectorScale = 4f;
+
+        [Header("â”€â”€ GPU Buoyancy Offload â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [SerializeField] private bool enableGpuBuoyancySampling = true;
+        [SerializeField] private ComputeShader gpuBuoyancyCompute;
+        [SerializeField, Range(64, 1024)] private int gpuBuoyancyActivationThreshold = 256;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC API
@@ -286,14 +318,32 @@ namespace Hecton8.Physics
         private NativeArray<float3>         _upVectors;
         private NativeArray<BuoyancyParams> _params;
         private NativeArray<float>          _waveOffsets;
+        private NativeArray<float>          _gpuBuoyancyForcesY;
         private NativeArray<float3>         _resultForces;
         private NativeArray<float3>         _resultTorques;
+        private NativeArray<GpuBuoyancyObjectData> _gpuBuoyancyObjectDataUpload;
+        private NativeArray<float4> _gpuBuoyancyReadback;
+        // COLD ALLOC: Rigidbody[capacity] — schedule-time rigidbody snapshot for deferred force application — owner: HectonFluidEngine
+        private Rigidbody[] _scheduledBodies;
+        private JobHandle _scheduledBuoyancyHandle;
+        private bool _scheduledBuoyancyJobActive;
+        private int _scheduledForceCount;
 
         /// <summary>Текущая ёмкость NativeArrays (всегда >= count объектов).</summary>
         private int _nativeCapacity;
         private int _lodFrameCounter;
         private float _observerResolveRetryTimer;
         private const float ObserverResolveRetryInterval = 1f;
+        private const int MaxNativeCapacityGrowthIterations = 16;
+        private GraphicsBuffer _gpuBuoyancyPositionBuffer;
+        private GraphicsBuffer _gpuBuoyancyParamBuffer;
+        private GraphicsBuffer _gpuBuoyancyResultBuffer;
+        private AsyncGPUReadbackRequest[] _gpuReadbackRequests;
+        private int[] _gpuReadbackCounts;
+        private bool[] _gpuReadbackActive;
+        private int _gpuReadbackWriteIndex;
+        private bool _hasGpuBuoyancyData;
+        private int _gpuBuoyancyKernel = -1;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -325,16 +375,27 @@ namespace Hecton8.Physics
             
             // Cache LOD distances once (update if parameters change via property)
             UpdateCachedLodDistances();
+
+#if UNITY_EDITOR
+            if (gpuBuoyancyCompute == null)
+                gpuBuoyancyCompute = AssetDatabase.LoadAssetAtPath<ComputeShader>(GpuBuoyancyComputeAssetPath);
+#endif
+            if (gpuBuoyancyCompute != null)
+                _gpuBuoyancyKernel = gpuBuoyancyCompute.FindKernel("EvaluateBuoyancy");
+
+            _gpuReadbackRequests = new AsyncGPUReadbackRequest[GpuReadbackRingSize]; // COLD ALLOC: AsyncGPUReadbackRequest[3] - fixed GPU buoyancy readback ring state - owner: HectonFluidEngine
+            _gpuReadbackCounts = new int[GpuReadbackRingSize]; // COLD ALLOC: int[3] - GPU buoyancy readback element counts - owner: HectonFluidEngine
+            _gpuReadbackActive = new bool[GpuReadbackRingSize]; // COLD ALLOC: bool[3] - GPU buoyancy readback slot activity - owner: HectonFluidEngine
         }
 
         private void OnEnable()
         {
-            GameTickManager.Instance?.Register((IFixedTickable)this);
+            GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
         }
 
         private void OnDisable()
         {
-            GameTickManager.Instance?.Unregister((IFixedTickable)this);
+            GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
 
             // Release runtime job buffers before editor domain/play-mode teardown.
             // In-editor play transitions do not always guarantee a clean OnDestroy path
@@ -429,6 +490,18 @@ namespace Hecton8.Physics
         {
             using (ProfilerRegistry.PhysicsTick.Auto())
             {
+            if (_scheduledBuoyancyJobActive)
+            {
+                if (!_scheduledBuoyancyHandle.IsCompleted)
+                    return;
+
+                _scheduledBuoyancyHandle.Complete();
+                ApplyScheduledForces();
+                _scheduledBuoyancyHandle = default;
+                _scheduledBuoyancyJobActive = false;
+                _scheduledForceCount = 0;
+            }
+
             int count = _objects.Count;
             if (count == 0)
             {
@@ -466,19 +539,32 @@ namespace Hecton8.Physics
             }
 
             // ── 3. Schedule Job ──
+            for (int i = 0; i < count; i++)
+                _scheduledBodies[i] = _bodies[i];
+
             WeatherRuntimeSnapshot weatherSnapshot = ResolveWeatherSnapshot();
+            ConsumeGpuBuoyancyReadbacks();
+            TryDispatchGpuBuoyancySampling(weatherSnapshot, count);
 
-            WaveQueryJob waveJob = new WaveQueryJob
+            JobHandle waveHandle = default;
+            bool useGpuBuoyancy = enableGpuBuoyancySampling &&
+                                  gpuBuoyancyCompute != null &&
+                                  count >= gpuBuoyancyActivationThreshold &&
+                                  _hasGpuBuoyancyData;
+            if (!useGpuBuoyancy)
             {
-                PositionsWS = _positions,
-                VerticalOffsets = _waveOffsets,
-                Wave0 = weatherSnapshot.Wave0,
-                Wave1 = weatherSnapshot.Wave1,
-                Wave2 = weatherSnapshot.Wave2,
-                TimeSeconds = weatherSnapshot.CurrentMeta.TimeAccumulator
-            };
+                WaveQueryJob waveJob = new WaveQueryJob
+                {
+                    PositionsWS = _positions,
+                    VerticalOffsets = _waveOffsets,
+                    Wave0 = weatherSnapshot.Wave0,
+                    Wave1 = weatherSnapshot.Wave1,
+                    Wave2 = weatherSnapshot.Wave2,
+                    TimeSeconds = weatherSnapshot.CurrentMeta.TimeAccumulator
+                };
 
-            JobHandle waveHandle = waveJob.Schedule(count, jobBatchSize);
+                waveHandle = waveJob.Schedule(count, jobBatchSize);
+            }
 
             BuoyancyJob job = new BuoyancyJob
             {
@@ -488,6 +574,7 @@ namespace Hecton8.Physics
                 upVectors        = _upVectors,
                 objParams        = _params,
                 waveOffsets      = _waveOffsets,
+                gpuBuoyancyForcesY = _gpuBuoyancyForcesY,
                 resultForces     = _resultForces,
                 resultTorques    = _resultTorques,
 
@@ -501,21 +588,21 @@ namespace Hecton8.Physics
                     currentVector.y * currentStrength,
                     currentVector.z * currentStrength),
                 time             = Time.unscaledTime,
-                enablePhantomCurrent = enablePhantomCurrent,
+                enablePhantomCurrent = enablePhantomCurrent ? (byte)1 : (byte)0,
                 currentNoiseScale = currentNoiseScale,
                 currentTimeScale = currentTimeScale,
                 currentVerticalFactor = currentVerticalFactor,
                 phantomCurrentStrength = phantomCurrentStrength,
-                dt               = fixedDeltaTime
+                useGpuBuoyancyForce = useGpuBuoyancy ? (byte)1 : (byte)0
             };
 
-            JobHandle handle = job.Schedule(count, jobBatchSize, waveHandle);
+            _scheduledBuoyancyHandle = job.Schedule(count, jobBatchSize, waveHandle);
 
             // ── 4. Complete ──
-            handle.Complete();
 
             // ── 5. Apply forces ──
-            ApplyForces();
+            _scheduledBuoyancyJobActive = true;
+            _scheduledForceCount = count;
             }
         }
 
@@ -559,6 +646,7 @@ namespace Hecton8.Physics
                 Vector3 angVel = rb.angularVelocity;
                 Vector3 up = rb.transform.up;
                 Vector3 localCurrent = Vector3.zero;
+                obj.GetBuoyancySampleBounds(out Vector3 boundsCenter, out Vector3 boundsExtents);
 
                 byte simulationMode = 0;
                 byte simplifiedSubmersion = 0;
@@ -630,6 +718,8 @@ namespace Hecton8.Physics
                 _upVectors[i] = new float3(up.x, up.y, up.z);
                 _params[i]     = new BuoyancyParams
                 {
+                    boundsCenter = new float3(boundsCenter.x, boundsCenter.y, boundsCenter.z),
+                    boundsExtents = new float3(boundsExtents.x, boundsExtents.y, boundsExtents.z),
                     density = obj.Density,
                     volume  = obj.Volume,
                     height  = obj.Height > 0f ? obj.Height : 0.01f,
@@ -637,7 +727,7 @@ namespace Hecton8.Physics
                     currentResponse = obj.CurrentResponse * currentWeight,
                     surfaceStability = obj.SurfaceStability * stabilityWeight,
                     localCurrent = new float3(localCurrent.x, localCurrent.y, localCurrent.z),
-                    isInAir = obj.ShouldSuppressFluid(waterLevel),
+                    isInAir = obj.ShouldSuppressFluid(waterLevel) ? (byte)1 : (byte)0,
                     simulationMode = simulationMode,
                     simplifiedSubmersion = simplifiedSubmersion
                 };
@@ -652,13 +742,11 @@ namespace Hecton8.Physics
         /// Применяет вычисленные силы к Rigidbody. Main thread.
         /// AddForce(ForceMode.Force) — корректно для FixedUpdate.
         /// </summary>
-        private void ApplyForces()
+        private void ApplyScheduledForces()
         {
-            int actualCount = _objects.Count;
-
-            for (int i = 0; i < actualCount; i++)
+            for (int i = 0; i < _scheduledForceCount; i++)
             {
-                Rigidbody rb = _bodies[i];
+                Rigidbody rb = _scheduledBodies[i];
                 if (rb == null) continue;
 
                 float3 force  = _resultForces[i];
@@ -692,11 +780,20 @@ namespace Hecton8.Physics
         /// </summary>
         private void ReallocateNativeArrays(int requiredCount)
         {
+            requiredCount = math.max(requiredCount, 1);
             int newCapacity = math.max(128, _nativeCapacity * 2);
+            int growthIterations = 0;
 
             while (newCapacity < requiredCount)
             {
+                if (growthIterations >= MaxNativeCapacityGrowthIterations || newCapacity > (int.MaxValue / 2))
+                {
+                    newCapacity = math.max(newCapacity, requiredCount);
+                    break;
+                }
+
                 newCapacity *= 2;
+                growthIterations++;
             }
 
             DisposeNativeArrays();
@@ -713,10 +810,18 @@ namespace Hecton8.Physics
                                  NativeArrayOptions.UninitializedMemory);
             _waveOffsets   = new NativeArray<float>(newCapacity, Allocator.Persistent,
                                  NativeArrayOptions.ClearMemory);
+            _gpuBuoyancyForcesY = new NativeArray<float>(newCapacity, Allocator.Persistent,
+                                 NativeArrayOptions.ClearMemory);
             _resultForces  = new NativeArray<float3>(newCapacity, Allocator.Persistent,
                                  NativeArrayOptions.ClearMemory);
             _resultTorques = new NativeArray<float3>(newCapacity, Allocator.Persistent,
                                  NativeArrayOptions.ClearMemory);
+            _gpuBuoyancyObjectDataUpload = new NativeArray<GpuBuoyancyObjectData>(newCapacity, Allocator.Persistent,
+                                 NativeArrayOptions.UninitializedMemory);
+            _gpuBuoyancyReadback = new NativeArray<float4>(newCapacity, Allocator.Persistent,
+                                 NativeArrayOptions.ClearMemory);
+            _scheduledBodies = new Rigidbody[newCapacity];
+            EnsureGpuBuoyancyBuffers(newCapacity);
 
             _nativeCapacity = newCapacity;
         }
@@ -726,16 +831,40 @@ namespace Hecton8.Physics
         /// </summary>
         private void DisposeNativeArrays()
         {
-            if (_positions.IsCreated)     _positions.Dispose();
-            if (_velocities.IsCreated)    _velocities.Dispose();
-            if (_angularVelocities.IsCreated) _angularVelocities.Dispose();
-            if (_upVectors.IsCreated)     _upVectors.Dispose();
-            if (_params.IsCreated)        _params.Dispose();
-            if (_waveOffsets.IsCreated)   _waveOffsets.Dispose();
-            if (_resultForces.IsCreated)  _resultForces.Dispose();
-            if (_resultTorques.IsCreated) _resultTorques.Dispose();
+            JobHandle dependency = _scheduledBuoyancyJobActive ? _scheduledBuoyancyHandle : default;
+            DisposeNativeArray(ref _positions, dependency);
+            DisposeNativeArray(ref _velocities, dependency);
+            DisposeNativeArray(ref _angularVelocities, dependency);
+            DisposeNativeArray(ref _upVectors, dependency);
+            DisposeNativeArray(ref _params, dependency);
+            DisposeNativeArray(ref _waveOffsets, dependency);
+            DisposeNativeArray(ref _gpuBuoyancyForcesY, dependency);
+            DisposeNativeArray(ref _resultForces, dependency);
+            DisposeNativeArray(ref _resultTorques, dependency);
+            DisposeNativeArray(ref _gpuBuoyancyObjectDataUpload, dependency);
+            DisposeNativeArray(ref _gpuBuoyancyReadback, dependency);
+            _scheduledBodies = null;
+            _scheduledBuoyancyHandle = default;
+            _scheduledBuoyancyJobActive = false;
+            _scheduledForceCount = 0;
+            ReleaseGpuBuoyancyBuffers();
+            _hasGpuBuoyancyData = false;
 
             _nativeCapacity = 0;
+        }
+
+        private static void DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency)
+            where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            if (dependency.IsCompleted)
+                array.Dispose();
+            else
+                array.Dispose(dependency);
+
+            array = default;
         }
 
         private void ReleaseIdleNativeBuffersIfNeeded()
@@ -753,6 +882,138 @@ namespace Hecton8.Physics
                 return default;
 
             return weatherService.GetRuntimeSnapshot();
+        }
+
+        private void EnsureGpuBuoyancyBuffers(int capacity)
+        {
+            if (capacity <= 0)
+                return;
+
+            if (_gpuBuoyancyPositionBuffer == null || _gpuBuoyancyPositionBuffer.count != capacity)
+            {
+                ReleaseGpuBuoyancyBuffers();
+                _gpuBuoyancyPositionBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float3>(capacity); // COLD ALLOC: GraphicsBuffer[capacity] - GPU buoyancy position upload buffer - owner: HectonFluidEngine
+                _gpuBuoyancyParamBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<GpuBuoyancyObjectData>(capacity); // COLD ALLOC: GraphicsBuffer[capacity] - GPU buoyancy object payload buffer - owner: HectonFluidEngine
+                _gpuBuoyancyResultBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(capacity); // COLD ALLOC: GraphicsBuffer[capacity] - GPU buoyancy result buffer for async readback - owner: HectonFluidEngine
+            }
+        }
+
+        private void ReleaseGpuBuoyancyBuffers()
+        {
+            if (_gpuBuoyancyPositionBuffer != null)
+            {
+                _gpuBuoyancyPositionBuffer.Release();
+                _gpuBuoyancyPositionBuffer = null;
+            }
+
+            if (_gpuBuoyancyParamBuffer != null)
+            {
+                _gpuBuoyancyParamBuffer.Release();
+                _gpuBuoyancyParamBuffer = null;
+            }
+
+            if (_gpuBuoyancyResultBuffer != null)
+            {
+                _gpuBuoyancyResultBuffer.Release();
+                _gpuBuoyancyResultBuffer = null;
+            }
+        }
+
+        private void ConsumeGpuBuoyancyReadbacks()
+        {
+            if (_gpuReadbackRequests == null || _gpuReadbackActive == null || !_gpuBuoyancyReadback.IsCreated)
+                return;
+
+            for (int requestIndex = 0; requestIndex < GpuReadbackRingSize; requestIndex++)
+            {
+                if (!_gpuReadbackActive[requestIndex])
+                    continue;
+
+                AsyncGPUReadbackRequest request = _gpuReadbackRequests[requestIndex];
+                if (!request.done)
+                    continue;
+
+                _gpuReadbackActive[requestIndex] = false;
+                if (request.hasError)
+                    continue;
+
+                int readCount = math.min(_gpuReadbackCounts[requestIndex], _gpuBuoyancyReadback.Length);
+                NativeArray<float4> readbackData = request.GetData<float4>();
+                for (int i = 0; i < readCount; i++)
+                {
+                    float4 sample = readbackData[i];
+                    _gpuBuoyancyReadback[i] = sample;
+                    _waveOffsets[i] = sample.x;
+                    _gpuBuoyancyForcesY[i] = sample.y;
+                }
+
+                _hasGpuBuoyancyData = readCount > 0;
+            }
+        }
+
+        private void UploadGpuBuoyancyObjectData(int count)
+        {
+            if (!_gpuBuoyancyObjectDataUpload.IsCreated)
+                return;
+
+            for (int i = 0; i < count; i++)
+            {
+                BuoyancyParams buoyancyParams = _params[i];
+                _gpuBuoyancyObjectDataUpload[i] = new GpuBuoyancyObjectData
+                {
+                    Volume = buoyancyParams.volume,
+                    Height = buoyancyParams.height,
+                    IsInAir = buoyancyParams.isInAir != 0 ? 1f : 0f,
+                    SimplifiedSubmersion = buoyancyParams.simplifiedSubmersion != 0 ? 1f : 0f
+                };
+            }
+        }
+
+        private void SetGpuWave(ComputeShader shader, int waveAId, int waveBId, in GerstnerWaveComponent wave)
+        {
+            shader.SetVector(waveAId, new Vector4(wave.DirectionXZ.x, wave.DirectionXZ.y, wave.Amplitude, wave.Wavelength));
+            shader.SetVector(waveBId, new Vector4(wave.Steepness, wave.PhaseOffset, wave.SpeedMultiplier, 0f));
+        }
+
+        private void TryDispatchGpuBuoyancySampling(in WeatherRuntimeSnapshot weatherSnapshot, int count)
+        {
+            if (!enableGpuBuoyancySampling ||
+                gpuBuoyancyCompute == null ||
+                _gpuBuoyancyKernel < 0 ||
+                count < gpuBuoyancyActivationThreshold ||
+                !_positions.IsCreated ||
+                !_gpuBuoyancyObjectDataUpload.IsCreated)
+            {
+                return;
+            }
+
+            EnsureGpuBuoyancyBuffers(count);
+            if (_gpuBuoyancyPositionBuffer == null || _gpuBuoyancyParamBuffer == null || _gpuBuoyancyResultBuffer == null)
+                return;
+
+            int slot = _gpuReadbackWriteIndex;
+            if (_gpuReadbackActive != null && _gpuReadbackActive[slot])
+                return;
+
+            UploadGpuBuoyancyObjectData(count);
+            GraphicsBufferUploadUtility.UploadNativeArray(_gpuBuoyancyPositionBuffer, _positions, count);
+            GraphicsBufferUploadUtility.UploadNativeArray(_gpuBuoyancyParamBuffer, _gpuBuoyancyObjectDataUpload, count);
+
+            gpuBuoyancyCompute.SetBuffer(_gpuBuoyancyKernel, _GpuBuoyancyPositionsId, _gpuBuoyancyPositionBuffer);
+            gpuBuoyancyCompute.SetBuffer(_gpuBuoyancyKernel, _GpuBuoyancyObjectDataId, _gpuBuoyancyParamBuffer);
+            gpuBuoyancyCompute.SetBuffer(_gpuBuoyancyKernel, _GpuBuoyancyResultsId, _gpuBuoyancyResultBuffer);
+            gpuBuoyancyCompute.SetInt(_GpuBuoyancyObjectCountId, count);
+            gpuBuoyancyCompute.SetVector(_GpuBuoyancyWaterParamsId, new Vector4(waterLevel, waterDensity, math.abs(UnityEngine.Physics.gravity.y), weatherSnapshot.CurrentMeta.TimeAccumulator));
+            SetGpuWave(gpuBuoyancyCompute, _GpuBuoyancyWave0AId, _GpuBuoyancyWave0BId, weatherSnapshot.Wave0);
+            SetGpuWave(gpuBuoyancyCompute, _GpuBuoyancyWave1AId, _GpuBuoyancyWave1BId, weatherSnapshot.Wave1);
+            SetGpuWave(gpuBuoyancyCompute, _GpuBuoyancyWave2AId, _GpuBuoyancyWave2BId, weatherSnapshot.Wave2);
+
+            int groupCount = math.max(1, (count + 63) / 64);
+            gpuBuoyancyCompute.Dispatch(_gpuBuoyancyKernel, groupCount, 1, 1);
+            _gpuReadbackRequests[slot] = AsyncGPUReadback.Request(_gpuBuoyancyResultBuffer);
+            _gpuReadbackCounts[slot] = count;
+            _gpuReadbackActive[slot] = true;
+            _gpuReadbackWriteIndex = (_gpuReadbackWriteIndex + 1) % GpuReadbackRingSize;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -799,6 +1060,13 @@ namespace Hecton8.Physics
 #if UNITY_EDITOR
         private void OnValidate()
         {
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                return;
+            }
+
             if (waterDensity < 0.01f) waterDensity = 0.01f;
             if (viscousDrag  < 0f)    viscousDrag  = 0f;
             if (angularDrag  < 0f)    angularDrag  = 0f;
@@ -818,6 +1086,13 @@ namespace Hecton8.Physics
 
         private void OnDrawGizmos()
         {
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                return;
+            }
+
             Gizmos.color = new Color(0f, 0.3f, 0.8f, 0.1f);
             Vector3 center = new Vector3(0f, waterLevel, 0f);
             Gizmos.DrawCube(center, new Vector3(200f, 0.02f, 200f));
@@ -865,10 +1140,14 @@ namespace Hecton8.Physics
     /// Blittable struct — безопасен для NativeArray и Burst.
     ///
     /// ИЗМЕНЕНИЕ: добавлено поле isInAir для системы Сухих Зон.
-    /// bool в struct для Burst — допустимо (blittable, 1 byte).
+    /// Dry-zone and simulation flags are packed into explicit bytes to keep the Burst payload deterministic.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public struct BuoyancyParams
     {
+        public float3 boundsCenter;
+        public float3 boundsExtents;
+
         /// <summary>Плотность объекта (кг/м³).</summary>
         public float density;
 
@@ -888,7 +1167,7 @@ namespace Hecton8.Physics
         /// Объект находится в сухой зоне (внутри незатопленного модуля).
         /// Если true — все водные силы обнуляются в BuoyancyJob.
         /// </summary>
-        public bool isInAir;
+        public byte isInAir;
         public byte simulationMode;
         public byte simplifiedSubmersion;
     }
@@ -919,6 +1198,7 @@ namespace Hecton8.Physics
     /// This samples the first-party weather spectrum for physics consumers and does not replace Crest FFT rendering.
     /// </summary>
     [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast)]
+    [StructLayout(LayoutKind.Sequential)]
     public struct WaveQueryJob : IJobParallelFor
     {
         private const float Gravity = 9.81f;
@@ -976,6 +1256,7 @@ namespace Hecton8.Physics
         }
     }
 
+    [StructLayout(LayoutKind.Sequential)]
     public struct BuoyancyJob : IJobParallelFor
     {
         // ── Input (ReadOnly) ──
@@ -985,6 +1266,7 @@ namespace Hecton8.Physics
         [ReadOnly] public NativeArray<float3>         upVectors;
         [ReadOnly] public NativeArray<BuoyancyParams> objParams;
         [ReadOnly] public NativeArray<float>          waveOffsets;
+        [ReadOnly] public NativeArray<float>          gpuBuoyancyForcesY;
 
         // ── Output (WriteOnly) ──
         [WriteOnly] public NativeArray<float3> resultForces;
@@ -998,12 +1280,12 @@ namespace Hecton8.Physics
         public float  gravity;
         public float3 baseCurrentForce;
         public float  time;
-        public bool   enablePhantomCurrent;
+        public byte   enablePhantomCurrent;
         public float  currentNoiseScale;
         public float  currentTimeScale;
         public float  currentVerticalFactor;
         public float  phantomCurrentStrength;
-        public float  dt;
+        public byte   useGpuBuoyancyForce;
 
         public void Execute(int i)
         {
@@ -1024,7 +1306,7 @@ namespace Hecton8.Physics
             // ══════════════════════════════════════════════
             // Мгновенное отключение всей водной физики.
             // Объект подчиняется только Unity gravity.
-            if (p.isInAir)
+            if (p.isInAir != 0)
             {
                 resultForces[i]  = float3.zero;
                 resultTorques[i] = float3.zero;
@@ -1058,6 +1340,9 @@ namespace Hecton8.Physics
             // ══════════════════════════════════════════════
             float displacedVolume = p.volume * subRatio;
             float buoyancyMagnitude = waterDensity * displacedVolume * gravity;
+            if (useGpuBuoyancyForce != 0 && i < gpuBuoyancyForcesY.Length)
+                buoyancyMagnitude = math.max(0f, gpuBuoyancyForcesY[i]);
+
             float3 buoyancyForce = new float3(0f, buoyancyMagnitude, 0f);
 
             // ══════════════════════════════════════════════
@@ -1070,7 +1355,7 @@ namespace Hecton8.Physics
             //  3. ПОДВОДНОЕ ТЕЧЕНИЕ (Current)
             // ══════════════════════════════════════════════
             float3 sampledCurrent = baseCurrentForce + p.localCurrent;
-            if (enablePhantomCurrent && p.currentResponse > 0.0001f)
+            if (enablePhantomCurrent != 0 && p.currentResponse > 0.0001f)
             {
                 sampledCurrent += CurrentManager.SampleCurrent(
                     pos,

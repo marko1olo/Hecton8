@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using Hecton8.Audio;
+using System.Collections.Generic;
 
 namespace Hecton8.UI
 {
@@ -80,6 +81,12 @@ namespace Hecton8.UI
         private SpatialAudioManager _audioManager;
         private float _lastSliderTickTime;
         private static UIAudioFeedback _instance;
+        // COLD ALLOC: List<Button>(64) — UI button registration buffer — owner: UIAudioFeedback
+        private readonly List<Button> _buttonResolveBuffer = new List<Button>(64);
+        // COLD ALLOC: List<Slider>(32) — UI slider registration buffer — owner: UIAudioFeedback
+        private readonly List<Slider> _sliderResolveBuffer = new List<Slider>(32);
+        // COLD ALLOC: List<Toggle>(32) — UI toggle registration buffer — owner: UIAudioFeedback
+        private readonly List<Toggle> _toggleResolveBuffer = new List<Toggle>(32);
 
         // Stats
         private int _totalSoundsPlayed;
@@ -177,10 +184,11 @@ namespace Hecton8.UI
 
         private void RegisterAllButtons()
         {
-            Button[] buttons = GetComponentsInChildren<Button>(true);
-            for (int i = 0; i < buttons.Length; i++)
+            _buttonResolveBuffer.Clear();
+            GetComponentsInChildren(true, _buttonResolveBuffer);
+            for (int i = 0; i < _buttonResolveBuffer.Count; i++)
             {
-                Button button = buttons[i];
+                Button button = _buttonResolveBuffer[i];
                 if (button == null)
                     continue;
 
@@ -188,32 +196,40 @@ namespace Hecton8.UI
                 ButtonType type = GetButtonType(button.gameObject.name);
                 RegisterButton(button, type);
             }
+
+            _buttonResolveBuffer.Clear();
         }
 
         private void RegisterAllSliders()
         {
-            Slider[] sliders = GetComponentsInChildren<Slider>(true);
-            for (int i = 0; i < sliders.Length; i++)
+            _sliderResolveBuffer.Clear();
+            GetComponentsInChildren(true, _sliderResolveBuffer);
+            for (int i = 0; i < _sliderResolveBuffer.Count; i++)
             {
-                Slider slider = sliders[i];
+                Slider slider = _sliderResolveBuffer[i];
                 if (slider == null)
                     continue;
 
                 slider.onValueChanged.AddListener(_ => OnSliderChanged());
             }
+
+            _sliderResolveBuffer.Clear();
         }
 
         private void RegisterAllToggles()
         {
-            Toggle[] toggles = GetComponentsInChildren<Toggle>(true);
-            for (int i = 0; i < toggles.Length; i++)
+            _toggleResolveBuffer.Clear();
+            GetComponentsInChildren(true, _toggleResolveBuffer);
+            for (int i = 0; i < _toggleResolveBuffer.Count; i++)
             {
-                Toggle toggle = toggles[i];
+                Toggle toggle = _toggleResolveBuffer[i];
                 if (toggle == null)
                     continue;
 
                 toggle.onValueChanged.AddListener(OnToggleChanged);
             }
+
+            _toggleResolveBuffer.Clear();
         }
 
         private void RegisterButton(Button button, ButtonType type)

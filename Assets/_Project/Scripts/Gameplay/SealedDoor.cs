@@ -46,7 +46,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
-    public sealed class SealedDoor : MonoBehaviour, ICuttable, ITickable
+    public sealed class SealedDoor : MonoBehaviour, ICuttable, ITickable, IUpdatable
     {
         // ══════════════════════════════════════════════════════════
         //  SHADER PROPERTY IDs — cached once, zero GC
@@ -184,15 +184,11 @@ namespace Hecton8.Gameplay
 
             // Auto-find renderer if not assigned
             if (doorRenderer == null)
-            {
-                doorRenderer = GetComponentInChildren<Renderer>();
-            }
+                TryResolveOwnedComponent(transform, out doorRenderer);
 
             // Auto-find animator if not assigned
             if (animator == null)
-            {
-                animator = GetComponentInChildren<Animator>();
-            }
+                TryResolveOwnedComponent(transform, out animator);
 
             ResetState();
         }
@@ -477,32 +473,37 @@ namespace Hecton8.Gameplay
         //  PRIVATE — TICK REGISTRATION
         // ══════════════════════════════════════════════════════════
 
+        private static bool TryResolveOwnedComponent<T>(Transform root, out T component) where T : Component
+        {
+            component = null;
+            if (root == null)
+                return false;
+
+            if (root.TryGetComponent(out component))
+                return true;
+
+            for (int i = 0; i < root.childCount; i++)
+            {
+                if (TryResolveOwnedComponent(root.GetChild(i), out component))
+                    return true;
+            }
+
+            return false;
+        }
+
         private void RegisterToTick()
         {
             if (_isRegistered) return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-            {
-                tickManager.Register(this);
-                _isRegistered = true;
-            }
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            else
-            {
-                Debug.LogError("[SealedDoor] GameTickManager.Instance is null. Cannot register for tick.", this);
-            }
-#endif
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+            _isRegistered = true;
         }
 
         private void UnregisterFromTick()
         {
             if (!_isRegistered) return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister(this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _isRegistered = false;
         }
 

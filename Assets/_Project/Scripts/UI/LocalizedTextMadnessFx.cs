@@ -9,7 +9,7 @@ namespace Hecton8.UI
     /// CanvasRenderer does not expose MaterialPropertyBlock, so this owner maintains a per-label material instance.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class LocalizedTextMadnessFx : MonoBehaviour, ITickable
+    public sealed class LocalizedTextMadnessFx : MonoBehaviour, ITickable, IUpdatable
     {
         private static readonly int UnderlayColorId = Shader.PropertyToID("_UnderlayColor");
         private static readonly int UnderlayOffsetXId = Shader.PropertyToID("_UnderlayOffsetX");
@@ -73,23 +73,14 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
-            ApplyIdleState();
             UnregisterFromTickManager();
+            ReleaseMaterialInstance();
         }
 
         private void OnDestroy()
         {
-            ApplyIdleState();
             UnregisterFromTickManager();
-
-            if (_materialInstance != null)
-            {
-                if (_target != null && _sourceMaterial != null && ReferenceEquals(_target.fontSharedMaterial, _materialInstance))
-                    _target.fontSharedMaterial = _sourceMaterial;
-
-                Destroy(_materialInstance);
-                _materialInstance = null;
-            }
+            ReleaseMaterialInstance();
         }
 
         /// <inheritdoc />
@@ -181,16 +172,28 @@ namespace Hecton8.UI
             _target.UpdateMeshPadding();
         }
 
+        private void ReleaseMaterialInstance()
+        {
+            if (_materialInstance == null)
+                return;
+
+            if (_target != null && _sourceMaterial != null && ReferenceEquals(_target.fontSharedMaterial, _materialInstance))
+                _target.fontSharedMaterial = _sourceMaterial;
+
+            if (Application.isPlaying)
+                Destroy(_materialInstance);
+            else
+                DestroyImmediate(_materialInstance);
+
+            _materialInstance = null;
+        }
+
         private void RegisterToTickManager()
         {
             if (_registered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register(this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _registered = true;
         }
 
@@ -199,10 +202,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister(this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _registered = false;
         }
     }

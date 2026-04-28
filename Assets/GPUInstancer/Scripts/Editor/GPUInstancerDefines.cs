@@ -1,4 +1,4 @@
-﻿using GPUInstancer.Extension;
+using GPUInstancer.Extension;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,9 +10,9 @@ using UnityEngine;
 
 namespace GPUInstancer
 {
-    [InitializeOnLoad]
     public class GPUInstancerDefines
     {
+        private const string SessionInitKey = "GPUInstancer.DefinesInitHandled";
         private static readonly string DEFINE_GPU_INSTANCER = "GPU_INSTANCER";
         private static readonly string[] AUTO_PACKAGE_IMPORTER_GUIDS = { "e134ae9cb2828d147a6ec91b020fcb63", "87dd7798fac1eed45bd360e61b272470" };
 
@@ -30,6 +30,11 @@ namespace GPUInstancer
         {
             if (InternalEditorUtility.inBatchMode || EditorApplication.isPlayingOrWillChangePlaymode)
                 return;
+
+            if (SessionState.GetBool(SessionInitKey, false))
+                return;
+
+            SessionState.SetBool(SessionInitKey, true);
 
             if (EditorUserBuildSettings.selectedBuildTargetGroup == BuildTargetGroup.Unknown)
                 return;

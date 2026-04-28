@@ -5,6 +5,7 @@ using Hecton.UI.MainMenu;
 using Hecton8.Core;
 using Hecton.Localization;
 using Hecton8.SaveSystem;
+using System.Collections.Generic;
 
 namespace Hecton8.UI
 {
@@ -15,7 +16,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Save Slot Hover Preview")]
-    public sealed class SaveSlotHoverPreview : MonoBehaviour, ITickable, IPointerEnterHandler, IPointerExitHandler
+    public sealed class SaveSlotHoverPreview : MonoBehaviour, ITickable, IUpdatable, IPointerEnterHandler, IPointerExitHandler
     {
         // ══════════════════════════════════════════════════════════
         // INSPECTOR
@@ -52,6 +53,8 @@ namespace Hecton8.UI
         private RectTransform _previewPanelRect;
         private Canvas _rootCanvas;
         private Camera _uiCamera;
+        // COLD ALLOC: List<TMP_Text>(8) — preview text auto-wire buffer — owner: SaveSlotHoverPreview
+        private readonly List<TMP_Text> _previewTextResolveBuffer = new List<TMP_Text>(8);
 
         // ══════════════════════════════════════════════════════════
         // LIFECYCLE
@@ -282,10 +285,11 @@ namespace Hecton8.UI
                 (previewTitleText != null && previewDetailsText != null && previewStatusText != null))
                 return;
 
-            TMP_Text[] previewTexts = previewPanel.GetComponentsInChildren<TMP_Text>(true); // COLD ALLOC: TMP_Text[] - one-shot preview metadata auto-wire scan - owner: SaveSlotHoverPreview
-            for (int i = 0; i < previewTexts.Length; i++)
+            _previewTextResolveBuffer.Clear();
+            previewPanel.GetComponentsInChildren(true, _previewTextResolveBuffer);
+            for (int i = 0; i < _previewTextResolveBuffer.Count; i++)
             {
-                TMP_Text candidate = previewTexts[i];
+                TMP_Text candidate = _previewTextResolveBuffer[i];
                 if (candidate == null)
                     continue;
 
@@ -308,9 +312,9 @@ namespace Hecton8.UI
                 }
             }
 
-            for (int i = 0; i < previewTexts.Length; i++)
+            for (int i = 0; i < _previewTextResolveBuffer.Count; i++)
             {
-                TMP_Text candidate = previewTexts[i];
+                TMP_Text candidate = _previewTextResolveBuffer[i];
                 if (candidate == null)
                     continue;
 
@@ -334,6 +338,8 @@ namespace Hecton8.UI
                     break;
                 }
             }
+
+            _previewTextResolveBuffer.Clear();
         }
 
         private static bool IsPreviewTextMatch(string candidateName, string tokenA, string tokenB, string tokenC)
@@ -449,10 +455,11 @@ namespace Hecton8.UI
 
         private void TryRegister()
         {
-            if (_registered || GameTickManager.Instance == null)
+            if (_registered)
                 return;
 
-            GameTickManager.Instance.Register(this);
+            SystemDispatcher.EnsureRuntimeInstance();
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _registered = true;
         }
 
@@ -461,12 +468,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-            {
-                tickManager.Unregister(this);
-            }
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _registered = false;
         }
 

@@ -20,6 +20,7 @@
 using UnityEngine;
 using UnityEngine.Rendering;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Hecton8.Core;
 using Unity.Jobs;
 using Unity.Burst;
@@ -186,6 +187,7 @@ public class HectonChunkData
     public int lod;
     public GameObject go;
     public Mesh mesh;
+    public MeshRenderer renderer;
 }
 
 public struct HectonChunkRequest
@@ -441,8 +443,36 @@ public struct HectonColorJob : IJobParallelFor
 // ════════════════════════════════════════════════════════════════════════════════
 #region HectonWorldGenerator
 
-public class HectonWorldGenerator : MonoBehaviour, ITickable
+public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable
 {
+    struct PendingPhysicsBake
+    {
+        public Mesh Mesh;
+        public GameObject Owner;
+        public MeshRenderer Renderer;
+        public Material DefaultMaterial;
+        public JobHandle Handle;
+        public byte State;
+    }
+
+    struct HectonPhysicsBakeJob : IJob
+    {
+        public int MeshInstanceId;
+
+        public void Execute()
+        {
+#pragma warning disable CS0618
+            Physics.BakeMesh(MeshInstanceId, false);
+#pragma warning restore CS0618
+        }
+    }
+
+    const byte PhysicsBakeStatePending = 0;
+    const byte PhysicsBakeStateScheduled = 1;
+    const byte PhysicsBakeStateCompleted = 2;
+    private const float PhysicsBakeFrameBudgetMilliseconds = 2f;
+    private static readonly double _physicsBakeTickToMilliseconds = 1000d / Stopwatch.Frequency;
+
     // ╔═══════════════════════════════════════════════╗
     // ║             INSPECTOR SETTINGS                ║
     // ╚═══════════════════════════════════════════════╝
@@ -490,6 +520,8 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable
     [Header("═══ RENDERING ═══")]
     public Material terrainMaterial;
     public bool generateColliders = true;
+    [Tooltip("Optional fallback material shown while streamed chunk collision is still baking.")]
+    public Material pendingCollisionBakeMaterial;
 
     [Header("═══ VOXEL ENGINE ═══")]
     [Tooltip("Reference to the voxel engine for cave/rift generation.")]
@@ -540,9 +572,10 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable
 
     private readonly List<PendingChunk> _pendingChunks = new List<PendingChunk>();
 
-    readonly List<Mesh>       _bakeMeshes  = new List<Mesh>();
-    readonly List<GameObject> _bakeObjects = new List<GameObject>();
-    int _bakeHead;
+    // COLD ALLOC: List<PendingPhysicsBake>[64] — background PhysX bake queue for streamed chunk colliders — owner: HectonWorldGenerator
+    readonly List<PendingPhysicsBake> _pendingPhysicsBakes = new List<PendingPhysicsBake>(64);
+    int _physicsBakeScheduleHead;
+    int _physicsBakeFinalizeHead;
     const int MAX_BAKES_PER_FRAME = 2;
 
     readonly Dictionary<int2, List<Vector3>> _poiBases     = new Dictionary<int2, List<Vector3>>();
@@ -599,25 +632,28 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable
         ProcessQueue();
         ProcessPendingChunks();
 
-        if (_bakeHead < _bakeMeshes.Count)
+        if (_physicsBakeFinalizeHead < _pendingPhysicsBakes.Count ||
+            _physicsBakeScheduleHead < _pendingPhysicsBakes.Count)
+        {
             BakePhysicsBatch();
+        }
     }
 
     void RegisterToTickManager()
     {
-        if (_registeredToTickManager || GameTickManager.Instance == null)
+        if (_registeredToTickManager)
             return;
 
-        GameTickManager.Instance.Register((ITickable)this);
+        GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
         _registeredToTickManager = true;
     }
 
     void UnregisterFromTickManager()
     {
-        if (!_registeredToTickManager || GameTickManager.Instance == null)
+        if (!_registeredToTickManager)
             return;
 
-        GameTickManager.Instance.Unregister((ITickable)this);
+        GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
         _registeredToTickManager = false;
     }
 
@@ -640,7 +676,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable
         foreach (var kvp in _active) DestroyChunk(kvp.Value);
         _active.Clear();
 
-        _bakeMeshes.Clear(); _bakeObjects.Clear(); _bakeHead = 0;
+        CompletePendingPhysicsBakes();
         _poiBases.Clear();
         _poiResources.Clear();
 
@@ -971,8 +1007,18 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable
 
             if (pc.lod == 0 && generateColliders)
             {
-                _bakeMeshes.Add(mesh);
-                _bakeObjects.Add(go);
+                if (pendingCollisionBakeMaterial != null)
+                    mr.sharedMaterial = pendingCollisionBakeMaterial;
+
+                _pendingPhysicsBakes.Add(new PendingPhysicsBake
+                {
+                    Mesh = mesh,
+                    Owner = go,
+                    Renderer = mr,
+                    DefaultMaterial = terrainMaterial,
+                    Handle = default,
+                    State = PhysicsBakeStatePending
+                });
             }
 
             if (pc.lod == 0)
@@ -986,7 +1032,8 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable
                 coord = pc.coord,
                 lod   = pc.lod,
                 go    = go,
-                mesh  = mesh
+                mesh  = mesh,
+                renderer = mr
             };
         }
         finally
@@ -1214,34 +1261,123 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable
 
     #region Physics
 
+    static JobHandle ScheduleAsyncPhysicsBake(Mesh mesh)
+    {
+        return new HectonPhysicsBakeJob
+        {
+            MeshInstanceId = unchecked((int)EntityId.ToULong(mesh.GetEntityId()))
+        }.Schedule();
+    }
+
     void BakePhysicsBatch()
     {
-        int baked = 0;
-
-        while (_bakeHead < _bakeMeshes.Count && baked < MAX_BAKES_PER_FRAME)
+        long batchStartTimestamp = Stopwatch.GetTimestamp();
+        int scheduled = 0;
+        while (_physicsBakeScheduleHead < _pendingPhysicsBakes.Count &&
+               scheduled < MAX_BAKES_PER_FRAME &&
+               !HasPhysicsBakeBudgetExpired(batchStartTimestamp))
         {
-            Mesh mesh       = _bakeMeshes[_bakeHead];
-            GameObject go   = _bakeObjects[_bakeHead];
-            _bakeHead++;
+            PendingPhysicsBake pending = _pendingPhysicsBakes[_physicsBakeScheduleHead];
+            if (pending.Mesh == null || pending.Owner == null)
+            {
+                pending.State = PhysicsBakeStateCompleted;
+            }
+            else if (pending.State == PhysicsBakeStatePending)
+            {
+                pending.Handle = ScheduleAsyncPhysicsBake(pending.Mesh);
+                pending.State = PhysicsBakeStateScheduled;
+                scheduled++;
+            }
 
-            if (mesh == null || go == null) continue;
-
-            #pragma warning disable CS0618
-            Physics.BakeMesh(mesh.GetInstanceID(), false);
-            #pragma warning restore CS0618
-
-            var mc = go.AddComponent<MeshCollider>();
-            mc.sharedMesh = mesh;
-
-            baked++;
+            _pendingPhysicsBakes[_physicsBakeScheduleHead] = pending;
+            _physicsBakeScheduleHead++;
         }
 
-        if (_bakeHead >= _bakeMeshes.Count)
+        while (_physicsBakeFinalizeHead < _physicsBakeScheduleHead &&
+               !HasPhysicsBakeBudgetExpired(batchStartTimestamp))
         {
-            _bakeMeshes.Clear();
-            _bakeObjects.Clear();
-            _bakeHead = 0;
+            PendingPhysicsBake pending = _pendingPhysicsBakes[_physicsBakeFinalizeHead];
+            if (pending.State == PhysicsBakeStateCompleted)
+            {
+                _physicsBakeFinalizeHead++;
+                continue;
+            }
+
+            if (pending.State != PhysicsBakeStateScheduled || !pending.Handle.IsCompleted)
+                break;
+
+            pending.Handle.Complete();
+
+            if (pending.Mesh != null && pending.Owner != null)
+            {
+                var mc = pending.Owner.GetComponent<MeshCollider>();
+                if (mc == null) mc = pending.Owner.AddComponent<MeshCollider>();
+                mc.sharedMesh = pending.Mesh;
+
+                if (pending.Renderer != null && pending.DefaultMaterial != null)
+                    pending.Renderer.sharedMaterial = pending.DefaultMaterial;
+            }
+
+            pending.State = PhysicsBakeStateCompleted;
+            _pendingPhysicsBakes[_physicsBakeFinalizeHead] = pending;
+            _physicsBakeFinalizeHead++;
         }
+
+        if (_physicsBakeFinalizeHead >= _pendingPhysicsBakes.Count &&
+            _physicsBakeScheduleHead >= _pendingPhysicsBakes.Count)
+        {
+            _pendingPhysicsBakes.Clear();
+            _physicsBakeScheduleHead = 0;
+            _physicsBakeFinalizeHead = 0;
+        }
+    }
+
+    void CompletePendingPhysicsBakes()
+    {
+        for (int i = 0; i < _pendingPhysicsBakes.Count; i++)
+        {
+            PendingPhysicsBake pending = _pendingPhysicsBakes[i];
+            if (pending.State == PhysicsBakeStateScheduled)
+                pending.Handle.Complete();
+
+            if (pending.Renderer != null && pending.DefaultMaterial != null)
+                pending.Renderer.sharedMaterial = pending.DefaultMaterial;
+        }
+
+        _pendingPhysicsBakes.Clear();
+        _physicsBakeScheduleHead = 0;
+        _physicsBakeFinalizeHead = 0;
+    }
+
+    void CancelPendingPhysicsBake(Mesh mesh, GameObject owner)
+    {
+        for (int i = _pendingPhysicsBakes.Count - 1; i >= 0; i--)
+        {
+            PendingPhysicsBake pending = _pendingPhysicsBakes[i];
+            if (!ReferenceEquals(pending.Mesh, mesh) && !ReferenceEquals(pending.Owner, owner))
+                continue;
+
+            if (pending.State == PhysicsBakeStateScheduled && !pending.Handle.IsCompleted)
+            {
+                // COLD SYNC JOB: chunk teardown must retire an in-flight PhysX bake before the source mesh is destroyed.
+                pending.Handle.Complete();
+            }
+
+            if (pending.Renderer != null && pending.DefaultMaterial != null)
+                pending.Renderer.sharedMaterial = pending.DefaultMaterial;
+
+            _pendingPhysicsBakes.RemoveAt(i);
+            if (i < _physicsBakeScheduleHead)
+                _physicsBakeScheduleHead--;
+            if (i < _physicsBakeFinalizeHead)
+                _physicsBakeFinalizeHead--;
+        }
+    }
+
+    private static bool HasPhysicsBakeBudgetExpired(long batchStartTimestamp)
+    {
+        double elapsedMilliseconds = (Stopwatch.GetTimestamp() - batchStartTimestamp) * _physicsBakeTickToMilliseconds;
+        return elapsedMilliseconds >= PhysicsBakeFrameBudgetMilliseconds;
     }
 
     #endregion
@@ -1278,6 +1414,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable
     void DestroyChunk(HectonChunkData cd)
     {
         if (cd == null) return;
+        CancelPendingPhysicsBake(cd.mesh, cd.go);
 
         // ── Destroy child voxel volumes (v2.1: через DespawnVolume) ──
         if (cd.go != null)

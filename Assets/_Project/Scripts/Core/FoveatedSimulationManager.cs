@@ -2,6 +2,7 @@ using System;
 using Hecton8.Bootstrap;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -9,6 +10,18 @@ using UnityEngine.Jobs;
 
 namespace Hecton8.Core
 {
+    internal interface IFoveatedDispatcher : IDisposable
+    {
+        void RegisterTarget(IFoveatedSimulationTarget target);
+        void UnregisterTarget(IFoveatedSimulationTarget target);
+        void BeginDispatcherFrame(float frameDeltaTime);
+        bool TryResolveTick(IUpdatable item, float frameDeltaTime, out float effectiveDeltaTime);
+        void NotifyTickCompleted(IUpdatable item);
+        void ScheduleFrameJobs();
+        void CompleteFrameJobs();
+        void ResetRuntimeState();
+    }
+
     internal interface IFoveatedSimulationTarget : IUpdatable
     {
         int FoveatedTargetIndex { get; set; }
@@ -23,8 +36,10 @@ namespace Hecton8.Core
     internal enum FoveatedTickRate : byte
     {
         Center60Hz = 0,
-        Periphery20Hz = 1,
-        Rear5Hz = 2,
+        Focus30Hz = 1,
+        Periphery20Hz = 2,
+        Far10Hz = 3,
+        Rear5Hz = 4,
     }
 
     /// <summary>
@@ -32,9 +47,52 @@ namespace Hecton8.Core
     /// throttles opt-in targets, smooths low-frequency visual motion, and keeps
     /// audio/raycast side effects on an allocation-free path.
     /// </summary>
-    internal sealed class FoveatedSimulationManager : IDisposable
+    internal sealed class FoveatedSimulationManager : IFoveatedDispatcher
     {
-        [BurstCompile]
+        private const double SlowJobCompleteWarningMilliseconds = 100.0;
+
+        [BurstCompile(FloatMode = FloatMode.Fast)]
+        private struct ImportanceScoringJob : IJobParallelFor
+        {
+            [ReadOnly] public NativeArray<float3> Positions;
+            public NativeArray<float> ImportanceScores;
+            public NativeArray<byte> TickRateCodes;
+            public NativeArray<byte> InsideFrustumFlags;
+            public float3 CameraPosition;
+            public float3 CameraForward;
+            public float3 CameraUp;
+
+            public void Execute(int index)
+            {
+                float3 toTarget = Positions[index] - CameraPosition;
+                float distanceSq = math.lengthsq(toTarget);
+                float safeDistanceSq = math.max(distanceSq, MinimumDirectionLength);
+                float inverseDistance = math.rsqrt(safeDistanceSq);
+                float3 directionToTarget = math.select(CameraForward, toTarget * inverseDistance, distanceSq > MinimumDirectionLength);
+                float distanceMeters = math.select(0.0f, distanceSq * inverseDistance, distanceSq > MinimumDirectionLength);
+                float forwardDot = math.clamp(math.dot(directionToTarget, CameraForward), -1.0f, 1.0f);
+                bool behindCamera = forwardDot <= 0.0f;
+                float frontHemisphereDot = math.saturate(forwardDot);
+                float distanceFactor = 1.0f / (1.0f + (distanceMeters * DistanceDecay));
+                float verticalDot = math.abs(math.dot(directionToTarget, CameraUp));
+                float verticalPenalty = math.select(1.0f, VerticalPenaltyScale, verticalDot > VerticalPenaltyDotThreshold);
+                float importanceScore = math.saturate(distanceFactor * frontHemisphereDot);
+                importanceScore *= verticalPenalty;
+                importanceScore = math.select(importanceScore, MinimumImportanceScore, behindCamera);
+
+                int tickRateCode = (int)FoveatedTickRate.Rear5Hz;
+                tickRateCode = math.select(tickRateCode, (int)FoveatedTickRate.Far10Hz, importanceScore >= LowImportanceThreshold);
+                tickRateCode = math.select(tickRateCode, (int)FoveatedTickRate.Periphery20Hz, importanceScore >= MidImportanceThreshold);
+                tickRateCode = math.select(tickRateCode, (int)FoveatedTickRate.Focus30Hz, importanceScore >= FocusImportanceThreshold);
+                tickRateCode = math.select(tickRateCode, (int)FoveatedTickRate.Center60Hz, importanceScore >= HighImportanceThreshold);
+
+                ImportanceScores[index] = importanceScore;
+                TickRateCodes[index] = (byte)tickRateCode;
+                InsideFrustumFlags[index] = behindCamera ? (byte)0 : (byte)1;
+            }
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast)]
         private struct VisualInterpolationJob : IJobParallelForTransform
         {
             [ReadOnly] public NativeArray<float3> FromPositions;
@@ -52,19 +110,25 @@ namespace Hecton8.Core
             }
         }
 
+        private const int ImportanceScoreBatchSize = 32;
         private const int MaxTargets = 512;
         private const int MinimumCommandsPerJob = 1;
         private const float CenterTickIntervalSeconds = 1.0f / 60.0f;
+        private const float FocusTickIntervalSeconds = 1.0f / 30.0f;
         private const float PeripheryTickIntervalSeconds = 1.0f / 20.0f;
+        private const float FarTickIntervalSeconds = 1.0f / 10.0f;
         private const float RearTickIntervalSeconds = 1.0f / 5.0f;
         private const float CameraResolveRetryInterval = 1.0f;
         private const float ListenerResolveRetryInterval = 1.0f;
-        private const float MaximumScoreDistanceMeters = 180.0f;
-        private const float CenterDotThreshold = 0.72f;
-        private const float BehindCameraDotThreshold = -0.1f;
-        private const float HighImportanceThreshold = 0.67f;
-        private const float DistanceWeight = 0.58f;
-        private const float FrustumWeight = 0.42f;
+        private const int CadenceHysteresisFrames = 30;
+        private const float HighImportanceThreshold = 0.75f;
+        private const float FocusImportanceThreshold = 0.50f;
+        private const float MidImportanceThreshold = 0.30f;
+        private const float LowImportanceThreshold = 0.15f;
+        private const float MinimumImportanceScore = 0.0f;
+        private const float DistanceDecay = 0.01f;
+        private const float VerticalPenaltyDotThreshold = 0.7f;
+        private const float VerticalPenaltyScale = 0.6f;
         private const float MinimumDirectionLength = 0.0001f;
         private const float MinimumVelocityDelta = 0.0001f;
         private const float MinimumDeferredRaycastImportanceScore = 0.2f;
@@ -72,8 +136,12 @@ namespace Hecton8.Core
         private const float MinimumPitch = 0.5f;
         private const float MaximumPitch = 2.0f;
         private const float CenterVelocitySmoothingSharpness = 18.0f;
+        private const float FocusVelocitySmoothingSharpness = 14.0f;
         private const float PeripheryVelocitySmoothingSharpness = 10.0f;
+        private const float FarVelocitySmoothingSharpness = 7.0f;
         private const float RearVelocitySmoothingSharpness = 5.0f;
+        private const long PersistentNativeBudgetBytes = 262144L;
+        private const string MemoryBudgetOwnerName = "FoveatedSimulationManager";
 
         // COLD ALLOC: IFoveatedSimulationTarget[512] — dispatcher-owned opt-in simulation targets — owner: FoveatedSimulationManager
         private readonly IFoveatedSimulationTarget[] _targets = new IFoveatedSimulationTarget[MaxTargets];
@@ -99,6 +167,7 @@ namespace Hecton8.Core
         private readonly float[] _lastTickDeltas = new float[MaxTargets];
         // COLD ALLOC: FoveatedTickRate[512] — current rate classification cache — owner: FoveatedSimulationManager
         private readonly FoveatedTickRate[] _tickRates = new FoveatedTickRate[MaxTargets];
+        private readonly int[] _framesSinceTickRateChange = new int[MaxTargets];
         // COLD ALLOC: int[512] — compact target-to-visual-transform mapping — owner: FoveatedSimulationManager
         private readonly int[] _visualTargetIndices = new int[MaxTargets];
         // COLD ALLOC: IFoveatedSimulationTarget[512] — deferred raycast owners for same-frame dispatch — owner: FoveatedSimulationManager
@@ -106,11 +175,18 @@ namespace Hecton8.Core
 
         private TransformAccessArray _visualTransformAccessArray;
         private Transform[] _visualTransformArray = Array.Empty<Transform>();
+        private NativeArray<float3> _jobScorePositions;
+        private NativeArray<float> _jobImportanceScores;
+        private NativeArray<byte> _jobTickRateCodes;
+        private NativeArray<byte> _jobInsideFrustumFlags;
         private NativeArray<float3> _jobFromPositions;
         private NativeArray<float3> _jobToPositions;
         private NativeArray<float> _jobAlphas;
+        private NativeQueue<RaycastCommand> _pendingDeferredRaycastCommands;
+        private NativeQueue<int> _pendingDeferredRaycastOwnerIndices;
         private NativeList<RaycastCommand> _deferredRaycastCommands;
         private NativeArray<RaycastHit> _deferredRaycastResults;
+        private JobHandle _importanceHandle;
         private JobHandle _interpolationHandle;
         private JobHandle _deferredRaycastHandle;
 
@@ -126,9 +202,12 @@ namespace Hecton8.Core
         private float _cameraResolveRetryTimer;
         private float _listenerResolveRetryTimer;
         private bool _visualTargetCacheDirty = true;
+        private bool _importanceScheduled;
         private bool _interpolationScheduled;
         private bool _deferredRaycastScheduled;
         private bool _listenerStateInitialized;
+        private int _queuedDeferredRaycastCount;
+        private int _lastDeferredRaycastScheduleFrame = -1;
 
         public void RegisterTarget(IFoveatedSimulationTarget target)
         {
@@ -157,6 +236,7 @@ namespace Hecton8.Core
             _tickAccumulators[index] = CenterTickIntervalSeconds;
             _lastTickDeltas[index] = CenterTickIntervalSeconds;
             _importanceScores[index] = 1.0f;
+            _framesSinceTickRateChange[index] = CadenceHysteresisFrames;
             target.FoveatedTargetIndex = index;
 
             Vector3 initialPosition = SampleVisualPosition(index);
@@ -198,6 +278,7 @@ namespace Hecton8.Core
                 _tickIntervals[removedIndex] = _tickIntervals[lastIndex];
                 _lastTickDeltas[removedIndex] = _lastTickDeltas[lastIndex];
                 _tickRates[removedIndex] = _tickRates[lastIndex];
+                _framesSinceTickRateChange[removedIndex] = _framesSinceTickRateChange[lastIndex];
 
                 if (swappedTarget != null)
                     swappedTarget.FoveatedTargetIndex = removedIndex;
@@ -211,7 +292,8 @@ namespace Hecton8.Core
 
         public void BeginDispatcherFrame(float frameDeltaTime)
         {
-            CompleteFrameJobs();
+            CompleteFrameJobsInternal(true);
+            EnsureNativeBuffersAllocated();
 
             if (_deferredRaycastCommands.IsCreated)
                 _deferredRaycastCommands.Clear();
@@ -221,7 +303,6 @@ namespace Hecton8.Core
 
             TryResolveListener(frameDeltaTime);
             UpdateListenerVelocity(frameDeltaTime);
-            RecalculateImportanceScores();
             UpdateDopplerProtection();
         }
 
@@ -269,19 +350,42 @@ namespace Hecton8.Core
             _visualToPositions[index] = currentPosition;
 
             float deltaTime = math.max(_lastTickDeltas[index], MinimumVelocityDelta);
-            Vector3 rawVelocity = (currentPosition - previousPosition) / deltaTime;
+            Vector3 rawVelocity = Vector3.zero;
+            if (TryResolveSafeReciprocal(deltaTime, out float inverseDeltaTime))
+                rawVelocity = SanitizeFiniteVector((currentPosition - previousPosition) * inverseDeltaTime);
             float velocityBlend = 1.0f - math.exp(-ResolveVelocitySmoothingSharpness(_tickRates[index]) * deltaTime);
             _smoothedVelocities[index] = Vector3.Lerp(_smoothedVelocities[index], rawVelocity, velocityBlend);
 
             if (_deferredRaycastCommands.IsCreated &&
-                _deferredRaycastCommands.Length < MaxTargets &&
+                _pendingDeferredRaycastCommands.IsCreated &&
+                _pendingDeferredRaycastOwnerIndices.IsCreated &&
+                _queuedDeferredRaycastCount < MaxTargets &&
                 _importanceScores[index] >= MinimumDeferredRaycastImportanceScore &&
                 target.TryBuildDeferredRaycastCommand(out RaycastCommand raycastCommand))
             {
-                int commandIndex = _deferredRaycastCommands.Length;
-                _deferredRaycastOwners[commandIndex] = target;
-                _deferredRaycastCommands.Add(raycastCommand);
+                _pendingDeferredRaycastCommands.Enqueue(raycastCommand);
+                _pendingDeferredRaycastOwnerIndices.Enqueue(index);
+                _queuedDeferredRaycastCount++;
             }
+        }
+
+        private static bool TryResolveSafeReciprocal(float value, out float reciprocal)
+        {
+            if (!float.IsFinite(value) || math.abs(value) <= MinimumVelocityDelta)
+            {
+                reciprocal = 0f;
+                return false;
+            }
+
+            reciprocal = 1f / value;
+            return float.IsFinite(reciprocal);
+        }
+
+        private static Vector3 SanitizeFiniteVector(Vector3 value)
+        {
+            return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z)
+                ? value
+                : Vector3.zero;
         }
 
         public void ScheduleFrameJobs()
@@ -292,7 +396,11 @@ namespace Hecton8.Core
             if (_visualTargetCount > 0)
                 ScheduleInterpolationJob();
 
-            if (_deferredRaycastCommands.IsCreated && _deferredRaycastCommands.Length > 0)
+            DrainDeferredRaycastQueues();
+            int currentFrame = Time.frameCount;
+            if (_deferredRaycastCommands.IsCreated &&
+                _deferredRaycastCommands.Length > 0 &&
+                _lastDeferredRaycastScheduleFrame != currentFrame)
             {
                 _deferredRaycastHandle = RaycastCommand.ScheduleBatch(
                     _deferredRaycastCommands.AsDeferredJobArray(),
@@ -300,20 +408,28 @@ namespace Hecton8.Core
                     MinimumCommandsPerJob,
                     default);
                 _deferredRaycastScheduled = true;
+                _lastDeferredRaycastScheduleFrame = currentFrame;
             }
+
+            ScheduleImportanceScoringJob();
         }
 
         public void CompleteFrameJobs()
         {
+            CompleteFrameJobsInternal(false);
+        }
+
+        private void CompleteFrameJobsInternal(bool includeDeferredRaycasts)
+        {
             if (_interpolationScheduled)
             {
-                _interpolationHandle.Complete();
+                CompleteJobWithWarning(ref _interpolationHandle, "FoveatedSimulationManager.Interpolation");
                 _interpolationScheduled = false;
             }
 
-            if (_deferredRaycastScheduled)
+            if (includeDeferredRaycasts && _deferredRaycastScheduled)
             {
-                _deferredRaycastHandle.Complete();
+                CompleteJobWithWarning(ref _deferredRaycastHandle, "FoveatedSimulationManager.DeferredRaycasts");
                 int raycastCount = _deferredRaycastCommands.Length;
                 for (int i = 0; i < raycastCount; i++)
                 {
@@ -326,13 +442,23 @@ namespace Hecton8.Core
 
                 _deferredRaycastScheduled = false;
             }
+
+            if (_importanceScheduled)
+            {
+                CompleteJobWithWarning(ref _importanceHandle, "FoveatedSimulationManager.ImportanceScoring");
+                ApplyImportanceResults();
+                _importanceScheduled = false;
+            }
         }
 
         public void ResetRuntimeState()
         {
-            CompleteFrameJobs();
+            CompleteFrameJobsInternal(true);
             DisposeVisualTransformAccessArray();
-            DisposeNativeBuffers();
+            DisposeNativeBuffers(JobHandle.CombineDependencies(_importanceHandle, JobHandle.CombineDependencies(_interpolationHandle, _deferredRaycastHandle)));
+            _importanceHandle = default;
+            _interpolationHandle = default;
+            _deferredRaycastHandle = default;
 
             Array.Clear(_targets, 0, _targets.Length);
             Array.Clear(_simulationTransforms, 0, _simulationTransforms.Length);
@@ -346,6 +472,7 @@ namespace Hecton8.Core
             Array.Clear(_tickIntervals, 0, _tickIntervals.Length);
             Array.Clear(_lastTickDeltas, 0, _lastTickDeltas.Length);
             Array.Clear(_tickRates, 0, _tickRates.Length);
+            Array.Clear(_framesSinceTickRateChange, 0, _framesSinceTickRateChange.Length);
             Array.Clear(_visualTargetIndices, 0, _visualTargetIndices.Length);
             Array.Clear(_deferredRaycastOwners, 0, _deferredRaycastOwners.Length);
 
@@ -360,9 +487,12 @@ namespace Hecton8.Core
             _cameraResolveRetryTimer = 0.0f;
             _listenerResolveRetryTimer = 0.0f;
             _visualTargetCacheDirty = true;
+            _importanceScheduled = false;
             _listenerStateInitialized = false;
             _interpolationScheduled = false;
             _deferredRaycastScheduled = false;
+            _queuedDeferredRaycastCount = 0;
+            _lastDeferredRaycastScheduleFrame = -1;
             _visualTransformArray = Array.Empty<Transform>();
         }
 
@@ -371,41 +501,86 @@ namespace Hecton8.Core
             ResetRuntimeState();
         }
 
-        private void RecalculateImportanceScores()
+        private static void CompleteJobWithWarning(ref JobHandle handle, string systemName)
         {
-            if (_cameraTransform == null)
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            long startTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+            handle.Complete();
+            long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - startTimestamp;
+            double elapsedMilliseconds = elapsedTicks * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
+            if (elapsedMilliseconds > SlowJobCompleteWarningMilliseconds)
+            {
+                Debug.LogWarning(
+                    $"[SystemDispatcher] JobHandle.Complete slow: {systemName} took {elapsedMilliseconds:F2}ms.");
+            }
+#else
+            handle.Complete();
+#endif
+        }
+
+        private void ScheduleImportanceScoringJob()
+        {
+            if (_cameraTransform == null || _targetCount <= 0)
                 return;
 
-            float3 cameraPosition = _cameraTransform.position;
-            float3 cameraForward = _cameraTransform.forward;
+            EnsureNativeBuffersAllocated();
 
             for (int i = 0; i < _targetCount; i++)
             {
-                IFoveatedSimulationTarget target = _targets[i];
                 Transform simulationTransform = _simulationTransforms[i];
-                if (simulationTransform == null || target == null)
+                _jobScorePositions[i] = simulationTransform != null
+                    ? (float3)simulationTransform.position
+                    : float3.zero;
+            }
+
+            ImportanceScoringJob scoringJob = new ImportanceScoringJob
+            {
+                Positions = _jobScorePositions,
+                ImportanceScores = _jobImportanceScores,
+                TickRateCodes = _jobTickRateCodes,
+                InsideFrustumFlags = _jobInsideFrustumFlags,
+                CameraPosition = _cameraTransform.position,
+                CameraForward = _cameraTransform.forward,
+                CameraUp = _cameraTransform.up,
+            };
+
+            _importanceHandle = scoringJob.Schedule(_targetCount, ImportanceScoreBatchSize);
+            _importanceScheduled = true;
+        }
+
+        private void ApplyImportanceResults()
+        {
+            for (int i = 0; i < _targetCount; i++)
+            {
+                IFoveatedSimulationTarget target = _targets[i];
+                if (target == null)
                     continue;
 
-                float3 targetPosition = simulationTransform.position;
-                float3 toTarget = targetPosition - cameraPosition;
-                float distanceSq = math.lengthsq(toTarget);
-                float inverseDistance = math.rsqrt(math.max(distanceSq, MinimumDirectionLength));
-                float distanceMeters = distanceSq > MinimumDirectionLength
-                    ? distanceSq * inverseDistance
-                    : 0.0f;
-                float3 directionToTarget = distanceSq > MinimumDirectionLength
-                    ? toTarget * inverseDistance
-                    : cameraForward;
-                float dotToFrustum = math.dot(cameraForward, directionToTarget);
-                float distanceFactor = 1.0f - math.saturate(distanceMeters / MaximumScoreDistanceMeters);
-                float frustumFactor = math.saturate((dotToFrustum - BehindCameraDotThreshold) / (1.0f - BehindCameraDotThreshold));
-                float importanceScore = math.saturate((distanceFactor * DistanceWeight) + (frustumFactor * FrustumWeight));
-                bool insideFrustum = dotToFrustum > BehindCameraDotThreshold;
+                float importanceScore = _jobImportanceScores[i];
+                FoveatedTickRate resolvedTickRate = (FoveatedTickRate)_jobTickRateCodes[i];
+                FoveatedTickRate currentTickRate = _tickRates[i];
+                bool immediateRearDemotion = resolvedTickRate == FoveatedTickRate.Rear5Hz && _jobInsideFrustumFlags[i] == 0;
+                if (!immediateRearDemotion &&
+                    math.abs((int)resolvedTickRate - (int)currentTickRate) == 1 &&
+                    _framesSinceTickRateChange[i] < CadenceHysteresisFrames)
+                {
+                    resolvedTickRate = currentTickRate;
+                }
+
+                if (resolvedTickRate != currentTickRate)
+                {
+                    _tickRates[i] = resolvedTickRate;
+                    _framesSinceTickRateChange[i] = 0;
+                }
+                else if (_framesSinceTickRateChange[i] < int.MaxValue)
+                {
+                    _framesSinceTickRateChange[i]++;
+                }
 
                 _importanceScores[i] = importanceScore;
-                _tickRates[i] = ResolveTickRate(importanceScore, dotToFrustum);
                 _tickIntervals[i] = ResolveTickInterval(_tickRates[i]);
-                target.OnFoveatedCadenceResolved(_tickRates[i], _tickIntervals[i], importanceScore, insideFrustum);
+                _tickAccumulators[i] = math.min(_tickAccumulators[i], _tickIntervals[i]);
+                target.OnFoveatedCadenceResolved(_tickRates[i], _tickIntervals[i], importanceScore, _jobInsideFrustumFlags[i] != 0);
             }
         }
 
@@ -452,7 +627,7 @@ namespace Hecton8.Core
                 int targetIndex = _visualTargetIndices[compactIndex];
                 Vector3 currentPosition = _visualToPositions[targetIndex];
 
-                if (_tickRates[targetIndex] == FoveatedTickRate.Rear5Hz)
+                if (_tickRates[targetIndex] != FoveatedTickRate.Center60Hz)
                 {
                     _jobFromPositions[compactIndex] = _visualFromPositions[targetIndex];
                     _jobToPositions[compactIndex] = currentPosition;
@@ -519,6 +694,25 @@ namespace Hecton8.Core
 
         private void EnsureNativeBuffersAllocated()
         {
+            if (!_jobScorePositions.IsCreated)
+            {
+                _jobScorePositions = new NativeArray<float3>(MaxTargets, Allocator.Persistent); // COLD ALLOC: NativeArray<float3>[512] - simulation positions for Burst cadence scoring - owner: FoveatedSimulationManager
+            }
+
+            if (!_jobImportanceScores.IsCreated)
+            {
+                _jobImportanceScores = new NativeArray<float>(MaxTargets, Allocator.Persistent); // COLD ALLOC: NativeArray<float>[512] - Burst importance score output buffer - owner: FoveatedSimulationManager
+            }
+
+            if (!_jobTickRateCodes.IsCreated)
+            {
+                _jobTickRateCodes = new NativeArray<byte>(MaxTargets, Allocator.Persistent); // COLD ALLOC: NativeArray<byte>[512] - Burst raw cadence tier codes before hysteresis - owner: FoveatedSimulationManager
+            }
+
+            if (!_jobInsideFrustumFlags.IsCreated)
+            {
+                _jobInsideFrustumFlags = new NativeArray<byte>(MaxTargets, Allocator.Persistent); // COLD ALLOC: NativeArray<byte>[512] - Burst front hemisphere visibility flags - owner: FoveatedSimulationManager
+            }
             if (!_jobFromPositions.IsCreated)
             {
                 _jobFromPositions = new NativeArray<float3>(MaxTargets, Allocator.Persistent); // COLD ALLOC: NativeArray<float3>[512] — interpolation source positions — owner: FoveatedSimulationManager
@@ -534,6 +728,16 @@ namespace Hecton8.Core
                 _jobAlphas = new NativeArray<float>(MaxTargets, Allocator.Persistent); // COLD ALLOC: NativeArray<float>[512] — interpolation alpha payloads — owner: FoveatedSimulationManager
             }
 
+            if (!_pendingDeferredRaycastCommands.IsCreated)
+            {
+                _pendingDeferredRaycastCommands = new NativeQueue<RaycastCommand>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RaycastCommand>[512] - next-frame deferred fauna sight-line requests - owner: FoveatedSimulationManager
+            }
+
+            if (!_pendingDeferredRaycastOwnerIndices.IsCreated)
+            {
+                _pendingDeferredRaycastOwnerIndices = new NativeQueue<int>(Allocator.Persistent); // COLD ALLOC: NativeQueue<int>[512] - deferred fauna sight-line owner indices aligned to queued commands - owner: FoveatedSimulationManager
+            }
+
             if (!_deferredRaycastCommands.IsCreated)
             {
                 _deferredRaycastCommands = new NativeList<RaycastCommand>(MaxTargets, Allocator.Persistent); // COLD ALLOC: NativeList<RaycastCommand>[512] — deferred throttled-entity physics commands — owner: FoveatedSimulationManager
@@ -543,30 +747,123 @@ namespace Hecton8.Core
             {
                 _deferredRaycastResults = new NativeArray<RaycastHit>(MaxTargets, Allocator.Persistent); // COLD ALLOC: NativeArray<RaycastHit>[512] — deferred throttled-entity raycast hits — owner: FoveatedSimulationManager
             }
+            RegisterNativeMemoryBudget();
         }
 
-        private void DisposeNativeBuffers()
+        private void DisposeNativeBuffers(JobHandle dependency)
         {
-            if (_jobFromPositions.IsCreated)
-                _jobFromPositions.Dispose();
+            MemoryBudgetTracker.Unregister(MemoryBudgetOwnerName);
+            DisposeNativeArray(ref _jobScorePositions, dependency);
+            DisposeNativeArray(ref _jobImportanceScores, dependency);
+            DisposeNativeArray(ref _jobTickRateCodes, dependency);
+            DisposeNativeArray(ref _jobInsideFrustumFlags, dependency);
+            DisposeNativeArray(ref _jobFromPositions, dependency);
+            DisposeNativeArray(ref _jobToPositions, dependency);
+            DisposeNativeArray(ref _jobAlphas, dependency);
+            DisposeNativeQueue(ref _pendingDeferredRaycastCommands);
+            DisposeNativeQueue(ref _pendingDeferredRaycastOwnerIndices);
+            DisposeNativeList(ref _deferredRaycastCommands, dependency);
+            DisposeNativeArray(ref _deferredRaycastResults, dependency);
 
-            if (_jobToPositions.IsCreated)
-                _jobToPositions.Dispose();
-
-            if (_jobAlphas.IsCreated)
-                _jobAlphas.Dispose();
-
-            if (_deferredRaycastCommands.IsCreated)
-                _deferredRaycastCommands.Dispose();
-
-            if (_deferredRaycastResults.IsCreated)
-                _deferredRaycastResults.Dispose();
-
+            _jobScorePositions = default;
+            _jobImportanceScores = default;
+            _jobTickRateCodes = default;
+            _jobInsideFrustumFlags = default;
             _jobFromPositions = default;
             _jobToPositions = default;
             _jobAlphas = default;
+            _pendingDeferredRaycastCommands = default;
+            _pendingDeferredRaycastOwnerIndices = default;
             _deferredRaycastCommands = default;
             _deferredRaycastResults = default;
+        }
+
+        private static void DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            array.Dispose(dependency);
+            array = default;
+        }
+
+        private static void DisposeNativeList<T>(ref NativeList<T> list, JobHandle dependency) where T : unmanaged
+        {
+            if (!list.IsCreated)
+                return;
+
+            list.Dispose(dependency);
+            list = default;
+        }
+
+        private static void DisposeNativeQueue<T>(ref NativeQueue<T> queue) where T : unmanaged
+        {
+            if (!queue.IsCreated)
+                return;
+
+            queue.Dispose();
+            queue = default;
+        }
+
+        private void DrainDeferredRaycastQueues()
+        {
+            if (!_deferredRaycastCommands.IsCreated)
+                return;
+
+            _deferredRaycastCommands.Clear();
+            Array.Clear(_deferredRaycastOwners, 0, _deferredRaycastOwners.Length);
+
+            int commandIndex = 0;
+            while (commandIndex < MaxTargets &&
+                   _pendingDeferredRaycastCommands.IsCreated &&
+                   _pendingDeferredRaycastOwnerIndices.IsCreated &&
+                   _pendingDeferredRaycastCommands.TryDequeue(out RaycastCommand command) &&
+                   _pendingDeferredRaycastOwnerIndices.TryDequeue(out int ownerIndex))
+            {
+                _deferredRaycastCommands.Add(command);
+                _deferredRaycastOwners[commandIndex] = ownerIndex >= 0 && ownerIndex < _targetCount ? _targets[ownerIndex] : null;
+                commandIndex++;
+            }
+
+            if (_pendingDeferredRaycastCommands.IsCreated)
+            {
+                while (_pendingDeferredRaycastCommands.TryDequeue(out _))
+                {
+                }
+            }
+
+            if (_pendingDeferredRaycastOwnerIndices.IsCreated)
+            {
+                while (_pendingDeferredRaycastOwnerIndices.TryDequeue(out _))
+                {
+                }
+            }
+
+            _queuedDeferredRaycastCount = 0;
+        }
+
+        private void RegisterNativeMemoryBudget()
+        {
+            long totalBytes = GetNativeArrayBytes(_jobScorePositions) +
+                              GetNativeArrayBytes(_jobImportanceScores) +
+                              GetNativeArrayBytes(_jobTickRateCodes) +
+                              GetNativeArrayBytes(_jobInsideFrustumFlags) +
+                              GetNativeArrayBytes(_jobFromPositions) +
+                              GetNativeArrayBytes(_jobToPositions) +
+                              GetNativeArrayBytes(_jobAlphas) +
+                              GetNativeArrayBytes(_deferredRaycastResults) +
+                              GetNativeListBytes(_deferredRaycastCommands);
+            MemoryBudgetTracker.Register(MemoryBudgetOwnerName, totalBytes, PersistentNativeBudgetBytes);
+        }
+
+        private static long GetNativeArrayBytes<T>(NativeArray<T> array) where T : struct
+        {
+            return array.IsCreated ? (long)array.Length * UnsafeUtility.SizeOf<T>() : 0L;
+        }
+
+        private static long GetNativeListBytes<T>(NativeList<T> list) where T : unmanaged
+        {
+            return list.IsCreated ? (long)list.Capacity * UnsafeUtility.SizeOf<T>() : 0L;
         }
 
         private void DisposeVisualTransformAccessArray()
@@ -592,7 +889,7 @@ namespace Hecton8.Core
                 playerTransform != null)
             {
                 if (!playerTransform.TryGetComponent(out _viewCamera))
-                    _viewCamera = playerTransform.GetComponentInChildren<Camera>(true);
+                    _viewCamera = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera : playerTransform.GetComponent<Camera>());
             }
 
             if (_viewCamera == null)
@@ -662,25 +959,18 @@ namespace Hecton8.Core
             return simulationTransform != null ? simulationTransform.position : Vector3.zero;
         }
 
-        private static FoveatedTickRate ResolveTickRate(float importanceScore, float dotToFrustum)
-        {
-            if (dotToFrustum <= BehindCameraDotThreshold)
-                return FoveatedTickRate.Rear5Hz;
-
-            if (importanceScore >= HighImportanceThreshold && dotToFrustum >= CenterDotThreshold)
-                return FoveatedTickRate.Center60Hz;
-
-            return FoveatedTickRate.Periphery20Hz;
-        }
-
         private static float ResolveTickInterval(FoveatedTickRate tickRate)
         {
             switch (tickRate)
             {
                 case FoveatedTickRate.Center60Hz:
                     return CenterTickIntervalSeconds;
+                case FoveatedTickRate.Focus30Hz:
+                    return FocusTickIntervalSeconds;
                 case FoveatedTickRate.Periphery20Hz:
                     return PeripheryTickIntervalSeconds;
+                case FoveatedTickRate.Far10Hz:
+                    return FarTickIntervalSeconds;
                 default:
                     return RearTickIntervalSeconds;
             }
@@ -692,8 +982,12 @@ namespace Hecton8.Core
             {
                 case FoveatedTickRate.Center60Hz:
                     return CenterVelocitySmoothingSharpness;
+                case FoveatedTickRate.Focus30Hz:
+                    return FocusVelocitySmoothingSharpness;
                 case FoveatedTickRate.Periphery20Hz:
                     return PeripheryVelocitySmoothingSharpness;
+                case FoveatedTickRate.Far10Hz:
+                    return FarVelocitySmoothingSharpness;
                 default:
                     return RearVelocitySmoothingSharpness;
             }
@@ -713,6 +1007,8 @@ namespace Hecton8.Core
             _tickIntervals[index] = 0.0f;
             _lastTickDeltas[index] = 0.0f;
             _tickRates[index] = FoveatedTickRate.Center60Hz;
+            _framesSinceTickRateChange[index] = 0;
         }
     }
 }
+

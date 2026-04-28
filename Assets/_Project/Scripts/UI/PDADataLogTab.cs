@@ -33,8 +33,11 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Data Log Tab")]
-    public sealed class PDADataLogTab : MonoBehaviour, ITickable
+    public sealed class PDADataLogTab : MonoBehaviour, ITickable, IUpdatable
     {
+        private const string PlaybackTimerTemplate = "{0:00}:{1:00}";
+        private static readonly char[] PlaybackTimerTemplateChars = PlaybackTimerTemplate.ToCharArray();
+
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  INSPECTOR
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -83,6 +86,8 @@ namespace Hecton8.UI
         // List rows â€” pre-allocated
         private readonly List<LogRow> _rows = new List<LogRow>(32);
         private readonly string[] _localizedCategoryLabels = new string[5]; // COLD ALLOC: string[5] — localized category labels — owner: PDADataLogTab
+        // COLD ALLOC: char[128] — uppercase title staging buffer for allocation-free TMP updates — owner: PDADataLogTab
+        private char[] _detailTitleBuffer = new char[128];
 
         // State
         private int _selectedIndex = -1;
@@ -344,11 +349,7 @@ namespace Hecton8.UI
             if (_registered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register(this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _registered = true;
         }
 
@@ -357,10 +358,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister(this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _registered = false;
         }
 
@@ -642,9 +640,12 @@ namespace Hecton8.UI
             SetDetailVisible(true);
 
             if (_titleLabel != null)
-                _titleLabel.text = isDiscovered
-                    ? ResolveLogStressReactiveText(log, "detail.title", log.DisplayTitleOrFallback.ToUpperInvariant())
+            {
+                string titleText = isDiscovered
+                    ? ResolveLogStressReactiveText(log, "detail.title", log.DisplayTitleOrFallback)
                     : ResolveStressReactiveText(_localizedEncryptedLabel);
+                SetUppercaseLabelText(_titleLabel, titleText, ref _detailTitleBuffer);
+            }
 
             if (_authorLabel != null)
                 _authorLabel.text = isDiscovered
@@ -735,14 +736,14 @@ namespace Hecton8.UI
             _prevTimerSeconds = secs;
             int m = secs / 60;
             int s = secs % 60;
-            _playbackTimerLabel.SetText("{0:00}:{1:00}", m, s);
+            SetPlaybackTimerText(m, s);
         }
 
         private void ResetPlaybackTimerDisplay()
         {
             _prevTimerSeconds = -1;
             if (_playbackTimerLabel != null)
-                _playbackTimerLabel.SetText("{0:00}:{1:00}", 0, 0);
+                SetPlaybackTimerText(0, 0);
         }
 
         private void SetDetailVisible(bool visible)
@@ -1317,6 +1318,66 @@ namespace Hecton8.UI
             r.anchorMax = amax;
             r.offsetMin = offsetMin;
             r.offsetMax = offsetMax;
+        }
+
+        private void SetPlaybackTimerText(int minutes, int seconds)
+        {
+            if (_playbackTimerLabel == null)
+                return;
+
+            LocNumericBuffer.Write(new System.ReadOnlySpan<char>(PlaybackTimerTemplateChars), LocNumericArg.Int(minutes), LocNumericArg.Int(seconds), out char[] buffer, out int length);
+            int safeLength = Mathf.Clamp(length, 0, buffer != null ? buffer.Length : 0);
+            _playbackTimerLabel.SetCharArray(buffer, 0, safeLength);
+            _playbackTimerLabel.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
+        }
+
+        private static void SetUppercaseLabelText(TMP_Text label, string source, ref char[] buffer)
+        {
+            if (label == null)
+                return;
+
+            WriteUppercaseToBuffer(source, ref buffer, out int length);
+            label.SetCharArray(buffer, 0, length);
+            label.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
+        }
+
+        private static void WriteUppercaseToBuffer(string source, ref char[] buffer, out int length)
+        {
+            if (string.IsNullOrEmpty(source))
+            {
+                EnsureCharCapacity(ref buffer, 1);
+                length = 0;
+                return;
+            }
+
+            EnsureCharCapacity(ref buffer, source.Length);
+            for (int i = 0; i < source.Length; i++)
+                buffer[i] = ConvertUppercaseInvariantChar(source[i]);
+
+            length = source.Length;
+        }
+
+        private static char ConvertUppercaseInvariantChar(char value)
+        {
+            if ((uint)(value - 'a') <= 25u)
+                return (char)(value - 32);
+
+            if ((uint)(value - '\u0430') <= 31u)
+                return (char)(value - 32);
+
+            return value == '\u0451' ? '\u0401' : value;
+        }
+
+        private static void EnsureCharCapacity(ref char[] buffer, int requiredLength)
+        {
+            if (buffer != null && buffer.Length >= requiredLength)
+                return;
+
+            int capacity = buffer == null ? 32 : buffer.Length;
+            while (capacity < requiredLength)
+                capacity <<= 1;
+
+            buffer = new char[capacity]; // COLD ALLOC: char[capacity] — expanded PDA text staging buffer — owner: PDADataLogTab
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•

@@ -1,0 +1,109 @@
+#pragma kernel ClearHistogram
+#pragma kernel BuildHistogram
+#pragma kernel ResolveExposure
+
+Texture2D<float4> _HectonSourceColor;
+RWStructuredBuffer<uint> _HectonNoirHistogram;
+RWStructuredBuffer<float4> _HectonNoirExposureState;
+
+float4 _HectonNoirInputSize;
+float _HectonNoirMinEv;
+float _HectonNoirMaxEv;
+float _HectonNoirExposureAdaptationRate;
+float _HectonNoirExposureDeltaTime;
+float _HectonNoirEVMaxDeltaPerFrame;
+
+static const uint HectonNoirFloatAbsMask = 0x7FFFFFFFu;
+static const uint HectonNoirFloatFiniteMask = 0x7F800000u;
+
+bool IsFiniteScalar(float value)
+{
+    return (asuint(value) & HectonNoirFloatAbsMask) < HectonNoirFloatFiniteMask;
+}
+
+float ResolveFiniteOrDefault(float value, float fallback)
+{
+    return IsFiniteScalar(value) ? value : fallback;
+}
+
+float ResolveFinitePositive(float value, float fallback, float minimumValue)
+{
+    float safeValue = ResolveFiniteOrDefault(value, fallback);
+    return max(safeValue, minimumValue);
+}
+
+float3 ResolveFiniteFloat3OrZero(float3 value)
+{
+    return float3(
+        ResolveFiniteOrDefault(value.x, 0.0),
+        ResolveFiniteOrDefault(value.y, 0.0),
+        ResolveFiniteOrDefault(value.z, 0.0));
+}
+
+float ResolveLuminance(float3 color)
+{
+    float3 safeColor = ResolveFiniteFloat3OrZero(max(color, 0.0.xxx));
+    float luminance = dot(safeColor, float3(0.2126, 0.7152, 0.0722));
+    return ResolveFinitePositive(luminance, 0.0001, 0.0001);
+}
+
+[numthreads(64, 1, 1)]
+void ClearHistogram(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    if (dispatchThreadID.x >= 64)
+        return;
+
+    _HectonNoirHistogram[dispatchThreadID.x] = 0u;
+}
+
+[numthreads(8, 8, 1)]
+void BuildHistogram(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    if (dispatchThreadID.x >= (uint)_HectonNoirInputSize.x ||
+        dispatchThreadID.y >= (uint)_HectonNoirInputSize.y)
+    {
+        return;
+    }
+
+    float3 sourceColor = ResolveFiniteFloat3OrZero(_HectonSourceColor.Load(int3(dispatchThreadID.xy, 0)).rgb);
+    float luminance = ResolveLuminance(sourceColor);
+    float ev = ResolveFiniteOrDefault(log2(luminance), _HectonNoirMinEv);
+    ev = clamp(ev, _HectonNoirMinEv, _HectonNoirMaxEv);
+    float range = ResolveFinitePositive(_HectonNoirMaxEv - _HectonNoirMinEv, 0.0001, 0.0001);
+    uint binIndex = (uint)min(63.0, floor(saturate((ev - _HectonNoirMinEv) / range) * 63.9999));
+    InterlockedAdd(_HectonNoirHistogram[binIndex], 1u);
+}
+
+[numthreads(1, 1, 1)]
+void ResolveExposure(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    float minEv = ResolveFiniteOrDefault(_HectonNoirMinEv, -10.0);
+    float maxEv = max(ResolveFiniteOrDefault(_HectonNoirMaxEv, 12.0), minEv + 0.0001);
+    float evRange = ResolveFinitePositive(maxEv - minEv, 0.0001, 0.0001);
+    float weightedEvSum = 0.0;
+    float totalSampleCount = 0.0;
+
+    [unroll]
+    for (uint binIndex = 0u; binIndex < 64u; binIndex++)
+    {
+        float sampleCount = (float)_HectonNoirHistogram[binIndex];
+        float binCenter = ((binIndex + 0.5) / 64.0) * evRange + minEv;
+        weightedEvSum += ResolveFiniteOrDefault(binCenter * sampleCount, 0.0);
+        totalSampleCount += ResolveFiniteOrDefault(sampleCount, 0.0);
+    }
+
+    float4 previousState = _HectonNoirExposureState[0];
+    float previousEv = clamp(ResolveFiniteOrDefault(previousState.x, 0.0), minEv, maxEv);
+    float weightedTargetEv = totalSampleCount > 0.5
+        ? clamp(ResolveFiniteOrDefault(weightedEvSum / ResolveFinitePositive(totalSampleCount, 0.0001, 0.0001), previousEv), minEv, maxEv)
+        : previousEv;
+    float adaptationRate = ResolveFinitePositive(_HectonNoirExposureAdaptationRate, 0.0001, 0.0001);
+    float deltaTime = ResolveFinitePositive(_HectonNoirExposureDeltaTime, 0.0001, 0.0001);
+    float blendT = saturate(ResolveFiniteOrDefault(1.0 - exp(-adaptationRate * deltaTime), 1.0));
+    float smoothedEv = clamp(ResolveFiniteOrDefault(lerp(previousEv, weightedTargetEv, blendT), previousEv), minEv, maxEv);
+    float evDeltaLimit = ResolveFinitePositive(_HectonNoirEVMaxDeltaPerFrame, 0.05, 0.05);
+    float currentEv = clamp(previousEv + clamp(smoothedEv - previousEv, -evDeltaLimit, evDeltaLimit), minEv, maxEv);
+    currentEv = clamp(ResolveFiniteOrDefault(currentEv, previousEv), minEv, maxEv);
+    float exposureMultiplier = clamp(ResolveFiniteOrDefault(exp2(-currentEv), 1.0), 0.05, 16.0);
+    _HectonNoirExposureState[0] = float4(currentEv, weightedTargetEv, exposureMultiplier, totalSampleCount);
+}

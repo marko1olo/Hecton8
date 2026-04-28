@@ -151,7 +151,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_RenderShadows: 1
   m_RequiresDepthTextureOption: 1
-  m_RequiresOpaqueTextureOption: 2
+  m_RequiresOpaqueTextureOption: 1
   m_CameraType: 0
   m_Cameras: []
   m_RendererIndex: -1
@@ -171,8 +171,8 @@ MonoBehaviour:
   m_UseScreenCoordOverride: 0
   m_ScreenSizeOverride: {x: 0, y: 0, z: 0, w: 0}
   m_ScreenCoordScaleBias: {x: 0, y: 0, z: 0, w: 0}
-  m_RequiresDepthTexture: 0
-  m_RequiresColorTexture: 0
+  m_RequiresDepthTexture: 1
+  m_RequiresColorTexture: 1
   m_TaaSettings:
     m_Quality: 3
     m_FrameInfluence: 0.1
@@ -2385,7 +2385,7 @@ Light:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7319841547223980745}
-  m_Enabled: 0
+  m_Enabled: 1
   serializedVersion: 13
   m_Type: 0
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -2652,8 +2652,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalCameraData
   m_RenderShadows: 0
-  m_RequiresDepthTextureOption: 0
-  m_RequiresOpaqueTextureOption: 0
+  m_RequiresDepthTextureOption: 1
+  m_RequiresOpaqueTextureOption: 1
   m_CameraType: 0
   m_Cameras: []
   m_RendererIndex: -1
@@ -2662,7 +2662,7 @@ MonoBehaviour:
     m_Bits: 4294967295
   m_VolumeTrigger: {fileID: 0}
   m_VolumeFrameworkUpdateModeOption: 2
-  m_RenderPostProcessing: 0
+  m_RenderPostProcessing: 1
   m_Antialiasing: 0
   m_AntialiasingQuality: 2
   m_StopNaN: 0
@@ -2673,8 +2673,8 @@ MonoBehaviour:
   m_UseScreenCoordOverride: 0
   m_ScreenSizeOverride: {x: 0, y: 0, z: 0, w: 0}
   m_ScreenCoordScaleBias: {x: 0, y: 0, z: 0, w: 0}
-  m_RequiresDepthTexture: 0
-  m_RequiresColorTexture: 0
+  m_RequiresDepthTexture: 1
+  m_RequiresColorTexture: 1
   m_TaaSettings:
     m_Quality: 3
     m_FrameInfluence: 0.1
@@ -2862,7 +2862,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 413d0a43e93c5564da334e37d575591c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NASAPunk.Visor.SuitHUDPresentationController
-  presentationMode: 1
+  presentationMode: 2
   overlayModernHud: {fileID: 0}
   projectedModernHud: {fileID: 0}
   visorController: {fileID: 7392659766808570678}
@@ -2877,7 +2877,7 @@ MonoBehaviour:
   previewProjectedSourceOnScreen: 0
   preferCanvasProjectionSource: 1
   syncProjectionLayoutFromOverlay: 0
-  debugAppliedModeLabel: ModernOverlay
+  debugAppliedModeLabel: ModernProjectedSharedRT
   debugModernEnabled: 0
   debugProjectedModeActive: 0
   debugOverlaysSuppressed: 0

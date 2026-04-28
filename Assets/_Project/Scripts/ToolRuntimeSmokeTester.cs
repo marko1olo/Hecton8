@@ -330,10 +330,10 @@ namespace Hecton8.Dev
         private void AutoResolveSceneReferences()
         {
             if (toolManager == null)
-                toolManager = FindAnyObjectByType<PlayerToolManager>();
+                toolManager = (Hecton8.Core.GlobalRegistry.Player != null ? Hecton8.Core.GlobalRegistry.Player.ToolManager : null);
 
             if (playerInventory == null)
-                playerInventory = FindAnyObjectByType<PlayerInventory>();
+                playerInventory = (Hecton8.Core.GlobalRegistry.Player != null ? Hecton8.Core.GlobalRegistry.Player.Inventory : null);
         }
 
         private void LogVerbose(string message)

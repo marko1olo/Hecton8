@@ -1,8 +1,14 @@
+using System;
+using System.IO;
+using System.Text;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Input;
 using Hecton8.Physics;
+using Hecton8.SaveSystem;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -17,8 +23,13 @@ namespace Hecton8.Bootstrap
     public sealed class GameBootstrapper : MonoBehaviour
     {
         private const string BootstrapSceneName = "00_BOOTSTRAP";
+        private const string FatalBootCrashFileName = "fatal_boot_crash.log";
+        private const string FatalBootOverlayMessageTemplate =
+            "BIOS ERROR 0xBOOT_FATAL\nPHASE: {0}\nACTION: SEE fatal_boot_crash.log";
+        private const int FatalBootCrashLogBufferBytes = 24576;
         private const string BiosErrorMessageTemplate =
             "BIOS ERROR 0xBOOT\nEXPECTED: 00_BOOTSTRAP [0]\nDETECTED: {0} [{1}]\nACTION: FORCED RECOVERY";
+        private static readonly UTF8Encoding _fatalBootCrashEncoding = new UTF8Encoding(false);
 
         private static GameBootstrapper _instance;
         private static bool _isBootstrapComplete;
@@ -55,6 +66,15 @@ namespace Hecton8.Bootstrap
             TryRecoverEntryVector(SceneManager.GetActiveScene(), true);
         }
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void GuardEntryVectorBeforeSceneLoad()
+        {
+            if (!Application.isPlaying || _isBootstrapComplete)
+                return;
+
+            TryRecoverEntryVector(SceneManager.GetActiveScene(), true);
+        }
+
         /// <summary>
         /// Ensures a runtime bootstrap owner exists on the current bootstrap shell object.
         /// </summary>
@@ -74,23 +94,40 @@ namespace Hecton8.Bootstrap
         /// <summary>
         /// Executes the ordered bootstrap phases once.
         /// </summary>
-        public void InitializeBootstrap()
+        public bool InitializeBootstrap()
         {
             if (_isBootstrapComplete)
-                return;
+                return true;
 
-            if (!TryRecoverEntryVector(SceneManager.GetActiveScene(), false))
-                return;
+            BootstrapStatus.BeginBoot();
+            try
+            {
+                if (!TryRecoverEntryVector(SceneManager.GetActiveScene(), false))
+                    return false;
 
-            RegisterSceneLoadGuard();
+                RegisterSceneLoadGuard();
 
-            InitializeCoreLayer();
-            InitializeEnvironmentLayer();
-            InitializePlayerLayer();
-            InitializeUILayer();
+                if (!TryRunBootstrapStep(BootstrapStepToken.Core, "Core", InitializeCoreLayer))
+                    return false;
 
-            _isBootstrapComplete = true;
-            BootstrapBiosErrorOverlay.Hide();
+                if (!TryRunBootstrapStep(BootstrapStepToken.Environment, "Environment", InitializeEnvironmentLayer))
+                    return false;
+
+                if (!TryRunBootstrapStep(BootstrapStepToken.Player, "Player", InitializePlayerLayer))
+                    return false;
+
+                if (!TryRunBootstrapStep(BootstrapStepToken.UI, "UI", InitializeUILayer))
+                    return false;
+
+                _isBootstrapComplete = true;
+                BootstrapBiosErrorOverlay.Hide();
+                return true;
+            }
+            catch (Exception exception)
+            {
+                HandleFatalBootstrapException("BootstrapEntry", exception);
+                return false;
+            }
         }
 
         private void Awake()
@@ -113,6 +150,8 @@ namespace Hecton8.Bootstrap
         private void InitializeCoreLayer()
         {
             SystemDispatcher.EnsureRuntimeInstance();
+            RenderDispatcher.EnsureRuntimeInstance();
+            SceneInstantiationGate.EnsureRuntimeInstance();
             SceneRuntimeService sceneRuntimeService = SceneRuntimeService.EnsureRuntimeInstance();
             EquipmentInteractionHandler interactionHandler = EquipmentInteractionHandler.EnsureRuntimeInstance();
             sceneRuntimeService.InitializeService();
@@ -124,24 +163,92 @@ namespace Hecton8.Bootstrap
             GlobalPhysicsStateManager.EnsureRuntimeInstance();
             PhysicsApplySystem physicsApplySystem = PhysicsApplySystem.EnsureRuntimeInstance();
             DebrisManager debrisManager = DebrisManager.EnsureRuntimeInstance();
+            EnvironmentRuntimeContextService environmentContextService = EnvironmentRuntimeContextService.EnsureRuntimeInstance();
+            OceanKinematicsRuntimeService oceanKinematicsRuntimeService = OceanKinematicsRuntimeService.EnsureRuntimeInstance();
             physicsApplySystem.InitializeService();
             debrisManager.InitializeService();
+            environmentContextService.InitializeService();
+            oceanKinematicsRuntimeService.InitializeService();
         }
 
-        private void InitializePlayerLayer()
+        private bool InitializePlayerLayer()
         {
+            if (!InputManager.TryValidateRuntimeConfiguration(out string inputConfigurationError))
+            {
+                BootstrapBiosErrorOverlay.Show(inputConfigurationError);
+                return false;
+            }
+
             InputManager inputManager = InputManager.Instance;
-            if (inputManager != null && Application.isPlaying)
+            if (inputManager == null)
+            {
+                BootstrapBiosErrorOverlay.Show(
+                    "BIOS ERROR 0xINPUT\nEXPECTED: Runtime InputManager instance\nDETECTED: InputManager.Instance returned null\nACTION: Repair the bootstrap input owner before boot.");
+                return false;
+            }
+
+            if (!inputManager.TryValidateRuntimeActions(out string inputActionsError))
+            {
+                BootstrapBiosErrorOverlay.Show(inputActionsError);
+                return false;
+            }
+
+            if (Application.isPlaying)
                 DontDestroyOnLoad(inputManager.gameObject);
 
             InputDispatcher inputDispatcher = InputDispatcher.EnsureRuntimeInstance();
+            PlayerRuntimeContextService playerContextService = PlayerRuntimeContextService.EnsureRuntimeInstance();
+            PlayerInventoryManager playerInventoryManager = PlayerInventoryManager.EnsureRuntimeInstance();
+            PlayerSensoryManager playerSensoryManager = PlayerSensoryManager.EnsureRuntimeInstance();
+            ContextualPhysicalIkRuntime.EnsureRuntimeInstance();
             inputDispatcher.InitializeService();
+            playerContextService.InitializeService();
+            playerInventoryManager.InitializeService();
+            playerSensoryManager.InitializeService();
+            return true;
         }
 
         private void InitializeUILayer()
         {
             // No UI-layer GlobalRegistry adapter exists yet.
             // Existing menu/HUD ownership remains on scene-authored controllers.
+        }
+
+        private static bool TryRunBootstrapStep(BootstrapStepToken stepToken, string phaseName, Action initializeAction)
+        {
+            BootstrapStatus.BeginStep(stepToken);
+            try
+            {
+                initializeAction?.Invoke();
+                return true;
+            }
+            catch (Exception exception)
+            {
+                HandleFatalBootstrapException(phaseName, exception);
+                return false;
+            }
+            finally
+            {
+                BootstrapStatus.EndStep(stepToken);
+            }
+        }
+
+        private static bool TryRunBootstrapStep(BootstrapStepToken stepToken, string phaseName, Func<bool> initializeAction)
+        {
+            BootstrapStatus.BeginStep(stepToken);
+            try
+            {
+                return initializeAction == null || initializeAction.Invoke();
+            }
+            catch (Exception exception)
+            {
+                HandleFatalBootstrapException(phaseName, exception);
+                return false;
+            }
+            finally
+            {
+                BootstrapStatus.EndStep(stepToken);
+            }
         }
 
         private static void RegisterSceneLoadGuard()
@@ -190,6 +297,73 @@ namespace Hecton8.Bootstrap
             GameStartContextHolder.Reset();
             SceneManager.LoadScene(BootstrapSceneName);
             return false;
+        }
+
+        private static void HandleFatalBootstrapException(string phaseName, Exception exception)
+        {
+            if (exception == null)
+                return;
+
+            string crashMessage = BuildFatalBootstrapMessage(phaseName, exception);
+            WriteFatalBootstrapLog(crashMessage);
+            BootstrapBiosErrorOverlay.Show(string.Format(FatalBootOverlayMessageTemplate, phaseName));
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogException(exception);
+#endif
+        }
+
+        private static string BuildFatalBootstrapMessage(string phaseName, Exception exception)
+        {
+            Scene activeScene = SceneManager.GetActiveScene();
+            StringBuilder builder = new StringBuilder(1024);
+            builder.Append("HECTON-8 FATAL BOOT CRASH").Append('\n')
+                .Append("UTC: ").Append(DateTime.UtcNow.ToString("O")).Append('\n')
+                .Append("PHASE: ").Append(string.IsNullOrEmpty(phaseName) ? "Unknown" : phaseName).Append('\n')
+                .Append("SCENE: ").Append(string.IsNullOrEmpty(activeScene.name) ? "<unnamed>" : activeScene.name)
+                .Append(" [").Append(activeScene.buildIndex).Append(']').Append('\n')
+                .Append("PERSISTENT_DATA_PATH: ").Append(Application.persistentDataPath).Append('\n')
+                .Append("STACKTRACE:").Append('\n')
+                .Append(exception);
+            return builder.ToString();
+        }
+
+        private static unsafe void WriteFatalBootstrapLog(string message)
+        {
+            if (string.IsNullOrEmpty(message))
+                return;
+
+            string persistentDataPath = Application.persistentDataPath;
+            if (string.IsNullOrEmpty(persistentDataPath))
+                return;
+
+            string truncatedMessage = message;
+            int requiredBytes = _fatalBootCrashEncoding.GetByteCount(truncatedMessage);
+            while (requiredBytes > FatalBootCrashLogBufferBytes && truncatedMessage.Length > 1)
+            {
+                truncatedMessage = truncatedMessage.Substring(0, truncatedMessage.Length >> 1);
+                requiredBytes = _fatalBootCrashEncoding.GetByteCount(truncatedMessage);
+            }
+
+            if (requiredBytes <= 0)
+                return;
+
+            string absolutePath = Path.Combine(persistentDataPath, FatalBootCrashFileName);
+            NativeArray<byte> scratch = new NativeArray<byte>(requiredBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[fatal boot crash payload bytes] - bootstrap fatal log staging - owner: GameBootstrapper
+            try
+            {
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch);
+                fixed (char* source = truncatedMessage)
+                {
+                    int bytesWritten = _fatalBootCrashEncoding.GetBytes(source, truncatedMessage.Length, destination, requiredBytes);
+                    if (bytesWritten > 0)
+                        AsyncWriteManager.WriteAll(absolutePath, destination, bytesWritten, out _);
+                }
+            }
+            finally
+            {
+                scratch.Dispose();
+            }
         }
 
         private static bool IsBootstrapScene(Scene scene)

@@ -10,7 +10,7 @@ namespace Hecton8.Optimization
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8012)]
-    public sealed class AssetLifecycleGovernor : MonoBehaviour, ITickable
+    public sealed class AssetLifecycleGovernor : MonoBehaviour, ITickable, IUpdatable
     {
         private const uint CollisionSalt = 0xDEADBEEF;
         private const float NativeHeapOverheadFactor = 1.15f;
@@ -306,11 +306,7 @@ namespace Hecton8.Optimization
             if (_registeredTick)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register((ITickable)this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
             _registeredTick = true;
         }
 
@@ -319,10 +315,7 @@ namespace Hecton8.Optimization
             if (!_registeredTick)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister((ITickable)this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
             _registeredTick = false;
         }
 

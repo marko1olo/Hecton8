@@ -35,7 +35,7 @@ namespace Hecton8.Construction
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-7000)]
-    public sealed class ConstructionManager : MonoBehaviour, ISaveable, ISlowTickable
+    public sealed class ConstructionManager : MonoBehaviour, IUpdatable, ISaveable, ISlowTickable
     {
         private const float SlowTickDeltaTime = 0.5f;
 
@@ -104,6 +104,7 @@ namespace Hecton8.Construction
         /// </summary>
         private List<GameObject> _spawnedModules;
         private bool _tickRegistered;
+        private float _slowTickAccumulator;
         private float _ambientAccidentTimer;
         private int _ambientAccidentCursor;
 
@@ -156,18 +157,15 @@ namespace Hecton8.Construction
 
         private void OnEnable()
         {
+            _slowTickAccumulator = 0f;
             TryRegister();
             SaveManager.Instance?.Register(this);
-        }
-
-        private void Start()
-        {
-            TryRegister();
         }
 
         private void OnDisable()
         {
             TryUnregister();
+            _slowTickAccumulator = 0f;
             SaveManager.Instance?.Unregister(this);
         }
 
@@ -177,6 +175,22 @@ namespace Hecton8.Construction
 
             if (_instance == this)
                 _instance = null;
+        }
+
+        public void Tick(float deltaTime)
+        {
+            if (deltaTime <= 0f)
+                return;
+
+            _slowTickAccumulator += deltaTime;
+            if (_slowTickAccumulator < SlowTickDeltaTime)
+                return;
+
+            _slowTickAccumulator -= SlowTickDeltaTime;
+            if (_slowTickAccumulator > SlowTickDeltaTime)
+                _slowTickAccumulator = SlowTickDeltaTime;
+
+            SlowTick();
         }
 
         public void SlowTick()
@@ -686,14 +700,11 @@ namespace Hecton8.Construction
 
         private void TryRegister()
         {
-            if (_tickRegistered)
+            if (_tickRegistered || !Application.isPlaying)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register((ISlowTickable)this);
+            SystemDispatcher.EnsureRuntimeInstance();
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _tickRegistered = true;
         }
 
@@ -702,10 +713,7 @@ namespace Hecton8.Construction
             if (!_tickRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister((ISlowTickable)this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _tickRegistered = false;
         }
 

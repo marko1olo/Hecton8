@@ -1,0 +1,264 @@
+using Hecton8.Core;
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
+using Unity.Jobs;
+using Unity.Mathematics;
+using UnityEngine;
+using UnityEngine.Rendering;
+
+namespace Hecton8.World
+{
+    /// <summary>
+    /// Shared BRG helpers for first-party world renderers.
+    /// Keeps native culling-output allocation and plane tests out of individual owners.
+    /// </summary>
+    internal static class HectonBatchRendererGroupUtility
+    {
+        [BurstCompile]
+        public struct BuildMatrixVisibilityMaskJob : IJobParallelFor
+        {
+            [ReadOnly] public NativeArray<Matrix4x4> Matrices;
+            [ReadOnly] public NativeArray<float4> CullingPlanes;
+            public NativeArray<byte> VisibilityMask;
+            public int InstanceCount;
+            public int PlaneCount;
+            public bool EnableCpuCulling;
+            public float3 GlobalOffset;
+            public float RadiusScale;
+            public float MinRadius;
+
+            public void Execute(int index)
+            {
+                if (index >= InstanceCount)
+                    return;
+
+                if (!EnableCpuCulling)
+                {
+                    VisibilityMask[index] = 1;
+                    return;
+                }
+
+                Matrix4x4 instanceMatrix = Matrices[index];
+                float3 center = new float3(instanceMatrix.m03, instanceMatrix.m13, instanceMatrix.m23) + GlobalOffset;
+                float3 axisX = new float3(instanceMatrix.m00, instanceMatrix.m10, instanceMatrix.m20);
+                float3 axisY = new float3(instanceMatrix.m01, instanceMatrix.m11, instanceMatrix.m21);
+                float3 axisZ = new float3(instanceMatrix.m02, instanceMatrix.m12, instanceMatrix.m22);
+                float radius = math.max(
+                    MinRadius,
+                    math.max(
+                        math.length(axisX),
+                        math.max(math.length(axisY), math.length(axisZ))) * RadiusScale);
+
+                for (int planeIndex = 0; planeIndex < PlaneCount; planeIndex++)
+                {
+                    float4 plane = CullingPlanes[planeIndex];
+                    if (math.dot(plane.xyz, center) + plane.w < -radius)
+                    {
+                        VisibilityMask[index] = 0;
+                        return;
+                    }
+                }
+
+                VisibilityMask[index] = 1;
+            }
+        }
+
+        [BurstCompile]
+        public unsafe struct FinalizeSingleDrawCommandOutputJob : IJob
+        {
+            [ReadOnly] public NativeArray<byte> VisibilityMask;
+            public int InstanceCount;
+            public BatchID BatchId;
+            public BatchMeshID MeshId;
+            public BatchMaterialID MaterialId;
+            public int Layer;
+            public int SubMeshIndex;
+            public ShadowCastingMode ShadowCastingMode;
+            public bool ReceiveShadows;
+            public MotionVectorGenerationMode MotionMode;
+            [NativeDisableUnsafePtrRestriction] public int* VisibleInstances;
+            [NativeDisableUnsafePtrRestriction] public BatchDrawCommand* DrawCommands;
+            [NativeDisableUnsafePtrRestriction] public BatchDrawRange* DrawRanges;
+            [NativeDisableUnsafePtrRestriction] public BatchCullingOutputDrawCommands* OutputCommands;
+
+            public void Execute()
+            {
+                int visibleCount = 0;
+                for (int instanceIndex = 0; instanceIndex < InstanceCount; instanceIndex++)
+                {
+                    if (VisibilityMask[instanceIndex] == 0)
+                        continue;
+
+                    VisibleInstances[visibleCount] = instanceIndex;
+                    visibleCount++;
+                }
+
+                int drawCommandCount = visibleCount > 0 ? 1 : 0;
+                if (drawCommandCount > 0)
+                {
+                    DrawCommands[0] = new BatchDrawCommand
+                    {
+                        flags = BatchDrawCommandFlags.None,
+                        visibleOffset = 0u,
+                        visibleCount = (uint)visibleCount,
+                        batchID = BatchId,
+                        materialID = MaterialId,
+                        splitVisibilityMask = ushort.MaxValue,
+                        lightmapIndex = ushort.MaxValue,
+                        sortingPosition = 0,
+                        meshID = MeshId,
+                        submeshIndex = (ushort)math.max(0, SubMeshIndex)
+                    };
+
+                    DrawRanges[0] = new BatchDrawRange
+                    {
+                        drawCommandsBegin = 0u,
+                        drawCommandsCount = 1u,
+                        drawCommandsType = BatchDrawCommandType.Direct,
+                        filterSettings = new BatchFilterSettings
+                        {
+                            renderingLayerMask = uint.MaxValue,
+                            rendererPriority = 0,
+                            layer = (byte)math.clamp(Layer, byte.MinValue, byte.MaxValue),
+                            shadowCastingMode = ShadowCastingMode,
+                            receiveShadows = ReceiveShadows,
+                            motionMode = MotionMode,
+                            staticShadowCaster = false,
+                            allDepthSorted = false
+                        }
+                    };
+                }
+
+                *OutputCommands = new BatchCullingOutputDrawCommands
+                {
+                    visibleInstances = VisibleInstances,
+                    visibleInstanceCount = visibleCount,
+                    drawCommands = DrawCommands,
+                    drawCommandCount = drawCommandCount,
+                    drawRanges = DrawRanges,
+                    drawRangeCount = drawCommandCount
+                };
+            }
+        }
+
+        /// <summary>
+        /// Allocates direct-draw BRG output storage for one callback.
+        /// Unity owns the TempJob memory after the callback returns.
+        /// </summary>
+        public static unsafe BatchCullingOutputDrawCommands AllocateDirectDrawOutput(
+            int visibleInstanceCount,
+            int drawCommandCount,
+            int drawRangeCount)
+        {
+            BatchCullingOutputDrawCommands output = default;
+            output.visibleInstanceCount = visibleInstanceCount;
+            output.drawCommandCount = drawCommandCount;
+            output.drawRangeCount = drawRangeCount;
+
+            if (visibleInstanceCount > 0)
+            {
+                output.visibleInstances = (int*)UnsafeUtility.Malloc(
+                    sizeof(int) * visibleInstanceCount,
+                    UnsafeUtility.AlignOf<int>(),
+                    Allocator.TempJob);
+            }
+
+            if (drawCommandCount > 0)
+            {
+                output.drawCommands = (BatchDrawCommand*)UnsafeUtility.Malloc(
+                    UnsafeUtility.SizeOf<BatchDrawCommand>() * drawCommandCount,
+                    UnsafeUtility.AlignOf<BatchDrawCommand>(),
+                    Allocator.TempJob);
+            }
+
+            if (drawRangeCount > 0)
+            {
+                output.drawRanges = (BatchDrawRange*)UnsafeUtility.Malloc(
+                    UnsafeUtility.SizeOf<BatchDrawRange>() * drawRangeCount,
+                    UnsafeUtility.AlignOf<BatchDrawRange>(),
+                    Allocator.TempJob);
+            }
+
+            return output;
+        }
+
+        /// <summary>
+        /// Writes the direct-draw output into the BRG callback payload.
+        /// </summary>
+        public static void WriteDirectDrawOutput(BatchCullingOutput cullingOutput, BatchCullingOutputDrawCommands output)
+        {
+            cullingOutput.drawCommands[0] = output;
+        }
+
+        /// <summary>
+        /// Returns a writable pointer for job-owned BRG output.
+        /// </summary>
+        public static unsafe BatchCullingOutputDrawCommands* GetDirectDrawOutputPointer(BatchCullingOutput cullingOutput)
+        {
+            return (BatchCullingOutputDrawCommands*)NativeArrayUnsafeUtility.GetUnsafePtr(cullingOutput.drawCommands);
+        }
+
+        /// <summary>
+        /// Returns true when a sphere intersects the current culling planes.
+        /// </summary>
+        public static bool IsSphereVisible(NativeArray<Plane> cullingPlanes, Vector3 center, float radius)
+        {
+            int planeCount = cullingPlanes.IsCreated ? cullingPlanes.Length : 0;
+            for (int planeIndex = 0; planeIndex < planeCount; planeIndex++)
+            {
+                Plane plane = cullingPlanes[planeIndex];
+                if (plane.GetDistanceToPoint(center) < -radius)
+                    return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Returns true when the conservative bounds sphere is visible to the current culling planes.
+        /// </summary>
+        public static bool IsBoundsVisible(NativeArray<Plane> cullingPlanes, Bounds bounds)
+        {
+            float radius = bounds.extents.magnitude;
+            return IsSphereVisible(cullingPlanes, bounds.center, radius);
+        }
+
+        /// <summary>
+        /// Creates one direct-draw range descriptor for the supplied filter settings.
+        /// </summary>
+        public static BatchDrawRange CreateDirectDrawRange(
+            uint drawCommandIndex,
+            int layer,
+            ShadowCastingMode shadowCastingMode,
+            bool receiveShadows,
+            MotionVectorGenerationMode motionMode)
+        {
+            return new BatchDrawRange
+            {
+                drawCommandsBegin = drawCommandIndex,
+                drawCommandsCount = 1u,
+                drawCommandsType = BatchDrawCommandType.Direct,
+                filterSettings = new BatchFilterSettings
+                {
+                    renderingLayerMask = uint.MaxValue,
+                    rendererPriority = 0,
+                    layer = (byte)Mathf.Clamp(layer, byte.MinValue, byte.MaxValue),
+                    shadowCastingMode = shadowCastingMode,
+                    receiveShadows = receiveShadows,
+                    motionMode = motionMode,
+                    staticShadowCaster = false,
+                    allDepthSorted = false
+                }
+            };
+        }
+
+        /// <summary>
+        /// Creates a tiny structured buffer suitable for BRG batch registration.
+        /// </summary>
+        public static GraphicsBuffer CreateBatchHandleBuffer()
+        {
+            return GraphicsBufferUploadUtility.CreateStructuredLockBuffer<uint>(1);
+        }
+    }
+}

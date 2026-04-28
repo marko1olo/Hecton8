@@ -52,7 +52,6 @@ namespace Hecton8.Gameplay
         private float _nextFeedbackAt;
         [SerializeField] private int _debugActiveBeaconCount;
         private readonly BeaconNetworkSystem.BeaconSnapshot[] _beaconBuffer = new BeaconNetworkSystem.BeaconSnapshot[32];
-        private readonly RaycastHit[] _deploymentHits = new RaycastHit[1]; // COLD ALLOC: beacon placement resolves a single hit per use.
         private int _cachedNearestAssessmentFrame = -1;
         private bool _cachedNearestAssessmentValid;
         private string _cachedNearestLabel;
@@ -283,22 +282,7 @@ namespace Hecton8.Gameplay
 
         private bool TryGetDeploymentHit(out RaycastHit hit)
         {
-            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
-                _cachedTransform.position,
-                _cachedTransform.forward,
-                _deploymentHits,
-                deployRange,
-                deploymentMask,
-                QueryTriggerInteraction.Ignore);
-
-            if (hitCount > 0)
-            {
-                hit = _deploymentHits[0];
-                return true;
-            }
-
-            hit = default;
-            return false;
+            return TryResolveQueuedRaycast(_cachedTransform.position, _cachedTransform.forward, deployRange, deploymentMask.value, QueryTriggerInteraction.Ignore, out hit);
         }
 
         private BeaconAssessment BuildExistingBeaconAssessment(BeaconNetworkSystem.BeaconSnapshot snapshot, float distance)

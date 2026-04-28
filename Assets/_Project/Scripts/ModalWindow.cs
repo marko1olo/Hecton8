@@ -140,7 +140,7 @@ namespace Hecton.UI.MainMenu
             if (button == null)
                 return null;
 
-            return button.GetComponentInChildren<TMP_Text>(true);
+            return Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<TMP_Text>(button.transform);
         }
 
         private static Transform FindDeepChild(Transform parent, string childName)

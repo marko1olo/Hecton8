@@ -55,165 +55,36 @@ namespace Hecton.Localization
                 return (int)hash;
             }
         }
-    }
-
-    /// <summary>
-    /// Zero-allocation right-to-left visual reorderer for Arabic and Hebrew glyph runs.
-    /// </summary>
-    public static class RTLProcessor
-    {
-        [ThreadStatic] private static char[] _stagingBuffer;
 
         /// <summary>
-        /// True when the provided span contains Arabic or Hebrew glyphs.
+        /// Compute a byte-wise ASCII FNV-1a hash for authored identifiers that are specified as one-byte symbols.
         /// </summary>
-        public static bool ContainsRightToLeftGlyph(ReadOnlySpan<char> logical)
+        public static uint ComputeAscii(string value)
         {
-            for (int i = 0; i < logical.Length; i++)
-            {
-                if (IsRightToLeftGlyph(logical[i]))
-                    return true;
-            }
-
-            return false;
+            return string.IsNullOrEmpty(value)
+                ? 0u
+                : ComputeAscii(value.AsSpan());
         }
 
         /// <summary>
-        /// Reorders logical RTL text into visual order without heap allocation.
+        /// Compute a byte-wise ASCII FNV-1a hash for authored identifiers that are specified as one-byte symbols.
         /// </summary>
-        public static ReadOnlySpan<char> ToVisualOrder(ReadOnlySpan<char> logical)
+        public static uint ComputeAscii(ReadOnlySpan<char> value)
         {
-            if (logical.Length == 0)
-                return ReadOnlySpan<char>.Empty;
+            if (value.Length == 0)
+                return 0u;
 
-            ToVisualBuffer(logical, out char[] buffer, out int length);
-            return buffer.AsSpan(0, length);
-        }
-
-        /// <summary>
-        /// Reorders logical RTL text into a thread-static char buffer consumable by TMP SetCharArray.
-        /// </summary>
-        public static void ToVisualBuffer(ReadOnlySpan<char> logical, out char[] buffer, out int length)
-        {
-            if (logical.Length == 0)
+            unchecked
             {
-                buffer = Array.Empty<char>();
-                length = 0;
-                return;
+                uint hash = FnvOffsetBasis;
+                for (int i = 0; i < value.Length; i++)
+                {
+                    hash ^= (byte)value[i];
+                    hash *= FnvPrime;
+                }
+
+                return hash;
             }
-
-            buffer = GetBuffer(logical.Length);
-            logical.CopyTo(buffer.AsSpan(0, logical.Length));
-            length = logical.Length;
-            ReverseRightToLeftRunInPlace(buffer, length);
-            ReverseLeftToRightRuns(buffer, length);
-        }
-
-        private static char[] GetBuffer(int requiredLength)
-        {
-            char[] buffer = _stagingBuffer;
-            if (buffer != null && buffer.Length >= requiredLength)
-                return buffer;
-
-            int capacity = buffer == null ? 128 : buffer.Length;
-            while (capacity < requiredLength)
-                capacity <<= 1;
-
-            _stagingBuffer = new char[capacity]; // COLD ALLOC: char[capacity] — RTL staging buffer per thread — owner: RTLProcessor
-            return _stagingBuffer;
-        }
-
-        private static void ReverseRightToLeftRunInPlace(char[] buffer, int length)
-        {
-            int left = 0;
-            int right = length - 1;
-            while (left < right)
-            {
-                if (IsCombiningMark(buffer[right]))
-                {
-                    right--;
-                    continue;
-                }
-
-                if (IsCombiningMark(buffer[left]))
-                {
-                    left++;
-                    continue;
-                }
-
-                char swap = buffer[left];
-                buffer[left] = buffer[right];
-                buffer[right] = swap;
-                left++;
-                right--;
-            }
-        }
-
-        private static void ReverseLeftToRightRuns(char[] buffer, int length)
-        {
-            int cursor = 0;
-            while (cursor < length)
-            {
-                if (!IsLeftToRightRunCharacter(buffer[cursor]))
-                {
-                    cursor++;
-                    continue;
-                }
-
-                int start = cursor;
-                cursor++;
-                while (cursor < length && IsLeftToRightRunCharacter(buffer[cursor]))
-                    cursor++;
-
-                int left = start;
-                int right = cursor - 1;
-                while (left < right)
-                {
-                    char swap = buffer[left];
-                    buffer[left] = buffer[right];
-                    buffer[right] = swap;
-                    left++;
-                    right--;
-                }
-            }
-        }
-
-        private static bool IsLeftToRightRunCharacter(char value)
-        {
-            return (value >= '0' && value <= '9') ||
-                   (value >= 'A' && value <= 'Z') ||
-                   (value >= 'a' && value <= 'z') ||
-                   value == '.' ||
-                   value == ',' ||
-                   value == ':' ||
-                   value == ';' ||
-                   value == '/' ||
-                   value == '\\' ||
-                   value == '-' ||
-                   value == '+' ||
-                   value == '%' ||
-                   value == '(' ||
-                   value == ')' ||
-                   value == '[' ||
-                   value == ']';
-        }
-
-        private static bool IsRightToLeftGlyph(char value)
-        {
-            return (value >= '\u0590' && value <= '\u08FF') ||
-                   (value >= '\uFB1D' && value <= '\uFEFC');
-        }
-
-        private static bool IsCombiningMark(char value)
-        {
-            return (value >= '\u0591' && value <= '\u05BD') ||
-                   value == '\u05BF' ||
-                   (value >= '\u05C1' && value <= '\u05C7') ||
-                   (value >= '\u0610' && value <= '\u061A') ||
-                   (value >= '\u064B' && value <= '\u065F') ||
-                   value == '\u0670' ||
-                   (value >= '\u06D6' && value <= '\u06ED') ||
-                   (value >= '\u08D3' && value <= '\u08FF');
         }
     }
 
@@ -353,13 +224,7 @@ namespace Hecton.Localization
         {
             string safeValue = value ?? string.Empty;
             char[] rawChars = safeValue.ToCharArray();
-            return new LocEntry(rawChars, rawChars.Length, null, 0);
-        }
-
-        private static bool RequiresVisualCache(GameLanguage language, ReadOnlySpan<char> value)
-        {
-            return LocalizationManager.IsRightToLeftLanguage(language) ||
-                   RTLProcessor.ContainsRightToLeftGlyph(value);
+            return new LocEntry(rawChars, rawChars.Length);
         }
 
         private static LocPool ResolvePool(LocLayer layer)
@@ -425,19 +290,14 @@ namespace Hecton.Localization
 
         private readonly struct LocEntry
         {
-            public LocEntry(char[] rawBuffer, int rawLength, char[] visualBuffer, int visualLength)
+            public LocEntry(char[] rawBuffer, int rawLength)
             {
                 RawBuffer = rawBuffer;
                 RawLength = rawLength;
-                VisualBuffer = visualBuffer;
-                VisualLength = visualLength;
             }
 
             public char[] RawBuffer { get; }
             public int RawLength { get; }
-            public char[] VisualBuffer { get; }
-            public int VisualLength { get; }
-            public bool HasVisualBuffer => VisualBuffer != null && VisualLength > 0;
         }
 
         private sealed class LocPool

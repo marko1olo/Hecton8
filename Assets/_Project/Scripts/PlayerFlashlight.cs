@@ -35,6 +35,7 @@ using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.UI;
 using Hecton8.Input;
+using Hecton8.Visor;
 using System;
 using VLB;
 using UnityEngine;
@@ -67,7 +68,7 @@ namespace Hecton8.Gameplay
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Player/Player Flashlight")]
-    public sealed class PlayerFlashlight : MonoBehaviour, ITickable
+    public sealed class PlayerFlashlight : MonoBehaviour, ITickable, IUpdatable
     {
         public enum BeamMode
         {
@@ -278,6 +279,7 @@ namespace Hecton8.Gameplay
             _beamMode = defaultBeamMode;
 
             ResolveReferences();
+            EnsureVoxelShadowProvider();
 
             if (flashlightLight != null)
             {
@@ -331,7 +333,7 @@ namespace Hecton8.Gameplay
             if (!_registered)
             {
                 Debug.LogError(
-                    "[PlayerFlashlight] GameTickManager.Instance is null at Start(). " +
+                    "[PlayerFlashlight] SystemDispatcher registration failed at Start(). " +
                     "Flashlight will not function.");
             }
 
@@ -572,16 +574,20 @@ namespace Hecton8.Gameplay
             }
         }
 
+        private void EnsureVoxelShadowProvider()
+        {
+            if (GetComponent<HectonFlashlightVoxelShadowProvider>() != null)
+                return;
+
+            gameObject.AddComponent<HectonFlashlightVoxelShadowProvider>(); // COLD ALLOC: HectonFlashlightVoxelShadowProvider[1] — runtime flashlight voxel-shadow owner bootstrap — owner: PlayerFlashlight
+        }
+
         private void TryRegister()
         {
             if (_registered)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager == null)
-                return;
-
-            gameTickManager.Register(this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
             _registered = true;
         }
 
@@ -590,10 +596,7 @@ namespace Hecton8.Gameplay
             if (!_registered)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager != null)
-                gameTickManager.Unregister(this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
             _registered = false;
         }
 
@@ -618,19 +621,28 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            Light[] candidateLights = _cachedMainCamera.GetComponentsInChildren<Light>(true);
-            for (int i = 0; i < candidateLights.Length; i++)
-            {
-                Light candidate = candidateLights[i];
-                if (candidate == null)
-                    continue;
+            Light candidateLight = FindFirstSpotLightInHierarchy(_cachedMainCamera.transform);
+            if (candidateLight != null && candidateLight.type == LightType.Spot)
+                flashlightLight = candidateLight;
+        }
 
-                if (candidate.type == LightType.Spot)
-                {
-                    flashlightLight = candidate;
-                    return;
-                }
+        private static Light FindFirstSpotLightInHierarchy(Transform root)
+        {
+            if (root == null)
+                return null;
+
+            if (root.TryGetComponent(out Light directLight) && directLight.type == LightType.Spot)
+                return directLight;
+
+            int childCount = root.childCount;
+            for (int i = 0; i < childCount; i++)
+            {
+                Light childLight = FindFirstSpotLightInHierarchy(root.GetChild(i));
+                if (childLight != null)
+                    return childLight;
             }
+
+            return null;
         }
 
         private void ConfigureFlashlightLight()
@@ -701,7 +713,7 @@ namespace Hecton8.Gameplay
 
             if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
             {
-                Camera playerCamera = playerTransform.GetComponentInChildren<Camera>(true);
+                Camera playerCamera = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera : playerTransform.GetComponent<Camera>());
                 if (playerCamera != null)
                 {
                     _cachedMainCamera = playerCamera;

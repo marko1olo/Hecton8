@@ -12,6 +12,8 @@ namespace MoreMountains.Tools
 	[AddComponentMenu("More Mountains/Tools/Utilities/MMScreenshot")]
 	public class MMScreenshot : MonoBehaviour
 	{
+		private const string LegacyAssetsScreenshotsFolder = "Assets/Screenshots";
+
 		/// the name of the folder (relative to the project's root) to save screenshots to
 		public string FolderName = "Screenshots";
 		/// the method to use to take the screenshot. Screencapture uses the API of the same name, and will let you keep 
@@ -80,34 +82,53 @@ namespace MoreMountains.Tools
 		/// </summary>
 		protected virtual void TakeScreenshot()
 		{
-			if (!Directory.Exists(FolderName))
+			string folderPath = ResolveFolderPath();
+			if (!Directory.Exists(folderPath))
 			{
-				Directory.CreateDirectory(FolderName);
+				Directory.CreateDirectory(folderPath);
 			}
 
 			string savePath = "";
 			switch (Method)
 			{
 				case Methods.ScreenCapture:
-					savePath = TakeScreenCaptureScreenshot();
+					savePath = TakeScreenCaptureScreenshot(folderPath);
 					break;
 
 				case Methods.RenderTexture:
-					savePath = TakeRenderTextureScreenshot();
+					savePath = TakeRenderTextureScreenshot(folderPath);
 					break;
 			}
 			Debug.Log("[MMScreenshot] Screenshot taken and saved at " + savePath);
+		}
+
+		protected virtual string ResolveFolderPath()
+		{
+			string normalizedFolderName = string.IsNullOrWhiteSpace(FolderName)
+				? string.Empty
+				: FolderName.Replace('\\', '/');
+
+			if (string.IsNullOrEmpty(normalizedFolderName) ||
+				string.Equals(normalizedFolderName, "Screenshots", System.StringComparison.OrdinalIgnoreCase) ||
+				string.Equals(normalizedFolderName, LegacyAssetsScreenshotsFolder, System.StringComparison.OrdinalIgnoreCase))
+			{
+				return Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Screenshots"));
+			}
+
+			return Path.IsPathRooted(FolderName)
+				? FolderName
+				: Path.GetFullPath(Path.Combine(Application.dataPath, "..", normalizedFolderName));
 		}
 
 		/// <summary>
 		/// Takes a screenshot using the ScreenCapture API and saves it to file
 		/// </summary>
 		/// <returns></returns>
-		protected virtual string TakeScreenCaptureScreenshot()
+		protected virtual string TakeScreenCaptureScreenshot(string folderPath)
 		{
 			float width = Screen.width * GameViewSizeMultiplier;
 			float height = Screen.height * GameViewSizeMultiplier;
-			string savePath = FolderName+"/screenshot_" + width + "x" + height + "_" + System.DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss") + ".png";
+			string savePath = Path.Combine(folderPath, "screenshot_" + width + "x" + height + "_" + System.DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss") + ".png");
 
 			ScreenCapture.CaptureScreenshot(savePath, GameViewSizeMultiplier);
 			return savePath;
@@ -117,9 +138,9 @@ namespace MoreMountains.Tools
 		/// Takes a screenshot using a render texture and saves it to file
 		/// </summary>
 		/// <returns></returns>
-		protected virtual string TakeRenderTextureScreenshot()
+		protected virtual string TakeRenderTextureScreenshot(string folderPath)
 		{
-			string savePath = FolderName + "/screenshot_" + ResolutionWidth + "x" + ResolutionHeight + "_" + System.DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss") + ".png";
+			string savePath = Path.Combine(folderPath, "screenshot_" + ResolutionWidth + "x" + ResolutionHeight + "_" + System.DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss") + ".png");
 
 			RenderTexture renderTexture = new RenderTexture(ResolutionWidth, ResolutionHeight, 24);
 			TargetCamera.targetTexture = renderTexture;

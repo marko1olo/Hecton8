@@ -58,6 +58,7 @@ namespace Hecton8.Bootstrap
         private const string PrefabRegistryRuntimeName = "[PrefabRegistry]";
         private const string PersistentWorldRegistryRuntimeName = "[PersistentWorldRegistry]";
         private const string RuntimePerformanceProfilerRuntimeName = "[RuntimePerformanceProfiler]";
+        private const string CrashTelemetryRuntimeName = "[CrashTelemetryBuffer]";
         private const string BootstrapAudioListenerRuntimeName = "[BootstrapAudioListener]";
         private static BootstrapController _instance;
 
@@ -95,7 +96,7 @@ namespace Hecton8.Bootstrap
                 return;
 
             BootstrapController existing =
-                UnityEngine.Object.FindAnyObjectByType<BootstrapController>(FindObjectsInactive.Include);
+                BootstrapController.Instance;
             if (existing != null)
             {
                 existing.EnsureInitializedAfterSceneLoad();
@@ -136,6 +137,7 @@ namespace Hecton8.Bootstrap
             }
 
             _instance = this;
+            BootstrapStatus.BeginBoot();
             EnsureBootstrapAudioListener(currentScene);
 
             // ── DontDestroyOnLoad ──
@@ -146,7 +148,8 @@ namespace Hecton8.Bootstrap
             Log("HECTON-8 Bootstrap Controller — Initializing");
             Log("═══════════════════════════════════════════════");
 
-            InitializeGlobalSystems();
+            if (!InitializeGlobalSystems())
+                return;
 
             _initializationComplete = true;
 
@@ -184,7 +187,8 @@ namespace Hecton8.Bootstrap
             Log("HECTON-8 Bootstrap Controller â€” Initializing");
             Log("â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•");
 
-            InitializeGlobalSystems();
+            if (!InitializeGlobalSystems())
+                return;
 
             _initializationComplete = true;
 
@@ -206,21 +210,27 @@ namespace Hecton8.Bootstrap
             SceneManager.LoadScene(MainMenuSceneName);
         }
 
-        private void InitializeGlobalSystems()
+        private bool InitializeGlobalSystems()
         {
             // ── Проверка Build Settings ──
             VerifyBootstrapIsFirstScene();
 
-            // ── Game Tick Manager (должен быть первым) ──
-            Log("[1/5] Initializing GameTickManager...");
-            GameTickManager gameTickManager = EnsureGameTickManager();
-            if (gameTickManager == null)
+            // ── System Dispatcher (должен быть первым) ──
+            Log("[1/5] Initializing SystemDispatcher...");
+            SystemDispatcher systemDispatcher = EnsureSystemDispatcher();
+            if (systemDispatcher == null)
             {
-                LogError("GameTickManager.Instance is null after access!");
-                return;
+                LogError("SystemDispatcher runtime instance could not be created.");
+                return false;
             }
-            EnsureDontDestroyOnLoad(gameTickManager.gameObject);
-            Log("  ✓ GameTickManager initialized");
+            EnsureDontDestroyOnLoad(systemDispatcher.gameObject);
+            CrashTelemetryBuffer crashTelemetryBuffer = EnsureCrashTelemetryBuffer();
+            if (crashTelemetryBuffer != null)
+            {
+                EnsureDontDestroyOnLoad(crashTelemetryBuffer.gameObject);
+                Log("  CrashTelemetryBuffer initialized");
+            }
+            Log("  ✓ SystemDispatcher initialized");
 
             // ── Save Manager ──
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -242,30 +252,42 @@ namespace Hecton8.Bootstrap
             if (saveManager == null)
             {
                 LogError("SaveManager.Instance is null after access!");
-                return;
+                return false;
             }
             EnsureDontDestroyOnLoad(saveManager.gameObject);
             Log("  ✓ SaveManager initialized");
 
             // ── Input Manager ──
             Log("[3/5] Initializing InputManager...");
-            if (InputManager.Instance == null)
+            if (!InputManager.TryValidateRuntimeConfiguration(out string inputConfigurationError))
             {
-                LogWarning("InputManager.Instance is null. Gameplay input will be unavailable.");
+                HandleFatalBootstrapError(inputConfigurationError);
+                return false;
             }
-            else
+            InputManager inputManager = InputManager.Instance;
+            if (inputManager == null)
             {
-                EnsureDontDestroyOnLoad(InputManager.Instance.gameObject);
-                Log("  ✓ InputManager initialized");
+                HandleFatalBootstrapError(
+                    "BIOS ERROR 0xINPUT\nEXPECTED: Runtime InputManager instance\nDETECTED: InputManager.Instance returned null\nACTION: Repair the bootstrap input owner before boot.");
+                return false;
             }
 
             // ── Object Pool Manager ──
+            if (!inputManager.TryValidateRuntimeActions(out string inputActionsError))
+            {
+                HandleFatalBootstrapError(inputActionsError);
+                return false;
+            }
+
+            EnsureDontDestroyOnLoad(inputManager.gameObject);
+            Log("  InputManager initialized");
+
             Log("[4/5] Initializing ObjectPoolManager...");
             ObjectPoolManager objectPoolManager = EnsureObjectPoolManager();
             if (objectPoolManager == null)
             {
                 LogError("ObjectPoolManager.Instance is null after access!");
-                return;
+                return false;
             }
             EnsureDontDestroyOnLoad(objectPoolManager.gameObject);
             Log("  ✓ ObjectPoolManager initialized");
@@ -275,7 +297,7 @@ namespace Hecton8.Bootstrap
             if (prefabRegistry == null)
             {
                 LogError("PrefabRegistry.Instance is null after access!");
-                return;
+                return false;
             }
             EnsureDontDestroyOnLoad(prefabRegistry.gameObject);
             Log("  PrefabRegistry initialized");
@@ -285,7 +307,7 @@ namespace Hecton8.Bootstrap
             if (persistentWorldRegistry == null)
             {
                 LogError("PersistentWorldRegistry.Instance is null after access!");
-                return;
+                return false;
             }
             EnsureDontDestroyOnLoad(persistentWorldRegistry.gameObject);
             Log("  PersistentWorldRegistry initialized");
@@ -295,13 +317,15 @@ namespace Hecton8.Bootstrap
             if (gameBootstrapper == null)
             {
                 LogError("GameBootstrapper could not be created.");
-                return;
+                return false;
             }
 
-            gameBootstrapper.InitializeBootstrap();
+            if (!gameBootstrapper.InitializeBootstrap())
+                return false;
             Log("  GameBootstrapper core initialized");
 
             Log("All systems initialized successfully.");
+            return true;
         }
 
         private GameBootstrapper EnsureGameBootstrapper()
@@ -355,19 +379,9 @@ namespace Hecton8.Bootstrap
             DontDestroyOnLoad(obj);
         }
 
-        private static GameTickManager EnsureGameTickManager()
+        private static SystemDispatcher EnsureSystemDispatcher()
         {
-            GameTickManager manager = GameTickManager.Instance;
-            if (manager != null)
-                return manager;
-
-            GameTickManager existing = UnityEngine.Object.FindAnyObjectByType<GameTickManager>(FindObjectsInactive.Include);
-            if (existing != null)
-                return existing;
-
-            // COLD ALLOC: bootstrap fallback singleton root when scene authoring omitted manager.
-            GameObject go = new GameObject(GameTickManagerRuntimeName);
-            return go.AddComponent<GameTickManager>();
+            return SystemDispatcher.EnsureRuntimeInstance();
         }
 
         private static SaveManager EnsureSaveManager()
@@ -376,7 +390,7 @@ namespace Hecton8.Bootstrap
             if (manager != null)
                 return manager;
 
-            SaveManager existing = UnityEngine.Object.FindAnyObjectByType<SaveManager>(FindObjectsInactive.Include);
+            SaveManager existing = SaveManager.Instance;
             if (existing != null)
                 return existing;
 
@@ -391,7 +405,7 @@ namespace Hecton8.Bootstrap
             if (manager != null)
                 return manager;
 
-            ObjectPoolManager existing = UnityEngine.Object.FindAnyObjectByType<ObjectPoolManager>(FindObjectsInactive.Include);
+            ObjectPoolManager existing = ObjectPoolManager.Instance;
             if (existing != null)
                 return existing;
 
@@ -406,7 +420,7 @@ namespace Hecton8.Bootstrap
             if (registry != null)
                 return registry;
 
-            PrefabRegistry existing = UnityEngine.Object.FindAnyObjectByType<PrefabRegistry>(FindObjectsInactive.Include);
+            PrefabRegistry existing = PrefabRegistry.Instance;
             if (existing != null)
                 return existing;
 
@@ -421,7 +435,7 @@ namespace Hecton8.Bootstrap
             if (registry != null)
                 return registry;
 
-            PersistentWorldRegistry existing = UnityEngine.Object.FindAnyObjectByType<PersistentWorldRegistry>(FindObjectsInactive.Include);
+            PersistentWorldRegistry existing = PersistentWorldRegistry.Instance;
             if (existing != null)
                 return existing;
 
@@ -459,20 +473,34 @@ namespace Hecton8.Bootstrap
         //  DEBUG
         // ══════════════════════════════════════════════════════════
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private static CrashTelemetryBuffer EnsureCrashTelemetryBuffer()
+        {
+            CrashTelemetryBuffer telemetry = CrashTelemetryBuffer.EnsureRuntimeInstance();
+            if (telemetry != null)
+                return telemetry;
+
+            GameObject telemetryObject = new GameObject(CrashTelemetryRuntimeName);
+            return telemetryObject.AddComponent<CrashTelemetryBuffer>();
+        }
+
         private static RuntimePerformanceProfiler EnsureRuntimePerformanceProfiler()
         {
             RuntimePerformanceProfiler profiler = RuntimePerformanceProfiler.Instance;
             if (profiler != null)
                 return profiler;
 
-            RuntimePerformanceProfiler existing = UnityEngine.Object.FindAnyObjectByType<RuntimePerformanceProfiler>(FindObjectsInactive.Include);
+            RuntimePerformanceProfiler existing = RuntimePerformanceProfiler.Instance;
             if (existing != null)
                 return existing;
 
             return null;
         }
-#endif
+
+        private static void HandleFatalBootstrapError(string message)
+        {
+            BootstrapBiosErrorOverlay.Show(message);
+            LogError(message);
+        }
 
         private static void Log(string message)
         {

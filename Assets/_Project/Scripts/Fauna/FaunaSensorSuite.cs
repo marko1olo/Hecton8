@@ -90,6 +90,8 @@ namespace Hecton8.AI
         private float _foveatedTickIntervalSeconds = 1.0f / 60.0f;
         private float _foveatedImportanceScore = 1.0f;
         private bool _foveatedInsideFrustum = true;
+        private Vector3 _cachedSelfPosition;
+        private Vector3 _cachedSelfForward;
         
         /// <summary>
         /// True if the creature has been failing to move forward due to obstacles.
@@ -121,12 +123,16 @@ namespace Hecton8.AI
             _foveatedTickIntervalSeconds = 1.0f / 60.0f;
             _foveatedImportanceScore = 1.0f;
             _foveatedInsideFrustum = true;
+            _cachedSelfPosition = self != null ? self.position : Vector3.zero;
+            _cachedSelfForward = self != null ? self.forward : Vector3.forward;
             if (WorldStateManager.Instance != null)
                 _playerTransform = WorldStateManager.Instance.PlayerTransform;
 
             if (_playerTransform != null)
             {
-                _playerToolManager = _playerTransform.GetComponentInChildren<PlayerToolManager>(true);
+                _playerToolManager = Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.ToolManager != null
+                    ? Hecton8.Core.GlobalRegistry.Player.ToolManager
+                    : Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<PlayerToolManager>(_playerTransform);
                 PlayerNoiseEmitter.EnsureAttached(_playerTransform);
             }
         }
@@ -134,10 +140,15 @@ namespace Hecton8.AI
         public void Tick(float dt, Vector3 velocity, float currentTimeSeconds)
         {
             _authoredTimeSeconds = currentTimeSeconds;
+            if (_selfTransform != null)
+            {
+                _cachedSelfPosition = _selfTransform.position;
+                _cachedSelfForward = _selfTransform.forward;
+            }
 
             if (_playerTransform != null)
             {
-                distSqrToPlayer = (_playerTransform.position - _selfTransform.position).sqrMagnitude;
+                distSqrToPlayer = (_playerTransform.position - _cachedSelfPosition).sqrMagnitude;
                 lodDisabled = distSqrToPlayer > 150f * 150f;
                 isSleeping = distSqrToPlayer > sleepDistance * sleepDistance;
             }
@@ -178,7 +189,7 @@ namespace Hecton8.AI
             _lastReportedPlayerTimeSeconds = _authoredTimeSeconds;
             hasNoisePlayerContact = true;
             RememberPlayerPosition(playerNoise.Position);
-            distSqrToPlayer = (_lastKnownPlayerPosition - _selfTransform.position).sqrMagnitude;
+            distSqrToPlayer = (_lastKnownPlayerPosition - _cachedSelfPosition).sqrMagnitude;
         }
 
         private bool HasFreshReportedPlayerNoise()
@@ -251,7 +262,7 @@ namespace Hecton8.AI
                 return;
 
             if (WorldSpatialHashGrid.TryGetNearestBioform(
-                    _selfTransform.position,
+                    _cachedSelfPosition,
                     _profile.territoryThreatRadius,
                     _profile.predatorMask,
                     _selfTransform,
@@ -267,7 +278,7 @@ namespace Hecton8.AI
         private void UpdateObstacleAvoidance(float dt, Vector3 velocity)
         {
             float length = Mathf.Clamp(avoidanceRange + velocity.magnitude * lookAheadFactor, avoidanceRange, maxRayLength);
-            Vector3 forwardDirection = velocity.sqrMagnitude > 0.0001f ? velocity.normalized : _selfTransform.forward;
+            Vector3 forwardDirection = velocity.sqrMagnitude > 0.0001f ? velocity.normalized : _cachedSelfForward;
             _rayDirs[0] = forwardDirection;
             _queuedObstacleRayDirection = forwardDirection;
             _queuedObstacleRayLength = length;
@@ -311,7 +322,7 @@ namespace Hecton8.AI
             if (_playerToolManager != null && _playerToolManager.CurrentTool != null)
             {
                 Transform toolTransform = _playerToolManager.CurrentTool.transform;
-                if ((toolTransform.position - _selfTransform.position).sqrMagnitude < distractorDetectRadius * distractorDetectRadius)
+                if ((toolTransform.position - _cachedSelfPosition).sqrMagnitude < distractorDetectRadius * distractorDetectRadius)
                 {
                     currentScavengeTarget = toolTransform;
                     return;
@@ -332,7 +343,7 @@ namespace Hecton8.AI
                 return;
 
             if (WorldSpatialHashGrid.TryGetNearestBioform(
-                    _selfTransform.position,
+                    _cachedSelfPosition,
                     aggroDistance,
                     searchMask,
                     _selfTransform,
@@ -356,7 +367,7 @@ namespace Hecton8.AI
                 return null;
 
             int count = WorldSpatialHashGrid.CollectContactsNonAlloc(
-                _selfTransform.position,
+                _cachedSelfPosition,
                 distractorDetectRadius,
                 SpatialTargetKind.Pickup | SpatialTargetKind.Signal,
                 _distractorSpatialBuffer);
@@ -395,7 +406,7 @@ namespace Hecton8.AI
                 return null;
 
             int count = WorldSpatialHashGrid.CollectContactsNonAlloc(
-                _selfTransform.position,
+                _cachedSelfPosition,
                 distractorDetectRadius,
                 SpatialTargetKind.Signal,
                 _distractorSpatialBuffer);
@@ -439,23 +450,21 @@ namespace Hecton8.AI
             if (obstacleLayerMask == 0)
                 return false;
 
-            if (_foveatedTickRate == FoveatedTickRate.Rear5Hz &&
-                !_foveatedInsideFrustum &&
-                _foveatedImportanceScore < 0.2f)
+            if (_foveatedImportanceScore < 0.2f)
             {
                 return false;
             }
 
             Vector3 direction = _queuedObstacleRayDirection.sqrMagnitude > 0.0001f
                 ? _queuedObstacleRayDirection.normalized
-                : _selfTransform.forward;
+                : _cachedSelfForward;
             float distance = Mathf.Clamp(
                 _queuedObstacleRayLength > 0f ? _queuedObstacleRayLength : avoidanceRange,
                 avoidanceRange,
                 maxRayLength);
 
             command = new RaycastCommand(
-                _selfTransform.position,
+                _cachedSelfPosition,
                 direction,
                 new QueryParameters(obstacleLayerMask, false, QueryTriggerInteraction.Ignore),
                 distance);

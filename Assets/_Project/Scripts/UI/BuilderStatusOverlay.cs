@@ -1,4 +1,5 @@
 using System.Text;
+using Hecton.Localization;
 using Hecton8.Building;
 using Hecton8.Bootstrap;
 using Hecton8.Construction;
@@ -13,9 +14,11 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Builder Status Overlay")]
-    public sealed class BuilderStatusOverlay : MonoBehaviour, ITickable
+    public sealed class BuilderStatusOverlay : MonoBehaviour, ITickable, IUpdatable
     {
         private const float AutoResolveRetryInterval = 1f;
+        private const string ModuleIndexTemplate = "MODULE {0}/{1}  //  BUILT {2}";
+        private static readonly char[] ModuleIndexTemplateChars = ModuleIndexTemplate.ToCharArray();
         private static readonly Color PanelColor = new Color(0.03f, 0.1f, 0.12f, 0.66f);
         private static readonly Color RuleColor = new Color(0.2f, 0.86f, 0.96f, 0.38f);
         private static readonly Color TitleColor = new Color(0.52f, 0.97f, 0.95f, 0.96f);
@@ -128,21 +131,24 @@ namespace Hecton8.UI
             if (requiresRuntimeResolve &&
                 (!Application.isPlaying || Time.unscaledTime >= _nextAutoResolveAt))
             {
-                if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
-                    playerTransform != null)
+                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                if (playerContext != null)
                 {
+                    if (toolManager == null)
+                        toolManager = playerContext.ToolManager;
+
                     if (playerBuilder == null)
-                        playerBuilder = playerTransform.GetComponentInChildren<PlayerBuilder>(true);
+                        playerBuilder = toolManager != null ? toolManager.CurrentTool as PlayerBuilder : null;
 
                     if (inventory == null)
-                        inventory = playerTransform.GetComponent<PlayerInventory>();
-
-                    if (toolManager == null)
-                        toolManager = playerTransform.GetComponentInChildren<PlayerToolManager>(true);
+                        inventory = playerContext.Inventory;
                 }
 
                 if (constructionManager == null)
-                    constructionManager = ConstructionManager.Instance;
+                {
+                    IEnvironmentRuntimeContext environmentContext = GlobalRegistry.Environment;
+                    constructionManager = environmentContext != null ? environmentContext.ConstructionManager : null;
+                }
 
                 _nextAutoResolveAt = Time.unscaledTime + AutoResolveRetryInterval;
             }
@@ -354,7 +360,12 @@ namespace Hecton8.UI
                     _moduleName.SetText("NO MODULE");
                 }
 
-                _indexLine.SetText("MODULE {0}/{1}  //  BUILT {2}", activeIndex + 1, Mathf.Max(1, buildCount), builtModuleCount);
+                SetNumericText(
+                    _indexLine,
+                    ModuleIndexTemplate,
+                    LocNumericArg.Int(activeIndex + 1),
+                    LocNumericArg.Int(Mathf.Max(1, buildCount)),
+                    LocNumericArg.Int(builtModuleCount));
                 BuildQueueHint(activeIndex, buildCount);
 
                 int roundedPowerRating = Mathf.RoundToInt(powerRating);
@@ -448,11 +459,8 @@ namespace Hecton8.UI
             if (_tickRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register((ITickable)this);
+            SystemDispatcher.EnsureRuntimeInstance();
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _tickRegistered = true;
         }
 
@@ -461,10 +469,7 @@ namespace Hecton8.UI
             if (!_tickRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister((ITickable)this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _tickRegistered = false;
         }
 
@@ -473,9 +478,7 @@ namespace Hecton8.UI
             unchecked
             {
                 int hash = 17;
-                #pragma warning disable CS0618
-                hash = hash * 31 + (data != null ? data.GetInstanceID() : 0);
-                #pragma warning restore CS0618
+                hash = hash * 31 + (data != null ? unchecked((int)EntityId.ToULong(data.GetEntityId())) : 0);
                 hash = hash * 31 + activeIndex;
                 hash = hash * 31 + buildCount;
                 hash = hash * 31 + builtModuleCount;
@@ -488,9 +491,7 @@ namespace Hecton8.UI
                         var cost = data.buildCost[i];
                         if (cost == null || cost.item == null)
                             continue;
-                        #pragma warning disable CS0618
-                        hash = hash * 31 + cost.item.GetInstanceID();
-                        #pragma warning restore CS0618
+                        hash = hash * 31 + unchecked((int)EntityId.ToULong(cost.item.GetEntityId()));
                         hash = hash * 31 + cost.amount;
                     }
                 }
@@ -600,6 +601,17 @@ namespace Hecton8.UI
             text.raycastTarget = false;
             text.textWrappingMode = TextWrappingModes.NoWrap;
             return text;
+        }
+
+        private static void SetNumericText(TextMeshProUGUI label, string template, LocNumericArg value0, LocNumericArg value1, LocNumericArg value2)
+        {
+            if (label == null)
+                return;
+
+            LocNumericBuffer.Write(new System.ReadOnlySpan<char>(ModuleIndexTemplateChars), value0, value1, value2, out char[] buffer, out int length);
+            int safeLength = Mathf.Clamp(length, 0, buffer != null ? buffer.Length : 0);
+            label.SetCharArray(buffer, 0, safeLength);
+            label.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
         }
     }
 }

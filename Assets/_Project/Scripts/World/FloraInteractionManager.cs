@@ -18,13 +18,19 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-105)]
-    public sealed class FloraInteractionManager : MonoBehaviour, ITickable
+    public sealed class FloraInteractionManager : MonoBehaviour, ITickable, IOriginShiftListener
     {
         [StructLayout(LayoutKind.Sequential)]
         private struct FloraInteractionPointGpuData
         {
             public Vector4 PositionRadius;
             public Vector4 VelocitySpeed;
+        }
+
+        private struct WakeTrailStampCommand
+        {
+            public Vector4 UvEllipse;
+            public Vector4 DirectionStrengthVertical;
         }
 
         private const int MaxPublishedInteractionPoints = 12;
@@ -34,7 +40,8 @@ namespace Hecton8.World
         private const float DefaultVegetationWaterLevel = 4900f;
         private const float FlowFieldUploadIntervalSeconds = 0.1f;
         private const float FlowFieldRecenterThresholdCells = 0.5f;
-        private const string WakeTrailShaderName = "Hidden/Hecton8/VegetationWakeTrailStamp";
+        private const int WakeTrailStampCommandCapacity = 4;
+        private const int WakeTrailThreadGroupSize = 8;
 #if UNITY_EDITOR
         private const string WakeTrailSimulationComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_VegetationWakeTrailSim.compute";
 #endif
@@ -46,7 +53,7 @@ namespace Hecton8.World
         private static readonly int _MarineSnowFlowFieldId = Shader.PropertyToID("_MarineSnowFlowField");
         private static readonly int _MarineSnowFlowFieldCenterCellSizeId = Shader.PropertyToID("_MarineSnowFlowFieldCenterCellSize");
         private static readonly int _FloraFlowFieldResolutionId = Shader.PropertyToID("_HectonFloraFlowFieldResolution");
-        private static readonly int _PlayerAbsoluteUniversePositionId = Shader.PropertyToID("_HectonPlayerAbsoluteUniversePosition");
+        private static readonly int _PlayerRuntimePositionId = Shader.PropertyToID("_HectonPlayerRuntimePosition");
         private static readonly int _PlayerFloraInteractionParamsId = Shader.PropertyToID("_HectonPlayerFloraInteractionParams");
         private static readonly int _VegetationFogColorId = Shader.PropertyToID("_HectonVegetationFogColor");
         private static readonly int _VegetationAmbientColorId = Shader.PropertyToID("_HectonVegetationAmbientColor");
@@ -63,11 +70,10 @@ namespace Hecton8.World
         private static readonly int _WakeTrailTextureId = Shader.PropertyToID("_HectonVegetationWakeTrailRT");
         private static readonly int _WakeTrailWorldRectId = Shader.PropertyToID("_HectonVegetationWakeTrailWorldRect");
         private static readonly int _WakeTrailActiveId = Shader.PropertyToID("_HectonVegetationWakeTrailActive");
-        private static readonly int _MainTexId = Shader.PropertyToID("_MainTex");
-        private static readonly int _WakeStampUvEllipseId = Shader.PropertyToID("_StampUvEllipse");
-        private static readonly int _WakeStampDirectionStrengthId = Shader.PropertyToID("_StampDirectionStrength");
-        private static readonly int _WakeScrollUvOffsetId = Shader.PropertyToID("_ScrollUvOffset");
-        private static readonly int _WakeFadeId = Shader.PropertyToID("_Fade");
+        private static readonly int _ShallowWaterFieldTextureId = Shader.PropertyToID("_HectonShallowWaterFieldRT");
+        private static readonly int _ShallowWaterFieldWorldRectId = Shader.PropertyToID("_HectonShallowWaterFieldWorldRect");
+        private static readonly int _ShallowWaterFieldActiveId = Shader.PropertyToID("_HectonShallowWaterFieldActive");
+        private static readonly int _ShallowWaterFieldTexelSizeId = Shader.PropertyToID("_HectonShallowWaterFieldTexelSize");
         private static readonly int _WakeTrailSourceId = Shader.PropertyToID("_HectonWakeTrailSource");
         private static readonly int _WakeTrailResultId = Shader.PropertyToID("_HectonWakeTrailResult");
         private static readonly int _WakeTrailFadeDeltaId = Shader.PropertyToID("_HectonWakeTrailFadeDelta");
@@ -77,6 +83,9 @@ namespace Hecton8.World
         private static readonly int _WakeTrailCurlStrengthId = Shader.PropertyToID("_HectonWakeTrailCurlStrength");
         private static readonly int _WakeTrailSimulationTimeId = Shader.PropertyToID("_HectonWakeTrailSimulationTime");
         private static readonly int _WakeTrailTexelSizeId = Shader.PropertyToID("_HectonWakeTrailTexelSize");
+        private static readonly int _WakeTrailStampCommandsId = Shader.PropertyToID("_HectonWakeTrailStampCommands");
+        private static readonly int _WakeTrailStampCountId = Shader.PropertyToID("_HectonWakeTrailStampCount");
+        private static readonly int _WakeTrailScrollUvOffsetId = Shader.PropertyToID("_HectonWakeTrailScrollUvOffset");
 
         [Header("Runtime Wiring")]
         [SerializeField]
@@ -166,13 +175,13 @@ namespace Hecton8.World
         private LayerMask _dynamicInteractionMask = ~0;
 
         [Header("Wake Trail")]
-        [SerializeField, Range(512, 2048)]
-        [Tooltip("Resolution of the persistent global wake trail map. Higher values preserve finer seabed streak detail.")]
-        private int _wakeTrailResolution = 2048;
+        [SerializeField, Range(256, 256)]
+        [Tooltip("Resolution of the shallow-water interaction field around the player. MX350 mandate fixes this at 256x256.")]
+        private int _wakeTrailResolution = 256;
 
-        [SerializeField, Range(96f, 384f)]
-        [Tooltip("World-space coverage of the top-down wake trail treadmill map centered around the player.")]
-        private float _wakeTrailWorldSize = 192f;
+        [SerializeField, Range(64f, 192f)]
+        [Tooltip("World-space coverage of the shallow-water field centered around the player.")]
+        private float _wakeTrailWorldSize = 128f;
 
         [SerializeField, Range(8f, 16f)]
         [Tooltip("Seconds required for the persistent wake trail to fade out back to calm water.")]
@@ -292,18 +301,22 @@ namespace Hecton8.World
         private FloraInteractionPointGpuData[] _interactionPoints;
         private Collider[] _interactionColliders;
         private Rigidbody[] _interactionBodies;
-        private ComputeBuffer _interactionBuffer;
+        private GraphicsBuffer _interactionBuffer;
         private GraphicsBuffer _flowFieldBuffer;
-        private Material _wakeTrailMaterial;
+        private GraphicsBuffer _wakeTrailStampCommandBuffer;
         private RenderTexture _wakeTrailRead;
         private RenderTexture _wakeTrailWrite;
         private Vector4 _wakeTrailWorldRect;
         private Vector2 _wakeTrailCenterXZ;
+        private Vector2 _pendingWakeTrailScrollUv;
+        private NativeArray<WakeTrailStampCommand> _queuedWakeTrailStampCommands;
         private float _wakeTrailRuntimeWorldSize;
         private float _wakeTrailEnergy;
         private float _playerSedimentCooldownRemaining;
         private float _scooterSedimentCooldownRemaining;
         private bool _wakeTrailDisabled;
+        private int _queuedWakeTrailStampCount;
+        private int _lastWakeTrailDispatchFrame = -1;
         private int _wakeTrailRuntimeResolution;
         private int _wakeTrailQualityLevel = -1;
         private int _wakeTrailSimulationKernel = -1;
@@ -314,8 +327,8 @@ namespace Hecton8.World
         private IHectonOceanKinematics _oceanKinematicsProvider;
         private Vector3 _flowFieldCenterWS;
         private Vector3 _lastUploadedFlowFieldCenterWS;
-        private Vector3[] _oceanFlowSamplePositions;
-        private Vector3[] _oceanFlowSampleResults;
+        private NativeArray<Vector3> _oceanFlowSamplePositions;
+        private NativeArray<Vector3> _oceanFlowSampleResults;
         private ParticleSystem.EmitParams _sedimentEmitParams;
 
         /// <summary>Last interaction point count pushed into the global flora buffer.</summary>
@@ -334,7 +347,7 @@ namespace Hecton8.World
         public long GetVRAMEstimation()
         {
             long totalBytes = 0L;
-            totalBytes += EstimateComputeBufferBytes(_interactionBuffer);
+            totalBytes += EstimateGraphicsBufferBytes(_interactionBuffer);
             totalBytes += EstimateGraphicsBufferBytes(_flowFieldBuffer);
             totalBytes += EstimateRenderTextureBytes(_wakeTrailRead);
             totalBytes += EstimateRenderTextureBytes(_wakeTrailWrite);
@@ -344,7 +357,7 @@ namespace Hecton8.World
         private void Awake()
         {
             _maxInteractionPoints = Mathf.Clamp(_maxInteractionPoints, 1, MaxPublishedInteractionPoints);
-            _wakeTrailResolution = Mathf.Clamp(_wakeTrailResolution, 512, 2048);
+            _wakeTrailResolution = 256;
             _wakeTrailWorldSize = Mathf.Max(32f, _wakeTrailWorldSize);
             _wakeTrailFadeSeconds = Mathf.Max(0.1f, _wakeTrailFadeSeconds);
             _wakeTrailDiffusion = Mathf.Clamp01(_wakeTrailDiffusion);
@@ -365,12 +378,11 @@ namespace Hecton8.World
             _interactionColliders = new Collider[MaxQueryColliders];
             // COLD ALLOC: Rigidbody[32] - duplicate suppression for interaction query results - owner: FloraInteractionManager
             _interactionBodies = new Rigidbody[MaxQueryColliders];
-            // COLD ALLOC: ComputeBuffer[_maxInteractionPoints] - global vegetation interaction StructuredBuffer - owner: FloraInteractionManager
-            _interactionBuffer = new ComputeBuffer(_maxInteractionPoints, InteractionPointStride, ComputeBufferType.Structured);
-            // COLD ALLOC: Vector3[1] - caller-owned ocean provider sample positions for vegetation flow publishing - owner: FloraInteractionManager
-            _oceanFlowSamplePositions = new Vector3[1];
-            // COLD ALLOC: Vector3[1] - caller-owned ocean provider sample results for vegetation flow publishing - owner: FloraInteractionManager
-            _oceanFlowSampleResults = new Vector3[1];
+            _interactionBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<FloraInteractionPointGpuData>(_maxInteractionPoints); // COLD ALLOC: GraphicsBuffer[_maxInteractionPoints] - global vegetation interaction StructuredBuffer - owner: FloraInteractionManager
+            // COLD ALLOC: NativeArray<Vector3>[1] - caller-owned ocean provider sample positions for vegetation flow publishing - owner: FloraInteractionManager
+            _oceanFlowSamplePositions = new NativeArray<Vector3>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<Vector3>[1] - caller-owned ocean provider sample results for vegetation flow publishing - owner: FloraInteractionManager
+            _oceanFlowSampleResults = new NativeArray<Vector3>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
 
             Shader.SetGlobalBuffer(_InteractionBufferId, _interactionBuffer);
             PublishFlowFieldGlobals();
@@ -385,6 +397,7 @@ namespace Hecton8.World
             if (_interactionBuffer != null)
                 Shader.SetGlobalBuffer(_InteractionBufferId, _interactionBuffer);
 
+            HectonFloatingOrigin.RegisterListener(this);
             PublishFlowFieldGlobals();
             PublishWakeTrailGlobals();
             TryRegister();
@@ -393,14 +406,22 @@ namespace Hecton8.World
 
         private void OnDisable()
         {
+            HectonFloatingOrigin.UnregisterListener(this);
             TryUnregister();
             ResetInteractionGlobals();
         }
 
         private void OnDestroy()
         {
+            HectonFloatingOrigin.UnregisterListener(this);
             TryUnregister();
             ResetInteractionGlobals();
+
+            if (_oceanFlowSamplePositions.IsCreated)
+                _oceanFlowSamplePositions.Dispose();
+
+            if (_oceanFlowSampleResults.IsCreated)
+                _oceanFlowSampleResults.Dispose();
 
             if (_interactionBuffer != null)
             {
@@ -410,6 +431,14 @@ namespace Hecton8.World
 
             ReleaseFlowFieldBuffer();
             ReleaseWakeTrailResources();
+        }
+
+        public void OnOriginShift(in OriginShiftEventData shiftData)
+        {
+            if (!isActiveAndEnabled || shiftData.ShiftOffset.sqrMagnitude <= 0.0001f)
+                return;
+
+            ApplyRuntimeOffsetToCachedState(-shiftData.ShiftOffset);
         }
 
         /// <summary>
@@ -450,7 +479,7 @@ namespace Hecton8.World
                 _playerBendRadius + velocityMagnitude * _dynamicVelocityRadiusMultiplier,
                 0.5f,
                 _maxBendRadius);
-            PublishPlayerAbsoluteUniversePosition(targetPosition, playerBendRadius, velocityMagnitude, targetForce);
+            PublishPlayerRuntimePosition(targetPosition, playerBendRadius, velocityMagnitude, targetForce);
             interactionCount = AppendInteractionPoint(_smoothPosition, playerVelocity, playerBendRadius, interactionCount);
             interactionCount = AppendScooterInteractionPoint(playerVelocity, interactionCount, deltaTime);
             interactionCount = CollectDynamicInteractionPoints(targetPosition, interactionCount);
@@ -464,7 +493,7 @@ namespace Hecton8.World
 
             if (_interactionBuffer != null && interactionCount > 0)
             {
-                _interactionBuffer.SetData(_interactionPoints, 0, 0, interactionCount);
+                GraphicsBufferUploadUtility.UploadArray(_interactionBuffer, _interactionPoints, interactionCount);
                 Shader.SetGlobalBuffer(_InteractionBufferId, _interactionBuffer);
                 Shader.SetGlobalInt(_InteractionCountId, interactionCount);
                 _lastPublishedInteractionCount = interactionCount;
@@ -529,13 +558,7 @@ namespace Hecton8.World
         {
             string[] qualityNames = QualitySettings.names;
             string qualityName = qualityLevel >= 0 && qualityLevel < qualityNames.Length ? qualityNames[qualityLevel] : string.Empty;
-            if (qualityName.IndexOf("Low", System.StringComparison.OrdinalIgnoreCase) >= 0 || qualityLevel <= 0)
-                return Mathf.Min(_wakeTrailResolution, 512);
-
-            if (qualityName.IndexOf("Medium", System.StringComparison.OrdinalIgnoreCase) >= 0 || qualityLevel == 1)
-                return Mathf.Min(_wakeTrailResolution, 1024);
-
-            return Mathf.Min(_wakeTrailResolution, 2048);
+            return 256;
         }
 
         private Vector3 ResolvePlayerVelocity(Vector3 targetPosition, float deltaTime)
@@ -554,9 +577,27 @@ namespace Hecton8.World
                 return Vector3.zero;
             }
 
-            Vector3 velocity = (targetPosition - _lastPlayerPosition) / deltaTime;
+            if (!TryResolveSafeReciprocal(deltaTime, out float inverseDeltaTime))
+            {
+                _lastPlayerPosition = targetPosition;
+                return Vector3.zero;
+            }
+
+            Vector3 velocity = HectonPlayerMotor.SafeVelocity((targetPosition - _lastPlayerPosition) * inverseDeltaTime);
             _lastPlayerPosition = targetPosition;
             return velocity;
+        }
+
+        private static bool TryResolveSafeReciprocal(float value, out float reciprocal)
+        {
+            if (!float.IsFinite(value) || math.abs(value) <= 0.0001f)
+            {
+                reciprocal = 0f;
+                return false;
+            }
+
+            reciprocal = 1f / value;
+            return float.IsFinite(reciprocal);
         }
 
         private int CollectDynamicInteractionPoints(Vector3 targetPosition, int interactionCount)
@@ -696,7 +737,7 @@ namespace Hecton8.World
             if (runtimePlayerTransform.TryGetComponent(out PlayerToolManager directToolManager))
                 return directToolManager;
 
-            return runtimePlayerTransform.GetComponentInChildren<PlayerToolManager>(true);
+            return ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.ToolManager != null) ? Hecton8.Core.GlobalRegistry.Player.ToolManager : runtimePlayerTransform.GetComponent<PlayerToolManager>());
         }
 
         private void ResolveScooterState()
@@ -728,7 +769,7 @@ namespace Hecton8.World
             if (directBridge != null)
                 return directBridge;
 
-            HectonMapMagicVegetationBridge childBridge = GetComponentInChildren<HectonMapMagicVegetationBridge>(true);
+            HectonMapMagicVegetationBridge childBridge = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<HectonMapMagicVegetationBridge>(transform);
             if (childBridge != null)
                 return childBridge;
 
@@ -964,11 +1005,10 @@ namespace Hecton8.World
                 if (_flowFieldBuffer == null || _flowFieldBuffer.count != requiredCount)
                 {
                     ReleaseFlowFieldBuffer();
-                    // COLD ALLOC: GraphicsBuffer[flowVectors.Length] - authoritative ecosystem flow-field GPU staging for flora shading - owner: FloraInteractionManager
-                    _flowFieldBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, requiredCount, FlowFieldStride);
+                    _flowFieldBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float2>(requiredCount); // COLD ALLOC: GraphicsBuffer[flowVectors.Length] - authoritative ecosystem flow-field GPU staging for flora shading - owner: FloraInteractionManager
                 }
 
-                _flowFieldBuffer.SetData(flowVectors);
+                GraphicsBufferUploadUtility.UploadNativeArray(_flowFieldBuffer, flowVectors, requiredCount);
                 _lastUploadedFlowFieldCenterWS = gridCenter;
                 _flowFieldUploadTimer = FlowFieldUploadIntervalSeconds;
             }
@@ -987,25 +1027,22 @@ namespace Hecton8.World
             Shader.SetGlobalInt(_FloraFlowFieldResolutionId, _flowFieldResolution);
         }
 
-        private void PublishPlayerAbsoluteUniversePosition(
+        private void PublishPlayerRuntimePosition(
             Vector3 playerRuntimePosition,
             float playerBendRadius,
             float playerSpeed,
             float targetForce)
         {
-            Vector3 playerAbsoluteUniversePosition = _vegetationBridge != null
-                ? HectonMapMagicVegetationBridge.ToUniverseSpace(playerRuntimePosition)
-                : HectonFloatingOrigin.ToAbsoluteUniversePosition(playerRuntimePosition);
             float normalizedForce = _maxInteractionForce > 0.0001f
                 ? Mathf.Clamp01(targetForce / _maxInteractionForce)
                 : 0f;
 
             Shader.SetGlobalVector(
-                _PlayerAbsoluteUniversePositionId,
+                _PlayerRuntimePositionId,
                 new Vector4(
-                    playerAbsoluteUniversePosition.x,
-                    playerAbsoluteUniversePosition.y,
-                    playerAbsoluteUniversePosition.z,
+                    playerRuntimePosition.x,
+                    playerRuntimePosition.y,
+                    playerRuntimePosition.z,
                     Mathf.Max(0.05f, playerBendRadius)));
             Shader.SetGlobalVector(
                 _PlayerFloraInteractionParamsId,
@@ -1022,8 +1059,8 @@ namespace Hecton8.World
             _oceanKinematicsProvider = provider;
             if (provider != null &&
                 provider.IsAvailable &&
-                _oceanFlowSamplePositions != null &&
-                _oceanFlowSampleResults != null &&
+                _oceanFlowSamplePositions.IsCreated &&
+                _oceanFlowSampleResults.IsCreated &&
                 _oceanFlowSamplePositions.Length > 0 &&
                 _oceanFlowSampleResults.Length > 0)
             {
@@ -1046,22 +1083,23 @@ namespace Hecton8.World
             if (_wakeTrailWrite == null)
                 _wakeTrailWrite = CreateWakeTrailTexture("__VegetationWakeTrail_B");
 
-            if (_wakeTrailMaterial == null)
-            {
-                Shader wakeTrailShader = Shader.Find(WakeTrailShaderName);
-                if (wakeTrailShader == null)
-                {
-                    Debug.LogError("[FloraInteractionManager] Missing wake trail shader. Expected Hidden/Hecton8/VegetationWakeTrailStamp.", this);
-                    _wakeTrailDisabled = true;
-                    PublishWakeTrailGlobals();
-                    return;
-                }
+            if (!_queuedWakeTrailStampCommands.IsCreated)
+                _queuedWakeTrailStampCommands = new NativeArray<WakeTrailStampCommand>(WakeTrailStampCommandCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<WakeTrailStampCommand>[4] - queued vegetation wake-trail stamps for single compute dispatch - owner: FloraInteractionManager
 
-                _wakeTrailMaterial = new Material(wakeTrailShader)
-                {
-                    hideFlags = HideFlags.HideAndDontSave
-                }; // COLD ALLOC: Material[1] - fullscreen blit material for persistent vegetation wake trail stamping - owner: FloraInteractionManager
+            if (_wakeTrailStampCommandBuffer == null)
+                _wakeTrailStampCommandBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<WakeTrailStampCommand>(WakeTrailStampCommandCapacity); // COLD ALLOC: GraphicsBuffer[4] - queued vegetation wake-trail stamp buffer for single compute dispatch - owner: FloraInteractionManager
+
+            TryAutoAssignWakeTrailSimulationCompute();
+            if (_wakeTrailSimulationCompute == null)
+            {
+                Debug.LogError("[FloraInteractionManager] Missing wake trail compute shader. Expected Hecton_VegetationWakeTrailSim.compute.", this);
+                _wakeTrailDisabled = true;
+                PublishWakeTrailGlobals();
+                return;
             }
+
+            if (_wakeTrailSimulationKernel < 0)
+                _wakeTrailSimulationKernel = _wakeTrailSimulationCompute.FindKernel("SimulateWakeTrail");
 
             RefreshWakeTrailWorldRect(Vector3.zero, forceClear: true);
             PublishWakeTrailGlobals();
@@ -1072,11 +1110,18 @@ namespace Hecton8.World
             ReleaseWakeTrailTexture(ref _wakeTrailRead);
             ReleaseWakeTrailTexture(ref _wakeTrailWrite);
 
-            if (_wakeTrailMaterial != null)
+            if (_wakeTrailStampCommandBuffer != null)
             {
-                Destroy(_wakeTrailMaterial);
-                _wakeTrailMaterial = null;
+                _wakeTrailStampCommandBuffer.Release();
+                _wakeTrailStampCommandBuffer = null;
             }
+
+            if (_queuedWakeTrailStampCommands.IsCreated)
+                _queuedWakeTrailStampCommands.Dispose();
+
+            _pendingWakeTrailScrollUv = Vector2.zero;
+            _queuedWakeTrailStampCount = 0;
+            _lastWakeTrailDispatchFrame = -1;
 
             Shader.SetGlobalFloat(_WakeTrailActiveId, 0f);
         }
@@ -1087,7 +1132,7 @@ namespace Hecton8.World
                 return;
 
             CreateWakeTrailResources();
-            if (_wakeTrailRead == null || _wakeTrailWrite == null || _wakeTrailMaterial == null)
+            if (_wakeTrailRead == null || _wakeTrailWrite == null || _wakeTrailSimulationCompute == null || _wakeTrailStampCommandBuffer == null)
             {
                 PublishWakeTrailGlobals();
                 return;
@@ -1097,19 +1142,17 @@ namespace Hecton8.World
 
             bool wrotePass = false;
             float fade = Mathf.Max(0f, deltaTime / _wakeTrailFadeSeconds);
-            bool supportsFluidWake = _wakeTrailSimulationCompute != null && _wakeTrailSimulationKernel >= 0;
             float strongestStamp = 0f;
 
             float playerSpeed = playerVelocity.magnitude;
             if (playerSpeed >= _wakeTrailPlayerMinSpeed)
             {
-                ExecuteWakeTrailPass(
+                QueueWakeTrailStamp(
                     playerPosition,
                     playerVelocity,
                     _wakeTrailBaseRadius,
                     Mathf.Clamp(_wakeTrailMinLength + playerSpeed * _wakeTrailVelocityToLength, _wakeTrailMinLength, _wakeTrailMaxLength),
-                    Mathf.Clamp01(_wakeTrailPlayerStrength),
-                    !supportsFluidWake && !wrotePass ? fade : 0f);
+                    Mathf.Clamp01(_wakeTrailPlayerStrength));
                 wrotePass = true;
                 strongestStamp = Mathf.Max(strongestStamp, _wakeTrailPlayerStrength);
             }
@@ -1117,26 +1160,18 @@ namespace Hecton8.World
             float scooterSpeed = _smoothedScooterVelocity.magnitude;
             if (_hasActiveScooterWake && scooterSpeed >= _wakeTrailScooterMinSpeed)
             {
-                ExecuteWakeTrailPass(
+                QueueWakeTrailStamp(
                     _lastPublishedScooterWakePosition,
                     _smoothedScooterVelocity,
                     _wakeTrailBaseRadius * 1.15f,
                     Mathf.Clamp(_wakeTrailMinLength + scooterSpeed * (_wakeTrailVelocityToLength * 1.7f), _wakeTrailMinLength * 1.25f, _wakeTrailMaxLength),
-                    Mathf.Clamp01(_wakeTrailScooterStrength),
-                    !supportsFluidWake && !wrotePass ? fade : 0f);
+                    Mathf.Clamp01(_wakeTrailScooterStrength));
                 wrotePass = true;
                 strongestStamp = Mathf.Max(strongestStamp, _wakeTrailScooterStrength);
             }
 
-            if (supportsFluidWake)
-            {
-                if (wrotePass || _wakeTrailEnergy > 0.0001f)
-                    ExecuteWakeTrailSimulation(fade);
-            }
-            else if (!wrotePass && _wakeTrailEnergy > 0.0001f)
-            {
-                ExecuteWakeTrailPass(playerPosition, Vector3.forward, 0f, 0f, 0f, fade);
-            }
+            if (wrotePass || _wakeTrailEnergy > 0.0001f || _pendingWakeTrailScrollUv.sqrMagnitude > 0.0000001f)
+                ExecuteWakeTrailSimulation(fade);
 
             _wakeTrailEnergy = Mathf.Max(0f, wrotePass ? Mathf.Max(_wakeTrailEnergy - fade, strongestStamp) : (_wakeTrailEnergy - fade));
             PublishWakeTrailGlobals();
@@ -1171,18 +1206,17 @@ namespace Hecton8.World
                 return;
             }
 
-            ScrollWakeTrailTextures(centerDelta);
+            QueueWakeTrailScroll(centerDelta);
         }
 
-        private void ExecuteWakeTrailPass(
+        private void QueueWakeTrailStamp(
             Vector3 positionWS,
             Vector3 directionWS,
             float radiusWS,
             float lengthWS,
-            float strength,
-            float fade)
+            float strength)
         {
-            if (_wakeTrailMaterial == null || _wakeTrailRead == null || _wakeTrailWrite == null)
+            if (!_queuedWakeTrailStampCommands.IsCreated || _queuedWakeTrailStampCount >= WakeTrailStampCommandCapacity)
                 return;
 
             Vector2 uvCenter = new Vector2(
@@ -1200,24 +1234,34 @@ namespace Hecton8.World
             float uvRadius = radiusWS * _wakeTrailWorldRect.z;
             float uvLength = lengthWS * _wakeTrailWorldRect.z;
 
-            _wakeTrailMaterial.SetTexture(_MainTexId, _wakeTrailRead);
-            _wakeTrailMaterial.SetVector(_WakeStampUvEllipseId, new Vector4(uvCenter.x, uvCenter.y, uvRadius, uvLength));
-            _wakeTrailMaterial.SetVector(_WakeStampDirectionStrengthId, new Vector4(directionXZ.x, directionXZ.y, Mathf.Clamp01(strength), verticalImpulse));
-            _wakeTrailMaterial.SetFloat(_WakeFadeId, Mathf.Max(0f, fade));
-            Graphics.Blit(_wakeTrailRead, _wakeTrailWrite, _wakeTrailMaterial, 0);
-
-            RenderTexture temp = _wakeTrailRead;
-            _wakeTrailRead = _wakeTrailWrite;
-            _wakeTrailWrite = temp;
+            _queuedWakeTrailStampCommands[_queuedWakeTrailStampCount] = new WakeTrailStampCommand
+            {
+                UvEllipse = new Vector4(uvCenter.x, uvCenter.y, uvRadius, uvLength),
+                DirectionStrengthVertical = new Vector4(directionXZ.x, directionXZ.y, Mathf.Clamp01(strength), verticalImpulse)
+            };
+            _queuedWakeTrailStampCount++;
         }
 
         private void ExecuteWakeTrailSimulation(float fade)
         {
-            if (_wakeTrailSimulationCompute == null || _wakeTrailSimulationKernel < 0 || _wakeTrailRead == null || _wakeTrailWrite == null)
+            if (_wakeTrailSimulationCompute == null ||
+                _wakeTrailSimulationKernel < 0 ||
+                _wakeTrailRead == null ||
+                _wakeTrailWrite == null ||
+                _wakeTrailStampCommandBuffer == null ||
+                _lastWakeTrailDispatchFrame == Time.frameCount)
+            {
                 return;
+            }
+
+            if (_queuedWakeTrailStampCount > 0 && _queuedWakeTrailStampCommands.IsCreated)
+                GraphicsBufferUploadUtility.UploadNativeArray(_wakeTrailStampCommandBuffer, _queuedWakeTrailStampCommands, _queuedWakeTrailStampCount);
 
             _wakeTrailSimulationCompute.SetTexture(_wakeTrailSimulationKernel, _WakeTrailSourceId, _wakeTrailRead);
             _wakeTrailSimulationCompute.SetTexture(_wakeTrailSimulationKernel, _WakeTrailResultId, _wakeTrailWrite);
+            _wakeTrailSimulationCompute.SetBuffer(_wakeTrailSimulationKernel, _WakeTrailStampCommandsId, _wakeTrailStampCommandBuffer);
+            _wakeTrailSimulationCompute.SetInt(_WakeTrailStampCountId, _queuedWakeTrailStampCount);
+            _wakeTrailSimulationCompute.SetVector(_WakeTrailScrollUvOffsetId, new Vector4(_pendingWakeTrailScrollUv.x, _pendingWakeTrailScrollUv.y, 0f, 0f));
             _wakeTrailSimulationCompute.SetFloat(_WakeTrailFadeDeltaId, Mathf.Max(0f, fade));
             _wakeTrailSimulationCompute.SetFloat(_WakeTrailDiffusionId, _wakeTrailDiffusion);
             _wakeTrailSimulationCompute.SetFloat(_WakeTrailWaveStrengthId, _wakeTrailWaveStrength);
@@ -1232,17 +1276,20 @@ namespace Hecton8.World
                     _wakeTrailRuntimeResolution,
                     _wakeTrailRuntimeResolution));
 
-            int groupCount = Mathf.CeilToInt(_wakeTrailRuntimeResolution / 8f);
+            int groupCount = Mathf.CeilToInt(_wakeTrailRuntimeResolution / (float)WakeTrailThreadGroupSize);
             _wakeTrailSimulationCompute.Dispatch(_wakeTrailSimulationKernel, Mathf.Max(1, groupCount), Mathf.Max(1, groupCount), 1);
 
             RenderTexture temp = _wakeTrailRead;
             _wakeTrailRead = _wakeTrailWrite;
             _wakeTrailWrite = temp;
+            _lastWakeTrailDispatchFrame = Time.frameCount;
+            _pendingWakeTrailScrollUv = Vector2.zero;
+            _queuedWakeTrailStampCount = 0;
         }
 
-        private void ScrollWakeTrailTextures(Vector2 centerDelta)
+        private void QueueWakeTrailScroll(Vector2 centerDelta)
         {
-            if (_wakeTrailMaterial == null || _wakeTrailRead == null || _wakeTrailWrite == null)
+            if (_wakeTrailRead == null || _wakeTrailWrite == null)
                 return;
 
             float uvOffsetX = centerDelta.x / Mathf.Max(_wakeTrailRuntimeWorldSize, 0.001f);
@@ -1253,13 +1300,8 @@ namespace Hecton8.World
                 return;
             }
 
-            _wakeTrailMaterial.SetTexture(_MainTexId, _wakeTrailRead);
-            _wakeTrailMaterial.SetVector(_WakeScrollUvOffsetId, new Vector4(uvOffsetX, uvOffsetY, 0f, 0f));
-            Graphics.Blit(_wakeTrailRead, _wakeTrailWrite, _wakeTrailMaterial, 1);
-
-            RenderTexture temp = _wakeTrailRead;
-            _wakeTrailRead = _wakeTrailWrite;
-            _wakeTrailWrite = temp;
+            _pendingWakeTrailScrollUv.x += uvOffsetX;
+            _pendingWakeTrailScrollUv.y += uvOffsetY;
         }
 
         private void ClearWakeTrailTextures()
@@ -1274,6 +1316,8 @@ namespace Hecton8.World
             GL.Clear(false, true, Color.clear);
             RenderTexture.active = active;
             _wakeTrailEnergy = 0f;
+            _pendingWakeTrailScrollUv = Vector2.zero;
+            _queuedWakeTrailStampCount = 0;
         }
 
         private void PublishWakeTrailGlobals()
@@ -1281,17 +1325,28 @@ namespace Hecton8.World
             if (_wakeTrailDisabled || _wakeTrailRead == null)
             {
                 Shader.SetGlobalFloat(_WakeTrailActiveId, 0f);
+                Shader.SetGlobalFloat(_ShallowWaterFieldActiveId, 0f);
                 return;
             }
 
             Shader.SetGlobalTexture(_WakeTrailTextureId, _wakeTrailRead);
             Shader.SetGlobalVector(_WakeTrailWorldRectId, _wakeTrailWorldRect);
             Shader.SetGlobalFloat(_WakeTrailActiveId, _wakeTrailRuntimeWorldSize > 0f ? 1f : 0f);
+            Shader.SetGlobalTexture(_ShallowWaterFieldTextureId, _wakeTrailRead);
+            Shader.SetGlobalVector(_ShallowWaterFieldWorldRectId, _wakeTrailWorldRect);
+            Shader.SetGlobalFloat(_ShallowWaterFieldActiveId, _wakeTrailRuntimeWorldSize > 0f ? 1f : 0f);
+            Shader.SetGlobalVector(
+                _ShallowWaterFieldTexelSizeId,
+                new Vector4(
+                    1f / Mathf.Max(_wakeTrailRuntimeResolution, 1),
+                    1f / Mathf.Max(_wakeTrailRuntimeResolution, 1),
+                    _wakeTrailRuntimeResolution,
+                    _wakeTrailRuntimeResolution));
         }
 
         private RenderTexture CreateWakeTrailTexture(string textureName)
         {
-            RenderTexture texture = new RenderTexture(_wakeTrailRuntimeResolution, _wakeTrailRuntimeResolution, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear)
+            RenderTexture texture = new RenderTexture(_wakeTrailRuntimeResolution, _wakeTrailRuntimeResolution, 0, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear)
             {
                 name = textureName,
                 wrapMode = TextureWrapMode.Clamp,
@@ -1344,12 +1399,59 @@ namespace Hecton8.World
             }
         }
 
+        private void ApplyRuntimeOffsetToCachedState(Vector3 runtimeOffset)
+        {
+            _smoothPosition += runtimeOffset;
+            if (_hasLastPlayerPosition)
+                _lastPlayerPosition += runtimeOffset;
+
+            if (_hasSmoothedScooterPosition)
+                _smoothedScooterPosition += runtimeOffset;
+
+            if (_hasActiveScooterWake)
+                _lastPublishedScooterWakePosition += runtimeOffset;
+
+            if (_interactionPoints != null &&
+                _interactionBuffer != null &&
+                _lastPublishedInteractionCount > 0)
+            {
+                int interactionCount = Mathf.Min(_lastPublishedInteractionCount, _interactionPoints.Length);
+                for (int i = 0; i < interactionCount; i++)
+                {
+                    Vector4 positionRadius = _interactionPoints[i].PositionRadius;
+                    positionRadius.x += runtimeOffset.x;
+                    positionRadius.y += runtimeOffset.y;
+                    positionRadius.z += runtimeOffset.z;
+                    _interactionPoints[i].PositionRadius = positionRadius;
+                }
+
+                GraphicsBufferUploadUtility.UploadArray(_interactionBuffer, _interactionPoints, interactionCount);
+            }
+
+            if (_flowFieldResolution > 0 || _flowFieldCellSize > 0f)
+            {
+                _flowFieldCenterWS += runtimeOffset;
+                _lastUploadedFlowFieldCenterWS += runtimeOffset;
+                PublishFlowFieldGlobals();
+            }
+
+            if (_wakeTrailWorldRect.z > 0f && _wakeTrailWorldRect.w > 0f)
+            {
+                _wakeTrailCenterXZ += new Vector2(runtimeOffset.x, runtimeOffset.z);
+                _wakeTrailWorldRect.x += runtimeOffset.x;
+                _wakeTrailWorldRect.y += runtimeOffset.z;
+                PublishWakeTrailGlobals();
+            }
+
+            PublishEnvironmentGlobals(_playerTransform != null ? _playerTransform.position : _smoothPosition);
+        }
+
         private void ResetInteractionGlobals()
         {
             Shader.SetGlobalVector(_PropWashPosId, Vector4.zero);
             Shader.SetGlobalFloat(_PropWashForceId, 0f);
             Shader.SetGlobalInt(_InteractionCountId, 0);
-            Shader.SetGlobalVector(_PlayerAbsoluteUniversePositionId, Vector4.zero);
+            Shader.SetGlobalVector(_PlayerRuntimePositionId, Vector4.zero);
             Shader.SetGlobalVector(_PlayerFloraInteractionParamsId, Vector4.zero);
             Shader.SetGlobalVector(_GlobalOceanFlowId, Vector4.zero);
             Shader.SetGlobalVector(_VegetationCurrentVectorId, Vector4.zero);
@@ -1391,11 +1493,8 @@ namespace Hecton8.World
             if (_isRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
 
-            tickManager.Register(this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _isRegistered = true;
         }
 
@@ -1404,16 +1503,9 @@ namespace Hecton8.World
             if (!_isRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister(this);
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
 
             _isRegistered = false;
-        }
-
-        private static long EstimateComputeBufferBytes(ComputeBuffer buffer)
-        {
-            return buffer != null ? (long)buffer.count * buffer.stride : 0L;
         }
 
         private static long EstimateGraphicsBufferBytes(GraphicsBuffer buffer)

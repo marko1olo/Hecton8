@@ -9,8 +9,10 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Audio Waveform Animator")]
-    public sealed class AudioWaveformAnimator : MonoBehaviour, ITickable
+    public sealed class AudioWaveformAnimator : MonoBehaviour, ITickable, IUpdatable
     {
+        private const int MaxCueTextChars = 1024;
+
         [Header("References")]
         [SerializeField] private RectTransform[] waveformBars;
         [SerializeField] private TMP_Text optionalCueText;
@@ -34,9 +36,11 @@ namespace Hecton8.UI
         private float _speakerIntensity = 1f;
         private float _pollTimer;
         private int _cueSeed;
+        private int _optionalCueTextLength = -1;
         private RectTransform _selfRect;
         private float[] _baseScaleX;
         private float[] _baseScaleZ;
+        private readonly char[] _optionalCueTextCache = new char[MaxCueTextChars]; // COLD ALLOC: char[1024] - optional waveform cue text cache for zero-GC TMP updates - owner: AudioWaveformAnimator
 
         /// <summary>
         /// Injects runtime-created waveform bars and optional cue text without requiring scene-side wiring.
@@ -98,11 +102,11 @@ namespace Hecton8.UI
             ApplyWaveformPose();
         }
 
-        private void HandleCueChanged(float duration, string text, float speakerIntensity)
+        private void HandleCueChanged(float duration, char[] textBuffer, int textStart, int textLength, float speakerIntensity)
         {
             _cueDuration = Mathf.Max(0f, duration);
             _cueTimer = _cueDuration;
-            _cueSeed = string.IsNullOrEmpty(text) ? 0 : text.GetHashCode();
+            _cueSeed = ComputeCueSeed(textBuffer, textStart, textLength);
             _speakerIntensity = Mathf.Clamp01(speakerIntensity);
             _amplitude = _cueDuration > 0f ? Mathf.Lerp(0.22f, 1f, _speakerIntensity) : 0f;
             if (_cueDuration <= 0f)
@@ -111,8 +115,7 @@ namespace Hecton8.UI
                 _speakerIntensity = 0f;
             }
 
-            if (optionalCueText != null && !string.Equals(optionalCueText.text, text, System.StringComparison.Ordinal))
-                optionalCueText.text = text ?? string.Empty;
+            ApplyOptionalCueText(textBuffer, textStart, textLength);
         }
 
         private void EnsureWaveformTargets()
@@ -213,16 +216,68 @@ namespace Hecton8.UI
             _subscribed = false;
         }
 
+        private void ApplyOptionalCueText(char[] textBuffer, int textStart, int textLength)
+        {
+            if (optionalCueText == null)
+                return;
+
+            int safeStart = textBuffer == null ? 0 : Mathf.Clamp(textStart, 0, textBuffer.Length);
+            int safeLength = textBuffer == null
+                ? 0
+                : Mathf.Clamp(textLength, 0, Mathf.Min(textBuffer.Length - safeStart, _optionalCueTextCache.Length));
+            if (_optionalCueTextLength == safeLength &&
+                BufferMatches(textBuffer, safeStart, _optionalCueTextCache, safeLength))
+            {
+                return;
+            }
+
+            for (int i = 0; i < safeLength; i++)
+                _optionalCueTextCache[i] = textBuffer[safeStart + i];
+
+            _optionalCueTextLength = safeLength;
+            optionalCueText.SetCharArray(
+                textBuffer ?? System.Array.Empty<char>(),
+                safeStart,
+                safeLength);
+        }
+
+        private static bool BufferMatches(char[] source, int sourceStart, char[] cached, int length)
+        {
+            if (source == null)
+                return length == 0;
+
+            for (int i = 0; i < length; i++)
+            {
+                if (source[sourceStart + i] != cached[i])
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static int ComputeCueSeed(char[] textBuffer, int textStart, int textLength)
+        {
+            if (textBuffer == null || textLength <= 0)
+                return 0;
+
+            int safeStart = Mathf.Clamp(textStart, 0, textBuffer.Length);
+            int safeLength = Mathf.Clamp(textLength, 0, textBuffer.Length - safeStart);
+            unchecked
+            {
+                int seed = 17;
+                for (int i = 0; i < safeLength; i++)
+                    seed = (seed * 31) + textBuffer[safeStart + i];
+
+                return seed;
+            }
+        }
+
         private void RegisterToTickManager()
         {
             if (_tickRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register(this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _tickRegistered = true;
         }
 
@@ -231,10 +286,7 @@ namespace Hecton8.UI
             if (!_tickRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister(this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _tickRegistered = false;
         }
     }

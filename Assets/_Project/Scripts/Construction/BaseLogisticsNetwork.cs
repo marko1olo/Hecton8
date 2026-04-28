@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Hecton.Localization;
 using Hecton8.Building;
 using Hecton8.Crafting;
 using Hecton8.Economy;
@@ -196,6 +197,24 @@ namespace Hecton8.Construction
             return count;
         }
 
+        public static int CountAccessibleItem(PowerGrid grid, int itemHashId)
+        {
+            if (grid == null || itemHashId == 0)
+                return 0;
+
+            int count = 0;
+            for (int i = 0; i < s_StorageEndpoints.Count; i++)
+            {
+                StorageEndpoint endpoint = s_StorageEndpoints[i];
+                if (endpoint.Crate == null || endpoint.Node == null || endpoint.Node.Grid != grid)
+                    continue;
+
+                count += endpoint.Crate.CountItemByHash(itemHashId);
+            }
+
+            return count;
+        }
+
         /// <summary>
         /// Prepare phase for legacy string-id callers. It resolves items through the item catalog and reserves slots
         /// without physically moving them.
@@ -208,7 +227,7 @@ namespace Hecton8.Construction
         {
             reservation = null;
 
-            if (grid == null || costs == null || costs.Count == 0 || itemCatalog == null)
+            if (grid == null || costs == null || costs.Count == 0)
                 return false;
 
             // COLD ALLOC: LogisticsReservation[1] — two-phase prepare token for a single network request — owner: BaseLogisticsNetwork
@@ -222,8 +241,8 @@ namespace Hecton8.Construction
                 if (string.IsNullOrWhiteSpace(pair.Key) || pair.Value <= 0)
                     continue;
 
-                ItemData item = itemCatalog.FindById(pair.Key);
-                if (item == null || !TryReserveSingleItem(grid, item, pair.Value, preparedReservation))
+                int itemHashId = LocHash.Compute(pair.Key);
+                if (itemHashId == 0 || !TryReserveSingleItemByHash(grid, itemHashId, pair.Value, preparedReservation))
                 {
                     RollbackReserved(preparedReservation);
                     return false;
@@ -258,6 +277,46 @@ namespace Hecton8.Construction
                     continue;
 
                 if (!TryReserveSingleItem(grid, cost.item, cost.amount, preparedReservation))
+                {
+                    RollbackReserved(preparedReservation);
+                    return false;
+                }
+            }
+
+            reservation = preparedReservation;
+            return true;
+        }
+
+        public static bool TryReserveResources(
+            PowerGrid grid,
+            int[] itemHashIds,
+            int[] amounts,
+            int costCount,
+            out LogisticsReservation reservation)
+        {
+            reservation = null;
+
+            if (grid == null ||
+                itemHashIds == null ||
+                amounts == null ||
+                costCount <= 0 ||
+                costCount > itemHashIds.Length ||
+                costCount > amounts.Length)
+            {
+                return false;
+            }
+
+            LogisticsReservation preparedReservation = new LogisticsReservation();
+            preparedReservation.Initialize(GetNextReservationId(), grid);
+
+            for (int i = 0; i < costCount; i++)
+            {
+                int itemHashId = itemHashIds[i];
+                int amount = amounts[i];
+                if (itemHashId == 0 || amount <= 0)
+                    continue;
+
+                if (!TryReserveSingleItemByHash(grid, itemHashId, amount, preparedReservation))
                 {
                     RollbackReserved(preparedReservation);
                     return false;
@@ -328,6 +387,37 @@ namespace Hecton8.Construction
                     continue;
 
                 while (remaining > 0 && endpoint.Crate.TryReserveItem(item, reservationId))
+                {
+                    reservation.AddTouchedCrate(endpoint.Crate);
+                    remaining--;
+                }
+            }
+
+            return remaining <= 0;
+        }
+
+        private static bool TryReserveSingleItemByHash(
+            PowerGrid grid,
+            int itemHashId,
+            int amount,
+            LogisticsReservation reservation)
+        {
+            if (grid == null || itemHashId == 0 || amount <= 0 || reservation == null || !reservation.IsPrepared)
+                return false;
+
+            if (CountAccessibleItem(grid, itemHashId) < amount)
+                return false;
+
+            int remaining = amount;
+            int reservationId = reservation.ReservationId;
+
+            for (int i = 0; i < s_StorageEndpoints.Count && remaining > 0; i++)
+            {
+                StorageEndpoint endpoint = s_StorageEndpoints[i];
+                if (endpoint.Crate == null || endpoint.Node == null || endpoint.Node.Grid != grid)
+                    continue;
+
+                while (remaining > 0 && endpoint.Crate.TryReserveItemByHash(itemHashId, reservationId))
                 {
                     reservation.AddTouchedCrate(endpoint.Crate);
                     remaining--;

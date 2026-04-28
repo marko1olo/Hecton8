@@ -1,6 +1,7 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using Hecton8.Core;
 
@@ -169,11 +170,8 @@ namespace Hecton8.UI
             if (_registered)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager == null)
-                return;
 
-            gameTickManager.Register(this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _registered = true;
         }
 
@@ -182,9 +180,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager != null)
-                gameTickManager.Unregister(this);
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
 
             _registered = false;
         }
@@ -245,7 +241,11 @@ namespace Hecton8.UI
             if (tooltipPanel == null || _canvas == null || _canvasRect == null)
                 return;
 
-            Vector2 mousePos = UnityEngine.Input.mousePosition;
+            Pointer pointer = Pointer.current;
+            if (pointer == null)
+                return;
+
+            Vector2 mousePos = pointer.position.ReadValue();
             Vector2 localPoint;
 
             RectTransformUtility.ScreenPointToLocalPointInRectangle(

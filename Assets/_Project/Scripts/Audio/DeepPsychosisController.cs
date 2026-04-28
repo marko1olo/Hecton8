@@ -2,7 +2,9 @@ using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.World;
+using Unity.Mathematics;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace Hecton8.Audio
 {
@@ -10,7 +12,7 @@ namespace Hecton8.Audio
     /// Drives low-frequency hallucination cues when the player is deep, oxygen-starved, or psychologically overloaded by pollution pressure.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class DeepPsychosisController : MonoBehaviour, ITickable, ISlowTickable
+    public sealed class DeepPsychosisController : MonoBehaviour, ITickable, IUpdatable, ISlowTickable
     {
         [Header("── Clip Pools ──────────────────")]
         [Tooltip("3D whisper cues emitted around the player during deep psychosis windows.")]
@@ -109,7 +111,7 @@ namespace Hecton8.Audio
                 return;
 
             PlayPsychosisCue();
-            _cueTimerSeconds = Mathf.Lerp(cueIntervalMaxSeconds, cueIntervalMinSeconds, _psychosisIntensity01);
+            _cueTimerSeconds = math.lerp(cueIntervalMaxSeconds, cueIntervalMinSeconds, _psychosisIntensity01);
         }
 
         /// <summary>
@@ -119,23 +121,23 @@ namespace Hecton8.Audio
         {
             TryResolveDependencies();
 
-            float depthMeters = _survivalSystem != null ? Mathf.Max(0f, _survivalSystem.Depth) : 0f;
-            float oxygenNormalized = _survivalSystem != null ? Mathf.Clamp01(_survivalSystem.OxygenNormalized) : 1f;
-            float deepPressure01 = Mathf.Clamp01(Mathf.InverseLerp(depthThreshold, depthThreshold + 350f, depthMeters));
+            float depthMeters = _survivalSystem != null ? math.max(0f, _survivalSystem.Depth) : 0f;
+            float oxygenNormalized = _survivalSystem != null ? math.saturate(_survivalSystem.OxygenNormalized) : 1f;
+            float deepPressure01 = math.saturate(math.unlerp(depthThreshold, depthThreshold + 350f, depthMeters));
             float oxygenDanger01 = oxygenNormalized <= oxygenThreshold
-                ? Mathf.Clamp01(Mathf.InverseLerp(oxygenThreshold, 0.05f, oxygenNormalized))
+                ? math.saturate(math.unlerp(oxygenThreshold, 0.05f, oxygenNormalized))
                 : 0f;
 
             EnvironmentalStrainManager strainManager = EnvironmentalStrainManager.Instance;
             float pollutionLoad = strainManager != null
-                ? Mathf.Max(0f, strainManager.MicroplasticStrain + strainManager.GeneralPollution)
+                ? math.max(0f, strainManager.MicroplasticStrain + strainManager.GeneralPollution)
                 : 0f;
             float pollutionPressure01 = pollutionLoad <= pollutionThreshold
                 ? 0f
-                : Mathf.Clamp01((pollutionLoad - pollutionThreshold) / Mathf.Max(1f, pollutionThreshold));
+                : math.saturate((pollutionLoad - pollutionThreshold) / math.max(1f, pollutionThreshold));
 
             float depthStress01 = deepPressure01 * oxygenDanger01;
-            _psychosisIntensity01 = Mathf.Clamp01(Mathf.Max(depthStress01, pollutionPressure01 * 0.65f));
+            _psychosisIntensity01 = math.saturate(math.max(depthStress01, pollutionPressure01 * 0.65f));
 
             _debugDepthMeters = depthMeters;
             _debugOxygenNormalized = oxygenNormalized;
@@ -160,40 +162,30 @@ namespace Hecton8.Audio
 
         private void TryRegisterTickHandlers()
         {
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
             if (!_registeredTick)
             {
-                tickManager.Register((ITickable)this);
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
                 _registeredTick = true;
             }
 
             if (!_registeredSlowTick)
             {
-                tickManager.Register((ISlowTickable)this);
+                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Player);
                 _registeredSlowTick = true;
             }
         }
 
         private void TryUnregisterTickHandlers()
         {
-            GameTickManager tickManager = GameTickManager.Instance;
-
             if (_registeredTick)
             {
-                if (tickManager != null)
-                    tickManager.Unregister((ITickable)this);
-
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
                 _registeredTick = false;
             }
 
             if (_registeredSlowTick)
             {
-                if (tickManager != null)
-                    tickManager.Unregister((ISlowTickable)this);
-
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
                 _registeredSlowTick = false;
             }
         }
@@ -211,22 +203,22 @@ namespace Hecton8.Audio
             }
 
             Vector3 origin = _playerTransform.position;
-            float radius = Mathf.Lerp(cueRadiusMin, cueRadiusMax, _psychosisIntensity01);
+            float radius = math.lerp(cueRadiusMin, cueRadiusMax, _psychosisIntensity01);
             Vector3 offset = new Vector3(
-                Random.Range(-1f, 1f),
-                Random.Range(-0.35f, 0.35f),
-                Random.Range(-1f, 1f));
+                UnityEngine.Random.Range(-1f, 1f),
+                UnityEngine.Random.Range(-0.35f, 0.35f),
+                UnityEngine.Random.Range(-1f, 1f));
 
             if (offset.sqrMagnitude < 0.01f)
                 offset = Vector3.forward;
 
             offset.Normalize();
             Vector3 cuePosition = origin + offset * radius;
-            float volume = Mathf.Lerp(cueVolumeMin, cueVolumeMax, _psychosisIntensity01);
-            float pitch = Random.Range(0.88f, 1.08f);
+            float volume = math.lerp(cueVolumeMin, cueVolumeMax, _psychosisIntensity01);
+            float pitch = UnityEngine.Random.Range(0.88f, 1.08f);
             audioManager.PlayAtPoint(clip, cuePosition, volume, pitch, audioManager.AmbientGroup);
 
-            if (_psychosisIntensity01 >= 0.55f && Random.value <= helmetWhisperChance)
+            if (_psychosisIntensity01 >= 0.55f && UnityEngine.Random.value <= helmetWhisperChance)
                 AcousticZoneController.Instance?.PlayMadnessWhisperCue();
         }
 
@@ -247,7 +239,7 @@ namespace Hecton8.Audio
                 return null;
 
             int clipCount = clips.Length;
-            int startIndex = Random.Range(0, clipCount);
+            int startIndex = UnityEngine.Random.Range(0, clipCount);
             for (int i = 0; i < clipCount; i++)
             {
                 AudioClip clip = clips[(startIndex + i) % clipCount];

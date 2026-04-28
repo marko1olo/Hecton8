@@ -9,6 +9,7 @@ namespace MoreMountains.Feedbacks
 	/// <summary>
 	/// this feedback will let you animate the position of 
 	/// </summary>
+	[global::System.Serializable]
 	[AddComponentMenu("")]
 	[FeedbackHelp("This feedback will animate the target object's position over time, for the specified duration, from the chosen initial position to the chosen destination. These can either be relative Vector3 offsets from the Feedback's position, or Transforms. If you specify transforms, the Vector3 values will be ignored.")]
 	[FeedbackPath("Transform/Position")]

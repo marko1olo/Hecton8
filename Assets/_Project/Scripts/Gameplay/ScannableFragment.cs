@@ -188,7 +188,7 @@ namespace Hecton8.Gameplay
             // Auto-find renderer if not assigned
             if (fragmentRenderer == null)
             {
-                fragmentRenderer = GetComponentInChildren<Renderer>();
+                fragmentRenderer = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Renderer>(transform);
             }
 
             RebuildLocalizedTextCache();

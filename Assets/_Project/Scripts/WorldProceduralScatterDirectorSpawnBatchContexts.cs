@@ -12,7 +12,7 @@ namespace Hecton8.World
             public Dictionary<int, int> PrefabCreateAllowances;
             public Dictionary<int, int> PrefabWarmupCounts;
             public Dictionary<int, GameObject> PrefabWarmupPrefabs;
-            public Dictionary<int, string> PrefabWarmupFamilyIds;
+            public Dictionary<int, int> PrefabWarmupFamilyHashes;
             public Vector3 ObserverPosition;
             public bool HasObserverPosition;
             public bool InitialWarmupPass;
@@ -27,7 +27,7 @@ namespace Hecton8.World
                 Dictionary<int, int> prefabCreateAllowances,
                 Dictionary<int, int> prefabWarmupCounts,
                 Dictionary<int, GameObject> prefabWarmupPrefabs,
-                Dictionary<int, string> prefabWarmupFamilyIds,
+                Dictionary<int, int> prefabWarmupFamilyHashes,
                 Vector3 observerPosition,
                 bool hasObserverPosition,
                 bool initialWarmupPass,
@@ -41,7 +41,7 @@ namespace Hecton8.World
                 PrefabCreateAllowances = prefabCreateAllowances;
                 PrefabWarmupCounts = prefabWarmupCounts;
                 PrefabWarmupPrefabs = prefabWarmupPrefabs;
-                PrefabWarmupFamilyIds = prefabWarmupFamilyIds;
+                PrefabWarmupFamilyHashes = prefabWarmupFamilyHashes;
                 ObserverPosition = observerPosition;
                 HasObserverPosition = hasObserverPosition;
                 InitialWarmupPass = initialWarmupPass;

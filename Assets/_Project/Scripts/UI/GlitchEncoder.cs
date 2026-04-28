@@ -7,7 +7,6 @@ namespace Hecton8.UI
     /// </summary>
     public static class GlitchEncoder
     {
-        private static readonly char[] s_decayGlyphs = { '#', '%', '&', '/', '?', '+', '=', '*', 'X', '0' };
         [System.ThreadStatic] private static char[] _stagingBuffer;
 
         /// <summary>
@@ -77,10 +76,7 @@ namespace Hecton8.UI
 
         private static char ResolveDecayGlyph(char source, uint state)
         {
-            if (source >= '0' && source <= '9')
-                return (char)('0' + (state % 10u));
-
-            return s_decayGlyphs[state % (uint)s_decayGlyphs.Length];
+            return GlitchTable.ResolveGlyph(source, state);
         }
 
         private static char[] GetBuffer(int requiredLength)

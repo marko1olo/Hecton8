@@ -1,3 +1,4 @@
+using System;
 using Hecton8.Core;
 using Unity.Mathematics;
 using UnityEngine;
@@ -18,6 +19,9 @@ namespace Hecton8.Gameplay
         private const float HeavySuitMassThreshold = 220f;
         private const string LeftGuideName = "Swim_LeftGuide";
         private const string RightGuideName = "Swim_RightGuide";
+        private const int MaxGuideHierarchySearchDepth = 64;
+        private const int MaxGuideHierarchySearchNodes = 512;
+        private const int MaxGuideChildScanCount = 128;
         private static readonly int _WaveSlopeForwardHash = Animator.StringToHash("WaveSlopeForward");
         private static readonly int _WaveSlopeLateralHash = Animator.StringToHash("WaveSlopeLateral");
         private static readonly int _WaveSlopeXHash = Animator.StringToHash("WaveSlopeX");
@@ -651,6 +655,12 @@ namespace Hecton8.Gameplay
         private bool _poseStateInitialized;
         private IInputService _inputService;
         private readonly RaycastHit[] _handObstacleHits = new RaycastHit[4]; // COLD ALLOC: RaycastHit[4] — swim hand obstacle probes — owner: PlayerSwimPresentationController
+        private readonly Transform[] _guideHierarchyCache = new Transform[MaxGuideHierarchySearchNodes]; // COLD ALLOC: Transform[512] — cached swim guide hierarchy snapshot — owner: PlayerSwimPresentationController
+        private readonly Transform[] _guideDirectChildCache = new Transform[MaxGuideChildScanCount]; // COLD ALLOC: Transform[128] — cached swim guide direct-children snapshot — owner: PlayerSwimPresentationController
+        private Transform _guideHierarchySource;
+        private int _guideHierarchyCount;
+        private Transform _guideDirectChildSource;
+        private int _guideDirectChildCount;
 
         /// <summary>Current resolved swim presentation mode.</summary>
         public PlayerSwimPresentationMode CurrentMode => _currentMode;
@@ -787,6 +797,13 @@ namespace Hecton8.Gameplay
 #if UNITY_EDITOR
         private void OnValidate()
         {
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                return;
+            }
+
             AutoResolveReferences(allowSingletonAccess: false);
             ResolveGuideReferences();
         }
@@ -848,7 +865,9 @@ namespace Hecton8.Gameplay
             if (profile == null)
                 return;
 
-            Vector3 velocity = playerRigidbody.linearVelocity;
+            Vector3 velocity = playerMovement != null
+                ? playerMovement.InterpolatedLinearVelocity
+                : playerRigidbody.linearVelocity;
             float speed = math.length(velocity);
             float planarSpeed = math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
             float speedDelta = speed - _previousSpeed;
@@ -938,7 +957,7 @@ namespace Hecton8.Gameplay
             {
                 gameObject.TryGetComponent(out swimAnimator);
                 if (swimAnimator == null)
-                    swimAnimator = GetComponentInChildren<Animator>(true);
+                    swimAnimator = ComponentReferenceUtility.ResolveOwnedComponent<Animator>(transform);
             }
 
             if (allowSingletonAccess && _inputService == null)
@@ -951,28 +970,86 @@ namespace Hecton8.Gameplay
             {
                 Transform rootTransform = playerMovement.transform;
                 if (rootTransform != null)
-                    viewModelRoot = FindTransformRecursive(rootTransform, "Swim_ViewmodelRoot");
+                    viewModelRoot = FindTransformByName(ResolveGuideHierarchy(rootTransform), "Swim_ViewmodelRoot");
             }
 
             if (viewModelRoot == null)
                 return;
 
             if (leftHandGuide == null)
-                leftHandGuide = FindChildByName(viewModelRoot, LeftGuideName);
+                leftHandGuide = FindChildByName(ResolveGuideDirectChildren(viewModelRoot), LeftGuideName);
 
             if (rightHandGuide == null)
-                rightHandGuide = FindChildByName(viewModelRoot, RightGuideName);
+                rightHandGuide = FindChildByName(ResolveGuideDirectChildren(viewModelRoot), RightGuideName);
         }
 
-        private static Transform FindChildByName(Transform parent, string childName)
+        private ReadOnlySpan<Transform> ResolveGuideHierarchy(Transform root)
         {
-            if (parent == null)
-                return null;
+            if (_guideHierarchySource != root || _guideHierarchyCount == 0)
+                RebuildGuideHierarchyCache(root);
 
-            int childCount = parent.childCount;
-            for (int i = 0; i < childCount; i++)
+            return new ReadOnlySpan<Transform>(_guideHierarchyCache, 0, _guideHierarchyCount);
+        }
+
+        private ReadOnlySpan<Transform> ResolveGuideDirectChildren(Transform root)
+        {
+            if (_guideDirectChildSource != root || _guideDirectChildCount == 0)
+                RebuildGuideDirectChildCache(root);
+
+            return new ReadOnlySpan<Transform>(_guideDirectChildCache, 0, _guideDirectChildCount);
+        }
+
+        private void RebuildGuideHierarchyCache(Transform root)
+        {
+            _guideHierarchySource = root;
+            _guideHierarchyCount = 0;
+
+            if (root == null)
+                return;
+
+            _guideHierarchyCache[0] = root;
+            int writeCount = 1;
+            for (int readIndex = 0; readIndex < writeCount; readIndex++)
             {
-                Transform child = parent.GetChild(i);
+                Transform parent = _guideHierarchyCache[readIndex];
+                int childCount = math.min(parent != null ? parent.childCount : 0, MaxGuideHierarchySearchNodes - writeCount);
+                for (int childIndex = 0; childIndex < childCount; childIndex++)
+                {
+                    Transform child = parent.GetChild(childIndex);
+                    if (child == null)
+                        continue;
+
+                    _guideHierarchyCache[writeCount++] = child;
+                }
+            }
+
+            _guideHierarchyCount = writeCount;
+        }
+
+        private void RebuildGuideDirectChildCache(Transform root)
+        {
+            _guideDirectChildSource = root;
+            _guideDirectChildCount = 0;
+
+            if (root == null)
+                return;
+
+            int childCount = math.min(root.childCount, MaxGuideChildScanCount);
+            for (int childIndex = 0; childIndex < childCount; childIndex++)
+            {
+                Transform child = root.GetChild(childIndex);
+                if (child == null)
+                    continue;
+
+                _guideDirectChildCache[_guideDirectChildCount++] = child;
+            }
+        }
+
+        private static Transform FindChildByName(ReadOnlySpan<Transform> children, string childName)
+        {
+            for (int i = 0; i < children.Length; i++)
+            {
+                Transform child = children[i];
                 if (child != null && child.name == childName)
                     return child;
             }
@@ -980,20 +1057,13 @@ namespace Hecton8.Gameplay
             return null;
         }
 
-        private static Transform FindTransformRecursive(Transform parent, string transformName)
+        private static Transform FindTransformByName(ReadOnlySpan<Transform> hierarchy, string transformName)
         {
-            if (parent == null)
-                return null;
-
-            if (parent.name == transformName)
-                return parent;
-
-            int childCount = parent.childCount;
-            for (int i = 0; i < childCount; i++)
+            for (int i = 0; i < hierarchy.Length; i++)
             {
-                Transform match = FindTransformRecursive(parent.GetChild(i), transformName);
-                if (match != null)
-                    return match;
+                Transform candidate = hierarchy[i];
+                if (candidate != null && candidate.name == transformName)
+                    return candidate;
             }
 
             return null;

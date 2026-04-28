@@ -15,6 +15,7 @@ using Hecton8.World;
 using Hecton.Localization;
 using Hecton8.Core;
 using TMPro;
+using Unity.Collections;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -34,6 +35,28 @@ namespace Hecton8.UI
     [AddComponentMenu("Hecton8/UI/PDA Inventory Tab")]
     public sealed class PDAInventoryTab : MonoBehaviour
     {
+        private static readonly char[] StackCountTemplateChars = "×{0}".ToCharArray();
+        private static readonly char[] DetailWeightStackTemplateChars = "MASS: {0:0.0} kg  |  STACK x{1}  |  TOTAL {2:0.0} kg".ToCharArray();
+        private static readonly char[] DetailWeightTemplateChars = "MASS: {0:0.0} kg".ToCharArray();
+        private static readonly char[] CargoWeightTemplateChars = "CARGO: {0:0.0} kg  |  {1}/{2} CELLS".ToCharArray();
+        private static readonly char[] CargoDigestPrefixAnchorsChars = "ANCHORS ".ToCharArray();
+        private static readonly char[] CargoDigestUnitsChars = "  |  UNITS ".ToCharArray();
+        private static readonly char[] CargoDigestFreeChars = "  |  FREE ".ToCharArray();
+        private static readonly char[] CargoDigestLineBreakChars = "\n".ToCharArray();
+        private static readonly char[] CargoDigestToolsChars = "TOOLS ".ToCharArray();
+        private static readonly char[] CargoDigestConsumablesChars = "  |  CONS ".ToCharArray();
+        private static readonly char[] CargoDigestMaterialsChars = "  |  MATS ".ToCharArray();
+        private static readonly char[] CargoDigestComponentsChars = "  |  PARTS ".ToCharArray();
+        private static readonly char[] CargoDigestMiscChars = "  |  MISC ".ToCharArray();
+        private static readonly char[] FilterDigestPrefixChars = "FILTER: ".ToCharArray();
+        private static readonly char[] FilterDigestShowingChars = "  |  SHOWING ".ToCharArray();
+        private static readonly char[] FilterDigestItemsChars = " ITEMS".ToCharArray();
+        private static readonly char[] FilterLabelAllChars = "ALL".ToCharArray();
+        private static readonly char[] FilterLabelToolsChars = "TOOLS".ToCharArray();
+        private static readonly char[] FilterLabelConsumablesChars = "CONS".ToCharArray();
+        private static readonly char[] FilterLabelMaterialsChars = "MATS".ToCharArray();
+        private static readonly char[] FilterLabelComponentsChars = "PARTS".ToCharArray();
+        private static readonly char[] PageDigestPrefixChars = "PAGE ".ToCharArray();
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -56,6 +79,7 @@ namespace Hecton8.UI
         private const float CellGap = 3f;
         private const float CellStep = CellSize + CellGap;
         private const int MaxItems = 48;
+        private const int MaxVisibleBlocks = 32;
         private const int ToolSlotCount = 4;
         private const int InventoryTabIndex = 0;
 
@@ -146,6 +170,7 @@ namespace Hecton8.UI
         private TextMeshProUGUI _weightLabel;
         private TextMeshProUGUI _cargoSummary;
         private TextMeshProUGUI _filterSummary;
+        private TextMeshProUGUI _pageSummary;
         private TextMeshProUGUI _gridSectionLabel;
         private TextMeshProUGUI _detailsSectionLabel;
         private TextMeshProUGUI _toolStripSectionLabel;
@@ -155,6 +180,8 @@ namespace Hecton8.UI
         private PDATabButton[] _tabButtons;
         private RectTransform _filterBarRoot;
         private PDAInventoryFilterButton[] _filterButtons;
+        private PDAInventoryPageButton _previousPageButton;
+        private PDAInventoryPageButton _nextPageButton;
         private RectTransform _toolSlotRowRoot;
 
         // USE button
@@ -186,9 +213,14 @@ namespace Hecton8.UI
         private int _hoverY = -1;
         private InventoryViewFilter _currentFilter = InventoryViewFilter.All;
         private int _visiblePlacementCount;
+        private int _currentPageIndex;
+        private int _filteredAnchorCount;
 
         // Placement buffer (pre-allocated)
-        private PlayerInventory.ItemPlacement[] _placementBuffer;
+        private char[] _cargoSummaryBuffer;
+        private char[] _filterSummaryBuffer;
+        private char[] _pageSummaryBuffer;
+        private int[] _filteredAnchorIndices;
         private bool _gridDirty;
         private bool _detailsDirty;
         private bool _toolStripDirty;
@@ -207,7 +239,10 @@ namespace Hecton8.UI
 
         private void Awake()
         {
-            _placementBuffer = new PlayerInventory.ItemPlacement[MaxItems];
+            _cargoSummaryBuffer = new char[160]; // COLD ALLOC: char[160] - cargo digest staging buffer - owner: PDAInventoryTab
+            _filterSummaryBuffer = new char[80]; // COLD ALLOC: char[80] - filter digest staging buffer - owner: PDAInventoryTab
+            _pageSummaryBuffer = new char[32]; // COLD ALLOC: char[32] - page digest staging buffer - owner: PDAInventoryTab
+            _filteredAnchorIndices = new int[MaxItems]; // COLD ALLOC: int[MaxItems] - filtered anchor page index buffer - owner: PDAInventoryTab
         }
 
         private void OnEnable()
@@ -230,24 +265,38 @@ namespace Hecton8.UI
 
         private void AutoResolve()
         {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (_dropOrigin == null && playerContext != null)
+                _dropOrigin = playerContext.PlayerCamera != null
+                    ? playerContext.PlayerCamera.transform
+                    : playerContext.PlayerTransform;
+            if (playerInventory == null && playerContext != null)
+                playerInventory = playerContext.Inventory;
+            if (toolManager == null && playerContext != null)
+                toolManager = playerContext.ToolManager;
+            if (playerPDA == null && playerContext != null)
+                playerPDA = playerContext.PlayerPDA;
+
             if ((!playerInventory || !toolManager || !playerPDA) &&
                 SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform != null)
             {
                 if (_dropOrigin == null)
                 {
-                    Camera playerCamera = playerTransform.GetComponentInChildren<Camera>(true);
+                    Camera playerCamera = null;
+                    if (!playerTransform.TryGetComponent(out playerCamera))
+                        playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
                     _dropOrigin = playerCamera != null ? playerCamera.transform : playerTransform;
                 }
 
                 if (playerInventory == null)
-                    playerInventory = playerTransform.GetComponent<PlayerInventory>();
+                    playerTransform.TryGetComponent(out playerInventory);
 
                 if (toolManager == null)
-                    toolManager = playerTransform.GetComponentInChildren<PlayerToolManager>(true);
+                    playerTransform.TryGetComponent(out toolManager);
 
                 if (playerPDA == null)
-                    playerPDA = playerTransform.GetComponentInChildren<PlayerPDA>(true);
+                    playerTransform.TryGetComponent(out playerPDA);
             }
 
             if (playerPDA == null)
@@ -513,13 +562,13 @@ namespace Hecton8.UI
             _selectImage.enabled = false;
 
             // Item block pool
-            _blockRects = new RectTransform[MaxItems];
-            _blockBgs = new Image[MaxItems];
-            _blockIcons = new Image[MaxItems];
-            _blockCanvasGroups = new CanvasGroup[MaxItems];
-            _blockCounts = new TextMeshProUGUI[MaxItems];
+            _blockRects = new RectTransform[MaxVisibleBlocks];
+            _blockBgs = new Image[MaxVisibleBlocks];
+            _blockIcons = new Image[MaxVisibleBlocks];
+            _blockCanvasGroups = new CanvasGroup[MaxVisibleBlocks];
+            _blockCounts = new TextMeshProUGUI[MaxVisibleBlocks];
 
-            for (int i = 0; i < MaxItems; i++)
+            for (int i = 0; i < MaxVisibleBlocks; i++)
             {
                 RectTransform br = CreateRect("Block_" + i, _gridArea);
                 br.pivot = new Vector2(0f, 1f);
@@ -916,6 +965,14 @@ namespace Hecton8.UI
             _filterSummary.rectTransform.offsetMin = new Vector2(12f, 6f);
             _filterSummary.rectTransform.offsetMax = new Vector2(-12f, 20f);
             _filterSummary.color = A(Primary, 0.72f);
+
+            _pageSummary = CreateText("PageSummary", root, 9f,
+                FontStyles.Bold, TextAlignmentOptions.BottomRight);
+            _pageSummary.rectTransform.anchorMin = new Vector2(0f, 0f);
+            _pageSummary.rectTransform.anchorMax = new Vector2(1f, 0f);
+            _pageSummary.rectTransform.offsetMin = new Vector2(12f, 6f);
+            _pageSummary.rectTransform.offsetMax = new Vector2(-12f, 20f);
+            _pageSummary.color = A(DimLow, 0.78f);
         }
 
         // ──────────────────────────────────────────────────────────
@@ -1033,6 +1090,36 @@ namespace Hecton8.UI
                     TabBgActive, TabBgInactive, TabActive, TabInactive);
                 _filterButtons[i] = button;
             }
+
+            RectTransform previousPageRect = CreateRect("PagePrev", _filterBarRoot);
+            previousPageRect.sizeDelta = new Vector2(28f, 20f);
+            EnsureLayoutElement(previousPageRect, 28f, 20f);
+            Image previousPageBg = previousPageRect.gameObject.AddComponent<Image>();
+            previousPageBg.color = TabBgInactive;
+            previousPageBg.raycastTarget = true;
+            TextMeshProUGUI previousPageLabel = CreateText("Label", previousPageRect, 10f,
+                FontStyles.Bold, TextAlignmentOptions.Center);
+            Stretch(previousPageLabel.rectTransform);
+            previousPageLabel.text = "<";
+            previousPageLabel.color = TabInactive;
+            _previousPageButton = previousPageRect.gameObject.AddComponent<PDAInventoryPageButton>();
+            _previousPageButton.Init(this, -1, previousPageBg, previousPageLabel,
+                TabBgActive, TabBgInactive, TabActive, TabInactive);
+
+            RectTransform nextPageRect = CreateRect("PageNext", _filterBarRoot);
+            nextPageRect.sizeDelta = new Vector2(28f, 20f);
+            EnsureLayoutElement(nextPageRect, 28f, 20f);
+            Image nextPageBg = nextPageRect.gameObject.AddComponent<Image>();
+            nextPageBg.color = TabBgInactive;
+            nextPageBg.raycastTarget = true;
+            TextMeshProUGUI nextPageLabel = CreateText("Label", nextPageRect, 10f,
+                FontStyles.Bold, TextAlignmentOptions.Center);
+            Stretch(nextPageLabel.rectTransform);
+            nextPageLabel.text = ">";
+            nextPageLabel.color = TabInactive;
+            _nextPageButton = nextPageRect.gameObject.AddComponent<PDAInventoryPageButton>();
+            _nextPageButton.Init(this, 1, nextPageBg, nextPageLabel,
+                TabBgActive, TabBgInactive, TabActive, TabInactive);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1080,6 +1167,16 @@ namespace Hecton8.UI
             InventoryGrid grid = playerInventory.Grid;
             if (grid == null) return;
 
+            NativeArray<int>.ReadOnly anchorHashIds = grid.AnchorHashIds;
+            NativeArray<byte>.ReadOnly anchorWidths = grid.AnchorWidths;
+            NativeArray<byte>.ReadOnly anchorHeights = grid.AnchorHeights;
+            NativeArray<byte>.ReadOnly anchorCategoryIds = grid.AnchorCategoryIds;
+            NativeArray<ushort>.ReadOnly stackCounts = playerInventory.GetStackCountsReadOnly();
+            if (!anchorHashIds.IsCreated || !anchorWidths.IsCreated || !anchorHeights.IsCreated || !anchorCategoryIds.IsCreated || !stackCounts.IsCreated)
+                return;
+
+            ValidateSelectionAgainstGrid(grid);
+
             // Update cell tints
             for (int y = 0; y < GridRows; y++)
             {
@@ -1087,46 +1184,39 @@ namespace Hecton8.UI
                 {
                     int idx = y * GridCols + x;
                     if (idx >= _cellImages.Length) continue;
-                    ItemData cell = grid.GetCell(x, y);
-                    _cellImages[idx].color = cell != null ? CellOccupied : CellEmpty;
+                    _cellImages[idx].color = grid.IsCellOccupied(x, y) ? CellOccupied : CellEmpty;
                 }
             }
 
-            // Get placements
-            int count = playerInventory.GetPlacements(_placementBuffer);
-            _visiblePlacementCount = 0;
+            _filteredAnchorCount = BuildFilteredAnchorIndexBuffer(anchorHashIds, anchorCategoryIds);
+            _visiblePlacementCount = _filteredAnchorCount;
+            SyncCurrentPageToSelection(grid);
+            ClampCurrentPageIndex(_filteredAnchorCount);
+            int pageStartIndex = _currentPageIndex * MaxVisibleBlocks;
+            int pageItemCount = Mathf.Max(0, Mathf.Min(MaxVisibleBlocks, _filteredAnchorCount - pageStartIndex));
             bool selectionHiddenByFilter = _selectedItem != null && !MatchesFilter(_selectedItem);
 
             // Activate/position blocks
-            for (int i = 0; i < MaxItems; i++)
+            for (int i = 0; i < MaxVisibleBlocks; i++)
             {
-                if (i < count)
+                if (i < pageItemCount)
                 {
-                    var p = _placementBuffer[i];
-                    bool visible = MatchesFilter(p.item);
-                    if (!visible)
-                    {
-                        SetCanvasGroupVisible(_blockCanvasGroups[i], false);
-                        SetGraphicVisible(_blockIcons[i], false);
-                        if (_blockCounts != null && i < _blockCounts.Length && _blockCounts[i] != null)
-                            SetGraphicVisible(_blockCounts[i], false);
-                        continue;
-                    }
-
-                    _visiblePlacementCount++;
+                    int anchorIndex = _filteredAnchorIndices[pageStartIndex + i];
+                    int itemHashId = anchorHashIds[anchorIndex];
+                    ItemData item = playerInventory.ItemCatalog != null ? playerInventory.ItemCatalog.FindByHash(itemHashId) : null;
                     SetCanvasGroupVisible(_blockCanvasGroups[i], true);
                     _blockRects[i].anchoredPosition = new Vector2(
-                        p.x * CellStep,
-                        -p.y * CellStep);
+                        (anchorIndex % grid.Columns) * CellStep,
+                        -(anchorIndex / grid.Columns) * CellStep);
                     _blockRects[i].sizeDelta = new Vector2(
-                        p.item.width * CellStep - CellGap,
-                        p.item.height * CellStep - CellGap);
+                        anchorWidths[anchorIndex] * CellStep - CellGap,
+                        anchorHeights[anchorIndex] * CellStep - CellGap);
 
                     _blockBgs[i].color = ItemBlock;
 
-                    if (p.item.icon != null)
+                    if (item != null && item.icon != null)
                     {
-                        _blockIcons[i].sprite = p.item.icon;
+                        _blockIcons[i].sprite = item.icon;
                         SetGraphicVisible(_blockIcons[i], true);
                     }
                     else
@@ -1137,10 +1227,11 @@ namespace Hecton8.UI
                     // Stack count badge
                     if (_blockCounts != null && i < _blockCounts.Length && _blockCounts[i] != null)
                     {
-                        if (p.stackCount > 1)
+                        int stackCount = Mathf.Max(1, stackCounts[anchorIndex]);
+                        if (stackCount > 1)
                         {
                             SetGraphicVisible(_blockCounts[i], true);
-                            _blockCounts[i].SetText("×{0}", p.stackCount);
+                            SetNumericText(_blockCounts[i], StackCountTemplateChars, LocNumericArg.Int(stackCount));
                         }
                         else
                         {
@@ -1157,11 +1248,29 @@ namespace Hecton8.UI
                 }
             }
 
-            _activeBlockCount = count;
+            _activeBlockCount = pageItemCount;
             if (selectionHiddenByFilter)
                 ClearSelectionSilently();
+
+            RefreshPageSummary();
+            RefreshPageButtons();
             RefreshWeight();
             RefreshCargoDigest();
+        }
+
+        private void ValidateSelectionAgainstGrid(InventoryGrid grid)
+        {
+            if (_selectedItem == null || grid == null)
+                return;
+
+            if (_selectedX < 0 || _selectedY < 0 || _selectedX >= GridCols || _selectedY >= GridRows)
+            {
+                ClearSelectionSilently();
+                return;
+            }
+
+            if (!ReferenceEquals(playerInventory.GetItemAt(_selectedX, _selectedY), _selectedItem))
+                ClearSelectionSilently();
         }
 
         private void RefreshDetails()
@@ -1242,10 +1351,14 @@ namespace Hecton8.UI
                 int stk = playerInventory != null
                     ? playerInventory.GetStackCount(_selectedX, _selectedY) : 1;
                 if (stk > 1)
-                    _detailWeight.SetText("MASS: {0:0.0} kg  |  STACK x{1}  |  TOTAL {2:0.0} kg",
-                        _selectedItem.weight, stk, _selectedItem.weight * stk);
+                    SetNumericText(
+                        _detailWeight,
+                        DetailWeightStackTemplateChars,
+                        LocNumericArg.Float(_selectedItem.weight),
+                        LocNumericArg.Int(stk),
+                        LocNumericArg.Float(_selectedItem.weight * stk));
                 else
-                    _detailWeight.SetText("MASS: {0:0.0} kg", _selectedItem.weight);
+                    SetNumericText(_detailWeight, DetailWeightTemplateChars, LocNumericArg.Float(_selectedItem.weight));
             }
 
             if (_detailSize != null)
@@ -1341,8 +1454,12 @@ namespace Hecton8.UI
             InventoryGrid grid = playerInventory.Grid;
             int usedCells = CountUsedCells();
             int totalCells = grid != null ? grid.Columns * grid.Rows : GridCols * GridRows;
-            _weightLabel.SetText("CARGO: {0:0.0} kg  |  {1}/{2} CELLS",
-                playerInventory.TotalWeight, usedCells, totalCells);
+            SetNumericText(
+                _weightLabel,
+                CargoWeightTemplateChars,
+                LocNumericArg.Float(playerInventory.TotalWeight),
+                LocNumericArg.Int(usedCells),
+                LocNumericArg.Int(totalCells));
         }
 
         private void RefreshCargoDigest()
@@ -1350,7 +1467,17 @@ namespace Hecton8.UI
             if (_cargoSummary == null || _filterSummary == null || playerInventory == null)
                 return;
 
-            int count = playerInventory.GetPlacements(_placementBuffer);
+            InventoryGrid grid = playerInventory.Grid;
+            if (grid == null)
+                return;
+
+            NativeArray<int>.ReadOnly anchorHashIds = grid.AnchorHashIds;
+            NativeArray<byte>.ReadOnly anchorCategoryIds = grid.AnchorCategoryIds;
+            NativeArray<ushort>.ReadOnly stackCounts = playerInventory.GetStackCountsReadOnly();
+            if (!anchorHashIds.IsCreated || !anchorCategoryIds.IsCreated || !stackCounts.IsCreated)
+                return;
+
+            int count = 0;
             int tools = 0;
             int consumables = 0;
             int materials = 0;
@@ -1358,12 +1485,16 @@ namespace Hecton8.UI
             int misc = 0;
             int totalUnits = 0;
 
-            for (int i = 0; i < count; i++)
+            int anchorCount = Mathf.Min(anchorHashIds.Length, Mathf.Min(anchorCategoryIds.Length, stackCounts.Length));
+            for (int i = 0; i < anchorCount; i++)
             {
-                PlayerInventory.ItemPlacement placement = _placementBuffer[i];
-                totalUnits += Mathf.Max(1, placement.stackCount);
+                if (anchorHashIds[i] == 0)
+                    continue;
 
-                switch (placement.item.category)
+                count++;
+                totalUnits += Mathf.Max(1, stackCounts[i]);
+
+                switch ((ItemCategory)anchorCategoryIds[i])
                 {
                     case ItemCategory.Tool:
                     case ItemCategory.Equipment:
@@ -1387,13 +1518,136 @@ namespace Hecton8.UI
             int totalCells = playerInventory.Grid != null
                 ? playerInventory.Grid.Columns * playerInventory.Grid.Rows
                 : GridCols * GridRows;
+            int freeCells = Mathf.Max(0, totalCells - CountUsedCells());
 
-            _cargoSummary.text =
-                $"ANCHORS {count}  |  UNITS {totalUnits}  |  FREE {Mathf.Max(0, totalCells - CountUsedCells())}/{totalCells}\n" +
-                $"TOOLS {tools}  |  CONS {consumables}  |  MATS {materials}  |  PARTS {components}  |  MISC {misc}";
+            int cargoLength;
+            EnsureCharCapacity(ref _cargoSummaryBuffer, 160);
+            while (!TryWriteCargoDigest(
+                       _cargoSummaryBuffer.AsSpan(),
+                       count,
+                       totalUnits,
+                       freeCells,
+                       totalCells,
+                       tools,
+                       consumables,
+                       materials,
+                       components,
+                       misc,
+                       out cargoLength))
+            {
+                EnsureCharCapacity(ref _cargoSummaryBuffer, _cargoSummaryBuffer.Length << 1);
+            }
 
-            _filterSummary.text =
-                $"FILTER: {CachedToUpperInvariant(GetFilterLabel(_currentFilter))}  |  SHOWING {_visiblePlacementCount}/{count} ITEMS";
+            ApplyDynamicBuffer(_cargoSummary, _cargoSummaryBuffer, cargoLength);
+
+            int filterLength;
+            EnsureCharCapacity(ref _filterSummaryBuffer, 80);
+            while (!TryWriteFilterDigest(
+                       _filterSummaryBuffer.AsSpan(),
+                       _currentFilter,
+                       _visiblePlacementCount,
+                       count,
+                       out filterLength))
+            {
+                EnsureCharCapacity(ref _filterSummaryBuffer, _filterSummaryBuffer.Length << 1);
+            }
+
+            ApplyDynamicBuffer(_filterSummary, _filterSummaryBuffer, filterLength);
+        }
+
+        private int BuildFilteredAnchorIndexBuffer(
+            NativeArray<int>.ReadOnly anchorHashIds,
+            NativeArray<byte>.ReadOnly anchorCategoryIds)
+        {
+            if (_filteredAnchorIndices == null)
+                return 0;
+
+            int limit = Mathf.Min(anchorHashIds.Length, anchorCategoryIds.Length);
+            int writeIndex = 0;
+            for (int anchorIndex = 0; anchorIndex < limit && writeIndex < _filteredAnchorIndices.Length; anchorIndex++)
+            {
+                if (anchorHashIds[anchorIndex] == 0 || !MatchesFilter(anchorCategoryIds[anchorIndex]))
+                    continue;
+
+                _filteredAnchorIndices[writeIndex++] = anchorIndex;
+            }
+
+            return writeIndex;
+        }
+
+        private void ClampCurrentPageIndex(int filteredAnchorCount)
+        {
+            int maxPageIndex = Mathf.Max(0, GetPageCount(filteredAnchorCount) - 1);
+            _currentPageIndex = Mathf.Clamp(_currentPageIndex, 0, maxPageIndex);
+        }
+
+        private void SyncCurrentPageToSelection(InventoryGrid grid)
+        {
+            if (_selectedItem == null || grid == null || _selectedX < 0 || _selectedY < 0)
+                return;
+
+            int selectedAnchorIndex = grid.GetCellAnchorIndex(_selectedX, _selectedY);
+            if (selectedAnchorIndex < 0)
+                return;
+
+            for (int i = 0; i < _filteredAnchorCount; i++)
+            {
+                if (_filteredAnchorIndices[i] != selectedAnchorIndex)
+                    continue;
+
+                _currentPageIndex = i / MaxVisibleBlocks;
+                return;
+            }
+        }
+
+        private void RefreshPageSummary()
+        {
+            if (_pageSummary == null)
+                return;
+
+            int pageCount = GetPageCount(_filteredAnchorCount);
+            int currentPage = pageCount > 0 ? Mathf.Min(_currentPageIndex + 1, pageCount) : 0;
+            int length;
+            EnsureCharCapacity(ref _pageSummaryBuffer, 24);
+            while (!TryWritePageDigest(_pageSummaryBuffer.AsSpan(), currentPage, pageCount, out length))
+                EnsureCharCapacity(ref _pageSummaryBuffer, _pageSummaryBuffer.Length << 1);
+
+            ApplyDynamicBuffer(_pageSummary, _pageSummaryBuffer, length);
+        }
+
+        private void RefreshPageButtons()
+        {
+            int pageCount = GetPageCount(_filteredAnchorCount);
+            bool canGoPrevious = _currentPageIndex > 0;
+            bool canGoNext = _currentPageIndex + 1 < pageCount;
+            _previousPageButton?.SetActive(canGoPrevious);
+            _nextPageButton?.SetActive(canGoNext);
+        }
+
+        private int GetPageCount(int filteredAnchorCount)
+        {
+            return filteredAnchorCount <= 0
+                ? 1
+                : ((filteredAnchorCount - 1) / MaxVisibleBlocks) + 1;
+        }
+
+        internal void ChangePage(int direction)
+        {
+            if (direction == 0)
+                return;
+
+            int pageCount = GetPageCount(_filteredAnchorCount);
+            if (pageCount <= 1)
+                return;
+
+            int nextPageIndex = Mathf.Clamp(_currentPageIndex + direction, 0, pageCount - 1);
+            if (nextPageIndex == _currentPageIndex)
+                return;
+
+            _currentPageIndex = nextPageIndex;
+            _gridDirty = true;
+            if (IsTabActive)
+                FlushPendingRefresh();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1452,7 +1706,7 @@ namespace Hecton8.UI
             HectonEventBus.Publish(new ItemDiscardedEvent(dropped, 1, dropOrigin));
 
             // Проверяем остался ли предмет на этой позиции
-            ItemData remaining = playerInventory.Grid.GetCell(_selectedX, _selectedY);
+            ItemData remaining = playerInventory.GetItemAt(_selectedX, _selectedY);
             if (!ReferenceEquals(remaining, _selectedItem))
             {
                 ClearSelection();
@@ -1479,7 +1733,7 @@ namespace Hecton8.UI
             _hoverY = gy;
 
             ItemData cell = playerInventory != null
-                ? playerInventory.Grid.GetCell(gx, gy)
+                ? playerInventory.GetItemAt(gx, gy)
                 : null;
 
             if (cell != null)
@@ -1510,7 +1764,7 @@ namespace Hecton8.UI
             }
 
             ItemData cell = playerInventory != null
-                ? playerInventory.Grid.GetCell(gx, gy)
+                ? playerInventory.GetItemAt(gx, gy)
                 : null;
 
             if (cell != null)
@@ -1553,7 +1807,7 @@ namespace Hecton8.UI
             if (!consumed) return;
 
             // Проверяем остался ли предмет
-            ItemData remaining = playerInventory.Grid.GetCell(_selectedX, _selectedY);
+            ItemData remaining = playerInventory.GetItemAt(_selectedX, _selectedY);
             if (!ReferenceEquals(remaining, _selectedItem))
                 ClearSelection();
             else
@@ -1627,6 +1881,8 @@ namespace Hecton8.UI
             PlayUISound(sortSound);
             playerInventory.SortInventory();
             ClearSelection();
+            if (IsTabActive)
+                FlushPendingRefresh(forceAll: true);
         }
 
         internal void HandlePointerExit()
@@ -1670,17 +1926,17 @@ namespace Hecton8.UI
 
         private void FindAnchor(ItemData item, int gx, int gy, out int ax, out int ay)
         {
-            ax = gx;
-            ay = gy;
             InventoryGrid grid = playerInventory.Grid;
+            int anchorIndex = grid != null ? grid.GetCellAnchorIndex(gx, gy) : -1;
+            if (anchorIndex < 0)
+            {
+                ax = gx;
+                ay = gy;
+                return;
+            }
 
-            // Walk left
-            while (ax > 0 && ReferenceEquals(grid.GetCell(ax - 1, gy), item))
-                ax--;
-
-            // Walk up
-            while (ay > 0 && ReferenceEquals(grid.GetCell(ax, ay - 1), item))
-                ay--;
+            ax = anchorIndex % grid.Columns;
+            ay = anchorIndex / grid.Columns;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1816,6 +2072,168 @@ namespace Hecton8.UI
             graphic.enabled = visible;
         }
 
+        private static void SetNumericText(TMP_Text label, char[] template, LocNumericArg value0)
+        {
+            if (label == null || template == null)
+                return;
+
+            LocNumericBuffer.Write(new ReadOnlySpan<char>(template), value0, out char[] buffer, out int length);
+            int safeLength = Mathf.Clamp(length, 0, buffer != null ? buffer.Length : 0);
+            label.SetCharArray(buffer, 0, safeLength);
+            label.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
+        }
+
+        private static void SetNumericText(TMP_Text label, char[] template, LocNumericArg value0, LocNumericArg value1, LocNumericArg value2)
+        {
+            if (label == null || template == null)
+                return;
+
+            LocNumericBuffer.Write(new ReadOnlySpan<char>(template), value0, value1, value2, out char[] buffer, out int length);
+            int safeLength = Mathf.Clamp(length, 0, buffer != null ? buffer.Length : 0);
+            label.SetCharArray(buffer, 0, safeLength);
+            label.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
+        }
+
+        private static void ApplyDynamicBuffer(TMP_Text label, char[] buffer, int length)
+        {
+            if (label == null || buffer == null)
+                return;
+
+            int safeLength = Mathf.Clamp(length, 0, buffer.Length);
+            label.SetCharArray(buffer, 0, safeLength);
+            label.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
+        }
+
+        private static void EnsureCharCapacity(ref char[] buffer, int requiredLength)
+        {
+            if (buffer != null && buffer.Length >= requiredLength)
+                return;
+
+            int capacity = buffer == null ? 32 : buffer.Length;
+            while (capacity < requiredLength)
+                capacity <<= 1;
+
+            buffer = new char[capacity]; // COLD ALLOC: char[capacity] - expanded inventory tab text staging buffer - owner: PDAInventoryTab
+        }
+
+        private static bool TryWriteCargoDigest(
+            Span<char> destination,
+            int anchors,
+            int totalUnits,
+            int freeCells,
+            int totalCells,
+            int tools,
+            int consumables,
+            int materials,
+            int components,
+            int misc,
+            out int length)
+        {
+            length = 0;
+            if (!TryWriteLiteral(destination, ref length, CargoDigestPrefixAnchorsChars) ||
+                !TryWriteInt(destination, ref length, anchors) ||
+                !TryWriteLiteral(destination, ref length, CargoDigestUnitsChars) ||
+                !TryWriteInt(destination, ref length, totalUnits) ||
+                !TryWriteLiteral(destination, ref length, CargoDigestFreeChars) ||
+                !TryWriteInt(destination, ref length, freeCells) ||
+                !TryWriteLiteral(destination, ref length, "/".AsSpan()) ||
+                !TryWriteInt(destination, ref length, totalCells) ||
+                !TryWriteLiteral(destination, ref length, CargoDigestLineBreakChars) ||
+                !TryWriteLiteral(destination, ref length, CargoDigestToolsChars) ||
+                !TryWriteInt(destination, ref length, tools) ||
+                !TryWriteLiteral(destination, ref length, CargoDigestConsumablesChars) ||
+                !TryWriteInt(destination, ref length, consumables) ||
+                !TryWriteLiteral(destination, ref length, CargoDigestMaterialsChars) ||
+                !TryWriteInt(destination, ref length, materials) ||
+                !TryWriteLiteral(destination, ref length, CargoDigestComponentsChars) ||
+                !TryWriteInt(destination, ref length, components) ||
+                !TryWriteLiteral(destination, ref length, CargoDigestMiscChars) ||
+                !TryWriteInt(destination, ref length, misc))
+            {
+                length = 0;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryWriteFilterDigest(
+            Span<char> destination,
+            InventoryViewFilter filter,
+            int visibleItems,
+            int totalItems,
+            out int length)
+        {
+            length = 0;
+            if (!TryWriteLiteral(destination, ref length, FilterDigestPrefixChars) ||
+                !TryWriteLiteral(destination, ref length, ResolveFilterLabelChars(filter)) ||
+                !TryWriteLiteral(destination, ref length, FilterDigestShowingChars) ||
+                !TryWriteInt(destination, ref length, visibleItems) ||
+                !TryWriteLiteral(destination, ref length, "/".AsSpan()) ||
+                !TryWriteInt(destination, ref length, totalItems) ||
+                !TryWriteLiteral(destination, ref length, FilterDigestItemsChars))
+            {
+                length = 0;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryWritePageDigest(Span<char> destination, int currentPage, int totalPages, out int length)
+        {
+            length = 0;
+            if (!TryWriteLiteral(destination, ref length, PageDigestPrefixChars) ||
+                !TryWriteInt(destination, ref length, currentPage) ||
+                !TryWriteLiteral(destination, ref length, "/".AsSpan()) ||
+                !TryWriteInt(destination, ref length, totalPages))
+            {
+                length = 0;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static ReadOnlySpan<char> ResolveFilterLabelChars(InventoryViewFilter filter)
+        {
+            switch (filter)
+            {
+                case InventoryViewFilter.Tools:
+                    return FilterLabelToolsChars;
+                case InventoryViewFilter.Consumables:
+                    return FilterLabelConsumablesChars;
+                case InventoryViewFilter.Materials:
+                    return FilterLabelMaterialsChars;
+                case InventoryViewFilter.Components:
+                    return FilterLabelComponentsChars;
+                default:
+                    return FilterLabelAllChars;
+            }
+        }
+
+        private static bool TryWriteLiteral(Span<char> destination, ref int index, ReadOnlySpan<char> literal)
+        {
+            if ((uint)index > (uint)destination.Length || literal.Length > destination.Length - index)
+                return false;
+
+            literal.CopyTo(destination.Slice(index));
+            index += literal.Length;
+            return true;
+        }
+
+        private static bool TryWriteInt(Span<char> destination, ref int index, int value)
+        {
+            if ((uint)index > (uint)destination.Length)
+                return false;
+
+            if (!value.TryFormat(destination.Slice(index), out int written))
+                return false;
+
+            index += written;
+            return true;
+        }
+
         private static Color A(Color c, float a) { c.a = a; return c; }
 
         internal void SetFilter(InventoryViewFilter filter)
@@ -1824,6 +2242,7 @@ namespace Hecton8.UI
                 return;
 
             _currentFilter = filter;
+            _currentPageIndex = 0;
 
             if (_filterButtons != null)
             {
@@ -1854,6 +2273,24 @@ namespace Hecton8.UI
             }
         }
 
+        private bool MatchesFilter(byte categoryId)
+        {
+            ItemCategory category = (ItemCategory)categoryId;
+            switch (_currentFilter)
+            {
+                case InventoryViewFilter.Tools:
+                    return category == ItemCategory.Tool || category == ItemCategory.Equipment;
+                case InventoryViewFilter.Consumables:
+                    return category == ItemCategory.Consumable;
+                case InventoryViewFilter.Materials:
+                    return category == ItemCategory.Material;
+                case InventoryViewFilter.Components:
+                    return category == ItemCategory.Component;
+                default:
+                    return true;
+            }
+        }
+
         private string GetFilterLabel(InventoryViewFilter filter)
         {
             switch (filter)
@@ -1871,21 +2308,7 @@ namespace Hecton8.UI
             if (playerInventory == null || playerInventory.Grid == null)
                 return 0;
 
-            InventoryGrid grid = playerInventory.Grid;
-            int cols = grid.Columns;
-            int rows = grid.Rows;
-            int used = 0;
-
-            for (int y = 0; y < rows; y++)
-            {
-                for (int x = 0; x < cols; x++)
-                {
-                    if (grid.GetCell(x, y) != null)
-                        used++;
-                }
-            }
-
-            return used;
+            return playerInventory.Grid.OccupiedCells;
         }
 
         private bool IsSelectedItemAssignableTool()
@@ -2421,6 +2844,72 @@ namespace Hecton8.UI
             if (_bg != null) _bg.color = _normalColor;
         }
     }
+
+    [DisallowMultipleComponent]
+    internal sealed class PDAInventoryPageButton : MonoBehaviour,
+        IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
+    {
+        private PDAInventoryTab _tab;
+        private int _direction;
+        private Image _bg;
+        private TMP_Text _label;
+        private Color _activeBackgroundColor;
+        private Color _inactiveBackgroundColor;
+        private Color _activeLabelColor;
+        private Color _inactiveLabelColor;
+        private bool _isActive;
+
+        public void Init(
+            PDAInventoryTab tab,
+            int direction,
+            Image bg,
+            TMP_Text label,
+            Color activeBackgroundColor,
+            Color inactiveBackgroundColor,
+            Color activeLabelColor,
+            Color inactiveLabelColor)
+        {
+            _tab = tab;
+            _direction = direction;
+            _bg = bg;
+            _label = label;
+            _activeBackgroundColor = activeBackgroundColor;
+            _inactiveBackgroundColor = inactiveBackgroundColor;
+            _activeLabelColor = activeLabelColor;
+            _inactiveLabelColor = inactiveLabelColor;
+            SetActive(false);
+        }
+
+        public void SetActive(bool isActive)
+        {
+            _isActive = isActive;
+
+            if (_bg != null)
+                _bg.color = isActive ? _activeBackgroundColor : _inactiveBackgroundColor;
+
+            if (_label != null)
+                _label.color = isActive ? _activeLabelColor : _inactiveLabelColor;
+        }
+
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            if (_isActive)
+                _tab?.ChangePage(_direction);
+        }
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            if (_isActive && _bg != null)
+                _bg.color = _activeBackgroundColor;
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            if (_bg != null)
+                _bg.color = _isActive ? _activeBackgroundColor : _inactiveBackgroundColor;
+        }
+    }
+
     [DisallowMultipleComponent]
     internal sealed class DropItemButton : MonoBehaviour,
         IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler

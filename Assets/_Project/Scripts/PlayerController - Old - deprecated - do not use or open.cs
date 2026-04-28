@@ -1,7 +1,8 @@
 using Hecton8.Input;
+using Hecton8.Core;
 using UnityEngine;
 
-public class PlayerControllerDeprecated : MonoBehaviour
+public class PlayerControllerDeprecated : MonoBehaviour, ITickable
 {
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 10f;
@@ -19,6 +20,7 @@ public class PlayerControllerDeprecated : MonoBehaviour
     private CharacterController controller;
     private float rotX;
     private float rotY;
+    private bool _registeredTick;
 
     private void Awake()
     {
@@ -36,7 +38,25 @@ public class PlayerControllerDeprecated : MonoBehaviour
         }
     }
 
-    private void Update()
+    private void OnEnable()
+    {
+        if (_registeredTick)
+            return;
+
+        GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
+        _registeredTick = true;
+    }
+
+    private void OnDisable()
+    {
+        if (!_registeredTick)
+            return;
+
+        GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+        _registeredTick = false;
+    }
+
+    public void Tick(float deltaTime)
     {
         if (controller == null || cam == null)
         {
@@ -50,7 +70,7 @@ public class PlayerControllerDeprecated : MonoBehaviour
         bool sprinting = inputManager != null && inputManager.IsSprinting;
 
         UpdateLook(lookInput);
-        UpdateMovement(moveInput, verticalInput, sprinting);
+        UpdateMovement(moveInput, verticalInput, sprinting, deltaTime);
     }
 
     private void UpdateLook(Vector2 lookInput)
@@ -63,13 +83,13 @@ public class PlayerControllerDeprecated : MonoBehaviour
         cam.localRotation = Quaternion.Euler(rotX, 0f, 0f);
     }
 
-    private void UpdateMovement(Vector2 moveInput, float verticalInput, bool sprinting)
+    private void UpdateMovement(Vector2 moveInput, float verticalInput, bool sprinting, float deltaTime)
     {
         float speedMultiplier = sprinting ? sprintMultiplier : 1f;
         Vector3 planarMovement = cam.forward * moveInput.y + cam.right * moveInput.x;
         Vector3 verticalMovement = Vector3.up * verticalInput * verticalSpeed;
         Vector3 motion = planarMovement * moveSpeed * speedMultiplier + verticalMovement;
 
-        controller.Move(motion * Time.deltaTime);
+        controller.Move(motion * deltaTime);
     }
 }

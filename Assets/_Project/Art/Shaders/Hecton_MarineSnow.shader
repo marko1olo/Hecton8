@@ -45,14 +45,24 @@ Shader "Hecton8/VFX/MarineSnow"
 
             StructuredBuffer<Particle> _MarineSnowParticles;
 
-            CBUFFER_START(_HectonMarineSnowFrame)
-                float4 _MarineSnowCameraPosition_Time;
-                float4 _MarineSnowCameraRight_DeltaTime;
-                float4 _MarineSnowCameraUp_Density;
-                float4 _MarineSnowFlowFieldCenterCellSize;
-                float4 _MarineSnowShellParams;
-                float4 _MarineSnowMetaParams;
-            CBUFFER_END
+            struct MarineSnowFrameData
+            {
+                float4 CameraPositionTime;
+                float4 CameraRightDeltaTime;
+                float4 CameraUpDensity;
+                float4 FlowFieldCenterCellSize;
+                float4 ShellParams;
+                float4 MetaParams;
+            };
+
+            StructuredBuffer<MarineSnowFrameData> _HectonMarineSnowFrame;
+
+            #define _MarineSnowCameraPosition_Time (_HectonMarineSnowFrame[0].CameraPositionTime)
+            #define _MarineSnowCameraRight_DeltaTime (_HectonMarineSnowFrame[0].CameraRightDeltaTime)
+            #define _MarineSnowCameraUp_Density (_HectonMarineSnowFrame[0].CameraUpDensity)
+            #define _MarineSnowFlowFieldCenterCellSize (_HectonMarineSnowFrame[0].FlowFieldCenterCellSize)
+            #define _MarineSnowShellParams (_HectonMarineSnowFrame[0].ShellParams)
+            #define _MarineSnowMetaParams (_HectonMarineSnowFrame[0].MetaParams)
 
             float4 _MarineSnowTint;
             float4 _MarineSnowRenderParams;

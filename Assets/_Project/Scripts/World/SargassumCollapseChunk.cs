@@ -1,6 +1,7 @@
 using Hecton8.Core;
 using UnityEngine;
 using UnityEngine.Rendering;
+using Hecton8.Physics;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -13,7 +14,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
-    public sealed class SargassumCollapseChunk : MonoBehaviour, ITickable, IPoolable
+    public sealed class SargassumCollapseChunk : MonoBehaviour, ITickable, IFixedTickable, IPoolable
     {
         private const string ScrapPickupPrefabAssetPath = "Assets/_Project/Prefabs/Resources/Pickups/PFB_Resource_TitaniumScrap.prefab";
         private static readonly Vector3[] ScrapEjectDirections =
@@ -121,14 +122,17 @@ namespace Hecton8.World
         private bool _hasSnag;
         private bool _cascadeImpactConsumed;
         private int _fragmentDepth;
-        private SpringJoint _snagSpringJoint;
-        private HingeJoint _snagHingeJoint;
+        private Rigidbody _snagConnectedBody;
+        private Vector3 _snagLocalAnchor;
+        private Vector3 _snagConnectedAnchor;
+        private bool _snagUseSpringOnly;
         private bool _siltTrailSettled;
         private float _snagHangTimer;
         private float _remainingThermalIntegrity;
         private float _scavengerConsume01;
         private bool _registeredScavengerHost;
         private bool _disintegrating;
+        private bool _registeredFixedTick;
         private readonly Collider[] _snagColliders = new Collider[8]; // COLD ALLOC: Collider[8] - bounded snag-target probe buffer for collapse chunks - owner: SargassumCollapseChunk
 
         private void Awake()
@@ -224,6 +228,18 @@ namespace Hecton8.World
             ObjectPoolManager poolManager = ObjectPoolManager.Instance;
             if (poolManager != null)
                 poolManager.Despawn(gameObject);
+        }
+
+        /// <summary>
+        /// Applies snag-constraint physics through the centralized fixed-step router.
+        /// </summary>
+        /// <param name="fixedDeltaTime">Physics step delta supplied by GameTickManager.</param>
+        public void FixedTick(float fixedDeltaTime)
+        {
+            if (!_hasSnag || chunkRigidbody == null || fixedDeltaTime <= 0f)
+                return;
+
+            ApplySnagConstraint(fixedDeltaTime);
         }
 
         /// <summary>
@@ -343,26 +359,36 @@ namespace Hecton8.World
         private void TryRegister()
         {
             if (_registeredTick)
+            {
+                if (_registeredFixedTick)
+                    return;
+            }
+            else
+            {
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+                _registeredTick = true;
+            }
+
+            if (_registeredFixedTick)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register((ITickable)this);
-            _registeredTick = true;
+            GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
+            _registeredFixedTick = true;
         }
 
         private void TryUnregister()
         {
-            if (!_registeredTick)
+            if (_registeredTick)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _registeredTick = false;
+            }
+
+            if (!_registeredFixedTick)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister((ITickable)this);
-
-            _registeredTick = false;
+            GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
+            _registeredFixedTick = false;
         }
 
         internal bool CanHostScavengers => gameObject.activeInHierarchy && _hasSnag && !_disintegrating;
@@ -390,14 +416,29 @@ namespace Hecton8.World
 
         private void ResolveRuntimeWiring(bool createFallbackTrail)
         {
-            if (chunkRigidbody == null)
-                TryGetComponent(out chunkRigidbody);
-
-            if (siltTrail == null)
-                siltTrail = GetComponentInChildren<ParticleSystem>(true);
+            ResolveExistingComponentReferences();
 
             if (siltTrail == null && createFallbackTrail)
                 siltTrail = CreateFallbackSiltTrail();
+        }
+
+        private bool ResolveExistingComponentReferences()
+        {
+            bool changed = false;
+            if (chunkRigidbody == null && TryGetComponent(out chunkRigidbody))
+                changed = true;
+
+            if (siltTrail == null)
+            {
+                ParticleSystem resolvedTrail = ComponentReferenceUtility.ResolveOwnedComponent<ParticleSystem>(transform);
+                if (resolvedTrail != null)
+                {
+                    siltTrail = resolvedTrail;
+                    changed = true;
+                }
+            }
+
+            return changed;
         }
 
         internal void ApplyThermalGeyserDamage(float damage)
@@ -414,48 +455,19 @@ namespace Hecton8.World
 
         private void EnsureSnagJoints()
         {
-            if (_snagSpringJoint == null && !TryGetComponent(out _snagSpringJoint))
-            {
-                // COLD ALLOC: SpringJoint[1] - cached hanging-debris spring joint on pooled collapse chunks - owner: SargassumCollapseChunk
-                _snagSpringJoint = gameObject.AddComponent<SpringJoint>();
-            }
-
-            if (_snagHingeJoint == null && !TryGetComponent(out _snagHingeJoint))
-            {
-                // COLD ALLOC: HingeJoint[1] - cached hanging-debris hinge joint on pooled collapse chunks - owner: SargassumCollapseChunk
-                _snagHingeJoint = gameObject.AddComponent<HingeJoint>();
-            }
-
             DisableSnagJoints();
         }
 
         private void DisableSnagJoints()
         {
-            if (_snagSpringJoint != null)
-            {
-                _snagSpringJoint.connectedBody = null;
-                _snagSpringJoint.autoConfigureConnectedAnchor = false;
-                _snagSpringJoint.enableCollision = false;
-                _snagSpringJoint.spring = 0f;
-                _snagSpringJoint.damper = 0f;
-                _snagSpringJoint.maxDistance = 0f;
-            }
-
-            if (_snagHingeJoint != null)
-            {
-                _snagHingeJoint.connectedBody = null;
-                _snagHingeJoint.autoConfigureConnectedAnchor = false;
-                _snagHingeJoint.enableCollision = false;
-                _snagHingeJoint.useSpring = false;
-            }
-
+            _snagConnectedBody = null;
+            _snagLocalAnchor = Vector3.zero;
+            _snagConnectedAnchor = Vector3.zero;
+            _snagUseSpringOnly = false;
         }
 
         private void TryConfigureSnag(Vector3 contactPointWS, Vector3 contactNormalWS, Rigidbody preferredBody, bool useVoxelRockSpring)
         {
-            if (_snagSpringJoint == null || _snagHingeJoint == null)
-                return;
-
             Rigidbody connectedBody = preferredBody;
             Vector3 safeNormal = contactNormalWS.sqrMagnitude > 0.0001f ? contactNormalWS.normalized : Vector3.up;
             Vector3 connectedAnchorWS = contactPointWS + safeNormal * snagSurfaceOffset;
@@ -491,42 +503,51 @@ namespace Hecton8.World
                 ? connectedBody.transform.InverseTransformPoint(connectedAnchorWS)
                 : connectedAnchorWS;
 
-            if (useVoxelRockSpring)
-            {
-                _snagSpringJoint.autoConfigureConnectedAnchor = false;
-                _snagSpringJoint.anchor = localAnchor;
-                _snagSpringJoint.connectedAnchor = connectedAnchor;
-                _snagSpringJoint.connectedBody = connectedBody;
-                _snagSpringJoint.spring = snagSpring;
-                _snagSpringJoint.damper = snagDamper;
-                _snagSpringJoint.maxDistance = snagMaxDistance;
-                _snagSpringJoint.enableCollision = false;
-                _hasSnag = true;
-                _siltTrailSettled = true;
-                TryRegisterScavengerHost();
-                return;
-            }
-
-            _snagSpringJoint.autoConfigureConnectedAnchor = false;
-            _snagSpringJoint.anchor = localAnchor;
-            _snagSpringJoint.connectedAnchor = connectedAnchor;
-            _snagSpringJoint.connectedBody = connectedBody;
-            _snagSpringJoint.spring = snagSpring;
-            _snagSpringJoint.damper = snagDamper;
-            _snagSpringJoint.maxDistance = snagMaxDistance;
-            _snagSpringJoint.enableCollision = false;
-
-            _snagHingeJoint.autoConfigureConnectedAnchor = false;
-            _snagHingeJoint.anchor = localAnchor;
-            _snagHingeJoint.connectedAnchor = connectedAnchor;
-            _snagHingeJoint.connectedBody = connectedBody;
-            _snagHingeJoint.axis = Vector3.up;
-            _snagHingeJoint.enableCollision = false;
-            _snagHingeJoint.useSpring = false;
-
+            _snagConnectedBody = connectedBody;
+            _snagLocalAnchor = localAnchor;
+            _snagConnectedAnchor = connectedAnchor;
+            _snagUseSpringOnly = useVoxelRockSpring;
             _hasSnag = true;
             _siltTrailSettled = true;
             TryRegisterScavengerHost();
+        }
+
+        private void ApplySnagConstraint(float fixedDeltaTime)
+        {
+            Vector3 connectedAnchorWS = _snagConnectedBody != null
+                ? _snagConnectedBody.transform.TransformPoint(_snagConnectedAnchor)
+                : _snagConnectedAnchor;
+            Vector3 localAnchorWS = transform.TransformPoint(_snagLocalAnchor);
+            Vector3 separation = localAnchorWS - connectedAnchorWS;
+            float distance = separation.magnitude;
+            if (distance <= 0.0001f)
+                return;
+
+            Vector3 directionAwayFromAnchor = separation / distance;
+            float extension = distance - snagMaxDistance;
+            if (extension <= 0f)
+                return;
+
+            Vector3 connectedVelocity = _snagConnectedBody != null
+                ? _snagConnectedBody.GetPointVelocity(connectedAnchorWS)
+                : Vector3.zero;
+            Vector3 chunkVelocity = chunkRigidbody.GetPointVelocity(localAnchorWS);
+            float separationSpeed = Vector3.Dot(chunkVelocity - connectedVelocity, directionAwayFromAnchor);
+            float requestedAcceleration = (extension * snagSpring) + (separationSpeed * snagDamper);
+            if (requestedAcceleration <= 0f)
+                return;
+
+            PhysicsForceRouter.QueueForce(
+                chunkRigidbody,
+                -directionAwayFromAnchor * requestedAcceleration,
+                ForceMode.Acceleration);
+
+            if (_snagUseSpringOnly)
+                return;
+
+            Vector3 angularVelocity = chunkRigidbody.angularVelocity;
+            float angularBlend = 1f / (1f + snagDamper * fixedDeltaTime);
+            chunkRigidbody.angularVelocity = angularVelocity * angularBlend;
         }
 
         private void UpdateSiltTrailEmission()
@@ -720,6 +741,42 @@ namespace Hecton8.World
         }
 
 #if UNITY_EDITOR
+        [ContextMenu("Author Missing Fallback Silt Trail")]
+        private void AuthorMissingFallbackSiltTrail()
+        {
+            if (Application.isPlaying)
+                return;
+
+            bool changed = ResolveExistingComponentReferences();
+            if (siltTrail == null)
+            {
+                siltTrail = CreateFallbackSiltTrail();
+                changed = siltTrail != null;
+            }
+
+            if (scrapPickupPrefab == null)
+            {
+                scrapPickupPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(ScrapPickupPrefabAssetPath);
+                changed |= scrapPickupPrefab != null;
+            }
+
+            if (!changed)
+                return;
+
+            EditorUtility.SetDirty(this);
+            EditorUtility.SetDirty(gameObject);
+            if (siltTrail != null)
+                EditorUtility.SetDirty(siltTrail.gameObject);
+
+            if (PrefabUtility.IsPartOfPrefabInstance(gameObject))
+            {
+                PrefabUtility.RecordPrefabInstancePropertyModifications(this);
+                PrefabUtility.RecordPrefabInstancePropertyModifications(gameObject);
+                if (siltTrail != null)
+                    PrefabUtility.RecordPrefabInstancePropertyModifications(siltTrail.gameObject);
+            }
+        }
+
         private void OnValidate()
         {
             siltTrailBaseRate = Mathf.Clamp(siltTrailBaseRate, 0f, 96f);
@@ -739,18 +796,14 @@ namespace Hecton8.World
 
             if (!Application.isPlaying)
             {
-                bool shouldAuthorPrefabTrail = siltTrail == null && PrefabUtility.IsPartOfPrefabAsset(gameObject);
-                ResolveRuntimeWiring(createFallbackTrail: shouldAuthorPrefabTrail);
+                bool changed = ResolveExistingComponentReferences();
                 if (scrapPickupPrefab == null)
-                    scrapPickupPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(ScrapPickupPrefabAssetPath);
-                if (shouldAuthorPrefabTrail && siltTrail != null)
                 {
-                    EditorUtility.SetDirty(this);
-                    EditorUtility.SetDirty(gameObject);
-                    EditorUtility.SetDirty(siltTrail.gameObject);
+                    scrapPickupPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(ScrapPickupPrefabAssetPath);
+                    changed |= scrapPickupPrefab != null;
                 }
 
-                if (scrapPickupPrefab != null)
+                if (changed)
                     EditorUtility.SetDirty(this);
             }
         }

@@ -36,7 +36,6 @@
 // ============================================================================
 
 using Hecton8.Audio;
-using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Input;
@@ -167,11 +166,13 @@ namespace Hecton8.UI
         /// PlayerInteraction для блокировки ввода.
         /// </summary>
         public static bool IsOpen { get; private set; }
+        internal static PlayerPDA ActiveRuntimeInstance { get; private set; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             IsOpen = false;
+            ActiveRuntimeInstance = null;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -213,7 +214,7 @@ namespace Hecton8.UI
 
         private void Awake()
         {
-            AutoResolveTabs();
+            ResolveTabReferences(createMissingTabs: false);
             IsOpen = false;
             _currentAlpha = 0f;
             _targetAlpha = 0f;
@@ -237,33 +238,21 @@ namespace Hecton8.UI
                 }
             }
 
-            // Auto-resolve SurvivalSystem if not assigned
-            if (survivalSystem == null && enableBatteryDrain)
-            {
-                if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
-                    survivalSystem = playerTransform.GetComponent<HectonSurvivalSystem>();
-
-                if (survivalSystem == null)
-                {
-                    Debug.LogWarning(
-                        "[PlayerPDA] Battery drain enabled but no HectonSurvivalSystem found. " +
-                        "Disabling battery drain.");
-                    enableBatteryDrain = false;
-                }
-            }
-
             PrepareRuntimeVisibility();
         }
 
         private void OnEnable()
         {
+            if (Application.isPlaying)
+                ActiveRuntimeInstance = this;
+
             TryRegister();
             SubscribeToInputManager();
         }
 
         private void Start()
         {
-            AutoResolveTabs();
+            ResolveTabReferences(createMissingTabs: false);
             TryRegister();
 
             SubscribeToInputManager();
@@ -271,13 +260,13 @@ namespace Hecton8.UI
             if (!_registered)
             {
                 Debug.LogError(
-                    "[PlayerPDA] GameTickManager.Instance is null at Start(). PDA tick loop will not run.");
+                    "[PlayerPDA] PDA dispatcher registration failed at Start(). PDA tick loop will not run.");
             }
 
             if (InputManager.Instance == null)
             {
                 Debug.LogError(
-                    "[PlayerPDA] GameTickManager.Instance is null at Start(). " +
+                    "[PlayerPDA] InputManager.Instance is null at Start(). " +
                     "PDA will not function.");
             }
         }
@@ -290,61 +279,83 @@ namespace Hecton8.UI
                 UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
                 return;
 #endif
-            AutoResolveTabs();
-
-#if UNITY_EDITOR
-            if (!Application.isPlaying && pdaPanel != null)
-            {
-                pdaPanel.SetActive(false);
-
-                if (pdaCanvasGroup == null)
-                    pdaCanvasGroup = pdaPanel.GetComponent<CanvasGroup>();
-
-                if (pdaCanvasGroup != null)
-                {
-                    pdaCanvasGroup.alpha = 0f;
-                    pdaCanvasGroup.interactable = false;
-                    pdaCanvasGroup.blocksRaycasts = false;
-                }
-            }
-#endif
+            ResolveEditorReferences();
         }
 
-        private void AutoResolveTabs()
+        private void ResolveEditorReferences()
         {
+            EnsureTabArrayCapacity();
+
             if (pdaPanel == null)
+            {
+                ClearResolvedTabs();
+            }
+            else
+            {
+                Transform root = pdaPanel.transform;
+                tabs[0] = ResolveExistingTab(root, "Tab_Inventory");
+                tabs[1] = ResolveExistingTab(root, "Tab_Loadout");
+                tabs[2] = ResolveExistingTab(root, "Tab_Construction");
+                tabs[3] = ResolveExistingTab(root, "Tab_Barter");
+                tabs[4] = ResolveExistingTab(root, "Tab_DataLog", "Tab_Reserved");
+                tabs[5] = ResolveExistingTab(root, "Tab_Spectrum");
+                tabs[6] = ResolveExistingTab(root, "Tab_AtlasSignal");
+                tabs[7] = ResolveExistingTab(root, "Tab_Diagnostics");
+            }
+
+            if (pdaPanel != null && pdaCanvasGroup == null)
+                pdaCanvasGroup = pdaPanel.GetComponent<CanvasGroup>();
+        }
+
+        private void ResolveTabReferences(bool createMissingTabs)
+        {
+            EnsureTabArrayCapacity();
+
+            if (pdaPanel == null)
+            {
+                ClearResolvedTabs();
                 return;
+            }
 
             Transform root = pdaPanel.transform;
-            GameObject inventory = root.Find("Tab_Inventory")?.gameObject;
-            GameObject loadout = root.Find("Tab_Loadout")?.gameObject;
-            GameObject construction = root.Find("Tab_Construction")?.gameObject;
-            GameObject barter = root.Find("Tab_Barter")?.gameObject;
-            GameObject dataLog = root.Find("Tab_DataLog")?.gameObject ?? root.Find("Tab_Reserved")?.gameObject;
+            GameObject inventory = ResolveExistingTab(root, "Tab_Inventory");
+            GameObject loadout = ResolveExistingTab(root, "Tab_Loadout");
+            GameObject construction = ResolveExistingTab(root, "Tab_Construction");
+            GameObject barter = ResolveExistingTab(root, "Tab_Barter");
+            GameObject dataLog = ResolveExistingTab(root, "Tab_DataLog", "Tab_Reserved");
+            GameObject spectrum = ResolveExistingTab(root, "Tab_Spectrum");
+            GameObject atlasSignal = ResolveExistingTab(root, "Tab_AtlasSignal");
+            GameObject diagnostics = ResolveExistingTab(root, "Tab_Diagnostics");
 
-            if (inventory == null && loadout == null && construction == null && barter == null && dataLog == null)
+            if (createMissingTabs)
+            {
+                if (barter == null)
+                    barter = EnsureRuntimeTab(root, "Tab_Barter", typeof(PDABarterTab));
+
+                if (spectrum == null)
+                    spectrum = EnsureRuntimeTab(root, "Tab_Spectrum", typeof(Hecton8.UI.PDASpectrumTab));
+
+                if (atlasSignal == null)
+                    atlasSignal = EnsureRuntimeTab(root, "Tab_AtlasSignal", typeof(Hecton8.UI.PDAAtlasSignalTab));
+
+                if (diagnostics == null)
+                    diagnostics = EnsureRuntimeTab(root, "Tab_Diagnostics", typeof(Hecton8.UI.PDADiagnosticTerminal));
+            }
+
+            if (inventory == null &&
+                loadout == null &&
+                construction == null &&
+                barter == null &&
+                dataLog == null &&
+                spectrum == null &&
+                atlasSignal == null &&
+                diagnostics == null)
+            {
+                ClearResolvedTabs();
                 return;
+            }
 
-            if (barter == null)
-                barter = EnsureRuntimeTab(root, "Tab_Barter", typeof(PDABarterTab));
-
-            // Spectrum tab — auto-create if missing
-            GameObject spectrum = root.Find("Tab_Spectrum")?.gameObject;
-            if (spectrum == null)
-                spectrum = EnsureRuntimeTab(root, "Tab_Spectrum", typeof(Hecton8.UI.PDASpectrumTab));
-
-            // Atlas Signal tab — auto-create if missing
-            GameObject atlasSignal = root.Find("Tab_AtlasSignal")?.gameObject;
-            if (atlasSignal == null)
-                atlasSignal = EnsureRuntimeTab(root, "Tab_AtlasSignal", typeof(Hecton8.UI.PDAAtlasSignalTab));
-
-            GameObject diagnostics = root.Find("Tab_Diagnostics")?.gameObject;
-            if (diagnostics == null)
-                diagnostics = EnsureRuntimeTab(root, "Tab_Diagnostics", typeof(Hecton8.UI.PDADiagnosticTerminal));
-
-            if (tabs == null || tabs.Length != 8)
-                tabs = new GameObject[8];
-
+            ClearResolvedTabs();
             if (inventory != null)   tabs[0] = inventory;
             if (loadout != null)     tabs[1] = loadout;
             if (construction != null) tabs[2] = construction;
@@ -382,10 +393,55 @@ namespace Hecton8.UI
             return tab;
         }
 
+        private void EnsureTabArrayCapacity()
+        {
+            if (tabs == null || tabs.Length != 8)
+                tabs = new GameObject[8]; // COLD ALLOC: GameObject[8] — PDA tab reference cache — owner: PlayerPDA
+        }
+
+        private void ClearResolvedTabs()
+        {
+            if (tabs == null)
+                return;
+
+            for (int i = 0; i < tabs.Length; i++)
+                tabs[i] = null;
+        }
+
+        private static GameObject ResolveExistingTab(Transform root, string primaryName, string alternateName = null)
+        {
+            if (root == null)
+                return null;
+
+            Transform primary = root.Find(primaryName);
+            if (primary != null)
+                return primary.gameObject;
+
+            if (!string.IsNullOrEmpty(alternateName))
+            {
+                Transform alternate = root.Find(alternateName);
+                if (alternate != null)
+                    return alternate.gameObject;
+            }
+
+            return null;
+        }
+
+#if UNITY_EDITOR
+        [ContextMenu("Rebuild PDA")]
+        private void RebuildPda()
+        {
+            ResolveTabReferences(createMissingTabs: true);
+            ResolveEditorReferences();
+        }
+#endif
+
         private void OnDisable()
         {
             TryUnregister();
             UnsubscribeFromInputManager();
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
 
             // Закрываем при отключении компонента
             if (IsOpen) ForceClose();
@@ -395,6 +451,8 @@ namespace Hecton8.UI
         {
             TryUnregister();
             UnsubscribeFromInputManager();
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
         }
 
         private void SubscribeToInputManager()
@@ -440,11 +498,7 @@ namespace Hecton8.UI
             if (_registered)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager == null)
-                return;
-
-            gameTickManager.Register(this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _registered = true;
         }
 
@@ -453,10 +507,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager != null)
-                gameTickManager.Unregister(this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _registered = false;
         }
 
@@ -477,9 +528,13 @@ namespace Hecton8.UI
             }
 
             // ── Battery drain ──
-            if (IsOpen && enableBatteryDrain && survivalSystem != null)
+            if (IsOpen && enableBatteryDrain)
             {
-                ProcessBatteryDrain(deltaTime);
+                if (survivalSystem == null)
+                    TryResolveSurvivalSystemFromRuntimeContext();
+
+                if (survivalSystem != null)
+                    ProcessBatteryDrain(deltaTime);
             }
 
             // ── Diagnostics ──
@@ -695,6 +750,19 @@ namespace Hecton8.UI
             pdaCanvasGroup.blocksRaycasts = false;
 
             ApplyTabVisibility(_activeTab);
+        }
+
+        private bool TryResolveSurvivalSystemFromRuntimeContext()
+        {
+            if (survivalSystem != null)
+                return true;
+
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
+            if (playerTransform == null)
+                return false;
+
+            return playerTransform.TryGetComponent(out survivalSystem);
         }
 
         private void EnsureTabCanvasGroups()
@@ -937,12 +1005,7 @@ namespace Hecton8.UI
             if (playerPda == null)
                 playerPda = GetComponentInParent<PlayerPDA>();
 
-            if (_playerMovement == null &&
-                SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
-                playerTransform != null)
-            {
-                _playerMovement = playerTransform.GetComponent<HectonPlayerMovement>();
-            }
+            ResolvePlayerMovementFromRuntimeContext();
 
             labelFont = LocalizedFontResolver.ResolveReadableFont(labelFont);
             numericFont = LocalizedFontResolver.ResolveNumericFont(numericFont, labelFont);
@@ -1085,15 +1148,20 @@ namespace Hecton8.UI
 
         private void ResolveDiagnosticsSources()
         {
-            if (_playerMovement == null &&
-                SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
-                playerTransform != null)
-            {
-                _playerMovement = playerTransform.GetComponent<HectonPlayerMovement>();
-            }
+            ResolvePlayerMovementFromRuntimeContext();
 
             if (_microFaunaBoids == null)
-                _microFaunaBoids = UnityEngine.Object.FindAnyObjectByType<SargassumMicroFaunaBoids>(FindObjectsInactive.Exclude);
+                _microFaunaBoids = SargassumMicroFaunaBoids.ActiveRuntimeInstance;
+        }
+
+        private void ResolvePlayerMovementFromRuntimeContext()
+        {
+            if (_playerMovement != null)
+                return;
+
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null)
+                _playerMovement = playerContext.PlayerMovement;
         }
 
         private bool IsDiagnosticsVisible()
@@ -1118,11 +1186,7 @@ namespace Hecton8.UI
             if (_registered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register((ISlowTickable)this);
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.UI);
             _registered = true;
         }
 
@@ -1131,10 +1195,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister((ISlowTickable)this);
-
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
             _registered = false;
         }
 

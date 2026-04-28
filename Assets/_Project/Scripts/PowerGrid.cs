@@ -6,6 +6,8 @@
 
 using System.Collections.Generic;
 using Hecton8.Gameplay;
+using Unity.Jobs;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Power
@@ -45,6 +47,9 @@ namespace Hecton8.Power
         private int _islandCount = 1;
         private int _cycleCount;
         private int _graphBuildVersion;
+        private bool _isDirty = true;
+        private bool _hasEvaluatedAtLeastOnce;
+        private bool _slowTickEvaluationPending;
 
         /// <summary>Number of registered nodes in this grid.</summary>
         public int NodeCount => _nodes.Count;
@@ -64,6 +69,9 @@ namespace Hecton8.Power
         /// <summary>True when requested consumption exceeds generation.</summary>
         public bool HasPowerDeficit => _hasPowerDeficit;
 
+        /// <summary>True when a topology or demand change is waiting for the next SlowTick evaluation.</summary>
+        public bool IsDirty => _isDirty;
+
         /// <summary>Brownout tier selected by the graph kernel.</summary>
         public LogisticsBrownoutTier BrownoutTier => _brownoutTier;
 
@@ -78,7 +86,7 @@ namespace Hecton8.Power
 
         public PowerGrid(int initialCapacity = 16)
         {
-            int safeCapacity = Mathf.Max(1, initialCapacity);
+            int safeCapacity = math.max(1, initialCapacity);
 
             Id = _nextId++;
             // COLD ALLOC: HashSet<PowerNode>[initialCapacity] — grid membership cache — owner: PowerGrid
@@ -92,6 +100,8 @@ namespace Hecton8.Power
 
         public void Dispose()
         {
+            _logisticsGraph.CompleteEvaluation();
+            _logisticsGraph.CompleteNodeStatePublish();
             _logisticsGraph.Dispose();
         }
 
@@ -103,11 +113,18 @@ namespace Hecton8.Power
             if (amount <= 0f)
                 return;
 
-            _totalGeneration = Mathf.Max(0f, _totalGeneration - amount);
+            _totalGeneration = math.max(0f, _totalGeneration - amount);
             _balance = _totalGeneration - _totalConsumption;
-            _supplyRatio = _totalConsumption > 0.0001f ? Mathf.Clamp01(_totalGeneration / _totalConsumption) : 1f;
+            _supplyRatio = _totalConsumption > 0.0001f ? math.saturate(_totalGeneration / _totalConsumption) : 1f;
             _hasPowerDeficit = _totalGeneration + 0.0001f < _totalConsumption;
             _brownoutTier = ResolveBrownoutTier(_supplyRatio);
+            _isDirty = true;
+        }
+
+        /// <summary>Marks this grid for the next SlowTick evaluation.</summary>
+        public void MarkDirty()
+        {
+            _isDirty = true;
         }
 
         /// <summary>Adds a node to this grid and updates its owner reference.</summary>
@@ -120,6 +137,7 @@ namespace Hecton8.Power
                 return;
 
             node.SetGrid(this);
+            _isDirty = true;
         }
 
         /// <summary>Removes a node from this grid and clears the owner reference.</summary>
@@ -131,6 +149,8 @@ namespace Hecton8.Power
             _nodes.Remove(node);
             if (ReferenceEquals(node.Grid, this))
                 node.SetGrid(null);
+
+            _isDirty = true;
         }
 
         /// <summary>Absorbs all nodes from another grid.</summary>
@@ -139,8 +159,10 @@ namespace Hecton8.Power
             if (other == null || ReferenceEquals(other, this))
                 return;
 
-            foreach (PowerNode node in other._nodes)
+            HashSet<PowerNode>.Enumerator enumerator = other._nodes.GetEnumerator();
+            while (enumerator.MoveNext())
             {
+                PowerNode node = enumerator.Current;
                 if (node == null)
                     continue;
 
@@ -149,6 +171,7 @@ namespace Hecton8.Power
             }
 
             other._nodes.Clear();
+            _isDirty = true;
         }
 
         /// <summary>
@@ -156,6 +179,24 @@ namespace Hecton8.Power
         /// </summary>
         public void UpdateBalance()
         {
+            if (_slowTickEvaluationPending)
+                EndSlowTickEvaluation();
+
+            EvaluateBalanceViaScheduledJob(scheduleNodeStatePublish: false);
+            ApplyConsumerStates();
+            _isDirty = false;
+            _hasEvaluatedAtLeastOnce = true;
+        }
+
+        /// <summary>Schedules a graph evaluation for the manager-owned SlowTick cadence.</summary>
+        public void BeginSlowTickEvaluation()
+        {
+            if (_slowTickEvaluationPending || _logisticsGraph.HasPendingNodeStatePublish || _logisticsGraph.HasPendingEvaluation)
+                return;
+
+            if (!_isDirty && _hasEvaluatedAtLeastOnce)
+                return;
+
             BuildGraphSnapshot();
 
             if (_topologyNodes.Count <= 0)
@@ -168,11 +209,28 @@ namespace Hecton8.Power
                 _brownoutTier = LogisticsBrownoutTier.None;
                 _islandCount = 0;
                 _cycleCount = 0;
+                _logisticsGraph.ClearPublishedNodeStates();
+                _isDirty = false;
+                _hasEvaluatedAtLeastOnce = true;
                 return;
             }
 
-            LogisticsNetworkGraph.TopologySummary topology = _logisticsGraph.AnalyzeTopology();
-            LogisticsNetworkGraph.DistributionSummary distribution = _logisticsGraph.Distribute();
+            JobHandle evaluationHandle = _logisticsGraph.ScheduleEvaluation();
+            _logisticsGraph.ScheduleNodeStatePublish(evaluationHandle);
+            _slowTickEvaluationPending = true;
+            _isDirty = false;
+        }
+
+        /// <summary>Completes the pending node-state publication pass and applies consumer power states.</summary>
+        public void EndSlowTickEvaluation()
+        {
+            if (!_slowTickEvaluationPending && !_logisticsGraph.HasPendingNodeStatePublish)
+                return;
+
+            _logisticsGraph.CompleteEvaluation();
+            _logisticsGraph.CompleteNodeStatePublish();
+            LogisticsNetworkGraph.TopologySummary topology = _logisticsGraph.GetScheduledTopologySummary();
+            LogisticsNetworkGraph.DistributionSummary distribution = _logisticsGraph.GetScheduledDistributionSummary();
 
             _totalGeneration = distribution.TotalGeneration;
             _totalConsumption = distribution.TotalConsumption;
@@ -184,16 +242,62 @@ namespace Hecton8.Power
             _cycleCount = topology.CycleCount;
 
             ApplyConsumerStates();
+            _slowTickEvaluationPending = false;
+            _hasEvaluatedAtLeastOnce = true;
         }
 
         /// <summary>Rebuilds the topology-only snapshot and returns current connectivity analysis.</summary>
         internal LogisticsNetworkGraph.TopologySummary AnalyzeTopology()
         {
             BuildGraphSnapshot();
-            LogisticsNetworkGraph.TopologySummary topology = _logisticsGraph.AnalyzeTopology();
+            _logisticsGraph.ScheduleEvaluation();
+            _logisticsGraph.CompleteEvaluation();
+            LogisticsNetworkGraph.TopologySummary topology = _logisticsGraph.GetScheduledTopologySummary();
             _islandCount = topology.IslandCount;
             _cycleCount = topology.CycleCount;
             return topology;
+        }
+
+        private void EvaluateBalanceViaScheduledJob(bool scheduleNodeStatePublish)
+        {
+            _slowTickEvaluationPending = false;
+            BuildGraphSnapshot();
+
+            if (_topologyNodes.Count <= 0)
+            {
+                _totalGeneration = 0f;
+                _totalConsumption = 0f;
+                _balance = 0f;
+                _supplyRatio = 1f;
+                _hasPowerDeficit = false;
+                _brownoutTier = LogisticsBrownoutTier.None;
+                _islandCount = 0;
+                _cycleCount = 0;
+                _logisticsGraph.ClearPublishedNodeStates();
+                return;
+            }
+
+            JobHandle evaluationHandle = _logisticsGraph.ScheduleEvaluation();
+            if (scheduleNodeStatePublish)
+                _logisticsGraph.ScheduleNodeStatePublish(evaluationHandle);
+
+            _logisticsGraph.CompleteEvaluation();
+            LogisticsNetworkGraph.TopologySummary topology = _logisticsGraph.GetScheduledTopologySummary();
+            LogisticsNetworkGraph.DistributionSummary distribution = _logisticsGraph.GetScheduledDistributionSummary();
+
+            _totalGeneration = distribution.TotalGeneration;
+            _totalConsumption = distribution.TotalConsumption;
+            _balance = distribution.Balance;
+            _supplyRatio = distribution.SupplyRatio;
+            _hasPowerDeficit = distribution.HasDeficit;
+            _brownoutTier = distribution.BrownoutTier;
+            _islandCount = topology.IslandCount;
+            _cycleCount = topology.CycleCount;
+
+            if (scheduleNodeStatePublish)
+                _logisticsGraph.CompleteNodeStatePublish();
+            else
+                _logisticsGraph.PublishNodeStateSynchronously();
         }
 
         internal List<PowerNode> TopologyNodes => _topologyNodes;
@@ -225,8 +329,10 @@ namespace Hecton8.Power
             if (_graphBuildVersion == int.MaxValue)
                 _graphBuildVersion = 1;
 
-            foreach (PowerNode node in _nodes)
+            HashSet<PowerNode>.Enumerator nodeEnumerator = _nodes.GetEnumerator();
+            while (nodeEnumerator.MoveNext())
             {
+                PowerNode node = nodeEnumerator.Current;
                 if (node == null)
                     continue;
 
@@ -296,7 +402,7 @@ namespace Hecton8.Power
             {
                 PowerNode node = _topologyNodes[nodeIndex];
                 _logisticsGraph.AddNode(
-                    (uint)nodeIndex,
+                    unchecked((uint)node.GetInstanceID()),
                     ResolveNodeCapacity(node),
                     1f,
                     ResolveNodePriorityTier(node),
@@ -407,10 +513,10 @@ namespace Hecton8.Power
                 if (component == null)
                     continue;
 
-                totalCapacity += Mathf.Abs(component.PowerRating);
+                totalCapacity += math.abs(component.PowerRating);
             }
 
-            return Mathf.Max(1f, totalCapacity);
+            return math.max(1f, totalCapacity);
         }
 
         private static LogisticsNodeFlags ResolveNodeFlags(PowerNode node)
@@ -469,7 +575,7 @@ namespace Hecton8.Power
             if (consumer is BaseModule)
                 return 0;
 
-            int priority = Mathf.Clamp(consumer.PowerPriority, 0, 100);
+            int priority = math.clamp(consumer.PowerPriority, 0, 100);
             if (priority <= 25)
                 return 1;
 
@@ -501,7 +607,7 @@ namespace Hecton8.Power
         private static float ResolveEdgeResistance(PowerNode sourceNode, PowerNode destinationNode)
         {
             Vector3 delta = destinationNode.transform.position - sourceNode.transform.position;
-            float resistance = Mathf.Max(MinEdgeResistance, delta.magnitude);
+            float resistance = math.max(MinEdgeResistance, math.length((float3)delta));
             if (sourceNode.IsShortCircuited || destinationNode.IsShortCircuited)
                 resistance *= ShortCircuitResistanceMultiplier;
 
@@ -510,7 +616,7 @@ namespace Hecton8.Power
 
         private static float ResolveRuptureDemand(PowerNode node)
         {
-            return Mathf.Max(0.25f, ResolveNodeCapacity(node) * RuptureDemandFactor);
+            return math.max(0.25f, ResolveNodeCapacity(node) * RuptureDemandFactor);
         }
 
         private static LogisticsBrownoutTier ResolveBrownoutTier(float supplyRatio)

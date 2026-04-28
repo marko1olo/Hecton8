@@ -1,0 +1,107 @@
+[StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+internal struct EntityDataRecord
+{
+    public AbsoluteUniversePositionBlit128 Position;
+    public int Quantity;
+    public float Integrity01;
+    public int InventoryHash;
+    public uint InstanceUid;
+}
+
+private NativeHashMap<uint, EntityDataRecord> _entityStateByInstanceUid;
+
+_entityStateByInstanceUid = new NativeHashMap<uint, EntityDataRecord>(maxTrackedItems, Allocator.Persistent);
+
+RegisterOrUpdateEntityState(in record);
+
+EntityDataRecord state = ResolveEntityState(in record);
+AbsoluteUniversePosition hydratedPosition = AbsoluteUniversePosition.FromAlignedBlit(in state.Position);
+int hydratedQuantity = math.max(1, state.Quantity);
+
+record.Position = position;
+EntityDataRecord state = CaptureEntityStateFromLiveInstance(in record, instance, in position);
+record.Quantity = state.Quantity;
+_records[recordIndex] = record;
+RegisterOrUpdatePoolSlot(recordIndex, in record);
+RegisterOrUpdateEntityState(in record, in state);
+
+private void RegisterOrUpdateEntityState(in PersistentWorldItemRecord record)
+{
+    EntityDataRecord state = CreateEntityStateFromRecord(in record);
+    RegisterOrUpdateEntityState(in record, in state);
+}
+
+private void RegisterOrUpdateEntityState(in PersistentWorldItemRecord record, in EntityDataRecord state)
+{
+    if (record.InstanceUid == 0u || !_entityStateByInstanceUid.IsCreated)
+        return;
+
+    _entityStateByInstanceUid.Remove(record.InstanceUid);
+    _entityStateByInstanceUid.TryAdd(record.InstanceUid, state);
+}
+
+private void RemoveEntityState(in PersistentWorldItemRecord record)
+{
+    if (!_entityStateByInstanceUid.IsCreated || record.InstanceUid == 0u)
+        return;
+
+    _entityStateByInstanceUid.Remove(record.InstanceUid);
+}
+
+private EntityDataRecord ResolveEntityState(in PersistentWorldItemRecord record)
+{
+    if (_entityStateByInstanceUid.IsCreated &&
+        record.InstanceUid != 0u &&
+        _entityStateByInstanceUid.TryGetValue(record.InstanceUid, out EntityDataRecord state))
+    {
+        return state;
+    }
+
+    return CreateEntityStateFromRecord(in record);
+}
+
+private static EntityDataRecord CreateEntityStateFromRecord(in PersistentWorldItemRecord record)
+{
+    return new EntityDataRecord
+    {
+        Position = record.Position.ToAlignedBlit(),
+        Quantity = math.max(1, record.Quantity),
+        Integrity01 = 1f,
+        InventoryHash = 0,
+        InstanceUid = record.InstanceUid
+    };
+}
+
+private EntityDataRecord CaptureEntityStateFromLiveInstance(
+    in PersistentWorldItemRecord record,
+    GameObject instance,
+    in AbsoluteUniversePosition position)
+{
+    EntityDataRecord state = ResolveEntityState(in record);
+    state.Position = position.ToAlignedBlit();
+    state.InstanceUid = record.InstanceUid;
+    state.Quantity = math.max(1, record.Quantity);
+
+    if (instance != null)
+    {
+        if (instance.TryGetComponent(out PickupItem pickupItem))
+        {
+            state.Quantity = math.max(1, pickupItem.Quantity);
+        }
+        else if (instance.TryGetComponent(out HectonItem hectonItem))
+        {
+            state.Quantity = math.max(1, hectonItem.Quantity);
+        }
+    }
+
+    if (state.Integrity01 <= 0f)
+        state.Integrity01 = 1f;
+
+    return state;
+}
+
+private AbsoluteUniversePosition ResolveResidencyPosition(in PersistentWorldItemRecord record)
+{
+    EntityDataRecord state = ResolveEntityState(in record);
+    return AbsoluteUniversePosition.FromAlignedBlit(in state.Position);
+}

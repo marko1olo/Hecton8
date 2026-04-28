@@ -1,4 +1,4 @@
-﻿/*! \cond PRIVATE */
+/*! \cond PRIVATE */
 using System;
 using UnityEditor;
 using UnityEditorInternal;
@@ -6,12 +6,19 @@ using UnityEngine;
 
 namespace DarkTonic.MasterAudio.EditorScripts
 {
-    [InitializeOnLoad]
     // ReSharper disable once CheckNamespace
     public class AudioScriptOrderManager
     {
+        private const string SessionOrderSyncKey = "MasterAudio.AudioScriptOrderHandled";
+
         static AudioScriptOrderManager()
         {
+            if (SessionState.GetBool(SessionOrderSyncKey, false))
+            {
+                return;
+            }
+
+            SessionState.SetBool(SessionOrderSyncKey, true);
             EditorApplication.delayCall -= ApplyScriptOrder;
             EditorApplication.delayCall += ApplyScriptOrder;
         }

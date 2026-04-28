@@ -1,4 +1,4 @@
-﻿%YAML 1.1
+%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!114 &11400000
 MonoBehaviour:
@@ -15,13 +15,13 @@ MonoBehaviour:
   recipeName: Beacon Core
   localizedRecipeName:
     tableKey: ITEM_BEACON_CORE_NAME
-    fallbackText: ''
+    fallbackText: 
     variants: []
   overrideIcon: {fileID: 0}
   description: Assemble a compact route-marker core with board logic and line output.
   localizedRecipeDescription:
     tableKey: ITEM_BEACON_CORE_DESCRIPTION
-    fallbackText: ''
+    fallbackText: 
     variants: []
   resultItem: {fileID: 11400000, guid: 8223f8ca6a48a7b4d9e8a1711a29b5c9, type: 2}
   resultQuantity: 1
@@ -31,5 +31,6 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: 55af013acadda304f891e03a554e0b27, type: 2}
     amount: 1
   craftTime: 1.5
+  powerCost: 5
   requiredScanEntryId: 
   fabricationGroup: 2

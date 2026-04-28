@@ -10,7 +10,7 @@ namespace Hecton8.Tools
     /// Verifies pause menu functionality using real runtime state instead of stubbed pass values.
     /// </summary>
     [DefaultExecutionOrder(800)]
-    public sealed class PauseSystemVerifier : MonoBehaviour, ITickable
+    public sealed class PauseSystemVerifier : MonoBehaviour, ITickable, IUpdatable
     {
         [Header("Verification Settings")]
         [SerializeField, Tooltip("Enable automatic pause verification")]
@@ -50,20 +50,20 @@ namespace Hecton8.Tools
 
         private void OnEnable()
         {
-            if (GameTickManager.Instance != null && !_registered)
-            {
-                GameTickManager.Instance.Register(this);
-                _registered = true;
-            }
+            if (_registered)
+                return;
+
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
+            _registered = true;
         }
 
         private void OnDisable()
         {
-            if (GameTickManager.Instance != null && _registered)
-            {
-                GameTickManager.Instance.Unregister(this);
-                _registered = false;
-            }
+            if (!_registered)
+                return;
+
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
+            _registered = false;
         }
 
         public void Tick(float dt)

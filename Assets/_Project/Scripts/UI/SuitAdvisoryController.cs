@@ -407,7 +407,7 @@ namespace Hecton8.UI
 
         private static string BuildDeathSummary(SurvivalDeathRecord record)
         {
-            int totalSeconds = Mathf.Max(0, Mathf.RoundToInt(record.LifeDurationSeconds));
+            int totalSeconds = Mathf.Max(0, Mathf.RoundToInt((float)record.LifeDurationSeconds));
             int minutes = totalSeconds / 60;
             int seconds = totalSeconds % 60;
 

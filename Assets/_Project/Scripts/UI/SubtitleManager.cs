@@ -11,7 +11,80 @@ using UnityEngine.UI;
 namespace Hecton8.UI
 {
     /// <summary>
-    /// Lower-screen subtitle owner for localized notifications and spoken log playback.
+    /// Zero-allocation subtitle playback bus for lore-backed voice and audio-log UI sync.
+    /// </summary>
+    public static class SubtitleEventBus
+    {
+        public enum PlaybackEventKind : byte
+        {
+            Started = 0,
+            Stopped = 1,
+            Completed = 2
+        }
+
+        public readonly struct PlaybackEvent
+        {
+            public PlaybackEvent(PlaybackEventKind kind, uint loreHash, float durationSeconds)
+            {
+                Kind = kind;
+                LoreHash = loreHash;
+                DurationSeconds = durationSeconds;
+            }
+
+            /// <summary>
+            /// Playback transition type.
+            /// </summary>
+            public PlaybackEventKind Kind { get; }
+
+            /// <summary>
+            /// Stable FNV-1a lore hash emitted by the audio owner.
+            /// </summary>
+            public uint LoreHash { get; }
+
+            /// <summary>
+            /// Active playback duration. Only meaningful for start events.
+            /// </summary>
+            public float DurationSeconds { get; }
+        }
+
+        /// <summary>
+        /// Fired when lore-backed audio playback changes state.
+        /// </summary>
+        public static event Action<PlaybackEvent> OnPlaybackEvent;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            OnPlaybackEvent = null;
+        }
+
+        /// <summary>
+        /// Publish a subtitle start event.
+        /// </summary>
+        public static void RaisePlaybackStarted(uint loreHash, float durationSeconds)
+        {
+            OnPlaybackEvent?.Invoke(new PlaybackEvent(PlaybackEventKind.Started, loreHash, durationSeconds));
+        }
+
+        /// <summary>
+        /// Publish a subtitle stop event.
+        /// </summary>
+        public static void RaisePlaybackStopped(uint loreHash)
+        {
+            OnPlaybackEvent?.Invoke(new PlaybackEvent(PlaybackEventKind.Stopped, loreHash, 0f));
+        }
+
+        /// <summary>
+        /// Publish a subtitle completion event.
+        /// </summary>
+        public static void RaisePlaybackCompleted(uint loreHash)
+        {
+            OnPlaybackEvent?.Invoke(new PlaybackEvent(PlaybackEventKind.Completed, loreHash, 0f));
+        }
+    }
+
+    /// <summary>
+    /// Lower-screen subtitle owner for localized notifications and lore-backed spoken playback.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Subtitle Manager")]
@@ -35,24 +108,70 @@ namespace Hecton8.UI
         {
             public float StartTime;
             public float SpeakerIntensity;
-            public string Text;
+            public int StartIndex;
+            public int Length;
         }
+
+        private ref struct SubtitleSpanBuilder
+        {
+            private Span<char> _destination;
+            private int _length;
+
+            public SubtitleSpanBuilder(Span<char> destination)
+            {
+                _destination = destination;
+                _length = 0;
+            }
+
+            public int Length => _length;
+
+            public void Append(char value)
+            {
+                if ((uint)_length >= (uint)_destination.Length)
+                    return;
+
+                _destination[_length++] = value;
+            }
+
+            public void Append(char[] source, int start, int length)
+            {
+                if (source == null || length <= 0 || _length >= _destination.Length)
+                    return;
+
+                int safeStart = Mathf.Clamp(start, 0, source.Length);
+                int safeLength = Mathf.Clamp(
+                    length,
+                    0,
+                    Mathf.Min(source.Length - safeStart, _destination.Length - _length));
+                if (safeLength <= 0)
+                    return;
+
+                source.AsSpan(safeStart, safeLength).CopyTo(_destination.Slice(_length));
+                _length += safeLength;
+            }
+        }
+
+        private const int MaxQueuedSubtitles = 8;
+        private const int MaxTimedAudioLogCueCount = 32;
+        private const int MaxSubtitleRenderCharacters = 2048;
 
         private static readonly Color BackdropColor = new Color(0.01f, 0.04f, 0.06f, 0.64f);
         private static readonly Color TextColor = new Color(0.86f, 0.96f, 1f, 0.96f);
         private static readonly Color WaveformColor = new Color(0.72f, 0.97f, 1f, 0.92f);
 
+        private readonly List<SubtitleRequest> _queue = new List<SubtitleRequest>(MaxQueuedSubtitles); // COLD ALLOC: List[8] - queued subtitle requests - owner: SubtitleManager
+        private readonly TimedSubtitleCue[] _timedAudioLogCues = new TimedSubtitleCue[MaxTimedAudioLogCueCount]; // COLD ALLOC: TimedSubtitleCue[32] - parsed timed subtitle cue metadata - owner: SubtitleManager
+        private readonly char[] _subtitleRenderBuffer = new char[MaxSubtitleRenderCharacters]; // COLD ALLOC: char[2048] - subtitle TMP render buffer - owner: SubtitleManager
+        private readonly char[] _lastRenderedSubtitleBuffer = new char[MaxSubtitleRenderCharacters]; // COLD ALLOC: char[2048] - subtitle change cache - owner: SubtitleManager
+
         public static SubtitleManager Instance { get; private set; }
 
-        [Header("── Settings ────────────────────────────────────────────────")]
+        [Header("Settings")]
         [SerializeField, Range(1.5f, 8f)] private float defaultDuration = 3.25f;
         [SerializeField, Range(1f, 12f)] private float fadeSpeed = 5f;
         [SerializeField, Range(1, 10)] private int maxQueuedSubtitles = 6;
         [SerializeField, Range(0.1f, 2f)] private float repeatSuppressWindow = 0.4f;
         [SerializeField] private TMP_FontAsset font;
-
-        private readonly List<SubtitleRequest> _queue = new List<SubtitleRequest>(8); // COLD ALLOC: List[8] — queued subtitle requests — owner: SubtitleManager
-        private readonly List<TimedSubtitleCue> _timedAudioLogCues = new List<TimedSubtitleCue>(16); // COLD ALLOC: List[16] — parsed audio-log subtitle cues — owner: SubtitleManager
 
         private RectTransform _root;
         private CanvasGroup _canvasGroup;
@@ -70,13 +189,19 @@ namespace Hecton8.UI
         private string _lastEnqueuedMessage;
         private SubtitleSource _lastEnqueuedSource;
         private float _lastEnqueueTime = -999f;
+        private int _lastRenderedSubtitleLength = -1;
         private bool _timedAudioLogActive;
         private float _timedAudioLogElapsed;
         private float _timedAudioLogTotalDuration;
+        private int _timedAudioLogCueCount;
         private int _timedAudioLogNextCueIndex;
-        private string _timedAudioLogTitleLine;
-        private string _timedAudioLogCurrentBody;
-        private string _currentAudioLogId;
+        private int _timedAudioLogCurrentCueStartIndex;
+        private int _timedAudioLogCurrentCueLength;
+        private char[] _timedAudioLogTitleBuffer;
+        private int _timedAudioLogTitleLength;
+        private char[] _timedAudioLogBodyBuffer;
+        private int _timedAudioLogBodyLength;
+        private uint _currentAudioLogHash;
         private int _lastStressCorruptionBucket = int.MinValue;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -86,9 +211,9 @@ namespace Hecton8.UI
         }
 
         /// <summary>
-        /// Raised when an audio-log subtitle cue changes. Args: cue duration, cue text, speaker intensity [0..1].
+        /// Raised when an audio-log cue changes. Args: cue duration, cue source buffer, cue start, cue length, speaker intensity [0..1].
         /// </summary>
-        public event Action<float, string, float> OnCueChanged;
+        public event Action<float, char[], int, int, float> OnCueChanged;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureRuntimeInstance()
@@ -96,11 +221,10 @@ namespace Hecton8.UI
             if (Instance != null)
                 return;
 
-            SuitHUDV4CanvasOverlay overlay = UnityEngine.Object.FindAnyObjectByType<SuitHUDV4CanvasOverlay>();
+            SuitHUDV4CanvasOverlay overlay = SuitHUDV4CanvasOverlay.ActiveRuntimeInstance;
             Canvas targetCanvas = overlay != null
                 ? overlay.TargetCanvas
-                : UnityEngine.Object.FindAnyObjectByType<Canvas>();
-
+                : (SuitHUDV4CanvasOverlay.ActiveRuntimeInstance != null ? SuitHUDV4CanvasOverlay.ActiveRuntimeInstance.GetComponent<Canvas>() : null);
             if (targetCanvas == null)
                 return;
 
@@ -128,22 +252,15 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             font = LocalizedFontResolver.ResolveReadableFont(font);
-
             NotificationEvents.OnPushNotification += HandleNotificationPushed;
-            AudioLogEvents.OnLogPlaybackStarted += HandleAudioLogPlaybackStarted;
-            AudioLogEvents.OnLogPlaybackStopped += HandleAudioLogPlaybackEnded;
-            AudioLogEvents.OnLogPlaybackCompleted += HandleAudioLogPlaybackEnded;
-
+            SubtitleEventBus.OnPlaybackEvent += HandleSubtitlePlaybackEvent;
             EnsureBuilt();
         }
 
         private void OnDisable()
         {
             NotificationEvents.OnPushNotification -= HandleNotificationPushed;
-            AudioLogEvents.OnLogPlaybackStarted -= HandleAudioLogPlaybackStarted;
-            AudioLogEvents.OnLogPlaybackStopped -= HandleAudioLogPlaybackEnded;
-            AudioLogEvents.OnLogPlaybackCompleted -= HandleAudioLogPlaybackEnded;
-
+            SubtitleEventBus.OnPlaybackEvent -= HandleSubtitlePlaybackEvent;
             UnregisterFromTickManager();
 
             if (Instance == this)
@@ -153,15 +270,12 @@ namespace Hecton8.UI
         /// <summary>
         /// Resolves a localization key and displays the subtitle for the requested duration.
         /// </summary>
-        /// <param name="key">Localization table key.</param>
-        /// <param name="duration">Display duration in seconds.</param>
         public void DisplaySubtitle(string key, float duration)
         {
             LocalizationManager manager = LocalizationManager.Instance;
             string resolved = manager != null
                 ? manager.GetExpandedOrFallback(manager.CurrentLanguage, key, key)
                 : key;
-
             Enqueue(resolved, duration, SubtitleSource.Generic, false);
         }
 
@@ -196,6 +310,7 @@ namespace Hecton8.UI
                     }
                     else
                     {
+                        ApplySubtitleBuffer(0);
                         UnregisterFromTickManager();
                     }
                 }
@@ -216,33 +331,48 @@ namespace Hecton8.UI
             Enqueue(message, defaultDuration, SubtitleSource.Notification, false);
         }
 
-        private void HandleAudioLogPlaybackStarted(AudioLogData data)
+        private void HandleSubtitlePlaybackEvent(SubtitleEventBus.PlaybackEvent playbackEvent)
         {
-            if (data == null || !data.HasSubtitleText)
-                return;
-
-            ClearTimedAudioLogState();
-            _currentAudioLogId = data.SafeLogId;
-
-            float duration = data.Duration > 0.01f
-                ? Mathf.Clamp(data.Duration, 1.5f, 30f)
-                : defaultDuration;
-
-            if (TryPrepareTimedAudioLog(data, out string timedMessage))
+            switch (playbackEvent.Kind)
             {
-                Enqueue(timedMessage, duration, SubtitleSource.AudioLog, true);
-                return;
-            }
+                case SubtitleEventBus.PlaybackEventKind.Started:
+                    HandleAudioLogPlaybackStarted(playbackEvent.LoreHash, playbackEvent.DurationSeconds);
+                    return;
 
-            NotifyCueChanged(duration, data.VisibleSubtitleOrFallback, 1f);
-            Enqueue(BuildAudioLogSubtitle(data), duration, SubtitleSource.AudioLog, true);
+                case SubtitleEventBus.PlaybackEventKind.Stopped:
+                case SubtitleEventBus.PlaybackEventKind.Completed:
+                    HandleAudioLogPlaybackEnded(playbackEvent.LoreHash);
+                    return;
+            }
         }
 
-        private void HandleAudioLogPlaybackEnded(string logId)
+        private void HandleAudioLogPlaybackStarted(uint loreHash, float durationSeconds)
         {
             ClearTimedAudioLogState();
-            _currentAudioLogId = string.Empty;
+            if (!TryPrepareAudioLogBuffers(loreHash, durationSeconds, out int initialRenderLength))
+                return;
 
+            RegisterToTickManager();
+            _currentSource = SubtitleSource.AudioLog;
+            _currentMessage = string.Empty;
+            _timer = durationSeconds > 0.01f
+                ? Mathf.Clamp(durationSeconds, 1.5f, 30f)
+                : defaultDuration;
+            _currentAlpha = 0f;
+            _isShowing = true;
+            _lastStressCorruptionBucket = int.MinValue;
+            ApplySubtitleBuffer(initialRenderLength);
+
+            if (_audioCueGroup != null)
+                _audioCueGroup.alpha = _currentAlpha;
+        }
+
+        private void HandleAudioLogPlaybackEnded(uint loreHash)
+        {
+            if (_currentAudioLogHash != 0u && loreHash != 0u && loreHash != _currentAudioLogHash)
+                return;
+
+            ClearTimedAudioLogState();
             if (_currentSource == SubtitleSource.AudioLog)
                 _timer = 0f;
         }
@@ -250,7 +380,6 @@ namespace Hecton8.UI
         private void Enqueue(string message, float duration, SubtitleSource source, bool interrupt)
         {
             EnsureBuilt();
-
             if (string.IsNullOrWhiteSpace(message))
                 return;
 
@@ -302,7 +431,6 @@ namespace Hecton8.UI
         private void ShowImmediate(string message, float duration, SubtitleSource source)
         {
             RegisterToTickManager();
-
             _currentMessage = message;
             _currentSource = source;
             _timer = duration;
@@ -310,150 +438,26 @@ namespace Hecton8.UI
             _isShowing = true;
             _lastStressCorruptionBucket = int.MinValue;
 
-            string displayMessage = ResolveDisplayMessage(source, message);
-            if (_subtitleText != null && !string.Equals(_subtitleText.text, displayMessage, System.StringComparison.Ordinal))
-                _subtitleText.text = displayMessage;
+            if (source == SubtitleSource.AudioLog)
+            {
+                ApplySubtitleBuffer(BuildCurrentAudioLogFrame());
+            }
+            else
+            {
+                string displayMessage = ResolveDisplayMessage(source, message);
+                CopyStringToRenderBuffer(displayMessage);
+                ApplySubtitleBuffer(Mathf.Min(displayMessage != null ? displayMessage.Length : 0, _subtitleRenderBuffer.Length));
+            }
 
             if (_audioCueGroup != null)
                 _audioCueGroup.alpha = source == SubtitleSource.AudioLog ? _currentAlpha : 0f;
         }
 
-        private static string BuildAudioLogSubtitle(AudioLogData data)
-        {
-            if (data == null)
-                return string.Empty;
-
-            string subtitleBody = data.VisibleSubtitleOrFallback;
-            if (string.IsNullOrWhiteSpace(subtitleBody))
-                return string.Empty;
-
-            string displayTitle = data.DisplayTitleOrFallback;
-            if (string.IsNullOrWhiteSpace(displayTitle))
-                return subtitleBody;
-
-            LocalizationManager manager = LocalizationManager.Instance;
-            string titleLine = manager != null
-                ? manager.GetFormatted(LocalizationKeys.AUDIOLOG_PLAYING, displayTitle)
-                : "PLAYING: " + displayTitle;
-
-            return string.Concat(titleLine, "\n", subtitleBody);
-        }
-
-        private bool TryPrepareTimedAudioLog(AudioLogData data, out string initialMessage)
-        {
-            _timedAudioLogCues.Clear();
-            _timedAudioLogElapsed = 0f;
-            _timedAudioLogTotalDuration = data != null ? Mathf.Max(0.5f, data.Duration) : 0f;
-            _timedAudioLogNextCueIndex = 0;
-            _timedAudioLogCurrentBody = string.Empty;
-
-            string subtitleBody = data != null ? data.SubtitleOrFallback : string.Empty;
-            if (!TryParseTimedSubtitleCues(subtitleBody, _timedAudioLogCues))
-            {
-                initialMessage = string.Empty;
-                return false;
-            }
-
-            string displayTitle = data.DisplayTitleOrFallback;
-            if (string.IsNullOrWhiteSpace(displayTitle))
-            {
-                _timedAudioLogTitleLine = string.Empty;
-            }
-            else
-            {
-                LocalizationManager manager = LocalizationManager.Instance;
-                _timedAudioLogTitleLine = manager != null
-                    ? manager.GetFormatted(LocalizationKeys.AUDIOLOG_PLAYING, displayTitle)
-                    : "PLAYING: " + displayTitle;
-            }
-
-            _timedAudioLogActive = true;
-            while (_timedAudioLogNextCueIndex < _timedAudioLogCues.Count &&
-                   _timedAudioLogCues[_timedAudioLogNextCueIndex].StartTime <= 0f)
-            {
-                int cueIndex = _timedAudioLogNextCueIndex;
-                _timedAudioLogCurrentBody = _timedAudioLogCues[_timedAudioLogNextCueIndex].Text;
-                _timedAudioLogNextCueIndex++;
-                NotifyCueChanged(GetCueDuration(cueIndex), _timedAudioLogCurrentBody, _timedAudioLogCues[cueIndex].SpeakerIntensity);
-            }
-
-            initialMessage = BuildTimedAudioLogFrame();
-            return true;
-        }
-
-        private void AdvanceTimedAudioLog(float deltaTime)
-        {
-            _timedAudioLogElapsed += deltaTime;
-            bool changed = false;
-            int lastCueIndex = -1;
-
-            while (_timedAudioLogNextCueIndex < _timedAudioLogCues.Count &&
-                   _timedAudioLogElapsed >= _timedAudioLogCues[_timedAudioLogNextCueIndex].StartTime)
-            {
-                lastCueIndex = _timedAudioLogNextCueIndex;
-                _timedAudioLogCurrentBody = _timedAudioLogCues[_timedAudioLogNextCueIndex].Text;
-                _timedAudioLogNextCueIndex++;
-                changed = true;
-            }
-
-            if (!changed)
-                return;
-
-            if (lastCueIndex >= 0)
-                NotifyCueChanged(GetCueDuration(lastCueIndex), _timedAudioLogCurrentBody, _timedAudioLogCues[lastCueIndex].SpeakerIntensity);
-
-            string frameMessage = BuildTimedAudioLogFrame();
-            _currentMessage = frameMessage;
-            string displayMessage = ResolveDisplayMessage(SubtitleSource.AudioLog, frameMessage);
-            if (_subtitleText != null && !string.Equals(_subtitleText.text, displayMessage, System.StringComparison.Ordinal))
-                _subtitleText.text = displayMessage;
-        }
-
-        private string BuildTimedAudioLogFrame()
-        {
-            if (string.IsNullOrWhiteSpace(_timedAudioLogCurrentBody))
-                return _timedAudioLogTitleLine ?? string.Empty;
-
-            if (string.IsNullOrWhiteSpace(_timedAudioLogTitleLine))
-                return _timedAudioLogCurrentBody;
-
-            return string.Concat(_timedAudioLogTitleLine, "\n", _timedAudioLogCurrentBody);
-        }
-
-        private void ClearTimedAudioLogState()
-        {
-            _timedAudioLogActive = false;
-            _timedAudioLogElapsed = 0f;
-            _timedAudioLogTotalDuration = 0f;
-            _timedAudioLogNextCueIndex = 0;
-            _timedAudioLogTitleLine = string.Empty;
-            _timedAudioLogCurrentBody = string.Empty;
-            _timedAudioLogCues.Clear();
-            _lastStressCorruptionBucket = int.MinValue;
-            NotifyCueChanged(0f, string.Empty, 0f);
-        }
-
-        private float GetCueDuration(int cueIndex)
-        {
-            if ((uint)cueIndex >= (uint)_timedAudioLogCues.Count)
-                return 0f;
-
-            float currentStart = Mathf.Max(0f, _timedAudioLogCues[cueIndex].StartTime);
-            float nextStart = cueIndex + 1 < _timedAudioLogCues.Count
-                ? Mathf.Max(currentStart, _timedAudioLogCues[cueIndex + 1].StartTime)
-                : Mathf.Max(currentStart, _timedAudioLogTotalDuration);
-
-            float duration = nextStart - currentStart;
-            return duration > 0.05f ? duration : 0.05f;
-        }
-
-        private void NotifyCueChanged(float duration, string text, float speakerIntensity)
-        {
-            OnCueChanged?.Invoke(Mathf.Max(0f, duration), text ?? string.Empty, Mathf.Clamp01(speakerIntensity));
-        }
-
         private void RefreshStressCorruptionIfNeeded()
         {
+            if (_currentSource == SubtitleSource.AudioLog)
+                return;
+
             LocalizationManager manager = LocalizationManager.Instance;
             int stressBucket = manager != null ? manager.GetHullStressCorruptionBucket() : 0;
             if (stressBucket == _lastStressCorruptionBucket)
@@ -461,8 +465,8 @@ namespace Hecton8.UI
 
             _lastStressCorruptionBucket = stressBucket;
             string displayMessage = ResolveDisplayMessage(_currentSource, _currentMessage);
-            if (_subtitleText != null && !string.Equals(_subtitleText.text, displayMessage, System.StringComparison.Ordinal))
-                _subtitleText.text = displayMessage;
+            CopyStringToRenderBuffer(displayMessage);
+            ApplySubtitleBuffer(Mathf.Min(displayMessage != null ? displayMessage.Length : 0, _subtitleRenderBuffer.Length));
         }
 
         private string ResolveDisplayMessage(SubtitleSource source, string message)
@@ -474,82 +478,287 @@ namespace Hecton8.UI
             if (manager == null)
                 return message;
 
-            if (source == SubtitleSource.AudioLog)
-            {
-                string sourceToken = string.IsNullOrWhiteSpace(_currentAudioLogId)
-                    ? "audio_log"
-                    : _currentAudioLogId;
-                return manager.ApplyPdaLoreCorruptionIfNeeded(sourceToken, message);
-            }
-
-            return manager.ApplyHullStressCorruptionIfNeeded(message);
+            return source == SubtitleSource.AudioLog
+                ? message
+                : manager.ApplyHullStressCorruptionIfNeeded(message);
         }
 
-        private static bool TryParseTimedSubtitleCues(string subtitle, List<TimedSubtitleCue> target)
+        private bool TryPrepareAudioLogBuffers(uint loreHash, float durationSeconds, out int initialRenderLength)
         {
-            if (target == null)
+            initialRenderLength = 0;
+            LoreDatabaseManager database = LoreDatabaseManager.Instance;
+            if (database == null || loreHash == 0u)
                 return false;
 
-            target.Clear();
-            if (string.IsNullOrEmpty(subtitle) || subtitle.IndexOf('[', System.StringComparison.Ordinal) < 0)
+            _currentAudioLogHash = loreHash;
+            _timedAudioLogElapsed = 0f;
+            _timedAudioLogTotalDuration = durationSeconds > 0.01f
+                ? Mathf.Max(0.5f, durationSeconds)
+                : defaultDuration;
+            _timedAudioLogCueCount = 0;
+            _timedAudioLogNextCueIndex = 0;
+            _timedAudioLogCurrentCueStartIndex = 0;
+            _timedAudioLogCurrentCueLength = 0;
+            _timedAudioLogTitleBuffer = null;
+            _timedAudioLogTitleLength = 0;
+            _timedAudioLogBodyBuffer = null;
+            _timedAudioLogBodyLength = 0;
+
+            database.TryGetTitleBuffer(loreHash, out _timedAudioLogTitleBuffer, out _timedAudioLogTitleLength, out _);
+            database.TryGetBodyBuffer(loreHash, out _timedAudioLogBodyBuffer, out _timedAudioLogBodyLength, out _);
+
+            bool hasTitle = _timedAudioLogTitleBuffer != null && _timedAudioLogTitleLength > 0;
+            bool hasBody = _timedAudioLogBodyBuffer != null && _timedAudioLogBodyLength > 0;
+            if (!hasTitle && !hasBody)
+                return false;
+
+            _timedAudioLogActive = hasBody && TryParseTimedSubtitleCues(_timedAudioLogBodyBuffer, _timedAudioLogBodyLength);
+            if (_timedAudioLogActive)
+            {
+                if (_timedAudioLogCueCount > 0 && _timedAudioLogCues[0].StartTime <= 0f)
+                {
+                    _timedAudioLogCurrentCueStartIndex = _timedAudioLogCues[0].StartIndex;
+                    _timedAudioLogCurrentCueLength = _timedAudioLogCues[0].Length;
+                    _timedAudioLogNextCueIndex = 1;
+                    NotifyCueChanged(
+                        GetCueDuration(0),
+                        _timedAudioLogBodyBuffer,
+                        _timedAudioLogCurrentCueStartIndex,
+                        _timedAudioLogCurrentCueLength,
+                        _timedAudioLogCues[0].SpeakerIntensity);
+                }
+                else
+                {
+                    NotifyCueChanged(0f, Array.Empty<char>(), 0, 0, 0f);
+                }
+            }
+            else
+            {
+                _timedAudioLogCurrentCueStartIndex = 0;
+                _timedAudioLogCurrentCueLength = hasBody ? _timedAudioLogBodyLength : 0;
+                NotifyCueChanged(
+                    _timedAudioLogTotalDuration,
+                    _timedAudioLogBodyBuffer,
+                    _timedAudioLogCurrentCueStartIndex,
+                    _timedAudioLogCurrentCueLength,
+                    1f);
+            }
+
+            initialRenderLength = BuildCurrentAudioLogFrame();
+            return initialRenderLength > 0;
+        }
+
+        private void AdvanceTimedAudioLog(float deltaTime)
+        {
+            _timedAudioLogElapsed += deltaTime;
+            bool changed = false;
+            int lastCueIndex = -1;
+            while (_timedAudioLogNextCueIndex < _timedAudioLogCueCount &&
+                   _timedAudioLogElapsed >= _timedAudioLogCues[_timedAudioLogNextCueIndex].StartTime)
+            {
+                lastCueIndex = _timedAudioLogNextCueIndex;
+                _timedAudioLogCurrentCueStartIndex = _timedAudioLogCues[lastCueIndex].StartIndex;
+                _timedAudioLogCurrentCueLength = _timedAudioLogCues[lastCueIndex].Length;
+                _timedAudioLogNextCueIndex++;
+                changed = true;
+            }
+
+            if (!changed || lastCueIndex < 0)
+                return;
+
+            NotifyCueChanged(
+                GetCueDuration(lastCueIndex),
+                _timedAudioLogBodyBuffer,
+                _timedAudioLogCurrentCueStartIndex,
+                _timedAudioLogCurrentCueLength,
+                _timedAudioLogCues[lastCueIndex].SpeakerIntensity);
+            ApplySubtitleBuffer(BuildCurrentAudioLogFrame());
+        }
+
+        private int BuildCurrentAudioLogFrame()
+        {
+            bool hasTitle = _timedAudioLogTitleBuffer != null && _timedAudioLogTitleLength > 0;
+            bool hasBody = _timedAudioLogBodyBuffer != null && _timedAudioLogCurrentCueLength > 0;
+            SubtitleSpanBuilder builder = new SubtitleSpanBuilder(_subtitleRenderBuffer);
+
+            if (hasTitle)
+                builder.Append(_timedAudioLogTitleBuffer, 0, _timedAudioLogTitleLength);
+
+            if (hasTitle && hasBody)
+                builder.Append('\n');
+
+            if (hasBody)
+            {
+                builder.Append(
+                    _timedAudioLogBodyBuffer,
+                    _timedAudioLogCurrentCueStartIndex,
+                    _timedAudioLogCurrentCueLength);
+            }
+
+            return builder.Length;
+        }
+
+        private void ClearTimedAudioLogState()
+        {
+            _timedAudioLogActive = false;
+            _timedAudioLogElapsed = 0f;
+            _timedAudioLogTotalDuration = 0f;
+            _timedAudioLogCueCount = 0;
+            _timedAudioLogNextCueIndex = 0;
+            _timedAudioLogCurrentCueStartIndex = 0;
+            _timedAudioLogCurrentCueLength = 0;
+            _timedAudioLogTitleBuffer = null;
+            _timedAudioLogTitleLength = 0;
+            _timedAudioLogBodyBuffer = null;
+            _timedAudioLogBodyLength = 0;
+            _currentAudioLogHash = 0u;
+            _lastStressCorruptionBucket = int.MinValue;
+            NotifyCueChanged(0f, Array.Empty<char>(), 0, 0, 0f);
+        }
+
+        private float GetCueDuration(int cueIndex)
+        {
+            if ((uint)cueIndex >= (uint)_timedAudioLogCueCount)
+                return 0f;
+
+            float currentStart = Mathf.Max(0f, _timedAudioLogCues[cueIndex].StartTime);
+            float nextStart = cueIndex + 1 < _timedAudioLogCueCount
+                ? Mathf.Max(currentStart, _timedAudioLogCues[cueIndex + 1].StartTime)
+                : Mathf.Max(currentStart, _timedAudioLogTotalDuration);
+            return Mathf.Max(0.1f, nextStart - currentStart);
+        }
+
+        private void NotifyCueChanged(float duration, char[] textBuffer, int textStart, int textLength, float speakerIntensity)
+        {
+            OnCueChanged?.Invoke(duration, textBuffer, textStart, textLength, speakerIntensity);
+        }
+
+        private bool TryParseTimedSubtitleCues(char[] subtitleBuffer, int subtitleLength)
+        {
+            _timedAudioLogCueCount = 0;
+            if (subtitleBuffer == null || subtitleLength <= 0)
                 return false;
 
             int cursor = 0;
-            while (cursor < subtitle.Length)
+            bool sawMarker = false;
+            while (cursor < subtitleLength)
             {
-                if (subtitle[cursor] != '[')
+                if (subtitleBuffer[cursor] != '[')
                 {
                     cursor++;
                     continue;
                 }
 
-                int markerStart = cursor;
-                int markerEnd = subtitle.IndexOf(']', markerStart + 1);
-                if (markerEnd <= markerStart + 1)
+                int markerEnd = FindChar(subtitleBuffer, cursor + 1, subtitleLength, ']');
+                if (markerEnd <= cursor + 1)
                 {
                     cursor++;
                     continue;
                 }
 
-                string markerBody = subtitle.Substring(markerStart + 1, markerEnd - markerStart - 1);
-                float speakerIntensity = 1f;
-                string startToken = markerBody;
-                int separatorIndex = markerBody.IndexOf('|');
-                if (separatorIndex < 0)
-                    separatorIndex = markerBody.IndexOf(',');
-
-                if (separatorIndex > 0)
+                sawMarker = true;
+                if (!TryParseCueHeader(subtitleBuffer, cursor + 1, markerEnd, out float startTime, out float speakerIntensity))
                 {
-                    startToken = markerBody.Substring(0, separatorIndex).Trim();
-                    string intensityToken = markerBody.Substring(separatorIndex + 1).Trim();
-                    if (float.TryParse(intensityToken, NumberStyles.Float, CultureInfo.InvariantCulture, out float parsedIntensity))
-                        speakerIntensity = Mathf.Clamp01(parsedIntensity);
-                }
-
-                if (!float.TryParse(startToken, NumberStyles.Float, CultureInfo.InvariantCulture, out float startTime))
-                {
-                    cursor++;
+                    cursor = markerEnd + 1;
                     continue;
                 }
 
                 int textStart = markerEnd + 1;
-                int nextMarker = subtitle.IndexOf('[', textStart);
-                int textEnd = nextMarker >= 0 ? nextMarker : subtitle.Length;
-                string cueText = subtitle.Substring(textStart, textEnd - textStart).Trim();
-                if (!string.IsNullOrWhiteSpace(cueText))
+                int nextMarker = FindChar(subtitleBuffer, textStart, subtitleLength, '[');
+                int textEnd = nextMarker >= 0 ? nextMarker : subtitleLength;
+                TrimRange(subtitleBuffer, ref textStart, ref textEnd);
+                if (textEnd > textStart && _timedAudioLogCueCount < _timedAudioLogCues.Length)
                 {
-                    target.Add(new TimedSubtitleCue
+                    _timedAudioLogCues[_timedAudioLogCueCount] = new TimedSubtitleCue
                     {
                         StartTime = Mathf.Max(0f, startTime),
                         SpeakerIntensity = speakerIntensity,
-                        Text = cueText
-                    });
+                        StartIndex = textStart,
+                        Length = textEnd - textStart
+                    };
+                    _timedAudioLogCueCount++;
                 }
 
                 cursor = textEnd;
             }
 
-            return target.Count > 0;
+            return sawMarker && _timedAudioLogCueCount > 0;
+        }
+
+        private static bool TryParseCueHeader(
+            char[] buffer,
+            int start,
+            int endExclusive,
+            out float startTime,
+            out float speakerIntensity)
+        {
+            speakerIntensity = 1f;
+            startTime = 0f;
+
+            int separatorIndex = -1;
+            for (int i = start; i < endExclusive; i++)
+            {
+                char current = buffer[i];
+                if (current == '|' || current == ',')
+                {
+                    separatorIndex = i;
+                    break;
+                }
+            }
+
+            int timeStart = start;
+            int timeEnd = separatorIndex >= 0 ? separatorIndex : endExclusive;
+            TrimRange(buffer, ref timeStart, ref timeEnd);
+            if (!float.TryParse(new ReadOnlySpan<char>(buffer, timeStart, timeEnd - timeStart), NumberStyles.Float, CultureInfo.InvariantCulture, out startTime))
+                return false;
+
+            if (separatorIndex < 0)
+                return true;
+
+            int intensityStart = separatorIndex + 1;
+            int intensityEnd = endExclusive;
+            TrimRange(buffer, ref intensityStart, ref intensityEnd);
+            if (intensityEnd <= intensityStart)
+                return true;
+
+            if (!float.TryParse(new ReadOnlySpan<char>(buffer, intensityStart, intensityEnd - intensityStart), NumberStyles.Float, CultureInfo.InvariantCulture, out float parsedIntensity))
+                return true;
+
+            speakerIntensity = Mathf.Clamp01(parsedIntensity);
+            return true;
+        }
+
+        private void CopyStringToRenderBuffer(string text)
+        {
+            int safeLength = 0;
+            if (!string.IsNullOrEmpty(text))
+            {
+                safeLength = Mathf.Min(text.Length, _subtitleRenderBuffer.Length);
+                for (int i = 0; i < safeLength; i++)
+                    _subtitleRenderBuffer[i] = text[i];
+            }
+
+            for (int i = safeLength; i < _lastRenderedSubtitleLength && i < _subtitleRenderBuffer.Length; i++)
+                _subtitleRenderBuffer[i] = '\0';
+        }
+
+        private void ApplySubtitleBuffer(int length)
+        {
+            if (_subtitleText == null)
+                return;
+
+            int safeLength = Mathf.Clamp(length, 0, _subtitleRenderBuffer.Length);
+            if (safeLength == _lastRenderedSubtitleLength &&
+                BuffersMatch(_subtitleRenderBuffer, _lastRenderedSubtitleBuffer, safeLength))
+            {
+                return;
+            }
+
+            for (int i = 0; i < safeLength; i++)
+                _lastRenderedSubtitleBuffer[i] = _subtitleRenderBuffer[i];
+
+            _lastRenderedSubtitleLength = safeLength;
+            _subtitleText.SetCharArray(_subtitleRenderBuffer, 0, safeLength);
         }
 
         private void RegisterToTickManager()
@@ -557,11 +766,7 @@ namespace Hecton8.UI
             if (_registeredToTickManager)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register(this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _registeredToTickManager = true;
         }
 
@@ -570,10 +775,7 @@ namespace Hecton8.UI
             if (!_registeredToTickManager)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister(this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _registeredToTickManager = false;
         }
 
@@ -609,10 +811,10 @@ namespace Hecton8.UI
             textOwner.layer = gameObject.layer;
             RectTransform textRect = textOwner.GetComponent<RectTransform>();
             textRect.SetParent(_root, false);
-            textRect.anchorMin = Vector2.zero;
-            textRect.anchorMax = Vector2.one;
-            textRect.offsetMin = new Vector2(78f, 10f);
-            textRect.offsetMax = new Vector2(-20f, -10f);
+            textRect.anchorMin = new Vector2(0f, 0f);
+            textRect.anchorMax = new Vector2(1f, 1f);
+            textRect.offsetMin = new Vector2(68f, 8f);
+            textRect.offsetMax = new Vector2(-22f, -12f);
 
             _subtitleText = textOwner.AddComponent<TextMeshProUGUI>();
             _subtitleText.font = font;
@@ -649,12 +851,15 @@ namespace Hecton8.UI
             _audioCueGroup.interactable = false;
             _audioCueGroup.blocksRaycasts = false;
 
-            // COLD ALLOC: RectTransform[4] — runtime subtitle waveform bars bound to AudioWaveformAnimator — owner: SubtitleManager
-            RectTransform[] waveformBars = new RectTransform[4];
+            RectTransform[] waveformBars = new RectTransform[4]; // COLD ALLOC: RectTransform[4] - runtime waveform bars - owner: SubtitleManager
             for (int i = 0; i < waveformBars.Length; i++)
             {
-                GameObject barObject = new GameObject("Bar" + i, typeof(RectTransform), typeof(Image));
+                GameObject barObject = new GameObject(
+                    "Bar_" + i,
+                    typeof(RectTransform),
+                    typeof(Image));
                 barObject.layer = gameObject.layer;
+
                 RectTransform barRect = barObject.GetComponent<RectTransform>();
                 barRect.SetParent(waveformRoot, false);
                 barRect.anchorMin = new Vector2(0f, 0.5f);
@@ -673,6 +878,54 @@ namespace Hecton8.UI
             _audioWaveformAnimator.ConfigureWaveformTargets(waveformBars);
 
             _built = true;
+        }
+
+        private static bool BuffersMatch(char[] source, char[] comparison, int length)
+        {
+            for (int i = 0; i < length; i++)
+            {
+                if (source[i] != comparison[i])
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static int FindChar(char[] buffer, int start, int endExclusive, char value)
+        {
+            if (buffer == null)
+                return -1;
+
+            int safeStart = Mathf.Max(0, start);
+            int safeEnd = Mathf.Min(endExclusive, buffer.Length);
+            for (int i = safeStart; i < safeEnd; i++)
+            {
+                if (buffer[i] == value)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private static void TrimRange(char[] buffer, ref int start, ref int endExclusive)
+        {
+            if (buffer == null)
+            {
+                start = 0;
+                endExclusive = 0;
+                return;
+            }
+
+            int safeStart = Mathf.Clamp(start, 0, buffer.Length);
+            int safeEnd = Mathf.Clamp(endExclusive, safeStart, buffer.Length);
+            while (safeStart < safeEnd && char.IsWhiteSpace(buffer[safeStart]))
+                safeStart++;
+
+            while (safeEnd > safeStart && char.IsWhiteSpace(buffer[safeEnd - 1]))
+                safeEnd--;
+
+            start = safeStart;
+            endExclusive = safeEnd;
         }
     }
 }

@@ -18,6 +18,7 @@
 // ============================================================================
 
 using System.Text;
+using Hecton.Localization;
 using Hecton8.AtlasSignal;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
@@ -30,9 +31,13 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Atlas Signal Tab")]
-    public sealed class PDAAtlasSignalTab : MonoBehaviour, ITickable
+    public sealed class PDAAtlasSignalTab : MonoBehaviour, ITickable, IUpdatable
     {
         private const float MainCameraResolveRetryInterval = 1f;
+        private const string StrengthPercentTemplate = "{0}%";
+        private const string PulseTimerTemplate = "{0:D2}:{1:D2}";
+        private static readonly char[] StrengthPercentTemplateChars = StrengthPercentTemplate.ToCharArray();
+        private static readonly char[] PulseTimerTemplateChars = PulseTimerTemplate.ToCharArray();
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -241,11 +246,7 @@ namespace Hecton8.UI
             if (_registered)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager == null)
-                return;
-
-            gameTickManager.Register(this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _registered = true;
         }
 
@@ -254,10 +255,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager != null)
-                gameTickManager.Unregister(this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _registered = false;
         }
 
@@ -487,7 +485,7 @@ namespace Hecton8.UI
                     {
                         _lastStrengthDisplayMode = displayMode;
                         _lastStrengthPercent = roundedPercent;
-                        _strengthValue.SetText("{0}%", roundedPercent);
+                        SetNumericText(_strengthValue, StrengthPercentTemplate, LocNumericArg.Int(roundedPercent));
                     }
                 }
             }
@@ -590,7 +588,7 @@ namespace Hecton8.UI
             _lastCountdownSeconds = totalSecs;
             int mins = totalSecs / 60;
             int secs = totalSecs % 60;
-            _pulseTimerLabel.SetText("{0:D2}:{1:D2}", mins, secs);
+            SetNumericText(_pulseTimerLabel, PulseTimerTemplate, LocNumericArg.Int(mins), LocNumericArg.Int(secs));
         }
 
         private bool CanRevealAtlasTelemetry(AtlasSignalSystem sys)
@@ -621,11 +619,17 @@ namespace Hecton8.UI
                 return;
 
             _mainCameraResolveRetryTimer = MainCameraResolveRetryInterval;
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null && playerContext.PlayerCamera != null)
+            {
+                _mainCamera = playerContext.PlayerCamera;
+                return;
+            }
+
             if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform != null)
             {
-                if (!playerTransform.TryGetComponent(out _mainCamera))
-                    _mainCamera = playerTransform.GetComponentInChildren<Camera>(true);
+                playerTransform.TryGetComponent(out _mainCamera);
             }
 
             if (_mainCamera == null && TryGetComponent(out Camera localCamera))
@@ -633,9 +637,6 @@ namespace Hecton8.UI
                 _mainCamera = localCamera;
                 return;
             }
-
-            if (_mainCamera == null)
-                _mainCamera = GetComponentInChildren<Camera>(true);
 
             if (_mainCamera == null)
                 _mainCamera = GetComponentInParent<Camera>();
@@ -695,6 +696,28 @@ namespace Hecton8.UI
             {
                 label.text = value;
             }
+        }
+
+        private static void SetNumericText(TextMeshProUGUI label, string template, LocNumericArg value0)
+        {
+            if (label == null)
+                return;
+
+            LocNumericBuffer.Write(new System.ReadOnlySpan<char>(StrengthPercentTemplateChars), value0, out char[] buffer, out int length);
+            int safeLength = Mathf.Clamp(length, 0, buffer != null ? buffer.Length : 0);
+            label.SetCharArray(buffer, 0, safeLength);
+            label.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
+        }
+
+        private static void SetNumericText(TextMeshProUGUI label, string template, LocNumericArg value0, LocNumericArg value1)
+        {
+            if (label == null)
+                return;
+
+            LocNumericBuffer.Write(new System.ReadOnlySpan<char>(PulseTimerTemplateChars), value0, value1, out char[] buffer, out int length);
+            int safeLength = Mathf.Clamp(length, 0, buffer != null ? buffer.Length : 0);
+            label.SetCharArray(buffer, 0, safeLength);
+            label.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
         }
 
         private static void SetLabelColor(TextMeshProUGUI label, Color value)

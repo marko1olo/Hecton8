@@ -1,20 +1,24 @@
+using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Visor;
-using Hecton8.World;
+using Unity.Burst;
 using Unity.Collections;
+using Unity.Jobs;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace Hecton8.UI
 {
     /// <summary>
-    /// Player-owned holographic compass that projects active abyssal anchors into the HUD as pulsing sonar contact dots.
+    /// Player-owned acoustic radar overlay that projects recent physics-impact emitters into the HUD as fading blips.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Sonar Holo Compass")]
     public sealed class SonarHoloCompass : MonoBehaviour, ITickable
     {
         private const int MaxDots = 16;
+        private const int ProjectionBatchSize = 4;
         private const float RootWidth = 188f;
         private const float RootHeight = 188f;
         private const float RingRadius = 74f;
@@ -23,6 +27,8 @@ namespace Hecton8.UI
         private const float DotPulseSize = 7f;
         private const float PingDecaySharpness = 4.2f;
         private const float HiddenAlphaCutoff = 0.001f;
+        private const float ImpactRadarMaxDistanceMeters = 40f;
+        private const float MinimumBlipEnergy = 0.001f;
         private const string RootName = "SonarHoloCompass";
 
         private static readonly Color FrameColor = new Color(0.48f, 0.95f, 0.92f, 0.16f);
@@ -30,17 +36,97 @@ namespace Hecton8.UI
         private static readonly Color DotRearColor = new Color(0.62f, 0.78f, 0.82f, 0.34f);
         private static Sprite s_quadSprite;
 
+        private struct AcousticRadarBlipInput
+        {
+            public float3 AbsolutePosition;
+            public float Amplitude;
+        }
+
+        private struct AcousticRadarBlipOutput
+        {
+            public float2 AnchoredPosition;
+            public float Energy;
+            public float DepthBlend;
+            public int Visible;
+        }
+
+        [BurstCompile]
+        private struct ProjectImpactBlipsJob : IJobParallelFor
+        {
+            [ReadOnly] public NativeArray<AcousticRadarBlipInput> Inputs;
+            public NativeArray<AcousticRadarBlipOutput> Outputs;
+            public float3 ListenerAbsolutePosition;
+            public float3 CameraRight;
+            public float3 CameraUp;
+            public float3 CameraForward;
+            public float RingRadius;
+            public float VerticalRadius;
+            public float MaxDistanceMeters;
+
+            public void Execute(int index)
+            {
+                AcousticRadarBlipInput input = Inputs[index];
+                float amplitude = math.saturate(input.Amplitude);
+                if (amplitude <= 0f)
+                {
+                    Outputs[index] = default;
+                    return;
+                }
+
+                float3 delta = input.AbsolutePosition - ListenerAbsolutePosition;
+                float distanceSqr = math.lengthsq(delta);
+                if (distanceSqr <= 0.0001f)
+                {
+                    Outputs[index] = default;
+                    return;
+                }
+
+                float distance = math.sqrt(distanceSqr);
+                if (distance > MaxDistanceMeters)
+                {
+                    Outputs[index] = default;
+                    return;
+                }
+
+                float inverseDistance = math.rsqrt(distanceSqr);
+                float3 direction = delta * inverseDistance;
+                float x = math.clamp(math.dot(CameraRight, direction) * RingRadius, -RingRadius, RingRadius);
+                float y = math.clamp(math.dot(CameraUp, direction) * VerticalRadius, -VerticalRadius, VerticalRadius);
+                float depthBlend = math.dot(CameraForward, direction) >= 0f ? 1f : 0.35f;
+                float distanceFade = 1f - math.saturate(distance / math.max(0.01f, MaxDistanceMeters));
+                float energy = amplitude * distanceFade;
+
+                Outputs[index] = new AcousticRadarBlipOutput
+                {
+                    AnchoredPosition = new float2(x, y),
+                    Energy = energy,
+                    DepthBlend = depthBlend,
+                    Visible = energy > MinimumBlipEnergy ? 1 : 0
+                };
+            }
+        }
+
         private bool _registeredToTick;
         private bool _uiBuilt;
+        private bool _projectionScheduled;
         private Canvas _targetCanvas;
         private Camera _viewCamera;
-        private HectonMapMagicVegetationBridge _vegetationBridge;
         private RectTransform _root;
         private CanvasGroup _canvasGroup;
         private RectTransform[] _dotRects;
         private Image[] _dotImages;
         private float _pingPulse;
         private float _lastRootAlpha = -1f;
+        private int _pendingProjectionCount;
+
+        // COLD ALLOC: ActiveEmitterSample[16] — impact-emitter copy buffer for acoustic radar projection — owner: SonarHoloCompass
+        private readonly SpatialAudioManager.ActiveEmitterSample[] _impactEmitterSamples =
+            new SpatialAudioManager.ActiveEmitterSample[MaxDots];
+        // COLD ALLOC: NativeArray<AcousticRadarBlipInput>[16] — persistent Burst input scratch for radar projection — owner: SonarHoloCompass
+        private NativeArray<AcousticRadarBlipInput> _projectionInputs;
+        // COLD ALLOC: NativeArray<AcousticRadarBlipOutput>[16] — persistent Burst output scratch for radar projection — owner: SonarHoloCompass
+        private NativeArray<AcousticRadarBlipOutput> _projectionOutputs;
+        private JobHandle _projectionHandle;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -50,6 +136,7 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            EnsureProjectionBuffers();
             ResolveOwners();
             EnsureUiBuilt();
             SpectrumEvents.OnSonarPingSent += HandleSonarPingSent;
@@ -65,6 +152,7 @@ namespace Hecton8.UI
         {
             SpectrumEvents.OnSonarPingSent -= HandleSonarPingSent;
             UnregisterFromTickManager();
+            HideDots();
             ApplyRootAlpha(0f);
         }
 
@@ -72,6 +160,7 @@ namespace Hecton8.UI
         {
             SpectrumEvents.OnSonarPingSent -= HandleSonarPingSent;
             UnregisterFromTickManager();
+            DisposeProjectionBuffers();
         }
 
         /// <inheritdoc />
@@ -80,26 +169,37 @@ namespace Hecton8.UI
             ResolveOwners();
             EnsureUiBuilt();
 
-            if (_canvasGroup == null || _root == null || _viewCamera == null || _vegetationBridge == null)
-            {
-                HideDots();
-                ApplyRootAlpha(0f);
-                return;
-            }
-
             if (_pingPulse > 0f)
                 _pingPulse = Mathf.Max(0f, _pingPulse - (dt * PingDecaySharpness));
 
-            if (!_vegetationBridge.TryGetActiveAbyssalAnchorPayload(out NativeArray<Vector3> anchors, out int activeCount) ||
-                !anchors.IsCreated ||
-                activeCount <= 0)
+            if (_canvasGroup == null || _root == null || _viewCamera == null)
+            {
+                if (!TryCompleteProjectionIfScheduled())
+                    return;
+                HideDots();
+                ApplyRootAlpha(0f);
+                return;
+            }
+
+            if (!TryCompleteProjectionIfScheduled())
+                return;
+
+            if (!SpatialAudioManager.TryGetInstance(out SpatialAudioManager audioManager))
             {
                 HideDots();
                 ApplyRootAlpha(0f);
                 return;
             }
 
-            RenderDots(anchors, activeCount);
+            int emitterCount = audioManager.CopyActiveImpactEmitterSamples(_impactEmitterSamples);
+            if (emitterCount <= 0)
+            {
+                HideDots();
+                ApplyRootAlpha(0f);
+                return;
+            }
+
+            ScheduleProjection(emitterCount);
         }
 
         private void HandleSonarPingSent(float intensity)
@@ -109,19 +209,59 @@ namespace Hecton8.UI
 
         private void ResolveOwners()
         {
-            if (_vegetationBridge == null)
-                _vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
-
             if (_viewCamera == null)
             {
-                if (TryGetComponent(out Camera localCamera))
+                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                if (playerContext != null && playerContext.PlayerCamera != null)
+                {
+                    _viewCamera = playerContext.PlayerCamera;
+                }
+                else if (TryGetComponent(out Camera localCamera))
+                {
                     _viewCamera = localCamera;
+                }
                 else
-                    _viewCamera = GetComponentInChildren<Camera>(true);
+                {
+                    _viewCamera = ComponentReferenceUtility.ResolveOwnedComponent<Camera>(transform);
+                }
             }
 
             if (_targetCanvas == null)
                 _targetCanvas = ResolveTargetCanvas();
+        }
+
+        private void EnsureProjectionBuffers()
+        {
+            if (!_projectionInputs.IsCreated)
+            {
+                _projectionInputs = new NativeArray<AcousticRadarBlipInput>(
+                    MaxDots,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            if (!_projectionOutputs.IsCreated)
+            {
+                _projectionOutputs = new NativeArray<AcousticRadarBlipOutput>(
+                    MaxDots,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory);
+            }
+        }
+
+        private void DisposeProjectionBuffers()
+        {
+            JobHandle dependency = _projectionScheduled ? _projectionHandle : default;
+            if (_projectionInputs.IsCreated)
+                _projectionInputs.Dispose(dependency);
+
+            if (_projectionOutputs.IsCreated)
+                _projectionOutputs.Dispose(dependency);
+
+            _projectionInputs = default;
+            _projectionOutputs = default;
+            _projectionScheduled = false;
+            _pendingProjectionCount = 0;
         }
 
         private void EnsureUiBuilt()
@@ -194,9 +334,9 @@ namespace Hecton8.UI
 
         private void CreateDots()
         {
-            // COLD ALLOC: RectTransform[16] — prebuilt abyssal compass marker pool — owner: SonarHoloCompass
+            // COLD ALLOC: RectTransform[16] — prebuilt acoustic-radar marker pool — owner: SonarHoloCompass
             _dotRects = new RectTransform[MaxDots];
-            // COLD ALLOC: Image[16] — prebuilt abyssal compass marker visuals — owner: SonarHoloCompass
+            // COLD ALLOC: Image[16] — prebuilt acoustic-radar marker visuals — owner: SonarHoloCompass
             _dotImages = new Image[MaxDots];
 
             for (int i = 0; i < MaxDots; i++)
@@ -217,51 +357,99 @@ namespace Hecton8.UI
             }
         }
 
-        private void RenderDots(NativeArray<Vector3> anchors, int activeCount)
+        private void ScheduleProjection(int emitterCount)
         {
-            Vector3 cameraPosition = _viewCamera.transform.position;
-            Vector3 cameraRight = _viewCamera.transform.right;
-            Vector3 cameraUp = _viewCamera.transform.up;
-            Vector3 cameraForward = _viewCamera.transform.forward;
-            float pulse = _pingPulse;
-            float pulseScale = 1f + (pulse * DotPulseSize / DotBaseSize);
+            EnsureProjectionBuffers();
+            if (!_projectionInputs.IsCreated || !_projectionOutputs.IsCreated)
+                return;
 
-            int visibleDots = Mathf.Min(MaxDots, activeCount);
-            for (int i = 0; i < visibleDots; i++)
+            int safeCount = Mathf.Clamp(emitterCount, 0, Mathf.Min(MaxDots, _impactEmitterSamples.Length));
+            float3 listenerAbsolutePosition =
+                HectonFloatingOrigin.ToAbsoluteUniversePosition(_viewCamera.transform.position);
+            for (int i = 0; i < safeCount; i++)
             {
-                Vector3 delta = anchors[i] - cameraPosition;
-                float distanceSqr = delta.sqrMagnitude;
-                if (distanceSqr <= 0.01f)
+                SpatialAudioManager.ActiveEmitterSample sample = _impactEmitterSamples[i];
+                _projectionInputs[i] = new AcousticRadarBlipInput
                 {
-                    HideDot(i);
-                    continue;
-                }
+                    AbsolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(sample.Position),
+                    Amplitude = sample.Amplitude
+                };
+            }
 
-                float inverseDistance = 1f / Mathf.Sqrt(distanceSqr);
-                Vector3 direction = delta * inverseDistance;
-                float x = Vector3.Dot(cameraRight, direction);
-                float y = Vector3.Dot(cameraUp, direction);
-                float z = Vector3.Dot(cameraForward, direction);
+            ProjectImpactBlipsJob job = new ProjectImpactBlipsJob
+            {
+                Inputs = _projectionInputs,
+                Outputs = _projectionOutputs,
+                ListenerAbsolutePosition = listenerAbsolutePosition,
+                CameraRight = _viewCamera.transform.right,
+                CameraUp = _viewCamera.transform.up,
+                CameraForward = _viewCamera.transform.forward,
+                RingRadius = RingRadius,
+                VerticalRadius = VerticalRadius,
+                MaxDistanceMeters = ImpactRadarMaxDistanceMeters
+            };
 
+            _pendingProjectionCount = safeCount;
+            _projectionHandle = job.Schedule(safeCount, ProjectionBatchSize);
+            _projectionScheduled = true;
+        }
+
+        private bool TryCompleteProjectionIfScheduled()
+        {
+            if (!_projectionScheduled)
+                return true;
+
+            if (!_projectionHandle.IsCompleted)
+                return false;
+
+            _projectionHandle.Complete();
+            _projectionScheduled = false;
+            ApplyProjectedDots(_pendingProjectionCount);
+            _pendingProjectionCount = 0;
+            return true;
+        }
+
+        private void ApplyProjectedDots(int activeCount)
+        {
+            if (_dotRects == null || _dotImages == null || !_projectionOutputs.IsCreated)
+                return;
+
+            int safeCount = Mathf.Clamp(activeCount, 0, Mathf.Min(MaxDots, _projectionOutputs.Length));
+            float pulseScale = 1f + (_pingPulse * DotPulseSize / DotBaseSize);
+            int visibleCount = 0;
+
+            for (int i = 0; i < safeCount; i++)
+            {
                 RectTransform dotRect = _dotRects[i];
                 Image dotImage = _dotImages[i];
                 if (dotRect == null || dotImage == null)
                     continue;
 
-                dotRect.anchoredPosition = new Vector2(
-                    Mathf.Clamp(x * RingRadius, -RingRadius, RingRadius),
-                    Mathf.Clamp(y * VerticalRadius, -VerticalRadius, VerticalRadius));
+                AcousticRadarBlipOutput blip = _projectionOutputs[i];
+                if (blip.Visible == 0)
+                {
+                    HideDot(i);
+                    continue;
+                }
 
-                float depthBlend = z >= 0f ? 1f : 0.35f;
-                float size = DotBaseSize * Mathf.Lerp(0.72f, 1.12f, depthBlend) * pulseScale;
+                float energy = Mathf.Clamp01(blip.Energy);
+                dotRect.anchoredPosition = new Vector2(blip.AnchoredPosition.x, blip.AnchoredPosition.y);
+                float size = DotBaseSize
+                    * Mathf.Lerp(0.72f, 1.12f, blip.DepthBlend)
+                    * Mathf.Lerp(0.78f, 1.36f, energy)
+                    * pulseScale;
                 dotRect.sizeDelta = new Vector2(size, size);
-                dotImage.color = Color.Lerp(DotRearColor, DotFrontColor, depthBlend);
+
+                Color color = Color.Lerp(DotRearColor, DotFrontColor, blip.DepthBlend);
+                color.a *= Mathf.Lerp(0.25f, 1f, energy);
+                dotImage.color = color;
+                visibleCount++;
             }
 
-            for (int i = visibleDots; i < MaxDots; i++)
+            for (int i = safeCount; i < MaxDots; i++)
                 HideDot(i);
 
-            ApplyRootAlpha(1f);
+            ApplyRootAlpha(visibleCount > 0 ? 1f : 0f);
         }
 
         private void HideDots()
@@ -297,11 +485,7 @@ namespace Hecton8.UI
             if (_registeredToTick)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register(this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _registeredToTick = true;
         }
 
@@ -310,20 +494,19 @@ namespace Hecton8.UI
             if (!_registeredToTick)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister(this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _registeredToTick = false;
         }
 
         private static Canvas ResolveTargetCanvas()
         {
-            SuitHUDV4CanvasOverlay overlay = Object.FindAnyObjectByType<SuitHUDV4CanvasOverlay>();
+            SuitHUDV4CanvasOverlay overlay = SuitHUDV4CanvasOverlay.ActiveRuntimeInstance;
             if (overlay != null && overlay.TargetCanvas != null)
                 return overlay.TargetCanvas;
 
-            return Object.FindAnyObjectByType<Canvas>();
+            return SuitHUDV4CanvasOverlay.ActiveRuntimeInstance != null
+                ? SuitHUDV4CanvasOverlay.ActiveRuntimeInstance.GetComponent<Canvas>()
+                : null;
         }
 
         private static Sprite ResolveQuadSprite()

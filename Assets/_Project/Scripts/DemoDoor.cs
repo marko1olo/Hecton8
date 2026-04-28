@@ -4,15 +4,18 @@ using UnityEngine;
 
 namespace ScifiOffice {
     public class DemoDoor : MonoBehaviour {
-        Animator anim;
+        private const string PlayerTag = "Player";
+        private static readonly int OpenTriggerHash = Animator.StringToHash("Open");
 
-        private void Start() {
-            anim = GetComponent<Animator>();
+        private Animator anim;
+
+        private void Awake() {
+            TryGetComponent(out anim);
         }
 
         private void OnTriggerEnter(Collider other) {
-            if(other.gameObject.name == "Player") {
-                anim.SetTrigger("Open");
+            if (anim != null && other != null && other.CompareTag(PlayerTag)) {
+                anim.SetTrigger(OpenTriggerHash);
             }
         }
     }

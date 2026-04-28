@@ -1,17 +1,20 @@
 using Hecton.Localization;
 using Hecton8.Core;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Hecton8.Gameplay
 {
-    public sealed class BeaconRuntime : MonoBehaviour, ITickable
+    public sealed class BeaconRuntime : MonoBehaviour, ITickable, IUpdatable
     {
         private static Material s_fallbackBeaconMaterial;
+        private static Shader s_fallbackBeaconShader;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             s_fallbackBeaconMaterial = null;
+            s_fallbackBeaconShader = null;
         }
 
         private GameObject _sourcePrefab;
@@ -93,10 +96,10 @@ namespace Hecton8.Gameplay
 
         private void RegisterToTickManager()
         {
-            if (_registeredToTickManager || GameTickManager.Instance == null)
+            if (_registeredToTickManager)
                 return;
 
-            GameTickManager.Instance.Register((ITickable)this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _registeredToTickManager = true;
         }
 
@@ -105,10 +108,7 @@ namespace Hecton8.Gameplay
             if (!_registeredToTickManager)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister((ITickable)this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _registeredToTickManager = false;
         }
 
@@ -116,15 +116,25 @@ namespace Hecton8.Gameplay
         {
             if (s_fallbackBeaconMaterial == null)
             {
-                Shader shader = Shader.Find("Universal Render Pipeline/Lit");
+                Shader shader = ResolveFallbackBeaconShader();
                 if (shader == null)
-                    shader = Shader.Find("Standard");
-
+                    return null;
                 s_fallbackBeaconMaterial = new Material(shader);
             }
 
             s_fallbackBeaconMaterial.color = color;
             return s_fallbackBeaconMaterial;
+        }
+
+        private static Shader ResolveFallbackBeaconShader()
+        {
+            if (s_fallbackBeaconShader != null)
+                return s_fallbackBeaconShader;
+
+            RenderPipelineAsset renderPipeline = GraphicsSettings.currentRenderPipeline ?? GraphicsSettings.defaultRenderPipeline;
+            Material defaultMaterial = renderPipeline != null ? renderPipeline.defaultMaterial : null;
+            s_fallbackBeaconShader = defaultMaterial != null ? defaultMaterial.shader : null;
+            return s_fallbackBeaconShader;
         }
 
 

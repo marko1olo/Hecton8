@@ -45,7 +45,7 @@ using TMPro;
 namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
-    public sealed class HectonScanMarkerSystem : ImmediateModeShapeDrawer, ITickable
+    public sealed class HectonScanMarkerSystem : ImmediateModeShapeDrawer, ITickable, IUpdatable
     {
         private static readonly List<VisorHUDController> s_controllerResolveBuffer = new List<VisorHUDController>(2);
         // ══════════════════════════════════════════════════════════
@@ -177,14 +177,16 @@ namespace Hecton8.Gameplay
         {
             base.OnEnable(); // Добавить это!
             ScanEvents.OnNodeFound += HandleNodeFound;
-            GameTickManager.Instance?.Register((ITickable)this);
+            if (Application.isPlaying)
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
         }
 
         public override void OnDisable()
         {
             base.OnDisable(); // Добавить это!
             ScanEvents.OnNodeFound -= HandleNodeFound;
-            GameTickManager.Instance?.Unregister((ITickable)this);
+            if (Application.isPlaying)
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
         }
 
         // ══════════════════════════════════════════════════════════

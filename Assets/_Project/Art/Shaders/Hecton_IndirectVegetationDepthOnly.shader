@@ -29,8 +29,11 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
             #pragma vertex Vert
             #pragma fragment Frag
             #pragma multi_compile_instancing
+            #pragma multi_compile _ HECTON_GPU_INDIRECT
 
+            #define UNITY_INDIRECT_DRAW_ARGS IndirectDrawIndexedArgs
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "UnityIndirect.cginc"
 
             #define HECTON_MAX_INTERACTION_POINTS 12
             #define HECTON_MAX_IMPACT_SPHERES 8
@@ -61,22 +64,22 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
             float4 _HectonVegetationCurrentVector;
             float4 _GlobalOceanFlow;
             float4 _SargassumGlobalDriftOffset;
-            float4 _HectonVegetationWakeTrailWorldRect;
+            float4 _HectonShallowWaterFieldWorldRect;
             float4 _SargassumCutMaskWorldRect;
-            float4 _HectonPlayerAbsoluteUniversePosition;
+            float4 _HectonPlayerRuntimePosition;
             float4 _HectonPlayerFloraInteractionParams;
             float4 _HectonFlowSynchronyParams;
             float _HectonVegetationCurrentStrength;
             float _HectonVegetationCurrentTimeScale;
             float _HectonVegetationCurrentVerticalFactor;
-            float _HectonVegetationWakeTrailActive;
+            float _HectonShallowWaterFieldActive;
             float _SargassumCutMaskActive;
             int _HectonFloraFlowFieldResolution;
             int _HectonFloraInteractionCount;
             int _HectonImpactSphereCount;
 
-            TEXTURE2D(_HectonVegetationWakeTrailRT);
-            SAMPLER(sampler_HectonVegetationWakeTrailRT);
+            TEXTURE2D(_HectonShallowWaterFieldRT);
+            SAMPLER(sampler_HectonShallowWaterFieldRT);
             TEXTURE2D(_SargassumCutMaskRT);
             SAMPLER(sampler_SargassumCutMaskRT);
 
@@ -213,18 +216,23 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
                 instanceWidth = lerp(0.75, 1.35, saturate(widthScale));
             }
 
-            float4 EvaluateWakeTrailData(float3 positionWS)
+            float2 DecodeShallowWaterVelocity(float2 encodedVelocity)
             {
-                if (_HectonVegetationWakeTrailActive < 0.5)
+                return encodedVelocity * 2.0 - 1.0;
+            }
+
+            float4 EvaluateShallowWaterFieldData(float3 positionWS)
+            {
+                if (_HectonShallowWaterFieldActive < 0.5)
                     return float4(0.5, 0.5, 0.0, 0.0);
 
                 float2 uv = float2(
-                    (positionWS.x - _HectonVegetationWakeTrailWorldRect.x) * _HectonVegetationWakeTrailWorldRect.z,
-                    (positionWS.z - _HectonVegetationWakeTrailWorldRect.y) * _HectonVegetationWakeTrailWorldRect.w);
+                    (positionWS.x - _HectonShallowWaterFieldWorldRect.x) * _HectonShallowWaterFieldWorldRect.z,
+                    (positionWS.z - _HectonShallowWaterFieldWorldRect.y) * _HectonShallowWaterFieldWorldRect.w);
                 if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0)
                     return float4(0.5, 0.5, 0.0, 0.0);
 
-                return SAMPLE_TEXTURE2D_LOD(_HectonVegetationWakeTrailRT, sampler_HectonVegetationWakeTrailRT, uv, 0);
+                return SAMPLE_TEXTURE2D_LOD(_HectonShallowWaterFieldRT, sampler_HectonShallowWaterFieldRT, uv, 0);
             }
 
             half EvaluateGlobalSargassumCutMask(float3 positionWS)
@@ -268,16 +276,17 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
 
             float3 ResolveWakeTrailOffset(float3 evaluationPositionWS, float3 baseNormalWS, float bendMask, float instanceType)
             {
-                float4 wakeTrailData = EvaluateWakeTrailData(evaluationPositionWS);
-                float wakeIntensity = saturate(wakeTrailData.b);
-                if (wakeIntensity <= 0.0001)
+                float4 shallowWaterData = EvaluateShallowWaterFieldData(evaluationPositionWS);
+                float displacement = saturate(shallowWaterData.b);
+                float2 planarVelocity = DecodeShallowWaterVelocity(shallowWaterData.rg);
+                float velocityMagnitude = saturate(length(planarVelocity));
+                if (displacement <= 0.0001 && velocityMagnitude <= 0.0001)
                     return float3(0.0, 0.0, 0.0);
 
-                float2 encodedDirection = wakeTrailData.rg * 2.0 - 1.0;
-                float3 wakeDirection = SafeNormalize3(float3(encodedDirection.x, 0.0, encodedDirection.y));
+                float3 wakeDirection = SafeNormalize3(float3(planarVelocity.x, 0.0, planarVelocity.y));
                 float3 planarWakeDirection = SafeNormalize3(wakeDirection - baseNormalWS * dot(wakeDirection, baseNormalWS));
                 float typeScale = instanceType < 0.5 ? 0.7 : (instanceType < 1.5 ? 1.0 : 0.3);
-                return planarWakeDirection * (wakeIntensity * bendMask * typeScale);
+                return planarWakeDirection * ((displacement + velocityMagnitude * 0.5) * bendMask * typeScale);
             }
 
             float3 ResolveInteractionOffset(float3 evaluationPositionWS, float3 baseNormalWS, float bendMask)
@@ -306,7 +315,7 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
 
             float3 ResolvePlayerBendOffset(float3 evaluationPositionWS, float3 baseNormalWS, float bendMask, float instanceType)
             {
-                float playerRadius = _HectonPlayerAbsoluteUniversePosition.w;
+                float playerRadius = _HectonPlayerRuntimePosition.w;
                 if (bendMask <= 0.0001 ||
                     _HectonPlayerFloraInteractionParams.w < 0.5 ||
                     playerRadius <= 0.0001)
@@ -314,7 +323,7 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
                     return float3(0.0, 0.0, 0.0);
                 }
 
-                float playerRuntimePosition = _HectonPlayerAbsoluteUniversePosition.xyz + _GlobalFloatingOffset.xyz;
+                float playerRuntimePosition = _HectonPlayerRuntimePosition.xyz;
                 float playerSpeed = _HectonPlayerFloraInteractionParams.x;
                 float playerPush = _HectonPlayerFloraInteractionParams.y;
                 if (playerSpeed <= 0.0001 || playerPush <= 0.0001)
@@ -434,7 +443,11 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
             {
                 Varyings output;
                 UNITY_SETUP_INSTANCE_ID(input);
-                uint sourceInstanceIndex = _HectonVisibleInstanceIndices[instanceID];
+                uint sourceInstanceIndex = instanceID;
+                #if defined(HECTON_GPU_INDIRECT)
+                    InitIndirectDrawArgs(0);
+                    sourceInstanceIndex = _HectonVisibleInstanceIndices[GetIndirectInstanceID(instanceID)];
+                #endif
                 float4x4 instanceMatrix = _HectonInstanceMatrices[sourceInstanceIndex];
                 float4 instanceData = _HectonVegetationInstanceData[sourceInstanceIndex];
                 float instanceType = clamp(round(instanceData.x), 0.0, 2.0);

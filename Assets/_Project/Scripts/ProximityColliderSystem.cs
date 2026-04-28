@@ -43,7 +43,7 @@ using UnityEditor;
 namespace Hecton8.Core
 {
     [DisallowMultipleComponent]
-    public sealed class ProximityColliderSystem : MonoBehaviour, ITickable
+    public sealed class ProximityColliderSystem : MonoBehaviour, ITickable, IUpdatable
     {
         internal static ProximityColliderSystem ActiveRuntimeInstance { get; private set; }
 #if UNITY_EDITOR
@@ -118,7 +118,7 @@ namespace Hecton8.Core
         ///
         /// Это позволяет избежать мерцания коллайдеров на границе радиуса.
         /// </summary>
-        [BurstCompile(CompileSynchronously = true)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast)]
         private struct DistanceCalcJob : IJobParallelFor
         {
             [ReadOnly] public float3 playerPos;
@@ -340,7 +340,7 @@ namespace Hecton8.Core
                 deactivateRadius = activateRadius + 5f;
             }
 
-            GameTickManager.Instance?.Register((ITickable)this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
         }
 
         private void OnDisable()
@@ -348,7 +348,7 @@ namespace Hecton8.Core
             // ── Завершаем текущую Job, если она в полёте ──
             CompleteCurrentJob();
 
-            GameTickManager.Instance?.Unregister((ITickable)this);
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
 #if UNITY_EDITOR
             ReleaseAssemblyReloadHook();
 #endif

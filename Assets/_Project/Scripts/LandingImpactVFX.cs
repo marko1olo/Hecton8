@@ -27,7 +27,7 @@ namespace Hecton8.VFX
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Volume))]
-    public sealed class LandingImpactVFX : MonoBehaviour, ITickable
+    public sealed class LandingImpactVFX : MonoBehaviour, ITickable, IUpdatable
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -410,10 +410,10 @@ namespace Hecton8.VFX
 
         private void RegisterToTickManager()
         {
-            if (_registeredToTickManager || GameTickManager.Instance == null)
+            if (_registeredToTickManager)
                 return;
 
-            GameTickManager.Instance.Register((ITickable)this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
             _registeredToTickManager = true;
         }
 
@@ -422,10 +422,7 @@ namespace Hecton8.VFX
             if (!_registeredToTickManager)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister((ITickable)this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
             _registeredToTickManager = false;
         }
 

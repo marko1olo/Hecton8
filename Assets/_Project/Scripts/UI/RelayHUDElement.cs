@@ -14,7 +14,7 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     [RequireComponent(typeof(RectTransform))]
     [RequireComponent(typeof(CanvasGroup))]
-    public sealed class RelayHUDElement : MonoBehaviour, ITickable
+    public sealed class RelayHUDElement : MonoBehaviour, ITickable, IUpdatable
     {
         private enum RelayMarkerVisibilityState : byte
         {
@@ -68,6 +68,8 @@ namespace Hecton8.UI
         private RelayMarkerVisibilityState _lastVisibilityState = RelayMarkerVisibilityState.Hidden_NoRouteTarget;
         private float _lastObservedDistance;
         private float _cameraRetryTime;
+        // COLD ALLOC: char[16] - relay HUD distance text staging buffer - owner: RelayHUDElement
+        private readonly char[] _distanceBuffer = new char[16];
         private const float CameraRetryInterval = 2f;
 
         private void Awake()
@@ -81,18 +83,19 @@ namespace Hecton8.UI
         {
             TryCacheCamera();
 
-            if (GameTickManager.Instance != null && !_registered)
+            if (!_registered)
             {
-                GameTickManager.Instance.Register(this);
+                SystemDispatcher.EnsureRuntimeInstance();
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
                 _registered = true;
             }
         }
 
         private void OnDisable()
         {
-            if (GameTickManager.Instance != null && _registered)
+            if (_registered)
             {
-                GameTickManager.Instance.Unregister(this);
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
                 _registered = false;
             }
 
@@ -215,9 +218,11 @@ namespace Hecton8.UI
             _cameraRetryTime = Time.time + CameraRetryInterval;
 
             // Resolve via SceneBootstrap player hierarchy (explicit ownership, no Camera.main)
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null && playerContext.PlayerTransform != null)
             {
-                _mainCamera = playerTransform.GetComponentInChildren<Camera>(true);
+                Transform playerTransform = playerContext.PlayerTransform;
+                _mainCamera = playerContext.PlayerCamera;
                 if (_mainCamera != null)
                 {
                     _playerTransform = playerTransform;
@@ -227,8 +232,6 @@ namespace Hecton8.UI
 
             // Fallback: walk local hierarchy (self, children, parent)
             _mainCamera = GetComponent<Camera>();
-            if (_mainCamera == null)
-                _mainCamera = GetComponentInChildren<Camera>(true);
             if (_mainCamera == null)
             {
                 Transform parent = transform.parent;
@@ -258,7 +261,7 @@ namespace Hecton8.UI
                 return;
 
             _lastLabel = relayLabel;
-            labelText.text = relayLabel;
+            labelText.SetText(relayLabel);
         }
 
         private void UpdateDistance(float distance)
@@ -271,7 +274,17 @@ namespace Hecton8.UI
                 return;
 
             _lastDistanceMeters = distanceMeters;
-            distanceText.SetText("{0}M", distanceMeters);
+            if (!distanceMeters.TryFormat(_distanceBuffer.AsSpan(), out int length))
+                length = 0;
+
+            if (length < _distanceBuffer.Length)
+            {
+                _distanceBuffer[length] = 'M';
+                length++;
+            }
+
+            distanceText.SetCharArray(_distanceBuffer, 0, length);
+            distanceText.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
         }
 
         private void UpdateColor(bool clampedToEdge)

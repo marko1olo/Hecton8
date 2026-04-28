@@ -283,11 +283,8 @@ namespace Hecton8.PDA
             if (_registeredToTick)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
 
-            tickManager.Register(this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
             _registeredToTick = true;
         }
 
@@ -296,9 +293,7 @@ namespace Hecton8.PDA
             if (!_registeredToTick)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister(this);
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
 
             _registeredToTick = false;
         }

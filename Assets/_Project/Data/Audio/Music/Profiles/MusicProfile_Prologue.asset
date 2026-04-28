@@ -1,4 +1,4 @@
-﻿%YAML 1.1
+%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!114 &11400000
 MonoBehaviour:
@@ -23,11 +23,11 @@ MonoBehaviour:
   _shortTrackCooldownSeconds: 75
   _localCalmWeight: 80
   _localTenseWeight: 80
-  _allowCrossTensionMix: false
+  _allowCrossTensionMix: 0
   _crossTensionMixChance: 0
   _longRepeatHorizon: 1
   _shortRepeatHorizon: 1
-  _calmLongTracks: 
+  _calmLongTracks:
   - _cueId: music.prologue_1_iron_heavy_rain
     _clip: {fileID: 8300000, guid: 9290c542008720742929db961ffb572c, type: 3}
     _volume: 0.891
@@ -40,11 +40,11 @@ MonoBehaviour:
   _discoveryStingers: []
   _dangerStingers: []
   _recoveryStingers: []
-  _calmBleedProfiles: 
+  _calmBleedProfiles:
   - _profile: {fileID: 11400000, guid: a000aeb555c4daf43854afbd92c1f90e, type: 2}
     _weight: 20
   - _profile: {fileID: 11400000, guid: 7425e2778fc51b7479d751c2041d8989, type: 2}
     _weight: 10
-  _tenseBleedProfiles: 
+  _tenseBleedProfiles:
   - _profile: {fileID: 11400000, guid: 7425e2778fc51b7479d751c2041d8989, type: 2}
     _weight: 20

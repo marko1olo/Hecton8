@@ -75,7 +75,7 @@ namespace Hecton.Localization
         private const string AnalyzerTechKeyPrefix = "TECH_";
         private const string AnalyzerPrefabToken = "EnvAnalyzer";
         private const string EnvironmentalAnalyzerToolTypeName = "EnvironmentalAnalyzerTool";
-        private const float HullStressCorruptionThreshold = 0.7f;
+        private const float HullStressCorruptionThreshold = 0.75f;
         private const float MadnessEligibilityThreshold = 0.9f;
         private const int MaxStressCorruptionBucket = 8;
         private const int MadnessVisualBucket = MaxStressCorruptionBucket + 1;
@@ -798,7 +798,7 @@ namespace Hecton.Localization
             if (!SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) || playerTransform == null)
                 return null;
 
-            _cachedPlayerToolManager = playerTransform.GetComponentInChildren<PlayerToolManager>(true);
+            _cachedPlayerToolManager = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.ToolManager != null) ? Hecton8.Core.GlobalRegistry.Player.ToolManager : playerTransform.GetComponent<PlayerToolManager>());
             return _cachedPlayerToolManager;
         }
 

@@ -11,9 +11,6 @@ namespace Hecton8.World
     /// </summary>
     internal static class WorldReadabilityRuntimeBootstrap
     {
-        private const string ManagersRootName = "[MANAGERS]";
-        private const string SystemsRootName = "--- SYSTEMS ---";
-
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureRuntimeInstance()
         {
@@ -36,7 +33,7 @@ namespace Hecton8.World
             WorldZoneDirector runtimeWorldZoneDirector,
             BiomeMatrixDirector runtimeBiomeMatrixDirector)
         {
-            WorldReadabilityDirector existingDirector = Object.FindAnyObjectByType<WorldReadabilityDirector>(FindObjectsInactive.Include);
+            WorldReadabilityDirector existingDirector = WorldReadabilityDirector.ActiveRuntimeInstance;
             if (existingDirector != null)
             {
                 existingDirector.ApplyRuntimeDependencies(runtimeWorldZoneDirector, runtimeBiomeMatrixDirector);
@@ -55,8 +52,7 @@ namespace Hecton8.World
 
         private static void EnsureRelayDirector(GameObject runtimeOwner)
         {
-            EmergencyServiceRelayDirector existingDirector =
-                Object.FindAnyObjectByType<EmergencyServiceRelayDirector>(FindObjectsInactive.Include);
+            EmergencyServiceRelayDirector existingDirector = EmergencyServiceRelayDirector.ActiveRuntimeInstance;
             if (existingDirector != null)
                 return;
 
@@ -74,11 +70,8 @@ namespace Hecton8.World
 
         private static GameObject ResolveManagersRoot()
         {
-            GameObject runtimeOwner = GameObject.Find(ManagersRootName);
-            if (runtimeOwner != null)
-                return runtimeOwner;
-
-            runtimeOwner = GameObject.Find(SystemsRootName);
+            GameObject runtimeOwner = null;
+            WorldRuntimeReferenceUtility.TryResolveManagersRoot(ref runtimeOwner);
             if (runtimeOwner != null)
                 return runtimeOwner;
 

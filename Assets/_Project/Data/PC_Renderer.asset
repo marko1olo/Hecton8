@@ -1,5 +1,54 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-5141615736367322437
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f95c3dbdc441f940a4f82456237eea7, type: 3}
+  m_Name: HectonAbyssalSsdoFeature
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.HectonAbyssalSsdoFeature
+  m_Active: 1
+  settings:
+    shader: {fileID: 4800000, guid: 1273a37900a6855419fdc57dc70275cd, type: 3}
+    blueNoiseTexture: {fileID: 0}
+    injectionPoint: 450
+    renderScale: 0.5
+    radiusMeters: 1.5
+    intensity: 0.78
+    bias: 0.05
+    depthSigma: 18
+    blurDepthThreshold: 0.18
+    compositeStrength: 0.52
+    sampleCount: 4
+    ambientDirection: {x: 0.18, y: 0.94, z: 0.26}
+--- !u!114 &-4638680478887311186
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 39f4fd68884d4898abef15d91c4984c0, type: 3}
+  m_Name: HectonVisorFluidDistortionFeature
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.HectonVisorFluidDistortionFeature
+  m_Active: 1
+  settings:
+    shader: {fileID: 4800000, guid: 2f16f2dbb7e64be8b2e781182e8fd8f7, type: 3}
+    injectionPoint: 550
+    distortionStrength: 0.012
+    runoffSpeed: 1.2
+    dropletScale: 8
+    lateralStreakStrength: 0.42
+    forwardStretchStrength: 0.28
+    hullStressContribution: 0.8
+    edgeFadeExponent: 1.35
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -29,7 +78,10 @@ MonoBehaviour:
   - {fileID: 58536412019685547}
   - {fileID: 7270194210237144737}
   - {fileID: 1886482717959882929}
-  m_RendererFeatureMap: ad6b866f10d7b46cabf8db7c8ef6cf00a15e49751debe464b188e97609222e1a
+  - {fileID: 3885649266627401901}
+  - {fileID: -5141615736367322437}
+  - {fileID: -4638680478887311186}
+  m_RendererFeatureMap: ad6b866f10d7b46cabf8db7c8ef6cf00a15e49751debe464b188e97609222e1aad5815c36b99ec35bb6a44aeba4fa5b8ae086265ae18a0bf
   m_UseNativeRenderPass: 1
   xrSystemData: {fileID: 0}
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
@@ -70,7 +122,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 729a2e952309e2547a3747b2cdd9a36f, type: 3}
   m_Name: ShapesRenderFeature
   m_EditorClassIdentifier: ShapesRuntime::Shapes.ShapesRenderFeature
-  m_Active: 1
+  m_Active: 0
 --- !u!114 &1886482717959882929
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -85,6 +137,57 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.ScreenSpaceShadows
   m_Active: 0
   m_Shader: {fileID: 4800000, guid: 0f854b35a0cf61a429bd5dcfea30eddd, type: 3}
+--- !u!114 &3885649266627401901
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbae2a4d1a7fe094680a86cdb7d616da, type: 3}
+  m_Name: HectonScooterVolumetricShaftsFeature
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.HectonScooterVolumetricShaftsFeature
+  m_Active: 1
+  settings:
+    shader: {fileID: 4800000, guid: df2f9fd24e26ee54f919bd0a51806232, type: 3}
+    autoExposureComputeShader: {fileID: 7200000, guid: d94720f8af074719a93b576740cb35e1, type: 3}
+    blueNoiseTexture: {fileID: 0}
+    injectionPoint: 450
+    renderScale: 0.5
+    raymarchSteps: 8
+    maxRayDistance: 56
+    scatteringAnisotropy: 0.68
+    density: 1.05
+    blueNoiseJitter: 0.85
+    bilateralDepthSigma: 24
+    shaftIntensity: 1.3
+    biolumPatternScale: 0.14
+    biolumProjectionStrength: 0.62
+    siltStrength: 1.15
+    siltNoiseScale: 0.14
+    siltFloorBoost: 1.35
+    siltDriftSpeed: 0.18
+    contactShadowStrength: 0.62
+    contactShadowSteps: 6
+    contactShadowBias: 0.08
+    contactShadowMaxDistance: 9
+    flashlightShadowSoftness: 6.5
+    flashlightShadowMinStep: 0.12
+    flashlightShadowBias: 0.06
+    flashlightShadowFloor: 0.08
+    noirPower: 1.9
+    noirFogDensity: 0.012
+    noirLiftColor: {r: 0.0038, g: 0.0056, b: 0.0078, a: 1}
+    lensGhostIntensity: 0.34
+    lensGhostScale: 0.075
+    lensChromaticAberration: 0.005
+    lensEdgeWeight: 4.2
+    minEv: -10
+    maxEv: 12
+    exposureAdaptationRate: 2.4
+    evMaxDeltaPerFrame: 0.5
 --- !u!114 &7270194210237144737
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -97,7 +200,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a1614fc811f8f184697d9bee70ab9fe5, type: 3}
   m_Name: DecalRendererFeature
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.DecalRendererFeature
-  m_Active: 1
+  m_Active: 0
   m_Settings:
     technique: 1
     maxDrawDistance: 200

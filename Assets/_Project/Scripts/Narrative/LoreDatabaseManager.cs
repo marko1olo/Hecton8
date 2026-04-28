@@ -1,5 +1,10 @@
 using System;
 using System.Collections.Generic;
+#if UNITY_EDITOR
+using System.IO;
+using System.Text;
+using UnityEditor;
+#endif
 using Hecton.Localization;
 using Hecton8.Modding;
 using Hecton8.SaveSystem;
@@ -291,13 +296,18 @@ namespace Hecton8.Narrative
         }
 
         /// <summary>
-        /// Compute the stable FNV-1a runtime hash for a lore ID.
+        /// Compute the stable authored FNV-1a runtime hash for an ASCII lore ID.
         /// </summary>
         /// <param name="logId">Stable authored lore ID.</param>
         /// <returns>Stable FNV-1a hash.</returns>
         public static uint ComputeLoreHash(string logId)
         {
-            return unchecked((uint)LocHash.Compute(logId));
+            return LocHash.ComputeAscii(logId);
+        }
+
+        private static uint ComputeLoreHash(ReadOnlySpan<char> logId)
+        {
+            return LocHash.ComputeAscii(logId);
         }
 
         /// <summary>
@@ -374,6 +384,22 @@ namespace Hecton8.Narrative
         }
 
         /// <summary>
+        /// Resolve the localized-or-fallback title buffer for one lore record hash.
+        /// </summary>
+        public bool TryGetTitleBuffer(uint logHash, out char[] buffer, out int length, out bool rtl)
+        {
+            if (!TryGetRecordIndex(logHash, out int index))
+            {
+                buffer = null;
+                length = 0;
+                rtl = false;
+                return false;
+            }
+
+            return TryGetTitleBuffer(index, out buffer, out length, out rtl);
+        }
+
+        /// <summary>
         /// Resolve the localized-or-fallback body buffer for one lore record.
         /// </summary>
         public bool TryGetBodyBuffer(int index, out char[] buffer, out int length, out bool rtl)
@@ -382,11 +408,43 @@ namespace Hecton8.Narrative
         }
 
         /// <summary>
+        /// Resolve the localized-or-fallback body buffer for one lore record hash.
+        /// </summary>
+        public bool TryGetBodyBuffer(uint logHash, out char[] buffer, out int length, out bool rtl)
+        {
+            if (!TryGetRecordIndex(logHash, out int index))
+            {
+                buffer = null;
+                length = 0;
+                rtl = false;
+                return false;
+            }
+
+            return TryGetBodyBuffer(index, out buffer, out length, out rtl);
+        }
+
+        /// <summary>
         /// Resolve the localized-or-fallback speaker buffer for one lore record.
         /// </summary>
         public bool TryGetSpeakerBuffer(int index, out char[] buffer, out int length, out bool rtl)
         {
             return TryGetRecordFieldBuffer(index, FieldKind.Speaker, out buffer, out length, out rtl);
+        }
+
+        /// <summary>
+        /// Resolve the localized-or-fallback speaker buffer for one lore record hash.
+        /// </summary>
+        public bool TryGetSpeakerBuffer(uint logHash, out char[] buffer, out int length, out bool rtl)
+        {
+            if (!TryGetRecordIndex(logHash, out int index))
+            {
+                buffer = null;
+                length = 0;
+                rtl = false;
+                return false;
+            }
+
+            return TryGetSpeakerBuffer(index, out buffer, out length, out rtl);
         }
 
         public void PopulateSaveData(SaveData data)
@@ -469,16 +527,8 @@ namespace Hecton8.Narrative
             GameLanguage language = manager != null ? manager.CurrentLanguage : GameLanguage.English;
             rtl = manager != null && LocalizationManager.IsRightToLeftLanguage(language);
 
-            if (rtl)
-            {
-                if (LocRegistry.TryGetVisualBuffer(keyHash, out buffer, out length))
-                    return true;
-            }
-            else
-            {
-                if (LocRegistry.TryGetRawBuffer(keyHash, out buffer, out length))
-                    return true;
-            }
+            if (LocRegistry.TryGetRawBuffer(keyHash, out buffer, out length))
+                return true;
 
             buffer = fallbackBuffer ?? Array.Empty<char>();
             length = buffer.Length;
@@ -558,5 +608,141 @@ namespace Hecton8.Narrative
                 Allocator.Persistent,
                 NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeBitArray[64 bits] — industrial lore unlock mask — owner: LoreDatabaseManager
         }
+
+#if UNITY_EDITOR
+        [MenuItem("Hecton-8/Rebake Lore Hashes")]
+        private static void RebakeLoreHashes()
+        {
+            List<string> sourcePaths = ResolveSourceFilePaths();
+            if (sourcePaths.Count == 0)
+            {
+                Debug.LogError("[LoreDatabaseManager] Rebake failed. No authored lore seed source files were found.");
+                return;
+            }
+
+            int updatedFileCount = 0;
+            int updatedLineCount = 0;
+            for (int fileIndex = 0; fileIndex < sourcePaths.Count; fileIndex++)
+            {
+                string sourcePath = sourcePaths[fileIndex];
+                string fullSourcePath = Path.GetFullPath(sourcePath);
+                string[] lines = File.ReadAllLines(fullSourcePath);
+                int updatedLineCountForFile = 0;
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    if (!TryRebakeLoreSeedLine(lines[i], out string rebakedLine))
+                        continue;
+
+                    if (string.Equals(lines[i], rebakedLine, StringComparison.Ordinal))
+                        continue;
+
+                    lines[i] = rebakedLine;
+                    updatedLineCountForFile++;
+                }
+
+                if (updatedLineCountForFile <= 0)
+                    continue;
+
+                File.WriteAllLines(fullSourcePath, lines, new UTF8Encoding(false));
+                AssetDatabase.ImportAsset(sourcePath, ImportAssetOptions.ForceUpdate);
+                updatedFileCount++;
+                updatedLineCount += updatedLineCountForFile;
+            }
+
+            if (updatedFileCount <= 0)
+            {
+                Debug.Log("[LoreDatabaseManager] Lore seed hashes already match the runtime ASCII FNV-1a owner across authored source files.");
+                return;
+            }
+
+            Debug.Log($"[LoreDatabaseManager] Rebaked {updatedLineCount} lore seed hashes across {updatedFileCount} source file(s).");
+        }
+
+        private static List<string> ResolveSourceFilePaths()
+        {
+            const string LoreSeedPrefix = "new LoreSeed(\"";
+
+            string scriptsRoot = Path.Combine(Application.dataPath, "_Project", "Scripts");
+            List<string> sourcePaths = new List<string>(8);
+            if (!Directory.Exists(scriptsRoot))
+                return sourcePaths;
+
+            string[] scriptPaths = Directory.GetFiles(scriptsRoot, "*.cs", SearchOption.AllDirectories);
+            for (int i = 0; i < scriptPaths.Length; i++)
+            {
+                string filePath = scriptPaths[i];
+                bool containsLoreSeed = false;
+                foreach (string line in File.ReadLines(filePath))
+                {
+                    if (line.IndexOf(LoreSeedPrefix, StringComparison.Ordinal) >= 0)
+                    {
+                        containsLoreSeed = true;
+                        break;
+                    }
+                }
+
+                if (!containsLoreSeed)
+                    continue;
+
+                string normalizedFilePath = filePath.Replace('\\', '/');
+                string assetsRoot = Application.dataPath.Replace('\\', '/');
+                if (!normalizedFilePath.StartsWith(assetsRoot, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                sourcePaths.Add("Assets" + normalizedFilePath.Substring(assetsRoot.Length));
+            }
+
+            return sourcePaths;
+        }
+
+        private static bool TryRebakeLoreSeedLine(string line, out string rebakedLine)
+        {
+            const string SeedPrefix = "new LoreSeed(\"";
+            rebakedLine = line;
+
+            if (string.IsNullOrEmpty(line))
+                return false;
+
+            int seedStart = line.IndexOf(SeedPrefix, StringComparison.Ordinal);
+            if (seedStart < 0)
+                return false;
+
+            int logIdStart = seedStart + SeedPrefix.Length;
+            int logIdEnd = line.IndexOf('\"', logIdStart);
+            if (logIdEnd <= logIdStart)
+                return false;
+
+            int hashPrefixIndex = line.IndexOf("0x", logIdEnd, StringComparison.OrdinalIgnoreCase);
+            if (hashPrefixIndex < 0)
+                return false;
+
+            int hashDigitsStart = hashPrefixIndex + 2;
+            int hashDigitsEnd = hashDigitsStart;
+            while (hashDigitsEnd < line.Length && IsHexDigit(line[hashDigitsEnd]))
+                hashDigitsEnd++;
+
+            if (hashDigitsEnd <= hashDigitsStart ||
+                hashDigitsEnd >= line.Length ||
+                (line[hashDigitsEnd] != 'u' && line[hashDigitsEnd] != 'U'))
+            {
+                return false;
+            }
+
+            string logId = line.Substring(logIdStart, logIdEnd - logIdStart);
+            uint computedHash = ComputeLoreHash(logId);
+            string replacement = "0x" + computedHash.ToString("x8") + "u";
+            rebakedLine = line.Substring(0, hashPrefixIndex) +
+                          replacement +
+                          line.Substring(hashDigitsEnd + 1);
+            return true;
+        }
+
+        private static bool IsHexDigit(char value)
+        {
+            return (value >= '0' && value <= '9') ||
+                   (value >= 'a' && value <= 'f') ||
+                   (value >= 'A' && value <= 'F');
+        }
+#endif
     }
 }

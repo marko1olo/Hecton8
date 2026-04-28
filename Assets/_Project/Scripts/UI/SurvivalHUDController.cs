@@ -25,7 +25,7 @@ namespace Hecton8.UI
     /// HUD controller for survival stat bars.
     /// Reads directly from HectonSurvivalSystem. Zero GC in hot paths.
     /// </summary>
-    public class SurvivalHUDController : MonoBehaviour, ITickable
+    public class SurvivalHUDController : MonoBehaviour, ITickable, IUpdatable
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -221,11 +221,8 @@ namespace Hecton8.UI
             if (_registered)
                 return;
 
-            if (GameTickManager.Instance != null)
-            {
-                GameTickManager.Instance.Register(this);
-                _registered = true;
-            }
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
+            _registered = true;
         }
 
         private void UnregisterFromTick()
@@ -233,11 +230,8 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            if (GameTickManager.Instance != null)
-            {
-                GameTickManager.Instance.Unregister(this);
-                _registered = false;
-            }
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            _registered = false;
         }
     }
 }

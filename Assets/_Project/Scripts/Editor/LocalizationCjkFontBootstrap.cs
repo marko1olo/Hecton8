@@ -260,6 +260,10 @@ namespace Hecton8.Editor
             {
                 return null;
             }
+            catch (UnassignedReferenceException)
+            {
+                return null;
+            }
         }
 
         private static void PrimeAtlas(TMP_FontAsset fontAsset, string authoredCharacters)
@@ -393,7 +397,19 @@ namespace Hecton8.Editor
                 return;
 
             ResetBrokenAtlasTextureReferences(fontAsset);
-            fontAsset.ClearFontAssetData(false);
+            try
+            {
+                fontAsset.ClearFontAssetData(false);
+            }
+            catch (MissingReferenceException)
+            {
+                ResetBrokenAtlasTextureReferences(fontAsset);
+            }
+            catch (UnassignedReferenceException)
+            {
+                ResetBrokenAtlasTextureReferences(fontAsset);
+            }
+
             SetClearDynamicDataOnBuild(fontAsset, false);
             EditorUtility.SetDirty(fontAsset);
         }
@@ -409,6 +425,10 @@ namespace Hecton8.Editor
                 return atlasTexture == null;
             }
             catch (MissingReferenceException)
+            {
+                return true;
+            }
+            catch (UnassignedReferenceException)
             {
                 return true;
             }

@@ -299,19 +299,19 @@ namespace Hecton8.Construction
 
         private void TryRegister()
         {
-            if (_registered || GameTickManager.Instance == null)
+            if (_registered)
                 return;
 
-            GameTickManager.Instance.Register((ISlowTickable)this);
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
             _registered = true;
         }
 
         private void TryUnregister()
         {
-            if (!_registered || GameTickManager.Instance == null)
+            if (!_registered)
                 return;
 
-            GameTickManager.Instance.Unregister((ISlowTickable)this);
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _registered = false;
         }
 
@@ -410,7 +410,7 @@ namespace Hecton8.Construction
         {
             PowerGrid grid = _powerNode != null ? _powerNode.Grid : null;
             if (grid != null)
-                grid.UpdateBalance();
+                grid.MarkDirty();
         }
 
         private void ClearBufferedOutputState()

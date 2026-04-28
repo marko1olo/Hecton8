@@ -30,8 +30,10 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Environmental Hazard")]
-    public sealed class EnvironmentalHazard : MonoBehaviour, ITickable
+    public sealed class EnvironmentalHazard : MonoBehaviour, ITickable, IUpdatable
     {
+        private static readonly int PlayerLayerIndex;
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -128,6 +130,11 @@ namespace Hecton8.Gameplay
         /// <summary>Hazard radius.</summary>
         public float HazardRadius => hazardRadius;
 
+        static EnvironmentalHazard()
+        {
+            PlayerLayerIndex = LayerMask.NameToLayer("Player");
+        }
+
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
         // ══════════════════════════════════════════════════════════
@@ -142,11 +149,9 @@ namespace Hecton8.Gameplay
                 hazardIndicator = GetComponent<Renderer>();
 
             // Cache player layer if not set
-            if (playerLayer == 0)
+            if (playerLayer == 0 && PlayerLayerIndex >= 0)
             {
-                int layer = LayerMask.NameToLayer("Player");
-                if (layer >= 0)
-                    playerLayer = 1 << layer;
+                playerLayer = 1 << PlayerLayerIndex;
             }
         }
 
@@ -173,11 +178,7 @@ namespace Hecton8.Gameplay
             if (_registered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register((ITickable)this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _registered = true;
         }
 
@@ -186,10 +187,7 @@ namespace Hecton8.Gameplay
             if (!_registered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister((ITickable)this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _registered = false;
         }
 

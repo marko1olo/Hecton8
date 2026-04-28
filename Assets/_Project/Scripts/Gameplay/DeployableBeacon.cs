@@ -32,7 +32,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
     [AddComponentMenu("Hecton/Gameplay/Deployable Beacon")]
-    public sealed class DeployableBeacon : MonoBehaviour, IInteractable, ITickable, IFixedTickable
+    public sealed class DeployableBeacon : MonoBehaviour, IInteractable, ITickable, IUpdatable, IFixedTickable
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -182,7 +182,7 @@ namespace Hecton8.Gameplay
             }
 
             if (beaconLight == null)
-                beaconLight = GetComponentInChildren<Renderer>();
+                beaconLight = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Renderer>(transform);
         }
 
         private void OnEnable()
@@ -413,32 +413,26 @@ namespace Hecton8.Gameplay
 
         private void TryRegisterTickSystems()
         {
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
             if (!_registered)
             {
-                tickManager.Register((ITickable)this);
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
                 _registered = true;
             }
 
             if (!_registeredFixed)
             {
-                tickManager.Register((IFixedTickable)this);
+                GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
                 _registeredFixed = true;
             }
         }
 
         private void TryUnregisterTickSystems()
         {
-            GameTickManager tickManager = GameTickManager.Instance;
+            if (_registered)
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
 
-            if (_registered && tickManager != null)
-                tickManager.Unregister((ITickable)this);
-
-            if (_registeredFixed && tickManager != null)
-                tickManager.Unregister((IFixedTickable)this);
+            if (_registeredFixed)
+                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
 
             _registered = false;
             _registeredFixed = false;

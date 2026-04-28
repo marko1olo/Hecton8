@@ -9,7 +9,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(HectonSurvivalSystem))]
     [RequireComponent(typeof(HectonPlayerMovement))]
-    public sealed class TraumaDispatcher : MonoBehaviour, ITickable, IDamageReceiver
+    public sealed class TraumaDispatcher : MonoBehaviour, ITickable, IUpdatable, IDamageReceiver
     {
         private const float IntegrityChannelDecayPerSecond = 0.35f;
         private const float PowerChannelDecayPerSecond = 0.28f;
@@ -243,11 +243,7 @@ namespace Hecton8.Gameplay
             if (_registered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register((ITickable)this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
             _registered = true;
         }
 
@@ -256,10 +252,7 @@ namespace Hecton8.Gameplay
             if (!_registered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister((ITickable)this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
             _registered = false;
         }
 

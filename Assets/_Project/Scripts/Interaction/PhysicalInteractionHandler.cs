@@ -164,15 +164,18 @@ namespace Hecton8.Interaction
 
             if (interactionAnchor == null)
             {
-                _playerCamera = GetComponentInChildren<Camera>(true);
+                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                _playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
+                if (_playerCamera == null)
+                    TryGetComponent(out _playerCamera);
+                if (_playerCamera == null)
+                    _playerCamera = GetComponentInParent<Camera>();
+
                 if (_playerCamera != null)
                     interactionAnchor = _playerCamera.transform;
             }
 
-            if (!TryGetComponent(out _physicalHandController))
-            {
-                _physicalHandController = gameObject.AddComponent<PhysicalHandController>(); // COLD ALLOC: PhysicalHandController[1] — heavy-object articulation grab proxy — owner: PhysicalInteractionHandler
-            }
+            TryGetComponent(out _physicalHandController);
         }
 
         private void OnEnable()
@@ -299,7 +302,7 @@ namespace Hecton8.Interaction
 
             Collider targetCollider = behaviour.GetComponent<Collider>();
             if (targetCollider == null)
-                targetCollider = behaviour.GetComponentInChildren<Collider>(true);
+                TryResolveOwnedComponent(behaviour.transform, out targetCollider);
 
             _activeInteractable = interactable;
             _activeBehaviour = behaviour;
@@ -334,6 +337,24 @@ namespace Hecton8.Interaction
             return true;
         }
 
+        private static bool TryResolveOwnedComponent<T>(Transform root, out T component) where T : Component
+        {
+            component = null;
+            if (root == null)
+                return false;
+
+            if (root.TryGetComponent(out component))
+                return true;
+
+            for (int i = 0; i < root.childCount; i++)
+            {
+                if (TryResolveOwnedComponent(root.GetChild(i), out component))
+                    return true;
+            }
+
+            return false;
+        }
+
         private bool TryBeginHeavyCarry(IInteractable interactable, MonoBehaviour behaviour)
         {
             if (!behaviour.TryGetComponent(out HeavyCarryInteractable heavyCarry))
@@ -349,7 +370,7 @@ namespace Hecton8.Interaction
                 return false;
             }
 
-            if (_physicalHandController == null || !_physicalHandController.BeginGrab(heavyCarry, carryBody))
+            if (!EnsurePhysicalHandController() || !_physicalHandController.BeginGrab(heavyCarry, carryBody))
                 return false;
 
             _activeInteractable = interactable;
@@ -370,6 +391,18 @@ namespace Hecton8.Interaction
             return true;
         }
 
+        private bool EnsurePhysicalHandController()
+        {
+            if (_physicalHandController != null)
+                return true;
+
+            if (TryGetComponent(out _physicalHandController))
+                return true;
+
+            _physicalHandController = gameObject.AddComponent<PhysicalHandController>(); // COLD ALLOC: PhysicalHandController[1] — heavy-object articulation grab proxy — owner: PhysicalInteractionHandler
+            return _physicalHandController != null;
+        }
+
         private void TickPocketPickup(float deltaTime)
         {
             _stateTimer += deltaTime;
@@ -381,12 +414,19 @@ namespace Hecton8.Interaction
             if (_activeBody == null && interactionAnchor != null)
             {
                 Vector3 targetPosition = GetAnchorTargetPosition();
+                Vector3 currentPosition = _activeTargetTransform.position;
+                if (!IsFiniteVector(targetPosition) || !IsFiniteVector(currentPosition))
+                    return;
+
                 Vector3 nextPosition = Vector3.SmoothDamp(
-                    _activeTargetTransform.position,
+                    currentPosition,
                     targetPosition,
                     ref _pullSmoothDampVelocity,
                     duration,
                     pickupMoveSpeed);
+                if (!IsFiniteVector(nextPosition))
+                    return;
+
                 _activeTargetTransform.position = nextPosition;
             }
 
@@ -401,7 +441,13 @@ namespace Hecton8.Interaction
 
             Vector3 targetPosition = GetAnchorTargetPosition();
             Vector3 currentPosition = _activeBody.position;
+            if (!IsFiniteVector(targetPosition) || !IsFiniteVector(currentPosition))
+                return;
+
             Vector3 nextPosition = Vector3.MoveTowards(currentPosition, targetPosition, pickupMoveSpeed * fixedDeltaTime);
+            if (!IsFiniteVector(nextPosition))
+                return;
+
             _activeBody.MovePosition(nextPosition);
         }
 
@@ -550,35 +596,42 @@ namespace Hecton8.Interaction
                 offset.y = heavyCarryVerticalOffset + pitchOffset - load * heavyCarryLoadSag;
             }
 
-            return interactionAnchor.position + offset;
+            Vector3 targetPosition = interactionAnchor.position + offset;
+            return IsFiniteVector(targetPosition) ? targetPosition : _cachedTransform.position;
+        }
+
+        private static bool IsFiniteVector(Vector3 value)
+        {
+            return !(float.IsNaN(value.x) || float.IsNaN(value.y) || float.IsNaN(value.z) ||
+                     float.IsInfinity(value.x) || float.IsInfinity(value.y) || float.IsInfinity(value.z));
         }
 
         private void RegisterToTickSystems()
         {
-            if (!_registeredTick && GameTickManager.Instance != null)
+            if (!_registeredTick)
             {
-                GameTickManager.Instance.Register((ITickable)this);
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
                 _registeredTick = true;
             }
 
-            if (!_registeredFixedTick && GameTickManager.Instance != null)
+            if (!_registeredFixedTick)
             {
-                GameTickManager.Instance.Register((IFixedTickable)this);
+                GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Player);
                 _registeredFixedTick = true;
             }
         }
 
         private void UnregisterFromTickSystems()
         {
-            if (_registeredTick && GameTickManager.Instance != null)
+            if (_registeredTick)
             {
-                GameTickManager.Instance.Unregister((ITickable)this);
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
                 _registeredTick = false;
             }
 
-            if (_registeredFixedTick && GameTickManager.Instance != null)
+            if (_registeredFixedTick)
             {
-                GameTickManager.Instance.Unregister((IFixedTickable)this);
+                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
                 _registeredFixedTick = false;
             }
         }

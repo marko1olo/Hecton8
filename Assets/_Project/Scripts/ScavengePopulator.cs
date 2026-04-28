@@ -290,7 +290,7 @@ namespace Hecton8.Core
             if (_isDuplicateInstance || !_initialized)
                 return;
 
-            GameTickManager.Instance?.Register((ISlowTickable)this);
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
 
             if (_playerTransform == null)
                 FindPlayer();
@@ -301,7 +301,7 @@ namespace Hecton8.Core
             if (_isDuplicateInstance || !_initialized)
                 return;
 
-            GameTickManager.Instance?.Unregister((ISlowTickable)this);
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
 
             DespawnAllChunks();
         }

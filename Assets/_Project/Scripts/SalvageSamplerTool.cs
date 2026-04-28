@@ -38,7 +38,6 @@ namespace Hecton8.Gameplay
         private float _cooldown;
         private float _nextFeedbackAt;
         private bool _secondaryLatched;
-        private readonly RaycastHit[] _samplingHits = new RaycastHit[1]; // COLD ALLOC: sampler only needs the closest contact per action.
         private int _cachedDiagnosisFrame = -1;
         private bool _cachedDiagnosisValid;
         private SamplerDiagnosis _cachedDiagnosis;
@@ -345,22 +344,7 @@ namespace Hecton8.Gameplay
 
         private bool TryGetSamplingHit(out RaycastHit hit)
         {
-            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
-                _cachedTransform.position,
-                _cachedTransform.forward,
-                _samplingHits,
-                samplingRange,
-                samplingMask,
-                QueryTriggerInteraction.Collide);
-
-            if (hitCount > 0)
-            {
-                hit = _samplingHits[0];
-                return true;
-            }
-
-            hit = default;
-            return false;
+            return TryResolveQueuedRaycast(_cachedTransform.position, _cachedTransform.forward, samplingRange, samplingMask.value, QueryTriggerInteraction.Collide, out hit);
         }
 
         private static readonly string[] _cachedUpperStrings = new string[16];

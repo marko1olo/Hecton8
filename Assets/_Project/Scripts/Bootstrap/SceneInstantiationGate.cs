@@ -11,6 +11,7 @@ namespace Hecton8.Bootstrap
     [DefaultExecutionOrder(-20010)]
     public sealed class SceneInstantiationGate : MonoBehaviour
     {
+        private const int GateOpenWatchdogFrames = 50000;
         private static SceneInstantiationGate _instance;
 
         private bool _worldPrimed;
@@ -22,6 +23,15 @@ namespace Hecton8.Bootstrap
         internal static SceneInstantiationGate Instance => _instance;
         internal bool IsOpen => _gateOpen;
         internal string LastFailureReason { get; private set; } = "UNINITIALIZED";
+
+        internal static SceneInstantiationGate EnsureRuntimeInstance()
+        {
+            if (_instance != null)
+                return _instance;
+
+            GameObject runtimeRoot = new GameObject("[SceneInstantiationGate]"); // COLD ALLOC: GameObject[1] - bootstrap-owned async scene activation gate root - owner: SceneInstantiationGate
+            return runtimeRoot.AddComponent<SceneInstantiationGate>();
+        }
 
         private void Awake()
         {
@@ -69,9 +79,19 @@ namespace Hecton8.Bootstrap
 
         internal async Awaitable WaitForOpenAsync(CancellationToken cancellationToken)
         {
+            int watchdog = 0;
             while (!_gateOpen)
             {
                 cancellationToken.ThrowIfCancellationRequested();
+
+                if (watchdog++ > GateOpenWatchdogFrames)
+                {
+                    LastFailureReason = "WATCHDOG_TIMEOUT";
+                    Debug.LogError(
+                        $"[SceneInstantiationGate] WaitForOpenAsync timed out after {GateOpenWatchdogFrames} frames. " +
+                        $"Scene='{_sceneName}' LastFailure='{LastFailureReason}'.");
+                    return;
+                }
 
                 if (TryValidateGate(out string failureReason))
                 {

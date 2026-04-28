@@ -88,11 +88,16 @@ namespace Hecton8.World
             public Vector2 uniformScaleRange = Vector2.one;
 
             [NonSerialized] private bool _isCheapProxy;
+            [NonSerialized] private int _variantHash;
 
             internal bool IsCheapProxy => _isCheapProxy;
+            internal int VariantHash => _variantHash;
 
             internal void RefreshRuntimeCache()
             {
+                _variantHash = string.IsNullOrWhiteSpace(variantId)
+                    ? 0
+                    : Hecton.Localization.LocHash.Compute(variantId);
                 _isCheapProxy = !string.IsNullOrWhiteSpace(variantId)
                     && variantId.EndsWith(".proxy.simple", StringComparison.Ordinal);
             }
@@ -146,6 +151,16 @@ namespace Hecton8.World
         public string futurePrefabRoot = string.Empty;
         [TextArea(2, 4)] public string gameplayRole = "Generic world family.";
         [System.NonSerialized] private string _generatedVariantId;
+        [NonSerialized] private int _familyHash;
+        [NonSerialized] private bool _isCheapProxyFamily;
+        [NonSerialized] private bool _isPassiveSpawnFamily;
+        [NonSerialized] private bool _isPredatorSpawnFamily;
+        [NonSerialized] private bool _isLargeThreatFamilyHint;
+
+        public int FamilyHash => _familyHash;
+        public bool IsCheapProxyFamily => _isCheapProxyFamily;
+        public bool IsPassiveSpawnFamily => _isPassiveSpawnFamily;
+        public bool IsPredatorSpawnFamily => _isPredatorSpawnFamily;
 
         public string GeneratedVariantId
         {
@@ -164,6 +179,7 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            RefreshRuntimeCache();
             RefreshVariantRuntimeCaches();
         }
 
@@ -218,7 +234,7 @@ namespace Hecton8.World
 
         public bool ResolveContributesLargeThreatZone()
         {
-            return contributesLargeThreatZone || LooksLikeLargeThreatFamilyId(familyId) || LooksLikeLargeThreatFamilyId(gameplayRole);
+            return contributesLargeThreatZone || _isLargeThreatFamilyHint;
         }
 
         private static bool LooksLikeLargeThreatFamilyId(string value)
@@ -238,9 +254,24 @@ namespace Hecton8.World
         private void OnValidate()
         {
             _generatedVariantId = null;
+            RefreshRuntimeCache();
             RefreshVariantRuntimeCaches();
         }
 #endif
+
+        private void RefreshRuntimeCache()
+        {
+            _familyHash = !string.IsNullOrWhiteSpace(familyId)
+                ? Hecton.Localization.LocHash.Compute(familyId)
+                : unchecked((int)EntityId.ToULong(GetEntityId()));
+            _isCheapProxyFamily = _familyHash == Hecton.Localization.LocHash.Compute("family.coral.low")
+                || _familyHash == Hecton.Localization.LocHash.Compute("family.coral.massive")
+                || _familyHash == Hecton.Localization.LocHash.Compute("family.landmark.spire")
+                || _familyHash == Hecton.Localization.LocHash.Compute("family.cave.entrance");
+            _isPassiveSpawnFamily = _familyHash == Hecton.Localization.LocHash.Compute("family.creature.spawn.passive");
+            _isPredatorSpawnFamily = _familyHash == Hecton.Localization.LocHash.Compute("family.creature.spawn.predator");
+            _isLargeThreatFamilyHint = LooksLikeLargeThreatFamilyId(familyId) || LooksLikeLargeThreatFamilyId(gameplayRole);
+        }
 
         private void RefreshVariantRuntimeCaches()
         {

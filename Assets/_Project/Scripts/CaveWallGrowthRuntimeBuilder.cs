@@ -11,7 +11,7 @@ namespace Hecton8.Caves
         private static readonly int _BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int _ColorId = Shader.PropertyToID("_Color");
         private static readonly int _EmissionColorId = Shader.PropertyToID("_EmissionColor");
-        private static readonly MaterialPropertyBlock _GrowthPropertyBlock = new MaterialPropertyBlock(); // COLD ALLOC: shared growth tint block.
+        private static MaterialPropertyBlock _GrowthPropertyBlock;
 
         public static void Build(
             Transform parent,
@@ -108,14 +108,25 @@ namespace Hecton8.Caves
 
             Color baseColor = Color.Lerp(new Color(0.14f, 0.18f, 0.16f, 1f), config.growthColor, Mathf.Clamp01(0.55f + config.pulseAmount * 0.35f));
             Color emission = config.growthColor * Mathf.Lerp(0.15f, 1.4f, Mathf.Clamp01(config.pulseAmount * globalIntensity));
-            _GrowthPropertyBlock.Clear();
-            renderer.GetPropertyBlock(_GrowthPropertyBlock);
-            _GrowthPropertyBlock.SetColor(_BaseColorId, baseColor);
-            _GrowthPropertyBlock.SetColor(_ColorId, baseColor);
-            _GrowthPropertyBlock.SetColor(_EmissionColorId, emission);
-            renderer.SetPropertyBlock(_GrowthPropertyBlock);
+            MaterialPropertyBlock propertyBlock = GetGrowthPropertyBlock();
+            propertyBlock.Clear();
+            renderer.GetPropertyBlock(propertyBlock);
+            propertyBlock.SetColor(_BaseColorId, baseColor);
+            propertyBlock.SetColor(_ColorId, baseColor);
+            propertyBlock.SetColor(_EmissionColorId, emission);
+            renderer.SetPropertyBlock(propertyBlock);
             renderer.shadowCastingMode = ShadowCastingMode.Off;
             renderer.receiveShadows = true;
+        }
+
+        private static MaterialPropertyBlock GetGrowthPropertyBlock()
+        {
+            if (_GrowthPropertyBlock != null)
+                return _GrowthPropertyBlock;
+
+            // COLD ALLOC: MaterialPropertyBlock[1] — shared growth tint block — owner: CaveWallGrowthRuntimeBuilder
+            _GrowthPropertyBlock = new MaterialPropertyBlock();
+            return _GrowthPropertyBlock;
         }
 
         private static int ResolveGrowthCount(

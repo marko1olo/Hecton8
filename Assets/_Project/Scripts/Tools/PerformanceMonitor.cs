@@ -12,7 +12,7 @@ namespace Hecton8.Tools
     /// Provides guardrail data for CPU optimization decisions.
     /// </summary>
     [DefaultExecutionOrder(1000)] // Run after most systems
-    public sealed class PerformanceMonitor : MonoBehaviour, ITickable
+    public sealed class PerformanceMonitor : MonoBehaviour, ITickable, IUpdatable
     {
         [Header("Monitoring Settings")]
         [SerializeField, Tooltip("Frames to capture for averaging")]
@@ -86,14 +86,12 @@ namespace Hecton8.Tools
 
         private void OnEnable()
         {
-            if (GameTickManager.Instance != null)
-                GameTickManager.Instance.Register(this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
         }
 
         private void OnDisable()
         {
-            if (GameTickManager.Instance != null)
-                GameTickManager.Instance.Unregister(this);
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
         }
 
         private void OnDestroy()

@@ -64,7 +64,7 @@ namespace Hecton8.Audio
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4000)] // После FluidEngine (-5000), до большинства систем
-    public sealed class AcousticZoneController : MonoBehaviour, ITickable
+    public sealed class AcousticZoneController : MonoBehaviour, ITickable, IUpdatable
     {
 #if UNITY_EDITOR
         private const string DefaultWaterDrainSoundPath = "Assets/_Project/Audio/Movement/swimming -onwater.wav";
@@ -73,12 +73,34 @@ namespace Hecton8.Audio
         private const string DefaultStormStaticPrimaryPath = "Assets/_Project/Audio/Music for Game/shelf_6_Decaying Analog Static.ogg";
         private const string DefaultStormStaticSecondaryPath = "Assets/_Project/Audio/Music for Game/shelf_7_Decaying Analog Static.ogg";
 #endif
+        private const string AcousticLowPassCutoffParameterDefault = "AcousticLowPassCutoffHz";
+        private const string AcousticLowPassResonanceParameterDefault = "AcousticLowPassResonanceQ";
+        private const string AcousticReverbDecayParameterDefault = "AcousticReverbDecayTime";
+        private const string AcousticReflectionsLevelParameterDefault = "AcousticReverbReflectionsLevelDb";
+        private const string AcousticReverbLevelParameterDefault = "AcousticReverbLevelDb";
+        private const string AcousticRoomHighFrequencyParameterDefault = "AcousticRoomHighFrequencyDb";
+        private const string AcousticDryLevelParameterDefault = "AcousticDryLevelDb";
+        private const int AcousticEmitterSampleCapacity = 24;
+        private const float AcousticEmitterOcclusionMaxDistanceMeters = 48f;
+        private const float AcousticEmitterDistanceWeightScale = 0.05f;
+        private const float AmbientSourceResolveRetryInterval = 0.5f;
 
         private enum AcousticZoneState : byte
         {
             Surface = 0,
             Underwater = 1,
             Interior = 2
+        }
+
+        private struct AcousticGraphState
+        {
+            public float LowPassCutoffHz;
+            public float LowPassResonanceQ;
+            public float ReverbDecayTime;
+            public float ReflectionsLevelDb;
+            public float ReverbLevelDb;
+            public float RoomHighFrequencyDb;
+            public float DryLevelDb;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -316,6 +338,22 @@ namespace Hecton8.Audio
         [Tooltip("Опциональная ссылка на loop AudioSource с подводным эмбиентом на игроке.\n" +
                  "Если не задана — контроллер лениво ищет первый 2D loop/playOnAwake source под player root.")]
         [SerializeField] private AudioSource playerUnderwaterAmbientSource;
+        [Tooltip("Явный AudioMixerGroup для подводного loop источника игрока. Если null — используется AmbientGroup из SpatialAudioManager.")]
+        [SerializeField] private AudioMixerGroup playerUnderwaterAmbientMixerGroup;
+        [Tooltip("Имя exposed-параметра AudioMixer для частоты low-pass фильтра.")]
+        [SerializeField] private string acousticLowPassCutoffParameter = AcousticLowPassCutoffParameterDefault;
+        [Tooltip("Имя exposed-параметра AudioMixer для резонанса low-pass фильтра.")]
+        [SerializeField] private string acousticLowPassResonanceParameter = AcousticLowPassResonanceParameterDefault;
+        [Tooltip("Имя exposed-параметра AudioMixer для decay reverb.")]
+        [SerializeField] private string acousticReverbDecayParameter = AcousticReverbDecayParameterDefault;
+        [Tooltip("Имя exposed-параметра AudioMixer для reflections level.")]
+        [SerializeField] private string acousticReflectionsLevelParameter = AcousticReflectionsLevelParameterDefault;
+        [Tooltip("Имя exposed-параметра AudioMixer для reverb level.")]
+        [SerializeField] private string acousticReverbLevelParameter = AcousticReverbLevelParameterDefault;
+        [Tooltip("Имя exposed-параметра AudioMixer для room HF.")]
+        [SerializeField] private string acousticRoomHighFrequencyParameter = AcousticRoomHighFrequencyParameterDefault;
+        [Tooltip("Имя exposed-параметра AudioMixer для dry level.")]
+        [SerializeField] private string acousticDryLevelParameter = AcousticDryLevelParameterDefault;
 
         [Header("── Biome Ambient Response ─────────────────────────")]
         [Tooltip("Опциональная ссылка на BiomeMatrixDirector. Если не задана — контроллер лениво резолвит runtime owner.")]
@@ -396,17 +434,94 @@ namespace Hecton8.Audio
         [Tooltip("If mixer snapshot authoring is incomplete, apply listener-level low-pass/reverb fallback so underwater/interior contrast still exists.")]
         [SerializeField] private bool enableSourceLevelAcousticFallback = true;
 
-        [Tooltip("Fallback low-pass cutoff for underwater listener processing.")]
+        [Tooltip("Legacy serialized underwater fallback cutoff retained for inspector compatibility.")]
+#pragma warning disable CS0414
         [SerializeField, Range(500f, 22000f)] private float underwaterFallbackLowPassCutoff = 1100f;
+#pragma warning restore CS0414
 
         [Tooltip("Fallback low-pass cutoff for interior listener processing.")]
         [SerializeField, Range(5000f, 22000f)] private float interiorFallbackLowPassCutoff = 16000f;
 
-        [Tooltip("Fallback reverb preset for interior listener processing.")]
+        [Tooltip("Legacy serialized interior reverb preset retained for inspector compatibility.")]
+#pragma warning disable CS0414
         [SerializeField] private AudioReverbPreset interiorFallbackReverbPreset = AudioReverbPreset.Room;
+#pragma warning restore CS0414
 
         [Tooltip("Fallback interior reverb dry level. Exposed so sound design can retune dry/wet balance without code changes.")]
         [SerializeField, Range(-10000f, 0f)] private float interiorFallbackReverbDryLevel = 0f;
+
+        [Header("── Runtime Acoustic Graph Fallback ─────────────")]
+        [Tooltip("Continuous low-pass/reverb listener graph used when the authored mixer only contains attenuation.")]
+        [SerializeField] private bool enableRuntimeAcousticGraph = true;
+
+        [Tooltip("How quickly runtime fallback filter coefficients chase the target acoustic state.")]
+        [SerializeField, Range(0.5f, 20f)] private float acousticGraphFollowSharpness = 7.5f;
+
+        [Tooltip("Decay speed for hull-impact energy injected into the acoustic graph.")]
+        [SerializeField, Range(0.5f, 20f)] private float acousticImpactImpulseDecay = 3.6f;
+
+        [Tooltip("Decay speed for active-sonar energy injected into the acoustic graph.")]
+        [SerializeField, Range(0.5f, 20f)] private float acousticSonarImpulseDecay = 2.2f;
+
+        [Tooltip("Reference depth used to fully close the underwater low-pass curve.")]
+        [SerializeField, Min(1f)] private float acousticDeepWaterReferenceDepth = 240f;
+
+        [Tooltip("Maximum listener low-pass cutoff when underwater but still near the surface.")]
+        [SerializeField, Range(500f, 22000f)] private float underwaterGraphShallowCutoff = 1800f;
+
+        [Tooltip("Minimum listener low-pass cutoff when the player is fully committed to the abyss.")]
+        [SerializeField, Range(500f, 22000f)] private float underwaterGraphDeepCutoff = 650f;
+
+        [Tooltip("Interior listener low-pass cutoff before collision impulses darken the room tone.")]
+        [SerializeField, Range(5000f, 22000f)] private float interiorGraphLowPassCutoff = 15800f;
+
+        [Tooltip("Base resonance used by the underwater low-pass contour.")]
+        [SerializeField, Range(0.5f, 3f)] private float underwaterGraphResonance = 1.22f;
+
+        [Tooltip("Base resonance used by the interior low-pass contour.")]
+        [SerializeField, Range(0.5f, 3f)] private float interiorGraphResonance = 1.05f;
+
+        [Tooltip("Baseline underwater reverb decay in seconds.")]
+        [SerializeField, Range(0.05f, 12f)] private float underwaterGraphDecayTime = 1.35f;
+
+        [Tooltip("Baseline interior reverb decay in seconds.")]
+        [SerializeField, Range(0.05f, 12f)] private float interiorGraphDecayTime = 0.95f;
+
+        [Tooltip("Additional interior decay time injected by heavy hull impacts.")]
+        [SerializeField, Range(0f, 4f)] private float interiorImpactDecayBoost = 0.65f;
+
+        [Tooltip("How strongly sonar pings temporarily open the underwater low-pass window.")]
+        [SerializeField, Range(0f, 1f)] private float sonarGraphOpenUpBoost = 0.35f;
+
+        [Tooltip("How strongly local hull impacts bend the active graph toward metallic ringing.")]
+        [SerializeField, Range(0f, 1f)] private float impactGraphMetallicBoost = 0.6f;
+
+        [Tooltip("Maximum distance for feeding a physics impact into the listener acoustic graph.")]
+        [SerializeField, Min(0.5f)] private float acousticImpactImpulseRadius = 18f;
+
+        [Tooltip("Underwater reflection level in dB.")]
+        [SerializeField, Range(-10000f, 1000f)] private float underwaterGraphReflectionsLevel = -4200f;
+
+        [Tooltip("Interior reflection level in dB.")]
+        [SerializeField, Range(-10000f, 1000f)] private float interiorGraphReflectionsLevel = -800f;
+
+        [Tooltip("Underwater late-reverb level in dB.")]
+        [SerializeField, Range(-10000f, 2000f)] private float underwaterGraphReverbLevel = -2200f;
+
+        [Tooltip("Interior late-reverb level in dB.")]
+        [SerializeField, Range(-10000f, 2000f)] private float interiorGraphReverbLevel = -1200f;
+
+        [Tooltip("Underwater high-frequency room loss in dB.")]
+        [SerializeField, Range(-10000f, 0f)] private float underwaterGraphRoomHighFrequency = -6500f;
+
+        [Tooltip("Interior high-frequency room loss in dB.")]
+        [SerializeField, Range(-10000f, 0f)] private float interiorGraphRoomHighFrequency = -1450f;
+
+        [Tooltip("Underwater dry level in dB.")]
+        [SerializeField, Range(-10000f, 0f)] private float underwaterGraphDryLevel = -800f;
+
+        [Tooltip("Interior dry level in dB.")]
+        [SerializeField, Range(-10000f, 0f)] private float interiorGraphDryLevel = -120f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — DIAGNOSTICS
@@ -428,6 +543,10 @@ namespace Hecton8.Audio
         [SerializeField] private string _debugSoundscapeTier;
         [SerializeField] private float _debugSoundscapeVolumeScale = 1f;
         [SerializeField] private float _debugSoundscapePitchScale = 1f;
+        [SerializeField] private float _debugAcousticLowPassCutoff = 22000f;
+        [SerializeField] private float _debugAcousticReverbDecay = 0f;
+        [SerializeField] private float _debugImpactImpulse;
+        [SerializeField] private float _debugSonarImpulse;
 #pragma warning restore CS0414
 
         // ══════════════════════════════════════════════════════════
@@ -470,16 +589,30 @@ namespace Hecton8.Audio
         private List<AudioSource> _playerAudioSources;
         private AudioSource _cachedAmbientSource;
         private AudioListener _cachedPlayerAudioListener;
-        private AudioLowPassFilter _listenerLowPassFilter;
-        private AudioReverbFilter _listenerReverbFilter;
+        private Transform _lastAmbientSourceSearchRoot;
+        private float _nextAmbientSourceHierarchyResolveTime;
         private bool _ambientSourceDefaultsCaptured;
         private bool _listenerFallbackDefaultsCaptured;
         private float _ambientSourceBaseVolume = 1f;
         private float _ambientSourceBasePitch = 1f;
         private float _listenerLowPassBaseCutoff = 22000f;
         private float _listenerLowPassBaseResonance = 1f;
-        private AudioReverbPreset _listenerReverbBasePreset = AudioReverbPreset.Off;
         private float _listenerReverbBaseDryLevel;
+        private float _listenerReverbBaseDecayTime = 1f;
+        private float _listenerReverbBaseReflectionsLevel = -10000f;
+        private float _listenerReverbBaseReverbLevel = -10000f;
+        private float _listenerReverbBaseRoomHighFrequency = 0f;
+        private bool _acousticMixerBindingsResolved;
+        private bool _acousticMixerBindingsValid;
+        private string _resolvedAcousticLowPassCutoffParameter;
+        private string _resolvedAcousticLowPassResonanceParameter;
+        private string _resolvedAcousticReverbDecayParameter;
+        private string _resolvedAcousticReflectionsLevelParameter;
+        private string _resolvedAcousticReverbLevelParameter;
+        private string _resolvedAcousticRoomHighFrequencyParameter;
+        private string _resolvedAcousticDryLevelParameter;
+        private bool _warnedMissingAcousticMixerParameters;
+        private float _snapshotTransitionLockUntilTime;
         private HectonBiomeMatrixProfile _lastBiomeProfileForAmbient;
         private int _currentAmbientSurvivalPressure;
         private int _currentAmbientRewardPull;
@@ -506,11 +639,37 @@ namespace Hecton8.Audio
         private bool _warnedMissingSurfaceSnapshotSet;
         private bool _warnedMissingSnapshotCoverage;
         private bool _warnedIncompleteMixerSnapshotAuthoring;
-        private bool _warnedMissingMixerEffectGraph;
         private int _validatedMixerSnapshotCount;
+        private float _acousticImpactImpulse;
+        private float _acousticSonarImpulse;
+        private float _currentAcousticLowPassCutoffHz = 22000f;
+        private float _currentAcousticLowPassResonanceQ = 1f;
+        private float _currentAcousticReverbDecayTime = 0f;
+        private float _currentAcousticReflectionsLevelDb = -10000f;
+        private float _currentAcousticReverbLevelDb = -10000f;
+        private float _currentAcousticRoomHighFrequencyDb = 0f;
+        private float _currentAcousticDryLevelDb = 0f;
+        private float _lastAppliedAcousticLowPassCutoffHz = float.NaN;
+        private float _lastAppliedAcousticLowPassResonanceQ = float.NaN;
+        private float _lastAppliedAcousticReverbDecayTime = float.NaN;
+        private float _lastAppliedAcousticReflectionsLevelDb = float.NaN;
+        private float _lastAppliedAcousticReverbLevelDb = float.NaN;
+        private float _lastAppliedAcousticRoomHighFrequencyDb = float.NaN;
+        private float _lastAppliedAcousticDryLevelDb = float.NaN;
+        private bool _acousticGraphStateInitialized;
         private bool _validatedMixerHasNamedCoverage;
         private bool _validatedMixerHasEffectGraph;
         private bool _usingSourceLevelAcousticFallback;
+        private int _resolvedEmitterOcclusionLayerMask;
+        private float _emitterOcclusionTransmission01 = 1f;
+        private float _emitterOcclusionLowPassCutoffHz = AcousticOcclusionUtility.OpenLowPassCutoffHertz;
+        private bool _hasPendingSnapshotTransition;
+        private AcousticZoneState _pendingSnapshotZone;
+        private float _pendingSnapshotDuration;
+        private const float AcousticCutoffWriteEpsilonHz = 8f;
+        private const float AcousticResonanceWriteEpsilon = 0.01f;
+        private const float AcousticDecayWriteEpsilonSeconds = 0.01f;
+        private const float AcousticDbWriteEpsilon = 0.1f;
         // COLD ALLOC: AudioMixerSnapshot[3] — surface weather snapshot blend targets — owner: AcousticZoneController
         private readonly AudioMixerSnapshot[] _surfaceBlendSnapshots = new AudioMixerSnapshot[3];
         // COLD ALLOC: float[3] — surface weather snapshot blend weights — owner: AcousticZoneController
@@ -524,6 +683,9 @@ namespace Hecton8.Audio
         private readonly AudioMixerSnapshot[] _activeSurfaceBlendSnapshots = new AudioMixerSnapshot[3];
         // COLD ALLOC: float[3] — last applied surface weather snapshot blend weights — owner: AcousticZoneController
         private readonly float[] _activeSurfaceBlendWeights = new float[3];
+        // COLD ALLOC: ActiveEmitterSample[24] — pooled world-emitter acoustic occlusion sample buffer — owner: AcousticZoneController
+        private static readonly SpatialAudioManager.ActiveEmitterSample[] s_emitterOcclusionSamples =
+            new SpatialAudioManager.ActiveEmitterSample[AcousticEmitterSampleCapacity];
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC PROPERTIES
@@ -565,6 +727,7 @@ namespace Hecton8.Audio
             TryRegister();
             HectonAtmosphereManager.OnStateChanged += HandleAtmosphereStateChanged;
             SoundscapeEvents.OnTierChanged += HandleSoundscapeTierChanged;
+            PhysicsEvents.OnImpact += HandlePhysicsImpact;
             SpectrumEvents.OnSonarPingSent += HandleSonarPingSent;
             _stormInterferencePulseTimer = 0f;
             _stormAmbientInterference = 0f;
@@ -575,6 +738,11 @@ namespace Hecton8.Audio
             _fatalPressureNoiseTimer = 0f;
             _nextMadnessWhisperTime = 0f;
             _fatalPressureNoiseUsePrimaryNext = true;
+            _acousticImpactImpulse = 0f;
+            _acousticSonarImpulse = 0f;
+            _resolvedEmitterOcclusionLayerMask = 0;
+            _emitterOcclusionTransmission01 = 1f;
+            _emitterOcclusionLowPassCutoffHz = AcousticOcclusionUtility.OpenLowPassCutoffHertz;
             ResolveBiomeMatrixDirector(true);
             RefreshSoundscapeTierContext(true);
         }
@@ -616,6 +784,7 @@ namespace Hecton8.Audio
         {
             HectonAtmosphereManager.OnStateChanged -= HandleAtmosphereStateChanged;
             SoundscapeEvents.OnTierChanged -= HandleSoundscapeTierChanged;
+            PhysicsEvents.OnImpact -= HandlePhysicsImpact;
             SpectrumEvents.OnSonarPingSent -= HandleSonarPingSent;
             _stormInterferencePulseTimer = 0f;
             _stormAmbientInterference = 0f;
@@ -624,6 +793,8 @@ namespace Hecton8.Audio
             _underwaterVegetationPulseTimer = 0f;
             _fatalPressureNoiseTimer = 0f;
             _nextMadnessWhisperTime = 0f;
+            _acousticImpactImpulse = 0f;
+            _acousticSonarImpulse = 0f;
             ResetSourceLevelAcousticFallback();
             TryUnregister();
         }
@@ -633,6 +804,7 @@ namespace Hecton8.Audio
             TryUnregister();
             HectonAtmosphereManager.OnStateChanged -= HandleAtmosphereStateChanged;
             SoundscapeEvents.OnTierChanged -= HandleSoundscapeTierChanged;
+            PhysicsEvents.OnImpact -= HandlePhysicsImpact;
             SpectrumEvents.OnSonarPingSent -= HandleSonarPingSent;
             ResetSourceLevelAcousticFallback();
 
@@ -647,10 +819,7 @@ namespace Hecton8.Audio
         {
             if (_registeredToTickManager) return;
 
-            GameTickManager gtm = GameTickManager.Instance;
-            if (gtm == null) return;
-
-            gtm.Register((ITickable)this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
             _registeredToTickManager = true;
         }
 
@@ -659,10 +828,7 @@ namespace Hecton8.Audio
             if (!_registeredToTickManager)
                 return;
 
-            GameTickManager gtm = GameTickManager.Instance;
-            if (gtm != null)
-                gtm.Unregister((ITickable)this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
             _registeredToTickManager = false;
         }
 
@@ -710,6 +876,7 @@ namespace Hecton8.Audio
             UpdateAmbientLoopMix(currentZone);
             UpdateUnderwaterVegetationOverlay(currentZone, deltaTime);
             UpdateFatalPressureLoopAudio(currentZone, deltaTime);
+            UpdateSourceLevelAcousticGraph(currentZone, deltaTime);
 
             // ── Первый кадр: установить начальное состояние без перехода ──
             if (!_stateInitialized)
@@ -717,6 +884,8 @@ namespace Hecton8.Audio
                 ApplyInitialSnapshot(currentZone);
                 return;
             }
+
+            ProcessPendingSnapshotTransition();
 
             // ── Edge detection: переход только при СМЕНЕ состояния ──
             if (currentZone == _lastZone)
@@ -977,9 +1146,16 @@ namespace Hecton8.Audio
             _playerMovement = null;
             playerUnderwaterAmbientSource = null;
             _cachedPlayerAudioListener = null;
-            _listenerLowPassFilter = null;
-            _listenerReverbFilter = null;
+            _cachedAmbientSource = null;
+            _lastAmbientSourceSearchRoot = null;
+            _nextAmbientSourceHierarchyResolveTime = 0f;
             _listenerFallbackDefaultsCaptured = false;
+            _acousticMixerBindingsResolved = false;
+            _acousticMixerBindingsValid = false;
+            InvalidateAppliedAcousticMixerStateCache();
+            _snapshotTransitionLockUntilTime = 0f;
+            _hasPendingSnapshotTransition = false;
+            _pendingSnapshotDuration = 0f;
             _hasPendingExteriorZone = false;
             if (buoyancy != null)
             {
@@ -1010,8 +1186,12 @@ namespace Hecton8.Audio
             _debugSoundscapeTier = _currentSoundscapeTier.ToString();
             _debugSoundscapeVolumeScale = _currentSoundscapeVolumeScale;
             _debugSoundscapePitchScale = _currentSoundscapePitchScale;
+            _debugAcousticLowPassCutoff = _currentAcousticLowPassCutoffHz;
+            _debugAcousticReverbDecay = _currentAcousticReverbDecayTime;
+            _debugImpactImpulse = _acousticImpactImpulse;
+            _debugSonarImpulse = _acousticSonarImpulse;
             if (_usingSourceLevelAcousticFallback)
-                _debugMixerCoverage += " | ListenerFallback";
+                _debugMixerCoverage += " | MixerParamFallback";
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
@@ -1340,6 +1520,7 @@ namespace Hecton8.Audio
         {
             if ((object)playerUnderwaterAmbientSource != null && playerUnderwaterAmbientSource != null)
             {
+                EnsureAmbientSourceMixerRouting(playerUnderwaterAmbientSource);
                 CacheAmbientSourceDefaults(playerUnderwaterAmbientSource);
                 return playerUnderwaterAmbientSource;
             }
@@ -1360,6 +1541,15 @@ namespace Hecton8.Audio
             if (playerTransform == null || _playerAudioSources == null)
                 return;
 
+            if (_lastAmbientSourceSearchRoot != playerTransform)
+            {
+                _lastAmbientSourceSearchRoot = playerTransform;
+                _nextAmbientSourceHierarchyResolveTime = 0f;
+            }
+
+            if (Time.unscaledTime < _nextAmbientSourceHierarchyResolveTime)
+                return;
+
             _playerAudioSources.Clear();
             playerTransform.GetComponentsInChildren(true, _playerAudioSources);
 
@@ -1377,9 +1567,12 @@ namespace Hecton8.Audio
                     continue;
 
                 playerUnderwaterAmbientSource = candidate;
+                EnsureAmbientSourceMixerRouting(candidate);
                 CacheAmbientSourceDefaults(candidate);
                 return;
             }
+
+            _nextAmbientSourceHierarchyResolveTime = Time.unscaledTime + AmbientSourceResolveRetryInterval;
         }
 
         private void CacheAmbientSourceDefaults(AudioSource ambientSource)
@@ -1387,6 +1580,7 @@ namespace Hecton8.Audio
             if (ambientSource == null)
                 return;
 
+            EnsureAmbientSourceMixerRouting(ambientSource);
             if (_cachedAmbientSource == ambientSource && _ambientSourceDefaultsCaptured)
                 return;
 
@@ -1396,10 +1590,33 @@ namespace Hecton8.Audio
             _ambientSourceDefaultsCaptured = true;
         }
 
-        private void ResolvePlayerListenerFilters()
+        private void EnsureAmbientSourceMixerRouting(AudioSource ambientSource)
+        {
+            if (ambientSource == null)
+                return;
+
+            if (playerUnderwaterAmbientMixerGroup != null)
+            {
+                if (ambientSource.outputAudioMixerGroup != playerUnderwaterAmbientMixerGroup)
+                    ambientSource.outputAudioMixerGroup = playerUnderwaterAmbientMixerGroup;
+                return;
+            }
+
+            if (ambientSource.outputAudioMixerGroup == null &&
+                SpatialAudioManager.TryGetInstance(out SpatialAudioManager spatialAudioManager) &&
+                spatialAudioManager != null &&
+                spatialAudioManager.AmbientGroup != null)
+            {
+                ambientSource.outputAudioMixerGroup = spatialAudioManager.AmbientGroup;
+            }
+        }
+
+        private AudioListener ResolvePlayerListenerFilters()
         {
             if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
                 ResolvePlayerListenerFilters(playerTransform);
+
+            return _cachedPlayerAudioListener;
         }
 
         private void ResolvePlayerListenerFilters(Transform playerTransform)
@@ -1411,7 +1628,7 @@ namespace Hecton8.Audio
             if ((object)listener == null || listener == null)
             {
                 if (!playerTransform.TryGetComponent(out listener))
-                    listener = playerTransform.GetComponentInChildren<AudioListener>(true);
+                    listener = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<AudioListener>(playerTransform);
 
                 _cachedPlayerAudioListener = listener;
             }
@@ -1419,26 +1636,122 @@ namespace Hecton8.Audio
             if ((object)listener == null || listener == null)
                 return;
 
-            if (!_listenerFallbackDefaultsCaptured)
+            EnsureAcousticMixerParameterBindings();
+        }
+
+        private bool EnsureAcousticMixerParameterBindings()
+        {
+            if (_acousticMixerBindingsResolved)
+                return _acousticMixerBindingsValid;
+
+            _acousticMixerBindingsResolved = true;
+            _acousticMixerBindingsValid = false;
+
+            if (masterMixer == null)
+                return false;
+
+            _resolvedAcousticLowPassCutoffParameter = ResolveAcousticMixerParameterName(acousticLowPassCutoffParameter, AcousticLowPassCutoffParameterDefault);
+            _resolvedAcousticLowPassResonanceParameter = ResolveAcousticMixerParameterName(acousticLowPassResonanceParameter, AcousticLowPassResonanceParameterDefault);
+            _resolvedAcousticReverbDecayParameter = ResolveAcousticMixerParameterName(acousticReverbDecayParameter, AcousticReverbDecayParameterDefault);
+            _resolvedAcousticReflectionsLevelParameter = ResolveAcousticMixerParameterName(acousticReflectionsLevelParameter, AcousticReflectionsLevelParameterDefault);
+            _resolvedAcousticReverbLevelParameter = ResolveAcousticMixerParameterName(acousticReverbLevelParameter, AcousticReverbLevelParameterDefault);
+            _resolvedAcousticRoomHighFrequencyParameter = ResolveAcousticMixerParameterName(acousticRoomHighFrequencyParameter, AcousticRoomHighFrequencyParameterDefault);
+            _resolvedAcousticDryLevelParameter = ResolveAcousticMixerParameterName(acousticDryLevelParameter, AcousticDryLevelParameterDefault);
+
+            if (!masterMixer.GetFloat(_resolvedAcousticLowPassCutoffParameter, out _listenerLowPassBaseCutoff) ||
+                !masterMixer.GetFloat(_resolvedAcousticLowPassResonanceParameter, out _listenerLowPassBaseResonance) ||
+                !masterMixer.GetFloat(_resolvedAcousticReverbDecayParameter, out _listenerReverbBaseDecayTime) ||
+                !masterMixer.GetFloat(_resolvedAcousticReflectionsLevelParameter, out _listenerReverbBaseReflectionsLevel) ||
+                !masterMixer.GetFloat(_resolvedAcousticReverbLevelParameter, out _listenerReverbBaseReverbLevel) ||
+                !masterMixer.GetFloat(_resolvedAcousticRoomHighFrequencyParameter, out _listenerReverbBaseRoomHighFrequency) ||
+                !masterMixer.GetFloat(_resolvedAcousticDryLevelParameter, out _listenerReverbBaseDryLevel))
             {
-                if (!listener.TryGetComponent(out _listenerLowPassFilter))
-                {
-                    _listenerLowPassFilter = listener.gameObject.AddComponent<AudioLowPassFilter>(); // COLD ALLOC: AudioLowPassFilter[1] — listener fallback acoustic filtering — owner: AcousticZoneController
-                    _listenerLowPassFilter.enabled = false;
-                }
-
-                if (!listener.TryGetComponent(out _listenerReverbFilter))
-                {
-                    _listenerReverbFilter = listener.gameObject.AddComponent<AudioReverbFilter>(); // COLD ALLOC: AudioReverbFilter[1] — listener fallback acoustic reverb — owner: AcousticZoneController
-                    _listenerReverbFilter.enabled = false;
-                }
-
-                _listenerLowPassBaseCutoff = _listenerLowPassFilter.cutoffFrequency;
-                _listenerLowPassBaseResonance = _listenerLowPassFilter.lowpassResonanceQ;
-                _listenerReverbBasePreset = _listenerReverbFilter.reverbPreset;
-                _listenerReverbBaseDryLevel = _listenerReverbFilter.dryLevel;
-                _listenerFallbackDefaultsCaptured = true;
+                LogMissingAcousticMixerParameterWarning();
+                return false;
             }
+
+            _currentAcousticLowPassCutoffHz = _listenerLowPassBaseCutoff;
+            _currentAcousticLowPassResonanceQ = _listenerLowPassBaseResonance;
+            _currentAcousticReverbDecayTime = _listenerReverbBaseDecayTime;
+            _currentAcousticReflectionsLevelDb = _listenerReverbBaseReflectionsLevel;
+            _currentAcousticReverbLevelDb = _listenerReverbBaseReverbLevel;
+            _currentAcousticRoomHighFrequencyDb = _listenerReverbBaseRoomHighFrequency;
+            _currentAcousticDryLevelDb = _listenerReverbBaseDryLevel;
+            _acousticGraphStateInitialized = false;
+            _listenerFallbackDefaultsCaptured = true;
+            _acousticMixerBindingsValid = true;
+            InvalidateAppliedAcousticMixerStateCache();
+            return true;
+        }
+
+        private bool ApplyAcousticMixerState(
+            float lowPassCutoffHz,
+            float lowPassResonanceQ,
+            float reverbDecayTime,
+            float reflectionsLevelDb,
+            float reverbLevelDb,
+            float roomHighFrequencyDb,
+            float dryLevelDb)
+        {
+            if (masterMixer == null)
+                return false;
+
+            if (HasAppliedAcousticMixerState(
+                    lowPassCutoffHz,
+                    lowPassResonanceQ,
+                    reverbDecayTime,
+                    reflectionsLevelDb,
+                    reverbLevelDb,
+                    roomHighFrequencyDb,
+                    dryLevelDb))
+            {
+                return true;
+            }
+
+            if (!masterMixer.SetFloat(_resolvedAcousticLowPassCutoffParameter, lowPassCutoffHz) ||
+                !masterMixer.SetFloat(_resolvedAcousticLowPassResonanceParameter, lowPassResonanceQ) ||
+                !masterMixer.SetFloat(_resolvedAcousticReverbDecayParameter, reverbDecayTime) ||
+                !masterMixer.SetFloat(_resolvedAcousticReflectionsLevelParameter, reflectionsLevelDb) ||
+                !masterMixer.SetFloat(_resolvedAcousticReverbLevelParameter, reverbLevelDb) ||
+                !masterMixer.SetFloat(_resolvedAcousticRoomHighFrequencyParameter, roomHighFrequencyDb) ||
+                !masterMixer.SetFloat(_resolvedAcousticDryLevelParameter, dryLevelDb))
+            {
+                _acousticMixerBindingsValid = false;
+                _usingSourceLevelAcousticFallback = false;
+                LogMissingAcousticMixerParameterWarning();
+                InvalidateAppliedAcousticMixerStateCache();
+                return false;
+            }
+
+            CacheAppliedAcousticMixerState(
+                lowPassCutoffHz,
+                lowPassResonanceQ,
+                reverbDecayTime,
+                reflectionsLevelDb,
+                reverbLevelDb,
+                roomHighFrequencyDb,
+                dryLevelDb);
+            return true;
+        }
+
+        private static string ResolveAcousticMixerParameterName(string configuredName, string fallbackName)
+        {
+            return string.IsNullOrWhiteSpace(configuredName) ? fallbackName : configuredName;
+        }
+
+        private void LogMissingAcousticMixerParameterWarning()
+        {
+            LogSnapshotFallbackWarningOnce(
+                ref _warnedMissingAcousticMixerParameters,
+                "[AcousticZoneController] MasterMixer acoustic exposed parameters are missing. Required params: " +
+                AcousticLowPassCutoffParameterDefault + ", " +
+                AcousticLowPassResonanceParameterDefault + ", " +
+                AcousticReverbDecayParameterDefault + ", " +
+                AcousticReflectionsLevelParameterDefault + ", " +
+                AcousticReverbLevelParameterDefault + ", " +
+                AcousticRoomHighFrequencyParameterDefault + ", " +
+                AcousticDryLevelParameterDefault +
+                ". Runtime acoustic graph fallback is disabled to avoid direct DSP component mutation.");
         }
 
         private void UpdateAmbientLoopMix(AcousticZoneState zone)
@@ -1594,11 +1907,45 @@ namespace Hecton8.Audio
 
         private void HandleSonarPingSent(float intensity)
         {
+            if (enableRuntimeAcousticGraph)
+                _acousticSonarImpulse = Mathf.Max(_acousticSonarImpulse, Mathf.Clamp01(intensity));
+
+            if (PlayerCriticalProceduralAudioRenderer.IsRuntimeInstalled)
+                return;
+
             if (sonarPingClip == null || !SpatialAudioManager.TryGetInstance(out SpatialAudioManager sam))
                 return;
 
             float volume = Mathf.Lerp(sonarPingVolumeMin, sonarPingVolumeMax, Mathf.Clamp01(intensity));
             sam.PlayStatic2D(sonarPingClip, volume, sam.InterfaceGroup);
+        }
+
+        private void HandlePhysicsImpact(PhysicsImpactSignal impactSignal)
+        {
+            if (!enableRuntimeAcousticGraph)
+                return;
+
+            AudioListener listener = _cachedPlayerAudioListener;
+            if ((object)listener == null || listener == null)
+            {
+                ResolvePlayerListenerFilters();
+                listener = _cachedPlayerAudioListener;
+            }
+
+            if ((object)listener == null || listener == null)
+                return;
+
+            float radius = Mathf.Max(0.5f, acousticImpactImpulseRadius);
+            float distance = Vector3.Distance(listener.transform.position, impactSignal.Point);
+            if (distance > radius)
+                return;
+
+            float proximity = 1f - Mathf.Clamp01(distance / radius);
+            float impulse = Mathf.Clamp01(impactSignal.Intensity * Mathf.Max(0.15f, proximity));
+            if (impactSignal.IsHeavy)
+                impulse = Mathf.Max(impulse, 0.35f * Mathf.Max(0.35f, proximity));
+
+            _acousticImpactImpulse = Mathf.Max(_acousticImpactImpulse, impulse);
         }
 
         internal void PlayMantaMisfire(float intensity)
@@ -1717,6 +2064,13 @@ namespace Hecton8.Audio
 
         private void ApplySourceLevelAcousticFallback(AcousticZoneState zone)
         {
+            UpdateSourceLevelAcousticGraph(zone, 0f);
+        }
+
+        private void UpdateSourceLevelAcousticGraph(AcousticZoneState zone, float deltaTime)
+        {
+            DecayAcousticGraphImpulses(deltaTime);
+
             if (!ShouldUseSourceLevelAcousticFallback())
             {
                 ResetSourceLevelAcousticFallback();
@@ -1724,72 +2078,287 @@ namespace Hecton8.Audio
             }
 
             ResolvePlayerListenerFilters();
-            if (!_listenerFallbackDefaultsCaptured ||
-                (object)_listenerLowPassFilter == null || _listenerLowPassFilter == null ||
-                (object)_listenerReverbFilter == null || _listenerReverbFilter == null)
+            if (!_listenerFallbackDefaultsCaptured)
             {
                 return;
             }
 
-            _usingSourceLevelAcousticFallback = true;
-
-            switch (zone)
+            if (zone == AcousticZoneState.Surface)
             {
-                case AcousticZoneState.Underwater:
-                    _listenerLowPassFilter.enabled = true;
-                    _listenerLowPassFilter.cutoffFrequency = ResolveUnderwaterFallbackCutoff();
-                    _listenerLowPassFilter.lowpassResonanceQ = 1.1f;
-                    _listenerReverbFilter.enabled = false;
-                    _listenerReverbFilter.reverbPreset = _listenerReverbBasePreset;
-                    _listenerReverbFilter.dryLevel = _listenerReverbBaseDryLevel;
-                    break;
+                ResetSourceLevelAcousticFallback();
+                return;
+            }
 
-                case AcousticZoneState.Interior:
-                    _listenerLowPassFilter.enabled = true;
-                    _listenerLowPassFilter.cutoffFrequency = interiorFallbackLowPassCutoff;
-                    _listenerLowPassFilter.lowpassResonanceQ = 1f;
-                    _listenerReverbFilter.enabled = true;
-                    _listenerReverbFilter.reverbPreset = interiorFallbackReverbPreset;
-                    _listenerReverbFilter.dryLevel = interiorFallbackReverbDryLevel;
-                    break;
+            AudioListener listener = _cachedPlayerAudioListener;
+            UpdateEmitterOcclusionState(listener);
+
+            AcousticGraphState targetState = zone == AcousticZoneState.Interior
+                ? ResolveInteriorAcousticGraphState()
+                : ResolveUnderwaterAcousticGraphState();
+
+            float blendT = deltaTime <= 0f
+                ? 1f
+                : 1f - Mathf.Exp(-Mathf.Max(0.01f, acousticGraphFollowSharpness) * deltaTime);
+
+            if (!_acousticGraphStateInitialized)
+            {
+                _currentAcousticLowPassCutoffHz = targetState.LowPassCutoffHz;
+                _currentAcousticLowPassResonanceQ = targetState.LowPassResonanceQ;
+                _currentAcousticReverbDecayTime = targetState.ReverbDecayTime;
+                _currentAcousticReflectionsLevelDb = targetState.ReflectionsLevelDb;
+                _currentAcousticReverbLevelDb = targetState.ReverbLevelDb;
+                _currentAcousticRoomHighFrequencyDb = targetState.RoomHighFrequencyDb;
+                _currentAcousticDryLevelDb = targetState.DryLevelDb;
+                _acousticGraphStateInitialized = true;
+            }
+            else
+            {
+                _currentAcousticLowPassCutoffHz = Mathf.Lerp(_currentAcousticLowPassCutoffHz, targetState.LowPassCutoffHz, blendT);
+                _currentAcousticLowPassResonanceQ = Mathf.Lerp(_currentAcousticLowPassResonanceQ, targetState.LowPassResonanceQ, blendT);
+                _currentAcousticReverbDecayTime = Mathf.Lerp(_currentAcousticReverbDecayTime, targetState.ReverbDecayTime, blendT);
+                _currentAcousticReflectionsLevelDb = Mathf.Lerp(_currentAcousticReflectionsLevelDb, targetState.ReflectionsLevelDb, blendT);
+                _currentAcousticReverbLevelDb = Mathf.Lerp(_currentAcousticReverbLevelDb, targetState.ReverbLevelDb, blendT);
+                _currentAcousticRoomHighFrequencyDb = Mathf.Lerp(_currentAcousticRoomHighFrequencyDb, targetState.RoomHighFrequencyDb, blendT);
+                _currentAcousticDryLevelDb = Mathf.Lerp(_currentAcousticDryLevelDb, targetState.DryLevelDb, blendT);
+            }
+
+            _usingSourceLevelAcousticFallback = ApplyAcousticMixerState(
+                _currentAcousticLowPassCutoffHz,
+                _currentAcousticLowPassResonanceQ,
+                _currentAcousticReverbDecayTime,
+                _currentAcousticReflectionsLevelDb,
+                _currentAcousticReverbLevelDb,
+                _currentAcousticRoomHighFrequencyDb,
+                _currentAcousticDryLevelDb);
+        }
+
+        private void DecayAcousticGraphImpulses(float deltaTime)
+        {
+            if (deltaTime <= 0f)
+                return;
+
+            _acousticImpactImpulse = Mathf.MoveTowards(
+                _acousticImpactImpulse,
+                0f,
+                Mathf.Max(0.01f, acousticImpactImpulseDecay) * deltaTime);
+            _acousticSonarImpulse = Mathf.MoveTowards(
+                _acousticSonarImpulse,
+                0f,
+                Mathf.Max(0.01f, acousticSonarImpulseDecay) * deltaTime);
+        }
+
+        private void UpdateEmitterOcclusionState(AudioListener listener)
+        {
+            _emitterOcclusionTransmission01 = 1f;
+            _emitterOcclusionLowPassCutoffHz = AcousticOcclusionUtility.OpenLowPassCutoffHertz;
+
+            if ((object)listener == null || listener == null || !SpatialAudioManager.TryGetInstance(out SpatialAudioManager spatialAudioManager))
+                return;
+
+            if (_resolvedEmitterOcclusionLayerMask == 0)
+                _resolvedEmitterOcclusionLayerMask = AcousticOcclusionUtility.BuildSensoryMask();
+
+            if (_resolvedEmitterOcclusionLayerMask == 0)
+                return;
+
+            int emitterCount = spatialAudioManager.CopyActiveWorldEmitterSamples(s_emitterOcclusionSamples);
+            if (emitterCount <= 0)
+                return;
+
+            Vector3 listenerPosition = listener.transform.position;
+            Transform listenerRoot = listener.transform.root;
+            float maxDistanceSqr = AcousticEmitterOcclusionMaxDistanceMeters * AcousticEmitterOcclusionMaxDistanceMeters;
+            float weightedTransmission = 0f;
+            float weightedCutoff = 0f;
+            float totalWeight = 0f;
+
+            for (int i = 0; i < emitterCount; i++)
+            {
+                SpatialAudioManager.ActiveEmitterSample sample = s_emitterOcclusionSamples[i];
+                if (!(sample.Amplitude > 0.0001f))
+                    continue;
+
+                Vector3 delta = sample.Position - listenerPosition;
+                float distanceSqr = delta.sqrMagnitude;
+                if (distanceSqr > maxDistanceSqr)
+                    continue;
+
+                float sampleWeight = sample.Amplitude / (1f + (distanceSqr * AcousticEmitterDistanceWeightScale));
+                if (!(sampleWeight > 0.0001f))
+                    continue;
+
+                if (!AcousticOcclusionUtility.TryGetCachedOcclusionPath(
+                        sample.Position,
+                        listenerPosition,
+                        _resolvedEmitterOcclusionLayerMask,
+                        null,
+                        listenerRoot,
+                        out AcousticOcclusionResult occlusion))
+                {
+                    AcousticOcclusionUtility.PrimeOcclusionPath(
+                        sample.Position,
+                        listenerPosition,
+                        _resolvedEmitterOcclusionLayerMask,
+                        null,
+                        listenerRoot);
+                    continue;
+                }
+
+                weightedTransmission += occlusion.Transmission01 * sampleWeight;
+                weightedCutoff += occlusion.LowPassCutoffHz * sampleWeight;
+                totalWeight += sampleWeight;
+
+                AcousticOcclusionUtility.PrimeOcclusionPath(
+                    sample.Position,
+                    listenerPosition,
+                    _resolvedEmitterOcclusionLayerMask,
+                    null,
+                    listenerRoot);
+            }
+
+            if (!(totalWeight > 0.0001f))
+                return;
+
+            _emitterOcclusionTransmission01 = Mathf.Clamp01(weightedTransmission / totalWeight);
+            _emitterOcclusionLowPassCutoffHz = Mathf.Clamp(
+                weightedCutoff / totalWeight,
+                AcousticOcclusionUtility.MinimumLowPassCutoffHertz,
+                AcousticOcclusionUtility.OpenLowPassCutoffHertz);
+        }
+
+        private AcousticGraphState ResolveInteriorAcousticGraphState()
+        {
+            float metallicImpulse = Mathf.Clamp01(_acousticImpactImpulse * Mathf.Max(0f, impactGraphMetallicBoost));
+            float sonarImpulse = Mathf.Clamp01(_acousticSonarImpulse);
+            AcousticGraphState state;
+            state.LowPassCutoffHz = Mathf.Lerp(interiorGraphLowPassCutoff, 7200f, metallicImpulse);
+            state.LowPassResonanceQ = Mathf.Lerp(interiorGraphResonance, interiorGraphResonance + 0.22f, metallicImpulse);
+            state.ReverbDecayTime = Mathf.Clamp(
+                interiorGraphDecayTime +
+                (interiorImpactDecayBoost * metallicImpulse) +
+                (0.22f * sonarImpulse),
+                0.05f,
+                12f);
+            state.ReflectionsLevelDb = Mathf.Clamp(
+                interiorGraphReflectionsLevel + (550f * metallicImpulse),
+                -10000f,
+                1000f);
+            state.ReverbLevelDb = Mathf.Clamp(
+                interiorGraphReverbLevel + (450f * sonarImpulse),
+                -10000f,
+                2000f);
+            state.RoomHighFrequencyDb = Mathf.Clamp(
+                interiorGraphRoomHighFrequency - (1600f * metallicImpulse),
+                -10000f,
+                0f);
+            state.DryLevelDb = Mathf.Clamp(
+                interiorGraphDryLevel - (120f * sonarImpulse),
+                -10000f,
+                0f);
+            ApplyEmitterOcclusionToAcousticState(ref state);
+            return state;
+        }
+
+        private AcousticGraphState ResolveUnderwaterAcousticGraphState()
+        {
+            float depth01 = ResolveUnderwaterGraphDepth01();
+            float sonarImpulse = Mathf.Clamp01(_acousticSonarImpulse * Mathf.Max(0f, sonarGraphOpenUpBoost));
+            float metallicImpulse = Mathf.Clamp01(_acousticImpactImpulse * Mathf.Max(0f, impactGraphMetallicBoost));
+            float baseCutoff = Mathf.Lerp(underwaterGraphShallowCutoff, underwaterGraphDeepCutoff, depth01);
+            float openedCutoff = Mathf.Min(interiorFallbackLowPassCutoff, baseCutoff + 2400f);
+            AcousticGraphState state;
+            state.LowPassCutoffHz = Mathf.Clamp(Mathf.Lerp(baseCutoff, openedCutoff, sonarImpulse), 500f, 22000f);
+            state.LowPassResonanceQ = Mathf.Lerp(underwaterGraphResonance, underwaterGraphResonance + 0.18f, metallicImpulse);
+            state.ReverbDecayTime = Mathf.Clamp(
+                Mathf.Lerp(0.92f, underwaterGraphDecayTime, depth01) +
+                (0.2f * sonarImpulse),
+                0.05f,
+                12f);
+            state.ReflectionsLevelDb = Mathf.Clamp(
+                underwaterGraphReflectionsLevel + (600f * sonarImpulse),
+                -10000f,
+                1000f);
+            state.ReverbLevelDb = Mathf.Clamp(
+                underwaterGraphReverbLevel + (300f * sonarImpulse) - (120f * metallicImpulse),
+                -10000f,
+                2000f);
+            state.RoomHighFrequencyDb = Mathf.Clamp(
+                Mathf.Lerp(underwaterGraphRoomHighFrequency, underwaterGraphRoomHighFrequency + 1200f, sonarImpulse),
+                -10000f,
+                0f);
+            state.DryLevelDb = Mathf.Clamp(
+                underwaterGraphDryLevel - (350f * depth01),
+                -10000f,
+                0f);
+            ApplyEmitterOcclusionToAcousticState(ref state);
+            return state;
+        }
+
+        private void ApplyEmitterOcclusionToAcousticState(ref AcousticGraphState state)
+        {
+            float occlusionShadow01 = Mathf.Clamp01(1f - _emitterOcclusionTransmission01);
+            if (occlusionShadow01 <= 0.0001f)
+                return;
+
+            float occludedCutoffHz = Mathf.Clamp(
+                _emitterOcclusionLowPassCutoffHz,
+                AcousticOcclusionUtility.MinimumLowPassCutoffHertz,
+                AcousticOcclusionUtility.OpenLowPassCutoffHertz);
+
+            state.LowPassCutoffHz = Mathf.Clamp(
+                Mathf.Min(state.LowPassCutoffHz, Mathf.Lerp(state.LowPassCutoffHz, occludedCutoffHz, occlusionShadow01)),
+                AcousticOcclusionUtility.MinimumLowPassCutoffHertz,
+                AcousticOcclusionUtility.OpenLowPassCutoffHertz);
+            state.LowPassResonanceQ = Mathf.Lerp(state.LowPassResonanceQ, state.LowPassResonanceQ + 0.18f, occlusionShadow01);
+            state.ReflectionsLevelDb = Mathf.Clamp(state.ReflectionsLevelDb + (420f * occlusionShadow01), -10000f, 1000f);
+            state.RoomHighFrequencyDb = Mathf.Clamp(state.RoomHighFrequencyDb - (2200f * occlusionShadow01), -10000f, 0f);
+            state.DryLevelDb = Mathf.Clamp(state.DryLevelDb - (260f * occlusionShadow01), -10000f, 0f);
+        }
+
+        private float ResolveUnderwaterGraphDepth01()
+        {
+            HectonPlayerMovement movement = ResolvePlayerMovement();
+            float depth = movement != null
+                ? Mathf.Max(0f, movement.CurrentDepth)
+                : ResolvePlayerDepthFallback();
+            float immersion = movement != null
+                ? Mathf.Clamp01(movement.WaterImmersionRatio)
+                : (_acousticUnderwaterState ? 1f : 0f);
+            float depth01 = Mathf.Clamp01(depth / Mathf.Max(1f, acousticDeepWaterReferenceDepth));
+            float immersion01 = Mathf.InverseLerp(acousticExitImmersionRatio, 1f, immersion);
+            return Mathf.Max(depth01, Mathf.Max(immersion01, ResolveSoundscapeTierDepth01()));
+        }
+
+        private float ResolveSoundscapeTierDepth01()
+        {
+            switch (_currentSoundscapeTier)
+            {
+                case SoundscapeTier.DeepAbyss:
+                    return 1f;
+
+                case SoundscapeTier.Abyss:
+                    return 0.75f;
+
+                case SoundscapeTier.Darkness:
+                    return 0.52f;
+
+                case SoundscapeTier.Thermal:
+                    return 0.48f;
+
+                case SoundscapeTier.Twilight:
+                    return 0.24f;
 
                 default:
-                    ResetSourceLevelAcousticFallback();
-                    break;
+                    return 0f;
             }
         }
 
         private bool ShouldUseSourceLevelAcousticFallback()
         {
-            if (!enableSourceLevelAcousticFallback)
-                return false;
-
-            EnsureSnapshotBindings();
-            return !_validatedMixerHasEffectGraph || _validatedMixerSnapshotCount <= 1;
-        }
-
-        private float ResolveUnderwaterFallbackCutoff()
-        {
-            switch (_currentSoundscapeTier)
-            {
-                case SoundscapeTier.DeepAbyss:
-                    return 650f;
-
-                case SoundscapeTier.Abyss:
-                    return 800f;
-
-                case SoundscapeTier.Darkness:
-                    return 950f;
-
-                case SoundscapeTier.Twilight:
-                    return 1250f;
-
-                case SoundscapeTier.Thermal:
-                    return 900f;
-
-                default:
-                    return underwaterFallbackLowPassCutoff;
-            }
+            return enableSourceLevelAcousticFallback &&
+                   enableRuntimeAcousticGraph &&
+                   masterMixer != null &&
+                   EnsureAcousticMixerParameterBindings();
         }
 
         private void ResetSourceLevelAcousticFallback()
@@ -1797,23 +2366,32 @@ namespace Hecton8.Audio
             if (!_listenerFallbackDefaultsCaptured)
             {
                 _usingSourceLevelAcousticFallback = false;
+                _acousticGraphStateInitialized = false;
                 return;
             }
 
-            if ((object)_listenerLowPassFilter != null && _listenerLowPassFilter != null)
+            if (_acousticMixerBindingsValid)
             {
-                _listenerLowPassFilter.cutoffFrequency = _listenerLowPassBaseCutoff;
-                _listenerLowPassFilter.lowpassResonanceQ = _listenerLowPassBaseResonance;
-                _listenerLowPassFilter.enabled = false;
+                ApplyAcousticMixerState(
+                    _listenerLowPassBaseCutoff,
+                    _listenerLowPassBaseResonance,
+                    _listenerReverbBaseDecayTime,
+                    _listenerReverbBaseReflectionsLevel,
+                    _listenerReverbBaseReverbLevel,
+                    _listenerReverbBaseRoomHighFrequency,
+                    _listenerReverbBaseDryLevel);
             }
 
-            if ((object)_listenerReverbFilter != null && _listenerReverbFilter != null)
-            {
-                _listenerReverbFilter.reverbPreset = _listenerReverbBasePreset;
-                _listenerReverbFilter.dryLevel = _listenerReverbBaseDryLevel;
-                _listenerReverbFilter.enabled = false;
-            }
-
+            _currentAcousticLowPassCutoffHz = _listenerLowPassBaseCutoff;
+            _currentAcousticLowPassResonanceQ = _listenerLowPassBaseResonance;
+            _currentAcousticReverbDecayTime = _listenerReverbBaseDecayTime;
+            _currentAcousticReflectionsLevelDb = _listenerReverbBaseReflectionsLevel;
+            _currentAcousticReverbLevelDb = _listenerReverbBaseReverbLevel;
+            _currentAcousticRoomHighFrequencyDb = _listenerReverbBaseRoomHighFrequency;
+            _currentAcousticDryLevelDb = _listenerReverbBaseDryLevel;
+            _emitterOcclusionTransmission01 = 1f;
+            _emitterOcclusionLowPassCutoffHz = AcousticOcclusionUtility.OpenLowPassCutoffHertz;
+            _acousticGraphStateInitialized = false;
             _usingSourceLevelAcousticFallback = false;
         }
 
@@ -1895,7 +2473,15 @@ namespace Hecton8.Audio
             if (IsResolvedSnapshotAlreadyActive(zone, snapshot))
                 return false;
 
-            snapshot.TransitionTo(Mathf.Max(0f, duration));
+            if (IsSnapshotTransitionLocked())
+            {
+                QueuePendingSnapshotTransition(zone, duration);
+                return false;
+            }
+
+            float transitionTime = Mathf.Max(0f, duration);
+            snapshot.TransitionTo(transitionTime);
+            ArmSnapshotTransitionLock(transitionTime);
             CacheResolvedSnapshotState(zone, snapshot);
             LogDiagnostic($"[AcousticZoneController] Snapshot activated: {snapshot.name}");
             return true;
@@ -1953,7 +2539,14 @@ namespace Hecton8.Audio
                 return false;
 
             float transitionTime = Mathf.Max(0f, surfaceWeatherTransitionDuration > 0f ? surfaceWeatherTransitionDuration : duration);
+            if (IsSnapshotTransitionLocked())
+            {
+                QueuePendingSnapshotTransition(AcousticZoneState.Surface, transitionTime);
+                return false;
+            }
+
             masterMixer.TransitionToSnapshots(_surfaceBlendSnapshots, _surfaceBlendWeights, transitionTime);
+            ArmSnapshotTransitionLock(transitionTime);
             CacheSurfaceBlendState(snapshotCount);
             return true;
         }
@@ -1970,6 +2563,40 @@ namespace Hecton8.Audio
                 snapshots[i] = null;
                 weights[i] = 0f;
             }
+        }
+
+        private bool IsSnapshotTransitionLocked()
+        {
+            return Time.unscaledTime < _snapshotTransitionLockUntilTime;
+        }
+
+        private void ArmSnapshotTransitionLock(float duration)
+        {
+            if (duration <= 0f)
+                return;
+
+            float unlockTime = Time.unscaledTime + duration;
+            if (unlockTime > _snapshotTransitionLockUntilTime)
+                _snapshotTransitionLockUntilTime = unlockTime;
+        }
+
+        private void QueuePendingSnapshotTransition(AcousticZoneState zone, float duration)
+        {
+            _pendingSnapshotZone = zone;
+            _pendingSnapshotDuration = Mathf.Max(0f, duration);
+            _hasPendingSnapshotTransition = true;
+        }
+
+        private void ProcessPendingSnapshotTransition()
+        {
+            if (!_hasPendingSnapshotTransition || IsSnapshotTransitionLocked())
+                return;
+
+            AcousticZoneState pendingZone = _pendingSnapshotZone;
+            float pendingDuration = _pendingSnapshotDuration;
+            _hasPendingSnapshotTransition = false;
+            _pendingSnapshotDuration = 0f;
+            TransitionToResolvedSnapshot(pendingZone, pendingDuration);
         }
 
         private bool IsResolvedSnapshotAlreadyActive(AcousticZoneState zone, AudioMixerSnapshot snapshot)
@@ -2027,6 +2654,54 @@ namespace Hecton8.Audio
             }
 
             ClearBlendTail(_activeSurfaceBlendSnapshots, _activeSurfaceBlendWeights, snapshotCount);
+        }
+
+        private bool HasAppliedAcousticMixerState(
+            float lowPassCutoffHz,
+            float lowPassResonanceQ,
+            float reverbDecayTime,
+            float reflectionsLevelDb,
+            float reverbLevelDb,
+            float roomHighFrequencyDb,
+            float dryLevelDb)
+        {
+            return !float.IsNaN(_lastAppliedAcousticLowPassCutoffHz) &&
+                   Mathf.Abs(_lastAppliedAcousticLowPassCutoffHz - lowPassCutoffHz) <= AcousticCutoffWriteEpsilonHz &&
+                   Mathf.Abs(_lastAppliedAcousticLowPassResonanceQ - lowPassResonanceQ) <= AcousticResonanceWriteEpsilon &&
+                   Mathf.Abs(_lastAppliedAcousticReverbDecayTime - reverbDecayTime) <= AcousticDecayWriteEpsilonSeconds &&
+                   Mathf.Abs(_lastAppliedAcousticReflectionsLevelDb - reflectionsLevelDb) <= AcousticDbWriteEpsilon &&
+                   Mathf.Abs(_lastAppliedAcousticReverbLevelDb - reverbLevelDb) <= AcousticDbWriteEpsilon &&
+                   Mathf.Abs(_lastAppliedAcousticRoomHighFrequencyDb - roomHighFrequencyDb) <= AcousticDbWriteEpsilon &&
+                   Mathf.Abs(_lastAppliedAcousticDryLevelDb - dryLevelDb) <= AcousticDbWriteEpsilon;
+        }
+
+        private void CacheAppliedAcousticMixerState(
+            float lowPassCutoffHz,
+            float lowPassResonanceQ,
+            float reverbDecayTime,
+            float reflectionsLevelDb,
+            float reverbLevelDb,
+            float roomHighFrequencyDb,
+            float dryLevelDb)
+        {
+            _lastAppliedAcousticLowPassCutoffHz = lowPassCutoffHz;
+            _lastAppliedAcousticLowPassResonanceQ = lowPassResonanceQ;
+            _lastAppliedAcousticReverbDecayTime = reverbDecayTime;
+            _lastAppliedAcousticReflectionsLevelDb = reflectionsLevelDb;
+            _lastAppliedAcousticReverbLevelDb = reverbLevelDb;
+            _lastAppliedAcousticRoomHighFrequencyDb = roomHighFrequencyDb;
+            _lastAppliedAcousticDryLevelDb = dryLevelDb;
+        }
+
+        private void InvalidateAppliedAcousticMixerStateCache()
+        {
+            _lastAppliedAcousticLowPassCutoffHz = float.NaN;
+            _lastAppliedAcousticLowPassResonanceQ = float.NaN;
+            _lastAppliedAcousticReverbDecayTime = float.NaN;
+            _lastAppliedAcousticReflectionsLevelDb = float.NaN;
+            _lastAppliedAcousticReverbLevelDb = float.NaN;
+            _lastAppliedAcousticRoomHighFrequencyDb = float.NaN;
+            _lastAppliedAcousticDryLevelDb = float.NaN;
         }
 
         private AudioMixerSnapshot ResolveSnapshotForZone(AcousticZoneState zone)
@@ -2100,7 +2775,8 @@ namespace Hecton8.Audio
             return string.Concat(
                 "Mixer snapshots=", _validatedMixerSnapshotCount.ToString(),
                 " named=", _validatedMixerHasNamedCoverage ? "yes" : "no",
-                " fx=", _validatedMixerHasEffectGraph ? "yes" : "no");
+                " fx=", _validatedMixerHasEffectGraph ? "yes" : "no",
+                " acousticParams=", _acousticMixerBindingsValid ? "yes" : "no");
         }
 
 #if UNITY_EDITOR
@@ -2185,7 +2861,6 @@ namespace Hecton8.Audio
             _warnedMissingSurfaceSnapshotSet = false;
             _warnedMissingSnapshotCoverage = false;
             _warnedIncompleteMixerSnapshotAuthoring = false;
-            _warnedMissingMixerEffectGraph = false;
             _validatedMixerSnapshotCount = 0;
             _validatedMixerHasNamedCoverage = false;
             _validatedMixerHasEffectGraph = false;
@@ -2264,12 +2939,6 @@ namespace Hecton8.Audio
                     $"[AcousticZoneController] MasterMixer snapshot authoring is incomplete. Snapshot count={snapshotCount}. Expected named coverage includes Underwater, BaseInterior, Surface, SurfaceRain, and SurfaceStorm.");
             }
 
-            if (!hasNonAttenuationEffect)
-            {
-                LogSnapshotFallbackWarningOnce(
-                    ref _warnedMissingMixerEffectGraph,
-                    "[AcousticZoneController] MasterMixer effect graph has no authored acoustic processing beyond Attenuation. Underwater/interior transitions need LPF/reverb-style processing to create real contrast.");
-            }
         }
 #endif
     }

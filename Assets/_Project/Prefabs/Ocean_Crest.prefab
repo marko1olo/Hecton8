@@ -352,6 +352,8 @@ GameObject:
   - component: {fileID: 631104235710018482}
   - component: {fileID: 4153056372701123456}
   - component: {fileID: 7666709485588549063}
+  - component: {fileID: 1182089648734552001}
+  - component: {fileID: 1954067716359082144}
   m_Layer: 4
   m_Name: Ocean_Crest
   m_TagString: Untagged
@@ -375,6 +377,7 @@ Transform:
   - {fileID: 661104235710018482}
   - {fileID: 771104235710018482}
   - {fileID: 8453796831506587848}
+  - {fileID: 1182089648734552003}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1881482921440711839
@@ -637,3 +640,113 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Physics.Crest5KinematicsAdapter
   crestWaterRenderer: {fileID: 0}
   sceneSearchRetryInterval: 1
+--- !u!114 &1182089648734552001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5513631557248329811}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c8f54dfc1dc54c4da9a83c91f1c4b27a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.HectonCrestOceanDepthCacheBootstrap
+  oceanRenderer: {fileID: 1881482921440711839}
+  oceanDepthCache: {fileID: 1182089648734552004}
+  mapMagicBridge: {fileID: 0}
+  terrainBoundsPadding: 64
+  depthCacheResolution: 512
+  repopulateOnTerrainChange: 1
+  _debugCacheReady: 0
+  _debugTerrainCount: 0
+  _debugWaterLevel: 0
+  _debugLastCacheCenterWS: {x: 0, y: 0, z: 0}
+  _debugLastCacheScaleWS: {x: 0, y: 0, z: 0}
+  _debugCaptureLayerMask: 0
+  _debugCameraMaxTerrainHeight: 0
+  _debugLastPopulateFrame: -1
+--- !u!114 &1954067716359082144
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5513631557248329811}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bb39863bb9d0457b93e91ab29b91da4d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.HectonCaveVoxelAmbientOcclusionController
+  viewerTransform: {fileID: 0}
+  viewerCamera: {fileID: 0}
+  fullOcclusionInteriorDepth: 8
+  caveAmbientIntensityScale: 0.58
+  caveReflectionIntensityScale: 0.62
+  occlusionBlendRate: 3
+  _debugHasViewer: 0
+  _debugVolumeCount: 0
+  _debugTargetOcclusion: 0
+  _debugAppliedOcclusion: 0
+  _debugViewerPositionWS: {x: 0, y: 0, z: 0}
+--- !u!1 &1182089648734552002
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1182089648734552003}
+  - component: {fileID: 1182089648734552004}
+  m_Layer: 4
+  m_Name: OceanDepthCache
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1182089648734552003
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1182089648734552002}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 4900, z: 0}
+  m_LocalScale: {x: 256, y: 1, z: 256}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5811674931265784657}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1182089648734552004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1182089648734552002}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5be4155a909a5ef47bdaaf1422602735, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Crest::Crest.OceanDepthCache
+  _version: 0
+  _type: 0
+  _refreshMode: 1
+  _layers:
+    serializedVersion: 2
+    m_Bits: 129
+  _layerNames: []
+  _resolution: 512
+  _cameraMaxTerrainHeight: 256
+  _terrainPixelErrorOverride: 0
+  _lodBiasOverride: 3.4028235e+38
+  _maximumLodLevelOverride: 0
+  _forceAlwaysUpdateDebug: 0
+  _hideDepthCacheCam: 1
+  _savedCache: {fileID: 0}
+  _runValidationOnStart: 1
+  _relative: 1

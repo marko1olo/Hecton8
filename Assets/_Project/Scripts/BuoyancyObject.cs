@@ -43,6 +43,18 @@ namespace Hecton8.Physics
     [AddComponentMenu("Hecton/Physics/Buoyancy Object")]
     public sealed class BuoyancyObject : MonoBehaviour, IFixedTickable
     {
+        private static int _WaterLayer = -1;
+        private static bool _layerCacheInitialized;
+
+        private static void EnsureLayerCache()
+        {
+            if (_layerCacheInitialized)
+                return;
+
+            _WaterLayer = LayerMask.NameToLayer("Water");
+            _layerCacheInitialized = true;
+        }
+
         [Header("Profile")]
 #if UNITY_EDITOR
         [Required("BuoyancyObject requires a BuoyancyProfile reference.")]
@@ -165,7 +177,7 @@ namespace Hecton8.Physics
         /// <summary>
         /// Frame offset unique to this instance. Distributes ground checks
         /// across frames so not all BuoyancyObjects check on the same frame.
-        /// Computed from GetInstanceID() in Awake.
+        /// Computed from GetEntityId() in Awake.
         /// </summary>
         private int _frameOffset;
 
@@ -232,6 +244,34 @@ namespace Hecton8.Physics
         /// True while another system explicitly suppresses buoyancy forces for this body.
         /// </summary>
         public bool IsExternallySuppressed => _externallySuppressed;
+
+        /// <summary>
+        /// Resolves the world-space voxel sampling bounds used by the fluid job.
+        /// Collider bounds are authoritative when present; otherwise the method
+        /// derives a stable fallback prism from the authored volume and height.
+        /// </summary>
+        internal void GetBuoyancySampleBounds(out Vector3 center, out Vector3 extents)
+        {
+            if (_collider != null)
+            {
+                Bounds bounds = _collider.bounds;
+                if (bounds.extents.sqrMagnitude > 0.000001f)
+                {
+                    center = bounds.center;
+                    extents = new Vector3(
+                        Mathf.Max(0.05f, bounds.extents.x),
+                        Mathf.Max(0.05f, bounds.extents.y),
+                        Mathf.Max(0.05f, bounds.extents.z));
+                    return;
+                }
+            }
+
+            float resolvedHeight = Mathf.Max(0.1f, height);
+            float footprintArea = Mathf.Max(0.01f, volume / resolvedHeight);
+            float halfWidth = Mathf.Max(0.05f, Mathf.Sqrt(footprintArea) * 0.5f);
+            center = _cachedTransform != null ? _cachedTransform.position : transform.position;
+            extents = new Vector3(halfWidth, resolvedHeight * 0.5f, halfWidth);
+        }
 
         /// <summary>
         /// True when fluid simulation should be fully suppressed for this object.
@@ -323,16 +363,15 @@ namespace Hecton8.Physics
 
         private void Awake()
         {
+            EnsureLayerCache();
             ApplyProfileIfNeeded();
             TryGetComponent(out _rb);
             TryGetComponent(out _collider);
             _cachedTransform = transform;
 
-            // Compute frame offset from instance ID for staggered checks.
-            // Abs because GetInstanceID can be negative.
-            #pragma warning disable CS0618
-            int id = GetInstanceID();
-            #pragma warning restore CS0618
+            // Compute frame offset from entity ID for staggered checks.
+            // Abs because the truncated int can be negative.
+            int id = unchecked((int)EntityId.ToULong(GetEntityId()));
             _frameOffset = (id < 0 ? -id : id) % groundCheckInterval;
         }
 
@@ -397,10 +436,10 @@ namespace Hecton8.Physics
 
         private void TryRegisterToFixedTick()
         {
-            if (_registeredToFixedTick || GameTickManager.Instance == null)
+            if (_registeredToFixedTick)
                 return;
 
-            GameTickManager.Instance.Register((IFixedTickable)this);
+            GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
             _registeredToFixedTick = true;
         }
 
@@ -409,10 +448,7 @@ namespace Hecton8.Physics
             if (!_registeredToFixedTick)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister((IFixedTickable)this);
-
+            GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
             _registeredToFixedTick = false;
         }
 
@@ -472,6 +508,15 @@ namespace Hecton8.Physics
 
         private void OnValidate()
         {
+#if UNITY_EDITOR
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                return;
+            }
+#endif
+
             ApplyProfileIfNeeded();
             if (density < 0.01f) density = 0.01f;
             if (volume  < 0.0001f) volume = 0.0001f;
@@ -482,18 +527,23 @@ namespace Hecton8.Physics
             if (groundCheckDistance < 0.01f) groundCheckDistance = 0.01f;
 
             // Ensure Water layer is excluded from groundLayers
-            int waterLayer = LayerMask.NameToLayer("Water");
-            if (waterLayer >= 0 && (groundLayers & (1 << waterLayer)) != 0)
+            if (_WaterLayer >= 0 && (groundLayers & (1 << _WaterLayer)) != 0)
             {
-                groundLayers &= ~(1 << waterLayer);
+                groundLayers &= ~(1 << _WaterLayer);
             }
         }
 
         private void OnDrawGizmosSelected()
         {
-            float waterY = HectonFluidEngine.Instance != null
-                ? HectonFluidEngine.Instance.WaterLevel
-                : 5000f;
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                return;
+            }
+
+            HectonFluidEngine engine = HectonFluidEngine.Instance;
+            float waterY = engine != null ? engine.WaterLevel : 5000f;
 
             bool submerged = transform.position.y < waterY;
 

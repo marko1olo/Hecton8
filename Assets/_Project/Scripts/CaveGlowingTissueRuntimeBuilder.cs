@@ -11,7 +11,7 @@ namespace Hecton8.Caves
         private static readonly int _BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int _ColorId = Shader.PropertyToID("_Color");
         private static readonly int _EmissionColorId = Shader.PropertyToID("_EmissionColor");
-        private static readonly MaterialPropertyBlock _TissuePropertyBlock = new MaterialPropertyBlock(); // COLD ALLOC: shared glowing-tissue block.
+        private static MaterialPropertyBlock _TissuePropertyBlock;
 
         public static void Build(
             Transform parent,
@@ -110,14 +110,25 @@ namespace Hecton8.Caves
             float glowFactor = Mathf.Lerp(0.45f, 1.25f, Hash01(runtimeSeed, index, 149)) * Mathf.Lerp(0.85f, 1.2f, globalIntensity);
             Color baseColor = Color.Lerp(config.baseColor, config.glowColor, 0.42f);
             Color emission = config.glowColor * glowFactor * Mathf.Lerp(0.35f, 1.35f, config.pulseAmount);
-            _TissuePropertyBlock.Clear();
-            renderer.GetPropertyBlock(_TissuePropertyBlock);
-            _TissuePropertyBlock.SetColor(_BaseColorId, baseColor);
-            _TissuePropertyBlock.SetColor(_ColorId, baseColor);
-            _TissuePropertyBlock.SetColor(_EmissionColorId, emission);
-            renderer.SetPropertyBlock(_TissuePropertyBlock);
+            MaterialPropertyBlock propertyBlock = GetTissuePropertyBlock();
+            propertyBlock.Clear();
+            renderer.GetPropertyBlock(propertyBlock);
+            propertyBlock.SetColor(_BaseColorId, baseColor);
+            propertyBlock.SetColor(_ColorId, baseColor);
+            propertyBlock.SetColor(_EmissionColorId, emission);
+            renderer.SetPropertyBlock(propertyBlock);
             renderer.shadowCastingMode = ShadowCastingMode.Off;
             renderer.receiveShadows = false;
+        }
+
+        private static MaterialPropertyBlock GetTissuePropertyBlock()
+        {
+            if (_TissuePropertyBlock != null)
+                return _TissuePropertyBlock;
+
+            // COLD ALLOC: MaterialPropertyBlock[1] — shared glowing-tissue block — owner: CaveGlowingTissueRuntimeBuilder
+            _TissuePropertyBlock = new MaterialPropertyBlock();
+            return _TissuePropertyBlock;
         }
 
         private static int ResolveTissueCount(

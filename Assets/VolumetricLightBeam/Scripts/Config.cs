@@ -1,4 +1,4 @@
-﻿#if UNITY_EDITOR
+#if UNITY_EDITOR
 //#define PROFILE_INSTANCE_LOADING
 using UnityEditor;
 #endif
@@ -455,7 +455,6 @@ namespace VLB
         }
 
 #if UNITY_EDITOR
-        [InitializeOnLoadMethod]
         static void OnProjectLoadedInEditor()
         {
             // Code executed on Unity Editor startup

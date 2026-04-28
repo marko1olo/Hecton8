@@ -49,7 +49,7 @@ namespace Hecton8.Crafting
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
-    public sealed class Fabricator : MonoBehaviour, IInteractable, ITickable, IPowerComponent, IFabricator
+    public sealed class Fabricator : MonoBehaviour, IInteractable, ITickable, IUpdatable, IPowerComponent, IFabricator
     {
         // COLD ALLOC: List<Fabricator>[8] - active fabricator registry for cold-path recipe lookups - owner: Fabricator
         private static readonly List<Fabricator> _activeFabricators = new List<Fabricator>(8);
@@ -124,11 +124,13 @@ namespace Hecton8.Crafting
         // ── Power State ──
         private bool _hasPower = true;
 
-        /// <summary>
-        /// Кэш списанных ингредиентов для возврата при отмене.
-        /// Pre-allocated: [ingredientIndex] = consumedCount.
-        /// </summary>
-        private readonly int[] _consumedCounts = new int[16];
+        private const int MaxLocalCraftReservations = 64;
+        private const int MaxNetworkCraftCosts = 32;
+        private readonly PlayerInventory.CraftReservation[] _localCraftReservations = new PlayerInventory.CraftReservation[MaxLocalCraftReservations];
+        private readonly int[] _networkCostItemHashes = new int[MaxNetworkCraftCosts];
+        private readonly int[] _networkCostAmounts = new int[MaxNetworkCraftCosts];
+        private int _localCraftReservationCount;
+        private int _networkCostCount;
 
         private BaseLogisticsNetwork.LogisticsReservation _networkReservation;
 
@@ -347,10 +349,10 @@ namespace Hecton8.Crafting
                 return 0;
 
             PlayerInventory inventory = inventoryOverride != null ? inventoryOverride : _playerInventory;
-            int count = CountItemInInventory(inventory, item);
+            int count = CountAvailableItemInInventory(inventory, item);
             PowerGrid grid = _powerNode != null ? _powerNode.Grid : null;
             if (grid != null)
-                count += BaseLogisticsNetwork.CountAccessibleItem(grid, item);
+                count += BaseLogisticsNetwork.CountAccessibleItem(grid, ComputeItemHash(item));
 
             return count;
         }
@@ -524,12 +526,9 @@ namespace Hecton8.Crafting
 
             if (result != null && _playerInventory != null)
             {
-                InventoryGrid grid = _playerInventory.Grid;
-
                 for (int i = 0; i < recipe.resultQuantity; i++)
                 {
-                    int px, py;
-                    if (!grid.TryAddItem(result, out px, out py))
+                    if (!_playerInventory.TryAddItem(result, 1))
                     {
                         Debug.LogWarning(
                             $"[Fabricator] Инвентарь полон! " +
@@ -537,8 +536,6 @@ namespace Hecton8.Crafting
                             $"(потеряно {recipe.resultQuantity - i} шт.)");
                         break;
                     }
-
-                    _playerInventory.AddWeight(result.weight);
                 }
             }
 
@@ -571,9 +568,7 @@ namespace Hecton8.Crafting
         private void NotifyGridBalanceChanged()
         {
             if (_powerNode != null && _powerNode.Grid != null)
-            {
-                _powerNode.Grid.UpdateBalance();
-            }
+                _powerNode.Grid.MarkDirty();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -586,25 +581,72 @@ namespace Hecton8.Crafting
                 return false;
 
             List<InventoryCost> costs = recipe.ingredients;
+            ulong satisfiedMask = 0UL;
+            int maskBit = 0;
 
             for (int c = 0, cCount = costs.Count; c < cCount; c++)
             {
                 InventoryCost cost = costs[c];
-                if (cost == null || cost.item == null) continue;
+                if (cost == null || cost.item == null)
+                    continue;
 
-                if (CountAccessibleItem(cost.item) < cost.amount)
+                if (CountAccessibleItem(cost.item) >= cost.amount)
+                {
+                    if (maskBit < 64)
+                        satisfiedMask |= 1UL << maskBit;
+                }
+                else
+                {
                     return false;
+                }
+
+                if (maskBit < 64)
+                    maskBit++;
             }
 
-            return true;
+            if (maskBit <= 0)
+                return true;
+
+            ulong requiredMask = maskBit >= 64
+                ? ulong.MaxValue
+                : ((1UL << maskBit) - 1UL);
+            return (satisfiedMask & requiredMask) == requiredMask;
         }
 
-        private static int CountItemInInventory(PlayerInventory inventory, ItemData item)
+        private static int CountAvailableItemInInventory(PlayerInventory inventory, ItemData item)
         {
             if (inventory == null || item == null)
                 return 0;
 
-            return inventory.CountTotal(item);
+            return inventory.CountAvailableTotal(item);
+        }
+
+        private static int ComputeItemHash(ItemData item)
+        {
+            return item == null ? 0 : LocHash.Compute(item.PersistentId);
+        }
+
+        private bool TryAccumulateNetworkCost(int itemHashId, int amount)
+        {
+            if (itemHashId == 0 || amount <= 0)
+                return false;
+
+            for (int i = 0; i < _networkCostCount; i++)
+            {
+                if (_networkCostItemHashes[i] != itemHashId)
+                    continue;
+
+                _networkCostAmounts[i] += amount;
+                return true;
+            }
+
+            if (_networkCostCount >= MaxNetworkCraftCosts)
+                return false;
+
+            _networkCostItemHashes[_networkCostCount] = itemHashId;
+            _networkCostAmounts[_networkCostCount] = amount;
+            _networkCostCount++;
+            return true;
         }
 
         private int CountReclaimableIngredientCells(RecipeData recipe)
@@ -620,7 +662,7 @@ namespace Hecton8.Crafting
                 InventoryCost cost = costs[i];
                 if (cost == null || cost.item == null) continue;
 
-                int localAvailable = CountItemInInventory(_playerInventory, cost.item);
+                int localAvailable = CountAvailableItemInInventory(_playerInventory, cost.item);
                 int removableCount = localAvailable < cost.amount ? localAvailable : cost.amount;
                 total += cost.item.CellArea * removableCount;
             }
@@ -634,6 +676,8 @@ namespace Hecton8.Crafting
                 return false;
 
             List<InventoryCost> costs = recipe.ingredients;
+            _localCraftReservationCount = 0;
+            _networkCostCount = 0;
 
             if (_networkReservation != null)
             {
@@ -641,46 +685,41 @@ namespace Hecton8.Crafting
                 _networkReservation = null;
             }
 
-            Dictionary<string, int> networkCosts = null;
-
             for (int c = 0, cCount = costs.Count; c < cCount; c++)
             {
                 InventoryCost cost = costs[c];
                 if (cost == null || cost.item == null) continue;
 
                 int remaining = cost.amount;
-                _consumedCounts[c] = 0;
-                int localAvailable = CountItemInInventory(_playerInventory, cost.item);
+                int localAvailable = CountAvailableItemInInventory(_playerInventory, cost.item);
                 int localTake = localAvailable < remaining ? localAvailable : remaining;
                 if (localTake > 0)
                 {
-                    if (!_playerInventory.TryRemoveQuantity(cost.item, localTake))
+                    if (!_playerInventory.TryReserveQuantityForCraft(
+                            cost.item,
+                            localTake,
+                            _localCraftReservations,
+                            ref _localCraftReservationCount))
                         return false;
 
                     remaining -= localTake;
-                    _consumedCounts[c] = localTake;
                 }
 
                 if (remaining > 0)
                 {
-                    if (networkCosts == null)
-                        networkCosts = new Dictionary<string, int>(costs.Count); // COLD ALLOC: Dictionary<string,int>[recipe.ingredients.Count] — pending logistics reservation costs — owner: Fabricator
-
-                    string itemId = cost.item.PersistentId;
-                    if (networkCosts.TryGetValue(itemId, out int reservedAmount))
-                        networkCosts[itemId] = reservedAmount + remaining;
-                    else
-                        networkCosts.Add(itemId, remaining);
+                    if (!TryAccumulateNetworkCost(ComputeItemHash(cost.item), remaining))
+                        return false;
                 }
             }
 
-            if (networkCosts != null && networkCosts.Count > 0)
+            if (_networkCostCount > 0)
             {
                 PowerGrid gridRef = _powerNode != null ? _powerNode.Grid : null;
                 if (!BaseLogisticsNetwork.TryReserveResources(
                         gridRef,
-                        networkCosts,
-                        _playerInventory != null ? _playerInventory.ItemCatalog : null,
+                        _networkCostItemHashes,
+                        _networkCostAmounts,
+                        _networkCostCount,
                         out _networkReservation))
                 {
                     return false;
@@ -694,43 +733,15 @@ namespace Hecton8.Crafting
         {
             if (_activeRecipe == null || _playerInventory == null || _playerInventory.Grid == null) return;
 
-            InventoryGrid grid = _playerInventory.Grid;
-            List<InventoryCost> costs = _activeRecipe.ingredients;
-            if (costs == null || costs.Count == 0)
-                return;
-
-            for (int c = 0, cCount = costs.Count; c < cCount; c++)
-            {
-                if (c >= _consumedCounts.Length) break;
-
-                int toRefund = _consumedCounts[c];
-                if (toRefund <= 0) continue;
-
-                InventoryCost cost = costs[c];
-                if (cost == null || cost.item == null) continue;
-
-                for (int i = 0; i < toRefund; i++)
-                {
-                    int px, py;
-                    if (grid.TryAddItem(cost.item, out px, out py))
-                    {
-                        _playerInventory.AddWeight(cost.item.weight);
-                    }
-                    else
-                    {
-                        Debug.LogWarning(
-                            $"[Fabricator] Не удалось вернуть {cost.item.itemName}!");
-                    }
-                }
-
-                _consumedCounts[c] = 0;
-            }
+            _playerInventory.ReleaseCraftReservations(_localCraftReservations, _localCraftReservationCount);
+            _localCraftReservationCount = 0;
 
             if (_networkReservation != null)
             {
                 BaseLogisticsNetwork.RollbackReserved(_networkReservation);
                 _networkReservation = null;
             }
+            _networkCostCount = 0;
 
         }
 
@@ -965,11 +976,7 @@ namespace Hecton8.Crafting
             if (_tickRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register((ITickable)this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _tickRegistered = true;
         }
 
@@ -978,10 +985,7 @@ namespace Hecton8.Crafting
             if (!_tickRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister((ITickable)this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _tickRegistered = false;
         }
 

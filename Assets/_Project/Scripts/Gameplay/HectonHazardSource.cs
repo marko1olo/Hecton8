@@ -13,7 +13,7 @@ namespace Hecton8.Gameplay
     /// Прикрепляется к префабам (гейзеры, обломки реакторов).
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class HectonHazardSource : MonoBehaviour, ITickable
+    public sealed class HectonHazardSource : MonoBehaviour, ITickable, IUpdatable
     {
         // ══════════════════════════════════════════════════════════════════
         //  INSPECTOR — SETTINGS
@@ -52,9 +52,7 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
-            #pragma warning disable CS0618
-            _instanceID = GetInstanceID();
-            #pragma warning restore CS0618
+            _instanceID = unchecked((int)EntityId.ToULong(GetEntityId()));
             _tr = transform;
         }
 
@@ -108,11 +106,7 @@ namespace Hecton8.Gameplay
             if (_isRegisteredInTick)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register(this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _isRegisteredInTick = true;
         }
 
@@ -121,10 +115,7 @@ namespace Hecton8.Gameplay
             if (!_isRegisteredInTick)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister(this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _isRegisteredInTick = false;
         }
 

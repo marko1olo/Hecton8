@@ -23,8 +23,6 @@ namespace Hecton8.World
     [AddComponentMenu("Hecton8/World/Emergency Service Relay")]
     public sealed class EmergencyServiceRelay : MonoBehaviour, IInteractable
     {
-        private const string ManagersRootName = "[MANAGERS]";
-        private const string SystemsRootName = "--- SYSTEMS ---";
         [Serializable]
         public struct RewardEntry
         {
@@ -275,9 +273,9 @@ namespace Hecton8.World
 
         private static void EnsureRuntimeRelayDirector()
         {
-            EmergencyServiceRelayDirector existingDirector = EmergencyServiceRelayDirector.Instance;
+            EmergencyServiceRelayDirector existingDirector = EmergencyServiceRelayDirector.ActiveRuntimeInstance;
             if (existingDirector == null)
-                existingDirector = UObject.FindAnyObjectByType<EmergencyServiceRelayDirector>(FindObjectsInactive.Include);
+                existingDirector = EmergencyServiceRelayDirector.Instance;
 
             if (!Application.isPlaying ||
                 existingDirector != null ||
@@ -286,9 +284,8 @@ namespace Hecton8.World
                 return;
             }
 
-            GameObject owner = GameObject.Find(ManagersRootName);
-            if (owner == null)
-                owner = GameObject.Find(SystemsRootName);
+            GameObject owner = null;
+            WorldRuntimeReferenceUtility.TryResolveManagersRoot(ref owner);
 
             if (owner == null)
             {
@@ -399,24 +396,24 @@ namespace Hecton8.World
         private static bool TryResolveInventory(Transform interactor, out PlayerInventory inventory)
         {
             inventory = null;
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
 
             if (interactor != null)
-            {
                 inventory = interactor.GetComponent<PlayerInventory>();
-                if (inventory == null)
-                    inventory = interactor.GetComponentInChildren<PlayerInventory>(true);
-            }
 
             if (inventory != null)
                 return true;
+
+            if (playerContext != null && playerContext.Inventory != null)
+            {
+                inventory = playerContext.Inventory;
+                return true;
+            }
 
             if (!SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) || playerTransform == null)
                 return false;
 
             inventory = playerTransform.GetComponent<PlayerInventory>();
-            if (inventory == null)
-                inventory = playerTransform.GetComponentInChildren<PlayerInventory>(true);
-
             return inventory != null;
         }
 

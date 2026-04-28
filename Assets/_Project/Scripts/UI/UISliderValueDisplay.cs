@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Hecton.Localization;
 
 namespace Hecton8.UI
 {
@@ -30,6 +31,8 @@ namespace Hecton8.UI
 
         private Slider _slider;
         private float _cachedValue = float.MinValue;
+        private string _resolvedTemplate = "{0:F0}";
+        private char[] _resolvedTemplateChars;
 
         // ══════════════════════════════════════════════════════════
         // LIFECYCLE
@@ -38,6 +41,7 @@ namespace Hecton8.UI
         private void Awake()
         {
             _slider = GetComponent<Slider>();
+            RebuildTemplateCache();
         }
 
         private void OnEnable()
@@ -54,6 +58,13 @@ namespace Hecton8.UI
             if (_slider != null)
                 _slider.onValueChanged.RemoveListener(OnValueChanged);
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            RebuildTemplateCache();
+        }
+#endif
 
         // ══════════════════════════════════════════════════════════
         // CALLBACKS
@@ -80,12 +91,19 @@ namespace Hecton8.UI
             _cachedValue = value;
 
             float displayValue = value * multiplier;
-            string formattedValue = string.Format(format, displayValue);
+            LocNumericBuffer.Write(new System.ReadOnlySpan<char>(_resolvedTemplateChars), LocNumericArg.Float(displayValue), out char[] buffer, out int length);
+            int safeLength = Mathf.Clamp(length, 0, buffer != null ? buffer.Length : 0);
+            valueText.SetCharArray(buffer, 0, safeLength);
+            valueText.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
+        }
 
-            if (!string.IsNullOrEmpty(suffix))
-                valueText.SetText(formattedValue + suffix);
-            else
-                valueText.SetText(formattedValue);
+        private void RebuildTemplateCache()
+        {
+            string safeFormat = string.IsNullOrEmpty(format) ? "{0:F0}" : format;
+            _resolvedTemplate = string.IsNullOrEmpty(suffix)
+                ? safeFormat
+                : string.Concat(safeFormat, suffix);
+            _resolvedTemplateChars = _resolvedTemplate.ToCharArray();
         }
     }
 }

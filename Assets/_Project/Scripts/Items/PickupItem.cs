@@ -18,6 +18,14 @@ namespace Hecton8.Interaction
     [RequireComponent(typeof(Collider))]
     public class PickupItem : MonoBehaviour, IInteractable, ISlowTickable, IFixedTickable
     {
+        internal static PickupItem ActiveRuntimeInstance { get; private set; }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            ActiveRuntimeInstance = null;
+        }
+
         private const float LooseCurrentVelocityInfluence = 0.45f;
         private const float LooseCurrentSpinInfluence = 0.12f;
         private const float CurrentSimulationCullDistance = 100f;
@@ -83,6 +91,9 @@ namespace Hecton8.Interaction
 
         private void OnEnable()
         {
+            if (ActiveRuntimeInstance == null)
+                ActiveRuntimeInstance = this;
+
             ResolveWorldStateIdentity();
 
             WorldStateManager worldStateManager = WorldStateManager.Instance;
@@ -111,6 +122,9 @@ namespace Hecton8.Interaction
             TryUnregisterFixedTick();
             UnregisterSpatialHandle();
             ClearPersistentWorldRecord();
+
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
         }
 
         private void OnDestroy()
@@ -118,6 +132,9 @@ namespace Hecton8.Interaction
             TryUnregisterSlowTick();
             TryUnregisterFixedTick();
             UnregisterSpatialHandle();
+
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
         }
 
         public void SlowTick()
@@ -206,11 +223,8 @@ namespace Hecton8.Interaction
             if (_registeredToSlowTick)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager == null)
-                return;
 
-            gameTickManager.Register((ISlowTickable)this);
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
             _registeredToSlowTick = true;
         }
 
@@ -222,11 +236,8 @@ namespace Hecton8.Interaction
             if (_rigidbody == null || _rigidbody.isKinematic)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager == null)
-                return;
 
-            gameTickManager.Register((IFixedTickable)this);
+            GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
             _registeredToFixedTick = true;
         }
 
@@ -235,9 +246,7 @@ namespace Hecton8.Interaction
             if (!_registeredToSlowTick)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager != null)
-                gameTickManager.Unregister((ISlowTickable)this);
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
 
             _registeredToSlowTick = false;
         }
@@ -247,9 +256,7 @@ namespace Hecton8.Interaction
             if (!_registeredToFixedTick)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager != null)
-                gameTickManager.Unregister((IFixedTickable)this);
+                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
 
             _registeredToFixedTick = false;
         }
@@ -277,8 +284,16 @@ namespace Hecton8.Interaction
             }
 
             PlayerInventory.ScavengeAttemptResult attempt = playerInventory.ScavengeAttempt(itemData, quantity, interactor);
-            if (!attempt.IsSuccess)
+            if (!attempt.AnyAdded)
             {
+                DropOverflow(interactor);
+                return;
+            }
+
+            quantity = attempt.RejectedQuantity;
+            if (quantity > 0)
+            {
+                RebuildInteractTextCache();
                 DropOverflow(interactor);
                 return;
             }

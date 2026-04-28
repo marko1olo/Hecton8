@@ -17,6 +17,21 @@ float _HectonSSGIRadius;
 float _HectonSSGIDepthSigma;
 int _HectonSSGISampleCount;
 
+bool IsFiniteScalar(float value)
+{
+    return isfinite(value);
+}
+
+float ResolveFiniteOrDefault(float value, float fallback)
+{
+    return IsFiniteScalar(value) ? value : fallback;
+}
+
+float3 ResolveFiniteFloat3OrZero(float3 value)
+{
+    return all(isfinite(value)) ? value : 0.0.xxx;
+}
+
 static const int2 kOffsets[8] =
 {
     int2(1, 0),
@@ -31,11 +46,14 @@ static const int2 kOffsets[8] =
 
 float Luminance(float3 color)
 {
-    return dot(color, float3(0.2126, 0.7152, 0.0722));
+    return ResolveFiniteOrDefault(dot(ResolveFiniteFloat3OrZero(color), float3(0.2126, 0.7152, 0.0722)), 0.0);
 }
 
 bool IsDepthValid(float rawDepth)
 {
+    if (!IsFiniteScalar(rawDepth))
+        return false;
+
 #if defined(UNITY_REVERSED_Z)
     return rawDepth > 0.0001;
 #else
@@ -81,6 +99,7 @@ float4 EvaluateGatherPixel(uint2 outputPixel, uint2 outputSize)
             continue;
 
         float4 sampleColor = _HectonSourceColor.Load(int3(samplePixel, 0));
+        sampleColor.rgb = ResolveFiniteFloat3OrZero(sampleColor.rgb);
         float sourceLuma = Luminance(sampleColor.rgb);
         float sourceMask = saturate((sourceLuma - _HectonSSGIThreshold) * 0.75);
         if (sourceMask <= 0.0001)
@@ -96,7 +115,9 @@ float4 EvaluateGatherPixel(uint2 outputPixel, uint2 outputSize)
     }
 
     float3 resolved = weightSum > 0.0001 ? accumulated / weightSum : 0.0;
-    return float4(resolved * _HectonSSGIIntensity, saturate(weightSum));
+    resolved = ResolveFiniteFloat3OrZero(resolved);
+    float intensity = max(ResolveFiniteOrDefault(_HectonSSGIIntensity, 0.0), 0.0);
+    return float4(resolved * intensity, saturate(ResolveFiniteOrDefault(weightSum, 0.0)));
 }
 
 [numthreads(8, 8, 1)]
@@ -126,6 +147,8 @@ void ResolveBiolumSSGI(uint3 dispatchThreadId : SV_DispatchThreadID)
     }
 
     float4 centerGather = _HectonBiolumSSGIGatherInput.Load(int3(dispatchThreadId.xy, 0));
+    centerGather.rgb = ResolveFiniteFloat3OrZero(centerGather.rgb);
+    centerGather.a = ResolveFiniteOrDefault(centerGather.a, 0.0);
     float3 accumulated = centerGather.rgb * max(centerGather.a, 0.25);
     float weightSum = max(centerGather.a, 0.25);
 
@@ -140,6 +163,8 @@ void ResolveBiolumSSGI(uint3 dispatchThreadId : SV_DispatchThreadID)
 
             int2 sampleOutputPixel = clamp(int2(dispatchThreadId.xy) + int2(offsetX, offsetY), int2(0, 0), int2(outputSize) - 1);
             float4 sampleGather = _HectonBiolumSSGIGatherInput.Load(int3(sampleOutputPixel, 0));
+            sampleGather.rgb = ResolveFiniteFloat3OrZero(sampleGather.rgb);
+            sampleGather.a = ResolveFiniteOrDefault(sampleGather.a, 0.0);
             if (sampleGather.a <= 0.0001)
                 continue;
 
@@ -160,5 +185,5 @@ void ResolveBiolumSSGI(uint3 dispatchThreadId : SV_DispatchThreadID)
     }
 
     float3 resolved = weightSum > 0.0001 ? accumulated / weightSum : 0.0;
-    _HectonBiolumSSGIResult[dispatchThreadId.xy] = float4(resolved, saturate(weightSum));
+    _HectonBiolumSSGIResult[dispatchThreadId.xy] = float4(ResolveFiniteFloat3OrZero(resolved), saturate(ResolveFiniteOrDefault(weightSum, 0.0)));
 }

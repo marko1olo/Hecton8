@@ -5,7 +5,7 @@
 // Тестирует корректность визуализации, валидации и производительности.
 // ============================================================================
 
-#if UNITY_EDITOR && UNITY_INCLUDE_TESTS
+#if UNITY_EDITOR && HECTON8_ENABLE_EDITMODE_TESTS
 using NUnit.Framework;
 using UnityEngine;
 using Hecton8.Physics;

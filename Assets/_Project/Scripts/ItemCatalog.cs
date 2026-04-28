@@ -9,6 +9,7 @@
 
 using System;
 using System.Collections.Generic;
+using Hecton.Localization;
 using Hecton8.Items;
 using UnityEngine;
 
@@ -28,6 +29,7 @@ namespace Hecton8.SaveSystem
         /// Используется для O(1) поиска при загрузке инвентаря и обратной совместимости старых save.
         /// </summary>
         private Dictionary<string, ItemData> _lookup;
+        private Dictionary<int, ItemData> _hashLookup;
         private bool _hasLookupAmbiguity;
         private string _lookupAmbiguitySummary;
         private List<ItemData> _runtimeItems;
@@ -59,6 +61,21 @@ namespace Hecton8.SaveSystem
             if (_lookup == null) RebuildLookup();
 
             _lookup.TryGetValue(id, out ItemData result);
+            return result;
+        }
+
+        /// <summary>
+        /// Resolves an item by the stable FNV-1a hash of its PersistentId.
+        /// </summary>
+        public ItemData FindByHash(int hashId)
+        {
+            if (hashId == 0)
+                return null;
+
+            if (_hashLookup == null)
+                RebuildLookup();
+
+            _hashLookup.TryGetValue(hashId, out ItemData result);
             return result;
         }
 
@@ -108,12 +125,16 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
+            if (HasHashConflict(item, out error))
+                return false;
+
             if (_runtimeItems == null)
                 _runtimeItems = new List<ItemData>(16); // COLD ALLOC: List<ItemData>[16] — runtime-only mod item overlay — owner: ItemCatalog
 
             _runtimeItems.Add(item);
             AddLookupAlias(persistentId, item);
             AddLookupAlias(legacyAlias, item);
+            AddHashLookupAlias(item);
             return !_hasLookupAmbiguity;
         }
 
@@ -151,6 +172,7 @@ namespace Hecton8.SaveSystem
         {
             int itemCount = allItems != null ? allItems.Count : 0;
             _lookup = new Dictionary<string, ItemData>(itemCount * 2);
+            _hashLookup = new Dictionary<int, ItemData>(itemCount * 2);
             _hasLookupAmbiguity = false;
             _lookupAmbiguitySummary = string.Empty;
 
@@ -165,6 +187,7 @@ namespace Hecton8.SaveSystem
 
                 AddLookupAlias(item.PersistentId, item);
                 AddLookupAlias(item.name, item);
+                AddHashLookupAlias(item);
             }
 
             if (_runtimeItems == null)
@@ -178,6 +201,7 @@ namespace Hecton8.SaveSystem
 
                 AddLookupAlias(runtimeItem.PersistentId, runtimeItem);
                 AddLookupAlias(runtimeItem.name, runtimeItem);
+                AddHashLookupAlias(runtimeItem);
             }
         }
 
@@ -230,6 +254,30 @@ namespace Hecton8.SaveSystem
             return false;
         }
 
+        private bool HasHashConflict(ItemData item, out string error)
+        {
+            error = null;
+            if (item == null)
+                return false;
+
+            int hashId = LocHash.Compute(item.PersistentId);
+            if (hashId == 0)
+            {
+                error = "PersistentId hash resolved to zero.";
+                return true;
+            }
+
+            if (_hashLookup != null &&
+                _hashLookup.TryGetValue(hashId, out ItemData existing) &&
+                !ReferenceEquals(existing, item))
+            {
+                error = $"Hash '{hashId}' already belongs to '{existing.name}'.";
+                return true;
+            }
+
+            return false;
+        }
+
         private void RecordAmbiguity(string id, ItemData existing, ItemData duplicate)
         {
             _hasLookupAmbiguity = true;
@@ -241,6 +289,42 @@ namespace Hecton8.SaveSystem
             string duplicateName = duplicate != null ? duplicate.name : "null";
             _lookupAmbiguitySummary =
                 $"ItemCatalog alias collision on '{id}' between '{existingName}' and '{duplicateName}'.";
+        }
+
+        private void AddHashLookupAlias(ItemData item)
+        {
+            if (item == null)
+                return;
+
+            int hashId = LocHash.Compute(item.PersistentId);
+            if (hashId == 0)
+                return;
+
+            if (_hashLookup.TryGetValue(hashId, out ItemData existing))
+            {
+                if (!ReferenceEquals(existing, item))
+                {
+                    RecordHashAmbiguity(hashId, existing, item);
+                    Debug.LogWarning($"[ItemCatalog] Duplicate hash alias '{hashId}' for '{item.PersistentId}'. Skipping duplicate entry.", item);
+                }
+
+                return;
+            }
+
+            _hashLookup.Add(hashId, item);
+        }
+
+        private void RecordHashAmbiguity(int hashId, ItemData existing, ItemData duplicate)
+        {
+            _hasLookupAmbiguity = true;
+
+            if (!string.IsNullOrEmpty(_lookupAmbiguitySummary))
+                return;
+
+            string existingName = existing != null ? existing.name : "null";
+            string duplicateName = duplicate != null ? duplicate.name : "null";
+            _lookupAmbiguitySummary =
+                $"ItemCatalog hash collision on '{hashId}' between '{existingName}' and '{duplicateName}'.";
         }
 
 #if UNITY_EDITOR

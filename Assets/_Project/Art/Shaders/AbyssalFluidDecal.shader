@@ -47,10 +47,10 @@ Shader "HECTON/World/AbyssalFluidDecal"
                 half _WakeThreshold;
             CBUFFER_END
 
-            TEXTURE2D(_HectonVegetationWakeTrailRT);
-            SAMPLER(sampler_HectonVegetationWakeTrailRT);
-            float4 _HectonVegetationWakeTrailWorldRect;
-            float _HectonVegetationWakeTrailActive;
+            TEXTURE2D(_HectonShallowWaterFieldRT);
+            SAMPLER(sampler_HectonShallowWaterFieldRT);
+            float4 _HectonShallowWaterFieldWorldRect;
+            float _HectonShallowWaterFieldActive;
 
             struct Attributes
             {
@@ -77,16 +77,16 @@ Shader "HECTON/World/AbyssalFluidDecal"
 
             float SampleWakeTrail(float2 worldXZ)
             {
-                if (_HectonVegetationWakeTrailActive < 0.5)
+                if (_HectonShallowWaterFieldActive < 0.5)
                     return 0.0;
 
                 float2 uv = float2(
-                    (worldXZ.x - _HectonVegetationWakeTrailWorldRect.x) * _HectonVegetationWakeTrailWorldRect.z,
-                    (worldXZ.y - _HectonVegetationWakeTrailWorldRect.y) * _HectonVegetationWakeTrailWorldRect.w);
+                    (worldXZ.x - _HectonShallowWaterFieldWorldRect.x) * _HectonShallowWaterFieldWorldRect.z,
+                    (worldXZ.y - _HectonShallowWaterFieldWorldRect.y) * _HectonShallowWaterFieldWorldRect.w);
                 if (any(uv < 0.0) || any(uv > 1.0))
                     return 0.0;
 
-                return SAMPLE_TEXTURE2D(_HectonVegetationWakeTrailRT, sampler_HectonVegetationWakeTrailRT, uv).r;
+                return SAMPLE_TEXTURE2D(_HectonShallowWaterFieldRT, sampler_HectonShallowWaterFieldRT, uv).b;
             }
 
             half4 Frag(Varyings input) : SV_Target

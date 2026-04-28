@@ -5,7 +5,6 @@ using UnityEngine;
 namespace DarkTonic.MasterAudio.EditorScripts
 {
     // ReSharper disable once CheckNamespace
-    [InitializeOnLoad]
     public class MasterAudioWelcomeWindow : EditorWindow
     {
         private const string Disable3DSoundSymbol = "DISABLE_3D_SOUND";
@@ -44,8 +43,6 @@ namespace DarkTonic.MasterAudio.EditorScripts
             window.showOnStart = true; // Can't check EditorPrefs when constructing window, so set this instead.
             return window;
         }
-
-        [InitializeOnLoadMethod]
         private static void InitializeOnLoadMethod()
         {
             RegisterWindowCheck();

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Hecton8.Caves;
 using Hecton8.Core;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -32,7 +33,7 @@ namespace Hecton8.World
         {
             public long Key;
             public int HoleId;
-            public Vector3 Position;
+            public AbsoluteUniversePosition AbsolutePosition;
             public float Radius;
             public float Priority;
             public uint Seed;
@@ -151,7 +152,8 @@ namespace Hecton8.World
                 CavePreset preset = cavePresetOverride != null
                     ? cavePresetOverride
                     : voxelEngine.defaultPreset;
-                Vector3 caveCenter = request.Position + (Vector3.down * Mathf.Max(1f, caveVerticalOffset));
+                Vector3 runtimePosition = ResolveRuntimePosition(in request);
+                Vector3 caveCenter = runtimePosition + (Vector3.down * Mathf.Max(1f, caveVerticalOffset));
                 GameObject volume = await voxelEngine.GenerateVolumeAsync(caveCenter, request.Seed, preset, lodLevel: 0, ct: token);
                 if (volume == null)
                     return;
@@ -196,9 +198,10 @@ namespace Hecton8.World
                 if (hole.SourceType != TerrainHoleSourceType.CaveEntrance)
                     continue;
 
+                AbsoluteUniversePosition absoluteHolePosition = AbsoluteUniversePosition.FromRuntimePosition(hole.Position);
                 long requestKey = hole.HoleId != 0
                     ? hole.HoleId
-                    : BuildHoleKey(hole.Position, hole.Radius);
+                    : BuildHoleKey(absoluteHolePosition, hole.Radius);
                 float distanceSq = (hole.Position - playerPosition).sqrMagnitude;
                 if (distanceSq > requestDistanceSq && !_activeVolumes.ContainsKey(requestKey))
                     continue;
@@ -207,10 +210,10 @@ namespace Hecton8.World
                 {
                     Key = requestKey,
                     HoleId = hole.HoleId,
-                    Position = hole.Position,
+                    AbsolutePosition = absoluteHolePosition,
                     Radius = Mathf.Max(4f, hole.Radius),
                     Priority = distanceSq,
-                    Seed = BuildHoleSeed(hole.Position, hole.Radius)
+                    Seed = BuildHoleSeed(absoluteHolePosition, hole.Radius)
                 };
                 _desiredRequests[request.Key] = request;
                 if (_desiredRequests.Count >= maxRuntimeVolumes * 2)
@@ -261,7 +264,7 @@ namespace Hecton8.World
                     continue;
                 }
 
-                if ((request.Position - playerPosition).sqrMagnitude > retentionDistanceSq)
+                if ((ResolveRuntimePosition(in request) - playerPosition).sqrMagnitude > retentionDistanceSq)
                     _keyScratch.Add(key);
             }
 
@@ -336,38 +339,32 @@ namespace Hecton8.World
 
         private void TryRegister()
         {
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
 
             if (!_registeredTick)
             {
-                tickManager.Register((ITickable)this);
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
                 _registeredTick = true;
             }
 
             if (!_registeredSlowTick)
             {
-                tickManager.Register((ISlowTickable)this);
+                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredSlowTick = true;
             }
         }
 
         private void TryUnregister()
         {
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
 
             if (_registeredTick)
             {
-                tickManager.Unregister((ITickable)this);
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
                 _registeredTick = false;
             }
 
             if (_registeredSlowTick)
             {
-                tickManager.Unregister((ISlowTickable)this);
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredSlowTick = false;
             }
         }
@@ -429,31 +426,43 @@ namespace Hecton8.World
             return new Bounds(center, new Vector3(radius * 2f, fallbackCaveHeight, radius * 2f));
         }
 
-        private static long BuildHoleKey(Vector3 position, float radius)
+        private static Vector3 ResolveRuntimePosition(in CaveEntranceRequest request)
+        {
+            float3 runtimePosition = request.AbsolutePosition.ToRuntimeFloat3();
+            return new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+        }
+
+        private static long BuildHoleKey(in AbsoluteUniversePosition position, float radius)
         {
             unchecked
             {
-                int x = Mathf.RoundToInt(position.x * 10f);
-                int y = Mathf.RoundToInt(position.y * 10f);
-                int z = Mathf.RoundToInt(position.z * 10f);
+                int localX = Mathf.RoundToInt(position.LocalX * 10f);
+                int localY = Mathf.RoundToInt(position.LocalY * 10f);
+                int localZ = Mathf.RoundToInt(position.LocalZ * 10f);
                 int r = Mathf.RoundToInt(radius * 10f);
                 long hash = 1469598103934665603L;
-                hash = (hash ^ x) * 1099511628211L;
-                hash = (hash ^ y) * 1099511628211L;
-                hash = (hash ^ z) * 1099511628211L;
+                hash = (hash ^ position.GridX) * 1099511628211L;
+                hash = (hash ^ position.GridY) * 1099511628211L;
+                hash = (hash ^ position.GridZ) * 1099511628211L;
+                hash = (hash ^ localX) * 1099511628211L;
+                hash = (hash ^ localY) * 1099511628211L;
+                hash = (hash ^ localZ) * 1099511628211L;
                 hash = (hash ^ r) * 1099511628211L;
                 return hash;
             }
         }
 
-        private static uint BuildHoleSeed(Vector3 position, float radius)
+        private static uint BuildHoleSeed(in AbsoluteUniversePosition position, float radius)
         {
             unchecked
             {
                 uint hash = 2166136261u;
-                hash = (hash ^ (uint)Mathf.RoundToInt(position.x * 10f)) * 16777619u;
-                hash = (hash ^ (uint)Mathf.RoundToInt(position.y * 10f)) * 16777619u;
-                hash = (hash ^ (uint)Mathf.RoundToInt(position.z * 10f)) * 16777619u;
+                hash = (hash ^ (uint)position.GridX) * 16777619u;
+                hash = (hash ^ (uint)position.GridY) * 16777619u;
+                hash = (hash ^ (uint)position.GridZ) * 16777619u;
+                hash = (hash ^ (uint)Mathf.RoundToInt(position.LocalX * 10f)) * 16777619u;
+                hash = (hash ^ (uint)Mathf.RoundToInt(position.LocalY * 10f)) * 16777619u;
+                hash = (hash ^ (uint)Mathf.RoundToInt(position.LocalZ * 10f)) * 16777619u;
                 hash = (hash ^ (uint)Mathf.RoundToInt(radius * 10f)) * 16777619u;
                 return hash;
             }

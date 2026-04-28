@@ -1,8 +1,20 @@
 #pragma kernel SimulateWakeTrail
 
+// RG = encoded planar velocity in [-1, 1], B = current displacement, A = previous displacement.
+
+struct WakeTrailStampCommand
+{
+    float4 UvEllipse;
+    float4 DirectionStrengthVertical;
+};
+
 Texture2D<float4> _HectonWakeTrailSource;
 RWTexture2D<float4> _HectonWakeTrailResult;
+SamplerState sampler_HectonWakeTrailSource;
+StructuredBuffer<WakeTrailStampCommand> _HectonWakeTrailStampCommands;
 
+int _HectonWakeTrailStampCount;
+float4 _HectonWakeTrailScrollUvOffset;
 float _HectonWakeTrailFadeDelta;
 float _HectonWakeTrailDiffusion;
 float _HectonWakeTrailWaveStrength;
@@ -10,6 +22,16 @@ float _HectonWakeTrailDamping;
 float _HectonWakeTrailCurlStrength;
 float _HectonWakeTrailSimulationTime;
 float4 _HectonWakeTrailTexelSize;
+
+float2 DecodeVelocity(float2 encodedVelocity)
+{
+    return encodedVelocity * 2.0 - 1.0;
+}
+
+float2 EncodeVelocity(float2 velocity)
+{
+    return saturate(velocity * 0.5 + 0.5);
+}
 
 float Hash31(float3 value)
 {
@@ -56,6 +78,62 @@ float2 ResolveCurlNoise(float2 uv)
     return curlLengthSq > 0.000001 ? curl * rsqrt(curlLengthSq) : float2(0.0, 1.0);
 }
 
+float4 SampleScrolledWakeTrail(float2 uv)
+{
+    float2 sourceUv = uv + _HectonWakeTrailScrollUvOffset.xy;
+    if (sourceUv.x < 0.0 || sourceUv.x > 1.0 || sourceUv.y < 0.0 || sourceUv.y > 1.0)
+        return float4(0.5, 0.5, 0.0, 0.0);
+
+    return _HectonWakeTrailSource.SampleLevel(sampler_HectonWakeTrailSource, sourceUv, 0);
+}
+
+float4 ApplyWakeTrailStamps(float2 uv, float4 currentValue)
+{
+    float currentIntensity = currentValue.b;
+    float previousIntensity = currentValue.a;
+    float2 currentVelocity = DecodeVelocity(currentValue.rg);
+
+    [loop]
+    for (int stampIndex = 0; stampIndex < _HectonWakeTrailStampCount; stampIndex++)
+    {
+        WakeTrailStampCommand stamp = _HectonWakeTrailStampCommands[stampIndex];
+        float2 stampDirection = stamp.DirectionStrengthVertical.xy;
+        float stampDirectionLength = length(stampDirection);
+        stampDirection = stampDirectionLength > 0.0001 ? stampDirection / stampDirectionLength : float2(0.0, 1.0);
+        float2 stampBitangent = float2(-stampDirection.y, stampDirection.x);
+
+        float2 delta = uv - stamp.UvEllipse.xy;
+        float radius = max(stamp.UvEllipse.z, 0.0001);
+        float halfLength = max(stamp.UvEllipse.w, 0.0001);
+        float verticalImpulse = saturate(stamp.DirectionStrengthVertical.w);
+        float along = dot(delta, stampDirection) / halfLength;
+        float across = dot(delta, stampBitangent) / radius;
+        float shape = saturate(1.0 - sqrt(along * along + across * across));
+        float stampIntensity = shape * shape * saturate(stamp.DirectionStrengthVertical.z) * lerp(1.0, 1.55, verticalImpulse);
+        if (stampIntensity <= 0.000001)
+            continue;
+
+        float2 stampVelocity = stampDirection * stampIntensity;
+        stampVelocity += stampBitangent * (across * verticalImpulse * stampIntensity * 0.35);
+        currentVelocity += stampVelocity;
+        float velocityMagnitudeSq = dot(currentVelocity, currentVelocity);
+        if (velocityMagnitudeSq > 1.0)
+            currentVelocity *= rsqrt(velocityMagnitudeSq);
+
+        float previousHeight = currentIntensity;
+        currentIntensity = max(currentIntensity, stampIntensity);
+        previousIntensity = lerp(previousHeight, currentIntensity, verticalImpulse * 0.35);
+    }
+
+    return float4(EncodeVelocity(currentVelocity), currentIntensity, previousIntensity);
+}
+
+float4 SampleStampedPixel(int2 pixel, float2 texelSize)
+{
+    float2 uv = (float2(pixel) + 0.5) * texelSize;
+    return ApplyWakeTrailStamps(uv, SampleScrolledWakeTrail(uv));
+}
+
 [numthreads(8, 8, 1)]
 void SimulateWakeTrail(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
@@ -71,37 +149,44 @@ void SimulateWakeTrail(uint3 dispatchThreadId : SV_DispatchThreadID)
     int2 downPixel = int2(pixel.x, max(pixel.y - 1, 0));
     int2 upPixel = int2(pixel.x, min(pixel.y + 1, (int)height - 1));
 
-    float4 center = _HectonWakeTrailSource[pixel];
-    float4 left = _HectonWakeTrailSource[leftPixel];
-    float4 right = _HectonWakeTrailSource[rightPixel];
-    float4 down = _HectonWakeTrailSource[downPixel];
-    float4 up = _HectonWakeTrailSource[upPixel];
+    float2 texelSize = _HectonWakeTrailTexelSize.xy;
+    float4 center = SampleStampedPixel(pixel, texelSize);
+    float4 left = SampleStampedPixel(leftPixel, texelSize);
+    float4 right = SampleStampedPixel(rightPixel, texelSize);
+    float4 down = SampleStampedPixel(downPixel, texelSize);
+    float4 up = SampleStampedPixel(upPixel, texelSize);
 
-    float currentIntensity = center.b;
-    float previousIntensity = center.a;
-    float neighborAverage = (left.b + right.b + down.b + up.b) * 0.25;
-    float diffusedIntensity = lerp(currentIntensity, neighborAverage, saturate(_HectonWakeTrailDiffusion));
-    float waveIntensity = ((neighborAverage * 2.0) - previousIntensity) * saturate(_HectonWakeTrailDamping);
-    float2 uv = (float2(dispatchThreadId.xy) + 0.5) * _HectonWakeTrailTexelSize.xy;
-    float2 curlNoise = ResolveCurlNoise(uv + currentIntensity * 0.17);
-    float curlInfluence = saturate(_HectonWakeTrailCurlStrength) * (0.35 + currentIntensity * 0.65);
-    float propagatedIntensity = saturate(lerp(diffusedIntensity, waveIntensity, saturate(_HectonWakeTrailWaveStrength)) - _HectonWakeTrailFadeDelta);
-    propagatedIntensity = saturate(propagatedIntensity + curlInfluence * abs(dot(curlNoise, float2(right.b - left.b, up.b - down.b))) * 0.14);
+    float currentDisplacement = center.b;
+    float previousDisplacement = center.a;
+    float neighborAverageDisplacement = (left.b + right.b + down.b + up.b) * 0.25;
+    float2 currentVelocity = DecodeVelocity(center.rg);
+    float2 leftVelocity = DecodeVelocity(left.rg);
+    float2 rightVelocity = DecodeVelocity(right.rg);
+    float2 downVelocity = DecodeVelocity(down.rg);
+    float2 upVelocity = DecodeVelocity(up.rg);
+    float2 neighborAverageVelocity = (leftVelocity + rightVelocity + downVelocity + upVelocity) * 0.25;
+    float2 displacementGradient = float2(right.b - left.b, up.b - down.b) * 0.5;
+    float divergence = ((rightVelocity.x - leftVelocity.x) + (upVelocity.y - downVelocity.y)) * 0.5;
+    float inertialDisplacement = (currentDisplacement - previousDisplacement) * saturate(_HectonWakeTrailDamping);
+    float2 uv = (float2(dispatchThreadId.xy) + 0.5) * texelSize;
+    float2 curlNoise = ResolveCurlNoise(uv + currentDisplacement * 0.17);
+    float curlInfluence = saturate(_HectonWakeTrailCurlStrength) * (0.2 + currentDisplacement * 0.8);
+    float diffusion = saturate(_HectonWakeTrailDiffusion);
+    float propagation = saturate(_HectonWakeTrailWaveStrength);
+    float damping = saturate(_HectonWakeTrailDamping);
 
-    float2 currentDirection = center.rg * 2.0 - 1.0;
-    float2 gradientDirection = float2(right.b - left.b, up.b - down.b);
-    float gradientLengthSq = dot(gradientDirection, gradientDirection);
-    float2 blendedDirection = currentDirection;
-    if (gradientLengthSq > 0.000001)
-        blendedDirection += normalize(gradientDirection) * (_HectonWakeTrailWaveStrength * 0.75);
+    float2 diffusedVelocity = lerp(currentVelocity, neighborAverageVelocity, diffusion);
+    float2 nextVelocity = diffusedVelocity - displacementGradient * propagation;
+    nextVelocity += curlNoise * curlInfluence;
+    nextVelocity *= damping;
 
-    blendedDirection += curlNoise * curlInfluence;
+    float velocityLengthSq = dot(nextVelocity, nextVelocity);
+    if (velocityLengthSq > 1.0)
+        nextVelocity *= rsqrt(velocityLengthSq);
 
-    float directionLengthSq = dot(blendedDirection, blendedDirection);
-    if (directionLengthSq <= 0.000001)
-        blendedDirection = float2(0.0, 1.0);
-    else
-        blendedDirection *= rsqrt(directionLengthSq);
+    float nextDisplacement = currentDisplacement + inertialDisplacement - divergence * propagation;
+    nextDisplacement = lerp(nextDisplacement, neighborAverageDisplacement, diffusion * 0.35);
+    nextDisplacement = saturate(nextDisplacement - _HectonWakeTrailFadeDelta);
 
-    _HectonWakeTrailResult[pixel] = float4(blendedDirection * 0.5 + 0.5, propagatedIntensity, currentIntensity);
+    _HectonWakeTrailResult[pixel] = float4(EncodeVelocity(nextVelocity), nextDisplacement, currentDisplacement);
 }

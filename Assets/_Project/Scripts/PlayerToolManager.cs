@@ -34,6 +34,7 @@ namespace Hecton8.Gameplay
     using Hecton8.Input;
     using Hecton8.Physics;
     using Hecton8.Tools;
+    using Unity.Mathematics;
     using UnityEngine;
 #if UNITY_EDITOR
     using UnityEditor;
@@ -125,9 +126,13 @@ namespace Hecton8.Gameplay
         private BaseModule _currentInteriorModule;
         private Rigidbody _currentInteriorCarrierBody;
         private bool _suppressInventoryChangedHandling;
+        private PlayerRuntimeContext _runtimeContext;
 
         public event Action<int> ActiveSlotChanged;
         public event Action ToolAssignmentsChanged;
+
+        internal Transform HandAnchor => handAnchor;
+        internal PlayerInventory Inventory => playerInventory;
 
         // ══════════════════════════════════════════════════════════
         //  SWAP STATE MACHINE
@@ -160,6 +165,7 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
+            ResolveRuntimeContextDependencies();
             if (handAnchor != null)
             {
                 _anchorRestPosition    = handAnchor.localPosition;
@@ -168,6 +174,7 @@ namespace Hecton8.Gameplay
 
             ResolveTransportCoordinator();
             RefreshSlotNameCache();
+            PublishRuntimeContextState();
         }
 
 #if UNITY_EDITOR
@@ -184,6 +191,7 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            ResolveRuntimeContextDependencies();
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
             RefreshInputSubscriptions();
             SubscribeModuleStatusEvents();
@@ -261,6 +269,7 @@ namespace Hecton8.Gameplay
 
             if (handheldToolsBlocked)
             {
+                PublishRuntimeContextState();
 #if UNITY_EDITOR
                 _debugCurrentSlot = _currentSlotIndex;
                 _debugStateName   = _swapState.ToString();
@@ -289,6 +298,8 @@ namespace Hecton8.Gameplay
                     _currentTool.UseSecondary(deltaTime);
                 }
             }
+
+            PublishRuntimeContextState();
 
 #if UNITY_EDITOR
             _debugCurrentSlot = _currentSlotIndex;
@@ -587,7 +598,56 @@ namespace Hecton8.Gameplay
         private void ResolveTransportCoordinator()
         {
             if (playerTransportCoordinator == null)
-                TryGetComponent(out playerTransportCoordinator);
+                playerTransportCoordinator = _runtimeContext != null ? _runtimeContext.PlayerTransportCoordinator : null;
+        }
+
+        private void ResolveRuntimeContextDependencies()
+        {
+            if (!PlayerRuntimeContextService.TryBindPlayerRoot(gameObject, out PlayerRuntimeContext runtimeContext))
+                return;
+
+            _runtimeContext = runtimeContext;
+            if (playerInventory == null)
+                playerInventory = runtimeContext.Inventory;
+
+            if (playerTransportCoordinator == null)
+                playerTransportCoordinator = runtimeContext.PlayerTransportCoordinator;
+
+            if (handAnchor == null)
+                handAnchor = runtimeContext.HandAnchor;
+        }
+
+        private void PublishRuntimeContextState()
+        {
+            if (_runtimeContext == null)
+                return;
+
+            uint flags = 0u;
+            if (_runtimeContext.IsBound)
+                flags |= (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot;
+            flags |= (uint)PlayerRuntimeSnapshotFlags.HasToolManager;
+            if (playerInventory != null)
+                flags |= (uint)PlayerRuntimeSnapshotFlags.HasInventory;
+            if (playerTransportCoordinator != null)
+                flags |= (uint)PlayerRuntimeSnapshotFlags.HasTransport;
+            if (_currentTool != null)
+                flags |= (uint)PlayerRuntimeSnapshotFlags.ToolEquipped;
+            if (IsHandheldToolUsageBlocked())
+                flags |= (uint)PlayerRuntimeSnapshotFlags.HandheldToolBlocked;
+
+            float swapProgress01 = math.saturate(_swapProgress);
+            float transportBoost01 = 0f;
+            IPlayerTransportSource transportSource = CurrentToolTransportSource;
+            if (transportSource != null)
+                transportBoost01 = math.saturate(transportSource.GetTransportBoost01());
+
+            PlayerInteractionRuntimeState interactionState = default;
+            interactionState.ActiveToolSlot = _currentSlotIndex;
+            interactionState.PendingToolSlot = _pendingSlotIndex;
+            interactionState.SwapProgress01 = swapProgress01;
+            interactionState.TransportBoost01 = transportBoost01;
+            interactionState.Flags = flags;
+            _runtimeContext.PublishInteractionState(in interactionState);
         }
 
         private void SubscribeModuleStatusEvents()
@@ -638,7 +698,7 @@ namespace Hecton8.Gameplay
                 return;
 
             // COLD SEARCH: recover current submarine interior ownership after enable/load or overlapping-module exit.
-            BaseModule[] modules = Object.FindObjectsByType<BaseModule>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            BaseModule[] modules = UnityEngine.Object.FindObjectsByType<BaseModule>(FindObjectsInactive.Exclude);
             for (int i = 0; i < modules.Length; i++)
             {
                 BaseModule module = modules[i];
@@ -1027,7 +1087,7 @@ namespace Hecton8.Gameplay
             {
                 for (int x = 0; x < cols; x++)
                 {
-                    ItemData cell = grid.GetCell(x, y);
+                    ItemData cell = playerInventory.GetItemAt(x, y);
 
                     // Сравниваем по ссылке — ScriptableObjects уникальны
                     if (ReferenceEquals(cell, targetData))

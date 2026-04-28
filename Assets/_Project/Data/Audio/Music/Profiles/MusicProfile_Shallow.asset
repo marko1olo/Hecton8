@@ -1,4 +1,4 @@
-﻿%YAML 1.1
+%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!114 &11400000
 MonoBehaviour:
@@ -23,11 +23,11 @@ MonoBehaviour:
   _shortTrackCooldownSeconds: 105
   _localCalmWeight: 60
   _localTenseWeight: 60
-  _allowCrossTensionMix: true
+  _allowCrossTensionMix: 0
   _crossTensionMixChance: 0.35
   _longRepeatHorizon: 3
   _shortRepeatHorizon: 2
-  _calmLongTracks: 
+  _calmLongTracks:
   - _cueId: music.melkovodie_1_vinyl_kelp_glow
     _clip: {fileID: 8300000, guid: 0f76da8c8fd1d6c49b3a30187cb21880, type: 3}
     _volume: 0.933
@@ -46,7 +46,7 @@ MonoBehaviour:
     _weight: 2
     _role: 0
     _tension: 0.22
-  _tenseLongTracks: 
+  _tenseLongTracks:
   - _cueId: music.melkovodie_2_the_weight_of_blue_light
     _clip: {fileID: 8300000, guid: 34bd1cdff6a3bfb48bae383d4d792176, type: 3}
     _volume: 0.891
@@ -59,7 +59,7 @@ MonoBehaviour:
     _weight: 1
     _role: 0
     _tension: 0.58
-  _calmShortTracks: 
+  _calmShortTracks:
   - _cueId: music.melkovodie_6_short30sec_beneath_the_glass_grove
     _clip: {fileID: 8300000, guid: b6a88ebc713fed943a1b20a62eb34d1d, type: 3}
     _volume: 0.891
@@ -67,7 +67,7 @@ MonoBehaviour:
     _role: 1
     _tension: 0.28
   _tenseShortTracks: []
-  _discoveryStingers: 
+  _discoveryStingers:
   - _cueId: music.stinger_discovery_1_the_sunken_gate
     _clip: {fileID: 8300000, guid: 81b174c662ccc04439985601bf432933, type: 3}
     _volume: 0.917
@@ -98,7 +98,7 @@ MonoBehaviour:
     _weight: 1
     _role: 4
     _tension: 0.5
-  _dangerStingers: 
+  _dangerStingers:
   - _cueId: music.stinger_dangerous_1_iron_teeth
     _clip: {fileID: 8300000, guid: ef4fb939718b1124daf5bbdcf98c8ed8, type: 3}
     _volume: 0.917
@@ -111,7 +111,7 @@ MonoBehaviour:
     _weight: 1
     _role: 5
     _tension: 0.95
-  _recoveryStingers: 
+  _recoveryStingers:
   - _cueId: music.stinger_being_saved_1release_at_depth
     _clip: {fileID: 8300000, guid: 2cee222960dc8d54098777e03cbd6adc, type: 3}
     _volume: 0.917
@@ -130,12 +130,12 @@ MonoBehaviour:
     _weight: 1
     _role: 6
     _tension: 0.22
-  _calmBleedProfiles: 
+  _calmBleedProfiles:
   - _profile: {fileID: 11400000, guid: 7425e2778fc51b7479d751c2041d8989, type: 2}
     _weight: 20
   - _profile: {fileID: 11400000, guid: 6054f072908319f4f85ef9ee8c453e0f, type: 2}
     _weight: 20
-  _tenseBleedProfiles: 
+  _tenseBleedProfiles:
   - _profile: {fileID: 11400000, guid: 7425e2778fc51b7479d751c2041d8989, type: 2}
     _weight: 20
   - _profile: {fileID: 11400000, guid: f336cbafe44b5ae4bb4d4dc08d358e74, type: 2}

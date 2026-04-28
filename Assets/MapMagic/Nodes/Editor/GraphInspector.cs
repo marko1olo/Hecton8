@@ -14,7 +14,7 @@ using MapMagic.Expose.GUI;
 namespace MapMagic.Nodes.GUI
 {
 	[CustomEditor(typeof(Graph))]
-	//[InitializeOnLoad]  
+	// legacy editor-load hook removed
 	public class GraphInspector : Editor
 	{
 		Graph graph; //aka target

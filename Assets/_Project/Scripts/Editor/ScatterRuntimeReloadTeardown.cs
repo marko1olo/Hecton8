@@ -4,23 +4,10 @@ using UnityEngine;
 
 namespace Hecton8.Editor
 {
-    [InitializeOnLoad]
     internal static class ScatterRuntimeReloadTeardown
     {
-        static ScatterRuntimeReloadTeardown()
-        {
-            AssemblyReloadEvents.beforeAssemblyReload -= HandleBeforeAssemblyReload;
-            AssemblyReloadEvents.beforeAssemblyReload += HandleBeforeAssemblyReload;
-            EditorApplication.quitting -= HandleEditorQuitting;
-            EditorApplication.quitting += HandleEditorQuitting;
-        }
-
-        private static void HandleBeforeAssemblyReload()
-        {
-            TeardownLoadedScatterOwners();
-        }
-
-        private static void HandleEditorQuitting()
+        [MenuItem("Tools/Hecton/Dev/Scatter/Run Scatter Reload Teardown", priority = 233)]
+        private static void RunTeardown()
         {
             TeardownLoadedScatterOwners();
         }

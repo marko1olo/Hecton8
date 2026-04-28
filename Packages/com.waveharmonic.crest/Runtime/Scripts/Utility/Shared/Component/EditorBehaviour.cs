@@ -1,5 +1,5 @@
 // Crest Water System
-// Copyright © 2024 Wave Harmonic. All rights reserved.
+// Copyright Â© 2024 Wave Harmonic. All rights reserved.
 
 using UnityEngine;
 
@@ -146,7 +146,6 @@ namespace WaveHarmonic.Crest.Internal
         }
 
         static MethodInfo s_ExecuteValidators;
-        [InitializeOnLoadMethod]
         static void Load()
         {
             var type = System.Type.GetType("WaveHarmonic.Crest.Editor.ValidatedHelper, WaveHarmonic.Crest.Shared.Editor");

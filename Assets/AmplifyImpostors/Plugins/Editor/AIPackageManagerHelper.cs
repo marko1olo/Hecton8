@@ -49,9 +49,9 @@ namespace AmplifyImpostors
 	}
 
 	[Serializable]
-	[InitializeOnLoad]
 	public static class AIPackageManagerHelper
 	{
+		private const string SessionAutoSrpCheckedKey = "AmplifyImpostors.AutoSrpChecked";
 		private static string URPPackageId = "com.unity.render-pipelines.universal";
 		private static string HDRPPackageId = "com.unity.render-pipelines.high-definition";
 
@@ -126,10 +126,20 @@ namespace AmplifyImpostors
 			if ( InternalEditorUtility.inBatchMode || EditorApplication.isPlayingOrWillChangePlaymode )
 				return;
 
-			if ( !Preferences.GlobalAutoSRP )
+			if ( SessionState.GetBool( SessionAutoSrpCheckedKey, false ) )
+				return;
+
+			SessionState.SetBool( SessionAutoSrpCheckedKey, true );
+
+			if ( !IsAutoSrpEnabled() )
 				return;
 
 			EditorApplication.delayCall += RequestInfo;
+		}
+
+		private static bool IsAutoSrpEnabled()
+		{
+			return EditorPrefs.GetBool( Preferences.PrefGlobalAutoSRP, Preferences.GlobalAutoSRP );
 		}
 
 		static void WaitForPackageListBeforeUpdating()
@@ -148,7 +158,7 @@ namespace AmplifyImpostors
 			if ( InternalEditorUtility.inBatchMode || EditorApplication.isPlayingOrWillChangePlaymode )
 				return;
 
-			if ( !Preferences.GlobalAutoSRP )
+			if ( !IsAutoSrpEnabled() )
 				return;
 
 			if ( !m_requireUpdateList && m_importingPackage == AIImportFlags.None )
@@ -186,7 +196,7 @@ namespace AmplifyImpostors
 
 		public static void StartImporting( string packagePath )
 		{
-			if ( !Preferences.GlobalAutoSRP )
+			if ( !IsAutoSrpEnabled() )
 			{
 				m_importingPackage = AIImportFlags.None;
 				return;

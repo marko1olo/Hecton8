@@ -1,0 +1,47 @@
+#pragma kernel CSMain
+
+struct StampCommand
+{
+    float4 UvRadiusStrength;
+};
+
+Texture2D<float4> _MainTex;
+RWTexture2D<float4> _Result;
+SamplerState sampler_MainTex;
+StructuredBuffer<StampCommand> _StampCommands;
+
+int _StampCount;
+float4 _ScrollUvOffset;
+float _Recovery;
+float4 _TexelSize;
+
+[numthreads(8, 8, 1)]
+void CSMain(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint width;
+    uint height;
+    _Result.GetDimensions(width, height);
+    if (dispatchThreadId.x >= width || dispatchThreadId.y >= height)
+        return;
+
+    float2 uv = (dispatchThreadId.xy + 0.5) * _TexelSize.xy;
+    float2 sourceUv = uv + _ScrollUvOffset.xy;
+    float current = 0.0;
+    if (sourceUv.x >= 0.0 && sourceUv.x <= 1.0 && sourceUv.y >= 0.0 && sourceUv.y <= 1.0)
+        current = _MainTex.SampleLevel(sampler_MainTex, sourceUv, 0).r;
+
+    current = max(0.0, current - _Recovery);
+
+    [loop]
+    for (int stampIndex = 0; stampIndex < _StampCount; stampIndex++)
+    {
+        float4 command = _StampCommands[stampIndex].UvRadiusStrength;
+        float radius = max(command.z, 0.0001);
+        float2 delta = uv - command.xy;
+        float normalized = saturate(1.0 - length(delta) / radius);
+        float stamp = normalized * normalized * command.w;
+        current = max(current, stamp);
+    }
+
+    _Result[dispatchThreadId.xy] = float4(current, current, current, 1.0);
+}

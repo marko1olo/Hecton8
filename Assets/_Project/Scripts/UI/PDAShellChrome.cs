@@ -1,3 +1,4 @@
+using System;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Gameplay;
@@ -35,6 +36,8 @@ namespace Hecton8.UI
         private const string RightFooterOnlineNumericTemplate = "O2 {N0:0}%  |  PWR {N1:0}%  |  PDA ONLINE";
         private const string RightFooterStandbyNumericTemplate = "O2 {N0:0}%  |  PWR {N1:0}%  |  PDA STANDBY";
         private const string IntrusionFooterNumericTemplate = "O2 {N0:0}%  |  PWR {N1:0}%  |  REBOOT {N2}%";
+        private const int NumericTemplateWriteAttemptLimit = 8;
+        private const int CharCapacityGrowthWatchdogLimit = 31;
 
         private static readonly Color Primary = new Color(0.46f, 0.98f, 0.94f, 0.96f);
         private static readonly Color Dim = new Color(0.78f, 0.96f, 0.93f, 0.84f);
@@ -48,6 +51,7 @@ namespace Hecton8.UI
         private static readonly Color MechModeText = new Color(0.9f, 0.96f, 0.72f, 0.94f);
         private static readonly int ShaderColorId = Shader.PropertyToID("_Color");
         private static readonly int FaceColorId = Shader.PropertyToID("_FaceColor");
+        private static readonly char[] s_emptyBuffer = new char[1];
 
         [Header("References")]
         [SerializeField] private PlayerPDA playerPDA;
@@ -116,8 +120,24 @@ namespace Hecton8.UI
         private string _localizedMechModeTag = MechModeTag;
         private string _localizedIntrusionHintPrefix = "REBOOT // HOLD ";
         private string _localizedIntrusionHintSuffix = " FOR 3.0S";
+        // COLD ALLOC: char[160] - PDA title staging buffer - owner: PDAShellChrome
+        private char[] _titleBuffer = new char[160];
+        // COLD ALLOC: char[128] - PDA tab staging buffer - owner: PDAShellChrome
+        private char[] _tabBuffer = new char[128];
+        // COLD ALLOC: char[160] - PDA left footer staging buffer - owner: PDAShellChrome
+        private char[] _leftFooterBuffer = new char[160];
+        // COLD ALLOC: char[128] - PDA right footer staging buffer - owner: PDAShellChrome
+        private char[] _rightFooterBuffer = new char[128];
+        // COLD ALLOC: char[64] - PDA context tag staging buffer - owner: PDAShellChrome
+        private char[] _contextTagBuffer = new char[64];
         // COLD ALLOC: char[96] - intrusion status hint buffer - owner: PDAShellChrome
         private readonly char[] _intrusionHintBuffer = new char[96];
+        private int _appliedTitleVersion = int.MinValue;
+        private int _appliedTabVersion = int.MinValue;
+        private int _appliedIntrusionVersion = int.MinValue;
+        private int _appliedContextTagVersion = int.MinValue;
+        private int _appliedLeftFooterVersion = int.MinValue;
+        private int _appliedRightFooterVersion = int.MinValue;
 
         private void Awake()
         {
@@ -155,27 +175,37 @@ namespace Hecton8.UI
 
         private void AutoResolve()
         {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerPDA == null && playerContext != null)
+                playerPDA = playerContext.PlayerPDA;
+            if (playerInventory == null && playerContext != null)
+                playerInventory = playerContext.Inventory;
+            if (toolManager == null && playerContext != null)
+                toolManager = playerContext.ToolManager;
+            if (_playerMovement == null && playerContext != null)
+                _playerMovement = playerContext.PlayerMovement;
+
             if ((!playerPDA || !playerInventory || !toolManager || !survivalSystem) &&
                 SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform != null)
             {
                 if (playerInventory == null)
-                    playerInventory = playerTransform.GetComponent<PlayerInventory>();
+                    playerTransform.TryGetComponent(out playerInventory);
 
                 if (toolManager == null)
-                    toolManager = playerTransform.GetComponentInChildren<PlayerToolManager>(true);
+                    playerTransform.TryGetComponent(out toolManager);
 
                 if (survivalSystem == null)
-                    survivalSystem = playerTransform.GetComponent<HectonSurvivalSystem>();
+                    playerTransform.TryGetComponent(out survivalSystem);
 
                 if (playerPDA == null)
-                    playerPDA = playerTransform.GetComponentInChildren<PlayerPDA>(true);
+                    playerTransform.TryGetComponent(out playerPDA);
 
                 if (_intrusionManager == null)
-                    _intrusionManager = playerTransform.GetComponent<PDAIntrusionManager>();
+                    playerTransform.TryGetComponent(out _intrusionManager);
 
                 if (_playerMovement == null)
-                    _playerMovement = playerTransform.GetComponent<HectonPlayerMovement>();
+                    playerTransform.TryGetComponent(out _playerMovement);
             }
 
             if (playerPDA == null)
@@ -397,9 +427,7 @@ namespace Hecton8.UI
             _chromeRoot = FindExistingChild(self, "ShellChrome") ?? CreateRect(self, "ShellChrome");
             Stretch(_chromeRoot, 0f, 0f, 0f, 0f);
             _chromeRoot.SetAsLastSibling();
-            _chromeCanvasGroup = _chromeRoot.GetComponent<CanvasGroup>();
-            if (_chromeCanvasGroup == null)
-                _chromeCanvasGroup = _chromeRoot.gameObject.AddComponent<CanvasGroup>();
+            _chromeCanvasGroup = EnsureCanvasGroup(_chromeRoot);
             _chromeCanvasGroup.interactable = false;
             _chromeCanvasGroup.blocksRaycasts = false;
             _chromeCanvasGroup.alpha = 0f;
@@ -428,7 +456,7 @@ namespace Hecton8.UI
             _titleText = CreateText(header, "Title", labelFont, 12f, FontStyles.Bold, TextAlignmentOptions.Left);
             Anchor(_titleText.rectTransform, new Vector2(0f, 0f), new Vector2(0.6f, 1f), new Vector2(14f, 0f), new Vector2(-8f, 0f));
             _titleText.color = Color.white;
-            _titleText.text = ResolveStressReactiveText(_localizedTitle);
+            ApplyDynamicBuffer(_titleText, s_emptyBuffer, 0);
 
             _tabText = CreateText(header, "Tab", numericFont, 11f, FontStyles.Bold, TextAlignmentOptions.Right);
             Anchor(_tabText.rectTransform, new Vector2(0.42f, 0f), new Vector2(1f, 1f), new Vector2(8f, 0f), new Vector2(-14f, 0f));
@@ -438,13 +466,13 @@ namespace Hecton8.UI
             Anchor(_intrusionText.rectTransform, new Vector2(0.2f, 1f), new Vector2(0.8f, 1f), new Vector2(0f, -66f), new Vector2(0f, -38f));
             _intrusionText.color = Color.white;
             _intrusionText.alpha = 0f;
-            _intrusionText.text = string.Empty;
+            ApplyDynamicBuffer(_intrusionText, s_emptyBuffer, 0);
 
             _contextTagText = CreateText(_chromeRoot, "ContextTag", numericFont, 10f, FontStyles.Bold, TextAlignmentOptions.Right);
             Anchor(_contextTagText.rectTransform, new Vector2(0.56f, 1f), new Vector2(0.96f, 1f), new Vector2(0f, -66f), new Vector2(0f, -40f));
             _contextTagText.color = Color.white;
             _contextTagText.alpha = 0f;
-            _contextTagText.text = string.Empty;
+            ApplyDynamicBuffer(_contextTagText, s_emptyBuffer, 0);
 
             _leftFooterText = CreateText(footer, "FooterLeft", numericFont, 10.5f, FontStyles.Normal, TextAlignmentOptions.Left);
             Anchor(_leftFooterText.rectTransform, new Vector2(0f, 0f), new Vector2(0.58f, 1f), new Vector2(14f, 0f), new Vector2(-8f, 0f));
@@ -482,8 +510,7 @@ namespace Hecton8.UI
             _lastRebootProgressPercent = -1;
             _cachedRebootBinding = string.Empty;
             _cachedRebootBindingStyle = (InputDisplayStyle)(-1);
-            if (_titleText != null)
-                _titleText.text = ResolveStressReactiveText(_localizedTitle);
+            InvalidateAppliedLabelVersions();
             RefreshChrome();
             EvaluateTickRegistration();
         }
@@ -496,14 +523,29 @@ namespace Hecton8.UI
             if (_intrusionManager == null)
                 _intrusionManager = PDAIntrusionManager.ActiveRuntimeInstance;
 
+            LocalizationManager manager = LocalizationManager.Instance;
+            bool rtl = manager != null && LocalizationManager.IsRightToLeftLanguage(manager.CurrentLanguage);
+            int stressBucket = manager != null ? manager.GetHullStressCorruptionBucket() : 0;
+            bool useStressReactiveStrings = stressBucket > 0;
+            float stressReactiveIntensity = useStressReactiveStrings && manager != null
+                ? manager.GetHullStressCorruptionIntensity()
+                : 0f;
+
             if (_titleText != null)
             {
-                string titleText = ResolveStressReactiveText(_localizedTitle);
-                if (!string.Equals(_titleText.text, titleText, System.StringComparison.Ordinal))
-                    _titleText.text = titleText;
+                ReadOnlySpan<char> titleSpan = _localizedTitle.AsSpan();
+                CopyTextToBuffer(titleSpan, ref _titleBuffer, out int titleLength);
+                ApplyTextBuffer(
+                    _titleText,
+                    _titleBuffer,
+                    titleLength,
+                    rtl,
+                    useStressReactiveStrings,
+                    stressReactiveIntensity,
+                    101,
+                    ComputeTextVersion(titleSpan, 101, stressBucket),
+                    ref _appliedTitleVersion);
             }
-
-            bool useStressReactiveStrings = ShouldUseStressReactiveStrings();
 
             string tabName = GetActiveTabLabel();
             int cargoCells = playerInventory != null && playerInventory.Grid != null
@@ -528,115 +570,154 @@ namespace Hecton8.UI
                 ? Mathf.RoundToInt(_intrusionManager.RebootProgressNormalized * 100f)
                 : 0;
 
-            if (_tabText != null && _lastActiveTab != activeTabIndex)
+            if (_tabText != null &&
+                (_lastActiveTab != activeTabIndex || _lastIntrusionActive != intrusionActive || _appliedTabVersion == int.MinValue))
             {
-                _tabText.text = ResolveStressReactiveText(intrusionActive ? IntrusionTabOverride : tabName);
+                string tabSource = intrusionActive ? IntrusionTabOverride : tabName;
+                ReadOnlySpan<char> tabSpan = tabSource.AsSpan();
+                CopyTextToBuffer(tabSpan, ref _tabBuffer, out int tabLength);
+                ApplyTextBuffer(
+                    _tabText,
+                    _tabBuffer,
+                    tabLength,
+                    rtl,
+                    useStressReactiveStrings,
+                    stressReactiveIntensity,
+                    113,
+                    ComputeTextVersion(tabSpan, 113, stressBucket),
+                    ref _appliedTabVersion);
                 _lastActiveTab = activeTabIndex;
             }
 
-             if (_leftFooterText != null && (_lastCargoCells != cargoCells || _lastCargoTotal != cargoTotal || _lastWeightDeci != weightDeci || _lastReadyTools != readyTools || _lastAssignedTools != assignedTools))
-             {
-                 int safeAssignedTools = Mathf.Max(assignedTools, 1);
-                 if (useStressReactiveStrings)
-                 {
-                     string leftFooter = string.Format(_localizedLeftFooterFormat, cargoCells, cargoTotal, weight, readyTools, safeAssignedTools);
-                     _leftFooterText.text = ResolveStressReactiveText(leftFooter);
-                 }
-                 else
-                 {
-                     LocNumericBuffer.Write(
-                         _localizedLeftFooterNumericTemplate.AsSpan(),
-                         LocNumericArg.Int(cargoCells),
-                         LocNumericArg.Int(cargoTotal),
-                         LocNumericArg.Float(weight),
-                         LocNumericArg.Int(readyTools),
-                         LocNumericArg.Int(safeAssignedTools),
-                         out char[] buffer,
-                         out int length);
-                     ApplyDynamicBuffer(_leftFooterText, buffer, length);
-                 }
-                 _lastCargoCells = cargoCells;
-                 _lastCargoTotal = cargoTotal;
-                 _lastWeightDeci = weightDeci;
-                 _lastReadyTools = readyTools;
-                 _lastAssignedTools = assignedTools;
-             }
+            if (_leftFooterText != null &&
+                (_lastCargoCells != cargoCells ||
+                 _lastCargoTotal != cargoTotal ||
+                 _lastWeightDeci != weightDeci ||
+                 _lastReadyTools != readyTools ||
+                 _lastAssignedTools != assignedTools ||
+                 _appliedLeftFooterVersion == int.MinValue))
+            {
+                int safeAssignedTools = Mathf.Max(assignedTools, 1);
+                TryWriteNumericTemplate(
+                    _localizedLeftFooterNumericTemplate.AsSpan(),
+                    ref _leftFooterBuffer,
+                    LocNumericArg.Int(cargoCells),
+                    LocNumericArg.Int(cargoTotal),
+                    LocNumericArg.Float(weight),
+                    LocNumericArg.Int(readyTools),
+                    LocNumericArg.Int(safeAssignedTools),
+                    out int leftFooterLength);
 
-             if (_rightFooterText != null &&
-                 (_lastOxygenPercent != oxygenPercent ||
-                  _lastEnergyPercent != energyPercent ||
-                  _lastPdaOpen != pdaOpen ||
-                  _lastIntrusionActive != intrusionActive ||
-                  _lastRebootProgressPercent != rebootProgressPercent))
-             {
-                 if (useStressReactiveStrings)
-                 {
-                     if (intrusionActive)
-                         _rightFooterText.text = ResolveStressReactiveText(string.Format(IntrusionFooterFormat, oxygenPercent, energyPercent, rebootProgressPercent));
-                     else if (pdaOpen)
-                         _rightFooterText.text = ResolveStressReactiveText(string.Format(_localizedRightFooterOnlineFormat, oxygenPercent, energyPercent));
-                     else
-                         _rightFooterText.text = ResolveStressReactiveText(string.Format(_localizedRightFooterStandbyFormat, oxygenPercent, energyPercent));
-                 }
-                 else if (intrusionActive)
-                 {
-                     LocNumericBuffer.Write(
-                         _localizedIntrusionFooterNumericTemplate.AsSpan(),
-                         LocNumericArg.Int(oxygenPercent),
-                         LocNumericArg.Int(energyPercent),
-                         LocNumericArg.Int(rebootProgressPercent),
-                         out char[] buffer,
-                         out int length);
-                     ApplyDynamicBuffer(_rightFooterText, buffer, length);
-                 }
-                 else if (pdaOpen)
-                 {
-                     LocNumericBuffer.Write(
-                         _localizedRightFooterOnlineNumericTemplate.AsSpan(),
-                         LocNumericArg.Int(oxygenPercent),
-                         LocNumericArg.Int(energyPercent),
-                         out char[] buffer,
-                         out int length);
-                     ApplyDynamicBuffer(_rightFooterText, buffer, length);
-                 }
-                 else
-                 {
-                     LocNumericBuffer.Write(
-                         _localizedRightFooterStandbyNumericTemplate.AsSpan(),
-                         LocNumericArg.Int(oxygenPercent),
-                         LocNumericArg.Int(energyPercent),
-                         out char[] buffer,
-                         out int length);
-                     ApplyDynamicBuffer(_rightFooterText, buffer, length);
-                 }
-                 _lastOxygenPercent = oxygenPercent;
-                 _lastEnergyPercent = energyPercent;
-                 _lastPdaOpen = pdaOpen;
-                 _lastIntrusionActive = intrusionActive;
-                 _lastRebootProgressPercent = rebootProgressPercent;
-             }
+                int leftFooterVersion = unchecked((((((cargoCells * 397) ^ cargoTotal) * 397) ^ weightDeci) * 397) ^ readyTools ^ (safeAssignedTools << 8) ^ (stressBucket << 16) ^ 211);
+                ApplyTextBuffer(
+                    _leftFooterText,
+                    _leftFooterBuffer,
+                    leftFooterLength,
+                    rtl,
+                    useStressReactiveStrings,
+                    stressReactiveIntensity,
+                    211,
+                    leftFooterVersion,
+                    ref _appliedLeftFooterVersion);
+
+                _lastCargoCells = cargoCells;
+                _lastCargoTotal = cargoTotal;
+                _lastWeightDeci = weightDeci;
+                _lastReadyTools = readyTools;
+                _lastAssignedTools = assignedTools;
+            }
+
+            if (_rightFooterText != null &&
+                (_lastOxygenPercent != oxygenPercent ||
+                 _lastEnergyPercent != energyPercent ||
+                 _lastPdaOpen != pdaOpen ||
+                 _lastIntrusionActive != intrusionActive ||
+                 _lastRebootProgressPercent != rebootProgressPercent ||
+                 _appliedRightFooterVersion == int.MinValue))
+            {
+                if (intrusionActive)
+                {
+                    TryWriteNumericTemplate(
+                        _localizedIntrusionFooterNumericTemplate.AsSpan(),
+                        ref _rightFooterBuffer,
+                        LocNumericArg.Int(oxygenPercent),
+                        LocNumericArg.Int(energyPercent),
+                        LocNumericArg.Int(rebootProgressPercent),
+                        out int rightFooterLength);
+
+                    int intrusionFooterVersion = unchecked((((oxygenPercent * 397) ^ energyPercent) * 397) ^ rebootProgressPercent ^ (stressBucket << 16) ^ 223);
+                    ApplyTextBuffer(
+                        _rightFooterText,
+                        _rightFooterBuffer,
+                        rightFooterLength,
+                        rtl,
+                        useStressReactiveStrings,
+                        stressReactiveIntensity,
+                        223,
+                        intrusionFooterVersion,
+                        ref _appliedRightFooterVersion);
+                }
+                else if (pdaOpen)
+                {
+                    TryWriteNumericTemplate(
+                        _localizedRightFooterOnlineNumericTemplate.AsSpan(),
+                        ref _rightFooterBuffer,
+                        LocNumericArg.Int(oxygenPercent),
+                        LocNumericArg.Int(energyPercent),
+                        out int rightFooterLength);
+
+                    int onlineFooterVersion = unchecked((((oxygenPercent * 397) ^ energyPercent) * 397) ^ (stressBucket << 16) ^ 227);
+                    ApplyTextBuffer(
+                        _rightFooterText,
+                        _rightFooterBuffer,
+                        rightFooterLength,
+                        rtl,
+                        useStressReactiveStrings,
+                        stressReactiveIntensity,
+                        227,
+                        onlineFooterVersion,
+                        ref _appliedRightFooterVersion);
+                }
+                else
+                {
+                    TryWriteNumericTemplate(
+                        _localizedRightFooterStandbyNumericTemplate.AsSpan(),
+                        ref _rightFooterBuffer,
+                        LocNumericArg.Int(oxygenPercent),
+                        LocNumericArg.Int(energyPercent),
+                        out int rightFooterLength);
+
+                    int standbyFooterVersion = unchecked((((oxygenPercent * 397) ^ energyPercent) * 397) ^ (stressBucket << 16) ^ 229);
+                    ApplyTextBuffer(
+                        _rightFooterText,
+                        _rightFooterBuffer,
+                        rightFooterLength,
+                        rtl,
+                        useStressReactiveStrings,
+                        stressReactiveIntensity,
+                        229,
+                        standbyFooterVersion,
+                        ref _appliedRightFooterVersion);
+                }
+
+                _lastOxygenPercent = oxygenPercent;
+                _lastEnergyPercent = energyPercent;
+                _lastPdaOpen = pdaOpen;
+                _lastIntrusionActive = intrusionActive;
+                _lastRebootProgressPercent = rebootProgressPercent;
+            }
 
             if (_intrusionText != null)
             {
                 if (intrusionActive)
                 {
                     string rebootBinding = ResolveRebootBinding();
-                    if (useStressReactiveStrings)
-                    {
-                        string intrusionLine = ResolveStressReactiveText(string.Format(IntrusionHintFormat, rebootBinding));
-                        if (!string.Equals(_intrusionText.text, intrusionLine, System.StringComparison.Ordinal))
-                            _intrusionText.text = intrusionLine;
-                    }
-                    else
-                    {
-                        SetIntrusionHintText(_intrusionText, rebootBinding);
-                    }
+                    SetIntrusionHintText(_intrusionText, rebootBinding, rtl, useStressReactiveStrings, stressReactiveIntensity, stressBucket);
                     _intrusionText.alpha = 1f;
                 }
                 else
                 {
-                    if (!string.IsNullOrEmpty(_intrusionText.text))
-                        _intrusionText.text = string.Empty;
+                    ClearLabel(_intrusionText, ref _appliedIntrusionVersion);
                     _intrusionText.alpha = 0f;
                 }
             }
@@ -645,15 +726,23 @@ namespace Hecton8.UI
             {
                 if (mechModeActive)
                 {
-                    string contextTag = ResolveStressReactiveText(_localizedMechModeTag);
-                    if (!string.Equals(_contextTagText.text, contextTag, System.StringComparison.Ordinal))
-                        _contextTagText.text = contextTag;
+                    ReadOnlySpan<char> contextSpan = _localizedMechModeTag.AsSpan();
+                    CopyTextToBuffer(contextSpan, ref _contextTagBuffer, out int contextLength);
+                    ApplyTextBuffer(
+                        _contextTagText,
+                        _contextTagBuffer,
+                        contextLength,
+                        rtl,
+                        useStressReactiveStrings,
+                        stressReactiveIntensity,
+                        131,
+                        ComputeTextVersion(contextSpan, 131, stressBucket),
+                        ref _appliedContextTagVersion);
                     _contextTagText.alpha = 1f;
                 }
                 else
                 {
-                    if (!string.IsNullOrEmpty(_contextTagText.text))
-                        _contextTagText.text = string.Empty;
+                    ClearLabel(_contextTagText, ref _appliedContextTagVersion);
                     _contextTagText.alpha = 0f;
                 }
             }
@@ -717,17 +806,6 @@ namespace Hecton8.UI
                 return fallback;
 
             return manager.GetOrFallback(manager.CurrentLanguage, key, fallback);
-        }
-
-        private static string ResolveStressReactiveText(string text)
-        {
-            if (string.IsNullOrEmpty(text))
-                return string.Empty;
-
-            LocalizationManager manager = LocalizationManager.Instance;
-            return manager != null
-                ? manager.ApplyHullStressCorruptionIfNeeded(text)
-                : text;
         }
 
         private static string ConvertToNumericTemplate(string template, string fallback)
@@ -795,13 +873,13 @@ namespace Hecton8.UI
                 : string.Empty;
         }
 
-        private bool ShouldUseStressReactiveStrings()
-        {
-            LocalizationManager manager = LocalizationManager.Instance;
-            return manager != null && manager.GetHullStressCorruptionBucket() > 0;
-        }
-
-        private void SetIntrusionHintText(TMP_Text label, string binding)
+        private void SetIntrusionHintText(
+            TMP_Text label,
+            string binding,
+            bool rtl,
+            bool useStressReactiveStrings,
+            float stressReactiveIntensity,
+            int stressBucket)
         {
             if (label == null)
                 return;
@@ -810,7 +888,18 @@ namespace Hecton8.UI
             index = CopyLiteralToBuffer(_intrusionHintBuffer, index, _localizedIntrusionHintPrefix);
             index = CopyLiteralToBuffer(_intrusionHintBuffer, index, string.IsNullOrEmpty(binding) ? "SUBMIT" : binding);
             index = CopyLiteralToBuffer(_intrusionHintBuffer, index, _localizedIntrusionHintSuffix);
-            ApplyDynamicBuffer(label, _intrusionHintBuffer, index);
+
+            int version = unchecked((((ComputeTextVersion(_localizedIntrusionHintPrefix.AsSpan(), 239, stressBucket) * 397) ^ ComputeTextVersion(_localizedIntrusionHintSuffix.AsSpan(), 241, stressBucket)) * 397) ^ ComputeTextVersion((string.IsNullOrEmpty(binding) ? "SUBMIT" : binding).AsSpan(), 243, stressBucket));
+            ApplyTextBuffer(
+                label,
+                _intrusionHintBuffer,
+                index,
+                rtl,
+                useStressReactiveStrings,
+                stressReactiveIntensity,
+                239,
+                version,
+                ref _appliedIntrusionVersion);
         }
 
         private static void ApplyDynamicBuffer(TMP_Text label, char[] buffer, int length)
@@ -831,6 +920,183 @@ namespace Hecton8.UI
             int copyLength = Mathf.Min(value.Length, buffer.Length - startIndex);
             value.AsSpan(0, copyLength).CopyTo(buffer.AsSpan(startIndex, copyLength));
             return startIndex + copyLength;
+        }
+
+        private static void CopyTextToBuffer(ReadOnlySpan<char> source, ref char[] buffer, out int length)
+        {
+            EnsureCharCapacity(ref buffer, source.Length);
+            source.CopyTo(buffer);
+            length = source.Length;
+        }
+
+        private static void EnsureCharCapacity(ref char[] buffer, int requiredLength)
+        {
+            if (buffer != null && buffer.Length >= requiredLength)
+                return;
+
+            int capacity = buffer == null ? 32 : buffer.Length;
+            int growthWatchdog = CharCapacityGrowthWatchdogLimit;
+            while (capacity < requiredLength && growthWatchdog-- > 0)
+            {
+                if (capacity > (int.MaxValue >> 1))
+                {
+                    capacity = requiredLength;
+                    break;
+                }
+
+                capacity <<= 1;
+            }
+
+            if (capacity < requiredLength)
+                capacity = requiredLength;
+
+            buffer = new char[capacity]; // COLD ALLOC: char[capacity] - expanded PDA text staging buffer - owner: PDAShellChrome
+        }
+
+        private static int ComputeTextVersion(ReadOnlySpan<char> source, int salt, int stressBucket)
+        {
+            unchecked
+            {
+                int version = salt ^ (stressBucket << 8);
+                for (int i = 0; i < source.Length; i++)
+                    version = (version * 397) ^ source[i];
+                return version;
+            }
+        }
+
+        private static void ClearLabel(TMP_Text label, ref int appliedVersion)
+        {
+            if (label == null)
+                return;
+
+            if (appliedVersion == 0)
+                return;
+
+            ApplyDynamicBuffer(label, s_emptyBuffer, 0);
+            appliedVersion = 0;
+        }
+
+        private static void ApplyTextBuffer(
+            TMP_Text label,
+            char[] sourceBuffer,
+            int sourceLength,
+            bool rtl,
+            bool useStressReactiveStrings,
+            float stressReactiveIntensity,
+            int corruptionSalt,
+            int version,
+            ref int appliedVersion)
+        {
+            if (label == null || sourceBuffer == null)
+                return;
+
+            if (label.isRightToLeftText != rtl)
+                label.isRightToLeftText = rtl;
+
+            if (appliedVersion == version)
+                return;
+
+            if (useStressReactiveStrings)
+            {
+                GlitchEncoder.ApplyDecay(
+                    sourceBuffer,
+                    sourceLength,
+                    stressReactiveIntensity,
+                    unchecked((version * 397) ^ corruptionSalt),
+                    out char[] corruptedBuffer,
+                    out int corruptedLength);
+                ApplyDynamicBuffer(label, corruptedBuffer, corruptedLength);
+            }
+            else
+            {
+                ApplyDynamicBuffer(label, sourceBuffer, sourceLength);
+            }
+
+            appliedVersion = version;
+        }
+
+        private static void TryWriteNumericTemplate(
+            ReadOnlySpan<char> template,
+            ref char[] buffer,
+            LocNumericArg value0,
+            LocNumericArg value1,
+            out int length)
+        {
+            EnsureCharCapacity(ref buffer, template.Length + 24);
+            for (int attempt = 0; attempt < NumericTemplateWriteAttemptLimit; attempt++)
+            {
+                if (LocNumericBuffer.TryWrite(template, buffer.AsSpan(), value0, value1, out length))
+                    return;
+
+                if (!TryExpandNumericTemplateBuffer(ref buffer))
+                    break;
+            }
+
+            CopyTextToBuffer(template, ref buffer, out length);
+        }
+
+        private static void TryWriteNumericTemplate(
+            ReadOnlySpan<char> template,
+            ref char[] buffer,
+            LocNumericArg value0,
+            LocNumericArg value1,
+            LocNumericArg value2,
+            out int length)
+        {
+            EnsureCharCapacity(ref buffer, template.Length + 24);
+            for (int attempt = 0; attempt < NumericTemplateWriteAttemptLimit; attempt++)
+            {
+                if (LocNumericBuffer.TryWrite(template, buffer.AsSpan(), value0, value1, value2, out length))
+                    return;
+
+                if (!TryExpandNumericTemplateBuffer(ref buffer))
+                    break;
+            }
+
+            CopyTextToBuffer(template, ref buffer, out length);
+        }
+
+        private static void TryWriteNumericTemplate(
+            ReadOnlySpan<char> template,
+            ref char[] buffer,
+            LocNumericArg value0,
+            LocNumericArg value1,
+            LocNumericArg value2,
+            LocNumericArg value3,
+            LocNumericArg value4,
+            out int length)
+        {
+            EnsureCharCapacity(ref buffer, template.Length + 32);
+            for (int attempt = 0; attempt < NumericTemplateWriteAttemptLimit; attempt++)
+            {
+                if (LocNumericBuffer.TryWrite(template, buffer.AsSpan(), value0, value1, value2, value3, value4, out length))
+                    return;
+
+                if (!TryExpandNumericTemplateBuffer(ref buffer))
+                    break;
+            }
+
+            CopyTextToBuffer(template, ref buffer, out length);
+        }
+
+        private static bool TryExpandNumericTemplateBuffer(ref char[] buffer)
+        {
+            int currentLength = buffer != null ? buffer.Length : 0;
+            if (currentLength <= 0 || currentLength > (int.MaxValue >> 1))
+                return false;
+
+            EnsureCharCapacity(ref buffer, currentLength << 1);
+            return buffer != null && buffer.Length > currentLength;
+        }
+
+        private void InvalidateAppliedLabelVersions()
+        {
+            _appliedTitleVersion = int.MinValue;
+            _appliedTabVersion = int.MinValue;
+            _appliedIntrusionVersion = int.MinValue;
+            _appliedContextTagVersion = int.MinValue;
+            _appliedLeftFooterVersion = int.MinValue;
+            _appliedRightFooterVersion = int.MinValue;
         }
 
         private string ResolveRebootBinding()
@@ -871,11 +1137,8 @@ namespace Hecton8.UI
             if (_registeredToTickManager)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
 
-            tickManager.Register(this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _registeredToTickManager = true;
         }
 
@@ -884,9 +1147,7 @@ namespace Hecton8.UI
             if (!_registeredToTickManager)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister(this);
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
 
             _registeredToTickManager = false;
         }
@@ -923,17 +1184,7 @@ namespace Hecton8.UI
 
         private static int CountUsedCells(InventoryGrid grid)
         {
-            int used = 0;
-            for (int y = 0; y < grid.Rows; y++)
-            {
-                for (int x = 0; x < grid.Columns; x++)
-                {
-                    if (grid.GetCell(x, y) != null)
-                        used++;
-                }
-            }
-
-            return used;
+            return grid != null ? grid.OccupiedCells : 0;
         }
 
         private static Color GetShellSeverityColor(float energy, float oxygen, float weight, int readyTools, int assignedTools)
@@ -959,15 +1210,24 @@ namespace Hecton8.UI
             return null;
         }
 
+        private static CanvasGroup EnsureCanvasGroup(RectTransform target)
+        {
+            if (target == null)
+                return null;
+
+            CanvasGroup canvasGroup = target.GetComponent<CanvasGroup>();
+            return canvasGroup != null ? canvasGroup : target.gameObject.AddComponent<CanvasGroup>();
+        }
+
         private static void ClearChildren(Transform parent)
         {
             for (int i = parent.childCount - 1; i >= 0; i--)
             {
                 Transform child = parent.GetChild(i);
                 if (Application.isPlaying)
-                    Object.Destroy(child.gameObject);
+                    UnityEngine.Object.Destroy(child.gameObject);
                 else
-                    Object.DestroyImmediate(child.gameObject);
+                    UnityEngine.Object.DestroyImmediate(child.gameObject);
             }
         }
 
@@ -1093,9 +1353,9 @@ namespace Hecton8.UI
                 return;
 
             if (Application.isPlaying)
-                Object.Destroy(material);
+                UnityEngine.Object.Destroy(material);
             else
-                Object.DestroyImmediate(material);
+                UnityEngine.Object.DestroyImmediate(material);
 
             material = null;
         }
@@ -1139,7 +1399,10 @@ namespace Hecton8.UI
 
         private static void CreateCornerBracket(RectTransform parent, bool left, bool top)
         {
-            RectTransform root = CreateRect(parent, $"Corner_{(left ? "L" : "R")}{(top ? "T" : "B")}");
+            string cornerName = left
+                ? (top ? "Corner_LT" : "Corner_LB")
+                : (top ? "Corner_RT" : "Corner_RB");
+            RectTransform root = CreateRect(parent, cornerName);
             root.anchorMin = new Vector2(left ? 0f : 1f, top ? 1f : 0f);
             root.anchorMax = root.anchorMin;
             root.pivot = root.anchorMin;

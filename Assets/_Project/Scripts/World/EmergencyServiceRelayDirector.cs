@@ -19,11 +19,10 @@ namespace Hecton8.World
         private const string DefaultIntroChainId = "intro_service_route";
         private const string DefaultRelayFallback =
             "HOLD TO THE SERVICE TRACE. RELAYS AND CACHES GIVE LORE, SUPPLIES, AND THE NEXT FOOTHOLD.";
-        private const string ManagersRootName = "[MANAGERS]";
-        private const string SystemsRootName = "--- SYSTEMS ---";
 
         private static EmergencyServiceRelayDirector _instance;
         public static EmergencyServiceRelayDirector Instance => ResolveInstance();
+        internal static EmergencyServiceRelayDirector ActiveRuntimeInstance => _instance;
 
         [Header("── Relay Chain ────────────────────────────")]
         [Tooltip("Chain ID used by the first-hour breadcrumb route.")]
@@ -437,16 +436,11 @@ namespace Hecton8.World
             if (_instance != null)
                 return _instance;
 
-            _instance = UnityEngine.Object.FindAnyObjectByType<EmergencyServiceRelayDirector>(FindObjectsInactive.Include);
-            if (_instance != null)
-                return _instance;
-
             if (!Application.isPlaying || EmergencyServiceRelay.ActiveCount <= 0)
                 return null;
 
-            GameObject owner = GameObject.Find(ManagersRootName);
-            if (owner == null)
-                owner = GameObject.Find(SystemsRootName);
+            GameObject owner = null;
+            WorldRuntimeReferenceUtility.TryResolveManagersRoot(ref owner);
 
             if (owner == null)
             {
@@ -454,7 +448,8 @@ namespace Hecton8.World
                 owner = new GameObject("EmergencyServiceRelayDirector_Root");
             }
 
-            _instance = owner.AddComponent<EmergencyServiceRelayDirector>();
+            if (!owner.TryGetComponent(out _instance))
+                _instance = owner.AddComponent<EmergencyServiceRelayDirector>();
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogWarning(

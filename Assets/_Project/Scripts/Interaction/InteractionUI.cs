@@ -30,9 +30,15 @@ namespace Hecton8.Interaction
 
         private IInteractable _lastDisplayedTarget;
         private string _cachedInteractPrefix;
+        private CanvasGroup _promptCanvasGroup;
 
         // COLD ALLOC: char[192] - hover prompt rich-text buffer - owner: InteractionUI
         private readonly char[] _charBuffer = new char[192];
+
+        private void Awake()
+        {
+            InitializePromptContainer();
+        }
 
         private void OnEnable()
         {
@@ -52,6 +58,7 @@ namespace Hecton8.Interaction
 
             LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
 
+            InitializePromptContainer();
             ConfigurePromptLabel();
             RefreshInteractPrefixCache();
             HidePrompt();
@@ -170,14 +177,12 @@ namespace Hecton8.Interaction
                 promptLabel.SetCharArray(_charBuffer, 0, totalLength);
             }
 
-            if (promptContainer != null && !promptContainer.activeSelf)
-                promptContainer.SetActive(true);
+            SetPromptVisible(true);
         }
 
         private void HidePrompt()
         {
-            if (promptContainer != null && promptContainer.activeSelf)
-                promptContainer.SetActive(false);
+            SetPromptVisible(false);
 
             _lastDisplayedTarget = null;
         }
@@ -227,6 +232,42 @@ namespace Hecton8.Interaction
                 promptLabel.fontSize,
                 TextOverflowModes.Ellipsis,
                 TextWrappingModes.Normal);
+        }
+
+        private void InitializePromptContainer()
+        {
+            if (promptContainer == null)
+                return;
+
+            if (!promptContainer.activeSelf)
+                promptContainer.SetActive(true);
+
+            if (_promptCanvasGroup == null && !promptContainer.TryGetComponent(out _promptCanvasGroup))
+            {
+                _promptCanvasGroup = promptContainer.AddComponent<CanvasGroup>(); // COLD ALLOC: CanvasGroup[1] - prompt visibility gating without SetActive - owner: InteractionUI
+            }
+
+            if (_promptCanvasGroup == null)
+                return;
+
+            _promptCanvasGroup.blocksRaycasts = false;
+            _promptCanvasGroup.interactable = false;
+        }
+
+        private void SetPromptVisible(bool visible)
+        {
+            if (promptContainer == null)
+                return;
+
+            InitializePromptContainer();
+            if (_promptCanvasGroup != null)
+            {
+                _promptCanvasGroup.alpha = visible ? 1f : 0f;
+                return;
+            }
+
+            if (promptContainer.activeSelf != visible)
+                promptContainer.SetActive(visible);
         }
 
         private static string ExtractPrefix(string template)

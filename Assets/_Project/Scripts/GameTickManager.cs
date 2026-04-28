@@ -44,7 +44,7 @@ namespace Hecton8.Core
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-10000)] // Тикает РАНЬШЕ всех
-    public sealed class GameTickManager : MonoBehaviour
+    public sealed class GameTickManager : MonoBehaviour, IUpdatable, IFixedTickable
     {
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
@@ -152,6 +152,7 @@ namespace Hecton8.Core
         private float _nextSlowTickReportTime;
         private bool _loggedFirstUpdateExecution;
         private bool _loggedFirstSlowTickExecution;
+        private bool _registeredToDispatcher;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -186,6 +187,13 @@ namespace Hecton8.Core
         {
             EnsureInitialized();
             ResetSlowTickState();
+
+            if (Application.isPlaying && !_registeredToDispatcher)
+            {
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
+                GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Core);
+                _registeredToDispatcher = true;
+            }
         }
 
         private void OnDisable()
@@ -198,6 +206,12 @@ namespace Hecton8.Core
                     this);
             }
 #endif
+            if (_registeredToDispatcher)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
+                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Core);
+                _registeredToDispatcher = false;
+            }
             ResetSlowTickState();
         }
 
@@ -211,6 +225,12 @@ namespace Hecton8.Core
                     this);
             }
 #endif
+            if (_registeredToDispatcher)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
+                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Core);
+                _registeredToDispatcher = false;
+            }
             if (_instance == this)
                 _instance = null;
         }
@@ -224,11 +244,11 @@ namespace Hecton8.Core
         //  UPDATE — единственный в проекте
         // ══════════════════════════════════════════════════════════
 
-        private void Update()
+        public void Tick(float deltaTime)
         {
             EnsureInitialized();
 
-            float dt = Time.deltaTime;
+            float dt = deltaTime;
             float slowTickDt = dt;
             if (Application.isPlaying &&
                 BootstrapState.HasActiveInstance &&
@@ -292,11 +312,11 @@ namespace Hecton8.Core
         //  FIXED UPDATE — единственный в проекте
         // ══════════════════════════════════════════════════════════
 
-        private void FixedUpdate()
+        public void FixedTick(float fixedDeltaTime)
         {
             EnsureInitialized();
 
-            float fdt = Time.fixedDeltaTime;
+            float fdt = fixedDeltaTime;
 
             _fixedTickables.BeginIteration();
 
@@ -621,7 +641,7 @@ namespace Hecton8.Core
         /// <summary>
         /// Авто-регистрация: объект проверяется на все интерфейсы.
         /// Удобно для классов, реализующих несколько интерфейсов:
-        ///   GameTickManager.Instance.RegisterAll(this);
+        ///   Registry-backed systems use explicit GlobalRegistry lane registration.
         ///
         /// Паттерн-матчинг `is` для reference types — zero GC.
         /// </summary>

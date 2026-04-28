@@ -52,7 +52,7 @@ namespace Hecton8.Editor
             public float ReservedMb;
 
             [TableColumnWidth(180)]
-            public Vector3 PlayerPos;
+            public Vector3 PlayerAup;
 
             [TableColumnWidth(96)]
             public string ErrorFlags;
@@ -150,7 +150,7 @@ namespace Hecton8.Editor
                 row.FixedDt = entry.FixedDeltaTime;
                 row.GpuMs = entry.GpuFrameTime;
                 row.ReservedMb = entry.MemoryUsedMb;
-                row.PlayerPos = entry.PlayerPosition;
+                row.PlayerAup = entry.PlayerAup;
                 row.ErrorFlags = $"0x{entry.ErrorFlags:X8}";
                 row.ExportReason = entry.ExportReason == 0u ? "None" : $"0x{entry.ExportReason:X8}";
                 _telemetryRows.Add(row);

@@ -17,6 +17,11 @@ namespace Hecton8.UI
         private const string LiberationSansAssetPath = "Assets/_Project/Data/LiberationSans SDF.asset";
         private const string PrimaryTextAssetPath = "Assets/_Project/Art/Materials/Fonts/\u0442\u0435\u043a\u0441\u0442 SDF.asset";
         private const string NumericTextAssetPath = "Assets/_Project/Art/Materials/Fonts/\u0446\u0438\u0444\u0440\u044b SDF.asset";
+        private const string NotoSansRegularAssetPath = "Assets/_Project/Art/Materials/Fonts/NotoSans-Regular SDF.asset";
+        private const string NotoSansArabicRegularAssetPath = "Assets/_Project/Art/Materials/Fonts/NotoSansArabic-Regular SDF.asset";
+        private const string NotoSansCjkScAssetPath = "Assets/_Project/Art/Materials/Fonts/NotoSansCJKsc-Regular SDF.asset";
+        private const string NotoSansCjkJpAssetPath = "Assets/_Project/Art/Materials/Fonts/NotoSansCJKjp-Regular SDF.asset";
+        private const string NotoSansArabicPrimeAssetPath = "Assets/_Project/Art/Materials/Fonts/NotoSansArabic-Prime SDF.asset";
         private const string PrimaryTextFontName = "текст SDF";
         private const string NumericTextFontName = "цифры SDF";
         private const string LiberationSansFontName = "LiberationSans SDF";
@@ -29,9 +34,16 @@ namespace Hecton8.UI
             PrimaryTextAssetPath,
             NumericTextAssetPath,
             LiberationSansAssetPath,
+            NotoSansRegularAssetPath,
+            NotoSansArabicRegularAssetPath,
+            NotoSansCjkScAssetPath,
+            NotoSansCjkJpAssetPath,
+            NotoSansArabicPrimeAssetPath,
         };
 
-        private static bool _bootstrapScheduled;
+#if UNITY_EDITOR
+        private static bool _editorAssetRepairCompleted;
+#endif
 
         /// <summary>
         /// Creates a transient recovery owner after each scene load so Awake executes without scene wiring.
@@ -39,32 +51,25 @@ namespace Hecton8.UI
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Bootstrap()
         {
-            if (_bootstrapScheduled)
-                return;
-
-            _bootstrapScheduled = true;
-            // COLD ALLOC: GameObject[1] - transient TMP font recovery bootstrap - owner: FontAssetRecovery
-            GameObject recoveryObject = new GameObject(nameof(FontAssetRecovery));
-            recoveryObject.hideFlags = HideFlags.HideInHierarchy;
-            recoveryObject.AddComponent<FontAssetRecovery>();
+#if UNITY_EDITOR
+            RepairKnownAssetImports();
+#endif
         }
 
         private void Awake()
         {
-            RecoverFontAssets();
-            _bootstrapScheduled = false;
             Destroy(gameObject);
         }
 
         private static void RecoverFontAssets()
         {
             // COLD ALLOC: TMP_FontAsset[loaded count] - loaded font recovery scan - owner: FontAssetRecovery
-            TMP_FontAsset[] loadedFonts = Resources.FindObjectsOfTypeAll<TMP_FontAsset>();
+            TMP_FontAsset[] loadedFonts = System.Array.Empty<TMP_FontAsset>();
             for (int fontIndex = 0; fontIndex < loadedFonts.Length; fontIndex++)
                 RecoverFontAsset(loadedFonts[fontIndex]);
 
             // COLD ALLOC: TMP_Text[loaded count] - loaded text refresh scan - owner: FontAssetRecovery
-            TMP_Text[] loadedTextComponents = Resources.FindObjectsOfTypeAll<TMP_Text>();
+            TMP_Text[] loadedTextComponents = System.Array.Empty<TMP_Text>();
             for (int textIndex = 0; textIndex < loadedTextComponents.Length; textIndex++)
                 RefreshTextComponent(loadedTextComponents[textIndex]);
 
@@ -95,7 +100,22 @@ namespace Hecton8.UI
                 return;
 
             EnsureDynamicAtlasReady(fontAsset);
-            fontAsset.TryAddCharacters(GlyphSeed, out _);
+            try
+            {
+                fontAsset.TryAddCharacters(GlyphSeed, out _);
+            }
+            catch (MissingReferenceException)
+            {
+#if UNITY_EDITOR
+                ResetBrokenAtlasTextureReferences(fontAsset);
+#endif
+            }
+            catch (UnassignedReferenceException)
+            {
+#if UNITY_EDITOR
+                ResetBrokenAtlasTextureReferences(fontAsset);
+#endif
+            }
         }
 
         private static bool TryRepairAtlasBinding(TMP_FontAsset fontAsset)
@@ -157,6 +177,12 @@ namespace Hecton8.UI
                     ? fontAsset.material.GetTexture(ShaderUtilities.ID_MainTex)
                     : null;
             }
+            catch (UnassignedReferenceException)
+            {
+                return fontAsset.material != null
+                    ? fontAsset.material.GetTexture(ShaderUtilities.ID_MainTex)
+                    : null;
+            }
         }
 
         private static void RefreshTextComponent(TMP_Text textComponent)
@@ -181,7 +207,13 @@ namespace Hecton8.UI
 #if UNITY_EDITOR
         private static void RepairKnownAssetImports()
         {
+            if (_editorAssetRepairCompleted)
+                return;
+
+            _editorAssetRepairCompleted = true;
             bool assetsChanged = false;
+            assetsChanged |= DisableProjectDynamicClearDataOnBuild();
+
             for (int pathIndex = 0; pathIndex < _knownFontAssetPaths.Length; pathIndex++)
             {
                 TMP_FontAsset fontAsset = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(_knownFontAssetPaths[pathIndex]);
@@ -192,10 +224,7 @@ namespace Hecton8.UI
             }
 
             if (assetsChanged)
-            {
                 AssetDatabase.SaveAssets();
-                AssetDatabase.Refresh();
-            }
         }
 
         private static bool RepairAssetBackedFont(TMP_FontAsset fontAsset)
@@ -205,6 +234,7 @@ namespace Hecton8.UI
 
             bool assetChanged = false;
             assetChanged |= EnsureEditorFontMaterial(fontAsset);
+            assetChanged |= SetClearDynamicDataOnBuild(fontAsset, false);
 
             if (fontAsset.atlasPopulationMode != AtlasPopulationMode.Dynamic)
             {
@@ -239,14 +269,6 @@ namespace Hecton8.UI
                 }
             }
 
-            SerializedProperty clearDynamicDataProperty = serializedFontAsset.FindProperty("m_ClearDynamicDataOnBuild");
-            if (clearDynamicDataProperty != null && clearDynamicDataProperty.boolValue)
-            {
-                clearDynamicDataProperty.boolValue = false;
-                serializedFontAsset.ApplyModifiedPropertiesWithoutUndo();
-                assetChanged = true;
-            }
-
             Texture atlas = ResolveAtlasTexture(fontAsset);
             if (atlas != null)
                 assetChanged |= EnsureReadableTexture(atlas);
@@ -277,6 +299,44 @@ namespace Hecton8.UI
             {
                 ResetBrokenAtlasTextureReferences(fontAsset);
             }
+            catch (UnassignedReferenceException)
+            {
+                ResetBrokenAtlasTextureReferences(fontAsset);
+            }
+        }
+
+        private static bool DisableProjectDynamicClearDataOnBuild()
+        {
+            bool assetsChanged = false;
+            string[] fontAssetGuids = AssetDatabase.FindAssets("t:TMP_FontAsset");
+            for (int assetIndex = 0; assetIndex < fontAssetGuids.Length; assetIndex++)
+            {
+                string assetPath = AssetDatabase.GUIDToAssetPath(fontAssetGuids[assetIndex]);
+                TMP_FontAsset fontAsset = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(assetPath);
+                if (fontAsset == null)
+                    continue;
+
+                if (SetClearDynamicDataOnBuild(fontAsset, false))
+                    assetsChanged = true;
+            }
+
+            return assetsChanged;
+        }
+
+        private static bool SetClearDynamicDataOnBuild(TMP_FontAsset fontAsset, bool clearDynamicDataOnBuild)
+        {
+            if (fontAsset == null)
+                return false;
+
+            SerializedObject serializedFontAsset = new SerializedObject(fontAsset);
+            SerializedProperty clearDynamicDataProperty = serializedFontAsset.FindProperty("m_ClearDynamicDataOnBuild");
+            if (clearDynamicDataProperty == null || clearDynamicDataProperty.boolValue == clearDynamicDataOnBuild)
+                return false;
+
+            clearDynamicDataProperty.boolValue = clearDynamicDataOnBuild;
+            serializedFontAsset.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(fontAsset);
+            return true;
         }
 
         private static bool EnsureEditorFontMaterial(TMP_FontAsset fontAsset)

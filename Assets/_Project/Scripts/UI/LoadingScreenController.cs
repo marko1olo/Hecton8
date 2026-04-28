@@ -12,7 +12,7 @@ namespace Hecton8.UI
     /// Prevents broken bootstrap appearance by maintaining visual continuity during async operations.
     /// </summary>
     [RequireComponent(typeof(CanvasGroup))]
-    public sealed class LoadingScreenController : MonoBehaviour, ITickable
+    public sealed class LoadingScreenController : MonoBehaviour, ITickable, IUpdatable
     {
         private enum VisibilityState
         {
@@ -327,10 +327,11 @@ namespace Hecton8.UI
 
         private void TryRegisterToTickManager()
         {
-            if (_registeredToTickManager || GameTickManager.Instance == null)
+            if (_registeredToTickManager)
                 return;
 
-            GameTickManager.Instance.Register(this);
+            SystemDispatcher.EnsureRuntimeInstance();
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _registeredToTickManager = true;
         }
 
@@ -339,12 +340,7 @@ namespace Hecton8.UI
             if (!_registeredToTickManager)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-            {
-                tickManager.Unregister(this);
-            }
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _registeredToTickManager = false;
         }
 

@@ -265,7 +265,7 @@ namespace Hecton8.Core
     /// Batch flushing for all tracked entities.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class EntityChangeManager : MonoBehaviour, ITickable
+    public sealed class EntityChangeManager : MonoBehaviour, ITickable, IUpdatable
     {
         private static EntityChangeManager _instance;
         private static readonly Dictionary<string, EntityChangeDetector> _detectors = new Dictionary<string, EntityChangeDetector>(256);
@@ -357,11 +357,7 @@ namespace Hecton8.Core
             if (_registered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register(this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
             _registered = true;
         }
 
@@ -370,10 +366,7 @@ namespace Hecton8.Core
             if (!_registered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister(this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
             _registered = false;
         }
 

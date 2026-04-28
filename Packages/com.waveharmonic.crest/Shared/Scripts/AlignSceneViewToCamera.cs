@@ -23,13 +23,19 @@ namespace WaveHarmonic.Crest.Examples
 #if UNITY_EDITOR
         static int s_Scene;
         static bool s_SceneChanged;
+        static bool s_HooksRegistered;
 
-        [InitializeOnLoadMethod]
-        static void OnLoad()
+        static void EnsureEditorHooks()
         {
+            if (s_HooksRegistered)
+            {
+                return;
+            }
+
             EditorSceneManager.sceneClosed -= OnSceneClosed;
             EditorSceneManager.sceneClosed += OnSceneClosed;
             s_Scene = SceneManager.GetActiveScene().handle;
+            s_HooksRegistered = true;
         }
 
         static void OnSceneClosed(Scene a)
@@ -43,6 +49,7 @@ namespace WaveHarmonic.Crest.Examples
 
         void OnEnable()
         {
+            EnsureEditorHooks();
             EditorApplication.update -= EditorUpdate;
             EditorApplication.update += EditorUpdate;
         }

@@ -9,7 +9,7 @@ namespace Hecton8.Optimization
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8007)]
-    public sealed class VRAMPressureMonitor : MonoBehaviour, ITickable
+    public sealed class VRAMPressureMonitor : MonoBehaviour, ITickable, IUpdatable
     {
         private const float BytesPerMegabyte = 1024f * 1024f;
         private const float DefaultRestoreFraction = 1.40f / 1.80f;
@@ -107,11 +107,7 @@ namespace Hecton8.Optimization
             if (_registeredTick)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register((ITickable)this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
             _registeredTick = true;
         }
 
@@ -120,10 +116,7 @@ namespace Hecton8.Optimization
             if (!_registeredTick)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister((ITickable)this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
             _registeredTick = false;
         }
 

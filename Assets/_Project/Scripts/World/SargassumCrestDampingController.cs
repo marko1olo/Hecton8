@@ -1,5 +1,8 @@
 using Hecton8.Core;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Hecton8.World
 {
@@ -8,12 +11,15 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-102)]
-    public sealed class SargassumCrestDampingController : MonoBehaviour, ITickable, ISlowTickable
+    public sealed class SargassumCrestDampingController : MonoBehaviour, ITickable, ISlowTickable, IOriginShiftListener
     {
-        private const string FacadeCopyShaderName = "Hidden/Hecton8/SargassumDampingFacadeCopy";
         private const string WavesInputName = "SargassumWaveDampingInput";
         private const string FoamInputName = "SargassumFoamDampingInput";
         private const string OilFilmInputName = "SargassumOilFilmInput";
+        private const int FacadeThreadGroupSize = 8;
+#if UNITY_EDITOR
+        private const string FacadeComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_SargassumDampingFacade.compute";
+#endif
 
         private static readonly int _DensityTexId = Shader.PropertyToID("_DensityTex");
         private static readonly int _DensityWorldRectId = Shader.PropertyToID("_DensityWorldRect");
@@ -21,9 +27,10 @@ namespace Hecton8.World
         private static readonly int _CutMaskWorldRectId = Shader.PropertyToID("_CutMaskWorldRect");
         private static readonly int _CutMaskActiveId = Shader.PropertyToID("_CutMaskActive");
         private static readonly int _GlobalDriftOffsetId = Shader.PropertyToID("_GlobalDriftOffset");
-        private static readonly int _DensityPowerId = Shader.PropertyToID("_DensityPower");
-        private static readonly int _CutReliefId = Shader.PropertyToID("_CutRelief");
-        private static readonly int _AlphaScaleId = Shader.PropertyToID("_AlphaScale");
+        private static readonly int _WaveFacadeParamsId = Shader.PropertyToID("_WaveFacadeParams");
+        private static readonly int _OilFacadeParamsId = Shader.PropertyToID("_OilFacadeParams");
+        private static readonly int _WaveDampingMaskResultId = Shader.PropertyToID("_WaveDampingMaskResult");
+        private static readonly int _OilFilmMaskResultId = Shader.PropertyToID("_OilFilmMaskResult");
         private static readonly int _WaveDampingMaskTextureId = Shader.PropertyToID("_SargassumWaveDampingMaskRT");
         private static readonly int _WaveDampingMaskWorldRectId = Shader.PropertyToID("_SargassumWaveDampingMaskWorldRect");
         private static readonly int _WaveDampingMaskActiveId = Shader.PropertyToID("_SargassumWaveDampingMaskActive");
@@ -41,8 +48,8 @@ namespace Hecton8.World
         private SargassumCutManager cutManager;
 
         [SerializeField]
-        [Tooltip("Optional explicit facade copy shader. Falls back to Hidden/Hecton8/SargassumDampingFacadeCopy when left empty.")]
-        private Shader facadeCopyShader;
+        [Tooltip("Optional explicit compute shader override used to bake both public damping facade textures in one dispatch.")]
+        private ComputeShader facadeBakeComputeOverride;
 
         [Header("── Wave Damping Facade ─────────────")]
         [SerializeField, Range(0.5f, 4f)]
@@ -83,7 +90,8 @@ namespace Hecton8.World
         [Tooltip("Resolution of the live public oil-film facade texture.")]
         private int _debugOilFacadeResolution;
 
-        private Material _facadeCopyMaterial;
+        private ComputeShader _facadeBakeCompute;
+        private int _facadeBakeKernel = -1;
         private RenderTexture _waveDampingMask;
         private RenderTexture _oilFilmMask;
         private Renderer _wavesInputRenderer;
@@ -130,11 +138,13 @@ namespace Hecton8.World
             DisableLegacyInputs();
             EnsureFacadeResources();
             RefreshFacadeTextures(force: true);
+            HectonFloatingOrigin.RegisterListener(this);
             TryRegister();
         }
 
         private void OnDisable()
         {
+            HectonFloatingOrigin.UnregisterListener(this);
             TryUnregister();
             ReleaseFacadeResources();
             PublishGlobals(active: false, forceClear: true);
@@ -142,6 +152,7 @@ namespace Hecton8.World
 
         private void OnDestroy()
         {
+            HectonFloatingOrigin.UnregisterListener(this);
             TryUnregister();
             ReleaseFacadeResources();
             PublishGlobals(active: false, forceClear: true);
@@ -198,6 +209,14 @@ namespace Hecton8.World
             RefreshFacadeTextures(force: true);
         }
 
+        public void OnOriginShift(in OriginShiftEventData shiftData)
+        {
+            if (!isActiveAndEnabled || shiftData.ShiftOffset.sqrMagnitude <= 0.0001f)
+                return;
+
+            ApplyRuntimeOffsetToCachedState(-shiftData.ShiftOffset);
+        }
+
         private void ResolveDependencies()
         {
             if (dragManager == null)
@@ -207,25 +226,11 @@ namespace Hecton8.World
                 cutManager = SargassumCutManager.Instance;
 
             ResolveLegacyInputs();
-
-            if (_facadeCopyMaterial == null)
-            {
-                Shader shader = facadeCopyShader != null ? facadeCopyShader : Shader.Find(FacadeCopyShaderName);
-                if (shader != null)
-                {
-                    // COLD ALLOC: Material[1] - first-party damping facade blit material, independent from Crest runtime assets - owner: SargassumCrestDampingController
-                    _facadeCopyMaterial = new Material(shader)
-                    {
-                        name = "MAT_Runtime_SargassumDampingFacadeCopy"
-                    };
-                    _facadeCopyMaterial.hideFlags = HideFlags.HideAndDontSave;
-                }
-            }
         }
 
         private void RefreshFacadeTextures(bool force)
         {
-            if (dragManager == null || _facadeCopyMaterial == null)
+            if (dragManager == null)
             {
                 PublishGlobals(active: false);
                 return;
@@ -252,36 +257,46 @@ namespace Hecton8.World
             _activeDriftOffset = dragManager.GlobalDriftOffset;
             _activeFieldRevision = dragManager.FieldRevision;
 
-            BakeFacadeTexture(_waveDampingMask, densityTexture, cutMaskTexture, densityWorldRect, cutMaskWorldRect, cutMaskAvailable, waveDampingDensityPower, waveDampingCutRelief, 1f, 0);
-            BakeFacadeTexture(_oilFilmMask, densityTexture, cutMaskTexture, densityWorldRect, cutMaskWorldRect, cutMaskAvailable, oilFilmDensityPower, oilFilmCutRelief, oilFilmAlphaScale, 1);
+            DispatchFacadeBake(densityTexture, cutMaskTexture, densityWorldRect, cutMaskWorldRect, cutMaskAvailable);
             PublishGlobals(active: true);
         }
 
-        private void BakeFacadeTexture(
-            RenderTexture target,
+        private void DispatchFacadeBake(
             Texture densityTexture,
             Texture cutMaskTexture,
             Vector4 densityWorldRect,
             Vector4 cutMaskWorldRect,
-            bool cutMaskActive,
-            float densityPower,
-            float cutRelief,
-            float alphaScale,
-            int passIndex)
+            bool cutMaskActive)
         {
-            if (target == null || _facadeCopyMaterial == null)
+            if (_waveDampingMask == null || _oilFilmMask == null || densityTexture == null)
                 return;
 
-            _facadeCopyMaterial.SetTexture(_DensityTexId, densityTexture);
-            _facadeCopyMaterial.SetVector(_DensityWorldRectId, densityWorldRect);
-            _facadeCopyMaterial.SetTexture(_CutMaskTexId, cutMaskActive && cutMaskTexture != null ? cutMaskTexture : Texture2D.blackTexture);
-            _facadeCopyMaterial.SetVector(_CutMaskWorldRectId, cutMaskWorldRect);
-            _facadeCopyMaterial.SetFloat(_CutMaskActiveId, cutMaskActive ? 1f : 0f);
-            _facadeCopyMaterial.SetVector(_GlobalDriftOffsetId, _activeDriftOffset);
-            _facadeCopyMaterial.SetFloat(_DensityPowerId, densityPower);
-            _facadeCopyMaterial.SetFloat(_CutReliefId, cutRelief);
-            _facadeCopyMaterial.SetFloat(_AlphaScaleId, alphaScale);
-            Graphics.Blit(null, target, _facadeCopyMaterial, passIndex);
+#if UNITY_EDITOR
+            TryAutoAssignFacadeCompute();
+#endif
+            if (_facadeBakeCompute == null)
+                _facadeBakeCompute = facadeBakeComputeOverride;
+
+            if (_facadeBakeCompute == null)
+                return;
+
+            if (_facadeBakeKernel < 0)
+                _facadeBakeKernel = _facadeBakeCompute.FindKernel("CSMain");
+
+            _facadeBakeCompute.SetTexture(_facadeBakeKernel, _DensityTexId, densityTexture);
+            _facadeBakeCompute.SetTexture(_facadeBakeKernel, _CutMaskTexId, cutMaskActive && cutMaskTexture != null ? cutMaskTexture : Texture2D.blackTexture);
+            _facadeBakeCompute.SetTexture(_facadeBakeKernel, _WaveDampingMaskResultId, _waveDampingMask);
+            _facadeBakeCompute.SetTexture(_facadeBakeKernel, _OilFilmMaskResultId, _oilFilmMask);
+            _facadeBakeCompute.SetVector(_DensityWorldRectId, densityWorldRect);
+            _facadeBakeCompute.SetVector(_CutMaskWorldRectId, cutMaskWorldRect);
+            _facadeBakeCompute.SetInt(_CutMaskActiveId, cutMaskActive ? 1 : 0);
+            _facadeBakeCompute.SetVector(_GlobalDriftOffsetId, _activeDriftOffset);
+            _facadeBakeCompute.SetVector(_WaveFacadeParamsId, new Vector4(waveDampingDensityPower, waveDampingCutRelief, 1f, 0f));
+            _facadeBakeCompute.SetVector(_OilFacadeParamsId, new Vector4(oilFilmDensityPower, oilFilmCutRelief, oilFilmAlphaScale, 0f));
+
+            int groupCountX = Mathf.Max(1, Mathf.CeilToInt(_waveDampingMask.width / (float)FacadeThreadGroupSize));
+            int groupCountY = Mathf.Max(1, Mathf.CeilToInt(_waveDampingMask.height / (float)FacadeThreadGroupSize));
+            _facadeBakeCompute.Dispatch(_facadeBakeKernel, groupCountX, groupCountY, 1);
         }
 
         private void EnsureFacadeResources()
@@ -312,14 +327,19 @@ namespace Hecton8.World
                 texture = null;
             }
 
-            texture = new RenderTexture(width, height, 0, RenderTextureFormat.R8, RenderTextureReadWrite.Linear)
+            bool supportsR8RandomWrite = SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.R8) &&
+                                         SystemInfo.SupportsRandomWriteOnRenderTextureFormat(RenderTextureFormat.R8);
+            RenderTextureFormat format = supportsR8RandomWrite
+                ? RenderTextureFormat.R8
+                : RenderTextureFormat.ARGB32;
+            texture = new RenderTexture(width, height, 0, format, RenderTextureReadWrite.Linear)
             {
                 name = name,
                 wrapMode = TextureWrapMode.Clamp,
                 filterMode = FilterMode.Bilinear,
                 useMipMap = false,
                 autoGenerateMips = false,
-                enableRandomWrite = false,
+                enableRandomWrite = true,
                 hideFlags = HideFlags.HideAndDontSave
             }; // COLD ALLOC: RenderTexture[1] - public sargassum damping facade texture for Crest 5 wave/albedo inputs - owner: SargassumCrestDampingController
             texture.Create();
@@ -330,11 +350,6 @@ namespace Hecton8.World
         {
             ReleaseRenderTexture(ref _waveDampingMask);
             ReleaseRenderTexture(ref _oilFilmMask);
-            if (_facadeCopyMaterial != null)
-            {
-                Destroy(_facadeCopyMaterial);
-                _facadeCopyMaterial = null;
-            }
 
             _debugWaveFacadeResolution = 0;
             _debugOilFacadeResolution = 0;
@@ -380,6 +395,36 @@ namespace Hecton8.World
             _hasPublishedFacadeData = true;
         }
 
+        private void ApplyRuntimeOffsetToCachedState(Vector3 runtimeOffset)
+        {
+            _activeDensityWorldRect = TranslateWorldRectXZ(_activeDensityWorldRect, runtimeOffset);
+            _activeCutMaskWorldRect = TranslateWorldRectXZ(_activeCutMaskWorldRect, runtimeOffset);
+            _activeDriftOffset += runtimeOffset;
+            _debugFacadeWorldRect = TranslateWorldRectXZ(_debugFacadeWorldRect, runtimeOffset);
+            _debugAppliedDriftOffset += runtimeOffset;
+
+            if (_hasPublishedFacadeData)
+                PublishGlobals(active: true);
+        }
+
+        private static Vector4 TranslateWorldRectXZ(Vector4 worldRect, Vector3 runtimeOffset)
+        {
+            if (worldRect == Vector4.zero)
+                return worldRect;
+
+            worldRect.x += runtimeOffset.x;
+            worldRect.y += runtimeOffset.z;
+            return worldRect;
+        }
+
+#if UNITY_EDITOR
+        private void TryAutoAssignFacadeCompute()
+        {
+            if (facadeBakeComputeOverride == null)
+                facadeBakeComputeOverride = AssetDatabase.LoadAssetAtPath<ComputeShader>(FacadeComputeAssetPath);
+        }
+#endif
+
         private void DisableLegacyInputs()
         {
             ResolveLegacyInputs();
@@ -420,38 +465,32 @@ namespace Hecton8.World
 
         private void TryRegister()
         {
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
 
             if (!_registeredTick)
             {
-                tickManager.Register((ITickable)this);
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
                 _registeredTick = true;
             }
 
             if (!_registeredSlowTick)
             {
-                tickManager.Register((ISlowTickable)this);
+                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredSlowTick = true;
             }
         }
 
         private void TryUnregister()
         {
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
 
             if (_registeredTick)
             {
-                tickManager.Unregister((ITickable)this);
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
                 _registeredTick = false;
             }
 
             if (_registeredSlowTick)
             {
-                tickManager.Unregister((ISlowTickable)this);
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredSlowTick = false;
             }
         }
@@ -469,6 +508,7 @@ namespace Hecton8.World
         private void OnValidate()
         {
             SanitizeSettings();
+            TryAutoAssignFacadeCompute();
         }
 #endif
     }

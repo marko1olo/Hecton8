@@ -18,7 +18,6 @@ using System.IO;
 using UnityEngine.SceneManagement;
 
 #if UNITY_EDITOR
-[InitializeOnLoad]
 #endif
 public class ftLightmaps {
 
@@ -320,6 +319,11 @@ public class ftLightmaps {
     static ftLightmaps() {
 
 #if UNITY_EDITOR
+        if (Application.isBatchMode)
+        {
+            return;
+        }
+
         EditorSceneManager.sceneOpening -= OnSceneOpening; // Andrew fix
         EditorSceneManager.sceneOpening += OnSceneOpening;
 

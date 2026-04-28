@@ -6,6 +6,7 @@ using Hecton8.Gameplay;
 using Hecton8.Physics;
 using Hecton8.VFX;
 using Hecton8.World;
+using Unity.Mathematics;
 
 namespace Hecton8.AI
 {
@@ -53,7 +54,7 @@ namespace Hecton8.AI
         [SerializeField] private FaunaSpeciesProfile _speciesProfile;
         [SerializeField] private FaunaSensorSuite _sensorSuite = new FaunaSensorSuite();
         [SerializeField] private FaunaSteeringEngine _steeringEngine = new FaunaSteeringEngine();
-        [SerializeField] private FaunaStateMachine _stateMachine = new FaunaStateMachine();
+        [SerializeField] private FaunaStateMachine _stateMachine = FaunaStateMachine.CreateDefault();
 
         public AIState CurrentState => _stateMachine.currentState;
         public FaunaSpeciesProfile SpeciesProfile => _speciesProfile;
@@ -70,7 +71,7 @@ namespace Hecton8.AI
         private bool _isDead;
         private bool _dispatcherRegistered;
         private int _spatialHandle;
-        private readonly CreatureUtilityBrain _utilityBrain = new CreatureUtilityBrain();
+        private CreatureUtilityBrain _utilityBrain;
         
         // --- Animator Hashes (Prime Directive #18) ---
         private static readonly int _HashSwimSpeed = Animator.StringToHash("SwimSpeed");
@@ -80,6 +81,9 @@ namespace Hecton8.AI
         private const float AmbientCurrentMaxVelocity = 3.8f;
         private const float AmbientCurrentCullDistance = 100f;
         private const float AmbientCurrentCullDistanceSqr = AmbientCurrentCullDistance * AmbientCurrentCullDistance;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private static float _nextSlowTickWatchdogLogTime;
+#endif
         
         // --- LOD & Stagger ---
         private bool _lodDisabled;
@@ -157,7 +161,7 @@ namespace Hecton8.AI
         private void Awake()
         {
             _rb = GetComponent<Rigidbody>();
-            _renderer = GetComponentInChildren<Renderer>();
+            _renderer = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Renderer>(transform);
             TryGetComponent(out _animator);
             ResolveFoveatedBindings();
             _tickStaggerShift = UnityEngine.Random.Range(0, 10);
@@ -165,11 +169,9 @@ namespace Hecton8.AI
             // Inject profile into subsystems
             _steeringEngine.Init(_rb, transform, _speciesProfile);
             _sensorSuite.Init(transform, _speciesProfile);
-            _stateMachine.Init(transform, _speciesProfile);
             _utilityBrain.Initialize(transform.position, _speciesProfile, _archetype);
+            ResetStateCache();
             _cognitionTimeSeconds = 0f;
-            
-            _stateMachine.OnAttackPerform += HandleAttackPerform;
         }
 
         private void OnEnable()
@@ -185,6 +187,7 @@ namespace Hecton8.AI
             }
 
             RegisterSpatialHandle();
+            _utilityBrain.SetRuntimeActive(true);
             ResetDispatcherCadence();
         }
 
@@ -201,15 +204,13 @@ namespace Hecton8.AI
 
             ClearInfectionHazardRegistration();
             UnregisterSpatialHandle();
+            _utilityBrain.SetRuntimeActive(false);
             ResetDispatcherCadence();
         }
 
         private void OnDestroy()
         {
             ClearInfectionHazardRegistration();
-            if (_stateMachine != null)
-                _stateMachine.OnAttackPerform -= HandleAttackPerform;
-
             _utilityBrain.Dispose();
         }
 
@@ -220,8 +221,9 @@ namespace Hecton8.AI
             ClearGeneticTraits();
             SetInfectedState(false, 0f);
             _currentHealth = _maxHealth;
-            _stateMachine.Init(transform, _speciesProfile);
             _utilityBrain.ResetRuntimeState(transform.position);
+            _utilityBrain.SetRuntimeActive(true);
+            ResetStateCache();
             _cognitionTimeSeconds = 0f;
             RefreshRuntimeEcosystemState();
             RegisterSpatialHandle();
@@ -237,6 +239,8 @@ namespace Hecton8.AI
             _rb.linearVelocity = Vector3.zero;
             _rb.angularVelocity = Vector3.zero;
             _utilityBrain.ResetRuntimeState(transform.position);
+            _utilityBrain.SetRuntimeActive(false);
+            ResetStateCache();
             _cognitionTimeSeconds = 0f;
             ClearInfectionHazardRegistration();
             UnregisterSpatialHandle();
@@ -263,27 +267,14 @@ namespace Hecton8.AI
             }
 
             AIState oldState = _currentStateCache;
-            Vector3 selfPosition = transform.position;
-            if (TryEvaluateUtilityPredatorBrain(dt, selfPosition, out CreatureUtilityEvaluation utilityEvaluation, out Transform attackTarget))
+            float3 selfPosition = transform.position;
+            CreatureUtilityEvaluation utilityEvaluation = EvaluateCognitionBrain(Time.frameCount, dt, selfPosition, out Transform attackTarget);
+            ApplyCognitionEvaluation(in utilityEvaluation);
+            if (utilityEvaluation.ShouldAttack && attackTarget != null)
             {
-                _cachedDesiredDirection = utilityEvaluation.DesiredDirection;
-                _currentStateCache = utilityEvaluation.LegacyState;
-                _stateMachine.currentState = utilityEvaluation.LegacyState;
-                _stateMachine.currentForceMultiplier = utilityEvaluation.ForceMultiplier;
-                _stateMachine.currentSpeedMultiplier = utilityEvaluation.SpeedMultiplier;
-                _stateMachine.currentTurnMultiplier = utilityEvaluation.TurnMultiplier;
-
-                if (utilityEvaluation.ShouldAttack && attackTarget != null)
-                {
-                    HandleAttackPerform(attackTarget);
-                    float attackCooldown = _speciesProfile != null ? _speciesProfile.attackCooldown : 1f;
-                    _utilityBrain.NotifyAttackPerformed(_cognitionTimeSeconds, attackCooldown);
-                }
-            }
-            else
-            {
-                _cachedDesiredDirection = _stateMachine.EvaluateAndGetDirection(dt, _sensorSuite, isAggressive, canFlee, HealthNormalized, selfPosition);
-                _currentStateCache = _stateMachine.currentState;
+                HandleAttackPerform(attackTarget);
+                float attackCooldown = _speciesProfile != null ? _speciesProfile.attackCooldown : 1f;
+                _utilityBrain.NotifyAttackPerformed(_cognitionTimeSeconds, attackCooldown);
             }
 
             if (_currentStateCache != oldState)
@@ -293,11 +284,14 @@ namespace Hecton8.AI
 
             if (_sensorSuite.isAvoidingObstacle)
             {
-                _cachedDesiredDirection = Vector3.Lerp(_cachedDesiredDirection, _sensorSuite.bestFreeDirection, 0.7f).normalized;
+                float3 blendedAvoidanceDirection = math.normalizesafe(
+                    math.lerp((float3)_cachedDesiredDirection, (float3)_sensorSuite.bestFreeDirection, 0.7f),
+                    (float3)_cachedDesiredDirection);
+                _cachedDesiredDirection = (Vector3)blendedAvoidanceDirection;
                 if (_sensorSuite.IsStuck && _sensorSuite.hasEscapePOI)
                 {
-                    Vector3 poiDir = (_sensorSuite.currentEscapePOI - transform.position).normalized;
-                    _cachedDesiredDirection = Vector3.Lerp(_cachedDesiredDirection, poiDir, 0.6f).normalized;
+                    float3 poiDir = math.normalizesafe((float3)_sensorSuite.currentEscapePOI - selfPosition, blendedAvoidanceDirection);
+                    _cachedDesiredDirection = (Vector3)math.normalizesafe(math.lerp(blendedAvoidanceDirection, poiDir, 0.6f), poiDir);
                 }
             }
 
@@ -308,12 +302,12 @@ namespace Hecton8.AI
             }
 
             // [REQ] Procedural Eye Tracking (The "Stare")
-            UpdateEyeTracking(dt);
+            UpdateEyeTracking(dt, (Vector3)selfPosition);
             FixedTick(dt);
             AdvanceSlowTickCadence(dt);
         }
 
-        private void UpdateEyeTracking(float dt)
+        private void UpdateEyeTracking(float dt, Vector3 selfPosition)
         {
             if (_speciesProfile == null || _speciesProfile.eyeTrackWeight <= 0.01f)
             {
@@ -332,10 +326,10 @@ namespace Hecton8.AI
 
             if (hasTarget)
             {
-                float distSqr = (targetPos - transform.position).sqrMagnitude;
+                float distSqr = (targetPos - selfPosition).sqrMagnitude;
                 if (distSqr < _speciesProfile.eyeTrackRange * _speciesProfile.eyeTrackRange)
                 {
-                    Vector3 toTarget = (targetPos - transform.position).normalized;
+                    Vector3 toTarget = (targetPos - selfPosition).normalized;
                     // Apply LookAt weight
                     LookDirection = Vector3.Slerp(transform.forward, toTarget, _speciesProfile.eyeTrackWeight);
                     return;
@@ -346,39 +340,66 @@ namespace Hecton8.AI
             LookDirection = Vector3.Slerp(LookDirection, transform.forward, 5f * dt);
         }
 
-        private bool TryEvaluateUtilityPredatorBrain(
+        private CreatureUtilityEvaluation EvaluateCognitionBrain(
+            int frameId,
             float dt,
-            Vector3 selfPosition,
-            out CreatureUtilityEvaluation evaluation,
+            float3 selfPosition,
             out Transform attackTarget)
         {
-            if (!_utilityBrain.IsActivePredator)
-            {
-                evaluation = default;
-                attackTarget = null;
-                return false;
-            }
-
-            bool hasPerceivedPlayerPosition = _sensorSuite.TryGetPerceivedPlayerPosition(out Vector3 perceivedPlayerPosition);
+            bool hasPlayerTarget = _sensorSuite.TryGetPerceivedPlayerPosition(out Vector3 playerPosition);
             bool hasDirectPlayerTransform = _sensorSuite.TryGetDirectPlayerTransform(out Transform directPlayerTransform);
+            bool hasThreatTarget = _sensorSuite.currentThreat != null;
+            bool hasPreyTarget = _sensorSuite.currentPrey != null;
+            bool hasScavengeTarget = _sensorSuite.currentScavengeTarget != null;
             float fearPressure01 = _sensorSuite.isThreatened ? 0.35f : 0f;
-            if (_sensorSuite.currentThreat != null)
+            if (hasThreatTarget)
                 fearPressure01 += 0.2f;
 
+            float3 selfVelocity = _rb != null ? _rb.linearVelocity : float3.zero;
+            float3 selfForward = transform.forward;
+            float attackRange = _speciesProfile != null ? _speciesProfile.attackRadius : math.max(1f, _stateMachine.attackRadius);
+            float wanderRadius = math.max(1f, _stateMachine.wanderRadius);
+            float patrolRadius = math.max(1f, _stateMachine.patrolRadius);
+
             CreatureUtilityContext context = new CreatureUtilityContext(
-                selfPosition,
-                transform.forward,
+                (Vector3)selfPosition,
+                (Vector3)selfVelocity,
+                (Vector3)selfForward,
+                hasPlayerTarget ? playerPosition : default,
+                hasThreatTarget ? _sensorSuite.currentThreat.position : default,
+                hasPreyTarget ? _sensorSuite.currentPrey.position : default,
+                hasScavengeTarget ? _sensorSuite.currentScavengeTarget.position : default,
+                _sensorSuite.flockCenter,
+                _sensorSuite.flockDirection,
+                _sensorSuite.flockAvoidance,
+                _sensorSuite.scatterDirection,
                 HealthNormalized,
+                _sensorSuite.distSqrToPlayer,
+                attackRange,
+                math.saturate(fearPressure01),
+                _stateMachine.escapeDistance,
+                _stateMachine.escapeSafeDistance,
+                wanderRadius,
+                patrolRadius,
+                math.saturate(_foveatedImportanceScore),
+                _sensorSuite.flockCount,
                 canFlee,
                 _sensorSuite.hasVisualPlayerContact,
-                hasPerceivedPlayerPosition,
-                perceivedPlayerPosition,
-                _sensorSuite.distSqrToPlayer,
-                _speciesProfile != null ? _speciesProfile.attackRadius : 3f,
-                Mathf.Clamp01(fearPressure01));
-            evaluation = _utilityBrain.Evaluate(dt, _cognitionTimeSeconds, in context);
-            attackTarget = hasDirectPlayerTransform ? directPlayerTransform : null;
-            return true;
+                hasPlayerTarget,
+                hasThreatTarget,
+                hasPreyTarget,
+                hasScavengeTarget,
+                _stateMachine.useTerritory,
+                _stateMachine.isFlockingFish,
+                _sensorSuite.isScattering,
+                isAggressive);
+
+            CreatureUtilityEvaluation evaluation = _utilityBrain.Evaluate(frameId, dt, _cognitionTimeSeconds, in context);
+            attackTarget = _sensorSuite.currentScavengeTarget ??
+                           _sensorSuite.currentDistractor ??
+                           directPlayerTransform ??
+                           _sensorSuite.currentPrey;
+            return evaluation;
         }
 
         public void FixedTick(float fdt)
@@ -416,13 +437,27 @@ namespace Hecton8.AI
             _slowTickAccumulator += dt;
 
             int iterationCount = 0;
+            int whileWatchdog = 0;
             while (_slowTickAccumulator >= SlowTickIntervalSeconds &&
                    iterationCount < MaxSlowTicksPerDispatcherTick)
             {
+                if (whileWatchdog++ > 10000)
+                    break;
+
                 _slowTickAccumulator -= SlowTickIntervalSeconds;
                 SlowTick();
                 iterationCount++;
             }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (_slowTickAccumulator >= SlowTickIntervalSeconds &&
+                iterationCount >= MaxSlowTicksPerDispatcherTick &&
+                Time.time >= _nextSlowTickWatchdogLogTime)
+            {
+                _nextSlowTickWatchdogLogTime = Time.time + 5f;
+                Debug.LogError("FaunaBrain slow-tick watchdog tripped. Cadence backlog was clamped.", this);
+            }
+#endif
 
             if (_slowTickAccumulator > SlowTickIntervalSeconds)
                 _slowTickAccumulator = SlowTickIntervalSeconds;
@@ -499,7 +534,9 @@ namespace Hecton8.AI
             {
                 // [RULE] Predators entering Sated state after eating
                 float satedDur = _speciesProfile != null ? _speciesProfile.satedDuration : 45f;
-                _stateMachine.ForceSated(satedDur);
+                _utilityBrain.ForceSated(_cognitionTimeSeconds, satedDur);
+                _stateMachine.currentState = AIState.Sated;
+                _currentStateCache = AIState.Sated;
                 
                 // [REQ] SHOAL SCATTERING (Panic Pulse)
                 // Trigger panic in all nearby prey within 10m
@@ -526,6 +563,10 @@ namespace Hecton8.AI
                         target.gameObject.SetActive(false);
                 }
 
+                IEcosystemDirectorService ecosystemDirector = GlobalRegistry.EcosystemDirector;
+                if (ecosystemDirector != null && ecosystemDirector.IsInitialized)
+                    ecosystemDirector.ReportPredation(target.position, 1);
+
                 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.Log($"[FAUNA] {gameObject.name} fed on {target.name}. Entering SATED state for {satedDur}s.");
                 #endif
@@ -548,7 +589,7 @@ namespace Hecton8.AI
                     // Check if player is using MantaScooter
                     // Scooter is typically a child of the player or held tool
                     // We check for components on the player or children
-                    var scooter = target.GetComponentInChildren<MantaScooter>();
+                    var scooter = target.GetComponent<MantaScooter>();
                     if (scooter != null)
                     {
                         // In Subnautica, damage to scooter/seaglide is often handled via player health 
@@ -628,7 +669,9 @@ namespace Hecton8.AI
                 return;
             }
 
-            _stateMachine.ForceRetreat(threatPosition, 8.0f); // Default 8s retreat
+            _utilityBrain.ForceRetreat(threatPosition, _cognitionTimeSeconds, 8f);
+            _stateMachine.currentState = AIState.Retreat;
+            _currentStateCache = AIState.Retreat;
         }
 
         private void Die()
@@ -638,6 +681,32 @@ namespace Hecton8.AI
                 ObjectPoolManager.Instance.Despawn(gameObject);
             else
                 gameObject.SetActive(false);
+        }
+
+        private void ApplyCognitionEvaluation(in CreatureUtilityEvaluation evaluation)
+        {
+            _cachedDesiredDirection = evaluation.DesiredDirection;
+            _currentStateCache = evaluation.LegacyState;
+            _stateMachine.currentState = evaluation.LegacyState;
+            _stateMachine.currentForceMultiplier = evaluation.ForceMultiplier;
+            _stateMachine.currentSpeedMultiplier = evaluation.SpeedMultiplier;
+            _stateMachine.currentTurnMultiplier = evaluation.TurnMultiplier;
+        }
+
+        private void ResetStateCache()
+        {
+            AIState initialState = ResolveInitialState();
+            _stateMachine.ResetRuntime(initialState);
+            _currentStateCache = initialState;
+            _cachedDesiredDirection = transform != null ? transform.forward : Vector3.forward;
+        }
+
+        private AIState ResolveInitialState()
+        {
+            if (_speciesProfile != null && _speciesProfile.isAmbusher)
+                return AIState.Idle;
+
+            return _stateMachine.isFlockingFish ? AIState.Flocking : AIState.Wander;
         }
     }
 }

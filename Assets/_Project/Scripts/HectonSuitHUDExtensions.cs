@@ -40,7 +40,7 @@ using UnityEditor;
 [DisallowMultipleComponent]
 [ExecuteAlways]
 [AddComponentMenu("Hecton8/HUD/Suit HUD Extensions")]
-public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer, ITickable
+public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer, ITickable, IUpdatable
 {
     private static readonly List<HectonSuitHUD_v4> s_hudResolveBuffer = new List<HectonSuitHUD_v4>(4);
     private static readonly List<SuitHUDV4CanvasOverlay> s_overlayResolveBuffer = new List<SuitHUDV4CanvasOverlay>(4);
@@ -268,10 +268,18 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer, ITickabl
             hasPlayerTransformRoot = SceneBootstrap.TryGetCurrentPlayerTransform(out playerTransformRoot);
 
         if (flashlight == null && hasPlayerTransformRoot)
-            flashlight = playerTransformRoot.GetComponentInChildren<PlayerFlashlight>(true);
+        {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null)
+                flashlight = playerContext.Flashlight;
+        }
 
         if (toolManager == null && hasPlayerTransformRoot)
-            toolManager = playerTransformRoot.GetComponentInChildren<PlayerToolManager>(true);
+        {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null)
+                toolManager = playerContext.ToolManager;
+        }
 
         SubscribeToolManager();
     }
@@ -810,11 +818,7 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer, ITickabl
         if (!Application.isPlaying || _tickRegistered)
             return;
 
-        GameTickManager tickManager = GameTickManager.Instance;
-        if (tickManager == null)
-            return;
-
-        tickManager.Register(this);
+        GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
         _tickRegistered = true;
     }
 
@@ -823,10 +827,7 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer, ITickabl
         if (!_tickRegistered)
             return;
 
-        GameTickManager tickManager = GameTickManager.Instance;
-        if (tickManager != null)
-            tickManager.Unregister(this);
-
+        GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
         _tickRegistered = false;
     }
 

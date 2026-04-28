@@ -187,11 +187,7 @@ namespace Hecton8.Gameplay
             if (_registered)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager == null)
-                return;
-
-            gameTickManager.Register(this);
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
             _registered = true;
         }
 
@@ -200,10 +196,7 @@ namespace Hecton8.Gameplay
             if (!_registered)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager != null)
-                gameTickManager.Unregister(this);
-
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _registered = false;
         }
 

@@ -1,125 +1,69 @@
 // ============================================================================
-// HECTON-8 — PlayerInventory.cs
-// MonoBehaviour-обёртка над InventoryGrid.
-// Вешается на корневой GameObject игрока.
-//
-// Ответственности:
-//   1. Создаёт InventoryGrid при инициализации.
-//   2. Слушает InteractionEvents.OnItemCollected и размещает предметы.
-//   3. Отслеживает общий вес и синхронизирует с HectonSurvivalSystem.
-//   4. ISaveable: сохраняет/загружает содержимое сетки инвентаря.
-//
-// НЕ содержит UI-логику — только данные и бизнес-правила.
+// HECTON-8 - PlayerInventory.cs
+// Native SOA-backed inventory owner. Managed ItemData resolution is seam-only.
 // ============================================================================
 
 namespace Hecton8.Inventory
 {
     using System;
     using Hecton.Localization;
+    using Hecton8.Core;
     using Hecton8.Gameplay;
     using Hecton8.Interaction;
     using Hecton8.Items;
     using Hecton8.Modding;
     using Hecton8.SaveSystem;
+    using Unity.Burst;
     using Unity.Collections;
     using Unity.Jobs;
+    using Unity.Mathematics;
     using UnityEngine;
 
     [DisallowMultipleComponent]
     public sealed class PlayerInventory : MonoBehaviour, ISaveable
     {
-        // ══════════════════════════════════════════════════════════
-        //  SINGLETON
-        // ══════════════════════════════════════════════════════════
+        private const ushort CraftingLockedMask = 1 << 10;
 
-        private static PlayerInventory _instance;
-        /// <summary>Singleton instance for external access.</summary>
-        public static PlayerInventory Instance => _instance;
+        private struct InventorySortEntry : IComparable<InventorySortEntry>
+        {
+            public ulong PackedKey;
+            public int OriginalIndex;
 
-        // ══════════════════════════════════════════════════════════
-        //  INSPECTOR
-        // ══════════════════════════════════════════════════════════
+            public int CompareTo(InventorySortEntry other)
+            {
+                int packedKeyCompare = PackedKey.CompareTo(other.PackedKey);
+                if (packedKeyCompare != 0)
+                    return packedKeyCompare;
 
-        [Header("── Grid Settings ─────────────────────────────")]
-        [Tooltip("Количество колонок сетки инвентаря")]
-        [SerializeField] private int columns = 8;
-        [Tooltip("Количество строк сетки инвентаря")]
-        [SerializeField] private int rows    = 6;
+                return OriginalIndex.CompareTo(other.OriginalIndex);
+            }
+        }
 
-        [Header("── References ────────────────────────────────")]
-        [Tooltip("Ссылка на систему выживания для синхронизации веса (опционально)")]
-        [SerializeField] private HectonSurvivalSystem survival;
+        [BurstCompile]
+        private struct InventorySortJob : IJob
+        {
+            public NativeArray<InventorySortEntry> Entries;
 
-        [Header("── Save System ───────────────────────────────")]
-        [Tooltip("Каталог всех предметов для поиска по ID при загрузке")]
-        [SerializeField] private ItemCatalog itemCatalog;
+            public void Execute()
+            {
+                NativeSortExtension.Sort(Entries);
+            }
+        }
 
-        // ══════════════════════════════════════════════════════════
-        //  RUNTIME STATE
-        // ══════════════════════════════════════════════════════════
+        public struct CraftReservation
+        {
+            public int AnchorIndex;
+            public int Quantity;
+            public int ItemHashId;
+        }
 
-        private InventoryGrid _grid;
-        /// <summary>
-        /// Количество предметов в стеке для каждой якорной ячейки.
-        /// Индекс = y * columns + x. Не-якорные ячейки = 0.
-        /// </summary>
-        private int[] _stackCounts;
-        private int[] _scavengeSimStackCounts;
-        private NativeArray<int> _anchorHashIds;
-        // ══════════════════════════════════════════════════════════
-        //  SAVE HELPERS (pre-allocated, reused)
-        // ══════════════════════════════════════════════════════════
-
-        /// <summary>
-        /// Вспомогательный массив для отслеживания multi-cell предметов
-        /// при сохранении. Аллоцируется один раз, очищается через Array.Clear.
-        /// </summary>
-        private bool[,] _saveDrawn;
-        private int     _saveDrawnCols;
-        private int     _saveDrawnRows;
-
-        // ══════════════════════════════════════════════════════════
-        //  PUBLIC API
-        // ══════════════════════════════════════════════════════════
-
-        /// <summary>Суммарный вес всех предметов в инвентаре (кг).</summary>
-        public float TotalWeight { get; private set; }
-
-        /// <summary>
-        /// Прямой доступ к сетке для UI и других систем.
-        /// Только чтение рекомендуется — мутация через PlayerInventory.
-        /// </summary>
-        public InventoryGrid Grid => _grid;
-
-        /// <summary>
-        /// Runtime item catalog currently used by inventory save/load and item resolution.
-        /// </summary>
-        public ItemCatalog ItemCatalog => itemCatalog;
-
-        /// <summary>
-        /// Fired whenever inventory contents change and UI must refresh.
-        /// Event is raised only after a completed mutation of the grid.
-        /// </summary>
-        public event Action InventoryChanged;
-
-        /// <summary>
-        /// Result of a single SCAVENGE_ATTEMPT against the inventory.
-        /// </summary>
         public readonly struct ScavengeAttemptResult
         {
-            /// <summary>Requested quantity from the world pickup.</summary>
             public readonly int RequestedQuantity;
-
-            /// <summary>Quantity committed into the inventory.</summary>
             public readonly int AddedQuantity;
-
-            /// <summary>Quantity rejected and left in the world.</summary>
             public readonly int RejectedQuantity;
 
-            /// <summary>True when at least one unit was inserted.</summary>
             public bool AnyAdded => AddedQuantity > 0;
-
-            /// <summary>True when the full request was committed.</summary>
             public bool IsSuccess => AddedQuantity > 0 && RejectedQuantity == 0;
 
             internal ScavengeAttemptResult(int requestedQuantity, int addedQuantity)
@@ -130,196 +74,272 @@ namespace Hecton8.Inventory
             }
         }
 
-        // DEPRECATED: use InventoryEvents.OnInventoryFull
-        // public event Action<ItemData> InventoryFull;
+        public struct ItemPlacement
+        {
+            public int itemHashId;
+            public int x;
+            public int y;
+            public ushort width;
+            public ushort height;
+            public ushort maxStack;
+            public ushort stackCount;
+            public ushort lockedCount;
+            public ushort stateFlags;
+            public float weight;
+            public byte categoryId;
+            public byte rarity;
+            public bool stackable;
 
-        // ══════════════════════════════════════════════════════════
-        //  LIFECYCLE
-        // ══════════════════════════════════════════════════════════
+            public InventoryGrid.InventoryItemDescriptor Descriptor => new InventoryGrid.InventoryItemDescriptor(
+                itemHashId,
+                (byte)width,
+                (byte)height,
+                maxStack,
+                weight,
+                categoryId,
+                rarity,
+                stackable);
+        }
+
+        private static PlayerInventory _instance;
+
+        [Header("── Grid Settings ──────────────────")]
+        [Tooltip("Inventory grid column count.")]
+        [SerializeField] private int columns = 8;
+        [Tooltip("Inventory grid row count.")]
+        [SerializeField] private int rows = 6;
+
+        [Header("── References ─────────────────────")]
+        [Tooltip("Optional survival system weight sink.")]
+        [SerializeField] private HectonSurvivalSystem survival;
+        [Tooltip("Item catalog used for load-time and UI seam resolution.")]
+        [SerializeField] private ItemCatalog itemCatalog;
+
+        private InventoryGrid _grid;
+        private NativeArray<ushort> _stackCounts;
+        private NativeArray<ushort> _craftLockedCounts;
+        private NativeArray<ushort> _anchorStateFlags;
+        private NativeArray<ushort> _scavengeSimStackCounts;
+        private NativeArray<byte> _simulationOccupiedCells;
+        private ItemPlacement[] _sortBuffer;
+        private ItemPlacement[] _sortedPlacements;
+
+        public static PlayerInventory Instance => _instance;
+        public float TotalWeight { get; private set; }
+        public InventoryGrid Grid => _grid;
+        public ItemCatalog ItemCatalog => itemCatalog;
+        public int InventoryVersion { get; private set; }
+        public event Action InventoryChanged;
+
+        public int SavePriority => 20;
+        public int LoadPriority => 20;
 
         private void Awake()
         {
-            // Singleton assignment
             if (_instance != null && _instance != this)
             {
                 Destroy(gameObject);
                 return;
             }
-            _instance = this;
 
+            _instance = this;
             _grid = new InventoryGrid(columns, rows);
-            // COLD ALLOC: int[columns * rows] — anchor stack counts — owner: PlayerInventory
-            _stackCounts = new int[columns * rows];
-            // COLD ALLOC: int[columns * rows] — atomic pickup stack simulation buffer — owner: PlayerInventory
-            _scavengeSimStackCounts = new int[columns * rows];
-            // COLD ALLOC: ItemPlacement[columns * rows] — inventory placement snapshot buffer — owner: PlayerInventory
+            // COLD ALLOC: ushort[columns * rows] — anchor stack counts — owner: PlayerInventory
+            _stackCounts = new NativeArray<ushort>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: ushort[columns * rows] — craft reservations per anchor — owner: PlayerInventory
+            _craftLockedCounts = new NativeArray<ushort>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: ushort[columns * rows] — per-anchor state flags — owner: PlayerInventory
+            _anchorStateFlags = new NativeArray<ushort>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: ushort[columns * rows] — stack simulation scratch — owner: PlayerInventory
+            _scavengeSimStackCounts = new NativeArray<ushort>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: byte[columns * rows] — occupancy simulation scratch — owner: PlayerInventory
+            _simulationOccupiedCells = new NativeArray<byte>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: ItemPlacement[columns * rows] — placement snapshot buffer — owner: PlayerInventory
             _sortBuffer = new ItemPlacement[columns * rows];
-            // COLD ALLOC: NativeArray<int>[columns * rows] — anchor hash cache for zero-GC inventory queries — owner: PlayerInventory
-            _anchorHashIds = new NativeArray<int>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            RefreshAnchorHashCache();
+            // COLD ALLOC: ItemPlacement[columns * rows] — placement reorder buffer — owner: PlayerInventory
+            _sortedPlacements = new ItemPlacement[columns * rows];
         }
 
         private void OnEnable()
         {
-
-            // ── Регистрация в SaveManager ──
-            SaveManager.Instance?.Register(this);
+            GlobalRegistry.Save?.Register(this);
         }
 
         private void OnDisable()
         {
-
-            // ── Отписка от SaveManager ──
-            SaveManager.Instance?.Unregister(this);
+            GlobalRegistry.Save?.Unregister(this);
         }
 
         private void OnDestroy()
         {
-            if (_anchorHashIds.IsCreated)
+            if (_grid != null)
             {
-                _anchorHashIds.Dispose(default(JobHandle));
-                _anchorHashIds = default;
+                _grid.Dispose(default);
+                _grid = null;
             }
+
+            if (_stackCounts.IsCreated)
+                _stackCounts.Dispose(default);
+
+            if (_craftLockedCounts.IsCreated)
+                _craftLockedCounts.Dispose(default);
+
+            if (_anchorStateFlags.IsCreated)
+                _anchorStateFlags.Dispose(default);
+
+            if (_scavengeSimStackCounts.IsCreated)
+                _scavengeSimStackCounts.Dispose(default);
+
+            if (_simulationOccupiedCells.IsCreated)
+                _simulationOccupiedCells.Dispose(default);
 
             if (_instance == this)
                 _instance = null;
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  PUBLIC METHODS
-        // ══════════════════════════════════════════════════════════
-
-        /// <summary>
-        /// Удаляет предмет из сетки и пересчитывает вес.
-        /// Вызывается UI-системой при drop/discard.
-        /// </summary>
-        /// <param name="item">Данные предмета для пересчёта веса.</param>
-        /// <param name="x">Колонка якорной ячейки.</param>
-        /// <param name="y">Строка якорной ячейки.</param>
         public void RemoveItem(ItemData item, int x, int y)
         {
-            if (item == null || _grid == null)
+            if (_grid == null || !_stackCounts.IsCreated)
                 return;
 
-            int idx = AnchorIndex(x, y);
-            int count = _stackCounts[idx];
-            if (count < 1) count = 1;
+            int anchorIndex = AnchorIndex(x, y);
+            if (!_grid.TryGetAnchorDescriptor(anchorIndex, out InventoryGrid.InventoryItemDescriptor descriptor) || IsCraftLockedFlagSet(anchorIndex))
+                return;
 
-            _grid.RemoveItem(x, y, item.width, item.height);
-            _stackCounts[idx] = 0;
-            TotalWeight -= item.weight * count;
+            int count = Mathf.Max(1, (int)_stackCounts[anchorIndex]);
+            _grid.RemoveAnchorAt(anchorIndex);
+            _stackCounts[anchorIndex] = 0;
+            _craftLockedCounts[anchorIndex] = 0;
+            _anchorStateFlags[anchorIndex] = 0;
 
-            if (TotalWeight < 0f) TotalWeight = 0f;
+            TotalWeight = Mathf.Max(0f, TotalWeight - descriptor.Weight * count);
             if (survival != null)
                 survival.SetWeight(TotalWeight);
 
             NotifyInventoryChanged();
         }
-        /// <summary>
-        /// Удаляет одну единицу из стека. Если стек становится пуст —
-        /// очищает ячейки. Возвращает удалённый ItemData (для спавна в мир).
-        /// </summary>
+
         public ItemData RemoveOneItem(int anchorX, int anchorY)
         {
-            if (_grid == null)
-                return null;
+            int itemHashId = RemoveOneItemHash(anchorX, anchorY);
+            return ResolveItemByHash(itemHashId);
+        }
 
-            ItemData item = _grid.GetCell(anchorX, anchorY);
-            if (item == null) return null;
+        public int RemoveOneItemHash(int anchorX, int anchorY)
+        {
+            if (_grid == null || !_stackCounts.IsCreated)
+                return 0;
 
-            int idx = AnchorIndex(anchorX, anchorY);
-            int count = _stackCounts[idx];
+            int anchorIndex = AnchorIndex(anchorX, anchorY);
+            if (!_grid.TryGetAnchorDescriptor(anchorIndex, out InventoryGrid.InventoryItemDescriptor descriptor))
+                return 0;
+
+            int count = Mathf.Max(1, (int)_stackCounts[anchorIndex]);
+            int unlockedCount = Mathf.Max(0, count - GetReservedCraftCount(anchorIndex));
+            if (unlockedCount <= 0)
+                return 0;
 
             if (count > 1)
             {
-                _stackCounts[idx]--;
+                _stackCounts[anchorIndex] = (ushort)(count - 1);
             }
             else
             {
-                _grid.RemoveItem(anchorX, anchorY, item.width, item.height);
-                _stackCounts[idx] = 0;
+                _grid.RemoveAnchorAt(anchorIndex);
+                _stackCounts[anchorIndex] = 0;
+                _craftLockedCounts[anchorIndex] = 0;
+                _anchorStateFlags[anchorIndex] = 0;
             }
 
-            TotalWeight -= item.weight;
-            if (TotalWeight < 0f) TotalWeight = 0f;
+            TotalWeight = Mathf.Max(0f, TotalWeight - descriptor.Weight);
             if (survival != null)
                 survival.SetWeight(TotalWeight);
 
             NotifyInventoryChanged();
-            return item;
+            return descriptor.HashId;
         }
 
-        /// <summary>
-        /// Потребляет одну единицу предмета из стека.
-        /// Применяет эффект через HectonSurvivalSystem.
-        /// Возвращает true если предмет был потреблён.
-        /// </summary>
         public bool ConsumeOneItem(int anchorX, int anchorY)
         {
-            ItemData item = _grid.GetCell(anchorX, anchorY);
-            if (item == null || !item.isConsumable) return false;
+            if (_grid == null)
+                return false;
 
-            // Применяем эффекты
+            int anchorIndex = AnchorIndex(anchorX, anchorY);
+            if (!_grid.TryGetAnchorDescriptor(anchorIndex, out InventoryGrid.InventoryItemDescriptor descriptor))
+                return false;
+
+            ItemData item = ResolveItemByHash(descriptor.HashId);
+            if (item == null || !item.isConsumable)
+                return false;
+
             if (survival != null)
             {
-                if (item.oxygenRestore > 0f)    survival.RefillOxygen(item.oxygenRestore);
-                if (item.energyRestore > 0f)    survival.RechargeEnergy(item.energyRestore);
-                if (item.integrityRestore > 0f) survival.Repair(item.integrityRestore);
+                if (item.oxygenRestore > 0f)
+                    survival.RefillOxygen(item.oxygenRestore);
+
+                if (item.energyRestore > 0f)
+                    survival.RechargeEnergy(item.energyRestore);
+
+                if (item.integrityRestore > 0f)
+                    survival.Repair(item.integrityRestore);
             }
 
-            // Удаляем единицу
             RemoveOneItem(anchorX, anchorY);
             return true;
         }
 
-        /// <summary>Количество предметов в стеке по координатам якоря.</summary>
         public int GetStackCount(int anchorX, int anchorY)
         {
-            if (_stackCounts == null) return 0;
-            int idx = AnchorIndex(anchorX, anchorY);
-            if (idx < 0 || idx >= _stackCounts.Length) return 0;
-            return _stackCounts[idx];
+            if (!_stackCounts.IsCreated)
+                return 0;
+
+            int index = AnchorIndex(anchorX, anchorY);
+            return (uint)index < (uint)_stackCounts.Length ? _stackCounts[index] : 0;
         }
 
-        /// <summary>
-        /// Суммарное количество единиц предмета по всем стекам.
-        /// Используется крафтом для проверки «есть ли 3 титана».
-        /// </summary>
+        public ItemData GetItemAt(int x, int y)
+        {
+            return ResolveItemByHash(GetItemHashAt(x, y));
+        }
+
+        public int GetItemHashAt(int x, int y)
+        {
+            return _grid == null ? 0 : _grid.GetCellHashId(x, y);
+        }
+
         public int CountTotal(ItemData item)
         {
-            if (item == null || _grid == null) return 0;
+            return CountTotal(ComputeItemHash(item));
+        }
 
-            int total = 0;
-            int cols = _grid.Columns;
-            int rws = _grid.Rows;
+        public int CountTotal(int itemHashId)
+        {
+            return CountQuantityByHash(itemHashId, false);
+        }
 
-            for (int y = 0; y < rws; y++)
-            {
-                for (int x = 0; x < cols; x++)
-                {
-                    ItemData cell = _grid.GetCell(x, y);
-                    if (!ReferenceEquals(cell, item)) continue;
+        public int CountAvailableTotal(ItemData item)
+        {
+            return CountAvailableTotal(ComputeItemHash(item));
+        }
 
-                    if (x > 0 && ReferenceEquals(_grid.GetCell(x - 1, y), item)) continue;
-                    if (y > 0 && ReferenceEquals(_grid.GetCell(x, y - 1), item)) continue;
-
-                    int idx = AnchorIndex(x, y);
-                    total += Mathf.Max(1, _stackCounts[idx]);
-                }
-            }
-
-            return total;
+        public int CountAvailableTotal(int itemHashId)
+        {
+            return CountQuantityByHash(itemHashId, true);
         }
 
         internal bool TryFindFirstAnchorByHash(int itemHashId, out int anchorIndex)
         {
             anchorIndex = -1;
-            if (!_anchorHashIds.IsCreated || itemHashId == 0)
+            if (_grid == null || !_stackCounts.IsCreated || itemHashId == 0)
                 return false;
 
-            for (int i = 0; i < _anchorHashIds.Length; i++)
+            for (int i = 0; i < _stackCounts.Length; i++)
             {
-                if (_anchorHashIds[i] != itemHashId)
+                if (!_grid.HasAnchor(i) || _grid.GetAnchorHashId(i) != itemHashId)
+                    continue;
+
+                int stackCount = Mathf.Max(1, (int)_stackCounts[i]);
+                if (GetReservedCraftCount(i) >= stackCount)
                     continue;
 
                 anchorIndex = i;
@@ -334,41 +354,32 @@ namespace Hecton8.Inventory
             if (!TryFindFirstAnchorByHash(itemHashId, out int anchorIndex) || _grid == null)
                 return false;
 
-            int cols = _grid.Columns;
-            int anchorX = anchorIndex % cols;
-            int anchorY = anchorIndex / cols;
+            int anchorX = anchorIndex % _grid.Columns;
+            int anchorY = anchorIndex / _grid.Columns;
             return RemoveOneItem(anchorX, anchorY) != null;
         }
-        /// <summary>
-        /// Прибавляет вес напрямую (без прохода через RemoveItem).
-        /// Используется Fabricator при возврате ингредиентов / добавлении результата.
-        /// </summary>
+
         public void AddWeight(float amount)
         {
-            TotalWeight += amount;
-            if (TotalWeight < 0f) TotalWeight = 0f;
-
+            TotalWeight = Mathf.Max(0f, TotalWeight + amount);
             if (survival != null)
                 survival.SetWeight(TotalWeight);
         }
 
-        /// <summary>
-        /// Returns true if at least one anchor instance of the item is present in the grid.
-        /// Safe for UI / hotbar availability checks.
-        /// </summary>
         public bool ContainsItem(ItemData item)
         {
-            return CountAnchors(item) > 0;
+            return ContainsItem(ComputeItemHash(item));
         }
 
-        /// <summary>
-        /// Programmatically adds one or more items into the inventory using the
-        /// same stacking/placement rules as world pickup flow.
-        /// Returns true only if the full quantity was added.
-        /// </summary>
+        public bool ContainsItem(int itemHashId)
+        {
+            return CountAnchorsByHash(itemHashId) > 0;
+        }
+
         public bool TryAddItem(ItemData item, int quantity = 1)
         {
-            if (!CanAcceptQuantity(item, quantity))
+            int itemHashId = ComputeItemHash(item);
+            if (!CanAcceptQuantity(itemHashId, quantity))
             {
                 if (item != null && quantity > 0)
                     InventoryEvents.NotifyInventoryFull(item);
@@ -376,32 +387,166 @@ namespace Hecton8.Inventory
                 return false;
             }
 
-            int addedQuantity;
-            return TryAddItemInternal(item, quantity, out addedQuantity);
+            return TryAddItemInternal(itemHashId, quantity, item, out _);
         }
 
-        /// <summary>
-        /// Executes the zero-loss SCAVENGE_ATTEMPT protocol for a world pickup.
-        /// The caller owns the world proxy and decides how rejected quantity is handled.
-        /// </summary>
-        /// <param name="item">Item definition being scavenged.</param>
-        /// <param name="quantity">Requested quantity from the world proxy.</param>
-        /// <param name="interactor">Interactor that initiated the pickup.</param>
-        /// <returns>Committed vs rejected quantity for DROP_OVERFLOW handling.</returns>
-        public ScavengeAttemptResult ScavengeAttempt(ItemData item, int quantity, Transform interactor)
+        public bool TryAddItem(int itemHashId, int quantity = 1)
         {
-            if (item == null || quantity <= 0)
-                return new ScavengeAttemptResult(Mathf.Max(0, quantity), 0);
-
-            if (!CanAcceptQuantity(item, quantity))
+            if (!CanAcceptQuantity(itemHashId, quantity))
             {
-                InventoryEvents.NotifyInventoryFull(item);
-                return new ScavengeAttemptResult(quantity, 0);
+                ItemData item = ResolveItemByHash(itemHashId);
+                if (item != null && quantity > 0)
+                    InventoryEvents.NotifyInventoryFull(item);
+
+                return false;
             }
 
-            int addedQuantity;
-            TryAddItemInternal(item, quantity, out addedQuantity);
+            return TryAddItemInternal(itemHashId, quantity, null, out _);
+        }
 
+        public bool TryReserveQuantityForCraft(ItemData item, int quantity, CraftReservation[] reservations, ref int reservationCount)
+        {
+            return TryReserveQuantityForCraft(ComputeItemHash(item), quantity, reservations, ref reservationCount);
+        }
+
+        public bool TryReserveQuantityForCraft(int itemHashId, int quantity, CraftReservation[] reservations, ref int reservationCount)
+        {
+            if (_grid == null || !_stackCounts.IsCreated || itemHashId == 0 || quantity <= 0 || reservations == null)
+                return false;
+
+            if (CountAvailableTotal(itemHashId) < quantity)
+                return false;
+
+            int startReservationCount = reservationCount;
+            int remaining = quantity;
+            for (int anchorIndex = 0; anchorIndex < _stackCounts.Length && remaining > 0; anchorIndex++)
+            {
+                if (!_grid.HasAnchor(anchorIndex) || _grid.GetAnchorHashId(anchorIndex) != itemHashId)
+                    continue;
+
+                int stackCount = Mathf.Max(1, (int)_stackCounts[anchorIndex]);
+                int available = Mathf.Max(0, stackCount - GetReservedCraftCount(anchorIndex));
+                if (available <= 0)
+                    continue;
+
+                if (reservationCount >= reservations.Length)
+                {
+                    ReleaseCraftReservationsRange(reservations, startReservationCount, reservationCount);
+                    reservationCount = startReservationCount;
+                    return false;
+                }
+
+                int take = Mathf.Min(available, remaining);
+                _craftLockedCounts[anchorIndex] = (ushort)Mathf.Min(ushort.MaxValue, _craftLockedCounts[anchorIndex] + take);
+                _anchorStateFlags[anchorIndex] |= CraftingLockedMask;
+                reservations[reservationCount++] = new CraftReservation
+                {
+                    AnchorIndex = anchorIndex,
+                    Quantity = take,
+                    ItemHashId = itemHashId
+                };
+                remaining -= take;
+            }
+
+            if (remaining > 0)
+            {
+                ReleaseCraftReservationsRange(reservations, startReservationCount, reservationCount);
+                reservationCount = startReservationCount;
+                return false;
+            }
+
+            return true;
+        }
+
+        public void ReleaseCraftReservations(CraftReservation[] reservations, int reservationCount)
+        {
+            ReleaseCraftReservationsRange(reservations, 0, reservationCount);
+        }
+
+        public bool CommitCraftReservations(CraftReservation[] reservations, int reservationCount)
+        {
+            if (reservations == null || reservationCount <= 0 || _grid == null || !_stackCounts.IsCreated)
+                return true;
+
+            for (int i = 0; i < reservationCount; i++)
+            {
+                if (!IsValidCraftReservation(in reservations[i]))
+                {
+                    ReleaseCraftReservations(reservations, reservationCount);
+                    return false;
+                }
+            }
+
+            float removedWeight = 0f;
+            for (int i = 0; i < reservationCount; i++)
+            {
+                CraftReservation reservation = reservations[i];
+                if (reservation.Quantity <= 0)
+                    continue;
+
+                int anchorIndex = reservation.AnchorIndex;
+                if (!_grid.TryGetAnchorDescriptor(anchorIndex, out InventoryGrid.InventoryItemDescriptor descriptor))
+                    continue;
+
+                _craftLockedCounts[anchorIndex] = (ushort)Mathf.Max(0, _craftLockedCounts[anchorIndex] - reservation.Quantity);
+                if (_craftLockedCounts[anchorIndex] == 0)
+                    _anchorStateFlags[anchorIndex] = (ushort)(_anchorStateFlags[anchorIndex] & ~CraftingLockedMask);
+
+                int stackCount = Mathf.Max(1, (int)_stackCounts[anchorIndex]);
+                int remainingStack = stackCount - reservation.Quantity;
+                if (remainingStack <= 0)
+                {
+                    _grid.RemoveAnchorAt(anchorIndex);
+                    _stackCounts[anchorIndex] = 0;
+                    _craftLockedCounts[anchorIndex] = 0;
+                    _anchorStateFlags[anchorIndex] = 0;
+                }
+                else
+                {
+                    _stackCounts[anchorIndex] = (ushort)remainingStack;
+                }
+
+                removedWeight += descriptor.Weight * reservation.Quantity;
+                reservations[i] = default;
+            }
+
+            TotalWeight = Mathf.Max(0f, TotalWeight - removedWeight);
+            if (survival != null)
+                survival.SetWeight(TotalWeight);
+
+            NotifyInventoryChanged();
+            return true;
+        }
+
+        public bool HasCraftReservations()
+        {
+            if (!_craftLockedCounts.IsCreated)
+                return false;
+
+            for (int i = 0; i < _craftLockedCounts.Length; i++)
+            {
+                if (IsCraftLockedFlagSet(i) && _craftLockedCounts[i] > 0)
+                    return true;
+            }
+
+            return false;
+        }
+
+        public ScavengeAttemptResult ScavengeAttempt(ItemData item, int quantity, Transform interactor)
+        {
+            return ScavengeAttempt(ComputeItemHash(item), quantity, interactor);
+        }
+
+        public ScavengeAttemptResult ScavengeAttempt(int itemHashId, int quantity, Transform interactor)
+        {
+            if (itemHashId == 0 || quantity <= 0)
+                return new ScavengeAttemptResult(Mathf.Max(0, quantity), 0);
+
+            ItemData item = ResolveItemByHash(itemHashId);
+            if (item == null)
+                return new ScavengeAttemptResult(Mathf.Max(0, quantity), 0);
+
+            TryAddItemInternal(itemHashId, quantity, item, out int addedQuantity);
             if (addedQuantity > 0)
             {
                 InteractionEvents.RaiseItemCollected(item, addedQuantity, interactor);
@@ -411,36 +556,303 @@ namespace Hecton8.Inventory
             return new ScavengeAttemptResult(quantity, addedQuantity);
         }
 
-        private bool TryAddItemInternal(ItemData item, int quantity, out int addedQuantity)
+        public bool TryRemoveQuantity(ItemData item, int quantity)
+        {
+            return TryRemoveQuantity(ComputeItemHash(item), quantity);
+        }
+
+        public bool TryRemoveQuantity(int itemHashId, int quantity)
+        {
+            if (_grid == null || !_stackCounts.IsCreated || itemHashId == 0 || quantity <= 0)
+                return false;
+
+            if (CountAvailableTotal(itemHashId) < quantity)
+                return false;
+
+            int remaining = quantity;
+            for (int anchorIndex = 0; anchorIndex < _stackCounts.Length && remaining > 0; anchorIndex++)
+            {
+                if (!_grid.HasAnchor(anchorIndex) || _grid.GetAnchorHashId(anchorIndex) != itemHashId)
+                    continue;
+
+                int stackCount = Mathf.Max(1, (int)_stackCounts[anchorIndex]);
+                int available = Mathf.Max(0, stackCount - GetReservedCraftCount(anchorIndex));
+                if (available <= 0)
+                    continue;
+
+                int take = Mathf.Min(available, remaining);
+                if (!_grid.TryGetAnchorDescriptor(anchorIndex, out InventoryGrid.InventoryItemDescriptor descriptor))
+                    continue;
+
+                if (take >= stackCount && !IsCraftLockedFlagSet(anchorIndex))
+                {
+                    _grid.RemoveAnchorAt(anchorIndex);
+                    _stackCounts[anchorIndex] = 0;
+                    _craftLockedCounts[anchorIndex] = 0;
+                    _anchorStateFlags[anchorIndex] = 0;
+                }
+                else
+                {
+                    _stackCounts[anchorIndex] = (ushort)(stackCount - take);
+                }
+
+                TotalWeight -= descriptor.Weight * take;
+                remaining -= take;
+            }
+
+            TotalWeight = Mathf.Max(0f, TotalWeight);
+            if (survival != null)
+                survival.SetWeight(TotalWeight);
+
+            NotifyInventoryChanged();
+            return true;
+        }
+
+        public int CountAnchors(ItemData item)
+        {
+            return CountAnchorsByHash(ComputeItemHash(item));
+        }
+
+        public void PopulateSaveData(SaveData data)
+        {
+            if (data == null)
+                return;
+
+            ref InventoryDTO dto = ref data.inventory;
+            dto.EnsureCapacity();
+
+            if (_grid == null)
+            {
+                dto.gridColumns = columns;
+                dto.gridRows = rows;
+                dto.totalWeight = 0f;
+                dto.cellCount = 0;
+                return;
+            }
+
+            dto.gridColumns = _grid.Columns;
+            dto.gridRows = _grid.Rows;
+            dto.totalWeight = TotalWeight;
+
+            int cellIndex = 0;
+            for (int anchorIndex = 0; anchorIndex < _stackCounts.Length && cellIndex < InventoryDTO.MaxCells; anchorIndex++)
+            {
+                if (!_grid.HasAnchor(anchorIndex))
+                    continue;
+
+                int x = anchorIndex % _grid.Columns;
+                int y = anchorIndex / _grid.Columns;
+                dto.itemHashIds[cellIndex] = _grid.GetAnchorHashId(anchorIndex);
+                dto.packedCellCoordinates[cellIndex] = InventoryDTO.PackCellCoordinate(x, y);
+                dto.stackCounts[cellIndex] = _stackCounts[anchorIndex];
+                cellIndex++;
+            }
+
+            dto.cellCount = cellIndex;
+        }
+
+        public void LoadFromSaveData(SaveData data)
+        {
+            if (data == null || itemCatalog == null || _grid == null)
+                return;
+
+            InventoryDTO dto = data.inventory;
+            _grid.Clear();
+            ClearNativeArray(_stackCounts);
+            ClearCraftReservationState();
+            TotalWeight = 0f;
+
+            if (dto.itemHashIds == null ||
+                dto.packedCellCoordinates == null ||
+                dto.stackCounts == null ||
+                dto.cellCount <= 0)
+            {
+                return;
+            }
+
+            int count = Mathf.Min(dto.cellCount, dto.itemHashIds.Length, dto.packedCellCoordinates.Length, dto.stackCounts.Length);
+            for (int i = 0; i < count; i++)
+            {
+                int itemHashId = dto.itemHashIds[i];
+                if (itemHashId == 0)
+                    continue;
+
+                if (!TryBuildDescriptor(itemHashId, out InventoryGrid.InventoryItemDescriptor descriptor))
+                    continue;
+
+                int cellX = InventoryDTO.UnpackCellX(dto.packedCellCoordinates[i]);
+                int cellY = InventoryDTO.UnpackCellY(dto.packedCellCoordinates[i]);
+                int loadedCount = dto.stackCounts[i] > 0 ? dto.stackCounts[i] : 1;
+
+                if (_grid.CheckFit(cellX, cellY, descriptor.Width, descriptor.Height))
+                {
+                    _grid.PlaceAt(in descriptor, cellX, cellY);
+                    _stackCounts[AnchorIndex(cellX, cellY)] = (ushort)Mathf.Clamp(loadedCount, 1, ushort.MaxValue);
+                    TotalWeight += descriptor.Weight * loadedCount;
+                    continue;
+                }
+
+                if (_grid.TryAddItem(in descriptor, out int px, out int py))
+                {
+                    _stackCounts[AnchorIndex(px, py)] = (ushort)Mathf.Clamp(loadedCount, 1, ushort.MaxValue);
+                    TotalWeight += descriptor.Weight * loadedCount;
+                }
+            }
+
+            if (survival != null)
+                survival.SetWeight(TotalWeight);
+
+            NotifyInventoryChanged();
+        }
+
+        public void SortInventory()
+        {
+            if (HasCraftReservations())
+                return;
+
+            int count = GetPlacements(_sortBuffer);
+            if (count <= 0)
+                return;
+
+            NativeArray<InventorySortEntry> sortEntries = new NativeArray<InventorySortEntry>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            try
+            {
+                for (int i = 0; i < count; i++)
+                    sortEntries[i] = BuildInventorySortEntry(in _sortBuffer[i], i);
+
+                // COLD SYNC JOB: inventory sort is explicit user action outside gameplay hot paths.
+                JobHandle handle = new InventorySortJob { Entries = sortEntries }.Schedule();
+                handle.Complete();
+
+                for (int i = 0; i < count; i++)
+                    _sortedPlacements[i] = _sortBuffer[sortEntries[i].OriginalIndex];
+
+                _grid.Clear();
+                ClearNativeArray(_stackCounts);
+                ClearCraftReservationState();
+                TotalWeight = 0f;
+
+                for (int i = 0; i < count; i++)
+                {
+                    ItemPlacement placement = _sortedPlacements[i];
+                    InventoryGrid.InventoryItemDescriptor descriptor = placement.Descriptor;
+                    if (_grid.TryAddItem(in descriptor, out int px, out int py))
+                    {
+                        _stackCounts[AnchorIndex(px, py)] = placement.stackCount;
+                        TotalWeight += placement.weight * placement.stackCount;
+                    }
+                }
+            }
+            finally
+            {
+                if (sortEntries.IsCreated)
+                    sortEntries.Dispose();
+            }
+
+            if (survival != null)
+                survival.SetWeight(TotalWeight);
+
+            NotifyInventoryChanged();
+        }
+
+        public int GetPlacements(ItemPlacement[] buffer)
+        {
+            if (buffer == null || _grid == null || !_stackCounts.IsCreated)
+                return 0;
+
+            int count = 0;
+            for (int anchorIndex = 0; anchorIndex < _stackCounts.Length && count < buffer.Length; anchorIndex++)
+            {
+                if (!_grid.TryGetAnchorDescriptor(anchorIndex, out InventoryGrid.InventoryItemDescriptor descriptor))
+                    continue;
+
+                buffer[count++] = new ItemPlacement
+                {
+                    itemHashId = descriptor.HashId,
+                    x = anchorIndex % _grid.Columns,
+                    y = anchorIndex / _grid.Columns,
+                    width = descriptor.Width,
+                    height = descriptor.Height,
+                    maxStack = descriptor.MaxStack,
+                    stackCount = (ushort)Mathf.Max(1, _stackCounts[anchorIndex]),
+                    lockedCount = _craftLockedCounts[anchorIndex],
+                    stateFlags = _anchorStateFlags[anchorIndex],
+                    weight = descriptor.Weight,
+                    categoryId = descriptor.CategoryId,
+                    rarity = descriptor.Rarity,
+                    stackable = descriptor.Stackable
+                };
+            }
+
+            return count;
+        }
+
+        public NativeArray<ushort>.ReadOnly GetStackCountsReadOnly()
+        {
+            return _stackCounts.IsCreated ? _stackCounts.AsReadOnly() : default;
+        }
+
+        public NativeArray<ushort>.ReadOnly GetCraftLockedCountsReadOnly()
+        {
+            return _craftLockedCounts.IsCreated ? _craftLockedCounts.AsReadOnly() : default;
+        }
+
+        public NativeArray<ushort>.ReadOnly GetAnchorStateFlagsReadOnly()
+        {
+            return _anchorStateFlags.IsCreated ? _anchorStateFlags.AsReadOnly() : default;
+        }
+
+        private void HandleItemCollected(ItemData item, int quantity, Transform interactor)
+        {
+            int itemHashId = ComputeItemHash(item);
+            if (itemHashId == 0)
+                return;
+
+            if (!CanAcceptQuantity(itemHashId, quantity))
+            {
+                if (item != null)
+                    InventoryEvents.NotifyInventoryFull(item);
+                return;
+            }
+
+            bool allAdded = TryAddItemInternal(itemHashId, quantity, item, out int addedQuantity);
+            if (addedQuantity > 0)
+                HectonEventBus.Publish(new ItemCollectedEvent(item, addedQuantity, interactor));
+
+            if (!allAdded)
+            {
+                if (item != null)
+                    InventoryEvents.NotifyInventoryFull(item);
+            }
+        }
+
+        private bool TryAddItemInternal(int itemHashId, int quantity, ItemData notificationItem, out int addedQuantity)
         {
             addedQuantity = 0;
-
-            if (item == null || quantity <= 0)
+            if (_grid == null || itemHashId == 0 || quantity <= 0 || !TryBuildDescriptor(itemHashId, out InventoryGrid.InventoryItemDescriptor descriptor))
                 return false;
 
             bool allAdded = true;
-
             for (int i = 0; i < quantity; i++)
             {
-                if (item.stackable && TryStackItem(item))
+                if (descriptor.Stackable && TryStackItem(descriptor.HashId, descriptor.MaxStack))
                 {
-                    TotalWeight += item.weight;
+                    TotalWeight += descriptor.Weight;
                     addedQuantity++;
                     continue;
                 }
 
-                int placedX;
-                int placedY;
-                if (_grid.TryAddItem(item, out placedX, out placedY))
+                if (_grid.TryAddItem(in descriptor, out int placedX, out int placedY))
                 {
                     _stackCounts[AnchorIndex(placedX, placedY)] = 1;
-                    TotalWeight += item.weight;
+                    TotalWeight += descriptor.Weight;
                     addedQuantity++;
                 }
                 else
                 {
                     allAdded = false;
-                    InventoryEvents.NotifyInventoryFull(item);
+                    if (notificationItem != null)
+                        InventoryEvents.NotifyInventoryFull(notificationItem);
                     break;
                 }
             }
@@ -452,381 +864,70 @@ namespace Hecton8.Inventory
 
                 NotifyInventoryChanged();
             }
+
             return allAdded;
         }
 
-        /// <summary>
-        /// Removes an exact quantity of one item type across all anchor stacks.
-        /// Returns false and performs no mutation when the inventory does not
-        /// contain the full requested quantity.
-        /// </summary>
-        public bool TryRemoveQuantity(ItemData item, int quantity)
+        private bool TryStackItem(int itemHashId, int maxStack)
         {
-            if (item == null || quantity <= 0)
+            if (_grid == null || !_stackCounts.IsCreated || itemHashId == 0 || maxStack <= 1)
                 return false;
 
-            if (CountTotal(item) < quantity)
-                return false;
-
-            int remaining = quantity;
-            int cols = _grid.Columns;
-            int rows = _grid.Rows;
-
-            for (int y = 0; y < rows && remaining > 0; y++)
+            for (int anchorIndex = 0; anchorIndex < _stackCounts.Length; anchorIndex++)
             {
-                for (int x = 0; x < cols && remaining > 0; x++)
-                {
-                    ItemData cell = _grid.GetCell(x, y);
-                    if (!ReferenceEquals(cell, item))
-                        continue;
-
-                    if (x > 0 && ReferenceEquals(_grid.GetCell(x - 1, y), item))
-                        continue;
-                    if (y > 0 && ReferenceEquals(_grid.GetCell(x, y - 1), item))
-                        continue;
-
-                    int idx = AnchorIndex(x, y);
-                    int stackCount = Mathf.Max(1, _stackCounts[idx]);
-                    int take = Mathf.Min(stackCount, remaining);
-
-                    if (take >= stackCount)
-                    {
-                        _grid.RemoveItem(x, y, item.width, item.height);
-                        _stackCounts[idx] = 0;
-                    }
-                    else
-                    {
-                        _stackCounts[idx] = stackCount - take;
-                    }
-
-                    TotalWeight -= item.weight * take;
-                    remaining -= take;
-                }
-            }
-
-            if (TotalWeight < 0f)
-                TotalWeight = 0f;
-
-            if (survival != null)
-                survival.SetWeight(TotalWeight);
-
-            NotifyInventoryChanged();
-            return true;
-        }
-
-        /// <summary>
-        /// Counts top-left anchor placements of a specific item.
-        /// Multi-cell items are counted once.
-        /// </summary>
-        public int CountAnchors(ItemData item)
-        {
-            if (item == null || _grid == null)
-                return 0;
-
-            int count = 0;
-            int cols = _grid.Columns;
-            int rows = _grid.Rows;
-
-            for (int y = 0; y < rows; y++)
-            {
-                for (int x = 0; x < cols; x++)
-                {
-                    ItemData cell = _grid.GetCell(x, y);
-                    if (!ReferenceEquals(cell, item))
-                        continue;
-
-                    if (x > 0 && ReferenceEquals(_grid.GetCell(x - 1, y), item))
-                        continue;
-
-                    if (y > 0 && ReferenceEquals(_grid.GetCell(x, y - 1), item))
-                        continue;
-
-                    count++;
-                }
-            }
-
-            return count;
-        }
-
-        // ══════════════════════════════════════════════════════════
-        //  ISaveable — SAVE / LOAD
-        // ══════════════════════════════════════════════════════════
-
-        /// <summary>Inventory загружается после Player stats.</summary>
-        public int SavePriority => 20;
-        public int LoadPriority => 20;
-
-        /// <summary>
-        /// Сохраняет содержимое сетки инвентаря.
-        /// Сканирует InventoryGrid, записывает якорные ячейки.
-        ///
-        /// Используем bool[,] для отслеживания multi-cell предметов
-        /// (аналогично HectonInventoryUI._drawn).
-        /// </summary>
-        public void PopulateSaveData(SaveData data)
-        {
-            if (data == null)
-                return;
-
-            ref InventoryDTO dto = ref data.inventory;
-            dto.EnsureCapacity();
-
-            InventoryGrid grid = _grid;
-            if (grid == null)
-            {
-                dto.gridColumns = this.columns;
-                dto.gridRows = this.rows;
-                dto.totalWeight = 0f;
-                dto.cellCount = 0;
-                return;
-            }
-
-            int cols = grid.Columns;
-            int rows = grid.Rows;
-
-            dto.gridColumns  = cols;
-            dto.gridRows     = rows;
-            dto.totalWeight  = TotalWeight;
-
-            // ── Отслеживание multi-cell (pre-allocated) ──
-            EnsureSaveDrawn(cols, rows);
-            System.Array.Clear(_saveDrawn, 0, _saveDrawn.Length);
-
-            int cellIndex = 0;
-
-            for (int y = 0; y < rows; y++)
-            {
-                for (int x = 0; x < cols; x++)
-                {
-                    if (_saveDrawn[x, y]) continue;
-
-                    ItemData item = grid.GetCell(x, y);
-                    if (item == null) continue;
-
-                    // Помечаем все ячейки предмета
-                    int endX = Mathf.Min(x + item.width, cols);
-                    int endY = Mathf.Min(y + item.height, rows);
-                    for (int iy = y; iy < endY; iy++)
-                        for (int ix = x; ix < endX; ix++)
-                            _saveDrawn[ix, iy] = true;
-
-                    // Записываем якорную ячейку
-                    if (cellIndex < InventoryDTO.MaxCells)
-                    {
-                        dto.cells[cellIndex] = new InventoryCellDTO
-                        {
-                            x          = x,
-                            y          = y,
-                            itemId     = item.PersistentId,
-                            stackCount = _stackCounts[y * cols + x]
-                        };
-                        cellIndex++;
-                    }
-                }
-            }
-
-            dto.cellCount = cellIndex;
-        }
-        /// <summary>
-        /// Восстанавливает инвентарь из SaveData.
-        /// Очищает текущую сетку, затем размещает предметы по координатам.
-        /// </summary>
-        public void LoadFromSaveData(SaveData data)
-        {
-            if (data == null)
-                return;
-
-            if (itemCatalog == null)
-            {
-                Debug.LogError("[PlayerInventory] ItemCatalog not assigned! Cannot load inventory.");
-                return;
-            }
-
-            InventoryDTO dto = data.inventory;
-            if (_grid == null)
-                return;
-
-            // ── Очистка текущего инвентаря ──
-            _grid.Clear();
-            System.Array.Clear(_stackCounts, 0, _stackCounts.Length);
-            TotalWeight = 0f;
-
-            if (dto.cells == null || dto.cellCount <= 0) return;
-
-            // ── Восстановление предметов ──
-            int count = Mathf.Min(dto.cellCount, dto.cells.Length);
-
-            for (int i = 0; i < count; i++)
-            {
-                InventoryCellDTO cell = dto.cells[i];
-
-                // ── Поиск ItemData по ID ──
-                ItemData item = itemCatalog.FindById(cell.itemId);
-                if (item == null)
-                {
-                    Debug.LogWarning(
-                        $"[PlayerInventory] Item '{cell.itemId}' not found in catalog. Skipping.");
+                if (!_grid.HasAnchor(anchorIndex) || _grid.GetAnchorHashId(anchorIndex) != itemHashId || IsCraftLockedFlagSet(anchorIndex))
                     continue;
-                }
 
-                // ── Размещение по сохранённым координатам ──
-                if (_grid.CheckFit(cell.x, cell.y, item.width, item.height))
+                if (_stackCounts[anchorIndex] < maxStack)
                 {
-                    _grid.PlaceAt(item, cell.x, cell.y);
-
-                    int loadedCount = cell.stackCount > 0 ? cell.stackCount : 1;
-                    _stackCounts[AnchorIndex(cell.x, cell.y)] = loadedCount;
-                    TotalWeight += item.weight * loadedCount;
-                }
-                else
-                {
-                    // Fallback: автопоиск свободного места
-                    int px, py;
-                    if (_grid.TryAddItem(item, out px, out py))
-                    {
-                        int loadedCount = cell.stackCount > 0 ? cell.stackCount : 1;
-                        _stackCounts[AnchorIndex(px, py)] = loadedCount;
-                        TotalWeight += item.weight * loadedCount;
-                        Debug.LogWarning(
-                            $"[PlayerInventory] '{cell.itemId}' repositioned " +
-                            $"from ({cell.x},{cell.y}) to ({px},{py}).");
-                    }
-                    else
-                    {
-                        Debug.LogWarning(
-                            $"[PlayerInventory] No space for '{cell.itemId}'. Lost.");
-                    }
-                }
-            }
-
-            // ── Синхронизация веса с survival ──
-            if (survival != null)
-                survival.SetWeight(TotalWeight);
-
-            NotifyInventoryChanged();
-        }
-
-        // ══════════════════════════════════════════════════════════
-        //  EVENT HANDLER
-        // ══════════════════════════════════════════════════════════
-
-        /// <summary>
-        /// Обработчик глобального события «предмет подобран».
-        /// В цикле пытается разместить quantity единиц предмета.
-        /// При неудаче — прекращает попытки (если один не влез,
-        /// следующий того же размера тоже не влезет).
-        /// </summary>
-        private void HandleItemCollected(ItemData item, int quantity, Transform interactor)
-        {
-            if (item == null)
-                return;
-
-            if (!CanAcceptQuantity(item, quantity))
-            {
-                InventoryEvents.NotifyInventoryFull(item);
-                Debug.LogWarning(
-                    $"[PlayerInventory] Ð˜Ð½Ð²ÐµÐ½Ñ‚Ð°Ñ€ÑŒ Ð¿Ð¾Ð»Ð¾Ð½! " +
-                    $"ÐÐµ ÑƒÐ´Ð°Ð»Ð¾ÑÑŒ Ð¿Ð¾Ð»Ð½Ð¾ÑÑ‚ÑŒÑŽ Ñ€Ð°Ð·Ð¼ÐµÑÑ‚Ð¸Ñ‚ÑŒ: {item.itemName} " +
-                    $"({item.width}Ã—{item.height}).");
-                return;
-            }
-
-            int addedQuantity;
-            bool allAdded = TryAddItemInternal(item, quantity, out addedQuantity);
-            if (addedQuantity > 0)
-                HectonEventBus.Publish(new ItemCollectedEvent(item, addedQuantity, interactor));
-
-            if (!allAdded)
-            {
-                Debug.LogWarning(
-                    $"[PlayerInventory] Инвентарь полон! " +
-                    $"Не удалось полностью разместить: {item.itemName} " +
-                    $"({item.width}×{item.height}).");
-            }
-        }
-        /// <summary>
-        /// Ищет существующий неполный стек того же предмета.
-        /// Если найден — инкрементирует count и возвращает true.
-        /// </summary>
-        private bool TryStackItem(ItemData item)
-        {
-            int cols = _grid.Columns;
-            int rows = _grid.Rows;
-
-            for (int y = 0; y < rows; y++)
-            {
-                for (int x = 0; x < cols; x++)
-                {
-                    ItemData cell = _grid.GetCell(x, y);
-                    if (!ReferenceEquals(cell, item)) continue;
-
-                    // Проверяем что это якорная ячейка
-                    if (x > 0 && ReferenceEquals(_grid.GetCell(x - 1, y), item)) continue;
-                    if (y > 0 && ReferenceEquals(_grid.GetCell(x, y - 1), item)) continue;
-
-                    int idx = AnchorIndex(x, y);
-                    if (_stackCounts[idx] < item.maxStack)
-                    {
-                        _stackCounts[idx]++;
-                        return true;
-                    }
+                    _stackCounts[anchorIndex]++;
+                    return true;
                 }
             }
 
             return false;
         }
 
-        private bool CanAcceptQuantity(ItemData item, int quantity)
+        private bool CanAcceptQuantity(int itemHashId, int quantity)
         {
-            if (item == null || quantity <= 0 || _grid == null || _stackCounts == null)
-                return false;
-
-            int cols = _grid.Columns;
-            int rows = _grid.Rows;
-            int stackSlotCount = cols * rows;
-
-            EnsureSaveDrawn(cols, rows);
-            System.Array.Copy(_stackCounts, _scavengeSimStackCounts, stackSlotCount);
-
-            for (int y = 0; y < rows; y++)
+            if (_grid == null ||
+                itemHashId == 0 ||
+                quantity <= 0 ||
+                !_stackCounts.IsCreated ||
+                !_scavengeSimStackCounts.IsCreated ||
+                !_simulationOccupiedCells.IsCreated ||
+                !TryBuildDescriptor(itemHashId, out InventoryGrid.InventoryItemDescriptor descriptor))
             {
-                for (int x = 0; x < cols; x++)
-                    _saveDrawn[x, y] = _grid.GetCell(x, y) != null;
+                return false;
             }
 
+            for (int i = 0; i < _stackCounts.Length; i++)
+                _scavengeSimStackCounts[i] = _stackCounts[i];
+
+            _grid.CopyOccupiedMask(_simulationOccupiedCells);
+
             int remaining = quantity;
-            if (item.stackable)
+            if (descriptor.Stackable)
             {
-                for (int y = 0; y < rows && remaining > 0; y++)
+                for (int anchorIndex = 0; anchorIndex < _stackCounts.Length && remaining > 0; anchorIndex++)
                 {
-                    for (int x = 0; x < cols && remaining > 0; x++)
-                    {
-                        ItemData cell = _grid.GetCell(x, y);
-                        if (!ReferenceEquals(cell, item))
-                            continue;
+                    if (!_grid.HasAnchor(anchorIndex) || _grid.GetAnchorHashId(anchorIndex) != descriptor.HashId || IsCraftLockedFlagSet(anchorIndex))
+                        continue;
 
-                        if (x > 0 && ReferenceEquals(_grid.GetCell(x - 1, y), item))
-                            continue;
+                    int stackCount = Mathf.Max(1, (int)_scavengeSimStackCounts[anchorIndex]);
+                    if (stackCount >= descriptor.MaxStack)
+                        continue;
 
-                        if (y > 0 && ReferenceEquals(_grid.GetCell(x, y - 1), item))
-                            continue;
-
-                        int idx = AnchorIndex(x, y);
-                        int stackCount = Mathf.Max(1, _scavengeSimStackCounts[idx]);
-                        if (stackCount >= item.maxStack)
-                            continue;
-
-                        int stackCapacity = item.maxStack - stackCount;
-                        int transfer = Mathf.Min(stackCapacity, remaining);
-                        _scavengeSimStackCounts[idx] = stackCount + transfer;
-                        remaining -= transfer;
-                    }
+                    int stackCapacity = descriptor.MaxStack - stackCount;
+                    int transfer = Mathf.Min(stackCapacity, remaining);
+                    _scavengeSimStackCounts[anchorIndex] = (ushort)(stackCount + transfer);
+                    remaining -= transfer;
                 }
             }
 
             while (remaining > 0)
             {
-                if (!TryReservePlacementInSimulation(item, cols, rows))
+                if (!TryReservePlacementInSimulation(in descriptor))
                     return false;
 
                 remaining--;
@@ -835,10 +936,12 @@ namespace Hecton8.Inventory
             return true;
         }
 
-        private bool TryReservePlacementInSimulation(ItemData item, int cols, int rows)
+        private bool TryReservePlacementInSimulation(in InventoryGrid.InventoryItemDescriptor descriptor)
         {
-            int width = item.width;
-            int height = item.height;
+            int cols = _grid.Columns;
+            int rows = _grid.Rows;
+            int width = descriptor.Width;
+            int height = descriptor.Height;
             if (width > cols || height > rows)
                 return false;
 
@@ -848,7 +951,7 @@ namespace Hecton8.Inventory
             {
                 for (int x = 0; x <= maxX; x++)
                 {
-                    if (_saveDrawn[x, y] || !CheckFitInSimulation(x, y, width, height))
+                    if (_simulationOccupiedCells[AnchorIndex(x, y)] != 0 || !CheckFitInSimulation(x, y, width, height))
                         continue;
 
                     MarkOccupiedInSimulation(x, y, width, height);
@@ -863,12 +966,11 @@ namespace Hecton8.Inventory
         {
             int endX = startX + width;
             int endY = startY + height;
-
             for (int y = startY; y < endY; y++)
             {
                 for (int x = startX; x < endX; x++)
                 {
-                    if (_saveDrawn[x, y])
+                    if (_simulationOccupiedCells[AnchorIndex(x, y)] != 0)
                         return false;
                 }
             }
@@ -880,134 +982,138 @@ namespace Hecton8.Inventory
         {
             int endX = startX + width;
             int endY = startY + height;
-
             for (int y = startY; y < endY; y++)
             {
                 for (int x = startX; x < endX; x++)
-                    _saveDrawn[x, y] = true;
+                    _simulationOccupiedCells[AnchorIndex(x, y)] = 1;
             }
         }
-        // ══════════════════════════════════════════════════════════
-        //  PRIVATE — SAVE HELPERS
-        // ══════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Lazy init / resize массива для отслеживания multi-cell
-        /// предметов при сохранении. Аллокация только при смене
-        /// размеров сетки (т.е. практически никогда).
-        /// </summary>
-        private void EnsureSaveDrawn(int cols, int rows)
+        private int AnchorIndex(int x, int y)
         {
-            if (_saveDrawn != null && _saveDrawnCols == cols && _saveDrawnRows == rows) return;
-            _saveDrawn     = new bool[cols, rows];
-            _saveDrawnCols = cols;
-            _saveDrawnRows = rows;
+            return y * _grid.Columns + x;
         }
-        /// <summary>
-        /// Сортирует инвентарь: собирает все предметы, сортирует по
-        /// категории → имени → весу, заново размещает. Zero-alloc
-        /// кроме одноразового массива.
-        /// </summary>
-        public void SortInventory()
+
+        private bool IsCraftLockedFlagSet(int anchorIndex)
         {
-            // Собираем все размещения
-            int count = GetPlacements(_sortBuffer);
-            if (count <= 0) return;
+            return _anchorStateFlags.IsCreated
+                && (uint)anchorIndex < (uint)_anchorStateFlags.Length
+                && (_anchorStateFlags[anchorIndex] & CraftingLockedMask) != 0;
+        }
 
-            // Собираем данные для сортировки
-            if (_sortEntries == null || _sortEntries.Length < count)
-                _sortEntries = new SortEntry[count];
+        private int GetReservedCraftCount(int anchorIndex)
+        {
+            if (!_craftLockedCounts.IsCreated || (uint)anchorIndex >= (uint)_craftLockedCounts.Length)
+                return 0;
 
-            for (int i = 0; i < count; i++)
+            return IsCraftLockedFlagSet(anchorIndex) ? _craftLockedCounts[anchorIndex] : 0;
+        }
+
+        private int CountAnchorsByHash(int itemHashId)
+        {
+            if (_grid == null || itemHashId == 0 || !_stackCounts.IsCreated)
+                return 0;
+
+            int count = 0;
+            for (int i = 0; i < _stackCounts.Length; i++)
             {
-                _sortEntries[i] = new SortEntry
+                if (_grid.HasAnchor(i) && _grid.GetAnchorHashId(i) == itemHashId)
+                    count++;
+            }
+
+            return count;
+        }
+
+        private int CountQuantityByHash(int itemHashId, bool availableOnly)
+        {
+            if (_grid == null || itemHashId == 0 || !_stackCounts.IsCreated)
+                return 0;
+
+            int total = 0;
+            for (int anchorIndex = 0; anchorIndex < _stackCounts.Length; anchorIndex++)
+            {
+                if (!_grid.HasAnchor(anchorIndex) || _grid.GetAnchorHashId(anchorIndex) != itemHashId)
+                    continue;
+
+                int count = Mathf.Max(1, (int)_stackCounts[anchorIndex]);
+                if (availableOnly)
+                    count = Mathf.Max(0, count - GetReservedCraftCount(anchorIndex));
+
+                total += count;
+            }
+
+            return total;
+        }
+
+        private static ulong PackInventorySortKey(byte categoryId, byte rarity, uint hashId)
+        {
+            return ((ulong)categoryId << 40)
+                | ((ulong)rarity << 32)
+                | hashId;
+        }
+
+        private bool TryBuildDescriptor(ItemData item, out InventoryGrid.InventoryItemDescriptor descriptor)
+        {
+            descriptor = default;
+            if (item == null)
+                return false;
+
+            int itemHashId = ComputeItemHash(item);
+            if (itemHashId == 0)
+                return false;
+
+            byte width = (byte)math.clamp(item.width, 1, byte.MaxValue);
+            byte height = (byte)math.clamp(item.height, 1, byte.MaxValue);
+            ushort maxStack = (ushort)math.clamp(item.maxStack, 1, ushort.MaxValue);
+            descriptor = new InventoryGrid.InventoryItemDescriptor(
+                itemHashId,
+                width,
+                height,
+                maxStack,
+                item.weight,
+                (byte)item.category,
+                0,
+                item.stackable && maxStack > 1);
+            return descriptor.IsValid;
+        }
+
+        private bool TryBuildDescriptor(int itemHashId, out InventoryGrid.InventoryItemDescriptor descriptor)
+        {
+            descriptor = default;
+            return itemCatalog != null
+                && itemHashId != 0
+                && TryBuildDescriptor(itemCatalog.FindByHash(itemHashId), out descriptor);
+        }
+
+        private ItemData ResolveItemByHash(int itemHashId)
+        {
+            return itemCatalog != null && itemHashId != 0
+                ? itemCatalog.FindByHash(itemHashId)
+                : null;
+        }
+
+        private static InventorySortEntry BuildInventorySortEntry(in ItemPlacement placement, int originalIndex)
+        {
+            if (placement.itemHashId == 0)
+            {
+                return new InventorySortEntry
                 {
-                    item = _sortBuffer[i].item,
-                    stackCount = _sortBuffer[i].stackCount
+                    PackedKey = PackInventorySortKey(byte.MaxValue, byte.MaxValue, uint.MaxValue),
+                    OriginalIndex = originalIndex
                 };
             }
 
-            // Сортируем
-            System.Array.Sort(_sortEntries, 0, count, SortEntryComparer.Instance);
-
-            // Очищаем сетку
-            _grid.Clear();
-            System.Array.Clear(_stackCounts, 0, _stackCounts.Length);
-            TotalWeight = 0f;
-
-            // Заново размещаем
-            for (int i = 0; i < count; i++)
+            return new InventorySortEntry
             {
-                SortEntry entry = _sortEntries[i];
-                int px, py;
-                if (_grid.TryAddItem(entry.item, out px, out py))
-                {
-                    _stackCounts[AnchorIndex(px, py)] = entry.stackCount;
-                    TotalWeight += entry.item.weight * entry.stackCount;
-                }
-            }
-
-            if (survival != null)
-                survival.SetWeight(TotalWeight);
-
-            NotifyInventoryChanged();
+                PackedKey = PackInventorySortKey(placement.categoryId, placement.rarity, unchecked((uint)placement.itemHashId)),
+                OriginalIndex = originalIndex
+            };
         }
 
-        private struct SortEntry
-        {
-            public ItemData item;
-            public int stackCount;
-        }
-
-        private sealed class SortEntryComparer : System.Collections.Generic.IComparer<SortEntry>
-        {
-            public static readonly SortEntryComparer Instance = new SortEntryComparer();
-
-            public int Compare(SortEntry a, SortEntry b)
-            {
-                // По категории
-                int cat = ((int)a.item.category).CompareTo((int)b.item.category);
-                if (cat != 0) return cat;
-
-                // По имени
-                int name = string.Compare(a.item.itemName, b.item.itemName,
-                    System.StringComparison.Ordinal);
-                if (name != 0) return name;
-
-                // По весу (тяжёлые первыми)
-                return b.item.weight.CompareTo(a.item.weight);
-            }
-        }
-
-        private SortEntry[] _sortEntries;
-        private PlayerInventory.ItemPlacement[] _sortBuffer;
-
-        private int AnchorIndex(int x, int y) => y * _grid.Columns + x;
         private void NotifyInventoryChanged()
         {
-            RefreshAnchorHashCache();
+            InventoryVersion++;
             InventoryChanged?.Invoke();
-        }
-
-        private void RefreshAnchorHashCache()
-        {
-            if (!_anchorHashIds.IsCreated)
-                return;
-
-            for (int i = 0; i < _anchorHashIds.Length; i++)
-                _anchorHashIds[i] = 0;
-
-            int placementCount = GetPlacements(_sortBuffer);
-            for (int i = 0; i < placementCount; i++)
-            {
-                ItemPlacement placement = _sortBuffer[i];
-                int itemHashId = ComputeItemHash(placement.item);
-                if (itemHashId == 0)
-                    continue;
-
-                int anchorIndex = AnchorIndex(placement.x, placement.y);
-                _anchorHashIds[anchorIndex] = itemHashId;
-            }
         }
 
         private static int ComputeItemHash(ItemData item)
@@ -1015,70 +1121,54 @@ namespace Hecton8.Inventory
             return item == null ? 0 : LocHash.Compute(item.PersistentId);
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  SNAPSHOT FOR UI (zero-mutation read)
-        // ══════════════════════════════════════════════════════════
-
-        /// <summary>
-        /// Описывает один предмет, размещённый в сетке.
-        /// Координаты — якорная (верхняя-левая) ячейка.
-        /// </summary>
-        public struct ItemPlacement
+        private void ClearCraftReservationState()
         {
-            public ItemData item;
-            public int x;
-            public int y;
-            public int stackCount;
+            ClearNativeArray(_craftLockedCounts);
+            ClearNativeArray(_anchorStateFlags);
         }
 
-        /// <summary>
-        /// Заполняет буфер якорными размещениями предметов.
-        /// Не мутирует сетку. Zero GC если буфер достаточного размера.
-        /// </summary>
-        /// <param name="buffer">Pre-allocated массив. Рекомендуемый размер: columns * rows.</param>
-        /// <returns>Количество записанных элементов.</returns>
-        public int GetPlacements(ItemPlacement[] buffer)
+        private void ReleaseCraftReservationsRange(CraftReservation[] reservations, int startIndex, int endExclusive)
         {
-            if (buffer == null || _grid == null) return 0;
+            if (reservations == null || !_craftLockedCounts.IsCreated || !_anchorStateFlags.IsCreated)
+                return;
 
-            int cols = _grid.Columns;
-            int rws = _grid.Rows;
-
-            EnsureSaveDrawn(cols, rws);
-            System.Array.Clear(_saveDrawn, 0, _saveDrawn.Length);
-
-            int count = 0;
-
-            for (int y = 0; y < rws; y++)
+            int max = Mathf.Min(endExclusive, reservations.Length);
+            for (int i = startIndex; i < max; i++)
             {
-                for (int x = 0; x < cols; x++)
+                CraftReservation reservation = reservations[i];
+                int anchorIndex = reservation.AnchorIndex;
+                if ((uint)anchorIndex < (uint)_craftLockedCounts.Length && reservation.Quantity > 0)
                 {
-                    if (_saveDrawn[x, y]) continue;
-
-                    ItemData item = _grid.GetCell(x, y);
-                    if (item == null) continue;
-
-                    int endX = Mathf.Min(x + item.width, cols);
-                    int endY = Mathf.Min(y + item.height, rws);
-                    for (int iy = y; iy < endY; iy++)
-                        for (int ix = x; ix < endX; ix++)
-                            _saveDrawn[ix, iy] = true;
-
-                    if (count < buffer.Length)
-                    {
-                        int idx = AnchorIndex(x, y);
-                        buffer[count++] = new ItemPlacement
-                        {
-                            item = item,
-                            x = x,
-                            y = y,
-                            stackCount = Mathf.Max(1, _stackCounts[idx])
-                        };
-                    }
+                    _craftLockedCounts[anchorIndex] = (ushort)Mathf.Max(0, _craftLockedCounts[anchorIndex] - reservation.Quantity);
+                    if (_craftLockedCounts[anchorIndex] == 0)
+                        _anchorStateFlags[anchorIndex] = (ushort)(_anchorStateFlags[anchorIndex] & ~CraftingLockedMask);
                 }
-            }
 
-            return count;
+                reservations[i] = default;
+            }
+        }
+
+        private bool IsValidCraftReservation(in CraftReservation reservation)
+        {
+            if (_grid == null || !_stackCounts.IsCreated || reservation.Quantity <= 0 || (uint)reservation.AnchorIndex >= (uint)_stackCounts.Length)
+                return false;
+
+            if (!_grid.HasAnchor(reservation.AnchorIndex) || _grid.GetAnchorHashId(reservation.AnchorIndex) != reservation.ItemHashId)
+                return false;
+
+            if (GetReservedCraftCount(reservation.AnchorIndex) < reservation.Quantity)
+                return false;
+
+            return Mathf.Max(1, (int)_stackCounts[reservation.AnchorIndex]) >= reservation.Quantity;
+        }
+
+        private static void ClearNativeArray(NativeArray<ushort> array)
+        {
+            if (!array.IsCreated)
+                return;
+
+            for (int i = 0; i < array.Length; i++)
+                array[i] = 0;
         }
     }
 }

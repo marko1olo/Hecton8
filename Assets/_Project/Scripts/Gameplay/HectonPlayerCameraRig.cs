@@ -10,7 +10,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Hecton Player Camera Rig")]
-    public sealed class HectonPlayerCameraRig : MonoBehaviour, ITickable
+    public sealed class HectonPlayerCameraRig : MonoBehaviour, ITickable, IUpdatable
     {
         [Header("References")]
         [SerializeField, Tooltip("Camera transform driven by the rig.")]
@@ -45,27 +45,27 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
-            if (GameTickManager.Instance != null && !_registered)
+            if (!_registered)
             {
-                GameTickManager.Instance.Register(this);
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
                 _registered = true;
             }
         }
 
         private void Start()
         {
-            if (GameTickManager.Instance != null && !_registered)
+            if (!_registered)
             {
-                GameTickManager.Instance.Register(this);
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
                 _registered = true;
             }
         }
 
         private void OnDisable()
         {
-            if (GameTickManager.Instance != null && _registered)
+            if (_registered)
             {
-                GameTickManager.Instance.Unregister(this);
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
                 _registered = false;
             }
         }

@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.World;
@@ -9,16 +11,16 @@ using UnityEngine.UI;
 namespace Hecton8.UI
 {
     /// <summary>
-    /// Canvas-space waypoint overlay that projects world targets into the HUD.
-    /// Built-in sources include the active relay route target and abyssal anchors.
+    /// Projects pooled waypoint markers onto the diegetic HUD plane using explicit camera-plane math.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/AR Waypoint Overlay")]
-    public sealed class ARWaypointOverlay : MonoBehaviour, ITickable, ISlowTickable
+    public sealed class ARWaypointOverlay : MonoBehaviour, ITickable, ISlowTickable, IOriginShiftListener
     {
-        private const int MaxAnchorWaypoints = 12;
+        private const int MaxAnchorWaypoints = 7;
         private const int MaxExternalWaypoints = 8;
         private const int MaxWaypoints = 1 + MaxAnchorWaypoints + MaxExternalWaypoints;
+        private const int MaximumLabelCharacters = 48;
         private const float ScreenMargin = 54f;
         private const float HiddenAlpha = 0f;
         private const float VisibleAlpha = 0.96f;
@@ -26,15 +28,24 @@ namespace Hecton8.UI
         private const float EdgeAlpha = 0.74f;
         private const float MarkerSize = 18f;
         private const float OutlineSize = 26f;
+        private const float EdgeMarkerWidth = 22f;
+        private const float EdgeMarkerHeight = 10f;
+        private const float EdgeOutlineWidth = 30f;
+        private const float EdgeOutlineHeight = 16f;
+        private const float ProjectionDepthEpsilon = 0.0001f;
         private const string RootName = "ARWaypointOverlay";
         private const string DefaultRelayLabel = "SERVICE RELAY";
         private const string DefaultAnchorLabel = "ABYSSAL ANCHOR";
+        private const string DefaultExternalLabel = "WAYPOINT";
 
         private static readonly Color RelayColor = new Color(0.64f, 0.94f, 0.98f, 0.96f);
         private static readonly Color AnchorColor = new Color(0.98f, 0.74f, 0.22f, 0.96f);
         private static readonly Color OccludedColor = new Color(0.94f, 0.94f, 0.94f, 0.62f);
-        private static readonly System.Collections.Generic.List<SuitHUDV4CanvasOverlay> s_overlayResolveBuffer =
-            new System.Collections.Generic.List<SuitHUDV4CanvasOverlay>(2);
+        private static readonly List<SuitHUDV4CanvasOverlay> s_overlayResolveBuffer =
+            new List<SuitHUDV4CanvasOverlay>(4);
+        private static readonly List<RectTransform> s_directChildBuffer =
+            new List<RectTransform>(32);
+
         private static Sprite s_quadSprite;
         private static ARWaypointOverlay s_instance;
 
@@ -42,7 +53,8 @@ namespace Hecton8.UI
         {
             public int Id;
             public Transform Target;
-            public Vector3 WorldPosition;
+            public Vector3 RuntimeWorldPosition;
+            public Vector3 CapturedTotalOffset;
             public string Label;
             public Color Color;
             public bool Active;
@@ -62,29 +74,35 @@ namespace Hecton8.UI
         {
             public RectTransform Root;
             public CanvasGroup Group;
+            public RectTransform FillRect;
+            public RectTransform OutlineRect;
             public Image Fill;
             public Image Outline;
             public TextMeshProUGUI Label;
             public string CachedLabel;
-            public bool CachedOutlineState;
+            public bool CachedEdgeState;
         }
 
         // COLD ALLOC: ExternalWaypoint[8] — external AR waypoint registry — owner: ARWaypointOverlay
         private readonly ExternalWaypoint[] _externalWaypoints = new ExternalWaypoint[MaxExternalWaypoints];
-        // COLD ALLOC: RuntimeWaypoint[21] — current projected waypoint payloads — owner: ARWaypointOverlay
+        // COLD ALLOC: RuntimeWaypoint[16] — projected waypoint payloads — owner: ARWaypointOverlay
         private readonly RuntimeWaypoint[] _runtimeWaypoints = new RuntimeWaypoint[MaxWaypoints];
-        // COLD ALLOC: WaypointSlot[21] — prebuilt AR waypoint UI pool — owner: ARWaypointOverlay
+        // COLD ALLOC: WaypointSlot[16] — pooled waypoint UI markers — owner: ARWaypointOverlay
         private readonly WaypointSlot[] _slots = new WaypointSlot[MaxWaypoints];
-        // COLD ALLOC: RaycastHit[1] — AR waypoint occlusion query buffer — owner: ARWaypointOverlay
+        // COLD ALLOC: RaycastHit[1] — waypoint occlusion query buffer — owner: ARWaypointOverlay
         private readonly RaycastHit[] _occlusionHits = new RaycastHit[1];
+        // COLD ALLOC: char[48] — transient zero-GC waypoint label formatter buffer — owner: ARWaypointOverlay
+        private readonly char[] _labelCharBuffer = new char[MaximumLabelCharacters];
 
-        [SerializeField] private LayerMask occlusionMask = ~0;
+        [SerializeField]
+        private LayerMask occlusionMask = ~0;
 
         private bool _registeredTick;
         private bool _registeredSlowTick;
         private bool _uiBuilt;
         private int _waypointCount;
         private Canvas _targetCanvas;
+        private RectTransform _targetCanvasRect;
         private RectTransform _root;
         private Camera _viewCamera;
         private Transform _playerTransform;
@@ -95,10 +113,12 @@ namespace Hecton8.UI
         {
             s_instance = null;
             s_quadSprite = null;
+            s_overlayResolveBuffer.Clear();
+            s_directChildBuffer.Clear();
         }
 
         /// <summary>
-        /// Register or refresh an external world-space waypoint.
+        /// Register or refresh an external waypoint bound to a transform target.
         /// </summary>
         public static void SetWaypoint(int id, Transform target, string label, Color color)
         {
@@ -109,7 +129,7 @@ namespace Hecton8.UI
         }
 
         /// <summary>
-        /// Register or refresh an external static-position waypoint.
+        /// Register or refresh an external waypoint bound to a runtime-space position.
         /// </summary>
         public static void SetWaypoint(int id, Vector3 worldPosition, string label, Color color)
         {
@@ -137,6 +157,7 @@ namespace Hecton8.UI
 
             ResolveOwners();
             EnsureUiBuilt();
+            HectonFloatingOrigin.RegisterListener(this);
             RegisterToTickManager();
             RegisterToSlowTickManager();
         }
@@ -152,6 +173,7 @@ namespace Hecton8.UI
             if (s_instance == this)
                 s_instance = null;
 
+            HectonFloatingOrigin.UnregisterListener(this);
             UnregisterFromTickManager();
             UnregisterFromSlowTickManager();
             HideAllSlots();
@@ -162,6 +184,7 @@ namespace Hecton8.UI
             if (s_instance == this)
                 s_instance = null;
 
+            HectonFloatingOrigin.UnregisterListener(this);
             UnregisterFromTickManager();
             UnregisterFromSlowTickManager();
         }
@@ -183,20 +206,68 @@ namespace Hecton8.UI
             RefreshOcclusionStates();
         }
 
+        /// <inheritdoc />
+        public void OnOriginShift(in OriginShiftEventData shiftData)
+        {
+            for (int i = 0; i < _externalWaypoints.Length; i++)
+            {
+                ExternalWaypoint externalWaypoint = _externalWaypoints[i];
+                if (!externalWaypoint.Active || externalWaypoint.UseTransform)
+                    continue;
+
+                externalWaypoint.RuntimeWorldPosition = shiftData.RebaseCapturedRuntimePosition(
+                    externalWaypoint.RuntimeWorldPosition,
+                    externalWaypoint.CapturedTotalOffset);
+                externalWaypoint.CapturedTotalOffset = shiftData.NewTotalOffset;
+                _externalWaypoints[i] = externalWaypoint;
+            }
+
+            _targetCanvas = null;
+            _targetCanvasRect = null;
+            _viewCamera = null;
+            _uiBuilt = false;
+            _root = null;
+        }
+
         private void ResolveOwners()
         {
             if (_vegetationBridge == null)
                 _vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
 
+            SuitHUDV4CanvasOverlay overlay = ResolveProjectionOverlay();
+            if (overlay != null)
+            {
+                Canvas overlayCanvas = overlay.TargetCanvas;
+                if (!ReferenceEquals(_targetCanvas, overlayCanvas))
+                {
+                    _targetCanvas = overlayCanvas;
+                    _targetCanvasRect = _targetCanvas != null ? _targetCanvas.transform as RectTransform : null;
+                    _uiBuilt = false;
+                    _root = null;
+                }
+
+                Camera overlayCamera = overlay.ProjectionCamera != null ? overlay.ProjectionCamera : (_targetCanvas != null ? _targetCanvas.worldCamera : null);
+                if (overlayCamera != null)
+                    _viewCamera = overlayCamera;
+            }
+
             if (_targetCanvas == null)
+            {
                 _targetCanvas = ResolveTargetCanvas();
+                _targetCanvasRect = _targetCanvas != null ? _targetCanvas.transform as RectTransform : null;
+            }
 
             if (_viewCamera == null)
             {
-                if (TryGetComponent(out Camera localCamera))
+                if (_targetCanvas != null && _targetCanvas.worldCamera != null)
+                    _viewCamera = _targetCanvas.worldCamera;
+                else if (TryGetComponent(out Camera localCamera))
                     _viewCamera = localCamera;
                 else if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
-                    _viewCamera = playerTransform.GetComponentInChildren<Camera>(true);
+                    _viewCamera =
+                        (GlobalRegistry.Player != null && GlobalRegistry.Player.PlayerCamera != null)
+                            ? GlobalRegistry.Player.PlayerCamera
+                            : playerTransform.GetComponent<Camera>();
             }
 
             if (_playerTransform == null)
@@ -215,6 +286,7 @@ namespace Hecton8.UI
             _root = FindExistingChild(canvasRoot, RootName);
             if (_root == null)
             {
+                // COLD ALLOC: GameObject[1] — AR waypoint root canvas-space owner — owner: ARWaypointOverlay
                 GameObject rootObject = new GameObject(RootName, typeof(RectTransform));
                 rootObject.layer = canvasRoot.gameObject.layer;
                 _root = rootObject.GetComponent<RectTransform>();
@@ -230,7 +302,7 @@ namespace Hecton8.UI
 
             ClearChildren(_root);
             for (int i = 0; i < _slots.Length; i++)
-                _slots[i] = CreateSlot(i, _root);
+                _slots[i] = CreateSlot(i, _root, _viewCamera);
 
             _uiBuilt = true;
         }
@@ -238,6 +310,7 @@ namespace Hecton8.UI
         private void CollectRuntimeWaypoints()
         {
             int count = 0;
+
             EmergencyServiceRelayDirector relayDirector = EmergencyServiceRelayDirector.Instance;
             EmergencyServiceRelay relayTarget = relayDirector != null ? relayDirector.GetActiveRouteTarget() : null;
             if (relayTarget != null && relayTarget.isActiveAndEnabled && count < _runtimeWaypoints.Length)
@@ -275,21 +348,27 @@ namespace Hecton8.UI
 
             for (int i = 0; i < _externalWaypoints.Length && count < _runtimeWaypoints.Length; i++)
             {
-                ExternalWaypoint external = _externalWaypoints[i];
-                if (!external.Active)
+                ExternalWaypoint externalWaypoint = _externalWaypoints[i];
+                if (!externalWaypoint.Active)
                     continue;
 
-                if (external.UseTransform && external.Target == null)
+                if (externalWaypoint.UseTransform)
                 {
-                    _externalWaypoints[i].Active = false;
-                    continue;
+                    if (externalWaypoint.Target == null)
+                    {
+                        externalWaypoint.Active = false;
+                        _externalWaypoints[i] = externalWaypoint;
+                        continue;
+                    }
+
+                    externalWaypoint.RuntimeWorldPosition = externalWaypoint.Target.position;
                 }
 
                 _runtimeWaypoints[count] = new RuntimeWaypoint
                 {
-                    WorldPosition = external.UseTransform ? external.Target.position : external.WorldPosition,
-                    Label = string.IsNullOrEmpty(external.Label) ? "WAYPOINT" : external.Label,
-                    Color = external.Color.a <= 0f ? RelayColor : external.Color,
+                    WorldPosition = externalWaypoint.RuntimeWorldPosition,
+                    Label = string.IsNullOrEmpty(externalWaypoint.Label) ? DefaultExternalLabel : externalWaypoint.Label,
+                    Color = externalWaypoint.Color.a <= 0f ? RelayColor : externalWaypoint.Color,
                     Active = true,
                     Occluded = count < _waypointCount && _runtimeWaypoints[count].Occluded
                 };
@@ -310,9 +389,6 @@ namespace Hecton8.UI
                 return;
             }
 
-            float halfWidth = Mathf.Max(1f, (_root.rect.width * 0.5f) - ScreenMargin);
-            float halfHeight = Mathf.Max(1f, (_root.rect.height * 0.5f) - ScreenMargin);
-
             for (int i = 0; i < _waypointCount; i++)
             {
                 RuntimeWaypoint waypoint = _runtimeWaypoints[i];
@@ -322,42 +398,54 @@ namespace Hecton8.UI
                     continue;
                 }
 
-                Vector3 viewport = _viewCamera.WorldToViewportPoint(waypoint.WorldPosition);
-                Vector2 anchoredPosition;
-                bool useEdgeClamp;
-                if (viewport.z > 0f &&
-                    viewport.x >= 0f && viewport.x <= 1f &&
-                    viewport.y >= 0f && viewport.y <= 1f)
+                if (!TryProjectWaypointOntoHudPlane(
+                        waypoint.WorldPosition,
+                        out Vector2 anchoredPosition,
+                        out Vector2 clampDirection,
+                        out bool clampedToEdge,
+                        out float visibility01))
                 {
-                    anchoredPosition = new Vector2(
-                        (viewport.x - 0.5f) * _root.rect.width,
-                        (viewport.y - 0.5f) * _root.rect.height);
-                    useEdgeClamp = false;
+                    HideSlot(i);
+                    continue;
                 }
-                else
+
+                if (visibility01 <= 0.0001f)
                 {
-                    anchoredPosition = ResolveEdgeClampedPosition(waypoint.WorldPosition, halfWidth, halfHeight);
-                    useEdgeClamp = true;
+                    HideSlot(i);
+                    continue;
                 }
 
                 WaypointSlot slot = _slots[i];
-                if (slot.Root == null || slot.Group == null)
+                if (slot.Root == null || slot.Group == null || slot.Fill == null || slot.Outline == null || slot.Label == null)
                     continue;
 
                 slot.Root.anchoredPosition = anchoredPosition;
-                slot.Root.localRotation = Quaternion.identity;
+                slot.Root.localRotation = clampedToEdge
+                    ? Quaternion.Euler(0f, 0f, Mathf.Atan2(clampDirection.y, clampDirection.x) * Mathf.Rad2Deg - 90f)
+                    : Quaternion.identity;
 
-                bool useOutline = waypoint.Occluded;
-                float alpha = waypoint.Occluded ? OccludedAlpha : (useEdgeClamp ? EdgeAlpha : VisibleAlpha);
-                slot.Group.alpha = alpha;
-                slot.Fill.color = useOutline ? Color.clear : waypoint.Color;
-                slot.Outline.color = useOutline ? OccludedColor : new Color(waypoint.Color.r, waypoint.Color.g, waypoint.Color.b, 0.22f);
-                slot.Outline.enabled = true;
-                slot.Fill.enabled = !useOutline;
-
-                if (!string.Equals(slot.CachedLabel, waypoint.Label, System.StringComparison.Ordinal))
+                if (slot.CachedEdgeState != clampedToEdge)
                 {
-                    slot.Label.SetText(waypoint.Label);
+                    ApplySlotIconState(ref slot, clampedToEdge);
+                    slot.CachedEdgeState = clampedToEdge;
+                }
+
+                bool useOutlineOnly = waypoint.Occluded;
+                float alpha = waypoint.Occluded
+                    ? visibility01 * OccludedAlpha
+                    : visibility01 * (clampedToEdge ? EdgeAlpha : VisibleAlpha);
+
+                slot.Group.alpha = alpha;
+                slot.Fill.enabled = !useOutlineOnly;
+                slot.Outline.enabled = true;
+                slot.Fill.color = waypoint.Color;
+                slot.Outline.color = useOutlineOnly
+                    ? OccludedColor
+                    : new Color(waypoint.Color.r, waypoint.Color.g, waypoint.Color.b, 0.22f);
+
+                if (!string.Equals(slot.CachedLabel, waypoint.Label, StringComparison.Ordinal))
+                {
+                    ApplyLabelText(slot.Label, waypoint.Label);
                     slot.CachedLabel = waypoint.Label;
                 }
 
@@ -390,7 +478,7 @@ namespace Hecton8.UI
                 }
 
                 Vector3 direction = delta / distance;
-                int hitCount = UnityEngine.Physics.RaycastNonAlloc(
+                int hitCount = Physics.RaycastNonAlloc(
                     origin,
                     direction,
                     _occlusionHits,
@@ -403,24 +491,90 @@ namespace Hecton8.UI
             }
         }
 
-        private Vector2 ResolveEdgeClampedPosition(Vector3 worldPosition, float halfWidth, float halfHeight)
+        private bool TryProjectWaypointOntoHudPlane(
+            Vector3 worldPosition,
+            out Vector2 anchoredPosition,
+            out Vector2 clampDirection,
+            out bool clampedToEdge,
+            out float visibility01)
         {
-            Vector3 local = _viewCamera.transform.InverseTransformPoint(worldPosition);
-            Vector2 planar = new Vector2(local.x, local.y);
-            if (local.z < 0f)
-                planar = -planar;
+            anchoredPosition = Vector2.zero;
+            clampDirection = Vector2.up;
+            clampedToEdge = false;
+            visibility01 = 0f;
 
-            if (planar.sqrMagnitude <= 0.0001f)
-                planar = Vector2.up;
+            if (_viewCamera == null || _root == null || _targetCanvasRect == null)
+                return false;
 
-            Vector2 direction = planar.normalized;
-            float tx = Mathf.Abs(direction.x) > 0.0001f ? halfWidth / Mathf.Abs(direction.x) : float.MaxValue;
-            float ty = Mathf.Abs(direction.y) > 0.0001f ? halfHeight / Mathf.Abs(direction.y) : float.MaxValue;
-            float distance = Mathf.Min(tx, ty);
-            return direction * distance;
+            Transform cameraTransform = _viewCamera.transform;
+            Vector3 cameraPosition = cameraTransform.position;
+            Vector3 delta = worldPosition - cameraPosition;
+            Vector3 cameraForward = cameraTransform.forward;
+            float viewDepth = Vector3.Dot(cameraForward, delta);
+            float planeDistance = ResolveHudPlaneDistance(cameraTransform, _targetCanvasRect);
+            if (planeDistance <= ProjectionDepthEpsilon)
+                return false;
+
+            float depthForProjection = Mathf.Abs(viewDepth) > ProjectionDepthEpsilon
+                ? viewDepth
+                : (viewDepth >= 0f ? ProjectionDepthEpsilon : -ProjectionDepthEpsilon);
+
+            float projectedWorldX = Vector3.Dot(cameraTransform.right, delta) * (planeDistance / depthForProjection);
+            float projectedWorldY = Vector3.Dot(cameraTransform.up, delta) * (planeDistance / depthForProjection);
+
+            Vector3 lossyScale = _root.lossyScale;
+            float scaleX = Mathf.Max(ProjectionDepthEpsilon, Mathf.Abs(lossyScale.x));
+            float scaleY = Mathf.Max(ProjectionDepthEpsilon, Mathf.Abs(lossyScale.y));
+            Vector2 projectedCanvasPosition = new Vector2(projectedWorldX / scaleX, projectedWorldY / scaleY);
+
+            bool behindPlayer = viewDepth <= ProjectionDepthEpsilon;
+            if (behindPlayer)
+                projectedCanvasPosition = -projectedCanvasPosition;
+
+            float halfWidth = Mathf.Max(1f, (_root.rect.width * 0.5f) - ScreenMargin);
+            float halfHeight = Mathf.Max(1f, (_root.rect.height * 0.5f) - ScreenMargin);
+
+            bool insideFrustum =
+                !behindPlayer &&
+                projectedCanvasPosition.x >= -halfWidth &&
+                projectedCanvasPosition.x <= halfWidth &&
+                projectedCanvasPosition.y >= -halfHeight &&
+                projectedCanvasPosition.y <= halfHeight;
+
+            if (insideFrustum)
+            {
+                anchoredPosition = projectedCanvasPosition;
+                clampDirection = projectedCanvasPosition.sqrMagnitude > ProjectionDepthEpsilon
+                    ? projectedCanvasPosition.normalized
+                    : Vector2.up;
+                visibility01 = 1f;
+                return true;
+            }
+
+            clampDirection = projectedCanvasPosition.sqrMagnitude > ProjectionDepthEpsilon
+                ? projectedCanvasPosition.normalized
+                : Vector2.up;
+
+            float tx = Mathf.Abs(clampDirection.x) > ProjectionDepthEpsilon
+                ? halfWidth / Mathf.Abs(clampDirection.x)
+                : float.MaxValue;
+            float ty = Mathf.Abs(clampDirection.y) > ProjectionDepthEpsilon
+                ? halfHeight / Mathf.Abs(clampDirection.y)
+                : float.MaxValue;
+
+            anchoredPosition = clampDirection * Mathf.Min(tx, ty);
+            clampedToEdge = true;
+            visibility01 = behindPlayer ? 0f : 1f;
+            return true;
         }
 
-        private void SetExternalWaypointInternal(int id, Transform target, Vector3 worldPosition, bool useTransform, string label, Color color)
+        private void SetExternalWaypointInternal(
+            int id,
+            Transform target,
+            Vector3 worldPosition,
+            bool useTransform,
+            string label,
+            Color color)
         {
             int freeIndex = -1;
             for (int i = 0; i < _externalWaypoints.Length; i++)
@@ -442,7 +596,8 @@ namespace Hecton8.UI
             {
                 Id = id,
                 Target = target,
-                WorldPosition = worldPosition,
+                RuntimeWorldPosition = worldPosition,
+                CapturedTotalOffset = HectonFloatingOrigin.CurrentTotalOffset,
                 Label = label,
                 Color = color,
                 Active = true,
@@ -486,11 +641,7 @@ namespace Hecton8.UI
             if (_registeredTick)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register((ITickable)this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _registeredTick = true;
         }
 
@@ -499,11 +650,7 @@ namespace Hecton8.UI
             if (_registeredSlowTick)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register((ISlowTickable)this);
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.UI);
             _registeredSlowTick = true;
         }
 
@@ -512,10 +659,7 @@ namespace Hecton8.UI
             if (!_registeredTick)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister((ITickable)this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _registeredTick = false;
         }
 
@@ -524,33 +668,45 @@ namespace Hecton8.UI
             if (!_registeredSlowTick)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister((ISlowTickable)this);
-
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
             _registeredSlowTick = false;
         }
 
-        private static Canvas ResolveTargetCanvas()
+        private static SuitHUDV4CanvasOverlay ResolveProjectionOverlay()
         {
             SuitHUDV4CanvasOverlay.CopyActiveOverlaysTo(s_overlayResolveBuffer);
             for (int i = 0; i < s_overlayResolveBuffer.Count; i++)
             {
                 SuitHUDV4CanvasOverlay overlay = s_overlayResolveBuffer[i];
-                if (overlay != null && overlay.TargetCanvas != null)
+                if (overlay == null || overlay.TargetCanvas == null)
+                    continue;
+
+                Canvas targetCanvas = overlay.TargetCanvas;
+                if (targetCanvas.renderMode == RenderMode.WorldSpace && overlay.ProjectionCamera != null)
                 {
                     s_overlayResolveBuffer.Clear();
-                    return overlay.TargetCanvas;
+                    return overlay;
                 }
             }
 
             s_overlayResolveBuffer.Clear();
-            return Object.FindAnyObjectByType<Canvas>();
+            return null;
         }
 
-        private static WaypointSlot CreateSlot(int index, RectTransform parent)
+        private static Canvas ResolveTargetCanvas()
         {
-            GameObject rootObject = new GameObject("Waypoint_" + index, typeof(RectTransform), typeof(CanvasGroup));
+            SuitHUDV4CanvasOverlay overlay = ResolveProjectionOverlay();
+            if (overlay != null)
+                return overlay.TargetCanvas;
+
+            return SuitHUDV4CanvasOverlay.ActiveRuntimeInstance != null
+                ? SuitHUDV4CanvasOverlay.ActiveRuntimeInstance.TargetCanvas
+                : null;
+        }
+
+        private static WaypointSlot CreateSlot(int index, RectTransform parent, Camera camera)
+        {
+            GameObject rootObject = new GameObject($"Waypoint_{index}", typeof(RectTransform), typeof(CanvasGroup));
             rootObject.layer = parent.gameObject.layer;
             RectTransform root = rootObject.GetComponent<RectTransform>();
             root.SetParent(parent, false);
@@ -560,37 +716,45 @@ namespace Hecton8.UI
             root.sizeDelta = new Vector2(120f, 42f);
 
             CanvasGroup group = rootObject.GetComponent<CanvasGroup>();
-            group.alpha = 0f;
+            group.alpha = HiddenAlpha;
             group.blocksRaycasts = false;
             group.interactable = false;
 
-            Image fill = CreateImage(root, "Fill", MarkerSize, RelayColor);
-            Image outline = CreateImage(root, "Outline", OutlineSize, OccludedColor);
+            Image fill = CreateImage(root, "Fill", MarkerSize, MarkerSize, RelayColor, out RectTransform fillRect);
+            Image outline = CreateImage(root, "Outline", OutlineSize, OutlineSize, OccludedColor, out RectTransform outlineRect);
             outline.enabled = true;
 
-            TextMeshProUGUI label = CreateLabel(root);
+            TextMeshProUGUI label = CreateLabel(root, camera);
             return new WaypointSlot
             {
                 Root = root,
                 Group = group,
+                FillRect = fillRect,
+                OutlineRect = outlineRect,
                 Fill = fill,
                 Outline = outline,
                 Label = label,
                 CachedLabel = string.Empty,
-                CachedOutlineState = false
+                CachedEdgeState = false
             };
         }
 
-        private static Image CreateImage(RectTransform parent, string name, float size, Color color)
+        private static Image CreateImage(
+            RectTransform parent,
+            string name,
+            float width,
+            float height,
+            Color color,
+            out RectTransform rect)
         {
             GameObject go = new GameObject(name, typeof(RectTransform), typeof(Image));
             go.layer = parent.gameObject.layer;
-            RectTransform rect = go.GetComponent<RectTransform>();
+            rect = go.GetComponent<RectTransform>();
             rect.SetParent(parent, false);
             rect.anchorMin = new Vector2(0.5f, 0.5f);
             rect.anchorMax = new Vector2(0.5f, 0.5f);
             rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.sizeDelta = new Vector2(size, size);
+            rect.sizeDelta = new Vector2(width, height);
 
             Image image = go.GetComponent<Image>();
             image.sprite = ResolveQuadSprite();
@@ -599,7 +763,7 @@ namespace Hecton8.UI
             return image;
         }
 
-        private static TextMeshProUGUI CreateLabel(RectTransform parent)
+        private static TextMeshProUGUI CreateLabel(RectTransform parent, Camera camera)
         {
             GameObject go = new GameObject("Label", typeof(RectTransform));
             go.layer = parent.gameObject.layer;
@@ -619,7 +783,64 @@ namespace Hecton8.UI
             label.textWrappingMode = TextWrappingModes.NoWrap;
             label.raycastTarget = false;
             TMP_TextRegistry.EnsureRegistered(label);
+
+            WorldSpaceTMPSharpnessController sharpnessController = go.AddComponent<WorldSpaceTMPSharpnessController>(); // COLD ALLOC: WorldSpaceTMPSharpnessController[1] — per-label world-space SDF sharpness owner — owner: ARWaypointOverlay
+            sharpnessController.Bind(label, camera);
             return label;
+        }
+
+        private void ApplyLabelText(TextMeshProUGUI label, string value)
+        {
+            if (label == null)
+                return;
+
+            int length = CopyLabelToBuffer(value, _labelCharBuffer);
+            label.SetCharArray(_labelCharBuffer, 0, length);
+        }
+
+        private static int CopyLabelToBuffer(string value, char[] destination)
+        {
+            if (destination == null || destination.Length == 0)
+                return 0;
+
+            if (string.IsNullOrEmpty(value))
+            {
+                destination[0] = '\0';
+                return 0;
+            }
+
+            int length = Mathf.Min(value.Length, destination.Length);
+            for (int i = 0; i < length; i++)
+                destination[i] = value[i];
+
+            return length;
+        }
+
+        private static void ApplySlotIconState(ref WaypointSlot slot, bool edgeState)
+        {
+            if (slot.FillRect != null)
+            {
+                slot.FillRect.sizeDelta = edgeState
+                    ? new Vector2(EdgeMarkerWidth, EdgeMarkerHeight)
+                    : new Vector2(MarkerSize, MarkerSize);
+            }
+
+            if (slot.OutlineRect != null)
+            {
+                slot.OutlineRect.sizeDelta = edgeState
+                    ? new Vector2(EdgeOutlineWidth, EdgeOutlineHeight)
+                    : new Vector2(OutlineSize, OutlineSize);
+            }
+        }
+
+        private static float ResolveHudPlaneDistance(Transform cameraTransform, RectTransform canvasRect)
+        {
+            if (cameraTransform == null || canvasRect == null)
+                return 0f;
+
+            return Mathf.Max(
+                ProjectionDepthEpsilon,
+                Vector3.Dot(cameraTransform.forward, canvasRect.position - cameraTransform.position));
         }
 
         private static RectTransform FindExistingChild(Transform parent, string childName)
@@ -627,26 +848,45 @@ namespace Hecton8.UI
             if (parent == null)
                 return null;
 
-            for (int i = 0; i < parent.childCount; i++)
+            s_directChildBuffer.Clear();
+            parent.GetComponentsInChildren(includeInactive: true, result: s_directChildBuffer);
+            for (int i = 0; i < s_directChildBuffer.Count; i++)
             {
-                Transform child = parent.GetChild(i);
-                if (child.name == childName)
-                    return child as RectTransform;
+                RectTransform child = s_directChildBuffer[i];
+                if (child == null || !ReferenceEquals(child.parent, parent))
+                    continue;
+
+                if (string.Equals(child.name, childName, StringComparison.Ordinal))
+                {
+                    s_directChildBuffer.Clear();
+                    return child;
+                }
             }
 
+            s_directChildBuffer.Clear();
             return null;
         }
 
         private static void ClearChildren(Transform parent)
         {
-            for (int i = parent.childCount - 1; i >= 0; i--)
+            if (parent == null)
+                return;
+
+            s_directChildBuffer.Clear();
+            parent.GetComponentsInChildren(includeInactive: true, result: s_directChildBuffer);
+            for (int i = s_directChildBuffer.Count - 1; i >= 0; i--)
             {
-                Transform child = parent.GetChild(i);
+                RectTransform child = s_directChildBuffer[i];
+                if (child == null || !ReferenceEquals(child.parent, parent))
+                    continue;
+
                 if (Application.isPlaying)
-                    Object.Destroy(child.gameObject);
+                    Destroy(child.gameObject);
                 else
-                    Object.DestroyImmediate(child.gameObject);
+                    DestroyImmediate(child.gameObject);
             }
+
+            s_directChildBuffer.Clear();
         }
 
         private static Sprite ResolveQuadSprite()

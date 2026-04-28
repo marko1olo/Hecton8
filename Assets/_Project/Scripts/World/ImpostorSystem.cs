@@ -105,6 +105,9 @@ namespace Hecton8.World
         [SerializeField, Tooltip("Optional explicit main camera reference. Falls back to cold-path camera resolve.")]
         private Camera _cameraReference;
 
+        [SerializeField, Tooltip("Fallback billboard shader assigned at authoring time. Used when source renderers do not expose a usable shared material.")]
+        private Shader _fallbackBillboardShader;
+
         private struct ImpostorInstance
         {
             public GameObject OriginalObject;
@@ -212,11 +215,8 @@ namespace Hecton8.World
             if (_registered)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager == null)
-                return;
 
-            gameTickManager.Register(this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _registered = true;
         }
 
@@ -225,9 +225,7 @@ namespace Hecton8.World
             if (!_registered)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager != null)
-                gameTickManager.Unregister(this);
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
 
             _registered = false;
         }
@@ -370,7 +368,7 @@ namespace Hecton8.World
                 playerTransform != null)
             {
                 if (!playerTransform.TryGetComponent(out _mainCamera))
-                    _mainCamera = playerTransform.GetComponentInChildren<Camera>(true);
+                    _mainCamera = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera : playerTransform.GetComponent<Camera>());
             }
 
             if (_mainCamera == null)
@@ -728,13 +726,7 @@ namespace Hecton8.World
 
         private Material BuildFallbackBillboardMaterial()
         {
-            Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
-            if (shader == null)
-                shader = Shader.Find("Universal Render Pipeline/Lit");
-
-            if (shader == null)
-                shader = Shader.Find("Unlit/Texture");
-
+            Shader shader = ResolveFallbackBillboardShader();
             if (shader == null)
                 return null;
 
@@ -747,6 +739,16 @@ namespace Hecton8.World
                 material.SetColor(_colorId, Color.white);
 
             return material;
+        }
+
+        private Shader ResolveFallbackBillboardShader()
+        {
+            if (_fallbackBillboardShader != null)
+                return _fallbackBillboardShader;
+
+            RenderPipelineAsset renderPipeline = GraphicsSettings.currentRenderPipeline ?? GraphicsSettings.defaultRenderPipeline;
+            Material defaultMaterial = renderPipeline != null ? renderPipeline.defaultMaterial : null;
+            return defaultMaterial != null ? defaultMaterial.shader : null;
         }
 
         private static bool TryCalculateBillboardPresentation(
@@ -800,7 +802,7 @@ namespace Hecton8.World
             else
                 Debug.LogWarning("[ImpostorSystem] Amplify Impostors runtime type not found.");
 
-            Shader impostorShader = Shader.Find("Amplify Impostors/URP/Impostor Standard");
+            Shader impostorShader = FindAmplifyImpostorShaderAsset();
             if (impostorShader != null)
                 Debug.Log($"[ImpostorSystem] Impostor shader found: {impostorShader.name}");
             else
@@ -863,6 +865,23 @@ namespace Hecton8.World
         {
             return Type.GetType($"{typeName}, AmplifyImpostors.Runtime") ??
                    Type.GetType($"{typeName}, Assembly-CSharp");
+        }
+
+        private static Shader FindAmplifyImpostorShaderAsset()
+        {
+            string[] shaderGuids = AssetDatabase.FindAssets("Impostor Standard t:Shader");
+            for (int i = 0; i < shaderGuids.Length; i++)
+            {
+                string assetPath = AssetDatabase.GUIDToAssetPath(shaderGuids[i]);
+                if (string.IsNullOrEmpty(assetPath) || assetPath.IndexOf("Amplify", StringComparison.OrdinalIgnoreCase) < 0)
+                    continue;
+
+                Shader shader = AssetDatabase.LoadAssetAtPath<Shader>(assetPath);
+                if (shader != null)
+                    return shader;
+            }
+
+            return null;
         }
 #endif
     }

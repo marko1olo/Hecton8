@@ -107,5 +107,27 @@ namespace Hecton8.Core
             Array.Clear(_items, 0, _count);
             _count = 0;
         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        /// <summary>
+        /// Debug-only validation that detects Unity objects destroyed without unregistering first.
+        /// </summary>
+        /// <param name="bucketName">Human-readable bucket label for diagnostics.</param>
+        public void ValidateNoDestroyedEntriesDebug(string bucketName)
+        {
+            for (int i = 0; i < _count; i++)
+            {
+                if (!(_items[i] is UnityEngine.Object unityObject))
+                    continue;
+
+                if (unityObject != null)
+                    continue;
+
+                UnityEngine.Debug.LogError(
+                    $"[RegistryBucket<{typeof(T).Name}>] Destroyed object remained registered in {bucketName} at index {i}.");
+                return;
+            }
+        }
+#endif
     }
 }

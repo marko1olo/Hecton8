@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Hecton8.Bootstrap;
+using Hecton8.Physics;
 using Unity.Burst;
 using Unity.Jobs;
 using UnityEngine;
@@ -16,9 +17,9 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-10000)]
-    public sealed class HectonFloatingOrigin : MonoBehaviour, ITickable
+    public sealed class HectonFloatingOrigin : MonoBehaviour, ITickable, IUpdatable
     {
-        [BurstCompile]
+        [BurstCompile(FloatMode = FloatMode.Fast)]
         private struct OriginShiftTranslateJob : IJobParallelForTransform
         {
             public Vector3 ShiftOffset;
@@ -35,6 +36,10 @@ namespace Hecton8.Core
         private static readonly int _HectonFloatingOriginOffsetId = Shader.PropertyToID("_HectonFloatingOriginOffset");
         private static readonly int _TotalUniverseOffsetId = Shader.PropertyToID("_TotalUniverseOffset");
         private static readonly List<IOriginShiftListener> _originShiftListeners = new List<IOriginShiftListener>(16);
+        private const int PrecisionWatchdogIntervalFrames = 300;
+        private const int ShiftStabilityWatchdogFrames = 50000;
+        private const float PrecisionWatchdogSafeRadiusMeters = 2048f;
+        private const float PrecisionWatchdogSafeRadiusSq = PrecisionWatchdogSafeRadiusMeters * PrecisionWatchdogSafeRadiusMeters;
 
         private static HectonFloatingOrigin _instance;
         private static OriginShiftEventData _lastShiftEvent;
@@ -193,8 +198,21 @@ namespace Hecton8.Core
         /// <returns>Stable committed shift payload for the current frame.</returns>
         public static async Awaitable<OriginShiftEventData> WaitForShiftStabilityAsync(CancellationToken cancellationToken = default)
         {
+            int watchdog = 0;
             while (_instance != null && (_instance._isShiftInProgress || _instance._physicsPauseActive))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                if (watchdog++ > ShiftStabilityWatchdogFrames)
+                {
+                    Debug.LogError(
+                        $"[FloatingOrigin] WaitForShiftStabilityAsync timed out after {ShiftStabilityWatchdogFrames} frames. " +
+                        $"shiftInProgress={_instance._isShiftInProgress} physicsPause={_instance._physicsPauseActive}");
+                    break;
+                }
+
                 await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+            }
 
             Vector3 currentOffset = CurrentTotalOffset;
             uint currentSequence = CurrentShiftSequence;
@@ -220,6 +238,7 @@ namespace Hecton8.Core
         {
             TryRegister();
             MarkShiftTargetsDirty();
+            TryPrepareShiftTargets();
         }
 
         private void OnDisable()
@@ -270,6 +289,13 @@ namespace Hecton8.Core
             }
 
             Vector3 anchorPosition = _anchor.position;
+            if ((Time.frameCount % PrecisionWatchdogIntervalFrames) == 0 &&
+                anchorPosition.sqrMagnitude >= PrecisionWatchdogSafeRadiusSq)
+            {
+                ShiftWorld(anchorPosition);
+                return;
+            }
+
             if (anchorPosition.sqrMagnitude > _thresholdSqr)
                 ShiftWorld(anchorPosition);
         }
@@ -280,9 +306,16 @@ namespace Hecton8.Core
                 return;
 
             _isShiftInProgress = true;
+            bool trackedBodiesPrepared = false;
+            bool trackedBodiesCommitted = false;
+            bool trackedBodiesFinalized = false;
+            bool physicsTransformsSynced = false;
             PausePhysicsForShift();
             try
             {
+                PhysicsApplySystem.PrepareTrackedBodiesForOriginShift();
+                trackedBodiesPrepared = true;
+
                 if (_shiftTargetsDirty)
                     RebuildShiftTargetCache();
 
@@ -297,6 +330,9 @@ namespace Hecton8.Core
                     handle.Complete();
                 }
 
+                PhysicsApplySystem.CommitTrackedBodiesForOriginShift(shiftOffset);
+                trackedBodiesCommitted = true;
+
                 Vector3 previousTotalOffset = TotalOffset;
                 TotalOffset += shiftOffset;
                 _shiftSequence++;
@@ -304,11 +340,23 @@ namespace Hecton8.Core
 
                 PublishGlobalOffsets();
                 UnityEngine.Physics.SyncTransforms();
+                physicsTransformsSynced = true;
+                PhysicsApplySystem.FinalizeTrackedBodiesAfterOriginShift();
+                trackedBodiesFinalized = true;
                 BroadcastOriginShift(_lastShiftEvent);
                 OnWorldShift?.Invoke(shiftOffset);
             }
             finally
             {
+                if (trackedBodiesCommitted && !physicsTransformsSynced)
+                {
+                    UnityEngine.Physics.SyncTransforms();
+                    physicsTransformsSynced = true;
+                }
+
+                if (trackedBodiesPrepared && !trackedBodiesFinalized)
+                    PhysicsApplySystem.FinalizeTrackedBodiesAfterOriginShift();
+
                 ResumePhysicsAfterShift();
                 _isShiftInProgress = false;
             }
@@ -441,11 +489,10 @@ namespace Hecton8.Core
             if (_isRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
+            if (!Application.isPlaying)
                 return;
 
-            tickManager.Register(this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
             _isRegistered = true;
         }
 
@@ -454,10 +501,7 @@ namespace Hecton8.Core
             if (!_isRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister(this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
             _isRegistered = false;
         }
 
@@ -486,16 +530,27 @@ namespace Hecton8.Core
         private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             _shiftTargetsDirty = true;
+            TryPrepareShiftTargets();
         }
 
         private void HandleSceneUnloaded(Scene scene)
         {
             _shiftTargetsDirty = true;
+            TryPrepareShiftTargets();
         }
 
         private void HandleActiveSceneChanged(Scene previousScene, Scene newScene)
         {
             _shiftTargetsDirty = true;
+            TryPrepareShiftTargets();
+        }
+
+        private void TryPrepareShiftTargets()
+        {
+            if (!Application.isPlaying || _isShiftInProgress || _physicsPauseActive || !_shiftTargetsDirty)
+                return;
+
+            RebuildShiftTargetCache();
         }
 
 #if UNITY_EDITOR

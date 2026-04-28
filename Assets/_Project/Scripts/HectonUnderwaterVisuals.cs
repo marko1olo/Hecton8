@@ -71,10 +71,10 @@ namespace Hecton8.Environment
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4000)]
-    [ExecuteAlways]
-    public sealed class HectonUnderwaterVisuals : MonoBehaviour, ITickable, ISlowTickable
+    public sealed class HectonUnderwaterVisuals : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IRenderable
     {
         internal static HectonUnderwaterVisuals ActiveRuntimeInstance { get; private set; }
+        internal static Material RuntimeSkyMaterialReference { get; private set; }
 
         private const float RuntimeCameraResolveRetryInterval = 1f;
         private const float EditorCameraResolveRetryInterval = 0.25f;
@@ -702,8 +702,10 @@ namespace Hecton8.Environment
         private Color _surfaceWeatherAmbientColor;
         private float _surfaceWeatherSunMultiplier = 1f;
 
+        private bool _registeredRenderable;
         private bool _registeredTick;
         private bool _registeredSlowTick;
+        private bool _renderSettingsGuardAcquired;
         private bool _wasUnderwater;
         private DepthZoneProfile _lastDepthZoneProfile;
         private float _submergeImpulseTimer;
@@ -771,17 +773,30 @@ namespace Hecton8.Environment
 #endif
 
         private float _editorSlowTickAccum;
+        private Material _runtimeSkyboxMaterial;
         private readonly RaycastHit[] _bottomSiltProbeHits = new RaycastHit[4]; // COLD ALLOC: RaycastHit[4] â€” reused seafloor probe buffer for underwater bottom-silt gating â€” owner: HectonUnderwaterVisuals
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  LIFECYCLE
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
+        private void Awake()
+        {
+            CacheRuntimeSkyMaterialReference();
+            ForceMandatedSkyboxOwnership();
+        }
+
         private void OnEnable()
         {
 #if UNITY_EDITOR
             EditorApplication.update -= EditorUpdate;
 #endif
+
+            if (!_renderSettingsGuardAcquired)
+            {
+                RenderSettingsLifecycleGuard.Acquire(this);
+                _renderSettingsGuardAcquired = true;
+            }
 
             if (Application.isPlaying)
             {
@@ -804,17 +819,18 @@ namespace Hecton8.Environment
             CacheBottomSiltLayerMask();
             CacheAtmosphereManager();
             CaptureBaseValues();
+            CacheRuntimeSkyMaterialReference();
+            ForceMandatedSkyboxOwnership();
             CaptureSkyBaseColors();
             InitializeCurrentValues();
             EnsureCrestUnderwaterPassOwnership();
             ApplyCrestMaterial();
             ApplyNoirResolveGlobals();
 
-            RenderPipelineManager.beginCameraRendering += EnforceFogState;
-
             if (Application.isPlaying)
             {
                 _debugEditorDriven = false;
+                TryRegisterRenderDispatcher();
                 EnsureRuntimeVisualOwners();
                 EnsureGameplayCameraStackEnabled();
                 MapMagicBridge.OnBiomeChanged += HandleBiomeChanged;
@@ -847,6 +863,8 @@ namespace Hecton8.Environment
             if (spaceCamera != null && !spaceCamera.enabled)
                 spaceCamera.enabled = true;
 
+            EnsureCameraTextureRequirements(mainCamera);
+            EnsureCameraTextureRequirements(spaceCamera);
             ApplyGameplayCameraCompositionMode();
             EnsureCrestUnderwaterPassOwnership();
         }
@@ -869,6 +887,8 @@ namespace Hecton8.Environment
                 return;
             }
 
+            EnsureCameraTextureRequirements(mainCameraData);
+            EnsureCameraTextureRequirements(spaceCameraData);
             CaptureGameplayCameraCompositionDefaults(mainCameraData, spaceCameraData, spaceCamera);
 
             if (SupportsGameplayCameraStacking(mainCameraData, spaceCameraData))
@@ -914,6 +934,49 @@ namespace Hecton8.Environment
                    spaceRenderer != null &&
                    mainRenderer.SupportsCameraStackingType(CameraRenderType.Overlay) &&
                    spaceRenderer.SupportsCameraStackingType(CameraRenderType.Base);
+        }
+
+        private static void EnsureCameraTextureRequirements(Camera camera)
+        {
+            if (camera == null ||
+                !camera.TryGetComponent(out UniversalAdditionalCameraData cameraData) ||
+                cameraData == null)
+            {
+                return;
+            }
+
+            EnsureCameraTextureRequirements(cameraData);
+        }
+
+        private static void EnsureCameraTextureRequirements(UniversalAdditionalCameraData cameraData)
+        {
+            if (cameraData == null)
+                return;
+
+            if (cameraData.requiresDepthOption != CameraOverrideOption.On)
+                cameraData.requiresDepthOption = CameraOverrideOption.On;
+
+            if (cameraData.requiresColorOption != CameraOverrideOption.On)
+                cameraData.requiresColorOption = CameraOverrideOption.On;
+
+            if (!cameraData.requiresDepthTexture)
+                cameraData.requiresDepthTexture = true;
+
+            if (!cameraData.requiresColorTexture)
+                cameraData.requiresColorTexture = true;
+
+            bool shouldEnablePostProcessing = cameraData.TryGetComponent(out CrestUnderwaterRenderer underwaterRenderer) &&
+                                              underwaterRenderer != null;
+            if (!shouldEnablePostProcessing &&
+                cameraData.TryGetComponent(out Camera camera) &&
+                camera != null &&
+                camera.CompareTag("MainCamera"))
+            {
+                shouldEnablePostProcessing = true;
+            }
+
+            if (shouldEnablePostProcessing && !cameraData.renderPostProcessing)
+                cameraData.renderPostProcessing = true;
         }
 
         private void ApplyGameplayCameraCompositionFallback(
@@ -1014,6 +1077,7 @@ namespace Hecton8.Environment
             EditorApplication.update -= EditorUpdate;
 #endif
             _debugEditorDriven = false;
+            TryRegisterRenderDispatcher();
             EnsureRuntimeVisualOwners();
             EnsureGameplayCameraStackEnabled();
 
@@ -1037,41 +1101,42 @@ namespace Hecton8.Environment
 
         private void OnDisable()
         {
-            RenderPipelineManager.beginCameraRendering -= EnforceFogState;
-
             if (Application.isPlaying)
             {
                 if (ActiveRuntimeInstance == this)
+                {
                     ActiveRuntimeInstance = null;
+                    if (ReferenceEquals(RuntimeSkyMaterialReference, skyMaterial))
+                        RuntimeSkyMaterialReference = null;
+                }
 
+                UnregisterRenderDispatcher();
                 MapMagicBridge.OnBiomeChanged -= HandleBiomeChanged;
                 BiomeMatrixDirector.OnMatrixBiomeChanged -= HandleMatrixBiomeChanged;
                 SoundscapeEvents.OnTierChanged -= HandleSoundscapeTierChanged;
 
-                GameTickManager tickManager = GameTickManager.Instance;
-                if (tickManager != null)
+                if (_registeredTick)
                 {
-                    if (_registeredTick)
-                    {
-                        tickManager.Unregister((ITickable)this);
-                        _registeredTick = false;
-                    }
-                    if (_registeredSlowTick)
-                    {
-                        tickManager.Unregister((ISlowTickable)this);
-                        _registeredSlowTick = false;
-                    }
+                    GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                    _registeredTick = false;
+                }
+                if (_registeredSlowTick)
+                {
+                    GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                    _registeredSlowTick = false;
                 }
             }
 #if UNITY_EDITOR
             else
             {
                 EditorApplication.update -= EditorUpdate;
+                DisableEditorSceneViewUnderwaterRenderer();
             }
 #endif
 
 #if UNITY_EDITOR
             ResumeEditorWaterRendering();
+            DisableEditorSceneViewUnderwaterRenderer();
 #endif
             _lastDepthZoneProfile = null;
             _nextThermoclineAllowedTime = float.NegativeInfinity;
@@ -1088,14 +1153,43 @@ namespace Hecton8.Environment
             RestoreSpaceCameraDefaults();
             RestoreCameraDefaults();
             RestoreSkyMaterialDefaults();
+            ReleaseRuntimeSkyboxMaterial();
             Shader.SetGlobalVector(_SargassumCanopyShadowParamsId, Vector4.zero);
             Shader.SetGlobalVector(_SargassumCanopyLightingParamsId, new Vector4(0f, 0f, 1f, 0f));
             ResetNoirResolveGlobals();
+
+            if (_renderSettingsGuardAcquired)
+            {
+                RenderSettingsLifecycleGuard.Release(this);
+                _renderSettingsGuardAcquired = false;
+            }
+
+            ReleaseRuntimeSkyboxMaterial();
+
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  EDITOR UPDATE
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+
+        private void OnDestroy()
+        {
+            if (ReferenceEquals(RuntimeSkyMaterialReference, skyMaterial))
+                RuntimeSkyMaterialReference = null;
+
+#if UNITY_EDITOR
+            EditorApplication.update -= EditorUpdate;
+            ResumeEditorWaterRendering();
+            DisableEditorSceneViewUnderwaterRenderer();
+#endif
+
+            if (_renderSettingsGuardAcquired)
+            {
+                RenderSettingsLifecycleGuard.Release(this);
+                _renderSettingsGuardAcquired = false;
+            }
+
+        }
 
 #if UNITY_EDITOR
         private void EditorUpdate()
@@ -1168,16 +1262,6 @@ namespace Hecton8.Environment
                     authoredGameplayCamera = playerOwnedCamera;
             }
 
-            if (sceneViewCamera != null)
-            {
-                if (mainCamera != sceneViewCamera)
-                    mainCamera = sceneViewCamera;
-                if (!ReferenceEquals(playerCamera, sceneViewCamera.transform))
-                    playerCamera = sceneViewCamera.transform;
-                _nextEditorCameraResolveTime = float.NegativeInfinity;
-                return;
-            }
-
             if (authoredGameplayCamera != null)
             {
                 if (!ReferenceEquals(mainCamera, authoredGameplayCamera))
@@ -1185,6 +1269,16 @@ namespace Hecton8.Environment
                 if (!ReferenceEquals(playerCamera, authoredGameplayCamera.transform))
                     playerCamera = authoredGameplayCamera.transform;
 
+                _nextEditorCameraResolveTime = float.NegativeInfinity;
+                return;
+            }
+
+            if (sceneViewCamera != null)
+            {
+                if (mainCamera != sceneViewCamera)
+                    mainCamera = sceneViewCamera;
+                if (!ReferenceEquals(playerCamera, sceneViewCamera.transform))
+                    playerCamera = sceneViewCamera.transform;
                 _nextEditorCameraResolveTime = float.NegativeInfinity;
                 return;
             }
@@ -1435,6 +1529,7 @@ namespace Hecton8.Environment
 
             float smoothedUnderwaterLightFactor = SmoothSunState(finalSunIntensity, lightFactor, deltaTime);
             float appliedSunIntensity = _smoothedSunIntensity;
+            ApplyRuntimeSkyboxOwnership();
             ApplySunVisualState(smoothedUnderwaterLightFactor);
             ApplySunScattering(smoothedUnderwaterLightFactor);
             ApplySunColorFade(smoothedUnderwaterLightFactor);
@@ -1444,6 +1539,19 @@ namespace Hecton8.Environment
 
             UpdateLightDiagnostics(lightFactor, baseSunIntensity, horizonFade, appliedSunIntensity);
             ApplyNoirResolveGlobals();
+        }
+
+        /// <summary>
+        /// Applies the current per-camera underwater fog state through the registry-owned render dispatcher.
+        /// </summary>
+        /// <param name="deltaTime">Scaled frame delta supplied by the render dispatcher.</param>
+        public void Render(float deltaTime)
+        {
+            Camera currentCamera = GlobalRenderContext.CurrentCamera;
+            if (currentCamera == null)
+                return;
+
+            EnforceFogState(currentCamera);
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -1634,14 +1742,7 @@ namespace Hecton8.Environment
             if (sunLight != null)
                 sunLight.intensity = finalIntensity;
 
-            if (sunFlare != null)
-            {
-                sunFlare.intensity = _baseFlareIntensity * lightFactor;
-
-                bool shouldEnable = lightFactor > sunVisualDisableThreshold;
-                if (sunFlare.enabled != shouldEnable)
-                    sunFlare.enabled = shouldEnable;
-            }
+            DisableLegacySunFlare();
 
             return finalIntensity;
         }
@@ -1714,17 +1815,93 @@ namespace Hecton8.Environment
         //  SUN SCATTERING
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
+        private Material ResolveActiveSkyMaterial()
+        {
+            return skyMaterial;
+        }
+
+        private void EnsureRuntimeSkyboxMaterial()
+        {
+            if (_runtimeSkyboxMaterial == skyMaterial || _runtimeSkyboxMaterial != skyMaterial)
+                return;
+
+            _runtimeSkyboxMaterial = new Material(skyMaterial); // COLD ALLOC: Material[1] — runtime underwater skybox clone for isolated RenderSettings ownership — owner: HectonUnderwaterVisuals
+            _runtimeSkyboxMaterial.name = $"{skyMaterial.name} (Runtime)";
+            _runtimeSkyboxMaterial.hideFlags = HideFlags.DontSave;
+        }
+
+        private void ApplyRuntimeSkyboxOwnership()
+        {
+            if (!Application.isPlaying || skyMaterial == null)
+                return;
+
+            EnsureRuntimeSkyboxMaterial();
+            if (ReferenceEquals(RenderSettings.skybox, skyMaterial))
+                return;
+
+            RenderSettings.skybox = skyMaterial;
+        }
+
+        private void ReleaseRuntimeSkyboxMaterial()
+        {
+            if (_runtimeSkyboxMaterial == skyMaterial || _runtimeSkyboxMaterial != skyMaterial)
+            {
+                if (skyMaterial != null && RenderSettings.skybox == null)
+                    RenderSettings.skybox = skyMaterial;
+
+                return;
+            }
+
+            if (_runtimeSkyboxMaterial == null)
+                return;
+
+            if (ReferenceEquals(RenderSettings.skybox, _runtimeSkyboxMaterial))
+                RenderSettings.skybox = skyMaterial;
+
+            if (Application.isPlaying)
+                Destroy(_runtimeSkyboxMaterial);
+            else
+                DestroyImmediate(_runtimeSkyboxMaterial);
+
+            _runtimeSkyboxMaterial = null;
+        }
+
+        private void CacheRuntimeSkyMaterialReference()
+        {
+            if (skyMaterial != null)
+                RuntimeSkyMaterialReference = skyMaterial;
+        }
+
+        private void ForceMandatedSkyboxOwnership()
+        {
+            if (skyMaterial == null)
+                return;
+
+            if (!ReferenceEquals(RuntimeSkyMaterialReference, skyMaterial))
+                RuntimeSkyMaterialReference = skyMaterial;
+
+            if (!ReferenceEquals(RenderSettings.skybox, skyMaterial))
+                RenderSettings.skybox = skyMaterial;
+        }
+
+        internal static bool TryGetRuntimeSkyMaterialReference(out Material skyMaterialReference)
+        {
+            skyMaterialReference = RuntimeSkyMaterialReference;
+            return skyMaterialReference != null;
+        }
+
         private void ApplySunScattering(float lightFactor)
         {
-            if (skyMaterial == null) return;
+            Material activeSkyMaterial = ResolveActiveSkyMaterial();
+            if (activeSkyMaterial == null) return;
 
             float scatterT = math.saturate(1f - lightFactor);
 
             float sunSize = Mathf.Lerp(baseSunSize, underwaterSunSizeMax, scatterT);
             float sunSoftness = Mathf.Lerp(baseSunEdgeSoftness, underwaterSunSoftnessMax, scatterT);
 
-            skyMaterial.SetFloat(_ID_SunSize, sunSize);
-            skyMaterial.SetFloat(_ID_SunEdgeSoftness, sunSoftness);
+            activeSkyMaterial.SetFloat(_ID_SunSize, sunSize);
+            activeSkyMaterial.SetFloat(_ID_SunEdgeSoftness, sunSoftness);
 
 #if UNITY_EDITOR
             _debugSunScatter = scatterT;
@@ -1738,15 +1915,16 @@ namespace Hecton8.Environment
         private void CaptureSkyBaseColors()
         {
             if (_baseSkyColorsCaptured) return;
-            if (skyMaterial == null) return;
+            Material activeSkyMaterial = ResolveActiveSkyMaterial();
+            if (activeSkyMaterial == null) return;
 
-            if (skyMaterial.HasColor(_ID_SunDiscColor))
-                _baseSunDiscColor = skyMaterial.GetColor(_ID_SunDiscColor);
+            if (activeSkyMaterial.HasColor(_ID_SunDiscColor))
+                _baseSunDiscColor = activeSkyMaterial.GetColor(_ID_SunDiscColor);
             else
                 _baseSunDiscColor = Color.white;
 
-            if (skyMaterial.HasColor(_ID_SunScatterColor))
-                _baseSunScatterColor = skyMaterial.GetColor(_ID_SunScatterColor);
+            if (activeSkyMaterial.HasColor(_ID_SunScatterColor))
+                _baseSunScatterColor = activeSkyMaterial.GetColor(_ID_SunScatterColor);
             else
                 _baseSunScatterColor = Color.white;
 
@@ -1755,7 +1933,8 @@ namespace Hecton8.Environment
 
         private void ApplySunColorFade(float lightFactor)
         {
-            if (skyMaterial == null) return;
+            Material activeSkyMaterial = ResolveActiveSkyMaterial();
+            if (activeSkyMaterial == null) return;
             if (!_baseSkyColorsCaptured) return;
 
             float colorFactor = lightFactor * lightFactor;
@@ -1772,21 +1951,22 @@ namespace Hecton8.Environment
             fadedScatter.b = _baseSunScatterColor.b * colorFactor;
             fadedScatter.a = _baseSunScatterColor.a;
 
-            skyMaterial.SetColor(_ID_SunDiscColor, fadedDisc);
-            skyMaterial.SetColor(_ID_SunScatterColor, fadedScatter);
+            activeSkyMaterial.SetColor(_ID_SunDiscColor, fadedDisc);
+            activeSkyMaterial.SetColor(_ID_SunScatterColor, fadedScatter);
         }
 
         private void RestoreSkyMaterialDefaults()
         {
-            if (skyMaterial == null) return;
+            Material activeSkyMaterial = ResolveActiveSkyMaterial();
+            if (activeSkyMaterial == null) return;
 
-            skyMaterial.SetFloat(_ID_SunSize, baseSunSize);
-            skyMaterial.SetFloat(_ID_SunEdgeSoftness, baseSunEdgeSoftness);
+            activeSkyMaterial.SetFloat(_ID_SunSize, baseSunSize);
+            activeSkyMaterial.SetFloat(_ID_SunEdgeSoftness, baseSunEdgeSoftness);
 
             if (_baseSkyColorsCaptured)
             {
-                skyMaterial.SetColor(_ID_SunDiscColor, _baseSunDiscColor);
-                skyMaterial.SetColor(_ID_SunScatterColor, _baseSunScatterColor);
+                activeSkyMaterial.SetColor(_ID_SunDiscColor, _baseSunDiscColor);
+                activeSkyMaterial.SetColor(_ID_SunScatterColor, _baseSunScatterColor);
             }
         }
 
@@ -1912,7 +2092,7 @@ namespace Hecton8.Environment
 #endif
         }
 
-        private void EnforceFogState(ScriptableRenderContext context, Camera cam)
+        private void EnforceFogState(Camera cam)
         {
             if (cam == null || cam.cameraType == CameraType.Preview)
                 return;
@@ -1920,7 +2100,9 @@ namespace Hecton8.Environment
             if (Application.isPlaying)
                 _debugEditorDriven = false;
 
-            bool renderUnderwater = ShouldRenderUnderwaterFogForCamera(cam);
+            bool renderUnderwater =
+                !(cam.cameraType == CameraType.SceneView && !Application.isPlaying) &&
+                ShouldRenderUnderwaterFogForCamera(cam);
 
             if (renderUnderwater)
             {
@@ -2242,6 +2424,9 @@ namespace Hecton8.Environment
 
         private bool ShouldRenderUnderwaterFogForCamera(Camera camera)
         {
+            if (camera != null && ReferenceEquals(camera, _spaceCamera))
+                return false;
+
             float cameraDepth = ResolveVisualDepthForCamera(camera);
             if (cameraDepth <= VisualExitUnderwaterDepth)
                 return false;
@@ -2359,8 +2544,9 @@ namespace Hecton8.Environment
 
         private Color ResolveCrestSkyTowardsSunColor()
         {
-            Color sunScatterColor = skyMaterial != null && skyMaterial.HasProperty(_ID_SunScatterColor)
-                ? skyMaterial.GetColor(_ID_SunScatterColor)
+            Material activeSkyMaterial = ResolveActiveSkyMaterial();
+            Color sunScatterColor = activeSkyMaterial != null && activeSkyMaterial.HasProperty(_ID_SunScatterColor)
+                ? activeSkyMaterial.GetColor(_ID_SunScatterColor)
                 : _baseSunScatterColor;
 
             if (sunScatterColor.maxColorComponent <= 0.0001f)
@@ -2508,12 +2694,7 @@ namespace Hecton8.Environment
                 }
             }
 
-            if (_baseValuesCaptured && sunFlare != null)
-            {
-                sunFlare.intensity = _baseFlareIntensity;
-                if (!sunFlare.enabled)
-                    sunFlare.enabled = true;
-            }
+            DisableLegacySunFlare();
 
             HideSunVisualAboveWater();
 
@@ -2803,15 +2984,17 @@ namespace Hecton8.Environment
                     Mathf.Lerp(6.2f, 4.8f, horizonSubsurfaceBias));
             }
 
-            if (sharedOceanFeedsUnderwater)
-            {
-                Vector3 underwaterDensityFloor = ResolveFallbackDepthFogDensity(oceanUnderwaterMaterial);
-                float densityFloorScale = _cachedVisualIsUnderwater ? 1f : 0.68f;
-                depthFogDensity = new Vector3(
-                    Mathf.Max(depthFogDensity.x, underwaterDensityFloor.x * densityFloorScale),
-                    Mathf.Max(depthFogDensity.y, underwaterDensityFloor.y * densityFloorScale),
-                    Mathf.Max(depthFogDensity.z, underwaterDensityFloor.z * densityFloorScale));
-            }
+            Vector3 authoredDepthFogDensity = ResolveAuthoredDepthFogDensity(
+                targetMaterial,
+                ResolveFallbackDepthFogDensity(targetMaterial));
+            float authoredDensityFloorScale =
+                underwaterMaterial || _cachedVisualIsUnderwater
+                    ? 1f
+                    : 0.68f;
+            depthFogDensity = new Vector3(
+                Mathf.Max(depthFogDensity.x, authoredDepthFogDensity.x * authoredDensityFloorScale),
+                Mathf.Max(depthFogDensity.y, authoredDepthFogDensity.y * authoredDensityFloorScale),
+                Mathf.Max(depthFogDensity.z, authoredDepthFogDensity.z * authoredDensityFloorScale));
             ApplyCrestSkyBinding(targetMaterial);
 
             SetMaterialColorIfPresent(targetMaterial, _ID_ScatterColourBase, scatterBase);
@@ -2873,6 +3056,47 @@ namespace Hecton8.Environment
                 targetMaterial.EnableKeyword(UnderwaterKeyword);
             else
                 targetMaterial.DisableKeyword(UnderwaterKeyword);
+
+            ApplyCrestUnderwaterGlobals(
+                targetMaterial,
+                depthFogDensity,
+                scatterBase,
+                scatterShallow,
+                diffuseShadow,
+                subSurfaceSunIntensity,
+                subSurfaceBaseIntensity,
+                subSurfaceSunFalloff);
+        }
+
+        private static void ApplyCrestUnderwaterGlobals(
+            Material targetMaterial,
+            Vector3 depthFogDensity,
+            Color diffuse,
+            Color diffuseGrazing,
+            Color diffuseShadow,
+            float subSurfaceSun,
+            float subSurfaceBase,
+            float subSurfaceSunFalloff)
+        {
+            if (!Application.isPlaying || targetMaterial == null)
+                return;
+
+            Shader.SetGlobalVector(
+                CrestUnderwaterRenderer.ShaderIDs.s_CrestDepthFogDensity,
+                new Vector4(depthFogDensity.x, depthFogDensity.y, depthFogDensity.z, 0f));
+            Shader.SetGlobalColor(CrestUnderwaterRenderer.ShaderIDs.s_CrestDiffuse, diffuse.linear);
+            Shader.SetGlobalColor(CrestUnderwaterRenderer.ShaderIDs.s_CrestDiffuseGrazing, diffuseGrazing.linear);
+            Shader.SetGlobalColor(CrestUnderwaterRenderer.ShaderIDs.s_CrestDiffuseShadow, diffuseShadow.linear);
+            Shader.SetGlobalColor(CrestUnderwaterRenderer.ShaderIDs.s_CrestSubSurfaceColour, diffuseGrazing.linear);
+            Shader.SetGlobalFloat(CrestUnderwaterRenderer.ShaderIDs.s_CrestSubSurfaceSun, subSurfaceSun);
+            Shader.SetGlobalFloat(CrestUnderwaterRenderer.ShaderIDs.s_CrestSubSurfaceBase, subSurfaceBase);
+            Shader.SetGlobalFloat(CrestUnderwaterRenderer.ShaderIDs.s_CrestSubSurfaceSunFallOff, subSurfaceSunFalloff);
+            global::Crest.Helpers.SetGlobalKeyword(
+                "CREST_SUBSURFACESCATTERING_ON",
+                targetMaterial.IsKeywordEnabled("_SUBSURFACESCATTERING_ON"));
+            global::Crest.Helpers.SetGlobalKeyword(
+                "CREST_SHADOWS_ON",
+                targetMaterial.IsKeywordEnabled("_SHADOWS_ON"));
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -3056,6 +3280,14 @@ namespace Hecton8.Environment
 
                 return ResolveCurrentDepth() > 0f;
             }
+        }
+
+        internal bool TryGetOwnedSkyboxMaterial(out Material ownedSkyboxMaterial)
+        {
+            ownedSkyboxMaterial = Application.isPlaying && _wasUnderwater
+                ? skyMaterial
+                : null;
+            return ownedSkyboxMaterial != null;
         }
 
         public float CurrentTurbidity => _currentTurbidity;
@@ -3328,6 +3560,7 @@ namespace Hecton8.Environment
                 _mainCameraUnderwaterRenderer.enabled = true;
 
             _mainCameraUnderwaterRenderer._copyOceanMaterialParamsEachFrame = true;
+            EnsureCameraTextureRequirements(mainCamera);
 
             ResolveSpaceCamera();
             PurgeSecondaryUnderwaterRenderers();
@@ -3338,6 +3571,8 @@ namespace Hecton8.Environment
         private void EnsureEditorCrestUnderwaterPassOwnership()
         {
             EnsureEditorGameplayCameraUnderwaterRenderer();
+            DisableEditorSceneViewUnderwaterRenderer();
+#if false
 
             SceneView sceneView = SceneView.lastActiveSceneView;
             Camera sceneViewCamera = sceneView != null ? sceneView.camera : null;
@@ -3360,6 +3595,7 @@ namespace Hecton8.Environment
 
             if (ReferenceEquals(mainCamera, sceneViewCamera))
                 _mainCameraUnderwaterRenderer = _editorSceneViewUnderwaterRenderer;
+#endif
         }
 
         private void EnsureEditorGameplayCameraUnderwaterRenderer()
@@ -3376,7 +3612,43 @@ namespace Hecton8.Environment
                     _gameplayMainCamera.gameObject.AddComponent<CrestUnderwaterRenderer>();
             }
 
+            CrestUnderwaterRenderer template = ResolveEditorUnderwaterRendererTemplate();
+            if (template != null &&
+                !ReferenceEquals(template, _editorCrestUnderwaterRenderer))
+            {
+                CopyUnderwaterRendererSettings(template, _editorCrestUnderwaterRenderer);
+            }
+
+            EnsureCameraTextureRequirements(_gameplayMainCamera);
             _editorCrestUnderwaterRenderer._copyOceanMaterialParamsEachFrame = true;
+            if (!_editorCrestUnderwaterRenderer.enabled)
+                _editorCrestUnderwaterRenderer.enabled = true;
+
+            if (ReferenceEquals(mainCamera, _gameplayMainCamera))
+                _mainCameraUnderwaterRenderer = _editorCrestUnderwaterRenderer;
+        }
+
+        private void DisableEditorSceneViewUnderwaterRenderer()
+        {
+            SceneView sceneView = SceneView.lastActiveSceneView;
+            Camera sceneViewCamera = sceneView != null ? sceneView.camera : null;
+            if (sceneViewCamera != null &&
+                sceneViewCamera.TryGetComponent(out CrestUnderwaterRenderer sceneViewUnderwaterRenderer) &&
+                sceneViewUnderwaterRenderer != null)
+            {
+                _editorSceneViewUnderwaterRenderer = sceneViewUnderwaterRenderer;
+                if (sceneViewUnderwaterRenderer.enabled)
+                    sceneViewUnderwaterRenderer.enabled = false;
+            }
+
+            if (_editorSceneViewUnderwaterRenderer != null &&
+                _editorSceneViewUnderwaterRenderer.enabled)
+            {
+                _editorSceneViewUnderwaterRenderer.enabled = false;
+            }
+
+            if (ReferenceEquals(_mainCameraUnderwaterRenderer, _editorSceneViewUnderwaterRenderer))
+                _mainCameraUnderwaterRenderer = _editorCrestUnderwaterRenderer;
         }
 
         private CrestUnderwaterRenderer ResolveEditorUnderwaterRendererTemplate()
@@ -3412,6 +3684,13 @@ namespace Hecton8.Environment
                 return;
 
             Transform mainCameraTransform = mainCamera.transform;
+            if (ReferenceEquals(_oceanRenderer.ViewCamera, mainCamera) &&
+                ReferenceEquals(_oceanRenderer.Viewpoint, mainCameraTransform))
+            {
+                return;
+            }
+
+            EnsureCameraTextureRequirements(mainCamera);
             _oceanRenderer.ViewCamera = mainCamera;
             _oceanRenderer.Viewpoint = mainCameraTransform;
         }
@@ -3527,7 +3806,10 @@ namespace Hecton8.Environment
                 }
 
                 if (ReferenceEquals(candidate, _spaceCamera))
+                {
                     _spaceCameraUnderwaterRenderer = candidateRenderer;
+                    continue;
+                }
 
                 Destroy(candidateRenderer);
             }
@@ -3605,6 +3887,15 @@ namespace Hecton8.Environment
 
             Vector4 value = material.GetVector(propertyId);
             return new Vector3(value.x, value.y, value.z);
+        }
+
+        private Vector3 ResolveAuthoredDepthFogDensity(Material targetMaterial, Vector3 fallback)
+        {
+            Vector3 authoredDensity = ReadMaterialVector3OrDefault(targetMaterial, _ID_DepthFogDensity, fallback);
+            return new Vector3(
+                Mathf.Clamp(authoredDensity.x, minFogDensity, maxFogDensity),
+                Mathf.Clamp(authoredDensity.y, minFogDensity, maxFogDensity),
+                Mathf.Clamp(authoredDensity.z, minFogDensity, maxFogDensity));
         }
 
         private static bool IsNearlyBlack(Color color)
@@ -3819,7 +4110,7 @@ namespace Hecton8.Environment
             if (ReferenceEquals(_underwaterMarineSnowSearchCamera, mainCamera))
                 return;
 
-            underwaterMarineSnow = mainCamera.GetComponentInChildren<HectonMarineSnowRenderer>(true);
+            underwaterMarineSnow = mainCamera.GetComponent<HectonMarineSnowRenderer>();
             _underwaterMarineSnowSearchCamera = mainCamera;
             if (underwaterMarineSnow != null)
                 underwaterMarineSnow.BindTargetCamera(mainCamera.transform);
@@ -4649,7 +4940,7 @@ namespace Hecton8.Environment
             }
 
 #if UNITY_EDITOR
-            biomeMatrixDirector = FindAnyObjectByType<BiomeMatrixDirector>(FindObjectsInactive.Include);
+            biomeMatrixDirector = BiomeMatrixDirector.ActiveRuntimeInstance;
 #endif
         }
 
@@ -4678,17 +4969,23 @@ namespace Hecton8.Environment
             if (sunFlare != null)
                 _baseFlareIntensity = sunFlare.intensity;
             _baseValuesCaptured = true;
+            DisableLegacySunFlare();
         }
 
         private void RestoreBaseValues()
         {
             if (!_baseValuesCaptured) return;
-            if (sunFlare != null)
-            {
-                sunFlare.intensity = _baseFlareIntensity;
-                if (!sunFlare.enabled)
-                    sunFlare.enabled = true;
-            }
+            DisableLegacySunFlare();
+        }
+
+        private void DisableLegacySunFlare()
+        {
+            if (sunFlare == null)
+                return;
+
+            sunFlare.intensity = 0f;
+            if (sunFlare.enabled)
+                sunFlare.enabled = false;
         }
 
         private void ApplySpaceCameraDepthState(float depth, bool isUnderwater)
@@ -5143,18 +5440,35 @@ namespace Hecton8.Environment
         private void TryRegisterTickManagers()
         {
             if (!Application.isPlaying) return;
-            GameTickManager tm = GameTickManager.Instance;
-            if (tm == null) return;
             if (!_registeredTick)
             {
-                tm.Register((ITickable)this);
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
                 _registeredTick = true;
             }
             if (!_registeredSlowTick)
             {
-                tm.Register((ISlowTickable)this);
+                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredSlowTick = true;
             }
+        }
+
+        private void TryRegisterRenderDispatcher()
+        {
+            if (!Application.isPlaying || _registeredRenderable)
+                return;
+
+            RenderDispatcher.EnsureRuntimeInstance();
+            GlobalRegistry.Renderables.Register(this);
+            _registeredRenderable = true;
+        }
+
+        private void UnregisterRenderDispatcher()
+        {
+            if (!_registeredRenderable)
+                return;
+
+            GlobalRegistry.Renderables.Unregister(this);
+            _registeredRenderable = false;
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•

@@ -2,7 +2,10 @@ using System;
 using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Unity.Burst;
 using Unity.Collections;
+using Unity.Jobs;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -14,7 +17,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-104)]
-    public sealed class SargassumGlobalDragManager : MonoBehaviour, ITickable, ISlowTickable, ISargassumMassiveDisplacementReceiver
+    public sealed class SargassumGlobalDragManager : MonoBehaviour, ITickable, ISlowTickable, ISargassumMassiveDisplacementReceiver, IOriginShiftListener
     {
         private static readonly int _GlobalDriftOffsetId = Shader.PropertyToID("_SargassumGlobalDriftOffset");
         private static readonly int _SinkTextureId = Shader.PropertyToID("_SargassumBuoyancySinkRT");
@@ -26,7 +29,7 @@ namespace Hecton8.World
         private const int InitialCellCapacity = 4096;
         private const int DefaultDensityTextureResolution = 128;
         private const int MaxDisruptionZoneCapacity = 16;
-        private const int IndirectArgsCount = 5;
+        private const int MaxEditorValidateDepth = 2;
         private const float MinDensityThreshold = 0.025f;
         private const byte CollapseChunkBurstSpawnedFlag = 1 << 0;
 
@@ -123,12 +126,78 @@ namespace Hecton8.World
             public uint Seed;
         }
 
+        private struct DensitySourceData
+        {
+            public float3 OriginWS;
+            public float Scale;
+        }
+
+        private struct DensityContributionData
+        {
+            public float Density;
+            public float MinY;
+            public float MaxY;
+        }
+
+        [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast)]
+        private struct BuildDensityContributionJob : IJobParallelFor
+        {
+            [ReadOnly] public NativeArray<DensitySourceData> Sources;
+            public NativeParallelMultiHashMap<long, DensityContributionData>.ParallelWriter Contributions;
+            public float CellSize;
+            public float InverseCellSize;
+            public float BaseInfluenceRadius;
+            public float BaseVerticalHalfExtent;
+            public float DistancePower;
+
+            public void Execute(int index)
+            {
+                DensitySourceData source = Sources[index];
+                float influenceRadius = math.max(BaseInfluenceRadius * source.Scale, CellSize * 0.35f);
+                float verticalHalfExtent = math.max(BaseVerticalHalfExtent * source.Scale, 0.5f);
+                float minY = source.OriginWS.y - verticalHalfExtent;
+                float maxY = source.OriginWS.y + verticalHalfExtent;
+
+                int minCellX = (int)math.floor((source.OriginWS.x - influenceRadius) * InverseCellSize);
+                int maxCellX = (int)math.floor((source.OriginWS.x + influenceRadius) * InverseCellSize);
+                int minCellZ = (int)math.floor((source.OriginWS.z - influenceRadius) * InverseCellSize);
+                int maxCellZ = (int)math.floor((source.OriginWS.z + influenceRadius) * InverseCellSize);
+                float safeDistancePower = math.max(1f, DistancePower);
+
+                for (int cellZ = minCellZ; cellZ <= maxCellZ; cellZ++)
+                {
+                    for (int cellX = minCellX; cellX <= maxCellX; cellX++)
+                    {
+                        float cellCenterX = (cellX + 0.5f) * CellSize;
+                        float cellCenterZ = (cellZ + 0.5f) * CellSize;
+                        float2 planarDelta = new float2(source.OriginWS.x - cellCenterX, source.OriginWS.z - cellCenterZ);
+                        float planarDistance = math.length(planarDelta);
+                        if (planarDistance > influenceRadius)
+                            continue;
+
+                        float normalized = 1f - planarDistance / math.max(influenceRadius, 0.001f);
+                        float density = math.pow(math.saturate(normalized), safeDistancePower);
+                        if (density <= 0.0001f)
+                            continue;
+
+                        long key = ((long)cellX << 32) ^ (uint)cellZ;
+                        Contributions.Add(key, new DensityContributionData
+                        {
+                            Density = density,
+                            MinY = minY,
+                            MaxY = maxY
+                        });
+                    }
+                }
+            }
+        }
+
         [Serializable]
         private struct NestedAttachmentPrototype
         {
             [Tooltip("Instanced mesh rendered for this nesting archetype.")]
             public Mesh Mesh;
-            [Tooltip("Shared asset material used by Graphics.DrawMeshInstanced.")]
+            [Tooltip("Shared asset material used by the instanced render path.")]
             public Material Material;
             [Tooltip("Relative selection weight for deterministic prototype picking.")]
             public int Weight;
@@ -383,19 +452,23 @@ namespace Hecton8.World
 
         [Header("── Procedural Scavengers ──────────────────")]
         [SerializeField]
-        [Tooltip("Optional authored indirect mesh rendered for bottom scavengers feeding on fallen collapse chunks.")]
+        [Tooltip("Optional authored mesh rendered for bottom scavengers feeding on fallen collapse chunks.")]
         private Mesh scavengerMesh;
 
         [SerializeField]
-        [Tooltip("Optional authored material used for indirect scavenger rendering. If missing, a first-party fallback material is created from the indirect scavenger shader.")]
+        [Tooltip("Optional authored material used for scavenger rendering. If missing, a first-party fallback material is created from the scavenger shader.")]
         private Material scavengerMaterial;
+
+        [SerializeField]
+        [Tooltip("First-party fallback shader used to build the hidden scavenger material when the authored material is missing.")]
+        private Shader scavengerFallbackShader;
 
         [SerializeField, Range(2, 24)]
         [Tooltip("Maximum number of settled collapse chunks tracked as active scavenger hosts.")]
         private int maxScavengerHostCount = 12;
 
         [SerializeField, Range(4, 32)]
-        [Tooltip("Maximum indirect scavenger instance count spawned around one settled collapse chunk.")]
+        [Tooltip("Maximum scavenger instance count spawned around one settled collapse chunk.")]
         private int scavengersPerHost = 12;
 
         [SerializeField, Range(30f, 90f)]
@@ -415,7 +488,7 @@ namespace Hecton8.World
         private float scavengerVerticalOffset = -0.12f;
 
         [SerializeField, Range(0f, 0.5f)]
-        [Tooltip("Vertical bob amplitude applied to indirect scavenger motion.")]
+        [Tooltip("Vertical bob amplitude applied to scavenger motion.")]
         private float scavengerBobAmplitude = 0.06f;
 
         [SerializeField, Range(0.02f, 0.4f)]
@@ -501,15 +574,17 @@ namespace Hecton8.World
         private int _debugScavengerHostCount;
 
         [SerializeField]
-        [Tooltip("Total indirect scavenger instances rendered this frame.")]
+        [Tooltip("Total scavenger BRG instances rendered this frame.")]
         private int _debugScavengerInstanceCount;
 
         [SerializeField]
-        [Tooltip("Bounds used for the current indirect scavenger draw call.")]
+        [Tooltip("Bounds used for the current scavenger BRG draw call.")]
         private Bounds _debugScavengerBounds;
 
         // COLD ALLOC: Dictionary<long, CellData>[4096] - coarse sargassum density field keyed by XZ cell hash - owner: SargassumGlobalDragManager
         private readonly Dictionary<long, CellData> _densityCells = new Dictionary<long, CellData>(InitialCellCapacity);
+        // COLD ALLOC: Dictionary<long, CellData>[4096] - transient origin-shift rebin scratch used to preserve canopy sampling until the next Burst rebuild - owner: SargassumGlobalDragManager
+        private readonly Dictionary<long, CellData> _densityCellsShiftScratch = new Dictionary<long, CellData>(InitialCellCapacity);
         private byte[] _densityTextureRaw;
         private Texture2D _densityFieldTexture;
         private byte[] _sinkTextureRaw;
@@ -521,9 +596,19 @@ namespace Hecton8.World
         private ScavengerHostState[] _scavengerHosts;
         private ExternalScavengerSiteState[] _externalScavengerSites;
         private Matrix4x4[] _scavengerMatrices;
-        private ComputeBuffer _scavengerMatrixBuffer;
-        private ComputeBuffer _scavengerArgsBuffer;
-        private MaterialPropertyBlock _scavengerPropertyBlock;
+        private NativeArray<Matrix4x4> _scavengerMatricesNative;
+        private GraphicsBuffer _scavengerMatrixBuffer;
+        private BatchRendererGroup _scavengerBatchRendererGroup;
+        private NativeArray<MetadataValue> _scavengerBatchMetadata;
+        private GraphicsBuffer _scavengerBatchHandleBuffer;
+        private BatchID _scavengerBatchId;
+        private BatchMeshID _scavengerBatchMeshId;
+        private BatchMaterialID _scavengerBatchMaterialId;
+        private Mesh _registeredScavengerMesh;
+        private Material _registeredScavengerMaterial;
+        private Material _scavengerBrgMaterial;
+        private Material _scavengerBrgMaterialSource;
+        private bool _ownsScavengerBrgMaterial;
         private int _nestedPrototypeCapacity;
         private int _activeNestedPrototypeCount;
         private int _activeNestedAttachmentStateCount;
@@ -538,16 +623,24 @@ namespace Hecton8.World
         private Material _fallbackScrapMaterial;
         private Mesh _fallbackScavengerMesh;
         private Material _fallbackScavengerMaterial;
+        private Shader _fallbackLitShader;
         private Bounds _scavengerDrawBounds;
-        private readonly uint[] _scavengerIndirectArgs = new uint[IndirectArgsCount]; // COLD ALLOC: uint[5] - indirect draw arguments for bottom scavenger swarms - owner: SargassumGlobalDragManager
 
         private bool _registeredTick;
         private bool _registeredSlowTick;
+        private int _editorValidateDepth;
         private bool _hasFieldData;
         private float _inverseCellSize;
         private int _fieldRevision;
         private HectonMapMagicVegetationBridge.FloatingLabyrinthConfig _fallbackLabyrinthConfig;
         private Vector4 _densityFieldWorldRect;
+        private NativeArray<DensitySourceData> _densityBuildSources;
+        private NativeParallelMultiHashMap<long, DensityContributionData> _densityContributions;
+        private JobHandle _densityBuildHandle;
+        private bool _densityBuildScheduled;
+        private int _pendingDensityTrackedInstances;
+        private Bounds _pendingDensityFieldBounds;
+        private bool _pendingDensityFieldBoundsInitialized;
 
         /// <summary>
         /// Active singleton instance.
@@ -651,12 +744,14 @@ namespace Hecton8.World
             EnsureDisruptionStorage();
             EnsureScavengerStorage();
             EnsureScavengerRenderResources();
+            HectonFloatingOrigin.RegisterListener(this);
             PublishShaderGlobals();
             TryRegister();
         }
 
         private void OnDisable()
         {
+            HectonFloatingOrigin.UnregisterListener(this);
             TryUnregister();
             ClearField();
             ClearNestedAttachments();
@@ -664,6 +759,7 @@ namespace Hecton8.World
             ClearDensityTexture();
             ClearSinkTexture();
             ClearScavengerHosts();
+            ReleaseDensityBuildStorage();
             Shader.SetGlobalVector(_GlobalDriftOffsetId, Vector4.zero);
             Shader.SetGlobalVector(_SinkWorldRectId, Vector4.zero);
             Shader.SetGlobalFloat(_MaxSinkDepthId, 0f);
@@ -672,12 +768,14 @@ namespace Hecton8.World
 
         private void OnDestroy()
         {
+            HectonFloatingOrigin.UnregisterListener(this);
             TryUnregister();
             ReleaseNestedAttachmentStorage();
             ReleaseFallbackNestingResources();
             ReleaseDensityTexture();
             ReleaseSinkTexture();
             ReleaseScavengerResources();
+            ReleaseDensityBuildStorage();
             Shader.SetGlobalVector(_GlobalDriftOffsetId, Vector4.zero);
             Shader.SetGlobalVector(_SinkWorldRectId, Vector4.zero);
             Shader.SetGlobalFloat(_MaxSinkDepthId, 0f);
@@ -698,6 +796,14 @@ namespace Hecton8.World
             RefreshDynamicTextures(incrementRevision: true);
             RebuildNestedAttachments();
             PublishShaderGlobals();
+        }
+
+        public void OnOriginShift(in OriginShiftEventData shiftData)
+        {
+            if (!isActiveAndEnabled || shiftData.ShiftOffset.sqrMagnitude <= 0.0001f)
+                return;
+
+            ApplyRuntimeOffsetToCachedState(-shiftData.ShiftOffset);
         }
 
         /// <summary>
@@ -736,19 +842,15 @@ namespace Hecton8.World
                 if (matrixCount <= 0)
                     continue;
 
-                Graphics.DrawMeshInstanced(
-                    prototype.Mesh,
-                    0,
-                    prototype.Material,
-                    _nestedMatricesByPrototype[prototypeIndex],
-                    matrixCount,
-                    null,
-                    prototype.ShadowCastingMode,
-                    true,
-                    gameObject.layer,
-                    null,
-                    LightProbeUsage.Off,
-                    null);
+                RenderParams renderParams = new RenderParams(prototype.Material)
+                {
+                    worldBounds = _debugNestedAttachmentBounds,
+                    shadowCastingMode = prototype.ShadowCastingMode,
+                    receiveShadows = true,
+                    layer = gameObject.layer,
+                    lightProbeUsage = LightProbeUsage.Off
+                };
+                Graphics.RenderMeshInstanced(renderParams, prototype.Mesh, 0, _nestedMatricesByPrototype[prototypeIndex], matrixCount);
             }
 
             DrawScavengers();
@@ -975,14 +1077,142 @@ namespace Hecton8.World
             if (mapMagicVegetationBridge != null)
                 return;
 
-            mapMagicVegetationBridge = FindAnyObjectByType<HectonMapMagicVegetationBridge>(FindObjectsInactive.Exclude);
+            mapMagicVegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+        }
+
+        private void ApplyRuntimeOffsetToCachedState(Vector3 runtimeOffset)
+        {
+            ShiftDensityCellsRuntimeOffset(runtimeOffset);
+            ShiftBoundsCenter(ref _debugFieldBounds, runtimeOffset);
+            ShiftBoundsCenter(ref _pendingDensityFieldBounds, runtimeOffset);
+            ShiftBoundsCenter(ref _debugNestedAttachmentBounds, runtimeOffset);
+            ShiftBoundsCenter(ref _scavengerDrawBounds, runtimeOffset);
+            ShiftBoundsCenter(ref _debugScavengerBounds, runtimeOffset);
+            ShiftWorldRectXY(ref _densityFieldWorldRect, runtimeOffset);
+            ShiftWorldRectXY(ref _debugDensityFieldWorldRect, runtimeOffset);
+
+            if (_disruptionZones != null)
+            {
+                for (int i = 0; i < _activeDisruptionZoneCount; i++)
+                {
+                    DisruptionZoneState zone = _disruptionZones[i];
+                    zone.SampleSpaceCenterWS += runtimeOffset;
+                    _disruptionZones[i] = zone;
+                }
+            }
+
+            if (_nestedAttachmentStates != null)
+            {
+                for (int i = 0; i < _activeNestedAttachmentStateCount; i++)
+                {
+                    NestedAttachmentState state = _nestedAttachmentStates[i];
+                    state.SampleSpaceAnchorWS += runtimeOffset;
+                    _nestedAttachmentStates[i] = state;
+                }
+            }
+
+            if (_scavengerHosts != null)
+            {
+                for (int i = 0; i < _activeScavengerHostCount; i++)
+                {
+                    ScavengerHostState host = _scavengerHosts[i];
+                    host.AnchorWS += runtimeOffset;
+                    _scavengerHosts[i] = host;
+                }
+            }
+
+            if (_externalScavengerSites != null)
+            {
+                for (int i = 0; i < _externalScavengerSites.Length; i++)
+                {
+                    ExternalScavengerSiteState site = _externalScavengerSites[i];
+                    site.AnchorWS += runtimeOffset;
+                    _externalScavengerSites[i] = site;
+                }
+            }
+
+            PublishShaderGlobals();
+        }
+
+        private void ShiftDensityCellsRuntimeOffset(Vector3 runtimeOffset)
+        {
+            if (_densityCells.Count <= 0)
+                return;
+
+            _densityCellsShiftScratch.Clear();
+            Dictionary<long, CellData>.Enumerator enumerator = _densityCells.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                long key = enumerator.Current.Key;
+                CellData cell = enumerator.Current.Value;
+                cell.MinY += runtimeOffset.y;
+                cell.MaxY += runtimeOffset.y;
+
+                int cellX = (int)(key >> 32);
+                int cellZ = (int)key;
+                float shiftedCenterX = ((cellX + 0.5f) * cellSize) + runtimeOffset.x;
+                float shiftedCenterZ = ((cellZ + 0.5f) * cellSize) + runtimeOffset.z;
+                int shiftedCellX = Mathf.FloorToInt(shiftedCenterX * _inverseCellSize);
+                int shiftedCellZ = Mathf.FloorToInt(shiftedCenterZ * _inverseCellSize);
+                long shiftedKey = PackCellKey(shiftedCellX, shiftedCellZ);
+
+                if (_densityCellsShiftScratch.TryGetValue(shiftedKey, out CellData existing))
+                {
+                    existing.Density += cell.Density;
+                    existing.MinY = Mathf.Min(existing.MinY, cell.MinY);
+                    existing.MaxY = Mathf.Max(existing.MaxY, cell.MaxY);
+                    _densityCellsShiftScratch[shiftedKey] = existing;
+                }
+                else
+                {
+                    _densityCellsShiftScratch.Add(shiftedKey, cell);
+                }
+            }
+
+            _densityCells.Clear();
+            Dictionary<long, CellData>.Enumerator shiftedEnumerator = _densityCellsShiftScratch.GetEnumerator();
+            while (shiftedEnumerator.MoveNext())
+                _densityCells.Add(shiftedEnumerator.Current.Key, shiftedEnumerator.Current.Value);
+
+            _debugOccupiedCells = _densityCells.Count;
+            _hasFieldData = _densityCells.Count > 0;
+        }
+
+        private static void ShiftBoundsCenter(ref Bounds bounds, Vector3 runtimeOffset)
+        {
+            if (bounds.size.sqrMagnitude <= 0.0001f)
+                return;
+
+            bounds.center += runtimeOffset;
+        }
+
+        private static void ShiftWorldRectXY(ref Vector4 worldRect, Vector3 runtimeOffset)
+        {
+            if (worldRect.z <= 0f || worldRect.w <= 0f)
+                return;
+
+            worldRect.x += runtimeOffset.x;
+            worldRect.y += runtimeOffset.z;
         }
 
         private void RebuildDensityField()
         {
-            ClearField();
+            if (_densityBuildScheduled)
+            {
+                if (!_densityBuildHandle.IsCompleted)
+                    return;
+
+                _densityBuildHandle.Complete();
+                _densityBuildScheduled = false;
+                ApplyDensityFieldBuildResults();
+                _densityBuildHandle = default;
+            }
+
             if (mapMagicVegetationBridge == null)
+            {
+                ClearField();
                 return;
+            }
 
             if (!mapMagicVegetationBridge.TryGetActiveSurfaceNativePayload(
                     out NativeArray<Matrix4x4> matrices,
@@ -990,12 +1220,19 @@ namespace Hecton8.World
                     out NativeArray<int> types,
                     out int activeCount) ||
                 activeCount <= 0)
+            {
+                ClearField();
                 return;
+            }
 
             Bounds fieldBounds = default;
             bool boundsInitialized = false;
             int trackedInstances = 0;
             Vector3 universeOffset = mapMagicVegetationBridge.TotalUniverseOffset;
+            EnsureDensityBuildSourceCapacity(activeCount);
+
+            int sourceCount = 0;
+            int estimatedContributionCount = 0;
 
             for (int i = 0; i < activeCount; i++)
             {
@@ -1007,52 +1244,18 @@ namespace Hecton8.World
                 float scale = ExtractUniformScale(matrix);
                 float influenceRadius = Mathf.Max(baseInfluenceRadius * scale, cellSize * 0.35f);
                 float verticalHalfExtent = Mathf.Max(baseVerticalHalfExtent * scale, 0.5f);
-                float minY = origin.y - verticalHalfExtent;
-                float maxY = origin.y + verticalHalfExtent;
+
+                _densityBuildSources[sourceCount++] = new DensitySourceData
+                {
+                    OriginWS = origin,
+                    Scale = scale
+                };
 
                 int minCellX = Mathf.FloorToInt((origin.x - influenceRadius) * _inverseCellSize);
                 int maxCellX = Mathf.FloorToInt((origin.x + influenceRadius) * _inverseCellSize);
                 int minCellZ = Mathf.FloorToInt((origin.z - influenceRadius) * _inverseCellSize);
                 int maxCellZ = Mathf.FloorToInt((origin.z + influenceRadius) * _inverseCellSize);
-
-                for (int cellZ = minCellZ; cellZ <= maxCellZ; cellZ++)
-                {
-                    for (int cellX = minCellX; cellX <= maxCellX; cellX++)
-                    {
-                        float cellCenterX = (cellX + 0.5f) * cellSize;
-                        float cellCenterZ = (cellZ + 0.5f) * cellSize;
-                        float planarDistance = Vector2.Distance(
-                            new Vector2(origin.x, origin.z),
-                            new Vector2(cellCenterX, cellCenterZ));
-                        if (planarDistance > influenceRadius)
-                            continue;
-
-                        float normalized = 1f - planarDistance / Mathf.Max(influenceRadius, 0.001f);
-                        float density = Mathf.Pow(Mathf.Clamp01(normalized), Mathf.Max(1f, distancePower));
-                        if (density <= 0.0001f)
-                            continue;
-
-                        long key = PackCellKey(cellX, cellZ);
-                        if (_densityCells.TryGetValue(key, out CellData existing))
-                        {
-                            existing.Density += density;
-                            existing.MinY = Mathf.Min(existing.MinY, minY);
-                            existing.MaxY = Mathf.Max(existing.MaxY, maxY);
-                            _densityCells[key] = existing;
-                        }
-                        else
-                        {
-                            _densityCells.Add(
-                                key,
-                                new CellData
-                                {
-                                    Density = density,
-                                    MinY = minY,
-                                    MaxY = maxY
-                                });
-                        }
-                    }
-                }
+                estimatedContributionCount += Mathf.Max(1, (maxCellX - minCellX + 1) * (maxCellZ - minCellZ + 1));
 
                 Bounds instanceBounds = new Bounds(origin, new Vector3(influenceRadius * 2f, verticalHalfExtent * 2f, influenceRadius * 2f));
                 if (!boundsInitialized)
@@ -1068,10 +1271,66 @@ namespace Hecton8.World
                 trackedInstances++;
             }
 
+            if (sourceCount <= 0)
+            {
+                ClearField();
+                return;
+            }
+
+            EnsureDensityContributionCapacity(estimatedContributionCount);
+            _densityContributions.Clear();
+
+            BuildDensityContributionJob buildJob = new BuildDensityContributionJob
+            {
+                Sources = _densityBuildSources.GetSubArray(0, sourceCount),
+                Contributions = _densityContributions.AsParallelWriter(),
+                CellSize = cellSize,
+                InverseCellSize = _inverseCellSize,
+                BaseInfluenceRadius = baseInfluenceRadius,
+                BaseVerticalHalfExtent = baseVerticalHalfExtent,
+                DistancePower = distancePower
+            };
+
+            _densityBuildHandle = buildJob.Schedule(sourceCount, math.max(1, math.min(32, sourceCount / 4)));
+            _densityBuildScheduled = true;
+            _pendingDensityTrackedInstances = trackedInstances;
+            _pendingDensityFieldBounds = fieldBounds;
+            _pendingDensityFieldBoundsInitialized = boundsInitialized;
+        }
+
+        private void ApplyDensityFieldBuildResults()
+        {
+            ClearField();
+
+            var contributionEnumerator = _densityContributions.GetEnumerator();
+            while (contributionEnumerator.MoveNext())
+            {
+                long key = contributionEnumerator.Current.Key;
+                DensityContributionData contribution = contributionEnumerator.Current.Value;
+                if (_densityCells.TryGetValue(key, out CellData existing))
+                {
+                    existing.Density += contribution.Density;
+                    existing.MinY = Mathf.Min(existing.MinY, contribution.MinY);
+                    existing.MaxY = Mathf.Max(existing.MaxY, contribution.MaxY);
+                    _densityCells[key] = existing;
+                }
+                else
+                {
+                    _densityCells.Add(
+                        key,
+                        new CellData
+                        {
+                            Density = contribution.Density,
+                            MinY = contribution.MinY,
+                            MaxY = contribution.MaxY
+                        });
+                }
+            }
+
             _hasFieldData = _densityCells.Count > 0;
-            _debugTrackedInstances = trackedInstances;
+            _debugTrackedInstances = _pendingDensityTrackedInstances;
             _debugOccupiedCells = _densityCells.Count;
-            _debugFieldBounds = boundsInitialized ? fieldBounds : default;
+            _debugFieldBounds = _pendingDensityFieldBoundsInitialized ? _pendingDensityFieldBounds : default;
         }
 
         private void ClearField()
@@ -1083,6 +1342,75 @@ namespace Hecton8.World
             _debugFieldBounds = default;
             _densityFieldWorldRect = Vector4.zero;
             _debugDensityFieldWorldRect = Vector4.zero;
+        }
+
+        private void EnsureDensityBuildSourceCapacity(int requiredCount)
+        {
+            int safeCount = Mathf.Max(1, Mathf.NextPowerOfTwo(requiredCount));
+            if (_densityBuildSources.IsCreated && _densityBuildSources.Length >= safeCount)
+                return;
+
+            if (_densityBuildSources.IsCreated)
+                _densityBuildSources.Dispose();
+
+            // COLD ALLOC: NativeArray<DensitySourceData>[capacity] - transient Burst source staging for canopy density rebuilds - owner: SargassumGlobalDragManager
+            _densityBuildSources = new NativeArray<DensitySourceData>(safeCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+        }
+
+        private void EnsureDensityContributionCapacity(int requiredCount)
+        {
+            int safeCount = Mathf.Max(1, Mathf.NextPowerOfTwo(requiredCount));
+            if (_densityContributions.IsCreated && _densityContributions.Capacity >= safeCount)
+                return;
+
+            if (_densityContributions.IsCreated)
+                _densityContributions.Dispose();
+
+            // COLD ALLOC: NativeParallelMultiHashMap<long,DensityContributionData>[capacity] - Burst-built cell contribution fanout before dictionary compaction - owner: SargassumGlobalDragManager
+            _densityContributions = new NativeParallelMultiHashMap<long, DensityContributionData>(safeCount, Allocator.Persistent);
+        }
+
+        private void ReleaseDensityBuildStorage()
+        {
+            JobHandle dependency = _densityBuildScheduled ? _densityBuildHandle : default;
+            DisposeNativeArray(ref _densityBuildSources, dependency);
+            DisposeNativeParallelMultiHashMap(ref _densityContributions, dependency);
+            _densityBuildHandle = default;
+            _densityBuildScheduled = false;
+            _pendingDensityTrackedInstances = 0;
+            _pendingDensityFieldBounds = default;
+            _pendingDensityFieldBoundsInitialized = false;
+        }
+
+        private static void DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency)
+            where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            if (dependency.IsCompleted)
+                array.Dispose();
+            else
+                array.Dispose(dependency);
+
+            array = default;
+        }
+
+        private static void DisposeNativeParallelMultiHashMap<TKey, TValue>(
+            ref NativeParallelMultiHashMap<TKey, TValue> hashMap,
+            JobHandle dependency)
+            where TKey : unmanaged, IEquatable<TKey>
+            where TValue : unmanaged
+        {
+            if (!hashMap.IsCreated)
+                return;
+
+            if (dependency.IsCompleted)
+                hashMap.Dispose();
+            else
+                hashMap.Dispose(dependency);
+
+            hashMap = default;
         }
 
         private void ClearNestedAttachments()
@@ -1512,10 +1840,7 @@ namespace Hecton8.World
 
             if (_fallbackCrateMaterial == null)
             {
-                Shader litShader = Shader.Find("Universal Render Pipeline/Lit");
-                if (litShader == null)
-                    litShader = Shader.Find("Standard");
-
+                Shader litShader = ResolveFallbackLitShader();
                 if (litShader != null)
                 {
                     _fallbackCrateMaterial = new Material(litShader)
@@ -1531,10 +1856,7 @@ namespace Hecton8.World
 
             if (_fallbackScrapMaterial == null)
             {
-                Shader litShader = Shader.Find("Universal Render Pipeline/Lit");
-                if (litShader == null)
-                    litShader = Shader.Find("Standard");
-
+                Shader litShader = ResolveFallbackLitShader();
                 if (litShader != null)
                 {
                     _fallbackScrapMaterial = new Material(litShader)
@@ -1833,31 +2155,29 @@ namespace Hecton8.World
                 return;
             }
 
+            ReleaseScavengerBuffers();
             _activeScavengerHostCount = 0;
             _activeExternalScavengerSiteCount = 0;
-            // COLD ALLOC: ScavengerHostState[hostCapacity] - tracked settled collapse chunks feeding the indirect scavenger renderer - owner: SargassumGlobalDragManager
+            // COLD ALLOC: ScavengerHostState[hostCapacity] - tracked settled collapse chunks feeding the scavenger BRG renderer - owner: SargassumGlobalDragManager
             _scavengerHosts = new ScavengerHostState[hostCapacity];
             // COLD ALLOC: ExternalScavengerSiteState[externalSiteCapacity] - corpse/carcass scavenger targets without live chunk owners - owner: SargassumGlobalDragManager
             _externalScavengerSites = new ExternalScavengerSiteState[externalSiteCapacity];
-            // COLD ALLOC: Matrix4x4[instanceCapacity] - CPU-side indirect transform payload for bottom scavenger instances - owner: SargassumGlobalDragManager
+            // COLD ALLOC: Matrix4x4[instanceCapacity] - CPU-side transform payload for bottom scavenger instances - owner: SargassumGlobalDragManager
             _scavengerMatrices = new Matrix4x4[instanceCapacity];
+            _scavengerMatricesNative = new NativeArray<Matrix4x4>(instanceCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Matrix4x4>[instanceCapacity] - Burst-readable scavenger BRG culling payload mirror - owner: SargassumGlobalDragManager
             _scavengerInstanceCapacity = instanceCapacity;
-            ReleaseScavengerBuffers();
         }
 
         private void EnsureScavengerRenderResources()
         {
             EnsureScavengerStorage();
 
-            if (_scavengerPropertyBlock == null)
-                _scavengerPropertyBlock = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - indirect scavenger draw bindings - owner: SargassumGlobalDragManager
-
             if (scavengerMesh == null && _fallbackScavengerMesh == null)
                 _fallbackScavengerMesh = BuildFallbackScavengerMesh();
 
             if (scavengerMaterial == null && _fallbackScavengerMaterial == null)
             {
-                Shader shader = Shader.Find("Hecton8/World/CollapseScavengerIndirect");
+                Shader shader = scavengerFallbackShader;
                 if (shader != null)
                 {
                     _fallbackScavengerMaterial = new Material(shader)
@@ -1865,18 +2185,25 @@ namespace Hecton8.World
                         name = "__CollapseScavengerIndirectFallback",
                         hideFlags = HideFlags.HideAndDontSave,
                         enableInstancing = true
-                    }; // COLD ALLOC: Material[1] - indirect scavenger fallback material bound to first-party shader - owner: SargassumGlobalDragManager
+                    }; // COLD ALLOC: Material[1] - scavenger fallback material bound to first-party shader - owner: SargassumGlobalDragManager
                 }
             }
 
-            if (_scavengerMatrixBuffer == null || _scavengerArgsBuffer == null)
-            {
-                _scavengerMatrixBuffer = new ComputeBuffer(Mathf.Max(1, _scavengerInstanceCapacity), 64, ComputeBufferType.Structured); // COLD ALLOC: ComputeBuffer[instanceCapacity] - indirect scavenger matrices - owner: SargassumGlobalDragManager
-                _scavengerArgsBuffer = new ComputeBuffer(1, IndirectArgsCount * sizeof(uint), ComputeBufferType.IndirectArguments); // COLD ALLOC: ComputeBuffer[1] - indirect scavenger draw arguments - owner: SargassumGlobalDragManager
-            }
+            if (_scavengerMatrixBuffer == null)
+                _scavengerMatrixBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Matrix4x4>(Mathf.Max(1, _scavengerInstanceCapacity)); // COLD ALLOC: GraphicsBuffer[instanceCapacity] - scavenger BRG matrices - owner: SargassumGlobalDragManager
 
-            if (_scavengerPropertyBlock != null && _scavengerMatrixBuffer != null)
-                _scavengerPropertyBlock.SetBuffer(_ScavengerMatricesId, _scavengerMatrixBuffer);
+            if (_scavengerBatchRendererGroup == null)
+            {
+                _scavengerBatchRendererGroup = new BatchRendererGroup(new BatchRendererGroupCreateInfo
+                {
+                    cullingCallback = OnPerformScavengerCulling,
+                    userContext = IntPtr.Zero
+                });
+
+                _scavengerBatchMetadata = new NativeArray<MetadataValue>(0, Allocator.Persistent); // COLD ALLOC: NativeArray<MetadataValue>[0] - BRG metadata placeholder for scavenger scatter - owner: SargassumGlobalDragManager
+                _scavengerBatchHandleBuffer = HectonBatchRendererGroupUtility.CreateBatchHandleBuffer(); // COLD ALLOC: GraphicsBuffer[1] - BRG registration handle buffer for scavenger scatter - owner: SargassumGlobalDragManager
+                _scavengerBatchId = _scavengerBatchRendererGroup.AddBatch(_scavengerBatchMetadata, _scavengerBatchHandleBuffer.bufferHandle);
+            }
         }
 
         private void ReleaseScavengerBuffers()
@@ -1887,10 +2214,10 @@ namespace Hecton8.World
                 _scavengerMatrixBuffer = null;
             }
 
-            if (_scavengerArgsBuffer != null)
+            if (_scavengerMatricesNative.IsCreated)
             {
-                _scavengerArgsBuffer.Release();
-                _scavengerArgsBuffer = null;
+                _scavengerMatricesNative.Dispose();
+                _scavengerMatricesNative = default;
             }
         }
 
@@ -1900,7 +2227,6 @@ namespace Hecton8.World
             _scavengerHosts = null;
             _externalScavengerSites = null;
             _scavengerMatrices = null;
-            _scavengerPropertyBlock = null;
             _scavengerInstanceCapacity = 0;
             _activeScavengerHostCount = 0;
             _activeExternalScavengerSiteCount = 0;
@@ -1916,6 +2242,34 @@ namespace Hecton8.World
                 Destroy(_fallbackScavengerMesh);
                 _fallbackScavengerMesh = null;
             }
+
+            if (_scavengerBatchRendererGroup != null)
+            {
+                if (!_scavengerBatchId.Equals(default))
+                    _scavengerBatchRendererGroup.RemoveBatch(_scavengerBatchId);
+                if (!_scavengerBatchMeshId.Equals(default))
+                    _scavengerBatchRendererGroup.UnregisterMesh(_scavengerBatchMeshId);
+                if (!_scavengerBatchMaterialId.Equals(default))
+                    _scavengerBatchRendererGroup.UnregisterMaterial(_scavengerBatchMaterialId);
+                _scavengerBatchRendererGroup.Dispose();
+                _scavengerBatchRendererGroup = null;
+                _scavengerBatchId = default;
+                _scavengerBatchMeshId = default;
+                _scavengerBatchMaterialId = default;
+                _registeredScavengerMesh = null;
+                _registeredScavengerMaterial = null;
+            }
+
+            if (_scavengerBatchHandleBuffer != null)
+            {
+                _scavengerBatchHandleBuffer.Release();
+                _scavengerBatchHandleBuffer = null;
+            }
+
+            if (_scavengerBatchMetadata.IsCreated)
+                _scavengerBatchMetadata.Dispose();
+
+            ReleaseScavengerBrgMaterial();
         }
 
         private void ClearScavengerHosts()
@@ -1942,15 +2296,6 @@ namespace Hecton8.World
             _debugScavengerBounds = default;
             _scavengerDrawBounds = default;
 
-            if (_scavengerArgsBuffer != null)
-            {
-                _scavengerIndirectArgs[0] = 0;
-                _scavengerIndirectArgs[1] = 0;
-                _scavengerIndirectArgs[2] = 0;
-                _scavengerIndirectArgs[3] = 0;
-                _scavengerIndirectArgs[4] = 0;
-                _scavengerArgsBuffer.SetData(_scavengerIndirectArgs);
-            }
         }
 
         private void UpdateScavengerHosts(float dt)
@@ -2012,6 +2357,8 @@ namespace Hecton8.World
 
                         float scale = Mathf.Lerp(scavengerScaleMin, scavengerScaleMax, scaleHash);
                         _scavengerMatrices[matrixCount] = Matrix4x4.TRS(positionWS, Quaternion.LookRotation(forward, Vector3.up), Vector3.one * scale);
+                        if (_scavengerMatricesNative.IsCreated && matrixCount < _scavengerMatricesNative.Length)
+                            _scavengerMatricesNative[matrixCount] = _scavengerMatrices[matrixCount];
                         matrixCount++;
 
                         Bounds instanceBounds = new Bounds(positionWS, Vector3.one * Mathf.Max(0.2f, scale * 2.8f));
@@ -2064,6 +2411,8 @@ namespace Hecton8.World
 
                         float scale = Mathf.Lerp(scavengerScaleMin, scavengerScaleMax, scaleHash) * Mathf.Lerp(0.7f, 1f, 1f - life01);
                         _scavengerMatrices[matrixCount] = Matrix4x4.TRS(positionWS, Quaternion.LookRotation(forward, Vector3.up), Vector3.one * scale);
+                        if (_scavengerMatricesNative.IsCreated && matrixCount < _scavengerMatricesNative.Length)
+                            _scavengerMatricesNative[matrixCount] = _scavengerMatrices[matrixCount];
                         matrixCount++;
 
                         Bounds instanceBounds = new Bounds(positionWS, Vector3.one * Mathf.Max(0.2f, scale * 2.8f));
@@ -2103,48 +2452,173 @@ namespace Hecton8.World
 
         private void UploadScavengerInstances(int instanceCount)
         {
-            if (_scavengerMatrixBuffer == null || _scavengerArgsBuffer == null)
+            if (_scavengerMatrixBuffer == null)
                 return;
-
-            Mesh activeMesh = scavengerMesh != null ? scavengerMesh : _fallbackScavengerMesh;
-            uint indexCount = activeMesh != null ? activeMesh.GetIndexCount(0) : 0u;
-            uint indexStart = activeMesh != null ? activeMesh.GetIndexStart(0) : 0u;
-            uint baseVertex = activeMesh != null ? activeMesh.GetBaseVertex(0) : 0u;
             if (instanceCount > 0)
-                _scavengerMatrixBuffer.SetData(_scavengerMatrices, 0, 0, instanceCount);
-
-            _scavengerIndirectArgs[0] = indexCount;
-            _scavengerIndirectArgs[1] = (uint)Mathf.Max(0, instanceCount);
-            _scavengerIndirectArgs[2] = indexStart;
-            _scavengerIndirectArgs[3] = baseVertex;
-            _scavengerIndirectArgs[4] = 0u;
-            _scavengerArgsBuffer.SetData(_scavengerIndirectArgs);
+                GraphicsBufferUploadUtility.UploadArray(_scavengerMatrixBuffer, _scavengerMatrices, instanceCount);
         }
 
         private void DrawScavengers()
         {
-            if (_debugScavengerInstanceCount <= 0 || _scavengerArgsBuffer == null)
+            if (_debugScavengerInstanceCount <= 0 || _scavengerMatrixBuffer == null || _scavengerBatchRendererGroup == null)
                 return;
 
             Mesh activeMesh = scavengerMesh != null ? scavengerMesh : _fallbackScavengerMesh;
-            Material activeMaterial = scavengerMaterial != null ? scavengerMaterial : _fallbackScavengerMaterial;
-            if (activeMesh == null || activeMaterial == null || _scavengerPropertyBlock == null)
+            Material activeMaterial = EnsureScavengerBrgMaterial();
+            if (activeMesh == null || activeMaterial == null)
                 return;
 
-            Graphics.DrawMeshInstancedIndirect(
-                activeMesh,
-                0,
-                activeMaterial,
-                _scavengerDrawBounds,
-                _scavengerArgsBuffer,
-                0,
-                _scavengerPropertyBlock,
-                ShadowCastingMode.Off,
-                false,
-                gameObject.layer,
-                null,
-                LightProbeUsage.Off,
-                null);
+            activeMaterial.SetBuffer(_ScavengerMatricesId, _scavengerMatrixBuffer);
+            SyncScavengerBatchRegistration(activeMesh, activeMaterial);
+            _scavengerBatchRendererGroup.SetBatchBuffer(_scavengerBatchId, _scavengerMatrixBuffer.bufferHandle);
+            _scavengerBatchRendererGroup.SetGlobalBounds(_scavengerDrawBounds);
+        }
+
+        private Material EnsureScavengerBrgMaterial()
+        {
+            Material sourceMaterial = scavengerMaterial != null ? scavengerMaterial : _fallbackScavengerMaterial;
+            if (sourceMaterial == null)
+                return null;
+
+            if (_scavengerBrgMaterial != null && _scavengerBrgMaterialSource == sourceMaterial)
+                return _scavengerBrgMaterial;
+
+            ReleaseScavengerBrgMaterial();
+            _scavengerBrgMaterial = new Material(sourceMaterial)
+            {
+                hideFlags = HideFlags.HideAndDontSave,
+                name = "__CollapseScavengerBrgMaterial",
+                enableInstancing = true
+            }; // COLD ALLOC: Material[1] - BRG-local scavenger material clone for per-renderer buffer binding - owner: SargassumGlobalDragManager
+            _scavengerBrgMaterialSource = sourceMaterial;
+            _ownsScavengerBrgMaterial = true;
+            return _scavengerBrgMaterial;
+        }
+
+        private void ReleaseScavengerBrgMaterial()
+        {
+            if (!_ownsScavengerBrgMaterial || _scavengerBrgMaterial == null)
+            {
+                _scavengerBrgMaterial = null;
+                _scavengerBrgMaterialSource = null;
+                _ownsScavengerBrgMaterial = false;
+                return;
+            }
+
+            Destroy(_scavengerBrgMaterial);
+            _scavengerBrgMaterial = null;
+            _scavengerBrgMaterialSource = null;
+            _ownsScavengerBrgMaterial = false;
+        }
+
+        private void SyncScavengerBatchRegistration(Mesh activeMesh, Material activeMaterial)
+        {
+            if (_scavengerBatchRendererGroup == null)
+                return;
+
+            if (_registeredScavengerMesh != activeMesh)
+            {
+                if (!_scavengerBatchMeshId.Equals(default))
+                    _scavengerBatchRendererGroup.UnregisterMesh(_scavengerBatchMeshId);
+
+                _scavengerBatchMeshId = activeMesh != null ? _scavengerBatchRendererGroup.RegisterMesh(activeMesh) : default;
+                _registeredScavengerMesh = activeMesh;
+            }
+
+            if (_registeredScavengerMaterial != activeMaterial)
+            {
+                if (!_scavengerBatchMaterialId.Equals(default))
+                    _scavengerBatchRendererGroup.UnregisterMaterial(_scavengerBatchMaterialId);
+
+                _scavengerBatchMaterialId = activeMaterial != null ? _scavengerBatchRendererGroup.RegisterMaterial(activeMaterial) : default;
+                _registeredScavengerMaterial = activeMaterial;
+            }
+        }
+
+        private JobHandle OnPerformScavengerCulling(
+            BatchRendererGroup rendererGroup,
+            BatchCullingContext cullingContext,
+            BatchCullingOutput cullingOutput,
+            IntPtr userContext)
+        {
+            int instanceCount = _debugScavengerInstanceCount;
+            if (instanceCount <= 0 ||
+                _scavengerBatchId.Equals(default) ||
+                _scavengerBatchMeshId.Equals(default) ||
+                _scavengerBatchMaterialId.Equals(default))
+            {
+                HectonBatchRendererGroupUtility.WriteDirectDrawOutput(
+                    cullingOutput,
+                    HectonBatchRendererGroupUtility.AllocateDirectDrawOutput(0, 0, 0));
+                return default;
+            }
+
+            if (!HectonBatchRendererGroupUtility.IsBoundsVisible(cullingContext.cullingPlanes, _scavengerDrawBounds))
+            {
+                HectonBatchRendererGroupUtility.WriteDirectDrawOutput(
+                    cullingOutput,
+                    HectonBatchRendererGroupUtility.AllocateDirectDrawOutput(0, 0, 0));
+                return default;
+            }
+
+            bool canCullPerInstance = _scavengerMatricesNative.IsCreated && _scavengerMatricesNative.Length >= instanceCount;
+            NativeArray<byte> visibilityMask = new NativeArray<byte>(instanceCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            NativeArray<float4> cullingPlanes = default;
+            int planeCount = 0;
+            if (canCullPerInstance)
+            {
+                planeCount = cullingContext.cullingPlanes.IsCreated ? cullingContext.cullingPlanes.Length : 0;
+                if (planeCount > 0)
+                {
+                    cullingPlanes = new NativeArray<float4>(planeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                    for (int planeIndex = 0; planeIndex < planeCount; planeIndex++)
+                    {
+                        Plane plane = cullingContext.cullingPlanes[planeIndex];
+                        cullingPlanes[planeIndex] = new float4(plane.normal.x, plane.normal.y, plane.normal.z, plane.distance);
+                    }
+                }
+            }
+
+            unsafe
+            {
+                BatchCullingOutputDrawCommands output = HectonBatchRendererGroupUtility.AllocateDirectDrawOutput(instanceCount, 1, 1);
+                JobHandle visibilityHandle = new HectonBatchRendererGroupUtility.BuildMatrixVisibilityMaskJob
+                {
+                    Matrices = _scavengerMatricesNative,
+                    CullingPlanes = cullingPlanes,
+                    VisibilityMask = visibilityMask,
+                    InstanceCount = instanceCount,
+                    PlaneCount = planeCount,
+                    EnableCpuCulling = canCullPerInstance,
+                    GlobalOffset = float3.zero,
+                    RadiusScale = 1.5f,
+                    MinRadius = 0.25f
+                }.Schedule(instanceCount, 64);
+
+                JobHandle finalizeHandle = new HectonBatchRendererGroupUtility.FinalizeSingleDrawCommandOutputJob
+                {
+                    VisibilityMask = visibilityMask,
+                    InstanceCount = instanceCount,
+                    BatchId = _scavengerBatchId,
+                    MeshId = _scavengerBatchMeshId,
+                    MaterialId = _scavengerBatchMaterialId,
+                    Layer = gameObject.layer,
+                    SubMeshIndex = 0,
+                    ShadowCastingMode = ShadowCastingMode.Off,
+                    ReceiveShadows = false,
+                    MotionMode = MotionVectorGenerationMode.Camera,
+                    VisibleInstances = output.visibleInstances,
+                    DrawCommands = output.drawCommands,
+                    DrawRanges = output.drawRanges,
+                    OutputCommands = HectonBatchRendererGroupUtility.GetDirectDrawOutputPointer(cullingOutput)
+                }.Schedule(visibilityHandle);
+
+                JobHandle disposeHandle = visibilityMask.Dispose(finalizeHandle);
+                if (cullingPlanes.IsCreated)
+                    disposeHandle = cullingPlanes.Dispose(disposeHandle);
+
+                return disposeHandle;
+            }
         }
 
         private Mesh BuildFallbackScavengerMesh()
@@ -2153,7 +2627,7 @@ namespace Hecton8.World
             {
                 name = "__CollapseScavengerFallback",
                 hideFlags = HideFlags.HideAndDontSave
-            }; // COLD ALLOC: Mesh[1] - first-party fallback indirect scavenger mesh - owner: SargassumGlobalDragManager
+            }; // COLD ALLOC: Mesh[1] - first-party fallback scavenger mesh - owner: SargassumGlobalDragManager
 
             Vector3[] vertices =
             {
@@ -2325,57 +2799,81 @@ namespace Hecton8.World
 
         private void OnValidate()
         {
-#if UNITY_EDITOR
-            if (collapseChunkPrefab == null)
-                collapseChunkPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Prefabs/Construction/Final/PFB_SargassumCollapseChunk.prefab");
+            _editorValidateDepth++;
+            if (_editorValidateDepth > MaxEditorValidateDepth)
+            {
+                _editorValidateDepth--;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError("SargassumGlobalDragManager editor validation watchdog tripped.", this);
 #endif
-            SanitizeSettings();
-            ResolveActiveNestingPrototypes();
-            EnsureNestedAttachmentStorage();
-            EnsureDisruptionStorage();
-            EnsureScavengerStorage();
-            CreateDensityTexture();
-            ClearNestedAttachments();
-            ClearScavengerHosts();
-            ClearDensityTexture();
-            ClearSinkTexture();
-            PublishShaderGlobals();
+                return;
+            }
+
+            try
+            {
+#if UNITY_EDITOR
+                if (collapseChunkPrefab == null)
+                    collapseChunkPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Prefabs/Construction/Final/PFB_SargassumCollapseChunk.prefab");
+                if (scavengerFallbackShader == null)
+                    scavengerFallbackShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Art/Shaders/Hecton_CollapseScavengerIndirect.shader");
+#endif
+                SanitizeSettings();
+                ResolveActiveNestingPrototypes();
+                EnsureNestedAttachmentStorage();
+                EnsureDisruptionStorage();
+                EnsureScavengerStorage();
+                CreateDensityTexture();
+                ClearNestedAttachments();
+                ClearScavengerHosts();
+                ClearDensityTexture();
+                ClearSinkTexture();
+                PublishShaderGlobals();
+            }
+            finally
+            {
+                _editorValidateDepth--;
+            }
+        }
+
+        private Shader ResolveFallbackLitShader()
+        {
+            if (_fallbackLitShader != null)
+                return _fallbackLitShader;
+
+            RenderPipelineAsset renderPipeline = GraphicsSettings.currentRenderPipeline ?? GraphicsSettings.defaultRenderPipeline;
+            Material defaultMaterial = renderPipeline != null ? renderPipeline.defaultMaterial : null;
+            _fallbackLitShader = defaultMaterial != null ? defaultMaterial.shader : null;
+            return _fallbackLitShader;
         }
 
         private void TryRegister()
         {
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
 
             if (!_registeredTick)
             {
-                tickManager.Register((ITickable)this);
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
                 _registeredTick = true;
             }
 
             if (!_registeredSlowTick)
             {
-                tickManager.Register((ISlowTickable)this);
+                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredSlowTick = true;
             }
         }
 
         private void TryUnregister()
         {
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
 
             if (_registeredTick)
             {
-                tickManager.Unregister((ITickable)this);
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
                 _registeredTick = false;
             }
 
             if (_registeredSlowTick)
             {
-                tickManager.Unregister((ISlowTickable)this);
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredSlowTick = false;
             }
         }

@@ -59,7 +59,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Gameplay/Battery Charger")]
-    public sealed class BatteryCharger : MonoBehaviour, ITickable, IPowerComponent, IInteractable
+    public sealed class BatteryCharger : MonoBehaviour, ITickable, IUpdatable, IPowerComponent, IInteractable
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -180,7 +180,7 @@ namespace Hecton8.Gameplay
                 _cachedToolManager = interactor.GetComponentInParent<PlayerToolManager>();
 
             if (_cachedToolManager == null)
-                _cachedToolManager = Object.FindAnyObjectByType<PlayerToolManager>();
+                _cachedToolManager = Hecton8.Core.GlobalRegistry.Player != null ? Hecton8.Core.GlobalRegistry.Player.ToolManager : null;
 
             return _cachedToolManager;
         }
@@ -194,7 +194,7 @@ namespace Hecton8.Gameplay
                 _cachedPlayerInventory = interactor.GetComponentInParent<PlayerInventory>();
 
             if (_cachedPlayerInventory == null)
-                _cachedPlayerInventory = Object.FindAnyObjectByType<PlayerInventory>();
+                _cachedPlayerInventory = Hecton8.Core.GlobalRegistry.Player != null ? Hecton8.Core.GlobalRegistry.Player.Inventory : null;
 
             return _cachedPlayerInventory;
         }
@@ -287,17 +287,15 @@ namespace Hecton8.Gameplay
             {
                 for (int x = 0; x < cols; x++)
                 {
-                    ItemData item = grid.GetCell(x, y);
+                    int anchorIndex = grid.GetCellAnchorIndex(x, y);
+                    if (anchorIndex < 0 || anchorIndex != y * cols + x)
+                        continue;
+
+                    ItemData item = playerInventory.GetItemAt(x, y);
                     if (item == null)
                         continue;
 
                     if (!IsBatteryItem(item))
-                        continue;
-
-                    // Check if this is an anchor cell
-                    if (x > 0 && ReferenceEquals(grid.GetCell(x - 1, y), item))
-                        continue;
-                    if (y > 0 && ReferenceEquals(grid.GetCell(x, y - 1), item))
                         continue;
 
                     // Insert battery
@@ -472,11 +470,7 @@ namespace Hecton8.Gameplay
             if (_registered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register((ITickable)this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _registered = true;
         }
 
@@ -485,10 +479,7 @@ namespace Hecton8.Gameplay
             if (!_registered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister((ITickable)this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _registered = false;
         }
 

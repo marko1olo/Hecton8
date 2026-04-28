@@ -133,7 +133,7 @@ namespace Hecton8.SaveSystem
             if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform != null)
             {
-                _cachedCaptureCamera = playerTransform.GetComponentInChildren<Camera>(true);
+                _cachedCaptureCamera = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera : playerTransform.GetComponent<Camera>());
             }
 
             captureCamera = _cachedCaptureCamera;

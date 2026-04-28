@@ -1,0 +1,97 @@
+#pragma kernel EvaluateBuoyancy
+
+#define HECTON_THREADS_PER_GROUP 64
+
+struct GpuBuoyancyObjectData
+{
+    float Volume;
+    float Height;
+    float IsInAir;
+    float SimplifiedSubmersion;
+};
+
+StructuredBuffer<float3> _GpuBuoyancyPositions;
+StructuredBuffer<GpuBuoyancyObjectData> _GpuBuoyancyObjectData;
+RWStructuredBuffer<float4> _GpuBuoyancyResults;
+
+int _GpuBuoyancyObjectCount;
+float4 _GpuBuoyancyWaterParams;
+float4 _GpuBuoyancyWave0A;
+float4 _GpuBuoyancyWave0B;
+float4 _GpuBuoyancyWave1A;
+float4 _GpuBuoyancyWave1B;
+float4 _GpuBuoyancyWave2A;
+float4 _GpuBuoyancyWave2B;
+
+static const float GravityConstant = 9.81;
+static const float TwoPi = 6.28318530718;
+
+float3 ComputeWaveDisplacement(float2 worldXZ, float4 waveA, float4 waveB, float timeSeconds)
+{
+    float amplitude = waveA.z;
+    float wavelength = waveA.w;
+    if (amplitude <= 0.0 || wavelength <= 0.01)
+        return 0.0.xxx;
+
+    float2 direction = dot(waveA.xy, waveA.xy) > 0.0001
+        ? normalize(waveA.xy)
+        : float2(1.0, 0.0);
+    float waveNumber = TwoPi / max(0.01, wavelength);
+    float phaseVelocity = sqrt(GravityConstant / waveNumber) * max(0.01, waveB.z);
+    float phase = waveNumber * dot(direction, worldXZ) - phaseVelocity * waveNumber * timeSeconds + waveB.y;
+    float sinPhase = sin(phase);
+    float cosPhase = cos(phase);
+    float horizontalDisplacement = waveB.x * amplitude;
+
+    return float3(
+        -direction.x * horizontalDisplacement * sinPhase,
+        amplitude * cosPhase,
+        -direction.y * horizontalDisplacement * sinPhase);
+}
+
+float3 ComputeTotalDisplacement(float2 worldXZ, float timeSeconds)
+{
+    float3 displacement = 0.0.xxx;
+    displacement += ComputeWaveDisplacement(worldXZ, _GpuBuoyancyWave0A, _GpuBuoyancyWave0B, timeSeconds);
+    displacement += ComputeWaveDisplacement(worldXZ, _GpuBuoyancyWave1A, _GpuBuoyancyWave1B, timeSeconds);
+    displacement += ComputeWaveDisplacement(worldXZ, _GpuBuoyancyWave2A, _GpuBuoyancyWave2B, timeSeconds);
+    return displacement;
+}
+
+[numthreads(HECTON_THREADS_PER_GROUP, 1, 1)]
+void EvaluateBuoyancy(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint instanceIndex = dispatchThreadId.x;
+    if (instanceIndex >= (uint)_GpuBuoyancyObjectCount)
+        return;
+
+    float3 positionWS = _GpuBuoyancyPositions[instanceIndex];
+    GpuBuoyancyObjectData objectData = _GpuBuoyancyObjectData[instanceIndex];
+    if (objectData.IsInAir > 0.5)
+    {
+        _GpuBuoyancyResults[instanceIndex] = 0.0.xxxx;
+        return;
+    }
+
+    float timeSeconds = _GpuBuoyancyWaterParams.w;
+    float2 correctedXZ = positionWS.xz;
+    float3 displacement = ComputeTotalDisplacement(correctedXZ, timeSeconds);
+    correctedXZ = positionWS.xz - displacement.xz;
+    displacement = ComputeTotalDisplacement(correctedXZ, timeSeconds);
+    correctedXZ = positionWS.xz - displacement.xz;
+    displacement = ComputeTotalDisplacement(correctedXZ, timeSeconds);
+
+    float waveOffset = displacement.y;
+    float depthBelowSurface = _GpuBuoyancyWaterParams.x + waveOffset - positionWS.y;
+    if (depthBelowSurface <= 0.0)
+    {
+        _GpuBuoyancyResults[instanceIndex] = float4(waveOffset, 0.0, 0.0, 0.0);
+        return;
+    }
+
+    float submersion = objectData.SimplifiedSubmersion > 0.5
+        ? 1.0
+        : saturate(depthBelowSurface / max(objectData.Height, 0.01));
+    float buoyancyForceY = _GpuBuoyancyWaterParams.y * (objectData.Volume * submersion) * _GpuBuoyancyWaterParams.z;
+    _GpuBuoyancyResults[instanceIndex] = float4(waveOffset, buoyancyForceY, 0.0, 0.0);
+}

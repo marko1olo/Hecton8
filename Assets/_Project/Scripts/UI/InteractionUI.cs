@@ -32,7 +32,7 @@ namespace Hecton8.UI
     /// Shows different prompts based on looked-at object and held tool.
     /// Uses ITickable for updates. Zero GC in hot paths.
     /// </summary>
-    public class InteractionUI : MonoBehaviour, ITickable
+    public class InteractionUI : MonoBehaviour, ITickable, IUpdatable
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -186,8 +186,9 @@ namespace Hecton8.UI
 
                 _cameraRetryTime = Time.time + CameraRetryInterval;
 
-                if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
-                    _mainCamera = playerTransform.GetComponentInChildren<Camera>(true);
+                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                if (playerContext != null)
+                    _mainCamera = playerContext.PlayerCamera;
 
                 if (_mainCamera == null)
                 {
@@ -453,14 +454,18 @@ namespace Hecton8.UI
 
         private void ResolvePlayerReferences()
         {
-            if (!SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext == null)
                 return;
 
             if (_toolManager == null)
-                _toolManager = playerTransform.GetComponent<PlayerToolManager>();
+                _toolManager = playerContext.ToolManager;
 
             if (_inventory == null)
-                _inventory = playerTransform.GetComponent<PlayerInventory>();
+                _inventory = playerContext.Inventory;
+
+            if (_mainCamera == null)
+                _mainCamera = playerContext.PlayerCamera;
         }
 
         private void HandleLanguageChanged(GameLanguage language)
@@ -535,11 +540,9 @@ namespace Hecton8.UI
             if (_registered)
                 return;
 
-            if (GameTickManager.Instance != null)
-            {
-                GameTickManager.Instance.Register(this);
-                _registered = true;
-            }
+            SystemDispatcher.EnsureRuntimeInstance();
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
+            _registered = true;
         }
 
         private void UnregisterFromTick()
@@ -547,11 +550,8 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            if (GameTickManager.Instance != null)
-            {
-                GameTickManager.Instance.Unregister(this);
-                _registered = false;
-            }
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            _registered = false;
         }
     }
 }

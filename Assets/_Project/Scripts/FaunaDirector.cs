@@ -51,7 +51,10 @@ using Hecton8.Ecosystem;
 using Hecton8.Environment;
 using Hecton8.Systems.AI;
 using Hecton8.World;
+using Unity.Collections;
 using UnityEngine;
+using float3 = Unity.Mathematics.float3;
+using int3 = Unity.Mathematics.int3;
 
 namespace Hecton8.AI
 {
@@ -66,6 +69,10 @@ namespace Hecton8.AI
         private const string SmallPassiveProxyPrefabName = "SmallPassiveProxy";
         private const float PlayerResolveRetryInterval = 1f;
         private const float DirectorSlowTickIntervalSeconds = 0.5f;
+        private const float DehydrationDistanceMeters = 160f;
+        private const double DehydrationDistanceSq = DehydrationDistanceMeters * DehydrationDistanceMeters;
+        private const int InvalidDehydrationSlotIndex = -1;
+        private const int MaxFaunaResidencySlots = 512;
         private const float SpawnVisibilityDotThreshold = 0.5f;
         private const float MinimumSpawnViewDirectionMagnitudeSqr = 0.0001f;
         private const float RuntimeSettingsRefreshInterval = 5f;
@@ -97,6 +104,9 @@ namespace Hecton8.AI
             /// <summary>Префаб-источник (для пула, если понадобится идентификация).</summary>
             public GameObject prefabSource;
 
+            /// <summary>Архетип существа для регидратации после off-screen деактивации.</summary>
+            public CreatureArchetypeData archetype;
+
             /// <summary>Чанк, в котором существо было заспавнено.</summary>
             public WorldChunkCoordinate chunkCoord;
 
@@ -105,6 +115,9 @@ namespace Hecton8.AI
 
             /// <summary>Является ли это существо крупной угрозой большого участка воды.</summary>
             public bool isLargeThreat;
+
+            /// <summary>Индекс резидентного слота дегидратации.</summary>
+            public int dehydrationSlotIndex;
         }
 
         private struct ResolvedFaunaEntry
@@ -120,6 +133,23 @@ namespace Hecton8.AI
             public bool prefersClaustrophobicZone;
             public bool prefersThermalZone;
             public bool prefersHighPressureZone;
+        }
+
+        private struct FaunaResidencyState
+        {
+            public GameObject prefabSource;
+            public CreatureArchetypeData archetype;
+            public Quaternion rotation;
+            public Vector3 linearVelocity;
+            public Vector3 angularVelocity;
+            public float health;
+            public int creatureTypeIndex;
+            public int biomeIndex;
+            public WorldChunkCoordinate chunkCoord;
+            public WorldMacroZoneCoordinate macroZoneCoord;
+            public bool isLargeThreat;
+            public bool isResident;
+            public bool isDehydrated;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -408,6 +438,13 @@ namespace Hecton8.AI
         private Dictionary<FaunaBiomeData, ResolvedFaunaEntry[]> _resolvedEntriesPerBiome;
         private Dictionary<FaunaBiomeData, int[]> _availablePoolCountsPerBiome;
         private Dictionary<FaunaBiomeData, Dictionary<GameObject, int>> _prefabTypeIndexLookup;
+        private NativeArray<PoolSlotData> _dehydratedPoolSlots;
+        private NativeQueue<int> _freeDehydrationSlotQueue;
+        // COLD ALLOC: FaunaResidencyState[512] - resident fauna state cache for dehydration and restore - owner: FaunaDirector
+        private FaunaResidencyState[] _dehydratedCreatureStates;
+        // COLD ALLOC: int[512] - active dehydrated slot index list for rehydration scans - owner: FaunaDirector
+        private int[] _activeDehydrationSlots;
+        private int _activeDehydrationSlotCount;
         private float _nextPlayerResolveTime = float.NegativeInfinity;
         private float _nextRuntimeSettingsRefreshTime = float.NegativeInfinity;
         private bool _runtimeSettingsDirty = true;
@@ -461,6 +498,7 @@ namespace Hecton8.AI
         {
             ActiveRuntimeInstance = this;
             EnsureRuntimeStateInitialized();
+            InitializeDehydrationResidencyState();
             ResolveSpawnRegistry();
             ResolveBiomeMatrixDirector();
             ResolveWorldZoneDirector();
@@ -525,6 +563,7 @@ namespace Hecton8.AI
 
         private void OnDestroy()
         {
+            DisposeDehydrationResidencyState();
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
         }
@@ -614,7 +653,8 @@ namespace Hecton8.AI
             //  2. CULLING — деспавн далёких существ
             // ══════════════════════════════════════════════════════
 
-            int cullCount = CullDistantCreatures(playerPos);
+            int cullCount = CullOrDehydrateDistantCreatures(playerPos);
+            HydrateResidentCreatures(playerPos);
 
             // ══════════════════════════════════════════════════════
             //  3. BIOME DETECTION (THROTTLED)
@@ -664,7 +704,7 @@ namespace Hecton8.AI
             _currentEffectiveSpawnsPerTick = ResolveEffectiveSpawnsPerTick(_currentMatrixFaunaMood, _currentDepthZone);
             _currentEffectiveBiomeMaxCount = 0;
 
-            if (_activeCreatures.Count < _currentEffectiveGlobalMaxCount)
+            if (GetTrackedCreaturePopulationCount() < _currentEffectiveGlobalMaxCount)
             {
                 // Ищем данные биома
                 if (_biomeLookup.TryGetValue(currentBiome, out FaunaBiomeData biomeData))
@@ -710,6 +750,7 @@ namespace Hecton8.AI
 
             int culled = 0;
             ObjectPoolManager pool = ObjectPoolManager.Instance;
+            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPos);
 
             for (int i = _activeCreatures.Count - 1; i >= 0; i--)
             {
@@ -719,6 +760,7 @@ namespace Hecton8.AI
                 if (creature.gameObject == null || creature.transform == null)
                 {
                     DecrementCreatureCounters(in creature);
+                    ReleaseDehydrationSlot(creature.dehydrationSlotIndex);
                     SwapRemoveAt(i);
                     culled++;
                     continue;
@@ -728,6 +770,7 @@ namespace Hecton8.AI
                 if (!creature.gameObject.activeInHierarchy)
                 {
                     DecrementCreatureCounters(in creature);
+                    ReleaseDehydrationSlot(creature.dehydrationSlotIndex);
                     SwapRemoveAt(i);
                     culled++;
                     continue;
@@ -757,6 +800,54 @@ namespace Hecton8.AI
         }
 
         // ══════════════════════════════════════════════════════════
+        private int CullOrDehydrateDistantCreatures(Vector3 playerPos)
+        {
+            if (_activeCreatures == null || _activeCreatures.Count == 0)
+                return 0;
+
+            int dehydrated = 0;
+            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPos);
+
+            for (int i = _activeCreatures.Count - 1; i >= 0; i--)
+            {
+                ActiveCreature creature = _activeCreatures[i];
+                if (creature.gameObject == null || creature.transform == null)
+                {
+                    DecrementCreatureCounters(in creature);
+                    ReleaseDehydrationSlot(creature.dehydrationSlotIndex);
+                    SwapRemoveAt(i);
+                    dehydrated++;
+                    continue;
+                }
+
+                if (!creature.gameObject.activeInHierarchy)
+                {
+                    DecrementCreatureCounters(in creature);
+                    ReleaseDehydrationSlot(creature.dehydrationSlotIndex);
+                    SwapRemoveAt(i);
+                    dehydrated++;
+                    continue;
+                }
+
+                AbsoluteUniversePosition creatureAup = AbsoluteUniversePosition.FromRuntimePosition(creature.transform.position);
+                if (AbsoluteUniversePosition.DistanceSq(in creatureAup, in playerAup) <= DehydrationDistanceSq)
+                    continue;
+
+                UpdateResidencyStateFromActiveCreature(in creature, in creatureAup, markDehydrated: true);
+                if (pool != null)
+                    pool.Despawn(creature.gameObject);
+                else
+                    creature.gameObject.SetActive(false);
+
+                AddActiveDehydrationSlot(creature.dehydrationSlotIndex);
+                SwapRemoveAt(i);
+                dehydrated++;
+            }
+
+            return dehydrated;
+        }
+
         //  SPAWN
         // ══════════════════════════════════════════════════════════
 
@@ -827,7 +918,7 @@ namespace Hecton8.AI
             for (int attempt = 0; attempt < _currentEffectiveSpawnsPerTick; attempt++)
             {
                 // Global limit
-                if (_activeCreatures.Count >= _currentEffectiveGlobalMaxCount)
+                if (GetTrackedCreaturePopulationCount() >= _currentEffectiveGlobalMaxCount)
                     break;
 
                 // Biome limit
@@ -948,17 +1039,24 @@ namespace Hecton8.AI
                 int typeIndex = selectedEntry.creatureTypeIndex;
 
                 // ── Регистрация в трекере ──
-                ActiveCreature record = new ActiveCreature
+                if (!TryBuildActiveCreatureRecord(
+                        instance,
+                        resolvedPrefab,
+                        selectedEntry.archetype,
+                        typeIndex,
+                        biomeIdx,
+                        spawnChunk,
+                        spawnMacroZone,
+                        isLargeThreat,
+                        out ActiveCreature record))
                 {
-                    gameObject        = instance,
-                    transform         = instance.transform,
-                    creatureTypeIndex  = typeIndex,
-                    biomeIndex        = biomeIdx,
-                    prefabSource      = resolvedPrefab,
-                    chunkCoord        = spawnChunk,
-                    macroZoneCoord    = spawnMacroZone,
-                    isLargeThreat     = isLargeThreat
-                };
+                    if (pool != null)
+                        pool.Despawn(instance);
+                    else
+                        instance.SetActive(false);
+
+                    continue;
+                }
 
                 _activeCreatures.Add(record);
 
@@ -1571,6 +1669,70 @@ namespace Hecton8.AI
                 _countsPerBiome = new int[maxBiomeIndex + 1];
         }
 
+        private void InitializeDehydrationResidencyState()
+        {
+            if (_dehydratedPoolSlots.IsCreated &&
+                _freeDehydrationSlotQueue.IsCreated &&
+                _dehydratedCreatureStates != null &&
+                _activeDehydrationSlots != null)
+            {
+                return;
+            }
+
+            int slotCapacity = MaxFaunaResidencySlots;
+
+            // COLD ALLOC: NativeArray<PoolSlotData>[512] - fauna residency slot metadata for dehydration and restore - owner: FaunaDirector
+            _dehydratedPoolSlots = new NativeArray<PoolSlotData>(slotCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeQueue<int>(Persistent) - free fauna residency slot queue - owner: FaunaDirector
+            _freeDehydrationSlotQueue = new NativeQueue<int>(Allocator.Persistent);
+            if (_dehydratedCreatureStates == null || _dehydratedCreatureStates.Length != slotCapacity)
+                _dehydratedCreatureStates = new FaunaResidencyState[slotCapacity];
+            if (_activeDehydrationSlots == null || _activeDehydrationSlots.Length != slotCapacity)
+                _activeDehydrationSlots = new int[slotCapacity];
+
+            for (int i = 0; i < slotCapacity; i++)
+                _freeDehydrationSlotQueue.Enqueue(i);
+
+            _activeDehydrationSlotCount = 0;
+        }
+
+        private void DisposeDehydrationResidencyState()
+        {
+            if (_dehydratedPoolSlots.IsCreated)
+                _dehydratedPoolSlots.Dispose();
+
+            if (_freeDehydrationSlotQueue.IsCreated)
+                _freeDehydrationSlotQueue.Dispose();
+
+            _dehydratedCreatureStates = null;
+            _activeDehydrationSlots = null;
+            _activeDehydrationSlotCount = 0;
+        }
+
+        private void ResetDehydrationResidencyState()
+        {
+            if (_dehydratedPoolSlots.IsCreated)
+            {
+                for (int i = 0; i < _dehydratedPoolSlots.Length; i++)
+                    _dehydratedPoolSlots[i] = default;
+            }
+
+            if (_dehydratedCreatureStates != null)
+                System.Array.Clear(_dehydratedCreatureStates, 0, _dehydratedCreatureStates.Length);
+
+            if (_activeDehydrationSlots != null)
+                System.Array.Clear(_activeDehydrationSlots, 0, _activeDehydrationSlots.Length);
+
+            if (_freeDehydrationSlotQueue.IsCreated)
+            {
+                _freeDehydrationSlotQueue.Clear();
+                for (int i = 0; i < _dehydratedPoolSlots.Length; i++)
+                    _freeDehydrationSlotQueue.Enqueue(i);
+            }
+
+            _activeDehydrationSlotCount = 0;
+        }
+
         /// <summary>
         /// Инкрементирует stateful-счётчики при добавлении существа.
         /// Используется ForceSpawnHorde для корректного accounting.
@@ -1631,6 +1793,297 @@ namespace Hecton8.AI
             _activeCreatures.RemoveAt(lastIndex);
         }
 
+        private int GetTrackedCreaturePopulationCount()
+        {
+            int activeCount = _activeCreatures != null ? _activeCreatures.Count : 0;
+            return activeCount + _activeDehydrationSlotCount;
+        }
+
+        private int AllocateDehydrationSlot()
+        {
+            if (!_freeDehydrationSlotQueue.IsCreated || !_freeDehydrationSlotQueue.TryDequeue(out int slotIndex))
+                return InvalidDehydrationSlotIndex;
+
+            return slotIndex;
+        }
+
+        private void ReleaseDehydrationSlot(int slotIndex)
+        {
+            if (slotIndex < 0 ||
+                !_dehydratedPoolSlots.IsCreated ||
+                !_freeDehydrationSlotQueue.IsCreated ||
+                _dehydratedCreatureStates == null ||
+                slotIndex >= _dehydratedCreatureStates.Length)
+            {
+                return;
+            }
+
+            if (!_dehydratedCreatureStates[slotIndex].isResident)
+                return;
+
+            RemoveActiveDehydrationSlot(slotIndex);
+            _dehydratedPoolSlots[slotIndex] = default;
+            _dehydratedCreatureStates[slotIndex] = default;
+            _freeDehydrationSlotQueue.Enqueue(slotIndex);
+        }
+
+        private void AddActiveDehydrationSlot(int slotIndex)
+        {
+            if (slotIndex < 0 || _activeDehydrationSlots == null)
+                return;
+
+            for (int i = 0; i < _activeDehydrationSlotCount; i++)
+            {
+                if (_activeDehydrationSlots[i] == slotIndex)
+                    return;
+            }
+
+            if (_activeDehydrationSlotCount >= _activeDehydrationSlots.Length)
+                return;
+
+            _activeDehydrationSlots[_activeDehydrationSlotCount] = slotIndex;
+            _activeDehydrationSlotCount++;
+        }
+
+        private void RemoveActiveDehydrationSlotAt(int index)
+        {
+            if (_activeDehydrationSlots == null || index < 0 || index >= _activeDehydrationSlotCount)
+                return;
+
+            int lastIndex = _activeDehydrationSlotCount - 1;
+            _activeDehydrationSlots[index] = _activeDehydrationSlots[lastIndex];
+            _activeDehydrationSlots[lastIndex] = 0;
+            _activeDehydrationSlotCount = lastIndex;
+        }
+
+        private void RemoveActiveDehydrationSlot(int slotIndex)
+        {
+            if (_activeDehydrationSlots == null || slotIndex < 0)
+                return;
+
+            for (int i = 0; i < _activeDehydrationSlotCount; i++)
+            {
+                if (_activeDehydrationSlots[i] != slotIndex)
+                    continue;
+
+                RemoveActiveDehydrationSlotAt(i);
+                return;
+            }
+        }
+
+        private bool TryBuildActiveCreatureRecord(
+            GameObject instance,
+            GameObject prefabSource,
+            CreatureArchetypeData archetype,
+            int creatureTypeIndex,
+            int biomeIndex,
+            WorldChunkCoordinate chunkCoord,
+            WorldMacroZoneCoordinate macroZoneCoord,
+            bool isLargeThreat,
+            out ActiveCreature record)
+        {
+            record = default;
+            if (instance == null || prefabSource == null)
+                return false;
+
+            int slotIndex = AllocateDehydrationSlot();
+            if (slotIndex == InvalidDehydrationSlotIndex)
+                return false;
+
+            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(instance.transform.position);
+            UpdateResidencySlot(slotIndex, instance, prefabSource, archetype, creatureTypeIndex, biomeIndex, chunkCoord, macroZoneCoord, isLargeThreat, in positionAup, markDehydrated: false);
+
+            record = new ActiveCreature
+            {
+                gameObject = instance,
+                transform = instance.transform,
+                creatureTypeIndex = creatureTypeIndex,
+                biomeIndex = biomeIndex,
+                prefabSource = prefabSource,
+                archetype = archetype,
+                chunkCoord = chunkCoord,
+                macroZoneCoord = macroZoneCoord,
+                isLargeThreat = isLargeThreat,
+                dehydrationSlotIndex = slotIndex
+            };
+
+            return true;
+        }
+
+        private void UpdateResidencyStateFromActiveCreature(in ActiveCreature creature, in AbsoluteUniversePosition positionAup, bool markDehydrated)
+        {
+            if (creature.dehydrationSlotIndex < 0 || creature.dehydrationSlotIndex >= _dehydratedPoolSlots.Length)
+                return;
+
+            UpdateResidencySlot(
+                creature.dehydrationSlotIndex,
+                creature.gameObject,
+                creature.prefabSource,
+                creature.archetype,
+                creature.creatureTypeIndex,
+                creature.biomeIndex,
+                creature.chunkCoord,
+                creature.macroZoneCoord,
+                creature.isLargeThreat,
+                in positionAup,
+                markDehydrated);
+        }
+
+        private void UpdateResidencySlot(
+            int slotIndex,
+            GameObject instance,
+            GameObject prefabSource,
+            CreatureArchetypeData archetype,
+            int creatureTypeIndex,
+            int biomeIndex,
+            WorldChunkCoordinate chunkCoord,
+            WorldMacroZoneCoordinate macroZoneCoord,
+            bool isLargeThreat,
+            in AbsoluteUniversePosition positionAup,
+            bool markDehydrated)
+        {
+            if (slotIndex < 0 ||
+                !_dehydratedPoolSlots.IsCreated ||
+                _dehydratedCreatureStates == null ||
+                slotIndex >= _dehydratedPoolSlots.Length)
+            {
+                return;
+            }
+
+            PoolSlotData slotData = _dehydratedPoolSlots[slotIndex];
+            slotData.BoundGuid = unchecked((ulong)(slotIndex + 1));
+            WritePoolSlotPosition(ref slotData, in positionAup);
+            slotData.HydrationFrame = unchecked((ushort)Time.frameCount);
+            slotData.RefCount = 1;
+            slotData.StateFlags = markDehydrated ? (byte)1 : (byte)0;
+            slotData.LastVisibleFrame = unchecked((ushort)Time.frameCount);
+            _dehydratedPoolSlots[slotIndex] = slotData;
+
+            Vector3 linearVelocity = Vector3.zero;
+            Vector3 angularVelocity = Vector3.zero;
+            Quaternion rotation = instance != null ? instance.transform.rotation : Quaternion.identity;
+            float health = archetype != null ? Mathf.Max(1f, archetype.maxHealth) : 1f;
+
+            if (instance != null)
+            {
+                if (instance.TryGetComponent(out FaunaBrain ai))
+                    health = ai.CurrentHealth;
+
+                if (instance.TryGetComponent(out Rigidbody rigidbody))
+                {
+                    linearVelocity = rigidbody.linearVelocity;
+                    angularVelocity = rigidbody.angularVelocity;
+                }
+            }
+
+            _dehydratedCreatureStates[slotIndex] = new FaunaResidencyState
+            {
+                prefabSource = prefabSource,
+                archetype = archetype,
+                rotation = rotation,
+                linearVelocity = linearVelocity,
+                angularVelocity = angularVelocity,
+                health = health,
+                creatureTypeIndex = creatureTypeIndex,
+                biomeIndex = biomeIndex,
+                chunkCoord = chunkCoord,
+                macroZoneCoord = macroZoneCoord,
+                isLargeThreat = isLargeThreat,
+                isResident = true,
+                isDehydrated = markDehydrated
+            };
+        }
+
+        private int HydrateResidentCreatures(Vector3 playerPos)
+        {
+            if (_activeDehydrationSlotCount <= 0 || _activeCreatures == null)
+                return 0;
+
+            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            if (pool == null)
+                return 0;
+
+            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPos);
+            int hydrated = 0;
+
+            for (int i = _activeDehydrationSlotCount - 1; i >= 0; i--)
+            {
+                if (_activeCreatures.Count >= _currentEffectiveGlobalMaxCount)
+                    break;
+
+                int slotIndex = _activeDehydrationSlots[i];
+                if (slotIndex < 0 || slotIndex >= _dehydratedCreatureStates.Length)
+                {
+                    RemoveActiveDehydrationSlotAt(i);
+                    continue;
+                }
+
+                FaunaResidencyState state = _dehydratedCreatureStates[slotIndex];
+                if (!state.isResident || !state.isDehydrated)
+                {
+                    RemoveActiveDehydrationSlotAt(i);
+                    continue;
+                }
+                PoolSlotData slotData = _dehydratedPoolSlots[slotIndex];
+                AbsoluteUniversePosition creatureAup = ReadPoolSlotPosition(in slotData);
+                if (AbsoluteUniversePosition.DistanceSq(in creatureAup, in playerAup) > DehydrationDistanceSq)
+                    continue;
+
+                Vector3 runtimePosition = creatureAup.ToRuntimeFloat3();
+                GameObject instance = pool.Spawn(state.prefabSource, runtimePosition, state.rotation, false);
+                if (instance == null)
+                    continue;
+
+                if (instance.TryGetComponent(out FaunaBrain ai))
+                {
+                    ai.ApplyArchetype(state.archetype);
+                    ai.SetSpawnPoint(runtimePosition);
+                    FaunaGeneticsManager.Instance?.ApplyTraits(ai, state.archetype, state.biomeIndex, runtimePosition);
+                    EcosystemHealthDirector.Instance?.ConfigureSpawnedFauna(ai, state.archetype, state.chunkCoord);
+
+                    float clampedHealth = Mathf.Clamp(state.health, 0f, ai.MaxHealth);
+                    float restoreDamage = ai.MaxHealth - clampedHealth;
+                    if (restoreDamage > 0.001f)
+                        ai.TakeDamage(restoreDamage);
+                }
+
+                if (instance.TryGetComponent(out Rigidbody rigidbody))
+                {
+                    rigidbody.linearVelocity = state.linearVelocity;
+                    rigidbody.angularVelocity = state.angularVelocity;
+                }
+
+                ActiveCreature creature = new ActiveCreature
+                {
+                    gameObject = instance,
+                    transform = instance.transform,
+                    creatureTypeIndex = state.creatureTypeIndex,
+                    biomeIndex = state.biomeIndex,
+                    prefabSource = state.prefabSource,
+                    archetype = state.archetype,
+                    chunkCoord = state.chunkCoord,
+                    macroZoneCoord = state.macroZoneCoord,
+                    isLargeThreat = state.isLargeThreat,
+                    dehydrationSlotIndex = slotIndex
+                };
+
+                _activeCreatures.Add(creature);
+                state.isDehydrated = false;
+                _dehydratedCreatureStates[slotIndex] = state;
+
+                slotData = _dehydratedPoolSlots[slotIndex];
+                slotData.StateFlags = 0;
+                slotData.HydrationFrame = unchecked((ushort)Time.frameCount);
+                slotData.LastVisibleFrame = unchecked((ushort)Time.frameCount);
+                _dehydratedPoolSlots[slotIndex] = slotData;
+
+                RemoveActiveDehydrationSlotAt(i);
+                hydrated++;
+            }
+
+            return hydrated;
+        }
+
         // ══════════════════════════════════════════════════════════
         //  PLAYER LOOKUP
         // ══════════════════════════════════════════════════════════
@@ -1668,7 +2121,9 @@ namespace Hecton8.AI
             if (_playerViewTransform != null)
                 return;
 
-            Camera playerCamera = _playerTransform.GetComponentInChildren<Camera>(true);
+            Camera playerCamera = Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null
+                ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera
+                : Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Camera>(_playerTransform);
             _playerViewTransform = playerCamera != null ? playerCamera.transform : _playerTransform;
         }
 
@@ -2334,27 +2789,6 @@ namespace Hecton8.AI
             int biomeIndex = biomeData.biomeIndex;
             int typeIndex = selectedEntry.creatureTypeIndex;
 
-            ActiveCreature record = new ActiveCreature
-            {
-                gameObject = instance,
-                transform = instance.transform,
-                creatureTypeIndex = typeIndex,
-                biomeIndex = biomeIndex,
-                prefabSource = resolvedPrefab,
-                chunkCoord = spawnChunk,
-                macroZoneCoord = spawnMacroZone,
-                isLargeThreat = selectedEntry.isLargeThreat
-            };
-
-            _activeCreatures.Add(record);
-            IncrementCreatureCounters(biomeIndex, typeIndex, biomeData);
-            IncrementChunkCount(spawnChunk);
-            if (selectedEntry.isLargeThreat)
-                IncrementMacroZoneCount(spawnMacroZone);
-
-            if (typeIndex >= 0 && typeIndex < availablePoolCounts.Length && availablePoolCounts[typeIndex] > 0)
-                availablePoolCounts[typeIndex]--;
-
             if (instance.TryGetComponent(out FaunaBrain ai))
             {
                 ai.ApplyArchetype(selectedEntry.archetype);
@@ -2365,6 +2799,34 @@ namespace Hecton8.AI
                 if (selectedEntry.isPredator || threatClass != EncounterThreatClass.Drone)
                     ai.ForceState(FaunaBrain.AIState.Aggressive);
             }
+
+            if (!TryBuildActiveCreatureRecord(
+                    instance,
+                    resolvedPrefab,
+                    selectedEntry.archetype,
+                    typeIndex,
+                    biomeIndex,
+                    spawnChunk,
+                    spawnMacroZone,
+                    selectedEntry.isLargeThreat,
+                    out ActiveCreature record))
+            {
+                if (pool != null)
+                    pool.Despawn(instance);
+                else
+                    instance.SetActive(false);
+
+                return false;
+            }
+
+            _activeCreatures.Add(record);
+            IncrementCreatureCounters(biomeIndex, typeIndex, biomeData);
+            IncrementChunkCount(spawnChunk);
+            if (selectedEntry.isLargeThreat)
+                IncrementMacroZoneCount(spawnMacroZone);
+
+            if (typeIndex >= 0 && typeIndex < availablePoolCounts.Length && availablePoolCounts[typeIndex] > 0)
+                availablePoolCounts[typeIndex]--;
 
             spawnedInstance = instance;
             return true;
@@ -2382,6 +2844,7 @@ namespace Hecton8.AI
                 if (creature.gameObject == null)
                 {
                     DecrementCreatureCounters(in creature);
+                    ReleaseDehydrationSlot(creature.dehydrationSlotIndex);
                     SwapRemoveAt(i);
                     continue;
                 }
@@ -2395,6 +2858,7 @@ namespace Hecton8.AI
                     creature.gameObject.SetActive(false);
 
                 DecrementCreatureCounters(in creature);
+                ReleaseDehydrationSlot(creature.dehydrationSlotIndex);
                 SwapRemoveAt(i);
                 return true;
             }
@@ -2422,6 +2886,7 @@ namespace Hecton8.AI
             }
 
             _activeCreatures.Clear();
+            ResetDehydrationResidencyState();
             _countsPerChunk.Clear();
             _largeThreatCountsPerMacroZone.Clear();
 
@@ -2809,7 +3274,7 @@ namespace Hecton8.AI
             for (int h = 0; h < hordeSize; h++)
             {
                 // ── Global limit check ──
-                if (_activeCreatures.Count >= _runtimeGlobalMaxCount)
+                if (GetTrackedCreaturePopulationCount() >= _runtimeGlobalMaxCount)
                     break;
 
                 // ── Выбор случайного типа существа из биома ──
@@ -2850,23 +3315,9 @@ namespace Hecton8.AI
                 int typeIndex = selectedEntry.creatureTypeIndex;
 
                 // ── Регистрация в трекере ──
-                ActiveCreature record = new ActiveCreature
-                {
-                    gameObject       = instance,
-                    transform        = instance.transform,
-                    creatureTypeIndex = typeIndex,
-                    biomeIndex       = biomeIdx,
-                    prefabSource     = resolvedPrefab,
-                    chunkCoord       = spawnChunk,
-                    macroZoneCoord   = default,
-                    isLargeThreat    = false
-                };
-
-                _activeCreatures.Add(record);
+                ActiveCreature record = default;
 
                 // ── Инкремент stateful-счётчиков ──
-                IncrementCreatureCounters(biomeIdx, typeIndex, biomeData);
-                IncrementChunkCount(spawnChunk);
 
                 // ── Настройка AI: спавн-поинт + принудительное Aggressive ──
                 if (instance.TryGetComponent(out FaunaBrain ai))
@@ -2877,6 +3328,29 @@ namespace Hecton8.AI
                     EcosystemHealthDirector.Instance?.ConfigureSpawnedFauna(ai, selectedEntry.archetype, spawnChunk);
                     ai.ForceState(FaunaBrain.AIState.Aggressive);
                 }
+
+                if (!TryBuildActiveCreatureRecord(
+                        instance,
+                        resolvedPrefab,
+                        selectedEntry.archetype,
+                        typeIndex,
+                        biomeIdx,
+                        spawnChunk,
+                        default,
+                        false,
+                        out record))
+                {
+                    if (pool != null)
+                        pool.Despawn(instance);
+                    else
+                        instance.SetActive(false);
+
+                    continue;
+                }
+
+                _activeCreatures.Add(record);
+                IncrementCreatureCounters(biomeIdx, typeIndex, biomeData);
+                IncrementChunkCount(spawnChunk);
 
                 if (typeIndex >= 0 && typeIndex < availablePoolCounts.Length && availablePoolCounts[typeIndex] > 0)
                     availablePoolCounts[typeIndex]--;
@@ -3287,6 +3761,25 @@ namespace Hecton8.AI
         private static long ComposeMacroZoneKey(WorldMacroZoneCoordinate macroZoneCoord)
         {
             return ((long)macroZoneCoord.x << 32) ^ (uint)macroZoneCoord.z;
+        }
+
+        private static void WritePoolSlotPosition(ref PoolSlotData slotData, in AbsoluteUniversePosition position)
+        {
+            slotData.AupCell = new int3((int)position.GridX, (int)position.GridY, (int)position.GridZ);
+            slotData.LocalOffset = new float3(position.LocalX, position.LocalY, position.LocalZ);
+        }
+
+        private static AbsoluteUniversePosition ReadPoolSlotPosition(in PoolSlotData slotData)
+        {
+            return new AbsoluteUniversePosition
+            {
+                GridX = slotData.AupCell.x,
+                GridY = slotData.AupCell.y,
+                GridZ = slotData.AupCell.z,
+                LocalX = slotData.LocalOffset.x,
+                LocalY = slotData.LocalOffset.y,
+                LocalZ = slotData.LocalOffset.z
+            };
         }
 
         private static WorldMacroZoneCoordinate DecomposeMacroZoneKey(long key)

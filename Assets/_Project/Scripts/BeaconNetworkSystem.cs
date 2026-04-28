@@ -307,7 +307,7 @@ namespace Hecton8.Gameplay
             if (playerObject.TryGetComponent(out beaconNetworkSystem))
                 return true;
 
-            beaconNetworkSystem = playerObject.GetComponentInChildren<BeaconNetworkSystem>(true);
+            beaconNetworkSystem = playerObject.GetComponent<BeaconNetworkSystem>();
             return beaconNetworkSystem != null;
         }
 

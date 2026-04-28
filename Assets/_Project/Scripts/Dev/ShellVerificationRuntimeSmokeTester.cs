@@ -22,6 +22,8 @@ namespace Hecton8.Dev
     [AddComponentMenu("Hecton8/Dev/Shell Verification Runtime Smoke Tester")]
     public sealed class ShellVerificationRuntimeSmokeTester : MonoBehaviour
     {
+        internal static ShellVerificationRuntimeSmokeTester ActiveRuntimeInstance { get; private set; }
+
         private enum ResumePhase
         {
             None = 0,
@@ -71,6 +73,7 @@ namespace Hecton8.Dev
 
         private void Awake()
         {
+            ActiveRuntimeInstance = this;
             DontDestroyOnLoad(gameObject);
             AutoResolve();
             LogVerbose($"Awake runOnStart={runOnStart} verbose={verboseLogging} scene={SceneManager.GetActiveScene().name}");
@@ -92,6 +95,12 @@ namespace Hecton8.Dev
         private void OnDisable()
         {
             SceneManager.sceneLoaded -= HandleSceneLoaded;
+        }
+
+        private void OnDestroy()
+        {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
         }
 
 #if UNITY_EDITOR

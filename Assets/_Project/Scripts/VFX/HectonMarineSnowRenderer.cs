@@ -12,12 +12,11 @@ namespace Hecton8.Environment
     /// GPU-resident camera-local marine snow renderer driven by the authoritative ecosystem flow field.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class HectonMarineSnowRenderer : MonoBehaviour, ITickable
+    public sealed class HectonMarineSnowRenderer : MonoBehaviour, ITickable, IUpdatable, IOriginShiftListener
     {
         private const int ThreadGroupSize = 64;
         private const int ParticleStride = 64;
         private const int FrameConstantsStride = 96;
-        private const int IndirectArgsStride = sizeof(uint) * 4;
         private const int ParticleFlagSnow = 1 << 3;
 
         [StructLayout(LayoutKind.Sequential)]
@@ -58,15 +57,15 @@ namespace Hecton8.Environment
             internal static readonly int TintId = Shader.PropertyToID("_MarineSnowTint");
         }
 
-        [Header("── References ─────────────────")]
+        [Header("â”€â”€ References â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Camera transform that owns the marine snow shell. Bind this to the runtime main camera.")]
         [SerializeField] private Transform targetCamera;
         [Tooltip("Compute shader responsible for marine-snow simulation.")]
         [SerializeField] private ComputeShader marineSnowCompute;
-        [Tooltip("Dedicated material used by the indirect marine-snow billboard draw.")]
+        [Tooltip("Dedicated material used by the direct marine-snow billboard draw.")]
         [SerializeField] private Material marineSnowMaterial;
 
-        [Header("── Population ─────────────────")]
+        [Header("â”€â”€ Population â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Maximum compute-simulated marine-snow particles. MX350 budget = 32768.")]
         [SerializeField, Range(512, 32768)] private int maxParticles = 32768;
         [Tooltip("Empty safety radius around the camera to avoid particles clipping through the visor.")]
@@ -76,7 +75,7 @@ namespace Hecton8.Environment
         [Tooltip("Vertical span of the marine-snow shell relative to the target camera.")]
         [SerializeField] private Vector2 verticalSpan = new Vector2(-10f, 8f);
 
-        [Header("── Drift ──────────────────────")]
+        [Header("â”€â”€ Drift â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Minimum base descent speed for marine snow.")]
         [SerializeField, Range(0.005f, 0.08f)] private float descentMinSpeed = 0.015f;
         [Tooltip("Maximum base descent speed for marine snow.")]
@@ -86,7 +85,7 @@ namespace Hecton8.Environment
         [Tooltip("Base drag coefficient for the mandated anisotropic-drag attenuation.")]
         [SerializeField, Range(0.01f, 0.5f)] private float baseDragCoefficient = 0.15f;
 
-        [Header("── Flow Coupling ──────────────")]
+        [Header("â”€â”€ Flow Coupling â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("How strongly particles chase the authoritative ecosystem current before anisotropic drag is applied.")]
         [SerializeField, Range(0f, 1f)] private float flowBlend = 0.18f;
         [Tooltip("Extra flow-coupling gain injected by denser water states.")]
@@ -96,7 +95,7 @@ namespace Hecton8.Environment
         [Tooltip("If the flow-field center shifts by more than this many cells, force an upload immediately.")]
         [SerializeField, Range(0.1f, 4f)] private float flowFieldRecenterThresholdCells = 0.5f;
 
-        [Header("── Rendering ──────────────────")]
+        [Header("â”€â”€ Rendering â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Minimum world-space snow billboard size.")]
         [SerializeField, Range(0.0005f, 0.02f)] private float particleSizeMin = 0.0035f;
         [Tooltip("Maximum world-space snow billboard size.")]
@@ -109,18 +108,16 @@ namespace Hecton8.Environment
         [SerializeField, Range(0.5f, 8f)] private float softness = 3.2f;
         [Tooltip("Distance fade for the camera-local shell.")]
         [SerializeField, Range(4f, 48f)] private float maxViewDistance = 18f;
-        [Tooltip("Shadow-casting mode for the indirect particle draw.")]
+        [Tooltip("Shadow-casting mode for the marine-snow particle draw.")]
         [SerializeField] private ShadowCastingMode shadowCastingMode = ShadowCastingMode.Off;
 
-        private readonly FrameConstantsData[] _frameConstantsUpload = new FrameConstantsData[1]; // COLD ALLOC: FrameConstantsData[1] — reusable per-frame constant-buffer upload cache — owner: HectonMarineSnowRenderer
-        private readonly uint[] _indirectArgsUpload = new uint[4]; // COLD ALLOC: UInt32[4] — reusable indirect draw arguments upload cache — owner: HectonMarineSnowRenderer
+        private readonly FrameConstantsData[] _frameConstantsUpload = new FrameConstantsData[1]; // COLD ALLOC: FrameConstantsData[1] â€” reusable per-frame constant-buffer upload cache â€” owner: HectonMarineSnowRenderer
 
         private ParticleGpuData[] _bootstrapParticles;
         private GraphicsBuffer _particleBufferA;
         private GraphicsBuffer _particleBufferB;
         private GraphicsBuffer _flowFieldBuffer;
         private GraphicsBuffer _frameConstantsBuffer;
-        private GraphicsBuffer _indirectArgsBuffer;
         private Camera _targetCameraComponent;
         private Bounds _drawBounds;
         private int _kernelIndex = -1;
@@ -148,20 +145,26 @@ namespace Hecton8.Environment
         private void OnEnable()
         {
             ResolveTargetCamera();
+            HectonFloatingOrigin.RegisterListener(this);
             TryRegisterTick();
         }
 
         private void OnDisable()
         {
+            HectonFloatingOrigin.UnregisterListener(this);
             SetUnderwaterState(false, 0f, 0f, 1f, 0f);
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null && _registeredTick)
+            if (_registeredTick)
             {
-                tickManager.Unregister((ITickable)this);
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
                 _registeredTick = false;
             }
 
             ReleaseBuffers();
+        }
+
+        private void OnDestroy()
+        {
+            HectonFloatingOrigin.UnregisterListener(this);
         }
 
         /// <summary>
@@ -189,6 +192,32 @@ namespace Hecton8.Environment
             _lastDepth = math.max(0f, depth);
             _lastLightFactor = math.saturate(lightFactor);
             _lastSubmergeImpulse = math.saturate(submergeImpulse);
+        }
+
+        public void OnOriginShift(in OriginShiftEventData shiftData)
+        {
+            if (!isActiveAndEnabled || shiftData.ShiftOffset.sqrMagnitude <= 0.0001f)
+                return;
+
+            Vector3 runtimeOffset = -shiftData.ShiftOffset;
+            _flowFieldCenterWS += runtimeOffset;
+            if (_lastUploadedFlowFieldCenterWS != Vector3.zero)
+                _lastUploadedFlowFieldCenterWS += runtimeOffset;
+
+            _flowFieldUploadTimer = 0f;
+
+            if (!_buffersReady || _bootstrapParticles == null)
+                return;
+
+            ResolveTargetCamera();
+            if (targetCamera == null)
+                return;
+
+            int particleCount = math.max(64, maxParticles);
+            BootstrapParticles(particleCount);
+            GraphicsBufferUploadUtility.UploadArray(_particleBufferA, _bootstrapParticles, particleCount);
+            GraphicsBufferUploadUtility.UploadArray(_particleBufferB, _bootstrapParticles, particleCount);
+            _frameParity = 0;
         }
 
         public void Tick(float dt)
@@ -230,11 +259,10 @@ namespace Hecton8.Environment
 
         private void TryRegisterTick()
         {
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null || _registeredTick)
+            if (_registeredTick)
                 return;
 
-            tickManager.Register((ITickable)this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _registeredTick = true;
         }
 
@@ -255,26 +283,18 @@ namespace Hecton8.Environment
                 return;
             }
 
-            // COLD ALLOC: ParticleGpuData[maxParticles] — maxParticles * 64B bootstrap upload cache, required to seed both GPU ping-pong buffers without runtime allocations — owner: HectonMarineSnowRenderer
+            // COLD ALLOC: ParticleGpuData[maxParticles] â€” maxParticles * 64B bootstrap upload cache, required to seed both GPU ping-pong buffers without runtime allocations â€” owner: HectonMarineSnowRenderer
             _bootstrapParticles = new ParticleGpuData[clampedParticleCount];
-            // COLD ALLOC: GraphicsBuffer[maxParticles] — persistent marine-snow particle state ping-pong buffer A — owner: HectonMarineSnowRenderer
-            _particleBufferA = new GraphicsBuffer(GraphicsBuffer.Target.Structured, clampedParticleCount, ParticleStride);
-            // COLD ALLOC: GraphicsBuffer[maxParticles] — persistent marine-snow particle state ping-pong buffer B — owner: HectonMarineSnowRenderer
-            _particleBufferB = new GraphicsBuffer(GraphicsBuffer.Target.Structured, clampedParticleCount, ParticleStride);
-            // COLD ALLOC: GraphicsBuffer[1] — per-frame marine-snow constant buffer — owner: HectonMarineSnowRenderer
-            _frameConstantsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Constant, 1, FrameConstantsStride);
-            // COLD ALLOC: GraphicsBuffer[1] — indirect draw arguments for the marine-snow billboard pass — owner: HectonMarineSnowRenderer
-            _indirectArgsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, 1, IndirectArgsStride);
-
-            _indirectArgsUpload[0] = 6u;
-            _indirectArgsUpload[1] = (uint)clampedParticleCount;
-            _indirectArgsUpload[2] = 0u;
-            _indirectArgsUpload[3] = 0u;
-            _indirectArgsBuffer.SetData(_indirectArgsUpload);
-
+            // COLD ALLOC: GraphicsBuffer[maxParticles] â€” persistent marine-snow particle state ping-pong buffer A â€” owner: HectonMarineSnowRenderer
+            _particleBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<ParticleGpuData>(clampedParticleCount);
+            // COLD ALLOC: GraphicsBuffer[maxParticles] â€” persistent marine-snow particle state ping-pong buffer B â€” owner: HectonMarineSnowRenderer
+            _particleBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<ParticleGpuData>(clampedParticleCount);
+            // COLD ALLOC: GraphicsBuffer[1] â€” per-frame marine-snow constant buffer â€” owner: HectonMarineSnowRenderer
+            _frameConstantsBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<FrameConstantsData>(1);
+            // COLD ALLOC: GraphicsBuffer[1] â€” indirect draw arguments for the marine-snow billboard pass â€” owner: HectonMarineSnowRenderer
             BootstrapParticles(clampedParticleCount);
-            _particleBufferA.SetData(_bootstrapParticles);
-            _particleBufferB.SetData(_bootstrapParticles);
+            GraphicsBufferUploadUtility.UploadArray(_particleBufferA, _bootstrapParticles, clampedParticleCount);
+            GraphicsBufferUploadUtility.UploadArray(_particleBufferB, _bootstrapParticles, clampedParticleCount);
             _frameParity = 0;
             _buffersReady = true;
             _staticBindingsDirty = true;
@@ -359,12 +379,12 @@ namespace Hecton8.Environment
             if (_flowFieldBuffer == null || _flowFieldBuffer.count != requiredCount)
             {
                 ReleaseBuffer(ref _flowFieldBuffer);
-                // COLD ALLOC: GraphicsBuffer[flowVectors.Length] — ecosystem flow-field snapshot staging on GPU, sized to the authoritative bridge payload — owner: HectonMarineSnowRenderer
-                _flowFieldBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, requiredCount, sizeof(float) * 2);
+                // COLD ALLOC: GraphicsBuffer[flowVectors.Length] â€” ecosystem flow-field snapshot staging on GPU, sized to the authoritative bridge payload â€” owner: HectonMarineSnowRenderer
+                _flowFieldBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float2>(requiredCount);
                 _staticBindingsDirty = true;
             }
 
-            _flowFieldBuffer.SetData(flowVectors);
+            GraphicsBufferUploadUtility.UploadNativeArray(_flowFieldBuffer, flowVectors, requiredCount);
             _lastUploadedFlowFieldCenterWS = gridCenter;
             _flowFieldUploadTimer = math.max(0.05f, flowFieldUploadInterval);
         }
@@ -381,7 +401,7 @@ namespace Hecton8.Environment
             marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.ParticlesWriteId, _particleBufferB);
             if (_flowFieldBuffer != null)
                 marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.FlowFieldId, _flowFieldBuffer);
-            marineSnowCompute.SetConstantBuffer(ShaderIds.FrameConstantsId, _frameConstantsBuffer, 0, FrameConstantsStride);
+            marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.FrameConstantsId, _frameConstantsBuffer);
             marineSnowCompute.SetVector(
                 ShaderIds.DriftParamsId,
                 new Vector4(
@@ -397,7 +417,7 @@ namespace Hecton8.Environment
                     0.15f,
                     0f));
 
-            marineSnowMaterial.SetConstantBuffer(ShaderIds.FrameConstantsId, _frameConstantsBuffer, 0, FrameConstantsStride);
+            marineSnowMaterial.SetBuffer(ShaderIds.FrameConstantsId, _frameConstantsBuffer);
             marineSnowMaterial.SetVector(
                 ShaderIds.RenderParamsId,
                 new Vector4(
@@ -442,7 +462,7 @@ namespace Hecton8.Environment
                     activeFlag)
             };
 
-            _frameConstantsBuffer.SetData(_frameConstantsUpload);
+            GraphicsBufferUploadUtility.UploadArray(_frameConstantsBuffer, _frameConstantsUpload, 1);
             marineSnowCompute.SetVector(ShaderIds.FlowSynchronyParamsId, ResolveFlowSynchronyParams());
         }
 
@@ -481,17 +501,16 @@ namespace Hecton8.Environment
                 cameraPosition + new Vector3(0f, (verticalSpan.x + verticalSpan.y) * 0.5f, 0f),
                 new Vector3(outerRadius * 2f, verticalSize, outerRadius * 2f));
 
-            Graphics.DrawProceduralIndirect(
-                marineSnowMaterial,
-                _drawBounds,
-                MeshTopology.Triangles,
-                _indirectArgsBuffer,
-                0,
-                _targetCameraComponent,
-                null,
-                shadowCastingMode,
-                false,
-                gameObject.layer);
+            RenderParams renderParams = new RenderParams(marineSnowMaterial)
+            {
+                worldBounds = _drawBounds,
+                shadowCastingMode = shadowCastingMode,
+                receiveShadows = false,
+                layer = gameObject.layer,
+                camera = _targetCameraComponent,
+                lightProbeUsage = LightProbeUsage.Off
+            };
+            Graphics.RenderPrimitives(renderParams, MeshTopology.Triangles, 6, math.max(64, maxParticles));
         }
 
         private void ReleaseBuffers()
@@ -500,7 +519,6 @@ namespace Hecton8.Environment
             ReleaseBuffer(ref _particleBufferB);
             ReleaseBuffer(ref _flowFieldBuffer);
             ReleaseBuffer(ref _frameConstantsBuffer);
-            ReleaseBuffer(ref _indirectArgsBuffer);
             _buffersReady = false;
             _kernelIndex = -1;
             _bootstrapParticles = null;
@@ -529,3 +547,5 @@ namespace Hecton8.Environment
         }
     }
 }
+
+

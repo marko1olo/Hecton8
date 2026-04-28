@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
@@ -9,16 +9,23 @@ using System.IO;
 
 namespace CandiceAIforGames.AI
 {
-    [InitializeOnLoad]
     public class CandiceAutorun
     {
+        private const string SessionStartupKey = "CandiceAutorun.StartupHandled";
         static string storagePath;
         static CandiceAutorun()
         {
             storagePath = Application.persistentDataPath + "/candiceAutorun.txt";
-            if (InternalEditorUtility.inBatchMode || EditorApplication.isPlayingOrWillChangePlaymode)
+            if (InternalEditorUtility.inBatchMode ||
+                EditorApplication.isPlayingOrWillChangePlaymode ||
+                EditorApplication.isCompiling ||
+                EditorApplication.isUpdating)
                 return;
 
+            if (SessionState.GetBool(SessionStartupKey, false))
+                return;
+
+            SessionState.SetBool(SessionStartupKey, true);
             EditorApplication.delayCall += Update;
         }
         static void Update()
@@ -33,20 +40,12 @@ namespace CandiceAIforGames.AI
             {
                 object obj = LoadFromFile();
 
-                if (obj == null)
-                {
-                    LaunchStartupWindow();
-                }
-                else
+                if (obj != null)
                 {
                     int i = Convert.ToInt32(obj.ToString());
                     if (i == 1)
                     {
                         LaunchStartupWindow();
-                    }
-                    else
-                    {
-
                     }
                 }
             }

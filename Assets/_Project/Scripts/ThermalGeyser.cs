@@ -12,7 +12,7 @@ namespace Hecton8.Caves
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(CurrentVolume))]
-    public sealed class ThermalGeyser : MonoBehaviour, ITickable, IFixedTickable
+    public sealed class ThermalGeyser : MonoBehaviour, ITickable, IUpdatable, IFixedTickable
     {
         [Header("── Runtime Wiring ──────────────────")]
         [SerializeField]
@@ -242,34 +242,26 @@ namespace Hecton8.Caves
 
         private void TryRegister()
         {
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
             if (!_registeredTick)
             {
-                tickManager.Register((ITickable)this);
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
                 _registeredTick = true;
             }
 
             if (_registeredFixedTick)
                 return;
 
-            tickManager.Register((IFixedTickable)this);
+            GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
             _registeredFixedTick = true;
         }
 
         private void TryUnregister()
         {
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-            {
-                if (_registeredTick)
-                    tickManager.Unregister((ITickable)this);
+            if (_registeredTick)
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
 
-                if (_registeredFixedTick)
-                    tickManager.Unregister((IFixedTickable)this);
-            }
+            if (_registeredFixedTick)
+                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
 
             _registeredTick = false;
             _registeredFixedTick = false;

@@ -48,7 +48,6 @@ namespace Hecton8.Gameplay
         private float _cooldown;
         private float _nextFeedbackAt;
         private bool _secondaryLatched;
-        private readonly RaycastHit[] _targetHits = new RaycastHit[1]; // COLD ALLOC: stun checks only the nearest target per shot.
         private int _cachedAssessmentFrame = -1;
         private bool _cachedAssessmentValid;
         private StunAssessment _cachedAssessment;
@@ -311,22 +310,7 @@ namespace Hecton8.Gameplay
 
         private bool TryGetTargetHit(out RaycastHit hit)
         {
-            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
-                _cachedTransform.position,
-                _cachedTransform.forward,
-                _targetHits,
-                range,
-                targetMask,
-                QueryTriggerInteraction.Ignore);
-
-            if (hitCount > 0)
-            {
-                hit = _targetHits[0];
-                return true;
-            }
-
-            hit = default;
-            return false;
+            return TryResolveQueuedRaycast(_cachedTransform.position, _cachedTransform.forward, range, targetMask.value, QueryTriggerInteraction.Ignore, out hit);
         }
 
         private static StunAssessment BuildAssessment(FaunaBrain ai, StunTargetRuntime stunState)
@@ -533,7 +517,7 @@ namespace Hecton8.Gameplay
         }
     }
 
-    public sealed class StunTargetRuntime : MonoBehaviour, ITickable
+    public sealed class StunTargetRuntime : MonoBehaviour, ITickable, IUpdatable
     {
         private FaunaBrain _target;
         private float _remaining;
@@ -599,19 +583,19 @@ namespace Hecton8.Gameplay
 
         private void RegisterToTickManager()
         {
-            if (_registeredToTickManager || GameTickManager.Instance == null)
+            if (_registeredToTickManager)
                 return;
 
-            GameTickManager.Instance.Register((ITickable)this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _registeredToTickManager = true;
         }
 
         private void UnregisterFromTickManager()
         {
-            if (!_registeredToTickManager || GameTickManager.Instance == null)
+            if (!_registeredToTickManager)
                 return;
 
-            GameTickManager.Instance.Unregister((ITickable)this);
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _registeredToTickManager = false;
         }
     }

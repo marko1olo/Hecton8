@@ -9,7 +9,7 @@ namespace Hecton8.Caves
         private const string ShelfRootName = "_SedimentShelves";
         private static readonly int _BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int _ColorId = Shader.PropertyToID("_Color");
-        private static readonly MaterialPropertyBlock _ShelfPropertyBlock = new MaterialPropertyBlock(); // COLD ALLOC: shared shelf tint block.
+        private static MaterialPropertyBlock _ShelfPropertyBlock;
 
         public static void Build(
             Transform parent,
@@ -115,13 +115,24 @@ namespace Hecton8.Caves
 
             Color shelfColor = config.tint;
             shelfColor.a = Mathf.Clamp01(config.opacity);
-            _ShelfPropertyBlock.Clear();
-            renderer.GetPropertyBlock(_ShelfPropertyBlock);
-            _ShelfPropertyBlock.SetColor(_BaseColorId, shelfColor);
-            _ShelfPropertyBlock.SetColor(_ColorId, shelfColor);
-            renderer.SetPropertyBlock(_ShelfPropertyBlock);
+            MaterialPropertyBlock propertyBlock = GetShelfPropertyBlock();
+            propertyBlock.Clear();
+            renderer.GetPropertyBlock(propertyBlock);
+            propertyBlock.SetColor(_BaseColorId, shelfColor);
+            propertyBlock.SetColor(_ColorId, shelfColor);
+            renderer.SetPropertyBlock(propertyBlock);
             renderer.shadowCastingMode = ShadowCastingMode.Off;
             renderer.receiveShadows = true;
+        }
+
+        private static MaterialPropertyBlock GetShelfPropertyBlock()
+        {
+            if (_ShelfPropertyBlock != null)
+                return _ShelfPropertyBlock;
+
+            // COLD ALLOC: MaterialPropertyBlock[1] — shared shelf tint block — owner: CaveSedimentShelfRuntimeBuilder
+            _ShelfPropertyBlock = new MaterialPropertyBlock();
+            return _ShelfPropertyBlock;
         }
 
         private static int ResolveShelfCount(

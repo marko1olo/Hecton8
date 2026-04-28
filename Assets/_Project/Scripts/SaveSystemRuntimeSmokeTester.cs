@@ -350,7 +350,7 @@ namespace Hecton8.Dev
             for (int generation = 1; generation <= 8; generation++)
             {
                 string backupPath = SaveManager.GetBackupSaveFilePath(currentSlot, generation);
-                if (!ES3.FileExists(backupPath))
+                if (!File.Exists(Path.Combine(Application.persistentDataPath, backupPath)))
                     continue;
 
                 if (IsGenerationMarkedCorrupted(generation))
@@ -378,7 +378,7 @@ namespace Hecton8.Dev
 
         private void CorruptRelativePath(string relativePath)
         {
-            if (string.IsNullOrEmpty(relativePath) || !ES3.FileExists(relativePath))
+            if (string.IsNullOrEmpty(relativePath) || !File.Exists(Path.Combine(Application.persistentDataPath, relativePath)))
             {
                 LogVerbose($"Skip corruption, path missing: {relativePath}");
                 return;
@@ -396,7 +396,7 @@ namespace Hecton8.Dev
         private void AutoResolve()
         {
             if (saveManager == null)
-                saveManager = SaveManager.Instance != null ? SaveManager.Instance : FindAnyObjectByType<SaveManager>();
+                saveManager = SaveManager.Instance != null ? SaveManager.Instance : SaveManager.Instance;
         }
 
         private void LogVerbose(string message)

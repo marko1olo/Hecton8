@@ -1,0 +1,23 @@
+PlayerInventory.cs remaining ItemData seams:
+200 RemoveItem(ItemData item, int x, int y)
+222 RemoveOneItem(int anchorX, int anchorY) returns ItemData
+271 ConsumeOneItem resolves ItemData for consumable payload fields
+300 GetItemAt(int x, int y) returns ItemData
+310 CountTotal(ItemData item)
+320 CountAvailableTotal(ItemData item)
+369 ContainsItem(ItemData item)
+379 TryAddItem(ItemData item, int quantity = 1)
+397 TryAddItem(int) still resolves ItemData only for notification seam
+407 TryReserveQuantityForCraft(ItemData item, ...)
+535 ScavengeAttempt(ItemData item, ...)
+545 ScavengeAttempt(int) resolves ItemData only for event seam
+559 TryRemoveQuantity(ItemData item, int quantity)
+611 CountAnchors(ItemData item)
+805 HandleItemCollected(ItemData item, ...)
+829 TryAddItemInternal(..., ItemData notificationItem, ...)
+1055 TryBuildDescriptor(ItemData item, ...)
+1088 ResolveItemByHash(int itemHashId) returns ItemData
+1119 ComputeItemHash(ItemData item)
+
+InventoryGrid.cs remaining ItemData seams:
+none; file is numeric/native only.

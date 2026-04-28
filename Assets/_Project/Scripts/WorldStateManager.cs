@@ -5,6 +5,7 @@ using Hecton8.Core;
 using Hecton8.Interaction;
 using Hecton8.SaveSystem;
 using Hecton8.Scavenging;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -106,18 +107,18 @@ namespace Hecton8.World
             // COLD ALLOC: HashSet<string>[initialCapacity] — depleted node persistence set — owner: WorldStateManager
             _depletedNodeIds = new HashSet<string>(initialCapacity);
             // COLD ALLOC: HashSet<long>[initialCapacity] — depleted pickup persistence set — owner: WorldStateManager
-            _depletedPickupKeys = new HashSet<long>(Mathf.Max(64, initialCapacity));
+            _depletedPickupKeys = new HashSet<long>(math.max(64, initialCapacity));
             _depletedPickupChunkKeysByPickupKey.Clear();
         }
 
         private void OnEnable()
         {
-            SaveManager.Instance?.Register(this);
+            GlobalRegistry.Save?.Register(this);
         }
 
         private void OnDisable()
         {
-            SaveManager.Instance?.Unregister(this);
+            GlobalRegistry.Save?.Unregister(this);
         }
 
         private void OnDestroy()
@@ -270,7 +271,7 @@ namespace Hecton8.World
 
             if (dto.depletedNodeIds != null && dto.depletedCount > 0)
             {
-                int nodeCount = Mathf.Min(dto.depletedCount, dto.depletedNodeIds.Length);
+                int nodeCount = math.min(dto.depletedCount, dto.depletedNodeIds.Length);
                 for (int i = 0; i < nodeCount; i++)
                 {
                     string id = dto.depletedNodeIds[i];
@@ -437,23 +438,23 @@ namespace Hecton8.World
             if (dto.depletedPickupWords == null || dto.depletedPickupWordCount <= 0)
                 return;
 
-            int wordCount = Mathf.Min(dto.depletedPickupWordCount, dto.depletedPickupWords.Length);
+            int wordCount = math.min(dto.depletedPickupWordCount, dto.depletedPickupWords.Length);
             int chunkCount = dto.depletedPickupChunkKeys != null
-                ? Mathf.Min(dto.depletedPickupChunkCount, dto.depletedPickupChunkKeys.Length)
+                ? math.min(dto.depletedPickupChunkCount, dto.depletedPickupChunkKeys.Length)
                 : 0;
 
             if (chunkCount > 0 &&
                 dto.depletedPickupChunkWordStarts != null &&
                 dto.depletedPickupChunkWordCounts != null)
             {
-                chunkCount = Mathf.Min(chunkCount, dto.depletedPickupChunkWordStarts.Length, dto.depletedPickupChunkWordCounts.Length);
+                chunkCount = math.min(chunkCount, math.min(dto.depletedPickupChunkWordStarts.Length, dto.depletedPickupChunkWordCounts.Length));
 
                 for (int chunkIndex = 0; chunkIndex < chunkCount; chunkIndex++)
                 {
                     long chunkKey = dto.depletedPickupChunkKeys[chunkIndex];
-                    int wordStart = Mathf.Clamp(dto.depletedPickupChunkWordStarts[chunkIndex], 0, wordCount);
+                    int wordStart = math.clamp(dto.depletedPickupChunkWordStarts[chunkIndex], 0, wordCount);
                     int availableWordCount = wordCount - wordStart;
-                    int chunkWordCount = Mathf.Clamp(dto.depletedPickupChunkWordCounts[chunkIndex], 0, availableWordCount);
+                    int chunkWordCount = math.clamp(dto.depletedPickupChunkWordCounts[chunkIndex], 0, availableWordCount);
 
                     for (int wordIndex = 0; wordIndex < chunkWordCount; wordIndex++)
                     {

@@ -31,7 +31,7 @@ namespace Hecton8.Gameplay
     /// Deployable gravity trap that pulls nearby objects towards it.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class GravTrap : MonoBehaviour, ITickable, ISlowTickable
+    public sealed class GravTrap : MonoBehaviour, ITickable, IUpdatable, ISlowTickable
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — PULL SETTINGS
@@ -297,48 +297,32 @@ namespace Hecton8.Gameplay
         {
             if (_isRegisteredTick) return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-            {
-                tickManager.Register(this as ITickable);
-                _isRegisteredTick = true;
-            }
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+            _isRegisteredTick = true;
         }
 
         private void UnregisterFromTick()
         {
             if (!_isRegisteredTick) return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-            {
-                tickManager.Unregister(this as ITickable);
-                _isRegisteredTick = false;
-            }
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            _isRegisteredTick = false;
         }
 
         private void RegisterToSlowTick()
         {
             if (_isRegisteredSlowTick) return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-            {
-                tickManager.Register(this as ISlowTickable);
-                _isRegisteredSlowTick = true;
-            }
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
+            _isRegisteredSlowTick = true;
         }
 
         private void UnregisterFromSlowTick()
         {
             if (!_isRegisteredSlowTick) return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-            {
-                tickManager.Unregister(this as ISlowTickable);
-                _isRegisteredSlowTick = false;
-            }
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            _isRegisteredSlowTick = false;
         }
 
         // ══════════════════════════════════════════════════════════

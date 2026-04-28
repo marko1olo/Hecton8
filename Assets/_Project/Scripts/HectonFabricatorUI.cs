@@ -89,7 +89,7 @@ using Hecton8.Input;
 namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
-    public sealed class HectonFabricatorUI : ImmediateModeShapeDrawer, ITickable
+    public sealed class HectonFabricatorUI : ImmediateModeShapeDrawer, ITickable, IUpdatable
     {
         // ══════════════════════════════════════════════════════════
         //  STATIC — PRE-CACHED STRINGS (allocated once at class load)
@@ -309,11 +309,11 @@ namespace Hecton8.UI
                 playerTransform != null)
             {
                 if (hudCamera == null)
-                    hudCamera = playerTransform.GetComponentInChildren<Camera>(true);
+                    hudCamera = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera : playerTransform.GetComponent<Camera>());
 
                 playerInventory = playerTransform.GetComponent<PlayerInventory>();
                 if (playerInventory == null)
-                    playerInventory = playerTransform.GetComponentInChildren<PlayerInventory>(true);
+                    playerInventory = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.Inventory != null) ? Hecton8.Core.GlobalRegistry.Player.Inventory : playerTransform.GetComponent<PlayerInventory>());
             }
         }
 
@@ -647,11 +647,7 @@ namespace Hecton8.UI
             if (_tickRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register((ITickable)this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _tickRegistered = true;
         }
 
@@ -660,10 +656,7 @@ namespace Hecton8.UI
             if (!_tickRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister((ITickable)this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _tickRegistered = false;
         }
 
@@ -1531,23 +1524,7 @@ namespace Hecton8.UI
             if (_currentFabricator != null)
                 return _currentFabricator.CountAccessibleItem(item, playerInventory);
 
-            if (playerInventory == null || playerInventory.Grid == null) return 0;
-
-            InventoryGrid grid = playerInventory.Grid;
-            int cols = grid.Columns;
-            int rows = grid.Rows;
-            int count = 0;
-
-            for (int y = 0; y < rows; y++)
-            {
-                for (int x = 0; x < cols; x++)
-                {
-                    if (ReferenceEquals(grid.GetCell(x, y), item))
-                        count++;
-                }
-            }
-
-            return count;
+            return playerInventory != null ? playerInventory.CountTotal(item) : 0;
         }
 
         // ══════════════════════════════════════════════════════════

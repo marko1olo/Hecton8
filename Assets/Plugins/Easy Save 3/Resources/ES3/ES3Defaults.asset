@@ -44,7 +44,6 @@ MonoBehaviour:
     - Hecton8.Input
     - Hecton8.Input.Generated
     - Hecton8.World.Contracts
-    - Hecton8.World.Dots
     - JBooth.MicroSplat.Core
     - Lofelt.NiceVibrations
     - Lofelt.NiceVibrations.Demo
@@ -62,8 +61,6 @@ MonoBehaviour:
     - MoreMountains.Feedbacks.TextMeshPro
     - MoreMountains.Feedbacks.URP
     - MoreMountains.Tools
-    - NaughtyAttributes.Core
-    - NaughtyAttributes.Test
     - RealtimeCSG
     - ShapesRuntime
     - Tayx.Graphy

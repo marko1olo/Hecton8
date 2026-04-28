@@ -50,7 +50,7 @@ namespace Hecton8.EditorTools
         //  MENU COMMANDS
         // ══════════════════════════════════════════════════════════
 
-        [MenuItem("Hecton8/Audit/VRAM && Vitals Report")]
+        [MenuItem("Hecton8/Audit/VRAM and Vitals Report")]
         public static void GenerateReport()
         {
             var sb = new StringBuilder(8192); // COLD ALLOC: editor-only.

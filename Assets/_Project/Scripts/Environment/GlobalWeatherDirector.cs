@@ -8,7 +8,7 @@ namespace Hecton8.Environment
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Environment/Global Weather Director")]
     [DefaultExecutionOrder(-4550)]
-    public sealed class GlobalWeatherDirector : MonoBehaviour, ITickable, ISlowTickable, IWeatherService
+    public sealed class GlobalWeatherDirector : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IWeatherService
     {
         private const float CurrentSyncEpsilonSq = 0.000025f;
         private const float VectorNormalizeEpsilon = 0.0001f;
@@ -316,12 +316,8 @@ namespace Hecton8.Environment
             if (_registeredToTickManager)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager == null)
-                return;
-
-            gameTickManager.Register((ITickable)this);
-            gameTickManager.Register((ISlowTickable)this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
             _registeredToTickManager = true;
         }
 
@@ -330,13 +326,8 @@ namespace Hecton8.Environment
             if (!_registeredToTickManager)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager != null)
-            {
-                gameTickManager.Unregister((ITickable)this);
-                gameTickManager.Unregister((ISlowTickable)this);
-            }
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _registeredToTickManager = false;
         }
 
@@ -547,10 +538,7 @@ namespace Hecton8.Environment
 
         private float ResolveSlowTickInterval()
         {
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            return gameTickManager != null
-                ? math.max(0.05f, gameTickManager.SlowTickIntervalSeconds)
-                : 0.5f;
+            return 0.5f;
         }
 
         private float NextRandom01()
@@ -591,15 +579,15 @@ namespace Hecton8.Environment
             else
                 profile.currentDirection.Normalize();
 
-            profile.windSpeed = Mathf.Max(0f, profile.windSpeed);
-            profile.currentSpeed = Mathf.Max(0f, profile.currentSpeed);
-            profile.thermalIntensity = Mathf.Max(0f, profile.thermalIntensity);
-            profile.waveAmplitudeScale = Mathf.Max(0f, profile.waveAmplitudeScale);
-            profile.waveSteepnessScale = Mathf.Max(0f, profile.waveSteepnessScale);
-            profile.waveSpeedScale = Mathf.Max(0.01f, profile.waveSpeedScale);
-            profile.minHoldSeconds = Mathf.Max(1f, profile.minHoldSeconds);
-            profile.maxHoldSeconds = Mathf.Max(profile.minHoldSeconds, profile.maxHoldSeconds);
-            profile.transitionProbability = Mathf.Clamp01(profile.transitionProbability);
+            profile.windSpeed = math.max(0f, profile.windSpeed);
+            profile.currentSpeed = math.max(0f, profile.currentSpeed);
+            profile.thermalIntensity = math.max(0f, profile.thermalIntensity);
+            profile.waveAmplitudeScale = math.max(0f, profile.waveAmplitudeScale);
+            profile.waveSteepnessScale = math.max(0f, profile.waveSteepnessScale);
+            profile.waveSpeedScale = math.max(0.01f, profile.waveSpeedScale);
+            profile.minHoldSeconds = math.max(1f, profile.minHoldSeconds);
+            profile.maxHoldSeconds = math.max(profile.minHoldSeconds, profile.maxHoldSeconds);
+            profile.transitionProbability = math.saturate(profile.transitionProbability);
         }
 
         private static void SanitizeWave(ref WaveBandAuthoring band)
@@ -609,10 +597,10 @@ namespace Hecton8.Environment
             else
                 band.directionXZ.Normalize();
 
-            band.amplitude = Mathf.Max(0f, band.amplitude);
-            band.wavelength = Mathf.Max(0.01f, band.wavelength);
-            band.steepness = Mathf.Max(0f, band.steepness);
-            band.speedMultiplier = Mathf.Max(0.01f, band.speedMultiplier);
+            band.amplitude = math.max(0f, band.amplitude);
+            band.wavelength = math.max(0.01f, band.wavelength);
+            band.steepness = math.max(0f, band.steepness);
+            band.speedMultiplier = math.max(0.01f, band.speedMultiplier);
         }
     }
 }

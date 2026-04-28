@@ -1,0 +1,165 @@
+# REND_GPU_DRIVEN_ANIMATION_VAT.md
+## Technical Mandate — HECTON-8 Engine 
+---
+
+## §0 · CONTRACTS & IDENTITY
+
+[CONTRACT] Unity 6.0 (6000.4) pure GPU-driven Swarm Rendering architecture.
+[RULE] SkinnedMeshRenderer PERMANENTLY FORBIDDEN for background fauna (Boids/Swarms). CPU skinning for 5000+ entities = instant architectural failure on i3-10gen.
+[RULE] Swarm animation MUST execute exclusively via Vertex Animation Textures (VAT).
+[RULE] Rendering pipeline MUST route through `Graphics.RenderMeshIndirect` driven by Compute Shaders. Zero CPU draw calls per fish.
+[RULE] Unity 6 `GPU Resident Drawer` compatibility enforced globally. `BatchRendererGroup Variants` = `Keep All`.
+[FORBID] Updating Animator parameters per entity. Animator component banned on boid prefabs.
+[FORBID] `new ComputeBuffer()` per frame. Allocate once at scene init. Use Unity 6 `GraphicsBuffer` (Target = `Structured`).
+
+---
+
+## §1 · DATA ARCHITECTURE & VRAM PACKING
+
+### 1.1 BoidInstance Cache-Line Alignment[DATA] `BoidInstance` payload MUST fit exactly 32 bytes (2 instances per 64-byte L1 cache line). Expand/contract is forbidden.
+
+struct BoidInstance {
+  float3 Position;        // 12B: World-space origin-shifted position
+  uint   Rotation;        // 4B : Smallest-three Quaternion compression (10:10:10:2 format)
+  float  Scale;           // 4B : Uniform mesh scalar
+  uint   AnimPhaseSpeed;  // 4B : [half PhaseOffset (16-bit)] |[half SpeedMult (16-bit)]
+  uint   StateFlags;      // 4B : Bits 0-7: Species ID, Bits 8-15: ColorTint index, Bits 16-31: Reserved
+  uint   Pad;             // 4B : Unused. Reserved for bitwise physics layer flags.
+} // Total: 32 Bytes. Aligned.
+
+### 1.2 VAT Texture Layout
+[DATA] Dimensions: Width = VertexCount, Height = FrameCount.
+[DATA] VRAM Budget (LOD0): `RGBAHalf` (FP16) or tightly packed `RGBA32` for position offsets.
+[DATA] Normals (LOD0): Octahedron mapping encoded into Pos offset W channel (or dropped entirely).
+[DATA] Ambient Boids (LOD1/LOD2): Normal map discarded. Fallback to procedural flat shading for Deep Sea Noir silhouettes.
+
+---
+
+## §2 · HLOD & FRUSTUM CULLING (COMPUTE KERNEL)
+
+[FLOW] CPU dispatches Compute Shader (`CS_Main`) once per frame.
+[FLOW] CS reads `GraphicsBuffer _AllBoids`.
+[FLOW] CS evaluates Frustum + Distance. Outputs to `AppendStructuredBuffer _VisibleLOD0, _VisibleLOD1, _VisibleLOD2`.
+[FLOW] CS `InterlockedAdd` updates `_IndirectArgs` buffer for `DrawMeshInstancedIndirect`.
+
+### 2.1 Distance Culling Tiers
+LOD0 (< 20m) : Full VAT animation. High-poly mesh. Octahedron normal reconstruction.
+LOD1 (20m - 80m): Skip VAT normal reconstruction. Flat normal shading. Low-poly mesh.
+LOD2 (> 80m) : Billboard Impostor. Render 1 quad. Animate flipbook. Zero vertex offset.
+
+### 2.2 Bitwise Culling Kernel
+// ThreadGroup(64,1,1)
+uint id = DTid.x;
+if (id >= _MaxBoids) return;
+
+BoidInstance boid = _AllBoids[id];
+float dist = distance(boid.Position, _CameraPos);
+
+// Frustum cull (AABB sphere test against 6 planes)
+if (!IsWithinFrustum(boid.Position, boid.Scale * _CullRadius)) return;
+
+if (dist < 20.0f) {
+  _VisibleLOD0.Append(boid);
+  InterlockedAdd(_IndirectArgsLOD0[1], 1);
+} else if (dist < 80.0f) {
+  _VisibleLOD1.Append(boid);
+  InterlockedAdd(_IndirectArgsLOD1[1], 1);
+} else if (dist < 250.0f) {
+  _VisibleLOD2.Append(boid);
+  InterlockedAdd(_IndirectArgsLOD2[1], 1);
+}
+
+### 2.3 Culling Desync Prevention
+[SAFE] If Boid simulation frustum culls entity, GPU indirect args MUST immediately reflect count reduction. No ghost rendering.
+[RULE] `_IndirectArgsBuffer` indices [1] (instanceCount) MUST be zeroed via `ComputeShader` prior to Frustum Culling dispatch.
+[FORBID] CPU `GraphicsBuffer.SetData` for zeroing args. Latency bottleneck. Use dedicated initialization kernel `CS_ClearArgs`.
+
+---
+
+## §3 · SHADER MATH & VAT SAMPLING (HLSL KERNEL)
+
+### 3.1 Unpack Payload
+float speedMult   = f16tof32(instance.AnimPhaseSpeed & 0xFFFF);
+float phaseOffset = f16tof32(instance.AnimPhaseSpeed >> 16);
+
+### 3.2 Phase Math
+[MATH] Animation Phase: `phase = frac(_Time.y * speedMult * BaseFPS + phaseOffset)`
+[SAFE] Out-of-bounds VAT sampling prevention:
+`phase = clamp(phase, 0.5 / FrameCount, 1.0 - 0.5 / FrameCount)`
+
+### 3.3 UV Sampling
+[MATH] `u = (VertexID + 0.5) / VertexCount`
+[MATH] `v = phase`
+
+### 3.4 Vertex Displacement Kernel
+// 1. Sample VAT
+float4 vatPos = _VATPositionTex.SampleLevel(sampler_VATPositionTex, float2(u, v), 0);
+
+// 2. Decode Rotation
+float4 rotQuat = UnpackSmallestThree(instance.Rotation);
+
+// 3. Transform Offset (World Space)
+float3 rotatedOffset = RotateVectorByQuat(vatPos.xyz * instance.Scale, rotQuat);
+
+// 4. Inject
+v.vertex.xyz = instance.Position + rotatedOffset;
+
+### 3.5 Phase Offset Seed Injection
+[SENIOR_HACK] Prevent "synchronized swimming" artifact.
+`animPhaseOffset = hash11(InstanceID) * BaseFPS;` (Computed at spawn, written to `BoidInstance` buffer once. Read-only forever).
+
+---
+
+## §4 · UNITY 6000.4 OPTIMIZATION & PIPELINE INTEGRATION
+
+### 4.1 Global Pipeline Directives[SYS] Universal Render Pipeline (URP) Asset -> Rendering Path: `Forward+` (Mandatory for Unity 6 GPU Occlusion Culling compatibility).[SYS] Project Settings > Player > Other Settings -> Disable `Static Batching`.[SYS] Project Settings > Graphics -> `BatchRendererGroup Variants` = `Keep All`.
+[SYS] Window > Rendering > Occlusion Culling -> `GPU Occlusion Culling` = `Enabled`.
+
+### 4.2 Render Graph Compatibility
+[RULE] All custom Compute Shader textures/buffers handling intermediate VAT calculations MUST use Unity 6 Render Graph API memoryless attachments (`RenderGraph.CreateTexture` with `RenderGraphTextureDesc`).
+[FORBID] Legacy `RenderTexture.GetTemporary`.
+
+### 4.3 Depth Pre-Pass Binding
+[RULE] Ensure `_CameraDepthTexture` sample operates correctly under Forward+. Boid materials MUST include `DepthOnly` pass to write correctly to Z-buffer for GPU Resident Drawer hardware occlusion testing.
+
+---
+
+## §5 · HARDWARE SCALABILITY GUARD (MX350 / TIER_LOW)
+
+### 5.1 VRAM Atlas Packing
+[SCALE] MX350 Guard: Maximum VAT budget = 32MB total.
+[RULE] Multiple fish species MUST pack into single shared VAT atlas (e.g., 2048x2048).
+[MATH] Atlas V coordinate: `v_final = (SpeciesYOffset + v * SpeciesHeight) / AtlasHeight`
+
+### 5.2 Geometry Budgets
+TIER_LOW (MX350)  : LOD0 max distance = 10m. LOD1 max distance = 30m. LOD2 max = 100m. Maximum 2048 boids on-screen.
+TIER_ULTRA (RTX)  : LOD0 max distance = 50m. LOD1 max distance = 150m. LOD2 max = 500m. Maximum 32,768 boids on-screen.
+
+### 5.3 Memory Hierarchy
+[BUDGET] All boid structures (Simulation -> GPU Render) pre-allocated at `Awake`.
+`NativeArray<BoidInstance> _SimBuffer` (CPU Read/Write, Burst job updated).
+`GraphicsBuffer _RenderBuffer` (GPU Read, updated via AsyncUploadBuffer per simulation tick).
+[RULE] Ping-pong double buffering on `_RenderBuffer` (Buffer A rendering, Buffer B receiving CPU Burst DMA transfer).
+
+---
+
+## §6 · FAILURE MODES & EDGE CASES
+
+[SAFE] Floating Origin Shift:
+`FloatingOrigin.OnShift` triggers immediately -> CPU updates `_RenderBuffer` position offsets via fast Burst job before next `CS_Main` dispatch. Do NOT lerp. Hard teleport only.
+
+[SAFE] GPU Buffer Resize Desync:
+If spawn event exceeds `_MaxBoids` capacity -> Reallocate `_AllBoids` buffer, increment capacity by x1.5, invoke `SetData` copy, rebind to Compute Material and CS kernels simultaneously. Drop 1 frame if necessary to guarantee thread safety.
+
+[SAFE] NaNs in VAT Generation:
+Baking tools (Houdini/Blender) occasionally output NaNs for collapsed LOD vertices.
+VAT Import script MUST scrub texture via AssetPostprocessor, replacing `NaN` with `float3(0,0,0)`.
+
+---
+
+## §7 · INTEGRATION CHECKLIST (VALIDATION)
+
+[BOOT] Assert `GraphicsBuffer.Target.Structured` support.
+[BOOT] Validate BoidInstance size `sizeof(BoidInstance) == 32`.
+[BOOT] Assert URP Asset `GPU Occlusion` is active.[RUNTIME] Frame Debugger Verification: Swarm rendering MUST appear as `DrawMeshInstancedIndirect`. Total CPU Draw Calls for 10,000 boids = 3. (LOD0, LOD1, LOD2).
+[RUNTIME] Profiler verification: CPU skinning cost MUST = 0.0ms.

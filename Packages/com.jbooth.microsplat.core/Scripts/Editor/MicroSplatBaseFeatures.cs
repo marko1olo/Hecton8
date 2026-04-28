@@ -1,4 +1,4 @@
-﻿//////////////////////////////////////////////////////
+//////////////////////////////////////////////////////
 // MicroSplat
 // Copyright (c) Jason Booth
 //////////////////////////////////////////////////////
@@ -12,7 +12,6 @@ using System.Collections.Generic;
 
 namespace JBooth.MicroSplat
 {
-   [InitializeOnLoad]
    public class MicroSplatBaseFeatures : FeatureDescriptor
    {
       public override int DisplaySortOrder()

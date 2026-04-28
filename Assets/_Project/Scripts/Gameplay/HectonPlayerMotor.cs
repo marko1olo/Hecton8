@@ -12,6 +12,7 @@ namespace Hecton8.Gameplay
     public sealed class HectonPlayerMotor : MonoBehaviour, IMotorForces
     {
         private const float MinVectorMagnitudeSq = 0.000001f;
+        private const int MaxSlideSweepIterations = 2;
 
         private Rigidbody _body;
         private CapsuleCollider _capsule;
@@ -197,8 +198,42 @@ namespace Hecton8.Gameplay
             float skinWidth,
             out RaycastHit blockingHit)
         {
-            blockingHit = default;
             if (_body == null || _capsule == null)
+            {
+                blockingHit = default;
+                return false;
+            }
+
+            ResolveCapsulePoints(_body, _capsule, 0f, out Vector3 point1, out Vector3 point2, out float radius);
+            return TrySweepGatedMove(
+                displacement,
+                layerMask,
+                skinWidth,
+                point1,
+                point2,
+                radius,
+                ResolveSelfColliderInstanceId(),
+                out blockingHit,
+                out _);
+        }
+
+        /// <summary>
+        /// Applies a sweep-gated move using caller-supplied capsule metrics to avoid transform traversal in hot paths.
+        /// </summary>
+        public bool TrySweepGatedMove(
+            Vector3 displacement,
+            int layerMask,
+            float skinWidth,
+            Vector3 capsulePoint1,
+            Vector3 capsulePoint2,
+            float capsuleRadius,
+            int selfColliderInstanceId,
+            out RaycastHit blockingHit,
+            out Vector3 resolvedPosition)
+        {
+            blockingHit = default;
+            resolvedPosition = _body != null ? _body.position : Vector3.zero;
+            if (_body == null)
                 return false;
 
             if (!IsFiniteNonZero(displacement))
@@ -208,44 +243,63 @@ namespace Hecton8.Gameplay
             if (distance <= 0.0001f)
                 return true;
 
-            Vector3 direction = displacement / distance;
-            ResolveCapsulePoints(_body, _capsule, 0f, out Vector3 point1, out Vector3 point2, out float radius);
-            int hitCount = UnityEngine.Physics.CapsuleCastNonAlloc(
-                point1,
-                point2,
-                radius,
-                direction,
-                _sweepHitBuffer,
-                distance + skinWidth,
-                layerMask,
-                QueryTriggerInteraction.Ignore);
+            Vector3 currentPosition = _body.position;
+            Vector3 currentPoint1 = capsulePoint1;
+            Vector3 currentPoint2 = capsulePoint2;
+            Vector3 remainingDisplacement = displacement;
+            Vector3 accumulatedDisplacement = Vector3.zero;
+            bool blocked = false;
+            blockingHit = default;
 
-            float nearestDistance = float.MaxValue;
-            int nearestIndex = -1;
-            for (int i = 0; i < hitCount; i++)
+            for (int iteration = 0; iteration < MaxSlideSweepIterations; iteration++)
             {
-                RaycastHit hit = _sweepHitBuffer[i];
-                Collider hitCollider = hit.collider;
-                if (hitCollider == null || hitCollider.attachedRigidbody == _body)
-                    continue;
+                float remainingDistance = remainingDisplacement.magnitude;
+                if (remainingDistance <= 0.0001f)
+                    break;
 
-                if (hit.distance < nearestDistance)
+                Vector3 direction = remainingDisplacement / remainingDistance;
+                if (!TryFindNearestBlockingHit(
+                        currentPoint1,
+                        currentPoint2,
+                        capsuleRadius,
+                        direction,
+                        remainingDistance + skinWidth,
+                        layerMask,
+                        selfColliderInstanceId,
+                        out RaycastHit nearestHit))
                 {
-                    nearestDistance = hit.distance;
-                    nearestIndex = i;
+                    accumulatedDisplacement += remainingDisplacement;
+                    currentPosition += remainingDisplacement;
+                    break;
                 }
+
+                blocked = true;
+                if (blockingHit.collider == null)
+                    blockingHit = nearestHit;
+
+                float safeDistance = math.max(0f, nearestHit.distance - skinWidth);
+                Vector3 advance = direction * safeDistance;
+                if (advance.sqrMagnitude > MinVectorMagnitudeSq)
+                {
+                    accumulatedDisplacement += advance;
+                    currentPosition += advance;
+                }
+
+                Vector3 slideDisplacement = Vector3.ProjectOnPlane(remainingDisplacement - advance, nearestHit.normal);
+                if (slideDisplacement.sqrMagnitude <= MinVectorMagnitudeSq)
+                    break;
+
+                Vector3 capsuleOffset = currentPosition - _body.position;
+                currentPoint1 = capsulePoint1 + capsuleOffset;
+                currentPoint2 = capsulePoint2 + capsuleOffset;
+                remainingDisplacement = slideDisplacement;
             }
 
-            if (nearestIndex < 0)
-            {
-                MovePosition(_body.position + displacement);
+            resolvedPosition = _body.position + accumulatedDisplacement;
+            MovePosition(resolvedPosition);
+
+            if (!blocked)
                 return true;
-            }
-
-            blockingHit = _sweepHitBuffer[nearestIndex];
-            float safeDistance = math.max(0f, blockingHit.distance - skinWidth);
-            if (safeDistance > 0.0001f)
-                MovePosition(_body.position + direction * safeDistance);
 
             ProjectLinearVelocityOnPlane(blockingHit.normal);
             return false;
@@ -311,10 +365,66 @@ namespace Hecton8.Gameplay
             return math.all(math.isfinite(value3)) && math.lengthsq(value3) > MinVectorMagnitudeSq;
         }
 
+#pragma warning disable CS0618
+        private static int GetHitColliderInstanceId(in RaycastHit hit)
+        {
+            return hit.colliderInstanceID;
+        }
+#pragma warning restore CS0618
+
+        private bool TryFindNearestBlockingHit(
+            Vector3 capsulePoint1,
+            Vector3 capsulePoint2,
+            float capsuleRadius,
+            Vector3 direction,
+            float distance,
+            int layerMask,
+            int selfColliderInstanceId,
+            out RaycastHit nearestHit)
+        {
+            nearestHit = default;
+            int hitCount = UnityEngine.Physics.CapsuleCastNonAlloc(
+                capsulePoint1,
+                capsulePoint2,
+                math.max(0.01f, capsuleRadius),
+                direction,
+                _sweepHitBuffer,
+                distance,
+                layerMask,
+                QueryTriggerInteraction.Ignore);
+
+            float nearestDistance = float.MaxValue;
+            int nearestIndex = -1;
+            for (int i = 0; i < hitCount; i++)
+            {
+                RaycastHit hit = _sweepHitBuffer[i];
+                int hitColliderInstanceId = GetHitColliderInstanceId(in hit);
+                if (hitColliderInstanceId == 0 || hitColliderInstanceId == selfColliderInstanceId)
+                    continue;
+
+                if (hit.distance < nearestDistance)
+                {
+                    nearestDistance = hit.distance;
+                    nearestIndex = i;
+                }
+            }
+
+            if (nearestIndex < 0)
+                return false;
+
+            nearestHit = _sweepHitBuffer[nearestIndex];
+            return true;
+        }
+
         internal static Vector3 SafeVelocity(Vector3 velocity, Vector3 fallback = default)
         {
             float3 velocity3 = new float3(velocity.x, velocity.y, velocity.z);
             return math.all(math.isfinite(velocity3)) ? velocity : fallback;
+        }
+
+        private int ResolveSelfColliderInstanceId()
+        {
+            return _capsule != null ? unchecked((int)EntityId.ToULong(_capsule.GetEntityId())) : 0;
         }
 
         private Vector3 ClampTorqueByAngularAcceleration(Vector3 worldTorque, float maxAngularAcceleration)

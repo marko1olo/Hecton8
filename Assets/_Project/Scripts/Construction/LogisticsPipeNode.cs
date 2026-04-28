@@ -2,6 +2,7 @@ using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Items;
 using Hecton8.Power;
+using Unity.Mathematics;
 using Hecton8.SaveSystem;
 using UnityEngine;
 
@@ -18,6 +19,7 @@ namespace Hecton8.Construction
     {
         private const float SlowTickDeltaTime = 0.5f;
         private const float PositionRefreshEpsilonSqr = 0.0004f;
+        private static readonly Color PipeSplineColor = new Color(0.30f, 0.82f, 0.95f, 0.88f);
 
         private static int s_NextReservationId = 1;
 
@@ -62,12 +64,18 @@ namespace Hecton8.Construction
 
         private PowerNode _powerNode;
         private Transform _cachedTransform;
+        private Transform _cachedSourceTransform;
+        private Transform _cachedDestinationTransform;
         private bool _registered;
         private bool _hasPower = true;
         private float _exportTimer;
         private int _activeReservationId;
+        private int _pipeLinkId;
         private ItemData _inFlightItem;
         private float _transitRemaining;
+        private float _cachedPathDistanceMeters;
+        private Vector3 _cachedSourcePosition;
+        private Vector3 _cachedDestinationPosition;
         private Vector3 _lastSourcePosition;
         private Vector3 _lastDestinationPosition;
 
@@ -79,11 +87,14 @@ namespace Hecton8.Construction
         {
             _cachedTransform = transform;
             _powerNode = GetComponent<PowerNode>();
+            _pipeLinkId = GetInstanceID();
+            RefreshEndpointCache(true);
         }
 
         private void OnEnable()
         {
             TryRegister();
+            RefreshEndpointCache(true);
             RefreshCableVisuals(true);
         }
 
@@ -107,6 +118,7 @@ namespace Hecton8.Construction
             _debugHasPower = true;
             _exportTimer = 0f;
             TryRegister();
+            RefreshEndpointCache(true);
             RefreshCableVisuals(true);
         }
 
@@ -122,6 +134,7 @@ namespace Hecton8.Construction
 
         public void SlowTick()
         {
+            RefreshEndpointCache(false);
             RefreshCableVisuals(false);
 
             if (_inFlightItem != null)
@@ -149,7 +162,7 @@ namespace Hecton8.Construction
 
         internal void PopulateSaveData(ref ModuleDTO dto)
         {
-            dto.pipeExportTimerSeconds = Mathf.Max(0f, _exportTimer);
+            dto.pipeExportTimerSeconds = math.max(0f, _exportTimer);
             if (_inFlightItem == null)
                 return;
 
@@ -165,14 +178,14 @@ namespace Hecton8.Construction
 
             float duration = ResolveTransitDuration();
             dto.pipeTransitProgress = duration > 0.0001f
-                ? Mathf.Clamp01(1f - (_transitRemaining / duration))
+                ? math.saturate(1f - (_transitRemaining / duration))
                 : 1f;
         }
 
         internal void RestoreFromSaveData(ModuleDTO dto, ItemCatalog itemCatalog)
         {
             ClearInFlightState();
-            _exportTimer = Mathf.Clamp(dto.pipeExportTimerSeconds, 0f, Mathf.Max(exportIntervalSeconds, SlowTickDeltaTime));
+            _exportTimer = math.clamp(dto.pipeExportTimerSeconds, 0f, math.max(exportIntervalSeconds, SlowTickDeltaTime));
 
             if (itemCatalog == null || string.IsNullOrWhiteSpace(dto.pipeInFlightItemId) || dto.pipeInFlightAmount <= 0)
                 return;
@@ -182,7 +195,7 @@ namespace Hecton8.Construction
                 return;
 
             _inFlightItem = item;
-            _transitRemaining = Mathf.Max(0f, ResolveTransitDuration() * (1f - Mathf.Clamp01(dto.pipeTransitProgress)));
+            _transitRemaining = math.max(0f, ResolveTransitDuration() * (1f - math.saturate(dto.pipeTransitProgress)));
             _debugInFlightItemId = item.PersistentId;
             _debugTransitRemaining = _transitRemaining;
         }
@@ -203,19 +216,19 @@ namespace Hecton8.Construction
 
         private void TryRegister()
         {
-            if (_registered || GameTickManager.Instance == null)
+            if (_registered)
                 return;
 
-            GameTickManager.Instance.Register((ISlowTickable)this);
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
             _registered = true;
         }
 
         private void TryUnregister()
         {
-            if (!_registered || GameTickManager.Instance == null)
+            if (!_registered)
                 return;
 
-            GameTickManager.Instance.Unregister((ISlowTickable)this);
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _registered = false;
         }
 
@@ -292,20 +305,24 @@ namespace Hecton8.Construction
 
         private float ResolveTransitDuration()
         {
+            RefreshEndpointCache(false);
             if (sourceCrate == null || destinationCrate == null)
                 return SlowTickDeltaTime;
 
-            float distance = Vector3.Distance(sourceCrate.transform.position, destinationCrate.transform.position);
-            return Mathf.Max(SlowTickDeltaTime, distance / Mathf.Max(0.1f, transitSpeedMetersPerSecond));
+            return math.max(SlowTickDeltaTime, _cachedPathDistanceMeters / math.max(0.1f, transitSpeedMetersPerSecond));
         }
 
         private void RefreshCableVisuals(bool force)
         {
-            if (cableRenderer == null)
+            DisableLegacyCableRenderer();
+            if (sourceCrate == null || destinationCrate == null || ReferenceEquals(sourceCrate, destinationCrate))
+            {
+                ConnectionSplineBatchRenderer.RemovePipeLink(_pipeLinkId);
                 return;
+            }
 
-            Vector3 sourcePosition = ResolveSourcePoint();
-            Vector3 destinationPosition = ResolveDestinationPoint();
+            Vector3 sourcePosition = _cachedSourcePosition;
+            Vector3 destinationPosition = _cachedDestinationPosition;
             bool moved = force ||
                          (sourcePosition - _lastSourcePosition).sqrMagnitude > PositionRefreshEpsilonSqr ||
                          (destinationPosition - _lastDestinationPosition).sqrMagnitude > PositionRefreshEpsilonSqr;
@@ -315,29 +332,31 @@ namespace Hecton8.Construction
 
             _lastSourcePosition = sourcePosition;
             _lastDestinationPosition = destinationPosition;
-            cableRenderer.positionCount = 2;
-            cableRenderer.SetPosition(0, sourcePosition);
-            cableRenderer.SetPosition(1, destinationPosition);
-            cableRenderer.enabled = true;
+            ConnectionSplineBatchRenderer.SubmitPipeLink(_pipeLinkId, sourcePosition, destinationPosition, PipeSplineColor);
         }
 
-        private Vector3 ResolveSourcePoint()
+        private void RefreshEndpointCache(bool force)
         {
-            if (sourceCrate != null)
-                return sourceCrate.transform.position;
+            Transform sourceTransform = sourceCrate != null ? sourceCrate.transform : _cachedTransform;
+            Transform destinationTransform = destinationCrate != null ? destinationCrate.transform : _cachedTransform;
+            if (force || _cachedSourceTransform != sourceTransform)
+                _cachedSourceTransform = sourceTransform;
 
-            return _cachedTransform != null ? _cachedTransform.position : transform.position;
-        }
+            if (force || _cachedDestinationTransform != destinationTransform)
+                _cachedDestinationTransform = destinationTransform;
 
-        private Vector3 ResolveDestinationPoint()
-        {
-            if (destinationCrate != null)
-                return destinationCrate.transform.position;
-
-            return _cachedTransform != null ? _cachedTransform.position : transform.position;
+            _cachedSourcePosition = _cachedSourceTransform != null ? _cachedSourceTransform.position : Vector3.zero;
+            _cachedDestinationPosition = _cachedDestinationTransform != null ? _cachedDestinationTransform.position : _cachedSourcePosition;
+            _cachedPathDistanceMeters = math.distance(_cachedSourcePosition, _cachedDestinationPosition);
         }
 
         private void ClearCableVisuals()
+        {
+            ConnectionSplineBatchRenderer.RemovePipeLink(_pipeLinkId);
+            DisableLegacyCableRenderer();
+        }
+
+        private void DisableLegacyCableRenderer()
         {
             if (cableRenderer == null)
                 return;
@@ -350,7 +369,7 @@ namespace Hecton8.Construction
         {
             PowerGrid grid = _powerNode != null ? _powerNode.Grid : null;
             if (grid != null)
-                grid.UpdateBalance();
+                grid.MarkDirty();
         }
 
         private static int GetNextReservationId()

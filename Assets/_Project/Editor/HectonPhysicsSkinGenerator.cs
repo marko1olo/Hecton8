@@ -51,7 +51,7 @@ public class HectonPhysicsSkinGenerator : EditorWindow
     // Scroll
     private Vector2 scrollPos;
 
-    [MenuItem("Hecton/Physics Skin Generator %#p")]
+    [MenuItem("Hecton/Physics Skin Generator")]
     public static void ShowWindow()
     {
         var w = GetWindow<HectonPhysicsSkinGenerator>("⛏ Physics Skin");

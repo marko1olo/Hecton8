@@ -106,11 +106,11 @@ namespace Hecton8.UI
         {
             if (pauseMenu == null)
                 pauseMenu = GetComponentInParent<PauseMenuController>();
-            labelFont = ResolveReadableFont(labelFont);
+            labelFont = LocalizedFontResolver.ResolveReadableFont(labelFont);
             if (bindingFont == null)
                 bindingFont = labelFont;
             else
-                bindingFont = ResolveReadableFont(bindingFont);
+                bindingFont = LocalizedFontResolver.ResolveReadableFont(bindingFont);
 
             _rows = BuildDefaultRows(); // COLD ALLOC: RebindRow[15] — default rebinding rows — owner: PauseControlsPanel
             EnsureBuilt(); // COLD ALLOC: Image[45] + TextMeshProUGUI[30] — UI elements — owner: PauseControlsPanel
@@ -162,8 +162,8 @@ namespace Hecton8.UI
         public void Configure(PauseMenuController owner, TMP_FontAsset labels, TMP_FontAsset bindings)
         {
             pauseMenu = owner;
-            labelFont = ResolveReadableFont(labels);
-            bindingFont = ResolveReadableFont(bindings != null ? bindings : labelFont);
+            labelFont = LocalizedFontResolver.ResolveReadableFont(labels);
+            bindingFont = LocalizedFontResolver.ResolveReadableFont(bindings != null ? bindings : labelFont);
         }
 
         /// <summary>
@@ -967,7 +967,7 @@ namespace Hecton8.UI
             if (preferred != null && !IsNumericOnlyFont(preferred))
                 return preferred;
 
-            TMP_FontAsset[] fonts = Resources.FindObjectsOfTypeAll<TMP_FontAsset>();
+            TMP_FontAsset[] fonts = System.Array.Empty<TMP_FontAsset>();
             for (int i = 0; i < fonts.Length; i++)
             {
                 TMP_FontAsset candidate = fonts[i];
@@ -982,7 +982,7 @@ namespace Hecton8.UI
                 }
             }
 
-            return TMP_Settings.defaultFontAsset;
+            return LocalizedFontResolver.ResolveReadableFont(preferred);
         }
 
         private static bool IsNumericOnlyFont(TMP_FontAsset font)

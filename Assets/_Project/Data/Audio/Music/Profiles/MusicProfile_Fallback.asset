@@ -1,4 +1,4 @@
-﻿%YAML 1.1
+%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!114 &11400000
 MonoBehaviour:
@@ -23,11 +23,11 @@ MonoBehaviour:
   _shortTrackCooldownSeconds: 80
   _localCalmWeight: 50
   _localTenseWeight: 50
-  _allowCrossTensionMix: false
+  _allowCrossTensionMix: 0
   _crossTensionMixChance: 0
   _longRepeatHorizon: 2
   _shortRepeatHorizon: 2
-  _calmLongTracks: 
+  _calmLongTracks:
   - _cueId: music.ambient_dlinni_1_sub_bass_throb
     _clip: {fileID: 8300000, guid: 873eecfdae0703744963096d4b3755e1, type: 3}
     _volume: 0.794
@@ -70,7 +70,7 @@ MonoBehaviour:
     _weight: 1
     _role: 0
     _tension: 0.34
-  _tenseLongTracks: 
+  _tenseLongTracks:
   - _cueId: music.ambient_deep_1_underwater_muffled_silence
     _clip: {fileID: 8300000, guid: 2120a917b8f58f5419996f894b1ff0f5, type: 3}
     _volume: 1
@@ -95,7 +95,7 @@ MonoBehaviour:
     _weight: 1
     _role: 0
     _tension: 0.68
-  _calmShortTracks: 
+  _calmShortTracks:
   - _cueId: music.ambient_korotki_1_sub_bass_throb
     _clip: {fileID: 8300000, guid: 29d4affbaac6d784e9046c6117145790, type: 3}
     _volume: 0.724
@@ -114,7 +114,7 @@ MonoBehaviour:
     _weight: 1
     _role: 1
     _tension: 0.4
-  _tenseShortTracks: 
+  _tenseShortTracks:
   - _cueId: music.danger_zatmenie_1_distant_metallic_groan
     _clip: {fileID: 8300000, guid: 5d1593e1d1e1cc341847c32c4a3c3f4c, type: 3}
     _volume: 0.917
@@ -127,7 +127,7 @@ MonoBehaviour:
     _weight: 1
     _role: 3
     _tension: 0.9
-  _discoveryStingers: 
+  _discoveryStingers:
   - _cueId: music.stinger_discovery_1_the_sunken_gate
     _clip: {fileID: 8300000, guid: 81b174c662ccc04439985601bf432933, type: 3}
     _volume: 0.917
@@ -164,7 +164,7 @@ MonoBehaviour:
     _weight: 1
     _role: 4
     _tension: 0.5
-  _dangerStingers: 
+  _dangerStingers:
   - _cueId: music.stinger_dangerous_1_iron_teeth
     _clip: {fileID: 8300000, guid: ef4fb939718b1124daf5bbdcf98c8ed8, type: 3}
     _volume: 0.917
@@ -177,7 +177,7 @@ MonoBehaviour:
     _weight: 1
     _role: 5
     _tension: 0.95
-  _recoveryStingers: 
+  _recoveryStingers:
   - _cueId: music.stinger_being_saved_1release_at_depth
     _clip: {fileID: 8300000, guid: 2cee222960dc8d54098777e03cbd6adc, type: 3}
     _volume: 0.917
@@ -196,14 +196,14 @@ MonoBehaviour:
     _weight: 1
     _role: 6
     _tension: 0.22
-  _calmBleedProfiles: 
+  _calmBleedProfiles:
   - _profile: {fileID: 11400000, guid: 5c06f44782ad09b46930905adc0afd58, type: 2}
     _weight: 10
   - _profile: {fileID: 11400000, guid: 7425e2778fc51b7479d751c2041d8989, type: 2}
     _weight: 10
   - _profile: {fileID: 11400000, guid: 519c105bce6086e48b69182e2951ca40, type: 2}
     _weight: 10
-  _tenseBleedProfiles: 
+  _tenseBleedProfiles:
   - _profile: {fileID: 11400000, guid: 519c105bce6086e48b69182e2951ca40, type: 2}
     _weight: 10
   - _profile: {fileID: 11400000, guid: f336cbafe44b5ae4bb4d4dc08d358e74, type: 2}

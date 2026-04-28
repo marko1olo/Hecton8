@@ -1,11 +1,13 @@
 using Hecton.Localization;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Input;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem.UI;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -16,7 +18,7 @@ namespace Hecton.UI.MainMenu
     /// save slot generation, and async scene loading.
     /// All UI text is driven through LocalizationManager.
     /// </summary>
-    public sealed class MainMenuController : MonoBehaviour, ITickable
+    public sealed class MainMenuController : MonoBehaviour, ITickable, IUpdatable
     {
         private enum PanelTransitionState
         {
@@ -86,6 +88,8 @@ namespace Hecton.UI.MainMenu
         private CanvasGroup _transitionFromPanel;
         private CanvasGroup _transitionToPanel;
         private CanvasGroup _currentPanel;
+        private InputManager _inputManager;
+        private bool _cancelRequested;
         private PanelTransitionState _panelTransitionState;
 
 
@@ -99,6 +103,7 @@ namespace Hecton.UI.MainMenu
                 return;
             }
 
+            BootstrapStatus.MarkMainMenuReached();
             AutoWireSceneReferences();
             ConfigureAdaptiveLabels();
             ValidateReferences();
@@ -128,6 +133,8 @@ namespace Hecton.UI.MainMenu
             TryRegisterToTickManager();
             _lastUnscaledTickTime = Time.unscaledTime;
             BlockCancelInputBriefly();
+            EnsureInputSystemEventRouting();
+            BindMenuInput();
             LocalizationManager.OnLanguageChanged += OnLanguageChanged;
             
             // Subscribe to save/load events for UI feedback
@@ -143,6 +150,8 @@ namespace Hecton.UI.MainMenu
 
         private void OnDisable()
         {
+            UnbindMenuInput();
+
             // TASK 31: Null-safe event unsubscription in OnDisable
             if (LocalizationManager.Instance != null)
                 LocalizationManager.OnLanguageChanged -= OnLanguageChanged;
@@ -360,7 +369,8 @@ namespace Hecton.UI.MainMenu
             if (group == null)
                 return null;
 
-            return group.GetComponentInChildren<TMP_Text>(true);
+            TMP_Text label;
+            return TryResolveDescendantComponent(group.transform, out label) ? label : null;
         }
 
         private static CanvasGroup ResolveCanvasGroup(CanvasGroup current, Transform root, string objectName)
@@ -404,7 +414,26 @@ namespace Hecton.UI.MainMenu
             if (button == null)
                 return null;
 
-            return button.GetComponentInChildren<TMP_Text>(true);
+            TMP_Text label;
+            return TryResolveDescendantComponent(button.transform, out label) ? label : null;
+        }
+
+        private static bool TryResolveDescendantComponent<T>(Transform root, out T component) where T : Component
+        {
+            component = null;
+            if (root == null)
+                return false;
+
+            if (root.TryGetComponent(out component))
+                return true;
+
+            for (int i = 0; i < root.childCount; i++)
+            {
+                if (TryResolveDescendantComponent(root.GetChild(i), out component))
+                    return true;
+            }
+
+            return false;
         }
 
         private static Transform FindDeepChild(Transform parent, string childName)
@@ -761,8 +790,10 @@ namespace Hecton.UI.MainMenu
                 _isSceneLoadInFlight ||
                 _isSaveLoadBusy ||
                 Time.unscaledTime < _cancelInputBlockedUntil ||
-                !Input.GetKeyDown(KeyCode.Escape))
+                !_cancelRequested)
                 return;
+
+            _cancelRequested = false;
 
             if (_currentPanel == settingsGroup)
             {
@@ -809,6 +840,75 @@ namespace Hecton.UI.MainMenu
         private void BlockCancelInputBriefly()
         {
             _cancelInputBlockedUntil = Time.unscaledTime + CancelInputDebounceSeconds;
+            _cancelRequested = false;
+        }
+
+        private void BindMenuInput()
+        {
+            InputManager inputManager = InputManager.Instance;
+            if (ReferenceEquals(_inputManager, inputManager))
+            {
+                if (_inputManager != null && _inputManager.CanSwitchActionMaps)
+                    _inputManager.SwitchToUIInput();
+
+                return;
+            }
+
+            UnbindMenuInput();
+            _inputManager = inputManager;
+            if (_inputManager == null)
+                return;
+
+            _inputManager.OnCancel += HandleMenuCancelPerformed;
+            if (_inputManager.CanSwitchActionMaps)
+                _inputManager.SwitchToUIInput();
+        }
+
+        private void UnbindMenuInput()
+        {
+            if (_inputManager != null)
+                _inputManager.OnCancel -= HandleMenuCancelPerformed;
+
+            _inputManager = null;
+            _cancelRequested = false;
+        }
+
+        private void HandleMenuCancelPerformed()
+        {
+            _cancelRequested = true;
+        }
+
+        private static void EnsureInputSystemEventRouting()
+        {
+            EventSystem eventSystem = EventSystem.current;
+            if (eventSystem == null)
+            {
+                GameObject eventSystemRoot = new GameObject("EventSystem", typeof(EventSystem)); // COLD ALLOC: GameObject[1] - menu fallback event system root - owner: MainMenuController
+                eventSystemRoot.hideFlags = HideFlags.DontSave;
+                eventSystem = eventSystemRoot.GetComponent<EventSystem>();
+            }
+
+            if (eventSystem == null)
+                return;
+
+            StandaloneInputModule legacyInputModule = eventSystem.GetComponent<StandaloneInputModule>();
+            if (!eventSystem.TryGetComponent(out InputSystemUIInputModule inputSystemModule))
+            {
+                if (legacyInputModule != null)
+                {
+                    legacyInputModule.enabled = false;
+                    if (Application.isPlaying)
+                        Destroy(legacyInputModule);
+                    else
+                        DestroyImmediate(legacyInputModule);
+                }
+
+                inputSystemModule = eventSystem.gameObject.AddComponent<InputSystemUIInputModule>();
+            }
+
+            InputManager inputManager = InputManager.Instance;
+            if (inputManager != null)
+                inputManager.TryConfigureUiInputModule(inputSystemModule);
         }
 
         private void RequestSelectionRefresh()
@@ -1238,19 +1338,19 @@ namespace Hecton.UI.MainMenu
 
         private void TryRegisterToTickManager()
         {
-            if (_registeredToTickManager || GameTickManager.Instance == null)
+            if (_registeredToTickManager)
                 return;
 
-            GameTickManager.Instance.Register(this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _registeredToTickManager = true;
         }
 
         private void UnregisterFromTickManager()
         {
-            if (!_registeredToTickManager || GameTickManager.Instance == null)
+            if (!_registeredToTickManager)
                 return;
 
-            GameTickManager.Instance.Unregister(this);
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _registeredToTickManager = false;
         }
 

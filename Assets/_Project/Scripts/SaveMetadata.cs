@@ -22,7 +22,7 @@ namespace Hecton8.SaveSystem
         public Vector3 PlayerPosition;
         
         [Header("── Integrity ─────────────────────────────────")]
-        public string Checksum; // CRC32 (hex)
+        public string Checksum; // XXHash3 checksum (hex; v4+ uses 64-bit, legacy v3 remains 32-bit)
 
         public DateTime GetDateTime() => new DateTime(Timestamp, DateTimeKind.Utc);
         public string slotName => SlotName;
@@ -51,8 +51,8 @@ namespace Hecton8.SaveSystem
             if (string.IsNullOrEmpty(path))
                 return;
 
-            ES3Settings settings = new ES3Settings { compressionType = ES3.CompressionType.None };
-            ES3.Save("meta", this, path, settings);
+            if (!SaveSidecarStorage.SaveMetadata(this, path, out string error))
+                Debug.LogWarning($"[SaveMetadata] Failed to save meta to '{path}': {error}");
         }
 
         public static SaveMetadata Load(string slotName)
@@ -62,13 +62,14 @@ namespace Hecton8.SaveSystem
 
         public static SaveMetadata LoadFromPath(string path)
         {
-            if (string.IsNullOrEmpty(path) || !ES3.FileExists(path))
+            if (string.IsNullOrEmpty(path) || !SaveSidecarStorage.Exists(path))
                 return null;
 
             try
             {
-                ES3Settings settings = new ES3Settings { compressionType = ES3.CompressionType.None };
-                return ES3.Load<SaveMetadata>("meta", path, settings);
+                return SaveSidecarStorage.LoadMetadata(path, out SaveMetadata metadata, out string error)
+                    ? metadata
+                    : HandleLoadFailure(path, error);
             }
             catch (Exception ex)
             {
@@ -116,16 +117,18 @@ namespace Hecton8.SaveSystem
 
         public static bool Exists(string path)
         {
-            return !string.IsNullOrEmpty(path) && ES3.FileExists(path);
+            return !string.IsNullOrEmpty(path) && SaveSidecarStorage.Exists(path);
         }
 
         public static bool Delete(string path)
         {
-            if (!ES3.FileExists(path))
-                return false;
+            return SaveSidecarStorage.Delete(path);
+        }
 
-            ES3.DeleteFile(path);
-            return true;
+        private static SaveMetadata HandleLoadFailure(string path, string error)
+        {
+            Debug.LogWarning($"[SaveMetadata] Failed to load meta from '{path}': {error}");
+            return null;
         }
     }
 }

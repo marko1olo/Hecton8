@@ -1,4 +1,4 @@
-﻿// ============================================================================
+// ============================================================================
 // HECTON-8 — FirstHourDirector.cs
 // Режиссура первого часа игры.
 //
@@ -266,11 +266,7 @@ namespace Hecton8.Gameplay
             if (_registered)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager == null)
-                return;
-
-            gameTickManager.Register(this);
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
             _registered = true;
         }
 
@@ -279,10 +275,7 @@ namespace Hecton8.Gameplay
             if (!_registered)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager != null)
-                gameTickManager.Unregister(this);
-
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _registered = false;
         }
 
@@ -687,16 +680,20 @@ namespace Hecton8.Gameplay
         private static bool SaveInventoryContainsItem(InventoryDTO inventory, string itemId)
         {
             if (string.IsNullOrEmpty(itemId) ||
-                inventory.cells == null ||
+                inventory.itemHashIds == null ||
                 inventory.cellCount <= 0)
             {
                 return false;
             }
 
-            int cellCount = Mathf.Min(inventory.cellCount, inventory.cells.Length);
+            int itemHashId = LocHash.Compute(itemId);
+            if (itemHashId == 0)
+                return false;
+
+            int cellCount = Mathf.Min(inventory.cellCount, inventory.itemHashIds.Length);
             for (int i = 0; i < cellCount; i++)
             {
-                if (string.Equals(inventory.cells[i].itemId, itemId, StringComparison.Ordinal))
+                if (inventory.itemHashIds[i] == itemHashId)
                     return true;
             }
 
@@ -722,7 +719,7 @@ namespace Hecton8.Gameplay
             {
                 for (int x = 0; x < columns; x++)
                 {
-                    ItemData item = grid.GetCell(x, y);
+                    ItemData item = inventory.GetItemAt(x, y);
                     if (item == null)
                         continue;
 
@@ -1145,7 +1142,7 @@ namespace Hecton8.Gameplay
             if (inventory != null)
                 return true;
 
-            inventory = playerTransform.GetComponentInChildren<PlayerInventory>(true);
+            inventory = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.Inventory != null) ? Hecton8.Core.GlobalRegistry.Player.Inventory : playerTransform.GetComponent<PlayerInventory>());
             return inventory != null;
         }
 

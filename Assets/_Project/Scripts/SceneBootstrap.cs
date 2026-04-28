@@ -230,6 +230,12 @@ namespace Hecton8.Bootstrap
         /// </summary>
         private const int WorldReadyThreshold = 100;
 
+        /// <summary>
+        /// Maximum number of stagnant world-ready polls before bootstrap stops waiting
+        /// on a queue that is no longer draining.
+        /// </summary>
+        private const int WorldReadyStagnationPollLimit = 40;
+
         /// <summary>Интервал проверки коллайдера под игроком (секунды).</summary>
         private const float GroundCheckPollIntervalSec = 0.2f;
 
@@ -469,16 +475,16 @@ namespace Hecton8.Bootstrap
 
             // ── Критические (блокируют запуск) ──
 
-            // GameTickManager — ПЕРВЫМ: все тиковые системы зависят от него
-            if (GameTickManager.Instance == null)
+            // SystemDispatcher — ПЕРВЫМ: все тиковые системы зависят от него
+            if (SystemDispatcher.EnsureRuntimeInstance() == null)
             {
-                Debug.LogError("[SceneBootstrap] GameTickManager NOT FOUND! " +
-                    "Create a GameObject with GameTickManager component.");
+                Debug.LogError("[SceneBootstrap] SystemDispatcher NOT FOUND! " +
+                    "Ensure bootstrap creates the runtime dispatcher.");
                 allCritical = false;
             }
             else
             {
-                Log("  ✓ GameTickManager (awakened first)");
+                Log("  ✓ SystemDispatcher (awakened first)");
             }
 
             if (ObjectPoolManager.Instance == null)
@@ -819,10 +825,31 @@ namespace Hecton8.Bootstrap
             Log($"  Waiting for world population " +
                 $"(threshold: ≤{WorldReadyThreshold})...");
 
+            int lastPendingCount = int.MaxValue;
+            int stagnantPollCount = 0;
             while (populator.PendingSpawnCount > WorldReadyThreshold)
             {
+                int pendingCount = populator.PendingSpawnCount;
                 SetStep($"Populating World: " +
-                        $"{populator.PendingSpawnCount} remaining");
+                        $"{pendingCount} remaining");
+
+                if (pendingCount < lastPendingCount)
+                {
+                    lastPendingCount = pendingCount;
+                    stagnantPollCount = 0;
+                }
+                else
+                {
+                    stagnantPollCount++;
+                    if (stagnantPollCount >= WorldReadyStagnationPollLimit)
+                    {
+                        Debug.LogWarning(
+                            $"[SceneBootstrap] World-ready queue stalled at {pendingCount} pending entries. " +
+                            "Continuing bootstrap to avoid startup deadlock.");
+                        return;
+                    }
+                }
+
                 await Awaitable.WaitForSecondsAsync(
                     WorldReadyPollIntervalSec, cancellationToken: ct);
             }

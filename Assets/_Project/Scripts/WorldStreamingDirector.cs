@@ -1,6 +1,5 @@
 using Hecton8.Core;
 using Hecton8.Gameplay;
-using MapMagic.Core;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -70,7 +69,7 @@ namespace Hecton8.World
 
         [Header("Terrain Runtime LOD")]
         [SerializeField] private bool terrainDraftsInPlaymode = true;
-        [SerializeField] private MapMagicObject.Resolution terrainDraftResolution = MapMagicObject.Resolution._65;
+        [SerializeField] private int terrainDraftResolution = 65;
         [SerializeField] private int terrainMainRange = 2;
         [SerializeField] private int terrainDraftRange = 2;
         [SerializeField] private int terrainMainTeardownRange = 3;
@@ -114,7 +113,7 @@ namespace Hecton8.World
 #pragma warning restore CS0414
 
         private bool _registeredToTickManager;
-        private float _smoothedSpeed;
+        private float _smoothedSpeedSq;
         private DepthZone _lastDepthZone = (DepthZone)(-1);
         private MotionMode _lastMotionMode = (MotionMode)(-1);
         private int _lastObjectsPerFrame = -1;
@@ -247,11 +246,8 @@ namespace Hecton8.World
             if (_registeredToTickManager)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager == null)
-                return;
 
-            gameTickManager.Register((ISlowTickable)this);
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
             _registeredToTickManager = true;
         }
 
@@ -260,9 +256,7 @@ namespace Hecton8.World
             if (!_registeredToTickManager)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager != null)
-                gameTickManager.Unregister((ISlowTickable)this);
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
 
             _registeredToTickManager = false;
         }
@@ -319,11 +313,12 @@ namespace Hecton8.World
                 return;
             }
 
-            float targetSpeed = GetCurrentSpeed();
-            _smoothedSpeed = Mathf.Lerp(_smoothedSpeed, targetSpeed, speedSmoothing);
+            float targetSpeedSq = GetCurrentSpeedSq();
+            _smoothedSpeedSq = Mathf.Lerp(_smoothedSpeedSq, targetSpeedSq, speedSmoothing);
 
             DepthZone depthZone = GetDepthZone(depth);
-            MotionMode motionMode = _smoothedSpeed >= traverseSpeedStart ? MotionMode.Traverse : MotionMode.Survey;
+            float traverseSpeedThresholdSq = traverseSpeedStart * traverseSpeedStart;
+            MotionMode motionMode = _smoothedSpeedSq >= traverseSpeedThresholdSq ? MotionMode.Traverse : MotionMode.Survey;
             StreamingProfile profile = GetProfile(depthZone, motionMode);
             activeProfile = profile;
 
@@ -342,7 +337,7 @@ namespace Hecton8.World
             }
 
             _debugDepth = depth;
-            _debugSpeed = _smoothedSpeed;
+            _debugSpeed = Mathf.Sqrt(Mathf.Max(0f, _smoothedSpeedSq));
             _debugDepthZone = GetDepthZoneLabel(depthZone);
             _debugMotionMode = GetMotionModeLabel(motionMode);
 
@@ -411,33 +406,50 @@ namespace Hecton8.World
             _debugTerrainDetailDistance = profile.terrainDetailDistance;
         }
 
-        private static string GetTerrainResolutionLabel(MapMagicObject.Resolution resolution)
+        private static string GetTerrainResolutionLabel(int resolution)
         {
             switch (resolution)
             {
-                case MapMagicObject.Resolution._33:
+                case 33:
                     return TerrainResolution33Label;
-                case MapMagicObject.Resolution._65:
+                case 65:
                     return TerrainResolution65Label;
-                case MapMagicObject.Resolution._129:
+                case 129:
                     return TerrainResolution129Label;
-                case MapMagicObject.Resolution._257:
+                case 257:
                     return TerrainResolution257Label;
-                case MapMagicObject.Resolution._513:
+                case 513:
                     return TerrainResolution513Label;
-                case MapMagicObject.Resolution._1025:
+                case 1025:
                     return TerrainResolution1025Label;
-                case MapMagicObject.Resolution._2049:
+                case 2049:
                     return TerrainResolution2049Label;
                 default:
                     return TerrainResolution65Label;
             }
         }
 
-        private float GetCurrentSpeed()
+        private static int NormalizeTerrainDraftResolution(int resolution)
+        {
+            switch (resolution)
+            {
+                case 33:
+                case 65:
+                case 129:
+                case 257:
+                case 513:
+                case 1025:
+                case 2049:
+                    return resolution;
+                default:
+                    return 65;
+            }
+        }
+
+        private float GetCurrentSpeedSq()
         {
             if (playerRigidbody != null)
-                return playerRigidbody.linearVelocity.magnitude;
+                return playerRigidbody.linearVelocity.sqrMagnitude;
 
             return 0f;
         }
@@ -539,6 +551,7 @@ namespace Hecton8.World
             terrainDraftPixelError = Mathf.Clamp(terrainDraftPixelError, terrainMainPixelError + 1, 12);
             terrainDraftBaseMapDistance = Mathf.Clamp(terrainDraftBaseMapDistance, 256, terrainMainBaseMapDistance);
             terrainHeightmapMaximumLod = Mathf.Clamp(terrainHeightmapMaximumLod, 0, 3);
+            terrainDraftResolution = NormalizeTerrainDraftResolution(terrainDraftResolution);
 
             surfaceSurveyProfile = ClampProfile(surfaceSurveyProfile);
             surfaceTraverseProfile = ClampProfile(surfaceTraverseProfile);

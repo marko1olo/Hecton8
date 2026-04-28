@@ -1,4 +1,4 @@
-﻿using UnityEditor;
+using UnityEditor;
 using UnityEngine;
 using UnityEditor.Build;
 using System.Collections.Generic;
@@ -6,14 +6,17 @@ using UnityEditor.Compilation;
 using System.Reflection;
 using System.Linq;
 using System;
-
-[InitializeOnLoad]
 public class ES3ScriptingDefineSymbols
 {
+    private const string SessionDefineSyncKey = "ES3ScriptingDefineSymbols.SessionSyncQueued";
     private static bool _setDefineSymbolsQueued;
 
     static ES3ScriptingDefineSymbols()
     {
+        if (SessionState.GetBool(SessionDefineSyncKey, false))
+            return;
+
+        SessionState.SetBool(SessionDefineSyncKey, true);
         QueueSetDefineSymbols();
     }
 

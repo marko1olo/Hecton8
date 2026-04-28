@@ -781,7 +781,8 @@ namespace Hecton8.Gameplay
 
         private Transform FindSceneTransform(string name)
         {
-            GameObject target = GameObject.Find(name);
+            GameObject target = null;
+            Hecton8.World.WorldRuntimeReferenceUtility.TryResolveScenePath(ref target, name);
             return target != null ? target.transform : null;
         }
 

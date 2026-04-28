@@ -13,15 +13,17 @@ using Object = UnityEngine.Object;
 
 namespace Hecton8.Editor
 {
-    [InitializeOnLoad]
     internal static class ShellVerificationPlayModeCompileGate
     {
+        private const string EnableMenuPath = "Hecton/Dev/Verification/Enable Shell Smoke Compile Gate";
+        private const string DisableMenuPath = "Hecton/Dev/Verification/Disable Shell Smoke Compile Gate";
         private const string BootstrapSceneName = "00_BOOTSTRAP";
         private const string MainMenuSceneName = "01_MAIN_MENU";
         private const double RetryStableWindowSeconds = 0.75d;
         private const double EnteredPlayModeRetryBudgetSeconds = 20d;
         private const int MaxRetryAttempts = 3;
 
+        private static bool _isRegistered;
         private static bool _retryPending;
         private static bool _awaitingDirtyPlayEvaluation;
         private static double _retryRequestedAt;
@@ -29,12 +31,41 @@ namespace Hecton8.Editor
         private static int _retryAttempts;
         private static string _lastReason = "None";
 
-        static ShellVerificationPlayModeCompileGate()
+        [MenuItem(EnableMenuPath, false, 140)]
+        private static void Enable()
         {
+            RegisterCallbacks();
+        }
+
+        [MenuItem(DisableMenuPath, false, 141)]
+        private static void Disable()
+        {
+            UnregisterCallbacks(clearRetryState: true);
+        }
+
+        private static void RegisterCallbacks()
+        {
+            if (_isRegistered)
+                return;
+
             EditorApplication.playModeStateChanged -= HandlePlayModeStateChanged;
             EditorApplication.playModeStateChanged += HandlePlayModeStateChanged;
             EditorApplication.update -= HandleEditorUpdate;
             EditorApplication.update += HandleEditorUpdate;
+            _isRegistered = true;
+        }
+
+        private static void UnregisterCallbacks(bool clearRetryState)
+        {
+            if (_isRegistered)
+            {
+                EditorApplication.playModeStateChanged -= HandlePlayModeStateChanged;
+                EditorApplication.update -= HandleEditorUpdate;
+                _isRegistered = false;
+            }
+
+            if (clearRetryState)
+                ClearRetryState();
         }
 
         private static void HandlePlayModeStateChanged(PlayModeStateChange state)

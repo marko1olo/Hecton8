@@ -276,7 +276,7 @@ namespace Hecton8.Gameplay
 
         /// <summary>
         /// Словарь отслеживаемых BuoyancyObject внутри Interior Zone.
-        /// Key: Collider.GetInstanceID() (не GameObject — т.к. триггер видит Collider).
+        /// Key: Collider.GetEntityId() (не GameObject — т.к. триггер видит Collider).
         /// Value: кэшированный BuoyancyObject.
         /// </summary>
         private readonly Dictionary<int, BuoyancyObject> _trackedObjects
@@ -564,8 +564,7 @@ namespace Hecton8.Gameplay
                 _trackedPlayerSurvival = null;
             // ── Interior Zone: BuoyancyObject tracking ──
             #pragma warning disable CS0618
-            int key = other.GetInstanceID();
-            #pragma warning restore CS0618
+            int key = unchecked((int)EntityId.ToULong(other.GetEntityId()));
 
             if (_trackedObjects.TryGetValue(key, out BuoyancyObject buoyancy))
             {
@@ -846,15 +845,8 @@ namespace Hecton8.Gameplay
                         bool addedToInventory = false;
 
                         // ── Попытка добавить в инвентарь ──
-                        if (grid != null)
-                        {
-                            int px, py;
-                            if (grid.TryAddItem(cost.item, out px, out py))
-                            {
-                                playerInventory.AddWeight(cost.item.weight);
-                                addedToInventory = true;
-                            }
-                        }
+                        if (playerInventory != null && grid != null && playerInventory.TryAddItem(cost.item, 1))
+                            addedToInventory = true;
 
                         // ── Fallback: спавн в мир ──
                         if (!addedToInventory)
@@ -916,16 +908,8 @@ namespace Hecton8.Gameplay
             for (int i = 0; i < quantity; i++)
             {
                 bool addedToInventory = false;
-                if (targetGrid != null)
-                {
-                    int px;
-                    int py;
-                    if (targetGrid.TryAddItem(itemData, out px, out py))
-                    {
-                        playerInventory.AddWeight(itemData.weight);
-                        addedToInventory = true;
-                    }
-                }
+                if (playerInventory != null && targetGrid != null && playerInventory.TryAddItem(itemData, 1))
+                    addedToInventory = true;
 
                 if (addedToInventory)
                     continue;
@@ -960,18 +944,10 @@ namespace Hecton8.Gameplay
         {
             if (itemData == null)
                 return;
-
-            // Небольшой случайный разброс, чтобы предметы не стакались
-            Vector3 offset;
-            offset.x = UnityEngine.Random.Range(-0.4f, 0.4f);
-            offset.y = UnityEngine.Random.Range(0f, 0.3f);
-            offset.z = UnityEngine.Random.Range(-0.4f, 0.4f);
-
-            Vector3 spawnPosition = position + offset;
             PersistentWorldRegistry persistentWorldRegistry = PersistentWorldRegistry.Instance;
             if (persistentWorldRegistry != null &&
                 itemData.worldPrefab != null &&
-                persistentWorldRegistry.TryRegisterDroppedItem(itemData, 1, spawnPosition))
+                persistentWorldRegistry.TryRegisterDroppedItem(itemData, 1, position))
             {
                 return;
             }
@@ -997,7 +973,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            GameObject itemGO = pool.Spawn(worldItemPrefab, spawnPosition, Quaternion.identity);
+            GameObject itemGO = pool.Spawn(worldItemPrefab, position, Quaternion.identity);
 
             if (itemGO == null)
                 return;
@@ -1484,8 +1460,7 @@ namespace Hecton8.Gameplay
         private void TrackBuoyancyObject(Collider other, BuoyancyObject buoyancy)
         {
             #pragma warning disable CS0618
-            int key = other.GetInstanceID();
-            #pragma warning restore CS0618
+            int key = unchecked((int)EntityId.ToULong(other.GetEntityId()));
 
             if (_trackedObjects.ContainsKey(key))
                 return;
@@ -1554,11 +1529,7 @@ namespace Hecton8.Gameplay
             if (_tickRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register((ISlowTickable)this);
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
             _tickRegistered = true;
         }
 
@@ -1567,10 +1538,7 @@ namespace Hecton8.Gameplay
             if (!_tickRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister((ISlowTickable)this);
-
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _tickRegistered = false;
         }
 

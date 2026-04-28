@@ -242,12 +242,14 @@ namespace Hecton8.Dev
                 playerPDA = FindSceneObjectIncludingInactive<PlayerPDA>();
             if (pauseMenu == null)
             {
-                pauseMenu = FindSceneObjectIncludingInactive<PauseMenuController>();
+                pauseMenu = PauseMenuController.ActiveRuntimeInstance;
+                if (pauseMenu == null)
+                    pauseMenu = FindSceneObjectIncludingInactive<PauseMenuController>();
                 if (pauseMenu == null)
                 {
                     PauseMenuHost host = FindSceneObjectIncludingInactive<PauseMenuHost>();
                     if (host != null)
-                        pauseMenu = host.GetComponentInChildren<PauseMenuController>(true);
+                        pauseMenu = host.GetComponent<PauseMenuController>();
                 }
 
                 if (pauseMenu == null)

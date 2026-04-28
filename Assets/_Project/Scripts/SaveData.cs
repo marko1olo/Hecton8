@@ -3,11 +3,11 @@
 // Главный контейнер сохранения. Паттерн DTO (Data Transfer Object).
 //
 // ВСЕ данные сохранения — здесь. Один объект → одна сериализация.
-// Easy Save 3 (ES3) сериализует этот класс целиком.
+// Native binary save codecs serialize this class field-by-field.
 //
 // ДИЗАЙН-РЕШЕНИЯ:
 //   • [Serializable] struct для вложенных DTO — минимум heap-аллокаций.
-//   • Примитивные типы вместо Vector3/Quaternion — ES3 совместимость
+//   • Примитивные типы вместо Vector3/Quaternion — binary compatibility
 //     и портируемость (JSON, binary, XML).
 //   • string ID вместо int InstanceID — стабильность между сессиями.
 //   • Версионирование: поле version для миграции данных.
@@ -15,7 +15,7 @@
 //
 // РАСШИРЕНИЕ:
 //   Добавляй новые DTO как поля SaveData. Старые сейвы получат
-//   дефолтные значения для новых полей (ES3 обрабатывает gracefully).
+//   дефолтные значения для новых полей обрабатываются миграцией и дефолтными инициализаторами.
 // ============================================================================
 
 using System;
@@ -41,10 +41,10 @@ namespace Hecton8.SaveSystem
         public string timestamp;
 
         /// <summary>Общее время игры в секундах.</summary>
-        public float totalPlayTime;
+        public double totalPlayTime;
 
         /// <summary>Текущая версия формата. Используется для миграции.</summary>
-        public const int CurrentVersion = 38; // v38: packed industrial lore unlock bit words added for the zero-GC PDA archive
+        public const int CurrentVersion = 40; // v40: inventory persistence migrated to packed SOA hashes + coordinates
 
         // ─────────────────────── DTO Sections ────────────────────
 
@@ -183,6 +183,11 @@ namespace Hecton8.SaveSystem
 
         public static SaveData CreateNew(float playTime)
         {
+            return CreateNew((double)playTime);
+        }
+
+        public static SaveData CreateNew(double playTime)
+        {
             return new SaveData
             {
                 version       = CurrentVersion,
@@ -266,8 +271,8 @@ namespace Hecton8.SaveSystem
         public float weight;
         public float hunger;
         public float thirst;
-        public float currentLifeDurationSeconds;
-        public float currentLifePeakDepthMeters;
+        public double currentLifeDurationSeconds;
+        public double currentLifePeakDepthMeters;
         public float currentLifeLowestOxygenNormalized;
         public float currentLifeLowestEnergyNormalized;
         public float currentLifeLowestIntegrityNormalized;
@@ -285,8 +290,8 @@ namespace Hecton8.SaveSystem
         public float lastDeathPosX;
         public float lastDeathPosY;
         public float lastDeathPosZ;
-        public float lastDeathLifeDurationSeconds;
-        public float lastDeathPeakDepthMeters;
+        public double lastDeathLifeDurationSeconds;
+        public double lastDeathPeakDepthMeters;
         public float lastDeathLowestOxygenNormalized;
         public float lastDeathLowestEnergyNormalized;
         public float lastDeathLowestIntegrityNormalized;
@@ -331,7 +336,9 @@ namespace Hecton8.SaveSystem
     public struct InventoryDTO
     {
         public int cellCount;
-        public InventoryCellDTO[] cells;
+        public int[] itemHashIds;
+        public uint[] packedCellCoordinates;
+        public ushort[] stackCounts;
         public float totalWeight;
         public int gridColumns;
         public int gridRows;
@@ -340,8 +347,32 @@ namespace Hecton8.SaveSystem
 
         public void EnsureCapacity()
         {
-            if (cells == null || cells.Length < MaxCells)
-                cells = new InventoryCellDTO[MaxCells];
+            if (itemHashIds == null || itemHashIds.Length < MaxCells)
+                itemHashIds = new int[MaxCells];
+
+            if (packedCellCoordinates == null || packedCellCoordinates.Length < MaxCells)
+                packedCellCoordinates = new uint[MaxCells];
+
+            if (stackCounts == null || stackCounts.Length < MaxCells)
+                stackCounts = new ushort[MaxCells];
+        }
+
+        public static uint PackCellCoordinate(int x, int y)
+        {
+            unchecked
+            {
+                return ((uint)(ushort)x) | ((uint)(ushort)y << 16);
+            }
+        }
+
+        public static int UnpackCellX(uint packedCellCoordinate)
+        {
+            return (ushort)(packedCellCoordinate & 0xFFFFu);
+        }
+
+        public static int UnpackCellY(uint packedCellCoordinate)
+        {
+            return (ushort)(packedCellCoordinate >> 16);
         }
     }
 

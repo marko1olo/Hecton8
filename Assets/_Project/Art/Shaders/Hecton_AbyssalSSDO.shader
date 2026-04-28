@@ -245,17 +245,20 @@ Shader "Hidden/Hecton8/AbyssalSSDO"
 
         half4 FragOcclusion(Varyings input) : SV_Target
         {
-            return half4(EvaluateDirectionalOcclusion(input.screenUV), 0.0, 0.0, 1.0);
+            half occlusion = EvaluateDirectionalOcclusion(input.screenUV);
+            return half4(occlusion, occlusion, occlusion, 1.0);
         }
 
         half4 FragBlurH(Varyings input) : SV_Target
         {
-            return half4(BlurOcclusion(input.screenUV, float2(1.0, 0.0)), 0.0, 0.0, 1.0);
+            half occlusion = BlurOcclusion(input.screenUV, float2(1.0, 0.0));
+            return half4(occlusion, occlusion, occlusion, 1.0);
         }
 
         half4 FragBlurV(Varyings input) : SV_Target
         {
-            return half4(BlurOcclusion(input.screenUV, float2(0.0, 1.0)), 0.0, 0.0, 1.0);
+            half occlusion = BlurOcclusion(input.screenUV, float2(0.0, 1.0));
+            return half4(occlusion, occlusion, occlusion, 1.0);
         }
 
         half4 FragComposite(Varyings input) : SV_Target

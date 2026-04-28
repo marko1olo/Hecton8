@@ -11,7 +11,7 @@ namespace MoreMountains.Tools
 	/// </summary>
 	public class MMLockInspector : MonoBehaviour
 	{
-		[MenuItem("Tools/More Mountains/Lock Inspector %l")]
+		[MenuItem("Tools/More Mountains/Lock Inspector")]
 		static public void LockInspector()
 		{
 			Type inspectorType = typeof(Editor).Assembly.GetType("UnityEditor.InspectorWindow");

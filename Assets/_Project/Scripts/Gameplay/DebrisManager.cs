@@ -699,7 +699,7 @@ namespace Hecton8.Gameplay
             public byte CollisionEnabled;
         }
 
-        [BurstCompile]
+        [BurstCompile(FloatMode = FloatMode.Fast)]
         private struct DebrisSimulationJob : IJob
         {
             [ReadOnly] public NativeArray<DebrisChunkState> ReadStates;
@@ -971,7 +971,7 @@ namespace Hecton8.Gameplay
 
                 cachedChunkMeshes[writeIndex] = meshFilter.sharedMesh;
                 cachedLocalMatrices[writeIndex] = rootWorldToLocal * meshFilter.transform.localToWorldMatrix;
-                cachedMassScales[writeIndex] = Mathf.Max(0.25f, meshFilter.sharedMesh.bounds.extents.magnitude);
+                cachedMassScales[writeIndex] = math.max(0.25f, meshFilter.sharedMesh.bounds.extents.magnitude);
                 writeIndex++;
             }
         }

@@ -30,7 +30,7 @@ namespace Hecton8.Gameplay
     /// Subnautica Brain Coral equivalent.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class OxygenPlant : MonoBehaviour, ITickable
+    public sealed class OxygenPlant : MonoBehaviour, ITickable, IUpdatable
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — SPAWN SETTINGS
@@ -71,6 +71,7 @@ namespace Hecton8.Gameplay
         private float _releaseTimer;
         private float _nextReleaseTime;
         private bool _isRegistered;
+        private bool _poolMissingLogged;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -136,18 +137,21 @@ namespace Hecton8.Gameplay
 
             Vector3 spawnPos = spawnPoint.position;
 
-            // Spawn bubble via ObjectPoolManager if available, else Instantiate
-            GameObject bubble;
             ObjectPoolManager pool = ObjectPoolManager.Instance;
-            if (pool != null)
+            if (pool == null)
             {
-                bubble = pool.Spawn(oxygenBubblePrefab, spawnPos, Quaternion.identity);
-            }
-            else
-            {
-                bubble = Instantiate(oxygenBubblePrefab, spawnPos, Quaternion.identity);
+                if (!_poolMissingLogged)
+                {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    Debug.LogWarning("[OxygenPlant] ObjectPoolManager unavailable. Bubble release skipped to avoid runtime Instantiate.", this);
+#endif
+                    _poolMissingLogged = true;
+                }
+
+                return;
             }
 
+            GameObject bubble = pool.Spawn(oxygenBubblePrefab, spawnPos, Quaternion.identity);
             if (bubble == null) return;
 
             // Play release sound
@@ -195,30 +199,16 @@ namespace Hecton8.Gameplay
         {
             if (_isRegistered) return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-            {
-                tickManager.Register(this);
-                _isRegistered = true;
-            }
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            else
-            {
-                Debug.LogError("[OxygenPlant] GameTickManager.Instance is null. Cannot register for tick.", this);
-            }
-#endif
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+            _isRegistered = true;
         }
 
         private void UnregisterFromTick()
         {
             if (!_isRegistered) return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-            {
-                tickManager.Unregister(this);
-                _isRegistered = false;
-            }
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            _isRegistered = false;
         }
 
         // ══════════════════════════════════════════════════════════

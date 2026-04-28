@@ -30,6 +30,9 @@ namespace Hecton8.Gameplay
         private const string RightHandAttachmentName = "Swim_RightHandAttachment";
         private const string ViewmodelRootName = "Swim_ViewmodelRoot";
         private const string FirstPersonToolsLayerName = "FirstPersonTools";
+        private const int MaxHierarchyTraversalDepth = 64;
+        private const int MaxHierarchyTraversalNodes = 512;
+        private static int s_firstPersonToolsLayer = int.MinValue;
 
         [Header("── References ─────────────────────────")]
         [Tooltip("Primary swim presentation owner publishing guide pose truth.")]
@@ -255,7 +258,7 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
-            _firstPersonToolsLayer = LayerMask.NameToLayer(FirstPersonToolsLayerName);
+            _firstPersonToolsLayer = ResolveFirstPersonToolsLayer();
             AutoResolveReferences();
             CacheBaseScales();
             RefreshAttachmentDebugState();
@@ -269,7 +272,7 @@ namespace Hecton8.Gameplay
         private void Start()
         {
             if (_firstPersonToolsLayer < 0)
-                _firstPersonToolsLayer = LayerMask.NameToLayer(FirstPersonToolsLayerName);
+                _firstPersonToolsLayer = ResolveFirstPersonToolsLayer();
 
             AutoResolveReferences();
             CacheBaseScales();
@@ -290,7 +293,14 @@ namespace Hecton8.Gameplay
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            _firstPersonToolsLayer = LayerMask.NameToLayer(FirstPersonToolsLayerName);
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                return;
+            }
+
+            _firstPersonToolsLayer = ResolveFirstPersonToolsLayer();
             AutoResolveReferences();
             CacheBaseScales();
             RefreshAttachmentDebugState();
@@ -581,15 +591,35 @@ namespace Hecton8.Gameplay
             ApplyLayerRecursive(root, _firstPersonToolsLayer);
         }
 
+        private static int ResolveFirstPersonToolsLayer()
+        {
+            if (s_firstPersonToolsLayer != int.MinValue)
+                return s_firstPersonToolsLayer;
+
+            s_firstPersonToolsLayer = LayerMask.NameToLayer(FirstPersonToolsLayerName);
+            return s_firstPersonToolsLayer;
+        }
+
         private static void ApplyLayerRecursive(Transform root, int layer)
         {
-            if (root == null)
+            int visitedNodeCount = 0;
+            ApplyLayerRecursive(root, layer, 0, ref visitedNodeCount);
+        }
+
+        private static void ApplyLayerRecursive(Transform root, int layer, int depth, ref int visitedNodeCount)
+        {
+            if (root == null || depth > MaxHierarchyTraversalDepth || visitedNodeCount >= MaxHierarchyTraversalNodes)
                 return;
 
+            visitedNodeCount++;
             root.gameObject.layer = layer;
             int childCount = root.childCount;
             for (int i = 0; i < childCount; i++)
-                ApplyLayerRecursive(root.GetChild(i), layer);
+            {
+                ApplyLayerRecursive(root.GetChild(i), layer, depth + 1, ref visitedNodeCount);
+                if (visitedNodeCount >= MaxHierarchyTraversalNodes)
+                    break;
+            }
         }
 
         private void RefreshAttachmentDebugState()
@@ -792,18 +822,28 @@ namespace Hecton8.Gameplay
 
         private static Transform FindTransformRecursive(Transform parent, string transformName)
         {
-            if (parent == null)
+            int visitedNodeCount = 0;
+            return FindTransformRecursive(parent, transformName, 0, ref visitedNodeCount);
+        }
+
+        private static Transform FindTransformRecursive(Transform parent, string transformName, int depth, ref int visitedNodeCount)
+        {
+            if (parent == null || depth > MaxHierarchyTraversalDepth || visitedNodeCount >= MaxHierarchyTraversalNodes)
                 return null;
 
+            visitedNodeCount++;
             if (parent.name == transformName)
                 return parent;
 
             int childCount = parent.childCount;
             for (int i = 0; i < childCount; i++)
             {
-                Transform match = FindTransformRecursive(parent.GetChild(i), transformName);
+                Transform match = FindTransformRecursive(parent.GetChild(i), transformName, depth + 1, ref visitedNodeCount);
                 if (match != null)
                     return match;
+
+                if (visitedNodeCount >= MaxHierarchyTraversalNodes)
+                    break;
             }
 
             return null;

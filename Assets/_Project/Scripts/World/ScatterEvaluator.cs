@@ -115,11 +115,7 @@ namespace Hecton8.World
             }
 
             if (_hasActiveJob)
-            {
-                // Force-complete stale job before scheduling new one.
-                _activeHandle.Complete();
-                _hasActiveJob = false;
-            }
+                return _activeHandle;
 
             // Reset counter.
             _candidateCount[0] = 0;
@@ -163,6 +159,9 @@ namespace Hecton8.World
             if (!_hasActiveJob || !_initialized)
                 return 0;
 
+            if (!_activeHandle.IsCompleted)
+                return 0;
+
             _activeHandle.Complete();
             _hasActiveJob = false;
 
@@ -186,14 +185,29 @@ namespace Hecton8.World
         {
             if (_disposed) return;
 
-            ForceComplete();
-
-            if (_candidates.IsCreated) _candidates.Dispose();
-            if (_heightSamples.IsCreated) _heightSamples.Dispose();
-            if (_candidateCount.IsCreated) _candidateCount.Dispose();
+            JobHandle activeHandle = _hasActiveJob ? _activeHandle : default;
+            DisposeNativeArray(ref _candidates, activeHandle);
+            DisposeNativeArray(ref _heightSamples, activeHandle);
+            DisposeNativeArray(ref _candidateCount, activeHandle);
 
             _disposed = true;
             _initialized = false;
+            _activeHandle = default;
+            _hasActiveJob = false;
+        }
+
+        private static void DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency)
+            where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            if (dependency.IsCompleted)
+                array.Dispose();
+            else
+                array.Dispose(dependency);
+
+            array = default;
         }
 
         // ══════════════════════════════════════════════════════════

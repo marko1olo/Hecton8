@@ -63,7 +63,7 @@ namespace Hecton8.Biolum
     /// - Zero allocations in Tick()
     /// </summary>
     [DisallowMultipleComponent, RequireComponent(typeof(Transform))]
-    public abstract class HectonBiolumZone : MonoBehaviour, ITickable
+    public abstract class HectonBiolumZone : MonoBehaviour, ITickable, IUpdatable
     {
         // ───────────────────────────────────────────────────────────────────────────────
         // INSPECTOR SETTINGS (Compact)
@@ -114,9 +114,10 @@ namespace Hecton8.Biolum
 
         protected virtual void OnEnable()
         {
-            if (GameTickManager.Instance != null && !_isRegistered)
+            if (!_isRegistered)
             {
-                GameTickManager.Instance.Register(this as ITickable);
+                SystemDispatcher.EnsureRuntimeInstance();
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
                 _isRegistered = true;
             }
             if (HectonBiolumManager.Instance != null)
@@ -125,9 +126,9 @@ namespace Hecton8.Biolum
 
         protected virtual void OnDisable()
         {
-            if (GameTickManager.Instance != null && _isRegistered)
+            if (_isRegistered)
             {
-                GameTickManager.Instance.Unregister(this as ITickable);
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
                 _isRegistered = false;
             }
             if (HectonBiolumManager.Instance != null)
@@ -217,13 +218,8 @@ namespace Hecton8.Biolum
                 return;
             }
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-            {
-                return;
-            }
-
-            tickManager.Register(this as ITickable);
+            SystemDispatcher.EnsureRuntimeInstance();
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _isRegistered = true;
         }
 

@@ -200,11 +200,7 @@ namespace Hecton8.Optimization
             if (_registeredSlowTick)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register((ISlowTickable)this);
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);
             _registeredSlowTick = true;
         }
 
@@ -213,12 +209,7 @@ namespace Hecton8.Optimization
             if (!_registeredSlowTick)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-            {
-                tickManager.Unregister((ISlowTickable)this);
-            }
-
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
             _registeredSlowTick = false;
         }
         

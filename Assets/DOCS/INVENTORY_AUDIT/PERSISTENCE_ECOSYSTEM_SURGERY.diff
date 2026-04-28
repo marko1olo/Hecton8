@@ -1,0 +1,3196 @@
+diff --git a/Assets/_Project/Scripts/SaveBinaryStorage.cs b/Assets/_Project/Scripts/SaveBinaryStorage.cs
+index 09c04b72..42e37f3c 100644
+--- a/Assets/_Project/Scripts/SaveBinaryStorage.cs
++++ b/Assets/_Project/Scripts/SaveBinaryStorage.cs
+@@ -1,9 +1,7 @@
+ using System;
+ using System.IO;
++using System.IO.MemoryMappedFiles;
+ using System.Runtime.InteropServices;
+-using System.Text;
+-using Hecton8.Core;
+-using Hecton8.SaveSystem;
+ using Hecton8.World;
+ using Unity.Collections;
+ using Unity.Collections.LowLevel.Unsafe;
+@@ -12,15 +10,232 @@ using UnityEngine;
+ 
+ namespace Hecton8.SaveSystem
+ {
++    internal static unsafe class AsyncWriteManager
++    {
++        internal struct ReadOnlyMapping
++        {
++            public FileStream FileStream;
++            public MemoryMappedFile FileMapping;
++            public MemoryMappedViewAccessor Accessor;
++            public IntPtr View;
++            public long Length;
++        }
++
++        internal static bool WriteAll(string absolutePath, void* buffer, int byteCount, out string error)
++        {
++            return WriteAll(absolutePath, buffer, byteCount, null, 0, out error);
++        }
++
++        internal static bool WriteAll(
++            string absolutePath,
++            void* firstBuffer,
++            int firstByteCount,
++            void* secondBuffer,
++            int secondByteCount,
++            out string error)
++        {
++            error = string.Empty;
++            if (string.IsNullOrEmpty(absolutePath))
++            {
++                error = "Native write path is empty.";
++                return false;
++            }
++
++            int totalBytes = math.max(firstByteCount, 0) + math.max(secondByteCount, 0);
++            if (totalBytes <= 0)
++            {
++                error = "Native write requested zero bytes.";
++                return false;
++            }
++
++            FileStream fileStream = null;
++            MemoryMappedFile memoryMappedFile = null;
++            MemoryMappedViewAccessor accessor = null;
++            byte* mappedPointer = null;
++            try
++            {
++                fileStream = new FileStream(absolutePath, FileMode.Create, FileAccess.ReadWrite, FileShare.None);
++                fileStream.SetLength(totalBytes);
++                memoryMappedFile = MemoryMappedFile.CreateFromFile(fileStream, null, totalBytes, MemoryMappedFileAccess.ReadWrite, HandleInheritability.None, true);
++                accessor = memoryMappedFile.CreateViewAccessor(0L, totalBytes, MemoryMappedFileAccess.Write);
++                accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref mappedPointer);
++                byte* destination = mappedPointer + accessor.PointerOffset;
++
++                if (firstBuffer != null && firstByteCount > 0)
++                    UnsafeUtility.MemCpy(destination, firstBuffer, firstByteCount);
++
++                if (secondBuffer != null && secondByteCount > 0)
++                    UnsafeUtility.MemCpy(destination + math.max(firstByteCount, 0), secondBuffer, secondByteCount);
++
++                accessor.Flush();
++                fileStream.Flush(true);
++                return true;
++            }
++            catch (Exception ex)
++            {
++                error = $"Memory-mapped write failed for '{absolutePath}': {ex.Message}";
++                return false;
++            }
++            finally
++            {
++                if (accessor != null && mappedPointer != null)
++                    accessor.SafeMemoryMappedViewHandle.ReleasePointer();
++
++                accessor?.Dispose();
++                memoryMappedFile?.Dispose();
++                fileStream?.Dispose();
++            }
++        }
++
++        internal static bool TryReadAll(string absolutePath, void* buffer, int byteCount, out string error)
++        {
++            error = string.Empty;
++            if (string.IsNullOrEmpty(absolutePath) || buffer == null || byteCount <= 0)
++            {
++                error = "Native read request is invalid.";
++                return false;
++            }
++
++            FileStream fileStream = null;
++            MemoryMappedFile memoryMappedFile = null;
++            MemoryMappedViewAccessor accessor = null;
++            byte* mappedPointer = null;
++            try
++            {
++                fileStream = new FileStream(absolutePath, FileMode.Open, FileAccess.Read, FileShare.Read);
++                long fileLength = fileStream.Length;
++
++                if (fileLength < byteCount)
++                {
++                    error = $"Native mapped read exceeded file length for '{absolutePath}'.";
++                    return false;
++                }
++
++                memoryMappedFile = MemoryMappedFile.CreateFromFile(fileStream, null, fileLength, MemoryMappedFileAccess.Read, HandleInheritability.None, true);
++                accessor = memoryMappedFile.CreateViewAccessor(0L, byteCount, MemoryMappedFileAccess.Read);
++                accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref mappedPointer);
++                UnsafeUtility.MemCpy(buffer, mappedPointer + accessor.PointerOffset, byteCount);
++                return true;
++            }
++            catch (Exception ex)
++            {
++                error = $"Memory-mapped read failed for '{absolutePath}': {ex.Message}";
++                return false;
++            }
++            finally
++            {
++                if (accessor != null && mappedPointer != null)
++                    accessor.SafeMemoryMappedViewHandle.ReleasePointer();
++
++                accessor?.Dispose();
++                memoryMappedFile?.Dispose();
++                fileStream?.Dispose();
++            }
++        }
++
++        internal static bool TryGetFileLength(string absolutePath, out long fileLength, out string error)
++        {
++            fileLength = 0L;
++            error = string.Empty;
++            if (string.IsNullOrEmpty(absolutePath))
++            {
++                error = "Native read path is empty.";
++                return false;
++            }
++
++            try
++            {
++                fileLength = new FileInfo(absolutePath).Length;
++                return true;
++            }
++            catch (Exception ex)
++            {
++                error = $"Failed to read file length for '{absolutePath}': {ex.Message}";
++                return false;
++            }
++        }
++
++        internal static bool TryOpenReadOnlyMapping(string absolutePath, out ReadOnlyMapping mapping, out string error)
++        {
++            mapping = default;
++            error = string.Empty;
++            if (string.IsNullOrEmpty(absolutePath))
++            {
++                error = "Native read path is empty.";
++                return false;
++            }
++
++            FileStream fileStream = null;
++            MemoryMappedFile memoryMappedFile = null;
++            MemoryMappedViewAccessor accessor = null;
++            byte* mappedPointer = null;
++            try
++            {
++                fileStream = new FileStream(absolutePath, FileMode.Open, FileAccess.Read, FileShare.Read);
++                long fileLength = fileStream.Length;
++
++                if (fileLength <= 0L)
++                {
++                    error = $"Mapped read requested an empty file for '{absolutePath}'.";
++                    return false;
++                }
++
++                memoryMappedFile = MemoryMappedFile.CreateFromFile(fileStream, null, fileLength, MemoryMappedFileAccess.Read, HandleInheritability.None, true);
++                accessor = memoryMappedFile.CreateViewAccessor(0L, fileLength, MemoryMappedFileAccess.Read);
++                accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref mappedPointer);
++                IntPtr mappedView = (IntPtr)(mappedPointer + accessor.PointerOffset);
++
++                mapping = new ReadOnlyMapping
++                {
++                    FileStream = fileStream,
++                    FileMapping = memoryMappedFile,
++                    Accessor = accessor,
++                    View = mappedView,
++                    Length = fileLength
++                };
++
++                fileStream = null;
++                memoryMappedFile = null;
++                accessor = null;
++                mappedPointer = null;
++                return true;
++            }
++            catch (Exception ex)
++            {
++                error = $"Memory-mapped open failed for '{absolutePath}': {ex.Message}";
++                return false;
++            }
++            finally
++            {
++                if (accessor != null && mappedPointer != null)
++                    accessor.SafeMemoryMappedViewHandle.ReleasePointer();
++
++                accessor?.Dispose();
++                memoryMappedFile?.Dispose();
++                fileStream?.Dispose();
++            }
++        }
++
++        internal static void CloseReadOnlyMapping(ref ReadOnlyMapping mapping)
++        {
++            if (mapping.Accessor != null)
++                mapping.Accessor.SafeMemoryMappedViewHandle.ReleasePointer();
++
++            mapping.Accessor?.Dispose();
++            mapping.FileMapping?.Dispose();
++            mapping.FileStream?.Dispose();
++            mapping = default;
++        }
++    }
+     internal static unsafe class SaveBinaryStorage
+     {
+         internal const uint Magic = 0x48454354u;
+-        internal const ushort CurrentVersion = 0x0002;
+-        internal const ushort MinimumSupportedVersion = 0x0001;
+-        internal const byte LegacyCompatMaskV1 = 0x05;
+-        internal const byte CurrentCompatMask = 0x0A;
++        internal const ushort CurrentVersion = 0x0006;
++        internal const ushort MinimumSupportedVersion = 0x0003;
++        internal const byte CurrentCompatMask = 0x0B;
+         internal const byte FlagLz4Blocks = 0x01;
+-        internal const int HeaderSize = 44;
++        internal const int CurrentHeaderSize = 52;
++        internal const int LegacyHeaderSize = 44;
+         internal const int BlockSizeBytes = 256 * 1024;
+         internal const int RawPayloadCapacityBytes = 64 * 1024 * 1024;
+         internal const int MaxCompressedPayloadBytes = 67378176;
+@@ -28,10 +243,44 @@ namespace Hecton8.SaveSystem
+         private const long UnixEpochTicks = 621355968000000000L;
+         private const int PayloadPrefixSizeBytes = 60;
+         private const int PackedQuestStateSectionHeaderSize = 8;
++        private const int PersistentWorldSectionHeaderSize = 12;
++        private const int EcosystemSectionHeaderSize = 4;
++        private const int SaveFileHeaderPrefixSize = 8;
++        private const int LegacyHeaderHashSizeBytes = 36;
++        private const int CurrentHeaderHashSizeBytes = 44;
++        private const ushort First64BitHashVersion = 0x0004;
++        private const ushort CompactPersistentWorldSectionVersion = 0x0005;
++        private const ushort EcosystemSectionVersion = 0x0006;
+         private const string Lz4DllName = "liblz4";
+ 
+-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = HeaderSize)]
++        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = SaveFileHeaderPrefixSize)]
++        private struct SaveFileHeaderPrefix
++        {
++            public uint MagicValue;
++            public ushort Version;
++            public byte CompatMask;
++            public byte Flags;
++        }
++
++        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = CurrentHeaderSize)]
+         internal struct SaveFileHeader
++        {
++            public uint MagicValue;
++            public ushort Version;
++            public byte CompatMask;
++            public byte Flags;
++            public ulong TimestampUnixMs;
++            public uint DeltaCount;
++            public uint EntityCount;
++            public uint PlayerOffset;
++            public uint DeltaOffset;
++            public uint EntityOffset;
++            public ulong HashPayload64;
++            public ulong HashHeader64;
++        }
++
++        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = LegacyHeaderSize)]
++        private struct LegacySaveFileHeader
+         {
+             public uint MagicValue;
+             public ushort Version;
+@@ -101,6 +350,32 @@ namespace Hecton8.SaveSystem
+             public uint Checksum;
+         }
+ 
++        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = PersistentWorldSectionHeaderSize)]
++        private struct PersistentWorldSectionHeader
++        {
++            public uint ChunkCount;
++            public uint ItemHashCount;
++            public uint RecordCount;
++        }
++
++        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = EcosystemSectionHeaderSize)]
++        private struct EcosystemSectionHeader
++        {
++            public uint RecordCount;
++        }
++
++        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
++        private struct PersistentWorldSaveRecord16
++        {
++            public uint PackedLocalPosition;
++            public uint InstanceUid;
++            public ushort Quantity;
++            public byte ItemFlags;
++            public byte Reserved;
++            public ushort ChunkIndex;
++            public ushort ItemHashIndex;
++        }
++
+         internal static void WarmRuntime()
+         {
+             byte value = 0;
+@@ -112,188 +387,231 @@ namespace Hecton8.SaveSystem
+             if (string.IsNullOrEmpty(absolutePath) || !File.Exists(absolutePath))
+                 return false;
+ 
+-            byte[] headerBytes = new byte[sizeof(uint)];
+-            using (FileStream stream = new FileStream(absolutePath, FileMode.Open, FileAccess.Read, FileShare.Read))
++            if (!AsyncWriteManager.TryGetFileLength(absolutePath, out long fileLength, out _)
++                || fileLength < sizeof(uint))
+             {
+-                if (stream.Read(headerBytes, 0, headerBytes.Length) != headerBytes.Length)
+-                    return false;
++                return false;
+             }
+ 
+-            fixed (byte* headerPtr = headerBytes)
+-            {
+-                return UnsafeUtility.ReadArrayElement<uint>(headerPtr, 0) == Magic;
+-            }
++            uint headerValue = 0u;
++            return AsyncWriteManager.TryReadAll(absolutePath, &headerValue, sizeof(uint), out _)
++                && headerValue == Magic;
+         }
+ 
+         internal static bool TryWriteSaveFile(
+             string absolutePath,
+             SaveMetadata metadata,
+             SaveData data,
+-            NativeArray<PersistentWorldItemRecord> persistentWorldItems,
++            NativeArray<PersistentWorldDeltaRecord> persistentWorldDeltas,
++            NativeArray<EcosystemSectorSaveRecord> ecosystemSectorStates,
+             NativeArray<uint> packedQuestStateWords,
++            NativeArray<byte> voxelDeltaSnapshot,
+             NativeArray<byte> rawBuffer,
+             NativeArray<byte> compressedBuffer,
+             out string error)
+         {
+             error = string.Empty;
++            NativeParallelHashMap<int3, ushort> persistentWorldChunkLookup = default;
++            NativeList<int3> persistentWorldChunkTable = default;
++            NativeParallelHashMap<ulong, ushort> persistentWorldItemHashLookup = default;
++            NativeList<ulong> persistentWorldItemHashTable = default;
+ 
+-            if (string.IsNullOrEmpty(absolutePath))
+-            {
+-                error = "Save path is empty.";
+-                return false;
+-            }
+-
+-            if (!rawBuffer.IsCreated || !compressedBuffer.IsCreated)
+-            {
+-                error = "Native save buffers are not initialized.";
+-                return false;
+-            }
+-
+-            if (metadata == null || data == null)
++            try
+             {
+-                error = "Save payload is null.";
+-                return false;
+-            }
+-
+-            ES3Settings payloadSettings = CreatePayloadSettings();
+-            byte[] saveBytes = ES3.Serialize(data, payloadSettings);
+-            if (saveBytes == null || saveBytes.Length <= 0)
+-            {
+-                error = "Binary payload serialization produced no data.";
+-                return false;
+-            }
++                if (string.IsNullOrEmpty(absolutePath))
++                {
++                    error = "Save path is empty.";
++                    return false;
++                }
+ 
+-            byte[] sceneBytes = Encoding.UTF8.GetBytes(string.IsNullOrEmpty(metadata.SceneName) ? "Unknown" : metadata.SceneName);
+-            byte[] versionBytes = Encoding.UTF8.GetBytes(string.IsNullOrEmpty(metadata.GameVersion) ? Application.version : metadata.GameVersion);
++                if (!rawBuffer.IsCreated || !compressedBuffer.IsCreated)
++                {
++                    error = "Native save buffers are not initialized.";
++                    return false;
++                }
+ 
+-            if (sceneBytes.Length > ushort.MaxValue || versionBytes.Length > ushort.MaxValue)
+-            {
+-                error = "Save metadata strings exceed the payload prefix limits.";
+-                return false;
+-            }
++                if (metadata == null || data == null)
++                {
++                    error = "Save payload is null.";
++                    return false;
++                }
+ 
+-            int entityRecordSize = UnsafeUtility.SizeOf<PersistentWorldItemRecord>();
+-            int entityCount = persistentWorldItems.IsCreated ? persistentWorldItems.Length : 0;
+-            int entityBytesLength = entityCount * entityRecordSize;
+-            int packedQuestWordCount = packedQuestStateWords.IsCreated ? packedQuestStateWords.Length : 0;
+-            int packedQuestSectionLength = packedQuestWordCount > 0
+-                ? PackedQuestStateSectionHeaderSize + (packedQuestWordCount * UnsafeUtility.SizeOf<uint>())
+-                : 0;
+-            int rawPayloadLength = PayloadPrefixSizeBytes + sceneBytes.Length + versionBytes.Length + saveBytes.Length + packedQuestSectionLength + entityBytesLength;
+-            if (rawPayloadLength > rawBuffer.Length)
+-            {
+-                error = $"Save payload ({rawPayloadLength} bytes) exceeded the {rawBuffer.Length} byte raw buffer ceiling.";
+-                return false;
+-            }
++                string sceneName = string.IsNullOrEmpty(metadata.SceneName) ? "Unknown" : metadata.SceneName;
++                string gameVersion = string.IsNullOrEmpty(metadata.GameVersion) ? Application.version : metadata.GameVersion;
++                int sceneBytesLength = checked(sceneName.Length * sizeof(char));
++                int versionBytesLength = checked(gameVersion.Length * sizeof(char));
+ 
+-            byte* rawPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rawBuffer);
+-            byte* compressedPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(compressedBuffer);
++                if (sceneBytesLength > ushort.MaxValue || versionBytesLength > ushort.MaxValue)
++                {
++                    error = "Save metadata strings exceed the payload prefix limits.";
++                    return false;
++                }
+ 
+-            ulong timestampUnixMs = ToUnixMilliseconds(metadata.Timestamp);
+-            PayloadPrefix prefix = new PayloadPrefix
+-            {
+-                TimestampUnixMs = timestampUnixMs,
+-                PlayTimeSeconds = metadata.PlayTimeSeconds,
+-                PlayerPosition = ToAup(metadata.PlayerPosition),
+-                SaveDataVersion = Mathf.Max(data.version, 0),
+-                SaveDataByteLength = (uint)saveBytes.Length,
+-                SceneNameByteLength = (ushort)sceneBytes.Length,
+-                GameVersionByteLength = (ushort)versionBytes.Length
+-            };
++                int entityCount = persistentWorldDeltas.IsCreated ? persistentWorldDeltas.Length : 0;
++                if (entityCount > 0 &&
++                    !TryBuildPersistentWorldSectionTables(
++                        persistentWorldDeltas,
++                        out persistentWorldChunkLookup,
++                        out persistentWorldChunkTable,
++                        out persistentWorldItemHashLookup,
++                        out persistentWorldItemHashTable,
++                        out error))
++                {
++                    return false;
++                }
+ 
+-            UnsafeUtility.MemClear(rawPtr, rawBuffer.Length);
+-            UnsafeUtility.CopyStructureToPtr(ref prefix, rawPtr);
++                int packedQuestWordCount = packedQuestStateWords.IsCreated ? packedQuestStateWords.Length : 0;
++                int ecosystemSectorCount = ecosystemSectorStates.IsCreated ? ecosystemSectorStates.Length : 0;
++                int voxelDeltaByteLength = voxelDeltaSnapshot.IsCreated ? voxelDeltaSnapshot.Length : 0;
++                int packedQuestSectionLength = packedQuestWordCount > 0
++                    ? PackedQuestStateSectionHeaderSize + (packedQuestWordCount * UnsafeUtility.SizeOf<uint>())
++                    : 0;
++                int persistentWorldSectionLength = entityCount > 0
++                    ? ComputePersistentWorldSectionLength(entityCount, persistentWorldChunkTable.Length, persistentWorldItemHashTable.Length)
++                    : 0;
++                int ecosystemSectionLength = ComputeEcosystemSectionLength(ecosystemSectorCount);
++
++                byte* rawPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rawBuffer);
++                byte* compressedPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(compressedBuffer);
++                UnsafeUtility.MemClear(rawPtr, rawBuffer.Length);
++
++                int payloadCursor = PayloadPrefixSizeBytes + sceneBytesLength + versionBytesLength;
++                if (!SaveBinaryPayloadCodec.TryWrite(data, AddByteOffset(rawPtr, payloadCursor), rawBuffer.Length - payloadCursor, out int saveDataByteLength, out error))
++                    return false;
+ 
+-            int payloadCursor = PayloadPrefixSizeBytes;
+-            CopyManagedBytesToUnmanaged(sceneBytes, AddByteOffset(rawPtr, payloadCursor));
+-            payloadCursor += sceneBytes.Length;
+-            CopyManagedBytesToUnmanaged(versionBytes, AddByteOffset(rawPtr, payloadCursor));
+-            payloadCursor += versionBytes.Length;
+-            CopyManagedBytesToUnmanaged(saveBytes, AddByteOffset(rawPtr, payloadCursor));
+-            payloadCursor += saveBytes.Length;
+-            int packedQuestOffsetInPayload = payloadCursor;
++                int rawPayloadLength = payloadCursor + saveDataByteLength + packedQuestSectionLength + persistentWorldSectionLength + ecosystemSectionLength + voxelDeltaByteLength;
++                if (rawPayloadLength > rawBuffer.Length)
++                {
++                    error = $"Save payload ({rawPayloadLength} bytes) exceeded the {rawBuffer.Length} byte raw buffer ceiling.";
++                    return false;
++                }
+ 
+-            if (packedQuestWordCount > 0)
+-            {
+-                PackedQuestStateSectionHeader packedQuestHeader = new PackedQuestStateSectionHeader
++                ulong timestampUnixMs = ToUnixMilliseconds(metadata.Timestamp);
++                PayloadPrefix prefix = new PayloadPrefix
+                 {
+-                    WordCount = (uint)packedQuestWordCount,
+-                    Checksum = ComputePackedQuestStateChecksum(packedQuestStateWords)
++                    TimestampUnixMs = timestampUnixMs,
++                    PlayTimeSeconds = metadata.PlayTimeSeconds,
++                    PlayerPosition = ToAup(metadata.PlayerPosition),
++                    SaveDataVersion = math.max(data.version, 0),
++                    SaveDataByteLength = (uint)saveDataByteLength,
++                    SceneNameByteLength = (ushort)sceneBytesLength,
++                    GameVersionByteLength = (ushort)versionBytesLength
+                 };
+ 
+-                UnsafeUtility.CopyStructureToPtr(ref packedQuestHeader, AddByteOffset(rawPtr, payloadCursor));
+-                payloadCursor += PackedQuestStateSectionHeaderSize;
++                UnsafeUtility.CopyStructureToPtr(ref prefix, rawPtr);
++                payloadCursor = PayloadPrefixSizeBytes;
++                CopyUtf16StringToUnmanaged(sceneName, AddByteOffset(rawPtr, payloadCursor));
++                payloadCursor += sceneBytesLength;
++                CopyUtf16StringToUnmanaged(gameVersion, AddByteOffset(rawPtr, payloadCursor));
++                payloadCursor += versionBytesLength;
++                payloadCursor += saveDataByteLength;
++                int packedQuestOffsetInPayload = payloadCursor;
+ 
+-                void* packedQuestSourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(packedQuestStateWords);
+-                UnsafeUtility.MemCpy(AddByteOffset(rawPtr, payloadCursor), packedQuestSourcePtr, packedQuestWordCount * UnsafeUtility.SizeOf<uint>());
+-                payloadCursor += packedQuestWordCount * UnsafeUtility.SizeOf<uint>();
+-            }
++                if (packedQuestWordCount > 0)
++                {
++                    PackedQuestStateSectionHeader packedQuestHeader = new PackedQuestStateSectionHeader
++                    {
++                        WordCount = (uint)packedQuestWordCount,
++                        Checksum = ComputePackedQuestStateChecksum(packedQuestStateWords)
++                    };
++
++                    UnsafeUtility.CopyStructureToPtr(ref packedQuestHeader, AddByteOffset(rawPtr, payloadCursor));
++                    payloadCursor += PackedQuestStateSectionHeaderSize;
++
++                    void* packedQuestSourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(packedQuestStateWords);
++                    UnsafeUtility.MemCpy(AddByteOffset(rawPtr, payloadCursor), packedQuestSourcePtr, packedQuestWordCount * UnsafeUtility.SizeOf<uint>());
++                    payloadCursor += packedQuestWordCount * UnsafeUtility.SizeOf<uint>();
++                }
+ 
+-            int entityOffsetInPayload = payloadCursor;
++                int entityOffsetInPayload = payloadCursor;
++                if (entityCount > 0)
++                {
++                    WritePersistentWorldSection(
++                        AddByteOffset(rawPtr, payloadCursor),
++                        persistentWorldDeltas,
++                        persistentWorldChunkLookup,
++                        persistentWorldChunkTable,
++                        persistentWorldItemHashLookup,
++                        persistentWorldItemHashTable);
++
++                    payloadCursor += persistentWorldSectionLength;
++                }
+ 
+-            if (entityBytesLength > 0)
+-            {
+-                void* entitySourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(persistentWorldItems);
+-                UnsafeUtility.MemCpy(AddByteOffset(rawPtr, payloadCursor), entitySourcePtr, entityBytesLength);
+-                payloadCursor += entityBytesLength;
+-            }
++                WriteEcosystemSection(AddByteOffset(rawPtr, payloadCursor), ecosystemSectorStates);
++                payloadCursor += ecosystemSectionLength;
+ 
+-            uint payloadHash = Hash32(rawPtr, rawPayloadLength);
++                if (voxelDeltaByteLength > 0)
++                {
++                    void* voxelSourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(voxelDeltaSnapshot);
++                    UnsafeUtility.MemCpy(AddByteOffset(rawPtr, payloadCursor), voxelSourcePtr, voxelDeltaByteLength);
++                    payloadCursor += voxelDeltaByteLength;
++                }
+ 
+-            SaveFileHeader header = new SaveFileHeader
+-            {
+-                MagicValue = Magic,
+-                Version = CurrentVersion,
+-                CompatMask = CurrentCompatMask,
+-                Flags = FlagLz4Blocks,
+-                TimestampUnixMs = timestampUnixMs,
+-                DeltaCount = (uint)packedQuestWordCount,
+-                EntityCount = (uint)entityCount,
+-                PlayerOffset = HeaderSize,
+-                DeltaOffset = (uint)(HeaderSize + packedQuestOffsetInPayload),
+-                EntityOffset = (uint)(HeaderSize + entityOffsetInPayload),
+-                HashHeader32 = 0u,
+-                HashPayload32 = payloadHash
+-            };
++                ulong payloadHash = Hash64(rawPtr, rawPayloadLength);
+ 
+-            header.HashHeader32 = ComputeHeaderHash(ref header);
++                SaveFileHeader header = new SaveFileHeader
++                {
++                    MagicValue = Magic,
++                    Version = CurrentVersion,
++                    CompatMask = CurrentCompatMask,
++                    Flags = FlagLz4Blocks,
++                    TimestampUnixMs = timestampUnixMs,
++                    DeltaCount = (uint)packedQuestWordCount,
++                    EntityCount = (uint)entityCount,
++                    PlayerOffset = CurrentHeaderSize,
++                    DeltaOffset = (uint)(CurrentHeaderSize + packedQuestOffsetInPayload),
++                    EntityOffset = (uint)(CurrentHeaderSize + entityOffsetInPayload),
++                    HashPayload64 = payloadHash,
++                    HashHeader64 = 0UL
++                };
+ 
+-            int compressedPayloadLength = Lz4BlockCompress(rawPtr, rawPayloadLength, compressedPtr, compressedBuffer.Length);
+-            if (compressedPayloadLength <= 0)
+-            {
+-                error = "LZ4 block compression failed.";
+-                return false;
+-            }
++                header.HashHeader64 = ComputeHeaderHash(ref header);
+ 
+-            string directory = Path.GetDirectoryName(absolutePath);
+-            if (!string.IsNullOrEmpty(directory))
+-                Directory.CreateDirectory(directory);
++                if (!TryCompressPayload(rawPtr, rawPayloadLength, compressedPtr, compressedBuffer.Length, out int compressedPayloadLength, out error))
++                    return false;
+ 
+-            byte[] headerBytes = new byte[HeaderSize];
+-            fixed (byte* headerPtr = headerBytes)
+-            {
++                string directory = Path.GetDirectoryName(absolutePath);
++                if (!string.IsNullOrEmpty(directory))
++                    Directory.CreateDirectory(directory);
++
++                byte* headerPtr = stackalloc byte[CurrentHeaderSize];
++                UnsafeUtility.MemClear(headerPtr, CurrentHeaderSize);
+                 UnsafeUtility.CopyStructureToPtr(ref header, headerPtr);
+-            }
+ 
+-            using (FileStream stream = new FileStream(absolutePath, FileMode.Create, FileAccess.Write, FileShare.None))
+-            {
+-                stream.Write(headerBytes, 0, headerBytes.Length);
+-                using (UnmanagedMemoryStream payloadStream = new UnmanagedMemoryStream(compressedPtr, compressedPayloadLength))
++                if (!AsyncWriteManager.WriteAll(
++                        absolutePath,
++                        headerPtr,
++                        CurrentHeaderSize,
++                        compressedPtr,
++                        compressedPayloadLength,
++                        out error))
++                {
++                    return false;
++                }
++
++                if (!TryReadMetadata(absolutePath, metadata.SlotName, rawBuffer, out _, out _, out string verifyError))
+                 {
+-                    payloadStream.CopyTo(stream);
++                    error = $"Write-verify failed: {verifyError}";
++                    return false;
+                 }
+ 
+-                stream.Flush();
++                metadata.Checksum = payloadHash.ToString("X16");
++                return true;
+             }
+-
+-            if (!TryReadMetadata(absolutePath, metadata.SlotName, rawBuffer, out _, out _, out string verifyError))
++            finally
+             {
+-                error = $"Write-verify failed: {verifyError}";
+-                return false;
+-            }
++                if (persistentWorldItemHashTable.IsCreated)
++                    persistentWorldItemHashTable.Dispose();
+ 
+-            metadata.Checksum = payloadHash.ToString("X8");
+-            return true;
++                if (persistentWorldItemHashLookup.IsCreated)
++                    persistentWorldItemHashLookup.Dispose();
++
++                if (persistentWorldChunkTable.IsCreated)
++                    persistentWorldChunkTable.Dispose();
++
++                if (persistentWorldChunkLookup.IsCreated)
++                    persistentWorldChunkLookup.Dispose();
++            }
+         }
+ 
+         internal static bool TryReadMetadata(
+@@ -307,17 +625,17 @@ namespace Hecton8.SaveSystem
+             metadata = null;
+             detectedVersion = 0;
+ 
+-            if (!TryReadPayload(absolutePath, rawBuffer, out SaveFileHeader header, out PayloadPrefix prefix, out byte* rawPtr, out _, out string readError))
++            if (!TryReadPayload(absolutePath, rawBuffer, out SaveFileHeader header, out PayloadPrefix prefix, out byte* rawPtr, out int rawPayloadLength, out string readError))
+             {
+                 error = readError;
+                 return false;
+             }
+ 
+             int cursor = PayloadPrefixSizeBytes;
+-            if (!TryReadUtf8String(rawPtr, rawBuffer.Length, ref cursor, prefix.SceneNameByteLength, out string sceneName, out error))
++            if (!TryReadUtf16String(rawPtr, rawPayloadLength, ref cursor, prefix.SceneNameByteLength, out string sceneName, out error))
+                 return false;
+ 
+-            if (!TryReadUtf8String(rawPtr, rawBuffer.Length, ref cursor, prefix.GameVersionByteLength, out string gameVersion, out error))
++            if (!TryReadUtf16String(rawPtr, rawPayloadLength, ref cursor, prefix.GameVersionByteLength, out string gameVersion, out error))
+                 return false;
+ 
+             detectedVersion = prefix.SaveDataVersion;
+@@ -329,7 +647,7 @@ namespace Hecton8.SaveSystem
+                 PlayTimeSeconds = prefix.PlayTimeSeconds,
+                 SceneName = sceneName,
+                 PlayerPosition = ToRuntimePosition(prefix.PlayerPosition),
+-                Checksum = header.HashPayload32.ToString("X8")
++                Checksum = FormatPayloadChecksum(in header)
+             };
+ 
+             error = string.Empty;
+@@ -342,14 +660,18 @@ namespace Hecton8.SaveSystem
+             NativeArray<byte> rawBuffer,
+             out SaveData data,
+             out uint[] packedQuestStateWords,
+-            out PersistentWorldItemRecord[] persistentWorldItems,
++            out PersistentWorldDeltaRecord[] persistentWorldDeltas,
++            out EcosystemSectorSaveRecord[] ecosystemSectorStates,
++            out NativeArray<byte> voxelDeltaSnapshot,
+             out SaveMetadata metadata,
+             out int detectedVersion,
+             out string error)
+         {
+             data = null;
+             packedQuestStateWords = null;
+-            persistentWorldItems = null;
++            persistentWorldDeltas = null;
++            ecosystemSectorStates = null;
++            voxelDeltaSnapshot = default;
+             metadata = null;
+             detectedVersion = 0;
+ 
+@@ -360,10 +682,10 @@ namespace Hecton8.SaveSystem
+             }
+ 
+             int cursor = PayloadPrefixSizeBytes;
+-            if (!TryReadUtf8String(rawPtr, rawBuffer.Length, ref cursor, prefix.SceneNameByteLength, out string sceneName, out error))
++            if (!TryReadUtf16String(rawPtr, rawPayloadLength, ref cursor, prefix.SceneNameByteLength, out string sceneName, out error))
+                 return false;
+ 
+-            if (!TryReadUtf8String(rawPtr, rawBuffer.Length, ref cursor, prefix.GameVersionByteLength, out string gameVersion, out error))
++            if (!TryReadUtf16String(rawPtr, rawPayloadLength, ref cursor, prefix.GameVersionByteLength, out string gameVersion, out error))
+                 return false;
+ 
+             int saveDataLength = checked((int)prefix.SaveDataByteLength);
+@@ -373,14 +695,12 @@ namespace Hecton8.SaveSystem
+                 return false;
+             }
+ 
+-            byte[] saveBytes = new byte[saveDataLength];
+-            CopyUnmanagedBytesToManaged(AddByteOffset(rawPtr, cursor), saveBytes);
++            if (!SaveBinaryPayloadCodec.TryRead(AddByteOffset(rawPtr, cursor), saveDataLength, out data, out int bytesRead, out error))
++                return false;
+ 
+-            ES3Settings payloadSettings = CreatePayloadSettings();
+-            data = ES3.Deserialize<SaveData>(saveBytes, payloadSettings);
+-            if (data == null)
++            if (bytesRead != saveDataLength)
+             {
+-                error = "Binary save payload deserialized to null.";
++                error = "Binary save payload length mismatch.";
+                 return false;
+             }
+ 
+@@ -395,11 +715,31 @@ namespace Hecton8.SaveSystem
+                 return false;
+             }
+ 
+-            if (!TryReadPersistentWorldItems(
++            if (!TryReadPersistentWorldDeltas(
++                    rawPtr,
++                    rawPayloadLength,
++                    header,
++                    out persistentWorldDeltas,
++                    out error))
++            {
++                return false;
++            }
++
++            if (!TryReadEcosystemSectorStates(
++                    rawPtr,
++                    rawPayloadLength,
++                    header,
++                    out ecosystemSectorStates,
++                    out error))
++            {
++                return false;
++            }
++
++            if (!TryReadVoxelDeltaSnapshot(
+                     rawPtr,
+                     rawPayloadLength,
+                     header,
+-                    out persistentWorldItems,
++                    out voxelDeltaSnapshot,
+                     out error))
+             {
+                 return false;
+@@ -414,7 +754,7 @@ namespace Hecton8.SaveSystem
+                 PlayTimeSeconds = prefix.PlayTimeSeconds,
+                 SceneName = sceneName,
+                 PlayerPosition = ToRuntimePosition(prefix.PlayerPosition),
+-                Checksum = header.HashPayload32.ToString("X8")
++                Checksum = FormatPayloadChecksum(in header)
+             };
+ 
+             error = string.Empty;
+@@ -426,6 +766,12 @@ namespace Hecton8.SaveSystem
+             return xxHash3.Hash64(ptr, length).x;
+         }
+ 
++        internal static ulong Hash64(void* ptr, long length)
++        {
++            uint2 hash = xxHash3.Hash64(ptr, length);
++            return ((ulong)hash.y << 32) | hash.x;
++        }
++
+         private static byte* AddByteOffset(void* source, int byteOffset)
+         {
+             // Byte-wise pointer math only. Never advance typed pointers by raw byte offsets.
+@@ -491,58 +837,138 @@ namespace Hecton8.SaveSystem
+                 return false;
+             }
+ 
+-            byte[] fileBytes = File.ReadAllBytes(absolutePath);
+-            if (fileBytes.Length < HeaderSize)
++            if (!AsyncWriteManager.TryGetFileLength(absolutePath, out long fileLength, out error))
++                return false;
++
++            if (fileLength < LegacyHeaderSize)
+             {
+                 error = "Save file is smaller than the fixed header.";
+                 return false;
+             }
+ 
+-            rawPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rawBuffer);
++            if (fileLength > int.MaxValue)
++            {
++                error = "Save file exceeds the supported native staging range.";
++                return false;
++            }
+ 
+-            fixed (byte* filePtr = fileBytes)
++            if (fileLength > CurrentHeaderSize + MaxCompressedPayloadBytes)
+             {
+-                header = UnsafeUtility.ReadArrayElement<SaveFileHeader>(filePtr, 0);
+-                if (header.MagicValue != Magic)
+-                {
+-                    error = "Save magic mismatch.";
+-                    return false;
+-                }
++                error = "Save file exceeds the maximum supported compressed payload size.";
++                return false;
++            }
+ 
+-                if (!TryValidateHeader(header, out error))
++            rawPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rawBuffer);
++            // MMF path: decompression reads directly from the mapped view into the persistent raw payload buffer.
++            AsyncWriteManager.ReadOnlyMapping readMapping = default;
++            try
++            {
++                if (!AsyncWriteManager.TryOpenReadOnlyMapping(absolutePath, out readMapping, out error))
+                     return false;
+ 
+-                uint computedHeaderHash = Hash32(filePtr, 0x24L);
+-                if (computedHeaderHash != header.HashHeader32)
++                if (readMapping.Length != fileLength)
+                 {
+-                    error = "Header checksum mismatch.";
++                    error = "Mapped save length changed during payload read.";
+                     return false;
+                 }
+ 
+-                int compressedPayloadLength = fileBytes.Length - HeaderSize;
+-                if (compressedPayloadLength <= 0)
++                byte* filePtr = (byte*)readMapping.View;
++
++                SaveFileHeaderPrefix headerPrefix = UnsafeUtility.ReadArrayElement<SaveFileHeaderPrefix>(filePtr, 0);
++                if (headerPrefix.MagicValue != Magic)
+                 {
+-                    error = "Save payload is missing.";
++                    error = "Save magic mismatch.";
+                     return false;
+                 }
+ 
+-                rawPayloadLength = Lz4BlockDecompress(AddByteOffset(filePtr, HeaderSize), compressedPayloadLength, rawPtr, rawBuffer.Length);
+-                if (rawPayloadLength <= 0)
++                int headerSizeBytes = ResolveHeaderSize(headerPrefix.Version);
++                if (headerSizeBytes <= 0)
+                 {
+-                    error = "LZ4 block decompression failed.";
++                    error = $"Unsupported save header version {headerPrefix.Version}.";
+                     return false;
+                 }
+ 
+-                uint computedPayloadHash = Hash32(rawPtr, rawPayloadLength);
+-                if (computedPayloadHash != header.HashPayload32)
++                if (fileLength < headerSizeBytes)
+                 {
+-                    error = "Payload checksum mismatch.";
++                    error = "Save file is truncated inside the fixed header.";
+                     return false;
+                 }
+ 
+-                if (rawPayloadLength < PayloadPrefixSizeBytes)
++                bool isCurrentHeader = headerPrefix.Version >= First64BitHashVersion;
++                if (isCurrentHeader)
+                 {
+-                    error = "Payload prefix is truncated.";
++                    header = UnsafeUtility.ReadArrayElement<SaveFileHeader>(filePtr, 0);
++                    ulong computedHeaderHash = Hash64(filePtr, CurrentHeaderHashSizeBytes);
++                    if (computedHeaderHash != header.HashHeader64)
++                    {
++                        error = "Header checksum mismatch.";
++                        return false;
++                    }
++                }
++                else
++                {
++                    LegacySaveFileHeader legacyHeader = UnsafeUtility.ReadArrayElement<LegacySaveFileHeader>(filePtr, 0);
++                    uint computedHeaderHash = Hash32(filePtr, LegacyHeaderHashSizeBytes);
++                    if (computedHeaderHash != legacyHeader.HashHeader32)
++                    {
++                        error = "Header checksum mismatch.";
++                        return false;
++                    }
++
++                    header = ConvertLegacyHeader(in legacyHeader);
++                }
++
++                if (!TryValidateHeader(header, out error))
++                    return false;
++
++                int compressedPayloadLength = (int)readMapping.Length - headerSizeBytes;
++                if (compressedPayloadLength <= 0)
++                {
++                    error = "Save payload is missing.";
++                    return false;
++                }
++
++                if (compressedPayloadLength > MaxCompressedPayloadBytes)
++                {
++                    error = "Compressed save payload exceeds the supported decoder budget.";
++                    return false;
++                }
++
++                rawPayloadLength = Lz4BlockDecompress(AddByteOffset(filePtr, headerSizeBytes), compressedPayloadLength, rawPtr, rawBuffer.Length);
++                if (rawPayloadLength <= 0)
++                {
++                    error = "LZ4 block decompression failed.";
++                    return false;
++                }
++
++                if (rawPayloadLength > RawPayloadCapacityBytes || rawPayloadLength > rawBuffer.Length)
++                {
++                    error = "Decompressed save payload exceeded the decoder budget.";
++                    return false;
++                }
++
++                if (isCurrentHeader)
++                {
++                    ulong computedPayloadHash = Hash64(rawPtr, rawPayloadLength);
++                    if (computedPayloadHash != header.HashPayload64)
++                    {
++                        error = "Payload checksum mismatch.";
++                        return false;
++                    }
++                }
++                else
++                {
++                    uint computedPayloadHash = Hash32(rawPtr, rawPayloadLength);
++                    if (computedPayloadHash != (uint)header.HashPayload64)
++                    {
++                        error = "Payload checksum mismatch.";
++                        return false;
++                    }
++                }
++
++                if (rawPayloadLength < PayloadPrefixSizeBytes)
++                {
++                    error = "Payload prefix is truncated.";
+                     return false;
+                 }
+ 
+@@ -561,8 +987,9 @@ namespace Hecton8.SaveSystem
+                     return false;
+                 }
+ 
+-                int deltaSectionOffset = checked((int)header.DeltaOffset) - HeaderSize;
+-                int entitySectionOffset = checked((int)header.EntityOffset) - HeaderSize;
++                int payloadBaseOffset = ResolvePayloadBaseOffset(in header);
++                int deltaSectionOffset = checked((int)header.DeltaOffset) - payloadBaseOffset;
++                int entitySectionOffset = checked((int)header.EntityOffset) - payloadBaseOffset;
+                 if (deltaSectionOffset < playerPayloadLength || deltaSectionOffset > rawPayloadLength)
+                 {
+                     error = "Packed quest-state offset exceeds the decompressed payload bounds.";
+@@ -575,25 +1002,15 @@ namespace Hecton8.SaveSystem
+                     return false;
+                 }
+ 
+-                if (RequiresCompatMigration(header))
+-                {
+-                    if (!TryMigratePayloadHeader(ref header, out error))
+-                        return false;
+-                }
++            }
++            finally
++            {
++                AsyncWriteManager.CloseReadOnlyMapping(ref readMapping);
+             }
+ 
+             return true;
+         }
+ 
+-        private static ES3Settings CreatePayloadSettings()
+-        {
+-            return new ES3Settings
+-            {
+-                encryptionType = ES3.EncryptionType.None,
+-                compressionType = ES3.CompressionType.None
+-            };
+-        }
+-
+         private static bool TryReadPackedQuestStateWords(
+             byte* rawPtr,
+             int rawPayloadLength,
+@@ -606,8 +1023,9 @@ namespace Hecton8.SaveSystem
+             error = string.Empty;
+ 
+             int packedQuestWordCount = checked((int)header.DeltaCount);
+-            int packedQuestSectionOffset = checked((int)header.DeltaOffset) - HeaderSize;
+-            int entitySectionOffset = checked((int)header.EntityOffset) - HeaderSize;
++            int payloadBaseOffset = ResolvePayloadBaseOffset(in header);
++            int packedQuestSectionOffset = checked((int)header.DeltaOffset) - payloadBaseOffset;
++            int entitySectionOffset = checked((int)header.EntityOffset) - payloadBaseOffset;
+             if (packedQuestWordCount <= 0 || packedQuestSectionOffset == entitySectionOffset)
+             {
+                 if (packedQuestSectionOffset < playerPayloadLength || packedQuestSectionOffset > rawPayloadLength)
+@@ -669,22 +1087,25 @@ namespace Hecton8.SaveSystem
+             return true;
+         }
+ 
+-        private static bool TryReadPersistentWorldItems(
++        private static bool TryReadPersistentWorldDeltas(
+             byte* rawPtr,
+             int rawPayloadLength,
+             SaveFileHeader header,
+-            out PersistentWorldItemRecord[] persistentWorldItems,
++            out PersistentWorldDeltaRecord[] persistentWorldDeltas,
+             out string error)
+         {
+-            persistentWorldItems = null;
++            persistentWorldDeltas = null;
+             error = string.Empty;
+ 
+             int entityCount = checked((int)header.EntityCount);
+             if (entityCount <= 0)
+                 return true;
+ 
+-            int entityRecordSize = UnsafeUtility.SizeOf<PersistentWorldItemRecord>();
+-            int entitySectionOffset = checked((int)header.EntityOffset) - HeaderSize;
++            if (header.Version >= CompactPersistentWorldSectionVersion)
++                return TryReadPersistentWorldDeltasV5(rawPtr, rawPayloadLength, header, out persistentWorldDeltas, out error);
++
++            int entityRecordSize = UnsafeUtility.SizeOf<PersistentWorldDeltaRecord>();
++            int entitySectionOffset = checked((int)header.EntityOffset) - ResolvePayloadBaseOffset(in header);
+ 
+             long entityBytesLong = (long)entityCount * entityRecordSize;
+             if (entityBytesLong > int.MaxValue)
+@@ -700,11 +1121,11 @@ namespace Hecton8.SaveSystem
+                 return false;
+             }
+ 
+-            persistentWorldItems = new PersistentWorldItemRecord[entityCount];
++            persistentWorldDeltas = new PersistentWorldDeltaRecord[entityCount];
+             if (entityBytes == 0)
+                 return true;
+ 
+-            fixed (PersistentWorldItemRecord* destinationPtr = persistentWorldItems)
++            fixed (PersistentWorldDeltaRecord* destinationPtr = persistentWorldDeltas)
+             {
+                 byte* entitySourcePtr = AddByteOffset(rawPtr, entitySectionOffset);
+                 UnsafeUtility.MemCpy(destinationPtr, entitySourcePtr, entityBytes);
+@@ -713,83 +1134,503 @@ namespace Hecton8.SaveSystem
+             return true;
+         }
+ 
+-        private static uint ComputeHeaderHash(ref SaveFileHeader header)
++        private static bool TryReadVoxelDeltaSnapshot(
++            byte* rawPtr,
++            int rawPayloadLength,
++            SaveFileHeader header,
++            out NativeArray<byte> voxelDeltaSnapshot,
++            out string error)
++        {
++            voxelDeltaSnapshot = default;
++            if (!TryResolvePersistentWorldSectionLength(rawPtr, rawPayloadLength, header, out int entitySectionOffset, out int entitySectionLength, out error))
++                return false;
++
++            int voxelSectionOffset = entitySectionOffset + entitySectionLength;
++            if (header.Version >= EcosystemSectionVersion)
++            {
++                if (!TryResolveEcosystemSectionLength(
++                        rawPtr,
++                        rawPayloadLength,
++                        header,
++                        entitySectionOffset,
++                        entitySectionLength,
++                        out int ecosystemSectionOffset,
++                        out int ecosystemSectionLength,
++                        out error))
++                {
++                    return false;
++                }
++
++                voxelSectionOffset = ecosystemSectionOffset + ecosystemSectionLength;
++            }
++
++            if (voxelSectionOffset < 0 || voxelSectionOffset > rawPayloadLength)
++            {
++                error = "Voxel delta payload offset exceeds the decompressed payload bounds.";
++                return false;
++            }
++
++            int voxelByteLength = rawPayloadLength - voxelSectionOffset;
++            if (voxelByteLength <= 0)
++                return true;
++
++            voxelDeltaSnapshot = new NativeArray<byte>(voxelByteLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
++            void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(voxelDeltaSnapshot);
++            UnsafeUtility.MemCpy(destinationPtr, AddByteOffset(rawPtr, voxelSectionOffset), voxelByteLength);
++            return true;
++        }
++
++        private static ulong ComputeHeaderHash(ref SaveFileHeader header)
+         {
+             SaveFileHeader copy = header;
+-            copy.HashHeader32 = 0u;
+-            copy.HashPayload32 = header.HashPayload32;
+-            return Hash32(UnsafeUtility.AddressOf(ref copy), 0x24L);
++            copy.HashHeader64 = 0UL;
++            return Hash64(UnsafeUtility.AddressOf(ref copy), CurrentHeaderHashSizeBytes);
+         }
+ 
+-        private static bool TryValidateHeader(SaveFileHeader header, out string error)
++        private static bool TryBuildPersistentWorldSectionTables(
++            NativeArray<PersistentWorldDeltaRecord> persistentWorldDeltas,
++            out NativeParallelHashMap<int3, ushort> chunkLookup,
++            out NativeList<int3> chunkTable,
++            out NativeParallelHashMap<ulong, ushort> itemHashLookup,
++            out NativeList<ulong> itemHashTable,
++            out string error)
+         {
+-            if (header.Version < MinimumSupportedVersion || header.Version > CurrentVersion)
++            int recordCount = persistentWorldDeltas.IsCreated ? persistentWorldDeltas.Length : 0;
++            int capacity = math.max(recordCount, 1);
++            chunkLookup = new NativeParallelHashMap<int3, ushort>(capacity, Allocator.Persistent);
++            chunkTable = new NativeList<int3>(capacity, Allocator.Persistent);
++            itemHashLookup = new NativeParallelHashMap<ulong, ushort>(capacity, Allocator.Persistent);
++            itemHashTable = new NativeList<ulong>(capacity, Allocator.Persistent);
++            error = string.Empty;
++
++            for (int i = 0; i < recordCount; i++)
+             {
+-                error = $"Unsupported save header version {header.Version}.";
++                PersistentWorldDeltaRecord deltaRecord = persistentWorldDeltas[i];
++                if (!deltaRecord.IsValid)
++                    continue;
++
++                if (!chunkLookup.ContainsKey(deltaRecord.ChunkId))
++                {
++                    if (chunkTable.Length >= ushort.MaxValue)
++                    {
++                        error = "Persistent-world delta chunk table exceeded 65535 unique chunks.";
++                        return false;
++                    }
++
++                    ushort chunkIndex = (ushort)chunkTable.Length;
++                    chunkLookup.Add(deltaRecord.ChunkId, chunkIndex);
++                    chunkTable.Add(deltaRecord.ChunkId);
++                }
++
++                if (!itemHashLookup.ContainsKey(deltaRecord.ItemPersistentIdHash))
++                {
++                    if (itemHashTable.Length >= ushort.MaxValue)
++                    {
++                        error = "Persistent-world delta item table exceeded 65535 unique item hashes.";
++                        return false;
++                    }
++
++                    ushort itemIndex = (ushort)itemHashTable.Length;
++                    itemHashLookup.Add(deltaRecord.ItemPersistentIdHash, itemIndex);
++                    itemHashTable.Add(deltaRecord.ItemPersistentIdHash);
++                }
++            }
++
++            return true;
++        }
++
++        private static int ComputePersistentWorldSectionLength(int entityCount, int chunkCount, int itemHashCount)
++        {
++            return PersistentWorldSectionHeaderSize +
++                   checked(chunkCount * UnsafeUtility.SizeOf<int3>()) +
++                   checked(itemHashCount * UnsafeUtility.SizeOf<ulong>()) +
++                   checked(entityCount * UnsafeUtility.SizeOf<PersistentWorldSaveRecord16>());
++        }
++
++        private static int ComputeEcosystemSectionLength(int recordCount)
++        {
++            return EcosystemSectionHeaderSize +
++                   checked(math.max(recordCount, 0) * UnsafeUtility.SizeOf<EcosystemSectorSaveRecord>());
++        }
++
++        private static void WritePersistentWorldSection(
++            byte* destination,
++            NativeArray<PersistentWorldDeltaRecord> persistentWorldDeltas,
++            NativeParallelHashMap<int3, ushort> chunkLookup,
++            NativeList<int3> chunkTable,
++            NativeParallelHashMap<ulong, ushort> itemHashLookup,
++            NativeList<ulong> itemHashTable)
++        {
++            PersistentWorldSectionHeader sectionHeader = new PersistentWorldSectionHeader
++            {
++                ChunkCount = (uint)chunkTable.Length,
++                ItemHashCount = (uint)itemHashTable.Length,
++                RecordCount = (uint)(persistentWorldDeltas.IsCreated ? persistentWorldDeltas.Length : 0)
++            };
++
++            UnsafeUtility.CopyStructureToPtr(ref sectionHeader, destination);
++            int cursor = PersistentWorldSectionHeaderSize;
++
++            if (chunkTable.Length > 0)
++            {
++                void* chunkSourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(chunkTable.AsArray());
++                UnsafeUtility.MemCpy(AddByteOffset(destination, cursor), chunkSourcePtr, chunkTable.Length * UnsafeUtility.SizeOf<int3>());
++                cursor += chunkTable.Length * UnsafeUtility.SizeOf<int3>();
++            }
++
++            if (itemHashTable.Length > 0)
++            {
++                void* itemSourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(itemHashTable.AsArray());
++                UnsafeUtility.MemCpy(AddByteOffset(destination, cursor), itemSourcePtr, itemHashTable.Length * UnsafeUtility.SizeOf<ulong>());
++                cursor += itemHashTable.Length * UnsafeUtility.SizeOf<ulong>();
++            }
++
++            int recordCount = persistentWorldDeltas.IsCreated ? persistentWorldDeltas.Length : 0;
++            for (int i = 0; i < recordCount; i++)
++            {
++                PersistentWorldDeltaRecord deltaRecord = persistentWorldDeltas[i];
++                PersistentWorldSaveRecord16 saveRecord = default;
++                if (deltaRecord.IsValid &&
++                    chunkLookup.TryGetValue(deltaRecord.ChunkId, out ushort chunkIndex) &&
++                    itemHashLookup.TryGetValue(deltaRecord.ItemPersistentIdHash, out ushort itemHashIndex))
++                {
++                    saveRecord = new PersistentWorldSaveRecord16
++                    {
++                        PackedLocalPosition = deltaRecord.PackedLocalPosition,
++                        InstanceUid = deltaRecord.InstanceUid,
++                        Quantity = (ushort)math.clamp(deltaRecord.Quantity, 1, ushort.MaxValue),
++                        ItemFlags = deltaRecord.ItemFlags,
++                        Reserved = 0,
++                        ChunkIndex = chunkIndex,
++                        ItemHashIndex = itemHashIndex
++                    };
++                }
++
++                UnsafeUtility.CopyStructureToPtr(ref saveRecord, AddByteOffset(destination, cursor));
++                cursor += UnsafeUtility.SizeOf<PersistentWorldSaveRecord16>();
++            }
++        }
++
++        private static bool TryReadPersistentWorldDeltasV5(
++            byte* rawPtr,
++            int rawPayloadLength,
++            SaveFileHeader header,
++            out PersistentWorldDeltaRecord[] persistentWorldDeltas,
++            out string error)
++        {
++            persistentWorldDeltas = null;
++            if (!TryResolvePersistentWorldSectionLength(rawPtr, rawPayloadLength, header, out int entitySectionOffset, out _, out error))
++                return false;
++
++            PersistentWorldSectionHeader sectionHeader = UnsafeUtility.ReadArrayElement<PersistentWorldSectionHeader>(AddByteOffset(rawPtr, entitySectionOffset), 0);
++            int chunkCount = checked((int)sectionHeader.ChunkCount);
++            int itemHashCount = checked((int)sectionHeader.ItemHashCount);
++            int recordCount = checked((int)sectionHeader.RecordCount);
++            if (recordCount != checked((int)header.EntityCount))
++            {
++                error = "Persistent-world delta section count mismatch.";
+                 return false;
+             }
+ 
+-            if (header.CompatMask != LegacyCompatMaskV1 && header.CompatMask != CurrentCompatMask)
++            persistentWorldDeltas = new PersistentWorldDeltaRecord[recordCount];
++            if (recordCount <= 0)
+             {
+-                error = $"Unsupported save compatibility mask 0x{header.CompatMask:X2}.";
++                error = string.Empty;
++                return true;
++            }
++
++            int cursor = entitySectionOffset + PersistentWorldSectionHeaderSize;
++            byte* chunkTablePtr = AddByteOffset(rawPtr, cursor);
++            cursor += chunkCount * UnsafeUtility.SizeOf<int3>();
++            byte* itemHashTablePtr = AddByteOffset(rawPtr, cursor);
++            cursor += itemHashCount * UnsafeUtility.SizeOf<ulong>();
++            byte* saveRecordPtr = AddByteOffset(rawPtr, cursor);
++
++            for (int i = 0; i < recordCount; i++)
++            {
++                PersistentWorldSaveRecord16 saveRecord = UnsafeUtility.ReadArrayElement<PersistentWorldSaveRecord16>(saveRecordPtr, i);
++                if (saveRecord.ChunkIndex >= chunkCount || saveRecord.ItemHashIndex >= itemHashCount)
++                {
++                    error = "Persistent-world delta section lookup index is out of range.";
++                    persistentWorldDeltas = null;
++                    return false;
++                }
++
++                persistentWorldDeltas[i] = new PersistentWorldDeltaRecord
++                {
++                    ChunkId = UnsafeUtility.ReadArrayElement<int3>(chunkTablePtr, saveRecord.ChunkIndex),
++                    ItemPersistentIdHash = UnsafeUtility.ReadArrayElement<ulong>(itemHashTablePtr, saveRecord.ItemHashIndex),
++                    InstanceUid = saveRecord.InstanceUid,
++                    PackedLocalPosition = saveRecord.PackedLocalPosition,
++                    Quantity = saveRecord.Quantity == 0 ? (ushort)1 : saveRecord.Quantity,
++                    ItemFlags = saveRecord.ItemFlags,
++                    Reserved = saveRecord.Reserved
++                };
++            }
++
++            error = string.Empty;
++            return true;
++        }
++
++        private static bool TryResolvePersistentWorldSectionLength(
++            byte* rawPtr,
++            int rawPayloadLength,
++            SaveFileHeader header,
++            out int entitySectionOffset,
++            out int entitySectionLength,
++            out string error)
++        {
++            entitySectionOffset = checked((int)header.EntityOffset) - ResolvePayloadBaseOffset(in header);
++            entitySectionLength = 0;
++            error = string.Empty;
++
++            if (entitySectionOffset < 0 || entitySectionOffset > rawPayloadLength)
++            {
++                error = "Entity payload offset exceeds the decompressed payload bounds.";
+                 return false;
+             }
+ 
+-            if ((header.Flags & FlagLz4Blocks) == 0)
++            if (header.Version < CompactPersistentWorldSectionVersion)
+             {
+-                error = "Save payload is not flagged as LZ4 block-compressed.";
++                int entityCount = checked((int)header.EntityCount);
++                entitySectionLength = entityCount > 0
++                    ? checked(entityCount * UnsafeUtility.SizeOf<PersistentWorldDeltaRecord>())
++                    : 0;
++                if (entitySectionOffset + entitySectionLength > rawPayloadLength)
++                {
++                    error = "Entity payload exceeds the decompressed payload bounds.";
++                    return false;
++                }
++
++                return true;
++            }
++
++            if (header.EntityCount <= 0)
++                return true;
++
++            if (entitySectionOffset + PersistentWorldSectionHeaderSize > rawPayloadLength)
++            {
++                error = "Persistent-world delta section header is truncated.";
+                 return false;
+             }
+ 
+-            if (header.PlayerOffset != HeaderSize)
++            PersistentWorldSectionHeader sectionHeader = UnsafeUtility.ReadArrayElement<PersistentWorldSectionHeader>(AddByteOffset(rawPtr, entitySectionOffset), 0);
++            if (sectionHeader.RecordCount != header.EntityCount)
+             {
+-                error = $"Player payload offset {header.PlayerOffset} does not match fixed header size {HeaderSize}.";
++                error = "Persistent-world delta section header count mismatch.";
+                 return false;
+             }
+ 
+-            if (header.DeltaOffset < header.PlayerOffset || header.EntityOffset < header.DeltaOffset)
++            int chunkCount = checked((int)sectionHeader.ChunkCount);
++            int itemHashCount = checked((int)sectionHeader.ItemHashCount);
++            int recordCount = checked((int)sectionHeader.RecordCount);
++            entitySectionLength = ComputePersistentWorldSectionLength(recordCount, chunkCount, itemHashCount);
++            if (entitySectionOffset + entitySectionLength > rawPayloadLength)
+             {
+-                error = "Save payload offsets are out of order.";
++                error = "Persistent-world delta section exceeds the decompressed payload bounds.";
+                 return false;
+             }
+ 
+-            error = string.Empty;
+             return true;
+         }
+ 
+-        private static bool RequiresCompatMigration(SaveFileHeader header)
++        private static void WriteEcosystemSection(
++            byte* destination,
++            NativeArray<EcosystemSectorSaveRecord> ecosystemSectorStates)
+         {
+-            return header.Version < CurrentVersion || header.CompatMask != CurrentCompatMask;
++            int recordCount = ecosystemSectorStates.IsCreated ? ecosystemSectorStates.Length : 0;
++            EcosystemSectionHeader sectionHeader = new EcosystemSectionHeader
++            {
++                RecordCount = (uint)recordCount
++            };
++
++            UnsafeUtility.CopyStructureToPtr(ref sectionHeader, destination);
++            if (recordCount <= 0)
++                return;
++
++            void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(ecosystemSectorStates);
++            UnsafeUtility.MemCpy(
++                AddByteOffset(destination, EcosystemSectionHeaderSize),
++                sourcePtr,
++                recordCount * UnsafeUtility.SizeOf<EcosystemSectorSaveRecord>());
+         }
+ 
+-        private static bool TryMigratePayloadHeader(ref SaveFileHeader header, out string error)
++        private static bool TryReadEcosystemSectorStates(
++            byte* rawPtr,
++            int rawPayloadLength,
++            SaveFileHeader header,
++            out EcosystemSectorSaveRecord[] ecosystemSectorStates,
++            out string error)
+         {
+-            if (header.CompatMask == LegacyCompatMaskV1)
++            ecosystemSectorStates = null;
++            error = string.Empty;
++
++            if (header.Version < EcosystemSectionVersion)
++                return true;
++
++            if (!TryResolvePersistentWorldSectionLength(rawPtr, rawPayloadLength, header, out int entitySectionOffset, out int entitySectionLength, out error))
++                return false;
++
++            if (!TryResolveEcosystemSectionLength(
++                    rawPtr,
++                    rawPayloadLength,
++                    header,
++                    entitySectionOffset,
++                    entitySectionLength,
++                    out int ecosystemSectionOffset,
++                    out int ecosystemSectionLength,
++                    out error))
+             {
+-                if (header.DeltaCount != 0u || header.EntityCount != 0u)
+-                {
+-                    error = "Legacy v1 delta/entity migration is not implemented for populated payload sections.";
+-                    return false;
+-                }
++                return false;
++            }
+ 
+-                header.Version = CurrentVersion;
+-                header.CompatMask = CurrentCompatMask;
+-                error = string.Empty;
++            EcosystemSectionHeader sectionHeader = UnsafeUtility.ReadArrayElement<EcosystemSectionHeader>(AddByteOffset(rawPtr, ecosystemSectionOffset), 0);
++            int recordCount = checked((int)sectionHeader.RecordCount);
++            ecosystemSectorStates = new EcosystemSectorSaveRecord[recordCount];
++            if (recordCount <= 0)
++                return true;
++
++            fixed (EcosystemSectorSaveRecord* destinationPtr = ecosystemSectorStates)
++            {
++                UnsafeUtility.MemCpy(
++                    destinationPtr,
++                    AddByteOffset(rawPtr, ecosystemSectionOffset + EcosystemSectionHeaderSize),
++                    recordCount * UnsafeUtility.SizeOf<EcosystemSectorSaveRecord>());
++            }
++
++            return true;
++        }
++
++        private static bool TryResolveEcosystemSectionLength(
++            byte* rawPtr,
++            int rawPayloadLength,
++            SaveFileHeader header,
++            int entitySectionOffset,
++            int entitySectionLength,
++            out int ecosystemSectionOffset,
++            out int ecosystemSectionLength,
++            out string error)
++        {
++            ecosystemSectionOffset = entitySectionOffset + entitySectionLength;
++            ecosystemSectionLength = 0;
++            error = string.Empty;
++
++            if (header.Version < EcosystemSectionVersion)
+                 return true;
++
++            if (ecosystemSectionOffset < 0 || ecosystemSectionOffset > rawPayloadLength)
++            {
++                error = "Ecosystem payload offset exceeds the decompressed payload bounds.";
++                return false;
++            }
++
++            if (ecosystemSectionOffset + EcosystemSectionHeaderSize > rawPayloadLength)
++            {
++                error = "Ecosystem section header is truncated.";
++                return false;
++            }
++
++            EcosystemSectionHeader sectionHeader = UnsafeUtility.ReadArrayElement<EcosystemSectionHeader>(AddByteOffset(rawPtr, ecosystemSectionOffset), 0);
++            int recordCount = checked((int)sectionHeader.RecordCount);
++            ecosystemSectionLength = ComputeEcosystemSectionLength(recordCount);
++            if (ecosystemSectionOffset + ecosystemSectionLength > rawPayloadLength)
++            {
++                error = "Ecosystem section exceeds the decompressed payload bounds.";
++                return false;
+             }
+ 
+-            if (header.Version < CurrentVersion)
++            return true;
++        }
++
++        private static bool TryCompressPayload(
++            byte* rawPtr,
++            int rawPayloadLength,
++            byte* compressedPtr,
++            int compressedCapacity,
++            out int compressedPayloadLength,
++            out string error)
++        {
++            compressedPayloadLength = Lz4BlockCompress(rawPtr, rawPayloadLength, compressedPtr, compressedCapacity);
++            if (compressedPayloadLength > 0)
+             {
+-                header.Version = CurrentVersion;
+-                header.CompatMask = CurrentCompatMask;
+                 error = string.Empty;
+                 return true;
+             }
+ 
+-            error = $"Unsupported save compatibility migration path from version {header.Version} mask 0x{header.CompatMask:X2}.";
++            error = "LZ4 block compression failed.";
+             return false;
+         }
+ 
++        private static bool TryValidateHeader(SaveFileHeader header, out string error)
++        {
++            if (header.Version < MinimumSupportedVersion || header.Version > CurrentVersion)
++            {
++                error = $"Unsupported save header version {header.Version}.";
++                return false;
++            }
++
++            if (header.CompatMask != CurrentCompatMask)
++            {
++                error = $"Unsupported save compatibility mask 0x{header.CompatMask:X2}.";
++                return false;
++            }
++
++            if ((header.Flags & FlagLz4Blocks) == 0)
++            {
++                error = "Save payload is not flagged as LZ4 block-compressed.";
++                return false;
++            }
++
++            int expectedHeaderSize = ResolveExpectedHeaderSize(header.Version);
++            if (expectedHeaderSize <= 0)
++            {
++                error = $"Unsupported save header version {header.Version}.";
++                return false;
++            }
++
++            if (header.PlayerOffset != expectedHeaderSize)
++            {
++                error = $"Player payload offset {header.PlayerOffset} does not match fixed header size {expectedHeaderSize}.";
++                return false;
++            }
++
++            if (header.DeltaOffset < header.PlayerOffset || header.EntityOffset < header.DeltaOffset)
++            {
++                error = "Save payload offsets are out of order.";
++                return false;
++            }
++
++            if (header.DeltaOffset > header.PlayerOffset + RawPayloadCapacityBytes)
++            {
++                error = "Save packed quest-state offset exceeds the raw payload decoder budget.";
++                return false;
++            }
++
++            if (header.EntityOffset > header.PlayerOffset + RawPayloadCapacityBytes)
++            {
++                error = "Save entity payload offset exceeds the raw payload decoder budget.";
++                return false;
++            }
++
++            if (header.DeltaCount > (uint)(RawPayloadCapacityBytes / UnsafeUtility.SizeOf<uint>()))
++            {
++                error = "Save packed quest-state count exceeds the decoder budget.";
++                return false;
++            }
++
++            int maxEntityRecordSize = header.Version >= CompactPersistentWorldSectionVersion
++                ? UnsafeUtility.SizeOf<PersistentWorldSaveRecord16>()
++                : UnsafeUtility.SizeOf<PersistentWorldDeltaRecord>();
++            if (header.EntityCount > (uint)(RawPayloadCapacityBytes / maxEntityRecordSize))
++            {
++                error = "Save entity count exceeds the decoder budget.";
++                return false;
++            }
++
++            error = string.Empty;
++            return true;
++        }
++
+         private static uint ComputePackedQuestStateChecksum(NativeArray<uint> packedQuestStateWords)
+         {
+             if (!packedQuestStateWords.IsCreated || packedQuestStateWords.Length <= 0)
+@@ -810,6 +1651,57 @@ namespace Hecton8.SaveSystem
+             }
+         }
+ 
++        private static SaveFileHeader ConvertLegacyHeader(in LegacySaveFileHeader legacyHeader)
++        {
++            return new SaveFileHeader
++            {
++                MagicValue = legacyHeader.MagicValue,
++                Version = legacyHeader.Version,
++                CompatMask = legacyHeader.CompatMask,
++                Flags = legacyHeader.Flags,
++                TimestampUnixMs = legacyHeader.TimestampUnixMs,
++                DeltaCount = legacyHeader.DeltaCount,
++                EntityCount = legacyHeader.EntityCount,
++                PlayerOffset = legacyHeader.PlayerOffset,
++                DeltaOffset = legacyHeader.DeltaOffset,
++                EntityOffset = legacyHeader.EntityOffset,
++                HashPayload64 = legacyHeader.HashPayload32,
++                HashHeader64 = legacyHeader.HashHeader32
++            };
++        }
++
++        private static int ResolveHeaderSize(ushort version)
++        {
++            switch (version)
++            {
++                case 0x0003:
++                    return LegacyHeaderSize;
++                case First64BitHashVersion:
++                case CompactPersistentWorldSectionVersion:
++                case CurrentVersion:
++                    return CurrentHeaderSize;
++                default:
++                    return 0;
++            }
++        }
++
++        private static int ResolveExpectedHeaderSize(ushort version)
++        {
++            return ResolveHeaderSize(version);
++        }
++
++        private static int ResolvePayloadBaseOffset(in SaveFileHeader header)
++        {
++            return checked((int)header.PlayerOffset);
++        }
++
++        private static string FormatPayloadChecksum(in SaveFileHeader header)
++        {
++            return header.Version >= First64BitHashVersion
++                ? header.HashPayload64.ToString("X16")
++                : ((uint)header.HashPayload64).ToString("X8");
++        }
++
+         private static ulong ToUnixMilliseconds(long utcTicks)
+         {
+             long safeTicks = utcTicks > 0L ? utcTicks : DateTime.UtcNow.Ticks;
+@@ -832,7 +1724,7 @@ namespace Hecton8.SaveSystem
+             return new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+         }
+ 
+-        private static bool TryReadUtf8String(
++        private static bool TryReadUtf16String(
+             byte* source,
+             int sourceLength,
+             ref int cursor,
+@@ -845,53 +1737,64 @@ namespace Hecton8.SaveSystem
+ 
+             if (byteLength < 0 || cursor < 0 || cursor + byteLength > sourceLength)
+             {
+-                error = "UTF-8 metadata block exceeds the payload bounds.";
++                error = "UTF-16 metadata block exceeds the payload bounds.";
+                 return false;
+             }
+ 
+             if (byteLength == 0)
+                 return true;
+ 
+-            byte[] bytes = new byte[byteLength];
+-            CopyUnmanagedBytesToManaged(AddByteOffset(source, cursor), bytes);
+-            value = Encoding.UTF8.GetString(bytes);
+-            cursor += byteLength;
+-            return true;
+-        }
+-
+-        private static void CopyManagedBytesToUnmanaged(byte[] source, byte* destination)
+-        {
+-            if (source == null || source.Length == 0)
+-                return;
+-
+-            fixed (byte* sourcePtr = source)
++            if ((byteLength & 1) != 0)
+             {
+-                UnsafeUtility.MemCpy(destination, sourcePtr, source.Length);
++                error = "UTF-16 metadata block has an odd byte length.";
++                return false;
+             }
++
++            int charCount = byteLength / sizeof(char);
++            value = new string((char*)AddByteOffset(source, cursor), 0, charCount);
++            cursor += byteLength;
++            return true;
+         }
+ 
+-        private static void CopyUnmanagedBytesToManaged(byte* source, byte[] destination)
++        private static void CopyUtf16StringToUnmanaged(string source, byte* destination)
+         {
+-            if (destination == null || destination.Length == 0)
++            if (string.IsNullOrEmpty(source))
+                 return;
+ 
+-            fixed (byte* destinationPtr = destination)
++            fixed (char* sourcePtr = source)
+             {
+-                UnsafeUtility.MemCpy(destinationPtr, source, destination.Length);
++                UnsafeUtility.MemCpy(destination, sourcePtr, source.Length * sizeof(char));
+             }
+         }
+ 
+         private static int Lz4BlockDecompress(byte* source, int compressedLength, byte* destination, int destinationCapacity)
+         {
+-            if (source == null || destination == null || compressedLength <= 0 || destinationCapacity <= 0)
++            if (source == null ||
++                destination == null ||
++                compressedLength <= 0 ||
++                compressedLength > MaxCompressedPayloadBytes ||
++                destinationCapacity <= 0 ||
++                destinationCapacity > RawPayloadCapacityBytes)
++                return 0;
++
++            const int BlockHeaderBytes = 8;
++            const int MinimumCompressedBlockBytes = BlockHeaderBytes + 1;
++            if (compressedLength < MinimumCompressedBlockBytes)
+                 return 0;
+ 
+             int sourceOffset = 0;
+             int destinationOffset = 0;
++            int blockIterations = 0;
++            int maxBlocksFromSource = compressedLength / MinimumCompressedBlockBytes;
++            int maxBlocksFromDestination = (destinationCapacity + BlockSizeBytes - 1) / BlockSizeBytes;
++            int maxBlockIterations = math.min(maxBlocksFromSource, maxBlocksFromDestination);
++            if (maxBlockIterations <= 0)
++                return 0;
+ 
+-            while (sourceOffset < compressedLength)
++            while (sourceOffset < compressedLength && blockIterations < maxBlockIterations)
+             {
+-                if (sourceOffset + 8 > compressedLength)
++                blockIterations++;
++                if (sourceOffset + BlockHeaderBytes > compressedLength)
+                     return 0;
+ 
+                 int blockCompressedLength = UnsafeUtility.ReadArrayElement<int>(source + sourceOffset, 0);
+@@ -899,7 +1802,10 @@ namespace Hecton8.SaveSystem
+                 if (blockCompressedLength <= 0 || blockRawLength <= 0)
+                     return 0;
+ 
+-                sourceOffset += 8;
++                if (blockRawLength > BlockSizeBytes)
++                    return 0;
++
++                sourceOffset += BlockHeaderBytes;
+                 if (sourceOffset + blockCompressedLength > compressedLength)
+                     return 0;
+ 
+@@ -914,6 +1820,9 @@ namespace Hecton8.SaveSystem
+                 destinationOffset += blockRawLength;
+             }
+ 
++            if (sourceOffset != compressedLength)
++                return 0;
++
+             return destinationOffset;
+         }
+ 
+diff --git a/Assets/_Project/Scripts/SaveManager.cs b/Assets/_Project/Scripts/SaveManager.cs
+index d5c95de3..de6edcce 100644
+--- a/Assets/_Project/Scripts/SaveManager.cs
++++ b/Assets/_Project/Scripts/SaveManager.cs
+@@ -12,10 +12,13 @@ using System;
+ using System.Collections.Generic;
+ using System.Diagnostics;
+ using System.IO;
++using Hecton8.Caves;
++using Hecton8.Core;
+ using Hecton8.Modding;
+ using Hecton8.Quest;
+ using Hecton8.World;
+ using Unity.Collections;
++using Unity.Mathematics;
+ using UnityEngine;
+ using Debug = UnityEngine.Debug;
+ 
+@@ -23,8 +26,11 @@ namespace Hecton8.SaveSystem
+ {
+     [DisallowMultipleComponent]
+     [DefaultExecutionOrder(-8000)]
+-    public sealed class SaveManager : MonoBehaviour
++    public sealed class SaveManager : MonoBehaviour, ISaveService
+     {
++        private const long MainThreadSnapshotBudgetMs = 50L;
++        private static readonly long PreCompressionYieldBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 500L);
++
+         // ----------------------------------------------------------
+         //  SAVE STATE
+         // ----------------------------------------------------------
+@@ -41,8 +47,9 @@ namespace Hecton8.SaveSystem
+             _instance = null;
+         }
+         public static SaveManager Instance => _instance;
++        public bool IsInitialized => ReferenceEquals(_instance, this) && ReferenceEquals(GlobalRegistry.Save, this);
+         public bool IsBusy => _isBusy;
+-        public float CurrentPlayTimeSeconds => _totalPlayTime + (Time.realtimeSinceStartup - _sessionStartTime);
++        public float CurrentPlayTimeSeconds => (float)ResolveCurrentPlayTimeSeconds();
+         public bool LastOperationSucceeded { get; private set; }
+         public string LastOperationError { get; private set; }
+         public string LastOperationSlot { get; private set; }
+@@ -72,8 +79,8 @@ namespace Hecton8.SaveSystem
+ 
+         private readonly List<ISaveable> _saveables = new List<ISaveable>(16);
+         private bool _registryDirty;
+-        private float _sessionStartTime;
+-        private float _totalPlayTime;
++        private double _sessionStartTime;
++        private double _totalPlayTime;
+         private bool _isBusy;
+ 
+         private static readonly Comparison<ISaveable> SavePriorityCompare = (a, b) => a.SavePriority.CompareTo(b.SavePriority);
+@@ -116,11 +123,11 @@ namespace Hecton8.SaveSystem
+                 switch (category)
+                 {
+                     case SaveSlotCategory.Auto:
+-                        return Mathf.Clamp(Instance.autoBackupGenerations, 1, 8);
++                        return math.clamp(Instance.autoBackupGenerations, 1, 8);
+                     case SaveSlotCategory.Quick:
+-                        return Mathf.Clamp(Instance.quickBackupGenerations, 1, 8);
++                        return math.clamp(Instance.quickBackupGenerations, 1, 8);
+                     default:
+-                        return Mathf.Clamp(Instance.manualBackupGenerations, 1, 8);
++                        return math.clamp(Instance.manualBackupGenerations, 1, 8);
+                 }
+             }
+ 
+@@ -139,13 +146,13 @@ namespace Hecton8.SaveSystem
+         {
+             if (Instance != null)
+             {
+-                return Mathf.Clamp(
+-                    Mathf.Max(Instance.manualBackupGenerations, Mathf.Max(Instance.autoBackupGenerations, Instance.quickBackupGenerations)),
++                return math.clamp(
++                    math.max(Instance.manualBackupGenerations, math.max(Instance.autoBackupGenerations, Instance.quickBackupGenerations)),
+                     1,
+                     8);
+             }
+ 
+-            return Mathf.Max(DefaultManualBackupGenerations, Mathf.Max(DefaultAutoBackupGenerations, DefaultQuickBackupGenerations));
++            return math.max(DefaultManualBackupGenerations, math.max(DefaultAutoBackupGenerations, DefaultQuickBackupGenerations));
+         }
+ 
+         private static SaveSlotCategory ClassifySlot(string slotName)
+@@ -167,13 +174,17 @@ namespace Hecton8.SaveSystem
+             if (_instance != null && _instance != this) { Destroy(gameObject); return; }
+             _instance = this;
+             DontDestroyOnLoad(gameObject);
+-            _sessionStartTime = Time.realtimeSinceStartup;
++            _sessionStartTime = Time.realtimeSinceStartupAsDouble;
+             InitializeNativeBuffers();
+             SaveBinaryStorage.WarmRuntime();
++            GlobalRegistry.RegisterSaveService(this);
+         }
+ 
+         private void OnDestroy()
+         {
++            if (ReferenceEquals(GlobalRegistry.Save, this))
++                GlobalRegistry.UnregisterSaveService(this);
++
+             if (_instance == this)
+                 _instance = null;
+ 
+@@ -263,27 +274,51 @@ namespace Hecton8.SaveSystem
+             SaveEvents.RaiseSaveStarted(slotName);
+ 
+             var totalTimer = Stopwatch.StartNew();
+-            float playTime = _totalPlayTime + (Time.realtimeSinceStartup - _sessionStartTime);
++            var snapshotTimer = Stopwatch.StartNew();
++            double playTime = ResolveCurrentPlayTimeSeconds();
+             SaveData data = SaveData.CreateNew(playTime);
+             PersistentWorldRegistry persistentWorldRegistry = PersistentWorldRegistry.Instance;
+-            NativeArray<PersistentWorldItemRecord> persistentWorldSnapshot = default;
++            NativeArray<PersistentWorldDeltaRecord> persistentWorldDeltaSnapshot = default;
++            NativeArray<EcosystemSectorSaveRecord> ecosystemSectorSnapshot = default;
+             NativeArray<uint> packedQuestStateSnapshot = default;
++            NativeArray<byte> voxelDeltaSnapshot = default;
+ 
+             try
+             {
+                 SortRegistryIfDirty(SavePriorityCompare);
+                 for (int i = 0; i < _saveables.Count; i++)
+                 {
+-                    if (IsAlive(_saveables[i])) _saveables[i].PopulateSaveData(data);
++                    if (!IsAlive(_saveables[i]))
++                        continue;
++
++                    if (_saveables[i] is VoxelDeltaProcessor voxelDeltaProcessor)
++                    {
++                        if (voxelDeltaSnapshot.IsCreated)
++                            voxelDeltaSnapshot.Dispose();
++
++                        voxelDeltaSnapshot = voxelDeltaProcessor.CaptureNativeSnapshot(Allocator.Persistent);
++                        continue;
++                    }
++
++                    _saveables[i].PopulateSaveData(data);
+                 }
+ 
+                 ModSaveStateStore.PopulateSaveData(data);
++                Stopwatch divergenceSnapshotTimer = Stopwatch.StartNew();
+                 if (persistentWorldRegistry != null)
+                 {
+                     persistentWorldRegistry.CaptureSaveSnapshot();
+-                    persistentWorldSnapshot = persistentWorldRegistry.GetSaveSnapshotArray();
++                    persistentWorldDeltaSnapshot = persistentWorldRegistry.GetSaveSnapshotArray();
++                }
++
++                EcosystemDirector ecosystemDirector = GlobalRegistry.EcosystemDirector as EcosystemDirector;
++                if (ecosystemDirector != null)
++                {
++                    ecosystemDirector.CaptureSaveSnapshot();
++                    ecosystemSectorSnapshot = ecosystemDirector.GetSaveSnapshotArray();
+                 }
+ 
++                divergenceSnapshotTimer.Stop();
+                 QuestManager questManager = QuestManager.Instance;
+                 if (questManager != null)
+                     packedQuestStateSnapshot = questManager.CapturePackedStateSnapshot(Allocator.Persistent);
+@@ -293,31 +328,32 @@ namespace Hecton8.SaveSystem
+                     SlotName = slotName,
+                     GameVersion = Application.version,
+                     Timestamp = DateTime.UtcNow.Ticks,
+-                    PlayTimeSeconds = playTime,
++                    PlayTimeSeconds = (float)playTime,
+                     SceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name,
+                     PlayerPosition = data.playerStats.GetPosition()
+                 };
+ 
++                snapshotTimer.Stop();
++                WarnIfSnapshotBudgetExceeded(slotName, snapshotTimer.ElapsedMilliseconds);
++
+                 string tempPath = GetTempSaveFilePath(slotName);
++                if (divergenceSnapshotTimer.ElapsedTicks > PreCompressionYieldBudgetTicks)
++                    await Awaitable.NextFrameAsync();
+ 
+                 await Awaitable.BackgroundThreadAsync();
+ 
+-                DeleteFileIfExists(tempPath);
+-                string absoluteTempPath = GetPersistentAbsolutePath(tempPath);
+-                if (!SaveBinaryStorage.TryWriteSaveFile(
+-                    absoluteTempPath,
++                ExecuteVerifiedSavePipeline(
++                    slotName,
++                    tempPath,
++                    GetPrimarySaveFilePath(slotName),
+                     metadata,
+                     data,
+-                    persistentWorldSnapshot,
++                    persistentWorldDeltaSnapshot,
++                    ecosystemSectorSnapshot,
+                     packedQuestStateSnapshot,
++                    voxelDeltaSnapshot,
+                     _savePayloadBuffer,
+-                    _compressedSaveBuffer,
+-                    out string writeError))
+-                {
+-                    throw new Exception(writeError);
+-                }
+-
+-                CommitTempSaveToPrimary(slotName, tempPath, GetPrimarySaveFilePath(slotName));
++                    _compressedSaveBuffer);
+ 
+                 await Awaitable.MainThreadAsync();
+                 SaveThumbnailSystem.CaptureThumbnail(slotName);
+@@ -328,7 +364,7 @@ namespace Hecton8.SaveSystem
+                 RecordSuccessfulSave(slotName, data.version, savedIntegrity);
+ 
+                 LastOperationSucceeded = true;
+-                Debug.Log($"[SaveManager] Saved '{slotName}' (CRC: {metadata.Checksum}) in {totalTimer.ElapsedMilliseconds}ms");
++                Debug.Log($"[SaveManager] Saved '{slotName}' (XXH3-64: {metadata.Checksum}) in {totalTimer.ElapsedMilliseconds}ms");
+                 SaveEvents.RaiseSaveCompleted(slotName);
+             }
+             catch (Exception ex)
+@@ -343,10 +379,24 @@ namespace Hecton8.SaveSystem
+                 if (packedQuestStateSnapshot.IsCreated)
+                     packedQuestStateSnapshot.Dispose();
+ 
++                if (voxelDeltaSnapshot.IsCreated)
++                    voxelDeltaSnapshot.Dispose();
++
+                 _isBusy = false;
+             }
+         }
+ 
++        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
++        private static void WarnIfSnapshotBudgetExceeded(string slotName, long snapshotElapsedMs)
++        {
++            if (snapshotElapsedMs <= MainThreadSnapshotBudgetMs)
++                return;
++
++            Debug.LogWarning(
++                $"[SaveManager] Main-thread snapshot for '{slotName}' took {snapshotElapsedMs}ms. " +
++                $"Budget is {MainThreadSnapshotBudgetMs}ms. Snapshot purity is pending verification.");
++        }
++
+         public async Awaitable LoadGameAsync(string slotName)
+         {
+             LastOperationSucceeded = false;
+@@ -387,13 +437,15 @@ namespace Hecton8.SaveSystem
+             _isBusy = true;
+             SaveEvents.RaiseLoadStarted(slotName);
+             var totalTimer = Stopwatch.StartNew();
++            NativeArray<byte> loadedVoxelDeltaSnapshot = default;
+ 
+             try
+             {
+                 await Awaitable.BackgroundThreadAsync();
+                 SaveData data = null;
+                 uint[] loadedQuestStateWords = null;
+-                PersistentWorldItemRecord[] loadedWorldItems = null;
++                PersistentWorldDeltaRecord[] loadedWorldDeltas = null;
++                EcosystemSectorSaveRecord[] loadedEcosystemSectors = null;
+                 SaveMetadata loadedMetadata = null;
+                 SaveLoadCandidate loadedCandidate = default;
+                 Exception lastError = null;
+@@ -407,14 +459,18 @@ namespace Hecton8.SaveSystem
+                         candidates[i],
+                         out SaveData candidateData,
+                         out uint[] candidateQuestStateWords,
+-                        out PersistentWorldItemRecord[] candidateWorldItems,
++                        out PersistentWorldDeltaRecord[] candidateWorldDeltas,
++                        out EcosystemSectorSaveRecord[] candidateEcosystemSectors,
++                        out NativeArray<byte> candidateVoxelDeltaSnapshot,
+                         out SaveMetadata candidateMetadata,
+                         out bool candidateUsedLegacyFormat,
+                         out string candidateError))
+                     {
+                         data = candidateData;
+                         loadedQuestStateWords = candidateQuestStateWords;
+-                        loadedWorldItems = candidateWorldItems;
++                        loadedWorldDeltas = candidateWorldDeltas;
++                        loadedEcosystemSectors = candidateEcosystemSectors;
++                        loadedVoxelDeltaSnapshot = candidateVoxelDeltaSnapshot;
+                         loadedCandidate = candidates[i];
+                         loadedMetadata = candidateMetadata;
+                         usedLegacyFormat = candidateUsedLegacyFormat;
+@@ -439,19 +495,33 @@ namespace Hecton8.SaveSystem
+                 }
+ 
+                 _totalPlayTime = data.totalPlayTime;
+-                _sessionStartTime = Time.realtimeSinceStartup;
++                _sessionStartTime = Time.realtimeSinceStartupAsDouble;
+                 ModSaveStateStore.LoadFromSaveData(data);
+                 QuestManager.StageLoadedPackedState(loadedQuestStateWords);
+                 
+                 _registryDirty = true;
+                 SortRegistryIfDirty(LoadPriorityCompare);
+ 
++                VoxelDeltaProcessor voxelDeltaProcessor = null;
+                 for (int i = 0; i < _saveables.Count; i++)
+                 {
+-                    if (IsAlive(_saveables[i])) _saveables[i].LoadFromSaveData(data);
++                    if (!IsAlive(_saveables[i]))
++                        continue;
++
++                    if (_saveables[i] is VoxelDeltaProcessor loadedVoxelDeltaProcessor)
++                    {
++                        voxelDeltaProcessor = loadedVoxelDeltaProcessor;
++                        continue;
++                    }
++
++                    _saveables[i].LoadFromSaveData(data);
+                 }
+ 
+-                PersistentWorldRegistry.Instance?.RestoreFromLoadedRecords(loadedWorldItems);
++                if (voxelDeltaProcessor != null && !voxelDeltaProcessor.TryLoadNativeSnapshot(loadedVoxelDeltaSnapshot, out string voxelLoadError))
++                    throw new Exception(voxelLoadError);
++
++                PersistentWorldRegistry.Instance?.RestoreFromLoadedRecords(loadedWorldDeltas);
++                (GlobalRegistry.EcosystemDirector as EcosystemDirector)?.RestoreFromLoadedRecords(loadedEcosystemSectors);
+ 
+                 string activeSceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+                 Vector3 playerPosition = data.playerStats.GetPosition();
+@@ -465,11 +535,11 @@ namespace Hecton8.SaveSystem
+                         SlotName = slotName,
+                         GameVersion = Application.version,
+                         Timestamp = DateTime.UtcNow.Ticks,
+-                        PlayTimeSeconds = data.totalPlayTime,
++                        PlayTimeSeconds = (float)data.totalPlayTime,
+                         SceneName = string.IsNullOrEmpty(activeSceneName) ? "Unknown" : activeSceneName,
+                         PlayerPosition = playerPosition
+                     };
+-                    repairedPrimaryArtifacts = SelfRepairPrimaryArtifacts(slotName, data, repairMetadata, loadedQuestStateWords, loadedWorldItems);
++                    repairedPrimaryArtifacts = SelfRepairPrimaryArtifacts(slotName, data, repairMetadata, loadedQuestStateWords, loadedWorldDeltas, loadedEcosystemSectors, loadedVoxelDeltaSnapshot);
+                     await Awaitable.MainThreadAsync();
+                 }
+ 
+@@ -495,7 +565,13 @@ namespace Hecton8.SaveSystem
+                 Debug.LogError($"[SaveManager] Load failed: {ex.Message}");
+                 SaveEvents.RaiseLoadFailed(slotName, ex.Message);
+             }
+-            finally { _isBusy = false; }
++            finally
++            {
++                if (loadedVoxelDeltaSnapshot.IsCreated)
++                    loadedVoxelDeltaSnapshot.Dispose();
++
++                _isBusy = false;
++            }
+         }
+ 
+         public bool SaveExists(string slotName)
+@@ -733,8 +809,61 @@ namespace Hecton8.SaveSystem
+             if (!FileExists(tempPath))
+                 throw new FileNotFoundException("Verified temp save was not found during final rotation.", GetPersistentAbsolutePath(tempPath));
+ 
++            // Step 5: rotate the previously committed primary into the backup chain before overwrite.
+             RotateBackupChain(finalPath, generation => GetBackupSaveFilePath(slotName, generation), GetBackupRetentionCountStatic(slotName));
++
++            // Step 6: promote the verified temp artifact to the authoritative primary slot.
+             File.Move(GetPersistentAbsolutePath(tempPath), GetPersistentAbsolutePath(finalPath));
++
++            // Step 7: primary must exist after promotion.
++            if (!FileExists(finalPath))
++                throw new IOException($"Primary save promotion failed for '{slotName}'.");
++
++            // Step 8: temp must be fully consumed after promotion.
++            if (FileExists(tempPath))
++                throw new IOException($"Temp save cleanup failed for '{slotName}'.");
++        }
++
++        private static void ExecuteVerifiedSavePipeline(
++            string slotName,
++            string tempPath,
++            string finalPath,
++            SaveMetadata metadata,
++            SaveData data,
++            NativeArray<PersistentWorldDeltaRecord> persistentWorldItems,
++            NativeArray<EcosystemSectorSaveRecord> ecosystemSectorStates,
++            NativeArray<uint> packedQuestStateWords,
++            NativeArray<byte> voxelDeltaSnapshot,
++            NativeArray<byte> rawBuffer,
++            NativeArray<byte> compressedBuffer)
++        {
++            // Step 1: clear any stale temp artifact from a previous interrupted transaction.
++            DeleteFileIfExists(tempPath);
++
++            // Step 2: resolve the absolute temp path used by the binary writer.
++            string absoluteTempPath = GetPersistentAbsolutePath(tempPath);
++
++            // Step 3: write the snapshot into .tmp using the binary container writer.
++            if (!SaveBinaryStorage.TryWriteSaveFile(
++                absoluteTempPath,
++                    metadata,
++                    data,
++                    persistentWorldItems,
++                    ecosystemSectorStates,
++                    packedQuestStateWords,
++                    voxelDeltaSnapshot,
++                    rawBuffer,
++                    compressedBuffer,
++                    out string writeError))
++            {
++                throw new Exception(writeError);
++            }
++
++            // Step 4: the writer already re-reads metadata internally, but the pipeline still requires the temp artifact to exist here.
++            if (!FileExists(tempPath))
++                throw new FileNotFoundException("Verified temp save was not created by the binary writer.", absoluteTempPath);
++
++            CommitTempSaveToPrimary(slotName, tempPath, finalPath);
+         }
+ 
+         private static bool TryExtractSlotName(string fileName, out string slotName)
+@@ -824,7 +953,9 @@ namespace Hecton8.SaveSystem
+             List<SaveLoadCandidate> candidates = BuildLoadCandidates(slotName);
+             SaveData repairedData = null;
+             uint[] packedQuestStateWords = null;
+-            PersistentWorldItemRecord[] persistentWorldItems = null;
++            PersistentWorldDeltaRecord[] persistentWorldItems = null;
++            EcosystemSectorSaveRecord[] ecosystemSectorStates = null;
++            NativeArray<byte> voxelDeltaSnapshot = default;
+             SaveMetadata metadataSource = beforeInfo.Metadata;
+             SaveLoadCandidate selectedCandidate = default;
+             bool usedLegacyFormat = false;
+@@ -837,7 +968,9 @@ namespace Hecton8.SaveSystem
+                     candidates[i],
+                     out SaveData candidateData,
+                     out uint[] candidatePackedQuestStateWords,
+-                    out PersistentWorldItemRecord[] candidateWorldItems,
++                    out PersistentWorldDeltaRecord[] candidateWorldItems,
++                    out EcosystemSectorSaveRecord[] candidateEcosystemSectorStates,
++                    out NativeArray<byte> candidateVoxelDeltaSnapshot,
+                     out SaveMetadata candidateMetadata,
+                     out bool candidateUsedLegacyFormat,
+                     out string candidateError))
+@@ -845,6 +978,8 @@ namespace Hecton8.SaveSystem
+                     repairedData = candidateData;
+                     packedQuestStateWords = candidatePackedQuestStateWords;
+                     persistentWorldItems = candidateWorldItems;
++                    ecosystemSectorStates = candidateEcosystemSectorStates;
++                    voxelDeltaSnapshot = candidateVoxelDeltaSnapshot;
+                     metadataSource = candidateMetadata ?? beforeInfo.Metadata;
+                     selectedCandidate = candidates[i];
+                     usedLegacyFormat = candidateUsedLegacyFormat;
+@@ -856,6 +991,9 @@ namespace Hecton8.SaveSystem
+ 
+             if (repairedData == null)
+             {
++                if (voxelDeltaSnapshot.IsCreated)
++                    voxelDeltaSnapshot.Dispose();
++
+                 result.Message = string.IsNullOrEmpty(errorMessage)
+                     ? "No valid save candidate could be repaired."
+                     : errorMessage;
+@@ -876,6 +1014,8 @@ namespace Hecton8.SaveSystem
+                 metadataSource,
+                 packedQuestStateWords,
+                 persistentWorldItems,
++                ecosystemSectorStates,
++                voxelDeltaSnapshot,
+                 shouldRewritePrimarySave);
+ 
+             SaveSlotInfo afterInfo = BuildSaveSlotInfoInternal(slotName);
+@@ -892,6 +1032,10 @@ namespace Hecton8.SaveSystem
+                 ? "Slot repaired and normalized."
+                 : "Slot already healthy.";
+             RecordRepairResult(result, repairedData != null ? repairedData.version : 0);
++
++            if (voxelDeltaSnapshot.IsCreated)
++                voxelDeltaSnapshot.Dispose();
++
+             return true;
+         }
+ 
+@@ -937,6 +1081,8 @@ namespace Hecton8.SaveSystem
+                     out SaveData candidateData,
+                     out _,
+                     out _,
++                    out _,
++                    out NativeArray<byte> candidateVoxelDeltaSnapshot,
+                     out SaveMetadata _,
+                     out bool candidateLegacyFormat,
+                     out string candidateError))
+@@ -953,6 +1099,9 @@ namespace Hecton8.SaveSystem
+                         selectedData = candidateData;
+                         selectedLegacyFormat = candidateLegacyFormat;
+                     }
++
++                    if (candidateVoxelDeltaSnapshot.IsCreated)
++                        candidateVoxelDeltaSnapshot.Dispose();
+                 }
+                 else
+                 {
+@@ -973,7 +1122,7 @@ namespace Hecton8.SaveSystem
+             result.SelectedBackupSource = selectedCandidate.IsBackup;
+             result.SelectedBackupGeneration = selectedCandidate.IsBackup ? selectedCandidate.BackupGeneration : 0;
+             result.SelectedLegacyCompression = selectedLegacyFormat;
+-            result.DetectedVersion = selectedData != null ? Mathf.Max(selectedData.version, 0) : 0;
++            result.DetectedVersion = selectedData != null ? math.max(selectedData.version, 0) : 0;
+             result.RequiresMigration = selectedData != null && selectedData.version != SaveData.CurrentVersion;
+             result.RecommendedSource = selectedCandidate.IsBackup
+                 ? $"Backup g{selectedCandidate.BackupGeneration}"
+@@ -1024,7 +1173,9 @@ namespace Hecton8.SaveSystem
+             SaveData data,
+             SaveMetadata metadata,
+             uint[] packedQuestStateWords,
+-            PersistentWorldItemRecord[] persistentWorldItems)
++            PersistentWorldDeltaRecord[] persistentWorldItems,
++            EcosystemSectorSaveRecord[] ecosystemSectorStates,
++            NativeArray<byte> voxelDeltaSnapshot)
+         {
+             return RepairPrimaryArtifacts(
+                 slotName,
+@@ -1032,6 +1183,8 @@ namespace Hecton8.SaveSystem
+                 metadata,
+                 packedQuestStateWords,
+                 persistentWorldItems,
++                ecosystemSectorStates,
++                voxelDeltaSnapshot,
+                 overwritePrimarySave: true);
+         }
+ 
+@@ -1040,7 +1193,9 @@ namespace Hecton8.SaveSystem
+             SaveLoadCandidate candidate,
+             out SaveData data,
+             out uint[] packedQuestStateWords,
+-            out PersistentWorldItemRecord[] persistentWorldItems,
++            out PersistentWorldDeltaRecord[] persistentWorldItems,
++            out EcosystemSectorSaveRecord[] ecosystemSectorStates,
++            out NativeArray<byte> voxelDeltaSnapshot,
+             out SaveMetadata metadata,
+             out bool usedLegacyFormat,
+             out string errorMessage)
+@@ -1048,6 +1203,8 @@ namespace Hecton8.SaveSystem
+             data = null;
+             packedQuestStateWords = null;
+             persistentWorldItems = null;
++            ecosystemSectorStates = null;
++            voxelDeltaSnapshot = default;
+             metadata = null;
+             usedLegacyFormat = false;
+             errorMessage = string.Empty;
+@@ -1055,7 +1212,7 @@ namespace Hecton8.SaveSystem
+             string absolutePath = GetPersistentAbsolutePath(candidate.SavePath);
+             if (SaveBinaryStorage.IsBinaryContainer(absolutePath))
+             {
+-                return TryLoadBinaryCandidate(slotName, candidate, out data, out packedQuestStateWords, out persistentWorldItems, out metadata, out errorMessage);
++                return TryLoadBinaryCandidate(slotName, candidate, out data, out packedQuestStateWords, out persistentWorldItems, out ecosystemSectorStates, out voxelDeltaSnapshot, out metadata, out errorMessage);
+             }
+ 
+             errorMessage = $"Unsupported non-binary save artifact '{candidate.SavePath}'.";
+@@ -1067,13 +1224,17 @@ namespace Hecton8.SaveSystem
+             SaveLoadCandidate candidate,
+             out SaveData data,
+             out uint[] packedQuestStateWords,
+-            out PersistentWorldItemRecord[] persistentWorldItems,
++            out PersistentWorldDeltaRecord[] persistentWorldItems,
++            out EcosystemSectorSaveRecord[] ecosystemSectorStates,
++            out NativeArray<byte> voxelDeltaSnapshot,
+             out SaveMetadata metadata,
+             out string errorMessage)
+         {
+             data = null;
+             packedQuestStateWords = null;
+             persistentWorldItems = null;
++            ecosystemSectorStates = null;
++            voxelDeltaSnapshot = default;
+             metadata = null;
+             errorMessage = string.Empty;
+ 
+@@ -1087,10 +1248,15 @@ namespace Hecton8.SaveSystem
+                     out data,
+                     out packedQuestStateWords,
+                     out persistentWorldItems,
++                    out ecosystemSectorStates,
++                    out voxelDeltaSnapshot,
+                     out metadata,
+                     out _,
+                     out errorMessage))
+                 {
++                    if (voxelDeltaSnapshot.IsCreated)
++                        voxelDeltaSnapshot.Dispose();
++
+                     return false;
+                 }
+ 
+@@ -1138,32 +1304,42 @@ namespace Hecton8.SaveSystem
+             SaveData data,
+             SaveMetadata metadataSource,
+             uint[] packedQuestStateWords,
+-            PersistentWorldItemRecord[] persistentWorldItems,
++            PersistentWorldDeltaRecord[] persistentWorldItems,
++            EcosystemSectorSaveRecord[] ecosystemSectorStates,
++            NativeArray<byte> voxelDeltaSnapshot,
+             bool overwritePrimarySave)
+         {
+             string primarySavePath = GetPrimarySaveFilePath(slotName);
+             string tempSavePath = GetTempSaveFilePath(slotName);
+ 
+             bool changedAnything = false;
+-            DeleteFileIfExists(tempSavePath);
+-
+             if (overwritePrimarySave || !FileExists(primarySavePath))
+             {
+                 SaveMetadata writeMetadata = CreateMetadataFromData(slotName, data, metadataSource);
+                 AcquireWriteBuffers(out NativeArray<byte> rawBuffer, out bool ownsRawBuffer, out NativeArray<byte> compressedBuffer, out bool ownsCompressedBuffer);
+-                NativeArray<PersistentWorldItemRecord> persistentWorldItemBuffer = default;
++                NativeArray<PersistentWorldDeltaRecord> persistentWorldItemBuffer = default;
++                NativeArray<EcosystemSectorSaveRecord> ecosystemSectorBuffer = default;
+                 NativeArray<uint> packedQuestStateBuffer = default;
+                 try
+                 {
+                     if (persistentWorldItems != null && persistentWorldItems.Length > 0)
+                     {
+-                        persistentWorldItemBuffer = new NativeArray<PersistentWorldItemRecord>(
++                        persistentWorldItemBuffer = new NativeArray<PersistentWorldDeltaRecord>(
+                             persistentWorldItems.Length,
+                             Allocator.Temp,
+                             NativeArrayOptions.UninitializedMemory);
+                         persistentWorldItemBuffer.CopyFrom(persistentWorldItems);
+                     }
+ 
++                    if (ecosystemSectorStates != null && ecosystemSectorStates.Length > 0)
++                    {
++                        ecosystemSectorBuffer = new NativeArray<EcosystemSectorSaveRecord>(
++                            ecosystemSectorStates.Length,
++                            Allocator.Temp,
++                            NativeArrayOptions.UninitializedMemory);
++                        ecosystemSectorBuffer.CopyFrom(ecosystemSectorStates);
++                    }
++
+                     if (packedQuestStateWords != null && packedQuestStateWords.Length > 0)
+                     {
+                         packedQuestStateBuffer = new NativeArray<uint>(
+@@ -1173,24 +1349,27 @@ namespace Hecton8.SaveSystem
+                         packedQuestStateBuffer.CopyFrom(packedQuestStateWords);
+                     }
+ 
+-                    if (!SaveBinaryStorage.TryWriteSaveFile(
+-                        GetPersistentAbsolutePath(tempSavePath),
++                    ExecuteVerifiedSavePipeline(
++                        slotName,
++                        tempSavePath,
++                        primarySavePath,
+                         writeMetadata,
+                         data,
+                         persistentWorldItemBuffer,
++                        ecosystemSectorBuffer,
+                         packedQuestStateBuffer,
++                        voxelDeltaSnapshot,
+                         rawBuffer,
+-                        compressedBuffer,
+-                        out string error))
+-                    {
+-                        throw new Exception(error);
+-                    }
++                        compressedBuffer);
+                 }
+                 finally
+                 {
+                     if (persistentWorldItemBuffer.IsCreated)
+                         persistentWorldItemBuffer.Dispose();
+ 
++                    if (ecosystemSectorBuffer.IsCreated)
++                        ecosystemSectorBuffer.Dispose();
++
+                     if (packedQuestStateBuffer.IsCreated)
+                         packedQuestStateBuffer.Dispose();
+ 
+@@ -1198,7 +1377,6 @@ namespace Hecton8.SaveSystem
+                     ReleaseBuffer(compressedBuffer, ownsCompressedBuffer);
+                 }
+ 
+-                CommitTempSaveToPrimary(slotName, tempSavePath, primarySavePath);
+                 changedAnything = true;
+             }
+ 
+@@ -1213,7 +1391,7 @@ namespace Hecton8.SaveSystem
+             string gameVersion = source != null && !string.IsNullOrEmpty(source.GameVersion)
+                 ? source.GameVersion
+                 : Application.version;
+-            float playTimeSeconds = data != null ? data.totalPlayTime : 0f;
++            float playTimeSeconds = data != null ? (float)data.totalPlayTime : 0f;
+             Vector3 playerPosition = data != null ? data.playerStats.GetPosition() : Vector3.zero;
+ 
+             return new SaveMetadata
+@@ -1243,6 +1421,11 @@ namespace Hecton8.SaveSystem
+             ownsBuffer = true;
+         }
+ 
++        private double ResolveCurrentPlayTimeSeconds()
++        {
++            return _totalPlayTime + (Time.realtimeSinceStartupAsDouble - _sessionStartTime);
++        }
++
+         private static void AcquireWriteBuffers(
+             out NativeArray<byte> rawBuffer,
+             out bool ownsRawBuffer,
+@@ -1342,7 +1525,7 @@ namespace Hecton8.SaveSystem
+             record.LastKnownSaveVersion = result.DetectedVersion;
+             record.LastKnownIntegrityState = result.IntegrityState.ToString();
+             record.LastLoadUsedBackup = result.SelectedBackupSource;
+-            record.LastLoadBackupGeneration = result.SelectedBackupSource ? Mathf.Max(1, result.SelectedBackupGeneration) : 0;
++            record.LastLoadBackupGeneration = result.SelectedBackupSource ? math.max(1, result.SelectedBackupGeneration) : 0;
+             record.LastLoadUsedLegacyCompression = result.SelectedLegacyCompression;
+             record.LastAuditMessage = result.Message ?? string.Empty;
+             record.Save();
+@@ -1359,7 +1542,7 @@ namespace Hecton8.SaveSystem
+             record.LastKnownSaveVersion = dataVersion;
+             record.LastKnownIntegrityState = result.IntegrityAfter.ToString();
+             record.LastLoadUsedBackup = result.UsedBackupSource;
+-            record.LastLoadBackupGeneration = result.UsedBackupSource ? Mathf.Max(1, result.SourceBackupGeneration) : 0;
++            record.LastLoadBackupGeneration = result.UsedBackupSource ? math.max(1, result.SourceBackupGeneration) : 0;
+             record.LastLoadUsedLegacyCompression = result.UsedLegacyCompression;
+             record.LastRepairMessage = result.Message ?? string.Empty;
+             record.Save();
+
+diff --untracked EcosystemDirector.cs
+diff --git "a/C:\\Users\\danat\\AppData\\Local\\Temp\\tmpD54F.tmp" b/Assets/_Project/Scripts/World/EcosystemDirector.cs
+index e69de29b..e620a437 100644
+--- "a/C:\\Users\\danat\\AppData\\Local\\Temp\\tmpD54F.tmp"
++++ b/Assets/_Project/Scripts/World/EcosystemDirector.cs
+@@ -0,0 +1,665 @@
++using System.Runtime.InteropServices;
++using Hecton8.Core;
++using Unity.Burst;
++using Unity.Collections;
++using Unity.Collections.LowLevel.Unsafe;
++using Unity.Jobs;
++using Unity.Mathematics;
++using UnityEngine;
++
++namespace Hecton8.World
++{
++    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 12)]
++    internal struct EcosystemSectorSaveRecord
++    {
++        public int2 SectorCoord;
++        public uint PackedPopulations;
++    }
++
++    /// <summary>
++    /// Cold-path sector ecosystem simulator that evolves predator/prey counts with a Lotka-Volterra solve.
++    /// </summary>
++    [DisallowMultipleComponent]
++    [DefaultExecutionOrder(-4037)]
++    public sealed class EcosystemDirector : MonoBehaviour, ISlowTickable, IEcosystemDirectorService
++    {
++        private const float DefaultSlowTickIntervalSeconds = 0.5f;
++        private const float SectorEdgeLengthMeters = 1000f;
++        private const int MinimumSectorCapacity = 16;
++        private const int MinimumPredationEventCapacity = 32;
++
++        [StructLayout(LayoutKind.Sequential)]
++        private struct SectorPopulationState
++        {
++            public int2 SectorCoord;
++            public float PreyPopulation;
++            public float PredatorPopulation;
++            public float HarvestPressure;
++            public int PreyPopulationRounded;
++            public int PredatorPopulationRounded;
++        }
++
++        [StructLayout(LayoutKind.Sequential)]
++        private struct PredationEvent
++        {
++            public long SectorKey;
++            public int PreyConsumed;
++        }
++
++        [BurstCompile]
++        private struct LotkaVolterraSolveJob : IJobParallelFor
++        {
++            [ReadOnly] public NativeArray<SectorPopulationState> FrontStates;
++            [ReadOnly] public NativeHashMap<long, int> SectorIndexByKey;
++            public NativeArray<SectorPopulationState> BackStates;
++            public float DeltaTimeSeconds;
++            public float Alpha;
++            public float Beta;
++            public float Delta;
++            public float Gamma;
++            public float PredatorGainPerPrey;
++            public float HarvestPressureDecay;
++            public float HarvestCrashRate;
++            public float PreyMigrationRate;
++            public float PredatorMigrationRate;
++            public float PreyOverflowThreshold;
++            public float PredatorOverflowThreshold;
++            public float DepletedSectorBias;
++            public float OverflowRedistributionRate;
++            public int MaxPreyPopulation;
++            public int MaxPredatorPopulation;
++
++            public void Execute(int index)
++            {
++                SectorPopulationState state = FrontStates[index];
++                float prey = math.max(0f, state.PreyPopulation);
++                float predator = math.max(0f, state.PredatorPopulation);
++                float harvestPressure = math.max(0f, state.HarvestPressure) * math.exp(-HarvestPressureDecay * DeltaTimeSeconds);
++                float growthSuppression = math.saturate(1f - harvestPressure);
++                growthSuppression *= growthSuppression;
++                float harvestPressureSq = harvestPressure * harvestPressure;
++                float interaction = prey * predator;
++                float preyDelta = (Alpha * growthSuppression * prey) - (Beta * interaction) - (HarvestCrashRate * (harvestPressure + harvestPressureSq) * prey);
++                float predatorDelta = (Delta * interaction * PredatorGainPerPrey) - (Gamma * predator);
++                float preyMigration = ComputeNeighborMigration(index, prey, true, PreyOverflowThreshold);
++                float predatorMigration = ComputeNeighborMigration(index, predator, false, PredatorOverflowThreshold);
++
++                prey = math.clamp(prey + (preyDelta * DeltaTimeSeconds), 0f, MaxPreyPopulation);
++                predator = math.clamp(predator + (predatorDelta * DeltaTimeSeconds), 0f, MaxPredatorPopulation);
++                prey = math.clamp(prey + (preyMigration * PreyMigrationRate * DeltaTimeSeconds), 0f, MaxPreyPopulation);
++                predator = math.clamp(predator + (predatorMigration * PredatorMigrationRate * DeltaTimeSeconds), 0f, MaxPredatorPopulation);
++
++                state.PreyPopulation = prey;
++                state.PredatorPopulation = predator;
++                state.HarvestPressure = harvestPressure;
++                state.PreyPopulationRounded = (int)math.round(prey);
++                state.PredatorPopulationRounded = (int)math.round(predator);
++                BackStates[index] = state;
++            }
++
++            private float ComputeNeighborMigration(int index, float sectorPopulation, bool samplePrey, float overflowThreshold)
++            {
++                int2 sectorCoord = FrontStates[index].SectorCoord;
++                float gradient = 0f;
++                int lowerNeighborCount = 0;
++                gradient += SampleNeighborDelta(sectorCoord + new int2(1, 0), sectorPopulation, samplePrey, ref lowerNeighborCount);
++                gradient += SampleNeighborDelta(sectorCoord + new int2(-1, 0), sectorPopulation, samplePrey, ref lowerNeighborCount);
++                gradient += SampleNeighborDelta(sectorCoord + new int2(0, 1), sectorPopulation, samplePrey, ref lowerNeighborCount);
++                gradient += SampleNeighborDelta(sectorCoord + new int2(0, -1), sectorPopulation, samplePrey, ref lowerNeighborCount);
++
++                float safeOverflowThreshold = math.max(1f, overflowThreshold);
++                float depletion01 = math.saturate(1f - (sectorPopulation / safeOverflowThreshold));
++                gradient *= 1f + (depletion01 * DepletedSectorBias);
++
++                float overflow = math.max(0f, sectorPopulation - safeOverflowThreshold);
++                if (overflow > 0f && lowerNeighborCount > 0)
++                {
++                    gradient -= overflow * OverflowRedistributionRate * (lowerNeighborCount * 0.25f);
++                }
++
++                return gradient;
++            }
++
++            private float SampleNeighborDelta(int2 neighborCoord, float sectorPopulation, bool samplePrey, ref int lowerNeighborCount)
++            {
++                if (!SectorIndexByKey.TryGetValue(PackSectorKey(neighborCoord), out int neighborIndex))
++                    return 0f;
++
++                SectorPopulationState neighbor = FrontStates[neighborIndex];
++                float neighborPopulation = samplePrey ? neighbor.PreyPopulation : neighbor.PredatorPopulation;
++                if (neighborPopulation < sectorPopulation)
++                    lowerNeighborCount++;
++
++                return neighborPopulation - sectorPopulation;
++            }
++
++            private static long PackSectorKey(int2 sectorCoord)
++            {
++                return ((long)sectorCoord.x << 32) | (uint)sectorCoord.y;
++            }
++        }
++
++        [Header("Sector Runtime")]
++        [Tooltip("Maximum number of active 1 km sectors tracked in the cold-path population model.")]
++        [SerializeField, Min(MinimumSectorCapacity)] private int maxTrackedSectors = 128;
++        [Tooltip("Maximum predation events buffered between 10-second cold solves.")]
++        [SerializeField, Min(MinimumPredationEventCapacity)] private int maxBufferedPredationEvents = 256;
++        [Tooltip("Seconds between ecosystem solves. 10 seconds = 0.1 Hz.")]
++        [SerializeField, Min(1f)] private float coldTickIntervalSeconds = 10f;
++
++        [Header("Initial Populations")]
++        [Tooltip("Minimum deterministic prey population seeded into a new 1 km sector.")]
++        [SerializeField, Min(0)] private int initialPreyPopulationMin = 192;
++        [Tooltip("Maximum deterministic prey population seeded into a new 1 km sector.")]
++        [SerializeField, Min(1)] private int initialPreyPopulationMax = 768;
++        [Tooltip("Minimum deterministic predator population seeded into a new 1 km sector.")]
++        [SerializeField, Min(0)] private int initialPredatorPopulationMin = 8;
++        [Tooltip("Maximum deterministic predator population seeded into a new 1 km sector.")]
++        [SerializeField, Min(1)] private int initialPredatorPopulationMax = 48;
++
++        [Header("Lotka-Volterra Coefficients")]
++        [Tooltip("Prey natural growth coefficient alpha in dPrey/dt = alpha*Prey - beta*Prey*Predator.")]
++        [SerializeField, Min(0f)] private float preyGrowthAlpha = 0.0035f;
++        [Tooltip("Predation coefficient beta in dPrey/dt = alpha*Prey - beta*Prey*Predator.")]
++        [SerializeField, Min(0f)] private float predationBeta = 0.00003f;
++        [Tooltip("Predator reproduction coefficient delta in dPredator/dt = delta*Prey*Predator - gamma*Predator.")]
++        [SerializeField, Min(0f)] private float predatorGrowthDelta = 0.000012f;
++        [Tooltip("Predator decay coefficient gamma in dPredator/dt = delta*Prey*Predator - gamma*Predator.")]
++        [SerializeField, Min(0f)] private float predatorDecayGamma = 0.004f;
++        [Tooltip("Additional predator gain factor applied when prey are consumed by runtime attacks.")]
++        [SerializeField, Min(0f)] private float predatorGainPerPrey = 0.2f;
++        [Tooltip("Upper clamp for prey population values after each solve.")]
++        [SerializeField, Min(1)] private int maxPreyPopulation = 1024;
++        [Tooltip("Upper clamp for predator population values after each solve.")]
++        [SerializeField, Min(1)] private int maxPredatorPopulation = 128;
++        [Tooltip("Exponential decay applied to harvest pressure each cold solve.")]
++        [SerializeField, Min(0f)] private float harvestPressureDecay = 0.18f;
++        [Tooltip("Additional prey loss applied while harvest pressure remains elevated.")]
++        [SerializeField, Min(0f)] private float harvestCrashRate = 0.012f;
++        [Tooltip("Harvest pressure added per prey consumed by runtime attacks.")]
++        [SerializeField, Min(0f)] private float harvestPressurePerPrey = 0.08f;
++        [Tooltip("Sector-to-sector prey migration rate along local population gradients.")]
++        [SerializeField, Min(0f)] private float preyMigrationRate = 0.00085f;
++        [Tooltip("Sector-to-sector predator migration rate along local population gradients.")]
++        [SerializeField, Min(0f)] private float predatorMigrationRate = 0.00018f;
++        [Tooltip("Prey population above this threshold is treated as overflow and bleeds toward depleted adjacent sectors.")]
++        [SerializeField, Min(1f)] private float preyOverflowThreshold = 384f;
++        [Tooltip("Predator population above this threshold is treated as overflow and bleeds toward depleted adjacent sectors.")]
++        [SerializeField, Min(1f)] private float predatorOverflowThreshold = 28f;
++        [Tooltip("Extra pull applied to depleted sectors so empty neighbors refill instead of remaining mathematically dead.")]
++        [SerializeField, Min(0f)] private float depletedSectorBias = 1.35f;
++        [Tooltip("Fraction of local overflow converted into outward migration pressure when adjacent sectors are less populated.")]
++        [SerializeField, Min(0f)] private float overflowRedistributionRate = 0.85f;
++
++        private NativeArray<SectorPopulationState> _sectorFrontStates;
++        private NativeArray<SectorPopulationState> _sectorBackStates;
++        private NativeHashMap<long, int> _sectorIndexByKey;
++        private NativeArray<PredationEvent> _pendingPredationEvents;
++        private NativeList<EcosystemSectorSaveRecord> _saveSnapshotSectors;
++        private JobHandle _scheduledSolveHandle;
++        private float _coldTickAccumulator;
++        private int _activeSectorCount;
++        private int _pendingPredationEventCount;
++        private bool _registeredService;
++        private bool _registeredSlowTickable;
++        private bool _solveScheduled;
++
++        /// <summary>
++        /// True once the runtime-native state is allocated and registered.
++        /// </summary>
++        public bool IsInitialized => _sectorFrontStates.IsCreated && _sectorBackStates.IsCreated && _sectorIndexByKey.IsCreated;
++
++        internal void CaptureSaveSnapshot()
++        {
++            if (!_saveSnapshotSectors.IsCreated)
++                return;
++
++            _saveSnapshotSectors.Clear();
++            if (!IsInitialized)
++                return;
++
++            CompleteScheduledSolve(forceComplete: true);
++            for (int sectorIndex = 0; sectorIndex < _activeSectorCount; sectorIndex++)
++            {
++                SectorPopulationState state = _sectorFrontStates[sectorIndex];
++                _saveSnapshotSectors.Add(new EcosystemSectorSaveRecord
++                {
++                    SectorCoord = state.SectorCoord,
++                    PackedPopulations = PackPopulationCounts(state.PreyPopulationRounded, state.PredatorPopulationRounded)
++                });
++            }
++        }
++
++        internal NativeArray<EcosystemSectorSaveRecord> GetSaveSnapshotArray()
++        {
++            return _saveSnapshotSectors.IsCreated ? _saveSnapshotSectors.AsArray() : default;
++        }
++
++        internal unsafe void RestoreFromLoadedRecords(EcosystemSectorSaveRecord[] loadedRecords)
++        {
++            if (!IsInitialized)
++                return;
++
++            CompleteScheduledSolve(forceComplete: true);
++            _sectorIndexByKey.Clear();
++            _pendingPredationEventCount = 0;
++            _coldTickAccumulator = 0f;
++            _solveScheduled = false;
++            _scheduledSolveHandle = default;
++
++            if (_sectorFrontStates.IsCreated)
++            {
++                void* frontPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_sectorFrontStates);
++                UnsafeUtility.MemClear(frontPtr, _sectorFrontStates.Length * UnsafeUtility.SizeOf<SectorPopulationState>());
++            }
++
++            if (_sectorBackStates.IsCreated)
++            {
++                void* backPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_sectorBackStates);
++                UnsafeUtility.MemClear(backPtr, _sectorBackStates.Length * UnsafeUtility.SizeOf<SectorPopulationState>());
++            }
++
++            int recordCount = loadedRecords != null ? math.min(loadedRecords.Length, _sectorFrontStates.Length) : 0;
++            _activeSectorCount = 0;
++            for (int sectorIndex = 0; sectorIndex < recordCount; sectorIndex++)
++            {
++                EcosystemSectorSaveRecord saveRecord = loadedRecords[sectorIndex];
++                UnpackPopulationCounts(saveRecord.PackedPopulations, out int preyPopulation, out int predatorPopulation);
++                SectorPopulationState restoredState = new SectorPopulationState
++                {
++                    SectorCoord = saveRecord.SectorCoord,
++                    PreyPopulation = preyPopulation,
++                    PredatorPopulation = predatorPopulation,
++                    HarvestPressure = 0f,
++                    PreyPopulationRounded = preyPopulation,
++                    PredatorPopulationRounded = predatorPopulation
++                };
++
++                _sectorFrontStates[sectorIndex] = restoredState;
++                _sectorBackStates[sectorIndex] = restoredState;
++                _sectorIndexByKey.TryAdd(PackSectorKey(saveRecord.SectorCoord), sectorIndex);
++                _activeSectorCount++;
++            }
++        }
++
++        private void Awake()
++        {
++            SanitizeSettings();
++            AllocateRuntimeState();
++        }
++
++        private void OnEnable()
++        {
++            SanitizeSettings();
++            AllocateRuntimeState();
++            TryRegisterService();
++            TryRegisterSlowTickable();
++        }
++
++        private void OnDisable()
++        {
++            TryUnregisterSlowTickable();
++            TryUnregisterService();
++            DisposeRuntimeState();
++        }
++
++        /// <summary>
++        /// Advances the sector population solve at 0.1 Hz using a Burst job.
++        /// </summary>
++        public void SlowTick()
++        {
++            if (!IsInitialized)
++                return;
++
++            CompleteScheduledSolve(forceComplete: false);
++            EnsurePlayerSectorRegistered();
++            EnsureMigrationNeighborSectorsRegistered();
++
++            _coldTickAccumulator += DefaultSlowTickIntervalSeconds;
++            if (_coldTickAccumulator < coldTickIntervalSeconds)
++                return;
++
++            _coldTickAccumulator -= coldTickIntervalSeconds;
++            CompleteScheduledSolve(forceComplete: true);
++            ApplyPendingPredationEvents();
++            ScheduleSectorSolve();
++        }
++
++        /// <summary>
++        /// Resolves predator/prey counts for the 1 km sector containing the supplied world position.
++        /// </summary>
++        public bool TryGetSectorPopulation(Vector3 worldPosition, out EcosystemSectorPopulationSample sample)
++        {
++            sample = default;
++            if (!IsInitialized)
++                return false;
++
++            if (_solveScheduled && !_scheduledSolveHandle.IsCompleted)
++                return false;
++
++            CompleteScheduledSolve(forceComplete: false);
++            int2 sectorCoord = QuantizeSector(worldPosition);
++            int slotIndex = ResolveOrCreateSectorSlot(sectorCoord, seedWithBaseline: true);
++            if (slotIndex < 0)
++                return false;
++
++            SectorPopulationState state = _sectorFrontStates[slotIndex];
++            sample.SectorX = state.SectorCoord.x;
++            sample.SectorZ = state.SectorCoord.y;
++            sample.PreyPopulation = state.PreyPopulationRounded;
++            sample.PredatorPopulation = state.PredatorPopulationRounded;
++            return true;
++        }
++
++        /// <summary>
++        /// Registers prey consumption so the next cold solve reflects predator feeding pressure.
++        /// </summary>
++        public void ReportPredation(Vector3 worldPosition, int preyConsumed)
++        {
++            if (!IsInitialized || preyConsumed <= 0)
++                return;
++
++            int2 sectorCoord = QuantizeSector(worldPosition);
++            long packedSectorKey = PackSectorKey(sectorCoord);
++            int slotIndex;
++            if (_sectorIndexByKey.TryGetValue(packedSectorKey, out int existingSlotIndex))
++            {
++                slotIndex = existingSlotIndex;
++            }
++            else
++            {
++                if (_solveScheduled && !_scheduledSolveHandle.IsCompleted)
++                    return;
++
++                slotIndex = ResolveOrCreateSectorSlot(sectorCoord, seedWithBaseline: true);
++            }
++
++            if (slotIndex < 0 || _pendingPredationEventCount >= _pendingPredationEvents.Length)
++                return;
++
++            PredationEvent predationEvent = default;
++            predationEvent.SectorKey = packedSectorKey;
++            predationEvent.PreyConsumed = preyConsumed;
++            _pendingPredationEvents[_pendingPredationEventCount] = predationEvent;
++            _pendingPredationEventCount++;
++        }
++
++        private void SanitizeSettings()
++        {
++            maxTrackedSectors = math.max(MinimumSectorCapacity, maxTrackedSectors);
++            maxBufferedPredationEvents = math.max(MinimumPredationEventCapacity, maxBufferedPredationEvents);
++            coldTickIntervalSeconds = math.max(1f, coldTickIntervalSeconds);
++            initialPreyPopulationMax = math.max(initialPreyPopulationMin, initialPreyPopulationMax);
++            initialPredatorPopulationMax = math.max(initialPredatorPopulationMin, initialPredatorPopulationMax);
++            maxPreyPopulation = math.max(initialPreyPopulationMax, maxPreyPopulation);
++            maxPredatorPopulation = math.max(initialPredatorPopulationMax, maxPredatorPopulation);
++            preyOverflowThreshold = math.clamp(preyOverflowThreshold, 1f, maxPreyPopulation);
++            predatorOverflowThreshold = math.clamp(predatorOverflowThreshold, 1f, maxPredatorPopulation);
++        }
++
++        private void AllocateRuntimeState()
++        {
++            if (_sectorFrontStates.IsCreated)
++                return;
++
++            // COLD ALLOC: NativeArray<SectorPopulationState>[maxTrackedSectors] - ecosystem sector front buffer for Burst readers - owner: EcosystemDirector
++            _sectorFrontStates = new NativeArray<SectorPopulationState>(maxTrackedSectors, Allocator.Persistent, NativeArrayOptions.ClearMemory);
++            // COLD ALLOC: NativeArray<SectorPopulationState>[maxTrackedSectors] - ecosystem sector back buffer for Burst writers - owner: EcosystemDirector
++            _sectorBackStates = new NativeArray<SectorPopulationState>(maxTrackedSectors, Allocator.Persistent, NativeArrayOptions.ClearMemory);
++            // COLD ALLOC: NativeHashMap<long,int>[maxTrackedSectors] - packed sector-key to slot lookup for O(1) cold-path classification - owner: EcosystemDirector
++            _sectorIndexByKey = new NativeHashMap<long, int>(maxTrackedSectors, Allocator.Persistent);
++            // COLD ALLOC: NativeArray<PredationEvent>[maxBufferedPredationEvents] - predation event ring for next cold solve consumption - owner: EcosystemDirector
++            _pendingPredationEvents = new NativeArray<PredationEvent>(maxBufferedPredationEvents, Allocator.Persistent, NativeArrayOptions.ClearMemory);
++            // COLD ALLOC: NativeList<EcosystemSectorSaveRecord>[maxTrackedSectors] - packed ecosystem persistence snapshot staging buffer - owner: EcosystemDirector
++            _saveSnapshotSectors = new NativeList<EcosystemSectorSaveRecord>(maxTrackedSectors, Allocator.Persistent);
++            _activeSectorCount = 0;
++            _pendingPredationEventCount = 0;
++            _coldTickAccumulator = 0f;
++            _scheduledSolveHandle = default;
++            _solveScheduled = false;
++        }
++
++        private void DisposeRuntimeState()
++        {
++            JobHandle disposeDependency = _solveScheduled ? _scheduledSolveHandle : default;
++
++            if (_sectorFrontStates.IsCreated)
++                _sectorFrontStates.Dispose(disposeDependency);
++            if (_sectorBackStates.IsCreated)
++                _sectorBackStates.Dispose(disposeDependency);
++            if (_sectorIndexByKey.IsCreated)
++                _sectorIndexByKey.Dispose(disposeDependency);
++            if (_pendingPredationEvents.IsCreated)
++                _pendingPredationEvents.Dispose(disposeDependency);
++            if (_saveSnapshotSectors.IsCreated)
++                _saveSnapshotSectors.Dispose(disposeDependency);
++
++            _sectorFrontStates = default;
++            _sectorBackStates = default;
++            _sectorIndexByKey = default;
++            _pendingPredationEvents = default;
++            _saveSnapshotSectors = default;
++            _activeSectorCount = 0;
++            _pendingPredationEventCount = 0;
++            _coldTickAccumulator = 0f;
++            _scheduledSolveHandle = default;
++            _solveScheduled = false;
++        }
++
++        private void TryRegisterService()
++        {
++            if (_registeredService)
++                return;
++
++            GlobalRegistry.RegisterEcosystemDirectorService(this);
++            _registeredService = true;
++        }
++
++        private void TryUnregisterService()
++        {
++            if (!_registeredService)
++                return;
++
++            GlobalRegistry.UnregisterEcosystemDirectorService(this);
++            _registeredService = false;
++        }
++
++        private void TryRegisterSlowTickable()
++        {
++            if (_registeredSlowTickable)
++                return;
++
++            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.UI);
++            _registeredSlowTickable = true;
++        }
++
++        private void TryUnregisterSlowTickable()
++        {
++            if (!_registeredSlowTickable)
++                return;
++
++            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
++            _registeredSlowTickable = false;
++        }
++
++        private void EnsurePlayerSectorRegistered()
++        {
++            if (_solveScheduled && !_scheduledSolveHandle.IsCompleted)
++                return;
++
++            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
++            if (playerContext == null || !playerContext.IsInitialized || playerContext.PlayerTransform == null)
++                return;
++
++            ResolveOrCreateSectorSlot(QuantizeSector(playerContext.PlayerTransform.position), seedWithBaseline: true);
++        }
++
++        private void EnsureMigrationNeighborSectorsRegistered()
++        {
++            if (_solveScheduled && !_scheduledSolveHandle.IsCompleted)
++                return;
++
++            int seedSectorCount = _activeSectorCount;
++            for (int sectorIndex = 0; sectorIndex < seedSectorCount && _activeSectorCount < _sectorFrontStates.Length; sectorIndex++)
++            {
++                SectorPopulationState sourceState = _sectorFrontStates[sectorIndex];
++                if (sourceState.PreyPopulationRounded <= 0 && sourceState.PredatorPopulationRounded <= 0)
++                    continue;
++
++                int2 sectorCoord = sourceState.SectorCoord;
++                ResolveOrCreateSectorSlot(sectorCoord + new int2(1, 0), seedWithBaseline: false);
++                if (_activeSectorCount >= _sectorFrontStates.Length)
++                    break;
++
++                ResolveOrCreateSectorSlot(sectorCoord + new int2(-1, 0), seedWithBaseline: false);
++                if (_activeSectorCount >= _sectorFrontStates.Length)
++                    break;
++
++                ResolveOrCreateSectorSlot(sectorCoord + new int2(0, 1), seedWithBaseline: false);
++                if (_activeSectorCount >= _sectorFrontStates.Length)
++                    break;
++
++                ResolveOrCreateSectorSlot(sectorCoord + new int2(0, -1), seedWithBaseline: false);
++            }
++        }
++
++        private void ApplyPendingPredationEvents()
++        {
++            if (_pendingPredationEventCount <= 0)
++                return;
++
++            for (int eventIndex = 0; eventIndex < _pendingPredationEventCount; eventIndex++)
++            {
++                PredationEvent predationEvent = _pendingPredationEvents[eventIndex];
++                if (!_sectorIndexByKey.TryGetValue(predationEvent.SectorKey, out int slotIndex))
++                    continue;
++
++                SectorPopulationState state = _sectorFrontStates[slotIndex];
++                float preyRemoved = math.max(0f, predationEvent.PreyConsumed);
++                state.PreyPopulation = math.max(0f, state.PreyPopulation - preyRemoved);
++                state.PredatorPopulation = math.min(maxPredatorPopulation, state.PredatorPopulation + (preyRemoved * predatorGainPerPrey));
++                state.HarvestPressure = math.max(0f, state.HarvestPressure + (preyRemoved * harvestPressurePerPrey));
++                state.PreyPopulationRounded = (int)math.round(state.PreyPopulation);
++                state.PredatorPopulationRounded = (int)math.round(state.PredatorPopulation);
++                _sectorFrontStates[slotIndex] = state;
++                _sectorBackStates[slotIndex] = state;
++            }
++
++            _pendingPredationEventCount = 0;
++        }
++
++        private void ScheduleSectorSolve()
++        {
++            if (_activeSectorCount <= 0 || _solveScheduled)
++                return;
++
++            var solveJob = new LotkaVolterraSolveJob
++            {
++                FrontStates = _sectorFrontStates,
++                SectorIndexByKey = _sectorIndexByKey,
++                BackStates = _sectorBackStates,
++                DeltaTimeSeconds = coldTickIntervalSeconds,
++                Alpha = preyGrowthAlpha,
++                Beta = predationBeta,
++                Delta = predatorGrowthDelta,
++                Gamma = predatorDecayGamma,
++                PredatorGainPerPrey = predatorGainPerPrey,
++                HarvestPressureDecay = harvestPressureDecay,
++                HarvestCrashRate = harvestCrashRate,
++                PreyMigrationRate = preyMigrationRate,
++                PredatorMigrationRate = predatorMigrationRate,
++                PreyOverflowThreshold = preyOverflowThreshold,
++                PredatorOverflowThreshold = predatorOverflowThreshold,
++                DepletedSectorBias = depletedSectorBias,
++                OverflowRedistributionRate = overflowRedistributionRate,
++                MaxPreyPopulation = maxPreyPopulation,
++                MaxPredatorPopulation = maxPredatorPopulation
++            };
++
++            _scheduledSolveHandle = solveJob.Schedule(_activeSectorCount, 16);
++            _solveScheduled = true;
++        }
++
++        private void CompleteScheduledSolve(bool forceComplete)
++        {
++            if (!_solveScheduled)
++                return;
++
++            if (!forceComplete && !_scheduledSolveHandle.IsCompleted)
++                return;
++
++            _scheduledSolveHandle.Complete();
++            NativeArray<SectorPopulationState> swap = _sectorFrontStates;
++            _sectorFrontStates = _sectorBackStates;
++            _sectorBackStates = swap;
++            _scheduledSolveHandle = default;
++            _solveScheduled = false;
++        }
++
++        private int ResolveOrCreateSectorSlot(int2 sectorCoord, bool seedWithBaseline = true)
++        {
++            long packedKey = PackSectorKey(sectorCoord);
++            if (_sectorIndexByKey.TryGetValue(packedKey, out int existingSlot))
++                return existingSlot;
++
++            if (_activeSectorCount >= _sectorFrontStates.Length)
++                return -1;
++
++            int slotIndex = _activeSectorCount;
++            _activeSectorCount++;
++            _sectorIndexByKey.TryAdd(packedKey, slotIndex);
++
++            SectorPopulationState seededState = SeedSectorState(sectorCoord, seedWithBaseline);
++            _sectorFrontStates[slotIndex] = seededState;
++            _sectorBackStates[slotIndex] = seededState;
++            return slotIndex;
++        }
++
++        private SectorPopulationState SeedSectorState(int2 sectorCoord, bool seedWithBaseline)
++        {
++            int preyPopulation = 0;
++            int predatorPopulation = 0;
++            if (seedWithBaseline)
++            {
++                uint hash = math.hash(new uint2((uint)sectorCoord.x, (uint)sectorCoord.y));
++                float prey01 = (hash & 0xFFFFu) / 65535f;
++                float predator01 = ((hash >> 16) & 0xFFFFu) / 65535f;
++                preyPopulation = (int)math.round(math.lerp(initialPreyPopulationMin, initialPreyPopulationMax, prey01));
++                predatorPopulation = (int)math.round(math.lerp(initialPredatorPopulationMin, initialPredatorPopulationMax, predator01));
++            }
++
++            SectorPopulationState state = default;
++            state.SectorCoord = sectorCoord;
++            state.PreyPopulation = preyPopulation;
++            state.PredatorPopulation = predatorPopulation;
++            state.HarvestPressure = 0f;
++            state.PreyPopulationRounded = preyPopulation;
++            state.PredatorPopulationRounded = predatorPopulation;
++            return state;
++        }
++
++        private static int2 QuantizeSector(Vector3 worldPosition)
++        {
++            float2 scaled = new float2(worldPosition.x, worldPosition.z) / SectorEdgeLengthMeters;
++            return (int2)math.floor(scaled);
++        }
++
++        private static long PackSectorKey(int2 sectorCoord)
++        {
++            return ((long)sectorCoord.x << 32) | (uint)sectorCoord.y;
++        }
++
++        private static uint PackPopulationCounts(int preyPopulation, int predatorPopulation)
++        {
++            uint packedPrey = (ushort)math.clamp(preyPopulation, 0, ushort.MaxValue);
++            uint packedPredator = (ushort)math.clamp(predatorPopulation, 0, ushort.MaxValue);
++            return packedPrey | (packedPredator << 16);
++        }
++
++        private static void UnpackPopulationCounts(uint packedCounts, out int preyPopulation, out int predatorPopulation)
++        {
++            preyPopulation = (int)(packedCounts & 0xFFFFu);
++            predatorPopulation = (int)((packedCounts >> 16) & 0xFFFFu);
++        }
++    }
++}

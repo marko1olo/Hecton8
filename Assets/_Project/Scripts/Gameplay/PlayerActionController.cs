@@ -30,7 +30,7 @@ namespace Hecton8.Gameplay
     /// Управляет таймером, прерываниями и завершением действия.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class PlayerActionController : MonoBehaviour, ITickable
+    public sealed class PlayerActionController : MonoBehaviour, ITickable, IUpdatable
     {
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
@@ -432,10 +432,8 @@ namespace Hecton8.Gameplay
         {
             if (_registered) return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null) return;
-
-            tickManager.Register((ITickable)this);
+            SystemDispatcher.EnsureRuntimeInstance();
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
             _registered = true;
         }
 
@@ -443,10 +441,7 @@ namespace Hecton8.Gameplay
         {
             if (!_registered) return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister((ITickable)this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
             _registered = false;
         }
     }

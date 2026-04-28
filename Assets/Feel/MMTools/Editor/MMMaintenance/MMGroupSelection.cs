@@ -13,7 +13,7 @@ namespace MoreMountains.Tools
 		/// <summary>
 		/// Creates a parent object and puts all selected transforms under it
 		/// </summary>
-		[MenuItem("Tools/More Mountains/Group Selection %g")]
+		[MenuItem("Tools/More Mountains/Group Selection")]
 		public static void GroupSelection()
 		{
 			if (!Selection.activeTransform)

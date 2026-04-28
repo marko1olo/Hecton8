@@ -480,11 +480,8 @@ namespace Hecton8.Narrative
             if (_registeredToTick)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
 
-            tickManager.Register(this);
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Player);
             _registeredToTick = true;
         }
 
@@ -493,9 +490,7 @@ namespace Hecton8.Narrative
             if (!_registeredToTick)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister(this);
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
 
             _registeredToTick = false;
         }

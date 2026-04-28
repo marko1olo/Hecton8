@@ -84,7 +84,6 @@ namespace Hecton8.Gameplay
 
         private Transform _cachedTransform;
         private RaycastHit _hit;
-        private readonly RaycastHit[] _repairHits = new RaycastHit[1]; // COLD ALLOC: repair tool needs only the nearest service contact.
         private bool _isRepairing;
         private bool _wasRepairingLastFrame;
         private bool _invalidTargetReportedThisUse;
@@ -579,22 +578,7 @@ namespace Hecton8.Gameplay
 
         private bool TryGetRepairHit(out RaycastHit hit)
         {
-            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
-                _cachedTransform.position,
-                _cachedTransform.forward,
-                _repairHits,
-                repairRange,
-                repairMask,
-                QueryTriggerInteraction.Ignore);
-
-            if (hitCount > 0)
-            {
-                hit = _repairHits[0];
-                return true;
-            }
-
-            hit = default;
-            return false;
+            return TryResolveQueuedRaycast(_cachedTransform.position, _cachedTransform.forward, repairRange, repairMask.value, QueryTriggerInteraction.Ignore, out hit);
         }
 
         private static ServiceDiagnosis BuildDiagnosis(BaseModule module)

@@ -31,8 +31,15 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Renderer))]
     [AddComponentMenu("Hecton/Gameplay/Solar Panel")]
-    public sealed class SolarPanel : MonoBehaviour, IPowerComponent, ITickable
+    public sealed class SolarPanel : MonoBehaviour, IPowerComponent, ITickable, IUpdatable
     {
+        private static readonly int _WaterLayer;
+
+        static SolarPanel()
+        {
+            _WaterLayer = LayerMask.NameToLayer("Water");
+        }
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -109,8 +116,8 @@ namespace Hecton8.Gameplay
         private MaterialPropertyBlock _mpb;
         private static readonly int _EmissionColorID = Shader.PropertyToID("_EmissionColor");
 
-        // Pre-allocated raycast hit for sky check
-        private RaycastHit _skyHit;
+        // COLD ALLOC: RaycastHit[4] - synchronous sky-occlusion probe buffer - owner: SolarPanel
+        private readonly RaycastHit[] _skyHitBuffer = new RaycastHit[4];
 
         // ══════════════════════════════════════════════════════════
         //  IPowerComponent IMPLEMENTATION
@@ -195,11 +202,7 @@ namespace Hecton8.Gameplay
             if (_registered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register((ITickable)this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _registered = true;
         }
 
@@ -208,10 +211,7 @@ namespace Hecton8.Gameplay
             if (!_registered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister((ITickable)this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _registered = false;
         }
 
@@ -281,8 +281,10 @@ namespace Hecton8.Gameplay
             if (depth >= maxEffectiveDepth)
                 return 0.1f;
 
-            // Linear interpolation
-            float t = (depth - minDepth) / (maxEffectiveDepth - minDepth);
+            if (!TryResolveSafeReciprocal(maxEffectiveDepth - minDepth, out float inverseDepthRange))
+                return 0.1f;
+
+            float t = (depth - minDepth) * inverseDepthRange;
             return Mathf.Lerp(1f, 0.1f, t);
         }
 
@@ -320,18 +322,19 @@ namespace Hecton8.Gameplay
 
             // Smooth ramp up/down at day boundaries
             float dayLength = dayEndHour - dayStartHour;
-            float dayProgress = hour - dayStartHour;
+            if (!TryResolveSafeReciprocal(dayLength * 0.2f, out float inverseRampDuration))
+                return 0f;
 
-            // Ramp up in first 20% of day, ramp down in last 20%
+            float dayProgress = hour - dayStartHour;
             float rampDuration = dayLength * 0.2f;
 
             if (dayProgress < rampDuration)
             {
-                return dayProgress / rampDuration;
+                return dayProgress * inverseRampDuration;
             }
             else if (dayProgress > dayLength - rampDuration)
             {
-                return (dayLength - dayProgress) / rampDuration;
+                return (dayLength - dayProgress) * inverseRampDuration;
             }
 
             return 1f; // Full day
@@ -344,15 +347,56 @@ namespace Hecton8.Gameplay
         {
             Vector3 origin = _cachedTransform.position;
             Vector3 direction = Vector3.up;
+            if (!TryResolveSafeReciprocal(skyCheckDistance, out float inverseSkyDistance))
+                return 1f;
 
-            if (UnityEngine.Physics.Raycast(origin, direction, out _skyHit, skyCheckDistance, obstructionLayers, QueryTriggerInteraction.Ignore))
+            if (TryResolveNearestSkyHit(origin, direction, skyCheckDistance, out RaycastHit hit))
             {
                 // Obstructed - reduce power based on distance to obstruction
-                float obstructionDistance = _skyHit.distance;
-                return Mathf.Clamp01(obstructionDistance / skyCheckDistance * 0.5f);
+                return Mathf.Clamp01(hit.distance * inverseSkyDistance * 0.5f);
             }
 
             return 1f; // Clear sky
+        }
+
+        private bool TryResolveNearestSkyHit(Vector3 origin, Vector3 direction, float maxDistance, out RaycastHit nearestHit)
+        {
+            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
+                origin,
+                direction,
+                _skyHitBuffer,
+                maxDistance,
+                obstructionLayers,
+                QueryTriggerInteraction.Ignore);
+
+            nearestHit = default;
+            float nearestDistance = float.MaxValue;
+            for (int i = 0; i < hitCount; i++)
+            {
+                RaycastHit candidate = _skyHitBuffer[i];
+                if (candidate.collider == null || float.IsNaN(candidate.distance) || float.IsInfinity(candidate.distance))
+                    continue;
+
+                if (candidate.distance >= nearestDistance)
+                    continue;
+
+                nearestDistance = candidate.distance;
+                nearestHit = candidate;
+            }
+
+            return nearestHit.collider != null;
+        }
+
+        private static bool TryResolveSafeReciprocal(float value, out float reciprocal)
+        {
+            if (float.IsNaN(value) || float.IsInfinity(value) || Mathf.Abs(value) <= 0.0001f)
+            {
+                reciprocal = 0f;
+                return false;
+            }
+
+            reciprocal = 1f / value;
+            return !float.IsNaN(reciprocal) && !float.IsInfinity(reciprocal);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -398,10 +442,9 @@ namespace Hecton8.Gameplay
             if (skyCheckDistance < 1f) skyCheckDistance = 1f;
 
             // Ensure Water layer is excluded from obstruction check
-            int waterLayer = LayerMask.NameToLayer("Water");
-            if (waterLayer >= 0 && (obstructionLayers & (1 << waterLayer)) != 0)
+            if (_WaterLayer >= 0 && (obstructionLayers & (1 << _WaterLayer)) != 0)
             {
-                obstructionLayers &= ~(1 << waterLayer);
+                obstructionLayers &= ~(1 << _WaterLayer);
             }
         }
 

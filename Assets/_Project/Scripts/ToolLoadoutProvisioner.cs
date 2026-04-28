@@ -20,6 +20,8 @@ namespace Hecton8.Dev
     [AddComponentMenu("Hecton8/Dev/Tool Loadout Provisioner")]
     public sealed class ToolLoadoutProvisioner : MonoBehaviour
     {
+        internal static ToolLoadoutProvisioner ActiveRuntimeInstance { get; private set; }
+
         [Header("References")]
         [SerializeField] private PlayerInventory playerInventory;
         [SerializeField] private PlayerToolManager toolManager;
@@ -45,10 +47,19 @@ namespace Hecton8.Dev
 
         private void Awake()
         {
+            if (Application.isPlaying)
+                ActiveRuntimeInstance = this;
+
             AutoResolveSceneReferences();
 #if UNITY_EDITOR
             AutoResolveDefaultAssets();
 #endif
+        }
+
+        private void OnDestroy()
+        {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
         }
 
         private void Start()
@@ -156,7 +167,7 @@ namespace Hecton8.Dev
                     playerInventory = playerTransform.GetComponent<PlayerInventory>();
 
                 if (toolManager == null)
-                    toolManager = playerTransform.GetComponentInChildren<PlayerToolManager>(true);
+                    toolManager = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.ToolManager != null) ? Hecton8.Core.GlobalRegistry.Player.ToolManager : playerTransform.GetComponent<PlayerToolManager>());
             }
         }
 

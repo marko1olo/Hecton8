@@ -6,6 +6,7 @@ namespace MoreMountains.Feedbacks
 	/// This feedback lets you emit a PositionShake event. This will be caught by MMPositionShakers (on the specified channel).
 	/// Position shakers, as the name suggests, are used to shake the position of a transform, along a direction, with optional noise and other fine control options.
 	/// </summary>
+	[global::System.Serializable]
 	[AddComponentMenu("")]
 	[FeedbackPath("Transform/Position Shake")]
 	[FeedbackHelp("This feedback lets you emit a PositionShake event. This will be caught by MMPositionShakers (on the specified channel)." +

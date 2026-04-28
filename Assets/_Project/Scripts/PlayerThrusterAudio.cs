@@ -343,11 +343,7 @@ namespace Hecton8.Audio
             if (_registered)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager == null)
-                return;
-
-            gameTickManager.Register(this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
             _registered = true;
         }
 
@@ -356,9 +352,7 @@ namespace Hecton8.Audio
             if (!_registered)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager != null)
-                gameTickManager.Unregister(this);
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
 
             _registered = false;
         }

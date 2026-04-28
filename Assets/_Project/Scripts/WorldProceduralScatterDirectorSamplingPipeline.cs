@@ -1,12 +1,16 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using Hecton8.Environment;
+using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.World
 {
     public sealed partial class WorldProceduralScatterDirector
     {
+        private const int MaxSynchronousScatterReconcileIterations = 2048;
+
         private void ResetSamplingState(ScatterState nextState = ScatterState.Idle)
         {
             _samplingTotalCells = 0;
@@ -127,15 +131,17 @@ namespace Hecton8.World
             int structureBudget = ResolveRuntimeBudget(structurePlacementsPerWindow, WorldStreamingLayer.Construction, 0, 2);
             int spawnStride = Mathf.Max(2, spawnCellStride);
             int spawnBudget = ResolveRuntimeBudget(spawnPlacementsPerWindow, WorldStreamingLayer.Fauna, 0, 2);
-            Vector3 center = playerTransform.position;
-            int centerCellX = WorldToScatterCellIndex(center.x, cellSize);
-            int centerCellZ = WorldToScatterCellIndex(center.z, cellSize);
+            Vector3 runtimeCenter = playerTransform.position;
+            Vector3 absoluteCenter = ToAbsoluteScatterPosition(runtimeCenter);
+            int centerCellX = WorldToScatterCellIndex(absoluteCenter.x, cellSize);
+            int centerCellZ = WorldToScatterCellIndex(absoluteCenter.z, cellSize);
             int cellDiameter = (radiusCells * 2) + 1;
             int totalCells = cellDiameter * cellDiameter;
 
             context = new ScatterSamplingBeginContext(
                 rules,
-                center,
+                runtimeCenter,
+                absoluteCenter,
                 centerCellX,
                 centerCellZ,
                 cellSize,
@@ -186,7 +192,12 @@ namespace Hecton8.World
 
         private void CacheScatterSamplingPass(in ScatterSamplingBeginContext context)
         {
-            _samplingSnapshot = new SamplingSnapshot(context.Center, context.CenterCellX, context.CenterCellZ, context.Now);
+            _samplingSnapshot = new SamplingSnapshot(
+                context.RuntimeCenter,
+                context.AbsoluteCenter,
+                context.CenterCellX,
+                context.CenterCellZ,
+                context.Now);
             _samplingTotalCells = context.TotalCells;
             _samplingCellDiameter = context.CellDiameter;
             _samplingRadiusCells = context.RadiusCells;
@@ -213,10 +224,11 @@ namespace Hecton8.World
                     {
                         int cellXIndex = context.CenterCellX + x;
                         int cellZIndex = context.CenterCellZ + z;
-                        Vector3 sampleOrigin = new Vector3(
+                        Vector3 sampleOriginAbsolute = new Vector3(
                             (cellXIndex + 0.5f) * context.CellSize,
-                            context.Center.y,
+                            context.AbsoluteCenter.y,
                             (cellZIndex + 0.5f) * context.CellSize);
+                        Vector3 sampleOrigin = ToRuntimeScatterPosition(sampleOriginAbsolute);
                         if (fieldSampler.TryBuildCellInput(sampleOrigin, cellXIndex, cellZIndex, out WorldProceduralFieldSampler.CellInputData cellInput))
                             _memory.CellSamplingInputs[cellCursor] = cellInput;
                         else
@@ -246,8 +258,12 @@ namespace Hecton8.World
 
             if (_scatterState == ScatterState.Spawning)
             {
-                while (HasPendingScatterReconcileWork())
+                int reconcileWatchdog = MaxSynchronousScatterReconcileIterations;
+                while (HasPendingScatterReconcileWork() && reconcileWatchdog-- > 0)
                     ContinuePendingScatterReconcile();
+
+                if (HasPendingScatterReconcileWork())
+                    return true;
 
                 _scatterState = ScatterState.Idle;
             }
@@ -286,7 +302,7 @@ namespace Hecton8.World
                 return;
             }
 
-            Vector3 center = completionContext.Center;
+            Vector3 center = completionContext.AbsoluteCenter;
             float size = completionContext.CellSize;
             float now = completionContext.Now;
             int totalCells = completionContext.TotalCells;
@@ -749,7 +765,7 @@ namespace Hecton8.World
             if (_samplingTotalCells <= 0 || fieldSampler == null || _memory == null)
                 return false;
 
-            context.Center = _samplingSnapshot.PlayerPosition;
+            context.AbsoluteCenter = _samplingSnapshot.AbsoluteCenter;
             context.CellSize = _samplingCellSize;
             context.Now = _samplingNow;
             context.TotalCells = _samplingTotalCells;
@@ -1138,6 +1154,51 @@ namespace Hecton8.World
             ref int passiveSpawnCount,
             ref int predatorSpawnCount)
         {
+            if (TryEvaluateScatterCellCandidateAcceptanceBatch(
+                    ref cellPlacementCounters,
+                    in acceptanceContext,
+                    layerPlacementCounts,
+                    clusterAccentCounts,
+                    structureAccentCounts,
+                    passiveSpawnCount,
+                    predatorSpawnCount))
+            {
+                NativeArray<byte> acceptanceResults = _memory.CandidateAcceptanceBatchResults.AsArray();
+                int candidateCount = math.min(_candidateBuffer.Count, acceptanceResults.Length);
+                for (int i = 0; i < candidateCount; i++)
+                {
+                    if (acceptanceResults[i] == 0)
+                        continue;
+
+                    ScatterCandidate candidate = _candidateBuffer[i];
+                    WorldPrefabFamilyProfile.ScatterLayer layer = candidate.Family.scatterLayer;
+                    int layerIndex = (int)layer;
+                    if (!TryRegisterDesiredPlacement(candidate.Placement, in acceptanceContext.PlacementRegistrationContext))
+                        continue;
+
+                    ApplyAcceptedScatterCellCandidate(
+                        ref cellPlacementCounters,
+                        candidate,
+                        layer,
+                        layerIndex,
+                        acceptanceContext.StructureStride,
+                        acceptanceContext.SpawnStride,
+                        layerPlacementCounts,
+                        clusterAccentCounts,
+                        structureAccentCounts,
+                        layerTopCandidates,
+                        layerTopValid,
+                        layerFamilyCounts,
+                        layerBiomeCounts,
+                        ref classicParityAccumulator,
+                        ref passiveSpawnCount,
+                        ref predatorSpawnCount,
+                        acceptanceContext.CollectDetailedDiagnostics);
+                }
+
+                return;
+            }
+
             for (int i = 0; i < _candidateBuffer.Count; i++)
             {
                 ScatterCandidate candidate = _candidateBuffer[i];
@@ -1190,7 +1251,7 @@ namespace Hecton8.World
                     continue;
                 }
 
-                if (!CanAcceptCandidate(candidate))
+                if (!CanAcceptCandidateNative(candidate))
                     continue;
 
                 if (!TryRegisterDesiredPlacement(candidate.Placement, in acceptanceContext.PlacementRegistrationContext))

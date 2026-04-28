@@ -61,12 +61,12 @@ namespace Hecton8.Building
 
         private void OnEnable()
         {
-            GameTickManager.Instance?.Register((IFixedTickable)this);
+            GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Player);
         }
 
         private void OnDisable()
         {
-            GameTickManager.Instance?.Unregister((IFixedTickable)this);
+            GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
         }
 
         public void OnSpawn()

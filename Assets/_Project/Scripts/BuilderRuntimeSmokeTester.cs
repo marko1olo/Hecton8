@@ -215,16 +215,16 @@ namespace Hecton8.Dev
         private void AutoResolveSceneReferences()
         {
             if (playerBuilder == null)
-                playerBuilder = FindAnyObjectByType<PlayerBuilder>();
+                playerBuilder = (Hecton8.Core.GlobalRegistry.Player != null ? Hecton8.Core.GlobalRegistry.Player.PlayerBuilder : null);
 
             if (constructionManager == null)
-                constructionManager = FindAnyObjectByType<ConstructionManager>();
+                constructionManager = ConstructionManager.Instance;
 
             if (playerInventory == null)
-                playerInventory = FindAnyObjectByType<PlayerInventory>();
+                playerInventory = (Hecton8.Core.GlobalRegistry.Player != null ? Hecton8.Core.GlobalRegistry.Player.Inventory : null);
 
             if (loadoutProvisioner == null)
-                loadoutProvisioner = FindAnyObjectByType<ToolLoadoutProvisioner>();
+                loadoutProvisioner = ToolLoadoutProvisioner.ActiveRuntimeInstance;
         }
 
         private string DescribeResolvedRefs()
@@ -262,7 +262,7 @@ namespace Hecton8.Dev
 
             if (playerBuilder != null)
             {
-                Camera playerCamera = playerBuilder.GetComponentInChildren<Camera>(true);
+                Camera playerCamera = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera : playerBuilder.GetComponent<Camera>());
                 reference = playerCamera != null ? playerCamera.transform : playerBuilder.transform;
             }
 
@@ -270,7 +270,7 @@ namespace Hecton8.Dev
                 SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform != null)
             {
-                Camera playerCamera = playerTransform.GetComponentInChildren<Camera>(true);
+                Camera playerCamera = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera : playerTransform.GetComponent<Camera>());
                 reference = playerCamera != null ? playerCamera.transform : playerTransform;
             }
 

@@ -1,0 +1,5 @@
+<Project>
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Assembly-CSharp' Or '$(MSBuildProjectName)' == 'Assembly-CSharp-firstpass'">
+    <BuildProjectReferences>false</BuildProjectReferences>
+  </PropertyGroup>
+</Project>

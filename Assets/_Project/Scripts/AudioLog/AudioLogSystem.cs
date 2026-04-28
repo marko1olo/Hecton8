@@ -63,6 +63,7 @@ namespace Hecton8.Narrative
         private readonly HashSet<string> _discoveredLogs = new HashSet<string>(256);
 
         private AudioLogData _currentLog;
+        private uint _currentLogHash;
         private float _playbackTimer;
         private bool _isPlaying;
         private bool _registered;
@@ -143,11 +144,14 @@ namespace Hecton8.Narrative
 
             // Воспроизведение завершено
             string completedId = _currentLog.logId;
+            uint completedHash = _currentLogHash;
             _isPlaying = false;
             _currentLog = null;
+            _currentLogHash = 0u;
             _playbackTimer = 0f;
 
             AudioLogEvents.RaisePlaybackCompleted(completedId);
+            SubtitleEventBus.RaisePlaybackCompleted(completedHash);
 
             LogPlaybackCompleted(completedId);
         }
@@ -208,10 +212,12 @@ namespace Hecton8.Narrative
             }
 
             _currentLog = data;
+            _currentLogHash = LoreDatabaseManager.ComputeLoreHash(data.SafeLogId);
             _playbackTimer = data.Duration;
             _isPlaying = true;
 
             AudioLogEvents.RaisePlaybackStarted(data);
+            SubtitleEventBus.RaisePlaybackStarted(_currentLogHash, _playbackTimer);
 
             LogPlaying(data.logId, data.Duration);
         }
@@ -225,11 +231,14 @@ namespace Hecton8.Narrative
                 return;
 
             string stoppedId = _currentLog.logId;
+            uint stoppedHash = _currentLogHash;
             _isPlaying = false;
             _currentLog = null;
+            _currentLogHash = 0u;
             _playbackTimer = 0f;
 
             AudioLogEvents.RaisePlaybackStopped(stoppedId);
+            SubtitleEventBus.RaisePlaybackStopped(stoppedHash);
         }
 
         /// <summary>
@@ -263,11 +272,7 @@ namespace Hecton8.Narrative
             if (_registered)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager == null)
-                return;
-
-            gameTickManager.Register(this);
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);
             _registered = true;
         }
 
@@ -276,10 +281,7 @@ namespace Hecton8.Narrative
             if (!_registered)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager != null)
-                gameTickManager.Unregister(this);
-
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
             _registered = false;
         }
 

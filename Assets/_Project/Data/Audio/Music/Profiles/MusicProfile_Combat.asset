@@ -1,4 +1,4 @@
-﻿%YAML 1.1
+%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!114 &11400000
 MonoBehaviour:
@@ -23,12 +23,12 @@ MonoBehaviour:
   _shortTrackCooldownSeconds: 55
   _localCalmWeight: 50
   _localTenseWeight: 70
-  _allowCrossTensionMix: false
+  _allowCrossTensionMix: 0
   _crossTensionMixChance: 0
   _longRepeatHorizon: 2
   _shortRepeatHorizon: 2
   _calmLongTracks: []
-  _tenseLongTracks: 
+  _tenseLongTracks:
   - _cueId: music.being_attacked_1_metallic_alarm_panic
     _clip: {fileID: 8300000, guid: 054f500f297e56549a8c78ff8ef2f168, type: 3}
     _volume: 0.939
@@ -54,7 +54,7 @@ MonoBehaviour:
     _role: 2
     _tension: 0.92
   _calmShortTracks: []
-  _tenseShortTracks: 
+  _tenseShortTracks:
   - _cueId: music.danger_zatmenie_1_distant_metallic_groan
     _clip: {fileID: 8300000, guid: 5d1593e1d1e1cc341847c32c4a3c3f4c, type: 3}
     _volume: 0.917
@@ -68,7 +68,7 @@ MonoBehaviour:
     _role: 3
     _tension: 0.94
   _discoveryStingers: []
-  _dangerStingers: 
+  _dangerStingers:
   - _cueId: music.stinger_dangerous_1_iron_teeth
     _clip: {fileID: 8300000, guid: ef4fb939718b1124daf5bbdcf98c8ed8, type: 3}
     _volume: 0.917
@@ -81,7 +81,7 @@ MonoBehaviour:
     _weight: 1
     _role: 5
     _tension: 0.98
-  _recoveryStingers: 
+  _recoveryStingers:
   - _cueId: music.stinger_being_saved_1release_at_depth
     _clip: {fileID: 8300000, guid: 2cee222960dc8d54098777e03cbd6adc, type: 3}
     _volume: 0.917
@@ -101,7 +101,7 @@ MonoBehaviour:
     _role: 6
     _tension: 0.22
   _calmBleedProfiles: []
-  _tenseBleedProfiles: 
+  _tenseBleedProfiles:
   - _profile: {fileID: 11400000, guid: 519c105bce6086e48b69182e2951ca40, type: 2}
     _weight: 10
   - _profile: {fileID: 11400000, guid: a1a53362b69461a49a59c04b635d606b, type: 2}

@@ -35,13 +35,17 @@ namespace Hecton8.Tools
 
         public static PauseMenuController ResolvePauseMenu()
         {
+            PauseMenuController runtimePauseMenu = PauseMenuController.ActiveRuntimeInstance;
+            if (runtimePauseMenu != null)
+                return runtimePauseMenu;
+
             PauseMenuController pauseMenu = FindSceneObjectIncludingInactive<PauseMenuController>();
             if (pauseMenu != null)
                 return pauseMenu;
 
             PauseMenuHost host = FindSceneObjectIncludingInactive<PauseMenuHost>();
             if (host != null)
-                return host.GetComponentInChildren<PauseMenuController>(true);
+                return host.GetComponent<PauseMenuController>();
 
             return null;
         }

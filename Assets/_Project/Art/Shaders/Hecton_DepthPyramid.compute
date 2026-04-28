@@ -1,0 +1,51 @@
+#pragma kernel CopyDepthPyramidMip0
+#pragma kernel DownsampleDepthPyramidMip
+
+Texture2D<float> _HectonDepthPyramidSourceDepth;
+Texture2D<float> _HectonDepthPyramidSource;
+RWTexture2D<float> _HectonDepthPyramidTarget;
+
+[numthreads(8, 8, 1)]
+void CopyDepthPyramidMip0(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint width;
+    uint height;
+    _HectonDepthPyramidTarget.GetDimensions(width, height);
+    if (dispatchThreadId.x >= width || dispatchThreadId.y >= height)
+        return;
+
+    _HectonDepthPyramidTarget[dispatchThreadId.xy] = _HectonDepthPyramidSourceDepth.Load(int3(dispatchThreadId.xy, 0));
+}
+
+[numthreads(8, 8, 1)]
+void DownsampleDepthPyramidMip(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint width;
+    uint height;
+    _HectonDepthPyramidTarget.GetDimensions(width, height);
+    if (dispatchThreadId.x >= width || dispatchThreadId.y >= height)
+        return;
+
+    uint srcWidth;
+    uint srcHeight;
+    _HectonDepthPyramidSource.GetDimensions(srcWidth, srcHeight);
+
+    uint2 sourceBase = dispatchThreadId.xy * 2;
+    uint2 sampleA = min(sourceBase, uint2(srcWidth - 1, srcHeight - 1));
+    uint2 sampleB = min(sourceBase + uint2(1, 0), uint2(srcWidth - 1, srcHeight - 1));
+    uint2 sampleC = min(sourceBase + uint2(0, 1), uint2(srcWidth - 1, srcHeight - 1));
+    uint2 sampleD = min(sourceBase + uint2(1, 1), uint2(srcWidth - 1, srcHeight - 1));
+
+    float depthA = _HectonDepthPyramidSource.Load(int3(sampleA, 0));
+    float depthB = _HectonDepthPyramidSource.Load(int3(sampleB, 0));
+    float depthC = _HectonDepthPyramidSource.Load(int3(sampleC, 0));
+    float depthD = _HectonDepthPyramidSource.Load(int3(sampleD, 0));
+
+#if defined(UNITY_REVERSED_Z)
+    float farthestDepth = min(min(depthA, depthB), min(depthC, depthD));
+#else
+    float farthestDepth = max(max(depthA, depthB), max(depthC, depthD));
+#endif
+
+    _HectonDepthPyramidTarget[dispatchThreadId.xy] = farthestDepth;
+}

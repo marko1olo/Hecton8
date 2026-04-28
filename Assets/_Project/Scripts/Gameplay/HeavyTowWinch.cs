@@ -223,7 +223,7 @@ namespace Hecton8.Gameplay
 
             if (towAnchor == null)
             {
-                Camera playerCamera = GetComponentInChildren<Camera>(true);
+                Camera playerCamera = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Camera>(transform);
                 if (playerCamera != null)
                     towAnchor = playerCamera.transform;
             }

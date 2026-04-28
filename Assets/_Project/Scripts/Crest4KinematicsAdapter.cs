@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using Unity.Collections;
 using UnityEngine;
+using Hecton8.Core;
 
 namespace Hecton8.Physics
 {
@@ -9,10 +11,13 @@ namespace Hecton8.Physics
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Physics/Crest 4 Kinematics Adapter")]
-    public sealed class Crest4KinematicsAdapter : MonoBehaviour, IHectonOceanKinematics
+    public sealed class Crest4KinematicsAdapter : HectonCrestOceanKinematics
     {
         private const int MaxBatchSampleCount = 5;
         private const int ProviderPriority = 400;
+        private static readonly int _waveFoamStrengthId = Shader.PropertyToID("_WaveFoamStrength");
+        private static readonly int _waveFoamCoverageId = Shader.PropertyToID("_WaveFoamCoverage");
+        private static readonly int _foamScaleId = Shader.PropertyToID("_FoamScale");
 
         [Header("References")]
         [Tooltip("Optional explicit Crest ocean owner. Leave empty to resolve OceanRenderer.Instance or scan the scene.")]
@@ -27,16 +32,26 @@ namespace Hecton8.Physics
         private int _displacementQueryOwnerHash;
         private int _flowQueryOwnerHash;
         private float _nextResolveTime = float.NegativeInfinity;
+        // COLD ALLOC: Vector3[5] - native-to-managed Crest position bridge scratch for Crest 4 runtime fallback - owner: Crest4KinematicsAdapter
+        private readonly Vector3[] _samplePositionScratch = new Vector3[MaxBatchSampleCount];
+        // COLD ALLOC: Vector3[5] - native-to-managed Crest flow bridge scratch for Crest 4 runtime fallback - owner: Crest4KinematicsAdapter
+        private readonly Vector3[] _flowScratch = new Vector3[MaxBatchSampleCount];
+        // COLD ALLOC: Vector3[5] - native-to-managed Crest wave-normal bridge scratch for Crest 4 runtime fallback - owner: Crest4KinematicsAdapter
+        private readonly Vector3[] _waveNormalScratch = new Vector3[MaxBatchSampleCount];
+        // COLD ALLOC: Vector3[5] - native-to-managed Crest velocity bridge scratch for Crest 4 runtime fallback - owner: Crest4KinematicsAdapter
+        private readonly Vector3[] _surfaceVelocityScratch = new Vector3[MaxBatchSampleCount];
+        // COLD ALLOC: Vector3[5] - native-to-managed Crest displacement bridge scratch for Crest 4 runtime fallback - owner: Crest4KinematicsAdapter
+        private readonly Vector3[] _displacementScratch = new Vector3[MaxBatchSampleCount];
         private readonly List<GameObject> _sceneRootBuffer =
             new List<GameObject>(16); // COLD ALLOC: List<GameObject>(16) — reusable scene root scan buffer for delayed Crest owner recovery — owner: Crest4KinematicsAdapter
         private readonly float[] _heightScratch =
             new float[MaxBatchSampleCount]; // COLD ALLOC: float[5] — temporary Crest height scratch buffer for wave-only queries — owner: Crest4KinematicsAdapter
 
         /// <inheritdoc />
-        public int Priority => ProviderPriority;
+        public override int Priority => ProviderPriority;
 
         /// <inheritdoc />
-        public bool IsAvailable
+        public override bool IsAvailable
         {
             get
             {
@@ -46,7 +61,80 @@ namespace Hecton8.Physics
         }
 
         /// <inheritdoc />
-        public float SeaLevel => ResolveSeaLevel(ResolveOceanRenderer(forceSceneSearch: false));
+        public override float SeaLevel => ResolveSeaLevel(ResolveOceanRenderer(forceSceneSearch: false));
+
+        /// <inheritdoc />
+        public override bool TryGetSurfaceWeatherState(out HectonOceanSurfaceWeatherState state)
+        {
+            state = default;
+            Crest.OceanRenderer oceanRenderer = ResolveOceanRenderer(forceSceneSearch: true);
+            if (oceanRenderer == null)
+                return false;
+
+            uint flags = (uint)HectonOceanSurfaceWeatherStateFlags.SupportsWindSpeed;
+            state.WindSpeed = Mathf.Max(0f, oceanRenderer._globalWindSpeed);
+
+            Material oceanMaterial = oceanRenderer.OceanMaterial;
+            if (oceanMaterial != null)
+            {
+                if (oceanMaterial.HasProperty(_waveFoamStrengthId))
+                {
+                    flags |= (uint)HectonOceanSurfaceWeatherStateFlags.SupportsFoamStrength;
+                    state.FoamStrength = oceanMaterial.GetFloat(_waveFoamStrengthId);
+                }
+
+                if (oceanMaterial.HasProperty(_waveFoamCoverageId))
+                {
+                    flags |= (uint)HectonOceanSurfaceWeatherStateFlags.SupportsFoamCoverage;
+                    state.FoamCoverage = oceanMaterial.GetFloat(_waveFoamCoverageId);
+                }
+
+                if (oceanMaterial.HasProperty(_foamScaleId))
+                {
+                    flags |= (uint)HectonOceanSurfaceWeatherStateFlags.SupportsFoamScale;
+                    state.FoamScale = oceanMaterial.GetFloat(_foamScaleId);
+                }
+            }
+
+            state.Flags = flags;
+            return true;
+        }
+
+        /// <inheritdoc />
+        public override bool ApplySurfaceWeatherState(in HectonOceanSurfaceWeatherState state)
+        {
+            Crest.OceanRenderer oceanRenderer = ResolveOceanRenderer(forceSceneSearch: true);
+            if (oceanRenderer == null)
+                return false;
+
+            uint flags = state.Flags;
+            if ((flags & (uint)HectonOceanSurfaceWeatherStateFlags.SupportsWindSpeed) != 0u)
+                oceanRenderer._globalWindSpeed = Mathf.Max(0f, state.WindSpeed);
+
+            Material oceanMaterial = oceanRenderer.OceanMaterial;
+            if (oceanMaterial == null)
+                return true;
+
+            if ((flags & (uint)HectonOceanSurfaceWeatherStateFlags.SupportsFoamStrength) != 0u &&
+                oceanMaterial.HasProperty(_waveFoamStrengthId))
+            {
+                oceanMaterial.SetFloat(_waveFoamStrengthId, state.FoamStrength);
+            }
+
+            if ((flags & (uint)HectonOceanSurfaceWeatherStateFlags.SupportsFoamCoverage) != 0u &&
+                oceanMaterial.HasProperty(_waveFoamCoverageId))
+            {
+                oceanMaterial.SetFloat(_waveFoamCoverageId, state.FoamCoverage);
+            }
+
+            if ((flags & (uint)HectonOceanSurfaceWeatherStateFlags.SupportsFoamScale) != 0u &&
+                oceanMaterial.HasProperty(_foamScaleId))
+            {
+                oceanMaterial.SetFloat(_foamScaleId, state.FoamScale);
+            }
+
+            return true;
+        }
 
         private void Awake()
         {
@@ -59,16 +147,16 @@ namespace Hecton8.Physics
 
         private void OnEnable()
         {
-            HectonOceanRegistry.Register(this);
+            OceanKinematicsRuntimeService.RegisterProvider(this);
         }
 
         private void OnDisable()
         {
-            HectonOceanRegistry.Unregister(this);
+            OceanKinematicsRuntimeService.UnregisterProvider(this);
         }
 
         /// <inheritdoc />
-        public bool GetWaterHeight(Vector3[] samplePositions, int sampleCount, float minSpatialLength, float[] waterHeights)
+        public override bool GetWaterHeight(Vector3[] samplePositions, int sampleCount, float minSpatialLength, float[] waterHeights)
         {
             if (!ValidateHeightRequest(samplePositions, sampleCount, waterHeights))
                 return false;
@@ -87,7 +175,19 @@ namespace Hecton8.Physics
         }
 
         /// <inheritdoc />
-        public bool GetSurfaceFlow(Vector3[] samplePositions, int sampleCount, float minSpatialLength, Vector3[] surfaceFlows)
+        public override bool GetWaterHeight(NativeArray<Vector3> samplePositions, int sampleCount, float minSpatialLength, NativeArray<float> waterHeights)
+        {
+            if (!ValidateHeightRequest(samplePositions, sampleCount, waterHeights))
+                return false;
+
+            CopyNativePositions(samplePositions, sampleCount);
+            bool succeeded = GetWaterHeight(_samplePositionScratch, sampleCount, minSpatialLength, _heightScratch);
+            CopyManagedHeightsToNative(_heightScratch, waterHeights, sampleCount);
+            return succeeded;
+        }
+
+        /// <inheritdoc />
+        public override bool GetSurfaceFlow(Vector3[] samplePositions, int sampleCount, float minSpatialLength, Vector3[] surfaceFlows)
         {
             if (!ValidateVectorRequest(samplePositions, sampleCount, surfaceFlows))
                 return false;
@@ -106,7 +206,19 @@ namespace Hecton8.Physics
         }
 
         /// <inheritdoc />
-        public bool GetWaveNormal(
+        public override bool GetSurfaceFlow(NativeArray<Vector3> samplePositions, int sampleCount, float minSpatialLength, NativeArray<Vector3> surfaceFlows)
+        {
+            if (!ValidateVectorRequest(samplePositions, sampleCount, surfaceFlows))
+                return false;
+
+            CopyNativePositions(samplePositions, sampleCount);
+            bool succeeded = GetSurfaceFlow(_samplePositionScratch, sampleCount, minSpatialLength, _flowScratch);
+            CopyManagedVectorsToNative(_flowScratch, surfaceFlows, sampleCount);
+            return succeeded;
+        }
+
+        /// <inheritdoc />
+        public override bool GetWaveNormal(
             Vector3[] samplePositions,
             int sampleCount,
             float minSpatialLength,
@@ -148,6 +260,32 @@ namespace Hecton8.Physics
             return true;
         }
 
+        /// <inheritdoc />
+        public override bool GetWaveNormal(
+            NativeArray<Vector3> samplePositions,
+            int sampleCount,
+            float minSpatialLength,
+            NativeArray<Vector3> waveNormals,
+            NativeArray<Vector3> surfaceVelocities,
+            NativeArray<Vector3> displacements)
+        {
+            if (!ValidateWaveRequest(samplePositions, sampleCount, waveNormals, surfaceVelocities, displacements))
+                return false;
+
+            CopyNativePositions(samplePositions, sampleCount);
+            bool succeeded = GetWaveNormal(
+                _samplePositionScratch,
+                sampleCount,
+                minSpatialLength,
+                _waveNormalScratch,
+                _surfaceVelocityScratch,
+                _displacementScratch);
+            CopyManagedVectorsToNative(_waveNormalScratch, waveNormals, sampleCount);
+            CopyManagedVectorsToNative(_surfaceVelocityScratch, surfaceVelocities, sampleCount);
+            CopyManagedVectorsToNative(_displacementScratch, displacements, sampleCount);
+            return succeeded;
+        }
+
         private bool TryResolveCollisionProvider(out Crest.ICollProvider collisionProvider)
         {
             Crest.OceanRenderer oceanRenderer = ResolveOceanRenderer(forceSceneSearch: true);
@@ -183,7 +321,7 @@ namespace Hecton8.Physics
                 if (rootObject == null)
                     continue;
 
-                Crest.OceanRenderer candidate = rootObject.GetComponentInChildren<Crest.OceanRenderer>(true);
+                Crest.OceanRenderer candidate = rootObject.GetComponent<Crest.OceanRenderer>();
                 if (candidate == null)
                     continue;
 
@@ -213,10 +351,30 @@ namespace Hecton8.Physics
                    heights.Length >= sampleCount;
         }
 
+        private static bool ValidateHeightRequest(NativeArray<Vector3> samplePositions, int sampleCount, NativeArray<float> heights)
+        {
+            return samplePositions.IsCreated &&
+                   heights.IsCreated &&
+                   sampleCount > 0 &&
+                   sampleCount <= MaxBatchSampleCount &&
+                   samplePositions.Length >= sampleCount &&
+                   heights.Length >= sampleCount;
+        }
+
         private static bool ValidateVectorRequest(Vector3[] samplePositions, int sampleCount, Vector3[] vectors)
         {
             return samplePositions != null &&
                    vectors != null &&
+                   sampleCount > 0 &&
+                   sampleCount <= MaxBatchSampleCount &&
+                   samplePositions.Length >= sampleCount &&
+                   vectors.Length >= sampleCount;
+        }
+
+        private static bool ValidateVectorRequest(NativeArray<Vector3> samplePositions, int sampleCount, NativeArray<Vector3> vectors)
+        {
+            return samplePositions.IsCreated &&
+                   vectors.IsCreated &&
                    sampleCount > 0 &&
                    sampleCount <= MaxBatchSampleCount &&
                    samplePositions.Length >= sampleCount &&
@@ -235,6 +393,38 @@ namespace Hecton8.Physics
                    displacements != null &&
                    surfaceVelocities.Length >= sampleCount &&
                    displacements.Length >= sampleCount;
+        }
+
+        private static bool ValidateWaveRequest(
+            NativeArray<Vector3> samplePositions,
+            int sampleCount,
+            NativeArray<Vector3> waveNormals,
+            NativeArray<Vector3> surfaceVelocities,
+            NativeArray<Vector3> displacements)
+        {
+            return ValidateVectorRequest(samplePositions, sampleCount, waveNormals) &&
+                   surfaceVelocities.IsCreated &&
+                   displacements.IsCreated &&
+                   surfaceVelocities.Length >= sampleCount &&
+                   displacements.Length >= sampleCount;
+        }
+
+        private void CopyNativePositions(NativeArray<Vector3> samplePositions, int sampleCount)
+        {
+            for (int i = 0; i < sampleCount; i++)
+                _samplePositionScratch[i] = samplePositions[i];
+        }
+
+        private static void CopyManagedHeightsToNative(float[] source, NativeArray<float> destination, int sampleCount)
+        {
+            for (int i = 0; i < sampleCount; i++)
+                destination[i] = source[i];
+        }
+
+        private static void CopyManagedVectorsToNative(Vector3[] source, NativeArray<Vector3> destination, int sampleCount)
+        {
+            for (int i = 0; i < sampleCount; i++)
+                destination[i] = source[i];
         }
     }
 }

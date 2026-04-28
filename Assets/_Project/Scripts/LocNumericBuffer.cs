@@ -62,6 +62,10 @@ namespace Hecton.Localization
     /// </summary>
     public static class LocNumericBuffer
     {
+        private const int DefaultBufferSlack = 24;
+        private const int MaxWriteAttempts = 8;
+        private const int CapacityGrowthWatchdogLimit = 31;
+
         [ThreadStatic] private static char[] _stagingBuffer;
 
         /// <summary>
@@ -75,11 +79,35 @@ namespace Hecton.Localization
         }
 
         /// <summary>
+        /// Copy a literal template into a caller-owned destination span without heap allocation.
+        /// </summary>
+        public static bool TryWrite(ReadOnlySpan<char> template, Span<char> destination, out int length)
+        {
+            if (template.Length > destination.Length)
+            {
+                length = 0;
+                return false;
+            }
+
+            template.CopyTo(destination);
+            length = template.Length;
+            return true;
+        }
+
+        /// <summary>
         /// Write one numeric payload into a localized template without heap allocation.
         /// </summary>
         public static void Write(ReadOnlySpan<char> template, LocNumericArg value0, out char[] buffer, out int length)
         {
             WriteInternal(template, value0, default, default, default, default, 1, out buffer, out length);
+        }
+
+        /// <summary>
+        /// Write one numeric payload into a caller-owned destination span without heap allocation.
+        /// </summary>
+        public static bool TryWrite(ReadOnlySpan<char> template, Span<char> destination, LocNumericArg value0, out int length)
+        {
+            return TryWriteInternal(template, destination, value0, default, default, default, default, 1, out length);
         }
 
         /// <summary>
@@ -96,6 +124,19 @@ namespace Hecton.Localization
         }
 
         /// <summary>
+        /// Write two numeric payloads into a caller-owned destination span without heap allocation.
+        /// </summary>
+        public static bool TryWrite(
+            ReadOnlySpan<char> template,
+            Span<char> destination,
+            LocNumericArg value0,
+            LocNumericArg value1,
+            out int length)
+        {
+            return TryWriteInternal(template, destination, value0, value1, default, default, default, 2, out length);
+        }
+
+        /// <summary>
         /// Write three numeric payloads into a localized template without heap allocation.
         /// </summary>
         public static void Write(
@@ -107,6 +148,20 @@ namespace Hecton.Localization
             out int length)
         {
             WriteInternal(template, value0, value1, value2, default, default, 3, out buffer, out length);
+        }
+
+        /// <summary>
+        /// Write three numeric payloads into a caller-owned destination span without heap allocation.
+        /// </summary>
+        public static bool TryWrite(
+            ReadOnlySpan<char> template,
+            Span<char> destination,
+            LocNumericArg value0,
+            LocNumericArg value1,
+            LocNumericArg value2,
+            out int length)
+        {
+            return TryWriteInternal(template, destination, value0, value1, value2, default, default, 3, out length);
         }
 
         /// <summary>
@@ -125,6 +180,21 @@ namespace Hecton.Localization
         }
 
         /// <summary>
+        /// Write four numeric payloads into a caller-owned destination span without heap allocation.
+        /// </summary>
+        public static bool TryWrite(
+            ReadOnlySpan<char> template,
+            Span<char> destination,
+            LocNumericArg value0,
+            LocNumericArg value1,
+            LocNumericArg value2,
+            LocNumericArg value3,
+            out int length)
+        {
+            return TryWriteInternal(template, destination, value0, value1, value2, value3, default, 4, out length);
+        }
+
+        /// <summary>
         /// Write five numeric payloads into a localized template without heap allocation.
         /// </summary>
         public static void Write(
@@ -138,6 +208,22 @@ namespace Hecton.Localization
             out int length)
         {
             WriteInternal(template, value0, value1, value2, value3, value4, 5, out buffer, out length);
+        }
+
+        /// <summary>
+        /// Write five numeric payloads into a caller-owned destination span without heap allocation.
+        /// </summary>
+        public static bool TryWrite(
+            ReadOnlySpan<char> template,
+            Span<char> destination,
+            LocNumericArg value0,
+            LocNumericArg value1,
+            LocNumericArg value2,
+            LocNumericArg value3,
+            LocNumericArg value4,
+            out int length)
+        {
+            return TryWriteInternal(template, destination, value0, value1, value2, value3, value4, 5, out length);
         }
 
         /// <summary>
@@ -212,7 +298,35 @@ namespace Hecton.Localization
             out char[] buffer,
             out int length)
         {
-            buffer = GetBuffer(template.Length + 24);
+            buffer = GetBuffer(template.Length + DefaultBufferSlack);
+            for (int attempt = 0; attempt < MaxWriteAttempts; attempt++)
+            {
+                if (TryWriteInternal(template, buffer.AsSpan(), value0, value1, value2, value3, value4, valueCount, out length))
+                    return;
+
+                int currentCapacity = buffer.Length;
+                int nextRequiredLength = currentCapacity > (int.MaxValue >> 1)
+                    ? int.MaxValue
+                    : currentCapacity << 1;
+                EnsureCapacity(ref buffer, nextRequiredLength);
+                if (buffer.Length <= currentCapacity)
+                    break;
+            }
+
+            WriteTemplateFallback(template, ref buffer, out length);
+        }
+
+        private static bool TryWriteInternal(
+            ReadOnlySpan<char> template,
+            Span<char> destination,
+            LocNumericArg value0,
+            LocNumericArg value1,
+            LocNumericArg value2,
+            LocNumericArg value3,
+            LocNumericArg value4,
+            int valueCount,
+            out int length)
+        {
             int writeIndex = 0;
             int cursor = 0;
 
@@ -220,22 +334,28 @@ namespace Hecton.Localization
             {
                 if (!TryConsumeToken(template, ref cursor, out int tokenIndex, out ReadOnlySpan<char> format))
                 {
-                    EnsureCapacity(ref buffer, writeIndex + 1);
-                    buffer[writeIndex++] = template[cursor++];
+                    if ((uint)writeIndex >= (uint)destination.Length)
+                    {
+                        length = 0;
+                        return false;
+                    }
+
+                    destination[writeIndex++] = template[cursor++];
                     continue;
                 }
 
                 LocNumericArg value = ResolveValue(tokenIndex, value0, value1, value2, value3, value4, valueCount);
-                int charsWritten;
-                while (!value.TryFormat(buffer.AsSpan(writeIndex), format, out charsWritten))
+                if (!value.TryFormat(destination.Slice(writeIndex), format, out int charsWritten))
                 {
-                    EnsureCapacity(ref buffer, buffer.Length << 1);
+                    length = 0;
+                    return false;
                 }
 
                 writeIndex += charsWritten;
             }
 
             length = writeIndex;
+            return true;
         }
 
         private static bool TryConsumeToken(
@@ -251,7 +371,7 @@ namespace Hecton.Localization
                 return false;
 
             char digit = template[cursor + 2];
-            if (digit < '0' || digit > '3')
+            if (digit < '0' || digit > '4')
                 return false;
 
             tokenIndex = digit - '0';
@@ -322,8 +442,7 @@ namespace Hecton.Localization
                 return buffer;
 
             int capacity = buffer == null ? 128 : buffer.Length;
-            while (capacity < requiredLength)
-                capacity <<= 1;
+            capacity = ResolveExpandedCapacity(capacity, requiredLength);
 
             _stagingBuffer = new char[capacity]; // COLD ALLOC: char[capacity] — thread-local numeric formatter buffer — owner: LocNumericBuffer
             return _stagingBuffer;
@@ -334,12 +453,32 @@ namespace Hecton.Localization
             if (buffer.Length >= requiredLength)
                 return;
 
-            int capacity = buffer.Length;
-            while (capacity < requiredLength)
-                capacity <<= 1;
+            int capacity = ResolveExpandedCapacity(buffer.Length, requiredLength);
 
             buffer = new char[capacity]; // COLD ALLOC: char[capacity] — expanded thread-local numeric formatter buffer — owner: LocNumericBuffer
             _stagingBuffer = buffer;
+        }
+
+        private static int ResolveExpandedCapacity(int currentCapacity, int requiredLength)
+        {
+            int capacity = Math.Max(1, currentCapacity);
+            int growthWatchdog = CapacityGrowthWatchdogLimit;
+            while (capacity < requiredLength && growthWatchdog-- > 0)
+            {
+                if (capacity > (int.MaxValue >> 1))
+                    return requiredLength;
+
+                capacity <<= 1;
+            }
+
+            return capacity < requiredLength ? requiredLength : capacity;
+        }
+
+        private static void WriteTemplateFallback(ReadOnlySpan<char> template, ref char[] buffer, out int length)
+        {
+            EnsureCapacity(ref buffer, template.Length);
+            template.CopyTo(buffer);
+            length = template.Length;
         }
     }
 }

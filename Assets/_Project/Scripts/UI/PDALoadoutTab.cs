@@ -184,18 +184,26 @@ namespace Hecton8.UI
 
         private void AutoResolve()
         {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerInventory == null && playerContext != null)
+                playerInventory = playerContext.Inventory;
+            if (toolManager == null && playerContext != null)
+                toolManager = playerContext.ToolManager;
+            if (playerPDA == null && playerContext != null)
+                playerPDA = playerContext.PlayerPDA;
+
             if ((!playerInventory || !toolManager || !playerPDA) &&
                 SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform != null)
             {
                 if (playerInventory == null)
-                    playerInventory = playerTransform.GetComponent<PlayerInventory>();
+                    playerTransform.TryGetComponent(out playerInventory);
 
                 if (toolManager == null)
-                    toolManager = playerTransform.GetComponentInChildren<PlayerToolManager>(true);
+                    playerTransform.TryGetComponent(out toolManager);
 
                 if (playerPDA == null)
-                    playerPDA = playerTransform.GetComponentInChildren<PlayerPDA>(true);
+                    playerTransform.TryGetComponent(out playerPDA);
             }
 
             if (playerPDA == null)

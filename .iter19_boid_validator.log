@@ -1,0 +1,531 @@
+[Licensing::Module] Trying to connect to existing licensing client channel...
+Built from '6000.4/staging' branch; Version is '6000.4.1f1 (8535861f39e1) revision 8729990'; Using compiler version '194234433'; Build Type 'Release'
+OS: 'Windows 11  (10.0.26200) CoreSingleLanguage' Language: 'en' Physical Memory: 32407 MB
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-danat" at "2026-04-26T12:04:36.7072224Z"
+BatchMode: 1, IsHumanControllingUs: 0, StartBugReporterOnCrash: 0, Is64bit: 1
+System  architecture: x64
+Process architecture: x64
+Date: 2026-04-26T12:04:36Z
+
+COMMAND LINE ARGUMENTS:
+C:\Program Files\Unity\Hub\Editor\6000.4.1f1\Editor\Unity.exe
+-projectPath
+C:\hades\Hecton8
+-batchmode
+-quit
+-nographics
+-logFile
+C:\hades\Hecton8\.iter19_boid_validator.log
+Successfully changed project path to: C:\hades\Hecton8
+C:/hades/Hecton8
+[UnityMemory] Configuration Parameters - Can be set up in boot.config
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-nav-mesh-worker=65536"
+    "memorysetup-temp-allocator-size-audio-worker=65536"
+    "memorysetup-temp-allocator-size-cloud-worker=32768"
+    "memorysetup-temp-allocator-size-gfx=262144"
+    "memorysetup-temp-allocator-size-preload-manager=33554432"
+    "memorysetup-temp-allocator-size-job-worker=262144"
+    "memorysetup-temp-allocator-size-background-worker=32768"
+    "memorysetup-allocator-temp-initial-block-size-main=262144"
+    "memorysetup-allocator-temp-initial-block-size-worker=262144"
+    "memorysetup-bucket-allocator-granularity=16"
+    "memorysetup-bucket-allocator-bucket-count=8"
+    "memorysetup-bucket-allocator-block-size=33554432"
+    "memorysetup-bucket-allocator-block-count=8"
+    "memorysetup-main-allocator-block-size=16777216"
+    "memorysetup-thread-allocator-block-size=16777216"
+    "memorysetup-gfx-main-allocator-block-size=16777216"
+    "memorysetup-gfx-thread-allocator-block-size=16777216"
+    "memorysetup-cache-allocator-block-size=4194304"
+    "memorysetup-typetree-allocator-block-size=2097152"
+    "memorysetup-profiler-bucket-allocator-granularity=16"
+    "memorysetup-profiler-bucket-allocator-bucket-count=8"
+    "memorysetup-profiler-bucket-allocator-block-size=33554432"
+    "memorysetup-profiler-bucket-allocator-block-count=8"
+    "memorysetup-profiler-allocator-block-size=16777216"
+    "memorysetup-profiler-editor-allocator-block-size=1048576"
+    "memorysetup-temp-allocator-size-main=16777216"
+    "memorysetup-job-temp-allocator-block-size=2097152"
+    "memorysetup-job-temp-allocator-block-size-background=1048576"
+    "memorysetup-job-temp-allocator-reduction-small-platforms=262144"
+Player connection [23944]  Target information:
+
+Player connection [23944]  * "[IP] 192.168.1.130 [Port] 55504 [Flags] 2 [Guid] 1351348592 [EditorId] 1351348592 [Version] 1048832 [Id] WindowsEditor(7,Shinobu) [Debug] 1 [PackageName] WindowsEditor [ProjectName] Editor" 
+
+Player connection [23944]  * "[IP] 172.18.0.1 [Port] 55504 [Flags] 2 [Guid] 1351348592 [EditorId] 1351348592 [Version] 1048832 [Id] WindowsEditor(7,Shinobu) [Debug] 1 [PackageName] WindowsEditor [ProjectName] Editor" 
+
+Player connection [23944] Host joined multi-casting on [225.0.0.222:54997]...
+Player connection [23944] Host joined alternative multi-casting on [225.0.0.222:34997]...
+Input System module state changed to: Initialized.
+[Physics::Module] Initialized fallback backend.
+[Physics::Module] Id: 0xdecafbad
+[Licensing::Client] Error: HandshakeResponse reported an error:
+	ResponseCode: 505
+	ResponseStatus: Unsupported protocol version '1.18.1'.
+[Licensing::Module] Error: Failed to handshake to channel: "LicenseClient-danat"
+[Licensing::IpcConnector] LicenseClient-danat channel disconnected successfully.
+[Licensing::IpcConnector] Channel LicenseClient-danat-6000.4.1 doesn't exist
+[Licensing::Module] Successfully launched the LicensingClient (PId: 29400)
+[Package Manager] Connected to IPC stream "Upm-55320" after 4.7 seconds.
+[Licensing::Module] Licensing is not yet initialized.
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-danat-6000.4.1" at "2026-04-26T12:04:45.2752501Z"
+[Licensing::Client] Handshaking with LicensingClient:
+  Version:                 1.18.1+9fbee8e
+  Session Id:              342a6736b953420d9e2a34579b8fb4d3
+  Correlation Id:          89a6d6b85573383af567f1ef6c501efe
+  External correlation Id: 7932201771403338602
+  Machine Id:              KXBg4HkLZwVfPhjJrzyzSmUVWFw=
+[Licensing::Module] Successfully connected to LicensingClient on channel: "LicenseClient-danat-6000.4.1" (connect: 2.92s, validation: 0.24s, handshake: 3.91s)
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-danat-6000.4.1-notifications" at "2026-04-26T12:04:49.4287999Z"
+[Licensing::Module] Connected to LicensingClient (PId: 29400, launch time: 0.01, total connection time: 7.07s)
+[Licensing::Module] Error: Access token is unavailable; failed to update
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Module] License group:
+  Id: 7972536317136-UnityPersXXXX
+  Product: Unity Personal
+  Type: Assigned
+  Expiration: Unlimited
+[Licensing::Client] Successfully updated license, isAsync: True, time: 0.04
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Module] Licensing Background thread has ended after 12.82s
+[Licensing::Module] Licensing is initialized (took 6.41s).
+[Licensing::Client] Successfully resolved entitlement details
+Library Redirect Path: Library/
+[Physics::Module] Selected backend.
+[Physics::Module] Name: PhysX
+[Physics::Module] Id: 0xf2b8ea05
+[Physics::Module] SDK Version: 4.1.2
+[Physics::Module] Integration Version: 1.0.0
+[Physics::Module] Threading Mode: Multi-Threaded
+Artifact Garbage Collection - Removed 1 unused hashed content files
+Refreshing native plugins compatible for Editor in 2705.66 ms, found 27 plugins.
+Initialize engine version: 6000.4.1f1 (8535861f39e1)
+[Subsystems] Discovering subsystems at path C:/Program Files/Unity/Hub/Editor/6000.4.1f1/Editor/Data/Resources/UnitySubsystems
+[Subsystems] Discovering subsystems at path C:/hades/Hecton8/Assets
+Forcing GfxDevice: Null
+GfxDevice: creating device client; kGfxThreadingModeNonThreaded
+NullGfxDevice:
+    Version:  NULL 1.0 [1.0]
+    Renderer: Null Device
+    Vendor:   Unity Technologies
+Initialize mono
+Mono path[0] = 'C:/Program Files/Unity/Hub/Editor/6000.4.1f1/Editor/Data/Managed'
+Mono path[1] = 'C:/Program Files/Unity/Hub/Editor/6000.4.1f1/Editor/Data/MonoBleedingEdge/lib/mono/unityjit-win32'
+Mono config path = 'C:/Program Files/Unity/Hub/Editor/6000.4.1f1/Editor/Data/MonoBleedingEdge/etc'
+Using monoOptions --debugger-agent=transport=dt_socket,embedding=1,server=y,suspend=n,address=127.0.0.1:56320
+CodeReloadManager initialized
+Using cacheserver namespaces - metadata:defaultmetadata, artifacts:defaultartifacts
+Using cacheserver namespaces - metadata:defaultmetadata, artifacts:defaultartifacts
+ImportWorker Server TCP listen port: 0
+AcceleratorClientConnectionCallback - disconnected - :0
+Begin MonoManager ReloadAssembly
+Registering precompiled unity dll's ...
+Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.4.1f1/Editor/Data/PlaybackEngines/WindowsStandaloneSupport/UnityEditor.WindowsStandalone.Extensions.dll
+Registered in 0.007304 seconds.
+Native extension for WindowsStandalone target not found
+Package Manager log level set to [2]
+ScheduleIndexationOnStartup MainProcess:False IndexOnStartup:True
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in  2.388 seconds
+Domain Reload Profiling: 5029ms
+	BeginReloadAssembly (699ms)
+		CreateAndSetChildDomain (14ms)
+	RebuildCommonClasses (272ms)
+	RebuildNativeTypeToScriptingClass (59ms)
+	initialDomainReloadingComplete (291ms)
+	LoadAllAssembliesAndSetupDomain (1311ms)
+		LoadAssemblies (663ms)
+		AnalyzeDomain (1229ms)
+			TypeCache.Refresh (1221ms)
+				TypeCache.ScanAssembly (1144ms)
+			ResolveRequiredComponents (4ms)
+	FinalizeReload (2397ms)
+		SetupLoadedEditorAssemblies (0ms)
+			InitializePlatformSupportModulesInManaged (212ms)
+			BeforeProcessingInitializeOnLoad (542ms)
+			ProcessInitializeOnLoadAttributes (725ms)
+			ProcessInitializeOnLoadMethodAttributes (587ms)
+[Licensing::Client] Successfully resolved entitlement details
+Application.AssetDatabase Initial Refresh Start
+[Package Manager] Restoring resolved packages state from cache
+[Licensing::Client] Successfully resolved entitlement details
+[Package Manager] Registered 65 packages:
+  Packages from [https://packages.unity.com]:
+    com.unity.ai.navigation@2.0.11 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.ai.navigation@78534c21b27d)
+    com.unity.collab-proxy@2.11.4 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.collab-proxy@a5329f833fa8)
+    com.unity.inputsystem@1.19.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.inputsystem@21a28c3a6c83)
+    com.unity.memoryprofiler@1.1.12 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.memoryprofiler@485b5ba42ef5)
+    com.unity.nuget.newtonsoft-json@3.2.2 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.nuget.newtonsoft-json@4dfd81071c64)
+    com.unity.probuilder@6.0.9 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.probuilder@1f279ab829b7)
+    com.unity.sharp-zip-lib@1.4.1 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.sharp-zip-lib@f6e4ef34e4d8)
+    com.unity.timeline@1.8.11 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.timeline@bfd27f8016ff)
+    com.unity.visualscripting@1.9.11 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.visualscripting@8bed5ad90189)
+    com.unity.searcher@4.9.4 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.searcher@d45a78918735)
+    com.unity.settings-manager@2.1.1 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.settings-manager@0b8638c5ce86)
+    com.unity.burst@1.8.28 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.burst@07790c2d06d9)
+    com.unity.mathematics@1.3.3 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.mathematics@19a9377c4ffa)
+    com.unity.profiling.core@1.0.3 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.profiling.core@8a49f7027d06)
+    com.unity.editorcoroutines@1.0.1 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.editorcoroutines@54394ed3283c)
+    com.unity.nuget.mono-cecil@1.11.6 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.nuget.mono-cecil@ecb9724e46ff)
+    com.unity.test-framework.performance@3.2.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.test-framework.performance@0840f58e4562)
+  Built-in packages:
+    com.unity.2d.sprite@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.2d.sprite@929df5adbb1f)
+    com.unity.render-pipelines.universal@17.4.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.render-pipelines.universal@580a03820d50)
+    com.unity.ugui@2.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.ugui@d8a2716f3013)
+    com.unity.modules.accessibility@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.accessibility)
+    com.unity.modules.ai@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.ai)
+    com.unity.modules.androidjni@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.androidjni)
+    com.unity.modules.animation@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.animation)
+    com.unity.modules.assetbundle@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.assetbundle)
+    com.unity.modules.audio@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.audio)
+    com.unity.modules.cloth@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.cloth)
+    com.unity.modules.director@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.director)
+    com.unity.modules.imageconversion@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.imageconversion)
+    com.unity.modules.imgui@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.imgui)
+    com.unity.modules.jsonserialize@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.jsonserialize)
+    com.unity.modules.particlesystem@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.particlesystem)
+    com.unity.modules.physics@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.physics)
+    com.unity.modules.physics2d@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.physics2d)
+    com.unity.modules.screencapture@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.screencapture)
+    com.unity.modules.terrain@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.terrain)
+    com.unity.modules.terrainphysics@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.terrainphysics)
+    com.unity.modules.tilemap@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.tilemap)
+    com.unity.modules.ui@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.ui)
+    com.unity.modules.uielements@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.uielements)
+    com.unity.modules.umbra@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.umbra)
+    com.unity.modules.unityanalytics@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.unityanalytics)
+    com.unity.modules.unitywebrequest@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.unitywebrequest)
+    com.unity.modules.unitywebrequestassetbundle@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.unitywebrequestassetbundle)
+    com.unity.modules.unitywebrequestaudio@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.unitywebrequestaudio)
+    com.unity.modules.unitywebrequesttexture@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.unitywebrequesttexture)
+    com.unity.modules.unitywebrequestwww@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.unitywebrequestwww)
+    com.unity.modules.vectorgraphics@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.vectorgraphics)
+    com.unity.modules.vehicles@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.vehicles)
+    com.unity.modules.video@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.video)
+    com.unity.modules.vr@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.vr)
+    com.unity.modules.wind@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.wind)
+    com.unity.modules.xr@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.xr)
+    com.unity.render-pipelines.core@17.4.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.render-pipelines.core@e6c93b445dd3)
+    com.unity.modules.subsystems@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.subsystems)
+    com.unity.modules.hierarchycore@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.hierarchycore)
+    com.unity.render-pipelines.universal-config@17.4.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.render-pipelines.universal-config@0db4263b9e6b)
+    com.unity.collections@6.4.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.collections@538ace9075bc)
+    com.unity.test-framework@1.6.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.test-framework@76560ee600cb)
+    com.unity.ext.nunit@2.0.5 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.ext.nunit@d8c07649098d)
+  Embedded packages:
+    com.coplaydev.unity-mcp@file:C:\hades\Hecton8\Packages\com.coplaydev.unity-mcp (location: C:\hades\Hecton8\Packages\com.coplaydev.unity-mcp)
+    com.jbooth.microsplat.core@file:C:\hades\Hecton8\Packages\com.jbooth.microsplat.core (location: C:\hades\Hecton8\Packages\com.jbooth.microsplat.core)
+    com.jbooth.microsplat.urp2022@file:C:\hades\Hecton8\Packages\com.jbooth.microsplat.urp2022 (location: C:\hades\Hecton8\Packages\com.jbooth.microsplat.urp2022)
+    com.unity.shadergraph@file:C:\hades\Hecton8\Packages\com.unity.shadergraph (location: C:\hades\Hecton8\Packages\com.unity.shadergraph)
+    com.waveharmonic.crest@file:C:\hades\Hecton8\Packages\com.waveharmonic.crest (location: C:\hades\Hecton8\Packages\com.waveharmonic.crest)
+[Subsystems] No new subsystems found in resolved package list.
+[Package Manager] Done registering packages in 0.28 seconds
+[ScriptCompilation] Requested script compilation because: AssetDatabase observed changes in script compilation related files
+Starting: C:\Program Files\Unity\Hub\Editor\6000.4.1f1\Editor\Data\Tools\BuildPipeline\bee_backend.exe --ipc --defer-dag-verification --dagfile="Library/Bee/1900b0aEDbg.dag" --continue-on-failure --profile="Library/Bee/backend1.traceevents" ScriptAssemblies
+WorkingDir: C:/hades/Hecton8
+DisplayProgressbar: Compiling Scripts
+Starting: C:\Program Files\Unity\Hub\Editor\6000.4.1f1\Editor\Data\netcorerun\netcorerun.exe "C:\Program Files\Unity\Hub\Editor\6000.4.1f1\Editor\Data\Tools\BuildPipeline\ScriptCompilationBuildProgram.exe" "Library/Bee/1900b0aEDbg.dag.json" "Library/Bee/1900b0aEDbg-inputdata.json" "Library\Bee\buildprogram0.traceevents"
+WorkingDir: C:/hades/Hecton8
+ExitCode: 4 Duration: 55s
+[1216/1644  1s] ILPP-Configuration Library/ilpp-configuration.nevergeneratedoutput
+Rebuilding DAG because FileSignature timestamp changed: Library/Bee/1900b0aEDbg-inputdata.json
+[BUSY       7s] Csc Library/Bee/artifacts/1900b0aEDbg.dag/RealtimeCSG.dll (+2 others)
+[BUSY      12s] Csc Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.Core.dll (+2 others)
+[BUSY      18s] Csc Library/Bee/artifacts/1900b0aEDbg.dag/RealtimeCSG.dll (+2 others)
+[BUSY      23s] Csc Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.Core.dll (+2 others)
+[BUSY      29s] Csc Library/Bee/artifacts/1900b0aEDbg.dag/RealtimeCSG.dll (+2 others)
+[1254/1644 34s] Csc Library/Bee/artifacts/1900b0aEDbg.dag/RealtimeCSG.dll (+2 others)
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Thirdparty\UnityFBXExporter\FBXUnityMaterialGetter.cs(102,33): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Thirdparty\UnityFBXExporter\FBXUnityMaterialGetter.cs(225,31): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\API\Legacy\Editor\BrushFactory.cs(60,56): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\API\Legacy\Editor\BrushFactory.cs(61,56): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Control\Bindings\NativeMethodBindings.cs(93,48): warning CS0618: 'EditorUtility.InstanceIDToObject(int)' is obsolete: 'InstanceIDToObject(int) is obsolete. Use EditorUtility.EntityIdToObject instead.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Control\Bindings\NativeMethodBindings.cs(97,53): warning CS0618: 'EditorUtility.InstanceIDToObject(int)' is obsolete: 'InstanceIDToObject(int) is obsolete. Use EditorUtility.EntityIdToObject instead.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Control\Bindings\NativeMethodBindings.cs(101,55): warning CS0618: 'EditorUtility.InstanceIDToObject(int)' is obsolete: 'InstanceIDToObject(int) is obsolete. Use EditorUtility.EntityIdToObject instead.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Control\Bindings\NativeMethodBindings.cs(105,39): warning CS0618: 'EditorUtility.InstanceIDToObject(int)' is obsolete: 'InstanceIDToObject(int) is obsolete. Use EditorUtility.EntityIdToObject instead.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Control\Bindings\NativeMethodBindings.cs(304,19): warning CS0618: 'EditorUtility.InstanceIDToObject(int)' is obsolete: 'InstanceIDToObject(int) is obsolete. Use EditorUtility.EntityIdToObject instead.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Control\Bindings\NativeMethodBindings.cs(415,20): warning CS0618: 'EditorUtility.InstanceIDToObject(int)' is obsolete: 'InstanceIDToObject(int) is obsolete. Use EditorUtility.EntityIdToObject instead.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Control\Bindings\NativeMethodBindings.cs(627,17): warning CS0618: 'EditorUtility.InstanceIDToObject(int)' is obsolete: 'InstanceIDToObject(int) is obsolete. Use EditorUtility.EntityIdToObject instead.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Data\SceneQuery\SceneQueryUtility.cs(889,26): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Data\SceneQuery\SceneQueryUtility.cs(889,7): warning CS0618: 'Selection.Contains(int)' is obsolete: 'Use Contains() with EntityId instead.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Data\SceneQuery\SceneQueryUtility.cs(949,37): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Data\SceneQuery\SceneQueryUtility.cs(949,18): warning CS0618: 'Selection.Contains(int)' is obsolete: 'Use Contains() with EntityId instead.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Data\SceneQuery\SceneQueryUtility.cs(1010,26): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Data\SceneQuery\SceneQueryUtility.cs(1010,7): warning CS0618: 'Selection.Contains(int)' is obsolete: 'Use Contains() with EntityId instead.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Thirdparty\UnityFBXExporter\FBXUnityMeshGetter.cs(525,35): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Thirdparty\UnityFBXExporter\FBXUnityMeshGetter.cs(532,34): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Control\Managers\MeshInstanceManager.Export.cs(297,26): warning CS0618: 'EditorUtility.InstanceIDToObject(int)' is obsolete: 'InstanceIDToObject(int) is obsolete. Use EditorUtility.EntityIdToObject instead.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\View\GUI\HierarchyWindowItemGUI\HierarchyWindowItemGUI.cs(15,12): warning CS0618: 'EditorUtility.InstanceIDToObject(int)' is obsolete: 'InstanceIDToObject(int) is obsolete. Use EditorUtility.EntityIdToObject instead.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Control\Managers\MeshInstanceManager.cs(706,15): warning CS0618: 'EditorUtility.InstanceIDToObject(int)' is obsolete: 'InstanceIDToObject(int) is obsolete. Use EditorUtility.EntityIdToObject instead.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Control\Managers\MeshInstanceManager.cs(793,47): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\View\DragAndDrop\SceneDragTool.Materials.cs(467,28): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Control\Managers\MeshInstanceManager.cs(957,56): warning CS0618: 'StaticEditorFlags.NavigationStatic' is obsolete: 'Enum member StaticEditorFlags.NavigationStatic has been deprecated. The precise selection of the objects is now done using NavMeshBuilder.CollectSources() and NavMeshBuildMarkup.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Control\Managers\MeshInstanceManager.cs(979,28): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Data\Settings\ColorSettings.cs(170,31): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Data\Selection\SelectionUtility.cs(346,21): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Data\Selection\SelectionUtility.cs(368,32): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Data\Hierarchy\ParentNodeDataExtension.cs(69,77): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Data\Hierarchy\ParentNodeDataExtension.cs(77,31): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Data\Settings\CSGSettings.cs(474,53): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Data\Settings\CSGSettings.cs(501,51): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Data\Settings\CSGSettings.cs(508,65): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Data\Selection\SelectionUtility.cs(390,56): warning CS0618: 'Selection.instanceIDs' is obsolete: 'Use entityIds instead.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Data\Selection\SelectionUtility.cs(396,23): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Data\Selection\SelectionUtility.cs(410,7): warning CS0618: 'Selection.instanceIDs' is obsolete: 'Use entityIds instead.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Data\Selection\SelectionUtility.cs(418,23): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Data\Selection\SelectionUtility.cs(420,6): warning CS0618: 'Selection.instanceIDs' is obsolete: 'Use entityIds instead.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Data\Selection\SelectionUtility.cs(429,23): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Data\Selection\SelectionUtility.cs(431,6): warning CS0618: 'Selection.instanceIDs' is obsolete: 'Use entityIds instead.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Control\Managers\UnityCompilerDefineManager.cs(58,25): warning CS0618: 'PlayerSettings.GetScriptingDefineSymbolsForGroup(BuildTargetGroup)' is obsolete: 'Use GetScriptingDefineSymbols(NamedBuildTarget buildTarget) instead'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Control\Managers\UnityCompilerDefineManager.cs(112,6): warning CS0618: 'PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup, string)' is obsolete: 'Use SetScriptingDefineSymbols(NamedBuildTarget buildTarget, string defines) instead'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Data\Hierarchy\ParentNodeDataExtension.cs(219,76): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Data\Hierarchy\ParentNodeDataExtension.cs(229,31): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Control\Managers\UpdateLoop.cs(107,13): warning CS0618: 'EditorApplication.hierarchyWindowItemOnGUI' is obsolete: 'hierarchyWindowItemOnGUI is obsolete. Use hierarchyWindowItemByEntityIdOnGUI instead.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Control\Managers\UpdateLoop.cs(108,4): warning CS0618: 'EditorApplication.hierarchyWindowItemOnGUI' is obsolete: 'hierarchyWindowItemOnGUI is obsolete. Use hierarchyWindowItemByEntityIdOnGUI instead.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Control\Managers\UpdateLoop.cs(138,4): warning CS0618: 'EditorApplication.hierarchyWindowItemOnGUI' is obsolete: 'hierarchyWindowItemOnGUI is obsolete. Use hierarchyWindowItemByEntityIdOnGUI instead.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Runtime\Scripts\Components\GeneratedMeshes.cs(49,8): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Runtime\Scripts\Components\GeneratedMeshInstance.cs(169,29): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Runtime\Scripts\Components\GeneratedMeshInstance.cs(170,26): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Runtime\Scripts\Components\GeneratedMeshInstance.cs(178,21): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Runtime\Scripts\Components\GeneratedMeshInstance.cs(206,120): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Runtime\Scripts\Components\GeneratedMeshInstance.cs(209,116): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Runtime\Scripts\Components\GeneratedMeshInstance.cs(210,116): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Control\Managers\InternalCSGModelManager.DefaultModel.cs(134,10): warning CS0618: 'StaticEditorFlags.NavigationStatic' is obsolete: 'Enum member StaticEditorFlags.NavigationStatic has been deprecated. The precise selection of the objects is now done using NavMeshBuilder.CollectSources() and NavMeshBuildMarkup.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Control\Managers\InternalCSGModelManager.DefaultModel.cs(136,10): warning CS0618: 'StaticEditorFlags.OffMeshLinkGeneration' is obsolete: 'Enum member StaticEditorFlags.OffMeshLinkGeneration has been deprecated. You can now use NavMeshBuilder.CollectSources() and NavMeshBuildMarkup to nominate the objects that will generate Off-Mesh Links.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\View\GUI\ComponentEditorWindows\CSGModelComponent.Inspector.GUI.cs(1281,51): warning CS0618: 'EditorUtility.InstanceIDToObject(int)' is obsolete: 'InstanceIDToObject(int) is obsolete. Use EditorUtility.EntityIdToObject instead.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Data\Hierarchy\HierarchyItemExtension.cs(195,23): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Control\Managers\InternalCSGModelManager.Registration.cs(162,13): warning CS0618: 'StaticEditorFlags.NavigationStatic' is obsolete: 'Enum member StaticEditorFlags.NavigationStatic has been deprecated. The precise selection of the objects is now done using NavMeshBuilder.CollectSources() and NavMeshBuildMarkup.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Control\Managers\InternalCSGModelManager.Registration.cs(164,13): warning CS0618: 'StaticEditorFlags.OffMeshLinkGeneration' is obsolete: 'Enum member StaticEditorFlags.OffMeshLinkGeneration has been deprecated. You can now use NavMeshBuilder.CollectSources() and NavMeshBuildMarkup to nominate the objects that will generate Off-Mesh Links.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Control\Managers\InternalCSGModelManager.Registration.cs(233,43): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Control\Managers\InternalCSGModelManager.Registration.cs(348,40): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Control\Managers\InternalCSGModelManager.Registration.cs(443,40): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Control\Managers\InternalCSGModelManager.Registration.cs(497,32): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Control\Managers\InternalCSGModelManager.Registration.cs(585,36): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Control\Managers\InternalCSGModelManager.Registration.cs(657,41): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\Control\Managers\InternalCSGModelManager.Registration.cs(701,43): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\RealtimeCSG\RealtimeCSG\Plugins\Editor\Scripts\View\GUI\EditModeGUI\EditModes\Generators\Generator.Base.cs(81,31): warning CS0414: The field 'GeneratorBase.previousViewTool' is assigned but its value is never used
+[BUSY      39s] Csc Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.Core.dll (+2 others)
+[BUSY      50s] Csc Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.Core.dll (+2 others)
+[1255/1644 53s] Csc Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.Core.dll (+2 others)
+Assets\_Project\Scripts\Core\HectonUrpTextureRequirementsGuard.cs(57,43): warning CS0618: 'Object.FindFirstObjectByType<T>(FindObjectsInactive)' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+
+Assets\_Project\Scripts\Core\HectonUrpTextureRequirementsGuard.cs(65,21): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+
+Assets\_Project\Scripts\Core\HectonUrpTextureRequirementsGuard.cs(63,17): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsInactive, FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+
+Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs(601,39): warning CS0414: The field 'ProceduralWreckGenerator._debugAsyncGenerationInFlight' is assigned but its value is never used
+*** Tundra requires additional run (55.05 seconds), 3 items updated, 1249 evaluated
+ExitCode: 0 Duration: 6s368ms
+Starting: C:\Program Files\Unity\Hub\Editor\6000.4.1f1\Editor\Data\Tools\BuildPipeline\bee_backend.exe --ipc --defer-dag-verification --dagfile="Library/Bee/1900b0aEDbg.dag" --continue-on-failure --dagfilejson="Library\Bee\1900b0aEDbg.dag.json" --profile="Library/Bee/backend2.traceevents" ScriptAssemblies
+WorkingDir: C:/hades/Hecton8
+ExitCode: 0 Duration: 39s
+Finished compiling graph: 1648 nodes, 35587 flattened edges (28539 ToBuild, 284 ToUse), maximum node priority 1952
+[ 708/1644  0s] WriteText Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.Core.rsp
+[1217/1644  3s] ILPP-Configuration Library/ilpp-configuration.nevergeneratedoutput
+[1617/1644  0s] ILPostProcess Library/Bee/artifacts/1900b0aEDbg.dag/post-processed/RealtimeCSG.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aEDbg.dag/RealtimeCSG.dll, with 161 defines and 287 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[1618/1644  0s] CopyFiles Library/ScriptAssemblies/RealtimeCSG.pdb
+[1619/1644  0s] CopyFiles Library/ScriptAssemblies/RealtimeCSG.dll
+[BUSY       9s] Csc Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.Core.dll (+2 others)
+[1620/1644 18s] Csc Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.Core.dll (+2 others)
+Assets\_Project\Scripts\Core\HectonUrpTextureRequirementsGuard.cs(57,43): warning CS0618: 'Object.FindFirstObjectByType<T>(FindObjectsInactive)' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+
+Assets\_Project\Scripts\Core\HectonUrpTextureRequirementsGuard.cs(65,21): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+
+Assets\_Project\Scripts\Core\HectonUrpTextureRequirementsGuard.cs(63,17): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsInactive, FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+
+Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs(601,39): warning CS0414: The field 'ProceduralWreckGenerator._debugAsyncGenerationInFlight' is assigned but its value is never used
+[1621/1644  2s] Csc Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.Editor.dll (+2 others)
+[1622/1644  0s] ILPostProcess Library/Bee/artifacts/1900b0aEDbg.dag/post-processed/Hecton8.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.Editor.dll, with 159 defines and 320 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[1623/1644  0s] CopyFiles Library/ScriptAssemblies/Hecton8.Editor.pdb
+[1624/1644  0s] CopyFiles Library/ScriptAssemblies/Hecton8.Editor.dll
+[1625/1644  2s] Csc Library/Bee/artifacts/1900b0aEDbg.dag/Assembly-CSharp-firstpass.dll (+2 others)
+[1626/1644  5s] Csc Library/Bee/artifacts/1900b0aEDbg.dag/Assembly-CSharp-Editor-firstpass.dll (+2 others)
+[1627/1644  5s] Csc Library/Bee/artifacts/1900b0aEDbg.dag/Assembly-CSharp.dll (+2 others)
+[1628/1644  8s] ILPostProcess Library/Bee/artifacts/1900b0aEDbg.dag/post-processed/Assembly-CSharp-firstpass.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aEDbg.dag/Assembly-CSharp-firstpass.dll, with 161 defines and 408 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[1629/1644  0s] CopyFiles Library/ScriptAssemblies/Assembly-CSharp-firstpass.dll
+[1630/1644  0s] CopyFiles Library/ScriptAssemblies/Assembly-CSharp-firstpass.pdb
+[1631/1644  3s] Csc Library/Bee/artifacts/1900b0aEDbg.dag/Assembly-CSharp-Editor.dll (+2 others)
+[1632/1644  6s] ILPostProcess Library/Bee/artifacts/1900b0aEDbg.dag/post-processed/Assembly-CSharp-Editor-firstpass.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aEDbg.dag/Assembly-CSharp-Editor-firstpass.dll, with 159 defines and 430 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[1633/1644  0s] CopyFiles Library/ScriptAssemblies/Assembly-CSharp-Editor-firstpass.pdb
+[1634/1644  0s] CopyFiles Library/ScriptAssemblies/Assembly-CSharp-Editor-firstpass.dll
+[1635/1644  2s] ILPostProcess Library/Bee/artifacts/1900b0aEDbg.dag/post-processed/Assembly-CSharp-Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aEDbg.dag/Assembly-CSharp-Editor.dll, with 159 defines and 432 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[1636/1644  0s] CopyFiles Library/ScriptAssemblies/Assembly-CSharp-Editor.pdb
+[1637/1644  0s] CopyFiles Library/ScriptAssemblies/Assembly-CSharp-Editor.dll
+[1638/1644  7s] ILPostProcess Library/Bee/artifacts/1900b0aEDbg.dag/post-processed/Assembly-CSharp.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aEDbg.dag/Assembly-CSharp.dll, with 161 defines and 409 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[1639/1644  0s] CopyFiles Library/ScriptAssemblies/Assembly-CSharp.pdb
+[1640/1644  0s] CopyFiles Library/ScriptAssemblies/Assembly-CSharp.dll
+[1641/1644 19s] ILPostProcess Library/Bee/artifacts/1900b0aEDbg.dag/post-processed/Hecton8.Core.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.Core.dll, with 161 defines and 321 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[1642/1644  0s] CopyFiles Library/ScriptAssemblies/Hecton8.Core.pdb
+[1643/1644  0s] CopyFiles Library/ScriptAssemblies/Hecton8.Core.dll
+*** Tundra build success (39.64 seconds), 29 items updated, 1644 evaluated
+Assets\_Project\Scripts\Core\HectonUrpTextureRequirementsGuard.cs(57,43): warning CS0618: 'Object.FindFirstObjectByType<T>(FindObjectsInactive)' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets\_Project\Scripts\Core\HectonUrpTextureRequirementsGuard.cs(65,21): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets\_Project\Scripts\Core\HectonUrpTextureRequirementsGuard.cs(63,17): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsInactive, FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs(601,39): warning CS0414: The field 'ProceduralWreckGenerator._debugAsyncGenerationInFlight' is assigned but its value is never used
+AssetDatabase: script compilation time: 103.355555s
+Begin MonoManager ReloadAssembly
+[Licensing::Client] Successfully resolved entitlement details
+Assembly DocCodeExamples.dll at Library/ScriptAssemblies/DocCodeExamples.dll not valid. Loading of assembly skipped.
+Assembly Hecton8.EditModeTests.dll at Library/ScriptAssemblies/Hecton8.EditModeTests.dll not valid. Loading of assembly skipped.
+Assembly Hecton8.PlayModeTests.dll at Library/ScriptAssemblies/Hecton8.PlayModeTests.dll not valid. Loading of assembly skipped.
+Assembly Hecton8.World.Dots.dll at Library/ScriptAssemblies/Hecton8.World.Dots.dll not valid. Loading of assembly skipped.
+Assembly TestNewCustomAssembly.dll at Library/ScriptAssemblies/TestNewCustomAssembly.dll not valid. Loading of assembly skipped.
+Assembly Unity.2D.Sprite.Package.EditorTests.dll at Library/ScriptAssemblies/Unity.2D.Sprite.Package.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.BurstCompatibilityGen.dll at Library/ScriptAssemblies/Unity.Collections.BurstCompatibilityGen.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.DocCodeSamples.dll at Library/ScriptAssemblies/Unity.Collections.DocCodeSamples.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.PerformanceTests.dll at Library/ScriptAssemblies/Unity.Collections.PerformanceTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.Tests.dll at Library/ScriptAssemblies/Unity.Collections.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.Tests.Playmode.dll at Library/ScriptAssemblies/Unity.Collections.Tests.Playmode.dll not valid. Loading of assembly skipped.
+Assembly Unity.InputSystem.DocCodeSamples.dll at Library/ScriptAssemblies/Unity.InputSystem.DocCodeSamples.dll not valid. Loading of assembly skipped.
+Assembly Unity.InputSystem.IntegrationTests.dll at Library/ScriptAssemblies/Unity.InputSystem.IntegrationTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.InputSystem.TestFramework.dll at Library/ScriptAssemblies/Unity.InputSystem.TestFramework.dll not valid. Loading of assembly skipped.
+Assembly Unity.Mathematics.Tests.dll at Library/ScriptAssemblies/Unity.Mathematics.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Nuget.Mono-Cecil.dll at Library/ScriptAssemblies/Unity.Nuget.Mono-Cecil.dll not valid. Loading of assembly skipped.
+Assembly Unity.PathTracing.Editor.Tests.dll at Library/ScriptAssemblies/Unity.PathTracing.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.PathTracing.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.PathTracing.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.PerformanceTesting.dll at Library/ScriptAssemblies/Unity.PerformanceTesting.dll not valid. Loading of assembly skipped.
+Assembly Unity.PerformanceTesting.Editor.dll at Library/ScriptAssemblies/Unity.PerformanceTesting.Editor.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Core.Editor.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Core.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Core.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Core.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Universal.Config.Editor.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Universal.Config.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Universal.Editor.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Universal.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Universal.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Universal.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Searcher.EditorTests.dll at Library/ScriptAssemblies/Unity.Searcher.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Settings.Tests.dll at Library/ScriptAssemblies/Unity.Settings.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.ShaderGraph.Editor.Tests.dll at Library/ScriptAssemblies/Unity.ShaderGraph.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.SharpZipLib.Editor.Tests.dll at Library/ScriptAssemblies/Unity.SharpZipLib.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.SharpZipLib.Tests.dll at Library/ScriptAssemblies/Unity.SharpZipLib.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.TextMeshPro.Editor.Tests.dll at Library/ScriptAssemblies/Unity.TextMeshPro.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.TextMeshPro.Tests.dll at Library/ScriptAssemblies/Unity.TextMeshPro.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.UnifiedRayTracing.Editor.Tests.dll at Library/ScriptAssemblies/Unity.UnifiedRayTracing.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.VisualScripting.DocCodeExamples.dll at Library/ScriptAssemblies/Unity.VisualScripting.DocCodeExamples.dll not valid. Loading of assembly skipped.
+Assembly UnityEditor.TestRunner.dll at Library/ScriptAssemblies/UnityEditor.TestRunner.dll not valid. Loading of assembly skipped.
+Assembly UnityEditor.UI.Common.Tests.dll at Library/ScriptAssemblies/UnityEditor.UI.Common.Tests.dll not valid. Loading of assembly skipped.
+Assembly UnityEditor.UI.EditorTests.dll at Library/ScriptAssemblies/UnityEditor.UI.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly UnityEngine.TestRunner.dll at Library/ScriptAssemblies/UnityEngine.TestRunner.dll not valid. Loading of assembly skipped.
+Assembly UnityEngine.UI.Tests.dll at Library/ScriptAssemblies/UnityEngine.UI.Tests.dll not valid. Loading of assembly skipped.
+Refreshing native plugins compatible for Editor in 20.31 ms, found 30 plugins.
+Native extension for WindowsStandalone target not found
+Refreshing native plugins compatible for Editor in 42.54 ms, found 30 plugins.

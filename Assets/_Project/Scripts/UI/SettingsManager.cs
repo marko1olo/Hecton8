@@ -1057,7 +1057,7 @@ namespace Hecton8.UI
                     return true;
                 }
 
-                Camera playerChildCamera = playerTransform.GetComponentInChildren<Camera>(true);
+                Camera playerChildCamera = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera : playerTransform.GetComponent<Camera>());
                 if (playerChildCamera != null)
                 {
                     mainCamera = playerChildCamera;
@@ -1073,7 +1073,7 @@ namespace Hecton8.UI
                 return true;
             }
 
-            Camera childCamera = GetComponentInChildren<Camera>(true);
+            Camera childCamera = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Camera>(transform);
             if (childCamera != null)
             {
                 mainCamera = childCamera;

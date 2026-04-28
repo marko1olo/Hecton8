@@ -118,7 +118,7 @@ namespace Hecton8.Gameplay
             _cachedTransform = transform;
 
             if (targetRenderer == null)
-                targetRenderer = GetComponentInChildren<Renderer>();
+                targetRenderer = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Renderer>(transform);
 
             // COLD ALLOC: Renderer[n] - intact renderer cache for collapse toggles - owner: HarvestableOutcrop
             _cachedRenderers = GetComponentsInChildren<Renderer>(true);
@@ -259,16 +259,19 @@ namespace Hecton8.Gameplay
                 return;
 
             PlayerInventory playerInventory = PlayerInventory.Instance;
+            int rejectedQuantity = quantity;
             if (playerInventory != null)
             {
                 PlayerInventory.ScavengeAttemptResult result = playerInventory.ScavengeAttempt(item, quantity, playerInventory.transform);
                 if (result.IsSuccess)
                     return;
+
+                rejectedQuantity = result.RejectedQuantity;
             }
 
             PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
-            if (registry != null)
-                registry.TryRegisterDroppedItem(item, quantity, dropPoint);
+            if (registry != null && rejectedQuantity > 0)
+                registry.TryRegisterDroppedItem(item, rejectedQuantity, dropPoint);
         }
 
         private ItemData ResolveYieldItem(float toolPower)

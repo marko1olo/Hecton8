@@ -10,7 +10,7 @@ namespace Hecton8.World
         {
             public bool HasSample;
             public bool UsedFallbackOnly;
-            public Vector3 Position;
+            public Vector3 AbsolutePosition;
             public int CenterCellX;
             public int CenterCellZ;
             public int RadiusCells;
@@ -62,7 +62,8 @@ namespace Hecton8.World
         {
             public ScatterSamplingBeginContext(
                 IReadOnlyList<WorldProceduralPlacementRule> rules,
-                Vector3 center,
+                Vector3 runtimeCenter,
+                Vector3 absoluteCenter,
                 int centerCellX,
                 int centerCellZ,
                 float cellSize,
@@ -78,7 +79,8 @@ namespace Hecton8.World
                 int spawnBudget)
             {
                 Rules = rules;
-                Center = center;
+                RuntimeCenter = runtimeCenter;
+                AbsoluteCenter = absoluteCenter;
                 CenterCellX = centerCellX;
                 CenterCellZ = centerCellZ;
                 CellSize = cellSize;
@@ -95,7 +97,8 @@ namespace Hecton8.World
             }
 
             public IReadOnlyList<WorldProceduralPlacementRule> Rules { get; }
-            public Vector3 Center { get; }
+            public Vector3 RuntimeCenter { get; }
+            public Vector3 AbsoluteCenter { get; }
             public int CenterCellX { get; }
             public int CenterCellZ { get; }
             public float CellSize { get; }
@@ -113,7 +116,7 @@ namespace Hecton8.World
 
         private struct ScatterSamplingCompletionContext
         {
-            public Vector3 Center;
+            public Vector3 AbsoluteCenter;
             public float CellSize;
             public float Now;
             public int TotalCells;
@@ -171,7 +174,7 @@ namespace Hecton8.World
 
             public ScatterSamplingCompletionContext(bool initializeDefaults)
             {
-                Center = Vector3.zero;
+                AbsoluteCenter = Vector3.zero;
                 CellSize = 0f;
                 Now = 0f;
                 TotalCells = 0;

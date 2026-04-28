@@ -1,8 +1,18 @@
 using Hecton8.Gameplay;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Construction
 {
+    [System.Flags]
+    internal enum ModuleStateFlags : byte
+    {
+        None = 0,
+        Flooded = 1 << 0,
+        Draining = 1 << 1,
+        WasFlooded = 1 << 2
+    }
+
     internal enum ModuleDamageOutcome
     {
         None = 0,
@@ -27,25 +37,23 @@ namespace Hecton8.Construction
     {
         private float _maxIntegrity;
         private float _currentIntegrity;
-        private bool _isFlooded;
         private float _drainDuration;
         private float _repairWearPerCascade;
         private float _minimumRecoverableIntegrityRatio;
         private float _maxRecoverableIntegrity;
         private BaseModuleFailureMode _failureMode;
-        private bool _isDraining;
+        private ModuleStateFlags _stateFlags;
         private float _drainTimer;
-        private bool _wasFlooded;
 
         public float MaxIntegrity => _maxIntegrity;
         public float CurrentIntegrity => _currentIntegrity;
-        public bool IsFlooded => _isFlooded;
+        public bool IsFlooded => HasStateFlag(ModuleStateFlags.Flooded);
         public float DrainDuration => _drainDuration;
         public BaseModuleFailureMode FailureMode => _failureMode;
         public float MaxRecoverableIntegrity => GetRepairIntegrityCap();
-        public bool IsDraining => _isDraining;
-        public float DrainProgress => _drainDuration > 0.01f ? Mathf.Clamp01(_drainTimer / _drainDuration) : (_isFlooded ? 0f : 1f);
-        public bool WasFlooded => _wasFlooded;
+        public bool IsDraining => HasStateFlag(ModuleStateFlags.Draining);
+        public float DrainProgress => _drainDuration > 0.01f ? math.saturate(_drainTimer / _drainDuration) : (IsFlooded ? 0f : 1f);
+        public bool WasFlooded => HasStateFlag(ModuleStateFlags.WasFlooded);
 
         public void Configure(
             float maxIntegrity,
@@ -57,62 +65,63 @@ namespace Hecton8.Construction
             float maxRecoverableIntegrity,
             BaseModuleFailureMode failureMode)
         {
-            _maxIntegrity = Mathf.Max(1f, maxIntegrity);
-            _drainDuration = Mathf.Max(0.1f, drainDuration);
-            _repairWearPerCascade = Mathf.Max(0f, repairWearPerCascade);
-            _minimumRecoverableIntegrityRatio = Mathf.Clamp(minimumRecoverableIntegrityRatio, 0.1f, 1f);
+            _maxIntegrity = math.max(1f, maxIntegrity);
+            _drainDuration = math.max(0.1f, drainDuration);
+            _repairWearPerCascade = math.max(0f, repairWearPerCascade);
+            _minimumRecoverableIntegrityRatio = math.clamp(minimumRecoverableIntegrityRatio, 0.1f, 1f);
             _maxRecoverableIntegrity = maxRecoverableIntegrity <= 0f ? _maxIntegrity : maxRecoverableIntegrity;
             _currentIntegrity = currentIntegrity;
-            _isFlooded = flooded;
             _failureMode = failureMode;
             EnsureRepairIntegrityCapInitialized();
-            _currentIntegrity = Mathf.Clamp(_currentIntegrity, 0f, GetRepairIntegrityCap());
-            _wasFlooded = _isFlooded;
+            _currentIntegrity = math.clamp(_currentIntegrity, 0f, GetRepairIntegrityCap());
+            _stateFlags = ModuleStateFlags.None;
+            SetStateFlag(ModuleStateFlags.Flooded, flooded);
+            SetStateFlag(ModuleStateFlags.WasFlooded, flooded);
         }
 
         public void ResetForSpawn()
         {
             EnsureRepairIntegrityCapInitialized();
-            _currentIntegrity = Mathf.Clamp(_currentIntegrity, 0f, GetRepairIntegrityCap());
-            _wasFlooded = _isFlooded;
+            _currentIntegrity = math.clamp(_currentIntegrity, 0f, GetRepairIntegrityCap());
+            SetStateFlag(ModuleStateFlags.Draining, false);
+            SetStateFlag(ModuleStateFlags.WasFlooded, IsFlooded);
         }
 
         public void ResetForDespawn()
         {
-            _isDraining = false;
+            SetStateFlag(ModuleStateFlags.Draining, false);
             _drainTimer = 0f;
             _failureMode = BaseModuleFailureMode.None;
             _maxRecoverableIntegrity = _maxIntegrity;
             _currentIntegrity = _maxIntegrity;
-            _isFlooded = false;
-            _wasFlooded = false;
+            _stateFlags = ModuleStateFlags.None;
         }
 
         public void RestoreState(float integrity, bool flooded, BaseModuleFailureMode failureMode, float repairIntegrityCap)
         {
             EnsureRepairIntegrityCapInitialized();
-            _maxRecoverableIntegrity = Mathf.Clamp(repairIntegrityCap, _maxIntegrity * _minimumRecoverableIntegrityRatio, _maxIntegrity);
-            _currentIntegrity = Mathf.Clamp(integrity, 0f, GetRepairIntegrityCap());
-            _isFlooded = flooded;
-            _wasFlooded = flooded;
+            _maxRecoverableIntegrity = math.clamp(repairIntegrityCap, _maxIntegrity * _minimumRecoverableIntegrityRatio, _maxIntegrity);
+            _currentIntegrity = math.clamp(integrity, 0f, GetRepairIntegrityCap());
+            _stateFlags = ModuleStateFlags.None;
+            SetStateFlag(ModuleStateFlags.Flooded, flooded);
+            SetStateFlag(ModuleStateFlags.WasFlooded, flooded);
             _failureMode = failureMode;
-            _isDraining = false;
             _drainTimer = 0f;
         }
 
         public void SetCurrentIntegrity(float value)
         {
-            _currentIntegrity = Mathf.Clamp(value, 0f, GetRepairIntegrityCap());
+            _currentIntegrity = math.clamp(value, 0f, GetRepairIntegrityCap());
         }
 
         public void SetFlooded(bool flooded)
         {
-            _isFlooded = flooded;
+            SetStateFlag(ModuleStateFlags.Flooded, flooded);
         }
 
         public float GetRepairIntegrityCap()
         {
-            return Mathf.Clamp(_maxRecoverableIntegrity, ResolveMinimumRepairIntegrityCap(), _maxIntegrity);
+            return math.clamp(_maxRecoverableIntegrity, ResolveMinimumRepairIntegrityCap(), _maxIntegrity);
         }
 
         public int ResolveRemainingRepairCycles()
@@ -127,7 +136,7 @@ namespace Hecton8.Construction
             if (remainingRecoverableMargin <= 0f)
                 return 0;
 
-            return Mathf.FloorToInt(remainingRecoverableMargin / _repairWearPerCascade + 0.0001f);
+            return (int)math.floor(remainingRecoverableMargin / _repairWearPerCascade + 0.0001f);
         }
 
         public bool HasOperationalPower(bool hasPower)
@@ -148,12 +157,12 @@ namespace Hecton8.Construction
 
         public bool ShouldSyncFloodState()
         {
-            return _isFlooded != _wasFlooded;
+            return IsFlooded != WasFlooded;
         }
 
         public void MarkFloodStateSynchronized()
         {
-            _wasFlooded = _isFlooded;
+            SetStateFlag(ModuleStateFlags.WasFlooded, IsFlooded);
         }
 
         public void ApplyMaterialFatigue()
@@ -173,7 +182,7 @@ namespace Hecton8.Construction
         {
             EnsureRepairIntegrityCapInitialized();
 
-            float nextCap = Mathf.Clamp(repairIntegrityCap, ResolveMinimumRepairIntegrityCap(), _maxIntegrity);
+            float nextCap = math.clamp(repairIntegrityCap, ResolveMinimumRepairIntegrityCap(), _maxIntegrity);
             if (_maxRecoverableIntegrity <= nextCap + 0.0001f)
                 return false;
 
@@ -191,7 +200,7 @@ namespace Hecton8.Construction
 
             EnsureRepairIntegrityCapInitialized();
 
-            float nextCap = Mathf.Clamp(
+            float nextCap = math.clamp(
                 _maxRecoverableIntegrity + amount,
                 ResolveMinimumRepairIntegrityCap(),
                 _maxIntegrity);
@@ -221,7 +230,7 @@ namespace Hecton8.Construction
                 return ModuleRepairOutcome.None;
 
             float repairCap = GetRepairIntegrityCap();
-            if (_currentIntegrity >= repairCap && !_isFlooded)
+            if (_currentIntegrity >= repairCap && !IsFlooded)
                 return ModuleRepairOutcome.None;
 
             _currentIntegrity += amount;
@@ -236,20 +245,20 @@ namespace Hecton8.Construction
         {
             ApplyMaterialFatigue();
             _failureMode = resolvedFailureMode;
-            _isDraining = false;
+            SetStateFlag(ModuleStateFlags.Draining, false);
             _drainTimer = 0f;
 
             switch (_failureMode)
             {
                 case BaseModuleFailureMode.Fire:
-                    _isFlooded = false;
+                    SetStateFlag(ModuleStateFlags.Flooded, false);
                     break;
                 case BaseModuleFailureMode.ShortCircuit:
-                    _isFlooded = true;
+                    SetStateFlag(ModuleStateFlags.Flooded, true);
                     break;
                 default:
                     _failureMode = BaseModuleFailureMode.OxygenLeak;
-                    _isFlooded = true;
+                    SetStateFlag(ModuleStateFlags.Flooded, true);
                     break;
             }
         }
@@ -261,13 +270,13 @@ namespace Hecton8.Construction
 
         public void ForceFlood()
         {
-            _isFlooded = true;
+            SetStateFlag(ModuleStateFlags.Flooded, true);
             StopDrain();
         }
 
         public void ForceDrainComplete(bool clearOxygenLeakFailure)
         {
-            _isFlooded = false;
+            SetStateFlag(ModuleStateFlags.Flooded, false);
             StopDrain();
             if (clearOxygenLeakFailure && _failureMode == BaseModuleFailureMode.OxygenLeak)
                 _failureMode = BaseModuleFailureMode.None;
@@ -278,23 +287,23 @@ namespace Hecton8.Construction
             if (!HasOperationalPower(hasOperationalPower))
                 return false;
 
-            if (!_isFlooded || _currentIntegrity < GetRepairIntegrityCap())
+            if (!IsFlooded || _currentIntegrity < GetRepairIntegrityCap())
                 return false;
 
-            bool startedNow = !_isDraining;
-            _isDraining = true;
+            bool startedNow = !IsDraining;
+            SetStateFlag(ModuleStateFlags.Draining, true);
             return startedNow;
         }
 
         public void StopDrain()
         {
-            _isDraining = false;
+            SetStateFlag(ModuleStateFlags.Draining, false);
             _drainTimer = 0f;
         }
 
         public bool AdvanceDrain(float dt)
         {
-            if (!_isDraining)
+            if (!IsDraining)
                 return false;
 
             _drainTimer += dt;
@@ -316,11 +325,11 @@ namespace Hecton8.Construction
                     hash = hash * 31 + prefabId[i];
             }
 
-            hash = hash * 31 + Mathf.RoundToInt(worldPosition.x * 10f);
-            hash = hash * 31 + Mathf.RoundToInt(worldPosition.y * 10f);
-            hash = hash * 31 + Mathf.RoundToInt(worldPosition.z * 10f);
+            hash = hash * 31 + (int)math.round(worldPosition.x * 10f);
+            hash = hash * 31 + (int)math.round(worldPosition.y * 10f);
+            hash = hash * 31 + (int)math.round(worldPosition.z * 10f);
 
-            int resolved = Mathf.Abs(hash % 3);
+            int resolved = math.abs(hash % 3);
             if (!hasPower && resolved == 2)
                 resolved = 0;
 
@@ -342,6 +351,19 @@ namespace Hecton8.Construction
                 minimumCap = 1f;
 
             return minimumCap;
+        }
+
+        private bool HasStateFlag(ModuleStateFlags flag)
+        {
+            return (_stateFlags & flag) != 0;
+        }
+
+        private void SetStateFlag(ModuleStateFlags flag, bool enabled)
+        {
+            if (enabled)
+                _stateFlags |= flag;
+            else
+                _stateFlags &= ~flag;
         }
 
         private void EnsureRepairIntegrityCapInitialized()

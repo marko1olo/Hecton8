@@ -139,9 +139,16 @@ namespace Hecton8.Gameplay
         ///
         /// Аллокации: FindWithTag (одна строковая проверка, допустимо в OnSpawn).
         /// </summary>
+        private void Awake()
+        {
+            EnsureScreenPropertyBlock();
+        }
+
         public override void OnSpawn()
         {
             base.OnSpawn();
+
+            EnsureScreenPropertyBlock();
 
             _selfTransform = transform;
             _bound         = false;
@@ -176,7 +183,7 @@ namespace Hecton8.Gameplay
             }
 
             // ── Кэш Main Camera Transform ──
-            Camera playerCamera = playerTransform.GetComponentInChildren<Camera>(true);
+            Camera playerCamera = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera : playerTransform.GetComponent<Camera>());
             if (playerCamera != null)
             {
                 _cameraTransform = playerCamera.transform;
@@ -185,12 +192,6 @@ namespace Hecton8.Gameplay
             {
                 Debug.LogWarning(
                     "[BuilderTool] OnSpawn: Player camera not found in player hierarchy. Sway effect disabled.");
-            }
-
-            // ── LCD Screen: инициализация MaterialPropertyBlock ──
-            if (_screenPropBlock == null)
-            {
-                _screenPropBlock = new MaterialPropertyBlock();
             }
 
             _lastDisplayedBuildable = null;
@@ -434,7 +435,7 @@ namespace Hecton8.Gameplay
         public void UpdateScreen()
         {
             if (screenRenderer == null) return;
-            if (_screenPropBlock == null) return;
+            EnsureScreenPropertyBlock();
 
             BuildableData buildable = null;
 
@@ -482,6 +483,15 @@ namespace Hecton8.Gameplay
             _screenPropBlock.SetColor(PropScreenColor, screenColor);
 
             screenRenderer.SetPropertyBlock(_screenPropBlock, screenMaterialIndex);
+        }
+
+        private void EnsureScreenPropertyBlock()
+        {
+            if (_screenPropBlock != null)
+                return;
+
+            // COLD ALLOC: MaterialPropertyBlock[1] — builder LCD state bridge — owner: BuilderTool
+            _screenPropBlock = new MaterialPropertyBlock();
         }
 
         // ══════════════════════════════════════════════════════════

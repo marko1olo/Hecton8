@@ -8,6 +8,7 @@ namespace MoreMountains.Feedbacks
 	/// <summary>
 	/// This feedback will let you animate the position/rotation/scale of a target transform to match the one of a destination transform.
 	/// </summary>
+	[global::System.Serializable]
 	[AddComponentMenu("")]
 	[FeedbackHelp("This feedback will let you animate the position/rotation/scale of a target transform to match the one of a destination transform.")]
 	[FeedbackPath("Transform/Destination")]

@@ -157,7 +157,6 @@ namespace Hecton8.Gameplay
         private int _cachedContextDirectiveFrame = -1;
         private bool _cachedHasContextDirective;
         private string _cachedContextDirective;
-        private readonly RaycastHit[] _contextRaycastHits = new RaycastHit[1]; // COLD ALLOC: single-hit flashlight context probe buffer.
 
         // ══════════════════════════════════════════════════════════
         //  IBatteryTool STATE
@@ -288,7 +287,7 @@ namespace Hecton8.Gameplay
                 if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                     playerTransform != null)
                 {
-                    _flashlight = playerTransform.GetComponentInChildren<PlayerFlashlight>(true);
+                    _flashlight = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.Flashlight != null) ? Hecton8.Core.GlobalRegistry.Player.Flashlight : playerTransform.GetComponent<PlayerFlashlight>());
                 }
             }
 
@@ -486,19 +485,8 @@ namespace Hecton8.Gameplay
             
             if (!cache.TryGet(ray, contextProbeRange, contextMask, out Hecton8.Physics.QueryResult qResult))
             {
-                int hitCount = Physics.RaycastNonAlloc(
-                    ray,
-                    _contextRaycastHits,
-                    contextProbeRange,
-                    contextMask,
-                    QueryTriggerInteraction.Collide);
-
-                if (hitCount <= 0)
-                {
+                if (!TryResolveQueuedRaycast(ray.origin, ray.direction, contextProbeRange, contextMask.value, QueryTriggerInteraction.Collide, out RaycastHit hit))
                     return false;
-                }
-
-                RaycastHit hit = _contextRaycastHits[0];
                 qResult = new Hecton8.Physics.QueryResult { hasHit = true, hit = hit };
                 cache.Set(ray, contextProbeRange, contextMask, qResult);
             }

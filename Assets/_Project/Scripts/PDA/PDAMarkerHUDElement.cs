@@ -12,7 +12,7 @@ namespace Hecton8.PDA
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/PDA/PDA Marker HUD Element")]
-    public sealed class PDAMarkerHUDElement : MonoBehaviour, ITickable
+    public sealed class PDAMarkerHUDElement : MonoBehaviour, ITickable, IUpdatable
     {
         private sealed class MarkerIconDisplay
         {
@@ -126,7 +126,7 @@ namespace Hecton8.PDA
                 {
                     rectTransform = rectTransform,
                     canvasGroup = canvasGroup,
-                    iconImage = iconObject.GetComponentInChildren<Image>(true),
+                    iconImage = iconObject.GetComponent<Image>(),
                     titleText = ResolveChildText(iconObject.transform, "Label"),
                     distanceText = ResolveChildText(iconObject.transform, "Distance"),
                     cachedTitle = string.Empty,
@@ -151,7 +151,7 @@ namespace Hecton8.PDA
             if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform != null)
             {
-                _mainCamera = playerTransform.GetComponentInChildren<Camera>(true);
+                _mainCamera = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera : playerTransform.GetComponent<Camera>());
             }
 
             return _mainCamera != null && _mainCamera.isActiveAndEnabled;
@@ -297,11 +297,7 @@ namespace Hecton8.PDA
             if (_registeredToTick)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register(this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _registeredToTick = true;
         }
 
@@ -310,10 +306,7 @@ namespace Hecton8.PDA
             if (!_registeredToTick)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister(this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _registeredToTick = false;
         }
     }

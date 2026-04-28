@@ -346,19 +346,19 @@ namespace Hecton8.Tools
 
         private void TryRegisterWithTickManager()
         {
-            if (_registeredToTick || GameTickManager.Instance == null)
+            if (_registeredToTick)
                 return;
 
-            GameTickManager.Instance.Register(this);
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Player);
             _registeredToTick = true;
         }
 
         private void UnregisterFromTickManager()
         {
-            if (!_registeredToTick || GameTickManager.Instance == null)
+            if (!_registeredToTick)
                 return;
 
-            GameTickManager.Instance.Unregister(this);
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
             _registeredToTick = false;
         }
 
@@ -412,7 +412,7 @@ namespace Hecton8.Tools
                 _playerRoot.TryGetComponent(out _playerSurvivalSystem);
 
             if (_playerToolManager == null)
-                _playerToolManager = _playerRoot.GetComponentInChildren<PlayerToolManager>(true);
+                _playerToolManager = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.ToolManager != null) ? Hecton8.Core.GlobalRegistry.Player.ToolManager : _playerRoot.GetComponent<PlayerToolManager>());
 
             return _playerSurvivalSystem != null && _playerToolManager != null;
         }

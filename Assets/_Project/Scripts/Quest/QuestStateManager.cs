@@ -849,7 +849,7 @@ namespace Hecton8.Quest
             public QuestBitAddress Address;
         }
 
-        [BurstCompile]
+        [BurstCompile(FloatMode = FloatMode.Fast)]
         private struct EvaluateQuestSignalJob : IJob
         {
             public QuestSignal Signal;

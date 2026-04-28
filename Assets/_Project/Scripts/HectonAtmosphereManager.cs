@@ -62,7 +62,7 @@ namespace Hecton8.Atmosphere
     [AddComponentMenu("Hecton/Atmosphere Manager")]
     [DefaultExecutionOrder(-6000)]  // v4.3: MUST tick before UnderwaterVisuals(-4000)
     [ExecuteAlways]
-    public class HectonAtmosphereManager : MonoBehaviour, ITickable
+    public class HectonAtmosphereManager : MonoBehaviour, ITickable, IUpdatable
     {
         private const float VisualEnterUnderwaterDepth = 0.01f;
         private const float VisualExitUnderwaterDepth = 0.005f;
@@ -377,7 +377,7 @@ namespace Hecton8.Atmosphere
                 if (!_registeredToTickManager)
                 {
                     Debug.LogError(
-                        "[HectonAtmosphere] GameTickManager.Instance == null in Start(). " +
+                        "[HectonAtmosphere] SystemDispatcher registration failed in Start(). " +
                         "Atmosphere will NOT update.", this);
                 }
             }
@@ -429,11 +429,7 @@ namespace Hecton8.Atmosphere
             if (_registeredToTickManager)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager == null)
-                return;
-
-            gameTickManager.Register((ITickable)this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _registeredToTickManager = true;
         }
 
@@ -442,10 +438,7 @@ namespace Hecton8.Atmosphere
             if (!_registeredToTickManager)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager != null)
-                gameTickManager.Unregister((ITickable)this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _registeredToTickManager = false;
         }
 
@@ -1075,7 +1068,9 @@ namespace Hecton8.Atmosphere
             if (_playerTransform != null)
             {
                 _playerTransform.TryGetComponent(out _playerMovement);
-                Camera playerOwnedCamera = _playerTransform.GetComponentInChildren<Camera>(true);
+                Camera playerOwnedCamera = Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null
+                    ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera
+                    : Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Camera>(_playerTransform);
                 if (playerOwnedCamera != null)
                     _playerCameraTransform = playerOwnedCamera.transform;
             }

@@ -15,7 +15,7 @@ namespace Hecton8.Construction
     [RequireComponent(typeof(Collider))]
     [RequireComponent(typeof(PowerNode))]
     [AddComponentMenu("Hecton8/Construction/Vehicle Docking Module")]
-    public sealed class VehicleDockingModule : MonoBehaviour, ITickable, IPowerComponent, IPoolable
+    public sealed class VehicleDockingModule : MonoBehaviour, ITickable, IUpdatable, IPowerComponent, IPoolable
     {
         [Header("── Docking ──────────────────")]
         [Tooltip("Optional snap anchor applied when a rigidbody transport is docked. Falls back to this transform.")]
@@ -178,19 +178,19 @@ namespace Hecton8.Construction
 
         private void TryRegister()
         {
-            if (_registered || GameTickManager.Instance == null)
+            if (_registered)
                 return;
 
-            GameTickManager.Instance.Register((ITickable)this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _registered = true;
         }
 
         private void TryUnregister()
         {
-            if (!_registered || GameTickManager.Instance == null)
+            if (!_registered)
                 return;
 
-            GameTickManager.Instance.Unregister((ITickable)this);
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _registered = false;
         }
 

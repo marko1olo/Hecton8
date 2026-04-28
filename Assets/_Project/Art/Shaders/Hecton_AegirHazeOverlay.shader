@@ -53,7 +53,6 @@ Shader "HECTON/Sky/Hecton_AegirHazeOverlay"
             Cull Front
             ZWrite Off
             ZTest LEqual
-            Blend SrcAlpha OneMinusSrcAlpha
 
             HLSLPROGRAM
             #pragma vertex OverlayVert
@@ -87,6 +86,11 @@ Shader "HECTON/Sky/Hecton_AegirHazeOverlay"
 
             float4 _SunDirection;
             float4 _AegirDirection;
+            float4 _BlueNoiseTex_TexelSize;
+            float _HectonFrameCount;
+
+            TEXTURE2D(_BlueNoiseTex);
+            SAMPLER(sampler_BlueNoiseTex);
 
             static const float3 FALLBACK_SUN_DIR = float3(0.57735, 0.57735, 0.57735);
             static const float3 FALLBACK_AEGIR_DIR = float3(0.0, 0.93633, -0.35112);
@@ -112,6 +116,35 @@ Shader "HECTON/Sky/Hecton_AegirHazeOverlay"
             {
                 float lenSq = dot(v, v);
                 return (lenSq < DIR_THRESHOLD * DIR_THRESHOLD) ? fallback : v * rsqrt(lenSq);
+            }
+
+            float ResolveInterleavedGradientNoise(float2 positionCS)
+            {
+                float2 pixel = floor(positionCS);
+                return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+            }
+
+            float ResolveTemporalFrameIndex()
+            {
+                return max(_HectonFrameCount, floor(_Time.y * 60.0));
+            }
+
+            float2 ResolveTemporalR2Offset()
+            {
+                const float2 r2Sequence = float2(0.7548776662466927, 0.5698402909980532);
+                return frac(ResolveTemporalFrameIndex() * r2Sequence);
+            }
+
+            float ResolveBlueNoiseThreshold(float4 positionCS)
+            {
+                float2 pixel = floor(positionCS.xy / max(_DitherScale, 1.0h));
+                if (_BlueNoiseTex_TexelSize.z > 0.0001 && _BlueNoiseTex_TexelSize.w > 0.0001)
+                {
+                    float2 blueNoiseUV = frac(pixel * _BlueNoiseTex_TexelSize.xy + ResolveTemporalR2Offset());
+                    return SAMPLE_TEXTURE2D(_BlueNoiseTex, sampler_BlueNoiseTex, blueNoiseUV).r;
+                }
+
+                return ResolveInterleavedGradientNoise(pixel + ResolveTemporalR2Offset() * 256.0);
             }
 
             Varyings OverlayVert(Attributes input)
@@ -169,8 +202,9 @@ Shader "HECTON/Sky/Hecton_AegirHazeOverlay"
                 half alpha = saturate(discMask * _OverlayAlpha * (baseVeil + edgeVeil * _DiscEdgeVeil));
                 half3 atmosphericColor = lerp(_HazeColor.rgb, skyGradient, 0.55h + horizonVeil * 0.25h);
                 atmosphericColor = lerp(atmosphericColor, _SkyColorHorizon.rgb, horizonVeil * 0.45h + _NightBlend * 0.15h);
+                clip(alpha - ResolveBlueNoiseThreshold(input.positionCS));
 
-                return half4(atmosphericColor * hazeSunTint, alpha);
+                return half4(atmosphericColor * hazeSunTint, 1.0h);
             }
             ENDHLSL
         }

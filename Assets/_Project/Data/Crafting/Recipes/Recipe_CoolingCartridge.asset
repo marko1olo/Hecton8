@@ -1,4 +1,4 @@
-﻿%YAML 1.1
+%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!114 &11400000
 MonoBehaviour:
@@ -15,13 +15,13 @@ MonoBehaviour:
   recipeName: Cooling Cartridge
   localizedRecipeName:
     tableKey: ITEM_COOLING_CARTRIDGE_NAME
-    fallbackText: ''
+    fallbackText: 
     variants: []
   overrideIcon: {fileID: 0}
   description: Build a compact cooling pack for hot-running portable devices.
   localizedRecipeDescription:
     tableKey: ITEM_COOLING_CARTRIDGE_DESCRIPTION
-    fallbackText: ''
+    fallbackText: 
     variants: []
   resultItem: {fileID: 11400000, guid: 25a396571465ef74494020aa732aa9ee, type: 2}
   resultQuantity: 1
@@ -33,5 +33,6 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: 9396a932269079a46ae6e81cfc90e58b, type: 2}
     amount: 1
   craftTime: 1.5
+  powerCost: 5
   requiredScanEntryId: 
   fabricationGroup: 6

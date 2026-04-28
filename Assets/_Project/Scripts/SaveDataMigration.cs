@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Hecton8.Narrative;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.SaveSystem
@@ -135,19 +136,38 @@ namespace Hecton8.SaveSystem
         private static bool EnsureInventory(ref InventoryDTO dto, List<string> steps)
         {
             bool changed = false;
-            if (dto.cells == null || dto.cells.Length < InventoryDTO.MaxCells)
+            if (dto.itemHashIds == null ||
+                dto.itemHashIds.Length < InventoryDTO.MaxCells ||
+                dto.packedCellCoordinates == null ||
+                dto.packedCellCoordinates.Length < InventoryDTO.MaxCells ||
+                dto.stackCounts == null ||
+                dto.stackCounts.Length < InventoryDTO.MaxCells)
             {
                 dto.EnsureCapacity();
                 changed = true;
-                steps.Add("inventory capacity repaired");
+                steps.Add("inventory SOA capacity repaired");
             }
 
-            int clamped = Mathf.Clamp(dto.cellCount, 0, dto.cells != null ? dto.cells.Length : 0);
+            int capacity = math.min(
+                dto.itemHashIds != null ? dto.itemHashIds.Length : 0,
+                math.min(
+                    dto.packedCellCoordinates != null ? dto.packedCellCoordinates.Length : 0,
+                    dto.stackCounts != null ? dto.stackCounts.Length : 0));
+            int clamped = math.clamp(dto.cellCount, 0, capacity);
             if (clamped != dto.cellCount)
             {
                 dto.cellCount = clamped;
                 changed = true;
                 steps.Add("inventory count clamped");
+            }
+
+            for (int i = 0; i < dto.cellCount; i++)
+            {
+                if (dto.stackCounts[i] > 0)
+                    continue;
+
+                dto.stackCounts[i] = 1;
+                changed = true;
             }
 
             return changed;
@@ -199,7 +219,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("world state capacity repaired");
             }
 
-            int clamped = Mathf.Clamp(dto.depletedCount, 0, dto.depletedNodeIds != null ? dto.depletedNodeIds.Length : 0);
+            int clamped = math.clamp(dto.depletedCount, 0, dto.depletedNodeIds != null ? dto.depletedNodeIds.Length : 0);
             if (clamped != dto.depletedCount)
             {
                 dto.depletedCount = clamped;
@@ -207,7 +227,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("world state count clamped");
             }
 
-            int clampedPickupChunks = Mathf.Clamp(
+            int clampedPickupChunks = math.clamp(
                 dto.depletedPickupChunkCount,
                 0,
                 dto.depletedPickupChunkKeys != null ? dto.depletedPickupChunkKeys.Length : 0);
@@ -218,7 +238,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("world pickup chunk count clamped");
             }
 
-            int clampedPickupWords = Mathf.Clamp(
+            int clampedPickupWords = math.clamp(
                 dto.depletedPickupWordCount,
                 0,
                 dto.depletedPickupWords != null ? dto.depletedPickupWords.Length : 0);
@@ -253,11 +273,11 @@ namespace Hecton8.SaveSystem
                 dto.EnsureCapacity();
                 if (previousKeys != null)
                 {
-                    int copyCount = Mathf.Min(previousKeys.Length, dto.infectedChunkKeys.Length);
+                    int copyCount = math.min(previousKeys.Length, dto.infectedChunkKeys.Length);
                     Array.Copy(previousKeys, dto.infectedChunkKeys, copyCount);
                     if (previousSeverities != null)
                     {
-                        int severityCopyCount = Mathf.Min(previousSeverities.Length, dto.infectedSeverities.Length);
+                        int severityCopyCount = math.min(previousSeverities.Length, dto.infectedSeverities.Length);
                         Array.Copy(previousSeverities, dto.infectedSeverities, severityCopyCount);
                     }
                 }
@@ -266,7 +286,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("ecosystem state capacity repaired");
             }
 
-            int clampedCount = Mathf.Clamp(dto.infectedZoneCount, 0, dto.infectedChunkKeys != null ? dto.infectedChunkKeys.Length : 0);
+            int clampedCount = math.clamp(dto.infectedZoneCount, 0, dto.infectedChunkKeys != null ? dto.infectedChunkKeys.Length : 0);
             if (clampedCount != dto.infectedZoneCount)
             {
                 dto.infectedZoneCount = clampedCount;
@@ -276,8 +296,8 @@ namespace Hecton8.SaveSystem
 
             for (int i = 0; i < clampedCount; i++)
             {
-                float clampedSeverity = Mathf.Clamp01(dto.infectedSeverities[i]);
-                if (Mathf.Abs(clampedSeverity - dto.infectedSeverities[i]) > 0.0001f)
+                float clampedSeverity = math.saturate(dto.infectedSeverities[i]);
+                if (math.abs(clampedSeverity - dto.infectedSeverities[i]) > 0.0001f)
                 {
                     dto.infectedSeverities[i] = clampedSeverity;
                     changed = true;
@@ -299,7 +319,7 @@ namespace Hecton8.SaveSystem
             }
 
             int chunkCapacity = dto.chunks != null ? dto.chunks.Length : 0;
-            int clampedChunkCount = Mathf.Clamp(dto.chunkCount, 0, chunkCapacity);
+            int clampedChunkCount = math.clamp(dto.chunkCount, 0, chunkCapacity);
             if (clampedChunkCount != dto.chunkCount)
             {
                 dto.chunkCount = clampedChunkCount;
@@ -339,10 +359,10 @@ namespace Hecton8.SaveSystem
                 }
 
                 int cellCapacity = chunk.cells != null ? chunk.cells.Length : 0;
-                int legacyCellCount = Mathf.Clamp(chunk.cellCount, 0, cellCapacity);
+                int legacyCellCount = math.clamp(chunk.cellCount, 0, cellCapacity);
                 int denseCellCount = hasDenseStorage ? CountDirtyMaskBits(chunk.dirtyMaskWords) : 0;
                 int clampedCellCount = hasDenseStorage
-                    ? Mathf.Max(denseCellCount, legacyCellCount)
+                    ? math.max(denseCellCount, legacyCellCount)
                     : legacyCellCount;
                 if (clampedCellCount != chunk.cellCount)
                 {
@@ -376,7 +396,7 @@ namespace Hecton8.SaveSystem
                 return 0;
 
             int total = 0;
-            int wordCount = Mathf.Min(dirtyMaskWords.Length, VoxelDeltaChunkDTO.DirtyMaskWordCount);
+            int wordCount = math.min(dirtyMaskWords.Length, VoxelDeltaChunkDTO.DirtyMaskWordCount);
             for (int i = 0; i < wordCount; i++)
             {
                 uint value = dirtyMaskWords[i];
@@ -401,7 +421,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("narrative discovery capacity repaired");
             }
 
-            int clampedCount = Mathf.Clamp(data.narrativeDiscoveryCount, 0, data.narrativeDiscoveryIds.Length);
+            int clampedCount = math.clamp(data.narrativeDiscoveryCount, 0, data.narrativeDiscoveryIds.Length);
             if (clampedCount != data.narrativeDiscoveryCount)
             {
                 data.narrativeDiscoveryCount = clampedCount;
@@ -430,7 +450,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("exploration map capacity repaired");
             }
 
-            int clampedCount = Mathf.Clamp(dto.exploredChunkCount, 0, dto.exploredChunkKeys != null ? dto.exploredChunkKeys.Length : 0);
+            int clampedCount = math.clamp(dto.exploredChunkCount, 0, dto.exploredChunkKeys != null ? dto.exploredChunkKeys.Length : 0);
             if (clampedCount != dto.exploredChunkCount)
             {
                 dto.exploredChunkCount = clampedCount;
@@ -453,7 +473,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("pda logbook capacity repaired");
             }
 
-            int clampedCount = Mathf.Clamp(dto.entryCount, 0, dto.entries != null ? dto.entries.Length : 0);
+            int clampedCount = math.clamp(dto.entryCount, 0, dto.entries != null ? dto.entries.Length : 0);
             if (clampedCount != dto.entryCount)
             {
                 dto.entryCount = clampedCount;
@@ -463,12 +483,12 @@ namespace Hecton8.SaveSystem
 
             if (dto.nextSequence < 1)
             {
-                dto.nextSequence = Mathf.Max(1, clampedCount + 1);
+                dto.nextSequence = math.max(1, clampedCount + 1);
                 changed = true;
                 steps.Add("pda logbook sequence repaired");
             }
 
-            int clampedSeenOriginCount = Mathf.Clamp(dto.seenOriginCount, 0, dto.seenOriginKeys != null ? dto.seenOriginKeys.Length : 0);
+            int clampedSeenOriginCount = math.clamp(dto.seenOriginCount, 0, dto.seenOriginKeys != null ? dto.seenOriginKeys.Length : 0);
             if (clampedSeenOriginCount != dto.seenOriginCount)
             {
                 dto.seenOriginCount = clampedSeenOriginCount;
@@ -490,7 +510,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("pda marker capacity repaired");
             }
 
-            int clampedCount = Mathf.Clamp(dto.markerCount, 0, dto.entries != null ? dto.entries.Length : 0);
+            int clampedCount = math.clamp(dto.markerCount, 0, dto.entries != null ? dto.entries.Length : 0);
             if (clampedCount != dto.markerCount)
             {
                 dto.markerCount = clampedCount;
@@ -500,7 +520,7 @@ namespace Hecton8.SaveSystem
 
             if (dto.nextSequence < 1)
             {
-                dto.nextSequence = Mathf.Max(1, clampedCount + 1);
+                dto.nextSequence = math.max(1, clampedCount + 1);
                 changed = true;
                 steps.Add("pda marker sequence repaired");
             }
@@ -596,7 +616,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("procedural lore capacity repaired");
             }
 
-            int clampedCount = Mathf.Clamp(dto.activeCount, 0, dto.activePlacements != null ? dto.activePlacements.Length : 0);
+            int clampedCount = math.clamp(dto.activeCount, 0, dto.activePlacements != null ? dto.activePlacements.Length : 0);
             if (clampedCount != dto.activeCount)
             {
                 dto.activeCount = clampedCount;
@@ -625,7 +645,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("achievement registry capacity repaired");
             }
 
-            int clampedUnlockedCount = Mathf.Clamp(dto.unlockedCount, 0, dto.unlockedIds != null ? dto.unlockedIds.Length : 0);
+            int clampedUnlockedCount = math.clamp(dto.unlockedCount, 0, dto.unlockedIds != null ? dto.unlockedIds.Length : 0);
             if (clampedUnlockedCount != dto.unlockedCount)
             {
                 dto.unlockedCount = clampedUnlockedCount;
@@ -698,10 +718,10 @@ namespace Hecton8.SaveSystem
                 steps.Add("resource scarcity capacity repaired");
             }
 
-            int clampedEntryCount = Mathf.Clamp(
+            int clampedEntryCount = math.clamp(
                 dto.entryCount,
                 0,
-                Mathf.Min(dto.itemIds.Length, dto.collectedCounts.Length));
+                math.min(dto.itemIds.Length, dto.collectedCounts.Length));
 
             if (clampedEntryCount != dto.entryCount)
             {
@@ -797,7 +817,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("construction capacity repaired");
             }
 
-            int clamped = Mathf.Clamp(dto.moduleCount, 0, dto.modules != null ? dto.modules.Length : 0);
+            int clamped = math.clamp(dto.moduleCount, 0, dto.modules != null ? dto.modules.Length : 0);
             if (clamped != dto.moduleCount)
             {
                 dto.moduleCount = clamped;
@@ -836,7 +856,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("procedural world state capacity repaired");
             }
 
-            int clampedSuppressed = Mathf.Clamp(dto.suppressedPlacementCount, 0, dto.suppressedPlacementKeys != null ? dto.suppressedPlacementKeys.Length : 0);
+            int clampedSuppressed = math.clamp(dto.suppressedPlacementCount, 0, dto.suppressedPlacementKeys != null ? dto.suppressedPlacementKeys.Length : 0);
             if (clampedSuppressed != dto.suppressedPlacementCount)
             {
                 dto.suppressedPlacementCount = clampedSuppressed;
@@ -844,7 +864,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("procedural suppressed placement count clamped");
             }
 
-            int clampedFauna = Mathf.Clamp(dto.faunaStateCount, 0, dto.faunaStates != null ? dto.faunaStates.Length : 0);
+            int clampedFauna = math.clamp(dto.faunaStateCount, 0, dto.faunaStates != null ? dto.faunaStates.Length : 0);
             if (clampedFauna != dto.faunaStateCount)
             {
                 dto.faunaStateCount = clampedFauna;
@@ -866,7 +886,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("scan log capacity repaired");
             }
 
-            int clampedEntries = Mathf.Clamp(dto.entryCount, 0, dto.entries != null ? dto.entries.Length : 0);
+            int clampedEntries = math.clamp(dto.entryCount, 0, dto.entries != null ? dto.entries.Length : 0);
             if (clampedEntries != dto.entryCount)
             {
                 dto.entryCount = clampedEntries;
@@ -874,7 +894,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("scan log count clamped");
             }
 
-            int clampedRecent = Mathf.Clamp(dto.recentCount, 0, dto.recentEntryIds != null ? dto.recentEntryIds.Length : 0);
+            int clampedRecent = math.clamp(dto.recentCount, 0, dto.recentEntryIds != null ? dto.recentEntryIds.Length : 0);
             if (clampedRecent != dto.recentCount)
             {
                 dto.recentCount = clampedRecent;
@@ -896,7 +916,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("barter capacity repaired");
             }
 
-            int clampedStates = Mathf.Clamp(dto.stateCount, 0, dto.offerStates != null ? dto.offerStates.Length : 0);
+            int clampedStates = math.clamp(dto.stateCount, 0, dto.offerStates != null ? dto.offerStates.Length : 0);
             if (clampedStates != dto.stateCount)
             {
                 dto.stateCount = clampedStates;
@@ -904,7 +924,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("barter state count clamped");
             }
 
-            int clampedTransactions = Mathf.Clamp(dto.recentTransactionCount, 0, dto.recentTransactions != null ? dto.recentTransactions.Length : 0);
+            int clampedTransactions = math.clamp(dto.recentTransactionCount, 0, dto.recentTransactions != null ? dto.recentTransactions.Length : 0);
             if (clampedTransactions != dto.recentTransactionCount)
             {
                 dto.recentTransactionCount = clampedTransactions;
@@ -925,7 +945,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("field log capacity repaired");
             }
 
-            int clamped = Mathf.Clamp(dto.recentCount, 0, dto.recentEntries != null ? dto.recentEntries.Length : 0);
+            int clamped = math.clamp(dto.recentCount, 0, dto.recentEntries != null ? dto.recentEntries.Length : 0);
             if (clamped != dto.recentCount)
             {
                 dto.recentCount = clamped;
@@ -946,7 +966,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("beacon capacity repaired");
             }
 
-            int clamped = Mathf.Clamp(dto.activeCount, 0, dto.entries != null ? dto.entries.Length : 0);
+            int clamped = math.clamp(dto.activeCount, 0, dto.entries != null ? dto.entries.Length : 0);
             if (clamped != dto.activeCount)
             {
                 dto.activeCount = clamped;
@@ -981,7 +1001,7 @@ namespace Hecton8.SaveSystem
 
             if (dto.nextSequence <= 0)
             {
-                dto.nextSequence = Mathf.Max(1, dto.activeCount + 1);
+                dto.nextSequence = math.max(1, dto.activeCount + 1);
                 changed = true;
                 steps.Add("beacon sequence repaired");
             }
@@ -1082,7 +1102,7 @@ namespace Hecton8.SaveSystem
                             ? 2
                             : 0;
 
-            int clampedRevealStage = Mathf.Clamp(data.atlasSignalRevealStage, 0, MaxAtlasRevealStage);
+            int clampedRevealStage = math.clamp(data.atlasSignalRevealStage, 0, MaxAtlasRevealStage);
             if (sourceVersion < SaveData.CurrentVersion && clampedRevealStage < inferredRevealStage)
                 clampedRevealStage = inferredRevealStage;
 

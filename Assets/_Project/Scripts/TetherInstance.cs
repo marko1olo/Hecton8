@@ -27,7 +27,6 @@ namespace Hecton8.Physics
         private const float MinDistance = 0.0001f;
         private const float MinVectorMagnitudeSq = 0.000001f;
         private const float TowCableOverDampingMinimum = 1.2f;
-        private const float NonElasticLimitRatio = 1.10f;
         private const int MinVisualSegmentCount = 8;
         private const int MaxVisualSegmentCount = 24;
         private const float VisualSagScale = 0.05f;
@@ -122,6 +121,7 @@ namespace Hecton8.Physics
         private Matrix4x4 _solverLocalToWorldMatrix = Matrix4x4.identity;
         private bool _solveInPlatformLocalSpace;
         private bool _kinematicAnchorCompensationEnabled;
+        private float _primaryConstraintForceMagnitude;
 
         /// <summary>Active owner facade that exposes tether state to the rest of gameplay.</summary>
         public HeavyTowWinch Owner => _owner;
@@ -239,6 +239,9 @@ namespace Hecton8.Physics
             GlobalPhysicsStateManager.RegisterTetherConnection(this, _playerRigidbody, _payloadBody);
             RefreshKinematicAnchorCompensationState(forceRecalculateDamping: true);
             RecalculateDampingCoefficient();
+            EnsurePrimaryConstraint(
+                owner != null ? owner.ResolveTowAnchorPosition() : Vector3.zero,
+                _payloadBody != null ? _payloadBody.worldCenterOfMass : Vector3.zero);
             _isActive = true;
             _visualBounds = new Bounds(
                 owner != null ? owner.ResolveTowAnchorPosition() : Vector3.zero,
@@ -329,16 +332,9 @@ namespace Hecton8.Physics
             if (_currentLength > _maxTowBreakDistance)
                 return TetherLifecycleState.Released;
 
-            ApplyHardConstraint(anchorCount);
-            anchorCount = BuildAnchorChain(anchorPosition, _payloadBody.worldCenterOfMass);
-            if (anchorCount < 2)
-            {
-                ResetRuntimeLoads();
-                _owner.ApplyTowLoad(1f);
-                return TetherLifecycleState.Alive;
-            }
-
-            float peakTension = ApplySpringForces(anchorCount);
+            SyncPrimaryConstraint(anchorPosition, payloadPosition);
+            UpdateConstraintTelemetry();
+            float peakTension = ResolvePrimaryConstraintForceMagnitude();
             float bioCablePeakTension = ApplyExternalCableSnareForce();
             if (bioCablePeakTension > peakTension)
                 peakTension = bioCablePeakTension;
@@ -371,7 +367,7 @@ namespace Hecton8.Physics
                 return;
 
             float safeDeltaTime = math.max(deltaTime, 0f);
-            float blendT = 1f - math.exp(-_visualSegmentSmoothSpeed * safeDeltaTime);
+            float blendT = ResolveBlendFactor(_visualSegmentSmoothSpeed, safeDeltaTime);
             float pathLength = math.max(_currentLength, MinDistance);
             float step = _visualSegmentPositions.Length > 1
                 ? pathLength / (_visualSegmentPositions.Length - 1)
@@ -415,6 +411,7 @@ namespace Hecton8.Physics
         public void Deactivate()
         {
             GlobalPhysicsStateManager.UnregisterTetherConnection(this);
+            ReleasePrimaryConstraint();
             _isActive = false;
             _owner = null;
             _playerMotor = null;
@@ -500,6 +497,7 @@ namespace Hecton8.Physics
 
         private void OnDestroy()
         {
+            ReleasePrimaryConstraint();
             DisposeRuntimeResources();
         }
 
@@ -555,6 +553,7 @@ namespace Hecton8.Physics
                 : math.max(1f, requestedMultiplier);
             float criticalDamping = 2f * math.sqrt(math.max(_springStiffness, 0f) * math.max(_reducedMass, 0f));
             _dampingCoefficient = criticalDamping * overDampingMultiplier;
+            RefreshPrimaryConstraintDrive();
         }
 
         private void AdvanceExternalCableSnare(float fixedDeltaTime)
@@ -575,7 +574,7 @@ namespace Hecton8.Physics
             float targetTension = keepAlive ? _bioCableRequestedTension01 : 0f;
             float targetCutProgress = keepAlive ? _bioCableRequestedCutProgress01 : 1f;
             Vector3 targetAnchor = keepAlive ? _bioCableRequestedAnchorWS : Vector3.zero;
-            float blendT = 1f - math.exp(-math.max(1f, _bioCableBlendSharpness) * fixedDeltaTime);
+            float blendT = ResolveBlendFactor(math.max(1f, _bioCableBlendSharpness), fixedDeltaTime);
 
             _bioCableCurrentTension01 = math.lerp(_bioCableCurrentTension01, targetTension, blendT);
             _bioCableCurrentCutProgress01 = math.lerp(_bioCableCurrentCutProgress01, targetCutProgress, blendT);
@@ -592,7 +591,7 @@ namespace Hecton8.Physics
             if (_payloadBody == null)
                 return Vector3.zero;
 
-            float time = Time.time;
+            float time = Time.fixedTime;
             float3 phantomCurrentSample = CurrentManager.SampleCurrent(
                 new float3(payloadPosition.x, payloadPosition.y, payloadPosition.z),
                 time,
@@ -908,112 +907,6 @@ namespace Hecton8.Physics
             _segmentRestLengthsDirty = false;
         }
 
-        private void ApplyHardConstraint(int anchorCount)
-        {
-            int segmentCount = anchorCount - 1;
-            for (int i = 0; i < segmentCount; i++)
-            {
-                Vector3 start = _anchorPositions[i];
-                Vector3 end = _anchorPositions[i + 1];
-                Vector3 solverStart = _solverAnchorPositions[i];
-                Vector3 solverEnd = _solverAnchorPositions[i + 1];
-                Vector3 delta = solverEnd - solverStart;
-                float currentDistance = delta.magnitude;
-                if (currentDistance <= MinDistance)
-                    continue;
-
-                float hardLimit = _segmentRestLengths[i] * NonElasticLimitRatio;
-                float overExtension = currentDistance - hardLimit;
-                if (overExtension <= 0f)
-                    continue;
-
-                Vector3 solverDirection = delta / currentDistance;
-                Vector3 worldDirection = ResolveSolverDirectionToWorld(solverDirection);
-                bool startDynamic = i == 0;
-                bool endDynamic = i == segmentCount - 1 && !_kinematicAnchorCompensationEnabled;
-                float startInvMass = startDynamic && _playerRigidbody != null
-                    ? 1f / math.max(_playerRigidbody.mass, 0.0001f)
-                    : 0f;
-                float endInvMass = endDynamic && _payloadBody != null && !_payloadBody.isKinematic
-                    ? 1f / math.max(_payloadBody.mass, 0.0001f)
-                    : 0f;
-                float totalInvMass = startInvMass + endInvMass;
-                if (totalInvMass <= 0f)
-                    continue;
-
-                if (startDynamic)
-                {
-                    Vector3 correction = worldDirection * (overExtension * (startInvMass / totalInvMass));
-                    MovePlayerPosition(_playerRigidbody.position + correction);
-                }
-
-                if (endDynamic)
-                {
-                    Vector3 correction = worldDirection * (-overExtension * (endInvMass / totalInvMass));
-                    _payloadBody.MovePosition(_payloadBody.position + correction);
-                }
-
-                Vector3 relativeVelocity = _solverAnchorVelocities[i + 1] - _solverAnchorVelocities[i];
-                float relVelAlongCable = Vector3.Dot(relativeVelocity, solverDirection);
-                if (relVelAlongCable <= 0f)
-                    continue;
-
-                Vector3 velocityCorrection = worldDirection * relVelAlongCable;
-                if (startDynamic)
-                    ApplyPlayerVelocityChange(velocityCorrection * (startInvMass / totalInvMass));
-                if (endDynamic)
-                    PhysicsForceRouter.QueueForce(_payloadBody, -velocityCorrection * (endInvMass / totalInvMass), ForceMode.VelocityChange);
-            }
-        }
-
-        private float ApplySpringForces(int anchorCount)
-        {
-            int segmentCount = anchorCount - 1;
-            Vector3 playerAcceleration = Vector3.zero;
-            Vector3 payloadAcceleration = Vector3.zero;
-            float peakTension = 0f;
-
-            for (int i = 0; i < segmentCount; i++)
-            {
-                Vector3 solverStart = _solverAnchorPositions[i];
-                Vector3 solverEnd = _solverAnchorPositions[i + 1];
-                Vector3 delta = solverEnd - solverStart;
-                float currentDistance = delta.magnitude;
-                if (currentDistance <= MinDistance)
-                    continue;
-
-                Vector3 solverDirection = delta / currentDistance;
-                float extension = currentDistance - _segmentRestLengths[i];
-                if (extension <= 0f)
-                    continue;
-
-                Vector3 relativeVelocity = _solverAnchorVelocities[i + 1] - _solverAnchorVelocities[i];
-                float relVelAlongCable = Vector3.Dot(relativeVelocity, solverDirection);
-                float springForce = _springStiffness * extension;
-                float dampingForce = _dampingCoefficient * relVelAlongCable;
-                float tension = springForce + dampingForce;
-                if (tension <= 0f)
-                    continue;
-
-                if (tension > peakTension)
-                    peakTension = tension;
-
-                Vector3 worldDirection = ResolveSolverDirectionToWorld(solverDirection);
-                if (i == 0)
-                    playerAcceleration += worldDirection * tension;
-
-                if (i == segmentCount - 1 && !_kinematicAnchorCompensationEnabled)
-                    payloadAcceleration += -worldDirection * tension;
-            }
-
-            ApplyPlayerAcceleration(playerAcceleration);
-            ApplyClampedAcceleration(_payloadBody, payloadAcceleration, _maxCableAcceleration);
-
-            float extensionTotal = math.max(0f, _currentLength - _restLength);
-            _tension01 = math.saturate(extensionTotal / math.max(_fullTensionExtension, 0.01f));
-            return peakTension;
-        }
-
         private void UpdateTowDirectionResponse()
         {
             if (_owner == null)
@@ -1049,6 +942,12 @@ namespace Hecton8.Physics
             _owner.ApplyTowLoad(_towDragMultiplier);
         }
 
+        private void UpdateConstraintTelemetry()
+        {
+            float extensionTotal = math.max(0f, _currentLength - _restLength);
+            _tension01 = math.saturate(extensionTotal / math.max(_fullTensionExtension, 0.01f));
+        }
+
         private bool UpdateStressAndSnap(float peakTension, float fixedDeltaTime)
         {
             float snapThreshold = math.max(1f, _owner != null ? _owner.ResolveSnapTensionThreshold() : 1f);
@@ -1074,6 +973,7 @@ namespace Hecton8.Physics
                 ? (_bendPoints[_bendPointCount - 1] - _payloadBody.worldCenterOfMass).normalized
                 : (_owner.ResolveTowAnchorPosition() - _payloadBody.worldCenterOfMass).normalized;
             float snapSeverity = math.saturate(peakTension / snapThreshold);
+            ReleasePrimaryConstraint();
             _owner.HandleTetherSnap(playerSegmentDirection, payloadSegmentDirection, snapSeverity, false, _payloadBody, _payloadCollider);
             return true;
         }
@@ -1203,41 +1103,6 @@ namespace Hecton8.Physics
             _payloadDrift01 = 0f;
         }
 
-        private void MovePlayerPosition(Vector3 position)
-        {
-            if (_playerMotor != null)
-            {
-                _playerMotor.MovePosition(position);
-                return;
-            }
-
-            if (_playerRigidbody != null)
-                _playerRigidbody.MovePosition(position);
-        }
-
-        private void ApplyPlayerAcceleration(Vector3 acceleration)
-        {
-            if (_playerMotor != null)
-            {
-                _playerMotor.ApplyAcceleration(ClampVector(acceleration, _maxCableAcceleration));
-                return;
-            }
-
-            ApplyClampedAcceleration(_playerRigidbody, acceleration, _maxCableAcceleration);
-        }
-
-        private void ApplyPlayerVelocityChange(Vector3 velocityChange)
-        {
-            if (_playerMotor != null)
-            {
-                _playerMotor.ApplyVelocityChange(velocityChange);
-                return;
-            }
-
-            if (_playerRigidbody != null && velocityChange.sqrMagnitude > MinVectorMagnitudeSq)
-                PhysicsForceRouter.QueueForce(_playerRigidbody, velocityChange, ForceMode.VelocityChange);
-        }
-
         private static void ApplyClampedAcceleration(Rigidbody body, Vector3 acceleration, float maxAcceleration)
         {
             if (body == null)
@@ -1288,6 +1153,8 @@ namespace Hecton8.Physics
             GlobalPhysicsStateManager.RegisterTetherConnection(this, _playerRigidbody, _payloadBody);
             RefreshKinematicAnchorCompensationState(forceRecalculateDamping: true);
             RecalculateDampingCoefficient();
+            if (_owner != null && _payloadBody != null)
+                SyncPrimaryConstraint(_owner.ResolveTowAnchorPosition(), _payloadBody.worldCenterOfMass);
         }
 
         internal bool TryGetPayloadBody(out Rigidbody payloadBody)
@@ -1322,6 +1189,85 @@ namespace Hecton8.Physics
             _solveInPlatformLocalSpace = true;
         }
 
+        private void EnsurePrimaryConstraint(Vector3 anchorPositionWS, Vector3 payloadPositionWS)
+        {
+            SyncPrimaryConstraint(anchorPositionWS, payloadPositionWS);
+        }
+
+        private void SyncPrimaryConstraint(Vector3 anchorPositionWS, Vector3 payloadPositionWS)
+        {
+            if (_payloadBody == null || _playerRigidbody == null)
+            {
+                ReleasePrimaryConstraint();
+                return;
+            }
+
+            Vector3 constraintAnchorPosition = _bendPointCount > 0
+                ? _bendPoints[_bendPointCount - 1]
+                : anchorPositionWS;
+            Vector3 separation = payloadPositionWS - constraintAnchorPosition;
+            float distance = separation.magnitude;
+            if (distance <= MinDistance)
+            {
+                _primaryConstraintForceMagnitude = 0f;
+                return;
+            }
+
+            Vector3 directionAwayFromAnchor = separation / distance;
+            Vector3 directionTowardAnchor = -directionAwayFromAnchor;
+            float targetDistance = ResolvePrimaryConstraintTargetDistance();
+            float extension = distance - targetDistance;
+            if (extension <= 0f)
+            {
+                _primaryConstraintForceMagnitude = 0f;
+                return;
+            }
+
+            Vector3 anchorVelocity = _bendPointCount > 0
+                ? Vector3.zero
+                : _playerRigidbody.GetPointVelocity(anchorPositionWS);
+            Vector3 payloadVelocity = _payloadBody.GetPointVelocity(payloadPositionWS);
+            float separationSpeed = Vector3.Dot(payloadVelocity - anchorVelocity, directionAwayFromAnchor);
+            float requestedAcceleration = (extension * math.max(0f, _springStiffness)) + (separationSpeed * math.max(0f, _dampingCoefficient));
+            if (requestedAcceleration <= 0f)
+            {
+                _primaryConstraintForceMagnitude = 0f;
+                return;
+            }
+
+            _primaryConstraintForceMagnitude = requestedAcceleration;
+            ApplyClampedAcceleration(_payloadBody, directionTowardAnchor * requestedAcceleration, _maxCableAcceleration);
+        }
+
+        private void RefreshPrimaryConstraintDrive()
+        {
+            _primaryConstraintForceMagnitude = 0f;
+        }
+
+        private float ResolvePrimaryConstraintForceMagnitude()
+        {
+            return _primaryConstraintForceMagnitude;
+        }
+
+        private void ReleasePrimaryConstraint()
+        {
+            _primaryConstraintForceMagnitude = 0f;
+        }
+
+        private float ResolvePrimaryConstraintTargetDistance()
+        {
+            int lastSegmentIndex = _bendPointCount;
+            if (_segmentRestLengthsDirty ||
+                lastSegmentIndex < 0 ||
+                lastSegmentIndex >= MaxSegments ||
+                _segmentRestLengths[lastSegmentIndex] <= MinDistance)
+            {
+                return math.max(_restLength, MinDistance);
+            }
+
+            return math.max(_segmentRestLengths[lastSegmentIndex], MinDistance);
+        }
+
         private void PopulateSolverAnchors(int anchorCount)
         {
             if (_solveInPlatformLocalSpace && _solverPlatform != null && _solverPlatformTransform != null)
@@ -1351,18 +1297,6 @@ namespace Hecton8.Physics
                 _solverAnchorPositions[i] = _anchorPositions[i];
                 _solverAnchorVelocities[i] = _anchorVelocities[i];
             }
-        }
-
-        private Vector3 ResolveSolverDirectionToWorld(Vector3 solverDirection)
-        {
-            if (!_solveInPlatformLocalSpace)
-                return solverDirection;
-
-            Vector3 worldDirection = _solverLocalToWorldMatrix.MultiplyVector(solverDirection);
-            if (worldDirection.sqrMagnitude <= MinVectorMagnitudeSq)
-                return Vector3.zero;
-
-            return worldDirection.normalized;
         }
 
         private bool InvalidateBendPointsForDynamicVoxelChange()
@@ -1426,6 +1360,14 @@ namespace Hecton8.Physics
             _kinematicAnchorCompensationEnabled = nextState;
             if (_playerRigidbody != null && _payloadBody != null)
                 RecalculateDampingCoefficient();
+        }
+
+        private static float ResolveBlendFactor(float sharpness, float deltaTime)
+        {
+            if (sharpness <= 0f || deltaTime <= 0f)
+                return 0f;
+
+            return math.saturate(sharpness * deltaTime);
         }
     }
 }

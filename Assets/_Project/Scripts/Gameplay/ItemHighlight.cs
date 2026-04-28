@@ -34,7 +34,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Renderer))]
-    public sealed class ItemHighlight : MonoBehaviour, ITickable
+    public sealed class ItemHighlight : MonoBehaviour, ITickable, IUpdatable
     {
         // ═════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -227,10 +227,8 @@ namespace Hecton8.Gameplay
         {
             if (_tickRegistered) return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null) return;
-
-            tickManager.Register((ITickable)this);
+            SystemDispatcher.EnsureRuntimeInstance();
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _tickRegistered = true;
         }
 
@@ -238,10 +236,7 @@ namespace Hecton8.Gameplay
         {
             if (!_tickRegistered) return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister((ITickable)this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _tickRegistered = false;
         }
 

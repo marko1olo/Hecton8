@@ -1,62 +1,62 @@
-// ============================================================================
-// HECTON-8 — HectonBoidController.cs
+﻿// ============================================================================
+// HECTON-8 â€” HectonBoidController.cs
 // GPU-based Boid System Controller.
 //
-// ОТВЕТСТВЕННОСТИ:
-//   1. Инициализация ComputeBuffer с начальными позициями рыб.
-//   2. Каждый кадр: передача uniforms → Dispatch → Indirect Draw.
-//   3. Frustum Culling: отключение рендера если стая не видна.
-//   4. Lifecycle: корректный Release буферов при OnDestroy.
+// ÐžÐ¢Ð’Ð•Ð¢Ð¡Ð¢Ð’Ð•ÐÐÐžÐ¡Ð¢Ð˜:
+//   1. Ð˜Ð½Ð¸Ñ†Ð¸Ð°Ð»Ð¸Ð·Ð°Ñ†Ð¸Ñ GraphicsBuffer Ñ Ð½Ð°Ñ‡Ð°Ð»ÑŒÐ½Ñ‹Ð¼Ð¸ Ð¿Ð¾Ð·Ð¸Ñ†Ð¸ÑÐ¼Ð¸ Ñ€Ñ‹Ð±.
+//   2. ÐšÐ°Ð¶Ð´Ñ‹Ð¹ ÐºÐ°Ð´Ñ€: Ð¿ÐµÑ€ÐµÐ´Ð°Ñ‡Ð° uniforms â†’ Dispatch â†’ Indirect Draw.
+//   3. Frustum Culling: Ð¾Ñ‚ÐºÐ»ÑŽÑ‡ÐµÐ½Ð¸Ðµ Ñ€ÐµÐ½Ð´ÐµÑ€Ð° ÐµÑÐ»Ð¸ ÑÑ‚Ð°Ñ Ð½Ðµ Ð²Ð¸Ð´Ð½Ð°.
+//   4. Lifecycle: ÐºÐ¾Ñ€Ñ€ÐµÐºÑ‚Ð½Ñ‹Ð¹ Release Ð±ÑƒÑ„ÐµÑ€Ð¾Ð² Ð¿Ñ€Ð¸ OnDestroy.
 //
-// АРХИТЕКТУРА:
-//   • ITickable — интеграция с GameTickManager. Нет Update().
-//   • Graphics.RenderMeshIndirect (Unity 6) — один draw call на 5000 рыб.
-//   • Ping-Pong ComputeBuffer — два буфера, swap каждый кадр, zero race conditions.
-//   • MaterialPropertyBlock — zero GC per-frame (reuse).
+// ÐÐ Ð¥Ð˜Ð¢Ð•ÐšÐ¢Ð£Ð Ð:
+//   â€¢ ITickable â€” Ð¸Ð½Ñ‚ÐµÐ³Ñ€Ð°Ñ†Ð¸Ñ Ñ GameTickManager. ÐÐµÑ‚ Update().
+//   â€¢ Graphics.RenderMeshPrimitives (Unity 6) â€” Ð¾Ð´Ð¸Ð½ draw call Ð½Ð° 5000 Ñ€Ñ‹Ð±.
+//   â€¢ Ping-Pong GraphicsBuffer â€” Ð´Ð²Ð° Ð±ÑƒÑ„ÐµÑ€Ð°, swap ÐºÐ°Ð¶Ð´Ñ‹Ð¹ ÐºÐ°Ð´Ñ€, zero race conditions.
+//   â€¢ MaterialPropertyBlock â€” zero GC per-frame (reuse).
 //
 // PING-PONG ARCHITECTURE:
-//   Каждый кадр compute shader читает из _BoidsBufferRead и пишет в _BoidsBufferWrite.
-//   После dispatch буферы логически меняются местами через _frameIndex % 2.
-//   Vertex shader всегда читает из буфера, в который только что записали (writeBuffer).
-//   Никаких аллокаций — только переприсвоение ссылок на существующие буферы.
+//   ÐšÐ°Ð¶Ð´Ñ‹Ð¹ ÐºÐ°Ð´Ñ€ compute shader Ñ‡Ð¸Ñ‚Ð°ÐµÑ‚ Ð¸Ð· _BoidsBufferRead Ð¸ Ð¿Ð¸ÑˆÐµÑ‚ Ð² _BoidsBufferWrite.
+//   ÐŸÐ¾ÑÐ»Ðµ dispatch Ð±ÑƒÑ„ÐµÑ€Ñ‹ Ð»Ð¾Ð³Ð¸Ñ‡ÐµÑÐºÐ¸ Ð¼ÐµÐ½ÑÑŽÑ‚ÑÑ Ð¼ÐµÑÑ‚Ð°Ð¼Ð¸ Ñ‡ÐµÑ€ÐµÐ· _frameIndex % 2.
+//   Vertex shader Ð²ÑÐµÐ³Ð´Ð° Ñ‡Ð¸Ñ‚Ð°ÐµÑ‚ Ð¸Ð· Ð±ÑƒÑ„ÐµÑ€Ð°, Ð² ÐºÐ¾Ñ‚Ð¾Ñ€Ñ‹Ð¹ Ñ‚Ð¾Ð»ÑŒÐºÐ¾ Ñ‡Ñ‚Ð¾ Ð·Ð°Ð¿Ð¸ÑÐ°Ð»Ð¸ (writeBuffer).
+//   ÐÐ¸ÐºÐ°ÐºÐ¸Ñ… Ð°Ð»Ð»Ð¾ÐºÐ°Ñ†Ð¸Ð¹ â€” Ñ‚Ð¾Ð»ÑŒÐºÐ¾ Ð¿ÐµÑ€ÐµÐ¿Ñ€Ð¸ÑÐ²Ð¾ÐµÐ½Ð¸Ðµ ÑÑÑ‹Ð»Ð¾Ðº Ð½Ð° ÑÑƒÑ‰ÐµÑÑ‚Ð²ÑƒÑŽÑ‰Ð¸Ðµ Ð±ÑƒÑ„ÐµÑ€Ñ‹.
 //
 // RENDERING:
-//   Instanced rendering через StructuredBuffer в vertex shader.
-//   Каждый instance читает свою BoidData из буфера по SV_InstanceID.
+//   Instanced rendering Ñ‡ÐµÑ€ÐµÐ· StructuredBuffer Ð² vertex shader.
+//   ÐšÐ°Ð¶Ð´Ñ‹Ð¹ instance Ñ‡Ð¸Ñ‚Ð°ÐµÑ‚ ÑÐ²Ð¾ÑŽ BoidData Ð¸Ð· Ð±ÑƒÑ„ÐµÑ€Ð° Ð¿Ð¾ SV_InstanceID.
 //   Vertex shader: position + LookRotation(velocity) + scale.
 //
 // 3D DEPTH TRACKING (v2.1):
-//   UpdateTarget() следует за игроком по всем трём осям (X, Y, Z).
-//   Ось Y ограничена: верхняя граница бокса (center.y + boundsSize.y)
-//   не может превышать waterSurfaceY. Это гарантирует, что стая
-//   погружается вместе с игроком, но никогда не пробивает поверхность.
+//   UpdateTarget() ÑÐ»ÐµÐ´ÑƒÐµÑ‚ Ð·Ð° Ð¸Ð³Ñ€Ð¾ÐºÐ¾Ð¼ Ð¿Ð¾ Ð²ÑÐµÐ¼ Ñ‚Ñ€Ñ‘Ð¼ Ð¾ÑÑÐ¼ (X, Y, Z).
+//   ÐžÑÑŒ Y Ð¾Ð³Ñ€Ð°Ð½Ð¸Ñ‡ÐµÐ½Ð°: Ð²ÐµÑ€Ñ…Ð½ÑÑ Ð³Ñ€Ð°Ð½Ð¸Ñ†Ð° Ð±Ð¾ÐºÑÐ° (center.y + boundsSize.y)
+//   Ð½Ðµ Ð¼Ð¾Ð¶ÐµÑ‚ Ð¿Ñ€ÐµÐ²Ñ‹ÑˆÐ°Ñ‚ÑŒ waterSurfaceY. Ð­Ñ‚Ð¾ Ð³Ð°Ñ€Ð°Ð½Ñ‚Ð¸Ñ€ÑƒÐµÑ‚, Ñ‡Ñ‚Ð¾ ÑÑ‚Ð°Ñ
+//   Ð¿Ð¾Ð³Ñ€ÑƒÐ¶Ð°ÐµÑ‚ÑÑ Ð²Ð¼ÐµÑÑ‚Ðµ Ñ Ð¸Ð³Ñ€Ð¾ÐºÐ¾Ð¼, Ð½Ð¾ Ð½Ð¸ÐºÐ¾Ð³Ð´Ð° Ð½Ðµ Ð¿Ñ€Ð¾Ð±Ð¸Ð²Ð°ÐµÑ‚ Ð¿Ð¾Ð²ÐµÑ€Ñ…Ð½Ð¾ÑÑ‚ÑŒ.
 //
 // GPU MEMORY SAFETY (v2.2):
-//   • InitializeBuffers() вызывает Release() на старые буферы перед
-//     созданием новых. Предотвращает утечку VRAM при повторном вызове.
-//   • _fallbackHeightMap создаётся ТОЛЬКО если == null. Переиспользуется
-//     при повторных вызовах. Уничтожается только в ReleaseBuffers().
-//   • Awake() защищён от double-init: если _initialized — сначала Release.
-//   • NativeArray<byte> для заполнения fallback текстуры (zero managed alloc).
+//   â€¢ InitializeBuffers() Ð²Ñ‹Ð·Ñ‹Ð²Ð°ÐµÑ‚ Release() Ð½Ð° ÑÑ‚Ð°Ñ€Ñ‹Ðµ Ð±ÑƒÑ„ÐµÑ€Ñ‹ Ð¿ÐµÑ€ÐµÐ´
+//     ÑÐ¾Ð·Ð´Ð°Ð½Ð¸ÐµÐ¼ Ð½Ð¾Ð²Ñ‹Ñ…. ÐŸÑ€ÐµÐ´Ð¾Ñ‚Ð²Ñ€Ð°Ñ‰Ð°ÐµÑ‚ ÑƒÑ‚ÐµÑ‡ÐºÑƒ VRAM Ð¿Ñ€Ð¸ Ð¿Ð¾Ð²Ñ‚Ð¾Ñ€Ð½Ð¾Ð¼ Ð²Ñ‹Ð·Ð¾Ð²Ðµ.
+//   â€¢ _fallbackHeightMap ÑÐ¾Ð·Ð´Ð°Ñ‘Ñ‚ÑÑ Ð¢ÐžÐ›Ð¬ÐšÐž ÐµÑÐ»Ð¸ == null. ÐŸÐµÑ€ÐµÐ¸ÑÐ¿Ð¾Ð»ÑŒÐ·ÑƒÐµÑ‚ÑÑ
+//     Ð¿Ñ€Ð¸ Ð¿Ð¾Ð²Ñ‚Ð¾Ñ€Ð½Ñ‹Ñ… Ð²Ñ‹Ð·Ð¾Ð²Ð°Ñ…. Ð£Ð½Ð¸Ñ‡Ñ‚Ð¾Ð¶Ð°ÐµÑ‚ÑÑ Ñ‚Ð¾Ð»ÑŒÐºÐ¾ Ð² ReleaseBuffers().
+//   â€¢ Awake() Ð·Ð°Ñ‰Ð¸Ñ‰Ñ‘Ð½ Ð¾Ñ‚ double-init: ÐµÑÐ»Ð¸ _initialized â€” ÑÐ½Ð°Ñ‡Ð°Ð»Ð° Release.
+//   â€¢ NativeArray<byte> Ð´Ð»Ñ Ð·Ð°Ð¿Ð¾Ð»Ð½ÐµÐ½Ð¸Ñ fallback Ñ‚ÐµÐºÑÑ‚ÑƒÑ€Ñ‹ (zero managed alloc).
 //
-// PERFORMANCE на MX350 (целевое железо):
+// PERFORMANCE Ð½Ð° MX350 (Ñ†ÐµÐ»ÐµÐ²Ð¾Ðµ Ð¶ÐµÐ»ÐµÐ·Ð¾):
 //   5000 boids: Compute ~0.5ms, Draw ~0.3ms = ~0.8ms total.
 //   Instanced draw: 1 draw call (vs 5000 GameObjects = 5000 calls).
 //   CPU: ~0.01ms (uniform upload + dispatch + draw).
 //
 // HEIGHTMAP INTEGRATION:
-//   Terrain heightmap передаётся как Texture2D.
-//   Можно захватить через Terrain.terrainData.heightmapTexture
-//   или отрисовать через Camera.RenderTexture (для MapMagic multi-tile).
+//   Terrain heightmap Ð¿ÐµÑ€ÐµÐ´Ð°Ñ‘Ñ‚ÑÑ ÐºÐ°Ðº Texture2D.
+//   ÐœÐ¾Ð¶Ð½Ð¾ Ð·Ð°Ñ…Ð²Ð°Ñ‚Ð¸Ñ‚ÑŒ Ñ‡ÐµÑ€ÐµÐ· Terrain.terrainData.heightmapTexture
+//   Ð¸Ð»Ð¸ Ð¾Ñ‚Ñ€Ð¸ÑÐ¾Ð²Ð°Ñ‚ÑŒ Ñ‡ÐµÑ€ÐµÐ· Camera.RenderTexture (Ð´Ð»Ñ MapMagic multi-tile).
 //
 // ZERO GC:
-//   • Все буферы аллоцированы в Awake, освобождены в OnDestroy.
-//   • BoidData — struct (blittable, no GC pressure).
-//   • MaterialPropertyBlock.SetBuffer — zero GC (reuse).
-//   • ComputeShader.SetFloat/SetVector/SetInt — zero GC.
-//   • Graphics.RenderMeshIndirect — zero GC.
-//   • GeometryUtility.TestPlanesAABB — zero GC (struct arrays).
-//   • Ping-Pong swap — integer increment, zero allocation.
+//   â€¢ Ð’ÑÐµ Ð±ÑƒÑ„ÐµÑ€Ñ‹ Ð°Ð»Ð»Ð¾Ñ†Ð¸Ñ€Ð¾Ð²Ð°Ð½Ñ‹ Ð² Awake, Ð¾ÑÐ²Ð¾Ð±Ð¾Ð¶Ð´ÐµÐ½Ñ‹ Ð² OnDestroy.
+//   â€¢ BoidData â€” struct (blittable, no GC pressure).
+//   â€¢ MaterialPropertyBlock.SetBuffer â€” zero GC (reuse).
+//   â€¢ ComputeShader.SetFloat/SetVector/SetInt â€” zero GC.
+//   â€¢ Graphics.RenderMeshPrimitives â€” zero GC.
+//   â€¢ GeometryUtility.TestPlanesAABB â€” zero GC (struct arrays).
+//   â€¢ Ping-Pong swap â€” integer increment, zero allocation.
 // ============================================================================
 
 using Hecton8.Core;
@@ -68,17 +68,17 @@ using UnityEngine.Rendering;
 namespace Hecton8.AI.GPU
 {
     [DisallowMultipleComponent]
-    public sealed class HectonBoidController : MonoBehaviour, ITickable
+    public sealed class HectonBoidController : MonoBehaviour, ITickable, IUpdatable
     {
-        // ══════════════════════════════════════════════════════════
-        //  BOID DATA — must match compute shader struct exactly
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  BOID DATA â€” must match compute shader struct exactly
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>
         /// GPU-compatible boid data structure.
-        /// 32 bytes total (8 floats × 4 bytes).
+        /// 32 bytes total (8 floats Ã— 4 bytes).
         /// Matches HLSL struct BoidData layout exactly.
-        /// Blittable — no GC, direct GPU upload.
+        /// Blittable â€” no GC, direct GPU upload.
         /// </summary>
         private struct BoidData
         {
@@ -90,33 +90,33 @@ namespace Hecton8.AI.GPU
         }
 
         /// <summary>Stride of BoidData in bytes. Must match GPU struct.</summary>
-        private const int BoidStride = 32; // 8 × sizeof(float)
+        private const int BoidStride = 32; // 8 Ã— sizeof(float)
 
-        // ══════════════════════════════════════════════════════════
-        //  INSPECTOR — CORE
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  INSPECTOR â€” CORE
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        [Header("── Core References ───────────────────────────")]
-        [Tooltip("Compute Shader для симуляции бойдов.")]
+        [Header("â”€â”€ Core References â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Tooltip("Compute Shader Ð´Ð»Ñ ÑÐ¸Ð¼ÑƒÐ»ÑÑ†Ð¸Ð¸ Ð±Ð¾Ð¹Ð´Ð¾Ð².")]
         [SerializeField] private ComputeShader boidShader;
 
-        [Tooltip("Mesh одной рыбы (low-poly, ~100-300 tris).")]
+        [Tooltip("Mesh Ð¾Ð´Ð½Ð¾Ð¹ Ñ€Ñ‹Ð±Ñ‹ (low-poly, ~100-300 tris).")]
         [SerializeField] private Mesh fishMesh;
 
-        [Tooltip("Material для instanced рендера. Должен поддерживать " +
-                 "StructuredBuffer<BoidData> в vertex shader.")]
+        [Tooltip("Material Ð´Ð»Ñ instanced Ñ€ÐµÐ½Ð´ÐµÑ€Ð°. Ð”Ð¾Ð»Ð¶ÐµÐ½ Ð¿Ð¾Ð´Ð´ÐµÑ€Ð¶Ð¸Ð²Ð°Ñ‚ÑŒ " +
+                 "StructuredBuffer<BoidData> Ð² vertex shader.")]
         [SerializeField] private Material fishMaterial;
 
-        [Header("── Population ────────────────────────────────")]
-        [Tooltip("Количество рыб в стае. Max recommended: 5000.")]
+        [Header("â”€â”€ Population â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Tooltip("ÐšÐ¾Ð»Ð¸Ñ‡ÐµÑÑ‚Ð²Ð¾ Ñ€Ñ‹Ð± Ð² ÑÑ‚Ð°Ðµ. Max recommended: 5000.")]
         [Range(64, 8192)]
         [SerializeField] private int boidCount = 2000;
 
-        // ══════════════════════════════════════════════════════════
-        //  INSPECTOR — BOID RULES
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  INSPECTOR â€” BOID RULES
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        [Header("── Boid Weights ──────────────────────────────")]
+        [Header("â”€â”€ Boid Weights â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [SerializeField] private float separationWeight = 2.5f;
         [SerializeField] private float alignmentWeight  = 1.0f;
         [SerializeField] private float cohesionWeight   = 1.0f;
@@ -124,59 +124,59 @@ namespace Hecton8.AI.GPU
         [SerializeField] private float obstacleWeight   = 3.0f;
         [SerializeField] private float boundsWeight     = 1.5f;
 
-        [Header("── Boid Radii ────────────────────────────────")]
-        [Tooltip("Радиус восприятия (alignment + cohesion).")]
+        [Header("â”€â”€ Boid Radii â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Tooltip("Ð Ð°Ð´Ð¸ÑƒÑ Ð²Ð¾ÑÐ¿Ñ€Ð¸ÑÑ‚Ð¸Ñ (alignment + cohesion).")]
         [SerializeField] private float perceptionRadius    = 5f;
-        [Tooltip("Радиус разделения (separation). Должен быть < perception.")]
+        [Tooltip("Ð Ð°Ð´Ð¸ÑƒÑ Ñ€Ð°Ð·Ð´ÐµÐ»ÐµÐ½Ð¸Ñ (separation). Ð”Ð¾Ð»Ð¶ÐµÐ½ Ð±Ñ‹Ñ‚ÑŒ < perception.")]
         [SerializeField] private float separationRadius    = 2f;
-        [Tooltip("Высота над дном, с которой начинается уклонение.")]
+        [Tooltip("Ð’Ñ‹ÑÐ¾Ñ‚Ð° Ð½Ð°Ð´ Ð´Ð½Ð¾Ð¼, Ñ ÐºÐ¾Ñ‚Ð¾Ñ€Ð¾Ð¹ Ð½Ð°Ñ‡Ð¸Ð½Ð°ÐµÑ‚ÑÑ ÑƒÐºÐ»Ð¾Ð½ÐµÐ½Ð¸Ðµ.")]
         [SerializeField] private float obstacleAvoidRadius = 5f;
 
-        [Header("── Speed ─────────────────────────────────────")]
+        [Header("â”€â”€ Speed â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [SerializeField] private float minSpeed = 2f;
         [SerializeField] private float maxSpeed = 6f;
 
-        // ══════════════════════════════════════════════════════════
-        //  INSPECTOR — SPAWN ZONE
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  INSPECTOR â€” SPAWN ZONE
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        [Header("── Simulation Zone ───────────────────────────")]
-        [Tooltip("Центр зоны симуляции (мировые координаты).")]
+        [Header("â”€â”€ Simulation Zone â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Tooltip("Ð¦ÐµÐ½Ñ‚Ñ€ Ð·Ð¾Ð½Ñ‹ ÑÐ¸Ð¼ÑƒÐ»ÑÑ†Ð¸Ð¸ (Ð¼Ð¸Ñ€Ð¾Ð²Ñ‹Ðµ ÐºÐ¾Ð¾Ñ€Ð´Ð¸Ð½Ð°Ñ‚Ñ‹).")]
         [SerializeField] private Vector3 boundsCenter = Vector3.zero;
-        [Tooltip("Полуразмеры зоны симуляции.")]
+        [Tooltip("ÐŸÐ¾Ð»ÑƒÑ€Ð°Ð·Ð¼ÐµÑ€Ñ‹ Ð·Ð¾Ð½Ñ‹ ÑÐ¸Ð¼ÑƒÐ»ÑÑ†Ð¸Ð¸.")]
         [SerializeField] private Vector3 boundsSize   = new Vector3(100f, 30f, 100f);
 
-        [Tooltip("Радиус начального спавна вокруг центра.")]
+        [Tooltip("Ð Ð°Ð´Ð¸ÑƒÑ Ð½Ð°Ñ‡Ð°Ð»ÑŒÐ½Ð¾Ð³Ð¾ ÑÐ¿Ð°Ð²Ð½Ð° Ð²Ð¾ÐºÑ€ÑƒÐ³ Ñ†ÐµÐ½Ñ‚Ñ€Ð°.")]
         [SerializeField] private float spawnRadius = 30f;
 
-        // ══════════════════════════════════════════════════════════
-        //  INSPECTOR — HEIGHTMAP
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  INSPECTOR â€” HEIGHTMAP
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        [Header("── Heightmap (Terrain) ───────────────────────")]
-        [Tooltip("Текстура высот из MapMagic/Terrain. " +
-                 "R-канал = нормализованная высота [0..1]. " +
-                 "Если null — obstacle avoidance использует flat plane.")]
+        [Header("â”€â”€ Heightmap (Terrain) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Tooltip("Ð¢ÐµÐºÑÑ‚ÑƒÑ€Ð° Ð²Ñ‹ÑÐ¾Ñ‚ Ð¸Ð· MapMagic/Terrain. " +
+                 "R-ÐºÐ°Ð½Ð°Ð» = Ð½Ð¾Ñ€Ð¼Ð°Ð»Ð¸Ð·Ð¾Ð²Ð°Ð½Ð½Ð°Ñ Ð²Ñ‹ÑÐ¾Ñ‚Ð° [0..1]. " +
+                 "Ð•ÑÐ»Ð¸ null â€” obstacle avoidance Ð¸ÑÐ¿Ð¾Ð»ÑŒÐ·ÑƒÐµÑ‚ flat plane.")]
         [SerializeField] private Texture2D heightMap;
 
-        [Tooltip("Мировая позиция начала террейна (XZ).")]
+        [Tooltip("ÐœÐ¸Ñ€Ð¾Ð²Ð°Ñ Ð¿Ð¾Ð·Ð¸Ñ†Ð¸Ñ Ð½Ð°Ñ‡Ð°Ð»Ð° Ñ‚ÐµÑ€Ñ€ÐµÐ¹Ð½Ð° (XZ).")]
         [SerializeField] private Vector2 worldOffset = Vector2.zero;
 
-        [Tooltip("Мировой размер террейна (XZ).")]
+        [Tooltip("ÐœÐ¸Ñ€Ð¾Ð²Ð¾Ð¹ Ñ€Ð°Ð·Ð¼ÐµÑ€ Ñ‚ÐµÑ€Ñ€ÐµÐ¹Ð½Ð° (XZ).")]
         [SerializeField] private Vector2 worldSize = new Vector2(1024f, 1024f);
 
-        [Tooltip("Масштаб высоты террейна (максимальная Y).")]
+        [Tooltip("ÐœÐ°ÑÑˆÑ‚Ð°Ð± Ð²Ñ‹ÑÐ¾Ñ‚Ñ‹ Ñ‚ÐµÑ€Ñ€ÐµÐ¹Ð½Ð° (Ð¼Ð°ÐºÑÐ¸Ð¼Ð°Ð»ÑŒÐ½Ð°Ñ Y).")]
         [SerializeField] private float heightScale = 100f;
 
-        [Tooltip("Уровень поверхности воды (мировая Y).")]
+        [Tooltip("Ð£Ñ€Ð¾Ð²ÐµÐ½ÑŒ Ð¿Ð¾Ð²ÐµÑ€Ñ…Ð½Ð¾ÑÑ‚Ð¸ Ð²Ð¾Ð´Ñ‹ (Ð¼Ð¸Ñ€Ð¾Ð²Ð°Ñ Y).")]
         [SerializeField] private float waterSurfaceY = 0f;
 
-        // ══════════════════════════════════════════════════════════
-        //  INSPECTOR — RENDERING
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  INSPECTOR â€” RENDERING
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        [Header("── Rendering ─────────────────────────────────")]
-        [Tooltip("Масштаб модели рыбы (uniform).")]
+        [Header("â”€â”€ Rendering â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Tooltip("ÐœÐ°ÑÑˆÑ‚Ð°Ð± Ð¼Ð¾Ð´ÐµÐ»Ð¸ Ñ€Ñ‹Ð±Ñ‹ (uniform).")]
         [SerializeField] private float fishScale = 0.3f;
 
         [Tooltip("Rendering layer mask.")]
@@ -185,33 +185,33 @@ namespace Hecton8.AI.GPU
         [Tooltip("Shadow casting mode for instanced fish.")]
         [SerializeField] private ShadowCastingMode shadowMode = ShadowCastingMode.Off;
 
-        // ══════════════════════════════════════════════════════════
-        //  INSPECTOR — DIAGNOSTICS
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  INSPECTOR â€” DIAGNOSTICS
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        [Header("── Diagnostics ───────────────────────────────")]
+        [Header("â”€â”€ Diagnostics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [SerializeField] private bool  _debugIsVisible;
         [SerializeField] private float _debugComputeMs;
         [SerializeField] private int   _debugDispatchGroups;
 
-        // ══════════════════════════════════════════════════════════
-        //  COMPUTE SHADER PROPERTY IDs — cached, zero GC
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  COMPUTE SHADER PROPERTY IDs â€” cached, zero GC
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private static class ShaderProps
         {
-            // ── Buffers (Compute Shader — Ping-Pong) ──
+            // â”€â”€ Buffers (Compute Shader â€” Ping-Pong) â”€â”€
             public static readonly int BoidsBufferRead  = Shader.PropertyToID("_BoidsBufferRead");
             public static readonly int BoidsBufferWrite = Shader.PropertyToID("_BoidsBufferWrite");
 
-            // ── Buffer (Material / Vertex Shader) ──
+            // â”€â”€ Buffer (Material / Vertex Shader) â”€â”€
             public static readonly int BoidsBuffer = Shader.PropertyToID("_BoidsBuffer");
 
-            // ── Simulation ──
+            // â”€â”€ Simulation â”€â”€
             public static readonly int BoidCount = Shader.PropertyToID("_BoidCount");
             public static readonly int DeltaTime = Shader.PropertyToID("_DeltaTime");
 
-            // ── Weights ──
+            // â”€â”€ Weights â”€â”€
             public static readonly int SeparationWeight = Shader.PropertyToID("_SeparationWeight");
             public static readonly int AlignmentWeight  = Shader.PropertyToID("_AlignmentWeight");
             public static readonly int CohesionWeight   = Shader.PropertyToID("_CohesionWeight");
@@ -219,23 +219,23 @@ namespace Hecton8.AI.GPU
             public static readonly int ObstacleWeight   = Shader.PropertyToID("_ObstacleWeight");
             public static readonly int BoundsWeight     = Shader.PropertyToID("_BoundsWeight");
 
-            // ── Radii ──
+            // â”€â”€ Radii â”€â”€
             public static readonly int PerceptionRadius    = Shader.PropertyToID("_PerceptionRadius");
             public static readonly int SeparationRadius    = Shader.PropertyToID("_SeparationRadius");
             public static readonly int ObstacleAvoidRadius = Shader.PropertyToID("_ObstacleAvoidRadius");
 
-            // ── Speed ──
+            // â”€â”€ Speed â”€â”€
             public static readonly int MinSpeed = Shader.PropertyToID("_MinSpeed");
             public static readonly int MaxSpeed = Shader.PropertyToID("_MaxSpeed");
 
-            // ── Target ──
+            // â”€â”€ Target â”€â”€
             public static readonly int TargetPosition = Shader.PropertyToID("_TargetPosition");
 
-            // ── Bounds ──
+            // â”€â”€ Bounds â”€â”€
             public static readonly int BoundsCenter = Shader.PropertyToID("_BoundsCenter");
             public static readonly int BoundsSize   = Shader.PropertyToID("_BoundsSize");
 
-            // ── Heightmap ──
+            // â”€â”€ Heightmap â”€â”€
             public static readonly int HeightMap       = Shader.PropertyToID("_HeightMap");
             public static readonly int WorldOffset     = Shader.PropertyToID("_WorldOffset");
             public static readonly int WorldSize       = Shader.PropertyToID("_WorldSize");
@@ -243,39 +243,38 @@ namespace Hecton8.AI.GPU
             public static readonly int WaterSurfaceY   = Shader.PropertyToID("_WaterSurfaceY");
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  GPU BUFFERS — PING-PONG
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  GPU BUFFERS â€” PING-PONG
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>
         /// Ping-Pong buffer A. On even frames: Read. On odd frames: Write.
         /// Created in InitializeBuffers, released in ReleaseBuffers.
         /// </summary>
-        private ComputeBuffer _boidsBufferA;
+        private GraphicsBuffer _boidsBufferA;
 
         /// <summary>
         /// Ping-Pong buffer B. On even frames: Write. On odd frames: Read.
         /// Created in InitializeBuffers, released in ReleaseBuffers.
         /// </summary>
-        private ComputeBuffer _boidsBufferB;
+        private GraphicsBuffer _boidsBufferB;
 
         /// <summary>
         /// Frame counter for Ping-Pong buffer swap.
         /// Incremented each Tick. Used as: _frameIndex % 2.
-        /// Zero allocation swap — only integer arithmetic.
+        /// Zero allocation swap â€” only integer arithmetic.
         /// </summary>
         private int _frameIndex;
 
         /// <summary>
-        /// Args buffer for RenderMeshIndirect.
-        /// 5 uint: [indexCount, instanceCount, startIndex, baseVertex, startInstance].
-        /// Создаётся один раз. Никогда не меняется (кроме OnValidate).
+        /// GPU draw state.
+        /// Direct instance count is issued from CPU-side render params.
+        /// Ð¡Ð¾Ð·Ð´Ð°Ñ‘Ñ‚ÑÑ Ð¾Ð´Ð¸Ð½ Ñ€Ð°Ð·. ÐÐ¸ÐºÐ¾Ð³Ð´Ð° Ð½Ðµ Ð¼ÐµÐ½ÑÐµÑ‚ÑÑ (ÐºÑ€Ð¾Ð¼Ðµ OnValidate).
         /// </summary>
-        private GraphicsBuffer _argsBuffer;
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  CACHED STATE
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>Kernel index for CSMain.</summary>
         private int _kernelCSMain;
@@ -286,7 +285,7 @@ namespace Hecton8.AI.GPU
         /// <summary>Number of dispatch groups = ceil(boidCount / threadGroupSize).</summary>
         private int _dispatchGroupCount;
 
-        /// <summary>Кэшированный Transform игрока.</summary>
+        /// <summary>ÐšÑÑˆÐ¸Ñ€Ð¾Ð²Ð°Ð½Ð½Ñ‹Ð¹ Transform Ð¸Ð³Ñ€Ð¾ÐºÐ°.</summary>
         private Transform _playerTransform;
 
         /// <summary>Target position (follows player).</summary>
@@ -295,7 +294,7 @@ namespace Hecton8.AI.GPU
         /// <summary>
         /// Pre-allocated Plane[6] for frustum culling.
         /// GeometryUtility.CalculateFrustumPlanes fills this array.
-        /// Reused every frame — zero GC.
+        /// Reused every frame â€” zero GC.
         /// </summary>
         private readonly Plane[] _frustumPlanes = new Plane[6];
 
@@ -305,18 +304,18 @@ namespace Hecton8.AI.GPU
         /// </summary>
         private Bounds _simulationBounds;
 
-        /// <summary>MaterialPropertyBlock for instanced rendering. Reused — zero GC.</summary>
+        /// <summary>MaterialPropertyBlock for instanced rendering. Reused â€” zero GC.</summary>
         private MaterialPropertyBlock _materialProps;
 
-        /// <summary>Кэшированная камера.</summary>
+        /// <summary>ÐšÑÑˆÐ¸Ñ€Ð¾Ð²Ð°Ð½Ð½Ð°Ñ ÐºÐ°Ð¼ÐµÑ€Ð°.</summary>
         private Camera _mainCamera;
 
         /// <summary>Is system initialized and ready.</summary>
         private bool _initialized;
 
         /// <summary>
-        /// RenderParams для Graphics.RenderMeshIndirect (Unity 6).
-        /// Создаётся один раз.
+        /// RenderParams Ð´Ð»Ñ Graphics.RenderMeshPrimitives (Unity 6).
+        /// Ð¡Ð¾Ð·Ð´Ð°Ñ‘Ñ‚ÑÑ Ð¾Ð´Ð¸Ð½ Ñ€Ð°Ð·.
         /// </summary>
         private RenderParams _renderParams;
 
@@ -327,33 +326,35 @@ namespace Hecton8.AI.GPU
         /// </summary>
         private Texture2D _fallbackHeightMap;
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  LIFECYCLE
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>
         /// Initialization entry point.
         ///
-        /// v2.2 FIX: Добавлена защита от повторного вызова через _initialized.
-        /// Если Awake вызывается повторно (edge case: скрипт пересоздан
-        /// через Reset в Inspector, или ошибка в наследнике), старые
-        /// GPU-ресурсы корректно освобождаются перед созданием новых.
+        /// v2.2 FIX: Ð”Ð¾Ð±Ð°Ð²Ð»ÐµÐ½Ð° Ð·Ð°Ñ‰Ð¸Ñ‚Ð° Ð¾Ñ‚ Ð¿Ð¾Ð²Ñ‚Ð¾Ñ€Ð½Ð¾Ð³Ð¾ Ð²Ñ‹Ð·Ð¾Ð²Ð° Ñ‡ÐµÑ€ÐµÐ· _initialized.
+        /// Ð•ÑÐ»Ð¸ Awake Ð²Ñ‹Ð·Ñ‹Ð²Ð°ÐµÑ‚ÑÑ Ð¿Ð¾Ð²Ñ‚Ð¾Ñ€Ð½Ð¾ (edge case: ÑÐºÑ€Ð¸Ð¿Ñ‚ Ð¿ÐµÑ€ÐµÑÐ¾Ð·Ð´Ð°Ð½
+        /// Ñ‡ÐµÑ€ÐµÐ· Reset Ð² Inspector, Ð¸Ð»Ð¸ Ð¾ÑˆÐ¸Ð±ÐºÐ° Ð² Ð½Ð°ÑÐ»ÐµÐ´Ð½Ð¸ÐºÐµ), ÑÑ‚Ð°Ñ€Ñ‹Ðµ
+        /// GPU-Ñ€ÐµÑÑƒÑ€ÑÑ‹ ÐºÐ¾Ñ€Ñ€ÐµÐºÑ‚Ð½Ð¾ Ð¾ÑÐ²Ð¾Ð±Ð¾Ð¶Ð´Ð°ÑŽÑ‚ÑÑ Ð¿ÐµÑ€ÐµÐ´ ÑÐ¾Ð·Ð´Ð°Ð½Ð¸ÐµÐ¼ Ð½Ð¾Ð²Ñ‹Ñ….
         ///
-        /// БЕЗ ЗАЩИТЫ: каждый повторный вызов создаёт новые ComputeBuffer
-        /// и Texture2D без Release/Destroy старых. Unity НЕ собирает
-        /// GPU-ресурсы через GC — они утекают навсегда до перезапуска.
-        /// На MX350 (2GB VRAM): 5000 boids × 32 bytes × 2 buffers = 320KB
-        /// за каждый вызов. 10 вызовов = 3.2MB.
+        /// Ð‘Ð•Ð— Ð—ÐÐ©Ð˜Ð¢Ð«: ÐºÐ°Ð¶Ð´Ñ‹Ð¹ Ð¿Ð¾Ð²Ñ‚Ð¾Ñ€Ð½Ñ‹Ð¹ Ð²Ñ‹Ð·Ð¾Ð² ÑÐ¾Ð·Ð´Ð°Ñ‘Ñ‚ Ð½Ð¾Ð²Ñ‹Ðµ GraphicsBuffer
+        /// Ð¸ Texture2D Ð±ÐµÐ· Release/Destroy ÑÑ‚Ð°Ñ€Ñ‹Ñ…. Unity ÐÐ• ÑÐ¾Ð±Ð¸Ñ€Ð°ÐµÑ‚
+        /// GPU-Ñ€ÐµÑÑƒÑ€ÑÑ‹ Ñ‡ÐµÑ€ÐµÐ· GC â€” Ð¾Ð½Ð¸ ÑƒÑ‚ÐµÐºÐ°ÑŽÑ‚ Ð½Ð°Ð²ÑÐµÐ³Ð´Ð° Ð´Ð¾ Ð¿ÐµÑ€ÐµÐ·Ð°Ð¿ÑƒÑÐºÐ°.
+        /// ÐÐ° MX350 (2GB VRAM): 5000 boids Ã— 32 bytes Ã— 2 buffers = 320KB
+        /// Ð·Ð° ÐºÐ°Ð¶Ð´Ñ‹Ð¹ Ð²Ñ‹Ð·Ð¾Ð². 10 Ð²Ñ‹Ð·Ð¾Ð²Ð¾Ð² = 3.2MB.
         /// </summary>
         private void Awake()
         {
-            // ── Защита от повторной инициализации (v2.2) ──
-            // Если уже инициализирован — сначала освобождаем старые ресурсы.
-            // Покрывает edge cases:
-            //   • Reset компонента в Inspector во время Play Mode
-            //   • Ошибочный вызов из наследника
-            //   • Unity internal re-Awake (крайне редко, но возможно
-            //     при AddComponent на уже существующий GO)
+            EnsureMaterialPropertyBlock();
+
+            // â”€â”€ Ð—Ð°Ñ‰Ð¸Ñ‚Ð° Ð¾Ñ‚ Ð¿Ð¾Ð²Ñ‚Ð¾Ñ€Ð½Ð¾Ð¹ Ð¸Ð½Ð¸Ñ†Ð¸Ð°Ð»Ð¸Ð·Ð°Ñ†Ð¸Ð¸ (v2.2) â”€â”€
+            // Ð•ÑÐ»Ð¸ ÑƒÐ¶Ðµ Ð¸Ð½Ð¸Ñ†Ð¸Ð°Ð»Ð¸Ð·Ð¸Ñ€Ð¾Ð²Ð°Ð½ â€” ÑÐ½Ð°Ñ‡Ð°Ð»Ð° Ð¾ÑÐ²Ð¾Ð±Ð¾Ð¶Ð´Ð°ÐµÐ¼ ÑÑ‚Ð°Ñ€Ñ‹Ðµ Ñ€ÐµÑÑƒÑ€ÑÑ‹.
+            // ÐŸÐ¾ÐºÑ€Ñ‹Ð²Ð°ÐµÑ‚ edge cases:
+            //   â€¢ Reset ÐºÐ¾Ð¼Ð¿Ð¾Ð½ÐµÐ½Ñ‚Ð° Ð² Inspector Ð²Ð¾ Ð²Ñ€ÐµÐ¼Ñ Play Mode
+            //   â€¢ ÐžÑˆÐ¸Ð±Ð¾Ñ‡Ð½Ñ‹Ð¹ Ð²Ñ‹Ð·Ð¾Ð² Ð¸Ð· Ð½Ð°ÑÐ»ÐµÐ´Ð½Ð¸ÐºÐ°
+            //   â€¢ Unity internal re-Awake (ÐºÑ€Ð°Ð¹Ð½Ðµ Ñ€ÐµÐ´ÐºÐ¾, Ð½Ð¾ Ð²Ð¾Ð·Ð¼Ð¾Ð¶Ð½Ð¾
+            //     Ð¿Ñ€Ð¸ AddComponent Ð½Ð° ÑƒÐ¶Ðµ ÑÑƒÑ‰ÐµÑÑ‚Ð²ÑƒÑŽÑ‰Ð¸Ð¹ GO)
             if (_initialized)
             {
                 Debug.LogWarning(
@@ -379,9 +380,18 @@ namespace Hecton8.AI.GPU
             _initialized      = true;
         }
 
+        private void EnsureMaterialPropertyBlock()
+        {
+            if (_materialProps != null)
+                return;
+
+            // COLD ALLOC: MaterialPropertyBlock[1] — boid instanced render state — owner: HectonBoidController
+            _materialProps = new MaterialPropertyBlock();
+        }
+
         private void OnEnable()
         {
-            GameTickManager.Instance?.Register((ITickable)this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
 
             if (_playerTransform == null)
                 FindPlayer();
@@ -389,7 +399,7 @@ namespace Hecton8.AI.GPU
 
         private void OnDisable()
         {
-            GameTickManager.Instance?.Unregister((ITickable)this);
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
         }
 
         private void OnDestroy()
@@ -397,9 +407,9 @@ namespace Hecton8.AI.GPU
             ReleaseBuffers();
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  ITickable — MAIN LOOP
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  ITickable â€” MAIN LOOP
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>
         /// Called every frame by GameTickManager.
@@ -410,7 +420,7 @@ namespace Hecton8.AI.GPU
         ///   3. Dispatch compute shader (GPU simulation).
         ///   4. Increment frame index (swap buffers for next frame).
         ///   5. Frustum culling check.
-        ///   6. Instanced draw (if visible) — reads from writeBuffer.
+        ///   6. Instanced draw (if visible) â€” reads from writeBuffer.
         ///
         /// CPU cost: ~0.01ms (uniform upload + dispatch command + draw command).
         /// Actual computation happens on GPU asynchronously.
@@ -420,22 +430,23 @@ namespace Hecton8.AI.GPU
             using (ProfilerRegistry.AiTick.Auto())
             {
             if (!_initialized) return;
+            EnsureRuntimeBufferCapacity();
 
-            // ══════════════════════════════════════════════════════
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             //  1. UPDATE TARGET
-            // ══════════════════════════════════════════════════════
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
             UpdateTarget();
 
-            // ══════════════════════════════════════════════════════
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             //  2. SET UNIFORMS (includes Ping-Pong buffer binding)
-            // ══════════════════════════════════════════════════════
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
             SetComputeUniforms(deltaTime);
 
-            // ══════════════════════════════════════════════════════
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             //  3. DISPATCH COMPUTE
-            // ══════════════════════════════════════════════════════
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 #if UNITY_EDITOR
             float t0 = Time.realtimeSinceStartup;
@@ -447,15 +458,15 @@ namespace Hecton8.AI.GPU
             _debugComputeMs = (Time.realtimeSinceStartup - t0) * 1000f;
 #endif
 
-            // ══════════════════════════════════════════════════════
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             //  4. INCREMENT FRAME INDEX (swap for next frame)
-            // ══════════════════════════════════════════════════════
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
             _frameIndex++;
 
-            // ══════════════════════════════════════════════════════
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             //  5. FRUSTUM CULLING
-            // ══════════════════════════════════════════════════════
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
             bool isVisible = CheckFrustumVisibility();
 
@@ -463,9 +474,9 @@ namespace Hecton8.AI.GPU
             _debugIsVisible = isVisible;
 #endif
 
-            // ══════════════════════════════════════════════════════
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             //  6. RENDER (if visible)
-            // ══════════════════════════════════════════════════════
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
             if (isVisible)
             {
@@ -474,9 +485,9 @@ namespace Hecton8.AI.GPU
             }
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  INITIALIZATION — COMPUTE
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  INITIALIZATION â€” COMPUTE
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>
         /// Finds kernel, reads thread group size, computes dispatch count.
@@ -497,48 +508,64 @@ namespace Hecton8.AI.GPU
 #endif
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  INITIALIZATION — BUFFERS (v2.2 — GPU Memory Leak Fix)
-        // ══════════════════════════════════════════════════════════
+        private void EnsureRuntimeBufferCapacity()
+        {
+            bool requiresReallocation =
+                _boidsBufferA == null ||
+                _boidsBufferB == null ||
+                _boidsBufferA.count != boidCount ||
+                _boidsBufferB.count != boidCount;
+            if (!requiresReallocation)
+                return;
+
+            _dispatchGroupCount = (boidCount + _threadGroupSizeX - 1) / _threadGroupSizeX;
+            InitializeBuffers();
+            InitializeRendering();
+            _simulationBounds = new Bounds(boundsCenter, boundsSize * 2f);
+        }
+
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  INITIALIZATION â€” BUFFERS (v2.2 â€” GPU Memory Leak Fix)
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>
-        /// Creates both Ping-Pong ComputeBuffers, fills with identical initial positions,
+        /// Creates both Ping-Pong GraphicsBuffers, fills with identical initial positions,
         /// uploads to GPU. Creates args buffer for indirect draw.
         ///
-        /// v2.2 FIX: Перед созданием каждого GPU-ресурса вызывается Release/Destroy
-        /// для старого, если он не null. Это предотвращает утечку VRAM при:
-        ///   • Повторном вызове InitializeBuffers() (hot reload, redesign).
-        ///   • Пересоздании системы через public API (SetBoidCount в будущем).
-        ///   • Edge case с Awake (см. комментарий в Awake).
+        /// v2.2 FIX: ÐŸÐµÑ€ÐµÐ´ ÑÐ¾Ð·Ð´Ð°Ð½Ð¸ÐµÐ¼ ÐºÐ°Ð¶Ð´Ð¾Ð³Ð¾ GPU-Ñ€ÐµÑÑƒÑ€ÑÐ° Ð²Ñ‹Ð·Ñ‹Ð²Ð°ÐµÑ‚ÑÑ Release/Destroy
+        /// Ð´Ð»Ñ ÑÑ‚Ð°Ñ€Ð¾Ð³Ð¾, ÐµÑÐ»Ð¸ Ð¾Ð½ Ð½Ðµ null. Ð­Ñ‚Ð¾ Ð¿Ñ€ÐµÐ´Ð¾Ñ‚Ð²Ñ€Ð°Ñ‰Ð°ÐµÑ‚ ÑƒÑ‚ÐµÑ‡ÐºÑƒ VRAM Ð¿Ñ€Ð¸:
+        ///   â€¢ ÐŸÐ¾Ð²Ñ‚Ð¾Ñ€Ð½Ð¾Ð¼ Ð²Ñ‹Ð·Ð¾Ð²Ðµ InitializeBuffers() (hot reload, redesign).
+        ///   â€¢ ÐŸÐµÑ€ÐµÑÐ¾Ð·Ð´Ð°Ð½Ð¸Ð¸ ÑÐ¸ÑÑ‚ÐµÐ¼Ñ‹ Ñ‡ÐµÑ€ÐµÐ· public API (SetBoidCount Ð² Ð±ÑƒÐ´ÑƒÑ‰ÐµÐ¼).
+        ///   â€¢ Edge case Ñ Awake (ÑÐ¼. ÐºÐ¾Ð¼Ð¼ÐµÐ½Ñ‚Ð°Ñ€Ð¸Ð¹ Ð² Awake).
         ///
-        /// ПОРЯДОК: Release old → Create new → SetData.
-        /// Если Release вызван на уже released буфер — Unity просто игнорирует.
-        /// Null-check обязателен, т.к. Release() на null = NullReferenceException.
+        /// ÐŸÐžÐ Ð¯Ð”ÐžÐš: Release old â†’ Create new â†’ SetData.
+        /// Ð•ÑÐ»Ð¸ Release Ð²Ñ‹Ð·Ð²Ð°Ð½ Ð½Ð° ÑƒÐ¶Ðµ released Ð±ÑƒÑ„ÐµÑ€ â€” Unity Ð¿Ñ€Ð¾ÑÑ‚Ð¾ Ð¸Ð³Ð½Ð¾Ñ€Ð¸Ñ€ÑƒÐµÑ‚.
+        /// Null-check Ð¾Ð±ÑÐ·Ð°Ñ‚ÐµÐ»ÐµÐ½, Ñ‚.Ðº. Release() Ð½Ð° null = NullReferenceException.
         ///
         /// ALLOCATION: One-time. BoidData[] on managed heap (released by GC after upload).
-        /// Both ComputeBuffers live on GPU until Release().
+        /// Both GraphicsBuffers live on GPU until Release().
         /// Both buffers get identical data so first-frame Read is never garbage.
         ///
         /// SPAWN Y RANGE:
-        ///   Нижняя граница: boundsCenter.y - boundsSize.y (полная высота бокса вниз).
-        ///   Верхняя граница: waterSurfaceY - 2f (2 метра ниже поверхности воды).
-        ///   Рыбы распределяются равномерно по всему вертикальному диапазону бокса.
+        ///   ÐÐ¸Ð¶Ð½ÑÑ Ð³Ñ€Ð°Ð½Ð¸Ñ†Ð°: boundsCenter.y - boundsSize.y (Ð¿Ð¾Ð»Ð½Ð°Ñ Ð²Ñ‹ÑÐ¾Ñ‚Ð° Ð±Ð¾ÐºÑÐ° Ð²Ð½Ð¸Ð·).
+        ///   Ð’ÐµÑ€Ñ…Ð½ÑÑ Ð³Ñ€Ð°Ð½Ð¸Ñ†Ð°: waterSurfaceY - 2f (2 Ð¼ÐµÑ‚Ñ€Ð° Ð½Ð¸Ð¶Ðµ Ð¿Ð¾Ð²ÐµÑ€Ñ…Ð½Ð¾ÑÑ‚Ð¸ Ð²Ð¾Ð´Ñ‹).
+        ///   Ð Ñ‹Ð±Ñ‹ Ñ€Ð°ÑÐ¿Ñ€ÐµÐ´ÐµÐ»ÑÑŽÑ‚ÑÑ Ñ€Ð°Ð²Ð½Ð¾Ð¼ÐµÑ€Ð½Ð¾ Ð¿Ð¾ Ð²ÑÐµÐ¼Ñƒ Ð²ÐµÑ€Ñ‚Ð¸ÐºÐ°Ð»ÑŒÐ½Ð¾Ð¼Ñƒ Ð´Ð¸Ð°Ð¿Ð°Ð·Ð¾Ð½Ñƒ Ð±Ð¾ÐºÑÐ°.
         /// </summary>
         private void InitializeBuffers()
         {
-            // ═══════════════════════════════════════════════════
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             //  STEP 1: Release existing GPU resources (if any)
             //
-            //  ComputeBuffer и GraphicsBuffer — unmanaged GPU memory.
-            //  Unity GC их НЕ освобождает. Без Release() — прямая
-            //  утечка VRAM. На MX350 с 2GB это критично.
+            //  GraphicsBuffer Ð¸ GraphicsBuffer â€” unmanaged GPU memory.
+            //  Unity GC Ð¸Ñ… ÐÐ• Ð¾ÑÐ²Ð¾Ð±Ð¾Ð¶Ð´Ð°ÐµÑ‚. Ð‘ÐµÐ· Release() â€” Ð¿Ñ€ÑÐ¼Ð°Ñ
+            //  ÑƒÑ‚ÐµÑ‡ÐºÐ° VRAM. ÐÐ° MX350 Ñ 2GB ÑÑ‚Ð¾ ÐºÑ€Ð¸Ñ‚Ð¸Ñ‡Ð½Ð¾.
             //
-            //  Texture2D — managed, но GPU-сторона (native texture)
-            //  освобождается только через Destroy(). Без Destroy() —
-            //  native texture утекает до выхода из Play Mode.
-            // ═══════════════════════════════════════════════════
+            //  Texture2D â€” managed, Ð½Ð¾ GPU-ÑÑ‚Ð¾Ñ€Ð¾Ð½Ð° (native texture)
+            //  Ð¾ÑÐ²Ð¾Ð±Ð¾Ð¶Ð´Ð°ÐµÑ‚ÑÑ Ñ‚Ð¾Ð»ÑŒÐºÐ¾ Ñ‡ÐµÑ€ÐµÐ· Destroy(). Ð‘ÐµÐ· Destroy() â€”
+            //  native texture ÑƒÑ‚ÐµÐºÐ°ÐµÑ‚ Ð´Ð¾ Ð²Ñ‹Ñ…Ð¾Ð´Ð° Ð¸Ð· Play Mode.
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-            // ── Release old Ping-Pong buffers ──
+            // â”€â”€ Release old Ping-Pong buffers â”€â”€
             if (_boidsBufferA != null)
             {
                 _boidsBufferA.Release();
@@ -551,24 +578,18 @@ namespace Hecton8.AI.GPU
                 _boidsBufferB = null;
             }
 
-            // ── Release old args buffer ──
-            if (_argsBuffer != null)
-            {
-                _argsBuffer.Release();
-                _argsBuffer = null;
-            }
-
-            // ═══════════════════════════════════════════════════
+            // â”€â”€ Release old args buffer â”€â”€
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             //  STEP 2: Create Ping-Pong boids buffers
-            // ═══════════════════════════════════════════════════
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-            _boidsBufferA = new ComputeBuffer(boidCount, BoidStride);
-            _boidsBufferB = new ComputeBuffer(boidCount, BoidStride);
+            _boidsBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<BoidData>(boidCount);
+            _boidsBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<BoidData>(boidCount);
 
-            // ═══════════════════════════════════════════════════
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             //  STEP 3: Fill initial data
             //  One array, uploaded to BOTH buffers.
-            // ═══════════════════════════════════════════════════
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
             BoidData[] initialData = new BoidData[boidCount];
 
@@ -598,36 +619,36 @@ namespace Hecton8.AI.GPU
                 };
             }
 
-            // Upload identical data to BOTH buffers — first-frame Read is never garbage
-            _boidsBufferA.SetData(initialData);
-            _boidsBufferB.SetData(initialData);
+            // Upload identical data to BOTH buffers â€” first-frame Read is never garbage
+            GraphicsBufferUploadUtility.UploadArray(_boidsBufferA, initialData, boidCount);
+            GraphicsBufferUploadUtility.UploadArray(_boidsBufferB, initialData, boidCount);
 
-            // ═══════════════════════════════════════════════════
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             //  STEP 4: Initialize frame index
-            // ═══════════════════════════════════════════════════
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
             _frameIndex = 0;
 
-            // ═══════════════════════════════════════════════════
-            //  STEP 5: Fallback heightmap (v2.2 — reuse if exists)
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+            //  STEP 5: Fallback heightmap (v2.2 â€” reuse if exists)
             //
-            //  Текстура создаётся ТОЛЬКО если ещё не существует.
-            //  При повторном вызове InitializeBuffers() старая текстура
-            //  переиспользуется — zero VRAM leak.
+            //  Ð¢ÐµÐºÑÑ‚ÑƒÑ€Ð° ÑÐ¾Ð·Ð´Ð°Ñ‘Ñ‚ÑÑ Ð¢ÐžÐ›Ð¬ÐšÐž ÐµÑÐ»Ð¸ ÐµÑ‰Ñ‘ Ð½Ðµ ÑÑƒÑ‰ÐµÑÑ‚Ð²ÑƒÐµÑ‚.
+            //  ÐŸÑ€Ð¸ Ð¿Ð¾Ð²Ñ‚Ð¾Ñ€Ð½Ð¾Ð¼ Ð²Ñ‹Ð·Ð¾Ð²Ðµ InitializeBuffers() ÑÑ‚Ð°Ñ€Ð°Ñ Ñ‚ÐµÐºÑÑ‚ÑƒÑ€Ð°
+            //  Ð¿ÐµÑ€ÐµÐ¸ÑÐ¿Ð¾Ð»ÑŒÐ·ÑƒÐµÑ‚ÑÑ â€” zero VRAM leak.
             //
-            //  Если heightMap назначена в Inspector — fallback не нужен,
-            //  но мы его НЕ уничтожаем (он может понадобиться если
-            //  heightMap будет снят в рантайме через SetHeightMap(null, ...)).
+            //  Ð•ÑÐ»Ð¸ heightMap Ð½Ð°Ð·Ð½Ð°Ñ‡ÐµÐ½Ð° Ð² Inspector â€” fallback Ð½Ðµ Ð½ÑƒÐ¶ÐµÐ½,
+            //  Ð½Ð¾ Ð¼Ñ‹ ÐµÐ³Ð¾ ÐÐ• ÑƒÐ½Ð¸Ñ‡Ñ‚Ð¾Ð¶Ð°ÐµÐ¼ (Ð¾Ð½ Ð¼Ð¾Ð¶ÐµÑ‚ Ð¿Ð¾Ð½Ð°Ð´Ð¾Ð±Ð¸Ñ‚ÑŒÑÑ ÐµÑÐ»Ð¸
+            //  heightMap Ð±ÑƒÐ´ÐµÑ‚ ÑÐ½ÑÑ‚ Ð² Ñ€Ð°Ð½Ñ‚Ð°Ð¹Ð¼Ðµ Ñ‡ÐµÑ€ÐµÐ· SetHeightMap(null, ...)).
             //
-            //  Уничтожение _fallbackHeightMap — ТОЛЬКО в ReleaseBuffers()
-            //  (вызывается из OnDestroy).
-            // ═══════════════════════════════════════════════════
+            //  Ð£Ð½Ð¸Ñ‡Ñ‚Ð¾Ð¶ÐµÐ½Ð¸Ðµ _fallbackHeightMap â€” Ð¢ÐžÐ›Ð¬ÐšÐž Ð² ReleaseBuffers()
+            //  (Ð²Ñ‹Ð·Ñ‹Ð²Ð°ÐµÑ‚ÑÑ Ð¸Ð· OnDestroy).
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
             if (heightMap == null && _fallbackHeightMap == null)
             {
-                // Создаём минимальную текстуру 4×4 (R8 = 16 байт на GPU).
-                // Чёрная = высота 0 = плоское дно.
-                // hideFlags предотвращает появление в Project/Hierarchy.
+                // Ð¡Ð¾Ð·Ð´Ð°Ñ‘Ð¼ Ð¼Ð¸Ð½Ð¸Ð¼Ð°Ð»ÑŒÐ½ÑƒÑŽ Ñ‚ÐµÐºÑÑ‚ÑƒÑ€Ñƒ 4Ã—4 (R8 = 16 Ð±Ð°Ð¹Ñ‚ Ð½Ð° GPU).
+                // Ð§Ñ‘Ñ€Ð½Ð°Ñ = Ð²Ñ‹ÑÐ¾Ñ‚Ð° 0 = Ð¿Ð»Ð¾ÑÐºÐ¾Ðµ Ð´Ð½Ð¾.
+                // hideFlags Ð¿Ñ€ÐµÐ´Ð¾Ñ‚Ð²Ñ€Ð°Ñ‰Ð°ÐµÑ‚ Ð¿Ð¾ÑÐ²Ð»ÐµÐ½Ð¸Ðµ Ð² Project/Hierarchy.
                 _fallbackHeightMap = new Texture2D(4, 4, TextureFormat.R8, false)
                 {
                     name       = "[HectonBoid] FallbackHeightMap",
@@ -637,7 +658,7 @@ namespace Hecton8.AI.GPU
                 };
 
                 // NativeArray path: zero managed Color[] allocation.
-                // GetRawTextureData returns existing native buffer — zero GC.
+                // GetRawTextureData returns existing native buffer â€” zero GC.
                 NativeArray<byte> rawData = _fallbackHeightMap.GetRawTextureData<byte>();
                 for (int i = 0; i < rawData.Length; i++)
                 {
@@ -645,36 +666,21 @@ namespace Hecton8.AI.GPU
                 }
 
                 _fallbackHeightMap.Apply(false, false);
-                // makeNoLongerReadable=false: сохраняем CPU-копию
-                // для возможного перечитывания при hot reload.
+                // makeNoLongerReadable=false: ÑÐ¾Ñ…Ñ€Ð°Ð½ÑÐµÐ¼ CPU-ÐºÐ¾Ð¿Ð¸ÑŽ
+                // Ð´Ð»Ñ Ð²Ð¾Ð·Ð¼Ð¾Ð¶Ð½Ð¾Ð³Ð¾ Ð¿ÐµÑ€ÐµÑ‡Ð¸Ñ‚Ñ‹Ð²Ð°Ð½Ð¸Ñ Ð¿Ñ€Ð¸ hot reload.
             }
 
-            // ═══════════════════════════════════════════════════
-            //  STEP 6: Args buffer for RenderMeshIndirect
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+            //  STEP 6: Args buffer for RenderMeshPrimitives
             //  (old buffer already released in STEP 1)
-            // ═══════════════════════════════════════════════════
+            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
             // GraphicsBuffer.IndirectDrawIndexedArgs: 5 uints = 20 bytes
-            _argsBuffer = new GraphicsBuffer(
-                GraphicsBuffer.Target.IndirectArguments,
-                1,
-                GraphicsBuffer.IndirectDrawIndexedArgs.size);
-
-            var args = new GraphicsBuffer.IndirectDrawIndexedArgs[1];
-            args[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
-            {
-                indexCountPerInstance = fishMesh.GetIndexCount(0),
-                instanceCount        = (uint)boidCount,
-                startIndex           = fishMesh.GetIndexStart(0),
-                baseVertexIndex      = fishMesh.GetBaseVertex(0),
-                startInstance        = 0
-            };
-            _argsBuffer.SetData(args);
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  INITIALIZATION — RENDERING
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  INITIALIZATION â€” RENDERING
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>
         /// Sets up MaterialPropertyBlock and RenderParams.
@@ -683,9 +689,9 @@ namespace Hecton8.AI.GPU
         /// </summary>
         private void InitializeRendering()
         {
-            _materialProps = new MaterialPropertyBlock();
+            _materialProps.Clear();
 
-            // Frame 0: Read=A, Write=B → after dispatch, fresh data is in B
+            // Frame 0: Read=A, Write=B â†’ after dispatch, fresh data is in B
             _materialProps.SetBuffer(ShaderProps.BoidsBuffer, _boidsBufferB);
             _materialProps.SetFloat("_FishScale", fishScale);
 
@@ -699,23 +705,23 @@ namespace Hecton8.AI.GPU
             };
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  BUFFER RELEASE (v2.2 — Safe for repeated calls)
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  BUFFER RELEASE (v2.2 â€” Safe for repeated calls)
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>
         /// Releases all GPU resources. Called in OnDestroy and
         /// as safety cleanup before re-initialization in Awake.
         ///
-        /// CRITICAL: ComputeBuffer и GraphicsBuffer MUST be released manually.
+        /// CRITICAL: GraphicsBuffer Ð¸ GraphicsBuffer MUST be released manually.
         /// Unity does NOT garbage collect GPU buffers.
         /// Texture2D native side must be destroyed via Object.Destroy().
         ///
-        /// Паттерн: null-check → Release/Destroy → null assignment.
-        /// Null assignment предотвращает double-Release при повторных вызовах.
+        /// ÐŸÐ°Ñ‚Ñ‚ÐµÑ€Ð½: null-check â†’ Release/Destroy â†’ null assignment.
+        /// Null assignment Ð¿Ñ€ÐµÐ´Ð¾Ñ‚Ð²Ñ€Ð°Ñ‰Ð°ÐµÑ‚ double-Release Ð¿Ñ€Ð¸ Ð¿Ð¾Ð²Ñ‚Ð¾Ñ€Ð½Ñ‹Ñ… Ð²Ñ‹Ð·Ð¾Ð²Ð°Ñ….
         ///
-        /// Безопасно вызывать многократно — все ветки проверяют null.
-        /// Порядок не критичен — буферы независимы друг от друга.
+        /// Ð‘ÐµÐ·Ð¾Ð¿Ð°ÑÐ½Ð¾ Ð²Ñ‹Ð·Ñ‹Ð²Ð°Ñ‚ÑŒ Ð¼Ð½Ð¾Ð³Ð¾ÐºÑ€Ð°Ñ‚Ð½Ð¾ â€” Ð²ÑÐµ Ð²ÐµÑ‚ÐºÐ¸ Ð¿Ñ€Ð¾Ð²ÐµÑ€ÑÑŽÑ‚ null.
+        /// ÐŸÐ¾Ñ€ÑÐ´Ð¾Ðº Ð½Ðµ ÐºÑ€Ð¸Ñ‚Ð¸Ñ‡ÐµÐ½ â€” Ð±ÑƒÑ„ÐµÑ€Ñ‹ Ð½ÐµÐ·Ð°Ð²Ð¸ÑÐ¸Ð¼Ñ‹ Ð´Ñ€ÑƒÐ³ Ð¾Ñ‚ Ð´Ñ€ÑƒÐ³Ð°.
         /// </summary>
         private void ReleaseBuffers()
         {
@@ -731,12 +737,6 @@ namespace Hecton8.AI.GPU
                 _boidsBufferB = null;
             }
 
-            if (_argsBuffer != null)
-            {
-                _argsBuffer.Release();
-                _argsBuffer = null;
-            }
-
             if (_fallbackHeightMap != null)
             {
                 Destroy(_fallbackHeightMap);
@@ -744,18 +744,18 @@ namespace Hecton8.AI.GPU
             }
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  COMPUTE — UNIFORM UPLOAD + PING-PONG BINDING
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  COMPUTE â€” UNIFORM UPLOAD + PING-PONG BINDING
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>
         /// Sets all compute shader uniforms and binds Ping-Pong buffers.
         /// 
         /// Ping-Pong logic:
-        ///   Even _frameIndex → Read from A, Write to B.
-        ///   Odd  _frameIndex → Read from B, Write to A.
+        ///   Even _frameIndex â†’ Read from A, Write to B.
+        ///   Odd  _frameIndex â†’ Read from B, Write to A.
         ///
-        /// All SetFloat/SetInt/SetVector/SetTexture/SetBuffer — zero GC.
+        /// All SetFloat/SetInt/SetVector/SetTexture/SetBuffer â€” zero GC.
         /// Called once per frame, BEFORE Dispatch.
         /// </summary>
         private void SetComputeUniforms(float dt)
@@ -763,20 +763,20 @@ namespace Hecton8.AI.GPU
             ComputeShader cs = boidShader;
             int kernel = _kernelCSMain;
 
-            // ── Ping-Pong Buffer Binding ──
+            // â”€â”€ Ping-Pong Buffer Binding â”€â”€
             // Determine which buffer is Read and which is Write this frame.
-            // No allocation — just pointer swap via ternary on existing references.
-            ComputeBuffer readBuffer  = (_frameIndex % 2 == 0) ? _boidsBufferA : _boidsBufferB;
-            ComputeBuffer writeBuffer = (_frameIndex % 2 == 0) ? _boidsBufferB : _boidsBufferA;
+            // No allocation â€” just pointer swap via ternary on existing references.
+            GraphicsBuffer readBuffer  = (_frameIndex % 2 == 0) ? _boidsBufferA : _boidsBufferB;
+            GraphicsBuffer writeBuffer = (_frameIndex % 2 == 0) ? _boidsBufferB : _boidsBufferA;
 
             cs.SetBuffer(kernel, ShaderProps.BoidsBufferRead, readBuffer);
             cs.SetBuffer(kernel, ShaderProps.BoidsBufferWrite, writeBuffer);
 
-            // ── Simulation ──
+            // â”€â”€ Simulation â”€â”€
             cs.SetInt(ShaderProps.BoidCount, boidCount);
             cs.SetFloat(ShaderProps.DeltaTime, dt);
 
-            // ── Weights ──
+            // â”€â”€ Weights â”€â”€
             cs.SetFloat(ShaderProps.SeparationWeight, separationWeight);
             cs.SetFloat(ShaderProps.AlignmentWeight, alignmentWeight);
             cs.SetFloat(ShaderProps.CohesionWeight, cohesionWeight);
@@ -784,26 +784,26 @@ namespace Hecton8.AI.GPU
             cs.SetFloat(ShaderProps.ObstacleWeight, obstacleWeight);
             cs.SetFloat(ShaderProps.BoundsWeight, boundsWeight);
 
-            // ── Radii ──
+            // â”€â”€ Radii â”€â”€
             cs.SetFloat(ShaderProps.PerceptionRadius, perceptionRadius);
             cs.SetFloat(ShaderProps.SeparationRadius, separationRadius);
             cs.SetFloat(ShaderProps.ObstacleAvoidRadius, obstacleAvoidRadius);
 
-            // ── Speed ──
+            // â”€â”€ Speed â”€â”€
             cs.SetFloat(ShaderProps.MinSpeed, minSpeed);
             cs.SetFloat(ShaderProps.MaxSpeed, maxSpeed);
 
-            // ── Target ──
+            // â”€â”€ Target â”€â”€
             cs.SetVector(ShaderProps.TargetPosition,
                 new Vector4(_targetPosition.x, _targetPosition.y, _targetPosition.z, 0f));
 
-            // ── Bounds ──
+            // â”€â”€ Bounds â”€â”€
             cs.SetVector(ShaderProps.BoundsCenter,
                 new Vector4(boundsCenter.x, boundsCenter.y, boundsCenter.z, 0f));
             cs.SetVector(ShaderProps.BoundsSize,
                 new Vector4(boundsSize.x, boundsSize.y, boundsSize.z, 0f));
 
-            // ── Heightmap ──
+            // â”€â”€ Heightmap â”€â”€
             Texture2D hmap = heightMap != null ? heightMap : _fallbackHeightMap;
             cs.SetTexture(kernel, ShaderProps.HeightMap, hmap);
             cs.SetVector(ShaderProps.WorldOffset,
@@ -814,9 +814,9 @@ namespace Hecton8.AI.GPU
             cs.SetFloat(ShaderProps.WaterSurfaceY, waterSurfaceY);
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  RENDERING
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>
         /// Issues indirect instanced draw call.
@@ -831,8 +831,8 @@ namespace Hecton8.AI.GPU
         ///     currentData = (_frameIndex % 2 == 0) ? B : A
         ///   This correctly points to the buffer that was just written.
         ///
-        /// Graphics.RenderMeshIndirect (Unity 6):
-        ///   - Reads instance count from args buffer (GPU → GPU, no readback).
+        /// Graphics.RenderMeshPrimitives (Unity 6):
+        ///   - Reads instance count from args buffer (GPU â†’ GPU, no readback).
         ///   - Vertex shader reads BoidData via SV_InstanceID.
         ///   - Zero CPU overhead for transforms.
         ///
@@ -847,7 +847,7 @@ namespace Hecton8.AI.GPU
             if (fishMesh == null || fishMaterial == null)
                 return;
 
-            ComputeBuffer currentDataBuffer = (_frameIndex % 2 == 0) ? _boidsBufferA : _boidsBufferB;
+            GraphicsBuffer currentDataBuffer = (_frameIndex % 2 == 0) ? _boidsBufferA : _boidsBufferB;
 
             _materialProps.SetBuffer(ShaderProps.BoidsBuffer, currentDataBuffer);
             _renderParams.matProps = _materialProps;
@@ -855,54 +855,51 @@ namespace Hecton8.AI.GPU
             // Update world bounds in case center moved
             _renderParams.worldBounds = _simulationBounds;
 
-            Graphics.RenderMeshIndirect(
-                in _renderParams,
-                fishMesh,
-                _argsBuffer);
+            Graphics.RenderMeshPrimitives(_renderParams, fishMesh, 0, boidCount);
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  FRUSTUM CULLING
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>
         /// Tests simulation AABB against camera frustum.
         ///
-        /// Uses pre-allocated Plane[6] array — zero GC.
+        /// Uses pre-allocated Plane[6] array â€” zero GC.
         /// GeometryUtility.CalculateFrustumPlanes fills array in-place.
-        /// GeometryUtility.TestPlanesAABB — struct math, zero GC.
+        /// GeometryUtility.TestPlanesAABB â€” struct math, zero GC.
         ///
-        /// If camera is not found — assumes visible (safety).
+        /// If camera is not found â€” assumes visible (safety).
         /// </summary>
         private bool CheckFrustumVisibility()
         {
             if (!TryResolveViewCamera())
-                return true; // No camera — assume visible
+                return true; // No camera â€” assume visible
 
             GeometryUtility.CalculateFrustumPlanes(_mainCamera, _frustumPlanes);
 
             return GeometryUtility.TestPlanesAABB(_frustumPlanes, _simulationBounds);
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  TARGET TRACKING
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>
         /// Updates target position to follow player in full 3D.
         /// Falls back to boundsCenter if player not found.
         ///
         /// DEPTH TRACKING:
-        ///   boundsCenter следует за игроком по всем трём осям (X, Y, Z).
-        ///   Ограничение по Y: верхняя граница бокса (center.y + boundsSize.y)
-        ///   не может превышать waterSurfaceY.
+        ///   boundsCenter ÑÐ»ÐµÐ´ÑƒÐµÑ‚ Ð·Ð° Ð¸Ð³Ñ€Ð¾ÐºÐ¾Ð¼ Ð¿Ð¾ Ð²ÑÐµÐ¼ Ñ‚Ñ€Ñ‘Ð¼ Ð¾ÑÑÐ¼ (X, Y, Z).
+        ///   ÐžÐ³Ñ€Ð°Ð½Ð¸Ñ‡ÐµÐ½Ð¸Ðµ Ð¿Ð¾ Y: Ð²ÐµÑ€Ñ…Ð½ÑÑ Ð³Ñ€Ð°Ð½Ð¸Ñ†Ð° Ð±Ð¾ÐºÑÐ° (center.y + boundsSize.y)
+        ///   Ð½Ðµ Ð¼Ð¾Ð¶ÐµÑ‚ Ð¿Ñ€ÐµÐ²Ñ‹ÑˆÐ°Ñ‚ÑŒ waterSurfaceY.
         ///   maxCenterY = waterSurfaceY - boundsSize.y
         ///   targetY = min(playerY, maxCenterY)
         ///
-        ///   Это гарантирует:
-        ///     • Стая погружается вместе с игроком.
-        ///     • Рыбы никогда не пробивают поверхность воды.
-        ///     • При плавании у поверхности — бокс прижат к воде сверху.
+        ///   Ð­Ñ‚Ð¾ Ð³Ð°Ñ€Ð°Ð½Ñ‚Ð¸Ñ€ÑƒÐµÑ‚:
+        ///     â€¢ Ð¡Ñ‚Ð°Ñ Ð¿Ð¾Ð³Ñ€ÑƒÐ¶Ð°ÐµÑ‚ÑÑ Ð²Ð¼ÐµÑÑ‚Ðµ Ñ Ð¸Ð³Ñ€Ð¾ÐºÐ¾Ð¼.
+        ///     â€¢ Ð Ñ‹Ð±Ñ‹ Ð½Ð¸ÐºÐ¾Ð³Ð´Ð° Ð½Ðµ Ð¿Ñ€Ð¾Ð±Ð¸Ð²Ð°ÑŽÑ‚ Ð¿Ð¾Ð²ÐµÑ€Ñ…Ð½Ð¾ÑÑ‚ÑŒ Ð²Ð¾Ð´Ñ‹.
+        ///     â€¢ ÐŸÑ€Ð¸ Ð¿Ð»Ð°Ð²Ð°Ð½Ð¸Ð¸ Ñƒ Ð¿Ð¾Ð²ÐµÑ€Ñ…Ð½Ð¾ÑÑ‚Ð¸ â€” Ð±Ð¾ÐºÑ Ð¿Ñ€Ð¸Ð¶Ð°Ñ‚ Ðº Ð²Ð¾Ð´Ðµ ÑÐ²ÐµÑ€Ñ…Ñƒ.
         /// </summary>
         private void UpdateTarget()
         {
@@ -915,9 +912,9 @@ namespace Hecton8.AI.GPU
             {
                 _targetPosition = _playerTransform.position;
 
-                // Динамические границы: центр следует за игроком по X, Y и Z.
-                // Ограничиваем Y, чтобы верхняя граница бокса (center.y + boundsSize.y)
-                // не пробивала поверхность воды (waterSurfaceY).
+                // Ð”Ð¸Ð½Ð°Ð¼Ð¸Ñ‡ÐµÑÐºÐ¸Ðµ Ð³Ñ€Ð°Ð½Ð¸Ñ†Ñ‹: Ñ†ÐµÐ½Ñ‚Ñ€ ÑÐ»ÐµÐ´ÑƒÐµÑ‚ Ð·Ð° Ð¸Ð³Ñ€Ð¾ÐºÐ¾Ð¼ Ð¿Ð¾ X, Y Ð¸ Z.
+                // ÐžÐ³Ñ€Ð°Ð½Ð¸Ñ‡Ð¸Ð²Ð°ÐµÐ¼ Y, Ñ‡Ñ‚Ð¾Ð±Ñ‹ Ð²ÐµÑ€Ñ…Ð½ÑÑ Ð³Ñ€Ð°Ð½Ð¸Ñ†Ð° Ð±Ð¾ÐºÑÐ° (center.y + boundsSize.y)
+                // Ð½Ðµ Ð¿Ñ€Ð¾Ð±Ð¸Ð²Ð°Ð»Ð° Ð¿Ð¾Ð²ÐµÑ€Ñ…Ð½Ð¾ÑÑ‚ÑŒ Ð²Ð¾Ð´Ñ‹ (waterSurfaceY).
                 float maxCenterY = waterSurfaceY - boundsSize.y;
                 float targetY    = Mathf.Min(_targetPosition.y, maxCenterY);
 
@@ -956,22 +953,24 @@ namespace Hecton8.AI.GPU
             if (_playerTransform == null)
                 return false;
 
-            _mainCamera = _playerTransform.GetComponentInChildren<Camera>(true);
+            _mainCamera = Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null
+                ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera
+                : Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Camera>(_playerTransform);
             return _mainCamera != null;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  PUBLIC API
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        /// <summary>Количество бойдов.</summary>
+        /// <summary>ÐšÐ¾Ð»Ð¸Ñ‡ÐµÑÑ‚Ð²Ð¾ Ð±Ð¾Ð¹Ð´Ð¾Ð².</summary>
         public int BoidCount => boidCount;
 
-        /// <summary>Сейчас рендерится.</summary>
+        /// <summary>Ð¡ÐµÐ¹Ñ‡Ð°Ñ Ñ€ÐµÐ½Ð´ÐµÑ€Ð¸Ñ‚ÑÑ.</summary>
         public bool IsVisible => _debugIsVisible;
 
         /// <summary>
-        /// Устанавливает heightmap в runtime (например, при смене тайла MapMagic).
+        /// Ð£ÑÑ‚Ð°Ð½Ð°Ð²Ð»Ð¸Ð²Ð°ÐµÑ‚ heightmap Ð² runtime (Ð½Ð°Ð¿Ñ€Ð¸Ð¼ÐµÑ€, Ð¿Ñ€Ð¸ ÑÐ¼ÐµÐ½Ðµ Ñ‚Ð°Ð¹Ð»Ð° MapMagic).
         /// </summary>
         /// <param name="texture">Heightmap texture (R channel = height [0..1]).</param>
         /// <param name="offset">Terrain world position XZ.</param>
@@ -986,14 +985,14 @@ namespace Hecton8.AI.GPU
         }
 
         /// <summary>
-        /// Сбрасывает позиции всех бойдов в центр.
-        /// Используй при телепорте игрока.
-        /// Вызывает SetData — одна аллокация managed массива.
+        /// Ð¡Ð±Ñ€Ð°ÑÑ‹Ð²Ð°ÐµÑ‚ Ð¿Ð¾Ð·Ð¸Ñ†Ð¸Ð¸ Ð²ÑÐµÑ… Ð±Ð¾Ð¹Ð´Ð¾Ð² Ð² Ñ†ÐµÐ½Ñ‚Ñ€.
+        /// Ð˜ÑÐ¿Ð¾Ð»ÑŒÐ·ÑƒÐ¹ Ð¿Ñ€Ð¸ Ñ‚ÐµÐ»ÐµÐ¿Ð¾Ñ€Ñ‚Ðµ Ð¸Ð³Ñ€Ð¾ÐºÐ°.
+        /// Ð’Ñ‹Ð·Ñ‹Ð²Ð°ÐµÑ‚ SetData â€” Ð¾Ð´Ð½Ð° Ð°Ð»Ð»Ð¾ÐºÐ°Ñ†Ð¸Ñ managed Ð¼Ð°ÑÑÐ¸Ð²Ð°.
         /// Uploads to BOTH Ping-Pong buffers to ensure consistency.
         ///
         /// SPAWN Y RANGE:
-        ///   Нижняя граница: center.y - boundsSize.y (полная высота бокса вниз).
-        ///   Верхняя граница: waterSurfaceY - 2f.
+        ///   ÐÐ¸Ð¶Ð½ÑÑ Ð³Ñ€Ð°Ð½Ð¸Ñ†Ð°: center.y - boundsSize.y (Ð¿Ð¾Ð»Ð½Ð°Ñ Ð²Ñ‹ÑÐ¾Ñ‚Ð° Ð±Ð¾ÐºÑÐ° Ð²Ð½Ð¸Ð·).
+        ///   Ð’ÐµÑ€Ñ…Ð½ÑÑ Ð³Ñ€Ð°Ð½Ð¸Ñ†Ð°: waterSurfaceY - 2f.
         /// </summary>
         public void ResetPositions(Vector3 center)
         {
@@ -1019,17 +1018,17 @@ namespace Hecton8.AI.GPU
                 };
             }
 
-            // Upload to BOTH buffers — next frame's Read will have valid data regardless of _frameIndex
-            _boidsBufferA.SetData(resetData);
-            _boidsBufferB.SetData(resetData);
+            // Upload to BOTH buffers â€” next frame's Read will have valid data regardless of _frameIndex
+            GraphicsBufferUploadUtility.UploadArray(_boidsBufferA, resetData, boidCount);
+            GraphicsBufferUploadUtility.UploadArray(_boidsBufferB, resetData, boidCount);
 
             boundsCenter = center;
             _simulationBounds.center = center;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  EDITOR
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 #if UNITY_EDITOR
         private void OnDrawGizmosSelected()
@@ -1065,9 +1064,11 @@ namespace Hecton8.AI.GPU
             if (Application.isPlaying && _initialized)
             {
                 _dispatchGroupCount = (boidCount + _threadGroupSizeX - 1) / _threadGroupSizeX;
+                EnsureRuntimeBufferCapacity();
                 _simulationBounds = new Bounds(boundsCenter, boundsSize * 2f);
             }
         }
 #endif
     }
 }
+

@@ -11,7 +11,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-103)]
-    public sealed class AbyssalFluidDecalManager : MonoBehaviour, ITickable
+    public sealed class AbyssalFluidDecalManager : MonoBehaviour, ITickable, IOriginShiftListener
     {
         private struct FluidDecalState
         {
@@ -133,16 +133,19 @@ namespace Hecton8.World
         {
             EnsureStorage();
             EnsureRenderingResources();
+            HectonFloatingOrigin.RegisterListener(this);
             TryRegister();
         }
 
         private void OnDisable()
         {
+            HectonFloatingOrigin.UnregisterListener(this);
             TryUnregister();
         }
 
         private void OnDestroy()
         {
+            HectonFloatingOrigin.UnregisterListener(this);
             TryUnregister();
             if (_ownsRuntimeMaterial && _runtimeMaterial != null)
             {
@@ -175,6 +178,14 @@ namespace Hecton8.World
         public void RegisterRuptureFluid(Vector3 positionWS, float radiusScale)
         {
             RegisterDecal(positionWS, ruptureFluidColor, Mathf.Lerp(1.4f, 3.2f, Mathf.Clamp01(radiusScale)), Mathf.Lerp(3.6f, 7.5f, Mathf.Clamp01(radiusScale)), 14f);
+        }
+
+        public void OnOriginShift(in OriginShiftEventData shiftData)
+        {
+            if (!isActiveAndEnabled || shiftData.ShiftOffset.sqrMagnitude <= 0.0001f)
+                return;
+
+            ApplyRuntimeOffsetToCachedState(-shiftData.ShiftOffset);
         }
 
         /// <summary>
@@ -382,11 +393,8 @@ namespace Hecton8.World
             if (_registeredTick)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
 
-            tickManager.Register((ITickable)this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _registeredTick = true;
         }
 
@@ -395,11 +403,26 @@ namespace Hecton8.World
             if (!_registeredTick)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister((ITickable)this);
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
 
             _registeredTick = false;
+        }
+
+        private void ApplyRuntimeOffsetToCachedState(Vector3 runtimeOffset)
+        {
+            _previousGlobalDriftOffset += runtimeOffset;
+            if (_decalStates == null)
+                return;
+
+            for (int i = 0; i < _decalStates.Length; i++)
+            {
+                if (!_decalStates[i].Active)
+                    continue;
+
+                FluidDecalState decal = _decalStates[i];
+                decal.PositionWS += runtimeOffset;
+                _decalStates[i] = decal;
+            }
         }
 
         private void SanitizeSettings()

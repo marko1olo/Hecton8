@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.SaveSystem;
 using Unity.Collections;
@@ -57,7 +58,7 @@ namespace Hecton8.Caves
                 _dispatcherRegistered = true;
             }
 
-            TryRegisterSaveManager();
+            TryRegisterSaveService();
         }
 
         private void OnDisable()
@@ -68,9 +69,9 @@ namespace Hecton8.Caves
                 _dispatcherRegistered = false;
             }
 
-            if (_saveRegistered && SaveManager.Instance != null)
+            if (_saveRegistered && GlobalRegistry.Save != null)
             {
-                SaveManager.Instance.Unregister(this);
+                GlobalRegistry.Save.Unregister(this);
                 _saveRegistered = false;
             }
 
@@ -86,7 +87,7 @@ namespace Hecton8.Caves
         /// <param name="deltaTime">Unused dispatcher delta.</param>
         public void Tick(float deltaTime)
         {
-            TryRegisterSaveManager();
+            TryRegisterSaveService();
             FlushPendingCarves();
             FlushPendingRebuilds();
         }
@@ -401,12 +402,185 @@ namespace Hecton8.Caves
             }
         }
 
-        private void TryRegisterSaveManager()
+        public unsafe NativeArray<byte> CaptureNativeSnapshot(Allocator allocator)
         {
-            if (_saveRegistered || SaveManager.Instance == null)
+            if (_chunkStates.Count <= 0)
+                return default;
+
+            int chunkCount = 0;
+            int totalDirtyCellCount = 0;
+            int bytesPerChunk = UnsafeUtility.SizeOf<NativeSnapshotChunkHeader>()
+                + (ChunkDirtyMaskWordCount * UnsafeUtility.SizeOf<uint>())
+                + (ChunkCellCount * UnsafeUtility.SizeOf<ushort>())
+                + (ChunkCellCount * UnsafeUtility.SizeOf<byte>());
+            int totalBytes = UnsafeUtility.SizeOf<NativeSnapshotHeader>();
+
+            Dictionary<ChunkAddress, ChunkDeltaState>.Enumerator countEnumerator = _chunkStates.GetEnumerator();
+            while (countEnumerator.MoveNext())
+            {
+                ChunkDeltaState state = countEnumerator.Current.Value;
+                int cellCount = CountDirtyCells(in state);
+                if (cellCount <= 0)
+                    continue;
+
+                chunkCount++;
+                totalDirtyCellCount += cellCount;
+                totalBytes += bytesPerChunk;
+            }
+
+            countEnumerator.Dispose();
+            if (chunkCount <= 0)
+                return default;
+
+            NativeArray<byte> snapshot = new NativeArray<byte>(totalBytes, allocator, NativeArrayOptions.UninitializedMemory);
+            byte* snapshotPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(snapshot);
+            int cursor = 0;
+
+            NativeSnapshotHeader header = new NativeSnapshotHeader
+            {
+                ChunkCount = chunkCount,
+                TotalDirtyCellCount = totalDirtyCellCount
+            };
+
+            UnsafeUtility.CopyStructureToPtr(ref header, snapshotPtr);
+            cursor += UnsafeUtility.SizeOf<NativeSnapshotHeader>();
+
+            Dictionary<ChunkAddress, ChunkDeltaState>.Enumerator writeEnumerator = _chunkStates.GetEnumerator();
+            while (writeEnumerator.MoveNext())
+            {
+                KeyValuePair<ChunkAddress, ChunkDeltaState> pair = writeEnumerator.Current;
+                ChunkDeltaState state = pair.Value;
+                int dirtyCellCount = CountDirtyCells(in state);
+                if (dirtyCellCount <= 0)
+                    continue;
+
+                NativeSnapshotChunkHeader chunkHeader = new NativeSnapshotChunkHeader
+                {
+                    ChunkX = state.ChunkCoord.x,
+                    ChunkY = state.ChunkCoord.y,
+                    ChunkZ = state.ChunkCoord.z,
+                    VoxelSize = state.VoxelSize,
+                    DirtyCellCount = dirtyCellCount
+                };
+
+                UnsafeUtility.CopyStructureToPtr(ref chunkHeader, snapshotPtr + cursor);
+                cursor += UnsafeUtility.SizeOf<NativeSnapshotChunkHeader>();
+
+                void* dirtyMaskPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(state.DirtyMaskWords);
+                UnsafeUtility.MemCpy(snapshotPtr + cursor, dirtyMaskPtr, ChunkDirtyMaskWordCount * UnsafeUtility.SizeOf<uint>());
+                cursor += ChunkDirtyMaskWordCount * UnsafeUtility.SizeOf<uint>();
+
+                void* sdfPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(state.SdfValueBits);
+                UnsafeUtility.MemCpy(snapshotPtr + cursor, sdfPtr, ChunkCellCount * UnsafeUtility.SizeOf<ushort>());
+                cursor += ChunkCellCount * UnsafeUtility.SizeOf<ushort>();
+
+                void* materialPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(state.MaterialIds);
+                UnsafeUtility.MemCpy(snapshotPtr + cursor, materialPtr, ChunkCellCount * UnsafeUtility.SizeOf<byte>());
+                cursor += ChunkCellCount * UnsafeUtility.SizeOf<byte>();
+            }
+
+            writeEnumerator.Dispose();
+            return snapshot;
+        }
+
+        public unsafe bool TryLoadNativeSnapshot(NativeArray<byte> snapshot, out string error)
+        {
+            error = string.Empty;
+
+            DisposeChunkStates();
+            _pendingRebuildVolumes.Clear();
+
+            if (!snapshot.IsCreated || snapshot.Length <= 0)
+            {
+                RequestRebuildsForLoadedState();
+                return true;
+            }
+
+            int minimumHeaderBytes = UnsafeUtility.SizeOf<NativeSnapshotHeader>();
+            if (snapshot.Length < minimumHeaderBytes)
+            {
+                error = "Voxel delta snapshot is truncated.";
+                return false;
+            }
+
+            byte* snapshotPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(snapshot);
+            NativeSnapshotHeader header = UnsafeUtility.ReadArrayElement<NativeSnapshotHeader>(snapshotPtr, 0);
+            if (header.ChunkCount < 0 || header.TotalDirtyCellCount < 0)
+            {
+                error = "Voxel delta snapshot header is invalid.";
+                return false;
+            }
+
+            int cursor = minimumHeaderBytes;
+            int dirtyMaskByteLength = ChunkDirtyMaskWordCount * UnsafeUtility.SizeOf<uint>();
+            int sdfByteLength = ChunkCellCount * UnsafeUtility.SizeOf<ushort>();
+            int materialByteLength = ChunkCellCount * UnsafeUtility.SizeOf<byte>();
+            int chunkHeaderBytes = UnsafeUtility.SizeOf<NativeSnapshotChunkHeader>();
+            int loadedDirtyCellCount = 0;
+
+            for (int chunkIndex = 0; chunkIndex < header.ChunkCount; chunkIndex++)
+            {
+                if (cursor > snapshot.Length - chunkHeaderBytes)
+                {
+                    error = "Voxel delta chunk header exceeds the snapshot bounds.";
+                    return false;
+                }
+
+                NativeSnapshotChunkHeader chunkHeader = UnsafeUtility.ReadArrayElement<NativeSnapshotChunkHeader>(snapshotPtr + cursor, 0);
+                cursor += chunkHeaderBytes;
+
+                if (chunkHeader.VoxelSize <= 0f || chunkHeader.DirtyCellCount < 0)
+                {
+                    error = "Voxel delta chunk header contains invalid values.";
+                    return false;
+                }
+
+                loadedDirtyCellCount += chunkHeader.DirtyCellCount;
+
+                int chunkPayloadBytes = dirtyMaskByteLength + sdfByteLength + materialByteLength;
+                if (cursor > snapshot.Length - chunkPayloadBytes)
+                {
+                    error = "Voxel delta chunk payload exceeds the snapshot bounds.";
+                    return false;
+                }
+
+                ChunkDeltaState state = GetOrCreateChunkState(new int3(chunkHeader.ChunkX, chunkHeader.ChunkY, chunkHeader.ChunkZ), chunkHeader.VoxelSize);
+
+                void* dirtyMaskPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(state.DirtyMaskWords);
+                UnsafeUtility.MemCpy(dirtyMaskPtr, snapshotPtr + cursor, dirtyMaskByteLength);
+                cursor += dirtyMaskByteLength;
+
+                void* sdfPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(state.SdfValueBits);
+                UnsafeUtility.MemCpy(sdfPtr, snapshotPtr + cursor, sdfByteLength);
+                cursor += sdfByteLength;
+
+                void* materialPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(state.MaterialIds);
+                UnsafeUtility.MemCpy(materialPtr, snapshotPtr + cursor, materialByteLength);
+                cursor += materialByteLength;
+            }
+
+            if (cursor != snapshot.Length)
+            {
+                error = "Voxel delta snapshot contains unread trailing bytes.";
+                return false;
+            }
+
+            if (loadedDirtyCellCount != header.TotalDirtyCellCount)
+            {
+                error = "Voxel delta snapshot dirty-cell count does not match the header.";
+                return false;
+            }
+
+            RequestRebuildsForLoadedState();
+            return true;
+        }
+
+        private void TryRegisterSaveService()
+        {
+            if (_saveRegistered || GlobalRegistry.Save == null)
                 return;
 
-            SaveManager.Instance.Register(this);
+            GlobalRegistry.Save.Register(this);
             _saveRegistered = true;
         }
 
@@ -483,6 +657,16 @@ namespace Hecton8.Caves
                         SetCell(ref state, localIndex, newValue, materialId, true);
                     }
                 }
+            }
+        }
+
+        private void RequestRebuildsForLoadedState()
+        {
+            for (int i = 0; i < _registeredVolumes.Count; i++)
+            {
+                HectonVoxelVolume volume = _registeredVolumes[i];
+                if (volume != null && HasOverlappingDelta(volume))
+                    volume.RequestDeltaRebuild();
             }
         }
 
@@ -744,6 +928,23 @@ namespace Hecton8.Caves
             public Vector3 AbsoluteHitPoint;
             public float AccumulatedDamage;
             public byte MaterialId;
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        private struct NativeSnapshotHeader
+        {
+            public int ChunkCount;
+            public int TotalDirtyCellCount;
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        private struct NativeSnapshotChunkHeader
+        {
+            public int ChunkX;
+            public int ChunkY;
+            public int ChunkZ;
+            public float VoxelSize;
+            public int DirtyCellCount;
         }
 
         private readonly struct ChunkAddress : IEquatable<ChunkAddress>

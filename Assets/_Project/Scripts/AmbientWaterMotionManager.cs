@@ -22,7 +22,7 @@ namespace Hecton8.Physics
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4900)]
     [AddComponentMenu("Hecton/Physics/Ambient Water Motion Manager")]
-    public sealed class AmbientWaterMotionManager : MonoBehaviour, ITickable
+    public sealed class AmbientWaterMotionManager : MonoBehaviour, ITickable, IUpdatable
     {
         private static AmbientWaterMotionManager _instance;
 
@@ -328,11 +328,8 @@ namespace Hecton8.Physics
             if (_tickRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register((ITickable)this);
+            SystemDispatcher.EnsureRuntimeInstance();
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _tickRegistered = true;
         }
 
@@ -341,10 +338,7 @@ namespace Hecton8.Physics
             if (!_tickRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister((ITickable)this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _tickRegistered = false;
         }
 

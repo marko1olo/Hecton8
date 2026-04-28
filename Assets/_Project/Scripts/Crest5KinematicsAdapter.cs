@@ -1,6 +1,8 @@
 using System.Collections.Generic;
+using Unity.Collections;
 using UnityEngine;
 using WaveHarmonic.Crest;
+using Hecton8.Core;
 
 namespace Hecton8.Physics
 {
@@ -10,7 +12,7 @@ namespace Hecton8.Physics
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Physics/Crest 5 Kinematics Adapter")]
-    public sealed class Crest5KinematicsAdapter : MonoBehaviour, IHectonOceanKinematics
+    public sealed class Crest5KinematicsAdapter : HectonCrestOceanKinematics
     {
         private const int MaxBatchSampleCount = 5;
         private const float DefaultSeaLevel = 4900f;
@@ -38,10 +40,10 @@ namespace Hecton8.Physics
             new SampleFlowHelper[MaxBatchSampleCount]; // COLD ALLOC: SampleFlowHelper[5] — per-point Crest 5 flow query lanes for zero-GC batch sampling — owner: Crest5KinematicsAdapter
 
         /// <inheritdoc />
-        public int Priority => ProviderPriority;
+        public override int Priority => ProviderPriority;
 
         /// <inheritdoc />
-        public bool IsAvailable
+        public override bool IsAvailable
         {
             get
             {
@@ -59,7 +61,33 @@ namespace Hecton8.Physics
         }
 
         /// <inheritdoc />
-        public float SeaLevel => ResolveSeaLevel(ResolveWaterRenderer(forceSceneSearch: false));
+        public override float SeaLevel => ResolveSeaLevel(ResolveWaterRenderer(forceSceneSearch: false));
+
+        /// <inheritdoc />
+        public override bool TryGetSurfaceWeatherState(out HectonOceanSurfaceWeatherState state)
+        {
+            state = default;
+            WaterRenderer waterRenderer = ResolveWaterRenderer(forceSceneSearch: true);
+            if (waterRenderer == null)
+                return false;
+
+            state.WindSpeed = Mathf.Max(0f, waterRenderer.WindSpeed);
+            state.Flags = (uint)HectonOceanSurfaceWeatherStateFlags.SupportsWindSpeed;
+            return true;
+        }
+
+        /// <inheritdoc />
+        public override bool ApplySurfaceWeatherState(in HectonOceanSurfaceWeatherState state)
+        {
+            WaterRenderer waterRenderer = ResolveWaterRenderer(forceSceneSearch: true);
+            if (waterRenderer == null)
+                return false;
+
+            if ((state.Flags & (uint)HectonOceanSurfaceWeatherStateFlags.SupportsWindSpeed) != 0u)
+                waterRenderer.WindSpeed = Mathf.Max(0f, state.WindSpeed);
+
+            return true;
+        }
 
         private void Awake()
         {
@@ -68,16 +96,16 @@ namespace Hecton8.Physics
 
         private void OnEnable()
         {
-            HectonOceanRegistry.Register(this);
+            OceanKinematicsRuntimeService.RegisterProvider(this);
         }
 
         private void OnDisable()
         {
-            HectonOceanRegistry.Unregister(this);
+            OceanKinematicsRuntimeService.UnregisterProvider(this);
         }
 
         /// <inheritdoc />
-        public bool GetWaterHeight(Vector3[] samplePositions, int sampleCount, float minSpatialLength, float[] waterHeights)
+        public override bool GetWaterHeight(Vector3[] samplePositions, int sampleCount, float minSpatialLength, float[] waterHeights)
         {
             EnsureHelpersInitialized();
 
@@ -108,7 +136,41 @@ namespace Hecton8.Physics
         }
 
         /// <inheritdoc />
-        public bool GetSurfaceFlow(Vector3[] samplePositions, int sampleCount, float minSpatialLength, Vector3[] surfaceFlows)
+        public override bool GetWaterHeight(NativeArray<Vector3> samplePositions, int sampleCount, float minSpatialLength, NativeArray<float> waterHeights)
+        {
+            EnsureHelpersInitialized();
+
+            if (!ValidateHeightRequest(samplePositions, sampleCount, waterHeights))
+                return false;
+
+            WaterRenderer waterRenderer = ResolveWaterRenderer(forceSceneSearch: true);
+            if (waterRenderer == null)
+            {
+                FillHeightFallback(waterHeights, sampleCount, DefaultSeaLevel);
+                return false;
+            }
+
+            float resolvedMinSpatialLength = Mathf.Max(0.01f, minSpatialLength);
+            PrimeProvidersIfNeeded(waterRenderer, samplePositions[0], resolvedMinSpatialLength, requireFlow: false);
+            bool succeeded = true;
+            float seaLevel = ResolveSeaLevel(waterRenderer);
+            for (int i = 0; i < sampleCount; i++)
+            {
+                if (_heightSampleHelpers[i].SampleHeight(samplePositions[i], out float sampledHeight, resolvedMinSpatialLength))
+                {
+                    waterHeights[i] = sampledHeight;
+                    continue;
+                }
+
+                waterHeights[i] = seaLevel;
+                succeeded = false;
+            }
+
+            return succeeded;
+        }
+
+        /// <inheritdoc />
+        public override bool GetSurfaceFlow(Vector3[] samplePositions, int sampleCount, float minSpatialLength, Vector3[] surfaceFlows)
         {
             EnsureHelpersInitialized();
 
@@ -141,7 +203,40 @@ namespace Hecton8.Physics
         }
 
         /// <inheritdoc />
-        public bool GetWaveNormal(
+        public override bool GetSurfaceFlow(NativeArray<Vector3> samplePositions, int sampleCount, float minSpatialLength, NativeArray<Vector3> surfaceFlows)
+        {
+            EnsureHelpersInitialized();
+
+            if (!ValidateVectorRequest(samplePositions, sampleCount, surfaceFlows))
+                return false;
+
+            WaterRenderer waterRenderer = ResolveWaterRenderer(forceSceneSearch: true);
+            if (waterRenderer == null || waterRenderer.FlowLod == null || !waterRenderer.FlowLod.Enabled)
+            {
+                FillVectorFallback(surfaceFlows, sampleCount, Vector3.zero);
+                return false;
+            }
+
+            float resolvedMinSpatialLength = Mathf.Max(0.01f, minSpatialLength);
+            PrimeProvidersIfNeeded(waterRenderer, samplePositions[0], resolvedMinSpatialLength, requireFlow: true);
+            bool succeeded = true;
+            for (int i = 0; i < sampleCount; i++)
+            {
+                if (_flowSampleHelpers[i].Sample(samplePositions[i], out Vector2 flow, resolvedMinSpatialLength))
+                {
+                    surfaceFlows[i] = new Vector3(flow.x, 0f, flow.y);
+                    continue;
+                }
+
+                surfaceFlows[i] = Vector3.zero;
+                succeeded = false;
+            }
+
+            return succeeded;
+        }
+
+        /// <inheritdoc />
+        public override bool GetWaveNormal(
             Vector3[] samplePositions,
             int sampleCount,
             float minSpatialLength,
@@ -175,6 +270,56 @@ namespace Hecton8.Physics
                         out waveNormals[i],
                         resolvedMinSpatialLength))
                 {
+                    continue;
+                }
+
+                displacements[i] = Vector3.zero;
+                surfaceVelocities[i] = Vector3.zero;
+                waveNormals[i] = Vector3.up;
+                succeeded = false;
+            }
+
+            return succeeded;
+        }
+
+        /// <inheritdoc />
+        public override bool GetWaveNormal(
+            NativeArray<Vector3> samplePositions,
+            int sampleCount,
+            float minSpatialLength,
+            NativeArray<Vector3> waveNormals,
+            NativeArray<Vector3> surfaceVelocities,
+            NativeArray<Vector3> displacements)
+        {
+            EnsureHelpersInitialized();
+
+            if (!ValidateWaveRequest(samplePositions, sampleCount, waveNormals, surfaceVelocities, displacements))
+                return false;
+
+            WaterRenderer waterRenderer = ResolveWaterRenderer(forceSceneSearch: true);
+            if (waterRenderer == null)
+            {
+                FillVectorFallback(waveNormals, sampleCount, Vector3.up);
+                FillVectorFallback(surfaceVelocities, sampleCount, Vector3.zero);
+                FillVectorFallback(displacements, sampleCount, Vector3.zero);
+                return false;
+            }
+
+            float resolvedMinSpatialLength = Mathf.Max(0.01f, minSpatialLength);
+            PrimeProvidersIfNeeded(waterRenderer, samplePositions[0], resolvedMinSpatialLength, requireFlow: false);
+            bool succeeded = true;
+            for (int i = 0; i < sampleCount; i++)
+            {
+                if (_waveSampleHelpers[i].SampleDisplacement(
+                        samplePositions[i],
+                        out Vector3 displacement,
+                        out Vector3 surfaceVelocity,
+                        out Vector3 waveNormal,
+                        resolvedMinSpatialLength))
+                {
+                    displacements[i] = displacement;
+                    surfaceVelocities[i] = surfaceVelocity;
+                    waveNormals[i] = waveNormal;
                     continue;
                 }
 
@@ -273,7 +418,7 @@ namespace Hecton8.Physics
                 if (rootObject == null)
                     continue;
 
-                WaterRenderer candidate = rootObject.GetComponentInChildren<WaterRenderer>(true);
+                WaterRenderer candidate = rootObject.GetComponent<WaterRenderer>();
                 if (candidate == null)
                     continue;
 
@@ -303,6 +448,13 @@ namespace Hecton8.Physics
                 heights[i] = value;
         }
 
+        private static void FillHeightFallback(NativeArray<float> heights, int sampleCount, float value)
+        {
+            int resolvedCount = Mathf.Min(sampleCount, heights.Length);
+            for (int i = 0; i < resolvedCount; i++)
+                heights[i] = value;
+        }
+
         private static void FillVectorFallback(Vector3[] values, int sampleCount, Vector3 fallbackValue)
         {
             if (values == null)
@@ -313,10 +465,27 @@ namespace Hecton8.Physics
                 values[i] = fallbackValue;
         }
 
+        private static void FillVectorFallback(NativeArray<Vector3> values, int sampleCount, Vector3 fallbackValue)
+        {
+            int resolvedCount = Mathf.Min(sampleCount, values.Length);
+            for (int i = 0; i < resolvedCount; i++)
+                values[i] = fallbackValue;
+        }
+
         private static bool ValidateHeightRequest(Vector3[] samplePositions, int sampleCount, float[] heights)
         {
             return samplePositions != null &&
                    heights != null &&
+                   sampleCount > 0 &&
+                   sampleCount <= MaxBatchSampleCount &&
+                   samplePositions.Length >= sampleCount &&
+                   heights.Length >= sampleCount;
+        }
+
+        private static bool ValidateHeightRequest(NativeArray<Vector3> samplePositions, int sampleCount, NativeArray<float> heights)
+        {
+            return samplePositions.IsCreated &&
+                   heights.IsCreated &&
                    sampleCount > 0 &&
                    sampleCount <= MaxBatchSampleCount &&
                    samplePositions.Length >= sampleCount &&
@@ -333,6 +502,16 @@ namespace Hecton8.Physics
                    vectors.Length >= sampleCount;
         }
 
+        private static bool ValidateVectorRequest(NativeArray<Vector3> samplePositions, int sampleCount, NativeArray<Vector3> vectors)
+        {
+            return samplePositions.IsCreated &&
+                   vectors.IsCreated &&
+                   sampleCount > 0 &&
+                   sampleCount <= MaxBatchSampleCount &&
+                   samplePositions.Length >= sampleCount &&
+                   vectors.Length >= sampleCount;
+        }
+
         private static bool ValidateWaveRequest(
             Vector3[] samplePositions,
             int sampleCount,
@@ -343,6 +522,20 @@ namespace Hecton8.Physics
             return ValidateVectorRequest(samplePositions, sampleCount, waveNormals) &&
                    surfaceVelocities != null &&
                    displacements != null &&
+                   surfaceVelocities.Length >= sampleCount &&
+                   displacements.Length >= sampleCount;
+        }
+
+        private static bool ValidateWaveRequest(
+            NativeArray<Vector3> samplePositions,
+            int sampleCount,
+            NativeArray<Vector3> waveNormals,
+            NativeArray<Vector3> surfaceVelocities,
+            NativeArray<Vector3> displacements)
+        {
+            return ValidateVectorRequest(samplePositions, sampleCount, waveNormals) &&
+                   surfaceVelocities.IsCreated &&
+                   displacements.IsCreated &&
                    surfaceVelocities.Length >= sampleCount &&
                    displacements.Length >= sampleCount;
         }

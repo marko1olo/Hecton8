@@ -1,0 +1,346 @@
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Scan_Pickup_ResourceB'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Item_Tool_Builder_World'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'VisorHUDController' on game object 'Suit_Visor'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+NASAPunk.Visor.VisorHUDController..ctor () (at Assets/_Project/Scripts/Visor/VisorHUDController.cs:112)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Item_Tool_BeaconDeployer_World'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'PFB_Resource_SilverOre'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Item_Tool_LaserCutter_World'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: NameToLayer is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'PlayerSwimBlockoutRig' on game object 'Player'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.LayerMask.NameToLayer (System.String layerName) (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Gameplay.PlayerSwimBlockoutRig..cctor () (at Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs:35)
+Rethrow as TypeInitializationException: The type initializer for 'Hecton8.Gameplay.PlayerSwimBlockoutRig' threw an exception.
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'PFB_Resource_FiberKelp'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Scrap_C'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Fiber_B'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Item_Tool_Scanner_World'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Scrap_B'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Item_Tool_StunPistol_World'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Membrane_A'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Item_Tool_Repair_World'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'PFB_Resource_MembraneTissue'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'BuilderTool' on game object 'Tool_Builder_Proxy'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Gameplay.BuilderTool..ctor () (at Assets/_Project/Scripts/BuilderTool.cs:100)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Item_Tool_Knife_World'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Item_Tool_SalvageSampler_World'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Fiber_A'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Resin_A'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Trial_Salvage_A'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Fiber_C'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Trial_Salvage_B'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Scrap_A'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'VisorHUDController' on game object 'Suit_Visor'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+NASAPunk.Visor.VisorHUDController..ctor () (at Assets/_Project/Scripts/Visor/VisorHUDController.cs:112)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'DarkRoute_Salvage_Close'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Item_Tool_Knife_World'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'PFB_Resource_CopperOre'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'PFB_Resource_TitaniumScrap'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Resin_B'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Scan_Pickup_ResourceA'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Item_Tool_SalvageSampler_World'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'PFB_Resource_SulfurClumps'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'PFB_Resource_HydrocarbonResin'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Item_Tool_HarpoonLauncher_World'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Item_Titanium'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Membrane_B'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Item_Tool_Repair_World'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Item_Tool_StunPistol_World'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Item_Tool_Builder_World'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Item_Tool_EnvAnalyzer_World'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Ops_Salvage'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Item_Titanium'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Item_Tool_Propulsion_World'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Trial_Salvage_C'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Item_Tool_Flashlight_World'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Item_Tool_BeaconDeployer_World'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: NameToLayer is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'HectonCrestOceanDepthCacheBootstrap' on game object 'Ocean_Crest'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.LayerMask.NameToLayer (System.String layerName) (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.World.HectonCrestOceanDepthCacheBootstrap..cctor () (at Assets/_Project/Scripts/World/HectonCrestOceanDepthCacheBootstrap.cs:45)
+Rethrow as TypeInitializationException: The type initializer for 'Hecton8.World.HectonCrestOceanDepthCacheBootstrap' threw an exception.
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Scrap_D'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: NameToLayer is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'PlayerSwimBlockoutRig' on game object 'Player'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.LayerMask.NameToLayer (System.String layerName) (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Gameplay.PlayerSwimBlockoutRig..cctor () (at Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs:35)
+Rethrow as TypeInitializationException: The type initializer for 'Hecton8.Gameplay.PlayerSwimBlockoutRig' threw an exception.
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Item_Tool_Propulsion_World'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Item_Tool_Flashlight_World'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'BuilderTool' on game object 'Tool_Builder_Held'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Gameplay.BuilderTool..ctor () (at Assets/_Project/Scripts/BuilderTool.cs:100)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Item_Tool_HarpoonLauncher_World'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Item_Tool_EnvAnalyzer_World'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Item_Tool_Scanner_World'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'Item_Tool_LaserCutter_World'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+UnityException: NameToLayer is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'HectonCrestOceanDepthCacheBootstrap' on game object 'Ocean_Crest'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.LayerMask.NameToLayer (System.String layerName) (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.World.HectonCrestOceanDepthCacheBootstrap..cctor () (at Assets/_Project/Scripts/World/HectonCrestOceanDepthCacheBootstrap.cs:45)
+Rethrow as TypeInitializationException: The type initializer for 'Hecton8.World.HectonCrestOceanDepthCacheBootstrap' threw an exception.
+
+UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'InteractionHighlighter' on game object 'PFB_Resource_SilicaShards'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.MaterialPropertyBlock..ctor () (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Interaction.InteractionHighlighter..ctor () (at Assets/_Project/Scripts/InteractionHighlighter.cs:105)
+
+ArgumentNullException: Value cannot be null.
+Parameter name: dest
+UnityEngine.Bindings.ThrowHelper.ThrowArgumentNullException (System.Object obj, System.String parameterName) (at <5ea200363ab142a582463089d51cabd3>:0)
+UnityEngine.Renderer.Internal_GetPropertyBlock (UnityEngine.MaterialPropertyBlock dest) (at <5ea200363ab142a582463089d51cabd3>:0)
+UnityEngine.Renderer.GetPropertyBlock (UnityEngine.MaterialPropertyBlock properties) (at <5ea200363ab142a582463089d51cabd3>:0)
+NASAPunk.Visor.VisorHUDController.BindRT () (at Assets/_Project/Scripts/Visor/VisorHUDController.cs:896)
+NASAPunk.Visor.VisorHUDController.RebuildProjection () (at Assets/_Project/Scripts/Visor/VisorHUDController.cs:883)
+NASAPunk.Visor.VisorHUDController.OnValidate () (at Assets/_Project/Scripts/Visor/VisorHUDController.cs:313)
+
+ArgumentNullException: Value cannot be null.
+Parameter name: dest
+UnityEngine.Bindings.ThrowHelper.ThrowArgumentNullException (System.Object obj, System.String parameterName) (at <5ea200363ab142a582463089d51cabd3>:0)
+UnityEngine.Renderer.Internal_GetPropertyBlock (UnityEngine.MaterialPropertyBlock dest) (at <5ea200363ab142a582463089d51cabd3>:0)
+UnityEngine.Renderer.GetPropertyBlock (UnityEngine.MaterialPropertyBlock properties) (at <5ea200363ab142a582463089d51cabd3>:0)
+NASAPunk.Visor.VisorHUDController.BindRT () (at Assets/_Project/Scripts/Visor/VisorHUDController.cs:896)
+NASAPunk.Visor.VisorHUDController.RebuildProjection () (at Assets/_Project/Scripts/Visor/VisorHUDController.cs:883)
+NASAPunk.Visor.VisorHUDController.OnEnable () (at Assets/_Project/Scripts/Visor/VisorHUDController.cs:208)
+
+UnityException: NameToLayer is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'PlayerSwimBlockoutRig' on game object 'Player'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.LayerMask.NameToLayer (System.String layerName) (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Gameplay.PlayerSwimBlockoutRig..cctor () (at Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs:35)
+Rethrow as TypeInitializationException: The type initializer for 'Hecton8.Gameplay.PlayerSwimBlockoutRig' threw an exception.
+
+UnityException: NameToLayer is not allowed to be called from a MonoBehaviour constructor (or instance field initializer), call it in Awake or Start instead. Called from MonoBehaviour 'PlayerSwimBlockoutRig' on game object 'Player'.
+See "Script Serialization" page in the Unity Manual for further details.
+UnityEngine.LayerMask.NameToLayer (System.String layerName) (at <5ea200363ab142a582463089d51cabd3>:0)
+Hecton8.Gameplay.PlayerSwimBlockoutRig..cctor () (at Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs:35)
+Rethrow as TypeInitializationException: The type initializer for 'Hecton8.Gameplay.PlayerSwimBlockoutRig' threw an exception.
+
+Error while saving Prefab: 'Assets/_Project/Prefabs/Suit_HUD_Canvas.prefab'. You are trying to save a Prefab with a missing script. This is not allowed.
+Please change the script or remove it from the GameObject 'Suit_HUD_Canvas'.
+UnityEditor.PrefabUtility:SaveAsPrefabAsset (UnityEngine.GameObject,string,bool&)
+MCPForUnity.Editor.Tools.Prefabs.ManagePrefabs:ModifyContents (Newtonsoft.Json.Linq.JObject) (at ./Library/PackageCache/com.coplaydev.unity-mcp@fbdb152757bd/Editor/Tools/Prefabs/ManagePrefabs.cs:655)
+MCPForUnity.Editor.Tools.Prefabs.ManagePrefabs:HandleCommand (Newtonsoft.Json.Linq.JObject) (at ./Library/PackageCache/com.coplaydev.unity-mcp@fbdb152757bd/Editor/Tools/Prefabs/ManagePrefabs.cs:56)
+MCPForUnity.Editor.Tools.CommandRegistry:ExecuteCommand (string,Newtonsoft.Json.Linq.JObject,System.Threading.Tasks.TaskCompletionSource`1<string>) (at ./Library/PackageCache/com.coplaydev.unity-mcp@fbdb152757bd/Editor/Tools/CommandRegistry.cs:236)
+MCPForUnity.Editor.Services.Transport.TransportCommandDispatcher:ProcessCommand (string,MCPForUnity.Editor.Services.Transport.TransportCommandDispatcher/PendingCommand) (at ./Library/PackageCache/com.coplaydev.unity-mcp@fbdb152757bd/Editor/Services/Transport/TransportCommandDispatcher.cs:366)
+MCPForUnity.Editor.Services.Transport.TransportCommandDispatcher:ProcessQueue () (at ./Library/PackageCache/com.coplaydev.unity-mcp@fbdb152757bd/Editor/Services/Transport/TransportCommandDispatcher.cs:262)
+MCPForUnity.Editor.Services.Transport.TransportCommandDispatcher:<RequestMainThreadPump>g__Pump|11_0 () (at ./Library/PackageCache/com.coplaydev.unity-mcp@fbdb152757bd/Editor/Services/Transport/TransportCommandDispatcher.cs:184)
+MCPForUnity.Editor.Services.Transport.TransportCommandDispatcher/<>c:<RequestMainThreadPump>b__11_1 (object) (at ./Library/PackageCache/com.coplaydev.unity-mcp@fbdb152757bd/Editor/Services/Transport/TransportCommandDispatcher.cs:189)
+UnityEngine.UnitySynchronizationContext:ExecuteTasks ()
+

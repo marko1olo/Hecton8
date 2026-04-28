@@ -1,4 +1,4 @@
-﻿//////////////////////////////////////////////////////
+//////////////////////////////////////////////////////
 // MicroSplat
 // Copyright (c) Jason Booth
 //////////////////////////////////////////////////////
@@ -12,7 +12,6 @@ using static UnityEngine.GraphicsBuffer;
 
 namespace JBooth.MicroSplat
 {
-   [InitializeOnLoad]
    public class MicroSplatDefines
    {
       const string sMicroSplatDefine = "__MICROSPLAT__";

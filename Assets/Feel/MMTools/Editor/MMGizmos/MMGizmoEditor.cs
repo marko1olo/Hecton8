@@ -1,5 +1,4 @@
 ﻿using UnityEditor;
-using UnityEditor.ShortcutManagement;
 using UnityEngine;
 
 namespace MoreMountains.Tools
@@ -14,7 +13,6 @@ namespace MoreMountains.Tools
 		/// <summary>
 		/// Lets you press G when in scene view to toggle gizmos on or off
 		/// </summary>
-		[Shortcut("Toggle Gizmos", typeof(SceneView), KeyCode.G, displayName = "ToggleGizmos")]
 		public static void ToggleGizmos()
 		{
 			SceneView.lastActiveSceneView.drawGizmos = !SceneView.lastActiveSceneView.drawGizmos;

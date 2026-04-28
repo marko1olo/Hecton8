@@ -10,10 +10,13 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9940)]
-    public sealed class SceneRuntimeService : MonoBehaviour, ISceneService
+    public sealed class SceneRuntimeService : MonoBehaviour, ISceneService, IUpdatable
     {
         private static SceneRuntimeService _instance;
         private bool _isInitialized;
+        private bool _registeredSceneService;
+        private bool _registeredSceneCallbacks;
+        private bool _registeredUpdatable;
 
         /// <summary>
         /// True once the service has registered itself into <see cref="GlobalRegistry"/>.
@@ -51,11 +54,17 @@ namespace Hecton8.Core
         public void InitializeService()
         {
             if (_isInitialized)
+            {
+                TryRegisterUpdatable();
+                TryRegisterSceneService();
+                TryRegisterSceneCallbacks();
                 return;
+            }
 
-            GlobalRegistry.RegisterSceneService(this);
-            SceneManager.sceneUnloaded += HandleSceneUnloaded;
             _isInitialized = true;
+            TryRegisterUpdatable();
+            TryRegisterSceneService();
+            TryRegisterSceneCallbacks();
         }
 
         /// <summary>
@@ -72,6 +81,14 @@ namespace Hecton8.Core
 
             ClearRuntimeState();
             SceneManager.LoadScene(sceneName);
+        }
+
+        /// <summary>
+        /// Core-lane dispatcher hook required by the runtime registry contract.
+        /// </summary>
+        /// <param name="deltaTime">Scaled frame delta supplied by the dispatcher.</param>
+        public void Tick(float deltaTime)
+        {
         }
 
         private void Awake()
@@ -93,14 +110,29 @@ namespace Hecton8.Core
             }
         }
 
-        private void OnDestroy()
+        private void OnEnable()
         {
+            TryRegisterUpdatable();
             if (_isInitialized)
             {
-                SceneManager.sceneUnloaded -= HandleSceneUnloaded;
-                GlobalRegistry.UnregisterSceneService(this);
-                _isInitialized = false;
+                TryRegisterSceneService();
+                TryRegisterSceneCallbacks();
             }
+        }
+
+        private void OnDisable()
+        {
+            TryUnregisterUpdatable();
+            TryUnregisterSceneCallbacks();
+            TryUnregisterSceneService();
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregisterUpdatable();
+            TryUnregisterSceneCallbacks();
+            TryUnregisterSceneService();
+            _isInitialized = false;
 
             if (_instance == this)
                 _instance = null;
@@ -127,6 +159,61 @@ namespace Hecton8.Core
                 GlobalRegistry.Debris.ClearActiveDebris();
 
             GlobalPhysicsStateManager.ClearRuntimeStateStatic();
+        }
+
+        private void TryRegisterUpdatable()
+        {
+            if (_registeredUpdatable)
+                return;
+
+            SystemDispatcher.EnsureRuntimeInstance();
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
+            _registeredUpdatable = true;
+        }
+
+        private void TryUnregisterUpdatable()
+        {
+            if (!_registeredUpdatable)
+                return;
+
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
+            _registeredUpdatable = false;
+        }
+
+        private void TryRegisterSceneService()
+        {
+            if (_registeredSceneService)
+                return;
+
+            GlobalRegistry.RegisterSceneService(this);
+            _registeredSceneService = true;
+        }
+
+        private void TryUnregisterSceneService()
+        {
+            if (!_registeredSceneService)
+                return;
+
+            GlobalRegistry.UnregisterSceneService(this);
+            _registeredSceneService = false;
+        }
+
+        private void TryRegisterSceneCallbacks()
+        {
+            if (_registeredSceneCallbacks)
+                return;
+
+            SceneManager.sceneUnloaded += HandleSceneUnloaded;
+            _registeredSceneCallbacks = true;
+        }
+
+        private void TryUnregisterSceneCallbacks()
+        {
+            if (!_registeredSceneCallbacks)
+                return;
+
+            SceneManager.sceneUnloaded -= HandleSceneUnloaded;
+            _registeredSceneCallbacks = false;
         }
     }
 }

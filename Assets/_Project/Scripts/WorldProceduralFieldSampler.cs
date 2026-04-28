@@ -33,6 +33,9 @@ namespace Hecton8.World
         private const string SeafloorSourceFallbackLabel = "FallbackSynthetic";
         private const int MaxSeafloorHeightCacheEntries = 4096;
         private const int MaxBiomeIndexCacheEntries = 4096;
+        private const int NoiseLookupResolution = 512;
+        private const int NoiseLookupMask = NoiseLookupResolution - 1;
+        private const float NoiseLookupValueScale = 1f / ushort.MaxValue;
 #if UNITY_EDITOR
         private static bool _assemblyReloadHookRegistered;
 #endif
@@ -342,6 +345,7 @@ namespace Hecton8.World
         private NativeArray<BiomeMatrixData> _burstBiomeMatrixData;
         private NativeArray<BiomeFamilyData> _burstBiomeFamilyData;
         private NativeArray<CaveEntranceHintData> _burstCaveEntranceHints;
+        private NativeArray<ushort> _noiseLookupTable;
         private int _burstZoneDataCount;
         private int _burstBiomeMatrixDataCount;
         private int _burstBiomeFamilyDataCount;
@@ -422,6 +426,7 @@ namespace Hecton8.World
             [ReadOnly] public NativeArray<BiomeMatrixData> BiomeMatrices;
             [ReadOnly] public NativeArray<BiomeFamilyData> BiomeFamilies;
             [ReadOnly] public NativeArray<CaveEntranceHintData> CaveEntranceHints;
+            [ReadOnly] public NativeArray<ushort> NoiseLookupTable;
             [WriteOnly] public NativeArray<CellOutputData> CellOutputs;
 
             public float SlopeProbeMeters;
@@ -468,6 +473,7 @@ namespace Hecton8.World
                     BiomeMatrices,
                     BiomeFamilies,
                     CaveEntranceHints,
+                    NoiseLookupTable,
                     SlopeProbeMeters,
                     FieldNoiseScale,
                     DetailNoiseScale,
@@ -530,6 +536,7 @@ namespace Hecton8.World
             NativeArray<BiomeMatrixData> biomeMatrices,
             NativeArray<BiomeFamilyData> biomeFamilies,
             NativeArray<CaveEntranceHintData> caveEntranceHints,
+            NativeArray<ushort> noiseLookupTable,
             float slopeProbeMeters,
             float fieldNoiseScale,
             float detailNoiseScale,
@@ -587,7 +594,7 @@ namespace Hecton8.World
                 IsValid = 1
             };
 
-            FillNoiseContext(ref output, fieldNoiseScale, detailNoiseScale);
+            FillNoiseContext(ref output, noiseLookupTable, fieldNoiseScale, detailNoiseScale);
             output.ZoneDataIndex = ResolveZoneDataIndex(output.Position.xz, zones, zoneCount, currentZoneDataIndex, out output.ZoneWeight);
             if (output.ZoneDataIndex >= 0)
             {
@@ -755,41 +762,59 @@ namespace Hecton8.World
             output.SecondarySampleValid = 1;
         }
 
-        private static void FillNoiseContext(ref CellOutputData output, float fieldNoiseScale, float detailNoiseScale)
+        private static void FillNoiseContext(ref CellOutputData output, NativeArray<ushort> noiseLookupTable, float fieldNoiseScale, float detailNoiseScale)
         {
             float x = output.Position.x;
             float z = output.Position.z;
-            output.TerrainNoise = EvaluateNoise01Job(x, z, fieldNoiseScale);
-            output.DetailNoise = EvaluateNoise01Job(x + 91.7f, z - 33.4f, detailNoiseScale);
-            output.SedimentFieldNoise = EvaluateNoise01Job(x - 218.6f, z + 57.4f, fieldNoiseScale * 0.74f);
-            output.FertileFieldNoise = EvaluateNoise01Job(x + 127.8f, z - 146.2f, detailNoiseScale * 0.78f);
-            output.ReefFieldNoise = EvaluateNoise01Job(x + 314.4f, z + 88.5f, detailNoiseScale * 0.58f);
-            output.IndustrialFieldNoise = EvaluateNoise01Job(x - 401.1f, z - 203.6f, fieldNoiseScale * 0.82f);
-            output.HazardFieldNoise = EvaluateNoise01Job(x + 261.7f, z - 318.3f, detailNoiseScale * 0.94f);
-            output.LandmarkFieldNoise = EvaluateNoise01Job(x - 83.2f, z + 367.9f, fieldNoiseScale * 0.62f);
-            output.BasinFieldNoise = EvaluateNoise01Job(x + 452.5f, z + 121.3f, detailNoiseScale * 0.66f);
-            output.RuggedBiomeNoise = EvaluateNoise01Job(x + 173.4f, z - 117.2f, fieldNoiseScale * 0.9f);
-            output.FertileBiomeNoise = EvaluateNoise01Job(x - 91.6f, z + 44.3f, fieldNoiseScale * 1.15f);
-            output.ThermalBiomeNoise = EvaluateNoise01Job(x + 304.2f, z + 281.4f, detailNoiseScale * 0.92f);
-            output.MetallicBiomeNoise = EvaluateNoise01Job(x - 211.5f, z + 96.7f, detailNoiseScale * 0.88f);
-            output.CrystalBiomeNoise = EvaluateNoise01Job(x + 67.4f, z - 248.6f, detailNoiseScale * 0.84f);
-            output.VoidBiomeNoise = EvaluateNoise01Job(x - 403.1f, z - 365.8f, fieldNoiseScale * 0.66f);
-            output.ReefBiomeNoise = EvaluateNoise01Job(x + 149.7f, z - 71.9f, detailNoiseScale * 0.9f);
-            output.BasinMacroNoise = EvaluateNoise01Job(x - 512.4f, z + 188.6f, fieldNoiseScale * 0.22f);
-            output.ReefMacroNoise = EvaluateNoise01Job(x + 417.2f, z - 153.3f, fieldNoiseScale * 0.24f);
-            output.ServiceMacroNoise = EvaluateNoise01Job(x - 286.5f, z + 407.8f, fieldNoiseScale * 0.21f);
-            output.RiftMacroNoise = EvaluateNoise01Job(x + 598.1f, z - 487.2f, fieldNoiseScale * 0.19f);
-            output.CoralPatternNoise = EvaluateNoise01Job(x + 153.4f, z - 74.7f, detailNoiseScale * 0.86f);
-            output.CaveNoise = EvaluateNoise01Job(x - 141.7f, z + 208.3f, fieldNoiseScale * 0.78f);
-            output.CompositionNoise = EvaluateNoise01Job(x + 387.2f, z - 291.4f, detailNoiseScale * 0.56f);
+            output.TerrainNoise = SampleNoiseLookup01(noiseLookupTable, x, z, fieldNoiseScale);
+            output.DetailNoise = SampleNoiseLookup01(noiseLookupTable, x + 91.7f, z - 33.4f, detailNoiseScale);
+            output.SedimentFieldNoise = SampleNoiseLookup01(noiseLookupTable, x - 218.6f, z + 57.4f, fieldNoiseScale * 0.74f);
+            output.FertileFieldNoise = SampleNoiseLookup01(noiseLookupTable, x + 127.8f, z - 146.2f, detailNoiseScale * 0.78f);
+            output.ReefFieldNoise = SampleNoiseLookup01(noiseLookupTable, x + 314.4f, z + 88.5f, detailNoiseScale * 0.58f);
+            output.IndustrialFieldNoise = SampleNoiseLookup01(noiseLookupTable, x - 401.1f, z - 203.6f, fieldNoiseScale * 0.82f);
+            output.HazardFieldNoise = SampleNoiseLookup01(noiseLookupTable, x + 261.7f, z - 318.3f, detailNoiseScale * 0.94f);
+            output.LandmarkFieldNoise = SampleNoiseLookup01(noiseLookupTable, x - 83.2f, z + 367.9f, fieldNoiseScale * 0.62f);
+            output.BasinFieldNoise = SampleNoiseLookup01(noiseLookupTable, x + 452.5f, z + 121.3f, detailNoiseScale * 0.66f);
+            output.RuggedBiomeNoise = SampleNoiseLookup01(noiseLookupTable, x + 173.4f, z - 117.2f, fieldNoiseScale * 0.9f);
+            output.FertileBiomeNoise = SampleNoiseLookup01(noiseLookupTable, x - 91.6f, z + 44.3f, fieldNoiseScale * 1.15f);
+            output.ThermalBiomeNoise = SampleNoiseLookup01(noiseLookupTable, x + 304.2f, z + 281.4f, detailNoiseScale * 0.92f);
+            output.MetallicBiomeNoise = SampleNoiseLookup01(noiseLookupTable, x - 211.5f, z + 96.7f, detailNoiseScale * 0.88f);
+            output.CrystalBiomeNoise = SampleNoiseLookup01(noiseLookupTable, x + 67.4f, z - 248.6f, detailNoiseScale * 0.84f);
+            output.VoidBiomeNoise = SampleNoiseLookup01(noiseLookupTable, x - 403.1f, z - 365.8f, fieldNoiseScale * 0.66f);
+            output.ReefBiomeNoise = SampleNoiseLookup01(noiseLookupTable, x + 149.7f, z - 71.9f, detailNoiseScale * 0.9f);
+            output.BasinMacroNoise = SampleNoiseLookup01(noiseLookupTable, x - 512.4f, z + 188.6f, fieldNoiseScale * 0.22f);
+            output.ReefMacroNoise = SampleNoiseLookup01(noiseLookupTable, x + 417.2f, z - 153.3f, fieldNoiseScale * 0.24f);
+            output.ServiceMacroNoise = SampleNoiseLookup01(noiseLookupTable, x - 286.5f, z + 407.8f, fieldNoiseScale * 0.21f);
+            output.RiftMacroNoise = SampleNoiseLookup01(noiseLookupTable, x + 598.1f, z - 487.2f, fieldNoiseScale * 0.19f);
+            output.CoralPatternNoise = SampleNoiseLookup01(noiseLookupTable, x + 153.4f, z - 74.7f, detailNoiseScale * 0.86f);
+            output.CaveNoise = SampleNoiseLookup01(noiseLookupTable, x - 141.7f, z + 208.3f, fieldNoiseScale * 0.78f);
+            output.CompositionNoise = SampleNoiseLookup01(noiseLookupTable, x + 387.2f, z - 291.4f, detailNoiseScale * 0.56f);
         }
 
-        private static float EvaluateNoise01Job(float x, float z, float scale)
+        private static float SampleNoiseLookup01(NativeArray<ushort> noiseLookupTable, float x, float z, float scale)
         {
-            float s = math.max(0.0001f, scale);
-            float a = NoiseTo01(noise.snoise(new float2(x * s, z * s)));
-            float b = NoiseTo01(noise.snoise(new float2((x + 127.37f) * (s * 2.2f), (z - 93.11f) * (s * 2.2f))));
-            return math.clamp((a * 0.65f) + (b * 0.35f), 0f, 1f);
+            if (!noiseLookupTable.IsCreated || noiseLookupTable.Length <= 0)
+                return 0.5f;
+
+            float safeScale = math.max(0.0001f, scale);
+            float sampleX = math.frac(x * safeScale) * NoiseLookupResolution;
+            float sampleZ = math.frac(z * safeScale) * NoiseLookupResolution;
+
+            int x0 = (int)math.floor(sampleX) & NoiseLookupMask;
+            int z0 = (int)math.floor(sampleZ) & NoiseLookupMask;
+            int x1 = (x0 + 1) & NoiseLookupMask;
+            int z1 = (z0 + 1) & NoiseLookupMask;
+            float tx = sampleX - math.floor(sampleX);
+            float tz = sampleZ - math.floor(sampleZ);
+
+            float a = noiseLookupTable[z0 * NoiseLookupResolution + x0] * NoiseLookupValueScale;
+            float b = noiseLookupTable[z0 * NoiseLookupResolution + x1] * NoiseLookupValueScale;
+            float c = noiseLookupTable[z1 * NoiseLookupResolution + x0] * NoiseLookupValueScale;
+            float d = noiseLookupTable[z1 * NoiseLookupResolution + x1] * NoiseLookupValueScale;
+
+            float top = math.lerp(a, b, tx);
+            float bottom = math.lerp(c, d, tx);
+            return math.lerp(top, bottom, tz);
         }
 
         private static float NoiseTo01(float value)
@@ -1676,6 +1701,7 @@ namespace Hecton8.World
                 BiomeMatrices = _burstBiomeMatrixData,
                 BiomeFamilies = _burstBiomeFamilyData,
                 CaveEntranceHints = _burstCaveEntranceHints,
+                NoiseLookupTable = _noiseLookupTable,
                 CellOutputs = cellOutputs,
                 SlopeProbeMeters = slopeProbeMeters,
                 FieldNoiseScale = fieldNoiseScale,
@@ -1899,11 +1925,55 @@ namespace Hecton8.World
             };
         }
 
+        private void EnsureNoiseLookupTable()
+        {
+            int requiredLength = NoiseLookupResolution * NoiseLookupResolution;
+            if (_noiseLookupTable.IsCreated && _noiseLookupTable.Length == requiredLength)
+                return;
+
+            if (_noiseLookupTable.IsCreated)
+                _noiseLookupTable.Dispose();
+
+            // COLD ALLOC: NativeArray<ushort>[262144] - persistent tileable noise LUT replacing runtime analytical noise in dense field sampling - owner: WorldProceduralFieldSampler
+            _noiseLookupTable = new NativeArray<ushort>(requiredLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            for (int z = 0; z < NoiseLookupResolution; z++)
+            {
+                float v = z / (float)NoiseLookupResolution;
+                int rowOffset = z * NoiseLookupResolution;
+                for (int x = 0; x < NoiseLookupResolution; x++)
+                {
+                    float u = x / (float)NoiseLookupResolution;
+                    float broad = EvaluateTileableNoise01(u, v, 6.5f);
+                    float detail = EvaluateTileableNoise01(math.frac(u + 0.317f), math.frac(v + 0.143f), 13.75f);
+                    float combined = math.saturate((broad * 0.65f) + (detail * 0.35f));
+                    _noiseLookupTable[rowOffset + x] = (ushort)math.round(combined * ushort.MaxValue);
+                }
+            }
+        }
+
+        private static float EvaluateTileableNoise01(float u, float v, float frequency)
+        {
+            float2 sample = new float2(u * frequency, v * frequency);
+            float2 sampleXWrap = new float2((u - 1f) * frequency, v * frequency);
+            float2 sampleYWrap = new float2(u * frequency, (v - 1f) * frequency);
+            float2 sampleXYWrap = new float2((u - 1f) * frequency, (v - 1f) * frequency);
+
+            float a = NoiseTo01(noise.snoise(sample));
+            float b = NoiseTo01(noise.snoise(sampleXWrap));
+            float c = NoiseTo01(noise.snoise(sampleYWrap));
+            float d = NoiseTo01(noise.snoise(sampleXYWrap));
+
+            float top = math.lerp(a, b, u);
+            float bottom = math.lerp(c, d, u);
+            return math.lerp(top, bottom, v);
+        }
+
         public void PrepareBurstData()
         {
             CompletePendingSamplingJob();
             ResolveReferences();
             WorldRuntimeReferenceUtility.TryResolveWorldCaveDirector(ref _worldCaveDirector);
+            EnsureNoiseLookupTable();
 
             int activeAnchorVersion = WorldZoneAnchor.ActiveAnchorVersion;
             if (activeAnchorVersion != _lastActiveAnchorVersion)
@@ -1976,9 +2046,7 @@ namespace Hecton8.World
                 HectonBiomeFamilyProfile family = _biomeFamilyBakeList[i];
                 _burstBiomeFamilyData[i] = new BiomeFamilyData
                 {
-                    #pragma warning disable CS0618
-                    FamilyInstanceId = family != null ? family.GetInstanceID() : 0,
-                    #pragma warning restore CS0618
+                    FamilyInstanceId = family != null ? unchecked((int)EntityId.ToULong(family.GetEntityId())) : 0,
                     Flags = TokenizeFamilyFlags(family)
                 };
             }
@@ -2843,10 +2911,8 @@ namespace Hecton8.World
 
         private float EvaluateNoise01(float x, float z, float scale)
         {
-            float s = Mathf.Max(0.0001f, scale);
-            float a = Mathf.PerlinNoise(x * s, z * s);
-            float b = Mathf.PerlinNoise((x + 127.37f) * (s * 2.2f), (z - 93.11f) * (s * 2.2f));
-            return Mathf.Clamp01((a * 0.65f) + (b * 0.35f));
+            EnsureNoiseLookupTable();
+            return SampleNoiseLookup01(_noiseLookupTable, x, z, scale);
         }
 
         private HectonBiomeFamilyProfile ResolveFallbackBiomeFamily(
@@ -3643,6 +3709,8 @@ namespace Hecton8.World
                 _burstBiomeFamilyData.Dispose();
             if (_burstCaveEntranceHints.IsCreated)
                 _burstCaveEntranceHints.Dispose();
+            if (_noiseLookupTable.IsCreated)
+                _noiseLookupTable.Dispose();
 
             _burstZoneDataCount = 0;
             _burstBiomeMatrixDataCount = 0;

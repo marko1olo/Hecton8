@@ -11,7 +11,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Loading Tips Display")]
-    public sealed class LoadingTipsDisplay : MonoBehaviour, ITickable
+    public sealed class LoadingTipsDisplay : MonoBehaviour, ITickable, IUpdatable
     {
         [Header("=== UI REFERENCES ===")]
         [SerializeField] private TextMeshProUGUI tipText;
@@ -214,8 +214,12 @@ namespace Hecton8.UI
                 int newIndex = Random.Range(0, _tips.Length);
                 if (_tips.Length > 1)
                 {
-                    while (newIndex == _currentTipIndex)
+                    int rerollWatchdog = _tips.Length << 1;
+                    while (newIndex == _currentTipIndex && rerollWatchdog-- > 0)
                         newIndex = Random.Range(0, _tips.Length);
+
+                    if (newIndex == _currentTipIndex)
+                        newIndex = (_currentTipIndex + 1) % _tips.Length;
                 }
 
                 _currentTipIndex = newIndex;
@@ -243,11 +247,7 @@ namespace Hecton8.UI
             if (_registered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register(this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _registered = true;
         }
 
@@ -256,10 +256,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister(this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _registered = false;
         }
     }

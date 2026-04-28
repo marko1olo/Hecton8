@@ -41,8 +41,8 @@ namespace Hecton8.SaveSystem
             if (string.IsNullOrEmpty(SlotName))
                 return;
 
-            ES3Settings settings = new ES3Settings { compressionType = ES3.CompressionType.None };
-            ES3.Save("diag", this, GetPath(SlotName), settings);
+            if (!SaveSidecarStorage.SaveMaintenanceRecord(this, out string error))
+                UnityEngine.Debug.LogWarning($"[SaveSlotMaintenanceRecord] Failed to save diag for '{SlotName}': {error}");
         }
 
         public static SaveSlotMaintenanceRecord Load(string slotName)
@@ -50,14 +50,14 @@ namespace Hecton8.SaveSystem
             if (string.IsNullOrEmpty(slotName))
                 return null;
 
-            string path = GetPath(slotName);
-            if (!ES3.FileExists(path))
+            if (!SaveSidecarStorage.Exists(GetPath(slotName)))
                 return null;
 
             try
             {
-                ES3Settings settings = new ES3Settings { compressionType = ES3.CompressionType.None };
-                return ES3.Load<SaveSlotMaintenanceRecord>("diag", path, settings);
+                return SaveSidecarStorage.LoadMaintenanceRecord(slotName, out SaveSlotMaintenanceRecord record, out string error)
+                    ? record
+                    : HandleLoadFailure(slotName, error);
             }
             catch (Exception ex)
             {
@@ -77,6 +77,12 @@ namespace Hecton8.SaveSystem
                 LastAuditMessage = string.Empty,
                 LastRepairMessage = string.Empty
             };
+        }
+
+        private static SaveSlotMaintenanceRecord HandleLoadFailure(string slotName, string error)
+        {
+            UnityEngine.Debug.LogWarning($"[SaveSlotMaintenanceRecord] Failed to load diag for '{slotName}': {error}");
+            return null;
         }
     }
 }

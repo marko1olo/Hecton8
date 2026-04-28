@@ -536,6 +536,13 @@ namespace Hecton8.World
 #if UNITY_EDITOR
         private void OnValidate()
         {
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                return;
+            }
+
             segmentCount = Mathf.Clamp(segmentCount, 4, 24);
             segmentLength = Mathf.Max(0.1f, segmentLength);
             attractorSpring = Mathf.Clamp(attractorSpring, 0f, 32f);
@@ -552,11 +559,18 @@ namespace Hecton8.World
             elasticBreakHoldTime = Mathf.Clamp(elasticBreakHoldTime, 0.02f, 1f);
             elasticBreakRecoilMultiplier = Mathf.Clamp(elasticBreakRecoilMultiplier, 0f, 4f);
 
-            ResolveRuntimeWiring();
-            EnsureStorage();
-            if (!_initialized)
-                InitializeAt(transform.position, Vector3.up);
-            else
+            if (lineRenderer == null)
+                TryGetComponent(out lineRenderer);
+
+            if (lineRenderer != null)
+            {
+                lineRenderer.positionCount = Mathf.Max(2, segmentCount);
+                lineRenderer.widthMultiplier = 1f;
+                lineRenderer.startWidth = rootWidth;
+                lineRenderer.endWidth = tipWidth;
+            }
+
+            if (_initialized && _points != null && _points.Length == Mathf.Clamp(segmentCount, 4, 24))
             {
                 ApplyVisualState();
                 SyncRenderer();

@@ -2,7 +2,11 @@ using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Input;
 using Hecton8.Bootstrap;
+using Unity.Collections;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Hecton8.World
 {
@@ -13,9 +17,21 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-103)]
     public sealed class SargassumCutManager : MonoBehaviour, ITickable, ISlowTickable
     {
-        private const string StampShaderName = "Hidden/Hecton8/SargassumCutMaskStamp";
+        private const int StampCommandCapacity = 16;
+        private const int StampThreadGroupSize = 8;
         private const float DefaultWaterLevel = 4900f;
         private const int RecentStampCapacity = 16;
+        private const int DamageVolumeStampCapacity = 16;
+        private const int DamageVolumeThreadGroupSize = 4;
+#if UNITY_EDITOR
+        private const string StampComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_SargassumCutMask.compute";
+        private const string DamageVolumeComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_TerrainDamageVolume.compute";
+#endif
+
+        private struct StampCommand
+        {
+            public Vector4 UvRadiusStrength;
+        }
 
         private struct RecentCutStamp
         {
@@ -34,6 +50,12 @@ namespace Hecton8.World
             public float Lifetime;
         }
 
+        private struct DamageVolumeStampCommand
+        {
+            public Vector4 PositionRadius;
+            public Vector4 StrengthPadding;
+        }
+
         private static readonly int _CutMaskTextureId = Shader.PropertyToID("_SargassumCutMaskRT");
         private static readonly int _CutMaskWorldRectId = Shader.PropertyToID("_SargassumCutMaskWorldRect");
         private static readonly int _CutMaskActiveId = Shader.PropertyToID("_SargassumCutMaskActive");
@@ -41,9 +63,25 @@ namespace Hecton8.World
         private static readonly int _ScrollUvOffsetId = Shader.PropertyToID("_ScrollUvOffset");
         private static readonly int _RecoveryId = Shader.PropertyToID("_Recovery");
         private static readonly int _MainTexId = Shader.PropertyToID("_MainTex");
+        private static readonly int _ResultId = Shader.PropertyToID("_Result");
+        private static readonly int _StampCommandsId = Shader.PropertyToID("_StampCommands");
+        private static readonly int _StampCountId = Shader.PropertyToID("_StampCount");
+        private static readonly int _TexelSizeId = Shader.PropertyToID("_TexelSize");
         private static readonly int _RecentCutHeatCountId = Shader.PropertyToID("_HectonRecentCutHeatCount");
         private static readonly int _RecentCutHeatPositionRadiusId = Shader.PropertyToID("_HectonRecentCutHeatPositionRadius");
         private static readonly int _RecentCutHeatStrengthTimeId = Shader.PropertyToID("_HectonRecentCutHeatStrengthTime");
+        private static readonly int _DamageVolumeTextureId = Shader.PropertyToID("_HectonDamageVolumeTex");
+        private static readonly int _DamageVolumeActiveId = Shader.PropertyToID("_HectonDamageVolumeActive");
+        private static readonly int _DamageVolumeWorldMinId = Shader.PropertyToID("_HectonDamageVolumeWorldMin");
+        private static readonly int _DamageVolumeInvSizeId = Shader.PropertyToID("_HectonDamageVolumeInvSize");
+        private static readonly int _DamageVolumeSourceId = Shader.PropertyToID("_HectonDamageVolumeSource");
+        private static readonly int _DamageVolumeResultId = Shader.PropertyToID("_HectonDamageVolumeResult");
+        private static readonly int _DamageVolumeStampCommandsId = Shader.PropertyToID("_HectonDamageVolumeStampCommands");
+        private static readonly int _DamageVolumeStampCountId = Shader.PropertyToID("_HectonDamageVolumeStampCount");
+        private static readonly int _DamageVolumeRecoveryId = Shader.PropertyToID("_HectonDamageVolumeRecovery");
+        private static readonly int _DamageVolumeWorldMinParamId = Shader.PropertyToID("_HectonDamageVolumeWorldMinParam");
+        private static readonly int _DamageVolumeInvSizeParamId = Shader.PropertyToID("_HectonDamageVolumeInvSizeParam");
+        private static readonly int _DamageVolumeResolutionId = Shader.PropertyToID("_HectonDamageVolumeResolution");
 
         private static SargassumCutManager _instance;
 
@@ -65,6 +103,14 @@ namespace Hecton8.World
         private Shader stampShaderOverride;
 
         [SerializeField]
+        [Tooltip("Optional compute shader override used to update the global cut mask in one dispatch per frame.")]
+        private ComputeShader stampComputeOverride;
+
+        [SerializeField]
+        [Tooltip("Optional compute shader override used to stamp the 3D thermal damage volume consumed by terrain shaders.")]
+        private ComputeShader damageVolumeComputeOverride;
+
+        [SerializeField]
         [Tooltip("Optional debris burst emitter triggered whenever a global cut stamp is written.")]
         private SargassumDebrisParticleSystem debrisParticleSystem;
 
@@ -84,6 +130,23 @@ namespace Hecton8.World
         [SerializeField, Range(0f, 2f)]
         [Tooltip("Recovery speed in mask-value units per second. Lower values keep cuts open for longer.")]
         private float recoveryPerSecond = 0.15f;
+
+        [Header("── Damage Volume ──────────────────")]
+        [SerializeField, Range(32, 128)]
+        [Tooltip("Resolution of the cubic XZ damage volume texture sampled by terrain shaders.")]
+        private int damageVolumeResolution = 64;
+
+        [SerializeField, Range(16, 96)]
+        [Tooltip("Resolution of the vertical damage volume slices.")]
+        private int damageVolumeDepth = 32;
+
+        [SerializeField, Min(8f)]
+        [Tooltip("Vertical world-space height covered by the 3D terrain damage volume.")]
+        private float damageVolumeHeight = 24f;
+
+        [SerializeField, Range(0f, 1f)]
+        [Tooltip("Per-update recovery applied to the 3D damage volume.")]
+        private float damageVolumeRecoveryPerSecond = 0.04f;
 
         [Header("── Scooter Cutting ──────────────────")]
         [SerializeField, Range(0.1f, 6f)]
@@ -144,7 +207,14 @@ namespace Hecton8.World
         private PlayerToolManager _playerToolManager;
         private RenderTexture _maskRead;
         private RenderTexture _maskWrite;
-        private Material _stampMaterial;
+        private ComputeShader _stampCompute;
+        private int _stampKernel = -1;
+        private GraphicsBuffer _stampCommandBuffer;
+        private RenderTexture _damageVolumeRead;
+        private RenderTexture _damageVolumeWrite;
+        private ComputeShader _damageVolumeCompute;
+        private int _damageVolumeKernel = -1;
+        private GraphicsBuffer _damageVolumeStampCommandBuffer;
         private bool _registeredTick;
         private bool _registeredSlowTick;
         private float _maskEnergy;
@@ -152,8 +222,18 @@ namespace Hecton8.World
         private Vector4 _maskWorldRect;
         private float _maskWorldSize;
         private Vector2 _maskCenterXZ;
+        private Vector2 _pendingScrollUv;
+        private float _pendingRecovery;
+        private int _queuedStampCount;
+        private int _lastMaskDispatchFrame = -1;
         private int _maskRuntimeResolution;
         private int _maskQualityLevel = -1;
+        private NativeArray<StampCommand> _queuedStampCommands;
+        private NativeArray<DamageVolumeStampCommand> _queuedDamageVolumeStampCommands;
+        private int _queuedDamageVolumeStampCount;
+        private Vector3 _damageVolumeWorldMin;
+        private Vector3 _damageVolumeWorldSize;
+        private int _lastDamageVolumeDispatchFrame = -1;
         // COLD ALLOC: RecentCutStamp[16] - CPU mirror of the newest cut stamps for zero-readback gameplay queries - owner: SargassumCutManager
         private readonly RecentCutStamp[] _recentCutStamps = new RecentCutStamp[RecentStampCapacity];
         // COLD ALLOC: RecentCutHeatStamp[16] - timestamped cut heat stamps for voxel rock thermal scarring - owner: SargassumCutManager
@@ -305,13 +385,17 @@ namespace Hecton8.World
             RefreshMaskWorldRect();
 
             bool wroteMask = false;
-            if (_maskRead != null && _maskWrite != null && _stampMaterial != null && IsInsideMaskWorldRect(positionWS))
+            if (_maskRead != null && _maskWrite != null && _stampCompute != null && _stampCommandBuffer != null && IsInsideMaskWorldRect(positionWS))
             {
                 ExecuteStampPass(positionWS, clampedRadius, clampedStrength, 0f);
                 _maskEnergy = Mathf.Max(_maskEnergy, clampedStrength);
+                ProcessQueuedMaskUpdate();
                 PublishGlobals();
                 wroteMask = true;
             }
+
+            QueueDamageVolumeStamp(positionWS, clampedRadius, clampedStrength);
+            ProcessQueuedDamageVolumeUpdate(0f);
 
             RegisterRecentCutStamp(positionWS, clampedRadius, clampedStrength);
             RegisterRecentCutHeatStamp(positionWS, clampedRadius, clampedStrength);
@@ -335,6 +419,10 @@ namespace Hecton8.World
             _instance = this;
             maskResolution = Mathf.Clamp(maskResolution, 512, 2048);
             centerSnapPixelStride = Mathf.Max(0.1f, centerSnapPixelStride);
+            damageVolumeResolution = Mathf.Clamp(damageVolumeResolution, 32, 128);
+            damageVolumeDepth = Mathf.Clamp(damageVolumeDepth, 16, 96);
+            damageVolumeHeight = Mathf.Max(8f, damageVolumeHeight);
+            damageVolumeRecoveryPerSecond = Mathf.Clamp01(damageVolumeRecoveryPerSecond);
             _maskQualityLevel = QualitySettings.GetQualityLevel();
             _maskRuntimeResolution = ResolveMaskResolutionForQuality(_maskQualityLevel);
             ResolveDependencies();
@@ -353,6 +441,7 @@ namespace Hecton8.World
         {
             TryUnregister();
             Shader.SetGlobalFloat(_CutMaskActiveId, 0f);
+            Shader.SetGlobalFloat(_DamageVolumeActiveId, 0f);
             Shader.SetGlobalInt(_RecentCutHeatCountId, 0);
         }
 
@@ -372,7 +461,7 @@ namespace Hecton8.World
         public void Tick(float deltaTime)
         {
             ResolveDependencies();
-            if (_maskRead == null || _maskWrite == null || _stampMaterial == null)
+            if (_maskRead == null || _maskWrite == null || _stampCompute == null || _stampCommandBuffer == null)
                 return;
 
             DecayRecentCutStamps(deltaTime);
@@ -417,12 +506,15 @@ namespace Hecton8.World
             if (!wrotePass && needsRecoveryPass)
                 ExecuteStampPass(Vector3.zero, 0f, 0f, deltaTime);
 
-            if (!wrotePass && !needsRecoveryPass)
+            bool hasDamageVolumeWork = _queuedDamageVolumeStampCount > 0 || (_damageVolumeRead != null && damageVolumeRecoveryPerSecond > 0f);
+            if (!wrotePass && !needsRecoveryPass && !HasPendingMaskUpdate() && !hasDamageVolumeWork)
                 return;
 
             float recoveredEnergy = Mathf.Max(0f, _maskEnergy - recoveryPerSecond * deltaTime);
             _maskEnergy = wrotePass ? Mathf.Max(recoveredEnergy, strongestStampThisFrame) : recoveredEnergy;
             _debugMaskEnergy = _maskEnergy;
+            ProcessQueuedMaskUpdate();
+            ProcessQueuedDamageVolumeUpdate(deltaTime);
             PublishGlobals();
         }
 
@@ -434,13 +526,15 @@ namespace Hecton8.World
             ResolveDependencies();
             RefreshQualityDependentResourcesIfNeeded();
             RefreshMaskWorldRect();
+            ProcessQueuedMaskUpdate();
+            ProcessQueuedDamageVolumeUpdate(0f);
             PublishGlobals(forceHeatRefresh: true);
         }
 
         private void ResolveDependencies()
         {
             if (mapMagicVegetationBridge == null)
-                mapMagicVegetationBridge = FindAnyObjectByType<HectonMapMagicVegetationBridge>(FindObjectsInactive.Exclude);
+                mapMagicVegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
 
             Transform runtimePlayerTransform = BootstrapState.CurrentPlayerTransform;
             _playerTransform = runtimePlayerTransform != null ? runtimePlayerTransform : playerTransformOverride;
@@ -448,38 +542,74 @@ namespace Hecton8.World
             {
                 _playerToolManager = playerToolManagerOverride;
                 if (_playerToolManager == null && _playerTransform != null && !_playerTransform.TryGetComponent(out _playerToolManager))
-                    _playerToolManager = _playerTransform.GetComponentInChildren<PlayerToolManager>(true);
+                    _playerToolManager = Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.ToolManager != null
+                        ? Hecton8.Core.GlobalRegistry.Player.ToolManager
+                        : Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<PlayerToolManager>(_playerTransform);
             }
 
             if (debrisParticleSystem == null)
-                debrisParticleSystem = GetComponentInChildren<SargassumDebrisParticleSystem>(true);
+                debrisParticleSystem = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<SargassumDebrisParticleSystem>(transform);
         }
 
         private void CreateResources()
         {
+#if UNITY_EDITOR
+            TryAutoAssignAssets();
+#endif
+
             if (_maskRead == null)
                 _maskRead = CreateMaskTexture("__SargassumCutMask_A");
 
             if (_maskWrite == null)
                 _maskWrite = CreateMaskTexture("__SargassumCutMask_B");
 
-            if (_stampMaterial == null)
+            if (_damageVolumeRead == null)
+                _damageVolumeRead = CreateDamageVolumeTexture("__SargassumDamageVolume_A");
+
+            if (_damageVolumeWrite == null)
+                _damageVolumeWrite = CreateDamageVolumeTexture("__SargassumDamageVolume_B");
+
+            if (!_queuedStampCommands.IsCreated)
+                _queuedStampCommands = new NativeArray<StampCommand>(StampCommandCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<StampCommand>[16] - staged cut-mask stamp commands for one compute dispatch - owner: SargassumCutManager
+
+            if (_stampCommandBuffer == null)
+                _stampCommandBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<StampCommand>(StampCommandCapacity); // COLD ALLOC: GraphicsBuffer[16] - staged cut-mask stamp command buffer for one compute dispatch - owner: SargassumCutManager
+
+            if (!_queuedDamageVolumeStampCommands.IsCreated)
+                _queuedDamageVolumeStampCommands = new NativeArray<DamageVolumeStampCommand>(DamageVolumeStampCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<DamageVolumeStampCommand>[16] - staged 3D terrain-damage volume stamps for one compute dispatch - owner: SargassumCutManager
+
+            if (_damageVolumeStampCommandBuffer == null)
+                _damageVolumeStampCommandBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<DamageVolumeStampCommand>(DamageVolumeStampCapacity); // COLD ALLOC: GraphicsBuffer[16] - staged 3D terrain-damage volume stamp command buffer - owner: SargassumCutManager
+
+            if (_stampCompute == null)
             {
-                Shader stampShader = stampShaderOverride != null ? stampShaderOverride : Shader.Find(StampShaderName);
-                if (stampShader == null)
+                _stampCompute = stampComputeOverride;
+                if (_stampCompute == null)
                 {
-                    Debug.LogError("[SargassumCutManager] Missing stamp shader. Expected Hidden/Hecton8/SargassumCutMaskStamp.", this);
+                    Debug.LogError("[SargassumCutManager] Missing cut-mask compute shader. Expected Hecton_SargassumCutMask.compute.", this);
                     enabled = false;
                     return;
                 }
 
-                _stampMaterial = new Material(stampShader)
-                {
-                    hideFlags = HideFlags.HideAndDontSave
-                }; // COLD ALLOC: Material[1] - fullscreen blit material for global sargassum cut mask stamping - owner: SargassumCutManager
+                _stampKernel = _stampCompute.FindKernel("CSMain");
             }
 
+            if (_damageVolumeCompute == null)
+            {
+                _damageVolumeCompute = damageVolumeComputeOverride;
+                if (_damageVolumeCompute == null)
+                {
+                    Debug.LogError("[SargassumCutManager] Missing terrain damage-volume compute shader. Expected Hecton_TerrainDamageVolume.compute.", this);
+                    enabled = false;
+                    return;
+                }
+
+                _damageVolumeKernel = _damageVolumeCompute.FindKernel("StampDamageVolume");
+            }
+
+            ResetQueuedMaskUpdateState();
             RefreshMaskWorldRect(forceClear: true);
+            RefreshDamageVolumeBounds(forceClear: true);
         }
 
         private void RefreshQualityDependentResourcesIfNeeded()
@@ -494,6 +624,7 @@ namespace Hecton8.World
                 return;
 
             _maskRuntimeResolution = desiredResolution;
+            ResetQueuedMaskUpdateState();
             ReleaseMaskTexture(ref _maskRead);
             ReleaseMaskTexture(ref _maskWrite);
             CreateResources();
@@ -515,14 +646,37 @@ namespace Hecton8.World
 
         private void ReleaseResources()
         {
+            ResetQueuedMaskUpdateState();
             ReleaseMaskTexture(ref _maskRead);
             ReleaseMaskTexture(ref _maskWrite);
 
-            if (_stampMaterial != null)
+            if (_stampCommandBuffer != null)
             {
-                Destroy(_stampMaterial);
-                _stampMaterial = null;
+                _stampCommandBuffer.Release();
+                _stampCommandBuffer = null;
             }
+
+            if (_damageVolumeStampCommandBuffer != null)
+            {
+                _damageVolumeStampCommandBuffer.Release();
+                _damageVolumeStampCommandBuffer = null;
+            }
+
+            if (_queuedStampCommands.IsCreated)
+                _queuedStampCommands.Dispose();
+
+            if (_queuedDamageVolumeStampCommands.IsCreated)
+                _queuedDamageVolumeStampCommands.Dispose();
+
+            ReleaseDamageVolumeTexture(ref _damageVolumeRead);
+            ReleaseDamageVolumeTexture(ref _damageVolumeWrite);
+
+            _stampCompute = null;
+            _stampKernel = -1;
+            _damageVolumeCompute = null;
+            _damageVolumeKernel = -1;
+            _lastMaskDispatchFrame = -1;
+            _lastDamageVolumeDispatchFrame = -1;
 
             Shader.SetGlobalInt(_RecentCutHeatCountId, 0);
         }
@@ -543,18 +697,17 @@ namespace Hecton8.World
             _maskCenterXZ = desiredCenterXZ;
             _maskWorldSize = desiredWorldSize;
             UpdateWorldRect(desiredCenterXZ, desiredWorldSize);
+            RefreshDamageVolumeBounds(forceClear: mustClear);
 
             if (mustClear)
             {
                 ClearMaskTextures();
                 _maskEnergy = 0f;
                 _debugMaskEnergy = 0f;
-                PublishGlobals();
                 return;
             }
 
             ScrollMaskTextures(centerDelta);
-            PublishGlobals();
         }
 
         private bool TryResolveScooterStamp(out Vector3 stampPositionWS, out Vector3 stampDirectionWS)
@@ -611,19 +764,25 @@ namespace Hecton8.World
         private void ExecuteStampPass(Vector3 positionWS, float radiusWS, float strength, float deltaTime)
         {
             float recovery = Mathf.Max(0f, recoveryPerSecond * Mathf.Max(0f, deltaTime));
+            if (recovery > _pendingRecovery)
+                _pendingRecovery = recovery;
+
+            float clampedStrength = Mathf.Clamp01(strength);
+            if (clampedStrength <= 0f || radiusWS <= 0f)
+                return;
+
             Vector2 uvCenter = new Vector2(
                 (positionWS.x - _maskWorldRect.x) * _maskWorldRect.z,
                 (positionWS.z - _maskWorldRect.y) * _maskWorldRect.w);
             float uvRadius = radiusWS * _maskWorldRect.z;
+            if (_queuedStampCount >= StampCommandCapacity || !_queuedStampCommands.IsCreated)
+                return;
 
-            _stampMaterial.SetTexture(_MainTexId, _maskRead);
-            _stampMaterial.SetVector(_StampUvRadiusStrengthId, new Vector4(uvCenter.x, uvCenter.y, uvRadius, Mathf.Clamp01(strength)));
-            _stampMaterial.SetFloat(_RecoveryId, recovery);
-            Graphics.Blit(_maskRead, _maskWrite, _stampMaterial, 0);
-
-            RenderTexture temp = _maskRead;
-            _maskRead = _maskWrite;
-            _maskWrite = temp;
+            _queuedStampCommands[_queuedStampCount] = new StampCommand
+            {
+                UvRadiusStrength = new Vector4(uvCenter.x, uvCenter.y, uvRadius, clampedStrength)
+            };
+            _queuedStampCount++;
             _debugLastStampPosition = positionWS;
         }
 
@@ -761,13 +920,8 @@ namespace Hecton8.World
                 return;
             }
 
-            _stampMaterial.SetTexture(_MainTexId, _maskRead);
-            _stampMaterial.SetVector(_ScrollUvOffsetId, new Vector4(uvOffsetX, uvOffsetY, 0f, 0f));
-            Graphics.Blit(_maskRead, _maskWrite, _stampMaterial, 1);
-
-            RenderTexture temp = _maskRead;
-            _maskRead = _maskWrite;
-            _maskWrite = temp;
+            _pendingScrollUv.x += uvOffsetX;
+            _pendingScrollUv.y += uvOffsetY;
         }
 
         private float ResolveSnapWorldStride(float worldSize)
@@ -797,6 +951,203 @@ namespace Hecton8.World
             RenderTexture.active = _maskWrite;
             GL.Clear(false, true, Color.black);
             RenderTexture.active = active;
+            ResetQueuedMaskUpdateState();
+        }
+
+        private RenderTexture CreateDamageVolumeTexture(string textureName)
+        {
+            RenderTexture texture = new RenderTexture(damageVolumeResolution, damageVolumeResolution, 0, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear)
+            {
+                name = textureName,
+                dimension = UnityEngine.Rendering.TextureDimension.Tex3D,
+                volumeDepth = damageVolumeDepth,
+                wrapMode = TextureWrapMode.Clamp,
+                filterMode = FilterMode.Bilinear,
+                useMipMap = false,
+                autoGenerateMips = false,
+                enableRandomWrite = true,
+                hideFlags = HideFlags.HideAndDontSave
+            }; // COLD ALLOC: RenderTexture[1] - persistent 3D terrain-damage splat volume - owner: SargassumCutManager
+            texture.Create();
+            return texture;
+        }
+
+        private static void ReleaseDamageVolumeTexture(ref RenderTexture texture)
+        {
+            if (texture == null)
+                return;
+
+            texture.Release();
+            Destroy(texture);
+            texture = null;
+        }
+
+        private void ClearDamageVolumeTextures()
+        {
+            if (_damageVolumeRead == null || _damageVolumeWrite == null)
+                return;
+
+            Graphics.SetRenderTarget(_damageVolumeRead, 0, CubemapFace.Unknown, -1);
+            GL.Clear(false, true, Color.clear);
+            Graphics.SetRenderTarget(_damageVolumeWrite, 0, CubemapFace.Unknown, -1);
+            GL.Clear(false, true, Color.clear);
+            Graphics.SetRenderTarget(null);
+            _queuedDamageVolumeStampCount = 0;
+        }
+
+        private void ResetQueuedMaskUpdateState()
+        {
+            _pendingScrollUv = Vector2.zero;
+            _pendingRecovery = 0f;
+            _queuedStampCount = 0;
+        }
+
+        private bool HasPendingMaskUpdate()
+        {
+            return _queuedStampCount > 0 ||
+                   _pendingRecovery > 0.000001f ||
+                   _pendingScrollUv.sqrMagnitude > 0.0000001f;
+        }
+
+        private void ProcessQueuedMaskUpdate()
+        {
+            if (_maskRead == null ||
+                _maskWrite == null ||
+                _stampCompute == null ||
+                _stampKernel < 0 ||
+                _stampCommandBuffer == null ||
+                !HasPendingMaskUpdate() ||
+                _lastMaskDispatchFrame == Time.frameCount)
+            {
+                return;
+            }
+
+            if (_queuedStampCount > 0 && _queuedStampCommands.IsCreated)
+                GraphicsBufferUploadUtility.UploadNativeArray(_stampCommandBuffer, _queuedStampCommands, _queuedStampCount);
+
+            _stampCompute.SetTexture(_stampKernel, _MainTexId, _maskRead);
+            _stampCompute.SetTexture(_stampKernel, _ResultId, _maskWrite);
+            _stampCompute.SetBuffer(_stampKernel, _StampCommandsId, _stampCommandBuffer);
+            _stampCompute.SetInt(_StampCountId, _queuedStampCount);
+            _stampCompute.SetVector(_ScrollUvOffsetId, new Vector4(_pendingScrollUv.x, _pendingScrollUv.y, 0f, 0f));
+            _stampCompute.SetFloat(_RecoveryId, _pendingRecovery);
+            _stampCompute.SetVector(
+                _TexelSizeId,
+                new Vector4(
+                    1f / Mathf.Max(_maskRuntimeResolution, 1),
+                    1f / Mathf.Max(_maskRuntimeResolution, 1),
+                    _maskRuntimeResolution,
+                    _maskRuntimeResolution));
+
+            int groupCount = Mathf.Max(1, Mathf.CeilToInt(_maskRuntimeResolution / (float)StampThreadGroupSize));
+            _stampCompute.Dispatch(_stampKernel, groupCount, groupCount, 1);
+
+            RenderTexture temp = _maskRead;
+            _maskRead = _maskWrite;
+            _maskWrite = temp;
+            _lastMaskDispatchFrame = Time.frameCount;
+            ResetQueuedMaskUpdateState();
+        }
+
+        private void RefreshDamageVolumeBounds(bool forceClear = false)
+        {
+            if (_damageVolumeRead == null || _damageVolumeWrite == null)
+                return;
+
+            float worldSize = Mathf.Max(minimumMaskWorldSize, 128f);
+            float halfSize = worldSize * 0.5f;
+            float minX = _maskCenterXZ.x - halfSize;
+            float minZ = _maskCenterXZ.y - halfSize;
+            float minY = ResolveMaskWaterLevel(_playerTransform != null ? _playerTransform.position.y : DefaultWaterLevel) - damageVolumeHeight;
+            Vector3 desiredWorldMin = new Vector3(minX, minY, minZ);
+            Vector3 desiredWorldSize = new Vector3(worldSize, damageVolumeHeight, worldSize);
+
+            bool boundsChanged =
+                (_damageVolumeWorldSize - desiredWorldSize).sqrMagnitude > 0.0001f ||
+                (_damageVolumeWorldMin - desiredWorldMin).sqrMagnitude > 0.0001f;
+
+            _damageVolumeWorldMin = desiredWorldMin;
+            _damageVolumeWorldSize = desiredWorldSize;
+
+            if (forceClear || boundsChanged)
+                ClearDamageVolumeTextures();
+        }
+
+        private void QueueDamageVolumeStamp(Vector3 positionWS, float radiusWS, float strength)
+        {
+            RefreshDamageVolumeBounds();
+            if (_damageVolumeRead == null ||
+                _damageVolumeWrite == null ||
+                !_queuedDamageVolumeStampCommands.IsCreated ||
+                _queuedDamageVolumeStampCount >= DamageVolumeStampCapacity)
+            {
+                return;
+            }
+
+            Vector3 maxBounds = _damageVolumeWorldMin + _damageVolumeWorldSize;
+            if (positionWS.x < _damageVolumeWorldMin.x || positionWS.x > maxBounds.x ||
+                positionWS.y < _damageVolumeWorldMin.y || positionWS.y > maxBounds.y ||
+                positionWS.z < _damageVolumeWorldMin.z || positionWS.z > maxBounds.z)
+            {
+                return;
+            }
+
+            _queuedDamageVolumeStampCommands[_queuedDamageVolumeStampCount] = new DamageVolumeStampCommand
+            {
+                PositionRadius = new Vector4(positionWS.x, positionWS.y, positionWS.z, Mathf.Max(0.05f, radiusWS)),
+                StrengthPadding = new Vector4(Mathf.Clamp01(strength), 0f, 0f, 0f)
+            };
+            _queuedDamageVolumeStampCount++;
+        }
+
+        private void ProcessQueuedDamageVolumeUpdate(float deltaTime)
+        {
+            if (_damageVolumeRead == null ||
+                _damageVolumeWrite == null ||
+                _damageVolumeCompute == null ||
+                _damageVolumeKernel < 0 ||
+                _damageVolumeStampCommandBuffer == null ||
+                (_queuedDamageVolumeStampCount <= 0 && deltaTime <= 0f) ||
+                _lastDamageVolumeDispatchFrame == Time.frameCount)
+            {
+                return;
+            }
+
+            if (_queuedDamageVolumeStampCount > 0 && _queuedDamageVolumeStampCommands.IsCreated)
+            {
+                GraphicsBufferUploadUtility.UploadNativeArray(
+                    _damageVolumeStampCommandBuffer,
+                    _queuedDamageVolumeStampCommands,
+                    _queuedDamageVolumeStampCount);
+            }
+
+            _damageVolumeCompute.SetTexture(_damageVolumeKernel, _DamageVolumeSourceId, _damageVolumeRead);
+            _damageVolumeCompute.SetTexture(_damageVolumeKernel, _DamageVolumeResultId, _damageVolumeWrite);
+            _damageVolumeCompute.SetBuffer(_damageVolumeKernel, _DamageVolumeStampCommandsId, _damageVolumeStampCommandBuffer);
+            _damageVolumeCompute.SetInt(_DamageVolumeStampCountId, _queuedDamageVolumeStampCount);
+            _damageVolumeCompute.SetFloat(_DamageVolumeRecoveryId, Mathf.Max(0f, damageVolumeRecoveryPerSecond * Mathf.Max(0f, deltaTime)));
+            _damageVolumeCompute.SetVector(
+                _DamageVolumeWorldMinParamId,
+                new Vector4(_damageVolumeWorldMin.x, _damageVolumeWorldMin.y, _damageVolumeWorldMin.z, 0f));
+            _damageVolumeCompute.SetVector(
+                _DamageVolumeInvSizeParamId,
+                new Vector4(
+                    1f / Mathf.Max(_damageVolumeWorldSize.x, 0.001f),
+                    1f / Mathf.Max(_damageVolumeWorldSize.y, 0.001f),
+                    1f / Mathf.Max(_damageVolumeWorldSize.z, 0.001f),
+                    0f));
+            _damageVolumeCompute.SetInts(_DamageVolumeResolutionId, damageVolumeResolution, damageVolumeDepth, damageVolumeResolution);
+
+            int groupCountX = Mathf.Max(1, Mathf.CeilToInt(damageVolumeResolution / (float)DamageVolumeThreadGroupSize));
+            int groupCountY = Mathf.Max(1, Mathf.CeilToInt(damageVolumeDepth / (float)DamageVolumeThreadGroupSize));
+            int groupCountZ = Mathf.Max(1, Mathf.CeilToInt(damageVolumeResolution / (float)DamageVolumeThreadGroupSize));
+            _damageVolumeCompute.Dispatch(_damageVolumeKernel, groupCountX, groupCountY, groupCountZ);
+
+            RenderTexture temp = _damageVolumeRead;
+            _damageVolumeRead = _damageVolumeWrite;
+            _damageVolumeWrite = temp;
+            _lastDamageVolumeDispatchFrame = Time.frameCount;
+            _queuedDamageVolumeStampCount = 0;
         }
 
         private void PublishGlobals(bool forceHeatRefresh = false)
@@ -805,12 +1156,32 @@ namespace Hecton8.World
             {
                 Shader.SetGlobalFloat(_CutMaskActiveId, 0f);
                 Shader.SetGlobalInt(_RecentCutHeatCountId, 0);
+                Shader.SetGlobalFloat(_DamageVolumeActiveId, 0f);
                 return;
             }
 
             Shader.SetGlobalTexture(_CutMaskTextureId, _maskRead);
             Shader.SetGlobalVector(_CutMaskWorldRectId, _maskWorldRect);
             Shader.SetGlobalFloat(_CutMaskActiveId, _maskWorldSize > 0f ? 1f : 0f);
+            if (_damageVolumeRead != null)
+            {
+                Shader.SetGlobalTexture(_DamageVolumeTextureId, _damageVolumeRead);
+                Shader.SetGlobalFloat(_DamageVolumeActiveId, 1f);
+                Shader.SetGlobalVector(
+                    _DamageVolumeWorldMinId,
+                    new Vector4(_damageVolumeWorldMin.x, _damageVolumeWorldMin.y, _damageVolumeWorldMin.z, 0f));
+                Shader.SetGlobalVector(
+                    _DamageVolumeInvSizeId,
+                    new Vector4(
+                        1f / Mathf.Max(_damageVolumeWorldSize.x, 0.001f),
+                        1f / Mathf.Max(_damageVolumeWorldSize.y, 0.001f),
+                        1f / Mathf.Max(_damageVolumeWorldSize.z, 0.001f),
+                        0f));
+            }
+            else
+            {
+                Shader.SetGlobalFloat(_DamageVolumeActiveId, 0f);
+            }
 
             if (!forceHeatRefresh && !_recentCutHeatDirty)
                 return;
@@ -845,45 +1216,41 @@ namespace Hecton8.World
 
         private void TryRegister()
         {
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
 
             if (!_registeredTick)
             {
-                tickManager.Register((ITickable)this);
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
                 _registeredTick = true;
             }
 
             if (!_registeredSlowTick)
             {
-                tickManager.Register((ISlowTickable)this);
+                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredSlowTick = true;
             }
         }
 
         private void TryUnregister()
         {
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
 
             if (_registeredTick)
             {
-                tickManager.Unregister((ITickable)this);
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
                 _registeredTick = false;
             }
 
             if (_registeredSlowTick)
             {
-                tickManager.Unregister((ISlowTickable)this);
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredSlowTick = false;
             }
         }
 
         private RenderTexture CreateMaskTexture(string textureName)
         {
-            RenderTextureFormat format = SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.R8)
+            bool supportsR8RandomWrite = SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.R8) &&
+                                         SystemInfo.SupportsRandomWriteOnRenderTextureFormat(RenderTextureFormat.R8);
+            RenderTextureFormat format = supportsR8RandomWrite
                 ? RenderTextureFormat.R8
                 : RenderTextureFormat.ARGB32;
             RenderTexture texture = new RenderTexture(_maskRuntimeResolution, _maskRuntimeResolution, 0, format, RenderTextureReadWrite.Linear)
@@ -893,7 +1260,7 @@ namespace Hecton8.World
                 filterMode = FilterMode.Bilinear,
                 useMipMap = false,
                 autoGenerateMips = false,
-                enableRandomWrite = false,
+                enableRandomWrite = true,
                 hideFlags = HideFlags.HideAndDontSave
             }; // COLD ALLOC: RenderTexture[1] - global sargassum cut mask ping-pong target - owner: SargassumCutManager
             texture.Create();
@@ -909,5 +1276,18 @@ namespace Hecton8.World
             Destroy(texture);
             texture = null;
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            TryAutoAssignAssets();
+        }
+
+        private void TryAutoAssignAssets()
+        {
+            if (stampComputeOverride == null)
+                stampComputeOverride = AssetDatabase.LoadAssetAtPath<ComputeShader>(StampComputeAssetPath);
+        }
+#endif
     }
 }

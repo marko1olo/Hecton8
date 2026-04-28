@@ -188,11 +188,8 @@ namespace Hecton8.World
             TryResolveMainCamera();
             ApplyQualityPreset(_qualityPreset);
 
-            // Register with SaveManager
-            if (SaveManager.Instance != null)
-            {
-                SaveManager.Instance.Register(this);
-            }
+            // Register with the authoritative save service.
+            GlobalRegistry.Save?.Register(this);
 
             #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log("[LODSystemManager] Initialized. Max LOD groups: " + _maxLODGroupsPerFrame);
@@ -223,11 +220,8 @@ namespace Hecton8.World
 
         private void OnDestroy()
         {
-            // Unregister from SaveManager
-            if (SaveManager.Instance != null)
-            {
-                SaveManager.Instance.Unregister(this);
-            }
+            // Unregister from the authoritative save service.
+            GlobalRegistry.Save?.Unregister(this);
 
             // Complete any pending jobs BEFORE disposing NativeArrays
             if (_jobScheduled)
@@ -276,11 +270,8 @@ namespace Hecton8.World
             if (_registered)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager == null)
-                return;
 
-            gameTickManager.Register(this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _registered = true;
         }
 
@@ -289,9 +280,7 @@ namespace Hecton8.World
             if (!_registered)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager != null)
-                gameTickManager.Unregister(this);
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
 
             _registered = false;
         }
@@ -331,6 +320,9 @@ namespace Hecton8.World
             // Complete previous frame's job if still running
             if (_jobScheduled)
             {
+                if (!_distanceJobHandle.IsCompleted)
+                    return;
+
                 _distanceJobHandle.Complete();
                 ApplyLODTransitions();
                 _jobScheduled = false;
@@ -559,7 +551,7 @@ namespace Hecton8.World
                 playerTransform != null)
             {
                 if (!playerTransform.TryGetComponent(out _mainCamera))
-                    _mainCamera = playerTransform.GetComponentInChildren<Camera>(true);
+                    _mainCamera = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera : playerTransform.GetComponent<Camera>());
             }
 
             if (_mainCamera == null)

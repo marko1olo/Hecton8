@@ -14,6 +14,7 @@ namespace Hecton8.World
     [AddComponentMenu("Hecton8/World/World Readability Director")]
     public sealed class WorldReadabilityDirector : MonoBehaviour, ISlowTickable
     {
+        internal static WorldReadabilityDirector ActiveRuntimeInstance { get; private set; }
         private const int SeverityInfo = 0;
         private const int SeverityWarning = 1;
         private const int SeverityCritical = 2;
@@ -80,6 +81,9 @@ namespace Hecton8.World
 
         private void Awake()
         {
+            if (Application.isPlaying)
+                ActiveRuntimeInstance = this;
+
             ResolveReferences(force: true);
             ResetObservedState();
             UpdateDiagnostics();
@@ -87,6 +91,9 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            if (Application.isPlaying)
+                ActiveRuntimeInstance = this;
+
             TryRegister();
 
             ResolveReferences(force: true);
@@ -104,6 +111,9 @@ namespace Hecton8.World
 
         private void OnDisable()
         {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
+
             TryUnregister();
 
             _hasPendingMessage = false;
@@ -121,11 +131,8 @@ namespace Hecton8.World
             if (_registeredToTickManager)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager == null)
-                return;
 
-            gameTickManager.Register((ISlowTickable)this);
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
             _registeredToTickManager = true;
         }
 
@@ -134,9 +141,7 @@ namespace Hecton8.World
             if (!_registeredToTickManager)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager != null)
-                gameTickManager.Unregister((ISlowTickable)this);
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
 
             _registeredToTickManager = false;
         }

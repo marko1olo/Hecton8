@@ -60,6 +60,9 @@ namespace Hecton8.Gameplay
     using Hecton.Localization;
     using Hecton8.Physics;
     using Hecton8.Scavenging;
+    using Hecton8.World;
+    using EquipmentInteractionPacket = Hecton8.Interaction.InteractionPacket;
+    using EquipmentInteractionSignal = Hecton8.Interaction.InteractionSignal;
     using Unity.Mathematics;
     using UnityEngine;
 
@@ -252,6 +255,7 @@ namespace Hecton8.Gameplay
         private Vector3 _cachedDeconstructAnchorPoint;
         private Vector3 _cachedDeconstructAnchorNormal = Vector3.up;
         private uint _cachedToolId;
+        private ulong _raycastRequesterId;
         private byte _toolStateFlags = IdleState;
 
         // ── Sparks cache ──
@@ -308,6 +312,7 @@ namespace Hecton8.Gameplay
             _diagnosisSB = new System.Text.StringBuilder(256);
             CacheSparksEmission();
             CacheToolId();
+            CacheRaycastRequesterId();
             SetVisualsActive(false);
             
             EnsurePlayerBindings();
@@ -317,6 +322,7 @@ namespace Hecton8.Gameplay
         {
             base.OnSpawn();
             CacheToolId();
+            CacheRaycastRequesterId();
             ResetAllState();
             SetVisualsActive(false);
         }
@@ -640,10 +646,10 @@ namespace Hecton8.Gameplay
             else
                 direction.Normalize();
 
-            Vector3 absoluteOrigin = HectonFloatingOrigin.ToAbsoluteUniversePosition(_cachedTransform.position);
-            Vector3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePosition(_hitInfo.point);
+            Vector3 absoluteOrigin = ResolveAbsoluteUniversePoint(_cachedTransform.position);
+            Vector3 absoluteHitPoint = ResolveAbsoluteUniversePoint(_hitInfo.point);
             float normalizedPower = ResolveNormalizedPower(powerScale, heatMultiplier);
-            InteractionPacket packet = new InteractionPacket(
+            EquipmentInteractionPacket packet = new EquipmentInteractionPacket(
                 _cachedToolId,
                 new float3(absoluteOrigin.x, absoluteOrigin.y, absoluteOrigin.z),
                 new float3(direction.x, direction.y, direction.z),
@@ -652,7 +658,7 @@ namespace Hecton8.Gameplay
                 (byte)ToolActionMode.Primary,
                 _toolStateFlags,
                 (uint)Time.frameCount);
-            Hecton8.Interaction.InteractionSignal signal = new Hecton8.Interaction.InteractionSignal(
+            EquipmentInteractionSignal signal = new EquipmentInteractionSignal(
                 packet,
                 unchecked((int)EntityId.ToULong(_hitInfo.collider.GetEntityId())),
                 new float3(absoluteHitPoint.x, absoluteHitPoint.y, absoluteHitPoint.z),
@@ -662,7 +668,16 @@ namespace Hecton8.Gameplay
                 0);
 
             if (interactionService.Publish(signal, _hitInfo.collider))
+            {
+                SargassumCutManager cutManager = SargassumCutManager.Instance;
+                if (cutManager != null)
+                {
+                    float terrainDamageRadius = math.lerp(0.2f, 0.75f, normalizedPower);
+                    cutManager.RegisterExternalCut(_hitInfo.point, terrainDamageRadius, normalizedPower, direction, 0.1f);
+                }
+
                 ApplyRecoilImpulse(direction, normalizedPower);
+            }
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1285,7 +1300,7 @@ namespace Hecton8.Gameplay
         {
             IInteractionSignalService interactionService = GlobalRegistry.InteractionSignals;
             if (interactionService != null && interactionService.IsInitialized)
-                return interactionService.TryRaycastPrimary(_cachedTransform.position, _cachedTransform.forward, maxRange, cuttableLayer.value, out hit);
+                return interactionService.TryRaycastPrimary(_raycastRequesterId, _cachedTransform.position, _cachedTransform.forward, maxRange, cuttableLayer.value, QueryTriggerInteraction.Ignore, out hit);
 
             hit = default;
             return false;
@@ -1319,10 +1334,20 @@ namespace Hecton8.Gameplay
             _cachedToolId = unchecked((uint)Animator.StringToHash(toolIdSource));
         }
 
+        private void CacheRaycastRequesterId()
+        {
+            _raycastRequesterId = EntityId.ToULong(gameObject.GetEntityId());
+        }
+
         private float ResolveNormalizedPower(float powerScale, float heatMultiplier)
         {
             float normalizedPower = powerScale * (heatMultiplier / math.max(1f + heatDamageBonus, 0.0001f));
             return math.saturate(normalizedPower);
+        }
+
+        private static Vector3 ResolveAbsoluteUniversePoint(Vector3 runtimePoint)
+        {
+            return runtimePoint + HectonFloatingOrigin.CurrentTotalOffset;
         }
 
         private void ApplyRecoilImpulse(Vector3 direction, float normalizedPower)

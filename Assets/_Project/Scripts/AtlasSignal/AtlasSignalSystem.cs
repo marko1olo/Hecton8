@@ -29,6 +29,7 @@ using Hecton8.Gameplay;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
 using Hecton.Localization;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.AtlasSignal
@@ -205,10 +206,10 @@ namespace Hecton8.AtlasSignal
             if (desiredRevealStage > _maxRevealStageUnlocked)
                 _maxRevealStageUnlocked = desiredRevealStage;
 
-            float newStrength = Mathf.Min(rawStrength, ResolveRevealStrengthCap(_maxRevealStageUnlocked));
+            float newStrength = math.min(rawStrength, ResolveRevealStrengthCap(_maxRevealStageUnlocked));
 
             // Публикуем изменение силы
-            if (Mathf.Abs(newStrength - _lastPublishedStrength) > StrengthEpsilon)
+            if (math.abs(newStrength - _lastPublishedStrength) > StrengthEpsilon)
             {
                 _currentStrength = newStrength;
                 _lastPublishedStrength = newStrength;
@@ -278,7 +279,7 @@ namespace Hecton8.AtlasSignal
             if (biomeMatrixDirector != null)
                 return biomeMatrixDirector.CurrentDepthMeters;
 
-            return Mathf.Max(0f, -_playerTransform.position.y);
+            return math.max(0f, -_playerTransform.position.y);
         }
 
         private float CalculateRawStrength()
@@ -332,11 +333,7 @@ namespace Hecton8.AtlasSignal
             if (_registered)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager == null)
-                return;
-
-            gameTickManager.Register(this);
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);
             _registered = true;
         }
 
@@ -345,10 +342,7 @@ namespace Hecton8.AtlasSignal
             if (!_registered)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager != null)
-                gameTickManager.Unregister(this);
-
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
             _registered = false;
         }
 
@@ -485,7 +479,7 @@ namespace Hecton8.AtlasSignal
             if (data == null) return;
             _signalEverDetected = data.atlasSignalDetected;
             _pulseTimer = data.atlasSignalPulseTimer;
-            _maxRevealStageUnlocked = Mathf.Clamp(data.atlasSignalRevealStage, 0, 4);
+            _maxRevealStageUnlocked = math.clamp(data.atlasSignalRevealStage, 0, 4);
             _ghostManifestationAnnounced = _maxRevealStageUnlocked > 0 && !_signalEverDetected;
             _identityDiscoverySynchronized = _maxRevealStageUnlocked < IdentityRevealStage;
             if (_signalEverDetected && _maxRevealStageUnlocked < FormalDetectionRevealStage)

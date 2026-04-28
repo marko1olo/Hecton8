@@ -13,14 +13,15 @@ Shader "HECTON/Environment/RuinSeepSheen"
         _FlowAmount ("Flow Amount", Range(0, 1)) = 0.28
         _FresnelPower ("Fresnel Power", Range(0.5, 8)) = 3.4
         _FresnelStrength ("Fresnel Strength", Range(0, 2)) = 0.85
+        _DitherScale ("Dither Scale", Range(1, 8)) = 4.0
     }
 
     SubShader
     {
         Tags
         {
-            "Queue" = "Transparent"
-            "RenderType" = "Transparent"
+            "Queue" = "AlphaTest"
+            "RenderType" = "TransparentCutout"
             "RenderPipeline" = "UniversalPipeline"
             "IgnoreProjector" = "True"
             "PreviewType" = "Plane"
@@ -28,8 +29,8 @@ Shader "HECTON/Environment/RuinSeepSheen"
         }
 
         Cull Off
-        ZWrite Off
-        Blend SrcAlpha OneMinusSrcAlpha
+        ZWrite On
+        AlphaToMask On
 
         Pass
         {
@@ -56,6 +57,7 @@ Shader "HECTON/Environment/RuinSeepSheen"
                 half _FlowAmount;
                 half _FresnelPower;
                 half _FresnelStrength;
+                half _DitherScale;
             CBUFFER_END
 
             TEXTURE2D(_MainTex);
@@ -103,6 +105,12 @@ Shader "HECTON/Environment/RuinSeepSheen"
                 return pow(mask, max(_LuminancePower, 0.001h));
             }
 
+            float ResolveInterleavedGradientNoise(float2 positionCS)
+            {
+                float2 pixel = floor(positionCS / max(_DitherScale, 1.0h));
+                return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+            }
+
             half4 Frag(Varyings input) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(input);
@@ -120,7 +128,8 @@ Shader "HECTON/Environment/RuinSeepSheen"
 
                 half3 color = lerp(_TintColor.rgb, _HighlightColor.rgb, saturate(fresnel)) * highlight;
                 half alpha = saturate(seepMask * _TintColor.a * _Opacity * (0.78h + fresnel * 0.4h));
-                return half4(color, alpha);
+                clip(alpha - ResolveInterleavedGradientNoise(input.positionCS.xy));
+                return half4(color, 1.0h);
             }
             ENDHLSL
         }

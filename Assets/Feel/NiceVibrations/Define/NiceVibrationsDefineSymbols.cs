@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
@@ -12,9 +12,9 @@ namespace MoreMountains.FeedbacksForThirdParty
     /// <summary>
     /// This class lets you specify (in code, by editing it) symbols that will be added to the build settings' define symbols list automatically
     /// </summary>
-    [InitializeOnLoad]
     public class NiceVibrationsDefineSymbols
     {
+        private const string SessionSymbolsKey = "NiceVibrations.DefinesHandled";
         private static bool _queued;
 
         /// <summary>
@@ -30,6 +30,10 @@ namespace MoreMountains.FeedbacksForThirdParty
         /// </summary>
         static NiceVibrationsDefineSymbols()
         {
+            if (SessionState.GetBool(SessionSymbolsKey, false))
+                return;
+
+            SessionState.SetBool(SessionSymbolsKey, true);
             QueueApplySymbols();
         }
 

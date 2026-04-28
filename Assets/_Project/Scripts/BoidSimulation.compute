@@ -159,7 +159,7 @@ float  _WaterSurfaceY;              // Water surface Y coordinate
 // SECTION 4: THREAD CONFIGURATION
 // ============================================================================
 
-#define THREAD_GROUP_SIZE 256        // Threads per group — must match C# Dispatch call
+#define THREAD_GROUP_SIZE 64         // MX350/Pascal baseline: one 64-thread group per wave pair
                                      // Chosen for: LDS budget (8KB), MX350 occupancy,
                                      // warp alignment (256 = 8 warps of 32)
 

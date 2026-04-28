@@ -16,12 +16,16 @@ Shader "Crest/Inputs/Albedo/Sargassum Oil Film"
 
     SubShader
     {
-        Tags { "RenderType" = "Opaque" }
+        Tags
+        {
+            "RenderType" = "TransparentCutout"
+            "Queue" = "AlphaTest"
+        }
 
         Pass
         {
-            Blend SrcAlpha OneMinusSrcAlpha
-            ZWrite Off
+            AlphaToMask On
+            ZWrite On
 
             CGPROGRAM
             #pragma vertex Vert
@@ -77,6 +81,11 @@ Shader "Crest/Inputs/Albedo/Sargassum Oil Film"
                 return output;
             }
 
+            float InterleavedGradientNoise(float2 screenPosition)
+            {
+                return frac(52.9829189 * frac(dot(screenPosition, float2(0.06711056, 0.00583715))));
+            }
+
             half4 Frag(Varyings input) : SV_Target
             {
                 float2 densitySampleXZ = input.worldXZ - _SargassumGlobalDriftOffset.xz;
@@ -100,7 +109,8 @@ Shader "Crest/Inputs/Albedo/Sargassum Oil Film"
                 float3 spectralShift = 0.5 + 0.5 * cos(float3(0.0, 2.0943951, 4.1887902) + spectralPhase + chromaPhaseOffset);
                 float spectralMask = effectiveDensity * effectiveDensity * _IridescenceStrength * (1.0 + fresnel * _ChromaticAberration);
                 float3 oilyColor = lerp(_OilTint.rgb, saturate(_OilTint.rgb + spectralShift * 0.65), spectralMask);
-                return half4(oilyColor, alpha);
+                clip(alpha - InterleavedGradientNoise(input.positionCS.xy));
+                return half4(oilyColor, 1.0);
             }
             ENDCG
         }

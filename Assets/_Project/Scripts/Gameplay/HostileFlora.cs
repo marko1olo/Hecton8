@@ -114,6 +114,7 @@ namespace Hecton8.Gameplay
         private float _cooldownTimer;
         private bool _isRegistered;
         private bool _playerFound;
+        private bool _poolMissingLogged;
 
         // Pre-cached player tag
         private const string PlayerTag = "Player";
@@ -214,16 +215,14 @@ namespace Hecton8.Gameplay
 
         private void UpdateTarget()
         {
-            // Find player if not cached
-            if (!_playerFound || _playerTarget == null)
+            if (_playerTarget != null && _playerTarget.gameObject.activeInHierarchy)
             {
-                GameObject player = GameObject.FindGameObjectWithTag(PlayerTag);
-                if (player != null)
-                {
-                    _playerTarget = player.transform;
-                    _playerFound = true;
-                }
+                _playerFound = true;
+                return;
             }
+
+            Hecton8.World.WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _playerTarget);
+            _playerFound = _playerTarget != null;
         }
 
         private void TickIdle()
@@ -328,18 +327,22 @@ namespace Hecton8.Gameplay
             float randomAngle = Random.Range(-inaccuracy, inaccuracy);
             spawnRot = Quaternion.AngleAxis(randomAngle, Vector3.up) * spawnRot;
 
-            // Spawn projectile
-            GameObject projectile;
             ObjectPoolManager pool = ObjectPoolManager.Instance;
-            if (pool != null)
+            if (pool == null)
             {
-                projectile = pool.Spawn(projectilePrefab, spawnPos, spawnRot);
-            }
-            else
-            {
-                projectile = Instantiate(projectilePrefab, spawnPos, spawnRot);
+                if (!_poolMissingLogged)
+                {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    Debug.LogWarning("[HostileFlora] ObjectPoolManager unavailable. Projectile spawn skipped to avoid runtime Instantiate.", this);
+#endif
+                    _poolMissingLogged = true;
+                }
+
+                _state = FloraState.Cooldown;
+                return;
             }
 
+            GameObject projectile = pool.Spawn(projectilePrefab, spawnPos, spawnRot);
             if (projectile == null)
             {
                 _state = FloraState.Cooldown;
@@ -400,30 +403,16 @@ namespace Hecton8.Gameplay
         {
             if (_isRegistered) return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-            {
-                tickManager.Register(this as ISlowTickable);
-                _isRegistered = true;
-            }
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            else
-            {
-                Debug.LogError("[HostileFlora] GameTickManager.Instance is null. Cannot register for slow tick.", this);
-            }
-#endif
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
+            _isRegistered = true;
         }
 
         private void UnregisterFromSlowTick()
         {
             if (!_isRegistered) return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-            {
-                tickManager.Unregister(this as ISlowTickable);
-                _isRegistered = false;
-            }
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            _isRegistered = false;
         }
 
         // ══════════════════════════════════════════════════════════

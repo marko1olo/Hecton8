@@ -1,5 +1,8 @@
 using Hecton8.Core;
 using Unity.Collections;
+using System;
+using Unity.Jobs;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 #if UNITY_EDITOR
@@ -9,13 +12,12 @@ using UnityEditor;
 namespace Hecton8.World
 {
     /// <summary>
-    /// Draws far-field cartographer HLODs through one indirect call with per-instance fade.
+    /// Draws far-field cartographer HLODs through BRG draw commands with per-instance fade.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-89)]
-    public sealed class HectonHLODRenderer : MonoBehaviour, ITickable
+    public sealed class HectonHLODRenderer : MonoBehaviour, ITickable, IUpdatable, IOriginShiftListener
     {
-        private const int IndirectArgsCount = 5;
 #if UNITY_EDITOR
         private const string ShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_HLODUnlitFog.shader";
 #endif
@@ -38,7 +40,7 @@ namespace Hecton8.World
         private Shader _shader;
 
         [SerializeField]
-        [Tooltip("Submesh index rendered through the indirect call.")]
+        [Tooltip("Submesh index rendered through the BRG draw commands.")]
         private int _subMeshIndex;
 
         [SerializeField]
@@ -54,44 +56,54 @@ namespace Hecton8.World
         [Tooltip("Fallback conservative HLOD bounds.")]
         private Vector3 _boundsSize = new Vector3(3000f, 1600f, 3000f);
 
-        private ComputeBuffer _matrixBuffer;
-        private ComputeBuffer _fadeBuffer;
-        private ComputeBuffer _argsBuffer;
+        private GraphicsBuffer _matrixBuffer;
+        private GraphicsBuffer _fadeBuffer;
         private MaterialPropertyBlock _propertyBlock;
         private Material _runtimeMaterial;
-        private uint[] _indirectArgs;
         private NativeArray<Matrix4x4> _uploadedMatrices;
         private NativeArray<Vector4> _uploadedFade;
-        private ComputeBuffer _uploadedMatrixBuffer;
-        private ComputeBuffer _uploadedFadeBuffer;
+        private GraphicsBuffer _uploadedMatrixBuffer;
+        private GraphicsBuffer _uploadedFadeBuffer;
         private Bounds _drawBounds;
         private int _instanceCount;
         private bool _hasBoundsOverride;
         private bool _isRegistered;
         private bool _ownsRuntimeMaterial;
-        private bool _argsDirty = true;
         private Vector4 _lastGlobalFloatingOffset = new Vector4(float.NaN, float.NaN, float.NaN, float.NaN);
+        private BatchRendererGroup _batchRendererGroup;
+        private NativeArray<MetadataValue> _batchMetadata;
+        private GraphicsBuffer _batchHandleBuffer;
+        private BatchID _batchId;
+        private BatchMeshID _batchMeshId;
+        private BatchMaterialID _batchMaterialId;
+        private Mesh _registeredMesh;
+        private Material _registeredMaterial;
+        private Material _brgMaterial;
+        private Material _brgMaterialSource;
+        private bool _ownsBrgMaterial;
 
         private void Awake()
         {
-            _propertyBlock = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - HLOD indirect properties - owner: HectonHLODRenderer
-            _indirectArgs = new uint[IndirectArgsCount]; // COLD ALLOC: uint[5] - HLOD indirect args payload - owner: HectonHLODRenderer
+            _propertyBlock = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - HLOD draw properties - owner: HectonHLODRenderer
             _drawBounds = new Bounds(transform.position + _boundsCenterOffset, _boundsSize);
             EnsureResources();
         }
 
         private void OnEnable()
         {
+            HectonFloatingOrigin.RegisterListener(this);
             RegisterTick();
         }
 
         private void OnDisable()
         {
+            HectonFloatingOrigin.UnregisterListener(this);
             UnregisterTick();
         }
 
         private void OnDestroy()
         {
+            HectonFloatingOrigin.UnregisterListener(this);
             ReleaseResources();
         }
 
@@ -102,42 +114,30 @@ namespace Hecton8.World
                 return;
 
             EnsureResources();
-            if (_argsBuffer == null)
+            if (_batchRendererGroup == null || _batchId.Equals(default))
                 return;
 
-            UpdateArgsBuffer();
-            Material activeMaterial = ResolveMaterial();
-            if (_mesh == null || activeMaterial == null)
+            Mesh activeMesh = _mesh;
+            Material activeMaterial = EnsureBrgMaterial();
+            if (activeMesh == null || activeMaterial == null)
                 return;
-
-            _propertyBlock.SetBuffer(InstanceMatricesId, _matrixBuffer);
-            _propertyBlock.SetBuffer(InstanceFadeId, _fadeBuffer);
 
             Vector4 globalFloatingOffset = ResolveGlobalFloatingOffset();
             if (_lastGlobalFloatingOffset != globalFloatingOffset)
             {
-                _propertyBlock.SetVector(GlobalFloatingOffsetId, globalFloatingOffset);
+                activeMaterial.SetVector(GlobalFloatingOffsetId, globalFloatingOffset);
                 _lastGlobalFloatingOffset = globalFloatingOffset;
             }
 
-            Graphics.DrawMeshInstancedIndirect(
-                _mesh,
-                Mathf.Max(0, _subMeshIndex),
-                activeMaterial,
-                ResolveDrawBounds(),
-                _argsBuffer,
-                0,
-                _propertyBlock,
-                ShadowCastingMode.Off,
-                false,
-                gameObject.layer,
-                _cameraOverride,
-                LightProbeUsage.Off,
-                null);
+            activeMaterial.SetBuffer(InstanceMatricesId, _matrixBuffer);
+            activeMaterial.SetBuffer(InstanceFadeId, _fadeBuffer);
+            SyncBatchRegistration(activeMesh, activeMaterial);
+            _batchRendererGroup.SetBatchBuffer(_batchId, _matrixBuffer.bufferHandle);
+            _batchRendererGroup.SetGlobalBounds(ResolveDrawBounds());
         }
 
         /// <summary>
-        /// Uploads cartographer-owned HLOD instances into renderer-owned indirect buffers without managed allocations.
+        /// Uploads cartographer-owned HLOD instances into renderer-owned BRG buffers without managed allocations.
         /// </summary>
         public void BindNativeInstances(NativeArray<HLODInstance> instances, int instanceCount)
         {
@@ -175,14 +175,26 @@ namespace Hecton8.World
                 }
             }
 
-            _uploadedMatrixBuffer.SetData(_uploadedMatrices, 0, 0, instanceCount);
-            _uploadedFadeBuffer.SetData(_uploadedFade, 0, 0, instanceCount);
+            GraphicsBufferUploadUtility.UploadNativeArray(_uploadedMatrixBuffer, _uploadedMatrices, instanceCount);
+            GraphicsBufferUploadUtility.UploadNativeArray(_uploadedFadeBuffer, _uploadedFade, instanceCount);
             _matrixBuffer = _uploadedMatrixBuffer;
             _fadeBuffer = _uploadedFadeBuffer;
             _instanceCount = instanceCount;
             _drawBounds = hasCombinedBounds ? combinedBounds : new Bounds(transform.position + _boundsCenterOffset, _boundsSize);
             _hasBoundsOverride = hasCombinedBounds;
-            _argsDirty = true;
+        }
+
+        public void OnOriginShift(in OriginShiftEventData shiftData)
+        {
+            if (!isActiveAndEnabled || !_hasBoundsOverride || shiftData.ShiftOffset.sqrMagnitude <= 0.0001f)
+                return;
+
+            Bounds drawBounds = _drawBounds;
+            drawBounds.center -= shiftData.ShiftOffset;
+            _drawBounds = drawBounds;
+
+            if (_batchRendererGroup != null)
+                _batchRendererGroup.SetGlobalBounds(_drawBounds);
         }
 
         /// <summary>
@@ -194,7 +206,6 @@ namespace Hecton8.World
             _fadeBuffer = null;
             _instanceCount = 0;
             _hasBoundsOverride = false;
-            _argsDirty = true;
         }
 
         private void RegisterTick()
@@ -202,11 +213,8 @@ namespace Hecton8.World
             if (_isRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register(this);
+            SystemDispatcher.EnsureRuntimeInstance();
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _isRegistered = true;
         }
 
@@ -215,21 +223,12 @@ namespace Hecton8.World
             if (!_isRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister(this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _isRegistered = false;
         }
 
         private void EnsureResources()
         {
-            if (_argsBuffer == null)
-            {
-                _argsBuffer = new ComputeBuffer(1, sizeof(uint) * IndirectArgsCount, ComputeBufferType.IndirectArguments); // COLD ALLOC: ComputeBuffer[1] - HLOD indirect args buffer - owner: HectonHLODRenderer
-                _argsDirty = true;
-            }
-
 #if UNITY_EDITOR
             if (_shader == null)
                 _shader = AssetDatabase.LoadAssetAtPath<Shader>(ShaderAssetPath);
@@ -244,6 +243,67 @@ namespace Hecton8.World
                     enableInstancing = true
                 }; // COLD ALLOC: Material[1] - hidden first-party HLOD material - owner: HectonHLODRenderer
                 _ownsRuntimeMaterial = true;
+            }
+
+            if (_batchRendererGroup == null)
+            {
+                _batchRendererGroup = new BatchRendererGroup(new BatchRendererGroupCreateInfo
+                {
+                    cullingCallback = OnPerformCulling,
+                    userContext = IntPtr.Zero
+                });
+
+                _batchMetadata = new NativeArray<MetadataValue>(0, Allocator.Persistent); // COLD ALLOC: NativeArray<MetadataValue>[0] - BRG metadata placeholder for HLOD renderer - owner: HectonHLODRenderer
+                _batchHandleBuffer = HectonBatchRendererGroupUtility.CreateBatchHandleBuffer(); // COLD ALLOC: GraphicsBuffer[1] - BRG registration handle buffer for HLOD renderer - owner: HectonHLODRenderer
+                _batchId = _batchRendererGroup.AddBatch(_batchMetadata, _batchHandleBuffer.bufferHandle);
+                _batchRendererGroup.SetGlobalBounds(ResolveDrawBounds());
+            }
+        }
+
+        private Material EnsureBrgMaterial()
+        {
+            Material sourceMaterial = ResolveMaterial();
+            if (sourceMaterial == null)
+                return null;
+
+            if (_brgMaterial != null && _brgMaterialSource == sourceMaterial)
+                return _brgMaterial;
+
+            ReleaseBrgMaterial();
+
+            _brgMaterial = new Material(sourceMaterial)
+            {
+                hideFlags = HideFlags.HideAndDontSave,
+                name = "__HectonHLODBrgMaterial",
+                enableInstancing = true
+            }; // COLD ALLOC: Material[1] - BRG-local HLOD material clone for per-renderer buffer binding - owner: HectonHLODRenderer
+            _brgMaterialSource = sourceMaterial;
+            _ownsBrgMaterial = true;
+            _lastGlobalFloatingOffset = new Vector4(float.NaN, float.NaN, float.NaN, float.NaN);
+            return _brgMaterial;
+        }
+
+        private void SyncBatchRegistration(Mesh activeMesh, Material activeMaterial)
+        {
+            if (_batchRendererGroup == null)
+                return;
+
+            if (_registeredMesh != activeMesh)
+            {
+                if (!_batchMeshId.Equals(default))
+                    _batchRendererGroup.UnregisterMesh(_batchMeshId);
+
+                _batchMeshId = activeMesh != null ? _batchRendererGroup.RegisterMesh(activeMesh) : default;
+                _registeredMesh = activeMesh;
+            }
+
+            if (_registeredMaterial != activeMaterial)
+            {
+                if (!_batchMaterialId.Equals(default))
+                    _batchRendererGroup.UnregisterMaterial(_batchMaterialId);
+
+                _batchMaterialId = activeMaterial != null ? _batchRendererGroup.RegisterMaterial(activeMaterial) : default;
+                _registeredMaterial = activeMaterial;
             }
         }
 
@@ -281,27 +341,8 @@ namespace Hecton8.World
 
             _uploadedMatrices = new NativeArray<Matrix4x4>(nextCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Matrix4x4>[NextPowerOfTwo(requiredCount)] - HLOD matrix upload cache - owner: HectonHLODRenderer
             _uploadedFade = new NativeArray<Vector4>(nextCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Vector4>[NextPowerOfTwo(requiredCount)] - HLOD fade upload cache - owner: HectonHLODRenderer
-            _uploadedMatrixBuffer = new ComputeBuffer(nextCapacity, sizeof(float) * 16, ComputeBufferType.Structured); // COLD ALLOC: ComputeBuffer[NextPowerOfTwo(requiredCount)] - HLOD matrix buffer - owner: HectonHLODRenderer
-            _uploadedFadeBuffer = new ComputeBuffer(nextCapacity, sizeof(float) * 4, ComputeBufferType.Structured); // COLD ALLOC: ComputeBuffer[NextPowerOfTwo(requiredCount)] - HLOD fade buffer - owner: HectonHLODRenderer
-        }
-
-        private void UpdateArgsBuffer()
-        {
-            if (!_argsDirty || _argsBuffer == null)
-                return;
-
-            bool validSubMesh = _mesh != null && _subMeshIndex >= 0 && _subMeshIndex < _mesh.subMeshCount;
-            uint indexCount = validSubMesh ? _mesh.GetIndexCount(_subMeshIndex) : 0u;
-            uint indexStart = validSubMesh ? _mesh.GetIndexStart(_subMeshIndex) : 0u;
-            uint baseVertex = validSubMesh ? _mesh.GetBaseVertex(_subMeshIndex) : 0u;
-
-            _indirectArgs[0] = indexCount;
-            _indirectArgs[1] = (uint)Mathf.Max(0, _instanceCount);
-            _indirectArgs[2] = indexStart;
-            _indirectArgs[3] = baseVertex;
-            _indirectArgs[4] = 0u;
-            _argsBuffer.SetData(_indirectArgs);
-            _argsDirty = false;
+            _uploadedMatrixBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Matrix4x4>(nextCapacity); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(requiredCount)] - HLOD matrix buffer - owner: HectonHLODRenderer
+            _uploadedFadeBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector4>(nextCapacity); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(requiredCount)] - HLOD fade buffer - owner: HectonHLODRenderer
         }
 
         private Material ResolveMaterial()
@@ -319,11 +360,31 @@ namespace Hecton8.World
 
         private void ReleaseResources()
         {
-            if (_argsBuffer != null)
+            if (_batchRendererGroup != null)
             {
-                _argsBuffer.Release();
-                _argsBuffer = null;
+                if (!_batchId.Equals(default))
+                    _batchRendererGroup.RemoveBatch(_batchId);
+                if (!_batchMeshId.Equals(default))
+                    _batchRendererGroup.UnregisterMesh(_batchMeshId);
+                if (!_batchMaterialId.Equals(default))
+                    _batchRendererGroup.UnregisterMaterial(_batchMaterialId);
+                _batchRendererGroup.Dispose();
+                _batchRendererGroup = null;
+                _batchId = default;
+                _batchMeshId = default;
+                _batchMaterialId = default;
+                _registeredMesh = null;
+                _registeredMaterial = null;
             }
+
+            if (_batchHandleBuffer != null)
+            {
+                _batchHandleBuffer.Release();
+                _batchHandleBuffer = null;
+            }
+
+            if (_batchMetadata.IsCreated)
+                _batchMetadata.Dispose();
 
             if (_uploadedMatrixBuffer != null)
             {
@@ -352,6 +413,116 @@ namespace Hecton8.World
 
             _runtimeMaterial = null;
             _ownsRuntimeMaterial = false;
+            ReleaseBrgMaterial();
+        }
+
+        private void ReleaseBrgMaterial()
+        {
+            if (!_ownsBrgMaterial || _brgMaterial == null)
+            {
+                _brgMaterial = null;
+                _brgMaterialSource = null;
+                _ownsBrgMaterial = false;
+                return;
+            }
+
+            if (Application.isPlaying)
+                Destroy(_brgMaterial);
+            else
+                DestroyImmediate(_brgMaterial);
+
+            _brgMaterial = null;
+            _brgMaterialSource = null;
+            _ownsBrgMaterial = false;
+        }
+
+        private JobHandle OnPerformCulling(
+            BatchRendererGroup rendererGroup,
+            BatchCullingContext cullingContext,
+            BatchCullingOutput cullingOutput,
+            IntPtr userContext)
+        {
+            if (_instanceCount <= 0 ||
+                _matrixBuffer == null ||
+                _fadeBuffer == null ||
+                _batchId.Equals(default) ||
+                _batchMeshId.Equals(default) ||
+                _batchMaterialId.Equals(default))
+            {
+                HectonBatchRendererGroupUtility.WriteDirectDrawOutput(
+                    cullingOutput,
+                    HectonBatchRendererGroupUtility.AllocateDirectDrawOutput(0, 0, 0));
+                return default;
+            }
+
+            Bounds drawBounds = ResolveDrawBounds();
+            if (!HectonBatchRendererGroupUtility.IsBoundsVisible(cullingContext.cullingPlanes, drawBounds))
+            {
+                HectonBatchRendererGroupUtility.WriteDirectDrawOutput(
+                    cullingOutput,
+                    HectonBatchRendererGroupUtility.AllocateDirectDrawOutput(0, 0, 0));
+                return default;
+            }
+
+            bool canCullPerInstance = _uploadedMatrices.IsCreated && _matrixBuffer == _uploadedMatrixBuffer;
+            NativeArray<byte> visibilityMask = new NativeArray<byte>(_instanceCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            NativeArray<float4> cullingPlanes = default;
+            int planeCount = 0;
+            if (canCullPerInstance)
+            {
+                planeCount = cullingContext.cullingPlanes.IsCreated ? cullingContext.cullingPlanes.Length : 0;
+                if (planeCount > 0)
+                {
+                    cullingPlanes = new NativeArray<float4>(planeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                    for (int planeIndex = 0; planeIndex < planeCount; planeIndex++)
+                    {
+                        Plane plane = cullingContext.cullingPlanes[planeIndex];
+                        cullingPlanes[planeIndex] = new float4(plane.normal.x, plane.normal.y, plane.normal.z, plane.distance);
+                    }
+                }
+            }
+
+            unsafe
+            {
+                Vector4 floatingOffset = ResolveGlobalFloatingOffset();
+                BatchCullingOutputDrawCommands output = HectonBatchRendererGroupUtility.AllocateDirectDrawOutput(_instanceCount, 1, 1);
+                JobHandle visibilityHandle = new HectonBatchRendererGroupUtility.BuildMatrixVisibilityMaskJob
+                {
+                    Matrices = _uploadedMatrices,
+                    CullingPlanes = cullingPlanes,
+                    VisibilityMask = visibilityMask,
+                    InstanceCount = _instanceCount,
+                    PlaneCount = planeCount,
+                    EnableCpuCulling = canCullPerInstance,
+                    GlobalOffset = new float3(floatingOffset.x, floatingOffset.y, floatingOffset.z),
+                    RadiusScale = 1.7321f,
+                    MinRadius = 0.5f
+                }.Schedule(_instanceCount, 64);
+
+                JobHandle finalizeHandle = new HectonBatchRendererGroupUtility.FinalizeSingleDrawCommandOutputJob
+                {
+                    VisibilityMask = visibilityMask,
+                    InstanceCount = _instanceCount,
+                    BatchId = _batchId,
+                    MeshId = _batchMeshId,
+                    MaterialId = _batchMaterialId,
+                    Layer = gameObject.layer,
+                    SubMeshIndex = _subMeshIndex,
+                    ShadowCastingMode = ShadowCastingMode.Off,
+                    ReceiveShadows = false,
+                    MotionMode = MotionVectorGenerationMode.Camera,
+                    VisibleInstances = output.visibleInstances,
+                    DrawCommands = output.drawCommands,
+                    DrawRanges = output.drawRanges,
+                    OutputCommands = HectonBatchRendererGroupUtility.GetDirectDrawOutputPointer(cullingOutput)
+                }.Schedule(visibilityHandle);
+
+                JobHandle disposeHandle = visibilityMask.Dispose(finalizeHandle);
+                if (cullingPlanes.IsCreated)
+                    disposeHandle = cullingPlanes.Dispose(disposeHandle);
+
+                return disposeHandle;
+            }
         }
 
         private static Vector4 ResolveGlobalFloatingOffset()

@@ -1,0 +1,102 @@
+using System;
+using System.Threading;
+using MCPForUnity.Editor.Constants;
+using UnityEditor;
+using UnityEngine;
+
+namespace MCPForUnity.Editor.Helpers
+{
+    [InitializeOnLoad]
+    internal static class McpLog
+    {
+        private const string InfoPrefix = "<b><color=#2EA3FF>MCP-FOR-UNITY</color></b>:";
+        private const string DebugPrefix = "<b><color=#6AA84F>MCP-FOR-UNITY</color></b>:";
+        private const string WarnPrefix = "<b><color=#cc7a00>MCP-FOR-UNITY</color></b>:";
+        private const string ErrorPrefix = "<b><color=#cc3333>MCP-FOR-UNITY</color></b>:";
+
+        private static readonly SynchronizationContext MainThreadContext;
+        private static readonly int MainThreadId;
+        private static volatile bool _debugEnabled;
+
+        static McpLog()
+        {
+            MainThreadContext = SynchronizationContext.Current;
+            MainThreadId = Thread.CurrentThread.ManagedThreadId;
+            PrimeDebugPreferenceOnMainThread();
+        }
+
+        private static bool IsDebugEnabled() => _debugEnabled;
+        private static bool IsMainThread() => Thread.CurrentThread.ManagedThreadId == MainThreadId;
+
+        private static bool ReadDebugPreference()
+        {
+            try { return EditorPrefs.GetBool(EditorPrefKeys.DebugLogs, false); }
+            catch { return false; }
+        }
+
+        public static void PrimeDebugPreferenceOnMainThread()
+        {
+            if (!IsMainThread())
+            {
+                return;
+            }
+
+            _debugEnabled = ReadDebugPreference();
+        }
+
+        public static void SetDebugLoggingEnabled(bool enabled)
+        {
+            _debugEnabled = enabled;
+            Dispatch(static state =>
+            {
+                try { EditorPrefs.SetBool(EditorPrefKeys.DebugLogs, (bool)state); }
+                catch { }
+            }, enabled);
+        }
+
+        public static void Debug(string message)
+        {
+            if (!IsDebugEnabled()) return;
+            Dispatch(static state => UnityEngine.Debug.Log((string)state), $"{DebugPrefix} {message}");
+        }
+
+        public static void Info(string message, bool always = true)
+        {
+            if (!always && !IsDebugEnabled()) return;
+            Dispatch(static state => UnityEngine.Debug.Log((string)state), $"{InfoPrefix} {message}");
+        }
+
+        public static void Warn(string message)
+        {
+            Dispatch(static state => UnityEngine.Debug.LogWarning((string)state), $"{WarnPrefix} {message}");
+        }
+
+        public static void Error(string message)
+        {
+            Dispatch(static state => UnityEngine.Debug.LogError((string)state), $"{ErrorPrefix} {message}");
+        }
+
+        private static void Dispatch(SendOrPostCallback callback, object state)
+        {
+            if (callback == null)
+            {
+                return;
+            }
+
+            if (IsMainThread() || MainThreadContext == null)
+            {
+                callback(state);
+                return;
+            }
+
+            try
+            {
+                MainThreadContext.Post(callback, state);
+            }
+            catch (Exception)
+            {
+                callback(state);
+            }
+        }
+    }
+}

@@ -26,6 +26,7 @@ namespace Hecton8.Dev
     public sealed class PhysicalInteractionRuntimeVerifier : MonoBehaviour
     {
         private const string ProbeItemPath = "Assets/_Project/Data/Items/Data_Titanium.asset";
+        private const int MaxSimulationStepsPerRun = 32;
 
         [Header("References")]
         [SerializeField] private PhysicalInteractionHandler interactionHandler;
@@ -70,6 +71,10 @@ namespace Hecton8.Dev
 
         private void Start()
         {
+#if !(UNITY_EDITOR || DEVELOPMENT_BUILD)
+            return;
+#endif
+
             if (!runOnStart || _debugRunning)
                 return;
 
@@ -155,21 +160,30 @@ namespace Hecton8.Dev
 
         private void AutoResolveReferences()
         {
+            Hecton8.Core.IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
             if (interactionHandler == null)
-                interactionHandler = GetComponent<PhysicalInteractionHandler>() ?? FindAnyObjectByType<PhysicalInteractionHandler>();
+            {
+                interactionHandler = GetComponent<PhysicalInteractionHandler>();
+                if (interactionHandler == null && playerContext != null && playerContext.PlayerObject != null)
+                    playerContext.PlayerObject.TryGetComponent(out interactionHandler);
+            }
 
             if (playerInventory == null)
-                playerInventory = GetComponent<PlayerInventory>() ?? FindAnyObjectByType<PlayerInventory>();
+                playerInventory = GetComponent<PlayerInventory>() ?? (Hecton8.Core.GlobalRegistry.Player != null ? Hecton8.Core.GlobalRegistry.Player.Inventory : null);
 
             if (survivalSystem == null)
-                survivalSystem = GetComponent<HectonSurvivalSystem>() ?? FindAnyObjectByType<HectonSurvivalSystem>();
+            {
+                survivalSystem = GetComponent<HectonSurvivalSystem>();
+                if (survivalSystem == null && playerContext != null && playerContext.PlayerObject != null)
+                    playerContext.PlayerObject.TryGetComponent(out survivalSystem);
+            }
 
             if (playerCamera == null && interactionHandler != null)
-                playerCamera = interactionHandler.GetComponentInChildren<Camera>(true);
+                playerCamera = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera : interactionHandler.GetComponent<Camera>());
 
             if (pickupProbeItem == null)
             {
-                PickupItem scenePickup = FindAnyObjectByType<PickupItem>();
+                PickupItem scenePickup = PickupItem.ActiveRuntimeInstance;
                 if (scenePickup != null)
                     pickupProbeItem = scenePickup.ItemData;
             }
@@ -286,11 +300,12 @@ namespace Hecton8.Dev
 
         private void SimulateHandlerSteps(int stepCount)
         {
-            if (stepCount <= 0)
+            int safeStepCount = Mathf.Clamp(stepCount, 0, MaxSimulationStepsPerRun);
+            if (safeStepCount <= 0)
                 return;
 
             float stepDelta = Mathf.Max(0.01f, simulatedDeltaTime);
-            for (int i = 0; i < stepCount; i++)
+            for (int i = 0; i < safeStepCount; i++)
             {
                 interactionHandler.Tick(stepDelta);
                 interactionHandler.FixedTick(stepDelta);
@@ -370,6 +385,9 @@ namespace Hecton8.Dev
 
             AutoResolveReferences();
             AutoResolveAssets();
+            simulatedDeltaTime = Mathf.Clamp(simulatedDeltaTime, 0.01f, 0.25f);
+            pickupSimulationSteps = Mathf.Clamp(pickupSimulationSteps, 1, MaxSimulationStepsPerRun);
+            heavySimulationSteps = Mathf.Clamp(heavySimulationSteps, 1, MaxSimulationStepsPerRun);
         }
 
         private void AutoResolveAssets()

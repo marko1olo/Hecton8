@@ -9,8 +9,8 @@ using System.Linq;
 
 namespace Pathfinding {
 	/// <summary>Handles update checking for the A* Pathfinding Project</summary>
-	[InitializeOnLoad]
 	public static class AstarUpdateChecker {
+		const string SessionStartupCheckKey = "AstarUpdateChecker.StartupCheckQueued";
 #if UNITY_2018_1_OR_NEWER
 		/// <summary>Used for downloading new version information</summary>
 		static UnityWebRequest updateCheckDownload;
@@ -109,7 +109,9 @@ namespace Pathfinding {
 
 		static AstarUpdateChecker() {
 			EditorBase.getDocumentationURL = () => GetURL("documentation");
+			if (SessionState.GetBool(SessionStartupCheckKey, false)) return;
 			if (!ShouldScheduleStartupCheck()) return;
+			SessionState.SetBool(SessionStartupCheckKey, true);
 			EditorApplication.delayCall += RegisterStartupCheck;
 		}
 

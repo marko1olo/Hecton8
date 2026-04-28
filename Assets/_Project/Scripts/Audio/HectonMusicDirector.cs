@@ -5,6 +5,7 @@ using Hecton8.Systems.AI;
 using Hecton8.Atmosphere;
 using Hecton8.Bootstrap;
 using Hecton8.World;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Audio;
 using UnityEngine.SceneManagement;
@@ -13,7 +14,7 @@ namespace Hecton8.Audio
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-3900)] // Consumes zone/acoustic state resolved by earlier managers.
-    public sealed class HectonMusicDirector : MonoBehaviour, ITickable, ISlowTickable
+    public sealed class HectonMusicDirector : MonoBehaviour, ITickable, IUpdatable, ISlowTickable
     {
         private enum PlaybackState : byte
         {
@@ -61,7 +62,7 @@ namespace Hecton8.Audio
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureRuntimeInstance()
         {
-            if (!Application.isPlaying || _instance != null || GameTickManager.Instance == null)
+            if (!Application.isPlaying || _instance != null)
                 return;
 
             GameObject runtimeRoot = new GameObject("HectonMusicDirector_Root");
@@ -553,7 +554,7 @@ namespace Hecton8.Audio
         public void SetManualTension01(float tension01)
         {
             _manualTensionOverride = true;
-            _manualTension01 = Mathf.Clamp01(tension01);
+            _manualTension01 = math.saturate(tension01);
             ReevaluateContext(true);
         }
 
@@ -663,40 +664,30 @@ namespace Hecton8.Audio
 
         private void TryRegisterTickHandlers()
         {
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
             if (!_registeredTick)
             {
-                tickManager.Register((ITickable)this);
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
                 _registeredTick = true;
             }
 
             if (!_registeredSlowTick)
             {
-                tickManager.Register((ISlowTickable)this);
+                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredSlowTick = true;
             }
         }
 
         private void TryUnregisterTickHandlers()
         {
-            GameTickManager tickManager = GameTickManager.Instance;
-
             if (_registeredTick)
             {
-                if (tickManager != null)
-                    tickManager.Unregister((ITickable)this);
-
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
                 _registeredTick = false;
             }
 
             if (_registeredSlowTick)
             {
-                if (tickManager != null)
-                    tickManager.Unregister((ISlowTickable)this);
-
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredSlowTick = false;
             }
         }
@@ -806,13 +797,13 @@ namespace Hecton8.Audio
 
             if (WorldSpatialHashGrid.TryGetNearestAggressiveBioform(
                 _playerTransform.position,
-                Mathf.Max(1f, _predatorSenseRadius),
+                math.max(1f, _predatorSenseRadius),
                 ~0,
                 _playerTransform,
                 out SpatialQueryHit predatorHit))
             {
-                float distance = Mathf.Sqrt(predatorHit.DistanceSqr);
-                _predatorProximity01 = 1f - Mathf.Clamp01(distance / Mathf.Max(1f, _predatorSenseRadius));
+                float distance = math.sqrt(predatorHit.DistanceSqr);
+                _predatorProximity01 = 1f - math.saturate(distance / math.max(1f, _predatorSenseRadius));
             }
             else
             {
@@ -830,11 +821,11 @@ namespace Hecton8.Audio
                 return;
 
             float depthMeters = ResolveLayerDepthMeters();
-            float depth01 = Mathf.InverseLerp(20f, 900f, depthMeters);
-            float rhythmTarget = Mathf.Clamp01(_resolvedTension01 * 0.65f + _predatorProximity01 * 0.55f + _stormPressure01 * 0.18f);
-            float bassTarget = Mathf.Clamp01(depth01 * 0.62f + _resolvedTension01 * 0.28f + _oxygenDanger01 * 0.26f + _stormPressure01 * 0.12f);
-            float atmosphereTarget = Mathf.Clamp01(0.24f + depth01 * 0.58f + _stormPressure01 * 0.16f - (_currentBaseContext ? 0.16f : 0f));
-            float dangerTarget = Mathf.Clamp01(Mathf.Max(_predatorProximity01, _oxygenDanger01, _resolvedTension01 * 0.82f) + _stormPressure01 * 0.18f);
+            float depth01 = InverseLerp(20f, 900f, depthMeters);
+            float rhythmTarget = math.saturate(_resolvedTension01 * 0.65f + _predatorProximity01 * 0.55f + _stormPressure01 * 0.18f);
+            float bassTarget = math.saturate(depth01 * 0.62f + _resolvedTension01 * 0.28f + _oxygenDanger01 * 0.26f + _stormPressure01 * 0.12f);
+            float atmosphereTarget = math.saturate(0.24f + depth01 * 0.58f + _stormPressure01 * 0.16f - (_currentBaseContext ? 0.16f : 0f));
+            float dangerTarget = math.saturate(math.max(math.max(_predatorProximity01, _oxygenDanger01), _resolvedTension01 * 0.82f) + _stormPressure01 * 0.18f);
 
             if (_currentBaseContext)
             {
@@ -860,10 +851,10 @@ namespace Hecton8.Audio
         private float ResolveLayerDepthMeters()
         {
             if (_survivalSystem != null)
-                return Mathf.Max(0f, _survivalSystem.Depth);
+                return math.max(0f, _survivalSystem.Depth);
 
             if (_biomeMatrixDirector != null)
-                return Mathf.Max(0f, _biomeMatrixDirector.CurrentDepthMeters);
+                return math.max(0f, _biomeMatrixDirector.CurrentDepthMeters);
 
             return 0f;
         }
@@ -873,7 +864,7 @@ namespace Hecton8.Audio
             if (_survivalSystem == null)
                 return 0f;
 
-            return Mathf.Clamp01(Mathf.InverseLerp(0.35f, 0.05f, _survivalSystem.OxygenNormalized));
+            return InverseLerp(0.35f, 0.05f, _survivalSystem.OxygenNormalized);
         }
 
         private float ResolveStormPressure01(float depthMeters)
@@ -882,14 +873,14 @@ namespace Hecton8.Audio
             if (weatherDirector == null || depthMeters > 120f)
                 return 0f;
 
-            float depthAttenuation = 1f - Mathf.Clamp01(depthMeters / 120f);
-            return Mathf.Clamp01(weatherDirector.CurrentElectricalActivity * depthAttenuation);
+            float depthAttenuation = 1f - math.saturate(depthMeters / 120f);
+            return math.saturate(weatherDirector.CurrentElectricalActivity * depthAttenuation);
         }
 
         private float MoveLayerValue(float current, float target, float deltaTime)
         {
             float speed = target > current ? _layerAttackSpeed : _layerReleaseSpeed;
-            return Mathf.MoveTowards(current, target, deltaTime * Mathf.Max(0.01f, speed));
+            return MoveTowards(current, target, deltaTime * math.max(0.01f, speed));
         }
 
         private void ApplyLayerMixerState(bool force)
@@ -908,8 +899,8 @@ namespace Hecton8.Audio
             if (string.IsNullOrEmpty(parameterName))
                 return;
 
-            float db = Mathf.Lerp(MixerFloorDb, MixerCeilingDb, Mathf.Clamp01(normalizedValue));
-            if (!force && Mathf.Abs(db - cachedDb) < 0.1f)
+            float db = math.lerp(MixerFloorDb, MixerCeilingDb, math.saturate(normalizedValue));
+            if (!force && math.abs(db - cachedDb) < 0.1f)
                 return;
 
             _layerMixer.SetFloat(parameterName, db);
@@ -1053,7 +1044,7 @@ namespace Hecton8.Audio
             DepthZoneProfile depthZone = _depthZoneDirector != null ? _depthZoneDirector.CurrentZone : null;
 
             float aiTension01 = _directorAI != null
-                ? Mathf.Clamp01(_directorAI.TensionScore * 0.01f)
+                ? math.saturate(_directorAI.TensionScore * 0.01f)
                 : 0f;
             float biomePressure01 = ResolveBiomePressure01(matrixProfile);
             float zonePressure01 = ResolveZonePressure01(currentZone);
@@ -1082,7 +1073,7 @@ namespace Hecton8.Audio
             _debugSafePocketSuppression01 = safePocketSuppression01;
             _debugFirstHourPressureBoost01 = firstHourPressureBoost01;
 
-            return Mathf.Clamp01(tension01);
+            return math.saturate(tension01);
         }
 
         private bool ResolveBaseContext()
@@ -1165,7 +1156,7 @@ namespace Hecton8.Audio
             if (selectedCue.Role == HectonMusicClipRole.ExplorationShort || selectedCue.Role == HectonMusicClipRole.CombatShort)
                 _shortTrackCooldownRemaining = playbackProfile.ShortTrackCooldownSeconds;
 
-            float targetVolume = Mathf.Clamp01(selectedCue.Volume);
+            float targetVolume = math.saturate(selectedCue.Volume);
             float fadeSeconds = HasAnyActiveVoice()
                 ? playbackProfile.CrossfadeSeconds
                 : playbackProfile.FadeInSeconds;
@@ -1248,7 +1239,7 @@ namespace Hecton8.Audio
                     if (t > 1f)
                         t = 1f;
 
-                    _voiceBaseVolumes[i] = Mathf.Lerp(_voiceFadeStartVolumes[i], _voiceFadeTargetVolumes[i], t);
+                    _voiceBaseVolumes[i] = math.lerp(_voiceFadeStartVolumes[i], _voiceFadeTargetVolumes[i], t);
                     if (t >= 1f)
                     {
                         _voiceFading[i] = false;
@@ -1317,7 +1308,7 @@ namespace Hecton8.Audio
                 return;
 
             _voiceFadeStartVolumes[voiceIndex] = _voiceBaseVolumes[voiceIndex];
-            _voiceFadeTargetVolumes[voiceIndex] = Mathf.Clamp01(targetVolume);
+            _voiceFadeTargetVolumes[voiceIndex] = math.saturate(targetVolume);
             _voiceFadeDurations[voiceIndex] = duration > 0.01f ? duration : 0.01f;
             _voiceFadeElapsedTimes[voiceIndex] = 0f;
             _voiceFading[voiceIndex] = true;
@@ -1334,7 +1325,7 @@ namespace Hecton8.Audio
             if (maxPause <= minPause)
                 _waitTimerSeconds = minPause;
             else
-                _waitTimerSeconds = Random.Range(minPause, maxPause);
+                _waitTimerSeconds = UnityEngine.Random.Range(minPause, maxPause);
 
             _playbackState = PlaybackState.Waiting;
             TraceEvent("Wait", waitProfile, null);
@@ -1350,7 +1341,7 @@ namespace Hecton8.Audio
                 rootProfile.CrossTensionMixChance > 0f &&
                 PoolHasValidClips(GetPool(rootProfile, highTension, preferShort)) &&
                 PoolHasValidClips(GetPool(rootProfile, !highTension, preferShort)) &&
-                Random.value <= rootProfile.CrossTensionMixChance &&
+                UnityEngine.Random.value <= rootProfile.CrossTensionMixChance &&
                 TrySelectCueFromMode(rootProfile, !highTension, preferShort, out selectedCue, out selectedProfile))
             {
                 _selectionUsedCrossTension = true;
@@ -1384,12 +1375,12 @@ namespace Hecton8.Audio
             if (ReferenceEquals(rootProfile, _shallowProfile) && _shelfProfile != null)
             {
                 candidate = _shelfProfile;
-                nearestBoundaryDistance = Mathf.Abs(600f - depthMeters);
+                nearestBoundaryDistance = math.abs(600f - depthMeters);
             }
             else if (ReferenceEquals(rootProfile, _shelfProfile))
             {
-                float shallowDistance = _shallowProfile != null ? Mathf.Abs(600f - depthMeters) : float.MaxValue;
-                float abyssDistance = _abyssProfile != null ? Mathf.Abs(3500f - depthMeters) : float.MaxValue;
+                float shallowDistance = _shallowProfile != null ? math.abs(600f - depthMeters) : float.MaxValue;
+                float abyssDistance = _abyssProfile != null ? math.abs(3500f - depthMeters) : float.MaxValue;
 
                 if (shallowDistance <= abyssDistance)
                 {
@@ -1405,7 +1396,7 @@ namespace Hecton8.Audio
             else if (ReferenceEquals(rootProfile, _abyssProfile) && _shelfProfile != null)
             {
                 candidate = _shelfProfile;
-                nearestBoundaryDistance = Mathf.Abs(3500f - depthMeters);
+                nearestBoundaryDistance = math.abs(3500f - depthMeters);
             }
 
             if (candidate == null || ReferenceEquals(candidate, rootProfile) || nearestBoundaryDistance > _depthBlendWindowMeters)
@@ -1416,7 +1407,7 @@ namespace Hecton8.Audio
                 return;
 
             depthBlendProfile = candidate;
-            depthBlendWeight = Mathf.Clamp(Mathf.RoundToInt(normalized * _depthBlendMaxWeight), 1, _depthBlendMaxWeight);
+            depthBlendWeight = math.clamp((int)math.round(normalized * _depthBlendMaxWeight), 1, _depthBlendMaxWeight);
         }
 
         private bool TrySelectCueFromMode(HectonMusicBiomeProfile rootProfile, bool highTension, bool preferShort, out HectonMusicClip selectedCue, out HectonMusicBiomeProfile selectedProfile)
@@ -1457,7 +1448,7 @@ namespace Hecton8.Audio
             if (totalWeight <= 0)
                 return false;
 
-            int roll = Random.Range(0, totalWeight);
+            int roll = UnityEngine.Random.Range(0, totalWeight);
             if (PoolHasValidClips(GetPool(rootProfile, highTension, preferShort)))
             {
                 if (roll < localWeight)
@@ -1546,7 +1537,7 @@ namespace Hecton8.Audio
             if (validCount <= 0 || totalWeight <= 0)
                 return false;
 
-            int roll = Random.Range(0, totalWeight);
+            int roll = UnityEngine.Random.Range(0, totalWeight);
 
             for (int i = 0; i < pool.Length; i++)
             {
@@ -1600,7 +1591,7 @@ namespace Hecton8.Audio
             if (profile == null || _shortTrackCooldownRemaining > 0f || profile.ShortTrackChance <= 0f)
                 return false;
 
-            return Random.value <= profile.ShortTrackChance;
+            return UnityEngine.Random.value <= profile.ShortTrackChance;
         }
 
         private bool ShouldTriggerEndFade(int voiceIndex, float fadeOutSeconds)
@@ -1700,7 +1691,7 @@ namespace Hecton8.Audio
             _stingerSource.Stop();
             _stingerSource.clip = selectedCue.Clip;
             _stingerSource.loop = false;
-            _stingerSource.volume = Mathf.Clamp01(selectedCue.Volume);
+            _stingerSource.volume = math.saturate(selectedCue.Volume);
             _stingerSource.outputAudioMixerGroup = ResolveStingerMixerGroup();
             _stingerSource.Play();
 
@@ -1794,7 +1785,7 @@ namespace Hecton8.Audio
                 return false;
 
             bool excludeRepeat = validCount > 1 && _lastStingerClip != null && totalWithoutRepeat > 0;
-            int roll = Random.Range(0, excludeRepeat ? totalWithoutRepeat : totalWeight);
+            int roll = UnityEngine.Random.Range(0, excludeRepeat ? totalWithoutRepeat : totalWeight);
 
             for (int i = 0; i < pool.Length; i++)
             {
@@ -1833,7 +1824,7 @@ namespace Hecton8.Audio
         private void StartDuck(float target, float duration)
         {
             _duckStart = _duckCurrent;
-            _duckTarget = Mathf.Clamp01(target);
+            _duckTarget = math.saturate(target);
             _duckDuration = duration > 0.01f ? duration : 0.01f;
             _duckElapsed = 0f;
             _duckFading = true;
@@ -1849,7 +1840,7 @@ namespace Hecton8.Audio
             if (t > 1f)
                 t = 1f;
 
-            _duckCurrent = Mathf.Lerp(_duckStart, _duckTarget, t);
+            _duckCurrent = math.lerp(_duckStart, _duckTarget, t);
             if (t >= 1f)
                 _duckFading = false;
         }
@@ -1879,7 +1870,7 @@ namespace Hecton8.Audio
             _overrideActive = true;
             _overrideLoop = loop;
             _overrideClip = clip;
-            _overrideVolume = Mathf.Clamp01(volume);
+            _overrideVolume = math.saturate(volume);
             _pendingImmediateSelection = false;
             _scheduleWaitWhenSilent = false;
             _waitTimerSeconds = 0f;
@@ -2243,7 +2234,7 @@ namespace Hecton8.Audio
 
         private static float ResolvePressure01(int authoredValue)
         {
-            return Mathf.Clamp01((authoredValue - 1f) / 4f);
+            return math.saturate((authoredValue - 1f) / 4f);
         }
 
         private static bool ReadsAsSafeZoneKind(WorldZoneAnchor.ZoneKind kind)
@@ -2291,7 +2282,7 @@ namespace Hecton8.Audio
             float survivalPressure01 = ResolvePressure01(matrixProfile.survivalPressure);
             float routePressure01 = ResolvePressure01(matrixProfile.routePressure);
             float pressure01 = survivalPressure01 * 0.72f + routePressure01 * 0.28f;
-            return Mathf.Clamp01(pressure01);
+            return math.saturate(pressure01);
         }
 
         private static float ResolveRewardUnease01(HectonBiomeMatrixProfile matrixProfile)
@@ -2306,7 +2297,7 @@ namespace Hecton8.Audio
             float rareRewardBonus = matrixProfile.rewardPull >= 4 && !string.IsNullOrWhiteSpace(matrixProfile.rareRewardHook)
                 ? 0.18f
                 : 0f;
-            return Mathf.Clamp01(rewardPull01 * 0.68f + rareRewardBonus);
+            return math.saturate(rewardPull01 * 0.68f + rareRewardBonus);
         }
 
         private static float ResolveZonePressure01(WorldZoneAnchor currentZone)
@@ -2316,17 +2307,17 @@ namespace Hecton8.Audio
 
             float zonePressure01 = ResolveZoneKindPressure01(currentZone.Kind);
             if (currentZone.RouteCritical)
-                zonePressure01 = Mathf.Max(zonePressure01, 0.46f);
+                zonePressure01 = math.max(zonePressure01, 0.46f);
 
             if (!string.IsNullOrWhiteSpace(currentZone.GameplayIntent))
             {
                 if (ContainsAnyToken(currentZone.GameplayIntent, ThermalTokens))
-                    zonePressure01 = Mathf.Max(zonePressure01, 0.62f);
+                    zonePressure01 = math.max(zonePressure01, 0.62f);
                 else if (ContainsAnyToken(currentZone.GameplayIntent, CaveTokens))
-                    zonePressure01 = Mathf.Max(zonePressure01, 0.52f);
+                    zonePressure01 = math.max(zonePressure01, 0.52f);
             }
 
-            return Mathf.Clamp01(zonePressure01);
+            return math.saturate(zonePressure01);
         }
 
         private static float ResolveDepthZonePressure01(DepthZoneProfile depthZone)
@@ -2334,24 +2325,24 @@ namespace Hecton8.Audio
             if (depthZone == null)
                 return 0f;
 
-            float pressure01 = Mathf.Clamp01(depthZone.dangerLevel);
+            float pressure01 = math.saturate(depthZone.dangerLevel);
 
             if (depthZone.requiredHullTier > 0)
-                pressure01 = Mathf.Max(pressure01, Mathf.Clamp01(depthZone.requiredHullTier * 0.24f));
+                pressure01 = math.max(pressure01, math.saturate(depthZone.requiredHullTier * 0.24f));
 
             if (depthZone.hasCaves)
-                pressure01 = Mathf.Max(pressure01, 0.44f);
+                pressure01 = math.max(pressure01, 0.44f);
 
             if (depthZone.isThermal)
-                pressure01 = Mathf.Max(pressure01, 0.58f);
+                pressure01 = math.max(pressure01, 0.58f);
 
             if (depthZone.minDepth >= 600f)
-                pressure01 = Mathf.Max(pressure01, 0.36f);
+                pressure01 = math.max(pressure01, 0.36f);
 
             if (depthZone.minDepth >= 3500f)
-                pressure01 = Mathf.Max(pressure01, 0.62f);
+                pressure01 = math.max(pressure01, 0.62f);
 
-            return Mathf.Clamp01(pressure01);
+            return math.saturate(pressure01);
         }
 
         private static float ResolveSafePocketSuppression01(HectonBiomeMatrixProfile matrixProfile, WorldZoneAnchor currentZone)
@@ -2363,19 +2354,19 @@ namespace Hecton8.Audio
                 if (ReadsAsSafeZoneKind(currentZone.Kind))
                     suppression01 = 1f;
                 else if (currentZone.RouteCritical)
-                    suppression01 = Mathf.Max(suppression01, 0.18f);
+                    suppression01 = math.max(suppression01, 0.18f);
             }
 
             if (matrixProfile != null)
             {
                 if (!string.IsNullOrWhiteSpace(matrixProfile.safePocketIdentity))
-                    suppression01 = Mathf.Max(suppression01, matrixProfile.survivalPressure >= 4 ? 0.35f : 0.55f);
+                    suppression01 = math.max(suppression01, matrixProfile.survivalPressure >= 4 ? 0.35f : 0.55f);
 
                 if (matrixProfile.survivalPressure <= 2 && matrixProfile.rewardPull <= 2)
-                    suppression01 = Mathf.Max(suppression01, 0.14f);
+                    suppression01 = math.max(suppression01, 0.14f);
             }
 
-            return Mathf.Clamp01(suppression01);
+            return math.saturate(suppression01);
         }
 
         private static float ResolveFirstHourPressureBoost01(HectonBiomeMatrixProfile matrixProfile, WorldZoneAnchor currentZone)
@@ -2388,28 +2379,47 @@ namespace Hecton8.Audio
             if (matrixProfile != null)
             {
                 if (matrixProfile.depthTier >= 4)
-                    boost01 = Mathf.Max(boost01, 0.42f);
+                    boost01 = math.max(boost01, 0.42f);
 
                 if (matrixProfile.survivalPressure >= 4)
-                    boost01 = Mathf.Max(boost01, 0.58f);
+                    boost01 = math.max(boost01, 0.58f);
             }
 
             if (currentZone != null)
             {
                 if (currentZone.Kind == WorldZoneAnchor.ZoneKind.Progression || currentZone.Kind == WorldZoneAnchor.ZoneKind.Navigation)
-                    boost01 = Mathf.Max(boost01, 0.34f);
+                    boost01 = math.max(boost01, 0.34f);
 
                 if (currentZone.RouteCritical)
-                    boost01 = Mathf.Max(boost01, 0.26f);
+                    boost01 = math.max(boost01, 0.26f);
             }
 
             if (!firstHourDirector.IsMilestoneComplete(FirstHourMilestone.FirstCraft))
-                boost01 = Mathf.Max(boost01, 0.18f);
+                boost01 = math.max(boost01, 0.18f);
 
             if (!firstHourDirector.IsMilestoneComplete(FirstHourMilestone.FirstModule))
-                boost01 = Mathf.Max(boost01, 0.32f);
+                boost01 = math.max(boost01, 0.32f);
 
-            return Mathf.Clamp01(boost01);
+            return math.saturate(boost01);
+        }
+
+        private static float InverseLerp(float a, float b, float value)
+        {
+            float denominator = b - a;
+            if (math.abs(denominator) <= 0.000001f)
+                return 0f;
+
+            return math.saturate((value - a) / denominator);
+        }
+
+        private static float MoveTowards(float current, float target, float maxDelta)
+        {
+            float delta = target - current;
+            float absDelta = math.abs(delta);
+            if (absDelta <= maxDelta || absDelta <= 0.000001f)
+                return target;
+
+            return current + math.sign(delta) * maxDelta;
         }
 
 #if UNITY_EDITOR

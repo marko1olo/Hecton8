@@ -31,8 +31,10 @@ namespace Hecton8.World
         private const float CameraResolveRetryInterval = 1f;
         private const float CacheValidationInterval = 0.5f;
         private const int CacheValidationTileBudget = 2;
+        private const int StartupBootstrapTileBatchSize = 2;
         private const int DefaultJobBatchSize = 32;
         private const int InitialTileCapacity = 32;
+        private const int TileCacheLruCapacity = 64;
         private const int InitialChunkCapacity = 256;
         private const int InitialChunkArrayCapacity = 64;
         private const int ChunkPoolBytesPerInstance = 128;
@@ -55,6 +57,12 @@ namespace Hecton8.World
         private const float DefaultThermalGridVerticalCellSize = 250f;
         private const float DefaultThermalGridDepthMeters = 4000f;
         private const float AbyssalFlowNoiseStartDepthMeters = 2000f;
+        private const int MaxTileCacheLruIterations = 512;
+        private const int MaxChunkPoolEvictionIterations = 2048;
+        private const int MaxPathReconstructionIterations = 4096;
+        private const int MaxHeapRebalanceIterations = 4096;
+        private const int MaxThreatDdaSteps = 4096;
+        private const int MaxPathCompactionIterations = 4096;
         private static readonly int _ShaderVegetationAudioDensityId = Shader.PropertyToID("_HectonVegetationAudioDensity");
         private static readonly int _ShaderVegetationAudioAcousticTypeId = Shader.PropertyToID("_HectonVegetationAudioAcousticType");
         private const float PlayerVisibilityDenseCoverThreshold = 0.32f;
@@ -837,6 +845,8 @@ namespace Hecton8.World
             public TerrainTile Tile;
             public Terrain Terrain;
             public TerrainData TerrainData;
+            public Texture2D[] AlphamapTextureCache;
+            public Texture HeightTextureCache;
             public Vector3 TerrainPosition;
             public Vector3 TerrainSize;
             public int AlphamapResolution;
@@ -852,11 +862,23 @@ namespace Hecton8.World
             public uint HeightmapUpdateCount;
             public int ActiveCacheBufferIndex;
             public int PendingCacheBufferIndex;
+            public uint LastAccessFrame;
             public bool HeightReadbackPending;
+            public bool PendingRemoval;
             public AsyncGPUReadbackRequest HeightReadbackRequest;
             public TileNativeCacheBuffer PrimaryCacheBuffer;
             public TileNativeCacheBuffer SecondaryCacheBuffer;
         }
+
+        private struct DeferredTileCacheDisposal
+        {
+            public AsyncGPUReadbackRequest Request;
+            public TileNativeCacheBuffer PrimaryCacheBuffer;
+            public TileNativeCacheBuffer SecondaryCacheBuffer;
+        }
+
+        // COLD ALLOC: List<DeferredTileCacheDisposal>[8] - deferred terrain height-readback cache disposals that avoid main-thread GPU stalls during teardown - owner: HectonMapMagicVegetationBridge
+        private static readonly List<DeferredTileCacheDisposal> s_DeferredTileCacheDisposals = new List<DeferredTileCacheDisposal>(8);
 
         /// <summary>
         /// Shared Voronoi/Worley parameters used by vegetation generation and external sargassum systems.
@@ -1168,9 +1190,9 @@ namespace Hecton8.World
                 _underwater = underwater;
             }
 
-            public ComputeBuffer InstanceMatrixBuffer => null;
+            public GraphicsBuffer InstanceMatrixBuffer => null;
 
-            public ComputeBuffer InstanceDataBuffer => null;
+            public GraphicsBuffer InstanceDataBuffer => null;
 
             public int InstanceCount => _underwater ? _owner._underwaterFrontCount : _owner._surfaceFrontCount;
 
@@ -1215,6 +1237,9 @@ namespace Hecton8.World
         private readonly List<ChunkKey> _jobScratchKeys = new List<ChunkKey>(InitialChunkArrayCapacity);
         // COLD ALLOC: List<TerrainHoleRecord>[16] - terrain-hole distance-eviction scratch cache - owner: HectonMapMagicVegetationBridge
         private readonly List<TerrainHoleRecord> _terrainHoleEvictionScratch = new List<TerrainHoleRecord>(16);
+        // COLD ALLOC: List<long>[16] - deferred tile-removal staging while GPU height readbacks finish without blocking the main thread - owner: HectonMapMagicVegetationBridge
+        private readonly List<long> _tileStateRemovalScratchKeys = new List<long>(16);
+        private TerrainTile[] _startupBootstrapTiles = Array.Empty<TerrainTile>();
 
         private ChunkKey[] _desiredChunkKeys;
         private float[] _desiredChunkDistances;
@@ -1257,10 +1282,10 @@ namespace Hecton8.World
         private JobHandle _underwaterBackReaderHandle;
         private IndirectVegetationNativeBufferSource _surfaceNativeBufferSource;
         private IndirectVegetationNativeBufferSource _underwaterNativeBufferSource;
-        private ComputeBuffer _surfaceInstanceBuffer;
-        private ComputeBuffer _surfaceInstanceDataBuffer;
-        private ComputeBuffer _underwaterInstanceBuffer;
-        private ComputeBuffer _underwaterInstanceDataBuffer;
+        private GraphicsBuffer _surfaceInstanceBuffer;
+        private GraphicsBuffer _surfaceInstanceDataBuffer;
+        private GraphicsBuffer _underwaterInstanceBuffer;
+        private GraphicsBuffer _underwaterInstanceDataBuffer;
         private NativeChunkPool _surfaceChunkPool;
         private NativeChunkPool _underwaterChunkPool;
         private PoolBlock[] _surfacePoolFreeBlocks;
@@ -1378,6 +1403,25 @@ namespace Hecton8.World
             return sampledAny;
         }
 
+        internal bool TryFillTerrainHeightGridFromNativeCacheAUP(
+            Vector3 absoluteOrigin,
+            int sampleCountX,
+            int sampleCountZ,
+            float step,
+            NativeArray<float> outHeights,
+            float fallbackHeight)
+        {
+            Vector3 runtimeOrigin = HectonFloatingOrigin.ToRuntimePosition(absoluteOrigin);
+            return TryFillTerrainHeightGridFromNativeCache(
+                runtimeOrigin.x,
+                runtimeOrigin.z,
+                sampleCountX,
+                sampleCountZ,
+                step,
+                outHeights,
+                fallbackHeight);
+        }
+
         // COLD ALLOC: Plane[6] - cached frustum plane array reused for no-alloc chunk visibility tests - owner: HectonMapMagicVegetationBridge
         private readonly Plane[] _viewFrustumPlanes = new Plane[6];
         private ChunkKey[] _densityQueryChunkKeys;
@@ -1395,18 +1439,25 @@ namespace Hecton8.World
         private NativeArray<float> _ecosystemThreatGridNextNative;
         private NativeArray<byte> _ecosystemThreatGridCompressedCurrentNative;
         private NativeArray<byte> _ecosystemThreatGridCompressedNextNative;
+        private NativeArray<byte> _ecosystemThreatVoxelCurrentNative;
+        private NativeArray<byte> _ecosystemThreatVoxelNextNative;
         private NativeArray<byte> _ecosystemThreatEchoCurrentNative;
         private NativeArray<byte> _ecosystemThreatEchoNextNative;
         private NativeArray<float2> _ecosystemFlowFieldCurrentNative;
         private NativeArray<float2> _ecosystemFlowFieldNextNative;
+        private NativeArray<SwarmWakeImpulse> _swarmWakeImpulseNative;
         private NativeArray<float> _abyssalThermalGridNative;
         private NativeArray<float> _abyssalThermalGridNextNative;
         private NativeArray<float> _canopyHeightGridNative;
         private NativeArray<TerrainHoleRecord> _terrainHoleRecordsNative;
         private NativeArray<TerrainHoleStreamingRecord> _terrainHoleStreamingRecordsNative;
         private NativeArray<ArtificialStructureRecord> _artificialStructureRecordsNative;
-        private NativeParallelMultiHashMap<int, int> _artificialStructureHashNative;
-        private NativeParallelMultiHashMap<int, int> _threatSamplingChunkHashNative;
+        private NativeParallelMultiHashMap<int, int> _artificialStructureHashFrontNative;
+        private NativeParallelMultiHashMap<int, int> _artificialStructureHashBackNative;
+        private NativeParallelMultiHashMap<int, int> _threatSamplingChunkHashFrontNative;
+        private NativeParallelMultiHashMap<int, int> _threatSamplingChunkHashBackNative;
+        private bool _artificialStructureHashSwapPending;
+        private bool _threatSamplingChunkHashSwapPending;
         private Vector3[] _abyssalAnchorPositions = Array.Empty<Vector3>();
         private NativeArray<Vector3> _abyssalAnchorPositionsNative;
         private Vector3[] _abyssalNavNodeSnapshot = Array.Empty<Vector3>();
@@ -1452,6 +1503,8 @@ namespace Hecton8.World
         private int _visibleHlodCount;
         private int _ecosystemThreatGridResolution;
         private int _ecosystemThreatGridCellCount;
+        private int _ecosystemThreatGridResolutionY;
+        private int _ecosystemThreatVoxelCellCount;
         private int _canopyGridResolution;
         private int _canopyGridCellCount;
         private int _abyssalThermalGridResolutionXZ;
@@ -1465,6 +1518,7 @@ namespace Hecton8.World
         private bool _threatPropagationScheduled;
         private bool _flowFieldInitialized;
         private bool _flowFieldScheduled;
+        private int _swarmWakeImpulseCount;
         private bool _canopyGridInitialized;
         private bool _abyssalThermalGridInitialized;
         private bool _abyssalThermalGridScheduled;
@@ -1481,8 +1535,11 @@ namespace Hecton8.World
         private JobHandle _aggregateRebuildHandle;
         private Vector3 _ecosystemThreatGridCenter;
         private Vector3 _scheduledThreatGridCenter;
+        private Vector3 _ecosystemThreatVoxelOrigin;
+        private Vector3 _scheduledThreatVoxelOrigin;
         private Vector3 _ecosystemFlowFieldCenter;
         private Vector3 _scheduledFlowFieldCenter;
+        private float _swarmWakeImpulseExpireTime = float.NegativeInfinity;
         private Vector3 _canopyGridCenter;
         private Vector3 _abyssalThermalGridCenter;
         private Vector3 _scheduledAbyssalThermalGridCenter;
@@ -1510,6 +1567,13 @@ namespace Hecton8.World
         private bool _aggregateRebuildScheduled;
         private bool _surfaceAggregateSwapPending;
         private bool _underwaterAggregateSwapPending;
+        private int _startupBootstrapTileCount;
+        private int _startupBootstrapTileCursor;
+        private bool _startupTerrainHoleSyncPending = true;
+        private bool _startupTileBootstrapPending = true;
+        private bool _startupResidencyPending = true;
+        private bool _runtimeLifecycleActive;
+        private bool _runtimeTeardownComplete;
         private ArtificialInteriorState _activeArtificialInteriorState;
         private static HectonMapMagicVegetationBridge _activeRuntimeInstance;
 
@@ -1652,8 +1716,14 @@ namespace Hecton8.World
             InitializeThreatGridMetadata();
             InitializeCanopyGridMetadata();
             InitializeThermalGridMetadata();
-            EnsureThreatGridBuffers();
-            SyncTerrainHoleNativeCache();
+
+            if (!Application.isPlaying)
+            {
+                _runtimeLifecycleActive = false;
+                _runtimeTeardownComplete = false;
+                ResetDeferredStartupWork();
+                return;
+            }
 
             ResolveRuntimeDependencies();
 
@@ -1676,29 +1746,49 @@ namespace Hecton8.World
             // COLD ALLOC: TerrainHoleStreamingRecord[initialTerrainHoleCapacity] - terrain-hole streaming snapshot growth cache - owner: HectonMapMagicVegetationBridge
             _terrainHoleStreamingRecords = new TerrainHoleStreamingRecord[Mathf.Max(4, initialTerrainHoleCapacity)];
             InitializeChunkPools();
+            _runtimeLifecycleActive = true;
+            _runtimeTeardownComplete = false;
         }
 
         private void OnEnable()
         {
+            if (!_runtimeLifecycleActive)
+            {
+                if (_activeRuntimeInstance == this)
+                    _activeRuntimeInstance = null;
+
+                return;
+            }
+
+            _runtimeTeardownComplete = false;
             _activeRuntimeInstance = this;
             InitializeChunkPools();
             BindRendererSources();
             ResolveRuntimeDependencies();
             TrySubscribeEvents();
-            TryBootstrapExistingTiles();
             TryRegister();
-            RefreshResidency();
+            QueueDeferredStartupWork();
         }
 
         private void Start()
         {
+            if (!_runtimeLifecycleActive)
+                return;
+
             BindRendererSources();
             TryRegister();
-            RefreshResidency();
         }
 
         private void OnDisable()
         {
+            if (!_runtimeLifecycleActive || _runtimeTeardownComplete)
+            {
+                if (_activeRuntimeInstance == this)
+                    _activeRuntimeInstance = null;
+
+                return;
+            }
+
             CompleteThreatPropagationJob(forceComplete: true);
             CompleteFlowFieldJob(forceComplete: true);
             CompleteThermalGridJob(forceComplete: true);
@@ -1731,12 +1821,22 @@ namespace Hecton8.World
             ClearVegetationAudioHandoff();
             _totalUniverseOffset = Vector3.zero;
             GlobalTotalUniverseOffset = Vector3.zero;
+            ResetDeferredStartupWork();
             if (_activeRuntimeInstance == this)
                 _activeRuntimeInstance = null;
+            _runtimeTeardownComplete = true;
         }
 
         private void OnDestroy()
         {
+            if (!_runtimeLifecycleActive || _runtimeTeardownComplete)
+            {
+                if (_activeRuntimeInstance == this)
+                    _activeRuntimeInstance = null;
+
+                return;
+            }
+
             CompleteThreatPropagationJob(forceComplete: true);
             CompleteFlowFieldJob(forceComplete: true);
             CompleteThermalGridJob(forceComplete: true);
@@ -1771,6 +1871,8 @@ namespace Hecton8.World
             GlobalTotalUniverseOffset = Vector3.zero;
             if (_activeRuntimeInstance == this)
                 _activeRuntimeInstance = null;
+            _runtimeTeardownComplete = true;
+            _runtimeLifecycleActive = false;
         }
 
         /// <summary>
@@ -1779,8 +1881,13 @@ namespace Hecton8.World
         /// <param name="dt">Frame delta supplied by GameTickManager.</param>
         public void Tick(float dt)
         {
+            TryDisposeDeferredTileCacheReadbacks();
+
             if (_externalThreatPulseHoldTimer > 0f)
                 _externalThreatPulseHoldTimer = Mathf.Max(0f, _externalThreatPulseHoldTimer - dt);
+
+            if (TryProgressDeferredStartupWork())
+                return;
 
             CompleteAbyssalPathJob(forceComplete: false);
             CompleteHLODCullJob(forceComplete: false);
@@ -1822,43 +1929,55 @@ namespace Hecton8.World
         /// </summary>
         public void SlowTick()
         {
-            CompleteAbyssalPathJob(forceComplete: true);
+            TryDisposeDeferredTileCacheReadbacks();
+
+            if (TryProgressDeferredStartupWork())
+                return;
+
+            CompleteAbyssalPathJob(forceComplete: false);
             ResolveRuntimeDependencies();
             RefreshResidency();
             SyncMegaWreckInteriorTerrainHoles();
             EvictDistantTerrainHoles();
-            CompleteThreatPropagationJob(forceComplete: true);
-            CompleteFlowFieldJob(forceComplete: true);
-            CompleteThermalGridJob(forceComplete: true);
-            RebuildArtificialStructureThreatSnapshot();
+            CompleteThreatPropagationJob(forceComplete: false);
+            CompleteFlowFieldJob(forceComplete: false);
+            CompleteThermalGridJob(forceComplete: false);
             RebuildHLODRegistrySnapshot();
-            PrepareThreatSamplingSnapshot();
-            ScheduleThreatPropagationJob();
-            ScheduleFlowFieldJob();
-            ScheduleThermalGridJob();
+            if (CanRefreshThreatSpatialSnapshots())
+            {
+                RebuildArtificialStructureThreatSnapshot();
+                PrepareThreatSamplingSnapshot();
+                CommitThreatSpatialSnapshotBufferSwaps();
+                if (!_threatPropagationScheduled)
+                    ScheduleThreatPropagationJob();
+                if (!_flowFieldScheduled)
+                    ScheduleFlowFieldJob();
+                if (!_abyssalThermalGridScheduled)
+                    ScheduleThermalGridJob();
+            }
             UpdateVegetationAudioHandoff();
             LogNativePoolFragmentationIfDue();
         }
 
         /// <summary>Active surface instance matrix buffer currently owned by this bridge.</summary>
-        public ComputeBuffer SurfaceInstanceMatrixBuffer => _surfaceInstanceBuffer;
+        public GraphicsBuffer SurfaceInstanceMatrixBuffer => _surfaceInstanceBuffer;
 
         /// <summary>Active surface instance metadata buffer currently owned by this bridge.</summary>
-        public ComputeBuffer SurfaceInstanceDataBuffer => _surfaceInstanceDataBuffer;
+        public GraphicsBuffer SurfaceInstanceDataBuffer => _surfaceInstanceDataBuffer;
 
         /// <summary>Active underwater instance matrix buffer currently owned by this bridge.</summary>
-        public ComputeBuffer UnderwaterInstanceMatrixBuffer => _underwaterInstanceBuffer;
+        public GraphicsBuffer UnderwaterInstanceMatrixBuffer => _underwaterInstanceBuffer;
 
         /// <summary>Active underwater instance metadata buffer currently owned by this bridge.</summary>
-        public ComputeBuffer UnderwaterInstanceDataBuffer => _underwaterInstanceDataBuffer;
+        public GraphicsBuffer UnderwaterInstanceDataBuffer => _underwaterInstanceDataBuffer;
 
-        /// <summary>Active surface matrix cache in persistent native memory for direct ComputeBuffer.SetData handoff.</summary>
+        /// <summary>Active surface matrix cache in persistent native memory for direct GraphicsBuffer upload handoff.</summary>
         public NativeArray<Matrix4x4> ActiveSurfaceMatricesNative => _surfaceAggregateFrontBuffers.Matrices;
 
-        /// <summary>Active surface metadata cache in persistent native memory for direct ComputeBuffer.SetData handoff.</summary>
+        /// <summary>Active surface metadata cache in persistent native memory for direct GraphicsBuffer upload handoff.</summary>
         public NativeArray<HectonVegetationInstanceData> ActiveSurfaceMetadataNative => _surfaceAggregateFrontBuffers.Metadata;
 
-        /// <summary>Active surface type cache in persistent native memory for direct ComputeBuffer.SetData handoff.</summary>
+        /// <summary>Active surface type cache in persistent native memory for direct GraphicsBuffer upload handoff.</summary>
         public NativeArray<int> ActiveSurfaceTypesNative => _surfaceAggregateFrontBuffers.Types;
 
         /// <summary>Active surface semantic-type cache in persistent native memory for AI/ocean handoff.</summary>
@@ -1873,7 +1992,7 @@ namespace Hecton8.World
         /// <summary>Active surface 3D flow-vector cache in persistent native memory for abyssal current consumers.</summary>
         public NativeArray<Vector3> ActiveSurfaceFlowVectorsNative => _surfaceAggregateFrontBuffers.FlowVectors;
 
-        /// <summary>Active underwater matrix cache in persistent native memory for direct ComputeBuffer.SetData handoff.</summary>
+        /// <summary>Active underwater matrix cache in persistent native memory for direct GraphicsBuffer upload handoff.</summary>
         public NativeArray<Matrix4x4> ActiveUnderwaterMatricesNative => _underwaterAggregateFrontBuffers.Matrices;
 
         /// <summary>Accumulated floating-origin offset applied at render/query time instead of rewriting chunk-pool matrices.</summary>
@@ -1885,10 +2004,10 @@ namespace Hecton8.World
         /// <summary>Converts stable universe coordinates into current runtime-local coordinates.</summary>
         public static Vector3 ToRuntimeSpace(Vector3 universePosition) => universePosition + GlobalTotalUniverseOffset;
 
-        /// <summary>Active underwater metadata cache in persistent native memory for direct ComputeBuffer.SetData handoff.</summary>
+        /// <summary>Active underwater metadata cache in persistent native memory for direct GraphicsBuffer upload handoff.</summary>
         public NativeArray<HectonVegetationInstanceData> ActiveUnderwaterMetadataNative => _underwaterAggregateFrontBuffers.Metadata;
 
-        /// <summary>Active underwater type cache in persistent native memory for direct ComputeBuffer.SetData handoff.</summary>
+        /// <summary>Active underwater type cache in persistent native memory for direct GraphicsBuffer upload handoff.</summary>
         public NativeArray<int> ActiveUnderwaterTypesNative => _underwaterAggregateFrontBuffers.Types;
 
         /// <summary>Active underwater semantic-type cache in persistent native memory for AI/ocean handoff.</summary>
@@ -2103,7 +2222,7 @@ namespace Hecton8.World
         }
 
         /// <summary>
-        /// Returns the current surface payload as native memory ready for direct ComputeBuffer.SetData handoff.
+        /// Returns the current surface payload as native memory ready for direct GraphicsBuffer upload handoff.
         /// </summary>
         public bool TryGetActiveSurfaceNativePayload(
             out NativeArray<Matrix4x4> matrices,
@@ -2156,7 +2275,7 @@ namespace Hecton8.World
         }
 
         /// <summary>
-        /// Returns the current underwater payload as native memory ready for direct ComputeBuffer.SetData handoff.
+        /// Returns the current underwater payload as native memory ready for direct GraphicsBuffer upload handoff.
         /// </summary>
         public bool TryGetActiveUnderwaterNativePayload(
             out NativeArray<Matrix4x4> matrices,
@@ -2312,6 +2431,30 @@ namespace Hecton8.World
         }
 
         /// <summary>
+        /// Returns the 3D byte voxel threat snapshot used by Burst DDA line-of-sight.
+        /// Layout: [x + y * width + z * width * height].
+        /// </summary>
+        public bool TryGetEcosystemThreatVoxelPayload(
+            out NativeArray<byte> threatVoxels,
+            out Vector3Int gridDimensions,
+            out Vector3 gridOrigin,
+            out Vector3 voxelCellSize)
+        {
+            threatVoxels = _ecosystemThreatVoxelCurrentNative;
+            gridDimensions = new Vector3Int(_ecosystemThreatGridResolution, _ecosystemThreatGridResolutionY, _ecosystemThreatGridResolution);
+            gridOrigin = _ecosystemThreatVoxelOrigin;
+            voxelCellSize = new Vector3(threatGridCellSize, thermalGridVerticalCellSize, threatGridCellSize);
+            return _threatGridInitialized &&
+                   threatVoxels.IsCreated &&
+                   gridDimensions.x > 0 &&
+                   gridDimensions.y > 0 &&
+                   gridDimensions.z > 0 &&
+                   voxelCellSize.x > 0f &&
+                   voxelCellSize.y > 0f &&
+                   voxelCellSize.z > 0f;
+        }
+
+        /// <summary>
         /// Returns the permanent threat-echo flags aligned to the compressed ecosystem threat grid.
         /// </summary>
         public bool TryGetEcosystemThreatEchoPayload(
@@ -2347,6 +2490,33 @@ namespace Hecton8.World
                    flowVectors.IsCreated &&
                    gridResolution > 0 &&
                    cellSize > 0f;
+        }
+
+        /// <summary>
+        /// Registers one short-lived wake impulse that will be folded into the next abyssal flow-field solve.
+        /// </summary>
+        public void RegisterSwarmWakeImpulse(Vector3 positionWS, Vector3 flowVectorWS, float radiusMeters, float lifetimeSeconds)
+        {
+            EnsureFlowFieldBuffers();
+            float strength = flowVectorWS.magnitude;
+            if (strength <= 0.0001f)
+            {
+                _swarmWakeImpulseCount = 0;
+                _swarmWakeImpulseExpireTime = float.NegativeInfinity;
+                if (_swarmWakeImpulseNative.IsCreated)
+                    _swarmWakeImpulseNative[0] = default;
+                return;
+            }
+
+            _swarmWakeImpulseNative[0] = new SwarmWakeImpulse
+            {
+                Position = new float3(positionWS.x, positionWS.y, positionWS.z),
+                Radius = math.max(0.1f, radiusMeters),
+                FlowVector = new float3(flowVectorWS.x, flowVectorWS.y, flowVectorWS.z),
+                Strength = strength
+            };
+            _swarmWakeImpulseCount = 1;
+            _swarmWakeImpulseExpireTime = Time.unscaledTime + math.max(0.1f, lifetimeSeconds);
         }
 
         /// <summary>
@@ -2751,60 +2921,138 @@ namespace Hecton8.World
                 return false;
             }
 
-            int startNode = FindNearestAbyssalNavNodeIndex(startPosition);
-            int endNode = FindNearestAbyssalNavNodeIndex(endPosition);
+            float3 startProbe = new float3(startPosition.x, startPosition.y, startPosition.z);
+            float3 endProbe = new float3(endPosition.x, endPosition.y, endPosition.z);
+            bool hasStartHybridSample = VoxelDynamicNavGridRuntime.TrySampleHybridNavigation(startProbe, out VoxelDynamicNavGridRuntime.HybridNavigationSample startHybridSample);
+            bool hasEndHybridSample = VoxelDynamicNavGridRuntime.TrySampleHybridNavigation(endProbe, out VoxelDynamicNavGridRuntime.HybridNavigationSample endHybridSample);
+            bool hasStartTerrainHeight = startHybridSample.HasTerrainHeight != 0 || TryGetCachedTerrainHeight(startPosition.x, startPosition.z, out startHybridSample.TerrainHeight);
+            bool hasEndTerrainHeight = endHybridSample.HasTerrainHeight != 0 || TryGetCachedTerrainHeight(endPosition.x, endPosition.z, out endHybridSample.TerrainHeight);
+            VoxelDynamicNavGridRuntime.HybridNavigationMode startNavMode = hasStartHybridSample ? startHybridSample.Mode : VoxelDynamicNavGridRuntime.HybridNavigationMode.OpenWaterHeightmap;
+            VoxelDynamicNavGridRuntime.HybridNavigationMode endNavMode = hasEndHybridSample ? endHybridSample.Mode : VoxelDynamicNavGridRuntime.HybridNavigationMode.OpenWaterHeightmap;
+            bool startUsesHeightmap = startNavMode == VoxelDynamicNavGridRuntime.HybridNavigationMode.OpenWaterHeightmap;
+            bool endUsesHeightmap = endNavMode == VoxelDynamicNavGridRuntime.HybridNavigationMode.OpenWaterHeightmap;
+            bool startUsesVoxel = !startUsesHeightmap;
+            bool endUsesVoxel = !endUsesHeightmap;
+
+            Vector3 resolvedStartPosition = startPosition;
+            if (startUsesHeightmap && hasStartTerrainHeight)
+                resolvedStartPosition.y = math.max(startPosition.y, startHybridSample.TerrainHeight + abyssalNavNodeHoverHeight);
+
+            Vector3 resolvedEndPosition = endPosition;
+            if (endUsesHeightmap && hasEndTerrainHeight)
+                resolvedEndPosition.y = math.max(endPosition.y, endHybridSample.TerrainHeight + abyssalNavNodeHoverHeight);
+
+            int startNode = FindNearestAbyssalNavNodeIndex(resolvedStartPosition);
+            int endNode = FindNearestAbyssalNavNodeIndex(resolvedEndPosition);
             if (startNode < 0 || endNode < 0)
                 return false;
 
-            if (_hasLastAbyssalPathTarget &&
+            bool canReuseLastAbyssalTarget = startUsesHeightmap && endUsesHeightmap;
+            if (canReuseLastAbyssalTarget &&
+                _hasLastAbyssalPathTarget &&
                 _lastAbyssalPathEndNode >= 0 &&
                 _lastAbyssalPathEndNode < _abyssalNavNodeCount &&
-                (endPosition - _lastAbyssalPathTargetPosition).sqrMagnitude < (abyssalPathRetargetDistance * abyssalPathRetargetDistance))
+                (resolvedEndPosition - _lastAbyssalPathTargetPosition).sqrMagnitude < (abyssalPathRetargetDistance * abyssalPathRetargetDistance))
             {
                 endNode = _lastAbyssalPathEndNode;
             }
 
+            EnsureAbyssalPathBuffers(_abyssalNavNodeCount);
             if (_abyssalPathRawResultNative.IsCreated)
                 _abyssalPathRawResultNative.Clear();
             if (_abyssalPathResultNative.IsCreated)
                 _abyssalPathResultNative.Clear();
-            EnsureAbyssalPathBuffers(_abyssalNavNodeCount);
             _abyssalPathCount = 0;
 
-            var astarJob = new NativeAStarJob
+            JobHandle pathSourceHandle = default;
+            bool scheduledMacroVoxelRoute = false;
+            if (startUsesVoxel &&
+                endUsesVoxel &&
+                VoxelDynamicNavGridRuntime.TryBuildMacroPortalRoute(startProbe, endProbe, _abyssalPathRawResultNative))
             {
-                Nodes = _abyssalNavNodeSnapshotNative,
-                NodeTypes = _abyssalNavNodeTypesSnapshotNative,
-                ConduitVectors = _abyssalNavConduitVectorsSnapshotNative,
-                ConduitStrengths = _abyssalNavConduitStrengthSnapshotNative,
-                ThreatGrid = _ecosystemThreatGridCurrentNative,
-                ThreatGridCenter = new float3(_ecosystemThreatGridCenter.x, _ecosystemThreatGridCenter.y, _ecosystemThreatGridCenter.z),
-                ThreatGridCellSize = threatGridCellSize,
-                ThreatGridResolution = _ecosystemThreatGridResolution,
-                WaterLevel = waterLevel,
-                Parents = _abyssalPathParentsNative,
-                GScore = _abyssalPathGScoreNative,
-                FScore = _abyssalPathFScoreNative,
-                ClosedFlags = _abyssalPathClosedFlagsNative,
-                HeapNodes = _abyssalPathHeapNodesNative,
-                HeapPositions = _abyssalPathHeapPositionsNative,
-                Path = _abyssalPathRawResultNative,
-                StartNode = startNode,
-                EndNode = endNode,
-                StartPosition = new float3(startPosition.x, startPosition.y, startPosition.z),
-                EndPosition = new float3(endPosition.x, endPosition.y, endPosition.z),
-                NeighborRadius = abyssalPathNeighborRadius,
-                VerticalTolerance = abyssalPathVerticalTolerance,
-                ThreatPenaltyWeight = abyssalPathThreatPenaltyWeight,
-                ConduitStartDepth = abyssalConduitStartDepth,
-                ConduitVerticalToleranceBonus = abyssalConduitVerticalToleranceBonus,
-                ConduitMisalignmentPenalty = abyssalConduitMisalignmentPenalty,
-                ConduitAlignmentReward = abyssalConduitAlignmentReward,
-                InteriorTraversalCostMultiplier = abyssalInteriorTraversalCostMultiplier,
-                MaxExpandedNodes = abyssalPathMaxExpandedNodes
-            };
+                scheduledMacroVoxelRoute = true;
+            }
 
-            JobHandle astarHandle = astarJob.Schedule();
+            if (!scheduledMacroVoxelRoute)
+            {
+                var astarJob = new NativeAStarJob
+                {
+                    Nodes = _abyssalNavNodeSnapshotNative,
+                    NodeTypes = _abyssalNavNodeTypesSnapshotNative,
+                    ConduitVectors = _abyssalNavConduitVectorsSnapshotNative,
+                    ConduitStrengths = _abyssalNavConduitStrengthSnapshotNative,
+                    ThreatGrid = _ecosystemThreatGridCurrentNative,
+                    ThreatVoxelGrid = _ecosystemThreatVoxelCurrentNative,
+                    ThreatGridCenter = new float3(_ecosystemThreatGridCenter.x, _ecosystemThreatGridCenter.y, _ecosystemThreatGridCenter.z),
+                    ThreatGridCellSize = threatGridCellSize,
+                    ThreatGridResolution = _ecosystemThreatGridResolution,
+                    ThreatVoxelDimensions = new int3(_ecosystemThreatGridResolution, _ecosystemThreatGridResolutionY, _ecosystemThreatGridResolution),
+                    ThreatVoxelOrigin = new float3(_ecosystemThreatVoxelOrigin.x, _ecosystemThreatVoxelOrigin.y, _ecosystemThreatVoxelOrigin.z),
+                    ThreatVoxelCellSize = new float3(threatGridCellSize, thermalGridVerticalCellSize, threatGridCellSize),
+                    WaterLevel = waterLevel,
+                    Parents = _abyssalPathParentsNative,
+                    GScore = _abyssalPathGScoreNative,
+                    FScore = _abyssalPathFScoreNative,
+                    ClosedFlags = _abyssalPathClosedFlagsNative,
+                    HeapNodes = _abyssalPathHeapNodesNative,
+                    HeapPositions = _abyssalPathHeapPositionsNative,
+                    Path = _abyssalPathRawResultNative,
+                    StartNode = startNode,
+                    EndNode = endNode,
+                    StartPosition = new float3(resolvedStartPosition.x, resolvedStartPosition.y, resolvedStartPosition.z),
+                    EndPosition = new float3(resolvedEndPosition.x, resolvedEndPosition.y, resolvedEndPosition.z),
+                    NeighborRadius = abyssalPathNeighborRadius,
+                    VerticalTolerance = abyssalPathVerticalTolerance,
+                    ThreatPenaltyWeight = abyssalPathThreatPenaltyWeight,
+                    ConduitStartDepth = abyssalConduitStartDepth,
+                    ConduitVerticalToleranceBonus = abyssalConduitVerticalToleranceBonus,
+                    ConduitMisalignmentPenalty = abyssalConduitMisalignmentPenalty,
+                    ConduitAlignmentReward = abyssalConduitAlignmentReward,
+                    InteriorTraversalCostMultiplier = abyssalInteriorTraversalCostMultiplier,
+                    MaxExpandedNodes = abyssalPathMaxExpandedNodes
+                };
+
+                pathSourceHandle = astarJob.Schedule();
+            }
+
+            NativeArray<byte> navPassabilityGrid = default;
+            int3 navPassabilityDimensions = int3.zero;
+            float3 navPassabilityOrigin = float3.zero;
+            float navPassabilityCellSize = 0f;
+
+            if (startUsesVoxel &&
+                !VoxelDynamicNavGridRuntime.TryGetContainingPassabilityPayload(
+                    startProbe,
+                    out navPassabilityGrid,
+                    out navPassabilityDimensions,
+                    out navPassabilityOrigin,
+                    out navPassabilityCellSize))
+            {
+                VoxelDynamicNavGridRuntime.TryGetNearestPassabilityPayload(
+                    startProbe,
+                    out navPassabilityGrid,
+                    out navPassabilityDimensions,
+                    out navPassabilityOrigin,
+                    out navPassabilityCellSize);
+            }
+
+            if (!navPassabilityGrid.IsCreated &&
+                endUsesVoxel &&
+                !VoxelDynamicNavGridRuntime.TryGetContainingPassabilityPayload(
+                    endProbe,
+                    out navPassabilityGrid,
+                    out navPassabilityDimensions,
+                    out navPassabilityOrigin,
+                    out navPassabilityCellSize))
+            {
+                VoxelDynamicNavGridRuntime.TryGetNearestPassabilityPayload(
+                    endProbe,
+                    out navPassabilityGrid,
+                    out navPassabilityDimensions,
+                    out navPassabilityOrigin,
+                    out navPassabilityCellSize);
+            }
+
             var smoothingJob = new StringPullPathJob
             {
                 InputPath = _abyssalPathRawResultNative.AsDeferredJobArray(),
@@ -2814,10 +3062,18 @@ namespace Hecton8.World
                 TerrainHoles = _terrainHoleRecordsNative,
                 TerrainHoleCount = _terrainHoleCount,
                 ArtificialStructures = _artificialStructureRecordsNative,
-                ArtificialStructureHash = _artificialStructureHashNative,
+                ArtificialStructureHash = _artificialStructureHashFrontNative,
+                NavPassabilityGrid = navPassabilityGrid,
+                ThreatVoxelGrid = _ecosystemThreatVoxelCurrentNative,
                 ThreatGridCenter = new float3(_ecosystemThreatGridCenter.x, _ecosystemThreatGridCenter.y, _ecosystemThreatGridCenter.z),
                 ThreatGridCellSize = threatGridCellSize,
                 ThreatGridResolution = _ecosystemThreatGridResolution,
+                NavPassabilityDimensions = navPassabilityDimensions,
+                NavPassabilityOrigin = navPassabilityOrigin,
+                NavPassabilityCellSize = navPassabilityCellSize,
+                ThreatVoxelDimensions = new int3(_ecosystemThreatGridResolution, _ecosystemThreatGridResolutionY, _ecosystemThreatGridResolution),
+                ThreatVoxelOrigin = new float3(_ecosystemThreatVoxelOrigin.x, _ecosystemThreatVoxelOrigin.y, _ecosystemThreatVoxelOrigin.z),
+                ThreatVoxelCellSize = new float3(threatGridCellSize, thermalGridVerticalCellSize, threatGridCellSize),
                 SampleSpacing = abyssalPathSmoothingSampleSpacing,
                 MaxSamplesPerSegment = abyssalPathSmoothingMaxSamples,
                 KelpWeight = abyssalPathSmoothingKelpWeight,
@@ -2826,11 +3082,11 @@ namespace Hecton8.World
                 OutputPath = _abyssalPathResultNative
             };
 
-            _abyssalPathHandle = smoothingJob.Schedule(astarHandle);
+            _abyssalPathHandle = smoothingJob.Schedule(pathSourceHandle);
             _abyssalPathScheduled = true;
-            _lastAbyssalPathEndNode = endNode;
-            _lastAbyssalPathTargetPosition = endPosition;
-            _hasLastAbyssalPathTarget = true;
+            _lastAbyssalPathEndNode = canReuseLastAbyssalTarget && !scheduledMacroVoxelRoute ? endNode : -1;
+            _lastAbyssalPathTargetPosition = resolvedEndPosition;
+            _hasLastAbyssalPathTarget = canReuseLastAbyssalTarget && !scheduledMacroVoxelRoute;
             handle = _abyssalPathHandle;
             return true;
         }
@@ -2922,6 +3178,22 @@ namespace Hecton8.World
             return ApplyDensityTypeMask(
                 SampleDensityChannelsAtPosition(position, _densityQueryChunksNative, _densityQueryGridNative, _densityQueryChunkCount),
                 typeMask);
+        }
+
+        /// <summary>
+        /// Samples terrain height from the active native tile cache without allocating.
+        /// </summary>
+        public bool TryGetCachedTerrainHeight(float worldX, float worldZ, out float terrainHeight)
+        {
+            terrainHeight = 0f;
+            if (!TryFindTileStateAtPosition(new Vector3(worldX, 0f, worldZ), out TileRuntimeState state) ||
+                state == null ||
+                !TryGetActiveTileCache(state, out _, out _, out NativeArray<ushort> heightSamples))
+            {
+                return false;
+            }
+
+            return TrySampleCachedTerrainHeight(state, heightSamples, worldX, worldZ, out terrainHeight);
         }
 
         /// <summary>
@@ -3117,6 +3389,11 @@ namespace Hecton8.World
 
             _ecosystemThreatGridResolution = Mathf.Max(3, resolution);
             _ecosystemThreatGridCellCount = _ecosystemThreatGridResolution * _ecosystemThreatGridResolution;
+            _ecosystemThreatGridResolutionY = Mathf.Max(2, Mathf.RoundToInt(thermalGridDepthMeters / Mathf.Max(1f, thermalGridVerticalCellSize)) + 1);
+            long voxelCellCount = (long)_ecosystemThreatGridCellCount * _ecosystemThreatGridResolutionY;
+            _ecosystemThreatVoxelCellCount = voxelCellCount > 0L && voxelCellCount <= int.MaxValue
+                ? (int)voxelCellCount
+                : 0;
         }
 
         private void InitializeCanopyGridMetadata()
@@ -3145,6 +3422,9 @@ namespace Hecton8.World
         {
             if (_ecosystemThreatGridCellCount <= 0)
                 InitializeThreatGridMetadata();
+
+            if (!HasValidThreatGridConfiguration())
+                return;
 
             if (!_ecosystemThreatGridCurrentNative.IsCreated || _ecosystemThreatGridCurrentNative.Length != _ecosystemThreatGridCellCount)
             {
@@ -3175,6 +3455,20 @@ namespace Hecton8.World
                 _ecosystemThreatGridCompressedNextNative = new NativeArray<byte>(_ecosystemThreatGridCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             }
 
+            if (!_ecosystemThreatVoxelCurrentNative.IsCreated || _ecosystemThreatVoxelCurrentNative.Length != _ecosystemThreatVoxelCellCount)
+            {
+                DisposeNativeArray(ref _ecosystemThreatVoxelCurrentNative);
+                // COLD ALLOC: NativeArray<byte>[_ecosystemThreatVoxelCellCount] - 3D byte voxel threat snapshot front buffer used by AI DDA line-of-sight - owner: HectonMapMagicVegetationBridge
+                _ecosystemThreatVoxelCurrentNative = new NativeArray<byte>(_ecosystemThreatVoxelCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            }
+
+            if (!_ecosystemThreatVoxelNextNative.IsCreated || _ecosystemThreatVoxelNextNative.Length != _ecosystemThreatVoxelCellCount)
+            {
+                DisposeNativeArray(ref _ecosystemThreatVoxelNextNative);
+                // COLD ALLOC: NativeArray<byte>[_ecosystemThreatVoxelCellCount] - 3D byte voxel threat snapshot back buffer written by Burst voxelization - owner: HectonMapMagicVegetationBridge
+                _ecosystemThreatVoxelNextNative = new NativeArray<byte>(_ecosystemThreatVoxelCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            }
+
             if (!_ecosystemThreatEchoCurrentNative.IsCreated || _ecosystemThreatEchoCurrentNative.Length != _ecosystemThreatGridCellCount)
             {
                 DisposeNativeArray(ref _ecosystemThreatEchoCurrentNative);
@@ -3188,6 +3482,16 @@ namespace Hecton8.World
                 // COLD ALLOC: NativeArray<byte>[_ecosystemThreatGridCellCount] - back buffer for threat-echo propagation/shift - owner: HectonMapMagicVegetationBridge
                 _ecosystemThreatEchoNextNative = new NativeArray<byte>(_ecosystemThreatGridCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             }
+        }
+
+        private bool HasValidThreatGridConfiguration()
+        {
+            return _ecosystemThreatGridResolution > 0 &&
+                   _ecosystemThreatGridResolutionY > 0 &&
+                   _ecosystemThreatGridCellCount > 0 &&
+                   _ecosystemThreatVoxelCellCount > 0 &&
+                   threatGridCellSize > 0f &&
+                   thermalGridVerticalCellSize > 0f;
         }
 
         private void EnsureCanopyGridBuffer()
@@ -3211,8 +3515,9 @@ namespace Hecton8.World
                 !_densityQueryChunksNative.IsCreated ||
                 !_threatAttractorGridNative.IsCreated)
             {
-                if (_threatSamplingChunkHashNative.IsCreated)
-                    _threatSamplingChunkHashNative.Clear();
+                EnsureThreatSamplingChunkHashBuffersCapacity(1);
+                _threatSamplingChunkHashBackNative.Clear();
+                _threatSamplingChunkHashSwapPending = true;
 
                 return;
             }
@@ -3235,8 +3540,9 @@ namespace Hecton8.World
                 _ecosystemThreatGridResolution <= 0 ||
                 threatGridCellSize <= 0f)
             {
-                if (_threatSamplingChunkHashNative.IsCreated)
-                    _threatSamplingChunkHashNative.Clear();
+                EnsureThreatSamplingChunkHashBuffersCapacity(1);
+                _threatSamplingChunkHashBackNative.Clear();
+                _threatSamplingChunkHashSwapPending = true;
 
                 return;
             }
@@ -3245,22 +3551,11 @@ namespace Hecton8.World
             for (int i = 0; i < _threatSamplingChunkCount; i++)
                 hashCapacity += EstimateThreatSamplingChunkHashEntries(_threatSamplingChunksNative[i], gridCenter);
 
-            hashCapacity = Mathf.Max(1, hashCapacity);
-            if (!_threatSamplingChunkHashNative.IsCreated)
-            {
-                // COLD ALLOC: NativeParallelMultiHashMap<int,int>[hashCapacity] - threat-sampling chunk spatial hash for funnel/flow obstacle lookups - owner: HectonMapMagicVegetationBridge
-                _threatSamplingChunkHashNative = new NativeParallelMultiHashMap<int, int>(hashCapacity, Allocator.Persistent);
-            }
-            else
-            {
-                if (_threatSamplingChunkHashNative.Capacity < hashCapacity)
-                    _threatSamplingChunkHashNative.Capacity = hashCapacity;
-
-                _threatSamplingChunkHashNative.Clear();
-            }
+            EnsureThreatSamplingChunkHashBuffersCapacity(hashCapacity);
 
             for (int i = 0; i < _threatSamplingChunkCount; i++)
                 StampThreatSamplingChunkHash(_threatSamplingChunksNative[i], gridCenter, i);
+            _threatSamplingChunkHashSwapPending = true;
         }
 
         private int EstimateThreatSamplingChunkHashEntries(VegetationDensityChunkRecord chunk, Vector3 gridCenter)
@@ -3285,7 +3580,7 @@ namespace Hecton8.World
 
         private void StampThreatSamplingChunkHash(VegetationDensityChunkRecord chunk, Vector3 gridCenter, int chunkIndex)
         {
-            if (!_threatSamplingChunkHashNative.IsCreated || _ecosystemThreatGridResolution <= 0 || threatGridCellSize <= 0f)
+            if (!_threatSamplingChunkHashBackNative.IsCreated || _ecosystemThreatGridResolution <= 0 || threatGridCellSize <= 0f)
                 return;
 
             GetThreatGridBounds(gridCenter, out float minGridX, out float maxGridX, out float minGridZ, out float maxGridZ);
@@ -3304,7 +3599,7 @@ namespace Hecton8.World
             {
                 int rowOffset = cellZ * _ecosystemThreatGridResolution;
                 for (int cellX = minCellX; cellX <= maxCellX; cellX++)
-                    _threatSamplingChunkHashNative.Add(rowOffset + cellX, chunkIndex);
+                    _threatSamplingChunkHashBackNative.Add(rowOffset + cellX, chunkIndex);
             }
         }
 
@@ -3318,8 +3613,9 @@ namespace Hecton8.World
             if (targetCount <= 0)
             {
                 _artificialStructureCount = 0;
-                if (_artificialStructureHashNative.IsCreated)
-                    _artificialStructureHashNative.Clear();
+                EnsureArtificialStructureHashBuffersCapacity(1);
+                _artificialStructureHashBackNative.Clear();
+                _artificialStructureHashSwapPending = true;
 
                 return;
             }
@@ -3332,19 +3628,7 @@ namespace Hecton8.World
             for (int i = 0; i < _megaWreckStreamCount; i++)
                 estimatedHashEntries += EstimateArtificialStructureHashEntries(GetMegaWreckSectionBounds(_megaWreckStreamSnapshot[i]), targetCenter);
 
-            int hashCapacity = Mathf.Max(1, estimatedHashEntries);
-            if (!_artificialStructureHashNative.IsCreated)
-            {
-                // COLD ALLOC: NativeParallelMultiHashMap<int,int>[hashCapacity] - threat-grid cell hash for artificial structure overlap lookups - owner: HectonMapMagicVegetationBridge
-                _artificialStructureHashNative = new NativeParallelMultiHashMap<int, int>(hashCapacity, Allocator.Persistent);
-            }
-            else
-            {
-                if (_artificialStructureHashNative.Capacity < hashCapacity)
-                    _artificialStructureHashNative.Capacity = hashCapacity;
-
-                _artificialStructureHashNative.Clear();
-            }
+            EnsureArtificialStructureHashBuffersCapacity(estimatedHashEntries);
 
             int writeIndex = 0;
             for (int i = 0; i < _persistentArtificialStructures.Count; i++)
@@ -3365,6 +3649,7 @@ namespace Hecton8.World
             }
 
             _artificialStructureCount = writeIndex;
+            _artificialStructureHashSwapPending = true;
         }
 
         private void WriteArtificialStructureRecord(Bounds bounds, StructureType type, Vector3 gridCenter, int writeIndex)
@@ -3405,7 +3690,7 @@ namespace Hecton8.World
 
         private void StampArtificialStructureHash(ArtificialStructureRecord record, Vector3 gridCenter, int recordIndex)
         {
-            if (!_artificialStructureHashNative.IsCreated || _ecosystemThreatGridResolution <= 0 || threatGridCellSize <= 0f)
+            if (!_artificialStructureHashBackNative.IsCreated || _ecosystemThreatGridResolution <= 0 || threatGridCellSize <= 0f)
                 return;
 
             GetThreatGridBounds(gridCenter, out float minGridX, out float maxGridX, out float minGridZ, out float maxGridZ);
@@ -3424,7 +3709,83 @@ namespace Hecton8.World
             {
                 int rowOffset = cellZ * _ecosystemThreatGridResolution;
                 for (int cellX = minCellX; cellX <= maxCellX; cellX++)
-                    _artificialStructureHashNative.Add(rowOffset + cellX, recordIndex);
+                    _artificialStructureHashBackNative.Add(rowOffset + cellX, recordIndex);
+            }
+        }
+
+        private void EnsureThreatSamplingChunkHashBuffersCapacity(int requiredCapacity)
+        {
+            int safeCapacity = Mathf.Max(1, requiredCapacity);
+            if (!_threatSamplingChunkHashFrontNative.IsCreated)
+            {
+                // COLD ALLOC: NativeParallelMultiHashMap<int,int>[safeCapacity] - threat-sampling chunk spatial hash front buffer for Burst readers - owner: HectonMapMagicVegetationBridge
+                _threatSamplingChunkHashFrontNative = new NativeParallelMultiHashMap<int, int>(safeCapacity, Allocator.Persistent);
+            }
+
+            if (!_threatSamplingChunkHashBackNative.IsCreated)
+            {
+                // COLD ALLOC: NativeParallelMultiHashMap<int,int>[safeCapacity] - threat-sampling chunk spatial hash back buffer for SlowTick rebuilds - owner: HectonMapMagicVegetationBridge
+                _threatSamplingChunkHashBackNative = new NativeParallelMultiHashMap<int, int>(safeCapacity, Allocator.Persistent);
+            }
+            else if (_threatSamplingChunkHashBackNative.Capacity < safeCapacity)
+            {
+                _threatSamplingChunkHashBackNative.Capacity = safeCapacity;
+            }
+
+            _threatSamplingChunkHashBackNative.Clear();
+        }
+
+        private void EnsureArtificialStructureHashBuffersCapacity(int requiredCapacity)
+        {
+            int safeCapacity = Mathf.Max(1, requiredCapacity);
+            if (!_artificialStructureHashFrontNative.IsCreated)
+            {
+                // COLD ALLOC: NativeParallelMultiHashMap<int,int>[safeCapacity] - artificial-structure threat hash front buffer for Burst readers - owner: HectonMapMagicVegetationBridge
+                _artificialStructureHashFrontNative = new NativeParallelMultiHashMap<int, int>(safeCapacity, Allocator.Persistent);
+            }
+
+            if (!_artificialStructureHashBackNative.IsCreated)
+            {
+                // COLD ALLOC: NativeParallelMultiHashMap<int,int>[safeCapacity] - artificial-structure threat hash back buffer for SlowTick rebuilds - owner: HectonMapMagicVegetationBridge
+                _artificialStructureHashBackNative = new NativeParallelMultiHashMap<int, int>(safeCapacity, Allocator.Persistent);
+            }
+            else if (_artificialStructureHashBackNative.Capacity < safeCapacity)
+            {
+                _artificialStructureHashBackNative.Capacity = safeCapacity;
+            }
+
+            _artificialStructureHashBackNative.Clear();
+        }
+
+        private void SwapThreatSamplingChunkHashBuffers()
+        {
+            NativeParallelMultiHashMap<int, int> hashSwap = _threatSamplingChunkHashFrontNative;
+            _threatSamplingChunkHashFrontNative = _threatSamplingChunkHashBackNative;
+            _threatSamplingChunkHashBackNative = hashSwap;
+        }
+
+        private void SwapArtificialStructureHashBuffers()
+        {
+            NativeParallelMultiHashMap<int, int> hashSwap = _artificialStructureHashFrontNative;
+            _artificialStructureHashFrontNative = _artificialStructureHashBackNative;
+            _artificialStructureHashBackNative = hashSwap;
+        }
+
+        private void CommitThreatSpatialSnapshotBufferSwaps()
+        {
+            if (!CanRefreshThreatSpatialSnapshots())
+                return;
+
+            if (_artificialStructureHashSwapPending)
+            {
+                SwapArtificialStructureHashBuffers();
+                _artificialStructureHashSwapPending = false;
+            }
+
+            if (_threatSamplingChunkHashSwapPending)
+            {
+                SwapThreatSamplingChunkHashBuffers();
+                _threatSamplingChunkHashSwapPending = false;
             }
         }
 
@@ -3475,10 +3836,14 @@ namespace Hecton8.World
             NativeArray<byte> threatCompressedSwap = _ecosystemThreatGridCompressedCurrentNative;
             _ecosystemThreatGridCompressedCurrentNative = _ecosystemThreatGridCompressedNextNative;
             _ecosystemThreatGridCompressedNextNative = threatCompressedSwap;
+            NativeArray<byte> threatVoxelSwap = _ecosystemThreatVoxelCurrentNative;
+            _ecosystemThreatVoxelCurrentNative = _ecosystemThreatVoxelNextNative;
+            _ecosystemThreatVoxelNextNative = threatVoxelSwap;
             NativeArray<byte> echoSwap = _ecosystemThreatEchoCurrentNative;
             _ecosystemThreatEchoCurrentNative = _ecosystemThreatEchoNextNative;
             _ecosystemThreatEchoNextNative = echoSwap;
             _ecosystemThreatGridCenter = _scheduledThreatGridCenter;
+            _ecosystemThreatVoxelOrigin = _scheduledThreatVoxelOrigin;
             _threatGridInitialized = true;
             _threatPropagationScheduled = false;
             if (InvalidateChunksForNewPermanentEchoes())
@@ -3488,7 +3853,12 @@ namespace Hecton8.World
 
         private void ScheduleThreatPropagationJob()
         {
+            if (_threatPropagationScheduled)
+                return;
+
             EnsureThreatGridBuffers();
+            if (!HasValidThreatGridConfiguration())
+                return;
 
             Vector3 targetCenter = playerTransform != null
                 ? playerTransform.position
@@ -3502,6 +3872,11 @@ namespace Hecton8.World
 
             int shiftX = Mathf.RoundToInt((targetCenter.x - previousCenter.x) / threatGridCellSize);
             int shiftZ = Mathf.RoundToInt((targetCenter.z - previousCenter.z) / threatGridCellSize);
+            float halfExtent = (_ecosystemThreatGridResolution - 1) * 0.5f * threatGridCellSize;
+            Vector3 voxelOrigin = new Vector3(
+                targetCenter.x - halfExtent,
+                waterLevel - thermalGridDepthMeters,
+                targetCenter.z - halfExtent);
 
             var job = new ThreatPropagationJob
             {
@@ -3513,7 +3888,7 @@ namespace Hecton8.World
                 ThreatChunks = _threatSamplingChunksNative,
                 ThreatAttractorGrid = _threatSamplingAttractorGridNative,
                 ArtificialStructures = _artificialStructureRecordsNative,
-                ArtificialStructureHash = _artificialStructureHashNative,
+                ArtificialStructureHash = _artificialStructureHashFrontNative,
                 GridResolution = _ecosystemThreatGridResolution,
                 ThreatChunkCount = _threatSamplingChunkCount,
                 CellSize = threatGridCellSize,
@@ -3537,8 +3912,31 @@ namespace Hecton8.World
             };
 
             _scheduledThreatGridCenter = targetCenter;
+            _scheduledThreatVoxelOrigin = voxelOrigin;
             _lastThreatPropagationTime = Time.time;
-            _threatPropagationHandle = job.Schedule(_ecosystemThreatGridCellCount, DefaultJobBatchSize);
+            JobHandle propagationHandle = job.Schedule(_ecosystemThreatGridCellCount, DefaultJobBatchSize);
+            var voxelJob = new ThreatVoxelizationJob
+            {
+                ThreatGrid = _ecosystemThreatGridNextNative,
+                DensityChunks = _threatSamplingChunksNative,
+                DensityGrid = _densityQueryGridNative,
+                ThreatAttractorGrid = _threatSamplingAttractorGridNative,
+                ChunkHash = _threatSamplingChunkHashFrontNative,
+                ArtificialStructures = _artificialStructureRecordsNative,
+                ArtificialStructureHash = _artificialStructureHashFrontNative,
+                Output = _ecosystemThreatVoxelNextNative,
+                GridResolutionXZ = _ecosystemThreatGridResolution,
+                GridResolutionY = _ecosystemThreatGridResolutionY,
+                CellSizeXZ = threatGridCellSize,
+                CellSizeY = thermalGridVerticalCellSize,
+                GridOrigin = new float3(voxelOrigin.x, voxelOrigin.y, voxelOrigin.z),
+                GridCenter = new float3(targetCenter.x, targetCenter.y, targetCenter.z),
+                KelpObstacleWeight = flowFieldKelpObstacleWeight,
+                SargassumObstacleWeight = flowFieldSargassumObstacleWeight,
+                TechnoObstacleWeight = flowFieldTechnoObstacleWeight,
+                ObstacleHardThreshold = flowFieldObstacleHardThreshold
+            };
+            _threatPropagationHandle = voxelJob.Schedule(_ecosystemThreatVoxelCellCount, DefaultJobBatchSize, propagationHandle);
             _threatPropagationScheduled = true;
         }
 
@@ -3560,6 +3958,14 @@ namespace Hecton8.World
                 DisposeNativeArray(ref _ecosystemFlowFieldNextNative);
                 // COLD ALLOC: NativeArray<float2>[_ecosystemThreatGridCellCount] - abyssal flow-field back buffer for Burst writes - owner: HectonMapMagicVegetationBridge
                 _ecosystemFlowFieldNextNative = new NativeArray<float2>(_ecosystemThreatGridCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            }
+
+            if (!_swarmWakeImpulseNative.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<SwarmWakeImpulse>[1] - single-slot boid wake impulse injected into abyssal flow-field solves - owner: HectonMapMagicVegetationBridge
+                _swarmWakeImpulseNative = new NativeArray<SwarmWakeImpulse>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                _swarmWakeImpulseCount = 0;
+                _swarmWakeImpulseExpireTime = float.NegativeInfinity;
             }
         }
 
@@ -3623,7 +4029,18 @@ namespace Hecton8.World
 
         private void ScheduleFlowFieldJob()
         {
+            if (_flowFieldScheduled)
+                return;
+
             EnsureFlowFieldBuffers();
+            if (_swarmWakeImpulseCount > 0 &&
+                (!float.IsFinite(_swarmWakeImpulseExpireTime) || Time.unscaledTime > _swarmWakeImpulseExpireTime))
+            {
+                _swarmWakeImpulseCount = 0;
+                if (_swarmWakeImpulseNative.IsCreated)
+                    _swarmWakeImpulseNative[0] = default;
+            }
+
             Vector3 flowCenter = _threatGridInitialized
                 ? _ecosystemThreatGridCenter
                 : (playerTransform != null ? playerTransform.position : Vector3.zero);
@@ -3643,11 +4060,13 @@ namespace Hecton8.World
                 FlowChunks = _threatSamplingChunksNative,
                 FlowDensityGrid = _flowSamplingDensityGridNative,
                 ThreatAttractorGrid = _threatSamplingAttractorGridNative,
-                ChunkHash = _threatSamplingChunkHashNative,
+                ChunkHash = _threatSamplingChunkHashFrontNative,
                 NavSupportGrid = _flowNavSupportGridNative,
+                ExternalWakeImpulses = _swarmWakeImpulseNative,
                 Output = _ecosystemFlowFieldNextNative,
                 GridResolution = _ecosystemThreatGridResolution,
                 ChunkCount = _threatSamplingChunkCount,
+                ExternalWakeImpulseCount = _swarmWakeImpulseCount,
                 CellSize = threatGridCellSize,
                 GridCenter = new float3(flowCenter.x, flowCenter.y, flowCenter.z),
                 PlayerPosition = new float3(playerPosition.x, playerPosition.y, playerPosition.z),
@@ -3672,6 +4091,9 @@ namespace Hecton8.World
 
         private void ScheduleThermalGridJob()
         {
+            if (_abyssalThermalGridScheduled)
+                return;
+
             EnsureThermalGridBuffers();
 
             Vector3 thermalCenter = playerTransform != null
@@ -4792,12 +5214,18 @@ namespace Hecton8.World
 
         private bool TryValidateResidentTileCaches()
         {
-            bool readbackChanged = FinalizePendingTileHeightReadbacks(forceComplete: false);
+            bool readbackChanged = FinalizePendingTileHeightReadbacks();
             if (_tileStates.Count == 0 || playerTransform == null)
+            {
+                EnforceTileCacheLruBudget();
                 return readbackChanged;
+            }
 
             if (Time.unscaledTime < _nextCacheValidationTime)
+            {
+                EnforceTileCacheLruBudget();
                 return readbackChanged;
+            }
 
             _nextCacheValidationTime = Time.unscaledTime + CacheValidationInterval;
             bool changed = false;
@@ -4817,7 +5245,10 @@ namespace Hecton8.World
             }
 
             if (_selectedChunkCount <= 0 || remainingBudget <= 0)
+            {
+                EnforceTileCacheLruBudget();
                 return changed || readbackChanged;
+            }
 
             int startIndex = _cacheValidationChunkCursor;
             for (int scanned = 0; scanned < _selectedChunkCount && remainingBudget > 0; scanned++)
@@ -4843,39 +5274,54 @@ namespace Hecton8.World
                 _cacheValidationChunkCursor = (selectedIndex + 1) % _selectedChunkCount;
             }
 
+            EnforceTileCacheLruBudget();
             return changed || readbackChanged;
         }
 
-        private bool FinalizePendingTileHeightReadbacks(bool forceComplete)
+        private bool FinalizePendingTileHeightReadbacks()
         {
             if (_tileStates.Count <= 0)
                 return false;
 
             bool changed = false;
+            _tileStateRemovalScratchKeys.Clear();
             Dictionary<long, TileRuntimeState>.Enumerator enumerator = _tileStates.GetEnumerator();
             while (enumerator.MoveNext())
             {
                 TileRuntimeState state = enumerator.Current.Value;
-                if (state == null || !state.HeightReadbackPending)
+                if (state == null)
                     continue;
 
-                if (TryFinalizeTileHeightReadback(state, forceComplete))
+                if (state.PendingRemoval)
+                {
+                    if (!state.HeightReadbackPending || TryFinalizeTileHeightReadback(state))
+                        _tileStateRemovalScratchKeys.Add(enumerator.Current.Key);
+
+                    continue;
+                }
+
+                if (!state.HeightReadbackPending)
+                    continue;
+
+                if (TryFinalizeTileHeightReadback(state))
                 {
                     InvalidateTileChunks(state.TileX, state.TileZ, state.ChunkCountX, state.ChunkCountZ);
                     changed = true;
                 }
             }
 
+            enumerator.Dispose();
+
+            for (int i = 0; i < _tileStateRemovalScratchKeys.Count; i++)
+                FinalizeDeferredTileRemoval(_tileStateRemovalScratchKeys[i]);
+
             return changed;
         }
 
-        private static bool TryFinalizeTileHeightReadback(TileRuntimeState state, bool forceComplete)
+        private static bool TryFinalizeTileHeightReadback(TileRuntimeState state)
         {
             if (state == null || !state.HeightReadbackPending)
                 return false;
-
-            if (forceComplete && !state.HeightReadbackRequest.done)
-                state.HeightReadbackRequest.WaitForCompletion();
 
             if (!state.HeightReadbackRequest.done)
                 return false;
@@ -4890,12 +5336,34 @@ namespace Hecton8.World
             }
 
             state.ActiveCacheBufferIndex = state.PendingCacheBufferIndex;
+            TouchTileCacheState(state);
             unchecked
             {
                 state.CacheRevision++;
             }
 
             return true;
+        }
+
+        private bool CanRefreshThreatSpatialSnapshots()
+        {
+            return !_threatPropagationScheduled &&
+                   !_flowFieldScheduled &&
+                   !_abyssalThermalGridScheduled &&
+                   !_abyssalPathScheduled;
+        }
+
+        private void FinalizeDeferredTileRemoval(long tileKey)
+        {
+            if (!_tileStates.TryGetValue(tileKey, out TileRuntimeState state) || state == null)
+                return;
+
+            if (state.HeightReadbackPending)
+                return;
+
+            DisposeTileNativeCaches(state);
+            _tileStates.Remove(tileKey);
+            _activeSetDirty = true;
         }
 
         private bool TryFindPlayerTileState(Vector3 playerPosition, out TileRuntimeState state)
@@ -4910,7 +5378,7 @@ namespace Hecton8.World
             while (enumerator.MoveNext())
             {
                 TileRuntimeState candidate = enumerator.Current.Value;
-                if (candidate == null)
+                if (candidate == null || candidate.PendingRemoval)
                     continue;
 
                 Vector3 terrainMin = candidate.TerrainPosition;
@@ -4953,7 +5421,98 @@ namespace Hecton8.World
             sandMask = buffer.SandMaskNative;
             rockMask = buffer.RockMaskNative;
             heightSamples = buffer.HeightSamplesNative;
+            TouchTileCacheState(state);
             return true;
+        }
+
+        private static void TouchTileCacheState(TileRuntimeState state)
+        {
+            if (state == null)
+                return;
+
+            state.LastAccessFrame = unchecked((uint)Mathf.Max(0, Time.frameCount));
+        }
+
+        private static bool HasActiveTileCache(TileRuntimeState state)
+        {
+            if (state == null)
+                return false;
+
+            TileNativeCacheBuffer buffer = state.ActiveCacheBufferIndex == 0
+                ? state.PrimaryCacheBuffer
+                : state.SecondaryCacheBuffer;
+
+            return buffer.SandMaskNative.IsCreated &&
+                   buffer.RockMaskNative.IsCreated &&
+                   buffer.HeightSamplesNative.IsCreated;
+        }
+
+        private static void EvictTileCache(TileRuntimeState state)
+        {
+            if (state == null)
+                return;
+
+            DisposeTileNativeCaches(state);
+            state.AlphamapTextureCache = null;
+            state.HeightTextureCache = null;
+            state.AlphamapTextureCount = 0;
+            state.CombinedAlphamapHash = 0;
+            state.CombinedAlphamapUpdateCount = 0u;
+            state.HeightmapHash = 0;
+            state.HeightmapUpdateCount = 0u;
+            state.CacheRevision = 0;
+            state.LastAccessFrame = 0u;
+        }
+
+        private long ResolveProtectedTileKey()
+        {
+            if (playerTransform == null || !TryFindPlayerTileState(playerTransform.position, out TileRuntimeState playerTileState) || playerTileState == null)
+                return long.MinValue;
+
+            return PackTileCoord(playerTileState.TileX, playerTileState.TileZ);
+        }
+
+        private void EnforceTileCacheLruBudget()
+        {
+            if (_tileStates.Count <= TileCacheLruCapacity)
+                return;
+
+            long protectedTileKey = ResolveProtectedTileKey();
+            int lruIterations = 0;
+            while (lruIterations < MaxTileCacheLruIterations)
+            {
+                lruIterations++;
+                int residentCacheCount = 0;
+                long evictionKey = long.MinValue;
+                uint oldestAccessFrame = uint.MaxValue;
+
+                Dictionary<long, TileRuntimeState>.Enumerator enumerator = _tileStates.GetEnumerator();
+                while (enumerator.MoveNext())
+                {
+                    long tileKey = enumerator.Current.Key;
+                    TileRuntimeState state = enumerator.Current.Value;
+                    if (!HasActiveTileCache(state))
+                        continue;
+
+                    residentCacheCount++;
+                    if (tileKey == protectedTileKey || state == null || state.HeightReadbackPending)
+                        continue;
+
+                    if (state.LastAccessFrame <= oldestAccessFrame)
+                    {
+                        oldestAccessFrame = state.LastAccessFrame;
+                        evictionKey = tileKey;
+                    }
+                }
+
+                if (residentCacheCount <= TileCacheLruCapacity || evictionKey == long.MinValue)
+                    return;
+
+                if (_tileStates.TryGetValue(evictionKey, out TileRuntimeState evictionState))
+                    EvictTileCache(evictionState);
+            }
+
+            LogLoopGuardHit(nameof(EnforceTileCacheLruBudget), MaxTileCacheLruIterations);
         }
 
         private static bool HasTileCacheSignatureChanged(TileRuntimeState state, TerrainData terrainData)
@@ -4961,8 +5520,10 @@ namespace Hecton8.World
             if (state == null || terrainData == null)
                 return false;
 
+            RefreshTerrainTextureCaches(state, terrainData);
             CaptureTileCacheSignature(
-                terrainData,
+                state.AlphamapTextureCache,
+                state.HeightTextureCache,
                 out int alphamapTextureCount,
                 out int combinedAlphamapHash,
                 out uint combinedAlphamapUpdateCount,
@@ -4980,6 +5541,9 @@ namespace Hecton8.World
         {
             if (state == null || state.TerrainData == null)
                 return false;
+
+            if (!HasActiveTileCache(state))
+                return CacheTileMasks(state, state.TerrainData);
 
             if (!HasTileCacheSignatureChanged(state, state.TerrainData))
                 return false;
@@ -5154,7 +5718,7 @@ namespace Hecton8.World
 
         private bool RebuildAndBindActiveBuffers()
         {
-            CompleteAbyssalPathJob(forceComplete: true);
+            CompleteAbyssalPathJob(forceComplete: false);
             RebuildDensityQuerySnapshot();
             RebuildAbyssalAnchorSnapshot();
             RebuildAbyssalNavNodeSnapshot();
@@ -7106,6 +7670,13 @@ namespace Hecton8.World
 #endif
         }
 
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogLoopGuardHit(string loopName, int maxIterations)
+        {
+            Debug.LogError($"[HectonMapMagicVegetationBridge] Loop guard hit: {loopName} after {maxIterations} iterations.");
+        }
+
         private bool TryResolveVegetationTypeFromCachedMasks(Vector3 positionWS, out HectonVegetationInstanceType type)
         {
             type = HectonVegetationInstanceType.Grass;
@@ -7323,9 +7894,10 @@ namespace Hecton8.World
             if (jobState == null)
                 return;
 
-            DisposeNativeArray(ref jobState.GrassRecords);
-            DisposeNativeArray(ref jobState.FloatingRecords);
-            DisposeNativeArray(ref jobState.KelpRecords);
+            DisposeNativeArray(ref jobState.GrassRecords, jobState.Handle);
+            DisposeNativeArray(ref jobState.FloatingRecords, jobState.Handle);
+            DisposeNativeArray(ref jobState.KelpRecords, jobState.Handle);
+            jobState.Handle = default;
         }
 
         private static void DisposeNativeArray<T>(ref NativeArray<T> array)
@@ -7336,6 +7908,63 @@ namespace Hecton8.World
 
             array.Dispose();
             array = default;
+        }
+
+        private static void DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency)
+            where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            if (dependency.IsCompleted)
+                array.Dispose();
+            else
+                array.Dispose(dependency);
+
+            array = default;
+        }
+
+        private static void DisposeNativeList<T>(ref NativeList<T> list, JobHandle dependency)
+            where T : unmanaged
+        {
+            if (!list.IsCreated)
+                return;
+
+            if (dependency.IsCompleted)
+                list.Dispose();
+            else
+                list.Dispose(dependency);
+
+            list = default;
+        }
+
+        private static void DisposeNativeParallelMultiHashMap<TKey, TValue>(
+            ref NativeParallelMultiHashMap<TKey, TValue> map,
+            JobHandle dependency)
+            where TKey : unmanaged
+            , IEquatable<TKey>
+            where TValue : unmanaged
+        {
+            if (!map.IsCreated)
+                return;
+
+            if (dependency.IsCompleted)
+                map.Dispose();
+            else
+                map.Dispose(dependency);
+
+            map = default;
+        }
+
+        private static JobHandle CombineOptionalHandles(JobHandle current, JobHandle next)
+        {
+            if (current.Equals(default))
+                return next;
+
+            if (next.Equals(default))
+                return current;
+
+            return JobHandle.CombineDependencies(current, next);
         }
 
         [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast)]
@@ -7833,8 +8462,8 @@ namespace Hecton8.World
                     : float2.zero;
 
                 float retentionBoost = math.saturate((attractor.x * SargassumRetentionBoost) + (attractor.y * TechnoJungleRetentionBoost));
-                float retention = math.saturate(1f - (DecayPerSecond * DeltaTime));
-                retention = math.lerp(retention, 1f, retentionBoost);
+                float decayRate = math.max(0f, DecayPerSecond) * (1f - retentionBoost);
+                float retention = math.exp(-decayRate * math.max(0f, DeltaTime));
                 float propagatedThreat = diffusedThreat * retention;
 
                 float localDeposit = 0f;
@@ -7900,26 +8529,26 @@ namespace Hecton8.World
 
             private float SampleNeighborAverage(int x, int z, float centerThreat)
             {
-                float sum = centerThreat;
-                int samples = 1;
-                sum += SampleShiftedThreatClamped(x - 1, z, ref samples);
-                sum += SampleShiftedThreatClamped(x + 1, z, ref samples);
-                sum += SampleShiftedThreatClamped(x, z - 1, ref samples);
-                sum += SampleShiftedThreatClamped(x, z + 1, ref samples);
-                sum += SampleShiftedThreatClamped(x - 1, z - 1, ref samples);
-                sum += SampleShiftedThreatClamped(x + 1, z - 1, ref samples);
-                sum += SampleShiftedThreatClamped(x - 1, z + 1, ref samples);
-                sum += SampleShiftedThreatClamped(x + 1, z + 1, ref samples);
-                return sum / math.max(1, samples);
+                float weightedSum = centerThreat * 4f;
+                float totalWeight = 4f;
+                AccumulateThreatSample(x - 1, z, 2f, ref weightedSum, ref totalWeight);
+                AccumulateThreatSample(x + 1, z, 2f, ref weightedSum, ref totalWeight);
+                AccumulateThreatSample(x, z - 1, 2f, ref weightedSum, ref totalWeight);
+                AccumulateThreatSample(x, z + 1, 2f, ref weightedSum, ref totalWeight);
+                AccumulateThreatSample(x - 1, z - 1, 1f, ref weightedSum, ref totalWeight);
+                AccumulateThreatSample(x + 1, z - 1, 1f, ref weightedSum, ref totalWeight);
+                AccumulateThreatSample(x - 1, z + 1, 1f, ref weightedSum, ref totalWeight);
+                AccumulateThreatSample(x + 1, z + 1, 1f, ref weightedSum, ref totalWeight);
+                return weightedSum / math.max(1f, totalWeight);
             }
 
-            private float SampleShiftedThreatClamped(int x, int z, ref int samples)
+            private void AccumulateThreatSample(int x, int z, float weight, ref float weightedSum, ref float totalWeight)
             {
                 if (x < 0 || z < 0 || x >= GridResolution || z >= GridResolution)
-                    return 0f;
+                    return;
 
-                samples++;
-                return SampleShiftedThreat(x, z);
+                weightedSum += SampleShiftedThreat(x, z) * weight;
+                totalWeight += weight;
             }
 
             private static byte EncodeThreat(float threat)
@@ -7941,38 +8570,37 @@ namespace Hecton8.World
 
                 do
                 {
-                    if (structureIndex < 0 || structureIndex >= ArtificialStructures.Length)
-                        continue;
-
-                    ArtificialStructureRecord structure = ArtificialStructures[structureIndex];
-                    if (samplePosition.x < structure.MinX ||
-                        samplePosition.x > structure.MaxX ||
-                        samplePosition.y < structure.MinY ||
-                        samplePosition.y > structure.MaxY ||
-                        samplePosition.z < structure.MinZ ||
-                        samplePosition.z > structure.MaxZ)
+                    if (structureIndex >= 0 && structureIndex < ArtificialStructures.Length)
                     {
-                        continue;
+                        ArtificialStructureRecord structure = ArtificialStructures[structureIndex];
+                        if (samplePosition.x >= structure.MinX &&
+                            samplePosition.x <= structure.MaxX &&
+                            samplePosition.y >= structure.MinY &&
+                            samplePosition.y <= structure.MaxY &&
+                            samplePosition.z >= structure.MinZ &&
+                            samplePosition.z <= structure.MaxZ)
+                        {
+                            switch ((StructureType)structure.Type)
+                            {
+                                case StructureType.BaseModule:
+                                    suppression = math.max(suppression, StructureThreatSuppression);
+                                    break;
+
+                                case StructureType.HazardEmitter:
+                                    attraction = math.max(attraction, StructureHazardAttraction);
+                                    break;
+
+                                case StructureType.MegaWreck:
+                                    attraction = math.max(attraction, StructureHazardAttraction * 0.5f);
+                                    break;
+
+                                case StructureType.VoxelCave:
+                                    suppression = math.max(suppression, StructureThreatSuppression * 0.35f);
+                                    break;
+                            }
+                        }
                     }
 
-                    switch ((StructureType)structure.Type)
-                    {
-                        case StructureType.BaseModule:
-                            suppression = math.max(suppression, StructureThreatSuppression);
-                            break;
-
-                        case StructureType.HazardEmitter:
-                            attraction = math.max(attraction, StructureHazardAttraction);
-                            break;
-
-                        case StructureType.MegaWreck:
-                            attraction = math.max(attraction, StructureHazardAttraction * 0.5f);
-                            break;
-
-                        case StructureType.VoxelCave:
-                            suppression = math.max(suppression, StructureThreatSuppression * 0.35f);
-                            break;
-                    }
                 }
                 while (ArtificialStructureHash.TryGetNextValue(out structureIndex, ref iterator));
 
@@ -7985,6 +8613,151 @@ namespace Hecton8.World
         }
 
         [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast)]
+        private struct ThreatVoxelizationJob : IJobParallelFor
+        {
+            private const byte SolidThreat = 255;
+
+            [ReadOnly] public NativeArray<float> ThreatGrid;
+            [ReadOnly] public NativeArray<VegetationDensityChunkRecord> DensityChunks;
+            [ReadOnly] public NativeArray<float3> DensityGrid;
+            [ReadOnly] public NativeArray<float2> ThreatAttractorGrid;
+            [ReadOnly] public NativeParallelMultiHashMap<int, int> ChunkHash;
+            [ReadOnly] public NativeArray<ArtificialStructureRecord> ArtificialStructures;
+            [ReadOnly] public NativeParallelMultiHashMap<int, int> ArtificialStructureHash;
+            [WriteOnly] public NativeArray<byte> Output;
+            public int GridResolutionXZ;
+            public int GridResolutionY;
+            public float CellSizeXZ;
+            public float CellSizeY;
+            public float3 GridOrigin;
+            public float3 GridCenter;
+            public float KelpObstacleWeight;
+            public float SargassumObstacleWeight;
+            public float TechnoObstacleWeight;
+            public float ObstacleHardThreshold;
+
+            public void Execute(int index)
+            {
+                if (!Output.IsCreated ||
+                    index < 0 ||
+                    index >= Output.Length ||
+                    GridResolutionXZ <= 0 ||
+                    GridResolutionY <= 0)
+                {
+                    return;
+                }
+
+                int cellsPerSlice = GridResolutionXZ * GridResolutionY;
+                int cellZ = index / cellsPerSlice;
+                int sliceIndex = index - (cellZ * cellsPerSlice);
+                int cellY = sliceIndex / GridResolutionXZ;
+                int cellX = sliceIndex - (cellY * GridResolutionXZ);
+                float3 voxelCenterOffset = new float3(
+                    (cellX + 0.5f) * CellSizeXZ,
+                    (cellY + 0.5f) * CellSizeY,
+                    (cellZ + 0.5f) * CellSizeXZ);
+                float3 samplePosition = new float3(
+                    GridOrigin.x + voxelCenterOffset.x,
+                    GridOrigin.y + voxelCenterOffset.y,
+                    GridOrigin.z + voxelCenterOffset.z);
+
+                int columnIndex = (cellZ * GridResolutionXZ) + cellX;
+                float threat = ThreatGrid.IsCreated && columnIndex >= 0 && columnIndex < ThreatGrid.Length
+                    ? math.saturate(ThreatGrid[columnIndex])
+                    : 0f;
+                byte encodedThreat = EncodeOpenThreat(threat);
+                float obstacle = SampleObstacle(samplePosition);
+                bool isSolid = obstacle >= ObstacleHardThreshold || IsInsideBlockingStructure(columnIndex, samplePosition);
+                Output[index] = isSolid ? SolidThreat : encodedThreat;
+            }
+
+            private float SampleObstacle(float3 position)
+            {
+                if (DensityChunks.IsCreated &&
+                    DensityGrid.IsCreated &&
+                    ChunkHash.IsCreated)
+                {
+                    float3 density = SampleDensityChannelsAtPositionHashed(
+                        position,
+                        DensityChunks,
+                        DensityGrid,
+                        ChunkHash,
+                        GridCenter,
+                        CellSizeXZ,
+                        GridResolutionXZ,
+                        DensityChunks.Length);
+                    float2 attractor = ThreatAttractorGrid.IsCreated
+                        ? SampleThreatAttractorAtPositionHashed(
+                            position,
+                            DensityChunks,
+                            ThreatAttractorGrid,
+                            ChunkHash,
+                            GridCenter,
+                            CellSizeXZ,
+                            GridResolutionXZ,
+                            DensityChunks.Length)
+                        : float2.zero;
+                    float obstacle = (density.y * KelpObstacleWeight) +
+                                     (density.z * (SargassumObstacleWeight * 0.35f)) +
+                                     (attractor.x * SargassumObstacleWeight) +
+                                     (attractor.y * TechnoObstacleWeight);
+                    return math.saturate(obstacle);
+                }
+
+                return 0f;
+            }
+
+            private bool IsInsideBlockingStructure(int columnIndex, float3 position)
+            {
+                if (!ArtificialStructures.IsCreated ||
+                    !ArtificialStructureHash.IsCreated ||
+                    columnIndex < 0)
+                {
+                    return false;
+                }
+
+                NativeParallelMultiHashMapIterator<int> iterator;
+                int structureIndex;
+                if (!ArtificialStructureHash.TryGetFirstValue(columnIndex, out structureIndex, out iterator))
+                    return false;
+
+                do
+                {
+                    if (structureIndex >= 0 && structureIndex < ArtificialStructures.Length)
+                    {
+                        ArtificialStructureRecord structure = ArtificialStructures[structureIndex];
+                        if (position.x >= structure.MinX &&
+                            position.x <= structure.MaxX &&
+                            position.y >= structure.MinY &&
+                            position.y <= structure.MaxY &&
+                            position.z >= structure.MinZ &&
+                            position.z <= structure.MaxZ)
+                        {
+                            return true;
+                        }
+                    }
+
+                }
+                while (ArtificialStructureHash.TryGetNextValue(out structureIndex, ref iterator));
+
+                return false;
+            }
+
+            private static byte EncodeOpenThreat(float threat)
+            {
+                return (byte)math.clamp((int)math.round(math.saturate(threat) * 254f), 0, 254);
+            }
+        }
+
+        private struct SwarmWakeImpulse
+        {
+            public float3 Position;
+            public float Radius;
+            public float3 FlowVector;
+            public float Strength;
+        }
+
+        [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast)]
         private struct BuildAbyssalFlowFieldJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<float> ThreatGrid;
@@ -7993,9 +8766,11 @@ namespace Hecton8.World
             [ReadOnly] public NativeArray<float2> ThreatAttractorGrid;
             [ReadOnly] public NativeParallelMultiHashMap<int, int> ChunkHash;
             [ReadOnly] public NativeArray<float> NavSupportGrid;
+            [ReadOnly] public NativeArray<SwarmWakeImpulse> ExternalWakeImpulses;
             [WriteOnly] public NativeArray<float2> Output;
             public int GridResolution;
             public int ChunkCount;
+            public int ExternalWakeImpulseCount;
             public float CellSize;
             public float3 GridCenter;
             public float3 PlayerPosition;
@@ -8041,9 +8816,11 @@ namespace Hecton8.World
 
                 float navSupport = SampleNavSupport(cellX, cellZ);
                 float2 roadDir = math.normalizesafe(ComputeNavGradient(cellX, cellZ), seekDir);
+                float2 wakeDir = SampleWakeFlow(position);
 
                 float2 combined = seekDir;
                 combined += roadDir * NavSupportBias * navSupport;
+                combined += wakeDir;
                 combined += avoidanceDir * ObstacleAvoidBias * math.max(obstacleFactor, centerObstacle);
                 if (centerObstacle >= ObstacleHardThreshold && navSupport <= 0.001f)
                     combined = avoidanceDir * math.max(1f, ObstacleAvoidBias);
@@ -8120,6 +8897,32 @@ namespace Hecton8.World
                     return 0f;
 
                 return math.saturate(NavSupportGrid[(cellZ * GridResolution) + cellX]);
+            }
+
+            private float2 SampleWakeFlow(float3 position)
+            {
+                if (!ExternalWakeImpulses.IsCreated || ExternalWakeImpulseCount <= 0)
+                    return float2.zero;
+
+                float2 wake = float2.zero;
+                for (int i = 0; i < ExternalWakeImpulseCount; i++)
+                {
+                    SwarmWakeImpulse impulse = ExternalWakeImpulses[i];
+                    if (impulse.Radius <= 0.0001f || impulse.Strength <= 0.0001f)
+                        continue;
+
+                    float2 planarDelta = new float2(position.x - impulse.Position.x, position.z - impulse.Position.z);
+                    float planarDistance = math.length(planarDelta);
+                    float planarGate = math.saturate(1f - (planarDistance / math.max(impulse.Radius, 0.001f)));
+                    if (planarGate <= 0f)
+                        continue;
+
+                    float verticalGate = math.saturate(1f - (math.abs(position.y - impulse.Position.y) / math.max(impulse.Radius, 0.001f)));
+                    float weight = planarGate * planarGate * verticalGate * impulse.Strength;
+                    wake += math.normalizesafe(new float2(impulse.FlowVector.x, impulse.FlowVector.z), float2.zero) * weight;
+                }
+
+                return wake;
             }
         }
 
@@ -8245,6 +9048,7 @@ namespace Hecton8.World
             [ReadOnly] public NativeArray<Vector3> ConduitVectors;
             [ReadOnly] public NativeArray<float> ConduitStrengths;
             [ReadOnly] public NativeArray<float> ThreatGrid;
+            [ReadOnly] public NativeArray<byte> ThreatVoxelGrid;
             public NativeArray<int> Parents;
             public NativeArray<float> GScore;
             public NativeArray<float> FScore;
@@ -8255,6 +9059,9 @@ namespace Hecton8.World
             public float3 ThreatGridCenter;
             public float ThreatGridCellSize;
             public int ThreatGridResolution;
+            public int3 ThreatVoxelDimensions;
+            public float3 ThreatVoxelOrigin;
+            public float3 ThreatVoxelCellSize;
             public float WaterLevel;
             public int StartNode;
             public int EndNode;
@@ -8341,7 +9148,7 @@ namespace Hecton8.World
                         if ((verticalDelta * verticalDelta) > (allowedVertical * allowedVertical))
                             continue;
 
-                        float threatPenalty = (1f - SampleThreatAtWorldPosition(neighborNode)) * ThreatPenaltyWeight;
+                        float threatPenalty = math.saturate(SampleThreatAtWorldPosition(neighborNode)) * ThreatPenaltyWeight;
                         float conduitPenalty = conduitStrength * ((1f - conduitAlignment) * ConduitMisalignmentPenalty);
                         float conduitThreatReduction = threatPenalty * conduitStrength * conduitAlignment * math.saturate(ConduitAlignmentReward);
                         float traversalMultiplier = math.max(1f, ResolveTraversalMultiplier(current, neighbor));
@@ -8362,8 +9169,10 @@ namespace Hecton8.World
 
                 Path.AddNoResize(new Vector3(EndPosition.x, EndPosition.y, EndPosition.z));
                 int nodeIndex = EndNode;
-                while (nodeIndex >= 0)
+                int pathIterations = 0;
+                while (nodeIndex >= 0 && pathIterations < MaxPathReconstructionIterations)
                 {
+                    pathIterations++;
                     float3 node = ToFloat3(Nodes[nodeIndex]);
                     Path.AddNoResize(new Vector3(node.x, node.y, node.z));
                     if (nodeIndex == StartNode)
@@ -8438,18 +9247,68 @@ namespace Hecton8.World
 
             private float SampleThreatAtWorldPosition(float3 position)
             {
+                float voxelThreat = SampleThreatVoxelAtWorldPosition(position);
+
                 if (!ThreatGrid.IsCreated || ThreatGridResolution <= 0 || ThreatGridCellSize <= 0f)
-                    return 0f;
+                    return voxelThreat;
 
                 float halfExtent = (ThreatGridResolution - 1) * 0.5f * ThreatGridCellSize;
                 float localX = position.x - (ThreatGridCenter.x - halfExtent);
                 float localZ = position.z - (ThreatGridCenter.z - halfExtent);
                 if (localX < 0f || localZ < 0f || localX > halfExtent * 2f || localZ > halfExtent * 2f)
+                    return voxelThreat;
+
+                float cellCoordX = localX / ThreatGridCellSize;
+                float cellCoordZ = localZ / ThreatGridCellSize;
+                int x0 = math.clamp((int)math.floor(cellCoordX), 0, ThreatGridResolution - 1);
+                int z0 = math.clamp((int)math.floor(cellCoordZ), 0, ThreatGridResolution - 1);
+                int x1 = math.min(x0 + 1, ThreatGridResolution - 1);
+                int z1 = math.min(z0 + 1, ThreatGridResolution - 1);
+                float tx = math.saturate(cellCoordX - x0);
+                float tz = math.saturate(cellCoordZ - z0);
+
+                float h00 = ThreatGrid[(z0 * ThreatGridResolution) + x0];
+                float h10 = ThreatGrid[(z0 * ThreatGridResolution) + x1];
+                float h01 = ThreatGrid[(z1 * ThreatGridResolution) + x0];
+                float h11 = ThreatGrid[(z1 * ThreatGridResolution) + x1];
+                float hx0 = math.lerp(h00, h10, tx);
+                float hx1 = math.lerp(h01, h11, tx);
+                float surfaceThreat = math.lerp(hx0, hx1, tz);
+                return math.max(surfaceThreat, voxelThreat);
+            }
+
+            private float SampleThreatVoxelAtWorldPosition(float3 position)
+            {
+                if (!ThreatVoxelGrid.IsCreated ||
+                    ThreatVoxelDimensions.x <= 0 ||
+                    ThreatVoxelDimensions.y <= 0 ||
+                    ThreatVoxelDimensions.z <= 0)
+                {
+                    return 0f;
+                }
+
+                float3 local = position - ThreatVoxelOrigin;
+                if (local.x < 0f || local.y < 0f || local.z < 0f)
                     return 0f;
 
-                int cellX = math.clamp((int)math.round(localX / ThreatGridCellSize), 0, ThreatGridResolution - 1);
-                int cellZ = math.clamp((int)math.round(localZ / ThreatGridCellSize), 0, ThreatGridResolution - 1);
-                return ThreatGrid[(cellZ * ThreatGridResolution) + cellX];
+                int3 voxel = new int3(
+                    (int)math.floor(local.x / math.max(ThreatVoxelCellSize.x, 0.001f)),
+                    (int)math.floor(local.y / math.max(ThreatVoxelCellSize.y, 0.001f)),
+                    (int)math.floor(local.z / math.max(ThreatVoxelCellSize.z, 0.001f)));
+                if (voxel.x < 0 || voxel.y < 0 || voxel.z < 0 ||
+                    voxel.x >= ThreatVoxelDimensions.x ||
+                    voxel.y >= ThreatVoxelDimensions.y ||
+                    voxel.z >= ThreatVoxelDimensions.z)
+                {
+                    return 0f;
+                }
+
+                int flatIndex = voxel.x + (voxel.y * ThreatVoxelDimensions.x) + (voxel.z * ThreatVoxelDimensions.x * ThreatVoxelDimensions.y);
+                if (flatIndex < 0 || flatIndex >= ThreatVoxelGrid.Length)
+                    return 0f;
+
+                byte encoded = ThreatVoxelGrid[flatIndex];
+                return encoded >= 255 ? 1f : (encoded / 254f);
             }
 
             private float ResolveTraversalMultiplier(int currentIndex, int neighborIndex)
@@ -8512,8 +9371,10 @@ namespace Hecton8.World
 
             private void SiftUp(int index)
             {
-                while (index > 0)
+                int heapIterations = 0;
+                while (index > 0 && heapIterations < MaxHeapRebalanceIterations)
                 {
+                    heapIterations++;
                     int parentIndex = (index - 1) >> 1;
                     int node = HeapNodes[index];
                     int parentNode = HeapNodes[parentIndex];
@@ -8530,8 +9391,10 @@ namespace Hecton8.World
 
             private void SiftDown(int index, int heapCount)
             {
-                while (true)
+                int heapIterations = 0;
+                while (heapIterations < MaxHeapRebalanceIterations)
                 {
+                    heapIterations++;
                     int left = (index << 1) + 1;
                     if (left >= heapCount)
                         break;
@@ -8560,21 +9423,33 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast)]
+        [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct StringPullPathJob : IJob
         {
+            private const float FunnelEpsilon = 0.00001f;
+            private const float DdaEpsilon = 0.000001f;
+            private const byte SolidThreatVoxel = 255;
+
             [ReadOnly] public NativeArray<Vector3> InputPath;
             [ReadOnly] public NativeArray<VegetationDensityChunkRecord> DensityChunks;
             [ReadOnly] public NativeArray<float3> DensityGrid;
             [ReadOnly] public NativeArray<TerrainHoleRecord> TerrainHoles;
             [ReadOnly] public NativeArray<ArtificialStructureRecord> ArtificialStructures;
             [ReadOnly] public NativeParallelMultiHashMap<int, int> ArtificialStructureHash;
+            [ReadOnly] public NativeArray<byte> NavPassabilityGrid;
+            [ReadOnly] public NativeArray<byte> ThreatVoxelGrid;
             public NativeList<Vector3> OutputPath;
             public int ChunkCount;
             public int TerrainHoleCount;
             public float3 ThreatGridCenter;
             public float ThreatGridCellSize;
             public int ThreatGridResolution;
+            public int3 NavPassabilityDimensions;
+            public float3 NavPassabilityOrigin;
+            public float NavPassabilityCellSize;
+            public int3 ThreatVoxelDimensions;
+            public float3 ThreatVoxelOrigin;
+            public float3 ThreatVoxelCellSize;
             public float SampleSpacing;
             public int MaxSamplesPerSegment;
             public float KelpWeight;
@@ -8607,27 +9482,27 @@ namespace Hecton8.World
                 float3 apex = ToFloat3(InputPath[0]);
                 float3 left = apex;
                 float3 right = apex;
-                float3 funnelNormal = ResolveEndpointPortalNormal(0);
+                float3 fallbackAxis = ResolvePortalAxis(0);
 
                 for (int portalIndex = 1; portalIndex < pathCount; portalIndex++)
                 {
-                    BuildPortal(portalIndex, out float3 portalLeft, out float3 portalRight, out float3 portalNormal);
-                    float3 testNormal = ResolveFunnelNormal(apex, left, right, funnelNormal, portalNormal);
-                    if (SignedPortalVolume(apex, portalLeft, portalRight, testNormal) < 0f)
+                    BuildPortal(portalIndex, out float3 portalLeft, out float3 portalRight, out float3 portalAxis);
+                    float3 windingAxis = ResolveWindingAxis(apex, left, right, portalLeft, portalRight, portalAxis, fallbackAxis);
+                    if (ScalarTripleProduct(windingAxis, portalLeft - apex, portalRight - apex) < 0f)
                     {
                         float3 swap = portalLeft;
                         portalLeft = portalRight;
                         portalRight = swap;
                     }
 
-                    testNormal = ResolveFunnelNormal(apex, left, right, funnelNormal, portalNormal);
-                    if (SignedPortalVolume(apex, right, portalRight, testNormal) <= 0f)
+                    windingAxis = ResolveWindingAxis(apex, left, right, portalLeft, portalRight, portalAxis, fallbackAxis);
+                    if (ScalarTripleProduct(windingAxis, right - apex, portalRight - apex) <= FunnelEpsilon)
                     {
-                        if (math.all(right == apex) || SignedPortalVolume(apex, left, portalRight, testNormal) > 0f)
+                        if (IsDegenerateRay(apex, right) || ScalarTripleProduct(windingAxis, left - apex, portalRight - apex) > FunnelEpsilon)
                         {
                             right = portalRight;
                             rightIndex = portalIndex;
-                            funnelNormal = ResolveFunnelNormal(apex, left, right, funnelNormal, portalNormal);
+                            fallbackAxis = portalAxis;
                         }
                         else
                         {
@@ -8639,20 +9514,20 @@ namespace Hecton8.World
                             right = apex;
                             leftIndex = apexIndex;
                             rightIndex = apexIndex;
-                            funnelNormal = ResolveEndpointPortalNormal(apexIndex);
+                            fallbackAxis = ResolvePortalAxis(apexIndex);
                             portalIndex = apexIndex;
                             continue;
                         }
                     }
 
-                    testNormal = ResolveFunnelNormal(apex, left, right, funnelNormal, portalNormal);
-                    if (SignedPortalVolume(apex, left, portalLeft, testNormal) >= 0f)
+                    windingAxis = ResolveWindingAxis(apex, left, right, portalLeft, portalRight, portalAxis, fallbackAxis);
+                    if (ScalarTripleProduct(windingAxis, left - apex, portalLeft - apex) >= -FunnelEpsilon)
                     {
-                        if (math.all(left == apex) || SignedPortalVolume(apex, right, portalLeft, testNormal) < 0f)
+                        if (IsDegenerateRay(apex, left) || ScalarTripleProduct(windingAxis, right - apex, portalLeft - apex) < -FunnelEpsilon)
                         {
                             left = portalLeft;
                             leftIndex = portalIndex;
-                            funnelNormal = ResolveFunnelNormal(apex, left, right, funnelNormal, portalNormal);
+                            fallbackAxis = portalAxis;
                         }
                         else
                         {
@@ -8664,7 +9539,7 @@ namespace Hecton8.World
                             right = apex;
                             leftIndex = apexIndex;
                             rightIndex = apexIndex;
-                            funnelNormal = ResolveEndpointPortalNormal(apexIndex);
+                            fallbackAxis = ResolvePortalAxis(apexIndex);
                             portalIndex = apexIndex;
                             continue;
                         }
@@ -8677,9 +9552,11 @@ namespace Hecton8.World
                 Vector3 endPoint = InputPath[pathCount - 1];
                 if (OutputPath.Length == 0 || !Approximately(OutputPath[OutputPath.Length - 1], endPoint))
                     OutputPath.AddNoResize(endPoint);
+
+                CompactPathByVoxelLineOfSight();
             }
 
-            private void BuildPortal(int index, out float3 leftPortal, out float3 rightPortal, out float3 portalNormal)
+            private void BuildPortal(int index, out float3 leftPortal, out float3 rightPortal, out float3 portalAxis)
             {
                 Vector3 centerValue = InputPath[index];
                 float3 center = ToFloat3(centerValue);
@@ -8687,7 +9564,7 @@ namespace Hecton8.World
                 {
                     leftPortal = center;
                     rightPortal = center;
-                    portalNormal = ResolveEndpointPortalNormal(index);
+                    portalAxis = ResolvePortalAxis(index);
                     return;
                 }
 
@@ -8695,10 +9572,9 @@ namespace Hecton8.World
                 float3 next = ToFloat3(InputPath[index + 1]);
                 float3 prevDirection = math.normalizesafe(center - previous, new float3(0f, 0f, 1f));
                 float3 nextDirection = math.normalizesafe(next - center, prevDirection);
-                float3 axis = math.normalizesafe(prevDirection + nextDirection, nextDirection);
-                float3 initialNormal = math.normalizesafe(math.cross(prevDirection, nextDirection), ResolvePerpendicular(axis));
-                float3 side = math.normalizesafe(math.cross(initialNormal, axis), ResolvePerpendicular(axis));
-                portalNormal = math.normalizesafe(math.cross(axis, side), initialNormal);
+                portalAxis = math.normalizesafe(prevDirection + nextDirection, nextDirection);
+                float3 cornerNormal = math.normalizesafe(math.cross(prevDirection, nextDirection), ResolvePerpendicular(portalAxis));
+                float3 side = math.normalizesafe(math.cross(cornerNormal, portalAxis), ResolvePerpendicular(portalAxis));
                 float obstacle = SampleObstacle(centerValue);
                 float obstacleT = math.saturate(obstacle / math.max(0.01f, DensityObstacleThreshold));
                 float maxHalfWidth = math.max(0.9f, SampleSpacing * 1.6f);
@@ -8744,25 +9620,22 @@ namespace Hecton8.World
 
                 do
                 {
-                    if (structureIndex < 0 || structureIndex >= ArtificialStructures.Length)
-                        continue;
-
-                    ArtificialStructureRecord structure = ArtificialStructures[structureIndex];
-                    StructureType structureType = (StructureType)structure.Type;
-                    if (structureType != StructureType.BaseModule && structureType != StructureType.MegaWreck)
-                        continue;
-
-                    if (position.x < structure.MinX ||
-                        position.x > structure.MaxX ||
-                        position.y < structure.MinY ||
-                        position.y > structure.MaxY ||
-                        position.z < structure.MinZ ||
-                        position.z > structure.MaxZ)
+                    if (structureIndex >= 0 && structureIndex < ArtificialStructures.Length)
                     {
-                        continue;
+                        ArtificialStructureRecord structure = ArtificialStructures[structureIndex];
+                        StructureType structureType = (StructureType)structure.Type;
+                        if ((structureType == StructureType.BaseModule || structureType == StructureType.MegaWreck) &&
+                            position.x >= structure.MinX &&
+                            position.x <= structure.MaxX &&
+                            position.y >= structure.MinY &&
+                            position.y <= structure.MaxY &&
+                            position.z >= structure.MinZ &&
+                            position.z <= structure.MaxZ)
+                        {
+                            return true;
+                        }
                     }
 
-                    return true;
                 }
                 while (ArtificialStructureHash.TryGetNextValue(out structureIndex, ref iterator));
 
@@ -8782,16 +9655,198 @@ namespace Hecton8.World
                 return (cellZ * ThreatGridResolution) + cellX;
             }
 
-            private float3 ResolveEndpointPortalNormal(int index)
+            private void CompactPathByVoxelLineOfSight()
+            {
+                if (OutputPath.Length <= 2 || !HasAnyVoxelGrid())
+                {
+                    return;
+                }
+
+                int sourceLength = OutputPath.Length;
+                int lastIndex = sourceLength - 1;
+                int anchorIndex = 0;
+                int writeIndex = 0;
+
+                int compactionIterations = 0;
+                while (anchorIndex < lastIndex && compactionIterations < MaxPathCompactionIterations)
+                {
+                    compactionIterations++;
+                    Vector3 anchorPoint = OutputPath[anchorIndex];
+                    OutputPath[writeIndex] = anchorPoint;
+                    writeIndex++;
+
+                    int farthestVisibleIndex = anchorIndex + 1;
+                    for (int candidateIndex = farthestVisibleIndex + 1; candidateIndex <= lastIndex; candidateIndex++)
+                    {
+                        if (!HasVoxelLineOfSight(ToFloat3(anchorPoint), ToFloat3(OutputPath[candidateIndex])))
+                            break;
+
+                        farthestVisibleIndex = candidateIndex;
+                    }
+
+                    anchorIndex = farthestVisibleIndex;
+                }
+
+                Vector3 finalPoint = OutputPath[lastIndex];
+                if (writeIndex == 0 || !Approximately(OutputPath[writeIndex - 1], finalPoint))
+                {
+                    OutputPath[writeIndex] = finalPoint;
+                    writeIndex++;
+                }
+
+                OutputPath.Length = writeIndex;
+            }
+
+            private bool HasVoxelLineOfSight(float3 start, float3 end)
+            {
+                float3 delta = end - start;
+                float distanceSq = math.lengthsq(delta);
+                if (distanceSq <= DdaEpsilon)
+                    return true;
+
+                if (!TryWorldToVoxel(start, out int3 currentVoxel) ||
+                    !TryWorldToVoxel(end, out int3 targetVoxel))
+                {
+                    return true;
+                }
+
+                float3 activeVoxelOrigin = GetActiveVoxelOrigin();
+                float3 activeVoxelCellSize = GetActiveVoxelCellSize();
+                int3 activeVoxelDimensions = GetActiveVoxelDimensions();
+                float3 rayDirection = delta * math.rsqrt(distanceSq);
+                bool3 positiveMask = rayDirection >= 0f;
+                bool3 activeAxisMask = math.abs(rayDirection) > DdaEpsilon;
+                int3 step = math.select(new int3(-1, -1, -1), new int3(1, 1, 1), positiveMask);
+                float3 cellMin = activeVoxelOrigin + (new float3(currentVoxel.x, currentVoxel.y, currentVoxel.z) * activeVoxelCellSize);
+                float3 voxelBoundary = cellMin + math.select(float3.zero, activeVoxelCellSize, positiveMask);
+                float3 safeAbsDirection = math.max(math.abs(rayDirection), new float3(DdaEpsilon, DdaEpsilon, DdaEpsilon));
+                float3 rayDirectionInverse = 1f / safeAbsDirection;
+                float3 tMax = math.abs((voxelBoundary - start) * rayDirectionInverse);
+                float3 tDelta = activeVoxelCellSize * rayDirectionInverse;
+                tMax = math.select(new float3(1000000f, 1000000f, 1000000f), tMax, activeAxisMask);
+                tDelta = math.select(new float3(1000000f, 1000000f, 1000000f), tDelta, activeAxisMask);
+
+                int maxSteps = math.min(activeVoxelDimensions.x + activeVoxelDimensions.y + activeVoxelDimensions.z + 1, MaxThreatDdaSteps);
+                for (int stepIndex = 0; stepIndex < maxSteps; stepIndex++)
+                {
+                    if (SampleVoxel(currentVoxel) >= SolidThreatVoxel)
+                        return false;
+
+                    if (math.all(currentVoxel == targetVoxel))
+                        return true;
+
+                    bool3 axisMask = (tMax <= tMax.yzx) & (tMax <= tMax.zxy);
+                    tMax += math.select(float3.zero, tDelta, axisMask);
+                    currentVoxel += math.select(int3.zero, step, axisMask);
+                    if (!IsVoxelInside(currentVoxel))
+                        return true;
+                }
+
+                return true;
+            }
+
+            private bool TryWorldToVoxel(float3 worldPosition, out int3 voxel)
+            {
+                float3 activeVoxelOrigin = GetActiveVoxelOrigin();
+                float3 activeVoxelCellSize = GetActiveVoxelCellSize();
+                float3 local = worldPosition - activeVoxelOrigin;
+                if (local.x < 0f || local.y < 0f || local.z < 0f)
+                {
+                    voxel = int3.zero;
+                    return false;
+                }
+
+                int3 candidate = new int3(
+                    (int)math.floor(local.x / math.max(activeVoxelCellSize.x, DdaEpsilon)),
+                    (int)math.floor(local.y / math.max(activeVoxelCellSize.y, DdaEpsilon)),
+                    (int)math.floor(local.z / math.max(activeVoxelCellSize.z, DdaEpsilon)));
+                if (!IsVoxelInside(candidate))
+                {
+                    voxel = int3.zero;
+                    return false;
+                }
+
+                voxel = candidate;
+                return true;
+            }
+
+            private bool IsVoxelInside(int3 voxel)
+            {
+                int3 activeVoxelDimensions = GetActiveVoxelDimensions();
+                return voxel.x >= 0 &&
+                       voxel.y >= 0 &&
+                       voxel.z >= 0 &&
+                       voxel.x < activeVoxelDimensions.x &&
+                       voxel.y < activeVoxelDimensions.y &&
+                       voxel.z < activeVoxelDimensions.z;
+            }
+
+            private byte SampleVoxel(int3 voxel)
+            {
+                if (HasNavPassabilityGrid())
+                {
+                    int flatIndex = FlattenThreatVoxelIndex(voxel, NavPassabilityDimensions);
+                    if (flatIndex < 0 || flatIndex >= NavPassabilityGrid.Length)
+                        return 0;
+
+                    return NavPassabilityGrid[flatIndex];
+                }
+
+                int legacyFlatIndex = FlattenThreatVoxelIndex(voxel, ThreatVoxelDimensions);
+                if (legacyFlatIndex < 0 || legacyFlatIndex >= ThreatVoxelGrid.Length)
+                    return 0;
+
+                return ThreatVoxelGrid[legacyFlatIndex];
+            }
+
+            private static int FlattenThreatVoxelIndex(int3 voxel, int3 dimensions)
+            {
+                return voxel.x + (voxel.y * dimensions.x) + (voxel.z * dimensions.x * dimensions.y);
+            }
+
+            private bool HasAnyVoxelGrid()
+            {
+                return HasNavPassabilityGrid() ||
+                       (ThreatVoxelGrid.IsCreated &&
+                        ThreatVoxelDimensions.x > 0 &&
+                        ThreatVoxelDimensions.y > 0 &&
+                        ThreatVoxelDimensions.z > 0);
+            }
+
+            private bool HasNavPassabilityGrid()
+            {
+                return NavPassabilityGrid.IsCreated &&
+                       NavPassabilityDimensions.x > 0 &&
+                       NavPassabilityDimensions.y > 0 &&
+                       NavPassabilityDimensions.z > 0 &&
+                       NavPassabilityCellSize > 0f;
+            }
+
+            private int3 GetActiveVoxelDimensions()
+            {
+                return HasNavPassabilityGrid() ? NavPassabilityDimensions : ThreatVoxelDimensions;
+            }
+
+            private float3 GetActiveVoxelOrigin()
+            {
+                return HasNavPassabilityGrid() ? NavPassabilityOrigin : ThreatVoxelOrigin;
+            }
+
+            private float3 GetActiveVoxelCellSize()
+            {
+                return HasNavPassabilityGrid()
+                    ? new float3(NavPassabilityCellSize, NavPassabilityCellSize, NavPassabilityCellSize)
+                    : ThreatVoxelCellSize;
+            }
+
+            private float3 ResolvePortalAxis(int index)
             {
                 int clampedIndex = math.clamp(index, 0, InputPath.Length - 1);
                 int previousIndex = math.max(0, clampedIndex - 1);
                 int nextIndex = math.min(InputPath.Length - 1, clampedIndex + 1);
                 float3 previous = ToFloat3(InputPath[previousIndex]);
                 float3 next = ToFloat3(InputPath[nextIndex]);
-                float3 axis = math.normalizesafe(next - previous, new float3(0f, 0f, 1f));
-                float3 side = ResolvePerpendicular(axis);
-                return math.normalizesafe(math.cross(axis, side), new float3(0f, 1f, 0f));
+                return math.normalizesafe(next - previous, new float3(0f, 0f, 1f));
             }
 
             private static float3 ToFloat3(Vector3 value)
@@ -8807,15 +9862,34 @@ namespace Hecton8.World
                 return math.normalizesafe(math.cross(reference, axis), new float3(0f, 0f, 1f));
             }
 
-            private static float3 ResolveFunnelNormal(float3 apex, float3 left, float3 right, float3 currentNormal, float3 portalNormal)
+            private static float3 ResolveWindingAxis(
+                float3 apex,
+                float3 left,
+                float3 right,
+                float3 portalLeft,
+                float3 portalRight,
+                float3 portalAxis,
+                float3 fallbackAxis)
             {
-                float3 fallback = math.normalizesafe(portalNormal, math.normalizesafe(currentNormal, new float3(0f, 1f, 0f)));
-                return math.normalizesafe(math.cross(left - apex, right - apex), fallback);
+                float3 portalCenterDirection = math.normalizesafe((((portalLeft + portalRight) * 0.5f) - apex), portalAxis);
+                if (math.lengthsq(portalCenterDirection) > FunnelEpsilon)
+                    return portalCenterDirection;
+
+                float3 wedgeCenterDirection = math.normalizesafe((((left + right) * 0.5f) - apex), portalAxis);
+                if (math.lengthsq(wedgeCenterDirection) > FunnelEpsilon)
+                    return wedgeCenterDirection;
+
+                return math.normalizesafe(portalAxis, math.normalizesafe(fallbackAxis, new float3(0f, 0f, 1f)));
             }
 
-            private static float SignedPortalVolume(float3 apex, float3 a, float3 b, float3 normal)
+            private static float ScalarTripleProduct(float3 axis, float3 b, float3 c)
             {
-                return math.dot(math.cross(a - apex, b - apex), normal);
+                return math.dot(axis, math.cross(b, c));
+            }
+
+            private static bool IsDegenerateRay(float3 apex, float3 point)
+            {
+                return math.lengthsq(point - apex) <= FunnelEpsilon;
             }
 
             private static bool Approximately(Vector3 a, Vector3 b)
@@ -9859,7 +10933,7 @@ namespace Hecton8.World
             if (playerTransform != null)
             {
                 if (!playerTransform.TryGetComponent(out _cachedViewCamera))
-                    _cachedViewCamera = playerTransform.GetComponentInChildren<Camera>(true);
+                    _cachedViewCamera = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera : playerTransform.GetComponent<Camera>());
             }
 
             if (_cachedViewCamera == null && TryGetComponent(out Camera localCamera))
@@ -9901,8 +10975,8 @@ namespace Hecton8.World
 
         private void UploadChannel(
             HectonIndirectVegetationRenderer renderer,
-            ref ComputeBuffer matrixBuffer,
-            ref ComputeBuffer dataBuffer,
+            ref GraphicsBuffer matrixBuffer,
+            ref GraphicsBuffer dataBuffer,
             NativeArray<Matrix4x4> matrices,
             NativeArray<HectonVegetationInstanceData> metadata,
             int count,
@@ -9915,22 +10989,22 @@ namespace Hecton8.World
                 return;
             }
 
-            EnsureStructuredBuffer(ref matrixBuffer, count, HectonIndirectVegetationRenderer.InstanceMatrixStride);
-            EnsureStructuredBuffer(ref dataBuffer, count, HectonIndirectVegetationRenderer.InstanceDataStride);
+            EnsureStructuredBuffer<Matrix4x4>(ref matrixBuffer, count);
+            EnsureStructuredBuffer<HectonVegetationInstanceData>(ref dataBuffer, count);
             if (matrixBuffer == null || dataBuffer == null)
             {
                 ClearChannel(renderer);
                 return;
             }
 
-            matrixBuffer.SetData(matrices, 0, 0, count);
-            dataBuffer.SetData(metadata, 0, 0, count);
+            GraphicsBufferUploadUtility.UploadNativeArray(matrixBuffer, matrices, count);
+            GraphicsBufferUploadUtility.UploadNativeArray(dataBuffer, metadata, count);
             renderer.BindInstanceBuffer(matrixBuffer, count);
             renderer.BindInstanceDataBuffer(dataBuffer);
             renderer.SetDrawBounds(bounds);
         }
 
-        private void EnsureStructuredBuffer(ref ComputeBuffer buffer, int count, int stride)
+        private void EnsureStructuredBuffer<T>(ref GraphicsBuffer buffer, int count) where T : struct
         {
             if (count <= 0)
             {
@@ -9942,8 +11016,7 @@ namespace Hecton8.World
                 return;
 
             ReleaseBuffer(ref buffer);
-            // COLD ALLOC: ComputeBuffer[count] - streamed vegetation structured payload - owner: HectonMapMagicVegetationBridge
-            buffer = new ComputeBuffer(count, stride, ComputeBufferType.Structured);
+            buffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<T>(count); // COLD ALLOC: GraphicsBuffer[count] - streamed vegetation structured payload - owner: HectonMapMagicVegetationBridge
         }
 
         private ChunkPayload CreateChunkPayloadHeader(TileRuntimeState state, int chunkX, int chunkZ)
@@ -10153,8 +11226,12 @@ namespace Hecton8.World
                 return;
 
             bool evictedPayload = false;
-            while (_chunkPayloadUsedBytes > guardBytes && TryFindChunkPoolEvictionVictim(out int victimIndex, out ChunkKey victimKey))
+            int evictionIterations = 0;
+            while (_chunkPayloadUsedBytes > guardBytes &&
+                   evictionIterations < MaxChunkPoolEvictionIterations &&
+                   TryFindChunkPoolEvictionVictim(out int victimIndex, out ChunkKey victimKey))
             {
+                evictionIterations++;
                 bool hadPayload = _chunkPayloads.TryGetValue(victimKey, out ChunkPayload payload);
                 if (hadPayload)
                 {
@@ -10168,6 +11245,9 @@ namespace Hecton8.World
                 RemoveDesiredChunkAt(victimIndex);
                 evictedPayload |= hadPayload;
             }
+
+            if (_chunkPayloadUsedBytes > guardBytes && evictionIterations >= MaxChunkPoolEvictionIterations)
+                LogLoopGuardHit(nameof(EnforceChunkPoolMemoryGuard), MaxChunkPoolEvictionIterations);
 
             TrimPendingQueueToDesired();
             if (evictedPayload)
@@ -10402,9 +11482,15 @@ namespace Hecton8.World
             long tileKey = PackTileCoord(tileX, tileZ);
             if (_tileStates.TryGetValue(tileKey, out TileRuntimeState state) && state != null)
             {
-                TryFinalizeTileHeightReadback(state, forceComplete: true);
                 InvalidateTileChunks(tileX, tileZ, state.ChunkCountX, state.ChunkCountZ);
-                DisposeTileNativeCaches(state);
+                ClearCorruptionStateForTile(tileX, tileZ);
+                state.PendingRemoval = true;
+
+                if (state.HeightReadbackPending && !TryFinalizeTileHeightReadback(state))
+                    return;
+
+                FinalizeDeferredTileRemoval(tileKey);
+                return;
             }
 
             ClearCorruptionStateForTile(tileX, tileZ);
@@ -10613,23 +11699,121 @@ namespace Hecton8.World
             DisposeNativeArray(ref buffers.FlowVectors);
         }
 
-        private void TryBootstrapExistingTiles()
+        private bool TryBootstrapExistingTiles()
         {
-            if (_tileStates.Count > 0 || mapMagicBridge == null || mapMagicBridge.RuntimeMapMagicObject == null)
-                return;
+            if (_startupBootstrapTileCount > 0 || _startupBootstrapTileCursor > 0)
+                return true;
 
-            TerrainTile[] tiles = mapMagicBridge.RuntimeMapMagicObject.GetComponentsInChildren<TerrainTile>(true); // COLD ALLOC: TerrainTile[] bootstrap snapshot for already-applied tiles - owner: HectonMapMagicVegetationBridge
-            if (tiles == null || tiles.Length == 0)
-                return;
+            if (mapMagicBridge == null || mapMagicBridge.RuntimeMapMagicObject == null)
+                return false;
 
-            for (int i = 0; i < tiles.Length; i++)
+            _startupBootstrapTiles = mapMagicBridge.RuntimeMapMagicObject.GetComponentsInChildren<TerrainTile>(true); // COLD ALLOC: TerrainTile[] deferred bootstrap snapshot for already-applied tiles - owner: HectonMapMagicVegetationBridge
+            _startupBootstrapTileCount = _startupBootstrapTiles != null ? _startupBootstrapTiles.Length : 0;
+            _startupBootstrapTileCursor = 0;
+            return true;
+        }
+
+        private void QueueDeferredStartupWork()
+        {
+            _startupTerrainHoleSyncPending = true;
+            _startupTileBootstrapPending = true;
+            _startupResidencyPending = true;
+            ReleaseDeferredStartupTileSnapshot();
+        }
+
+        private void ResetDeferredStartupWork()
+        {
+            _startupTerrainHoleSyncPending = true;
+            _startupTileBootstrapPending = true;
+            _startupResidencyPending = true;
+            ReleaseDeferredStartupTileSnapshot();
+        }
+
+        private bool TryProgressDeferredStartupWork()
+        {
+            bool hasPendingStartupWork = _startupTerrainHoleSyncPending ||
+                                         _startupTileBootstrapPending ||
+                                         _startupResidencyPending;
+            if (!hasPendingStartupWork)
+                return false;
+
+            if (Application.isPlaying &&
+                BootstrapState.HasActiveInstance &&
+                !BootstrapState.IsGameReady)
             {
-                TerrainTile tile = tiles[i];
+                return true;
+            }
+
+            ResolveRuntimeDependencies();
+
+            if (_startupTerrainHoleSyncPending)
+            {
+                SyncTerrainHoleNativeCache();
+                _startupTerrainHoleSyncPending = false;
+                return true;
+            }
+
+            if (_startupTileBootstrapPending)
+            {
+                if (!TryBootstrapExistingTiles())
+                    return true;
+
+                if (_startupBootstrapTileCount <= 0)
+                {
+                    _startupTileBootstrapPending = false;
+                    ReleaseDeferredStartupTileSnapshot();
+                    return true;
+                }
+
+                int processedCount = ProcessDeferredStartupTileBatch(StartupBootstrapTileBatchSize);
+                if (processedCount > 0)
+                    _startupResidencyPending = true;
+
+                if (_startupBootstrapTileCursor >= _startupBootstrapTileCount)
+                {
+                    _startupTileBootstrapPending = false;
+                    ReleaseDeferredStartupTileSnapshot();
+                }
+
+                return true;
+            }
+
+            if (_startupResidencyPending)
+            {
+                RefreshResidency();
+                _startupResidencyPending = false;
+                return true;
+            }
+
+            return false;
+        }
+
+        private int ProcessDeferredStartupTileBatch(int batchSize)
+        {
+            if (_startupBootstrapTileCount <= 0 || _startupBootstrapTiles == null)
+                return 0;
+
+            int safeBatchSize = Mathf.Max(1, batchSize);
+            int processedCount = 0;
+            while (_startupBootstrapTileCursor < _startupBootstrapTileCount &&
+                   processedCount < safeBatchSize)
+            {
+                TerrainTile tile = _startupBootstrapTiles[_startupBootstrapTileCursor++];
                 if (tile == null || ResolveMainTerrain(tile) == null || IsForeignTile(tile))
                     continue;
 
                 UpsertTileState(tile);
+                processedCount++;
             }
+
+            return processedCount;
+        }
+
+        private void ReleaseDeferredStartupTileSnapshot()
+        {
+            _startupBootstrapTiles = Array.Empty<TerrainTile>();
+            _startupBootstrapTileCount = 0;
+            _startupBootstrapTileCursor = 0;
         }
 
         private void UpsertTileState(TerrainTile tile)
@@ -10666,6 +11850,7 @@ namespace Hecton8.World
             state.Tile = tile;
             state.Terrain = terrain;
             state.TerrainData = terrainData;
+            RefreshTerrainTextureCaches(state, terrainData);
             state.TerrainPosition = terrain.GetPosition();
             state.TerrainSize = terrainData.size;
             state.AlphamapResolution = terrainData.alphamapResolution;
@@ -10737,12 +11922,9 @@ namespace Hecton8.World
             if (_isRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
 
-            tickManager.Register((ITickable)this);
-            tickManager.Register((ISlowTickable)this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
             _isRegistered = true;
         }
 
@@ -10751,12 +11933,8 @@ namespace Hecton8.World
             if (!_isRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-            {
-                tickManager.Unregister((ITickable)this);
-                tickManager.Unregister((ISlowTickable)this);
-            }
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
 
             _isRegistered = false;
         }
@@ -11238,7 +12416,10 @@ namespace Hecton8.World
 
             EnsurePoolBlockCapacity(ref freeBlocks, freeBlockCount + 1);
             int insertIndex = freeBlockCount;
-            while (insertIndex > 0 && offset < freeBlocks[insertIndex - 1].Offset)
+            int insertWatchdog = freeBlockCount + 1;
+            while (insertIndex > 0 &&
+                   offset < freeBlocks[insertIndex - 1].Offset &&
+                   insertWatchdog-- > 0)
             {
                 freeBlocks[insertIndex] = freeBlocks[insertIndex - 1];
                 insertIndex--;
@@ -11248,7 +12429,8 @@ namespace Hecton8.World
             freeBlockCount++;
 
             int mergeIndex = Mathf.Max(0, insertIndex - 1);
-            while (mergeIndex < freeBlockCount - 1)
+            int mergeWatchdog = freeBlockCount + 1;
+            while (mergeIndex < freeBlockCount - 1 && mergeWatchdog-- > 0)
             {
                 PoolBlock current = freeBlocks[mergeIndex];
                 PoolBlock next = freeBlocks[mergeIndex + 1];
@@ -11298,10 +12480,13 @@ namespace Hecton8.World
 
         private void DisposeAllTileNativeCaches()
         {
-            FinalizePendingTileHeightReadbacks(forceComplete: true);
+            FinalizePendingTileHeightReadbacks();
+            TryDisposeDeferredTileCacheReadbacks();
             Dictionary<long, TileRuntimeState>.Enumerator enumerator = _tileStates.GetEnumerator();
             while (enumerator.MoveNext())
-                DisposeTileNativeCaches(enumerator.Current.Value);
+                QueueDeferredTileCacheDisposal(enumerator.Current.Value);
+
+            TryDisposeDeferredTileCacheReadbacks();
         }
 
         private void DisposeTerrainHoleCache()
@@ -11324,6 +12509,47 @@ namespace Hecton8.World
             state.ActiveCacheBufferIndex = 0;
             state.PendingCacheBufferIndex = 0;
             state.HeightReadbackPending = false;
+            state.HeightReadbackRequest = default;
+        }
+
+        private static void QueueDeferredTileCacheDisposal(TileRuntimeState state)
+        {
+            if (state == null)
+                return;
+
+            if (state.HeightReadbackPending && !state.HeightReadbackRequest.done)
+            {
+                s_DeferredTileCacheDisposals.Add(new DeferredTileCacheDisposal
+                {
+                    Request = state.HeightReadbackRequest,
+                    PrimaryCacheBuffer = state.PrimaryCacheBuffer,
+                    SecondaryCacheBuffer = state.SecondaryCacheBuffer
+                });
+
+                state.PrimaryCacheBuffer = default;
+                state.SecondaryCacheBuffer = default;
+                state.ActiveCacheBufferIndex = 0;
+                state.PendingCacheBufferIndex = 0;
+                state.HeightReadbackPending = false;
+                state.HeightReadbackRequest = default;
+                return;
+            }
+
+            DisposeTileNativeCaches(state);
+        }
+
+        private static void TryDisposeDeferredTileCacheReadbacks()
+        {
+            for (int i = s_DeferredTileCacheDisposals.Count - 1; i >= 0; i--)
+            {
+                DeferredTileCacheDisposal disposal = s_DeferredTileCacheDisposals[i];
+                if (!disposal.Request.done)
+                    continue;
+
+                DisposeTileNativeCacheBuffer(ref disposal.PrimaryCacheBuffer);
+                DisposeTileNativeCacheBuffer(ref disposal.SecondaryCacheBuffer);
+                s_DeferredTileCacheDisposals.RemoveAt(i);
+            }
         }
 
         private static void DisposeTileNativeCacheBuffer(ref TileNativeCacheBuffer buffer)
@@ -11439,7 +12665,7 @@ namespace Hecton8.World
 
             if (state.HeightReadbackPending)
             {
-                if (!TryFinalizeTileHeightReadback(state, forceComplete: false))
+                if (!TryFinalizeTileHeightReadback(state))
                     return false;
 
                 InvalidateTileChunks(state.TileX, state.TileZ, state.ChunkCountX, state.ChunkCountZ);
@@ -11453,15 +12679,17 @@ namespace Hecton8.World
             int heightSampleCount = heightResolution * heightResolution;
             int writeBufferIndex = state.ActiveCacheBufferIndex == 0 ? 1 : 0;
             EnsureTileNativeCacheBufferCapacity(state, writeBufferIndex, sampleCount, heightSampleCount);
+            RefreshTerrainTextureCaches(state, terrainData);
             CaptureTileCacheSignature(
-                terrainData,
+                state.AlphamapTextureCache,
+                state.HeightTextureCache,
                 out state.AlphamapTextureCount,
                 out state.CombinedAlphamapHash,
                 out state.CombinedAlphamapUpdateCount,
                 out state.HeightmapHash,
                 out state.HeightmapUpdateCount);
 
-            Texture2D[] alphamapTextures = terrainData.alphamapTextures;
+            Texture2D[] alphamapTextures = state.AlphamapTextureCache;
             TileNativeCacheBuffer writeBuffer = writeBufferIndex == 0
                 ? state.PrimaryCacheBuffer
                 : state.SecondaryCacheBuffer;
@@ -11486,8 +12714,12 @@ namespace Hecton8.World
                 }
             }
 
+            Texture heightTexture = state.HeightTextureCache;
+            if (heightTexture == null)
+                return false;
+
             terrainData.SyncHeightmap();
-            AsyncGPUReadbackRequest request = AsyncGPUReadback.RequestIntoNativeArray(ref writeBuffer.HeightSamplesNative, terrainData.heightmapTexture, 0, TextureFormat.R16);
+            AsyncGPUReadbackRequest request = AsyncGPUReadback.RequestIntoNativeArray(ref writeBuffer.HeightSamplesNative, heightTexture, 0, TextureFormat.R16);
             state.PendingCacheBufferIndex = writeBufferIndex;
             state.HeightReadbackRequest = request;
             state.HeightReadbackPending = true;
@@ -11529,7 +12761,8 @@ namespace Hecton8.World
         }
 
         private static void CaptureTileCacheSignature(
-            TerrainData terrainData,
+            Texture2D[] alphamapTextures,
+            Texture heightTexture,
             out int alphamapTextureCount,
             out int combinedAlphamapHash,
             out uint combinedAlphamapUpdateCount,
@@ -11542,10 +12775,6 @@ namespace Hecton8.World
             heightmapHash = 0;
             heightmapUpdateCount = 0u;
 
-            if (terrainData == null)
-                return;
-
-            Texture2D[] alphamapTextures = terrainData.alphamapTextures;
             if (alphamapTextures != null)
             {
                 alphamapTextureCount = alphamapTextures.Length;
@@ -11563,12 +12792,38 @@ namespace Hecton8.World
                 }
             }
 
-            Texture heightTexture = terrainData.heightmapTexture;
             if (heightTexture == null)
                 return;
 
             heightmapHash = heightTexture.imageContentsHash.GetHashCode();
             heightmapUpdateCount = heightTexture.updateCount;
+        }
+
+        private static void RefreshTerrainTextureCaches(TileRuntimeState state, TerrainData terrainData)
+        {
+            if (state == null || terrainData == null)
+                return;
+
+            int textureCount = Mathf.Max(0, terrainData.alphamapTextureCount);
+            if (textureCount == 0)
+            {
+                state.AlphamapTextureCache = null;
+            }
+            else
+            {
+                Texture2D[] cachedTextures = state.AlphamapTextureCache;
+                if (cachedTextures == null || cachedTextures.Length != textureCount)
+                {
+                    // COLD ALLOC: Texture2D[textureCount] - per-tile alpha texture cache handles for zero-GC mask sampling - owner: HectonMapMagicVegetationBridge
+                    cachedTextures = new Texture2D[textureCount];
+                    state.AlphamapTextureCache = cachedTextures;
+                }
+
+                for (int i = 0; i < textureCount; i++)
+                    cachedTextures[i] = terrainData.GetAlphamapTexture(i);
+            }
+
+            state.HeightTextureCache = terrainData.heightmapTexture;
         }
 
         private void ClearRendererBindings()
@@ -11605,7 +12860,7 @@ namespace Hecton8.World
             ReleaseBuffer(ref _underwaterInstanceDataBuffer);
         }
 
-        private static void ReleaseBuffer(ref ComputeBuffer buffer)
+        private static void ReleaseBuffer(ref GraphicsBuffer buffer)
         {
             if (buffer == null)
                 return;
@@ -11616,16 +12871,28 @@ namespace Hecton8.World
 
         private void DisposeThreatGridState()
         {
-            DisposeNativeArray(ref _threatSamplingChunksNative);
-            DisposeNativeArray(ref _threatSamplingAttractorGridNative);
-            DisposeNativeArray(ref _ecosystemThreatGridCurrentNative);
-            DisposeNativeArray(ref _ecosystemThreatGridNextNative);
-            DisposeNativeArray(ref _ecosystemThreatGridCompressedCurrentNative);
-            DisposeNativeArray(ref _ecosystemThreatGridCompressedNextNative);
-            DisposeNativeArray(ref _ecosystemThreatEchoCurrentNative);
-            DisposeNativeArray(ref _ecosystemThreatEchoNextNative);
-            if (_threatSamplingChunkHashNative.IsCreated)
-                _threatSamplingChunkHashNative.Dispose();
+            JobHandle disposeHandle = default;
+            if (_threatPropagationScheduled)
+                disposeHandle = _threatPropagationHandle;
+            if (_flowFieldScheduled)
+                disposeHandle = CombineOptionalHandles(disposeHandle, _flowFieldHandle);
+            if (_abyssalThermalGridScheduled)
+                disposeHandle = CombineOptionalHandles(disposeHandle, _abyssalThermalGridHandle);
+            if (_abyssalPathScheduled)
+                disposeHandle = CombineOptionalHandles(disposeHandle, _abyssalPathHandle);
+
+            DisposeNativeArray(ref _threatSamplingChunksNative, disposeHandle);
+            DisposeNativeArray(ref _threatSamplingAttractorGridNative, disposeHandle);
+            DisposeNativeArray(ref _ecosystemThreatGridCurrentNative, disposeHandle);
+            DisposeNativeArray(ref _ecosystemThreatGridNextNative, disposeHandle);
+            DisposeNativeArray(ref _ecosystemThreatGridCompressedCurrentNative, disposeHandle);
+            DisposeNativeArray(ref _ecosystemThreatGridCompressedNextNative, disposeHandle);
+            DisposeNativeArray(ref _ecosystemThreatVoxelCurrentNative, disposeHandle);
+            DisposeNativeArray(ref _ecosystemThreatVoxelNextNative, disposeHandle);
+            DisposeNativeArray(ref _ecosystemThreatEchoCurrentNative, disposeHandle);
+            DisposeNativeArray(ref _ecosystemThreatEchoNextNative, disposeHandle);
+            DisposeNativeParallelMultiHashMap(ref _threatSamplingChunkHashFrontNative, disposeHandle);
+            DisposeNativeParallelMultiHashMap(ref _threatSamplingChunkHashBackNative, default);
 
             _threatSamplingChunkCount = 0;
             _threatPropagationHandle = default;
@@ -11639,19 +12906,25 @@ namespace Hecton8.World
             _externalThreatPulseHoldTimer = 0f;
             _ecosystemThreatGridCenter = Vector3.zero;
             _scheduledThreatGridCenter = Vector3.zero;
+            _ecosystemThreatVoxelOrigin = Vector3.zero;
+            _scheduledThreatVoxelOrigin = Vector3.zero;
             _lastThreatPropagationTime = float.NegativeInfinity;
-            _threatSamplingChunkHashNative = default;
+            _threatSamplingChunkHashSwapPending = false;
         }
 
         private void DisposeFlowFieldState()
         {
-            DisposeNativeArray(ref _flowSamplingDensityGridNative);
-            DisposeNativeArray(ref _flowNavSupportGridNative);
-            DisposeNativeArray(ref _ecosystemFlowFieldCurrentNative);
-            DisposeNativeArray(ref _ecosystemFlowFieldNextNative);
+            JobHandle disposeHandle = _flowFieldScheduled ? _flowFieldHandle : default;
+            DisposeNativeArray(ref _flowSamplingDensityGridNative, disposeHandle);
+            DisposeNativeArray(ref _flowNavSupportGridNative, disposeHandle);
+            DisposeNativeArray(ref _ecosystemFlowFieldCurrentNative, disposeHandle);
+            DisposeNativeArray(ref _ecosystemFlowFieldNextNative, disposeHandle);
+            DisposeNativeArray(ref _swarmWakeImpulseNative, disposeHandle);
             _flowFieldHandle = default;
             _flowFieldScheduled = false;
             _flowFieldInitialized = false;
+            _swarmWakeImpulseCount = 0;
+            _swarmWakeImpulseExpireTime = float.NegativeInfinity;
             _ecosystemFlowFieldCenter = Vector3.zero;
             _scheduledFlowFieldCenter = Vector3.zero;
         }
@@ -11665,8 +12938,9 @@ namespace Hecton8.World
 
         private void DisposeThermalGridState()
         {
-            DisposeNativeArray(ref _abyssalThermalGridNative);
-            DisposeNativeArray(ref _abyssalThermalGridNextNative);
+            JobHandle disposeHandle = _abyssalThermalGridScheduled ? _abyssalThermalGridHandle : default;
+            DisposeNativeArray(ref _abyssalThermalGridNative, disposeHandle);
+            DisposeNativeArray(ref _abyssalThermalGridNextNative, disposeHandle);
             _abyssalThermalGridHandle = default;
             _abyssalThermalGridScheduled = false;
             _abyssalThermalGridInitialized = false;
@@ -11680,10 +12954,17 @@ namespace Hecton8.World
         private void DisposeArtificialStructureSnapshot()
         {
             DisposeNativeArray(ref _artificialStructureRecordsNative);
-            if (_artificialStructureHashNative.IsCreated)
-                _artificialStructureHashNative.Dispose();
+            JobHandle disposeHandle = default;
+            if (_threatPropagationScheduled)
+                disposeHandle = _threatPropagationHandle;
+            if (_abyssalPathScheduled)
+                disposeHandle = CombineOptionalHandles(disposeHandle, _abyssalPathHandle);
+
+            DisposeNativeParallelMultiHashMap(ref _artificialStructureHashFrontNative, disposeHandle);
+            DisposeNativeParallelMultiHashMap(ref _artificialStructureHashBackNative, default);
 
             _artificialStructureCount = 0;
+            _artificialStructureHashSwapPending = false;
         }
 
         private void EnsureAbyssalNavGraphHashCapacity(int requiredCapacity)
@@ -11769,17 +13050,16 @@ namespace Hecton8.World
 
         private void DisposeAbyssalPathState()
         {
-            DisposeNativeArray(ref _abyssalPathSnapshotNative);
-            DisposeNativeArray(ref _abyssalPathParentsNative);
-            DisposeNativeArray(ref _abyssalPathGScoreNative);
-            DisposeNativeArray(ref _abyssalPathFScoreNative);
-            DisposeNativeArray(ref _abyssalPathClosedFlagsNative);
-            DisposeNativeArray(ref _abyssalPathHeapNodesNative);
-            DisposeNativeArray(ref _abyssalPathHeapPositionsNative);
-            if (_abyssalPathRawResultNative.IsCreated)
-                _abyssalPathRawResultNative.Dispose();
-            if (_abyssalPathResultNative.IsCreated)
-                _abyssalPathResultNative.Dispose();
+            JobHandle disposeHandle = _abyssalPathScheduled ? _abyssalPathHandle : default;
+            DisposeNativeArray(ref _abyssalPathSnapshotNative, disposeHandle);
+            DisposeNativeArray(ref _abyssalPathParentsNative, disposeHandle);
+            DisposeNativeArray(ref _abyssalPathGScoreNative, disposeHandle);
+            DisposeNativeArray(ref _abyssalPathFScoreNative, disposeHandle);
+            DisposeNativeArray(ref _abyssalPathClosedFlagsNative, disposeHandle);
+            DisposeNativeArray(ref _abyssalPathHeapNodesNative, disposeHandle);
+            DisposeNativeArray(ref _abyssalPathHeapPositionsNative, disposeHandle);
+            DisposeNativeList(ref _abyssalPathRawResultNative, disposeHandle);
+            DisposeNativeList(ref _abyssalPathResultNative, disposeHandle);
             _abyssalPathHandle = default;
             _abyssalPathScheduled = false;
             _abyssalPathCount = 0;
@@ -11789,10 +13069,11 @@ namespace Hecton8.World
 
         private void DisposeHLODRegistryState()
         {
-            DisposeNativeArray(ref _hlodRegistrySnapshotNative);
-            DisposeNativeArray(ref _visibleHlodSnapshotNative);
-            DisposeNativeArray(ref _hlodVisibleFlagsNative);
-            DisposeNativeArray(ref _hlodFrustumPlanesNative);
+            JobHandle disposeHandle = _hlodCullScheduled ? _hlodCullHandle : default;
+            DisposeNativeArray(ref _hlodRegistrySnapshotNative, disposeHandle);
+            DisposeNativeArray(ref _visibleHlodSnapshotNative, disposeHandle);
+            DisposeNativeArray(ref _hlodVisibleFlagsNative, disposeHandle);
+            DisposeNativeArray(ref _hlodFrustumPlanesNative, disposeHandle);
             _hlodCullHandle = default;
             _hlodCullScheduled = false;
             _hlodRegistryCount = 0;
@@ -11801,8 +13082,14 @@ namespace Hecton8.World
 
         private void DisposePoolDefragState()
         {
-            DisposeNativeArray(ref _surfaceDefragMovesNative);
-            DisposeNativeArray(ref _underwaterDefragMovesNative);
+            JobHandle surfaceDisposeHandle = _poolDefragScheduled && _surfaceDefragMoveCount > 0
+                ? _surfacePoolDefragHandle
+                : default;
+            JobHandle underwaterDisposeHandle = _poolDefragScheduled && _underwaterDefragMoveCount > 0
+                ? _underwaterPoolDefragHandle
+                : default;
+            DisposeNativeArray(ref _surfaceDefragMovesNative, surfaceDisposeHandle);
+            DisposeNativeArray(ref _underwaterDefragMovesNative, underwaterDisposeHandle);
             _surfacePoolDefragHandle = default;
             _underwaterPoolDefragHandle = default;
             _poolDefragScheduled = false;

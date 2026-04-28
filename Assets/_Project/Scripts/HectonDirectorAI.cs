@@ -104,7 +104,7 @@ namespace Hecton8.Systems.AI
             SystemDispatcher.EnsureRuntimeInstance();
             if (!_dispatcherRegistered)
             {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
                 _dispatcherRegistered = true;
             }
 
@@ -120,7 +120,7 @@ namespace Hecton8.Systems.AI
 
             if (_dispatcherRegistered)
             {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
                 _dispatcherRegistered = false;
             }
         }
@@ -293,7 +293,7 @@ namespace Hecton8.Systems.AI
                 WorldRuntimeReferenceUtility.TryResolveFaunaDirector(ref faunaDirector);
 
             if (playerCamera == null && playerTransform != null)
-                playerCamera = playerTransform.GetComponentInChildren<Camera>(true);
+                playerCamera = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera : playerTransform.GetComponent<Camera>());
         }
 
         private float UpdateFrameTimeAverage(float deltaTime)
@@ -321,12 +321,31 @@ namespace Hecton8.Systems.AI
         private Vector3 ResolvePlayerVelocity(Vector3 playerPosition, float deltaTime)
         {
             Vector3 velocity = Vector3.zero;
-            if (_hasPreviousPlayerPosition && deltaTime > 0f)
-                velocity = (playerPosition - _previousPlayerPosition) / deltaTime;
+            if (_hasPreviousPlayerPosition && TryResolveSafeReciprocal(deltaTime, out float inverseDeltaTime))
+                velocity = SanitizeFiniteVector((playerPosition - _previousPlayerPosition) * inverseDeltaTime);
 
             _previousPlayerPosition = playerPosition;
             _hasPreviousPlayerPosition = true;
             return velocity;
+        }
+
+        private static bool TryResolveSafeReciprocal(float value, out float reciprocal)
+        {
+            if (!float.IsFinite(value) || Mathf.Abs(value) <= 0.0001f)
+            {
+                reciprocal = 0f;
+                return false;
+            }
+
+            reciprocal = 1f / value;
+            return float.IsFinite(reciprocal);
+        }
+
+        private static Vector3 SanitizeFiniteVector(Vector3 value)
+        {
+            return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z)
+                ? value
+                : Vector3.zero;
         }
 
         private Vector3 ResolvePlayerForward()

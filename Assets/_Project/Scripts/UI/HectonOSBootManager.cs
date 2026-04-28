@@ -14,7 +14,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Hecton OS Boot Manager")]
-    public sealed class HectonOSBootManager : MonoBehaviour, ITickable
+    public sealed class HectonOSBootManager : MonoBehaviour, ITickable, IUpdatable
     {
         private enum BootReason : byte
         {
@@ -403,11 +403,7 @@ namespace Hecton8.UI
             if (_tickRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register(this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _tickRegistered = true;
         }
 
@@ -416,10 +412,7 @@ namespace Hecton8.UI
             if (!_tickRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister(this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _tickRegistered = false;
         }
 
@@ -517,11 +510,11 @@ namespace Hecton8.UI
 
         private static Canvas ResolveTargetCanvas()
         {
-            SuitHUDV4CanvasOverlay overlay = Object.FindAnyObjectByType<SuitHUDV4CanvasOverlay>();
+            SuitHUDV4CanvasOverlay overlay = SuitHUDV4CanvasOverlay.ActiveRuntimeInstance;
             if (overlay != null && overlay.TargetCanvas != null)
                 return overlay.TargetCanvas;
 
-            return Object.FindAnyObjectByType<Canvas>();
+            return (SuitHUDV4CanvasOverlay.ActiveRuntimeInstance != null ? SuitHUDV4CanvasOverlay.ActiveRuntimeInstance.GetComponent<Canvas>() : null);
         }
 
         private static string ResolveLocalized(LocalizationManager manager, string key, string fallback)

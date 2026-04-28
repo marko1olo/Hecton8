@@ -1,11 +1,10 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
-
-[InitializeOnLoad]
 public class PhysicsCreatorUpdater
 {
+	private const string SessionCleanupKey = "PhysicsCreatorUpdater.CleanupHandled";
 	private static bool _queued;
 
 	private class SearchQuery
@@ -22,6 +21,10 @@ public class PhysicsCreatorUpdater
 
 	static PhysicsCreatorUpdater()
 	{
+		if (SessionState.GetBool(SessionCleanupKey, false))
+			return;
+
+		SessionState.SetBool(SessionCleanupKey, true);
 		QueueCleanupScan();
 	}
 

@@ -51,7 +51,7 @@ namespace Hecton8.World
         public bool TryComplete(out ScatterSimulationResult result)
         {
             result = default;
-            if (!IsInitialized || !_evaluator.IsJobActive)
+            if (!IsInitialized || !_evaluator.IsJobActive || !_evaluator.IsJobCompleted)
                 return false;
 
             int candidateCount = _evaluator.CompleteAndGetResults(out NativeArray<ScatterSimulationCandidate> candidates);

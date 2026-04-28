@@ -50,6 +50,7 @@ namespace Hecton8.Caves
         private const int MaxTerrainHoleHandleCount = 8;
         private const int MaxColliderChunkCount = 8;
         private const int MaxPlasmaCutSteps = 24;
+        private const int MaxQueuedRebuildPassesPerKick = 4;
         private const float MinPlasmaCutPower = 0.02f;
         private const byte DefaultDeltaMaterialId = 0;
 
@@ -133,6 +134,15 @@ namespace Hecton8.Caves
                 cornerZ * voxelStep);
             cornerWorld = cachedTransform.TransformPoint(localCorner);
             return true;
+        }
+
+        /// <summary>
+        /// Tentacle / appendage helper alias for the nearest voxel-corner query.
+        /// Kept on the runtime volume owner so gameplay code does not reach into voxel build internals.
+        /// </summary>
+        public bool TryGetNearestCorner(Vector3 worldPosition, Vector3 worldNormal, out Vector3 cornerWorld)
+        {
+            return TryResolveNearestVoxelCorner(worldPosition, worldNormal, out cornerWorld);
         }
 
         /// <summary>LOD level used to build this runtime volume.</summary>
@@ -744,6 +754,7 @@ namespace Hecton8.Caves
         private void QueueRebuild()
         {
             _rebuildQueued = true;
+            VoxelDynamicNavGridRuntime.QueueDirtyVolume(this);
             if (_bakeState == VoxelBakeState.Complete || _bakeState == VoxelBakeState.Idle)
                 SetBakeState(VoxelBakeState.Pending);
 
@@ -758,10 +769,14 @@ namespace Hecton8.Caves
             if (_rebuildRunning)
                 return;
 
+            bool rescheduleNextFrame = false;
             _rebuildRunning = true;
             try
             {
-                while (_rebuildQueued && MatchesRuntimeStamp(expectedRuntimeStamp))
+                int rebuildWatchdog = MaxQueuedRebuildPassesPerKick;
+                while (_rebuildQueued &&
+                       MatchesRuntimeStamp(expectedRuntimeStamp) &&
+                       rebuildWatchdog-- > 0)
                 {
                     _rebuildQueued = false;
                     SetBakeState(VoxelBakeState.Baking);
@@ -774,6 +789,13 @@ namespace Hecton8.Caves
 
                     SetBakeState(_rebuildQueued ? VoxelBakeState.Pending : VoxelBakeState.Complete);
                 }
+
+                if (_rebuildQueued && MatchesRuntimeStamp(expectedRuntimeStamp))
+                {
+                    SetBakeState(VoxelBakeState.Pending);
+                    await Awaitable.NextFrameAsync();
+                    rescheduleNextFrame = true;
+                }
             }
             catch (Exception ex)
             {
@@ -784,6 +806,9 @@ namespace Hecton8.Caves
             {
                 _rebuildRunning = false;
             }
+
+            if (rescheduleNextFrame && MatchesRuntimeStamp(_runtimeStamp))
+                _ = ProcessQueuedRebuildsAsync(_runtimeStamp);
         }
 
         private void UnregisterTerrainHoles()
@@ -814,6 +839,7 @@ namespace Hecton8.Caves
         private void OnDestroy()
         {
             _deltaProcessor?.UnregisterVolume(this);
+            VoxelDynamicNavGridRuntime.UnregisterVolume(this);
             UnregisterTerrainHoles();
             ResetColliderChunks(true);
             _runtimeStamp++;

@@ -255,12 +255,12 @@ namespace Hecton8.Systems.AI
                 (int)math.floor(position.x),
                 (int)math.floor(position.y),
                 (int)math.floor(position.z));
-            uint hash = WangHash((uint)(grid.x * 73856093));
-            hash ^= WangHash((uint)(grid.y * 19349663));
-            hash ^= WangHash((uint)(grid.z * 83492791));
-            hash ^= WangHash((uint)(sequenceSalt * 1664525));
-            hash ^= WangHash((uint)(phase * 1013904223));
-            hash ^= WangHash((uint)(activeEnemyCount * 214013));
+            uint hash = WangHash(unchecked((uint)grid.x) * 73856093u);
+            hash ^= WangHash(unchecked((uint)grid.y) * 19349663u);
+            hash ^= WangHash(unchecked((uint)grid.z) * 83492791u);
+            hash ^= WangHash(unchecked((uint)sequenceSalt) * 1664525u);
+            hash ^= WangHash(unchecked((uint)phase) * 1013904223u);
+            hash ^= WangHash(unchecked((uint)activeEnemyCount) * 214013u);
             return hash == 0u ? 1u : hash;
         }
 
@@ -359,7 +359,7 @@ namespace Hecton8.Systems.AI
 
             _frameIndex++;
             _jobOutput[0] = default;
-            _activeJobHandle = job.Schedule();
+            _activeJobHandle = job.Schedule(1, 1);
             _jobScheduled = true;
         }
 
@@ -562,8 +562,8 @@ namespace Hecton8.Systems.AI
         }
     }
 
-    [BurstCompile(CompileSynchronously = true)]
-    internal struct EncounterDirectorJob : IJob
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast)]
+    internal struct EncounterDirectorJob : IJobParallelFor
     {
         private const float StressTau = 8f;
         private const float LoadShedThresholdMs = 20f;
@@ -600,8 +600,11 @@ namespace Hecton8.Systems.AI
         public float SurfaceWorldY;
         public NativeArray<EncounterJobOutput> Output;
 
-        public void Execute()
+        public void Execute(int index)
         {
+            if (index != 0)
+                return;
+
             EncounterDirectorState state = CurrentState;
             EncounterJobOutput output = default;
 

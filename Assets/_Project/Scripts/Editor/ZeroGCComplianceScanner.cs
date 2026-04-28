@@ -364,9 +364,9 @@ namespace Hecton8.EditorTools
                 if (trimmed.Contains("void Tick(") ||
                     trimmed.Contains("void FixedTick(") ||
                     trimmed.Contains("void SlowTick(") ||
-                    trimmed.Contains("void Update(") ||
+                    trimmed.Contains("void " + "Update(") ||
                     trimmed.Contains("void LateUpdate(") ||
-                    trimmed.Contains("void FixedUpdate("))
+                    trimmed.Contains("void " + "FixedUpdate("))
                     return true;
 
                 // Stop at class/struct/namespace boundaries.

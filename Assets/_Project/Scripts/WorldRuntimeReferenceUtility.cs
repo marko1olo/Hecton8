@@ -1,8 +1,10 @@
 using Hecton8.AI;
 using Hecton8.Core;
 using Hecton8.Environment;
+using System.Collections.Generic;
 using System;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Hecton8.World
 {
@@ -17,6 +19,8 @@ namespace Hecton8.World
         private static MapMagicBridge _CachedMapMagicBridge;
         private static ScavengePopulator _CachedScavengePopulator;
         private static HectonMapMagicVegetationBridge _CachedVegetationBridge;
+        // COLD ALLOC: List<GameObject>[32] — loaded-scene root traversal buffer for deterministic scene-path resolution — owner: WorldRuntimeReferenceUtility
+        private static readonly List<GameObject> _SceneRootBuffer = new List<GameObject>(32);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -25,6 +29,7 @@ namespace Hecton8.World
             _CachedMapMagicBridge = null;
             _CachedScavengePopulator = null;
             _CachedVegetationBridge = null;
+            _SceneRootBuffer.Clear();
         }
 
         public static bool TryResolvePlayerTransform(ref Transform target)
@@ -70,6 +75,18 @@ namespace Hecton8.World
             return target != null;
         }
 
+        public static bool TryResolveScenePath(ref Transform target, string scenePath)
+        {
+            if (target != null)
+                return true;
+
+            if (string.IsNullOrWhiteSpace(scenePath))
+                return false;
+
+            target = ResolveScenePath(scenePath);
+            return target != null;
+        }
+
         public static bool TryResolveSceneObject<T>(ref T target, string relativePath) where T : Component
         {
             if (target != null)
@@ -94,6 +111,30 @@ namespace Hecton8.World
 
             target = transform.gameObject;
             return target != null;
+        }
+
+        public static bool TryResolveScenePath(ref GameObject target, string scenePath)
+        {
+            if (target != null)
+                return true;
+
+            Transform transform = null;
+            if (!TryResolveScenePath(ref transform, scenePath) || transform == null)
+                return false;
+
+            target = transform.gameObject;
+            return true;
+        }
+
+        public static bool TryResolveManagersRoot(ref GameObject target)
+        {
+            if (target != null)
+                return true;
+
+            if (TryResolveScenePath(ref target, "[MANAGERS]"))
+                return true;
+
+            return TryResolveScenePath(ref target, "--- SYSTEMS ---");
         }
 
         public static bool TryResolveBiomeSamplerCache(ref BiomeSamplerCache target)
@@ -298,6 +339,68 @@ namespace Hecton8.World
             if (target != null)
                 _CachedScavengePopulator = target;
             return target != null;
+        }
+
+        private static Transform ResolveScenePath(string scenePath)
+        {
+            int segmentStart = 0;
+            string rootSegment = ReadNextScenePathSegment(scenePath, ref segmentStart);
+            if (string.IsNullOrEmpty(rootSegment))
+                return null;
+
+            Transform current = FindLoadedSceneRoot(rootSegment);
+            while (current != null && segmentStart < scenePath.Length)
+            {
+                string segment = ReadNextScenePathSegment(scenePath, ref segmentStart);
+                if (string.IsNullOrEmpty(segment))
+                    continue;
+
+                current = current.Find(segment);
+            }
+
+            return current;
+        }
+
+        private static Transform FindLoadedSceneRoot(string rootSegment)
+        {
+            for (int sceneIndex = 0; sceneIndex < SceneManager.sceneCount; sceneIndex++)
+            {
+                Scene scene = SceneManager.GetSceneAt(sceneIndex);
+                if (!scene.IsValid() || !scene.isLoaded)
+                    continue;
+
+                _SceneRootBuffer.Clear();
+                scene.GetRootGameObjects(_SceneRootBuffer);
+                for (int rootIndex = 0; rootIndex < _SceneRootBuffer.Count; rootIndex++)
+                {
+                    GameObject root = _SceneRootBuffer[rootIndex];
+                    if (root != null && string.Equals(root.name, rootSegment, StringComparison.Ordinal))
+                        return root.transform;
+                }
+            }
+
+            return null;
+        }
+
+        private static string ReadNextScenePathSegment(string scenePath, ref int segmentStart)
+        {
+            while (segmentStart < scenePath.Length && scenePath[segmentStart] == '/')
+                segmentStart++;
+
+            if (segmentStart >= scenePath.Length)
+                return null;
+
+            int separatorIndex = scenePath.IndexOf('/', segmentStart);
+            if (separatorIndex < 0)
+            {
+                string finalSegment = scenePath.Substring(segmentStart);
+                segmentStart = scenePath.Length;
+                return finalSegment;
+            }
+
+            string segment = scenePath.Substring(segmentStart, separatorIndex - segmentStart);
+            segmentStart = separatorIndex + 1;
+            return segment;
         }
     }
 }

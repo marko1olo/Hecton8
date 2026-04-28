@@ -1,0 +1,84 @@
+#pragma kernel ProjectCaustics
+
+RWTexture2D<float> _HectonCausticsOutput;
+
+float4 _HectonCausticsSimulationParamsA;
+float4 _HectonCausticsSimulationParamsB;
+float4 _HectonCausticsSimulationParamsC;
+float4 _HectonCausticsTexelSize;
+
+float2 Hash22(float2 p)
+{
+    float3 p3 = frac(float3(p.xyx) * float3(0.1031, 0.1030, 0.0973));
+    p3 += dot(p3, p3.yzx + 33.33);
+    return frac((p3.xx + p3.yz) * p3.zy);
+}
+
+float VoronoiRidge(float2 uv, float cellDensity, float timePhase)
+{
+    float2 domain = uv * cellDensity;
+    float2 baseCell = floor(domain);
+    float2 fracCell = frac(domain);
+    float nearest = 9999.0;
+    float secondNearest = 9999.0;
+
+    [unroll]
+    for (int y = -1; y <= 1; y++)
+    {
+        [unroll]
+        for (int x = -1; x <= 1; x++)
+        {
+            float2 offset = float2(x, y);
+            float2 cell = baseCell + offset;
+            float2 jitter = Hash22(cell);
+            float2 animatedPoint = offset + jitter - fracCell;
+            animatedPoint += float2(
+                sin((jitter.x + timePhase) * 6.2831853),
+                cos((jitter.y + timePhase * 1.37) * 6.2831853)) * 0.12;
+
+            float distanceSq = dot(animatedPoint, animatedPoint);
+            if (distanceSq < nearest)
+            {
+                secondNearest = nearest;
+                nearest = distanceSq;
+            }
+            else if (distanceSq < secondNearest)
+            {
+                secondNearest = distanceSq;
+            }
+        }
+    }
+
+    float nearestDistance = sqrt(nearest);
+    float secondNearestDistance = sqrt(secondNearest);
+    return saturate(secondNearestDistance - nearestDistance);
+}
+
+[numthreads(8, 8, 1)]
+void ProjectCaustics(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint width;
+    uint height;
+    _HectonCausticsOutput.GetDimensions(width, height);
+    if (dispatchThreadId.x >= width || dispatchThreadId.y >= height)
+        return;
+
+    float2 texelSize = _HectonCausticsTexelSize.xy;
+    float2 uv = (float2(dispatchThreadId.xy) + 0.5) * texelSize;
+
+    float primaryDensity = max(_HectonCausticsSimulationParamsA.x, 0.5);
+    float secondaryDensity = max(_HectonCausticsSimulationParamsA.y, primaryDensity);
+    float primarySpeed = _HectonCausticsSimulationParamsA.z;
+    float secondarySpeed = _HectonCausticsSimulationParamsA.w;
+    float sharpness = max(_HectonCausticsSimulationParamsB.x, 0.1);
+    float secondaryWeight = saturate(_HectonCausticsSimulationParamsB.y);
+    float timeValue = _HectonCausticsSimulationParamsB.z;
+
+    float primaryLayer = VoronoiRidge(uv + float2(timeValue * primarySpeed, -timeValue * primarySpeed * 0.61), primaryDensity, timeValue * primarySpeed);
+    float secondaryLayer = VoronoiRidge(uv + float2(-timeValue * secondarySpeed * 0.73, timeValue * secondarySpeed), secondaryDensity, timeValue * secondarySpeed + 17.0);
+    float combined = lerp(primaryLayer, max(primaryLayer, secondaryLayer), secondaryWeight);
+    combined = pow(saturate(combined * 2.3), sharpness);
+    combined = saturate(combined * 1.35);
+
+    _HectonCausticsOutput[dispatchThreadId.xy] = combined;
+}

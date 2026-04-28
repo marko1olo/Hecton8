@@ -1,0 +1,14 @@
+private void RemoveTileState(int tileX, int tileZ)
+{
+    long tileKey = PackTileCoord(tileX, tileZ);
+    if (_tileStates.TryGetValue(tileKey, out TileRuntimeState state) && state != null)
+    {
+        TryFinalizeTileHeightReadback(state, forceComplete: true);
+        InvalidateTileChunks(tileX, tileZ, state.ChunkCountX, state.ChunkCountZ);
+        DisposeTileNativeCaches(state);
+    }
+
+    ClearCorruptionStateForTile(tileX, tileZ);
+    _tileStates.Remove(tileKey);
+    _activeSetDirty = true;
+}

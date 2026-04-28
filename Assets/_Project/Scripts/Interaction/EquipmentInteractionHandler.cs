@@ -1,8 +1,8 @@
 using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.Gameplay;
-using Hecton8.World;
 using Unity.Collections;
+using Unity.Jobs;
 using UnityEngine;
 
 namespace Hecton8.Interaction
@@ -12,29 +12,44 @@ namespace Hecton8.Interaction
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9935)]
-    public sealed class EquipmentInteractionHandler : MonoBehaviour, IInteractionSignalService
+    public sealed class EquipmentInteractionHandler : MonoBehaviour, IInteractionSignalService, IUpdatable
     {
         private const int MaxQueuedSignals = 256;
-        private const int MaxRayHits = 8;
-        private const int MaxSpatialHits = 16;
+        private const int MaxQueuedRayRequests = 64;
+        private const int MinCommandsPerJob = 1;
         private const float MinDirectionSqr = 0.0001f;
         private const float MinHitDistance = 0.05f;
-        private const float MaxBroadPhaseRadius = 12f;
 
         private static EquipmentInteractionHandler _instance;
 
-        // COLD ALLOC: RaycastHit[8] - shared narrow-phase beam query buffer - owner: EquipmentInteractionHandler
-        private readonly RaycastHit[] _raycastBuffer = new RaycastHit[MaxRayHits];
-        // COLD ALLOC: SpatialQueryHit[16] - shared broad-phase tool contact buffer - owner: EquipmentInteractionHandler
-        private readonly SpatialQueryHit[] _spatialBuffer = new SpatialQueryHit[MaxSpatialHits];
         // COLD ALLOC: Collider[256] - queued target side-channel aligned with the native interaction queue - owner: EquipmentInteractionHandler
         private readonly Collider[] _queuedTargetColliders = new Collider[MaxQueuedSignals];
+        // COLD ALLOC: ulong[64] - requester ids for the writable raycast staging lane - owner: EquipmentInteractionHandler
+        private readonly ulong[] _stagingRequesterIds = new ulong[MaxQueuedRayRequests];
+        // COLD ALLOC: ulong[64] - requester ids paired with the scheduled raycast lane - owner: EquipmentInteractionHandler
+        private readonly ulong[] _scheduledRequesterIds = new ulong[MaxQueuedRayRequests];
+        // COLD ALLOC: ulong[64] - requester ids paired with completed frame-latent raycast results - owner: EquipmentInteractionHandler
+        private readonly ulong[] _completedRequesterIds = new ulong[MaxQueuedRayRequests];
+        // COLD ALLOC: RaycastHit[64] - completed frame-latent tool raycast results - owner: EquipmentInteractionHandler
+        private readonly RaycastHit[] _completedHits = new RaycastHit[MaxQueuedRayRequests];
+        // COLD ALLOC: bool[64] - validity bits for completed frame-latent tool raycast results - owner: EquipmentInteractionHandler
+        private readonly bool[] _completedHasHit = new bool[MaxQueuedRayRequests];
 
         private NativeQueue<InteractionSignal> _signalQueue;
+        private NativeArray<RaycastCommand> _scheduledCommands;
+        private NativeArray<RaycastHit> _scheduledHits;
+        private NativeArray<RaycastCommand> _stagingCommands;
+        private NativeArray<RaycastHit> _stagingHits;
+        private JobHandle _scheduledRaycastHandle;
         private int _queueHead;
         private int _queueTail;
         private int _queueCount;
+        private int _stagedRequestCount;
+        private int _scheduledRequestCount;
+        private int _completedResultCount;
+        private bool _scheduledRaycastActive;
         private bool _isInitialized;
+        private bool _dispatcherRegistered;
 
         /// <inheritdoc />
         public bool IsInitialized => _isInitialized;
@@ -67,7 +82,14 @@ namespace Hecton8.Interaction
             if (_isInitialized)
                 return;
 
+            SystemDispatcher.EnsureRuntimeInstance();
             GlobalRegistry.RegisterInteractionSignalService(this);
+            if (!_dispatcherRegistered)
+            {
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
+                _dispatcherRegistered = true;
+            }
+
             _isInitialized = true;
         }
 
@@ -85,42 +107,22 @@ namespace Hecton8.Interaction
         }
 
         /// <inheritdoc />
-        public bool TryRaycastPrimary(Vector3 origin, Vector3 direction, float range, int layerMask, out RaycastHit hit)
+        public bool TryRaycastPrimary(ulong requesterId, Vector3 origin, Vector3 direction, float range, int layerMask, QueryTriggerInteraction queryTriggerInteraction, out RaycastHit hit)
         {
             hit = default;
-            if (range <= 0f || direction.sqrMagnitude < MinDirectionSqr)
-                return false;
+            bool hasCompletedHit = TryGetCompletedRaycast(requesterId, out hit);
+            if (requesterId == 0UL || range <= 0f || direction.sqrMagnitude < MinDirectionSqr)
+                return hasCompletedHit;
 
             Vector3 normalizedDirection = direction.normalized;
-            WorldSpatialHashGrid.CollectContactsNonAlloc(
-                origin,
-                Mathf.Min(range * 0.5f, MaxBroadPhaseRadius),
-                SpatialTargetKind.Resource | SpatialTargetKind.Bioform | SpatialTargetKind.Module,
-                _spatialBuffer);
+            QueuePrimaryRaycast(requesterId, origin, normalizedDirection, range, layerMask, queryTriggerInteraction);
+            return hasCompletedHit;
+        }
 
-            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
-                origin,
-                normalizedDirection,
-                _raycastBuffer,
-                range,
-                layerMask,
-                QueryTriggerInteraction.Ignore);
-
-            if (hitCount <= 0)
-                return false;
-
-            SortRayHitsByDistance(hitCount);
-            for (int i = 0; i < hitCount; i++)
-            {
-                RaycastHit candidate = _raycastBuffer[i];
-                if (!IsValidHit(origin, normalizedDirection, range, layerMask, candidate))
-                    continue;
-
-                hit = candidate;
-                return true;
-            }
-
-            return false;
+        /// <inheritdoc />
+        public void Tick(float deltaTime)
+        {
+            CompleteScheduledRaycasts();
         }
 
         /// <inheritdoc />
@@ -128,8 +130,10 @@ namespace Hecton8.Interaction
         {
             if (_signalQueue.IsCreated)
             {
-                while (_signalQueue.TryDequeue(out _))
+                int drainIterations = 0;
+                while (drainIterations < MaxQueuedSignals && _signalQueue.TryDequeue(out _))
                 {
+                    drainIterations++;
                 }
             }
 
@@ -154,6 +158,16 @@ namespace Hecton8.Interaction
                 _signalQueue = new NativeQueue<InteractionSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<InteractionSignal>(Persistent) - deferred interaction signal bus - owner: EquipmentInteractionHandler
             }
 
+            if (!_scheduledCommands.IsCreated)
+            {
+                _scheduledCommands = new NativeArray<RaycastCommand>(MaxQueuedRayRequests, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastCommand>[64] - scheduled tool raycast lane - owner: EquipmentInteractionHandler
+                _scheduledHits = new NativeArray<RaycastHit>(MaxQueuedRayRequests, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[64] - scheduled tool raycast results - owner: EquipmentInteractionHandler
+                _stagingCommands = new NativeArray<RaycastCommand>(MaxQueuedRayRequests, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastCommand>[64] - writable tool raycast staging lane - owner: EquipmentInteractionHandler
+                _stagingHits = new NativeArray<RaycastHit>(MaxQueuedRayRequests, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[64] - writable tool raycast staging results - owner: EquipmentInteractionHandler
+                ResetCommandLane(_scheduledCommands);
+                ResetCommandLane(_stagingCommands);
+            }
+
             if (Application.isPlaying)
             {
                 if (transform.parent != null)
@@ -166,6 +180,7 @@ namespace Hecton8.Interaction
         private void LateUpdate()
         {
             FlushSignals();
+            ScheduleStagedRaycasts();
         }
 
         private void OnDestroy()
@@ -176,9 +191,17 @@ namespace Hecton8.Interaction
                 _isInitialized = false;
             }
 
+            if (_dispatcherRegistered)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
+                _dispatcherRegistered = false;
+            }
+
             ClearQueuedSignals();
             if (_signalQueue.IsCreated)
                 _signalQueue.Dispose();
+
+            DisposeRaycastBuffers();
 
             if (_instance == this)
                 _instance = null;
@@ -186,8 +209,12 @@ namespace Hecton8.Interaction
 
         private void FlushSignals()
         {
-            while (_queueCount > 0 && _signalQueue.TryDequeue(out InteractionSignal signal))
+            int processedCount = 0;
+            while (_queueCount > 0 &&
+                   processedCount < MaxQueuedSignals &&
+                   _signalQueue.TryDequeue(out InteractionSignal signal))
             {
+                processedCount++;
                 Collider targetCollider = _queuedTargetColliders[_queueHead];
                 _queuedTargetColliders[_queueHead] = null;
                 _queueHead = (_queueHead + 1) % MaxQueuedSignals;
@@ -299,20 +326,178 @@ namespace Hecton8.Interaction
             return toHit.sqrMagnitude > 0.0001f;
         }
 
-        private void SortRayHitsByDistance(int hitCount)
+        private void QueuePrimaryRaycast(ulong requesterId, Vector3 origin, Vector3 direction, float range, int layerMask, QueryTriggerInteraction queryTriggerInteraction)
         {
-            for (int i = 1; i < hitCount; i++)
+            int requestIndex = FindStagedRequestIndex(requesterId);
+            if (requestIndex < 0)
             {
-                RaycastHit key = _raycastBuffer[i];
-                int j = i - 1;
-                while (j >= 0 && _raycastBuffer[j].distance > key.distance)
-                {
-                    _raycastBuffer[j + 1] = _raycastBuffer[j];
-                    j--;
-                }
+                if (_stagedRequestCount >= MaxQueuedRayRequests)
+                    return;
 
-                _raycastBuffer[j + 1] = key;
+                requestIndex = _stagedRequestCount;
+                _stagingRequesterIds[_stagedRequestCount] = requesterId;
+                _stagedRequestCount++;
             }
+
+            _stagingCommands[requestIndex] = CreateRaycastCommand(origin, direction, range, layerMask, queryTriggerInteraction);
+        }
+
+        private bool TryGetCompletedRaycast(ulong requesterId, out RaycastHit hit)
+        {
+            hit = default;
+            if (requesterId == 0UL)
+                return false;
+
+            for (int i = 0; i < _completedResultCount; i++)
+            {
+                if (_completedRequesterIds[i] != requesterId)
+                    continue;
+
+                if (!_completedHasHit[i])
+                    return false;
+
+                hit = _completedHits[i];
+                return true;
+            }
+
+            return false;
+        }
+
+        private int FindStagedRequestIndex(ulong requesterId)
+        {
+            for (int i = 0; i < _stagedRequestCount; i++)
+            {
+                if (_stagingRequesterIds[i] == requesterId)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private void CompleteScheduledRaycasts()
+        {
+            if (!_scheduledRaycastActive || !_scheduledRaycastHandle.IsCompleted)
+                return;
+
+            _scheduledRaycastHandle.Complete();
+            _completedResultCount = _scheduledRequestCount;
+
+            for (int i = 0; i < _scheduledRequestCount; i++)
+            {
+                RaycastCommand command = _scheduledCommands[i];
+                RaycastHit candidate = _scheduledHits[i];
+                int layerMask = command.queryParameters.layerMask;
+                _completedRequesterIds[i] = _scheduledRequesterIds[i];
+                _completedHasHit[i] = IsValidHit(command.from, command.direction, command.distance, layerMask, candidate);
+                _completedHits[i] = _completedHasHit[i] ? candidate : default;
+                _scheduledRequesterIds[i] = 0UL;
+            }
+
+            for (int i = _scheduledRequestCount; i < MaxQueuedRayRequests; i++)
+            {
+                _completedRequesterIds[i] = 0UL;
+                _completedHasHit[i] = false;
+                _completedHits[i] = default;
+            }
+
+            _scheduledRequestCount = 0;
+            _scheduledRaycastActive = false;
+            ResetCommandLane(_scheduledCommands);
+        }
+
+        private void ScheduleStagedRaycasts()
+        {
+            if (_scheduledRaycastActive || _stagedRequestCount <= 0)
+                return;
+
+            for (int i = _stagedRequestCount; i < MaxQueuedRayRequests; i++)
+            {
+                _stagingCommands[i] = CreateInvalidRaycastCommand();
+                _stagingRequesterIds[i] = 0UL;
+            }
+
+            _scheduledRaycastHandle = RaycastCommand.ScheduleBatch(_stagingCommands, _stagingHits, MinCommandsPerJob, default);
+            _scheduledRaycastActive = true;
+            _scheduledRequestCount = _stagedRequestCount;
+
+            NativeArray<RaycastCommand> scheduledCommands = _scheduledCommands;
+            _scheduledCommands = _stagingCommands;
+            _stagingCommands = scheduledCommands;
+
+            NativeArray<RaycastHit> scheduledHits = _scheduledHits;
+            _scheduledHits = _stagingHits;
+            _stagingHits = scheduledHits;
+
+            System.Array.Copy(_stagingRequesterIds, _scheduledRequesterIds, MaxQueuedRayRequests);
+            System.Array.Clear(_stagingRequesterIds, 0, _stagingRequesterIds.Length);
+
+            _stagedRequestCount = 0;
+        }
+
+        private void DisposeRaycastBuffers()
+        {
+            if (_scheduledCommands.IsCreated)
+            {
+                if (_scheduledRaycastActive)
+                    _scheduledCommands.Dispose(_scheduledRaycastHandle);
+                else
+                    _scheduledCommands.Dispose();
+
+                _scheduledCommands = default;
+            }
+
+            if (_scheduledHits.IsCreated)
+            {
+                if (_scheduledRaycastActive)
+                    _scheduledHits.Dispose(_scheduledRaycastHandle);
+                else
+                    _scheduledHits.Dispose();
+
+                _scheduledHits = default;
+            }
+
+            if (_stagingCommands.IsCreated)
+            {
+                _stagingCommands.Dispose();
+                _stagingCommands = default;
+            }
+
+            if (_stagingHits.IsCreated)
+            {
+                _stagingHits.Dispose();
+                _stagingHits = default;
+            }
+        }
+
+        private static RaycastCommand CreateRaycastCommand(Vector3 origin, Vector3 direction, float range, int layerMask, QueryTriggerInteraction queryTriggerInteraction)
+        {
+            return new RaycastCommand
+            {
+                from = origin,
+                direction = direction,
+                distance = range,
+                queryParameters = new QueryParameters
+                {
+                    layerMask = layerMask,
+                    hitTriggers = queryTriggerInteraction,
+                    hitBackfaces = false,
+                    hitMultipleFaces = false
+                }
+            };
+        }
+
+        private static RaycastCommand CreateInvalidRaycastCommand()
+        {
+            return CreateRaycastCommand(Vector3.zero, Vector3.forward, 0f, 0, QueryTriggerInteraction.Ignore);
+        }
+
+        private static void ResetCommandLane(NativeArray<RaycastCommand> commands)
+        {
+            if (!commands.IsCreated)
+                return;
+
+            for (int i = 0; i < commands.Length; i++)
+                commands[i] = CreateInvalidRaycastCommand();
         }
     }
 }

@@ -74,6 +74,15 @@ namespace Hecton8.Visor
     public sealed class SpectrumSystem : MonoBehaviour, ITickable
     {
         private const int SonarRevealMaxContacts = 24;
+        private const int PassiveRadarAzimuthSectorCount = 8;
+        private const int PassiveRadarElevationSectorCount = 4;
+        private const int PassiveRadarSectorCount = PassiveRadarAzimuthSectorCount * PassiveRadarElevationSectorCount;
+        private const int PassiveRadarSourceBudget = 8;
+        private const int PassiveRadarAutoGainHistoryLength = 30;
+        private const int PassiveRadarSlowTickHz = 10;
+        private const float PassiveRadarTickIntervalSeconds = 1f / PassiveRadarSlowTickHz;
+        private const float PassiveRadarDecayFactor = 0.75f;
+        private const float PassiveRadarMinimumDistanceMeters = 0.5f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -187,6 +196,11 @@ namespace Hecton8.Visor
         private float _activeSonarWaveBandWidth;
         private bool _activeSonarWavefrontActive;
         private float _activeLidarPersistence;
+        private float _passiveRadarTickAccumulator;
+        private float _passiveRadarPeakEnergy;
+        private float _passiveRadarAutoGain = 1f;
+        private int _passiveRadarPeakSector = -1;
+        private int _passiveRadarAutoGainWriteIndex;
 
         // Cached shader IDs
         private static readonly int _ShaderSpectrumMode =
@@ -213,6 +227,12 @@ namespace Hecton8.Visor
             Shader.PropertyToID("_AbyssalDistortion");
         private static readonly int _ShaderLidarPersistence =
             Shader.PropertyToID("_LidarPersistence");
+        private static readonly int _ShaderPassiveRadarRows =
+            Shader.PropertyToID("_PassiveRadarRows");
+        private static readonly int _ShaderPassiveRadarPeak =
+            Shader.PropertyToID("_PassiveRadarPeak");
+        private static readonly int _ShaderPassiveRadarAutoGain =
+            Shader.PropertyToID("_PassiveRadarAutoGain");
         private static readonly System.Collections.Generic.List<VisorHUDController> s_glitchControllers =
             new System.Collections.Generic.List<VisorHUDController>(4); // COLD ALLOC: shared glitch pulse controller buffer
         // COLD ALLOC: SpatialQueryHit[24] — active-sonar reveal contact buffer — owner: SpectrumSystem
@@ -221,6 +241,18 @@ namespace Hecton8.Visor
         private static readonly Vector4[] s_sonarRevealContacts = new Vector4[SonarRevealMaxContacts];
         // COLD ALLOC: Vector4[24] — active-sonar semantic shader payload buffer — owner: SpectrumSystem
         private static readonly Vector4[] s_sonarRevealContactMeta = new Vector4[SonarRevealMaxContacts];
+        // COLD ALLOC: float[32] â€” passive hydrophone radar energy grid â€” owner: SpectrumSystem
+        private readonly float[] _passiveRadarGrid = new float[PassiveRadarSectorCount];
+        // COLD ALLOC: float[30] â€” passive hydrophone auto-gain history â€” owner: SpectrumSystem
+        private readonly float[] _passiveRadarPeakHistory = new float[PassiveRadarAutoGainHistoryLength];
+        // COLD ALLOC: Vector4[8] â€” passive hydrophone shader row payload â€” owner: SpectrumSystem
+        private static readonly Vector4[] s_passiveRadarRows = new Vector4[PassiveRadarAzimuthSectorCount];
+        // COLD ALLOC: ActiveEmitterSample[32] â€” active world emitter buffer for passive hydrophone scan â€” owner: SpectrumSystem
+        private static readonly SpatialAudioManager.ActiveEmitterSample[] s_passiveRadarEmitterBuffer = new SpatialAudioManager.ActiveEmitterSample[32];
+        // COLD ALLOC: ActiveEmitterSample[8] â€” nearest emitter shortlist for passive hydrophone scan â€” owner: SpectrumSystem
+        private static readonly SpatialAudioManager.ActiveEmitterSample[] s_passiveRadarNearestBuffer = new SpatialAudioManager.ActiveEmitterSample[PassiveRadarSourceBudget];
+        // COLD ALLOC: float[8] â€” nearest emitter distance cache for passive hydrophone scan â€” owner: SpectrumSystem
+        private static readonly float[] s_passiveRadarNearestDistanceSqr = new float[PassiveRadarSourceBudget];
         // COLD ALLOC: List<WorldZoneAnchor>[16] â€” active-sonar abyssal anchor fallback scratch list â€” owner: SpectrumSystem
         private static readonly System.Collections.Generic.List<WorldZoneAnchor> s_abyssalAnchorBuffer =
             new System.Collections.Generic.List<WorldZoneAnchor>(16);
@@ -258,12 +290,8 @@ namespace Hecton8.Visor
         {
             if (!_registered)
             {
-                GameTickManager gameTickManager = GameTickManager.Instance;
-                if (gameTickManager != null)
-                {
-                    gameTickManager.Register(this);
-                    _registered = true;
-                }
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
+                _registered = true;
             }
 
             ResolveSurvivalSystem();
@@ -283,9 +311,7 @@ namespace Hecton8.Visor
         {
             if (_registered)
             {
-                GameTickManager gameTickManager = GameTickManager.Instance;
-                if (gameTickManager != null)
-                    gameTickManager.Unregister(this);
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
 
                 _registered = false;
             }
@@ -300,9 +326,7 @@ namespace Hecton8.Visor
         {
             if (_registered)
             {
-                GameTickManager gameTickManager = GameTickManager.Instance;
-                if (gameTickManager != null)
-                    gameTickManager.Unregister(this);
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
 
                 _registered = false;
             }
@@ -321,6 +345,11 @@ namespace Hecton8.Visor
         {
             UpdateActiveSonarWavefront(deltaTime);
             UpdateLidarPersistence(deltaTime);
+
+            if (_currentMode == SpectrumMode.Sonar)
+                UpdatePassiveRadar(deltaTime);
+            else if (_passiveRadarPeakSector >= 0)
+                ClearPassiveRadarState();
 
             if (_currentMode != SpectrumMode.Sonar)
                 return;
@@ -493,6 +522,7 @@ namespace Hecton8.Visor
             _activeSonarWaveBandWidth = 0f;
             _activeSonarWavefrontActive = false;
             _activeLidarPersistence = 0f;
+            ClearPassiveRadarState();
             SpectrumEvents.RaiseSonarSnapshotUpdated(default);
         }
 
@@ -598,6 +628,180 @@ namespace Hecton8.Visor
                 _activeLidarPersistence = 0f;
 
             Shader.SetGlobalFloat(_ShaderLidarPersistence, _activeLidarPersistence);
+        }
+
+        private void UpdatePassiveRadar(float deltaTime)
+        {
+            if (deltaTime <= 0f)
+                return;
+
+            _passiveRadarTickAccumulator += deltaTime;
+            while (_passiveRadarTickAccumulator >= PassiveRadarTickIntervalSeconds)
+            {
+                _passiveRadarTickAccumulator -= PassiveRadarTickIntervalSeconds;
+                StepPassiveRadar();
+            }
+        }
+
+        private void StepPassiveRadar()
+        {
+            for (int i = 0; i < _passiveRadarGrid.Length; i++)
+                _passiveRadarGrid[i] *= PassiveRadarDecayFactor;
+
+            if (!ResolvePlayerTransform() || !SpatialAudioManager.TryGetInstance(out SpatialAudioManager audioManager))
+            {
+                UpdatePassiveRadarPeakAndShaderState();
+                return;
+            }
+
+            Vector3 listenerPosition = _playerTransform.position;
+            int emitterCount = audioManager.CopyActiveWorldEmitterSamples(s_passiveRadarEmitterBuffer);
+            int nearestCount = SelectNearestPassiveRadarEmitters(listenerPosition, emitterCount);
+            float minimumDistanceSqr = PassiveRadarMinimumDistanceMeters * PassiveRadarMinimumDistanceMeters;
+            for (int i = 0; i < nearestCount; i++)
+            {
+                SpatialAudioManager.ActiveEmitterSample sample = s_passiveRadarNearestBuffer[i];
+                Vector3 delta = sample.Position - listenerPosition;
+                float distanceSqr = Mathf.Max(delta.sqrMagnitude, minimumDistanceSqr);
+                float inverseDistance = 1f / distanceSqr;
+                Vector3 direction = delta / Mathf.Sqrt(distanceSqr);
+                int sector = EncodePassiveRadarSector(direction);
+                _passiveRadarGrid[sector] += sample.Amplitude * inverseDistance;
+            }
+
+            UpdatePassiveRadarPeakAndShaderState();
+        }
+
+        private static int SelectNearestPassiveRadarEmitters(Vector3 listenerPosition, int emitterCount)
+        {
+            for (int i = 0; i < PassiveRadarSourceBudget; i++)
+            {
+                s_passiveRadarNearestDistanceSqr[i] = float.MaxValue;
+                s_passiveRadarNearestBuffer[i] = default;
+            }
+
+            int safeEmitterCount = Mathf.Min(emitterCount, s_passiveRadarEmitterBuffer.Length);
+            int selectedCount = 0;
+            for (int emitterIndex = 0; emitterIndex < safeEmitterCount; emitterIndex++)
+            {
+                SpatialAudioManager.ActiveEmitterSample sample = s_passiveRadarEmitterBuffer[emitterIndex];
+                float distanceSqr = (sample.Position - listenerPosition).sqrMagnitude;
+                int insertIndex = -1;
+                for (int slot = 0; slot < PassiveRadarSourceBudget; slot++)
+                {
+                    if (distanceSqr < s_passiveRadarNearestDistanceSqr[slot])
+                    {
+                        insertIndex = slot;
+                        break;
+                    }
+                }
+
+                if (insertIndex < 0)
+                    continue;
+
+                for (int shift = PassiveRadarSourceBudget - 1; shift > insertIndex; shift--)
+                {
+                    s_passiveRadarNearestDistanceSqr[shift] = s_passiveRadarNearestDistanceSqr[shift - 1];
+                    s_passiveRadarNearestBuffer[shift] = s_passiveRadarNearestBuffer[shift - 1];
+                }
+
+                s_passiveRadarNearestDistanceSqr[insertIndex] = distanceSqr;
+                s_passiveRadarNearestBuffer[insertIndex] = sample;
+                if (selectedCount < PassiveRadarSourceBudget)
+                    selectedCount++;
+            }
+
+            return selectedCount;
+        }
+
+        private static int EncodePassiveRadarSector(Vector3 direction)
+        {
+            float azimuth = Mathf.Atan2(direction.x, direction.z);
+            float elevation = Mathf.Asin(Mathf.Clamp(direction.y, -1f, 1f));
+            int azimuthSector = Mathf.Clamp(
+                Mathf.FloorToInt(((azimuth + Mathf.PI) / (Mathf.PI * 2f)) * PassiveRadarAzimuthSectorCount),
+                0,
+                PassiveRadarAzimuthSectorCount - 1);
+            float elevation01 = Mathf.InverseLerp(-Mathf.PI * 0.5f, Mathf.PI * 0.5f, elevation);
+            int elevationSector = Mathf.Clamp(
+                Mathf.FloorToInt(elevation01 * PassiveRadarElevationSectorCount),
+                0,
+                PassiveRadarElevationSectorCount - 1);
+            return (azimuthSector * PassiveRadarElevationSectorCount) + elevationSector;
+        }
+
+        private void UpdatePassiveRadarPeakAndShaderState()
+        {
+            float peakEnergy = 0f;
+            int peakSector = -1;
+            int activeSectorCount = 0;
+            for (int azimuthSector = 0; azimuthSector < PassiveRadarAzimuthSectorCount; azimuthSector++)
+            {
+                int rowBaseIndex = azimuthSector * PassiveRadarElevationSectorCount;
+                Vector4 row = new Vector4(
+                    _passiveRadarGrid[rowBaseIndex],
+                    _passiveRadarGrid[rowBaseIndex + 1],
+                    _passiveRadarGrid[rowBaseIndex + 2],
+                    _passiveRadarGrid[rowBaseIndex + 3]);
+                s_passiveRadarRows[azimuthSector] = row;
+
+                for (int elevationSector = 0; elevationSector < PassiveRadarElevationSectorCount; elevationSector++)
+                {
+                    float energy = _passiveRadarGrid[rowBaseIndex + elevationSector];
+                    if (energy > 0.0001f)
+                        activeSectorCount++;
+
+                    if (energy <= peakEnergy)
+                        continue;
+
+                    peakEnergy = energy;
+                    peakSector = rowBaseIndex + elevationSector;
+                }
+            }
+
+            _passiveRadarPeakHistory[_passiveRadarAutoGainWriteIndex] = peakEnergy;
+            _passiveRadarAutoGainWriteIndex++;
+            if (_passiveRadarAutoGainWriteIndex >= PassiveRadarAutoGainHistoryLength)
+                _passiveRadarAutoGainWriteIndex = 0;
+
+            float autoGain = 0f;
+            for (int i = 0; i < _passiveRadarPeakHistory.Length; i++)
+            {
+                if (_passiveRadarPeakHistory[i] > autoGain)
+                    autoGain = _passiveRadarPeakHistory[i];
+            }
+
+            _passiveRadarPeakEnergy = peakEnergy;
+            _passiveRadarPeakSector = peakSector;
+            _passiveRadarAutoGain = autoGain > 0.0001f ? autoGain : 1f;
+            int peakAzimuthSector = peakSector >= 0 ? peakSector / PassiveRadarElevationSectorCount : -1;
+            int peakElevationSector = peakSector >= 0 ? peakSector & (PassiveRadarElevationSectorCount - 1) : -1;
+            Shader.SetGlobalVectorArray(_ShaderPassiveRadarRows, s_passiveRadarRows);
+            Shader.SetGlobalVector(
+                _ShaderPassiveRadarPeak,
+                new Vector4(peakAzimuthSector, peakElevationSector, peakEnergy, activeSectorCount));
+            Shader.SetGlobalFloat(_ShaderPassiveRadarAutoGain, _passiveRadarAutoGain);
+        }
+
+        private void ClearPassiveRadarState()
+        {
+            for (int i = 0; i < _passiveRadarGrid.Length; i++)
+                _passiveRadarGrid[i] = 0f;
+
+            for (int i = 0; i < _passiveRadarPeakHistory.Length; i++)
+                _passiveRadarPeakHistory[i] = 0f;
+
+            for (int i = 0; i < s_passiveRadarRows.Length; i++)
+                s_passiveRadarRows[i] = Vector4.zero;
+
+            _passiveRadarTickAccumulator = 0f;
+            _passiveRadarPeakEnergy = 0f;
+            _passiveRadarAutoGain = 1f;
+            _passiveRadarPeakSector = -1;
+            _passiveRadarAutoGainWriteIndex = 0;
+            Shader.SetGlobalVectorArray(_ShaderPassiveRadarRows, s_passiveRadarRows);
+            Shader.SetGlobalVector(_ShaderPassiveRadarPeak, Vector4.zero);
+            Shader.SetGlobalFloat(_ShaderPassiveRadarAutoGain, 1f);
         }
 
         private float ResolveAbyssalDistortion(float depth)

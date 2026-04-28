@@ -53,7 +53,7 @@ namespace Hecton8.AI
                 : null;
 
             if (!TryGetComponent(out _foveatedAudioSource))
-                _foveatedAudioSource = GetComponentInChildren<AudioSource>(true);
+                _foveatedAudioSource = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<AudioSource>(transform);
         }
     }
 }

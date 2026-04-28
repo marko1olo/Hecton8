@@ -5,7 +5,7 @@ namespace Hecton8.World
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4300)]
-    public sealed class BiomeSamplerCache : MonoBehaviour, ISlowTickable
+    public sealed class BiomeSamplerCache : MonoBehaviour, ISlowTickable, IOriginShiftListener
     {
         internal static BiomeSamplerCache ActiveRuntimeInstance { get; private set; }
 
@@ -60,6 +60,7 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            HectonFloatingOrigin.RegisterListener(this);
             TryRegister();
         }
 
@@ -73,11 +74,13 @@ namespace Hecton8.World
         private void OnDisable()
         {
             TryUnregister();
+            HectonFloatingOrigin.UnregisterListener(this);
         }
 
         private void OnDestroy()
         {
             TryUnregister();
+            HectonFloatingOrigin.UnregisterListener(this);
 
             if (ActiveRuntimeInstance == this)
                 ActiveRuntimeInstance = null;
@@ -88,11 +91,7 @@ namespace Hecton8.World
             if (_registeredToTickManager)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager == null)
-                return;
-
-            gameTickManager.Register((ISlowTickable)this);
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
             _registeredToTickManager = true;
         }
 
@@ -101,16 +100,21 @@ namespace Hecton8.World
             if (!_registeredToTickManager)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager != null)
-                gameTickManager.Unregister((ISlowTickable)this);
-
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _registeredToTickManager = false;
         }
 
         public void SlowTick()
         {
             RebuildCache(force: false);
+        }
+
+        public void OnOriginShift(in OriginShiftEventData shiftData)
+        {
+            if (!isActiveAndEnabled || shiftData.ShiftOffset.sqrMagnitude <= 0.0001f)
+                return;
+
+            ApplyRuntimeOffsetToCachedState(-shiftData.ShiftOffset);
         }
 
         public bool TryGetCachedSample(Vector3 position, out CachedSample sample)
@@ -227,6 +231,24 @@ namespace Hecton8.World
             }
 
             return bestIndex;
+        }
+
+        private void ApplyRuntimeOffsetToCachedState(Vector3 runtimeOffset)
+        {
+            if (!_hasLastCenterPosition && (_samples == null || _sampleCount <= 0))
+                return;
+
+            if (_hasLastCenterPosition)
+                _lastCenterPosition += runtimeOffset;
+
+            _debugLastCenterPosition += runtimeOffset;
+
+            for (int i = 0; i < _sampleCount; i++)
+            {
+                CachedSample sample = _samples[i];
+                sample.position += runtimeOffset;
+                _samples[i] = sample;
+            }
         }
 
         private void EnsureReferences()

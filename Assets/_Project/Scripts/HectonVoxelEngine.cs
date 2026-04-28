@@ -1,45 +1,6 @@
-﻿// â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
-// â•‘  HectonVoxelEngine.cs â€” Project HECTON-8 Localized Voxel Volumes           â•‘
-// â•‘  Unity 6 (URP) | Burst + Jobs | Marching Cubes | Multi-Primitive SDF      â•‘
-// â•‘  v4.0 â€” Complete cave SDF rewrite                                          â•‘
-// â•‘                                                                             â•‘
-// â•‘  CHANGES v4.0:                                                              â•‘
-// â•‘  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€                                                              â•‘
-// â•‘  1. VoxelDensityJob completely rewritten:                                  â•‘
-// â•‘     â€” Multi-primitive SDF: rooms (sphere/ellipsoid/shaft/hall/crevice)     â•‘
-// â•‘     â€” Tunnel capsules with conic taper and elliptic cross-section          â•‘
-// â•‘     â€” Entrance funnels connecting to terrain surface                       â•‘
-// â•‘     â€” CaveStructure support (columns/bridges/boulders â€” future use)       â•‘
-// â•‘     â€” Polynomial smooth-min blending for organic shapes                   â•‘
-// â•‘     â€” Domain warping via fractal noise for curved tunnels                 â•‘
-// â•‘     â€” Wall noise (FBM) for rocky surface detail                           â•‘
-// â•‘     â€” Horizontal terracing for rock strata layers                         â•‘
-// â•‘     â€” Floor flattening per-room                                            â•‘
-// â•‘     â€” Near-surface-only noise evaluation (performance optimization)        â•‘
-// â•‘                                                                             â•‘
-// â•‘  2. GenerateVolumeAsync new signature:                                     â•‘
-// â•‘     â€” Accepts seed + CavePreset (or raw NativeArrays)                     â•‘
-// â•‘     â€” Calls CaveGraphGenerator internally                                 â•‘
-// â•‘     â€” gridDimension and voxelSize per-call (not global)                   â•‘
-// â•‘     â€” Two-pass exact MC extraction: count â†’ prefix sum â†’ emit             â•‘
-// â•‘                                                                             â•‘
-// â•‘  3. VoxelPOIType, VoxelPOIData, VoxelPOIDefinition â€” REMOVED              â•‘
-// â•‘     Replaced by CavePreset / CaveGenerationParams from CaveTypes.cs       â•‘
-// â•‘                                                                             â•‘
-// â•‘  4. maxGridDimension raised to 128                                         â•‘
-// â•‘                                                                             â•‘
-// â•‘  PRESERVED from v3.2:                                                       â•‘
-// â•‘  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€                                                      â•‘
-// â•‘  â€¢ Awaitable API (Unity 6 native async, zero GC)                           â•‘
-// â•‘  â€¢ MCTables (edge/tri lookup, thread-safe init/shutdown)                   â•‘
-// â•‘  â€¢ VoxelMCExtractJob (marching cubes extraction, unchanged)                â•‘
-// â•‘  â€¢ VoxelWeldJob (edge-based vertex welding, unchanged)                     â•‘
-// â•‘  â€¢ VoxelNormalJob (density gradient normals, unchanged)                    â•‘
-// â•‘  â€¢ VoxelBiomeSampleJob (biome grid sampling, unchanged)                    â•‘
-// â•‘  â€¢ BuildWeldedMeshNative (mesh assembly, unchanged)                        â•‘
-// â•‘  â€¢ Pool integration (ObjectPoolManager)                                    â•‘
-// â•‘  â€¢ MapMagicBridge height sampling on main thread                           â•‘
-// â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// HectonVoxelEngine.cs
+// Project HECTON-8 localized voxel volumes.
+// Unity 6 URP. Burst + Jobs. Marching Cubes. Multi-primitive SDF.
 
 using System;
 using UnityEngine;
@@ -60,9 +21,9 @@ using Stopwatch = System.Diagnostics.Stopwatch;
 using UnityEditor;
 #endif
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════════════════════════════
 //  REGION: MARCHING CUBES LOOKUP TABLES (unchanged from v3.2)
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════════════════════════════
 #region Marching Cubes Tables
 
 public static class MCTables
@@ -442,9 +403,9 @@ public static class MCTables
 
 #endregion
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════════════════════════════
 //  REGION: MC RAW VERTEX (unchanged)
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════════════════════════════
 #region MC Types
 
 public struct MCRawVertex
@@ -455,26 +416,26 @@ public struct MCRawVertex
 
 #endregion
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════════════════════════════
 //  REGION: BURST JOBS
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════════════════════════════
 #region Voxel Burst Jobs
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-//  JOB 1: DENSITY FIELD â€” Multi-primitive SDF cave system (v4.0 REWRITE)
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════════
+//  JOB 1: DENSITY FIELD — Multi-primitive SDF cave system (v4.0 REWRITE)
+// ═══════════════════════════════════════════════════════════════════════════════
 [BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
 public struct VoxelDensityJob : IJobParallelFor
 {
-    // â”€â”€ Grid dimensions â”€â”€
+    // ── Grid dimensions ──
     public int ptsX, ptsY, ptsZ;
     public float3 volumeOrigin;
     public float voxelStep;
 
-    // â”€â”€ Terrain â”€â”€
+    // ── Terrain ──
     [ReadOnly] public NativeArray<float> terrainHeights;
 
-    // â”€â”€ Cave SDF primitives â”€â”€
+    // ── Cave SDF primitives ──
     [ReadOnly] public NativeArray<CaveNode> caveNodes;
     [ReadOnly] public NativeArray<CaveTunnel> caveTunnels;
     [ReadOnly] public NativeArray<CaveEntrance> caveEntrances;
@@ -486,7 +447,7 @@ public struct VoxelDensityJob : IJobParallelFor
     [ReadOnly] public NativeArray<int> tunnelBucketOffsets;
     [ReadOnly] public NativeArray<int> tunnelBucketIndices;
 
-    // â”€â”€ Cave parameters â”€â”€
+    // ── Cave parameters ──
     public CaveGenerationParams caveParams;
     public float3 absoluteNoiseOffset;
     public int partitionDimX;
@@ -495,18 +456,18 @@ public struct VoxelDensityJob : IJobParallelFor
     public float3 partitionOrigin;
     public float3 partitionInvCellSize;
 
-    // â”€â”€ Edge sealing â”€â”€
+    // ── Edge sealing ──
     public float sealMargin;
     public int lodLevel;
     public float lodTransitionBand;
 
-    // â”€â”€ Output â”€â”€
+    // ── Output ──
     [WriteOnly] public NativeArray<float> density;
     [WriteOnly] public NativeArray<float> smoothDensity;
 
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-    //  EXECUTE â€” Per voxel point
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ════════════════════════════════════════════════════════════════════════
+    //  EXECUTE — Per voxel point
+    // ════════════════════════════════════════════════════════════════════════
 
     public void Execute(int idx)
     {
@@ -696,9 +657,9 @@ public struct VoxelDensityJob : IJobParallelFor
     }
 
 
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-    //  CAVE SDF EVALUATION â€” Core of the cave generation system
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ════════════════════════════════════════════════════════════════════════
+    //  CAVE SDF EVALUATION — Core of the cave generation system
+    // ════════════════════════════════════════════════════════════════════════
 
     void EvaluateCaveSDF(float3 wp, out float smoothCaveDist, out float finalCaveDist)
     {
@@ -873,9 +834,9 @@ public struct VoxelDensityJob : IJobParallelFor
         return densityValue;
     }
 
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-    //  ROOM SDF â€” Sphere, Ellipsoid, Shaft, Hall, Crevice
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ════════════════════════════════════════════════════════════════════════
+    //  ROOM SDF — Sphere, Ellipsoid, Shaft, Hall, Crevice
+    // ════════════════════════════════════════════════════════════════════════
 
     void EvaluateRoom(float3 warpedPos, float3 absoluteOriginalPos, CaveNode node, out float smoothDist, out float finalDist)
     {
@@ -942,9 +903,9 @@ public struct VoxelDensityJob : IJobParallelFor
         }
     }
 
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-    //  TUNNEL SDF â€” Conic capsule with optional cross-section scaling
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ════════════════════════════════════════════════════════════════════════
+    //  TUNNEL SDF — Conic capsule with optional cross-section scaling
+    // ════════════════════════════════════════════════════════════════════════
 
     float EvaluateTunnel(float3 warpedPos, float3 absoluteOriginalPos, float3 localOriginalPos, CaveTunnel tunnel)
     {
@@ -1166,16 +1127,16 @@ public struct VoxelDensityJob : IJobParallelFor
     }
 
 
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-    //  WALL DETAIL â€” Noise + terraces applied near cave surface
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ════════════════════════════════════════════════════════════════════════
+    //  WALL DETAIL — Noise + terraces applied near cave surface
+    // ════════════════════════════════════════════════════════════════════════
 
     float EvaluateWallDetail(float3 wp, float currentSDF)
     {
         float detail = 0f;
         float nearSurfaceMask = 1f - math.saturate(math.abs(currentSDF) / math.max(caveParams.noiseEvalDistance, 0.001f));
 
-        // â”€â”€ Fractal wall noise â”€â”€
+        // ── Fractal wall noise ──
         if (caveParams.wallNoiseAmplitude > 0.001f)
         {
             float wallNoise = FractalNoise3D(
@@ -1199,7 +1160,7 @@ public struct VoxelDensityJob : IJobParallelFor
             detail += dripMask * caveParams.wallNoiseAmplitude * 0.45f * nearSurfaceMask;
         }
 
-        // â”€â”€ Horizontal terraces (rock strata) â”€â”€
+        // ── Horizontal terraces (rock strata) ──
         if (caveParams.terraceAmplitude > 0.001f)
         {
             float terrace = EvaluateTerrace(
@@ -1241,9 +1202,9 @@ public struct VoxelDensityJob : IJobParallelFor
         return derivative;
     }
 
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-    //  SDF PRIMITIVES â€” Inlined for Burst performance
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ════════════════════════════════════════════════════════════════════════
+    //  SDF PRIMITIVES — Inlined for Burst performance
+    // ════════════════════════════════════════════════════════════════════════
 
     /// <summary>Signed distance to sphere.</summary>
     static float SDSphere(float3 p, float3 center, float radius)
@@ -1261,7 +1222,7 @@ public struct VoxelDensityJob : IJobParallelFor
         if (lenScaled < 0.0001f)
             return -math.cmin(radii); // Deep inside
 
-        // Approximate: distance in scaled space Ã— minimum radius
+        // Approximate: distance in scaled space × minimum radius
         // This is not exact but good enough for MC and much cheaper than analytic
         return (lenScaled - 1f) * math.cmin(radii);
     }
@@ -1307,7 +1268,7 @@ public struct VoxelDensityJob : IJobParallelFor
         float baba = math.dot(ba, ba);
 
         if (baba < 0.0001f)
-            return math.length(pa) - radiusA; // Degenerate: a â‰ˆ b â†’ sphere
+            return math.length(pa) - radiusA; // Degenerate: a ≈ b → sphere
 
         float h = math.saturate(math.dot(pa, ba) / baba);
         float radius = math.lerp(radiusA, radiusB, h);
@@ -1352,9 +1313,9 @@ public struct VoxelDensityJob : IJobParallelFor
         return math.length(scaled) - radius;
     }
 
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-    //  CSG OPERATIONS â€” Smooth blending
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ════════════════════════════════════════════════════════════════════════
+    //  CSG OPERATIONS — Smooth blending
+    // ════════════════════════════════════════════════════════════════════════
 
     /// <summary>Polynomial smooth minimum (cubic). Merges shapes organically.</summary>
     static float SmoothMin(float a, float b, float k)
@@ -1395,9 +1356,9 @@ public struct VoxelDensityJob : IJobParallelFor
         return SmoothMaxExp(distBase, -distCarve, k);
     }
 
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-    //  NOISE FUNCTIONS â€” Burst-safe, no managed allocations
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ════════════════════════════════════════════════════════════════════════
+    //  NOISE FUNCTIONS — Burst-safe, no managed allocations
+    // ════════════════════════════════════════════════════════════════════════
 
     /// <summary>3D gradient noise via Unity.Mathematics.noise.snoise.
     /// Returns [-1, 1] range.</summary>
@@ -1406,7 +1367,7 @@ public struct VoxelDensityJob : IJobParallelFor
         return noise.snoise(p);
     }
 
-    /// <summary>Fractal Brownian Motion â€” layered noise.</summary>
+    /// <summary>Fractal Brownian Motion — layered noise.</summary>
     static float FractalNoise3D(float3 p, float frequency, int octaves,
                                  float lacunarity, float persistence, uint seed)
     {
@@ -1442,9 +1403,9 @@ public struct VoxelDensityJob : IJobParallelFor
         return v;
     }
 
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-    //  DOMAIN WARPING â€” Distort coordinates with noise
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ════════════════════════════════════════════════════════════════════════
+    //  DOMAIN WARPING — Distort coordinates with noise
+    // ════════════════════════════════════════════════════════════════════════
 
     /// <summary>
     /// Warp world coordinates using 3-channel fractal noise.
@@ -1469,9 +1430,9 @@ public struct VoxelDensityJob : IJobParallelFor
         return p + new float3(dx, dy, dz) * amplitude;
     }
 
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-    //  TERRACE â€” Horizontal rock strata layers
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ════════════════════════════════════════════════════════════════════════
+    //  TERRACE — Horizontal rock strata layers
+    // ════════════════════════════════════════════════════════════════════════
 
     /// <summary>Evaluate horizontal terrace effect.
     /// Creates periodic ledges in cave walls based on Y coordinate.</summary>
@@ -1486,9 +1447,9 @@ public struct VoxelDensityJob : IJobParallelFor
         return terrace * amplitude;
     }
 
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-    //  FLOOR FLATTENING â€” Makes room bottoms more walkable
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ════════════════════════════════════════════════════════════════════════
+    //  FLOOR FLATTENING — Makes room bottoms more walkable
+    // ════════════════════════════════════════════════════════════════════════
 
     /// <summary>Flatten the bottom portion of a room.
     /// Only affects the lower 30% of the room height.
@@ -1549,9 +1510,9 @@ struct VoxelColliderChunkClassifyJob : IJobParallelFor
     }
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════════
 //  JOB 2: Marching Cubes exact count pass
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════════
 [BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
 public struct VoxelMCCountJob : IJobParallelFor
 {
@@ -1611,9 +1572,9 @@ public struct VoxelMCCountJob : IJobParallelFor
     float D(int ix, int iy, int iz) => density[GI(ix, iy, iz)];
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════════
 //  JOB 2.1: Marching Cubes extraction (exact-offset write)
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════════
 [BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
 public unsafe struct VoxelMCExtractJob : IJobParallelFor
 {
@@ -1764,15 +1725,22 @@ public unsafe struct VoxelMCExtractJob : IJobParallelFor
     }
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════════
 //  JOB 2.5: Vertex Welding (UNCHANGED from v3.2)
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════════
 [BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
 public unsafe struct VoxelWeldJob : IJob
 {
+    private const int InvalidVertexIndex = -1;
+
     public int rawCount;
+    public int ptsX;
+    public int ptsY;
+    public int ptsZ;
     [ReadOnly] public NativeArray<MCRawVertex> rawVertices;
-    public NativeParallelHashMap<long, int> edgeToVertex;
+    [NativeDisableContainerSafetyRestriction] public NativeArray<int> edgeVertexX;
+    [NativeDisableContainerSafetyRestriction] public NativeArray<int> edgeVertexY;
+    [NativeDisableContainerSafetyRestriction] public NativeArray<int> edgeVertexZ;
     [WriteOnly, NativeDisableContainerSafetyRestriction]
     public NativeArray<float3> weldedPositions;
     [WriteOnly, NativeDisableContainerSafetyRestriction]
@@ -1785,26 +1753,106 @@ public unsafe struct VoxelWeldJob : IJob
         for (int i = 0; i < rawCount; i++)
         {
             MCRawVertex rv = rawVertices[i];
-            if (edgeToVertex.TryGetValue(rv.edgeId, out int existingIdx))
+            if (TryResolveEdgeRegistrySlot(rv.edgeId, out int axis, out int edgeSlot))
             {
-                triangleIndices[i] = existingIdx;
-            }
-            else
-            {
+                int existingIdx = ReadEdgeVertex(axis, edgeSlot);
+                if (existingIdx != InvalidVertexIndex)
+                {
+                    triangleIndices[i] = existingIdx;
+                    continue;
+                }
+
                 int newIdx = weldedCount;
                 weldedPositions[newIdx] = rv.position;
-                edgeToVertex.Add(rv.edgeId, newIdx);
+                WriteEdgeVertex(axis, edgeSlot, newIdx);
                 triangleIndices[i] = newIdx;
                 weldedCount++;
+                continue;
             }
+
+            int fallbackIdx = weldedCount;
+            weldedPositions[fallbackIdx] = rv.position;
+            triangleIndices[i] = fallbackIdx;
+            weldedCount++;
         }
         weldedCounter[0] = weldedCount;
     }
+
+    bool TryResolveEdgeRegistrySlot(long packedEdge, out int axis, out int slot)
+    {
+        int lo = (int)(packedEdge & 0xFFFFFFFFL);
+        int hi = (int)(packedEdge >> 32);
+        int strideX = ptsX;
+        int strideXY = ptsX * ptsY;
+        int diff = hi - lo;
+        int x = lo % ptsX;
+        int y = (lo / ptsX) % ptsY;
+        int z = lo / strideXY;
+        int cellsX = ptsX - 1;
+        int cellsY = ptsY - 1;
+        int cellsZ = ptsZ - 1;
+
+        if (diff == 1 && x < cellsX)
+        {
+            axis = 0;
+            slot = x + y * cellsX + z * cellsX * ptsY;
+            return true;
+        }
+
+        if (diff == strideX && y < cellsY)
+        {
+            axis = 1;
+            slot = x + y * ptsX + z * ptsX * cellsY;
+            return true;
+        }
+
+        if (diff == strideXY && z < cellsZ)
+        {
+            axis = 2;
+            slot = x + y * ptsX + z * ptsX * ptsY;
+            return true;
+        }
+
+        axis = -1;
+        slot = -1;
+        return false;
+    }
+
+    int ReadEdgeVertex(int axis, int slot)
+    {
+        switch (axis)
+        {
+            case 0:
+                return edgeVertexX[slot];
+            case 1:
+                return edgeVertexY[slot];
+            case 2:
+                return edgeVertexZ[slot];
+            default:
+                return InvalidVertexIndex;
+        }
+    }
+
+    void WriteEdgeVertex(int axis, int slot, int vertexIndex)
+    {
+        switch (axis)
+        {
+            case 0:
+                edgeVertexX[slot] = vertexIndex;
+                break;
+            case 1:
+                edgeVertexY[slot] = vertexIndex;
+                break;
+            case 2:
+                edgeVertexZ[slot] = vertexIndex;
+                break;
+        }
+    }
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════════
 //  JOB 3: Normals from density gradient (UNCHANGED from v3.2)
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════════
 [BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
 public struct VoxelNormalJob : IJobParallelFor
 {
@@ -1895,6 +1943,53 @@ int GridIndex(int x, int y, int z) => x + y * ptsX + z * ptsX * ptsY;
 }
 
 [BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
+public struct VoxelTerrainSeamSnapJob : IJobParallelFor
+{
+    public int ptsX;
+    public int ptsZ;
+    public float3 volumeOrigin;
+    public float voxelStep;
+    public float seamSnapBand;
+
+    [ReadOnly] public NativeArray<float> terrainHeights;
+    public NativeArray<float3> positions;
+
+    public void Execute(int idx)
+    {
+        if (!terrainHeights.IsCreated || ptsX <= 1 || ptsZ <= 1 || seamSnapBand <= 0f)
+            return;
+
+        float3 position = positions[idx];
+        float terrainHeight = SampleTerrainHeight(position.xz);
+        float distanceToTerrain = math.abs(terrainHeight - position.y);
+        if (distanceToTerrain >= seamSnapBand)
+            return;
+
+        positions[idx] = new float3(position.x, terrainHeight, position.z);
+    }
+
+    float SampleTerrainHeight(float2 worldXZ)
+    {
+        float localX = (worldXZ.x - volumeOrigin.x) / voxelStep;
+        float localZ = (worldXZ.y - volumeOrigin.z) / voxelStep;
+        localX = math.clamp(localX, 0f, ptsX - 1f);
+        localZ = math.clamp(localZ, 0f, ptsZ - 1f);
+
+        int x0 = (int)localX;
+        int z0 = (int)localZ;
+        int x1 = math.min(x0 + 1, ptsX - 1);
+        int z1 = math.min(z0 + 1, ptsZ - 1);
+        float fx = localX - x0;
+        float fz = localZ - z0;
+
+        float h00 = terrainHeights[x0 + z0 * ptsX];
+        float h10 = terrainHeights[x1 + z0 * ptsX];
+        float h01 = terrainHeights[x0 + z1 * ptsX];
+        float h11 = terrainHeights[x1 + z1 * ptsX];
+        return math.lerp(math.lerp(h00, h10, fx), math.lerp(h01, h11, fx), fz);
+    }
+}
+[BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
 public struct VoxelSeamNormalBlendJob : IJobParallelFor
 {
     public int ptsX;
@@ -1921,7 +2016,7 @@ public struct VoxelSeamNormalBlendJob : IJobParallelFor
         float3 terrainNormal = SampleTerrainNormal(position.xz);
         float3 voxelNormal = math.normalizesafe(normals[idx], new float3(0f, 1f, 0f));
         float blendT = math.smoothstep(0f, seamTransitionBand, distanceToTerrain);
-        normals[idx] = BlendNormalsNlerp(terrainNormal, voxelNormal, blendT);
+        normals[idx] = BlendNormalsSlerp(terrainNormal, voxelNormal, blendT);
     }
 
     float SampleTerrainHeight(float2 worldXZ)
@@ -1987,9 +2082,21 @@ public struct VoxelSeamNormalBlendJob : IJobParallelFor
         return math.normalizesafe(math.cross(tangentZ, tangentX), new float3(0f, 1f, 0f));
     }
 
-    static float3 BlendNormalsNlerp(float3 terrainNormal, float3 voxelNormal, float t)
+    static float3 BlendNormalsSlerp(float3 terrainNormal, float3 voxelNormal, float t)
     {
-        return math.normalizesafe(math.lerp(terrainNormal, voxelNormal, t), terrainNormal);
+        float blend = math.saturate(t);
+        float dot = math.clamp(math.dot(terrainNormal, voxelNormal), -1f, 1f);
+        if (math.abs(dot) > 0.9999f)
+            return math.normalizesafe(math.lerp(terrainNormal, voxelNormal, blend), terrainNormal);
+
+        float theta = math.acos(dot);
+        float sinTheta = math.sin(theta);
+        if (sinTheta <= 0.0001f)
+            return math.normalizesafe(math.lerp(terrainNormal, voxelNormal, blend), terrainNormal);
+
+        float terrainWeight = math.sin((1f - blend) * theta) / sinTheta;
+        float voxelWeight = math.sin(blend * theta) / sinTheta;
+        return math.normalizesafe(terrainNormal * terrainWeight + voxelNormal * voxelWeight, terrainNormal);
     }
 }
 
@@ -2009,9 +2116,9 @@ public struct VoxelShiftAwareProjectionJob : IJobParallelFor
 }
 
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════════
 //  JOB 3.5: Biome Sampling (UNCHANGED from v3.2)
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════════
 [BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
 public struct VoxelBiomeSampleJob : IJobParallelFor
 {
@@ -2041,9 +2148,9 @@ public struct VoxelBiomeSampleJob : IJobParallelFor
     }
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-//  JOB 4: Vertex Colors (v4.0 â€” updated for cave SDF)
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════════
+//  JOB 4: Vertex Colors (v4.0 — updated for cave SDF)
+// ═══════════════════════════════════════════════════════════════════════════════
 [BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
 public struct VoxelColorJob : IJobParallelFor
 {
@@ -2127,12 +2234,12 @@ public struct VoxelColorJob : IJobParallelFor
     }
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-//  JOB 5: Cave Interior Spawn Points (v4.1 â€” deterministic hash IDs)
+// ═══════════════════════════════════════════════════════════════════════════════
+//  JOB 5: Cave Interior Spawn Points (v4.1 — deterministic hash IDs)
 //  Extracts floor positions from welded mesh for loot/flora/fauna spawning.
 //  Each point carries a deterministic hashId derived from world position,
 //  ensuring save system consistency regardless of parallel execution order.
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════════
 [BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
 public struct VoxelSpawnPointJob : IJobParallelFor
 {
@@ -2144,7 +2251,7 @@ public struct VoxelSpawnPointJob : IJobParallelFor
     public float volumeHalfExtent;
 
     /// <summary>Minimum upward normal component to qualify as "floor".
-    /// 0.75 â‰ˆ 41Â° from horizontal. Flat surfaces only.</summary>
+    /// 0.75 ≈ 41° from horizontal. Flat surfaces only.</summary>
     public float floorNormalThreshold;
 
     /// <summary>Minimum normalized interior depth to qualify.
@@ -2165,26 +2272,26 @@ public struct VoxelSpawnPointJob : IJobParallelFor
         float3 pos = positions[idx];
         float3 nrm = normals[idx];
 
-        // â”€â”€ Filter 1: Floor normal â”€â”€
+        // ── Filter 1: Floor normal ──
         float upDot = math.dot(nrm, new float3(0, 1, 0));
         if (upDot < floorNormalThreshold)
             return;
 
-        // â”€â”€ Filter 2: Interior depth â”€â”€
+        // ── Filter 2: Interior depth ──
         float distFromCenter = math.length(pos - volumeCenter);
         float normalizedDist = distFromCenter / math.max(volumeHalfExtent, 1f);
         float interiorness = 1f - math.saturate(normalizedDist);
         if (interiorness < minInteriorDepth)
             return;
 
-        // â”€â”€ Filter 3: Spatial hash (deterministic thinning) â”€â”€
+        // ── Filter 3: Spatial hash (deterministic thinning) ──
         uint hash = SpatialHash(pos, seed);
         float hashNormalized = (hash & 0xFFFF) / 65535f;
         if (hashNormalized > keepFraction)
             return;
 
-        // â”€â”€ Passed all filters â”€â”€
-        // hashId is deterministic: same position â†’ same hash â†’ same ID always
+        // ── Passed all filters ──
+        // hashId is deterministic: same position → same hash → same ID always
         int hashId = (int)(hash & 0x7FFFFFFF); // Positive int, stable across runs
 
         spawnPoints.AddNoResize(new CaveSpawnData
@@ -2200,7 +2307,7 @@ public struct VoxelSpawnPointJob : IJobParallelFor
     /// </summary>
     static uint SpatialHash(float3 p, uint seed)
     {
-        // Quantize to 10cm grid â€” prevents floating-point jitter
+        // Quantize to 10cm grid — prevents floating-point jitter
         int3 ip = (int3)math.floor(p * 10f);
 
         uint h = seed;
@@ -2221,65 +2328,65 @@ public struct VoxelSpawnPointJob : IJobParallelFor
 
 #endregion
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════════════════════════════
 //  REGION: HECTON VOXEL ENGINE (v4.0)
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════════════════════════════
 #region HectonVoxelEngine
 
 public class HectonVoxelEngine : MonoBehaviour
 {
     private const string DefaultVoxelBakeGhostShaderName = "Hecton8/Environment/Hecton_VoxelBakeGhost";
 
-    // â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
-    // â•‘           INSPECTOR SETTINGS                  â•‘
-    // â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ╔═══════════════════════════════════════════════╗
+    // ║           INSPECTOR SETTINGS                  ║
+    // ╚═══════════════════════════════════════════════╝
 
-    [Header("â•â•â• DEFAULT CAVE PRESET â•â•â•")]
+    [Header("═══ DEFAULT CAVE PRESET ═══")]
     [Tooltip("Default preset used when GenerateVolumeAsync is called without explicit preset.")]
     public CavePreset defaultPreset = new CavePreset();
-    [Header("â•â•â• MAPMAGIC INTEGRATION â•â•â•")]
+    [Header("═══ MAPMAGIC INTEGRATION ═══")]
     [Tooltip("MapMagic tile size in meters.\n" +
              "Must match your MapMagic Tile Size setting.\n" +
              "Used to compute chunkCoord for ScavengePopulator spawn points.")]
     [SerializeField]
     private float mapMagicTileSize = 999f;
-    [Header("â•â•â• EDGE SEAL â•â•â•")]
+    [Header("═══ EDGE SEAL ═══")]
     [Tooltip("Margin (m) where density fades to solid at volume borders.")]
     [Range(1f, 10f)]
     public float sealMargin = 3f;
 
-    [Header("â•â•â• CAVE EDGE COLOR â•â•â•")]
+    [Header("═══ CAVE EDGE COLOR ═══")]
     [Tooltip("Width (m) for cave-edge fade in vertex color B channel.")]
     [Range(1f, 20f)]
     public float caveEdgeColorWidth = 5f;
 
-    [Header("â•â•â• RENDERING â•â•â•")]
+    [Header("═══ RENDERING ═══")]
     public Material voxelMaterial;
     public Material voxelBakeGhostMaterial;
 
-    [Header("â•â•â• REFERENCES â•â•â•")]
+    [Header("═══ REFERENCES ═══")]
     [Tooltip("Bridge to MapMagic terrain for height sampling.")]
     public MapMagicBridge mapMagicBridge;
 
-    [Header("â•â•â• POOL â•â•â•")]
+    [Header("═══ POOL ═══")]
     [Tooltip("Prefab for pooled voxel volume GameObjects.")]
     public GameObject voxelVolumePrefab;
     [Tooltip("Reusable native scratch slots reserved for streaming cave generation. Separate from flora pools.")]
     [SerializeField] private int streamingScratchSlotCount = 2;
 
-    // â”€â”€ Constants â”€â”€
+    // ── Constants ──
     const float ABYSSAL_MAX_DEPTH = 5000f;
     const float TerrainVoxelSeamTransitionBand = 3.5f;
     const int JOB_BATCH = 64;
 
     /// <summary>
-    /// MC raw buffer multiplier. 2Ã— totalCells instead of 15Ã— (worst case).
+    /// MC raw buffer multiplier. 2× totalCells instead of 15× (worst case).
     /// Atomic counter in MC job truncates gracefully if buffer fills.
     /// Saves ~85% peak memory allocation.
     /// </summary>
     const int MC_BUFFER_MULTIPLIER = 2;
 
-    // â”€â”€ Internal â”€â”€
+    // ── Internal ──
     static int _liveEngineCount;
     static int _activeGenerationOperations;
     static int _shutdownRequested;
@@ -2371,6 +2478,8 @@ public class HectonVoxelEngine : MonoBehaviour
 
     sealed class VoxelPipelineData : IDisposable
     {
+        public HectonVoxelVolume SourceVolume;
+        public int SourceRuntimeStamp;
         public Vector3 WorldCenter;
         public Vector3 AbsoluteUniverseOffsetAtStart;
         public uint ShiftEpochAtStart;
@@ -2402,7 +2511,9 @@ public class HectonVoxelEngine : MonoBehaviour
         public NativeArray<MCRawVertex> RawVertices;
         public NativeArray<float3> WeldedPositions;
         public NativeArray<int> TriangleIndices;
-        public NativeParallelHashMap<long, int> EdgeToVertex;
+        public NativeArray<int> EdgeVertexX;
+        public NativeArray<int> EdgeVertexY;
+        public NativeArray<int> EdgeVertexZ;
         public NativeArray<float3> Normals;
         public NativeArray<float> CurvatureValues;
         public NativeArray<float> BiomeValues;
@@ -2427,7 +2538,9 @@ public class HectonVoxelEngine : MonoBehaviour
             if (RawVertices.IsCreated) RawVertices.Dispose();
             if (WeldedPositions.IsCreated) WeldedPositions.Dispose();
             if (TriangleIndices.IsCreated) TriangleIndices.Dispose();
-            if (EdgeToVertex.IsCreated) EdgeToVertex.Dispose();
+            if (EdgeVertexX.IsCreated) EdgeVertexX.Dispose();
+            if (EdgeVertexY.IsCreated) EdgeVertexY.Dispose();
+            if (EdgeVertexZ.IsCreated) EdgeVertexZ.Dispose();
             if (Normals.IsCreated) Normals.Dispose();
             if (CurvatureValues.IsCreated) CurvatureValues.Dispose();
             if (BiomeValues.IsCreated) BiomeValues.Dispose();
@@ -2451,9 +2564,9 @@ public class HectonVoxelEngine : MonoBehaviour
         }
     }
 
-    // â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
-    // â•‘              LIFECYCLE                        â•‘
-    // â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ╔═══════════════════════════════════════════════╗
+    // ║              LIFECYCLE                        ║
+    // ╚═══════════════════════════════════════════════╝
 
     void OnEnable()
     {
@@ -2486,9 +2599,9 @@ public class HectonVoxelEngine : MonoBehaviour
         TeardownRuntimeState();
     }
 
-    // â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
-    // â•‘       PUBLIC API â€” CAVE GENERATION            â•‘
-    // â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ╔═══════════════════════════════════════════════╗
+    // ║       PUBLIC API — CAVE GENERATION            ║
+    // ╚═══════════════════════════════════════════════╝
 
     /// <summary>
     /// Generate a complete cave volume from seed and preset.
@@ -2524,7 +2637,7 @@ public class HectonVoxelEngine : MonoBehaviour
     /// <param name="worldCenter">World-space center of the voxel volume.</param>
     /// <param name="seed">Deterministic seed for cave generation.</param>
     /// <param name="preset">Cave configuration. Null = use defaultPreset.</param>
-    /// <param name="lodLevel">Voxel LOD level. 0 = full resolution, 1 = doubled voxel step.</param>
+    /// <param name="lodLevel">Voxel LOD level. 0 = full resolution, 1 = doubled voxel step, 2 = quadrupled voxel step.</param>
     /// <param name="ct">Cancellation token for async cancellation.</param>
     /// <returns>Generated GameObject with mesh, or null if generation produced no geometry.</returns>
     public async Awaitable<GameObject> GenerateVolumeAsync(
@@ -2556,7 +2669,7 @@ public class HectonVoxelEngine : MonoBehaviour
             if (preset == null)
                 preset = CavePresetLibrary.Create(CavePresetType.Grotto);
 
-            int clampedLodLevel = math.clamp(lodLevel, 0, 1);
+            int clampedLodLevel = math.clamp(lodLevel, 0, 2);
             int baseGridDim = math.clamp(preset.gridDimension, 32, 128);
             float baseVoxelStep = math.max(preset.voxelSize, 0.25f);
             int gridDim = math.max(16, baseGridDim >> clampedLodLevel);
@@ -2730,7 +2843,7 @@ public class HectonVoxelEngine : MonoBehaviour
 
             MCTables.Initialize();
 
-            int clampedLodLevel = math.clamp(lodLevel, 0, 1);
+            int clampedLodLevel = math.clamp(lodLevel, 0, 2);
             int baseGridDim = math.clamp(gridDimension, 32, 128);
             float baseVoxelStep = math.max(voxelSize, 0.25f);
             int gridDim = math.max(16, baseGridDim >> clampedLodLevel);
@@ -2860,7 +2973,7 @@ public class HectonVoxelEngine : MonoBehaviour
             MCTables.Initialize();
 
             OriginShiftEventData stableShift = await HectonFloatingOrigin.WaitForShiftStabilityAsync(ct);
-            int lodLevel = math.clamp(volume.LODLevel, 0, 1);
+            int lodLevel = math.clamp(volume.LODLevel, 0, 2);
             int gridDim = math.clamp(volume.GridDimension, 16, 128);
             float voxelStep = math.max(volume.VoxelSize, 0.25f);
             Vector3 committedTotalOffset = stableShift.NewTotalOffset;
@@ -2935,6 +3048,8 @@ public class HectonVoxelEngine : MonoBehaviour
 
             pipelineData = new VoxelPipelineData
             {
+                SourceVolume = volume,
+                SourceRuntimeStamp = expectedRuntimeStamp,
                 WorldCenter = worldCenter,
                 AbsoluteUniverseOffsetAtStart = committedTotalOffset,
                 ShiftEpochAtStart = stableShift.Sequence,
@@ -3146,12 +3261,12 @@ public class HectonVoxelEngine : MonoBehaviour
 
         float fallbackHeight = data.TerrainHeightCenter;
         bool sampledHeightGrid = false;
+        Vector3 absoluteGridOrigin = new Vector3(data.VolumeOrigin.x, 0f, data.VolumeOrigin.z) + data.AbsoluteUniverseOffsetAtStart;
         HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
         if (vegetationBridge != null)
         {
-            sampledHeightGrid = vegetationBridge.TryFillTerrainHeightGridFromNativeCache(
-                data.VolumeOrigin.x,
-                data.VolumeOrigin.z,
+            sampledHeightGrid = vegetationBridge.TryFillTerrainHeightGridFromNativeCacheAUP(
+                absoluteGridOrigin,
                 data.PtsX,
                 data.PtsZ,
                 data.VoxelStep,
@@ -3168,7 +3283,8 @@ public class HectonVoxelEngine : MonoBehaviour
                 float wz = data.VolumeOrigin.z + iz * data.VoxelStep;
                 int hi = ix + iz * data.PtsX;
 
-                if (mapMagicBridge.TryGetHeight(wx, wz, out float sampledHeight))
+                Vector3 absoluteSamplePosition = new Vector3(wx, 0f, wz) + data.AbsoluteUniverseOffsetAtStart;
+                if (mapMagicBridge.TryGetHeightAUP(absoluteSamplePosition, out float sampledHeight))
                     terrainHeights[hi] = sampledHeight;
                 else
                     terrainHeights[hi] = fallbackHeight;
@@ -3179,6 +3295,9 @@ public class HectonVoxelEngine : MonoBehaviour
             gridBiome[i] = 0f;
 
         ct.ThrowIfCancellationRequested();
+        NativeArray<byte> navGridBackBuffer = default;
+        bool navGridScheduled = false;
+        JobHandle navGridHandle = default;
 
         JobHandle densityHandle = new VoxelDensityJob
         {
@@ -3215,6 +3334,25 @@ public class HectonVoxelEngine : MonoBehaviour
             smoothDensity = smoothDensityField
         }.Schedule(data.TotalPts, JOB_BATCH);
 
+        if (data.SourceVolume != null &&
+            VoxelDynamicNavGridRuntime.TryPrepareBuild(
+                data.SourceVolume,
+                data.SourceRuntimeStamp,
+                new int3(data.PtsX, data.PtsY, data.PtsZ),
+                data.VolumeOrigin,
+                data.VoxelStep,
+                data.TotalPts,
+                out navGridBackBuffer))
+        {
+            navGridHandle = new VoxelDynamicNavGridRuntime.PassabilityBuildJob
+            {
+                DensityField = densityField,
+                Output = navGridBackBuffer,
+                SolidThreshold = 0f
+            }.Schedule(data.TotalPts, JOB_BATCH, densityHandle);
+            navGridScheduled = true;
+        }
+
         JobHandle mcCountHandle = new VoxelMCCountJob
         {
             cellsX = data.GridDimension,
@@ -3229,7 +3367,12 @@ public class HectonVoxelEngine : MonoBehaviour
             cellVertexCounts = cellVertexCounts
         }.Schedule(data.TotalCells, JOB_BATCH, densityHandle);
 
-        await AwaitForJobCompletionAsync(mcCountHandle, ct);
+        JobHandle firstPhaseHandle = navGridScheduled
+            ? JobHandle.CombineDependencies(mcCountHandle, navGridHandle)
+            : mcCountHandle;
+        await AwaitForJobCompletionAsync(firstPhaseHandle, ct);
+        if (navGridScheduled)
+            VoxelDynamicNavGridRuntime.CommitBuild(data.SourceVolume, data.SourceRuntimeStamp);
 
         int exactRawVertexCount = 0;
         for (int cellIndex = 0; cellIndex < data.TotalCells; cellIndex++)
@@ -3248,8 +3391,24 @@ public class HectonVoxelEngine : MonoBehaviour
         data.WeldedPositions = new NativeArray<float3>(data.RawCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
         // COLD ALLOC: NativeArray<int>[data.RawCount] - exact triangle index buffer mapped from raw MC vertices - owner: HectonVoxelEngine
         data.TriangleIndices = new NativeArray<int>(data.RawCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-        // COLD ALLOC: NativeParallelHashMap<long,int>[data.RawCount/2] - edge-to-vertex weld map for exact MC extraction - owner: HectonVoxelEngine
-        data.EdgeToVertex = new NativeParallelHashMap<long, int>(math.max(1, data.RawCount / 2), Allocator.Persistent);
+        int edgeVertexCountX = data.GridDimension * data.PtsY * data.PtsZ;
+        int edgeVertexCountY = data.PtsX * data.GridDimension * data.PtsZ;
+        int edgeVertexCountZ = data.PtsX * data.PtsY * data.GridDimension;
+        // COLD ALLOC: NativeArray<int>[edgeVertexCountX] - deterministic X-edge weld ownership registry - owner: HectonVoxelEngine
+        data.EdgeVertexX = new NativeArray<int>(edgeVertexCountX, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+        // COLD ALLOC: NativeArray<int>[edgeVertexCountY] - deterministic Y-edge weld ownership registry - owner: HectonVoxelEngine
+        data.EdgeVertexY = new NativeArray<int>(edgeVertexCountY, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+        // COLD ALLOC: NativeArray<int>[edgeVertexCountZ] - deterministic Z-edge weld ownership registry - owner: HectonVoxelEngine
+        data.EdgeVertexZ = new NativeArray<int>(edgeVertexCountZ, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+
+        for (int edgeIndex = 0; edgeIndex < data.EdgeVertexX.Length; edgeIndex++)
+            data.EdgeVertexX[edgeIndex] = -1;
+
+        for (int edgeIndex = 0; edgeIndex < data.EdgeVertexY.Length; edgeIndex++)
+            data.EdgeVertexY[edgeIndex] = -1;
+
+        for (int edgeIndex = 0; edgeIndex < data.EdgeVertexZ.Length; edgeIndex++)
+            data.EdgeVertexZ[edgeIndex] = -1;
 
         JobHandle mcHandle = new VoxelMCExtractJob
         {
@@ -3281,8 +3440,13 @@ public class HectonVoxelEngine : MonoBehaviour
             JobHandle weldHandle = new VoxelWeldJob
             {
                 rawCount = data.RawCount,
+                ptsX = data.PtsX,
+                ptsY = data.PtsY,
+                ptsZ = data.PtsZ,
                 rawVertices = data.RawVertices,
-                edgeToVertex = data.EdgeToVertex,
+                edgeVertexX = data.EdgeVertexX,
+                edgeVertexY = data.EdgeVertexY,
+                edgeVertexZ = data.EdgeVertexZ,
                 weldedPositions = data.WeldedPositions,
                 triangleIndices = data.TriangleIndices,
                 weldedCounter = weldedCounter
@@ -3313,6 +3477,17 @@ public class HectonVoxelEngine : MonoBehaviour
             data.SpawnPointList = new NativeList<CaveSpawnData>(maxSpawnPoints, Allocator.Persistent);
         }
 
+        JobHandle seamSnapHandle = new VoxelTerrainSeamSnapJob
+        {
+            ptsX = data.PtsX,
+            ptsZ = data.PtsZ,
+            volumeOrigin = data.VolumeOrigin,
+            voxelStep = data.VoxelStep,
+            seamSnapBand = TerrainVoxelSeamTransitionBand * 0.35f,
+            terrainHeights = terrainHeights,
+            positions = data.WeldedPositions
+        }.Schedule(data.WeldedCount, JOB_BATCH);
+
         JobHandle normalHandle = new VoxelNormalJob
         {
             ptsX = data.PtsX,
@@ -3325,7 +3500,7 @@ public class HectonVoxelEngine : MonoBehaviour
             positions = data.WeldedPositions,
             normals = data.Normals,
             curvatureValues = data.CurvatureValues
-        }.Schedule(data.WeldedCount, JOB_BATCH);
+        }.Schedule(data.WeldedCount, JOB_BATCH, seamSnapHandle);
 
         JobHandle seamNormalHandle = new VoxelSeamNormalBlendJob
         {
@@ -3734,9 +3909,9 @@ public class HectonVoxelEngine : MonoBehaviour
         return x + (data.PartitionDimX * (y + (data.PartitionDimY * z)));
     }
 
-    // â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
-    // â•‘            INTERNAL HELPERS                   â•‘
-    // â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ╔═══════════════════════════════════════════════╗
+    // ║            INTERNAL HELPERS                   ║
+    // ╚═══════════════════════════════════════════════╝
 
     static void BeginGenerationOperation()
     {
@@ -4367,9 +4542,9 @@ public class HectonVoxelEngine : MonoBehaviour
 #endif
     }
 
-    // â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
-    // â•‘                GIZMOS                         â•‘
-    // â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ╔═══════════════════════════════════════════════╗
+    // ║                GIZMOS                         ║
+    // ╚═══════════════════════════════════════════════╝
 
     void OnDrawGizmosSelected()
     {
@@ -4386,9 +4561,9 @@ public class HectonVoxelEngine : MonoBehaviour
 
 #endregion
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════════════════════════════
 //  CUSTOM EDITOR (v4.0)
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════════════════════════════
 #if UNITY_EDITOR
 
 [CustomEditor(typeof(HectonVoxelEngine))]
@@ -4406,7 +4581,7 @@ public class HectonVoxelEngineEditor : Editor
         if (Application.isPlaying)
         {
             EditorGUILayout.HelpBox(
-                $"â•â•â• CAVE VOXEL ENGINE v4.0 â•â•â•\n" +
+                $"═══ CAVE VOXEL ENGINE v4.0 ═══\n" +
                 $"Active Volumes: {engine.ActiveVolumeCount}\n" +
                 $"MC Tables: {(MCTables.IsReady ? "Ready" : "Not Init")}\n" +
                 $"Height Source: MapMagicBridge\n" +
@@ -4429,8 +4604,8 @@ public class HectonVoxelEngineEditor : Editor
         float totalMB = densityMB + rawMB + weldMapMB;
 
         EditorGUILayout.HelpBox(
-            $"â•â•â• CURRENT PRESET: {preset.presetName} â•â•â•\n" +
-            $"Grid: {dim}Â³ | Voxel: {vox}m | Coverage: {coverage:F0}m\n" +
+            $"═══ CURRENT PRESET: {preset.presetName} ═══\n" +
+            $"Grid: {dim}³ | Voxel: {vox}m | Coverage: {coverage:F0}m\n" +
             $"Rooms: {preset.minRooms}-{preset.maxRooms}\n" +
             $"Density: {densityMB:F1} MB | MC Buffer: {rawMB:F1} MB\n" +
             $"Peak temp: {totalMB:F1} MB (freed after gen)\n" +
@@ -4440,7 +4615,7 @@ public class HectonVoxelEngineEditor : Editor
         EditorGUILayout.Space(5);
 
         GUI.backgroundColor = new Color(1f, 0.5f, 0.4f);
-        if (GUILayout.Button("âœ•  Clear All Volumes", GUILayout.Height(28)))
+        if (GUILayout.Button("✕  Clear All Volumes", GUILayout.Height(28)))
         {
             Undo.RegisterFullObjectHierarchyUndo(engine.gameObject, "Clear Caves");
             engine.ClearAllVolumes();
@@ -4448,6 +4623,4 @@ public class HectonVoxelEngineEditor : Editor
         GUI.backgroundColor = Color.white;
     }
 }
-
 #endif
-

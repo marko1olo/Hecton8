@@ -43,30 +43,64 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             float _HectonContactShadowSteps;
             float _HectonContactShadowBias;
             float _HectonContactShadowMaxDistance;
+            float _HectonFlashlightShadowSteps;
+            float _HectonFlashlightShadowSoftness;
+            float _HectonFlashlightShadowMinStep;
+            float _HectonFlashlightShadowBias;
+            float _HectonFlashlightShadowFloor;
+            float _HectonNoirPower;
+            float _HectonNoirFogDensity;
+            float4 _HectonNoirLiftColor;
+            float _HectonLensGhostIntensity;
+            float _HectonLensGhostScale;
+            float _HectonLensChromaticAberration;
+            float _HectonLensEdgeWeight;
+            float _HectonHasExposureState;
             float _HectonHasBlueNoiseTex;
+            float _HectonFrameCount;
         CBUFFER_END
 
+        StructuredBuffer<float4> _HectonNoirExposureState;
         int _HectonScooterHeadlightCount;
         float4 _HectonScooterHeadlightPositionsWS[HECTON_MAX_SCOOTER_HEADLIGHTS];
         float4 _HectonScooterHeadlightDirectionsWS[HECTON_MAX_SCOOTER_HEADLIGHTS];
         float4 _HectonScooterHeadlightColors[HECTON_MAX_SCOOTER_HEADLIGHTS];
         float4 _HectonScooterHeadlightConeData[HECTON_MAX_SCOOTER_HEADLIGHTS];
+        float4 _HectonFlashlightPositionWS;
+        float4 _HectonFlashlightDirectionWS;
+        float4 _HectonFlashlightColor;
+        float4 _HectonFlashlightConeData;
+        float4 _HectonFlashlightVoxelHalfExtents;
+        float4x4 _HectonFlashlightVoxelWorldToLocal;
+        float4 _HectonCaveVoxelHalfExtents;
+        float4x4 _HectonCaveVoxelWorldToLocal;
+        float4 _SunDirection;
         float4 _HectonScooterVelocityWS;
         float4 _HectonFloorBiolumColor;
-        float4 _HectonVegetationWakeTrailWorldRect;
+        float4 _HectonShallowWaterFieldWorldRect;
+        float4 _HectonCaveVoxelAoParams;
         float4 _GlobalDriftOffset;
         float4 _BlitTexture_TexelSize;
         float4 _BlueNoiseTex_TexelSize;
+        float4 _HectonShaftsTexture_TexelSize;
+        float _EclipseOcclusion;
         float _HectonFloorBiolumStrength;
-        float _HectonVegetationWakeTrailActive;
+        float _HectonShallowWaterFieldActive;
         float _HectonScooterBrakeCloud;
+        float _HectonFlashlightActive;
+        float _HectonFlashlightVoxelActive;
+        float _HectonCaveVoxelActive;
 
         TEXTURE2D_X(_BlitTexture);
         TEXTURE2D(_BlueNoiseTex);
         SAMPLER(sampler_BlueNoiseTex);
-        TEXTURE2D(_HectonVegetationWakeTrailRT);
-        SAMPLER(sampler_HectonVegetationWakeTrailRT);
+        TEXTURE2D(_HectonShallowWaterFieldRT);
+        SAMPLER(sampler_HectonShallowWaterFieldRT);
         TEXTURE2D_X(_HectonShaftsTexture);
+        TEXTURE3D(_VoxelDensityTex);
+        SAMPLER(sampler_VoxelDensityTex);
+        TEXTURE3D(_HectonCaveVoxelSdfTex);
+        SAMPLER(sampler_HectonCaveVoxelSdfTex);
 
         struct Attributes
         {
@@ -101,20 +135,60 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             return lenSq > 0.00001 ? value * rsqrt(lenSq) : float3(0.0, 0.0, 1.0);
         }
 
+        float ResolveSpotConeAttenuation(float cosAngle, float innerCos, float outerCos)
+        {
+            float coneRange = max(innerCos - outerCos, 0.0001);
+            return saturate((cosAngle - outerCos) / coneRange);
+        }
+
+        float ResolveVolumetricLightDistanceFade(float3 lightPositionWS)
+        {
+            float lightDistanceToCamera = distance(_WorldSpaceCameraPos, lightPositionWS);
+            float safeDistance = isfinite(lightDistanceToCamera) ? lightDistanceToCamera : HECTON_VOLUMETRIC_LIGHT_CULL_DISTANCE;
+            float fadeRange = max(HECTON_VOLUMETRIC_LIGHT_CULL_DISTANCE - HECTON_VOLUMETRIC_LIGHT_CULL_FADE_START, 0.0001);
+            float fade = 1.0 - saturate((safeDistance - HECTON_VOLUMETRIC_LIGHT_CULL_FADE_START) / fadeRange);
+            return max(fade, 0.0);
+        }
+
+        float ResolveTemporalFrameIndex()
+        {
+            return max(_HectonFrameCount, floor(_Time.y * 60.0));
+        }
+
+        float2 ResolveTemporalR2Offset()
+        {
+            const float2 r2Sequence = float2(0.7548776662466927, 0.5698402909980532);
+            return frac(ResolveTemporalFrameIndex() * r2Sequence);
+        }
+
+        float2 ResolveBlueNoiseTexelScale()
+        {
+            float useImportedTexelScale = step(0.0001, _BlueNoiseTex_TexelSize.z) * step(0.0001, _BlueNoiseTex_TexelSize.w);
+            return lerp(float2(1.0 / 64.0, 1.0 / 64.0), _BlueNoiseTex_TexelSize.xy, useImportedTexelScale);
+        }
+
         float ResolveInterleavedNoise(float2 screenUV)
         {
-            float2 pixel = floor(screenUV * _ScaledScreenParams.xy);
+            float2 temporalOffset = ResolveTemporalR2Offset() * _ScaledScreenParams.xy;
+            float2 pixel = floor(screenUV * _ScaledScreenParams.xy + temporalOffset);
             return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
         }
 
         float ResolveBlueNoise(float2 screenUV)
         {
             float2 pixel = floor(screenUV * _ScaledScreenParams.xy);
-            float2 blueNoiseUV = frac(pixel / 64.0);
+            float2 temporalOffset = ResolveTemporalR2Offset();
+            float2 blueNoiseUV = frac(pixel * ResolveBlueNoiseTexelScale() + temporalOffset);
             float sampled = _HectonHasBlueNoiseTex > 0.5 ? SAMPLE_TEXTURE2D(_BlueNoiseTex, sampler_BlueNoiseTex, blueNoiseUV).r : 0.0;
             float fallback = ResolveInterleavedNoise(screenUV);
             float useBlueNoise = step(0.5, _HectonHasBlueNoiseTex) * step(0.0001, _BlueNoiseTex_TexelSize.z);
             return lerp(fallback, sampled, useBlueNoise);
+        }
+
+        half3 ApplyResolveBlueNoiseDither(half3 color, float2 screenUV)
+        {
+            float dither = (ResolveBlueNoise(screenUV) - 0.5) * (1.0 / 255.0);
+            return max(color + (half)dither.xxx, 0.0h);
         }
 
         float ResolveFarRawDepth()
@@ -145,11 +219,12 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             linearEyeDepth = LinearEyeDepth(resolvedRawDepth, _ZBufferParams);
         }
 
-        float EvaluateSchlickPhase(float cosTheta, float anisotropy)
+        float PhaseHG(float cosTheta, float anisotropy)
         {
-            float k = anisotropy * 0.5;
-            float denominator = max(1.0 - k * cosTheta, 0.08);
-            return (1.0 - k * k) / (12.56637 * denominator * denominator);
+            float g = clamp(anisotropy, -0.95, 0.95);
+            float gSq = g * g;
+            float denominator = max(1.0 + gSq - 2.0 * g * cosTheta, 0.0001);
+            return (1.0 - gSq) * SafeRcp(12.56637 * denominator * sqrt(denominator));
         }
 
         float Hash31(float3 value)
@@ -196,18 +271,18 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             return density * floorBoost * _HectonSiltStrength;
         }
 
-        float4 EvaluateWakeTrailData(float3 positionWS)
+        float4 EvaluateShallowWaterFieldData(float3 positionWS)
         {
-            if (_HectonVegetationWakeTrailActive < 0.5)
+            if (_HectonShallowWaterFieldActive < 0.5)
                 return float4(0.5, 0.5, 0.0, 0.0);
 
             float2 uv = float2(
-                (positionWS.x - _HectonVegetationWakeTrailWorldRect.x) * _HectonVegetationWakeTrailWorldRect.z,
-                (positionWS.z - _HectonVegetationWakeTrailWorldRect.y) * _HectonVegetationWakeTrailWorldRect.w);
+                (positionWS.x - _HectonShallowWaterFieldWorldRect.x) * _HectonShallowWaterFieldWorldRect.z,
+                (positionWS.z - _HectonShallowWaterFieldWorldRect.y) * _HectonShallowWaterFieldWorldRect.w);
             if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0)
                 return float4(0.5, 0.5, 0.0, 0.0);
 
-            return SAMPLE_TEXTURE2D_LOD(_HectonVegetationWakeTrailRT, sampler_HectonVegetationWakeTrailRT, uv, 0);
+            return SAMPLE_TEXTURE2D_LOD(_HectonShallowWaterFieldRT, sampler_HectonShallowWaterFieldRT, uv, 0);
         }
 
         float ResolveBrakeSiltImpulse(float3 cameraPositionWS, float3 samplePositionWS, float3 rayDirectionWS)
@@ -345,16 +420,161 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             return 1.0 - saturate(shadowOcclusion * _HectonContactShadowStrength);
         }
 
-        float ResolveSpotConeAttenuation(float cosAngle, float innerCos, float outerCos)
+        float ResolveFlashlightShadowFloor()
         {
-            float coneRange = max(innerCos - outerCos, 0.0001);
-            return saturate((cosAngle - outerCos) / coneRange);
+            float noirLiftFloor = max(_HectonNoirLiftColor.r, max(_HectonNoirLiftColor.g, _HectonNoirLiftColor.b));
+            return max(_HectonFlashlightShadowFloor, noirLiftFloor);
         }
 
-        float ResolveVolumetricLightDistanceFade(float3 lightPositionWS)
+        float3 TransformFlashlightVoxelLocal(float3 positionWS)
         {
-            float lightDistanceToCamera = distance(_WorldSpaceCameraPos, lightPositionWS);
-            return 1.0 - smoothstep(HECTON_VOLUMETRIC_LIGHT_CULL_FADE_START, HECTON_VOLUMETRIC_LIGHT_CULL_DISTANCE, lightDistanceToCamera);
+            return mul(_HectonFlashlightVoxelWorldToLocal, float4(positionWS, 1.0)).xyz;
+        }
+
+        float SampleFlashlightVoxelSignedDistance(float3 positionWS)
+        {
+            if (_HectonFlashlightVoxelActive <= 0.5)
+                return _HectonFlashlightVoxelHalfExtents.w;
+
+            float3 halfExtents = max(_HectonFlashlightVoxelHalfExtents.xyz, float3(0.001, 0.001, 0.001));
+            float3 localPosition = TransformFlashlightVoxelLocal(positionWS);
+            float3 sampleUv = localPosition / (halfExtents * 2.0) + 0.5;
+            if (sampleUv.x <= 0.0 || sampleUv.x >= 1.0 ||
+                sampleUv.y <= 0.0 || sampleUv.y >= 1.0 ||
+                sampleUv.z <= 0.0 || sampleUv.z >= 1.0)
+            {
+                return _HectonFlashlightVoxelHalfExtents.w;
+            }
+
+            float encoded = SAMPLE_TEXTURE3D_LOD(_VoxelDensityTex, sampler_VoxelDensityTex, sampleUv, 0).r;
+            return lerp(-_HectonFlashlightVoxelHalfExtents.w, _HectonFlashlightVoxelHalfExtents.w, encoded);
+        }
+
+        float SampleCaveVoxelSignedDistance(float3 positionWS)
+        {
+            if (_HectonCaveVoxelActive <= 0.5)
+                return _HectonCaveVoxelHalfExtents.w;
+
+            float3 halfExtents = max(_HectonCaveVoxelHalfExtents.xyz, float3(0.001, 0.001, 0.001));
+            float3 localPosition = mul(_HectonCaveVoxelWorldToLocal, float4(positionWS, 1.0)).xyz;
+            float3 sampleUv = localPosition / (halfExtents * 2.0) + 0.5;
+            if (sampleUv.x <= 0.0 || sampleUv.x >= 1.0 ||
+                sampleUv.y <= 0.0 || sampleUv.y >= 1.0 ||
+                sampleUv.z <= 0.0 || sampleUv.z >= 1.0)
+            {
+                return _HectonCaveVoxelHalfExtents.w;
+            }
+
+            float encoded = SAMPLE_TEXTURE3D_LOD(_HectonCaveVoxelSdfTex, sampler_HectonCaveVoxelSdfTex, sampleUv, 0).r;
+            return lerp(-_HectonCaveVoxelHalfExtents.w, _HectonCaveVoxelHalfExtents.w, encoded);
+        }
+
+        float EvaluateFlashlightVoxelShadowRay(float3 rayOriginWS, float3 rayDirectionWS, float rayLength)
+        {
+            if (_HectonFlashlightActive <= 0.5 || _HectonFlashlightVoxelActive <= 0.5 || rayLength <= 0.0001)
+                return 1.0;
+
+            int stepCount = max(1, (int)round(_HectonFlashlightShadowSteps));
+            float minStep = max(_HectonFlashlightShadowMinStep, 0.01);
+            float shadowFloor = ResolveFlashlightShadowFloor();
+            float result = 1.0;
+            float travel = minStep;
+
+            [loop]
+            for (int stepIndex = 0; stepIndex < 32; stepIndex++)
+            {
+                if (stepIndex >= stepCount || travel >= rayLength)
+                    break;
+
+                float3 samplePositionWS = rayOriginWS + rayDirectionWS * travel;
+                float h = SampleFlashlightVoxelSignedDistance(samplePositionWS);
+                if (h <= 0.02)
+                    return shadowFloor;
+
+                result = min(result, _HectonFlashlightShadowSoftness * h / max(travel, 0.001));
+                travel += max(minStep, h);
+            }
+
+            return max(saturate(result), shadowFloor);
+        }
+
+        float EvaluateFlashlightSurfaceMask(float3 surfacePositionWS, float3 normalWS)
+        {
+            if (_HectonFlashlightActive <= 0.5 || _HectonFlashlightVoxelActive <= 0.5)
+                return 0.0;
+
+            float3 lightPositionWS = _HectonFlashlightPositionWS.xyz;
+            float lightRange = max(0.1, _HectonFlashlightPositionWS.w);
+            float3 toSurfaceWS = surfacePositionWS - lightPositionWS;
+            float surfaceDistance = length(toSurfaceWS);
+            if (surfaceDistance <= 0.0001 || surfaceDistance >= lightRange)
+                return 0.0;
+
+            float3 surfaceDirectionWS = toSurfaceWS * SafeRcp(surfaceDistance);
+            float3 lightDirectionWS = SafeNormalize3(_HectonFlashlightDirectionWS.xyz);
+            float coneAttenuation = ResolveSpotConeAttenuation(
+                dot(lightDirectionWS, surfaceDirectionWS),
+                _HectonFlashlightDirectionWS.w,
+                _HectonFlashlightConeData.x);
+            if (coneAttenuation <= 0.0001)
+                return 0.0;
+
+            float rangeAttenuation = saturate(1.0 - surfaceDistance * _HectonFlashlightConeData.z);
+            rangeAttenuation *= rangeAttenuation;
+            float noL = saturate(dot(normalWS, -surfaceDirectionWS));
+            return coneAttenuation * rangeAttenuation * noL * saturate(_HectonFlashlightColor.w * 0.35);
+        }
+
+        float EvaluateFlashlightSurfaceShadow(float3 surfacePositionWS, float3 normalWS)
+        {
+            if (_HectonFlashlightActive <= 0.5 || _HectonFlashlightVoxelActive <= 0.5)
+                return 1.0;
+
+            float3 lightRayWS = _HectonFlashlightPositionWS.xyz - surfacePositionWS;
+            float lightDistance = length(lightRayWS);
+            if (lightDistance <= 0.0001)
+                return 1.0;
+
+            float3 rayDirectionWS = lightRayWS * SafeRcp(lightDistance);
+            float3 rayOriginWS = surfacePositionWS + normalWS * _HectonFlashlightShadowBias;
+            float rayLength = max(lightDistance - _HectonFlashlightShadowBias, 0.0);
+            return EvaluateFlashlightVoxelShadowRay(rayOriginWS, rayDirectionWS, rayLength);
+        }
+
+        half3 EvaluateFlashlightScattering(float3 samplePositionWS, float3 rayDirectionWS)
+        {
+            if (_HectonFlashlightActive <= 0.5 || _HectonFlashlightVoxelActive <= 0.5)
+                return half3(0.0, 0.0, 0.0);
+
+            float3 lightPositionWS = _HectonFlashlightPositionWS.xyz;
+            float lightRange = max(0.1, _HectonFlashlightPositionWS.w);
+            float3 lightDirectionWS = SafeNormalize3(_HectonFlashlightDirectionWS.xyz);
+            float3 sampleVectorWS = samplePositionWS - lightPositionWS;
+            float sampleDistance = length(sampleVectorWS);
+            if (sampleDistance <= 0.0001 || sampleDistance >= lightRange)
+                return half3(0.0, 0.0, 0.0);
+
+            float3 sampleDirectionWS = sampleVectorWS * SafeRcp(sampleDistance);
+            float coneAttenuation = ResolveSpotConeAttenuation(
+                dot(lightDirectionWS, sampleDirectionWS),
+                _HectonFlashlightDirectionWS.w,
+                _HectonFlashlightConeData.x);
+            if (coneAttenuation <= 0.0001)
+                return half3(0.0, 0.0, 0.0);
+
+            float rangeAttenuation = saturate(1.0 - sampleDistance * _HectonFlashlightConeData.z);
+            rangeAttenuation *= rangeAttenuation;
+            float halo = exp2(-sampleDistance * (1.35 * _HectonFlashlightConeData.z));
+            float phaseCos = saturate(dot(sampleDirectionWS, -rayDirectionWS));
+            float phase = PhaseHG(phaseCos, _HectonShaftScatteringAnisotropy);
+            float volumetricEnergy = (coneAttenuation * rangeAttenuation * phase * _HectonFlashlightConeData.y) + (halo * 0.08);
+            float shadow = EvaluateFlashlightVoxelShadowRay(
+                samplePositionWS - sampleDirectionWS * _HectonFlashlightShadowBias,
+                -sampleDirectionWS,
+                max(sampleDistance - _HectonFlashlightShadowBias, 0.0));
+            half3 lightColor = _HectonFlashlightColor.rgb;
+            float lightIntensity = _HectonFlashlightColor.w;
+            return lightColor * (lightIntensity * volumetricEnergy * shadow);
         }
 
         half3 EvaluateHeadlightScattering(float3 samplePositionWS, float3 rayDirectionWS)
@@ -393,7 +613,7 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
                 rangeAttenuation *= rangeAttenuation;
                 float halo = exp2(-sampleDistance * (1.35 * inverseRange));
                 float phaseCos = saturate(dot(sampleDirectionWS, -rayDirectionWS));
-                float phase = EvaluateSchlickPhase(phaseCos, _HectonShaftScatteringAnisotropy);
+                float phase = PhaseHG(phaseCos, _HectonShaftScatteringAnisotropy);
                 float volumetricEnergy = ((coneAttenuation * rangeAttenuation * phase * shaftStrength) + (halo * 0.08)) * volumetricLightFade;
                 half3 lightColor = _HectonScooterHeadlightColors[lightIndex].rgb;
                 float lightIntensity = _HectonScooterHeadlightColors[lightIndex].w;
@@ -405,8 +625,11 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
 
         half3 IntegrateHeadlightShafts(float2 screenUV)
         {
-            if (_HectonScooterHeadlightCount <= 0)
+            if (_HectonScooterHeadlightCount <= 0 &&
+                (_HectonFlashlightActive <= 0.5 || _HectonFlashlightVoxelActive <= 0.5))
+            {
                 return half3(0.0, 0.0, 0.0);
+            }
 
             float rawDepth;
             float depthValid;
@@ -423,29 +646,32 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             float3 rayDirectionWS = rayVectorWS * SafeRcp(rayLength);
             float noise = ResolveBlueNoise(screenUV);
             float jitter = lerp(0.5, noise, _HectonShaftBlueNoiseJitter);
-            int steps = max(1, (int)round(_HectonShaftRaymarchSteps));
+            const int steps = 8;
             float stepLength = rayLength * SafeRcp((float)steps);
             float extinction = max(0.0001, _HectonShaftDensity * 0.08);
             half3 accumulated = half3(0.0, 0.0, 0.0);
 
-            [loop]
-            for (int stepIndex = 0; stepIndex < 32; stepIndex++)
+            [unroll(8)]
+            for (int stepIndex = 0; stepIndex < steps; stepIndex++)
             {
-                if (stepIndex >= steps)
-                    break;
-
                 float travelDistance = min(rayLength, ((stepIndex + jitter) * stepLength));
                 float3 samplePositionWS = cameraPositionWS + rayDirectionWS * travelDistance;
-                half3 scattering = EvaluateHeadlightScattering(samplePositionWS, rayDirectionWS);
+                if (_HectonCaveVoxelActive > 0.5 && SampleCaveVoxelSignedDistance(samplePositionWS) <= 0.02)
+                    break;
+
+                half3 scattering =
+                    EvaluateHeadlightScattering(samplePositionWS, rayDirectionWS) +
+                    EvaluateFlashlightScattering(samplePositionWS, rayDirectionWS);
                 float surfaceProximity = saturate(travelDistance * SafeRcp(rayLength));
-                float4 wakeTrailData = EvaluateWakeTrailData(samplePositionWS);
-                float wakeIntensity = saturate(wakeTrailData.b);
-                float2 wakeDirection = wakeTrailData.rg * 2.0 - 1.0;
-                float3 wakeTurbulence = float3(wakeDirection.x, 0.0, wakeDirection.y) * (wakeIntensity * 2.1);
+                float4 wakeTrailData = EvaluateShallowWaterFieldData(samplePositionWS);
+                float wakeDisplacement = saturate(wakeTrailData.b);
+                float2 wakeVelocity = wakeTrailData.rg * 2.0 - 1.0;
+                float wakeVelocityMagnitude = saturate(length(wakeVelocity));
+                float3 wakeTurbulence = float3(wakeVelocity.x, 0.0, wakeVelocity.y) * (wakeDisplacement * 1.4 + wakeVelocityMagnitude * 0.7);
                 float brakeImpulse = ResolveBrakeSiltImpulse(cameraPositionWS, samplePositionWS, rayDirectionWS);
                 float3 brakeTurbulence = SafeNormalize3(_HectonScooterVelocityWS.xyz) * (brakeImpulse * 1.8);
                 float siltField = ResolveSiltField(samplePositionWS + wakeTurbulence + brakeTurbulence, rayDirectionWS, surfaceProximity);
-                siltField *= lerp(1.0, 1.0 + wakeIntensity * 1.35, wakeIntensity);
+                siltField *= lerp(1.0, 1.0 + wakeDisplacement * 1.35, wakeDisplacement);
                 siltField *= 1.0 + brakeImpulse * 2.4;
                 scattering *= (1.0 + siltField);
                 float distanceFade = exp2(-travelDistance * extinction);
@@ -491,6 +717,124 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             }
 
             return half4(accumulated * SafeRcp(weightSum), 1.0);
+        }
+
+        float ResolveNoirFogFactor(float linearEyeDepth)
+        {
+            float depthLinear = max(0.0, linearEyeDepth);
+            float fogNoir = pow(saturate(1.0 - exp(-depthLinear * max(_HectonNoirFogDensity, 0.0001))), max(_HectonNoirPower, 0.001));
+            return saturate(fogNoir);
+        }
+
+        float ResolveExposureMultiplier()
+        {
+            if (_HectonHasExposureState <= 0.5)
+                return 1.0;
+
+            return max(_HectonNoirExposureState[0].z, 0.05);
+        }
+
+        half3 ResolveNoirMinimumColor()
+        {
+            return max(_HectonNoirLiftColor.rgb, half3(0.01h, 0.012h, 0.016h));
+        }
+
+        float2 ResolveSunScreenUv(out float visibility)
+        {
+            float3 toSunWS = SafeNormalize3(-_SunDirection.xyz);
+            if (dot(toSunWS, toSunWS) <= 0.0001)
+            {
+                visibility = 0.0;
+                return float2(0.5, 0.5);
+            }
+
+            float3 cameraPositionWS = GetCameraPositionWS();
+            float4 clip = TransformWorldToHClip(cameraPositionWS + toSunWS * 4096.0);
+            if (clip.w <= 0.0)
+            {
+                visibility = 0.0;
+                return float2(0.5, 0.5);
+            }
+
+            float2 uv = clip.xy * SafeRcp(clip.w) * 0.5 + 0.5;
+            float inside =
+                step(-0.25, uv.x) *
+                step(uv.x, 1.25) *
+                step(-0.25, uv.y) *
+                step(uv.y, 1.25);
+            visibility = inside * saturate(1.0 - _EclipseOcclusion);
+            return uv;
+        }
+
+        half3 EvaluateLensGhost(float2 screenUV, float2 ghostCenter, float ghostRadius, float2 aberrationOffset, float intensity)
+        {
+            float2 deltaR = screenUV - (ghostCenter + aberrationOffset);
+            float2 deltaG = screenUV - ghostCenter;
+            float2 deltaB = screenUV - (ghostCenter - aberrationOffset);
+            float radiusSq = max(ghostRadius * ghostRadius, 0.000001);
+            float maskR = saturate(1.0 - dot(deltaR, deltaR) * SafeRcp(radiusSq));
+            float maskG = saturate(1.0 - dot(deltaG, deltaG) * SafeRcp(radiusSq));
+            float maskB = saturate(1.0 - dot(deltaB, deltaB) * SafeRcp(radiusSq));
+            maskR *= maskR;
+            maskG *= maskG;
+            maskB *= maskB;
+            return half3(maskR, maskG, maskB) * intensity;
+        }
+
+        half3 EvaluateProceduralLensArtifacts(float2 screenUV)
+        {
+            if (_HectonLensGhostIntensity <= 0.0001)
+                return half3(0.0, 0.0, 0.0);
+
+            float sunVisibility;
+            float2 sunUV = ResolveSunScreenUv(sunVisibility);
+            if (sunVisibility <= 0.0001)
+                return half3(0.0, 0.0, 0.0);
+
+            float2 centerUV = float2(0.5, 0.5);
+            float2 flareVector = centerUV - sunUV;
+            float2 radialFromCenter = screenUV - centerUV;
+            float edgeFactor = saturate(dot(radialFromCenter, radialFromCenter) * 4.84);
+            float edgeWeight = saturate(edgeFactor * max(_HectonLensEdgeWeight, 0.0));
+            float2 aberrationDirection = SafeNormalize3(float3(flareVector, 0.0)).xy;
+            float2 aberrationOffset = aberrationDirection * (_HectonLensChromaticAberration * lerp(0.35, 1.0, edgeFactor));
+            float baseRadius = max(_HectonLensGhostScale, 0.001);
+            float ghostFade = saturate(1.0 - dot(sunUV - centerUV, sunUV - centerUV) * 1.6);
+            float visibility = sunVisibility * ghostFade * _HectonLensGhostIntensity;
+            if (visibility <= 0.0001)
+                return half3(0.0, 0.0, 0.0);
+
+            half3 ghosts = half3(0.0, 0.0, 0.0);
+            ghosts += EvaluateLensGhost(screenUV, centerUV + flareVector * 0.35, baseRadius * 1.20, aberrationOffset * 0.7, visibility * 0.75);
+            ghosts += EvaluateLensGhost(screenUV, centerUV + flareVector * 0.68, baseRadius * 0.94, aberrationOffset * 1.0, visibility * 0.55);
+            ghosts += EvaluateLensGhost(screenUV, centerUV + flareVector * 1.05, baseRadius * 0.72, aberrationOffset * 1.35, visibility * 0.42);
+            return ghosts * lerp(0.32, 1.0, edgeWeight);
+        }
+
+        half3 BilateralUpsampleShafts(float2 screenUV, float centerDepth)
+        {
+            float2 texelSize = _HectonShaftsTexture_TexelSize.xy;
+            float2 lowPixel = screenUV * _HectonShaftsTexture_TexelSize.zw - 0.5;
+            float2 basePixel = floor(lowPixel);
+            half3 accumulated = half3(0.0, 0.0, 0.0);
+            float weightSum = 0.0;
+
+            [unroll(4)]
+            for (int tapIndex = 0; tapIndex < 4; tapIndex++)
+            {
+                float2 tapOffset = float2((tapIndex & 1) != 0 ? 1.0 : 0.0, tapIndex >= 2 ? 1.0 : 0.0);
+                float2 sampleUV = (basePixel + tapOffset + 0.5) * texelSize;
+                float2 sampleDelta = (sampleUV - screenUV) * _HectonShaftsTexture_TexelSize.zw;
+                float spatialWeight = exp2(-dot(sampleDelta, sampleDelta));
+                float sampleDepth = ResolveLinearEyeDepthAtUv(saturate(sampleUV));
+                float depthDelta = abs(sampleDepth - centerDepth);
+                float depthWeight = exp2(-depthDelta * max(0.01, _HectonShaftBilateralDepthSigma));
+                float weight = spatialWeight * depthWeight;
+                accumulated += SAMPLE_TEXTURE2D_X(_HectonShaftsTexture, sampler_LinearClamp, saturate(sampleUV)).rgb * weight;
+                weightSum += weight;
+            }
+
+            return accumulated * SafeRcp(weightSum);
         }
 
         float3 ApproximateWorldNormal(float2 screenUV, float3 centerPositionWS)
@@ -562,22 +906,41 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
         half4 FragComposite(Varyings input) : SV_Target
         {
             half4 sourceColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, input.screenUV);
-            half3 shafts = SAMPLE_TEXTURE2D_X(_HectonShaftsTexture, sampler_LinearClamp, input.screenUV).rgb;
-            half3 biolumProjection = EvaluateBiolumFloorProjection(input.screenUV);
             float rawDepth;
             float depthValid;
             float3 scenePositionWS;
             float linearEyeDepth;
             ResolveDepthData(input.screenUV, rawDepth, depthValid, scenePositionWS, linearEyeDepth);
+            float exposureMultiplier = ResolveExposureMultiplier();
+            half3 noirMinimum = ResolveNoirMinimumColor();
+            sourceColor.rgb *= exposureMultiplier;
+            half3 shafts = BilateralUpsampleShafts(input.screenUV, linearEyeDepth);
+            shafts *= exposureMultiplier;
+            half3 biolumProjection = EvaluateBiolumFloorProjection(input.screenUV) * exposureMultiplier;
+            half3 lensGhosts = EvaluateProceduralLensArtifacts(input.screenUV) * exposureMultiplier;
             if (depthValid > 0.5)
             {
                 float3 normalWS = ApproximateWorldNormal(input.screenUV, scenePositionWS);
                 float headlightMask = EvaluateSurfaceHeadlightMask(scenePositionWS, normalWS);
                 float contactShadow = EvaluateContactShadow(scenePositionWS, normalWS);
                 sourceColor.rgb *= lerp(1.0, contactShadow, headlightMask);
+                float flashlightMask = EvaluateFlashlightSurfaceMask(scenePositionWS, normalWS);
+                float flashlightShadow = EvaluateFlashlightSurfaceShadow(scenePositionWS, normalWS);
+                sourceColor.rgb *= lerp(1.0, flashlightShadow, flashlightMask);
+
+                float fogNoir = ResolveNoirFogFactor(linearEyeDepth);
+                sourceColor.rgb = lerp(sourceColor.rgb, max(noirMinimum, sourceColor.rgb * 0.14h + noirMinimum), fogNoir);
+                sourceColor.rgb = max(sourceColor.rgb, noirMinimum);
+            }
+            else
+            {
+                sourceColor.rgb = max(sourceColor.rgb, noirMinimum);
             }
 
-            return half4(sourceColor.rgb + shafts + biolumProjection, sourceColor.a);
+            half3 finalColor = sourceColor.rgb + shafts + biolumProjection + lensGhosts;
+            finalColor = max(finalColor, noirMinimum);
+            finalColor = ApplyResolveBlueNoiseDither(finalColor, input.screenUV);
+            return half4(finalColor, sourceColor.a);
         }
         ENDHLSL
 

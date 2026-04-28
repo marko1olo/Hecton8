@@ -255,11 +255,10 @@ namespace Hecton8.Visor
 
         private void TryRegisterTickHandler()
         {
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null || _registered)
+            if (_registered)
                 return;
 
-            tickManager.Register((ITickable)this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _registered = true;
         }
 
@@ -268,9 +267,7 @@ namespace Hecton8.Visor
             if (!_registered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister((ITickable)this);
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
 
             _registered = false;
         }

@@ -173,7 +173,7 @@ namespace Hecton8.Scavenging
             // ── Авто-поиск Renderer ──
             if (targetRenderer == null)
             {
-                targetRenderer = GetComponentInChildren<Renderer>();
+                targetRenderer = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Renderer>(transform);
             }
 
             ResetState();

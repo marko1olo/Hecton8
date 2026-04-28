@@ -10,7 +10,7 @@ namespace Hecton8.Construction
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
     [AddComponentMenu("Hecton8/Construction/Repair Drone Entity")]
-    public sealed class RepairDroneEntity : MonoBehaviour, ITickable, IFixedTickable, IPoolable
+    public sealed class RepairDroneEntity : MonoBehaviour, ITickable, IUpdatable, IFixedTickable, IPoolable
     {
         private enum DroneMissionState : byte
         {
@@ -206,21 +206,21 @@ namespace Hecton8.Construction
 
         private void TryRegister()
         {
-            if (_registered || GameTickManager.Instance == null)
+            if (_registered)
                 return;
 
-            GameTickManager.Instance.Register((ITickable)this);
-            GameTickManager.Instance.Register((IFixedTickable)this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+            GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
             _registered = true;
         }
 
         private void TryUnregister()
         {
-            if (!_registered || GameTickManager.Instance == null)
+            if (!_registered)
                 return;
 
-            GameTickManager.Instance.Unregister((ITickable)this);
-            GameTickManager.Instance.Unregister((IFixedTickable)this);
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
             _registered = false;
         }
 

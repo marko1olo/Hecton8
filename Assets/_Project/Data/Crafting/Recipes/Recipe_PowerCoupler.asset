@@ -1,4 +1,4 @@
-﻿%YAML 1.1
+%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!114 &11400000
 MonoBehaviour:
@@ -15,14 +15,14 @@ MonoBehaviour:
   recipeName: Power Coupler
   localizedRecipeName:
     tableKey: ITEM_POWER_COUPLER_NAME
-    fallbackText: ''
+    fallbackText: 
     variants: []
   overrideIcon: {fileID: 0}
   description: Assemble a sealed high-load coupler for generator and habitat power
     links.
   localizedRecipeDescription:
     tableKey: ITEM_POWER_COUPLER_DESCRIPTION
-    fallbackText: ''
+    fallbackText: 
     variants: []
   resultItem: {fileID: 11400000, guid: 2f16016142035d6459a0e8b33c4ae20f, type: 2}
   resultQuantity: 1
@@ -34,5 +34,6 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: ae02bcd19d7e28b44a03544b03dc399a, type: 2}
     amount: 1
   craftTime: 1.5
+  powerCost: 5
   requiredScanEntryId: 
   fabricationGroup: 6

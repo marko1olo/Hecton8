@@ -36,6 +36,7 @@ namespace Hecton8.World
 
         [Header("Variant")]
         [SerializeField] private string variantId = "variant.generic";
+        [SerializeField, HideInInspector] private int variantHash;
         [SerializeField] private bool proxyOnly = true;
         [SerializeField] private bool supportsFinalVariant;
         [SerializeField] private bool finalVariantActive;
@@ -78,6 +79,8 @@ namespace Hecton8.World
         private LODSystemManager _lodSystemManager;
         private CullingManager _cullingManager;
         private bool _cullingRegistered;
+        private bool _poolManaged;
+        private Transform _generatedGeologyRoot;
 
         // COLD ALLOC: List<LODGroup>[4] — runtime child LOD scan buffer — owner: WorldProceduralProxyInstance
         private readonly List<LODGroup> _lodGroupBuffer = new List<LODGroup>(4);
@@ -85,10 +88,12 @@ namespace Hecton8.World
         private readonly List<LODGroup> _registeredLodGroups = new List<LODGroup>(4);
 
         public string ActiveVariantId => variantId;
+        public int ActiveVariantHash => variantHash;
         public bool IsFinalVariantActive => finalVariantActive;
         public bool SupportsFinalVariant => supportsFinalVariant;
         public long RuntimeKey => runtimeKey;
         public string FamilyId => familyId;
+        public bool IsPoolManaged => _poolManaged;
         public string GeologyProfileId => geologyProfileId;
         public string GeologyArchetype => geologyArchetype;
         public bool UsesGenerativeGeology => usesGenerativeGeology;
@@ -181,6 +186,7 @@ namespace Hecton8.World
             socketKind = socket != null ? socket.Kind : WorldContentSocket.ContentKind.Generic;
             preferredFidelity = family != null ? family.defaultFidelity : WorldSliceAnchor.SliceState.Mid;
             variantId = string.IsNullOrWhiteSpace(configuredVariantId) ? "variant.generic" : configuredVariantId;
+            variantHash = string.IsNullOrWhiteSpace(variantId) ? 0 : Hecton.Localization.LocHash.Compute(variantId);
             proxyOnly = configuredProxyOnly;
             supportsFinalVariant = false;
             finalVariantActive = false;
@@ -260,6 +266,7 @@ namespace Hecton8.World
             socketKind = rule != null ? rule.GetScatterContentKind() : WorldContentSocket.ContentKind.Generic;
             preferredFidelity = family != null ? family.defaultFidelity : WorldSliceAnchor.SliceState.Mid;
             variantId = string.IsNullOrWhiteSpace(configuredVariantId) ? "variant.generic" : configuredVariantId;
+            variantHash = string.IsNullOrWhiteSpace(variantId) ? 0 : Hecton.Localization.LocHash.Compute(variantId);
             proxyOnly = configuredProxyOnly;
             supportsFinalVariant = configuredSupportsFinalVariant;
             finalVariantActive = configuredFinalVariantActive;
@@ -294,6 +301,35 @@ namespace Hecton8.World
             hasMacroZone = configuredHasMacroZone;
             macroZoneX = configuredMacroZoneCoord.x;
             macroZoneZ = configuredMacroZoneCoord.z;
+        }
+
+        public void SetPoolManaged(bool poolManaged)
+        {
+            _poolManaged = poolManaged;
+        }
+
+        public void SetGeneratedGeologyRoot(Transform generatedRoot)
+        {
+            _generatedGeologyRoot = generatedRoot;
+        }
+
+        public Transform ResolveGeneratedGeologyRoot(string generatedRootName)
+        {
+            if (_generatedGeologyRoot != null)
+                return _generatedGeologyRoot;
+
+            int childCount = transform.childCount;
+            for (int i = 0; i < childCount; i++)
+            {
+                Transform child = transform.GetChild(i);
+                if (child == null || !string.Equals(child.name, generatedRootName, System.StringComparison.Ordinal))
+                    continue;
+
+                _generatedGeologyRoot = child;
+                return child;
+            }
+
+            return null;
         }
 
         /// <summary>

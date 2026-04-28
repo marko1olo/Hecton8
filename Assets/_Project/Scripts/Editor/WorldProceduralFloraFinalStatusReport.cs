@@ -11,6 +11,9 @@ namespace Hecton8.EditorTools
 {
     public static class WorldProceduralFloraFinalStatusReport
     {
+        private const string AutomationArmMenuPath = "Tools/Hecton/Dev/Flora/Arm Procedural Flora Automation Bridge";
+        private const string AutomationDisarmMenuPath = "Tools/Hecton/Dev/Flora/Disarm Procedural Flora Automation Bridge";
+        private const string AutomationPollMenuPath = "Tools/Hecton/Dev/Flora/Process Procedural Flora Automation Request";
         private const string ReportFileName = "PROCEDURAL_FLORA_FINAL_STATUS_REPORT.md";
         private const string ProceduralFamilyFolder = "Assets/_Project/Data/World/ProceduralFamilies";
         private const string KelpShaderName = "Hecton8/Flora/KelpMaster";
@@ -18,7 +21,7 @@ namespace Hecton8.EditorTools
         private const string AutomationFolderName = "CodexFloraAutomation";
         private const string AutomationRequestFileName = "flora_request.json";
         private const string AutomationResponseFileName = "flora_response.json";
-        private const string AutomationPreviewFolder = "Assets/Screenshots/Automation";
+        private const string AutomationPreviewFolder = "Screenshots/Automation";
         private const double AutomationPollIntervalSeconds = 0.5d;
         private const double AutomationPreviewTimeoutSeconds = 75d;
         private const int AutomationPreviewWidth = 512;
@@ -40,15 +43,57 @@ namespace Hecton8.EditorTools
 
         private static double _automationNextPollTime;
         private static bool _automationRequestActive;
+        private static bool _automationBridgeRegistered;
         private static AutomationResponse _activeAutomationResponse;
         private static double _automationPreviewDeadline;
 
-        [InitializeOnLoadMethod]
+        [MenuItem(AutomationArmMenuPath, priority = 242)]
+        private static void ArmAutomationBridge()
+        {
+            RegisterAutomationBridge();
+        }
+
+        [MenuItem(AutomationDisarmMenuPath, priority = 243)]
+        private static void DisarmAutomationBridge()
+        {
+            UnregisterAutomationBridge();
+        }
+
+        [MenuItem(AutomationPollMenuPath, priority = 244)]
+        private static void ProcessAutomationRequest()
+        {
+            TryBeginAutomationRequest();
+        }
+
+        [MenuItem(AutomationArmMenuPath, true)]
+        private static bool ArmAutomationBridgeValidate()
+        {
+            return !_automationBridgeRegistered;
+        }
+
+        [MenuItem(AutomationDisarmMenuPath, true)]
+        private static bool DisarmAutomationBridgeValidate()
+        {
+            return _automationBridgeRegistered;
+        }
+
         private static void RegisterAutomationBridge()
         {
-            EditorApplication.update -= UpdateAutomationBridge;
+            if (_automationBridgeRegistered)
+                return;
+
             EditorApplication.update += UpdateAutomationBridge;
             _automationNextPollTime = EditorApplication.timeSinceStartup + AutomationPollIntervalSeconds;
+            _automationBridgeRegistered = true;
+        }
+
+        private static void UnregisterAutomationBridge()
+        {
+            if (!_automationBridgeRegistered)
+                return;
+
+            EditorApplication.update -= UpdateAutomationBridge;
+            _automationBridgeRegistered = false;
         }
 
         [MenuItem("Hecton/Validation/Generate Procedural Flora Final Status Report", priority = 241)]
@@ -132,8 +177,7 @@ namespace Hecton8.EditorTools
 
             try
             {
-                EnsureAssetFolder("Assets/Screenshots");
-                EnsureAssetFolder(AutomationPreviewFolder);
+                EnsureAutomationPreviewFolderExists();
 
                 WorldProceduralFloraMaterialAuthoring.Apply();
                 WorldProceduralFloraBakedStarterGenerator.Generate();
@@ -749,6 +793,11 @@ namespace Hecton8.EditorTools
             return Path.Combine(GetProjectRootPath(), "Temp", AutomationFolderName);
         }
 
+        private static string GetAutomationPreviewFolderPath()
+        {
+            return Path.Combine(GetProjectRootPath(), AutomationPreviewFolder.Replace('/', Path.DirectorySeparatorChar));
+        }
+
         private static string GetAutomationRequestFilePath()
         {
             return Path.Combine(GetAutomationFolderPath(), AutomationRequestFileName);
@@ -766,21 +815,11 @@ namespace Hecton8.EditorTools
                 Directory.CreateDirectory(automationFolderPath);
         }
 
-        private static void EnsureAssetFolder(string assetPath)
+        private static void EnsureAutomationPreviewFolderExists()
         {
-            if (AssetDatabase.IsValidFolder(assetPath))
-                return;
-
-            string[] segments = assetPath.Split('/');
-            string current = segments[0];
-            for (int i = 1; i < segments.Length; i++)
-            {
-                string next = current + "/" + segments[i];
-                if (!AssetDatabase.IsValidFolder(next))
-                    AssetDatabase.CreateFolder(current, segments[i]);
-
-                current = next;
-            }
+            string previewFolderPath = GetAutomationPreviewFolderPath();
+            if (!Directory.Exists(previewFolderPath))
+                Directory.CreateDirectory(previewFolderPath);
         }
 
         private static void SafeDeleteFile(string path)

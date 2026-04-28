@@ -70,7 +70,6 @@ namespace Hecton8.Gameplay
         private float _cooldown;
         private float _tracerTimer;
         private float _nextFeedbackAt;
-        private readonly RaycastHit[] _targetHits = new RaycastHit[1]; // COLD ALLOC: harpoon resolves only the nearest target per shot.
         private Rigidbody _tetheredBody;
         private Collider _tetheredCollider;
         private HeavyTowWinch _heavyTowWinch;
@@ -231,6 +230,7 @@ namespace Hecton8.Gameplay
 
             Vector3 direction = (_cachedTransform.position - body.worldCenterOfMass).normalized;
             PhysicsForceRouter.QueueForce(body, direction * reelImpulse, ForceMode.Impulse);
+            ToolHitUtility.TryApplyRelativeCarrierImpulse(direction, reelImpulse);
 
             if (Time.time >= _nextFeedbackAt)
             {
@@ -502,6 +502,7 @@ namespace Hecton8.Gameplay
             Vector3 direction = (_cachedTransform.position - _tetheredBody.worldCenterOfMass).normalized;
             float impulseAmount = reelImpulse * tetherPullBonus;
             PhysicsForceRouter.QueueForce(_tetheredBody, direction * impulseAmount, ForceMode.Impulse);
+            ToolHitUtility.TryApplyRelativeCarrierImpulse(direction, impulseAmount);
 
             if (Time.time >= _nextFeedbackAt)
             {
@@ -602,22 +603,7 @@ namespace Hecton8.Gameplay
 
         private bool TryGetTargetHit(out RaycastHit hit)
         {
-            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
-                _cachedTransform.position,
-                _cachedTransform.forward,
-                _targetHits,
-                range,
-                targetMask,
-                QueryTriggerInteraction.Ignore);
-
-            if (hitCount > 0)
-            {
-                hit = _targetHits[0];
-                return true;
-            }
-
-            hit = default;
-            return false;
+            return TryResolveQueuedRaycast(_cachedTransform.position, _cachedTransform.forward, range, targetMask.value, QueryTriggerInteraction.Ignore, out hit);
         }
 
         private bool TryGetAssessmentCached(out HarpoonAssessment assessment)

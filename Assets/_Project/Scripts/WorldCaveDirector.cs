@@ -213,11 +213,7 @@ namespace Hecton8.World
             if (_registeredToTickManager)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager == null)
-                return;
-
-            gameTickManager.Register((ISlowTickable)this);
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
             _registeredToTickManager = true;
         }
 
@@ -226,10 +222,7 @@ namespace Hecton8.World
             if (!_registeredToTickManager)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager != null)
-                gameTickManager.Unregister((ISlowTickable)this);
-
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _registeredToTickManager = false;
         }
 
@@ -720,6 +713,25 @@ namespace Hecton8.World
 
                 for (int i = 0; i < hints.Length; i++)
                     buffer.Add(hints[i]);
+            }
+        }
+
+        internal void CollectActiveVolumes(List<HectonVoxelVolume> buffer)
+        {
+            if (buffer == null)
+                return;
+
+            buffer.Clear();
+
+            var enumerator = _caveInstances.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                KeyValuePair<long, CaveInstance> pair = enumerator.Current;
+                CaveInstance instance = pair.Value;
+                if (!instance.isActive || !IsTrackedVolumeAlive(pair.Key, instance.volume))
+                    continue;
+
+                buffer.Add(instance.volume);
             }
         }
 

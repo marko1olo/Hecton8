@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4640316111039491594}
-  m_Layer: 5
+  m_Layer: 0
   m_Name: Gauge_PWR
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2347,6 +2347,7 @@ GameObject:
   - component: {fileID: 918044680547512795}
   - component: {fileID: 8109131789165046890}
   - component: {fileID: 5920354388807484853}
+  - component: {fileID: 3896178095003698194}
   m_Layer: 5
   m_Name: Suit_HUD_Canvas
   m_TagString: Untagged
@@ -2363,7 +2364,7 @@ RectTransform:
   m_GameObject: {fileID: 2631486575886313125}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4151454289797554437}
@@ -2374,11 +2375,11 @@ RectTransform:
   - {fileID: 770246495779474258}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
-  m_Pivot: {x: 0, y: 0}
+  m_SizeDelta: {x: 1600, y: 900}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!223 &7915165240633007945
 Canvas:
   m_ObjectHideFlags: 0
@@ -2450,7 +2451,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2631486575886313125}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0b6367f6f85b72641b4b7cc04b06c7dd, type: 3}
   m_Name: 
@@ -2472,8 +2473,15 @@ MonoBehaviour:
   renderPath: 0
   overallScale: 0.98
   chromeAlpha: 0.14
-  projectionPlaneDistance: 1
+  projectionPlaneDistance: 0.5
   overlaySortingOrder: 140
+  stressPulseStartThreshold: 0.24
+  stressPulseFrequencyMin: 0.9
+  stressPulseFrequencyMax: 2.3
+  stressPulseChromeAlphaBoost: 0.09
+  stressPulseBrightnessBoost: 0.12
+  stressPulseWarningBlend: 0.18
+  stressPulseBlendSpeed: 3.4
   headerOffset: {x: 0, y: -34}
   telemetryOffset: {x: -226, y: 126}
   telemetrySize: {x: 184, y: 124}
@@ -2488,6 +2496,22 @@ MonoBehaviour:
   gaugeValueOffsetY: 0
   gaugeLabelOffsetY: -34
   _appliedLayoutRevision: 0
+--- !u!114 &3896178095003698194
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2631486575886313125}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf01e647ee538ad49bdad9d34764edd1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.UI.HectonUIScaler
+  referenceResolution: {x: 1600, y: 900}
+  matchWidthOrHeight: 0.5
+  minimumScale: 0.72
+  maximumScale: 1.35
 --- !u!1 &2686821459172600369
 GameObject:
   m_ObjectHideFlags: 0

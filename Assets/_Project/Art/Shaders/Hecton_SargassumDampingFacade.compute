@@ -1,0 +1,56 @@
+#pragma kernel CSMain
+
+Texture2D<float4> _DensityTex;
+Texture2D<float4> _CutMaskTex;
+RWTexture2D<float4> _WaveDampingMaskResult;
+RWTexture2D<float4> _OilFilmMaskResult;
+SamplerState sampler_DensityTex;
+SamplerState sampler_CutMaskTex;
+
+int _CutMaskActive;
+float4 _DensityWorldRect;
+float4 _CutMaskWorldRect;
+float4 _GlobalDriftOffset;
+float4 _WaveFacadeParams;
+float4 _OilFacadeParams;
+
+float SampleRectTexture(Texture2D<float4> textureSampler, SamplerState textureState, float2 worldXZ, float4 worldRect)
+{
+    float2 uv = (worldXZ - worldRect.xy) * worldRect.zw;
+    if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0)
+        return 0.0;
+
+    return textureSampler.SampleLevel(textureState, uv, 0).r;
+}
+
+[numthreads(8, 8, 1)]
+void CSMain(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint width;
+    uint height;
+    _WaveDampingMaskResult.GetDimensions(width, height);
+    if (dispatchThreadId.x >= width || dispatchThreadId.y >= height)
+        return;
+
+    float2 uv = (dispatchThreadId.xy + 0.5) / float2(width, height);
+    float density = _DensityTex.SampleLevel(sampler_DensityTex, uv, 0).r;
+
+    float worldSizeX = _DensityWorldRect.z > 0.0 ? 1.0 / _DensityWorldRect.z : 0.0;
+    float worldSizeZ = _DensityWorldRect.w > 0.0 ? 1.0 / _DensityWorldRect.w : 0.0;
+    float2 worldXZ = float2(
+        _DensityWorldRect.x + uv.x * worldSizeX + _GlobalDriftOffset.x,
+        _DensityWorldRect.y + uv.y * worldSizeZ + _GlobalDriftOffset.z);
+
+    float cutMask = _CutMaskActive != 0
+        ? SampleRectTexture(_CutMaskTex, sampler_CutMaskTex, worldXZ, _CutMaskWorldRect)
+        : 0.0;
+
+    float waveEffectiveDensity = saturate(density * (1.0 - saturate(cutMask * _WaveFacadeParams.y)));
+    float waveMask = pow(saturate(waveEffectiveDensity), _WaveFacadeParams.x) * _WaveFacadeParams.z;
+
+    float oilEffectiveDensity = saturate(density * (1.0 - saturate(cutMask * _OilFacadeParams.y)));
+    float oilMask = pow(saturate(oilEffectiveDensity), _OilFacadeParams.x) * _OilFacadeParams.z;
+
+    _WaveDampingMaskResult[dispatchThreadId.xy] = float4(waveMask, waveMask, waveMask, waveMask);
+    _OilFilmMaskResult[dispatchThreadId.xy] = float4(oilMask, oilMask, oilMask, oilMask);
+}

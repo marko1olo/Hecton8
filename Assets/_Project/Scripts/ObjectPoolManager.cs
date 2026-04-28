@@ -16,7 +16,7 @@
 //     Никаких AddComponent в горячих путях.
 //
 // v2.1 FIX — DespawnTimer:
-//   • УДАЛЁН private void Update(). Нарушал архитектуру Zero Native Updates.
+//   • УДАЛЁН legacy native frame loop. Нарушал архитектуру Zero Native Updates.
 //   • Реализует ITickable. Таймер тикается через GameTickManager.
 //   • Ленивая регистрация: Register ТОЛЬКО когда таймер активен.
 //     Unregister при истечении, OnDisable, или деспавне.
@@ -105,7 +105,7 @@ namespace Hecton8.Core
         /// <summary>
         /// Основное хранилище пулов.
         /// Key = PrefabRegistry.GetOrRegisterPrefab(prefab) — стабильный, уникальный, int.
-        /// Key = prefab.GetInstanceID() — стабильный, уникальный, int.
+        /// Key = prefab.GetEntityId() — стабильный, уникальный, int.
         /// Value = Pool (очередь + контейнер + метаданные).
         /// </summary>
         private Dictionary<int, Pool> _pools;
@@ -181,7 +181,7 @@ namespace Hecton8.Core
                     if (!TryGetPrefabRegistry(out PrefabRegistry registry))
                         return;
 
-                    // v3.0: Use PrefabRegistry instead of deprecated GetInstanceID()
+                    // v3.0: Use PrefabRegistry instead of deprecated GetEntityId()
                     int id = registry.GetOrRegisterPrefab(prefab);
 
                     if (!_pools.TryGetValue(id, out Pool pool))
@@ -634,7 +634,7 @@ namespace Hecton8.Core
             public GameObject prefab;
 
             /// <summary>PrefabRegistry ID оригинального префаба.</summary>
-            /// <summary>GetInstanceID() оригинального префаба.</summary>
+            /// <summary>GetEntityId() оригинального префаба.</summary>
             public int prefabId;
         }
 
@@ -681,7 +681,7 @@ namespace Hecton8.Core
         /// Таймер для отложенного возврата в пул.
         /// Реализует ITickable — тикается через GameTickManager.
         ///
-        /// v2.1 FIX: УДАЛЁН private void Update().
+        /// v2.1 FIX: УДАЛЁН legacy native frame loop.
         ///   Старая версия использовала нативный Update(), что нарушало
         ///   архитектуру проекта (Zero Native Updates). Каждый активный
         ///   DespawnTimer добавлял ~500ns overhead через Unity Message System
@@ -750,12 +750,8 @@ namespace Hecton8.Core
                 // ── Регистрация в GameTickManager (ленивая) ──
                 if (!_registeredToTickManager)
                 {
-                    GameTickManager gtm = GameTickManager.Instance;
-                    if (gtm != null)
-                    {
-                        gtm.Register((ITickable)this);
-                        _registeredToTickManager = true;
-                    }
+                    GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
+                    _registeredToTickManager = true;
                 }
             }
 
@@ -821,12 +817,7 @@ namespace Hecton8.Core
                 // ── Отписка от GameTickManager ──
                 if (_registeredToTickManager)
                 {
-                    GameTickManager gtm = GameTickManager.Instance;
-                    if (gtm != null)
-                    {
-                        gtm.Unregister((ITickable)this);
-                    }
-
+                    GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
                     _registeredToTickManager = false;
                 }
             }

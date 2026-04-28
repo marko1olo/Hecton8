@@ -1,28 +1,28 @@
 // ============================================================================
-// HECTON-8 — PrefabRegistry.cs
-// Central stable ID mapping for prefabs. Replaces deprecated GetInstanceID().
+// HECTON-8 â€” PrefabRegistry.cs
+// Central stable ID mapping for prefabs. Replaces deprecated GetEntityId().
 // ============================================================================
 //
 // ARCHITECTURE:
-//   • Singleton (DontDestroyOnLoad) — one registry per game session.
-//   • Bi-directional mapping: GameObject ↔ int PrefabId.
-//   • Zero GC lookups via Dictionary<int, GameObject> and Dictionary<GameObject, int>.
-//   • Editor-time assignment via [ContextMenu] or auto-registration on first access.
-//   • Optional native ID snapshot for jobs that only need prefab ID membership.
+//   â€¢ Singleton (DontDestroyOnLoad) â€” one registry per game session.
+//   â€¢ Bi-directional mapping: GameObject â†” int PrefabId.
+//   â€¢ Zero GC lookups via Dictionary<int, GameObject> and Dictionary<GameObject, int>.
+//   â€¢ Editor-time assignment via [ContextMenu] or auto-registration on first access.
+//   â€¢ Optional native ID snapshot for jobs that only need prefab ID membership.
 //
 // UNITY 6.4+ COMPATIBILITY:
-//   • GetInstanceID() deprecated in Unity 6.4, error in Unity 6.5.
-//   • Uses EntityId where available, stable hash fallback otherwise.
-//   • Conditional compilation: #if UNITY_6000_4_OR_NEWER
+//   â€¢ GetEntityId() replaces the obsolete object-instance path in Unity 6.4+.
+//   â€¢ Uses EntityId where available, stable hash fallback otherwise.
+//   â€¢ Conditional compilation: #if UNITY_6000_4_OR_NEWER
 //
 // USAGE:
 //   int id = PrefabRegistry.Instance.GetOrRegisterPrefab(myPrefab);
 //   GameObject prefab = PrefabRegistry.Instance.GetPrefab(id);
 //
 // ZERO GC:
-//   • Dictionary lookups — O(1), no allocations.
-//   • No string operations in hot paths.
-//   • NativeArray for Burst-compatible reads (after warmup).
+//   â€¢ Dictionary lookups â€” O(1), no allocations.
+//   â€¢ No string operations in hot paths.
+//   â€¢ NativeArray for Burst-compatible reads (after warmup).
 // ============================================================================
 
 using System.Collections.Generic;
@@ -38,14 +38,14 @@ namespace Hecton8.Core
 {
     /// <summary>
     /// Central registry for stable prefab IDs.
-    /// Replaces deprecated GetInstanceID() with persistent, save-safe identifiers.
+    /// Replaces deprecated GetEntityId() path with persistent, save-safe identifiers.
     /// </summary>
     [DefaultExecutionOrder(-9500)] // Before ObjectPoolManager
     public sealed class PrefabRegistry : MonoBehaviour
     {
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  SINGLETON
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private static PrefabRegistry _instance;
         private static bool _isShuttingDown;
@@ -83,16 +83,16 @@ namespace Hecton8.Core
             }
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  STORAGE
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        /// <summary>Forward mapping: PrefabId → Prefab.</summary>
-        // COLD ALLOC: Dictionary[256] — prefab registry — owner: PrefabRegistry
+        /// <summary>Forward mapping: PrefabId â†’ Prefab.</summary>
+        // COLD ALLOC: Dictionary[256] â€” prefab registry â€” owner: PrefabRegistry
         private readonly Dictionary<int, GameObject> _idToPrefab = new Dictionary<int, GameObject>(256);
 
-        /// <summary>Reverse mapping: Prefab → PrefabId.</summary>
-        // COLD ALLOC: Dictionary[256] — prefab reverse lookup — owner: PrefabRegistry
+        /// <summary>Reverse mapping: Prefab â†’ PrefabId.</summary>
+        // COLD ALLOC: Dictionary[256] â€” prefab reverse lookup â€” owner: PrefabRegistry
         private readonly Dictionary<GameObject, int> _prefabToId = new Dictionary<GameObject, int>(256);
 
         /// <summary>Counter for generating new IDs. Starts at 1 (0 = invalid).</summary>
@@ -107,9 +107,9 @@ namespace Hecton8.Core
         /// <summary>Lock object for thread-safe native map creation.</summary>
         private readonly object _nativeMapLock = new object();
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  LIFECYCLE
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private void Awake()
         {
@@ -212,11 +212,8 @@ namespace Hecton8.Core
             _isResolvingRuntimeInstance = true;
             try
             {
-                PrefabRegistry existing = FindAnyObjectByType<PrefabRegistry>(FindObjectsInactive.Include);
-                if (existing != null)
-                    return existing;
 
-                // COLD ALLOC: GameObject[1] — runtime prefab registry fallback when direct bootstrap path is missing — owner: PrefabRegistry
+                // COLD ALLOC: GameObject[1] â€” runtime prefab registry fallback when direct bootstrap path is missing â€” owner: PrefabRegistry
                 GameObject runtimeRoot = new GameObject("[PrefabRegistry]");
                 return runtimeRoot.AddComponent<PrefabRegistry>();
             }
@@ -226,9 +223,9 @@ namespace Hecton8.Core
             }
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  PUBLIC API — REGISTRATION
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  PUBLIC API â€” REGISTRATION
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>
         /// Gets or creates a stable ID for the prefab.
@@ -267,9 +264,9 @@ namespace Hecton8.Core
             return newId;
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  PUBLIC API — LOOKUP
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  PUBLIC API â€” LOOKUP
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>
         /// Gets the prefab by ID.
@@ -311,9 +308,9 @@ namespace Hecton8.Core
             return prefabId > 0 && _idToPrefab.ContainsKey(prefabId);
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  PUBLIC API — NATIVE MAP (BURST)
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  PUBLIC API â€” NATIVE MAP (BURST)
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>
         /// Warms up the native map for Burst job access.
@@ -342,9 +339,9 @@ namespace Hecton8.Core
             return _nativeMap;
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  PUBLIC API — DIAGNOSTICS
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  PUBLIC API â€” DIAGNOSTICS
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>Number of registered prefabs.</summary>
         public int RegisteredCount => _idToPrefab.Count;
@@ -358,7 +355,7 @@ namespace Hecton8.Core
         {
             Debug.Log($"[PrefabRegistry] {_idToPrefab.Count} registered prefabs:");
             foreach (var kvp in _idToPrefab)
-                Debug.Log($"  {kvp.Key} → {kvp.Value?.name ?? "null"}");
+                Debug.Log($"  {kvp.Key} â†’ {kvp.Value?.name ?? "null"}");
         }
 
         /// <summary>
@@ -375,3 +372,4 @@ namespace Hecton8.Core
 #endif
     }
 }
+

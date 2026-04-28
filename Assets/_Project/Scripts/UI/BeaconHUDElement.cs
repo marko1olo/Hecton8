@@ -24,8 +24,10 @@ namespace Hecton8.UI
     /// HUD element that displays deployed beacons on screen.
     /// Uses ITickable for updates. Zero GC in hot paths.
     /// </summary>
-    public class BeaconHUDElement : MonoBehaviour, ITickable
+    public class BeaconHUDElement : MonoBehaviour, ITickable, IUpdatable
     {
+        private static readonly char[] s_EmptyChars = new char[1];
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -64,10 +66,12 @@ namespace Hecton8.UI
         private Camera _mainCamera;
         private Transform _cachedTransform;
         private bool _registered;
-        private string _distancePattern = "{0:0} m";
         private GameLanguage _distanceLanguage = GameLanguage.English;
         private float _cameraRetryTime;
         private const float CameraRetryInterval = 2f;
+        // COLD ALLOC: char[24] — localized distance pattern cache — owner: BeaconHUDElement
+        private readonly char[] _distancePatternBuffer = new char[24];
+        private int _distancePatternLength = 6;
 
         // Pre-allocated array for beacon icons
         private BeaconIconDisplay[] _iconDisplays = new BeaconIconDisplay[16]; // COLD ALLOC: max 16 beacon icons — owner: BeaconHUDElement
@@ -88,15 +92,19 @@ namespace Hecton8.UI
                 for (int i = 0; i < _iconDisplays.Length; i++)
                 {
                     GameObject icon = Instantiate(beaconIconPrefab, iconContainer);
-                    icon.SetActive(false);
+                    CanvasGroup canvasGroup = icon.GetComponent<CanvasGroup>();
+                    if (canvasGroup == null)
+                        canvasGroup = icon.AddComponent<CanvasGroup>();
                     _iconDisplays[i] = new BeaconIconDisplay
                     {
                         gameObject = icon,
                         transform = icon.transform,
-                        canvasGroup = icon.GetComponent<CanvasGroup>(),
+                        canvasGroup = canvasGroup,
                         labelText = ResolveChildText(icon.transform, "Label"),
                         distanceText = ResolveChildText(icon.transform, "Distance")
                     };
+
+                    ApplyDisplayVisible(_iconDisplays[i], false, 0f);
                 }
             }
         }
@@ -129,11 +137,9 @@ namespace Hecton8.UI
 
                 _cameraRetryTime = Time.time + CameraRetryInterval;
 
-                if (Hecton8.Bootstrap.SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform)
-                    && playerTransform != null)
-                {
-                    _mainCamera = playerTransform.GetComponentInChildren<Camera>(true);
-                }
+                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                if (playerContext != null)
+                    _mainCamera = playerContext.PlayerCamera;
 
                 if (_mainCamera == null)
                     return;
@@ -146,7 +152,7 @@ namespace Hecton8.UI
             for (int i = beaconCount; i < _activeIconCount; i++)
             {
                 if (_iconDisplays[i] != null && _iconDisplays[i].gameObject != null)
-                    _iconDisplays[i].gameObject.SetActive(false);
+                    ApplyDisplayVisible(_iconDisplays[i], false, 0f);
             }
 
             _activeIconCount = Mathf.Min(beaconCount, _iconDisplays.Length);
@@ -158,7 +164,7 @@ namespace Hecton8.UI
                 if (beacon == null || !beacon.isActiveAndEnabled)
                 {
                     if (_iconDisplays[i] != null && _iconDisplays[i].gameObject != null)
-                        _iconDisplays[i].gameObject.SetActive(false);
+                        ApplyDisplayVisible(_iconDisplays[i], false, 0f);
                     continue;
                 }
 
@@ -183,7 +189,7 @@ namespace Hecton8.UI
             // Check if too far
             if (distance > maxDisplayDistance)
             {
-                display.gameObject.SetActive(false);
+                ApplyDisplayVisible(display, false, 0f);
                 return;
             }
 
@@ -193,7 +199,7 @@ namespace Hecton8.UI
             // Check if behind camera
             if (screenPos.z < 0f)
             {
-                display.gameObject.SetActive(false);
+                ApplyDisplayVisible(display, false, 0f);
                 return;
             }
 
@@ -202,7 +208,6 @@ namespace Hecton8.UI
             float clampedY = Mathf.Clamp(screenPos.y, screenMargin, Screen.height - screenMargin);
 
             // Activate and position
-            display.gameObject.SetActive(true);
             display.transform.position = new Vector3(clampedX, clampedY, 0f);
 
             // Calculate alpha based on distance
@@ -212,11 +217,7 @@ namespace Hecton8.UI
                 alpha = 1f - (distance - fadeStartDistance) / (maxDisplayDistance - fadeStartDistance);
             }
 
-            // Apply alpha
-            if (display.canvasGroup != null)
-            {
-                display.canvasGroup.alpha = alpha;
-            }
+            ApplyDisplayVisible(display, true, alpha);
 
             // Update distance text
             if (display.labelText != null)
@@ -226,13 +227,15 @@ namespace Hecton8.UI
                     string displayLabel = beacon.DisplayLabel;
                     if (!string.Equals(display.CachedLabel, displayLabel, System.StringComparison.Ordinal))
                     {
-                        display.labelText.text = displayLabel;
-                        display.CachedLabel = displayLabel;
+                        string resolvedLabel = displayLabel ?? string.Empty;
+                        display.labelText.SetText(resolvedLabel);
+                        display.CachedLabel = resolvedLabel;
                     }
                 }
                 else if (!string.IsNullOrEmpty(display.CachedLabel))
                 {
-                    display.labelText.text = string.Empty;
+                    display.labelText.SetCharArray(s_EmptyChars, 0, 0);
+                    display.labelText.UpdateVertexData(TMPro.TMP_VertexDataUpdateFlags.All);
                     display.CachedLabel = string.Empty;
                 }
             }
@@ -245,14 +248,17 @@ namespace Hecton8.UI
                     if (!display.HasCachedDistance || display.CachedDistanceMeters != roundedDistance)
                     {
                         float localizedDistance = LocalizedMeasurementFormatter.ConvertDistanceMeters(distance, _distanceLanguage);
-                        display.distanceText.SetText(_distancePattern, localizedDistance);
+                        LocNumericBuffer.Write(new System.ReadOnlySpan<char>(_distancePatternBuffer, 0, _distancePatternLength), LocNumericArg.Float(localizedDistance), out char[] buffer, out int length);
+                        display.distanceText.SetCharArray(buffer, 0, length);
+                        display.distanceText.UpdateVertexData(TMPro.TMP_VertexDataUpdateFlags.All);
                         display.CachedDistanceMeters = roundedDistance;
                         display.HasCachedDistance = true;
                     }
                 }
                 else if (display.HasCachedDistance)
                 {
-                    display.distanceText.text = string.Empty;
+                    display.distanceText.SetCharArray(s_EmptyChars, 0, 0);
+                    display.distanceText.UpdateVertexData(TMPro.TMP_VertexDataUpdateFlags.All);
                     display.CachedDistanceMeters = 0;
                     display.HasCachedDistance = false;
                 }
@@ -264,9 +270,26 @@ namespace Hecton8.UI
             for (int i = 0; i < _iconDisplays.Length; i++)
             {
                 if (_iconDisplays[i] != null && _iconDisplays[i].gameObject != null)
-                    _iconDisplays[i].gameObject.SetActive(false);
+                    ApplyDisplayVisible(_iconDisplays[i], false, 0f);
             }
             _activeIconCount = 0;
+        }
+
+        private static void ApplyDisplayVisible(BeaconIconDisplay display, bool visible, float alpha)
+        {
+            if (display == null || display.gameObject == null)
+                return;
+
+            CanvasGroup canvasGroup = display.canvasGroup;
+            if (canvasGroup == null)
+            {
+                display.gameObject.SetActive(visible);
+                return;
+            }
+
+            canvasGroup.alpha = visible ? Mathf.Clamp01(alpha) : 0f;
+            canvasGroup.blocksRaycasts = false;
+            canvasGroup.interactable = false;
         }
 
         private void RegisterToTick()
@@ -274,11 +297,9 @@ namespace Hecton8.UI
             if (_registered)
                 return;
 
-            if (GameTickManager.Instance != null)
-            {
-                GameTickManager.Instance.Register(this);
-                _registered = true;
-            }
+            SystemDispatcher.EnsureRuntimeInstance();
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
+            _registered = true;
         }
 
         private void UnregisterFromTick()
@@ -286,11 +307,8 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            if (GameTickManager.Instance != null)
-            {
-                GameTickManager.Instance.Unregister(this);
-                _registered = false;
-            }
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            _registered = false;
         }
 
         private static TMPro.TMP_Text ResolveChildText(Transform root, string childName)
@@ -317,7 +335,18 @@ namespace Hecton8.UI
             LocalizationManager manager = LocalizationManager.Instance;
             _distanceLanguage = manager != null ? manager.CurrentLanguage : GameLanguage.English;
             string unitLabel = LocalizedMeasurementFormatter.ResolveDistanceUnitLabel(_distanceLanguage);
-            _distancePattern = string.Concat("{0:0} ", unitLabel);
+            if (string.IsNullOrEmpty(unitLabel))
+                unitLabel = "m";
+
+            const string prefix = "{0:0} ";
+            int cursor = 0;
+            for (int i = 0; i < prefix.Length && cursor < _distancePatternBuffer.Length; i++)
+                _distancePatternBuffer[cursor++] = prefix[i];
+
+            for (int i = 0; i < unitLabel.Length && cursor < _distancePatternBuffer.Length; i++)
+                _distancePatternBuffer[cursor++] = unitLabel[i];
+
+            _distancePatternLength = cursor;
         }
 
         private void InvalidateDisplayCaches()

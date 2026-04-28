@@ -15,7 +15,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
     [AddComponentMenu("Hecton8/Gameplay/Player Health")]
-    public sealed class HectonPlayerHealth : MonoBehaviour, ISaveable, ITickable
+    public sealed class HectonPlayerHealth : MonoBehaviour, ISaveable, ITickable, IUpdatable
     {
         /// <summary>Maximum health points.</summary>
         [Header("Health Settings")]
@@ -206,11 +206,7 @@ namespace Hecton8.Gameplay
             if (_registeredToTickManager)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register((ITickable)this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
             _registeredToTickManager = true;
         }
 
@@ -219,10 +215,7 @@ namespace Hecton8.Gameplay
             if (!_registeredToTickManager)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister((ITickable)this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
             _registeredToTickManager = false;
         }
 

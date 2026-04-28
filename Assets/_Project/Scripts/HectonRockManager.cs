@@ -45,6 +45,8 @@ namespace Hecton8.World
             }
         }
 
+        internal GPUInstancerPrefabManager GpuInstancerManager => gpuiManager;
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — ROCK LAYERS
         // ══════════════════════════════════════════════════════════
@@ -189,9 +191,9 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
-            if (GameTickManager.Instance != null && !_registeredToTickManager)
+            if (!_registeredToTickManager)
             {
-                GameTickManager.Instance.Register((ISlowTickable)this);
+                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredToTickManager = true;
             }
         }
@@ -200,15 +202,8 @@ namespace Hecton8.World
         {
             if (!_registeredToTickManager)
             {
-                if (GameTickManager.Instance != null)
-                {
-                    GameTickManager.Instance.Register((ISlowTickable)this);
-                    _registeredToTickManager = true;
-                }
-                else
-                {
-                    Debug.LogError("[HectonRockManager] GameTickManager.Instance is null at Start().", this);
-                }
+                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredToTickManager = true;
             }
 
 #if UNITY_EDITOR
@@ -218,9 +213,9 @@ namespace Hecton8.World
 
         private void OnDisable()
         {
-            if (GameTickManager.Instance != null && _registeredToTickManager)
+            if (_registeredToTickManager)
             {
-                GameTickManager.Instance.Unregister((ISlowTickable)this);
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredToTickManager = false;
             }
         }

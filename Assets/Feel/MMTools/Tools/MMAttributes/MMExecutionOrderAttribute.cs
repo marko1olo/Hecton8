@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
 using System;
@@ -40,7 +40,6 @@ namespace MoreMountains.Tools
 		/// <summary>
 		/// When Unity loads, modifies the execution orders of monos with an ExecutionOrder attribute, if needed
 		/// </summary>
-		[InitializeOnLoadMethod]        
 		protected static void ModifyExecutionOrder()
 		{
 			QueueModifyExecutionOrder();

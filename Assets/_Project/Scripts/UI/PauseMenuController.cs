@@ -10,6 +10,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.UI;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -17,8 +18,9 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Pause Menu Controller")]
-    public sealed class PauseMenuController : MonoBehaviour, ITickable
+    public sealed class PauseMenuController : MonoBehaviour, ITickable, IUpdatable
     {
+        internal static PauseMenuController ActiveRuntimeInstance { get; private set; }
         private const string PauseMenuRootName = "PauseMenu_Root";
 
         private enum PauseSection
@@ -61,10 +63,13 @@ namespace Hecton8.UI
         private bool _exitToMainMenuInFlight;
         private bool _saveOperationInFlight;
         private bool _sceneActivationRequested;
+        private bool _pauseRequested;
+        private bool _cancelRequested;
         private PauseSection _activeSection;
         private float _cachedTimeScale = 1f;
         private AsyncOperation _mainMenuLoadOperation;
         private int _lastMainMenuLoadPercent = -1;
+        private InputManager _inputManager;
 
         private RectTransform _root;
         private CanvasGroup _canvasGroup;
@@ -135,11 +140,7 @@ namespace Hecton8.UI
             if (_registered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register(this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _registered = true;
         }
 
@@ -148,15 +149,15 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister(this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _registered = false;
         }
 
         private void Awake()
         {
+            if (Application.isPlaying)
+                ActiveRuntimeInstance = this;
+
             AutoResolve();
             EnsureBuilt();
             ApplyClosedState(restorePlayerInput: false);
@@ -164,7 +165,11 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            if (Application.isPlaying)
+                ActiveRuntimeInstance = this;
+
             TryRegister();
+            BindInputActions();
 
             LocalizationManager.OnLanguageChanged += OnLanguageChanged;
             SaveEvents.OnSaveStarted += HandleSaveStarted;
@@ -174,6 +179,11 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
+
+            UnbindInputActions();
+
             // TASK 31: Null-safe event unsubscription in OnDisable
             if (LocalizationManager.Instance != null)
                 LocalizationManager.OnLanguageChanged -= OnLanguageChanged;
@@ -196,6 +206,9 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
+
             TryUnregister();
         }
 
@@ -228,28 +241,17 @@ namespace Hecton8.UI
             if (_saveOperationInFlight)
                 return;
 
-            bool escapePressed = Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame;
-            bool startPressed = Gamepad.current != null && Gamepad.current.startButton.wasPressedThisFrame;
-
-            if (!escapePressed && !startPressed)
-                return;
-
-            if (!_isOpen)
+            if (_pauseRequested)
             {
-                if (PlayerPDA.IsOpen || HectonFabricatorUI.IsMenuOpen)
-                    return;
-
-                Open();
-                return;
+                _pauseRequested = false;
+                HandlePauseRequested();
             }
 
-            if (_activeSection == PauseSection.Main)
+            if (_cancelRequested)
             {
-                Close();
-                return;
+                _cancelRequested = false;
+                HandleCancelRequested();
             }
-
-            ShowSection(PauseSection.Main);
         }
 
         public void Open()
@@ -274,6 +276,8 @@ namespace Hecton8.UI
             EnsureBuilt();
             EnsureEventSystem();
 
+            _pauseRequested = false;
+            _cancelRequested = false;
             _isOpen = true;
             RegisterOpenMenu();
             _activeSection = PauseSection.Main;
@@ -344,6 +348,8 @@ namespace Hecton8.UI
         {
             bool wasOpen = _isOpen;
             _isOpen = false;
+            _pauseRequested = false;
+            _cancelRequested = false;
             if (wasOpen)
                 UnregisterOpenMenu();
             _activeSection = PauseSection.Main;
@@ -411,10 +417,10 @@ namespace Hecton8.UI
                 if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                     playerTransform != null)
                 {
-                    playerPDA = playerTransform.GetComponentInChildren<PlayerPDA>(true);
+                    playerPDA = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerPDA != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerPDA : playerTransform.GetComponent<PlayerPDA>());
                 }
             }
-            labelFont = ResolveReadableFont(labelFont);
+            labelFont = LocalizedFontResolver.ResolveReadableFont(labelFont);
             if (numericFont == null)
                 numericFont = labelFont;
             else if (IsNumericOnlyFont(labelFont) && !IsNumericOnlyFont(numericFont))
@@ -1506,11 +1512,98 @@ namespace Hecton8.UI
 
         private static void EnsureEventSystem()
         {
-            if (EventSystem.current != null)
+            EventSystem eventSystem = EventSystem.current;
+            if (eventSystem == null)
+            {
+                GameObject eventSystemRoot = new GameObject("EventSystem", typeof(EventSystem)); // COLD ALLOC: GameObject[1] - pause-menu fallback event system root - owner: PauseMenuController
+                eventSystemRoot.hideFlags = HideFlags.DontSave;
+                eventSystem = eventSystemRoot.GetComponent<EventSystem>();
+            }
+
+            if (eventSystem == null)
                 return;
 
-            GameObject eventSystemRoot = new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
-            eventSystemRoot.hideFlags = HideFlags.DontSave;
+            StandaloneInputModule legacyInputModule = eventSystem.GetComponent<StandaloneInputModule>();
+            if (!eventSystem.TryGetComponent(out InputSystemUIInputModule inputSystemModule))
+            {
+                if (legacyInputModule != null)
+                {
+                    legacyInputModule.enabled = false;
+                    if (Application.isPlaying)
+                        Destroy(legacyInputModule);
+                    else
+                        DestroyImmediate(legacyInputModule);
+                }
+
+                inputSystemModule = eventSystem.gameObject.AddComponent<InputSystemUIInputModule>();
+            }
+
+            InputManager inputManager = InputManager.Instance;
+            if (inputManager != null)
+                inputManager.TryConfigureUiInputModule(inputSystemModule);
+        }
+
+        private void BindInputActions()
+        {
+            InputManager inputManager = InputManager.Instance;
+            if (ReferenceEquals(_inputManager, inputManager))
+                return;
+
+            UnbindInputActions();
+            _inputManager = inputManager;
+            if (_inputManager == null)
+                return;
+
+            _inputManager.OnPause += HandlePauseActionPerformed;
+            _inputManager.OnCancel += HandleCancelActionPerformed;
+        }
+
+        private void UnbindInputActions()
+        {
+            if (_inputManager != null)
+            {
+                _inputManager.OnPause -= HandlePauseActionPerformed;
+                _inputManager.OnCancel -= HandleCancelActionPerformed;
+            }
+
+            _inputManager = null;
+            _pauseRequested = false;
+            _cancelRequested = false;
+        }
+
+        private void HandlePauseActionPerformed()
+        {
+            _pauseRequested = true;
+        }
+
+        private void HandleCancelActionPerformed()
+        {
+            _cancelRequested = true;
+        }
+
+        private void HandlePauseRequested()
+        {
+            if (_isOpen)
+                return;
+
+            if (PlayerPDA.IsOpen || HectonFabricatorUI.IsMenuOpen)
+                return;
+
+            Open();
+        }
+
+        private void HandleCancelRequested()
+        {
+            if (!_isOpen)
+                return;
+
+            if (_activeSection == PauseSection.Main)
+            {
+                Close();
+                return;
+            }
+
+            ShowSection(PauseSection.Main);
         }
 
         private static TMP_FontAsset ResolveReadableFont(TMP_FontAsset preferred)
@@ -1518,7 +1611,7 @@ namespace Hecton8.UI
             if (preferred != null && !IsNumericOnlyFont(preferred))
                 return preferred;
 
-            TMP_FontAsset[] fonts = Resources.FindObjectsOfTypeAll<TMP_FontAsset>();
+            TMP_FontAsset[] fonts = System.Array.Empty<TMP_FontAsset>();
             for (int i = 0; i < fonts.Length; i++)
             {
                 TMP_FontAsset candidate = fonts[i];
@@ -1533,7 +1626,7 @@ namespace Hecton8.UI
                 }
             }
 
-            return TMP_Settings.defaultFontAsset;
+            return LocalizedFontResolver.ResolveReadableFont(preferred);
         }
 
         private static bool IsNumericOnlyFont(TMP_FontAsset font)

@@ -1,0 +1,213 @@
+using System;
+using System.Runtime.InteropServices;
+
+namespace Hecton8.Audio
+{
+    [Flags]
+    internal enum NativeAudioKernelBridgeStatus
+    {
+        None = 0,
+        Active = 1 << 0,
+        DescriptorMagicMismatch = 1 << 1,
+        NullPointer = 1 << 2,
+        AlignmentInvalid = 1 << 3,
+        CapacityInvalid = 1 << 4,
+        SharedStateInvalid = 1 << 5,
+        Cleared = 1 << 6,
+        Busy = 1 << 7,
+        PluginUnavailable = 1 << 30
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct NativeAudioKernelRingBufferDescriptor
+    {
+        public const uint DescriptorMagicValue = 0x484B3031u;
+        public const int RequiredAlignmentBytes = 4;
+        public const int ReadIndexSlot = 0;
+        public const int WriteIndexSlot = 1;
+        public const int CapacityFramesSlot = 2;
+        public const int CapacityMaskSlot = 3;
+        public const int GuardValueSlotA = 4;
+        public const int GuardValueSlotB = 5;
+        public const int SharedStateSlotCount = 6;
+        public const int SharedStateGuardValueA = unchecked((int)0x48454354);
+        public const int SharedStateGuardValueB = unchecked((int)0x4F4E2D38);
+
+        public uint DescriptorMagic;
+        public IntPtr Frames;
+        public IntPtr SharedState;
+        public IntPtr ReadIndex;
+        public IntPtr WriteIndex;
+        public int CapacityFrames;
+        public int CapacityMask;
+        public int SharedStateLengthInts;
+    }
+
+    internal static class HectonSensoryKernelNativeBridge
+    {
+        public static bool IsDescriptorValid(in NativeAudioKernelRingBufferDescriptor descriptor, out NativeAudioKernelBridgeStatus status)
+        {
+            status = NativeAudioKernelBridgeStatus.None;
+
+            if (descriptor.DescriptorMagic != NativeAudioKernelRingBufferDescriptor.DescriptorMagicValue)
+                status |= NativeAudioKernelBridgeStatus.DescriptorMagicMismatch;
+
+            if (descriptor.Frames == IntPtr.Zero ||
+                descriptor.SharedState == IntPtr.Zero ||
+                descriptor.ReadIndex == IntPtr.Zero ||
+                descriptor.WriteIndex == IntPtr.Zero)
+            {
+                status |= NativeAudioKernelBridgeStatus.NullPointer;
+            }
+
+            if (!IsAligned(descriptor.Frames, NativeAudioKernelRingBufferDescriptor.RequiredAlignmentBytes) ||
+                !IsAligned(descriptor.SharedState, NativeAudioKernelRingBufferDescriptor.RequiredAlignmentBytes) ||
+                !IsAligned(descriptor.ReadIndex, NativeAudioKernelRingBufferDescriptor.RequiredAlignmentBytes) ||
+                !IsAligned(descriptor.WriteIndex, NativeAudioKernelRingBufferDescriptor.RequiredAlignmentBytes))
+            {
+                status |= NativeAudioKernelBridgeStatus.AlignmentInvalid;
+            }
+
+            if (descriptor.CapacityFrames <= 1 ||
+                descriptor.CapacityMask != descriptor.CapacityFrames - 1 ||
+                !IsPowerOfTwo(descriptor.CapacityFrames))
+            {
+                status |= NativeAudioKernelBridgeStatus.CapacityInvalid;
+            }
+
+            if (descriptor.SharedStateLengthInts < NativeAudioKernelRingBufferDescriptor.SharedStateSlotCount)
+                status |= NativeAudioKernelBridgeStatus.SharedStateInvalid;
+
+            if (status == NativeAudioKernelBridgeStatus.None)
+                status = NativeAudioKernelBridgeStatus.Active;
+
+            return status == NativeAudioKernelBridgeStatus.Active;
+        }
+
+#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
+        private const string PluginName = "HectonAudioKernel";
+
+        [DllImport(PluginName, EntryPoint = "HectonSensoryKernel_RegisterSharedRingBuffer")]
+        private static extern void RegisterSharedRingBuffer(ref NativeAudioKernelRingBufferDescriptor descriptor);
+
+        [DllImport(PluginName, EntryPoint = "HectonSensoryKernel_ClearSharedRingBuffer")]
+        private static extern void ClearSharedRingBuffer();
+
+        [DllImport(PluginName, EntryPoint = "HectonSensoryKernel_GetSharedRingBufferStatus")]
+        private static extern int GetSharedRingBufferStatusNative();
+
+        public static NativeAudioKernelBridgeStatus GetStatus()
+        {
+            try
+            {
+                return (NativeAudioKernelBridgeStatus)GetSharedRingBufferStatusNative();
+            }
+            catch (DllNotFoundException)
+            {
+                return NativeAudioKernelBridgeStatus.PluginUnavailable;
+            }
+            catch (EntryPointNotFoundException)
+            {
+                return NativeAudioKernelBridgeStatus.PluginUnavailable;
+            }
+        }
+
+        public static bool TryRegister(ref NativeAudioKernelRingBufferDescriptor descriptor)
+        {
+            return TryRegister(ref descriptor, out _);
+        }
+
+        public static bool TryRegister(ref NativeAudioKernelRingBufferDescriptor descriptor, out NativeAudioKernelBridgeStatus status)
+        {
+            if (!IsDescriptorValid(in descriptor, out status))
+                return false;
+
+            try
+            {
+                RegisterSharedRingBuffer(ref descriptor);
+                status = GetStatus();
+                return (status & NativeAudioKernelBridgeStatus.Active) != 0;
+            }
+            catch (DllNotFoundException)
+            {
+                status = NativeAudioKernelBridgeStatus.PluginUnavailable;
+                return false;
+            }
+            catch (EntryPointNotFoundException)
+            {
+                status = NativeAudioKernelBridgeStatus.PluginUnavailable;
+                return false;
+            }
+        }
+
+        public static bool TryClear()
+        {
+            return TryClear(out _);
+        }
+
+        public static bool TryClear(out NativeAudioKernelBridgeStatus status)
+        {
+            try
+            {
+                ClearSharedRingBuffer();
+                status = GetStatus();
+                return (status & NativeAudioKernelBridgeStatus.Active) == 0;
+            }
+            catch (DllNotFoundException)
+            {
+                status = NativeAudioKernelBridgeStatus.PluginUnavailable;
+                return false;
+            }
+            catch (EntryPointNotFoundException)
+            {
+                status = NativeAudioKernelBridgeStatus.PluginUnavailable;
+                return false;
+            }
+        }
+#else
+        public static NativeAudioKernelBridgeStatus GetStatus()
+        {
+            return NativeAudioKernelBridgeStatus.PluginUnavailable;
+        }
+
+        public static bool TryRegister(ref NativeAudioKernelRingBufferDescriptor descriptor)
+        {
+            return TryRegister(ref descriptor, out _);
+        }
+
+        public static bool TryRegister(ref NativeAudioKernelRingBufferDescriptor descriptor, out NativeAudioKernelBridgeStatus status)
+        {
+            if (!IsDescriptorValid(in descriptor, out status))
+                return false;
+
+            status = NativeAudioKernelBridgeStatus.PluginUnavailable;
+            return false;
+        }
+
+        public static bool TryClear()
+        {
+            return TryClear(out _);
+        }
+
+        public static bool TryClear(out NativeAudioKernelBridgeStatus status)
+        {
+            status = NativeAudioKernelBridgeStatus.PluginUnavailable;
+            return false;
+        }
+#endif
+
+        private static bool IsAligned(IntPtr pointer, int alignmentBytes)
+        {
+            if (pointer == IntPtr.Zero || alignmentBytes <= 0)
+                return false;
+
+            long mask = alignmentBytes - 1L;
+            return (pointer.ToInt64() & mask) == 0L;
+        }
+
+        private static bool IsPowerOfTwo(int value)
+        {
+            return value > 0 && (value & (value - 1)) == 0;
+        }
+    }
+}

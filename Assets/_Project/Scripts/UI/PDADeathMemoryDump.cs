@@ -14,7 +14,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Death Memory Dump")]
-    public sealed class PDADeathMemoryDump : MonoBehaviour, ITickable
+    public sealed class PDADeathMemoryDump : MonoBehaviour, ITickable, IUpdatable
     {
         private enum DumpState : byte
         {
@@ -184,7 +184,7 @@ namespace Hecton8.UI
                 switch (i)
                 {
                     case 22:
-                        AppendTelemetryLine(_dumpBuilder, "PRESSURE VECTOR", Mathf.RoundToInt(record.PeakDepthMeters), "M");
+                        AppendTelemetryLine(_dumpBuilder, "PRESSURE VECTOR", Mathf.RoundToInt((float)record.PeakDepthMeters), "M");
                         break;
 
                     case 61:
@@ -192,7 +192,7 @@ namespace Hecton8.UI
                         break;
 
                     case 118:
-                        AppendTelemetryLine(_dumpBuilder, "LIFE TRACE", Mathf.RoundToInt(record.LifeDurationSeconds), "S");
+                        AppendTelemetryLine(_dumpBuilder, "LIFE TRACE", Mathf.RoundToInt((float)record.LifeDurationSeconds), "S");
                         break;
 
                     default:
@@ -270,8 +270,8 @@ namespace Hecton8.UI
             unchecked
             {
                 int hash = 17;
-                hash = (hash * 31) + Mathf.RoundToInt(record.PeakDepthMeters);
-                hash = (hash * 31) + Mathf.RoundToInt(record.LifeDurationSeconds);
+                hash = (hash * 31) + Mathf.RoundToInt((float)record.PeakDepthMeters);
+                hash = (hash * 31) + Mathf.RoundToInt((float)record.LifeDurationSeconds);
                 hash = (hash * 31) + Mathf.RoundToInt(record.LowestIntegrityNormalized * 1000f);
                 hash = (hash * 31) + Mathf.RoundToInt(record.Position.x * 10f);
                 hash = (hash * 31) + Mathf.RoundToInt(record.Position.y * 10f);
@@ -372,11 +372,7 @@ namespace Hecton8.UI
             if (_tickRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager == null)
-                return;
-
-            tickManager.Register(this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _tickRegistered = true;
         }
 
@@ -385,20 +381,17 @@ namespace Hecton8.UI
             if (!_tickRegistered)
                 return;
 
-            GameTickManager tickManager = GameTickManager.Instance;
-            if (tickManager != null)
-                tickManager.Unregister(this);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _tickRegistered = false;
         }
 
         private static Canvas ResolveTargetCanvas()
         {
-            SuitHUDV4CanvasOverlay overlay = Object.FindAnyObjectByType<SuitHUDV4CanvasOverlay>();
+            SuitHUDV4CanvasOverlay overlay = SuitHUDV4CanvasOverlay.ActiveRuntimeInstance;
             if (overlay != null && overlay.TargetCanvas != null)
                 return overlay.TargetCanvas;
 
-            return Object.FindAnyObjectByType<Canvas>();
+            return (SuitHUDV4CanvasOverlay.ActiveRuntimeInstance != null ? SuitHUDV4CanvasOverlay.ActiveRuntimeInstance.GetComponent<Canvas>() : null);
         }
 
         private static string ResolveLocalized(string key, string fallback)

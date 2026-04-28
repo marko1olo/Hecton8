@@ -227,11 +227,8 @@ namespace Hecton8.World
                 ApplyRenderScale();
             }
 
-            // Register with SaveManager
-            if (SaveManager.Instance != null)
-            {
-                SaveManager.Instance.Register(this);
-            }
+            // Register with the authoritative save service.
+            GlobalRegistry.Save?.Register(this);
 
             #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log("[DynamicResolutionScaler] Initialized. Target frame time: " + _targetFrameTime + " ms");
@@ -250,11 +247,8 @@ namespace Hecton8.World
 
         private void OnDestroy()
         {
-            // Unregister from SaveManager
-            if (SaveManager.Instance != null)
-            {
-                SaveManager.Instance.Unregister(this);
-            }
+            // Unregister from the authoritative save service.
+            GlobalRegistry.Save?.Unregister(this);
 
             RestoreDefaultRenderScale();
             TryUnregister();
@@ -269,11 +263,8 @@ namespace Hecton8.World
             if (_registered)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager == null)
-                return;
 
-            gameTickManager.Register(this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _registered = true;
         }
 
@@ -282,9 +273,7 @@ namespace Hecton8.World
             if (!_registered)
                 return;
 
-            GameTickManager gameTickManager = GameTickManager.Instance;
-            if (gameTickManager != null)
-                gameTickManager.Unregister(this);
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
 
             _registered = false;
         }

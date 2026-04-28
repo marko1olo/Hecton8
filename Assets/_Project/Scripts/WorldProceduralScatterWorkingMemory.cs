@@ -12,6 +12,7 @@ namespace Hecton8.World
         internal sealed class ScatterWorkingMemory : IDisposable
         {
             private const int InitialGridPlacementNativeCapacity = 16384;
+            private const int InitialCandidateAcceptanceBatchCapacity = 256;
 
             public NativeArray<WorldProceduralFieldSampler.CellInputData> CellSamplingInputs;
             public NativeArray<WorldProceduralFieldSampler.CellOutputData> CellSamplingOutputs;
@@ -43,11 +44,20 @@ namespace Hecton8.World
             public NativeParallelMultiHashMap<int, float3> GridPlacementPositionBuckets;
             public NativeParallelMultiHashMap<int, int> GridPlacementMetadataBuckets;
             public NativeArray<int> CandidateAcceptanceResult;
+            public NativeList<ScatterCellCandidateAcceptanceInput> CandidateAcceptanceBatchInputs;
+            public NativeList<byte> CandidateAcceptanceBatchResults;
+            public NativeList<ScatterPlacementSpatialMetadata> CandidateAcceptanceBatchPendingMetadata;
+            public NativeParallelMultiHashMap<int, float3> CandidateAcceptanceBatchPendingPositionBuckets;
+            public NativeParallelMultiHashMap<int, int> CandidateAcceptanceBatchPendingMetadataBuckets;
+            public NativeArray<int> CandidateAcceptanceClusterAccentCountsScratch;
+            public NativeArray<int> CandidateAcceptanceStructureAccentCountsScratch;
+            public NativeArray<float> CandidateAcceptanceClusterAccentRoleMaxRatiosScratch;
+            public NativeArray<int> CandidateAcceptanceStructureAccentRoleMaxCountsScratch;
             public readonly System.Collections.Generic.Dictionary<long, ScatterCandidate> StructureRescueCandidates = new System.Collections.Generic.Dictionary<long, ScatterCandidate>(64);
             public readonly System.Collections.Generic.Dictionary<long, ScatterCandidate> SpawnRescueCandidates = new System.Collections.Generic.Dictionary<long, ScatterCandidate>(64);
             public readonly System.Collections.Generic.Dictionary<int, int> PrefabWarmupCounts = new System.Collections.Generic.Dictionary<int, int>(32);
             public readonly System.Collections.Generic.Dictionary<int, GameObject> PrefabWarmupPrefabs = new System.Collections.Generic.Dictionary<int, GameObject>(32);
-            public readonly System.Collections.Generic.Dictionary<int, string> PrefabWarmupFamilyIds = new System.Collections.Generic.Dictionary<int, string>(32);
+            public readonly System.Collections.Generic.Dictionary<int, int> PrefabWarmupFamilyHashes = new System.Collections.Generic.Dictionary<int, int>(32);
             public readonly System.Collections.Generic.Dictionary<int, int> PrefabCreateAllowances = new System.Collections.Generic.Dictionary<int, int>(32);
             public readonly System.Collections.Generic.Dictionary<int, int> PreferredFamilyPlacementCounts = new System.Collections.Generic.Dictionary<int, int>(16);
             public readonly WorldProceduralPatternProfile[] PatternProfileCache = new WorldProceduralPatternProfile[16];
@@ -120,6 +130,15 @@ namespace Hecton8.World
                 GridPlacementMetadataBuckets = new NativeParallelMultiHashMap<int, int>(InitialGridPlacementNativeCapacity, Allocator.Persistent);
                 // COLD ALLOC: NativeArray<int>[1] — candidate acceptance result scratch — owner: WorldProceduralScatterDirector.ScatterWorkingMemory
                 CandidateAcceptanceResult = new NativeArray<int>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                CandidateAcceptanceBatchInputs = new NativeList<ScatterCellCandidateAcceptanceInput>(InitialCandidateAcceptanceBatchCapacity, Allocator.Persistent);
+                CandidateAcceptanceBatchResults = new NativeList<byte>(InitialCandidateAcceptanceBatchCapacity, Allocator.Persistent);
+                CandidateAcceptanceBatchPendingMetadata = new NativeList<ScatterPlacementSpatialMetadata>(InitialCandidateAcceptanceBatchCapacity, Allocator.Persistent);
+                CandidateAcceptanceBatchPendingPositionBuckets = new NativeParallelMultiHashMap<int, float3>(InitialCandidateAcceptanceBatchCapacity, Allocator.Persistent);
+                CandidateAcceptanceBatchPendingMetadataBuckets = new NativeParallelMultiHashMap<int, int>(InitialCandidateAcceptanceBatchCapacity, Allocator.Persistent);
+                CandidateAcceptanceClusterAccentCountsScratch = new NativeArray<int>(_ClusterAccentRoleCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                CandidateAcceptanceStructureAccentCountsScratch = new NativeArray<int>(_StructureAccentRoleCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                CandidateAcceptanceClusterAccentRoleMaxRatiosScratch = new NativeArray<float>(_ClusterAccentRoleCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                CandidateAcceptanceStructureAccentRoleMaxCountsScratch = new NativeArray<int>(_StructureAccentRoleCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             }
 
             public void EnsureCellSamplingCapacity(int requiredCapacity)
@@ -142,13 +161,81 @@ namespace Hecton8.World
                     GridPlacementMetadataBuckets.Clear();
                 if (CandidateAcceptanceResult.IsCreated)
                     CandidateAcceptanceResult[0] = 1;
+                if (CandidateAcceptanceBatchInputs.IsCreated)
+                    CandidateAcceptanceBatchInputs.Clear();
+                if (CandidateAcceptanceBatchResults.IsCreated)
+                    CandidateAcceptanceBatchResults.Clear();
+                if (CandidateAcceptanceBatchPendingMetadata.IsCreated)
+                    CandidateAcceptanceBatchPendingMetadata.Clear();
+                if (CandidateAcceptanceBatchPendingPositionBuckets.IsCreated)
+                    CandidateAcceptanceBatchPendingPositionBuckets.Clear();
+                if (CandidateAcceptanceBatchPendingMetadataBuckets.IsCreated)
+                    CandidateAcceptanceBatchPendingMetadataBuckets.Clear();
+                if (CandidateAcceptanceClusterAccentCountsScratch.IsCreated)
+                    ClearNativeArray(CandidateAcceptanceClusterAccentCountsScratch, 0);
+                if (CandidateAcceptanceStructureAccentCountsScratch.IsCreated)
+                    ClearNativeArray(CandidateAcceptanceStructureAccentCountsScratch, 0);
+                if (CandidateAcceptanceClusterAccentRoleMaxRatiosScratch.IsCreated)
+                    ClearNativeArray(CandidateAcceptanceClusterAccentRoleMaxRatiosScratch, 0f);
+                if (CandidateAcceptanceStructureAccentRoleMaxCountsScratch.IsCreated)
+                    ClearNativeArray(CandidateAcceptanceStructureAccentRoleMaxCountsScratch, 0);
 
                 GridPlacementNativeOverflowed = false;
             }
 
+            public bool PrepareScatterCellCandidateAcceptanceBatch(int requiredCapacity)
+            {
+                if (!CandidateAcceptanceBatchInputs.IsCreated ||
+                    !CandidateAcceptanceBatchResults.IsCreated ||
+                    !CandidateAcceptanceBatchPendingMetadata.IsCreated ||
+                    !CandidateAcceptanceBatchPendingPositionBuckets.IsCreated ||
+                    !CandidateAcceptanceBatchPendingMetadataBuckets.IsCreated ||
+                    !CandidateAcceptanceClusterAccentCountsScratch.IsCreated ||
+                    !CandidateAcceptanceStructureAccentCountsScratch.IsCreated ||
+                    !CandidateAcceptanceClusterAccentRoleMaxRatiosScratch.IsCreated ||
+                    !CandidateAcceptanceStructureAccentRoleMaxCountsScratch.IsCreated)
+                {
+                    return false;
+                }
+
+                if (requiredCapacity <= 0)
+                {
+                    CandidateAcceptanceBatchInputs.Clear();
+                    CandidateAcceptanceBatchResults.Clear();
+                    CandidateAcceptanceBatchPendingMetadata.Clear();
+                    CandidateAcceptanceBatchPendingPositionBuckets.Clear();
+                    CandidateAcceptanceBatchPendingMetadataBuckets.Clear();
+                    return true;
+                }
+
+                if (CandidateAcceptanceBatchInputs.Capacity < requiredCapacity)
+                    CandidateAcceptanceBatchInputs.Capacity = math.max(requiredCapacity, CandidateAcceptanceBatchInputs.Capacity * 2);
+
+                if (CandidateAcceptanceBatchResults.Capacity < requiredCapacity)
+                    CandidateAcceptanceBatchResults.Capacity = math.max(requiredCapacity, CandidateAcceptanceBatchResults.Capacity * 2);
+
+                if (CandidateAcceptanceBatchPendingMetadata.Capacity < requiredCapacity)
+                    CandidateAcceptanceBatchPendingMetadata.Capacity = math.max(requiredCapacity, CandidateAcceptanceBatchPendingMetadata.Capacity * 2);
+
+                if (CandidateAcceptanceBatchPendingPositionBuckets.Capacity < requiredCapacity)
+                    CandidateAcceptanceBatchPendingPositionBuckets.Capacity = math.max(requiredCapacity, CandidateAcceptanceBatchPendingPositionBuckets.Capacity * 2);
+
+                if (CandidateAcceptanceBatchPendingMetadataBuckets.Capacity < requiredCapacity)
+                    CandidateAcceptanceBatchPendingMetadataBuckets.Capacity = math.max(requiredCapacity, CandidateAcceptanceBatchPendingMetadataBuckets.Capacity * 2);
+
+                CandidateAcceptanceBatchInputs.Clear();
+                CandidateAcceptanceBatchInputs.ResizeUninitialized(requiredCapacity);
+                CandidateAcceptanceBatchResults.Clear();
+                CandidateAcceptanceBatchResults.ResizeUninitialized(requiredCapacity);
+                CandidateAcceptanceBatchPendingMetadata.Clear();
+                CandidateAcceptanceBatchPendingPositionBuckets.Clear();
+                CandidateAcceptanceBatchPendingMetadataBuckets.Clear();
+                return true;
+            }
+
             public bool TryRegisterGridPlacement(ScatterPlacement placement)
             {
-                if (placement == null || GridPlacementNativeOverflowed)
+                if (placement == null)
                     return false;
 
                 if (!GridPlacementSpatialMetadata.IsCreated ||
@@ -159,13 +246,9 @@ namespace Hecton8.World
                     return false;
                 }
 
-                if (GridPlacementSpatialMetadata.Length >= GridPlacementSpatialMetadata.Capacity ||
-                    GridPlacementSpatialMetadata.Length >= GridPlacementPositionBuckets.Capacity ||
-                    GridPlacementSpatialMetadata.Length >= GridPlacementMetadataBuckets.Capacity)
-                {
-                    GridPlacementNativeOverflowed = true;
+                int requiredCapacity = GridPlacementSpatialMetadata.Length + 1;
+                if (!EnsureGridPlacementSpatialCapacity(requiredCapacity))
                     return false;
-                }
 
                 int metadataIndex = GridPlacementSpatialMetadata.Length;
                 float3 position = new float3(placement.Position.x, placement.Position.y, placement.Position.z);
@@ -179,6 +262,39 @@ namespace Hecton8.World
                 GridPlacementPositionBuckets.Add(cellKey, position);
                 GridPlacementMetadataBuckets.Add(cellKey, metadataIndex);
                 return true;
+            }
+
+            private bool EnsureGridPlacementSpatialCapacity(int requiredCapacity)
+            {
+                if (!GridPlacementSpatialMetadata.IsCreated ||
+                    !GridPlacementPositionBuckets.IsCreated ||
+                    !GridPlacementMetadataBuckets.IsCreated)
+                {
+                    GridPlacementNativeOverflowed = true;
+                    return false;
+                }
+
+                if (requiredCapacity <= GridPlacementSpatialMetadata.Capacity &&
+                    requiredCapacity <= GridPlacementPositionBuckets.Capacity &&
+                    requiredCapacity <= GridPlacementMetadataBuckets.Capacity)
+                {
+                    return true;
+                }
+
+                int newCapacity = math.max(
+                    InitialGridPlacementNativeCapacity,
+                    math.max(requiredCapacity, GridPlacementSpatialMetadata.Capacity * 2));
+                GridPlacementSpatialMetadata.Capacity = newCapacity;
+                GridPlacementPositionBuckets.Capacity = newCapacity;
+                GridPlacementMetadataBuckets.Capacity = newCapacity;
+                GridPlacementNativeOverflowed = false;
+                return true;
+            }
+
+            private static void ClearNativeArray<T>(NativeArray<T> array, T value) where T : struct
+            {
+                for (int i = 0; i < array.Length; i++)
+                    array[i] = value;
             }
 
             public void EnsureCandidateMapsInitialized()
@@ -217,6 +333,24 @@ namespace Hecton8.World
                     GridPlacementMetadataBuckets.Dispose();
                 if (CandidateAcceptanceResult.IsCreated)
                     CandidateAcceptanceResult.Dispose();
+                if (CandidateAcceptanceBatchInputs.IsCreated)
+                    CandidateAcceptanceBatchInputs.Dispose();
+                if (CandidateAcceptanceBatchResults.IsCreated)
+                    CandidateAcceptanceBatchResults.Dispose();
+                if (CandidateAcceptanceBatchPendingMetadata.IsCreated)
+                    CandidateAcceptanceBatchPendingMetadata.Dispose();
+                if (CandidateAcceptanceBatchPendingPositionBuckets.IsCreated)
+                    CandidateAcceptanceBatchPendingPositionBuckets.Dispose();
+                if (CandidateAcceptanceBatchPendingMetadataBuckets.IsCreated)
+                    CandidateAcceptanceBatchPendingMetadataBuckets.Dispose();
+                if (CandidateAcceptanceClusterAccentCountsScratch.IsCreated)
+                    CandidateAcceptanceClusterAccentCountsScratch.Dispose();
+                if (CandidateAcceptanceStructureAccentCountsScratch.IsCreated)
+                    CandidateAcceptanceStructureAccentCountsScratch.Dispose();
+                if (CandidateAcceptanceClusterAccentRoleMaxRatiosScratch.IsCreated)
+                    CandidateAcceptanceClusterAccentRoleMaxRatiosScratch.Dispose();
+                if (CandidateAcceptanceStructureAccentRoleMaxCountsScratch.IsCreated)
+                    CandidateAcceptanceStructureAccentRoleMaxCountsScratch.Dispose();
 
                 GroundRescueCandidates.Dispose();
                 ClusterRescueCandidates.Dispose();
@@ -263,7 +397,7 @@ namespace Hecton8.World
                 SpawnRescueCandidates.Clear();
                 PrefabWarmupCounts.Clear();
                 PrefabWarmupPrefabs.Clear();
-                PrefabWarmupFamilyIds.Clear();
+                PrefabWarmupFamilyHashes.Clear();
                 PrefabCreateAllowances.Clear();
                 PreferredFamilyPlacementCounts.Clear();
                 Array.Clear(PatternProfileCache, 0, PatternProfileCache.Length);

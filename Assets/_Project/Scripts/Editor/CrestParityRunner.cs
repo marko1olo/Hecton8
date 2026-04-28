@@ -10,7 +10,6 @@ namespace Hecton8.Editor
     /// <summary>
     /// Runs a multi-frame Crest 4 vs Crest 5 runtime height parity test in the migration scene.
     /// </summary>
-    [InitializeOnLoad]
     internal static class CrestParityRunner
     {
         private const string MenuRunPath = "Tools/Hecton8/Crest/Run Height Parity Test";
@@ -32,13 +31,6 @@ namespace Hecton8.Editor
         private static Vector3[] s_SamplePositions;
         private static float[] s_Crest4Heights;
         private static float[] s_Crest5Heights;
-
-        static CrestParityRunner()
-        {
-            EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
-            EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
-            EditorApplication.update -= OnEditorUpdate;
-        }
 
         [MenuItem(MenuRunPath)]
         private static void Run()
@@ -68,6 +60,7 @@ namespace Hecton8.Editor
             legacyOcean.gameObject.SetActive(true);
             EditorUtility.SetDirty(legacyOcean.gameObject);
 
+            RegisterCallbacks();
             DestroyRuntimeHarness();
 
             Debug.Log("[CrestParity] Armed. Entering play mode.");
@@ -109,6 +102,7 @@ namespace Hecton8.Editor
                     Debug.Log(result);
 
                 SessionState.SetBool(ArmedKey, false);
+                UnregisterCallbacks();
             }
         }
 
@@ -157,6 +151,19 @@ namespace Hecton8.Editor
             EditorApplication.update -= OnEditorUpdate;
             DestroyRuntimeHarness();
             EditorApplication.isPlaying = false;
+        }
+
+        private static void RegisterCallbacks()
+        {
+            EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+            EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+            EditorApplication.update -= OnEditorUpdate;
+        }
+
+        private static void UnregisterCallbacks()
+        {
+            EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+            EditorApplication.update -= OnEditorUpdate;
         }
 
         private static string BuildParityReport(

@@ -11,7 +11,7 @@ namespace Hecton8.Tools
     /// Provides guardrail enforcement to prevent any single system from consuming too much CPU/GPU.
     /// </summary>
     [DefaultExecutionOrder(500)] // After most systems but before rendering
-    public sealed class PerformanceBudgetController : MonoBehaviour, ITickable
+    public sealed class PerformanceBudgetController : MonoBehaviour, ITickable, IUpdatable
     {
         [Header("Budget Settings (Target MX350)")]
         [SerializeField, Tooltip("Target frame time budget in milliseconds (16.67ms = 60fps)")]
@@ -78,14 +78,12 @@ namespace Hecton8.Tools
 
         private void OnEnable()
         {
-            if (GameTickManager.Instance != null)
-                GameTickManager.Instance.Register(this);
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
         }
 
         private void OnDisable()
         {
-            if (GameTickManager.Instance != null)
-                GameTickManager.Instance.Unregister(this);
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
         }
 
         private void OnDestroy()

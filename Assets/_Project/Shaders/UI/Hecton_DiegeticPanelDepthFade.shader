@@ -111,13 +111,11 @@ Shader "Hecton8/UI/Diegetic Panel Depth Fade"
                     float fadeRange = max(_DepthFadeRange, 1e-4);
                     float occlusionFactor = saturate(depthDelta / fadeRange);
                     float ditherThreshold = ResolveBayerThreshold(screenUV);
-
-                    if (occlusionFactor < ditherThreshold)
-                        discard;
-
+                    clip(occlusionFactor - ditherThreshold);
                     baseColor.a *= occlusionFactor;
                 }
 
+                clip(baseColor.a - 0.001h);
                 return baseColor;
             }
             ENDHLSL

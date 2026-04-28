@@ -3,8 +3,8 @@
 // Интерфейсы-контракты для централизованной системы обновления.
 //
 // Любой скрипт, реализующий один или несколько интерфейсов, обязан:
-//   1. В OnEnable()  → GameTickManager.Instance.Register(this)
-//   2. В OnDisable() → GameTickManager.Instance.Unregister(this)
+//   1. В OnEnable()  → GlobalRegistry registration
+//   2. В OnDisable() → matching GlobalRegistry unregistration
 //   3. НИКОГДА не объявлять собственный Update/FixedUpdate/LateUpdate.
 //
 // GameTickManager вызывает методы централизованно — один Update
@@ -17,11 +17,11 @@ namespace Hecton8.Core
     /// Каждый кадр. Замена Update().
     /// Используй для: ввода, движения, анимации, UI-логики.
     /// </summary>
-    public interface ITickable
+    public interface ITickable : IUpdatable
     {
         /// <param name="deltaTime">Time.deltaTime — передаётся напрямую,
         /// без лишнего обращения к Time API.</param>
-        void Tick(float deltaTime);
+        new void Tick(float deltaTime);
     }
 
     /// <summary>

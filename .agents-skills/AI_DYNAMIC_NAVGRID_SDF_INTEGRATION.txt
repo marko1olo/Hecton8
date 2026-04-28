@@ -1,0 +1,185 @@
+# AI_DYNAMIC_NAVGRID_SDF_INTEGRATION.md
+## Technical Mandate — HECTON-8 Engine
+---
+
+## §0 · EXECUTION POLICY
+
+[RULE] Eradicate Unity static NavMesh. World = Destructible SDF. Navigation = Dynamic 3D Voxel Grids.
+[RULE] Enforce strict asynchronous execution. NavGrid generation/updates run exclusively on worker threads via `IJobParallelFor` (Burst compiled).
+[RULE] Implement double-buffering. AI read-queries `FrontBuffer`. SDF delta-writes target `BackBuffer`.
+[FORBID] Main thread blocking. Zero pathfinding graph updates permitted on Main thread.[FORBID] Per-frame allocations. Pre-allocate all `NativeArray` / `NativeHashMap` structures during scene Awake phase.
+
+---
+
+## §1 · DATA ARCHITECTURE
+
+### 1.1 Memory Layout
+[DATA] Global Chunk Registry: `NativeHashMap<uint, NavGridChunk>` (Capacity = Active world streaming radius).
+[DATA] Chunk Key: 32-bit `Morton3D(worldPosition / ChunkSize)`.
+
+[DATA] NavGridChunk Struct Layout:
+```csharp
+struct NavGridChunk {
+  NativeArray<byte> FrontBuffer;  // 4096 bytes (16³ at 1m pitch)
+  NativeArray<byte> BackBuffer;   // 4096 bytes
+  NativeArray<ushort> DistanceMap;// 8192 bytes (Manhattan distance cache)
+  uint VersionFrame;              // Atomic sync stamp
+  byte LodLevel;                  // 0=1m, 1=4m
+}
+
+1.2 Grid Taxonomy (byte)
+
+0x00 → Open Water (Passable, Cost 1.0) 0xFF → Solid Terrain / Obstacle
+(Impassable) 0x01–0x0A → Bio-Hazard (Kelp, Corals) (Cost 1.5–3.0) 0x0B–0x1A →
+Thermal Hazard (Vents) (Cost 3.0–5.0) 0x1B–0x2A → Flow Gradient (Ocean Current)
+(Cost directional multiplier) 0xFE → Temporary Dilation Boundary (Reserved)
+
+1.3 Memory Alignment
+
+[RULE] Align structs to 64-byte cache lines. Prevent false sharing across worker
+threads. [RULE] Index mapping: index = x + (y * 16) + (z * 256). Flat 1D layout.
+
+§2 · ALGORITHMIC & MATH TRUTH
+
+2.1 Async Rebuild Pipeline
+
+[FLOW] Trigger: Player drill/weld interaction (SDF delta).
+
+1.  Isolate modified ChunkIDs.
+2.  Push to NativeQueue<uint> DirtyChunks.
+3.  Frame Start (Update): Dequeue priority chunks.
+4.  Schedule IJobParallelFor: Evaluate SDF at NavGrid coordinates.
+5.  BackBuffer[i] = SDF_Value(worldPos) < 0.0f ? 0xFF : 0x00.
+6.  Chain IJob: Execute Clearance Dilation on BackBuffer.
+7.  Chain IJob: Recalculate Sub-chunk Portals.
+8.  Frame End (LateUpdate): Swap FrontBuffer / BackBuffer pointers. Increment
+    VersionFrame.
+
+2.2 Clearance Dilation Kernel (3D Manhattan Transform)
+
+[MATH] Inflate 0xFF cells by AgentRadius to prevent AI wall-clipping.
+[FLOW] 2-Pass Linear Sweep Algorithm:
+
+// Pass 1: +X, +Y, +Z sweep
+For each cell (x, y, z):
+  If BackBuffer[cell] == 0xFF: DistanceMap[cell] = 0
+  Else: DistanceMap[cell] = Min(
+    DistanceMap[cell],
+    DistanceMap[x-1, y, z] + 1,
+    DistanceMap[x, y-1, z] + 1,
+    DistanceMap[x, y, z-1] + 1
+  )
+
+// Pass 2: -X, -Y, -Z sweep
+For each cell (x, y, z) reverse order:
+  DistanceMap[cell] = Min(
+    DistanceMap[cell],
+    DistanceMap[x+1, y, z] + 1,
+    DistanceMap[x, y+1, z] + 1,
+    DistanceMap[x, y, z+1] + 1
+  )
+
+// Threshold evaluation
+If DistanceMap[cell] <= AgentRadius_Cells: BackBuffer[cell] = 0xFF
+
+2.3 Threat Gradient Propagation
+
+[MATH] Blur heat/hazard sources into adjacent open water. [FLOW]
+Single-pass 6-neighbor convolution. Shift bits to divide impact by distance.
+BackBuffer[i] = Max(BackBuffer[i], HazardSource >> DistanceMap[i])
+
+2.4 Hierarchical Pathfinding (Portals)
+
+[SENIOR_HACK] Bypass global A* on 1m pitch. Implement Chunk-to-Chunk
+macro-routing.
+
+1.  Define 6 boundary planes per chunk.
+2.  Scan boundary cells. Group contiguous 0x00 cells into Portal struct
+    (Centroid float3, Radius float, DestChunkID uint).
+3.  Cache connectivity: NativeMultiHashMap<uint, PortalData>.
+4.  Global AI Pathing: Execute A* traversing only Portal nodes.
+5.  Local AI Pathing: Execute Micro-A* inside FrontBuffer connecting Agent Pos →
+    Entry Portal → Exit Portal.
+
+§3 · HARDWARE & SCALABILITY (MX350 / i3 BUDGET)
+
+3.1 Frame Computation Budgets
+
+[SCALE] Limit NavGrid geometry rebuilds: Max 2 chunks per frame. [SCALE] Limit
+AI Path Queries: Max 4 global paths, 16 local paths per frame. [SCALE] Thread
+saturation control: Schedule NavGridRebuildJob with
+[NativeDisableParallelForRestriction] to avoid Unity safety-check overhead in
+release builds.
+
+3.2 LOD Navigation Thresholds
+
+[SCALE] Depth/Distance tiering protocol:
+
+  - Distance < 50m (LOD0): High-res grid (1.0m pitch). Full 3D Dilation.
+    Micro-A* active.
+  - Distance 50–150m (LOD1): Low-res grid (4.0m pitch). Portals only. Raycast
+    gap-filling.
+  - Distance > 150m (LOD2): Flow fields. Boids steering vector math. Zero grid
+    lookup.
+
+3.3 Cache Miss Mitigation
+
+[RULE] Array iteration MUST remain linear. [FORBID] X-Y-Z nested loops. for(int
+i=0; i<4096; ++i) mandatory. [RULE] Pathfinding Open/Closed lists: Use custom
+NativeHeap<T> (min-heap) allocated per job thread. Discard
+System.Collections.Generic completely.
+
+§4 · INTEGRATION & FAILURE MODES
+
+4.1 Trapped Entity Push-Out
+
+[SAFE] Trigger: SDF carving manifests 0xFF over existing Entity coordinate.
+
+1.  Sample DistanceMap at trapped index i.
+2.  Compute 3D gradient vector pointing to highest valid distance (Open Water).
+
+gradX = DistanceMap[x+1] - DistanceMap[x-1]
+gradY = DistanceMap[y+1] - DistanceMap[y-1]
+gradZ = DistanceMap[z+1] - DistanceMap[z-1]
+PushVector = Normalize(float3(gradX, gradY, gradZ))
+
+3.  Apply overriding physical impulse to Entity Rigidbody along PushVector.
+4.  Fallback: Snap position to nearest 0x00 centroid if velocity push fails
+    post 2.0s watchdog.
+
+4.2 Path Discontinuity
+
+[SAFE] Trigger: Active AI path intersects chunk currently mid-rebuild
+(VersionFrame mismatch / Chunk locked).
+
+1.  Stall path validation sequence.
+2.  Force Entity to coast on last known valid trajectory (velocity vector) for
+    max 3 frames.
+3.  Frame 4 timeout check: If chunk remains locked, trigger LocalHover state.
+    Halt forward thrust.
+4.  Enqueue high-priority emergency local re-path request.
+
+4.3 Out-of-Bounds Query Nullification
+
+[SAFE] Protect array boundaries during Dilation/A* kernel execution. [RULE]
+Bitwise mask indices. safe_index = raw_index & 0x0FFF; (4095 clamp for 16³).
+[FORBID] Branching bounds checks inside Burst job inner loops.
+
+§5 · A* MATH KERNEL (UNDERWATER SPECIFIC)
+
+5.1 Heuristic Function
+
+[MATH] Deep-sea pathing must penalize vertical movement due to buoyancy/ballast
+acceleration limits.
+
+H(n) = BaseCost * (dx + dy + dz) + (DiagCost - 2 * BaseCost) * min(dx, dy, dz)
+dx = abs(node.x - goal.x)
+dy = abs(node.y - goal.y) * 1.85  // Vertical traverse penalty bias
+dz = abs(node.z - goal.z)
+
+5.2 Node Cost Evaluation
+
+[MATH] G(n) = Parent_G(n) + Distance + (NavGrid_Value(n) * ThreatMultiplier).
+[RULE] Early exit override: If NavGrid_Value(n) == 0xFF, discard node block
+immediately.
+

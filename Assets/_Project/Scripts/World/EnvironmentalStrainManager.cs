@@ -71,7 +71,7 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
-            SaveManager.Instance?.Register(this);
+            GlobalRegistry.Save?.Register(this);
 
             if (_itemRecycledSubscription == null)
                 _itemRecycledSubscription = HectonEventBus.Subscribe<ItemRecycledEvent>(HandleItemRecycled, "world.environment");
@@ -82,7 +82,7 @@ namespace Hecton8.World
 
         private void OnDisable()
         {
-            SaveManager.Instance?.Unregister(this);
+            GlobalRegistry.Save?.Unregister(this);
             _itemRecycledSubscription?.Dispose();
             _itemRecycledSubscription = null;
             _itemDiscardedSubscription?.Dispose();
@@ -91,7 +91,7 @@ namespace Hecton8.World
 
         private void OnDestroy()
         {
-            SaveManager.Instance?.Unregister(this);
+            GlobalRegistry.Save?.Unregister(this);
             _itemRecycledSubscription?.Dispose();
             _itemRecycledSubscription = null;
             _itemDiscardedSubscription?.Dispose();

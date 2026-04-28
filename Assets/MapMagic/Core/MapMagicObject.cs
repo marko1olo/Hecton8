@@ -179,7 +179,7 @@ namespace MapMagic.Core
 			Shader shader = null;
 			#endif
 		
-			if (shader == null) shader = Shader.Find("HDRP/TerrainLit");
+			if (shader == null) shader = Shader.Find("Universal Render Pipeline/Terrain/Lit");
 			if (shader == null) shader = Shader.Find("Nature/Terrain/Standard");
 			if (shader == null) shader = Shader.Find("Lightweight Render Pipeline/Terrain/Lit");
 

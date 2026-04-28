@@ -8,7 +8,6 @@ using UnityEngine.SceneManagement;
 
 namespace Hecton8.Editor
 {
-    [InitializeOnLoad]
     internal static class MissingScriptProbe
     {
         private const string CleanupMenuPath = "Tools/HECTON-8/Maintenance/Cleanup Missing Scripts (_Project + Loaded Scenes)";
@@ -24,14 +23,6 @@ namespace Hecton8.Editor
         private static bool _prefabAssetScanCompleted;
         private static int _remainingPlayModeRescanPasses;
         private static double _nextPlayModeRescanAt;
-
-        static MissingScriptProbe()
-        {
-            EditorApplication.playModeStateChanged += HandlePlayModeStateChanged;
-            EditorSceneManager.sceneOpened += HandleSceneOpened;
-            EditorApplication.update += HandleEditorUpdate;
-            EditorApplication.delayCall += ScanPrefabAssetsOnce;
-        }
 
         private static void HandlePlayModeStateChanged(PlayModeStateChange state)
         {

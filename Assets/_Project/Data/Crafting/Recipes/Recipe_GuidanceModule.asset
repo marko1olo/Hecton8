@@ -1,4 +1,4 @@
-﻿%YAML 1.1
+%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!114 &11400000
 MonoBehaviour:
@@ -15,13 +15,13 @@ MonoBehaviour:
   recipeName: Guidance Module
   localizedRecipeName:
     tableKey: ITEM_GUIDANCE_MODULE_NAME
-    fallbackText: ''
+    fallbackText: 
     variants: []
   overrideIcon: {fileID: 0}
   description: Assemble a late precision guidance package for advanced field hardware.
   localizedRecipeDescription:
     tableKey: ITEM_GUIDANCE_MODULE_DESCRIPTION
-    fallbackText: ''
+    fallbackText: 
     variants: []
   resultItem: {fileID: 11400000, guid: fc90438aa8e2810449b936d3a4506bbf, type: 2}
   resultQuantity: 1
@@ -33,5 +33,6 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: a85858d645dd9fe4e93fed3fbf501d0d, type: 2}
     amount: 1
   craftTime: 1.5
+  powerCost: 5
   requiredScanEntryId: 
   fabricationGroup: 2

@@ -1,4 +1,4 @@
-﻿//////////////////////////////////////////////////////
+//////////////////////////////////////////////////////
 // MicroSplat
 // Copyright (c) Jason Booth
 //////////////////////////////////////////////////////
@@ -11,7 +11,6 @@ using UnityEditor.Build;
 
 namespace JBooth.MicroSplat
 {
-    [InitializeOnLoad]
     public class TextureArrayActiveBuildTargetListener : IActiveBuildTargetChanged
     {
         public int callbackOrder => 0;

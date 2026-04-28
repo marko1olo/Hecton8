@@ -10,6 +10,7 @@
 
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.UI;
 using System;
 using System.Collections.Generic;
 
@@ -56,6 +57,7 @@ namespace Hecton8.Input
         private bool _restorePlayerInputOnEnable;
         private bool _restoreUiInputOnEnable;
         private bool _deviceChangeSubscribed;
+        private bool _processingInputRecovery;
         private int _lastDisplayDeviceId;
         private int _connectedGamepadCount;
         private Vector2 _moveInput;
@@ -75,6 +77,31 @@ namespace Hecton8.Input
         {
             _instance = null;
             _isShuttingDown = false;
+        }
+
+        public static bool TryValidateRuntimeConfiguration(out string message)
+        {
+#if !ENABLE_INPUT_SYSTEM
+            message =
+                "BIOS ERROR 0xINPUT\nEXPECTED: Input System Package (New)\nDETECTED: ENABLE_INPUT_SYSTEM missing\nACTION: Enable the Input System package before boot.";
+            return false;
+#else
+#if ENABLE_LEGACY_INPUT_MANAGER
+            message =
+                "BIOS ERROR 0xINPUT\nEXPECTED: Active Input Handling = Input System Package (New)\nDETECTED: Legacy Input Manager compile path is still active\nACTION: Set Active Input Handling to Input System Package (New).";
+            return false;
+#else
+            if (InputSystem.settings == null)
+            {
+                message =
+                    "BIOS ERROR 0xINPUT\nEXPECTED: InputSystem settings asset\nDETECTED: null runtime settings\nACTION: Restore the Input System package configuration before boot.";
+                return false;
+            }
+
+            message = string.Empty;
+            return true;
+#endif
+#endif
         }
         
         public static InputManager Instance
@@ -126,6 +153,7 @@ namespace Hecton8.Input
         private InputAction _interactAction;
         private InputAction _flashlightAction;
         private InputAction _pdaAction;
+        private InputAction _pauseAction;
         private InputAction _toolSlot1Action;
         private InputAction _toolSlot2Action;
         private InputAction _toolSlot3Action;
@@ -141,6 +169,22 @@ namespace Hecton8.Input
         private InputAction _cancelAction;
         private InputAction _tabNextAction;
         private InputAction _tabPreviousAction;
+        private InputAction _uiModuleSubmitAction;
+        private InputAction _uiModuleCancelAction;
+        private InputAction _uiPointAction;
+        private InputAction _uiClickAction;
+        private InputAction _uiMiddleClickAction;
+        private InputAction _uiRightClickAction;
+        private InputAction _uiScrollWheelAction;
+
+        private InputActionReference _uiModuleMoveReference;
+        private InputActionReference _uiModuleSubmitReference;
+        private InputActionReference _uiModuleCancelReference;
+        private InputActionReference _uiPointReference;
+        private InputActionReference _uiClickReference;
+        private InputActionReference _uiMiddleClickReference;
+        private InputActionReference _uiRightClickReference;
+        private InputActionReference _uiScrollWheelReference;
 
         // ═══════════════════════════════════════════════════════════════════════════════════════════
         // EVENTS (ZERO GC)
@@ -159,6 +203,7 @@ namespace Hecton8.Input
         public event Action OnInteract;
         public event Action OnFlashlight;
         public event Action OnPDA;
+        public event Action OnPause;
         public event Action OnInventory;
         
         // Tool Events
@@ -199,6 +244,95 @@ namespace Hecton8.Input
         public float VerticalMovementInput => _verticalMovementInput;
         public InputActionAsset InputActionsAsset => _runtimeInputActionAsset;
         internal InputAction UiSubmitAction => _submitAction;
+
+        public bool TryValidateRuntimeActions(out string message)
+        {
+            if (!EnsureInputActionsInitialized())
+            {
+                message =
+                    "BIOS ERROR 0xINPUT\nEXPECTED: Runtime action asset initialized\nDETECTED: InputManager action initialization failed\nACTION: Repair the HECTON-8 input action maps before boot.";
+                return false;
+            }
+
+            if (_playerActionMap == null)
+            {
+                message =
+                    "BIOS ERROR 0xINPUT\nEXPECTED: Player action map\nDETECTED: missing Player map\nACTION: Restore the player action map before boot.";
+                return false;
+            }
+
+            if (_uiActionMap == null)
+            {
+                message =
+                    "BIOS ERROR 0xINPUT\nEXPECTED: UI action map\nDETECTED: missing UI map\nACTION: Restore the UI action map before boot.";
+                return false;
+            }
+
+            if (_moveAction == null ||
+                _lookAction == null ||
+                _interactAction == null ||
+                _pdaAction == null ||
+                _pauseAction == null ||
+                _inventoryAction == null)
+            {
+                message =
+                    "BIOS ERROR 0xINPUT\nEXPECTED: Player actions Movement/Look/Interact/PDA/Pause/Inventory\nDETECTED: one or more player actions missing\nACTION: Rebuild the player action schema before boot.";
+                return false;
+            }
+
+            if (_navigateAction == null ||
+                _submitAction == null ||
+                _cancelAction == null ||
+                _tabNextAction == null ||
+                _tabPreviousAction == null)
+            {
+                message =
+                    "BIOS ERROR 0xINPUT\nEXPECTED: UI actions Navigate/Submit/Cancel/TabNext/TabPrevious\nDETECTED: one or more UI actions missing\nACTION: Rebuild the UI action schema before boot.";
+                return false;
+            }
+
+            message = string.Empty;
+            return true;
+        }
+
+        /// <summary>
+        /// Configures a runtime UI input module to use the project-owned action asset instead of Unity's default UI actions.
+        /// </summary>
+        /// <param name="inputModule">Target runtime UI input module.</param>
+        /// <returns>True when the module was bound to the runtime HECTON-8 UI actions.</returns>
+        public bool TryConfigureUiInputModule(InputSystemUIInputModule inputModule)
+        {
+            if (inputModule == null || !EnsureInputActionsInitialized())
+                return false;
+
+            if (_navigateAction == null ||
+                _uiModuleSubmitAction == null ||
+                _uiModuleCancelAction == null ||
+                _uiPointAction == null ||
+                _uiClickAction == null ||
+                _uiMiddleClickAction == null ||
+                _uiRightClickAction == null ||
+                _uiScrollWheelAction == null)
+            {
+                return false;
+            }
+
+            EnsureUiModuleActionReferences();
+
+            inputModule.actionsAsset = _runtimeInputActionAsset;
+            inputModule.move = _uiModuleMoveReference;
+            inputModule.submit = _uiModuleSubmitReference;
+            inputModule.cancel = _uiModuleCancelReference;
+            inputModule.point = _uiPointReference;
+            inputModule.leftClick = _uiClickReference;
+            inputModule.middleClick = _uiMiddleClickReference;
+            inputModule.rightClick = _uiRightClickReference;
+            inputModule.scrollWheel = _uiScrollWheelReference;
+            inputModule.trackedDeviceOrientation = null;
+            inputModule.trackedDevicePosition = null;
+
+            return true;
+        }
 
         // ═══════════════════════════════════════════════════════════════════════════════════════════
         // INITIALIZATION
@@ -288,6 +422,7 @@ namespace Hecton8.Input
             }
 
             _runtimeInputActionAsset.name = templateAsset.name;
+            EnsureRequiredRuntimeActions(_runtimeInputActionAsset);
             
             // Get action maps
             _playerActionMap = _runtimeInputActionAsset.FindActionMap("Player");
@@ -301,8 +436,8 @@ namespace Hecton8.Input
 
             if (_uiActionMap == null)
             {
-                // Generated fallback currently exposes only the Player map. This is a
-                // supported runtime mode while the UI actions asset is being migrated.
+                Debug.LogError("[InputManager] UI action map not found in InputActionAsset!");
+                return;
             }
             
             // Cache all action references (zero GC)
@@ -327,6 +462,7 @@ namespace Hecton8.Input
             _interactAction = _playerActionMap.FindAction("Interact");
             _flashlightAction = _playerActionMap.FindAction("Flashlight");
             _pdaAction = _playerActionMap.FindAction("PDA");
+            _pauseAction = _playerActionMap.FindAction("Pause");
             _toolSlot1Action = _playerActionMap.FindAction("ToolSlot1");
             _toolSlot2Action = _playerActionMap.FindAction("ToolSlot2");
             _toolSlot3Action = _playerActionMap.FindAction("ToolSlot3");
@@ -344,6 +480,61 @@ namespace Hecton8.Input
             _cancelAction = _uiActionMap.FindAction("Cancel");
             _tabNextAction = _uiActionMap.FindAction("TabNext");
             _tabPreviousAction = _uiActionMap.FindAction("TabPrevious");
+            _uiModuleSubmitAction = _uiActionMap.FindAction("UiModuleSubmit");
+            _uiModuleCancelAction = _uiActionMap.FindAction("UiModuleCancel");
+            _uiPointAction = _uiActionMap.FindAction("Point");
+            _uiClickAction = _uiActionMap.FindAction("Click");
+            _uiMiddleClickAction = _uiActionMap.FindAction("MiddleClick");
+            _uiRightClickAction = _uiActionMap.FindAction("RightClick");
+            _uiScrollWheelAction = _uiActionMap.FindAction("ScrollWheel");
+        }
+
+        private void EnsureUiModuleActionReferences()
+        {
+            _uiModuleMoveReference = CreateUiModuleActionReference(_uiModuleMoveReference, _navigateAction);
+            _uiModuleSubmitReference = CreateUiModuleActionReference(_uiModuleSubmitReference, _uiModuleSubmitAction);
+            _uiModuleCancelReference = CreateUiModuleActionReference(_uiModuleCancelReference, _uiModuleCancelAction);
+            _uiPointReference = CreateUiModuleActionReference(_uiPointReference, _uiPointAction);
+            _uiClickReference = CreateUiModuleActionReference(_uiClickReference, _uiClickAction);
+            _uiMiddleClickReference = CreateUiModuleActionReference(_uiMiddleClickReference, _uiMiddleClickAction);
+            _uiRightClickReference = CreateUiModuleActionReference(_uiRightClickReference, _uiRightClickAction);
+            _uiScrollWheelReference = CreateUiModuleActionReference(_uiScrollWheelReference, _uiScrollWheelAction);
+        }
+
+        private static InputActionReference CreateUiModuleActionReference(InputActionReference existingReference, InputAction action)
+        {
+            if (action == null)
+                return null;
+
+            if (existingReference != null && existingReference.action == action)
+                return existingReference;
+
+            return InputActionReference.Create(action); // COLD ALLOC: InputActionReference[1] - runtime UI module action reference - owner: InputManager
+        }
+
+        private void ReleaseUiModuleActionReferences()
+        {
+            DestroyUiModuleActionReference(ref _uiModuleMoveReference);
+            DestroyUiModuleActionReference(ref _uiModuleSubmitReference);
+            DestroyUiModuleActionReference(ref _uiModuleCancelReference);
+            DestroyUiModuleActionReference(ref _uiPointReference);
+            DestroyUiModuleActionReference(ref _uiClickReference);
+            DestroyUiModuleActionReference(ref _uiMiddleClickReference);
+            DestroyUiModuleActionReference(ref _uiRightClickReference);
+            DestroyUiModuleActionReference(ref _uiScrollWheelReference);
+        }
+
+        private void DestroyUiModuleActionReference(ref InputActionReference actionReference)
+        {
+            if (actionReference == null)
+                return;
+
+            if (Application.isPlaying)
+                Destroy(actionReference);
+            else
+                DestroyImmediate(actionReference);
+
+            actionReference = null;
         }
 
         private InputActionAsset CreateRuntimeInputActionAsset(InputActionAsset templateAsset)
@@ -386,6 +577,8 @@ namespace Hecton8.Input
             _interactAction.performed += OnInteractPerformed;
             _flashlightAction.performed += OnFlashlightPerformed;
             _pdaAction.performed += OnPDAPerformed;
+            if (_pauseAction != null)
+                _pauseAction.performed += OnPausePerformed;
             _inventoryAction.performed += OnInventoryPerformed;
             
             _toolSlot1Action.performed += OnToolSlot1Performed;
@@ -457,6 +650,9 @@ namespace Hecton8.Input
 
             if (_pdaAction != null)
                 _pdaAction.performed -= OnPDAPerformed;
+
+            if (_pauseAction != null)
+                _pauseAction.performed -= OnPausePerformed;
 
             if (_inventoryAction != null)
                 _inventoryAction.performed -= OnInventoryPerformed;
@@ -595,6 +791,11 @@ namespace Hecton8.Input
         {
             CaptureInputDisplayStyle(context);
             OnPDA?.Invoke();
+        }
+        private void OnPausePerformed(InputAction.CallbackContext context)
+        {
+            CaptureInputDisplayStyle(context);
+            OnPause?.Invoke();
         }
         private void OnInventoryPerformed(InputAction.CallbackContext context)
         {
@@ -869,33 +1070,221 @@ namespace Hecton8.Input
             if (string.IsNullOrWhiteSpace(path))
                 return false;
 
-            try
-            {
-                display = action.GetBindingDisplayString(bindingIndex);
-            }
-            catch
-            {
-                display = string.Empty;
-            }
+            return TryBuildBindingDisplayStringFromPath(path, out display);
+        }
 
-            if (string.IsNullOrWhiteSpace(display))
-            {
-                try
-                {
-                    display = InputControlPath.ToHumanReadableString(
-                        path,
-                        InputControlPath.HumanReadableStringOptions.OmitDevice);
-                }
-                catch
-                {
-                    display = string.Empty;
-                }
-            }
+        private static bool TryBuildBindingDisplayStringFromPath(string path, out string display)
+        {
+            display = string.Empty;
+            if (string.IsNullOrWhiteSpace(path))
+                return false;
 
-            if (string.IsNullOrWhiteSpace(display))
+            ReadOnlySpan<char> pathSpan = path.AsSpan();
+            ReadOnlySpan<char> controlName = ExtractBindingControlName(pathSpan);
+            if (controlName.IsEmpty)
+            {
                 display = path;
+                return true;
+            }
 
+            bool isKeyboard = PathContainsDeviceToken(pathSpan, "Keyboard");
+            bool isMouse = PathContainsDeviceToken(pathSpan, "Mouse");
+            bool isGamepad = PathContainsDeviceToken(pathSpan, "Gamepad");
+            if (TryResolveBindingAlias(controlName, isKeyboard, isMouse, isGamepad, out display))
+                return true;
+
+            display = controlName.ToString().Trim().ToUpperInvariant();
             return !string.IsNullOrWhiteSpace(display);
+        }
+
+        private static ReadOnlySpan<char> ExtractBindingControlName(ReadOnlySpan<char> bindingPath)
+        {
+            int slashIndex = bindingPath.LastIndexOf('/');
+            if (slashIndex < 0 || slashIndex >= bindingPath.Length - 1)
+                return ReadOnlySpan<char>.Empty;
+
+            return bindingPath.Slice(slashIndex + 1);
+        }
+
+        private static bool PathContainsDeviceToken(ReadOnlySpan<char> bindingPath, string token)
+        {
+            return bindingPath.IndexOf(token.AsSpan(), StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private static bool TryResolveBindingAlias(
+            ReadOnlySpan<char> controlName,
+            bool isKeyboard,
+            bool isMouse,
+            bool isGamepad,
+            out string display)
+        {
+            string normalized = controlName.ToString().Replace("-", string.Empty).Trim().ToLowerInvariant();
+            if (normalized.Length == 1 && char.IsLetterOrDigit(normalized[0]))
+            {
+                display = normalized.ToUpperInvariant();
+                return true;
+            }
+
+            if (isKeyboard)
+            {
+                switch (normalized)
+                {
+                    case "space":
+                        display = "SPACE";
+                        return true;
+                    case "escape":
+                        display = "ESC";
+                        return true;
+                    case "enter":
+                    case "numenter":
+                        display = "ENTER";
+                        return true;
+                    case "tab":
+                        display = "TAB";
+                        return true;
+                    case "backspace":
+                        display = "BACK";
+                        return true;
+                    case "uparrow":
+                        display = "UP";
+                        return true;
+                    case "downarrow":
+                        display = "DOWN";
+                        return true;
+                    case "leftarrow":
+                        display = "LEFT";
+                        return true;
+                    case "rightarrow":
+                        display = "RIGHT";
+                        return true;
+                    case "leftshift":
+                    case "rightshift":
+                        display = "SHIFT";
+                        return true;
+                    case "leftctrl":
+                    case "rightctrl":
+                    case "leftcontrol":
+                    case "rightcontrol":
+                        display = "CTRL";
+                        return true;
+                    case "leftalt":
+                    case "rightalt":
+                        display = "ALT";
+                        return true;
+                    case "digit1":
+                    case "numpad1":
+                        display = "1";
+                        return true;
+                    case "digit2":
+                    case "numpad2":
+                        display = "2";
+                        return true;
+                    case "digit3":
+                    case "numpad3":
+                        display = "3";
+                        return true;
+                    case "digit4":
+                    case "numpad4":
+                        display = "4";
+                        return true;
+                    case "digit5":
+                    case "numpad5":
+                        display = "5";
+                        return true;
+                    case "digit6":
+                    case "numpad6":
+                        display = "6";
+                        return true;
+                    case "digit7":
+                    case "numpad7":
+                        display = "7";
+                        return true;
+                    case "digit8":
+                    case "numpad8":
+                        display = "8";
+                        return true;
+                    case "digit9":
+                    case "numpad9":
+                        display = "9";
+                        return true;
+                    case "digit0":
+                    case "numpad0":
+                        display = "0";
+                        return true;
+                }
+            }
+
+            if (isMouse)
+            {
+                switch (normalized)
+                {
+                    case "leftbutton":
+                        display = "LMB";
+                        return true;
+                    case "rightbutton":
+                        display = "RMB";
+                        return true;
+                    case "middlebutton":
+                        display = "MMB";
+                        return true;
+                    case "scroll":
+                    case "scrolly":
+                        display = "SCROLL";
+                        return true;
+                }
+            }
+
+            if (isGamepad)
+            {
+                switch (normalized)
+                {
+                    case "buttonsouth":
+                        display = "A";
+                        return true;
+                    case "buttoneast":
+                        display = "B";
+                        return true;
+                    case "buttonwest":
+                        display = "X";
+                        return true;
+                    case "buttonnorth":
+                        display = "Y";
+                        return true;
+                    case "leftshoulder":
+                        display = "LB";
+                        return true;
+                    case "rightshoulder":
+                        display = "RB";
+                        return true;
+                    case "lefttrigger":
+                        display = "LT";
+                        return true;
+                    case "righttrigger":
+                        display = "RT";
+                        return true;
+                    case "start":
+                        display = "START";
+                        return true;
+                    case "select":
+                        display = "SELECT";
+                        return true;
+                    case "dpadup":
+                        display = "DPAD UP";
+                        return true;
+                    case "dpaddown":
+                        display = "DPAD DOWN";
+                        return true;
+                    case "dpadleft":
+                        display = "DPAD LEFT";
+                        return true;
+                    case "dpadright":
+                        display = "DPAD RIGHT";
+                        return true;
+                }
+            }
+
+            display = string.Empty;
+            return false;
         }
 
         private static int GetFirstDisplayableBindingIndex(InputAction action)
@@ -1370,35 +1759,45 @@ namespace Hecton8.Input
 
         private void ProcessInputRecoveryStateMachine()
         {
-            if (_isShuttingDown || _inputRecoveryState != InputRecoveryState.RebuildPending)
+            if (_isShuttingDown ||
+                _processingInputRecovery ||
+                _inputRecoveryState != InputRecoveryState.RebuildPending)
                 return;
 
-            _inputRecoveryState = InputRecoveryState.Rebuilding;
-            ResetInputActionCaches(disposeRuntimeAsset: true);
-
-            if (_isShuttingDown)
+            _processingInputRecovery = true;
+            try
             {
+                _inputRecoveryState = InputRecoveryState.Rebuilding;
+                ResetInputActionCaches(disposeRuntimeAsset: true);
+
+                if (_isShuttingDown)
+                {
+                    _inputRecoveryState = InputRecoveryState.Stable;
+                    return;
+                }
+
+                InitializeInputActions();
+                if (!_inputMapsInitialized)
+                {
+                    _inputRecoveryState = InputRecoveryState.AwaitingDeviceReconnect;
+                    return;
+                }
+
+                bool playerRestored = !_restorePlayerInputOnEnable || TrySetActionMapEnabled(_playerActionMap, enable: true, scheduleRecoveryOnFailure: false);
+                bool uiRestored = !_restoreUiInputOnEnable || _uiActionMap == null || TrySetActionMapEnabled(_uiActionMap, enable: true, scheduleRecoveryOnFailure: false);
+                if (!playerRestored || !uiRestored)
+                {
+                    _inputRecoveryState = InputRecoveryState.AwaitingDeviceReconnect;
+                    return;
+                }
+
                 _inputRecoveryState = InputRecoveryState.Stable;
-                return;
+                RefreshCurrentDisplayStyleFromTrackedDevices();
             }
-
-            InitializeInputActions();
-            if (!_inputMapsInitialized)
+            finally
             {
-                _inputRecoveryState = InputRecoveryState.AwaitingDeviceReconnect;
-                return;
+                _processingInputRecovery = false;
             }
-
-            bool playerRestored = !_restorePlayerInputOnEnable || TrySetActionMapEnabled(_playerActionMap, enable: true, scheduleRecoveryOnFailure: false);
-            bool uiRestored = !_restoreUiInputOnEnable || _uiActionMap == null || TrySetActionMapEnabled(_uiActionMap, enable: true, scheduleRecoveryOnFailure: false);
-            if (!playerRestored || !uiRestored)
-            {
-                _inputRecoveryState = InputRecoveryState.AwaitingDeviceReconnect;
-                return;
-            }
-
-            _inputRecoveryState = InputRecoveryState.Stable;
-            RefreshCurrentDisplayStyleFromTrackedDevices();
         }
 
         private void BindResolvedActionMapReference(string actionMapName, InputActionMap actionMap)
@@ -1465,6 +1864,146 @@ namespace Hecton8.Input
             return true;
         }
 
+        private static void EnsureRequiredRuntimeActions(InputActionAsset runtimeAsset)
+        {
+            if (runtimeAsset == null)
+                return;
+
+            InputActionMap playerActionMap = runtimeAsset.FindActionMap("Player");
+            if (playerActionMap != null)
+                EnsurePauseAction(playerActionMap);
+
+            EnsureUiActionMap(runtimeAsset);
+        }
+
+        private static void EnsurePauseAction(InputActionMap playerActionMap)
+        {
+            if (playerActionMap == null || playerActionMap.FindAction("Pause") != null)
+                return;
+
+            InputAction pauseAction = playerActionMap.AddAction("Pause", type: InputActionType.Button);
+            pauseAction.AddBinding("<Keyboard>/escape");
+            pauseAction.AddBinding("<Gamepad>/start");
+        }
+
+        private static InputActionMap EnsureUiActionMap(InputActionAsset runtimeAsset)
+        {
+            if (runtimeAsset == null)
+                return null;
+
+            InputActionMap uiActionMap = runtimeAsset.FindActionMap("UI");
+            if (uiActionMap == null)
+            {
+                uiActionMap = new InputActionMap("UI");
+                runtimeAsset.AddActionMap(uiActionMap);
+            }
+
+            InputAction navigateAction = EnsureUiAction(uiActionMap, "Navigate", InputActionType.Value, "Vector2");
+            if (!HasBindingPath(navigateAction, "2DVector"))
+            {
+                navigateAction.AddCompositeBinding("2DVector")
+                    .With("Up", "<Keyboard>/w")
+                    .With("Down", "<Keyboard>/s")
+                    .With("Left", "<Keyboard>/a")
+                    .With("Right", "<Keyboard>/d");
+            }
+
+            if (!HasBindingPath(navigateAction, "<Keyboard>/upArrow"))
+            {
+                navigateAction.AddCompositeBinding("2DVector")
+                    .With("Up", "<Keyboard>/upArrow")
+                    .With("Down", "<Keyboard>/downArrow")
+                    .With("Left", "<Keyboard>/leftArrow")
+                    .With("Right", "<Keyboard>/rightArrow");
+            }
+
+            AddBindingIfMissing(navigateAction, "<Gamepad>/dpad");
+            AddBindingIfMissing(navigateAction, "<Gamepad>/leftStick");
+
+            InputAction submitAction = EnsureUiAction(uiActionMap, "Submit", InputActionType.Button, "Button");
+            AddBindingIfMissing(submitAction, "<Keyboard>/enter");
+            AddBindingIfMissing(submitAction, "<Mouse>/leftButton");
+            AddBindingIfMissing(submitAction, "<Gamepad>/buttonSouth");
+
+            InputAction cancelAction = EnsureUiAction(uiActionMap, "Cancel", InputActionType.Button, "Button");
+            AddBindingIfMissing(cancelAction, "<Keyboard>/escape");
+            AddBindingIfMissing(cancelAction, "<Keyboard>/tab");
+            AddBindingIfMissing(cancelAction, "<Mouse>/rightButton");
+            AddBindingIfMissing(cancelAction, "<Gamepad>/buttonEast");
+            AddBindingIfMissing(cancelAction, "<Gamepad>/start");
+
+            InputAction tabNextAction = EnsureUiAction(uiActionMap, "TabNext", InputActionType.Button, "Button");
+            AddBindingIfMissing(tabNextAction, "<Keyboard>/e");
+            AddBindingIfMissing(tabNextAction, "<Gamepad>/rightShoulder");
+
+            InputAction tabPreviousAction = EnsureUiAction(uiActionMap, "TabPrevious", InputActionType.Button, "Button");
+            AddBindingIfMissing(tabPreviousAction, "<Keyboard>/q");
+            AddBindingIfMissing(tabPreviousAction, "<Gamepad>/leftShoulder");
+
+            InputAction uiModuleSubmitAction = EnsureUiAction(uiActionMap, "UiModuleSubmit", InputActionType.Button, "Button");
+            AddBindingIfMissing(uiModuleSubmitAction, "<Keyboard>/enter");
+            AddBindingIfMissing(uiModuleSubmitAction, "<Gamepad>/buttonSouth");
+
+            InputAction uiModuleCancelAction = EnsureUiAction(uiActionMap, "UiModuleCancel", InputActionType.Button, "Button");
+            AddBindingIfMissing(uiModuleCancelAction, "<Keyboard>/escape");
+            AddBindingIfMissing(uiModuleCancelAction, "<Gamepad>/buttonEast");
+            AddBindingIfMissing(uiModuleCancelAction, "<Gamepad>/start");
+
+            InputAction pointAction = EnsureUiAction(uiActionMap, "Point", InputActionType.PassThrough, "Vector2");
+            AddBindingIfMissing(pointAction, "<Mouse>/position");
+
+            InputAction clickAction = EnsureUiAction(uiActionMap, "Click", InputActionType.PassThrough, "Button");
+            AddBindingIfMissing(clickAction, "<Mouse>/leftButton");
+
+            InputAction middleClickAction = EnsureUiAction(uiActionMap, "MiddleClick", InputActionType.PassThrough, "Button");
+            AddBindingIfMissing(middleClickAction, "<Mouse>/middleButton");
+
+            InputAction rightClickAction = EnsureUiAction(uiActionMap, "RightClick", InputActionType.PassThrough, "Button");
+            AddBindingIfMissing(rightClickAction, "<Mouse>/rightButton");
+
+            InputAction scrollWheelAction = EnsureUiAction(uiActionMap, "ScrollWheel", InputActionType.PassThrough, "Vector2");
+            AddBindingIfMissing(scrollWheelAction, "<Mouse>/scroll");
+
+            return uiActionMap;
+        }
+
+        private static InputAction EnsureUiAction(
+            InputActionMap actionMap,
+            string actionName,
+            InputActionType actionType,
+            string expectedControlType)
+        {
+            InputAction action = actionMap.FindAction(actionName);
+            if (action != null)
+                return action;
+
+            return actionMap.AddAction(actionName, type: actionType, expectedControlLayout: expectedControlType);
+        }
+
+        private static bool HasBindingPath(InputAction action, string bindingPath)
+        {
+            if (action == null || string.IsNullOrEmpty(bindingPath))
+                return false;
+
+            var bindings = action.bindings;
+            int bindingCount = bindings.Count;
+            for (int i = 0; i < bindingCount; i++)
+            {
+                if (string.Equals(bindings[i].path, bindingPath, StringComparison.Ordinal))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static void AddBindingIfMissing(InputAction action, string bindingPath)
+        {
+            if (action == null || HasBindingPath(action, bindingPath))
+                return;
+
+            action.AddBinding(bindingPath);
+        }
+
         private bool EnsureInputActionsInitialized()
         {
             if (_isShuttingDown)
@@ -1525,6 +2064,7 @@ namespace Hecton8.Input
             _interactAction = null;
             _flashlightAction = null;
             _pdaAction = null;
+            _pauseAction = null;
             _toolSlot1Action = null;
             _toolSlot2Action = null;
             _toolSlot3Action = null;
@@ -1538,6 +2078,15 @@ namespace Hecton8.Input
             _cancelAction = null;
             _tabNextAction = null;
             _tabPreviousAction = null;
+            _uiModuleSubmitAction = null;
+            _uiModuleCancelAction = null;
+            _uiPointAction = null;
+            _uiClickAction = null;
+            _uiMiddleClickAction = null;
+            _uiRightClickAction = null;
+            _uiScrollWheelAction = null;
+
+            ReleaseUiModuleActionReferences();
 
             if (!disposeRuntimeAsset)
                 return;

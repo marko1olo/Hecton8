@@ -1,6 +1,9 @@
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Collections.Generic;
 using Hecton8.Atmosphere;
 using Hecton8.Core;
+using Hecton8.Gameplay;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -10,35 +13,71 @@ using UnityEngine;
 namespace Hecton8.Physics
 {
     /// <summary>
+    /// Deferred exterior water-entry payload emitted by sampled hull buoyancy points.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct SplashEvent
+    {
+        /// <summary>Camera-relative world position of the splash contact point.</summary>
+        public float3 RuntimePosition;
+        /// <summary>Absolute universe position (AUP) of the splash for persistent VFX anchoring.</summary>
+        public float3 AbsoluteUniversePosition;
+        /// <summary>Water surface normal at the splash point.</summary>
+        public float3 SurfaceNormal;
+        /// <summary>Vertical impact speed at the moment of water entry.</summary>
+        public float ImpactSpeedMetersPerSecond;
+        /// <summary>Kinetic energy of the impact in joules, used to scale splash VFX intensity.</summary>
+        public float KineticEnergyJoules;
+        /// <summary>0–1 ratio of the sample point submerged below the waterline at impact.</summary>
+        public float SubmersionFactor;
+        /// <summary>Index of the exterior buoyancy sample point that detected the splash.</summary>
+        public int SampleIndex;
+    }
+
+    /// <summary>
     /// Fixed-step flooded-interior model for submarine rigidbodies.
-    /// Tracks compartment fill, bulkhead isolation, inertia blending, and delayed slosh torque
-    /// without rewriting rigidbody mass or center of mass every physics step.
+    /// Tracks compartment fill, bulkhead isolation, flood-mass coupling, center-of-mass shifting,
+    /// inertia blending, and delayed slosh torque.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
     [AddComponentMenu("Hecton/Physics/Submarine Fluid Dynamics")]
-    public sealed class SubmarineFluidDynamics : MonoBehaviour, IUpdatable, IFixedTickable
+    public sealed class SubmarineFluidDynamics : MonoBehaviour, IFixedTickable, IOriginShiftListener
     {
         private const int CompartmentCapacity = 8;
         private const int BulkheadCapacity = 7;
-        private const int RingBufferLength = 8;
+        private const int RingBufferLength = 16;
         private const int RingBufferMask = RingBufferLength - 1;
-        private const int SloshDelayFrames = 3;
+        private const float MinimumSloshDelaySeconds = 0.05f;
+        private const float MaximumSloshDelaySeconds = 0.15f;
         private const float WaterDensityKgPerCubicMeter = 1025f;
         private const float GravityMetersPerSecondSquared = 9.81f;
         private const float DefaultFixedStepSeconds = 0.02f;
         private const float DefaultDischargeCoefficient = 0.62f;
         private const float DefaultBulkheadFlowCoefficient = 0.4f;
+        private const float DefaultBulkheadDoorAreaSquareMeters = 1.6f;
         private const float DefaultMaxTransferPerTick = 0.1f;
         private const float DefaultSloshFactor = 0.15f;
         private const float DefaultSloshMinimumVolume = 0.05f;
         private const float DefaultMaxSloshTorque = 50000f;
         private const float DefaultReportedCenterTauSeconds = 1.2f;
+        private const float DefaultCenterOfMassTauSeconds = 1.2f;
+        private const float DefaultMaxCenterOfMassDeltaPerTickMeters = 0.05f;
         private const float DefaultMaximumIngressPerSecondNormalized = 0.25f;
+        private const float DefaultAddedMassLinearDampingScale = 0.3f;
+        private const float DefaultAddedMassAngularDampingScale = 0.3f;
+        private const float DefaultRigidbodyMassUpdateThresholdKg = 5f;
+        private const float CriticalFloodAddedMassLinearBoost = 2f;
+        private const float CriticalFloodAddedMassAngularBoost = 8f;
+        private const float CriticalFloodSloshResistanceBoost = 6f;
+        private const float FloodedHullRotationalResistanceScale = 0.08f;
+        private const float DefaultExteriorBuoyancyForceClampScale = 1.15f;
+        private const float DefaultExteriorBuoyancyTorqueClampScale = 1.25f;
+        private const int ExteriorBuoyancySampleCount = 8;
+        private const int MaxQueuedSplashEvents = 32;
+        private const float SplashSubmersionThreshold = 0.5f;
         private const float CriticalFillThreshold = 0.8f;
         private const float Epsilon = 0.0001f;
-        private const int MaxFixedTicksPerDispatcherTick = 3;
-
         private const uint FlagBreached = 1u << 0;
         private const uint FlagSealed = 1u << 1;
         private const uint FlagCritical = 1u << 2;
@@ -83,6 +122,19 @@ namespace Hecton8.Physics
 
             [Tooltip("When true, fluid transfer across this bulkhead pair halts immediately.")]
             public bool isSealed;
+
+            [Tooltip("Cross-sectional doorway area used for pressure blowout force in square meters.")]
+            [Min(0f)]
+            public float doorAreaSquareMeters;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct CompartmentState
+        {
+            public float currentVolume;
+            public float maxVolume;
+            public float3 localCentroid;
+            public uint stateFlags;
         }
 #pragma warning restore CS0649
 
@@ -100,11 +152,20 @@ namespace Hecton8.Physics
         [Tooltip("Authored inertia tensor for the fully flooded state.")]
         [SerializeField] private Vector3 fullyFloodedInertiaTensor = new Vector3(1650f, 2550f, 3200f);
 
-        [Tooltip("Dry-hull local center used only for telemetry. Rigidbody.centerOfMass is not rewritten at runtime.")]
+        [Tooltip("Dry-hull local center used as the baseline for flood-driven center-of-mass shifting.")]
         [SerializeField] private Vector3 dryCenterOfMassLocal = Vector3.zero;
 
         [Tooltip("Time constant used to smooth the reported flood centroid for downstream telemetry and VFX.")]
         [SerializeField, Min(0.1f)] private float reportedCenterTauSeconds = DefaultReportedCenterTauSeconds;
+
+        [Tooltip("Time constant used to blend the live rigidbody center of mass toward the flooded centroid.")]
+        [SerializeField, Min(0.1f)] private float centerOfMassTauSeconds = DefaultCenterOfMassTauSeconds;
+
+        [Tooltip("Maximum local-space center-of-mass movement applied per fixed step.")]
+        [SerializeField, Min(0.001f)] private float maxCenterOfMassDeltaPerTickMeters = DefaultMaxCenterOfMassDeltaPerTickMeters;
+
+        [Tooltip("Minimum flood-mass delta required before Rigidbody.mass is updated.")]
+        [SerializeField, Min(0.1f)] private float rigidbodyMassUpdateThresholdKg = DefaultRigidbodyMassUpdateThresholdKg;
 
         [Header("── Flood Math ────────────────────")]
         [Tooltip("Sharp-edge discharge coefficient used in Torricelli ingress.")]
@@ -129,12 +190,31 @@ namespace Hecton8.Physics
         [Tooltip("Absolute cap on total delayed slosh torque in local space.")]
         [SerializeField, Min(0f)] private float maxSloshTorque = DefaultMaxSloshTorque;
 
+        [Tooltip("Extra angular damping multiplier applied when the hull is submerged. 0.3 = 30% heavier turns.")]
+        [SerializeField, Range(0f, 1f)] private float addedMassAngularDampingScale = DefaultAddedMassAngularDampingScale;
+
+        [Tooltip("Extra linear damping multiplier applied when the hull is submerged. 0.3 = 30% heavier translational drag.")]
+        [SerializeField, Range(0f, 1f)] private float addedMassLinearDampingScale = DefaultAddedMassLinearDampingScale;
+
         [Header("── Depth Source ──────────────────")]
         [Tooltip("When true, depth is sampled from the atmosphere sea level relative to the hull position.")]
         [SerializeField] private bool sampleDepthFromAtmosphere = true;
 
         [Tooltip("Fallback or manual external depth when atmospheric sea level sampling is disabled.")]
         [SerializeField, Min(0f)] private float manualExternalDepthMeters;
+
+        [Header("── Exterior Buoyancy ──────────────────")]
+        [Tooltip("Optional explicit collider used to derive exterior buoyancy sample points. Falls back to the first owned collider.")]
+        [SerializeField] private Collider exteriorHullCollider;
+
+        [Tooltip("Exterior displaced volume used by sampled buoyancy. Zero derives from total compartment capacity or the hull bounds.")]
+        [SerializeField, Min(0f)] private float exteriorDisplacementVolumeCubicMeters;
+
+        [Tooltip("Safety clamp applied against the theoretical Archimedes force for the full displacement volume.")]
+        [SerializeField, Range(1f, 2f)] private float exteriorBuoyancyForceClampScale = DefaultExteriorBuoyancyForceClampScale;
+
+        [Tooltip("Safety clamp multiplier applied against the theoretical buoyancy torque from the furthest sample lever arm.")]
+        [SerializeField, Range(1f, 3f)] private float exteriorBuoyancyTorqueClampScale = DefaultExteriorBuoyancyTorqueClampScale;
 
         [Header("── Diagnostics ───────────────────")]
         [SerializeField] private int _debugConfiguredCompartmentCount;
@@ -143,29 +223,68 @@ namespace Hecton8.Physics
         [SerializeField] private float _debugTotalFloodVolumeCubicMeters;
         [SerializeField] private float _debugFloodFillRatio;
         [SerializeField] private Vector3 _debugReportedFloodCenterOfMassLocal;
+        [SerializeField] private Vector3 _debugAppliedCenterOfMassLocal;
         [SerializeField] private Vector3 _debugAppliedInertiaTensor;
+        [SerializeField] private float _debugAppliedRigidbodyMass;
+        [SerializeField] private float _debugFloodMassKilograms;
+        [SerializeField] private Vector3 _debugDelayedSloshAngularVelocityLocal;
         [SerializeField] private Vector3 _debugLastSloshTorqueLocal;
+        [SerializeField] private float _debugExternalSubmergedVolumeCubicMeters;
+        [SerializeField] private Vector3 _debugLastExternalBuoyancyForce;
+        [SerializeField] private Vector3 _debugLastExternalBuoyancyTorque;
+        [SerializeField] private float _debugAppliedLinearDamping;
+        [SerializeField] private float _debugAppliedAngularDamping;
+        [SerializeField] private float _debugSubmersionFactor;
 
         private Rigidbody _rigidbody;
         private Transform _cachedTransform;
         private bool _registered;
+        private bool _registeredOriginShiftListener;
         private bool _fluidJobRunning;
+        private bool _skipHydrodynamicsForCurrentFixedTick;
         private int _configuredCompartmentCount;
         private int _configuredBulkheadCount;
         private int _ringHead;
         private float _externalDepthMeters;
-        private float _fixedStepAccumulator;
         private float _floodFillRatio;
         private float _totalFloodVolumeCubicMeters;
+        private float _currentFixedDeltaTime = DefaultFixedStepSeconds;
         private float _reportedCenterBlendAlpha;
         private float _reportedCenterBlendFixedStep = -1f;
+        private float _centerOfMassBlendAlpha;
+        private float _centerOfMassBlendFixedStep = -1f;
+        private float _baseLinearDamping;
+        private float _baseAngularDamping;
+        private float _dryRigidbodyMass;
+        private float _lastAppliedRigidbodyMass;
+        private float _lastAppliedLinearDamping;
+        private float _lastAppliedAngularDamping;
+        private float _externalSubmergedVolumeCubicMeters;
+        private float _exteriorBuoyancyMaxLeverArm = 1f;
+        private float _submersionFactor;
         private Vector3 _reportedFloodCenterOfMassLocal;
+        private Vector3 _appliedCenterOfMassLocal;
+        private Vector3 _currentFloodCenterOfMassLocal;
         private Vector3 _resolvedDryInertiaTensor;
         private Vector3 _resolvedFloodedInertiaTensor;
         private Vector3 _lastAppliedInertiaTensor;
         private Vector3 _lastSloshTorqueLocal;
+        private Vector3 _lastExternalBuoyancyForce;
+        private Vector3 _lastExternalBuoyancyTorque;
+        private float _currentHydrodynamicLinearInertiaScale = 1f;
+        private float _currentHydrodynamicAngularInertiaScale = 1f;
         private JobHandle _disposeHandle;
         private JobHandle _fluidJobHandle;
+        private JobHandle _massPropertiesJobHandle;
+        private bool _baselineDampingCached;
+        private bool _baselineMassCached;
+        private bool _massPropertiesJobRunning;
+        private int _queuedSplashEventCount;
+        private CompartmentState[] _compartmentStates;
+        private ISubmarineHullBreachReadModel _structuralBreachReadModel;
+        private readonly List<MonoBehaviour> _componentSearchBuffer = new List<MonoBehaviour>(4); // COLD ALLOC: List<MonoBehaviour>(4) — local component search scratch for interface-only structural breach wiring — owner: SubmarineFluidDynamics
+        // COLD ALLOC: Vector3[8] — cached local buoyancy sample points for exterior waterline force distribution — owner: SubmarineFluidDynamics
+        private readonly Vector3[] _exteriorBuoyancySampleLocalPoints = new Vector3[ExteriorBuoyancySampleCount];
 
         private NativeArray<float> _compartmentFloodVolumes;
         private NativeArray<float> _compartmentMaxVolumes;
@@ -174,33 +293,35 @@ namespace Hecton8.Physics
         private NativeArray<uint> _compartmentFlags;
         private NativeArray<int2> _bulkheadPairs;
         private NativeArray<byte> _bulkheadSealed;
+        private NativeArray<float> _bulkheadDoorAreas;
         private NativeArray<float3> _comAccumulatorFront;
         private NativeArray<float3> _comAccumulatorBack;
+        private NativeArray<FloodMassPropertiesResult> _massPropertiesFront;
+        private NativeArray<FloodMassPropertiesResult> _massPropertiesBack;
         private NativeArray<float3> _angularVelocityHistoryLocal;
+        private NativeArray<float> _previousExteriorSampleSubmersionFactors;
         private NativeArray<float> _jobFloodVolumes;
         private NativeArray<uint> _jobCompartmentFlags;
+        private NativeArray<float> _bulkheadTransferDeltas;
+        private NativeQueue<SplashEvent> _splashEventQueue;
 
         [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct FluidTransferJob : IJob
         {
             [ReadOnly] public NativeArray<float> InputFloodVolumes;
             [ReadOnly] public NativeArray<float> MaxVolumes;
             [ReadOnly] public NativeArray<float> BreachAreas;
             [ReadOnly] public NativeArray<uint> InputFlags;
-            [ReadOnly] public NativeArray<int2> BulkheadPairs;
-            [ReadOnly] public NativeArray<byte> BulkheadSealed;
 
             public NativeArray<float> OutputFloodVolumes;
             public NativeArray<uint> OutputFlags;
 
             public int CompartmentCount;
-            public int BulkheadCount;
             public float DepthMeters;
             public float FixedDeltaTime;
             public float DischargeCoefficient;
             public float MaximumIngressPerSecondNormalized;
-            public float BulkheadFlowCoefficient;
-            public float MaxTransferPerTick;
 
             public void Execute()
             {
@@ -256,10 +377,92 @@ namespace Hecton8.Physics
                     OutputFloodVolumes[i] = currentVolume;
                     OutputFlags[i] = flags;
                 }
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [StructLayout(LayoutKind.Sequential)]
+        private struct BulkheadTransferDeltaJob : IJobParallelFor
+        {
+            [ReadOnly] public NativeArray<float> FloodVolumes;
+            [ReadOnly] public NativeArray<float> MaxVolumes;
+            [ReadOnly] public NativeArray<int2> BulkheadPairs;
+            [ReadOnly] public NativeArray<byte> BulkheadSealed;
+
+            public NativeArray<float> TransferDeltas;
+
+            public int CompartmentCount;
+            public float FixedDeltaTime;
+            public float BulkheadFlowCoefficient;
+            public float MaxTransferPerTick;
+
+            public void Execute(int index)
+            {
+                TransferDeltas[index] = 0f;
+
+                int2 pair = BulkheadPairs[index];
+                int compartmentA = pair.x;
+                int compartmentB = pair.y;
+                if (compartmentA < 0 || compartmentA >= CompartmentCount || compartmentB < 0 || compartmentB >= CompartmentCount)
+                    return;
+
+                if (BulkheadSealed[index] != 0)
+                    return;
+
+                float maxVolumeA = MaxVolumes[compartmentA];
+                float maxVolumeB = MaxVolumes[compartmentB];
+                if (maxVolumeA <= Epsilon || maxVolumeB <= Epsilon)
+                    return;
+
+                if (!TryResolveSafeNormalizedRatio(FloodVolumes[compartmentA], maxVolumeA, out float fillA) ||
+                    !TryResolveSafeNormalizedRatio(FloodVolumes[compartmentB], maxVolumeB, out float fillB))
+                {
+                    return;
+                }
 
                 float transferCoefficient = math.max(0f, BulkheadFlowCoefficient);
                 float perTickTransferCap = math.max(0.01f, MaxTransferPerTick);
+                float headDifference = fillA - fillB;
+                float deltaVolume = math.clamp(headDifference * transferCoefficient * FixedDeltaTime, -perTickTransferCap, perTickTransferCap);
 
+                if (deltaVolume > 0f)
+                {
+                    deltaVolume = math.min(
+                        deltaVolume,
+                        math.min(FloodVolumes[compartmentA], maxVolumeB - FloodVolumes[compartmentB]));
+                }
+                else if (deltaVolume < 0f)
+                {
+                    float transferMagnitude = math.min(
+                        -deltaVolume,
+                        math.min(FloodVolumes[compartmentB], maxVolumeA - FloodVolumes[compartmentA]));
+                    deltaVolume = -transferMagnitude;
+                }
+
+                if (math.abs(deltaVolume) <= Epsilon || !math.isfinite(deltaVolume))
+                    deltaVolume = 0f;
+
+                TransferDeltas[index] = deltaVolume;
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [StructLayout(LayoutKind.Sequential)]
+        private struct ApplyBulkheadTransferJob : IJob
+        {
+            [ReadOnly] public NativeArray<int2> BulkheadPairs;
+            [ReadOnly] public NativeArray<byte> BulkheadSealed;
+            [ReadOnly] public NativeArray<float> MaxVolumes;
+            [ReadOnly] public NativeArray<float> TransferDeltas;
+
+            public NativeArray<float> FloodVolumes;
+            public NativeArray<uint> Flags;
+
+            public int BulkheadCount;
+            public int CompartmentCount;
+
+            public void Execute()
+            {
                 for (int i = 0; i < BulkheadCount; i++)
                 {
                     int2 pair = BulkheadPairs[i];
@@ -270,48 +473,109 @@ namespace Hecton8.Physics
 
                     if (BulkheadSealed[i] != 0)
                     {
-                        OutputFlags[compartmentA] |= FlagSealed;
-                        OutputFlags[compartmentB] |= FlagSealed;
+                        Flags[compartmentA] |= FlagSealed;
+                        Flags[compartmentB] |= FlagSealed;
                         continue;
                     }
 
-                    float maxVolumeA = MaxVolumes[compartmentA];
-                    float maxVolumeB = MaxVolumes[compartmentB];
-                    if (maxVolumeA <= Epsilon || maxVolumeB <= Epsilon)
-                        continue;
-
-                    float fillA = OutputFloodVolumes[compartmentA] / maxVolumeA;
-                    float fillB = OutputFloodVolumes[compartmentB] / maxVolumeB;
-                    float headDifference = fillA - fillB;
-                    float deltaVolume = math.clamp(headDifference * transferCoefficient * FixedDeltaTime, -perTickTransferCap, perTickTransferCap);
-
-                    if (deltaVolume > 0f)
+                    float deltaVolume = TransferDeltas[i];
+                    if (deltaVolume > Epsilon)
                     {
-                        deltaVolume = math.min(
-                            deltaVolume,
-                            math.min(OutputFloodVolumes[compartmentA], maxVolumeB - OutputFloodVolumes[compartmentB]));
-                        if (deltaVolume <= Epsilon)
-                            continue;
-
-                        OutputFloodVolumes[compartmentA] -= deltaVolume;
-                        OutputFloodVolumes[compartmentB] += deltaVolume;
-                        OutputFlags[compartmentA] |= FlagTransferSource;
-                        OutputFlags[compartmentB] |= FlagTransferDestination;
+                        FloodVolumes[compartmentA] = math.clamp(FloodVolumes[compartmentA] - deltaVolume, 0f, MaxVolumes[compartmentA]);
+                        FloodVolumes[compartmentB] = math.clamp(FloodVolumes[compartmentB] + deltaVolume, 0f, MaxVolumes[compartmentB]);
+                        Flags[compartmentA] |= FlagTransferSource;
+                        Flags[compartmentB] |= FlagTransferDestination;
                     }
-                    else if (deltaVolume < 0f)
+                    else if (deltaVolume < -Epsilon)
                     {
-                        float transferMagnitude = math.min(
-                            -deltaVolume,
-                            math.min(OutputFloodVolumes[compartmentB], maxVolumeA - OutputFloodVolumes[compartmentA]));
-                        if (transferMagnitude <= Epsilon)
-                            continue;
-
-                        OutputFloodVolumes[compartmentA] += transferMagnitude;
-                        OutputFloodVolumes[compartmentB] -= transferMagnitude;
-                        OutputFlags[compartmentB] |= FlagTransferSource;
-                        OutputFlags[compartmentA] |= FlagTransferDestination;
+                        float transferMagnitude = -deltaVolume;
+                        FloodVolumes[compartmentA] = math.clamp(FloodVolumes[compartmentA] + transferMagnitude, 0f, MaxVolumes[compartmentA]);
+                        FloodVolumes[compartmentB] = math.clamp(FloodVolumes[compartmentB] - transferMagnitude, 0f, MaxVolumes[compartmentB]);
+                        Flags[compartmentB] |= FlagTransferSource;
+                        Flags[compartmentA] |= FlagTransferDestination;
                     }
                 }
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [StructLayout(LayoutKind.Sequential)]
+        private struct FloodMassPropertiesResult
+        {
+            public float FloodMassKilograms;
+            public float FloodMassRatio;
+            public float3 FloodCenterLocal;
+            public float3 TargetCenterLocal;
+            public float3 InertiaTensor;
+        }
+
+        [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [StructLayout(LayoutKind.Sequential)]
+        private struct FloodMassPropertiesJob : IJob
+        {
+            [ReadOnly] public NativeArray<float> FloodVolumes;
+            [ReadOnly] public NativeArray<float> MaxVolumes;
+            [ReadOnly] public NativeArray<float3> LocalCentroids;
+            [ReadOnly] public NativeArray<uint> Flags;
+
+            public NativeArray<float3> WeightedCentroids;
+            public NativeArray<FloodMassPropertiesResult> Output;
+
+            public int CompartmentCount;
+            public float3 DryCenterLocal;
+            public float3 DryInertiaTensor;
+            public float3 FloodedInertiaTensor;
+
+            public void Execute()
+            {
+                float totalFloodMass = 0f;
+                float totalCapacity = 0f;
+                float3 weightedSum = float3.zero;
+
+                for (int i = 0; i < CompartmentCapacity; i++)
+                {
+                    if (i >= CompartmentCount)
+                    {
+                        WeightedCentroids[i] = float3.zero;
+                        continue;
+                    }
+
+                    float maxVolume = math.max(0f, MaxVolumes[i]);
+                    totalCapacity += maxVolume;
+                    if (maxVolume <= Epsilon || (Flags[i] & FlagFrozen) != 0u)
+                    {
+                        WeightedCentroids[i] = float3.zero;
+                        continue;
+                    }
+
+                    float currentVolume = math.clamp(FloodVolumes[i], 0f, maxVolume);
+                    float mass = currentVolume * WaterDensityKgPerCubicMeter;
+                    float3 weightedCentroid = LocalCentroids[i] * mass;
+                    WeightedCentroids[i] = weightedCentroid;
+                    weightedSum += weightedCentroid;
+                    totalFloodMass += mass;
+                }
+
+                float3 floodCenter = DryCenterLocal;
+                if (totalFloodMass > Epsilon)
+                    floodCenter = weightedSum / totalFloodMass;
+
+                float maxFloodMass = totalCapacity * WaterDensityKgPerCubicMeter;
+                float floodMassRatio = maxFloodMass > Epsilon
+                    ? math.saturate(totalFloodMass / maxFloodMass)
+                    : 0f;
+
+                float3 targetCenter = math.lerp(DryCenterLocal, floodCenter, floodMassRatio);
+                float3 inertiaTensor = math.lerp(DryInertiaTensor, FloodedInertiaTensor, floodMassRatio);
+
+                Output[0] = new FloodMassPropertiesResult
+                {
+                    FloodMassKilograms = math.isfinite(totalFloodMass) ? math.max(0f, totalFloodMass) : 0f,
+                    FloodMassRatio = math.isfinite(floodMassRatio) ? math.saturate(floodMassRatio) : 0f,
+                    FloodCenterLocal = math.all(math.isfinite(floodCenter)) ? floodCenter : DryCenterLocal,
+                    TargetCenterLocal = math.all(math.isfinite(targetCenter)) ? targetCenter : DryCenterLocal,
+                    InertiaTensor = math.all(math.isfinite(inertiaTensor)) ? inertiaTensor : DryInertiaTensor
+                };
             }
         }
 
@@ -324,66 +588,52 @@ namespace Hecton8.Physics
         /// <summary>Normalized total fill ratio across the authored compartment capacity.</summary>
         public float FloodFillRatio => _floodFillRatio;
 
+        /// <summary>Number of deferred splash payloads available for downstream VFX polling.</summary>
+        public int PendingSplashEventCount => _queuedSplashEventCount;
+
         /// <summary>Reported local-space flood centroid for telemetry, audio, or VFX queries.</summary>
         public Vector3 ReportedFloodCenterOfMassLocal => _reportedFloodCenterOfMassLocal;
 
         /// <summary>Resolved external water depth used by the current ingress step.</summary>
         public float ExternalDepthMeters => _externalDepthMeters;
 
+        internal int ConfiguredBulkheadCount => _configuredBulkheadCount;
+
         private void Awake()
         {
             CacheReferences();
-            EnsureNativeState();
             RefreshResolvedInertiaTensors();
-            SeedNativeStateFromAuthoring();
             RefreshDerivedConstants(DefaultFixedStepSeconds);
-            ResetDispatcherCadence();
             RefreshDebugState();
         }
 
         private void OnEnable()
         {
             CacheReferences();
+            RebuildExteriorBuoyancySampleLocalPoints();
             EnsureNativeState();
             RefreshResolvedInertiaTensors();
             SeedNativeStateFromAuthoring();
+            RefreshDerivedConstants(DefaultFixedStepSeconds);
             TryRegister();
-            ResetDispatcherCadence();
+            TryRegisterOriginShiftListener();
             RefreshDebugState();
         }
 
         private void OnDisable()
         {
+            TryUnregisterOriginShiftListener();
             TryUnregister();
-            ResetDispatcherCadence();
+            RestoreRigidbodyDynamics();
             DisposeNativeStateDeferred();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterOriginShiftListener();
             TryUnregister();
-            ResetDispatcherCadence();
+            RestoreRigidbodyDynamics();
             DisposeNativeStateDeferred();
-        }
-
-        public void Tick(float deltaTime)
-        {
-            if (deltaTime <= 0f)
-                return;
-
-            _fixedStepAccumulator += deltaTime;
-            float maxAccumulator = DefaultFixedStepSeconds * MaxFixedTicksPerDispatcherTick;
-            if (_fixedStepAccumulator > maxAccumulator)
-                _fixedStepAccumulator = maxAccumulator;
-
-            int iterations = 0;
-            while (_fixedStepAccumulator >= DefaultFixedStepSeconds &&
-                   iterations < MaxFixedTicksPerDispatcherTick)
-            {
-                FixedTick(DefaultFixedStepSeconds);
-                _fixedStepAccumulator -= DefaultFixedStepSeconds;
-                iterations++;
-            }
         }
 
         /// <summary>
@@ -395,14 +645,52 @@ namespace Hecton8.Physics
             if (!_compartmentFloodVolumes.IsCreated || _rigidbody == null || fixedDeltaTime <= 0f)
                 return;
 
+            _skipHydrodynamicsForCurrentFixedTick = false;
+            _currentFixedDeltaTime = fixedDeltaTime;
+            float depthMeters = ResolveExternalDepthMeters();
             ConsumeCompletedFluidTransfer();
+            ConsumeCompletedFloodMassProperties();
+            if (ShouldAbortHydrodynamicsFixedTick())
+                return;
+
             RefreshDerivedConstants(fixedDeltaTime);
             SyncBulkheadSealedFlags();
+            SyncStructuralBreachIngress();
             FinalizeCompartmentState();
-            UpdateReportedFloodCenter();
+            if (ShouldAbortHydrodynamicsFixedTick())
+                return;
+
+            ApplyFloodMassPropertiesToRigidbody(force: false);
+            if (ShouldAbortHydrodynamicsFixedTick())
+                return;
+
+            float3 targetFloodCenter = ResolveFloodTargetCenterOfMassFromBufferedJob();
+            if (ShouldAbortHydrodynamicsFixedTick())
+                return;
+
+            ApplyCenterOfMassShift(targetFloodCenter);
+            if (ShouldAbortHydrodynamicsFixedTick())
+                return;
+
+            UpdateReportedFloodCenter(targetFloodCenter);
             ApplyInterpolatedInertiaTensor();
+            if (ShouldAbortHydrodynamicsFixedTick())
+                return;
+
+            ApplySampledExteriorBuoyancy(depthMeters);
+            if (ShouldAbortHydrodynamicsFixedTick())
+                return;
+
+            ApplyAddedMassDamping();
+            if (ShouldAbortHydrodynamicsFixedTick())
+                return;
+
             ApplyDelayedSloshTorque();
-            ScheduleFluidTransferJob(ResolveExternalDepthMeters(), fixedDeltaTime);
+            if (ShouldAbortHydrodynamicsFixedTick())
+                return;
+
+            ScheduleFloodMassPropertiesJob();
+            ScheduleFluidTransferJob(depthMeters, fixedDeltaTime);
             RefreshDebugState();
         }
 
@@ -426,6 +714,7 @@ namespace Hecton8.Physics
                 return;
 
             CompletePendingFluidTransferForAuthoritativeWrite();
+            CompletePendingFloodMassPropertiesForAuthoritativeWrite();
             float sanitizedArea = Mathf.Max(0f, breachAreaSquareMeters);
             _compartmentBreachAreas[compartmentIndex] = sanitizedArea;
 
@@ -455,6 +744,7 @@ namespace Hecton8.Physics
                 return;
 
             CompletePendingFluidTransferForAuthoritativeWrite();
+            CompletePendingFloodMassPropertiesForAuthoritativeWrite();
             int bulkheadIndex = FindBulkheadIndex(compartmentA, compartmentB);
             if (bulkheadIndex >= 0)
             {
@@ -473,11 +763,17 @@ namespace Hecton8.Physics
                 return;
 
             CompletePendingFluidTransferForAuthoritativeWrite();
+            CompletePendingFloodMassPropertiesForAuthoritativeWrite();
             float maxVolume = _compartmentMaxVolumes[compartmentIndex];
             _compartmentFloodVolumes[compartmentIndex] = math.saturate(fillNormalized) * maxVolume;
+            RefreshDerivedConstants(DefaultFixedStepSeconds);
             FinalizeCompartmentState();
-            UpdateReportedFloodCenter();
+            float3 targetFloodCenter = ResolveFloodTargetCenterOfMassLocal();
+            SeedFloodMassPropertiesBuffers(targetFloodCenter, _floodFillRatio);
+            ApplyCenterOfMassShift(targetFloodCenter);
+            UpdateReportedFloodCenter(targetFloodCenter);
             ApplyInterpolatedInertiaTensor();
+            ApplyAddedMassDamping();
             RefreshDebugState();
         }
 
@@ -490,9 +786,89 @@ namespace Hecton8.Physics
                 return 0f;
 
             float maxVolume = _compartmentMaxVolumes[compartmentIndex];
-            return maxVolume > Epsilon
-                ? math.saturate(_compartmentFloodVolumes[compartmentIndex] / maxVolume)
+            if (maxVolume <= Epsilon)
+                return 0f;
+
+            return TryResolveSafeNormalizedRatio(_compartmentFloodVolumes[compartmentIndex], maxVolume, out float fillRatio)
+                ? fillRatio
                 : 0f;
+        }
+
+        internal float GetCompartmentFloodVolumeCubicMeters(int compartmentIndex)
+        {
+            if (!IsCompartmentIndexValid(compartmentIndex) || !_compartmentFloodVolumes.IsCreated)
+                return 0f;
+
+            return _compartmentFloodVolumes[compartmentIndex];
+        }
+
+        internal float GetCompartmentMaxFloodVolumeCubicMeters(int compartmentIndex)
+        {
+            if (!IsCompartmentIndexValid(compartmentIndex) || !_compartmentMaxVolumes.IsCreated)
+                return 0f;
+
+            return _compartmentMaxVolumes[compartmentIndex];
+        }
+
+        internal bool TryGetBulkheadDefinition(int bulkheadIndex, out int compartmentA, out int compartmentB, out bool isSealed)
+        {
+            compartmentA = -1;
+            compartmentB = -1;
+            isSealed = false;
+
+            if (bulkheadIndex < 0 || bulkheadIndex >= _configuredBulkheadCount || !_bulkheadPairs.IsCreated || !_bulkheadSealed.IsCreated)
+                return false;
+
+            int2 pair = _bulkheadPairs[bulkheadIndex];
+            if (!IsCompartmentIndexValid(pair.x) || !IsCompartmentIndexValid(pair.y))
+                return false;
+
+            compartmentA = pair.x;
+            compartmentB = pair.y;
+            isSealed = _bulkheadSealed[bulkheadIndex] != 0;
+            return true;
+        }
+
+        internal float GetBulkheadDoorAreaSquareMeters(int bulkheadIndex)
+        {
+            if (bulkheadIndex < 0 || bulkheadIndex >= _configuredBulkheadCount || !_bulkheadDoorAreas.IsCreated)
+                return DefaultBulkheadDoorAreaSquareMeters;
+
+            return math.max(Epsilon, _bulkheadDoorAreas[bulkheadIndex]);
+        }
+
+        /// <inheritdoc />
+        public void OnOriginShift(in OriginShiftEventData shiftData)
+        {
+            if (shiftData.ShiftOffset.sqrMagnitude <= 0.000001f)
+                return;
+
+            ResetSloshHistoryForOriginShift();
+            ResetSplashDetectionState(clearQueuedEvents: true);
+        }
+
+        /// <summary>
+        /// Dequeues one sampled exterior water-entry payload for downstream VFX systems.
+        /// </summary>
+        /// <param name="splashEvent">Resolved splash payload when available.</param>
+        /// <returns>True when a splash payload was dequeued.</returns>
+        public bool TryDequeueSplashEvent(out SplashEvent splashEvent)
+        {
+            if (!_splashEventQueue.IsCreated || _queuedSplashEventCount <= 0)
+            {
+                splashEvent = default;
+                return false;
+            }
+
+            if (!_splashEventQueue.TryDequeue(out splashEvent))
+            {
+                splashEvent = default;
+                _queuedSplashEventCount = 0;
+                return false;
+            }
+
+            _queuedSplashEventCount--;
+            return true;
         }
 
         /// <summary>
@@ -525,12 +901,58 @@ namespace Hecton8.Physics
 
             if (_rigidbody == null)
                 TryGetComponent(out _rigidbody);
+
+            if (exteriorHullCollider == null)
+                TryGetComponent(out exteriorHullCollider);
+
+            if (_structuralBreachReadModel == null)
+                _structuralBreachReadModel = GlobalRegistry.SubmarineHullBreach;
+
+            if (_structuralBreachReadModel == null)
+            {
+                _componentSearchBuffer.Clear();
+                GetComponents(_componentSearchBuffer);
+                for (int i = 0; i < _componentSearchBuffer.Count; i++)
+                {
+                    MonoBehaviour component = _componentSearchBuffer[i];
+                    if (ReferenceEquals(component, this))
+                        continue;
+
+                    if (component is ISubmarineHullBreachReadModel readModel)
+                    {
+                        _structuralBreachReadModel = readModel;
+                        break;
+                    }
+                }
+            }
+
+            if (_rigidbody != null && !_baselineDampingCached)
+            {
+                _baseLinearDamping = Mathf.Max(0f, _rigidbody.linearDamping);
+                _baseAngularDamping = Mathf.Max(0f, _rigidbody.angularDamping);
+                _lastAppliedLinearDamping = _baseLinearDamping;
+                _lastAppliedAngularDamping = _baseAngularDamping;
+                _baselineDampingCached = true;
+            }
+
+            if (_rigidbody != null && !_baselineMassCached)
+            {
+                _dryRigidbodyMass = math.isfinite(_rigidbody.mass) ? math.max(_rigidbody.mass, Epsilon) : 1f;
+                _lastAppliedRigidbodyMass = _dryRigidbodyMass;
+                _baselineMassCached = true;
+            }
         }
 
         private void EnsureNativeState()
         {
             if (_compartmentFloodVolumes.IsCreated)
                 return;
+
+            if (_compartmentStates == null)
+            {
+                // COLD ALLOC: CompartmentState[8] — compartment flood snapshots for CoM and telemetry — owner: SubmarineFluidDynamics
+                _compartmentStates = new CompartmentState[CompartmentCapacity];
+            }
 
             // COLD ALLOC: NativeArray<float>[8] — compartment flood volume storage — owner: SubmarineFluidDynamics
             _compartmentFloodVolumes = new NativeArray<float>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
@@ -546,16 +968,28 @@ namespace Hecton8.Physics
             _bulkheadPairs = new NativeArray<int2>(BulkheadCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<byte>[7] — bulkhead seal state — owner: SubmarineFluidDynamics
             _bulkheadSealed = new NativeArray<byte>(BulkheadCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<float>[7] — authored bulkhead doorway areas for pressure blowout math — owner: SubmarineFluidDynamics
+            _bulkheadDoorAreas = new NativeArray<float>(BulkheadCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<float3>[8] — ping-pong flood centroid accumulator front buffer — owner: SubmarineFluidDynamics
             _comAccumulatorFront = new NativeArray<float3>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<float3>[8] — ping-pong flood centroid accumulator back buffer — owner: SubmarineFluidDynamics
             _comAccumulatorBack = new NativeArray<float3>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float3>[8] — local angular-velocity slosh history — owner: SubmarineFluidDynamics
+            // COLD ALLOC: NativeArray<FloodMassPropertiesResult>[1] — front flood mass-properties result buffer — owner: SubmarineFluidDynamics
+            _massPropertiesFront = new NativeArray<FloodMassPropertiesResult>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<FloodMassPropertiesResult>[1] — back flood mass-properties result buffer — owner: SubmarineFluidDynamics
+            _massPropertiesBack = new NativeArray<FloodMassPropertiesResult>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<float3>[16] — local angular-velocity slosh history supporting 50–150 ms delayed counter-torque taps — owner: SubmarineFluidDynamics
             _angularVelocityHistoryLocal = new NativeArray<float3>(RingBufferLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<float>[8] — previous sampled exterior submersion factors for splash transition detection — owner: SubmarineFluidDynamics
+            _previousExteriorSampleSubmersionFactors = new NativeArray<float>(ExteriorBuoyancySampleCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<float>[8] â€” Burst fluid-transfer output volumes â€” owner: SubmarineFluidDynamics
             _jobFloodVolumes = new NativeArray<float>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<uint>[8] â€” Burst fluid-transfer output flags â€” owner: SubmarineFluidDynamics
             _jobCompartmentFlags = new NativeArray<uint>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<float>[7] â€” per-bulkhead transfer delta scratch â€” owner: SubmarineFluidDynamics
+            _bulkheadTransferDeltas = new NativeArray<float>(BulkheadCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeQueue<SplashEvent>(Persistent) — deferred exterior splash payload queue for VFX consumers — owner: SubmarineFluidDynamics
+            _splashEventQueue = new NativeQueue<SplashEvent>(Allocator.Persistent);
         }
 
         private void SeedNativeStateFromAuthoring()
@@ -595,6 +1029,12 @@ namespace Hecton8.Physics
                 _comAccumulatorBack[i] = float3.zero;
             }
 
+            if (_massPropertiesFront.IsCreated)
+                _massPropertiesFront[0] = default;
+
+            if (_massPropertiesBack.IsCreated)
+                _massPropertiesBack[0] = default;
+
             if (bulkheads != null && bulkheads.Length > 0)
             {
                 _configuredBulkheadCount = Mathf.Clamp(bulkheads.Length, 0, BulkheadCapacity);
@@ -605,6 +1045,7 @@ namespace Hecton8.Physics
                         Mathf.Clamp(bulkhead.compartmentA, 0, CompartmentCapacity - 1),
                         Mathf.Clamp(bulkhead.compartmentB, 0, CompartmentCapacity - 1));
                     _bulkheadSealed[i] = bulkhead.isSealed ? (byte)1 : (byte)0;
+                    _bulkheadDoorAreas[i] = Mathf.Max(Epsilon, bulkhead.doorAreaSquareMeters > Epsilon ? bulkhead.doorAreaSquareMeters : DefaultBulkheadDoorAreaSquareMeters);
                 }
             }
             else
@@ -614,6 +1055,7 @@ namespace Hecton8.Physics
                 {
                     _bulkheadPairs[i] = new int2(i, i + 1);
                     _bulkheadSealed[i] = 0;
+                    _bulkheadDoorAreas[i] = DefaultBulkheadDoorAreaSquareMeters;
                 }
             }
 
@@ -621,10 +1063,13 @@ namespace Hecton8.Physics
             {
                 _bulkheadPairs[i] = new int2(-1, -1);
                 _bulkheadSealed[i] = 0;
+                _bulkheadDoorAreas[i] = DefaultBulkheadDoorAreaSquareMeters;
             }
 
             for (int i = 0; i < RingBufferLength; i++)
                 _angularVelocityHistoryLocal[i] = float3.zero;
+
+            ResetSplashDetectionState(clearQueuedEvents: true);
 
             for (int i = 0; i < CompartmentCapacity; i++)
             {
@@ -638,13 +1083,23 @@ namespace Hecton8.Physics
             _ringHead = 0;
             _fluidJobHandle = default;
             _fluidJobRunning = false;
-            _reportedFloodCenterOfMassLocal = dryCenterOfMassLocal;
+            _massPropertiesJobHandle = default;
+            _massPropertiesJobRunning = false;
+            Vector3 safeDryCenter = SanitizeCenterOfMass(dryCenterOfMassLocal, Vector3.zero);
+            _reportedFloodCenterOfMassLocal = safeDryCenter;
+            _appliedCenterOfMassLocal = safeDryCenter;
+            _currentFloodCenterOfMassLocal = _appliedCenterOfMassLocal;
             _lastAppliedInertiaTensor = _resolvedDryInertiaTensor;
-            if (_rigidbody != null)
-                _rigidbody.inertiaTensor = _lastAppliedInertiaTensor;
+            _externalSubmergedVolumeCubicMeters = 0f;
+            _submersionFactor = 0f;
+            _lastExternalBuoyancyForce = Vector3.zero;
+            _lastExternalBuoyancyTorque = Vector3.zero;
 
             FinalizeCompartmentState();
-            UpdateReportedFloodCenter();
+            float3 targetFloodCenter = ResolveFloodTargetCenterOfMassLocal();
+            ApplyStartupMassProperties(targetFloodCenter);
+            SeedFloodMassPropertiesBuffers(targetFloodCenter, _floodFillRatio);
+            UpdateReportedFloodCenter(targetFloodCenter);
         }
 
         private void DisposeNativeStateDeferred()
@@ -656,6 +1111,13 @@ namespace Hecton8.Physics
                 _fluidJobRunning = false;
             }
 
+            if (_massPropertiesJobRunning)
+            {
+                _disposeHandle = JobHandle.CombineDependencies(_disposeHandle, _massPropertiesJobHandle);
+                _massPropertiesJobHandle = default;
+                _massPropertiesJobRunning = false;
+            }
+
             DisposeDeferred(ref _compartmentFloodVolumes);
             DisposeDeferred(ref _compartmentMaxVolumes);
             DisposeDeferred(ref _compartmentBreachAreas);
@@ -663,11 +1125,49 @@ namespace Hecton8.Physics
             DisposeDeferred(ref _compartmentFlags);
             DisposeDeferred(ref _bulkheadPairs);
             DisposeDeferred(ref _bulkheadSealed);
+            DisposeDeferred(ref _bulkheadDoorAreas);
             DisposeDeferred(ref _comAccumulatorFront);
             DisposeDeferred(ref _comAccumulatorBack);
+            DisposeDeferred(ref _massPropertiesFront);
+            DisposeDeferred(ref _massPropertiesBack);
             DisposeDeferred(ref _angularVelocityHistoryLocal);
+            DisposeDeferred(ref _previousExteriorSampleSubmersionFactors);
             DisposeDeferred(ref _jobFloodVolumes);
             DisposeDeferred(ref _jobCompartmentFlags);
+            DisposeDeferred(ref _bulkheadTransferDeltas);
+            _disposeHandle.Complete();
+            _disposeHandle = default;
+
+            if (_splashEventQueue.IsCreated)
+            {
+                _splashEventQueue.Dispose();
+                _splashEventQueue = default;
+            }
+
+            _queuedSplashEventCount = 0;
+        }
+
+        private void RestoreRigidbodyDynamics()
+        {
+            if (_rigidbody == null)
+                return;
+
+            Vector3 safeDryCenter = SanitizeCenterOfMass(dryCenterOfMassLocal, Vector3.zero);
+            Vector3 safeDryTensor = SanitizeTensor(_resolvedDryInertiaTensor);
+            float safeLinearDamping = math.isfinite(_baseLinearDamping) ? math.max(0f, _baseLinearDamping) : 0f;
+            float safeAngularDamping = math.isfinite(_baseAngularDamping) ? math.max(0f, _baseAngularDamping) : 0f;
+            _rigidbody.centerOfMass = safeDryCenter;
+            _rigidbody.inertiaTensor = safeDryTensor;
+            _rigidbody.mass = math.max(_dryRigidbodyMass, Epsilon);
+            _lastAppliedRigidbodyMass = _rigidbody.mass;
+            _rigidbody.linearDamping = safeLinearDamping;
+            _rigidbody.angularDamping = safeAngularDamping;
+            _lastAppliedLinearDamping = safeLinearDamping;
+            _lastAppliedAngularDamping = safeAngularDamping;
+            _externalSubmergedVolumeCubicMeters = 0f;
+            _submersionFactor = 0f;
+            _lastExternalBuoyancyForce = Vector3.zero;
+            _lastExternalBuoyancyTorque = Vector3.zero;
         }
 
         private void TryRegister()
@@ -676,8 +1176,17 @@ namespace Hecton8.Physics
                 return;
 
             SystemDispatcher.EnsureRuntimeInstance();
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+            GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
             _registered = true;
+        }
+
+        private void TryRegisterOriginShiftListener()
+        {
+            if (_registeredOriginShiftListener || !Application.isPlaying)
+                return;
+
+            HectonFloatingOrigin.RegisterListener(this);
+            _registeredOriginShiftListener = true;
         }
 
         private void TryUnregister()
@@ -685,13 +1194,46 @@ namespace Hecton8.Physics
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
             _registered = false;
         }
 
-        private void ResetDispatcherCadence()
+        private void TryUnregisterOriginShiftListener()
         {
-            _fixedStepAccumulator = 0f;
+            if (!_registeredOriginShiftListener)
+                return;
+
+            HectonFloatingOrigin.UnregisterListener(this);
+            _registeredOriginShiftListener = false;
+        }
+
+        private void ResetSloshHistoryForOriginShift()
+        {
+            if (_angularVelocityHistoryLocal.IsCreated)
+            {
+                for (int i = 0; i < RingBufferLength; i++)
+                    _angularVelocityHistoryLocal[i] = float3.zero;
+            }
+
+            _ringHead = 0;
+            _debugDelayedSloshAngularVelocityLocal = Vector3.zero;
+            _lastSloshTorqueLocal = Vector3.zero;
+            _debugLastSloshTorqueLocal = Vector3.zero;
+        }
+
+        private void ResetSplashDetectionState(bool clearQueuedEvents)
+        {
+            if (_previousExteriorSampleSubmersionFactors.IsCreated)
+            {
+                for (int i = 0; i < _previousExteriorSampleSubmersionFactors.Length; i++)
+                    _previousExteriorSampleSubmersionFactors[i] = 0f;
+            }
+
+            if (clearQueuedEvents && _splashEventQueue.IsCreated)
+                _splashEventQueue.Clear();
+
+            if (clearQueuedEvents)
+                _queuedSplashEventCount = 0;
         }
 
         private void CompletePendingFluidTransferForAuthoritativeWrite()
@@ -704,49 +1246,125 @@ namespace Hecton8.Physics
             ConsumeCompletedFluidTransfer();
         }
 
+        private void CompletePendingFloodMassPropertiesForAuthoritativeWrite()
+        {
+            if (!_massPropertiesJobRunning)
+                return;
+
+            // COLD SYNC JOB: authoritative compartment writes must not race a pending flood mass-properties job.
+            _massPropertiesJobHandle.Complete();
+            ConsumeCompletedFloodMassProperties();
+        }
+
         private void ConsumeCompletedFluidTransfer()
         {
-            if (!_fluidJobRunning || !_fluidJobHandle.IsCompleted)
+            if (!_fluidJobRunning || !_fluidJobHandle.IsCompleted || !_jobFloodVolumes.IsCreated || !_jobCompartmentFlags.IsCreated)
                 return;
 
             _fluidJobHandle.Complete();
             _fluidJobHandle = default;
             _fluidJobRunning = false;
 
-            for (int i = 0; i < CompartmentCapacity; i++)
-            {
-                _compartmentFloodVolumes[i] = _jobFloodVolumes[i];
-                _compartmentFlags[i] = _jobCompartmentFlags[i];
-            }
+            NativeArray<float> floodVolumeFrontBuffer = _compartmentFloodVolumes;
+            _compartmentFloodVolumes = _jobFloodVolumes;
+            _jobFloodVolumes = floodVolumeFrontBuffer;
+
+            NativeArray<uint> flagFrontBuffer = _compartmentFlags;
+            _compartmentFlags = _jobCompartmentFlags;
+            _jobCompartmentFlags = flagFrontBuffer;
+        }
+
+        private void ConsumeCompletedFloodMassProperties()
+        {
+            if (!_massPropertiesJobRunning || !_massPropertiesJobHandle.IsCompleted || !_massPropertiesBack.IsCreated)
+                return;
+
+            _massPropertiesJobHandle.Complete();
+            _massPropertiesJobHandle = default;
+            _massPropertiesJobRunning = false;
+
+            NativeArray<FloodMassPropertiesResult> resultFrontBuffer = _massPropertiesFront;
+            _massPropertiesFront = _massPropertiesBack;
+            _massPropertiesBack = resultFrontBuffer;
+
+            NativeArray<float3> accumulatorFrontBuffer = _comAccumulatorFront;
+            _comAccumulatorFront = _comAccumulatorBack;
+            _comAccumulatorBack = accumulatorFrontBuffer;
         }
 
         private void ScheduleFluidTransferJob(float depthMeters, float fixedDeltaTime)
         {
-            if (_fluidJobRunning || !_jobFloodVolumes.IsCreated || !_jobCompartmentFlags.IsCreated)
+            if (_fluidJobRunning || !_jobFloodVolumes.IsCreated || !_jobCompartmentFlags.IsCreated || !_bulkheadTransferDeltas.IsCreated)
                 return;
 
-            FluidTransferJob job = new FluidTransferJob
+            FluidTransferJob ingressJob = new FluidTransferJob
             {
                 InputFloodVolumes = _compartmentFloodVolumes,
                 MaxVolumes = _compartmentMaxVolumes,
                 BreachAreas = _compartmentBreachAreas,
                 InputFlags = _compartmentFlags,
-                BulkheadPairs = _bulkheadPairs,
-                BulkheadSealed = _bulkheadSealed,
                 OutputFloodVolumes = _jobFloodVolumes,
                 OutputFlags = _jobCompartmentFlags,
                 CompartmentCount = _configuredCompartmentCount,
-                BulkheadCount = _configuredBulkheadCount,
                 DepthMeters = depthMeters,
                 FixedDeltaTime = fixedDeltaTime,
                 DischargeCoefficient = dischargeCoefficient,
-                MaximumIngressPerSecondNormalized = maximumIngressPerSecondNormalized,
+                MaximumIngressPerSecondNormalized = maximumIngressPerSecondNormalized
+            };
+
+            BulkheadTransferDeltaJob deltaJob = new BulkheadTransferDeltaJob
+            {
+                FloodVolumes = _jobFloodVolumes,
+                MaxVolumes = _compartmentMaxVolumes,
+                BulkheadPairs = _bulkheadPairs,
+                BulkheadSealed = _bulkheadSealed,
+                TransferDeltas = _bulkheadTransferDeltas,
+                CompartmentCount = _configuredCompartmentCount,
+                FixedDeltaTime = fixedDeltaTime,
                 BulkheadFlowCoefficient = bulkheadFlowCoefficient,
                 MaxTransferPerTick = maxTransferPerTick
             };
 
-            _fluidJobHandle = job.Schedule();
+            ApplyBulkheadTransferJob applyJob = new ApplyBulkheadTransferJob
+            {
+                BulkheadPairs = _bulkheadPairs,
+                BulkheadSealed = _bulkheadSealed,
+                MaxVolumes = _compartmentMaxVolumes,
+                TransferDeltas = _bulkheadTransferDeltas,
+                FloodVolumes = _jobFloodVolumes,
+                Flags = _jobCompartmentFlags,
+                BulkheadCount = _configuredBulkheadCount,
+                CompartmentCount = _configuredCompartmentCount
+            };
+
+            JobHandle ingressHandle = ingressJob.Schedule();
+            JobHandle deltaHandle = deltaJob.Schedule(_configuredBulkheadCount, 1, ingressHandle);
+            _fluidJobHandle = applyJob.Schedule(deltaHandle);
             _fluidJobRunning = true;
+        }
+
+        private void ScheduleFloodMassPropertiesJob()
+        {
+            if (_massPropertiesJobRunning || !_massPropertiesBack.IsCreated || !_comAccumulatorBack.IsCreated)
+                return;
+
+            Vector3 safeDryCenter = SanitizeCenterOfMass(dryCenterOfMassLocal, Vector3.zero);
+            FloodMassPropertiesJob job = new FloodMassPropertiesJob
+            {
+                FloodVolumes = _compartmentFloodVolumes,
+                MaxVolumes = _compartmentMaxVolumes,
+                LocalCentroids = _compartmentLocalCentroids,
+                Flags = _compartmentFlags,
+                WeightedCentroids = _comAccumulatorBack,
+                Output = _massPropertiesBack,
+                CompartmentCount = _configuredCompartmentCount,
+                DryCenterLocal = new float3(safeDryCenter.x, safeDryCenter.y, safeDryCenter.z),
+                DryInertiaTensor = new float3(_resolvedDryInertiaTensor.x, _resolvedDryInertiaTensor.y, _resolvedDryInertiaTensor.z),
+                FloodedInertiaTensor = new float3(_resolvedFloodedInertiaTensor.x, _resolvedFloodedInertiaTensor.y, _resolvedFloodedInertiaTensor.z)
+            };
+
+            _massPropertiesJobHandle = job.Schedule();
+            _massPropertiesJobRunning = true;
         }
 
         private void ClearTransientFlags()
@@ -771,6 +1389,25 @@ namespace Hecton8.Physics
 
                 _compartmentFlags[pair.x] |= FlagSealed;
                 _compartmentFlags[pair.y] |= FlagSealed;
+            }
+        }
+
+        private void SyncStructuralBreachIngress()
+        {
+            if (_structuralBreachReadModel == null || !_structuralBreachReadModel.IsReady || !_compartmentBreachAreas.IsCreated)
+                return;
+
+            for (int i = 0; i < CompartmentCapacity; i++)
+            {
+                float breachArea = i < _configuredCompartmentCount
+                    ? math.max(0f, _structuralBreachReadModel.GetCompartmentBreachAreaSquareMeters(i))
+                    : 0f;
+
+                _compartmentBreachAreas[i] = breachArea;
+                if (breachArea > Epsilon)
+                    _compartmentFlags[i] |= FlagBreached;
+                else
+                    _compartmentFlags[i] &= ~FlagBreached;
             }
         }
 
@@ -832,8 +1469,13 @@ namespace Hecton8.Physics
                 if (maxVolumeA <= Epsilon || maxVolumeB <= Epsilon)
                     continue;
 
-                float fillA = _compartmentFloodVolumes[compartmentA] / maxVolumeA;
-                float fillB = _compartmentFloodVolumes[compartmentB] / maxVolumeB;
+                if (!TryResolveSafeNormalizedRatio(_compartmentFloodVolumes[compartmentA], maxVolumeA, out float fillA) ||
+                    !TryResolveSafeNormalizedRatio(_compartmentFloodVolumes[compartmentB], maxVolumeB, out float fillB))
+                {
+                    EmergencyResetHydrodynamics("SimulateBulkheadTransfer.FillRatio");
+                    continue;
+                }
+
                 float headDifference = fillA - fillB;
                 float deltaVolume = math.clamp(headDifference * transferCoefficient * fixedDeltaTime, -perTickTransferCap, perTickTransferCap);
 
@@ -874,10 +1516,19 @@ namespace Hecton8.Physics
                 {
                     _compartmentFloodVolumes[i] = 0f;
                     _compartmentFlags[i] = 0u;
+                    if (_compartmentStates != null)
+                        _compartmentStates[i] = default;
                     continue;
                 }
 
-                float currentVolume = math.clamp(_compartmentFloodVolumes[i], 0f, maxVolume);
+                float sourceVolume = _compartmentFloodVolumes[i];
+                if (!math.isfinite(sourceVolume))
+                {
+                    EmergencyResetHydrodynamics("FinalizeCompartmentState.CurrentVolume");
+                    sourceVolume = 0f;
+                }
+
+                float currentVolume = math.clamp(sourceVolume, 0f, maxVolume);
                 uint flags = _compartmentFlags[i];
                 if (currentVolume >= maxVolume - Epsilon)
                 {
@@ -889,7 +1540,12 @@ namespace Hecton8.Physics
                     flags &= ~FlagOverflow;
                 }
 
-                float fillRatio = currentVolume / maxVolume;
+                if (!TryResolveSafeNormalizedRatio(currentVolume, maxVolume, out float fillRatio))
+                {
+                    EmergencyResetHydrodynamics("FinalizeCompartmentState.FillRatio");
+                    fillRatio = 0f;
+                }
+
                 if (fillRatio >= CriticalFillThreshold)
                     flags |= FlagCritical;
                 else
@@ -897,48 +1553,289 @@ namespace Hecton8.Physics
 
                 _compartmentFloodVolumes[i] = currentVolume;
                 _compartmentFlags[i] = flags;
+                if (_compartmentStates != null)
+                {
+                    _compartmentStates[i] = new CompartmentState
+                    {
+                        currentVolume = currentVolume,
+                        maxVolume = maxVolume,
+                        localCentroid = _compartmentLocalCentroids[i],
+                        stateFlags = flags
+                    };
+                }
+
                 totalFloodVolume += currentVolume;
+            }
+
+            if (!math.isfinite(totalFloodVolume))
+            {
+                EmergencyResetHydrodynamics("FinalizeCompartmentState.TotalFloodVolume");
+                _totalFloodVolumeCubicMeters = 0f;
+                _floodFillRatio = 0f;
+                return;
             }
 
             _totalFloodVolumeCubicMeters = totalFloodVolume;
             float totalCapacity = ResolveTotalCapacityCubicMeters();
-            _floodFillRatio = totalCapacity > Epsilon
-                ? math.saturate(totalFloodVolume / totalCapacity)
+            if (!math.isfinite(totalCapacity) || totalCapacity <= Epsilon)
+            {
+                EmergencyResetHydrodynamics("FinalizeCompartmentState.TotalCapacity");
+                _totalFloodVolumeCubicMeters = 0f;
+                _floodFillRatio = 0f;
+                return;
+            }
+
+            _floodFillRatio = TryResolveSafeNormalizedRatio(totalFloodVolume, totalCapacity, out float totalFillRatio)
+                ? totalFillRatio
                 : 0f;
         }
 
-        private void UpdateReportedFloodCenter()
+        private void ApplyFloodMassPropertiesToRigidbody(bool force)
         {
-            float totalFloodMass = 0f;
-            float3 weightedSum = float3.zero;
-            for (int i = 0; i < CompartmentCapacity; i++)
+            if (_rigidbody == null)
+                return;
+
+            float dryMass = math.max(_dryRigidbodyMass, Epsilon);
+            float floodMass = _massPropertiesFront.IsCreated && _massPropertiesFront.Length > 0
+                ? math.max(0f, _massPropertiesFront[0].FloodMassKilograms)
+                : math.max(0f, _totalFloodVolumeCubicMeters) * WaterDensityKgPerCubicMeter;
+            float targetMass = dryMass + floodMass;
+            if (!math.isfinite(targetMass))
             {
-                float currentVolume = _compartmentFloodVolumes[i];
-                float mass = currentVolume * WaterDensityKgPerCubicMeter;
-                float3 weightedCentroid = _compartmentLocalCentroids[i] * mass;
-                _comAccumulatorBack[i] = weightedCentroid;
-                weightedSum += weightedCentroid;
-                totalFloodMass += mass;
+                EmergencyResetHydrodynamics("ApplyFloodMassPropertiesToRigidbody.TargetMass");
+                return;
             }
 
-            float3 dryCenter = new float3(dryCenterOfMassLocal.x, dryCenterOfMassLocal.y, dryCenterOfMassLocal.z);
-            float3 floodCenter = totalFloodMass > Epsilon
-                ? weightedSum / totalFloodMass
-                : dryCenter;
-            float3 targetCenter = math.lerp(dryCenter, floodCenter, _floodFillRatio);
+            float currentMass = math.isfinite(_lastAppliedRigidbodyMass)
+                ? math.max(_lastAppliedRigidbodyMass, Epsilon)
+                : dryMass;
+            float threshold = math.max(0.1f, rigidbodyMassUpdateThresholdKg);
+            if (!force && math.abs(targetMass - currentMass) <= threshold)
+                return;
+
+            _rigidbody.mass = targetMass;
+            _lastAppliedRigidbodyMass = targetMass;
+        }
+
+        private void ApplyCenterOfMassShift(float3 targetCenter)
+        {
+            if (_rigidbody == null)
+                return;
+
+            float3 currentCenter = new float3(_appliedCenterOfMassLocal.x, _appliedCenterOfMassLocal.y, _appliedCenterOfMassLocal.z);
+            float3 blendedCenter = math.lerp(currentCenter, targetCenter, _centerOfMassBlendAlpha);
+            if (!math.all(math.isfinite(blendedCenter)))
+            {
+                EmergencyResetHydrodynamics("ApplyCenterOfMassShift.BlendedCenter");
+                return;
+            }
+
+            float3 delta = blendedCenter - currentCenter;
+            float maxCenterDelta = math.max(0.001f, maxCenterOfMassDeltaPerTickMeters);
+            float deltaMagnitude = math.length(delta);
+            if (deltaMagnitude > maxCenterDelta)
+            {
+                if (!TryResolveSafeQuotient(maxCenterDelta, deltaMagnitude, out float centerClampScale))
+                {
+                    EmergencyResetHydrodynamics("ApplyCenterOfMassShift.Clamp");
+                    return;
+                }
+                else
+                {
+                    blendedCenter = currentCenter + (delta * centerClampScale);
+                }
+            }
+
+            Vector3 newCenter = HectonPlayerMotor.SafeVelocity(new Vector3(blendedCenter.x, blendedCenter.y, blendedCenter.z), _appliedCenterOfMassLocal);
+            if ((_appliedCenterOfMassLocal - newCenter).sqrMagnitude <= 0.000001f)
+                return;
+
+            _rigidbody.centerOfMass = newCenter;
+            _appliedCenterOfMassLocal = newCenter;
+        }
+
+        private void ApplyStartupMassProperties(float3 targetCenter)
+        {
+            Vector3 safeCenter = SanitizeCenterOfMass(
+                new Vector3(targetCenter.x, targetCenter.y, targetCenter.z),
+                _appliedCenterOfMassLocal);
+            Vector3 safeTensor = SanitizeTensor(Vector3.Lerp(_resolvedDryInertiaTensor, _resolvedFloodedInertiaTensor, _floodFillRatio));
+            float safeLinearDamping = math.isfinite(_lastAppliedLinearDamping) ? math.max(0f, _lastAppliedLinearDamping) : 0f;
+            float safeAngularDamping = math.isfinite(_lastAppliedAngularDamping) ? math.max(0f, _lastAppliedAngularDamping) : 0f;
+
+            _appliedCenterOfMassLocal = safeCenter;
+            _currentFloodCenterOfMassLocal = safeCenter;
+            _lastAppliedInertiaTensor = safeTensor;
+            _lastAppliedLinearDamping = safeLinearDamping;
+            _lastAppliedAngularDamping = safeAngularDamping;
+
+            if (_rigidbody == null)
+                return;
+
+            _rigidbody.centerOfMass = safeCenter;
+            _rigidbody.inertiaTensor = safeTensor;
+            ApplyFloodMassPropertiesToRigidbody(force: true);
+            _rigidbody.linearDamping = safeLinearDamping;
+            _rigidbody.angularDamping = safeAngularDamping;
+        }
+
+        private void UpdateReportedFloodCenter(float3 targetCenter)
+        {
             float3 currentCenter = new float3(
                 _reportedFloodCenterOfMassLocal.x,
                 _reportedFloodCenterOfMassLocal.y,
                 _reportedFloodCenterOfMassLocal.z);
             float3 blendedCenter = math.lerp(currentCenter, targetCenter, _reportedCenterBlendAlpha);
             if (!math.all(math.isfinite(blendedCenter)))
-                blendedCenter = dryCenter;
+                blendedCenter = currentCenter;
 
             _reportedFloodCenterOfMassLocal = new Vector3(blendedCenter.x, blendedCenter.y, blendedCenter.z);
+        }
 
-            NativeArray<float3> swap = _comAccumulatorFront;
-            _comAccumulatorFront = _comAccumulatorBack;
-            _comAccumulatorBack = swap;
+        private float3 ResolveFloodTargetCenterOfMassLocal()
+        {
+            float totalFloodMass = 0f;
+            float3 weightedSum = float3.zero;
+            Vector3 safeDryCenter = SanitizeCenterOfMass(dryCenterOfMassLocal, Vector3.zero);
+            float3 dryCenter = new float3(safeDryCenter.x, safeDryCenter.y, safeDryCenter.z);
+            for (int i = 0; i < _configuredCompartmentCount; i++)
+            {
+                CompartmentState state = _compartmentStates != null ? _compartmentStates[i] : default;
+                if ((state.stateFlags & FlagFrozen) != 0 || state.maxVolume <= Epsilon)
+                {
+                    if (_comAccumulatorBack.IsCreated && i < _comAccumulatorBack.Length)
+                        _comAccumulatorBack[i] = float3.zero;
+
+                    continue;
+                }
+
+                if (!math.isfinite(state.currentVolume))
+                {
+                    EmergencyResetHydrodynamics("ResolveFloodTargetCenterOfMassLocal.CurrentVolume");
+                    return dryCenter;
+                }
+
+                float mass = math.max(0f, state.currentVolume) * WaterDensityKgPerCubicMeter;
+                if (!math.isfinite(mass))
+                {
+                    EmergencyResetHydrodynamics("ResolveFloodTargetCenterOfMassLocal.Mass");
+                    return dryCenter;
+                }
+
+                float3 weightedCentroid = state.localCentroid * mass;
+                if (!math.all(math.isfinite(weightedCentroid)))
+                {
+                    EmergencyResetHydrodynamics("ResolveFloodTargetCenterOfMassLocal.WeightedCentroid");
+                    return dryCenter;
+                }
+
+                if (_comAccumulatorBack.IsCreated && i < _comAccumulatorBack.Length)
+                    _comAccumulatorBack[i] = weightedCentroid;
+
+                weightedSum += weightedCentroid;
+                if (!math.all(math.isfinite(weightedSum)))
+                {
+                    EmergencyResetHydrodynamics("ResolveFloodTargetCenterOfMassLocal.WeightedSum");
+                    return dryCenter;
+                }
+
+                totalFloodMass += mass;
+                if (!math.isfinite(totalFloodMass))
+                {
+                    EmergencyResetHydrodynamics("ResolveFloodTargetCenterOfMassLocal.TotalFloodMass");
+                    return dryCenter;
+                }
+            }
+
+            float maxFloodMass = ResolveTotalCapacityCubicMeters() * WaterDensityKgPerCubicMeter;
+            float3 floodCenter = dryCenter;
+            if (totalFloodMass > Epsilon)
+            {
+                if (!TryResolveSafeVectorDivision(weightedSum, totalFloodMass, out floodCenter))
+                {
+                    EmergencyResetHydrodynamics("ResolveFloodTargetCenterOfMassLocal.WeightedCenter");
+                    floodCenter = dryCenter;
+                }
+            }
+
+            float floodMassRatio = 0f;
+            if (maxFloodMass > Epsilon &&
+                !TryResolveSafeNormalizedRatio(totalFloodMass, maxFloodMass, out floodMassRatio))
+            {
+                EmergencyResetHydrodynamics("ResolveFloodTargetCenterOfMassLocal.FloodMassRatio");
+                floodMassRatio = 0f;
+            }
+
+            float3 targetCenter = math.lerp(dryCenter, floodCenter, floodMassRatio);
+            if (!math.all(math.isfinite(targetCenter)))
+                targetCenter = dryCenter;
+
+            _currentFloodCenterOfMassLocal = new Vector3(targetCenter.x, targetCenter.y, targetCenter.z);
+            return targetCenter;
+        }
+
+        private float3 ResolveFloodTargetCenterOfMassFromBufferedJob()
+        {
+            if (!_massPropertiesFront.IsCreated || _massPropertiesFront.Length == 0)
+                return ResolveFloodTargetCenterOfMassLocal();
+
+            FloodMassPropertiesResult result = _massPropertiesFront[0];
+            float3 dryCenter = new float3(_appliedCenterOfMassLocal.x, _appliedCenterOfMassLocal.y, _appliedCenterOfMassLocal.z);
+            float3 targetCenter = math.all(math.isfinite(result.TargetCenterLocal))
+                ? result.TargetCenterLocal
+                : dryCenter;
+
+            _currentFloodCenterOfMassLocal = new Vector3(targetCenter.x, targetCenter.y, targetCenter.z);
+            return targetCenter;
+        }
+
+        private float3 RecordAndSampleDelayedSloshAngularVelocityLocal(float internalFloodRatio)
+        {
+            Vector3 worldAngularVelocity = IsFiniteVector(_rigidbody.angularVelocity) ? _rigidbody.angularVelocity : Vector3.zero;
+            Vector3 localAngularVelocity = _cachedTransform != null
+                ? _cachedTransform.InverseTransformDirection(worldAngularVelocity)
+                : worldAngularVelocity;
+            if (!IsFiniteVector(localAngularVelocity))
+                localAngularVelocity = Vector3.zero;
+
+            float3 currentLocalAngularVelocity = new float3(
+                localAngularVelocity.x,
+                localAngularVelocity.y,
+                localAngularVelocity.z);
+            if (math.any(math.isnan(currentLocalAngularVelocity)) || !math.all(math.isfinite(currentLocalAngularVelocity)))
+            {
+                EmergencyResetHydrodynamics("RecordAndSampleDelayedSloshAngularVelocityLocal.Current");
+                currentLocalAngularVelocity = float3.zero;
+            }
+
+            _angularVelocityHistoryLocal[_ringHead] = currentLocalAngularVelocity;
+            _ringHead = (_ringHead + 1) & RingBufferMask;
+
+            float delaySeconds = ResolveSloshDelaySeconds(internalFloodRatio);
+            float safeFixedStep = Mathf.Max(_currentFixedDeltaTime, DefaultFixedStepSeconds);
+            int delayFrames = 1;
+            if (!TryResolveSafeQuotient(delaySeconds, safeFixedStep, out float delayFrameFloat))
+            {
+                EmergencyResetHydrodynamics("RecordAndSampleDelayedSloshAngularVelocityLocal.DelayFrames");
+            }
+            else
+            {
+                delayFrames = Mathf.Clamp(
+                    Mathf.RoundToInt(delayFrameFloat),
+                    1,
+                    RingBufferLength - 1);
+            }
+
+            int delayIndex = (_ringHead - delayFrames - 1) & RingBufferMask;
+            float3 delayedAngularVelocity = _angularVelocityHistoryLocal[delayIndex];
+            if (math.any(math.isnan(delayedAngularVelocity)) || !math.all(math.isfinite(delayedAngularVelocity)))
+            {
+                EmergencyResetHydrodynamics("RecordAndSampleDelayedSloshAngularVelocityLocal.Delayed");
+                _angularVelocityHistoryLocal[delayIndex] = float3.zero;
+                return float3.zero;
+            }
+
+            return delayedAngularVelocity;
         }
 
         private void ApplyInterpolatedInertiaTensor()
@@ -946,7 +1843,26 @@ namespace Hecton8.Physics
             if (_rigidbody == null)
                 return;
 
-            Vector3 tensor = Vector3.Lerp(_resolvedDryInertiaTensor, _resolvedFloodedInertiaTensor, _floodFillRatio);
+            Vector3 targetTensor;
+            if (_massPropertiesFront.IsCreated && _massPropertiesFront.Length > 0)
+            {
+                float3 jobTensor = _massPropertiesFront[0].InertiaTensor;
+                targetTensor = math.all(math.isfinite(jobTensor))
+                    ? new Vector3(jobTensor.x, jobTensor.y, jobTensor.z)
+                    : Vector3.Lerp(_resolvedDryInertiaTensor, _resolvedFloodedInertiaTensor, _floodFillRatio);
+            }
+            else
+            {
+                targetTensor = Vector3.Lerp(_resolvedDryInertiaTensor, _resolvedFloodedInertiaTensor, _floodFillRatio);
+            }
+
+            if (!IsFiniteVector(targetTensor))
+            {
+                EmergencyResetHydrodynamics("ApplyInterpolatedInertiaTensor.Lerp");
+                return;
+            }
+
+            Vector3 tensor = SanitizeTensor(targetTensor);
             if ((_lastAppliedInertiaTensor - tensor).sqrMagnitude <= 0.000001f)
                 return;
 
@@ -954,26 +1870,284 @@ namespace Hecton8.Physics
             _lastAppliedInertiaTensor = tensor;
         }
 
+        private void ApplySampledExteriorBuoyancy(float depthMeters)
+        {
+            if (_rigidbody == null || _cachedTransform == null)
+            {
+                _externalSubmergedVolumeCubicMeters = 0f;
+                _submersionFactor = 0f;
+                _lastExternalBuoyancyForce = Vector3.zero;
+                _lastExternalBuoyancyTorque = Vector3.zero;
+                ResetSplashDetectionState(clearQueuedEvents: false);
+                return;
+            }
+
+            float displacementVolume = ResolveExteriorDisplacementVolumeCubicMeters();
+            if (!float.IsFinite(displacementVolume) || displacementVolume <= Epsilon)
+            {
+                _externalSubmergedVolumeCubicMeters = 0f;
+                _submersionFactor = 0f;
+                _lastExternalBuoyancyForce = Vector3.zero;
+                _lastExternalBuoyancyTorque = Vector3.zero;
+                ResetSplashDetectionState(clearQueuedEvents: false);
+                return;
+            }
+
+            float safeDepthMeters = float.IsFinite(depthMeters) ? math.max(0f, depthMeters) : 0f;
+            float surfaceY = _cachedTransform.position.y + safeDepthMeters;
+            Vector3 centerOfMassWorld = _rigidbody.worldCenterOfMass;
+            float3 centerOfMassWorldFloat = new float3(centerOfMassWorld.x, centerOfMassWorld.y, centerOfMassWorld.z);
+            if (math.any(math.isnan(centerOfMassWorldFloat)) || !math.all(math.isfinite(centerOfMassWorldFloat)))
+            {
+                EmergencyResetHydrodynamics("ApplySampledExteriorBuoyancy.CenterOfMass");
+                _externalSubmergedVolumeCubicMeters = 0f;
+                _submersionFactor = 0f;
+                _lastExternalBuoyancyForce = Vector3.zero;
+                _lastExternalBuoyancyTorque = Vector3.zero;
+                return;
+            }
+
+            if (!IsFiniteVector(centerOfMassWorld))
+            {
+                _externalSubmergedVolumeCubicMeters = 0f;
+                _submersionFactor = 0f;
+                _lastExternalBuoyancyForce = Vector3.zero;
+                _lastExternalBuoyancyTorque = Vector3.zero;
+                return;
+            }
+
+            if (!TryResolveSafeQuotient(displacementVolume, ExteriorBuoyancySampleCount, out float sampleVolume))
+            {
+                EmergencyResetHydrodynamics("ApplySampledExteriorBuoyancy.SampleVolumeDivision");
+                _externalSubmergedVolumeCubicMeters = 0f;
+                _submersionFactor = 0f;
+                _lastExternalBuoyancyForce = Vector3.zero;
+                _lastExternalBuoyancyTorque = Vector3.zero;
+                return;
+            }
+
+            float perSampleForceMagnitude = WaterDensityKgPerCubicMeter * sampleVolume * GravityMetersPerSecondSquared;
+            float rigidbodyMass = math.isfinite(_rigidbody.mass) ? math.max(_rigidbody.mass, Epsilon) : Epsilon;
+            if (!TryResolveSafeQuotient(rigidbodyMass, ExteriorBuoyancySampleCount, out float sampleHullMass))
+            {
+                EmergencyResetHydrodynamics("ApplySampledExteriorBuoyancy.SampleMassDivision");
+                _externalSubmergedVolumeCubicMeters = 0f;
+                _submersionFactor = 0f;
+                _lastExternalBuoyancyForce = Vector3.zero;
+                _lastExternalBuoyancyTorque = Vector3.zero;
+                return;
+            }
+
+            if (!float.IsFinite(sampleVolume) || !float.IsFinite(perSampleForceMagnitude))
+            {
+                EmergencyResetHydrodynamics("ApplySampledExteriorBuoyancy.SampleVolume");
+                _externalSubmergedVolumeCubicMeters = 0f;
+                _submersionFactor = 0f;
+                _lastExternalBuoyancyForce = Vector3.zero;
+                _lastExternalBuoyancyTorque = Vector3.zero;
+                return;
+            }
+
+            Vector3 totalForce = Vector3.zero;
+            Vector3 totalTorque = Vector3.zero;
+            float submergedVolume = 0f;
+
+            for (int i = 0; i < ExteriorBuoyancySampleCount; i++)
+            {
+                Vector3 worldPoint = _cachedTransform.TransformPoint(_exteriorBuoyancySampleLocalPoints[i]);
+                float3 worldPointFloat = new float3(worldPoint.x, worldPoint.y, worldPoint.z);
+                if (math.any(math.isnan(worldPointFloat)) || !math.all(math.isfinite(worldPointFloat)))
+                {
+                    EmergencyResetHydrodynamics("ApplySampledExteriorBuoyancy.SamplePoint");
+                    _externalSubmergedVolumeCubicMeters = 0f;
+                    _submersionFactor = 0f;
+                    _lastExternalBuoyancyForce = Vector3.zero;
+                    _lastExternalBuoyancyTorque = Vector3.zero;
+                    return;
+                }
+
+                if (!IsFiniteVector(worldPoint))
+                    continue;
+
+                float submersionFactor = ResolveSurfaceSubmersionFactor(worldPoint.y - surfaceY);
+                QueueExteriorSplashEventIfNeeded(i, worldPoint, submersionFactor, sampleHullMass);
+                if (submersionFactor <= Epsilon)
+                    continue;
+
+                float submergedSampleVolume = sampleVolume * submersionFactor;
+                if (!float.IsFinite(submergedSampleVolume))
+                {
+                    EmergencyResetHydrodynamics("ApplySampledExteriorBuoyancy.SubmergedSampleVolume");
+                    _externalSubmergedVolumeCubicMeters = 0f;
+                    _submersionFactor = 0f;
+                    _lastExternalBuoyancyForce = Vector3.zero;
+                    _lastExternalBuoyancyTorque = Vector3.zero;
+                    return;
+                }
+
+                submergedVolume += submergedSampleVolume;
+
+                Vector3 sampleForce = Vector3.up * (perSampleForceMagnitude * submersionFactor);
+                if (!IsFiniteVector(sampleForce))
+                {
+                    EmergencyResetHydrodynamics("ApplySampledExteriorBuoyancy.SampleForce");
+                    _externalSubmergedVolumeCubicMeters = 0f;
+                    _submersionFactor = 0f;
+                    _lastExternalBuoyancyForce = Vector3.zero;
+                    _lastExternalBuoyancyTorque = Vector3.zero;
+                    return;
+                }
+
+                totalForce += sampleForce;
+                totalTorque += Vector3.Cross(worldPoint - centerOfMassWorld, sampleForce);
+            }
+
+            if (!float.IsFinite(submergedVolume))
+            {
+                EmergencyResetHydrodynamics("ApplySampledExteriorBuoyancy.SubmergedVolume");
+                _externalSubmergedVolumeCubicMeters = 0f;
+                _submersionFactor = 0f;
+                _lastExternalBuoyancyForce = Vector3.zero;
+                _lastExternalBuoyancyTorque = Vector3.zero;
+                return;
+            }
+
+            _externalSubmergedVolumeCubicMeters = math.clamp(submergedVolume, 0f, displacementVolume);
+            if (!TryResolveSafeNormalizedRatio(_externalSubmergedVolumeCubicMeters, displacementVolume, out _submersionFactor))
+            {
+                EmergencyResetHydrodynamics("ApplySampledExteriorBuoyancy.SubmersionRatio");
+                _externalSubmergedVolumeCubicMeters = 0f;
+                _submersionFactor = 0f;
+                _lastExternalBuoyancyForce = Vector3.zero;
+                _lastExternalBuoyancyTorque = Vector3.zero;
+                return;
+            }
+
+            float maxForceMagnitude = WaterDensityKgPerCubicMeter *
+                displacementVolume *
+                GravityMetersPerSecondSquared *
+                math.max(1f, exteriorBuoyancyForceClampScale);
+            float maxTorqueMagnitude = maxForceMagnitude *
+                math.max(0.1f, _exteriorBuoyancyMaxLeverArm) *
+                math.max(1f, exteriorBuoyancyTorqueClampScale);
+
+            totalForce = ClampMagnitude(totalForce, maxForceMagnitude);
+            totalTorque = ClampMagnitude(totalTorque, maxTorqueMagnitude);
+            float3 totalForceFloat = new float3(totalForce.x, totalForce.y, totalForce.z);
+            float3 totalTorqueFloat = new float3(totalTorque.x, totalTorque.y, totalTorque.z);
+            if (math.any(math.isnan(totalForceFloat)) || math.any(math.isnan(totalTorqueFloat)) ||
+                !math.all(math.isfinite(totalForceFloat)) || !math.all(math.isfinite(totalTorqueFloat)))
+            {
+                EmergencyResetHydrodynamics("ApplySampledExteriorBuoyancy.Result");
+                totalForce = Vector3.zero;
+                totalTorque = Vector3.zero;
+            }
+
+            if (!IsFiniteVector(totalForce))
+                totalForce = Vector3.zero;
+            if (!IsFiniteVector(totalTorque))
+                totalTorque = Vector3.zero;
+
+            totalForce = ApplyHydrodynamicLinearInertiaScale(totalForce);
+            totalTorque = ApplyHydrodynamicAngularInertiaScale(totalTorque);
+            _lastExternalBuoyancyForce = totalForce;
+            _lastExternalBuoyancyTorque = totalTorque;
+
+            if (totalForce.sqrMagnitude > Epsilon)
+                PhysicsForceRouter.QueueForce(_rigidbody, totalForce, ForceMode.Force);
+
+            if (totalTorque.sqrMagnitude > Epsilon)
+                PhysicsForceRouter.QueueTorque(_rigidbody, totalTorque, ForceMode.Force);
+        }
+
+        private void ApplyAddedMassDamping()
+        {
+            if (_rigidbody == null)
+                return;
+
+            if (!float.IsFinite(_submersionFactor))
+                _submersionFactor = 0f;
+            else
+                _submersionFactor = math.saturate(_submersionFactor);
+
+            float internalFloodRatio = float.IsFinite(_floodFillRatio)
+                ? math.saturate(_floodFillRatio)
+                : 0f;
+            float criticalFloodRatio = math.smoothstep(CriticalFillThreshold, 1f, internalFloodRatio);
+            float dampingSubmersion = math.max(_submersionFactor, internalFloodRatio);
+            float linearScale = math.max(0f, addedMassLinearDampingScale) *
+                (1f + internalFloodRatio + (criticalFloodRatio * CriticalFloodAddedMassLinearBoost));
+            float angularScale = math.max(0f, addedMassAngularDampingScale) *
+                (1f + (internalFloodRatio * 2f) + (criticalFloodRatio * CriticalFloodAddedMassAngularBoost));
+            if (!float.IsFinite(criticalFloodRatio) ||
+                !float.IsFinite(dampingSubmersion) ||
+                !float.IsFinite(linearScale) ||
+                !float.IsFinite(angularScale))
+            {
+                EmergencyResetHydrodynamics("ApplyAddedMassDamping.Scale");
+                return;
+            }
+
+            float targetLinearDamping = _baseLinearDamping * (1f + (linearScale * dampingSubmersion));
+            float targetAngularDamping = _baseAngularDamping * (1f + (angularScale * dampingSubmersion));
+            if (!float.IsFinite(targetLinearDamping) || !float.IsFinite(targetAngularDamping))
+            {
+                EmergencyResetHydrodynamics("ApplyAddedMassDamping.Result");
+                return;
+            }
+
+            _currentHydrodynamicLinearInertiaScale = math.max(1f, 1f + (linearScale * dampingSubmersion));
+            _currentHydrodynamicAngularInertiaScale = math.max(1f, 1f + (angularScale * dampingSubmersion));
+
+            if (math.abs(_lastAppliedLinearDamping - targetLinearDamping) > 0.0005f)
+            {
+                _rigidbody.linearDamping = targetLinearDamping;
+                _lastAppliedLinearDamping = targetLinearDamping;
+            }
+
+            if (math.abs(_lastAppliedAngularDamping - targetAngularDamping) > 0.0005f)
+            {
+                _rigidbody.angularDamping = targetAngularDamping;
+                _lastAppliedAngularDamping = targetAngularDamping;
+            }
+        }
+
         private void ApplyDelayedSloshTorque()
         {
             if (_rigidbody == null || !_angularVelocityHistoryLocal.IsCreated)
+            {
+                _debugDelayedSloshAngularVelocityLocal = Vector3.zero;
                 return;
+            }
 
-            Vector3 worldAngularVelocity = _rigidbody.angularVelocity;
-            Vector3 localAngularVelocity = _cachedTransform != null
-                ? _cachedTransform.InverseTransformDirection(worldAngularVelocity)
-                : worldAngularVelocity;
+            float internalFloodRatio = float.IsFinite(_floodFillRatio)
+                ? math.saturate(_floodFillRatio)
+                : 0f;
+            if (internalFloodRatio <= Epsilon)
+            {
+                _debugDelayedSloshAngularVelocityLocal = Vector3.zero;
+                _lastSloshTorqueLocal = Vector3.zero;
+                return;
+            }
 
-            float3 currentLocalAngularVelocity = new float3(
-                localAngularVelocity.x,
-                localAngularVelocity.y,
-                localAngularVelocity.z);
-            _angularVelocityHistoryLocal[_ringHead] = currentLocalAngularVelocity;
-            _ringHead = (_ringHead + 1) & RingBufferMask;
+            float3 delayedAngularVelocity = RecordAndSampleDelayedSloshAngularVelocityLocal(internalFloodRatio);
+            if (math.any(math.isnan(delayedAngularVelocity)) || !math.all(math.isfinite(delayedAngularVelocity)))
+            {
+                EmergencyResetHydrodynamics("ApplyDelayedSloshTorque.DelayedVelocity");
+                _debugDelayedSloshAngularVelocityLocal = Vector3.zero;
+                _lastSloshTorqueLocal = Vector3.zero;
+                return;
+            }
 
-            int delayIndex = (_ringHead - SloshDelayFrames - 1) & RingBufferMask;
-            float3 delayedAngularVelocity = _angularVelocityHistoryLocal[delayIndex];
+            _debugDelayedSloshAngularVelocityLocal = new Vector3(
+                delayedAngularVelocity.x,
+                delayedAngularVelocity.y,
+                delayedAngularVelocity.z);
             float3 totalSloshTorque = float3.zero;
+            float criticalFloodRatio = math.smoothstep(CriticalFillThreshold, 1f, internalFloodRatio);
+            float delayedResistanceScale = math.max(0f, sloshFactor) *
+                internalFloodRatio *
+                (1f + (criticalFloodRatio * CriticalFloodSloshResistanceBoost));
 
             for (int i = 0; i < _configuredCompartmentCount; i++)
             {
@@ -985,30 +2159,348 @@ namespace Hecton8.Physics
                 if (maxVolume <= Epsilon)
                     continue;
 
-                float fillRatio = math.saturate(currentVolume / maxVolume);
+                if (!TryResolveSafeNormalizedRatio(currentVolume, maxVolume, out float fillRatio))
+                {
+                    EmergencyResetHydrodynamics("ApplyDelayedSloshTorque.FillRatio");
+                    _lastSloshTorqueLocal = Vector3.zero;
+                    return;
+                }
+
                 float freesurf = 1f - fillRatio;
                 freesurf *= freesurf;
-                float sloshMass = currentVolume * WaterDensityKgPerCubicMeter;
-                totalSloshTorque += -delayedAngularVelocity * (fillRatio * math.max(0f, sloshFactor) * sloshMass * freesurf);
+                float sloshMass = currentVolume * WaterDensityKgPerCubicMeter * math.lerp(1f, 3f, criticalFloodRatio);
+                if (!float.IsFinite(sloshMass))
+                {
+                    EmergencyResetHydrodynamics("ApplyDelayedSloshTorque.SloshMass");
+                    _lastSloshTorqueLocal = Vector3.zero;
+                    return;
+                }
+
+                totalSloshTorque += -delayedAngularVelocity * (fillRatio * sloshMass * freesurf);
+                if (math.any(math.isnan(totalSloshTorque)) || !math.all(math.isfinite(totalSloshTorque)))
+                {
+                    EmergencyResetHydrodynamics("ApplyDelayedSloshTorque.Accumulate");
+                    _lastSloshTorqueLocal = Vector3.zero;
+                    return;
+                }
             }
+
+            float floodedHullMass = math.max(0f, _totalFloodVolumeCubicMeters) * WaterDensityKgPerCubicMeter;
+            float resistanceLeverArm = math.max(0.1f, _exteriorBuoyancyMaxLeverArm);
+            float3 rotationalResistanceTorque = -delayedAngularVelocity *
+                (floodedHullMass * resistanceLeverArm * FloodedHullRotationalResistanceScale * criticalFloodRatio);
+            if (math.any(math.isnan(rotationalResistanceTorque)) || !math.all(math.isfinite(rotationalResistanceTorque)))
+            {
+                EmergencyResetHydrodynamics("ApplyDelayedSloshTorque.RotationalResistance");
+                _lastSloshTorqueLocal = Vector3.zero;
+                return;
+            }
+
+            totalSloshTorque += rotationalResistanceTorque;
+            totalSloshTorque *= delayedResistanceScale;
 
             float maxTorqueMagnitude = math.max(0f, maxSloshTorque);
             if (maxTorqueMagnitude > Epsilon)
             {
                 float torqueMagnitude = math.length(totalSloshTorque);
                 if (torqueMagnitude > maxTorqueMagnitude && torqueMagnitude > Epsilon)
-                    totalSloshTorque = (totalSloshTorque / torqueMagnitude) * maxTorqueMagnitude;
+                {
+                    if (!TryResolveSafeQuotient(maxTorqueMagnitude, torqueMagnitude, out float torqueClampScale))
+                    {
+                        EmergencyResetHydrodynamics("ApplyDelayedSloshTorque.Clamp");
+                        _lastSloshTorqueLocal = Vector3.zero;
+                        return;
+                    }
+
+                    totalSloshTorque *= torqueClampScale;
+                }
             }
 
-            if (!math.all(math.isfinite(totalSloshTorque)) || math.lengthsq(totalSloshTorque) <= Epsilon)
+            if (math.any(math.isnan(totalSloshTorque)) || !math.all(math.isfinite(totalSloshTorque)))
+            {
+                EmergencyResetHydrodynamics("ApplyDelayedSloshTorque.Result");
+                _lastSloshTorqueLocal = Vector3.zero;
+                return;
+            }
+
+            if (math.lengthsq(totalSloshTorque) <= Epsilon)
             {
                 _lastSloshTorqueLocal = Vector3.zero;
                 return;
             }
 
-            Vector3 localTorque = new Vector3(totalSloshTorque.x, totalSloshTorque.y, totalSloshTorque.z);
-            _rigidbody.AddRelativeTorque(localTorque, ForceMode.Force);
+            Vector3 localTorque = HectonPlayerMotor.SafeVelocity(new Vector3(totalSloshTorque.x, totalSloshTorque.y, totalSloshTorque.z));
+            if (localTorque.sqrMagnitude <= Epsilon)
+            {
+                _lastSloshTorqueLocal = Vector3.zero;
+                return;
+            }
+
+            Vector3 worldTorque = _cachedTransform != null
+                ? _cachedTransform.TransformDirection(localTorque)
+                : localTorque;
+            worldTorque = ApplyHydrodynamicAngularInertiaScale(worldTorque);
+            if (!IsFiniteVector(worldTorque))
+            {
+                _lastSloshTorqueLocal = Vector3.zero;
+                return;
+            }
+
+            PhysicsForceRouter.QueueTorque(_rigidbody, worldTorque, ForceMode.Force);
             _lastSloshTorqueLocal = localTorque;
+        }
+
+        private void EmergencyResetHydrodynamics(string context)
+        {
+            _skipHydrodynamicsForCurrentFixedTick = true;
+
+            if (_rigidbody != null)
+            {
+                _rigidbody.linearVelocity = Vector3.zero;
+                _rigidbody.angularVelocity = Vector3.zero;
+            }
+
+            _externalSubmergedVolumeCubicMeters = 0f;
+            _submersionFactor = 0f;
+            _lastSloshTorqueLocal = Vector3.zero;
+            _lastExternalBuoyancyForce = Vector3.zero;
+            _lastExternalBuoyancyTorque = Vector3.zero;
+            _debugDelayedSloshAngularVelocityLocal = Vector3.zero;
+            _debugLastSloshTorqueLocal = Vector3.zero;
+            _debugExternalSubmergedVolumeCubicMeters = 0f;
+            _debugSubmersionFactor = 0f;
+            _currentHydrodynamicLinearInertiaScale = 1f;
+            _currentHydrodynamicAngularInertiaScale = 1f;
+            ResetSplashDetectionState(clearQueuedEvents: true);
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogError($"[SubmarineFluidDynamics] NaN/Inf detected in {context}. Rigidbody velocities reset.");
+#endif
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool ShouldAbortHydrodynamicsFixedTick()
+        {
+            if (!_skipHydrodynamicsForCurrentFixedTick)
+                return false;
+
+            RefreshDebugState();
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private Vector3 ApplyHydrodynamicLinearInertiaScale(Vector3 force)
+        {
+            float scale = math.max(1f, _currentHydrodynamicLinearInertiaScale);
+            return scale > 1f ? (force / scale) : force;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private Vector3 ApplyHydrodynamicAngularInertiaScale(Vector3 torque)
+        {
+            float scale = math.max(1f, _currentHydrodynamicAngularInertiaScale);
+            return scale > 1f ? (torque / scale) : torque;
+        }
+
+        private void QueueExteriorSplashEventIfNeeded(int sampleIndex, Vector3 worldPoint, float currentSubmersionFactor, float sampleHullMass)
+        {
+            if (!_previousExteriorSampleSubmersionFactors.IsCreated ||
+                sampleIndex < 0 ||
+                sampleIndex >= _previousExteriorSampleSubmersionFactors.Length)
+            {
+                return;
+            }
+
+            float previousSubmersionFactor = _previousExteriorSampleSubmersionFactors[sampleIndex];
+            if (!float.IsFinite(previousSubmersionFactor))
+                previousSubmersionFactor = 0f;
+
+            previousSubmersionFactor = math.saturate(previousSubmersionFactor);
+            currentSubmersionFactor = math.saturate(currentSubmersionFactor);
+            _previousExteriorSampleSubmersionFactors[sampleIndex] = currentSubmersionFactor;
+
+            if (previousSubmersionFactor > Epsilon || currentSubmersionFactor <= SplashSubmersionThreshold)
+                return;
+
+            if (!_splashEventQueue.IsCreated || _queuedSplashEventCount >= MaxQueuedSplashEvents || _rigidbody == null)
+                return;
+
+            Vector3 pointVelocity = _rigidbody.GetPointVelocity(worldPoint);
+            if (!IsFiniteVector(pointVelocity))
+                return;
+
+            float impactSpeedMetersPerSecond = math.max(0f, -Vector3.Dot(pointVelocity, Vector3.up));
+            if (!(impactSpeedMetersPerSecond > Epsilon) || !float.IsFinite(impactSpeedMetersPerSecond))
+                return;
+
+            float effectiveSampleMass = math.max(sampleHullMass, Epsilon);
+            float kineticEnergyJoules = 0.5f * effectiveSampleMass * impactSpeedMetersPerSecond * impactSpeedMetersPerSecond;
+            if (!(kineticEnergyJoules > Epsilon) || !float.IsFinite(kineticEnergyJoules))
+                return;
+
+            Vector3 absoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(worldPoint);
+            if (!IsFiniteVector(absoluteUniversePosition))
+                return;
+
+            _splashEventQueue.Enqueue(new SplashEvent
+            {
+                RuntimePosition = new float3(worldPoint.x, worldPoint.y, worldPoint.z),
+                AbsoluteUniversePosition = new float3(absoluteUniversePosition.x, absoluteUniversePosition.y, absoluteUniversePosition.z),
+                SurfaceNormal = new float3(0f, 1f, 0f),
+                ImpactSpeedMetersPerSecond = impactSpeedMetersPerSecond,
+                KineticEnergyJoules = kineticEnergyJoules,
+                SubmersionFactor = currentSubmersionFactor,
+                SampleIndex = sampleIndex
+            });
+            _queuedSplashEventCount++;
+        }
+
+        private void RebuildExteriorBuoyancySampleLocalPoints()
+        {
+            if (_cachedTransform == null)
+                return;
+
+            Vector3 centerLocal = SanitizeCenterOfMass(dryCenterOfMassLocal, Vector3.zero);
+            Vector3 extentsLocal = Vector3.one;
+            if (exteriorHullCollider != null)
+            {
+                Bounds hullBounds = exteriorHullCollider.bounds;
+                if (IsFiniteVector(hullBounds.min) && IsFiniteVector(hullBounds.max))
+                {
+                    Vector3 localMin = _cachedTransform.InverseTransformPoint(hullBounds.min);
+                    Vector3 localMax = _cachedTransform.InverseTransformPoint(hullBounds.max);
+                    if (IsFiniteVector(localMin) && IsFiniteVector(localMax))
+                    {
+                        Vector3 minLocal = Vector3.Min(localMin, localMax);
+                        Vector3 maxLocal = Vector3.Max(localMin, localMax);
+                        centerLocal = SanitizeCenterOfMass((minLocal + maxLocal) * 0.5f, centerLocal);
+                        extentsLocal = maxLocal - minLocal;
+                        extentsLocal *= 0.5f;
+                    }
+                }
+            }
+            else
+            {
+                float fallbackVolume = math.max(Epsilon, ResolveExteriorDisplacementVolumeCubicMeters());
+                float fallbackHalfExtent = math.max(0.5f, math.pow(fallbackVolume, 1f / 3f) * 0.5f);
+                extentsLocal = new Vector3(fallbackHalfExtent, fallbackHalfExtent * 0.6f, fallbackHalfExtent * 1.4f);
+            }
+
+            if (!IsFiniteVector(extentsLocal))
+                extentsLocal = Vector3.one;
+
+            extentsLocal.x = Mathf.Max(0.25f, Mathf.Abs(extentsLocal.x) * 0.75f);
+            extentsLocal.y = Mathf.Max(0.25f, Mathf.Abs(extentsLocal.y) * 0.75f);
+            extentsLocal.z = Mathf.Max(0.25f, Mathf.Abs(extentsLocal.z) * 0.75f);
+
+            int sampleIndex = 0;
+            for (int ySign = -1; ySign <= 1; ySign += 2)
+            {
+                for (int xSign = -1; xSign <= 1; xSign += 2)
+                {
+                    for (int zSign = -1; zSign <= 1; zSign += 2)
+                    {
+                        _exteriorBuoyancySampleLocalPoints[sampleIndex++] = centerLocal + new Vector3(
+                            extentsLocal.x * xSign,
+                            extentsLocal.y * ySign,
+                            extentsLocal.z * zSign);
+                    }
+                }
+            }
+
+            _exteriorBuoyancyMaxLeverArm = 0.1f;
+            for (int i = 0; i < ExteriorBuoyancySampleCount; i++)
+            {
+                float leverArm = Vector3.Distance(centerLocal, _exteriorBuoyancySampleLocalPoints[i]);
+                if (leverArm > _exteriorBuoyancyMaxLeverArm)
+                    _exteriorBuoyancyMaxLeverArm = leverArm;
+            }
+        }
+
+        private float ResolveExteriorDisplacementVolumeCubicMeters()
+        {
+            if (exteriorDisplacementVolumeCubicMeters > Epsilon)
+                return exteriorDisplacementVolumeCubicMeters;
+
+            float compartmentCapacity = ResolveTotalCapacityCubicMeters();
+            if (compartmentCapacity > Epsilon)
+                return compartmentCapacity;
+
+            if (exteriorHullCollider != null)
+            {
+                Bounds hullBounds = exteriorHullCollider.bounds;
+                Vector3 hullSize = hullBounds.size;
+                if (IsFiniteVector(hullSize))
+                    return math.max(Epsilon, hullSize.x * hullSize.y * hullSize.z);
+            }
+
+            return 0f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveSurfaceSubmersionFactor(float signedDistanceToSurface)
+        {
+            return math.saturate(math.smoothstep(0.5f, -0.5f, signedDistanceToSurface));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveSloshDelaySeconds(float internalFloodRatio)
+        {
+            float safeFloodRatio = math.saturate(math.select(0f, internalFloodRatio, math.isfinite(internalFloodRatio)));
+            return math.lerp(MinimumSloshDelaySeconds, MaximumSloshDelaySeconds, safeFloodRatio);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool TryResolveSafeNormalizedRatio(float numerator, float denominator, out float ratio)
+        {
+            ratio = 0f;
+            if (math.isnan(numerator) || math.isnan(denominator) ||
+                !math.isfinite(numerator) || !math.isfinite(denominator) ||
+                denominator <= Epsilon)
+            {
+                return false;
+            }
+
+            float candidate = numerator / denominator;
+            if (math.isnan(candidate) || !math.isfinite(candidate))
+                return false;
+
+            ratio = math.saturate(candidate);
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool TryResolveSafeQuotient(float numerator, float denominator, out float quotient)
+        {
+            quotient = 0f;
+            if (math.isnan(numerator) || math.isnan(denominator) ||
+                !math.isfinite(numerator) || !math.isfinite(denominator) ||
+                math.abs(denominator) <= Epsilon)
+            {
+                return false;
+            }
+
+            float candidate = numerator / denominator;
+            if (math.isnan(candidate) || !math.isfinite(candidate))
+                return false;
+
+            quotient = candidate;
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool TryResolveSafeVectorDivision(float3 numerator, float denominator, out float3 quotient)
+        {
+            quotient = float3.zero;
+            if (!TryResolveSafeQuotient(1f, denominator, out float inverseDenominator))
+                return false;
+
+            float3 candidate = numerator * inverseDenominator;
+            if (math.any(math.isnan(candidate)) || !math.all(math.isfinite(candidate)))
+                return false;
+
+            quotient = candidate;
+            return true;
         }
 
         private float ResolveExternalDepthMeters()
@@ -1018,24 +2510,44 @@ namespace Hecton8.Physics
                 HectonAtmosphereManager atmosphereManager = HectonAtmosphereManager.Instance;
                 if (atmosphereManager != null && _cachedTransform != null)
                 {
-                    _externalDepthMeters = math.max(0f, atmosphereManager.SeaLevelY - _cachedTransform.position.y);
+                    float depthMeters = atmosphereManager.SeaLevelY - _cachedTransform.position.y;
+                    _externalDepthMeters = math.isfinite(depthMeters) ? math.max(0f, depthMeters) : 0f;
                     return _externalDepthMeters;
                 }
             }
 
-            _externalDepthMeters = math.max(0f, manualExternalDepthMeters);
+            _externalDepthMeters = math.isfinite(manualExternalDepthMeters) ? math.max(0f, manualExternalDepthMeters) : 0f;
             return _externalDepthMeters;
         }
 
         private void RefreshDerivedConstants(float fixedDeltaTime)
         {
             float safeFixedStep = fixedDeltaTime > 0f ? fixedDeltaTime : DefaultFixedStepSeconds;
-            if (math.abs(_reportedCenterBlendFixedStep - safeFixedStep) <= 0.0001f)
-                return;
+            if (math.abs(_reportedCenterBlendFixedStep - safeFixedStep) > 0.0001f)
+            {
+                float reportedTau = math.max(0.1f, reportedCenterTauSeconds);
+                _reportedCenterBlendAlpha = ResolveBlendFactor(reportedTau, safeFixedStep);
+                _reportedCenterBlendFixedStep = safeFixedStep;
+            }
 
-            float tau = math.max(0.1f, reportedCenterTauSeconds);
-            _reportedCenterBlendAlpha = 1f - math.exp(-safeFixedStep / tau);
-            _reportedCenterBlendFixedStep = safeFixedStep;
+            if (math.abs(_centerOfMassBlendFixedStep - safeFixedStep) > 0.0001f)
+            {
+                float centerTau = math.max(0.1f, centerOfMassTauSeconds);
+                _centerOfMassBlendAlpha = ResolveBlendFactor(centerTau, safeFixedStep);
+                _centerOfMassBlendFixedStep = safeFixedStep;
+            }
+        }
+
+        private static float ResolveBlendFactor(float tauSeconds, float deltaTime)
+        {
+            if (tauSeconds <= 0f || deltaTime <= 0f)
+                return 0f;
+
+            if (!TryResolveSafeQuotient(-deltaTime, tauSeconds, out float exponent))
+                return 0f;
+
+            float candidate = 1f - math.exp(exponent);
+            return math.isfinite(candidate) ? math.saturate(candidate) : 0f;
         }
 
         private void RefreshResolvedInertiaTensors()
@@ -1054,13 +2566,45 @@ namespace Hecton8.Physics
             _debugTotalFloodVolumeCubicMeters = _totalFloodVolumeCubicMeters;
             _debugFloodFillRatio = _floodFillRatio;
             _debugReportedFloodCenterOfMassLocal = _reportedFloodCenterOfMassLocal;
+            _debugAppliedCenterOfMassLocal = _appliedCenterOfMassLocal;
             _debugAppliedInertiaTensor = _lastAppliedInertiaTensor;
+            _debugAppliedRigidbodyMass = _lastAppliedRigidbodyMass;
+            _debugFloodMassKilograms = math.max(0f, _totalFloodVolumeCubicMeters) * WaterDensityKgPerCubicMeter;
             _debugLastSloshTorqueLocal = _lastSloshTorqueLocal;
+            _debugExternalSubmergedVolumeCubicMeters = _externalSubmergedVolumeCubicMeters;
+            _debugLastExternalBuoyancyForce = _lastExternalBuoyancyForce;
+            _debugLastExternalBuoyancyTorque = _lastExternalBuoyancyTorque;
+            _debugAppliedLinearDamping = _lastAppliedLinearDamping;
+            _debugAppliedAngularDamping = _lastAppliedAngularDamping;
+            _debugSubmersionFactor = _submersionFactor;
+        }
+
+        private void SeedFloodMassPropertiesBuffers(float3 targetFloodCenter, float floodMassRatio)
+        {
+            if (!_massPropertiesFront.IsCreated || !_massPropertiesBack.IsCreated)
+                return;
+
+            Vector3 targetTensor = Vector3.Lerp(_resolvedDryInertiaTensor, _resolvedFloodedInertiaTensor, floodMassRatio);
+            float floodMassKilograms = math.max(0f, _totalFloodVolumeCubicMeters) * WaterDensityKgPerCubicMeter;
+            FloodMassPropertiesResult result = new FloodMassPropertiesResult
+            {
+                FloodMassKilograms = floodMassKilograms,
+                FloodMassRatio = math.saturate(floodMassRatio),
+                FloodCenterLocal = targetFloodCenter,
+                TargetCenterLocal = targetFloodCenter,
+                InertiaTensor = new float3(targetTensor.x, targetTensor.y, targetTensor.z)
+            };
+
+            _massPropertiesFront[0] = result;
+            _massPropertiesBack[0] = result;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private float ResolveTotalCapacityCubicMeters()
         {
+            if (!_compartmentMaxVolumes.IsCreated || _configuredCompartmentCount <= 0)
+                return 0f;
+
             float totalCapacity = 0f;
             for (int i = 0; i < _configuredCompartmentCount; i++)
                 totalCapacity += _compartmentMaxVolumes[i];
@@ -1087,10 +2631,36 @@ namespace Hecton8.Physics
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static Vector3 SanitizeTensor(Vector3 tensor)
         {
-            tensor.x = Mathf.Max(0.001f, tensor.x);
-            tensor.y = Mathf.Max(0.001f, tensor.y);
-            tensor.z = Mathf.Max(0.001f, tensor.z);
+            tensor.x = float.IsFinite(tensor.x) ? Mathf.Max(0.001f, tensor.x) : 0.001f;
+            tensor.y = float.IsFinite(tensor.y) ? Mathf.Max(0.001f, tensor.y) : 0.001f;
+            tensor.z = float.IsFinite(tensor.z) ? Mathf.Max(0.001f, tensor.z) : 0.001f;
             return tensor;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static Vector3 SanitizeCenterOfMass(Vector3 value, Vector3 fallback)
+        {
+            if (IsFiniteVector(value))
+                return value;
+
+            return IsFiniteVector(fallback) ? fallback : Vector3.zero;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static Vector3 ClampMagnitude(Vector3 value, float maxMagnitude)
+        {
+            float maxMagnitudeSq = maxMagnitude * maxMagnitude;
+            if (value.sqrMagnitude <= maxMagnitudeSq || value.sqrMagnitude <= Epsilon)
+                return value;
+
+            return value.normalized * maxMagnitude;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsFiniteVector(Vector3 value)
+        {
+            return !(float.IsNaN(value.x) || float.IsNaN(value.y) || float.IsNaN(value.z) ||
+                     float.IsInfinity(value.x) || float.IsInfinity(value.y) || float.IsInfinity(value.z));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1098,6 +2668,24 @@ namespace Hecton8.Physics
         {
             return index >= 0 && index < _configuredCompartmentCount;
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            exteriorDisplacementVolumeCubicMeters = Mathf.Max(0f, exteriorDisplacementVolumeCubicMeters);
+            exteriorBuoyancyForceClampScale = Mathf.Clamp(exteriorBuoyancyForceClampScale, 1f, 2f);
+            exteriorBuoyancyTorqueClampScale = Mathf.Clamp(exteriorBuoyancyTorqueClampScale, 1f, 3f);
+            addedMassAngularDampingScale = Mathf.Clamp01(addedMassAngularDampingScale);
+
+            if (!UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode &&
+                !UnityEditor.EditorApplication.isCompiling &&
+                !UnityEditor.EditorApplication.isUpdating)
+            {
+                CacheReferences();
+                RebuildExteriorBuoyancySampleLocalPoints();
+            }
+        }
+#endif
 
         private void DisposeDeferred<T>(ref NativeArray<T> array) where T : struct
         {
